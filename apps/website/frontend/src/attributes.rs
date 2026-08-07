@@ -26,7 +26,9 @@
 //! here.
 //!
 //! **T-700 (3DEN-PLACE-013) — the numeric nudge.** Every `number_field` now moves by PageUp /
-//! PageDown, with `Ctrl` / `Shift` / `Alt` scaling the step (`nudge_step`). A nudge writes the
+//! PageDown — and, since wave-127 F-1, by ArrowUp / ArrowDown, which the browser used to step
+//! ONTO THE STEP GRID (`412.37` + one ArrowUp = `413`) until this handler and `step="any"` took
+//! them — with `Ctrl` / `Shift` / `Alt` scaling the step (`nudge_step`). A nudge writes the
 //! field's local draft only, so a burst coalesces into the one blur/Enter commit the field already
 //! made, and a field the T-082 gate has shut refuses the keyboard exactly as it refuses typing.
 #![allow(dead_code)]
@@ -417,6 +419,16 @@ fn modal_view(
  * [`number_field`] had NO keyboard affordance of its own at all: `type="number"` buys the browser's
  * ±1 arrow keys and nothing else, and PageUp/PageDown just scrolled the modal.
  *
+ * **wave-127 F-1 — and the browser's own arrow keys were a PRECISION BUG, not an affordance.** A
+ * `type="number"` input with no `step` gets the default `step=1` on step base `0`, and the WHATWG
+ * "step up" algorithm does not add the step to the current value: when the value is off the step
+ * grid it SNAPS to the grid first. One ArrowUp on a focused field holding `412.37` therefore set the
+ * DOM value to `413`, fired `input`, and blur committed the integer — the exact defect T-775 shipped
+ * to remove, alive on the key next to the one it fixed. Both halves of the fix are below: the input
+ * carries `step="any"` (no grid, so a stray arrow can only ever move by a whole step from where the
+ * value already is), and the handler CLAIMS ArrowUp/ArrowDown into the same `nudged()` path as
+ * PageUp/PageDown so the modifier scale is the same on every nudge key.
+ *
  * The two functions below are deliberately OUTSIDE the `#[cfg(target_arch = "wasm32")]` block that
  * holds the rest of this modal. Everything in a `view!` tree is unreachable from `cargo test`
  * (native) and therefore can only be pinned against its own source; the nudge's decisions —
@@ -424,7 +436,8 @@ fn modal_view(
  * kept native and tested by CALLING them. The keydown handler is then a thin wire between the two.
  */
 
-/// The step one PageUp/PageDown moves a numeric field, given the modifier keys.
+/// The step one nudge key (PageUp/PageDown, ArrowUp/ArrowDown) moves a numeric field, given the
+/// modifier keys.
 ///
 /// | held    | step |
 /// |---------|------|
@@ -450,7 +463,7 @@ fn nudge_step(ctrl: bool, shift: bool, alt: bool) -> f64 {
     }
 }
 
-/// `from` moved by one `step` (`up` = PageUp). `None` means **there is no legal nudge**, and the
+/// `from` moved by one `step` (`up` = PageUp/ArrowUp). `None` means **there is no legal nudge**, and the
 /// caller must write nothing at all.
 ///
 /// `from` is `None` whenever the field's text does not parse, and the case that matters is the
@@ -502,6 +515,33 @@ fn field_display(value: f64) -> String {
     }
 }
 
+/// **T-775** — does a settled [`number_field`] draft deserve a write? `n` is the parsed draft,
+/// `settled` the value the field was showing, `differs` the multi-edit gate's verdict.
+///
+/// Three rules, and each one is a defect that shipped or was one refactor away:
+///   * a NON-FINITE parse writes nothing. `"inf"` and `"NaN"` both parse as `f64` and would sail
+///     into the document; the core filters them per-axis, but a refused write still fires
+///     `after_local_edit()` at the caller, so the mission goes dirty for a number that never landed.
+///   * an UNCHANGED value writes nothing — the T-775 defect itself. Nothing downstream asks "did
+///     anything change": `editor_ops::attrs_update_position` writes `position` and calls
+///     `after_local_edit()` on any non-refused slot, so a focus/blur on an untouched coordinate
+///     dirties the mission, arms a persist and mints an undo step for an edit the operator never
+///     made. The comparison is against the EXACT settled value, never the rounded presentation
+///     string — comparing against the display is how the rounding kept leaking into the document.
+///   * a DIFFERING field is EXEMPT from the equality skip. Under a multi-selection `settled` is one
+///     arbitrary member's number, so typing that number is a deliberate stamp onto the whole
+///     selection and must commit even though it "equals" the value shown.
+///
+/// **wave-127 F-3** — this is a function, and native, because the decision was previously an inline
+/// expression inside a `#[cfg(target_arch = "wasm32")]` `view!` closure, guarded by nothing but a
+/// source pin on its literal text. There is no wasm-bindgen-test harness in this repo, so NOTHING
+/// executed it: a correct refactor (inverting the condition) turned the pin red while a subtly wrong
+/// rewrite that kept the string shape stayed green. The pin now only checks that `commit` CALLS this;
+/// the behaviour is tested by calling it.
+fn should_commit(differs: bool, n: f64, settled: f64) -> bool {
+    n.is_finite() && (differs || n != settled)
+}
+
 /// Mono numeric field committing on blur/Enter (one commit = one undo step). While focused it holds
 /// the local draft, seeded from the EXACT doc value; unfocused it mirrors the doc value at
 /// presentation precision ([`field_display`]), so a map drag updates it live.
@@ -511,7 +551,8 @@ fn field_display(value: f64) -> String {
 /// number, and stays `disabled` until the "Apply to all" checkbox is ticked. The commit path is
 /// untouched: whatever the operator types is parsed and handed to `on_commit` exactly as before.
 ///
-/// **T-700 3DEN-PLACE-013 — the keyboard nudge, and why a burst COALESCES.** PageUp/PageDown move
+/// **T-700 3DEN-PLACE-013 — the keyboard nudge, and why a burst COALESCES.** PageUp/PageDown and
+/// (wave-127 F-1) ArrowUp/ArrowDown move
 /// the value by [`nudge_step`]; a nudge writes the local **draft** and nothing else, so a run of
 /// them settles into the ONE commit that blur/Enter already fires. It is exactly what typing does,
 /// and it is that way for two concrete reasons rather than taste:
@@ -566,22 +607,13 @@ fn number_field(
     let commit = move || {
         focused.set(false);
         if let Ok(n) = draft.get_untracked().parse::<f64>() {
-            // T-775 — AN IDLE FOCUS/BLUR IS NOT AN EDIT. Nothing downstream asks "did anything
-            // change": `editor_ops::attrs_update_position` calls `update_slot_position` and then
-            // `after_local_edit()` on any non-refused slot, so a no-op commit rewrites `position`,
-            // dirties the mission, arms a persist and mints an undo step for a number the operator
-            // never touched. Worse, it is not even value-preserving — the core terrain-follows on an
-            // x/y write (`pz = 0.0` when `z` is `None`), so tabbing through X would drop a manually
-            // authored Z to the deck.
-            //
-            // Compared against the EXACT settled value, never the presentation string: a check
-            // against a rounded display is how the rounding would keep leaking into the document.
-            //
-            // A DIFFERING field is exempt. There is no shared settled value under a multi-selection
-            // — `value` is one arbitrary member's number — so typing that number is a deliberate
-            // stamp onto the whole selection and must still commit.
-            let unchanged = !gate.differs() && n == value;
-            if n.is_finite() && !unchanged {
+            // T-775 — AN IDLE FOCUS/BLUR IS NOT AN EDIT. The whole decision (and every reason for
+            // each of its three rules) lives in [`should_commit`], which is native and therefore
+            // actually tested; this is the wire. wave-127 F-2 removed one of the reasons the skip
+            // used to carry — an x/y commit no longer flattens a manually authored Z, because
+            // `editor_ops::attrs_update_position` now passes the slot's current z back in — but the
+            // dirty mission, the armed persist and the undo step for an untouched number remain.
+            if should_commit(gate.differs(), n, value) {
                 on_commit(n);
             }
         }
@@ -592,6 +624,14 @@ fn number_field(
             <div class="relative">
                 <input
                     type="number"
+                    // wave-127 F-1 — `step="any"` is a PRECISION guard, not styling. Without it the
+                    // input carries the default `step=1` on step base `0`, and the browser's own
+                    // arrow keys / spinner run the WHATWG step-up algorithm, which SNAPS an off-grid
+                    // value onto the grid: one ArrowUp on `412.37` writes `413`, not `413.37`. With
+                    // `step="any"` there is no grid to snap to. The handler below also claims the
+                    // arrow keys outright — belt and braces, because this attribute is the only
+                    // thing standing between the spinner buttons and an authored coordinate.
+                    step="any"
                     aria-label=label
                     disabled=move || gate.locked()
                     placeholder=if gate.differs() { "—" } else { "" }
@@ -615,15 +655,19 @@ fn number_field(
                             }
                             return;
                         }
-                        // T-700 3DEN-PLACE-013 — the nudge.
+                        // T-700 3DEN-PLACE-013 — the nudge. wave-127 F-1 added the ARROW keys: the
+                        // browser's native stepping on those was a rounding bug (see `step="any"`
+                        // above), and taking them here also makes the modifier scale identical on
+                        // every key that moves the number.
                         let up = match key.as_str() {
-                            "PageUp" => true,
-                            "PageDown" => false,
+                            "PageUp" | "ArrowUp" => true,
+                            "PageDown" | "ArrowDown" => false,
                             _ => return,
                         };
                         // Claimed unconditionally, before any refusal below: whether or not this
                         // field accepts the nudge, the operator asked to move a NUMBER, and the
-                        // default action is to scroll the modal out from under them.
+                        // default action is to scroll the modal out from under them (PageUp/Down) or
+                        // to snap the value onto the step grid (the arrows).
                         ev.prevent_default();
                         // T-082 — the core drops a refused field's write on the floor, and an
                         // un-ticked latch is an operator who has not opted this column into the
@@ -1294,17 +1338,41 @@ mod tests {
     /// The keys themselves. `live_source` KEEPS string literals — `ev.key()` is compared against
     /// literals, so this is the one pin that can see which keys are actually bound, and it must
     /// not be satisfiable by the doc comment that describes them.
+    ///
+    /// **wave-127 F-1 — the arrow keys and `step="any"` are part of this pin now.** A `type="number"`
+    /// input with no `step` gets `step=1` on step base `0`, and the WHATWG step-up algorithm SNAPS an
+    /// off-grid value onto the grid rather than adding to it: the browser's own ArrowUp on a focused
+    /// `412.37` set the DOM value to `413`, fired `input`, and blur committed the integer — T-775's
+    /// defect on the adjacent key. Losing EITHER half (the attribute or the interception) hands the
+    /// arrows back to the browser, so both are asserted here.
     #[test]
-    fn the_nudge_is_bound_to_page_up_and_page_down_and_eats_the_scroll() {
+    fn the_nudge_is_bound_to_the_page_and_arrow_keys_and_never_steps_on_a_grid() {
         let src = live_source(include_str!("attributes.rs"));
         let field = only_body(&src, "fn number_field(");
-        for key in ["\"PageUp\"", "\"PageDown\""] {
+        for key in ["\"PageUp\"", "\"PageDown\"", "\"ArrowUp\"", "\"ArrowDown\""] {
             assert!(field.contains(key), "number_field must bind {key}");
         }
+        // The arrows must share the nudge's OWN match arms — bound to some other handler they would
+        // not take `nudge_step`, and (worse) might not prevent the browser's default stepping.
+        for arm in [
+            "\"PageUp\" | \"ArrowUp\" => true,",
+            "\"PageDown\" | \"ArrowDown\" => false,",
+        ] {
+            assert!(
+                field.contains(arm),
+                "the arrow keys must enter the SAME nudge as the page keys; missing arm `{arm}` in \
+                 body:\n{field}"
+            );
+        }
+        assert!(
+            field.contains("step=\"any\""),
+            "the input must carry step=\"any\": with the default step=1 the browser's own arrow \
+             keys and spinner snap an authored 412.37 onto the integer grid"
+        );
         assert!(
             field.contains("ev.prevent_default()"),
-            "PageUp/PageDown scroll by default — the nudge must claim the key or the modal moves \
-             instead of the number"
+            "PageUp/PageDown scroll by default and the arrows step by default — the nudge must \
+             claim the key or the modal moves (or the value rounds) instead of the number"
         );
         // All three modifiers reach the step scale, in the argument order `nudge_step` declares.
         assert!(
@@ -1363,8 +1431,9 @@ mod tests {
     ///     `413` instead of `413.37`: the nudge inherited a rounding it never performed.
     ///   * BLUR skips `on_commit` when the parsed draft still equals the settled value. Nothing
     ///     downstream will do this for it — `editor_ops::attrs_update_position` writes and calls
-    ///     `after_local_edit()` on every non-refused slot, so without this an idle click dirties
-    ///     the mission, mints an undo step, and terrain-follows a manually authored Z to zero.
+    ///     `after_local_edit()` on every non-refused slot, so without this an idle click dirties the
+    ///     mission and mints an undo step for a number nobody touched. (It also used to flatten a
+    ///     manually authored Z; that is fixed at the caller now — wave-127 F-2, pinned below.)
     #[test]
     fn an_untouched_field_commits_nothing_and_the_draft_seeds_from_the_exact_value() {
         let src = attrs_src();
@@ -1396,14 +1465,16 @@ mod tests {
             "the focus handler is what puts the exact value into the draft"
         );
         let commit = only_body(&src, "let commit = move ||");
+        // wave-127 F-3 — the pin's job is now WIRING only: that `commit` asks `should_commit`, with
+        // the gate's verdict and the settled value, before it writes. What the answer should BE is
+        // decided by `should_commit_writes_only_a_new_finite_value` below, which CALLS the function.
         assert!(
-            commit.contains("let unchanged = !gate.differs() && n == value;"),
-            "commit must decide `unchanged` against the settled value, and must EXEMPT a differing \
-             field — under a multi-selection `value` is one arbitrary member's number and typing \
-             it is a deliberate stamp onto the rest; body was:\n{commit}"
+            commit.contains("should_commit(gate.differs(), n, value)"),
+            "commit must route the decision through `should_commit`, handing it the multi-edit \
+             gate's verdict and the SETTLED value; body was:\n{commit}"
         );
         let guard = commit
-            .find("!unchanged")
+            .find("should_commit(")
             .expect("the skip must gate the commit, not merely be computed");
         let call = commit
             .find("on_commit(n)")
@@ -1412,6 +1483,112 @@ mod tests {
             guard < call,
             "the no-op skip must be checked BEFORE the write; guard at {guard}, on_commit(n) at \
              {call}"
+        );
+    }
+
+    /// **wave-127 F-3** — the blur/Enter decision, EXERCISED. Previously this lived as an inline
+    /// expression inside a wasm-only `view!` closure and was guarded by a source pin on its literal
+    /// text; with no wasm-bindgen-test harness in the repo, nothing ran it. A semantically identical
+    /// rewrite turned that pin red and a subtly wrong one kept it green — the exact inversion of what
+    /// a test is for.
+    #[test]
+    fn should_commit_writes_only_a_new_finite_value() {
+        use super::should_commit;
+        // The T-775 case: focus and leave an untouched field ⇒ no write, no undo step.
+        assert!(
+            !should_commit(false, 412.37, 412.37),
+            "an idle focus/blur on an unchanged value must not commit"
+        );
+        assert!(!should_commit(false, 0.0, 0.0));
+        // A real edit commits, however small — 3 decimals is the working resolution.
+        assert!(should_commit(false, 412.371, 412.37));
+        assert!(should_commit(false, -1.0, 1.0));
+        // A DIFFERING field is exempt from the equality skip: under a multi-selection the settled
+        // value is one arbitrary member's number, so typing it is a deliberate stamp on the rest.
+        assert!(
+            should_commit(true, 412.37, 412.37),
+            "a differing (multi-value) field must commit even when the typed number equals the one \
+             arbitrary member's value it was compared against"
+        );
+        assert!(should_commit(true, 5.0, 9.0));
+        // Non-finite refuses under BOTH gate verdicts. `"inf"`/`"NaN"` parse as f64 and the core
+        // filters them per axis, but a refused write still fires `after_local_edit()` at the caller
+        // — a dirty mission and an undo step for a number that never landed.
+        for differs in [false, true] {
+            for n in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+                assert!(
+                    !should_commit(differs, n, 1.0),
+                    "a non-finite draft must never commit (differs={differs}, n={n})"
+                );
+            }
+        }
+        // NaN is not equal to itself, so the equality skip alone would have LET IT THROUGH — the
+        // finite check has to be its own rule, not a consequence of the comparison.
+        assert!(
+            !should_commit(false, f64::NAN, f64::NAN),
+            "NaN != NaN, so the equality skip cannot be what stops a non-finite draft"
+        );
+    }
+
+    /// **wave-127 F-2** — an Attributes x/y edit must not silently discard an authored Z.
+    ///
+    /// `update_slot_position` terrain-follows on any x/y write (`pz = 0.0` when `z` is `None`). That
+    /// matches the JS oracle, whose caller then re-samples the DEM — but NOTHING re-samples after an
+    /// Attributes commit in this frontend, so the `0.0` was final: an operator who authored a rooftop
+    /// Z lost it the moment they nudged X by a metre, inside the same undo step as the X edit.
+    ///
+    /// The fix is pinned at the FRONTEND CALLERS deliberately. `map-engine-core`'s mutator keeps its
+    /// documented byte-parity with `ydoc.updateSlotPosition`; these two functions read the current Z
+    /// and pass it back in, which makes the follow a no-op for this path alone.
+    ///
+    /// A source pin because `editor_ops` is wasm32-only and `cargo test` cannot build it.
+    #[test]
+    fn an_attributes_x_or_y_commit_carries_the_slots_current_z_back_in() {
+        let ops = live_code(include_str!("editor_ops.rs"));
+        for f in [
+            "pub fn attrs_update_position(",
+            "pub fn attrs_update_position_multi(",
+        ] {
+            let body = only_body(&ops, f);
+            let resolve = body.find("z.or_else(").unwrap_or_else(|| {
+                panic!("{f} must resolve a missing z before writing; body was:\n{body}")
+            });
+            let write = body
+                .find("core.update_slot_position(")
+                .unwrap_or_else(|| panic!("{f} must still write through the core mutator"));
+            assert!(
+                resolve < write,
+                "{f} must resolve the sticky z BEFORE the write; resolve at {resolve}, write at \
+                 {write}"
+            );
+            assert!(
+                body.contains("slot_z("),
+                "{f} must read the slot's CURRENT z, not invent one; body was:\n{body}"
+            );
+        }
+        // The read is conditional on the commit being able to zero a z at all — an explicit z write
+        // or a rotation-only edit must not pay for an O(document) JSON read.
+        let rows = only_body(&ops, "fn keep_z_rows(");
+        assert!(
+            rows.contains(
+                "(z.is_none() && (x.is_some() || y.is_some())).then(|| raw_slot_rows(core))"
+            ),
+            "keep_z_rows must read the rows exactly when an x/y edit would otherwise zero the z; \
+             body was:\n{rows}"
+        );
+        // And the read is off the EXACT raw row, not the materialized SoA: the SoA's `zs` is f32 (a
+        // round-trip would rewrite the authored value) and it OMITS slots on hidden layers (T-665),
+        // where a failed read is a zeroed z.
+        let live_ops = live_source(include_str!("editor_ops.rs"));
+        let read = only_body(&live_ops, "fn slot_z(");
+        assert!(
+            read.contains("\"position\"") && read.contains("\"z\""),
+            "slot_z must read `position.z` off the raw slot row; body was:\n{read}"
+        );
+        assert!(
+            !read.contains("materialize"),
+            "slot_z must not go through the f32 SoA — it drops hidden-layer slots and rounds the \
+             value it exists to preserve; body was:\n{read}"
         );
     }
 }

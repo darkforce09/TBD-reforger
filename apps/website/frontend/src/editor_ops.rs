@@ -1213,6 +1213,49 @@ fn row_str(rows: &serde_json::Map<String, serde_json::Value>, id: &str, key: &st
         .to_string()
 }
 
+/// **wave-127 F-2** — one slot's CURRENT `z`, exact, straight off the raw row. `None` when the slot
+/// is absent or carries no finite numeric `z`.
+///
+/// Read from the raw row rather than the materialized SoA for two reasons, both of which would
+/// corrupt the value this exists to preserve: the SoA's `zs` column is **f32**, so round-tripping an
+/// authored `z` through it would rewrite it as a slightly different number on every X tweak; and a
+/// slot filed under a HIDDEN layer is omitted from the SoA entirely (T-665), so the read would fail
+/// on precisely the slots a careful operator has tucked away — and a failed read is a zeroed z.
+fn slot_z(rows: &serde_json::Map<String, serde_json::Value>, id: &str) -> Option<f64> {
+    rows.get(id)?
+        .get("position")?
+        .get("z")?
+        .as_f64()
+        .filter(|v| v.is_finite())
+}
+
+/// **wave-127 F-2** — the slot rows an Attributes position commit needs in order to KEEP an authored
+/// `z`; `None` when this commit cannot zero one, and the callers then skip the read entirely.
+///
+/// `update_slot_position` terrain-follows on any x/y write — `z = None` with `x` or `y` set stores
+/// `pz = 0.0`. In the JS oracle that is harmless because the caller re-samples the DEM and writes the
+/// real elevation straight back. **In this frontend nothing re-samples after an Attributes commit**:
+/// `terrainZ` did not survive the React deletion (the only mention left in this module is a comment
+/// on [`place_at`]), so the document simply keeps the literal `0.0`. An operator who authored a
+/// rooftop `z` and later nudged X by a metre in the Transform tab lost that `z` — silently, and
+/// inside the same undo step as the X edit.
+///
+/// The fix is here, at the CALLER, not in the mutator: `MissionDocCore::update_slot_position` claims
+/// byte-parity with `ydoc.updateSlotPosition` and keeps it. These two functions read the current `z`
+/// and pass it back in, which makes the terrain-follow a no-op for the Attributes path only. The drag
+/// path ([`commit_positions`]) is deliberately untouched.
+///
+/// Reading the rows is O(document) JSON, so it is done once per COMMIT and only for a commit that
+/// could actually zero a `z`: an explicit z write, or a rotation-only edit, never reaches it.
+fn keep_z_rows(
+    core: &MissionDocCore,
+    x: Option<f64>,
+    y: Option<f64>,
+    z: Option<f64>,
+) -> Option<serde_json::Map<String, serde_json::Value>> {
+    (z.is_none() && (x.is_some() || y.is_some())).then(|| raw_slot_rows(core))
+}
+
 /// Read one slot's editable attributes for the modal's field values.
 /// `None` when the slot no longer exists (undone away while open → the modal closes).
 ///
@@ -1298,10 +1341,16 @@ pub fn attrs_locked_count(ids: &[String]) -> usize {
 /// nothing. The guard belongs at `attributes::number_field`'s `commit`, which is the only place that
 /// knows the settled value the operator started from.
 ///
-/// It is not merely convenient to guard there, it is the only correct place: an `x`-only call is NOT
-/// a no-op just because `x` is unchanged. `update_slot_position` terrain-follows on any x/y write
-/// (`pz = 0.0` when `z` is `None`, DEM re-sampled JS-side), so "same x" and "same document" are
-/// different questions at this layer and an equality skip here would suppress a legitimate re-follow.
+/// It is not merely convenient to guard there, it is the only correct place: this layer cannot see
+/// what the operator started from — it is handed a number, not an edit. "Same x" and "same document"
+/// were also different questions here for a second reason that no longer holds: an x-only call used
+/// to terrain-follow the slot's z to `0.0`, so it changed the document even when `x` was unchanged.
+///
+/// **wave-127 F-2 — an x/y edit no longer discards an authored z.** The comment that used to sit here
+/// said the zeroed z was "DEM re-sampled JS-side"; that is FALSE for this path — nothing follows an
+/// Attributes commit to re-sample, so the `0.0` was final and an authored rooftop z died under a 1 m
+/// X nudge. [`keep_z_rows`] explains the fix and why it lives at this caller instead of in the core
+/// mutator.
 pub fn attrs_update_position(
     id: &str,
     x: Option<f64>,
@@ -1324,6 +1373,9 @@ pub fn attrs_update_position(
         if core.slot_layer_is_locked(id) {
             return false; // the core would skip this write; do not report it as an edit
         }
+        // wave-127 F-2 — an x/y edit carries the slot's CURRENT z back in, so the core's
+        // terrain-follow cannot flatten an authored one. See `keep_z_rows`.
+        let z = z.or_else(|| keep_z_rows(core, x, y, z).and_then(|rows| slot_z(&rows, id)));
         let b = terrain_bounds_of(core);
         core.update_slot_position(id, x, y, z, rotation, b[2], b[3]);
         true
@@ -1365,6 +1417,9 @@ pub fn attrs_update_position_multi(
             return false;
         };
         let b = terrain_bounds_of(core);
+        // wave-127 F-2 — read ONCE for the whole stamp, then hand each member its own z back. An X
+        // stamp across a selection used to flatten every member's authored z in one undo step.
+        let rows = keep_z_rows(core, x, y, z);
         // T-082 (F-7) — `moved` is the honest `did`: a selection where EVERY member is
         // transform-locked changed nothing, so it must not bump `doc_ver` or dirty the mission. A
         // selection that straddles the lock still fires the tail — the unlocked members did move.
@@ -1373,6 +1428,7 @@ pub fn attrs_update_position_multi(
             if core.slot_layer_is_locked(id) {
                 continue;
             }
+            let z = z.or_else(|| rows.as_ref().and_then(|r| slot_z(r, id)));
             core.update_slot_position(id, x, y, z, rotation, b[2], b[3]);
             moved = true;
         }
