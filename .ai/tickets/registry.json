@@ -1,5 +1,5 @@
 {
- "next_id": 777,
+ "next_id": 778,
  "tickets": [
   {
    "id": "T-001",
@@ -18706,7 +18706,7 @@
    "id": "T-753",
    "order": 4629,
    "program": "eden",
-   "status": "deferred",
+   "status": "shipped",
    "stream": "mission-creator",
    "targets": [
     "website"
@@ -19121,7 +19121,7 @@
    "id": "T-773",
    "order": 4649,
    "program": "eden",
-   "status": "deferred",
+   "status": "shipped",
    "stream": "mission-creator",
    "targets": [
     "website"
@@ -19162,7 +19162,7 @@
    "id": "T-775",
    "order": 4651,
    "program": "eden",
-   "status": "deferred",
+   "status": "shipped",
    "stream": "mission-creator",
    "targets": [
     "website"
@@ -19200,6 +19200,27 @@
    "title": "Wave-119 residue: four census guards weaker than they read, and one mislabelled hit row",
    "summary": "Four NITs from the wave-119 verifier, grouped because each is a few lines and three are the same class — a guard that reads stronger than it asserts. Every underlying behaviour was independently verified correct; these are gaps in the guarantees. (1) eden_help.rs:953-961: `every_shared_channel_claimant_reads_live_state` is a per-listener SUBSTRING check, so an unrelated `get_untracked()` anywhere in the closure satisfies it. All ten current claimants genuinely gate their Escape path (the verifier read each), so this is latent — but the exemption it guards is the one that keeps a nine-claimant Escape channel legal, which is the last place a weak guard should sit. (2) eden_help.rs:1084-1094: `there_is_exactly_one_extractor` scans only the six declared surface files plus eden_help, so a fifth copy elsewhere in the crate would pass. A repo-wide grep confirms none exists today (sole definition at eden_help.rs:829), and this is the pin enforcing T-738's banked instruction, so it should scan the crate. (3) eden_help.rs:684-686: a keydown closure that reads NEITHER `ev.key()` NOR `ev.code()`, or whose event parameter is not named `ev`, is silently DROPPED from discovery rather than flagged. Partially mitigated by the declared per-file counts and the empty-bindings check, but 'silently dropped' is the shape the whole census exists to eliminate. (4) eden_dock_left.rs:1527-1537 and :547-550 (T-697): a plain hit that matched on FACTION reports `field` as the entity's first text attribute, so the row title claims `matched name \"...\"` when the faction is what matched. Cosmetic and never wrong about WHICH entity matched, only about why. Diagnosis: editor_verify/wave119.md NIT-1..4.",
    "notes": "filed by wave-119 adversarial verifier (editor factory)"
+  },
+  {
+   "id": "T-777",
+   "order": 4653,
+   "program": "eden",
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "surfaces": [
+    "EDITOR"
+   ],
+   "impact": [
+    "mission-authoring",
+    "state"
+   ],
+   "title": "Paste and place-composition land every slot at z = 0.0 — NEEDS OPERATOR DECISION alongside T-743",
+   "summary": "MINOR from the wave-127 focused re-verifier. THIS IS THE ONE WAVE-127 FINDING THAT WAS NOT FIXED, AND IT IS DELIBERATE: it sits on T-743's reserved decision surface. Wave 127 closed a four-instance family where an x/y write with z=None made `update_slot_position` store `pz = 0.0` (store.rs:2779-2783) with nothing re-sampling terrain afterwards — fixed at `attrs_update_position`/`_multi` (F-2), `commit_positions` (F-5, reached by Align/Distribute/place-pattern) and the marquee drag (F-6). The re-verifier then proved that family CLOSED (zero `move_entities` frontend callers; exactly one `move_entities_and_vehicles`; five `update_slot_position` sites, three z-resolved and two rotation-only which cannot trip the mutator's `x.is_some() || y.is_some()` arm). WHAT REMAINS IS A DIFFERENT CLASS — a CREATE path, not a missed caller: `editor_ops.rs:642` (`paste_at_cursor`) pushes `zs.push(0.0)` for every pasted slot and explicitly drops `position.z` from the copied extras, and `place_composition` (store.rs:2394/2409) does the same, symmetric for vehicles. Ctrl+V a rooftop entity and the copy lands on the deck. NO AUTHORED WORK IS DESTROYED — there is no cut, the source is untouched, so this is a wrong-landing-position defect rather than the silent corruption the rest of the wave fixed. WHY IT WAS NOT FIXED AUTONOMOUSLY: the `zs.push(0.0)` carries the in-code rationale 'DEM not ready — byte-parity with the flat-map case', which is the SAME byte-parity-with-the-JS-oracle argument that makes T-743 (`PASTE_NUDGE` = 20 m, store.rs:4998-4999) an operator decision rather than a slice-sized fix. Both are 'where does a pasted entity land', both are pinned to the JS oracle, and changing z unilaterally could pre-empt whichever of T-743's three paths the operator picks. DECIDE THE TWO TOGETHER. The z axis is arguably independent of the x/y nudge — preserving the source z is compatible with all three T-743 paths — but that is the operator's call to make, not the factory's. Diagnosis: editor_verify/wave127.md, focused re-verification section.",
+   "notes": "filed by the wave-127 focused re-verifier; deliberately NOT fixed in-wave — routes to the operator with T-743"
   }
  ]
 }

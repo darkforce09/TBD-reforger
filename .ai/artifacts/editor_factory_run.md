@@ -73,6 +73,7 @@ diagnosis) → registry flip + `distrobox-host-exec sh -c './scripts/ticket sync
 | 118 | 102 | T-637 T-698 T-699 | PASS 30/30 (run 1) | 1M/3m/1N | SHIPPED — 240px dock equalisation (input-critical geometry, unprojection pinned), clipboard exporters, loadout buffer; the T-634 tripwire fired and was INVERTED not weakened; **verifier REFUTED two slice claims** (T-769, and T-759's attempted widening); T-769..T-773 filed |
 | 119 | 103 | T-697 T-700 T-703 | PASS 30/30 (run 1) | 2M/1m/4N | SHIPPED — document search + selection filter (one query language across four surfaces), numeric nudge + shared SearchBox, **keybinding collision test that found bindings shipped undocumented for the whole programme**; T-774..T-776 filed. **RUN COMPLETE: 24/24 tickets, 8/8 gates PASS on run 1, zero quarantines, zero BLOCKERs.** |
 | 120 | 95 | T-701 T-706 | PASS (run 3; run 1 red on the ledger tripwire firing as designed, run 2 = fixup) | 0B/4M/5m/4N → all hardened pre-close | SHIPPED — per-entity hide + the one-pass 1.3 contract; ledger learned DeclaredPendingEmit; 9 reader-ambiguities + 3 prose residues fixed BEFORE any reader dispatched; unread gate live at 53 fields |
+| 127 | 104 | T-775 T-753 T-773 | PASS 30/30 (run 1; re-gated PASS 30/30 over the fix pass) | 0B/2M/1m/1N + focused re-verify 0B/0M/1m/1N | SHIPPED — **NO-DEFERRAL REGIME (operator, 2026-08-07): every verifier finding at every severity is fixed in-wave, not filed.** All 6 findings fixed across 3 fix rounds. The wave's real yield was a FOUR-INSTANCE LIVE DEFECT FAMILY: `update_slot_position` stores `pz = 0.0` on any x/y write with z=None, excused everywhere by a "DEM re-sampled JS-side" comment for a sampler that **died with the React deletion** — fixed at attrs (F-2), Align/Distribute/pattern (F-5) and the marquee drag (F-6, which passed a literal `vec![0.0; n]`). Family proven CLOSED by the re-verifier. T-777 filed and deliberately NOT fixed — it is T-743's reserved decision surface |
 | 121 | assign at close | T-702 T-212 T-654 | — | — | pending |
 | 122 | assign at close | T-673 T-674 T-675 | — | — | pending |
 | 123 | assign at close | T-676 T-677 T-678 | — | — | pending |
@@ -130,6 +131,32 @@ Known traps already hit: rustfmt needs the file's real edition (tools/* are 2024
 schema-validate` broken in worktrees; agent chat summaries are not artifacts — trust gates and
 the verifier; wave-101 agents running concurrent slice gates queue on the gate lock (WAITING is
 serialisation, not a hang).
+
+## THE z = 0.0 FAMILY — discovered and closed in wave 127; bake into every later brief
+
+`MissionDocCore::update_slot_position` (store.rs:2779-2783) writes `pz = 0.0` whenever `z` is None
+and x or y is Some. Every call site excused this with a comment saying the DEM is re-sampled
+JS-side. **That sampler does not exist** — `terrainZ` did not survive the React deletion; a grep for
+`terrainZ|terrain_z|sample_z|sampleZ|dem_z|elevation_at` across `apps/website/frontend/src` returns
+only comments saying so. The 0.0 was final, and vehicles were unaffected (`set_vehicle_position`
+passes `e.z`) — **the slot/vehicle asymmetry is the reliable tell**.
+
+Four instances, all shipped green, all fixed in wave 127:
+`attrs_update_position`/`_multi` (F-2) · `commit_positions`, reached by
+`apply_pattern_to_selection`/`align_selection`/`space_selection` (F-5) · the `LG::Move` marquee drag,
+which passed a literal `vec![0.0; n]` (F-6) · `move_entities` — no frontend caller.
+
+**Rules for every later wave:**
+- **NEVER fix this in `crates/map-engine-core`.** store.rs:2747-2749 claims byte-parity with the JS
+  oracle `ydoc.updateSlotPosition`. Fix at the frontend caller, every time.
+- **Reuse `keep_z_rows()` / `slot_z()`** (`editor_ops.rs:1216-1257`, `pub(crate)`). A third
+  z-resolution path is its own defect class. Read z off `slots_json` (exact f64) — **NOT** the SoA,
+  whose `zs` is f32 and omits hidden-layer slots (T-665).
+- **Any new `update_slot_position` / `move_entities_and_vehicles` caller must pass a real z.**
+  Rotation-only calls (x=None, y=None) cannot trip the arm and are safe.
+- Batch callers: hoist the document read; `raw_slot_rows` is an O(document) JSON parse.
+- If you build a `zs` vector, `zs[i]` must be `ids[i]` — a mismatched zip hands one slot another's
+  elevation, which is WORSE than the zeroing and looks green.
 
 ## Forward constraints for later-wave briefs (from verifiers — bake into dispatch prompts)
 
