@@ -92,6 +92,12 @@ enum Pending {
     /// mirrors [`begin_place_object`]'s shape (a plain `arm(…)` from a palette press) — so the map's
     /// `has_pending` ghost, the release-over-chrome cancel, and Ctrl multi-place all work unchanged.
     Composition(String),
+    /// T-069 (RIGHT-MODE-006) — a map marker armed from the Markers palette, carrying the
+    /// `$defs/marker.icon` alias the icon row was pressed for. One-shot like the three payloads
+    /// above; the canvas release writes `factionsById[faction-{SIDE}].briefing.markers[]` at the
+    /// drop point. It carries the icon rather than a `PlacePayload` because a marker is not a
+    /// `/registry` catalog leaf — there is no asset to resolve, only a closed vocabulary alias.
+    Marker(String),
     /// T-582 — an in-progress zone draw. Unlike the three above this is **multi-click**: it is not
     /// consumed by the first canvas release, so [`place_at`] branches on it before its `take`.
     Zone(ZoneDraft),
@@ -3198,6 +3204,11 @@ fn arm(pending: Pending) {
                 // a zone, it is neither a BLUFOR thing nor an Objects thing). Always accepted; the
                 // Composition tab is the only surface that produces this arm.
                 Pending::Composition(_) => true,
+                // T-069 — a marker arms from its OWN tab for the same reason a composition does: a
+                // marker is neither a BLUFOR thing nor an Objects thing. Its SIDE comes from the
+                // active chip at DROP time (`ensure_side_faction` in `place_at_impl`), not from the
+                // Objects flag, so the Objects chip has nothing to say about whether it may arm.
+                Pending::Marker(_) => true,
                 // T-582 — zones are not a palette arm and do not route through here
                 // ([`begin_zone_draw`] sets `pending` itself, because a zone is authorable under
                 // either chip: a play area is not a BLUFOR thing or an Objects thing). Rejecting
@@ -4623,6 +4634,27 @@ fn place_at_impl(x: f64, y: f64, alt_empty: bool, keep: bool) -> bool {
                     }
                     None
                 }
+                // T-069 (RIGHT-MODE-006) — drop a marker at the release point, under the active
+                // side's faction briefing (the ONLY schema-legal marker placement; see the block
+                // header at the end of this file). The slot id minted above is not used: a marker
+                // is not a slot and lives in a different address space, so it mints its own id off
+                // the marker list.
+                Pending::Marker(icon) => {
+                    let _ = id;
+                    let faction_id = ensure_side_faction(core, &side);
+                    let marker_id = mint_marker_id(&marker_rows_of(core));
+                    // `y` here is the canvas's second WORLD axis, which is mission `z` — the same
+                    // rename `advance_zone_draw(x, z)` makes one screen down. `$defs/marker` is
+                    // `{x, z}` and carries no height at all, so there is no third component to drop.
+                    let (mx, mz) = (x, y);
+                    // Fresh markers carry an EMPTY label: `$defs/marker` requires the key, and the
+                    // author captions it in the panel. Inventing "Marker 1" would put a placeholder
+                    // on a game server's map the moment someone forgot to overwrite it.
+                    core.set_faction_briefing_marker(&faction_id, &marker_id, mx, mz, &icon, "");
+                    // Markers are not slots: putting a marker id in the slot selection would show
+                    // `SEL 1` with nothing highlighted (the `place_at` selection rule).
+                    None
+                }
                 Pending::Composition(comp_id) => {
                     // The single `id` minted above is unused for a composition (it mints its own
                     // per-entity ids). Resolve the row, mint one id per captured entity, and stamp
@@ -5561,4 +5593,276 @@ pub fn owner_line_world(selected_trigger: Option<&str>) -> Option<((f64, f64), (
     // Dangling owner → None → no line. NOT an error, NOT a clear — the edge is kept in the doc.
     let owner = placed_entity_pos(owner_id)?;
     Some((centre, owner))
+}
+
+/* ═══════════════ T-069 — map markers: the four schema-carried fields ═══════════════ */
+//
+// ## Where a marker goes, and why it is NOT `markersById`
+//
+// `grep -c marker editor_ops.rs` was **0** before this block: T-345 shipped
+// `set_faction_briefing_marker` / `remove_faction_briefing_marker` on `MissionDocCore` and nothing
+// in the product ever called them. This block is the caller — the same "T-211 shipped eleven zone
+// mutators and NOTHING called them" shape the zone tool above has.
+//
+// T-069's registry summary says free placement needs generic add/move/remove on the `markersById`
+// ROOT map. **That premise is dead**, and it is dead in a checkable way rather than as a matter of
+// taste. `mission.schema.json` declares markers in exactly ONE place — `$defs/briefing.markers[]`,
+// an array of `$defs/marker` — and declares no top-level `markers` property at all. On the compile
+// side `flatten_to_mod_document` deserialises `EditorPayload { editor: EditorGraph { factions,
+// squads, slots } }`, which declares no root key whatsoever. So the root map is a closed
+// hydrate→emit loop: a marker authored there survives a save and reaches no mod subsystem. The
+// store carries that argument on `set_faction_briefing_marker`'s §authority note, and
+// `a_marker_in_the_root_map_never_reaches_the_compiled_document` (T-069, `store.rs`) now pins it as
+// a test instead of prose. **Author on the briefing, not the root.**
+//
+// The practical consequence for this surface: a marker is SIDE-SCOPED. It is placed under the
+// active Eden side chip through [`ensure_side_faction`] — the same faction resolution a character
+// place uses — because `bridgehead-at-levie` gives both sides different orders at the same
+// coordinates, and the mod looks a briefing up by the joining player's faction.
+//
+// ## Scope: the four schema-carried fields, and not one more
+//
+// `$defs/marker` = `{x, z, icon, label}`. This block authors exactly those, mapping onto
+// ATTR-FIELD-MRK-POSITION (`x`/`z`), -MRK-TYPE (`icon`) and -MRK-TEXT (`label`). The schema ALSO
+// declares `size` / `rotationDeg` / `shape` / `area` — all stamped "T-673, lands after T-069" in
+// their own descriptions — and this block deliberately writes none of them: they are marker STYLE
+// and Eden's second Area-marker model, which is a different ticket. Nothing here widens the schema.
+//
+// ## The icon vocabulary is READ, never typed
+//
+// `$defs/marker.icon` is a CLOSED enum of 64 aliases (the `TBD_MarkerIcons.EnsureAliases` register
+// keys). Before that enum existed a typo validated clean and then degraded at runtime to the
+// fallback DOT glyph. So the picker offers the schema's list and nothing else, and
+// [`crate::eden_dock_right::marker_icon_is_authorable`] — which reads the embedded schema, not a
+// hand-typed copy — is the gate every write here passes through. An unknown alias is REFUSED at
+// this boundary rather than stored: the store's mutator takes an `&str` and asks no questions (it
+// must stay that way — its own tests author aliases this enum does not contain), so the product
+// surface is where the vocabulary is enforced.
+
+/// One authored marker, as the dock lists it. The `(faction_id, id)` pair is the address both store
+/// mutators take, carried on every row so a listed marker can be moved, re-captioned, re-iconed or
+/// deleted without a second lookup.
+#[derive(Clone, Debug, PartialEq)]
+pub struct MarkerRow {
+    /// `factionsById` key — `faction-BLUFOR` / `-OPFOR` / `-INDFOR`.
+    pub faction_id: String,
+    /// Doc-internal id. Addressing only; it never reaches the wire (`$defs/marker` is
+    /// `additionalProperties: false`, and the serde boundary drops the key for free).
+    pub id: String,
+    /// ATTR-FIELD-MRK-POSITION — world metres. `$defs/marker` is `{x, z}`: a marker is a MAP glyph,
+    /// so it carries no height, unlike a slot's `{x, y, z}` position.
+    pub x: f64,
+    pub z: f64,
+    /// ATTR-FIELD-MRK-TYPE — one of the 64 closed `$defs/marker.icon` aliases.
+    pub icon: String,
+    /// ATTR-FIELD-MRK-TEXT — the caption, stored VERBATIM (the mod caps it at render time; capping
+    /// here would destroy the authored value in the one place the author could still fix it).
+    pub label: String,
+}
+
+impl MarkerRow {
+    /// The side chip this marker belongs to (`BLUFOR` / `OPFOR` / `INDFOR`), derived from the
+    /// `faction-{SIDE}` id [`ensure_side_faction`] mints. Falls back to the whole id for a faction
+    /// that came from a library import under some other naming.
+    #[must_use]
+    pub fn side(&self) -> &str {
+        self.faction_id
+            .strip_prefix("faction-")
+            .unwrap_or(&self.faction_id)
+    }
+
+    /// The palette row's right-hand readout — ATTR-FIELD-MRK-POSITION at a glance.
+    #[must_use]
+    pub fn position_summary(&self) -> String {
+        format!("{:.0}, {:.0}", self.x, self.z)
+    }
+}
+
+/// Every authored marker on every faction, in the document's own order (faction groups sorted,
+/// array order preserved inside each). Reads `briefing_marker_rows_json` — the typed reader T-345
+/// never shipped, which is why its two mutators had no product caller.
+#[must_use]
+pub fn marker_rows() -> Vec<MarkerRow> {
+    OPS_CTX
+        .with(|c| {
+            let guard = c.borrow();
+            let ctx = guard.as_ref()?;
+            let d = ctx.doc.borrow();
+            Some(marker_rows_of(d.as_ref()?))
+        })
+        .unwrap_or_default()
+}
+
+/// The parse, taking the core directly. Split out because [`place_at_impl`] already holds the doc
+/// borrow when it needs the list (to mint an unused id), and re-entering through [`marker_rows`]
+/// there would re-open a borrow the place path is in the middle of.
+fn marker_rows_of(core: &MissionDocCore) -> Vec<MarkerRow> {
+    let Ok(rows) = serde_json::from_str::<serde_json::Value>(&core.briefing_marker_rows_json())
+    else {
+        return Vec::new();
+    };
+    let Some(arr) = rows.as_array() else {
+        return Vec::new();
+    };
+    arr.iter()
+        .filter_map(|r| {
+            Some(MarkerRow {
+                faction_id: r.get("factionId")?.as_str()?.to_string(),
+                id: r.get("id")?.as_str()?.to_string(),
+                x: r.get("x")?.as_f64()?,
+                z: r.get("z")?.as_f64()?,
+                icon: r
+                    .get("icon")
+                    .and_then(serde_json::Value::as_str)
+                    .unwrap_or_default()
+                    .to_string(),
+                label: r
+                    .get("label")
+                    .and_then(serde_json::Value::as_str)
+                    .unwrap_or_default()
+                    .to_string(),
+            })
+        })
+        .collect()
+}
+
+/// How many markers the document carries (the palette header readout).
+#[must_use]
+pub fn marker_count() -> usize {
+    marker_rows().len()
+}
+
+/// RIGHT-MODE-006 — an icon press ARMS a marker place. Consumed by [`place_at`] on the next canvas
+/// release, dropped by [`cancel_pending`] on a release over chrome: the one-shot palette-arm
+/// lifecycle, so the map's `has_pending` ghost and the Ctrl multi-place both work with no
+/// marker-specific branch.
+///
+/// Refuses an alias outside the closed `$defs/marker.icon` enum, so a bad vocabulary cannot even be
+/// armed, let alone stored.
+pub fn begin_place_marker(icon: String) {
+    if !crate::eden_dock_right::marker_icon_is_authorable(&icon) {
+        return;
+    }
+    arm(Pending::Marker(icon));
+}
+
+/// The armed marker icon, or `None`. Backs the panel's "click the map to drop it" hint.
+#[must_use]
+pub fn armed_marker_icon() -> Option<String> {
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let ctx = guard.as_ref()?;
+        let p = ctx.pending.borrow();
+        match &*p {
+            Some(Pending::Marker(icon)) => Some(icon.clone()),
+            _ => None,
+        }
+    })
+}
+
+/// Mint a marker id unused anywhere in the document.
+///
+/// Unique across ALL factions, not just the one being written: the dock lists every side in one
+/// list and addresses a row by its id alone, so two sides sharing `mk-1` would make the list
+/// ambiguous even though the store (keyed by the pair) would be perfectly happy.
+fn mint_marker_id(rows: &[MarkerRow]) -> String {
+    let taken: std::collections::HashSet<&str> = rows.iter().map(|r| r.id.as_str()).collect();
+    let mut n: u32 = 1;
+    loop {
+        let id = format!("mk-{n}");
+        if !taken.contains(id.as_str()) {
+            return id;
+        }
+        n = n.saturating_add(1);
+    }
+}
+
+/// ATTR-FIELD-MRK-TYPE — re-icon an existing marker, keeping its position and caption.
+///
+/// Goes through the same upsert the place does, which is what makes it an in-place replace rather
+/// than a delete-and-append: array order is the order the mod renders in.
+#[must_use]
+pub fn set_marker_icon(faction_id: &str, marker_id: &str, icon: &str) -> bool {
+    if !crate::eden_dock_right::marker_icon_is_authorable(icon) {
+        return false;
+    }
+    upsert_marker_field(faction_id, marker_id, |row| row.icon = icon.to_string())
+}
+
+/// ATTR-FIELD-MRK-TEXT — re-caption an existing marker. The label is stored VERBATIM; the mod caps
+/// it at render time and the emitter applies that cap when it compiles, so capping here would
+/// destroy the authored value in the one place the author could still see and fix it.
+#[must_use]
+pub fn set_marker_label(faction_id: &str, marker_id: &str, label: &str) -> bool {
+    upsert_marker_field(faction_id, marker_id, |row| row.label = label.to_string())
+}
+
+/// ATTR-FIELD-MRK-POSITION — move a marker to `(x, z)` world metres. Non-finite input is refused
+/// rather than stored: `$defs/marker` types both as `number`, and a NaN would serialise as JSON
+/// `null` and fail the validator at save time, far from the box that produced it.
+#[must_use]
+pub fn set_marker_position(faction_id: &str, marker_id: &str, x: f64, z: f64) -> bool {
+    if !x.is_finite() || !z.is_finite() {
+        return false;
+    }
+    upsert_marker_field(faction_id, marker_id, |row| {
+        row.x = x;
+        row.z = z;
+    })
+}
+
+/// Delete one marker. Its siblings and the briefing prose beside them are untouched
+/// (`remove_faction_briefing_marker` reads the briefing and writes it back whole).
+#[must_use]
+pub fn remove_marker(faction_id: &str, marker_id: &str) -> bool {
+    let exists = marker_rows()
+        .iter()
+        .any(|r| r.faction_id == faction_id && r.id == marker_id);
+    if !exists {
+        return false;
+    }
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        if let Some(ctx) = guard.as_ref() {
+            let d = ctx.doc.borrow();
+            if let Some(core) = d.as_ref() {
+                core.remove_faction_briefing_marker(faction_id, marker_id);
+            }
+        }
+    });
+    crate::mission_history::after_local_edit();
+    true
+}
+
+/// The shared edit body: read the row, apply `edit`, write it back through the store's UPSERT.
+///
+/// Read-modify-write rather than a per-field mutator because the store's writer takes the whole
+/// `{x, z, icon, label}` tuple — it replaces the row in place. Editing one field therefore means
+/// carrying the other three across, and doing that in one function is what stops a future caller
+/// from re-captioning a marker back to the origin.
+fn upsert_marker_field(
+    faction_id: &str,
+    marker_id: &str,
+    edit: impl FnOnce(&mut MarkerRow),
+) -> bool {
+    let Some(mut row) = marker_rows()
+        .into_iter()
+        .find(|r| r.faction_id == faction_id && r.id == marker_id)
+    else {
+        return false;
+    };
+    edit(&mut row);
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        if let Some(ctx) = guard.as_ref() {
+            let d = ctx.doc.borrow();
+            if let Some(core) = d.as_ref() {
+                core.set_faction_briefing_marker(
+                    faction_id, marker_id, row.x, row.z, &row.icon, &row.label,
+                );
+            }
+        }
+    });
+    crate::mission_history::after_local_edit();
+    true
 }
