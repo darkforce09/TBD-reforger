@@ -17,12 +17,86 @@ use std::collections::HashMap;
 // The inline scrubber/weather author through the same T-193 gate as the Mission Settings dialog.
 #[cfg(target_arch = "wasm32")]
 use crate::eden_env::author_env;
-use crate::eden_layout::{
-    BTN_ICON, DISABLED_GLYPH, DIVIDER, HOVER_FILL, MENU_GUTTER, STRIP, TOGGLED_PLATE,
-};
+use crate::eden_layout::{DISABLED_GLYPH, DIVIDER, HOVER_FILL, MENU_GUTTER, TOGGLED_PLATE};
 // T-633 — the scrubber and the weather picker are the shared Aegis primitives now, not raw
 // `<input type="range">` / `<select>`.
 use crate::ui::{cn, MaterialIcon, Select, Slider};
+
+// ═══════════════ T-634 — two rows, and one action hierarchy ═══════════════
+//
+// Eden fits EIGHT menus (`y 0–22`) AND twenty-five tool icons (`y 22–40`, its own row) into 40 px.
+// We fit five menus, the title, a scrubber, a weather picker, undo/redo/history, three buttons and a
+// gear into ONE 48 px row — which is why it reads as crowded, and why
+// `editor_chrome_direction.md` §"Four concrete moves" (1) rescoped this ticket from "no action
+// hierarchy" to Eden's structure. Menus on row 1, an icon toolbar on row 2.
+//
+// **HEIGHT IS A LAYOUT CONTRACT.** `eden_layout::STRIP_TOP_PX` (48) is the top inset four accessors
+// and `mission_editor`'s `top-12`/`h-12` are written from, so two rows must SPLIT 48, never add to
+// it. The menu row is a fixed `h-6` (24) and the tool row is `flex-1` — it takes whatever is left —
+// so the total is 48 BY CONSTRUCTION and nothing downstream of `STRIP_TOP_PX` moves. The two
+// `*_PX` consts below state that split as a number the pins can check against `STRIP_TOP_PX`
+// itself; they are documentation-with-teeth, not a second source of truth for the height.
+
+/// T-634 — the menu row's fixed height (`h-6`). See the module block above.
+const ROW_MENUS_PX: f64 = 24.0;
+/// T-634 — the tool row's height: the REMAINDER (`flex-1`), which is 48 − 24. Not a class value —
+/// the row never states a height — so the split can never drift from `STRIP_TOP_PX`.
+const ROW_TOOLS_PX: f64 = 24.0;
+
+/// T-634 — the two-row shell, replacing `eden_layout::STRIP` at this one call site.
+///
+/// The SURFACE half — `pointer-events-auto bg-surface-container-lowest/55 shadow-xl backdrop-blur-xl`
+/// plus the `border-b border-white/10` bottom edge — is `STRIP`'s, verbatim (pinned below): nothing
+/// about the strip's glass or its edge changes. What changes is the FLOW: `flex h-full items-center
+/// gap-2 px-3` (one centred row) becomes `flex h-full flex-col` (two stacked rows), and the
+/// horizontal padding moves onto the rows so the tool row's `border-t` hairline reaches the full
+/// width instead of stopping 12 px short at each end.
+///
+/// It lives here rather than beside `STRIP` because `eden_layout` is another slice's `owns` this
+/// wave (T-637). Folding this recipe back next to `STRIP` is reported as residue.
+const STRIP_ROWS: &str = "pointer-events-auto bg-surface-container-lowest/55 shadow-xl backdrop-blur-xl flex h-full flex-col border-b border-white/10";
+
+/// T-634 — row 1, Eden's `y 0–22`: the menu bar, the editable title, and the live slot census.
+/// Identity and commands. `h-6` is [`ROW_MENUS_PX`].
+const ROW_MENUS: &str = "flex h-6 shrink-0 items-center gap-2 px-3";
+
+/// T-634 — row 2, Eden's `y 22–40` (its own row): history/undo/redo, the ORBAT Manager, the
+/// environment cluster (scrubber · readout · weather · settings gear) and, at the far right, the one
+/// primary action with the exports demoted under it. `flex-1` is [`ROW_TOOLS_PX`] — the remainder.
+const ROW_TOOLS: &str = "flex min-h-0 flex-1 items-center gap-1.5 border-t border-white/10 px-3";
+
+/// T-634 — the ONE primary action. `Save Version` earns it: it is the routine, reversible,
+/// most-used command, and it is the only FILLED button in the strip. Before this ticket it was one
+/// of three buttons at near-equal visual weight (a filled primary and two outlined exports, all
+/// `px-3 py-1 text-xs font-medium`), so the routine and the consequential read the same.
+const ACTION_PRIMARY: &str = "shrink-0 rounded bg-primary px-2.5 py-0.5 text-xs font-medium text-on-primary transition-colors hover:bg-primary/90";
+
+/// T-634 — the demoted tier: outlined, unfilled, and muted at rest. The two exports wore an outline
+/// but full `text-on-surface` next to the primary; they are now ONE `Export` trigger wearing this,
+/// with the choice of format a second-level decision inside its menu. Compose with [`HOVER_FILL`].
+const ACTION_SECONDARY: &str = "shrink-0 rounded border border-outline-variant/40 px-2.5 py-0.5 text-xs font-medium text-on-surface-variant";
+
+/// T-634 — the tool row's icon button, replacing `eden_layout::BTN_ICON` at these four call sites.
+///
+/// Two reasons it is not `BTN_ICON`. (1) **Weight** — `BTN_ICON` rests at `text-on-surface-variant`,
+/// which is exactly the ticket's "the undo/redo/history glyphs are too dim to find"; a live control
+/// rests at full `text-on-surface` here, and dimming is reserved for the DISABLED state, where it
+/// means something. (2) **Height** — `BTN_ICON`'s `p-1.5` around a 24 px `text-base` line box is a
+/// 36 px control, which cannot sit in a 24 px row; `p-0.5` around a `leading-none` 16 px glyph is 20.
+/// State comes from the T-668 vocabulary ([`HOVER_FILL`] + [`DISABLED_GLYPH`]) rather than
+/// `BTN_ICON`'s pre-vocabulary ad-hoc `hover:`/`disabled:` pair, so a disabled glyph still dims,
+/// still refuses the hover fill, and still keeps its `title` (rule 3).
+const TOOL_ICON: &str = "shrink-0 rounded p-0.5 text-on-surface";
+
+/// T-634 — one dropdown-row recipe, shared by the menu-bar dropdowns and the demoted-export menu, so
+/// the demotion lands INSIDE the T-668 menu vocabulary instead of inventing a second dropdown
+/// language beside it. Compose with [`HOVER_FILL`] + [`DISABLED_GLYPH`]; every row that uses it
+/// leads with the unconditional [`MENU_GUTTER`] cell.
+const MENU_ROW: &str = "flex w-full items-center gap-1.5 px-3 py-1.5 text-left text-label-sm text-on-surface disabled:cursor-default disabled:text-outline";
+
+/// T-634 — the dropdown surface itself (menu bar and export menu alike).
+const MENU_PANEL: &str =
+    "glass animate-menu-in absolute top-full z-50 mt-1 rounded-lg py-1 shadow-lg";
 
 // Top Command Strip (T-172 B9) — menu bar · editable title · time scrubber + weather ·
 // History (disabled) · Undo/Redo · Save dialog · Export · Settings.
@@ -80,8 +154,13 @@ const MENUS: [(&str, &[MenuItem]); 7] = [
                 label: "Export JSON",
                 action: Some(MenuAction::Export),
             },
+            // T-634 — the `…` came off. The T-668 convention is that `…` means "opens a dialog",
+            // and `export_compiled_now` opens none: it composes the bytes, starts a browser
+            // download and reports through a toast. `Save Version…` and `Mission Settings…` keep
+            // theirs because they really do put a dialog in front of the operator. Pinned below —
+            // a suffix that promises a dialog and delivers a download is the convention leaking.
             MenuItem {
-                label: "Export Compiled Mission…",
+                label: "Export Compiled Mission",
                 action: Some(MenuAction::ExportCompiled),
             },
         ],
@@ -665,6 +744,10 @@ pub fn TopCommandStrip(
     orbat_open: Option<RwSignal<bool>>,
 ) -> impl IntoView {
     let open_menu = RwSignal::new(None::<usize>);
+    // T-634 — the demoted exports' dropdown. A second latch rather than an eighth `MENUS` entry:
+    // the export menu hangs off a BUTTON in the tool row, not off the menu bar, and the two are
+    // mutually exclusive (opening either closes the other) so only one dropdown is ever up.
+    let export_open = RwSignal::new(false);
     let save_open = RwSignal::new(false);
     let save_notes = RwSignal::new(String::new());
     // T-692 — the Controls Hint's open latch. SEEDED from `eden_help`'s thread-local rather than
@@ -695,6 +778,11 @@ pub fn TopCommandStrip(
             if ev.key() == "Escape" {
                 if open_menu.get_untracked().is_some() {
                     open_menu.set(None);
+                }
+                // T-634 — the export dropdown joins the strip's ONE Escape closure, for the same
+                // reason the Controls Hint did: a third window listener is what T-726 is about.
+                if export_open.get_untracked() {
+                    export_open.set(false);
                 }
                 if save_open.get_untracked() {
                     save_open.set(false);
@@ -759,6 +847,8 @@ pub fn TopCommandStrip(
     });
     let run_action = move |a: MenuAction| {
         open_menu.set(None);
+        // T-634 — the export menu dispatches through this same function, so it closes here too.
+        export_open.set(false);
         match a {
             MenuAction::Save => save_open.set(true),
             MenuAction::Export => {
@@ -826,9 +916,13 @@ pub fn TopCommandStrip(
     };
     let title_fallback = StoredValue::new(title);
     view! {
-        <div class=STRIP>
-            // Menu bar (screen 05: File / Edit / View / Mission / Environment).
-            <div class="flex items-center">
+        <div class=STRIP_ROWS>
+            // ═══════════ ROW 1 — menus · title · census (Eden `y 0–22`) ═══════════
+            // Identity and commands: what this mission IS and the eight ways into it. Nothing that
+            // acts on the map lives here any more — that is row 2's job.
+            <div class=ROW_MENUS>
+            // Menu bar (screen 05: File / Edit / Arrange / View / Mission / Environment / Help).
+            <div class="flex shrink-0 items-center">
                 {MENUS
                     .iter()
                     .enumerate()
@@ -843,17 +937,21 @@ pub fn TopCommandStrip(
                                     // neighbour's hover, so "this menu is open" and "the pointer is
                                     // over this menu" were indistinguishable. That was the ticket's
                                     // headline confusion, on the top strip.
+                                    // T-634 — `py-0.5` not `py-1`: a 16 px `text-label-sm` line box
+                                    // in a 24 px row leaves 4 px, not 8. The state classes are
+                                    // untouched.
                                     class=move || {
                                         if open_menu.get() == Some(i) {
-                                            cn(&["rounded px-2 py-1 text-label-sm", TOGGLED_PLATE])
+                                            cn(&["rounded px-2 py-0.5 text-label-sm", TOGGLED_PLATE])
                                         } else {
                                             cn(&[
-                                                "rounded px-2 py-1 text-label-sm text-on-surface-variant",
+                                                "rounded px-2 py-0.5 text-label-sm text-on-surface-variant",
                                                 HOVER_FILL,
                                             ])
                                         }
                                     }
                                     on:click=move |_| {
+                                        export_open.set(false);
                                         open_menu
                                             .update(|m| {
                                                 *m = if *m == Some(i) { None } else { Some(i) };
@@ -866,7 +964,7 @@ pub fn TopCommandStrip(
                                     (open_menu.get() == Some(i))
                                         .then(|| {
                                             view! {
-                                                <div class="glass animate-menu-in absolute top-full left-0 z-50 mt-1 w-64 rounded-lg py-1 shadow-lg">
+                                                <div class=cn(&[MENU_PANEL, "left-0 w-64"])>
                                                     {items
                                                         .iter()
                                                         .map(|it| {
@@ -925,11 +1023,7 @@ pub fn TopCommandStrip(
                                                                             type="button"
                                                                             title=title
                                                                             class=cn(
-                                                                                &[
-                                                                                    "flex w-full items-center gap-1.5 px-3 py-1.5 text-left text-label-sm text-on-surface disabled:cursor-default disabled:text-outline",
-                                                                                    HOVER_FILL,
-                                                                                    DISABLED_GLYPH,
-                                                                                ],
+                                                                                &[MENU_ROW, HOVER_FILL, DISABLED_GLYPH],
                                                                             )
                                                                             disabled=disabled
                                                                             on:click=move |_| run_action(a)
@@ -969,12 +1063,7 @@ pub fn TopCommandStrip(
                                                                             type="button"
                                                                             disabled=true
                                                                             title="Not available yet"
-                                                                            class=cn(
-                                                                                &[
-                                                                                    "flex w-full items-center gap-1.5 px-3 py-1.5 text-left text-label-sm disabled:cursor-default disabled:text-outline",
-                                                                                    DISABLED_GLYPH,
-                                                                                ],
-                                                                            )
+                                                                            class=cn(&[MENU_ROW, DISABLED_GLYPH])
                                                                         >
                                                                             <span class=MENU_GUTTER></span>
                                                                             <span>{label}</span>
@@ -994,54 +1083,6 @@ pub fn TopCommandStrip(
                     })
                     .collect_view()}
             </div>
-            // T-177 B2 / T-071.0 — ORBAT Manager: opens the modal shell (browse/select the live
-            // faction → squad → slot tree). Sits right of the Environment menu. Disabled in the
-            // scaffold-only case (no `orbat_open` signal), mirroring the settings gear.
-            <button
-                type="button"
-                aria-label="ORBAT Manager"
-                // T-668 — rule (3): the disabled scaffold-only case keeps its tooltip (a disabled
-                // control that explains itself beats one that goes silent). `text-primary` +
-                // `hover:bg-primary/15` is the primary-CTA text-button hover idiom (a solid tinted
-                // fill, no border — never confusable with TOGGLED_PLATE); the disabled half is
-                // DISABLED_GLYPH.
-                title="Open the ORBAT Manager"
-                class=cn(
-                    &[
-                        "rounded px-2 py-1 text-label-sm font-semibold text-primary transition-colors hover:bg-primary/15",
-                        DISABLED_GLYPH,
-                    ],
-                )
-                disabled=orbat_open.is_none()
-                on:click=move |_| {
-                    if let Some(o) = orbat_open {
-                        o.set(true);
-                    }
-                }
-            >
-                "ORBAT Manager"
-            </button>
-            // T-692 — the Controls Hint overlay (MENU-VIEW-017). Mounted HERE, inside the strip,
-            // rather than beside it in `mission_editor`: the strip is already one of the four
-            // mounts `mission_editor` gates on `chrome_hidden`, so hosting the card in this
-            // subtree gives it the Backspace hide/show behaviour BY CONSTRUCTION — there is no
-            // second gate that could drift out of step with the first (the debug HUD gets its
-            // gating the same way, from inside the status bar). Renders no DOM while closed.
-            <crate::eden_help::ControlsHint open=hint_open />
-            // Click-away scrim for an open menu (below the dropdowns' z-50).
-            {move || {
-                open_menu
-                    .get()
-                    .is_some()
-                    .then(|| {
-                        view! {
-                            <div
-                                class="fixed inset-0 z-40"
-                                on:click=move |_| open_menu.set(None)
-                            ></div>
-                        }
-                    })
-            }}
             <span class=DIVIDER></span>
             // Editable mission title (React setTitle) + the dirty dot.
             <div class="flex min-w-0 flex-1 items-center">
@@ -1060,7 +1101,10 @@ pub fn TopCommandStrip(
                         <input
                             type="text"
                             aria-label="Mission title"
-                            class="w-full min-w-0 truncate rounded border border-transparent bg-transparent px-1.5 py-0.5 text-label-md font-semibold text-on-surface outline-none transition-colors focus:border-outline-variant/40 focus:bg-surface-container"
+                            // T-634 — `py-0` not `py-0.5`: a 20 px `text-label-md` line box plus
+                            // the 1 px focus border is 22, which clears a 24 px row; `py-0.5`
+                            // made it exactly 24 and the focus ring touched both edges.
+                            class="w-full min-w-0 truncate rounded border border-transparent bg-transparent px-1.5 py-0 text-label-md font-semibold text-on-surface outline-none transition-colors focus:border-outline-variant/40 focus:bg-surface-container"
                             prop:value=doc_title
                             on:change=move |ev| {
                                 #[cfg(target_arch = "wasm32")]
@@ -1095,9 +1139,16 @@ pub fn TopCommandStrip(
             // on top; the generated one-liner (the stable community-naming format) sits below it as a
             // truncating line whose full text is also its tooltip. Both `shrink-0` so the flex title
             // to the left keeps the elastic width.
-            <div class="mr-2 flex shrink-0 flex-col items-end justify-center leading-tight">
+            //
+            // T-634 — the two lines became ONE. They stacked inside a 48 px strip; a 24 px menu row
+            // cannot hold a 25 px two-line block, and a readout that overflows its row is the
+            // crowding this ticket exists to remove. Same two elements, same `data-` hooks, same
+            // tooltips, same truncation — laid side by side across the row instead of down it, with
+            // the hairline between them. Nothing is dropped: the summary's full text was already its
+            // own tooltip, because it was already truncated at `max-w-[22rem]`.
+            <div class="flex shrink-0 items-center gap-2 leading-none">
                 <div
-                    class="flex items-center gap-1.5 font-mono text-[11px] tabular-nums text-on-surface-variant"
+                    class="flex items-center gap-1.5 font-mono text-[11px] leading-none tabular-nums text-on-surface-variant"
                     title="Per-side slot census (WEST · EAST · IND · TOTAL)"
                     data-slot-census
                 >
@@ -1136,15 +1187,97 @@ pub fn TopCommandStrip(
                         <span class="text-on-surface">{move || census.get().total}</span>
                     </span>
                 </div>
+                <span class=DIVIDER></span>
                 // The generated one-liner — the stable format other tools parse (`summary_line`).
                 <div
-                    class="max-w-[22rem] truncate font-mono text-[10px] text-outline"
+                    class="max-w-[22rem] truncate font-mono text-[10px] leading-none text-outline"
                     title=move || summary.get()
                     data-mission-summary
                 >
                     {move || summary.get()}
                 </div>
             </div>
+            </div>
+            // ═══════════ ROW 2 — the icon toolbar (Eden `y 22–40`, its own row) ═══════════
+            // Everything that ACTS: history/undo/redo, the ORBAT Manager, the environment cluster,
+            // and the actions at the far right in one hierarchy — one primary, one demoted.
+            <div class=ROW_TOOLS>
+            // History — present-but-disabled (React parity; version list lands with the history
+            // lane). T-634 — first in the row, with Undo/Redo: the three history glyphs are one
+            // cluster and they lead the toolbar, where Eden puts its own first tool group.
+            <button
+                type="button"
+                aria-label="History"
+                title="Version history (soon)"
+                class=cn(&[TOOL_ICON, HOVER_FILL, DISABLED_GLYPH])
+                disabled=true
+            >
+                <MaterialIcon name="history" class="block text-base leading-none" />
+            </button>
+            // `aria-label` is the gate's DOM handle for the button path (smoke_undo_editor A3/A6) —
+            // a real a11y name, not a test-only attribute.
+            <button
+                type="button"
+                aria-label="Undo"
+                title="Undo (Ctrl+Z)"
+                class=cn(&[TOOL_ICON, HOVER_FILL, DISABLED_GLYPH])
+                disabled=move || !can_undo.get()
+                on:click=move |_| {
+                    #[cfg(target_arch = "wasm32")]
+                    {
+                        crate::mission_history::undo();
+                    }
+                }
+            >
+                <MaterialIcon name="undo" class="block text-base leading-none" />
+            </button>
+            <button
+                type="button"
+                aria-label="Redo"
+                title="Redo (Ctrl+Shift+Z)"
+                class=cn(&[TOOL_ICON, HOVER_FILL, DISABLED_GLYPH])
+                disabled=move || !can_redo.get()
+                on:click=move |_| {
+                    #[cfg(target_arch = "wasm32")]
+                    {
+                        crate::mission_history::redo();
+                    }
+                }
+            >
+                <MaterialIcon name="redo" class="block text-base leading-none" />
+            </button>
+            <span class=DIVIDER></span>
+            // T-177 B2 / T-071.0 — ORBAT Manager: opens the modal shell (browse/select the live
+            // faction → squad → slot tree). Disabled in the scaffold-only case (no `orbat_open`
+            // signal), mirroring the settings gear. T-634 — it moved off the menu row: it is a
+            // command, not a menu, and a command sitting inside the menu bar is exactly the mixing
+            // that made one 48 px row unreadable. Its styling is UNCHANGED (T-668 chose that
+            // primary-CTA text-button idiom deliberately) — only its row is new.
+            <button
+                type="button"
+                aria-label="ORBAT Manager"
+                // T-668 — rule (3): the disabled scaffold-only case keeps its tooltip (a disabled
+                // control that explains itself beats one that goes silent). `text-primary` +
+                // `hover:bg-primary/15` is the primary-CTA text-button hover idiom (a solid tinted
+                // fill, no border — never confusable with TOGGLED_PLATE); the disabled half is
+                // DISABLED_GLYPH.
+                title="Open the ORBAT Manager"
+                class=cn(
+                    &[
+                        "shrink-0 rounded px-2 py-0.5 text-label-sm font-semibold text-primary transition-colors hover:bg-primary/15",
+                        DISABLED_GLYPH,
+                    ],
+                )
+                disabled=orbat_open.is_none()
+                on:click=move |_| {
+                    if let Some(o) = orbat_open {
+                        o.set(true);
+                    }
+                }
+            >
+                "ORBAT Manager"
+            </button>
+            <span class=DIVIDER></span>
             // Inline time scrubber + weather (screen 05 center) — same doc fields as the
             // Mission Settings dialog (`update_environment`, one undo step per commit), and
             // T-192 the same `missions` row mirror, so the two entry points cannot disagree.
@@ -1195,101 +1328,155 @@ pub fn TopCommandStrip(
                         let _ = w;
                     })
                 />
+                // T-159.26 — Mission Settings (environment). Opens the dialog when a
+                // `settings_open` signal is threaded (the editor); disabled in the scaffold-only
+                // case.
+                //
+                // T-634 — the gear used to sit ALONE at the far right of the strip, past the export
+                // buttons, belonging to nothing. It belongs HERE: the scrubber and the weather
+                // picker are two fields of the Mission Settings dialog rendered inline, and the gear
+                // opens the rest of them. Grouping it with the two it extends turns a stranded glyph
+                // into the third member of the environment cluster.
+                <button
+                    type="button"
+                    aria-label="Mission settings"
+                    title="Mission Settings — the rest of the environment"
+                    class=cn(&[TOOL_ICON, HOVER_FILL, DISABLED_GLYPH])
+                    disabled=settings_open.is_none()
+                    on:click=move |_| {
+                        if let Some(s) = settings_open {
+                            s.set(true);
+                        }
+                    }
+                >
+                    <MaterialIcon name="settings" class="block text-base leading-none" />
+                </button>
             </div>
-            <span class=DIVIDER></span>
-            // History — present-but-disabled (React parity; version list lands with the history
-            // lane).
+            // T-634 — the elastic gap. Tools left, actions right: the two ends of the toolbar are
+            // the two kinds of thing it holds, and the space between them is what says so.
+            <div class="min-w-4 flex-1"></div>
+            // The save readout keeps its `min-w-24` reservation so the actions to its right do not
+            // shuffle sideways every time the status text changes length.
+            <span class="min-w-24 shrink-0 font-mono text-xs text-on-surface-variant">
+                {move || save_status.get()}
+            </span>
+            // ── T-634: the action hierarchy ──────────────────────────────────────────────────────
+            //
+            // Three buttons stood here at near-equal visual weight — a filled `Save Version` and two
+            // outlined exports, all `px-3 py-1 text-xs font-medium text-on-surface`. Weight is the
+            // only signal a top strip has, so spending it evenly said the three commands are
+            // equivalent, when one is the routine reversible save an author makes twenty times a
+            // session and the other two produce files that leave the product.
+            //
+            // ONE primary: `Save Version`. Chosen over an export because it is the frequent one and
+            // the safe one — a primary should be the button you want the operator to reach for
+            // without thinking, and `editor_chrome_direction.md` §Open already names Save Version as
+            // the candidate for Eden's loudest slot.
+            //
+            // The two exports are DEMOTED INTO A MENU behind one secondary trigger. A menu rather
+            // than "two smaller buttons" because the choice between them is a real question with a
+            // real answer that needs prose — the superset envelope re-imports here and the mod
+            // cannot read it; the compiled document is what a game server receives — and a dropdown
+            // row has room for that where a 90 px button does not. Rather than the File menu alone
+            // (which also carries both): losing the one-click export from the strip would be a
+            // discoverability regression, and this keeps it one click away while spending a third of
+            // the weight. The rows reuse `MENU_ROW`/`MENU_GUTTER`/`MENU_PANEL`, so the demotion
+            // lands inside the T-668 menu vocabulary instead of beside it.
             <button
                 type="button"
-                aria-label="History"
-                title="Version history (soon)"
-                class=BTN_ICON
-                disabled=true
-            >
-                <MaterialIcon name="history" class="block text-base" />
-            </button>
-            // `aria-label` is the gate's DOM handle for the button path (smoke_undo_editor A3/A6) —
-            // a real a11y name, not a test-only attribute.
-            <button
-                type="button"
-                aria-label="Undo"
-                title="Undo (Ctrl+Z)"
-                class=BTN_ICON
-                disabled=move || !can_undo.get()
-                on:click=move |_| {
-                    #[cfg(target_arch = "wasm32")]
-                    {
-                        crate::mission_history::undo();
-                    }
-                }
-            >
-                <MaterialIcon name="undo" class="block text-base" />
-            </button>
-            <button
-                type="button"
-                aria-label="Redo"
-                title="Redo (Ctrl+Shift+Z)"
-                class=BTN_ICON
-                disabled=move || !can_redo.get()
-                on:click=move |_| {
-                    #[cfg(target_arch = "wasm32")]
-                    {
-                        crate::mission_history::redo();
-                    }
-                }
-            >
-                <MaterialIcon name="redo" class="block text-base" />
-            </button>
-            <span class=DIVIDER></span>
-            <button
-                type="button"
-                class="rounded bg-primary px-3 py-1 text-xs font-medium text-on-primary"
+                title="Save an immutable version of this mission"
+                class=ACTION_PRIMARY
                 on:click=move |_| save_open.set(true)
             >
                 "Save Version"
             </button>
-            <button
-                type="button"
-                class="rounded border border-outline-variant/40 px-3 py-1 text-xs font-medium text-on-surface"
-                on:click=move |_| {
-                    #[cfg(target_arch = "wasm32")]
-                    crate::mission_commands::export_now(&save_semver.get_untracked());
-                }
-            >
-                "Export JSON"
-            </button>
-            // T-243 — the compiled mod document (what `/compiled` serves a game server), beside the
-            // superset envelope above. `/compiled` is service-token-only, so this button is the
-            // only way an author can see these bytes at all.
-            <button
-                type="button"
-                title="Download the compiled mission document the game server receives"
-                class="rounded border border-outline-variant/40 px-3 py-1 text-xs font-medium text-on-surface"
-                on:click=move |_| {
-                    #[cfg(target_arch = "wasm32")]
-                    crate::mission_commands::export_compiled_now(toasts);
-                }
-            >
-                "Export Compiled"
-            </button>
-            <span class="min-w-24 font-mono text-xs text-on-surface-variant">
-                {move || save_status.get()}
-            </span>
-            // T-159.26 — Mission Settings (environment). Opens the dialog when a `settings_open`
-            // signal is threaded (the editor); disabled in the scaffold-only case.
-            <button
-                type="button"
-                aria-label="Mission settings"
-                class=BTN_ICON
-                disabled=settings_open.is_none()
-                on:click=move |_| {
-                    if let Some(s) = settings_open {
-                        s.set(true);
+            <div class="relative shrink-0">
+                <button
+                    type="button"
+                    aria-label="Export"
+                    aria-haspopup="menu"
+                    title="Download this mission — pick a format"
+                    class=move || {
+                        if export_open.get() {
+                            cn(&[ACTION_SECONDARY, TOGGLED_PLATE])
+                        } else {
+                            cn(&[ACTION_SECONDARY, HOVER_FILL])
+                        }
                     }
-                }
-            >
-                <MaterialIcon name="settings" class="block text-base" />
-            </button>
+                    on:click=move |_| {
+                        open_menu.set(None);
+                        export_open.update(|o| *o = !*o);
+                    }
+                >
+                    "Export"
+                    // `text-sm`, not `text-base`: a 16 px glyph would grow the 16 px `text-xs` line
+                    // box and push the button past the tool row's 24 px.
+                    <MaterialIcon
+                        name="expand_more"
+                        class="ml-0.5 inline-block align-middle text-sm leading-none"
+                    />
+                </button>
+                {move || {
+                    export_open
+                        .get()
+                        .then(|| {
+                            view! {
+                                <div class=cn(&[MENU_PANEL, "right-0 w-72"])>
+                                    <button
+                                        type="button"
+                                        title="The editor superset envelope — re-imports here; the mod cannot load it"
+                                        class=cn(&[MENU_ROW, HOVER_FILL])
+                                        on:click=move |_| run_action(MenuAction::Export)
+                                    >
+                                        <span class=MENU_GUTTER></span>
+                                        <span>"Export JSON"</span>
+                                    </button>
+                                    // T-243 — the compiled mod document (what `/compiled` serves a
+                                    // game server), beside the superset envelope above.
+                                    // `/compiled` is service-token-only, so this row is the only
+                                    // way an author can see these bytes at all.
+                                    <button
+                                        type="button"
+                                        title="The compiled mission document the game server receives"
+                                        class=cn(&[MENU_ROW, HOVER_FILL])
+                                        on:click=move |_| run_action(MenuAction::ExportCompiled)
+                                    >
+                                        <span class=MENU_GUTTER></span>
+                                        <span>"Export Compiled"</span>
+                                    </button>
+                                </div>
+                            }
+                        })
+                }}
+            </div>
+            </div>
+            // ═══════════ Overlays — outside both rows, inside the strip ═══════════
+            // T-692 — the Controls Hint overlay (MENU-VIEW-017). Mounted HERE, inside the strip,
+            // rather than beside it in `mission_editor`: the strip is already one of the four
+            // mounts `mission_editor` gates on `chrome_hidden`, so hosting the card in this
+            // subtree gives it the Backspace hide/show behaviour BY CONSTRUCTION — there is no
+            // second gate that could drift out of step with the first (the debug HUD gets its
+            // gating the same way, from inside the status bar). Renders no DOM while closed.
+            // T-634 moved it out of row 1 and up to the shell — it is `fixed inset-0`, so it never
+            // belonged to a row, and a `fixed` child of a 24 px flex row is a trap for the next
+            // edit. The subtree — which is what the gate is — is unchanged.
+            <crate::eden_help::ControlsHint open=hint_open />
+            // Click-away scrim for an open dropdown (below the dropdowns' z-50). T-634 — it now
+            // covers the export menu too, so both dropdowns dismiss the same way.
+            {move || {
+                (open_menu.get().is_some() || export_open.get())
+                    .then(|| {
+                        view! {
+                            <div
+                                class="fixed inset-0 z-40"
+                                on:click=move |_| {
+                                    open_menu.set(None);
+                                    export_open.set(false);
+                                }
+                            ></div>
+                        }
+                    })
+            }}
             // Save Version dialog (React SaveVersionDialog: semver + notes + size estimate +
             // indeterminate bar while saving). Renders no DOM while closed.
             {move || {
@@ -2409,5 +2596,280 @@ mod t633_aegis_controls {
             WEATHER_OPTIONS.iter().all(|(_, label)| !label.is_empty()),
             "every option needs a human label — a blank row is an unpickable option"
         );
+    }
+}
+
+/// T-634 — two rows, and one action hierarchy.
+///
+/// Two defects, one cause. The strip held five menus, a title, a scrubber, a weather picker, three
+/// history glyphs, three buttons, a status readout and a gear in ONE 48 px row, so (a) it read as
+/// crowded and (b) the only signal left to separate `Save Version` from `Export JSON` and
+/// `Export Compiled` — visual weight — was spent evenly across all three. Eden fits eight menus at
+/// `y 0–22` and twenty-five tool icons at `y 22–40`, in forty pixels, by giving each kind of thing
+/// its own row. That is what these pin: the split, its cost in pixels (zero), and the hierarchy the
+/// space bought.
+///
+/// Source pins on scrubbed source — this is a Leptos view a native test cannot render — plus data
+/// pins over `MENUS`, which is a `const` table and can be read directly.
+#[cfg(test)]
+mod t634_two_rows_and_a_hierarchy {
+    use super::{MENUS, ROW_MENUS, ROW_MENUS_PX, ROW_TOOLS, ROW_TOOLS_PX, STRIP_ROWS};
+    use crate::arsenal::class_r_scrub::{live_source, only_body};
+    use crate::eden_layout::{BTN_ICON, STRIP, STRIP_TOP_PX};
+
+    /// The strip's own view body, with comments blanked and class/aria literals kept — the literals
+    /// ARE the structure these pins read.
+    fn body() -> String {
+        let src = live_source(include_str!("eden_top_strip.rs"));
+        only_body(&src, "pub fn TopCommandStrip(").to_string()
+    }
+
+    /// Where a needle first appears in the body. Panics rather than returning an `Option`: a missing
+    /// landmark is a renamed control, which is new information, not a silently-skipped ordering.
+    fn at(body: &str, needle: &str) -> usize {
+        body.find(needle)
+            .unwrap_or_else(|| panic!("T-634: the strip no longer contains `{needle}`"))
+    }
+
+    /// **THE HEIGHT CONTRACT.** `STRIP_TOP_PX` (48) is the top inset the four `eden_layout`
+    /// accessors and `mission_editor`'s `top-12`/`h-12` are written from. Two rows must therefore
+    /// SPLIT it, never add to it. The menu row states a fixed `h-6`; the tool row states no height at
+    /// all and takes the remainder (`flex-1`), so the sum is 48 by construction and no consumer of
+    /// `STRIP_TOP_PX` moves. This checks both halves: the arithmetic, and that the classes really
+    /// are "one fixed, one elastic" rather than two fixed heights that could drift apart.
+    #[test]
+    fn two_rows_split_the_strip_height_they_do_not_add_to_it() {
+        assert!(
+            (ROW_MENUS_PX + ROW_TOOLS_PX - STRIP_TOP_PX).abs() < f64::EPSILON,
+            "T-634: the two rows must sum to eden_layout::STRIP_TOP_PX ({STRIP_TOP_PX}), not \
+             {}. A taller strip is a layout change every inset reader downstream would have to \
+             follow.",
+            ROW_MENUS_PX + ROW_TOOLS_PX
+        );
+        assert!(
+            ROW_MENUS.contains("h-6"),
+            "T-634: the menu row is the FIXED one — `h-6` (= {ROW_MENUS_PX} px)"
+        );
+        assert!(
+            ROW_TOOLS.contains("flex-1") && !ROW_TOOLS.contains("h-["),
+            "T-634: the tool row must take the REMAINDER (`flex-1`) and state no height of its own \
+             — two stated heights can drift apart from STRIP_TOP_PX; a remainder cannot"
+        );
+    }
+
+    /// The shell is two stacked rows, and its MATERIAL is `eden_layout::STRIP`'s, verbatim. Only the
+    /// flow changed: `items-center` (one centred row) → `flex-col` (two rows). If the surface halves
+    /// ever diverge the strip stops matching the docks it sits above, which is the "disjointed"
+    /// complaint `editor_chrome_direction.md` exists to answer.
+    #[test]
+    fn the_shell_is_two_rows_in_the_same_glass() {
+        let surface =
+            "pointer-events-auto bg-surface-container-lowest/55 shadow-xl backdrop-blur-xl";
+        assert!(
+            STRIP.starts_with(surface) && STRIP_ROWS.starts_with(surface),
+            "T-634: the two-row shell must keep eden_layout::STRIP's surface recipe verbatim"
+        );
+        for edge in ["border-b", "border-white/10"] {
+            assert!(
+                STRIP.contains(edge) && STRIP_ROWS.contains(edge),
+                "T-634: the strip's bottom edge (`{edge}`) is unchanged by the row split"
+            );
+        }
+        assert!(
+            STRIP_ROWS.contains("flex-col") && STRIP_ROWS.contains("h-full"),
+            "T-634: the shell stacks its two rows and still fills the 48 px it is given"
+        );
+        assert!(
+            !STRIP_ROWS.contains("items-center"),
+            "T-634: `items-center` in a column would centre the rows horizontally — the shell must \
+             let each row stretch to full width"
+        );
+    }
+
+    /// **Menus on row 1, the icon toolbar on row 2** — Eden's `y 0–22` / `y 22–40`. Proven as an
+    /// ORDERING over the rendered body: the menu table is iterated inside the menu row, and every
+    /// tool glyph appears only after the tool row opens. A re-layout that put a tool back in the
+    /// menu row would move one of these indices past another.
+    #[test]
+    fn the_menus_own_row_one_and_the_toolbar_owns_row_two() {
+        let b = body();
+        let row_menus = at(&b, "class=ROW_MENUS");
+        let row_tools = at(&b, "class=ROW_TOOLS");
+        assert!(
+            row_menus < row_tools,
+            "T-634: the menu row renders first — Eden puts the menus at y 0–22, above the tools"
+        );
+        // The menu bar is inside row 1.
+        let menu_table = at(&b, "{MENUS");
+        assert!(
+            row_menus < menu_table && menu_table < row_tools,
+            "T-634: the menu bar must render inside the MENU row, not the tool row"
+        );
+        // …and every tool-row citizen is inside row 2. `History` is the disabled version-list glyph,
+        // `Undo`/`Redo` the two live ones, `Mission settings` the gear, `Export` the demoted menu.
+        for tool in [
+            r#"aria-label="History""#,
+            r#"aria-label="Undo""#,
+            r#"aria-label="Redo""#,
+            r#"aria-label="ORBAT Manager""#,
+            r#"aria-label="Mission settings""#,
+            r#"aria-label="Export""#,
+        ] {
+            assert!(
+                at(&b, tool) > row_tools,
+                "T-634: `{tool}` belongs to the TOOL row — a command in the menu row is the mixing \
+                 that made one 48 px strip unreadable"
+            );
+        }
+        // The title stays with the menus: it is identity, not a tool.
+        assert!(
+            at(&b, r#"aria-label="Mission title""#) < row_tools,
+            "T-634: the editable title is row-1 identity, beside the menus"
+        );
+    }
+
+    /// **ONE primary.** `Save Version` is the only filled button in the strip; the exports are one
+    /// secondary trigger. Checked on the CONSTS (a filled recipe vs an outlined one) and on the body
+    /// (the primary recipe is used exactly once). Before this ticket three sibling buttons carried
+    /// `px-3 py-1 text-xs font-medium` and only their fill differed, so the routine save and the two
+    /// consequential exports read at near-equal weight.
+    #[test]
+    fn exactly_one_action_is_primary() {
+        assert!(
+            super::ACTION_PRIMARY.contains("bg-primary"),
+            "T-634: the primary action is FILLED — that is what makes it the loudest thing"
+        );
+        assert!(
+            !super::ACTION_SECONDARY.contains("bg-primary")
+                && super::ACTION_SECONDARY.contains("border"),
+            "T-634: the demoted tier is outlined and unfilled — a second fill is a second primary"
+        );
+        let b = body();
+        assert_eq!(
+            b.matches("class=ACTION_PRIMARY").count(),
+            1,
+            "T-634: exactly ONE control in the strip may wear the primary recipe"
+        );
+        assert!(
+            b.contains("class=ACTION_SECONDARY") || b.contains("ACTION_SECONDARY, HOVER_FILL"),
+            "T-634: the Export trigger must wear the demoted recipe"
+        );
+    }
+
+    /// **…and the two exports are demoted BEHIND it, not merely shrunk.** Each export now has
+    /// exactly ONE dispatch site in the strip — the shared `run_action` — where before it had two
+    /// (the menu row and a top-level button of its own). The second copy was the near-equal weight.
+    /// The rows themselves reuse the T-668 menu vocabulary rather than inventing a second dropdown
+    /// language: `MENU_PANEL` / `MENU_ROW` / the unconditional `MENU_GUTTER`.
+    #[test]
+    fn the_exports_live_behind_one_secondary_trigger() {
+        let b = body();
+        for dispatch in [
+            "crate::mission_commands::export_now(",
+            "crate::mission_commands::export_compiled_now(",
+        ] {
+            assert_eq!(
+                b.matches(dispatch).count(),
+                1,
+                "T-634: `{dispatch}` must have exactly one dispatch site in the strip (the shared \
+                 `run_action`); a second call site is the top-level button this ticket demoted"
+            );
+        }
+        let gate = at(&b, "export_open");
+        for row in [
+            "run_action(MenuAction::Export)",
+            "run_action(MenuAction::ExportCompiled)",
+        ] {
+            assert!(
+                at(&b, row) > gate,
+                "T-634: `{row}` must render inside the export dropdown, behind `export_open`"
+            );
+        }
+        assert!(
+            b.contains("MENU_PANEL, ") && b.matches("MENU_ROW, HOVER_FILL").count() >= 2,
+            "T-634: the export menu reuses the T-668 menu recipes — the demotion lands inside the \
+             vocabulary, not beside it"
+        );
+    }
+
+    /// **The history glyphs are no longer too dim to find.** `eden_layout::BTN_ICON` rests at
+    /// `text-on-surface-variant` — the muted colour — so History/Undo/Redo sat at the same weight
+    /// whether they were live or not, and dimming meant nothing. `TOOL_ICON` rests at full
+    /// `text-on-surface` and takes its disabled half from `DISABLED_GLYPH`, so dim now means exactly
+    /// one thing: this control cannot act. All four tool glyphs use it, and `BTN_ICON` is gone from
+    /// the strip.
+    #[test]
+    fn a_live_tool_glyph_rests_bright_and_only_a_dead_one_dims() {
+        assert!(
+            BTN_ICON.contains("text-on-surface-variant"),
+            "T-634: this pin's premise — BTN_ICON is the muted recipe the glyphs used to wear. If \
+             eden_layout changed it, TOOL_ICON's reason to exist changed with it (T-637 owns that \
+             file; this is the signal to fold them back together)"
+        );
+        assert!(
+            super::TOOL_ICON.contains("text-on-surface")
+                && !super::TOOL_ICON.contains("text-on-surface-variant"),
+            "T-634: a LIVE tool glyph rests at full strength — being hard to find was the defect"
+        );
+        let b = body();
+        assert!(
+            !b.contains("BTN_ICON"),
+            "T-634: no strip control may fall back to the muted BTN_ICON recipe"
+        );
+        assert_eq!(
+            b.matches("cn(&[TOOL_ICON, HOVER_FILL, DISABLED_GLYPH])").count(),
+            4,
+            "T-634: all four tool glyphs (History · Undo · Redo · the settings gear) take the same \
+             recipe and the same T-668 state pair"
+        );
+        // Rule (3) survives the swap: the permanently-disabled History glyph still explains itself.
+        assert!(
+            b.contains("Version history (soon)"),
+            "T-668 rule (3): a disabled glyph keeps its tooltip — it must not go silent"
+        );
+    }
+
+    /// **The gear is not stranded any more.** It used to render LAST, past both export buttons, at
+    /// the far right of the strip, adjacent to nothing it had anything to do with. It now sits
+    /// immediately after the weather picker: the scrubber and the picker are two Mission Settings
+    /// fields rendered inline, and the gear opens the rest of them. Pinned as an ordering — gear
+    /// after the `Select`, and before the actions rather than after them.
+    #[test]
+    fn the_gear_sits_with_the_environment_it_opens() {
+        let b = body();
+        let weather = at(&b, "<Select");
+        let gear = at(&b, r#"aria-label="Mission settings""#);
+        let primary = at(&b, "class=ACTION_PRIMARY");
+        assert!(
+            weather < gear && gear < primary,
+            "T-634: the gear belongs to the environment cluster (after the weather picker, before \
+             the actions), not alone at the far right past every button"
+        );
+    }
+
+    /// **T-668's `…` rule, applied to this ticket's menu.** `…` means "opens a dialog", everywhere.
+    /// `Save Version…` and the two `Mission Settings…` rows earn it. `Export Compiled Mission` did
+    /// not: `export_compiled_now` composes bytes, starts a browser download and reports through a
+    /// toast — no dialog ever appears. A suffix that promises one and delivers a download is the
+    /// convention leaking, and a leaking convention teaches the operator to ignore it.
+    #[test]
+    fn an_ellipsis_is_a_promise_of_a_dialog() {
+        for (menu, items) in MENUS {
+            for it in items {
+                let promises_dialog = it.label.ends_with('…');
+                let opens_dialog = matches!(
+                    it.action,
+                    Some(super::MenuAction::Save) | Some(super::MenuAction::Settings)
+                );
+                assert_eq!(
+                    promises_dialog,
+                    opens_dialog,
+                    "T-668/T-634: `{}` (menu `{menu}`) — the `…` suffix and \"a dialog follows\" \
+                     must agree exactly. Save Version and Mission Settings put a dialog in front of \
+                     the operator; every other row acts, downloads or toggles.",
+                    it.label
+                );
+            }
+        }
     }
 }
