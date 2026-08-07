@@ -1290,6 +1290,221 @@ fn AssetPickerOverlay(
     }
 }
 
+/// T-651 (`PLACE-COMMENT-001`) — **the comment editor**: the one surface that authors all three
+/// `ATTR-FIELD-CMT-*` fields, plus the COPY and DELETE verbs. Opened by double-clicking a comment row
+/// in the Outliner; renders no DOM while closed.
+///
+/// **Why its own overlay and not the Attributes modal.** Attributes reads the slot SoA
+/// (`editor_ops::read_attrs`), and a comment is not in it — a comment never reaches `materialize`
+/// at all, which is the same property that keeps it out of the render and off the compiled mission.
+/// Pointing Attributes at a comment id would open a dialog with every field blank and every write a
+/// no-op: the T-716 "live-but-inert" failure this codebase already names.
+///
+/// **Where each verb lands.** Title/tooltip/position write through `set_comment_*`, one core
+/// transaction each, so each committed edit is one Ctrl+Z. The POSITION pair is also the drag
+/// commit's surface: with a comment absent from the render SoA there is nothing on the map to grab,
+/// so typed coordinates are the honest form of "drag" for this ticket — the doc-side mutator
+/// (`move_comment`) is the same one a future map-drawn comment glyph would call, so wiring a
+/// pointer drag later changes the CALLER and nothing else. Duplicate is the copy verb; Delete
+/// removes the row and unfiles it from its folder. Filing into a layer is the Outliner drag, not a
+/// control here.
+///
+/// Commits on `change` (blur / Enter), not on every keystroke: a per-character write would put one
+/// undo step per letter on the stack of a field whose whole purpose is long prose.
+#[component]
+fn CommentEditorOverlay(open: RwSignal<Option<String>>, doc_tick: RwSignal<u64>) -> impl IntoView {
+    // Esc closes (the picker / context-menu idiom).
+    #[cfg(target_arch = "wasm32")]
+    {
+        let key = window_event_listener(leptos::ev::keydown, move |ev| {
+            if open.get_untracked().is_some() && ev.key() == "Escape" {
+                ev.prevent_default();
+                crate::editor_ops::close_comment_editor();
+            }
+        });
+        on_cleanup(move || key.remove());
+    }
+
+    move || {
+        let id = open.get()?;
+        // `doc_tick` is the reactive re-read trigger (the Attributes-modal idiom): an undo, a
+        // duplicate or an outliner refile bumps it and this panel re-reads the row.
+        let _ = doc_tick.get();
+        #[cfg(target_arch = "wasm32")]
+        let row = crate::editor_ops::read_comment(&id);
+        #[cfg(not(target_arch = "wasm32"))]
+        let row: Option<()> = None;
+        // The row vanished (deleted, or undone away while the panel was open) — close rather than
+        // edit a ghost. Returning `None` renders nothing; the signal is cleared on the next open.
+        let (title, tooltip, x, z) = match &row {
+            #[cfg(target_arch = "wasm32")]
+            Some(c) => (c.title.clone(), c.tooltip.clone(), c.x, c.z),
+            #[cfg(not(target_arch = "wasm32"))]
+            Some(()) => (String::new(), String::new(), 0.0, 0.0),
+            None => return None,
+        };
+        let (id_title, id_tip, id_x, id_z, id_dup, id_del) = (
+            id.clone(),
+            id.clone(),
+            id.clone(),
+            id.clone(),
+            id.clone(),
+            id.clone(),
+        );
+        let (x_for_z, z_for_x) = (x, z);
+        Some(view! {
+            <div
+                class="fixed inset-0 z-40 bg-scrim/40"
+                on:pointerdown=move |ev| {
+                    ev.stop_propagation();
+                    #[cfg(target_arch = "wasm32")]
+                    crate::editor_ops::close_comment_editor();
+                }
+            ></div>
+            <div
+                class="glass animate-dialog-in fixed top-1/2 left-1/2 z-50 flex w-[min(28rem,92vw)] -translate-x-1/2 -translate-y-1/2 flex-col gap-3 rounded-xl border border-outline-variant/30 p-4 shadow-2xl outline-none"
+                on:pointerdown=move |ev| ev.stop_propagation()
+            >
+                <div class="flex items-center gap-2">
+                    <span class="font-label-md text-label-md text-on-surface">"Comment"</span>
+                    <span class="ml-auto font-code-sm text-code-sm text-on-surface-variant">
+                        {id.clone()}
+                    </span>
+                </div>
+                // ATTR-FIELD-CMT-TITLE
+                <div class="space-y-1">
+                    <label class="font-label-sm text-[11px] text-on-surface-variant">"Title"</label>
+                    <input
+                        type="text"
+                        class="w-full rounded border border-border-subtle bg-surface-dim px-2 py-1.5 font-label-md text-label-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+                        prop:value=title
+                        on:change=move |ev| {
+                            #[cfg(target_arch = "wasm32")]
+                            {
+                                crate::editor_ops::rename_comment(
+                                    id_title.clone(),
+                                    event_target_value(&ev),
+                                );
+                            }
+                            #[cfg(not(target_arch = "wasm32"))]
+                            let _ = (&id_title, &ev);
+                        }
+                    />
+                </div>
+                // ATTR-FIELD-CMT-TOOLTIP — a textarea, not an input: FNF v3's surviving in-map
+                // instructions ran to seven paragraphs, and a single-line box would make the field
+                // useless for the one job it exists to do.
+                <div class="space-y-1">
+                    <label class="font-label-sm text-[11px] text-on-surface-variant">"Tooltip"</label>
+                    <textarea
+                        rows="5"
+                        class="w-full rounded border border-border-subtle bg-surface-dim px-2 py-1.5 font-label-md text-label-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+                        prop:value=tooltip
+                        on:change=move |ev| {
+                            #[cfg(target_arch = "wasm32")]
+                            {
+                                crate::editor_ops::set_comment_tooltip(
+                                    id_tip.clone(),
+                                    event_target_value(&ev),
+                                );
+                            }
+                            #[cfg(not(target_arch = "wasm32"))]
+                            let _ = (&id_tip, &ev);
+                        }
+                    ></textarea>
+                </div>
+                // ATTR-FIELD-CMT-POSITION — world metres, `{x, z}` (the marker / zone-centre
+                // vocabulary, never `{x, y}`). A non-numeric entry is ignored rather than written as
+                // 0, which would teleport the note to the terrain corner on a stray keystroke.
+                <div class="flex gap-2">
+                    <div class="flex-1 space-y-1">
+                        <label class="font-label-sm text-[11px] text-on-surface-variant">"X (m)"</label>
+                        <input
+                            type="number"
+                            class="w-full rounded border border-border-subtle bg-surface-dim px-2 py-1.5 font-code-md text-code-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+                            prop:value=x
+                            on:change=move |ev| {
+                                #[cfg(target_arch = "wasm32")]
+                                if let Ok(v) = event_target_value(&ev).trim().parse::<f64>() {
+                                    crate::editor_ops::move_comment(id_x.clone(), v, z_for_x);
+                                }
+                                #[cfg(not(target_arch = "wasm32"))]
+                                let _ = (&id_x, &ev, z_for_x);
+                            }
+                        />
+                    </div>
+                    <div class="flex-1 space-y-1">
+                        <label class="font-label-sm text-[11px] text-on-surface-variant">"Z (m)"</label>
+                        <input
+                            type="number"
+                            class="w-full rounded border border-border-subtle bg-surface-dim px-2 py-1.5 font-code-md text-code-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none"
+                            prop:value=z
+                            on:change=move |ev| {
+                                #[cfg(target_arch = "wasm32")]
+                                if let Ok(v) = event_target_value(&ev).trim().parse::<f64>() {
+                                    crate::editor_ops::move_comment(id_z.clone(), x_for_z, v);
+                                }
+                                #[cfg(not(target_arch = "wasm32"))]
+                                let _ = (&id_z, &ev, x_for_z);
+                            }
+                        />
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 pt-1">
+                    // COPY. The new comment lands in the same folder, offset so it is not stacked
+                    // invisibly on its source. The panel follows the copy — that is what makes the
+                    // duplicate immediately editable instead of leaving the operator on the original.
+                    <button
+                        type="button"
+                        class="rounded border border-border-subtle px-3 py-1.5 text-label-md text-on-surface hover:bg-primary/15"
+                        on:click=move |_| {
+                            #[cfg(target_arch = "wasm32")]
+                            if let Some(new_id) =
+                                crate::editor_ops::duplicate_comment(&id_dup, COMMENT_COPY_OFFSET_M)
+                            {
+                                crate::editor_ops::open_comment_editor(new_id);
+                            }
+                            #[cfg(not(target_arch = "wasm32"))]
+                            let _ = &id_dup;
+                        }
+                    >
+                        "Duplicate"
+                    </button>
+                    <button
+                        type="button"
+                        class="rounded border border-error/50 px-3 py-1.5 text-label-md text-error hover:bg-error/15"
+                        on:click=move |_| {
+                            #[cfg(target_arch = "wasm32")]
+                            {
+                                crate::editor_ops::delete_comment(id_del.clone());
+                                crate::editor_ops::close_comment_editor();
+                            }
+                            #[cfg(not(target_arch = "wasm32"))]
+                            let _ = &id_del;
+                        }
+                    >
+                        "Delete"
+                    </button>
+                    <button
+                        type="button"
+                        class="ml-auto rounded bg-primary px-3 py-1.5 text-label-md text-on-primary"
+                        on:click=move |_| {
+                            #[cfg(target_arch = "wasm32")]
+                            crate::editor_ops::close_comment_editor();
+                        }
+                    >
+                        "Close"
+                    </button>
+                </div>
+            </div>
+        })
+    }
+}
+
+/// T-651 — how far a duplicated comment is offset from its source, in metres. Non-zero so the copy
+/// is a distinct, clickable row rather than a perfect overlay of the original.
+const COMMENT_COPY_OFFSET_M: f64 = 25.0;
+
 #[component]
 pub fn MissionEditorPage() -> impl IntoView {
     let container_ref = NodeRef::<leptos::html::Div>::new();
@@ -1460,6 +1675,10 @@ pub fn MissionEditorPage() -> impl IntoView {
     // picker is self-contained and does NOT depend on the DockRight catalog, which is exactly why
     // this floating form was chosen over "focus the dock's search" (a hidden dock can't be focused).
     let asset_picker = RwSignal::new(None::<AssetPickerState>);
+    // T-651 — the comment editor's open comment id (`None` = closed). Mounted BESIDE the ungated
+    // dialogs like the picker and the context menu, so a comment stays editable under Backspace
+    // hide-chrome (a floating overlay is not dock chrome — the wave-101 mount rule).
+    let comment_editor = RwSignal::new(None::<String>);
     // T-662 — Backspace hides the whole Eden chrome (Eden's "hide interface"), leaving the map
     // full-bleed and interactive. Gates the four dock mounts + the strip below; another Backspace
     // brings them back. Declared on both targets — the view reads it, the wasm keydown toggles it.
@@ -1655,6 +1874,23 @@ pub fn MissionEditorPage() -> impl IntoView {
             // `on_cleanup` is `Send`-bound) — no double-free (plain Rust `Drop`). The optional
             // doc→engine bind (D5) happens below once the engine is `Some`.
             let doc = crate::mission_doc::new_seeded_doc();
+            // T-651 — THE NEW-MISSION TEMPLATE SEEDS COMMENTS. Two of them, under the `INIT` origin
+            // so the template is not an undo step.
+            //
+            // This is the right instant and the only one: the doc is freshly minted and nothing has
+            // loaded into it yet. Both later boot steps REPLACE the document wholesale — the IDB
+            // restore swaps in a different core, and `hydrate_from_server`'s adopt path reloads from
+            // the saved payload — so a restored or downloaded mission keeps exactly the comments it
+            // was saved with and never gets a second template. Seeding after either step would be
+            // the duplicate-notes bug; `seed_template_comments` also declines on a non-empty
+            // comments map, so the property holds twice over.
+            //
+            // Two, because that is what the evidence supports. FNF v4 deleted a 219-line config
+            // guide and a 421-file template, and the onboarding that survived is literally two
+            // Comment entities. FNF v3 had 28. **This is ONE community across TWO eras — WOG and
+            // OFCRA ship no comment equivalent at all** — so the seed copies what survived a
+            // rewrite, not what a single era once had, and it is not a four-way convergence.
+            crate::editor_ops::seed_new_mission_template(&doc);
             let doc_ver = Rc::new(Cell::new(1u32));
             crate::mission_doc::register_mission_doc(doc.clone(), doc_ver.clone());
 
@@ -1985,6 +2221,9 @@ pub fn MissionEditorPage() -> impl IntoView {
             // T-647 PLACE-003 — same handoff for the empty-ground asset picker: the wasm `dblclick`
             // closure opens it through `editor_ops::open_asset_picker`, which writes this signal.
             crate::editor_ops::set_asset_picker_signal(asset_picker);
+            // T-651 — same handoff for the comment editor: the Outliner's comment row (a native
+            // view with no reactive handle) opens it through `editor_ops::open_comment_editor`.
+            crate::editor_ops::set_comment_editor_signal(comment_editor);
 
             crate::mission_history::register_editor_history();
             crate::mission_history::register_key_handler();
@@ -3496,7 +3735,23 @@ pub fn MissionEditorPage() -> impl IntoView {
                         )
                     });
                     let sel = selection.borrow().clone();
-                    let target = crate::context_menu::resolve_target(hit.as_deref(), &sel);
+                    // T-651 (`PLACE-COMMENT-001`) — the PLACE GESTURE, and it is deliberately not an
+                    // armed one. The world point is unprojected HERE, against the same frozen camera
+                    // the pick above used, and rides `MenuTarget` to the dispatch; "Place Comment"
+                    // then writes the annotation immediately at that point.
+                    //
+                    // Why no arm: an armed place would join `LeftGesture`'s pointerdown/up machine,
+                    // and that machine has a known-pending defect (T-723 — the armed pointerup path
+                    // has no button filter, can strand `LG::Pending`, and has no Esc disarm; the
+                    // in-code "left/pan_px are both None here" invariant near pointerdown was
+                    // refuted in wave 106). Comments do not need an arm to be correct: unlike a
+                    // palette place, the gesture that chooses the point (the right-click) and the
+                    // gesture that confirms the action (the menu row) are already two events, so the
+                    // point is captured once and consumed once, with no in-flight state to strand.
+                    // This ticket therefore adds ZERO new state to the gesture machine.
+                    let world = cam.unproject_xy(px, py);
+                    let target = crate::context_menu::resolve_target(hit.as_deref(), &sel)
+                        .at_world(world[0], world[1]);
                     crate::context_menu::open(ev.client_x() as f64, ev.client_y() as f64, target);
                 }
             });
@@ -3899,6 +4154,12 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // DockRight catalog is built from, so a picked leaf arms the identical place the
                 // dock would (`begin_place`), which the next canvas click lands (PLACE-001). Renders
                 // no DOM while `asset_picker` is None.
+                // T-651 — the comment editor (all three ATTR-FIELD-CMT-* fields + copy/delete),
+                // opened by double-clicking a comment row in the Outliner. Ungated for the same
+                // reason as the picker above; renders no DOM while closed.
+                <div class="pointer-events-auto">
+                    <CommentEditorOverlay open=comment_editor doc_tick />
+                </div>
                 <div class="pointer-events-auto">
                     <AssetPickerOverlay picker=asset_picker registry=registry_items active_side />
                 </div>
@@ -6372,6 +6633,108 @@ mod t647_placement_interactions {
         assert!(
             comp.contains("asset_catalog::build_catalog_tree("),
             "PLACE-003: the picker must reuse build_catalog_tree (the dock's own catalog)"
+        );
+    }
+
+    // ───────────────────── T-651 — PLACE-COMMENT-001: the place point + the template seed ───────
+
+    /// The right-click handler captures the WORLD point of the click and hands it to the menu, which
+    /// is what makes `Place Comment` land where the operator clicked. Also pins the negative that
+    /// matters: this ticket added NO state to the `LeftGesture` machine — no new arm, no new
+    /// `Pending`, nothing that could strand (T-723's territory, deliberately untouched).
+    #[test]
+    fn the_contextmenu_handler_captures_the_world_point_and_arms_no_gesture() {
+        let ed = editor_live();
+        let body = only_body(&ed, "let oncontextmenu =");
+        assert!(
+            body.contains("cam.unproject_xy(px, py)") && body.contains(".at_world("),
+            "PLACE-COMMENT-001: the right-click must unproject its own pixel and attach the world \
+             point to the MenuTarget"
+        );
+        assert!(
+            !body.contains("LeftGesture")
+                && !body.contains("editor_ops::arm(")
+                && !body.contains("Pending::"),
+            "T-651 must add no state to the gesture machine — the place is committed by the menu \
+             row, not by an armed pointerup (T-723)"
+        );
+    }
+
+    /// THE NEW-MISSION TEMPLATE SEEDS COMMENTS, at the fresh-doc site and BEFORE both boot steps
+    /// that replace the document. Order is the whole property: seeding after the IDB restore or the
+    /// server hydrate would stamp a template onto a mission that already has its own comments.
+    #[test]
+    fn the_new_mission_template_seeds_comments_before_restore_and_hydrate() {
+        let ed = editor_live();
+        let seed = ed
+            .find("editor_ops::seed_new_mission_template(&doc)")
+            .expect("T-651: the new-mission template seed must run in the editor page");
+        let mint = ed
+            .find("mission_doc::new_seeded_doc()")
+            .expect("the fresh-doc mint");
+        let restore = ed
+            .find("yrs_persist::load_state(&id)")
+            .expect("the IDB restore");
+        let hydrate = ed
+            .find("mission_hydrate::hydrate_from_server(")
+            .expect("the server hydrate");
+        assert!(
+            seed > mint,
+            "the template seeds into the freshly-minted doc, not before it exists"
+        );
+        assert!(
+            seed < restore && seed < hydrate,
+            "the template must seed BEFORE the restore ({restore}) and the hydrate ({hydrate}) — \
+             both replace the document, so a later seed would duplicate onto a saved mission"
+        );
+    }
+
+    /// The comment editor is a real, ungated overlay (it survives Backspace hide-chrome, the
+    /// wave-101 mount rule) and it authors all three ATTR-FIELD-CMT-* fields plus copy and delete —
+    /// so every store mutator this ticket shipped is reachable from the UI.
+    #[test]
+    fn the_comment_editor_is_ungated_and_authors_every_comment_field() {
+        let ed = editor_live();
+        assert!(
+            ed.contains("let comment_editor = RwSignal::new(None")
+                && ed.contains("editor_ops::set_comment_editor_signal(comment_editor)"),
+            "T-651: the page must own the comment-editor signal and register it with editor_ops"
+        );
+        let mount = ed
+            .find("CommentEditorOverlay open=")
+            .expect("the comment editor mount");
+        let ctx_menu = ed
+            .find("ContextMenuOverlay menu=")
+            .expect("context menu mount is the ungated-dialog landmark");
+        assert!(
+            mount > ctx_menu && !ed[ctx_menu..mount].contains("(!chrome_hidden.get()).then("),
+            "T-651: the comment editor must mount beside the ungated dialogs"
+        );
+        // The component is defined ABOVE the page, so scrub from the same cold-registry anchor the
+        // picker pin uses (reassembled so this line is not a second occurrence of it).
+        let cold_anchor = format!("const REGISTRY_{}", "COLD_PAGE");
+        let raw = include_str!("mission_editor.rs");
+        let region =
+            live_code(&raw[raw.find(cold_anchor.as_str()).expect("cold anchor present")..]);
+        let comp = only_body(&region, "fn CommentEditorOverlay(");
+        for op in [
+            "editor_ops::rename_comment(",      // ATTR-FIELD-CMT-TITLE
+            "editor_ops::set_comment_tooltip(", // ATTR-FIELD-CMT-TOOLTIP
+            "editor_ops::move_comment(",        // ATTR-FIELD-CMT-POSITION (the drag commit)
+            "editor_ops::duplicate_comment(",   // COPY
+            "editor_ops::delete_comment(",
+        ] {
+            assert!(
+                comp.contains(op),
+                "T-651: the comment editor must reach `{op}` — an unreachable mutator is a \
+                 half-shipped field"
+            );
+        }
+        // A comment must never be routed into the SLOT surfaces (the T-716 live-but-inert trap).
+        assert!(
+            !comp.contains("editor_ops::open_attributes(")
+                && !comp.contains("editor_ops::select_slot("),
+            "T-651: a comment id must not enter the slot selection / Attributes lanes"
         );
     }
 

@@ -39,6 +39,9 @@ pub const UNFILED_ID: &str = "__unfiled";
 pub const VIRTUAL_SLOT_THRESHOLD: usize = 50;
 /// React's `label: s.role || 'Unit'` fallback (`EditorLayersSection.tsx:66`).
 const SLOT_FALLBACK_LABEL: &str = "Unit";
+/// T-651 — an untitled comment's row label (the `SLOT_FALLBACK_LABEL` idiom: a row must always be
+/// clickable, and a blank title would render a zero-width row you cannot select to fix).
+pub const COMMENT_FALLBACK_LABEL: &str = "Comment";
 
 /// An `editorLayers` row, as carried by the doc's `small_maps_json()` → `editorLayersById`.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -64,6 +67,22 @@ pub struct SlotRow {
     pub role: String,
 }
 
+/// T-651 — one `commentsById` row as the tree needs it (`PLACE-COMMENT-001`).
+///
+/// A comment is an **editor-only virtual entity**: it appears here, files into a layer and drags
+/// like a slot, and it NEVER reaches the compiled mission (the exclusion is structural, in
+/// `map-engine-core`'s `doc/store.rs` — `mission::flatten::EditorPayload` declares no `comments`
+/// key). This row carries no position: the tree does not draw the map, and leaving `x`/`z` out
+/// means a drag that moves a comment cannot desync a stale copy held by the outliner.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CommentRow {
+    pub id: String,
+    /// ATTR-FIELD-CMT-TITLE — the row label. Empty falls back to [`COMMENT_FALLBACK_LABEL`].
+    pub title: String,
+    /// ATTR-FIELD-CMT-TOOLTIP — the long body, rendered as the row's hover text.
+    pub tooltip: String,
+}
+
 /// What a row represents — the view needs this to route a click (folder → active layer, slot →
 /// selection) and to pick a glyph.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -77,6 +96,10 @@ pub enum NodeKind {
     Faction,
     /// T-168 — an ORBAT squad group header (id is the squad doc id).
     Squad,
+    /// T-651 — an editor-only COMMENT (`PLACE-COMMENT-001`). Its id is a `commentsById` key, never a
+    /// slot id: a row of this kind must never be routed into `select_slot` / `open_attributes` (a
+    /// comment is in no selection lane and has no Attributes modal), and it never compiles.
+    Comment,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -101,6 +124,11 @@ pub struct OutlinerNode {
     /// T-665 — RESOLVED lock: this node is under a locked layer/ancestor (drives the row's lock
     /// adornment + a disabled affordance hint). Its slots refuse a move at the store level.
     pub locked_effective: bool,
+    /// T-651 — hover text. Non-empty only on [`NodeKind::Comment`] rows, where it carries
+    /// ATTR-FIELD-CMT-TOOLTIP. A comment's whole point is a body too long for a label (FNF v3's
+    /// tutorial ran seven paragraphs), so the tree has to carry it or the annotation is unreadable
+    /// without a second dialog this ticket does not ship.
+    pub tooltip: String,
 }
 
 fn slot_node(s: &SlotRow) -> OutlinerNode {
@@ -132,17 +160,68 @@ fn slot_node_full(
         locked: false,
         hidden_effective,
         locked_effective,
+        tooltip: String::new(),
+    }
+}
+
+/// T-651 — a comment leaf. Carries no hidden/locked state: those are per-LAYER transform/visibility
+/// contracts on mission geometry, and a comment is neither hidden from a render (it is not in the
+/// render SoA at all — it never reaches `materialize`) nor transform-lockable (see
+/// `MissionDocCore::set_comment_position` for why a locked layer does not freeze its own note).
+/// Inheriting the dim/lock adornments would advertise a refusal that does not exist.
+fn comment_node(c: &CommentRow) -> OutlinerNode {
+    OutlinerNode {
+        id: c.id.clone(),
+        label: if c.title.is_empty() {
+            COMMENT_FALLBACK_LABEL.to_string()
+        } else {
+            c.title.clone()
+        },
+        kind: NodeKind::Comment,
+        children: Vec::new(),
+        is_leader: false,
+        hidden: false,
+        locked: false,
+        hidden_effective: false,
+        locked_effective: false,
+        tooltip: c.tooltip.clone(),
     }
 }
 
 /// Build the outliner: the "Unfiled" pseudo-root (when any slot is filed nowhere) followed by the
 /// real root layers. See the module docs for the divergences and the ordering rule.
+///
+/// T-651 — the comment-free form, kept as its own entry point so every caller that has no comments
+/// to show (and every test that predates them) reads unchanged. The live editor dock calls
+/// [`build_outliner_with_comments`].
 #[must_use]
 pub fn build_outliner(layers: &[LayerRow], slots: &[SlotRow]) -> Vec<OutlinerNode> {
+    build_outliner_with_comments(layers, slots, &[])
+}
+
+/// T-651 — the outliner including editor-only COMMENT rows (`PLACE-COMMENT-001`).
+///
+/// A comment is placed by the SAME rule a slot is, because it is filed by the same mechanism: it
+/// belongs to the first layer whose `entityIds` lists its id, and one listed nowhere lands in the
+/// "Unfiled" pseudo-root. There is no parallel comment-filing structure to drift — see
+/// `MissionDocCore::move_comment_to_layer`, which literally delegates to `move_slot_to_layer`.
+///
+/// Inside a folder the `entityIds` sequence is authoritative for BOTH kinds (React parity for slots,
+/// and the only order a comment has), so a comment sits exactly where the operator dropped it rather
+/// than in a segregated block. In the Unfiled root, slots come first and then comments, each sorted
+/// by id — Unfiled has no authored order at all (see the module docs), so a stable, kind-grouped
+/// order is the readable choice and the gate-exact one.
+#[must_use]
+pub fn build_outliner_with_comments(
+    layers: &[LayerRow],
+    slots: &[SlotRow],
+    comments: &[CommentRow],
+) -> Vec<OutlinerNode> {
     let mut out: Vec<OutlinerNode> = Vec::new();
 
     // Reverse index, matching `MissionDocCore::materialize` (`store.rs:206-221`): a slot belongs to
-    // the FIRST layer whose `entityIds` lists it; one in none is unfiled.
+    // the FIRST layer whose `entityIds` lists it; one in none is unfiled. T-651 — the same index
+    // answers the same question for a comment id, because they share the array.
     let filed: HashSet<&str> = layers
         .iter()
         .flat_map(|l| l.entity_ids.iter().map(String::as_str))
@@ -153,18 +232,30 @@ pub fn build_outliner(layers: &[LayerRow], slots: &[SlotRow]) -> Vec<OutlinerNod
         .filter(|s| !filed.contains(s.id.as_str()))
         .collect();
     unfiled.sort_by(|a, b| a.id.cmp(&b.id)); // deterministic; materialize order is arbitrary
-    if !unfiled.is_empty() {
+    let mut unfiled_comments: Vec<&CommentRow> = comments
+        .iter()
+        .filter(|c| !filed.contains(c.id.as_str()))
+        .collect();
+    unfiled_comments.sort_by(|a, b| a.id.cmp(&b.id));
+    if !unfiled.is_empty() || !unfiled_comments.is_empty() {
+        let n = unfiled.len() + unfiled_comments.len();
+        let children: Vec<OutlinerNode> = unfiled
+            .into_iter()
+            .map(slot_node)
+            .chain(unfiled_comments.into_iter().map(comment_node))
+            .collect();
         out.push(OutlinerNode {
             id: UNFILED_ID.to_string(),
-            label: format!("Unfiled ({})", unfiled.len()),
+            label: format!("Unfiled ({n})"),
             kind: NodeKind::Unfiled,
             // Unfiled slots are in no layer, so they can inherit neither hidden nor locked.
-            children: unfiled.into_iter().map(slot_node).collect(),
+            children,
             is_leader: false,
             hidden: false,
             locked: false,
             hidden_effective: false,
             locked_effective: false,
+            tooltip: String::new(),
         });
     }
 
@@ -174,7 +265,9 @@ pub fn build_outliner(layers: &[LayerRow], slots: &[SlotRow]) -> Vec<OutlinerNod
         // would hang the tab rather than render wrong, which is not a trade worth taking.
         let mut seen = HashSet::new();
         // Roots have no ancestor, so the inherited flags start `false`.
-        out.push(build_layer(root, layers, slots, false, false, &mut seen));
+        out.push(build_layer(
+            root, layers, slots, comments, false, false, &mut seen,
+        ));
     }
 
     out
@@ -188,6 +281,7 @@ fn build_layer<'a>(
     layer: &'a LayerRow,
     layers: &'a [LayerRow],
     slots: &[SlotRow],
+    comments: &[CommentRow],
     anc_hidden: bool,
     anc_locked: bool,
     seen: &mut HashSet<&'a str>,
@@ -206,6 +300,7 @@ fn build_layer<'a>(
                 child,
                 layers,
                 slots,
+                comments,
                 hidden_effective,
                 locked_effective,
                 seen,
@@ -214,9 +309,15 @@ fn build_layer<'a>(
         // `entityIds` order (React parity). A dangling id (slot deleted, layer not yet patched) is
         // skipped, mirroring React's `.filter((s): s is Slot => Boolean(s))`. A slot inherits this
         // folder's effective hidden/locked state.
+        //
+        // T-651 — an id that is not a slot may be a COMMENT (they share this array by design). Slot
+        // is tried first: ids come from disjoint mints, so the order is not a tie-break but a cheap
+        // ordering of the common case, and an id in neither map is still skipped as dangling.
         for eid in &layer.entity_ids {
             if let Some(s) = slots.iter().find(|s| &s.id == eid) {
                 children.push(slot_node_full(s, false, hidden_effective, locked_effective));
+            } else if let Some(c) = comments.iter().find(|c| &c.id == eid) {
+                children.push(comment_node(c));
             }
         }
     }
@@ -231,6 +332,7 @@ fn build_layer<'a>(
         locked: layer.locked,
         hidden_effective,
         locked_effective,
+        tooltip: String::new(),
     }
 }
 
@@ -303,6 +405,8 @@ pub fn build_orbat(
                     locked: false,
                     hidden_effective: false,
                     locked_effective: false,
+                    // ORBAT rows are never comments (comments live in the layer tree only).
+                    tooltip: String::new(),
                 }
             })
             .collect();
@@ -316,6 +420,7 @@ pub fn build_orbat(
             locked: false,
             hidden_effective: false,
             locked_effective: false,
+            tooltip: String::new(),
         });
     }
     out
@@ -380,6 +485,8 @@ pub struct FlatRow {
     pub hidden_effective: bool,
     /// T-665 — RESOLVED lock (own or inherited): the windowed row shows the inherited-lock adornment.
     pub locked_effective: bool,
+    /// T-651 — copied from [`OutlinerNode::tooltip`] for the windowed comment row's hover text.
+    pub tooltip: String,
 }
 
 /// Flatten a tree to pre-order rows (parent before its children). Every node becomes exactly one
@@ -435,6 +542,7 @@ pub fn flatten_visible(
                 locked: n.locked,
                 hidden_effective: n.hidden_effective,
                 locked_effective: n.locked_effective,
+                tooltip: n.tooltip.clone(),
             });
             if !collapsed.contains(&n.id) {
                 let mut child_ids = guide_ids;
@@ -706,6 +814,7 @@ mod tests {
                 locked: false,
                 hidden_effective: false,
                 locked_effective: false,
+                tooltip: String::new(),
             }
         }
         // Root(+sib Root2) → [ChildA(+sib ChildB) → GrandA, ChildB(last) → Leaf]; Root2(last) → Leaf2.
@@ -909,6 +1018,172 @@ mod tests {
         assert!(
             s0.hidden_effective && s0.locked_effective,
             "slot two levels down inherits both"
+        );
+    }
+
+    /* ───────────────── T-651 — editor comments / annotations (PLACE-COMMENT-001) ───────────────── */
+
+    fn comment(id: &str, title: &str, tooltip: &str) -> CommentRow {
+        CommentRow {
+            id: id.to_string(),
+            title: title.to_string(),
+            tooltip: tooltip.to_string(),
+        }
+    }
+
+    /// A comment files into a folder through the SAME `entityIds` array a slot does, and it sits at
+    /// its authored position in that sequence rather than in a segregated block — so an operator who
+    /// dropped a note between two units sees it between them.
+    #[test]
+    fn a_filed_comment_sits_in_entity_ids_order_beside_slots() {
+        let layers = vec![layer("L", "Layer", None, &["s1", "cmt-1", "s2"])];
+        let slots = vec![slot("s1", "SL"), slot("s2", "Rifleman")];
+        let comments = vec![comment("cmt-1", "Assembly area", "form up here")];
+        let tree = build_outliner_with_comments(&layers, &slots, &comments);
+
+        assert_eq!(tree.len(), 1, "no Unfiled root — everything is filed");
+        let kids = &tree[0].children;
+        assert_eq!(
+            kids.iter().map(|n| n.id.as_str()).collect::<Vec<_>>(),
+            vec!["s1", "cmt-1", "s2"],
+            "the comment keeps its authored slot in the sequence"
+        );
+        assert_eq!(kids[1].kind, NodeKind::Comment);
+        assert_eq!(kids[1].label, "Assembly area", "the title is the row label");
+        assert_eq!(kids[1].tooltip, "form up here");
+        assert!(kids[1].children.is_empty(), "a comment is a leaf");
+    }
+
+    /// A comment listed in no folder lands in the Unfiled pseudo-root, whose count covers BOTH kinds
+    /// (a header reading "Unfiled (1)" over two rows is the bug this pins).
+    #[test]
+    fn unfiled_comments_join_the_pseudo_root_and_are_counted() {
+        let tree = build_outliner_with_comments(
+            &[],
+            &[slot("s1", "SL")],
+            &[comment("cmt-2", "B", ""), comment("cmt-1", "A", "")],
+        );
+        assert_eq!(tree.len(), 1);
+        assert_eq!(tree[0].kind, NodeKind::Unfiled);
+        assert_eq!(
+            tree[0].label, "Unfiled (3)",
+            "one slot + two comments — the header counts BOTH kinds"
+        );
+        assert_eq!(
+            tree[0]
+                .children
+                .iter()
+                .map(|n| n.id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["s1", "cmt-1", "cmt-2"],
+            "slots first, then comments sorted by id (Unfiled has no authored order)"
+        );
+    }
+
+    /// An Unfiled root appears for comments ALONE — a mission whose only annotation is unfiled must
+    /// still show it, not silently swallow it because there are no unfiled slots.
+    #[test]
+    fn a_lone_unfiled_comment_still_gets_the_pseudo_root() {
+        let layers = vec![layer("L", "Layer", None, &["s1"])];
+        let tree = build_outliner_with_comments(
+            &layers,
+            &[slot("s1", "SL")],
+            &[comment("cmt-1", "note", "")],
+        );
+        assert_eq!(tree[0].kind, NodeKind::Unfiled);
+        assert_eq!(tree[0].label, "Unfiled (1)");
+        assert_eq!(tree[0].children[0].kind, NodeKind::Comment);
+    }
+
+    /// An untitled comment still renders a clickable row (the `SLOT_FALLBACK_LABEL` rule) — a blank
+    /// title must not produce a zero-width row you cannot select in order to fix it.
+    #[test]
+    fn an_untitled_comment_falls_back_to_a_label() {
+        let tree = build_outliner_with_comments(&[], &[], &[comment("cmt-1", "", "body")]);
+        assert_eq!(tree[0].children[0].label, COMMENT_FALLBACK_LABEL);
+    }
+
+    /// A comment does NOT inherit its folder's hidden/locked adornments: it is not in the render SoA
+    /// (so "hidden" has nothing to hide) and its position is not transform-locked (see
+    /// `MissionDocCore::set_comment_position`). Dimming it would advertise a refusal that does not
+    /// exist — while the sibling SLOT in the same folder does inherit both, which is the contrast
+    /// that makes this a decision rather than an omission.
+    #[test]
+    fn a_comment_does_not_inherit_hidden_or_locked_but_its_sibling_slot_does() {
+        let layers = vec![layer_flags(
+            "L",
+            "Layer",
+            None,
+            &["s1", "cmt-1"],
+            true,
+            true,
+        )];
+        let tree = build_outliner_with_comments(
+            &layers,
+            &[slot("s1", "SL")],
+            &[comment("cmt-1", "note", "")],
+        );
+        let kids = &tree[0].children;
+        assert!(
+            kids[0].hidden_effective && kids[0].locked_effective,
+            "slot inherits"
+        );
+        assert!(
+            !kids[1].hidden_effective && !kids[1].locked_effective,
+            "comment does not: {:?}",
+            kids[1]
+        );
+    }
+
+    /// `build_outliner` (the comment-free entry point) is exactly `build_outliner_with_comments`
+    /// with an empty slice — so no caller that predates comments can drift from the one that has
+    /// them.
+    #[test]
+    fn build_outliner_is_the_empty_comment_case() {
+        let layers = vec![layer("L", "Layer", None, &["s1"])];
+        let slots = vec![slot("s1", "SL")];
+        assert_eq!(
+            build_outliner(&layers, &slots),
+            build_outliner_with_comments(&layers, &slots, &[])
+        );
+    }
+
+    /// The tooltip survives the flatten into windowed rows — the windowed renderer draws from
+    /// `FlatRow`, so a body that stopped at `OutlinerNode` would vanish on any tree past the
+    /// virtualization threshold and nowhere else (the nastiest possible way to lose it).
+    #[test]
+    fn flatten_carries_the_comment_tooltip_into_the_windowed_row() {
+        let layers = vec![layer("L", "Layer", None, &["cmt-1"])];
+        let tree =
+            build_outliner_with_comments(&layers, &[], &[comment("cmt-1", "T", "long body")]);
+        let rows = flatten(&tree);
+        let row = rows
+            .iter()
+            .find(|r| r.kind == NodeKind::Comment)
+            .expect("a comment row");
+        assert_eq!(row.tooltip, "long body");
+        assert_eq!(row.label, "T");
+        assert_eq!(row.depth, 1);
+        // Every other row carries an empty tooltip — the field is comment-only.
+        assert!(rows
+            .iter()
+            .filter(|r| r.kind != NodeKind::Comment)
+            .all(|r| r.tooltip.is_empty()));
+    }
+
+    /// A dangling id in `entityIds` (the comment was deleted, the folder not yet patched) is skipped
+    /// exactly as a dangling slot id is — a stale reference must never panic or render a ghost row.
+    #[test]
+    fn a_dangling_comment_id_is_skipped_not_rendered() {
+        let layers = vec![layer("L", "Layer", None, &["cmt-gone", "s1"])];
+        let tree = build_outliner_with_comments(&layers, &[slot("s1", "SL")], &[]);
+        assert_eq!(
+            tree[0]
+                .children
+                .iter()
+                .map(|n| n.id.as_str())
+                .collect::<Vec<_>>(),
+            vec!["s1"]
         );
     }
 }

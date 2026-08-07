@@ -69,11 +69,16 @@ pub enum ContextItem {
     Log,
 
     // ── empty-ground-only ──────────────────────────────────────────────────────
-    /// `Place Comment` — drop an annotation marker at the clicked point. **This slice's headline
-    /// entry point** (`PLACE-COMMENT-001`). The *marker* is authored by T-069 (markers) which owns
-    /// `entitiesById`; T-664 closes the entry point, so the row renders disabled-with-ticket until
-    /// the marker lands. (The ticket says "closes PLACE-COMMENT-001's entry point" — the entry point
-    /// is this row existing in the right menu, not the comment feature itself.)
+    /// `Place Comment` — drop an editor-only annotation at the clicked point (`PLACE-COMMENT-001`).
+    ///
+    /// **T-651 — ENABLED.** T-664 shipped this row disabled-with-ticket because the entry point
+    /// existed before the feature did; T-651 authored the feature, so the row is live and
+    /// [`dispatch`] calls `editor_ops::place_comment` at [`MenuTarget::world`]. The T-664 note said
+    /// the marker would be authored by T-069 (`entitiesById`); that turned out to be the wrong home
+    /// and is recorded here rather than quietly dropped. `entitiesById` COMPILES — it is
+    /// `mission.schema.json`'s `entities[]` — and a comment must never reach a game server, so
+    /// comments got their own `commentsById` root that `mission::flatten::EditorPayload` does not
+    /// declare. T-069 still owns markers; it does not own this.
     PlaceComment,
 
     // ── on-entity-only ─────────────────────────────────────────────────────────
@@ -122,7 +127,8 @@ impl ContextItem {
     #[must_use]
     pub const fn unblocked_by(self) -> Option<&'static str> {
         match self {
-            ContextItem::PlaceComment => Some("PLACE-COMMENT-001"),
+            // T-651 shipped `PLACE-COMMENT-001`, so the row is enabled and has no blocking ticket.
+            ContextItem::PlaceComment => None,
             ContextItem::Connect => Some("CONN-START-001"),
             ContextItem::Transform => Some("CTX-FORMATION-001"),
             ContextItem::SaveComposition => Some("COMP-SAVE-001"),
@@ -244,12 +250,8 @@ impl MenuTake {
                 MenuEntry::parent(I::Edit, "Edit", None),
                 MenuEntry::parent(I::Log, "Log", None),
                 MenuEntry::sep(),
-                // The headline of this slice: the entry point PLACE-COMMENT-001 closes.
-                MenuEntry::off(
-                    I::PlaceComment,
-                    "Place Comment",
-                    I::PlaceComment.unblocked_by(),
-                ),
+                // T-651 — live: places an editor-only annotation at the right-clicked point.
+                MenuEntry::on(I::PlaceComment, "Place Comment"),
             ],
             // Take B — one unit selected (batch :199-221). `Place Comment` is absent here (batch
             // :221); `Play from Here` becomes `Play as the Character` (batch :204).
@@ -288,7 +290,11 @@ impl MenuTake {
 ///
 /// Carries the [`MenuTake`] to render **and** the target ids the on-entity actions operate on, so
 /// the caller has a single value to open the menu with — the menu never re-derives the target.
-#[derive(Debug, Clone, PartialEq, Eq)]
+// T-651 — `Eq` dropped (was `PartialEq, Eq`): `world` carries `f64`s, which are `PartialEq` only.
+// Nothing keys a map or set on a `MenuTarget`; the derive existed because the struct happened to be
+// all-`Eq`, and `MenuState` — the value that actually rides an `RwSignal` — was already `PartialEq`
+// alone for exactly the same reason (its `x`/`y` pixels).
+#[derive(Debug, Clone, PartialEq)]
 pub struct MenuTarget {
     /// Which menu to show.
     pub take: MenuTake,
@@ -299,6 +305,24 @@ pub struct MenuTarget {
     /// SEL readout and the menu's target all agree — exactly what a plain left-click would have done.
     /// `None` when the click was on empty ground or on an already-selected entity (selection intact).
     pub retarget_to: Option<String>,
+    /// T-651 — the WORLD point `(x, z)` in metres the right-click unprojects to, when the caller
+    /// could compute one (it needs a live engine camera, so the pure [`resolve_target`] cannot).
+    ///
+    /// `Place Comment` is the first row whose action is about WHERE the click landed rather than
+    /// WHAT it hit, and the menu's own `x`/`y` are screen pixels — unprojecting them at dispatch
+    /// time would be a second, later camera read that a pan between open and click would make wrong.
+    /// Capturing the point at open pins the annotation to the ground the operator right-clicked.
+    pub world: Option<(f64, f64)>,
+}
+
+impl MenuTarget {
+    /// T-651 — attach the unprojected world point of the right-click (builder, so the pure
+    /// [`resolve_target`] rule and its tests stay unchanged). The wasm host chains this on.
+    #[must_use]
+    pub fn at_world(mut self, x: f64, z: f64) -> Self {
+        self.world = Some((x, z));
+        self
+    }
 }
 
 /// **The hit-target / selection-retarget rule** (Eden's context sensitivity, batch §"Consolidated
@@ -321,6 +345,7 @@ pub fn resolve_target(hit: Option<&str>, selection: &[String]) -> MenuTarget {
             take: MenuTake::EmptyGround,
             target_ids: Vec::new(),
             retarget_to: None,
+            world: None,
         },
         Some(id) => {
             if selection.iter().any(|s| s == id) {
@@ -329,6 +354,7 @@ pub fn resolve_target(hit: Option<&str>, selection: &[String]) -> MenuTarget {
                     take: MenuTake::OnEntity,
                     target_ids: selection.to_vec(),
                     retarget_to: None,
+                    world: None,
                 }
             } else {
                 // Outside the selection → retarget to the hit entity (replace selection).
@@ -336,6 +362,7 @@ pub fn resolve_target(hit: Option<&str>, selection: &[String]) -> MenuTarget {
                     take: MenuTake::OnEntity,
                     target_ids: vec![id.to_string()],
                     retarget_to: Some(id.to_string()),
+                    world: None,
                 }
             }
         }
@@ -455,8 +482,13 @@ pub fn close() {
 /// A **disabled** item is a no-op — we never invent behaviour for a row whose ticket has not landed.
 /// A later ticket adds its arm here (matching on the [`ContextItem`] **variant**) when it turns its
 /// row on; the `#[non_exhaustive]` enum keeps the catch-all honest.
+///
+/// T-651 — `world` is [`MenuTarget::world`], the point the right-click unprojected to, forwarded
+/// verbatim from the OPEN rather than recomputed here. `Place Comment` is the first row that acts on
+/// a location instead of an entity; recomputing at click time would silently follow a camera the
+/// operator panned while the menu was up.
 #[cfg(target_arch = "wasm32")]
-pub fn dispatch(item: ContextItem, target_ids: &[String]) {
+pub fn dispatch(item: ContextItem, target_ids: &[String], world: Option<(f64, f64)>) {
     match item {
         // Camera → the clicked entity's centroid (reusing the selection-center path). For the
         // empty-ground `Go Here` the caller passes no ids; center-on-selection then no-ops, which is
@@ -475,6 +507,16 @@ pub fn dispatch(item: ContextItem, target_ids: &[String]) {
         ContextItem::EditLoadout => {
             if let Some(id) = target_ids.first() {
                 crate::editor_ops::open_arsenal(id.clone());
+            }
+        }
+        // T-651 (`PLACE-COMMENT-001`) — place an editor-only annotation at the world point the
+        // right-click unprojected to. `target_ids` is empty here by construction: the row lives in
+        // the EmptyGround take only (Eden omits it on the entity take, `batch01_context_menu.md:221`),
+        // so the action is about the POINT, not an entity. With no world point (a host that did not
+        // supply one) this is a no-op rather than a guess at the map centre.
+        ContextItem::PlaceComment => {
+            if let Some((x, z)) = world {
+                let _ = crate::editor_ops::place_comment(x, z);
             }
         }
         // Every other id is a disabled row (feature not shipped / owned by a later ticket) — no-op.
@@ -530,7 +572,7 @@ pub fn ContextMenuOverlay(menu: RwSignal<Option<MenuState>>) -> impl IntoView {
                         if let Some(entry) = entries.get(idx) {
                             if let Some(item) = entry.item {
                                 if entry.enabled {
-                                    dispatch(item, &state.target.target_ids);
+                                    dispatch(item, &state.target.target_ids, state.target.world);
                                 }
                             }
                         }
@@ -553,6 +595,9 @@ pub fn ContextMenuOverlay(menu: RwSignal<Option<MenuState>>) -> impl IntoView {
         let state = menu.get()?;
         let entries = state.entries();
         let target_ids = state.target.target_ids.clone();
+        // T-651 — the unprojected right-click point rides every row so `Place Comment` acts on the
+        // ground that was clicked, not on a later camera read.
+        let world = state.target.world;
         // Anchor at the event pixel. `max-w` + the viewport keep it on screen; a fuller Eden-parity
         // flip/clamp (batch rule 4/5) is a later polish — the ticket ships the menu, its targeting
         // and dismissal.
@@ -560,7 +605,7 @@ pub fn ContextMenuOverlay(menu: RwSignal<Option<MenuState>>) -> impl IntoView {
         let rows = entries
             .into_iter()
             .enumerate()
-            .map(|(idx, e)| render_row(idx, e, target_ids.clone(), highlight))
+            .map(|(idx, e)| render_row(idx, e, target_ids.clone(), world, highlight))
             .collect_view();
         Some(view! {
             // Click-away backdrop — transparent, full-screen, closes on any click. `z-40` sits under
@@ -594,6 +639,8 @@ fn render_row(
     idx: usize,
     entry: MenuEntry,
     target_ids: Vec<String>,
+    // T-651 — the right-click's world point (see [`MenuTarget::world`]); `None` off the wasm host.
+    world: Option<(f64, f64)>,
     highlight: RwSignal<Option<usize>>,
 ) -> AnyView {
     // Separator.
@@ -623,9 +670,9 @@ fn render_row(
         move |_ev: leptos::ev::MouseEvent| {
             if enabled {
                 #[cfg(target_arch = "wasm32")]
-                dispatch(item, &target_ids);
+                dispatch(item, &target_ids, world);
                 #[cfg(not(target_arch = "wasm32"))]
-                let _ = (item, &target_ids);
+                let _ = (item, &target_ids, world);
             }
         }
     };
@@ -753,15 +800,34 @@ mod tests {
             .collect();
         on.sort_unstable();
         on.dedup();
-        assert_eq!(on, vec!["Attributes...", "Edit Loadout...", "Go Here"]);
+        // T-651 turned `Place Comment` on — the deliberate list update this test asks for. It is the
+        // FIRST of T-664's six forward-contract rows to ship, and it shipped by matching on the
+        // variant in `dispatch`, exactly as the id-enum contract intended.
+        assert_eq!(
+            on,
+            vec![
+                "Attributes...",
+                "Edit Loadout...",
+                "Go Here",
+                "Place Comment"
+            ]
+        );
     }
 
     #[test]
     fn disabled_rows_that_have_an_owning_ticket_name_it() {
         // The six-ticket forward contract: each of these disabled rows must carry its blocking
         // ticket so a later agent can find its attachment point.
+        // T-651 — `PlaceComment` LEFT this list: its feature shipped, so it is enabled and carries
+        // no blocking ticket. The remaining four are still the forward contract, and the assertion
+        // below (`unblocked_by() == None` for the shipped row) is what stops a stale ticket tag from
+        // outliving the work.
+        assert_eq!(
+            ContextItem::PlaceComment.unblocked_by(),
+            None,
+            "PLACE-COMMENT-001 shipped in T-651 — the row must not still name a blocking ticket"
+        );
         let want = [
-            (ContextItem::PlaceComment, "PLACE-COMMENT-001"),
             (ContextItem::Connect, "CONN-START-001"),
             (ContextItem::Transform, "CTX-FORMATION-001"),
             (ContextItem::SaveComposition, "COMP-SAVE-001"),
@@ -885,5 +951,95 @@ mod tests {
         ];
         assert_eq!(step_highlight(&all_off, None, 1), None);
         assert_eq!(step_highlight(&all_off, None, -1), None);
+    }
+
+    /* ─────────────── T-651 — Place Comment: the enabled row and its world point ─────────────── */
+
+    /// `Place Comment` is LIVE and lives on the empty-ground take ONLY (Eden omits it on the entity
+    /// take, `batch01_context_menu.md:221`). Both halves matter: enabled-and-present is what T-651
+    /// ships, and absent-on-entity is what keeps a right-click on a unit from placing a note on top
+    /// of it.
+    #[test]
+    fn place_comment_is_enabled_and_empty_ground_only() {
+        let empty = MenuTake::EmptyGround.entries();
+        let row = empty
+            .iter()
+            .find(|r| r.item == Some(ContextItem::PlaceComment))
+            .expect("Place Comment on the empty-ground take");
+        assert!(row.enabled, "T-651 shipped the feature");
+        assert_eq!(row.blocked, None, "an enabled row names no blocking ticket");
+        assert!(!row.submenu, "it is a leaf action, not a parent");
+        assert!(
+            !MenuTake::OnEntity
+                .entries()
+                .iter()
+                .any(|r| r.item == Some(ContextItem::PlaceComment)),
+            "still omitted from the on-entity take"
+        );
+        // It is reachable by keyboard, which is the practical meaning of "enabled" for this menu.
+        assert!(selectable_indices(&empty)
+            .iter()
+            .any(|&i| empty[i].item == Some(ContextItem::PlaceComment)));
+    }
+
+    /// **THE PLACE GESTURE, AS AN EVENT SEQUENCE** (not a source pin): right-click empty ground at a
+    /// known world point → the menu that opens targets no entity, carries THAT point, and offers a
+    /// live `Place Comment` row. Those four facts together are what make the dispatch land the
+    /// annotation on the ground the operator clicked.
+    ///
+    /// The second half is the one that actually catches regressions: a SECOND right-click elsewhere
+    /// must replace the point. A menu that cached the first click's world position would place every
+    /// later comment at the first spot — a bug invisible on any single-event test.
+    #[test]
+    fn right_click_sequence_carries_each_click_own_world_point() {
+        // 1. Right-click empty ground at world (100, 200) with a live selection.
+        let selection = vec!["s1".to_string(), "s2".to_string()];
+        let first = resolve_target(None, &selection).at_world(100.0, 200.0);
+        assert_eq!(first.take, MenuTake::EmptyGround);
+        assert!(
+            first.target_ids.is_empty(),
+            "the empty-ground take acts on a POINT, not on the selection"
+        );
+        assert_eq!(
+            first.retarget_to, None,
+            "an empty-ground right-click must not disturb the selection"
+        );
+        assert_eq!(first.world, Some((100.0, 200.0)));
+        assert!(
+            first
+                .take
+                .entries()
+                .iter()
+                .any(|r| r.item == Some(ContextItem::PlaceComment) && r.enabled),
+            "the row the operator is about to click is live"
+        );
+
+        // 2. Dismiss, right-click again somewhere else: the NEW point wins.
+        let second = resolve_target(None, &selection).at_world(7_000.5, -12.25);
+        assert_eq!(
+            second.world,
+            Some((7_000.5, -12.25)),
+            "each right-click carries its own point — no cached first click"
+        );
+        assert_ne!(first.world, second.world);
+
+        // 3. A right-click ON an entity resolves to the other take, so `Place Comment` is not even
+        //    offered — the world point riding along is inert there.
+        let on_entity = resolve_target(Some("s1"), &selection).at_world(1.0, 2.0);
+        assert_eq!(on_entity.take, MenuTake::OnEntity);
+        assert!(!on_entity
+            .take
+            .entries()
+            .iter()
+            .any(|r| r.item == Some(ContextItem::PlaceComment)));
+    }
+
+    /// A host that supplies no world point (nothing to unproject against — no engine) leaves
+    /// `world` at `None`, and the dispatch's documented behaviour there is to do NOTHING rather than
+    /// guess a location. Pinned so `at_world` can never become implicitly-zero.
+    #[test]
+    fn a_target_without_a_world_point_stays_none() {
+        assert_eq!(resolve_target(None, &[]).world, None);
+        assert_eq!(resolve_target(Some("a"), &[]).world, None);
     }
 }
