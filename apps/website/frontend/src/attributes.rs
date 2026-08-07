@@ -469,8 +469,42 @@ fn nudged(from: Option<f64>, up: bool, step: f64) -> Option<f64> {
     quantised.is_finite().then_some(quantised)
 }
 
+/// **T-775** — what an UNFOCUSED [`number_field`] shows. Presentation only; nothing commits this.
+///
+/// It used to be `format!("{}", value.round())`, and that single `.round()` was the whole defect:
+/// an entity dragged to `x = 412.37` read `412`, the draft seeded from that string, and blur wrote
+/// the `412` back over the authored number. The fix is split in two — the field now edits the EXACT
+/// value (see `number_field`'s `exact`) and only ROUNDS FOR PRESENTATION here, which is the shape
+/// the T-775 spec asked for.
+///
+/// Three decimals, because that is the resolution the rest of the editor already works at: it is the
+/// quantum [`nudged`] snaps every keyboard step onto, and the precision `eden_toolbelt::fmt_coord`
+/// prints the cursor readout with. Trailing zeros are trimmed so a whole coordinate still reads
+/// `412` rather than `412.000` — the tidiness the old `.round()` was reaching for, without the lie
+/// about the integer part.
+///
+/// Bare `format!("{value}")` is deliberately NOT used for display: it prints the shortest string
+/// that round-trips, and a drag-derived f64 (nothing snaps a drag to a grid) can need 17 characters
+/// of it. Three of those in the Transform tab's `grid-cols-3` would overflow every field. The exact
+/// string is not lost — it is what focus puts in the draft, so the operator sees full precision on
+/// the one screen where it is actionable: the one they are editing.
+fn field_display(value: f64) -> String {
+    if !value.is_finite() {
+        return format!("{value}");
+    }
+    let s = format!("{value:.3}");
+    let t = s.trim_end_matches('0').trim_end_matches('.');
+    // `-0.0001` formats as `-0.000` and trims to `-0`; a field claiming a negative zero is noise.
+    if t == "-0" {
+        "0".to_string()
+    } else {
+        t.to_string()
+    }
+}
+
 /// Mono numeric field committing on blur/Enter (one commit = one undo step). While focused it holds
-/// the local draft; unfocused it mirrors the doc value (rounded), so a map drag updates it live.
+/// the local draft, seeded from the EXACT doc value; unfocused it mirrors the doc value at
+/// presentation precision ([`field_display`]), so a map drag updates it live.
 ///
 /// T-649 — `gate` is the multi-edit gate. When it reports `differs()` there is no single truthful
 /// value to display, so the field shows EMPTY (placeholder `—`) rather than one arbitrary member's
@@ -493,6 +527,11 @@ fn nudged(from: Option<f64>, up: bool, step: f64) -> Option<f64> {
 /// A nudge is a WRITE, so it takes the same gate the typed path takes ([`Gate::locked_now`]) — a
 /// T-082 refused field and an un-ticked "Apply to all" both refuse the keyboard exactly as they
 /// refuse the keyboard's typed characters.
+///
+/// **T-775 — the nudge steps from the EXACT value.** It reads the draft, and the draft is seeded on
+/// focus from `exact`. When that seed was the rounded display string, PageUp on `412.37` committed
+/// `413` rather than `413.37`: the nudge inherited a rounding it never performed. Fixing the seed
+/// fixed the nudge, which is why T-700's note and T-775's fix live in the same function.
 #[cfg(target_arch = "wasm32")]
 fn number_field(
     label: &'static str,
@@ -503,20 +542,46 @@ fn number_field(
 ) -> impl IntoView {
     let draft = RwSignal::new(String::new());
     let focused = RwSignal::new(false);
-    let rounded = StoredValue::new(format!("{}", value.round()));
+    // T-775 — TWO strings, and the split is the fix. `shown` is presentation (see
+    // [`field_display`]); `exact` is the value the field actually EDITS, printed at full
+    // round-trip precision so that focusing and leaving a field is a genuine no-op.
+    let shown = StoredValue::new(field_display(value));
+    let exact = StoredValue::new(format!("{value}"));
     // A differing field starts from an EMPTY draft — pre-filling one member's value would make an
     // accidental blur write that member's number onto the whole selection.
+    let display = move || {
+        if gate.differs() {
+            String::new()
+        } else {
+            shown.get_value()
+        }
+    };
     let seed = move || {
         if gate.differs() {
             String::new()
         } else {
-            rounded.get_value()
+            exact.get_value()
         }
     };
     let commit = move || {
         focused.set(false);
         if let Ok(n) = draft.get_untracked().parse::<f64>() {
-            if n.is_finite() {
+            // T-775 — AN IDLE FOCUS/BLUR IS NOT AN EDIT. Nothing downstream asks "did anything
+            // change": `editor_ops::attrs_update_position` calls `update_slot_position` and then
+            // `after_local_edit()` on any non-refused slot, so a no-op commit rewrites `position`,
+            // dirties the mission, arms a persist and mints an undo step for a number the operator
+            // never touched. Worse, it is not even value-preserving — the core terrain-follows on an
+            // x/y write (`pz = 0.0` when `z` is `None`), so tabbing through X would drop a manually
+            // authored Z to the deck.
+            //
+            // Compared against the EXACT settled value, never the presentation string: a check
+            // against a rounded display is how the rounding would keep leaking into the document.
+            //
+            // A DIFFERING field is exempt. There is no shared settled value under a multi-selection
+            // — `value` is one arbitrary member's number — so typing that number is a deliberate
+            // stamp onto the whole selection and must still commit.
+            let unchanged = !gate.differs() && n == value;
+            if n.is_finite() && !unchanged {
                 on_commit(n);
             }
         }
@@ -530,7 +595,7 @@ fn number_field(
                     aria-label=label
                     disabled=move || gate.locked()
                     placeholder=if gate.differs() { "—" } else { "" }
-                    prop:value=move || { if focused.get() { draft.get() } else { seed() } }
+                    prop:value=move || { if focused.get() { draft.get() } else { display() } }
                     on:focus=move |_| {
                         draft.set(seed());
                         focused.set(true);
@@ -1245,6 +1310,108 @@ mod tests {
         assert!(
             field.contains("nudge_step(ev.ctrl_key(), ev.shift_key(), ev.alt_key())"),
             "the step must be scaled from the live modifier state, in (ctrl, shift, alt) order"
+        );
+    }
+
+    /// **T-775** — [`super::field_display`] is presentation, and presentation is allowed to round
+    /// only because nothing commits it. What it may NOT do is what the old `format!("{}",
+    /// value.round())` did: report an authored `412.37` as the integer `412`.
+    #[test]
+    fn the_display_keeps_the_working_resolution_and_never_flattens_to_an_integer() {
+        use super::{field_display, nudge_step, nudged};
+        // The ticket's own repro value. This assertion IS the bug.
+        assert_eq!(
+            field_display(412.37),
+            "412.37",
+            "an authored coordinate must not be displayed as an integer"
+        );
+        assert_eq!(field_display(412.371), "412.371");
+        assert_eq!(field_display(-45.5), "-45.5");
+        // Whole numbers stay tidy — the tidiness the old `.round()` was reaching for, kept.
+        assert_eq!(field_display(412.0), "412");
+        assert_eq!(field_display(4120.0), "4120");
+        assert_eq!(field_display(0.0), "0");
+        // No field may claim a negative zero.
+        assert_eq!(field_display(-0.0), "0");
+        assert_eq!(field_display(-0.0001), "0");
+        // The display's precision is `nudged`'s quantum, so a nudged value always survives it
+        // verbatim — the keyboard can never produce a number its own field cannot show.
+        for step in [
+            nudge_step(true, false, false),
+            nudge_step(false, true, false),
+            nudge_step(false, false, true),
+            nudge_step(false, false, false),
+        ] {
+            let n = nudged(Some(412.37), true, step).expect("a finite base nudges");
+            assert_eq!(
+                field_display(n),
+                format!("{n}"),
+                "a nudge quantises to 3 decimals; the display must not round it further"
+            );
+        }
+        // Past the working resolution the display DOES round — which is precisely why focus seeds
+        // the draft from `exact` instead of from this string. Pinned below.
+        assert_eq!(field_display(412.371_234_5), "412.371");
+    }
+
+    /// **T-775** — the two halves that make focusing and leaving a field a genuine no-op.
+    ///
+    /// A source pin because `number_field` is `#[cfg(target_arch = "wasm32")]` and `cargo test`
+    /// cannot build it. Each half is useless without the other:
+    ///   * FOCUS seeds the draft from `exact`, the full round-trip printing — not from the rounded
+    ///     presentation. Seeding from the display is what made T-700's PageUp on `412.37` commit
+    ///     `413` instead of `413.37`: the nudge inherited a rounding it never performed.
+    ///   * BLUR skips `on_commit` when the parsed draft still equals the settled value. Nothing
+    ///     downstream will do this for it — `editor_ops::attrs_update_position` writes and calls
+    ///     `after_local_edit()` on every non-refused slot, so without this an idle click dirties
+    ///     the mission, mints an undo step, and terrain-follows a manually authored Z to zero.
+    #[test]
+    fn an_untouched_field_commits_nothing_and_the_draft_seeds_from_the_exact_value() {
+        let src = attrs_src();
+        let field = only_body(&src, "fn number_field(");
+        assert!(
+            !field.contains("value.round()"),
+            "the field must not round the authored value away — that was the T-775 defect"
+        );
+        assert!(
+            field.contains("StoredValue::new(field_display(value))"),
+            "the unfocused display must go through `field_display`"
+        );
+        // `live_source` KEEPS literals: `format!("{value}")` is the assertion here, and `live_code`
+        // blanks exactly the part that distinguishes it from a rounded format string.
+        let live_src = live_source(include_str!("attributes.rs"));
+        let live = only_body(&live_src, "fn number_field(");
+        assert!(
+            live.contains("let exact = StoredValue::new(format!(\"{value}\"));"),
+            "`exact` must be the full round-trip printing of the value; body was:\n{live}"
+        );
+        let seed = only_body(&src, "let seed = move ||");
+        assert!(
+            seed.contains("exact.get_value()") && !seed.contains("shown.get_value()"),
+            "focus must seed the draft from the EXACT value, never the presentation; body was:\n\
+             {seed}"
+        );
+        assert!(
+            field.contains("draft.set(seed())"),
+            "the focus handler is what puts the exact value into the draft"
+        );
+        let commit = only_body(&src, "let commit = move ||");
+        assert!(
+            commit.contains("let unchanged = !gate.differs() && n == value;"),
+            "commit must decide `unchanged` against the settled value, and must EXEMPT a differing \
+             field — under a multi-selection `value` is one arbitrary member's number and typing \
+             it is a deliberate stamp onto the rest; body was:\n{commit}"
+        );
+        let guard = commit
+            .find("!unchanged")
+            .expect("the skip must gate the commit, not merely be computed");
+        let call = commit
+            .find("on_commit(n)")
+            .expect("commit must still hold its one write");
+        assert!(
+            guard < call,
+            "the no-op skip must be checked BEFORE the write; guard at {guard}, on_commit(n) at \
+             {call}"
         );
     }
 }
