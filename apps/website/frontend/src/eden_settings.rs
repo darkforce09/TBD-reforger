@@ -2529,9 +2529,11 @@ mod t688_aggregated_settings {
     /// The honest half of the same rule for the MISSION-level keys: `mission.schema.json` declares a
     /// `default` for NONE of them, so the view must say so.
     ///
-    /// **This is where a second source of truth would have been most tempting.** `eden_env` holds
-    /// `FLOW_DEFAULT_TIMELIMIT_S = 5400` and friends — but those mirror the literals
-    /// `mission::flatten`'s `ModFlow` splices in, a COMPILER FALLBACK, not a schema declaration.
+    /// **This is where a second source of truth would have been most tempting.** `eden_env` exposes
+    /// `FLOW_DEFAULT_TIMELIMIT_S = 5400` and friends — but since T-753 those are `mission::flatten`'s
+    /// own constants re-exported (`pub use`, eden_env.rs), not a mirrored copy: a COMPILER FALLBACK,
+    /// not a schema declaration. The distinction this test defends is unchanged; only the mechanism
+    /// moved. There is no longer a second copy that could drift.
     /// Printing 5400 in a "schema default" column would be the view reporting a diff against a number
     /// the schema never stated. Perturbation this catches: exactly that substitution.
     #[test]
