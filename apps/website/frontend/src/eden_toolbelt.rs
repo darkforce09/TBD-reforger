@@ -101,6 +101,46 @@ pub fn format_distance(dist_m: f64) -> String {
     }
 }
 
+/// T-670 — format a screen scale for the status bar's numeric SCALE readout, e.g. `"4.00 m/px"`.
+/// This is the number Eden prints in its status bar, and it is [`m_per_px`] — the SAME quantity the
+/// T-667 scale bar sizes from and the SAME quantity T-639's contour ladder reasons about
+/// (`map_engine_core::world::lod_gates::contour_interval_for_zoom` takes `m_per_px` and documents
+/// the identical `2^(−deckZoom)` convention), so the printed value is a true on-screen check of the
+/// ladder rather than a lookalike second computation.
+///
+/// **Three significant figures across the whole zoom clamp** — `MIN_ZOOM −6` ⇒ `64.0 m/px`,
+/// `MAX_ZOOM 6` ⇒ `0.0156 m/px` — so the cell keeps a steady width AND the printed number stays
+/// within 0.5% of the live scale everywhere. That second property is what lets the readout be a
+/// real check of T-639's ladder at close zoom: a fixed decimal count would have decayed to two
+/// significant figures below 0.1 m/px and started printing a number the ladder does not use.
+///
+/// The STRING is also the quantiser: the editor's rAF sampler writes its zoom signal only when this
+/// formatting CHANGES, which is what keeps a per-frame zoom read from re-rendering the status bar at
+/// 60 fps. Degenerate input (non-finite or ≤ 0) ⇒ an em-dash cell, matching the other readouts'
+/// "no value" idiom.
+#[must_use]
+pub fn format_m_per_px(m_per_px: f64) -> String {
+    if !m_per_px.is_finite() || m_per_px <= 0.0 {
+        return "— m/px".to_string();
+    }
+    // Decimals for ~3 significant figures at this magnitude. The last two rungs are below the
+    // MAX_ZOOM floor (0.0156 m/px) and exist only so a future zoom-ceiling raise degrades sanely.
+    let decimals = if m_per_px >= 100.0 {
+        0
+    } else if m_per_px >= 10.0 {
+        1
+    } else if m_per_px >= 1.0 {
+        2
+    } else if m_per_px >= 0.1 {
+        3
+    } else if m_per_px >= 0.01 {
+        4
+    } else {
+        5
+    };
+    format!("{m_per_px:.decimals$} m/px")
+}
+
 /// Pick the scale bar for a screen scale of `m_per_px`: the LARGEST `1/2/5 × 10^n` metres whose bar
 /// (`dist / m_per_px`) is ≤ [`SCALE_MAX_PX`]. Live-updates on zoom because `m_per_px` does.
 ///
@@ -422,6 +462,15 @@ pub fn StatusBar(
     /// caller with no ruler (the back-compat shim) can omit it.
     #[prop(optional)]
     ruler_status: Option<RwSignal<Option<String>>>,
+    /// T-670 — the live screen scale in **metres per pixel**, the one number Eden prints and we did
+    /// not. `RenderEngine::zoom()` is reachable only from the editor's rAF sampler, so the sampler
+    /// owns this signal and writes it ONLY when [`format_m_per_px`] would change (see
+    /// `mission_editor::start_raf`) — a still or panning camera writes nothing, so the status bar
+    /// never re-renders per frame. `Option` so the compat shim and the native view shell can omit
+    /// it; absent ⇒ the editor's default deck zoom (−2 ⇒ `4.00 m/px`), matching [`ScaleBar`]'s own
+    /// engine-less fallback so the two surfaces still agree when there is no engine.
+    #[prop(optional)]
+    scale_mpp: Option<RwSignal<f64>>,
 ) -> impl IntoView {
     // Exactly-one-selected → that slot's x/y/z from the doc. Recomputes on selection change AND
     // on the post-mutation selected_ids re-set (drag commit), so it never shows a stale position.
@@ -494,6 +543,24 @@ pub fn StatusBar(
                         }}
                     </span>
                 </span>
+                // ── T-670 (STATUS-ZOOM-001) — the metres-per-pixel SCALE readout: the fourth cell of
+                // this mono group, beside SZ. Eden prints this number in its status bar and we
+                // printed nothing, which also left T-639's zoom-adaptive contour ladder with no
+                // on-screen check. It is deliberately the SAME quantity as the T-667 scale bar in
+                // the centre slot — both go through `m_per_px(deck_zoom)` off the SAME engine zoom
+                // (see `scale_mpp` below, which now feeds the bar too), so the graphic and the
+                // number can never disagree. Its own `title` (like SZ's) — the group title above
+                // describes OBJ/SEL only.
+                <span data-status-scale title="Map scale — metres per screen pixel">
+                    "SCL"
+                    <span class="ml-1 text-on-surface">
+                        {move || {
+                            format_m_per_px(
+                                scale_mpp.map_or_else(|| m_per_px(-2.0), |s| s.get()),
+                            )
+                        }}
+                    </span>
+                </span>
             </div>
             // ── Ruler readout (T-642, Decision 1) — the running total + last-leg readout, beside the
             // OBJ/SEL/SZ telemetry. Renders ONLY when a ruler has at least one leg (`ruler_status` is
@@ -529,7 +596,9 @@ pub fn StatusBar(
                 class="flex min-w-0 flex-1 items-center justify-center gap-2 font-mono text-code-md text-outline"
                 title="Scale bar (T-667)"
             >
-                <ScaleBar cursor debug_hud />
+                // T-670 forwards `scale_mpp` here so the BAR and the numeric SCL cell read one
+                // number, not two independent zoom reads that can disagree by a frame.
+                <ScaleBar cursor debug_hud scale_mpp />
             </div>
             // ── Debug HUD slot (T-719) — a legitimate VISIBLE home in the right section, before
             // OPEN. Before T-636 the HUD lived at `right-3 bottom-3` on the overlay with no z-index,
@@ -581,6 +650,12 @@ pub fn StatusBar(
 /// second animation loop. On native (`cargo test`/`check`) there is no engine, so it falls back to
 /// the default deckZoom (`−2`) purely so the component compiles; the maths is proven by the pure
 /// functions above.
+///
+/// **T-670 supersedes that heartbeat when `scale_mpp` is supplied.** The numeric metres-per-pixel
+/// readout needs the zoom promptly, so the editor's rAF sampler now publishes it (change-guarded).
+/// Given a signal that already carries the live scale, re-deriving it here from a second camera
+/// read would be exactly the "two scale surfaces that can disagree" the ticket warns against — so
+/// the bar consumes the signal instead. The heartbeat path stays as the engine-less fallback.
 #[component]
 pub fn ScaleBar(
     /// Pan heartbeat — the editor's pointer-move cursor write (drives the pan re-read).
@@ -590,8 +665,22 @@ pub fn ScaleBar(
     /// (not `#[prop(optional)]`) so [`StatusBar`] can forward its own optional `debug_hud` straight
     /// through.
     debug_hud: Option<RwSignal<String>>,
+    /// T-670 — the editor's live metres-per-pixel, written by the rAF sampler only when the
+    /// displayed scale changes. When present it REPLACES the camera re-read below: the bar and the
+    /// status bar's numeric SCL cell then resolve from the same `f64`, so the graphic and the
+    /// number are the same measurement by construction (and the bar now tracks a wheel-zoom on the
+    /// next frame instead of waiting up to a second for the ~1 Hz HUD heartbeat). `Option` so the
+    /// compat shim and native builds keep the T-667 camera-snapshot path. `Option` (not
+    /// `#[prop(optional)]`) so [`StatusBar`] can forward its own optional prop straight through,
+    /// exactly as it does for `debug_hud`.
+    scale_mpp: Option<RwSignal<f64>>,
 ) -> impl IntoView {
     let spec = move || -> ScaleBarSpec {
+        // T-670 — one scale source when the editor supplies it (see the prop doc). Pan does not
+        // change scale, so this path needs neither heartbeat.
+        if let Some(s) = scale_mpp {
+            return pick_scale_bar(s.get());
+        }
         // Subscribe to both heartbeats so the closure re-runs on pan (cursor) and on zoom (hud).
         let _ = cursor.get();
         if let Some(h) = debug_hud {
@@ -1477,5 +1566,226 @@ mod t668_state_vocabulary {
                 "the {tip} tool button must carry its title (rule 3 tooltip retention)"
             );
         }
+    }
+}
+
+/// T-670 (`STATUS-ZOOM-001`) — the numeric metres-per-pixel readout. Eden prints this in its status
+/// bar; we printed nothing, which also left T-639's zoom-adaptive contour ladder with no on-screen
+/// check. Two halves are proven here: the pure formatting (a real value table, plus the
+/// reconciliation that the printed number IS the contour ladder's own `m_per_px`), and — by source
+/// inspection, since these are Leptos view innards — that the cell is wired into the OBJ/SEL/SZ
+/// group and that the T-667 scale bar now resolves from the SAME signal rather than a second,
+/// independently-sampled zoom. Needles are assembled at run time so this module's own prose can
+/// never satisfy them.
+#[cfg(test)]
+mod t670_scale_readout {
+    use super::{format_m_per_px, m_per_px, pick_scale_bar};
+    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body, only_item};
+    use map_engine_core::camera::{MAX_ZOOM, MIN_ZOOM};
+
+    /// The readout across the whole zoom clamp, at the real rungs the operator sees. `MIN_ZOOM −6`
+    /// is whole-Everon (64 m/px), `−2` the editor default (4 m/px), `0` unity, `MAX_ZOOM 6` the
+    /// close-inspection ceiling (0.0156 m/px). Three significant figures throughout — including
+    /// below 0.1 m/px, where a fixed 3-decimal format would have dropped to two.
+    #[test]
+    fn readout_table_across_the_zoom_clamp() {
+        let cases = [
+            (MIN_ZOOM, "64.0 m/px"),
+            (-4.0, "16.0 m/px"),
+            (-2.0, "4.00 m/px"),
+            (-1.0, "2.00 m/px"),
+            (0.0, "1.00 m/px"),
+            (2.0, "0.250 m/px"),
+            (4.0, "0.0625 m/px"),
+            (MAX_ZOOM, "0.0156 m/px"),
+        ];
+        for (z, want) in cases {
+            let got = format_m_per_px(m_per_px(z));
+            assert_eq!(got, want, "zoom {z} must read {want}, got {got}");
+        }
+        // A degenerate scale reads as the same em-dash "no value" the other cells use — never NaN,
+        // never `inf`, on the operator's screen.
+        for bad in [f64::NAN, f64::INFINITY, 0.0, -1.0] {
+            assert!(
+                format_m_per_px(bad).starts_with('\u{2014}'),
+                "degenerate m/px {bad} must render the em-dash cell, not a raw float"
+            );
+        }
+    }
+
+    /// The readout is MONOTONE in zoom: zooming in never prints a larger metres-per-pixel. A
+    /// formatter that rounded into a non-monotone sequence would make the number lie about the
+    /// direction of a gesture, which is worse than printing nothing.
+    #[test]
+    fn readout_never_goes_backwards_as_you_zoom_in() {
+        let mut prev = f64::INFINITY;
+        let mut z = MIN_ZOOM;
+        while z <= MAX_ZOOM {
+            let shown: f64 = format_m_per_px(m_per_px(z))
+                .trim_end_matches(" m/px")
+                .parse()
+                .expect("the readout must be a parseable number plus its unit");
+            assert!(
+                shown <= prev,
+                "zoom {z}: printed {shown} m/px after {prev} — the readout must not increase as \
+                 you zoom IN"
+            );
+            prev = shown;
+            z += 0.25;
+        }
+    }
+
+    /// **Reconciliation with T-639 (wave 101).** The summary says this readout is the on-screen
+    /// check for the zoom-adaptive contour ladder, so it must print the ladder's OWN scale, not a
+    /// lookalike. `world_assets::dem_vectors::push_contours` computes `2.0_f64.powf(-zoom)` and
+    /// hands it to `contour_interval_for_zoom`; [`m_per_px`] is that same expression.
+    ///
+    /// `contour_interval_for_zoom` itself cannot be CALLED from here — `map-engine-core`'s `world`
+    /// feature is a wasm32-only dependency of this crate, so on native it does not exist. So the
+    /// identity is pinned two ways that need no such call: numerically, that our conversion IS
+    /// `2^(−zoom)` at every rung of the clamp; and on the ladder's own scrubbed SOURCE, that the
+    /// number it feeds the ladder is that same expression. If T-639 ever re-bases its scale, this
+    /// fails rather than letting the status bar quietly print a lookalike.
+    #[test]
+    fn the_printed_scale_is_the_contour_ladders_own_scale() {
+        // (1) Numerically: our conversion is the ladder's expression, everywhere in the clamp.
+        let mut z = MIN_ZOOM;
+        while z <= MAX_ZOOM {
+            let ladder_mpp = 2.0_f64.powf(-z); // `dem_vectors::push_contours`, verbatim
+            assert!(
+                (ladder_mpp - m_per_px(z)).abs() < 1e-12,
+                "zoom {z}: the readout's m/px must BE the contour ladder's m/px"
+            );
+            // (2) …and the DISPLAYED string is that same quantity to ≤0.5%, so reading the cell
+            // tells the operator which contour rung they are looking at.
+            let shown: f64 = format_m_per_px(m_per_px(z))
+                .trim_end_matches(" m/px")
+                .parse()
+                .expect("parseable readout");
+            assert!(
+                (shown - ladder_mpp).abs() <= ladder_mpp * 0.0051,
+                "zoom {z}: the printed {shown} m/px must be the live {ladder_mpp} m/px to display \
+                 precision"
+            );
+            z += 0.125;
+        }
+        // (3) On the ladder's source: the contour scale it consumes is the same conversion, fed
+        // straight into `contour_interval_for_zoom`. Scrubbed CODE, so a comment cannot satisfy it.
+        let dem = live_code(include_str!("world_assets/dem_vectors.rs"));
+        assert!(
+            dem.contains(&format!("let m_per_px = 2.0_f64.{}(-zoom);", "powf")),
+            "T-639/T-670: the contour ladder's screen scale must still be 2^(-zoom) — if it \
+             re-bases, the status-bar readout stops being a check of it"
+        );
+        assert!(
+            dem.contains(&format!("{}(m_per_px)", "contour_interval_for_zoom")),
+            "T-639/T-670: that scale must be what selects the contour interval"
+        );
+    }
+
+    /// **Reconciliation with T-667 (wave 106).** One scale, two surfaces: the graphic bar and this
+    /// number must be the same measurement. Given the same `m_per_px`, the bar's chosen ground
+    /// distance and the printed number are consistent — the bar is `dist_m / m_per_px` px long,
+    /// which is exactly what the printed number says it should be.
+    #[test]
+    fn the_bar_and_the_number_describe_the_same_scale() {
+        let mut z = MIN_ZOOM;
+        while z <= MAX_ZOOM {
+            let mpp = m_per_px(z);
+            let spec = pick_scale_bar(mpp);
+            let shown: f64 = format_m_per_px(mpp)
+                .trim_end_matches(" m/px")
+                .parse()
+                .expect("parseable readout");
+            // Measuring the drawn bar with the printed scale recovers its labelled distance to
+            // within the readout's own display precision (≤ 0.5%).
+            let measured = spec.width_px * shown;
+            assert!(
+                (measured - spec.dist_m).abs() <= spec.dist_m * 0.0051,
+                "zoom {z}: a {:.1} px bar read at {shown} m/px measures {measured} m, but is \
+                 labelled {} m — the two scale surfaces disagree",
+                spec.width_px,
+                spec.dist_m
+            );
+            z += 0.125;
+        }
+    }
+
+    /// (wiring) The cell is a REAL fourth cell of the OBJ/SEL/SZ mono group in `StatusBar` — not a
+    /// floating span elsewhere in the bar — it carries a DOM handle and its own tooltip, and it
+    /// renders through the pure formatter above rather than an inline `format!`.
+    #[test]
+    fn the_scl_cell_sits_in_the_objselsz_group() {
+        let src = live_source(include_str!("eden_toolbelt.rs"));
+        let status = only_body(&src, &format!("pub fn {}", "StatusBar("));
+        let hook = format!("data-status-{}", "scale");
+        let at = status
+            .find(&hook)
+            .expect("T-670: the scale readout must carry a DOM handle");
+        // It is inside the SAME group div as OBJ/SEL/SZ: the SZ cell precedes it and the group's
+        // closing </div> follows it, with no intervening element opening a new group.
+        let sz = status
+            .find(&["\"S", "Z\""].concat())
+            .expect("SZ cell present");
+        assert!(
+            sz < at,
+            "T-670: the scale cell must be the FOURTH cell — after SZ, inside the same group"
+        );
+        let group_end = status[sz..]
+            .find("</div>")
+            .map(|i| sz + i)
+            .expect("the OBJ/SEL/SZ group closes");
+        assert!(
+            at < group_end,
+            "T-670: the scale cell must close inside the OBJ/SEL/SZ group, not after it"
+        );
+        // Its own tooltip (the group title covers OBJ/SEL only), and the label the operator reads.
+        let cell_end = status[at..]
+            .find("</span>")
+            .map(|i| at + i)
+            .unwrap_or(status.len());
+        let cell = &status[at..cell_end];
+        assert!(
+            cell.contains("title=") && cell.contains(&["S", "CL"].concat()),
+            "T-670: the scale cell must carry its own title and the SCL label"
+        );
+        // The rendered value goes through the pure formatter (proven on scrubbed CODE, so a
+        // mention in a comment or a class string cannot satisfy it).
+        let code = live_code(include_str!("eden_toolbelt.rs"));
+        let status_code = only_body(&code, &format!("pub fn {}", "StatusBar("));
+        assert!(
+            status_code.contains(&format!("{}(", "format_m_per_px")),
+            "T-670: the cell must render through format_m_per_px, not an inline format!"
+        );
+    }
+
+    /// (single source) The status bar forwards its scale signal INTO the T-667 scale bar, and the
+    /// bar resolves from that signal when it has one — so the number and the graphic can never be
+    /// two independently-sampled zooms that disagree. The engine-less `camera_snapshot` fallback
+    /// survives for native/compat callers.
+    #[test]
+    fn the_scale_bar_resolves_from_the_same_signal() {
+        let code = live_code(include_str!("eden_toolbelt.rs"));
+        let status = only_body(&code, &format!("pub fn {}", "StatusBar("));
+        assert!(
+            status.contains(&format!("{} cursor debug_hud scale_mpp", "<ScaleBar")),
+            "T-670: StatusBar must forward scale_mpp into the ScaleBar (one scale, two surfaces)"
+        );
+        let bar = only_item(&code, &format!("pub fn {}", "ScaleBar("));
+        assert!(
+            bar.contains("scale_mpp: Option<RwSignal<f64>>"),
+            "T-670: ScaleBar must accept the shared scale signal"
+        );
+        // It PREFERS the signal: the early return off `scale_mpp` precedes the camera re-read.
+        let prefer = bar
+            .find(&format!("{} = scale_mpp {{", "if let Some(s)"))
+            .expect("T-670: ScaleBar must branch on the shared signal");
+        let snapshot = bar
+            .find(&format!("{}()", "camera_snapshot"))
+            .expect("T-667: the camera fallback must survive for engine-less callers");
+        assert!(
+            prefer < snapshot,
+            "T-670: the shared signal must take precedence over a second camera read"
+        );
     }
 }
