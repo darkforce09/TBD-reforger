@@ -7785,7 +7785,7 @@ mod t644_los_button_submode {
 /// both window-level editor keydowns (this file + `mission_history`) as raw text.
 #[cfg(test)]
 mod t648_transform {
-    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::arsenal::class_r_scrub::{live_code, only_body};
     use crate::mission_editor::transform::{
         bearing_to_face, norm_deg, snap_rotate, snap_translate, snap_value, step, Axis, SnapState,
         WidgetVariant, ROTATE_LADDER_DEG, TRANSLATE_LADDER_M,
@@ -8088,14 +8088,11 @@ mod t648_transform {
         // / `_ => {}`. Comments are stripped (`live_source` keeps the `"KeyX"` arm LITERALS but drops
         // notes) so a comment that MENTIONS a rejected keysym for explanation is not read as a
         // binding — the census is about arm patterns, not prose.
-        fn keydown_arms(src: &str) -> String {
-            let head = "match ev.code().as_str() {";
-            let at = src.find(head).expect("an editor keydown match is present");
-            let rest = &src[at..];
-            // Stop at the fallthrough arm — both keydowns end their arm list with a `_ =>`.
-            let end = rest.find("_ =>").map(|i| i + 4).unwrap_or(rest.len());
-            live_source(&rest[..end])
-        }
+        //
+        // T-703/T-738: the slicer used to be a private copy right here — one of FOUR. It now lives
+        // once, in `eden_help::keymap_census`, beside the structured (code, modifiers) census that
+        // detects collisions; `there_is_exactly_one_extractor` keeps it from being copied again.
+        use crate::eden_help::keymap_census::keydown_arms;
         let this_arms = keydown_arms(include_str!("mission_editor.rs"));
         let history_arms = keydown_arms(include_str!("mission_history.rs"));
         // Needles assembled so the LITERAL never appears verbatim in this test's own source.
@@ -8425,6 +8422,10 @@ mod t655_validation_panel_wiring {
 #[cfg(test)]
 mod t649_select_all_and_multi_edit {
     use crate::arsenal::class_r_scrub::live_code;
+    /// T-703/T-738 — THE keydown arm-list extractor, consumed rather than re-copied. This module
+    /// carried the raw-text variant of it; the shared one scrubs comments, which is strictly
+    /// stronger for the census below (a note that MENTIONS `KeyA` can no longer read as a binding).
+    use crate::eden_help::keymap_census::keydown_arms;
 
     /// Everything after the editor page's own signature — the live editor body.
     fn editor_live() -> String {
@@ -8436,19 +8437,6 @@ mod t649_select_all_and_multi_edit {
             "scrub anchor must be unambiguous"
         );
         live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..])
-    }
-
-    /// The keydown ARM LIST of one window-level editor keydown, as raw text (a keydown arm IS a
-    /// `"KeyX"` string, so this deliberately does NOT blank literals). Slicing to the arm list is
-    /// what keeps a needle from self-matching inside this test module, which lives in the same file
-    /// as the arms it censuses: the slice runs from the FIRST `match ev.code().as_str()` head to
-    /// that arm list's `_ =>` terminator, and this module sits well after it.
-    fn keydown_arms(src: &str) -> String {
-        let head = "match ev.code().as_str() {";
-        let at = src.find(head).expect("an editor keydown match is present");
-        let rest = &src[at..];
-        let end = rest.find("_ =>").map_or(rest.len(), |i| i + 4);
-        rest[..end].to_string()
     }
 
     /// All whitespace removed. `rustfmt` is free to break a Leptos `view!` expression across lines
@@ -8509,7 +8497,7 @@ mod t649_select_all_and_multi_edit {
     #[test]
     fn ctrl_a_hands_the_container_rect_to_select_all_in_view() {
         let ed = editor_live();
-        let arms = keydown_arms(&ed);
+        let arms = keydown_arms(include_str!("mission_editor.rs"));
         assert!(
             arms.contains("container.get_bounding_client_rect()")
                 && arms.contains("editor_ops::select_all_in_view(rect.width(), rect.height())"),
@@ -8762,20 +8750,12 @@ mod t649_select_all_and_multi_edit {
 /// module (which lives in the same file as the arms it reads).
 #[cfg(test)]
 mod t669_clipboard_completion {
-    use crate::arsenal::class_r_scrub::live_source;
+    /// T-703/T-738 — THE keydown arm-list extractor. This module held the third of four copies;
+    /// it now consumes the one in `eden_help::keymap_census`, which also carries the structured
+    /// `(code, modifiers)` census that finally makes the Ctrl+V / Ctrl+Shift+V distinction this
+    /// module's own pins had to hand-check.
+    use crate::eden_help::keymap_census::keydown_arms;
     use std::collections::BTreeSet;
-
-    /// The keydown ARM LIST of one window-level editor keydown. Comments are stripped
-    /// (`live_source` keeps the `KeyboardEvent.code` arm literals but blanks prose), so a note that
-    /// MENTIONS a keysym is never counted as a binding; the slice runs from the `match
-    /// ev.code().as_str()` head to that arm list's `_ =>` terminator.
-    fn keydown_arms(src: &str) -> String {
-        let head = "match ev.code().as_str() {";
-        let at = src.find(head).expect("an editor keydown match is present");
-        let rest = &src[at..];
-        let end = rest.find("_ =>").map_or(rest.len(), |i| i + 4);
-        live_source(&rest[..end])
-    }
 
     /// Needles assembled so the arm LITERAL never appears verbatim in this test's own source.
     fn key(k: &str) -> String {
@@ -8938,65 +8918,42 @@ mod t669_clipboard_completion {
 
     /// The help module's opening sentence counts the bindings, and a hand-typed count goes stale the
     /// moment a slice adds an arm (it already had: T-740 filed it reading "sixteen" against a real
-    /// 17). Derive the number instead. `SHORTCUTS`' distinct codes ARE the bound codes —
-    /// `every_binding_has_a_help_entry` and `no_help_entry_invents_a_binding` assert that set
-    /// equality both ways — so counting the table counts the keydowns, and the next slice to add an
-    /// arm gets told the new word rather than discovering the drift a wave later.
+    /// 17). Derive the number instead.
+    ///
+    /// T-703 moved the SOURCE of that number one step back, to where it belongs. It used to be
+    /// counted off `SHORTCUTS` — the documentation — on the argument that the T-692 pins hold the
+    /// table equal to the bindings. True, but circular: a count taken off the docs measures the
+    /// docs. It is now taken off `keymap_census`, which reads the live listeners, and this pin
+    /// additionally holds `SHORTCUTS` to the same total, so the circle is closed from the outside.
     #[test]
     fn the_help_blurb_counts_the_bindings_correctly() {
         let codes: BTreeSet<&str> = crate::eden_help::SHORTCUTS
             .iter()
             .flat_map(|s| s.codes.iter().copied())
             .collect();
-        let word = english(codes.len());
-        let sentence = format!("binds {word} `KeyboardEvent.code` values");
+        let bound = crate::eden_help::keymap_census::all_bound_codes();
+        assert_eq!(
+            codes.len(),
+            bound.len(),
+            "T-740: the help table documents {} distinct codes but the editor binds {} ({bound:?}) \
+             — the count in `eden_help`'s header cannot be right about both",
+            codes.len(),
+            bound.len()
+        );
+        let word = english(bound.len());
+        let sentence = format!("binds {word} distinct `KeyboardEvent` codes");
         assert!(
             include_str!("eden_help.rs").contains(&sentence),
-            "T-669/T-740: the editor now binds {} distinct key codes ({codes:?}), so \
+            "T-669/T-740: the editor now binds {} distinct key codes ({bound:?}), so \
              `eden_help`'s opening paragraph must read \"{sentence}\"",
-            codes.len()
+            bound.len()
         );
     }
 
-    /// Small-integer spelling, for the sentence above. Deliberately narrow: a count outside the
-    /// range panics with instructions rather than silently spelling nothing.
+    /// Small-integer spelling. T-703 folded the second copy of this into
+    /// `keymap_census::spell`, beside the census the number is derived from.
     fn english(n: usize) -> String {
-        const ONES: [&str; 20] = [
-            "zero",
-            "one",
-            "two",
-            "three",
-            "four",
-            "five",
-            "six",
-            "seven",
-            "eight",
-            "nine",
-            "ten",
-            "eleven",
-            "twelve",
-            "thirteen",
-            "fourteen",
-            "fifteen",
-            "sixteen",
-            "seventeen",
-            "eighteen",
-            "nineteen",
-        ];
-        const TENS: [&str; 4] = ["twenty", "thirty", "forty", "fifty"];
-        assert!(
-            n < 60,
-            "extend `english` past {n} before the editor gets there"
-        );
-        if n < 20 {
-            return ONES[n].to_string();
-        }
-        let (t, r) = (n / 10 - 2, n % 10);
-        if r == 0 {
-            TENS[t].to_string()
-        } else {
-            format!("{}-{}", TENS[t], ONES[r])
-        }
+        crate::eden_help::keymap_census::spell(n)
     }
 }
 
