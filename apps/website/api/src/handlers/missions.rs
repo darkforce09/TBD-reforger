@@ -6,7 +6,7 @@ use std::collections::HashSet;
 
 use axum::extract::rejection::JsonRejection;
 use axum::extract::{Path, Query, State};
-use axum::http::{StatusCode, header};
+use axum::http::{HeaderName, StatusCode, header};
 use axum::response::{IntoResponse, Json, Response};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
@@ -30,8 +30,9 @@ use crate::models::{
 };
 use crate::services::text::is_http_url;
 use crate::services::{
-    CompileError, ModMissionDocument, flatten_to_mod_document_with_catalog, mission_terrain_key,
-    write_audit,
+    COMPILE_DIAGNOSTICS_COUNT_HEADER, COMPILE_DIAGNOSTICS_RULES_HEADER, CompileError,
+    ModMissionDocument, compile_diagnostics_rules_header, flatten_to_mod_document_with_catalog,
+    mission_terrain_key, write_audit,
 };
 use crate::state::AppState;
 
@@ -1788,6 +1789,19 @@ pub async fn mission_default_overrides(
 /// ([`load_cargo_phys_catalog`]) and compiles via [`flatten_to_mod_document_with_catalog`], so
 /// pre-T-416 over-capacity versions refuse here instead of shipping an empty-catalog no-op.
 ///
+/// **T-690 — the compile's structured diagnostics reach this boundary too, and are not dropped.**
+/// The body cannot carry them: `mission.schema.json` closes the document root with
+/// `additionalProperties: false` and [`validated_compiled_body`] holds the bytes to it, so a
+/// `diagnostics` key would 500 the route for every mission. They ride ALONGSIDE the bytes instead —
+/// two response headers ([`COMPILE_DIAGNOSTICS_COUNT_HEADER`] /
+/// [`COMPILE_DIAGNOSTICS_RULES_HEADER`]) and one structured log line per finding.
+///
+/// The log line is the channel that actually matters here, and this file already says why:
+/// "TBD_MissionLoader.OnBackendFetchError discards the response body ... so this log line is what an
+/// operator actually reads". A finding is `warn!`, never `error!` — a diagnostic is not a refusal,
+/// the document served is complete and valid, and logging it at `error` would train an operator to
+/// ignore the level that means the route is broken.
+///
 /// @route GET /api/v1/missions/:id/compiled
 /// @contract mission.schema.json#/
 pub async fn get_compiled_mission(
@@ -1817,8 +1831,42 @@ pub async fn get_compiled_mission(
                 return Err(unreadable_stored_payload(&id, &detail));
             }
         };
+    // T-690 — lifted BEFORE `validated_compiled_body` consumes the document into bytes: the field is
+    // `#[serde(skip)]`, so once `doc` is serialized the findings are unrecoverable (the same reason
+    // `flatten_mod_document_json_full` lifts the kit substitutions where it does).
+    let diagnostics = doc.diagnostics.clone();
     let body = validated_compiled_body(&id, &doc)?;
-    Ok(([(header::CONTENT_TYPE, "application/json")], body).into_response())
+
+    for f in &diagnostics {
+        tracing::warn!(
+            mission = %id,
+            rule = %f.rule_id,
+            severity = %f.severity.as_str(),
+            subject = %f.subject,
+            subject_id = %f.subject_id.as_deref().unwrap_or(""),
+            detail = %f.message,
+            "compile diagnostic",
+        );
+    }
+
+    let mut headers = axum::http::HeaderMap::new();
+    headers.insert(
+        header::CONTENT_TYPE,
+        axum::http::HeaderValue::from_static("application/json"),
+    );
+    // The count is always sent, `0` included: "the compile reported nothing" and "this build of the
+    // API does not report" must not look the same to a caller.
+    if let Ok(v) = axum::http::HeaderValue::from_str(&diagnostics.len().to_string()) {
+        headers.insert(HeaderName::from_static(COMPILE_DIAGNOSTICS_COUNT_HEADER), v);
+    }
+    if let Some(rules) = compile_diagnostics_rules_header(&diagnostics) {
+        // Rule ids are `&'static str` ASCII constants, so this cannot fail; the fallible form is
+        // used anyway rather than an `expect` that would 500 the route over a header.
+        if let Ok(v) = axum::http::HeaderValue::from_str(&rules) {
+            headers.insert(HeaderName::from_static(COMPILE_DIAGNOSTICS_RULES_HEADER), v);
+        }
+    }
+    Ok((headers, body).into_response())
 }
 
 /// A stored payload the mission compiler cannot deserialise (`CompileError::Parse`).
@@ -2307,6 +2355,69 @@ mod tests {
         assert!(
             !stripped.contains("flatten_to_mod_document("),
             "/compiled must not call the empty-catalog no-arg flatten; got:\n{body}"
+        );
+    }
+
+    /// T-690 Class-R: `/compiled` must SURFACE the compile's structured findings, not drop them.
+    ///
+    /// This is the defect the ticket is named after, at the one boundary where it is invisible:
+    /// everything the compile learned was thrown away or flattened into a pass/fail, and here the
+    /// caller is a game server that reads no body on failure — so a dropped finding leaves literally
+    /// no trace anywhere. The pin reads the live handler body and asserts four things:
+    ///
+    /// 1. the findings are lifted BEFORE `validated_compiled_body` consumes the document (the field
+    ///    is `#[serde(skip)]`; after serialization they are unrecoverable);
+    /// 2. both headers are emitted (the "alongside the bytes" channel);
+    /// 3. each finding reaches the log, which this file already documents as the only channel an
+    ///    operator actually reads on this route; and
+    /// 4. a finding is NOT converted into a refusal — no `ApiError` is constructed from one.
+    ///
+    /// RED: delete the `let diagnostics = doc.diagnostics.clone();` line, or the `tracing::warn!`.
+    #[test]
+    fn t690_compiled_route_surfaces_the_structured_diagnostics() {
+        const SRC: &str = include_str!("missions.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("missions.rs must have a #[cfg(test)] module");
+        let start = production
+            .find("pub async fn get_compiled_mission(")
+            .expect("get_compiled_mission must exist");
+        let body = production[start..]
+            .split("\nfn unreadable_stored_payload(")
+            .next()
+            .expect("get_compiled_mission must precede unreadable_stored_payload");
+
+        let lift = body
+            .find("doc.diagnostics")
+            .expect("/compiled must read the compile's findings off the document");
+        let consume = body
+            .find("validated_compiled_body(")
+            .expect("/compiled must still hold the body to mission.schema.json");
+        assert!(
+            lift < consume,
+            "the findings must be lifted BEFORE the document is serialized — `#[serde(skip)]` \
+             means they cannot be recovered afterwards; got:\n{body}"
+        );
+        assert!(
+            body.contains("COMPILE_DIAGNOSTICS_COUNT_HEADER")
+                && body.contains("COMPILE_DIAGNOSTICS_RULES_HEADER"),
+            "/compiled must carry the findings alongside the bytes in both headers; got:\n{body}"
+        );
+        assert!(
+            body.contains("tracing::warn!"),
+            "/compiled must log each finding — the mod discards the response body, so the log is \
+             what an operator reads; got:\n{body}"
+        );
+        // A diagnostic is not a refusal: the findings loop must not mint an error.
+        let loop_body = body
+            .split("for f in &diagnostics {")
+            .nth(1)
+            .and_then(|t| t.split("\n    }").next())
+            .expect("the per-finding loop must exist");
+        assert!(
+            !loop_body.contains("ApiError") && !loop_body.contains("return"),
+            "a finding must not refuse the compile — the document is complete and valid; got:\n{loop_body}"
         );
     }
 

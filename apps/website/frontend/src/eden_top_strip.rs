@@ -159,6 +159,14 @@ const MENUS: [(&str, &[MenuItem]); 7] = [
             // download and reports through a toast. `Save Version…` and `Mission Settings…` keep
             // theirs because they really do put a dialog in front of the operator. Pinned below —
             // a suffix that promises a dialog and delivers a download is the convention leaking.
+            //
+            // **T-690 re-examined this and the `…` STAYS OFF.** The verb now does more: the compile
+            // returns structured findings alongside the bytes, and this row publishes them to the
+            // T-655 validation panel. That is not "opening" anything — the panel is a persistent
+            // floating card that is already on screen (it survives even hide-chrome, deliberately),
+            // so the row updates a surface the operator is already looking at rather than putting a
+            // new one in front of them. The `…` promise is about interruption, not about whether the
+            // click had a visible effect. Recorded here because the next reader will ask.
             MenuItem {
                 label: "Export Compiled Mission",
                 action: Some(MenuAction::ExportCompiled),
@@ -2852,6 +2860,10 @@ mod t634_two_rows_and_a_hierarchy {
     /// not: `export_compiled_now` composes bytes, starts a browser download and reports through a
     /// toast — no dialog ever appears. A suffix that promises one and delivers a download is the
     /// convention leaking, and a leaking convention teaches the operator to ignore it.
+    ///
+    /// T-690 gave that row a second effect (it publishes the compile's findings to the already-open
+    /// T-655 panel) and the verdict did not move: updating a surface the operator is already looking
+    /// at is not opening one. See the `Export Compiled Mission` row's own comment in `MENUS`.
     #[test]
     fn an_ellipsis_is_a_promise_of_a_dialog() {
         for (menu, items) in MENUS {

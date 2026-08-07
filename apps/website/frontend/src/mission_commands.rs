@@ -24,6 +24,57 @@ pub(crate) fn compiled_export_text(doc: &[u8]) -> Result<String, String> {
     String::from_utf8(doc.to_vec()).map_err(|e| format!("compiled document is not UTF-8: {e}"))
 }
 
+/// T-690 — the one-line author-facing summary of a compile's structured findings.
+///
+/// ## Why this replaces the toast rather than joining it
+///
+/// The compile used to say one of two things: "Downloaded the compiled mission document." or an
+/// error. Everything it LEARNED — which authored values it discarded, and whose — was thrown away.
+/// FNF v4's `init3DEN.sqf` is rated the single thing that framework does better than anyone else
+/// precisely because Export is a build step there; TBD had the build step and none of the build
+/// system. The findings now ride alongside the bytes
+/// (`flatten::flatten_mod_document_json_with_diagnostics`) and are PUBLISHED to the T-655 validation
+/// panel, which is the render surface and is not duplicated here. This string is only the pointer:
+/// it names the count by severity so the toast says something true and finite, and sends the author
+/// to the list rather than trying to be the list.
+///
+/// Empty findings → `None`: a clean compile gets the plain success message it always had, never a
+/// celebratory "0 issues" (the panel's own empty-state doctrine).
+///
+/// Class-R / ungated so native `cargo test` can pin the wording without a browser (the
+/// [`compiled_export_text`] precedent).
+pub(crate) fn compile_diagnostics_summary(
+    findings: &[map_engine_core::mission::validate::Finding],
+) -> Option<String> {
+    use map_engine_core::mission::validate::Severity;
+    if findings.is_empty() {
+        return None;
+    }
+    let count = |s: Severity| findings.iter().filter(|f| f.severity == s).count();
+    let label = |n: usize, noun: &str| {
+        if n == 1 {
+            format!("1 {noun}")
+        } else {
+            format!("{n} {noun}s")
+        }
+    };
+    let mut parts: Vec<String> = Vec::new();
+    for (sev, noun) in [
+        (Severity::Error, "error"),
+        (Severity::Warning, "warning"),
+        (Severity::Info, "note"),
+    ] {
+        let n = count(sev);
+        if n > 0 {
+            parts.push(label(n, noun));
+        }
+    }
+    Some(format!(
+        "The compile reported {} — see the validation panel.",
+        parts.join(" · ")
+    ))
+}
+
 /// Author-facing message when [`ROW_META`] never arrived.
 ///
 /// `authenticated == false` means the session is missing/expired (hydrate 401 never sets the row);
@@ -141,7 +192,15 @@ mod imp {
     use wasm_bindgen::JsCast;
 
     use map_engine_core::mission::compile::{compile_export, compile_payload, version_body};
-    use map_engine_core::mission::flatten::{flatten_mod_document_json, MissionMeta};
+    use map_engine_core::mission::flatten::{
+        flatten_mod_document_json_with_diagnostics, MissionMeta,
+    };
+    use map_engine_core::mission::validate::Finding;
+
+    /// T-690 — what a compile hands the command layer: the download text and the structured
+    /// findings, from one compile. Aliased so the entry point's signature stays on one line, which
+    /// is what `class_r_source_forbids_value_pretty_on_compiled_export` locates it by.
+    type CompiledWithDiagnostics = (String, Vec<Finding>);
 
     use crate::auth::AuthStore;
     use crate::mission_doc::DocHandle;
@@ -279,6 +338,25 @@ mod imp {
     /// mounted, or when the compile refuses (no placed slots is the common one, and it is the same
     /// `409` a game server would get).
     pub fn compiled_document_json() -> Result<String, String> {
+        compiled_document_json_with_diagnostics().map(|(text, _)| text)
+    }
+
+    /// T-690 — the compile, with the structured result it produced ALONGSIDE the bytes.
+    ///
+    /// This is the body [`compiled_document_json`] projects: one compile, one document, one finding
+    /// list. Splitting it the other way round (a second compile just for the findings) is the shape
+    /// `flatten_mod_document_json_full` exists to forbid — two compiles are two things that can
+    /// disagree about what was compiled.
+    ///
+    /// The findings are `map_engine_core::mission::validate::Finding`s — the T-657 vocabulary
+    /// (`rule_id` / `severity` / `primitive` / `message` / `subject` / `subject_id`), reused so the
+    /// T-655 panel renders a compile finding through exactly the same row as a validation finding
+    /// and click-to-select works on both.
+    ///
+    /// # Errors
+    /// Same three refusals as [`compiled_document_json`] — a missing row, an unmounted editor, or a
+    /// compile that produced no document. A FINDING is never one of them.
+    pub fn compiled_document_json_with_diagnostics() -> Result<CompiledWithDiagnostics, String> {
         let Some(snap) = snapshot() else {
             return Err("Editor not ready".to_string());
         };
@@ -297,10 +375,11 @@ mod imp {
         let payload_bytes = serde_json::to_vec(&payload).map_err(|e| e.to_string())?;
         let meta_bytes = serde_json::to_vec(&meta).map_err(|e| e.to_string())?;
 
-        let doc = flatten_mod_document_json(&meta_bytes, &payload_bytes)?;
+        let (doc, findings) =
+            flatten_mod_document_json_with_diagnostics(&meta_bytes, &payload_bytes)?;
         // T-417 — ship the compact wire bytes (byte-identical to `/compiled`). Do not re-parse to
         // `serde_json::Value` for a "pretty" download — that is not whitespace-only vs the route.
-        compiled_export_text(&doc)
+        compiled_export_text(&doc).map(|text| (text, findings))
     }
 
     /// `MissionMeta` is a plain data carrier in core and deliberately not `Clone` (it is an input type
@@ -319,30 +398,60 @@ mod imp {
         }
     }
 
-    /// Trigger the server-truth download and report the outcome (T-243). `toasts` is resolved at
-    /// component setup by the caller — `use_toasts()` is an `expect_context` and would panic from a
-    /// DOM handler, the `RowMirror` precedent.
+    /// Trigger the server-truth download and report the outcome (T-243).
+    ///
+    /// **T-690 — this is where the compile stops being a pass/fail.** The compile now returns a
+    /// structured finding list alongside the bytes; this publishes that list to the T-655 validation
+    /// panel ([`crate::validation_panel::publish_compile_findings`]) and lets the toast shrink back
+    /// to what a toast is good at — a one-line verdict with a pointer. The panel is the render
+    /// surface and is deliberately not duplicated here.
+    ///
+    /// The publish happens even when the list is EMPTY, and that is load-bearing: a clean compile
+    /// must CLEAR the previous compile's findings, or the panel would show a stale build report
+    /// after the author fixed everything in it.
+    ///
+    /// `toasts` is resolved at component setup by the caller — `use_toasts()` is an `expect_context`
+    /// and would panic from a DOM handler, the `RowMirror` precedent.
     pub fn export_compiled_now(toasts: crate::toast::Toasts) {
         let mission_id = EDITOR_CTX
             .with(|c| c.borrow().as_ref().map(|ctx| ctx.mission_id.clone()))
             .unwrap_or_default();
-        match compiled_document_json() {
-            Ok(json) => {
+        match compiled_document_json_with_diagnostics() {
+            Ok((json, findings)) => {
                 let filename = format!("mission-{mission_id}.compiled.json");
                 if let Err(e) = download_json(&filename, &json) {
                     toasts.error(format!("Could not start the download: {e:?}"));
                     return;
                 }
+                // The findings reach the panel through the engine's own row type, so a compile
+                // finding renders — and click-to-selects on its `subject_id` — exactly like a
+                // validation finding. Published AFTER the download starts: a diagnostic is not a
+                // refusal, and the file the author asked for is not held back by one.
+                let summary = super::compile_diagnostics_summary(&findings);
+                crate::validation_panel::publish_compile_findings(
+                    findings
+                        .iter()
+                        .map(crate::validation_panel::PanelFinding::from_finding)
+                        .collect(),
+                );
                 // Naming the staleness is the whole reason this is a toast and not a silent download:
                 // the file is the CURRENT document, which is only what a game server would fetch once
                 // this state is saved.
-                if crate::mission_history::is_dirty() {
-                    toasts.message(
-                        "Downloaded the compiled mission document — compiled from your unsaved changes, \
-                         so the server still serves the last saved version.",
-                    );
+                let staleness = if crate::mission_history::is_dirty() {
+                    Some(
+                        "Downloaded the compiled mission document — compiled from your unsaved \
+                         changes, so the server still serves the last saved version.",
+                    )
                 } else {
-                    toasts.success("Downloaded the compiled mission document.");
+                    None
+                };
+                match (staleness, summary) {
+                    (Some(stale), Some(s)) => toasts.message(format!("{stale} {s}")),
+                    (Some(stale), None) => toasts.message(stale.to_string()),
+                    (None, Some(s)) => {
+                        toasts.message(format!("Downloaded the compiled mission document. {s}"))
+                    }
+                    (None, None) => toasts.success("Downloaded the compiled mission document."),
                 }
             }
             Err(e) => toasts.error(e),
@@ -622,6 +731,34 @@ mod imp {
             JsValue::from_str(&compiled_document_json().unwrap_or_else(|e| e))
         }) as Box<dyn FnMut() -> JsValue>);
 
+        // T-690 — the compile's structured findings as JSON, so a harness can read back what the
+        // build step LEARNED and not only what it emitted. Same argument as `compiled_document_json`
+        // above: a result whose only exit is a floating card is a result no harness can check.
+        // Returns `[{ruleId, severity, primitive, message, subject, subjectId}]`, `[]` on a clean
+        // compile, and `{"error": "…"}` on a refusal — the three cases are distinguishable by shape.
+        let compiled_diags = Closure::wrap(Box::new(move || -> JsValue {
+            let out = match compiled_document_json_with_diagnostics() {
+                Ok((_, findings)) => {
+                    let rows: Vec<serde_json::Value> = findings
+                        .iter()
+                        .map(|f| {
+                            serde_json::json!({
+                                "ruleId": f.rule_id,
+                                "severity": f.severity.as_str(),
+                                "primitive": f.primitive.tag(),
+                                "message": f.message,
+                                "subject": f.subject,
+                                "subjectId": f.subject_id,
+                            })
+                        })
+                        .collect();
+                    serde_json::to_string(&rows).unwrap_or_else(|_| "[]".to_string())
+                }
+                Err(e) => serde_json::json!({ "error": e }).to_string(),
+            };
+            JsValue::from_str(&out)
+        }) as Box<dyn FnMut() -> JsValue>);
+
         let compile_save = {
             let doc = doc.clone();
             Closure::wrap(Box::new(move || -> JsValue {
@@ -692,6 +829,11 @@ mod imp {
         );
         let _ = js_sys::Reflect::set(
             &obj,
+            &JsValue::from_str("compiled_diagnostics_json"),
+            compiled_diags.as_ref(),
+        );
+        let _ = js_sys::Reflect::set(
+            &obj,
             &JsValue::from_str("merge_mission_json"),
             merge_fn.as_ref(),
         );
@@ -702,6 +844,7 @@ mod imp {
         compile_save.forget();
         compile_export_fn.forget();
         compiled_doc.forget();
+        compiled_diags.forget();
         merge_fn.forget();
     }
 }
@@ -803,24 +946,44 @@ mod tests {
     /// depended on `clone_meta` staying the next item, and would have returned the *first* of two
     /// `compiled_document_json` definitions without a word — with the shared scrubber's
     /// ambiguity-refusing extractor.
+    ///
+    /// **T-690 moved the needle one function down, and did not loosen it.** The transport body now
+    /// lives in `compiled_document_json_with_diagnostics` (the compile returns findings alongside
+    /// the bytes, and `compiled_document_json` is a projection of it — one compile, not two). So the
+    /// pin reads the body that actually calls the compile, AND asserts the projection is thin: if
+    /// `compiled_document_json` ever grows its own compile again, the second assertion fires and the
+    /// two paths can no longer drift into shipping different bytes.
     #[test]
     fn class_r_source_forbids_value_pretty_on_compiled_export() {
         use crate::arsenal::class_r_scrub::{live_code, only_body};
         const SRC: &str = include_str!("mission_commands.rs");
         let production = live_code(SRC);
-        let code = only_body(&production, "pub fn compiled_document_json()");
+        let code = only_body(
+            &production,
+            "pub fn compiled_document_json_with_diagnostics()",
+        );
         assert!(
             code.contains("compiled_export_text(&doc)"),
-            "compiled_document_json must ship via compiled_export_text"
+            "the compile path must ship via compiled_export_text"
         );
         assert!(
             !code.contains("to_string_pretty"),
-            "compiled_document_json must not pretty-print the compiled doc"
+            "the compile path must not pretty-print the compiled doc"
         );
         // A live `serde_json::Value` binding in the return path is the old defect.
         assert!(
             !code.contains("let value: serde_json::Value"),
-            "compiled_document_json must not re-parse through Value for download"
+            "the compile path must not re-parse through Value for download"
+        );
+        // …and the plain entry point is a PROJECTION of it, never a second compile.
+        let plain = only_body(&production, "pub fn compiled_document_json()");
+        assert!(
+            plain.contains("compiled_document_json_with_diagnostics()"),
+            "compiled_document_json must project the diagnostics body, not compile again; got:\n{plain}"
+        );
+        assert!(
+            !plain.contains("flatten_mod_document_json"),
+            "compiled_document_json must not run its own compile; got:\n{plain}"
         );
         // The ROW_META docs are PROSE, so they are read from the raw file on purpose — the
         // scrubber's whole job is to delete prose, and asserting a doc string against scrubbed
@@ -1049,6 +1212,122 @@ mod tests {
         assert!(
             !code.contains("set_dirty(true)"),
             "merge_mission_now must not end on a bare set_dirty(true) — after_local_edit sets dirty"
+        );
+    }
+
+    /* ══════════ T-690 — the compile's structured result ══════════ */
+
+    use map_engine_core::mission::validate::{Finding, Primitive, Severity};
+
+    fn finding(rule_id: &'static str, severity: Severity, subject_id: Option<&str>) -> Finding {
+        Finding {
+            rule_id,
+            severity,
+            primitive: Primitive::PerObjectInvariant,
+            message: "the compile dropped a value".to_string(),
+            subject: "/editor/slots/0/rank".to_string(),
+            subject_id: subject_id.map(ToString::to_string),
+        }
+    }
+
+    /// A clean compile gets the message it always had — never a celebratory "0 issues".
+    #[test]
+    fn a_clean_compile_produces_no_diagnostics_summary() {
+        assert_eq!(super::compile_diagnostics_summary(&[]), None);
+    }
+
+    /// The toast shrinks to a verdict + a pointer: counts by severity, worst first, only the
+    /// non-zero rungs, correctly pluralised, and it names where the list actually lives.
+    #[test]
+    fn the_diagnostics_summary_counts_by_severity_and_points_at_the_panel() {
+        let findings = [
+            finding("COMPILE-DROP-SQUAD-LEADER", Severity::Warning, Some("sq1")),
+            finding("COMPILE-DROP-SLOT-RANK", Severity::Info, Some("s1")),
+            finding("COMPILE-DROP-SLOT-TAG", Severity::Info, Some("s1")),
+        ];
+        let s = super::compile_diagnostics_summary(&findings).expect("some findings");
+        assert!(s.contains("1 warning"), "{s}");
+        assert!(s.contains("2 notes"), "{s}");
+        assert!(!s.contains("error"), "no zero-count rung may appear: {s}");
+        assert!(
+            s.contains("validation panel"),
+            "the toast must point at the render surface rather than try to be it: {s}"
+        );
+    }
+
+    /// **The feed.** The compile's findings reach the T-655 panel through the panel's OWN row type,
+    /// so a compile finding renders — and click-to-selects on its `subject_id` — exactly like a
+    /// validation finding. No second panel, no parallel vocabulary.
+    #[test]
+    fn compile_findings_reach_the_validation_panel() {
+        use crate::validation_panel::{
+            evaluate_now, publish_compile_findings, PanelFinding, Rollup,
+        };
+
+        // Baseline: nothing published, nothing shown (no payload source is registered on the host).
+        publish_compile_findings(Vec::new());
+        assert!(
+            Rollup::of(&evaluate_now()).is_empty(),
+            "the panel starts empty"
+        );
+
+        let findings = [
+            finding("COMPILE-DROP-SQUAD-LEADER", Severity::Warning, Some("sq1")),
+            finding("COMPILE-DROP-SLOT-RANK", Severity::Info, Some("s1")),
+        ];
+        publish_compile_findings(findings.iter().map(PanelFinding::from_finding).collect());
+
+        let rows = evaluate_now();
+        assert_eq!(rows.len(), 2, "{rows:?}");
+        let rollup = Rollup::of(&rows);
+        assert_eq!((rollup.errors, rollup.warnings, rollup.infos), (0, 1, 1));
+        assert_eq!(rollup.chip_text(), "1 warning · 1 info");
+        // The owning entity id survived, which is what makes the row clickable — the T-657
+        // `subject_id` vocabulary reused rather than a parallel one invented.
+        let leader = rows
+            .iter()
+            .find(|r| r.rule_id == "COMPILE-DROP-SQUAD-LEADER")
+            .expect("the leader finding rendered");
+        assert_eq!(leader.subject_id.as_deref(), Some("sq1"));
+        assert!(leader.is_selectable());
+
+        // A clean compile CLEARS the previous build report — otherwise the panel would show a stale
+        // list after the author fixed everything in it.
+        publish_compile_findings(Vec::new());
+        assert!(
+            Rollup::of(&evaluate_now()).is_empty(),
+            "a clean compile must clear the previous compile's findings"
+        );
+    }
+
+    /// Class-R — the export path FEEDS the shipped panel and does not grow one of its own.
+    ///
+    /// The ticket's own constraint ("owns only the compiler and the command layer so the panel stays
+    /// a single claimant") is the kind that decays silently: a second list rendered next to the
+    /// download button would look fine and would be a second claimant. This reads the live body.
+    #[test]
+    fn class_r_the_export_publishes_to_the_panel_and_builds_no_second_one() {
+        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        const SRC: &str = include_str!("mission_commands.rs");
+        let production = live_code(SRC);
+        let code = only_body(&production, "pub fn export_compiled_now(");
+        assert!(
+            code.contains("validation_panel::publish_compile_findings("),
+            "export_compiled_now must publish the compile's findings to the T-655 panel; got:\n{code}"
+        );
+        assert!(
+            code.contains("compiled_document_json_with_diagnostics()"),
+            "export_compiled_now must take the bytes AND the findings from one compile; got:\n{code}"
+        );
+        // A `view!` here would be a second render surface for the same findings.
+        assert!(
+            !code.contains("view!"),
+            "export_compiled_now must not render a panel of its own; got:\n{code}"
+        );
+        // …and the summary must not try to be the list: no per-finding message in the toast.
+        assert!(
+            !code.contains("f.message"),
+            "the toast is a pointer, not the list; got:\n{code}"
         );
     }
 }
