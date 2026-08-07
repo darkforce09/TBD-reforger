@@ -55,7 +55,7 @@ diagnosis) → registry flip + `distrobox-host-exec sh -c './scripts/ticket sync
 | 112 | 96 | T-649 T-686 T-692 | PASS 30/30 (run 1) | 1M/4m/3N | SHIPPED — select-all in view + multi-edit checkboxes (both suppress-on-multi guards inverted, T-716 rows honest), loadout import round-trip, Help menu + Controls Hint; T-735..T-742 filed |
 | 113 | 97 | T-082 T-669 T-694 | PASS 30/30 (run 1) | 1M/1m/3N | SHIPPED — entity type + role description (F-7 closed as a disabled affordance; needed a new core mutator OUTSIDE owns), cut + paste-at-source, mission shape reinterpreted by the operator (derived slot count, no min_players); T-743..T-747 filed |
 | 114 | 98 | T-633 T-651 T-695 | PASS 30/30 (run 1) | 1M/2m/4N | SHIPPED — Aegis slider+select primitives in ui.rs, editor comments (own non-compiling core root, rule proven by firing it), catalogue favourites; **PLACE-COMMENT-001 does NOT fully close** — no map glyph, not composable (T-748); T-748..T-752 filed |
-| 115 | assign at close | T-634 T-670 T-688 | — | — | pending |
+| 115 | 99 | T-634 T-670 T-688 | PASS 30/30 (run 1) | 2M/5m/3N | SHIPPED — two-row strip inside the same 48px (no pin weakened), m/px readout unified with T-667's scale bar, aggregated settings with schema-sourced defaults; **T-753 confirmed by experiment** (flow defaults drift ships green); T-753..T-758 filed |
 | 116 | assign at close | T-069 T-690 T-696 | — | — | pending |
 | 117 | assign at close | T-084 T-671 T-672 | — | — | pending |
 | 118 | assign at close | T-637 T-698 T-699 | — | — | pending |
@@ -221,6 +221,25 @@ serialisation, not a hang).
 
 ## Deferred tickets filed by verifiers
 
+- **T-753** (W115/MAJOR-1) ⚠️ **CONFIRMED BY EXPERIMENT.** `FLOW_DEFAULT_*` are `pub const` in BOTH
+  `flatten.rs:1491` and `eden_env.rs:186` with **no cross-crate pin**; the only guard restates the
+  literals against the frontend's own copy. The verifier edited flatten.rs 600→900, ran the frontend
+  suite → **800 passed / 0 failed** while the compiler emits 900s and the editor shows 600. Reverted,
+  tree clean. This is the defect class **T-688 was filed to prevent, one layer beneath it**. The fix
+  compiles today (the frontend already has the `mission` feature) and was simply never written.
+- **T-754** (W115/MAJOR-2): T-688's rows **click through to nothing** — the T-655 router resolves
+  slots and vehicles, the only entity-owned settings are zones, so 100% of owned rows fall to a
+  text-only toast while still wearing `cursor-pointer`. A dead click dressed as an affordance.
+  Widening the router also fixes T-655's own zone-subject blind spot.
+- **T-755** (W115/MINOR-2,3 + NIT-1): three pins narrower than the claims they narrate (T-688's
+  constructor needle, T-670's scrub check, and **T-692's ControlsHint pin, which checks presence
+  rather than gated-subtree position** — the mechanism that makes Backspace hide it).
+- **T-756** (W115/MINOR-4 + NIT-3): a non-finite zoom prints a confident `1.00 m/px` instead of the
+  em-dash; band-top carry gives 4 sig figs. Both outside the live clamp.
+- **T-757** (W115/MINOR-5): `mission.schema.json` (91 KB) is embedded twice in the wasm bundle — same
+  path so no drift, but present twice in the dev artifact; `eden_zones.rs:626` still calls it "~40 KB".
+- **T-758** (W115/MINOR-6): mission-owned rows are inert focusable buttons. Sequence **after** T-754,
+  or the view becomes honest but still unhelpful.
 - **T-748** (W114/MAJOR-1) ⚠️ **PLACE-COMMENT-001 does not fully close.** The spec row wants
   "Draggable, copy/paste, layerable, **composable**" + "Comment icon at position". Shipped comments
   have **no map glyph** (deliberately absent from the render SoA — the same property that keeps
