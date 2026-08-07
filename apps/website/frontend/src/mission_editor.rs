@@ -1541,6 +1541,16 @@ pub fn MissionEditorPage() -> impl IntoView {
     // a keypress: the author must not be able to hide the reason their mission is broken. Do not copy
     // this "hide it behind a key" pattern onto validation output.
     let debug_hud_shown = RwSignal::new(false);
+    // T-670 (STATUS-ZOOM-001) — the status bar's metres-per-pixel readout, and the single scale
+    // number the T-667 scale bar now sizes from. `RenderEngine::zoom()` is reachable ONLY from the
+    // rAF sampler (`start_raf`), so the signal has to be born here and be written there; seeded with
+    // the editor's default deck zoom (−2 ⇒ 4.00 m/px) so the cell reads a real value before the
+    // engine mounts and on native, where there is no engine at all.
+    //
+    // The sampler runs EVERY FRAME. It writes this signal only when `format_m_per_px` would change
+    // (guard in `start_raf`), so a still or merely panning camera writes nothing and the status bar
+    // never re-renders per frame — the regression the `rf <ms>` cell above exists to surface.
+    let scale_mpp = RwSignal::new(crate::eden_toolbelt::m_per_px(-2.0));
     // T-642/T-643 — the active editor tool (Select ⇆ Ruler ⇆ LoS). The `ModeToolbar` buttons read +
     // set it (the active tool enters TOOL_ACTIVE state, Select returns); the wasm pointer handlers
     // branch on it to choose the point-capture gesture (Ruler AND LoS share `LG::Ruler`) vs the
@@ -2794,7 +2804,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                             if restore_settled.get() {
                                 crate::mission_history::rebind_engine_from_doc();
                             }
-                            start_raf(engine.clone(), disposed.clone(), debug_hud);
+                            start_raf(engine.clone(), disposed.clone(), debug_hud, scale_mpp);
                             // T-166 — full map-asset host (hillshade + sat + DEM vectors + world +
                             // forest). Terrain from doc meta (seed/hydrate; default everon).
                             {
@@ -4105,6 +4115,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                         debug_hud
                         hud_shown=debug_hud_shown
                         ruler_status
+                        scale_mpp
                     />
                 </div>
                 })}
@@ -4382,6 +4393,7 @@ fn start_raf(
     engine: std::rc::Rc<std::cell::RefCell<Option<map_engine_render::RenderEngine>>>,
     disposed: std::sync::Arc<std::sync::atomic::AtomicBool>,
     debug_hud: RwSignal<String>,
+    scale_mpp: RwSignal<f64>,
 ) {
     use std::cell::RefCell;
     use std::rc::Rc;
@@ -4393,6 +4405,14 @@ fn start_raf(
     // chunks, tree glyphs, FPS. Counting frames between samples measures real rAF cadence.
     let mut frames = 0u32;
     let mut last_sample = 0.0f64;
+    // T-670 — last PUBLISHED scale readout. The camera zoom is only reachable from inside this
+    // per-frame closure, so this is the guard that keeps a 60 fps read from becoming a 60 fps
+    // Leptos write: the frame formats the scale and calls `set` ONLY when the formatted string
+    // differs from what the status bar is already showing. Without it every frame would dirty
+    // `scale_mpp`, re-rendering the status bar (and the scale bar) 60×/s for a value that changes a
+    // handful of times per wheel gesture and never at all while panning or idle. Empty until the
+    // first frame publishes, so the seeded default is replaced as soon as the engine is live.
+    let mut last_scale_text = String::new();
 
     let f: Rc<RefCell<Option<Closure<dyn FnMut()>>>> = Rc::new(RefCell::new(None));
     let g = f.clone();
@@ -4422,6 +4442,20 @@ fn start_raf(
             let _ = e.render();
             e.poll(); // ★ T-159.15.1: drain readback map_async so the next submit can't double-map
             frames += 1;
+            // T-670 — publish the screen scale for the status-bar readout (and, through it, the
+            // T-667 scale bar). Read every frame so a wheel-zoom shows on the very next frame
+            // rather than waiting up to a second for the ~1 Hz HUD sample below; WRITTEN only when
+            // the displayed string changes, so an idle or panning camera costs zero re-renders.
+            // The `m_per_px`/`format_m_per_px` pair is `eden_toolbelt`'s — the same conversion the
+            // scale bar uses and the same `2^(−deckZoom)` convention T-639's contour ladder takes.
+            {
+                let mpp = crate::eden_toolbelt::m_per_px(e.zoom());
+                let text = crate::eden_toolbelt::format_m_per_px(mpp);
+                if text != last_scale_text {
+                    last_scale_text = text;
+                    scale_mpp.set(mpp);
+                }
+            }
             {
                 // js_sys::Date over web_sys Performance — no extra web-sys feature needed, and
                 // ms precision is plenty for a 1 Hz FPS sample.
@@ -8694,5 +8728,113 @@ mod t669_clipboard_completion {
         } else {
             format!("{}-{}", TENS[t], ONES[r])
         }
+    }
+}
+
+/// T-670 (`STATUS-ZOOM-001`) — the editor's half of the metres-per-pixel readout. `RenderEngine::
+/// zoom()` is reachable only from the rAF sampler, so the editor owns the signal and the sampler
+/// writes it. The sampler runs EVERY FRAME, which makes the write guard the load-bearing part of
+/// this ticket: an unguarded `set` would dirty the status bar 60×/s and tank editor performance —
+/// the exact class of regression the `rf <ms>` HUD cell exists to surface. These are Leptos view /
+/// wasm-closure innards, so they are pinned by SOURCE INSPECTION on scrubbed code (the established
+/// `t635`/`t636` pattern here); needles are assembled at run time so this module's own prose can
+/// never satisfy them.
+#[cfg(test)]
+mod t670_scale_signal {
+    use crate::arsenal::class_r_scrub::{live_code, only_item};
+
+    /// The editor page region onward, comments stripped and string literals blanked — the same
+    /// slice `t635_debug_hud` uses. `start_raf` is defined after `MissionEditorPage`, so it is in.
+    fn editor_live() -> String {
+        let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
+        let raw = include_str!("mission_editor.rs");
+        live_code(&raw[raw.find(anchor.as_str()).expect("anchor present")..])
+    }
+
+    /// The signal is a real signal seeded from the shared `m_per_px` conversion (not a bare float
+    /// literal), and it is threaded into the status bar — so the cell reads a true value before the
+    /// engine mounts, and on native, where `start_raf` never runs.
+    #[test]
+    fn the_scale_signal_is_seeded_and_reaches_the_status_bar() {
+        let ed = editor_live();
+        assert!(
+            ed.contains(&format!(
+                "let scale_mpp = RwSignal::new(crate::eden_toolbelt::{}(-2.0))",
+                "m_per_px"
+            )),
+            "T-670: scale_mpp must be a real signal seeded from eden_toolbelt::m_per_px at the \
+             editor's default deck zoom"
+        );
+        let belt = ed
+            .find("crate::eden_toolbelt::StatusBar")
+            .expect("StatusBar mount present");
+        let close = ed[belt..]
+            .find("/>")
+            .map(|i| belt + i)
+            .expect("the StatusBar mount closes");
+        assert!(
+            ed[belt..close].contains("scale_mpp"),
+            "T-670: the scale signal must be passed into the StatusBar mount"
+        );
+    }
+
+    /// **THE GUARD.** The sampler writes `scale_mpp` exactly once, and only inside an inequality
+    /// against the last PUBLISHED readout string. Delete the guard and this fails — which is the
+    /// point: the failure mode it prevents (a 60 fps Leptos write from a per-frame closure) is
+    /// invisible to a compile and to every other test in this crate.
+    #[test]
+    fn the_sampler_writes_the_scale_only_when_the_readout_changes() {
+        let ed = editor_live();
+        let raf = only_item(&ed, &format!("fn {}", "start_raf("));
+        let set = format!("scale_mpp.{}(", "set");
+        assert_eq!(
+            raf.matches(set.as_str()).count(),
+            1,
+            "T-670: the sampler must have exactly ONE scale write — a second, unguarded one would \
+             reintroduce the per-frame re-render"
+        );
+        let at = raf.find(set.as_str()).expect("counted above");
+        // The write's enclosing block is the change guard, and the guard updates the remembered
+        // string in the same block (otherwise it would fire on every frame after the first change).
+        let guard = format!("if text != {} {{", "last_scale_text");
+        let g = raf
+            .find(guard.as_str())
+            .unwrap_or_else(|| panic!("T-670: the scale write must sit behind `{guard}`"));
+        assert!(
+            g < at,
+            "T-670: the change guard must OPEN before the scale write, not after it"
+        );
+        assert!(
+            raf[g..at].contains(&format!("{} = text;", "last_scale_text")),
+            "T-670: the guard must remember the published readout, or it fires every frame"
+        );
+        // The remembered value is a per-closure `mut` local, not a fresh binding each frame.
+        assert!(
+            raf.contains(&format!("let mut {} = String::new()", "last_scale_text")),
+            "T-670: the last-published readout must live ACROSS frames (a closure-captured local)"
+        );
+    }
+
+    /// The scale is read every frame and published promptly — it does NOT ride the ~1 Hz debug-HUD
+    /// sample. A zoom gesture must show on the next frame; hanging the readout off the 1 Hz block
+    /// would make it up to a second stale, and would also make the guard above pointless, hiding
+    /// the regression this ticket is about.
+    #[test]
+    fn the_scale_does_not_ride_the_one_hz_hud_sample() {
+        let ed = editor_live();
+        let raf = only_item(&ed, &format!("fn {}", "start_raf("));
+        let scale = raf
+            .find(&format!("scale_mpp.{}(", "set"))
+            .expect("scale write present");
+        let hud = raf
+            .find(&format!("debug_hud.{}(", "set"))
+            .expect("HUD write present");
+        let sample_gate = raf
+            .find("now - last_sample >= 1000.0")
+            .expect("the ~1 Hz sample gate is still there");
+        assert!(
+            scale < sample_gate && scale < hud,
+            "T-670: the scale must be published BEFORE (and outside) the ~1 Hz HUD sample block"
+        );
     }
 }
