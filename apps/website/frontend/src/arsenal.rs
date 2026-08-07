@@ -627,6 +627,214 @@ pub fn try_export(
     Ok(picks_to_export(picks, cargo, modpack_id))
 }
 
+/* ───────── T-686 — the INGEST half: reading a `loadout-export.schema.json` doc back ───────── */
+
+/// The row key every *document-level* refusal is filed under.
+///
+/// [`rules::RowError::key`] normally names the loadout row whose pick the author must change, and
+/// the rule-derived refusals below keep doing exactly that. A malformed file has no row to blame —
+/// the fault is the document — so it gets its own key rather than being pinned on an innocent row.
+const IMPORT_DOC_KEY: &str = "document";
+
+/// What an accepted import *would* apply. Nothing in here has touched the live mission document:
+/// [`try_import`] returns a value, the caller applies it, and that separation is what makes
+/// "a document that does not validate applies nothing" true by construction rather than by care.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ImportedLoadout {
+    /// The picks map, in the same shape [`loadout_to_picks`] produces (incl. the packed
+    /// `attachments@<weapon>` keys).
+    pub picks: HashMap<String, String>,
+    pub cargo: Vec<rules::CargoRow>,
+    /// Did the document carry a `cargo` key at all?
+    ///
+    /// `cargo` is optional in the v2 branch and absent from v1 entirely, and key presence is the
+    /// T-068.15.2 "user state" marker: present-and-empty means *the author cleared it* (never
+    /// re-seed), absent means *nobody has said* (a later seed may still fire). A file that never
+    /// mentions cargo has not authored an empty cargo list, so importing one must not claim it did.
+    pub cargo_present: bool,
+    /// `modpackId` off the document. Reported, never a refusal — see [`try_import`].
+    pub modpack_id: String,
+    /// `"1"` or `"2"` — which `oneOf` branch the document satisfied.
+    pub loadout_version: String,
+}
+
+/// Read an accepted document into picks + cargo.
+///
+/// **v2** is the inverse of [`picks_to_export`] and re-uses [`loadout_to_picks`] +
+/// [`rules::cargo_from_loadout`] verbatim rather than growing a second reader: the export file's
+/// `wear` / `weapons` / `cargo` blocks are the same byte shape as the persisted `SlotLoadoutV2`
+/// doc field (that is *why* T-199 could reuse the wear/weapon vocabulary), so the code that already
+/// reads one reads the other. The derived legacy `gear` block is deliberately IGNORED on a v2
+/// document: it is a lossy projection of `wear`/`weapons` written for the v1 mod reader, and
+/// preferring it would silently discard the launcher, the sidearm and half the wear rows.
+///
+/// **v1** has only the four fixed gear slots, so the mapping is the documented derivation run
+/// backwards: `uniform`→jacket, `helmet`→headCover, `primary`(+optic/magazine)→the primary weapon.
+/// `vest` lands on the **`vest`** row and not `armoredVest`, because v1 has one vest key and the
+/// two are one-way collapsible — choosing `armoredVest` would invent armour the file never claimed.
+fn import_doc_to_picks(
+    raw: &str,
+    doc: &serde_json::Value,
+) -> (HashMap<String, String>, Vec<rules::CargoRow>, bool) {
+    let version = doc
+        .get("loadoutVersion")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default();
+    if version == "2" {
+        let picks = loadout_to_picks(Some(raw));
+        let (cargo, present) = rules::cargo_from_loadout(Some(raw));
+        return (picks, cargo, present);
+    }
+    let gear = doc.get("gear");
+    let mut picks = HashMap::new();
+    for (doc_key, pick_key) in [
+        ("primary", "primary"),
+        ("uniform", "jacket"),
+        ("vest", "vest"),
+        ("helmet", "headCover"),
+        ("optic", "optic"),
+        ("magazine", "magazine"),
+    ] {
+        let value = gear
+            .and_then(|g| g.get(doc_key))
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.is_empty());
+        if let Some(v) = value {
+            picks.insert(pick_key.to_string(), v.to_string());
+        }
+    }
+    (picks, Vec::new(), false)
+}
+
+/// T-686 — the import gate, and the exact mirror of [`try_export`]. `Ok` is the state to apply; on
+/// `Err` there are **no picks at all**, only the refusals, so a refusal cannot be half-applied.
+///
+/// TBD shipped the export half of this round-trip and none of the ingest half: `try_export` +
+/// `download_json` wrote a `loadout-export.schema.json` v2 file that nothing in the SPA could read
+/// back. This is the door in. No new format — the same shipped schema, the same reader
+/// ([`loadout_to_picks`]), the same [`rules::RowError`] refusal vocabulary.
+///
+/// **Three gates, in order, and the first one that speaks stops the import:**
+/// 1. **It is JSON.** A parse failure is the document's fault, so it is filed under
+///    [`IMPORT_DOC_KEY`].
+/// 2. **It satisfies the SHIPPED schema** ([`rules::validate_against_loadout_export_schema`], which
+///    checks against the `include_str!`-compiled bytes of the file itself, not a transcription).
+///    This is the gate that makes the OFCRA class of bug unrepresentable rather than merely
+///    unlikely: a misspelled wear key, a cargo container outside the closed vocabulary, `qty: 0`, a
+///    string where a slot wants a ResourceName-or-null — all of them are *schema* errors, and all
+///    of them were silent data in a hand-maintained `.sqf` (ofcra_omtk.md 5.9, 14.1).
+/// 3. **The picks obey the loadout rules** — [`validate_loadout`] (compat edges),
+///    [`attachment_errors`] (the packed set `arsenal_rules` cannot see) and
+///    [`rules::cargo_capacity_errors`]. A schema-valid document can still describe a scope on no
+///    rifle or forty magazines in a chest rig; importing it without this check would re-import
+///    exactly the silent data bugs the schema gate cannot see.
+///
+/// **What is deliberately NOT a refusal, and why:**
+/// * [`rules::cargo_unworn_container_errors`] — T-504's argument holds unchanged on the way in:
+///   this module cannot see the slot's kit prefab, whose own clothing is what the mod resolves the
+///   container against, so refusing here would block imports of loadouts that deliver perfectly.
+///   It stays a warning in [`loadout_faults`], where the author sees it after the import lands.
+/// * A **`modpackId` mismatch.** The document carries the modpack it was authored against and the
+///   Arsenal knows its own ([`export_modpack_id`]), but the honest answer to a mismatch is "these
+///   resource names may not resolve", not "you may not do this" — and the compat/registry checks
+///   above already fail on names this catalog genuinely does not have. The value is returned so the
+///   caller can say so.
+///
+/// Note the asymmetry this creates with [`try_export`], which refuses on capacity **only**: a
+/// loadout with a stranded optic can be downloaded but not re-imported. That is intended. The
+/// export gate's job is to not write a file that lies about a soldier; this one's job is to not let
+/// an outside document put the editor into a state the author did not author. A document that
+/// fails here describes a loadout the Arsenal would badge as broken the moment it landed, and the
+/// author is better served being told before it lands than after. (Both feed-fed checks degrade to
+/// empty when the compat feed is not `Ready` — a feed we never received must never fail a loadout,
+/// on the way in or out.)
+pub fn try_import(
+    raw: &str,
+    items: &[RegistryItem],
+    feed: &CompatFeed,
+) -> Result<ImportedLoadout, Vec<rules::RowError>> {
+    let doc: serde_json::Value = match serde_json::from_str(raw) {
+        Ok(v) => v,
+        Err(e) => {
+            return Err(vec![rules::RowError {
+                key: IMPORT_DOC_KEY,
+                message: format!("This file is not valid JSON — {e}."),
+            }])
+        }
+    };
+    if let Err(faults) = rules::validate_against_loadout_export_schema(&doc) {
+        return Err(faults
+            .into_iter()
+            .map(|message| rules::RowError {
+                key: IMPORT_DOC_KEY,
+                message,
+            })
+            .collect());
+    }
+    let (picks, cargo, cargo_present) = import_doc_to_picks(raw, &doc);
+
+    // The rule pass, BEFORE anything is applied. Same three sources the verdict badge counts,
+    // minus the one T-504 proved must never block.
+    let mut refusals = validate_loadout(&picks, feed.ready_graph(), feed.status);
+    refusals.extend(attachment_errors(&picks, feed));
+    refusals.extend(rules::cargo_capacity_errors(
+        &picks,
+        &cargo,
+        &index_by_name(items),
+    ));
+    if !refusals.is_empty() {
+        return Err(refusals);
+    }
+
+    Ok(ImportedLoadout {
+        picks,
+        cargo,
+        cargo_present,
+        modpack_id: doc
+            .get("modpackId")
+            .and_then(|v| v.as_str())
+            .unwrap_or_default()
+            .to_string(),
+        loadout_version: doc
+            .get("loadoutVersion")
+            .and_then(|v| v.as_str())
+            .unwrap_or_default()
+            .to_string(),
+    })
+}
+
+/// The one-line receipt an accepted import prints: what actually landed, counted off the applied
+/// state rather than off the file, so it cannot claim more than was applied.
+fn import_summary(name: &str, doc: &ImportedLoadout, catalog_modpack: &str) -> String {
+    let weapons = ROWS
+        .iter()
+        .filter(|r| r.weapon.is_some())
+        .filter(|r| doc.picks.get(r.key).is_some_and(|v| !v.is_empty()))
+        .count();
+    let wear = ROWS
+        .iter()
+        .filter(|r| r.weapon.is_none())
+        .filter(|r| doc.picks.get(r.key).is_some_and(|v| !v.is_empty()))
+        .count();
+    let mut line = format!(
+        "Imported {name} (v{}) — {weapons} weapon(s), {wear} wear row(s), {} cargo row(s). One Ctrl+Z undoes the whole import.",
+        doc.loadout_version,
+        doc.cargo.len(),
+    );
+    // Warn-only, and only when both sides actually know what they are: an empty modpackId is the
+    // honest "we do not know" the export writes when the registry fetch failed, not a mismatch.
+    if !doc.modpack_id.is_empty()
+        && !catalog_modpack.is_empty()
+        && doc.modpack_id != catalog_modpack
+    {
+        line.push_str(&format!(
+            " Note: this file was authored against modpack {}, and this mission's catalog is {} — check the picks resolved to what you expected.",
+            doc.modpack_id, catalog_modpack
+        ));
+    }
+    line
+}
+
 /// The Smart Arsenal tab — mounted in the Attributes modal (T-159.26 seam). `registry` is the flat
 /// catalog; `compat` the edge feed (both fetched once by the editor); `slot_id` + `loadout_json`
 /// come from the modal's re-read.
@@ -691,6 +899,12 @@ pub fn ArsenalTab(
         persist(&picks.get_untracked(), items);
     };
 
+    // T-686 — the import outcome, said in the panel next to the button that produced it. Two
+    // signals and not one `Result` because they render differently and never both: a receipt is a
+    // quiet line, a refusal is a list the author has to read.
+    let import_status = RwSignal::new(String::new());
+    let import_refusals = RwSignal::new(Vec::<String>::new());
+
     // T-172 B10 — full screen-04 Smart Forge layout (operator-confirmed scope): region icon
     // rail · filtered item list · 3D doll (DollEngine; SVG paper-doll only as the create-error
     // fallback, the T-154 contract) · compat panel · COMPAT/VALID badges · Download loadout JSON.
@@ -724,6 +938,117 @@ pub fn ArsenalTab(
                             else { m.insert(key.clone(), value.clone()); }
                         });
                         persist(&picks.get_untracked(), &items.get_value());
+                    };
+                    // T-686 — apply an ACCEPTED import. **This is the one-undo-step contract.**
+                    //
+                    // The three `set`s are signal writes and commit nothing; the single `persist`
+                    // that follows is the only document mutation, and `persist` is one
+                    // `editor_ops::set_loadout` is one `mission_history::after_local_edit`
+                    // (`editor_ops.rs:1611`) is one undo step. So Ctrl+Z after an import restores
+                    // the whole loadout the author had before it — not the last wear row of it.
+                    // No new atomic-batch API was needed: the Arsenal's existing commit already
+                    // takes the entire `SlotLoadoutV2` document in one call, which is exactly the
+                    // shape an import wants. `tests::t686::the_import_applies_in_one_commit` pins it.
+                    let apply_import = move |doc: ImportedLoadout, items: &[RegistryItem]| {
+                        picks.set(doc.picks);
+                        cargo.set(doc.cargo);
+                        cargo_present.set(doc.cargo_present);
+                        persist(&picks.get_untracked(), items);
+                    };
+                    // T-686 — the file picker. Same off-DOM programmatic idiom as the mission
+                    // upload (`missions.rs:1875`) and the CMS hero upload (`content.rs:632`): a
+                    // one-shot `<input type=file>` that never sits in the DOM, so there is no dead
+                    // control in a panel most authors will never import into.
+                    //
+                    // Read → parse → validate all happen before a single signal is written; the
+                    // apply above is the only writer, and it only ever sees an `Ok`.
+                    let import_loadout = move |_| {
+                        #[cfg(target_arch = "wasm32")]
+                        {
+                            use wasm_bindgen::closure::Closure;
+                            use wasm_bindgen::JsCast;
+
+                            let picker = web_sys::window()
+                                .and_then(|w| w.document())
+                                .and_then(|d| d.create_element("input").ok())
+                                .and_then(|el| el.dyn_into::<web_sys::HtmlInputElement>().ok());
+                            let Some(input) = picker else {
+                                import_status.set(String::new());
+                                import_refusals
+                                    .set(vec!["Could not open the file picker.".to_string()]);
+                                return;
+                            };
+                            input.set_type("file");
+                            input.set_accept("application/json,.json");
+
+                            let input_for_cb = input.clone();
+                            let on_change = Closure::once(move |_ev: web_sys::Event| {
+                                let Some(file) =
+                                    input_for_cb.files().and_then(|list| list.item(0))
+                                else {
+                                    return;
+                                };
+                                let name = file.name();
+                                import_refusals.set(Vec::new());
+                                import_status.set(format!("Reading {name}…"));
+                                leptos::task::spawn_local(async move {
+                                    // `Blob::text()` is a Promise — the browser reads off disk on
+                                    // its own thread and the tab stays interactive through it.
+                                    let text = match wasm_bindgen_futures::JsFuture::from(
+                                        file.text(),
+                                    )
+                                    .await
+                                    {
+                                        Ok(v) => v.as_string().unwrap_or_default(),
+                                        Err(_) => {
+                                            import_status.set(String::new());
+                                            import_refusals.set(vec![format!(
+                                                "Could not read {name}."
+                                            )]);
+                                            return;
+                                        }
+                                    };
+                                    let its = items.get_value();
+                                    match try_import(&text, &its, &compat.get_untracked()) {
+                                        Ok(doc) => {
+                                            let line = import_summary(
+                                                &name,
+                                                &doc,
+                                                &export_modpack_id(&its),
+                                            );
+                                            apply_import(doc, &its);
+                                            import_refusals.set(Vec::new());
+                                            import_status.set(line);
+                                        }
+                                        Err(refusals) => {
+                                            // The refusal contract, said first and said plainly:
+                                            // a document that does not validate applies NOTHING.
+                                            import_status.set(String::new());
+                                            import_refusals.set(
+                                                std::iter::once(format!(
+                                                    "{name} was not applied — this loadout is unchanged.",
+                                                ))
+                                                .chain(refusals.into_iter().map(|e| e.message))
+                                                .collect(),
+                                            );
+                                        }
+                                    }
+                                });
+                            });
+                            let _ = input.add_event_listener_with_callback(
+                                "change",
+                                on_change.as_ref().unchecked_ref(),
+                            );
+                            // One-shot listener outlives this frame — the picker is
+                            // fire-and-forget (the `content.rs` contract).
+                            on_change.forget();
+                            input.click();
+                        }
+                        #[cfg(not(target_arch = "wasm32"))]
+                        {
+                            // No DOM, no file picker, and no hosted document to import into.
+                            let _ = (apply_import, import_status, import_refusals, items);
+                        }
                     };
                     view! {
                         // Top badges: compat status (left) + live weight (right).
@@ -1034,6 +1359,18 @@ pub fn ArsenalTab(
                                     }
                                         .into_any()
                                 }}
+                                // T-686 — the other half of the round-trip. Never disabled: the
+                                // gate is `try_import`, and an author with a bad file needs to be
+                                // told WHY, which requires letting them pick it.
+                                <button
+                                    type="button"
+                                    data-loadout-import
+                                    class="flex shrink-0 items-center gap-1.5 rounded-lg border border-outline-variant/40 px-3 py-1.5 text-label-sm font-medium text-on-surface transition-colors hover:bg-white/10"
+                                    on:click=import_loadout
+                                >
+                                    <span class="material-symbols-outlined text-[16px]">"upload"</span>
+                                    "Import loadout JSON"
+                                </button>
                                 <button
                                     type="button"
                                     prop:disabled=move || {
@@ -1072,6 +1409,42 @@ pub fn ArsenalTab(
                                 </button>
                             </div>
                         </div>
+                        // T-686 — the import outcome. A refusal lists EVERY reason and applied
+                        // nothing, so there is no half-applied state to explain and no "partially
+                        // imported" wording anywhere in it. An acceptance prints what landed.
+                        {move || {
+                            let refusals = import_refusals.get();
+                            if !refusals.is_empty() {
+                                let n = refusals.len() - 1; // the lead line is not a reason
+                                return view! {
+                                    <div
+                                        data-import-refused=n.to_string()
+                                        class="rounded-lg border border-error-alert/40 bg-error/10 p-2 text-label-sm normal-case text-error-alert"
+                                    >
+                                        <ul class="flex list-none flex-col gap-1">
+                                            {refusals
+                                                .into_iter()
+                                                .map(|m| view! { <li>{m}</li> })
+                                                .collect::<Vec<_>>()}
+                                        </ul>
+                                    </div>
+                                }
+                                    .into_any();
+                            }
+                            let status = import_status.get();
+                            if status.is_empty() {
+                                return ().into_any();
+                            }
+                            view! {
+                                <p
+                                    data-import-status
+                                    class="text-label-sm normal-case text-on-surface-variant"
+                                >
+                                    {status}
+                                </p>
+                            }
+                                .into_any()
+                        }}
                         // T-503 — the persistence contract, said in the panel. The platform's one
                         // "not saved yet" signal is the `•` beside the mission title, and this tab
                         // renders under a full-viewport blur scrim that dims exactly that. So the
@@ -3998,6 +4371,382 @@ mod tests {
             "{PERSIST_CLEAN}"
         );
         assert!(!mission_has_unsaved_work(), "native shell hosts no editor");
+    }
+
+    /* ═══════════ T-686 — the import half of the round-trip ═══════════ */
+
+    mod t686 {
+        use super::*;
+
+        /// A schema-valid v2 document, as the download button writes it.
+        fn v2_file(p: &HashMap<String, String>, cargo: &[rules::CargoRow]) -> serde_json::Value {
+            serde_json::from_str(&picks_to_export(p, cargo, "mp")).expect("export is JSON")
+        }
+
+        fn refuse(raw: &str) -> Vec<rules::RowError> {
+            try_import(raw, &[], &CompatFeed::default())
+                .expect_err("this document must not be applied")
+        }
+
+        /// **The claim in the ticket title.** Download a loadout, hand the file back, and the
+        /// Arsenal is in the state it started in — picks, cargo and all. Nothing in between
+        /// invents, drops or renames a value.
+        #[test]
+        fn the_round_trip_closes() {
+            let rows = vec![
+                row("vest", "res://mag_stanag", 3),
+                row("backpack", "res://mag_stanag", 2),
+            ];
+            let raw = picks_to_export(&full_picks(), &rows, "mp");
+            // A `Loading` feed: no compat data, so no edge validation — the round-trip claim is
+            // about the serialization, and a feed we never received must not colour it.
+            let back = try_import(&raw, &[], &CompatFeed::default()).expect("its own export");
+            assert_eq!(
+                back.picks,
+                full_picks(),
+                "picks must survive the round-trip"
+            );
+            assert_eq!(back.cargo, rows, "cargo must survive the round-trip");
+            assert!(back.cargo_present);
+            assert_eq!(back.loadout_version, "2");
+            assert_eq!(back.modpack_id, "mp");
+            // And the empty end of the range: a bare-soldier document is a legal import.
+            let bare = picks_to_export(&HashMap::new(), &[], "");
+            let back = try_import(&bare, &[], &CompatFeed::default()).expect("bare soldier");
+            assert!(back.picks.is_empty() && back.cargo.is_empty());
+        }
+
+        /// The importer must enforce the file the repo ships, not a copy of it that can drift.
+        #[test]
+        fn the_compiled_in_schema_is_the_shipped_file() {
+            let p = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../../../packages/tbd-schema/schema/loadout-export.schema.json");
+            let on_disk = std::fs::read_to_string(&p).expect("read the shipped schema");
+            assert_eq!(
+                rules::LOADOUT_EXPORT_SCHEMA_JSON,
+                on_disk,
+                "the importer must validate against the shipped schema, byte for byte"
+            );
+            // And it is the v2 producer's own schema — the one `picks_to_export` writes against.
+            let schema: serde_json::Value = serde_json::from_str(&on_disk).unwrap();
+            assert_eq!(
+                schema["$id"],
+                "https://schema.tbdevent.eu/loadout-export/v2.json"
+            );
+        }
+
+        /// **The refusal contract.** Every one of these is a document the OFCRA-class silent data
+        /// bug looks like in JSON, and every one of them must apply NOTHING and say why.
+        #[test]
+        fn a_document_that_does_not_validate_applies_nothing() {
+            let base = v2_file(&picks(&[("primary", "res://rifle_m16")]), &[]);
+
+            let mut unknown_key = base.clone();
+            unknown_key["equipmentt"] = serde_json::json!({});
+
+            let mut no_gear = base.clone();
+            no_gear.as_object_mut().unwrap().remove("gear");
+
+            let mut bad_container = base.clone();
+            bad_container["cargo"] =
+                serde_json::json!([{"container": "rucksack", "item": "res://mag", "qty": 1}]);
+
+            let mut zero_qty = base.clone();
+            zero_qty["cargo"] =
+                serde_json::json!([{"container": "vest", "item": "res://mag", "qty": 0}]);
+
+            let mut bad_wear_key = base.clone();
+            bad_wear_key["wear"]["chest rig"] = serde_json::json!("res://x");
+
+            let mut wear_not_a_slot = base.clone();
+            wear_not_a_slot["wear"]["jacket"] = serde_json::json!(7);
+
+            let mut weapon_missing_slot_type = base.clone();
+            weapon_missing_slot_type["weapons"][0]
+                .as_object_mut()
+                .unwrap()
+                .remove("slotType");
+
+            let mut empty_weapon = base.clone();
+            empty_weapon["weapons"][0]["weapon"] = serde_json::json!("");
+
+            let mut future_version = base.clone();
+            future_version["loadoutVersion"] = serde_json::json!("3");
+
+            let cases: Vec<(&str, String, &str)> = vec![
+                ("not JSON at all", "{ nope".to_string(), "not valid JSON"),
+                ("an empty object", "{}".to_string(), "loadoutVersion"),
+                (
+                    "a key outside the closed envelope",
+                    unknown_key.to_string(),
+                    "additionalProperties is false",
+                ),
+                (
+                    "a v2 document with no gear block",
+                    no_gear.to_string(),
+                    "missing required key `gear`",
+                ),
+                (
+                    "a cargo container outside the closed vocabulary",
+                    bad_container.to_string(),
+                    "outside the closed vocabulary",
+                ),
+                (
+                    "a zero-quantity cargo row",
+                    zero_qty.to_string(),
+                    "at least 1",
+                ),
+                (
+                    "a wear key that fails the schema pattern",
+                    bad_wear_key.to_string(),
+                    "additionalProperties is false",
+                ),
+                (
+                    "a wear slot that is neither a ResourceName nor null",
+                    wear_not_a_slot.to_string(),
+                    "expected string or null",
+                ),
+                (
+                    "a weapon with no slotType",
+                    weapon_missing_slot_type.to_string(),
+                    "missing required key `slotType`",
+                ),
+                (
+                    "an empty weapon ResourceName",
+                    empty_weapon.to_string(),
+                    "at least 1 character",
+                ),
+                (
+                    "a loadoutVersion nobody ships",
+                    future_version.to_string(),
+                    "loadoutVersion",
+                ),
+            ];
+
+            for (label, raw, needle) in cases {
+                let faults = refuse(&raw);
+                assert!(
+                    faults.iter().all(|f| f.key == IMPORT_DOC_KEY),
+                    "{label}: a malformed document blames the document, not a row"
+                );
+                let joined = faults
+                    .iter()
+                    .map(|f| f.message.as_str())
+                    .collect::<Vec<_>>()
+                    .join(" | ");
+                assert!(
+                    joined.contains(needle),
+                    "{label}: refusal must say why — wanted `{needle}`, got `{joined}`"
+                );
+            }
+            // The one that must NOT refuse, or the gate is indistinguishable from a broken button.
+            assert!(try_import(&base.to_string(), &[], &CompatFeed::default()).is_ok());
+        }
+
+        /// The T-686 requirement in as many words: the imported picks go through the SAME loadout
+        /// rules the panel uses, before anything is committed. A schema-valid document can still
+        /// describe a scope on no rifle or forty magazines in a chest rig.
+        #[test]
+        fn imported_picks_go_through_the_loadout_rules_before_commit() {
+            // 1. Capacity — a hand-authored file the export gate would never have written.
+            let items = capacity_catalog();
+            let over = picks_to_export(
+                &picks(&[("vest", "res://chest_rig")]),
+                &[row("vest", "res://mag_stanag", 4)],
+                "mp",
+            );
+            let faults = try_import(&over, &items, &CompatFeed::default())
+                .expect_err("over-capacity cargo must not be imported");
+            assert_eq!(faults.len(), 1);
+            assert_eq!(faults[0].key, "vest");
+            assert!(faults[0].message.contains("240 / 200 cm³"), "{faults:?}");
+
+            // 2. Compat — a ready feed carrying no `optic_on_weapon` edge rejects the optic.
+            let optic_doc = picks_to_export(
+                &picks(&[("primary", "res://rifle_m16"), ("optic", "res://acog")]),
+                &[],
+                "mp",
+            );
+            let ready = attachment_feed(&[]);
+            let faults = try_import(&optic_doc, &items, &ready)
+                .expect_err("an incompatible optic must not be imported");
+            assert!(faults.iter().any(|f| f.key == "optic"), "{faults:?}");
+
+            // 3. Attachments — the packed set `arsenal_rules` cannot see is checked too.
+            let mut p = picks(&[("primary", "res://rifle_m16")]);
+            p.insert(
+                attachments_key("primary"),
+                pack_attachments(&["res://supp".into()]),
+            );
+            let att_doc = picks_to_export(&p, &[], "mp");
+            let faults = try_import(&att_doc, &items, &ready)
+                .expect_err("a stranded attachment must not be imported");
+            assert!(faults.iter().any(|f| f.key == "primary"), "{faults:?}");
+
+            // And all three land on a live import once the feed vouches for them.
+            let feed = CompatFeed::default();
+            assert!(try_import(&optic_doc, &items, &feed).is_ok());
+            assert!(try_import(&att_doc, &items, &feed).is_ok());
+        }
+
+        /// T-504's argument survives the trip in: undeliverable cargo WARNS, it never blocks.
+        /// The website cannot see the slot's kit prefab, so a refusal here would stop an author
+        /// importing a loadout the mod delivers perfectly.
+        #[test]
+        fn undeliverable_cargo_does_not_block_an_import() {
+            // Three magazines aimed at a vest this document does not wear.
+            let raw = picks_to_export(&HashMap::new(), &[row("vest", "res://mag_stanag", 3)], "mp");
+            let back = try_import(&raw, &capacity_catalog(), &CompatFeed::default())
+                .expect("an unworn container must not refuse an import");
+            assert_eq!(back.cargo.len(), 1);
+            // …and the verdict badge still counts it once it has landed.
+            let faults = loadout_faults(
+                &back.picks,
+                &back.cargo,
+                &CompatFeed::default(),
+                &index_by_name(&capacity_catalog()),
+                Some(&kit(&[])),
+            );
+            assert_eq!(faults.len(), 1, "{faults:?}");
+            assert_eq!(faults[0].key, "vest");
+        }
+
+        /// The v1 branch: the locked `gear` derivation, run backwards.
+        #[test]
+        fn the_v1_branch_imports_through_the_locked_derivation_backwards() {
+            let raw = serde_json::json!({
+                "loadoutVersion": "1",
+                "modpackId": "legacy",
+                "gear": {
+                    "primary": "res://rifle_m16",
+                    "uniform": "res://bdu_blouse",
+                    "vest": "res://chest_rig",
+                    "helmet": "res://helmet_pasgt",
+                    "optic": "res://acog",
+                    "magazine": serde_json::Value::Null,
+                },
+            })
+            .to_string();
+            let back = try_import(&raw, &[], &CompatFeed::default()).expect("a v1 document");
+            assert_eq!(back.loadout_version, "1");
+            assert_eq!(back.picks.get("primary").unwrap(), "res://rifle_m16");
+            assert_eq!(back.picks.get("jacket").unwrap(), "res://bdu_blouse");
+            assert_eq!(back.picks.get("headCover").unwrap(), "res://helmet_pasgt");
+            assert_eq!(back.picks.get("optic").unwrap(), "res://acog");
+            // v1 has ONE vest key, and the two Arsenal rows collapse into it one-way. It lands on
+            // `vest`; claiming `armoredVest` would invent armour the file never described.
+            assert_eq!(back.picks.get("vest").unwrap(), "res://chest_rig");
+            assert!(back.picks.get("armoredVest").is_none());
+            assert!(back.picks.get("magazine").is_none(), "null is not a pick");
+            // v1 carries no cargo at all, so the key is absent — a later seed may still fire.
+            assert!(back.cargo.is_empty() && !back.cargo_present);
+            // A v2 document's DERIVED gear block must not be read in its place: this file's gear
+            // names a different rifle, and the v2 fields win.
+            let mut lying = v2_file(&picks(&[("primary", "res://rifle_m16")]), &[]);
+            lying["gear"]["primary"] = serde_json::json!("res://not_the_rifle");
+            let back = try_import(&lying.to_string(), &[], &CompatFeed::default()).unwrap();
+            assert_eq!(back.picks.get("primary").unwrap(), "res://rifle_m16");
+        }
+
+        /// `cargo` key PRESENCE is the T-068.15.2 anti-reseed marker, and an import must not
+        /// invent it: a file that never mentions cargo has not authored an empty cargo list.
+        #[test]
+        fn the_cargo_key_marker_follows_the_document() {
+            let mut silent = v2_file(&picks(&[("primary", "res://rifle_m16")]), &[]);
+            silent.as_object_mut().unwrap().remove("cargo");
+            let back = try_import(&silent.to_string(), &[], &CompatFeed::default()).unwrap();
+            assert!(
+                !back.cargo_present,
+                "a file with no cargo key must stay seed-eligible"
+            );
+            // Present-and-empty is the author having cleared it — that must stick.
+            let cleared = v2_file(&picks(&[("primary", "res://rifle_m16")]), &[]);
+            let back = try_import(&cleared.to_string(), &[], &CompatFeed::default()).unwrap();
+            assert!(back.cargo_present && back.cargo.is_empty());
+        }
+
+        /// The receipt counts what was APPLIED, and the modpack note warns without blocking.
+        #[test]
+        fn the_receipt_reports_what_landed_and_warns_on_a_foreign_modpack() {
+            let raw = picks_to_export(
+                &full_picks(),
+                &[row("vest", "res://mag_stanag", 1)],
+                "alpha",
+            );
+            let doc = try_import(&raw, &[], &CompatFeed::default()).unwrap();
+            let line = import_summary("kit.json", &doc, "alpha");
+            assert!(line.contains("4 weapon(s)"), "{line}");
+            assert!(line.contains("8 wear row(s)"), "{line}");
+            assert!(line.contains("1 cargo row(s)"), "{line}");
+            assert!(line.contains("Ctrl+Z"), "{line}");
+            assert!(!line.contains("modpack"), "matching modpack: {line}");
+            // A foreign modpack is a note, not a refusal.
+            let line = import_summary("kit.json", &doc, "bravo");
+            assert!(line.contains("authored against modpack alpha"), "{line}");
+            // "We do not know" on either side is not a mismatch.
+            let unknown = try_import(
+                &picks_to_export(&HashMap::new(), &[], ""),
+                &[],
+                &CompatFeed::default(),
+            )
+            .unwrap();
+            assert!(!import_summary("k.json", &unknown, "alpha").contains("modpack"));
+        }
+
+        /// T-686 Class-R: the import must reach the live document through EXACTLY ONE commit, so
+        /// Ctrl+Z restores the whole pre-import loadout rather than the last field of it.
+        ///
+        /// RED (N steps): replace the three `set`s with a `for (k, v) in doc.picks` loop that
+        /// calls `persist` per pick → "an import is ONE undo step, so apply_import applies the
+        /// whole document at once and has nothing to iterate — found a `for `". A textual
+        /// `persist(` count alone does NOT catch that shape (the loop has one call site), which is
+        /// why the loop itself is what this asserts on.
+        /// RED (ungated): call `apply_import` outside the `Ok(doc)` arm → the `try_import` pin.
+        /// RED (decoy, `#[cfg(any())]`): park the picker in a dead item → same failure.
+        #[test]
+        fn the_import_applies_in_one_commit() {
+            let live = live_production_src();
+            let tab = fn_body(&live, "pub fn ArsenalTab(");
+            assert!(
+                tab.contains("try_import("),
+                "the import must be gated on a live path"
+            );
+            assert!(
+                tab.contains("apply_import(doc, &its)"),
+                "only an accepted document may be applied"
+            );
+            assert!(
+                tab.contains("data-loadout-import"),
+                "the panel must carry an import control the author can reach"
+            );
+
+            let apply = fn_body(&live, "let apply_import =");
+            let commits = apply.matches("persist(").count();
+            assert_eq!(
+                commits, 1,
+                "an import is ONE undo step: apply_import must commit exactly once, found {commits}"
+            );
+            // The call-site count is necessary and NOT sufficient: one `persist(` inside a loop is
+            // still N undo steps. `apply_import` replaces the whole document with three signal
+            // writes, so it has nothing to iterate — and any iteration in it is the N-step shape.
+            for loopy in ["for ", "while ", "for_each", ".iter()"] {
+                assert!(
+                    !apply.contains(loopy),
+                    "an import is ONE undo step, so apply_import applies the whole document at \
+                     once and has nothing to iterate — found a `{loopy}`"
+                );
+            }
+            for needle in ["picks.set(", "cargo.set(", "cargo_present.set("] {
+                assert!(
+                    apply.contains(needle),
+                    "the apply must replace the whole loadout — missing {needle}"
+                );
+            }
+            assert!(
+                !apply.contains("set_loadout"),
+                "the apply must go through the same `persist` every other pick uses"
+            );
+        }
     }
 
     /// **The scrubber's own pin.** Every shape the Class-R pins in this crate claim to defeat is
