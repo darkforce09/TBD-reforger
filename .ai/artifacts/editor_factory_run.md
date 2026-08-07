@@ -3,13 +3,30 @@
 Program: waves 100–126 (77 tickets), authority `docs/platform/EDITOR_FACTORY_START.md`.
 Run started 2026-08-02 from 852f17a4 (plan adversarially verified: 20/20 invariants).
 
-**Close-marker numbering:** the wave-close ledger (wave.sh oracle 1) requires marker numbers to
-advance by exactly one from `wave 82 CLOSED` (c2dac546). Editor wave L therefore closes as marker
-M = L − 17 (100→83 … 126→109), with the editor label in the free text:
-`wave M CLOSED — editor wave L: …`. Oracle 2 cannot corroborate markers 83+ (plan rows carry the
-100+ labels), so wave gates after 100 pass `TBD_GATE_BASE_CONFIRM=<prev close sha>` after
-verifying the sha by hand. This is the documented hatch, not a bypass: membership is confirmed by
-the operator-side reading the tooling demands.
+**Close-marker numbering — DERIVE IT FROM GIT, NEVER FROM A FORMULA:**
+
+```sh
+git log --grep='^wave [0-9]\+ CLOSED' --format='%s' -1     # → the highest marker in the ledger
+```
+
+The next close is **that number + 1**. Nothing else. The ledger (wave.sh oracle 1) requires marker
+numbers to advance by exactly one and hard-refuses `n > high + 1` (`scripts/platform/wave.sh:2098`).
+
+> **The old `M = L − 17` formula was WRONG and was removed on 2026-08-07.** It held for waves
+> 100→111 (markers 83→94), then broke the moment waves 112–119 were deferred: editor wave **120**
+> closed at marker **95**, not 103, because markers advance sequentially regardless of which editor
+> waves run or in what packing width. A fresh orchestrator applying the formula to wave 121 would
+> write `wave 104 CLOSED`, and oracle 1 would refuse the gate — *"claims a wave that never opened."*
+> The marker and the editor-wave label are independent counters; only the git ledger knows the
+> marker.
+>
+> **At the last close (`1de39175`, editor wave 120 @ marker 95) the next marker is 96.**
+
+The editor label rides in the free text: `wave <marker> CLOSED — editor wave L: …`.
+Oracle 2 cannot corroborate markers 83+ (plan rows carry the 100+ labels), so wave gates after 100
+pass `TBD_GATE_BASE_CONFIRM=<prev close sha>` after verifying the sha by hand. This is the
+documented hatch, not a bypass: membership is confirmed by the operator-side reading the tooling
+demands.
 
 **Standing env on every wave.sh / cargo invocation:**
 `CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target` (never /tmp) ·
@@ -35,33 +52,35 @@ diagnosis) → registry flip + `distrobox-host-exec sh -c './scripts/ticket sync
 | 110 | 93 | T-644 T-648 T-668 | PASS (run 2; run 1 pre-fix) | 1B/1M/5m/13N → flip fixed in-wave | SHIPPED — viewshed (mirror BLOCKER fixed + wired end-to-end), transform gestures, state vocabulary; T-730..T-732 filed, T-729/T-726 widened |
 | 111 | 94 | T-645 T-655 T-693 | PASS (runs 1+2; re-run over blocker fix) | 1B/2M/4m/7N → fix CLEARED | SHIPPED — placement helpers (garrison split honestly), always-on validation panel, merge mission; BLOCKER (repeat-merge id collision) fixed in-wave 9ebcb8a9; T-733 T-734 filed |
 | — | — | **WAVES 112–119 DEFERRED TO NEXT WEEK** (operator budget pivot — 24 Rust tickets, serialize on mission_editor.rs) | | | |
-| 112 | 95 | T-649 T-686 T-692 | — | — | pending |
-| 113 | 96 | T-082 T-669 T-694 | — | — | pending |
-| 114 | 97 | T-633 T-651 T-695 | — | — | pending |
-| 115 | 98 | T-634 T-670 T-688 | — | — | pending |
-| 116 | 99 | T-069 T-690 T-696 | — | — | pending |
-| 117 | 100 | T-084 T-671 T-672 | — | — | pending |
-| 118 | 101 | T-637 T-698 T-699 | — | — | pending |
-| 119 | 102 | T-697 T-700 T-703 | — | — | pending |
+| 112 | assign at close | T-649 T-686 T-692 | — | — | pending |
+| 113 | assign at close | T-082 T-669 T-694 | — | — | pending |
+| 114 | assign at close | T-633 T-651 T-695 | — | — | pending |
+| 115 | assign at close | T-634 T-670 T-688 | — | — | pending |
+| 116 | assign at close | T-069 T-690 T-696 | — | — | pending |
+| 117 | assign at close | T-084 T-671 T-672 | — | — | pending |
+| 118 | assign at close | T-637 T-698 T-699 | — | — | pending |
+| 119 | assign at close | T-697 T-700 T-703 | — | — | pending |
 | 120 | 95 | T-701 T-706 | PASS (run 3; run 1 red on the ledger tripwire firing as designed, run 2 = fixup) | 0B/4M/5m/4N → all hardened pre-close | SHIPPED — per-entity hide + the one-pass 1.3 contract; ledger learned DeclaredPendingEmit; 9 reader-ambiguities + 3 prose residues fixed BEFORE any reader dispatched; unread gate live at 53 fields |
-| 121 | 104 | T-702 T-212 T-654 | — | — | pending |
-| 122 | 105 | T-673 T-674 T-675 | — | — | pending |
-| 123 | 106 | T-676 T-677 T-678 | — | — | pending |
-| 124 | 107 | T-679 T-680 T-681 | — | — | pending |
-| 125 | 108 | T-682 T-684 T-685 | — | — | pending |
-| 126 | 109 | T-689 T-705 | — | — | pending |
+| 121 | assign at close | T-702 T-212 T-654 | — | — | pending |
+| 122 | assign at close | T-673 T-674 T-675 | — | — | pending |
+| 123 | assign at close | T-676 T-677 T-678 | — | — | pending |
+| 124 | assign at close | T-679 T-680 T-681 | — | — | pending |
+| 125 | assign at close | T-682 T-684 T-685 | — | — | pending |
+| 126 | assign at close | T-689 T-705 | — | — | pending |
 
 ## Continuation recipe (compaction-proof — execute mechanically from any fresh context)
 
-State lives in the table above: the first non-`SHIPPED` row is the current wave. Per wave L
-(marker M = L−17), tickets from `awk -F'\t' '$1==L' docs/platform/wave_plan.tsv`:
+State lives in the table above: the first non-`SHIPPED` row is the current wave — **skip the
+`WAVES 112–119 DEFERRED` banner row and everything it covers unless the operator un-defers them;
+the next wave to run is 121.** The close marker is **not** derived from the wave number: read it
+from git (`git log --grep='^wave [0-9]\+ CLOSED' --format='%s' -1`, then +1 — see the top of this
+file). Per wave L, tickets from `awk -F'\t' '$1==L' docs/platform/wave_plan.tsv`:
 1. `bash scripts/mod/slice-worktree.sh new T-xxx` per ticket.
 2. Dispatch ≤3 slice agents (Agent tool, background): model **opus**, except any ticket whose
    owns includes `.c` under apps/mod/tbd-framework/ → model **fable**. Brief = registry summary
-   verbatim + the standing HARD RULES block (no sub-agents; no .py; distrobox-host-exec with
-   CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target never /tmp; explicit-path staging; slice gate
-   `bash scripts/platform/wave.sh gate --slice T-xxx` must PASS from the worktree; tree clean;
-   Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>).
+   verbatim + the standing HARD RULES block and the required report schema, both recorded in
+   **[`docs/platform/EDITOR_SLICE_BRIEF.md`](../../docs/platform/EDITOR_SLICE_BRIEF.md)** — paste
+   the block inline (it is 0.12% of the budget; making agents read it costs more than it saves).
 3. BARRIER: all agents report. Then merge each: `git merge --no-ff slice/T-xxx -m "T-xxx: <title>"`.
 4. Wave gate: `CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target TBD_WAVE_GENERATION_FLOOR=100
    TBD_GATE_WAVE=<L> bash scripts/platform/wave.sh gate` — when oracle 2 falls silent (markers 83+
@@ -74,6 +93,8 @@ State lives in the table above: the first non-`SHIPPED` row is the current wave.
    is real data loss, where continuing could destroy work.
 5. One Fable adversarial verifier over merged main (documents, never fixes; BLOCKERs fixed
    in-wave, else deferred tickets + diagnosis). Report → .ai/artifacts/editor_verify/waveL.md.
+   Brief + severity/triage table: **[`docs/platform/EDITOR_VERIFY_BRIEF.md`](../../docs/platform/EDITOR_VERIFY_BRIEF.md)**.
+   **Every wave, full adversarial, Fable 5 — operator decision 2026-08-07; not tiered, not traded.**
 6. `bash scripts/platform/wave.sh verified $(git rev-parse HEAD)` · registry: wave tickets →
    shipped, verifier tickets filed (next free T-7xx) · `distrobox-host-exec sh -c 'cd
    /home/Samuel/Projects/TBD-Reforger && ./scripts/ticket sync'` · update this file's table ·

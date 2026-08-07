@@ -556,9 +556,30 @@ The five most contended files are sequenced across waves rather than shared with
 ### Token budget
 
 Measured from the 2026-07-25 transcripts: **93.1M non-cache-read tokens per 5-hour window**, 73% of
-it cache *creation* — which is roughly fixed per agent, because every agent re-creates the system
-prompt plus the 88 KB `CLAUDE.md`. True cost per agent ≈ **824k**, about 4-5× what the reported
+it cache *creation*. True cost per agent ≈ **824k**, about 4-5× what the reported
 `subagent_tokens` figure suggests.
+
+> **CORRECTION (2026-08-07) — the "every agent re-creates the 88 KB `CLAUDE.md`" clause was wrong
+> and has been struck.** Re-measured exactly from the `usage` records of the 13-wave editor run
+> (68 subagents): every subagent's turn-1 context is ~22.3k tokens — 22,227 median for the 46
+> agents whose cwd was the repo root, 22,627 for the 21 whose cwd was `$HOME`. `CLAUDE.md` was
+> 22,347 tokens by itself, so it cannot have been in there: **0 of 68 subagents carried it**, and
+> only 5 ever read it explicitly. Subagents do not inherit the project `CLAUDE.md`.
+>
+> Where the tokens actually went, over 2,355,581,888 input-side tokens for one 13-wave run:
+>
+> | | token-turns | share |
+> |---|---:|---:|
+> | base context (system + tools + brief) | 220,587,879 | 9.4% |
+> | agent output resident (thinking, text, tool inputs) | 268,690,765 | 11.4% |
+> | **`Read` tool results resident** | **1,019,060,802** | **43.3%** |
+> | **`Bash` tool results resident** | **409,407,866** | **17.4%** |
+> | orchestrator (one 857-turn chat, mean context 478k) | 410,066,059 | 17.4% |
+>
+> Cost is cumulative, not a high-water mark: a token entering context at turn *n* of a *T*-turn
+> agent is re-read *T−n* times. That multiplier — not any fixed per-agent preamble — is the budget.
+> 618 of 987 `Read` calls (63%) re-read a path the agent had already read, costing 166,485,070
+> token-turns on their own. Guards: `cargo xtask ai guard` / `ai run`.
 
 | | |
 |---|--:|

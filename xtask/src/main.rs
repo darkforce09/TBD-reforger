@@ -2,6 +2,7 @@
 #![allow(clippy::unnecessary_sort_by)]
 #![allow(clippy::unnecessary_unwrap)]
 
+mod ai;
 mod check;
 mod cmds;
 mod codegen_schema;
@@ -86,6 +87,24 @@ enum TopCmd {
     /// Flags mirror the original: [--repack] [--check] [TICKET...]
     #[command(name = "slice-collisions")]
     SliceCollisions {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+    /// Agent context guards + output filtering (token-efficiency rework)
+    Ai {
+        #[command(subcommand)]
+        cmd: AiCmd,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+enum AiCmd {
+    /// PreToolUse hook: reads the harness hook JSON on stdin.
+    /// exit 0 = allow, exit 2 = deny (reason on stderr). Fails OPEN on anything unexpected.
+    Guard,
+    /// Run a command and print a filtered view of its output. Never hides a failure: a
+    /// non-zero exit also prints the raw tail, and verdict lines always pass through.
+    Run {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
@@ -459,6 +478,10 @@ fn run() -> Result<u8> {
             Ok(code)
         }
         TopCmd::SliceCollisions { args } => slice_collisions::run(&args),
+        TopCmd::Ai { cmd } => match cmd {
+            AiCmd::Guard => Ok(ai::cmd_guard()),
+            AiCmd::Run { args } => ai::cmd_run(&args),
+        },
         TopCmd::Gen { cmd } => {
             let code = match cmd {
                 GenCmd::FontTable { bdf } => node_free::gen_font_table(&bdf)?,
