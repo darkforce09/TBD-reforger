@@ -20,7 +20,9 @@ use crate::eden_env::author_env;
 use crate::eden_layout::{
     BTN_ICON, DISABLED_GLYPH, DIVIDER, HOVER_FILL, MENU_GUTTER, STRIP, TOGGLED_PLATE,
 };
-use crate::ui::{cn, MaterialIcon};
+// T-633 — the scrubber and the weather picker are the shared Aegis primitives now, not raw
+// `<input type="range">` / `<select>`.
+use crate::ui::{cn, MaterialIcon, Select, Slider};
 
 // Top Command Strip (T-172 B9) — menu bar · editable title · time scrubber + weather ·
 // History (disabled) · Undo/Redo · Save dialog · Export · Settings.
@@ -295,6 +297,18 @@ struct MirroredField {
     column: &'static str,
     label: &'static str,
 }
+
+/// T-633 — the inline weather picker's `(wire value, label)` table. A const rather than four
+/// `<option>` tags in the view, because [`crate::ui::Select`] takes its options as data: the wire
+/// enum and the words the author reads then have ONE definition in this file instead of markup that
+/// drifts. Values are the schema's snake_case weather enum — the same strings `MIRROR_WEATHER`
+/// mirrors onto the `missions` row, so the picker and the PATCH cannot disagree by construction.
+const WEATHER_OPTIONS: &[(&str, &str)] = &[
+    ("clear", "Clear"),
+    ("overcast", "Overcast"),
+    ("heavy_rain", "Heavy Rain"),
+    ("dense_fog", "Dense Fog"),
+];
 
 const MIRROR_TIME: MirroredField = MirroredField {
     column: "time_of_day",
@@ -1134,52 +1148,53 @@ pub fn TopCommandStrip(
             // Inline time scrubber + weather (screen 05 center) — same doc fields as the
             // Mission Settings dialog (`update_environment`, one undo step per commit), and
             // T-192 the same `missions` row mirror, so the two entry points cannot disagree.
+            // T-633 — both controls are now the Aegis primitives from `ui`, not browser chrome. The
+            // scrubber painted its track and thumb in the UA accent (`accent-[--color-primary]`
+            // only tints the widget; the shape stayed the browser's) and the weather picker carried
+            // a native arrow. The handlers below are UNCHANGED in substance: the same `author_env`
+            // write and the same `RowMirror` commit, still on the SETTLE event only — `Slider`
+            // exposes `on_change` (native `change`) and no `input`, so the ~30 values/second a drag
+            // produces reach the mirror's dedupe→debounce→single-flight exactly as before, and the
+            // primitive adds no signal and no re-render of its own to that path.
             <div class="flex shrink-0 items-center gap-2">
-                <input
-                    type="range"
-                    min="0"
-                    max="1439"
-                    step="1"
-                    aria-label="Time of day"
-                    class="w-28 accent-[--color-primary]"
-                    prop:value=move || {
-                        hhmm_to_minutes(&env.get().time).unwrap_or(360).to_string()
-                    }
-                    on:change=move |ev| {
+                <Slider
+                    label="Time of day"
+                    min=0
+                    max=1439
+                    class="w-28"
+                    value=Signal::derive(move || {
+                        hhmm_to_minutes(&env.get().time).unwrap_or(360) as i32
+                    })
+                    on_change=Callback::new(move |mins: i32| {
                         #[cfg(target_arch = "wasm32")]
                         {
-                            let v: u32 = event_target_value(&ev).parse().unwrap_or(0);
-                            let hhmm = minutes_to_hhmm(v);
+                            let hhmm = minutes_to_hhmm(mins.clamp(0, 1439) as u32);
                             author_env("time", hhmm.as_str().into());
                             row_mirror.set_time(&hhmm);
                         }
                         #[cfg(not(target_arch = "wasm32"))]
-                        let _ = &ev;
-                    }
+                        let _ = mins;
+                    })
                 />
+                // The live readout IS the drag feedback — the reason `Slider` needs no per-pixel
+                // callback. It re-reads the same `env` memo the scrubber paints from.
                 <span class="font-mono text-xs tabular-nums text-on-surface-variant">
                     {move || env.get().time}
                 </span>
-                <select
-                    aria-label="Weather"
-                    class="rounded border border-outline-variant/40 bg-surface-container px-1.5 py-0.5 text-xs text-on-surface"
-                    prop:value=move || env.get().weather
-                    on:change=move |ev| {
+                <Select
+                    label="Weather"
+                    options=WEATHER_OPTIONS
+                    value=Signal::derive(move || env.get().weather)
+                    on_change=Callback::new(move |w: String| {
                         #[cfg(target_arch = "wasm32")]
                         {
-                            let w = event_target_value(&ev);
                             author_env("weather", w.as_str().into());
                             row_mirror.set_weather(&w);
                         }
                         #[cfg(not(target_arch = "wasm32"))]
-                        let _ = &ev;
-                    }
-                >
-                    <option value="clear">"Clear"</option>
-                    <option value="overcast">"Overcast"</option>
-                    <option value="heavy_rain">"Heavy Rain"</option>
-                    <option value="dense_fog">"Dense Fog"</option>
-                </select>
+                        let _ = w;
+                    })
+                />
             </div>
             <span class=DIVIDER></span>
             // History — present-but-disabled (React parity; version list lands with the history
@@ -2288,6 +2303,111 @@ mod t692_help_surface {
         assert!(
             code.contains("hint_open.get()"),
             "the checkmark gutter must read the LIVE open state, not a constant"
+        );
+    }
+}
+
+/// T-633 — the top strip's two native controls are gone.
+///
+/// The defect was narrow and visible: the time scrubber was a raw `<input type="range">` whose only
+/// styling was `accent-[--color-primary]` — which tints the UA widget and nothing else, so it still
+/// drew a browser-blue rail and a browser-shaped thumb against Aegis `#adc6ff` — and the weather
+/// picker was a raw `<select>` wearing the platform's native arrow. Both are now `crate::ui`
+/// primitives (created by this ticket; see the pins in `ui.rs` for what they guarantee).
+///
+/// Source pins, on scrubbed source: this is a Leptos view a native test cannot render. Absence
+/// needles are assembled from fragments so this module's own prose cannot satisfy them.
+#[cfg(test)]
+mod t633_aegis_controls {
+    use super::WEATHER_OPTIONS;
+    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+
+    /// THE FIX, stated as an absence. No raw range input and no raw select may remain in the strip.
+    /// Checked on the string-KEPT source, because `type="range"` is a literal and that is exactly
+    /// where the defect lived.
+    #[test]
+    fn no_raw_browser_control_remains_in_the_strip() {
+        let src = live_source(include_str!("eden_top_strip.rs"));
+        let raw_range = [r#"type=""#, r#"range""#].concat();
+        assert!(
+            !src.contains(&raw_range),
+            "T-633: the time scrubber must be the ui::Slider primitive, not a raw range input"
+        );
+        let raw_select = ["<sel", "ect"].concat();
+        assert!(
+            !src.contains(&raw_select),
+            "T-633: the weather picker must be the ui::Select primitive, not a raw select element"
+        );
+        // The accent-colour escape hatch is the thing that LOOKED like a fix and was not: it tints
+        // the UA widget and leaves its geometry alone. It must be gone, not merely supplemented.
+        let accent = ["accent-[--color-", "primary]"].concat();
+        assert!(
+            !src.contains(&accent),
+            "T-633: `accent-color` only tints browser chrome — the control must paint its own parts"
+        );
+    }
+
+    /// …and the primitives are actually WIRED, in the strip's own subtree. An absence pin alone is
+    /// satisfied by deleting the controls, which is not the fix.
+    #[test]
+    fn the_strip_renders_the_aegis_primitives() {
+        let code = live_code(include_str!("eden_top_strip.rs"));
+        let body = only_body(&code, "pub fn TopCommandStrip(");
+        for needle in ["<Slider", "<Select", "options=WEATHER_OPTIONS"] {
+            assert!(
+                body.contains(needle),
+                "T-633: the top strip must render `{needle}` — the raw controls were replaced, not \
+                 removed"
+            );
+        }
+        // The import is by name, so a stale `ui::` glob cannot make the pin above pass on nothing.
+        assert!(
+            code.contains("use crate::ui::{cn, MaterialIcon, Select, Slider}"),
+            "T-633: the strip must import the two primitives by name from the shared ui module"
+        );
+    }
+
+    /// **The debounce is not regressed.** T-192's whole point is that a held scrubber emits ~30
+    /// values/second and the `missions` row gets ONE PATCH per settle. The commit path is unchanged
+    /// by this ticket — `author_env` then `row_mirror.set_time` — and it hangs off the primitive's
+    /// `on_change` (the native `change`), never an input/drag event. `ui.rs`'s own pins prove the
+    /// primitive has no `on:input`; this proves the STRIP did not grow one around it.
+    #[test]
+    fn the_scrubber_still_commits_only_on_settle() {
+        let code = live_code(include_str!("eden_top_strip.rs"));
+        let body = only_body(&code, "pub fn TopCommandStrip(");
+        assert!(
+            body.contains("on_change=Callback::new(move |mins: i32|"),
+            "T-633: the scrubber commits through the primitive's settle callback"
+        );
+        for step in ["author_env(", "row_mirror.set_time(&hhmm)"] {
+            assert!(
+                body.contains(step),
+                "T-633: the T-192 mirror path (`{step}`) must survive the control swap"
+            );
+        }
+        // The live readout is what makes a settle-only callback sufficient: the operator sees the
+        // time move during the drag because the label re-reads the same `env` memo.
+        assert!(
+            body.contains("env.get().time"),
+            "T-633: the HH:MM readout is the drag feedback — without it, settle-only would feel dead"
+        );
+    }
+
+    /// The option table is data, and it is the wire enum. A picker whose values drifted from the
+    /// schema's weather strings would author a document the mod cannot read, and `MIRROR_WEATHER`
+    /// would mirror the drift onto the `missions` row.
+    #[test]
+    fn the_weather_options_are_the_wire_enum() {
+        let values: Vec<&str> = WEATHER_OPTIONS.iter().map(|(v, _)| *v).collect();
+        assert_eq!(
+            values,
+            vec!["clear", "overcast", "heavy_rain", "dense_fog"],
+            "T-633: the picker's values are the schema's snake_case weather enum, in order"
+        );
+        assert!(
+            WEATHER_OPTIONS.iter().all(|(_, label)| !label.is_empty()),
+            "every option needs a human label — a blank row is an unpickable option"
         );
     }
 }
