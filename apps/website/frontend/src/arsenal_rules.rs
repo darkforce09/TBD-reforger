@@ -1159,7 +1159,8 @@ fn validate_against_schema(
 
 /// Walk **every schema position reachable in `root`** and refuse anything this build cannot fully
 /// evaluate: an unsupported keyword, a keyword whose value has an unimplemented form, an
-/// unresolvable `$ref`, a `$ref` carrying siblings, a `patternProperties` key this matcher cannot
+/// unresolvable `$ref`, a `$ref` carrying siblings, a `$ref` CHAIN (a `$ref` whose target is itself
+/// a `$ref` — [`schema_deref`] resolves one hop only), a `patternProperties` key this matcher cannot
 /// parse.
 ///
 /// Structural, never keyword-sniffing. It descends into [`SCHEMA_NAMED_SUBSCHEMAS`] values,
@@ -1167,8 +1168,10 @@ fn validate_against_schema(
 /// audited as a schema *whatever it contains*. `{"maxItems": 1}` in `$defs` is therefore reported,
 /// where the guard this replaces skipped it for carrying no keyword the guard recognised.
 ///
-/// `visited` holds the `$ref` strings already followed: a `$def` is audited once, and a
-/// self-referential one terminates instead of recursing forever.
+/// `visited` holds the `$ref` strings already followed: a `$def` is audited once, and one that
+/// reaches itself through a subschema (`{"items": {"$ref": "#/$defs/self"}}`) terminates instead of
+/// recursing forever. A `$ref` that points STRAIGHT at another `$ref` never gets that far — it is
+/// refused above as a chain, which is also what closes the plain `$ref`-to-itself cycle.
 fn audit_schema_support(
     root: &serde_json::Value,
     node: &serde_json::Value,
@@ -1209,6 +1212,23 @@ fn audit_schema_support(
         }
         match (map["$ref"].as_str(), schema_deref(root, node)) {
             (Some(r), Some(target)) => {
+                // A `$ref` whose TARGET is itself a `$ref` is a CHAIN — or, when it comes back
+                // round, a CYCLE. [`schema_deref`] resolves exactly ONE hop and the document walk
+                // never re-derefs, so the walk replaces this node with a target that is nothing but
+                // another pointer and then checks NOTHING. This audit, meanwhile, follows the chain
+                // to the assertions at the end of it and passes it clean — the guard calling a
+                // schema fully supported while the walk reads none of it, which is the exact
+                // fail-open shape T-735 exists to close.
+                //
+                // Refuse rather than implement chain-following: "this importer does not follow $ref
+                // chains" is honest and fails CLOSED, where a chain-follower invites cycle-detection
+                // bugs in the one code path whose whole job is not to lie.
+                if target.get("$ref").is_some() {
+                    out.refuse(format!(
+                        "{path}: `$ref` points at `{r}`, which is itself a $ref — this importer follows exactly one hop, so it refuses rather than skipping every assertion behind the chain"
+                    ));
+                    return;
+                }
                 if !visited.iter().any(|seen| seen == r) {
                     visited.push(r.to_string());
                     audit_schema_support(root, target, r, visited, out);
@@ -1319,18 +1339,27 @@ fn audit_schema_support(
         audit_schema_support(root, branch, &format!("{path}/oneOf/{i}"), visited, out);
     }
     for single in SCHEMA_SUBSCHEMA_KEYWORDS {
-        // `false`/`true` are the two boolean schemas, handled by the walk; anything else that is
-        // not an object was refused by the form check above, so only objects descend here.
+        // Only objects descend, and the two keywords get there differently. `additionalProperties`
+        // accepts the boolean schemas `true`/`false`, so its form check passes them and the
+        // DOCUMENT WALK implements them ("admits anything" / "closes the object"); they are simply
+        // not subschemas to recurse into. `items` accepts no boolean at all — its form check above
+        // already REFUSED one, along with the tuple form. So a non-object here is either handled
+        // elsewhere or already refused; neither is a check skipped in silence.
         if let Some(child) = map.get(*single).filter(|v| v.is_object()) {
             audit_schema_support(root, child, &format!("{path}/{single}"), visited, out);
         }
     }
 }
 
-/// `#/a/b`-style local pointer resolution. `None` = a `$ref` this checker will not follow (remote,
-/// a pointer into nothing, or a `$ref` that is not even a string), which the caller turns into a
-/// refusal. The `as_str()?` is deliberate: `{"$ref": 5}` used to answer "there is no $ref here",
-/// which made a node with no other keyword a node with nothing to check.
+/// `#/a/b`-style local pointer resolution, **one hop and one hop only** — the returned value is
+/// whatever sits at the pointer, `$ref` and all, and no caller re-derefs it. That is why
+/// [`audit_schema_support`] refuses a target that is itself a `$ref`: following the chain here would
+/// mean owning cycle detection, and the walk would still be reading the first hop.
+///
+/// `None` = a `$ref` this checker will not follow (remote, a pointer into nothing, or a `$ref` that
+/// is not even a string), which the caller turns into a refusal. The `as_str()?` is deliberate:
+/// `{"$ref": 5}` used to answer "there is no $ref here", which made a node with no other keyword a
+/// node with nothing to check.
 fn schema_deref<'a>(
     root: &'a serde_json::Value,
     node: &'a serde_json::Value,
@@ -2822,5 +2851,127 @@ mod tests {
         );
         doc["tags"] = serde_json::json!(["ok"]);
         assert!(validate_against_schema(&single, &doc).is_ok());
+    }
+
+    /* ═══════ wave 128 — the fourth fail-open form: `$ref` CHAINS, and the audit that blessed them ═══════ */
+
+    /// **`$ref -> $ref -> assertions` validated NOTHING, and the T-735 audit passed it clean.**
+    ///
+    /// [`schema_deref`] resolves exactly one hop and no caller re-derefs, so the document walk
+    /// replaced the node with a target that was itself nothing but a pointer and then checked no
+    /// assertion at all — `{"modpackId": 123}` came back `Ok` against `{"type": "string"}` at the
+    /// far end. The audit made that WORSE rather than catching it: the audit did follow the chain,
+    /// reached the assertions, found every keyword supported, and reported the schema fully
+    /// readable — the guard vouching for rules the walk never read, which is the exact shape T-735
+    /// exists to close.
+    ///
+    /// Refusal, not chain-following, is the fix: "this importer follows one hop" is honest and
+    /// fails CLOSED, where a chain-follower would put cycle detection inside the one code path
+    /// whose entire job is not to lie. Unreachable through the shipped file today — every `$ref` in
+    /// it is single-hop — and one ordinary `$defs` refactor away, with every other pin still green.
+    #[test]
+    fn a_ref_chain_is_refused_rather_than_checking_nothing() {
+        let chained = shipped_schema_with(|s| {
+            s["$defs"]["tail"] = serde_json::json!({"type": "string", "minLength": 2});
+            s["$defs"]["hop"] = serde_json::json!({"$ref": "#/$defs/tail"});
+            s["oneOf"][0]["properties"]["modpackId"] = serde_json::json!({"$ref": "#/$defs/hop"});
+        });
+
+        // The document the chain used to ACCEPT: an integer where the far end says string.
+        let mut bad = a_valid_v1_document();
+        bad["modpackId"] = serde_json::json!(123);
+        let faults = validate_against_schema(&chained, &bad)
+            .expect_err("a $ref chain must refuse, not check nothing and answer Ok");
+        assert!(
+            faults
+                .iter()
+                .any(|f| f.contains("#/$defs/hop") && f.contains("itself a $ref")),
+            "the refusal must name the pointer whose assertions it dropped: {faults:?}"
+        );
+
+        // Document-INDEPENDENT, like every other refusal T-735 added: a chain this build cannot
+        // follow is refused for the documents that would have passed too. A refusal that waited for
+        // a document to break the far-end rule would leave the hole open for every document that
+        // does not — which is how the first three forms survived a green suite.
+        assert!(
+            validate_against_schema(&chained, &a_valid_v1_document()).is_err(),
+            "the chain refusal must not wait for a document that happens to break the far end"
+        );
+
+        // CONTROL — the single hop this importer DOES implement still asserts, both keywords, and
+        // still passes a good document. Without this the assertions above stay green if `$ref`
+        // support is simply amputated, which is fail-closed by uselessness rather than by contract.
+        let single = shipped_schema_with(|s| {
+            s["$defs"]["tail"] = serde_json::json!({"type": "string", "minLength": 2});
+            s["oneOf"][0]["properties"]["modpackId"] = serde_json::json!({"$ref": "#/$defs/tail"});
+        });
+        let typed = validate_against_schema(&single, &bad)
+            .expect_err("the implemented single-hop $ref must still assert `type`");
+        assert!(
+            typed.iter().any(|f| f.contains("expected string")),
+            "a single hop must yield the document FAULT, not a refusal: {typed:?}"
+        );
+        let mut short = a_valid_v1_document();
+        short["modpackId"] = serde_json::json!("m");
+        assert!(
+            validate_against_schema(&single, &short).is_err(),
+            "the far-end `minLength` must be live too, or the control proves only half a hop"
+        );
+        assert!(validate_against_schema(&single, &a_valid_v1_document()).is_ok());
+    }
+
+    /// **A `$ref` CYCLE is the same hole with the far end removed** — one hop of deref lands back on
+    /// a bare `$ref`, so the walk checked nothing, and the audit walked the loop on its `visited`
+    /// bookkeeping alone and called it supported. The one-hop rule closes both shapes at once:
+    /// a cycle is just a chain that comes back round.
+    #[test]
+    fn a_ref_cycle_is_refused_by_the_same_one_hop_rule() {
+        let mut bad = a_valid_v1_document();
+        bad["modpackId"] = serde_json::json!(123);
+
+        // The tightest knot there is: a `$def` that is nothing but a pointer at itself.
+        let direct = shipped_schema_with(|s| {
+            s["$defs"]["knot"] = serde_json::json!({"$ref": "#/$defs/knot"});
+            s["oneOf"][0]["properties"]["modpackId"] = serde_json::json!({"$ref": "#/$defs/knot"});
+        });
+        let faults = validate_against_schema(&direct, &bad)
+            .expect_err("a $ref cycle must refuse, not accept a document it never examined");
+        assert!(
+            faults
+                .iter()
+                .any(|f| f.contains("#/$defs/knot") && f.contains("itself a $ref")),
+            "the refusal must name the cycle's pointer: {faults:?}"
+        );
+        assert!(
+            validate_against_schema(&direct, &a_valid_v1_document()).is_err(),
+            "a cycle is unreadable for every document, including the ones that would have passed"
+        );
+
+        // Two-step: a -> b -> a. Nothing at either end is ever an assertion.
+        let pair = shipped_schema_with(|s| {
+            s["$defs"]["ping"] = serde_json::json!({"$ref": "#/$defs/pong"});
+            s["$defs"]["pong"] = serde_json::json!({"$ref": "#/$defs/ping"});
+            s["oneOf"][0]["properties"]["modpackId"] = serde_json::json!({"$ref": "#/$defs/ping"});
+        });
+        let two = validate_against_schema(&pair, &bad)
+            .expect_err("a two-step $ref cycle must refuse as loudly as a one-step one");
+        assert!(
+            two.iter()
+                .any(|f| f.contains("#/$defs/pong") && f.contains("itself a $ref")),
+            "the refusal must name the hop it would not follow: {two:?}"
+        );
+
+        // PRECISION — the rule bans `$ref`-at-a-`$ref`, NOT recursion. A `$def` that reaches itself
+        // through a subschema still resolves in one hop at every position, is terminated by
+        // `visited`, and must keep validating. A fix that banned self-reference outright would pass
+        // every assertion above and refuse a schema this importer can read perfectly well.
+        let recursive = shipped_schema_with(|s| {
+            s["$defs"]["rec"] =
+                serde_json::json!({"type": "array", "items": {"$ref": "#/$defs/rec"}});
+        });
+        assert!(
+            validate_against_schema(&recursive, &a_valid_v1_document()).is_ok(),
+            "recursion through a subschema is one hop at every step — it must still be supported"
+        );
     }
 }
