@@ -71,7 +71,7 @@ diagnosis) → registry flip + `distrobox-host-exec sh -c './scripts/ticket sync
 | 116 | 100 | T-069 T-690 T-696 | PASS 30/30 (run 1, **no BASE_CONFIRM needed** — see below) | 2M/2m/3N | SHIPPED — markers authored on briefings[] (the ticket's markersById premise was WRONG and was refused; premise corrected in the registry), compile emits structured diagnostics (six T-216 silent drops now speak), locations + bookmarks; T-759..T-763 filed |
 | 117 | 101 | T-084 T-671 T-672 | PASS 30/30 (run 1) | 1M/2m/1N | SHIPPED — search grammar (classname-TAIL decision made and pinned), mission presentation (**three live bugs found and fixed**), connection graph (see+check in full, one edge verb short by design); T-764..T-768 filed |
 | 118 | 102 | T-637 T-698 T-699 | PASS 30/30 (run 1) | 1M/3m/1N | SHIPPED — 240px dock equalisation (input-critical geometry, unprojection pinned), clipboard exporters, loadout buffer; the T-634 tripwire fired and was INVERTED not weakened; **verifier REFUTED two slice claims** (T-769, and T-759's attempted widening); T-769..T-773 filed |
-| 119 | assign at close | T-697 T-700 T-703 | — | — | pending |
+| 119 | 103 | T-697 T-700 T-703 | PASS 30/30 (run 1) | 2M/1m/4N | SHIPPED — document search + selection filter (one query language across four surfaces), numeric nudge + shared SearchBox, **keybinding collision test that found bindings shipped undocumented for the whole programme**; T-774..T-776 filed. **RUN COMPLETE: 24/24 tickets, 8/8 gates PASS on run 1, zero quarantines, zero BLOCKERs.** |
 | 120 | 95 | T-701 T-706 | PASS (run 3; run 1 red on the ledger tripwire firing as designed, run 2 = fixup) | 0B/4M/5m/4N → all hardened pre-close | SHIPPED — per-entity hide + the one-pass 1.3 contract; ledger learned DeclaredPendingEmit; 9 reader-ambiguities + 3 prose residues fixed BEFORE any reader dispatched; unread gate live at 53 fields |
 | 121 | assign at close | T-702 T-212 T-654 | — | — | pending |
 | 122 | assign at close | T-673 T-674 T-675 | — | — | pending |
@@ -232,6 +232,22 @@ serialisation, not a hang).
   gate; compile.sh --selftest once per wave proves the gate can fail.
 
 ## Deferred tickets filed by verifiers
+
+- **T-774** (W119/MAJOR-1) ⚠️ **The census T-703 built to fix "2 of 11 listeners" itself sees
+  11 of 13.** `faction_manager.rs:70` and `orbat_manager.rs:249` install window keydowns, both
+  mounted from `mission_editor.rs` (one via an `eden_chrome` re-export, which is why a symbol search
+  missed it). Harmless today — both bind Escape only, gated on open state — but both sit outside the
+  growth tripwire AND the coverage pins, so a key added to either ships undocumented and
+  collision-unchecked with everything green. One line per file. **Also: the slice's "39 bindings"
+  is unsubstantiated — the verifier's parser counts 32.**
+- **T-775** (W119/MAJOR-2, PRE-EXISTING): **focusing a coordinate field and clicking away without
+  typing overwrites the document's precise value with a rounded one** (412.37 → 412), with a real
+  write and a real undo step — no equality check anywhere in the path. T-700's nudge inherits it
+  through `seed()`, so nudging 412.37 commits 413. One-line fix (skip `on_commit` when the parsed
+  draft equals the last settled value) kills the rounding, the no-op write and the extra undo step.
+- **T-776** (W119/NIT-1..4): three census guards weaker than they read (substring live-state check,
+  extractor-uniqueness pin scoped to seven files, a closure reading neither `key()` nor `code()` is
+  silently dropped) plus a mislabelled hit row.
 
 > **⚠️ TWO SLICE CLAIMS FROM WAVE 118 WERE REFUTED BY THE VERIFIER. Do not scope remediation off
 > either.** (1) T-637's `CONTAINER_H` rationale — see T-769; the smoke would have failed LOUDLY,
