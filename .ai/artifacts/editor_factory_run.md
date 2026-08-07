@@ -76,8 +76,9 @@ the next wave to run is 121.** The close marker is **not** derived from the wave
 from git (`git log --grep='^wave [0-9]\+ CLOSED' --format='%s' -1`, then +1 — see the top of this
 file). Per wave L, tickets from `awk -F'\t' '$1==L' docs/platform/wave_plan.tsv`:
 1. `bash scripts/mod/slice-worktree.sh new T-xxx` per ticket.
-2. Dispatch ≤3 slice agents (Agent tool, background): model **opus**, except any ticket whose
-   owns includes `.c` under apps/mod/tbd-framework/ → model **fable**. Brief = registry summary
+2. Dispatch ≤3 slice agents (Agent tool, background): model **opus** for ALL coders — Rust and
+   Enfusion `.c` alike (operator cost amendment 2026-08-07; supersedes the Enfusion→Fable rule —
+   do not resurrect it from older copies). Verifiers stay **fable**. Brief = registry summary
    verbatim + the standing HARD RULES block and the required report schema, both recorded in
    **[`docs/platform/EDITOR_SLICE_BRIEF.md`](../../docs/platform/EDITOR_SLICE_BRIEF.md)** — paste
    the block inline (it is 0.12% of the budget; making agents read it costs more than it saves).
