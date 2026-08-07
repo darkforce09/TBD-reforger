@@ -23,10 +23,22 @@ numbers to advance by exactly one and hard-refuses `n > high + 1` (`scripts/plat
 > **At the last close (`1de39175`, editor wave 120 @ marker 95) the next marker is 96.**
 
 The editor label rides in the free text: `wave <marker> CLOSED — editor wave L: …`.
-Oracle 2 cannot corroborate markers 83+ (plan rows carry the 100+ labels), so wave gates after 100
-pass `TBD_GATE_BASE_CONFIRM=<prev close sha>` after verifying the sha by hand. This is the
-documented hatch, not a bypass: membership is confirmed by the operator-side reading the tooling
-demands.
+
+**ORACLE 2 STOPS DEMANDING THE HATCH AT MARKER 99 — measured, not guessed (2026-08-07).**
+`wave_plan.tsv` is SILENT for waves 83–98, which is why every gate from editor wave 100 to 115 had
+to pass `TBD_GATE_BASE_CONFIRM=<prev close sha>`. But the plan DOES carry rows for waves 99–103
+(wave 99 = the 78-row platform backlog; 100–103 = the editor waves of the same number). So once a
+close marker reaches 99, the next gate corroborates against those coincidental rows and the hatch
+is no longer requested — **verified live at the wave-116 gate, which passed 30/30 with no
+`TBD_GATE_BASE_CONFIRM` at all.** This is a NUMBER COLLISION, not agreement about your wave, and it
+is benign: the one thing that could have hard-refused is wave 99's only non-`shipped` ticket,
+T-449, and it is `cancelled`, which `wave_ledger_unshipped_at` (wave.sh:2044) accepts alongside
+`shipped`. **If a gate demands the hatch when this note says it should not, stop and read it — do
+not reflexively confirm.**
+
+Derive the base FROM THE LEDGER, never by typing a sha from memory:
+`BASE=$(git rev-list --extended-regexp --grep='^wave [0-9]+ CLOSED' -1 HEAD)`. The gate refuses an
+abbreviated or misremembered sha, and it refused one of this run's on exactly that ground.
 
 **Standing env on every wave.sh / cargo invocation:**
 `CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target` (never /tmp) ·
@@ -56,7 +68,7 @@ diagnosis) → registry flip + `distrobox-host-exec sh -c './scripts/ticket sync
 | 113 | 97 | T-082 T-669 T-694 | PASS 30/30 (run 1) | 1M/1m/3N | SHIPPED — entity type + role description (F-7 closed as a disabled affordance; needed a new core mutator OUTSIDE owns), cut + paste-at-source, mission shape reinterpreted by the operator (derived slot count, no min_players); T-743..T-747 filed |
 | 114 | 98 | T-633 T-651 T-695 | PASS 30/30 (run 1) | 1M/2m/4N | SHIPPED — Aegis slider+select primitives in ui.rs, editor comments (own non-compiling core root, rule proven by firing it), catalogue favourites; **PLACE-COMMENT-001 does NOT fully close** — no map glyph, not composable (T-748); T-748..T-752 filed |
 | 115 | 99 | T-634 T-670 T-688 | PASS 30/30 (run 1) | 2M/5m/3N | SHIPPED — two-row strip inside the same 48px (no pin weakened), m/px readout unified with T-667's scale bar, aggregated settings with schema-sourced defaults; **T-753 confirmed by experiment** (flow defaults drift ships green); T-753..T-758 filed |
-| 116 | assign at close | T-069 T-690 T-696 | — | — | pending |
+| 116 | 100 | T-069 T-690 T-696 | PASS 30/30 (run 1, **no BASE_CONFIRM needed** — see below) | 2M/2m/3N | SHIPPED — markers authored on briefings[] (the ticket's markersById premise was WRONG and was refused; premise corrected in the registry), compile emits structured diagnostics (six T-216 silent drops now speak), locations + bookmarks; T-759..T-763 filed |
 | 117 | assign at close | T-084 T-671 T-672 | — | — | pending |
 | 118 | assign at close | T-637 T-698 T-699 | — | — | pending |
 | 119 | assign at close | T-697 T-700 T-703 | — | — | pending |
@@ -221,6 +233,26 @@ serialisation, not a hang).
 
 ## Deferred tickets filed by verifiers
 
+- **T-759** (W116/1) ⚠️ **HOLLOW PINS — the signature defect aimed at the pins themselves.**
+  T-696's headline source pins `include_str!` the WHOLE file including their own test module, so
+  every positive needle matches the assertion searching for it. **Delete the production usage and
+  they all stay green.** The facts are true today; the guarantee is not. The same file already
+  contains the correct pattern three tests down.
+- **T-760** (W116/2): markers **draw nothing** — no render lane. The slice's refusal was correct
+  (the sole rebind tail is outside its owns; the SoA route fails because `slots_bind_soa` is the
+  pick bridge). Filed because T-651's identical gap got T-748 and markers had no equivalent.
+  Recipe left in the ticket. **Schedule with or after T-672 to share the `draw_order.rs` edit.**
+- **T-761** (W116/3): compile findings survive a mission switch — export A, navigate to B, and B's
+  panel shows A's build report with subject_ids that resolve to nothing. Client-side routing, same
+  wasm instance, no reset on hydrate.
+- **T-762** (W116/4): `fly_to` rides the **T-166 smoke hook** in production. Behaviourally sound
+  and there is still only one camera mover, but rename the hook and fly-to dies silently — and the
+  only pin tying them together is one of T-759's hollow ones.
+- **T-763** (W116/5-8): **strikes a false claim from the record** — the T-069 slice's "a pin was
+  passing on a decoy" narrative does NOT reproduce; the pin inversions were correct, the story was
+  not. Plus: /compiled headers pinned by source scan only, marker attribute selection by bare id,
+  and overstated test prose. *An agent's chat summary is not an artifact — this one was relayed
+  onward before it was checked.*
 - **T-753** (W115/MAJOR-1) ⚠️ **CONFIRMED BY EXPERIMENT.** `FLOW_DEFAULT_*` are `pub const` in BOTH
   `flatten.rs:1491` and `eden_env.rs:186` with **no cross-crate pin**; the only guard restates the
   literals against the frontend's own copy. The verifier edited flatten.rs 600→900, ran the frontend

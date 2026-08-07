@@ -154,12 +154,12 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 - **T-120** — Staging soak + golden mission smoke (`queued`)
 - **T-146** — Asset Browser Data Wiring (`queued`)
 - **T-170** — Prod default flip to Leptos SPA (`queued`)
-- **T-069** — Markers on map — the four schema-carried fields (`queued`)
-- **T-690** — Compile becomes a compiler: structured diagnostics instead of a toast (`queued`)
 - **T-672** — Connection graph: draw, sync, delete, formation (`queued`)
 - **T-671** — Mission presentation: briefing text and thumbnail (`queued`)
 - **T-084** — Classname / mod prefix search in the asset browser (`queued`)
 - **T-637** — Dock density and the 240px equalisation (`queued`)
+- **T-673** — Marker style and Area markers — the $defs/marker widening (`queued`)
+- **T-674** — T-216 follow-on: slot identity reaches the wire (`queued`)
 <!-- ticket-sync:status:end -->
 
 **Shipped history — every slice, sha and tag — lives in**

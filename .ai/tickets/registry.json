@@ -1,5 +1,5 @@
 {
- "next_id": 759,
+ "next_id": 764,
  "tickets": [
   {
    "id": "T-001",
@@ -1479,7 +1479,7 @@
   {
    "id": "T-069",
    "title": "Markers on map — the four schema-carried fields",
-   "summary": "PROMOTED, RESCOPED, AND MERGED WITH T-213 (cancelled in favour of this row — the two were the same job under two names). Keeps this id because it owns the in-code stub message and the test that pins it. SCOPE: the four schema-carried fields only — `ATTR-FIELD-MRK-TYPE`, `-MRK-TEXT`, `-MRK-POSITION` against `$defs/marker` = {x, z, icon, label}, plus `RIGHT-MODE-006`. Marker STYLE (size / rotation / shape / brush / colour / alpha) and Eden's whole second Area-marker model are a $defs/marker widening and are a workbench ticket that must ship AFTER this one, or this converts from a factory ticket into a workbench one. This is the one absent-entity family that is factory-dispatchable today, because $defs/marker already declares the four fields and the icon enum is closed at 64 aliases, so the marker CORE needs no schema edit at all. TWO DEAD PREMISES TO FIX BEFORE STARTING: T-213's spec cited a `state/schema.ts` that no longer exists (the React tree was deleted at T-159.29.3), and THIS TICKET'S OWN SPEC PREMISE at docs/specs/Mission_Creator_Architecture/t069_markers_on_map.md IS CONFIRMED DEAD — rewrite it first. Code: the whole right-dock stub — tab button `{tab_btn(2, \"Markers\")}` at eden_chrome.rs:3046 and a body that is the `_ =>` fallthrough arm reading \"Marker placement lands in T-069.\" at :3337; PaletteKind :1833 has three variants and needs a fourth. `grep -c marker editor_ops.rs` -> 0: not one marker command exists in the SPA's mutation surface. In store.rs `markersById` is a declared root :355 with `marker_any(id, x, z, icon, label)` :3048 and `marker_row_id` :3033 already written, but the ONLY two mutators — `set_faction_briefing_marker` :2030 and `remove_faction_briefing_marker` :2070 — are faction-briefing scoped with zero product callers, so free placement needs generic add/move/remove. RENDER PATH, graded medium and the thing to check FIRST: `crates/map-engine-render/src/draw_order.rs` declares every lane (`LaneRole` :9; mission lanes MissionZones :55, SquadLinks :57, MissionVehicles, Slots) and there is NO marker lane, and `upload_icon_lane` (engine.rs:3555) is a CLOSED three-arm match over world assets. All 10 `marker` hits in that 6,302-line file were read and none is a mission marker. BUT if markers can ride the slot SoA that editor_ops.rs already uploads via `core.materialize()`, BOTH crate paths drop and this ticket stops touching map-engine-render at all. Trace `slots_gpu` before assuming the lane.",
+   "summary": "PROMOTED, RESCOPED, AND MERGED WITH T-213 (cancelled in favour of this row — the two were the same job under two names). Keeps this id because it owns the in-code stub message and the test that pins it. SCOPE: the four schema-carried fields only — `ATTR-FIELD-MRK-TYPE`, `-MRK-TEXT`, `-MRK-POSITION` against `$defs/marker` = {x, z, icon, label}, plus `RIGHT-MODE-006`. Marker STYLE (size / rotation / shape / brush / colour / alpha) and Eden's whole second Area-marker model are a $defs/marker widening and are a workbench ticket that must ship AFTER this one, or this converts from a factory ticket into a workbench one. This is the one absent-entity family that is factory-dispatchable today, because $defs/marker already declares the four fields and the icon enum is closed at 64 aliases, so the marker CORE needs no schema edit at all. TWO DEAD PREMISES TO FIX BEFORE STARTING: T-213's spec cited a `state/schema.ts` that no longer exists (the React tree was deleted at T-159.29.3), and THIS TICKET'S OWN SPEC PREMISE at docs/specs/Mission_Creator_Architecture/t069_markers_on_map.md IS CONFIRMED DEAD — rewrite it first. Code: the whole right-dock stub — tab button `{tab_btn(2, \"Markers\")}` at eden_chrome.rs:3046 and a body that is the `_ =>` fallthrough arm reading \"Marker placement lands in T-069.\" at :3337; PaletteKind :1833 has three variants and needs a fourth. `grep -c marker editor_ops.rs` -> 0: not one marker command exists in the SPA's mutation surface. In store.rs `markersById` is a declared root :355 with `marker_any(id, x, z, icon, label)` :3048 and `marker_row_id` :3033 already written, but the ONLY two mutators — `set_faction_briefing_marker` :2030 and `remove_faction_briefing_marker` :2070 — are faction-briefing scoped with zero product callers, so free placement needs generic add/move/remove. RENDER PATH, graded medium and the thing to check FIRST: `crates/map-engine-render/src/draw_order.rs` declares every lane (`LaneRole` :9; mission lanes MissionZones :55, SquadLinks :57, MissionVehicles, Slots) and there is NO marker lane, and `upload_icon_lane` (engine.rs:3555) is a CLOSED three-arm match over world assets. All 10 `marker` hits in that 6,302-line file were read and none is a mission marker. BUT if markers can ride the slot SoA that editor_ops.rs already uploads via `core.materialize()`, BOTH crate paths drop and this ticket stops touching map-engine-render at all. Trace `slots_gpu` before assuming the lane. || PREMISE CORRECTED 2026-08-07 (wave 116, verified independently by the adversarial verifier): the instruction above to give `markersById` 'generic add/move/remove' for free placement is WRONG and was NOT followed. mission.schema.json's top level declares 19 closed properties with additionalProperties:false and NO `markers` key; the only marker declaration in the whole schema is $defs/briefing.markers[]; and flatten's EditorPayload declares no root markers key either. Markers authored into the root map reach NOTHING — they would have been invisible to every mod subsystem. Shipped on briefings[].markers[] instead, where derive_briefings compiles them and the mod's TBD_MarkerService draws them. Pinned by store.rs::a_marker_in_the_root_map_never_reaches_the_compiled_document. The markersById root map is still standing (has_content counts it for the warm-session conflict gate); removing it is a migration, not a marker ticket.",
    "program": "eden",
    "surfaces": [
     "MAP",
@@ -1491,7 +1491,7 @@
     "state",
     "mc-authoring"
    ],
-   "status": "queued",
+   "status": "shipped",
    "order": 4180,
    "route": "/missions/:id/edit",
    "stream": "mission-creator",
@@ -1499,7 +1499,7 @@
     "website"
    ],
    "executor": "claude-code",
-   "notes": "editor-UI program wave 16 (wave_plan.tsv row 116)",
+   "notes": "editor-UI program wave 16 (wave_plan.tsv row 116) — SHIPPED wave 116 (editor factory), 91c8e930; verifier wave116.md. The four schema-carried fields authored on briefings[].markers[] (see the PREMISE CORRECTED note in the summary — the ticket's markersById instruction was wrong and was refused). Also shipped the READ half T-345 never wrote, which is why its two mutators had zero callers. Icon vocabulary PARSED from the schema's own 64-alias enum, not hand-copied. map-engine-render is absent from the diff entirely, so the T-672 collision in wave 117 is dissolved. ⚠️ Markers DRAW NOTHING on the map — no render lane; see T-760.",
    "depends_on": [
     "T-661"
    ],
@@ -17310,7 +17310,7 @@
     "ui",
     "mc-integrity"
    ],
-   "status": "queued",
+   "status": "shipped",
    "order": 4185,
    "route": "/missions/:id/edit",
    "stream": "mission-creator",
@@ -17318,7 +17318,7 @@
     "website"
    ],
    "executor": "claude-code",
-   "notes": "editor-UI program wave 16 (wave_plan.tsv row 116); filed 2026-08-01 by the framework_synthesis coverage audit (parity/coverage_audit.md)",
+   "notes": "editor-UI program wave 16 (wave_plan.tsv row 116); filed 2026-08-01 by the framework_synthesis coverage audit (parity/coverage_audit.md) — SHIPPED wave 116 (editor factory), cc4a00eb; verifier wave116.md. Structured diagnostics alongside the bytes (severity, stable rule id, owning entity id, message), reusing T-657's Finding vocabulary; the six T-216 silent drops now emit. Deliberately NOT registry rules — the verifier confirmed the exhaustiveness argument: ORBAT-SQUAD-HAS-LEADER fires for a squad with no leader and COMPILE-DROP-SQUAD-LEADER for one with a leader, so as always-on rules every compiled squad trips one and the panel could never go green. One compile body with three projections. API surfaces findings as two headers + a warn! per finding, never a body key (the schema closes the document root). Touched validation_panel.rs outside owns (additive seam, 60 lines, no pin weakened).",
    "depends_on": [
     "T-661",
     "T-655"
@@ -17536,7 +17536,7 @@
    "id": "T-696",
    "order": 4500,
    "program": "eden",
-   "status": "queued",
+   "status": "shipped",
    "stream": "mission-creator",
    "targets": [
     "website"
@@ -17551,7 +17551,8 @@
    "surfaces": [
     "LEFT",
     "MAP"
-   ]
+   ],
+   "notes": "— SHIPPED wave 116 (editor factory), 032513af; verifier wave116.md. Locations tab (named places re-read through the SAME url and parser as LabelHost::init, nothing hardcoded) plus persistent camera bookmarks storing x/y/zoom, not undoable and not document edits. ⚠️ TWO DEFECTS: its headline source pins are HOLLOW (see T-759) and fly_to rides the T-166 smoke hook in production (see T-762)."
   },
   {
    "id": "T-697",
@@ -18819,6 +18820,112 @@
    "title": "Aggregated-settings a11y: mission-owned rows are inert focusable buttons",
    "summary": "MINOR from the wave-115 verifier. eden_settings.rs:1623-1640: rows whose owner is the mission document itself name no entity and are explicitly not click targets (data-selectable=false), but they still render as focusable <button> elements. A keyboard user tabs onto them and activating does nothing. Correct shapes: render non-interactive rows as a non-focusable element, or keep the button and mark it aria-disabled with the reason. Related and worth doing in the same pass — T-754 covers the larger problem that the rows which DO name an entity are also inert, but for a different reason (the router cannot resolve zones). Together the two mean every row in the view is currently a dead click; fixing the styling and focusability without fixing T-754's router would make the view honest but still unhelpful, so sequence T-754 first. Diagnosis: editor_verify/wave115.md MINOR-6.",
    "notes": "filed by wave-115 adversarial verifier (editor factory)"
+  },
+  {
+   "id": "T-759",
+   "order": 4635,
+   "program": "eden",
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "surfaces": [
+    "LEFT"
+   ],
+   "impact": [
+    "tests"
+   ],
+   "title": "T-696's headline source pins are hollow — they match their own test source",
+   "summary": "MAJOR from the wave-116 adversarial verifier, and it is this programme's signature defect aimed at the pins themselves. apps/website/frontend/src/eden_dock_left.rs:1107-1130 and :1083-1101: `SRC` is an `include_str!` of the WHOLE file, test module included. Every POSITIVE needle in `the_index_and_the_fly_to_reuse_the_shipped_paths` and `the_dock_has_two_tabs_and_defaults_to_layers` — \"parse_locations_json\", \"__editorCamSet\", \"camera_snapshot\", \"/map-assets/{terrain}/locations.json\", \"let tab = RwSignal::new(LeftTab::Layers)\", and all eight testids — appears VERBATIM inside the assertion that searches for it. Delete the production usage entirely and every one of those pins stays GREEN. The author knew the idiom: the single NEGATIVE needle in the same block is deliberately split (`format!(\"{}{}\", \"set_view\", \"(\")`) with a comment saying \"so the needle itself is not a hit\" — the positives simply did not get the same treatment. THE PINNED FACTS ARE ALL TRUE TODAY (the verifier re-proved each independently), so nothing is broken; what is broken is the guarantee. Registry precedent T-559/T-561 rates this class DIRTY MAJOR. FIX, two options, either is cheap: split every positive needle the way the negative one already is, or scope SRC to the production half by truncating at the `#[cfg(test)]` marker — the pattern `bookmarks_and_fly_to_are_not_document_edits` three tests down in the same file already does the latter correctly and can be copied. Diagnosis: editor_verify/wave116.md finding 1.",
+   "notes": "filed by wave-116 adversarial verifier (editor factory)"
+  },
+  {
+   "id": "T-760",
+   "order": 4636,
+   "program": "eden",
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "surfaces": [
+    "MAP",
+    "RIGHT"
+   ],
+   "impact": [
+    "mission-authoring",
+    "ui"
+   ],
+   "title": "Markers draw nothing on the map — RIGHT-MODE-006 is at best half-closed and untracked",
+   "summary": "MAJOR (scope gap) from the wave-116 verifier. T-069 ships marker AUTHORING — place, list, retype, recaption, reposition, delete — and all four ATTR-FIELD-MRK-* rows close honestly. But a placed marker renders NOTHING: there is no marker lane in map-engine-render, and `mission_history.rs:364 after_doc_change` rebinds slots, squad links and vehicles only. RIGHT-MODE-006 is titled 'markers on the map'. THE SLICE'S REFUSAL TO ADD THE LANE WAS CORRECT AND SHOULD NOT BE SECOND-GUESSED: the sole rebind tail after undo/redo/restore is `after_doc_change`, which was outside its owns, and a lane fed only from owned call sites would show a marker the document no longer has — worse than no lane. It also verified the SoA route fails, because `slots_bind_soa` is the PICK BRIDGE (markers riding it would be hit-testable as slots, draggable in a marquee, counted against the 500-slot cluster threshold, and listed as slots in the outliner). NOTE THE ASYMMETRY THIS TICKET EXISTS TO CORRECT: wave 114's T-651 shipped editor comments with the identical no-glyph property and that gap got T-748 filed against it; markers had no equivalent, so the gap lived only in a verifier report. RECIPE, left by the T-069 agent so it is one sitting: add `LaneRole::MissionMarkers` between MissionZones and SquadLinks (above zone rings, below squad links and slots, so a marker never occludes a unit); add `markers_bind(&[f32], &[u8])` beside `vehicles_bind` reusing `upload_slot_role_lane` + `pack_icon_instance` (no new pipeline, no new atlas); add it to `clear_slot_lanes`; and ONE line each in `after_doc_change` and `rebind_engine_from_doc`. SCHEDULE WITH OR AFTER T-672 (wave 117) to share the draw_order.rs edit. Diagnosis: editor_verify/wave116.md finding 2.",
+   "notes": "filed by wave-116 adversarial verifier (editor factory)"
+  },
+  {
+   "id": "T-761",
+   "order": 4637,
+   "program": "eden",
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "surfaces": [
+    "EDITOR"
+   ],
+   "impact": [
+    "ui",
+    "state"
+   ],
+   "title": "Compile findings survive a mission switch — mission B's panel shows mission A's build report",
+   "summary": "MINOR from the wave-116 verifier, and a real user-visible bug rather than a latent one. validation_panel.rs:524: the `COMPILE_FINDINGS` thread_local is written only by `publish_compile_findings`, whose sole production caller is `export_compiled_now`. NOTHING resets it on editor mount or hydrate. `/missions/:id/edit` is a client-side leptos_router route (app_routes.rs:90), so navigating between missions does NOT reload the wasm instance. REPRO: open mission A, Export Compiled, navigate to mission B — B's validation panel shows A's build report, and its findings carry subject_ids that resolve to nothing in B, so clicking them selects nothing. This is a lifecycle bug, not a green-ness bug: the verifier separately confirmed that a clean compile correctly CLEARS the list (whole-list replace, pinned), so the mechanism is right and only the mount/hydrate reset is missing. FIX: one clear on editor hydrate, plus a pin that fails if a second mission's panel can inherit a previous mission's compile findings. Diagnosis: editor_verify/wave116.md finding 3.",
+   "notes": "filed by wave-116 adversarial verifier (editor factory)"
+  },
+  {
+   "id": "T-762",
+   "order": 4638,
+   "program": "eden",
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "surfaces": [
+    "LEFT"
+   ],
+   "impact": [
+    "ui",
+    "dx"
+   ],
+   "title": "fly_to rides the T-166 smoke hook in production and every failure mode is silent",
+   "summary": "MINOR from the wave-116 verifier. eden_dock_left.rs:821 `fly_to` moves the camera by invoking `window.__editorCamSet` — the closure `mission_editor::register_editor_cam` installs as a T-166 SMOKE HOOK. VERIFIED BEHAVIOURALLY SOUND: the hook is installed unconditionally at engine init (mission_editor.rs:2780/4572), its body is exactly `set_view` -> `on_camera_changed` -> `flush_viewport` (the shipped mover), and the 'not yet installed' window coincides with 'no engine', where `live_camera()` already no-ops the click. So there is still exactly ONE camera mover in the codebase and the dock contains zero camera math — which was the right instinct. THE RISK IS COUPLING, NOT CORRECTNESS: rename or remove that test hook and fly-to dies silently, with no error and no failing test — and the only pin tying this file to the hook name is one of the HOLLOW ones filed as T-759, so it would not catch it either. FIX: promote a real seam — `pub fn fly_to(x, y, zoom)` beside `camera_snapshot` in world_assets/mod.rs, ~8 lines using the same RENDER_CTX borrow as `apply_grid` — and repoint the dock at it. The slice could not do this: world_assets/mod.rs was in nobody's owns and mission_editor.rs was T-069's that wave. Do it before the T-672-era churn. RELATED: `world_assets::labels` is a private module and `LabelHost.towns` a private field, so the dock also re-fetches and re-parses `/map-assets/<terrain>/locations.json` that was already parsed at boot — add `pub fn named_locations()` in the same pass. Diagnosis: editor_verify/wave116.md finding 4.",
+   "notes": "filed by wave-116 adversarial verifier (editor factory)"
+  },
+  {
+   "id": "T-763",
+   "order": 4639,
+   "program": "eden",
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "surfaces": [
+    "EDITOR",
+    "API"
+   ],
+   "impact": [
+    "docs",
+    "tests"
+   ],
+   "title": "Wave-116 residue: a false decoy claim to strike, plus three small gaps",
+   "summary": "Four items from the wave-116 verifier, grouped because each is small. (1) A FALSE CLAIM TO STRIKE FROM THE RECORD: the T-069 slice reported that a pre-existing pin had been 'passing on a DECOY — the stub sentence quoted in a comment'. IT DOES NOT REPRODUCE. At base 619e5a14 the needle 'Marker placement lands in T-069.' occurs exactly twice: the live view stub (eden_dock_right.rs:1376) and the split-literal T-695 pin (:3354), which its own source cannot satisfy. No comment quoted the sentence and both pins were passing on the real stub. The pin INVERSIONS the slice performed were correct and preserved their original index claims — only the decoy narrative is wrong. Recorded here because an agent's chat summary is not an artifact, and this one was relayed onward before it was checked. (2) missions.rs:2358: the /compiled diagnostics headers are pinned by SOURCE SCAN only — there is no response-level test asserting `x-compile-diagnostics-count: 0` on a clean mission. Verified correct by reading (unconditional insert; HeaderValue::from_str over an integer cannot fail), so this is a missing test, not a defect. (3) Marker Attributes selects by id ALONE, so a hydrated foreign payload carrying the same marker id under two different factions would edit the first match. Unreachable through this editor's own minting, which always pairs (factionId, id). (4) store.rs test prose overstates its case: it says `EditorPayload` 'declares no root key whatsoever' when it does declare zones/entities/vehicles. The load-bearing half — that it declares no root `markers` key — is true and is what the test actually proves. Diagnosis: editor_verify/wave116.md findings 5-8.",
+   "notes": "filed by wave-116 adversarial verifier (editor factory)"
   }
  ]
 }
