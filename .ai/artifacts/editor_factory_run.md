@@ -54,7 +54,7 @@ diagnosis) → registry flip + `distrobox-host-exec sh -c './scripts/ticket sync
 | — | — | **WAVES 112–119 UN-DEFERRED 2026-08-07** by the operator and run in plan order (24 Rust tickets, 3-wide; they serialize on mission_editor.rs — 8 of 8 waves touch it — so the packing was NOT widened). The 2026-08-02 budget-pivot deferral below is closed out. | | | |
 | 112 | 96 | T-649 T-686 T-692 | PASS 30/30 (run 1) | 1M/4m/3N | SHIPPED — select-all in view + multi-edit checkboxes (both suppress-on-multi guards inverted, T-716 rows honest), loadout import round-trip, Help menu + Controls Hint; T-735..T-742 filed |
 | 113 | 97 | T-082 T-669 T-694 | PASS 30/30 (run 1) | 1M/1m/3N | SHIPPED — entity type + role description (F-7 closed as a disabled affordance; needed a new core mutator OUTSIDE owns), cut + paste-at-source, mission shape reinterpreted by the operator (derived slot count, no min_players); T-743..T-747 filed |
-| 114 | assign at close | T-633 T-651 T-695 | — | — | pending |
+| 114 | 98 | T-633 T-651 T-695 | PASS 30/30 (run 1) | 1M/2m/4N | SHIPPED — Aegis slider+select primitives in ui.rs, editor comments (own non-compiling core root, rule proven by firing it), catalogue favourites; **PLACE-COMMENT-001 does NOT fully close** — no map glyph, not composable (T-748); T-748..T-752 filed |
 | 115 | assign at close | T-634 T-670 T-688 | — | — | pending |
 | 116 | assign at close | T-069 T-690 T-696 | — | — | pending |
 | 117 | assign at close | T-084 T-671 T-672 | — | — | pending |
@@ -221,6 +221,27 @@ serialisation, not a hang).
 
 ## Deferred tickets filed by verifiers
 
+- **T-748** (W114/MAJOR-1) ⚠️ **PLACE-COMMENT-001 does not fully close.** The spec row wants
+  "Draggable, copy/paste, layerable, **composable**" + "Comment icon at position". Shipped comments
+  have **no map glyph** (deliberately absent from the render SoA — the same property that keeps
+  them off the compiled mission) and **cannot be composed** (compositions capture from the
+  selection; comments sit in no selection lane). T-651 disclosed the drag/copy narrowings honestly;
+  **"composable" was a silent drop**, which is what the HARD GATE bars. Scope accounting, not
+  broken code.
+- **T-749** (W114/MINOR-1): T-633's settle-only rationale cites live HH:MM drag feedback that does
+  not exist (the readout is a `doc_tick` memo, frozen mid-drag), and a test comment claims an
+  absence its assertion does not check. Behaviour is correct; the prose is not.
+- **T-750** (W114/MINOR-2): the Favourites tab spins on "Resolving…" forever if the registry fetch
+  fails — no error signal, no retry. The fetch omission predates T-695; the spinner surface is new.
+- **T-751** (W114/NIT-1..4): disabled Select's chevron does not dim · T-215 pin distinctness is
+  prose-enforced (nothing pins the favourites arm clone-free) · the comment undo test pins row
+  restore but not layer-filing restore · **`compile.rs:37-38` still says keep the twin key lists
+  "in lockstep" when four keys now diverge deliberately — someone will "fix" that and either drop
+  every comment on save or compile annotations into missions.**
+- **T-752** (W112–114, three slice agents + orchestrator): `clippy --all-targets` is red on main and
+  **neither the wave gate nor `ci-local-leptos` passes `--all-targets`**, so the debt is invisible to
+  both. Nothing is breaking. Counts in the slice reports are inflated by T-742; T-633's five are the
+  credible residue. `map-engine-core` already uses `--all-targets --all-features`; the frontend is the outlier.
 - **T-743** (W113/F-1,F-4) ⚠️ **NEEDS OPERATOR DECISION**: `paste_at_cursor(None, None)` is NOT
   paste-at-original — `paste_slots`' no-anchor arm unconditionally applies `PASTE_NUDGE` = 20m
   (store.rs:2175-2178, :4225), so **ACTION-PASTE-ORIG-001 does not close as literally named**. The

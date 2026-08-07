@@ -1,5 +1,5 @@
 {
- "next_id": 748,
+ "next_id": 753,
  "tickets": [
   {
    "id": "T-001",
@@ -16715,7 +16715,7 @@
     "state",
     "mc-authoring"
    ],
-   "status": "queued",
+   "status": "shipped",
    "order": 4140,
    "route": "/missions/:id/edit",
    "stream": "mission-creator",
@@ -16723,7 +16723,7 @@
     "website"
    ],
    "executor": "claude-code",
-   "notes": "editor-UI program wave 14 (wave_plan.tsv row 114)",
+   "notes": "editor-UI program wave 14 (wave_plan.tsv row 114) — SHIPPED wave 114 (editor factory), ef98b687; verifier wave114.md. Editor-only comment entities with their own non-compiling core root; never-compiles proven by a test that FIRES the rule (routes a comment through entities[] and asserts the leak). Outliner rows, layer filing, duplicate, delete, template seeding. ⚠️ TWO SPEC-ROW CLAUSES NOT DELIVERED — no map glyph (comments are absent from the render SoA) and NOT COMPOSABLE (compositions capture from the selection; comments sit in no selection lane). The drag/copy narrowings were disclosed by the slice; 'composable' was NOT, and that silent drop is what the HARD GATE bars. See T-748 — PLACE-COMMENT-001 does not fully close.",
    "depends_on": [
     "T-661",
     "T-664"
@@ -16741,7 +16741,7 @@
    "impact": [
     "ui"
    ],
-   "status": "queued",
+   "status": "shipped",
    "order": 4150,
    "route": "/missions/:id/edit",
    "stream": "mission-creator",
@@ -16749,7 +16749,7 @@
     "website"
    ],
    "executor": "claude-code",
-   "notes": "editor-UI program wave 14 (wave_plan.tsv row 114)",
+   "notes": "editor-UI program wave 14 (wave_plan.tsv row 114) — SHIPPED wave 114 (editor factory), 17fe692e; verifier wave114.md. New Slider + Select primitives in ui.rs (available platform-wide), replacing the raw range/select in the top strip; on:change only, so the ~30Hz RowMirror debounce is intact. Tailwind pseudo-element output verified out-of-band by the slice AND re-verified independently against the built dist CSS. NOTE: ui.rs now imports two &'static str class recipes from eden_layout — an accepted layering inversion, no cycle, nothing runtime.",
    "depends_on": [
     "T-661"
    ]
@@ -17515,7 +17515,7 @@
    "id": "T-695",
    "order": 4490,
    "program": "eden",
-   "status": "queued",
+   "status": "shipped",
    "stream": "mission-creator",
    "targets": [
     "website"
@@ -17529,7 +17529,8 @@
    "summary": "NEW-F5 + 3den E3 + 3DEN-CTX-001. Eden F7. Pure SPA over the live catalogue with localStorage. Deliberately NOT folded into T-646: that ticket is search and submode filtering over the existing tree, this is a separate persistent collection with its own add/remove verbs.",
    "surfaces": [
     "RIGHT"
-   ]
+   ],
+   "notes": "— SHIPPED wave 114 (editor factory), 0fa3b530; verifier wave114.md. Starred-asset collection over the live catalogue, localStorage key tbd-mc-editor-favourites with a version stamp and one migration chokepoint; identity is resource_name so a modpack re-ingest cannot orphan the collection. Stale favourites are KEPT AND MARKED, never pruned (a toggled-off modpack is reversible); resolve_favourites is count-preserving by construction and pinned."
   },
   {
    "id": "T-696",
@@ -18588,6 +18589,112 @@
    "title": "A bare `cargo test -p map-engine-core` is a vacuous pass — the doc tests are feature-gated",
    "summary": "FACTORY HAZARD, caught by the wave-113 verifier as a near-miss (no live defect). `cargo test -p map-engine-core` WITHOUT `--all-features` compiles ZERO of the doc-module tests, because the `doc` module is feature-gated: 139 tests run instead of 600. Wave 113 added new store.rs tests (T-082's update_slot_object and slot_layer_is_locked pins) that live entirely inside that gate. The WAVE GATE IS SOUND — it runs --all-features (Makefile:183), so it genuinely examined the new code — but an agent or reviewer hand-running the crate's tests to check a claim gets a confident green over code that was never compiled. That is precisely this program's signature defect ('a tool reporting success over an input it never actually examined'), pointed at the verification step rather than at the product. Cheap mitigations: state the --all-features requirement in the slice brief's rule 3 alongside the wasm32/native split; or add a `#[test]` in the ungated part of map-engine-core that fails when the doc feature is off, so the vacuous configuration announces itself instead of passing quietly. Related to T-742 (shared CARGO_TARGET_DIR cross-talk) — both are ways an ad-hoc cargo invocation lies to an agent. Diagnosis: editor_verify/wave113.md verified-clean register item 13.",
    "notes": "filed by wave-113 adversarial verifier (editor factory)"
+  },
+  {
+   "id": "T-748",
+   "order": 4624,
+   "program": "eden",
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "surfaces": [
+    "MAP",
+    "EDITOR"
+   ],
+   "impact": [
+    "mission-authoring",
+    "ui"
+   ],
+   "title": "PLACE-COMMENT-001 does not fully close: comments have no map glyph and cannot be composed",
+   "summary": "MAJOR from the wave-114 adversarial verifier. The spec row (eden/interactions.md:214) Procedure step 3 reads 'Draggable, copy/paste, layerable, COMPOSABLE' with Postcondition 'Comment icon at position'. T-651 shipped neither of the last two. (1) NO MAP GLYPH: a comment draws nothing on the map, because it is deliberately absent from the render SoA — the same property that keeps it off the compiled mission. Drawing one needs map-engine-render, which was outside the slice's owns. The slice disclosed this by implication (it explained there is 'no glyph to grab' when narrowing drag to the outliner) but never as a postcondition it failed to meet. (2) NOT COMPOSABLE — AND THIS WAS SILENT: compositions capture is selection-based (editor_ops.rs:728 iterates the selection) and comments sit in NO selection lane (outliner.rs:99-101), so a comment can never enter a composition. That clause appears in no disclosure, commit message or field note. Silent partial delivery is precisely what CLAUDE.md's HARD GATE bars, and it is recorded here rather than left implicit. NOT a code defect: nothing is broken, no data is at risk, and the two acceptance checkboxes plus the registry-summary scope are met under the disclosed narrowings (drag -> outliner + X/Z fields, copy -> duplicate verb). This is scope accounting. FIX SHAPE: a glyph needs a render-side entry for a non-SoA entity; composability needs comments to join a selection lane, which is a larger decision than it looks because the selection lane is what keeps them out of the slot-shaped clipboard and Del-key paths. Decide whether the spec row should be re-scoped instead. Diagnosis: editor_verify/wave114.md MAJOR-1.",
+   "notes": "filed by wave-114 adversarial verifier (editor factory)"
+  },
+  {
+   "id": "T-749",
+   "order": 4625,
+   "program": "eden",
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "surfaces": [
+    "TOP"
+   ],
+   "impact": [
+    "ui",
+    "docs"
+   ],
+   "title": "T-633's settle-only rationale is false in prose and one test comment overclaims",
+   "summary": "MINOR from the wave-114 verifier. Two prose defects around correct code. (1) eden_top_strip.rs:1166 justifies the on:change (settle-only) commit by citing live HH:MM feedback during the drag. That feedback DOES NOT EXIST: the readout reads the `env` memo, which is recomputed only on doc_tick, and doc_tick mutates on settle — so the label is frozen mid-drag. This is unchanged from before T-633 (no regression) but the stated reason for the design is not a fact. (2) eden_top_strip.rs:2374 claims its pin proves no `on:input` grew around the scrubber; the test asserts no such absence, and there are pre-existing unrelated `on:input` handlers at :1355 and :1367 that would not trip it. The SHIPPED BEHAVIOUR IS CORRECT — the Slider really is on:change-only and the RowMirror debounce really is intact, both independently re-verified — so this is a comment-accuracy fix, not a behaviour fix. It matters because this program's recurring defect is a claim that outlives the thing it described. Diagnosis: editor_verify/wave114.md MINOR-1.",
+   "notes": "filed by wave-114 adversarial verifier (editor factory)"
+  },
+  {
+   "id": "T-750",
+   "order": 4626,
+   "program": "eden",
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "surfaces": [
+    "RIGHT"
+   ],
+   "impact": [
+    "ui"
+   ],
+   "title": "Favourites tab dead-ends in 'Resolving...' forever when the registry fetch fails",
+   "summary": "MINOR from the wave-114 verifier. mission_editor.rs:1791-1794: a failed registry fetch sets only `catalog` / `vehicle_catalog` and leaves `registry_items` at None. eden_dock_right.rs:873-881: the favourites panel treats None as 'still loading' and renders 'Resolving N favourite(s) against the catalogue...' with no failure arm, so the tab spins forever with no retry and no explanation. The behaviour is HONEST as far as it goes — T-695 deliberately made the loading state distinct so a slow load cannot mark a whole collection stale, which is the right call — but there is no terminal error state. The underlying omission (a registry fetch failure that sets no error signal) PREDATES T-695; what is new is a surface that renders that omission as an indefinite spinner. Fix: give the fetch a failure signal and add a failure arm to the panel with a retry. Diagnosis: editor_verify/wave114.md MINOR-2.",
+   "notes": "filed by wave-114 adversarial verifier (editor factory)"
+  },
+  {
+   "id": "T-751",
+   "order": 4627,
+   "program": "eden",
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "surfaces": [
+    "UI",
+    "RIGHT"
+   ],
+   "impact": [
+    "ui",
+    "docs"
+   ],
+   "title": "Wave-114 residue: four small honesty and pin-strength gaps",
+   "summary": "Four NITs from the wave-114 verifier, grouped because each is a few lines. (1) ui.rs Select: a disabled select dims but its sibling chevron does not (no `peer-disabled` variant), so a disabled control is half-lit. No caller passes `disabled` yet, so it is latent. (2) eden_dock_right.rs:745-751: T-695 deliberately kept `arm_favourite_place` textually distinct from `palette_rows` so T-215's source-inspection needle (`editor_ops::begin_place_vehicle(payload.clone())`) keeps constraining the palette path specifically — a genuinely good call — but that distinctness is enforced only by the favourites arm MOVING its payload rather than cloning. Nothing PINS it clone-free, so a future tidy-up could silently let the favourites path satisfy the palette's pin. Pin the distinctness. (3) store.rs:11639-11641: the comment undo test asserts the ROW is restored after a delete, but not that the LAYER FILING is restored. Same transaction and same undo scope make it near-certain, and the verifier confirmed the behaviour, but the assertion does not cover it. (4) compile.rs:37-38: the header says to keep the twin editor-payload key lists 'in lockstep', which is now actively misleading — `zones`, `compositions`, `triggers` and now `comments` diverge DELIBERATELY and permanently. The reason is documented on the store.rs side only; the compile.rs header should say the lists are intentionally different and point at that note, or someone will 'fix' the divergence and either drop every comment on save or compile annotations into missions. Diagnosis: editor_verify/wave114.md NIT-1..4.",
+   "notes": "filed by wave-114 adversarial verifier (editor factory)"
+  },
+  {
+   "id": "T-752",
+   "order": 4628,
+   "program": "eden",
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "surfaces": [
+    "INFRA"
+   ],
+   "impact": [
+    "dx",
+    "ci"
+   ],
+   "title": "clippy --all-targets is red on main and neither the wave gate nor CI looks at it",
+   "summary": "Reported independently by three slice agents across waves 112-114 and confirmed by the orchestrator. `cargo clippy -p website-frontend --target wasm32-unknown-unknown --all-targets -- -D warnings` is RED on untouched main. T-633 named five concrete ones on main-inherited code: unused imports at eden_layout.rs:448 and eden_tree.rs:952, unused variables at mission_editor.rs:4792 and eden_dock_right.rs:1112, plus an int_plus_one; T-695 additionally named the pre-existing unused `title_id`/`cat_id` in T-650's compositions_panel (eden_dock_right.rs:1649). ORCHESTRATOR VERIFICATION: Makefile:497 (`ci-local-leptos`, which mirrors ci.yml's website-frontend job) runs `cargo clippy -p website-frontend --target wasm32-unknown-unknown` with NO --all-targets and NO -D warnings, and the wave gate's own frontend clippy step likewise omits --all-targets. So this debt is real but invisible to BOTH the gate and CI, and nothing is currently breaking. CAUTION ON THE COUNTS: the larger figures in the slice reports (T-082 ~95, T-651 104, T-669 ~20) are inflated by T-742 — concurrent worktrees sharing CARGO_TARGET_DIR — and mostly name files those agents never touched. Treat T-633's five plus T-695's one as the credible residue and re-measure on a quiet tree before acting. DECIDE, do not silence: either clean them and add --all-targets to ci-local-leptos so the debt cannot regrow, or record deliberately that test-target lints are out of scope for this crate. Note map-engine-core ALREADY uses --all-targets --all-features (Makefile:181), so the frontend is the outlier.",
+   "notes": "reported by three slice agents across waves 112-114; scope confirmed by the orchestrator"
   }
  ]
 }

@@ -15,12 +15,12 @@
 - **T-120** — Staging soak + golden mission smoke (queued)
 - **T-146** — Asset Browser Data Wiring (queued)
 - **T-170** — Prod default flip to Leptos SPA (queued)
-- **T-651** — Editor comments / annotations (queued)
-- **T-633** — Native range and select controls in the top strip (queued)
 - **T-670** — Scale readout in the status bar (queued)
 - **T-688** — Aggregated settings view: every authored setting in one list, with diff-from-default (queued)
 - **T-634** — Top strip: split into two rows and give the actions a hierarchy (queued)
 - **T-069** — Markers on map — the four schema-carried fields (queued)
+- **T-690** — Compile becomes a compiler: structured diagnostics instead of a toast (queued)
+- **T-672** — Connection graph: draw, sync, delete, formation (queued)
 <!-- ticket-sync:next:end -->
 
 ---
