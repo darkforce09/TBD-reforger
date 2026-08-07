@@ -1071,7 +1071,16 @@ mod imp {
     /// believing a grid reference is on their clipboard and pastes whatever was there before. So the
     /// promise is AWAITED, and the success toast is on the resolve arm only — the failure arm names
     /// the browser's own reason.
-    fn write_clipboard(text: String, ok_message: String, toasts: crate::toast::Toasts) {
+    ///
+    /// **T-773 promoted this to the crate's ONE clipboard path.** `server_intel::server_panel`'s
+    /// Copy button carried the very defect this function was written against — a dropped
+    /// `write_text` promise followed by an unconditional "copied" toast — and it was the live
+    /// in-repo precedent any new exporter would have copied. It now calls through here (reachable
+    /// as `crate::mission_commands::write_clipboard` via the `pub use imp::*` re-export below).
+    /// A second clipboard path is a defect in itself: two vocabularies for "did the copy land"
+    /// means one of them is eventually wrong and nobody notices. If another surface needs to copy,
+    /// call this — do not re-derive it.
+    pub(crate) fn write_clipboard(text: String, ok_message: String, toasts: crate::toast::Toasts) {
         let clipboard = match clipboard_api() {
             Ok(c) => c,
             Err(why) => {
@@ -2051,5 +2060,48 @@ mod tests {
         assert_eq!(super::prefab_leaf("Character_US_GL.et"), "Character_US_GL");
         assert_eq!(super::prefab_leaf("plain"), "plain");
         assert_eq!(super::prefab_leaf(""), "");
+    }
+
+    /// **T-773 — `write_clipboard` is the crate's one clipboard path, and it must stay awaited.**
+    ///
+    /// T-698 wrote this helper correctly but nothing pinned it, and meanwhile `server_intel`'s Copy
+    /// button shipped the exact defect it was written against. T-773 repointed that button here, so
+    /// three surfaces plus the Server Intel panel now inherit this body's contract — and an
+    /// unpinned contract that four callers depend on is one refactor away from a silent lie.
+    ///
+    /// The behaviour itself cannot be exercised natively (there is no `navigator.clipboard` in a
+    /// `cargo test` process), so this pins the shape through `class_r_scrub::live_code`, which cuts
+    /// the test module first: the success toast must sit on the `Ok(_)` arm of the awaited future,
+    /// and the failure arm must exist and must report. `Ok(_) => toasts.success(ok_message)` is a
+    /// single needle on purpose — it fails if the await is removed, if the arm is reordered onto a
+    /// bare call, or if success is toasted before the match.
+    #[test]
+    fn class_r_write_clipboard_toasts_only_on_the_resolve_arm() {
+        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        const SRC: &str = include_str!("mission_commands.rs");
+        let production = live_code(SRC);
+        let body = only_body(
+            &production,
+            "pub(crate) fn write_clipboard(text: String, ok_message: String, toasts: crate::toast::Toasts)",
+        );
+
+        assert!(
+            body.contains("JsFuture::from(promise).await"),
+            "the writeText promise must be AWAITED, never dropped; got:\n{body}"
+        );
+        assert!(
+            body.contains("Ok(_) => toasts.success(ok_message)"),
+            "success may only be reported on the resolve arm of the awaited promise; got:\n{body}"
+        );
+        assert!(
+            body.contains("Err(e) => toasts.error("),
+            "a rejected clipboard write must reach the operator, not the bin; got:\n{body}"
+        );
+        // `let _ = <anything>.write_text` is the fire-and-forget shape this ticket removed from the
+        // repo. It must not come back in the helper every caller now trusts.
+        assert!(
+            !body.contains("let _ ="),
+            "no discarded result inside the clipboard helper; got:\n{body}"
+        );
     }
 }
