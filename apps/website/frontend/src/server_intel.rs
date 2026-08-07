@@ -211,18 +211,26 @@ fn server_panel(s: Value, live_sig: RwSignal<Option<ServerStatusDto>>) -> impl I
         .map(|n| format!("{n} terrain"))
         .unwrap_or_else(|| "Theater of operations".into());
 
+    // T-773 — copy the connect address through the ONE clipboard path in the crate.
+    //
+    // This used to be `let _ = win.navigator().clipboard().write_text(…)` followed unconditionally
+    // by `toasts.success("Server address copied")`. The promise was DROPPED. `writeText` rejects on
+    // an insecure context (plain http on a non-localhost host — exactly how staging is reached), on
+    // an unfocused document, and on a denied permission; in every one of those the rejection went
+    // in the bin and the operator was told the copy worked. They then paste whatever was on the
+    // clipboard before into a connect dialog and blame the server.
+    //
+    // `mission_commands::write_clipboard` (T-698) already resolves `navigator.clipboard` through
+    // Reflect and refuses with a readable message when it is absent, awaits the promise, and toasts
+    // success on the RESOLVE arm only. It is reused verbatim rather than re-derived here: a second
+    // clipboard vocabulary is how the two drift apart and one of them starts lying again.
     let copy_address = move |_| {
         #[cfg(target_arch = "wasm32")]
-        {
-            let toasts = crate::toast::use_toasts();
-            if let Some(win) = web_sys::window() {
-                let _ = win
-                    .navigator()
-                    .clipboard()
-                    .write_text(&copy_text.get_value());
-                toasts.success("Server address copied");
-            }
-        }
+        crate::mission_commands::write_clipboard(
+            copy_text.get_value(),
+            "Server address copied".to_string(),
+            crate::toast::use_toasts(),
+        );
     };
     let launch_stub = move |_| {
         #[cfg(target_arch = "wasm32")]
@@ -550,6 +558,58 @@ mod t385 {
         assert!(
             !panel.contains("Theater Unknown"),
             "do not restore the T-359 permanent placeholder inside server_panel"
+        );
+    }
+}
+
+#[cfg(test)]
+mod t773 {
+    /// **T-773 — the Copy button may not report a copy it never confirmed.**
+    ///
+    /// The shipped defect was three lines: `let _ = win.navigator().clipboard().write_text(…)`
+    /// with the promise dropped, then an unconditional `toasts.success("Server address copied")`.
+    /// `writeText` rejects on an insecure context, an unfocused document and a denied permission,
+    /// so on staging over plain http the toast said "copied" while the clipboard was untouched.
+    ///
+    /// This is a **source** pin rather than a behavioural one, deliberately and with its limits
+    /// stated: the thing under test is a `navigator.clipboard` promise, which does not exist in a
+    /// native `cargo test` process at all, and granting a headless browser clipboard permission
+    /// would test the browser rather than the button. What can be pinned without a browser is
+    /// *which path the button takes* — and since [`crate::mission_commands::write_clipboard`]'s
+    /// await-then-report contract is pinned in turn by
+    /// `class_r_write_clipboard_toasts_only_on_the_resolve_arm`, the two together say: this button
+    /// reaches the one helper, and that helper only claims success after the promise resolved.
+    ///
+    /// It reads through `class_r_scrub::live_code`, which cuts this test module before scanning —
+    /// a bare `include_str!` would match the needles in these very assertions and stay green with
+    /// the production code deleted.
+    #[test]
+    fn class_r_copy_address_routes_through_the_awaited_clipboard_helper() {
+        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        const SRC: &str = include_str!("server_intel.rs");
+        let production = live_code(SRC);
+        let body = only_body(&production, "let copy_address = move |_|");
+
+        assert!(
+            body.contains("crate::mission_commands::write_clipboard("),
+            "the Copy button must copy through the one awaited clipboard helper; got:\n{body}"
+        );
+        // The two halves of the original defect, each forbidden on its own so that re-introducing
+        // either — a raw write, or a success toast the panel decides for itself — is RED.
+        assert!(
+            !body.contains("write_text"),
+            "no raw navigator.clipboard.writeText in the panel — its promise is what got dropped; \
+             got:\n{body}"
+        );
+        assert!(
+            !body.contains(".clipboard()"),
+            "do not reach for navigator.clipboard here; write_clipboard resolves it and refuses \
+             readably when it is absent; got:\n{body}"
+        );
+        assert!(
+            !body.contains("success("),
+            "the panel must not toast success itself — only write_clipboard's resolve arm may; \
+             got:\n{body}"
         );
     }
 }
