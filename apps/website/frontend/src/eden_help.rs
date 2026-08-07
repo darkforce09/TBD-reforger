@@ -2,21 +2,25 @@
 //! and the toggleable **Controls Hint** overlay (rows MENU-BAR-008 / MENU-VIEW-017 /
 //! MENU-HELP-001).
 //!
-//! **The defect this closes.** The Mission Creator binds eighteen `KeyboardEvent.code` values across
-//! its two window-level keydowns (`mission_editor`'s editor handler and `mission_history`'s
-//! Ctrl+Z/Y handler) and, before this ticket, documented **none** of them anywhere in the UI: no
-//! Help menu, no hint overlay, and `context_menu`'s `with_shortcut` builder had zero callers. An
-//! operator's only route to `G`, `[`, `]`, `1`, `2`, `E`, `R` or Backspace was reading the Rust
-//! source.
+//! **The defect this closes.** The Mission Creator binds twenty-one distinct `KeyboardEvent` codes
+//! across eleven window-level keydown listeners in six editor-surface modules and, before this
+//! ticket, documented **none** of them anywhere in the UI: no Help menu, no hint overlay, and
+//! `context_menu`'s `with_shortcut` builder had zero callers. An operator's only route to `G`, `[`,
+//! `]`, `1`, `2`, `E`, `R` or Backspace was reading the Rust source.
+//!
+//! Those three numbers are **derived, not typed**: `the_prose_census_numbers_are_derived` (T-740)
+//! spells the live census counts out in words and asserts this paragraph contains them, because
+//! this sentence has already gone stale twice by being retyped. If you widen what counts as a
+//! binding, the pin tells you the new numbers — it does not let you guess them.
 //!
 //! **Why the list cannot drift.** A hand-typed prose list re-creates that defect one file over: it
 //! goes stale the first time a ticket adds an arm, and nothing goes red. So [`SHORTCUTS`] carries
-//! the `KeyboardEvent.code` values each row documents, and the `t692_help_covers_every_binding`
-//! pins below EXTRACT the real arm patterns out of both keydown `match ev.code().as_str()` blocks
-//! (the `t648_keydown_census` technique — scrubbed source, string literals kept, sliced to the arm
-//! list) and assert the two sets are EQUAL. A new binding with no help row fails the first pin; a
-//! help row for a binding that does not exist fails the second. Neither direction is a judgement
-//! call, and neither can be satisfied by a comment.
+//! the `KeyboardEvent` codes each row documents, and the `t692_help_covers_every_binding` pins
+//! below take the real bindings out of [`keymap_census`] — the ONE extractor (T-703/T-738) that
+//! reads every window-level keydown in the editor surface, both the `match ev.code().as_str()`
+//! blocks and the `ev.key()` listeners — and assert the two sets are EQUAL. A new binding with no
+//! help row fails the first pin; a help row for a binding that does not exist fails the second.
+//! Neither direction is a judgement call, and neither can be satisfied by a comment.
 //!
 //! The pins live here rather than in `mission_editor` because they must fail when *that* file
 //! changes and *this* one does not — the whole point is that the two are yoked.
@@ -54,12 +58,13 @@ pub struct Shortcut {
 }
 
 /// The overlay's section headings, in render order. A group naming no row renders nothing.
-pub const GROUPS: [&str; 5] = [
+pub const GROUPS: [&str; 6] = [
     "Selection",
     "View",
     "Transform & snapping",
     "History",
     "Tools",
+    "Context menu",
 ];
 
 /// Every keyboard shortcut the editor binds. Kept EQUAL to the live keydown arms by the pins at the
@@ -68,7 +73,10 @@ pub const GROUPS: [&str; 5] = [
 ///
 /// Chords spell out the guard each arm actually carries: `modk` is `ctrl || meta` (so "Ctrl/Cmd"),
 /// and the bare-key arms (`E`, `R`, `G`, `[`, `]`, `1`, `2`, Space, Delete, Backspace) reject every
-/// modifier, which is why they are written without one.
+/// modifier, which is why they are written without one. The `ev.key()` listeners (Escape, and the
+/// context menu's arrows / Enter) carry NO modifier guard at all — they fire on Ctrl+Esc as
+/// readily as on Esc — which is exactly why [`keymap_census`] compares `(code, modifiers)` and not
+/// bare codes.
 pub const SHORTCUTS: &[Shortcut] = &[
     // ── Selection (mission_editor's editor keydown) ───────────────────────────────────────────
     // T-649 landed the Ctrl+A arm in the same wave as this table. It could not be pre-seeded from
@@ -184,11 +192,39 @@ pub const SHORTCUTS: &[Shortcut] = &[
         group: "History",
     },
     // ── Tools ─────────────────────────────────────────────────────────────────────────────────
+    // T-738/T-703 — Escape is the editor's ONE SHARED CHANNEL: nine window-level listeners claim it
+    // (the editor keydown's measure-tool dismissal, the asset picker, the comment editor, the
+    // connections panel, the Attributes modal, the top strip's menus / export dropdown / Save
+    // dialog / Controls Hint, the context menu, and the three settings dialogs). Every claimant
+    // state-gates itself, so at most one thing is ever dismissed — that is what makes the pile-up
+    // sound rather than a collision, and `keymap_census::SHARED_CHANNELS` is where that decision is
+    // written down and pinned. This row used to name only the measurement tools, which advertised
+    // one ninth of the truth — including for the Controls Hint's OWN close button, whose tooltip
+    // says "Close (Esc)".
     Shortcut {
         codes: &["Escape"],
         chord: "Esc",
-        action: "Dismiss the ruler / line-of-sight / viewshed measurement",
+        action: "Dismiss whatever is up: a measurement, an open menu or dropdown, the Save dialog, \
+                 the Attributes modal, the asset picker, the comment editor, the connections panel, \
+                 a settings dialog, the context menu — or this card",
         group: "Tools",
+    },
+    // ── Context menu (context_menu's window keydown — the listener the census could not see) ────
+    // T-703 — these three were bound by a window-level `ev.key()` listener that the old code-only
+    // extractor never read, so they shipped undocumented for the whole programme. They only act
+    // while the context menu is OPEN (the listener returns early otherwise), which is why they can
+    // share Enter / the arrows with the rest of the suite without colliding.
+    Shortcut {
+        codes: &["ArrowUp", "ArrowDown"],
+        chord: "↑  /  ↓",
+        action: "Move the highlight while the context menu is open",
+        group: "Context menu",
+    },
+    Shortcut {
+        codes: &["Enter"],
+        chord: "Enter",
+        action: "Run the highlighted row (or expand it, if it opens a submenu)",
+        group: "Context menu",
     },
 ];
 
@@ -293,68 +329,866 @@ pub fn ControlsHint(open: RwSignal<bool>) -> impl IntoView {
     }
 }
 
-/// T-692 — the anti-drift pins. [`SHORTCUTS`] and the editor's real keydown arms must name the SAME
-/// set of `KeyboardEvent.code` values, in both directions.
+// ═════════════════ T-703 / T-738 — THE keydown census, and the collision test ═════════════════
+/// T-703 — **the** keyboard-binding census for the editor, and the collision test built on it.
 ///
-/// **Why source extraction.** Both keydowns are `#[cfg(target_arch = "wasm32")]` closures over
-/// `web_sys` events, so no native test can press a key at them; the arm list IS the binding, and
-/// reading it out of the scrubbed source is the same technique `t648_keydown_census` already uses
-/// to prove a key is free. Comments are stripped (`live_source` keeps the `"KeyX"` arm literals but
-/// blanks prose) so a note that MENTIONS a keysym is never mistaken for a binding, and only
-/// literals in ARM-HEAD position (followed by `=>`, `if` or `|`) count — a string constant inside
-/// an arm body is not a binding and must not be read as one.
+/// # Why this module exists at all
+///
+/// By wave 119 the keydown-arm extractor had been copy-pasted into FOUR places (`mission_editor`
+/// three times, `eden_help` once) in two variants. T-738 banked the instruction: consume it and
+/// widen it, do not write a fifth. So this is the one extractor; every census pin in the editor
+/// calls in here, and `there_is_exactly_one_extractor` keeps it that way.
+///
+/// # What T-738 found, which is the substance
+///
+/// The old extractor scraped only the two `match ev.code().as_str()` blocks (`mission_editor`'s
+/// editor keydown and `mission_history`'s Ctrl+Z/Y one). The editor binds keys in **nine more
+/// window-level listeners** it could not see, all through `ev.key()`: the asset picker, the comment
+/// editor and the connections panel (`mission_editor`), the Attributes modal (`attributes`), the
+/// menus / export dropdown / Save dialog / **Controls Hint** (`eden_top_strip` — T-692's own close
+/// path), the context menu's Escape/arrows/Enter (`context_menu`), and three settings dialogs
+/// (`eden_settings`). A collision test that cannot see half the bindings is the same lie the ticket
+/// exists to kill, so [`listeners`] DISCOVERS every window-level keydown closure in the editor
+/// surface rather than being handed a list of two.
+///
+/// # What a COLLISION is here
+///
+/// Not "the same code twice" — T-669 proved that test is blind, by adding `Ctrl+Shift+V` on an
+/// already-documented `KeyV` and watching every code-set pin stay green. A binding is
+/// `(code, modifier predicate)`, the predicate is read out of the live arm guard ([`Mods`]), and
+/// two bindings COLLIDE when they name the same code and their predicates OVERLAP — i.e. some real
+/// `(ctrl/meta, alt, shift)` combination satisfies both. `Ctrl+V` and `Ctrl+Shift+V` do not
+/// overlap; `Ctrl+V` and "V with any modifiers" do.
+///
+/// Two rules follow, because the two failure modes are genuinely different:
+///
+/// * **Across listeners** — two separate `keydown` closures both firing on one keypress is the
+///   defect the ticket names (Eden's Backspace-hides-the-interface vs Backspace-deletes; Eden's
+///   Space-cycles-the-widget vs Space-flyTo). Nothing orders them, so both run.
+///   [`no_two_listeners_claim_the_same_chord`].
+/// * **Within one listener** — `match` arms are ORDERED, so an overlap is resolved deterministically
+///   by position and is often deliberate (`mission_history` matches `"KeyZ" if shift` before bare
+///   `"KeyZ"`). The bug there is a later arm being *entirely* shadowed by an earlier one, which is a
+///   binding that can never fire. [`no_arm_is_shadowed_within_its_own_listener`].
+///
+/// # Escape, the one declared shared channel
+///
+/// Escape is claimed by nine listeners and that is by design, not an accident: each claimant reads
+/// its own live state first (`get_untracked()`) and the editor keydown's arm only "acts" when a
+/// measurement was actually dismissed. [`SHARED_CHANNELS`] is where that decision is written down,
+/// and it cannot rot in either direction — [`every_shared_channel_is_really_shared`] fails if a
+/// code is exempted without being multiply-claimed, and
+/// [`every_shared_channel_claimant_reads_live_state`] fails if a claimant stops gating itself.
 #[cfg(test)]
-mod t692_help_covers_every_binding {
-    use super::{Shortcut, GROUPS, SHORTCUTS};
-    use crate::arsenal::class_r_scrub::{live_code, live_source};
-    use std::collections::BTreeSet;
+pub(crate) mod keymap_census {
+    use crate::arsenal::class_r_scrub::live_source;
+    use std::collections::{BTreeMap, BTreeSet};
 
-    /// Every `KeyboardEvent.code` bound by the keydown in `src`.
+    /// A modifier PREDICATE, as read out of a live arm guard. `Some(true)` = the modifier is
+    /// required, `Some(false)` = forbidden, `None` = the binding does not constrain it (and so
+    /// claims the key with the modifier held **and** released).
     ///
-    /// Slices from the `match ev.code().as_str() {` head to the `_ =>` fallthrough (both editor
-    /// keydowns end their arm list that way), scrubs comments, then collects string literals that
-    /// sit in arm-head position. Position, not shape: a whitelist of "code-looking" strings would
-    /// silently miss the first binding on a key nobody anticipated, which is precisely the failure
-    /// this whole file exists to prevent.
-    fn bound_codes(src: &str) -> BTreeSet<String> {
-        let head = "match ev.code().as_str() {";
-        let at = src.find(head).expect("an editor keydown match is present");
-        let rest = &src[at..];
+    /// `modk` is the editor's `ctrl || meta`, the one abstraction the arms already use.
+    #[derive(Clone, Copy, PartialEq, Eq, Debug)]
+    pub(crate) struct Mods {
+        pub(crate) modk: Option<bool>,
+        pub(crate) alt: Option<bool>,
+        pub(crate) shift: Option<bool>,
+    }
+
+    impl Mods {
+        /// No constraint at all — what a bare `ev.key() == "Escape"` listener claims.
+        pub(crate) const ANY: Self = Self {
+            modk: None,
+            alt: None,
+            shift: None,
+        };
+
+        /// Does a real keypress with these modifier states reach this binding?
+        pub(crate) fn accepts(self, modk: bool, alt: bool, shift: bool) -> bool {
+            self.modk.is_none_or(|w| w == modk)
+                && self.alt.is_none_or(|w| w == alt)
+                && self.shift.is_none_or(|w| w == shift)
+        }
+
+        /// Every `(modk, alt, shift)` triple this predicate accepts. Three booleans, so the space is
+        /// eight events wide and enumerating it is exact — no reasoning about guard algebra.
+        fn matrix(self) -> Vec<(bool, bool, bool)> {
+            let mut out = Vec::new();
+            for modk in [false, true] {
+                for alt in [false, true] {
+                    for shift in [false, true] {
+                        if self.accepts(modk, alt, shift) {
+                            out.push((modk, alt, shift));
+                        }
+                    }
+                }
+            }
+            out
+        }
+
+        /// Is there a keypress BOTH bindings answer? This is the collision relation.
+        pub(crate) fn overlaps(self, other: Self) -> bool {
+            self.matrix()
+                .into_iter()
+                .any(|(m, a, s)| other.accepts(m, a, s))
+        }
+
+        /// Is every keypress `self` answers already answered by `other`? Within one ordered `match`
+        /// that means `self` is dead code.
+        pub(crate) fn covered_by(self, other: Self) -> bool {
+            self.matrix()
+                .into_iter()
+                .all(|(m, a, s)| other.accepts(m, a, s))
+        }
+
+        /// The arm guard AND the listener-level precondition above it.
+        fn and(self, pre: Self) -> Self {
+            fn one(arm: Option<bool>, pre: Option<bool>, what: &str) -> Option<bool> {
+                match (arm, pre) {
+                    (Some(a), Some(p)) => {
+                        assert_eq!(
+                            a, p,
+                            "T-703: an arm guard and its listener's precondition contradict on \
+                             {what} — the arm can never run"
+                        );
+                        Some(a)
+                    }
+                    (Some(a), None) => Some(a),
+                    (None, p) => p,
+                }
+            }
+            Self {
+                modk: one(self.modk, pre.modk, "ctrl/meta"),
+                alt: one(self.alt, pre.alt, "alt"),
+                shift: one(self.shift, pre.shift, "shift"),
+            }
+        }
+
+        /// Human form for a failure message.
+        fn describe(self) -> String {
+            let part = |v: Option<bool>, name: &str| match v {
+                Some(true) => format!("+{name}"),
+                Some(false) => format!("-{name}"),
+                None => format!("?{name}"),
+            };
+            format!(
+                "[{} {} {}]",
+                part(self.modk, "mod"),
+                part(self.alt, "alt"),
+                part(self.shift, "shift")
+            )
+        }
+    }
+
+    /// Read a `match` arm guard (everything between `if` and `=>`) as a [`Mods`].
+    ///
+    /// **Fail-closed.** A term this does not recognise PANICS rather than being ignored: a guard
+    /// silently read as "no constraint" would widen the binding and could turn a real collision
+    /// into a phantom one, and a guard silently dropped could hide one. Teach it the term.
+    fn parse_guard(guard: &str) -> Mods {
+        let mut m = Mods::ANY;
+        for raw in guard.split("&&") {
+            let term: String = raw.chars().filter(|c| !c.is_whitespace()).collect();
+            if term.is_empty() {
+                continue;
+            }
+            let (slot, want) = match term.as_str() {
+                "modk" | "ev.ctrl_key()||ev.meta_key()" => (0, true),
+                "!modk" | "!(ev.ctrl_key()||ev.meta_key())" => (0, false),
+                "ev.alt_key()" => (1, true),
+                "!ev.alt_key()" => (1, false),
+                "ev.shift_key()" => (2, true),
+                "!ev.shift_key()" => (2, false),
+                other => panic!(
+                    "T-703: unreadable modifier guard term `{other}`. The collision census refuses \
+                     to guess: a term it cannot read would silently widen or narrow the binding, \
+                     and either way the answer it gives about collisions would be about code that \
+                     is not there. Teach `parse_guard` the term."
+                ),
+            };
+            let slotted = match slot {
+                0 => &mut m.modk,
+                1 => &mut m.alt,
+                _ => &mut m.shift,
+            };
+            *slotted = Some(want);
+        }
+        m
+    }
+
+    /// One binding: a key code, the modifier predicate that reaches it, and where it lives.
+    #[derive(Clone, Debug)]
+    pub(crate) struct Binding {
+        pub(crate) code: String,
+        pub(crate) mods: Mods,
+        pub(crate) file: &'static str,
+        /// Index of the window-level listener within its file, in source order.
+        pub(crate) listener: usize,
+        /// Position within that listener — `match` arms are ordered and the order is load-bearing.
+        pub(crate) order: usize,
+        /// `ev.code()` or `ev.key()` — the accessor the listener reads.
+        pub(crate) via: &'static str,
+    }
+
+    impl Binding {
+        fn site(&self) -> String {
+            format!("{}#{} ({})", self.file, self.listener, self.via)
+        }
+    }
+
+    /// One window-level `keydown` closure: its scrubbed source and the bindings inside it.
+    pub(crate) struct Listener {
+        pub(crate) file: &'static str,
+        pub(crate) index: usize,
+        pub(crate) src: String,
+        pub(crate) bindings: Vec<Binding>,
+    }
+
+    /// The EDITOR SURFACE: every module that installs a window-level `keydown` while the Mission
+    /// Creator is up, with the number of such listeners each one is expected to install.
+    ///
+    /// The count is declared, not merely observed, so that ADDING a listener is red until someone
+    /// has looked at whether it collides — which is the whole ticket. Modules whose Escape belongs
+    /// to the suite rather than the editor (`ui`'s `Dialog`/`Modal`, `layout`'s nav) are out of
+    /// scope here and stay out; they are gated on `modal_stack::is_topmost_open`, which is a
+    /// different (and stricter) discipline from this one.
+    fn editor_surface() -> Vec<(&'static str, &'static str, usize)> {
+        vec![
+            ("mission_editor.rs", include_str!("mission_editor.rs"), 4),
+            ("mission_history.rs", include_str!("mission_history.rs"), 1),
+            ("attributes.rs", include_str!("attributes.rs"), 1),
+            ("eden_top_strip.rs", include_str!("eden_top_strip.rs"), 1),
+            ("context_menu.rs", include_str!("context_menu.rs"), 1),
+            ("eden_settings.rs", include_str!("eden_settings.rs"), 3),
+        ]
+    }
+
+    /// How a window-level keydown closure is registered. Both idioms the frontend uses; a third
+    /// would be invisible to the census, so `every_editor_surface_listener_is_censused` counts.
+    const LISTENER_HEADS: [&str; 2] = [
+        "window_event_listener(leptos::ev::keydown,",
+        "Closure::<dyn FnMut(web_sys::KeyboardEvent)>::new(",
+    ];
+
+    /// Listener-level modifier PRECONDITIONS: an early `return` above the arm list narrows every arm
+    /// in that closure, and reading only the arm heads would therefore over-claim.
+    /// `mission_history` bails on anything that is not Ctrl/Cmd-without-Alt before it looks at the
+    /// code at all, which is why its bare `"KeyZ"` arm is not the modifier-free claim it appears to
+    /// be.
+    ///
+    /// Keyed by a needle that must appear in the closure's own source, so the entry can only apply
+    /// to code that is really there — and if the source is reworded, the precondition simply stops
+    /// applying and the arms widen, which produces MORE collisions, not fewer. Fail-closed.
+    const PRECONDITIONS: [(&str, Mods); 1] = [(
+        "if !(ev.ctrl_key() || ev.meta_key()) || ev.alt_key() {",
+        Mods {
+            modk: Some(true),
+            alt: Some(false),
+            shift: None,
+        },
+    )];
+
+    /// Escape is claimed by every dismissable surface in the editor, deliberately. See the module
+    /// docs; the two pins below stop this from becoming a place to bury a real collision.
+    pub(crate) const SHARED_CHANNELS: [&str; 1] = ["Escape"];
+
+    /// Small-integer spelling, for the prose counts the census derives. One copy, consumed by
+    /// `mission_editor`'s help-blurb pin too — the same discipline this whole module is about.
+    /// Deliberately narrow: a count outside the range panics with instructions rather than
+    /// silently spelling nothing.
+    pub(crate) fn spell(n: usize) -> String {
+        const ONES: [&str; 20] = [
+            "zero",
+            "one",
+            "two",
+            "three",
+            "four",
+            "five",
+            "six",
+            "seven",
+            "eight",
+            "nine",
+            "ten",
+            "eleven",
+            "twelve",
+            "thirteen",
+            "fourteen",
+            "fifteen",
+            "sixteen",
+            "seventeen",
+            "eighteen",
+            "nineteen",
+        ];
+        const TENS: [&str; 4] = ["twenty", "thirty", "forty", "fifty"];
+        assert!(
+            n < 60,
+            "extend `spell` past {n} before the editor gets there"
+        );
+        if n < 20 {
+            return ONES[n].to_string();
+        }
+        let tens = TENS[n / 10 - 2];
+        if n.is_multiple_of(10) {
+            tens.to_string()
+        } else {
+            format!("{tens}-{}", ONES[n % 10])
+        }
+    }
+
+    /// Byte index of the `}` closing the `{` at `open`.
+    fn balanced(src: &str, open: usize) -> Option<usize> {
+        let mut depth = 0i32;
+        for (i, c) in src.char_indices() {
+            if i < open {
+                continue;
+            }
+            match c {
+                '{' => depth += 1,
+                '}' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        return Some(i);
+                    }
+                }
+                _ => {}
+            }
+        }
+        None
+    }
+
+    /// Every window-level keydown closure body in `raw`, comment-scrubbed, in source order.
+    ///
+    /// The closure body is sliced from the RAW source and scrubbed after, not before: `live_source`
+    /// cuts at the first `#[cfg(test)]` it sees and `mission_editor` has one on an inner
+    /// `clear_for_test` helper at line 88, so scrubbing the whole file first would hand back an
+    /// empty editor. Scrubbing from the listener head onward is safe — every one of these closures
+    /// closes long before its file's test module.
+    fn listener_bodies(raw: &str) -> Vec<String> {
+        let mut heads: Vec<usize> = Vec::new();
+        for head in LISTENER_HEADS {
+            let mut from = 0usize;
+            while let Some(i) = raw[from..].find(head) {
+                heads.push(from + i);
+                from += i + head.len();
+            }
+        }
+        heads.sort_unstable();
+        heads
+            .into_iter()
+            .filter_map(|start| {
+                let live = live_source(&raw[start..]);
+                let open = live.find('{')?;
+                let end = balanced(&live, open)?;
+                let body = live[open..=end].to_string();
+                // A `Closure::<dyn FnMut(KeyboardEvent)>` that reads neither accessor is not a
+                // binding site (it is some other keyboard plumbing) — do not census it.
+                (body.contains("ev.key()") || body.contains("ev.code()")).then_some(body)
+            })
+            .collect()
+    }
+
+    /// Arm heads of the `match` opened by `head` inside `body`: `(literal, guard)`, in source order.
+    ///
+    /// Only literals in ARM-HEAD position (the next non-space text is `=>`, `if ` or `|`) count — a
+    /// string constant inside an arm body is not a binding and must never be read as one.
+    fn match_arms(body: &str, head: &str) -> Vec<(String, Mods)> {
+        let Some(at) = body.find(head) else {
+            return Vec::new();
+        };
+        let rest = &body[at..];
         let end = rest.find("_ =>").map_or(rest.len(), |i| i + 4);
-        let arms: Vec<char> = live_source(&rest[..end]).chars().collect();
-        let mut out = BTreeSet::new();
+        let a: Vec<char> = rest[..end].chars().collect();
+        let mut out = Vec::new();
         let mut i = 0usize;
-        while i < arms.len() {
-            if arms[i] != '"' {
+        while i < a.len() {
+            if a[i] != '"' {
                 i += 1;
                 continue;
             }
             let start = i + 1;
             let mut j = start;
-            // A `KeyboardEvent.code` literal carries no escapes, so a plain scan to the next quote
+            // A `KeyboardEvent` code literal carries no escapes, so a plain scan to the next quote
             // is exact for the arm heads; anything weirder is not an arm head anyway.
-            while j < arms.len() && arms[j] != '"' {
+            while j < a.len() && a[j] != '"' {
                 j += 1;
             }
-            let lit: String = arms[start..j].iter().collect();
+            let lit: String = a[start..j].iter().collect();
             let mut k = j + 1;
-            while k < arms.len() && arms[k].is_whitespace() {
+            while k < a.len() && a[k].is_whitespace() {
                 k += 1;
             }
-            let tail: String = arms[k..arms.len().min(k + 3)].iter().collect();
-            if tail.starts_with("=>") || tail.starts_with("if ") || tail.starts_with('|') {
-                out.insert(lit);
+            let peek: String = a[k..a.len().min(k + 3)].iter().collect();
+            if peek.starts_with("=>") || peek.starts_with("if ") || peek.starts_with('|') {
+                // The guard is whatever sits between this literal and the arm's `=>`. Taking the
+                // LAST `if ` means an alternation (`"A" | "B" if g =>`) gives both literals the
+                // guard that really applies to them.
+                let mut p = k;
+                while p + 1 < a.len() && !(a[p] == '=' && a[p + 1] == '>') {
+                    p += 1;
+                }
+                let head_tail: String = a[k..p].iter().collect();
+                let mods = match head_tail.rfind("if ") {
+                    Some(g) => parse_guard(&head_tail[g + 3..]),
+                    None => Mods::ANY,
+                };
+                out.push((lit, mods));
             }
             i = j + 1;
         }
         out
     }
 
-    /// Both window-level editor keydowns, as one set of bound codes.
+    /// Every `ev.key() == "X"` comparison in `body`. These carry no modifier guard whatsoever —
+    /// they answer `Ctrl+Esc` and `Shift+Esc` as readily as `Esc` — which is why they are recorded
+    /// as [`Mods::ANY`] rather than being quietly assumed bare.
+    fn key_equals(body: &str) -> Vec<String> {
+        let needle = "ev.key() == \"";
+        let mut out = Vec::new();
+        let mut from = 0usize;
+        while let Some(i) = body[from..].find(needle) {
+            let s = from + i + needle.len();
+            let e = body[s..].find('"').map_or(body.len(), |d| s + d);
+            out.push(body[s..e].to_string());
+            from = e;
+        }
+        out
+    }
+
+    fn precondition(body: &str) -> Mods {
+        let mut m = Mods::ANY;
+        for (needle, pre) in PRECONDITIONS {
+            if body.contains(needle) {
+                m = m.and(pre);
+            }
+        }
+        m
+    }
+
+    /// THE census: every window-level keydown listener in the editor surface, with its bindings.
+    pub(crate) fn listeners() -> Vec<Listener> {
+        let mut out = Vec::new();
+        for (file, raw, _expected) in editor_surface() {
+            for (index, body) in listener_bodies(raw).into_iter().enumerate() {
+                let pre = precondition(&body);
+                let mut bindings = Vec::new();
+                let mut push = |code: String, mods: Mods, via: &'static str, order: &mut usize| {
+                    bindings.push(Binding {
+                        code,
+                        mods,
+                        file,
+                        listener: index,
+                        order: *order,
+                        via,
+                    });
+                    *order += 1;
+                };
+                let mut order = 0usize;
+                for (code, mods) in match_arms(&body, "match ev.code().as_str() {") {
+                    push(code, mods.and(pre), "ev.code()", &mut order);
+                }
+                for (code, mods) in match_arms(&body, "match ev.key().as_str() {") {
+                    push(code, mods.and(pre), "ev.key()", &mut order);
+                }
+                for code in key_equals(&body) {
+                    push(code, pre, "ev.key()", &mut order);
+                }
+                out.push(Listener {
+                    file,
+                    index,
+                    src: body,
+                    bindings,
+                });
+            }
+        }
+        out
+    }
+
+    /// Every binding in the editor surface, flattened.
+    pub(crate) fn all_bindings() -> Vec<Binding> {
+        listeners().into_iter().flat_map(|l| l.bindings).collect()
+    }
+
+    /// Every distinct key code the editor binds. This is what the T-692 coverage pins compare
+    /// [`super::SHORTCUTS`] against.
+    pub(crate) fn all_bound_codes() -> BTreeSet<String> {
+        all_bindings().into_iter().map(|b| b.code).collect()
+    }
+
+    /// The window-level editor keydown's ARM LIST as TEXT, comment-scrubbed with the `"KeyX"` arm
+    /// literals kept.
+    ///
+    /// This is the shape the older census pins in `mission_editor` grep against (they assert on
+    /// exact guard spellings such as `"KeyA" if modk && !ev.alt_key() && !ev.shift_key() =>`), and
+    /// it is the function that existed in four copies before T-703. It stays here, beside the
+    /// structured census, so there is exactly one of it.
+    ///
+    /// The assertion is new: the first `match ev.code().as_str()` in a file must sit in the
+    /// PRODUCTION half. A census that slices a fixture out of a test module and reports on that is
+    /// the hollow-pin failure this programme keeps finding, and it costs one line to refuse.
+    pub(crate) fn keydown_arms(src: &str) -> String {
+        let head = "match ev.code().as_str() {";
+        let at = src.find(head).expect("an editor keydown match is present");
+        assert!(
+            !src[..at].contains("\n#[cfg(test)]"),
+            "T-703: the first `match ev.code().as_str()` in this source sits after a top-level \
+             `#[cfg(test)]` — the census would be reading a test fixture instead of the shipped \
+             listener, which is a pin that proves nothing"
+        );
+        let rest = &src[at..];
+        let end = rest.find("_ =>").map_or(rest.len(), |i| i + 4);
+        live_source(&rest[..end])
+    }
+
+    // ── THE COLLISION TEST ────────────────────────────────────────────────────────────────────
+
+    /// **The ticket.** Two window-level listeners must not both answer one keypress.
+    ///
+    /// This is the case that has bitten twice already (Backspace: delete-the-selection vs
+    /// hide-the-interface; Space: flyTo vs cycle-the-widget). Nothing orders two separate `keydown`
+    /// closures — the browser runs both — so an overlap here is not a precedence question, it is two
+    /// actions firing on one key.
+    #[test]
+    fn no_two_listeners_claim_the_same_chord() {
+        let all = all_bindings();
+        let mut clashes: Vec<String> = Vec::new();
+        for (i, a) in all.iter().enumerate() {
+            for b in &all[i + 1..] {
+                if a.code != b.code
+                    || (a.file == b.file && a.listener == b.listener)
+                    || SHARED_CHANNELS.contains(&a.code.as_str())
+                    || !a.mods.overlaps(b.mods)
+                {
+                    continue;
+                }
+                clashes.push(format!(
+                    "`{}` is claimed by {} {} AND by {} {}",
+                    a.code,
+                    a.site(),
+                    a.mods.describe(),
+                    b.site(),
+                    b.mods.describe()
+                ));
+            }
+        }
+        assert!(
+            clashes.is_empty(),
+            "T-703: KEYBINDING COLLISION — two window-level editor listeners answer the same \
+             keypress, so BOTH fire and the operator gets two actions from one key:\n  {}\n\
+             Fix it by re-keying one of them, by narrowing a modifier guard so the two predicates \
+             no longer overlap, or — if the pile-up is deliberate and every claimant state-gates \
+             itself — by adding the code to `SHARED_CHANNELS` with the reason written down.",
+            clashes.join("\n  ")
+        );
+    }
+
+    /// Within ONE listener, `match` order resolves an overlap deterministically — that is why
+    /// `mission_history` can put `"KeyZ" if ev.shift_key()` in front of a bare `"KeyZ"` and mean it.
+    /// What is never intentional is an arm whose every keypress was already taken by an arm above
+    /// it: that binding can never fire, and `rustc` will not warn because guards make arm
+    /// reachability undecidable for it.
+    #[test]
+    fn no_arm_is_shadowed_within_its_own_listener() {
+        let mut dead: Vec<String> = Vec::new();
+        for l in listeners() {
+            for (i, later) in l.bindings.iter().enumerate() {
+                for earlier in &l.bindings[..i] {
+                    if earlier.code == later.code && later.mods.covered_by(earlier.mods) {
+                        dead.push(format!(
+                            "{} arm #{} `{}` {} is entirely covered by arm #{} {}",
+                            l.file,
+                            later.order,
+                            later.code,
+                            later.mods.describe(),
+                            earlier.order,
+                            earlier.mods.describe()
+                        ));
+                    }
+                }
+            }
+        }
+        assert!(
+            dead.is_empty(),
+            "T-703: DEAD BINDING — an arm is fully shadowed by an earlier arm on the same key in \
+             the same listener, so it can never run:\n  {}",
+            dead.join("\n  ")
+        );
+    }
+
+    /// The exemption list cannot rot into a dumping ground: a code sits in [`SHARED_CHANNELS`] only
+    /// while it really is claimed by two or more listeners. Exempt a key that is singly bound and
+    /// this is red — which means the list can only ever describe a pile-up that exists.
+    #[test]
+    fn every_shared_channel_is_really_shared() {
+        let all = all_bindings();
+        for code in SHARED_CHANNELS {
+            let sites: BTreeSet<(&str, usize)> = all
+                .iter()
+                .filter(|b| b.code == code)
+                .map(|b| (b.file, b.listener))
+                .collect();
+            assert!(
+                sites.len() >= 2,
+                "T-703: `{code}` is exempted from the collision rule but only {} listener(s) claim \
+                 it. An exemption for a key that is not actually shared is a hole waiting for the \
+                 next real collision to fall into — delete the entry.",
+                sites.len()
+            );
+        }
+    }
+
+    /// What makes the Escape pile-up sound rather than a collision: every claimant reads its own
+    /// live state before it acts, so at most one surface is ever dismissed. Pin that, or the
+    /// exemption is a wish rather than an argument.
+    #[test]
+    fn every_shared_channel_claimant_reads_live_state() {
+        for l in listeners() {
+            let claims_shared = l
+                .bindings
+                .iter()
+                .any(|b| SHARED_CHANNELS.contains(&b.code.as_str()));
+            if !claims_shared {
+                continue;
+            }
+            assert!(
+                l.src.contains("get_untracked()") || l.src.contains(".escape()"),
+                "T-703: {}#{} claims a shared channel ({SHARED_CHANNELS:?}) but never reads live \
+                 state — it will fire alongside every other claimant on one keypress, which is a \
+                 collision and not a shared channel",
+                l.file,
+                l.index
+            );
+        }
+        // The editor keydown's own Escape arm is the one claimant with no open/closed latch: it is
+        // gated on the measure tools having something to dismiss. `.escape()` returns false when a
+        // tool is empty and the arm returns the OR, so an Escape with nothing placed falls through
+        // untouched instead of swallowing the key from the dialogs above.
+        let arms = keydown_arms(include_str!("mission_editor.rs"));
+        let esc = arms
+            .find(&format!("\"{}\" if !modk", "Escape"))
+            .expect("the editor keydown's Escape arm");
+        // Just this arm: from its head to the head of the next one. Every arm in that match is
+        // guarded, so `" if ` is where the next one starts.
+        let rest = &arms[esc..];
+        let body = &rest[..rest[16..].find("\" if ").map_or(rest.len(), |i| i + 16)];
+        assert!(
+            body.contains(".escape()") && body.contains("||"),
+            "T-703: the editor keydown's Escape arm must ACT only when a measurement was really \
+             dismissed (the OR of the tools' `.escape()` results) — an arm that returns a bare \
+             `true` would swallow Escape from every dialog that shares the channel"
+        );
+    }
+
+    /// The census must see every listener there is. This is T-738's finding as a standing pin: the
+    /// old extractor read two listeners out of eleven and reported total coverage, and nothing was
+    /// red. A new window-level keydown anywhere in the editor surface now fails here until someone
+    /// bumps the count — which is the moment to check whether it collides.
+    #[test]
+    fn every_editor_surface_listener_is_censused() {
+        let mut total = 0usize;
+        for (file, raw, expected) in editor_surface() {
+            let found = listener_bodies(raw).len();
+            assert_eq!(
+                found, expected,
+                "T-703: `{file}` installs {found} window-level keydown listener(s), the census \
+                 expects {expected}. If a listener was ADDED, bump the count here — and read \
+                 `no_two_listeners_claim_the_same_chord` before you do, because a new listener is \
+                 exactly how the Backspace and Space collisions got in. If one was REMOVED, drop \
+                 the count."
+            );
+            total += found;
+        }
+        assert_eq!(
+            total, 11,
+            "T-703: the editor surface should carry 11 window-level keydown listeners, found \
+             {total}"
+        );
+        // A listener that yields no binding means the slicer lost the closure body (an unbalanced
+        // brace in a literal, a reworded registration) — that is a silently EMPTY census, the
+        // exact shape of a pin that passes forever while the UI rots.
+        for l in listeners() {
+            assert!(
+                !l.bindings.is_empty(),
+                "T-703: {}#{} was discovered but yielded no binding — the extractor lost its body",
+                l.file,
+                l.index
+            );
+        }
+    }
+
+    /// Every declared precondition must still match live source. A needle that no longer appears is
+    /// a stale entry, and a stale entry means the census is narrowing arms on the strength of a
+    /// guard that has been deleted.
+    #[test]
+    fn every_declared_precondition_is_still_in_the_source() {
+        let bodies: Vec<String> = listeners().into_iter().map(|l| l.src).collect();
+        for (needle, _) in PRECONDITIONS {
+            assert!(
+                bodies.iter().any(|b| b.contains(needle)),
+                "T-703: the listener precondition `{needle}` matches no listener any more. Either \
+                 the guard was reworded (update the needle — until you do, every arm under it is \
+                 censused as modifier-free) or it is gone (delete the entry)."
+            );
+        }
+    }
+
+    /// The T-669 lesson, stated as arithmetic: a census that compares bare CODES cannot see the
+    /// collisions this ticket is about. `Ctrl+V` and `Ctrl+Shift+V` share a code and do not
+    /// collide; `Ctrl+V` and "V with any modifiers" share a code and do. Any rule phrased on codes
+    /// alone gets both of those wrong, in opposite directions.
+    #[test]
+    fn overlap_is_modifier_aware_not_code_aware() {
+        let ctrl_v = Mods {
+            modk: Some(true),
+            alt: Some(false),
+            shift: Some(false),
+        };
+        let ctrl_shift_v = Mods {
+            modk: Some(true),
+            alt: Some(false),
+            shift: Some(true),
+        };
+        assert!(
+            !ctrl_v.overlaps(ctrl_shift_v),
+            "Ctrl+V and Ctrl+Shift+V partition the key — a rule that called this a collision would \
+             have blocked T-669"
+        );
+        assert!(
+            ctrl_v.overlaps(Mods::ANY),
+            "an unguarded `ev.key() == \"…\"` listener claims the key under EVERY modifier, so it \
+             collides with a Ctrl-guarded arm on the same code"
+        );
+        assert!(
+            ctrl_v.overlaps(Mods {
+                modk: Some(true),
+                alt: None,
+                shift: None
+            }),
+            "a Ctrl-anything arm swallows Ctrl+V — this is the shape T-669's Ctrl+Shift+V pin \
+             could not see, because both are `KeyV`"
+        );
+        // Coverage, the other relation, is strictly stronger than overlap.
+        assert!(ctrl_v.covered_by(Mods::ANY));
+        assert!(!Mods::ANY.covered_by(ctrl_v));
+        assert!(!ctrl_v.covered_by(ctrl_shift_v));
+    }
+
+    /// T-738 banked this: consume the extractor, do not write a fifth copy. By wave 113 it existed
+    /// four times (`mission_editor` ×3, `eden_help` ×1) in two variants, and each copy was one more
+    /// place a census could drift from the code it censuses. Exactly one definition, forever.
+    #[test]
+    fn there_is_exactly_one_extractor() {
+        // Assembled so the needle never appears verbatim in this test's own source.
+        let needle = format!("fn keydown{}(", "_arms");
+        let mut copies: Vec<String> = Vec::new();
+        let mut sources: Vec<(&str, &str)> = editor_surface()
+            .into_iter()
+            .map(|(f, raw, _)| (f, raw))
+            .collect();
+        sources.push(("eden_help.rs", include_str!("eden_help.rs")));
+        for (file, raw) in sources {
+            let n = raw.matches(needle.as_str()).count();
+            if n > 0 {
+                copies.push(format!("{file} ×{n}"));
+            }
+        }
+        assert_eq!(
+            copies,
+            vec!["eden_help.rs ×1".to_string()],
+            "T-738: the keydown-arm extractor must be defined ONCE, in `keymap_census`. Found: \
+             {copies:?}. Consume it (`use crate::eden_help::keymap_census::…`) and widen it there \
+             — a second copy is a second answer to the same question."
+        );
+    }
+
+    /// T-740 — the module's prose census numbers must be DERIVED from this census, not retyped.
+    /// That sentence has gone stale twice; a number nobody can check is a comment pretending to be
+    /// a measurement.
+    #[test]
+    fn the_prose_census_numbers_are_derived() {
+        // Only the `//!` header, so this pin can never read its own assertion strings back as
+        // evidence (the hollow-pin failure a bare whole-file `include_str!` walks into).
+        let raw = include_str!("eden_help.rs");
+        let header: String = raw
+            .lines()
+            .take_while(|l| l.starts_with("//!") || l.trim().is_empty())
+            .collect::<Vec<_>>()
+            .join("\n");
+        let ls = listeners();
+        let files: BTreeSet<&str> = ls.iter().map(|l| l.file).collect();
+        let claims = [
+            (all_bound_codes().len(), "distinct `KeyboardEvent` codes"),
+            (ls.len(), "window-level keydown listeners"),
+            (files.len(), "editor-surface modules"),
+        ];
+        for (n, what) in claims {
+            let phrase = format!("{} {what}", spell(n));
+            assert!(
+                header.contains(&phrase),
+                "T-740: the module header must say `{phrase}` — the census counts {n}. Do not \
+                 retype the old number; this is the third time."
+            );
+        }
+    }
+
+    /// A per-listener breakdown, so a reader can see what the census actually holds rather than
+    /// trusting that it holds something. Also a floor: a census that collapsed to a handful of
+    /// bindings would make every coverage pin above pass vacuously.
+    #[test]
+    fn the_census_reports_what_it_found() {
+        let ls = listeners();
+        let mut by_file: BTreeMap<&str, usize> = BTreeMap::new();
+        for l in &ls {
+            *by_file.entry(l.file).or_default() += l.bindings.len();
+        }
+        let total: usize = by_file.values().sum();
+        assert!(
+            total >= 25,
+            "T-703: the editor binds well over two dozen chords; a census finding {total} \
+             ({by_file:?}) has broken, and a broken census makes every pin built on it vacuous"
+        );
+        // Both accessors must be represented, or the widening T-738 asked for has been undone.
+        assert!(
+            ls.iter()
+                .flat_map(|l| &l.bindings)
+                .any(|b| b.via == "ev.code()"),
+            "the census must read the `match ev.code().as_str()` keydowns"
+        );
+        assert!(
+            ls.iter()
+                .flat_map(|l| &l.bindings)
+                .any(|b| b.via == "ev.key()"),
+            "T-738: the census must read the `ev.key()` listeners too — that widening IS this ticket"
+        );
+    }
+}
+
+/// T-692 — the anti-drift pins. [`SHORTCUTS`] and the editor's real key bindings must name the SAME
+/// set of `KeyboardEvent` codes, in both directions.
+///
+/// **Why source extraction.** Every one of these listeners is a `#[cfg(target_arch = "wasm32")]`
+/// closure over `web_sys` events, so no native test can press a key at them; the arm list IS the
+/// binding, and reading it out of the scrubbed source is the same technique `t648_keydown_census`
+/// already uses to prove a key is free. Comments are stripped (`live_source` keeps the `"KeyX"` arm
+/// literals but blanks prose) so a note that MENTIONS a keysym is never mistaken for a binding, and
+/// only literals in ARM-HEAD position (followed by `=>`, `if` or `|`) count — a string constant
+/// inside an arm body is not a binding and must not be read as one.
+///
+/// **T-703 widened the input, not the technique.** These pins used to own a private copy of the
+/// extractor that read the two `ev.code()` keydowns and nothing else, so nine `ev.key()` listeners
+/// — including the Controls Hint's own Escape — were documented or not entirely by luck. They now
+/// consume [`keymap_census`], which reads all eleven.
+#[cfg(test)]
+mod t692_help_covers_every_binding {
+    use super::keymap_census;
+    use super::{Shortcut, GROUPS, SHORTCUTS};
+    use crate::arsenal::class_r_scrub::live_code;
+    use std::collections::BTreeSet;
+
+    /// Every window-level editor keydown listener, as one set of bound codes. One line, because the
+    /// extractor lives in exactly one place now (T-738).
     fn all_bound() -> BTreeSet<String> {
-        let mut bound = bound_codes(include_str!("mission_editor.rs"));
-        bound.extend(bound_codes(include_str!("mission_history.rs")));
-        bound
+        keymap_census::all_bound_codes()
     }
 
     fn documented() -> BTreeSet<String> {
@@ -366,9 +1200,14 @@ mod t692_help_covers_every_binding {
 
     /// The extractor itself must be honest before either coverage assertion means anything: an
     /// extractor that returns nothing would make "every binding is documented" vacuously true, and
-    /// that is exactly the shape of a pin that passes forever while the UI rots. Pin two arms that
-    /// prove BOTH files were parsed (`Backspace` is `mission_editor`'s, `KeyZ` is
-    /// `mission_history`'s) and a floor on the count.
+    /// that is exactly the shape of a pin that passes forever while the UI rots. Pin arms that
+    /// prove each SOURCE was really parsed and a floor on the count.
+    ///
+    /// T-703 STRENGTHENED this rather than replacing it. It used to prove two files were read;
+    /// there were never two, there were six, and the four it could not see were the reason a
+    /// binding could ship undocumented with every pin green. `ArrowUp` is the witness that carries
+    /// the widening: no `ev.code()` match anywhere binds it, so it can only have come from an
+    /// `ev.key()` listener.
     #[test]
     fn the_extractor_actually_reads_both_keydowns() {
         let bound = all_bound();
@@ -381,9 +1220,19 @@ mod t692_help_covers_every_binding {
             "extractor must see mission_history's arms (found {bound:?})"
         );
         assert!(
-            bound.len() >= 14,
-            "the editor binds well over a dozen codes; an extractor finding {} has broken, and a \
-             broken extractor makes the coverage pins pass vacuously",
+            bound.contains("ArrowUp") && bound.contains("Enter"),
+            "T-738: the extractor must see the `ev.key()` listeners too — `ArrowUp` and `Enter` are \
+             bound by `context_menu`'s window keydown and by no `ev.code()` match at all, so their \
+             absence means the widening has been undone (found {bound:?})"
+        );
+        assert!(
+            bound.contains("Escape"),
+            "the shared Escape channel must be censused (found {bound:?})"
+        );
+        assert!(
+            bound.len() >= 20,
+            "the editor binds twenty-odd codes; an extractor finding {} has broken, and a broken \
+             extractor makes the coverage pins pass vacuously",
             bound.len()
         );
         // A body literal must never be read as a binding. `center_on_selection` is called from the
