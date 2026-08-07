@@ -51,8 +51,8 @@ diagnosis) → registry flip + `distrobox-host-exec sh -c './scripts/ticket sync
 | 109 | 92 | T-079 T-643 T-660 | PASS (run 1) | 0B/1M/5m/12N | SHIPPED — triggers editor half, LoS ray, cargo/loadout rules; T-729 filed (owner-line perf MAJOR), T-723/T-726 widened again |
 | 110 | 93 | T-644 T-648 T-668 | PASS (run 2; run 1 pre-fix) | 1B/1M/5m/13N → flip fixed in-wave | SHIPPED — viewshed (mirror BLOCKER fixed + wired end-to-end), transform gestures, state vocabulary; T-730..T-732 filed, T-729/T-726 widened |
 | 111 | 94 | T-645 T-655 T-693 | PASS (runs 1+2; re-run over blocker fix) | 1B/2M/4m/7N → fix CLEARED | SHIPPED — placement helpers (garrison split honestly), always-on validation panel, merge mission; BLOCKER (repeat-merge id collision) fixed in-wave 9ebcb8a9; T-733 T-734 filed |
-| — | — | **WAVES 112–119 DEFERRED TO NEXT WEEK** (operator budget pivot — 24 Rust tickets, serialize on mission_editor.rs) | | | |
-| 112 | assign at close | T-649 T-686 T-692 | — | — | pending |
+| — | — | **WAVES 112–119 UN-DEFERRED 2026-08-07** by the operator and run in plan order (24 Rust tickets, 3-wide; they serialize on mission_editor.rs — 8 of 8 waves touch it — so the packing was NOT widened). The 2026-08-02 budget-pivot deferral below is closed out. | | | |
+| 112 | 96 | T-649 T-686 T-692 | PASS 30/30 (run 1) | 1M/4m/3N | SHIPPED — select-all in view + multi-edit checkboxes (both suppress-on-multi guards inverted, T-716 rows honest), loadout import round-trip, Help menu + Controls Hint; T-735..T-742 filed |
 | 113 | assign at close | T-082 T-669 T-694 | — | — | pending |
 | 114 | assign at close | T-633 T-651 T-695 | — | — | pending |
 | 115 | assign at close | T-634 T-670 T-688 | — | — | pending |
@@ -70,9 +70,13 @@ diagnosis) → registry flip + `distrobox-host-exec sh -c './scripts/ticket sync
 
 ## Continuation recipe (compaction-proof — execute mechanically from any fresh context)
 
-State lives in the table above: the first non-`SHIPPED` row is the current wave — **skip the
-`WAVES 112–119 DEFERRED` banner row and everything it covers unless the operator un-defers them;
-the next wave to run is 121.** The close marker is **not** derived from the wave number: read it
+State lives in the table above: the first non-`SHIPPED` row is the current wave. **The 112–119
+deferral was LIFTED on 2026-08-07 — those waves are being run in plan order, so read the table
+normally and do not skip them.** (Waves 121–126, the mod half, remain PARKED mid-barrier: five
+slice branches committed-and-unmerged — T-702, T-212, T-654, T-673, T-674 — plus T-675's worktree
+stacked on T-674 with no work in it. Do not reap, drop or merge those six; preflight WARNs about
+them and that warn is expected. Their pending unread-gate row flips are a mod-half close step.)
+The close marker is **not** derived from the wave number: read it
 from git (`git log --grep='^wave [0-9]\+ CLOSED' --format='%s' -1`, then +1 — see the top of this
 file). Per wave L, tickets from `awk -F'\t' '$1==L' docs/platform/wave_plan.tsv`:
 1. `bash scripts/mod/slice-worktree.sh new T-xxx` per ticket.
@@ -217,6 +221,35 @@ serialisation, not a hang).
 
 ## Deferred tickets filed by verifiers
 
+- **T-735** (W112/MAJOR-1): T-686's import schema checker fails **OPEN** in three forms — `oneOf`
+  discards refusals from non-passing branches, schema-form `additionalProperties` is a no-op,
+  tuple-form `items` is dropped — and the pin meant to catch that is blind to all three (its
+  `is_schema` heuristic only inspects nodes already carrying a supported keyword). Proved in a
+  scratch crate. NOT live: every node of the shipped schema is currently examined. One `$defs`
+  edit from green tests over unvalidated documents.
+- **T-736** (W112/MINOR-1,2): two pins weaker than their own messages — the one-commit blacklist is
+  literal-spelling based (`.into_iter()` evades it), and the one-tail pin counts 1 whether the tail
+  is inside the loop or outside. Both live implementations are correct; neither pin would catch the
+  regression it exists for.
+- **T-737** (W112/MINOR-3): import refusals drop `RowError.key`, so two stranded rows are
+  indistinguishable. Includes the confirmed-reachable export/import asymmetry (exportable but not
+  re-importable when the compat feed is Ready).
+- **T-738** (W112/MINOR-4): the help census scrapes only the two `ev.code()` match blocks, so the
+  three-plus `ev.key()` Escape listeners — including T-692's own hint close path — are invisible to
+  it. **T-703 (W119) must consume this extractor and widen it, not write a third copy.**
+- **T-739** (W112/NIT-1): drifted line cites, one stating now-inverted behaviour
+  (`gap_analysis.md:244` and `editor_ops.rs:1236` still claim suppress-on-multi). **Registry summary
+  line numbers are themselves drifting — treat cites in dispatch briefs as hints, not as load-bearing.**
+- **T-740** (W112/NIT-2,3): help prose says "sixteen" bindings, real count is 17; redo row says
+  Ctrl+Y but the guard is `ctrl||meta`.
+- **T-741** (W112/NIT-4): mixed slot+vehicle selections overclaim ("N entities selected" /
+  "every selected entity") because `attrs_multi_ids` filters vehicles out — reachable via the
+  Ctrl+A this wave shipped.
+- **T-742** (W112, from the T-649 slice agent, NOT the verifier): concurrent slice worktrees share
+  `CARGO_TARGET_DIR` and can execute each other's test binary — T-649 observed a failure in a
+  T-686 test that does not exist in its tree, and the reported line moved between runs as the
+  sibling edited. The private-dir slice gate is unaffected; ad-hoc `cargo test` is not.
+  **NEEDS OPERATOR DECISION** — the shared dir is load-bearing for disk.
 - **T-711** (W101/F-1,N-2): §N3 LOD contract superseded by T-639; t152_7 stale call convention. cursor-docs.
 - **T-712** (W101/F-2,F-3,N-1): contour constant annotations honest; sample default view in acceptance.
 - **T-707** (W100/F-2): wave.sh test-split comment transposes its own measurement — one-line fix.

@@ -15,12 +15,12 @@
 - **T-120** — Staging soak + golden mission smoke (queued)
 - **T-146** — Asset Browser Data Wiring (queued)
 - **T-170** — Prod default flip to Leptos SPA (queued)
-- **T-649** — Select All in view, and multi-edit per-field checkboxes (queued)
-- **T-686** — Loadout import — close the round-trip TBD has only half of (queued)
 - **T-669** — Clipboard completion: Ctrl+X cut, Ctrl+Shift+V paste-at-original (queued)
 - **T-082** — Attributes modal: entity type and a real role description field (queued)
 - **T-651** — Editor comments / annotations (queued)
 - **T-633** — Native range and select controls in the top strip (queued)
+- **T-670** — Scale readout in the status bar (queued)
+- **T-688** — Aggregated settings view: every authored setting in one list, with diff-from-default (queued)
 <!-- ticket-sync:next:end -->
 
 ---

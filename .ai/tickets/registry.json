@@ -1,5 +1,5 @@
 {
- "next_id": 707,
+ "next_id": 743,
  "tickets": [
   {
    "id": "T-001",
@@ -16662,7 +16662,7 @@
     "ui",
     "state"
    ],
-   "status": "queued",
+   "status": "shipped",
    "order": 4110,
    "route": "/missions/:id/edit",
    "stream": "mission-creator",
@@ -16670,7 +16670,7 @@
     "website"
    ],
    "executor": "claude-code",
-   "notes": "editor-UI program wave 12 (wave_plan.tsv row 112)",
+   "notes": "editor-UI program wave 12 (wave_plan.tsv row 112) — SHIPPED wave 112 (editor factory), e4fefb38; verifier wave112.md. Ctrl+A viewport-scoped through the marquee primitive; BOTH suppress-on-multi guards inverted (T-716 rows now honest); per-field opt-in checkboxes. Arsenal tab still writes one slot under a multi-selection — disclosed with a UI banner, fan-out deferred to T-737's family.",
    "depends_on": [
     "T-661"
    ]
@@ -17254,7 +17254,7 @@
     "ui",
     "arsenal"
    ],
-   "status": "queued",
+   "status": "shipped",
    "order": 4115,
    "route": "/missions/:id/edit",
    "stream": "mission-creator",
@@ -17262,7 +17262,7 @@
     "website"
    ],
    "executor": "claude-code",
-   "notes": "editor-UI program wave 12 (wave_plan.tsv row 112); filed 2026-08-01 by the framework_synthesis coverage audit (parity/coverage_audit.md)",
+   "notes": "editor-UI program wave 12 (wave_plan.tsv row 112); filed 2026-08-01 by the framework_synthesis coverage audit (parity/coverage_audit.md) — SHIPPED wave 112 (editor factory), 2a3288c3; verifier wave112.md. Import gate reuses the shipped loadout-export v2 schema via include_str!, refuses whole-document on any fault, runs validate_loadout/attachment/capacity before commit, one undo step via set_loadout. NOTE: the hand-rolled schema subset checker fails OPEN in three forms — see T-735.",
    "depends_on": [
     "T-661"
    ]
@@ -17449,7 +17449,7 @@
    "id": "T-692",
    "order": 4460,
    "program": "eden",
-   "status": "queued",
+   "status": "shipped",
    "stream": "mission-creator",
    "targets": [
     "website"
@@ -17464,7 +17464,8 @@
    "surfaces": [
     "TOP",
     "UI"
-   ]
+   ],
+   "notes": "— SHIPPED wave 112 (editor factory), d4b6dd4d + merge fix 4973de19; verifier wave112.md. Help menu + Controls Hint overlay, chrome-gated by mount site; coverage pinned by a test that fails when a keydown arm has no help row — it fired on merge for T-649's KeyA exactly as predicted."
   },
   {
    "id": "T-693",
@@ -18317,6 +18318,170 @@
    "title": "Validation panel at scale: per-edit full compile, wasm panic honesty, seam pin",
    "summary": "T-655 residue, one design. (1) MAJOR: the always-on panel re-compiles the WHOLE doc per debounced edit burst (compile_payload measured 290ms/30k, 1213ms/120k native-release, linear -> ~3.6s at the 360k north star, wasm 1.5-3x worse) — the exact O(n)-per-edit class T-062/T-066 engineered away. Fine at ORBAT scale (≤10ms at 1k). Fix family: incremental payload assembly, a worker offload (T-066 precedent), or evaluate over the doc directly without full compile. The expanded list is also unvirtualized (3000 DOM buttons at 120k). (2) MINOR: the catch_unwind 'can never crash the editor' guarantee is native-only — wasm32 panics abort regardless (no panic-profile override); on native the swallow renders 'No issues' — a FALSE CLEAN. Make the fallback state visibly distinct ('validation unavailable') and document the wasm reality. (3) MINOR: the no-severity-on-clean pin binds the engine, not the panel seam — injecting a fabricated finding into evaluate_source left all tests green; pin the seam. Diagnosis: editor_verify/wave111.md MAJOR-2, MINOR-1, MINOR-2.",
    "notes": "filed by wave-111 adversarial verifier (editor factory)"
+  },
+  {
+   "id": "T-735",
+   "order": 4611,
+   "program": "eden",
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "surfaces": [
+    "ARS"
+   ],
+   "impact": [
+    "arsenal"
+   ],
+   "title": "Loadout import schema checker fails OPEN in three forms; its guard pin is blind to all three",
+   "summary": "MAJOR from the wave-112 adversarial verifier, proved in a scratch crate against the checker extracted verbatim from arsenal_rules.rs:999-1505. T-686 claims SUPPORTED_SCHEMA_KEYWORDS makes the subset checker fail CLOSED ('a keyword the checker does not implement is a refusal, not a skipped check'). It does not, in three forms: (1) arsenal_rules.rs:1299-1310 — oneOf DISCARDS refusals recorded by non-passing branches (passing==1 -> return), so an unimplemented keyword behind a $ref in a losing branch never surfaces and the document is ACCEPTED; (2) :1257 — additionalProperties is read only as `== false`, so the schema form {\"additionalProperties\":{\"type\":\"string\"}} is a silent no-op ({\"x\":123} -> Ok); (3) :1222-1226 -> :1152-1154 — tuple-form `items` is dropped via an as_object() miss that records nothing ({\"items\":[{\"type\":\"string\"}]} + [123] -> Ok). WORSE, the pin meant to catch exactly this (an_unimplemented_keyword_is_a_refusal_not_a_shrug, :2240) cannot: its is_schema heuristic (:2259-2262) only inspects nodes carrying at least one SUPPORTED keyword, so a node like {\"maxItems\":1} is skipped entirely. The verifier ran the walk verbatim against all three traps: zero flags. Control: a mixed node {\"type\":\"object\",\"maxProperties\":1} IS refused and IS flagged, so the guard works only where the slice tested it. NOT LIVE TODAY: all 101 lines of the shipped loadout-export.schema.json were read and every node carries a supported keyword, additionalProperties appears only as false, items only as an object — the importer currently examines everything it accepts. This is one $defs edit away from green tests over unexamined documents, which is this program's signature defect class. FIX SHAPE: propagate refusal-class faults out of non-passing oneOf branches; refuse (do not ignore) non-boolean additionalProperties and non-object items; make the keyword pin walk POSITIONALLY rather than sniffing for supported keywords. Diagnosis: editor_verify/wave112.md MAJOR-1.",
+   "notes": "filed by wave-112 adversarial verifier (editor factory)"
+  },
+  {
+   "id": "T-736",
+   "order": 4612,
+   "program": "eden",
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "surfaces": [
+    "ARS",
+    "ATTR"
+   ],
+   "impact": [
+    "ui"
+   ],
+   "title": "Two wave-112 pins do not constrain what they claim (spelling blacklist; tail-in-loop blind)",
+   "summary": "Two MINORs from the wave-112 verifier, same class — a pin whose assertion is weaker than its message. (1) arsenal.rs:4732: the strengthened one-commit pin blacklists the literal spellings [\"for \", \"while \", \"for_each\", \".iter()\"], so `.into_iter().map(|p| persist1(p)).count()`, a bare `loop {}`, or recursion all pass with one textual persist( — note `.into_iter()` does not contain `.iter()`. This pin already has history: its FIRST version went green under the N-step perturbation and had to be strengthened once. (2) mission_editor.rs:8007-8011: T-649's one-tail pin asserts matches(\"after_local_edit()\").count() == 1, which counts 1 whether the tail is inside the loop or outside it. Live code is CORRECT in both cases (apply_import is three signal writes + one persist -> set_loadout -> one after_local_edit at editor_ops.rs:1745; the _multi fns put the tail outside the loop at editor_ops.rs:1210-1217), so nothing is broken — but neither pin would catch the regression it exists to catch. Diagnosis: editor_verify/wave112.md MINOR-1, MINOR-2.",
+   "notes": "filed by wave-112 adversarial verifier (editor factory)"
+  },
+  {
+   "id": "T-737",
+   "order": 4613,
+   "program": "eden",
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "surfaces": [
+    "ARS"
+   ],
+   "impact": [
+    "arsenal",
+    "ui"
+   ],
+   "title": "Import refusals drop RowError.key, so the author cannot tell which row failed",
+   "summary": "MINOR from the wave-112 verifier. arsenal.rs:1031 renders import refusals through |e| e.message only, discarding RowError.key. Two stranded rows therefore both print 'Not compatible with the selected Primary weapon', indistinguishably — the author is told what is required but not which of their rows is at fault. Schema faults are unaffected (their messages carry the JSON path). Related and confirmed reachable: the deliberate export/import asymmetry T-686 flagged for review — export refuses on capacity only (arsenal.rs:743-750) while re-import additionally refuses compat when the compatibility feed is Ready, so a loadout with a stranded optic CAN be exported and CANNOT be re-imported. That asymmetry is defensible (the import gate's job is not to let an outside document put the editor into a state the author did not author) but it is exactly the case where naming the offending row matters most. Diagnosis: editor_verify/wave112.md MINOR-3.",
+   "notes": "filed by wave-112 adversarial verifier (editor factory)"
+  },
+  {
+   "id": "T-738",
+   "order": 4614,
+   "program": "eden",
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "surfaces": [
+    "UI",
+    "TOP"
+   ],
+   "impact": [
+    "ui"
+   ],
+   "title": "Help census is blind to ev.key() listeners — Escape is bound in at least three places it cannot see",
+   "summary": "MINOR from the wave-112 verifier. eden_help.rs:303-342 bound_codes()/all_bound() scrapes only the two `match ev.code().as_str()` blocks (mission_editor + mission_history). The editor already binds Escape in at least three listeners OUTSIDE them, all via ev.key(): mission_editor.rs:1200-1201 (asset picker), attributes.rs:167-171 (modal), and eden_top_strip.rs:680-696 (menus / Save / the Controls Hint itself — T-692's OWN close path). All are invisible to the coverage pin, so a future listener added anywhere but those two match blocks ships undocumented with both direction-pins green. Live consequence today: the Escape help row documents only measurement dismissal and omits the hint, the menus, the Save dialog, the modal and the picker — while the hint's own close button advertises Esc. The arm-extraction logic itself was attacked and held (or-patterns, guards, multi-line arms, body literals all handled; the >=14 / no-'(' honesty floor is real), so the defect is the SCOPE of the scrape, not its parsing. Note for T-703 (keybinding collision test, wave 119): consume this extractor rather than writing a third copy, and widen it to ev.key() listeners as part of that work. Diagnosis: editor_verify/wave112.md MINOR-4.",
+   "notes": "filed by wave-112 adversarial verifier (editor factory)"
+  },
+  {
+   "id": "T-739",
+   "order": 4615,
+   "program": "eden",
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "surfaces": [
+    "EDITOR"
+   ],
+   "impact": [
+    "docs"
+   ],
+   "title": "Drifted line cites, one of which states now-inverted behaviour",
+   "summary": "NIT cluster from the wave-112 verifier, but one entry is a live falsehood rather than a stale number. docs/specs/.../eden/gap_analysis.md:244 cites editor_ops.rs:583-585 for a suppress-on-multi guard that (a) has moved and (b) was INVERTED by T-649 in wave 112 — the doc asserts 'multi-selection suppresses the modal', which is now the opposite of what ships. editor_ops.rs:1236 (a T-648 comment) still claims suppress-on-multi for the same reason. Pure drift, no false claim: arsenal.rs:947 cites editor_ops.rs:1611 for a tail now at :1745; eden_top_strip.rs:713/1425/2064 cite refresh_docks at :1055 (actual :2076) and refresh_signals at :452 (actual :438). ALSO: the registry summary for T-649 itself cited editor_ops.rs:583-585/:605-607 for guards that were at :985/:1007 on 62195c15 — dispatch briefs are quoting drifted cites, so treat registry line numbers as hints, not as load-bearing. This is the 'false comment with its own refutation stacked beneath it' pattern the program has hit before (wave109 NOTE). Diagnosis: editor_verify/wave112.md NIT-1.",
+   "notes": "filed by wave-112 adversarial verifier (editor factory)"
+  },
+  {
+   "id": "T-740",
+   "order": 4616,
+   "program": "eden",
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "surfaces": [
+    "UI"
+   ],
+   "impact": [
+    "ui"
+   ],
+   "title": "Help table prose miscounts the bindings and mislabels the redo chord",
+   "summary": "NIT from the wave-112 verifier. eden_help.rs:5 says the editor binds 'sixteen' codes; the verifier re-derived by hand and the real count on merged main is SEVENTEEN (15 editor codes + KeyZ/KeyY). The table itself documents all 17 and both direction-pins are genuinely satisfied — only the prose is wrong, and it went wrong in the wave-112 merge fix, which added the KeyA row without updating the sentence. The ticket summary's original 'TBD binds 10 keyboard shortcuts' is stale twice over. Also eden_help.rs:166: the redo row reads 'Ctrl + Y' but the guard is ctrl||meta (mission_history.rs:490), so Cmd+Y redoes too and the row under-documents it. Diagnosis: editor_verify/wave112.md NIT-2, NIT-3.",
+   "notes": "filed by wave-112 adversarial verifier (editor factory)"
+  },
+  {
+   "id": "T-741",
+   "order": 4617,
+   "program": "eden",
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "surfaces": [
+    "ATTR"
+   ],
+   "impact": [
+    "ui"
+   ],
+   "title": "Multi-edit overclaims its scope on mixed slot+vehicle selections",
+   "summary": "NIT from the wave-112 verifier. editor_ops.rs:1826-1842 attrs_multi_ids filters the selection down to slots, because vehicles carry none of the SoA columns the multi-edit writes. But the Attributes modal header reports 'N entities selected' from the FULL selection and the per-field copy says 'every selected entity'. Under a Ctrl+A select-all — which T-649 shipped this wave, and which deliberately includes vehicles — those two strings overclaim: the user is told N entities will be changed when only the slot subset will be. Either count the filtered set in the header or say explicitly that vehicles are excluded. Low severity but it is the same honesty class as T-716 (a control that says it does more than it does). Diagnosis: editor_verify/wave112.md NIT-4.",
+   "notes": "filed by wave-112 adversarial verifier (editor factory)"
+  },
+  {
+   "id": "T-742",
+   "order": 4618,
+   "program": "eden",
+   "status": "deferred",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "surfaces": [
+    "INFRA"
+   ],
+   "impact": [
+    "dx",
+    "tests"
+   ],
+   "title": "Concurrent slice worktrees share CARGO_TARGET_DIR and can execute each other's test binary",
+   "summary": "FACTORY INFRASTRUCTURE, found by the T-649 slice agent mid-wave-112 (not by the verifier). Running `cargo test -p website-frontend` from the T-649 worktree reported a FAILURE in arsenal::tests::t686::the_import_applies_in_one_commit at arsenal.rs:4733 — a test that does not exist in T-649's tree, whose arsenal.rs is 4409 lines. On re-run the reported line moved 4733 -> 4738, tracking T-686's live edits in the sibling worktree. Cause: every slice worktree exports the shared CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target and therefore resolves the same website_frontend-<hash> test binary, so one slice can execute another slice's compiled tests. IMPACT: this is the program's signature defect class aimed at the factory itself — a slice agent can read a red, or a GREEN, that belongs to code it never wrote. A verifier or orchestrator trusting a bare `cargo test` line quoted in a slice report can be misled. The per-slice gate (wave.sh gate --slice) builds into a private dir and is NOT affected, and the shared dir is load-bearing for disk (preflight notes 8 worktrees at ~4GB shared vs ~44GB each unshared), so the fix is not simply 'stop sharing'. Options: a per-worktree target dir for the test profile only, a cargo --target-dir override on ad-hoc test invocations, or making the slice brief forbid ad-hoc `cargo test` in favour of the private-dir gate. NEEDS OPERATOR DECISION.",
+   "notes": "filed by the T-649 slice agent, wave 112 (editor factory) — factory infrastructure, needs operator decision"
   }
  ]
 }
