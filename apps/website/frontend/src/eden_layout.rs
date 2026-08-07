@@ -44,13 +44,29 @@ use std::cell::Cell;
 
 /// Top Command Strip height — `h-12` / the docks' `top-12`. Expanded value; live inset is
 /// [`strip_top_px`] (unchanged by dock collapse, zeroed only while `chrome_hidden`).
+///
+/// **T-637 does NOT touch this.** The strip height is a separate contract from the dock widths:
+/// T-634 split the strip into two rows that SUM to it ([`ROW_MENUS_PX`] + [`ROW_TOOLS_PX`]), and the
+/// `top-12`/`h-12` utilities are written from it. Equalising the docks moves the X insets only.
 pub const STRIP_TOP_PX: f64 = 48.0;
-/// Left dock width — `w-64`. Expanded value; live inset is [`dock_left_px`] (→ [`STUB_PX`] collapsed,
-/// → 0 while `chrome_hidden`).
-pub const DOCK_LEFT_PX: f64 = 256.0;
-/// Right dock width — `w-80`. Expanded value; live inset is [`dock_right_px`] (→ [`STUB_PX`]
-/// collapsed, → 0 while `chrome_hidden`).
-pub const DOCK_RIGHT_PX: f64 = 320.0;
+
+/// T-637 — the EQUALISED dock width, in CSS px. Eden is 240/240 in every one of the 75 screenshots;
+/// we were 256 left and 320 right, which is what pushed the right dock's trailing tab off the
+/// viewport (the T-632 clipping this ticket absorbed — the clipping was a symptom of the width).
+///
+/// One number, two names: [`DOCK_LEFT_PX`] and [`DOCK_RIGHT_PX`] both resolve to it, because the two
+/// readers outside this file's owns (`eden_chrome`'s re-export shim, `eden_toolbelt`'s grid-ref
+/// overlay) consume the per-side names as bare `f64`s and a rename would not compile there. Stating
+/// the equality as a definition rather than as two coincidentally-equal literals is what makes
+/// `docks_are_equal_width` a structural check instead of a numeric one.
+pub const DOCK_PX: f64 = 240.0;
+
+/// Left dock width — [`DOCK_LEFT_CLASS`] (`w-60`). Expanded value; live inset is [`dock_left_px`]
+/// (→ [`STUB_PX`] collapsed, → 0 while `chrome_hidden`).
+pub const DOCK_LEFT_PX: f64 = DOCK_PX;
+/// Right dock width — [`DOCK_RIGHT_CLASS`] (`w-60`). Expanded value; live inset is [`dock_right_px`]
+/// (→ [`STUB_PX`] collapsed, → 0 while `chrome_hidden`).
+pub const DOCK_RIGHT_PX: f64 = DOCK_PX;
 /// Bottom band reserved for the toolbelt chrome — the region a pointer probe must stay ABOVE to be
 /// on the real map, read identically by `select_tool::farthest_empty_px` and `mission_editor`'s
 /// palette-drop `on_canvas` gate (the two live readers; a test pins that they agree — now via the
@@ -71,6 +87,72 @@ pub const TOOLBELT_BAND_PX: f64 = 96.0;
 /// overlaying the map; the freed width reflows into the map pane. Same value drives the inset
 /// accessors, the Tailwind stub size (`w-6 h-6`), and the 24×24 chevron hit-box.
 pub const STUB_PX: f64 = 24.0;
+
+// ── T-637 — the DOM half of the inset contract ───────────────────────────────────────────────────
+//
+// **THE SILENT FAILURE THIS CLOSES.** The insets above are input-handling numbers: `select_tool`
+// unprojects the pointer by them and `mission_editor` mounts the docks with a Tailwind width class.
+// Nothing connected the two. `DOCK_LEFT_PX = 256.0` and `class="… w-64"` agreed only because a human
+// remembered that `w-64` is 256 px, and a change to one without the other maps every click inside
+// the map pane to the WRONG world position by exactly the difference — a plausible-looking wrongness
+// no rendering test catches, because both the panel and the map still draw correctly.
+//
+// ── MEASURED, not assumed ────────────────────────────────────────────────────────────────────────
+// The slice gate does not run Trunk, so it cannot tell you whether a re-layout renders. These
+// numbers came from `tailwindcss` run against `style/aegis.css` with the whole `src/**/*.rs` as its
+// content, then the real dock markup laid out in a headless Chrome and read back through
+// `getBoundingClientRect` and `scrollWidth − clientWidth`, at a 1920×1080 viewport:
+//
+//   left dock       240.00 wide · 1032 high · horizontal overflow 0
+//     header row      223.00 available, 198.63 used (chevron 24 · Layers 57.75 · Locations 84.88 · verb 20)
+//     filter row       22.00 high
+//     tree region     958.00 high  ← the "~900 px of void", now the tree's
+//   right dock      240.00 wide · horizontal overflow 0
+//     tab strip       223.00 available, 202.00 used (7×20 tabs + 20 verb + 24 chevron + gaps)
+//   tree row idle    16.00 high      tree row SELECTED (with its `border-t`)  16.00 high
+//
+// Every overflow figure is 0. The pre-ticket header wanted 228 px of a 215 px row and SQUEEZED
+// rather than reporting anything (see `eden_dock_left`'s header-budget note).
+//
+// So the mount classes live HERE, beside the numbers they must agree with, `mission_editor` renders
+// these consts rather than a hand-written literal, and [`tw_width_px`] reads the width back OUT of
+// the class string. `t637_dock_geometry` closes the loop: class → px → unprojected world point.
+
+/// T-637 — the LEFT dock wrapper's classes while EXPANDED. The `w-*` token is the DOM half of
+/// [`DOCK_LEFT_PX`]; `top-12` is the DOM half of [`STRIP_TOP_PX`].
+pub(crate) const DOCK_LEFT_MOUNT: &str = "absolute bottom-0 left-0 top-12 z-20 w-60";
+/// T-637 — the LEFT dock wrapper while COLLAPSED (T-638): no `w-*`, no `bottom-0`, so the wrapper
+/// shrinks to the [`STUB_PX`] box the dock renders and the freed strip is click-through to the map.
+pub(crate) const DOCK_LEFT_MOUNT_COLLAPSED: &str = "absolute left-0 top-12 z-20";
+/// T-637 — the RIGHT dock wrapper while expanded. Same `w-60` as the left: that IS the equalisation.
+pub(crate) const DOCK_RIGHT_MOUNT: &str = "absolute bottom-0 right-0 top-12 z-20 w-60";
+/// T-637 — the RIGHT dock wrapper while collapsed. See [`DOCK_LEFT_MOUNT_COLLAPSED`].
+pub(crate) const DOCK_RIGHT_MOUNT_COLLAPSED: &str = "absolute right-0 top-12 z-20";
+
+/// T-637 — the Tailwind v4 spacing scale, in CSS px: `w-60` / `h-4` / `size-6` → `N × 4.0`
+/// (`--spacing` is `0.25rem` = 4 px and the theme does not override it). Returns `None` when the
+/// class list carries no token with `prefix`, so a caller can tell "absent" from "zero".
+///
+/// This is the READ-BACK direction of the inset contract: it lets a native test recover the width a
+/// mount class will actually produce in the browser and compare it against the `f64` the pointer
+/// unprojection insets by. Only the plain numeric scale is supported — an arbitrary-value token
+/// (`w-[13px]`) is deliberately NOT parsed, because the whole point is that the chrome geometry
+/// stays on the scale the rest of the UI is written in; such a token reads as absent and the pins
+/// fail loudly rather than silently accepting an off-scale width.
+#[must_use]
+pub fn tw_len_px(classes: &str, prefix: &str) -> Option<f64> {
+    classes
+        .split_whitespace()
+        .filter_map(|tok| tok.strip_prefix(prefix))
+        .find_map(|n| n.parse::<f64>().ok())
+        .map(|n| n * 4.0)
+}
+
+/// T-637 — the width a `w-*` token in `classes` resolves to in CSS px. See [`tw_len_px`].
+#[must_use]
+pub fn tw_width_px(classes: &str) -> Option<f64> {
+    tw_len_px(classes, "w-")
+}
 
 thread_local! {
     /// T-638 — the left (Entity List) dock's collapse latch. Session-local (no prefs store: the
@@ -228,14 +310,67 @@ const OVERLAY_PANEL: &str = "pointer-events-auto rounded-xl border border-white/
 const OVERLAY_DOCKED: &str =
     "pointer-events-auto bg-surface-container-lowest/55 shadow-xl backdrop-blur-xl";
 
-/// `cn(overlayDocked, 'flex h-full items-center gap-2 border-b border-white/10 px-3')`.
-pub(crate) const STRIP: &str = "pointer-events-auto bg-surface-container-lowest/55 shadow-xl backdrop-blur-xl flex h-full items-center gap-2 border-b border-white/10 px-3";
-/// `cn(overlayDocked, …)` + the dock's own edge border.
-pub(crate) const DOCK_L: &str = "pointer-events-auto bg-surface-container-lowest/55 shadow-xl backdrop-blur-xl flex h-full flex-col overflow-y-auto border-r border-white/10 p-3";
-pub(crate) const DOCK_R: &str = "pointer-events-auto bg-surface-container-lowest/55 shadow-xl backdrop-blur-xl h-full overflow-y-auto border-l border-white/10 p-3";
+// ── T-637 — the top strip's shell, folded back from `eden_top_strip.rs` ──────────────────────────
+//
+// T-634 (wave 115) needed a two-row strip shell and a tighter icon recipe. `eden_layout` was another
+// slice's `owns` that wave, so it defined `STRIP_ROWS`/`ROW_MENUS`/`ROW_TOOLS`/`TOOL_ICON` LOCALLY in
+// `eden_top_strip.rs` and reported the fold-back as residue. This is that fold-back. Two things died
+// with it:
+//
+//   * **`STRIP` (the one-row shell) is GONE.** `eden_top_strip` was its only consumer and it moved to
+//     [`STRIP_ROWS`] at T-634, which left `STRIP` referenced by nothing but the test that compared
+//     the two. The file carries `#![allow(dead_code)]`, so nothing warned. Its load-bearing claim —
+//     "the strip is made of the same glass as the docks it sits above" — did not die with it: it is
+//     now checked directly between [`STRIP_ROWS`] and [`DOCK_L`]/[`DOCK_R`], which is what it always
+//     meant.
+//   * **`TOOL_ICON` is GONE** — see [`BTN_ICON`] below.
 
-/// The shared icon-button recipe (React TopCommandStrip:148).
-pub(crate) const BTN_ICON: &str = "rounded-md p-1.5 text-on-surface-variant transition-colors hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent";
+/// T-637 (was T-634's `STRIP_ROWS`) — the top strip's shell: [`OVERLAY_DOCKED`]'s glass, the
+/// `border-b` edge, and a COLUMN so the menu row and the tool row stack. It states no height of its
+/// own beyond `h-full`; the 48 px comes from `mission_editor`'s `h-12`, written from
+/// [`STRIP_TOP_PX`].
+pub(crate) const STRIP_ROWS: &str = "pointer-events-auto bg-surface-container-lowest/55 shadow-xl backdrop-blur-xl flex h-full flex-col border-b border-white/10";
+
+/// T-637 (was T-634's `ROW_MENUS`) — strip row 1, Eden's `y 0–22`: the menu bar, the editable title
+/// and the live slot census. Identity and commands. `h-6` is [`ROW_MENUS_PX`] — this is the FIXED
+/// row of the split.
+pub(crate) const ROW_MENUS: &str = "flex h-6 shrink-0 items-center gap-2 px-3";
+
+/// T-637 (was T-634's `ROW_TOOLS`) — strip row 2, Eden's `y 22–40`: history/undo/redo, the ORBAT
+/// Manager, the environment cluster and the one primary action. `flex-1` is [`ROW_TOOLS_PX`] — the
+/// REMAINDER, so the two rows can never drift from [`STRIP_TOP_PX`].
+pub(crate) const ROW_TOOLS: &str =
+    "flex min-h-0 flex-1 items-center gap-1.5 border-t border-white/10 px-3";
+
+/// T-637 (was T-634's) — the menu row's fixed height (`h-6`). Documentation-with-teeth: the pins
+/// check `ROW_MENUS_PX + ROW_TOOLS_PX == STRIP_TOP_PX`, so the split can never grow the strip.
+pub(crate) const ROW_MENUS_PX: f64 = 24.0;
+/// T-637 (was T-634's) — the tool row's height: the remainder, 48 − 24. Not a class value.
+pub(crate) const ROW_TOOLS_PX: f64 = 24.0;
+
+/// `cn(overlayDocked, …)` + the dock's own edge border.
+///
+/// T-637 — the padding drops `p-3` → `p-2`. At 320 px the right dock could afford 12 px of gutter on
+/// each side; at the equalised [`DOCK_PX`] those 24 px are the difference between the tab strip
+/// fitting and the trailing tab clipping, and Eden's own gutter is 8.
+pub(crate) const DOCK_L: &str = "pointer-events-auto bg-surface-container-lowest/55 shadow-xl backdrop-blur-xl flex h-full flex-col overflow-y-auto border-r border-white/10 p-2";
+pub(crate) const DOCK_R: &str = "pointer-events-auto bg-surface-container-lowest/55 shadow-xl backdrop-blur-xl flex h-full flex-col overflow-y-auto border-l border-white/10 p-2";
+
+/// The shared icon-button recipe (React TopCommandStrip:148), as T-637 rebuilt it.
+///
+/// **It used to rest at `text-on-surface-variant` with `p-1.5`, and that was a defect, not a style.**
+/// A muted rest colour meant a LIVE glyph and a DEAD one looked the same, so dimming carried no
+/// information — exactly the "the undo/redo/history glyphs are too dim to find" complaint. And
+/// `p-1.5` around a 24 px `text-base` line box is a 36 px control, which cannot sit in a 24 px strip
+/// row or a dense dock. T-634 could not fix it here (this file was another slice's owns that wave),
+/// so it routed around the defect with a local `TOOL_ICON` copy and left the defect standing for
+/// every OTHER caller. T-637 fixes the recipe and deletes the copy.
+///
+/// A live control now rests at full `text-on-surface`; dimming is reserved for DISABLED, where it
+/// means exactly one thing. State comes from the T-668 vocabulary ([`HOVER_FILL`] +
+/// [`DISABLED_GLYPH`]) composed at the call site rather than this recipe's old ad-hoc
+/// `hover:`/`disabled:` pair, so the chrome speaks one state language.
+pub(crate) const BTN_ICON: &str = "shrink-0 rounded p-0.5 text-on-surface";
 /// A vertical hairline divider (React `<span className="h-5 w-px bg-white/10" />`).
 pub(crate) const DIVIDER: &str = "h-5 w-px bg-white/10";
 
@@ -314,7 +449,7 @@ mod t636_band_readers_agree {
     use crate::arsenal::class_r_scrub::live_code;
 
     /// The band has ONE definition here (its expanded value), and both chokepoint readers reference
-    /// the LIVE inset via the accessor — neither smuggles in a bare `96.0`/`256`/`320`/`48`.
+    /// the LIVE inset via the accessor — neither smuggles in a bare `96.0`/`240.0`/`48.0`.
     /// `live_code` blanks comments + string literals, so a number mentioned in prose or a class
     /// string can never satisfy (or false-fail) a needle; the definitions themselves are checked on
     /// raw source, where the `= 96.0` value is real code.
@@ -419,10 +554,10 @@ mod t636_band_readers_agree {
         // No reader may hardcode an inset (that would silently diverge from a collapse). The needles
         // are split so this test's own source cannot satisfy them. eden_layout is excluded — it
         // legitimately holds the literals in the definitions above.
+        // T-637: the two dock literals collapsed from 256/320 to one equalised 240 (`DOCK_PX`).
         for bare in [
             ["96", ".0"].concat(),
-            ["256", ".0"].concat(),
-            ["320", ".0"].concat(),
+            ["240", ".0"].concat(),
             ["48", ".0"].concat(),
         ] {
             assert!(
@@ -789,6 +924,278 @@ mod t668_state_vocabulary {
         assert_ne!(
             TOGGLED_PLATE, defect_toggled,
             "the toggled recipe must not be the bare hover fill"
+        );
+    }
+}
+
+/// T-637 — **THE DOCK GEOMETRY IS AN INPUT CONTRACT, NOT A STYLESHEET.**
+///
+/// Equalising the docks to Eden's 240/240 is a two-line change to a pair of `f64`s and a pair of
+/// Tailwind classes — and getting those two halves out of step is the most dangerous edit in this
+/// file, because it fails SILENTLY. `select_tool` unprojects the pointer by the `f64`s; the browser
+/// lays the panels out from the classes. If the class says 256 and the const says 240, every panel
+/// still draws correctly, the map still draws correctly, and every click inside the map pane resolves
+/// to a world position 16 px wrong — 64 world metres at a typical zoom. No screenshot shows it and no
+/// render test catches it.
+///
+/// These pins close that loop end to end: the mount class parses back to the const ([`tw_width_px`]),
+/// the const is what the live accessor reports, and the accessor is what a real
+/// `map_engine_core::camera::OrthoCamera` unprojects with. The perturbation fires the rule on the
+/// exact half-edit it exists to catch — the pre-T-637 `w-64` class left behind while the const moved.
+#[cfg(test)]
+mod t637_dock_geometry {
+    use super::{
+        dock_left_px, dock_right_px, set_chrome_hidden, set_dock_left_collapsed,
+        set_dock_right_collapsed, strip_top_px, tw_width_px, BTN_ICON, DOCK_L, DOCK_LEFT_MOUNT,
+        DOCK_LEFT_MOUNT_COLLAPSED, DOCK_LEFT_PX, DOCK_PX, DOCK_R, DOCK_RIGHT_MOUNT,
+        DOCK_RIGHT_MOUNT_COLLAPSED, DOCK_RIGHT_PX, ROW_MENUS, ROW_MENUS_PX, ROW_TOOLS,
+        ROW_TOOLS_PX, STRIP_ROWS, STRIP_TOP_PX,
+    };
+    use crate::arsenal::class_r_scrub::live_code;
+    use map_engine_core::camera::OrthoCamera;
+
+    /// Both collapse latches off and the chrome shown, so the accessors report the EXPANDED consts.
+    /// The latches are thread-locals shared with `t638_collapse`, which runs on the same thread.
+    fn expanded() {
+        set_dock_left_collapsed(false);
+        set_dock_right_collapsed(false);
+        set_chrome_hidden(false);
+    }
+
+    /// **THE EQUALISATION.** Eden is 240/240 in every one of the 75 screenshots; we were 256 left and
+    /// 320 right. The asymmetry was not cosmetic — a 320 px right dock is what pushed its trailing tab
+    /// off the viewport (the T-632 clipping this ticket absorbed), and an off-centre map pane is what
+    /// made the collapse reflow feel like a jump.
+    ///
+    /// Stated structurally: both sides resolve to the ONE [`DOCK_PX`], so "equal" is a definition
+    /// rather than two literals that happen to match today.
+    #[test]
+    fn the_docks_are_one_equalised_width() {
+        assert_eq!(
+            DOCK_LEFT_PX, DOCK_RIGHT_PX,
+            "T-637: Eden's docks are the same width; ours were 256/320"
+        );
+        assert_eq!(DOCK_LEFT_PX, DOCK_PX);
+        assert_eq!(DOCK_RIGHT_PX, DOCK_PX);
+        assert!(
+            (DOCK_PX - 240.0).abs() < f64::EPSILON,
+            "T-637: the equalised width is Eden's 240, got {DOCK_PX}"
+        );
+        // The dock widths and the STRIP height are DIFFERENT contracts — equalising X must not have
+        // moved Y. T-634's two-row split depends on this number.
+        assert!(
+            (STRIP_TOP_PX - 48.0).abs() < f64::EPSILON,
+            "T-637 must not touch the strip height contract"
+        );
+    }
+
+    /// **THE SILENT-FAILURE PIN, AND THE ONE THIS TICKET MOST NEEDED.** The width the browser lays
+    /// out (parsed back out of the mount class) and the width the pointer unprojection insets by (the
+    /// live accessor) are ONE number, and the proof is carried all the way through to a world
+    /// coordinate on the engine's own camera.
+    ///
+    /// PERTURB / FAIL / RESTORE is inline and on the real failure mode: `w-64` is the class this
+    /// ticket replaced. Feed it to the same camera and the pane's left edge lands 64 world metres
+    /// away — the assertion checks the drift is EXACTLY `Δpx / scale`, so the check has teeth in both
+    /// directions (a drift of zero would mean the unprojection ignores its x argument).
+    #[test]
+    fn the_mounted_dock_width_and_the_pointer_unprojection_are_one_number() {
+        expanded();
+
+        // (1) Class → px. The collapsed mounts deliberately state NO width: the wrapper shrinks to
+        // the stub the dock renders, which is what makes the freed strip click-through to the map.
+        let dom_left =
+            tw_width_px(DOCK_LEFT_MOUNT).expect("the left mount must state a `w-*` width");
+        let dom_right =
+            tw_width_px(DOCK_RIGHT_MOUNT).expect("the right mount must state a `w-*` width");
+        assert!(
+            tw_width_px(DOCK_LEFT_MOUNT_COLLAPSED).is_none()
+                && tw_width_px(DOCK_RIGHT_MOUNT_COLLAPSED).is_none(),
+            "T-638: a collapsed dock's wrapper must state no width, or it keeps covering the map"
+        );
+
+        // (2) px → the const the input path insets by.
+        assert!(
+            (dom_left - dock_left_px()).abs() < f64::EPSILON,
+            "T-637: the LEFT mount class lays out {dom_left} px but the pointer unprojection insets \
+             by {} px — every click in the map pane would be off by the difference",
+            dock_left_px()
+        );
+        assert!(
+            (dom_right - dock_right_px()).abs() < f64::EPSILON,
+            "T-637: the RIGHT mount class lays out {dom_right} px but the pointer unprojection \
+             insets by {} px",
+            dock_right_px()
+        );
+
+        // (3) The world-space consequence, on the engine's own camera (the exact type
+        // `select_tool::frozen_camera` builds), full-bleed viewport like the editor's.
+        let (w, h) = (1920.0, 1080.0);
+        let (tx, ty, zoom) = (6400.0, 6400.0, -2.0);
+        let cam = OrthoCamera::new(w, h, tx, ty, zoom);
+        let scale = zoom.exp2();
+
+        let edge_from_const = cam.unproject_xy(dock_left_px(), strip_top_px())[0];
+        let edge_from_dom = cam.unproject_xy(dom_left, strip_top_px())[0];
+        assert!(
+            (edge_from_const - edge_from_dom).abs() < 1e-9,
+            "T-637: the map pane's LEFT edge must be one world point whether you derive it from the \
+             mount class or from the inset const"
+        );
+        let right_from_const = cam.unproject_xy(w - dock_right_px(), strip_top_px())[0];
+        let right_from_dom = cam.unproject_xy(w - dom_right, strip_top_px())[0];
+        assert!(
+            (right_from_const - right_from_dom).abs() < 1e-9,
+            "T-637: the map pane's RIGHT edge must be one world point from either derivation"
+        );
+
+        // (4) PERTURB — the pre-T-637 class, left behind while the const moved to 240. This is the
+        // half-edit the pin exists for, stated as a value so the check must reject it.
+        let stale = tw_width_px("absolute bottom-0 left-0 top-12 z-20 w-64")
+            .expect("the stale `w-64` class still parses");
+        assert!(
+            (stale - dom_left).abs() > f64::EPSILON,
+            "PERTURB: the stale class must differ from the shipped one or this proves nothing"
+        );
+        let drifted = cam.unproject_xy(stale, strip_top_px())[0];
+        let drift_m = (drifted - edge_from_const).abs();
+        assert!(
+            (drift_m - (stale - dom_left).abs() / scale).abs() < 1e-9,
+            "PERTURB: an out-of-step class must shift the unprojected edge by exactly Δpx / scale \
+             ({drift_m} m for {} px at scale {scale})",
+            (stale - dom_left).abs()
+        );
+        assert!(
+            drift_m > 1.0,
+            "PERTURB: {} px of class/const drift is {drift_m} world metres of pointer error — \
+             silent, plausible-looking, and invisible to every render test",
+            (stale - dom_left).abs()
+        );
+
+        // RESTORE: the shipped pair is the zero-drift one.
+        assert!((edge_from_const - edge_from_dom).abs() < 1e-9);
+        expanded();
+    }
+
+    /// The mount classes are RENDERED, not merely declared: `mission_editor` names these consts
+    /// instead of hand-writing a second copy of the width. Checked on scrubbed code (strings and
+    /// comments blanked), sliced from the page fn so the file's leading `#[cfg(test)]` helper does
+    /// not cut the body away — the t636/t662 idiom.
+    ///
+    /// Exactly one use each: a second mount would be a second place the width could drift.
+    #[test]
+    fn mission_editor_mounts_the_docks_from_these_consts() {
+        let raw = include_str!("mission_editor.rs");
+        let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
+        let editor = live_code(&raw[raw.find(anchor.as_str()).expect("anchor present")..]);
+        for name in [
+            "eden_layout::DOCK_LEFT_MOUNT",
+            "eden_layout::DOCK_LEFT_MOUNT_COLLAPSED",
+            "eden_layout::DOCK_RIGHT_MOUNT",
+            "eden_layout::DOCK_RIGHT_MOUNT_COLLAPSED",
+        ] {
+            assert!(
+                editor.contains(name),
+                "T-637: `{name}` must be RENDERED by mission_editor — a hand-written class literal \
+                 is a second source for a width the pointer unprojection has to agree with"
+            );
+        }
+        // Exactly four `eden_layout::DOCK_*` reads in the page body: two per dock (expanded +
+        // collapsed). A fifth is a second mount, i.e. a second place the geometry can drift.
+        assert_eq!(
+            editor.matches("eden_layout::DOCK_").count(),
+            4,
+            "T-637: the docks mount in exactly two places, each reading its expanded/collapsed pair"
+        );
+    }
+
+    /// T-637 — the T-634 FOLD-BACK. `STRIP_ROWS` / `ROW_MENUS` / `ROW_TOOLS` / `ROW_*_PX` now live
+    /// here beside their siblings, and the dead one-row `STRIP` they replaced is deleted.
+    ///
+    /// `STRIP`'s load-bearing claim survives its deletion: the strip is made of the SAME glass as the
+    /// docks it sits above (that shared surface is why the chrome reads as one product rather than
+    /// as assembled parts). It used to be checked by comparing the two shells to each other; it is
+    /// now checked directly against the docks, which is what it always meant.
+    #[test]
+    fn the_strip_shell_folded_back_and_still_shares_the_docks_glass() {
+        let surface =
+            "pointer-events-auto bg-surface-container-lowest/55 shadow-xl backdrop-blur-xl";
+        for (name, recipe) in [
+            ("STRIP_ROWS", STRIP_ROWS),
+            ("DOCK_L", DOCK_L),
+            ("DOCK_R", DOCK_R),
+        ] {
+            assert!(
+                recipe.starts_with(surface),
+                "T-637: `{name}` must open with the shared docked-overlay glass"
+            );
+        }
+        // The height contract T-634 built the split for, restated where the consts now live.
+        assert!(
+            (ROW_MENUS_PX + ROW_TOOLS_PX - STRIP_TOP_PX).abs() < f64::EPSILON,
+            "T-637: the two strip rows SPLIT {STRIP_TOP_PX} px, they do not add to it"
+        );
+        assert!(
+            ROW_MENUS.contains("h-6"),
+            "the menu row is the FIXED half of the split"
+        );
+        assert!(
+            ROW_TOOLS.contains("flex-1") && !ROW_TOOLS.contains("h-["),
+            "the tool row takes the REMAINDER — two stated heights could drift from STRIP_TOP_PX"
+        );
+        // The dead shell is gone. Needle assembled so this test's own source cannot satisfy it.
+        let layout = include_str!("eden_layout.rs");
+        let dead = format!("{} STRIP:", "pub(crate) const");
+        assert!(
+            !layout.contains(&dead),
+            "T-637: the one-row `STRIP` shell had no consumer left after T-634 and is deleted — \
+             `#![allow(dead_code)]` means nothing warns, so this is the only thing that would notice \
+             it coming back"
+        );
+        // The equalised docks are a flex COLUMN each, so a dock body can claim the leftover height
+        // instead of leaving it as void below a short tree.
+        for (name, dock) in [("DOCK_L", DOCK_L), ("DOCK_R", DOCK_R)] {
+            assert!(
+                dock.contains("flex") && dock.contains("flex-col") && dock.contains("h-full"),
+                "T-637: `{name}` must be a full-height column — the void under the tree was a dock \
+                 that never told its children they could grow"
+            );
+        }
+    }
+
+    /// T-637 — **the tripwire T-634 left, resolved.** `BTN_ICON` used to rest at
+    /// `text-on-surface-variant` with `p-1.5`: a live glyph looked like a dead one, and a 36 px
+    /// control could not sit in a 24 px strip row. T-634 could not fix it (this file was another
+    /// slice's owns that wave) and made a local `TOOL_ICON` copy instead, which left the defect
+    /// standing for every OTHER caller — the help panel's close button, the docks, the toolbelt.
+    ///
+    /// The recipe is now fixed at the source and the copy is deleted, so the fix reaches every
+    /// caller. The pin is INVERTED from T-634's, deliberately: its premise was that `BTN_ICON` is
+    /// still muted, and that premise is exactly what this ticket had to falsify.
+    #[test]
+    fn btn_icon_rests_bright_and_fits_a_dense_row() {
+        assert!(
+            BTN_ICON.contains("text-on-surface") && !BTN_ICON.contains("text-on-surface-variant"),
+            "T-637: a LIVE icon button rests at full strength; dimming is reserved for DISABLED, \
+             where it means something"
+        );
+        assert!(
+            BTN_ICON.contains("p-0.5") && !BTN_ICON.contains("p-1.5"),
+            "T-637: `p-1.5` around a 24 px line box is a 36 px control — too tall for a 24 px strip \
+             row or a dense dock"
+        );
+        assert!(
+            !BTN_ICON.contains("hover:") && !BTN_ICON.contains("disabled:"),
+            "T-637: state comes from the T-668 vocabulary at the call site (HOVER_FILL / \
+             DISABLED_GLYPH), not from an ad-hoc pair baked into the geometry recipe"
+        );
+        // The local copy is gone from the strip. Needle assembled so this source cannot satisfy it.
+        let strip = include_str!("eden_top_strip.rs");
+        let copy = format!("{} TOOL_ICON", "const");
+        assert!(
+            !strip.contains(&copy),
+            "T-637: `TOOL_ICON` existed only to route around the muted BTN_ICON; with the recipe \
+             fixed it is a second source of truth for the same geometry"
         );
     }
 }

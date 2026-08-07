@@ -4305,11 +4305,18 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // (drop `bottom-0`/`w-*` so it stops covering the map — the freed strip becomes
                 // click-through and the map pane reflows). The `DockLeft`/`DockRight` component renders
                 // either the full panel or the stub off the same `collapsed` signal.
+                //
+                // T-637 — THE WIDTH IS NOT WRITTEN HERE. These four class strings are `eden_layout`
+                // consts, next to the `DOCK_LEFT_PX`/`DOCK_RIGHT_PX` they must agree with, because
+                // `select_tool` unprojects the pointer by those numbers: a hand-written `w-*` that
+                // drifted from the const would map every click in the map pane to the wrong world
+                // position while everything still LOOKED right. `t637_dock_geometry` parses the width
+                // back out of these consts and unprojects with it.
                 {move || (!chrome_hidden.get()).then(|| view! {
                     <div class=move || if dock_left_collapsed.get() {
-                        "absolute left-0 top-12 z-20"
+                        crate::eden_layout::DOCK_LEFT_MOUNT_COLLAPSED
                     } else {
-                        "absolute bottom-0 left-0 top-12 z-20 w-64"
+                        crate::eden_layout::DOCK_LEFT_MOUNT
                     }>
                         <crate::eden_chrome::DockLeft
                             nodes=outliner_nodes
@@ -4321,9 +4328,9 @@ pub fn MissionEditorPage() -> impl IntoView {
                 })}
                 {move || (!chrome_hidden.get()).then(|| view! {
                     <div class=move || if dock_right_collapsed.get() {
-                        "absolute right-0 top-12 z-20"
+                        crate::eden_layout::DOCK_RIGHT_MOUNT_COLLAPSED
                     } else {
-                        "absolute bottom-0 right-0 top-12 z-20 w-80"
+                        crate::eden_layout::DOCK_RIGHT_MOUNT
                     }>
                         <crate::eden_chrome::DockRight
                             catalog

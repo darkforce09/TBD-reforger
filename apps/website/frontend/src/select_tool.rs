@@ -507,8 +507,14 @@ fn json_id_array(ids: &[String]) -> String {
 /// T-159.21 — the candidate grid is inset to the **chrome-free** region. The Eden chrome overlays
 /// this same container and stops `pointerdown` from reaching the map handlers, so a px under the
 /// top strip or a dock would be un-clickable and the deselect gate would hang on a stale selection.
-/// The insets come from `eden_chrome`, which is also what the view's Tailwind utilities are written
-/// from — one contract, two readers.
+///
+/// T-637 — the insets come from `eden_layout`'s accessors, and that file also owns the Tailwind
+/// MOUNT CLASSES `mission_editor` renders the docks with (`DOCK_LEFT_MOUNT` etc.). That is not
+/// tidiness: the numbers this function insets by and the classes the browser lays the panels out
+/// from are ONE contract, and if they drift the probe grid — and every real pointer unprojection
+/// alongside it — is offset by the difference while everything still looks correct.
+/// `eden_layout::t637_dock_geometry` parses the width back out of the mount class and checks it
+/// against the accessor this function calls.
 ///
 /// This **shrinks the search space; it does not weaken the property.** The result is still the
 /// argmax over candidates of the min distance to any projected slot, i.e. still empty — and the
@@ -794,8 +800,13 @@ pub fn register_editor_selection(
     probe_move.forget();
 }
 
-// T-636 / T-638 — the inset-reader tests live in `eden_layout` (the consts' owner, natively
+// T-636 / T-638 / T-637 — the inset-reader tests live in `eden_layout` (the consts' owner, natively
 // compiled), NOT here: this whole module is `#[cfg(target_arch = "wasm32")]` (main.rs), so a native
 // `cargo test` never sees it. `farthest_empty_px` above reads the band via the T-638 accessor
 // `crate::eden_layout::toolbelt_band_px()` (was `eden_chrome::TOOLBELT_BAND_PX`) — that read is one of
 // the two the layout accessor-conversion test pins by name, and it must not hardcode `96.0`.
+//
+// T-637 equalised the docks to 240/240. This file needed no change for that, and THAT IS THE POINT:
+// it reads `dock_left_px()`/`dock_right_px()`, never the numbers, so a width change reaches the
+// pointer path by construction. The half that could still go wrong — the mount CLASS drifting from
+// the const — is what `eden_layout::t637_dock_geometry` now pins.

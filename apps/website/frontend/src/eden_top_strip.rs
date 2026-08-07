@@ -17,7 +17,12 @@ use std::collections::HashMap;
 // The inline scrubber/weather author through the same T-193 gate as the Mission Settings dialog.
 #[cfg(target_arch = "wasm32")]
 use crate::eden_env::author_env;
-use crate::eden_layout::{DISABLED_GLYPH, DIVIDER, HOVER_FILL, MENU_GUTTER, TOGGLED_PLATE};
+// T-637 — `STRIP_ROWS` / `ROW_MENUS` / `ROW_TOOLS` and the icon recipe are `eden_layout`'s again
+// (the T-634 fold-back); this file renders them rather than redefining them.
+use crate::eden_layout::{
+    BTN_ICON, DISABLED_GLYPH, DIVIDER, HOVER_FILL, MENU_GUTTER, ROW_MENUS, ROW_TOOLS, STRIP_ROWS,
+    TOGGLED_PLATE,
+};
 // T-633 — the scrubber and the weather picker are the shared Aegis primitives now, not raw
 // `<input type="range">` / `<select>`.
 use crate::ui::{cn, MaterialIcon, Select, Slider};
@@ -37,33 +42,12 @@ use crate::ui::{cn, MaterialIcon, Select, Slider};
 // `*_PX` consts below state that split as a number the pins can check against `STRIP_TOP_PX`
 // itself; they are documentation-with-teeth, not a second source of truth for the height.
 
-/// T-634 — the menu row's fixed height (`h-6`). See the module block above.
-const ROW_MENUS_PX: f64 = 24.0;
-/// T-634 — the tool row's height: the REMAINDER (`flex-1`), which is 48 − 24. Not a class value —
-/// the row never states a height — so the split can never drift from `STRIP_TOP_PX`.
-const ROW_TOOLS_PX: f64 = 24.0;
-
-/// T-634 — the two-row shell, replacing `eden_layout::STRIP` at this one call site.
-///
-/// The SURFACE half — `pointer-events-auto bg-surface-container-lowest/55 shadow-xl backdrop-blur-xl`
-/// plus the `border-b border-white/10` bottom edge — is `STRIP`'s, verbatim (pinned below): nothing
-/// about the strip's glass or its edge changes. What changes is the FLOW: `flex h-full items-center
-/// gap-2 px-3` (one centred row) becomes `flex h-full flex-col` (two stacked rows), and the
-/// horizontal padding moves onto the rows so the tool row's `border-t` hairline reaches the full
-/// width instead of stopping 12 px short at each end.
-///
-/// It lives here rather than beside `STRIP` because `eden_layout` is another slice's `owns` this
-/// wave (T-637). Folding this recipe back next to `STRIP` is reported as residue.
-const STRIP_ROWS: &str = "pointer-events-auto bg-surface-container-lowest/55 shadow-xl backdrop-blur-xl flex h-full flex-col border-b border-white/10";
-
-/// T-634 — row 1, Eden's `y 0–22`: the menu bar, the editable title, and the live slot census.
-/// Identity and commands. `h-6` is [`ROW_MENUS_PX`].
-const ROW_MENUS: &str = "flex h-6 shrink-0 items-center gap-2 px-3";
-
-/// T-634 — row 2, Eden's `y 22–40` (its own row): history/undo/redo, the ORBAT Manager, the
-/// environment cluster (scrubber · readout · weather · settings gear) and, at the far right, the one
-/// primary action with the exports demoted under it. `flex-1` is [`ROW_TOOLS_PX`] — the remainder.
-const ROW_TOOLS: &str = "flex min-h-0 flex-1 items-center gap-1.5 border-t border-white/10 px-3";
+// T-637 — the T-634 residue is FOLDED BACK. `STRIP_ROWS`, `ROW_MENUS`, `ROW_TOOLS`, `ROW_MENUS_PX`
+// and `ROW_TOOLS_PX` were defined locally here only because `eden_layout` was another slice's `owns`
+// in wave 115; they now live in `eden_layout` beside `DOCK_L`/`DOCK_R`/`STRIP_TOP_PX`, and the dead
+// one-row `STRIP` they replaced is deleted. This file imports them (see the `use` block below).
+// `TOOL_ICON` folded back too — `eden_layout::BTN_ICON` IS the bright, dense recipe now, so the local
+// copy that routed around the old muted one has no reason to exist.
 
 /// T-634 — the ONE primary action. `Save Version` earns it: it is the routine, reversible,
 /// most-used command, and it is the only FILLED button in the strip. Before this ticket it was one
@@ -75,18 +59,6 @@ const ACTION_PRIMARY: &str = "shrink-0 rounded bg-primary px-2.5 py-0.5 text-xs 
 /// but full `text-on-surface` next to the primary; they are now ONE `Export` trigger wearing this,
 /// with the choice of format a second-level decision inside its menu. Compose with [`HOVER_FILL`].
 const ACTION_SECONDARY: &str = "shrink-0 rounded border border-outline-variant/40 px-2.5 py-0.5 text-xs font-medium text-on-surface-variant";
-
-/// T-634 — the tool row's icon button, replacing `eden_layout::BTN_ICON` at these four call sites.
-///
-/// Two reasons it is not `BTN_ICON`. (1) **Weight** — `BTN_ICON` rests at `text-on-surface-variant`,
-/// which is exactly the ticket's "the undo/redo/history glyphs are too dim to find"; a live control
-/// rests at full `text-on-surface` here, and dimming is reserved for the DISABLED state, where it
-/// means something. (2) **Height** — `BTN_ICON`'s `p-1.5` around a 24 px `text-base` line box is a
-/// 36 px control, which cannot sit in a 24 px row; `p-0.5` around a `leading-none` 16 px glyph is 20.
-/// State comes from the T-668 vocabulary ([`HOVER_FILL`] + [`DISABLED_GLYPH`]) rather than
-/// `BTN_ICON`'s pre-vocabulary ad-hoc `hover:`/`disabled:` pair, so a disabled glyph still dims,
-/// still refuses the hover fill, and still keeps its `title` (rule 3).
-const TOOL_ICON: &str = "shrink-0 rounded p-0.5 text-on-surface";
 
 /// T-634 — one dropdown-row recipe, shared by the menu-bar dropdowns and the demoted-export menu, so
 /// the demotion lands INSIDE the T-668 menu vocabulary instead of inventing a second dropdown
@@ -1229,7 +1201,7 @@ pub fn TopCommandStrip(
                 type="button"
                 aria-label="History"
                 title="Version history (soon)"
-                class=cn(&[TOOL_ICON, HOVER_FILL, DISABLED_GLYPH])
+                class=cn(&[BTN_ICON, HOVER_FILL, DISABLED_GLYPH])
                 disabled=true
             >
                 <MaterialIcon name="history" class="block text-base leading-none" />
@@ -1240,7 +1212,7 @@ pub fn TopCommandStrip(
                 type="button"
                 aria-label="Undo"
                 title="Undo (Ctrl+Z)"
-                class=cn(&[TOOL_ICON, HOVER_FILL, DISABLED_GLYPH])
+                class=cn(&[BTN_ICON, HOVER_FILL, DISABLED_GLYPH])
                 disabled=move || !can_undo.get()
                 on:click=move |_| {
                     #[cfg(target_arch = "wasm32")]
@@ -1255,7 +1227,7 @@ pub fn TopCommandStrip(
                 type="button"
                 aria-label="Redo"
                 title="Redo (Ctrl+Shift+Z)"
-                class=cn(&[TOOL_ICON, HOVER_FILL, DISABLED_GLYPH])
+                class=cn(&[BTN_ICON, HOVER_FILL, DISABLED_GLYPH])
                 disabled=move || !can_redo.get()
                 on:click=move |_| {
                     #[cfg(target_arch = "wasm32")]
@@ -1361,7 +1333,7 @@ pub fn TopCommandStrip(
                     type="button"
                     aria-label="Mission settings"
                     title="Mission Settings — the rest of the environment"
-                    class=cn(&[TOOL_ICON, HOVER_FILL, DISABLED_GLYPH])
+                    class=cn(&[BTN_ICON, HOVER_FILL, DISABLED_GLYPH])
                     disabled=settings_open.is_none()
                     on:click=move |_| {
                         if let Some(s) = settings_open {
@@ -2633,9 +2605,15 @@ mod t633_aegis_controls {
 /// pins over `MENUS`, which is a `const` table and can be read directly.
 #[cfg(test)]
 mod t634_two_rows_and_a_hierarchy {
-    use super::{MENUS, ROW_MENUS, ROW_MENUS_PX, ROW_TOOLS, ROW_TOOLS_PX, STRIP_ROWS};
+    use super::MENUS;
     use crate::arsenal::class_r_scrub::{live_source, only_body};
-    use crate::eden_layout::{BTN_ICON, STRIP, STRIP_TOP_PX};
+    // T-637 — the row recipes moved to `eden_layout` (the T-634 fold-back) and the dead one-row
+    // `STRIP` is deleted. `DOCK_L` stands in for it below: "the strip is the same glass as the docks
+    // it sits above" is what comparing the two shells always meant.
+    use crate::eden_layout::{
+        BTN_ICON, DOCK_L, ROW_MENUS, ROW_MENUS_PX, ROW_TOOLS, ROW_TOOLS_PX, STRIP_ROWS,
+        STRIP_TOP_PX,
+    };
 
     /// The strip's own view body, with comments blanked and class/aria literals kept — the literals
     /// ARE the structure these pins read.
@@ -2677,24 +2655,27 @@ mod t634_two_rows_and_a_hierarchy {
         );
     }
 
-    /// The shell is two stacked rows, and its MATERIAL is `eden_layout::STRIP`'s, verbatim. Only the
-    /// flow changed: `items-center` (one centred row) → `flex-col` (two rows). If the surface halves
-    /// ever diverge the strip stops matching the docks it sits above, which is the "disjointed"
-    /// complaint `editor_chrome_direction.md` exists to answer.
+    /// The shell is two stacked rows, and its MATERIAL is the docks', verbatim. Only the flow
+    /// changed: `items-center` (one centred row) → `flex-col` (two rows). If the surface halves ever
+    /// diverge the strip stops matching the docks it sits above, which is the "disjointed" complaint
+    /// `editor_chrome_direction.md` exists to answer.
+    ///
+    /// T-637 — this used to compare `STRIP_ROWS` against `eden_layout::STRIP`, the one-row shell it
+    /// replaced. That shell had no consumer left after T-634 and is now deleted, so the comparison
+    /// runs against `DOCK_L` instead. This is not a weakening: "the same glass as the docks" was
+    /// always the property; `STRIP` was only ever a proxy for it.
     #[test]
     fn the_shell_is_two_rows_in_the_same_glass() {
         let surface =
             "pointer-events-auto bg-surface-container-lowest/55 shadow-xl backdrop-blur-xl";
         assert!(
-            STRIP.starts_with(surface) && STRIP_ROWS.starts_with(surface),
-            "T-634: the two-row shell must keep eden_layout::STRIP's surface recipe verbatim"
+            DOCK_L.starts_with(surface) && STRIP_ROWS.starts_with(surface),
+            "T-634/T-637: the two-row shell must wear the same docked-overlay glass as the docks"
         );
-        for edge in ["border-b", "border-white/10"] {
-            assert!(
-                STRIP.contains(edge) && STRIP_ROWS.contains(edge),
-                "T-634: the strip's bottom edge (`{edge}`) is unchanged by the row split"
-            );
-        }
+        assert!(
+            STRIP_ROWS.contains("border-b") && STRIP_ROWS.contains("border-white/10"),
+            "T-634: the strip's bottom edge is unchanged by the row split"
+        );
         assert!(
             STRIP_ROWS.contains("flex-col") && STRIP_ROWS.contains("h-full"),
             "T-634: the shell stacks its two rows and still fills the 48 px it is given"
@@ -2812,35 +2793,43 @@ mod t634_two_rows_and_a_hierarchy {
         );
     }
 
-    /// **The history glyphs are no longer too dim to find.** `eden_layout::BTN_ICON` rests at
-    /// `text-on-surface-variant` — the muted colour — so History/Undo/Redo sat at the same weight
-    /// whether they were live or not, and dimming meant nothing. `TOOL_ICON` rests at full
-    /// `text-on-surface` and takes its disabled half from `DISABLED_GLYPH`, so dim now means exactly
-    /// one thing: this control cannot act. All four tool glyphs use it, and `BTN_ICON` is gone from
-    /// the strip.
+    /// **The history glyphs are no longer too dim to find** — and, since T-637, neither is anything
+    /// else that wears the shared icon recipe.
+    ///
+    /// **THIS PIN WENT RED ON PURPOSE.** T-634 wrote it with the premise `BTN_ICON.contains(
+    /// "text-on-surface-variant")` — an assertion that the SHARED recipe was still the muted, 36 px
+    /// one — because T-634 could not fix `eden_layout` (another slice owned it that wave) and had to
+    /// route around it with a local `TOOL_ICON` copy. The premise was a tripwire: it fires the moment
+    /// someone fixes the recipe at its source, which is exactly what T-637 did.
+    ///
+    /// Resolved by INVERTING it, not by weakening it and not by leaving the recipe broken to keep
+    /// the pin green. The property never changed — "a live glyph rests bright, and dimming means
+    /// disabled" — only where it is enforced: `BTN_ICON` itself now carries it, so it holds for the
+    /// help panel's close button and every dock/toolbelt caller too, not just for these four.
     #[test]
     fn a_live_tool_glyph_rests_bright_and_only_a_dead_one_dims() {
         assert!(
-            BTN_ICON.contains("text-on-surface-variant"),
-            "T-634: this pin's premise — BTN_ICON is the muted recipe the glyphs used to wear. If \
-             eden_layout changed it, TOOL_ICON's reason to exist changed with it (T-637 owns that \
-             file; this is the signal to fold them back together)"
+            BTN_ICON.contains("text-on-surface") && !BTN_ICON.contains("text-on-surface-variant"),
+            "T-637: the SHARED icon recipe rests at full strength — being hard to find was the \
+             defect, and T-634's local TOOL_ICON copy only hid it from this one file"
         );
         assert!(
-            super::TOOL_ICON.contains("text-on-surface")
-                && !super::TOOL_ICON.contains("text-on-surface-variant"),
-            "T-634: a LIVE tool glyph rests at full strength — being hard to find was the defect"
+            !BTN_ICON.contains("hover:") && !BTN_ICON.contains("disabled:"),
+            "T-637: the recipe carries geometry + rest weight only; its states come from the T-668 \
+             vocabulary at the call site, so a disabled glyph dims, refuses the hover fill, and \
+             keeps its title (rule 3)"
         );
         let b = body();
-        assert!(
-            !b.contains("BTN_ICON"),
-            "T-634: no strip control may fall back to the muted BTN_ICON recipe"
-        );
         assert_eq!(
-            b.matches("cn(&[TOOL_ICON, HOVER_FILL, DISABLED_GLYPH])").count(),
+            b.matches("cn(&[BTN_ICON, HOVER_FILL, DISABLED_GLYPH])").count(),
             4,
             "T-634: all four tool glyphs (History · Undo · Redo · the settings gear) take the same \
              recipe and the same T-668 state pair"
+        );
+        assert!(
+            !b.contains("TOOL_ICON"),
+            "T-637: the local copy is gone — a second source of truth for the same geometry is what \
+             let the defect survive everywhere except this file"
         );
         // Rule (3) survives the swap: the permanently-disabled History glyph still explains itself.
         assert!(

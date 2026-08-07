@@ -926,6 +926,61 @@ fn favourites_panel(
     .into_any()
 }
 
+// ── T-637 — the tab strip, as a WIDTH BUDGET ─────────────────────────────────────────────────────
+//
+// The strip's cells and its gaps are consts rather than inline class strings so
+// `t637_the_tab_strip_fits_the_dock` can ADD THEM UP against `eden_layout::DOCK_PX` and fail if the
+// next tab would push the trailing cell off the panel. That is the T-632 defect this ticket absorbed:
+// the seventh tab clipped at the window edge, and nothing in the codebase could tell.
+
+/// T-637 — the tab strip's own row: the tab group, then the Manage verb + collapse chevron.
+const TAB_STRIP: &str = "flex shrink-0 items-center justify-between gap-1";
+/// T-637 — the gap between cells inside each group.
+const TAB_GROUP: &str = "flex items-center gap-0.5";
+/// T-637 — a tab cell, selected. `size-5` (20 px) is the cell budget; the strip's arithmetic is
+/// written from it.
+const TAB_CELL_ON: &str = "flex size-5 shrink-0 items-center justify-center rounded border-b-2 border-primary text-primary";
+/// T-637 — a tab cell at rest.
+const TAB_CELL_OFF: &str = "flex size-5 shrink-0 items-center justify-center rounded border-b-2 border-transparent text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface";
+/// T-637 — the Manage verb's cell: the same box as a tab, in the primary tint (it is the strip's one
+/// verb, not an eighth tab).
+const TAB_CELL_VERB: &str =
+    "flex size-5 shrink-0 items-center justify-center rounded text-primary transition-colors hover:bg-primary/15";
+/// T-637 — how many TAB cells the strip renders (Factions · Vehicles · Zones · Compositions ·
+/// Triggers · Favourites · Markers). Stated so the budget test costs a compile error to get wrong,
+/// and pinned against the actual `tab_btn` call count in the view.
+const TAB_COUNT: usize = 7;
+
+/// T-637 — the tab strip's glyph for tab `i`.
+///
+/// **THE TAB STRIP RAN OFF THE VIEWPORT, AND THE WORDS WERE WHY.** The dock carries SEVEN tabs
+/// (Factions · Vehicles · Zones · Compositions · Triggers · Favourites · Markers) plus a Manage verb
+/// and the collapse chevron — nine cells. As uppercase `text-label-sm` words that is roughly 470 px
+/// of content, which did not fit the old 320 px dock (the trailing tab clipped at the window edge)
+/// and comes nowhere near the equalised 240. Eden solves exactly this by labelling its cells with
+/// glyphs and nothing else; nine 20 px cells is 180 px, which fits with room to spare.
+///
+/// **The label does not disappear — it moves.** Every tab keeps its word as both `title` (the hover
+/// tooltip) and `aria-label` (the accessible name), so the strip is still readable by pointer and by
+/// screen reader, and every existing `[aria-label]`-driven gate selector still resolves. What is
+/// gone is only the rendered text.
+///
+/// An unknown index is a programming error, not a state, so it falls back to a neutral glyph rather
+/// than panicking inside a view.
+#[must_use]
+fn tab_icon(i: usize) -> &'static str {
+    match i {
+        0 => "groups",         // Factions — the ORBAT roles palette
+        1 => "directions_car", // Vehicles
+        2 => "push_pin",       // Markers
+        3 => "crop_free",      // Zones — a drawn area
+        4 => "dashboard",      // Compositions — prefab clusters
+        5 => "bolt",           // Triggers — activation
+        6 => "star",           // Favourites — the starred collection
+        _ => "help",
+    }
+}
+
 /// Right dock — the **Factions** palette (spec O2), off the live `GET /api/v1/registry`. Leaves drag
 /// onto the map to place their slot. `fm_open` toggles the T-167 Faction Manager dialog.
 ///
@@ -966,6 +1021,8 @@ pub fn DockRight(
             palette_collapsed.set(set);
         }
     });
+    // T-637 — see [`tab_icon`]: the tab strip is GLYPHS now, not words.
+    //
     // T-172 B9 — screen-05 palette chrome: FACTIONS / VEHICLES / MARKERS tabs + Asset Browser
     // search. Vehicles/Markers placement stays T-070/T-069 — React's tabs were stubs too, so the
     // panels say exactly that. Search filters the catalog (T-055 behavior) and force-expands
@@ -1029,19 +1086,18 @@ pub fn DockRight(
     // `editor_ops` or on the wire knows or should know what an author has starred.
     let favourites = RwSignal::new(load_favourites());
     let tab_btn = move |i: usize, label: &'static str| {
+        let icon = tab_icon(i);
         view! {
             <button
                 type="button"
-                class=move || {
-                    if tab.get() == i {
-                        "border-b-2 border-primary px-1.5 pb-1 text-label-sm font-semibold uppercase tracking-wide text-on-surface"
-                    } else {
-                        "border-b-2 border-transparent px-1.5 pb-1 text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant transition-colors hover:text-on-surface"
-                    }
-                }
+                role="tab"
+                title=label
+                aria-label=label
+                aria-selected=move || (tab.get() == i).to_string()
+                class=move || if tab.get() == i { TAB_CELL_ON } else { TAB_CELL_OFF }
                 on:click=move |_| tab.set(i)
             >
-                {label}
+                <MaterialIcon name=icon class="block text-sm leading-none" />
             </button>
         }
     };
@@ -1050,8 +1106,8 @@ pub fn DockRight(
             <aside class=DOCK_R>
                 // T-638 — the tab strip carries the collapse chevron at its outer (top-RIGHT) end, after
                 // "Manage"; » while expanded, flips to « collapsed.
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-1">
+                <div class=TAB_STRIP>
+                    <div class=TAB_GROUP role="tablist">
                         {tab_btn(0, "Factions")}
                         {tab_btn(1, "Vehicles")}
                         // T-582 — Zones sits before the Markers stub: it is a live surface and that
@@ -1067,14 +1123,18 @@ pub fn DockRight(
                         {tab_btn(6, "Favourites")}
                         {tab_btn(2, "Markers")}
                     </div>
-                    <div class="flex items-center gap-1">
+                    <div class=TAB_GROUP>
+                        // T-637 — "Manage" was a WORD in a strip that had already run out of room.
+                        // It keeps its primary tint (it is the strip's one verb, not an eighth tab)
+                        // and its name in the tooltip + `aria-label`.
                         <button
                             type="button"
+                            title="Manage factions"
                             aria-label="Manage factions"
                             on:click=move |_| fm_open.set(true)
-                            class="rounded-md px-1.5 py-0.5 text-label-sm font-semibold uppercase tracking-wide text-primary transition-colors hover:bg-primary/15"
+                            class=TAB_CELL_VERB
                         >
-                            "Manage"
+                            <MaterialIcon name="tune" class="block text-sm leading-none" />
                         </button>
                         {collapse_chevron(collapsed, false)}
                     </div>
@@ -4065,6 +4125,162 @@ mod tests {
             fields,
             vec!["faction_id", "id", "x", "z", "icon", "label"],
             "MarkerRow is the four `$defs/marker` fields plus the (factionId, id) address"
+        );
+    }
+}
+
+/// T-637 — **THE TAB STRIP FITS THE DOCK, AND THAT IS NOW ARITHMETIC.**
+///
+/// This ticket absorbed T-632, which was filed as "the right dock's fifth tab runs off the viewport".
+/// That framing was a symptom: the strip had SEVEN word tabs, a `Manage` verb and a collapse chevron
+/// crammed into one row, and at ~470 px of uppercase labels it did not fit the old 320 px dock either
+/// — the trailing cell simply clipped at whatever edge it reached first. Equalising to 240 would have
+/// made it worse.
+///
+/// So the strip is glyphs (Eden's own answer — its cells carry no words at all), and the labels move
+/// to `title` + `aria-label` rather than disappearing. The durable half is this pin: the strip's
+/// width is ADDED UP from the cell and gap classes it actually renders and checked against
+/// `eden_layout::DOCK_PX` minus the dock's padding. An eighth tab, or a cell that grew, fails here
+/// instead of clipping silently in a browser nobody is looking at.
+#[cfg(test)]
+mod t637_tab_strip_budget {
+    use super::{TAB_CELL_OFF, TAB_CELL_ON, TAB_CELL_VERB, TAB_COUNT, TAB_GROUP, TAB_STRIP};
+    use crate::eden_layout::{tw_len_px, DOCK_PX, DOCK_R, STUB_PX};
+
+    /// The production half of this file — everything above the first test module, so a needle here
+    /// cannot satisfy itself (the T-759 hollow-pin trap).
+    fn production() -> &'static str {
+        include_str!("eden_dock_right.rs")
+            .split("#[cfg(test)]")
+            .next()
+            .expect("the production half precedes the test modules")
+    }
+
+    /// The strip's rendered width, in CSS px, from the classes themselves.
+    fn strip_width_px() -> f64 {
+        let cell = tw_len_px(TAB_CELL_ON, "size-").expect("a tab cell states its size");
+        let verb = tw_len_px(TAB_CELL_VERB, "size-").expect("the verb cell states its size");
+        let gap = tw_len_px(TAB_GROUP, "gap-").expect("the groups state their gap");
+        let outer = tw_len_px(TAB_STRIP, "gap-").expect("the strip states its gap");
+        let tabs = TAB_COUNT as f64;
+        // Tab group: N cells + (N−1) gaps. Right group: the verb + the 24 px collapse chevron
+        // (STUB_PX — its hit box must match the collapsed stub exactly, so it is not ours to shrink)
+        // + one gap. Then the gap between the two groups.
+        let left = tabs * cell + (tabs - 1.0) * gap;
+        let right = verb + STUB_PX + gap;
+        left + right + outer
+    }
+
+    /// The whole strip fits inside the equalised dock, gutters included.
+    #[test]
+    fn the_tab_strip_fits_the_dock() {
+        let pad = tw_len_px(DOCK_R, "p-").expect("the dock states its padding");
+        let budget = DOCK_PX - 2.0 * pad;
+        let width = strip_width_px();
+        assert!(
+            width <= budget,
+            "T-637/T-632: the tab strip renders {width} px inside a {budget} px dock — the trailing \
+             cell clips at the panel edge, which is exactly the defect this ticket absorbed"
+        );
+        // …and it is not fitting by a hair, which would clip the moment a glyph gained a border.
+        assert!(
+            budget - width >= 8.0,
+            "T-637: only {} px of slack — that is a clipping bug waiting for the next cell",
+            budget - width
+        );
+        // The budget is computed from the SELECTED cell, so the two states must be the same box.
+        // A selected tab that were wider would shuffle every cell right of it on each tab change —
+        // and would make this arithmetic a lower bound rather than the width.
+        assert_eq!(
+            tw_len_px(TAB_CELL_ON, "size-"),
+            tw_len_px(TAB_CELL_OFF, "size-"),
+            "T-637: selecting a tab must not resize its cell — the strip would jitter, and the \
+             width budget would be measuring the wrong state"
+        );
+    }
+
+    /// **PERTURB / FAIL / RESTORE on the real failure mode.** The pre-T-637 strip labelled its cells
+    /// with uppercase `text-label-sm` words. Even at a conservative 7 px per character plus the
+    /// `px-1.5` gutters, those seven labels plus `Manage` blow the budget — which is why the trailing
+    /// tab clipped. The budget check must REJECT that layout, or it is asserting nothing.
+    #[test]
+    fn the_budget_rejects_the_word_labelled_strip_it_replaced() {
+        let pad = tw_len_px(DOCK_R, "p-").expect("the dock states its padding");
+        let budget = DOCK_PX - 2.0 * pad;
+        // The labels the strip used to render, verbatim.
+        let words = [
+            "Factions",
+            "Vehicles",
+            "Zones",
+            "Compositions",
+            "Triggers",
+            "Favourites",
+            "Markers",
+            "Manage",
+        ];
+        // 12 px uppercase at ~7 px/char, plus `px-1.5` (12 px of gutter per cell) — deliberately
+        // conservative; the real advance width of uppercase 12 px is wider.
+        let word_strip: f64 = words
+            .iter()
+            .map(|w| w.chars().count() as f64 * 7.0 + 12.0)
+            .sum::<f64>()
+            + STUB_PX;
+        assert!(
+            word_strip > budget,
+            "PERTURB: the word-labelled strip must NOT fit ({word_strip} px in {budget} px) — if it \
+             did, the budget check would be passing everything"
+        );
+        // RESTORE: the shipped glyph strip does fit, and by a wide margin.
+        assert!(
+            strip_width_px() < word_strip,
+            "RESTORE: glyphs must actually be narrower than the words they replaced"
+        );
+    }
+
+    /// The count the budget is computed from is the count the view renders, and every cell keeps its
+    /// word where a human (or a screen reader, or a gate selector) can still reach it. A glyph strip
+    /// whose cells were anonymous would trade a clipping bug for an unusable one.
+    #[test]
+    fn every_glyph_tab_keeps_its_name() {
+        let src = production();
+        assert_eq!(
+            src.matches("tab_btn(").count(),
+            TAB_COUNT,
+            "T-637: TAB_COUNT ({TAB_COUNT}) must be the number of tabs the strip actually renders — \
+             the width budget is computed from it"
+        );
+        for label in [
+            "Factions",
+            "Vehicles",
+            "Zones",
+            "Compositions",
+            "Triggers",
+            "Favourites",
+            "Markers",
+        ] {
+            assert!(
+                src.contains(&format!("{:?}", label)),
+                "T-637: `{label}` must survive as the cell's title/aria-label — the word moved off \
+                 the glyph, it did not vanish"
+            );
+        }
+        // The label reaches BOTH the tooltip and the accessible name, from the one `label` argument.
+        assert!(
+            src.contains("title=label") && src.contains("aria-label=label"),
+            "T-637: one label, two consumers — a tooltip a pointer finds and a name a screen reader \
+             (and every `[aria-label]` gate selector) resolves"
+        );
+        // Every tab index the strip renders has a glyph of its own: two tabs sharing one is a strip
+        // you cannot read.
+        let mut glyphs: Vec<&str> = (0..TAB_COUNT).map(super::tab_icon).collect();
+        glyphs.sort_unstable();
+        let n = glyphs.len();
+        glyphs.dedup();
+        assert_eq!(
+            glyphs.len(),
+            n,
+            "T-637: each tab needs a DISTINCT glyph — with the words gone, the glyph is the only \
+             thing telling two tabs apart"
         );
     }
 }
