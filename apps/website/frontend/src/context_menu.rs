@@ -33,6 +33,133 @@
 
 use leptos::prelude::*;
 
+/// T-672 (`CONN-START-001`) — the three relations Eden's `Connect ▸` submenu can make, as menu-row
+/// payload. Carried INSIDE [`ContextItem::ConnectStart`] rather than as three flat variants so the
+/// three rows share one dispatch arm and cannot drift apart.
+///
+/// [`Self::token`] is the ONE place this maps to `map-engine-core`'s stored vocabulary
+/// (`ConnectionKind::parse`). The core refuses anything else, so a typo here is a dead row rather
+/// than a fourth spelling in the document (the T-241 single-vocabulary rule).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ConnKind {
+    /// `Sync to` — an undirected peer relation.
+    Sync,
+    /// `Group to` — `from` joins `to`'s group. Directed.
+    Group,
+    /// `Set Trigger Owner` — `to` owns `from`. Directed.
+    TriggerOwner,
+}
+
+impl ConnKind {
+    /// The token `map-engine-core` stores.
+    #[must_use]
+    pub const fn token(self) -> &'static str {
+        match self {
+            Self::Sync => "sync",
+            Self::Group => "group",
+            Self::TriggerOwner => "triggerOwner",
+        }
+    }
+
+    /// Eden's verbatim row label.
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Sync => "Sync to",
+            Self::Group => "Group to",
+            Self::TriggerOwner => "Set Trigger Owner",
+        }
+    }
+
+    /// The three rows, in Eden's order.
+    pub const ALL: [Self; 3] = [Self::Sync, Self::Group, Self::TriggerOwner];
+
+    /// T-672 — the inverse of [`Self::token`]. `None` for anything else.
+    ///
+    /// **This is the EDITOR-side half of a deliberate two-layer vocabulary check**, and the layering
+    /// is the point. `map-engine-core`'s `ConnectionKind::parse` is the AUTHORITY — it lives at the
+    /// one write door (`add_connection`) and refuses an unknown kind into the document, so a bad
+    /// token can never become a stored row no matter what the editor does. This copy exists only so
+    /// `editor_ops::arm_connect` can refuse to ARM on a bad token, which is a UI state and not a
+    /// document one: without it a mis-typed arm would sit live until the operator's next
+    /// right-click completed it into a refusal, and they would have no idea why nothing happened.
+    ///
+    /// The two lists cannot silently diverge in the direction that matters: any token this one
+    /// accepts and the core does not simply fails at write, visibly, with no edge drawn. Re-exporting
+    /// the core enum instead would need a `map-engine-core/src/doc/mod.rs` change, which is outside
+    /// this slice's owns — recorded here rather than done quietly.
+    #[must_use]
+    pub fn parse(token: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|k| k.token() == token)
+    }
+}
+
+/// T-672 (`CTX-FORMATION-001` / `ACTION-FORM-001`) — the formation rows, as menu-row payload.
+///
+/// **The nine tokens are `mission.schema.json`'s `$defs/group.formation` enum, verbatim.** The wire
+/// already names these; naming them a second way in the editor is precisely the divergence T-241
+/// exists to prevent, so [`Self::token`] returns the schema string and `formation_offsets` in
+/// `map-engine-core` matches on it. Adding a tenth formation means widening the schema first.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum FormationKind {
+    Column,
+    StaggerColumn,
+    Wedge,
+    EchelonLeft,
+    EchelonRight,
+    Vee,
+    Line,
+    File,
+    Diamond,
+}
+
+impl FormationKind {
+    /// The schema token (`$defs/group.formation`).
+    #[must_use]
+    pub const fn token(self) -> &'static str {
+        match self {
+            Self::Column => "column",
+            Self::StaggerColumn => "stagger_column",
+            Self::Wedge => "wedge",
+            Self::EchelonLeft => "echelon_left",
+            Self::EchelonRight => "echelon_right",
+            Self::Vee => "vee",
+            Self::Line => "line",
+            Self::File => "file",
+            Self::Diamond => "diamond",
+        }
+    }
+
+    /// The row label.
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Column => "Column",
+            Self::StaggerColumn => "Staggered Column",
+            Self::Wedge => "Wedge",
+            Self::EchelonLeft => "Echelon Left",
+            Self::EchelonRight => "Echelon Right",
+            Self::Vee => "Vee",
+            Self::Line => "Line",
+            Self::File => "File",
+            Self::Diamond => "Diamond",
+        }
+    }
+
+    /// Every formation, in schema-enum order.
+    pub const ALL: [Self; 9] = [
+        Self::Column,
+        Self::StaggerColumn,
+        Self::Wedge,
+        Self::EchelonLeft,
+        Self::EchelonRight,
+        Self::Vee,
+        Self::Line,
+        Self::File,
+        Self::Diamond,
+    ];
+}
+
 /// Every action a viewport context-menu row can carry — the **stable id** later tickets extend.
 ///
 /// Submenu parents ([`Select`](ContextItem::Select), [`Edit`](ContextItem::Edit),
@@ -82,15 +209,43 @@ pub enum ContextItem {
     PlaceComment,
 
     // ── on-entity-only ─────────────────────────────────────────────────────────
-    /// `Connect` submenu parent (`Sync to` / `Group to` / `Set Trigger Owner`). Disabled — unblocked
-    /// by `CONN-START-001`.
+    /// `Connect` submenu parent (`Sync to` / `Group to` / `Set Trigger Owner`).
+    ///
+    /// **T-672 — ENABLED, and it is the first row in this file that OPENS A SUBMENU.** T-664 shipped
+    /// every parent disabled because there was nothing to hang off it; `CONN-START-001` is the ticket
+    /// that changes that, so the accordion machinery ([`MenuState::open_submenu`],
+    /// [`ContextItem::submenu_entries`]) lands with it. Clicking this row does not act — it expands.
     Connect,
+    /// T-672 (`CONN-START-001`, act 1) — arm a connect of this kind FROM the target entity. A child
+    /// of [`Connect`](ContextItem::Connect). The payload rides the variant so the three rows share
+    /// one dispatch arm and cannot drift apart.
+    ConnectStart(ConnKind),
+    /// T-672 (`CONN-START-001`, act 2) — complete the armed connect ONTO the target entity. Present
+    /// only while a connect is armed (see [`MenuTarget::armed_connect`]).
+    ConnectComplete,
+    /// T-672 — drop the armed connect without drawing anything. Present only while one is armed;
+    /// this is the deliberate cancel affordance that replaces the Esc-disarm the pointer-arm path
+    /// still lacks (T-723).
+    ConnectCancel,
+    /// T-672 — open the Connections panel: the SEE + CHECK surface (every edge, every finding, a
+    /// delete per row). Present on BOTH takes, because auditing the graph is not an on-entity act.
+    ShowConnections,
     /// `Play as the Character` — preview controlling this unit (replaces `Play from Here`). Disabled:
     /// same reason as [`PlayFromHere`](ContextItem::PlayFromHere).
     PlayAsCharacter,
     /// `Transform` submenu parent (Set as Group Leader / Move to Formation / Snap to Surface / Orient
-    /// to Terrain|Sea Normal). Disabled — unblocked by `CTX-FORMATION-001`.
+    /// to Terrain|Sea Normal).
+    ///
+    /// **T-672 — ENABLED for its FORMATION rows only** (`CTX-FORMATION-001` — "RMB group/selection →
+    /// Formation", acceptance "Formation submenu"). The other three Eden rows need a surface-normal
+    /// / terrain-snap the editor has no API for and are NOT invented here; this submenu is the nine
+    /// formations and nothing else, which is the part the ticket owns.
     Transform,
+    /// T-672 (`ACTION-FORM-001` `ForceToFormation` / `CTX-FORMATION-001`) — snap the target squad
+    /// into this formation. A child of [`Transform`](ContextItem::Transform). The token rides the
+    /// variant and is the SCHEMA's own `$defs/group.formation` vocabulary, so the menu cannot name a
+    /// formation the wire does not have.
+    MoveToFormation(FormationKind),
     /// `Grid` submenu parent (Use X|Y|Z as Grid). Disabled: object-dimension grid snapping is not an
     /// editor feature. No single unblocked ticket; a faithful Eden row, disabled without a tag.
     Grid,
@@ -129,14 +284,58 @@ impl ContextItem {
         match self {
             // T-651 shipped `PLACE-COMMENT-001`, so the row is enabled and has no blocking ticket.
             ContextItem::PlaceComment => None,
-            ContextItem::Connect => Some("CONN-START-001"),
-            ContextItem::Transform => Some("CTX-FORMATION-001"),
+            // T-672 shipped `CONN-START-001` and `CTX-FORMATION-001`, so both parents are enabled
+            // and neither has a blocking ticket any more. The arms stay listed (rather than falling
+            // into the `_` catch-all) so the transition is visible to the next reader: this is what
+            // "a later ticket edits exactly the arm for the row it is turning on" looks like.
+            ContextItem::Connect | ContextItem::Transform => None,
             ContextItem::SaveComposition => Some("COMP-SAVE-001"),
             // KEY-WP-001 (waypoints) reaches the menu through the Select submenu.
             ContextItem::Select => Some("KEY-WP-001"),
             // ATTR-MULTI-001 extends an already-*enabled* row (multi-select attributes), so it is
             // not a "disabled until" tag — it is named on `Attributes` in the docs above.
             _ => None,
+        }
+    }
+
+    /// T-672 — `true` when clicking this row EXPANDS a submenu instead of acting. The two are
+    /// mutually exclusive: [`dispatch`] never runs a parent, and [`ContextMenuOverlay`] never
+    /// expands a leaf.
+    #[must_use]
+    pub const fn is_submenu_parent(self) -> bool {
+        matches!(self, ContextItem::Connect | ContextItem::Transform)
+    }
+
+    /// T-672 — the child rows this parent expands to, given whether a connect is currently ARMED.
+    /// Empty for a leaf.
+    ///
+    /// `armed` is passed in rather than read from `editor_ops` so this stays a pure function with
+    /// native tests — the whole reason the arm rides [`MenuTarget::armed_connect`], captured at OPEN.
+    ///
+    /// **The Connect submenu is state-dependent and shows ONE of two faces**, which is the entire
+    /// two-act gesture: unarmed, it offers the three kinds (act 1); armed, it offers `Complete` and
+    /// `Cancel` (act 2) and names the pending relation in the label, so an operator who forgot what
+    /// they armed can read it off the row instead of guessing. Showing both faces at once would let
+    /// a click mean "re-arm" when the operator meant "complete".
+    #[must_use]
+    pub fn submenu_entries(self, armed: Option<&(String, String)>) -> Vec<MenuEntry> {
+        match self {
+            ContextItem::Connect => match armed {
+                None => ConnKind::ALL
+                    .iter()
+                    .map(|k| MenuEntry::on(ContextItem::ConnectStart(*k), k.label()))
+                    .collect(),
+                Some((kind, from)) => vec![
+                    MenuEntry::on(ContextItem::ConnectComplete, "Complete Connection")
+                        .with_note(format!("{kind} from {from}")),
+                    MenuEntry::on(ContextItem::ConnectCancel, "Cancel Connection"),
+                ],
+            },
+            ContextItem::Transform => FormationKind::ALL
+                .iter()
+                .map(|f| MenuEntry::on(ContextItem::MoveToFormation(*f), f.label()))
+                .collect(),
+            _ => Vec::new(),
         }
     }
 }
@@ -160,10 +359,17 @@ pub struct MenuEntry {
     /// informational — rendered as a hover title so the operator (and the next agent) can see why a
     /// row is dark without leaving the app.
     pub blocked: Option<&'static str>,
-    /// `true` when Eden draws a `▶` submenu affordance on this row. This slice does not open the
-    /// submenu (its contents belong to later tickets), but the affordance is part of the faithful
-    /// transcription and tells the operator the row is a parent.
+    /// `true` when Eden draws a `▶` submenu affordance on this row. T-664 shipped the affordance
+    /// without the behaviour (submenu contents belonged to later tickets); T-672 made `Connect` and
+    /// `Transform` actually open, so on those two the glyph now flips to `▼` while expanded.
     pub submenu: bool,
+    /// T-672 — `true` when this row is a CHILD spliced in under an expanded parent. Purely visual
+    /// (the row indents); the dispatch path does not care.
+    pub child: bool,
+    /// T-672 — an optional trailing note rendered dim after the label. Used by
+    /// `Complete Connection` to name the pending relation, so the armed state is legible from the
+    /// row rather than remembered.
+    pub note: Option<String>,
 }
 
 impl MenuEntry {
@@ -176,6 +382,8 @@ impl MenuEntry {
             enabled: false,
             blocked: None,
             submenu: false,
+            child: false,
+            note: None,
         }
     }
 
@@ -188,6 +396,8 @@ impl MenuEntry {
             enabled: true,
             blocked: None,
             submenu: false,
+            child: false,
+            note: None,
         }
     }
 
@@ -201,6 +411,8 @@ impl MenuEntry {
             enabled: false,
             blocked,
             submenu: false,
+            child: false,
+            note: None,
         }
     }
 
@@ -214,12 +426,42 @@ impl MenuEntry {
             enabled: false,
             blocked,
             submenu: true,
+            child: false,
+            note: None,
         }
     }
 
     /// Builder chain: attach a shortcut hint to a row.
     const fn with_shortcut(mut self, s: &'static str) -> Self {
         self.shortcut = s;
+        self
+    }
+
+    /// T-672 — an **enabled submenu parent** (`▶`). The T-664 [`Self::parent`] above is always
+    /// disabled by construction; this is its live twin, used only by rows whose submenu ticket has
+    /// landed.
+    const fn open_parent(item: ContextItem, label: &'static str) -> Self {
+        Self {
+            item: Some(item),
+            label,
+            shortcut: "",
+            enabled: true,
+            blocked: None,
+            submenu: true,
+            child: false,
+            note: None,
+        }
+    }
+
+    /// T-672 — builder: attach the dim trailing note (`Complete Connection  sync from s0`).
+    fn with_note(mut self, note: String) -> Self {
+        self.note = Some(note);
+        self
+    }
+
+    /// T-672 — builder: mark a row as a spliced submenu child (indents it).
+    const fn as_child(mut self) -> Self {
+        self.child = true;
         self
     }
 }
@@ -252,20 +494,32 @@ impl MenuTake {
                 MenuEntry::sep(),
                 // T-651 — live: places an editor-only annotation at the right-clicked point.
                 MenuEntry::on(I::PlaceComment, "Place Comment"),
+                // T-672 — the connection graph's SEE + CHECK surface. It is on the EMPTY-GROUND take
+                // too (Eden has no such row at all) because auditing the graph is not an act on an
+                // entity, and requiring the operator to find something to right-click before they
+                // can read their own connections would be the "edges you cannot see" failure with
+                // an extra step in front of it.
+                MenuEntry::on(I::ShowConnections, "Connections..."),
             ],
             // Take B — one unit selected (batch :199-221). `Place Comment` is absent here (batch
             // :221); `Play from Here` becomes `Play as the Character` (batch :204).
             MenuTake::OnEntity => vec![
-                MenuEntry::parent(I::Connect, "Connect", I::Connect.unblocked_by()),
+                // T-672 — LIVE (`CONN-START-001`): expands to the three connect kinds, or to
+                // Complete/Cancel while a connect is armed.
+                MenuEntry::open_parent(I::Connect, "Connect"),
                 MenuEntry::sep(),
                 MenuEntry::on(I::GoHere, "Go Here"),
                 MenuEntry::off(I::PlayAsCharacter, "Play as the Character", None),
                 MenuEntry::sep(),
                 MenuEntry::parent(I::Select, "Select", I::Select.unblocked_by()),
                 MenuEntry::parent(I::Edit, "Edit", None),
-                MenuEntry::parent(I::Transform, "Transform", I::Transform.unblocked_by()),
+                // T-672 — LIVE (`CTX-FORMATION-001`): expands to the nine schema formations.
+                MenuEntry::open_parent(I::Transform, "Transform"),
                 MenuEntry::parent(I::Grid, "Grid", None),
                 MenuEntry::parent(I::Log, "Log", None),
+                MenuEntry::sep(),
+                // T-672 — same audit surface as the empty-ground take.
+                MenuEntry::on(I::ShowConnections, "Connections..."),
                 MenuEntry::sep(),
                 MenuEntry::off(
                     I::SaveComposition,
@@ -313,6 +567,13 @@ pub struct MenuTarget {
     /// time would be a second, later camera read that a pan between open and click would make wrong.
     /// Capturing the point at open pins the annotation to the ground the operator right-clicked.
     pub world: Option<(f64, f64)>,
+    /// T-672 — the connect ARMED at the moment this menu opened: `Some((kind, from_id))`.
+    ///
+    /// Captured at OPEN for exactly the reason [`Self::world`] is: the Connect submenu shows one of
+    /// two faces depending on this value, and re-reading `editor_ops::pending_connect()` at click
+    /// time would let a row the operator can SEE mean something else by the time they click it.
+    /// `None` here is also what makes [`ContextItem::submenu_entries`] pure and native-testable.
+    pub armed_connect: Option<(String, String)>,
 }
 
 impl MenuTarget {
@@ -321,6 +582,14 @@ impl MenuTarget {
     #[must_use]
     pub fn at_world(mut self, x: f64, z: f64) -> Self {
         self.world = Some((x, z));
+        self
+    }
+
+    /// T-672 — attach the armed connect (builder, same reason as [`Self::at_world`]). Chained by
+    /// [`open`], which is the one place the live arm is read.
+    #[must_use]
+    pub fn with_armed_connect(mut self, armed: Option<(String, String)>) -> Self {
+        self.armed_connect = armed;
         self
     }
 }
@@ -346,6 +615,7 @@ pub fn resolve_target(hit: Option<&str>, selection: &[String]) -> MenuTarget {
             target_ids: Vec::new(),
             retarget_to: None,
             world: None,
+            armed_connect: None,
         },
         Some(id) => {
             if selection.iter().any(|s| s == id) {
@@ -355,6 +625,7 @@ pub fn resolve_target(hit: Option<&str>, selection: &[String]) -> MenuTarget {
                     target_ids: selection.to_vec(),
                     retarget_to: None,
                     world: None,
+                    armed_connect: None,
                 }
             } else {
                 // Outside the selection → retarget to the hit entity (replace selection).
@@ -363,6 +634,7 @@ pub fn resolve_target(hit: Option<&str>, selection: &[String]) -> MenuTarget {
                     target_ids: vec![id.to_string()],
                     retarget_to: Some(id.to_string()),
                     world: None,
+                    armed_connect: None,
                 }
             }
         }
@@ -378,13 +650,44 @@ pub struct MenuState {
     pub y: f64,
     /// The resolved take + target (from [`resolve_target`]).
     pub target: MenuTarget,
+    /// T-672 — the submenu parent currently EXPANDED, or `None` (nothing expanded). At most one at a
+    /// time: opening a second parent replaces the first, and clicking the open parent collapses it.
+    pub open_submenu: Option<ContextItem>,
 }
 
 impl MenuState {
     /// The rows to render for this open menu.
+    ///
+    /// **T-672 — submenus are rendered as an in-panel ACCORDION, not as an Eden flyout.** When
+    /// [`Self::open_submenu`] names a parent, that parent's children are spliced into the list
+    /// directly beneath it, indented ([`MenuEntry::child`]).
+    ///
+    /// This is a deliberate, recorded divergence from Eden's flyout, and the reason is that the list
+    /// stays FLAT. Every consumer of it — [`selectable_indices`], [`step_highlight`], the keyboard
+    /// Enter handler, `render_row`, the highlight index — is written against one flat `Vec` of rows
+    /// with one index space. A flyout means a second floating panel, a second index space, a second
+    /// hover/keyboard focus owner and a rule for what Left/Right do; the accordion means the
+    /// submenu ticket adds ROWS and touches none of that machinery. Eden's `▶` becomes `▼` while
+    /// expanded so the affordance still reads correctly.
     #[must_use]
     pub fn entries(&self) -> Vec<MenuEntry> {
-        self.target.take.entries()
+        let base = self.target.take.entries();
+        let Some(open) = self.open_submenu else {
+            return base;
+        };
+        let mut out = Vec::with_capacity(base.len() + 9);
+        for entry in base {
+            let is_open_parent = entry.item == Some(open);
+            out.push(entry);
+            if is_open_parent {
+                out.extend(
+                    open.submenu_entries(self.target.armed_connect.as_ref())
+                        .into_iter()
+                        .map(MenuEntry::as_child),
+                );
+            }
+        }
+        out
     }
 }
 
@@ -460,9 +763,42 @@ pub fn open(x: f64, y: f64, target: MenuTarget) {
         // object, so the map tint and SEL readout follow the menu's target.
         crate::editor_ops::select_slot(id);
     }
+    // T-672 — snapshot the armed connect HERE, at open, the same rule `world` follows. The Connect
+    // submenu shows one of two faces off this value; reading it at click time instead would let a
+    // row the operator can see turn into a different action under their cursor.
+    let target = target.with_armed_connect(crate::editor_ops::pending_connect());
     MENU.with(|m| {
         if let Some(sig) = *m.borrow() {
-            sig.set(Some(MenuState { x, y, target }));
+            sig.set(Some(MenuState {
+                x,
+                y,
+                target,
+                // Always collapsed on open: a submenu left expanded from a previous right-click
+                // would put a child row under the cursor at the anchor pixel.
+                open_submenu: None,
+            }));
+        }
+    });
+}
+
+/// T-672 — expand `parent`'s submenu in the open menu, or COLLAPSE it when it is already the open
+/// one (click the parent again to close). No-op when the menu is closed.
+///
+/// A separate entry point from [`dispatch`] because the two are mutually exclusive by design: a
+/// parent never acts, a leaf never expands. Routing both through `dispatch` would have meant a
+/// `close()` at the end that a parent must not run.
+#[cfg(target_arch = "wasm32")]
+pub fn toggle_submenu(parent: ContextItem) {
+    MENU.with(|m| {
+        if let Some(sig) = *m.borrow() {
+            if let Some(mut state) = sig.get_untracked() {
+                state.open_submenu = if state.open_submenu == Some(parent) {
+                    None
+                } else {
+                    Some(parent)
+                };
+                sig.set(Some(state));
+            }
         }
     });
 }
@@ -519,6 +855,34 @@ pub fn dispatch(item: ContextItem, target_ids: &[String], world: Option<(f64, f6
                 let _ = crate::editor_ops::place_comment(x, z);
             }
         }
+        // T-672 (`CONN-START-001`, act 1) — arm a connect FROM this entity. `target_ids[0]` is the
+        // right-clicked entity (the retarget already made it the selection). Arming is not a
+        // document edit, so there is no undo step and nothing to persist until act 2 lands the edge.
+        ContextItem::ConnectStart(kind) => {
+            if let Some(id) = target_ids.first() {
+                let _ = crate::editor_ops::arm_connect(kind.token(), id);
+            }
+        }
+        // T-672 (`CONN-START-001`, act 2) — complete onto this entity. The core refuses a self-link
+        // or a duplicate, and `complete_connect` consumes the arm either way (a refusal that left
+        // the connect armed would strand the operator in a mode they thought they had left — the
+        // T-723 shape).
+        ContextItem::ConnectComplete => {
+            if let Some(id) = target_ids.first() {
+                let _ = crate::editor_ops::complete_connect(id);
+            }
+        }
+        ContextItem::ConnectCancel => crate::editor_ops::cancel_connect(),
+        // T-672 — open the SEE + CHECK panel. The one row on both takes.
+        ContextItem::ShowConnections => crate::editor_ops::open_connections_panel(),
+        // T-672 (`ACTION-FORM-001` / `CTX-FORMATION-001`) — re-form the target's squad. Inert (0
+        // moved, no undo step) when the target does not LEAD a squad, which is the honest answer:
+        // re-forming around a rifleman would be a leadership change nobody asked for.
+        ContextItem::MoveToFormation(f) => {
+            if let Some(id) = target_ids.first() {
+                let _ = crate::editor_ops::force_to_formation(id, f.token());
+            }
+        }
         // Every other id is a disabled row (feature not shipped / owned by a later ticket) — no-op.
         _ => {}
     }
@@ -572,7 +936,19 @@ pub fn ContextMenuOverlay(menu: RwSignal<Option<MenuState>>) -> impl IntoView {
                         if let Some(entry) = entries.get(idx) {
                             if let Some(item) = entry.item {
                                 if entry.enabled {
-                                    dispatch(item, &state.target.target_ids, state.target.world);
+                                    // T-672 — Enter on a submenu PARENT expands it rather than
+                                    // acting, so the keyboard path and the click path agree. Without
+                                    // this branch Enter on `Connect` would fall into `dispatch`'s
+                                    // catch-all and silently close the menu.
+                                    if item.is_submenu_parent() {
+                                        toggle_submenu(item);
+                                    } else {
+                                        dispatch(
+                                            item,
+                                            &state.target.target_ids,
+                                            state.target.world,
+                                        );
+                                    }
                                 }
                             }
                         }
@@ -602,10 +978,12 @@ pub fn ContextMenuOverlay(menu: RwSignal<Option<MenuState>>) -> impl IntoView {
         // flip/clamp (batch rule 4/5) is a later polish — the ticket ships the menu, its targeting
         // and dismissal.
         let pos = format!("left:{:.0}px;top:{:.0}px", state.x, state.y);
+        // T-672 — the expanded parent, so its `\u{25B6}` can flip to `\u{25BC}`.
+        let open_submenu = state.open_submenu;
         let rows = entries
             .into_iter()
             .enumerate()
-            .map(|(idx, e)| render_row(idx, e, target_ids.clone(), world, highlight))
+            .map(|(idx, e)| render_row(idx, e, target_ids.clone(), world, highlight, open_submenu))
             .collect_view();
         Some(view! {
             // Click-away backdrop — transparent, full-screen, closes on any click. `z-40` sits under
@@ -642,6 +1020,8 @@ fn render_row(
     // T-651 — the right-click's world point (see [`MenuTarget::world`]); `None` off the wasm host.
     world: Option<(f64, f64)>,
     highlight: RwSignal<Option<usize>>,
+    // T-672 — which submenu parent is currently expanded (for the `\u{25B6}` \u{2192} `\u{25BC}` flip).
+    open_submenu: Option<ContextItem>,
 ) -> AnyView {
     // Separator.
     let Some(item) = entry.item else {
@@ -655,6 +1035,10 @@ fn render_row(
     let shortcut = entry.shortcut;
     let submenu = entry.submenu;
     let enabled = entry.enabled;
+    // T-672 — a spliced submenu child indents; an expanded parent shows the down-caret.
+    let child = entry.child;
+    let note = entry.note.clone();
+    let expanded = submenu && open_submenu == Some(item);
     // Disabled rows name their blocking ticket in the tooltip so the operator (and the next agent)
     // sees why a row is dark. An enabled row has no tooltip.
     let title = entry
@@ -669,8 +1053,16 @@ fn render_row(
         let target_ids = target_ids.clone();
         move |_ev: leptos::ev::MouseEvent| {
             if enabled {
+                // T-672 — a submenu PARENT expands/collapses; it never acts and never closes the
+                // menu. `dispatch`'s trailing `close()` would dismiss the menu the operator is
+                // trying to open a submenu inside, which is why this is a separate call and not an
+                // extra arm in `dispatch`.
                 #[cfg(target_arch = "wasm32")]
-                dispatch(item, &target_ids, world);
+                if item.is_submenu_parent() {
+                    toggle_submenu(item);
+                } else {
+                    dispatch(item, &target_ids, world);
+                }
                 #[cfg(not(target_arch = "wasm32"))]
                 let _ = (item, &target_ids, world);
             }
@@ -696,9 +1088,16 @@ fn render_row(
                     highlight.set(Some(idx));
                 }
             }
+            class:pl-8=child
             on:click=on_click
         >
             <span class="flex-1 truncate">{label}</span>
+            {note
+                .map(|n| {
+                    view! {
+                        <span class="ml-2 shrink-0 truncate text-code-sm text-outline">{n}</span>
+                    }
+                })}
             {(!shortcut.is_empty())
                 .then(|| {
                     view! {
@@ -707,7 +1106,14 @@ fn render_row(
                         </span>
                     }
                 })}
-            {submenu.then(|| view! { <span class="shrink-0 text-outline">"\u{25B6}"</span> })}
+            {submenu
+                .then(|| {
+                    view! {
+                        <span class="shrink-0 text-outline">
+                            {if expanded { "\u{25BC}" } else { "\u{25B6}" }}
+                        </span>
+                    }
+                })}
         </button>
     }
     .into_any()
@@ -740,7 +1146,13 @@ mod tests {
                 "Select",
                 "Edit",
                 "Log",
-                "Place Comment"
+                "Place Comment",
+                // T-672 — the ONE row in this file that Eden does not have. It is the entry point
+                // to the connection graph's SEE + CHECK panel, and it is on the empty-ground take
+                // deliberately: auditing the graph is not an act on an entity, so requiring the
+                // operator to find something to right-click first would put a hurdle in front of
+                // the exact surface the ticket exists to guarantee.
+                "Connections...",
             ]
         );
         // Two separators (after Play from Here, after Log).
@@ -768,6 +1180,8 @@ mod tests {
                 "Transform",
                 "Grid",
                 "Log",
+                // T-672 — the non-Eden audit row, on both takes (see the empty-ground pin).
+                "Connections...",
                 "Save Custom Composition...",
                 "Find in Asset Browser...",
                 "Find in Config Viewer...",
@@ -803,13 +1217,22 @@ mod tests {
         // T-651 turned `Place Comment` on — the deliberate list update this test asks for. It is the
         // FIRST of T-664's six forward-contract rows to ship, and it shipped by matching on the
         // variant in `dispatch`, exactly as the id-enum contract intended.
+        //
+        // T-672 turned on `Connect` (`CONN-START-001`) and `Transform` (`CTX-FORMATION-001`) — the
+        // second and third of the six — and added the non-Eden `Connections...` audit row. Both
+        // parents are enabled in the sense this test means (clicking them does something) but they
+        // are the first rows that EXPAND rather than act; `submenu_parents_expand_they_do_not_act`
+        // below is what pins that distinction so "enabled" cannot quietly come to mean two things.
         assert_eq!(
             on,
             vec![
                 "Attributes...",
+                "Connect",
+                "Connections...",
                 "Edit Loadout...",
                 "Go Here",
-                "Place Comment"
+                "Place Comment",
+                "Transform",
             ]
         );
     }
@@ -819,17 +1242,23 @@ mod tests {
         // The six-ticket forward contract: each of these disabled rows must carry its blocking
         // ticket so a later agent can find its attachment point.
         // T-651 — `PlaceComment` LEFT this list: its feature shipped, so it is enabled and carries
-        // no blocking ticket. The remaining four are still the forward contract, and the assertion
-        // below (`unblocked_by() == None` for the shipped row) is what stops a stale ticket tag from
-        // outliving the work.
-        assert_eq!(
-            ContextItem::PlaceComment.unblocked_by(),
-            None,
-            "PLACE-COMMENT-001 shipped in T-651 — the row must not still name a blocking ticket"
-        );
+        // no blocking ticket. T-672 — `Connect` and `Transform` left it for the same reason
+        // (`CONN-START-001` / `CTX-FORMATION-001` shipped). The assertions below
+        // (`unblocked_by() == None` for each shipped row) are what stop a stale ticket tag from
+        // outliving the work — a disabled-looking row naming a closed ticket is how a feature gets
+        // built twice.
+        for (item, ticket) in [
+            (ContextItem::PlaceComment, "PLACE-COMMENT-001 (T-651)"),
+            (ContextItem::Connect, "CONN-START-001 (T-672)"),
+            (ContextItem::Transform, "CTX-FORMATION-001 (T-672)"),
+        ] {
+            assert_eq!(
+                item.unblocked_by(),
+                None,
+                "{ticket} shipped — {item:?} must not still name a blocking ticket"
+            );
+        }
         let want = [
-            (ContextItem::Connect, "CONN-START-001"),
-            (ContextItem::Transform, "CTX-FORMATION-001"),
             (ContextItem::SaveComposition, "COMP-SAVE-001"),
             (ContextItem::Select, "KEY-WP-001"),
         ];
@@ -1041,5 +1470,185 @@ mod tests {
     fn a_target_without_a_world_point_stays_none() {
         assert_eq!(resolve_target(None, &[]).world, None);
         assert_eq!(resolve_target(Some("a"), &[]).world, None);
+    }
+
+    /* ═══════════════ T-672 — submenus, the two-act connect, the formation vocabulary ═══════════ */
+
+    /// Build the menu state a right-click on `hit` would produce, with `armed` as the connect that
+    /// was live at OPEN and `open` as the expanded parent. Mirrors what `open` + `toggle_submenu`
+    /// do on wasm, so the sequence tests below drive the same values the browser would.
+    fn state(hit: &str, armed: Option<(&str, &str)>, open: Option<ContextItem>) -> MenuState {
+        MenuState {
+            x: 10.0,
+            y: 20.0,
+            target: resolve_target(Some(hit), &[])
+                .with_armed_connect(armed.map(|(k, f)| (k.to_string(), f.to_string()))),
+            open_submenu: open,
+        }
+    }
+
+    fn labels(entries: &[MenuEntry]) -> Vec<&'static str> {
+        entries
+            .iter()
+            .filter(|r| r.item.is_some())
+            .map(|r| r.label)
+            .collect()
+    }
+
+    /// **`CONN-START-001` as an EVENT SEQUENCE, not a source pin.** The connect gesture is two
+    /// right-clicks, and this walks both of them through the same values the wasm host produces —
+    /// what the operator SEES at each step, and what the row they click resolves to.
+    ///
+    /// The property that matters is that the Connect submenu shows exactly ONE of its two faces at
+    /// any moment. If it ever showed both, a click meant as "complete" could land on "re-arm" (or
+    /// vice versa) — an edge silently drawn between the wrong pair, which is precisely the class of
+    /// invisible defect this ticket's warning is about.
+    #[test]
+    fn the_two_act_connect_gesture_shows_one_face_at_a_time() {
+        // ACT 1 — right-click the SOURCE. Nothing armed, so the submenu offers the three kinds.
+        let s1 = state("s0", None, None);
+        assert!(
+            s1.entries()
+                .iter()
+                .any(|r| r.item == Some(ContextItem::Connect) && r.enabled && r.submenu),
+            "Connect is a LIVE submenu parent after T-672"
+        );
+        assert_eq!(
+            s1.entries(),
+            MenuTake::OnEntity.entries(),
+            "collapsed: no child rows are spliced until the parent is clicked"
+        );
+
+        let s1open = state("s0", None, Some(ContextItem::Connect));
+        let l = labels(&s1open.entries());
+        assert!(
+            l.contains(&"Sync to") && l.contains(&"Group to") && l.contains(&"Set Trigger Owner"),
+            "unarmed, the three KINDS are offered: {l:?}"
+        );
+        assert!(
+            !l.contains(&"Complete Connection") && !l.contains(&"Cancel Connection"),
+            "unarmed, there is nothing to complete: {l:?}"
+        );
+        // The children are spliced DIRECTLY under their parent, indented, not appended at the end.
+        let entries = s1open.entries();
+        let parent_at = entries
+            .iter()
+            .position(|r| r.item == Some(ContextItem::Connect))
+            .expect("Connect row");
+        assert_eq!(entries[parent_at + 1].label, "Sync to");
+        assert!(entries[parent_at + 1].child, "child rows indent");
+        assert!(!entries[parent_at].child, "the parent does not");
+        // …and the child rows are keyboard-reachable, because they are in the same flat index space.
+        assert!(
+            selectable_indices(&entries).contains(&(parent_at + 1)),
+            "a spliced child must be reachable by ArrowDown/Enter like any other enabled row"
+        );
+
+        // ACT 2 — the arm is live; right-click the TARGET. The SAME parent now offers the other face.
+        let s2 = state("s1", Some(("sync", "s0")), Some(ContextItem::Connect));
+        let l2 = labels(&s2.entries());
+        assert!(
+            l2.contains(&"Complete Connection") && l2.contains(&"Cancel Connection"),
+            "armed, the completion pair is offered: {l2:?}"
+        );
+        assert!(
+            !l2.contains(&"Sync to") && !l2.contains(&"Group to"),
+            "armed, the kind rows are GONE — one face at a time: {l2:?}"
+        );
+        // The pending relation is legible from the row rather than remembered.
+        let complete = s2
+            .entries()
+            .into_iter()
+            .find(|r| r.item == Some(ContextItem::ConnectComplete))
+            .expect("Complete row");
+        assert_eq!(complete.note.as_deref(), Some("sync from s0"));
+        // The target of act 2 is the entity right-clicked SECOND, which is what `dispatch` passes to
+        // `complete_connect` — the whole point of the retarget rule holding across both acts.
+        assert_eq!(s2.target.target_ids, vec!["s1".to_string()]);
+        assert_eq!(s2.target.retarget_to.as_deref(), Some("s1"));
+    }
+
+    /// Expanding is not acting, and only the two shipped parents expand. Without this the meaning of
+    /// `enabled` forks: `enabled_rows_are_exactly_the_shipping_features` counts `Connect` as live,
+    /// and this is what says live means "opens" and not "does".
+    #[test]
+    fn submenu_parents_expand_they_do_not_act() {
+        assert!(ContextItem::Connect.is_submenu_parent());
+        assert!(ContextItem::Transform.is_submenu_parent());
+        for leaf in [
+            ContextItem::GoHere,
+            ContextItem::Attributes,
+            ContextItem::PlaceComment,
+            ContextItem::ShowConnections,
+            ContextItem::ConnectComplete,
+        ] {
+            assert!(!leaf.is_submenu_parent(), "{leaf:?} is a leaf");
+            assert!(
+                leaf.submenu_entries(None).is_empty(),
+                "{leaf:?} has no children"
+            );
+        }
+        // The still-disabled Eden parents (`Select` / `Edit` / `Grid` / `Log`) did NOT become
+        // expandable: T-672 shipped two submenus, not submenus in general.
+        for parked in [
+            ContextItem::Select,
+            ContextItem::Edit,
+            ContextItem::Grid,
+            ContextItem::Log,
+        ] {
+            assert!(!parked.is_submenu_parent(), "{parked:?} has no ticket yet");
+        }
+        // Only ONE submenu is open at a time — the state carries a single `Option`, so expanding
+        // Transform cannot leave Connect's rows behind.
+        let t = state("s0", None, Some(ContextItem::Transform));
+        let l = labels(&t.entries());
+        assert!(l.contains(&"Wedge"), "Transform expanded: {l:?}");
+        assert!(!l.contains(&"Sync to"), "Connect stays collapsed: {l:?}");
+    }
+
+    /// **`CTX-FORMATION-001` names the SCHEMA's formations and no others.** Read out of
+    /// `mission.schema.json` at compile time rather than restated here, so the menu cannot offer a
+    /// formation the wire has no value for — the T-241 single-vocabulary rule, checked against the
+    /// authority instead of against a copy of it.
+    #[test]
+    fn the_formation_submenu_uses_the_schema_vocabulary_verbatim() {
+        const SCHEMA: &str =
+            include_str!("../../../../packages/tbd-schema/schema/mission.schema.json");
+        let schema: serde_json::Value = serde_json::from_str(SCHEMA).expect("schema parses");
+        let want: Vec<String> = schema["$defs"]["group"]["properties"]["formation"]["enum"]
+            .as_array()
+            .expect("$defs/group.formation.enum")
+            .iter()
+            .map(|v| v.as_str().expect("string token").to_string())
+            .collect();
+        let got: Vec<String> = FormationKind::ALL
+            .iter()
+            .map(|f| (*f).token().to_string())
+            .collect();
+        assert_eq!(
+            got, want,
+            "menu formations must be the schema enum, in order"
+        );
+
+        // Every token reaches a row, and every row has a distinct human label.
+        let rows = ContextItem::Transform.submenu_entries(None);
+        assert_eq!(rows.len(), want.len());
+        let mut seen: Vec<&str> = rows.iter().map(|r| r.label).collect();
+        seen.sort_unstable();
+        let before = seen.len();
+        seen.dedup();
+        assert_eq!(seen.len(), before, "two formations share a label");
+    }
+
+    /// The connect vocabulary agrees with itself in both directions, and rejects everything else —
+    /// the editor-side guard `editor_ops::arm_connect` leans on.
+    #[test]
+    fn conn_kind_tokens_round_trip_and_reject_strangers() {
+        for k in ConnKind::ALL {
+            assert_eq!(ConnKind::parse(k.token()), Some(k));
+        }
+        for junk in ["", "Sync", "sync ", "attachedTo", "triggerowner"] {
+            assert_eq!(ConnKind::parse(junk), None, "{junk:?} must not parse");
+        }
     }
 }

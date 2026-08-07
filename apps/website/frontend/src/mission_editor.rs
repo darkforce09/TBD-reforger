@@ -1505,6 +1505,254 @@ fn CommentEditorOverlay(open: RwSignal<Option<String>>, doc_tick: RwSignal<u64>)
 /// is a distinct, clickable row rather than a perfect overlay of the original.
 const COMMENT_COPY_OFFSET_M: f64 = 25.0;
 
+/// T-672 — one Connections-panel row, flattened for rendering: the edge plus the findings that name
+/// it. Target-independent on purpose — `editor_ops` is wasm-only, so this is what lets the panel have
+/// ONE view body instead of a wasm branch and an untested native twin.
+struct ConnRowView {
+    kind: String,
+    /// `"SL (s0) → Rifleman (s1)"` — both endpoints, label-resolved.
+    head: String,
+    id: String,
+    /// `"CONN-DANGLING: to endpoint `x` is not a placed entity"`, one per finding on this row.
+    problems: Vec<String>,
+}
+
+/// T-672 — **the Connections panel: the connection graph's SEE and CHECK surface.**
+///
+/// This component is the ticket's primary constraint made concrete. The framework corpus records
+/// FNF v4's entire defect cluster on the connection mechanism, with the instruction "the inspector
+/// and the validation rules must precede the edges — do not ship edges you cannot see or check".
+/// A connection has **no map glyph** in this slice (see the `LaneRole::SquadLinks` trace note on
+/// `editor_ops`'s connection block), so this panel is the ONLY place an operator can observe the
+/// graph they are authoring, audit it, or delete from it. It is not an inspector bolted onto the
+/// feature; it is the feature's only surface, and the edge verbs hang off it.
+///
+/// Three things, in the order they matter:
+///   1. **EVERY edge, listed** — `kind`, `from → to` with resolved labels, in `map-engine-core`'s
+///      stable content order (so the rows never reshuffle under the cursor between reads).
+///   2. **EVERY finding, listed** — the four graph rules (`CONN-SELF` / `CONN-DANGLING` /
+///      `CONN-DUPLICATE` / `CONN-CYCLE`, plus `CONN-KIND` for a hydrated foreign vocabulary),
+///      rendered against the row they belong to AND summarised at the top, because a warning the
+///      operator must scroll to find is a warning they will not read.
+///   3. **A delete per row** (`CONN-DEL-001`). Eden deletes a connection by selecting its line and
+///      pressing Del; there is no line here, so the addressable row is the selection.
+///
+/// It also shows the ARMED connect, if any, with its own cancel — the two-act connect gesture's only
+/// persistent state, which would otherwise be invisible between the two right-clicks.
+///
+/// `doc_tick` is the reactive re-read trigger (the Attributes-modal / comment-editor idiom): a draw,
+/// a delete, an undo or a hydrate bumps it and this panel re-reads. There is no doc change
+/// subscription, so a panel that read once would be a stale audit — which is worse than no audit.
+///
+/// Mounted UNGATED beside the other floating overlays: an audit surface the operator deliberately
+/// opened is not dock chrome and must survive a Backspace hide-chrome (the wave-101 mount rule).
+#[component]
+fn ConnectionsPanelOverlay(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> impl IntoView {
+    // Esc closes (the picker / context-menu / comment-editor idiom).
+    #[cfg(target_arch = "wasm32")]
+    {
+        let key = window_event_listener(leptos::ev::keydown, move |ev| {
+            if open.get_untracked() && ev.key() == "Escape" {
+                ev.prevent_default();
+                crate::editor_ops::close_connections_panel();
+            }
+        });
+        on_cleanup(move || key.remove());
+    }
+
+    move || {
+        if !open.get() {
+            return None;
+        }
+        // Re-read on every doc mutation — see the component note.
+        let _ = doc_tick.get();
+        // `editor_ops` is a wasm-only module, so the doc read is behind a cfg and the whole panel
+        // is expressed over the target-independent [`ConnRowView`]. That keeps ONE view body for
+        // both targets — the native build renders the same empty-state DOM rather than a second,
+        // untested branch (the shape `CommentEditorOverlay` uses, for the same reason).
+        #[cfg(target_arch = "wasm32")]
+        let (rows, finding_count, armed_line) = {
+            let list = crate::editor_ops::connection_list();
+            let findings = crate::editor_ops::connection_findings();
+            // Findings keyed by the row they belong to. Built once here rather than re-scanned per
+            // row: a graph with N edges and N findings would otherwise be quadratic, and the panel
+            // re-renders on every document mutation.
+            let mut by_row: std::collections::HashMap<String, Vec<String>> =
+                std::collections::HashMap::new();
+            for f in &findings {
+                by_row
+                    .entry(f.connection_id.clone())
+                    .or_default()
+                    .push(format!("{}: {}", f.code, f.detail));
+            }
+            let rows: Vec<ConnRowView> = list
+                .into_iter()
+                .map(|r| ConnRowView {
+                    problems: by_row.get(&r.id).cloned().unwrap_or_default(),
+                    head: format!("{} \u{2192} {}", r.from_label, r.to_label),
+                    kind: r.kind,
+                    id: r.id,
+                })
+                .collect();
+            let armed_line = crate::editor_ops::pending_connect()
+                .map(|(kind, from)| format!("Connecting: {kind} from {from}"));
+            (rows, findings.len(), armed_line)
+        };
+        #[cfg(not(target_arch = "wasm32"))]
+        let (rows, finding_count, armed_line): (Vec<ConnRowView>, usize, Option<String>) =
+            (Vec::new(), 0, None);
+
+        let total = rows.len();
+        // Bound out of the `view!` macro: `class:` takes a value, not a comparison expression.
+        let clean = finding_count == 0;
+        let empty = total == 0;
+
+        let row_views = rows
+            .into_iter()
+            .map(|r| {
+                let bad = !r.problems.is_empty();
+                let (problems, del_id, head) = (r.problems, r.id.clone(), r.head);
+                view! {
+                    <div class="flex flex-col gap-0.5 border-b border-outline-variant/20 py-1.5 last:border-b-0">
+                        <div class="flex items-center gap-2">
+                            <span
+                                class="shrink-0 rounded px-1.5 py-0.5 font-code-sm text-code-sm"
+                                class:bg-surface-dim=!bad
+                                class:text-on-surface-variant=!bad
+                                class:bg-error-container=bad
+                                class:text-on-error-container=bad
+                            >
+                                {r.kind}
+                            </span>
+                            <span class="flex-1 truncate font-label-md text-label-md text-on-surface">
+                                {head}
+                            </span>
+                            <span class="shrink-0 font-code-sm text-code-sm text-outline">
+                                {r.id}
+                            </span>
+                            <button
+                                type="button"
+                                title="Delete this connection (CONN-DEL-001) — one Ctrl+Z restores it"
+                                class="shrink-0 cursor-pointer rounded px-2 py-0.5 font-label-sm text-[11px] text-on-surface-variant hover:bg-error-container hover:text-on-error-container"
+                                on:click=move |_| {
+                                    #[cfg(target_arch = "wasm32")]
+                                    {
+                                        crate::editor_ops::delete_connection(&del_id);
+                                    }
+                                    #[cfg(not(target_arch = "wasm32"))]
+                                    let _ = &del_id;
+                                }
+                            >
+                                "Delete"
+                            </button>
+                        </div>
+                        {(!problems.is_empty())
+                            .then(|| {
+                                problems
+                                    .into_iter()
+                                    .map(|p| {
+                                        view! {
+                                            <div class="pl-2 font-code-sm text-code-sm text-error">
+                                                {p}
+                                            </div>
+                                        }
+                                    })
+                                    .collect_view()
+                            })}
+                    </div>
+                }
+            })
+            .collect_view();
+
+        Some(view! {
+            <div
+                class="fixed inset-0 z-40 bg-scrim/40"
+                on:pointerdown=move |ev| {
+                    ev.stop_propagation();
+                    #[cfg(target_arch = "wasm32")]
+                    crate::editor_ops::close_connections_panel();
+                }
+            ></div>
+            <div
+                class="glass animate-dialog-in fixed top-1/2 left-1/2 z-50 flex max-h-[80vh] w-[min(40rem,94vw)] -translate-x-1/2 -translate-y-1/2 flex-col gap-3 rounded-xl border border-outline-variant/30 p-4 shadow-2xl outline-none"
+                on:pointerdown=move |ev| ev.stop_propagation()
+            >
+                <div class="flex items-center gap-2">
+                    <span class="font-label-md text-label-md text-on-surface">"Connections"</span>
+                    <span class="font-code-sm text-code-sm text-on-surface-variant">
+                        {format!("{total} edge(s)")}
+                    </span>
+                    <button
+                        type="button"
+                        class="ml-auto cursor-pointer rounded px-2 py-1 font-label-sm text-[11px] text-on-surface-variant hover:bg-surface-dim"
+                        on:click=move |_| {
+                            #[cfg(target_arch = "wasm32")]
+                            crate::editor_ops::close_connections_panel();
+                        }
+                    >
+                        "Close"
+                    </button>
+                </div>
+                // The armed connect — the two-act gesture's only persistent state, which is
+                // otherwise invisible between the two right-clicks.
+                {armed_line
+                    .map(|line| {
+                        view! {
+                            <div class="flex items-center gap-2 rounded border border-primary/40 bg-surface-dim px-2 py-1">
+                                <span class="flex-1 truncate font-code-sm text-code-sm text-on-surface">
+                                    {line}
+                                </span>
+                                <button
+                                    type="button"
+                                    class="shrink-0 cursor-pointer rounded px-2 py-0.5 font-label-sm text-[11px] text-on-surface-variant hover:bg-surface-bright"
+                                    on:click=move |_| {
+                                        #[cfg(target_arch = "wasm32")]
+                                        {
+                                            crate::editor_ops::cancel_connect();
+                                            crate::editor_ops::open_connections_panel();
+                                        }
+                                    }
+                                >
+                                    "Cancel"
+                                </button>
+                            </div>
+                        }
+                    })}
+                // The CHECK summary. Rendered at the TOP and unconditionally (including the clean
+                // "no problems" case), because a validation surface that only appears when something
+                // is wrong cannot be distinguished from one that is broken.
+                <div
+                    class="rounded px-2 py-1 font-label-sm text-[11px]"
+                    class:bg-surface-dim=clean
+                    class:text-on-surface-variant=clean
+                    class:bg-error-container=!clean
+                    class:text-on-error-container=!clean
+                >
+                    {if clean {
+                        "No problems found in the connection graph.".to_string()
+                    } else {
+                        format!(
+                            "{finding_count} problem(s): dangling endpoints, self-links, duplicates or ownership cycles — see the rows below.",
+                        )
+                    }}
+                </div>
+                <div class="min-h-0 flex-1 overflow-y-auto">
+                    {if empty {
+                        view! {
+                            <div class="py-6 text-center font-label-sm text-[11px] text-on-surface-variant">
+                                "No connections yet. Right-click a unit → Connect → pick a relation, then right-click the target and choose Complete Connection."
+                            </div>
+                        }
+                            .into_any()
+                    } else {
+                        row_views.into_any()
+                    }}
+                </div>
+            </div>
+        })
+    }
+}
+
 #[component]
 pub fn MissionEditorPage() -> impl IntoView {
     let container_ref = NodeRef::<leptos::html::Div>::new();
@@ -1689,6 +1937,10 @@ pub fn MissionEditorPage() -> impl IntoView {
     // dialogs like the picker and the context menu, so a comment stays editable under Backspace
     // hide-chrome (a floating overlay is not dock chrome — the wave-101 mount rule).
     let comment_editor = RwSignal::new(None::<String>);
+    // T-672 — the Connections panel's open flag (the connection graph's SEE + CHECK surface).
+    // Declared beside the comment editor and registered with `editor_ops` in the same block below,
+    // because the only opener is a context-menu row that has no reactive handle to this signal.
+    let connections_panel = RwSignal::new(false);
     // T-662 — Backspace hides the whole Eden chrome (Eden's "hide interface"), leaving the map
     // full-bleed and interactive. Gates the four dock mounts + the strip below; another Backspace
     // brings them back. Declared on both targets — the view reads it, the wasm keydown toggles it.
@@ -2234,6 +2486,9 @@ pub fn MissionEditorPage() -> impl IntoView {
             // T-651 — same handoff for the comment editor: the Outliner's comment row (a native
             // view with no reactive handle) opens it through `editor_ops::open_comment_editor`.
             crate::editor_ops::set_comment_editor_signal(comment_editor);
+            // T-672 — same idiom: the `Connections...` context-menu row calls
+            // `editor_ops::open_connections_panel`, which needs this handle.
+            crate::editor_ops::set_connections_panel_signal(connections_panel);
 
             crate::mission_history::register_editor_history();
             crate::mission_history::register_key_handler();
@@ -4170,6 +4425,13 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // reason as the picker above; renders no DOM while closed.
                 <div class="pointer-events-auto">
                     <CommentEditorOverlay open=comment_editor doc_tick />
+                </div>
+                // T-672 — the Connections panel (every edge, every finding, a delete per row).
+                // UNGATED like the context menu and the comment editor: an audit surface the
+                // operator deliberately opened is not dock chrome, so it survives Backspace
+                // hide-chrome. Renders no DOM while closed.
+                <div class="pointer-events-auto">
+                    <ConnectionsPanelOverlay open=connections_panel doc_tick />
                 </div>
                 <div class="pointer-events-auto">
                     <AssetPickerOverlay picker=asset_picker registry=registry_items active_side />

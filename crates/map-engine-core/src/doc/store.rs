@@ -197,6 +197,57 @@ pub struct MissionDocCore {
     /// signal is that the mechanism survived a total rewrite that threw away everything else —
     /// which is why [`Self::seed_template_comments`] seeds exactly two, and not twenty-eight.
     comments: MapRef,
+    /// T-672 — root `connections` map (`connectionsById` in [`Self::small_maps_json`]) — undo-scoped.
+    /// The EDITOR-ONLY connection graph (`CONN-START-001` / `CONN-SYNC-001` / `CONN-DEL-001`): the
+    /// author-declared relations between two placed things, as Eden's `Connect ▸` submenu makes them.
+    ///
+    /// ── T-672 — WHY A CONNECTION CAN NEVER COMPILE, AND WHERE THAT IS ENFORCED ──────────────────
+    /// This adopts the T-651 `comments` arrangement, and it does so on MEASURED evidence rather than
+    /// by analogy. `packages/tbd-schema/schema/mission.schema.json` sets `additionalProperties:
+    /// false` at its top level and declares nineteen properties — `schemaVersion`, `meta`,
+    /// `environment`, `factions`, `orbat`, `slots`, `radioPlan`, `zones`, `entities`, `layers`,
+    /// `flow`, `winConditions`, `briefings`, `settings`, `objectives`, `vehicles`, `editorTriggers`,
+    /// `variants`, `missionParams`. **None of them is a relation collection**, and neither
+    /// `$defs/entity` nor `$defs/slot` nor `$defs/vehicle` carries a `syncedTo` / `connections` /
+    /// `owner` field. There is nowhere in the compiled mission for an edge to land: a connection
+    /// that "compiled" could only compile into a key the schema rejects.
+    ///
+    /// So the rule holds by NOT declaring — `connections` is not a key of
+    /// `mission::flatten::EditorPayload`, so serde drops the array before any mod-document code sees
+    /// it. The way to break it is to ADD a declaration (in `mission/flatten.rs`, another slice's
+    /// file) or to write an edge row into a root that IS compiled;
+    /// `connections_never_reach_the_mod_document` fires on exactly that second failure, the way
+    /// T-651's twin does.
+    ///
+    /// **Persistence is the different question with the different answer**, identically to comments:
+    /// `small_maps_json` emits the canonical `connectionsById` AND a `payloadExtras.connections`
+    /// projection; `compile_payload` promotes it onto the EDITOR-payload root (T-219);
+    /// [`Self::hydrate`] loads a top-level `connections[]` back here, and `connections` is in
+    /// `is_known_editor_payload_top_level` so it is not double-parked. Like comments — and unlike
+    /// zones / compositions / triggers — this projection is **PERMANENT**: no later ticket teaches
+    /// `mission/compile.rs` to author the key, because the schema must never declare one.
+    ///
+    /// ROW SHAPE — four strings and nothing else:
+    ///   id    String, required — the doc key.
+    ///   kind  String — `"sync"` | `"group"` | `"triggerOwner"`, the three verbs Eden's `Connect ▸`
+    ///         submenu offers ([`ConnectionKind`]). An unknown kind is refused at
+    ///         [`Self::add_connection`], so the vocabulary cannot fork the way T-241 exists to stop.
+    ///   from  String — the source id (the entity the operator armed the connect ON).
+    ///   to    String — the target id.
+    ///
+    /// **`sync` is UNDIRECTED and is normalised at write** (endpoints sorted — see
+    /// [`ConnectionKind::is_directed`]) so `sync(A,B)` and `sync(B,A)` are ONE edge and the duplicate
+    /// rule can actually see them. `group` / `triggerOwner` are directed and stored verbatim.
+    ///
+    /// ── THE FNF v4 WARNING, AND WHAT IT BOUGHT ──────────────────────────────────────────────────
+    /// The framework corpus puts FNF v4's entire defect cluster on exactly this mechanism. That is
+    /// why this collection ships its READ and CHECK surfaces ([`Self::connection_rows_json`],
+    /// [`Self::connection_findings_json`]) in the SAME edit as its write surface, and why every
+    /// refusal at [`Self::add_connection`] has a matching *finding* code: the mutator can keep this
+    /// editor's own authoring clean, but a hydrate can still bring in a self-link, a duplicate or a
+    /// dangling endpoint from a payload this editor did not author, and an edge nobody can enumerate
+    /// or validate is what that cluster is made of.
+    connections: MapRef,
     /// When true, mutators stamp `INIT` (untracked) instead of `LOCAL` — set around boot / hydrate /
     /// default-seeding so a load is not an undo step. Interior mutability: mutators take `&self`.
     init_mode: Cell<bool>,
@@ -278,6 +329,7 @@ impl MissionDocCore {
         let compositions = doc.get_or_insert_map("compositions");
         let triggers = doc.get_or_insert_map("triggers");
         let comments = doc.get_or_insert_map("comments");
+        let connections = doc.get_or_insert_map("connections");
 
         // capture_timeout_millis = 0 → every transaction is its own undo step. yrs extends the last
         // stack item only when `last_change > 0 && now - last_change < capture_timeout_millis`
@@ -319,6 +371,11 @@ impl MissionDocCore {
         // gesture like any other authoring act. Editor-only ≠ untracked: an accidental Delete on an
         // annotation that carried a seven-paragraph brief must be Ctrl+Z-able.
         undo_mgr.expand_scope(&doc, &comments);
+        // T-672 — drawing or deleting a connection is an undoable user gesture. This matters more
+        // here than anywhere else in this list: `CONN-DEL-001` is a DESTRUCTIVE verb on a relation
+        // that has no glyph of its own, so the only way an operator recovers from deleting the wrong
+        // edge is Ctrl+Z. Scoping the root is what makes that true.
+        undo_mgr.expand_scope(&doc, &connections);
 
         Self {
             doc,
@@ -333,6 +390,7 @@ impl MissionDocCore {
             compositions,
             triggers,
             comments,
+            connections,
             init_mode: Cell::new(false),
             undo_mgr,
         }
@@ -479,7 +537,7 @@ impl MissionDocCore {
         let meta = self.doc.get_or_insert_map("meta");
         let payload_extras = self.doc.get_or_insert_map("payloadExtras");
         let entity_order = self.doc.get_or_insert_map("entityOrder");
-        let named: [(&str, MapRef); 13] = [
+        let named: [(&str, MapRef); 14] = [
             ("factionsById", self.doc.get_or_insert_map("factions")),
             ("squadsById", self.doc.get_or_insert_map("squads")),
             ("loadoutsById", self.doc.get_or_insert_map("loadouts")),
@@ -506,6 +564,11 @@ impl MissionDocCore {
             // `zonesById`. This key reaches the EDITOR payload and stops there; see the `comments`
             // field's never-compiles note for why `flatten_to_mod_document` cannot see it.
             ("commentsById", self.doc.get_or_insert_map("comments")),
+            // T-672 — the canonical by-id emit for the editor-only connection graph, shaped exactly
+            // like `commentsById`. This key reaches the EDITOR payload and stops there; see the
+            // `connections` field's never-compiles note for why `flatten_to_mod_document` cannot see
+            // it (the schema declares no relation collection at all).
+            ("connectionsById", self.doc.get_or_insert_map("connections")),
         ];
 
         let txn = self.doc.transact();
@@ -555,12 +618,22 @@ impl MissionDocCore {
         // (the struct field, not `get_or_insert_map` — that deadlocks against the live `txn`, the
         // zones note's measured hang), ordered like every sibling.
         let comment_rows = ordered_rows(&txn, &self.comments, &entity_order, "comments");
+        // T-672 — the same projection for the editor-only connection graph, and it is the ONLY thing
+        // that makes a drawn edge survive a Save→Load. `compile_payload` promotes it onto the EDITOR
+        // payload root; `flatten_to_mod_document` cannot see that root key, so the compiled mission
+        // is unaffected (see the `connections` field's never-compiles note). PERMANENT for the same
+        // reason comments' is: there is no later ticket that teaches compile.rs to author
+        // `connections`, because the schema must never declare one. Built off `self.connections` (the
+        // struct field, not `get_or_insert_map` — that deadlocks against the live `txn`, the zones
+        // note's measured hang), ordered like every sibling.
+        let connection_rows = ordered_rows(&txn, &self.connections, &entity_order, "connections");
         // Omit when empty so a clean doc's snapshot shape stays unchanged.
         if payload_extras.len(&txn) > 0
             || !zone_rows.is_empty()
             || !comp_rows.is_empty()
             || !trigger_rows.is_empty()
             || !comment_rows.is_empty()
+            || !connection_rows.is_empty()
         {
             let mut extras: HashMap<String, Any> = match payload_extras.to_json(&txn) {
                 Any::Map(m) => (*m).clone(),
@@ -592,6 +665,18 @@ impl MissionDocCore {
                 extras.remove("comments");
             } else {
                 extras.insert("comments".to_string(), Any::Array(comment_rows.into()));
+            }
+            // T-672 — same absence rule for connections: `CONN-DEL-001` deleting the last edge must
+            // CLEAR the wire, not re-emit the array a reload parked. Absence has to be expressible
+            // or "delete connection" silently un-deletes itself on the next load — the exact
+            // half-applied-mutation shape the FNF v4 cluster is made of.
+            if connection_rows.is_empty() {
+                extras.remove("connections");
+            } else {
+                extras.insert(
+                    "connections".to_string(),
+                    Any::Array(connection_rows.into()),
+                );
             }
             if !extras.is_empty() {
                 root.insert("payloadExtras".to_string(), Any::Map(Arc::new(extras)));
@@ -1847,6 +1932,352 @@ impl MissionDocCore {
         ids
     }
 
+    // ── T-672 — the editor-only CONNECTION GRAPH (`connectionsById`) ─────────────────────────────
+    //
+    // ROW SHAPE + ROUTING + the never-compiles proof: see the `connections` field's note.
+    //
+    // **READ THIS FIRST — the order these three surfaces ship in is the ticket.** The framework
+    // corpus records FNF v4's entire defect cluster on this mechanism, and the instruction that came
+    // with it is "the inspector and the validation rules must precede the edges — do not ship edges
+    // you cannot see or check". So this block is written SEE → CHECK → WRITE:
+    //
+    //   SEE    [`Self::connection_rows_json`] — every edge, stable-ordered, addressable by id.
+    //   CHECK  [`Self::connection_findings_json`] — four rules over the WHOLE graph
+    //          (self-link, dangling endpoint, duplicate edge, cycle in the directed subgraph).
+    //   WRITE  [`Self::add_connection`] / [`Self::remove_connection`] /
+    //          [`Self::remove_connections_touching`].
+    //
+    // WHY BOTH A REFUSAL AND A FINDING FOR THE SAME CONDITION. `add_connection` refuses a self-link,
+    // an unknown kind and a duplicate, writing nothing. That keeps THIS editor's authoring clean and
+    // nothing more: [`Self::hydrate`] uses the generic ordered row loader every sibling collection
+    // uses, so a payload authored by another tool (or by an older build of this one) can land any of
+    // those shapes plus a dangling endpoint the mutator cannot even see at write time — an endpoint
+    // is only dangling relative to a document state that changes after the edge is drawn. Refusing
+    // rows at LOAD would silently destroy an operator's data. Showing them as findings is the honest
+    // answer, and it is why the checker is not merely a re-statement of the mutator's guards.
+    //
+    // WHY THE MUTATORS DO NOT REPAIR. Nothing here deletes a dangling edge, dedupes, or breaks a
+    // cycle. A relation the author drew is data; the graph's job is to tell the truth about it, and
+    // the operator's job is to decide. The one exception is
+    // [`Self::remove_connections_touching`], which is a CASCADE, not a repair: deleting an entity
+    // is an explicit destructive act, and leaving its edges behind would manufacture the dangling
+    // rows the checker exists to report.
+
+    /// T-672 (SEE) — every connection as a stable-ordered JSON array of
+    /// `{id, kind, from, to}`.
+    ///
+    /// **This is the inspector feed, and it is the half of this ticket that must never regress.**
+    /// A connection has no map glyph in this slice (see the `LaneRole::SquadLinks` trace in the
+    /// slice notes), so this listing is the ONLY way an operator can observe the graph they are
+    /// authoring. `connections_json` returns the raw by-id map, whose iteration order is
+    /// `serde_json`'s; a list that reshuffled between reads would make the rows dance under the
+    /// cursor for a document that never changed, and would make "delete the third one" a lie.
+    ///
+    /// Sort key is the full tuple `(kind, from, to, id)` — total, so the order is a function of the
+    /// CONTENT and two documents with the same edges list them identically regardless of the order
+    /// they were drawn in. Rows whose `id` field disagrees with their doc key, or which are missing
+    /// `from`/`to`, are still listed (keyed by the doc key, missing fields as `""`) rather than
+    /// skipped: a malformed row is exactly what the operator needs to SEE, and
+    /// [`Self::connection_findings_json`] will flag it dangling.
+    #[must_use]
+    pub fn connection_rows_json(&self) -> String {
+        let rows = self.connection_rows();
+        let out: Vec<serde_json::Value> = rows
+            .iter()
+            .map(|r| {
+                serde_json::json!({
+                    "id": r.id,
+                    "kind": r.kind,
+                    "from": r.from,
+                    "to": r.to,
+                })
+            })
+            .collect();
+        serde_json::Value::Array(out).to_string()
+    }
+
+    /// T-672 (CHECK) — validate the whole graph; a stable-ordered JSON array of
+    /// `{code, connectionId, detail}`.
+    ///
+    /// The four rules, and why each one is a rule:
+    ///
+    /// * **`CONN-SELF`** — `from == to`. An entity connected to itself is meaningless under every
+    ///   one of the three kinds and is the classic off-by-one of a two-click connect gesture that
+    ///   forgot to advance its target.
+    /// * **`CONN-DANGLING`** — an endpoint id that is in no slot / entity / vehicle / zone / trigger
+    ///   map. This is the rule that cannot be enforced at write time (an endpoint becomes dangling
+    ///   when the OTHER end is deleted, long after the edge was drawn), which is why the delete
+    ///   cascade in [`Self::remove_connections_touching`] exists and why this check still exists
+    ///   beside it — the cascade cannot reach an edge that arrived by hydrate.
+    /// * **`CONN-DUPLICATE`** — two rows with the same `(kind, from, to)` after `sync` normalisation.
+    ///   Reported on the SECOND and later rows in listing order, so the finding names the row to
+    ///   delete and the survivor is deterministic.
+    /// * **`CONN-CYCLE`** — an edge that closes a cycle in the DIRECTED subgraph (`group` /
+    ///   `triggerOwner`). Ownership must be a DAG: `A groups to B groups to A` has no leader, and a
+    ///   trigger-owner cycle has no owner. `sync` is deliberately EXCLUDED — it is an undirected
+    ///   peer relation, so a "cycle" in it is just a connected component and is perfectly legal.
+    ///
+    /// Findings are ordered by `(code, connectionId)` for the same reason the rows are: a panel that
+    /// reorders its own warnings between reads is unreadable.
+    #[must_use]
+    pub fn connection_findings_json(&self) -> String {
+        let rows = self.connection_rows();
+        let known = self.known_endpoint_ids();
+        let out: Vec<serde_json::Value> = validate_connection_rows(&rows, &known)
+            .into_iter()
+            .map(|f| {
+                serde_json::json!({
+                    "code": f.code,
+                    "connectionId": f.connection_id,
+                    "detail": f.detail,
+                })
+            })
+            .collect();
+        serde_json::Value::Array(out).to_string()
+    }
+
+    /// T-672 — the `connections` root as a JSON object (`connectionsById`), the narrow raw getter.
+    /// Prefer [`Self::connection_rows_json`] for anything an operator reads: this one's key order is
+    /// unspecified.
+    #[must_use]
+    pub fn connections_json(&self) -> String {
+        let txn = self.doc.transact();
+        let mut buf = String::new();
+        self.connections.to_json(&txn).to_json(&mut buf);
+        buf
+    }
+
+    /// T-672 — drawn-edge count (cheap).
+    #[must_use]
+    pub fn connection_count(&self) -> usize {
+        self.connections.len(&self.doc.transact()) as usize
+    }
+
+    /// T-672 (`CONN-START-001` / `CONN-SYNC-001`) — **draw an edge.** Returns `false` writing
+    /// NOTHING when the row would be junk:
+    ///
+    /// * `id`, `from` or `to` empty — an unaddressable or endpoint-less edge.
+    /// * `kind` not one of `sync` / `group` / `triggerOwner` ([`ConnectionKind::parse`]).
+    /// * `from == to` — a self-link (`CONN-SELF`).
+    /// * an existing row already has the same `(kind, from, to)` after normalisation
+    ///   (`CONN-DUPLICATE`). Drawing the same relation twice is not an edit; it is a second row the
+    ///   operator now has to find and delete.
+    ///
+    /// Cycles are NOT refused here. A cycle is a property of the graph, not of the edge, and the
+    /// edge that closes it is rarely the wrong one — refusing the last click would blame the wrong
+    /// gesture. `CONN-CYCLE` is a finding so the operator can see it and pick which edge to remove.
+    ///
+    /// `sync` endpoints are sorted before the write (see the field note): `sync(B,A)` stores as
+    /// `sync(A,B)`, so the duplicate guard above catches the reversed re-draw that a naive verbatim
+    /// store would let through as a second edge.
+    ///
+    /// Upserts by `id` like every other by-id add here — but note the duplicate guard runs FIRST, so
+    /// re-adding the same relation under a NEW id is refused rather than silently doubled.
+    pub fn add_connection(&self, id: &str, kind: &str, from: &str, to: &str) -> bool {
+        if id.is_empty() || from.is_empty() || to.is_empty() {
+            return false;
+        }
+        let Some(kind) = ConnectionKind::parse(kind) else {
+            return false;
+        };
+        if from == to {
+            return false;
+        }
+        let (from, to) = kind.normalise(from, to);
+        if self
+            .connection_rows()
+            .iter()
+            .any(|r| r.id != id && r.kind == kind.as_str() && r.from == from && r.to == to)
+        {
+            return false;
+        }
+        let mut txn = self.begin();
+        self.connections.insert(
+            &mut txn,
+            id,
+            Any::Map(Arc::new(connection_row(id, kind.as_str(), &from, &to))),
+        );
+        true
+    }
+
+    /// T-672 (`CONN-DEL-001`) — delete one edge by id. One transaction ⇒ one Ctrl+Z, which is the
+    /// only recovery path a relation with no map glyph has.
+    pub fn remove_connection(&self, id: &str) {
+        let mut txn = self.begin();
+        self.connections.remove(&mut txn, id);
+    }
+
+    /// T-672 — **the delete CASCADE**: drop every edge with `entity_id` at either end, in ONE
+    /// transaction, and return the ids removed.
+    ///
+    /// Called when the entity itself is deleted. This is not the checker being enforced — it is the
+    /// difference between a delete that finishes and one that manufactures `CONN-DANGLING` rows for
+    /// the operator to clean up by hand. One transaction so the entity delete and its edge removals
+    /// undo together; several mutators would be several undo steps
+    /// (`capture_timeout_millis = 0` makes every txn its own step), and a Ctrl+Z that restored the
+    /// unit but not its connections would be a half-applied undo.
+    pub fn remove_connections_touching(&self, entity_id: &str) -> Vec<String> {
+        if entity_id.is_empty() {
+            return Vec::new();
+        }
+        let doomed: Vec<String> = self
+            .connection_rows()
+            .into_iter()
+            .filter(|r| r.from == entity_id || r.to == entity_id)
+            .map(|r| r.id)
+            .collect();
+        if doomed.is_empty() {
+            return Vec::new();
+        }
+        let mut txn = self.begin();
+        for id in &doomed {
+            self.connections.remove(&mut txn, id.as_str());
+        }
+        doomed
+    }
+
+    /// T-672 — the connection rows as owned structs, sorted by `(kind, from, to, id)`. The single
+    /// read every surface above goes through, so the listing, the checker and the duplicate guard
+    /// cannot disagree about what the graph contains or what order it is in.
+    #[must_use]
+    fn connection_rows(&self) -> Vec<ConnectionRow> {
+        let txn = self.doc.transact();
+        let mut rows: Vec<ConnectionRow> = self
+            .connections
+            .iter(&txn)
+            .filter_map(|(key, _)| {
+                let row = read_connection_map(&txn, &self.connections, key)?;
+                Some(ConnectionRow {
+                    id: key.to_string(),
+                    kind: comment_str(&row, "kind"),
+                    from: comment_str(&row, "from"),
+                    to: comment_str(&row, "to"),
+                })
+            })
+            .collect();
+        rows.sort_by(|a, b| {
+            (&a.kind, &a.from, &a.to, &a.id).cmp(&(&b.kind, &b.from, &b.to, &b.id))
+        });
+        rows
+    }
+
+    /// T-672 — every id an edge is allowed to point AT: slots, entities (objects), vehicles, zones
+    /// and triggers. The `CONN-DANGLING` universe.
+    ///
+    /// Comments are deliberately absent. A comment is an editor-only annotation with no presence in
+    /// the compiled mission; syncing a unit to a sticky note is not a relation the mission can
+    /// express, so an edge pointing at one is dangling by construction and should read as such.
+    #[must_use]
+    fn known_endpoint_ids(&self) -> HashSet<String> {
+        let txn = self.doc.transact();
+        let mut out = HashSet::new();
+        for map in [
+            &self.slots,
+            &self.entities,
+            &self.vehicles,
+            &self.zones,
+            &self.triggers,
+        ] {
+            for (k, _) in map.iter(&txn) {
+                out.insert(k.to_string());
+            }
+        }
+        out
+    }
+
+    // ── T-672 — `ACTION-FORM-001` / `CTX-FORMATION-001`: force a squad to formation ──────────────
+
+    /// T-672 (`ACTION-FORM-001` `ForceToFormation`) — snap every member of the squad that owns
+    /// `leader_slot_id` onto its formation position, in ONE transaction. Returns the number of slots
+    /// moved (0 when the leader is unknown, unfiled, or alone).
+    ///
+    /// **The leader does not move.** Eden's `ForceToFormation` re-forms the group AROUND its leader;
+    /// moving the leader too would translate the whole squad and make the action a
+    /// nobody-asked-for reposition. So the leader is the anchor and the members take the offsets.
+    ///
+    /// Offsets come from [`formation_offsets`], which is a pure function and is where the geometry
+    /// is tested. Heading is the LEADER's `position.rotation` in degrees, so a squad re-formed after
+    /// the leader turns faces the way the leader faces — a formation that always pointed north would
+    /// be wrong the moment the operator rotated anything.
+    ///
+    /// `y` (elevation) is carried from each member's CURRENT value rather than resampled: this crate
+    /// has no DEM (the caller samples it — see [`Self::move_entities`]'s `zs`), and inventing a 0.0
+    /// would drop every re-formed unit to sea level. A formation snap is a horizontal action; the
+    /// vertical stays the operator's/DEM's business.
+    ///
+    /// One transaction ⇒ one Ctrl+Z, which matters here more than usual: this action moves several
+    /// units at once and an operator who dislikes the result must get all of them back in one press.
+    pub fn force_to_formation(&self, leader_slot_id: &str, formation: &str) -> usize {
+        let members = self.squad_members_of_leader(leader_slot_id);
+        if members.is_empty() {
+            return 0;
+        }
+        let mut txn = self.begin();
+        let Some(Out::YMap(leader)) = self.slots.get(&txn, leader_slot_id) else {
+            return 0;
+        };
+        let anchor = read_position_map(&txn, &leader);
+        let px = |k: &str| match anchor.get(k) {
+            Some(Any::Number(n)) => *n,
+            #[allow(clippy::cast_precision_loss)] // world metres are far inside f64's exact range
+            Some(Any::BigInt(i)) => *i as f64,
+            _ => 0.0,
+        };
+        let (lx, ly, heading) = (px("x"), px("y"), px("rotation"));
+        let offsets = formation_offsets(formation, members.len());
+        let (sin_h, cos_h) = heading.to_radians().sin_cos();
+        let mut moved = 0usize;
+        for (member, (ox, oy)) in members.iter().zip(offsets) {
+            let Some(Out::YMap(slot)) = self.slots.get(&txn, member.as_str()) else {
+                continue;
+            };
+            let existing = read_position_map(&txn, &slot);
+            // Rotate the body-frame offset into world space by the leader's heading. `+y` is the
+            // formation's FORWARD axis, matching the heading convention `position.rotation` uses.
+            let wx = lx + ox.mul_add(cos_h, oy * sin_h);
+            let wy = ly + oy.mul_add(cos_h, -(ox * sin_h));
+            let z = match existing.get("z") {
+                Some(Any::Number(n)) => *n,
+                #[allow(clippy::cast_precision_loss)]
+                Some(Any::BigInt(i)) => *i as f64,
+                _ => 0.0,
+            };
+            slot.insert(
+                &mut txn,
+                "position",
+                position_any_merged(existing, wx, wy, z, heading),
+            );
+            moved += 1;
+        }
+        moved
+    }
+
+    /// T-672 — the non-leader members of the squad `leader_slot_id` leads, in `squad.slotIds` order.
+    /// Empty when the slot leads no squad (only the DECLARED `leaderSlotId` counts — a formation
+    /// action fired from a rifleman must do nothing rather than silently re-form the squad around
+    /// him, which would be a leadership change nobody asked for).
+    #[must_use]
+    fn squad_members_of_leader(&self, leader_slot_id: &str) -> Vec<String> {
+        if leader_slot_id.is_empty() {
+            return Vec::new();
+        }
+        let txn = self.doc.transact();
+        for (squad_id, out_v) in self.squads.iter(&txn) {
+            let Out::YMap(sq) = out_v else { continue };
+            if read_str(&txn, &sq, "leaderSlotId").as_deref() != Some(leader_slot_id) {
+                continue;
+            }
+            return read_id_array(&txn, &self.squads, squad_id, "slotIds")
+                .iter()
+                .filter_map(|a| match a {
+                    Any::String(s) if s.as_ref() != leader_slot_id => Some(s.to_string()),
+                    _ => None,
+                })
+                .collect();
+        }
+        Vec::new()
+    }
+
     /// T-650 (COMP-PLACE-001) — place a saved composition: stamp every captured entity onto the map
     /// at `(drop_x, drop_y)` as ONE undoable transaction. This is the multi-paste the ticket calls
     /// for — a `paste_at_cursor`-shaped drop, but writing slots AND vehicles AND objects, all in a
@@ -2840,6 +3271,24 @@ impl MissionDocCore {
             payload.get("comments"),
             &entity_order,
             "comments",
+        );
+        // T-672 — top-level `connections[]` (promoted from `payloadExtras` by `compile_payload`) back
+        // into the `connections` root, ordered like every sibling. Listing `connections` in
+        // [`is_known_editor_payload_top_level`] is what keeps this off the parking path. This load is
+        // the whole reason a drawn edge survives a reload — and it is EDITOR-side only, so nothing
+        // here moves the compiled mission (see the `connections` field's never-compiles note).
+        //
+        // It is also why [`Self::connection_findings_json`] exists: this loader is DELIBERATELY
+        // unvalidating (it is the generic row loader every sibling uses), so a payload authored
+        // elsewhere can land a self-link, a duplicate or a dangling endpoint that
+        // [`Self::add_connection`] would have refused. Rejecting rows at load would silently destroy
+        // an operator's data; SHOWING them as findings is the honest answer.
+        load_rows_ordered(
+            &mut txn,
+            &self.connections,
+            payload.get("connections"),
+            &entity_order,
+            "connections",
         );
         load_rows_ordered(
             &mut txn,
@@ -5127,6 +5576,13 @@ fn is_known_editor_payload_top_level(key: &str) -> bool {
             // exact failure the zones note warns of); adding it WITH an author would be a request to
             // compile an annotation, which is the one thing this collection must never do.
             | "comments"
+            // T-672 — hydrate loads top-level `connections[]` into the `connections` root. Exactly
+            // the `comments` case, for exactly the `comments` reason: compile.rs's twin list does NOT
+            // list this key and never will, because the schema declares no relation collection for
+            // an edge to compile INTO. Adding `connections` to compile.rs's list without teaching it
+            // to author the key would drop every drawn edge on save; adding it WITH an author would
+            // be a request to compile a relation the mod document has no field for.
+            | "connections"
             | "markers"
             | "editor"
             | "orbat"
@@ -5385,6 +5841,323 @@ fn comment_str(row: &HashMap<String, Any>, key: &str) -> String {
         Some(Any::String(s)) => s.to_string(),
         _ => String::new(),
     }
+}
+
+/* ═══════════════ T-672 — the connection graph's vocabulary, rows, checker + formation ═══════════ */
+
+/// T-672 — the three relations Eden's `Connect ▸` submenu can make. **This enum is the whole
+/// vocabulary**, parsed at the one write door ([`MissionDocCore::add_connection`]), so a fourth
+/// spelling cannot enter the document by a typo at a call site — the T-241 single-vocabulary rule.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ConnectionKind {
+    /// `Sync to` — a symmetric peer relation between two placed things. UNDIRECTED.
+    Sync,
+    /// `Group to` — `from` joins `to`'s group. Directed; the graph must stay acyclic.
+    Group,
+    /// `Set Trigger Owner` — `to` owns `from`. Directed; the graph must stay acyclic.
+    TriggerOwner,
+}
+
+impl ConnectionKind {
+    /// Parse the stored/wire token. `None` for anything else — an unknown kind is refused rather
+    /// than coerced, because coercing would silently turn a typo into a relation the author did not
+    /// ask for and cannot see the difference of.
+    #[must_use]
+    pub fn parse(s: &str) -> Option<Self> {
+        match s {
+            "sync" => Some(Self::Sync),
+            "group" => Some(Self::Group),
+            "triggerOwner" => Some(Self::TriggerOwner),
+            _ => None,
+        }
+    }
+
+    /// The stored token.
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Sync => "sync",
+            Self::Group => "group",
+            Self::TriggerOwner => "triggerOwner",
+        }
+    }
+
+    /// Whether `from`→`to` has a direction. `sync` does not: it is a peer relation, which is why it
+    /// is normalised at write and excluded from the `CONN-CYCLE` rule (a "cycle" of peers is just a
+    /// connected component, and flagging it would be noise on a correct graph).
+    #[must_use]
+    pub const fn is_directed(self) -> bool {
+        !matches!(self, Self::Sync)
+    }
+
+    /// Canonical endpoint order for storage: undirected kinds sort their endpoints so `sync(B,A)`
+    /// and `sync(A,B)` are the SAME row, which is the only thing that lets the duplicate guard see
+    /// a reversed re-draw. Directed kinds are stored verbatim.
+    #[must_use]
+    fn normalise(self, from: &str, to: &str) -> (String, String) {
+        if self.is_directed() || from <= to {
+            (from.to_string(), to.to_string())
+        } else {
+            (to.to_string(), from.to_string())
+        }
+    }
+}
+
+/// T-672 — one connection as every reader wants it. `kind` stays a `String` (not a
+/// [`ConnectionKind`]) on purpose: a hydrated document can carry a kind this build does not know,
+/// and the listing must still SHOW it — dropping unreadable rows from the inspector is how a graph
+/// becomes unauditable.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ConnectionRow {
+    pub id: String,
+    pub kind: String,
+    pub from: String,
+    pub to: String,
+}
+
+/// T-672 — one validation finding. `code` is a stable id (`CONN-SELF`, `CONN-DANGLING`,
+/// `CONN-DUPLICATE`, `CONN-CYCLE`, `CONN-KIND`); `detail` is the human half.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ConnectionFinding {
+    pub code: &'static str,
+    pub connection_id: String,
+    pub detail: String,
+}
+
+/// T-672 (CHECK) — **the graph validator, as a pure function over rows.**
+///
+/// Pure and taking its inputs explicitly so the rules are tested against hand-built graphs with no
+/// yrs document in the way — the FNF v4 warning is specifically that this mechanism's defects hide,
+/// and a checker that can only be exercised through a live document is a checker nobody exercises.
+/// [`MissionDocCore::connection_findings_json`] is a thin adapter over this.
+///
+/// `rows` must be in the stable order [`MissionDocCore::connection_rows`] produces: `CONN-DUPLICATE`
+/// names the SECOND and later rows of a repeated `(kind, from, to)`, so which row survives is a
+/// function of that order.
+///
+/// Findings are sorted `(code, connection_id)` before returning.
+#[must_use]
+pub fn validate_connection_rows(
+    rows: &[ConnectionRow],
+    known_ids: &HashSet<String>,
+) -> Vec<ConnectionFinding> {
+    let mut out: Vec<ConnectionFinding> = Vec::new();
+    let mut seen: HashSet<(String, String, String)> = HashSet::new();
+
+    for r in rows {
+        if ConnectionKind::parse(&r.kind).is_none() {
+            out.push(ConnectionFinding {
+                code: "CONN-KIND",
+                connection_id: r.id.clone(),
+                detail: format!("unknown connection kind `{}`", r.kind),
+            });
+        }
+        if !r.from.is_empty() && r.from == r.to {
+            out.push(ConnectionFinding {
+                code: "CONN-SELF",
+                connection_id: r.id.clone(),
+                detail: format!("`{}` is connected to itself", r.from),
+            });
+        }
+        for (end, id) in [("from", &r.from), ("to", &r.to)] {
+            if id.is_empty() || !known_ids.contains(id) {
+                out.push(ConnectionFinding {
+                    code: "CONN-DANGLING",
+                    connection_id: r.id.clone(),
+                    detail: format!("{end} endpoint `{id}` is not a placed entity"),
+                });
+            }
+        }
+        let key = (r.kind.clone(), r.from.clone(), r.to.clone());
+        if !seen.insert(key) {
+            out.push(ConnectionFinding {
+                code: "CONN-DUPLICATE",
+                connection_id: r.id.clone(),
+                detail: format!(
+                    "`{}` → `{}` is already connected ({})",
+                    r.from, r.to, r.kind
+                ),
+            });
+        }
+    }
+
+    out.extend(cycle_findings(rows));
+    out.sort_by(|a, b| (a.code, &a.connection_id).cmp(&(b.code, &b.connection_id)));
+    out
+}
+
+/// T-672 — `CONN-CYCLE` over the DIRECTED subgraph only (`group` / `triggerOwner`).
+///
+/// Iterative three-colour DFS (white = unvisited, grey = on the current stack, black = finished): an
+/// edge into a GREY node is a back edge and closes a cycle, so that edge is the finding. Self-links
+/// are skipped here — they are already `CONN-SELF`, and reporting the same row twice under two codes
+/// would make the panel's count wrong.
+///
+/// Iterative rather than recursive because the depth is the author's, not ours: a 300-unit chain
+/// authored as one ownership line is legal input, and a recursive walk would blow the stack on a
+/// document rather than report on it.
+fn cycle_findings(rows: &[ConnectionRow]) -> Vec<ConnectionFinding> {
+    // node → [(target, connection id)] for directed kinds only.
+    let mut adj: HashMap<&str, Vec<(&str, &str)>> = HashMap::new();
+    for r in rows {
+        let directed = ConnectionKind::parse(&r.kind).is_some_and(ConnectionKind::is_directed);
+        if !directed || r.from == r.to || r.from.is_empty() || r.to.is_empty() {
+            continue;
+        }
+        adj.entry(r.from.as_str())
+            .or_default()
+            .push((r.to.as_str(), r.id.as_str()));
+    }
+
+    #[derive(Clone, Copy, PartialEq, Eq)]
+    enum Colour {
+        Grey,
+        Black,
+    }
+    let mut colour: HashMap<&str, Colour> = HashMap::new();
+    let mut out: Vec<ConnectionFinding> = Vec::new();
+    let mut roots: Vec<&str> = adj.keys().copied().collect();
+    roots.sort_unstable();
+
+    for root in roots {
+        if colour.contains_key(root) {
+            continue;
+        }
+        // Stack frames are (node, index of the next outgoing edge to walk).
+        let mut stack: Vec<(&str, usize)> = vec![(root, 0)];
+        colour.insert(root, Colour::Grey);
+        while let Some((node, edge_idx)) = stack.pop() {
+            let edges = adj.get(node).map_or(&[][..], Vec::as_slice);
+            if edge_idx >= edges.len() {
+                colour.insert(node, Colour::Black);
+                continue;
+            }
+            stack.push((node, edge_idx + 1));
+            let (target, conn_id) = edges[edge_idx];
+            match colour.get(target) {
+                Some(Colour::Grey) => out.push(ConnectionFinding {
+                    code: "CONN-CYCLE",
+                    connection_id: conn_id.to_string(),
+                    detail: format!("`{node}` → `{target}` closes an ownership cycle"),
+                }),
+                Some(Colour::Black) => {}
+                None => {
+                    colour.insert(target, Colour::Grey);
+                    stack.push((target, 0));
+                }
+            }
+        }
+    }
+    out
+}
+
+/// T-672 — build a connection row `{id, kind, from, to}`. One constructor so the write path and any
+/// future seed cannot disagree about the shape.
+fn connection_row(id: &str, kind: &str, from: &str, to: &str) -> HashMap<String, Any> {
+    let mut row: HashMap<String, Any> = HashMap::new();
+    row.insert("id".to_string(), Any::String(id.into()));
+    row.insert("kind".to_string(), Any::String(kind.into()));
+    row.insert("from".to_string(), Any::String(from.into()));
+    row.insert("to".to_string(), Any::String(to.into()));
+    row
+}
+
+/// T-672 — read a connection row whole, tolerating BOTH the freshly-written opaque `Any::Map` and
+/// the tracked `YMap` a hydrate materialises. The [`read_comment_map`] idiom, same reason: the
+/// listing and the checker must see a reloaded edge exactly as they see a freshly drawn one, or the
+/// graph you can check is not the graph you saved.
+fn read_connection_map<T: ReadTxn>(
+    txn: &T,
+    connections: &MapRef,
+    id: &str,
+) -> Option<HashMap<String, Any>> {
+    match connections.get(txn, id) {
+        Some(Out::Any(Any::Map(m))) => Some((*m).clone()),
+        Some(Out::YMap(row)) => Some(
+            row.iter(txn)
+                .map(|(k, out)| match out {
+                    Out::Any(a) => (k.to_string(), a),
+                    other => (k.to_string(), other.to_json(txn)),
+                })
+                .collect(),
+        ),
+        _ => None,
+    }
+}
+
+/// T-672 — metres between neighbouring positions in a formation. One constant so every formation
+/// scales together; a per-formation spacing would make `wedge` and `line` incomparable at a glance.
+pub const FORMATION_SPACING_M: f64 = 10.0;
+
+/// T-672 (`ACTION-FORM-001`) — **the formation geometry, pure.** `n` BODY-FRAME offsets `(x, y)` in
+/// metres for the `n` non-leader members, leader at the origin, `+y` forward and `+x` right.
+/// [`MissionDocCore::force_to_formation`] rotates these by the leader's heading; keeping the two
+/// apart is what lets the shapes be tested with no document and no trigonometry in the assertions.
+///
+/// `formation` takes the **schema's own vocabulary** — `$defs/group.formation`'s nine-token enum
+/// (`column`, `stagger_column`, `wedge`, `echelon_left`, `echelon_right`, `vee`, `line`, `file`,
+/// `diamond`). Reusing that list rather than inventing a parallel one is the T-241 rule: the wire
+/// already names these, so the editor must not name them a second way.
+///
+/// An unknown or empty token falls back to `column` — deliberately the shape whose result is
+/// unmistakable at any count (a straight trail behind the leader) and which cannot be confused with
+/// any of the other eight. A typo therefore produces a visibly wrong arrangement the operator
+/// notices, rather than a plausible formation they did not ask for.
+#[must_use]
+pub fn formation_offsets(formation: &str, n: usize) -> Vec<(f64, f64)> {
+    let s = FORMATION_SPACING_M;
+    // Rank (how far back) and pair index for the alternating-side shapes.
+    let alternating = |i: usize| -> (f64, f64) {
+        #[allow(clippy::cast_precision_loss)] // squad sizes are tens, not 2^53
+        let rank = (i / 2 + 1) as f64;
+        let side = if i.is_multiple_of(2) { 1.0 } else { -1.0 };
+        (side, rank)
+    };
+    #[allow(clippy::cast_precision_loss)]
+    let trail = |i: usize| (i + 1) as f64;
+
+    (0..n)
+        .map(|i| match formation {
+            // Behind the leader, alternating half a spacing left/right of the line of march.
+            "stagger_column" => {
+                let side = if i.is_multiple_of(2) { 0.5 } else { -0.5 };
+                (side * s, -trail(i) * s)
+            }
+            // A V opening BACKWARD from the leader.
+            "wedge" => {
+                let (side, rank) = alternating(i);
+                (side * rank * s, -rank * s)
+            }
+            // A V opening FORWARD — the wedge's mirror, leader at the back of the point.
+            "vee" => {
+                let (side, rank) = alternating(i);
+                (side * rank * s, rank * s)
+            }
+            // A diagonal trailing to one side.
+            "echelon_left" => (-trail(i) * s, -trail(i) * s),
+            "echelon_right" => (trail(i) * s, -trail(i) * s),
+            // Abreast of the leader, alternating sides so the squad stays centred on him.
+            "line" => {
+                let (side, rank) = alternating(i);
+                (side * rank * s, 0.0)
+            }
+            // Single file, tight — half spacing, the difference from `column` that makes the two
+            // distinguishable on the map instead of two names for one shape.
+            "file" => (0.0, -trail(i) * s * 0.5),
+            // Right, left, rear — repeating outward one ring at a time.
+            "diamond" => {
+                #[allow(clippy::cast_precision_loss)]
+                let ring = (i / 3 + 1) as f64;
+                match i % 3 {
+                    0 => (ring * s, -ring * s),
+                    1 => (-ring * s, -ring * s),
+                    _ => (0.0, -2.0 * ring * s),
+                }
+            }
+            // `column` and the documented fallback for anything unrecognised.
+            _ => (0.0, -trail(i) * s),
+        })
+        .collect()
 }
 
 /// T-651 — detach `id` from every Outliner folder's `entityIds`. The "unfile" half shared by
@@ -11999,5 +12772,546 @@ mod tests {
                 .is_none_or(|c| c.as_array().is_some_and(Vec::is_empty)),
             "a deleted comment must not be re-emitted from the parked copy: {after}"
         );
+    }
+
+    /* ══════════════════ T-672 — the connection graph: SEE, CHECK, then WRITE ═════════════════ */
+
+    /// A doc with two slots (`s0` leads `sq`, `s1` is its member) plus a vehicle and an object, so
+    /// every endpoint class the `CONN-DANGLING` universe covers is present and an edge can be drawn
+    /// between things that are not both slots.
+    #[cfg(feature = "mission")]
+    fn doc_with_connectable_things() -> MissionDocCore {
+        let doc = two_slots_visible_layer();
+        doc.set_origin_init(true);
+        doc.add_vehicle(
+            "v0",
+            "truck",
+            Some(300.0),
+            Some(400.0),
+            Some(0.0),
+            Some(0.0),
+        );
+        doc.add_entity("e0", "Crate", "crate_res", 500.0, 600.0, 0.0, 0.0);
+        doc.set_origin_init(false);
+        doc
+    }
+
+    /// **SEE — the listing is stable, total and addressable.** A connection has no map glyph in this
+    /// slice, so this array IS the operator's only view of the graph; if its order were a function of
+    /// `serde_json`'s map iteration the rows would dance between reads and "delete the third one"
+    /// would be a lie. Asserted by reading it repeatedly and byte-comparing, and by drawing the same
+    /// three edges into a SECOND document in a DIFFERENT order and getting the identical array —
+    /// order is a function of content, not of authoring history.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn the_connection_listing_is_stable_addressable_and_content_ordered() {
+        let a = doc_with_connectable_things();
+        assert!(a.add_connection("k1", "sync", "s1", "v0"));
+        assert!(a.add_connection("k2", "group", "s1", "s0"));
+        assert!(a.add_connection("k3", "triggerOwner", "e0", "v0"));
+
+        let first = a.connection_rows_json();
+        for _ in 0..8 {
+            assert_eq!(
+                a.connection_rows_json(),
+                first,
+                "listing must be byte-stable"
+            );
+        }
+        let rows: serde_json::Value = serde_json::from_str(&first).expect("rows json");
+        let rows = rows.as_array().expect("array");
+        assert_eq!(rows.len(), 3, "every edge is listed: {first}");
+        // Every row is addressable by the id the delete verb takes.
+        for r in rows {
+            let id = r["id"].as_str().expect("id");
+            assert!(["k1", "k2", "k3"].contains(&id), "unknown row id {id}");
+            assert!(!r["from"].as_str().expect("from").is_empty());
+            assert!(!r["to"].as_str().expect("to").is_empty());
+        }
+
+        // Same graph, authored in the reverse order, listed identically.
+        let b = doc_with_connectable_things();
+        assert!(b.add_connection("k3", "triggerOwner", "e0", "v0"));
+        assert!(b.add_connection("k2", "group", "s1", "s0"));
+        assert!(b.add_connection("k1", "sync", "s1", "v0"));
+        assert_eq!(
+            b.connection_rows_json(),
+            first,
+            "listing order must be a function of CONTENT, not of authoring order"
+        );
+    }
+
+    /// **CHECK — every rule FIRES on a graph built to break it, and a clean graph is silent.**
+    /// Pure, over `validate_connection_rows`, because the point of the FNF v4 warning is that these
+    /// defects hide: a checker only reachable through a live document is a checker nobody runs.
+    ///
+    /// The clean half is not decoration — it is what proves the four positives are the RULES firing
+    /// and not the checker shouting at everything.
+    #[test]
+    fn the_connection_checker_fires_every_rule_and_stays_silent_on_a_clean_graph() {
+        let known: HashSet<String> = ["a", "b", "c"].iter().map(|s| (*s).to_string()).collect();
+        let row = |id: &str, kind: &str, from: &str, to: &str| ConnectionRow {
+            id: id.to_string(),
+            kind: kind.to_string(),
+            from: from.to_string(),
+            to: to.to_string(),
+        };
+
+        // CLEAN: a sync pair, an ownership chain a→b→c. No findings at all.
+        let clean = vec![
+            row("ok1", "sync", "a", "b"),
+            row("ok2", "group", "a", "b"),
+            row("ok3", "group", "b", "c"),
+        ];
+        assert_eq!(
+            validate_connection_rows(&clean, &known),
+            Vec::new(),
+            "a correct graph must produce NO findings, or the positives below prove nothing"
+        );
+
+        let codes = |rows: &[ConnectionRow]| -> Vec<(&'static str, String)> {
+            validate_connection_rows(rows, &known)
+                .into_iter()
+                .map(|f| (f.code, f.connection_id))
+                .collect()
+        };
+
+        // CONN-SELF.
+        assert!(
+            codes(&[row("x", "sync", "a", "a")]).contains(&("CONN-SELF", "x".to_string())),
+            "a self-link must fire CONN-SELF"
+        );
+        // CONN-DANGLING — an endpoint that is not a placed entity.
+        assert!(
+            codes(&[row("x", "sync", "a", "ghost")]).contains(&("CONN-DANGLING", "x".to_string())),
+            "an unplaced endpoint must fire CONN-DANGLING"
+        );
+        // CONN-DUPLICATE — the SECOND row of a repeated triple, so the survivor is deterministic.
+        let dupes = codes(&[
+            row("first", "sync", "a", "b"),
+            row("second", "sync", "a", "b"),
+        ]);
+        assert!(
+            dupes.contains(&("CONN-DUPLICATE", "second".to_string()))
+                && !dupes.contains(&("CONN-DUPLICATE", "first".to_string())),
+            "duplicate must name the LATER row, not the survivor: {dupes:?}"
+        );
+        // CONN-CYCLE — a→b→c→a in the directed subgraph.
+        let cyc = codes(&[
+            row("e1", "group", "a", "b"),
+            row("e2", "group", "b", "c"),
+            row("e3", "group", "c", "a"),
+        ]);
+        assert!(
+            cyc.iter().any(|(code, _)| *code == "CONN-CYCLE"),
+            "an ownership cycle must fire CONN-CYCLE: {cyc:?}"
+        );
+        // …and the SAME three edges as `sync` are legal — sync is undirected, so a closed loop of
+        // peers is a connected component, not a defect. This is the rule's discrimination.
+        let sync_loop = codes(&[
+            row("e1", "sync", "a", "b"),
+            row("e2", "sync", "b", "c"),
+            row("e3", "sync", "a", "c"),
+        ]);
+        assert!(
+            !sync_loop.iter().any(|(code, _)| *code == "CONN-CYCLE"),
+            "a sync loop is legal — CONN-CYCLE is for DIRECTED kinds only: {sync_loop:?}"
+        );
+        // CONN-KIND — a vocabulary a hydrate can carry in but `add_connection` would refuse.
+        assert!(
+            codes(&[row("x", "attachedTo", "a", "b")]).contains(&("CONN-KIND", "x".to_string())),
+            "an unknown kind must fire CONN-KIND"
+        );
+
+        // Findings are stably ordered for the same reason the rows are.
+        let messy = vec![
+            row("z", "sync", "a", "a"),
+            row("y", "group", "a", "ghost"),
+            row("x", "sync", "ghost2", "b"),
+        ];
+        let once = validate_connection_rows(&messy, &known);
+        for _ in 0..8 {
+            assert_eq!(validate_connection_rows(&messy, &known), once);
+        }
+    }
+
+    /// **CHECK, through the live document.** The pure checker above is only useful if the doc-side
+    /// adapter feeds it the real graph and the real endpoint universe — so this drives the same
+    /// rules through `connection_findings_json` on a hydrated doc, which is the ONLY path a
+    /// self-link / duplicate / bad kind can actually reach the store (the mutator refuses all three,
+    /// the generic row loader does not).
+    #[cfg(feature = "mission")]
+    #[test]
+    fn hydrated_junk_edges_survive_the_load_and_are_reported_not_silently_dropped() {
+        let doc = doc_with_connectable_things();
+        assert!(doc.add_connection("good", "sync", "s0", "s1"));
+        let mut payload = crate::mission::compile::compile_payload(
+            &doc.small_maps_json(),
+            &doc.slots_json(),
+            false,
+        );
+        // Junk this editor cannot author, arriving the way a foreign payload would.
+        payload["connections"] = serde_json::json!([
+            {"id": "good", "kind": "sync", "from": "s0", "to": "s1"},
+            {"id": "selfie", "kind": "sync", "from": "s0", "to": "s0"},
+            {"id": "ghosted", "kind": "group", "from": "s1", "to": "nope"},
+            // Named to sort AFTER `good` in the `(kind, from, to, id)` listing order, because
+            // CONN-DUPLICATE names the later row and `good` is the survivor.
+            {"id": "zz-dupe", "kind": "sync", "from": "s0", "to": "s1"},
+            {"id": "weird", "kind": "attachedTo", "from": "s0", "to": "s1"},
+        ]);
+
+        let reloaded = doc_with_connectable_things();
+        reloaded.hydrate(&serde_json::to_string(&payload).expect("json"), "L");
+        assert_eq!(
+            reloaded.connection_count(),
+            5,
+            "a bad row must SURVIVE the load — rejecting at hydrate destroys an author's data"
+        );
+        let findings: serde_json::Value =
+            serde_json::from_str(&reloaded.connection_findings_json()).expect("findings");
+        let pairs: Vec<(String, String)> = findings
+            .as_array()
+            .expect("array")
+            .iter()
+            .map(|f| {
+                (
+                    f["code"].as_str().unwrap_or_default().to_string(),
+                    f["connectionId"].as_str().unwrap_or_default().to_string(),
+                )
+            })
+            .collect();
+        for want in [
+            ("CONN-SELF", "selfie"),
+            ("CONN-DANGLING", "ghosted"),
+            ("CONN-DUPLICATE", "zz-dupe"),
+            ("CONN-KIND", "weird"),
+        ] {
+            assert!(
+                pairs.contains(&(want.0.to_string(), want.1.to_string())),
+                "{want:?} missing from the live findings: {pairs:?}"
+            );
+        }
+        assert!(
+            !pairs.iter().any(|(_, id)| id == "good"),
+            "the sound edge must not be flagged: {pairs:?}"
+        );
+    }
+
+    /// **WRITE — every refusal, fired.** `add_connection` returns false AND writes nothing for the
+    /// empty id, the unknown kind, the self-link and the duplicate; and `sync` normalises its
+    /// endpoints so a REVERSED re-draw is caught as the duplicate it is (the case a verbatim store
+    /// would let through as a second edge, which is the FNF v4 shape exactly).
+    #[cfg(feature = "mission")]
+    #[test]
+    fn add_connection_refuses_junk_and_normalises_sync_endpoints() {
+        let doc = doc_with_connectable_things();
+        for (id, kind, from, to, why) in [
+            ("", "sync", "s0", "s1", "empty id"),
+            ("k", "sync", "", "s1", "empty from"),
+            ("k", "sync", "s0", "", "empty to"),
+            ("k", "attachedTo", "s0", "s1", "unknown kind"),
+            ("k", "sync", "s0", "s0", "self-link"),
+        ] {
+            assert!(
+                !doc.add_connection(id, kind, from, to),
+                "must refuse: {why}"
+            );
+            assert_eq!(doc.connection_count(), 0, "…and write nothing: {why}");
+        }
+
+        assert!(doc.add_connection("k1", "sync", "s1", "s0"));
+        let rows: serde_json::Value =
+            serde_json::from_str(&doc.connection_rows_json()).expect("rows");
+        assert_eq!(
+            (rows[0]["from"].as_str(), rows[0]["to"].as_str()),
+            (Some("s0"), Some("s1")),
+            "sync endpoints are sorted at write: {rows}"
+        );
+        // The reversed re-draw, under a fresh id, is the same edge.
+        assert!(
+            !doc.add_connection("k2", "sync", "s0", "s1"),
+            "sync(A,B) after sync(B,A) is a DUPLICATE, not a second edge"
+        );
+        assert_eq!(doc.connection_count(), 1);
+        // A DIRECTED kind keeps its direction: group(A,B) and group(B,A) are two real relations.
+        assert!(doc.add_connection("g1", "group", "s1", "s0"));
+        assert!(doc.add_connection("g2", "group", "s0", "s1"));
+        assert_eq!(
+            doc.connection_count(),
+            3,
+            "directed edges are not normalised"
+        );
+    }
+
+    /// **CONN-DEL-001 + the cascade.** Deleting one edge is one Ctrl+Z; deleting an ENTITY takes all
+    /// of its edges with it in ONE undo step, so a Ctrl+Z restores the unit and its connections
+    /// together. A cascade split across transactions would be a half-applied undo — the unit back,
+    /// its relations gone — which is exactly the class of defect the ticket's warning names.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn deleting_a_connection_and_cascading_an_entity_are_each_one_undo_step() {
+        let mut doc = doc_with_connectable_things();
+        assert!(doc.add_connection("k1", "sync", "s0", "s1"));
+        assert!(doc.add_connection("k2", "group", "s1", "v0"));
+        assert!(doc.add_connection("k3", "triggerOwner", "e0", "v0"));
+        let before = doc.undo_depth();
+
+        doc.remove_connection("k1");
+        assert_eq!(doc.connection_count(), 2);
+        assert_eq!(doc.undo_depth(), before + 1, "one delete ⇒ one undo step");
+        doc.undo();
+        assert_eq!(doc.connection_count(), 3, "Ctrl+Z brings the edge back");
+
+        let depth = doc.undo_depth();
+        let cascaded = doc.remove_connections_touching("v0");
+        assert_eq!(cascaded.len(), 2, "both edges touching v0: {cascaded:?}");
+        assert_eq!(doc.connection_count(), 1);
+        assert_eq!(
+            doc.undo_depth(),
+            depth + 1,
+            "the whole cascade is ONE transaction, not one per edge"
+        );
+        doc.undo();
+        assert_eq!(
+            doc.connection_count(),
+            3,
+            "one Ctrl+Z restores every cascaded edge"
+        );
+
+        assert!(
+            doc.remove_connections_touching("not-a-thing").is_empty(),
+            "an unknown id removes nothing"
+        );
+    }
+
+    /// **The rule that keeps a drawn edge alive: it rides the EDITOR payload and is STRUCTURALLY
+    /// ABSENT from the compiled MOD document** — `mission::flatten::EditorPayload` declares no
+    /// `connections` key, and the schema declares no relation collection for one to land in.
+    ///
+    /// The rule is an ABSENCE, so clean input proves nothing: the token would be missing from the mod
+    /// bytes even if the search were broken. This FIRES it — the same endpoint id is re-routed
+    /// through `entities[]`, a root flatten DOES read, and the token then APPEARS. That is what makes
+    /// step 3 an assertion instead of a tautology, and it is the exact failure a future edit would
+    /// cause by "helpfully" storing relations in a compiled collection.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn connections_never_reach_the_mod_document() {
+        // Two slots only — no vehicle / object, so the flatten under test is exercised on a document
+        // whose ONLY unusual content is the connection graph. (`doc_with_connectable_things` seeds a
+        // placeholder vehicle whose `resourceName` T-425's kit-alias guard rightly refuses to
+        // compile; that guard is not what this test is about.)
+        let doc = two_slots_visible_layer();
+        assert!(doc.add_connection("conn-1", "triggerOwner", "s1", "s0"));
+
+        // 1. The EDITOR payload carries it — without this half the feature does not persist.
+        let payload = crate::mission::compile::compile_payload(
+            &doc.small_maps_json(),
+            &doc.slots_json(),
+            false,
+        );
+        let conns = payload["connections"]
+            .as_array()
+            .expect("connections[] at the editor-payload root");
+        assert_eq!(conns.len(), 1, "one drawn edge: {payload}");
+        assert_eq!(conns[0]["kind"], "triggerOwner");
+        assert_eq!(conns[0]["from"], "s1", "a DIRECTED kind stores verbatim");
+        assert_eq!(conns[0]["to"], "s0");
+
+        // 2. …and it round-trips: a pristine doc hydrated from that payload has the edge back.
+        let reloaded = MissionDocCore::new();
+        reloaded.hydrate(&serde_json::to_string(&payload).expect("payload json"), "L");
+        assert_eq!(reloaded.connection_count(), 1);
+        let rows: serde_json::Value =
+            serde_json::from_str(&reloaded.connection_rows_json()).expect("rows");
+        assert_eq!(rows[0]["id"], "conn-1", "edge reloaded: {rows}");
+
+        // 3. The MOD document must not contain the relation — anywhere, in any field.
+        let meta = br#"{"id":"11112222333344445555666677778888","title":"t","author":"a",
+            "terrain":"everon","customTerrainName":"","maxPlayers":8,"timeOfDay":"05:30",
+            "weatherPreset":"clear"}"#;
+        let payload_bytes = serde_json::to_vec(&payload).expect("payload bytes");
+        let mod_text = String::from_utf8(
+            crate::mission::flatten::flatten_mod_document_json(meta, &payload_bytes)
+                .expect("flatten compiles"),
+        )
+        .expect("utf-8");
+        assert!(
+            !mod_text.contains("triggerOwner") && !mod_text.contains("connections"),
+            "a connection reached the compiled mission: {mod_text}"
+        );
+
+        // 4. ── FIRE THE RULE. The same token routed instead through `entities[]`, a root
+        //    `EditorPayload` DOES declare. If this does not turn the mod bytes dirty, step 3's
+        //    assertion cannot detect a leak and the whole guard is decorative.
+        let mut leaked = payload.clone();
+        leaked["entities"] = serde_json::json!([
+            {
+                "id": "leak1",
+                "alias": "triggerOwner",
+                "position": { "x": 1.0, "z": 2.0 },
+                "faction": "",
+            },
+            {
+                "id": "leak2",
+                "alias": "connections",
+                "position": { "x": 3.0, "z": 4.0 },
+                "faction": "",
+            },
+        ]);
+        let leaked_text = String::from_utf8(
+            crate::mission::flatten::flatten_mod_document_json(
+                meta,
+                &serde_json::to_vec(&leaked).expect("leaked bytes"),
+            )
+            .expect("leaked flatten compiles"),
+        )
+        .expect("utf-8");
+        assert!(
+            leaked_text.contains("triggerOwner") && leaked_text.contains("connections"),
+            "the leak probe did not reach the mod document, so step 3 proves nothing: {leaked_text}"
+        );
+
+        // 5. Deleting the last edge CLEARS the wire — absence must be expressible, or a
+        //    `CONN-DEL-001` delete silently un-deletes itself on the next load.
+        doc.remove_connection("conn-1");
+        let after = crate::mission::compile::compile_payload(
+            &doc.small_maps_json(),
+            &doc.slots_json(),
+            false,
+        );
+        assert!(
+            after
+                .get("connections")
+                .is_none_or(|c| c.as_array().is_some_and(Vec::is_empty)),
+            "a deleted connection must not be re-emitted from the parked copy: {after}"
+        );
+    }
+
+    /// **ACTION-FORM-001 geometry, pure.** The nine schema tokens produce nine DISTINCT shapes (a
+    /// name that silently aliased another would be a formation the operator cannot actually pick),
+    /// every offset is exactly `FORMATION_SPACING_M`-quantised, and an unknown token falls back to
+    /// `column` rather than to nothing.
+    #[test]
+    fn formation_offsets_are_distinct_per_schema_token_and_fall_back_to_column() {
+        const TOKENS: [&str; 9] = [
+            "column",
+            "stagger_column",
+            "wedge",
+            "echelon_left",
+            "echelon_right",
+            "vee",
+            "line",
+            "file",
+            "diamond",
+        ];
+        let shapes: Vec<Vec<(f64, f64)>> = TOKENS.iter().map(|t| formation_offsets(t, 6)).collect();
+        for (i, a) in shapes.iter().enumerate() {
+            assert_eq!(a.len(), 6, "{}: one offset per member", TOKENS[i]);
+            for (j, b) in shapes.iter().enumerate().skip(i + 1) {
+                assert_ne!(
+                    a, b,
+                    "`{}` and `{}` are the same shape",
+                    TOKENS[i], TOKENS[j]
+                );
+            }
+        }
+        // The leader is the anchor: nobody is placed on top of him.
+        for (i, shape) in shapes.iter().enumerate() {
+            assert!(
+                !shape.contains(&(0.0, 0.0)),
+                "`{}` puts a member on the leader",
+                TOKENS[i]
+            );
+        }
+        assert_eq!(
+            formation_offsets("no_such_formation", 3),
+            formation_offsets("column", 3),
+            "an unknown token falls back to column"
+        );
+        assert_eq!(
+            formation_offsets("column", 0),
+            Vec::new(),
+            "no members, no offsets"
+        );
+        // Column is a straight trail one spacing apart, which is the property the fallback relies on.
+        assert_eq!(
+            formation_offsets("column", 3),
+            vec![
+                (0.0, -FORMATION_SPACING_M),
+                (0.0, -2.0 * FORMATION_SPACING_M),
+                (0.0, -3.0 * FORMATION_SPACING_M),
+            ]
+        );
+    }
+
+    /// **ACTION-FORM-001 through the document.** The leader does NOT move (he is the anchor — moving
+    /// him would translate the squad and make the action a reposition nobody asked for); every member
+    /// lands on its offset ROTATED by the leader's heading; and the whole re-form is ONE undo step so
+    /// an operator who dislikes the result gets every unit back in one press.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn force_to_formation_anchors_the_leader_rotates_by_heading_and_is_one_undo_step() {
+        let mut doc = two_slots_visible_layer();
+        doc.set_origin_init(true);
+        doc.add_slot(
+            "s2", "sq", "L", 2, "Rifleman", None, None, 999.0, 999.0, 0.0, 0.0,
+        );
+        // Leader faces 90° — the formation's forward axis must follow him.
+        doc.set_slot_position("s0", 1_000.0, 2_000.0, 0.0, 90.0);
+        doc.set_origin_init(false);
+
+        let depth = doc.undo_depth();
+        assert_eq!(
+            doc.force_to_formation("s0", "column"),
+            2,
+            "both members moved"
+        );
+        assert_eq!(
+            doc.undo_depth(),
+            depth + 1,
+            "a re-form is ONE transaction, not one per member"
+        );
+
+        // Re-read the document on every call — a snapshot parsed once would make the post-undo
+        // assertion below read the PRE-undo positions and pass no matter what undo did.
+        let at = |d: &MissionDocCore, id: &str| {
+            let slots: serde_json::Value =
+                serde_json::from_str(&d.slots_json()).expect("slots_json");
+            (
+                slots[id]["position"]["x"].as_f64().expect("x"),
+                slots[id]["position"]["y"].as_f64().expect("y"),
+            )
+        };
+        assert_eq!(
+            at(&doc, "s0"),
+            (1_000.0, 2_000.0),
+            "the LEADER is the anchor and does not move"
+        );
+        // Body-frame column offsets are (0, -10) and (0, -20); at heading 90° "behind" is −x.
+        let (x1, y1) = at(&doc, "s1");
+        assert!(
+            (x1 - (1_000.0 - FORMATION_SPACING_M)).abs() < 1e-9 && (y1 - 2_000.0).abs() < 1e-9,
+            "member 1 must trail along the leader's heading, got ({x1}, {y1})"
+        );
+        let (x2, y2) = at(&doc, "s2");
+        assert!(
+            (x2 - (1_000.0 - 2.0 * FORMATION_SPACING_M)).abs() < 1e-9
+                && (y2 - 2_000.0).abs() < 1e-9,
+            "member 2 must trail twice as far, got ({x2}, {y2})"
+        );
+
+        assert!(doc.undo(), "the re-form is on the undo stack");
+        assert_eq!(
+            at(&doc, "s2"),
+            (999.0, 999.0),
+            "one Ctrl+Z restores every re-formed unit"
+        );
+
+        // A non-leader is not a leader: firing the action off a rifleman must do NOTHING rather than
+        // silently re-form the squad around him (that would be a leadership change nobody asked for).
+        assert_eq!(doc.force_to_formation("s1", "wedge"), 0);
+        assert_eq!(doc.force_to_formation("", "wedge"), 0);
+        assert_eq!(doc.force_to_formation("not-a-slot", "wedge"), 0);
     }
 }
