@@ -410,6 +410,37 @@ pub fn custom_chip_visible(submode: EdenSubmode) -> bool {
     matches!(submode, EdenSubmode::Groups)
 }
 
+// ── T-084 (RIGHT-SEARCH-002/003/004/005) — the search grammar's copy ─────────────────────────────
+//
+// A grammar nobody can discover is a grammar nobody uses, and the placeholder alone cannot teach
+// four operators. So the copy is split: the PLACEHOLDER names the operators (it is what an author
+// reads before typing anything), and the HINT under the box shows one worked example of each,
+// spelled against real catalogue shapes rather than `foo`/`bar` — `class:Character_US` is a bare
+// classname of the kind the tail rule was added for, and `mod:ArmaReforger` is a real addon root.
+//
+// Both live here as one const each so the three search boxes (Factions, Objects, Vehicles) cannot
+// drift apart, and so the copy is assertable without mounting a view.
+
+/// The `placeholder=` tail shared by all three asset-browser search boxes.
+pub const SEARCH_PLACEHOLDER_GRAMMAR: &str = " — class: mod: * /re/";
+
+/// The worked-example line under every asset-browser search box.
+pub const SEARCH_GRAMMAR_HINT: &str =
+    "class:Character_US · mod:ArmaReforger · *Rifleman · /^us (mg|ar)$/";
+
+/// The hint row rendered under each `type="search"` box.
+fn search_grammar_hint() -> impl IntoView {
+    view! {
+        <p
+            class="mt-1 text-[10px] leading-tight text-outline"
+            title="class: matches the Enfusion classname (the bare name works — the GUID head is optional). \
+                   mod: matches the addon. * and ? are wildcards over the whole name. /…/ is a regex."
+        >
+            {SEARCH_GRAMMAR_HINT}
+        </p>
+    }
+}
+
 // ── T-695 — Favourites: a starred-asset collection across the catalogue ──────────────────────────
 // (NEW-F5 + 3den E3 + 3DEN-CTX-001; Eden F7.)
 //
@@ -1130,13 +1161,14 @@ pub fn DockRight(
                                     "Search assets"
                                 }
                             }
-                            // T-646 — hint the `class:` operator (RIGHT-SEARCH-002). The broader
-                            // `mod `/glob/regex grammar is T-084 and lands its own copy here.
+                            // T-084 — the placeholder names every operator the grammar accepts
+                            // (T-646 shipped the `class:`-only version of this line); the hint row
+                            // below shows one worked example of each.
                             placeholder=move || {
                                 if objects_mode.get() {
-                                    "Search objects or class:…"
+                                    format!("Search objects{SEARCH_PLACEHOLDER_GRAMMAR}")
                                 } else {
-                                    "Search assets or class:…"
+                                    format!("Search assets{SEARCH_PLACEHOLDER_GRAMMAR}")
                                 }
                             }
                             class="mt-2 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-1.5 text-label-sm text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary/60"
@@ -1149,6 +1181,7 @@ pub fn DockRight(
                                 }
                             }
                         />
+                        {search_grammar_hint()}
                         <div class="mt-2">
                             {move || {
                                 if objects_mode.get() {
@@ -1275,10 +1308,12 @@ pub fn DockRight(
                         <input
                             type="search"
                             aria-label="Search vehicles"
-                            placeholder="Search vehicles or class:…"
+                            // T-084 — same grammar, same copy, on all three palettes.
+                            placeholder=format!("Search vehicles{SEARCH_PLACEHOLDER_GRAMMAR}")
                             class="mt-2 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-1.5 text-label-sm text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary/60"
                             on:input=move |ev| vehicle_search.set(event_target_value(&ev))
                         />
+                        {search_grammar_hint()}
                         // T-076 (RIGHT-CREW-001) — the manned/unmanned placement toggle, beside the
                         // Vehicles search. Checked ⇒ a placed vehicle is authored with crew (the Eden
                         // default); unchecked ⇒ `crewed: false` is stamped on the row. Native builds omit
@@ -2940,7 +2975,8 @@ mod tests {
     use super::{
         apply_eden_chip, custom_chip_visible, default_marker_icon, eden_chip_selected,
         filter_marker_icons, marker_icon_is_authorable, marker_icons, EdenChip, EdenSubmode,
-        EDEN_CUSTOM_CHIP, EDEN_SIDE_CHIPS, MISSION_SCHEMA_JSON,
+        EDEN_CUSTOM_CHIP, EDEN_SIDE_CHIPS, MISSION_SCHEMA_JSON, SEARCH_GRAMMAR_HINT,
+        SEARCH_PLACEHOLDER_GRAMMAR,
     };
     use leptos::prelude::*;
 
@@ -3798,6 +3834,65 @@ mod tests {
             "the marker stub message must be gone — including from comments, where it would \
              make this test's own haystack lie"
         );
+    }
+
+    // ── T-084 (RIGHT-SEARCH-002/003/004/005) — the grammar reaches all three search boxes ──────
+
+    /// The grammar is a pure function in `asset_catalog` and is tested there, behaviourally. What
+    /// only this file can answer is whether the three search boxes actually ADVERTISE it — a
+    /// discoverable operator is the whole difference between a feature and a secret.
+    ///
+    /// **T-759 hollow-pin discipline, twice over:** `SRC` is TRUNCATED at the test module marker so
+    /// this module is not part of its own haystack, and every needle is still assembled at run time.
+    /// Delete the placeholder or the hint row and this goes red.
+    #[test]
+    fn every_asset_search_box_advertises_the_grammar() {
+        const FULL: &str = include_str!("eden_dock_right.rs");
+        let marker = format!("{}{}", "#[cfg", "(test)]");
+        let src = &FULL[..FULL.find(&marker).expect("the test module marker exists")];
+        // Guard the guard: the truncation must actually have removed this module.
+        assert!(
+            !src.contains(&format!(
+                "fn every_asset_search{}",
+                "_box_advertises_the_grammar"
+            )),
+            "SRC must be truncated before the test module, or every needle below is self-matching"
+        );
+
+        // All three palettes share ONE placeholder tail, so the operator list cannot drift.
+        for noun in ["assets", "objects", "vehicles"] {
+            assert!(
+                src.contains(&format!("Search {noun}{}", "{SEARCH_PLACEHOLDER_GRAMMAR}")),
+                "the {noun} search box must name the grammar in its placeholder"
+            );
+        }
+        // The placeholder names every operator the parser accepts.
+        for op in ["class:", "mod:", "*", "/re/"] {
+            assert!(
+                SEARCH_PLACEHOLDER_GRAMMAR.contains(op),
+                "the placeholder must name the {op} operator"
+            );
+        }
+        // The hint row is rendered under each of the three boxes (two call sites: the shared
+        // Factions/Objects input and the Vehicles input).
+        assert_eq!(
+            src.matches(&format!("{}()}}", "{search_grammar_hint"))
+                .count(),
+            2,
+            "the hint row must sit under both search inputs"
+        );
+        // And it shows a worked example of each operator, not just its name.
+        for example in [
+            "class:Character_US",
+            "mod:ArmaReforger",
+            "*Rifleman",
+            "/^us ",
+        ] {
+            assert!(
+                SEARCH_GRAMMAR_HINT.contains(example),
+                "the hint must show a worked {example} example"
+            );
+        }
     }
 
     // ── T-069 (RIGHT-MODE-006) — the marker icon vocabulary ──────────────────────────────────
