@@ -866,7 +866,8 @@ pub fn dispatch(item: ContextItem, target_ids: &[String], world: Option<(f64, f6
         // T-672 (`CONN-START-001`, act 2) — complete onto this entity. The core refuses a self-link
         // or a duplicate, and `complete_connect` consumes the arm either way (a refusal that left
         // the connect armed would strand the operator in a mode they thought they had left — the
-        // T-723 shape).
+        // T-723 shape). T-768 adds a sibling CALLER on LMB pick in mission_editor; this RMB row
+        // must keep working unchanged.
         ContextItem::ConnectComplete => {
             if let Some(id) = target_ids.first() {
                 let _ = crate::editor_ops::complete_connect(id);
