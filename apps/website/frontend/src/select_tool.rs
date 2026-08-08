@@ -29,6 +29,18 @@ use crate::mission_doc::DocHandle;
 
 /// Motion (CSS px) separating a click from a drag — the React `useSelectTool` `DRAG_THRESHOLD`.
 pub const DRAG_THRESHOLD_PX: f64 = 4.0;
+
+/// T-723 — a `LeftGesture::Pending` must not promote into Move/Marquee unless at least one
+/// button is still held (`PointerEvent.buttons != 0`). A button-less promote is the phantom-drag
+/// class: a Pending stranded by the armed-place pointerup (wave-106 MAJOR-2) survives disarm,
+/// the next bare `pointermove` past [`DRAG_THRESHOLD_PX`] turns it into Move, and the next
+/// any-button `pointerup` commits a teleport. The mission_editor pointermove path calls this
+/// before capture/promote; event-SEQUENCE coverage lives in `mission_editor::armed_place` /
+/// `t723_armed_place` (this module is wasm-only and invisible to native `cargo test`).
+#[inline]
+pub fn may_promote_pending(buttons: u16) -> bool {
+    buttons != 0
+}
 /// `PointIndex` grid cell (world m) — SoT on [`map_engine_core::doc::MissionDocCore::GRID_CELL_M`].
 const GRID_CELL_M: f64 = map_engine_core::doc::MissionDocCore::GRID_CELL_M;
 /// Everon bounds (matches `mission_editor.rs`/`mission_doc.rs`), for the frozen-camera target clamp.
@@ -55,7 +67,10 @@ pub struct PendingLeft {
 /// T-159.19 — the in-flight LMB gesture, mirroring the React `useSelectTool` union
 /// (`pending-left` → `move` | `marquee`). A `pointerdown` opens `Pending`; the first `pointermove`
 /// past [`DRAG_THRESHOLD_PX`] promotes it to `Move` (a pick hit under the press) or `Marquee` (an
-/// empty press); a `pointerup` commits. Every world unproject in the gesture uses the **frozen**
+/// empty press) **only when [`may_promote_pending`] is true** (T-723 — buttons still held); a
+/// `pointerup` commits on button 0. While a place is armed the host must not open this gesture at
+/// all, and the armed pointerup must `take()` any stranded value (Pending/Ruler) — see
+/// `mission_editor::armed_place`. Every world unproject in the gesture uses the **frozen**
 /// `cam` copied at the press (M2/X-05 — the live `RenderEngine::unproject_xy` is deleted; a live
 /// one would feedback-loop as pan/zoom mutate mid-gesture). `Move.dx/dy` is the last coalesced
 /// world delta (fed to `engine.set_drag` for the GPU preview + `move_entities` on release).
