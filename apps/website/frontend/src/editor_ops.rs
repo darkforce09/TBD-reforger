@@ -1513,8 +1513,7 @@ pub fn attrs_update_position_multi(
 /// **Undo granularity, stated honestly.** `MissionDocCore` builds its `UndoManager` with
 /// `capture_timeout_millis = 0`, so every core transaction is its own undo step, and map-engine-core
 /// exposes no atomic *multi-slot* rotation API (T-648's `owns` is the three frontend files; the doc
-/// store is out of scope this slice). So a **single-entity** rotate — the Eden-standard case and the
-/// only one the Attributes modal itself supports (it suppresses on a multi-selection) — is exactly
+/// store is out of scope this slice). So a **single-entity** rotate — the Eden-standard case — is exactly
 /// **one** undo step, matching the ticket's "one undo step"; a **multi-selection** rotate is one step
 /// per entity, the same shape the module header already documents for the first compound place
 /// (layer + faction + squad + slot + leader). The whole gesture still fires **one** history/persist
