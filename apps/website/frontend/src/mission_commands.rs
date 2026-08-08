@@ -499,14 +499,80 @@ mod imp {
         /// avoid, so [`export_compiled_now`] refuses instead — and names auth failure separately from
         /// "no saved version".
         static ROW_META: RefCell<Option<MissionMeta>> = const { RefCell::new(None) };
+
+        /// **T-746 — the missions-row columns [`MissionMeta`] deliberately omits.** `compiled_meta()`
+        /// keeps `max_players` for the flatten but drops `game_mode` (and never carried the library
+        /// `briefing` / `thumbnail_url`). That omission is why `eden_settings::ShapeMirror` had to
+        /// invent a second GET on every dialog open. Same boot hydrate fills both cells; successful
+        /// shape PATCHes refresh this one so a reopen mid-flight is not the only path to the new mode.
+        static ROW_HYDRATE: RefCell<Option<HydratedRow>> = const { RefCell::new(None) };
+    }
+
+    /// T-746 — shape/presentation columns from the missions row, beside [`ROW_META`].
+    #[derive(Clone, Debug, PartialEq, Eq)]
+    pub(crate) struct HydratedRow {
+        pub game_mode: String,
+        pub max_players: i64,
+        pub briefing: String,
+        pub thumbnail_url: String,
     }
 
     /// Record the mission row for the server-truth Export (T-243). Called by
     /// `mission_hydrate::hydrate_from_server` on every successful `GET /missions/:id`, including the
     /// fresh-mission and warm-IDB branches — the row is what the compile needs, and it is equally real
     /// whichever way the payload half was resolved.
+    ///
+    /// **T-746 — also records [`HydratedRow`].** `MissionMeta` still has no `game_mode`; the hydrate
+    /// cell is the getter-facing half so ShapeMirror can seed without inventing values.
     pub fn set_row_meta(detail: &crate::dto::MissionDetail) {
         ROW_META.with(|r| *r.borrow_mut() = Some(detail.compiled_meta()));
+        ROW_HYDRATE.with(|h| {
+            *h.borrow_mut() = Some(HydratedRow {
+                game_mode: detail.game_mode.clone(),
+                max_players: detail.max_players,
+                briefing: detail.briefing.clone().unwrap_or_default(),
+                thumbnail_url: detail.thumbnail_url.clone().unwrap_or_default(),
+            });
+        });
+    }
+
+    /// T-746 — `max_players` from boot hydrate / last successful row GET. `None` when [`ROW_META`]
+    /// never arrived (same refuse conditions as Export Compiled).
+    pub(crate) fn row_max_players() -> Option<i64> {
+        ROW_META.with(|r| r.borrow().as_ref().map(|m| m.max_players))
+    }
+
+    /// T-746 — game mode + presentation columns retained beside [`ROW_META`].
+    pub(crate) fn hydrated_row() -> Option<HydratedRow> {
+        ROW_HYDRATE.with(|h| h.borrow().clone())
+    }
+
+    /// T-746 — a successful shape open-GET (or a full row refresh) replaces the hydrate cell.
+    pub(crate) fn note_hydrated_row(row: HydratedRow) {
+        ROW_HYDRATE.with(|h| *h.borrow_mut() = Some(row));
+    }
+
+    /// T-746 — a successful `game_mode` PATCH keeps the hydrate cell honest without waiting for reopen.
+    pub(crate) fn note_hydrated_game_mode(game_mode: &str) {
+        ROW_HYDRATE.with(|h| {
+            if let Some(row) = h.borrow_mut().as_mut() {
+                row.game_mode = game_mode.to_string();
+            }
+        });
+    }
+
+    /// T-746 — a successful briefing / thumbnail PATCH updates only the column that landed.
+    pub(crate) fn note_hydrated_presentation(briefing: Option<&str>, thumbnail_url: Option<&str>) {
+        ROW_HYDRATE.with(|h| {
+            if let Some(row) = h.borrow_mut().as_mut() {
+                if let Some(b) = briefing {
+                    row.briefing = b.to_string();
+                }
+                if let Some(t) = thumbnail_url {
+                    row.thumbnail_url = t.to_string();
+                }
+            }
+        });
     }
 
     /// Install the editor context (called once from `on_load`, after the doc is seeded/registered).
@@ -1508,6 +1574,26 @@ mod tests {
             prose.contains("401") && prose.contains("expired session"),
             "ROW_META docs must name 401 / expired session"
         );
+    }
+
+    /// T-746 — `set_row_meta` must retain `game_mode` (and presentation) beside `ROW_META`, and
+    /// expose getters. Without this, ShapeMirror is forced into a second GET just to learn the mode.
+    #[test]
+    fn t746_row_hydrate_keeps_game_mode_beside_meta() {
+        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        let src = live_code(include_str!("mission_commands.rs"));
+        let set = only_body(&src, "pub fn set_row_meta");
+        assert!(
+            set.contains("ROW_HYDRATE") && set.contains("game_mode"),
+            "T-746: set_row_meta must fill ROW_HYDRATE with game_mode"
+        );
+        for getter in [
+            "pub(crate) fn hydrated_row",
+            "pub(crate) fn row_max_players",
+            "pub(crate) fn note_hydrated_game_mode",
+        ] {
+            assert!(src.contains(getter), "T-746: missing getter/note {getter}");
+        }
     }
 
     /// **T-601 — calibration for the export pin above.**

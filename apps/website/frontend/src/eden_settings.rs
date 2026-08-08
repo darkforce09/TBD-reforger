@@ -131,24 +131,12 @@ fn is_known_game_mode(v: &str) -> bool {
     GAME_MODES.iter().any(|(k, _)| *k == v)
 }
 
-/// Is the route `:id` a real `missions` row?
+/// The `missions` row fields this dialog reads. None of them lives in the mission document.
 ///
-/// Deliberately duplicated from `eden_top_strip::is_mission_row_id`, which is private to a file this
-/// slice does not own. The check is not optional: the editor also mounts on synthetic ids
-/// (`mission_editor` falls back to `draft`; the gate route drives a smoke id) where both the shape
-/// GET and the shape PATCH are guaranteed failures. Cheap shape test — the SPA carries no `uuid`
-/// dependency.
-fn is_row_id(s: &str) -> bool {
-    s.len() == 36
-        && s.as_bytes().iter().enumerate().all(|(i, b)| match i {
-            8 | 13 | 18 | 23 => *b == b'-',
-            _ => b.is_ascii_hexdigit(),
-        })
-}
-
-/// The `missions` row fields this dialog reads. None of them lives in the mission document, and the
-/// editor's own hydrate keeps only `compiled_meta()` (which has `max_players` but no `game_mode`, and
-/// is private to `mission_commands`), so the dialog reads the row itself on open.
+/// **T-746 — boot hydrate now retains them.** `mission_commands::hydrated_row` keeps `game_mode` /
+/// `max_players` / presentation beside `ROW_META`, so ShapeMirror can seed from the same GET that
+/// already ran at editor boot. The open-GET remains (library/dossier can edit the row), gated by
+/// [`ShapeSeq`] so an in-flight PATCH cannot be clobbered by a pre-PATCH response.
 ///
 /// **T-671 added `briefing` and `thumbnail_url` to this struct rather than standing up a second
 /// one.** They are read from the same `GET /missions/:id` the shape is read from, on the same open,
@@ -166,6 +154,18 @@ struct RowShape {
     /// `missions.thumbnail_url` — an absolute `http`/`https` link, or empty. See
     /// [`THUMBNAIL_URL_NOTE`] for why it is a link and not a file.
     thumbnail_url: String,
+}
+
+#[cfg(target_arch = "wasm32")]
+impl From<crate::mission_commands::HydratedRow> for RowShape {
+    fn from(h: crate::mission_commands::HydratedRow) -> Self {
+        Self {
+            game_mode: h.game_mode,
+            max_players: h.max_players,
+            briefing: h.briefing,
+            thumbnail_url: h.thumbnail_url,
+        }
+    }
 }
 
 /// T-694 — the two numbers this dialog puts under **Players**, and the fact that it reconciles
@@ -409,20 +409,60 @@ fn mirror_briefing_into_document(briefing: &str) {
     }
 }
 
+/// T-746 — GET↔PATCH single-flight for [`ShapeMirror`]. Pure transitions (no timer, no network) so
+/// the reopen race is provable on the native test shell — same house as `eden_top_strip::MirrorState`.
+///
+/// A PATCH bumps `generation` on begin **and** on end. A load captures the generation at start and
+/// may apply only when that generation is still current and no PATCH is in flight. That closes:
+/// (1) GET-in-flight then PATCH — the GET's capture is stale; (2) reopen while PATCH is in flight —
+/// the GET is not started (or its land is refused); (3) GET that raced the PATCH window and lands
+/// after settle — end_patch bumped generation, so the pre-PATCH row cannot overwrite the optimistic
+/// value.
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
+struct ShapeSeq {
+    generation: u64,
+    patch_inflight: u32,
+}
+
+impl ShapeSeq {
+    fn begin_load(&self) -> u64 {
+        self.generation
+    }
+
+    fn may_apply_load(&self, captured: u64) -> bool {
+        self.patch_inflight == 0 && self.generation == captured
+    }
+
+    fn begin_patch(&mut self) {
+        self.generation = self.generation.wrapping_add(1);
+        self.patch_inflight = self.patch_inflight.saturating_add(1);
+    }
+
+    fn end_patch(&mut self) {
+        self.generation = self.generation.wrapping_add(1);
+        self.patch_inflight = self.patch_inflight.saturating_sub(1);
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+thread_local! {
+    static SHAPE_SEQ: std::cell::RefCell<ShapeSeq> =
+        const { std::cell::RefCell::new(ShapeSeq { generation: 0, patch_inflight: 0 }) };
+}
+
 /// T-694 — the `missions` row PATCH/GET pair behind [`render_shape_section`], and (T-671) behind
 /// [`render_presentation_section`]. One handle, one read, two sections.
 ///
 /// **Why not `eden_top_strip::RowMirror`.** That handle carries a debounce, a per-column dedupe and a
 /// single-flight sequencer, all of which exist for the time scrubber — ~30 distinct values a second,
 /// where out-of-order landing is a real hazard. A `<select>` emits one value per settled choice, so
-/// none of that machinery would ever be exercised here; and `RowMirror`'s `commit`/`MirroredField`
-/// are private to a file this slice does not own. This is the small honest version, not a fork.
+/// none of that scrubber machinery would ever be exercised here. **T-746** adds only the small
+/// GET↔PATCH [`ShapeSeq`] for the reopen race the scrubber sequencer was never meant to cover.
 ///
 /// **T-671 re-asked the question for a textarea and got the same answer.** A briefing is not a
 /// scrubber either: the box commits on `change` (blur/Enter), which is one settled value per edit —
 /// exactly what a debounce would collapse a keystroke stream *into*. PATCHing per keystroke and then
-/// debouncing it would be strictly worse than not doing it, and there is nothing for a sequencer to
-/// re-order when the author only produces one write per visit to the field.
+/// debouncing it would be strictly worse than not doing it.
 ///
 /// `Copy` and built from the reactive owner (`expect_context` / `use_toasts` / `use_params_map` all
 /// resolve there and would panic from a bare DOM handler), so each control's handler can capture it.
@@ -459,10 +499,28 @@ impl ShapeMirror {
     /// reverted one.
     fn load(self, shape: RwSignal<Option<RowShape>>) {
         let id = self.mission_id.get_value();
-        if !is_row_id(&id) {
+        if !crate::eden_top_strip::is_mission_row_id(&id) {
             shape.set(None);
             return;
         }
+        // T-746 — seed from boot hydrate while the open-GET is in flight (or instead, when a PATCH
+        // is already on the wire and we refuse to start a GET that can only stale-clobber).
+        if shape.get_untracked().is_none() {
+            if let Some(h) = crate::mission_commands::hydrated_row() {
+                shape.set(Some(RowShape::from(h)));
+            }
+        }
+        let captured = SHAPE_SEQ.with(|s| {
+            let seq = s.borrow();
+            if seq.patch_inflight > 0 {
+                None
+            } else {
+                Some(seq.begin_load())
+            }
+        });
+        let Some(captured) = captured else {
+            return;
+        };
         let auth = self.auth;
         leptos::task::spawn_local(async move {
             let got = crate::client::api_get::<crate::dto::MissionDetail>(
@@ -470,16 +528,31 @@ impl ShapeMirror {
                 &format!("/missions/{id}"),
             )
             .await;
+            let apply = SHAPE_SEQ.with(|s| s.borrow().may_apply_load(captured));
+            if !apply {
+                return;
+            }
             match got {
                 // T-671 — `briefing` / `thumbnail_url` are `Option<String>` on the DTO because the
                 // backend omits them when empty (`skip_serializing_if`). Absent and empty are the
                 // same fact for a control: nothing authored yet.
-                Ok(d) => shape.set(Some(RowShape {
-                    game_mode: d.game_mode,
-                    max_players: d.max_players,
-                    briefing: d.briefing.unwrap_or_default(),
-                    thumbnail_url: d.thumbnail_url.unwrap_or_default(),
-                })),
+                Ok(d) => {
+                    let row = RowShape {
+                        game_mode: d.game_mode,
+                        max_players: d.max_players,
+                        briefing: d.briefing.unwrap_or_default(),
+                        thumbnail_url: d.thumbnail_url.unwrap_or_default(),
+                    };
+                    crate::mission_commands::note_hydrated_row(
+                        crate::mission_commands::HydratedRow {
+                            game_mode: row.game_mode.clone(),
+                            max_players: row.max_players,
+                            briefing: row.briefing.clone(),
+                            thumbnail_url: row.thumbnail_url.clone(),
+                        },
+                    );
+                    shape.set(Some(row));
+                }
                 Err(e) => {
                     leptos::logging::warn!(
                         "T-694: could not read the mission row's shape: {}",
@@ -502,9 +575,13 @@ impl ShapeMirror {
         let Some(previous) = shape.get_untracked() else {
             return;
         };
-        if !is_row_id(&id) || !is_known_game_mode(&next) || previous.game_mode == next {
+        if !crate::eden_top_strip::is_mission_row_id(&id)
+            || !is_known_game_mode(&next)
+            || previous.game_mode == next
+        {
             return;
         }
+        SHAPE_SEQ.with(|s| s.borrow_mut().begin_patch());
         shape.set(Some(RowShape {
             game_mode: next.clone(),
             ..previous.clone()
@@ -512,21 +589,25 @@ impl ShapeMirror {
         let auth = self.auth;
         let toasts = self.toasts;
         leptos::task::spawn_local(async move {
-            let body = serde_json::json!({ "game_mode": next });
+            let body = serde_json::json!({ "game_mode": next.clone() });
             let res = crate::client::api_patch::<serde_json::Value>(
                 auth,
                 &format!("/missions/{id}"),
                 body,
             )
             .await;
-            if let Err(e) = &res {
-                leptos::logging::warn!(
-                    "T-694: could not save the mission's game mode: {}",
-                    crate::client::api_error_message(e, "PATCH /missions/:id failed")
-                );
-                toasts.error(game_mode_failure_message(e));
-                shape.set(Some(previous));
+            match &res {
+                Ok(_) => crate::mission_commands::note_hydrated_game_mode(&next),
+                Err(e) => {
+                    leptos::logging::warn!(
+                        "T-694: could not save the mission's game mode: {}",
+                        crate::client::api_error_message(e, "PATCH /missions/:id failed")
+                    );
+                    toasts.error(game_mode_failure_message(e));
+                    shape.set(Some(previous));
+                }
             }
+            SHAPE_SEQ.with(|s| s.borrow_mut().end_patch());
         });
     }
 
@@ -554,7 +635,7 @@ impl ShapeMirror {
         let Some(previous) = shape.get_untracked() else {
             return;
         };
-        if !is_row_id(&id) || field.read(&previous) == next {
+        if !crate::eden_top_strip::is_mission_row_id(&id) || field.read(&previous) == next {
             return;
         }
         if field == PresentationField::Thumbnail && !is_acceptable_thumbnail_url(&next) {
@@ -572,6 +653,7 @@ impl ShapeMirror {
         };
         let mut optimistic = previous.clone();
         field.write(&mut optimistic, next.clone());
+        SHAPE_SEQ.with(|s| s.borrow_mut().begin_patch());
         shape.set(Some(optimistic));
         let auth = self.auth;
         let toasts = self.toasts;
@@ -589,11 +671,15 @@ impl ShapeMirror {
             )
             .await;
             match &res {
-                Ok(_) => {
-                    if field == PresentationField::Briefing {
+                Ok(_) => match field {
+                    PresentationField::Briefing => {
                         mirror_briefing_into_document(&next);
+                        crate::mission_commands::note_hydrated_presentation(Some(&next), None);
                     }
-                }
+                    PresentationField::Thumbnail => {
+                        crate::mission_commands::note_hydrated_presentation(None, Some(&next));
+                    }
+                },
                 Err(e) => {
                     leptos::logging::warn!(
                         "T-671: could not save the mission's {column}: {}",
@@ -603,6 +689,7 @@ impl ShapeMirror {
                     shape.set(Some(previous));
                 }
             }
+            SHAPE_SEQ.with(|s| s.borrow_mut().end_patch());
         });
     }
 }
@@ -670,9 +757,8 @@ pub fn MissionSettingsDialog(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> i
     // lands, and again if it fails: the dialog would rather say it does not know (see
     // [`SHAPE_UNAVAILABLE_NOTE`]) than offer a control over a value it has not confirmed.
     let shape = RwSignal::new(None::<RowShape>);
-    // Re-read on every open, not once at mount. The row is also edited from the library and the
-    // dossier, and `mission_hydrate`'s boot GET keeps only `compiled_meta()` — which has no
-    // `game_mode` and is private to `mission_commands` — so there is nothing cached to reuse.
+    // Re-read on every open, not once at mount (library/dossier can edit the row). T-746 seeds from
+    // `mission_commands::hydrated_row` and refuses to apply a GET that raced an in-flight PATCH.
     #[cfg(target_arch = "wasm32")]
     {
         let loader = ShapeMirror::from_route();
@@ -2284,13 +2370,111 @@ mod t691_editor_prefs_split {
 // a function. Same house rules as the T-691 module above: needles are assembled from fragments, and
 // `live_code` blanks string literals and cuts every test module, so a needle meaning "a real call"
 // cannot false-green off a doc comment or a label.
+// T-746 — ShapeMirror GET↔PATCH single-flight + one row-id predicate + hydrate getters.
+// Behavioural pins on ShapeSeq are pure (native). Source pins use `live_code` so a hollow comment
+// cannot green them; they sit above this module so the scrubber still sees production call sites.
+#[cfg(test)]
+mod t746_shape_flight {
+    use super::ShapeSeq;
+    use crate::arsenal::class_r_scrub::{live_code, only_body};
+
+    /// The reopen race: a GET that started (or would land) across a PATCH window must not apply.
+    #[test]
+    fn a_get_that_races_a_patch_cannot_apply() {
+        let mut s = ShapeSeq::default();
+        let load_gen = s.begin_load();
+        assert!(s.may_apply_load(load_gen), "idle load may apply");
+        s.begin_patch();
+        assert!(
+            !s.may_apply_load(load_gen),
+            "GET captured before PATCH must not clobber the optimistic value"
+        );
+        assert_eq!(s.patch_inflight, 1);
+        // Reopen mid-flight: capture current generation, but inflight blocks apply (and load skips GET).
+        let reopen = s.begin_load();
+        assert!(
+            !s.may_apply_load(reopen),
+            "reopen while PATCH in flight must not apply a pre-PATCH row"
+        );
+        s.end_patch();
+        assert_eq!(s.patch_inflight, 0);
+        assert!(
+            !s.may_apply_load(load_gen),
+            "GET that raced the PATCH window stays stale after settle"
+        );
+        assert!(
+            !s.may_apply_load(reopen),
+            "end_patch bumps generation so the mid-flight GET cannot land late"
+        );
+        let fresh = s.begin_load();
+        assert!(s.may_apply_load(fresh), "a post-settle open may apply");
+    }
+
+    /// Production ShapeMirror must call the sequencer — not merely document it.
+    #[test]
+    fn shape_mirror_wires_the_sequencer() {
+        let src = live_code(include_str!("eden_settings.rs"));
+        for (fn_name, needles) in [
+            (
+                "fn load",
+                [
+                    "begin_load",
+                    "may_apply_load",
+                    "is_mission_row_id",
+                    "hydrated_row",
+                ]
+                .as_slice(),
+            ),
+            (
+                "fn set_game_mode",
+                [
+                    "begin_patch",
+                    "end_patch",
+                    "note_hydrated_game_mode",
+                    "is_mission_row_id",
+                ]
+                .as_slice(),
+            ),
+            (
+                "fn set_presentation",
+                [
+                    "begin_patch",
+                    "end_patch",
+                    "note_hydrated_presentation",
+                    "is_mission_row_id",
+                ]
+                .as_slice(),
+            ),
+        ] {
+            let body = only_body(&src, fn_name);
+            for needle in needles {
+                assert!(
+                    body.contains(needle),
+                    "T-746: {fn_name} must call/use {needle}"
+                );
+            }
+        }
+        // Assembled so a comment saying the copy is gone cannot green this pin.
+        let gone = format!("fn is{}", "_row_id");
+        assert!(
+            !src.contains(&gone),
+            "T-746: the duplicated row-id copy must be gone"
+        );
+        assert!(
+            src.contains("is_mission_row_id"),
+            "T-746: ShapeMirror must use the shared row-id predicate"
+        );
+    }
+}
+
 #[cfg(test)]
 mod t694_mission_shape {
     use super::{
-        game_mode_failure_message, is_known_game_mode, is_row_id, PlayerCount, GAME_MODES,
+        game_mode_failure_message, is_known_game_mode, PlayerCount, GAME_MODES,
         PLAYER_COUNT_DISAGREE_NOTE, SLOTS_PLACED_NOTE,
     };
     use crate::arsenal::class_r_scrub::{live_code, only_body};
+    use crate::eden_top_strip::is_mission_row_id;
 
     /// The select's table is the server's enum. `handlers/missions.rs::valid_game_mode` maps exactly
     /// `pve_coop` / `pvp` / `zeus` and 400s the rest, so drift here ships a control that can only
@@ -2318,7 +2502,7 @@ mod t694_mission_shape {
     /// shape GET/PATCH is a guaranteed failure, so the id must be checked before either goes out.
     #[test]
     fn row_id_guard_rejects_the_synthetic_editor_ids() {
-        assert!(is_row_id("3f2504e0-4f89-11d3-9a0c-0305e82c3301"));
+        assert!(is_mission_row_id("3f2504e0-4f89-11d3-9a0c-0305e82c3301"));
         for not_a_row in [
             "",
             "draft",
@@ -2329,7 +2513,7 @@ mod t694_mission_shape {
             "zzzzzzzz-4f89-11d3-9a0c-0305e82c3301", // not hex
         ] {
             assert!(
-                !is_row_id(not_a_row),
+                !is_mission_row_id(not_a_row),
                 "T-694: {not_a_row:?} must not be treated as a mission row id"
             );
         }
@@ -2478,7 +2662,7 @@ mod t694_mission_shape {
             "T-694: {setter} must PATCH the mission row"
         );
         assert!(
-            setter_body.contains(&format!("is{}", "_row_id")),
+            setter_body.contains(&format!("is{}", "_mission_row_id")),
             "T-694: {setter} must refuse synthetic editor ids before hitting the wire"
         );
     }
@@ -3557,7 +3741,7 @@ mod t671_mission_presentation {
             "T-671: {setter} must PATCH the mission row"
         );
         assert!(
-            setter_body.contains(&format!("is{}", "_row_id")),
+            setter_body.contains(&format!("is{}", "_mission_row_id")),
             "T-671: {setter} must refuse synthetic editor ids before hitting the wire"
         );
         assert!(

@@ -351,7 +351,10 @@ pub fn normalize_clock(s: &str) -> Option<String> {
 /// The editor also mounts on synthetic ids — `mission_editor` falls back to `draft`, and the gate
 /// route drives a smoke id — where a row PATCH is a guaranteed 400. Cheap shape check rather than a
 /// `uuid` dependency the SPA does not otherwise carry.
-fn is_mission_row_id(s: &str) -> bool {
+///
+/// **T-746 — `pub(crate)`.** `eden_settings::ShapeMirror` needs the same rule for its shape GET/PATCH
+/// guards. Keeping a second copy as `is_row_id` invited drift; one predicate, one owner.
+pub(crate) fn is_mission_row_id(s: &str) -> bool {
     s.len() == 36
         && s.as_bytes().iter().enumerate().all(|(i, b)| match i {
             8 | 13 | 18 | 23 => *b == b'-',
@@ -1855,6 +1858,17 @@ mod tests {
         for bad in ["", "2", "24:00", "12:60", "noon", "12:00:00:00"] {
             assert_eq!(normalize_clock(bad), None, "{bad:?} must not be PATCHed");
         }
+    }
+
+    /// T-746 — the row-id predicate is crate-visible so `eden_settings` does not keep a twin.
+    #[test]
+    fn t746_row_id_predicate_is_crate_visible() {
+        use crate::arsenal::class_r_scrub::live_code;
+        let src = live_code(include_str!("eden_top_strip.rs"));
+        assert!(
+            src.contains("pub(crate) fn is_mission_row_id"),
+            "T-746: is_mission_row_id must be pub(crate), not a private twin in eden_settings"
+        );
     }
 
     /// The mirror only fires on a real row. `mission_editor` falls back to `draft` and the editor
