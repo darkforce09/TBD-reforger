@@ -4215,11 +4215,40 @@ pub fn cancel_pending() {
     });
 }
 
+/// Every slot id the document actually holds — the slot half of both minters' uniqueness universe,
+/// read off the EXACT [`MissionDocCore::slots_json`] row map.
+///
+/// **Never `materialize()`.** The SoA is a VIEW: it drops slots on a hidden layer (T-665) and slots
+/// carrying their own `editorHidden` flag (T-701) before any column is pushed, so a hidden slot's id
+/// is INVISIBLE to a materialize-sourced uniqueness proof. Combined with [`OpsCtx::next_id`] resetting
+/// to 0 on every editor mount, that is a silent-destruction path: restore a document from IDB whose
+/// `n0` sits on a hidden layer, place anything, and the mint hands back `n0` — and the doc writes are
+/// upserts (`add_slot` / `place_composition` insert a fresh row under the id), so the tucked-away slot
+/// is overwritten inside the placement's undo step, with no error and no warning. Hidden slots are
+/// precisely the work a careful author put out of sight, i.e. the work least likely to be noticed
+/// missing.
+///
+/// This is the wave-127 rule for the id namespace: read `slots_json` (exact, complete), never the
+/// SoA/materialized view, which is lossy about hidden slots — the same reason
+/// [`capture_selection_entities`] and the shared `slot_z` reader were pointed at `slots_json`.
+/// Cost is one O(all slots) parse per placement gesture, the same price `paste_at_cursor` and the
+/// Attributes readers already pay; a place is a rare gesture, not the render hot path.
+fn live_slot_ids(core: &MissionDocCore) -> std::collections::HashSet<String> {
+    serde_json::from_str::<serde_json::Value>(&core.slots_json())
+        .ok()
+        .and_then(|v| v.as_object().map(|o| o.keys().cloned().collect()))
+        .unwrap_or_default()
+}
+
 /// Mint an unused slot id. The counter keeps this O(1) amortized, but uniqueness is **proven**
 /// against the live doc rather than assumed: undo frees ids, and an IDB restore can bring back a
 /// document that already used `n0`.
+///
+/// The proof runs over [`live_slot_ids`] — the raw `slots_json` keys, hidden rows included — because
+/// the materialized SoA cannot see a hidden slot and would let this hand back an id that is already
+/// taken. See that helper for the full argument.
 fn mint_id(ctx: &OpsCtx, core: &MissionDocCore) -> String {
-    let existing: std::collections::HashSet<String> = core.materialize().ids.into_iter().collect();
+    let existing = live_slot_ids(core);
     loop {
         let id = format!("n{}", ctx.next_id.get());
         ctx.next_id.set(ctx.next_id.get().saturating_add(1));
@@ -4240,9 +4269,13 @@ fn mint_id(ctx: &OpsCtx, core: &MissionDocCore) -> String {
 /// key a second placement could re-mint an id an earlier composed note already holds and upsert it
 /// away. Uniqueness is proven against the live doc rather than assumed, exactly as [`mint_id`]
 /// argues: undo frees ids and an IDB restore can bring back a document that already used them.
+///
+/// **The slot half comes off [`live_slot_ids`], not `materialize()`** — a hidden slot is absent from
+/// the SoA, so the old source let a placement re-mint (and upsert away) an id a hidden row already
+/// held. The three small-map halves below need no such treatment: `small_maps_json` dumps those root
+/// maps verbatim, with no visibility filter anywhere in it.
 fn mint_ids(ctx: &OpsCtx, core: &MissionDocCore, count: usize) -> Vec<String> {
-    let mut existing: std::collections::HashSet<String> =
-        core.materialize().ids.into_iter().collect();
+    let mut existing = live_slot_ids(core);
     if let Ok(small) = serde_json::from_str::<serde_json::Value>(&core.small_maps_json()) {
         for key in ["vehiclesById", "entitiesById", "commentsById"] {
             if let Some(obj) = small.get(key).and_then(|v| v.as_object()) {

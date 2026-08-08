@@ -1720,11 +1720,22 @@ pub(crate) fn compositions_panel(
         <p class="mt-0.5 text-label-sm normal-case text-outline">
             "Reusable multi-entity stamps. Select entities and Save; click a saved row to arm, then click the map to place."
         </p>
-        // T-781 — the two properties an author cannot see from the row summary, said once here:
-        // a selected comment is captured too (the composable clause of PLACE-COMMENT-001) and stays
-        // editor-only, and a placement restores the elevation each entity was saved at.
+        // T-781 — the two properties an author cannot see from the row summary, said once here: a
+        // placement restores the elevation each entity was saved at, and a comment carried in the
+        // selection is captured too (the composable clause of PLACE-COMMENT-001) and stays
+        // editor-only.
+        //
+        // **The comment clause is CONDITIONAL ("any comment in the selection") on purpose, and the
+        // no-selection line below no longer says "or comments".** The capture and place halves are
+        // built and pinned, but there is currently NO UI lane that puts a comment id into a
+        // selection: the Outliner comment row is `ROW_STATIC`, the map glyph has no pick path
+        // (`route_target` has no comment arm, so even a dock-left search hit for a comment renders
+        // inert), and the T-697 selection-filter apply only NARROWS a selection that already exists.
+        // Copy in the imperative — "select comments" — would name a gesture an author cannot
+        // perform. **T-784 (Outliner comment row + map glyph pick) is what closes that gap**; this
+        // wording is true on both sides of it, so it does not want rewriting when T-784 lands.
         <p class="mt-0.5 text-label-sm normal-case text-outline">
-            "Selected comments are captured too and stay editor-only — they never reach the compiled mission. Placed entities keep the elevation they were saved at."
+            "A save takes the whole selection: placed entities keep the elevation they were saved at, and any comment in the selection is captured and stays editor-only — comments never reach the compiled mission."
         </p>
 
         // ── Save affordance (shown only when a selection exists) ──────────────────────────────
@@ -1735,7 +1746,7 @@ pub(crate) fn compositions_panel(
                 // showing a button that no-ops.
                 return view! {
                     <p class="mt-3 text-label-sm normal-case text-outline">
-                        "Select one or more placed entities or comments to save a composition."
+                        "Select one or more placed entities to save a composition."
                     </p>
                 }
                     .into_any();
@@ -3665,6 +3676,67 @@ mod tests {
             "the comment arm must stamp through the shared comment_row constructor, so a composed \
              note is the same shape as a hand-placed one"
         );
+    }
+
+    /// Wave 144 F-1 — **both id minters must prove uniqueness against a universe that includes
+    /// HIDDEN slots.**
+    ///
+    /// `materialize()` is a VIEW: it drops slots on a hidden layer (T-665) and slots carrying
+    /// `editorHidden` (T-701). Sourcing the mint's `existing` set from it makes a hidden slot's id
+    /// look free — and with `next_id` resetting to 0 on every editor mount, an IDB-restored document
+    /// hands `n0` straight back to the next placement, whose insert is an UPSERT. The hidden row is
+    /// destroyed silently. This is the wave-127 rule for the id namespace: read `slots_json` (exact,
+    /// complete), never the SoA, which is lossy about hidden slots.
+    ///
+    /// The consequence is fired for real — on a document with two hidden slots, both universes, and
+    /// the upsert — by `map-engine-core`'s
+    /// `a_hidden_slot_is_invisible_to_a_materialize_sourced_id_mint`. What that test cannot see is
+    /// which universe the SHIPPED minters read, because `editor_ops.rs` is
+    /// `#![cfg(target_arch = "wasm32")]` from line one and no native test in this crate can call
+    /// into it. That is this pin: it binds `mint_id`, `mint_ids` and their shared `live_slot_ids`
+    /// helper to `slots_json`, so reverting either minter to `materialize()` reddens here.
+    ///
+    /// `live_code` blanks string literals, so every needle below means a CALL, not a mention, and
+    /// the doc comments this ticket wrote naming these very tokens cannot make it pass. Needles are
+    /// assembled at run time, this file's standing rule.
+    #[test]
+    fn both_id_minters_prove_uniqueness_against_hidden_slots_too() {
+        use crate::arsenal::class_r_scrub::{live_code, only_body};
+
+        let ops_code = live_code(include_str!("editor_ops.rs"));
+        let helper_call = format!("{}(", "live_slot_ids");
+        let helper_body = only_body(&ops_code, &format!("fn {helper_call}"));
+
+        // The shared helper reads the EXACT row map.
+        assert!(
+            helper_body.contains(&format!("{}()", "slots_json")),
+            "live_slot_ids must read the exact slots_json row map; body was:\n{helper_body}"
+        );
+
+        // …and BOTH minters go through it, so there is one universe, not two.
+        for name in ["mint_id", "mint_ids"] {
+            let body = only_body(&ops_code, &format!("fn {name}("));
+            assert!(
+                body.contains(&helper_call),
+                "{name} must source its slot half from live_slot_ids (slots_json), not the \
+                 materialized SoA — a hidden slot is absent from the SoA, so a mint proven against \
+                 it can re-mint and upsert away an id a hidden row already holds; body was:\n{body}"
+            );
+        }
+
+        // Belt to the braces above: the mint's whole id-universe path — the two minters and the
+        // helper they share, which is the entire closure that decides `existing` — must not reach
+        // for the lossy view at all. Scoped deliberately narrowly (`materialize` is the right
+        // reader nearly everywhere else in this file); the positive pins above are what actually
+        // hold the fix down.
+        for name in ["mint_id", "mint_ids", "live_slot_ids"] {
+            let body = only_body(&ops_code, &format!("fn {name}("));
+            assert!(
+                !body.contains(&format!("{}()", "materialize")),
+                "{name} must not build an id universe from the materialized SoA (T-665 / T-701 drop \
+                 hidden slots from it); body was:\n{body}"
+            );
+        }
     }
 
     /// T-650 — the composition arm rides the SAME T-647 armed-state machine as the object place: its

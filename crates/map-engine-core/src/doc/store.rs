@@ -12054,6 +12054,143 @@ mod tests {
         assert_eq!(doc.materialize().len(), 1, "un-hide restores the slot");
     }
 
+    /// The VIEW filter above has one consumer it must never be handed to: an id **uniqueness
+    /// proof**. `materialize()` omits hidden-layer (T-665) and `editorHidden` (T-701) slots, so a
+    /// mint that proves a candidate id unique against the SoA cannot see a hidden slot's id at all —
+    /// and every doc write here is an UPSERT (`add_slot` inserts a fresh row under the id), so the
+    /// collision destroys the hidden slot silently, inside the placement's own undo step. The
+    /// editor's counter resets to 0 on every mount, so an IDB restore puts `n0` back in play.
+    ///
+    /// This test fires the defect and the fix side by side on identical documents: the
+    /// SoA-sourced universe re-mints `n0` and the hidden slot's authored role is gone; the
+    /// `slots_json`-sourced universe skips every taken id and both hidden slots survive intact. A
+    /// fixture with only VISIBLE slots cannot tell the two universes apart, which is exactly why
+    /// this defect stood.
+    ///
+    /// The mint loop is reproduced here because the shipped one
+    /// (`website-frontend`'s `editor_ops::mint_id` / `mint_ids`) lives behind
+    /// `#![cfg(target_arch = "wasm32")]` and no native test can call it; the frontend pin
+    /// `both_id_minters_prove_uniqueness_against_hidden_slots_too` binds that source to
+    /// `slots_json` so the two halves cannot drift.
+    #[test]
+    fn a_hidden_slot_is_invisible_to_a_materialize_sourced_id_mint() {
+        use std::collections::HashSet;
+
+        // Two hidden slots — one by its LAYER (T-665), one by its OWN flag (T-701) — plus a
+        // visible control, so the fixture covers both arms of the effective-hidden union.
+        fn fixture() -> MissionDocCore {
+            let doc = MissionDocCore::new();
+            doc.set_origin_init(true);
+            doc.add_editor_layer("hid", "Hidden layer", None);
+            doc.add_editor_layer("vis", "Visible layer", None);
+            doc.add_slot(
+                "n0",
+                "sq",
+                "hid",
+                0,
+                "RECON-LEAD",
+                None,
+                None,
+                10.0,
+                20.0,
+                0.0,
+                0.0,
+            );
+            doc.add_slot(
+                "n1", "sq", "vis", 1, "SNIPER", None, None, 30.0, 40.0, 0.0, 0.0,
+            );
+            doc.add_slot(
+                "n2", "sq", "vis", 2, "Rifleman", None, None, 50.0, 60.0, 0.0, 0.0,
+            );
+            doc.set_editor_layer_hidden("hid", true);
+            doc.set_slot_editor_hidden("n1", true);
+            doc.set_origin_init(false);
+            doc
+        }
+        // `editor_ops::mint_id`'s loop verbatim, with the counter at its post-mount value (0).
+        fn mint(existing: &HashSet<String>) -> String {
+            let mut next = 0_u32;
+            loop {
+                let id = format!("n{next}");
+                next += 1;
+                if !existing.contains(&id) {
+                    return id;
+                }
+            }
+        }
+        let raw_ids = |doc: &MissionDocCore| -> HashSet<String> {
+            serde_json::from_str::<serde_json::Value>(&doc.slots_json())
+                .ok()
+                .and_then(|v| v.as_object().map(|o| o.keys().cloned().collect()))
+                .unwrap_or_default()
+        };
+        let role = |doc: &MissionDocCore, id: &str| -> String {
+            let slots: serde_json::Value =
+                serde_json::from_str(&doc.slots_json()).expect("slots_json");
+            slots[id]["role"].as_str().unwrap_or_default().to_string()
+        };
+
+        // The premise, proven live: the two universes DISAGREE, and only about hidden rows.
+        let doc = fixture();
+        let soa: HashSet<String> = doc.materialize().ids.into_iter().collect();
+        let raw = raw_ids(&doc);
+        assert_eq!(
+            soa,
+            HashSet::from(["n2".to_string()]),
+            "materialize() must drop both hidden slots (layer-hidden n0, editorHidden n1)"
+        );
+        assert_eq!(
+            raw,
+            HashSet::from(["n0".to_string(), "n1".to_string(), "n2".to_string()]),
+            "slots_json is the EXACT row map — hidden rows are still in the doc"
+        );
+
+        // THE DEFECT — proving uniqueness against the SoA hands back `n0`, which is taken, and the
+        // place upserts the hidden slot away. Role, position, loadout: gone, with no error.
+        let broken = fixture();
+        let collided = mint(&soa);
+        assert_eq!(
+            collided, "n0",
+            "an SoA-sourced universe cannot see the hidden slot's id"
+        );
+        broken.add_slot(
+            &collided, "sq", "vis", 3, "Rifleman", None, None, 70.0, 80.0, 0.0, 0.0,
+        );
+        assert_eq!(
+            role(&broken, "n0"),
+            "Rifleman",
+            "the hidden slot was silently overwritten — this is the destruction the fix prevents"
+        );
+
+        // THE FIX — the `slots_json`-sourced universe skips every taken id, so the placement lands
+        // on a free one and BOTH hidden slots keep their authored rows.
+        let fixed = fixture();
+        let minted = mint(&raw);
+        assert_eq!(minted, "n3", "the mint must skip every id the doc holds");
+        assert!(
+            !raw.contains(&minted),
+            "the minted id must not collide with any live row, hidden or not"
+        );
+        fixed.add_slot(
+            &minted, "sq", "vis", 3, "Rifleman", None, None, 70.0, 80.0, 0.0, 0.0,
+        );
+        assert_eq!(
+            role(&fixed, "n0"),
+            "RECON-LEAD",
+            "the layer-hidden slot survives the placement"
+        );
+        assert_eq!(
+            role(&fixed, "n1"),
+            "SNIPER",
+            "the editorHidden slot survives the placement"
+        );
+        assert_eq!(
+            raw_ids(&fixed).len(),
+            4,
+            "the placement ADDED a row rather than replacing one"
+        );
+    }
+
     /// TRANSFORM LOCK on the drag path (`move_entities`), fired once: a locked layer's slot refuses
     /// the delta (position unchanged), then unlocking lets the same move land.
     #[test]
