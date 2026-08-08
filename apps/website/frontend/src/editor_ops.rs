@@ -1447,15 +1447,13 @@ pub fn attrs_update_position(
 /// T-649 ATTR-MULTI-001 — the Transform commit applied to EVERY id in `ids`.
 ///
 /// Field-by-field, exactly like the single-slot [`attrs_update_position`]: a `None` argument is a
-/// field the operator did not opt in (its checkbox is unticked), and `update_slot_position` leaves
-/// those columns untouched — so ticking "Rotation" and typing a heading can never also stamp one
-/// slot's X onto the rest of the selection.
+/// field the operator did not opt in (its checkbox is unticked), and the slot mutator leaves those
+/// columns untouched — so ticking "Rotation" and typing a heading can never also stamp one slot's
+/// X onto the rest of the selection.
 ///
-/// **Undo granularity, stated honestly** (the [`rotate_selection_to_face`] note applies verbatim):
-/// `MissionDocCore` builds its `UndoManager` with `capture_timeout_millis = 0` and map-engine-core
-/// exposes no atomic multi-slot position API, so an N-slot commit is N undo steps. The whole commit
-/// still fires **one** history/persist tail (`after_local_edit` once, below), so it is one save and
-/// one rebind, not N.
+/// **Undo (T-732):** one LOCAL txn via [`MissionDocCore::update_entity_transforms`] = **one** undo
+/// step for the whole stamp (N Ctrl+Z for N slots was the pre-T-732 defect). Still fires **one**
+/// history/persist tail (`after_local_edit` once, below).
 pub fn attrs_update_position_multi(
     ids: &[String],
     x: Option<f64>,
@@ -1479,19 +1477,24 @@ pub fn attrs_update_position_multi(
         // wave-127 F-2 — read ONCE for the whole stamp, then hand each member its own z back. An X
         // stamp across a selection used to flatten every member's authored z in one undo step.
         let rows = keep_z_rows(core, x, y, z);
-        // T-082 (F-7) — `moved` is the honest `did`: a selection where EVERY member is
-        // transform-locked changed nothing, so it must not bump `doc_ver` or dirty the mission. A
-        // selection that straddles the lock still fires the tail — the unlocked members did move.
-        let mut moved = false;
+        // T-082 (F-7) — `update_entity_transforms` returns how many patches wrote; locked / unknown
+        // ids are skipped inside the one txn, so an all-locked selection yields 0 and skips the tail.
+        let mut patches: Vec<EntityTransformPatch> = Vec::with_capacity(ids.len());
         for id in ids {
             if core.slot_layer_is_locked(id) {
                 continue;
             }
             let z = z.or_else(|| rows.as_ref().and_then(|r| slot_z(r, id)));
-            core.update_slot_position(id, x, y, z, rotation, b[2], b[3]);
-            moved = true;
+            patches.push(EntityTransformPatch {
+                id: id.clone(),
+                is_slot: true,
+                x,
+                y,
+                z,
+                rotation,
+            });
         }
-        moved
+        core.update_entity_transforms(&patches, b[2], b[3]) > 0
     });
     if did {
         crate::mission_history::after_local_edit();

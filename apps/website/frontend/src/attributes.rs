@@ -1716,10 +1716,9 @@ mod tests {
     #[test]
     fn an_attributes_x_or_y_commit_carries_the_slots_current_z_back_in() {
         let ops = live_code(include_str!("editor_ops.rs"));
-        for f in [
-            "pub fn attrs_update_position(",
-            "pub fn attrs_update_position_multi(",
-        ] {
+        // Single-slot still goes through update_slot_position.
+        {
+            let f = "pub fn attrs_update_position(";
             let body = only_body(&ops, f);
             let resolve = body.find("z.or_else(").unwrap_or_else(|| {
                 panic!("{f} must resolve a missing z before writing; body was:\n{body}")
@@ -1735,6 +1734,31 @@ mod tests {
             assert!(
                 body.contains("slot_z("),
                 "{f} must read the slot's CURRENT z, not invent one; body was:\n{body}"
+            );
+        }
+        // T-732 — multi stamps via update_entity_transforms; sticky-z still before the batch.
+        {
+            let f = "pub fn attrs_update_position_multi(";
+            let body = only_body(&ops, f);
+            let resolve = body.find("z.or_else(").unwrap_or_else(|| {
+                panic!("{f} must resolve a missing z before writing; body was:\n{body}")
+            });
+            let write = body.find("update_entity_transforms(").unwrap_or_else(|| {
+                panic!("{f} must commit via update_entity_transforms (T-732 atomic batch)")
+            });
+            assert!(
+                resolve < write,
+                "{f} must resolve the sticky z BEFORE the batch write; resolve at {resolve}, write \
+                 at {write}"
+            );
+            assert!(
+                body.contains("slot_z("),
+                "{f} must read the slot's CURRENT z, not invent one; body was:\n{body}"
+            );
+            let per_id = ["core.update_slot", "_position(id,"].concat();
+            assert!(
+                !body.contains(&per_id),
+                "T-732: {f} must not call per-id update_slot_position (N undo steps)"
             );
         }
         // The read is conditional on the commit being able to zero a z at all — an explicit z write

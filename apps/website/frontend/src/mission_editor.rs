@@ -9982,28 +9982,50 @@ mod t649_select_all_and_multi_edit {
             );
         }
         let ops = live_code(include_str!("editor_ops.rs"));
-        for (f, write) in [
-            (
-                "pub fn attrs_update_position_multi(",
-                "core.update_slot_position(id,",
-            ),
-            ("pub fn attrs_update_slot_multi(", "core.update_slot(id,"),
-        ] {
+        // T-732 — position multi is ONE LOCAL txn via update_entity_transforms (not N×
+        // update_slot_position). Identity multi still fans out per-id (no atomic slot-attr API yet).
+        {
+            let f = "pub fn attrs_update_position_multi(";
             let src = fn_source(&ops, f);
+            let batch = ["update_entity", "_transforms("].concat();
+            let per_id = ["core.update_slot", "_position(id,"].concat();
             assert!(
-                src.contains("for id in ids {") && src.contains(write),
-                "{f} must apply the commit to every id in the target set"
+                src.contains(&batch),
+                "T-732: {f} must commit via update_entity_transforms (one LOCAL txn)"
             );
-            // One tail for the whole fan-out: one persist, one rebind — not N.
+            assert!(
+                !src.contains(&per_id),
+                "T-732: {f} must NOT loop per-id update_slot_position — that is N undo steps"
+            );
+            assert!(
+                src.contains("for id in ids {") && src.contains("EntityTransformPatch"),
+                "{f} must build a patch list over every id in the target set"
+            );
             assert_eq!(
                 src.matches("after_local_edit()").count(),
                 1,
                 "{f} must fire exactly ONE history/persist tail for the whole commit"
             );
-            // T-736 — count==1 alone greens a tail parked inside the loop. Brace-match the
-            // fan-out and demand the (single) call after it closes.
             assert_after_local_edit_outside_ids_loop(f, &src);
-            // A commit with no opted-in field is a no-op, not N writes of `None`.
+            assert!(
+                src.contains("is_none()") && src.contains("return;"),
+                "{f} must no-op when nothing was opted in"
+            );
+        }
+        {
+            let f = "pub fn attrs_update_slot_multi(";
+            let write = "core.update_slot(id,";
+            let src = fn_source(&ops, f);
+            assert!(
+                src.contains("for id in ids {") && src.contains(write),
+                "{f} must apply the commit to every id in the target set"
+            );
+            assert_eq!(
+                src.matches("after_local_edit()").count(),
+                1,
+                "{f} must fire exactly ONE history/persist tail for the whole commit"
+            );
+            assert_after_local_edit_outside_ids_loop(f, &src);
             assert!(
                 src.contains("is_none()") && src.contains("return;"),
                 "{f} must no-op when nothing was opted in"
