@@ -251,7 +251,9 @@ pub fn AttributesModal(
                     ))
                 }
                 None => {
-                    // Slot undone away while open → close (React's `slot &&` render guard).
+                    // T-744 — `None` means the slot is GONE from the raw rows (undone / deleted),
+                    // not merely hidden. Hide keeps `read_attrs` at `Some` (raw existence), so this
+                    // arm is no longer reachable from H / layer-hide (wave-113 F-2).
                     crate::editor_ops::close_attributes();
                     None
                 }
@@ -1158,6 +1160,75 @@ mod tests {
         for needle in ["asset_id: row_str(", "description: row_str("] {
             assert!(body.contains(needle), "read_attrs must fill `{needle}…`");
         }
+    }
+
+    /* ─────────── T-744 — hide must not close Attributes like undo-away ─────────── */
+
+    /// wave-113 F-2 / T-744: `read_attrs` Option-gates on RAW membership, not SoA membership.
+    ///
+    /// `materialize()` drops layer-hidden / `editorHidden` slots. The pre-fix body used
+    /// `soa.ids.iter().position(|s| s == id)?` as the Option gate, so Hide returned `None` and the
+    /// modal's `None` arm called `close_attributes()` — the same path as "slot was undone away".
+    ///
+    /// Hollow-pin rules: `live_code` blanks comments + string literals, so a docstring claiming the
+    /// fix cannot green these needles. delete-prod: stripping the raw gate from a forged copy must
+    /// drop the existence needle (proves the pin is about production, not this test module).
+    #[test]
+    fn read_attrs_gates_existence_on_raw_rows_not_soa_membership() {
+        let ops = live_code(include_str!("editor_ops.rs"));
+        let body = only_body(&ops, "pub fn read_attrs(id: &str) -> Option<SlotAttrs>");
+        let raw_gate = "!rows.contains_key(id)";
+        assert!(
+            body.contains(raw_gate),
+            "T-744: Option must gate on raw membership; body was:\n{body}"
+        );
+        assert!(
+            !body.contains("soa.ids.iter().position(|s| s == id)?"),
+            "T-744: SoA position must not be the Option gate (that made hide look like undo-away)"
+        );
+        assert!(
+            body.contains("core.materialize()"),
+            "T-744: SoA fields still come from materialize() when the slot is visible"
+        );
+        assert!(
+            body.contains("slot_attrs_from_raw(&rows, id)"),
+            "T-744: hidden-but-present slots must fall back to raw field values, not invent zeros"
+        );
+        // delete-prod control: remove the raw gate from a forged production body → needle gone →
+        // the positive assert above would RED. (This forged copy is never compiled; it proves the
+        // pin is load-bearing on the production token, not on a comment or this test's own source.)
+        let forged = body.replacen(raw_gate, "false /* delete-prod */", 1);
+        assert!(
+            !forged.contains(raw_gate),
+            "delete-prod control: stripping the raw gate must remove the existence needle"
+        );
+    }
+
+    /// The modal's `None` arm still closes — but only for true absence. Esc alone must not green
+    /// this pin: require the `read_attrs` match and **two** `close_attributes()` call sites in the
+    /// host (Esc listener + None arm). `live_code` blanks comments; `live_source` keeps call paths.
+    #[test]
+    fn attributes_modal_none_arm_still_closes_on_true_absence() {
+        let code = live_code(include_str!("attributes.rs"));
+        let host = only_body(&code, "pub fn AttributesModal(");
+        assert!(
+            host.contains("read_attrs(&id)"),
+            "AttributesModal must ask read_attrs for existence; body was:
+{host}"
+        );
+        assert!(
+            host.matches("close_attributes()").count() >= 2,
+            "Esc path AND the None/undo-away arm must both call close_attributes; found {} in:
+{host}",
+            host.matches("close_attributes()").count()
+        );
+        let src = live_source(include_str!("attributes.rs"));
+        let host_src = only_body(&src, "pub fn AttributesModal(");
+        assert!(
+            host_src.contains("read_attrs(&id)")
+                && host_src.matches("close_attributes()").count() >= 2,
+            "live_source pin: read_attrs + dual close_attributes must remain real call sites"
+        );
     }
 
     /// The write path: both new fields land through `update_slot_object`, and `update_slot`'s three

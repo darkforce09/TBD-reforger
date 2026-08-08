@@ -1273,41 +1273,89 @@ pub(crate) fn keep_z_rows(
 /// T-082 — the SoA supplies the transform/identity columns; the raw row (`raw_slot_rows`) supplies
 /// `assetId` and `description`, which the SoA does not carry. See [`SlotAttrs`] for why that split
 /// is the ticket rather than an implementation detail.
+///
+/// **T-744 (wave-113 F-2)** — existence is RAW membership, not SoA membership.
+/// `MissionDocCore::materialize()` drops T-665 layer-hidden and T-701 `editorHidden` slots before
+/// any column is pushed. Gating `Option` on `soa.ids.iter().position(…)?` made Hide close the
+/// Attributes modal through the same `None` → `close_attributes()` path as "slot was undone away".
+/// Transform/identity columns still prefer the SoA when the slot is visible; when materialize has
+/// filtered it, those columns fall back to the raw row so the open modal keeps real field values
+/// (a zeroed fallback would corrupt the next Transform commit).
 pub fn read_attrs(id: &str) -> Option<SlotAttrs> {
     OPS_CTX.with(|c| {
         let guard = c.borrow();
         let ctx = guard.as_ref()?;
         let d = ctx.doc.borrow();
         let core = d.as_ref()?;
-        let soa = core.materialize();
-        let row = soa.ids.iter().position(|s| s == id)?;
         let rows = raw_slot_rows(core);
-        let dict = |idx: u32, dict: &[String]| {
-            if idx == NONE_IDX {
-                String::new()
-            } else {
-                dict.get(idx as usize).cloned().unwrap_or_default()
-            }
-        };
-        let stance = match soa.stance.get(row).copied().unwrap_or(0) {
-            map_engine_core::doc::STANCE_CROUCH => "crouch",
-            map_engine_core::doc::STANCE_PRONE => "prone",
-            _ => "stand",
-        };
-        Some(SlotAttrs {
-            id: id.to_string(),
-            x: f64::from(soa.xs[row]),
-            y: f64::from(soa.ys[row]),
-            z: f64::from(soa.zs[row]),
-            rotation: f64::from(soa.rotations[row]),
-            stance: stance.to_string(),
-            role: dict(soa.role_idx[row], &soa.roles),
-            tag: dict(soa.tag_idx[row], &soa.tags),
-            squad: dict(soa.squad_idx[row], &soa.squads),
-            asset_id: row_str(&rows, id, "assetId"),
-            description: row_str(&rows, id, "description"),
-        })
+        // T-744 — Option gate is RAW existence. Hide must not look like undo-away.
+        if !rows.contains_key(id) {
+            return None;
+        }
+        let soa = core.materialize();
+        if let Some(row) = soa.ids.iter().position(|s| s == id) {
+            let dict = |idx: u32, dict: &[String]| {
+                if idx == NONE_IDX {
+                    String::new()
+                } else {
+                    dict.get(idx as usize).cloned().unwrap_or_default()
+                }
+            };
+            let stance = match soa.stance.get(row).copied().unwrap_or(0) {
+                map_engine_core::doc::STANCE_CROUCH => "crouch",
+                map_engine_core::doc::STANCE_PRONE => "prone",
+                _ => "stand",
+            };
+            Some(SlotAttrs {
+                id: id.to_string(),
+                x: f64::from(soa.xs[row]),
+                y: f64::from(soa.ys[row]),
+                z: f64::from(soa.zs[row]),
+                rotation: f64::from(soa.rotations[row]),
+                stance: stance.to_string(),
+                role: dict(soa.role_idx[row], &soa.roles),
+                tag: dict(soa.tag_idx[row], &soa.tags),
+                squad: dict(soa.squad_idx[row], &soa.squads),
+                asset_id: row_str(&rows, id, "assetId"),
+                description: row_str(&rows, id, "description"),
+            })
+        } else {
+            // Hidden (layer or editorHidden) but still in the doc — keep the modal open.
+            Some(slot_attrs_from_raw(&rows, id))
+        }
     })
+}
+
+/// T-744 — Attributes snapshot from a raw `slots_json` row. Used when `materialize()` has filtered
+/// the slot (hide) so the modal can stay open without inventing zeros for Transform fields.
+fn slot_attrs_from_raw(rows: &serde_json::Map<String, serde_json::Value>, id: &str) -> SlotAttrs {
+    let pos = rows.get(id).and_then(|r| r.get("position"));
+    let num = |key: &str| -> f64 {
+        pos.and_then(|p| p.get(key))
+            .and_then(|v| v.as_f64().or_else(|| v.as_i64().map(|i| i as f64)))
+            .unwrap_or(0.0)
+    };
+    // Prefer the exact-z helper (finite filter) so a malformed z does not display as NaN-coerced 0.
+    let z = slot_z(rows, id).unwrap_or_else(|| num("z"));
+    let stance_raw = row_str(rows, id, "stance");
+    let stance = match stance_raw.as_str() {
+        "crouch" => "crouch",
+        "prone" => "prone",
+        _ => "stand",
+    };
+    SlotAttrs {
+        id: id.to_string(),
+        x: num("x"),
+        y: num("y"),
+        z,
+        rotation: num("rotation"),
+        stance: stance.to_string(),
+        role: row_str(rows, id, "role"),
+        tag: row_str(rows, id, "tag"),
+        squad: row_str(rows, id, "squadId"),
+        asset_id: row_str(rows, id, "assetId"),
+        description: row_str(rows, id, "description"),
+    }
 }
 
 /// T-082 (wave-102 F-7) — how many of `ids` are transform-locked.
