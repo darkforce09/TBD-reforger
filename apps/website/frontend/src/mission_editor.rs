@@ -1753,6 +1753,115 @@ fn ConnectionsPanelOverlay(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> imp
     }
 }
 
+/* ═════════════ T-754 — what the click-to-select router RESOLVES, as a pure question ═════════════
+ *
+ * T-655 shipped ONE click-to-select router (`validation_panel::register_select_by_id`, registered
+ * from this file's wasm mount). Two surfaces now draw a click affordance on top of it — the
+ * validation panel's finding rows and T-688's aggregated settings rows — and the wave-115 verifier
+ * found the defect that follows from the router's resolution living INSIDE the closure: a surface
+ * cannot ask "would this click select anything?", so it guesses "the row names an id, so yes", and
+ * every zone-owned row wore `cursor-pointer` over a click that could only produce a toast.
+ *
+ * So the resolution is lifted OUT of the closure into [`route_target`] — pure, `serde_json`-only,
+ * natively compiled, and therefore both TESTABLE and ASKABLE. The registered closure is the only
+ * ACTOR (it still owns the `!Send` doc/selection/engine `Rc`s); a view that wants to know whether a
+ * click has a target asks the same function the click will ask. That is what makes "a row is
+ * clickable iff the router resolves its subject" a correspondence rather than a hope.
+ *
+ * The ZONE arm is the T-754 widening. A zone is in neither the slot SoA nor `vehiclesById` — its
+ * selection is the Zones panel's own `RwSignal` (`eden_dock_right::route_select_zone`, the seam that
+ * panel now exposes for exactly this) — so before this the router returned `false` for 100% of the
+ * aggregation's entity rows.
+ */
+
+/// What [`route_target`] resolved a subject id to — i.e. WHICH selection surface owns it.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) enum RouteTarget {
+    /// A slot: the caller's SoA predicate matched. The position comes from the SoA row (the caller
+    /// already has it), so no coordinates ride this arm.
+    Slot,
+    /// A `vehiclesById` row, at its authored `position`.
+    Vehicle { x: f64, y: f64 },
+    /// T-754 — a `zonesById` row, at its geometric centre. Selected in the Zones panel, not in the
+    /// slot selection (a zone id in `select_tool`'s selection would read `SEL 1` with nothing
+    /// highlighted — see `eden_dock_right`'s `zone_selected`).
+    Zone { x: f64, y: f64 },
+}
+
+/// **Where a `subject_id` would go if it were clicked**, over the document's `small_maps_json()`
+/// root plus `is_slot` (slot ids live in the SoA, which is not in that root, so the one fact this
+/// function cannot read is supplied by the caller).
+///
+/// `None` means NOTHING would be selected — a stale id whose entity was deleted, or a kind no
+/// selection surface owns. A view MUST NOT paint a click affordance on a row this returns `None`
+/// for; that is the T-754 defect, stated as a rule.
+///
+/// Order is slot → vehicle → zone, the order the shipped router already tried, so the widening
+/// cannot change what an existing id resolves to.
+pub(crate) fn route_target(
+    root: &serde_json::Value,
+    subject_id: &str,
+    is_slot: &dyn Fn(&str) -> bool,
+) -> Option<RouteTarget> {
+    if is_slot(subject_id) {
+        return Some(RouteTarget::Slot);
+    }
+    if let Some(p) = root
+        .get("vehiclesById")
+        .and_then(|m| m.get(subject_id))
+        .and_then(|v| v.get("position"))
+    {
+        if let (Some(x), Some(y)) = (
+            p.get("x").and_then(serde_json::Value::as_f64),
+            p.get("y").and_then(serde_json::Value::as_f64),
+        ) {
+            return Some(RouteTarget::Vehicle { x, y });
+        }
+    }
+    if let Some(zone) = root.get("zonesById").and_then(|m| m.get(subject_id)) {
+        if let Some((x, y)) = zone_centre(zone) {
+            return Some(RouteTarget::Zone { x, y });
+        }
+    }
+    None
+}
+
+/// A zone's geometric centre in world metres — a circle's centre, or a polygon's vertex mean.
+/// `None` for a shapeless row (a draw that was never committed), which is exactly the row a click
+/// cannot centre on and therefore must not advertise.
+///
+/// The shape vocabulary is the document's, read the same way `editor_ops::zone_rows` reads it:
+/// `shape.circle {x, z, r}` / `shape.polygon [[x, z], …]`, where **the map's world `y` IS that `z`**
+/// (`eden_zones::circle_from_clicks`' note). Read here off the JSON rather than through `ZoneRow`
+/// because `editor_ops` is a wasm32-only module and this must run on the native test shell.
+fn zone_centre(zone: &serde_json::Value) -> Option<(f64, f64)> {
+    let shape = zone.get("shape")?;
+    if let Some(c) = shape.get("circle") {
+        if let (Some(x), Some(z)) = (
+            c.get("x").and_then(serde_json::Value::as_f64),
+            c.get("z").and_then(serde_json::Value::as_f64),
+        ) {
+            return Some((x, z));
+        }
+    }
+    let ring = shape.get("polygon")?.as_array()?;
+    let verts: Vec<(f64, f64)> = ring
+        .iter()
+        .filter_map(|p| {
+            let a = p.as_array()?;
+            Some((a.first()?.as_f64()?, a.get(1)?.as_f64()?))
+        })
+        .collect();
+    if verts.is_empty() {
+        return None;
+    }
+    let n = verts.len() as f64;
+    let (sx, sz) = verts
+        .iter()
+        .fold((0.0, 0.0), |(ax, az), (x, z)| (ax + x, az + z));
+    Some((sx / n, sz / n))
+}
+
 #[component]
 pub fn MissionEditorPage() -> impl IntoView {
     let container_ref = NodeRef::<leptos::html::Div>::new();
@@ -2385,6 +2494,17 @@ pub fn MissionEditorPage() -> impl IntoView {
             // and no-ops (returns false) rather than clearing the current selection — the centroid
             // math mirrors the transform-widget pivot (slot SoA position, else the vehicle row's
             // `position`).
+            //
+            // T-754 — WIDENED TO ZONES, and the resolution moved OUT into the pure [`route_target`].
+            // Two things follow. (1) A zone id now SELECTS: not into `select_tool`'s selection (a
+            // zone is not a slot — `SEL 1` with nothing highlighted is the reason `zone_selected` is
+            // its own signal), but through `eden_dock_right::route_select_zone`, which drives the
+            // Zones panel's OWN selection signal and raises that tab. The camera still centres, so a
+            // zone click behaves like every other click-to-select. (2) Because the resolution is now
+            // a pure function, a surface can ASK whether a click has a target before drawing the
+            // affordance — which is the wave-115 MAJOR (`cursor-pointer` over a dead click) fixed at
+            // its cause rather than papered over. This is STILL THE ONE ROUTER: no second selection
+            // path was invented, the closure simply grew an arm.
             {
                 let doc = doc.clone();
                 let selection = selection.clone();
@@ -2395,38 +2515,45 @@ pub fn MissionEditorPage() -> impl IntoView {
                         let Some(core) = d.as_ref() else {
                             return false;
                         };
-                        // Resolve the id → a world position: a slot (SoA) or a vehicle
-                        // (`vehiclesById.position`). `None` ⇒ the entity is gone (a stale finding).
+                        // The one fact the small-maps root does not carry: slot-SoA membership.
                         let soa = core.materialize();
-                        let pos: Option<(f64, f64)> = soa
-                            .ids
-                            .iter()
-                            .position(|s| s == subject_id)
-                            .map(|row| (f64::from(soa.xs[row]), f64::from(soa.ys[row])))
-                            .or_else(|| {
-                                let root = serde_json::from_str::<serde_json::Value>(
-                                    &core.small_maps_json(),
-                                )
-                                .ok()?;
-                                let p =
-                                    root.get("vehiclesById")?.get(subject_id)?.get("position")?;
-                                let x = p.get("x").and_then(serde_json::Value::as_f64)?;
-                                let y = p.get("y").and_then(serde_json::Value::as_f64)?;
-                                Some((x, y))
-                            });
-                        let Some((cx, cy)) = pos else {
-                            // Stale finding — keep the current selection intact.
+                        let slot_row = soa.ids.iter().position(|s| s == subject_id);
+                        let root =
+                            serde_json::from_str::<serde_json::Value>(&core.small_maps_json())
+                                .unwrap_or(serde_json::Value::Null);
+                        // `None` ⇒ nothing to select (a stale finding, or a row this editor owns no
+                        // selection surface for). Keep the current selection intact.
+                        let Some(target) = route_target(&root, subject_id, &|_| slot_row.is_some())
+                        else {
                             return false;
                         };
                         drop(d);
-                        *selection.borrow_mut() = vec![subject_id.to_string()];
-                        let ids = selection.borrow().clone();
+                        let (cx, cy) = match target {
+                            RouteTarget::Slot => {
+                                let row = slot_row.expect("Slot arm implies the SoA matched");
+                                (f64::from(soa.xs[row]), f64::from(soa.ys[row]))
+                            }
+                            RouteTarget::Vehicle { x, y } | RouteTarget::Zone { x, y } => (x, y),
+                        };
+                        if matches!(target, RouteTarget::Zone { .. }) {
+                            // A zone is selected in the Zones panel, never in the slot selection.
+                            // If that panel is not mounted there is nothing to select, and the
+                            // router says so (false) instead of centring on a phantom selection.
+                            if !crate::eden_dock_right::route_select_zone(subject_id) {
+                                return false;
+                            }
+                        } else {
+                            *selection.borrow_mut() = vec![subject_id.to_string()];
+                            let ids = selection.borrow().clone();
+                            if let Some(e) = engine.borrow_mut().as_mut() {
+                                e.set_selection(ids);
+                            }
+                            crate::mission_history::refresh_selection();
+                        }
                         if let Some(e) = engine.borrow_mut().as_mut() {
-                            e.set_selection(ids);
                             e.set_view(cx, cy, e.zoom()); // centre on the offender (React flyTo)
                             e.on_camera_changed();
                         }
-                        crate::mission_history::refresh_selection();
                         true
                     },
                 ));
@@ -8525,6 +8652,98 @@ mod t655_validation_panel_wiring {
         assert!(
             !between.contains("debug_hud_shown.get()") && !between.contains("debug_hud.get()"),
             "T-655: validation is ALWAYS ON — the panel must not sit behind a debug flag"
+        );
+    }
+}
+
+/* ═══════ T-754 — the click-to-select router resolves ZONES, and says so before it is clicked ═════
+ *
+ * Two families, as the ticket demands: unit tests over the pure resolution (it is `serde_json`-only,
+ * so it RUNS natively — this is not a source scan pretending to be a behaviour test), and source pins
+ * for the parts that are wiring (the closure is wasm-only and holds `!Send` handles).
+ */
+#[cfg(test)]
+mod t754_router_resolves_zones {
+    use super::{route_target, RouteTarget};
+    use crate::arsenal::class_r_scrub::live_code;
+    use serde_json::json;
+
+    fn doc() -> serde_json::Value {
+        json!({
+            "vehiclesById": { "v1": { "position": { "x": 7.0, "y": 9.0 } } },
+            "zonesById": {
+                "z-circle": { "shape": { "circle": { "x": 100.0, "z": 250.0, "r": 500.0 } } },
+                "z-poly": { "shape": { "polygon": [[0.0, 0.0], [30.0, 0.0], [0.0, 30.0]] } },
+                "z-shapeless": { "type": "spawn" }
+            }
+        })
+    }
+
+    /// The resolution, arm by arm — including the ORDER, which is the shipped router's order (slot,
+    /// then vehicle, then the new zone arm), so the widening cannot change what an id already
+    /// resolved to. `None` still means "select nothing and keep the current selection".
+    #[test]
+    fn every_arm_resolves_and_the_order_is_the_shipped_one() {
+        let d = doc();
+        let no_slots = |_: &str| false;
+        assert_eq!(
+            route_target(&d, "v1", &no_slots),
+            Some(RouteTarget::Vehicle { x: 7.0, y: 9.0 })
+        );
+        assert_eq!(
+            route_target(&d, "z-circle", &no_slots),
+            Some(RouteTarget::Zone { x: 100.0, y: 250.0 })
+        );
+        assert_eq!(
+            route_target(&d, "z-poly", &no_slots),
+            Some(RouteTarget::Zone { x: 10.0, y: 10.0 })
+        );
+        assert_eq!(route_target(&d, "z-shapeless", &no_slots), None);
+        assert_eq!(route_target(&d, "nobody", &no_slots), None);
+        // A slot wins over everything else, exactly as the SoA lookup did when it ran first.
+        assert_eq!(
+            route_target(&d, "v1", &|_| true),
+            Some(RouteTarget::Slot),
+            "T-754: the slot arm must still take precedence — the widening reorders nothing"
+        );
+        // A garbage document resolves nothing rather than panicking inside a click handler.
+        assert_eq!(route_target(&json!(null), "z-circle", &no_slots), None);
+        assert_eq!(
+            route_target(
+                &json!({ "zonesById": { "z": { "shape": { "polygon": [] } } } }),
+                "z",
+                &no_slots
+            ),
+            None
+        );
+    }
+
+    /// The wiring: the ONE registered router grew a zone arm that drives the Zones panel's own
+    /// selection seam. No second router, and no zone id smuggled into `select_tool`'s selection.
+    #[test]
+    fn the_one_router_routes_zones_through_the_zones_panel() {
+        // Anchored at the page component, exactly as the T-655 module does: `cut_test_module` cuts
+        // from the FIRST `#[cfg(test)]` to EOF, and this file has one inside `registry_session` long
+        // before the mount — scrubbing from the top would leave an empty haystack every pin passes.
+        let raw = include_str!("mission_editor.rs");
+        let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
+        let ed = live_code(&raw[raw.find(anchor.as_str()).expect("the page component")..]);
+        assert_eq!(
+            ed.matches(&format!("register{}", "_select_by_id(")).count(),
+            1,
+            "T-754: there must still be exactly ONE registered click-to-select router"
+        );
+        assert!(
+            ed.contains(&format!("route{}", "_target(&root, subject_id")),
+            "T-754: the router must resolve through the pure `route_target`, so a view can ask the \
+             same question before drawing a click affordance"
+        );
+        assert!(
+            ed.contains(&format!(
+                "eden_dock_right::route{}",
+                "_select_zone(subject_id)"
+            )),
+            "T-754: a zone must be selected through the Zones panel's own selection seam"
         );
     }
 }
