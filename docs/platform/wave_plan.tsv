@@ -566,3 +566,6 @@
 142	T-778	Six register-at-mount thread_local seams have no lifecycle guard — port the wave-129 idiom	apps/website/frontend/src/ruler_tool.rs; apps/website/frontend/src/los_tool.rs; apps/website/frontend/src/world_assets/mod.rs; apps/website/frontend/src/select_tool.rs
 142	T-779	set_loadout discards the acknowledgement T-770 added	apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/arsenal.rs
 142	T-780	Connections have no line on the map, so delete is panel-only	crates/map-engine-render/src/draw_order.rs; crates/map-engine-render/src/engine.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/context_menu.rs
+143	T-743	Paste-at-original must land at the source position, not +20m	crates/map-engine-core/src/doc/store.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/eden_help.rs; docs/specs/Mission_Creator_Architecture/eden/gap_analysis.md
+143	T-777	Paste keeps its authored Z instead of landing at 0.0	apps/website/frontend/src/editor_ops.rs
+143	T-782	The editor player figure is the derived placed-slot count	apps/website/frontend/src/eden_settings.rs
