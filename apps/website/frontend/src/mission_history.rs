@@ -329,6 +329,7 @@ pub fn rebind_engine_from_doc() {
                 e.vehicles_bind(&doc.vehicle_xy_flat());
                 let (mxy, mtints) = marker_lane_xy_tints(doc);
                 e.markers_bind(&mxy, &mtints);
+                e.comments_bind(&comment_lane_xy(doc));
             }
         }
         refresh_signals(ctx, soa.ids.len());
@@ -389,6 +390,7 @@ fn after_doc_change(ctx: &HistoryCtx) {
             e.vehicles_bind(&doc.vehicle_xy_flat());
             let (mxy, mtints) = marker_lane_xy_tints(doc);
             e.markers_bind(&mxy, &mtints);
+            e.comments_bind(&comment_lane_xy(doc));
         }
     }
     ctx.doc_ver.set(ctx.doc_ver.get().saturating_add(1));
@@ -425,6 +427,38 @@ fn after_doc_change(ctx: &HistoryCtx) {
 /// plus packed RGBA8 side tints. Reads `briefing_marker_rows_json` (the only schema-legal marker
 /// surface). Kept here so undo/redo/restore share one feed with place/edit — a lane bound only
 /// from authoring call sites would go stale exactly the way the ticket forbids.
+/// T-748 — flat comment-lane `xy` for [`RenderEngine::comments_bind`]: interleaved world
+/// `[x,z,…]` from `comments_json` (`commentsById`). Sorted by id so undo/redo/restore share one
+/// stable feed with place/edit — a lane bound only from authoring call sites would go stale the
+/// same way T-760 forbids for markers.
+fn comment_lane_xy(doc: &MissionDocCore) -> Vec<f32> {
+    let Ok(map) = serde_json::from_str::<serde_json::Value>(&doc.comments_json()) else {
+        return Vec::new();
+    };
+    let Some(obj) = map.as_object() else {
+        return Vec::new();
+    };
+    let mut rows: Vec<_> = obj.iter().collect();
+    rows.sort_by(|a, b| a.0.cmp(b.0));
+    let mut xy = Vec::with_capacity(rows.len() * 2);
+    for (_, v) in rows {
+        let pos = |k: &str| {
+            v.get("position")
+                .and_then(|p| p.get(k))
+                .and_then(serde_json::Value::as_f64)
+                .unwrap_or(0.0)
+        };
+        let x = pos("x");
+        let z = pos("z");
+        #[allow(clippy::cast_possible_truncation)]
+        {
+            xy.push(x as f32);
+            xy.push(z as f32);
+        }
+    }
+    xy
+}
+
 fn marker_lane_xy_tints(doc: &MissionDocCore) -> (Vec<f32>, Vec<u8>) {
     let Ok(rows) = serde_json::from_str::<serde_json::Value>(&doc.briefing_marker_rows_json())
     else {

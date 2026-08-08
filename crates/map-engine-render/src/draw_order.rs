@@ -64,6 +64,10 @@ pub enum LaneRole {
     /// T-760 — briefing marker glyphs (above zone rings, below squad links + slots so a marker
     /// never occludes a unit). Slot-atlas discs; not on the pick/SoA bridge.
     MissionMarkers,
+    /// T-748 — editor-only comment glyphs (above briefing markers, below squad links + slots so a
+    /// note never occludes a unit). Slot-atlas rings; not on the pick/SoA bridge (same hazard
+    /// T-760 documented for markers — comments must not ride `slots_bind_soa`).
+    MissionComments,
     /// T-180.4 — squad leader→member hairline links (under slot rings).
     SquadLinks,
     /// T-180.8 — mission vehicle discs (under slot rings; pick-safe, separate from Slots).
@@ -120,14 +124,15 @@ pub fn lane_order(role: LaneRole) -> u8 {
         LaneRole::Grid => 22,
         LaneRole::MissionZones => 23,
         LaneRole::MissionMarkers => 24,
-        LaneRole::SquadLinks => 25,
-        LaneRole::MissionVehicles => 26,
-        LaneRole::Slots => 27,
-        LaneRole::SlotPlacePreview => 28,
-        LaneRole::SlotDrag => 29,
-        LaneRole::Clusters => 30,
-        LaneRole::Marquee => 31,
-        LaneRole::MarqueeOutline => 32,
+        LaneRole::MissionComments => 25,
+        LaneRole::SquadLinks => 26,
+        LaneRole::MissionVehicles => 27,
+        LaneRole::Slots => 28,
+        LaneRole::SlotPlacePreview => 29,
+        LaneRole::SlotDrag => 30,
+        LaneRole::Clusters => 31,
+        LaneRole::Marquee => 32,
+        LaneRole::MarqueeOutline => 33,
     }
 }
 
@@ -136,7 +141,7 @@ pub fn lane_order(role: LaneRole) -> u8 {
 /// tag-set assertion then fails until the variant is listed here too. Tests that must consider
 /// *every* lane (e.g. `marquee_lanes_are_topmost_fill_then_border`) derive from this rather than
 /// a hand-kept copy — a hand-kept copy silently stops examining each new lane.
-pub const ALL_LANES: [LaneRole; 33] = [
+pub const ALL_LANES: [LaneRole; 34] = [
     LaneRole::Stress,
     LaneRole::Calibration,
     LaneRole::Satellite,
@@ -162,6 +167,7 @@ pub const ALL_LANES: [LaneRole; 33] = [
     LaneRole::Grid,
     LaneRole::MissionZones,
     LaneRole::MissionMarkers,
+    LaneRole::MissionComments,
     LaneRole::SquadLinks,
     LaneRole::MissionVehicles,
     LaneRole::Slots,
@@ -294,6 +300,7 @@ pub fn lane_role_to_u32(role: LaneRole) -> Option<u32> {
         | LaneRole::Viewshed
         | LaneRole::Grid
         | LaneRole::MissionMarkers
+        | LaneRole::MissionComments
         | LaneRole::MissionVehicles
         | LaneRole::Slots
         | LaneRole::SlotPlacePreview
@@ -579,19 +586,20 @@ mod lane_order_pins {
                 L::Grid => 22,
                 L::MissionZones => 23,
                 L::MissionMarkers => 24,
-                L::SquadLinks => 25,
-                L::MissionVehicles => 26,
-                L::Slots => 27,
-                L::SlotPlacePreview => 28,
-                L::SlotDrag => 29,
-                L::Clusters => 30,
-                L::Marquee => 31,
-                L::MarqueeOutline => 32,
+                L::MissionComments => 25,
+                L::SquadLinks => 26,
+                L::MissionVehicles => 27,
+                L::Slots => 28,
+                L::SlotPlacePreview => 29,
+                L::SlotDrag => 30,
+                L::Clusters => 31,
+                L::Marquee => 32,
+                L::MarqueeOutline => 33,
             }
         }
         let mut tags: Vec<u8> = ALL_LANES.into_iter().map(tag).collect();
         tags.sort_unstable();
-        let expected: Vec<u8> = (0..33).collect();
+        let expected: Vec<u8> = (0..34).collect();
         assert_eq!(
             tags, expected,
             "ALL_LANES must list every variant exactly once"
@@ -626,6 +634,7 @@ mod lane_order_pins {
     fn mission_zones_sit_between_grid_and_squad_links() {
         assert!(lane_order(L::MissionZones) > lane_order(L::Grid));
         assert!(lane_order(L::MissionZones) < lane_order(L::MissionMarkers));
+        assert!(lane_order(L::MissionZones) < lane_order(L::MissionComments));
         assert!(lane_order(L::MissionZones) < lane_order(L::SquadLinks));
         assert!(lane_order(L::MissionZones) < lane_order(L::MissionVehicles));
         assert!(lane_order(L::MissionZones) < lane_order(L::Slots));
@@ -636,9 +645,20 @@ mod lane_order_pins {
     #[test]
     fn mission_markers_sit_between_zones_and_squad_links() {
         assert!(lane_order(L::MissionMarkers) > lane_order(L::MissionZones));
+        assert!(lane_order(L::MissionMarkers) < lane_order(L::MissionComments));
         assert!(lane_order(L::MissionMarkers) < lane_order(L::SquadLinks));
         assert!(lane_order(L::MissionMarkers) < lane_order(L::MissionVehicles));
         assert!(lane_order(L::MissionMarkers) < lane_order(L::Slots));
+    }
+
+    /// T-748: editor comment glyphs above briefing markers, below squad links + slots.
+    #[test]
+    fn mission_comments_sit_between_markers_and_squad_links() {
+        assert!(lane_order(L::MissionComments) > lane_order(L::MissionMarkers));
+        assert!(lane_order(L::MissionComments) > lane_order(L::MissionZones));
+        assert!(lane_order(L::MissionComments) < lane_order(L::SquadLinks));
+        assert!(lane_order(L::MissionComments) < lane_order(L::MissionVehicles));
+        assert!(lane_order(L::MissionComments) < lane_order(L::Slots));
     }
 
     #[test]
@@ -684,5 +704,119 @@ mod lane_order_pins {
         assert!(lane_order(L::SlotPlacePreview) > lane_order(L::Slots));
         assert!(lane_order(L::SlotPlacePreview) < lane_order(L::SlotDrag));
         assert!(lane_order(L::SlotPlacePreview) < lane_order(L::Marquee));
+    }
+}
+
+/// T-748 — `mission_history` is wasm32-only, so its feed cannot host a native Class-R pin here
+/// as a same-crate module. Pin both live call sites via `include_str!` so deleting either
+/// `comments_bind` feed turns RED (lane-order pins never examine the feeder).
+#[cfg(test)]
+mod t748_comments_bind_feed {
+    const HIST: &str = include_str!("../../../apps/website/frontend/src/mission_history.rs");
+
+    fn only_body(src: &str, sig: &str) -> String {
+        let start = src
+            .find(sig)
+            .unwrap_or_else(|| panic!("missing signature: {sig}"));
+        let after = &src[start..];
+        let brace = after.find('{').expect("missing body");
+        let mut depth = 0usize;
+        let mut end = brace;
+        for (i, ch) in after[brace..].char_indices() {
+            match ch {
+                '{' => depth += 1,
+                '}' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        end = brace + i + 1;
+                        break;
+                    }
+                }
+                _ => {}
+            }
+        }
+        after[..end].to_string()
+    }
+
+    fn comments_bind_needle() -> String {
+        format!("{}{}", "comments", "_bind")
+    }
+
+    fn comment_lane_xy_needle() -> String {
+        format!("{}{}", "comment_lane_", "xy")
+    }
+
+    #[test]
+    fn rebind_and_after_doc_change_both_feed_comments_bind() {
+        let rebind = only_body(HIST, "pub fn rebind_engine_from_doc");
+        let after = only_body(HIST, "fn after_doc_change");
+        let bind = comments_bind_needle();
+        let pack = comment_lane_xy_needle();
+        assert!(
+            rebind.contains(&bind),
+            "T-748: rebind_engine_from_doc must call comments_bind; body:\n{rebind}"
+        );
+        assert!(
+            rebind.contains(&pack),
+            "T-748: rebind_engine_from_doc must pack via comment_lane_xy; body:\n{rebind}"
+        );
+        assert!(
+            after.contains(&bind),
+            "T-748: after_doc_change must call comments_bind; body:\n{after}"
+        );
+        assert!(
+            after.contains(&pack),
+            "T-748: after_doc_change must pack via comment_lane_xy; body:\n{after}"
+        );
+    }
+}
+
+/// T-748 — `engine.rs` is wasm32-gated, so its body cannot host a native Class-R pin.
+/// Source-inspect `comments_bind` here: must upload `MissionComments` and must not touch
+/// the pick bridge (`last_ids` / `slots_bind_soa`).
+#[cfg(test)]
+mod t748_comments_bind_pick_bridge {
+    const ENGINE: &str = include_str!("engine.rs");
+
+    fn comments_bind_body() -> String {
+        let sig = "pub fn comments_bind";
+        let start = ENGINE
+            .find(sig)
+            .unwrap_or_else(|| panic!("T-748: missing {sig}"));
+        let after = &ENGINE[start..];
+        let brace = after.find('{').expect("comments_bind body");
+        let mut depth = 0usize;
+        let mut end = brace;
+        for (i, ch) in after[brace..].char_indices() {
+            match ch {
+                '{' => depth += 1,
+                '}' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        end = brace + i + 1;
+                        break;
+                    }
+                }
+                _ => {}
+            }
+        }
+        after[..end].to_string()
+    }
+
+    #[test]
+    fn comments_bind_body_does_not_touch_last_ids() {
+        let body = comments_bind_body();
+        assert!(
+            !body.contains("last_ids"),
+            "T-748: comments_bind must not touch pick-bridge last_ids; body:\n{body}"
+        );
+        assert!(
+            body.contains("MissionComments"),
+            "T-748: comments_bind must upload LaneRole::MissionComments; body:\n{body}"
+        );
+        assert!(
+            !body.contains("slots_bind_soa"),
+            "T-748: comments_bind must not call slots_bind_soa; body:\n{body}"
+        );
     }
 }
