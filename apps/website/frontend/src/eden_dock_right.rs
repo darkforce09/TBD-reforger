@@ -1904,15 +1904,13 @@ fn composition_row_view(
     // Handlers, each cloning the id they need (Leptos closures are `move`).
     let arm_id = id.clone();
     let edit_open_id = id.clone();
-    let (title_id, cat_id, del_id, save_id) = (id.clone(), id.clone(), id.clone(), id.clone());
+    let (del_id, save_id) = (id.clone(), id.clone());
 
     view! {
         <li>
             {move || {
                 if is_editing() {
-                    let (title_id, cat_id, save_id, edit_title, edit_category, edit_author) = (
-                        title_id.clone(),
-                        cat_id.clone(),
+                    let (save_id, edit_title, edit_category, edit_author) = (
                         save_id.clone(),
                         edit_title,
                         edit_category,
