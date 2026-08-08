@@ -2161,6 +2161,24 @@ fn render_all_settings_body(only_diffs: RwSignal<bool>) -> AnyView {
     }
 }
 
+/// Why an inert aggregated-settings row is not a click target — the title a keyboard/AT user
+/// reads instead of tabbing onto a dead `<button>`.
+///
+/// Two shapes, neither of which hardcodes owner kinds for clickability (T-754 / T-758):
+/// * [`SettingOwner::Mission`] — the document itself; there is no entity to select.
+/// * [`SettingOwner::Entity`] — the row names an id, but [`owner_is_routable`] said the registered
+///   probe will not select it right now (unmounted panel, missing shape, …). The reason does not
+///   invent a kind list; it reports the probe's refusal.
+#[must_use]
+pub fn inert_settings_row_reason(owner: &SettingOwner) -> String {
+    match owner {
+        SettingOwner::Mission => "Mission-owned settings name no entity — they are not click                                   targets. Change the value where it is authored."
+            .to_string(),
+        SettingOwner::Entity { .. } => "Found, but not selectable from here: the editor's                                         click-to-select router resolves no selection for this                                         owner right now, so a click would do nothing. Open it                                         from its own panel."
+            .to_string(),
+    }
+}
+
 /// One aggregated row: key, owning entity, authored value, schema default — and a click that routes
 /// to the owner through T-655's shipped router.
 ///
@@ -2168,11 +2186,17 @@ fn render_all_settings_body(only_diffs: RwSignal<bool>) -> AnyView {
 /// "does the row name an id". It gates the affordance and the click TOGETHER, through
 /// [`row_cursor_class`], so the two cannot disagree; `data-selectable` reports the same boolean, so a
 /// gate can read the claim the row is making.
+///
+/// T-758 — the element shape follows the same boolean: a routable row is a focusable `<button>`; an
+/// inert row is non-focusable text (`<div aria-disabled>`) carrying [`inert_settings_row_reason`].
+/// `data-selectable=false` used to short-circuit the click while leaving a tab-stop that did
+/// nothing — the wave-115 MINOR. Peer of the left-dock search hit's button-vs-inert split.
 #[cfg(target_arch = "wasm32")]
 fn setting_row_view(row: SettingRow, toasts: crate::toast::Toasts, clickable: bool) -> AnyView {
     let state = row.diff_state();
     let subject = row.owner.subject_id().map(ToString::to_string);
     let selectable = clickable;
+    let inert_reason = inert_settings_row_reason(&row.owner);
     let owner_label = row.owner.label();
     let click_id = subject.clone().unwrap_or_default();
     let click_owner = owner_label.clone();
@@ -2193,46 +2217,74 @@ fn setting_row_view(row: SettingRow, toasts: crate::toast::Toasts, clickable: bo
         DiffState::Unknown => ("no default", "bg-surface-variant/40 text-outline"),
     };
     let cursor = row_cursor_class(selectable);
-    view! {
-        <button
-            type="button"
-            class=format!(
-                "grid w-full grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_auto] items-baseline gap-3 rounded px-2 py-1.5 text-left outline-none transition-colors {cursor}",
-            )
-            data-all-settings-row=row.key.clone()
-            data-owner-id=subject.clone().unwrap_or_default()
-            data-diff=format!("{state:?}").to_lowercase()
-            data-default-source=source.clone()
-            data-selectable=selectable.to_string()
-            title=source
-            on:click=move |_| {
-                // Constraint (2): route through T-655's SHIPPED router, never a second selection
-                // path. Only a row the router RESOLVES is clickable at all (T-754), so the toast is
-                // now the race — the entity went away between this list being built and the click —
-                // rather than the everyday outcome it used to be for every zone row.
-                if selectable && !crate::validation_panel::route_select_by_subject_id(&click_id) {
-                    toasts.message(format!("{click_owner} — {OWNER_UNRESOLVED_NOTE}"));
+    let row_class = format!(
+        "grid w-full grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_auto] items-baseline gap-3 rounded px-2 py-1.5 text-left outline-none transition-colors {cursor}",
+    );
+    let key_attr = row.key.clone();
+    let owner_id_attr = subject.clone().unwrap_or_default();
+    let diff_attr = format!("{state:?}").to_lowercase();
+    let source_attr = source.clone();
+    let cells = view! {
+        <span class="min-w-0 truncate text-label-md text-on-surface" title=row.key.clone()>
+            {key_label}
+        </span>
+        <span class="min-w-0 truncate text-label-sm text-on-surface-variant">
+            {owner_label}
+        </span>
+        <span class="min-w-0 truncate font-mono text-code-md text-on-surface">
+            {value_text}
+        </span>
+        <span class="min-w-0 truncate font-mono text-code-md text-outline">
+            {default_text}
+        </span>
+        <span class=format!("shrink-0 rounded px-1.5 py-0.5 text-label-sm {badge_class}")>
+            {badge}
+        </span>
+    };
+    // Clickable IFF click does something (T-754). The element shape is the other half of that IFF
+    // (T-758): a focusable control only when the click path is live.
+    if selectable {
+        view! {
+            <button
+                type="button"
+                class=row_class
+                data-all-settings-row=key_attr
+                data-owner-id=owner_id_attr
+                data-diff=diff_attr
+                data-default-source=source_attr
+                data-selectable="true"
+                title=source
+                on:click=move |_| {
+                    // Constraint (2): route through T-655's SHIPPED router, never a second selection
+                    // path. Only a row the router RESOLVES is clickable at all (T-754), so the toast is
+                    // now the race — the entity went away between this list being built and the click —
+                    // rather than the everyday outcome it used to be for every zone row.
+                    if !crate::validation_panel::route_select_by_subject_id(&click_id) {
+                        toasts.message(format!("{click_owner} — {OWNER_UNRESOLVED_NOTE}"));
+                    }
                 }
-            }
-        >
-            <span class="min-w-0 truncate text-label-md text-on-surface" title=row.key.clone()>
-                {key_label}
-            </span>
-            <span class="min-w-0 truncate text-label-sm text-on-surface-variant">
-                {owner_label}
-            </span>
-            <span class="min-w-0 truncate font-mono text-code-md text-on-surface">
-                {value_text}
-            </span>
-            <span class="min-w-0 truncate font-mono text-code-md text-outline">
-                {default_text}
-            </span>
-            <span class=format!("shrink-0 rounded px-1.5 py-0.5 text-label-sm {badge_class}")>
-                {badge}
-            </span>
-        </button>
+            >
+                {cells}
+            </button>
+        }
+        .into_any()
+    } else {
+        view! {
+            <div
+                class=row_class
+                data-all-settings-row=key_attr
+                data-owner-id=owner_id_attr
+                data-diff=diff_attr
+                data-default-source=source_attr
+                data-selectable="false"
+                aria-disabled="true"
+                title=inert_reason
+            >
+                {cells}
+            </div>
+        }
+        .into_any()
     }
-    .into_any()
 }
 
 // T-691 — source-scan pins for the editor-vs-document split. These search the file they live in, so
@@ -3564,6 +3616,132 @@ mod t754_click_affordance {
             n.contains("deleted"),
             "T-754: the note must name what is actually left — the owner going away underneath the \
              open list"
+        );
+    }
+}
+
+// T-758 — inert aggregated-settings rows must not be focusable dead buttons. Wave-115 MINOR-6:
+// `data-selectable=false` short-circuited the click while the element stayed a tab-stop `<button>`.
+// Shape: clickable → `<button>`; inert → non-focusable `<div aria-disabled>` with
+// [`inert_settings_row_reason`]. Clickability remains [`owner_is_routable`] →
+// `subject_id_routes` (no kind list). Needles are fragment-assembled; `live_code` blanks literals
+// and cuts test modules so a hollow comment cannot green these pins (T-759 class).
+#[cfg(test)]
+mod t758_inert_row_a11y {
+    use super::{inert_settings_row_reason, owner_is_routable, row_cursor_class, SettingOwner};
+    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::validation_panel::register_route_probe;
+
+    /// Mission-owned rows name no entity: they are never routable, wear no pointer, and carry an
+    /// explicit inert reason. Perturbation RED: make `inert_settings_row_reason(Mission)` return an
+    /// empty string, or make `owner_is_routable(Mission)` return true.
+    #[test]
+    fn a_mission_owned_row_is_inert_with_a_reason() {
+        let owner = SettingOwner::Mission;
+        register_route_probe(std::rc::Rc::new(|_: &str| true));
+        assert!(
+            !owner_is_routable(&owner),
+            "T-758: Mission has no subject_id — even a probe that resolves everything must leave \
+             it inert (there is nothing to select)"
+        );
+        assert!(
+            !row_cursor_class(owner_is_routable(&owner)).contains("cursor-pointer"),
+            "T-758: a mission-owned row must wear no pointer affordance"
+        );
+        let reason = inert_settings_row_reason(&owner);
+        assert!(
+            reason.to_lowercase().contains("no entity")
+                || reason.to_lowercase().contains("not click"),
+            "T-758: the inert reason must tell the author why the row is not a click target, got \
+             {reason:?}"
+        );
+    }
+
+    /// An entity row the probe refuses is the same inert shape as Mission — reason names the
+    /// refusal, not a hardcoded kind ban. Affordance stays glued to `subject_id_routes`.
+    #[test]
+    fn an_unroutable_entity_row_is_inert_with_a_reason() {
+        register_route_probe(std::rc::Rc::new(|_: &str| false));
+        let owner = SettingOwner::Entity {
+            kind: "Zone",
+            id: "z-circle".into(),
+            label: "Play area".into(),
+        };
+        assert!(
+            !owner_is_routable(&owner),
+            "T-758: probe refusal ⇒ not clickable"
+        );
+        let reason = inert_settings_row_reason(&owner);
+        assert!(
+            reason.to_lowercase().contains("not selectable")
+                || reason.to_lowercase().contains("resolves no"),
+            "T-758: entity inert reason must name the router refusal, got {reason:?}"
+        );
+    }
+
+    /// **THE shape pin.** `setting_row_view` must branch: a selectable row is a `<button>`; an
+    /// inert row is a non-focusable element carrying `aria-disabled` and
+    /// `inert_settings_row_reason`. Restoring the pre-T-758 "always `<button>`" shape makes this
+    /// red — that is the wave-115 MINOR.
+    ///
+    /// Literals kept (`live_source`): the claim is about the attributes/tags that ship.
+    #[test]
+    fn an_inert_row_is_not_a_focusable_button() {
+        let lit = live_source(include_str!("eden_settings.rs"));
+        let row = only_body(&lit, &format!("fn setting{}", "_row_view"));
+        assert!(
+            row.contains("if selectable") || row.contains("if clickable"),
+            "T-758: the row must BRANCH on the same boolean that owns clickability — one shape for \
+             live, one for inert"
+        );
+        assert!(
+            row.contains("<button") && row.contains("</button>"),
+            "T-758: a selectable row must still be a real button (keyboard activates the click)"
+        );
+        assert!(
+            row.contains("<div")
+                && row.contains("aria-disabled")
+                && row.contains(&format!("inert{}", "_settings_row_reason")),
+            "T-758: an inert row must be a non-focusable element carrying aria-disabled and the \
+             reason — not a tab-stop button that does nothing"
+        );
+        // The inert branch must not be a disabled-looking button: no second `<button` after the
+        // branch that would still focus. Count opening button tags inside the function — exactly
+        // one (the selectable arm).
+        let buttons = row.matches("<button").count();
+        assert_eq!(
+            buttons, 1,
+            "T-758: exactly one <button> in setting_row_view (the selectable arm); an inert \
+             <button aria-disabled> would still be a tab stop unless tabindex=-1 is also set, and \
+             this slice chose the non-focusable element shape"
+        );
+    }
+
+    /// Clickability is still the registered probe — never a kind list, never a fallback. This is
+    /// the T-754 invariant restated for the a11y slice so a "fix focus by hardcoding Mission as
+    /// inert and everything else as a button" cannot green the shape pin while reopening dead
+    /// clicks on unroutable entities.
+    #[test]
+    fn inert_shape_still_asks_subject_id_routes_not_a_kind_list() {
+        let src = live_code(include_str!("eden_settings.rs"));
+        let routable = only_body(&src, &format!("fn owner{}", "_is_routable"));
+        assert!(
+            routable.contains(&format!("subject_id{}", "_routes")),
+            "T-758: clickability must remain subject_id_routes — the shape follows that boolean, \
+             it does not replace it"
+        );
+        let body = only_body(&src, &format!("fn render{}", "_all_settings_body"));
+        assert!(
+            body.contains(&format!("owner{}", "_is_routable(")),
+            "T-758: the body must still decide clickable via owner_is_routable"
+        );
+        // NEGATIVE: no matches!(kind, …) / hardcoded selectable-kind table in the live affordance
+        // path. `SettingOwner::Mission` in inert_settings_row_reason is a REASON branch, not a
+        // clickability decision — pinned separately by asking owner_is_routable above.
+        let row = only_body(&src, &format!("fn setting{}", "_row_view"));
+        assert!(
+            !row.contains("matches!") && !row.contains("DocKind::"),
+            "T-758: setting_row_view must not hardcode kind lists for the element shape"
         );
     }
 }
