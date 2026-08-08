@@ -1036,6 +1036,22 @@ fn rule_group_view(group: RuleGroup) -> AnyView {
     .into_any()
 }
 
+/// Why an inert finding row is not a click target — peer of [`crate::eden_settings::inert_settings_row_reason`].
+/// Positional findings name nobody; named subjects the probe refuses would be dead clicks.
+#[must_use]
+fn inert_finding_row_reason(f: &PanelFinding) -> String {
+    match f.subject_id.as_deref() {
+        None | Some("") => {
+            "This finding names no selectable subject — there is nothing for click-to-select to              pin."
+                .to_string()
+        }
+        Some(_) => {
+            "Found, but not selectable from here: the editor's click-to-select router resolves no              selection for this subject right now, so a click would do nothing."
+                .to_string()
+        }
+    }
+}
+
 /// One finding row — CLICK-TO-SELECT. Clicking routes `subject_id` → the editor selection so the
 /// offender is pinned on the map + in the trees (NOT a clipboard dump — the ticket's explicit call).
 ///
@@ -1045,6 +1061,10 @@ fn rule_group_view(group: RuleGroup) -> AnyView {
 /// nothing for — a positional/cardinality finding, a stale id, a subject kind no selection surface
 /// owns — renders INERT rather than wearing a pointer over a dead click. `data-selectable` reports
 /// the same boolean, so a gate can read the claim the row is making.
+///
+/// Wave 132 F3 / T-758 peer — element shape follows the same boolean: routable → focusable
+/// `<button>`; inert → non-focusable `<div aria-disabled>` carrying [`inert_finding_row_reason`].
+/// `data-selectable=false` alone used to short-circuit the click while leaving a tab-stop.
 fn finding_row_view(f: PanelFinding) -> AnyView {
     let selectable = finding_is_routable(&f);
     // The selection key the click routes on (moved into the on:click closure).
@@ -1055,30 +1075,48 @@ fn finding_row_view(f: PanelFinding) -> AnyView {
     let message = f.message.clone();
     let subject_body = f.subject.clone();
     let cursor = row_cursor_class(selectable);
-    view! {
-        <button
-            type="button"
-            class=format!(
-                "flex w-full flex-col gap-0.5 rounded px-2 py-1 text-left outline-none transition-colors {cursor}",
-            )
-            data-validation-finding=subject_attr
-            data-subject-id=subject_id_attr
-            data-selectable=selectable.to_string()
-            on:click=move |_| {
-                // Route only for a row the ROUTER resolved — the same boolean the styling used, so a
-                // click cannot happen where no affordance was drawn (or vice versa). The wasm-only op
-                // is a no-op on the host; the guard keeps an unresolvable click from clearing the
-                // selection.
-                if selectable {
+    let inert_reason = inert_finding_row_reason(&f);
+    let row_class = format!(
+        "flex w-full flex-col gap-0.5 rounded px-2 py-1 text-left outline-none transition-colors {cursor}",
+    );
+    let cells = view! {
+        <span class="text-label-md leading-snug text-on-surface">{message}</span>
+        <span class="text-label-sm text-outline">{subject_body}</span>
+    };
+    if selectable {
+        view! {
+            <button
+                type="button"
+                class=row_class
+                data-validation-finding=subject_attr
+                data-subject-id=subject_id_attr
+                data-selectable="true"
+                on:click=move |_| {
+                    // Route only for a row the ROUTER resolved — the same boolean the styling used,
+                    // so a click cannot happen where no affordance was drawn (or vice versa). The
+                    // wasm-only op is a no-op on the host.
                     select_finding_subject(&click_id);
                 }
-            }
-        >
-            <span class="text-label-md leading-snug text-on-surface">{message}</span>
-            <span class="text-label-sm text-outline">{subject_body}</span>
-        </button>
+            >
+                {cells}
+            </button>
+        }
+        .into_any()
+    } else {
+        view! {
+            <div
+                class=row_class
+                data-validation-finding=subject_attr
+                data-subject-id=subject_id_attr
+                data-selectable="false"
+                aria-disabled="true"
+                title=inert_reason
+            >
+                {cells}
+            </div>
+        }
+        .into_any()
     }
-    .into_any()
 }
 
 /// The severity ladder legend — Error / Warning / Info with each rung's meaning (the ticket's
@@ -1721,6 +1759,119 @@ mod w129_the_panel_asks_the_router {
         assert!(
             !row_lit.contains(&format!("cursor{}", "-pointer")),
             "wave 129: the row must not hand-roll the affordance beside the function that owns it"
+        );
+    }
+}
+
+// Wave 132 F3 — inert validation finding rows must not be focusable dead buttons. Peer of T-758
+// (`eden_settings::t758_inert_row_a11y`): clickable → `<button>`; inert → non-focusable
+// `<div aria-disabled>` with [`inert_finding_row_reason`]. Clickability remains
+// [`finding_is_routable`] → `subject_id_routes`. Needles are fragment-assembled; `live_code` /
+// `live_source` blank literals and cut test modules so a hollow comment cannot green these pins.
+#[cfg(test)]
+mod w132_inert_finding_row_a11y {
+    use super::{
+        finding_is_routable, inert_finding_row_reason, register_route_probe, row_cursor_class,
+        PanelFinding,
+    };
+    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use map_engine_core::mission::validate::{Primitive, Severity};
+
+    fn pf(rule_id: &str, subject_id: Option<&str>) -> PanelFinding {
+        PanelFinding {
+            rule_id: rule_id.to_string(),
+            severity: Severity::Error,
+            primitive: Primitive::PerObjectInvariant,
+            message: format!("{rule_id} says no"),
+            subject: format!("/x/{}", subject_id.unwrap_or("none")),
+            subject_id: subject_id.map(str::to_string),
+        }
+    }
+
+    /// Positional / empty-id findings name nobody: inert with an explicit reason. Affordance stays
+    /// glued to [`finding_is_routable`].
+    #[test]
+    fn a_positional_finding_row_is_inert_with_a_reason() {
+        register_route_probe(std::rc::Rc::new(|_: &str| true));
+        let f = pf("V2-FACTION-MAX", None);
+        assert!(
+            !finding_is_routable(&f),
+            "wave 132: a positional finding must stay inert even under an always-true probe"
+        );
+        assert!(
+            !row_cursor_class(finding_is_routable(&f)).contains("cursor-pointer"),
+            "wave 132: an inert finding must wear no pointer affordance"
+        );
+        let reason = inert_finding_row_reason(&f);
+        assert!(
+            reason.to_lowercase().contains("no selectable")
+                || reason.to_lowercase().contains("nothing"),
+            "wave 132: inert reason must tell the author why the row is not a click target, got              {reason:?}"
+        );
+    }
+
+    /// Named subject the probe refuses — same inert shape; reason names the refusal.
+    #[test]
+    fn an_unroutable_finding_row_is_inert_with_a_reason() {
+        register_route_probe(std::rc::Rc::new(|_: &str| false));
+        let f = pf("ASSET-RESOLVES", Some("e1"));
+        assert!(
+            !finding_is_routable(&f),
+            "wave 132: probe refusal ⇒ not clickable"
+        );
+        let reason = inert_finding_row_reason(&f);
+        assert!(
+            reason.to_lowercase().contains("not selectable")
+                || reason.to_lowercase().contains("resolves no"),
+            "wave 132: entity inert reason must name the router refusal, got {reason:?}"
+        );
+    }
+
+    /// **THE shape pin.** `finding_row_view` must branch: selectable → `<button>`; inert →
+    /// non-focusable element with `aria-disabled` + `inert_finding_row_reason`. Restoring the
+    /// always-`<button>` shape makes this red (wave-115 MINOR class / T-758 peer).
+    #[test]
+    fn an_inert_finding_row_is_not_a_focusable_button() {
+        let lit = live_source(include_str!("validation_panel.rs"));
+        let row = only_body(&lit, &format!("fn finding{}", "_row_view"));
+        assert!(
+            row.contains("if selectable"),
+            "wave 132: the row must BRANCH on the same boolean that owns clickability"
+        );
+        assert!(
+            row.contains("<button") && row.contains("</button>"),
+            "wave 132: a selectable finding must still be a real button"
+        );
+        assert!(
+            row.contains("<div")
+                && row.contains("aria-disabled")
+                && row.contains(&format!("inert{}", "_finding_row_reason")),
+            "wave 132: an inert finding must be a non-focusable element carrying aria-disabled and              the reason — not a tab-stop button that does nothing"
+        );
+        assert_eq!(
+            row.matches("<button").count(),
+            1,
+            "wave 132: exactly one <button> in finding_row_view (the selectable arm)"
+        );
+    }
+
+    /// Clickability remains the registered probe — shape follows that boolean, does not replace it.
+    #[test]
+    fn inert_finding_shape_still_asks_subject_id_routes() {
+        let src = live_code(include_str!("validation_panel.rs"));
+        let routable = only_body(&src, &format!("fn finding{}", "_is_routable"));
+        assert!(
+            routable.contains(&format!("subject_id{}", "_routes")),
+            "wave 132: clickability must remain subject_id_routes"
+        );
+        let row = only_body(&src, &format!("fn finding{}", "_row_view"));
+        assert!(
+            row.contains(&format!("finding{}", "_is_routable(")),
+            "wave 132: finding_row_view must still decide clickable via finding_is_routable"
+        );
+        assert!(
+            !row.contains("matches!") && !row.contains("DocKind::"),
+            "wave 132: finding_row_view must not hardcode kind lists for the element shape"
         );
     }
 }
