@@ -1659,6 +1659,32 @@ mod tests {
 
     const SRC: &str = include_str!("eden_dock_left.rs");
 
+    /// T-759 — **the haystack a POSITIVE source pin is allowed to read.** `SRC` is the WHOLE file,
+    /// test module included, so `SRC.contains("parse_locations_json")` is satisfied by the very
+    /// assertion that spells it: delete the production code and the pin stays green. Every positive
+    /// needle below therefore reads the file's PRODUCTION half through `class_r_scrub`, the same
+    /// scrubber the `t697_document_search` module three tests down already uses on this same file —
+    /// its first pass cuts everything from the first `#[cfg(test)]` onward, so a needle written in a
+    /// test can no longer satisfy itself. It also drops comments, which mattered here: this file
+    /// *names* `parse_locations_json`, `camera_snapshot` and the locations URL in its section header
+    /// prose, so three of these pins were green off the commentary alone.
+    ///
+    /// This form keeps string literals — a `data-testid` or a URL is code that ships, and pinning
+    /// one is not the defect that pinning a comment is.
+    ///
+    /// The NEGATIVE needle in `the_index_and_the_fly_to_reuse_the_shipped_paths` deliberately stays
+    /// on raw `SRC`: for "this must NOT appear", the widest unscrubbed haystack is the strongest
+    /// one, and scrubbing could only ever hide a hit.
+    fn live_src() -> String {
+        crate::arsenal::class_r_scrub::live_source(SRC)
+    }
+
+    /// The same production half with string/char literals blanked as well — for needles that mean
+    /// "this is real CODE", where the same text sitting in a literal is precisely the decoy.
+    fn live_rust() -> String {
+        crate::arsenal::class_r_scrub::live_code(SRC)
+    }
+
     fn place(name: &str, x: f64, y: f64) -> NamedPlace {
         NamedPlace {
             name: name.to_string(),
@@ -1855,10 +1881,16 @@ mod tests {
     #[test]
     fn the_dock_has_two_tabs_and_defaults_to_layers() {
         assert_ne!(LeftTab::Layers, LeftTab::Places);
+        // T-759: the default is CODE, so it is read from the literal-blanked production half —
+        // the same sentence quoted in a doc comment or a string cannot stand in for it.
+        let code = live_rust();
         assert!(
-            SRC.contains("let tab = RwSignal::new(LeftTab::Layers)"),
+            code.contains("let tab = RwSignal::new(LeftTab::Layers)"),
             "the dock must still open on the Editor Layers tree"
         );
+        // T-759: the testids are string literals that SHIP, so literals are kept — but the test
+        // module is cut, so this list cannot be its own evidence.
+        let src = live_src();
         for needle in [
             "dock-left-tab-layers",
             "dock-left-tab-places",
@@ -1869,7 +1901,7 @@ mod tests {
             "dock-left-location-list",
             "dock-left-places-filter",
         ] {
-            assert!(SRC.contains(needle), "missing driveable testid {needle}");
+            assert!(src.contains(needle), "missing driveable testid {needle}");
         }
     }
 
@@ -1878,26 +1910,36 @@ mod tests {
     /// rides the SHIPPED camera path rather than a second mover.
     #[test]
     fn the_index_and_the_fly_to_reuse_the_shipped_paths() {
+        // T-759: every positive needle here reads the scrubbed PRODUCTION half. All four facts are
+        // `#[cfg(target_arch = "wasm32")]`-only, so the native compiler never sees the code they
+        // pin — a source pin is the ONLY guarantee these have, and until this ticket it was a pin
+        // that matched its own assertion (and, for three of them, this file's own prose as well).
+        let code = live_rust();
+        let src = live_src();
         assert!(
-            SRC.contains("parse_locations_json"),
+            code.contains("parse_locations_json"),
             "the index must reuse map-engine-core's locations parser, not a private one"
         );
         assert!(
-            SRC.contains("/map-assets/{terrain}/locations.json"),
+            src.contains("/map-assets/{terrain}/locations.json"),
             "the index must read the same file the town-label lane reads"
         );
         assert!(
-            SRC.contains("__editorCamSet"),
+            src.contains("__editorCamSet"),
             "fly-to must ride the installed set_view/on_camera_changed closure"
         );
-        // Split so the needle itself is not a hit (the personnel.rs `production_src` idiom).
+        // The NEGATIVE stays on the whole unscrubbed file on purpose: "there is no second mover"
+        // is only as strong as the text it searched, and scrubbing could only hide a hit. The
+        // needle is still split so this line itself is not one (the personnel.rs `production_src`
+        // idiom) — the positives above no longer need that trick, because their haystack no
+        // longer contains them.
         let second_mover = format!("{}{}", "set_view", "(");
         assert!(
             !SRC.contains(&second_mover),
             "there must be no SECOND camera mover in this dock"
         );
         assert!(
-            SRC.contains("camera_snapshot"),
+            code.contains("camera_snapshot"),
             "a new bookmark must record the LIVE camera, not a guess"
         );
     }
@@ -1929,11 +1971,10 @@ mod tests {
 /// T-637 — the left dock's density work: the search row that fills the void, and the five decoration
 /// buttons that used to sit at the bottom of it.
 ///
-/// **NOTE ON THE PIN IDIOM.** The T-696 pins in the module above `include_str!` this whole file and
-/// then `contains()` a needle that also appears in their own assertion — so deleting the production
-/// code would leave them green (filed as T-759). These pins do not do that: every source needle below
-/// is checked against the PRODUCTION half only (`split("#[cfg(test)]").next()`), so a needle written
-/// here cannot satisfy itself.
+/// **NOTE ON THE PIN IDIOM.** Every source needle below is checked against the PRODUCTION half only
+/// (`split("#[cfg(test)]").next()`), so a needle written here cannot satisfy itself. The T-696 pins
+/// in the module above once did `contains()` against the WHOLE file, needle and assertion together —
+/// T-759 fixed that; they now read `class_r_scrub`'s scrubbed production half.
 #[cfg(test)]
 mod t637_density {
     use super::{
@@ -2185,10 +2226,10 @@ mod t637_density {
 /// T-697 — document search and the selection filter.
 ///
 /// **NOTE ON THE PIN IDIOM.** Every source needle below is checked against `class_r_scrub`'s scrubbed
-/// PRODUCTION text (`live_code` / `live_source`), whose first pass cuts the test module outright. It
-/// deliberately does NOT copy the `SRC = include_str!(whole file)` idiom the T-696 module above uses
-/// — those pins stay green if the production code is deleted, because the needle also appears in
-/// their own assertion (filed as T-759). A pin that can be satisfied by itself is not a pin.
+/// PRODUCTION text (`live_code` / `live_source`), whose first pass cuts the test module outright. A
+/// pin that can be satisfied by itself is not a pin. The T-696 module above used to do exactly that
+/// — `SRC = include_str!(whole file)`, so its needles matched their own assertions and would have
+/// survived the deletion of the code they pinned; T-759 pointed those pins at these same helpers.
 #[cfg(test)]
 mod t697_document_search {
     use super::{
