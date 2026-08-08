@@ -2253,6 +2253,11 @@ fn commit_loadout_writes(writes: &[crate::arsenal::LoadoutWrite]) -> usize {
 ///
 /// NOT gated on the transform lock, and that is the core's rule rather than an omission: T-665 locks
 /// TRANSFORM only, so identity/type/description edits are legal on a locked slot.
+///
+/// **T-745 (wave-113 F-3)** — `did` used to mean "ops context + document both exist", so an
+/// all-`None` call (or a call against a nonexistent id) still ran `after_local_edit` and armed a
+/// false save. Mirror [`attrs_update_slot_multi`]: only fire the tail when something actually
+/// changed. Existence is RAW (`raw_slot_rows`), not SoA — a hidden slot is still real (T-744).
 pub fn attrs_update_slot(
     id: &str,
     role: Option<String>,
@@ -2261,6 +2266,16 @@ pub fn attrs_update_slot(
     asset_id: Option<String>,
     description: Option<String>,
 ) {
+    // T-745 — nothing opted in ⇒ no write, no history/persist tail. Same shape as the multi peer
+    // (T-082 widened that guard by the object fields; the single-target path lacked it).
+    if role.is_none()
+        && tag.is_none()
+        && stance.is_none()
+        && asset_id.is_none()
+        && description.is_none()
+    {
+        return;
+    }
     let did = OPS_CTX.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {
@@ -2270,6 +2285,11 @@ pub fn attrs_update_slot(
         let Some(core) = d.as_ref() else {
             return false;
         };
+        // T-745 — a nonexistent id is a core no-op; do not bump doc_ver / dirty / persist.
+        // RAW map, not SoA: Hide filters the SoA (T-744) but the row is still in the document.
+        if !raw_slot_rows(core).contains_key(id) {
+            return false;
+        }
         if role.is_some() || tag.is_some() || stance.is_some() {
             core.update_slot(id, role, tag, stance);
         }
