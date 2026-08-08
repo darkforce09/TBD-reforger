@@ -3330,30 +3330,52 @@ mod tests {
     /// must not grow a clone. Needles are fragment-assembled so this module is not its own haystack.
     /// Note: `(payload)` is a prefix of the clone form, so the move needle ends at the trailing
     /// comma that only the favourites match arm writes.
+    ///
+    /// Wave-135 F3: Character + Object favourites arms are pinned the same way — vehicle-only left
+    /// Character/Object free to grow `.clone()` while this pin stayed green.
     #[test]
     fn favourites_place_arm_stays_clone_free() {
         const SRC: &str = include_str!("eden_dock_right.rs");
-        let palette = format!("{}{}", "begin_place_vehicle", "(payload.clone())");
-        let favourites = format!("{}{}", "begin_place_vehicle", "(payload),");
+        // Fragment the marker — a contiguous fn-name needle in this test would be a second hit.
+        let marker = format!("{}{}", "fn arm_favourite_place", "(");
+        let fav_arm = crate::arsenal::class_r_scrub::only_body(SRC, &marker);
         assert!(
-            SRC.contains(&palette),
-            "T-215 palette path must keep the clone call expression the gate inspects"
+            !fav_arm.contains(".clone()"),
+            "T-751: arm_favourite_place must stay clone-free across Character/Object/Vehicle;              body was:\n{fav_arm}"
         );
-        assert_eq!(
-            SRC.matches(&palette).count(),
-            1,
-            "T-751: exactly one palette-form vehicle arm (clone); a second means favourites grew              a clone and could satisfy the palette pin alone"
-        );
-        assert!(
-            SRC.contains(&favourites),
-            "T-751: arm_favourite_place must MOVE the payload so it stays textually distinct              from the palette clone needle"
-        );
-        assert_eq!(
-            SRC.matches(&favourites).count(),
-            1,
-            "T-751: exactly one move-form vehicle arm (the favourites match arm)"
-        );
+        for (label, stem) in [
+            ("Character", "begin_place"),
+            ("Vehicle", "begin_place_vehicle"),
+            ("Object", "begin_place_object"),
+        ] {
+            let palette = format!("{stem}{}", "(payload.clone())");
+            let favourites = format!("{stem}{}", "(payload),");
+            assert!(
+                SRC.contains(&palette),
+                "T-215/T-751 palette path must keep the {label} clone call expression"
+            );
+            assert_eq!(
+                SRC.matches(&palette).count(),
+                1,
+                "T-751: exactly one palette-form {label} arm (clone); a second means favourites                  grew a clone"
+            );
+            assert!(
+                SRC.contains(&favourites),
+                "T-751: favourites {label} arm must MOVE the payload (trailing-comma form)"
+            );
+            assert_eq!(
+                SRC.matches(&favourites).count(),
+                1,
+                "T-751: exactly one move-form {label} arm (the favourites match arm)"
+            );
+            assert!(
+                fav_arm.contains(&format!("{stem}{}", "(payload)")),
+                "T-751: arm_favourite_place {label} arm must call {stem}(payload)"
+            );
+        }
     }
+
+
 
     /// E1 + E5 — exact chip list; no CIV; no F-key labels in the chip row source of truth.
     #[test]
