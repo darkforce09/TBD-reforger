@@ -13243,6 +13243,19 @@ mod tests {
                 (0.0, -3.0 * FORMATION_SPACING_M),
             ]
         );
+        // T-767 / wave 131 F3 — schema `$defs/group.formation` description must name the
+        // editor consumers. Split so this line cannot satisfy the schema haystack.
+        let schema = include_str!("../../../../packages/tbd-schema/schema/mission.schema.json");
+        let force = format!("{}{}", "force_to_", "formation");
+        let offsets = format!("{}{}", "formation_", "offsets");
+        assert!(
+            schema.contains(&force),
+            "mission.schema.json formation description must mention force_to_formation"
+        );
+        assert!(
+            schema.contains(&offsets),
+            "mission.schema.json formation description must mention formation_offsets"
+        );
     }
 
     /// **ACTION-FORM-001 through the document.** The leader does NOT move (he is the anchor — moving
