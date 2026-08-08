@@ -713,9 +713,18 @@ pub(crate) mod keymap_census {
                 let open = live.find('{')?;
                 let end = balanced(&live, open)?;
                 let body = live[open..=end].to_string();
-                // A `Closure::<dyn FnMut(KeyboardEvent)>` that reads neither accessor is not a
-                // binding site (it is some other keyboard plumbing) — do not census it.
-                (body.contains("ev.key()") || body.contains("ev.code()")).then_some(body)
+                // T-776 — a keydown registration that reads neither `ev.key()` nor `ev.code()`
+                // (or whose event parameter is not named `ev`) used to be silently DROPPED from
+                // discovery. That is the hollow shape the census exists to eliminate: the listener
+                // never inflated `found`, so every per-file count and the empty-bindings check
+                // stayed green over an incomplete input. Fail closed — teach the census the new
+                // idiom, or rename the parameter to `ev` and use those accessors.
+                assert!(
+                    body.contains("ev.key()") || body.contains("ev.code()"),
+                    "T-776: a window-level keydown closure reads neither `ev.key()` nor                      `ev.code()` — it would have been silently dropped from the census. Body                      starts:\n{}",
+                    &body[..body.len().min(160)]
+                );
+                Some(body)
             })
             .collect()
     }
@@ -969,27 +978,102 @@ pub(crate) mod keymap_census {
         }
     }
 
+    /// T-776 — the source region that answers ONE shared-channel claim, not the whole listener.
+    /// An unrelated `get_untracked()` in another arm (cursor, snap, chrome, …) must not satisfy
+    /// the live-state pin: that was the hollow shape NIT-1 named.
+    fn key_equals_claim_site(src: &str, code: &str) -> Option<String> {
+        let needle = format!("ev.key() == \"{code}\"");
+        let at = src.find(&needle)?;
+        let before = &src[..at];
+        let if_at = before.rfind("if ").unwrap_or(0);
+        let after_if = &src[if_at..];
+        let rel_open = after_if.find('{')?;
+        let open = if_at + rel_open;
+        let end = balanced(src, open)?;
+        Some(src[if_at..=end].to_string())
+    }
+
+    /// Match-arm claim: `(prelude before the match, arm body including the literal head)`.
+    fn match_arm_claim(src: &str, code: &str) -> Option<(String, String)> {
+        let lit = format!("\"{code}\"");
+        let mut from = 0usize;
+        while let Some(i) = src[from..].find(&lit) {
+            let at = from + i;
+            let trimmed = src[at + lit.len()..].trim_start();
+            if trimmed.starts_with("=>") || trimmed.starts_with("if ") || trimmed.starts_with('|') {
+                let arrow_rel = src[at..].find("=>")?;
+                let after_arrow = &src[at + arrow_rel + 2..];
+                let body_start_rel = after_arrow.find(|c: char| !c.is_whitespace()).unwrap_or(0);
+                let abs = at + arrow_rel + 2 + body_start_rel;
+                let end = if src.as_bytes().get(abs) == Some(&b'{') {
+                    balanced(src, abs)?
+                } else {
+                    abs + after_arrow[body_start_rel..]
+                        .find('\n')
+                        .unwrap_or(after_arrow[body_start_rel..].len())
+                };
+                let match_at = src[..at].rfind("match ev.").unwrap_or(0);
+                return Some((src[..match_at].to_string(), src[at..=end].to_string()));
+            }
+            from = at + lit.len();
+        }
+        None
+    }
+
+    /// Open/closed latch in the listener prelude: a `get_untracked()` whose nearby window
+    /// actually `return`s. An unrelated untracked read (cursor position, …) does not count.
+    fn early_return_live_gate(prelude: &str) -> bool {
+        let mut from = 0usize;
+        while let Some(i) = prelude[from..].find("get_untracked()") {
+            let at = from + i;
+            let window = &prelude[at..prelude.len().min(at + 80)];
+            if window.contains("return") {
+                return true;
+            }
+            from = at + 1;
+        }
+        false
+    }
+
+    /// Does this listener's claim path for `code` read live state before acting?
+    fn shared_channel_claim_gated(src: &str, code: &str) -> bool {
+        if let Some(site) = key_equals_claim_site(src, code) {
+            return site.contains("get_untracked()") || site.contains(".escape()");
+        }
+        if let Some((prelude, arm)) = match_arm_claim(src, code) {
+            if arm.contains("get_untracked()") || arm.contains(".escape()") {
+                return true;
+            }
+            return early_return_live_gate(&prelude);
+        }
+        panic!(
+            "T-776: could not locate the `{code}` claim site in a shared-channel claimant — the \
+             census saw the binding but the live-state pin cannot find the path that answers it"
+        );
+    }
+
     /// What makes the Escape pile-up sound rather than a collision: every claimant reads its own
     /// live state before it acts, so at most one surface is ever dismissed. Pin that, or the
     /// exemption is a wish rather than an argument.
     #[test]
     fn every_shared_channel_claimant_reads_live_state() {
+        // T-776 — per CLAIM, not per listener. A substring over `l.src` was satisfied by any
+        // unrelated `get_untracked()` in the same closure (cursor, snap, chrome toggles, …) while
+        // the Escape path itself stayed unconditional. The exemption this pin guards is what keeps
+        // a many-claimant Escape channel legal — the last place a weak guard should sit.
         for l in listeners() {
-            let claims_shared = l
-                .bindings
-                .iter()
-                .any(|b| SHARED_CHANNELS.contains(&b.code.as_str()));
-            if !claims_shared {
-                continue;
+            for b in &l.bindings {
+                if !SHARED_CHANNELS.contains(&b.code.as_str()) {
+                    continue;
+                }
+                assert!(
+                    shared_channel_claim_gated(&l.src, &b.code),
+                    "T-703/T-776: {}#{} claims shared channel `{}` but its claim path never reads                      live state (`get_untracked()` / `.escape()` / an early-return latch) — it will                      fire alongside every other claimant on one keypress, which is a collision and                      not a shared channel",
+                    l.file,
+                    l.index,
+                    b.code
+                );
             }
-            assert!(
-                l.src.contains("get_untracked()") || l.src.contains(".escape()"),
-                "T-703: {}#{} claims a shared channel ({SHARED_CHANNELS:?}) but never reads live \
-                 state — it will fire alongside every other claimant on one keypress, which is a \
-                 collision and not a shared channel",
-                l.file,
-                l.index
-            );
         }
         // The editor keydown's own Escape arm is the one claimant with no open/closed latch: it is
         // gated on the measure tools having something to dismiss. `.escape()` returns false when a
@@ -1119,24 +1203,44 @@ pub(crate) mod keymap_census {
     fn there_is_exactly_one_extractor() {
         // Assembled so the needle never appears verbatim in this test's own source.
         let needle = format!("fn keydown{}(", "_arms");
+        // T-776 — scan the WHOLE crate, not `editor_surface()` + self. A fifth copy in
+        // `eden_dock_left` / `editor_ops` / `ui` sat outside the old six-file list and would have
+        // passed; this pin enforces T-738's banked "one extractor" instruction, so its input is
+        // the crate.
+        let src_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
         let mut copies: Vec<String> = Vec::new();
-        let mut sources: Vec<(&str, &str)> = editor_surface()
-            .into_iter()
-            .map(|(f, raw, _)| (f, raw))
-            .collect();
-        sources.push(("eden_help.rs", include_str!("eden_help.rs")));
-        for (file, raw) in sources {
-            let n = raw.matches(needle.as_str()).count();
-            if n > 0 {
-                copies.push(format!("{file} ×{n}"));
+        fn walk(dir: &std::path::Path, needle: &str, copies: &mut Vec<String>) {
+            let entries = std::fs::read_dir(dir)
+                .unwrap_or_else(|e| panic!("T-776: cannot read {}: {e}", dir.display()));
+            for ent in entries {
+                let ent = ent.expect("read_dir entry");
+                let path = ent.path();
+                if path.is_dir() {
+                    walk(&path, needle, copies);
+                    continue;
+                }
+                if path.extension().and_then(|e| e.to_str()) != Some("rs") {
+                    continue;
+                }
+                let raw = std::fs::read_to_string(&path)
+                    .unwrap_or_else(|e| panic!("T-776: cannot read {}: {e}", path.display()));
+                let n = raw.matches(needle).count();
+                if n > 0 {
+                    let name = path
+                        .file_name()
+                        .and_then(|s| s.to_str())
+                        .unwrap_or("?")
+                        .to_string();
+                    copies.push(format!("{name} ×{n}"));
+                }
             }
         }
+        walk(&src_root, &needle, &mut copies);
+        copies.sort();
         assert_eq!(
             copies,
             vec!["eden_help.rs ×1".to_string()],
-            "T-738: the keydown-arm extractor must be defined ONCE, in `keymap_census`. Found: \
-             {copies:?}. Consume it (`use crate::eden_help::keymap_census::…`) and widen it there \
-             — a second copy is a second answer to the same question."
+            "T-738/T-776: the keydown-arm extractor must be defined ONCE, in `keymap_census`.              Found: {copies:?}. Consume it (`use crate::eden_help::keymap_census::…`) and widen              it there — a second copy is a second answer to the same question."
         );
     }
 

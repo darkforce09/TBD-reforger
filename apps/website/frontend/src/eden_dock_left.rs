@@ -528,12 +528,15 @@ pub fn DockLeft(
                             let id = hit.entity.id.clone();
                             let badge = kind.noun();
                             let label = hit.entity.label.clone();
-                            let matched = hit
-                                .entity
-                                .text
-                                .iter()
-                                .find(|(f, _)| *f == hit.field)
-                                .map_or_else(String::new, |(_, v)| v.clone());
+                            let matched = if hit.field == "faction" {
+                                hit.entity.faction.clone()
+                            } else {
+                                hit.entity
+                                    .text
+                                    .iter()
+                                    .find(|(f, _)| *f == hit.field)
+                                    .map_or_else(String::new, |(_, v)| v.clone())
+                            };
                             let body = view! {
                                 <MaterialIcon
                                     name=kind.icon()
@@ -1444,7 +1447,8 @@ pub struct DocEntity {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DocHit {
     pub entity: DocEntity,
-    /// The `text` field name that matched — shown on the row so a hit is never mysterious.
+    /// The `text` field name that matched, or `"faction"` when only the faction/folder matched
+    /// (T-776) — shown on the row so a hit is never mysterious.
     pub field: &'static str,
 }
 
@@ -1501,7 +1505,8 @@ pub fn query_hits(query: &str, text: &str, class_name: &str, group: &str) -> boo
 }
 
 /// T-697 — search the whole document. Returns one hit per MATCHING ENTITY (not per matching
-/// attribute), carrying the FIRST attribute that matched, in `rows` order.
+/// attribute), carrying the FIRST text attribute that matched, in `rows` order — or `"faction"`
+/// when the entity matched only via its faction/folder group (T-776).
 ///
 /// A blank query returns NO hits rather than every row: an untouched filter box is not a request to
 /// list the mission, and answering it with 137 rows would bury the tree under the box that opened
@@ -1515,17 +1520,30 @@ pub fn search_document(rows: &[DocEntity], query: &str) -> Vec<DocHit> {
     }
     rows.iter()
         .filter_map(|e| {
-            e.text
+            // Prefer an attribute that hits WITHOUT the faction/folder contributing. A plain
+            // `BLUFOR` matches every entity of that side via the group node (deliberate subtree
+            // semantics) — but that is not a `name` hit. T-776: reporting the first text
+            // attribute here claimed `matched name "…"` when only the faction matched.
+            if let Some((field, _)) = e
+                .text
                 .iter()
-                .find(|(_, v)| query_hits(query, v, &e.class_name, &e.faction))
-                .map(|(field, _)| DocHit {
+                .find(|(_, v)| query_hits(query, v, &e.class_name, ""))
+            {
+                return Some(DocHit {
                     entity: e.clone(),
                     field,
-                })
+                });
+            }
+            if query_hits(query, "", &e.class_name, &e.faction) {
+                return Some(DocHit {
+                    entity: e.clone(),
+                    field: "faction",
+                });
+            }
+            None
         })
         .collect()
 }
-
 /// T-697 — one way to narrow the live selection, and the exact ids it would leave selected.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SelectionFacet {
@@ -2368,6 +2386,31 @@ mod t697_document_search {
     /// behave in the document exactly as they behave in the palette, because they ARE the palette's:
     /// `class:` prefixes the resource name or its tail, `mod:` takes the faction group, `*`/`?` glob
     /// whole-string per attribute, `/…/` is an unanchored regex.
+    /// T-776 — a plain faction hit must name `faction`, not the entity's first text attribute.
+    /// `BLUFOR` returns every BLUFOR entity via folder self-match (deliberate); lying that the
+    /// *name* matched is the honesty gap wave-119 NIT-4 named. Delete the faction branch in
+    /// [`search_document`] and this goes red.
+    #[test]
+    fn a_faction_only_hit_names_faction_not_the_first_text_attribute() {
+        let e = entity("slot-1", DocKind::Slot, "Alpha 1-1", "BLUFOR");
+        assert!(
+            !e.text
+                .iter()
+                .any(|(_, v)| v.to_lowercase().contains("blufor")),
+            "precondition: no text attribute contains the faction token"
+        );
+        let hits = search_document(std::slice::from_ref(&e), "BLUFOR");
+        assert_eq!(ids(&hits), ["slot-1"]);
+        assert_eq!(
+            hits[0].field, "faction",
+            "T-776: a faction-only hit must report field=faction, not `{}`",
+            hits[0].field
+        );
+        // And a real name hit still names the attribute — faction must not steal the credit.
+        let by_name = search_document(std::slice::from_ref(&e), "Alpha");
+        assert_eq!(by_name[0].field, "label");
+    }
+
     #[test]
     fn the_query_grammar_is_t084s() {
         let m = mission();
