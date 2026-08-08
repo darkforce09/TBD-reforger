@@ -84,6 +84,7 @@ diagnosis) → registry flip + `distrobox-host-exec sh -c './scripts/ticket sync
 | 135 | 112 | T-744 T-751 T-757 | PASS 30/30 (run 1; re-gated PASS over F1–H2) | 0B/0M/2m/1N+H + re-verify 0 | SHIPPED — Attributes stay open on hide, Select/favourites/compile honesty, one MISSION_SCHEMA embed. Suite 992. |
 | 136 | 113 | T-745 T-761 T-763 | PASS 30/30 (run 1; re-gated PASS over F1–F4) | 0B/2M/2m/0N + focused re-verify 0 | SHIPPED — attrs_update_slot no-op + lasting Class-R pin; compile findings cleared on hydrate; decoy narrative struck, marker Attributes (factionId,id), /compiled route pins count header (API handlers/missions.rs). Suite 997. |
 | 137 | 114 | T-741 T-749 T-772 | PASS 30/30 (run 1; re-gated PASS over F1/F2/NIT) | 0B/1M/1m/1N + focused re-verify 0 | SHIPPED — multi-edit slot-scope honesty + selection_n flow pin; settle-only scrubber prose/pin rename + Slider rustdoc; ControlsHint close call-site hit-box. Suite 1003. |
+| 138 | 115 | T-742 T-752 T-739 | PASS 30/30 (run 1; re-gated PASS over F1–F6) | 0B/4M/2m/1N + focused re-verify 0 | SHIPPED — approach C: wave.sh test --slice private dirs + brief ban; clippy --all-targets Makefile+CI+gate; gap_analysis/top_strip cite honesty. Suite 1006. |
 | 121 | assign at close | T-702 T-212 T-654 | — | — | pending |
 | 122 | assign at close | T-673 T-674 T-675 | — | — | pending |
 | 123 | assign at close | T-676 T-677 T-678 | — | — | pending |
