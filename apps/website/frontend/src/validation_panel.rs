@@ -359,6 +359,100 @@ impl Debouncer {
     }
 }
 
+/* ═══════════ the seam idiom: registered at mount, unregistered at unmount, remount-safe ═══════════
+ *
+ * This file publishes FOUR thread_local seams (the payload source, the click-to-select router, the
+ * route probe, the publish sink). Every one of them is a value handed over at mount by a surface
+ * that owns `!Send` / reactive state the native-compiled panel cannot hold.
+ *
+ * **Wave-129 F5, the same defect F2 fixed in `eden_dock_right`'s zone hook.** A seam registered at
+ * mount and never unregistered stays CALLABLE after the surface that owns it is gone: Backspace
+ * hide-chrome unmounts panels while dialogs deliberately survive, and SPA navigation drops the whole
+ * editor page. The stale closure then reports SUCCESS — `true`, or a stale payload — while every
+ * `set` inside it lands on a DISPOSED signal, which `reactive_graph` 0.2.14 makes a silent no-op.
+ * The caller sees a click that "worked" and nothing happened.
+ *
+ * The naive fix closes only half of it. An UNCONDITIONAL unregister at cleanup introduces the mirror
+ * defect: leptos does not guarantee that the dying owner's cleanup runs before the remount's
+ * registration, so an old cleanup can delete the LIVE surface's seam and leave it dead again. Hence
+ * [`unregister_seam`]'s identity guard — only the LOSING registration is cleared.
+ *
+ * It is written ONCE, here, and applied four times. Four bespoke copies is how a fifth seam gets
+ * added without one (which is exactly how the route probe arrived earlier in this same wave).
+ */
+
+/// A seam's registered value, comparable for IDENTITY against whatever is currently live.
+///
+/// Identity, not equality: the question [`unregister_seam`] asks is "is the thing in the cell the
+/// very registration *I* put there", and two structurally equal hooks from two different mounts must
+/// answer `false`. Both impls below are identity comparisons that survive reallocation — an `Rc`'s
+/// pointer is kept valid by the clone the installer holds, and a signal's key is a `slotmap` key
+/// whose version bumps when the slot is reused. **A bare `usize` address would not do**: the old
+/// value drops on re-register, a later registration can be allocated at the freed address, and a
+/// stale cleanup would then wrongly clear a live seam (ABA).
+pub(crate) trait SeamRegistration: Clone + 'static {
+    /// Is `live` — the value currently in the seam's cell — this very registration?
+    fn is_same_registration(&self, live: &Self) -> bool;
+}
+
+/// The three closure seams: identity is the `Rc` allocation.
+impl<T: ?Sized + 'static> SeamRegistration for std::rc::Rc<T> {
+    fn is_same_registration(&self, live: &Self) -> bool {
+        std::rc::Rc::ptr_eq(self, live)
+    }
+}
+
+/// The publish sink: identity is the arena key, which `PartialEq` already compares (and `slotmap`
+/// versions, so a recycled slot is not mistaken for the signal that used to live in it).
+impl<T: 'static, S: 'static> SeamRegistration for RwSignal<T, S> {
+    fn is_same_registration(&self, live: &Self) -> bool {
+        self == live
+    }
+}
+
+/// A seam's storage: one thread_local slot holding the current registration, or `None` (host build /
+/// pre-mount / everything unmounted) — which every read of it must report as HONEST FAILURE.
+type SeamCell<H> = std::thread::LocalKey<std::cell::RefCell<Option<H>>>;
+
+/// Install `hook` into `cell` for the CURRENT reactive owner: register it now, and unregister it
+/// when that owner is cleaned up (i.e. at unmount).
+///
+/// Called with no owner (the host tests, a non-reactive caller) it degrades to a bare register:
+/// `on_cleanup` outside an owner is a no-op, which is the pre-existing behaviour.
+///
+/// The hook is parked in a `StoredValue` with **LOCAL** storage because `on_cleanup` is
+/// `Send + Sync`-bound and an `Rc<dyn Fn>` is `!Send`, so the cleanup cannot carry the hook itself.
+/// An owner runs its cleanup functions BEFORE it removes its arena nodes, so the read back inside
+/// the cleanup is valid; and holding that clone is what keeps the allocation alive, which is what
+/// makes the identity check in [`unregister_seam`] meaningful.
+fn install_seam<H: SeamRegistration>(cell: &'static SeamCell<H>, hook: H) {
+    let mine = StoredValue::new_local(hook.clone());
+    cell.with(|c| *c.borrow_mut() = Some(hook));
+    on_cleanup(move || {
+        let _ = mine.try_with_value(|mine| unregister_seam(cell, mine));
+    });
+}
+
+/// Clear `cell` — but ONLY if `mine` is still the LIVE registration.
+///
+/// Returns whether this call is the one that cleared it; a superseded (losing) cleanup returns
+/// `false` and leaves the newer registration alone. The value is taken OUT of the cell and dropped
+/// after the borrow ends, so a `Drop` that re-enters this seam cannot hit a double borrow.
+fn unregister_seam<H: SeamRegistration>(cell: &'static SeamCell<H>, mine: &H) -> bool {
+    let taken = cell.with(|c| {
+        let mut slot = c.borrow_mut();
+        if slot
+            .as_ref()
+            .is_some_and(|live| mine.is_same_registration(live))
+        {
+            slot.take()
+        } else {
+            None
+        }
+    });
+    taken.is_some()
+}
+
 /* ═══════════════════════════ the cross-target payload source ═══════════════════════════ */
 
 // The engine is PURE core with no access to the SPA's `!Send` doc / `registry_session` thread_locals.
@@ -397,8 +491,13 @@ thread_local! {
 
 /// Register the payload-source getter (called once at mount from the wasm block). The closure reads
 /// the live doc + registry each time it is called, so the panel always evaluates the CURRENT mission.
+///
+/// **This is an INSTALL** ([`install_seam`]): the getter is unregistered when the owner that
+/// registered it is cleaned up, and a remount's newer getter is not clobbered by the old owner's
+/// cleanup. Without that, a getter closing over a dropped editor page's doc would keep answering
+/// with a mission that is no longer open — see the F5 note above [`SeamRegistration`].
 pub fn register_payload_source(f: PayloadSourceGetter) {
-    PAYLOAD_SOURCE.with(|c| *c.borrow_mut() = Some(f));
+    install_seam(&PAYLOAD_SOURCE, f);
 }
 
 /// The current payload source, or `None` (no getter registered — host build / pre-mount / a getter
@@ -424,8 +523,12 @@ thread_local! {
 /// Register the click-to-select router (called once at mount from the wasm block). The closure
 /// replaces the selection with the given entity id, centres the camera on it, and refreshes the
 /// mirrors — the T-655 `subject_id → select_slot/vehicle` path, living where the `!Send` handles do.
+///
+/// **This is an INSTALL** ([`install_seam`]): the router is unregistered at that owner's cleanup, so
+/// [`route_select_by_subject_id`] reports `false` once the surface holding those handles is gone
+/// instead of `true` over a selection that went nowhere — the F5/F2 dead click.
 pub fn register_select_by_id(f: SelectByIdRouter) {
-    SELECT_BY_ID.with(|c| *c.borrow_mut() = Some(f));
+    install_seam(&SELECT_BY_ID, f);
 }
 
 /// Route a finding's `subject_id` to the editor selection through the registered router. Returns
@@ -452,8 +555,13 @@ thread_local! {
 }
 
 /// Register the route probe (called once at mount, from the block that registers the router).
+///
+/// **This is an INSTALL** ([`install_seam`]), and here it is load-bearing for correctness rather
+/// than hygiene: [`finding_is_routable`] makes a row's clickability the probe's answer, so a probe
+/// that outlives its editor would paint rows clickable for a router that can no longer route —
+/// re-creating the very dead click the probe was added to prevent.
 pub fn register_route_probe(f: RouteProbe) {
-    ROUTE_PROBE.with(|c| *c.borrow_mut() = Some(f));
+    install_seam(&ROUTE_PROBE, f);
 }
 
 /// **Would a click on this `subject_id` select anything?** — the router's own resolution, asked
@@ -587,6 +695,18 @@ thread_local! {
         const { std::cell::RefCell::new(None) };
 }
 
+/// Register the mounted panel's findings signal as the publish sink, for as long as the component
+/// that owns that signal is alive.
+///
+/// **Wave-129 F5.** This seam always had a cleanup, but an UNCONDITIONAL one — `PANEL_SINK = None`
+/// at unmount, no matter what was in the cell. That is the second half of the F5 defect and the
+/// mirror of the missing-cleanup half: a remounted panel installs its NEW signal before the old
+/// panel's cleanup runs, the old cleanup clears it, and the live card then never repaints on a
+/// compile. [`install_seam`]'s identity guard makes the losing cleanup a no-op.
+pub fn register_panel_sink(sink: RwSignal<Vec<PanelFinding>>) {
+    install_seam(&PANEL_SINK, sink);
+}
+
 /// Publish the findings a compile produced (`map_engine_core::mission::flatten`'s
 /// [`Finding`]s, flattened to panel rows) and repaint. Replaces the previous compile's list whole —
 /// a finding describes one compile, so two compiles do not accumulate.
@@ -651,9 +771,10 @@ pub fn ValidationPanel(
 
     // T-690 — register `findings` as the publish sink so a compile's diagnostics repaint the card
     // the moment they are produced, without waiting for the doc-change debounce. Registered on both
-    // targets: the signal is the same one the view reads either way.
-    PANEL_SINK.with(|c| *c.borrow_mut() = Some(findings));
-    on_cleanup(move || PANEL_SINK.with(|c| *c.borrow_mut() = None));
+    // targets: the signal is the same one the view reads either way. Wave-129 F5 — the registration
+    // carries its own unmount (this component's owner), and the identity guard inside it is what
+    // keeps a REMOUNT's sink from being cleared by the outgoing panel's cleanup.
+    register_panel_sink(findings);
 
     // ── Re-evaluation: doc_tick → debounce → evaluate (wasm only) ──
     #[cfg(target_arch = "wasm32")]
@@ -1601,5 +1722,281 @@ mod w129_the_panel_asks_the_router {
             !row_lit.contains(&format!("cursor{}", "-pointer")),
             "wave 129: the row must not hand-roll the affordance beside the function that owns it"
         );
+    }
+}
+
+/* ══ wave-129 F5 — EVERY seam here is unregistered at unmount, and no remount is clobbered ═════════
+ *
+ * The lifecycle half of the dead click, pinned across all four of this file's thread_local seams at
+ * once. Wave 129 fixed this shape three times before this test existed — `eden_dock_right`'s zone
+ * hook (F2), and then the two seams F2 found here — while a FOURTH (the route probe) was being added
+ * without it in the same wave. So the pin is table-driven: a fifth seam that forgets [`install_seam`]
+ * joins this table and goes red, rather than shipping and being found by the next reader.
+ *
+ * These drive real `Owner`s and call `Owner::cleanup` — the code path leptos runs at unmount — in
+ * the three shapes that matter:
+ *   1. never installed                    -> the seam reports FAILURE (the baseline, so a green
+ *                                            elsewhere cannot be "it was already false");
+ *   2. install -> cleanup                 -> FAILURE, not `true`/`Some` over a DISPOSED no-op;
+ *   3. install(A) -> install(B) -> A's cleanup -> B SURVIVES and still answers (the identity
+ *      guard's entire reason for existing: leptos does not guarantee that a dying owner's cleanup
+ *      runs before the remount registers).
+ *
+ * Perturbation RED, and they redden DIFFERENTLY, which is the point: drop the `on_cleanup` from
+ * `install_seam` and shape 2 goes red; keep the cleanup but make it unconditional (delete the
+ * `is_same_registration` guard from `unregister_seam`) and shape 3 goes red ALONE — that is the
+ * failure a naive fix ships.
+ */
+#[cfg(test)]
+mod f5_seam_lifecycle {
+    use super::{
+        publish_compile_findings, read_payload_source, register_panel_sink,
+        register_payload_source, register_route_probe, register_select_by_id,
+        route_select_by_subject_id, subject_id_routes, PanelFinding, PayloadSource,
+    };
+    use leptos::prelude::*;
+    use map_engine_core::mission::validate::{Primitive, Severity};
+    use std::cell::RefCell;
+    use std::rc::Rc;
+
+    thread_local! {
+        /// Every tag that ANSWERED a seam's question, in call order. "Did anything actually happen"
+        /// is answered by WHICH registration ran, not only by the seam's boolean.
+        static ANSWERED: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
+
+        /// The publish sink's candidate signals, one per tag. They are created under a LONG-LIVED
+        /// owner and only INSTALLED from the short-lived one, so that after a cleanup the test can
+        /// still tell "the seam is empty" apart from "the signal is disposed". A disposed signal
+        /// swallows its `set` silently — that silence is the lie under test, so the test must not
+        /// rely on it.
+        static SINKS: RefCell<Vec<(&'static str, RwSignal<Vec<PanelFinding>>)>> =
+            const { RefCell::new(Vec::new()) };
+    }
+
+    fn note(tag: &'static str) {
+        ANSWERED.with(|l| l.borrow_mut().push(tag.to_string()));
+    }
+    fn answered() -> Vec<String> {
+        ANSWERED.with(|l| l.borrow().clone())
+    }
+    fn forget_answers() {
+        ANSWERED.with(|l| l.borrow_mut().clear());
+    }
+
+    /// A row to publish: the sink is asked "did a compile's findings reach you", so it needs one.
+    fn row() -> PanelFinding {
+        PanelFinding {
+            rule_id: "F5-PROBE".into(),
+            severity: Severity::Warning,
+            primitive: Primitive::PerObjectInvariant,
+            message: "f5".into(),
+            subject: "f5".into(),
+            subject_id: None,
+        }
+    }
+
+    /// The long-lived signal registered for `tag` (created by [`prepare_sinks`]).
+    fn sink_for(tag: &'static str) -> RwSignal<Vec<PanelFinding>> {
+        SINKS
+            .with(|s| {
+                s.borrow()
+                    .iter()
+                    .find(|(t, _)| *t == tag)
+                    .map(|(_, sig)| *sig)
+            })
+            .expect("prepare_sinks creates one signal per tag before anything is installed")
+    }
+
+    /// Create the sink signals under `owner`, which outlives every owner the seams are installed in.
+    fn prepare_sinks(owner: &Owner) {
+        let sinks = owner.with(|| {
+            ["A", "B"]
+                .map(|tag| (tag, RwSignal::new(Vec::<PanelFinding>::new())))
+                .to_vec()
+        });
+        SINKS.with(|s| *s.borrow_mut() = sinks);
+    }
+
+    /// Publish, then report which sink (if any) the publish reached — the sink's own version of
+    /// "did the seam answer, and who answered".
+    fn ask_sink() -> bool {
+        SINKS.with(|s| {
+            for (_, sig) in s.borrow().iter() {
+                sig.set(Vec::new());
+            }
+        });
+        publish_compile_findings(vec![row()]);
+        let mut reached = false;
+        SINKS.with(|s| {
+            for (tag, sig) in s.borrow().iter() {
+                if !sig.get_untracked().is_empty() {
+                    note(tag);
+                    reached = true;
+                }
+            }
+        });
+        reached
+    }
+
+    /// One seam, reduced to the two operations its lifecycle turns on.
+    struct Seam {
+        /// The thread_local's name, so a failure names the seam rather than a row index.
+        name: &'static str,
+        /// Register a `tag`-marked value under the CURRENT reactive owner.
+        install: fn(&'static str),
+        /// Ask the seam its OWN question. `true` = a live registration reported success.
+        ask: fn() -> bool,
+    }
+
+    /// All four seams this file publishes. A new one belongs here.
+    fn seams() -> [Seam; 4] {
+        [
+            Seam {
+                name: "PAYLOAD_SOURCE",
+                install: |tag| {
+                    register_payload_source(Rc::new(move || {
+                        note(tag);
+                        Some(PayloadSource {
+                            payload: serde_json::json!({}),
+                            known_asset_ids: None,
+                        })
+                    }));
+                },
+                ask: || read_payload_source().is_some(),
+            },
+            Seam {
+                name: "SELECT_BY_ID",
+                install: |tag| {
+                    register_select_by_id(Rc::new(move |_id: &str| {
+                        note(tag);
+                        true
+                    }));
+                },
+                ask: || route_select_by_subject_id("f5-subject"),
+            },
+            Seam {
+                name: "ROUTE_PROBE",
+                install: |tag| {
+                    register_route_probe(Rc::new(move |_id: &str| {
+                        note(tag);
+                        true
+                    }));
+                },
+                ask: || subject_id_routes("f5-subject"),
+            },
+            Seam {
+                name: "PANEL_SINK",
+                install: |tag| register_panel_sink(sink_for(tag)),
+                ask: ask_sink,
+            },
+        ]
+    }
+
+    /// Shape 1 — the baseline. Nothing has ever been installed on this thread, so every seam must
+    /// report failure. Without this, a green in the other two could just be "it was never true".
+    #[test]
+    fn a_seam_with_nothing_installed_reports_failure() {
+        let root = Owner::new();
+        prepare_sinks(&root);
+        for seam in seams() {
+            assert!(
+                !(seam.ask)(),
+                "F5 {}: nothing has ever been installed, so the seam must report failure",
+                seam.name
+            );
+        }
+        assert!(
+            answered().is_empty(),
+            "F5: no registration exists, so none can have answered — got {:?}",
+            answered()
+        );
+    }
+
+    /// Shape 2 — unmount unregisters. After the installing owner is cleaned up the seam must report
+    /// FAILURE and the stale registration must not run. Reporting success here is the whole defect:
+    /// the caller acts on that boolean while every `set` inside the dead closure lands on a DISPOSED
+    /// signal, which `reactive_graph` 0.2.14 makes a silent no-op.
+    #[test]
+    fn unmount_unregisters_every_seam_so_none_reports_success() {
+        let root = Owner::new();
+        prepare_sinks(&root);
+        for seam in seams() {
+            let mounted = root.child();
+            mounted.with(|| (seam.install)("A"));
+
+            forget_answers();
+            assert!(
+                (seam.ask)(),
+                "F5 {} precondition: while mounted the seam really does answer",
+                seam.name
+            );
+            assert_eq!(
+                answered(),
+                vec!["A".to_string()],
+                "F5 {} precondition: the LIVE registration is the one that answered",
+                seam.name
+            );
+
+            mounted.cleanup();
+
+            forget_answers();
+            assert!(
+                !(seam.ask)(),
+                "F5 {}: the installing owner is gone, so the seam must report FAILURE rather than \
+                 success over a disposed no-op",
+                seam.name
+            );
+            assert!(
+                answered().is_empty(),
+                "F5 {}: the stale registration must not be called at all after unmount — got {:?}",
+                seam.name,
+                answered()
+            );
+        }
+    }
+
+    /// Shape 3 — the identity guard. A remount installs its NEWER value before the old owner's
+    /// cleanup runs (leptos guarantees no other interleaving). The losing cleanup must recognise it
+    /// is no longer the live registration and leave the new one alone — otherwise the fix for a
+    /// stale seam becomes a fresh way to kill a live one, and the click is dead again.
+    #[test]
+    fn an_older_owners_cleanup_does_not_clobber_a_newer_registration() {
+        let root = Owner::new();
+        prepare_sinks(&root);
+        for seam in seams() {
+            // Siblings, not parent/child: two successive mounts under the page owner. A child would
+            // be cleaned up BY the parent and would prove nothing about the guard.
+            let old = root.child();
+            let new = root.child();
+            old.with(|| (seam.install)("A"));
+            new.with(|| (seam.install)("B"));
+
+            old.cleanup();
+
+            forget_answers();
+            assert!(
+                (seam.ask)(),
+                "F5 {}: the NEW mount is live — the superseded owner's cleanup must not unregister \
+                 it",
+                seam.name
+            );
+            assert_eq!(
+                answered(),
+                vec!["B".to_string()],
+                "F5 {}: the surviving registration must be the NEWER one, not a leftover that \
+                 merely happens to answer",
+                seam.name
+            );
+
+            new.cleanup();
+
+            forget_answers();
+            assert!(
+                !(seam.ask)(),
+                "F5 {}: the live mount's OWN cleanup does clear it — the guard skips losers, not \
+                 everyone",
+                seam.name
+            );
+        }
     }
 }
