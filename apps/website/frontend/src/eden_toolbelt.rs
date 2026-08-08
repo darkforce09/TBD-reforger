@@ -1819,5 +1819,20 @@ mod t670_scale_readout {
             prefer < snapshot,
             "T-670: the shared signal must take precedence over a second camera read"
         );
+        // Wave 133 F2 / T-756 NIT-3 — comment corrections (seed / camera_snapshot-dead notes).
+        // Raw include_str keeps docs that live_code blanks; only_item scopes to ScaleBar so the
+        // test module cannot hollow-self-match; needles are fragment-assembled.
+        let docs = include_str!("eden_toolbelt.rs");
+        let bar_docs = only_item(docs, &format!("pub fn {}", "ScaleBar("));
+        let seeded = format!("{}{}", "seeded ", "4.0");
+        let cam_dead = format!("{}{}", "dead on the only real ", "caller");
+        assert!(
+            bar_docs.contains(&seeded),
+            "T-756 / wave 133 F2: ScaleBar docs must keep the NIT-3 seed note (4 m/px default)"
+        );
+        assert!(
+            bar_docs.contains(&cam_dead),
+            "T-756 / wave 133 F2: ScaleBar docs must keep the NIT-3 camera_snapshot-dead note"
+        );
     }
 }
