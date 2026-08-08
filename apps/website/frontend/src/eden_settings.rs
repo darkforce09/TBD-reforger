@@ -27,8 +27,22 @@
 //! **The "min/max players" half of that ticket was reinterpreted by the operator**, which is why
 //! there is no `min_players` anywhere in this file, in `dto.rs`, or in a migration. A TBD mission's
 //! player count is not a number somebody types into a menu — it is how many slots have been placed.
-//! So this dialog *derives* it from `MissionDocCore::slot_count` and shows the stored `max_players`
-//! beside it, **unreconciled**, whenever the two disagree ([`PLAYER_COUNT_DISAGREE_NOTE`]).
+//! So this dialog *derives* it from `MissionDocCore::slot_count`.
+//!
+//! **T-782 — the operator's ruling (2026-08-08) closes the question wave 113 left open.** From T-694
+//! until now this block put the derived count and the stored `max_players` side by side in one grid,
+//! reconciled neither, and carried a note explaining that the argument was unsettled. It is settled:
+//! in the editor the player figure an author sees is the **derived slot count**, read through the one
+//! seam [`PlayerCount::player_figure`]. The old note is gone, but not the reasoning behind it — see
+//! [`PLAYER_COUNT_RULING_NOTE`], which states the decision rather than the argument, because a note
+//! describing an open question is a lie once the question has been answered.
+//!
+//! **`max_players` was not deleted, and must not be.** `dto::MissionDetail::compiled_meta` copies it
+//! into the compiled mission and the library card advertises it, so it is a live value that an author
+//! is entitled to see; it is simply not evidence about the document. It now renders one tier below
+//! the figure, labelled as author-declared ([`MAX_PLAYERS_KEPT_NOTE`]). Whether it should stay
+//! author-typed at all or be derived from the slot count is a **compile-path** question the ruling
+//! explicitly did not reach, and nothing in this file decides it.
 //!
 //! What it deliberately does **not** do: clamp either figure to a server limit, reuse the slot count
 //! as a capacity, or invent a minimum. A slot is a seat, not a player — 160 slots across 20 squads
@@ -168,12 +182,13 @@ impl From<crate::mission_commands::HydratedRow> for RowShape {
     }
 }
 
-/// T-694 — the two numbers this dialog puts under **Players**, and the fact that it reconciles
-/// neither.
+/// T-694 — the two numbers this dialog knows about. T-782 — which of them it *reports*.
 ///
-/// `placed` is `MissionDocCore::slot_count`: the seats actually in the document. `declared` is
+/// `placed` is `MissionDocCore::slot_count`: the seats actually in the document, and since the
+/// operator's ruling the figure this dialog puts under **Players**. `declared` is
 /// `missions.max_players`, the figure chosen once in the create dialog and never checked against the
-/// mission since; `None` means the row has not arrived (or the route id is not a row at all).
+/// mission since; `None` means the row has not arrived (or the route id is not a row at all). It is
+/// still carried, still shown, and no longer competing for the same heading.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 struct PlayerCount {
     placed: usize,
@@ -181,8 +196,24 @@ struct PlayerCount {
 }
 
 impl PlayerCount {
-    /// Do the two figures differ? Only then is [`PLAYER_COUNT_DISAGREE_NOTE`] shown — a mission whose
-    /// author happens to have placed exactly `max_players` slots needs no essay about it.
+    /// **T-782 — the figure the author sees, and the only route to it.**
+    ///
+    /// The defect this closes is a view showing a number the authority does not hold: two figures
+    /// under one heading, neither of them nominated. The ruling nominates one, and this method is
+    /// where that nomination lives so that "which number does the editor believe?" is answered once
+    /// instead of at each cell that happens to render a count.
+    ///
+    /// The body reads `placed` and nothing else **on purpose**. A fallback to the row's declared
+    /// figure — for an empty document, for a missing handle, for any reason at all — would be the
+    /// ruling reversed in a place nobody would think to look, and it is exactly the perturbation the
+    /// T-782 pins are shaped to catch.
+    fn player_figure(self) -> usize {
+        self.placed
+    }
+
+    /// Do the two figures differ? Only then is [`PLAYER_COUNT_RULING_NOTE`] shown — an author who
+    /// placed exactly `max_players` slots learns nothing from being told which of two identical
+    /// numbers the editor prefers.
     fn disagrees(self) -> bool {
         matches!(self.declared, Some(d) if d != i64::try_from(self.placed).unwrap_or(i64::MAX))
     }
@@ -200,14 +231,34 @@ const SLOTS_PLACED_NOTE: &str = "Counted from the slots placed in this mission �
 
 /// Shown only when the placed and declared figures differ ([`PlayerCount::disagrees`]).
 ///
-/// **Why it shows both instead of choosing.** The slot count is what the mission contains; the stored
-/// `max_players` is what the compiled mission carries (`dto::MissionDetail::compiled_meta`) and what
-/// the library card advertises. Silently preferring either would delete the author's only evidence
-/// that the two have drifted apart, which is the entire reason this row exists.
-const PLAYER_COUNT_DISAGREE_NOTE: &str =
-    "These two do not agree. Max players was chosen once, in the create dialog, and nothing has \
-     compared it to the mission since; the slot figure is what the mission actually contains. \
-     Neither is enforced here, so both are shown.";
+/// **T-782 retired the disagree-note and put the decision in its place.** What stood here explained
+/// an unresolved argument: the slot count is what the mission contains, `max_players` is what the
+/// compiled mission carries (`dto::MissionDetail::compiled_meta`) and what the library card
+/// advertises, and the dialog refused to prefer either because nobody had ruled. The operator ruled
+/// on 2026-08-08 — in the editor, the derived count is the player figure — and a note still
+/// presenting that as open would be describing a debate the reader cannot join and the code no
+/// longer has. The reasoning is not deleted, only re-aimed: this text says which figure won, and the
+/// author still sees the other one, so no evidence of drift is lost.
+///
+/// It claims no capacity. Neither figure is enforced here (T-694's point, unchanged), and whether
+/// `max_players` should be **derived at compile time** rather than typed is a question the ruling
+/// deliberately did not answer — so this copy states what the editor goes by, not what the compiler
+/// ought to.
+const PLAYER_COUNT_RULING_NOTE: &str =
+    "These two do not match. The editor goes by the slots placed — that is what this mission \
+     actually contains. Max players was chosen once, in the create dialog, and nothing has compared \
+     it to the mission since. Neither is enforced here.";
+
+/// T-782 — why the author-declared figure is still on screen at all, now that it no longer competes.
+///
+/// Deleting the cell was the tidy move and the wrong one. `compiled_meta` copies `max_players` into
+/// the compiled mission and the library card advertises it, so an author who cannot see it here
+/// cannot see what their own mission tells everybody else. What the ticket actually asked for was a
+/// nominated figure, not one fewer number: an unlabelled second count beside the first is the defect;
+/// a labelled one, a tier down, with its destination named, is a report.
+const MAX_PLAYERS_KEPT_NOTE: &str =
+    "Declared once, when the mission was created. It is shown because the compiled mission and the \
+     library card still carry this figure — not because anything here counts it.";
 
 /// Shown in place of the game-mode control when the row could not be read: an unsaved draft has no
 /// row to change, and a failed read must not present a working-looking `<select>` that silently
@@ -1040,13 +1091,17 @@ fn render_presentation_section(ctrl: &'static str, shape: RwSignal<Option<RowSha
 /// has always taken it. It is a plain `<select>` over [`GAME_MODES`] with no debounce: see
 /// [`ShapeMirror`] for why the top strip's sequencer is not reused.
 ///
-/// **Players is a report, not a setting.** The number that matters is how many slots have been
-/// placed, so it is derived from `MissionDocCore::slot_count` at render time — and because the
-/// dialog body re-renders on every `doc_tick`, placing or deleting a slot moves it without a reopen.
-/// The stored `max_players` is shown beside it, read-only, and when the two disagree
-/// [`PLAYER_COUNT_DISAGREE_NOTE`] says so instead of either figure quietly winning. There is no
-/// minimum, no clamp and no server-capacity check here on purpose — [`SLOTS_PLACED_NOTE`] and the
-/// module header carry that argument.
+/// **Players is a report, not a setting — and since T-782 it is one number.** The figure under that
+/// heading is how many slots have been placed: derived from `MissionDocCore::slot_count` at render
+/// time and rendered through [`PlayerCount::player_figure`], the single seam the ruling put between
+/// the two numbers and the screen. Because the dialog body re-renders on every `doc_tick`, placing or
+/// deleting a slot moves it without a reopen.
+///
+/// The stored `max_players` is no longer its equal in a two-column grid; it renders below the rule as
+/// the author-declared figure ([`MAX_PLAYERS_KEPT_NOTE`]), and when the two differ
+/// [`PLAYER_COUNT_RULING_NOTE`] names which one the editor goes by. Keeping it visible is the point:
+/// it is what `compiled_meta` ships. There is no minimum, no clamp and no server-capacity check here
+/// on purpose — [`SLOTS_PLACED_NOTE`] and the module header carry that argument.
 ///
 /// Inert on the native view shell (no document, no row), exactly like [`render_flow_section`].
 fn render_shape_section(ctrl: &'static str, shape: RwSignal<Option<RowShape>>) -> AnyView {
@@ -1060,6 +1115,10 @@ fn render_shape_section(ctrl: &'static str, shape: RwSignal<Option<RowShape>>) -
         let sect = "text-label-sm uppercase tracking-wider text-outline";
         let hint = "text-label-sm normal-case text-outline";
         let readonly = "rounded-md border border-outline-variant/20 bg-surface-container-lowest/30 px-2.5 py-1.5 font-mono text-code-md text-on-surface-variant";
+        // T-782 — the nominated figure is set apart from the read-only cap cell rather than sharing
+        // its box. Two identically-styled numbers under one heading is the presentation the ruling
+        // rejected, so the ruling has to be visible in the layout and not only in the copy.
+        let figure = "font-mono text-headline-sm text-on-surface";
         // Built here rather than threaded from setup: the section renders inside the dialog body's
         // reactive owner, so the three context lookups resolve, and the resulting `Copy` handle is
         // what the `on:change` closure captures — which is the property that actually matters.
@@ -1107,11 +1166,21 @@ fn render_shape_section(ctrl: &'static str, shape: RwSignal<Option<RowShape>>) -
             None => view! { <p class=hint>{SHAPE_UNAVAILABLE_NOTE}</p> }.into_any(),
         };
 
-        let declared_cell = counts.declared.map(|d| {
+        // T-782 — the author-declared cap, one tier below the figure and never beside it. Rendered
+        // only when the row arrived: a draft that was never saved has no `max_players` to report,
+        // and a bordered block announcing nothing is worse than no block. The ruling note rides
+        // inside it because it is a sentence about *this* number, and it is only worth reading when
+        // the two actually differ.
+        let declared_block = counts.declared.map(|d| {
+            let ruling = counts
+                .disagrees()
+                .then(|| view! { <span class=hint>{PLAYER_COUNT_RULING_NOTE}</span> });
             view! {
-                <div class="flex flex-col gap-1">
-                    <span class=sect>"Max players (set at creation)"</span>
+                <div class="flex flex-col gap-1 border-t border-outline-variant/20 pt-3">
+                    <span class=sect>"Max players (declared at creation)"</span>
                     <div class=readonly>{d.to_string()}</div>
+                    <span class=hint>{MAX_PLAYERS_KEPT_NOTE}</span>
+                    {ruling}
                 </div>
             }
         });
@@ -1124,18 +1193,16 @@ fn render_shape_section(ctrl: &'static str, shape: RwSignal<Option<RowShape>>) -
                     {mode_control}
                 </label>
 
-                <span class=sect>"Players"</span>
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="flex flex-col gap-1">
-                        <span class=sect>"Slots placed"</span>
-                        <div class=readonly>{placed.to_string()}</div>
-                    </div>
-                    {declared_cell}
+                // T-782 — "Players" now labels one figure, and that figure is the derived slot
+                // count. It reads through `player_figure` rather than the local so there is exactly
+                // one place the displayed number can come from.
+                <div class="flex flex-col gap-1">
+                    <span class=sect>"Players"</span>
+                    <div class=figure>{counts.player_figure().to_string()}</div>
+                    <span class=hint>{SLOTS_PLACED_NOTE}</span>
                 </div>
-                <span class=hint>{SLOTS_PLACED_NOTE}</span>
-                {counts
-                    .disagrees()
-                    .then(|| view! { <span class=hint>{PLAYER_COUNT_DISAGREE_NOTE}</span> })}
+
+                {declared_block}
             </div>
         }
         .into_any()
@@ -2549,7 +2616,7 @@ mod t746_shape_flight {
 mod t694_mission_shape {
     use super::{
         game_mode_failure_message, is_known_game_mode, PlayerCount, GAME_MODES,
-        PLAYER_COUNT_DISAGREE_NOTE, SLOTS_PLACED_NOTE,
+        PLAYER_COUNT_RULING_NOTE, SLOTS_PLACED_NOTE,
     };
     use crate::arsenal::class_r_scrub::{live_code, only_body};
     use crate::eden_top_strip::is_mission_row_id;
@@ -2599,7 +2666,14 @@ mod t694_mission_shape {
 
     /// The disagreement rule: both numbers are reported, and the explanatory note appears **only**
     /// when they differ. An author who placed exactly `max_players` slots needs no essay; an author
-    /// whose two numbers have drifted needs to be told nothing here reconciles them.
+    /// whose two numbers have drifted needs to be told which one the editor goes by.
+    ///
+    /// **Kept, not rewritten, by T-782.** The ruling changed what the note *says* (the answer, not
+    /// the argument) and where the declared figure *renders* — it did not change when the sentence
+    /// is worth showing, so this predicate still holds exactly as T-694 wrote it. What T-782 adds is
+    /// [`super::PlayerCount::player_figure`], pinned separately: `disagrees` decides whether to
+    /// explain, `player_figure` decides what is displayed, and conflating the two is how the ruling
+    /// would get quietly re-opened.
     #[test]
     fn player_count_flags_disagreement_and_nothing_else() {
         assert!(PlayerCount {
@@ -2639,10 +2713,14 @@ mod t694_mission_shape {
             note.contains("server"),
             "T-694: the slots note must say this is not what the server will hold"
         );
-        let disagree = PLAYER_COUNT_DISAGREE_NOTE.to_lowercase();
+        // T-782 renamed the note and replaced its argument with the answer. This assertion is the
+        // T-694 one, unchanged and re-aimed at the constant that succeeded it: the ruling settled
+        // WHICH figure the editor reports, not whether either is a capacity, so the copy must still
+        // refuse to claim one.
+        let ruling = PLAYER_COUNT_RULING_NOTE.to_lowercase();
         assert!(
-            disagree.contains("neither is enforced"),
-            "T-694: the disagreement note must say neither figure is enforced here"
+            ruling.contains("neither is enforced"),
+            "T-694/T-782: the ruling note must still say neither figure is enforced here"
         );
     }
 
@@ -2665,6 +2743,10 @@ mod t694_mission_shape {
     /// **The derived count is derived.** The shape section must read the live document's slot count
     /// rather than any stored figure. Perturbation this catches: swapping the call for the row's
     /// `max_players`, or for a hand-rolled counter.
+    ///
+    /// This pins where the number is *sourced*. Since T-782 it is only half the claim — a section
+    /// could source the slot count correctly and still print the declared figure under **Players** —
+    /// so `t782_player_count_ruling` pins the other half, that the sourced count is the one shown.
     #[test]
     fn player_count_comes_from_the_document_slot_count() {
         let src = live_code(include_str!("eden_settings.rs"));
@@ -2743,6 +2825,160 @@ mod t694_mission_shape {
             setter_body.contains(&format!("is{}", "_mission_row_id")),
             "T-694: {setter} must refuse synthetic editor ids before hitting the wire"
         );
+    }
+}
+
+// T-782 — the operator's ruling on the editor's player figure, pinned as a claim about what is
+// DISPLAYED rather than about what exists. The defect class is T-688's and T-753's: a view showing a
+// number the authority does not hold. "A slot count is computed somewhere in this function" would
+// have been true before the ruling too, so it pins nothing; the chain below is
+//   (a) `player_figure` returns `placed` and cannot see `declared` — value pin plus an exact-body
+//       pin, so relocating the fallback into a helper cannot green it;
+//   (b) the section renders THROUGH `player_figure`, and no second route to a rendered number
+//       survives anywhere in the file.
+// Together those say the figure on screen is the derived count. Same `class_r_scrub` house rules as
+// the modules above: `live_code` cuts the test module and blanks literals, so a needle cannot be met
+// by this test, by copy, or by a comment claiming the work was done.
+#[cfg(test)]
+mod t782_player_count_ruling {
+    use super::{PlayerCount, MAX_PLAYERS_KEPT_NOTE, PLAYER_COUNT_RULING_NOTE};
+    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+
+    /// **The ruling, as a value.** Whatever the row declares, the figure is the count of placed
+    /// slots. Perturbation this catches: pointing the display back at `max_players` — a
+    /// `player_figure` that prefers `declared` when the row has one, or that treats an empty
+    /// document as "no answer yet" and borrows the declared cap.
+    #[test]
+    fn the_player_figure_is_the_derived_slot_count() {
+        for declared in [None, Some(0), Some(1), Some(64), Some(999)] {
+            let counts = PlayerCount {
+                placed: 84,
+                declared,
+            };
+            assert_eq!(
+                counts.player_figure(),
+                84,
+                "T-782: the editor's player figure is the placed slot count — declared={declared:?} \
+                 must not change it"
+            );
+        }
+        // The empty document is the case a fallback would look reasonable in, and the case where it
+        // would lie hardest: a mission with no slots seats nobody, whatever was typed at creation.
+        assert_eq!(
+            PlayerCount {
+                placed: 0,
+                declared: Some(64)
+            }
+            .player_figure(),
+            0,
+            "T-782: a mission with no slots placed shows 0, not the declared 64"
+        );
+    }
+
+    /// **The seam is a seam.** `player_figure` is the whole of the decision, so its body must be the
+    /// whole of the decision: `self.placed`, nothing else. An exact-body pin rather than a scoped
+    /// "must not contain `declared`", because the interesting perturbation is not typing the word —
+    /// it is calling something that reaches the row on this function's behalf.
+    #[test]
+    fn the_seam_reads_the_document_count_and_nothing_else() {
+        let src = live_code(include_str!("eden_settings.rs"));
+        let seam = format!("fn player{}", "_figure");
+        let body: String = only_body(&src, &seam).split_whitespace().collect();
+        assert_eq!(
+            body, "self.placed",
+            "T-782: `{seam}` must be exactly the derived count. Anything else — a fallback to the \
+             declared cap, a clamp, a helper that can reach the row — re-opens a question the \
+             operator closed, in the one place a reader would not think to look"
+        );
+    }
+
+    /// **What is displayed is that derived count.** The section must render the figure through the
+    /// seam, and no rendered number may bypass it. The negative half is whole-file on purpose (the
+    /// house rule): a bypass moved into a neighbouring helper is still a bypass.
+    #[test]
+    fn the_displayed_players_figure_goes_through_the_seam() {
+        let src = live_code(include_str!("eden_settings.rs"));
+        let body = only_body(&src, &format!("fn render{}", "_shape_section"));
+        assert!(
+            body.contains(&format!("player{}()", "_figure")),
+            "T-782: the Players cell must render PlayerCount::player_figure() — a section that \
+             prints a local it computed itself is a second answer to the ruled question"
+        );
+        assert!(
+            !src.contains(&format!("placed{}", ".to_string()")),
+            "T-782: the placed local must not be rendered directly; it reaches the screen through \
+             the seam or not at all"
+        );
+        // The nomination has to be visible, not merely true. Two identically-styled numbers under
+        // one heading was the rejected presentation, so the figure carries its own type scale and
+        // the second number carries a label saying what it is. Read through the literal-preserving
+        // scrub: `live_code` blanks class strings and copy, so these needles are invisible to it.
+        // (Stated positively — a negative needle here could not be whole-file, because the same
+        // two-column grid is a legitimate layout for Time and Weather further up this file.)
+        let lit = live_source(include_str!("eden_settings.rs"));
+        let lit_body = only_body(&lit, &format!("fn render{}", "_shape_section"));
+        assert!(
+            lit_body.contains(&format!("text-headline{}", "-sm")),
+            "T-782: the nominated figure must be set apart from the read-only cap cell, not styled \
+             as its twin"
+        );
+        assert!(
+            lit_body.contains("declared at creation"),
+            "T-782: the second number must be labelled as the author's declaration"
+        );
+    }
+
+    /// **`max_players` survived the ruling.** The decision was about what the editor DISPLAYS; the
+    /// compile path still copies this column into the compiled mission
+    /// (`dto::MissionDetail::compiled_meta`) and the library card still advertises it. So it must
+    /// stay read, stay rendered, and stay labelled as the author's declaration — the failure this
+    /// catches is a tidy-up that reads "the derived count won, delete the loser" and silently drops
+    /// a value the compiler still ships.
+    #[test]
+    fn the_declared_cap_is_kept_and_labelled() {
+        let src = live_code(include_str!("eden_settings.rs"));
+        assert!(
+            src.contains(&format!("max{}", "_players")),
+            "T-782: `max_players` reaches the compiled mission — the display ruling must not delete it"
+        );
+        let body = only_body(&src, &format!("fn render{}", "_shape_section"));
+        assert!(
+            body.contains("declared"),
+            "T-782: the section must still report the author-declared figure"
+        );
+        let kept = MAX_PLAYERS_KEPT_NOTE.to_lowercase();
+        assert!(
+            kept.contains("compiled"),
+            "T-782: the kept-cap note must say where this figure actually goes, got {kept:?}"
+        );
+        assert!(
+            kept.contains("declared"),
+            "T-782: the kept-cap note must say the figure was declared, not counted, got {kept:?}"
+        );
+    }
+
+    /// **The note states the decision, not the argument.** The retired copy ended "so both are
+    /// shown" — an honest sentence while the question was open and a false one now. Its replacement
+    /// has to name the figure the editor goes by, or the screen still refuses to answer.
+    #[test]
+    fn the_ruling_note_names_the_answer_instead_of_the_argument() {
+        let note = PLAYER_COUNT_RULING_NOTE.to_lowercase();
+        assert!(
+            note.contains("goes by the slots placed"),
+            "T-782: the note must say which figure the editor goes by, got {note:?}"
+        );
+        assert!(
+            !note.contains("both are shown"),
+            "T-782: the disagree-note's refusal to choose was retired with the question, got {note:?}"
+        );
+        // The reserved sub-question is the operator's: nothing on screen may imply the editor has
+        // settled what the COMPILE path does with `max_players`.
+        for overreach in ["will be derived", "ignore this", "no longer used"] {
+            assert!(
+                !note.contains(overreach),
+                "T-782: {overreach:?} decides the compile-path question the ruling left open"
+            );
+        }
     }
 }
 
