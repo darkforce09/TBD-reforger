@@ -1479,22 +1479,47 @@ mod t778_seam_lifecycle {
     /// every test above. Pinned over `live_code`, which cuts the test module, the comments AND the
     /// string literals: the needles below therefore have to be real calls in the production body,
     /// not the prose two lines above them nor a decoy in a string.
+    ///
+    /// [wave 142 F-3] TIGHTENED. The pin reddened on the honest regression (the pre-T-778 direct
+    /// write) but GREENED on a decoy: rename a local to `install_seam_later` and write the cell with
+    /// `RefCell::replace` instead of `borrow_mut`, and both needles were satisfied while the
+    /// un-unregisterable registration was back. `install_seam` was a bare substring, and the negative
+    /// named ONE of the several ways to write a `RefCell`. Two changes close it:
+    ///
+    /// * the positive names the CALL and its ARGUMENT — the seam has to be installed on THIS cell,
+    ///   which no local's name can satisfy;
+    /// * the negative forbids reaching the cell at all from this body. `install_seam(&RENDER_CTX, …)`
+    ///   passes the cell; it never opens it. So `RENDER_CTX.with` inside `register_render_ctx` means
+    ///   a hand-rolled registration by definition, whatever mutator it then reaches for — and the
+    ///   three write shapes are forbidden by name as well, so the failure message says which one.
+    ///
+    /// This seam has no behavioural test anywhere (`world_assets` is wasm32-only with no
+    /// wasm-bindgen-test target), so this pin is its only guarantee. That is exactly the case where
+    /// the standard Class-R substring ceiling is worth paying to raise.
     #[test]
     fn the_render_ctx_seam_is_installed() {
         use crate::arsenal::class_r_scrub::{live_code, only_body, only_item};
         let src = live_code(include_str!("world_assets/mod.rs"));
 
         let body = only_body(&src, "pub fn register_render_ctx(");
+        // The call AND the cell it installs on — `install_seam_later = ()` does not contain this.
+        let install = ["install_seam(&", "RENDER_CTX"].concat();
         assert!(
-            body.contains("install_seam"),
-            "T-778: register_render_ctx must INSTALL (register + guarded unregister at the owner's \
-             cleanup), not write the cell directly; got:\n{body}"
+            body.contains(&install),
+            "T-778: register_render_ctx must INSTALL on RENDER_CTX (register + guarded unregister at \
+             the owner's cleanup), not write the cell directly; got:\n{body}"
         );
-        assert!(
-            !body.contains("borrow_mut"),
-            "T-778: register_render_ctx must not still poke RENDER_CTX behind install_seam's back — \
-             a bare write is the un-unregisterable registration this ticket removes; got:\n{body}"
-        );
+        // `install_seam` takes the cell; it never opens it. Opening it here is a hand-rolled
+        // registration whichever mutator follows — `borrow_mut`, `replace`, `take`, `set`.
+        let opens_cell = ["RENDER_CTX", ".with"].concat();
+        for forbidden in [opens_cell.as_str(), "borrow_mut", ".replace(", ".take("] {
+            assert!(
+                !body.contains(forbidden),
+                "T-778: register_render_ctx must not reach into RENDER_CTX behind install_seam's \
+                 back (`{forbidden}`) — a bare write is the un-unregisterable registration this \
+                 ticket removes; got:\n{body}"
+            );
+        }
 
         // The tuple-valued seam needs its own identity, and it must be Rc IDENTITY on both handles —
         // never a `usize` address (ABA) and never `||`, which would let a half-matching cleanup clear

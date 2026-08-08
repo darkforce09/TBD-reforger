@@ -2687,10 +2687,24 @@ pub fn refresh_docks() {
         };
         ctx.outliner_nodes.set(nodes);
         ctx.orbat_nodes.set(orbat);
-        ctx.selected_ids.set(ctx.selection.borrow().clone());
+        mirror_selection(ctx);
         ctx.doc_tick
             .set(ctx.doc_tick.get_untracked().wrapping_add(1));
     });
+}
+
+/// T-780 [wave 142 F-1] — push the entity selection to the dock mirror, **reconciling the map's edge
+/// selection first**.
+///
+/// This is the only place `selected_ids` is written, and both mirrors ([`refresh_docks`] on every
+/// document change, [`refresh_selection_mirrors`] on every selection-only change) go through it — so
+/// no route can put an entity selection on screen without [`reconcile_connection_selection`] having
+/// run against it. That is what turns "the two selections are mutually exclusive" from a statement
+/// about ONE pick's ordering into a property of every selection write in the editor, including the
+/// three that do not know the map exists (the Outliner row, the click-to-select router, a place).
+fn mirror_selection(ctx: &OpsCtx) {
+    reconcile_connection_selection(ctx);
+    ctx.selected_ids.set(ctx.selection.borrow().clone());
 }
 
 /// Selection-only dock mirror: push `selected_ids` (the trees' fine-grained `is_sel` source)
@@ -2698,7 +2712,7 @@ pub fn refresh_docks() {
 pub fn refresh_selection_mirrors() {
     OPS_CTX.with(|c| {
         if let Some(ctx) = c.borrow().as_ref() {
-            ctx.selected_ids.set(ctx.selection.borrow().clone());
+            mirror_selection(ctx);
         }
     });
 }
@@ -3530,6 +3544,103 @@ pub fn close_connections_panel() {
 }
 
 thread_local! {
+    /// T-780 [wave 142 F-1] — the connection edge SELECTED on the map (`None` = none). The signal is
+    /// owned by `mission_editor` (it is page-local overlay state, not document content) and handed
+    /// here through the [`CONNECTIONS_PANEL`] idiom.
+    ///
+    /// T-780 claimed the edge selection and the entity selection were "mutually exclusive by
+    /// construction". They were not. The construction was the MAP pick's own ordering — an edge is
+    /// only picked on a miss, and a miss clears the entity selection — and it says nothing about the
+    /// other routes into a selection: the Outliner row ([`select_slot`]), the marquee commit, the
+    /// click-to-select router, a place. Through any of those both selections were live at once, and
+    /// Delete over a highlighted slot removed an amber line somewhere else instead.
+    ///
+    /// So the claim is MADE TRUE here rather than asserted in a comment: the selection is registered
+    /// with the module that owns every entity-selection write, and [`reconcile_connection_selection`]
+    /// runs inside [`mirror_selection`] — the one function through which an entity selection reaches
+    /// the UI at all.
+    static CONNECTION_SELECTION: RefCell<Option<RwSignal<Option<String>>>> =
+        const { RefCell::new(None) };
+}
+
+/// T-780 [wave 142 F-1] — register the map's connection selection (once, from
+/// `mission_editor::on_load`). No registration ⇒ every verb below is inert, which is the native
+/// shell's case and the pre-mount case.
+pub fn set_connection_selection_signal(sig: RwSignal<Option<String>>) {
+    CONNECTION_SELECTION.with(|s| *s.borrow_mut() = Some(sig));
+}
+
+/// T-780 [wave 142 F-1] — **the reconcile.** Drop the map's edge selection when it can no longer be
+/// the thing Delete removes, for either of the two reasons it stops being that:
+///
+/// * an ENTITY selection is live — the operator is looking at a highlighted slot, so the amber line
+///   is a promise about a keypress that now belongs to the slot. This is the exclusivity, enforced.
+/// * the id no longer names an edge in the DOCUMENT — an undo of the connect, a panel-side delete,
+///   the T-672 endpoint cascade, an IDB restore. A stale id is not merely an inert tint: it is what
+///   let Delete report a removal over a document that never changed, which is the T-779 defect
+///   (success over a write that did not happen) rebuilt on a different surface.
+///
+/// Read through `try_get_untracked`, which answers `None` on a DISPOSED signal (a route-leave that
+/// outran a refresh), and NOTHING is written in that case — the T-778 rule: a write onto a signal
+/// whose owner is gone is not a reconcile, it is a lie with no reader.
+fn reconcile_connection_selection(ctx: &OpsCtx) {
+    CONNECTION_SELECTION.with(|s| {
+        let Some(sig) = *s.borrow() else {
+            return;
+        };
+        let Some(Some(id)) = sig.try_get_untracked() else {
+            return;
+        };
+        // Both borrows are released before the write: the set re-runs the lane Effect, which reads
+        // the same doc handle.
+        let entity_selected = !ctx.selection.borrow().is_empty();
+        let still_there = {
+            let d = ctx.doc.borrow();
+            d.as_ref()
+                .is_some_and(|core| connection_id_in_doc(core, &id))
+        };
+        if entity_selected || !still_there {
+            sig.set(None);
+        }
+    });
+}
+
+/// T-780 [wave 142 F-2] — does the live document actually hold an edge with this id?
+///
+/// Asked over `connection_rows_json`, the SAME stable listing the panel renders and the map lane is
+/// built from, so "present" means one thing to the verb, to the reconcile and to the operator's
+/// eyes. The core's `remove_connection` returns unit and so cannot answer "was it there?"; this
+/// takes the answer BEFORE the write instead of inferring it from a count afterwards.
+fn connection_id_in_doc(core: &MissionDocCore, id: &str) -> bool {
+    if id.is_empty() {
+        return false;
+    }
+    let Ok(rows) = serde_json::from_str::<serde_json::Value>(&core.connection_rows_json()) else {
+        return false;
+    };
+    rows.as_array().is_some_and(|a| {
+        a.iter()
+            .any(|r| r.get("id").and_then(serde_json::Value::as_str) == Some(id))
+    })
+}
+
+/// T-780 [wave 142 F-1] — the same question [`delete_connection`] gates on, asked from the map's
+/// Delete arm so a stale selection FALLS THROUGH to the entity delete instead of being handed to a
+/// verb that can only answer `false`. One question, one implementation, two callers.
+#[must_use]
+pub fn connection_exists(id: &str) -> bool {
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let d = ctx.doc.borrow();
+        d.as_ref()
+            .is_some_and(|core| connection_id_in_doc(core, id))
+    })
+}
+
+thread_local! {
     /// T-672 / T-768 — the armed half of the connect: `Some((kind, from_id))`.
     ///
     /// A plain `thread_local` and NOT a variant of place-arm `Pending`: place-arm is consumed by the
@@ -3611,6 +3722,19 @@ pub fn complete_connect(to_id: &str) -> bool {
 /// calls, and it is the whole of `CONN-DEL-001` in this slice: Eden deletes a connection by selecting
 /// its LINE and pressing Del, and there is no line to select here (no render lane — see the slice
 /// notes), so the addressable row IS the selection. One core transaction ⇒ one Ctrl+Z.
+///
+/// **The returned `bool` means "this connection was there and is now gone"** [wave 142 F-2]. It used
+/// to mean something weaker and wrong: the guard was `connection_count() == 0`, a COUNT rather than
+/// an id-presence check, so an id the document did not hold returned `true` whenever any OTHER edge
+/// existed — `after_local_edit` then dirtied a mission that never changed. That is the same class
+/// T-779 removed from `set_loadout` in the same wave (a verb inventing an acknowledgement for a
+/// write that did not land), and T-780's map selection made it reachable: an undo, or a panel-side
+/// delete, leaves the map holding an id the graph no longer has.
+///
+/// `MissionDocCore::remove_connection` returns unit and cannot report what it removed, so the answer
+/// is taken from the document BEFORE the write ([`connection_id_in_doc`]) instead of guessed after
+/// it. If the core mutator ever grows a `bool` like `add_connection` has, this gate becomes its
+/// return value and the pre-read goes away.
 pub fn delete_connection(id: &str) -> bool {
     let removed = OPS_CTX.with(|c| {
         let guard = c.borrow();
@@ -3621,7 +3745,7 @@ pub fn delete_connection(id: &str) -> bool {
         let Some(core) = d.as_ref() else {
             return false;
         };
-        if core.connection_count() == 0 {
+        if !connection_id_in_doc(core, id) {
             return false;
         }
         core.remove_connection(id);

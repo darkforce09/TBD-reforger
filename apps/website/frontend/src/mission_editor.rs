@@ -2545,11 +2545,23 @@ pub fn MissionEditorPage() -> impl IntoView {
     // Y.Doc — the same rule the slot selection, the ruler chain and the LoS ray follow (a selection
     // is not mission content, and putting it in the document would make it an undo step).
     //
-    // It is a signal rather than a `thread_local` because THREE places must agree about it and two
-    // of them are reactive: the `doc_tick` Effect that binds the lane (which re-tints on a selection
-    // change), the pointer arm that sets it, and the Delete key arm that consumes it. Mutually
-    // exclusive with the slot selection by construction: an edge is only picked when the
-    // slot/vehicle pick already MISSED, and that miss clears the slot selection.
+    // It is a signal rather than a `thread_local` because FOUR places must agree about it and two of
+    // them are reactive: the `doc_tick` Effect that binds the lane (which re-tints on a selection
+    // change), the pointer arm that sets it, the Delete key arm that consumes it, and — since wave
+    // 142 — `editor_ops`, which is handed the signal below and RECONCILES it.
+    //
+    // [wave 142 F-1] That last one is the correction to this ticket's original claim. It said the
+    // edge and slot selections were "mutually exclusive by construction" because an edge is only
+    // picked when the slot pick already MISSED and a miss clears the slot selection. True of the map
+    // pick; false of the editor. Nothing stopped the Outliner row, the marquee, the click-to-select
+    // router or a place from raising a slot selection while an edge stayed selected, and Delete then
+    // removed the EDGE while the operator looked at a highlighted slot. Nothing reconciled the id
+    // against the document either, so an undo left Delete pointing at an edge that no longer existed.
+    //
+    // Both are now closed in `editor_ops`, where every entity-selection write already funnels through
+    // one mirror (`mirror_selection` → `reconcile_connection_selection`): a live entity selection
+    // clears the edge, and so does an id the document no longer holds. The exclusivity is a property
+    // of the writes, not of one gesture's ordering.
     let selected_connection = RwSignal::new(None::<String>);
     // Both readers (the lane feed and the Delete arm) are wasm-only, so the native view shell never
     // touches it — the file's standard `let _ = …` acknowledgement rather than an `_`-prefixed name,
@@ -3243,6 +3255,13 @@ pub fn MissionEditorPage() -> impl IntoView {
             // T-672 — same idiom: the `Connections...` context-menu row calls
             // `editor_ops::open_connections_panel`, which needs this handle.
             crate::editor_ops::set_connections_panel_signal(connections_panel);
+            // T-780 [wave 142 F-1] — the SAME idiom, for the opposite reason: `editor_ops` does not
+            // read this one to render an overlay, it reconciles it. Every entity-selection write in
+            // the editor lands in `editor_ops::mirror_selection`, so handing the signal over is what
+            // makes "an edge selection and a slot selection cannot both be live" true of routes this
+            // page never sees (the Outliner row, the click-to-select router, a place), and what lets
+            // an undo that removed the edge clear the amber line with it.
+            crate::editor_ops::set_connection_selection_signal(selected_connection);
 
             crate::mission_history::register_editor_history();
             crate::mission_history::register_key_handler();
@@ -3283,7 +3302,25 @@ pub fn MissionEditorPage() -> impl IntoView {
             // binds against an engine that is finally there.
             //
             // The `selected_connection` read is tracked deliberately: picking an edge re-runs this
-            // and re-packs the lane with that edge tinted. Nothing else needs a "highlight" path.
+            // and re-packs the lane with that edge tinted. Nothing else needs a "highlight" path —
+            // and since wave 142 it is also how the reconcile becomes visible: `editor_ops` clearing
+            // a stale or superseded selection is a write to that signal, so the amber drops off the
+            // line in the same pass that made it stale.
+            //
+            // [wave 142 F-4 — RECORDED, DELIBERATE, NOT A BUG TO FILE AGAIN.] This lane re-binds on
+            // `doc_tick`, i.e. on COMMIT, so during a slot/vehicle drag an edge stays pinned to the
+            // committed endpoint and catches up on pointer-up, while the drag-preview lanes re-pack
+            // per pointermove. That is exactly what the sibling hairline lane does: `SquadLinks` is
+            // uploaded from the rebind path (`upload_squad_links` on `after_doc_change`) and lags the
+            // same way, for the same reason. Two hairline lanes over the same entities that disagree
+            // about where those entities are DURING a drag would be worse than both lagging — the
+            // inconsistency would read as one of them being wrong.
+            //
+            // Making them live would be ONE change to BOTH, not a change here: the drag preview owns
+            // the provisional positions (they never enter the document until commit), so both lanes
+            // would have to be re-packed from the preview's position map on each pointermove, with
+            // the committed document as the fallback for every entity not being dragged. That is a
+            // preview-side feature, not a connection-lane fix, and it is not this ticket's.
             {
                 let doc = doc.clone();
                 let engine = engine.clone();
@@ -3515,18 +3552,29 @@ pub fn MissionEditorPage() -> impl IntoView {
                             // its one arm and its one censused `!modk` guard; what changed is what
                             // the arm DOES, which is not a keymap fact.
                             //
-                            // The two selections can never both be live: an edge is only selected on
-                            // a pick MISS, and that miss clears the slot selection in the same
-                            // breath. Clearing on delete is the disarm — the id is gone from the
-                            // document after this, so leaving it selected would leave Del pointing at
-                            // a row that no longer exists (and, after a Ctrl+Z restored it, silently
-                            // re-armed).
+                            // [wave 142 F-1] THE ARM RESOLVES ITS SELECTION AGAINST THE DOCUMENT
+                            // before it fires. `editor_ops` reconciles the signal on every selection
+                            // and every document change (see the declaration), but the branch here
+                            // must not DEPEND on that having run: what an armed id is worth is a
+                            // question about the live graph, and asking it one expression before the
+                            // delete costs nothing. An id the document no longer holds falls through
+                            // to the entity delete rather than being handed to a verb that can only
+                            // answer `false` — which would swallow the keypress in silence.
+                            //
+                            // `connection_exists` is the SAME question `delete_connection` gates on,
+                            // so the branch taken here and the write that follows cannot disagree.
+                            //
+                            // The armed id is dropped either way. On the delete it is the disarm (the
+                            // edge is gone; leaving it selected would leave Del pointing at a row that
+                            // no longer exists, and a Ctrl+Z would silently re-arm it). On the stale
+                            // branch it is the same disarm one keypress earlier than the reconcile.
                             "Delete" if !modk => {
-                                match selected_connection.try_get_untracked().flatten() {
-                                    Some(id) => {
-                                        selected_connection.set(None);
-                                        crate::editor_ops::delete_connection(&id)
-                                    }
+                                let armed = selected_connection.try_get_untracked().flatten();
+                                if armed.is_some() {
+                                    selected_connection.set(None);
+                                }
+                                match armed.filter(|id| crate::editor_ops::connection_exists(id)) {
+                                    Some(id) => crate::editor_ops::delete_connection(&id),
                                     None => crate::editor_ops::delete_selection(),
                                 }
                             }
@@ -11496,6 +11544,11 @@ mod t780_connection_line {
     /// `editor_ops::delete_connection` — the same function `ConnectionsPanelOverlay`'s per-row
     /// button calls — off the map selection, and the slot `delete_selection` must survive as the
     /// other branch of the SAME arm, so one keypress can never delete both an edge and a slot.
+    ///
+    /// [wave 142 F-1] The ORDER is now three deep, not two: the arm must READ the armed id, RESOLVE
+    /// it against the live document, and only then delete. The middle step is the finding — without
+    /// it an id the document no longer holds (undo, a panel-side delete, the T-672 endpoint cascade)
+    /// was handed straight to the verb, which reported success over a write that never happened.
     #[test]
     fn map_delete_calls_the_panels_delete_connection() {
         let keys = only_body(&page(), "let onkeydown =").to_string();
@@ -11513,11 +11566,105 @@ mod t780_connection_line {
             at_sel < at_verb,
             "T-780: the map selection must be read before the delete, not after it"
         );
+        let resolve = ["editor_ops", "::", "connection_exists("].concat();
+        let at_resolve = keys.find(&resolve).expect(
+            "wave 142 F-1: the Delete branch must resolve the armed id against the live document \
+             before firing — a stale id must fall through to the entity delete, not be handed to a \
+             verb that can only answer false",
+        );
+        assert!(
+            at_sel < at_resolve && at_resolve < at_verb,
+            "wave 142 F-1: read the selection, RESOLVE it, then delete — in that order"
+        );
         let fallthrough = ["editor_ops", "::", "delete_selection()"].concat();
         assert!(
             keys[at_verb..].contains(&fallthrough),
             "T-780: the slot Delete must survive as the other branch — this is an addition to the \
              Delete arm, not a replacement of it"
+        );
+    }
+
+    /// **The verb's `bool` means the connection was there and is now gone** [wave 142 F-2].
+    ///
+    /// It used to mean "the document holds at least one connection", because the guard was a COUNT:
+    /// `delete_connection` returned `true` for an id the graph did not hold whenever any other edge
+    /// existed, and `after_local_edit` then dirtied a mission that never changed. That is the T-779
+    /// class — a verb inventing an acknowledgement for a write that did not land — and this pin is
+    /// the shape of it: no count in the guard, an id-presence check, taken BEFORE the write, because
+    /// the core's `remove_connection` returns unit and cannot report what it removed afterwards.
+    #[test]
+    fn delete_connection_answers_the_document_not_a_count() {
+        let ops = live_code(include_str!("editor_ops.rs"));
+        let verb = only_body(&ops, "pub fn delete_connection(");
+        let count = ["connection", "_count("].concat();
+        assert!(
+            !verb.contains(&count),
+            "wave 142 F-2: a COUNT cannot say whether THIS id was there; got:\n{verb}"
+        );
+        let gate = ["connection_id", "_in_doc("].concat();
+        let at_gate = verb.find(&gate).expect(
+            "wave 142 F-2: delete_connection must gate on the id being PRESENT in the document",
+        );
+        let remove = ["core.", "remove_connection("].concat();
+        let at_remove = verb
+            .find(&remove)
+            .expect("the verb must still be the one place the core mutator is reached");
+        assert!(
+            at_gate < at_remove,
+            "wave 142 F-2: the presence check must be taken before the write, not inferred after it"
+        );
+        // ONE question, ONE implementation: the map arm's fall-through gate asks the same thing, so
+        // the branch the keydown takes and the write that follows it cannot disagree.
+        assert!(
+            only_body(&ops, "pub fn connection_exists(").contains(&gate),
+            "wave 142 F-1: connection_exists must ask the same question the verb gates on"
+        );
+    }
+
+    /// **The two selections cannot coexist — by construction, not by convention** [wave 142 F-1].
+    ///
+    /// T-780 claimed exclusivity from the map pick's ordering, which says nothing about the Outliner
+    /// row, the marquee, the click-to-select router or a place: through any of those an edge and a
+    /// slot were both selected, and Delete removed the edge while the operator watched a highlighted
+    /// slot. The construction that makes it true is this: every entity-selection write in the editor
+    /// reaches the UI through ONE mirror, and the reconcile lives inside that mirror. So the pin is
+    /// not "someone remembered to clear it" — it is that `selected_ids` has exactly one writer.
+    #[test]
+    fn an_edge_selection_and_an_entity_selection_cannot_coexist() {
+        let ops = live_code(include_str!("editor_ops.rs"));
+        let mirror = ["mirror_", "selection(ctx)"].concat();
+        let reconcile = ["reconcile_connection", "_selection(ctx)"].concat();
+        assert!(
+            only_body(&ops, "fn mirror_selection(").contains(&reconcile),
+            "wave 142 F-1: the mirror must reconcile the map's edge selection"
+        );
+        for marker in ["pub fn refresh_docks(", "pub fn refresh_selection_mirrors("] {
+            assert!(
+                only_body(&ops, marker).contains(&mirror),
+                "wave 142 F-1: {marker} must push the selection through the shared mirror"
+            );
+        }
+        let push = ["selected_ids", ".set("].concat();
+        assert_eq!(
+            ops.matches(&push).count(),
+            1,
+            "wave 142 F-1: exactly ONE writer of selected_ids — a second would be a route that puts \
+             an entity selection on screen without the reconcile, which is the finding itself"
+        );
+        // The reconcile can only reach the map's selection because the page hands the signal over.
+        let handoff = ["editor_ops", "::", "set_connection_selection_signal("].concat();
+        assert!(
+            only_body(&page(), "canvas_ref.on_load(").contains(&handoff),
+            "wave 142 F-1: on_load must register the connection selection with editor_ops"
+        );
+        // And the reconcile drops the id for BOTH reasons it can stop naming what Delete removes:
+        // a live entity selection, and an id the document no longer holds.
+        let body = only_body(&ops, "fn reconcile_connection_selection(");
+        let in_doc = ["connection_id", "_in_doc("].concat();
+        assert!(
+            body.contains("selection.borrow().is_empty()") && body.contains(&in_doc),
+            "wave 142 F-1: the reconcile must test the entity selection AND the document; got:\n\
+             {body}"
         );
     }
 
@@ -11618,6 +11765,36 @@ mod t780_connection_line {
         assert!(
             !keys.replacen(&verb, "/* hollow */", 1).contains(&verb),
             "fired rule: deleting the delete_connection call must break the T-780 delete pin"
+        );
+        // [wave 142] The three new needles, same treatment: strip each from an in-memory copy of the
+        // real source and the assertion that found it has nothing left to find.
+        let resolve = ["editor_ops", "::", "connection_exists("].concat();
+        assert!(keys.contains(&resolve), "canary: the real arm resolves");
+        assert!(
+            !keys
+                .replacen(&resolve, "/* hollow */", 1)
+                .contains(&resolve),
+            "fired rule: dropping the document resolve must break the F-1 arm pin"
+        );
+        let ops = live_code(include_str!("editor_ops.rs"));
+        let gate = ["connection_id", "_in_doc("].concat();
+        let verb_body = only_body(&ops, "pub fn delete_connection(");
+        assert!(verb_body.contains(&gate), "canary: the real verb gates");
+        assert!(
+            !verb_body.replacen(&gate, "/* hollow */", 1).contains(&gate),
+            "fired rule: dropping the id-presence gate must break the F-2 verb pin"
+        );
+        let reconcile = ["reconcile_connection", "_selection(ctx)"].concat();
+        let mirror_body = only_body(&ops, "fn mirror_selection(");
+        assert!(
+            mirror_body.contains(&reconcile),
+            "canary: the real mirror reconciles"
+        );
+        assert!(
+            !mirror_body
+                .replacen(&reconcile, "/* hollow */", 1)
+                .contains(&reconcile),
+            "fired rule: dropping the reconcile must break the F-1 exclusivity pin"
         );
     }
 }
