@@ -360,22 +360,6 @@ fn presentation_failure_message(field: PresentationField, err: &crate::client::A
     )
 }
 
-/// Mirror a saved briefing into the live document's `meta.briefing`.
-///
-/// **Why the editor's own copy has to move too.** `compile_export` fills the download envelope's
-/// `briefing` string from `meta.briefing`, and until this ticket the only writer of that key was boot
-/// hydrate (`apply_row_meta`, T-418). So a briefing typed in this dialog and exported in the same
-/// session shipped the value from *before* the edit — the row was right and the download was stale.
-///
-/// `apply_row_meta` with a blank title and a blank terrain writes nothing but the briefing: the
-/// mutator skips a blank title and a terrain outside its three-value match, by its own rules. That is
-/// what makes this safe, not a convention here.
-///
-/// **A briefing CLEARED to empty cannot be mirrored.** `apply_row_meta` treats blank as "no value
-/// supplied" — deliberately, because that is what stops boot hydrate wiping a good briefing with an
-/// empty row — and `map-engine-core` exposes no other writer for `meta.briefing`. The row is cleared;
-/// the document's stale copy survives until the next reload, so an export taken in between still
-/// carries it. Naming that here beats a half-fix that looks total.
 /// Blur whatever control currently has focus, so its `change` handler runs.
 ///
 /// The dialog's controls are commit-on-settle (`change`), which is the right shape for a textarea and
@@ -395,16 +379,32 @@ fn blur_focused_control() {
     }
 }
 
+/// Mirror a saved briefing into the live document's `meta.briefing`.
+///
+/// **Why the editor's own copy has to move too.** `compile_export` fills the download envelope's
+/// `briefing` string from `meta.briefing`, and until T-671 the only writer of that key was boot
+/// hydrate (`apply_row_meta`, T-418). So a briefing typed in this dialog and exported in the same
+/// session shipped the value from *before* the edit — the row was right and the download was stale.
+///
+/// Non-blank values go through `apply_row_meta` with a blank title and a blank terrain: that mutator
+/// skips a blank title and a terrain outside its three-value match, by its own rules. That is what
+/// makes the non-blank path safe, not a convention here.
+///
+/// **T-766 — blank clears too.** `apply_row_meta` still treats blank as "not supplied" (hydrate must
+/// not wipe a good briefing). Clearing uses [`map_engine_core::doc::MissionDocCore::clear_meta_briefing`],
+/// which distinguishes "set to empty" from "not supplied".
 #[cfg(target_arch = "wasm32")]
 fn mirror_briefing_into_document(briefing: &str) {
-    if briefing.trim().is_empty() {
-        return;
-    }
     let Some(handle) = crate::mission_history::doc_handle() else {
         return;
     };
     let doc = handle.borrow();
-    if let Some(doc) = doc.as_ref() {
+    let Some(doc) = doc.as_ref() else {
+        return;
+    };
+    if briefing.trim().is_empty() {
+        doc.clear_meta_briefing();
+    } else {
         doc.apply_row_meta("", "", None, None, Some(briefing.to_string()));
     }
 }
@@ -3992,6 +3992,43 @@ mod t671_mission_presentation {
         assert!(
             body.contains(&guard),
             "T-671: the preview must be gated on the same accept rule the writer uses"
+        );
+    }
+}
+
+// T-766 — clearing a briefing must clear `meta.briefing` too. Needles are fragment-assembled;
+// `live_code` blanks literals and cuts test modules so a hollow comment cannot green these pins.
+#[cfg(test)]
+mod t766_clear_briefing_mirror {
+    use crate::arsenal::class_r_scrub::{live_code, only_body};
+
+    /// The blank arm must call the clear mutator — early-return on empty was the wave-117 defect.
+    #[test]
+    fn clearing_a_briefing_calls_the_clear_mutator() {
+        let src = live_code(include_str!("eden_settings.rs"));
+        let mirror = format!("mirror{}", "_briefing_into_document");
+        let body = only_body(&src, &format!("fn {mirror}"));
+        let clear = format!("clear{}", "_meta_briefing");
+        let apply = format!("apply{}", "_row_meta");
+        assert!(
+            body.contains(&format!("{clear}(")),
+            "T-766: blank briefing must call MissionDocCore::{clear}"
+        );
+        assert!(
+            body.contains(&format!("{apply}(")),
+            "T-766: non-blank path must still use apply_row_meta"
+        );
+        // The pre-fix early return: `if briefing.trim().is_empty() { return; }` — refuse it.
+        // A hollow `return;` after the clear call would still be wrong if clear is unreachable;
+        // require that trim-empty leads to the clear call (clear appears after is_empty check).
+        let empty = format!("is{}", "_empty");
+        let trim_empty_idx = body
+            .find(&format!("trim().{empty}()"))
+            .expect("T-766: mirror must still branch on trim().is_empty()");
+        let clear_idx = body.find(&format!("{clear}(")).expect("clear call");
+        assert!(
+            clear_idx > trim_empty_idx,
+            "T-766: clear_meta_briefing must be on the empty arm, not before the trim check"
         );
     }
 }

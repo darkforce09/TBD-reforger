@@ -3060,7 +3060,8 @@ impl MissionDocCore {
     /// `briefing` is the mission **row** library blurb (`missions.briefing` STRING) — not the
     /// per-faction `factionsById[].briefing` object. T-418 threads it so `compile_export` can emit
     /// a real envelope `briefing` instead of permanently `""`. Whitespace-only is not authored
-    /// content (same trim rule as title / featured briefing).
+    /// content (same trim rule as title / featured briefing). Blank / whitespace is **not** a clear
+    /// — use [`Self::clear_meta_briefing`] when the author deliberately emptied the field (T-766).
     pub fn apply_row_meta(
         &self,
         title: &str,
@@ -3094,6 +3095,17 @@ impl MissionDocCore {
                 self.meta.insert(&mut txn, "briefing", b);
             }
         }
+    }
+
+    /// T-766 — remove `meta.briefing` so a deliberate clear reaches `compile_export`.
+    ///
+    /// [`Self::apply_row_meta`] treats blank / whitespace briefing as "not supplied" so boot hydrate
+    /// cannot wipe a good value with an empty row. That guard is load-bearing and stays. This mutator
+    /// is the explicit "set to empty" arm the editor uses after a successful PATCH of
+    /// `missions.briefing` to `""` — without it, same-session Export ships the deleted text.
+    pub fn clear_meta_briefing(&self) {
+        let mut txn = self.begin();
+        self.meta.remove(&mut txn, "briefing");
     }
 
     /// Seed default meta if empty (mirrors `ydoc.seedMeta` + `DEFAULT_META`). No-op if meta exists.
@@ -8539,6 +8551,54 @@ mod tests {
         assert!(
             small_maps(&empty)["meta"].get("briefing").is_none(),
             "whitespace-only briefing must not invent meta.briefing"
+        );
+    }
+
+    /// T-766 — deliberate clear must drop `meta.briefing`; blank `apply_row_meta` must not.
+    ///
+    /// RED if `clear_meta_briefing` is a no-op, or if blank `Some("")` starts clearing (that would
+    /// break hydrate). Behavioural pin — not a source grep.
+    #[test]
+    fn t766_clear_meta_briefing_drops_key_blank_apply_does_not() {
+        let doc = MissionDocCore::new();
+        doc.apply_row_meta(
+            "Op",
+            "everon",
+            None,
+            None,
+            Some("Hold the bridge.\nWait for extract.".into()),
+        );
+        assert_eq!(
+            small_maps(&doc)["meta"]["briefing"],
+            "Hold the bridge.\nWait for extract.",
+            "precondition: row briefing must land"
+        );
+
+        // Hydrate-shaped blank must NOT wipe — the guard T-766 must not weaken.
+        doc.apply_row_meta("Op", "everon", None, None, Some("".into()));
+        assert_eq!(
+            small_maps(&doc)["meta"]["briefing"],
+            "Hold the bridge.\nWait for extract.",
+            "blank apply_row_meta must stay 'not supplied', not a clear"
+        );
+        doc.apply_row_meta("Op", "everon", None, None, Some("   \n\t  ".into()));
+        assert_eq!(
+            small_maps(&doc)["meta"]["briefing"],
+            "Hold the bridge.\nWait for extract.",
+            "whitespace-only apply_row_meta must stay 'not supplied'"
+        );
+
+        doc.clear_meta_briefing();
+        assert!(
+            small_maps(&doc)["meta"].get("briefing").is_none(),
+            "clear_meta_briefing must remove meta.briefing so compile_export emits \"\""
+        );
+
+        // Idempotent: clearing an absent key must not invent one.
+        doc.clear_meta_briefing();
+        assert!(
+            small_maps(&doc)["meta"].get("briefing").is_none(),
+            "second clear must stay absent"
         );
     }
 
