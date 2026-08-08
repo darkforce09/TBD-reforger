@@ -41,14 +41,16 @@ use crate::ui::{cn, MaterialIcon};
 //   2^zoom` px/m). Larger m/pix = zoomed further out.
 
 /// Metres-per-pixel at a given `deck_zoom` — the single scale convention (`2^(−deck_zoom)`), cited
-/// against `lod_gates`/`ortho.rs`. Non-finite ⇒ 1.0 (a safe unit scale; callers only ever pass a
-/// finite engine zoom).
+/// against `lod_gates`/`ortho.rs`. Non-finite ⇒ `f64::NAN` so [`format_m_per_px`] prints the
+/// em-dash cell rather than a fabricated `1.00 m/px` (T-756; the old T-667 unit-scale fallback
+/// looked measured once the readout claimed three significant figures). Callers only ever pass a
+/// finite engine zoom inside the live clamp.
 #[must_use]
 pub fn m_per_px(deck_zoom: f64) -> f64 {
     if deck_zoom.is_finite() {
         2.0_f64.powf(-deck_zoom)
     } else {
-        1.0
+        f64::NAN
     }
 }
 
@@ -117,7 +119,8 @@ pub fn format_distance(dist_m: f64) -> String {
 /// The STRING is also the quantiser: the editor's rAF sampler writes its zoom signal only when this
 /// formatting CHANGES, which is what keeps a per-frame zoom read from re-rendering the status bar at
 /// 60 fps. Degenerate input (non-finite or ≤ 0) ⇒ an em-dash cell, matching the other readouts'
-/// "no value" idiom.
+/// "no value" idiom. That path also covers a non-finite *zoom* once [`m_per_px`] returns `NAN`
+/// (T-756) — previously `m_per_px` mapped NaN→1.0 and this printed a confident `"1.00 m/px"`.
 #[must_use]
 pub fn format_m_per_px(m_per_px: f64) -> String {
     if !m_per_px.is_finite() || m_per_px <= 0.0 {
@@ -125,7 +128,24 @@ pub fn format_m_per_px(m_per_px: f64) -> String {
     }
     // Decimals for ~3 significant figures at this magnitude. The last two rungs are below the
     // MAX_ZOOM floor (0.0156 m/px) and exist only so a future zoom-ceiling raise degrades sanely.
-    let decimals = if m_per_px >= 100.0 {
+    // After picking the band, re-check the *rounded* value: a band-top carry (9.996 → 10.00 with
+    // two decimals) would otherwise print four significant figures; drop to the next band's width
+    // so carry reads `10.0` (T-756).
+    let decimals = decimals_for_mpp(m_per_px);
+    let factor = 10f64.powi(decimals as i32);
+    let rounded = (m_per_px * factor).round() / factor;
+    let decimals = if rounded.is_finite() && rounded > 0.0 {
+        decimals_for_mpp(rounded)
+    } else {
+        decimals
+    };
+    format!("{m_per_px:.decimals$} m/px")
+}
+
+/// Decimal count for ~3 significant figures at `m_per_px`'s magnitude. Shared by the band pick and
+/// the post-round carry re-pick inside [`format_m_per_px`].
+fn decimals_for_mpp(m_per_px: f64) -> usize {
+    if m_per_px >= 100.0 {
         0
     } else if m_per_px >= 10.0 {
         1
@@ -137,8 +157,7 @@ pub fn format_m_per_px(m_per_px: f64) -> String {
         4
     } else {
         5
-    };
-    format!("{m_per_px:.decimals$} m/px")
+    }
 }
 
 /// Pick the scale bar for a screen scale of `m_per_px`: the LARGEST `1/2/5 × 10^n` metres whose bar
@@ -466,9 +485,13 @@ pub fn StatusBar(
     /// not. `RenderEngine::zoom()` is reachable only from the editor's rAF sampler, so the sampler
     /// owns this signal and writes it ONLY when [`format_m_per_px`] would change (see
     /// `mission_editor::start_raf`) — a still or panning camera writes nothing, so the status bar
-    /// never re-renders per frame. `Option` so the compat shim and the native view shell can omit
-    /// it; absent ⇒ the editor's default deck zoom (−2 ⇒ `4.00 m/px`), matching [`ScaleBar`]'s own
-    /// engine-less fallback so the two surfaces still agree when there is no engine.
+    /// never re-renders per frame. The live mount always *passes* this signal, seeded to
+    /// `m_per_px(−2) = 4.0` before the first rAF tick (wave-115 NIT-3: it is not "absent on
+    /// native"). The first rAF frame still performs one redundant write because `last_scale_text`
+    /// starts empty. `Option` remains for the compat shim / a hypothetical caller that omits it;
+    /// absent ⇒ this cell falls back to a *static* `m_per_px(−2)`, while [`ScaleBar`]'s no-prop
+    /// path still tries `camera_snapshot()` on wasm — those two would diverge for such a caller,
+    /// and no such caller exists today (single mount in `mission_editor`).
     #[prop(optional)]
     scale_mpp: Option<RwSignal<f64>>,
 ) -> impl IntoView {
@@ -638,24 +661,19 @@ pub fn StatusBar(
     }
 }
 
-/// T-667 — the metric scale bar that mounts in [`StatusBar`]'s `data-status-furniture` slot. Reads
-/// the live camera zoom off the registered engine (`world_assets::camera_snapshot`, the same
-/// `RENDER_CTX` seam the Mission Settings render-pref controls use) and renders the largest round
-/// `1/2/5 × 10^n` distance whose bar fits ≤ [`SCALE_MAX_PX`] via [`pick_scale_bar`].
+/// T-667 — the metric scale bar that mounts in [`StatusBar`]'s `data-status-furniture` slot.
+/// Renders the largest round `1/2/5 × 10^n` distance whose bar fits ≤ [`SCALE_MAX_PX`] via
+/// [`pick_scale_bar`].
 ///
-/// **Reactivity (no new rAF loop):** the render closure subscribes to `cursor` — which the editor
-/// writes on every pointer-move, so the bar tracks pan — and to the `debug_hud` heartbeat, which
-/// the existing ~1 Hz rAF sample writes unconditionally, so the bar re-reads the zoom shortly after
-/// a wheel-zoom even with the pointer still. This is the CUR channel the spec says to reuse, not a
-/// second animation loop. On native (`cargo test`/`check`) there is no engine, so it falls back to
-/// the default deckZoom (`−2`) purely so the component compiles; the maths is proven by the pure
-/// functions above.
+/// **Reactivity (no new rAF loop):** historically the render closure subscribed to `cursor` (pan)
+/// and the `debug_hud` ~1 Hz heartbeat, then re-read zoom via `world_assets::camera_snapshot`.
+/// That path still compiles as the no-prop fallback.
 ///
-/// **T-670 supersedes that heartbeat when `scale_mpp` is supplied.** The numeric metres-per-pixel
-/// readout needs the zoom promptly, so the editor's rAF sampler now publishes it (change-guarded).
-/// Given a signal that already carries the live scale, re-deriving it here from a second camera
-/// read would be exactly the "two scale surfaces that can disagree" the ticket warns against — so
-/// the bar consumes the signal instead. The heartbeat path stays as the engine-less fallback.
+/// **T-670 + wave-115 NIT-3 — live path is the shared `scale_mpp` signal.** The editor always
+/// passes `scale_mpp` (seeded to `m_per_px(−2) = 4.0`, then rAF-updated change-guarded), so the
+/// bar takes the early return and the `camera_snapshot()` branch is currently dead code with an
+/// identical numeric outcome to the seed. The heartbeat/`camera_snapshot` path survives only for
+/// a caller that omits the prop; none does today.
 #[component]
 pub fn ScaleBar(
     /// Pan heartbeat — the editor's pointer-move cursor write (drives the pan re-read).
@@ -669,10 +687,11 @@ pub fn ScaleBar(
     /// displayed scale changes. When present it REPLACES the camera re-read below: the bar and the
     /// status bar's numeric SCL cell then resolve from the same `f64`, so the graphic and the
     /// number are the same measurement by construction (and the bar now tracks a wheel-zoom on the
-    /// next frame instead of waiting up to a second for the ~1 Hz HUD heartbeat). `Option` so the
-    /// compat shim and native builds keep the T-667 camera-snapshot path. `Option` (not
-    /// `#[prop(optional)]`) so [`StatusBar`] can forward its own optional prop straight through,
-    /// exactly as it does for `debug_hud`.
+    /// next frame instead of waiting up to a second for the ~1 Hz HUD heartbeat). The live editor
+    /// mount always supplies this (seeded 4.0); the `camera_snapshot()` arm below is therefore
+    /// dead on the only real caller (wave-115 NIT-3). `Option` (not `#[prop(optional)]`) so
+    /// [`StatusBar`] can forward its own optional prop straight through, exactly as it does for
+    /// `debug_hud`.
     scale_mpp: Option<RwSignal<f64>>,
 ) -> impl IntoView {
     let spec = move || -> ScaleBarSpec {
@@ -1246,7 +1265,7 @@ mod t667_furniture_math {
         assert!((m_per_px(-2.0) - 4.0).abs() < 1e-12); // editor default zoom
         assert!((m_per_px(2.0) - 0.25).abs() < 1e-12);
         assert!((m_per_px(-6.0) - 64.0).abs() < 1e-12); // MIN_ZOOM (whole terrain)
-        assert!((m_per_px(f64::NAN) - 1.0).abs() < 1e-12); // non-finite guard
+        assert!(m_per_px(f64::NAN).is_nan()); // T-756: non-finite → NAN → em-dash readout
     }
 
     /// The scale-bar distance table across the zoom range. Each row is `(deck_zoom, expected_dist_m,
@@ -1611,6 +1630,19 @@ mod t670_scale_readout {
                 "degenerate m/px {bad} must render the em-dash cell, not a raw float"
             );
         }
+        // T-756 (MINOR-4): a non-finite *zoom* must also hit the em-dash — `m_per_px` used to
+        // fabricate 1.0 and print a confident "1.00 m/px".
+        for bad_z in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY] {
+            let got = format_m_per_px(m_per_px(bad_z));
+            assert!(
+                got.starts_with('\u{2014}'),
+                "non-finite zoom {bad_z} must render the em-dash cell, got {got}"
+            );
+        }
+        // T-756 (MINOR-4): band-top carry must not print four significant figures.
+        assert_eq!(format_m_per_px(9.996), "10.0 m/px");
+        assert_eq!(format_m_per_px(99.96), "100 m/px");
+        assert_eq!(format_m_per_px(0.09996), "0.100 m/px");
     }
 
     /// The readout is MONOTONE in zoom: zooming in never prints a larger metres-per-pixel. A
