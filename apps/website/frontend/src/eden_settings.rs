@@ -2759,9 +2759,7 @@ mod t688_aggregated_settings {
         let settings = live_source(include_str!("eden_settings.rs"));
         let path = format!(
             "{}{}{}",
-            "../../../../packages/tbd-schema/schema/",
-            "mission",
-            ".schema.json"
+            "../../../../packages/tbd-schema/schema/", "mission", ".schema.json"
         );
         let embed = format!("include_str!(\"{path}\")");
         assert_eq!(
