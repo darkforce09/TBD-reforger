@@ -111,6 +111,14 @@ file inside them has.
   hits, all `let snap = read_snapshot()`. **Read the matches before reporting a count.**
 - **An agent's chat summary is not an artifact.** A quotation, two statistics and a whole ticket
   scope entered the record from summaries that said things their files did not.
+- **`cargo test -p map-engine-core` without features is a vacuous pass (T-747).** The `doc`
+  (and `mission` / `world`) modules are feature-gated — a bare run lists ~150 tests and never
+  compiles the hundreds under `doc::`. The wave gate / Makefile are sound (`--all-features`).
+  Always pass `--all-features` (or at least `--features doc,mission,world`) for this crate.
+  **T-742 note:** `bash scripts/platform/wave.sh test --slice T-nnn -p map-engine-core …`
+  isolates the target dir but does **not** inject features — you still must pass
+  `--all-features` on that command. An ungated tripwire in
+  `crates/map-engine-core/src/lib.rs` fails the featureless suite so the hole announces itself.
 
 ## The habit that matters
 

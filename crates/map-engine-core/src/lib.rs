@@ -36,3 +36,29 @@ pub mod spatial;
 pub mod squad_links;
 #[cfg(feature = "world")]
 pub mod world;
+
+/// T-747 — bare `cargo test -p map-engine-core` is a vacuous pass: `doc` / `mission` / `world`
+/// (and their ~500 tests) are feature-gated and never compile. This module is deliberately
+/// *not* behind those features so a featureless suite still runs one test — and that test
+/// fails until `--all-features` (or at least `--features doc`) is supplied.
+#[cfg(test)]
+mod feature_gate_tripwire {
+    /// Fail loudly when `doc` is off so agents cannot mistake ~150 green tests for the real suite.
+    ///
+    /// Wave gate / Makefile use `--all-features` (sound). Ad-hoc
+    /// `bash scripts/platform/wave.sh test --slice T-nnn -p map-engine-core` (T-742 private
+    /// target dirs) does **not** auto-add features — pass `--all-features` (or
+    /// `--features doc,mission,world`) yourself.
+    #[test]
+    #[allow(clippy::assertions_on_constants)] // intentional: cfg! is the tripwire signal
+    fn map_engine_core_tests_require_doc_feature() {
+        assert!(
+            cfg!(feature = "doc"),
+            "map-engine-core tests must run with --all-features (or at least --features doc). \
+             Bare `cargo test -p map-engine-core` compiles out the doc module and silently \
+             skips hundreds of tests (~150 listed vs ~600+ with --all-features). \
+             Wave gate is sound (Makefile --all-features); T-742 `wave.sh test --slice` still \
+             needs you to pass --all-features for this crate (T-747)."
+        );
+    }
+}
