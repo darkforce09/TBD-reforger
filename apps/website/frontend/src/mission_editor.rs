@@ -6073,7 +6073,7 @@ mod t628_boot_progress {
         for (i, &(start, end)) in spans.iter().enumerate() {
             assert!(end >= start, "span {i} is inverted");
             assert!(
-                end - start + 1 <= SAT_CHUNK_BYTES,
+                end - start < SAT_CHUNK_BYTES,
                 "span {i} is larger than one request"
             );
             if i > 0 {

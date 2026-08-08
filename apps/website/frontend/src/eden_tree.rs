@@ -1102,7 +1102,7 @@ mod tests {
     //! inline rename, root dropzone, the unfiltered-doc selection source).
 
     use super::*;
-    use crate::outliner::{build_outliner, LayerRow, NodeKind, SlotRow};
+    use crate::outliner::{build_outliner, LayerRow, SlotRow};
 
     fn slot(id: &str) -> SlotRow {
         SlotRow {
@@ -1560,13 +1560,6 @@ mod t637_one_dense_row_geometry {
         );
     }
 
-    /// Every glyph in a row is `text-sm`, whose default line box is 20 px — 4 px taller than the row
-    /// it sits in. `leading-none` collapses that line box to the glyph, which is what lets a 16 px row
-    /// hold a 16 px icon cell without the icons setting the height. A single icon that forgets it
-    /// re-inflates every row it appears in, so this is checked over the whole file rather than per
-    /// call site.
-    #[test]
-
     /// T-769 — the windowed scroller fills the flex tree region (`h-full`) and sizes its window from
     /// the measured `clientHeight`. A fixed `height:420px` coming back is the defect this pin guards.
     #[test]
@@ -1599,6 +1592,12 @@ mod t637_one_dense_row_geometry {
         );
     }
 
+    /// Every glyph in a row is `text-sm`, whose default line box is 20 px — 4 px taller than the row
+    /// it sits in. `leading-none` collapses that line box to the glyph, which is what lets a 16 px row
+    /// hold a 16 px icon cell without the icons setting the height. A single icon that forgets it
+    /// re-inflates every row it appears in, so this is checked over the whole file rather than per
+    /// call site.
+    #[test]
     fn no_row_glyph_carries_an_uncollapsed_line_box() {
         let src = include_str!("eden_tree.rs");
         let production = src
