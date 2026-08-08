@@ -18114,7 +18114,7 @@
    "impact": [
     "ui"
    ],
-   "status": "deferred",
+   "status": "shipped",
    "stream": "mission-creator",
    "targets": [
     "website"
@@ -18174,7 +18174,7 @@
    "impact": [
     "ui"
    ],
-   "status": "deferred",
+   "status": "shipped",
    "stream": "mission-creator",
    "targets": [
     "website"
@@ -18295,7 +18295,7 @@
    "impact": [
     "ui"
    ],
-   "status": "deferred",
+   "status": "shipped",
    "stream": "mission-creator",
    "targets": [
     "website"
