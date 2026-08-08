@@ -222,6 +222,8 @@ pub fn Select(
     #[prop(optional)] disabled: bool,
 ) -> impl IntoView {
     view! {
+        // `peer` + sibling `peer-disabled:` — DISABLED_GLYPH dims the <select> only; without the
+        // peer variant the Material chevron stays full-lit beside a 30%-opacity control (T-751).
         <span class="relative inline-flex items-center">
             <select
                 aria-label=label
@@ -229,7 +231,7 @@ pub fn Select(
                 disabled=disabled
                 class=cn(
                     &[
-                        "appearance-none rounded border border-outline-variant/40 bg-surface-container py-0.5 pr-6 pl-1.5 text-xs text-on-surface outline-none focus-visible:outline-1 focus-visible:outline-primary/60",
+                        "peer appearance-none rounded border border-outline-variant/40 bg-surface-container py-0.5 pr-6 pl-1.5 text-xs text-on-surface outline-none focus-visible:outline-1 focus-visible:outline-primary/60",
                         HOVER_FILL,
                         DISABLED_GLYPH,
                         class,
@@ -251,7 +253,7 @@ pub fn Select(
             </select>
             <MaterialIcon
                 name="expand_more"
-                class="pointer-events-none absolute right-0.5 text-base leading-none text-on-surface-variant"
+                class="pointer-events-none absolute right-0.5 text-base leading-none text-on-surface-variant peer-disabled:opacity-30"
             />
         </span>
     }
@@ -1031,6 +1033,27 @@ mod t633_range_and_select {
         assert!(
             select_body.contains("pointer-events-none"),
             "T-633: the chevron overlays the control, so it must not eat the click that opens it"
+        );
+    }
+
+    /// T-751 — a disabled Select dims via DISABLED_GLYPH on the <select>, but the chevron is a
+    /// *sibling* span, so `disabled:` variants never reach it. The select must be a Tailwind
+    /// `peer` and the chevron must carry `peer-disabled:opacity-30` (matching DISABLED_GLYPH's
+    /// opacity) or a disabled control is half-lit. Needles are fragment-assembled so this module
+    /// is not its own haystack.
+    #[test]
+    fn disabled_select_chevron_dims_with_peer_disabled() {
+        let src = source();
+        let select_body = only_body(&src, "pub fn Select(");
+        let peer = format!("{}{}", "peer ", "appearance-none");
+        let dim = format!("{}{}", "peer-disabled:", "opacity-30");
+        assert!(
+            select_body.contains(&peer),
+            "T-751: the <select> must be a Tailwind `peer` so a sibling can react to :disabled"
+        );
+        assert!(
+            select_body.contains(&dim),
+            "T-751: the Material chevron must carry peer-disabled:opacity-30 — DISABLED_GLYPH              cannot reach a sibling"
         );
     }
 

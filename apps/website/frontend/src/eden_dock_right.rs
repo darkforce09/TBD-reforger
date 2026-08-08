@@ -770,8 +770,10 @@ fn favourite_star(favourites: RwSignal<Favourites>, asset_id: String, label: Str
 /// The three arms are spelled out here rather than shared with `palette_rows` on purpose: the T-215
 /// gate pins the leaf's own call expression by source inspection, and folding both call sites into
 /// one helper would satisfy that needle from this function instead — a check passing over an input
-/// it never examined, which is exactly the defect class this programme is about. Note the argument
-/// is moved, not cloned, so the two call sites stay textually distinct.
+/// it never examined, which is exactly the defect class this programme is about. The argument is
+/// **moved, not cloned**, so the two call sites stay textually distinct — pinned by
+/// `favourites_place_arm_stays_clone_free` (T-751): a future tidy that cloned the payload here
+/// would let the favourites path satisfy T-215's palette needle while the palette itself regressed.
 #[cfg(target_arch = "wasm32")]
 fn arm_favourite_place(palette: CatalogPalette, payload: crate::asset_catalog::PlacePayload) {
     match palette {
@@ -3317,6 +3319,39 @@ mod tests {
         assert!(
             ops.contains("core.add_vehicle("),
             "the vehicle place must reach the core mutator"
+        );
+    }
+
+    /// T-751 — T-695 kept `arm_favourite_place` textually distinct from `palette_rows` so T-215's
+    /// source-inspection needle (the palette's `begin_place_vehicle` + clone call expression) keeps
+    /// constraining the **palette** path specifically. That distinctness is the favourites arm
+    /// MOVING its payload rather than cloning. Pin both forms: the palette clone needle must
+    /// still exist exactly once, and the favourites move form (fn + `(payload),`) must exist and
+    /// must not grow a clone. Needles are fragment-assembled so this module is not its own haystack.
+    /// Note: `(payload)` is a prefix of the clone form, so the move needle ends at the trailing
+    /// comma that only the favourites match arm writes.
+    #[test]
+    fn favourites_place_arm_stays_clone_free() {
+        const SRC: &str = include_str!("eden_dock_right.rs");
+        let palette = format!("{}{}", "begin_place_vehicle", "(payload.clone())");
+        let favourites = format!("{}{}", "begin_place_vehicle", "(payload),");
+        assert!(
+            SRC.contains(&palette),
+            "T-215 palette path must keep the clone call expression the gate inspects"
+        );
+        assert_eq!(
+            SRC.matches(&palette).count(),
+            1,
+            "T-751: exactly one palette-form vehicle arm (clone); a second means favourites grew              a clone and could satisfy the palette pin alone"
+        );
+        assert!(
+            SRC.contains(&favourites),
+            "T-751: arm_favourite_place must MOVE the payload so it stays textually distinct              from the palette clone needle"
+        );
+        assert_eq!(
+            SRC.matches(&favourites).count(),
+            1,
+            "T-751: exactly one move-form vehicle arm (the favourites match arm)"
         );
     }
 

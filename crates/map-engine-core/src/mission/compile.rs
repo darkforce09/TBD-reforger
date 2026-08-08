@@ -34,8 +34,15 @@ pub fn terrain_bounds(terrain: &str) -> [f64; 4] {
 /// Top-level keys [`compile_payload`] itself authors (and `orbat` on the Export path), plus the
 /// reserved `payloadExtras` side-channel name (T-432 / T-219 — never park or re-emit that key
 /// onto the wire). Everything else is a T-219 passthrough candidate, carried through the doc as
-/// `payloadExtras` (see `MissionDocCore::hydrate` / `small_maps_json`). Keep in lockstep with
-/// `is_known_editor_payload_top_level` in `doc/store.rs`.
+/// `payloadExtras` (see `MissionDocCore::hydrate` / `small_maps_json`).
+///
+/// **This list is intentionally NOT identical to `is_known_editor_payload_top_level` in
+/// `doc/store.rs`.** The twin answers a different question ("hydrate understands this key") and
+/// deliberately lists keys this compile list omits — `zones`, `compositions`, `triggers`,
+/// `comments`, `connections`. See that function's T-211 / T-651 / T-672 notes. Do not "fix" the
+/// divergence by adding those keys here alone: that skips the extras projection and drops authored
+/// rows on save (or, for comments / connections, invites compiling editor-only annotations). Keys
+/// both lists carry (`title`, `markers`, …) should still agree when either side grows a shared one.
 pub const KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS: &[&str] = &[
     "schemaVersion",
     "map",
@@ -1160,6 +1167,25 @@ mod tests {
     }
 
     // ── T-524 known-keys / hydrate-title lockstep ───────────────────────────────────────────────
+
+    /// T-751 — the twin in `doc/store.rs` deliberately lists keys this compile list omits.
+    /// Adding any of these HERE without also teaching `compile_payload` to author them drops the
+    /// extras projection on save; for `comments`/`connections` an author would compile an
+    /// editor-only annotation. The header above documents the asymmetry; this pin keeps the
+    /// absences load-bearing.
+    #[test]
+    fn editor_only_and_transitional_keys_stay_absent_from_compile_known_list() {
+        for key in ["zones", "compositions", "triggers", "comments", "connections"] {
+            assert!(
+                !is_known_editor_payload_top_level(key),
+                "T-751 — `{key}` must stay OUT of KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS; see                  store.rs is_known_editor_payload_top_level notes (T-211 / T-651 / T-672)"
+            );
+            assert!(
+                !KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS.contains(&key),
+                "T-751 — const list must omit `{key}` (helper alone is not enough)"
+            );
+        }
+    }
 
     /// T-524 Class R — after T-505, `title` is a first-class hydrate key in `doc/store.rs`.
     /// It MUST stay in `KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS` here or the two lists drift and
