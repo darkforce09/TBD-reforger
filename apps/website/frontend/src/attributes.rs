@@ -1262,6 +1262,61 @@ mod tests {
         );
     }
 
+    /// T-745 Class-R: `attrs_update_slot` must no-op on all-None and on a missing id.
+    ///
+    /// Production already carries both guards (editor_ops.rs). Without this lasting pin a one-hunk
+    /// revert ships green — the sibling route pin only requires `update_slot_object` / slot-half
+    /// gating (wave-136 F1).
+    ///
+    /// RED: strip the five-field all-None early `return` before `let did`.
+    /// RED: strip `!raw_slot_rows(core).contains_key(id) → false`.
+    #[test]
+    fn attrs_update_slot_noops_when_all_none_or_id_missing() {
+        let ops = live_code(include_str!("editor_ops.rs"));
+        let body = only_body(&ops, "pub fn attrs_update_slot(");
+
+        // (1) five-field all-None early `return` before `let did`
+        let before_did = body
+            .split("let did")
+            .next()
+            .expect("attrs_update_slot must bind `let did`");
+        for field in [
+            "role.is_none()",
+            "tag.is_none()",
+            "stance.is_none()",
+            "asset_id.is_none()",
+            "description.is_none()",
+        ] {
+            assert!(
+                before_did.contains(field),
+                "T-745: all-None guard must check `{field}` before `let did`; prelude was:\n{before_did}"
+            );
+        }
+        assert!(
+            before_did.contains("return"),
+            "T-745: all-None must early-return before `let did`; prelude was:\n{before_did}"
+        );
+
+        // (2) `!raw_slot_rows(core).contains_key(id)` → false arm
+        let raw_gate = "!raw_slot_rows(core).contains_key(id)";
+        assert!(
+            body.contains(raw_gate),
+            "T-745: missing id must gate on raw membership; body was:\n{body}"
+        );
+        let after_gate = body.split(raw_gate).nth(1).expect("raw gate present above");
+        let brace = after_gate
+            .find('{')
+            .expect("T-745: raw gate must open an if-arm");
+        let arm_tail = &after_gate[brace + 1..];
+        let close = arm_tail.find('}').expect("T-745: raw-gate arm must close");
+        let arm = arm_tail[..close].trim();
+        assert!(
+            arm.contains("return false")
+                || arm.split_whitespace().collect::<Vec<_>>().join(" ") == "false",
+            "T-745: raw absence arm must yield false (empty arm must RED); arm was:\n{arm}"
+        );
+    }
+
     /* ─────────── T-700 3DEN-PLACE-013 — the numeric nudge ─────────── */
 
     /// The step scale, exercised by CALLING it — the whole reason [`super::nudge_step`] lives
