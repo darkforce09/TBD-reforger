@@ -1014,8 +1014,61 @@ thread_local! {
 }
 
 /// Register the zone-selection hook (called once at [`DockRight`] mount).
+///
+/// Prefer [`install_select_zone`] from inside a component: a bare register with no matching
+/// unregister is the wave-129 F2 defect (see that function's docs).
 pub(crate) fn register_select_zone(f: ZoneSelectHook) {
     SELECT_ZONE.with(|c| *c.borrow_mut() = Some(f));
+}
+
+/// Unregister the zone-selection hook at [`DockRight`] unmount — but ONLY if `f` is still the LIVE
+/// registration.
+///
+/// The `Rc::ptr_eq` guard is the whole point, not a formality. Mount and unmount are not guaranteed
+/// to interleave the way the writing order suggests: a remount can install its NEWER hook BEFORE the
+/// OLD component's cleanup runs. An unconditional clear would then delete the live panel's hook and
+/// leave the routed zone click dead again — the exact failure this cleanup exists to prevent.
+///
+/// Returns whether this call is the one that cleared it; a superseded (losing) cleanup returns
+/// `false` and leaves the newer hook alone. The `Rc` is taken OUT of the cell and dropped after the
+/// borrow ends, for the same re-entrancy reason [`route_select_zone`] clones out before calling.
+pub(crate) fn unregister_select_zone(f: &ZoneSelectHook) -> bool {
+    let taken = SELECT_ZONE.with(|c| {
+        let mut slot = c.borrow_mut();
+        if slot
+            .as_ref()
+            .is_some_and(|live| std::rc::Rc::ptr_eq(live, f))
+        {
+            slot.take()
+        } else {
+            None
+        }
+    });
+    taken.is_some()
+}
+
+/// Install the zone-selection hook for the CURRENT reactive owner: register it now, and unregister
+/// it when that owner is cleaned up (i.e. at unmount).
+///
+/// **Wave-129 F2.** T-754 registered and never unregistered. Backspace hide-chrome unmounts
+/// [`DockRight`] (the chrome toggle in `mission_editor` has no modal guard — the aggregated-settings
+/// dialog deliberately SURVIVES that hide), and the stale closure stayed callable: every `set` in it
+/// then landed on DISPOSED signals, which `reactive_graph` 0.2.14 makes a silent no-op, while
+/// [`route_select_zone`] still returned `true`. The router therefore reported a click that
+/// "succeeded" and selected nothing — T-754's dead click, resurrected by lifecycle. Unregistering is
+/// what makes that `false` an honest report instead of `true` over a no-op.
+///
+/// The hook is parked in a `StoredValue` (LOCAL storage — an `Rc<dyn Fn>` is `!Send`) because
+/// `on_cleanup` is `Send + Sync`-bound and so cannot carry the `Rc` itself. An owner runs its
+/// cleanup functions BEFORE it removes its arena nodes, so the value is still readable there; and
+/// holding that clone keeps the allocation alive, which is what makes the `Rc::ptr_eq` identity
+/// check meaningful rather than an address a later hook could be re-allocated onto.
+pub(crate) fn install_select_zone(f: ZoneSelectHook) {
+    let mine = StoredValue::new_local(std::rc::Rc::clone(&f));
+    register_select_zone(f);
+    on_cleanup(move || {
+        let _ = mine.try_with_value(unregister_select_zone);
+    });
 }
 
 /// Select `zone_id` in the Zones panel. Returns whether the panel was there to select it — `false`
@@ -1121,7 +1174,11 @@ pub fn DockRight(
     // zone click makes the zone the panel's selection AND raises the Zones tab (and un-collapses the
     // dock, T-638): a selection the author cannot see is the same dead click in a different costume.
     // `RwSignal` is `Copy`, so the hook holds the signals themselves, not a borrow of this body.
-    register_select_zone(std::rc::Rc::new(move |id: &str| {
+    //
+    // wave-129 F2 — `install_*`, not `register_*`: the registration is unregistered on THIS owner's
+    // cleanup. Backspace hide-chrome unmounts this dock, and a hook left behind keeps answering
+    // `true` while writing to disposed signals — a click that reports success and selects nothing.
+    install_select_zone(std::rc::Rc::new(move |id: &str| {
         zone_selected.set(Some(id.to_string()));
         tab.set(ZONES_TAB);
         collapsed.set(false);
@@ -4397,13 +4454,19 @@ mod t754_zone_selection_seam {
     /// The hook drives the panel's OWN selection signal (not `select_tool`'s — a zone id there reads
     /// `SEL 1` with nothing highlighted) and raises the tab it is visible on, un-collapsing the dock.
     /// A selection the author cannot see is the same dead click wearing a different costume.
+    ///
+    /// wave-129 F2 moved the mount-time call from `register_*` to `install_*` (register + an
+    /// `on_cleanup` unregister); the needle follows it, because the thing being pinned is what the
+    /// hook DOES, and the hook is the same hook.
     #[test]
     fn the_hook_selects_the_zone_and_shows_it() {
         let src = production();
         let at = src
-            .find(&format!("register{}", "_select_zone(std::rc::Rc::new"))
-            .expect("T-754: DockRight must register the zone-selection hook at mount");
-        let body = &src[at..at + 320];
+            .find(&format!("install{}", "_select_zone(std::rc::Rc::new"))
+            .expect("T-754: DockRight must install the zone-selection hook at mount");
+        // Taken by CHARS, not bytes: the window runs into em-dashed prose, and a byte slice through
+        // one of those is a panic that has nothing to do with what this test is asserting.
+        let body: String = src[at..].chars().take(320).collect();
         assert!(
             body.contains(&format!("zone{}", "_selected.set(Some(")),
             "T-754: the hook must set the Zones panel's own selection signal"
@@ -4436,6 +4499,113 @@ mod t754_zone_selection_seam {
         assert!(
             !src.contains(&format!("tab_btn(3,{}", "")),
             "T-754: no literal 3 may address the Zones tab"
+        );
+    }
+}
+
+/* ══ wave-129 F2 — the zone hook is unregistered at unmount, and a remount is not clobbered ═══════
+ *
+ * T-754 made the routed zone click land by publishing the Zones panel's selection as a thread_local
+ * hook. It registered at mount and never unregistered, which opened a NARROWER dead click through
+ * lifecycle: Backspace hide-chrome unmounts `DockRight`, the stale closure stays callable,
+ * `route_select_zone` returns `true`, and every `set` inside lands on a DISPOSED signal — a silent
+ * no-op in `reactive_graph` 0.2.14. The click "succeeds" and selects nothing.
+ *
+ * These pin the LIFECYCLE, not the happy path (which `t754_zone_selection_seam` already covers), by
+ * driving real `Owner`s through `install_select_zone` and calling `Owner::cleanup` — the same code
+ * path leptos runs at unmount. Three shapes:
+ *   1. registered -> cleanup -> the route reports FAILURE (not `true` over a no-op);
+ *   2. install(A) -> install(B) -> A's cleanup -> B SURVIVES and still routes (the `Rc::ptr_eq`
+ *      guard's entire reason for existing: unmount is not guaranteed to precede the remount);
+ *   3. never installed -> failure.
+ */
+#[cfg(test)]
+mod f2_zone_hook_lifecycle {
+    use super::{install_select_zone, route_select_zone, ZoneSelectHook};
+    use leptos::prelude::Owner;
+    use std::{cell::RefCell, rc::Rc};
+
+    /// A hook plus the log of every id it is handed — so "did the click actually select something"
+    /// is answered by what the PANEL saw, not only by the router's boolean.
+    fn spy() -> (Rc<RefCell<Vec<String>>>, ZoneSelectHook) {
+        let log = Rc::new(RefCell::new(Vec::<String>::new()));
+        let sink = Rc::clone(&log);
+        let hook: ZoneSelectHook = Rc::new(move |id: &str| sink.borrow_mut().push(id.to_string()));
+        (log, hook)
+    }
+
+    /// With nothing ever installed the route reports failure — the baseline the other two are
+    /// measured against, so a green there cannot be "it was already false".
+    #[test]
+    fn a_route_with_no_panel_ever_installed_reports_failure() {
+        assert!(
+            !route_select_zone("z-nobody"),
+            "F2: no panel has ever registered, so the click selected nothing and must say so"
+        );
+    }
+
+    /// Unmount unregisters: after the owner is cleaned up the route must return `false`, and the
+    /// dead hook must not run. Returning `true` here is the lie F2 exists to kill — the router uses
+    /// that boolean to decide whether the click did anything.
+    #[test]
+    fn unmount_unregisters_so_the_route_stops_reporting_success() {
+        let (log, hook) = spy();
+        let owner = Owner::new();
+        owner.with(|| install_select_zone(hook));
+        assert!(
+            route_select_zone("z-mounted"),
+            "F2 precondition: while mounted the panel really does receive the selection"
+        );
+        owner.cleanup();
+        assert!(
+            !route_select_zone("z-after-unmount"),
+            "F2: the unmounted panel's signals are DISPOSED, so every `set` is a silent no-op — the \
+             route must report FAILURE, not `true` over a click that selected nothing"
+        );
+        assert_eq!(
+            log.borrow().as_slice(),
+            ["z-mounted".to_string()],
+            "F2: the stale hook must not be called at all after unmount"
+        );
+    }
+
+    /// The `Rc::ptr_eq` guard: a remount installs its hook BEFORE the old component's cleanup runs
+    /// (leptos does not guarantee the other interleaving). The OLD cleanup must recognise that it is
+    /// no longer the live registration and leave the NEW panel's hook alone — otherwise the fix for
+    /// the stale hook becomes a fresh way to kill a live one.
+    #[test]
+    fn an_older_owners_cleanup_does_not_clobber_a_newer_registration() {
+        let root = Owner::new();
+        // Siblings, not parent/child: two successive `DockRight` instances under the page owner. A
+        // child would be cleaned up BY the parent and prove nothing about the guard.
+        let old = root.child();
+        let new = root.child();
+        let (log_old, hook_old) = spy();
+        let (log_new, hook_new) = spy();
+        old.with(|| install_select_zone(hook_old));
+        new.with(|| install_select_zone(hook_new));
+
+        old.cleanup();
+
+        assert!(
+            route_select_zone("z-remounted"),
+            "F2: the NEW panel is live — the old component's cleanup must not unregister it"
+        );
+        assert_eq!(
+            log_new.borrow().as_slice(),
+            ["z-remounted".to_string()],
+            "F2: the id must reach the NEW panel, so the surviving registration is the new hook and \
+             not a leftover that merely happens to answer `true`"
+        );
+        assert!(
+            log_old.borrow().is_empty(),
+            "F2: the superseded hook must never run again"
+        );
+
+        new.cleanup();
+        assert!(
+            !route_select_zone("z-gone"),
+            "F2: the live panel's OWN cleanup does clear it — the guard skips losers, not everyone"
         );
     }
 }
