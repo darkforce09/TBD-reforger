@@ -1566,15 +1566,12 @@ fn render_editor_prefs_body() -> AnyView {
  * them from this block by name.
  */
 
-/// `mission.schema.json`, embedded — the ONE source of every default this view reports.
+/// `mission.schema.json` — the ONE source of every default this view reports.
 ///
-/// `eden_zones.rs` embeds the same path for the same reason (its `MISSION_SCHEMA`, whose header
-/// carries the full argument: `$defs/zoneRules` is `additionalProperties: false` precisely so its
-/// consumers would not each invent a copy). That const is private to a file this slice does not own,
-/// so this is a second `include_str!` of THE SAME BYTES — not a second vocabulary. Both point at
-/// `packages/tbd-schema/schema/mission.schema.json`; change the schema and both move together.
-const MISSION_SCHEMA_JSON: &str =
-    include_str!("../../../../packages/tbd-schema/schema/mission.schema.json");
+/// T-757: read [`crate::eden_zones::MISSION_SCHEMA`] rather than a second `include_str!`. That const
+/// carries the full argument (`$defs/zoneRules` is `additionalProperties: false` so consumers do not
+/// invent a copy). One embed, two readers; the schema path is named once.
+const MISSION_SCHEMA_JSON: &str = crate::eden_zones::MISSION_SCHEMA;
 
 /// Where a row's default came from — and, for the two negative cases, why there isn't one.
 ///
@@ -2746,6 +2743,52 @@ mod t688_aggregated_settings {
             "T-688: the embedded mission.schema.json must parse — it is the only source of \
                      every default this view reports",
         )
+    }
+
+
+    /// T-757 — zones + settings share ONE `include_str!` of mission.schema.json.
+    ///
+    /// Perturbation this catches: restoring a second `include_str!` in this file, or dropping the
+    /// `crate::eden_zones::MISSION_SCHEMA` alias so the view re-embeds. Needle path is assembled so
+    /// this test cannot become its own haystack; `live_code` drops cfg(test) so the pin cannot match
+    /// itself.
+    #[test]
+    fn zones_and_settings_share_one_mission_schema_embed() {
+        // live_source keeps string literals (needed to see the include_str path); live_code would blank them.
+        let zones = live_source(include_str!("eden_zones.rs"));
+        let settings = live_source(include_str!("eden_settings.rs"));
+        let path = format!(
+            "{}{}{}",
+            "../../../../packages/tbd-schema/schema/",
+            "mission",
+            ".schema.json"
+        );
+        let embed = format!("include_str!(\"{path}\")");
+        assert_eq!(
+            zones.matches(embed.as_str()).count(),
+            1,
+            "T-757: eden_zones must be the single include_str site among zones+settings"
+        );
+        assert!(
+            zones.contains("pub(crate) const MISSION_SCHEMA"),
+            "T-757: MISSION_SCHEMA must be pub(crate) so settings can share it"
+        );
+        assert_eq!(
+            settings.matches(embed.as_str()).count(),
+            0,
+            "T-757: eden_settings must not re-embed mission.schema.json"
+        );
+        let shared = format!("{}{}{}", "crate::eden_zones::", "MISSION", "_SCHEMA");
+        assert!(
+            settings.contains(&shared),
+            "T-757: eden_settings must read crate::eden_zones::MISSION_SCHEMA"
+        );
+        // Stale size lore (~40 KB vs ~91 KB) — drop rather than restate a drifting number.
+        let stale = format!("{}{}", "~40 ", "KB");
+        assert!(
+            !zones.contains(&stale),
+            "T-757: eden_zones must not restate a drifted ~40 KB embed cost"
+        );
     }
 
     fn zone_rule_props() -> serde_json::Map<String, serde_json::Value> {

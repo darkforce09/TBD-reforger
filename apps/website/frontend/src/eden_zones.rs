@@ -623,8 +623,9 @@ pub(crate) fn zones_panel(doc_tick: RwSignal<u64>, selected: RwSignal<Option<Str
 /// whatever it finds. Add a key to `$defs/zoneRules` and the control appears with no edit here;
 /// remove one and it disappears. `zone_rule_fields_cover_the_whole_vocabulary` pins that property.
 ///
-/// Cost: ~40 KB of JSON in the bundle, uncompressed, once. The alternative costs correctness.
-const MISSION_SCHEMA: &str =
+/// Embedded once for the crate via this `pub(crate)` const (T-757); other modules read it
+/// rather than a second `include_str!`. Bundle size follows the schema file — do not restate it.
+pub(crate) const MISSION_SCHEMA: &str =
     include_str!("../../../../packages/tbd-schema/schema/mission.schema.json");
 
 /// One authored `rules` control, derived from one `$defs/zoneRules` property.
