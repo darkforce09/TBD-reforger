@@ -1356,10 +1356,19 @@ fn audit_schema_support(
 /// [`audit_schema_support`] refuses a target that is itself a `$ref`: following the chain here would
 /// mean owning cycle detection, and the walk would still be reading the first hop.
 ///
-/// `None` = a `$ref` this checker will not follow (remote, a pointer into nothing, or a `$ref` that
-/// is not even a string), which the caller turns into a refusal. The `as_str()?` is deliberate:
-/// `{"$ref": 5}` used to answer "there is no $ref here", which made a node with no other keyword a
-/// node with nothing to check.
+/// `None` = a `$ref` this checker will not follow (remote, a pointer into nothing, a `$ref` that
+/// is not even a string, or an RFC 6901 ESCAPED segment), which the caller turns into a refusal.
+/// The `as_str()?` is deliberate: `{"$ref": 5}` used to answer "there is no $ref here", which made a
+/// node with no other keyword a node with nothing to check.
+///
+/// **Escaped tokens are refused, not unescaped.** RFC 6901 spells `/` inside a key as `~1` and `~`
+/// as `~0`, so `#/$defs/a~1b` means the key `a/b`. This resolver splits on `/` and looks the segment
+/// up verbatim, so it would ask for a key literally named `a~1b`. That is not merely a miss: if the
+/// schema happens to carry BOTH `a/b` and a literal `a~1b`, the pointer silently resolves to the
+/// WRONG node and the document is validated against a schema its author never wrote. Refusing keeps
+/// the one-hop contract honest — the same reason a `$ref` chain is refused rather than followed.
+/// Unescaping properly would be a handful of lines; it is not done because nothing in the shipped
+/// schema needs it, and an unused unescaper is one more thing that can be wrong in silence.
 fn schema_deref<'a>(
     root: &'a serde_json::Value,
     node: &'a serde_json::Value,
@@ -1369,6 +1378,9 @@ fn schema_deref<'a>(
     };
     let mut cur = root;
     for seg in raw.as_str()?.strip_prefix("#/")?.split('/') {
+        if seg.contains('~') {
+            return None;
+        }
         cur = cur.get(seg)?;
     }
     Some(cur)
@@ -2972,6 +2984,58 @@ mod tests {
         assert!(
             validate_against_schema(&recursive, &a_valid_v1_document()).is_ok(),
             "recursion through a subschema is one hop at every step — it must still be supported"
+        );
+    }
+
+    /// An RFC 6901 ESCAPED pointer segment must refuse, not resolve to the wrong node.
+    ///
+    /// `~1` spells `/` and `~0` spells `~`, so `#/$defs/a~1b` names the key `a/b`. `schema_deref`
+    /// splits on `/` and looks segments up verbatim, so it would ask for a key literally called
+    /// `a~1b`. The wave-128 re-verifier proved that is not just a miss: with BOTH keys present the
+    /// pointer silently resolved to the wrong schema and a document the real schema rejects came
+    /// back `Ok(())`. This is the same failure the `$ref`-chain rule closes — reading something
+    /// other than what the author wrote, quietly — so it refuses by the same one-hop logic.
+    #[test]
+    fn an_escaped_pointer_segment_is_refused_rather_than_resolved_to_the_wrong_node() {
+        // The decoy is the whole point: `a/b` is the pointer's true target and carries an assertion
+        // the document fails; the literal `a~1b` is what the un-unescaped lookup actually finds.
+        let escaped = shipped_schema_with(|s| {
+            s["$defs"]["a/b"] = serde_json::json!({"type": "string", "minLength": 9999});
+            s["$defs"]["a~1b"] = serde_json::json!({});
+            s["oneOf"][0]["properties"]["modpackId"] = serde_json::json!({"$ref": "#/$defs/a~1b"});
+        });
+
+        let faults = validate_against_schema(&escaped, &a_valid_v1_document()).expect_err(
+            "an escaped pointer segment must refuse — resolving it verbatim reads a schema the \
+             author did not write",
+        );
+        assert!(
+            faults.iter().any(|f| f.contains("modpackId")),
+            "the refusal must name the position whose $ref it would not follow: {faults:?}"
+        );
+
+        // Document-independent: the refusal is about the schema, so the document that would have
+        // been wrongly ACCEPTED must be refused too, not quietly passed.
+        assert!(
+            validate_against_schema(&escaped, &{
+                let mut d = a_valid_v1_document();
+                d["modpackId"] = serde_json::json!("x");
+                d
+            })
+            .is_err(),
+            "the escaped pointer is unreadable for every document, including the one the wrong \
+             node would have accepted"
+        );
+
+        // PRECISION — an ordinary unescaped pointer next to it still resolves. The rule bans `~`
+        // in a segment, not `$defs` keys or pointers in general.
+        let plain = shipped_schema_with(|s| {
+            s["$defs"]["plain"] = serde_json::json!({"type": "string"});
+            s["oneOf"][0]["properties"]["modpackId"] = serde_json::json!({"$ref": "#/$defs/plain"});
+        });
+        assert!(
+            validate_against_schema(&plain, &a_valid_v1_document()).is_ok(),
+            "a normal single-hop pointer must be unaffected by the escaped-segment rule"
         );
     }
 }
