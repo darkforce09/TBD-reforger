@@ -563,3 +563,6 @@
 140	T-740	Help table prose miscounts the bindings and mislabels the redo chord	apps/website/frontend/src/eden_help.rs
 141	T-748	PLACE-COMMENT-001 does not fully close: comments have no map glyph and cannot be composed	crates/map-engine-render/src/draw_order.rs; crates/map-engine-render/src/engine.rs; apps/website/frontend/src/mission_history.rs
 141	T-738	Help census is blind to ev.key() listeners — Escape is bound in at least three places it cannot see	apps/website/frontend/src/eden_help.rs
+142	T-778	Six register-at-mount thread_local seams have no lifecycle guard — port the wave-129 idiom	apps/website/frontend/src/ruler_tool.rs; apps/website/frontend/src/los_tool.rs; apps/website/frontend/src/world_assets/mod.rs; apps/website/frontend/src/select_tool.rs
+142	T-779	set_loadout discards the acknowledgement T-770 added	apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/arsenal.rs
+142	T-780	Connections have no line on the map, so delete is panel-only	crates/map-engine-render/src/draw_order.rs; crates/map-engine-render/src/engine.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/context_menu.rs
