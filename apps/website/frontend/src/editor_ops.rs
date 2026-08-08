@@ -460,7 +460,14 @@ thread_local! {
     static CLIPBOARD: RefCell<Vec<serde_json::Value>> = const { RefCell::new(Vec::new()) };
 }
 
-/// Delete/Backspace — remove the selected entities in one undoable step (React `removeEntities`).
+/// Delete/Backspace — remove the selected entities (React `removeEntities`).
+///
+/// **Wave 145 F-4 — NOT "in one undoable step", which is what this line used to claim.** The slot
+/// removal is one transaction, but the T-672 edge cascade opens one per deleted slot and the T-784
+/// comment loop opens one per removed note, so a multi-select or mixed delete costs several Ctrl+Z
+/// presses to walk back. Nothing is lost — undo restores all of it — and a single-slot or
+/// single-comment delete really is one step. The full argument, and why the batch would have to be
+/// minted core-side, is in the KNOWN AND ACCEPTED note on the cascade below.
 ///
 /// **T-784 — the selection can now hold a COMMENT id, so the verb PARTITIONS it.** A comment is a
 /// `commentsById` key, not a slot id: handing it to `remove_slots` removed nothing and reported
@@ -509,12 +516,29 @@ pub fn delete_selection() -> bool {
             // shared with `remove_editor_layer` and re-shaping it is a core-side change this slice
             // does not need to make to keep the graph honest. The visible cost is extra Ctrl+Z
             // presses; the alternative cost was dangling edges.
+            //
+            // WAVE 145 F-4 — **the comment loop above joins that acceptance, explicitly.** T-784
+            // wrote it as a plain `for` over `core.remove_comment`, and `remove_comment` opens its
+            // own transaction per call, so a delete over N notes is N more undo steps on top of the
+            // cascade's. It was never added to this paragraph, which left the T-672 note reading as
+            // if the cascade were the only multi-step half. It is the same accepted class, for the
+            // same reason (the one-txn batch would have to be minted core-side, and `store.rs` is
+            // out of this slice), with the same visible cost: extra Ctrl+Z presses, never lost work
+            // — undo restores every removed note. A SINGLE-comment delete is genuinely one step.
             for id in &ids {
                 let _ = core.remove_connections_touching(id);
             }
             // T-784 — GUARDED, because the comment-only case is the acceptance: with nothing but
-            // notes selected there is no slot half, and `remove_slots(vec![])` would still open a
-            // transaction — an empty undo step over a document this delete did not change.
+            // notes selected there is no slot half, and handing `remove_slots` an empty `Vec` is a
+            // pointless transaction opened over a document this delete did not change.
+            //
+            // WAVE 145 F-2 — what that guard is NOT. It was justified here as preventing "an empty
+            // undo step", and that justification is empirically false: yrs skips a transaction that
+            // wrote nothing, so `remove_slots(vec![])` leaves `can_undo()` FALSE and mints no undo
+            // step at all (probed natively against `MissionDocCore`). The guard stays — a call that
+            // provably cannot change anything should not be made, and saying "I removed the slots"
+            // over an empty half is the vocabulary this partition exists to avoid — but it is
+            // hygiene, not the last thing standing between the operator and a dead Ctrl+Z.
             if !ids.is_empty() {
                 core.remove_slots(ids);
             }

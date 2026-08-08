@@ -25,7 +25,7 @@
 #![cfg(target_arch = "wasm32")]
 
 use std::cell::{Cell, RefCell};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::rc::Rc;
 
 use leptos::prelude::{GetUntracked, RwSignal, Set};
@@ -295,6 +295,38 @@ pub fn refresh_hud() {
     });
 }
 
+/// **Wave 145 F-1 — the ONE selection prune, over the whole selectable universe.**
+///
+/// Drops from `ctx.selection` every id the live document no longer holds, and NOTHING else. Both
+/// post-change sites ([`rebind_engine_from_doc`] and [`after_doc_change`]) call this rather than
+/// each carrying its own `retain`, so the universe is decided once — two copies is how one of them
+/// gets widened and the other does not.
+///
+/// The universe is [`crate::mission_editor::selectable_ids`], read from the POST-change document:
+/// slots off `slots_json` (hidden rows included — `materialize()` drops T-665 / T-701 hidden slots
+/// and would deselect a slot for being invisible rather than for being gone, which is what made
+/// `editor_ops::toggle_hidden` unable to toggle back), plus the vehicle / entity / comment key sets
+/// off `small_maps_json`. Reading it from the settled document is what keeps the guarantee this
+/// prune exists for: a row deleted or undone away is out of its map before this runs, so its id
+/// still falls out and Delete can never act on it.
+///
+/// The universe function lives in `mission_editor` because this module is
+/// `#![cfg(target_arch = "wasm32")]` end to end and can host no test that ever executes; the pin
+/// `t784_comment_glyph::the_selection_prune_runs_over_the_whole_selectable_universe` reads this body
+/// back through `include_str!` and is what stops the SoA creeping back in.
+fn prune_selection(ctx: &HistoryCtx) {
+    let live = {
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return;
+        };
+        crate::mission_editor::selectable_ids(&core.slots_json(), &core.small_maps_json())
+    };
+    ctx.selection
+        .borrow_mut()
+        .retain(|id| live.contains(id.as_str()));
+}
+
 /// T-175 B1 — rebind the engine slot glyphs from the live doc after a **wholesale document swap**
 /// (IDB restore / server hydrate) so the restored slot positions actually reach the GPU. The IDB
 /// restore path previously only called [`refresh_hud`] (HUD counts, no engine rebind), so if the
@@ -313,12 +345,7 @@ pub fn rebind_engine_from_doc() {
         let Some(soa) = ctx.doc.borrow().as_ref().map(MissionDocCore::materialize) else {
             return;
         };
-        {
-            let live: HashSet<&str> = soa.ids.iter().map(String::as_str).collect();
-            ctx.selection
-                .borrow_mut()
-                .retain(|id| live.contains(id.as_str()));
-        }
+        prune_selection(ctx);
         let ids = ctx.selection.borrow().clone();
         if let Some(e) = ctx.engine.borrow_mut().as_mut() {
             let tints = map_engine_core::slots_gpu::side_tints_rgba_bytes(&soa.side_keys);
@@ -368,12 +395,7 @@ fn after_doc_change(ctx: &HistoryCtx) {
     let Some(soa) = ctx.doc.borrow().as_ref().map(MissionDocCore::materialize) else {
         return;
     };
-    {
-        let live: HashSet<&str> = soa.ids.iter().map(String::as_str).collect();
-        ctx.selection
-            .borrow_mut()
-            .retain(|id| live.contains(id.as_str()));
-    }
+    prune_selection(ctx);
     let ids = ctx.selection.borrow().clone();
     if let Some(e) = ctx.engine.borrow_mut().as_mut() {
         e.set_drag(Vec::new(), 0.0, 0.0); // clear any live drag overlay

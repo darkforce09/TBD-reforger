@@ -2492,6 +2492,83 @@ pub(crate) fn route_availability(
     Some((target, x, y))
 }
 
+/* ═════ Wave 145 F-1 — WHAT THE SELECTION PRUNE MAY KEEP: the WHOLE selectable universe ══════════
+ *
+ * `mission_history`'s post-change tail prunes `ctx.selection` so a document that changed under the
+ * app cannot leave the selection naming ids the document no longer holds. That guarantee is not
+ * decoration: undoing an *add* deletes rows, an IDB restore swaps the whole document, and a Delete
+ * over an id that no longer exists is the wave-129 / wave-142 MAJOR — a success report over a
+ * document nothing was written to, and a stale id coexisting with an edge selection so Delete took
+ * the wrong object. The prune is what has been closing that route.
+ *
+ * It was sourced from `materialize()`'s slot SoA, which is the SLOT universe and a lossy view of
+ * even that. Every other selectable kind is absent from it, so `retain` was not pruning STALE ids —
+ * it was deleting LIVE ones. A selected comment, vehicle or placed object fell out of the selection
+ * on the next drag commit, undo, layer toggle or loadout write, silently, with the Outliner
+ * highlight clearing under the operator's hands and no message.
+ *
+ * [`selectable_ids`] is the universe instead: the ids the document ACTUALLY HOLDS, across every map
+ * a selection can name. The two directions the prune has to get right, and where each comes from:
+ *
+ *   * A LIVE id SURVIVES — because its key is in one of the four maps read below.
+ *   * A GONE id STILL FALLS OUT — because both halves are read from the POST-change document. A
+ *     comment removed by Delete, by the comment panel, or by an undo is out of `commentsById`
+ *     BEFORE the prune runs, so `retain` drops it exactly as it always did. Widening the universe
+ *     does not weaken the staleness guarantee; sourcing it from a snapshot would.
+ *
+ * Membership is by KEY PRESENCE, not by resolvability. [`route_target`] additionally demands a
+ * `position` before it will centre a click on a row, but "does this row exist?" and "can a click fly
+ * to it?" are different questions and the prune asks the first — a vehicle row whose position was
+ * never authored still EXISTS, and deleting it from the selection would be the same silent loss in
+ * a smaller costume. `editor_ops::delete_selection` partitions on exactly this key-presence test.
+ *
+ * THE SLOT HALF COMES OFF `slots_json`, NOT THE SoA. That is the wave-144 rule for id universes
+ * (`editor_ops::live_slot_ids`, pinned by `eden_dock_right`'s
+ * `both_id_minters_prove_uniqueness_against_hidden_slots_too`), and it is load-bearing here for a
+ * second reason. `materialize()` DROPS slots on a hidden layer (T-665) and slots carrying
+ * `editorHidden` (T-701), so an SoA-sourced prune deselects a slot for being HIDDEN rather than for
+ * being GONE — a visibility policy nobody wrote, contradicted by the verbs that ship. `editor_ops::
+ * toggle_hidden` and `show_selection` act on the LIVE selection, and the hide they perform ends in
+ * `after_local_edit` → the prune → the very rows just hidden leave the selection: the toggle can
+ * never toggle back, and Show-selection is unreachable by the only route that reaches it. Existence
+ * is the question the prune asks; `slots_json` is the only complete answer to it.
+ *
+ * ZONES AND MARKERS ARE DELIBERATELY ABSENT. A zone is selected in the Zones panel through
+ * `eden_dock_right::route_select_zone` and never enters `ctx.selection` — the router's own `Zone`
+ * arm is written around exactly that — and a marker has no selection route at all. Adding either
+ * key would widen the universe past anything that can appear in the set it prunes, which is how a
+ * prune stops being able to say "this id is gone".
+ */
+
+/// **The ids the live document holds that a selection may name.** Slots off the raw `slots_json` key
+/// set (hidden rows INCLUDED), plus the `vehiclesById` / `entitiesById` / `commentsById` key sets off
+/// `small_maps_json`. The block above argues each half.
+///
+/// It lives HERE, beside [`route_target`], rather than in the module that calls it: `mission_history`
+/// is `#![cfg(target_arch = "wasm32")]` from line one, so a function placed there can never be
+/// unit-tested — the same reason [`comment_points`] lives here. `the_selection_prune_runs_over_the_
+/// whole_selectable_universe` holds `mission_history`'s single prune site to this function through
+/// `include_str!`, because an `include_str!` pin is the only reach a native test has into that file.
+#[must_use]
+pub(crate) fn selectable_ids(
+    slots_json: &str,
+    small_maps_json: &str,
+) -> std::collections::HashSet<String> {
+    let mut live: std::collections::HashSet<String> =
+        serde_json::from_str::<serde_json::Value>(slots_json)
+            .ok()
+            .and_then(|v| v.as_object().map(|o| o.keys().cloned().collect()))
+            .unwrap_or_default();
+    if let Ok(small) = serde_json::from_str::<serde_json::Value>(small_maps_json) {
+        for key in ["vehiclesById", "entitiesById", "commentsById"] {
+            if let Some(obj) = small.get(key).and_then(|v| v.as_object()) {
+                live.extend(obj.keys().cloned());
+            }
+        }
+    }
+    live
+}
+
 /// A zone's geometric centre in world metres — a circle's centre, or a polygon's vertex mean.
 /// `None` for a shapeless row (a draw that was never committed), which is exactly the row a click
 /// cannot centre on and therefore must not advertise.
@@ -4932,6 +5009,17 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 // DELIBERATELY AFTER the connect arm above: `complete_connect` must
                                 // keep seeing entity hits only, or an armed connection would take a
                                 // comment as an endpoint — an edge to a thing that never compiles.
+                                //
+                                // …and DELIBERATELY BEFORE the edge pick below, which is NOT a draw
+                                // -order argument (wave 145 F-3: `draw_order.rs` pins
+                                // `MissionConnections` ABOVE `MissionComments`, so at an exact
+                                // overlap the hairline is the topmost pixel and the note still wins
+                                // the click). The reason is the SHAPE of the two targets. A note is
+                                // a point with a `COMMENT_PICK_PX` radius — a few pixels, and if a
+                                // line crossing it could take the click it would be unclickable at
+                                // that spot with no way for the operator to tell why. An edge is a
+                                // long segment that stays clickable along its whole length, so it
+                                // loses nothing by yielding the handful of pixels around a note.
                                 //
                                 // Against the FROZEN press camera (X-05), tolerance derived by
                                 // unprojecting two points `COMMENT_PICK_PX` apart, exactly as the
@@ -12362,8 +12450,9 @@ mod t784_comment_glyph {
         );
         assert!(
             at_pick < at_edge && at_pick < at_apply,
-            "T-784: the glyph must be picked before the edge (a drawn object wins over a line \
-             under it) and before apply_click consumes the hit"
+            "T-784: the glyph must be picked before the edge (a note is a POINT target with a \
+             tight radius; an edge is a long segment that would otherwise swallow every click \
+             landing near a note that crosses it) and before apply_click consumes the hit"
         );
         // No second selection route: the map must not write the selection for a comment itself.
         let fold = ["let hit = hit.", "or_else("].concat();
@@ -12451,5 +12540,226 @@ mod t784_comment_glyph {
             "T-784: a prefix test is a second vocabulary for 'is this a comment?' and it is wrong \
              for any hydrated mission whose ids were not minted here"
         );
+    }
+}
+
+// ══ Wave 145 F-1 — the selection prune keeps what EXISTS and drops what is GONE, both ways ═══════
+//
+// The prune in `mission_history` had one job — drop ids the document no longer holds — and was
+// sourced from the slot SoA, a universe that contains no vehicle, no placed object and no comment.
+// So it did the opposite of its job for three of the four selectable kinds: every document change
+// (a drag commit, an undo, a layer toggle, a loadout write, an IDB restore) silently deleted them
+// from the selection and cleared the Outliner highlight.
+//
+// The correction is only half a correction if it stops there. The prune is ALSO what has been
+// guaranteeing that a stale id can never reach Delete — the wave-129 and wave-142 MAJORs both grew
+// out of an id outliving the thing it named. So these pins fire BOTH directions against
+// `selectable_ids`, the widened universe:
+//
+//   * a comment / vehicle / object / hidden slot that IS in the document SURVIVES a change;
+//   * one that is NOT in the document — deleted, undone away, or never minted — still FALLS OUT.
+//
+// Plus the two the widening could have got wrong: a HIDDEN slot is in the universe (it exists; the
+// SoA's T-665/T-701 drop is a visibility view, not an existence test), and a ZONE or MARKER is NOT
+// (neither has a route into `ctx.selection`, so admitting them would widen the universe past the
+// set being pruned). The Class-R pin at the end binds `mission_history`'s single prune site to this
+// function through `include_str!` — that module is `#![cfg(target_arch = "wasm32")]` end to end, so
+// no test placed in it would ever execute, and a source pin is the only reach a native test has.
+#[cfg(test)]
+mod w145_selection_prune {
+    use super::selectable_ids;
+    use crate::arsenal::class_r_scrub::{live_code, only_body};
+
+    /// Two slots, one of them carrying T-701 `editorHidden` — the row `materialize()` drops and the
+    /// raw key map keeps.
+    fn slots() -> String {
+        serde_json::json!({
+            "n1": { "x": 1.0, "y": 2.0 },
+            "n2": { "x": 3.0, "y": 4.0, "editorHidden": true },
+        })
+        .to_string()
+    }
+
+    /// One of every other by-id map a selection could be pruned against — including the two
+    /// (`zonesById`, `markersById`) that must NOT be admitted.
+    fn small() -> String {
+        serde_json::json!({
+            "vehiclesById": { "n3": { "position": { "x": 5.0, "y": 6.0 } } },
+            "entitiesById": { "n4": { "position": { "x": 7.0, "y": 8.0 } } },
+            "commentsById": { "cmt-1": { "title": "North", "position": { "x": 9.0, "z": 10.0 } } },
+            "zonesById": { "z1": { "shape": { "circle": { "x": 0.0, "z": 0.0, "r": 3.0 } } } },
+            "markersById": { "m1": { "position": { "x": 0.0, "z": 0.0 } } },
+        })
+        .to_string()
+    }
+
+    /// The prune exactly as `mission_history::prune_selection` performs it: `retain` over
+    /// [`selectable_ids`] of the POST-change document. Order-preserving, like the real `Vec`.
+    fn prune(sel: &[&str], slots_json: &str, small_maps_json: &str) -> Vec<String> {
+        let live = selectable_ids(slots_json, small_maps_json);
+        sel.iter()
+            .filter(|id| live.contains(**id))
+            .map(|id| (*id).to_string())
+            .collect()
+    }
+
+    /// **DIRECTION ONE — what EXISTS survives.** The regression in one line: with the universe
+    /// sourced from the slot SoA this returned `["n1"]`, and the operator's comment, vehicle and
+    /// object left the selection on the next drag commit with nothing said.
+    #[test]
+    fn every_live_selectable_kind_survives_a_document_change() {
+        assert_eq!(
+            prune(&["n1", "n2", "n3", "n4", "cmt-1"], &slots(), &small()),
+            vec!["n1", "n2", "n3", "n4", "cmt-1"],
+            "wave 145 F-1: a slot, a HIDDEN slot, a vehicle, a placed object and a comment all \
+             exist in this document — a prune that drops any of them is deleting the operator's \
+             selection, not pruning it"
+        );
+    }
+
+    /// **DIRECTION TWO — what is GONE still falls out.** This is the property the over-aggressive
+    /// prune was accidentally providing and that the widening must not spend: the universe is read
+    /// from the POST-change document, so a note removed by Delete / the panel / an undo is already
+    /// out of `commentsById` when this runs. Without it, a stale id reaches Delete — the wave-129
+    /// and wave-142 defect (a success report over an unchanged document; a stale id coexisting with
+    /// an edge selection so Delete removed the wrong object).
+    #[test]
+    fn an_id_the_document_no_longer_holds_still_falls_out() {
+        // The post-change document: the comment and the placed object are gone, the vehicle stays.
+        let after = serde_json::json!({
+            "vehiclesById": { "n3": { "position": { "x": 5.0, "y": 6.0 } } },
+            "entitiesById": {},
+            "commentsById": {},
+        })
+        .to_string();
+        assert_eq!(
+            prune(
+                &["n1", "n3", "n4", "cmt-1", "never-minted"],
+                &slots(),
+                &after
+            ),
+            vec!["n1", "n3"],
+            "wave 145 F-1: a removed comment, a removed object and an id the document never held \
+             must all leave the selection — the prune's whole reason for existing"
+        );
+        // The slot half is pruned by the same rule: a slot removed from `slots_json` is gone.
+        assert_eq!(
+            prune(&["n1", "n2"], "{\"n1\":{}}", &after),
+            vec!["n1"],
+            "wave 145 F-1: a deleted slot must still fall out — widening the universe is not \
+             licence to keep a row the document dropped"
+        );
+    }
+
+    /// **A HIDDEN slot is in the universe, because it still EXISTS.** `materialize()` drops slots on
+    /// a hidden layer (T-665) and slots carrying `editorHidden` (T-701) — that is a VIEW, and wave
+    /// 144 already established (`eden_dock_right::both_id_minters_prove_uniqueness_against_hidden_
+    /// slots_too`) that an id universe must not be built from it. Here the consequence of getting it
+    /// wrong is the other way round from the minters': an SoA-sourced prune deselects a slot for
+    /// being invisible, which makes `editor_ops::toggle_hidden` unable to toggle back and
+    /// `show_selection` unreachable — the hide runs `after_local_edit`, the prune removes the rows
+    /// it just hid, and the selection the Show verb needs is gone.
+    #[test]
+    fn a_hidden_slot_is_in_the_universe_because_hidden_is_not_gone() {
+        let live = selectable_ids(&slots(), &small());
+        assert!(
+            live.contains("n2"),
+            "wave 145 F-1: the slot half must come off the raw slots_json key map, hidden rows \
+             included — hidden is a view state, and the prune asks about existence"
+        );
+    }
+
+    /// **A zone and a marker are NOT in the universe.** A zone is selected in the Zones panel via
+    /// `eden_dock_right::route_select_zone` and never lands in `ctx.selection` (the router's `Zone`
+    /// arm is written around exactly that); a marker has no selection route at all. Admitting either
+    /// would widen the universe past the set being pruned, which costs the prune the only thing it
+    /// can say: "this id is gone".
+    #[test]
+    fn zones_and_markers_are_not_selectable_and_so_are_not_in_the_universe() {
+        let live = selectable_ids(&slots(), &small());
+        for id in ["z1", "m1"] {
+            assert!(
+                !live.contains(id),
+                "wave 145 F-1: {id} has no route into the editor selection, so it must not widen \
+                 the universe the selection is pruned against"
+            );
+        }
+    }
+
+    /// Unparseable or absent maps yield an EMPTY universe rather than a panic — the prune runs on
+    /// every committed edit and on the IDB restore swap, and the restore is precisely where a
+    /// half-written document can appear. An empty universe prunes everything, which is the safe
+    /// direction (no stale id survives) and is what the SoA-sourced code did on the same input.
+    #[test]
+    fn a_document_that_does_not_parse_yields_an_empty_universe() {
+        assert!(selectable_ids("not json", "not json").is_empty());
+        assert!(selectable_ids("{}", "{}").is_empty());
+        assert!(selectable_ids("[]", "null").is_empty());
+    }
+
+    /// **CLASS-R — the shipped prune site actually uses this universe.**
+    ///
+    /// `mission_history.rs` is `#![cfg(target_arch = "wasm32")]` from line one: a test written there
+    /// would never run, and no native test can call into it. This reads the module's LIVE SOURCE
+    /// back through `include_str!` and holds three things:
+    ///
+    ///   1. there is exactly ONE `retain` in the file — one prune, so a widening cannot land on one
+    ///      site and miss the other, which is what a copy at each call site invites;
+    ///   2. that prune builds its universe from `selectable_ids(slots_json, small_maps_json)`;
+    ///   3. both post-change entry points go through it.
+    ///
+    /// `live_code` blanks comments AND string literals, so every needle below means a CALL, not a
+    /// mention — the prose this ticket wrote naming these very tokens cannot make it pass. Needles
+    /// are assembled at run time, this file's standing rule.
+    ///
+    /// The two negatives are scoped to `prune_selection`'s body deliberately, on the wave-144
+    /// precedent: `materialize()` is the RIGHT reader everywhere else in that module (it feeds the
+    /// glyph bind), so a file-wide ban would be false. The positives above are what hold the fix
+    /// down; these only stop the SoA creeping back into the one body that must not read it.
+    #[test]
+    fn the_selection_prune_runs_over_the_whole_selectable_universe() {
+        let hist = live_code(include_str!("mission_history.rs"));
+        let retain = ["retain", "(|id|"].concat();
+        assert_eq!(
+            hist.matches(&retain).count(),
+            1,
+            "wave 145 F-1: mission_history must prune the selection in exactly ONE place — two \
+             retains is how one of them gets the widened universe and the other keeps the SoA"
+        );
+
+        let prune = ["prune", "_selection("].concat();
+        let body = only_body(&hist, &format!("fn {prune}"));
+        for needle in [
+            ["selectable", "_ids("].concat(),
+            ["slots", "_json()"].concat(),
+            ["small_maps", "_json()"].concat(),
+            retain.clone(),
+        ] {
+            assert!(
+                body.contains(&needle),
+                "wave 145 F-1: the prune must retain over \
+                 mission_editor::selectable_ids(slots_json, small_maps_json) — the ids the live \
+                 document actually holds, read from the POST-change document so a deleted id still \
+                 falls out; missing `{needle}`, body was:\n{body}"
+            );
+        }
+        for banned in ["materialize", "soa"] {
+            assert!(
+                !body.contains(banned),
+                "wave 145 F-1: the prune must not build its universe from the materialized SoA — \
+                 it holds no vehicle, object or comment id and drops T-665/T-701 hidden slots, so \
+                 pruning against it deletes live selections instead of stale ones; body was:\n\
+                 {body}"
+            );
+        }
+
+        for site in ["rebind_engine_from_doc", "after_doc_change"] {
+            let at = only_body(&hist, &format!("fn {site}("));
+            assert!(
+                at.contains(&prune),
+                "wave 145 F-1: {site} must prune through the shared prune_selection, not with a \
+                 retain of its own; body was:\n{at}"
+            );
+        }
     }
 }
