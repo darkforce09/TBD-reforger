@@ -981,6 +981,59 @@ fn tab_icon(i: usize) -> &'static str {
     }
 }
 
+/* ══════════ T-754 — the Zones panel's selection, reachable from OUTSIDE this component ══════════
+ *
+ * A zone's selection is deliberately NOT `select_tool`'s: it is `zone_selected`, an `RwSignal` local
+ * to [`DockRight`] (see its declaration for why — a zone id in the slot selection reads `SEL 1` with
+ * nothing highlighted). That locality is what made T-655's click-to-select router return `false` for
+ * every zone: the router lives in `mission_editor.rs`, holding the `!Send` doc/selection/engine
+ * handles, and had no way to reach a signal declared inside this component's body.
+ *
+ * So the panel EXPOSES its selection the same way the validation panel exposes its router — a
+ * thread_local hook registered at mount, read by a free function. This is a SEAM, not a second
+ * selection path: the hook only sets the signal this panel already owns (and raises the Zones tab so
+ * the selection is visible), and the ONE router is still `route_select_by_subject_id`.
+ */
+
+/// The Zones tab's index in the tab strip. Named because THREE places must agree — the tab button,
+/// the panel that renders under it, and [`register_select_zone`]'s "show me the selection I just
+/// made". A literal in the third place is a silent way for a routed click to select a zone on a tab
+/// the author is not looking at.
+pub(crate) const ZONES_TAB: usize = 3;
+
+/// The registered zone-selection hook: takes a `zonesById` id and makes it the Zones panel's
+/// selection. Set once at [`DockRight`] mount; `None` on the host / pre-mount.
+type ZoneSelectHook = std::rc::Rc<dyn Fn(&str)>;
+
+thread_local! {
+    /// The Zones panel's selection hook. Peer of `validation_panel::SELECT_BY_ID` and
+    /// `PAYLOAD_SOURCE`, and thread_local for the same reason: the signal is `!Send` panel state
+    /// that no caller can hold.
+    static SELECT_ZONE: std::cell::RefCell<Option<ZoneSelectHook>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+/// Register the zone-selection hook (called once at [`DockRight`] mount).
+pub(crate) fn register_select_zone(f: ZoneSelectHook) {
+    SELECT_ZONE.with(|c| *c.borrow_mut() = Some(f));
+}
+
+/// Select `zone_id` in the Zones panel. Returns whether the panel was there to select it — `false`
+/// on the host / pre-mount, which the router reports as "this click selected nothing" rather than
+/// pretending. The `Rc` is cloned OUT before the call so the hook (which sets signals, and so can
+/// re-enter the view) never runs under this cell's borrow.
+#[must_use]
+pub(crate) fn route_select_zone(zone_id: &str) -> bool {
+    let hook = SELECT_ZONE.with(|c| c.borrow().clone());
+    match hook {
+        Some(f) => {
+            f(zone_id);
+            true
+        }
+        None => false,
+    }
+}
+
 /// Right dock — the **Factions** palette (spec O2), off the live `GET /api/v1/registry`. Leaves drag
 /// onto the map to place their slot. `fm_open` toggles the T-167 Faction Manager dialog.
 ///
@@ -1064,6 +1117,15 @@ pub fn DockRight(
     // `SEL 1` with nothing highlighted anywhere — the same reason `place_at` keeps vehicle and
     // entity ids out of it.
     let zone_selected = RwSignal::new(None::<String>);
+    // T-754 — publish that selection so T-655's ONE click-to-select router can drive it. A routed
+    // zone click makes the zone the panel's selection AND raises the Zones tab (and un-collapses the
+    // dock, T-638): a selection the author cannot see is the same dead click in a different costume.
+    // `RwSignal` is `Copy`, so the hook holds the signals themselves, not a borrow of this body.
+    register_select_zone(std::rc::Rc::new(move |id: &str| {
+        zone_selected.set(Some(id.to_string()));
+        tab.set(ZONES_TAB);
+        collapsed.set(false);
+    }));
     // T-650 — the composition id currently in inline-edit (rename/recategorize), or `None`. Its own
     // signal, like `zone_selected`: a composition is neither a slot nor a zone, so it does not touch
     // `select_tool`'s selection or the zone selection.
@@ -1112,7 +1174,7 @@ pub fn DockRight(
                         {tab_btn(1, "Vehicles")}
                         // T-582 — Zones sits before the Markers stub: it is a live surface and that
                         // one is still a promise (T-069).
-                        {tab_btn(3, "Zones")}
+                        {tab_btn(ZONES_TAB, "Zones")}
                         // T-650 — Compositions is a live surface too, so it also precedes Markers.
                         {tab_btn(4, "Compositions")}
                         // T-079 — Triggers is a live surface (draw area + owner link), so it precedes
@@ -1461,7 +1523,9 @@ pub fn DockRight(
                         .into_any(),
                     // T-582 — the zone draw tool. T-211 shipped the document layer and eleven
                     // mutators; this is the first thing that calls them.
-                    3 => zones_panel(doc_tick, zone_selected),
+                    // T-754 — the constant, not a literal: a routed zone click raises this same
+                    // index, and the two must not be able to drift apart.
+                    ZONES_TAB => zones_panel(doc_tick, zone_selected),
                     // T-650 — the Compositions palette: save the current selection, list saved
                     // compositions grouped by category, arm a row to place, inline-edit rows.
                     4 => compositions_panel(doc_tick, comp_editing),
@@ -4281,6 +4345,97 @@ mod t637_tab_strip_budget {
             n,
             "T-637: each tab needs a DISTINCT glyph — with the words gone, the glyph is the only \
              thing telling two tabs apart"
+        );
+    }
+}
+
+/* ════════ T-754 — the Zones panel's selection is reachable, so a routed zone click lands ═════════
+ *
+ * The wave-115 MAJOR was that T-655's router could not select a zone: `zone_selected` is declared
+ * inside [`DockRight`]'s body and the router lives in `mission_editor.rs`. These pin the seam that
+ * closes that gap — behaviourally (an unmounted panel reports honestly; a mounted one receives the
+ * id) and on the source (the hook drives the panel's OWN signal and raises the tab it is visible on).
+ */
+#[cfg(test)]
+mod t754_zone_selection_seam {
+    use super::{register_select_zone, route_select_zone, ZONES_TAB};
+
+    /// The production half of this file — everything above the first test module, so a needle here
+    /// cannot satisfy itself (the T-759 hollow-pin trap).
+    fn production() -> &'static str {
+        include_str!("eden_dock_right.rs")
+            .split("#[cfg(test)]")
+            .next()
+            .expect("the production half precedes the test modules")
+    }
+
+    /// The seam, end to end: with no panel mounted the route reports that it selected NOTHING (which
+    /// is what lets the router return `false` instead of centring on a phantom selection), and with
+    /// the panel mounted the zone id reaches the panel's selection hook verbatim.
+    #[test]
+    fn the_route_reports_honestly_and_delivers_the_id() {
+        assert!(
+            !route_select_zone("z-circle"),
+            "T-754: no Zones panel mounted ⇒ nothing was selected, and the router must be told so"
+        );
+        let seen = std::rc::Rc::new(std::cell::RefCell::new(Vec::<String>::new()));
+        let sink = std::rc::Rc::clone(&seen);
+        register_select_zone(std::rc::Rc::new(move |id: &str| {
+            sink.borrow_mut().push(id.to_string());
+        }));
+        assert!(
+            route_select_zone("z-circle"),
+            "T-754: a mounted panel selects the zone, so the routed click is a real selection"
+        );
+        assert_eq!(
+            seen.borrow().as_slice(),
+            ["z-circle".to_string()],
+            "T-754: the id must reach the panel unchanged — no re-derivation on the way"
+        );
+    }
+
+    /// The hook drives the panel's OWN selection signal (not `select_tool`'s — a zone id there reads
+    /// `SEL 1` with nothing highlighted) and raises the tab it is visible on, un-collapsing the dock.
+    /// A selection the author cannot see is the same dead click wearing a different costume.
+    #[test]
+    fn the_hook_selects_the_zone_and_shows_it() {
+        let src = production();
+        let at = src
+            .find(&format!("register{}", "_select_zone(std::rc::Rc::new"))
+            .expect("T-754: DockRight must register the zone-selection hook at mount");
+        let body = &src[at..at + 320];
+        assert!(
+            body.contains(&format!("zone{}", "_selected.set(Some(")),
+            "T-754: the hook must set the Zones panel's own selection signal"
+        );
+        assert!(
+            body.contains(&format!("tab.set(ZONES{}", "_TAB)")),
+            "T-754: and raise the Zones tab, so the selection is visible"
+        );
+        assert!(
+            body.contains(&format!("collapsed.set({}", "false)")),
+            "T-754: and un-collapse the dock (T-638), for the same reason"
+        );
+    }
+
+    /// One index, three consumers. The tab button, the panel under it and the routed click all read
+    /// [`ZONES_TAB`]; a literal in any of them is a silent way to select a zone on a tab nobody is
+    /// looking at.
+    #[test]
+    fn the_zones_tab_index_is_stated_once() {
+        let src = production();
+        assert_eq!(ZONES_TAB, 3, "T-754: the Zones tab's index, stated once");
+        assert!(
+            src.contains(&format!("tab_btn(ZONES{}", "_TAB,")),
+            "T-754: the tab button must read the constant"
+        );
+        assert!(
+            src.contains(&format!("ZONES_TAB => zones{}", "_panel(")),
+            "T-754: the panel arm must read the constant too"
+        );
+        assert!(
+            !src.contains(&format!("tab_btn(3,{}", "")),
+            "T-754: no literal 3 may address the Zones tab"
         );
     }
 }

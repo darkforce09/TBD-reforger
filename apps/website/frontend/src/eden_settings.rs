@@ -1436,9 +1436,17 @@ fn render_editor_prefs_body() -> AnyView {
  *
  * (2) **ROWS CLICK THROUGH TO THE OWNING ENTITY** (wog.md 14.6 — a findings list that only prints is
  *     worse than one that selects). The click goes through T-655's SHIPPED router,
- *     [`crate::validation_panel::route_select_by_subject_id`], not a second selection path. What that
- *     router resolves today, and what it does not, is stated on [`OWNER_UNRESOLVED_NOTE`] — and the
- *     row says so out loud rather than swallowing the click.
+ *     [`crate::validation_panel::route_select_by_subject_id`], not a second selection path.
+ *
+ *     **T-754 — and the affordance is TRUE, row by row.** The wave-115 verifier found this view
+ *     styling every entity row `cursor-pointer` over a click that could only produce a toast: the
+ *     router resolved slots and vehicles, and 100% of this aggregation's entity rows are ZONES. The
+ *     fix is the widening, not a warning — the router now resolves a zone id (through the Zones
+ *     panel's own selection signal), and this view asks it, per row, via [`owner_is_routable`] before
+ *     drawing a single hover class. A row is clickable **iff** the router resolves its subject;
+ *     `a_row_is_clickable_iff_the_router_resolves_its_subject` fails the moment those two part
+ *     company. [`OWNER_UNRESOLVED_NOTE`] is what is left over: the race between the list being built
+ *     and the click landing.
  *
  * ═══ THE DEFAULTS COME OUT OF THE SCHEMA. FULL STOP. ═══
  *
@@ -1826,16 +1834,53 @@ pub const NOT_A_SCHEMA_KEY: &str = "not a schema key (editor-local)";
 
 /// What the view says when a row's owner could not be selected.
 ///
-/// **The honest half of constraint (2).** T-655's router
-/// ([`crate::validation_panel::register_select_by_id`], registered from `mission_editor.rs`) resolves
-/// a subject id against the slot SoA and `vehiclesById`. A zone is in neither — zone selection is a
-/// panel-local signal in `eden_dock_right.rs` — so routing a zone id returns `false` today. Both files
-/// are outside this slice's `owns`, so the view reuses the SHIPPED router rather than standing up a
-/// second selection path, and when the router declines it says which panel holds the zone instead of
-/// swallowing the click. A dead click that explains itself is recoverable; a silent one is not.
-pub const OWNER_UNRESOLVED_NOTE: &str = "The editor's click-to-select router resolves slots and \
-                                         vehicles; a zone is selected in the Zones panel of the \
-                                         right-hand dock.";
+/// **The residue of constraint (2), no longer its normal case.**
+///
+/// T-754 widened T-655's router to resolve ZONES (`mission_editor::route_target`'s `Zone` arm, which
+/// drives the Zones panel's own selection through `eden_dock_right::route_select_zone`), so the row
+/// kinds this view emits now route for real — and [`owner_is_routable`] is what decides whether a row
+/// wears a click affordance at all, so a row that cannot route no longer looks like it can.
+///
+/// This note is what remains: the RACE. A row is styled from the document as it was when the list was
+/// built; the click reads the document as it is now. Delete the zone in another panel with the dialog
+/// open and the click lands on nothing. Saying so is recoverable; swallowing it is not.
+pub const OWNER_UNRESOLVED_NOTE: &str = "That owner could not be selected — it may have been \
+                                         deleted since this list was built. Zones are selected in \
+                                         the Zones panel of the right-hand dock.";
+
+/// **Can the SHIPPED router actually select this row's owner?** — the ONE question behind both the
+/// row's affordance (`cursor-pointer`/hover) and its click.
+///
+/// The wave-115 MAJOR this answers: the view used to reason "the row names an id, so it is
+/// clickable", which was true of no row at all — every entity row was a zone, and the router resolved
+/// slots and vehicles only. Guessing is what made the affordance a lie, so the view stops guessing
+/// and asks [`crate::mission_editor::route_target`], the same resolution the click will run.
+///
+/// **The slot predicate is `false`, deliberately.** Slot-SoA membership is the one fact the
+/// small-maps root cannot answer, and materialising the SoA per render to ask it would be dead weight:
+/// [`aggregate_settings`] emits `Mission` and `Zone` owners and nothing else. That assumption is not
+/// left to trust — `the_view_emits_no_owner_kind_the_router_cannot_resolve` re-derives every owner
+/// kind the aggregation can produce and goes red the day a slot-owned (or any other) row appears, at
+/// which point this predicate must become a real lookup rather than a `false`.
+#[must_use]
+pub fn owner_is_routable(root: &serde_json::Value, owner: &SettingOwner) -> bool {
+    match owner.subject_id() {
+        None => false,
+        Some(id) => crate::mission_editor::route_target(root, id, &|_| false).is_some(),
+    }
+}
+
+/// The row's cursor/hover classes — **the affordance itself, as a function of one boolean**, so
+/// "clickable" and "looks clickable" cannot be decided in two places and disagree. `clickable` is
+/// [`owner_is_routable`]'s answer, never `subject_id().is_some()`.
+#[must_use]
+fn row_cursor_class(clickable: bool) -> &'static str {
+    if clickable {
+        "cursor-pointer hover:bg-primary/10"
+    } else {
+        "cursor-default"
+    }
+}
 
 /// The header copy. Says what this view is (one list, read-only) and — load-bearing — that a default
 /// cell is the SCHEMA's, so an author reading a diff knows what it was measured against.
@@ -1970,7 +2015,12 @@ fn render_all_settings_body(only_diffs: RwSignal<bool>) -> AnyView {
             view! { <p class=hint data-all-settings-empty>{empty}</p> }.into_any()
         } else {
             rows.into_iter()
-                .map(|r| setting_row_view(r, toasts))
+                .map(|r| {
+                    // T-754 — the affordance is decided per ROW, by asking the router whether this
+                    // subject resolves, against the same document root the rows were built from.
+                    let clickable = owner_is_routable(&root, &r.owner);
+                    setting_row_view(r, toasts, clickable)
+                })
                 .collect::<Vec<_>>()
                 .into_any()
         };
@@ -2001,11 +2051,16 @@ fn render_all_settings_body(only_diffs: RwSignal<bool>) -> AnyView {
 
 /// One aggregated row: key, owning entity, authored value, schema default — and a click that routes
 /// to the owner through T-655's shipped router.
+///
+/// T-754 — `clickable` is [`owner_is_routable`]'s answer (does the router resolve this subject?), NOT
+/// "does the row name an id". It gates the affordance and the click TOGETHER, through
+/// [`row_cursor_class`], so the two cannot disagree; `data-selectable` reports the same boolean, so a
+/// gate can read the claim the row is making.
 #[cfg(target_arch = "wasm32")]
-fn setting_row_view(row: SettingRow, toasts: crate::toast::Toasts) -> AnyView {
+fn setting_row_view(row: SettingRow, toasts: crate::toast::Toasts, clickable: bool) -> AnyView {
     let state = row.diff_state();
     let subject = row.owner.subject_id().map(ToString::to_string);
-    let selectable = subject.is_some();
+    let selectable = clickable;
     let owner_label = row.owner.label();
     let click_id = subject.clone().unwrap_or_default();
     let click_owner = owner_label.clone();
@@ -2025,11 +2080,7 @@ fn setting_row_view(row: SettingRow, toasts: crate::toast::Toasts) -> AnyView {
         DiffState::Matches => ("default", "bg-primary/15 text-on-surface-variant"),
         DiffState::Unknown => ("no default", "bg-surface-variant/40 text-outline"),
     };
-    let cursor = if selectable {
-        "cursor-pointer hover:bg-primary/10"
-    } else {
-        "cursor-default"
-    };
+    let cursor = row_cursor_class(selectable);
     view! {
         <button
             type="button"
@@ -2044,7 +2095,9 @@ fn setting_row_view(row: SettingRow, toasts: crate::toast::Toasts) -> AnyView {
             title=source
             on:click=move |_| {
                 // Constraint (2): route through T-655's SHIPPED router, never a second selection
-                // path. A row with no entity to select does not pretend to have one.
+                // path. Only a row the router RESOLVES is clickable at all (T-754), so the toast is
+                // now the race — the entity went away between this list being built and the click —
+                // rather than the everyday outcome it used to be for every zone row.
                 if selectable && !crate::validation_panel::route_select_by_subject_id(&click_id) {
                     toasts.message(format!("{click_owner} — {OWNER_UNRESOLVED_NOTE}"));
                 }
@@ -2930,6 +2983,250 @@ mod t688_aggregated_settings {
         assert_eq!(fmt_setting_value(&row.value), "240");
         assert_eq!(fmt_setting_default(&row.default), "120");
         assert_eq!(row.diff_state(), DiffState::Differs);
+    }
+}
+
+/* ═══════════════ T-754 — the click affordance is TRUE, row by row ═══════════════════════════════
+ *
+ * The wave-115 MAJOR, in one line: every entity row wore `cursor-pointer hover:` over a click that
+ * could only raise a toast. The router resolved slots + vehicles; 100% of this view's entity rows are
+ * ZONES. The constraint the ticket wrote ("rows click through to the owning entity") was true of no
+ * row at all.
+ *
+ * These tests pin the CORRESPONDENCE, not the compile: a row is clickable **iff** the router resolves
+ * its subject. `a_row_is_clickable_iff_the_router_resolves_its_subject` walks both directions — a
+ * resolvable zone, a shapeless zone, a deleted zone, a kind no surface owns — and reads the affordance
+ * out of the very function the view styles with. Perturbations it catches: styling from
+ * `subject_id().is_some()` again (the original defect); `row_cursor_class` handing out the pointer
+ * unconditionally; the router's Zone arm being removed.
+ */
+#[cfg(test)]
+mod t754_click_affordance {
+    use super::{
+        aggregate_settings, owner_is_routable, row_cursor_class, SettingOwner,
+        OWNER_UNRESOLVED_NOTE,
+    };
+    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::mission_editor::{route_target, RouteTarget};
+    use serde_json::json;
+
+    /// A mission with a mission-level setting and three zones: a circle, a polygon, and one that was
+    /// never given a shape (a draw that never committed). The third is the row a click genuinely
+    /// cannot centre on, so it is what stops the "iff" from being vacuously true.
+    fn doc() -> serde_json::Value {
+        json!({
+            "meta": { "terrain": "everon", "environment": { "time": "06:00" } },
+            "zonesById": {
+                "z-circle": {
+                    "type": "boundary", "label": "Play area",
+                    "shape": { "circle": { "x": 100.0, "z": 250.0, "r": 500.0 } },
+                    "rules": { "graceSeconds": 10 }
+                },
+                "z-poly": {
+                    "type": "objective_capture", "label": "Hilltop",
+                    "shape": { "polygon": [[0.0, 0.0], [10.0, 0.0], [10.0, 20.0], [0.0, 20.0]] },
+                    "rules": { "captureSeconds": 240 }
+                },
+                "z-shapeless": { "type": "spawn", "rules": { "penalty": "kill" } }
+            }
+        })
+    }
+
+    /// **The widening itself.** Every zone id this view can own now resolves through the SHIPPED
+    /// router's resolution — to the zone's geometric centre, so the click centres like every other
+    /// click-to-select. Before T-754 all four of these were `None` (the router read the slot SoA and
+    /// `vehiclesById` and nothing else), which is why 100% of the entity rows were dead.
+    #[test]
+    fn the_widened_router_resolves_the_zones_this_view_owns() {
+        let d = doc();
+        let no_slots = |_: &str| false;
+        assert_eq!(
+            route_target(&d, "z-circle", &no_slots),
+            Some(RouteTarget::Zone { x: 100.0, y: 250.0 }),
+            "T-754: a circle zone resolves to its centre (world y IS the document's z)"
+        );
+        assert_eq!(
+            route_target(&d, "z-poly", &no_slots),
+            Some(RouteTarget::Zone { x: 5.0, y: 10.0 }),
+            "T-754: a polygon zone resolves to its vertex mean"
+        );
+        assert_eq!(
+            route_target(&d, "z-shapeless", &no_slots),
+            None,
+            "T-754: a zone with no committed shape has nowhere to centre — it must NOT resolve"
+        );
+        assert_eq!(
+            route_target(&d, "z-deleted", &no_slots),
+            None,
+            "T-754: an id that is no longer in the document resolves to nothing"
+        );
+    }
+
+    /// **THE pin the ticket asks for: the affordance is true row by row.**
+    ///
+    /// `clickable` and `looks clickable` are read from the two ends — [`owner_is_routable`] → the
+    /// class the row actually wears, versus the router's own resolution — and must agree for every
+    /// owner, in both directions. A dead click dressed as an affordance fails here.
+    #[test]
+    fn a_row_is_clickable_iff_the_router_resolves_its_subject() {
+        let d = doc();
+        let owners = [
+            SettingOwner::Mission,
+            SettingOwner::Entity {
+                kind: "Zone",
+                id: "z-circle".into(),
+                label: "Play area".into(),
+            },
+            SettingOwner::Entity {
+                kind: "Zone",
+                id: "z-poly".into(),
+                label: "Hilltop".into(),
+            },
+            SettingOwner::Entity {
+                kind: "Zone",
+                id: "z-shapeless".into(),
+                label: "Spawn".into(),
+            },
+            SettingOwner::Entity {
+                kind: "Zone",
+                id: "z-deleted".into(),
+                label: "Gone".into(),
+            },
+            // A kind no selection surface owns — the shape of the NEXT setting-bearing entity this
+            // view absorbs. It must render inert, not hopeful.
+            SettingOwner::Entity {
+                kind: "Composition",
+                id: "comp-1".into(),
+                label: "FOB".into(),
+            },
+        ];
+        let (mut clickable_seen, mut inert_seen) = (0usize, 0usize);
+        for owner in &owners {
+            let wears_pointer =
+                row_cursor_class(owner_is_routable(&d, owner)).contains("cursor-pointer");
+            let resolves = owner
+                .subject_id()
+                .is_some_and(|id| route_target(&d, id, &|_| false).is_some());
+            assert_eq!(
+                wears_pointer,
+                resolves,
+                "T-754: `{}` wears the click affordance = {wears_pointer}, but the router resolves \
+                 it = {resolves}. A row must look clickable IFF clicking it selects something — the \
+                 wave-115 MAJOR was exactly this pair disagreeing.",
+                owner.label()
+            );
+            if resolves {
+                clickable_seen += 1;
+            } else {
+                inert_seen += 1;
+            }
+        }
+        // Not vacuous: the fixture exercised BOTH sides of the iff.
+        assert!(
+            clickable_seen >= 2 && inert_seen >= 3,
+            "T-754: this pin is only worth anything if it saw both clickable and inert rows \
+             (saw {clickable_seen} / {inert_seen})"
+        );
+        // And the affordance itself is the hover styling, not a name: the "yes" class carries the
+        // pointer AND the hover fill, the "no" class carries neither.
+        let yes = row_cursor_class(true);
+        let no = row_cursor_class(false);
+        assert!(
+            yes.contains("cursor-pointer") && yes.contains("hover:"),
+            "T-754: a clickable row must actually LOOK clickable"
+        );
+        assert!(
+            !no.contains("cursor-pointer") && !no.contains("hover:"),
+            "T-754: an unroutable row must wear neither cursor-pointer nor a hover state"
+        );
+    }
+
+    /// The `false` slot predicate in [`owner_is_routable`] is an ASSUMPTION about what this
+    /// aggregation emits, so it is checked rather than trusted: the walk mints exactly one entity
+    /// kind, `Zone`, and every entity row it produces routes. The day a slot-owned (or any other)
+    /// row appears, this goes red and that predicate must become a real lookup.
+    #[test]
+    fn the_view_emits_no_owner_kind_the_router_cannot_resolve() {
+        let d = doc();
+        let rows = aggregate_settings(&d);
+        let mut kinds: Vec<&str> = rows
+            .iter()
+            .filter_map(|r| match &r.owner {
+                SettingOwner::Entity { kind, .. } => Some(*kind),
+                SettingOwner::Mission => None,
+            })
+            .collect();
+        kinds.sort_unstable();
+        kinds.dedup();
+        assert_eq!(
+            kinds,
+            vec!["Zone"],
+            "T-754: the aggregation's entity rows are zones and only zones"
+        );
+        // Source side: the walk mints ONE `kind:`, so a second entity family cannot slip in without
+        // this pin (and `owner_is_routable`'s predicate) being revisited.
+        let src = live_source(include_str!("eden_settings.rs"));
+        let body = only_body(&src, &format!("fn aggregate{}", "_settings"));
+        let kind_writes = body.matches(&format!("kind{}", ": \"")).count();
+        assert_eq!(
+            kind_writes, 1,
+            "T-754: the aggregation mints exactly one owner kind today; a second one must be \
+             routable before it may be rendered clickable"
+        );
+        assert!(
+            body.contains(&format!("kind{}", ": \"Zone\"")),
+            "T-754: and that one kind is Zone — the kind the widened router now resolves"
+        );
+    }
+
+    /// One decision, one place. The row styles itself through [`row_cursor_class`] (it spells no
+    /// pointer/hover class of its own), and the body decides `clickable` by asking
+    /// [`owner_is_routable`] — which in turn asks the SHIPPED router's resolution rather than a local
+    /// table of kinds this file believes are selectable.
+    #[test]
+    fn the_affordance_and_the_click_ask_the_same_question() {
+        let src = live_code(include_str!("eden_settings.rs"));
+        let row = only_body(&src, &format!("fn setting{}", "_row_view"));
+        assert!(
+            row.contains(&format!("row{}", "_cursor_class(")),
+            "T-754: the row must take its cursor/hover classes from the one affordance function"
+        );
+        let body = only_body(&src, &format!("fn render{}", "_all_settings_body"));
+        assert!(
+            body.contains(&format!("owner{}", "_is_routable(")),
+            "T-754: the body must decide each row's clickability by asking the router"
+        );
+        let routable = only_body(&src, &format!("fn owner{}", "_is_routable"));
+        assert!(
+            routable.contains(&format!("mission{}", "_editor"))
+                && routable.contains(&format!("route{}", "_target(")),
+            "T-754: clickability must be the ROUTER's own resolution, not a second opinion about \
+             which kinds are selectable"
+        );
+        // Literals kept: the row must not hand-roll the affordance beside the function that owns it.
+        let lit = live_source(include_str!("eden_settings.rs"));
+        let row_lit = only_body(&lit, &format!("fn setting{}", "_row_view"));
+        assert!(
+            !row_lit.contains(&format!("cursor{}", "-pointer")),
+            "T-754: a second spelling of the pointer class is how the affordance drifts back out of \
+             agreement with the router"
+        );
+    }
+
+    /// The unresolved-owner note is now the RESIDUE (the race between the list being built and the
+    /// click landing), not a standing confession that zones cannot be selected.
+    #[test]
+    fn the_unresolved_note_no_longer_claims_zones_are_unroutable() {
+        let n = OWNER_UNRESOLVED_NOTE.to_lowercase();
+        assert!(
+            !n.contains("resolves slots and vehicles"),
+            "T-754: the router resolves zones now — the copy must not still say it does not"
+        );
+        assert!(
+            n.contains("deleted"),
+            "T-754: the note must name what is actually left — the owner going away underneath the \
+             open list"
+        );
     }
 }
 
