@@ -1032,7 +1032,8 @@ fn draw_batches<'a>(
                     LaneRole::Slots
                     | LaneRole::Clusters
                     | LaneRole::SlotPlacePreview
-                    | LaneRole::MissionVehicles => slot_base_bind,
+                    | LaneRole::MissionVehicles
+                    | LaneRole::MissionMarkers => slot_base_bind,
                     _ => glyph_atlas_bind,
                 };
                 let Some(atlas_bg) = atlas_bg else {
@@ -4432,12 +4433,52 @@ impl RenderEngine {
         self.upload_slot_role_lane(LaneRole::MissionVehicles, &bytes, true);
     }
 
-    /// Drop slots + drag + cluster lanes.
+    /// T-760 — bind briefing marker discs from interleaved world `xy` (`[x0,y0,…]`) and packed
+    /// RGBA8 side tints (`4·n` bytes, same layout as [`Self::slots_bind_soa`]). Reuses the slot
+    /// atlas + [`slots_gpu::pack_icon_instance`] — no new pipeline, no new atlas, and **not** on
+    /// the pick/SoA bridge (markers must not be hit-testable as slots). Empty clears the lane.
+    pub fn markers_bind(&mut self, xy: &[f32], side_tints_rgba: &[u8]) {
+        if !self.slot_bridge.atlas_ready {
+            return;
+        }
+        let n = xy.len() / 2;
+        if n == 0 {
+            self.remove_lane(LaneRole::MissionMarkers);
+            return;
+        }
+        let mut bytes = Vec::with_capacity(n * SLOT_ICON_STRIDE);
+        for i in 0..n {
+            let x = xy[i * 2];
+            let y = xy[i * 2 + 1];
+            let rgba = if side_tints_rgba.len() >= (i + 1) * 4 {
+                [
+                    side_tints_rgba[i * 4],
+                    side_tints_rgba[i * 4 + 1],
+                    side_tints_rgba[i * 4 + 2],
+                    side_tints_rgba[i * 4 + 3],
+                ]
+            } else {
+                slots_gpu::SIDE_BLUFOR_RGBA
+            };
+            slots_gpu::pack_icon_instance(
+                &mut bytes,
+                x,
+                y,
+                slots_gpu::SLOT_RING_PX,
+                slots_gpu::SLOT_GLYPH_DISC,
+                slots_gpu::pack_rgba_u32(rgba),
+            );
+        }
+        self.upload_slot_role_lane(LaneRole::MissionMarkers, &bytes, true);
+    }
+
+    /// Drop slots + drag + cluster + vehicle + marker lanes.
     fn clear_slot_lanes(&mut self) {
         self.remove_lane(LaneRole::Slots);
         self.remove_lane(LaneRole::SlotDrag);
         self.remove_lane(LaneRole::Clusters);
         self.remove_lane(LaneRole::MissionVehicles);
+        self.remove_lane(LaneRole::MissionMarkers);
     }
 
     fn upload_slot_role_lane(&mut self, role: LaneRole, bytes: &[u8], visible: bool) {
