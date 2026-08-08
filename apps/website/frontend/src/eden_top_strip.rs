@@ -2485,8 +2485,9 @@ mod t692_help_surface {
     /// The action is a TOGGLE reflected in the T-668 checkmark gutter, and the overlay is mounted
     /// from this file — specifically inside `TopCommandStrip`'s body (which is what puts it behind
     /// `mission_editor`'s `chrome_hidden` gate — the structural half is pinned in `eden_help`).
-    /// Wave-115 NIT-1 / T-755: presence alone is hollow; the pin must defend POSITION in the gated
-    /// subtree, not merely that the mount string exists somewhere in the file.
+    /// Wave-115 NIT-1 / T-755 / wave-134 F3: presence alone is hollow; the pin must defend POSITION
+    /// in the gated subtree (between STRIP_ROWS open and its matching close), not merely that the
+    /// mount string exists somewhere after the open tag.
     #[test]
     fn the_toggle_is_checked_in_the_gutter_and_mounted_here() {
         let code = crate::arsenal::class_r_scrub::live_code(include_str!("eden_top_strip.rs"));
@@ -2495,13 +2496,45 @@ mod t692_help_surface {
         let mount_at = body.find(&mount).expect(
             "T-692/T-755: the Controls Hint must be mounted inside TopCommandStrip's body — that              is the chrome_hidden-gated subtree",
         );
-        // Inside the strip shell, not a sibling above it: STRIP_ROWS opens the gated chrome surface.
+        // Inside the strip shell — between STRIP_ROWS open and its matching `</div>`, not a sibling
+        // above OR after the close (wave-115 NIT-1 / T-755; wave-134 F3 closes the after-close gap).
         let strip_at = body
             .find("STRIP_ROWS")
             .expect("T-692/T-755: TopCommandStrip must still open with STRIP_ROWS");
+        let strip_div = body[..strip_at]
+            .rfind("<div")
+            .expect("T-692/wave-134: STRIP_ROWS must be a <div class=…> open tag");
+        let strip_close = {
+            // Div-balance from the STRIP_ROWS open to its matching close.
+            let bytes = body.as_bytes();
+            let mut i = strip_div;
+            let mut depth = 0i32;
+            let close = loop {
+                if i >= body.len() {
+                    panic!("T-692/wave-134: STRIP_ROWS <div> never closed");
+                }
+                if body[i..].starts_with("<div") {
+                    let gt = body[i..].find('>').expect("unclosed <div");
+                    let self_closing = bytes.get(i + gt - 1) == Some(&b'/');
+                    if !self_closing {
+                        depth += 1;
+                    }
+                    i += gt + 1;
+                } else if body[i..].starts_with("</div>") {
+                    depth -= 1;
+                    if depth == 0 {
+                        break i;
+                    }
+                    i += 6;
+                } else {
+                    i += 1;
+                }
+            };
+            close
+        };
         assert!(
-            mount_at > strip_at,
-            "T-692/T-755: ControlsHint must sit inside the STRIP_ROWS subtree, not beside/above it"
+            mount_at > strip_at && mount_at < strip_close,
+            "T-692/T-755/wave-134: ControlsHint must sit inside the STRIP_ROWS subtree (between open              and matching close), not beside/above it or after the close"
         );
         // The gutter glyph is reactive on the open latch, so both menus agree on the state.
         assert!(
