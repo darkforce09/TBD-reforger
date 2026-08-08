@@ -379,18 +379,19 @@ fn modal_view(
                         _ => {
                             let loadout = crate::editor_ops::read_loadout(&slot_id.get_value());
                             view! {
-                                // T-649 — HONESTY BANNER. Inverting the `open_arsenal` guard is what
-                                // stops the context menu's "Edit Loadout..." row being enabled-but-
-                                // inert on a multi-selection: the modal opens now. But the Arsenal
-                                // BODY below is `arsenal.rs`'s and still edits ONE slot, so say so
-                                // rather than let the "N entities selected" header imply otherwise.
+                                // T-649 / T-771 — HONESTY BANNER. Inverting the `open_arsenal` guard
+                                // is what stops the context menu's "Edit Loadout..." row being
+                                // enabled-but-inert on a multi-selection: the modal opens now. Pick
+                                // and cargo rows still edit ONE slot; T-699's Copy / Apply / Remove
+                                // Everything act on the WHOLE selection. Say both, rather than let
+                                // the "N entities selected" header (or a one-sided claim) mislead.
                                 {is_multi
                                     .then(|| {
                                         view! {
                                             <p class="mb-3 rounded-md border border-outline-variant/40 bg-surface-container-lowest/50 px-3 py-2 text-label-sm normal-case text-on-surface-variant">
-                                                "Loadout edits apply to this one entity ("
+                                                "Pick and cargo edits apply to this one entity ("
                                                 {slot_id.get_value()}
-                                                "), not to the whole selection."
+                                                "); Copy, Apply, and Remove Everything act on the whole selection."
                                             </p>
                                         }
                                     })}
