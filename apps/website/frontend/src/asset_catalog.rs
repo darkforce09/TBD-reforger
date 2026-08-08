@@ -726,9 +726,36 @@ const RX_MAX_DEPTH: u32 = 400;
 ///
 /// [`RX_MAX_DEPTH`] guards the MATCHER; this guards the PARSER, which is a separate recursive
 /// descent ([`RxParser::alt`] → `seq` → `atom` → `alt`) that runs to completion BEFORE any matching
-/// and recurses once per nested `(`. No matcher-side bound can reach it. 512 chars caps parser
-/// nesting at ~256 levels, ~3x under the measured native-debug abort floor, and is itself far past
-/// any honest pattern — 5x the longest `resource_name` in the catalogue.
+/// and recurses once per nested `(`. No matcher-side bound can reach it.
+///
+/// **Why 512 — and the arithmetic an earlier version of this comment got wrong, twice.** It claimed
+/// 512 chars caps parser nesting at "~256 levels", "~3x" under the abort floor. Both numbers were
+/// wrong, because both assumed two characters per level, i.e. a BALANCED `()` pair. **Nothing
+/// requires a pattern to balance.** An unbalanced `(` opens a level that no `)` ever closes, so the
+/// worst case is ONE PARSER LEVEL PER CHARACTER: `(`x512 is accepted by this cap (512 is not *over*
+/// 512) and drives `alt` → `seq` → `atom` → `alt` **512** levels deep before the missing `)` fails
+/// it. Re-measured against THIS source by bisecting `(`xN through [`RxParser::alt`] on a 1 MiB
+/// thread — the vector is now pinned in
+/// `deep_regex_input_refuses_instead_of_trapping_the_wasm_stack`:
+///
+/// | build | deepest clean | aborts at | ~cost/level | 512 levels | margin |
+/// |---|---|---|---|---|---|
+/// | native debug — most frame-hungry available | 790 | 795 | ~1.3 KB | ~681 KB, 65% of 1 MiB | **1.54x** |
+/// | native release — proxy for the shipped wasm | 2500 | 3000 | ~0.4 KB | ~215 KB, 21% of 1 MiB | **4.9x** |
+///
+/// So the honest margin is **1.54x**, not 3x — and it is 1.54x against a deliberately pessimistic
+/// proxy. 512 is kept because it is CLEAN IN EVERY CONFIGURATION MEASURED (there is no build in
+/// which a pattern this cap admits traps), because the configuration that actually ships is release
+/// wasm, where it spends a fifth of the stack, and because it is still 5x the longest
+/// `resource_name` in the catalogue (95 chars) and so cannot narrow an honest query.
+///
+/// **What the corrected arithmetic does change:** at 512 levels the PARSER, not the matcher, is
+/// this engine's worst-case stack consumer — ~681 KB against [`RX_MAX_DEPTH`]'s ~525 KB. The two do
+/// not add (the parser runs to completion and returns before the matcher starts, so the peak is the
+/// larger of the two) but the peak is now this one, and in an unoptimised build it is two thirds of
+/// a 1 MiB stack, tighter than the half-the-stack standard [`RX_MAX_DEPTH`] was sized to.
+/// **Do not size a third bound off these ratios — re-measure.** The debug:release frame cost here
+/// is ~3.2x (790 vs 2500); that is a property of this build, not a constant.
 ///
 /// This is a belt to the depth cap's braces, NOT a replacement for it: `(x+x+)+y` overflows on a
 /// long HAYSTACK with a nine-character pattern, which no input-length rule can see.
@@ -1845,6 +1872,11 @@ mod tests {
     /// [`RX_MAX_PATTERN`] rejections at parse, i.e. the same `Invalid` the dock already explains —
     /// while `(x+x+)+y` has a NINE-CHARACTER pattern and is caught only by [`RX_MAX_DEPTH`]. That
     /// asymmetry is the reason a length cap cannot stand in for the depth cap.
+    ///
+    /// It also pins the third case, which the bound's original sizing arithmetic assumed away: the
+    /// pattern that is *at* [`RX_MAX_PATTERN`] and so is NOT refused for length, `(`x512. It costs
+    /// one parser level per CHARACTER — 512 of them, the deepest this parser can be driven — and it
+    /// must still return rather than abort.
     #[test]
     fn deep_regex_input_refuses_instead_of_trapping_the_wasm_stack() {
         on_a_wasm_sized_stack(|| {
@@ -1873,6 +1905,46 @@ mod tests {
                 search_empty_message(&format!("/{}/", "^".repeat(25_000)), "assets")
                     .contains("could not be read"),
                 "an over-long pattern must be explained, not reported as an empty catalogue"
+            );
+
+            // ── THE WORST CASE THE LENGTH CAP ADMITS, and the shape the old sizing arithmetic
+            // assumed away. `(`x512 is exactly AT RX_MAX_PATTERN, so it is NOT refused for length
+            // — it is parsed. Because nothing requires a pattern to balance, every one of those
+            // 512 chars opens a parser level that no `)` closes, so this is `alt` → `seq` → `atom`
+            // 512 deep: one level per CHARACTER, not per pair, which is the correction. Any deeper
+            // input is refused by length, so this is the deepest RxParser::alt can ever go.
+            //
+            // `p.pos` is the evidence half here, the parser's answer to `depth_capped`: the parser
+            // never backtracks and advances only in `atom`, one `(` per level entered, so a `pos`
+            // of 512 after a FAILED parse proves all 512 levels were genuinely entered rather than
+            // the parse bailing shallowly for some unrelated reason.
+            let src: Vec<char> = "(".repeat(512).chars().collect();
+            let mut p = RxParser { src: &src, pos: 0 };
+            assert!(p.alt().is_none(), "unbalanced parens must not compile");
+            assert_eq!(p.pos, 512, "the parse must have entered all 512 levels");
+            // Same input through the real entry points: it must RETURN, not abort, and arrive as
+            // the ordinary Invalid rather than as a new failure mode.
+            assert!(
+                Rx::parse(&"(".repeat(512)).is_none(),
+                "512 unbalanced parens must be refused cleanly, not trap"
+            );
+            assert_eq!(
+                parse_search_pattern(&format!("/{}/", "(".repeat(512))),
+                SearchPattern::Invalid,
+                "the deepest pattern the length cap admits must reach the dock as Invalid"
+            );
+            // One char further is refused for LENGTH, before the descent — that refusal is the
+            // only reason 512 is the worst case rather than merely a case, so pin the constant
+            // with it. Raising RX_MAX_PATTERN moves the worst case with it and invalidates the
+            // margin in its doc comment; native debug aborts at 795 levels, so there is far less
+            // room above 512 than the superseded "~256 levels / ~3x" arithmetic implied.
+            assert!(
+                Rx::parse(&"(".repeat(513)).is_none(),
+                "one char past the cap must be refused for length"
+            );
+            assert_eq!(
+                RX_MAX_PATTERN, 512,
+                "re-measure the abort floor before changing this — see RX_MAX_PATTERN's doc"
             );
 
             // ── The depth vectors: patterns the length cap ACCEPTS that still recurse past the
