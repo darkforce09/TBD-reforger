@@ -191,6 +191,21 @@ fn field_label(label: &'static str, gate: Gate) -> impl IntoView {
     }
 }
 
+/// T-741 — Attributes multi-edit header copy (wave-112 NIT-4).
+///
+/// Counts the **slot** subset the modal will write — never the full Ctrl+A selection — and says
+/// explicitly when vehicles were excluded because [`crate::editor_ops::attrs_multi_ids`] drops
+/// non-slot ids (vehicles carry none of the SoA columns multi-edit stamps).
+#[must_use]
+pub(crate) fn attrs_multi_subtitle(slot_n: usize, selection_n: usize) -> String {
+    let base = format!("{slot_n} slots selected · multi-edit");
+    if selection_n > slot_n {
+        format!("{base} · vehicles excluded")
+    } else {
+        base
+    }
+}
+
 /// The modal host. Renders nothing while closed (`attrs_open == None`) — V-capture-safe like the
 /// suite Dialog. `doc_ver` is the re-read trigger (the doc has no change subscription).
 #[component]
@@ -239,10 +254,13 @@ pub fn AttributesModal(
                     // and which of its fields disagree. Both re-read per render, so a selection or
                     // doc change while the modal is open is reflected immediately.
                     let multi = crate::editor_ops::attrs_multi_ids(&id);
+                    // T-741 — full selection length (may include vehicles Ctrl+A picked up).
+                    let selection_n = crate::editor_ops::attrs_selection_len();
                     let diff = crate::editor_ops::read_attrs_diff(&multi);
                     Some(modal_view(
                         attrs,
                         multi,
+                        selection_n,
                         diff,
                         opts,
                         registry_items,
@@ -273,6 +291,7 @@ pub fn AttributesModal(
 fn modal_view(
     attrs: crate::editor_ops::SlotAttrs,
     multi: Vec<String>,
+    selection_n: usize,
     diff: crate::editor_ops::AttrDiff,
     opts: MultiOpts,
     registry_items: RwSignal<Option<Vec<crate::dto::RegistryItem>>>,
@@ -298,8 +317,8 @@ fn modal_view(
     let subtitle = {
         let a = attrs.get_value();
         if is_multi {
-            // Never show one slot's role as the heading for N slots — say how many are being edited.
-            format!("{multi_n} entities selected · multi-edit")
+            // T-741 — slot subset + vehicles-excluded when the live selection is wider.
+            attrs_multi_subtitle(multi_n, selection_n)
         } else {
             let role = if a.role.is_empty() {
                 "Slot".to_string()
@@ -345,7 +364,7 @@ fn modal_view(
                                 <p class="rounded-md border border-primary/30 bg-primary/10 px-3 py-2 text-label-sm normal-case text-on-surface-variant">
                                     "Fields that differ across the selection are blank and locked. Tick "
                                     <span class="text-primary">"Apply to all"</span>
-                                    " to overwrite that field on every selected entity."
+                                    " to overwrite that field on every selected slot."
                                 </p>
                             }
                         })}
@@ -386,7 +405,7 @@ fn modal_view(
                                 // enabled-but-inert on a multi-selection: the modal opens now. Pick
                                 // and cargo rows still edit ONE slot; T-699's Copy / Apply / Remove
                                 // Everything act on the WHOLE selection. Say both, rather than let
-                                // the "N entities selected" header (or a one-sided claim) mislead.
+                                // the multi-edit "N slots selected" header (or a one-sided claim) mislead.
                                 {is_multi
                                     .then(|| {
                                         view! {
@@ -1793,6 +1812,94 @@ mod tests {
         assert!(
             body.contains("core.set_vehicle_position(") && body.contains("e.z,"),
             "the vehicle branch must still pass the vehicle's own z through; body was:\n{body}"
+        );
+    }
+
+    /* ─────────── T-741 — multi-edit header honesty (wave-112 NIT-4) ─────────── */
+
+    /// Behaviour pin: mixed slot+vehicle selection must name the SLOT write set and disclose
+    /// that vehicles are excluded. RED under the original overclaim ("N entities selected") and
+    /// under a hollow that counts the FULL selection as the header number.
+    #[test]
+    fn attrs_multi_subtitle_counts_slots_and_names_excluded_vehicles() {
+        // Original defect: 2 slots + 3 vehicles under Ctrl+A.
+        assert_eq!(
+            super::attrs_multi_subtitle(2, 5),
+            "2 slots selected · multi-edit · vehicles excluded"
+        );
+        // Slot-only multi-edit stays terse.
+        assert_eq!(
+            super::attrs_multi_subtitle(3, 3),
+            "3 slots selected · multi-edit"
+        );
+        // Hollow shape 1 — original overclaim wording (filtered count, but "entities").
+        assert_ne!(
+            super::attrs_multi_subtitle(2, 5),
+            "2 entities selected · multi-edit"
+        );
+        // Hollow shape 2 — counting the FULL selection as the write-set size.
+        assert_ne!(
+            super::attrs_multi_subtitle(2, 5),
+            "5 entities selected · multi-edit"
+        );
+        assert_ne!(
+            super::attrs_multi_subtitle(2, 5),
+            "5 slots selected · multi-edit"
+        );
+    }
+
+    /// Wiring pin (`live_code` / `only_body`): the modal must CALL the honesty helper with both
+    /// the filtered slot count and the live selection length — an inlined old `format!` cannot
+    /// satisfy this (literals blanked; the call shape is what remains).
+    #[test]
+    fn modal_view_routes_multi_subtitle_through_the_honesty_helper() {
+        let src = attrs_src();
+        let body = only_body(&src, "fn modal_view(");
+        assert!(
+            body.contains("attrs_multi_subtitle(multi_n, selection_n)"),
+            "modal_view must format the multi header via attrs_multi_subtitle(multi_n, selection_n);              body was:\n{body}"
+        );
+        let host = only_body(&src, "pub fn AttributesModal(");
+        assert!(
+            host.contains("attrs_selection_len()"),
+            "AttributesModal must read the live selection length for T-741 honesty; body was:\n{host}"
+        );
+    }
+
+    /// Copy pin (`live_source`): banner says "every selected slot", never the overclaiming
+    /// "every selected entity". Second hollow: the old header format string must be gone from
+    /// `modal_view`.
+    #[test]
+    fn multi_edit_copy_names_slots_not_every_selected_entity() {
+        let src = live_source(include_str!("attributes.rs"));
+        let body = only_body(&src, "fn modal_view(");
+        assert!(
+            body.contains("every selected slot"),
+            "differing-fields banner must say every selected slot; body was:\n{body}"
+        );
+        assert!(
+            !body.contains("every selected entity"),
+            "banner must not overclaim vehicles as editable entities; body was:\n{body}"
+        );
+        assert!(
+            !body.contains("entities selected · multi-edit"),
+            "modal_view must not keep the old entities-selected header format; body was:\n{body}"
+        );
+    }
+
+    /// `attrs_multi_ids` still filters to SoA slot ids — the subset the header is honest about.
+    #[test]
+    fn attrs_multi_ids_still_filters_selection_to_slot_soa() {
+        let ops = live_code(include_str!("editor_ops.rs"));
+        let body = only_body(&ops, "pub fn attrs_multi_ids(open_id: &str) -> Vec<String>");
+        assert!(
+            body.contains("soa.ids.iter().any(|r| r == s)"),
+            "attrs_multi_ids must keep filtering to slot SoA ids; body was:\n{body}"
+        );
+        let sel = only_body(&ops, "pub fn attrs_selection_len() -> usize");
+        assert!(
+            sel.contains("ctx.selection.borrow().len()"),
+            "attrs_selection_len must read the live selection length; body was:\n{sel}"
         );
     }
 }

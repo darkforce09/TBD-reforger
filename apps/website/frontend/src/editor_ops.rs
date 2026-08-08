@@ -2361,7 +2361,9 @@ pub fn attrs_update_slot_multi(
 ///
 /// Vehicles are filtered out on purpose: every field in this modal is a slot-SoA column
 /// (x/y/z/rotation/stance/role/tag) and `vehiclesById` rows have none of them, so counting a
-/// vehicle would show "N selected" while a Role write silently missed it.
+/// vehicle would show "N selected" while a Role write silently missed it. T-741: the modal header
+/// must name this slot subset (and say vehicles are excluded when [`attrs_selection_len`] is
+/// wider) — never report the full selection as the write set.
 #[must_use]
 pub fn attrs_multi_ids(open_id: &str) -> Vec<String> {
     OPS_CTX.with(|c| {
@@ -2387,6 +2389,19 @@ pub fn attrs_multi_ids(open_id: &str) -> Vec<String> {
         } else {
             ids
         }
+    })
+}
+
+/// T-741 — live selection length (slots + vehicles + …). Attributes multi-edit compares this to
+/// [`attrs_multi_ids`]'s slot subset so the header can say when vehicles were excluded from the
+/// write set (wave-112 NIT-4 / Ctrl+A via `view_ids_with_vehicles`).
+#[must_use]
+pub fn attrs_selection_len() -> usize {
+    OPS_CTX.with(|c| {
+        c.borrow()
+            .as_ref()
+            .map(|ctx| ctx.selection.borrow().len())
+            .unwrap_or(0)
     })
 }
 
