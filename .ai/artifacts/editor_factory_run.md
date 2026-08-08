@@ -91,12 +91,45 @@ diagnosis) → registry flip + `distrobox-host-exec sh -c './scripts/ticket sync
 | 142 | 119 | T-778 T-779 T-780 | PASS 30/30 (run 1; re-gated PASS over the fix) | 1M/1m/2N | SHIPPED — the residues the 130–141 run NAMED rather than dropped. T-778 guarded 5 of 6 seams and correctly REFUSED the 6th (a `window` bridge with `Closure::forget()` — no disposable state, nothing to guard); T-779 found 2 MORE discarded acks while auditing 159 call sites, and its refusal surface exists because gating the tail correctly would otherwise have shown GREEN "no unsaved changes" over a pick that never landed; T-780 ported the marker/comment lane recipe but had to feed it from a different channel (owns), then PINNED the chain proving every history path reaches it — the verifier attacked all 59 sites, both engine-mount orderings and IDB restore success AND failure, and could not break it. **VERIFIER MAJOR: T-780 reintroduced T-779's own defect in the same wave** — `delete_connection` guarded on `connection_count()==0` rather than id presence, so a stale edge id reported success and dirtied an unchanged document. Fixed by construction: the reconcile now lives inside the single writer every selection write funnels through. Also found: `everon_peaks_max_above_350` needs `--features png` or a bare run SILENTLY FILTERS IT OUT — the T-747 vacuous-pass family on a new flag |
 | 143 | 120 | T-743 T-777 T-782 | PASS 30/30 (run 1; re-gated PASS over the fix) | 0B/0M/2m/1N | SHIPPED — **the operator's two reserved decisions, executed.** Paste-at-original now lands on the SOURCE coordinates and keeps the AUTHORED z; the editor's player figure is the derived placed-slot count. **The ticket's premise was wrong: there was NO golden-test churn** — `PASTE_NUDGE` had one consumer and zero appearances in any test, fixture or golden, so the "blast radius" that made this an operator decision for months was an assumption about an uncovered arm. The constant was DELETED, not zeroed (a `0.0` named "nudge" invites re-inflation), and the shared no-anchor arm was split: plain Ctrl+V resolves its own anchor and falls back to the VIEW CENTRE, because the cursor reads off-map whenever the pointer sits over chrome — the normal state after click-then-paste. T-777 read z from the CLIPBOARD not the live document (a live read pairs the copy's old x/y with the source's CURRENT elevation, and resolves to nothing across missions or after the source is deleted). **The combined behaviour — which neither slice could test alone — was verified empirically by the verifier: exact x/y AND per-slot z.** T-782 left the compile path untouched: the ruling settled what is DISPLAYED, not what is COMPILED |
 | 144 | 121 | T-781 T-783 | PASS 30/30 (run 1; re-gated PASS over the fix) | 1M/1m | SHIPPED — comments become composable (PLACE-COMMENT-001's last clause) and a placed composition keeps its authored elevation; the seam lifecycle mechanism collapses from two copies to one. **THE VERIFIER FOUND A LIVE DATA-LOSS PATH THAT PREDATES THE WAVE:** `mint_id`/`mint_ids` proved id uniqueness against `materialize()`, which **DROPS hidden-layer (T-665) and editorHidden (T-701) slots**; `next_id` resets to 0 per mount and inserts are UPSERTS, so after an IDB restore a place could re-mint a hidden slot's id and silently overwrite it. T-781 had narrowed the class by adding `commentsById`, which is what made the slot half visible. **Same blind spot wave 127 hit with elevations — the materialized view is lossy about hidden slots, `slots_json` is not.** Fixed by sourcing both minters from `slots_json` keys. The absence proof for composed comments is non-vacuous by construction: the same token is routed through `entities[]`, which the payload root DOES declare, and required to APPEAR — the verifier then failed to smuggle a comment into the mod document by six further routes |
-| 121 | assign at close | T-702 T-212 T-654 | — | — | pending |
-| 122 | assign at close | T-673 T-674 T-675 | — | — | pending |
-| 123 | assign at close | T-676 T-677 T-678 | — | — | pending |
-| 124 | assign at close | T-679 T-680 T-681 | — | — | pending |
-| 125 | assign at close | T-682 T-684 T-685 | — | — | pending |
-| 126 | assign at close | T-689 T-705 | — | — | pending |
+| 150 | assign at close | T-702 T-212 T-654 | — | — | **PARKED** (was wave 121 — RENUMBERED 2026-08-08, see below) |
+| 151 | assign at close | T-673 T-674 T-675 | — | — | **PARKED** (was 122) |
+| 152 | assign at close | T-676 T-677 T-678 | — | — | **PARKED** (was 123) |
+| 153 | assign at close | T-679 T-680 T-681 | — | — | **PARKED** (was 124) |
+| 154 | assign at close | T-682 T-684 T-685 | — | — | **PARKED** (was 125) |
+| 155 | assign at close | T-689 T-705 | — | — | **PARKED** (was 126) |
+
+> ## ⚠️ THE MOD HALF WAS RENUMBERED 121–126 → 150–155 ON 2026-08-08. READ THIS BEFORE RESUMING IT.
+>
+> **Nothing about the mod work changed** — not a line of `.c`, not a branch, not a worktree, not a
+> ticket. **Only the wave-number column in `wave_plan.tsv` moved**, and this table with it. The six
+> parked worktrees (T-702, T-212, T-654, T-673, T-674, T-675) are untouched and still parked
+> mid-barrier. Verified at the time: the plan's ticket set is byte-identical before and after, 574
+> rows both ways.
+>
+> **WHY.** Close markers and editor-wave labels are independent counters — the top of this file says
+> so — but `wave.sh`'s ledger cross-check looks a close marker up in the plan's WAVE column. That is
+> harmless while the numbers do not collide. At **marker 121** it collided with mod wave 121, whose
+> three tickets are legitimately `queued` because the half is parked, so the gate concluded that
+> wave 144's close "assigns wave 121 ticket(s) the registry does not call shipped" and **refused
+> every base, derived or explicit.** There is no override env on that path. Markers 122–126 would
+> have hit mod waves 122–126 the same way — seventeen queued tickets across six waves, i.e. every
+> remaining remediation wave.
+>
+> This file already predicted the class ("a NUMBER COLLISION, not agreement about your wave") and
+> called it benign at marker 99, correctly: wave 99's only non-shipped ticket was `cancelled`, which
+> `wave_ledger_unshipped_at` accepts. It is **not** benign when the colliding tickets are genuinely
+> open.
+>
+> **The real defect is the cross-check conflating two counters the design calls independent.** The
+> operator chose the renumber over editing `wave.sh` mid-run — smaller, reversible, and it does not
+> touch the gate itself. **If the mod half is ever renumbered back into a live marker range, or if
+> markers ever reach 150, this returns.** The durable fix is to make that check compare a marker
+> against the MARKER ledger, not against plan rows that happen to share its number.
+>
+> **CONSEQUENCE FOR THE NEXT GATE:** markers 121+ now have no plan rows at all, so oracle 2 falls
+> silent and the gate asks for `TBD_GATE_BASE_CONFIRM=<prev close sha>` again — the behaviour every
+> gate from editor wave 100 to 115 had. That is expected here, not a signal. Verify the sha is the
+> previous `wave M-1 CLOSED` commit from the git ledger, then pass it.
 
 ## Continuation recipe (compaction-proof — execute mechanically from any fresh context)
 

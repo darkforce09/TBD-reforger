@@ -39,7 +39,7 @@ signal, not a formality.**
 **Mod wave A is PARKED mid-barrier — do not touch it.** Six worktrees: T-702, T-212, T-654, T-673,
 T-674 committed-and-unmerged, plus T-675 stacked on T-674 with no work in it. Do not reap, drop or
 merge them. Preflight WARNs about stale worktrees — expected, not a block. **`wave.sh status` will
-report "wave 121" with three slices "READY TO LAND" — that is the parked mod half. NEVER run
+report the parked mod half with three slices "READY TO LAND" — NEVER run
 `wave.sh land`.** The remediation gates take `TBD_GATE_WAVE=<L>` explicitly.
 
 **Before wave 130:** the stack should already be up (`api` on :8080, `trunk` on :3000, postgres on
@@ -237,4 +237,4 @@ the wave-138 gate; a broken gate stops the run.
 Update `.ai/artifacts/editor_factory_run.md`, sync the registry
 (`distrobox-host-exec sh -c './scripts/ticket sync'`), push, and **stop with a summary** — shipped,
 findings fixed in-wave, anything reserved, and what needs the operator's eyes.
-**Do not start the mod half (waves 121–126), finalization, or any playtest.**
+**Do not start the mod half (plan waves 150–155, renumbered from 121–126 on 2026-08-08 — see the run log for why), finalization, or any playtest.**

@@ -492,25 +492,25 @@
 118	T-699	Loadout buffer — copy, apply, and strip-everything	apps/website/frontend/src/arsenal.rs;apps/website/frontend/src/editor_ops.rs
 119	T-700	Small-UI idioms — numeric nudge, one shared search box, tree tooltips	apps/website/frontend/src/attributes.rs
 120	T-701	Editor-only visibility override — hide without deleting	apps/website/frontend/src/editor_ops.rs;crates/map-engine-core/src/doc/store.rs
-121	T-702	Whole-terrain zone — one zone sized to the map	apps/website/frontend/src/eden_zones.rs;apps/website/frontend/src/editor_ops.rs
+150	T-702	Whole-terrain zone — one zone sized to the map	apps/website/frontend/src/eden_zones.rs;apps/website/frontend/src/editor_ops.rs
 119	T-703	Keybinding collision test	apps/website/frontend/src/mission_editor.rs
 120	T-706	Widen mission.schema.json once for the whole editor program	packages/tbd-schema/schema/mission.schema.json
-121	T-212	Objectives as typed, placed, per-side entities with one uniform attribute spine	apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c
-121	T-654	Conditional inclusion: variant-gated document subtrees	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c
-122	T-673	Marker style and Area markers — the $defs/marker widening	apps/mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerData.c;apps/mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerClient.c
-122	T-674	T-216 follow-on: slot identity reaches the wire	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c
-122	T-675	Vehicle roster reaches the game — the compile half of T-076	apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c
-123	T-676	Trigger activation and effects — the Enfusion runtime	apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_TriggerRuntime.c
-123	T-677	Waypoints — group movement orders	apps/mod/tbd-framework/Scripts/Game/TBD/AI/TBD_WaypointRuntime.c
-123	T-678	Group AI state: combat mode, behaviour, formation, speed	apps/mod/tbd-framework/Scripts/Game/TBD/AI/TBD_GroupState.c
-124	T-679	Placement scatter: radius and area shape	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_PlacementScatter.c
-124	T-680	Vehicle states: lock, fuel, ammo	apps/mod/tbd-framework/Scripts/Game/TBD/Vehicles/TBD_VehicleState.c
-124	T-681	Entity states: health, allow-damage, show-model, size, stamina	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_EntityState.c
-125	T-682	Environment readers: fog, wind, view distance	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_EnvironmentReader.c
-125	T-684	Mission parameters as first-class document objects	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionParams.c
-125	T-685	Zones become volumes: min/max height, attacker and defender counts, starting owner	apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneVolume.c
-126	T-689	Play-area enforcement gains a vehicle-class axis: the aircraft exemption	apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_PlayAreaVehicleAxis.c
-126	T-705	Player gadget flags — map, compass, watch, GPS, radio	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_GadgetFlags.c
+150	T-212	Objectives as typed, placed, per-side entities with one uniform attribute spine	apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c
+150	T-654	Conditional inclusion: variant-gated document subtrees	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c
+151	T-673	Marker style and Area markers — the $defs/marker widening	apps/mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerData.c;apps/mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerClient.c
+151	T-674	T-216 follow-on: slot identity reaches the wire	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c
+151	T-675	Vehicle roster reaches the game — the compile half of T-076	apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c
+152	T-676	Trigger activation and effects — the Enfusion runtime	apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_TriggerRuntime.c
+152	T-677	Waypoints — group movement orders	apps/mod/tbd-framework/Scripts/Game/TBD/AI/TBD_WaypointRuntime.c
+152	T-678	Group AI state: combat mode, behaviour, formation, speed	apps/mod/tbd-framework/Scripts/Game/TBD/AI/TBD_GroupState.c
+153	T-679	Placement scatter: radius and area shape	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_PlacementScatter.c
+153	T-680	Vehicle states: lock, fuel, ammo	apps/mod/tbd-framework/Scripts/Game/TBD/Vehicles/TBD_VehicleState.c
+153	T-681	Entity states: health, allow-damage, show-model, size, stamina	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_EntityState.c
+154	T-682	Environment readers: fog, wind, view distance	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_EnvironmentReader.c
+154	T-684	Mission parameters as first-class document objects	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionParams.c
+154	T-685	Zones become volumes: min/max height, attacker and defender counts, starting owner	apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneVolume.c
+155	T-689	Play-area enforcement gains a vehicle-class axis: the aircraft exemption	apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_PlayAreaVehicleAxis.c
+155	T-705	Player gadget flags — map, compass, watch, GPS, radio	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_GadgetFlags.c
 
 # ── REMEDIATION PROGRAM (waves 127-141) — filed by the wave 112-119 adversarial verifiers.
 #    Authored 2026-08-07, NOT DISPATCHED. 44 tickets: T-735..T-776 filed this run, plus
