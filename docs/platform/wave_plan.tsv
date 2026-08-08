@@ -571,3 +571,4 @@
 143	T-782	The editor player figure is the derived placed-slot count	apps/website/frontend/src/eden_settings.rs
 144	T-781	Comments become composable, and a placed composition keeps its authored Z	crates/map-engine-core/src/doc/store.rs; apps/website/frontend/src/eden_dock_right.rs
 144	T-783	Lift install_seam beside the trait it shares — the idiom exists twice	apps/website/frontend/src/validation_panel.rs; apps/website/frontend/src/ruler_tool.rs
+145	T-784	A comment can be selected by clicking it — outliner row and map glyph	apps/website/frontend/src/eden_tree.rs; apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/mission_editor.rs
