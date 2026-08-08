@@ -312,8 +312,11 @@ pub fn refresh_hud() {
 ///
 /// The universe function lives in `mission_editor` because this module is
 /// `#![cfg(target_arch = "wasm32")]` end to end and can host no test that ever executes; the pin
-/// `t784_comment_glyph::the_selection_prune_runs_over_the_whole_selectable_universe` reads this body
-/// back through `include_str!` and is what stops the SoA creeping back in.
+/// `mission_editor::w145_selection_prune::the_selection_prune_runs_over_the_whole_selectable_universe`
+/// reads this body back through `include_str!` and is what stops the SoA creeping back in.
+/// (The path was wrong here until the wave-145 verifier caught it: it named `t784_comment_glyph`,
+/// a module that does not contain this pin, so a `cargo test` filter on the cited name ran ZERO
+/// tests — a citation that reads like a guarantee and resolves to nothing.)
 fn prune_selection(ctx: &HistoryCtx) {
     let live = {
         let d = ctx.doc.borrow();
