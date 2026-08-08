@@ -569,3 +569,5 @@
 143	T-743	Paste-at-original must land at the source position, not +20m	crates/map-engine-core/src/doc/store.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/eden_help.rs; docs/specs/Mission_Creator_Architecture/eden/gap_analysis.md
 143	T-777	Paste keeps its authored Z instead of landing at 0.0	apps/website/frontend/src/editor_ops.rs
 143	T-782	The editor player figure is the derived placed-slot count	apps/website/frontend/src/eden_settings.rs
+144	T-781	Comments become composable, and a placed composition keeps its authored Z	crates/map-engine-core/src/doc/store.rs; apps/website/frontend/src/eden_dock_right.rs
+144	T-783	Lift install_seam beside the trait it shares — the idiom exists twice	apps/website/frontend/src/validation_panel.rs; apps/website/frontend/src/ruler_tool.rs
