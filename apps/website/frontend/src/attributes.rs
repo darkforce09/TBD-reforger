@@ -221,14 +221,24 @@ pub fn AttributesModal(
 ) -> impl IntoView {
     // Esc closes (React Dialog behavior); the editor's own keydown handler skips editable fields,
     // so this window listener is the one Esc path.
+    // T-726 — modal-stack gate; topmost consumes.
     #[cfg(target_arch = "wasm32")]
     {
+        let modal_id = crate::ui::modal_stack::register(move || {
+            attrs_open.try_get_untracked().flatten().is_some()
+        });
         let esc = window_event_listener(leptos::ev::keydown, move |ev| {
-            if attrs_open.get_untracked().is_some() && ev.key() == "Escape" {
+            if attrs_open.get_untracked().is_some()
+                && ev.key() == "Escape"
+                && crate::ui::modal_stack::is_topmost_open(modal_id)
+            {
                 crate::editor_ops::close_attributes();
             }
         });
-        on_cleanup(move || esc.remove());
+        on_cleanup(move || {
+            esc.remove();
+            crate::ui::modal_stack::unregister(modal_id);
+        });
     }
     // T-649 ATTR-MULTI-CHK-001 — the per-field opt-in latches, minted ONCE on the component (see
     // `MultiOpts`). The effect re-arms them whenever the modal's target changes — it tracks
@@ -1916,6 +1926,30 @@ mod tests {
         assert!(
             sel.contains("ctx.selection.borrow().len()"),
             "attrs_selection_len must read the live selection length; body was:\n{sel}"
+        );
+    }
+}
+
+/// T-726 — Attributes modal Esc through the modal stack.
+#[cfg(test)]
+mod t726_attributes_esc_stack {
+    use crate::arsenal::class_r_scrub::{live_code, only_body};
+
+    #[test]
+    fn attributes_modal_gates_escape_on_modal_stack() {
+        let code = live_code(include_str!("attributes.rs"));
+        let body = only_body(&code, "pub fn AttributesModal(");
+        let reg = ["modal_stack", "::", "register("].concat();
+        let top = ["modal_stack", "::", "is_topmost_open(modal_id)"].concat();
+        let unreg = ["modal_stack", "::", "unregister(modal_id)"].concat();
+        assert!(body.contains(&reg), "T-726: AttributesModal must register");
+        assert!(
+            body.contains(&top),
+            "T-726: AttributesModal must gate Escape on is_topmost_open"
+        );
+        assert!(
+            body.contains(&unreg),
+            "T-726: AttributesModal must unregister"
         );
     }
 }

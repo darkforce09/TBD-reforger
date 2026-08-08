@@ -1430,15 +1430,26 @@ fn AssetPickerOverlay(
         }
     });
     // Esc closes (mirrors the context menu). No-op while the picker is closed.
+    // T-726 — register with the modal stack so a stacked overlay (or this picker over the
+    // measure-tool Esc seam) owns Escape alone; topmost consumes.
     #[cfg(target_arch = "wasm32")]
     {
+        let modal_id = crate::ui::modal_stack::register(move || {
+            picker.try_get_untracked().flatten().is_some()
+        });
         let key = window_event_listener(leptos::ev::keydown, move |ev| {
-            if picker.get_untracked().is_some() && ev.key() == "Escape" {
+            if picker.get_untracked().is_some()
+                && ev.key() == "Escape"
+                && crate::ui::modal_stack::is_topmost_open(modal_id)
+            {
                 ev.prevent_default();
                 crate::editor_ops::close_asset_picker();
             }
         });
-        on_cleanup(move || key.remove());
+        on_cleanup(move || {
+            key.remove();
+            crate::ui::modal_stack::unregister(modal_id);
+        });
     }
 
     move || {
@@ -1550,15 +1561,24 @@ fn AssetPickerOverlay(
 #[component]
 fn CommentEditorOverlay(open: RwSignal<Option<String>>, doc_tick: RwSignal<u64>) -> impl IntoView {
     // Esc closes (the picker / context-menu idiom).
+    // T-726 — modal-stack gate; topmost consumes.
     #[cfg(target_arch = "wasm32")]
     {
+        let modal_id =
+            crate::ui::modal_stack::register(move || open.try_get_untracked().flatten().is_some());
         let key = window_event_listener(leptos::ev::keydown, move |ev| {
-            if open.get_untracked().is_some() && ev.key() == "Escape" {
+            if open.get_untracked().is_some()
+                && ev.key() == "Escape"
+                && crate::ui::modal_stack::is_topmost_open(modal_id)
+            {
                 ev.prevent_default();
                 crate::editor_ops::close_comment_editor();
             }
         });
-        on_cleanup(move || key.remove());
+        on_cleanup(move || {
+            key.remove();
+            crate::ui::modal_stack::unregister(modal_id);
+        });
     }
 
     move || {
@@ -1785,15 +1805,24 @@ struct ConnRowView {
 #[component]
 fn ConnectionsPanelOverlay(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> impl IntoView {
     // Esc closes (the picker / context-menu / comment-editor idiom).
+    // T-726 — modal-stack gate; topmost consumes.
     #[cfg(target_arch = "wasm32")]
     {
+        let modal_id =
+            crate::ui::modal_stack::register(move || open.try_get_untracked().unwrap_or(false));
         let key = window_event_listener(leptos::ev::keydown, move |ev| {
-            if open.get_untracked() && ev.key() == "Escape" {
+            if open.get_untracked()
+                && ev.key() == "Escape"
+                && crate::ui::modal_stack::is_topmost_open(modal_id)
+            {
                 ev.prevent_default();
                 crate::editor_ops::close_connections_panel();
             }
         });
-        on_cleanup(move || key.remove());
+        on_cleanup(move || {
+            key.remove();
+            crate::ui::modal_stack::unregister(modal_id);
+        });
     }
 
     move || {
@@ -3085,38 +3114,46 @@ pub fn MissionEditorPage() -> impl IntoView {
                             // no-op. Esc only "acts" (→ prevent_default) when SOMETHING was dismissed;
                             // an Esc with neither tool placed falls through untouched (never swallowed).
                             "Escape" if !modk => {
-                                // T-723 — Esc disarms an armed place BEFORE the measure-tool seam.
-                                // `cancel_pending` was unreachable from the keyboard; Eden stamp
-                                // cancel is Esc (and RMB on pointerup). Clear the ghost with the arm.
-                                let place_acted = if crate::editor_ops::has_pending() {
-                                    crate::editor_ops::cancel_pending();
-                                    if let Some(e) = engine.borrow_mut().as_mut() {
-                                        e.clear_place_preview();
-                                    }
-                                    true
-                                } else {
+                                // T-726 — yield to any open overlay (context menu / dialogs /
+                                // pickers). Those register with `modal_stack`; without this guard,
+                                // Esc closing the menu also steps the measure machines (wave108
+                                // MAJOR-2; LoS/viewshed victims in waves 109–110).
+                                if crate::ui::modal_stack::any_open() {
                                     false
-                                };
-                                let ruler_acted = ruler.borrow_mut().escape();
-                                if ruler_acted {
-                                    sync_ruler();
-                                }
-                                let los_acted = los.borrow_mut().escape();
-                                if los_acted {
-                                    sync_los();
-                                }
-                                // T-644 — the viewshed's Esc is one step (clear the placed
-                                // observer + raster); on a real dismissal also drop the engine wash
-                                // lane. Like the ray, only one LoS lane is ever non-empty at a time
-                                // (the sub-mode toggle clears the other), so calling it unconditionally
-                                // is safe — an empty viewshed's `.escape()` is a false no-op.
-                                let viewshed_acted = viewshed.borrow_mut().escape();
-                                if viewshed_acted {
-                                    if let Some(e) = engine.borrow_mut().as_mut() {
-                                        e.viewshed_clear();
+                                } else {
+                                    // T-723 — Esc disarms an armed place BEFORE the measure-tool seam.
+                                    // `cancel_pending` was unreachable from the keyboard; Eden stamp
+                                    // cancel is Esc (and RMB on pointerup). Clear the ghost with the arm.
+                                    let place_acted = if crate::editor_ops::has_pending() {
+                                        crate::editor_ops::cancel_pending();
+                                        if let Some(e) = engine.borrow_mut().as_mut() {
+                                            e.clear_place_preview();
+                                        }
+                                        true
+                                    } else {
+                                        false
+                                    };
+                                    let ruler_acted = ruler.borrow_mut().escape();
+                                    if ruler_acted {
+                                        sync_ruler();
                                     }
+                                    let los_acted = los.borrow_mut().escape();
+                                    if los_acted {
+                                        sync_los();
+                                    }
+                                    // T-644 — the viewshed's Esc is one step (clear the placed
+                                    // observer + raster); on a real dismissal also drop the engine wash
+                                    // lane. Like the ray, only one LoS lane is ever non-empty at a time
+                                    // (the sub-mode toggle clears the other), so calling it unconditionally
+                                    // is safe — an empty viewshed's `.escape()` is a false no-op.
+                                    let viewshed_acted = viewshed.borrow_mut().escape();
+                                    if viewshed_acted {
+                                        if let Some(e) = engine.borrow_mut().as_mut() {
+                                            e.viewshed_clear();
+                                        }
+                                    }
+                                    place_acted || ruler_acted || los_acted || viewshed_acted
                                 }
-                                place_acted || ruler_acted || los_acted || viewshed_acted
                             }
                             "KeyC" if modk && !ev.alt_key() && !ev.shift_key() => {
                                 crate::editor_ops::copy_selection()
@@ -10697,6 +10734,109 @@ mod t760_markers_bind_feed {
         assert!(
             after.contains(&pack),
             "T-760: after_doc_change must pack via marker_lane_xy_tints; body:\n{after}"
+        );
+    }
+}
+
+/// T-726 — window-Esc pile-up: every editor Esc consumer consults the modal stack.
+///
+/// Defect (wave106 MINOR-2 / wave108 MAJOR-2 / wave109-110): separate window keydowns all fired on
+/// one Esc — stacked prefs+settings both closed, and Esc closing the context menu also cleared a
+/// placed ruler/LoS/viewshed. The fix is one design: overlays `register` + `is_topmost_open`; the
+/// shared measure arm yields while `any_open()`.
+///
+/// Hollow-pin discipline: deleting the `any_open` guard or any overlay's `is_topmost_open` gate
+/// turns the matching assert RED. Needles are assembled from fragments so this module cannot
+/// self-satisfy them.
+#[cfg(test)]
+mod t726_window_esc_stack {
+    use crate::arsenal::class_r_scrub::{live_code, only_body};
+
+    fn gate_needles() -> (String, String, String) {
+        (
+            ["modal_stack", "::", "register("].concat(),
+            ["modal_stack", "::", "is_topmost_open(modal_id)"].concat(),
+            ["modal_stack", "::", "unregister(modal_id)"].concat(),
+        )
+    }
+
+    /// Overlays live above the page; scrub from the cold-registry const (after the early
+    /// registry_session cfg(test)) so cut_test_module keeps production and drops later tests.
+    fn overlays_region() -> String {
+        let cold = format!("const REGISTRY_{}", "COLD_PAGE");
+        let raw = include_str!("mission_editor.rs");
+        live_code(&raw[raw.find(cold.as_str()).expect("cold anchor present")..])
+    }
+
+    /// Page body — hosts the shared measure-tool Escape arm.
+    fn page() -> String {
+        let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
+        let raw = include_str!("mission_editor.rs");
+        assert_eq!(raw.matches(anchor.as_str()).count(), 1);
+        live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])
+    }
+
+    /// Asset picker / comment editor / connections panel each register and gate Escape.
+    #[test]
+    fn editor_overlay_esc_listeners_gate_on_modal_stack() {
+        let region = overlays_region();
+        let (reg, top, unreg) = gate_needles();
+        // Markers reassembled so this module is not a second occurrence for only_body.
+        let components = [
+            format!("{}{}", "fn Asset", "PickerOverlay("),
+            format!("{}{}", "fn Comment", "EditorOverlay("),
+            format!("{}{}", "fn Connections", "PanelOverlay("),
+        ];
+        for component in &components {
+            let body = only_body(&region, component);
+            assert!(
+                body.contains(&reg),
+                "T-726: {component} must register with the modal stack"
+            );
+            assert!(
+                body.contains(&top),
+                "T-726: {component} must gate Escape on is_topmost_open — else stacked Esc pile-up"
+            );
+            assert!(
+                body.contains(&unreg),
+                "T-726: {component} must unregister on cleanup"
+            );
+        }
+    }
+
+    /// The shared ruler/LoS/viewshed Escape arm yields while any overlay claims Esc.
+    #[test]
+    fn measure_tool_escape_arm_yields_when_modal_stack_has_open() {
+        let code = page();
+        let any = ["modal_stack", "::", "any_open()"].concat();
+        assert!(
+            code.contains(&any),
+            "T-726: measure Esc arm must consult modal_stack::any_open() so an open menu/dialog \
+             consumes Esc alone (wave108 MAJOR-2). Hollow: delete the any_open guard → RED."
+        );
+        let any_at = code.find(&any).expect("any_open present");
+        let ruler = format!("{}{}", "ruler.borrow_mut().", "escape()");
+        let los = format!("{}{}", "los.borrow_mut().", "escape()");
+        let viewshed = format!("{}{}", "viewshed.borrow_mut().", "escape()");
+        let ruler_at = code.find(&ruler).expect("ruler escape in arm");
+        let los_at = code.find(&los).expect("los escape in arm");
+        let viewshed_at = code.find(&viewshed).expect("viewshed escape in arm");
+        assert!(
+            any_at < ruler_at && any_at < los_at && any_at < viewshed_at,
+            "T-726: any_open() must precede measure .escape() calls (yield before act)"
+        );
+    }
+
+    /// Hollow-pin canary: stripping `any_open` from an in-memory copy must break the pin needle.
+    #[test]
+    fn measure_any_open_guard_is_load_bearing() {
+        let code = page();
+        let any = ["modal_stack", "::", "any_open()"].concat();
+        assert!(code.contains(&any), "canary: real page carries any_open");
+        let perturbed = code.replacen(&any, "false /* hollow */", 1);
+        assert!(
+            !perturbed.contains(&any),
+            "fired rule: deleting any_open must break the T-726 measure Esc pin"
         );
     }
 }

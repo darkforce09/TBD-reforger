@@ -908,12 +908,19 @@ pub fn ContextMenuOverlay(menu: RwSignal<Option<MenuState>>) -> impl IntoView {
     // Keyboard: Esc closes; ArrowUp/Down move the highlight; Enter fires it. Installed once; the
     // handler no-ops while the menu is closed. `highlight` is the highlighted **entry index**.
     let highlight = RwSignal::new(None::<usize>);
+    // T-726 — register with the modal stack so Esc closing this menu does not also fire the
+    // editor's measure-tool Esc arm (wave108 MAJOR-2 / wave109–110).
     #[cfg(target_arch = "wasm32")]
     {
+        let modal_id =
+            crate::ui::modal_stack::register(move || menu.try_get_untracked().flatten().is_some());
         let key = window_event_listener(leptos::ev::keydown, move |ev| {
             let Some(state) = menu.get_untracked() else {
                 return;
             };
+            if !crate::ui::modal_stack::is_topmost_open(modal_id) {
+                return;
+            }
             match ev.key().as_str() {
                 "Escape" => {
                     ev.prevent_default();
@@ -957,7 +964,10 @@ pub fn ContextMenuOverlay(menu: RwSignal<Option<MenuState>>) -> impl IntoView {
                 _ => {}
             }
         });
-        on_cleanup(move || key.remove());
+        on_cleanup(move || {
+            key.remove();
+            crate::ui::modal_stack::unregister(modal_id);
+        });
     }
     // Reset the highlight every time the menu (re)opens so a stale highlight from a prior open never
     // leaks in.
@@ -1650,5 +1660,32 @@ mod tests {
         for junk in ["", "Sync", "sync ", "attachedTo", "triggerowner"] {
             assert_eq!(ConnKind::parse(junk), None, "{junk:?} must not parse");
         }
+    }
+}
+
+/// T-726 — context menu Esc is a modal-stack citizen (wave108 MAJOR-2).
+#[cfg(test)]
+mod t726_context_menu_esc_stack {
+    use crate::arsenal::class_r_scrub::{live_code, only_body};
+
+    #[test]
+    fn context_menu_gates_escape_on_modal_stack() {
+        let code = live_code(include_str!("context_menu.rs"));
+        let body = only_body(&code, "pub fn ContextMenuOverlay(");
+        let reg = ["modal_stack", "::", "register("].concat();
+        let top = ["modal_stack", "::", "is_topmost_open(modal_id)"].concat();
+        let unreg = ["modal_stack", "::", "unregister(modal_id)"].concat();
+        assert!(
+            body.contains(&reg),
+            "T-726: ContextMenuOverlay must register"
+        );
+        assert!(
+            body.contains(&top),
+            "T-726: ContextMenuOverlay must gate keys on is_topmost_open"
+        );
+        assert!(
+            body.contains(&unreg),
+            "T-726: ContextMenuOverlay must unregister"
+        );
     }
 }

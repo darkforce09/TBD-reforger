@@ -722,10 +722,17 @@ use crate::eden_top_strip::RowMirror;
 #[component]
 pub fn MissionSettingsDialog(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> impl IntoView {
     // Esc closes (the suite Dialog behavior).
+    // T-726 — gate on modal_stack so EditorPreferences / All Settings stacked over this dialog
+    // consume Escape first (wave106 MINOR-2).
     #[cfg(target_arch = "wasm32")]
     {
+        let modal_id =
+            crate::ui::modal_stack::register(move || open.try_get_untracked().unwrap_or(false));
         let esc = window_event_listener(leptos::ev::keydown, move |ev| {
-            if open.get_untracked() && ev.key() == "Escape" {
+            if open.get_untracked()
+                && ev.key() == "Escape"
+                && crate::ui::modal_stack::is_topmost_open(modal_id)
+            {
                 // T-671 — commit the focused control before the dialog goes away. Every authored
                 // control in here fires on `change` (blur/Enter), and Escape used to close without
                 // blurring anything: a briefing typed and then dismissed with the keyboard was
@@ -737,7 +744,10 @@ pub fn MissionSettingsDialog(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> i
                 open.set(false);
             }
         });
-        on_cleanup(move || esc.remove());
+        on_cleanup(move || {
+            esc.remove();
+            crate::ui::modal_stack::unregister(modal_id);
+        });
     }
     // T-192 — read the route id + auth store here, in the component body: the reactive owner is
     // live at setup and gone by the time a control's `on:change` fires.
@@ -1383,14 +1393,24 @@ fn render_prefs_section(env: &crate::dto::MissionEnv) -> AnyView {
 #[component]
 fn EditorPreferencesDialog(open: RwSignal<bool>) -> impl IntoView {
     // Esc closes (same suite Dialog behavior as MissionSettingsDialog).
+    // T-726 — register after MissionSettingsDialog (sibling mount order) so stacked Esc closes
+    // this first; parent survives until a second Esc.
     #[cfg(target_arch = "wasm32")]
     {
+        let modal_id =
+            crate::ui::modal_stack::register(move || open.try_get_untracked().unwrap_or(false));
         let esc = window_event_listener(leptos::ev::keydown, move |ev| {
-            if open.get_untracked() && ev.key() == "Escape" {
+            if open.get_untracked()
+                && ev.key() == "Escape"
+                && crate::ui::modal_stack::is_topmost_open(modal_id)
+            {
                 open.set(false);
             }
         });
-        on_cleanup(move || esc.remove());
+        on_cleanup(move || {
+            esc.remove();
+            crate::ui::modal_stack::unregister(modal_id);
+        });
     }
     move || {
         if !open.get() {
@@ -2017,14 +2037,23 @@ fn document_root() -> Option<serde_json::Value> {
 /// Renders no DOM while closed. READ-ONLY by construction; see the block header.
 #[component]
 fn AllSettingsDialog(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> impl IntoView {
+    // T-726 — modal-stack gate (same stacked-Esc contract as EditorPreferencesDialog).
     #[cfg(target_arch = "wasm32")]
     {
+        let modal_id =
+            crate::ui::modal_stack::register(move || open.try_get_untracked().unwrap_or(false));
         let esc = window_event_listener(leptos::ev::keydown, move |ev| {
-            if open.get_untracked() && ev.key() == "Escape" {
+            if open.get_untracked()
+                && ev.key() == "Escape"
+                && crate::ui::modal_stack::is_topmost_open(modal_id)
+            {
                 open.set(false);
             }
         });
-        on_cleanup(move || esc.remove());
+        on_cleanup(move || {
+            esc.remove();
+            crate::ui::modal_stack::unregister(modal_id);
+        });
     }
     // The diff-from-default filter. Off by default: the ticket's view is "every authored setting",
     // and the filter narrows it — an author who opens the list to "show me everything" and is shown
@@ -4118,6 +4147,73 @@ mod t766_clear_briefing_mirror {
         assert!(
             !window.contains(&format!("trim().{empty}()")),
             "T-766 / wave 133 F1: blank next must still reach the mirror — no trim().is_empty gate between Briefing => and the mirror call"
+        );
+    }
+}
+
+/// T-726 — Mission Settings / Editor Preferences / All Settings Esc through the modal stack.
+///
+/// wave106 MINOR-2: prefs stacked over settings, one Esc closed both. Each dialog now registers and
+/// gates on `is_topmost_open`. Hollow: strip the gate from any dialog body → RED.
+#[cfg(test)]
+mod t726_settings_esc_stack {
+    use crate::arsenal::class_r_scrub::{live_code, only_body};
+
+    fn prod() -> String {
+        live_code(include_str!("eden_settings.rs"))
+    }
+
+    fn gate_needles() -> (String, String, String) {
+        (
+            ["modal_stack", "::", "register("].concat(),
+            ["modal_stack", "::", "is_topmost_open(modal_id)"].concat(),
+            ["modal_stack", "::", "unregister(modal_id)"].concat(),
+        )
+    }
+
+    #[test]
+    fn settings_dialogs_gate_escape_on_modal_stack() {
+        let code = prod();
+        let (reg, top, unreg) = gate_needles();
+        for component in [
+            "pub fn MissionSettingsDialog(",
+            "fn EditorPreferencesDialog(",
+            "fn AllSettingsDialog(",
+        ] {
+            let body = only_body(&code, component);
+            assert!(
+                body.contains(&reg),
+                "T-726: {component} must register with the modal stack"
+            );
+            assert!(
+                body.contains(&top),
+                "T-726: {component} must gate Escape on is_topmost_open (stacked Esc)"
+            );
+            assert!(
+                body.contains(&unreg),
+                "T-726: {component} must unregister on cleanup"
+            );
+        }
+    }
+
+    /// Prefs mounts after settings in the parent view — registration order IS paint order.
+    #[test]
+    fn prefs_and_all_settings_mount_after_settings_body() {
+        let code = prod();
+        let body = only_body(&code, "pub fn MissionSettingsDialog(");
+        let prefs_at = body
+            .find("EditorPreferencesDialog")
+            .expect("prefs mount in MissionSettingsDialog");
+        let all_at = body
+            .find("AllSettingsDialog")
+            .expect("all-settings mount in MissionSettingsDialog");
+        // Both sibling mounts must appear after the settings dialog's own modal_stack::register
+        // so they paint/register on top when open.
+        let reg = ["modal_stack", "::", "register("].concat();
+        let reg_at = body.find(&reg).expect("settings registers");
+        assert!(
+            prefs_at > reg_at && all_at > reg_at,
+            "T-726: prefs/all-settings must mount after settings registers (topmost when open)"
         );
     }
 }
