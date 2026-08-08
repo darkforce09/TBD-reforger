@@ -2781,10 +2781,13 @@ mod t688_aggregated_settings {
             "T-757: eden_settings must read crate::eden_zones::MISSION_SCHEMA"
         );
         // Stale size lore (~40 KB vs ~91 KB) — drop rather than restate a drifting number.
+        // live_source blanks comments; the ticket defect was comment lore, so read the zones file
+        // raw (wave-135 F2). Restoring `~40 KB` in a doc-comment must RED.
+        let zones_raw = include_str!("eden_zones.rs");
         let stale = format!("{}{}", "~40 ", "KB");
         assert!(
-            !zones.contains(&stale),
-            "T-757: eden_zones must not restate a drifted ~40 KB embed cost"
+            !zones_raw.contains(&stale),
+            "T-757: eden_zones must not restate a drifted ~40 KB embed cost (comments count)"
         );
     }
 
