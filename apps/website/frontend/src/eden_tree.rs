@@ -321,13 +321,13 @@ pub(crate) fn chevron_or_spacer(
 /// the Tailwind spacing scale, pinned by `t637_one_dense_row_geometry`. Denser is the point (Eden's
 /// outliner runs at ~15.8 px), but the pin is the durable half — the two used to be able to drift.
 const ROW_H: f64 = 16.0;
-/// The windowed scroller's height. **Deliberately still a fixed budget, not `h-full`.** Letting the
-/// scroller grow to the dock's full height would make the rendered-row count a function of the
-/// viewport, and the T-169 windowing gate asserts `rendered < total` at a seeded 80 slots — a check
-/// that a tall enough window would silently stop testing. The dock itself scrolls (`DOCK_L`'s
-/// `overflow-y-auto`), so nothing is unreachable. At T-637's [`ROW_H`] this same 420 px shows 26 rows
-/// where it used to show 17.
-const CONTAINER_H: f64 = 420.0;
+/// T-769 — fallback height used only until the live scroller's `clientHeight` is measured (and on
+/// native, where there is no layout). The windowed scroller itself is `h-full min-h-0` inside the
+/// dock's `flex-1` tree region: a fixed 420 px budget left ~538 px of void on large missions after
+/// T-637 handed that region to the tree. The wave-118 claim that `h-full` would silently stop the
+/// T-169 windowing gate from testing was false — `smoke_virtual_outliner` also pins a rendered cap
+/// (and now pins the measured-height formula), so the two move together here.
+const CONTAINER_H_FALLBACK: f64 = 420.0;
 const OVERSCAN: usize = 6;
 
 /// T-665 — the eye + lock toggle glyphs for a Folder row (the two per-row controls the ticket
@@ -919,9 +919,10 @@ fn set_outliner_stats(key: &str, total: usize, rendered: usize) {
 fn set_outliner_stats(_key: &str, _total: usize, _rendered: usize) {}
 
 /// T-169 — render a dock tree, windowed above [`VIRTUAL_SLOT_THRESHOLD`]. Below it the whole
-/// flattened list renders eagerly; above it a fixed-height scroll container draws only the visible
-/// slice (+ overscan) between two spacer divs, so a mission-scale tree never builds N DOM rows.
-/// `stats_key` names this tree in `window.__outlinerStats`.
+/// flattened list renders eagerly; above it an `h-full` scroll container (T-769: measured from the
+/// dock's flex-1 tree region) draws only the visible slice (+ overscan) between two spacer divs, so
+/// a mission-scale tree never builds N DOM rows. `stats_key` names this tree in
+/// `window.__outlinerStats`.
 pub(crate) fn virtual_tree(
     nodes: RwSignal<Vec<OutlinerNode>>,
     selected: RwSignal<Vec<String>>,
@@ -975,9 +976,52 @@ pub(crate) fn virtual_tree(
         rev.update(|r| *r = r.wrapping_add(1));
     });
     let scroll_top = RwSignal::new(0.0_f64);
+    // T-769 — live scroller height. Starts at the historical 420 px fallback; an Effect reads
+    // `clientHeight` once the `h-full` node is mounted (and again on resize/scroll) so windowing
+    // tracks the flex-1 tree region instead of a nested fixed budget.
+    let container_h = RwSignal::new(CONTAINER_H_FALLBACK);
+    let scroller_ref = NodeRef::<leptos::html::Div>::new();
+    #[cfg(target_arch = "wasm32")]
+    let resize_hooked = StoredValue::new(false);
+    Effect::new(move |_| {
+        #[cfg(target_arch = "wasm32")]
+        {
+            use wasm_bindgen::JsCast;
+            let Some(node) = scroller_ref.get() else {
+                return;
+            };
+            let el: web_sys::Element = node.unchecked_into();
+            let h = el.client_height() as f64;
+            if h > 0.0 {
+                container_h.set(h);
+            }
+            if !resize_hooked.get_value() {
+                resize_hooked.set_value(true);
+                if let Some(win) = web_sys::window() {
+                    let closure = wasm_bindgen::closure::Closure::<dyn FnMut(web_sys::Event)>::wrap(
+                        Box::new(move |_| {
+                            if let Some(node) = scroller_ref.get_untracked() {
+                                let el: web_sys::Element = node.unchecked_into();
+                                let h = el.client_height() as f64;
+                                if h > 0.0 {
+                                    container_h.set(h);
+                                }
+                            }
+                        }),
+                    );
+                    let _ = win.add_event_listener_with_callback(
+                        "resize",
+                        closure.as_ref().unchecked_ref(),
+                    );
+                    closure.forget();
+                }
+            }
+        }
+    });
     (move || {
         rev.track(); // re-render the slice when the tree changes
         let st = scroll_top.get();
+        let viewport_h = container_h.get();
         flat.with_value(|f| {
             let total = f.len();
             if total == 0 {
@@ -996,7 +1040,7 @@ pub(crate) fn virtual_tree(
                 }
                 .into_any();
             }
-            let per_screen = (CONTAINER_H / ROW_H).ceil() as usize;
+            let per_screen = (viewport_h / ROW_H).ceil() as usize;
             let start = ((st / ROW_H).floor() as usize).saturating_sub(OVERSCAN);
             let end = (start + per_screen + 2 * OVERSCAN).min(total);
             set_outliner_stats(stats_key, total, end - start);
@@ -1008,13 +1052,18 @@ pub(crate) fn virtual_tree(
                 .collect();
             view! {
                 <div
-                    class="overflow-y-auto"
-                    style=format!("height:{CONTAINER_H}px")
+                    node_ref=scroller_ref
+                    class="h-full min-h-0 overflow-y-auto"
+                    data-testid="outliner-window-scroller"
                     on:scroll=move |ev| {
                         #[cfg(target_arch = "wasm32")]
                         {
                             use wasm_bindgen::JsCast;
                             if let Some(el) = ev.target().and_then(|t| t.dyn_into::<web_sys::Element>().ok()) {
+                                let h = el.client_height() as f64;
+                                if h > 0.0 {
+                                    container_h.set(h);
+                                }
                                 scroll_top.set(el.scroll_top() as f64);
                             }
                         }
@@ -1424,8 +1473,8 @@ mod tests {
 #[cfg(test)]
 mod t637_one_dense_row_geometry {
     use super::{
-        CONTAINER_H, PALETTE_LEAF, ROW, ROW_ACTIVE, ROW_BADGE, ROW_FACTION, ROW_GEOM, ROW_H,
-        ROW_STATIC, ROW_UNFILED,
+        PALETTE_LEAF, ROW, ROW_ACTIVE, ROW_BADGE, ROW_FACTION, ROW_GEOM, ROW_H, ROW_STATIC,
+        ROW_UNFILED,
     };
     use crate::eden_layout::tw_len_px;
 
@@ -1470,16 +1519,19 @@ mod t637_one_dense_row_geometry {
 
     /// **THE DENSITY, as a number.** 24 px was the complaint — a title, one row and ~900 px of void
     /// in a 240 px dock. Eden's outliner runs at ~15.8 px and that is how it fits a mission's worth
-    /// of structure in the same width. This pins the direction and the magnitude, not just the value:
-    /// the same fixed 420 px scroller must now show meaningfully MORE rows than the 17 it used to.
+    /// of structure in the same width. This pins the pitch change against the historical 420 px
+    /// budget (17 → 26 rows). T-769 made the live scroller measured/`h-full`; the arithmetic here is
+    /// still the densification magnitude, not a claim about the live container height.
     #[test]
     fn the_tree_is_dense_enough_to_be_eden_shaped() {
         assert!(
             ROW_H <= 16.0,
             "T-637: {ROW_H} px per row is not a dense tree — Eden's is ~15.8"
         );
-        let rows_now = (CONTAINER_H / ROW_H).floor();
-        let rows_before = (CONTAINER_H / 24.0).floor();
+        // Historical reference height from the pre-T-769 fixed budget — densification only.
+        const DENSITY_REFERENCE_H: f64 = 420.0;
+        let rows_now = (DENSITY_REFERENCE_H / ROW_H).floor();
+        let rows_before = (DENSITY_REFERENCE_H / 24.0).floor();
         assert!(
             rows_now >= rows_before + 8.0,
             "T-637: the densification must buy real rows — {rows_now} visible where the pre-ticket \
@@ -1514,6 +1566,39 @@ mod t637_one_dense_row_geometry {
     /// re-inflates every row it appears in, so this is checked over the whole file rather than per
     /// call site.
     #[test]
+
+    /// T-769 — the windowed scroller fills the flex tree region (`h-full`) and sizes its window from
+    /// the measured `clientHeight`. A fixed `height:420px` coming back is the defect this pin guards.
+    #[test]
+    fn the_windowed_scroller_is_measured_h_full_not_a_fixed_budget() {
+        use crate::arsenal::class_r_scrub::{live_code, live_source};
+        let raw = include_str!("eden_tree.rs");
+        let code = live_code(raw);
+        let source = live_source(raw);
+        assert!(
+            code.contains("client_height"),
+            "T-769: windowing must read the live scroller's clientHeight"
+        );
+        assert!(
+            source.contains("h-full min-h-0 overflow-y-auto"),
+            "T-769: the windowed scroller must be h-full inside the flex-1 tree region"
+        );
+        assert!(
+            source.contains("outliner-window-scroller"),
+            "T-769: the smoke measures this scroller by data-testid"
+        );
+        // Assembled so this pin's own prose cannot satisfy the negative check.
+        let fixed = format!("height:{}px", 420);
+        assert!(
+            !source.contains(&fixed),
+            "T-769: a fixed 420 px windowed budget must not return"
+        );
+        assert!(
+            !code.contains("CONTAINER_H:") && !code.contains("CONTAINER_H}"),
+            "T-769: CONTAINER_H must not drive windowing anymore"
+        );
+    }
+
     fn no_row_glyph_carries_an_uncollapsed_line_box() {
         let src = include_str!("eden_tree.rs");
         let production = src
