@@ -485,9 +485,16 @@ pub fn DockLeft(
 
     // ── T-697 — the hit list ─────────────────────────────────────────────────────────────────────
     // One row per matching entity, above the tree, only while the box has something in it. A row is
-    // a BUTTON when `DocKind::is_selectable` (slot / vehicle — what the T-655 router can resolve) and
-    // INERT TEXT otherwise, carrying `unselectable_reason` as its title. That branch is the whole of
-    // the T-754 lesson: the alternative is a row that looks clickable and selects nothing.
+    // a BUTTON when [`hit_is_routable`] — the REGISTERED route probe, i.e. the very resolution the
+    // row's click runs — and INERT TEXT otherwise, carrying `unselectable_reason` as its title.
+    //
+    // **Wave 129 (RV-1): the affordance asks the click's own resolver, per ROW, never a kind list.**
+    // This branch used to read `DocKind::is_selectable`, a hardcoded `Slot | Vehicle` set written
+    // when the T-655 router really did resolve only those two. The router has since grown a Zone arm
+    // (T-754) and an Entity arm (wave 129 F1), so zone and object hits rendered `aria-disabled` over
+    // a click that WOULD have selected — the same affordance/click divergence as T-754 with the
+    // polarity flipped, and just as much a lie to the author. There is exactly ONE decision now and
+    // the click is on the other end of it.
     let hits_body = move || {
         let q = layer_query.get();
         if q.trim().is_empty() {
@@ -521,6 +528,7 @@ pub fn DockLeft(
                         .into_iter()
                         .take(MAX_DOC_HITS)
                         .map(|hit| {
+                            let routable = hit_is_routable(&hit);
                             let kind = hit.entity.kind;
                             let id = hit.entity.id.clone();
                             let badge = kind.noun();
@@ -543,7 +551,7 @@ pub fn DockLeft(
                                     {badge}
                                 </span>
                             };
-                            if kind.is_selectable() {
+                            if routable {
                                 let title = format!(
                                     "Select this {badge} — matched {} \"{matched}\" ({id})",
                                     hit.field,
@@ -1325,15 +1333,20 @@ async fn fetch_named_places() -> Vec<NamedPlace> {
 // message pushes an author toward it. Not fixed here — it is a queued ticket and another slice's
 // file.
 //
-// **RESULTS SELECT, OR THEY SAY THEY CANNOT — wog.md 14.6, filed twice, most recently as T-754.**
-// A hit row routes through `validation_panel::route_select_by_subject_id`, the ONE shipped
-// click-to-select router (T-655). That router resolves a slot (off the SoA) or a vehicle (off
-// `vehiclesById.position`) and NOTHING else — read it: there is no arm for `entitiesById`, for a
-// briefing marker, for a zone, for a trigger, for a comment or for an editor layer. So
-// [`DocKind::is_selectable`] encodes that limit once, and a row whose kind fails it is rendered as
-// INERT TEXT — no button, no pointer cursor, `aria-disabled`, and a title that says in words why —
-// rather than as a control that looks live and selects nothing. That is the entire T-754 defect and
-// the only way to not repeat it is to not render the affordance.
+// **RESULTS SELECT, OR THEY SAY THEY CANNOT — wog.md 14.6, filed three times: T-754, wave 129, and
+// wave 129 RV-1 on this very surface.** A hit row routes through
+// `validation_panel::route_select_by_subject_id`, the ONE shipped click-to-select router (T-655), and
+// [`hit_is_routable`] asks that same router — through the REGISTERED probe
+// `validation_panel::subject_id_routes` — whether THIS row's id would resolve. A row it says no to is
+// rendered as INERT TEXT (no button, no pointer cursor, `aria-disabled`, and a title that says in
+// words why); a row it says yes to is a button. One decision, both ends of it.
+//
+// The rule is an IFF and it is violated in BOTH directions. T-754 was the loud half — an affordance
+// over a dead click. RV-1 was the quiet half: this file froze the router's reach into a
+// `Slot | Vehicle` constant, the router then grew a `Zone` arm (T-754) and an `Entity` arm (wave 129
+// F1), and zone/object hits went on rendering `aria-disabled` over a click that WOULD have selected,
+// under a title asserting a limit the code no longer had. A kind list cannot track a router; only
+// asking the router can.
 //
 // **WHERE IT LIVES, AND WHY THERE IS NO THIRD TAB.** T-637 measured the header as a width budget and
 // `the_header_row_fits_the_dock` adds it up: at [`crate::eden_layout::DOCK_PX`] 240 with `p-2`
@@ -1350,8 +1363,9 @@ async fn fetch_named_places() -> Vec<NamedPlace> {
 // matched (which text attribute, and on a vehicle/marker/zone/trigger the tree has never held any
 // row at all).
 
-/// T-697 — what a matched document row IS. Drives the row glyph and badge, and — the load-bearing
-/// one — [`DocKind::is_selectable`].
+/// T-697 — what a matched document row IS. Drives the row glyph, the badge noun, and the noun that
+/// [`unselectable_reason`] names. It does **not** decide clickability — [`hit_is_routable`] asks the
+/// router that, per row (wave 129 RV-1).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum DocKind {
     /// A `slots` row (an ORBAT player/AI slot).
@@ -1402,26 +1416,39 @@ impl DocKind {
             DocKind::Layer => "folder",
         }
     }
+}
 
-    /// **CAN THE SHIPPED ROUTER SELECT THIS? — the T-754 rule, stated once.**
-    ///
-    /// `validation_panel::route_select_by_subject_id` resolves a `subject_id` to a world position by
-    /// looking it up in the slot SoA and then in `vehiclesById.position`. There is no third lookup.
-    /// Every other kind therefore CANNOT be selected by clicking, and the results list must not
-    /// pretend otherwise — see [`unselectable_reason`], which is rendered as the row's title.
-    #[must_use]
-    pub fn is_selectable(self) -> bool {
-        matches!(self, DocKind::Slot | DocKind::Vehicle)
-    }
+/// **WOULD A CLICK ON THIS HIT SELECT ANYTHING? — the T-754 rule, asked of the click's own router.**
+///
+/// Wave 129 (RV-1), the peer of `validation_panel::finding_is_routable` and
+/// `eden_settings::owner_is_routable`. [`crate::validation_panel::subject_id_routes`] is the
+/// REGISTERED route probe — an `Rc` of the same resolution `route_select_by_subject_id` runs,
+/// narrowed by `mission_editor::route_availability` — so the affordance and the click cannot answer
+/// differently. Asking it per ROW rather than per KIND is the whole of the fix.
+///
+/// This replaced `DocKind::is_selectable`, a hardcoded `Slot | Vehicle` list. That list was true of
+/// T-655's router and false of the one that ships: T-754 added a `Zone` arm and wave-129 F1 added an
+/// `Entity` (placed object) arm, so zone and object hits were painted INERT over a click that would
+/// have worked, while the row's title asserted a router limit that no longer existed. **Do not
+/// re-derive this from a kind list, and do not fall back to `mission_editor::route_target` when no
+/// probe is registered** — no probe means no router to click into, and `false` is the honest answer.
+#[must_use]
+pub fn hit_is_routable(hit: &DocHit) -> bool {
+    crate::validation_panel::subject_id_routes(&hit.entity.id)
 }
 
 /// T-697 — why a hit row is inert, in words the author can act on. Rendered as the row's `title`
 /// (and its `aria-description`) so the answer is available exactly where the click would have been.
+///
+/// Wave 129 (RV-1) rewrote this sentence. It used to read "resolves slots and vehicles only", which
+/// stopped being true when the router grew its zone and entity arms — an inert row was explaining
+/// itself with a false statement about the code. It now says what [`hit_is_routable`] actually
+/// found: nothing to route to for this row, right now.
 #[must_use]
 pub fn unselectable_reason(kind: DocKind) -> String {
     format!(
-        "Found, but not selectable from here: the editor's click-to-select router resolves slots \
-         and vehicles only, so a {} has no selection to route to. Open it from its own panel.",
+        "Found, but not selectable from here: the editor's click-to-select router resolves no \
+         selection for this {} right now, so a click would do nothing. Open it from its own panel.",
         kind.noun()
     )
 }
@@ -2233,12 +2260,14 @@ mod t637_density {
 #[cfg(test)]
 mod t697_document_search {
     use super::{
-        matches_query, search_document, selection_facets, unselectable_reason, DocEntity, DocHit,
-        DocKind, HIT_GAP_PX, HIT_ICON_PX, HIT_MIN_LABEL_PX, HIT_ROW_PAD_PX, LIST_SCROLLBAR_PX,
-        MAX_DOC_HITS, UPPERCASE_LABEL_ADVANCE_PX,
+        hit_is_routable, matches_query, search_document, selection_facets, unselectable_reason,
+        DocEntity, DocHit, DocKind, HIT_GAP_PX, HIT_ICON_PX, HIT_MIN_LABEL_PX, HIT_ROW_PAD_PX,
+        LIST_SCROLLBAR_PX, MAX_DOC_HITS, UPPERCASE_LABEL_ADVANCE_PX,
     };
     use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
     use crate::eden_layout::{tw_len_px, DOCK_L, DOCK_PX};
+    use crate::mission_editor::route_target;
+    use crate::validation_panel::register_route_probe;
 
     /// The dock's own production text — comments, test modules and unreachable arms removed.
     fn dock_code() -> String {
@@ -2430,40 +2459,145 @@ mod t697_document_search {
         assert!(msg("nosuchthing").contains("No entities in this mission match"));
     }
 
-    /// **RESULTS SELECT, OR THEY SAY THEY CANNOT — wog.md 14.6 / T-754.** The shipped router
-    /// (`validation_panel::route_select_by_subject_id`) resolves a slot or a vehicle and nothing
-    /// else, so exactly those two kinds are live affordances and every other kind renders inert with
-    /// a reason. Perturbation RED: make `is_selectable` return `true` for every kind.
+    /// **RESULTS SELECT, OR THEY SAY THEY CANNOT — wog.md 14.6 / T-754 / wave 129 RV-1.**
+    ///
+    /// A CORRESPONDENCE pin, and it is the correspondence that is checked, not a list: for every
+    /// `DocKind` it computes the CLICK's own answer (`mission_editor::route_target` over a document
+    /// with one id per kind) and requires [`super::hit_is_routable`] — which the view's
+    /// button-vs-inert branch is — to equal it. Both directions, with a non-vacuity assert that this
+    /// run saw at least one LIVE row and at least one INERT one.
+    ///
+    /// **Why the old pin could not have caught RV-1.** It restated `DocKind::is_selectable`'s own
+    /// `Slot | Vehicle` constant back at it. When the router grew a `Zone` arm (T-754) and an
+    /// `Entity` arm (wave 129 F1) the constant went stale, zone and object hits kept rendering
+    /// `aria-disabled` over a click that would have selected, and the pin stayed green throughout —
+    /// because it was checking the kind list against itself. A guard that repeats its subject is not
+    /// a guard.
+    ///
+    /// Perturbation RED: restore the hardcoded list — decide the row from
+    /// `matches!(kind, DocKind::Slot | DocKind::Vehicle)` instead of asking the registered probe.
     #[test]
-    fn only_the_kinds_the_router_resolves_are_live_affordances() {
-        for k in [DocKind::Slot, DocKind::Vehicle] {
-            assert!(
-                k.is_selectable(),
-                "the T-655 router resolves a {}",
-                k.noun()
-            );
+    fn a_hit_row_is_a_live_affordance_iff_the_click_would_select() {
+        // One id per kind, in the document the shipped resolver reads. Slot ids live in the SoA,
+        // which is not in this root, so `is_slot` supplies them exactly as the router's caller does.
+        // The last four maps are in the document and owned by NO selection surface — the router has
+        // no arm for a briefing marker, a trigger, a comment or an editor layer.
+        let root = serde_json::json!({
+            "vehiclesById": { "veh-1": { "position": { "x": 10.0, "y": 20.0 } } },
+            "entitiesById": { "obj-1": { "position": { "x": 30.0, "y": 40.0 } } },
+            "zonesById": {
+                "zone-1": { "shape": { "circle": { "x": 5.0, "z": 6.0, "r": 50.0 } } }
+            },
+            "factionsById": { "BLUFOR": { "briefing": { "markers": [{ "id": "mark-1" }] } } },
+            "triggersById": { "trg-1": {} },
+            "commentsById": { "cmt-1": {} },
+            "editorLayersById": { "lay-1": {} }
+        });
+        fn is_slot(id: &str) -> bool {
+            id == "slot-1"
         }
-        for k in [
-            DocKind::Object,
-            DocKind::Marker,
-            DocKind::Zone,
-            DocKind::Trigger,
-            DocKind::Comment,
-            DocKind::Layer,
+        // The probe is registered the way `mission_editor` registers it at mount: the SAME
+        // resolution the click runs, asked as a question.
+        let probe_root = root.clone();
+        register_route_probe(std::rc::Rc::new(move |id: &str| {
+            route_target(&probe_root, id, &is_slot).is_some()
+        }));
+
+        let mut live: Vec<DocKind> = Vec::new();
+        let mut inert: Vec<DocKind> = Vec::new();
+        for (id, kind) in [
+            ("slot-1", DocKind::Slot),
+            ("veh-1", DocKind::Vehicle),
+            ("obj-1", DocKind::Object),
+            ("zone-1", DocKind::Zone),
+            ("mark-1", DocKind::Marker),
+            ("trg-1", DocKind::Trigger),
+            ("cmt-1", DocKind::Comment),
+            ("lay-1", DocKind::Layer),
         ] {
-            assert!(
-                !k.is_selectable(),
-                "T-754: the router has no arm for a {} — rendering one as clickable is the defect \
-                 this programme has now filed twice",
-                k.noun()
+            let hit = DocHit {
+                entity: entity(id, kind, "Row", "BLUFOR"),
+                field: "label",
+            };
+            // The ORACLE — what the click would actually do — computed independently of the view.
+            let would_select = route_target(&root, id, &is_slot).is_some();
+            assert_eq!(
+                hit_is_routable(&hit),
+                would_select,
+                "RV-1: the {} row's affordance must EQUAL what a click on it would do (the router \
+                 says {would_select}). Painting inert over a live click is the same lie as painting \
+                 live over a dead one",
+                kind.noun()
             );
-            let why = unselectable_reason(k);
+            if would_select {
+                live.push(kind);
+            } else {
+                inert.push(kind);
+            }
+        }
+
+        // NOT VACUOUS: this pin is worth nothing unless it saw the affordance both ON and OFF.
+        assert!(
+            !live.is_empty() && !inert.is_empty(),
+            "the correspondence must be exercised in both directions (saw live {live:?} / inert \
+             {inert:?})"
+        );
+        // What the router reaches TODAY — reported by the resolver, not asserted into the view. The
+        // day an arm is added or removed this line moves and the affordance moves with it, together.
+        assert_eq!(
+            live,
+            vec![
+                DocKind::Slot,
+                DocKind::Vehicle,
+                DocKind::Object,
+                DocKind::Zone
+            ],
+            "T-655 + T-754 (zones) + wave-129 F1 (placed objects) are the shipped router's arms"
+        );
+        assert_eq!(
+            inert,
+            vec![
+                DocKind::Marker,
+                DocKind::Trigger,
+                DocKind::Comment,
+                DocKind::Layer
+            ],
+            "T-754: the router has no arm for these, so their rows must stay INERT — rendering one \
+             as clickable is the defect this programme has filed three times"
+        );
+        for kind in &inert {
+            let why = unselectable_reason(*kind);
             assert!(
-                why.contains(k.noun()) && why.contains("slots and vehicles"),
-                "an inert row must say WHY, naming the kind and the router's limit"
+                why.contains(kind.noun()),
+                "an inert row must say WHY, naming the kind it is about"
+            );
+            assert!(
+                !why.contains("slots and vehicles"),
+                "RV-1: the reason may not assert a router limit the router does not have. It read \
+                 `resolves slots and vehicles only` for the whole of the zone and entity widenings"
             );
         }
-        // The router the live rows use is the shipped one, and there is no second selection path.
+
+        // THE OTHER AXIS — same document, different mount state (F6/F7). The resolver refuses while
+        // the owning panel is unmounted (or before the editor mounts, or on the host build), and the
+        // row must follow the RESOLVER, not the document.
+        register_route_probe(std::rc::Rc::new(|_: &str| false));
+        let zone = DocHit {
+            entity: entity("zone-1", DocKind::Zone, "Objective Alpha", "OPFOR"),
+            field: "label",
+        };
+        assert!(
+            !hit_is_routable(&zone),
+            "F6/F7: the resolver refuses this subject, so the row is inert — a fallback to \
+             `route_target` here IS the dead click"
+        );
+        assert!(
+            route_target(&root, "zone-1", &is_slot).is_some(),
+            "the document resolves `zone-1` in BOTH phases; only the probe's answer moved, which is \
+             exactly why the affordance may not be decided from the document"
+        );
+
+        // SOURCE SIDE — one decision, and the click is on the other end of it.
         let code = dock_code();
         assert!(
             code.contains("validation_panel::route_select_by_subject_id("),
@@ -2472,6 +2606,25 @@ mod t697_document_search {
         assert!(
             !code.contains("editor_ops::select_slot("),
             "T-697: a second click-to-select path is how the two drift apart"
+        );
+        assert!(
+            only_body(&code, &format!("fn hit{}", "_is_routable"))
+                .contains(&format!("subject_id{}", "_routes")),
+            "RV-1: clickability must be the REGISTERED probe's answer — the one the click runs"
+        );
+        // NEGATIVES, over the whole of this file's LIVE half (the test module, which legitimately
+        // calls the router to state the FACT the affordance is checked against, is cut first).
+        assert_eq!(
+            code.matches(&format!("is{}", "_selectable(")).count(),
+            0,
+            "RV-1: the hardcoded kind list is gone. It is a second copy of the router's reach, and \
+             a copy is a thing that can go stale — this one did, silently, for two widenings"
+        );
+        assert_eq!(
+            code.matches(&format!("route{}", "_target(")).count(),
+            0,
+            "RV-1: no live code in this view may resolve the router itself — that is a second \
+             availability decision, and the click's is the one that counts"
         );
         // The inert branch exists and is not a disabled-looking button.
         let src = dock_source();

@@ -580,10 +580,10 @@ mod t636_band_readers_agree {
 #[cfg(test)]
 mod t638_collapse {
     use super::{
-        centre_hold_target, chrome_hidden, dock_left_collapsed, dock_left_px, dock_right_collapsed,
-        dock_right_px, pane_center_px, set_chrome_hidden, set_dock_left_collapsed,
-        set_dock_right_collapsed, strip_top_px, toolbelt_band_px, DOCK_LEFT_PX, DOCK_RIGHT_PX,
-        STRIP_TOP_PX, STUB_PX, TOOLBELT_BAND_PX,
+        centre_hold_target, dock_left_collapsed, dock_left_px, dock_right_collapsed, dock_right_px,
+        pane_center_px, set_chrome_hidden, set_dock_left_collapsed, set_dock_right_collapsed,
+        strip_top_px, toolbelt_band_px, DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX, STUB_PX,
+        TOOLBELT_BAND_PX,
     };
     use map_engine_core::camera::OrthoCamera;
 
