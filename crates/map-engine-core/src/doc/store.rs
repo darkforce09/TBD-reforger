@@ -1316,7 +1316,6 @@ impl MissionDocCore {
         }
     }
 
-
     /// T-732 — map-place a vehicle **and** stamp `factionId` + unmanned intent in **one** LOCAL txn.
     ///
     /// The host used to call [`Self::add_vehicle`] then [`Self::set_vehicle_faction`] then
@@ -2875,12 +2874,7 @@ impl MissionDocCore {
     /// Thin wrapper over [`Self::update_entity_transforms`] for the multi-select Shift-rotate /
     /// orient path. Each `(id, is_slot, degrees)` writes rotation only; x/y/z stay put. Returns how
     /// many entities rotated.
-    pub fn rotate_entities(
-        &self,
-        items: &[(String, bool, f64)],
-        width: f64,
-        height: f64,
-    ) -> usize {
+    pub fn rotate_entities(&self, items: &[(String, bool, f64)], width: f64, height: f64) -> usize {
         let patches: Vec<EntityTransformPatch> = items
             .iter()
             .map(|(id, is_slot, deg)| EntityTransformPatch {
@@ -6719,7 +6713,6 @@ mod tests {
         assert_eq!(vehs["v0"]["position"]["rotation"], 45.0);
         assert!(!doc.can_undo());
     }
-
 
     /// T-732 Class-R — the OLD three-call place path is three undo steps (defect pin).
     #[test]

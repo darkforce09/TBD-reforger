@@ -28,8 +28,8 @@ use std::collections::HashMap;
 use leptos::prelude::{GetUntracked, RwSignal, Set};
 use map_engine_core::doc::place_character_under_side;
 use map_engine_core::doc::{
-    apply_faction_library, FactionLibraryInput, FactionLibraryRole, FactionLibraryVehicle,
-    EntityTransformPatch, MissionDocCore, APPLY_ANCHOR_X, APPLY_ANCHOR_Y, NONE_IDX,
+    apply_faction_library, EntityTransformPatch, FactionLibraryInput, FactionLibraryRole,
+    FactionLibraryVehicle, MissionDocCore, APPLY_ANCHOR_X, APPLY_ANCHOR_Y, NONE_IDX,
 };
 
 use crate::asset_catalog::PlacePayload;
@@ -1662,9 +1662,7 @@ fn confirm_bulk(n: usize, verb: &str) -> bool {
     if !crate::place_helpers::needs_confirm(n) {
         return true;
     }
-    let msg = format!(
-        "This will {verb} {n} entities. Continue? (Ctrl+Z undoes the whole op.)"
-    );
+    let msg = format!("This will {verb} {n} entities. Continue? (Ctrl+Z undoes the whole op.)");
     web_sys::window()
         .and_then(|w| w.confirm_with_message(&msg).ok())
         .unwrap_or(false)
@@ -1921,7 +1919,6 @@ pub fn orient_selection(cmd: crate::place_helpers::Orient) -> bool {
     }
     did
 }
-
 
 /// Read a slot's embedded `loadout` JSON (Arsenal picks) from `slots_json`. `None` when unset.
 pub fn read_loadout(id: &str) -> Option<String> {
