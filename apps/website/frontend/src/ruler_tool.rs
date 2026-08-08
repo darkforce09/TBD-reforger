@@ -50,6 +50,8 @@
 
 use leptos::prelude::*;
 
+use crate::validation_panel::SeamRegistration;
+
 // ── Pure geometry + formatting (native-tested) ──────────────────────────────────────────────────
 
 /// A ruler vertex: world metres `(x, y)` plus an optional DEM elevation `z` (metres ASL, `None`
@@ -554,10 +556,84 @@ thread_local! {
         const { std::cell::RefCell::new(None) };
 }
 
+/* ═══════ the seam idiom for this editor-tool cluster — install at mount, unregister at unmount ═════
+ *
+ * The SAME lifecycle contract `validation_panel::install_seam` publishes for its four seams, ported
+ * here for the five this cluster owns (`RULER_CHAIN`; `los_tool`'s `LOS_STATE` / `LOS_SAMPLER` /
+ * `VIEWSHED_STATE`; `world_assets`'s `RENDER_CTX`). **It is a copy, and it should not stay one**:
+ * `validation_panel`'s `install_seam`/`unregister_seam` are module-private and that file was not this
+ * slice's to widen. What IS reused is the part that matters — the identity vocabulary. `SeamRegistration`
+ * is `pub(crate)` and imported below, so the crate still has exactly ONE definition of "is the value in
+ * the cell the very registration I put there", and its `Rc` impl is the one doing the work here.
+ * FOLLOW-UP: lift these two functions beside that trait (or into a module both files can see) and
+ * delete this copy — a duplicated vocabulary is its own defect class.
+ *
+ * THE DEFECT (wave-129 F2/F5, third recurrence — T-778). A seam registered at mount and never
+ * unregistered stays READABLE after the surface that owns it is gone: Backspace hide-chrome unmounts
+ * panels while dialogs deliberately survive, and SPA navigation drops the whole editor page. The stale
+ * handle then reports SUCCESS — a non-empty chain, a `Some` sampler — while every `set` behind it
+ * lands on a DISPOSED signal, which `reactive_graph` 0.2.14 makes a silent no-op. The operator sees a
+ * click that "worked" and nothing happened.
+ *
+ * The naive fix closes only half of it. An UNCONDITIONAL unregister at cleanup introduces the mirror
+ * defect: leptos does not guarantee that a dying owner's cleanup runs before the REMOUNT registers, so
+ * an old cleanup can delete the LIVE surface's seam and leave it dead again. Hence the identity guard
+ * in [`unregister_seam`] — only the LOSING registration is cleared.
+ */
+
+/// A seam's storage: one thread_local slot holding the current registration, or `None` (native build /
+/// pre-mount / everything unmounted) — which every read of it must report as HONEST FAILURE.
+pub(crate) type SeamCell<H> = std::thread::LocalKey<std::cell::RefCell<Option<H>>>;
+
+/// Install `hook` into `cell` for the CURRENT reactive owner: register it now, and unregister it when
+/// that owner is cleaned up (i.e. at unmount).
+///
+/// Called with no owner (the native tests, a non-reactive caller) it degrades to a bare register:
+/// `on_cleanup` outside an owner is a no-op, which is the pre-existing behaviour.
+///
+/// The hook is parked in a `StoredValue` with **LOCAL** storage because `on_cleanup` is
+/// `Send + Sync`-bound and an `Rc<…>` is `!Send`, so the cleanup cannot carry the hook itself. An owner
+/// runs its cleanup functions BEFORE it removes its arena nodes, so the read back inside the cleanup is
+/// valid; and holding that clone is what keeps the allocation alive, which is what makes the identity
+/// check in [`unregister_seam`] meaningful rather than **a bare `usize` address** a later registration
+/// could be re-allocated onto while a stale cleanup wrongly clears it (ABA).
+pub(crate) fn install_seam<H: SeamRegistration>(cell: &'static SeamCell<H>, hook: H) {
+    let mine = StoredValue::new_local(hook.clone());
+    cell.with(|c| *c.borrow_mut() = Some(hook));
+    on_cleanup(move || {
+        let _ = mine.try_with_value(|mine| unregister_seam(cell, mine));
+    });
+}
+
+/// Clear `cell` — but ONLY if `mine` is still the LIVE registration.
+///
+/// Returns whether this call is the one that cleared it; a superseded (losing) cleanup returns `false`
+/// and leaves the newer registration alone. The value is taken OUT of the cell and dropped after the
+/// borrow ends, so a `Drop` that re-enters this seam cannot hit a double borrow.
+fn unregister_seam<H: SeamRegistration>(cell: &'static SeamCell<H>, mine: &H) -> bool {
+    let taken = cell.with(|c| {
+        let mut slot = c.borrow_mut();
+        if slot
+            .as_ref()
+            .is_some_and(|live| mine.is_same_registration(live))
+        {
+            slot.take()
+        } else {
+            None
+        }
+    });
+    taken.is_some()
+}
+
 /// Register the host's leaked ruler chain so [`RulerOverlay`] can read it. Called once at mount by
 /// `mission_editor` (peer of `context_menu::set_menu_signal`).
+///
+/// **This is an INSTALL** ([`install_seam`]): the chain is unregistered when the owner that registered
+/// it is cleaned up, and a remount's newer chain is not clobbered by the old owner's cleanup. Without
+/// that, [`read_registered_chain`] would keep returning a dead page's polyline as though the ruler
+/// were still live.
 pub fn register_ruler_chain(chain: std::rc::Rc<std::cell::RefCell<RulerChain>>) {
-    RULER_CHAIN.with(|c| *c.borrow_mut() = Some(chain));
+    install_seam(&RULER_CHAIN, chain);
 }
 
 /// A snapshot clone of the registered chain (empty if none registered — e.g. native/pre-mount).
@@ -1132,6 +1208,301 @@ mod tests {
             bearing_deg(o, east).round(),
             bearing_deg(o, p(0.0, 100.0)).round(),
             "bearing must vary with direction (east 90 vs north 0)"
+        );
+    }
+}
+
+/* ══ T-778 — every editor-tool seam is unregistered at unmount, and no remount is clobbered ═════════
+ *
+ * The lifecycle half of the dead click (wave-129 F2/F5), pinned across the FOUR natively-compiled
+ * thread_local seams of this tool cluster at once: `RULER_CHAIN` here, plus `los_tool`'s `LOS_STATE`,
+ * `LOS_SAMPLER` and `VIEWSHED_STATE`. Table-driven for the same reason
+ * `validation_panel::f5_seam_lifecycle` is: this defect has now been fixed FOUR times in three files,
+ * and each time a nearby seam shipped without the fix. A fifth seam that forgets [`install_seam`]
+ * joins this table and goes red, rather than being found by the next reader.
+ *
+ * These drive real `Owner`s and call `Owner::cleanup` — the code path leptos runs at unmount — in the
+ * three shapes that matter:
+ *   1. never installed                    -> the seam reports HONEST FAILURE (the baseline, so a
+ *                                            green elsewhere cannot be "it was already empty");
+ *   2. install -> cleanup                 -> FAILURE, and the STALE registration is not read at all;
+ *   3. install(A) -> install(B) -> A's cleanup -> B SURVIVES and still answers (the identity guard's
+ *      entire reason for existing: leptos does not guarantee that a dying owner's cleanup runs before
+ *      the remount registers).
+ *
+ * The two owners in shape 3 are SIBLINGS (`root.child()` twice), never parent/child — a child would
+ * be cleaned up BY its parent and the test would measure the tree instead of the guard.
+ *
+ * Perturbation RED, and they redden DIFFERENTLY, which is the point: drop the `on_cleanup` from
+ * [`install_seam`] and shape 2 goes red; keep the cleanup but make it unconditional (delete the
+ * `is_same_registration` guard from [`unregister_seam`]) and shape 3 goes red ALONE — that is the
+ * failure a naive fix ships.
+ *
+ * The FIFTH seam, `world_assets::RENDER_CTX`, cannot join this table: `world_assets` is declared
+ * `#[cfg(target_arch = "wasm32")]` in `main.rs` and its handles wrap a live `RenderEngine`/`MapHost`,
+ * so a native `cargo test` never compiles it. It is covered by [`the_render_ctx_seam_is_installed`]
+ * below — a Class-R pin over the SCRUBBED production half of that file, so neither the prose in its
+ * comments nor a test module can satisfy it.
+ */
+#[cfg(test)]
+mod t778_seam_lifecycle {
+    use super::{read_registered_chain, register_ruler_chain, RulerChain, RulerPoint};
+    use crate::los_tool::{
+        read_registered_sampler, read_registered_state, read_registered_viewshed,
+        register_los_sampler, register_los_state, register_viewshed_state, LosState, ViewshedState,
+    };
+    use leptos::prelude::*;
+    use std::cell::RefCell;
+    use std::rc::Rc;
+
+    thread_local! {
+        /// Every tag that ANSWERED a seam's question, in call order. "Did anything actually happen"
+        /// is answered by WHICH registration answered, not only by the seam's boolean — a seam that
+        /// reports failure while still reading a dead handle has not been fixed.
+        static ANSWERED: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
+    }
+
+    fn note(tag: &str) {
+        ANSWERED.with(|l| l.borrow_mut().push(tag.to_string()));
+    }
+    fn answered() -> Vec<String> {
+        ANSWERED.with(|l| l.borrow().clone())
+    }
+    fn forget_answers() {
+        ANSWERED.with(|l| l.borrow_mut().clear());
+    }
+
+    /// The world X a given mount registers. Both are NON-ZERO and distinct, so "the `Default` empty
+    /// state answered" (the honest failure) can never be mistaken for "a registration answered", and
+    /// the two mounts can never be mistaken for each other.
+    fn mark(tag: &str) -> f64 {
+        match tag {
+            "A" => 1000.0,
+            "B" => 2000.0,
+            other => unreachable!("unknown mount tag {other}"),
+        }
+    }
+
+    /// Decode a read-back world X into the mount that registered it, and record that it ANSWERED.
+    fn note_mark(x: f64) {
+        let tag = ["A", "B"]
+            .into_iter()
+            .find(|t| (mark(t) - x).abs() < f64::EPSILON)
+            .unwrap_or("<unregistered value>");
+        note(tag);
+    }
+
+    /// One seam, reduced to the two operations its lifecycle turns on.
+    struct Seam {
+        /// The thread_local's name, so a failure names the seam rather than a row index.
+        name: &'static str,
+        /// Register a `tag`-marked value under the CURRENT reactive owner.
+        install: fn(&'static str),
+        /// Ask the seam its OWN question. `true` = a live registration answered (and `note`d itself).
+        ask: fn() -> bool,
+    }
+
+    /// Every natively-compiled seam in this cluster. A new one belongs here.
+    fn seams() -> [Seam; 4] {
+        [
+            Seam {
+                name: "RULER_CHAIN",
+                install: |tag| {
+                    register_ruler_chain(Rc::new(RefCell::new(RulerChain {
+                        points: vec![RulerPoint::new(mark(tag), 0.0, None)],
+                        ..RulerChain::default()
+                    })));
+                },
+                ask: || match read_registered_chain().points.first() {
+                    Some(p) => {
+                        note_mark(p.x);
+                        true
+                    }
+                    None => false,
+                },
+            },
+            Seam {
+                name: "LOS_STATE",
+                install: |tag| {
+                    register_los_state(Rc::new(RefCell::new(LosState {
+                        pending_obs: Some((mark(tag), 0.0, None)),
+                        ..LosState::default()
+                    })));
+                },
+                ask: || match read_registered_state().pending_obs {
+                    Some((x, _, _)) => {
+                        note_mark(x);
+                        true
+                    }
+                    None => false,
+                },
+            },
+            Seam {
+                name: "LOS_SAMPLER",
+                // The one seam that is a real closure: it notes its own tag when CALLED, so shape 2
+                // can distinguish "the seam reported failure" from "the stale closure still ran".
+                install: |tag| {
+                    register_los_sampler(Rc::new(move |_x, _y| {
+                        note(tag);
+                        Some(mark(tag))
+                    }));
+                },
+                ask: || match read_registered_sampler() {
+                    Some(f) => f(0.0, 0.0).is_some(),
+                    None => false,
+                },
+            },
+            Seam {
+                name: "VIEWSHED_STATE",
+                install: |tag| {
+                    register_viewshed_state(Rc::new(RefCell::new(ViewshedState {
+                        observer: Some((mark(tag), 0.0, None)),
+                        ..ViewshedState::default()
+                    })));
+                },
+                ask: || match read_registered_viewshed().observer {
+                    Some((x, _, _)) => {
+                        note_mark(x);
+                        true
+                    }
+                    None => false,
+                },
+            },
+        ]
+    }
+
+    /// Shape 1 — never installed. The baseline: without it, a green in shape 2 could just mean the
+    /// seam never worked in the first place.
+    #[test]
+    fn an_uninstalled_seam_reports_honest_failure() {
+        let _root = Owner::new();
+        for seam in seams() {
+            forget_answers();
+            assert!(
+                !(seam.ask)(),
+                "T-778 {}: a seam nothing ever registered must report FAILURE",
+                seam.name
+            );
+            assert!(
+                answered().is_empty(),
+                "T-778 {}: nothing may answer when nothing is installed — got {:?}",
+                seam.name,
+                answered()
+            );
+        }
+    }
+
+    /// Shape 2 — install then unmount. The seam must report failure AND not read the dead handle.
+    #[test]
+    fn a_seam_is_unregistered_when_its_owner_is_cleaned_up() {
+        let root = Owner::new();
+        for seam in seams() {
+            let mounted = root.child();
+            mounted.with(|| (seam.install)("A"));
+
+            forget_answers();
+            assert!(
+                (seam.ask)(),
+                "T-778 {} precondition: while mounted the seam really does answer",
+                seam.name
+            );
+            assert_eq!(
+                answered(),
+                vec!["A".to_string()],
+                "T-778 {} precondition: the LIVE registration is the one that answered",
+                seam.name
+            );
+
+            mounted.cleanup();
+
+            forget_answers();
+            assert!(
+                !(seam.ask)(),
+                "T-778 {}: the installing owner is gone, so the seam must report FAILURE rather \
+                 than success over state whose every write is a disposed no-op",
+                seam.name
+            );
+            assert!(
+                answered().is_empty(),
+                "T-778 {}: the stale registration must not be read at all after unmount — got {:?}",
+                seam.name,
+                answered()
+            );
+        }
+    }
+
+    /// Shape 3 — the identity guard. A remount installs its NEWER value before the old owner's
+    /// cleanup runs. The losing cleanup must recognise it is no longer the live registration and
+    /// leave the new one alone — otherwise the fix for a stale seam becomes a fresh way to kill a
+    /// live one, and the click is dead again. This is the case an unconditional unregister fails.
+    #[test]
+    fn an_older_owners_cleanup_does_not_clobber_a_newer_registration() {
+        let root = Owner::new();
+        for seam in seams() {
+            // Siblings, not parent/child: two successive mounts under the page owner. A child would
+            // be cleaned up BY the parent and would prove nothing about the guard.
+            let old = root.child();
+            let new = root.child();
+            old.with(|| (seam.install)("A"));
+            new.with(|| (seam.install)("B"));
+
+            old.cleanup();
+
+            forget_answers();
+            assert!(
+                (seam.ask)(),
+                "T-778 {}: the NEW mount is live — the superseded owner's cleanup must not \
+                 unregister it",
+                seam.name
+            );
+            assert_eq!(
+                answered(),
+                vec!["B".to_string()],
+                "T-778 {}: the surviving registration must be the NEWER one, not a leftover that \
+                 merely happens to answer",
+                seam.name
+            );
+
+            new.cleanup();
+
+            forget_answers();
+            assert!(
+                !(seam.ask)(),
+                "T-778 {}: the live mount's OWN cleanup does clear it — the guard skips losers, \
+                 not everyone",
+                seam.name
+            );
+        }
+    }
+
+    /// Class-R — the fifth seam, `world_assets::RENDER_CTX`, which is wasm-only and so invisible to
+    /// every test above. Pinned over `live_code`, which cuts the test module, the comments AND the
+    /// string literals: the needles below therefore have to be real calls in the production body,
+    /// not the prose two lines above them nor a decoy in a string.
+    #[test]
+    fn the_render_ctx_seam_is_installed() {
+        use crate::arsenal::class_r_scrub::{live_code, only_body, only_item};
+        let src = live_code(include_str!("world_assets/mod.rs"));
+
+        let body = only_body(&src, "pub fn register_render_ctx(");
+        assert!(
+            body.contains("install_seam"),
+            "T-778: register_render_ctx must INSTALL (register + guarded unregister at the owner's \
+             cleanup), not write the cell directly; got:\n{body}"
+        );
+        assert!(
+            !body.contains("borrow_mut"),
+            "T-778: register_render_ctx must not still poke RENDER_CTX behind install_seam's back — \
+             a bare write is the un-unregisterable registration this ticket removes; got:\n{body}"
+        );
+
+        // The tuple-valued seam needs its own identity, and it must be Rc IDENTITY on both handles —
+        // never a `usize` address (ABA) and never `||`, which would let a half-matching cleanup clear
+        // a live remount.
+        let ident = only_item(&src, "fn is_same_registration(");
+        assert!(
+            ident.contains("Rc::ptr_eq") && ident.contains("&&"),
+            "T-778: RENDER_CTX identity must be Rc::ptr_eq on BOTH leaked handles; got:\n{ident}"
         );
     }
 }

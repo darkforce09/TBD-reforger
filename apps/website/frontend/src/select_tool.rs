@@ -718,6 +718,22 @@ fn probe_marquee_json(
 ///
 /// Read-only w.r.t. selection; the `probe*()` hooks mutate only the camera (`set_view`) for the smoke.
 /// Registered synchronously on mount (like `__missionDoc`); the closures leak with the engine.
+///
+/// **T-778 audited this leak and DELIBERATELY LEFT IT.** The wave-129/T-778 seam-lifecycle fix
+/// (`ruler_tool::install_seam`) does not apply here, and forcing it would break the harness:
+///   * this is not a thread_local seam — it is `Reflect::set` onto `window` plus `Closure::forget()`,
+///     which is irreversible by construction, so there is no cell to identity-guard;
+///   * the defect's PRECONDITION is absent. The dead click needs a `set` onto a DISPOSED signal
+///     (a silent no-op in `reactive_graph` 0.2.14) reported as success. These closures touch no
+///     reactive state at all: every handle they close over is a leaked `Rc<RefCell<…>>` chosen for
+///     exactly that reason (see the module docs — "never reads reactive-owner state that a route
+///     change could dispose"), and they are read-only w.r.t. selection, so they have no success to
+///     misreport;
+///   * the lifetime is intentional and wider than any owner: the smoke harness reads
+///     `window.__editorSelection` across the whole page lifetime, so unregistering at unmount would
+///     delete the bridge the S5 smoke is mid-way through using.
+/// The leak is scoped to the engine's own lifetime, which is the same leak `__missionDoc` /
+/// `__missionPersist` take. Re-auditing this needs new evidence, not a re-reading of the same facts.
 pub fn register_editor_selection(
     selection: SelectionHandle,
     doc: DocHandle,

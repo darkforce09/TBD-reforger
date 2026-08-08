@@ -107,9 +107,27 @@ thread_local! {
     static RENDER_CTX: RefCell<Option<(EngineHandle, HostHandle)>> = const { RefCell::new(None) };
 }
 
+/// T-778 — this seam's registration is the PAIR of leaked handles handed over at one mount, so its
+/// identity is BOTH `Rc` allocations. `&&` (not `||`) is the safe direction: a cleanup that cannot
+/// prove the live entry is exactly the pair it registered leaves it alone, so the worst case is a
+/// deferred unregister rather than a live remount being clobbered. **Never a bare `usize` address** —
+/// the clone `install_seam` parks keeps these allocations alive precisely so a freed-then-reused
+/// address cannot impersonate them (ABA).
+impl crate::validation_panel::SeamRegistration for (EngineHandle, HostHandle) {
+    fn is_same_registration(&self, live: &Self) -> bool {
+        Rc::ptr_eq(&self.0, &live.0) && Rc::ptr_eq(&self.1, &live.1)
+    }
+}
+
 /// Register the engine + host so the Mission Settings dialog can apply render prefs (P6).
+///
+/// **This is an INSTALL** (`ruler_tool::install_seam`): the pair is unregistered when the owner that
+/// registered it is cleaned up, and a remount's newer pair is not clobbered by the old owner's
+/// cleanup. Without that, [`camera_snapshot`] / [`named_locations`] would answer off a dead page's
+/// engine and [`fly_to`] would report nothing while moving a camera nobody can see — the T-778 /
+/// wave-129 dead click in its render-context form.
 pub fn register_render_ctx(engine: EngineHandle, host: HostHandle) {
-    RENDER_CTX.with(|c| *c.borrow_mut() = Some((engine, host)));
+    crate::ruler_tool::install_seam(&RENDER_CTX, (engine, host));
 }
 
 /// T-667 — the live camera `(target_x, target_y, zoom)` in world meters + deckZoom, read off the
