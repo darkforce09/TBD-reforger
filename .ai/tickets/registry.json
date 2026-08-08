@@ -18495,7 +18495,7 @@
    "id": "T-743",
    "order": 4619,
    "program": "eden",
-   "status": "ready",
+   "status": "shipped",
    "stream": "mission-creator",
    "targets": [
     "website"
@@ -19205,7 +19205,7 @@
    "id": "T-777",
    "order": 4653,
    "program": "eden",
-   "status": "ready",
+   "status": "shipped",
    "stream": "mission-creator",
    "targets": [
     "website"
@@ -19312,7 +19312,7 @@
    "id": "T-782",
    "order": 4658,
    "program": "eden",
-   "status": "ready",
+   "status": "shipped",
    "stream": "mission-creator",
    "targets": [
     "website"
