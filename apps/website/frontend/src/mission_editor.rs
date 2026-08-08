@@ -2018,6 +2018,187 @@ fn ConnectionsPanelOverlay(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> imp
     }
 }
 
+/* ══════════════ T-780 — the CONNECTION line: the map artifact `CONN-DEL-001` needs ══════════════
+ *
+ * T-672 shipped the connection graph and said so plainly: "a connection has no map glyph in this
+ * slice, so this panel is the ONLY place an operator can observe the graph". T-768 then finished the
+ * connect GESTURE — an edge can be started and completed with the pointer — and the gap became the
+ * defect: an author draws an edge on the map, nothing appears, and the only way to remove it is the
+ * panel's per-row Delete. This block is the line.
+ *
+ * THREE PIECES, and the split is deliberate:
+ *   1. [`connection_segments`] — document rows + endpoint positions → world-space segments. Pure.
+ *   2. [`connection_lane_verts`] — segments (+ which one is selected) → the flat
+ *      `[x,y,r,g,b,a]…` LineList `RenderEngine::connections_bind` takes. Pure.
+ *   3. [`pick_connection`] — a world point + a world tolerance → the edge under the cursor. Pure.
+ *
+ * Pure and native, so all three are unit-tested off-target: the wasm feed (the `doc_tick` Effect in
+ * `on_load`) and the wasm pick (the `LG::Pending` sub-threshold arm) are thin wrappers that supply
+ * the document and the camera and nothing else.
+ *
+ * **THE FEED IS FROM THE DOCUMENT, and that is the whole point of the lane.** T-069 and T-672 each
+ * established the same failure independently: a lane fed only from its own authoring call sites goes
+ * STALE after undo / redo / an IDB restore, because those paths replace the document without ever
+ * re-entering the code that drew. So nothing here caches; the Effect re-reads `MissionDocCore` on
+ * every `doc_tick`, and `doc_tick` is bumped by `editor_ops::refresh_docks`, which
+ * `mission_history::refresh_signals` calls at the END of `after_doc_change` (every committed edit,
+ * undo and redo) AND of `refresh_hud` / `rebind_engine_from_doc` (the mount seed, the server hydrate
+ * and the IDB restore swap). One channel, every path.
+ *
+ * No z is read or written anywhere in this block (wave-127): an edge is a 2-D map-plane line between
+ * two authored positions, so there is no `update_slot_position` / `move_entities_and_vehicles` call
+ * to hand a `None` z to, and no `zs` vector to mis-zip against an `ids` vector.
+ */
+
+/// One connection edge reduced to what the map needs: its id and its two endpoints in world metres.
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct ConnSegment {
+    /// The connection id — the SAME id `editor_ops::delete_connection` (the panel's verb) takes.
+    pub id: String,
+    pub ax: f64,
+    pub ay: f64,
+    pub bx: f64,
+    pub by: f64,
+}
+
+/// The unselected edge hairline: the Aegis primary at a low alpha, so a dense graph reads as
+/// structure rather than as a wall. Deliberately dimmer than `SquadLinks` — the ORBAT hairlines are
+/// structural truth and an editor-only relation must not compete with them.
+pub(crate) const CONN_LINE_RGBA: [f32; 4] = [173.0 / 255.0, 198.0 / 255.0, 1.0, 0.62];
+/// The SELECTED edge: opaque amber. A hue no other lane uses, because the only thing this colour has
+/// to communicate is "Delete will remove THIS one".
+pub(crate) const CONN_LINE_SELECTED_RGBA: [f32; 4] = [1.0, 0.78, 0.30, 1.0];
+/// Click tolerance for [`pick_connection`], in SCREEN pixels — converted to world metres by the
+/// caller through the frozen press camera, so the tolerance is constant on screen at every zoom.
+/// Matches the slot pick's feel: a hairline is 1 px, and nobody can click a 1 px target.
+pub(crate) const CONN_PICK_PX: f64 = 6.0;
+
+/// Build the drawable edges from `rows_json` ([`map_engine_core::doc::MissionDocCore::connection_rows_json`],
+/// the SAME stable-ordered listing the panel renders) and a map of entity id → world position.
+///
+/// An edge whose endpoint has no position is **skipped**, not drawn to the origin: a dangling edge is
+/// a `CONN-DANGLING` finding, and the panel is where a finding is reported. A line to (0,0) would be
+/// a second, wordless report that also happens to be wrong about where the entity is.
+///
+/// Self-links are skipped too — `add_connection` refuses them and `CONN-SELF` flags a hydrated one,
+/// and a zero-length segment is not a clickable artifact in any case.
+#[must_use]
+pub(crate) fn connection_segments(
+    rows_json: &str,
+    positions: &std::collections::HashMap<String, (f64, f64)>,
+) -> Vec<ConnSegment> {
+    let Ok(rows) = serde_json::from_str::<serde_json::Value>(rows_json) else {
+        return Vec::new();
+    };
+    let Some(arr) = rows.as_array() else {
+        return Vec::new();
+    };
+    let mut out = Vec::with_capacity(arr.len());
+    for r in arr {
+        let s = |k: &str| r.get(k).and_then(serde_json::Value::as_str).unwrap_or("");
+        let (id, from, to) = (s("id"), s("from"), s("to"));
+        if id.is_empty() || from == to {
+            continue;
+        }
+        let (Some(&(ax, ay)), Some(&(bx, by))) = (positions.get(from), positions.get(to)) else {
+            continue;
+        };
+        out.push(ConnSegment {
+            id: id.to_string(),
+            ax,
+            ay,
+            bx,
+            by,
+        });
+    }
+    out
+}
+
+/// Pack the edges into the flat `[x,y,r,g,b,a]` LineList `RenderEngine::connections_bind` takes:
+/// 6 floats per vertex, 2 vertices per segment, in `segs` order.
+///
+/// `selected` tints exactly one edge. It is matched by id against the same ids
+/// [`pick_connection`] returns and `editor_ops::delete_connection` consumes, so the highlighted line
+/// and the line Delete removes are the same line by construction rather than by convention.
+#[must_use]
+pub(crate) fn connection_lane_verts(segs: &[ConnSegment], selected: Option<&str>) -> Vec<f32> {
+    let mut v = Vec::with_capacity(segs.len() * 12);
+    for s in segs {
+        let c = if selected.is_some_and(|sel| sel == s.id) {
+            CONN_LINE_SELECTED_RGBA
+        } else {
+            CONN_LINE_RGBA
+        };
+        #[allow(clippy::cast_possible_truncation)]
+        for (x, y) in [(s.ax, s.ay), (s.bx, s.by)] {
+            v.push(x as f32);
+            v.push(y as f32);
+            v.extend_from_slice(&c);
+        }
+    }
+    v
+}
+
+/// The edge under a world point, or `None`. `tol_m` is the click radius in world metres (the caller
+/// converts [`CONN_PICK_PX`] through the press camera). Nearest edge wins, so overlapping edges
+/// resolve deterministically instead of by listing order.
+///
+/// Distance is point-to-SEGMENT, not point-to-line: the infinite-line form would let a click far off
+/// the end of a short edge, but on its extension, select it — a hit on nothing.
+#[must_use]
+pub(crate) fn pick_connection(
+    segs: &[ConnSegment],
+    wx: f64,
+    wy: f64,
+    tol_m: f64,
+) -> Option<String> {
+    let mut best: Option<(f64, &str)> = None;
+    for s in segs {
+        let (dx, dy) = (s.bx - s.ax, s.by - s.ay);
+        let len2 = dx.mul_add(dx, dy * dy);
+        let t = if len2 <= 0.0 {
+            0.0
+        } else {
+            (((wx - s.ax) * dx + (wy - s.ay) * dy) / len2).clamp(0.0, 1.0)
+        };
+        let d = (wx - t.mul_add(dx, s.ax)).hypot(wy - t.mul_add(dy, s.ay));
+        if d <= tol_m && best.is_none_or(|(bd, _)| d < bd) {
+            best = Some((d, s.id.as_str()));
+        }
+    }
+    best.map(|(_, id)| id.to_string())
+}
+
+/// The live document's drawable edges: [`connection_segments`] fed from `MissionDocCore` itself.
+///
+/// **This is the document read the lane and the pick share** — one function, called by the `doc_tick`
+/// Effect that binds the lane AND by the pointer arm that hit-tests it, so what is on screen and what
+/// a click can find are the same set by construction. Positions come from the materialized SoA
+/// (slots) and `editor_ops::vehicle_points` (vehicles) — the same two sources the slot/vehicle pick
+/// uses, and the same set the engine actually draws, so an edge to a slot hidden by the T-665 layer
+/// filter has no line and no hit box, matching the entity it points at.
+///
+/// Only x/y are read. `SlotSoa::xy` is f32 and that is correct here: these coordinates are on their
+/// way to a f32 vertex buffer and to a screen-space distance test, not to a `position` write — the
+/// wave-127 "read z off `slots_json`, not the SoA" rule is about the z this function never touches.
+#[cfg(target_arch = "wasm32")]
+#[must_use]
+fn live_connection_segments(core: &map_engine_core::doc::MissionDocCore) -> Vec<ConnSegment> {
+    let soa = core.materialize();
+    let mut positions: std::collections::HashMap<String, (f64, f64)> =
+        std::collections::HashMap::with_capacity(soa.ids.len());
+    for (i, id) in soa.ids.iter().enumerate() {
+        positions.insert(
+            id.clone(),
+            (f64::from(soa.xy[i * 2]), f64::from(soa.xy[i * 2 + 1])),
+        );
+    }
+    for (id, x, y) in crate::editor_ops::vehicle_points() {
+        positions.insert(id, (x, y));
+    }
+    connection_segments(&core.connection_rows_json(), &positions)
+}
+
 /* ═════════════ T-754 — what the click-to-select router RESOLVES, as a pure question ═════════════
  *
  * T-655 shipped ONE click-to-select router (`validation_panel::register_select_by_id`, registered
@@ -2360,6 +2541,21 @@ pub fn MissionEditorPage() -> impl IntoView {
     // T-180.9 — Attributes tab (1 = Identity default; `open_arsenal` sets 3 = Arsenal).
     let attrs_tab = RwSignal::new(1usize);
     let doc_tick = RwSignal::new(0u64);
+    // T-780 — the connection edge SELECTED on the map, if any. Session-local overlay state, NOT the
+    // Y.Doc — the same rule the slot selection, the ruler chain and the LoS ray follow (a selection
+    // is not mission content, and putting it in the document would make it an undo step).
+    //
+    // It is a signal rather than a `thread_local` because THREE places must agree about it and two
+    // of them are reactive: the `doc_tick` Effect that binds the lane (which re-tints on a selection
+    // change), the pointer arm that sets it, and the Delete key arm that consumes it. Mutually
+    // exclusive with the slot selection by construction: an edge is only picked when the
+    // slot/vehicle pick already MISSED, and that miss clears the slot selection.
+    let selected_connection = RwSignal::new(None::<String>);
+    // Both readers (the lane feed and the Delete arm) are wasm-only, so the native view shell never
+    // touches it — the file's standard `let _ = …` acknowledgement rather than an `_`-prefixed name,
+    // which would make the wasm call sites read as if the value were unused there too.
+    #[cfg(not(target_arch = "wasm32"))]
+    let _ = selected_connection;
     let settings_open = RwSignal::new(false);
     // T-167 — Faction Manager dialog toggle (launched from the Factions dock "Manage" button).
     let fm_open = RwSignal::new(false);
@@ -3062,6 +3258,54 @@ pub fn MissionEditorPage() -> impl IntoView {
             // item (`Send + Sync`) that removes and drops it.
             crate::mission_history::register_unload_guard();
             on_cleanup(crate::mission_history::unregister_unload_guard);
+
+            // ═══════════ T-780 — the CONNECTION lane feed, and it reads the DOCUMENT ═══════════
+            //
+            // Registered HERE, above `refresh_hud()`, for the same reason `editor_ops::set_ctx` is:
+            // that call funnels into `refresh_docks`, which bumps `doc_tick` — so the seed bind
+            // happens on the very first tick rather than one edit later.
+            //
+            // WHY THIS EFFECT AND NOT A CALL SITE. T-069 and T-672 independently established that a
+            // lane fed from a slice's own authoring call sites goes STALE after undo / redo /
+            // restore: those paths replace the document without re-entering the code that drew. So
+            // the lane is bound from ONE place that re-reads the live `MissionDocCore` whenever the
+            // document may have changed, and every path bumps that one channel:
+            //
+            //   * a committed edit, an undo, a redo   → `mission_history::after_doc_change`
+            //   * the mount seed / server hydrate     → `mission_history::refresh_hud`
+            //   * the IDB restore swap + the engine   → `mission_history::rebind_engine_from_doc`
+            //     mount handshake
+            //
+            // …and all three end in `refresh_signals` → `editor_ops::refresh_docks` → `doc_tick`.
+            // `rebind_engine_from_doc` being on that list is what makes the restore case work in the
+            // order it actually happens: the restore can settle BEFORE the engine exists, and the
+            // engine-mount handshake re-runs the rebind, which bumps the tick again, and this Effect
+            // binds against an engine that is finally there.
+            //
+            // The `selected_connection` read is tracked deliberately: picking an edge re-runs this
+            // and re-packs the lane with that edge tinted. Nothing else needs a "highlight" path.
+            {
+                let doc = doc.clone();
+                let engine = engine.clone();
+                Effect::new(move |_| {
+                    let _ = doc_tick.get();
+                    let selected = selected_connection.get();
+                    let segs = doc
+                        .borrow()
+                        .as_ref()
+                        .map_or_else(Vec::new, live_connection_segments);
+                    // An edge whose endpoint went away (undo of a place, an entity delete and its
+                    // T-672 cascade) simply stops producing a segment, so a stale selection is
+                    // inert: it tints nothing and `connections_bind` clears the lane at zero.
+                    let verts = connection_lane_verts(&segs, selected.as_deref());
+                    #[allow(clippy::cast_possible_truncation)]
+                    let count = segs.len() as u32;
+                    if let Some(e) = engine.borrow_mut().as_mut() {
+                        e.connections_bind(&verts, count);
+                    }
+                });
+            }
+
             crate::mission_history::refresh_hud();
 
             // T-159.26 — editor keyboard actions (MissionCreatorPage onKeyDown): Delete
@@ -3251,7 +3495,41 @@ pub fn MissionEditorPage() -> impl IntoView {
                             // the two keys are now split arms. Backspace always "acts" (it flips the
                             // signal), so `prevent_default` fires below to keep the browser from
                             // treating it as a Back navigation.
-                            "Delete" if !modk => crate::editor_ops::delete_selection(),
+                            // T-780 — `CONN-DEL-001` ON THE MAP. Eden deletes a connection by
+                            // selecting its line and pressing Del; T-672 could only offer the
+                            // panel's per-row button because there was no line. There is now, so
+                            // Del over a selected edge removes it.
+                            //
+                            // It calls `editor_ops::delete_connection` — the EXACT function the
+                            // panel's Delete button calls, which is the whole reason this arm is
+                            // three lines. A map-side `core.remove_connection` here would be a
+                            // second deletion path: a second place to keep the `after_local_edit`
+                            // tail, the `connection_count` guard and the one-txn-one-Ctrl+Z promise
+                            // correct, and the second one is always the one that rots (T-241).
+                            //
+                            // A BRANCH INSIDE THE ARM, not a second `"Delete"` arm with a guard.
+                            // Both would behave identically, but a new guard TERM has to be readable
+                            // by `eden_help`'s keymap census (`parse_guard`) — the census refuses to
+                            // guess at a term it cannot parse, because a misread guard would silently
+                            // widen or narrow the binding it reports collisions for. `Delete` keeps
+                            // its one arm and its one censused `!modk` guard; what changed is what
+                            // the arm DOES, which is not a keymap fact.
+                            //
+                            // The two selections can never both be live: an edge is only selected on
+                            // a pick MISS, and that miss clears the slot selection in the same
+                            // breath. Clearing on delete is the disarm — the id is gone from the
+                            // document after this, so leaving it selected would leave Del pointing at
+                            // a row that no longer exists (and, after a Ctrl+Z restored it, silently
+                            // re-armed).
+                            "Delete" if !modk => {
+                                match selected_connection.try_get_untracked().flatten() {
+                                    Some(id) => {
+                                        selected_connection.set(None);
+                                        crate::editor_ops::delete_connection(&id)
+                                    }
+                                    None => crate::editor_ops::delete_selection(),
+                                }
+                            }
                             "Backspace" if !modk => {
                                 chrome_hidden.set(!chrome_hidden.get_untracked());
                                 true
@@ -4361,6 +4639,47 @@ pub fn MissionEditorPage() -> impl IntoView {
                                     if let Some(ref id) = hit {
                                         let _ = crate::editor_ops::complete_connect(id);
                                     }
+                                }
+                                // ══════ T-780 — pick the CONNECTION line the operator drew ══════
+                                //
+                                // Runs ONLY on a miss: an entity always wins its own pixels, so an
+                                // edge can never steal a click from the slot it ends at. That
+                                // ordering is also what keeps the two selections mutually exclusive
+                                // — a hit clears the edge, and a plain miss is the only thing that
+                                // can set one (`apply_click(None, false)` clears the slot selection
+                                // in the very same breath).
+                                //
+                                // Against the FROZEN press camera `p.cam` (X-05), like the slot pick
+                                // above, so a click during an inertial pan tests the geometry the
+                                // operator was actually looking at. The tolerance is derived by
+                                // unprojecting two points `CONN_PICK_PX` apart rather than reading a
+                                // scale off the camera: it stays a constant SCREEN radius at every
+                                // zoom without this file learning the projection's internals.
+                                //
+                                // NO affordance is painted anywhere on the strength of this pick,
+                                // and that is on purpose (wave 129). This is a SELECTION gesture,
+                                // the same kind a slot click is — not a route to an inspector — so
+                                // there is no "can this subject be clicked" question to ask, and
+                                // therefore no second answer to it. The tint the picked edge gets is
+                                // the CONSEQUENCE of the click, applied after the fact by the lane
+                                // Effect, never a promise made before it. Nothing here consults
+                                // `route_target` or a hardcoded kind list.
+                                if hit.is_some() {
+                                    selected_connection.set(None);
+                                } else if !additive {
+                                    let w = p.cam.unproject_xy(p.start_x, p.start_y);
+                                    let w2 =
+                                        p.cam.unproject_xy(p.start_x + CONN_PICK_PX, p.start_y);
+                                    let tol = (w2[0] - w[0]).hypot(w2[1] - w[1]);
+                                    let edge = doc.borrow().as_ref().and_then(|c| {
+                                        pick_connection(
+                                            &live_connection_segments(c),
+                                            w[0],
+                                            w[1],
+                                            tol,
+                                        )
+                                    });
+                                    selected_connection.set(edge);
                                 }
                                 {
                                     let mut sel = selection.borrow_mut();
@@ -7317,13 +7636,25 @@ mod t662_input_traps {
             !raw.contains(combined.as_str()),
             "T-662: Backspace must no longer be aliased to Delete — the combined match arm is the bug"
         );
+        // T-780 widened the arm's BODY (a map-selected connection line is deleted through
+        // `editor_ops::delete_connection`, the panel's own verb; everything else still falls to
+        // `delete_selection`), so this pin no longer matches the one-expression form it was written
+        // against. The CLAIM is unchanged and is what is asserted: `Delete` alone is still its own
+        // arm, and it still removes the selection. Scoped to the window between the two arms, which
+        // is the same unambiguous window the Backspace behaviour check below uses.
+        let del_at = raw
+            .find("\"Delete\" if !modk =>")
+            .expect("Delete alone must still be its own match arm");
+        let bs_arm = raw
+            .find("\"Backspace\" if !modk =>")
+            .expect("Backspace must be its own match arm");
         assert!(
-            raw.contains("\"Delete\" if !modk => crate::editor_ops::delete_selection()"),
-            "Delete alone must still remove the selection"
+            del_at < bs_arm,
+            "the Delete arm must still precede the Backspace arm"
         );
         assert!(
-            raw.contains("\"Backspace\" if !modk =>"),
-            "Backspace must be its own match arm"
+            raw[del_at..bs_arm].contains("crate::editor_ops::delete_selection()"),
+            "Delete alone must still remove the selection"
         );
 
         // Behaviour of the Backspace arm: it toggles chrome_hidden and does NOT call delete. The
@@ -10989,6 +11320,304 @@ mod t768_connect_lmb_complete {
         assert!(
             !perturbed.contains(&complete),
             "fired rule: deleting complete_connect must break the T-768 LMB pin"
+        );
+    }
+}
+
+/// T-780 — the connection LINE: geometry, packing, hit test, and the four wiring facts that make
+/// `CONN-DEL-001` reachable from the map.
+///
+/// The first three are behaviour tests over the pure functions. The rest are Class-R pins, because
+/// the wiring lives in `#[cfg(target_arch = "wasm32")]` closures no native test can call: they are
+/// taken over `live_code` (comments AND string literals blanked, test module cut), so a needle can
+/// never be satisfied by the prose that describes it or by this module's own assertion text.
+#[cfg(test)]
+mod t780_connection_line {
+    use super::{
+        connection_lane_verts, connection_segments, pick_connection, ConnSegment, CONN_LINE_RGBA,
+        CONN_LINE_SELECTED_RGBA,
+    };
+    use crate::arsenal::class_r_scrub::{live_code, only_body};
+    use std::collections::HashMap;
+
+    fn positions() -> HashMap<String, (f64, f64)> {
+        [
+            ("a".to_string(), (0.0, 0.0)),
+            ("b".to_string(), (100.0, 0.0)),
+            ("c".to_string(), (0.0, 100.0)),
+        ]
+        .into_iter()
+        .collect()
+    }
+
+    fn rows(pairs: &[(&str, &str, &str)]) -> String {
+        let arr: Vec<serde_json::Value> = pairs
+            .iter()
+            .map(|(id, from, to)| {
+                serde_json::json!({"id": id, "kind": "sync", "from": from, "to": to})
+            })
+            .collect();
+        serde_json::Value::Array(arr).to_string()
+    }
+
+    /// A placed edge becomes one segment between its endpoints, in listing order.
+    #[test]
+    fn placed_edges_become_segments_in_listing_order() {
+        let segs = connection_segments(&rows(&[("k2", "a", "b"), ("k1", "b", "c")]), &positions());
+        assert_eq!(
+            segs,
+            vec![
+                ConnSegment {
+                    id: "k2".to_string(),
+                    ax: 0.0,
+                    ay: 0.0,
+                    bx: 100.0,
+                    by: 0.0
+                },
+                ConnSegment {
+                    id: "k1".to_string(),
+                    ax: 100.0,
+                    ay: 0.0,
+                    bx: 0.0,
+                    by: 100.0
+                },
+            ]
+        );
+    }
+
+    /// A DANGLING edge draws nothing — never a line to the origin. `CONN-DANGLING` is a panel
+    /// finding; a wrong line would be a second report that also lies about where the entity is.
+    /// A self-link (`CONN-SELF`) is dropped too: a zero-length segment is not a clickable artifact.
+    #[test]
+    fn dangling_and_self_edges_draw_nothing() {
+        let segs = connection_segments(
+            &rows(&[
+                ("dangle-from", "ghost", "b"),
+                ("dangle-to", "a", "ghost"),
+                ("self", "a", "a"),
+                ("good", "a", "b"),
+            ]),
+            &positions(),
+        );
+        assert_eq!(segs.len(), 1, "only the resolvable, non-self edge draws");
+        assert_eq!(segs[0].id, "good");
+        // Malformed input is inert, not a panic.
+        assert!(connection_segments("not json", &positions()).is_empty());
+        assert!(connection_segments("{}", &positions()).is_empty());
+    }
+
+    /// 6 floats per vertex, 2 vertices per segment, and the selected edge — and ONLY it — is tinted.
+    #[test]
+    fn lane_verts_tint_exactly_the_selected_edge() {
+        let segs = connection_segments(&rows(&[("k1", "a", "b"), ("k2", "b", "c")]), &positions());
+        let v = connection_lane_verts(&segs, Some("k2"));
+        assert_eq!(v.len(), 2 * 12, "6 floats/vert, 2 verts/segment");
+        assert_eq!((v[0], v[1]), (0.0, 0.0));
+        assert_eq!((v[6], v[7]), (100.0, 0.0));
+        assert_eq!(v[2..6], CONN_LINE_RGBA, "k1 is not selected");
+        assert_eq!(v[8..12], CONN_LINE_RGBA, "both k1 verts share its colour");
+        assert_eq!(v[14..18], CONN_LINE_SELECTED_RGBA, "k2 is selected");
+        assert_eq!(v[20..24], CONN_LINE_SELECTED_RGBA);
+        // No selection ⇒ nothing tinted; an id that names no edge ⇒ nothing tinted (a stale
+        // selection whose edge was undone away is inert, never a mis-tint of some other edge).
+        for sel in [None, Some("gone")] {
+            let plain = connection_lane_verts(&segs, sel);
+            assert!(plain.chunks_exact(6).all(|c| c[2..6] == CONN_LINE_RGBA[..]));
+        }
+        assert!(connection_lane_verts(&[], None).is_empty());
+    }
+
+    /// The hit test is point-to-SEGMENT: near the span hits, past the end does not (the
+    /// infinite-line form would select a short edge from far off its extension), and the NEAREST
+    /// edge wins when two are in range.
+    #[test]
+    fn pick_is_nearest_segment_within_tolerance() {
+        let segs = connection_segments(&rows(&[("k1", "a", "b"), ("k2", "a", "c")]), &positions());
+        // 3 m off the middle of the a→b edge, tolerance 5 m.
+        assert_eq!(
+            pick_connection(&segs, 50.0, 3.0, 5.0).as_deref(),
+            Some("k1")
+        );
+        // Same perpendicular offset, outside tolerance.
+        assert_eq!(pick_connection(&segs, 50.0, 9.0, 5.0), None);
+        // On the a→b LINE but 40 m past its `b` end — the extension is not the edge.
+        assert_eq!(pick_connection(&segs, 140.0, 0.0, 5.0), None);
+        // Near the shared corner both edges are in range; the closer one wins.
+        assert_eq!(
+            pick_connection(&segs, 2.0, 9.0, 20.0).as_deref(),
+            Some("k2")
+        );
+        assert_eq!(
+            pick_connection(&segs, 9.0, 2.0, 20.0).as_deref(),
+            Some("k1")
+        );
+        assert_eq!(pick_connection(&[], 0.0, 0.0, 100.0), None);
+    }
+
+    fn page() -> String {
+        let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
+        let raw = include_str!("mission_editor.rs");
+        assert_eq!(raw.matches(anchor.as_str()).count(), 1);
+        live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])
+    }
+
+    /// **The lane is fed from the DOCUMENT.** The mount body must bind `connections_bind` from
+    /// `live_connection_segments` (which reads `MissionDocCore`) packed by `connection_lane_verts`,
+    /// re-reading on `doc_tick` — the one channel `after_doc_change` (edit / undo / redo),
+    /// `refresh_hud` (seed / hydrate) and `rebind_engine_from_doc` (IDB restore + engine mount) all
+    /// bump. Deleting the `doc_tick` read is exactly the T-069 / T-672 stale-lane defect, and it
+    /// turns this pin RED.
+    #[test]
+    fn lane_is_bound_from_the_document_on_every_doc_tick() {
+        let mount = only_body(&page(), "canvas_ref.on_load(").to_string();
+        let bind = ["connections", "_bind("].concat();
+        let build = ["live_connection", "_segments"].concat();
+        let pack = ["connection_lane", "_verts("].concat();
+        assert!(
+            mount.contains(&bind),
+            "T-780: the mount must call connections_bind — without it the lane draws nothing"
+        );
+        assert!(
+            mount.contains(&build),
+            "T-780: the lane must be built from live_connection_segments (the document read)"
+        );
+        assert!(
+            mount.contains(&pack),
+            "T-780: the lane must be packed by connection_lane_verts"
+        );
+        let tick = ["doc_tick", ".get()"].concat();
+        assert!(
+            mount.contains(&tick),
+            "T-780: the feed must re-read doc_tick, or the lane goes stale on undo/redo/restore"
+        );
+    }
+
+    /// **Delete on the map routes through the PANEL's verb.** The keydown must call
+    /// `editor_ops::delete_connection` — the same function `ConnectionsPanelOverlay`'s per-row
+    /// button calls — off the map selection, and the slot `delete_selection` must survive as the
+    /// other branch of the SAME arm, so one keypress can never delete both an edge and a slot.
+    #[test]
+    fn map_delete_calls_the_panels_delete_connection() {
+        let keys = only_body(&page(), "let onkeydown =").to_string();
+        let verb = ["editor_ops", "::", "delete_connection("].concat();
+        let sel = ["selected_", "connection.try_get_untracked()"].concat();
+        assert!(
+            keys.contains(&verb),
+            "T-780: Delete must route through editor_ops::delete_connection (the panel's own verb)"
+        );
+        let at_verb = keys.find(&verb).expect("asserted above");
+        let at_sel = keys
+            .find(&sel)
+            .expect("T-780: the Delete branch must read the map connection selection");
+        assert!(
+            at_sel < at_verb,
+            "T-780: the map selection must be read before the delete, not after it"
+        );
+        let fallthrough = ["editor_ops", "::", "delete_selection()"].concat();
+        assert!(
+            keys[at_verb..].contains(&fallthrough),
+            "T-780: the slot Delete must survive as the other branch — this is an addition to the \
+             Delete arm, not a replacement of it"
+        );
+    }
+
+    /// **No second deletion path, and no kind list.** UNSCOPED over the whole live page (never
+    /// scoped — a scoped negative is green by construction): this file must reach the core's
+    /// `remove_connection` only through `editor_ops`, and the map path must not re-derive which
+    /// connections are actionable from a hardcoded vocabulary (the wave-129 rule — a kind list is a
+    /// second answer to a question that already has one).
+    #[test]
+    fn no_second_delete_path_and_no_hardcoded_kind_list() {
+        let code = page();
+        let core_delete = ["core.", "remove_connection("].concat();
+        assert!(
+            !code.contains(&core_delete),
+            "T-780: a map-side core.remove_connection would be a second CONN-DEL-001 vocabulary"
+        );
+        let kinds = ["ConnKind", "::parse"].concat();
+        assert!(
+            !code.contains(&kinds),
+            "T-780: the map connection path must not gate on a hardcoded kind list"
+        );
+    }
+
+    /// **THE HISTORY CHAIN, checked rather than claimed.** The acceptance for this lane is: draw an
+    /// edge, then UNDO, REDO and RESTORE FROM IDB, and the line survives each one. The feed above
+    /// re-binds on `doc_tick`; this pin proves every one of those paths actually reaches `doc_tick`,
+    /// so "it survives history" is a checked chain and not a hope:
+    ///
+    /// ```text
+    ///   undo / redo / a committed edit  → after_doc_change      ─┐
+    ///   the mount seed / server hydrate → refresh_hud           ─┼→ refresh_signals
+    ///   the IDB restore swap + the      → rebind_engine_from_doc ┘        │
+    ///   engine-mount handshake                                           ▼
+    ///                                          editor_ops::refresh_docks → doc_tick.set(n + 1)
+    /// ```
+    ///
+    /// This is the T-069 / T-672 defect stated as a test: break ANY link and the lane keeps drawing
+    /// whatever the document held before the undo. `mission_history.rs` and `editor_ops.rs` are read
+    /// here, never written — the chain already existed; what is new is that something checks it.
+    #[test]
+    fn every_history_path_reaches_the_doc_tick_the_lane_binds_on() {
+        let hist = live_code(include_str!("mission_history.rs"));
+        let ops = live_code(include_str!("editor_ops.rs"));
+        let signals = ["refresh_", "signals("].concat();
+        let docks = ["editor_ops", "::", "refresh_docks()"].concat();
+        let tail = ["after_doc", "_change(ctx)"].concat();
+
+        for (name, marker) in [("undo", "pub fn undo"), ("redo", "pub fn redo")] {
+            assert!(
+                only_body(&hist, marker).contains(&tail),
+                "T-780: {name} must run after_doc_change, or the lane never re-reads the document"
+            );
+        }
+        for (name, marker) in [
+            ("after_doc_change (edit/undo/redo)", "fn after_doc_change"),
+            ("refresh_hud (mount seed / hydrate)", "pub fn refresh_hud"),
+            (
+                "rebind_engine_from_doc (IDB restore)",
+                "pub fn rebind_engine_from_doc",
+            ),
+        ] {
+            assert!(
+                only_body(&hist, marker).contains(&signals),
+                "T-780: {name} must reach refresh_signals — it is the only route to doc_tick"
+            );
+        }
+        assert!(
+            only_body(&hist, "fn refresh_signals").contains(&docks),
+            "T-780: refresh_signals must call editor_ops::refresh_docks"
+        );
+        let bump = only_body(&ops, "pub fn refresh_docks");
+        assert!(
+            bump.contains("doc_tick") && bump.contains(".set("),
+            "T-780: refresh_docks must bump doc_tick — the one channel the lane binds on"
+        );
+    }
+
+    /// Hollow canary: the two pins above are load-bearing, not decorative — stripping either needle
+    /// from an in-memory copy of the real source breaks the assertion that found it.
+    #[test]
+    fn connection_pins_are_load_bearing() {
+        let mount = only_body(&page(), "canvas_ref.on_load(").to_string();
+        let bind = ["connections", "_bind("].concat();
+        assert!(
+            mount.contains(&bind),
+            "canary: the real mount binds the lane"
+        );
+        assert!(
+            !mount.replacen(&bind, "/* hollow */", 1).contains(&bind),
+            "fired rule: deleting connections_bind must break the T-780 feed pin"
+        );
+        let keys = only_body(&page(), "let onkeydown =").to_string();
+        let verb = ["editor_ops", "::", "delete_connection("].concat();
+        assert!(
+            keys.contains(&verb),
+            "canary: the real keydown deletes edges"
+        );
+        assert!(
+            !keys.replacen(&verb, "/* hollow */", 1).contains(&verb),
+            "fired rule: deleting the delete_connection call must break the T-780 delete pin"
         );
     }
 }

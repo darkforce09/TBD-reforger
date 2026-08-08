@@ -68,6 +68,23 @@ pub enum LaneRole {
     /// note never occludes a unit). Slot-atlas rings; not on the pick/SoA bridge (same hazard
     /// T-760 documented for markers — comments must not ride `slots_bind_soa`).
     MissionComments,
+    /// T-780 — the editor-only CONNECTION graph, drawn as one hairline segment per edge between
+    /// its two endpoints (`Contours` / `ForestOutline` / `SquadLinks` / `MissionZones` shape — a
+    /// flat `[x,y,r,g,b,a]…` LineList, no new pipeline and no new atlas).
+    ///
+    /// **Why this lane exists at all.** T-672 shipped the connection graph with no map artifact, so
+    /// `CONN-DEL-001` was reachable only from the Connections panel's per-row Delete: an author who
+    /// drew an edge on the map had nothing on the map to click. A line is the artifact.
+    ///
+    /// Order: above `MissionComments` (an edge is mission data, and it must composite over the
+    /// annotation glyphs it may pass under) and below `SquadLinks` — the squad hairlines are
+    /// structural ORBAT truth and win the overprint, exactly as every mission lane loses to
+    /// `Slots`, so a connection can never occlude a unit ring.
+    ///
+    /// Fed by its own typed engine API (`connections_bind`), like `MissionMarkers` /
+    /// `MissionComments` and unlike `SquadLinks` — so it has no `role_id` and cannot be reached
+    /// through the generic vector-lane upload path.
+    MissionConnections,
     /// T-180.4 — squad leader→member hairline links (under slot rings).
     SquadLinks,
     /// T-180.8 — mission vehicle discs (under slot rings; pick-safe, separate from Slots).
@@ -125,14 +142,15 @@ pub fn lane_order(role: LaneRole) -> u8 {
         LaneRole::MissionZones => 23,
         LaneRole::MissionMarkers => 24,
         LaneRole::MissionComments => 25,
-        LaneRole::SquadLinks => 26,
-        LaneRole::MissionVehicles => 27,
-        LaneRole::Slots => 28,
-        LaneRole::SlotPlacePreview => 29,
-        LaneRole::SlotDrag => 30,
-        LaneRole::Clusters => 31,
-        LaneRole::Marquee => 32,
-        LaneRole::MarqueeOutline => 33,
+        LaneRole::MissionConnections => 26,
+        LaneRole::SquadLinks => 27,
+        LaneRole::MissionVehicles => 28,
+        LaneRole::Slots => 29,
+        LaneRole::SlotPlacePreview => 30,
+        LaneRole::SlotDrag => 31,
+        LaneRole::Clusters => 32,
+        LaneRole::Marquee => 33,
+        LaneRole::MarqueeOutline => 34,
     }
 }
 
@@ -141,7 +159,7 @@ pub fn lane_order(role: LaneRole) -> u8 {
 /// tag-set assertion then fails until the variant is listed here too. Tests that must consider
 /// *every* lane (e.g. `marquee_lanes_are_topmost_fill_then_border`) derive from this rather than
 /// a hand-kept copy — a hand-kept copy silently stops examining each new lane.
-pub const ALL_LANES: [LaneRole; 34] = [
+pub const ALL_LANES: [LaneRole; 35] = [
     LaneRole::Stress,
     LaneRole::Calibration,
     LaneRole::Satellite,
@@ -168,6 +186,7 @@ pub const ALL_LANES: [LaneRole; 34] = [
     LaneRole::MissionZones,
     LaneRole::MissionMarkers,
     LaneRole::MissionComments,
+    LaneRole::MissionConnections,
     LaneRole::SquadLinks,
     LaneRole::MissionVehicles,
     LaneRole::Slots,
@@ -301,6 +320,9 @@ pub fn lane_role_to_u32(role: LaneRole) -> Option<u32> {
         | LaneRole::Grid
         | LaneRole::MissionMarkers
         | LaneRole::MissionComments
+        // T-780: fed by `connections_bind`, the typed API markers/comments use — no upload id, so
+        // the generic `upload_hairline_segments(role, …)` path cannot reach this lane by number.
+        | LaneRole::MissionConnections
         | LaneRole::MissionVehicles
         | LaneRole::Slots
         | LaneRole::SlotPlacePreview
@@ -587,19 +609,20 @@ mod lane_order_pins {
                 L::MissionZones => 23,
                 L::MissionMarkers => 24,
                 L::MissionComments => 25,
-                L::SquadLinks => 26,
-                L::MissionVehicles => 27,
-                L::Slots => 28,
-                L::SlotPlacePreview => 29,
-                L::SlotDrag => 30,
-                L::Clusters => 31,
-                L::Marquee => 32,
-                L::MarqueeOutline => 33,
+                L::MissionConnections => 26,
+                L::SquadLinks => 27,
+                L::MissionVehicles => 28,
+                L::Slots => 29,
+                L::SlotPlacePreview => 30,
+                L::SlotDrag => 31,
+                L::Clusters => 32,
+                L::Marquee => 33,
+                L::MarqueeOutline => 34,
             }
         }
         let mut tags: Vec<u8> = ALL_LANES.into_iter().map(tag).collect();
         tags.sort_unstable();
-        let expected: Vec<u8> = (0..34).collect();
+        let expected: Vec<u8> = (0..35).collect();
         assert_eq!(
             tags, expected,
             "ALL_LANES must list every variant exactly once"
@@ -659,6 +682,35 @@ mod lane_order_pins {
         assert!(lane_order(L::MissionComments) < lane_order(L::SquadLinks));
         assert!(lane_order(L::MissionComments) < lane_order(L::MissionVehicles));
         assert!(lane_order(L::MissionComments) < lane_order(L::Slots));
+    }
+
+    /// T-780: connection edges above the comment/marker glyphs, below squad links + vehicles +
+    /// slots — an edge never occludes a unit ring, and the ORBAT hairlines win the overprint.
+    #[test]
+    fn mission_connections_sit_between_comments_and_squad_links() {
+        assert!(lane_order(L::MissionConnections) > lane_order(L::MissionComments));
+        assert!(lane_order(L::MissionConnections) > lane_order(L::MissionMarkers));
+        assert!(lane_order(L::MissionConnections) > lane_order(L::MissionZones));
+        assert!(lane_order(L::MissionConnections) > lane_order(L::Grid));
+        assert!(lane_order(L::MissionConnections) < lane_order(L::SquadLinks));
+        assert!(lane_order(L::MissionConnections) < lane_order(L::MissionVehicles));
+        assert!(lane_order(L::MissionConnections) < lane_order(L::Slots));
+    }
+
+    /// T-780 — the connection lane is fed by its OWN typed engine API, exactly like
+    /// `MissionMarkers` / `MissionComments`. It must therefore have NO `role_id`: an upload id
+    /// would make `upload_hairline_segments(role, …)` a second door into the same lane, and a
+    /// second door is a second vocabulary. Pinned in both directions.
+    #[test]
+    fn mission_connections_has_no_wire_upload_id() {
+        assert_eq!(lane_role_to_u32(L::MissionConnections), None);
+        for id in 0..=role_id::MAX {
+            assert_ne!(
+                lane_role_from_u32(id),
+                Some(L::MissionConnections),
+                "id {id} must not resolve to the typed-API connection lane"
+            );
+        }
     }
 
     #[test]
@@ -817,6 +869,61 @@ mod t748_comments_bind_pick_bridge {
         assert!(
             !body.contains("slots_bind_soa"),
             "T-748: comments_bind must not call slots_bind_soa; body:\n{body}"
+        );
+    }
+}
+
+/// T-780 — same shape as the T-748 pin one module up: `engine.rs` is wasm32-gated, so
+/// `connections_bind`'s body cannot host a native Class-R pin of its own. Source-inspect it here.
+///
+/// The body is extracted by brace-matching from its signature, so this module's own source is not
+/// in the haystack — the needles cannot be satisfied by the assertion text that searches for them.
+#[cfg(test)]
+mod t780_connections_bind_pick_bridge {
+    const ENGINE: &str = include_str!("engine.rs");
+
+    fn connections_bind_body() -> String {
+        let sig = "pub fn connections_bind";
+        let start = ENGINE
+            .find(sig)
+            .unwrap_or_else(|| panic!("T-780: missing {sig}"));
+        let after = &ENGINE[start..];
+        let brace = after.find('{').expect("connections_bind body");
+        let mut depth = 0usize;
+        let mut end = brace;
+        for (i, ch) in after[brace..].char_indices() {
+            match ch {
+                '{' => depth += 1,
+                '}' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        end = brace + i + 1;
+                        break;
+                    }
+                }
+                _ => {}
+            }
+        }
+        after[..end].to_string()
+    }
+
+    /// The connection lane is a RENDER lane, not a pick surface: the map hit-test runs app-side off
+    /// the same document rows that feed the lane (`mission_editor::pick_connection`), so this body
+    /// must never enter the slot pick / SoA bridge — the identical hazard T-760 and T-748 pin.
+    #[test]
+    fn connections_bind_body_uploads_its_lane_and_skips_the_pick_bridge() {
+        let body = connections_bind_body();
+        assert!(
+            body.contains("MissionConnections"),
+            "T-780: connections_bind must upload LaneRole::MissionConnections; body:\n{body}"
+        );
+        assert!(
+            !body.contains("last_ids"),
+            "T-780: connections_bind must not touch pick-bridge last_ids; body:\n{body}"
+        );
+        assert!(
+            !body.contains("slots_bind_soa"),
+            "T-780: connections_bind must not call slots_bind_soa; body:\n{body}"
         );
     }
 }

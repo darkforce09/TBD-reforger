@@ -4696,10 +4696,39 @@ impl RenderEngine {
         item_count: u32,
         visible: bool,
     ) {
-        const STRIDE: usize = 6;
         let Some(role_enum) = lane_role_from_u32(role) else {
             return;
         };
+        self.upload_hairline_lane(role_enum, packed, item_count, visible);
+    }
+
+    /// T-780 — bind the editor-only CONNECTION edges: one hairline segment per edge, packed as
+    /// `[x,y,r,g,b,a]` per vertex (2 verts/segment) in the SAME layout `upload_hairline_segments`
+    /// takes. Empty clears the lane.
+    ///
+    /// A typed API rather than a `role_id`, for the reason `markers_bind` / `comments_bind` are:
+    /// the lane has exactly one feeder (`mission_editor`'s document-fed rebind), and an upload id
+    /// would open a second, unpinned door onto it. Colour lives in the caller's packing so the
+    /// SELECTED edge can be tinted without the engine learning what a connection is.
+    ///
+    /// **Not on the pick/SoA bridge** — the same hazard T-760 documented for markers. The map
+    /// hit-test for an edge runs app-side over the same document rows that build these verts, so
+    /// nothing here may touch `last_ids` / `slots_bind_soa`.
+    pub fn connections_bind(&mut self, packed: &[f32], item_count: u32) {
+        self.upload_hairline_lane(LaneRole::MissionConnections, packed, item_count, true);
+    }
+
+    /// The shared hairline upload, by resolved [`LaneRole`]. Split out of
+    /// [`Self::upload_hairline_segments`] so the typed connection API and the `role_id` API build
+    /// byte-identical `LineLane` batches instead of two hand-kept copies of the same packing.
+    fn upload_hairline_lane(
+        &mut self,
+        role_enum: LaneRole,
+        packed: &[f32],
+        item_count: u32,
+        visible: bool,
+    ) {
+        const STRIDE: usize = 6;
         if packed.is_empty() || !packed.len().is_multiple_of(STRIDE) {
             self.remove_lane(role_enum);
             self.set_vector_stat(role_enum, 0);
