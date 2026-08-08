@@ -157,11 +157,7 @@ pub fn named_locations() -> Vec<map_engine_core::world::LocationLabel> {
     RENDER_CTX.with(|c| {
         c.borrow()
             .as_ref()
-            .and_then(|(_, host)| {
-                host.borrow()
-                    .as_ref()
-                    .map(|mh| mh.labels.towns().to_vec())
-            })
+            .and_then(|(_, host)| host.borrow().as_ref().map(|mh| mh.labels.towns().to_vec()))
             .unwrap_or_default()
     })
 }
