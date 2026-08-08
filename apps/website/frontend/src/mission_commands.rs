@@ -1576,16 +1576,29 @@ mod tests {
         );
     }
 
-    /// T-746 — `set_row_meta` must retain `game_mode` (and presentation) beside `ROW_META`, and
-    /// expose getters. Without this, ShapeMirror is forced into a second GET just to learn the mode.
+    /// T-746 / wave 131 F2 — `set_row_meta` must retain `detail.game_mode` inside `HydratedRow`
+    /// (not a hollow `game_mode: String::new()` that still greps as `game_mode`). HOST cannot call
+    /// the wasm-only `set_row_meta`; the Class-R body pin is the load-bearing gate. Needles are
+    /// split so this assertion line cannot satisfy itself.
     #[test]
     fn t746_row_hydrate_keeps_game_mode_beside_meta() {
         use crate::arsenal::class_r_scrub::{live_code, only_body};
         let src = live_code(include_str!("mission_commands.rs"));
         let set = only_body(&src, "pub fn set_row_meta");
+        let row_hydrate = format!("{}{}", "ROW_", "HYDRATE");
+        let hydrated = format!("{}{}", "Hydrated", "Row {");
+        let from_detail = format!("{}{}", "game_mode: detail.", "game_mode");
         assert!(
-            set.contains("ROW_HYDRATE") && set.contains("game_mode"),
-            "T-746: set_row_meta must fill ROW_HYDRATE with game_mode"
+            set.contains(&row_hydrate),
+            "T-746: set_row_meta must write ROW_HYDRATE"
+        );
+        assert!(
+            set.contains(&hydrated),
+            "T-746: set_row_meta must construct HydratedRow"
+        );
+        assert!(
+            set.contains(&from_detail),
+            "T-746: HydratedRow.game_mode must come from detail.game_mode (not String::new())"
         );
         for getter in [
             "pub(crate) fn hydrated_row",
