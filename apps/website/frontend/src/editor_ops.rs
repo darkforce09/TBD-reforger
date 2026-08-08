@@ -773,6 +773,12 @@ pub fn paste_at_cursor(cx: Option<f64>, cy: Option<f64>) -> bool {
 // vehicle's heading/crew SHAPE come off `small_maps_json` exactly as `vehicle_rows` reads them. The
 // only transform is absolute→relative: each entry stores `(dx, dz)` from the selection centroid, so
 // a later place re-anchors the centroid at the cursor.
+//
+// T-781 widened the capture twice, and both halves are documented on `capture_selection_entities`:
+// a selected COMMENT is captured (the composable clause of `PLACE-COMMENT-001`) and is stamped back
+// into the editor-only `commentsById` root that never compiles; and every placeable entry carries
+// its AUTHORED elevation through the shared `slot_z` reader, so a composition of rooftop entities
+// no longer comes back on the ground.
 
 /// One saved composition as the palette needs it: identity, metadata, and an entity count for the
 /// row summary. The `entities` payload itself stays in the doc (the dock never needs to unpack it —
@@ -790,10 +796,11 @@ pub struct CompositionRow {
 /// `title` under `category`, authored by `author` (the current user's display string as-authored).
 /// Returns the new composition id, or `None` when the selection is empty / captured nothing.
 ///
-/// Each selected id is classified as a slot, vehicle, or object (whichever map holds it) and emitted
-/// as a RELATIVE-OFFSET entry from the selection centroid. A slot carries role/tag/asset/stance and
-/// its loadout blob; a vehicle carries resourceName/heading/crewed + the crew SHAPE; an object
-/// carries alias/resourceName/faction. Runs the shared dirty tail (one undo step for the save).
+/// Each selected id is classified as a slot, vehicle, object, or comment (whichever map holds it)
+/// and emitted as a RELATIVE-OFFSET entry from the selection centroid. A slot carries
+/// role/tag/asset/stance and its loadout blob; a vehicle carries resourceName/heading/crewed + the
+/// crew SHAPE; an object carries alias/resourceName/faction; a comment (T-781) carries its
+/// title/tooltip and nothing else. Runs the shared dirty tail (one undo step for the save).
 #[must_use]
 pub fn save_composition(title: String, category: String, author: String) -> Option<String> {
     let new_id = OPS_CTX.with(|c| {
@@ -827,15 +834,32 @@ pub fn save_composition(title: String, category: String, author: String) -> Opti
 }
 
 /// Build the relative-offset `entities` array for a selection. Slots come off `slots_json`
-/// (the exact-f64 dicts the clipboard capture reads); vehicles and objects come off
+/// (the exact-f64 dicts the clipboard capture reads); vehicles, objects and comments come off
 /// `small_maps_json`. The centroid is the mean of every captured entry's world position, in
 /// selection order (a stable f64 sum), so the offsets recenter cleanly on place.
+///
+/// **T-781 Part A — a COMMENT is a capture source.** `PLACE-COMMENT-001` asks for composable
+/// comments; before this, `commentsById` was simply not read here, so a selected comment was
+/// dropped without a word and the composition came back one entity short. A comment entry carries
+/// `title`/`tooltip` and no `resourceName`, because the thing it stamps is an editor-only
+/// annotation that `MissionDocCore::place_composition` writes into the root `comments` map — the
+/// collection `mission::flatten::EditorPayload` does not declare and serde therefore drops before
+/// the mod document exists.
+///
+/// **T-781 Part B — every placeable entry carries its AUTHORED elevation**, resolved through the
+/// shared [`slot_z`] reader against the exact-f64 rows above. Not the materialized SoA: its `zs`
+/// column is f32 and it omits hidden-layer slots (T-665), so a careful operator's tucked-away
+/// rooftop would read back as ground. `slot_z` is written against `{id: {position: {z}}}`, which is
+/// the shape of all three source maps, so this is the one z-resolution vocabulary and not a third.
+/// The elevation is written as a FIELD of the entry that produced it — never a parallel vector — so
+/// no index can drift and give an entity somebody else's height.
 fn capture_selection_entities(core: &MissionDocCore, sel: &[String]) -> Vec<serde_json::Value> {
     let slots = serde_json::from_str::<serde_json::Value>(&core.slots_json()).unwrap_or_default();
     let small =
         serde_json::from_str::<serde_json::Value>(&core.small_maps_json()).unwrap_or_default();
     let vehicles = small.get("vehiclesById").cloned().unwrap_or_default();
     let entities = small.get("entitiesById").cloned().unwrap_or_default();
+    let comments = small.get("commentsById").cloned().unwrap_or_default();
 
     // First pass: resolve each id to (kind, world position, source row) so the centroid is over the
     // SAME set the entries are built from.
@@ -844,6 +868,9 @@ fn capture_selection_entities(core: &MissionDocCore, sel: &[String]) -> Vec<serd
         x: f64,
         y: f64,
         rotation: f64,
+        /// T-781 Part B — the row's authored `position.z`. Zero for a comment, which has no third
+        /// component to carry.
+        elevation: f64,
         row: serde_json::Value,
     }
     let pos = |row: &serde_json::Value| -> (f64, f64, f64) {
@@ -860,6 +887,12 @@ fn capture_selection_entities(core: &MissionDocCore, sel: &[String]) -> Vec<serd
                 .unwrap_or(0.0),
         )
     };
+    // T-781 Part B — the shared z reader, applied to whichever source map holds the id. Resolved in
+    // the SAME iteration that reads x/y/rotation off that row, so the elevation cannot be paired
+    // with a different entity's offsets.
+    let elev_of = |src: &serde_json::Value, id: &str| -> f64 {
+        src.as_object().and_then(|m| slot_z(m, id)).unwrap_or(0.0)
+    };
     let mut captured: Vec<Captured> = Vec::new();
     for id in sel {
         if let Some(row) = slots.get(id) {
@@ -869,6 +902,7 @@ fn capture_selection_entities(core: &MissionDocCore, sel: &[String]) -> Vec<serd
                 x,
                 y,
                 rotation: r,
+                elevation: elev_of(&slots, id),
                 row: row.clone(),
             });
         } else if let Some(row) = vehicles.get(id) {
@@ -878,6 +912,7 @@ fn capture_selection_entities(core: &MissionDocCore, sel: &[String]) -> Vec<serd
                 x,
                 y,
                 rotation: r,
+                elevation: elev_of(&vehicles, id),
                 row: row.clone(),
             });
         } else if let Some(row) = entities.get(id) {
@@ -887,6 +922,27 @@ fn capture_selection_entities(core: &MissionDocCore, sel: &[String]) -> Vec<serd
                 x,
                 y,
                 rotation: r,
+                elevation: elev_of(&entities, id),
+                row: row.clone(),
+            });
+        } else if let Some(row) = comments.get(id) {
+            // T-781 — a comment row's position is `{x, z}`: TWO HORIZONTALS, the `$defs/marker`
+            // vocabulary, and no height at all. Its `z` is therefore the second WORLD axis and
+            // belongs in `y` here beside every other kind's `position.y` — reading it as an
+            // elevation would file the note's northing as its altitude and place it at the origin.
+            let p = row.get("position");
+            let axis = |k: &str| {
+                p.and_then(|p| p.get(k))
+                    .and_then(serde_json::Value::as_f64)
+                    .unwrap_or(0.0)
+            };
+            captured.push(Captured {
+                kind: "comment",
+                x: axis("x"),
+                y: axis("z"),
+                // A note has no heading and no height; both are absent from the row by design.
+                rotation: 0.0,
+                elevation: 0.0,
                 row: row.clone(),
             });
         }
@@ -912,6 +968,12 @@ fn capture_selection_entities(core: &MissionDocCore, sel: &[String]) -> Vec<serd
             e.insert("dx".into(), serde_json::json!(c.x - cx));
             e.insert("dz".into(), serde_json::json!(c.y - cy));
             e.insert("rotation".into(), serde_json::json!(c.rotation));
+            // T-781 Part B — the authored height, spelled `elevation` because `dz` is already spent
+            // on the second HORIZONTAL offset in this same map. `place_composition` reads it back by
+            // that name. Omitted for a comment, whose row has no such component to restore.
+            if c.kind != "comment" {
+                e.insert("elevation".into(), serde_json::json!(c.elevation));
+            }
             match c.kind {
                 "slot" => {
                     e.insert("role".into(), serde_json::json!(s(&c.row, "role")));
@@ -944,6 +1006,14 @@ fn capture_selection_entities(core: &MissionDocCore, sel: &[String]) -> Vec<serd
                     if let Some(crew) = c.row.get("crew").filter(|v| v.is_object()) {
                         e.insert("crew".into(), crew.clone());
                     }
+                }
+                "comment" => {
+                    // T-781 — the two ATTR-FIELD-CMT-* text fields, verbatim and uncapped, exactly
+                    // as the mutators store them (they reach no consumer that could reject them, so
+                    // there is nothing to normalise FOR). The third field, position, is already the
+                    // entry's `(dx, dz)`.
+                    e.insert("title".into(), serde_json::json!(s(&c.row, "title")));
+                    e.insert("tooltip".into(), serde_json::json!(s(&c.row, "tooltip")));
                 }
                 _ => {
                     // object
@@ -4163,11 +4233,18 @@ fn mint_id(ctx: &OpsCtx, core: &MissionDocCore) -> String {
 /// (a composition place mixes all three, so uniqueness against the slot SoA alone — [`mint_id`] —
 /// is not enough). The union is read once; each minted id is also added to it so a run of ids inside
 /// one call cannot collide with itself.
+///
+/// **T-781 — `commentsById` joined that union** the moment a composition could carry a comment. The
+/// disjoint `cmt-`/`n` prefixes ([`mint_comment_id`]) keep hand-placed notes out of the way, but a
+/// composition's comment is minted HERE and so gets an `n{k}` id like everything else; without this
+/// key a second placement could re-mint an id an earlier composed note already holds and upsert it
+/// away. Uniqueness is proven against the live doc rather than assumed, exactly as [`mint_id`]
+/// argues: undo frees ids and an IDB restore can bring back a document that already used them.
 fn mint_ids(ctx: &OpsCtx, core: &MissionDocCore, count: usize) -> Vec<String> {
     let mut existing: std::collections::HashSet<String> =
         core.materialize().ids.into_iter().collect();
     if let Ok(small) = serde_json::from_str::<serde_json::Value>(&core.small_maps_json()) {
-        for key in ["vehiclesById", "entitiesById"] {
+        for key in ["vehiclesById", "entitiesById", "commentsById"] {
             if let Some(obj) = small.get(key).and_then(|v| v.as_object()) {
                 existing.extend(obj.keys().cloned());
             }
