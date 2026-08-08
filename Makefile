@@ -492,7 +492,7 @@ ci-local: ## Full CI gate locally — mirrors ci.yml (run `make db-up` first)
 	$(MAKE) verify-t456
 	@bash scripts/mod/verify-t468-ci-schema-parity.sh
 
-ci-local-leptos: ## CI gate: Leptos SPA fmt + clippy(wasm32 --all-targets) + native tests + trunk release build (mirrors ci.yml website-frontend; T-752)
+ci-local-leptos: ## CI gate: Leptos SPA fmt + clippy(wasm32 --all-targets) + native tests + trunk release build (mirrors ci.yml website-frontend clippy --all-targets; T-752)
 	cargo fmt -p website-frontend --check
 	cargo clippy -p website-frontend --target wasm32-unknown-unknown --all-targets
 	cargo test -p website-frontend

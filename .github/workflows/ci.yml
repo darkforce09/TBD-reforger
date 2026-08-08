@@ -138,7 +138,8 @@ jobs:
       - name: fmt
         run: cargo fmt -p website-frontend --check
       - name: clippy (wasm32)
-        run: cargo clippy -p website-frontend --target wasm32-unknown-unknown
+        # --all-targets: see #[cfg(test)] / native-shell lints (T-752; warn mode, no -D).
+        run: cargo clippy -p website-frontend --target wasm32-unknown-unknown --all-targets
       - name: cargo test (native shell)
         run: cargo test -p website-frontend
       - name: trunk build --release
