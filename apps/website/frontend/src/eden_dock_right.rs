@@ -1225,13 +1225,13 @@ pub fn DockRight(
     // nor a zone, so putting its id in `select_tool`'s selection would show `SEL 1` with nothing
     // highlighted. The owner-link line renders while this is `Some`.
     let trigger_selected = RwSignal::new(None::<String>);
-    // T-069 (RIGHT-MODE-006) — the selected marker's doc id (Attributes target), or `None`. Its own
-    // signal for the same reason `zone_selected` / `trigger_selected` are: a marker is not a slot,
-    // so putting its id in `select_tool`'s selection would show `SEL 1` with nothing highlighted.
-    // The id alone is enough of a handle even though the store addresses a marker by
-    // `(factionId, id)` — `editor_ops::mint_marker_id` mints ids unique across every faction
-    // precisely so this one-string selection stays unambiguous, and the row carries its own faction.
-    let marker_selected = RwSignal::new(None::<String>);
+    // T-069 (RIGHT-MODE-006) — the selected marker's `(factionId, id)` address (Attributes target),
+    // or `None`. Its own signal for the same reason `zone_selected` / `trigger_selected` are: a
+    // marker is not a slot, so putting its id in `select_tool`'s selection would show `SEL 1` with
+    // nothing highlighted. Selection is the full address pair — not id alone — because a hydrated
+    // foreign payload can carry the same marker id under two factions (T-763 / wave-116 finding 7).
+    // This editor's own minting pairs `(factionId, id)` already; the Attributes lookup must too.
+    let marker_selected = RwSignal::new(None::<(String, String)>);
     // T-695 (NEW-F5 / 3den E3) — the starred-asset collection, seeded from localStorage on mount so
     // it survives a catalogue reload, and written back on every star/unstar. It is dock-local
     // because it is a per-user editor preference, not mission state: nothing in the document, in
@@ -2777,9 +2777,11 @@ pub(crate) fn triggers_panel(
 //
 // Tab 2 carried a one-line "lands in this ticket" stub from the day the dock was written;
 // `EdenSubmode::Markers` and `from_tab(2)` were already there, so only the BODY was missing. This is
-// that body. (The stub's exact wording is deliberately not quoted anywhere in this file —
-// `favourites_tab_is_wired_not_stubbed` asserts its ABSENCE, and a quotation in a comment would make
-// that search find its own description.)
+// that body. (Pre-T-069 the T-215 / T-695 pins passed on that LIVE stub — the sentence lived in the
+// rendered view and in the pins' own split literals, never as a comment decoy. Wave-116 finding 5
+// struck that decoy narrative. The inverted pins still refuse a contiguous reintroduction of the
+// stub text anywhere in this module — including comments — so this file cannot become its own
+// haystack.)
 //
 // **The vocabulary is READ from the schema, never typed here.** `$defs/marker.icon` is a CLOSED enum
 // of 64 aliases — the `TBD_MarkerIcons.EnsureAliases` register keys, the words a mission author may
@@ -2876,7 +2878,7 @@ pub fn filter_marker_icons(query: &str) -> Vec<&'static str> {
 #[cfg(target_arch = "wasm32")]
 pub(crate) fn markers_panel(
     doc_tick: RwSignal<u64>,
-    selected: RwSignal<Option<String>>,
+    selected: RwSignal<Option<(String, String)>>,
 ) -> AnyView {
     use crate::eden_tree::{ROW, ROW_ACTIVE};
     use crate::eden_zones::humanize_token;
@@ -2990,9 +2992,9 @@ pub(crate) fn markers_panel(
                     {rows
                         .into_iter()
                         .map(|m| {
-                            let id = m.id.clone();
-                            let sel_id = m.id.clone();
-                            let sel_id2 = m.id.clone();
+                            let addr = (m.faction_id.clone(), m.id.clone());
+                            let sel_addr = addr.clone();
+                            let sel_addr2 = addr.clone();
                             // The caption, or the alias when uncaptioned — never an invented
                             // placeholder, because an empty label is a real authored state.
                             let title = if m.label.is_empty() {
@@ -3005,15 +3007,15 @@ pub(crate) fn markers_panel(
                                 <li>
                                     <button
                                         type="button"
-                                        aria-pressed=move || selected.get().as_deref() == Some(sel_id.as_str())
+                                        aria-pressed=move || selected.get().as_ref() == Some(&sel_addr)
                                         class=move || {
-                                            if selected.get().as_deref() == Some(sel_id2.as_str()) {
+                                            if selected.get().as_ref() == Some(&sel_addr2) {
                                                 ROW_ACTIVE
                                             } else {
                                                 ROW
                                             }
                                         }
-                                        on:click=move |_| selected.set(Some(id.clone()))
+                                        on:click=move |_| selected.set(Some(addr.clone()))
                                     >
                                         <MaterialIcon name="place" class="block text-sm" />
                                         <span class="truncate">{title}</span>
@@ -3033,10 +3035,15 @@ pub(crate) fn markers_panel(
         // ── Attributes for the selected marker ───────────────────────────────────────────────
         {move || {
             let _ = doc_tick.get();
-            let Some(id) = selected.get() else {
+            let Some((faction_id, id)) = selected.get() else {
                 return ().into_any();
             };
-            let Some(m) = ops::marker_rows().into_iter().find(|r| r.id == id) else {
+            // T-763 — match on the full `(factionId, id)` address. Id-alone would edit the first
+            // faction's row when a hydrated foreign payload reused the same marker id on two sides.
+            let Some(m) = ops::marker_rows()
+                .into_iter()
+                .find(|r| r.faction_id == faction_id && r.id == id)
+            else {
                 // Deleted underneath us (undo, or a reload that dropped it).
                 return ().into_any();
             };
@@ -3056,7 +3063,7 @@ pub(crate) fn markers_panel(
 fn marker_attributes(
     m: crate::editor_ops::MarkerRow,
     doc_tick: RwSignal<u64>,
-    selected: RwSignal<Option<String>>,
+    selected: RwSignal<Option<(String, String)>>,
 ) -> AnyView {
     use crate::eden_zones::humanize_token;
     use crate::editor_ops as ops;
@@ -3182,7 +3189,7 @@ fn marker_attributes(
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) fn markers_panel(
     doc_tick: RwSignal<u64>,
-    selected: RwSignal<Option<String>>,
+    selected: RwSignal<Option<(String, String)>>,
 ) -> AnyView {
     let _ = (doc_tick, selected);
     ().into_any()
@@ -4102,8 +4109,7 @@ mod tests {
         );
         assert!(
             !SRC.contains(&format!("Marker placement {} T-069.", "lands in")),
-            "the marker stub message must be gone — including from comments, where it would \
-             make this test's own haystack lie"
+            "the former LIVE stub sentence must stay gone (pre-T-069 pins passed on that live              view text, not a comment decoy — wave-116 finding 5); contiguous reintroduction              anywhere in this module, comments included, would make the haystack lie"
         );
     }
 
@@ -4320,8 +4326,9 @@ mod tests {
     /// The ticket's own registry summary says free placement needs generic add/move/remove on
     /// `markersById`. That premise is dead: `mission.schema.json` declares markers in exactly one
     /// place (`$defs/briefing.markers[]`) and no top-level `markers` property at all, and
-    /// `flatten_to_mod_document` deserialises an `EditorPayload` that declares no root key — so the
-    /// root map is a closed hydrate→emit loop and a marker authored there reaches no mod subsystem.
+    /// `flatten_to_mod_document` deserialises an `EditorPayload` that declares no root `markers`
+    /// key (it does declare zones/entities/vehicles/…) — so the root map is a closed hydrate→emit
+    /// loop and a marker authored there reaches no mod subsystem.
     /// `store.rs`'s `a_marker_in_the_root_map_never_reaches_the_compiled_document` proves that end
     /// of it; this pins that the PRODUCT surface never went to the dead one.
     ///
@@ -4371,6 +4378,39 @@ mod tests {
             fields,
             vec!["faction_id", "id", "x", "z", "icon", "label"],
             "MarkerRow is the four `$defs/marker` fields plus the (factionId, id) address"
+        );
+    }
+
+    /// T-763 — Marker Attributes selects by `(factionId, id)`, never id alone.
+    ///
+    /// A hydrated foreign payload can carry the same marker id under two factions; id-alone
+    /// `find` would edit the first match while the operator has the second selected. Needles are
+    /// fragment-assembled so this module is not its own haystack.
+    #[test]
+    fn marker_attributes_selects_by_faction_id_and_id() {
+        const SRC: &str = include_str!("eden_dock_right.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("eden_dock_right.rs must have a #[cfg(test)] module");
+        // Scope to the Markers panel body — triggers still select by id alone, legally.
+        let panel = production
+            .split("pub(crate) fn markers_panel(")
+            .nth(1)
+            .and_then(|t| t.split("fn marker_attributes(").next())
+            .expect("markers_panel must precede marker_attributes");
+        let find = format!("r.faction_id == {} && r.id == {}", "faction_id", "id");
+        assert!(
+            panel.contains(&find),
+            "Attributes lookup must match on (factionId, id); got no `{find}` in markers_panel"
+        );
+        assert!(
+            !panel.contains(&format!("{}{}", "find(|r| r.id == ", "id)")),
+            "markers_panel must not select by id alone"
+        );
+        assert!(
+            production.contains(&format!("{}{}", "None::<(String, ", "String)>")),
+            "marker_selected must be Option<(factionId, id)>"
         );
     }
 }

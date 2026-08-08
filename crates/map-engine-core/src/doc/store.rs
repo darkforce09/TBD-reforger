@@ -155,7 +155,7 @@ pub struct MissionDocCore {
     /// a key of `mission::flatten::EditorPayload`, the struct `flatten_to_mod_document` deserialises
     /// the saved payload into. Serde therefore drops the array before any mod-document code sees it
     /// — the same mechanism the root `markers` map's §authority note describes at
-    /// [`Self::set_faction_briefing_marker`] ("declares no root key whatsoever, so that lane is
+    /// [`Self::set_faction_briefing_marker`] ("declares no root `markers` key, so that lane is
     /// never compiled"), and the same one `editorHidden` rides.
     ///
     /// So the rule holds by NOT declaring, which means the way to break it is to ADD a declaration
@@ -3613,9 +3613,9 @@ impl MissionDocCore {
     /// [`Self::small_maps_json`] emits it as `markersById`). It is authoritative for nothing that
     /// reaches a game server, and that is checkable rather than a matter of taste:
     /// `compile_payload` puts it at the EDITOR payload's `markers` root, and
-    /// `flatten_to_mod_document` deserialises `EditorPayload { editor: EditorGraph { factions,
-    /// squads, slots } }` — which declares no root key whatsoever, so that lane is never compiled.
-    /// It is a closed hydrate→emit loop. **Author here, not there.**
+    /// `flatten_to_mod_document` deserialises an `EditorPayload` that declares zones / entities /
+    /// vehicles / settings / editor / environment — but no root `markers` key — so that lane is
+    /// never compiled. It is a closed hydrate→emit loop. **Author here, not there.**
     ///
     /// The root map is left standing rather than deleted: [`Self::has_content`] counts it for the
     /// warm-session conflict gate, and removing a root map is a migration, not a marker ticket.
@@ -9399,10 +9399,10 @@ mod tests {
     /// T-069's own registry summary says free marker placement needs generic add/move/remove on
     /// `markersById`. That premise is DEAD, and this is the check that says so rather than asserting
     /// it in prose: `mission.schema.json` declares no top-level `markers` property at all, and
-    /// `flatten_to_mod_document` deserialises `EditorPayload { editor: { factions, squads, slots } }`
-    /// — which declares no root key whatsoever. So a row authored into the root map hydrates, emits
-    /// back through `small_maps_json` as `markersById`, and is then dropped on the floor by the
-    /// compiler. Authoring there would have produced markers no mod subsystem can read.
+    /// `flatten_to_mod_document` deserialises an `EditorPayload` that does declare zones / entities /
+    /// vehicles / … but declares no root `markers` key. So a row authored into the root map
+    /// hydrates, emits back through `small_maps_json` as `markersById`, and is then dropped on the
+    /// floor by the compiler. Authoring there would have produced markers no mod subsystem can read.
     ///
     /// The briefing marker on the SAME document is compiled in the same breath, which is what makes
     /// this a contrast and not just an empty-output assertion.
