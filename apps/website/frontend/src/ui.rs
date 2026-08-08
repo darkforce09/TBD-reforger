@@ -451,6 +451,21 @@ pub(crate) mod modal_stack {
             .is_some_and(|(top, _)| *top == id)
     }
 
+    /// Whether any registered overlay currently reports open.
+    ///
+    /// T-726 — non-overlay Escape consumers (the editor's shared ruler/LoS/viewshed arm) consult
+    /// this so an open dialog/menu/picker owns the keystroke. Overlay handlers themselves use
+    /// [`is_topmost_open`]; this is the "is anyone claiming Esc?" half for listeners that are not
+    /// stack entries.
+    ///
+    /// Same clone-out-before-call discipline as [`is_topmost_open`]: predicates may re-enter.
+    #[allow(dead_code)]
+    pub(crate) fn any_open() -> bool {
+        let preds: Vec<Rc<dyn Fn() -> bool>> =
+            REGISTRY.with_borrow(|r| r.iter().map(|(_, f)| Rc::clone(f)).collect());
+        preds.iter().any(|is_open| is_open())
+    }
+
     /// How many overlays are registered — the leak check for the tests.
     ///
     /// Deliberately **not** `#[cfg(test)]`. `class_r_scrub::cut_test_module` treats the *first*
@@ -928,6 +943,42 @@ mod tests {
                  one dead entry per mount. Body was: {body}"
             );
         }
+    }
+    /// T-726 — stacked dialogs: prefs over settings. One Escape must belong to the topmost only.
+    /// Mirrors EditorPreferencesDialog mounting after MissionSettingsDialog (eden_settings).
+    #[test]
+    fn stacked_dialogs_only_topmost_answers_escape() {
+        let start = modal_stack::depth();
+        // Mount order = paint order: settings first, prefs on top (sibling mount in eden_settings).
+        let (settings, settings_id) = overlay(true);
+        let (prefs, prefs_id) = overlay(true);
+        assert!(
+            modal_stack::is_topmost_open(prefs_id),
+            "prefs stacked over settings must own Escape"
+        );
+        assert!(
+            !modal_stack::is_topmost_open(settings_id),
+            "settings under open prefs must not answer Escape — this is T-726"
+        );
+        assert!(
+            modal_stack::any_open(),
+            "any_open must be true while either dialog is open"
+        );
+
+        // First Esc would close prefs only.
+        prefs.set(false);
+        assert!(modal_stack::is_topmost_open(settings_id));
+        assert!(!modal_stack::is_topmost_open(prefs_id));
+        assert!(modal_stack::any_open());
+
+        // Second Esc would close settings; then nobody owns Escape.
+        settings.set(false);
+        assert!(!modal_stack::is_topmost_open(settings_id));
+        assert!(!modal_stack::any_open());
+
+        modal_stack::unregister(settings_id);
+        modal_stack::unregister(prefs_id);
+        assert_eq!(modal_stack::depth(), start, "registrations must not leak");
     }
 }
 
