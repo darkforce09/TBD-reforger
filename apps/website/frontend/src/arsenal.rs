@@ -23,7 +23,7 @@
 //!   28 is the SPA-wide total. The other two are direct calls from `mission_hydrate.rs:496` and
 //!   `mission_editor.rs:1316`, neither of them an editor commit point, so the argument below is
 //!   unaffected by the correction. The Arsenal's `set_loadout`
-//!   (`editor_ops.rs:2002`) is one of them. Its own siblings in this very modal are the clearest
+//!   (`editor_ops.rs:2005`) is one of them. Its own siblings in this very modal are the clearest
 //!   case: Transform X/Y/Z/rotation (`attributes.rs:265`) and Identity role/tag/stance
 //!   (`attributes.rs:335`) commit on blur/Enter with no Save of their own — `attributes.rs:7` states
 //!   the contract in as many words ("rebind + persist + one undo step per commit"). Same for the
@@ -1313,7 +1313,7 @@ pub fn ArsenalTab(
                     // The three `set`s are signal writes and commit nothing; the single `persist`
                     // that follows is the only document mutation, and `persist` is one
                     // `editor_ops::set_loadout` is one `mission_history::after_local_edit`
-                    // (`editor_ops.rs:2016`) is one undo step. So Ctrl+Z after an import restores
+                    // (`editor_ops.rs:2019`) is one undo step. So Ctrl+Z after an import restores
                     // the whole loadout the author had before it — not the last wear row of it.
                     // No new atomic-batch API was needed: the Arsenal's existing commit already
                     // takes the entire `SlotLoadoutV2` document in one call, which is exactly the
