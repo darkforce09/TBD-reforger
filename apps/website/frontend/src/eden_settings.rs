@@ -2889,18 +2889,21 @@ mod t688_aggregated_settings {
         }
 
         // …and the constants themselves are named nowhere in the aggregation or its rendering.
+        // T-755: also scan `from_schema_node` itself — the prior list stopped at five callers and
+        // left the ONE value-carrying constructor free to substitute a FLOW_DEFAULT_*.
         let src = live_code(include_str!("eden_settings.rs"));
         let banned = format!("FLOW{}", "_DEFAULT_");
         for f in [
             format!("fn aggregate{}", "_settings"),
             format!("fn schema{}", "_default"),
+            format!("fn from{}", "_schema_node"),
             format!("fn render{}", "_all_settings_body"),
             format!("fn setting{}", "_row_view"),
             format!("fn fmt{}", "_setting_default"),
         ] {
             assert!(
                 !only_body(&src, &f).contains(&banned),
-                "T-688: `{banned}*` is a compiler fallback, not a schema default — it must not \
+                "T-688/T-755: `{banned}*` is a compiler fallback, not a schema default — it must not \
                  reach `{f}`"
             );
         }
@@ -2911,16 +2914,34 @@ mod t688_aggregated_settings {
     /// pinned rather than trusted.
     ///
     /// Perturbation this catches: a `SettingDefault::Schema { … }` assembled from a hand-typed table
-    /// anywhere else in the file.
+    /// anywhere else in the file — including the path-spelled form that the old `Self::Schema {`
+    /// needle missed (wave-115 MINOR-2 / T-755).
     #[test]
     fn a_default_value_is_built_in_exactly_one_place() {
         let src = live_code(include_str!("eden_settings.rs"));
-        let ctor = format!("Self::{} {{", "Schema");
+        let self_ctor = format!("Self::{} {{", "Schema");
         assert_eq!(
-            src.matches(&ctor).count(),
+            src.matches(&self_ctor).count(),
             1,
-            "T-688: the value-carrying default variant must be constructed exactly once (in \
+            "T-688/T-755: the value-carrying default variant must be constructed exactly once (in \
              from_schema_node, out of a schema node). A second site is a second source of truth."
+        );
+        // Path spelling `SettingDefault::Schema { … }` is how a second constructor evades `Self::`
+        // (wave-115 MINOR-2). Match-arm DESTRUCTURES use the same path form but bind fields
+        // (`value,` / `pointer,`); constructions INITIALISE them (`value:`). Count initialisers
+        // only — any one is a second source of truth (the sole allowed construction uses `Self::`).
+        let path_ctor = format!("{}::{} {{", "SettingDefault", "Schema");
+        let path_inits = src
+            .match_indices(&path_ctor)
+            .filter(|&(i, _)| {
+                let window = &src[i..src.len().min(i + 160)];
+                window.contains("value:")
+            })
+            .count();
+        assert_eq!(
+            path_inits,
+            0,
+            "T-688/T-755: no `SettingDefault::Schema {{ value: … }}` constructor — the path-spelled              form is a second source of truth the `Self::` needle alone cannot see"
         );
         // …and that one site reads the schema's own `default` key rather than deciding anything.
         let lit = live_source(include_str!("eden_settings.rs"));

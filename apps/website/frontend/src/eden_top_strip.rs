@@ -2483,18 +2483,29 @@ mod t692_help_surface {
     }
 
     /// The action is a TOGGLE reflected in the T-668 checkmark gutter, and the overlay is mounted
-    /// from this file (which is what puts it behind `mission_editor`'s `chrome_hidden` gate — the
-    /// structural half is pinned in `eden_help`).
+    /// from this file — specifically inside `TopCommandStrip`'s body (which is what puts it behind
+    /// `mission_editor`'s `chrome_hidden` gate — the structural half is pinned in `eden_help`).
+    /// Wave-115 NIT-1 / T-755: presence alone is hollow; the pin must defend POSITION in the gated
+    /// subtree, not merely that the mount string exists somewhere in the file.
     #[test]
     fn the_toggle_is_checked_in_the_gutter_and_mounted_here() {
         let code = crate::arsenal::class_r_scrub::live_code(include_str!("eden_top_strip.rs"));
+        let body = crate::arsenal::class_r_scrub::only_body(&code, "pub fn TopCommandStrip(");
+        let mount = format!("{} open=hint_open", "ControlsHint");
+        let mount_at = body.find(&mount).expect(
+            "T-692/T-755: the Controls Hint must be mounted inside TopCommandStrip's body — that              is the chrome_hidden-gated subtree",
+        );
+        // Inside the strip shell, not a sibling above it: STRIP_ROWS opens the gated chrome surface.
+        let strip_at = body
+            .find("STRIP_ROWS")
+            .expect("T-692/T-755: TopCommandStrip must still open with STRIP_ROWS");
         assert!(
-            code.contains("ControlsHint open=hint_open"),
-            "the Controls Hint must be mounted inside the strip's own subtree"
+            mount_at > strip_at,
+            "T-692/T-755: ControlsHint must sit inside the STRIP_ROWS subtree, not beside/above it"
         );
         // The gutter glyph is reactive on the open latch, so both menus agree on the state.
         assert!(
-            code.contains("hint_open.get()"),
+            body.contains("hint_open.get()"),
             "the checkmark gutter must read the LIVE open state, not a constant"
         );
     }

@@ -1667,54 +1667,85 @@ mod t670_scale_readout {
         }
     }
 
-    /// **Reconciliation with T-639 (wave 101).** The summary says this readout is the on-screen
-    /// check for the zoom-adaptive contour ladder, so it must print the ladder's OWN scale, not a
-    /// lookalike. `world_assets::dem_vectors::push_contours` computes `2.0_f64.powf(-zoom)` and
-    /// hands it to `contour_interval_for_zoom`; [`m_per_px`] is that same expression.
+    /// **Reconciliation with T-639 (wave 101 + T-755).** The summary says this readout is the
+    /// on-screen check for the zoom-adaptive contour ladder, so it must print the ladder's OWN
+    /// scale, not a lookalike. `apps/website/frontend/src/world_assets/dem_vectors.rs`
+    /// `push_contours` computes `2.0_f64.powf(-zoom)` and hands it — with nothing in between — to
+    /// `contour_interval_for_zoom`; [`m_per_px`] is that same expression (param name `deck_zoom`).
     ///
     /// `contour_interval_for_zoom` itself cannot be CALLED from here — `map-engine-core`'s `world`
     /// feature is a wasm32-only dependency of this crate, so on native it does not exist. So the
-    /// identity is pinned two ways that need no such call: numerically, that our conversion IS
-    /// `2^(−zoom)` at every rung of the clamp; and on the ladder's own scrubbed SOURCE, that the
-    /// number it feeds the ladder is that same expression. If T-639 ever re-bases its scale, this
-    /// fails rather than letting the status bar quietly print a lookalike.
+    /// identity is pinned three ways that need no such call: (a) OUR conversion's scrubbed body is
+    /// `2^(-deck_zoom)`; (b) the ladder's scrubbed body binds that expression and feeds it to the
+    /// interval selector with no adjustment line between; (c) numerically, our fn matches `2^(-z)`
+    /// across the clamp (and the printed string stays within display precision). Wave-115 MINOR-3:
+    /// the old exact-string needles missed an adjustment inserted between the bind and the call,
+    /// and an upstream `zoom` re-bind; the contiguous feed + no-rebind checks close those holes.
     #[test]
     fn the_printed_scale_is_the_contour_ladders_own_scale() {
-        // (1) Numerically: our conversion is the ladder's expression, everywhere in the clamp.
+        // (1) OUR conversion — scrubbed body, not a test-local recomputation of the formula alone.
+        let ours = live_code(include_str!("eden_toolbelt.rs"));
+        let our_mpp = only_body(&ours, &format!("pub fn {}", "m_per_px("));
+        assert!(
+            our_mpp.contains(&format!("2.0_f64.{}(-deck_zoom)", "powf")),
+            "T-670/T-755: m_per_px must be 2^(-deck_zoom) — the contour ladder's screen-scale              convention"
+        );
+
+        // (2) THE LADDER's feed — frontend dem_vectors.rs (not crates/). Contiguous bind→call so an
+        // adjustment line between them goes RED; no `let zoom` / `zoom =` rebind before the bind so
+        // an upstream re-based zoom goes RED.
+        let dem = live_code(include_str!("world_assets/dem_vectors.rs"));
+        let push = only_body(&dem, &format!("fn {}", "push_contours("));
+        let bind = format!("let m_per_px = 2.0_f64.{}(-zoom);", "powf");
+        let call = format!("{}(m_per_px)", "contour_interval_for_zoom");
+        let bind_at = push
+            .find(&bind)
+            .expect("T-639/T-670/T-755: push_contours must bind m_per_px = 2^(-zoom)");
+        let call_at = push
+            .find(&call)
+            .expect("T-639/T-670/T-755: push_contours must feed that m_per_px to the ladder");
+        assert!(
+            call_at > bind_at,
+            "T-670/T-755: contour_interval_for_zoom(m_per_px) must follow the 2^(-zoom) bind"
+        );
+        let between = &push[bind_at + bind.len()..call_at];
+        let squeezed: String = between.split_whitespace().collect::<Vec<_>>().join(" ");
+        assert_eq!(
+            squeezed,
+            "let interval =",
+            "T-670/T-755: bind and ladder call must be adjacent (`let interval =` only between);              got {squeezed:?}"
+        );
+        let before = &push[..bind_at];
+        assert!(
+            !before.contains("let zoom"),
+            "T-670/T-755: push_contours must not rebind `zoom` before computing m_per_px"
+        );
+        let before_sq: String = before.split_whitespace().collect::<Vec<_>>().join(" ");
+        assert!(
+            !before_sq.contains("zoom ="),
+            "T-670/T-755: push_contours must not assign `zoom` before computing m_per_px"
+        );
+
+        // (3) Numerically: our fn matches the shared convention across the clamp, and the printed
+        // string stays within display precision of that same quantity.
         let mut z = MIN_ZOOM;
         while z <= MAX_ZOOM {
-            let ladder_mpp = 2.0_f64.powf(-z); // `dem_vectors::push_contours`, verbatim
+            let shared = 2.0_f64.powf(-z);
             assert!(
-                (ladder_mpp - m_per_px(z)).abs() < 1e-12,
-                "zoom {z}: the readout's m/px must BE the contour ladder's m/px"
+                (shared - m_per_px(z)).abs() < 1e-12,
+                "zoom {z}: m_per_px must equal the shared 2^(-zoom) convention"
             );
-            // (2) …and the DISPLAYED string is that same quantity to ≤0.5%, so reading the cell
-            // tells the operator which contour rung they are looking at.
             let shown: f64 = format_m_per_px(m_per_px(z))
                 .trim_end_matches(" m/px")
                 .parse()
                 .expect("parseable readout");
             assert!(
-                (shown - ladder_mpp).abs() <= ladder_mpp * 0.0051,
-                "zoom {z}: the printed {shown} m/px must be the live {ladder_mpp} m/px to display \
-                 precision"
+                (shown - shared).abs() <= shared * 0.0051,
+                "zoom {z}: the printed {shown} m/px must be the live {shared} m/px to display                  precision"
             );
             z += 0.125;
         }
-        // (3) On the ladder's source: the contour scale it consumes is the same conversion, fed
-        // straight into `contour_interval_for_zoom`. Scrubbed CODE, so a comment cannot satisfy it.
-        let dem = live_code(include_str!("world_assets/dem_vectors.rs"));
-        assert!(
-            dem.contains(&format!("let m_per_px = 2.0_f64.{}(-zoom);", "powf")),
-            "T-639/T-670: the contour ladder's screen scale must still be 2^(-zoom) — if it \
-             re-bases, the status-bar readout stops being a check of it"
-        );
-        assert!(
-            dem.contains(&format!("{}(m_per_px)", "contour_interval_for_zoom")),
-            "T-639/T-670: that scale must be what selects the contour interval"
-        );
     }
-
     /// **Reconciliation with T-667 (wave 106).** One scale, two surfaces: the graphic bar and this
     /// number must be the same measurement. Given the same `m_per_px`, the bar's chosen ground
     /// distance and the printed number are consistent — the bar is `dist_m / m_per_px` px long,
