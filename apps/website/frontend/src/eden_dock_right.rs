@@ -4412,6 +4412,12 @@ mod tests {
             production.contains(&format!("{}{}", "None::<(String, ", "String)>")),
             "marker_selected must be Option<(factionId, id)>"
         );
+        // wave-136 F4 — pin selection addr construction at the click site. Pair-find alone greened
+        // when the write used `(String::new(), m.id.clone())`.
+        assert!(
+            panel.contains("let addr = (m.faction_id.clone(), m.id.clone())"),
+            "markers_panel click must build addr from both faction_id and id"
+        );
     }
 }
 

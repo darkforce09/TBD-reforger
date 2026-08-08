@@ -2390,10 +2390,13 @@ mod tests {
         let start = production
             .find("pub async fn get_compiled_mission(")
             .expect("get_compiled_mission must exist");
+        // Window must EXCLUDE the helper def — otherwise a route that no longer calls the helper
+        // still greens on the definition sitting between get_compiled_mission and
+        // unreadable_stored_payload (wave-136 F2).
         let body = production[start..]
-            .split("\nfn unreadable_stored_payload(")
+            .split("\nfn compiled_diagnostics_response_headers(")
             .next()
-            .expect("get_compiled_mission must precede unreadable_stored_payload");
+            .expect("get_compiled_mission must precede compiled_diagnostics_response_headers");
 
         let lift = body
             .find("doc.diagnostics")
@@ -2407,8 +2410,8 @@ mod tests {
              means they cannot be recovered afterwards; got:\n{body}"
         );
         assert!(
-            body.contains("compiled_diagnostics_response_headers"),
-            "/compiled must assemble diagnostics headers via compiled_diagnostics_response_headers; got:\n{body}"
+            body.contains("compiled_diagnostics_response_headers(&diagnostics)"),
+            "/compiled route body must call compiled_diagnostics_response_headers(&diagnostics); got:\n{body}"
         );
         let helper = production
             .split("fn compiled_diagnostics_response_headers(")
@@ -2464,6 +2467,25 @@ mod tests {
                 .get(COMPILE_DIAGNOSTICS_RULES_HEADER)
                 .is_none(),
             "rules header is omitted when nothing fired"
+        );
+
+        // wave-136 F2 — also pin the route, not only the helper. A bypass that inlines a HeaderMap
+        // omitting the count on empty findings must RED here (and in t690's narrowed window).
+        const SRC: &str = include_str!("missions.rs");
+        let production = SRC
+            .split("#[cfg(test)]")
+            .next()
+            .expect("missions.rs must have a #[cfg(test)] module");
+        let start = production
+            .find("pub async fn get_compiled_mission(")
+            .expect("get_compiled_mission must exist");
+        let route = production[start..]
+            .split("\nfn compiled_diagnostics_response_headers(")
+            .next()
+            .expect("get_compiled_mission must precede compiled_diagnostics_response_headers");
+        assert!(
+            route.contains("compiled_diagnostics_response_headers(&diagnostics)"),
+            "clean /compiled count pin requires the route to call the helper; got:\n{route}"
         );
     }
 
