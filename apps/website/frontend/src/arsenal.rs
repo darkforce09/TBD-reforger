@@ -1940,13 +1940,11 @@ pub fn ArsenalTab(
                                     format!("{n} buffered")
                                 }}
                             </span>
-                            // Said here because `attributes.rs`'s T-649 banner (not this slice's
-                            // file) tells a multi-selection that "loadout edits apply to this one
-                            // entity". That is still true of every pick and cargo row above — and
-                            // NOT true of these three verbs, which are the whole point of T-699.
-                            // The panel must not leave the author to reconcile the two.
+                            // T-771's Attributes banner already owns both scopes (one-entity
+                            // picks/cargo vs whole-selection Copy/Apply/Remove Everything). Local
+                            // reminder only — kept short so the two disclosures do not compete.
                             <span class="basis-full text-label-sm normal-case text-outline">
-                                "These three act on the whole selection, not on this one entity — unlike every pick above."
+                                "Buffer verbs: whole selection."
                             </span>
                         </div>
                         // T-699 — the buffer's outcome. A refusal lists EVERY reason and applied
