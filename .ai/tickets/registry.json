@@ -1,5 +1,5 @@
 {
- "next_id": 782,
+ "next_id": 783,
  "tickets": [
   {
    "id": "T-001",
@@ -18495,7 +18495,7 @@
    "id": "T-743",
    "order": 4619,
    "program": "eden",
-   "status": "deferred",
+   "status": "ready",
    "stream": "mission-creator",
    "targets": [
     "website"
@@ -18511,7 +18511,7 @@
    ],
    "title": "Paste-at-original lands 20m off, and three artifacts state otherwise — ACTION-PASTE-ORIG-001 not closed as named",
    "summary": "MAJOR from the wave-113 adversarial verifier, independently confirming the T-669 slice agent's contradiction of its own ticket. FACT: MissionDocCore::paste_slots' no-anchor arm is UNCONDITIONAL — `_ => (PASTE_NUDGE, PASTE_NUDGE)` at store.rs:2175-2178 with PASTE_NUDGE = 20.0 (store.rs:4225). Ctrl/Cmd+Shift+V calls paste_at_cursor(None, None), hits that arm, and every slot lands at (x+20, y+20) clamped. So the shipped behaviour is 'paste NEAR original, +20m on both axes', not 'paste at original'. THREE ARTIFACTS ARE WRONG ON THIS POINT OF FACT and must be corrected regardless of what is decided: the T-669 registry summary ('paste_at_cursor(None, None) is LITERALLY paste-at-original'), gap_analysis.md:265, and interactions_sweep.md:233. NOT the slice's fault and not silently fixable: the 20m nudge is deliberate byte-parity with the JS oracle ydoc.pasteSlots, so removing it is a semantics change with a golden-test blast radius, not a slice-sized edit. The slice shipped the arm as specified and made its own in-code comment honest, but the help row copy (eden_help.rs:108, 'Paste at the source position') repeats the overstatement. OPERATOR DECISION NEEDED — three options: (a) re-scope the row to 'paste without moving to the cursor (oracle 20m nudge)' and soften the help copy, (b) add an exact-coordinate paste variant as new work, (c) change PASTE_NUDGE semantics and accept the golden-test churn. ALSO folded in from the same report: the T-669 summary's claim that this ticket 'touches exactly one file' is stale — it also touched eden_help.rs, forced by T-692's coverage pins. Diagnosis: editor_verify/wave113.md F-1, F-4.",
-   "notes": "filed by wave-113 adversarial verifier (editor factory)"
+   "notes": "OPERATOR DECISION 2026-08-08 — option (c), fix it properly in Rust. The byte-parity with the JS oracle was ONLY a migration safety measure so the rewrite could not silently lose behaviour; it is not a contract worth keeping. Operator: paste landing 20 m from its source is clearly wrong. ACTION-PASTE-ORIG-001 must land EXACTLY at the source position and the golden-test churn is accepted. LOCATION re-derived by the orchestrator (the cites above have drifted): the offset is the `_ => (PASTE_NUDGE, PASTE_NUDGE)` arm of paste_slots' anchor match in crates/map-engine-core/src/doc/store.rs (~:2972), PASTE_NUDGE = 20.0 (~:5117). Plain Ctrl+V is mission_editor.rs:3195 paste_at_cursor(cx, cy) — ANCHORED, correct, leave it. Paste-at-original is mission_editor.rs:3217 paste_at_cursor(None, None). WARNING — THE ARM IS SHARED AND MUST BE SPLIT: that same no-anchor branch is also the fallback when a PLAIN paste happens with the cursor off-map (PASTE_NUDGE's own doc says so). Zeroing the constant would silently turn every off-map plain paste into a paste-at-original. Give paste-at-original its own zero-offset path and state deliberately what the off-map fallback should do. Also correct the three artifacts that assert the opposite, and the help-row copy at eden_help.rs."
   },
   {
    "id": "T-744",
@@ -19205,7 +19205,7 @@
    "id": "T-777",
    "order": 4653,
    "program": "eden",
-   "status": "deferred",
+   "status": "ready",
    "stream": "mission-creator",
    "targets": [
     "website"
@@ -19220,7 +19220,7 @@
    ],
    "title": "Paste and place-composition land every slot at z = 0.0 — NEEDS OPERATOR DECISION alongside T-743",
    "summary": "MINOR from the wave-127 focused re-verifier. THIS IS THE ONE WAVE-127 FINDING THAT WAS NOT FIXED, AND IT IS DELIBERATE: it sits on T-743's reserved decision surface. Wave 127 closed a four-instance family where an x/y write with z=None made `update_slot_position` store `pz = 0.0` (store.rs:2779-2783) with nothing re-sampling terrain afterwards — fixed at `attrs_update_position`/`_multi` (F-2), `commit_positions` (F-5, reached by Align/Distribute/place-pattern) and the marquee drag (F-6). The re-verifier then proved that family CLOSED (zero `move_entities` frontend callers; exactly one `move_entities_and_vehicles`; five `update_slot_position` sites, three z-resolved and two rotation-only which cannot trip the mutator's `x.is_some() || y.is_some()` arm). WHAT REMAINS IS A DIFFERENT CLASS — a CREATE path, not a missed caller: `editor_ops.rs:642` (`paste_at_cursor`) pushes `zs.push(0.0)` for every pasted slot and explicitly drops `position.z` from the copied extras, and `place_composition` (store.rs:2394/2409) does the same, symmetric for vehicles. Ctrl+V a rooftop entity and the copy lands on the deck. NO AUTHORED WORK IS DESTROYED — there is no cut, the source is untouched, so this is a wrong-landing-position defect rather than the silent corruption the rest of the wave fixed. WHY IT WAS NOT FIXED AUTONOMOUSLY: the `zs.push(0.0)` carries the in-code rationale 'DEM not ready — byte-parity with the flat-map case', which is the SAME byte-parity-with-the-JS-oracle argument that makes T-743 (`PASTE_NUDGE` = 20 m, store.rs:4998-4999) an operator decision rather than a slice-sized fix. Both are 'where does a pasted entity land', both are pinned to the JS oracle, and changing z unilaterally could pre-empt whichever of T-743's three paths the operator picks. DECIDE THE TWO TOGETHER. The z axis is arguably independent of the x/y nudge — preserving the source z is compatible with all three T-743 paths — but that is the operator's call to make, not the factory's. Diagnosis: editor_verify/wave127.md, focused re-verification section.",
-   "notes": "filed by the wave-127 focused re-verifier; deliberately NOT fixed in-wave — routes to the operator with T-743"
+   "notes": "OPERATOR DECISION 2026-08-08 — same ruling as T-743: the JS byte-parity was a migration safety net, not a contract. A pasted or composed entity must KEEP ITS AUTHORED Z rather than landing at 0.0. Fix editor_ops.rs paste_at_cursor's `zs.push(0.0)` and place_composition (store.rs) to carry the source z, exactly as wave 127 did for the four move/edit paths. Wave 127's rules still bind: fix at the frontend caller where possible, reuse keep_z_rows()/slot_z(), read z off slots_json (exact f64) and NOT the SoA (f32, omits hidden-layer slots per T-665). Sequence with T-743 — they are one behaviour change on two axes and should land together."
   },
   {
    "id": "T-778",
@@ -19249,10 +19249,17 @@
    "program": "eden",
    "status": "ready",
    "stream": "mission-creator",
-   "targets": ["website"],
+   "targets": [
+    "website"
+   ],
    "executor": "claude-code",
-   "surfaces": ["ARS"],
-   "impact": ["state", "mission-authoring"],
+   "surfaces": [
+    "ARS"
+   ],
+   "impact": [
+    "state",
+    "mission-authoring"
+   ],
    "title": "set_loadout discards the acknowledgement T-770 added, so the history tail fires over writes that never happened",
    "summary": "RESIDUE of T-770 (wave 140), verified by the orchestrator 2026-08-08. T-770's whole point was that `commit_writes` counted closure CALLS rather than sink acknowledgements, so its WARNING arm was unreachable. The core half landed: `MissionDocCore::update_slot_loadout` (crates/map-engine-core/src/doc/store.rs:2784) now returns `bool` and returns `false` when the slot id is not in the document. THE FRONTEND HALF DID NOT. `editor_ops::set_loadout` (apps/website/frontend/src/editor_ops.rs:2005) calls `core.update_slot_loadout(id, loadout_json);` and then hardcodes `true` as the value of `did`, discarding the acknowledgement entirely. CONSEQUENCES, both live: (1) `crate::mission_history::after_local_edit()` fires whenever the OPS_CTX and doc merely EXIST, so a set_loadout against a stale or deleted slot id still marks the mission dirty and mints an undo step over a document that did not change; (2) any receipt built on this path still cannot distinguish a real write from a no-op, which is precisely the defect T-770 was filed to close. FIX: return the mutator's bool out of the closure instead of `true`, so `did` means what its name says, and gate `after_local_edit()` on it. Then check the callers — `arsenal.rs:1253` is the live one — and decide whether a refused write should surface to the operator rather than passing silently. ACCEPTANCE: a test that calls set_loadout with an id that is NOT in the document and asserts no history entry is minted and the mission is not dirtied; perturb by restoring the hardcoded `true` and watch it go red. Note arsenal.rs carries source pins naming `pub fn set_loadout` and its tail line (arsenal.rs:6180, :6205, :4897) — update them honestly, do not delete them.",
    "notes": "residue of T-770 (wave 140); core half shipped, frontend half did not"
@@ -19263,10 +19270,18 @@
    "program": "eden",
    "status": "ready",
    "stream": "mission-creator",
-   "targets": ["website"],
+   "targets": [
+    "website"
+   ],
    "executor": "claude-code",
-   "surfaces": ["CONN", "MAP"],
-   "impact": ["ui", "mission-authoring"],
+   "surfaces": [
+    "CONN",
+    "MAP"
+   ],
+   "impact": [
+    "ui",
+    "mission-authoring"
+   ],
    "title": "Connections have no line on the map, so CONN-DEL-001 can only be reached from the panel",
    "summary": "DISCLOSED SCOPE GAP carried from T-768 (wave 140) and confirmed still open after the remediation run. T-768 delivered the connect gesture's pointer half once T-723 fixed the armed-pointerup path, so a connection can now be STARTED and FINISHED on the map. What it did not deliver is a rendered LINE: connections draw nothing, so there is no artifact to click, and CONN-DEL-001 (delete a connection) is reachable only from the panel's Delete control. An author who drew a connection on the map has no way to remove it on the map. THIS IS THE SAME SHAPE T-760 AND T-748 ALREADY CLOSED for markers and comments respectively: both needed a render lane in crates/map-engine-render/src/draw_order.rs plus the rebind tail in apps/website/frontend/src/mission_history.rs, and both are now shipped and can be copied rather than re-derived. RECIPE: add the connection lane to draw_order.rs and engine.rs the way the marker lane was added by T-760; feed it from the document, NOT from a slice's own owns — T-069 and T-672 independently established that a lane fed from a slice's own state goes stale after undo/redo/restore, which is why the feed comes first; then wire pick/hit-testing so a line can be selected, and route Delete through the existing path rather than authoring a second one. ACCEPTANCE: draw a connection, undo, redo, restore from IDB, and confirm the line survives each; then select the line on the map and delete it through the same code path the panel's Delete uses.",
    "notes": "scope gap disclosed by T-768 (wave 140); render lane recipe already shipped by T-760 and T-748"
@@ -19277,13 +19292,43 @@
    "program": "eden",
    "status": "ready",
    "stream": "mission-creator",
-   "targets": ["website"],
+   "targets": [
+    "website"
+   ],
    "executor": "claude-code",
-   "surfaces": ["COMP", "MAP"],
-   "impact": ["ui", "mission-authoring"],
+   "surfaces": [
+    "COMP",
+    "MAP"
+   ],
+   "impact": [
+    "ui",
+    "mission-authoring"
+   ],
    "title": "Comments still cannot be composed — PLACE-COMMENT-001's last undelivered clause",
    "summary": "RESIDUE of T-748 (wave 141) and, before it, T-651 (wave 114). The spec row PLACE-COMMENT-001 asks for comments that are 'Draggable, copy/paste, layerable, COMPOSABLE' plus a 'Comment icon at position'. T-748 (wave 141) delivered the map glyph, so the icon clause is closed. THE COMPOSABLE CLAUSE IS NOT: compositions capture from the SELECTION, and comments sit in no selection lane, so a comment can never be part of a composition. T-748's own diagnosis called this out — 'composable was a silent drop, which is what the HARD GATE bars' — and it is scope accounting rather than broken code: nothing misbehaves, the feature simply does not exist. THE INTERESTING QUESTION IS WHERE TO PUT COMMENTS. They are deliberately absent from the compiled mission (the same property that keeps them out of the render SoA before T-748 gave them a glyph), so a composition containing a comment must carry it as authoring metadata and must NOT emit it into the compiled output. Check how `place_composition` (crates/map-engine-core/src/doc/store.rs) captures and replays, and whether the comment can ride the same rows without reaching flatten. WATCH THE Z RULE: `place_composition` creates at z = 0.0 (see T-777) and that is on the operator's reserved decision surface with T-743 — do not change paste/composition landing semantics as part of this ticket; carry whatever the operator decides. ACCEPTANCE: select a comment together with entities, make a composition, place it, and confirm the comment comes back at the right offset, survives undo/redo/restore, and does NOT appear in the compiled mission.",
    "notes": "residue of T-748 (w141) / T-651 (w114); interacts with T-777 + T-743 on landing position"
+  },
+  {
+   "id": "T-782",
+   "order": 4658,
+   "program": "eden",
+   "status": "ready",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "surfaces": [
+    "EDITOR",
+    "FRONTEND"
+   ],
+   "impact": [
+    "ui",
+    "mission-authoring"
+   ],
+   "title": "Resolve the player-count question: the editor shows placed slots; the library shows per-side and total",
+   "summary": "OPERATOR DECISION 2026-08-08, closing the T-694 player-cap question that has been open since wave 113. THE RULING: in the EDITOR the figure an author sees is HOW MANY SLOTS ARE PLACED DOWN — the derived count, not an author-typed cap. In the MISSION LIBRARY a mission should show how many slots there are PER SIDE and the TOTAL. CURRENT STATE, verified by the orchestrator: two numbers exist and nothing reconciles them. `max_players` (dto.rs ~:851) is AUTHOR-DECLARED — typed once into the create dialog — and is copied into the compiled mission by `compiled_meta`, so it is not dead. `MissionDocCore::slot_count` is the number of seats the document actually contains. The editor currently shows BOTH side by side and deliberately does not resolve the disagreement; the rationale lives at `eden_settings::PLAYER_COUNT_DISAGREE_NOTE`. This ruling resolves it: slot_count is the truth for the editor's player figure. This is consistent with the operator's wave-113 decision (derived slot count, no min_players). EDITOR HALF (do now): make the derived slot count the figure the author sees, and retire the disagree-note in favour of the decided answer rather than leaving a note explaining an unresolved argument. Do NOT delete `max_players` — it reaches the compiled mission. ONE SUB-QUESTION LEFT FOR THE OPERATOR, do not invent it: should `max_players` remain author-typed at all, or be DERIVED from slot_count so the compiled mission cannot disagree with the document? The ruling settles what is displayed; it does not settle what is compiled. LIBRARY HALF (design deferred by the operator): show slots per side plus the total on the mission library view. The operator explicitly said the exact presentation is to be worked out later — bring a proposal, do not guess at layout. Note the per-side breakdown does not exist as a derived value yet; check whether flatten or the doc can produce it without a new wire field before assuming a schema change.",
+   "notes": "closes the T-694 player-cap question; editor half actionable now, library presentation deferred to the operator"
   }
  ]
 }
