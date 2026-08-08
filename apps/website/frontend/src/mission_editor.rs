@@ -3459,6 +3459,10 @@ pub fn MissionEditorPage() -> impl IntoView {
                         report.clone(),
                     )
                     .await;
+                    // T-761 — Export Compiled parks findings in a thread_local; client-side
+                    // `/missions/:id/edit` remounts reuse the wasm instance, so clear on hydrate
+                    // or mission B inherits A's build report (wave-116 finding 3).
+                    crate::validation_panel::clear_compile_findings();
                     // T-628 — the mission segment is over the instant the hydrate returns, on every
                     // one of its paths (adopted / trusted-local / conflict / 404 / offline). Closing
                     // it here rather than inside the hydrate is what stops a network failure from
@@ -9201,6 +9205,61 @@ mod t655_validation_panel_wiring {
         assert!(
             !between.contains("debug_hud_shown.get()") && !between.contains("debug_hud.get()"),
             "T-655: validation is ALWAYS ON — the panel must not sit behind a debug flag"
+        );
+    }
+}
+
+/* ═══════ T-761 — compile findings cleared on editor hydrate (wave-116 finding 3) ═══════════════
+ *
+ * The behavioural pin lives in validation_panel. This Class-R pin locks the PRODUCTION call site:
+ * MissionEditorPage must clear after hydrate_from_server, or a client-side mission switch still
+ * inherits the previous mission's build report.
+ */
+#[cfg(test)]
+mod t761_compile_findings_cleared_on_hydrate {
+    use crate::arsenal::class_r_scrub::live_code;
+
+    fn editor_live() -> String {
+        let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
+        let raw = include_str!("mission_editor.rs");
+        assert_eq!(
+            raw.matches(anchor.as_str()).count(),
+            1,
+            "scrub anchor must be unambiguous"
+        );
+        live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..])
+    }
+
+    #[test]
+    fn mission_editor_clears_compile_findings_on_hydrate() {
+        let ed = editor_live();
+        assert!(
+            ed.contains("validation_panel::clear_compile_findings()"),
+            "T-761: MissionEditorPage must clear COMPILE_FINDINGS on hydrate so mission B cannot              inherit mission A's build report"
+        );
+        // Order: hydrate_from_server returns, THEN clear — the ticket's "one clear on editor
+        // hydrate". A clear that runs only on a different path would leave the defect.
+        let hydrate = ed
+            .find("mission_hydrate::hydrate_from_server(")
+            .expect("hydrate_from_server call");
+        let clear = ed
+            .find("validation_panel::clear_compile_findings()")
+            .expect("clear_compile_findings call");
+        assert!(
+            clear > hydrate,
+            "T-761: clear must run after hydrate_from_server returns (got clear@{clear} hydrate@{hydrate})"
+        );
+        // The clear sits in the same production body that awaits hydrate — not a decoy in a comment.
+        let after = &ed[hydrate..];
+        let await_at = after
+            .find(".await")
+            .expect("hydrate_from_server must be awaited");
+        let clear_rel = after
+            .find("validation_panel::clear_compile_findings()")
+            .expect("clear after hydrate anchor");
+        assert!(
+            clear_rel > await_at,
+            "T-761: clear_compile_findings must follow the hydrate .await"
         );
     }
 }
