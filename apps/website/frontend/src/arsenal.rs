@@ -636,6 +636,33 @@ pub fn try_export(
 /// the fault is the document — so it gets its own key rather than being pinned on an innocent row.
 const IMPORT_DOC_KEY: &str = "document";
 
+/// T-737 — render one [`rules::RowError`] as the line the author actually reads.
+///
+/// A `RowError` is a **pair**: the row whose pick must change, and the reason it must. Both refusal
+/// lists in this panel used to print `e.message` alone and drop the key on the floor — and the
+/// reason on its own is not an instruction. One weapon swap strands the optic *and* the magazine,
+/// and both rows then say the identical sentence ("Not compatible with the selected Primary"), so
+/// an author handed two of them learns only that something is wrong twice. The row label is the
+/// address; without it a refusal names what is required but never *which of their rows* is at
+/// fault. Prefixing it puts the distinguishing token at the left margin of every line, which is
+/// where a list is scanned.
+///
+/// **[`IMPORT_DOC_KEY`] is exempt, by the same argument.** A document-level fault has no row to
+/// blame — that is why it has its own key — and the schema checker's message already carries the
+/// JSON pointer, which is a *better* address than any row label. So the rule is not "the doc key is
+/// special", it is "prefix the label when there is a row"; [`rules::row`] answering `None` is
+/// exactly the condition, and any future non-row key inherits the same handling for free.
+///
+/// The reason is never rewritten, only prefixed, so a caller that has already framed the message
+/// (Apply's "Buffered loadout from `<id>` — …") keeps its framing intact underneath.
+#[must_use]
+pub fn refusal_line(e: &rules::RowError) -> String {
+    match rules::row(e.key) {
+        Some(r) => format!("{} — {}", r.label, e.message),
+        None => e.message.clone(),
+    }
+}
+
 /// What an accepted import *would* apply. Nothing in here has touched the live mission document:
 /// [`try_import`] returns a value, the caller applies it, and that separation is what makes
 /// "a document that does not validate applies nothing" true by construction rather than by care.
@@ -1360,12 +1387,16 @@ pub fn ArsenalTab(
                                         Err(refusals) => {
                                             // The refusal contract, said first and said plainly:
                                             // a document that does not validate applies NOTHING.
+                                            // T-737 — through `refusal_line`, so each reason
+                                            // arrives with the row it is about: two rows stranded
+                                            // by one weapon swap give the identical reason and
+                                            // are otherwise indistinguishable.
                                             import_status.set(String::new());
                                             import_refusals.set(
                                                 std::iter::once(format!(
                                                     "{name} was not applied — this loadout is unchanged.",
                                                 ))
-                                                .chain(refusals.into_iter().map(|e| e.message))
+                                                .chain(refusals.iter().map(refusal_line))
                                                 .collect(),
                                             );
                                         }
@@ -1445,13 +1476,16 @@ pub fn ArsenalTab(
                                 }
                                 Err(refusals) => {
                                     // Same refusal contract as the import, said the same way: a
-                                    // buffer that does not validate applies NOTHING.
+                                    // buffer that does not validate applies NOTHING. T-737 — and
+                                    // rendered the same way too, because the identical-reason
+                                    // problem is identical here: `buffer_refusals` names WHICH
+                                    // copied loadout is bad, `refusal_line` names which row in it.
                                     buffer_status.set(String::new());
                                     buffer_refusals.set(
                                         std::iter::once(
                                             "Nothing was applied — every selected loadout is unchanged.".to_string(),
                                         )
-                                        .chain(refusals.into_iter().map(|e| e.message))
+                                        .chain(refusals.iter().map(refusal_line))
                                         .collect(),
                                     );
                                 }
@@ -5811,6 +5845,200 @@ mod tests {
             assert!(
                 !resync.contains("persist("),
                 "the resync is signal writes only — a persist here is an extra undo step"
+            );
+        }
+    }
+
+    /// **T-737 — a refusal has to say which row.**
+    ///
+    /// The defect is not "the message is wrong"; every message here is true. The defect is that
+    /// two *different* rows produce the *same* true sentence, so the list the author is shown
+    /// cannot be acted on. Every test below therefore uses **two** stranded rows — one row cannot
+    /// observe this defect at all, and a test written with one would have stayed green through it.
+    mod t737 {
+        use super::*;
+
+        /// A ready feed carrying arbitrary typed edges. `attachment_feed` only speaks
+        /// `attachment_on_weapon`; the two rows this defect is about (`optic`, `magazine`) are
+        /// `RowSource::Edge` rows on two *other* edge types, so they need their own feed.
+        fn typed_feed(edges: &[(&str, &str, &str)]) -> CompatFeed {
+            let rows: Vec<crate::dto::RegistryCompatEdge> = edges
+                .iter()
+                .enumerate()
+                .map(|(i, (from, to, ty))| crate::dto::RegistryCompatEdge {
+                    id: i.to_string(),
+                    modpack_id: "m".into(),
+                    from_node: (*from).into(),
+                    to_node: (*to).into(),
+                    edge_type: (*ty).into(),
+                    evidence: String::new(),
+                    qty: 1,
+                    created_at: String::new(),
+                    updated_at: String::new(),
+                })
+                .collect();
+            CompatFeed {
+                status: rules::CompatStatus::Ready,
+                graph: rules::CompatGraph::from_edges(&rows),
+            }
+        }
+
+        /// `mod t699`'s buffer helpers, re-declared rather than borrowed: they are private to that
+        /// module, and a sibling reaching into it would not compile.
+        fn buf(source: &str, json: Option<&str>) -> BufferedLoadout {
+            BufferedLoadout {
+                source_id: source.to_string(),
+                loadout_json: json.map(str::to_string),
+            }
+        }
+
+        fn ids(v: &[&str]) -> Vec<String> {
+            v.iter().map(|s| (*s).to_string()).collect()
+        }
+
+        /// One weapon swap, two stranded rows: an ACOG and a STANAG that this catalog knows —
+        /// on the *other* rifle. Both edge rows are refused, and refused for the same reason.
+        fn two_stranded_rows() -> (String, CompatFeed) {
+            let raw = picks_to_export(
+                &picks(&[
+                    ("primary", "res://rifle_m16"),
+                    ("optic", "res://acog"),
+                    ("magazine", "res://mag_stanag"),
+                ]),
+                &[],
+                "mp",
+            );
+            let feed = typed_feed(&[
+                ("res://rifle_ak", "res://acog", "optic_on_weapon"),
+                ("res://rifle_ak", "res://mag_stanag", "mag_in_weapon"),
+            ]);
+            (raw, feed)
+        }
+
+        /// **The claim in the ticket title.** Two stranded rows must render as two lines the
+        /// author can tell apart, each naming its own row — while the reason each carries survives
+        /// intact underneath.
+        ///
+        /// RED (the shipped defect): render the list with `.map(|e| e.message)` again — i.e. make
+        /// `refusal_line` return `e.message.clone()` unconditionally → "two stranded rows must not
+        /// print the same line".
+        #[test]
+        fn two_stranded_rows_render_as_two_distinguishable_refusals() {
+            let (raw, feed) = two_stranded_rows();
+            let refusals = try_import(&raw, &[], &feed).expect_err("a stranded loadout is refused");
+            assert_eq!(refusals.len(), 2, "two rows are stranded: {refusals:?}");
+
+            // The premise, stated as a fact about the data rather than assumed: the two REASONS
+            // are byte-identical. Everything that distinguishes the rows lives in `key`, which is
+            // exactly what the old rendering threw away.
+            assert_eq!(
+                refusals[0].message, refusals[1].message,
+                "the premise of this test — the reason alone cannot tell the rows apart"
+            );
+            assert_eq!(
+                [refusals[0].key, refusals[1].key],
+                ["optic", "magazine"],
+                "…and the key is where the difference is: {refusals:?}"
+            );
+
+            let lines: Vec<String> = refusals.iter().map(refusal_line).collect();
+            assert_ne!(
+                lines[0], lines[1],
+                "two stranded rows must not print the same line: {lines:?}"
+            );
+            assert!(lines[0].starts_with("Optic — "), "{lines:?}");
+            assert!(lines[1].starts_with("Magazine — "), "{lines:?}");
+            for (line, e) in lines.iter().zip(&refusals) {
+                assert!(
+                    line.ends_with(&e.message),
+                    "naming the row must not cost the reason: {line}"
+                );
+            }
+        }
+
+        /// The same two rows down the **Apply** door, which shares the refusal contract and shared
+        /// the defect. `buffer_refusals` names which copied loadout is bad; `refusal_line` names
+        /// which row inside it — and both are needed, because one buffered loadout can strand two
+        /// rows at once.
+        #[test]
+        fn apply_refusals_name_the_row_as_well_as_the_source() {
+            let (raw, feed) = two_stranded_rows();
+            let refusals = plan_apply(&ids(&["t1"]), &[buf("s1", Some(&raw))], 7, &[], &feed)
+                .expect_err("…nor applicable");
+            assert_eq!(refusals.len(), 2, "{refusals:?}");
+            assert_eq!(
+                refusals[0].message, refusals[1].message,
+                "the source prefix alone cannot tell two rows of ONE loadout apart"
+            );
+
+            let lines: Vec<String> = refusals.iter().map(refusal_line).collect();
+            assert_ne!(lines[0], lines[1], "{lines:?}");
+            for line in &lines {
+                assert!(
+                    line.contains("Buffered loadout from s1"),
+                    "which copied loadout is still the first question: {line}"
+                );
+            }
+            assert!(lines[0].starts_with("Optic — "), "{lines:?}");
+            assert!(lines[1].starts_with("Magazine — "), "{lines:?}");
+        }
+
+        /// Schema and parse faults are left exactly as they were: their messages already carry the
+        /// JSON pointer, which is a better address than any row label, and there is no row to name.
+        /// The exemption is `rules::row` answering `None` — not a hard-coded key comparison.
+        #[test]
+        fn document_faults_keep_their_own_address() {
+            for raw in ["{ not json", r#"{"loadoutVersion":"2"}"#] {
+                let refusals = try_import(raw, &[], &CompatFeed::default())
+                    .expect_err("a malformed document is refused");
+                assert!(!refusals.is_empty());
+                for e in &refusals {
+                    assert_eq!(e.key, IMPORT_DOC_KEY, "no row is to blame: {e:?}");
+                    assert_eq!(
+                        refusal_line(e),
+                        e.message,
+                        "a document fault must not grow a row prefix it cannot justify"
+                    );
+                }
+            }
+        }
+
+        /// **The T-686 asymmetry is not this ticket's to change, and this pins that it did not.**
+        /// Export refuses on capacity ONLY, so a loadout with a stranded optic can still be
+        /// downloaded; the import gate additionally refuses compat, so the same bytes cannot come
+        /// back in. That is intended — the import gate's job is to not let an outside document put
+        /// the editor into a state the author did not author — and it is precisely the case where
+        /// naming the row matters most, so the naming is asserted on the very bytes that prove it.
+        #[test]
+        fn the_export_import_asymmetry_still_holds() {
+            let (raw, feed) = two_stranded_rows();
+            let doc_picks = loadout_to_picks(Some(&raw));
+            assert!(
+                try_export(&doc_picks, &[], &[], "mp").is_ok(),
+                "export refuses on capacity only — a stranded optic must still download"
+            );
+            let refusals = try_import(&raw, &[], &feed)
+                .expect_err("…and the import gate must still refuse those same bytes on compat");
+            let lines: Vec<String> = refusals.iter().map(refusal_line).collect();
+            assert_ne!(
+                lines[0], lines[1],
+                "the exportable-but-not-importable case is where naming the row matters most"
+            );
+        }
+
+        /// Class-R: the fix has to be in the panel, not merely available to it. Both refusal lists
+        /// — the import's and the Apply's — must render through `refusal_line`.
+        ///
+        /// RED: revert either list to `.map(|e| e.message)` → the count drops to 1.
+        #[test]
+        fn both_refusal_lists_render_through_refusal_line() {
+            let live = live_production_src();
+            let tab = fn_body(&live, "pub fn ArsenalTab(");
+            assert_eq!(
+                tab.matches("refusal_line").count(),
+                2,
+                "both refusal lists must name the row; found: {}",
+                tab.matches("refusal_line").count()
             );
         }
     }
