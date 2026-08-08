@@ -1865,6 +1865,37 @@ pub(crate) fn route_target(
     None
 }
 
+/// **Wave 129 F6 — AVAILABILITY: what a click on this subject would actually REACH.**
+///
+/// [`route_target`] answers "which surface owns this id?" over the document alone. That is not the
+/// whole of "would this click do something", because one arm needs a SEAM as well as a row: a
+/// [`RouteTarget::Zone`] is selected through `eden_dock_right::route_select_zone`, and that reports
+/// `false` when the Zones panel is not mounted (wave-129 F2 made it honest — it used to answer
+/// `true` while writing to disposed signals). So a zone whose panel is gone RESOLVES but is not
+/// AVAILABLE, and a click on it returns `false`.
+///
+/// F6 is the divergence that fell out of F1 + F2 being fixed independently: the affordance probe was
+/// built from the resolution alone (`… .is_some()`) while the click also consulted the seam, so a
+/// zone row painted `cursor-pointer` over a click that could not land — the T-754 MAJOR, re-created
+/// by two correct fixes disagreeing. This function is the fix's shape: **ONE narrowing that the
+/// probe and the click both go through**, so "a row is clickable IFF clicking it does something" is
+/// a single decision rather than a condition written twice and kept in step by hope.
+///
+/// `resolved` is [`route_target`]'s answer with the centre the caller already computed;
+/// `zone_panel_live` is the one fact the document cannot carry — "is the Zones panel mounted?".
+/// Every non-`Zone` arm passes straight through: they select into the editor selection, which exists
+/// for as long as the router itself does.
+pub(crate) fn route_availability(
+    resolved: Option<(RouteTarget, f64, f64)>,
+    zone_panel_live: &dyn Fn() -> bool,
+) -> Option<(RouteTarget, f64, f64)> {
+    let (target, x, y) = resolved?;
+    if matches!(target, RouteTarget::Zone { .. }) && !zone_panel_live() {
+        return None;
+    }
+    Some((target, x, y))
+}
+
 /// A zone's geometric centre in world metres — a circle's centre, or a polygon's vertex mean.
 /// `None` for a shapeless row (a draw that was never committed), which is exactly the row a click
 /// cannot centre on and therefore must not advertise.
@@ -2596,21 +2627,56 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // (`mission_history`, "does not mark dirty / bump `doc_ver`"), so a cache keyed on
                 // it would answer for the pre-restore document — an affordance lying again, which
                 // is the one trade this seam may not make.
+                //
+                // WAVE 129 F6 — and the ask is `available`, not `resolve`. `resolve` answers "which
+                // surface owns this id?"; the CLICK also needs the Zones panel to be MOUNTED before a
+                // zone selection can land (F2 made `route_select_zone` report that honestly). A probe
+                // built from `resolve` alone therefore said `true` for a zone whose panel Backspace
+                // had unmounted while the click said `false` — `cursor-pointer` over a dead click,
+                // the exact T-754 MAJOR, re-created by two correct fixes disagreeing. So the
+                // narrowing lives ONCE, in [`route_availability`], and this is the only place the
+                // "is the Zones panel there?" question is asked: both seams below clone THIS `Rc`.
+                //
+                // The liveness oracle is `chrome_hidden`, which is the very gate the `DockRight`
+                // mount is written against further down this component (`(!chrome_hidden.get())
+                // .then(|| view! { … DockRight … })`), and `DockRight`'s body is where
+                // `install_select_zone` runs. `eden_dock_right` exposes no side-effect-free "is the
+                // hook live?" accessor — the only reader is `route_select_zone`, which SELECTS — and
+                // that module is outside this change's owns, so the mount gate this file owns is the
+                // strongest honest answer available. `t754_router_resolves_zones` pins the two
+                // against each other so the mirror cannot drift into a lie.
+                //
+                // Read REACTIVELY (`.get()`, not `get_untracked`): a row's affordance must repaint
+                // when Backspace hides the chrome, or it would be correct only until the next
+                // unrelated re-render.
+                let available: SubjectResolver = {
+                    let resolve = std::rc::Rc::clone(&resolve);
+                    std::rc::Rc::new(move |subject_id: &str| {
+                        route_availability(resolve(subject_id), &|| !chrome_hidden.get())
+                    })
+                };
                 {
-                    let probe = std::rc::Rc::clone(&resolve);
+                    let probe = std::rc::Rc::clone(&available);
                     crate::validation_panel::register_route_probe(std::rc::Rc::new(
                         move |subject_id: &str| probe(subject_id).is_some(),
                     ));
                 }
                 crate::validation_panel::register_select_by_id(std::rc::Rc::new(
                     move |subject_id: &str| {
-                        let Some((target, cx, cy)) = resolve(subject_id) else {
+                        let Some((target, cx, cy)) = available(subject_id) else {
                             return false;
                         };
                         if matches!(target, RouteTarget::Zone { .. }) {
                             // A zone is selected in the Zones panel, never in the slot selection.
                             // If that panel is not mounted there is nothing to select, and the
                             // router says so (false) instead of centring on a phantom selection.
+                            //
+                            // F6 — that case is already excluded above: `available` refused any
+                            // `Zone` whose panel is gone, so this `false` is now a case the probe
+                            // has ALSO ruled out rather than one only the click could see. The
+                            // check stays because `route_select_zone` is the actor and its report
+                            // is the ground truth; if it ever disagrees with the oracle the honest
+                            // answer is still `false`, never a `true` over a no-op.
                             if !crate::eden_dock_right::route_select_zone(subject_id) {
                                 return false;
                             }
@@ -8856,12 +8922,25 @@ mod t754_router_resolves_zones {
         );
         assert!(
             ed.contains(&format!("Rc::clone(&resolve{}", ")")),
-            "wave 129: the probe must hold THAT resolution (the same `Rc`), not a second copy of \
-             the question"
+            "wave 129: the availability narrowing must hold THAT resolution (the same `Rc`), not a \
+             second copy of the question"
         );
         assert!(
             ed.contains(&format!("resolve{}", "(subject_id)")),
             "wave 129: and the click acts on what that one resolution returned"
+        );
+        // F6 — and BOTH seams read the same NARROWED `Rc`, not the raw resolution. See
+        // `wave129_f6_probe_and_click_cannot_disagree` for why the narrowing exists.
+        assert!(
+            ed.contains(&format!("Rc::clone(&available{}", ")")),
+            "wave 129 F6: the probe must hold the AVAILABILITY `Rc` — a probe built from the bare \
+             resolution says `true` for a zone whose panel is unmounted, which the click answers \
+             `false`"
+        );
+        assert!(
+            ed.contains(&format!("available{}", "(subject_id)")),
+            "wave 129 F6: and the click must gate on that same availability, so the two cannot \
+             answer differently"
         );
         // And the Entity arm rides the selection path, not the Zones-panel path: only `Zone` may
         // divert into `route_select_zone`.
@@ -8898,6 +8977,218 @@ mod t754_router_resolves_zones {
             )),
             "T-754: a zone must be selected through the Zones panel's own selection seam"
         );
+    }
+}
+
+/* ════ wave 129 F6 — the affordance probe and the click may not answer different questions ════
+ *
+ * F1 built the probe out of `route_target`'s resolution alone; F2 made `route_select_zone` report
+ * honestly that an unmounted Zones panel selects nothing. Each is right. TOGETHER they disagreed:
+ * for a zone subject with the panel unmounted the probe said `true` (the row painted
+ * `cursor-pointer`) and the click said `false` (nothing happened) — a dead click dressed as an
+ * affordance, which is the T-754 MAJOR this wave was opened to kill.
+ *
+ * The fix is [`route_availability`]: ONE narrowing both seams go through. These pins defend the
+ * INVARIANT, not the arm — the table below covers every target kind, so the next divergence (a new
+ * arm that needs a seam, say) is red here whether or not it is a zone.
+ */
+#[cfg(test)]
+mod wave129_f6_probe_and_click_cannot_disagree {
+    use super::{route_availability, route_target, RouteTarget};
+    use crate::arsenal::class_r_scrub::live_code;
+    use serde_json::json;
+
+    fn doc() -> serde_json::Value {
+        json!({
+            "vehiclesById": { "v1": { "position": { "x": 7.0, "y": 9.0 } } },
+            "entitiesById": {
+                "e1": { "position": { "x": 100.0, "y": 200.0, "z": 0.0, "rotation": 90.0 } }
+            },
+            "zonesById": {
+                "z-circle": { "shape": { "circle": { "x": 100.0, "z": 250.0, "r": 500.0 } } },
+                // A draw that was never committed: resolves to nothing on ANY panel state.
+                "z-shapeless": { "type": "spawn" }
+            }
+        })
+    }
+
+    /// `resolve`'s job in the registered block: [`route_target`] plus the centre the click will use.
+    /// The slot centre comes off the SoA there; any pair does here, the arm is what matters.
+    fn resolved(
+        d: &serde_json::Value,
+        subject_id: &str,
+        is_slot: bool,
+    ) -> Option<(RouteTarget, f64, f64)> {
+        let target = route_target(d, subject_id, &|_| is_slot)?;
+        let (x, y) = match target {
+            RouteTarget::Slot => (1.0, 2.0),
+            RouteTarget::Vehicle { x, y }
+            | RouteTarget::Entity { x, y }
+            | RouteTarget::Zone { x, y } => (x, y),
+        };
+        Some((target, x, y))
+    }
+
+    /// **The probe**, as `register_route_probe` computes it: availability, asked.
+    fn probe_says(d: &serde_json::Value, id: &str, is_slot: bool, zone_panel_live: bool) -> bool {
+        route_availability(resolved(d, id, is_slot), &|| zone_panel_live).is_some()
+    }
+
+    /// **The click**, modelled the way `register_select_by_id` is WRITTEN — availability gate, then
+    /// ACT, and for a `Zone` the act is `eden_dock_right::route_select_zone`, whose returned `bool`
+    /// is precisely "was the Zones panel there?" (`route_select_zone`: `Some(f) => true, None =>
+    /// false`). Modelling the seam SEPARATELY from the oracle is what makes this test able to fail:
+    /// if the narrowing stops consulting panel liveness, the click still does, and the two diverge.
+    fn click_succeeds(
+        d: &serde_json::Value,
+        id: &str,
+        is_slot: bool,
+        zone_panel_live: bool,
+    ) -> bool {
+        let Some((target, _cx, _cy)) =
+            route_availability(resolved(d, id, is_slot), &|| zone_panel_live)
+        else {
+            return false;
+        };
+        if matches!(target, RouteTarget::Zone { .. }) {
+            return zone_panel_live;
+        }
+        true
+    }
+
+    /// Every target kind, both panel states: **the probe's answer IS the click's outcome.**
+    ///
+    /// Perturbation RED: drop the `Zone` narrowing from [`route_availability`] (make it
+    /// `Some((target, x, y))` unconditionally) — the `zone, Zones panel unmounted` row then reads
+    /// probe `true` / click `false`, which is the live F6 defect.
+    #[test]
+    fn the_probe_answers_the_question_the_click_will_answer_for_every_target_kind() {
+        let d = doc();
+        // (label, subject_id, is_slot, zone_panel_live, clicking it does something)
+        let table: &[(&str, &str, bool, bool, bool)] = &[
+            ("slot", "s1", true, true, true),
+            // A slot is selected in the editor selection, which lives as long as the router does —
+            // hide-chrome must NOT make it inert. This row is why the narrowing is arm-keyed.
+            ("slot, chrome hidden", "s1", true, false, true),
+            ("vehicle", "v1", false, true, true),
+            ("vehicle, chrome hidden", "v1", false, false, true),
+            ("entity (placed object)", "e1", false, true, true),
+            ("entity, chrome hidden", "e1", false, false, true),
+            ("zone, Zones panel mounted", "z-circle", false, true, true),
+            // THE F6 ROW.
+            (
+                "zone, Zones panel unmounted",
+                "z-circle",
+                false,
+                false,
+                false,
+            ),
+            ("zone with no shape", "z-shapeless", false, true, false),
+            ("unresolvable id", "nobody", false, true, false),
+            (
+                "unresolvable id, chrome hidden",
+                "nobody",
+                false,
+                false,
+                false,
+            ),
+        ];
+        for &(label, id, is_slot, live, expected) in table {
+            let probe = probe_says(&d, id, is_slot, live);
+            let click = click_succeeds(&d, id, is_slot, live);
+            assert_eq!(
+                probe, click,
+                "wave 129 F6 [{label}]: the affordance probe and the click disagree — a row painted \
+                 clickable over a click that does nothing (or an inert row over a live click)"
+            );
+            assert_eq!(
+                probe, expected,
+                "wave 129 F6 [{label}]: wrong availability — a row is clickable IFF clicking it \
+                 does something"
+            );
+        }
+        // The table is not vacuous in either direction: it saw clickable rows AND dead rows.
+        assert!(
+            table.iter().any(|r| r.4) && table.iter().any(|r| !r.4),
+            "wave 129 F6: the table must exercise both outcomes, or `probe == click` is trivially \
+             satisfiable"
+        );
+    }
+
+    /// The wiring half: there is ONE narrowing in the editor body and BOTH seams clone it. A second
+    /// copy of the condition is how F1 and F2 drifted apart in the first place.
+    ///
+    /// Perturbation RED: revert the probe to a clone of the bare `resolve`.
+    #[test]
+    fn one_availability_decision_feeds_both_the_probe_and_the_click() {
+        let ed = editor_live();
+        assert_eq!(
+            ed.matches(&format!("route{}", "_availability(")).count(),
+            1,
+            "wave 129 F6: the availability narrowing must be applied exactly ONCE — two call sites \
+             are two conditions to keep in step"
+        );
+        assert_eq!(
+            ed.matches(&format!("let available: Subject{}", "Resolver"))
+                .count(),
+            1,
+            "wave 129 F6: one narrowed resolver, built once"
+        );
+        assert!(
+            ed.contains(&format!("Rc::clone(&available{}", ")")),
+            "wave 129 F6: the probe must be a clone of the NARROWED resolver"
+        );
+        assert!(
+            ed.contains(&format!("available{}", "(subject_id)")),
+            "wave 129 F6: and the click must gate on that same narrowed resolver"
+        );
+    }
+
+    /// The oracle is not a second opinion: "the Zones panel is live" is asked as `!chrome_hidden`,
+    /// and `!chrome_hidden` is EXACTLY the gate the `DockRight` mount is written against — and
+    /// `DockRight`'s body is where `install_select_zone` registers the seam.
+    ///
+    /// This pin exists because `eden_dock_right` exposes no side-effect-free "is the hook live?"
+    /// reader (its only reader, `route_select_zone`, SELECTS), so the probe must mirror the mount
+    /// condition. A mirror with nothing holding it to its subject is the defect class this wave is
+    /// about; this is what holds it. Move the `DockRight` mount behind a different gate and this
+    /// goes red.
+    #[test]
+    fn the_zone_liveness_oracle_is_the_dock_right_mount_gate() {
+        let ed = squash(&editor_live());
+        assert!(
+            ed.contains(&format!(
+                "route{}",
+                "_availability(resolve(subject_id),&||!chrome_hidden.get())"
+            )),
+            "wave 129 F6: the zone-liveness oracle must be the chrome gate, read reactively"
+        );
+        let mount = ed
+            .find(&format!("eden_chrome::Dock{}", "Right"))
+            .expect("wave 129 F6: the DockRight mount");
+        let gate = ed[..mount]
+            .rfind("(!chrome_hidden.get()).then(")
+            .expect("wave 129 F6: DockRight must be mounted behind the chrome gate");
+        assert!(
+            mount - gate < 400,
+            "wave 129 F6: the chrome gate the oracle mirrors must be the one that opens the \
+             DockRight mount — nothing else may sit between them"
+        );
+    }
+
+    /// The live editor body, comment- and literal-scrubbed, anchored at the page component (the
+    /// file has a `#[cfg(test)]` module long before the mount, so scrubbing from the top would cut
+    /// the mount away and leave a haystack every pin passes).
+    fn editor_live() -> String {
+        let raw = include_str!("mission_editor.rs");
+        let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
+        live_code(&raw[raw.find(anchor.as_str()).expect("the page component")..])
+    }
+
+    /// Whitespace removed: `rustfmt` may break any of these expressions across lines, and a pin on
+    /// an expression that is really a pin on the formatter is worthless.
+    fn squash(src: &str) -> String {
+        src.chars().filter(|c| !c.is_whitespace()).collect()
     }
 }
 
