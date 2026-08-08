@@ -2926,22 +2926,21 @@ mod t688_aggregated_settings {
             "T-688/T-755: the value-carrying default variant must be constructed exactly once (in \
              from_schema_node, out of a schema node). A second site is a second source of truth."
         );
-        // Path spelling `SettingDefault::Schema { … }` is how a second constructor evades `Self::`
-        // (wave-115 MINOR-2). Match-arm DESTRUCTURES use the same path form but bind fields
-        // (`value,` / `pointer,`); constructions INITIALISE them (`value:`). Count initialisers
-        // only — any one is a second source of truth (the sole allowed construction uses `Self::`).
-        let path_ctor = format!("{}::{} {{", "SettingDefault", "Schema");
-        let path_inits = src
-            .match_indices(&path_ctor)
+        // Any `::Schema { value: … }` initialiser — path-spelled (`SettingDefault::`), alias-spelled
+        // (`SD::`), or otherwise — is a second source of truth. Match-arm DESTRUCTURES bind fields
+        // (`value,` / `pointer,`); constructions INITIALISE them (`value:`). The sole allowed site
+        // is the `Self::Schema` above (wave-115 MINOR-2 / T-755; wave-134 F2 closes the alias gap).
+        let schema_value_inits = src
+            .match_indices("::Schema {")
             .filter(|&(i, _)| {
                 let window = &src[i..src.len().min(i + 160)];
                 window.contains("value:")
             })
             .count();
         assert_eq!(
-            path_inits,
-            0,
-            "T-688/T-755: no `SettingDefault::Schema {{ value: … }}` constructor — the path-spelled              form is a second source of truth the `Self::` needle alone cannot see"
+            schema_value_inits,
+            1,
+            "T-688/T-755/wave-134: exactly one `::Schema {{ value: … }}` constructor (Self:: in              from_schema_node) — a path- or alias-spelled second site is a second source of truth"
         );
         // …and that one site reads the schema's own `default` key rather than deciding anything.
         let lit = live_source(include_str!("eden_settings.rs"));
