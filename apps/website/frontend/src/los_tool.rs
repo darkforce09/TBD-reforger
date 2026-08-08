@@ -52,6 +52,8 @@
 
 use leptos::prelude::*;
 
+use crate::ruler_tool::install_seam;
+
 use map_engine_core::dem::sample::{ProfileSample, Viewshed, Visibility};
 
 // ── Decision 1 — eye-height constants (named, adjustable later) ──────────────────────────────────
@@ -708,8 +710,13 @@ thread_local! {
 
 /// Register the host's leaked LoS state so [`LosOverlay`] can read it. Called once at mount by
 /// `mission_editor` (peer of `ruler_tool::register_ruler_chain`).
+///
+/// **This is an INSTALL** ([`install_seam`]): the state is unregistered at the registering owner's
+/// cleanup, and a remount's newer state is not clobbered by the old owner's cleanup — see the T-778
+/// note above `ruler_tool::install_seam`. Without it [`read_registered_state`] keeps returning a dead
+/// page's shot as though the tool were live.
 pub fn register_los_state(state: std::rc::Rc<std::cell::RefCell<LosState>>) {
-    LOS_STATE.with(|c| *c.borrow_mut() = Some(state));
+    install_seam(&LOS_STATE, state);
 }
 
 /// A snapshot clone of the registered state (empty if none registered — e.g. native/pre-mount).
@@ -736,8 +743,14 @@ thread_local! {
 /// Register the host's DEM point-sampler (world x,y → ground metres, `None` off coverage) so the
 /// overlay can rebuild the profile as the camera pans. The host passes a closure over its live DEM
 /// grid handle — the SAME `sample_grid_meters` the ruler's Z read uses.
+///
+/// **This is an INSTALL** ([`install_seam`]), and here it is load-bearing for correctness rather than
+/// only for freshness: a sampler closing over a dropped page's DEM handle would keep answering
+/// [`compute_viewshed_for`] / `build_profile` with elevations from a terrain that is no longer open.
+/// After unmount [`read_registered_sampler`] reports `None` — the honest "no DEM here" the pure layer
+/// already handles — instead of `Some` over stale ground.
 pub fn register_los_sampler(sampler: std::rc::Rc<dyn Fn(f64, f64) -> Option<f64>>) {
-    LOS_SAMPLER.with(|c| *c.borrow_mut() = Some(sampler));
+    install_seam(&LOS_SAMPLER, sampler);
 }
 
 /// A clone of the registered sampler (`None` if none registered — native/pre-mount).
@@ -757,8 +770,11 @@ thread_local! {
 
 /// Register the host's leaked viewshed state so the overlay/engine bridge can read it. Called once at
 /// mount by `mission_editor`, beside `register_los_state`.
+///
+/// **This is an INSTALL** ([`install_seam`]), for the same reason as its peer above: after unmount
+/// [`read_registered_viewshed`] must report the empty state rather than a dead page's observer disc.
 pub fn register_viewshed_state(state: std::rc::Rc<std::cell::RefCell<ViewshedState>>) {
-    VIEWSHED_STATE.with(|c| *c.borrow_mut() = Some(state));
+    install_seam(&VIEWSHED_STATE, state);
 }
 
 /// A snapshot clone of the registered viewshed state (empty if none registered — native/pre-mount).
