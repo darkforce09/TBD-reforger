@@ -216,21 +216,23 @@ pub const SHORTCUTS: &[Shortcut] = &[
         group: "History",
     },
     // ── Tools ─────────────────────────────────────────────────────────────────────────────────
-    // T-738/T-703 — Escape is the editor's ONE SHARED CHANNEL: nine window-level listeners claim it
-    // (the editor keydown's measure-tool dismissal, the asset picker, the comment editor, the
-    // connections panel, the Attributes modal, the top strip's menus / export dropdown / Save
-    // dialog / Controls Hint, the context menu, and the three settings dialogs). Every claimant
-    // state-gates itself, so at most one thing is ever dismissed — that is what makes the pile-up
-    // sound rather than a collision, and `keymap_census::SHARED_CHANNELS` is where that decision is
-    // written down and pinned. This row used to name only the measurement tools, which advertised
-    // one ninth of the truth — including for the Controls Hint's OWN close button, whose tooltip
-    // says "Close (Esc)".
+    // T-738/T-703 — Escape is the editor's ONE SHARED CHANNEL. Every dismissable editor-surface
+    // listener claims it: the editor keydown's measure-tool dismissal, the asset picker, the
+    // comment editor, the connections panel, the Attributes modal, the top strip's menus /
+    // export dropdown / Save dialog / Controls Hint, the context menu, the three settings
+    // dialogs, and the Faction / ORBAT Manager dialogs (T-774). The claimant COUNT is derived in
+    // `keymap_census` (pinned by `the_prose_census_numbers_are_derived`) — do not retype it here.
+    // Every claimant state-gates itself, so at most one thing is ever dismissed; that is what
+    // makes the pile-up sound rather than a collision, and `keymap_census::SHARED_CHANNELS` is
+    // where that decision is written down and pinned. This row used to name only the measurement
+    // tools, which advertised a fraction of the truth — including for the Controls Hint's OWN
+    // close button, whose tooltip says "Close (Esc)".
     Shortcut {
         codes: &["Escape"],
         chord: "Esc",
         action: "Dismiss whatever is up: a measurement, an open menu or dropdown, the Save dialog, \
                  the Attributes modal, the asset picker, the comment editor, the connections panel, \
-                 a settings dialog, the context menu — or this card",
+                 a settings dialog, the context menu, the Faction or ORBAT Manager — or this card",
         group: "Tools",
     },
     // ── Context menu (context_menu's window keydown — the listener the census could not see) ────
@@ -1474,6 +1476,63 @@ mod t692_help_covers_every_binding {
             bound.iter().all(|c| !c.contains('(')),
             "arm-head extraction picked up something that is not a key code: {bound:?}"
         );
+    }
+
+    /// T-738 — the wave-112 MINOR-4 sites (and the two T-774 added) must each appear in the census
+    /// as an `ev.key()` Escape claim. `ArrowUp`/`Enter` already witness that *some* `ev.key()`
+    /// listener is read; this pin fails if a *known* Escape site is dropped from the scrape while
+    /// Escape still arrives from the editor keydown's `ev.code()` arm alone — the exact false-green
+    /// shape the ticket names.
+    #[test]
+    fn known_escape_ev_key_sites_are_censused() {
+        let required: &[(&str, &str)] = &[
+            // wave-112 MINOR-4
+            ("mission_editor.rs", "asset picker / comment / connections"),
+            ("attributes.rs", "Attributes modal"),
+            ("eden_top_strip.rs", "menus / Save / Controls Hint"),
+            // already on the surface when T-703 widened; still a drop-from-scrape trap
+            ("context_menu.rs", "context menu"),
+            ("eden_settings.rs", "settings dialogs"),
+            // T-774 — the two the eleven-listener census still missed
+            ("faction_manager.rs", "Faction Manager"),
+            ("orbat_manager.rs", "ORBAT Manager"),
+        ];
+        let all = keymap_census::all_bindings();
+        for (file, what) in required {
+            assert!(
+                all.iter()
+                    .any(|b| b.file == *file && b.code == "Escape" && b.via == "ev.key()"),
+                "T-738: Escape via `ev.key()` in {file} ({what}) is invisible to the census — that                  is the wave-112 MINOR-4 false-green. Re-add the file to `editor_surface` / teach                  the extractor the idiom; do not document Escape from the `ev.code()` arm alone."
+            );
+        }
+    }
+
+    /// T-738 — the Escape help row must document the SHARED channel, not only measurement dismissal.
+    /// The Controls Hint's own close button advertises Esc; a row that names only the ruler lies
+    /// to the operator standing on that button.
+    #[test]
+    fn escape_help_documents_the_shared_channel() {
+        let row = SHORTCUTS
+            .iter()
+            .find(|s| s.codes.contains(&"Escape"))
+            .expect("SHORTCUTS must document Escape");
+        for needle in [
+            "measurement",
+            "Save",
+            "Attributes",
+            "asset picker",
+            "settings",
+            "context menu",
+            "Faction",
+            "ORBAT",
+            "this card",
+        ] {
+            assert!(
+                row.action.contains(needle),
+                "T-738: Escape help action must document the shared channel (missing `{needle}` in                  `{}`); naming only measurement dismissal is the live defect wave-112 MINOR-4 saw",
+                row.action
+            );
+        }
     }
 
     /// THE TICKET, as a test: a binding with no help entry is RED. This is the pin that fires when
