@@ -327,6 +327,8 @@ pub fn rebind_engine_from_doc() {
             if let Some(doc) = ctx.doc.borrow().as_ref() {
                 upload_squad_links(e, doc, &soa);
                 e.vehicles_bind(&doc.vehicle_xy_flat());
+                let (mxy, mtints) = marker_lane_xy_tints(doc);
+                e.markers_bind(&mxy, &mtints);
             }
         }
         refresh_signals(ctx, soa.ids.len());
@@ -385,6 +387,8 @@ fn after_doc_change(ctx: &HistoryCtx) {
             // committed document is what puts it back on authored truth. A gesture that ends
             // WITHOUT a commit never reaches here — `select_tool::clear_drag_preview` covers those.
             e.vehicles_bind(&doc.vehicle_xy_flat());
+            let (mxy, mtints) = marker_lane_xy_tints(doc);
+            e.markers_bind(&mxy, &mtints);
         }
     }
     ctx.doc_ver.set(ctx.doc_ver.get().saturating_add(1));
@@ -415,6 +419,37 @@ fn after_doc_change(ctx: &HistoryCtx) {
         crate::yrs_persist::schedule_edit_persist(ctx.doc.clone(), &ctx.mission_id);
     }
     refresh_signals(ctx, soa.ids.len());
+}
+
+/// T-760 — flat marker lane args for [`RenderEngine::markers_bind`]: interleaved world `[x,z,…]`
+/// plus packed RGBA8 side tints. Reads `briefing_marker_rows_json` (the only schema-legal marker
+/// surface). Kept here so undo/redo/restore share one feed with place/edit — a lane bound only
+/// from authoring call sites would go stale exactly the way the ticket forbids.
+fn marker_lane_xy_tints(doc: &MissionDocCore) -> (Vec<f32>, Vec<u8>) {
+    let Ok(rows) = serde_json::from_str::<serde_json::Value>(&doc.briefing_marker_rows_json()) else {
+        return (Vec::new(), Vec::new());
+    };
+    let Some(arr) = rows.as_array() else {
+        return (Vec::new(), Vec::new());
+    };
+    let mut xy = Vec::with_capacity(arr.len() * 2);
+    let mut tints = Vec::with_capacity(arr.len() * 4);
+    for r in arr {
+        let x = r.get("x").and_then(serde_json::Value::as_f64).unwrap_or(0.0);
+        let z = r.get("z").and_then(serde_json::Value::as_f64).unwrap_or(0.0);
+        #[allow(clippy::cast_possible_truncation)]
+        {
+            xy.push(x as f32);
+            xy.push(z as f32);
+        }
+        let faction = r
+            .get("factionId")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("");
+        let side = faction.strip_prefix("faction-").unwrap_or(faction);
+        tints.extend_from_slice(&map_engine_core::slots_gpu::side_rgba(side));
+    }
+    (xy, tints)
 }
 
 /// T-180.4 — thin dirty→upload: collect inputs from doc, geometry in core, hairline role 9.

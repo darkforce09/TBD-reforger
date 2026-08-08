@@ -61,6 +61,9 @@ pub enum LaneRole {
     /// Order: above `Grid` (zones are mission data, not world chrome) and below `SquadLinks`,
     /// so a zone ring can enclose the units it contains without ever occluding a slot marker.
     MissionZones,
+    /// T-760 — briefing marker glyphs (above zone rings, below squad links + slots so a marker
+    /// never occludes a unit). Slot-atlas discs; not on the pick/SoA bridge.
+    MissionMarkers,
     /// T-180.4 — squad leader→member hairline links (under slot rings).
     SquadLinks,
     /// T-180.8 — mission vehicle discs (under slot rings; pick-safe, separate from Slots).
@@ -116,14 +119,15 @@ pub fn lane_order(role: LaneRole) -> u8 {
         LaneRole::Viewshed => 21,
         LaneRole::Grid => 22,
         LaneRole::MissionZones => 23,
-        LaneRole::SquadLinks => 24,
-        LaneRole::MissionVehicles => 25,
-        LaneRole::Slots => 26,
-        LaneRole::SlotPlacePreview => 27,
-        LaneRole::SlotDrag => 28,
-        LaneRole::Clusters => 29,
-        LaneRole::Marquee => 30,
-        LaneRole::MarqueeOutline => 31,
+        LaneRole::MissionMarkers => 24,
+        LaneRole::SquadLinks => 25,
+        LaneRole::MissionVehicles => 26,
+        LaneRole::Slots => 27,
+        LaneRole::SlotPlacePreview => 28,
+        LaneRole::SlotDrag => 29,
+        LaneRole::Clusters => 30,
+        LaneRole::Marquee => 31,
+        LaneRole::MarqueeOutline => 32,
     }
 }
 
@@ -132,7 +136,7 @@ pub fn lane_order(role: LaneRole) -> u8 {
 /// tag-set assertion then fails until the variant is listed here too. Tests that must consider
 /// *every* lane (e.g. `marquee_lanes_are_topmost_fill_then_border`) derive from this rather than
 /// a hand-kept copy — a hand-kept copy silently stops examining each new lane.
-pub const ALL_LANES: [LaneRole; 32] = [
+pub const ALL_LANES: [LaneRole; 33] = [
     LaneRole::Stress,
     LaneRole::Calibration,
     LaneRole::Satellite,
@@ -157,6 +161,7 @@ pub const ALL_LANES: [LaneRole; 32] = [
     LaneRole::Viewshed,
     LaneRole::Grid,
     LaneRole::MissionZones,
+    LaneRole::MissionMarkers,
     LaneRole::SquadLinks,
     LaneRole::MissionVehicles,
     LaneRole::Slots,
@@ -288,6 +293,7 @@ pub fn lane_role_to_u32(role: LaneRole) -> Option<u32> {
         // it has no `role_id` — exactly like `ForestFill`'s companion typed lanes and the world lanes.
         | LaneRole::Viewshed
         | LaneRole::Grid
+        | LaneRole::MissionMarkers
         | LaneRole::MissionVehicles
         | LaneRole::Slots
         | LaneRole::SlotPlacePreview
@@ -572,19 +578,20 @@ mod lane_order_pins {
                 L::Viewshed => 21,
                 L::Grid => 22,
                 L::MissionZones => 23,
-                L::SquadLinks => 24,
-                L::MissionVehicles => 25,
-                L::Slots => 26,
-                L::SlotPlacePreview => 27,
-                L::SlotDrag => 28,
-                L::Clusters => 29,
-                L::Marquee => 30,
-                L::MarqueeOutline => 31,
+                L::MissionMarkers => 24,
+                L::SquadLinks => 25,
+                L::MissionVehicles => 26,
+                L::Slots => 27,
+                L::SlotPlacePreview => 28,
+                L::SlotDrag => 29,
+                L::Clusters => 30,
+                L::Marquee => 31,
+                L::MarqueeOutline => 32,
             }
         }
         let mut tags: Vec<u8> = ALL_LANES.into_iter().map(tag).collect();
         tags.sort_unstable();
-        let expected: Vec<u8> = (0..32).collect();
+        let expected: Vec<u8> = (0..33).collect();
         assert_eq!(
             tags, expected,
             "ALL_LANES must list every variant exactly once"
@@ -618,10 +625,20 @@ mod lane_order_pins {
     #[test]
     fn mission_zones_sit_between_grid_and_squad_links() {
         assert!(lane_order(L::MissionZones) > lane_order(L::Grid));
+        assert!(lane_order(L::MissionZones) < lane_order(L::MissionMarkers));
         assert!(lane_order(L::MissionZones) < lane_order(L::SquadLinks));
         assert!(lane_order(L::MissionZones) < lane_order(L::MissionVehicles));
         assert!(lane_order(L::MissionZones) < lane_order(L::Slots));
         assert!(lane_order(L::MissionZones) < lane_order(L::Marquee));
+    }
+
+    /// T-760: briefing markers above zone rings, below squad links + slots (never occlude a unit).
+    #[test]
+    fn mission_markers_sit_between_zones_and_squad_links() {
+        assert!(lane_order(L::MissionMarkers) > lane_order(L::MissionZones));
+        assert!(lane_order(L::MissionMarkers) < lane_order(L::SquadLinks));
+        assert!(lane_order(L::MissionMarkers) < lane_order(L::MissionVehicles));
+        assert!(lane_order(L::MissionMarkers) < lane_order(L::Slots));
     }
 
     #[test]
