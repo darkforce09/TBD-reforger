@@ -2931,7 +2931,8 @@ impl MissionDocCore {
     /// Paste `k` copied slots in ONE transaction (mirrors `ydoc.pasteSlots` @180). JS mints the ids
     /// and resolves each slot's target squad/layer (both already existing — `ensureDefault*` runs
     /// JS-side), so the parallel arrays are index-aligned per slot. Positions translate so the clip's
-    /// centroid lands at `(anchor_x, anchor_y)`, or nudge `+PASTE_NUDGE` on x/y when no anchor; x/y
+    /// centroid lands at `(anchor_x, anchor_y)`, or — with NO anchor — does not translate at all, so
+    /// every slot keeps its SOURCE coordinates (T-743; see the arm's own note below); x/y
     /// clamp to `[0,width]×[0,height]`; `zs[i]` is the JS-sampled DEM elevation at the clamped paste
     /// position (0 when the DEM is not ready — the vitest case, byte-parity-preserving); rotation
     /// carries from the source. `index` accumulates per squad (seeded from the squad's current
@@ -2969,9 +2970,28 @@ impl MissionDocCore {
         // Centroid in the JS reduce order (left-to-right f64 sum) → byte-identical translate.
         let cx = src_x.iter().sum::<f64>() / n as f64;
         let cy = src_y.iter().sum::<f64>() / n as f64;
+        // T-743 — NO ANCHOR IS PASTE-AT-ORIGINAL, AND IT TRANSLATES BY NOTHING.
+        //
+        // This arm used to add a fixed 20 m to both axes (`PASTE_NUDGE`, byte-parity with
+        // `ydoc.pasteSlots`), so `Ctrl/Cmd+Shift+V` — the command literally named "paste at the
+        // source position" — landed every slot at `(x+20, y+20)`. The operator's call (2026-08-08):
+        // the JS byte-parity was a MIGRATION SAFETY NET so the Rust rewrite could not silently lose
+        // behaviour, not a contract. A paste that lands 20 m from its source is wrong however
+        // faithfully it reproduces the oracle, so the offset is gone and the golden churn accepted.
+        // There is deliberately no compatibility flag: two paste geometries selectable at runtime is
+        // how the next reader ends up unable to say where a paste lands.
+        //
+        // THE ARM IS NO LONGER SHARED. `PASTE_NUDGE`'s own doc comment recorded that this branch
+        // served a SECOND caller — the fallback when a PLAIN paste happens with the map cursor
+        // off-map, where `cx`/`cy` arrive as `None`. Zeroing the offset without dealing with that
+        // would have silently converted every off-map plain paste into a paste-at-original. It was
+        // dealt with at the source instead: the plain `Ctrl/Cmd+V` arm in `mission_editor.rs` now
+        // resolves its own fallback anchor (the centre of the visible map) and NEVER reaches this
+        // function without one. So `(None, None)` here has exactly one meaning, and it is the one
+        // the command is named for.
         let (dx, dy) = match (anchor_x, anchor_y) {
             (Some(ax), Some(ay)) => (ax - cx, ay - cy),
-            _ => (PASTE_NUDGE, PASTE_NUDGE),
+            _ => (0.0, 0.0),
         };
 
         let mut txn = self.begin();
@@ -5113,8 +5133,9 @@ fn ensure_leader_invariant_in_txn(
     }
 }
 
-/// Distance (m) a paste is offset from its originals when the cursor is off-map (`ydoc.PASTE_NUDGE`).
-const PASTE_NUDGE: f64 = 20.0;
+// T-743 — `PASTE_NUDGE` (20 m, `ydoc.PASTE_NUDGE`) lived here and is DELETED, not zeroed. It had one
+// consumer, `paste_slots`' no-anchor arm, and that arm is now an exact-source paste; a `0.0` constant
+// named "nudge" would only invite someone to make it non-zero again.
 
 // ── T-693 merge_mission_payload support (types + pure helpers) ───────────────────────────────────
 
@@ -8406,6 +8427,91 @@ mod tests {
             v["p2"].get("loadout").is_none(),
             "empty string = no loadout copied"
         );
+    }
+
+    /// **T-743 — a paste with NO anchor lands EXACTLY on the source coordinates.**
+    ///
+    /// The command is named "paste at the source position"; before this ticket the no-anchor arm
+    /// added `PASTE_NUDGE` = 20 m to both axes and it landed 20 m away on both. Non-integral,
+    /// asymmetric source coordinates on purpose: `(10, 10)` would pass against an off-by-20 that
+    /// happened to be applied to the wrong axis, and integral ones hide the `Any::BigInt` vs
+    /// `Any::Number` encoding split.
+    ///
+    /// Perturb by restoring any non-zero offset in `paste_slots`' `_ =>` arm — both x and y fail.
+    #[test]
+    fn t743_paste_without_anchor_lands_on_source_coordinates() {
+        let doc = MissionDocCore::new();
+        doc.add_editor_layer("lyr", "Default", None);
+        doc.paste_slots(
+            vec!["p1".into(), "p2".into()],
+            vec!["sq1".into(), "sq1".into()],
+            vec!["lyr".into(), "lyr".into()],
+            vec![1234.5, 4321.25],
+            vec![6789.75, 987.5],
+            vec![0.0, 0.0],
+            vec![0.0, 0.0],
+            vec!["Rifleman".into(), "Medic".into()],
+            vec![String::new(), String::new()],
+            vec![String::new(), String::new()],
+            vec!["stand".into(), "stand".into()],
+            vec![String::new(), String::new()],
+            vec![String::new(), String::new()],
+            None,
+            None,
+            12800.0,
+            12800.0,
+        );
+        let v: serde_json::Value = serde_json::from_str(&doc.slots_json()).expect("valid json");
+        assert_eq!(
+            v["p1"]["position"]["x"].as_f64(),
+            Some(1234.5),
+            "paste-at-original must not move x"
+        );
+        assert_eq!(
+            v["p1"]["position"]["y"].as_f64(),
+            Some(6789.75),
+            "paste-at-original must not move y"
+        );
+        // The SECOND slot pins that this is a zero TRANSLATE, not a coincidence at the centroid:
+        // a translate computed off the clip centroid would still leave the centroid put while
+        // moving both members.
+        assert_eq!(v["p2"]["position"]["x"].as_f64(), Some(4321.25));
+        assert_eq!(v["p2"]["position"]["y"].as_f64(), Some(987.5));
+    }
+
+    /// The anchored paste — plain `Ctrl/Cmd+V` — is UNCHANGED by T-743: the clip's centroid still
+    /// lands on the anchor and the members keep their relative layout. Pinned beside the no-anchor
+    /// case because "make paste-at-original exact" is one `match` arm away from "make every paste
+    /// exact", which would silently break the paste operators actually use.
+    #[test]
+    fn t743_anchored_paste_still_moves_the_centroid_onto_the_anchor() {
+        let doc = MissionDocCore::new();
+        doc.add_editor_layer("lyr", "Default", None);
+        doc.paste_slots(
+            vec!["a1".into(), "a2".into()],
+            vec!["sq1".into(), "sq1".into()],
+            vec!["lyr".into(), "lyr".into()],
+            vec![100.0, 200.0],
+            vec![300.0, 500.0],
+            vec![0.0, 0.0],
+            vec![0.0, 0.0],
+            vec!["Rifleman".into(), "Medic".into()],
+            vec![String::new(), String::new()],
+            vec![String::new(), String::new()],
+            vec!["stand".into(), "stand".into()],
+            vec![String::new(), String::new()],
+            vec![String::new(), String::new()],
+            Some(1000.0),
+            Some(2000.0),
+            12800.0,
+            12800.0,
+        );
+        let v: serde_json::Value = serde_json::from_str(&doc.slots_json()).expect("valid json");
+        // Centroid (150, 400) → (1000, 2000), so dx = 850, dy = 1600.
+        assert_eq!(v["a1"]["position"]["x"].as_f64(), Some(950.0));
+        assert_eq!(v["a1"]["position"]["y"].as_f64(), Some(1900.0));
+        assert_eq!(v["a2"]["position"]["x"].as_f64(), Some(1050.0));
+        assert_eq!(v["a2"]["position"]["y"].as_f64(), Some(2100.0));
     }
 
     #[test]

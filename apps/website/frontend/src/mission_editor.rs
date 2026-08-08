@@ -2378,6 +2378,35 @@ fn zone_centre(zone: &serde_json::Value) -> Option<(f64, f64)> {
     Some((sx / n, sz / n))
 }
 
+/// T-743 — where a PLAIN `Ctrl/Cmd+V` anchors when the map cursor is not available.
+///
+/// **Why this function exists at all.** `MissionDocCore::paste_slots` takes an OPTIONAL anchor, and
+/// "no anchor" now means one thing only: paste every slot on its source coordinates
+/// (`Ctrl/Cmd+Shift+V`). Before T-743 the same no-anchor branch was doing double duty — it also
+/// absorbed the plain paste whose cursor was off-map, and paid for that with a 20 m nudge applied to
+/// BOTH callers. Splitting the intents means the plain arm has to answer the off-map question here,
+/// on its own, rather than by falling through to a branch named for something else.
+///
+/// **The decision.** An off-map plain paste anchors on the CENTRE OF THE VISIBLE MAP. It is not an
+/// exotic path — `cursor` is `None` whenever the pointer sits over any chrome panel (the hierarchy
+/// tree, the Attributes dock), which is exactly where it is after a click-then-Ctrl+V — so making it
+/// a silent no-op would strand a real, frequent gesture. Pasting into the middle of the view keeps
+/// the promise plain paste actually makes ("put the copy where I am looking"), lands it inside the
+/// terrain clamp, and leaves it selected and visible. What it deliberately does NOT do is quietly
+/// become paste-at-original: that is a separate command with a separate chord, and two chords that
+/// do the same thing under a condition the operator cannot see is the defect this ticket fixes.
+///
+/// `None` out means "do not paste" and is reachable only when there is no camera to take a centre
+/// from — the engine has not booted, or its matrix is singular (NaN, read as off-map by the same
+/// `is_finite` rule the CUR read-out uses). There is nowhere to put the slots and no view to put
+/// them in; the keypress falls through unhandled rather than inventing a coordinate.
+fn plain_paste_anchor(
+    cursor: Option<(f64, f64)>,
+    view_centre: Option<(f64, f64)>,
+) -> Option<(f64, f64)> {
+    cursor.or(view_centre)
+}
+
 #[component]
 pub fn MissionEditorPage() -> impl IntoView {
     let container_ref = NodeRef::<leptos::html::Div>::new();
@@ -3472,20 +3501,63 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 crate::editor_ops::copy_selection()
                                     && crate::editor_ops::delete_selection()
                             }
+                            // T-743 — THE PLAIN PASTE ALWAYS CARRIES AN ANCHOR. It used to hand
+                            // `paste_at_cursor` the raw `cx`/`cy`, which are `None` whenever the
+                            // pointer is off the map (over any chrome panel, or before the first
+                            // pointermove) — and a `None` anchor is now the paste-at-original
+                            // instruction, which is emphatically not what a plain Ctrl/Cmd+V means.
+                            // So the fallback is resolved HERE, where the camera is, instead of in
+                            // the document core where the two intents used to share one branch:
+                            // cursor if there is one, otherwise the centre of the visible map. See
+                            // `plain_paste_anchor` for why that is the fallback and not a no-op.
+                            //
+                            // The centre is unprojected against `frozen_camera` — the SAME camera the
+                            // CUR read-out and every pick use — so "the middle of the view" means the
+                            // same world point here as it would if the operator had put the pointer
+                            // there and pressed Ctrl+V. `try_borrow` rather than `borrow`: this is a
+                            // window-level listener that can fire during a frame that already holds
+                            // the engine, and a panic in a keydown takes the whole editor with it.
                             "KeyV" if modk && !ev.alt_key() && !ev.shift_key() => {
-                                crate::editor_ops::paste_at_cursor(cx, cy)
+                                let rect = container.get_bounding_client_rect();
+                                let view_centre = engine
+                                    .try_borrow()
+                                    .ok()
+                                    .and_then(|g| {
+                                        g.as_ref().map(|e| {
+                                            crate::select_tool::frozen_camera(
+                                                rect.width(),
+                                                rect.height(),
+                                                e.target_x(),
+                                                e.target_y(),
+                                                e.zoom(),
+                                            )
+                                            .unproject_xy(rect.width() / 2.0, rect.height() / 2.0)
+                                        })
+                                    })
+                                    .filter(|c| c[0].is_finite() && c[1].is_finite())
+                                    .map(|c| (c[0], c[1]));
+                                match plain_paste_anchor(cx.zip(cy), view_centre) {
+                                    Some((ax, ay)) => {
+                                        crate::editor_ops::paste_at_cursor(Some(ax), Some(ay))
+                                    }
+                                    None => false,
+                                }
                             }
                             // T-669 ACTION-PASTE-ORIG-001 — Ctrl/Cmd+Shift+V pastes with NO cursor
                             // anchor. `paste_at_cursor`'s anchor is `Option`al and that option IS the
-                            // feature: `Some(cx, cy)` translates the clip's centroid onto the map
-                            // cursor (the plain paste arm above), `None` leaves every slot on its
-                            // SOURCE coordinates. Honesty about the one wrinkle: with no anchor
-                            // `Doc::paste_slots` offsets the whole clip by `PASTE_NUDGE` (20 m) so the
-                            // copy is not buried pixel-perfect under its original and unclickable.
-                            // That nudge is `map-engine-core`'s pre-existing no-anchor behaviour
-                            // (byte-parity with the JS `ydoc.pasteSlots`), not a choice this arm
-                            // makes, and the help row says "source position" rather than claiming an
-                            // exact-coordinate paste.
+                            // feature: `Some(ax, ay)` translates the clip's centroid onto that point
+                            // (the plain paste arm above), `None` leaves every slot on its SOURCE
+                            // coordinates.
+                            //
+                            // T-743 — AND IT NOW MEANS THAT EXACTLY. This comment used to carry a
+                            // wrinkle: `Doc::paste_slots`' no-anchor arm added a 20 m `PASTE_NUDGE`
+                            // to both axes for byte-parity with the JS `ydoc.pasteSlots`, so the
+                            // command named "paste at the source position" put every slot 20 m off
+                            // it. The operator retired that parity (it was a migration safety net,
+                            // not a contract); the arm translates by nothing, and the help row's
+                            // "source position" is now a literal statement rather than an
+                            // approximation. The off-map plain paste that used to share the nudged
+                            // branch is answered in the arm above.
                             //
                             // MUTUAL EXCLUSION with the plain paste arm: that arm guards
                             // `!ev.shift_key()`, this one guards `ev.shift_key()`, and both require
@@ -10595,9 +10667,17 @@ mod t669_clipboard_completion {
     }
 
     /// `paste_at_cursor`'s anchor is `Option`al, and that option IS paste-at-original: the plain
-    /// paste arm hands it the map cursor, the Shift arm hands it nothing so every slot keeps its
-    /// source coordinates. Pin both halves — passing `cx, cy` to the Shift arm by accident is the
-    /// exact regression that would make this ticket a no-op while still looking bound.
+    /// paste arm hands it a point, the Shift arm hands it nothing so every slot keeps its source
+    /// coordinates. Pin both halves — passing `cx, cy` to the Shift arm by accident is the exact
+    /// regression that would make this ticket a no-op while still looking bound.
+    ///
+    /// **T-743 — the no-anchor call must be UNIQUE.** The plain arm used to pass its raw `cx`/`cy`
+    /// through, which are `None` with the pointer off the map, so the two commands collapsed onto
+    /// one branch and the shared branch had to compromise (a 20 m nudge) to serve both. The count
+    /// below is the whole split, expressed as a fact about the shipped listener: exactly ONE arm in
+    /// the editor keydown may say "no anchor", and it is the one Shift+V takes. Counted over the
+    /// entire arm list rather than inside a slice, so a re-ordered or renamed arm cannot make it
+    /// pass by moving the offender out of a window.
     #[test]
     fn paste_at_original_passes_no_anchor() {
         let arms = keydown_arms(include_str!("mission_editor.rs"));
@@ -10613,13 +10693,57 @@ mod t669_clipboard_completion {
             ))
             .expect("ACTION-PASTE-ORIG-001: Ctrl/Cmd+Shift+V must be an arm of its own");
         assert!(
-            arms[plain..shifted].contains("editor_ops::paste_at_cursor(cx, cy)"),
-            "the plain Ctrl/Cmd+V must still anchor the paste on the map cursor"
+            arms[plain..shifted].contains("plain_paste_anchor(cx.zip(cy), view_centre)"),
+            "T-743: the plain Ctrl/Cmd+V must resolve its own anchor — cursor, else the view \
+             centre — instead of handing an `Option` straight to the paste"
+        );
+        assert!(
+            arms[plain..shifted].contains("editor_ops::paste_at_cursor(Some(ax), Some(ay))"),
+            "T-743: the plain Ctrl/Cmd+V must paste with an anchor it has already resolved"
         );
         assert!(
             arms[shifted..].contains("editor_ops::paste_at_cursor(None, None)"),
             "ACTION-PASTE-ORIG-001: the Shift arm must pass NO anchor — that is what makes the \
              paste land on the source position instead of the cursor"
+        );
+        assert_eq!(
+            arms.matches("editor_ops::paste_at_cursor(None, None)")
+                .count(),
+            1,
+            "T-743: exactly one keydown arm may paste with no anchor. A second one means some \
+             other chord silently means paste-at-original too, which is the shared-branch defect \
+             this ticket removed"
+        );
+    }
+
+    /// **T-743 — the off-map plain paste falls back to the view centre, never to "no anchor".**
+    ///
+    /// The keydown arm itself cannot run off-browser (it reads a live camera), so the DECISION is
+    /// factored into a pure function and pinned here; the arm's call site is pinned by source
+    /// above. Perturb `plain_paste_anchor` to return `None` when the cursor is missing — the
+    /// off-map case fails, and that perturbation is precisely the regression that would hand
+    /// `paste_at_cursor` a `None` anchor and turn a plain paste into a paste-at-original.
+    #[test]
+    fn t743_plain_paste_falls_back_to_the_view_centre() {
+        // Cursor on the map wins outright — the fallback must not override a real cursor.
+        assert_eq!(
+            super::plain_paste_anchor(Some((10.0, 20.0)), Some((999.0, 999.0))),
+            Some((10.0, 20.0)),
+            "a live map cursor is the anchor; the view centre is only a fallback"
+        );
+        // Pointer over a chrome panel (the common case) — anchored on the view centre, and NOT
+        // silently promoted to paste-at-original.
+        assert_eq!(
+            super::plain_paste_anchor(None, Some((640.0, 480.0))),
+            Some((640.0, 480.0)),
+            "an off-map plain paste must still carry an anchor — the middle of what is on screen"
+        );
+        // No camera at all (engine not booted, or a singular matrix) — there is nothing to anchor
+        // on and nothing on screen, so the keypress does not paste.
+        assert_eq!(
+            super::plain_paste_anchor(None, None),
+            None,
+            "with no cursor and no camera the plain paste must decline, not invent a coordinate"
         );
     }
 

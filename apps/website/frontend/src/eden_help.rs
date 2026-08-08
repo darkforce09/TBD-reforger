@@ -132,6 +132,11 @@ pub const SHORTCUTS: &[Shortcut] = &[
         action: "Paste at the cursor",
         group: "Selection",
     },
+    // T-743 — this row's copy is UNCHANGED and is now literally true. It was written by T-669 as a
+    // description of the intent while `paste_slots`' no-anchor arm still added a 20 m `PASTE_NUDGE`
+    // to both axes, which made "the source position" an overstatement of ±20 m and is half of what
+    // T-743 was raised for. The nudge is gone; the paste lands on the source coordinates exactly, so
+    // the sentence needed no softening — the code came to meet it.
     Shortcut {
         codes: &["KeyV"],
         chord: "Ctrl/Cmd + Shift + V",
