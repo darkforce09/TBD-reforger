@@ -58,6 +58,22 @@ impl Clock for ZeroClock {
     }
 }
 
+/// T-732 — one per-entity transform patch for [`MissionDocCore::update_entity_transforms`].
+///
+/// `is_slot = true` rides the slot path (terrain bounds clamp, transform-lock refusal, the same
+/// z-policy as [`MissionDocCore::update_slot_position`]); `false` rides the vehicle path (no clamp,
+/// no lock, partial axes leave the others alone — rotation-only and translate-only both work).
+/// `None` on an axis means leave it. Unknown ids are skipped.
+#[derive(Clone, Debug, PartialEq)]
+pub struct EntityTransformPatch {
+    pub id: String,
+    pub is_slot: bool,
+    pub x: Option<f64>,
+    pub y: Option<f64>,
+    pub z: Option<f64>,
+    pub rotation: Option<f64>,
+}
+
 /// The `yrs`-backed document core. `slots` is a root map of nested per-slot maps; `editor_layers` is
 /// the root map whose `entityIds` arrays give each slot its Outliner folder — the `state/ydoc.ts`
 /// shape, materialized into a [`SlotSoa`].
@@ -1300,6 +1316,36 @@ impl MissionDocCore {
         }
     }
 
+    /// T-732 — map-place a vehicle **and** stamp `factionId` + unmanned intent in **one** LOCAL txn.
+    ///
+    /// The host used to call [`Self::add_vehicle`] then [`Self::set_vehicle_faction`] then
+    /// [`Self::set_vehicle_crewed`] — three txns — so an unmanned place needed three Ctrl+Z (wave-103
+    /// MINOR / T-718 item 3). Prefer this for every map-placed vehicle. `crewed = true` omits the key
+    /// (Eden default); `false` writes `crewed: false`. `faction_id` is the already-resolved side
+    /// faction (`faction-BLUFOR` etc.); minting a missing faction row stays the caller's concern.
+    #[allow(clippy::too_many_arguments)]
+    pub fn place_vehicle_with_crew_stamp(
+        &self,
+        id: &str,
+        resource_name: &str,
+        x: f64,
+        y: f64,
+        z: f64,
+        rotation: f64,
+        faction_id: &str,
+        crewed: bool,
+    ) {
+        let mut txn = self.begin();
+        let v = self
+            .vehicles
+            .insert(&mut txn, id, MapPrelim::from([("id", id)]));
+        v.insert(&mut txn, "resourceName", resource_name);
+        v.insert(&mut txn, "position", position_any(x, y, z, rotation));
+        v.insert(&mut txn, "factionId", faction_id);
+        if !crewed {
+            v.insert(&mut txn, "crewed", false);
+        }
+    }
     /// T-076 — unboard: clear one seat of a vehicle's crew map. No-op when the vehicle or seat is
     /// absent. Removes the `crew` key entirely once its last seat is cleared, so an emptied crew
     /// leaves the row shape it had before any board (the omit idiom [`Self::set_vehicle_cargo`] uses
@@ -2759,35 +2805,88 @@ impl MissionDocCore {
         height: f64,
     ) {
         let mut txn = self.begin();
-        // T-665 — transform lock: a slot on a locked layer (or under a locked ancestor) refuses the
-        // Attributes-tab position edit, the same silent refusal the drag path takes in
-        // `move_entities_in_txn`. Guarded before the write so no `position` is rewritten.
-        if slot_is_transform_locked(&txn, &self.editor_layers, id) {
-            return;
+        let _ = update_slot_position_in_txn(
+            &mut txn,
+            &self.slots,
+            &self.editor_layers,
+            id,
+            x,
+            y,
+            z,
+            rotation,
+            width,
+            height,
+        );
+    }
+
+    /// T-732 — apply many per-entity transform patches in **one** LOCAL yrs transaction.
+    ///
+    /// The T-645 placement helpers and multi-select rotate used to call [`Self::update_slot_position`]
+    /// / [`Self::set_vehicle_position`] once per entity — N txns under `capture_timeout_millis = 0` —
+    /// so a 50-entity pattern needed 50 Ctrl+Z. One call here is one undo step (T-491's shape,
+    /// generalized to per-entity targets). Returns how many patches actually wrote (unknown ids and
+    /// transform-locked slots are skipped).
+    pub fn update_entity_transforms(
+        &self,
+        patches: &[EntityTransformPatch],
+        width: f64,
+        height: f64,
+    ) -> usize {
+        if patches.is_empty() {
+            return 0;
         }
-        if let Some(Out::YMap(slot)) = self.slots.get(&txn, id) {
-            let (mut px, mut py, mut pz, mut prot) = read_position(&txn, &slot);
-            if let Some(nx) = x.filter(|v| v.is_finite()) {
-                px = nx.clamp(0.0, width);
+        let mut txn = self.begin();
+        let mut n = 0usize;
+        for p in patches {
+            let applied = if p.is_slot {
+                update_slot_position_in_txn(
+                    &mut txn,
+                    &self.slots,
+                    &self.editor_layers,
+                    &p.id,
+                    p.x,
+                    p.y,
+                    p.z,
+                    p.rotation,
+                    width,
+                    height,
+                )
+            } else {
+                update_vehicle_position_in_txn(
+                    &mut txn,
+                    &self.vehicles,
+                    &p.id,
+                    p.x,
+                    p.y,
+                    p.z,
+                    p.rotation,
+                )
+            };
+            if applied {
+                n += 1;
             }
-            if let Some(ny) = y.filter(|v| v.is_finite()) {
-                py = ny.clamp(0.0, height);
-            }
-            if let Some(nr) = rotation.filter(|v| v.is_finite()) {
-                prot = ((nr % 360.0) + 360.0) % 360.0;
-            }
-            if let Some(nz) = z.filter(|v| v.is_finite()) {
-                pz = nz;
-            } else if x.is_some() || y.is_some() {
-                pz = 0.0; // terrain-follow; DEM z is sampled on the JS side
-            }
-            let existing = read_position_map(&txn, &slot);
-            slot.insert(
-                &mut txn,
-                "position",
-                position_any_merged(existing, px, py, pz, prot),
-            );
         }
+        n
+    }
+
+    /// T-732 — rotate many slots and/or vehicles in **one** LOCAL txn (one undo step).
+    ///
+    /// Thin wrapper over [`Self::update_entity_transforms`] for the multi-select Shift-rotate /
+    /// orient path. Each `(id, is_slot, degrees)` writes rotation only; x/y/z stay put. Returns how
+    /// many entities rotated.
+    pub fn rotate_entities(&self, items: &[(String, bool, f64)], width: f64, height: f64) -> usize {
+        let patches: Vec<EntityTransformPatch> = items
+            .iter()
+            .map(|(id, is_slot, deg)| EntityTransformPatch {
+                id: id.clone(),
+                is_slot: *is_slot,
+                x: None,
+                y: None,
+                z: None,
+                rotation: Some(*deg),
+            })
+            .collect();
+        self.update_entity_transforms(&patches, width, height)
     }
 
     /// Move several slots by a shared world delta (drag release). `zs[i]` is the JS-sampled DEM
@@ -5345,6 +5444,87 @@ fn read_env_map<T: ReadTxn>(txn: &T, meta: &MapRef) -> HashMap<String, Any> {
     }
 }
 
+/// T-732 — slot transform apply inside an existing txn (shared by [`MissionDocCore::update_slot_position`]
+/// and [`MissionDocCore::update_entity_transforms`]). Returns whether a write landed.
+#[allow(clippy::too_many_arguments)]
+fn update_slot_position_in_txn(
+    txn: &mut TransactionMut,
+    slots: &MapRef,
+    editor_layers: &MapRef,
+    id: &str,
+    x: Option<f64>,
+    y: Option<f64>,
+    z: Option<f64>,
+    rotation: Option<f64>,
+    width: f64,
+    height: f64,
+) -> bool {
+    if slot_is_transform_locked(&*txn, editor_layers, id) {
+        return false;
+    }
+    let Some(Out::YMap(slot)) = slots.get(&*txn, id) else {
+        return false;
+    };
+    let (mut px, mut py, mut pz, mut prot) = read_position(txn, &slot);
+    if let Some(nx) = x.filter(|v| v.is_finite()) {
+        px = nx.clamp(0.0, width);
+    }
+    if let Some(ny) = y.filter(|v| v.is_finite()) {
+        py = ny.clamp(0.0, height);
+    }
+    if let Some(nr) = rotation.filter(|v| v.is_finite()) {
+        prot = ((nr % 360.0) + 360.0) % 360.0;
+    }
+    if let Some(nz) = z.filter(|v| v.is_finite()) {
+        pz = nz;
+    } else if x.is_some() || y.is_some() {
+        pz = 0.0; // terrain-follow; DEM z is sampled on the JS side
+    }
+    let existing = read_position_map(txn, &slot);
+    slot.insert(
+        &mut *txn,
+        "position",
+        position_any_merged(existing, px, py, pz, prot),
+    );
+    true
+}
+
+/// T-732 — vehicle transform apply inside an existing txn (shared by the atomic batch path).
+/// Partial axes leave the others alone. Returns whether a write landed.
+fn update_vehicle_position_in_txn(
+    txn: &mut TransactionMut,
+    vehicles: &MapRef,
+    id: &str,
+    x: Option<f64>,
+    y: Option<f64>,
+    z: Option<f64>,
+    rotation: Option<f64>,
+) -> bool {
+    let Some(Out::YMap(v)) = vehicles.get(&*txn, id) else {
+        return false;
+    };
+    let (mut px, mut py, mut pz, mut prot) = read_position(txn, &v);
+    if let Some(nx) = x.filter(|v| v.is_finite()) {
+        px = nx;
+    }
+    if let Some(ny) = y.filter(|v| v.is_finite()) {
+        py = ny;
+    }
+    if let Some(nz) = z.filter(|v| v.is_finite()) {
+        pz = nz;
+    }
+    if let Some(nr) = rotation.filter(|v| v.is_finite()) {
+        prot = ((nr % 360.0) + 360.0) % 360.0;
+    }
+    let existing = read_position_map(txn, &v);
+    v.insert(
+        &mut *txn,
+        "position",
+        position_any_merged(existing, px, py, pz, prot),
+    );
+    true
+}
+
 /// T-491 — slot delta apply inside an existing txn (shared by [`MissionDocCore::move_entities`]
 /// and [`MissionDocCore::move_entities_and_vehicles`]).
 ///
@@ -6532,6 +6712,212 @@ mod tests {
         );
         assert_eq!(vehs["v0"]["position"]["rotation"], 45.0);
         assert!(!doc.can_undo());
+    }
+
+    /// T-732 Class-R — the OLD three-call place path is three undo steps (defect pin).
+    #[test]
+    fn unmanned_place_split_calls_are_three_undo_steps() {
+        let doc = MissionDocCore::new();
+        doc.set_origin_init(true);
+        doc.add_faction("faction-BLUFOR", "BLUFOR", "BLUFOR");
+        doc.set_origin_init(false);
+        assert_eq!(doc.undo_depth(), 0);
+
+        doc.add_vehicle(
+            "v0",
+            "Prefab/Vehicle.et",
+            Some(10.0),
+            Some(20.0),
+            Some(0.0),
+            Some(0.0),
+        );
+        doc.set_vehicle_faction("v0", "faction-BLUFOR");
+        doc.set_vehicle_crewed("v0", false);
+        assert_eq!(
+            doc.undo_depth(),
+            3,
+            "split place path: add + faction + crewed = three undo steps"
+        );
+        assert_eq!(vehicles_of(&doc)["v0"]["crewed"], false);
+        assert_eq!(vehicles_of(&doc)["v0"]["factionId"], "faction-BLUFOR");
+    }
+
+    /// T-732 Class-R — `place_vehicle_with_crew_stamp` is ONE undo step (unmanned).
+    #[test]
+    fn place_vehicle_with_crew_stamp_is_one_undo_step_unmanned() {
+        let mut doc = MissionDocCore::new();
+        doc.set_origin_init(true);
+        doc.add_faction("faction-BLUFOR", "BLUFOR", "BLUFOR");
+        doc.set_origin_init(false);
+        assert_eq!(doc.undo_depth(), 0);
+
+        doc.place_vehicle_with_crew_stamp(
+            "v0",
+            "Prefab/Vehicle.et",
+            10.0,
+            20.0,
+            0.0,
+            0.0,
+            "faction-BLUFOR",
+            false,
+        );
+        assert_eq!(doc.undo_depth(), 1, "atomic stamp = one undo step");
+        let v = &vehicles_of(&doc)["v0"];
+        assert_eq!(v["position"]["x"], 10.0);
+        assert_eq!(v["position"]["y"], 20.0);
+        assert_eq!(v["factionId"], "faction-BLUFOR");
+        assert_eq!(v["crewed"], false, "unmanned intent stamped");
+
+        assert!(doc.undo());
+        assert_eq!(doc.undo_depth(), 0);
+        assert!(
+            vehicles_of(&doc).get("v0").is_none(),
+            "one undo removes the whole place"
+        );
+    }
+
+    /// T-732 Class-R — manned stamp omits `crewed` and is still one undo step.
+    #[test]
+    fn place_vehicle_with_crew_stamp_omits_crewed_when_manned() {
+        let doc = MissionDocCore::new();
+        doc.set_origin_init(true);
+        doc.add_faction("faction-OPFOR", "OPFOR", "OPFOR");
+        doc.set_origin_init(false);
+
+        doc.place_vehicle_with_crew_stamp(
+            "v1",
+            "Prefab/Truck.et",
+            1.0,
+            2.0,
+            0.0,
+            90.0,
+            "faction-OPFOR",
+            true,
+        );
+        assert_eq!(doc.undo_depth(), 1);
+        let v = &vehicles_of(&doc)["v1"];
+        assert!(v["crewed"].is_null(), "manned = omit crewed key");
+        assert_eq!(v["factionId"], "faction-OPFOR");
+        assert_eq!(v["position"]["rotation"], 90.0);
+    }
+
+    /// T-732 Class-R — multi-entity rotate is ONE undo step (slots + vehicle).
+    #[test]
+    fn rotate_entities_is_one_undo_step_for_multi_selection() {
+        let mut doc = MissionDocCore::new();
+        doc.set_origin_init(true);
+        doc.add_slot(
+            "s0", "sq", "lyr", 0, "Rifleman", None, None, 100.0, 200.0, 0.0, 0.0,
+        );
+        doc.add_slot(
+            "s1", "sq", "lyr", 1, "Rifleman", None, None, 110.0, 200.0, 0.0, 45.0,
+        );
+        doc.add_vehicle(
+            "v0",
+            "Prefab/Vehicle.et",
+            Some(300.0),
+            Some(400.0),
+            Some(1.5),
+            Some(10.0),
+        );
+        doc.set_origin_init(false);
+        assert_eq!(doc.undo_depth(), 0);
+
+        let n = doc.rotate_entities(
+            &[
+                ("s0".into(), true, 90.0),
+                ("s1".into(), true, 180.0),
+                ("v0".into(), false, 270.0),
+            ],
+            8192.0,
+            8192.0,
+        );
+        assert_eq!(n, 3, "all three patches applied");
+        assert_eq!(doc.undo_depth(), 1, "N rotates = ONE undo step");
+
+        let slots = doc.materialize();
+        assert_eq!(slots.rotations[row_of(&slots, "s0")], 90.0);
+        assert_eq!(slots.rotations[row_of(&slots, "s1")], 180.0);
+        assert_eq!(vehicles_of(&doc)["v0"]["position"]["rotation"], 270.0);
+        assert_eq!(
+            vehicles_of(&doc)["v0"]["position"]["x"],
+            300.0,
+            "rotate leaves vehicle x"
+        );
+        assert_eq!(
+            vehicles_of(&doc)["v0"]["position"]["z"],
+            1.5,
+            "rotate leaves vehicle z"
+        );
+
+        assert!(doc.undo());
+        assert_eq!(doc.undo_depth(), 0);
+        let slots = doc.materialize();
+        assert_eq!(slots.rotations[row_of(&slots, "s0")], 0.0);
+        assert_eq!(slots.rotations[row_of(&slots, "s1")], 45.0);
+        assert_eq!(vehicles_of(&doc)["v0"]["position"]["rotation"], 10.0);
+    }
+
+    /// T-732 Class-R — per-entity position batch (T-645 pattern/align shape) is ONE undo step.
+    #[test]
+    fn update_entity_transforms_is_one_undo_step_for_mixed_batch() {
+        let mut doc = MissionDocCore::new();
+        doc.set_origin_init(true);
+        doc.add_slot(
+            "s0", "sq", "lyr", 0, "Rifleman", None, None, 100.0, 200.0, 5.0, 0.0,
+        );
+        doc.add_vehicle(
+            "v0",
+            "Prefab/Vehicle.et",
+            Some(300.0),
+            Some(400.0),
+            Some(2.0),
+            Some(45.0),
+        );
+        doc.set_origin_init(false);
+
+        let n = doc.update_entity_transforms(
+            &[
+                EntityTransformPatch {
+                    id: "s0".into(),
+                    is_slot: true,
+                    x: Some(150.0),
+                    y: Some(250.0),
+                    z: Some(5.0),
+                    rotation: None,
+                },
+                EntityTransformPatch {
+                    id: "v0".into(),
+                    is_slot: false,
+                    x: Some(310.0),
+                    y: Some(410.0),
+                    z: Some(2.0),
+                    rotation: Some(45.0),
+                },
+            ],
+            8192.0,
+            8192.0,
+        );
+        assert_eq!(n, 2);
+        assert_eq!(doc.undo_depth(), 1, "batch position write = one undo step");
+
+        let slots = doc.materialize();
+        let i = row_of(&slots, "s0");
+        assert_eq!(slots.xs[i], 150.0);
+        assert_eq!(slots.ys[i], 250.0);
+        assert_eq!(slots.zs[i], 5.0, "authored z preserved");
+        let v = &vehicles_of(&doc)["v0"];
+        assert_eq!(v["position"]["x"], 310.0);
+        assert_eq!(v["position"]["y"], 410.0);
+        assert_eq!(v["position"]["z"], 2.0);
+        assert_eq!(v["position"]["rotation"], 45.0);
+
+        assert!(doc.undo());
+        let slots = doc.materialize();
+        let i = row_of(&slots, "s0");
+        assert_eq!(slots.xs[i], 100.0);
+        assert_eq!(slots.ys[i], 200.0);
+        assert_eq!(vehicles_of(&doc)["v0"]["position"]["x"], 300.0);
     }
 
     /// T-574 — the **behavioural** pin that replaces T-491's soft `include_str!` string check.

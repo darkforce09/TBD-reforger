@@ -1756,11 +1756,11 @@ mod tests {
     /// **wave-127 F-5** — the PLACEMENT commands must not flatten an authored Z either.
     ///
     /// Same defect as F-2 above, one path over: `editor_ops::commit_positions` — the shared commit
-    /// behind the top strip's Align, Distribute and placement-pattern menus — wrote every slot as
-    /// `update_slot_position(.., Some(x), Some(y), None, ..)`, the exact shape the core mutator
-    /// terrain-follows to `pz = 0.0`. Nothing re-samples afterwards, so selecting rooftop slots and
-    /// pressing Align dropped all of them to the deck in one gesture, while VEHICLES in the same
-    /// selection kept their z on the very next branch. That asymmetry was the tell.
+    /// behind the top strip's Align, Distribute and placement-pattern menus — used to write every
+    /// slot as `update_slot_position(.., Some(x), Some(y), None, ..)`, the exact shape the core
+    /// mutator terrain-follows to `pz = 0.0`. T-732 now batches through
+    /// `MissionDocCore::update_entity_transforms`, but the sticky-z resolution must still happen
+    /// BEFORE the batch is built.
     ///
     /// Pinned here, beside its sibling, for the same reason: `editor_ops` is `wasm32`-only, so no
     /// test inside it is built by the native harness.
@@ -1777,17 +1777,16 @@ mod tests {
         let read = body.find("slot_z(").unwrap_or_else(|| {
             panic!("commit_positions must read each slot's CURRENT z, not invent one; body was:\n{body}")
         });
-        let write = body.find("core.update_slot_position(").unwrap_or_else(|| {
-            panic!("commit_positions must still write through the core mutator")
+        let write = body.find("update_entity_transforms(").unwrap_or_else(|| {
+            panic!("commit_positions must commit via update_entity_transforms (T-732 atomic batch)")
         });
         assert!(
             read < write,
-            "commit_positions must resolve the sticky z BEFORE the write; read at {read}, write at \
-             {write}"
+            "commit_positions must resolve the sticky z BEFORE the batch write; read at {read}, \
+             write at {write}"
         );
         // The rows are an O(document) JSON parse and this commits k entities, so the batch read must
-        // be HOISTED above the per-entity loop and happen exactly once. A `keep_z_rows` call that
-        // drifted inside the loop would still be correct and would still pass every assert above.
+        // be HOISTED above the per-entity loop and happen exactly once.
         let rows = body.find("keep_z_rows(").unwrap_or_else(|| {
             panic!(
                 "commit_positions must resolve its rows through keep_z_rows — \
@@ -1808,10 +1807,14 @@ mod tests {
             "exactly one keep_z_rows call — more than one means the document is re-parsed per \
              entity; body was:\n{body}"
         );
-        // And the vehicle branch keeps doing what it always did correctly.
+        // Vehicle branch still carries its own z into the patch.
         assert!(
-            body.contains("core.set_vehicle_position(") && body.contains("e.z,"),
+            body.contains("z: Some(e.z)") || body.contains("z: Some(e.z,"),
             "the vehicle branch must still pass the vehicle's own z through; body was:\n{body}"
+        );
+        assert!(
+            body.contains("is_slot: false"),
+            "vehicle patches must be marked is_slot: false; body was:\n{body}"
         );
     }
 
