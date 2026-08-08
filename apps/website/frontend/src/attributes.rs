@@ -1852,6 +1852,121 @@ mod tests {
         );
     }
 
+    /// **T-777** — and neither may PASTE. A copy lands at the elevation it was copied from.
+    ///
+    /// Third path in the same family as F-2 and F-5 above. `editor_ops::paste_at_cursor` pushed a
+    /// hard-coded ground value into `paste_slots`' `zs` column for every clipboard row, justified
+    /// in a comment as byte-parity with the flat-map JS oracle. The **operator set that parity
+    /// aside on 2026-08-08** — it was a migration safety net, never a contract — and the zero was
+    /// FINAL either way: the oracle's caller re-sampled the DEM and wrote the real elevation back,
+    /// nothing in this frontend does, so copying a rooftop entity dropped the copy to the ground
+    /// inside the paste's own undo step.
+    ///
+    /// A SOURCE pin for the same reason as its two siblings: `editor_ops` is
+    /// `#![cfg(target_arch = "wasm32")]`, so the native harness builds nothing inside it and no
+    /// test here can call the function. The other half — that a non-zero elevation carried across
+    /// the seam actually survives into the document, and that a multi-slot paste does not hand one
+    /// entity another's z — is a live native test at
+    /// `crates/map-engine-core/tests/paste_keeps_authored_z.rs`. Neither half is sufficient alone:
+    /// this one cannot see the document, that one cannot see which value the frontend chooses.
+    #[test]
+    fn a_paste_carries_each_copied_slots_authored_z_into_the_copy() {
+        let ops = live_code(include_str!("editor_ops.rs"));
+        // FILE-WIDE, not scoped to the paste body: the failure mode is the literal coming back, and
+        // it does not have to come back in the function it was removed from.
+        let flattening_push = ["zs.push(", "0.0)"].concat();
+        assert!(
+            !ops.contains(&flattening_push),
+            "no path may push a hard-coded ground elevation into a zs column — nothing re-samples \
+             terrain afterwards, so that value is what the operator is left with"
+        );
+        // The overruled rationale must not survive as a live comment either; it would send the next
+        // reader to restore the behaviour the operator just removed. Checked on RAW source because
+        // `live_code` strips exactly the thing under test.
+        assert!(
+            !include_str!("editor_ops.rs").contains("DEM not ready"),
+            "the paste's parity rationale was overruled on 2026-08-08 and must not be left standing"
+        );
+
+        let body = only_body(&ops, "pub fn paste_at_cursor(");
+        // Resolved through the SHARED reader. A second z-resolution vocabulary is its own defect
+        // class here — F-2, F-5, F-6 and this path must all read a z the same way.
+        assert!(
+            body.contains("slot_z("),
+            "paste_at_cursor must read each copied slot's authored z, not invent one; body was:\n\
+             {body}"
+        );
+        // Resolved ONCE for the whole paste and HOISTED above the per-slot walk: building the
+        // lookup inside the loop would be quadratic in the paste size.
+        let rows = body.find("let z_rows").unwrap_or_else(|| {
+            panic!("paste_at_cursor must resolve its z lookup up front; body was:\n{body}")
+        });
+        let loop_at = body
+            .find("for slot in &clip")
+            .unwrap_or_else(|| panic!("paste_at_cursor must still walk the clipboard rows"));
+        assert!(
+            rows < loop_at,
+            "the z lookup must be built ABOVE the per-slot loop (built at {rows}, loop at \
+             {loop_at}) — once per PASTE, not once per slot"
+        );
+        assert_eq!(
+            body.matches("let z_rows").count(),
+            1,
+            "exactly one z lookup; a second one means a second z-resolution path"
+        );
+
+        // ORDER CORRESPONDENCE — the whole reason this fix can be worse than the bug if it is
+        // wrong. `zs[i]` must be the elevation of the row that minted `ids[i]`, and a mismatched
+        // zip hands one entity another's elevation while looking perfectly green.
+        //
+        // Proved structurally, not by convention: BOTH pushes live inside the ONE walk over
+        // `clip`, and each occurs EXACTLY ONCE in the whole function. One iteration therefore
+        // appends exactly one element to each vector, in lockstep — a total, order-preserving map
+        // from clipboard row to (id, z) pair. No zip, no id lookup, no second source to drift.
+        let per_slot = only_body(&body, "for slot in &clip");
+        assert!(
+            per_slot.contains("ids.push(mint_id("),
+            "the id mint must stay inside the clipboard walk; loop body was:\n{per_slot}"
+        );
+        assert!(
+            per_slot.contains("zs.push("),
+            "the z push must sit in the SAME iteration as the id mint, or the two vectors are only \
+             conventionally aligned; loop body was:\n{per_slot}"
+        );
+        for (needle, what) in [("ids.push(mint_id(", "id mint"), ("zs.push(", "z push")] {
+            assert_eq!(
+                body.matches(needle).count(),
+                1,
+                "exactly one {what} in paste_at_cursor — a second one appends off-cadence and \
+                 shifts every later index by one"
+            );
+        }
+        // And nothing re-orders either vector between the walk that builds them and the single
+        // hand-off. Scoped to that REGION on purpose: this asserts a property OF the region, not a
+        // ban on a token (those are file-wide, see the top of this test).
+        let hand_off = body.find("core.paste_slots(").unwrap_or_else(|| {
+            panic!("paste_at_cursor must still commit through the bulk paste mutator")
+        });
+        assert!(
+            loop_at < hand_off,
+            "the parallel arrays must be built before they are handed off"
+        );
+        for reorder in [
+            ".sort",
+            ".reverse(",
+            ".dedup",
+            ".retain(",
+            ".swap(",
+            ".rotate_",
+        ] {
+            assert!(
+                !body[loop_at..hand_off].contains(reorder),
+                "nothing may `{reorder}` between building the paste arrays and handing them to \
+                 paste_slots — the index correspondence is the contract"
+            );
+        }
+    }
+
     /* ─────────── T-741 — multi-edit header honesty (wave-112 NIT-4) ─────────── */
 
     /// Behaviour pin: mixed slot+vehicle selection must name the SLOT write set and disclose

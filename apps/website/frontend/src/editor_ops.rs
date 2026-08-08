@@ -585,6 +585,9 @@ pub fn copy_selection() -> bool {
 /// Ctrl/Cmd+V — paste the clipboard at `(cx, cy)` (the map cursor), preserving the relative layout
 /// (React `pasteSlots`; centroid → cursor). Mints ids, files under the resolved layer, keeps the
 /// source squad id (inert while squads is empty), selects the paste. `true` if anything pasted.
+///
+/// **T-777** — and each copy keeps the elevation it was authored at, rather than landing at ground
+/// level. See the `z_rows` note in the body for why that read is off the clipboard snapshot.
 pub fn paste_at_cursor(cx: Option<f64>, cy: Option<f64>) -> bool {
     let placed = OPS_CTX.with(|c| {
         let guard = c.borrow();
@@ -622,6 +625,29 @@ pub fn paste_at_cursor(cx: Option<f64>, cy: Option<f64>) -> bool {
                 .and_then(serde_json::Value::as_f64)
                 .unwrap_or(0.0)
         };
+        // **T-777 — the copied slots' authored `z`, keyed by SOURCE id, resolved once for the whole
+        // paste.** Built here rather than inside the loop below so the resolution is hoisted, and
+        // built from the CLIPBOARD rather than from the live document, for two reasons:
+        //
+        // 1. `copy_selection` files the RAW `slots_json()` rows on the clipboard — the very rows
+        //    [`slot_z`] is written to read — so the authored `z` is already in hand and the paste
+        //    costs ZERO extra `raw_slot_rows` parses (that helper is O(document) JSON). The exact
+        //    f64 survives, and a slot on a hidden layer still resolves: neither would be true off
+        //    the materialized SoA, whose `zs` column is f32 and which drops T-665 hidden slots.
+        // 2. `x`, `y` and `rotation` above already come from this snapshot. Reading `z` from the
+        //    LIVE document instead would compose the copy's old x/y with the source's *current*
+        //    elevation the moment anyone nudged the original after copying, and would resolve to
+        //    nothing at all when the source has since been deleted or the clipboard is pasted into
+        //    a different mission — and a failed read here is a silently flattened entity.
+        //
+        // `keep_z_rows` is deliberately NOT the reader for this path: its guard answers "could this
+        // `update_slot_position` write terrain-follow an authored z to 0.0?", a question about that
+        // mutator's Option signature which `paste_slots` does not have. Its PARTNER `slot_z` is the
+        // shared reader, and that is what is reused — one z-resolution vocabulary, not a third.
+        let z_rows: serde_json::Map<String, serde_json::Value> = clip
+            .iter()
+            .filter_map(|s| Some((s.get("id")?.as_str()?.to_string(), s.clone())))
+            .collect();
         // T-220 — fields the parallel paste arrays do not carry (unknown keys + unknown
         // position sub-keys). Known keys are filtered again inside `paste_slots`.
         const PASTE_KNOWN: &[&str] = &[
@@ -640,8 +666,22 @@ pub fn paste_at_cursor(cx: Option<f64>, cy: Option<f64>) -> bool {
             sx.push(gp(slot, "x"));
             sy.push(gp(slot, "y"));
             srot.push(gp(slot, "rotation"));
-            zs.push(0.0); // DEM not ready — byte-parity with the flat-map case
-                          // Keep the source squad if it still exists, else "" (empty squads map → inert).
+            // **T-777 — the copy keeps the original's elevation.** This used to push a literal
+            // ground value "for byte-parity with the flat-map case". The operator set that parity
+            // aside on 2026-08-08 (it was a migration safety net, never a contract), and it was
+            // unrecoverable regardless: nothing in this frontend re-samples terrain after a paste
+            // — `terrainZ` did not survive the React deletion — so the zero was FINAL, and a
+            // rooftop entity fell to the ground the moment it was duplicated. Resolved through the
+            // shared [`slot_z`] against `z_rows` above; a row carrying no finite `z` still reads as
+            // ground, exactly as before, so a flat-map paste is unchanged.
+            //
+            // **ORDER.** This push and the `ids.push` at the top of this iteration are the same
+            // pass of the same walk over `clip`, so `zs[i]` is by construction the elevation of the
+            // row that minted `ids[i]` — a total map, not a convention two sites happen to share.
+            // Both vectors reach `paste_slots` below untouched; nothing between here and that call
+            // sorts, filters, or re-orders either one.
+            zs.push(slot_z(&z_rows, &g(slot, "id")).unwrap_or(0.0));
+            // Keep the source squad if it still exists, else "" (empty squads map → inert).
             squad_ids.push(g(slot, "squadId"));
             layer_ids.push(layer_id.clone());
             roles.push(g(slot, "role"));
