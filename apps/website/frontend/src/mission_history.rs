@@ -426,7 +426,8 @@ fn after_doc_change(ctx: &HistoryCtx) {
 /// surface). Kept here so undo/redo/restore share one feed with place/edit — a lane bound only
 /// from authoring call sites would go stale exactly the way the ticket forbids.
 fn marker_lane_xy_tints(doc: &MissionDocCore) -> (Vec<f32>, Vec<u8>) {
-    let Ok(rows) = serde_json::from_str::<serde_json::Value>(&doc.briefing_marker_rows_json()) else {
+    let Ok(rows) = serde_json::from_str::<serde_json::Value>(&doc.briefing_marker_rows_json())
+    else {
         return (Vec::new(), Vec::new());
     };
     let Some(arr) = rows.as_array() else {
@@ -435,8 +436,14 @@ fn marker_lane_xy_tints(doc: &MissionDocCore) -> (Vec<f32>, Vec<u8>) {
     let mut xy = Vec::with_capacity(arr.len() * 2);
     let mut tints = Vec::with_capacity(arr.len() * 4);
     for r in arr {
-        let x = r.get("x").and_then(serde_json::Value::as_f64).unwrap_or(0.0);
-        let z = r.get("z").and_then(serde_json::Value::as_f64).unwrap_or(0.0);
+        let x = r
+            .get("x")
+            .and_then(serde_json::Value::as_f64)
+            .unwrap_or(0.0);
+        let z = r
+            .get("z")
+            .and_then(serde_json::Value::as_f64)
+            .unwrap_or(0.0);
         #[allow(clippy::cast_possible_truncation)]
         {
             xy.push(x as f32);

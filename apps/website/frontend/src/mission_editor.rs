@@ -782,10 +782,19 @@ pub mod armed_place {
     pub enum Ev {
         /// Palette / picker / composition arm.
         Arm,
-        PointerDown { button: i16, on_canvas: bool },
+        PointerDown {
+            button: i16,
+            on_canvas: bool,
+        },
         /// `buttons` = buttons bitfield after the move; `past_threshold` ≈ travel ≥ 4 px.
-        PointerMove { buttons: u16, past_threshold: bool },
-        PointerUp { button: i16, on_canvas: bool },
+        PointerMove {
+            buttons: u16,
+            past_threshold: bool,
+        },
+        PointerUp {
+            button: i16,
+            on_canvas: bool,
+        },
         Escape,
     }
 
@@ -796,7 +805,10 @@ pub mod armed_place {
             Ev::Arm => {
                 host.armed = true;
             }
-            Ev::PointerDown { button, on_canvas: _ } => {
+            Ev::PointerDown {
+                button,
+                on_canvas: _,
+            } => {
                 if button == 1 {
                     host.pan = true;
                 } else if button == 0 {
@@ -902,7 +914,6 @@ pub mod armed_place {
         (host, all)
     }
 }
-
 
 /// T-648 — the TRANSFORM primitives: the snap-grid quantiser, the Shift-rotate face-cursor bearing,
 /// and the transformation-widget state machine. All pure (no `web_sys`, no engine, no doc), so they
@@ -4125,12 +4136,8 @@ pub fn MissionEditorPage() -> impl IntoView {
                             } else {
                                 None
                             };
-                            let world_ok = world
-                                .filter(|c| c[0].is_finite() && c[1].is_finite());
-                            match armed_place::decide_armed_pointerup(
-                                button,
-                                world_ok.is_some(),
-                            ) {
+                            let world_ok = world.filter(|c| c[0].is_finite() && c[1].is_finite());
+                            match armed_place::decide_armed_pointerup(button, world_ok.is_some()) {
                                 armed_place::ArmedUp::Place => {
                                     // ══════════════════════ T-647 — the Ctrl state machine (arm ↔ Ctrl) ═══════
                                     // Ctrl is OVERLOADED across this ticket and its meaning is decided by the
@@ -4207,10 +4214,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                     let _ = container.release_pointer_capture(ev.pointer_id());
                                 }
                                 if let Some(e) = engine.borrow_mut().as_mut() {
-                                    st::clear_drag_preview(
-                                        e,
-                                        &crate::editor_ops::vehicle_points(),
-                                    );
+                                    st::clear_drag_preview(e, &crate::editor_ops::vehicle_points());
                                 }
                             }
                             LG::Marquee { .. } => {
@@ -10136,7 +10140,6 @@ mod t670_scale_signal {
     }
 }
 
-
 /// T-723 — event-SEQUENCE regressions for the armed-place root (wave-106 MAJOR-1/2/3,
 /// wave-108 composition tooltip + Ruler strand, wave-109 LoS strand).
 ///
@@ -10201,7 +10204,11 @@ mod t723_armed_place {
         );
         assert!(!host.armed);
         assert!(effects.contains(&Effect::Place), "got {effects:?}");
-        assert!(host.left.is_none(), "armed up must clear left; left={:?}", host.left);
+        assert!(
+            host.left.is_none(),
+            "armed up must clear left; left={:?}",
+            host.left
+        );
     }
 
     /// MAJOR-2: canvas press while armed must NOT latch Pending; up clears anyway.
@@ -10375,7 +10382,10 @@ mod t723_armed_place {
                 on_canvas: true,
             },
         );
-        assert!(!effects.contains(&Effect::CommitRulerVertex), "got {effects:?}");
+        assert!(
+            !effects.contains(&Effect::CommitRulerVertex),
+            "got {effects:?}"
+        );
     }
 
     /// Ctrl multi-place chain: each canvas up places without leaving left latched.
