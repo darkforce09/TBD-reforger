@@ -204,14 +204,16 @@ const SLOTS_PLACED_NOTE: &str = "Counted from the slots placed in this mission �
 /// `max_players` is what the compiled mission carries (`dto::MissionDetail::compiled_meta`) and what
 /// the library card advertises. Silently preferring either would delete the author's only evidence
 /// that the two have drifted apart, which is the entire reason this row exists.
-const PLAYER_COUNT_DISAGREE_NOTE: &str = "These two do not agree. Max players was chosen once, in the create dialog, and nothing has \
+const PLAYER_COUNT_DISAGREE_NOTE: &str =
+    "These two do not agree. Max players was chosen once, in the create dialog, and nothing has \
      compared it to the mission since; the slot figure is what the mission actually contains. \
      Neither is enforced here, so both are shown.";
 
 /// Shown in place of the game-mode control when the row could not be read: an unsaved draft has no
 /// row to change, and a failed read must not present a working-looking `<select>` that silently
 /// PATCHes nothing.
-const SHAPE_UNAVAILABLE_NOTE: &str = "The mission row has not loaded, so game mode cannot be changed here. A draft that has never \
+const SHAPE_UNAVAILABLE_NOTE: &str =
+    "The mission row has not loaded, so game mode cannot be changed here. A draft that has never \
      been saved to the library has no row yet.";
 
 /// T-694 — what a refused game-mode PATCH tells the author.
@@ -326,14 +328,16 @@ const THUMBNAIL_URL_NOTE: &str = "An absolute http:// or https:// link to an ima
 
 /// Shown when the typed thumbnail is not a link the column can hold. Local, immediate, and it names
 /// the accept rule rather than echoing a 400 — see [`is_acceptable_thumbnail_url`].
-const THUMBNAIL_REJECTED_NOTE: &str = "That is not an absolute http:// or https:// link, so it was \
+const THUMBNAIL_REJECTED_NOTE: &str =
+    "That is not an absolute http:// or https:// link, so it was \
                                        not saved. A site path like /uploads/x.png is not enough — \
                                        the mission row needs the whole address.";
 
 /// Shown in place of both presentation controls when the row could not be read. Same rule, and the
 /// same reason, as [`SHAPE_UNAVAILABLE_NOTE`]: a control over a value nobody has confirmed is a
 /// control that silently writes nothing.
-const PRESENTATION_UNAVAILABLE_NOTE: &str = "The mission row has not loaded, so the briefing and thumbnail cannot be edited here. A draft \
+const PRESENTATION_UNAVAILABLE_NOTE: &str =
+    "The mission row has not loaded, so the briefing and thumbnail cannot be edited here. A draft \
      that has never been saved to the library has no row yet.";
 
 /// T-671 — what a refused presentation PATCH tells the author. Same 403-is-structural split, for the
@@ -692,9 +696,9 @@ impl ShapeMirror {
 
 #[cfg(target_arch = "wasm32")]
 use crate::eden_env::{
+    author_env, fmt_duration_secs, parse_flow_seconds, read_flow_jip, read_flow_seconds,
     FLOW_DEFAULT_BRIEFING_S, FLOW_DEFAULT_SAFESTART_S, FLOW_DEFAULT_TIMELIMIT_S, JIP_OPTIONS,
-    SETTINGS_UNREAD_NOTE, author_env, fmt_duration_secs, parse_flow_seconds, read_flow_jip,
-    read_flow_seconds,
+    SETTINGS_UNREAD_NOTE,
 };
 #[cfg(target_arch = "wasm32")]
 use crate::eden_top_strip::RowMirror;
@@ -1990,7 +1994,8 @@ fn row_cursor_class(clickable: bool) -> &'static str {
 
 /// The header copy. Says what this view is (one list, read-only) and — load-bearing — that a default
 /// cell is the SCHEMA's, so an author reading a diff knows what it was measured against.
-pub const ALL_SETTINGS_NOTE: &str = "Every setting authored in this mission, whichever entity owns \
+pub const ALL_SETTINGS_NOTE: &str =
+    "Every setting authored in this mission, whichever entity owns \
                                      it. Read-only: change a value where it is authored. Defaults \
                                      are read from mission.schema.json, so a key the schema states \
                                      no default for is shown as such rather than guessed.";
@@ -2517,8 +2522,8 @@ mod t746_shape_flight {
 #[cfg(test)]
 mod t694_mission_shape {
     use super::{
-        GAME_MODES, PLAYER_COUNT_DISAGREE_NOTE, PlayerCount, SLOTS_PLACED_NOTE,
-        game_mode_failure_message, is_known_game_mode,
+        game_mode_failure_message, is_known_game_mode, PlayerCount, GAME_MODES,
+        PLAYER_COUNT_DISAGREE_NOTE, SLOTS_PLACED_NOTE,
     };
     use crate::arsenal::class_r_scrub::{live_code, only_body};
     use crate::eden_top_strip::is_mission_row_id;
@@ -2571,35 +2576,27 @@ mod t694_mission_shape {
     /// whose two numbers have drifted needs to be told nothing here reconciles them.
     #[test]
     fn player_count_flags_disagreement_and_nothing_else() {
-        assert!(
-            PlayerCount {
-                placed: 84,
-                declared: Some(64)
-            }
-            .disagrees()
-        );
-        assert!(
-            PlayerCount {
-                placed: 0,
-                declared: Some(64)
-            }
-            .disagrees()
-        );
-        assert!(
-            !PlayerCount {
-                placed: 64,
-                declared: Some(64)
-            }
-            .disagrees()
-        );
+        assert!(PlayerCount {
+            placed: 84,
+            declared: Some(64)
+        }
+        .disagrees());
+        assert!(PlayerCount {
+            placed: 0,
+            declared: Some(64)
+        }
+        .disagrees());
+        assert!(!PlayerCount {
+            placed: 64,
+            declared: Some(64)
+        }
+        .disagrees());
         // No row means nothing to disagree WITH — the block shows the derived count alone.
-        assert!(
-            !PlayerCount {
-                placed: 84,
-                declared: None
-            }
-            .disagrees()
-        );
+        assert!(!PlayerCount {
+            placed: 84,
+            declared: None
+        }
+        .disagrees());
     }
 
     /// Copy pin. [`SLOTS_PLACED_NOTE`] must keep saying that a slot is not a player and that this is
@@ -2736,10 +2733,10 @@ mod t694_mission_shape {
 #[cfg(test)]
 mod t688_aggregated_settings {
     use super::{
-        ALL_SETTINGS_NOTE, DiffState, MISSION_SCHEMA_JSON, MISSION_SETTING_POINTERS,
-        NO_DEFAULT_DECLARED, NOT_A_SCHEMA_KEY, OWNER_UNRESOLVED_NOTE, SettingDefault, SettingOwner,
-        SettingRow, aggregate_settings, fmt_setting_default, fmt_setting_value,
-        mission_setting_pointer, values_agree,
+        aggregate_settings, fmt_setting_default, fmt_setting_value, mission_setting_pointer,
+        values_agree, DiffState, SettingDefault, SettingOwner, SettingRow, ALL_SETTINGS_NOTE,
+        MISSION_SCHEMA_JSON, MISSION_SETTING_POINTERS, NOT_A_SCHEMA_KEY, NO_DEFAULT_DECLARED,
+        OWNER_UNRESOLVED_NOTE,
     };
     use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
     use serde_json::json;
@@ -2955,11 +2952,9 @@ mod t688_aggregated_settings {
             assert_eq!(mission_setting_pointer(key), Some(*pointer));
         }
         // The zone-rule pointers are formatted, so one representative proves the shape.
-        assert!(
-            schema
-                .pointer("/$defs/zoneRules/properties/graceSeconds")
-                .is_some()
-        );
+        assert!(schema
+            .pointer("/$defs/zoneRules/properties/graceSeconds")
+            .is_some());
     }
 
     /// **The walk is over the DOCUMENT.** A key this file has never heard of still gets a row — as
@@ -3278,11 +3273,11 @@ mod t688_aggregated_settings {
 #[cfg(test)]
 mod t754_click_affordance {
     use super::{
-        OWNER_UNRESOLVED_NOTE, SettingOwner, aggregate_settings, owner_is_routable,
-        row_cursor_class,
+        aggregate_settings, owner_is_routable, row_cursor_class, SettingOwner,
+        OWNER_UNRESOLVED_NOTE,
     };
     use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
-    use crate::mission_editor::{RouteTarget, route_target};
+    use crate::mission_editor::{route_target, RouteTarget};
     use crate::validation_panel::register_route_probe;
     use serde_json::json;
 
@@ -3633,7 +3628,7 @@ mod t754_click_affordance {
 // and cuts test modules so a hollow comment cannot green these pins (T-759 class).
 #[cfg(test)]
 mod t758_inert_row_a11y {
-    use super::{SettingOwner, inert_settings_row_reason, owner_is_routable, row_cursor_class};
+    use super::{inert_settings_row_reason, owner_is_routable, row_cursor_class, SettingOwner};
     use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
     use crate::validation_panel::register_route_probe;
 
@@ -3759,8 +3754,8 @@ mod t758_inert_row_a11y {
 #[cfg(test)]
 mod t671_mission_presentation {
     use super::{
-        BRIEFING_NOTE, PresentationField, RowShape, THUMBNAIL_REJECTED_NOTE, THUMBNAIL_URL_NOTE,
-        is_acceptable_thumbnail_url, presentation_failure_message,
+        is_acceptable_thumbnail_url, presentation_failure_message, PresentationField, RowShape,
+        BRIEFING_NOTE, THUMBNAIL_REJECTED_NOTE, THUMBNAIL_URL_NOTE,
     };
     use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
 
