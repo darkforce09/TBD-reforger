@@ -18434,7 +18434,7 @@
    "id": "T-740",
    "order": 4616,
    "program": "eden",
-   "status": "deferred",
+   "status": "shipped",
    "stream": "mission-creator",
    "targets": [
     "website"
@@ -19018,7 +19018,7 @@
    "id": "T-768",
    "order": 4644,
    "program": "eden",
-   "status": "deferred",
+   "status": "shipped",
    "stream": "mission-creator",
    "targets": [
     "website"
@@ -19060,7 +19060,7 @@
    "id": "T-770",
    "order": 4646,
    "program": "eden",
-   "status": "deferred",
+   "status": "shipped",
    "stream": "mission-creator",
    "targets": [
     "website"

@@ -86,6 +86,7 @@ diagnosis) → registry flip + `distrobox-host-exec sh -c './scripts/ticket sync
 | 137 | 114 | T-741 T-749 T-772 | PASS 30/30 (run 1; re-gated PASS over F1/F2/NIT) | 0B/1M/1m/1N + focused re-verify 0 | SHIPPED — multi-edit slot-scope honesty + selection_n flow pin; settle-only scrubber prose/pin rename + Slider rustdoc; ControlsHint close call-site hit-box. Suite 1003. |
 | 138 | 115 | T-742 T-752 T-739 | PASS 30/30 (run 1; re-gated PASS over F1–F6) | 0B/4M/2m/1N + focused re-verify 0 | SHIPPED — approach C: wave.sh test --slice private dirs + brief ban; clippy --all-targets Makefile+CI+gate; gap_analysis/top_strip cite honesty. Suite 1006. |
 | 139 | 116 | T-732 T-747 T-726 | PASS 30/30 (run 1; re-gated PASS over F1–F3 + cite) | 0B/3M/0m/1N + focused re-verify 0 | SHIPPED — attrs multi atomic undo; wave.sh map-engine --all-features + tripwire; Esc→modal_stack (ORBAT/Faction/top-strip). Suite 1014. |
+| 140 | 117 | T-770 T-768 T-740 | PASS 30/30 (run 1) | 0B/0M/2m/1N | SHIPPED — loadout sink acks; connect LMB→complete_connect; redo Cmd chord. Suite 1023. |
 | 121 | assign at close | T-702 T-212 T-654 | — | — | pending |
 | 122 | assign at close | T-673 T-674 T-675 | — | — | pending |
 | 123 | assign at close | T-676 T-677 T-678 | — | — | pending |
