@@ -4433,7 +4433,7 @@ impl RenderEngine {
         self.upload_slot_role_lane(LaneRole::MissionVehicles, &bytes, true);
     }
 
-    /// T-760 — bind briefing marker discs from interleaved world `xy` (`[x0,y0,…]`) and packed
+    /// T-760 — bind briefing marker discs from interleaved map-plane `xy` (`[x0,z0,…]`; feeder pushes x then z) and packed
     /// RGBA8 side tints (`4·n` bytes, same layout as [`Self::slots_bind_soa`]). Reuses the slot
     /// atlas + [`slots_gpu::pack_icon_instance`] — no new pipeline, no new atlas, and **not** on
     /// the pick/SoA bridge (markers must not be hit-testable as slots). Empty clears the lane.

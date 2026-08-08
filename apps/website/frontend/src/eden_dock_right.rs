@@ -2919,7 +2919,7 @@ pub(crate) fn markers_panel(
                 .into_any()
         }}
 
-        // ── Armed state (the one-shot arm; a release over chrome drops it) ────────────────────
+        // ── Armed state (T-723 KeepArmed: Esc/RMB cancel; off-canvas LMB keeps the arm) ───────
         {move || {
             let _ = doc_tick.get();
             let Some(icon) = ops::armed_marker_icon() else {
