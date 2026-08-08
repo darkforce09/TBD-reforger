@@ -423,42 +423,27 @@ fn after_doc_change(ctx: &HistoryCtx) {
     refresh_signals(ctx, soa.ids.len());
 }
 
+/// T-748 — flat comment-lane `xy` for [`RenderEngine::comments_bind`]: interleaved world `[x,z,…]`
+/// from `comments_json` (`commentsById`). Both bind sites in this file call it, so undo / redo /
+/// restore share one feed with place/edit — a lane bound only from authoring call sites would go
+/// stale the same way T-760 forbids for markers.
+///
+/// **T-784 — the parse itself moved to `mission_editor::comment_lane_xy`, and this is now the whole
+/// of the function.** It used to be a private copy of that parse, which made the lane and the map's
+/// comment PICK two independent readers of the same document — the shape T-780 refused for the
+/// connection line. `mission_editor::comment_lane_xy` packs `mission_editor::comment_points`, and
+/// `mission_editor::pick_comment` hit-tests that same list, so what is drawn and what a click can
+/// find are one set by construction. It lives over there for a second reason too: this module is
+/// `#![cfg(target_arch = "wasm32")]` in its entirety, so nothing defined here can be unit-tested
+/// (which is why the T-748 feed pin has to reach this file through `include_str!` at all).
+fn comment_lane_xy(doc: &MissionDocCore) -> Vec<f32> {
+    crate::mission_editor::comment_lane_xy(&doc.comments_json())
+}
+
 /// T-760 — flat marker lane args for [`RenderEngine::markers_bind`]: interleaved world `[x,z,…]`
 /// plus packed RGBA8 side tints. Reads `briefing_marker_rows_json` (the only schema-legal marker
 /// surface). Kept here so undo/redo/restore share one feed with place/edit — a lane bound only
 /// from authoring call sites would go stale exactly the way the ticket forbids.
-/// T-748 — flat comment-lane `xy` for [`RenderEngine::comments_bind`]: interleaved world
-/// `[x,z,…]` from `comments_json` (`commentsById`). Sorted by id so undo/redo/restore share one
-/// stable feed with place/edit — a lane bound only from authoring call sites would go stale the
-/// same way T-760 forbids for markers.
-fn comment_lane_xy(doc: &MissionDocCore) -> Vec<f32> {
-    let Ok(map) = serde_json::from_str::<serde_json::Value>(&doc.comments_json()) else {
-        return Vec::new();
-    };
-    let Some(obj) = map.as_object() else {
-        return Vec::new();
-    };
-    let mut rows: Vec<_> = obj.iter().collect();
-    rows.sort_by(|a, b| a.0.cmp(b.0));
-    let mut xy = Vec::with_capacity(rows.len() * 2);
-    for (_, v) in rows {
-        let pos = |k: &str| {
-            v.get("position")
-                .and_then(|p| p.get(k))
-                .and_then(serde_json::Value::as_f64)
-                .unwrap_or(0.0)
-        };
-        let x = pos("x");
-        let z = pos("z");
-        #[allow(clippy::cast_possible_truncation)]
-        {
-            xy.push(x as f32);
-            xy.push(z as f32);
-        }
-    }
-    xy
-}
-
 fn marker_lane_xy_tints(doc: &MissionDocCore) -> (Vec<f32>, Vec<u8>) {
     let Ok(rows) = serde_json::from_str::<serde_json::Value>(&doc.briefing_marker_rows_json())
     else {
