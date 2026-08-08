@@ -2933,9 +2933,13 @@ impl MissionDocCore {
     /// JS-side), so the parallel arrays are index-aligned per slot. Positions translate so the clip's
     /// centroid lands at `(anchor_x, anchor_y)`, or — with NO anchor — does not translate at all, so
     /// every slot keeps its SOURCE coordinates (T-743; see the arm's own note below); x/y
-    /// clamp to `[0,width]×[0,height]`; `zs[i]` is the JS-sampled DEM elevation at the clamped paste
-    /// position (0 when the DEM is not ready — the vitest case, byte-parity-preserving); rotation
-    /// carries from the source. `index` accumulates per squad (seeded from the squad's current
+    /// clamp to `[0,width]×[0,height]`; `zs[i]` is the elevation the CALLER supplies for slot `i`, and
+    /// it is written verbatim — this seam neither samples terrain nor rescues a zero. Since T-777 the
+    /// frontend passes each copied slot's AUTHORED z, so a copy keeps the height of the entity it came
+    /// from. The rationale that stood here ("the JS-sampled DEM elevation, 0 when the DEM is not
+    /// ready") described a sampler that no longer exists: `terrainZ` did not survive the React
+    /// deletion, so a 0 arriving through this seam is final, not a placeholder awaiting a lookup.
+    /// Rotation carries from the source. `index` accumulates per squad (seeded from the squad's current
     /// `slotIds`). `""` tag/asset → key omitted. Appends are batched (each squad's `slotIds` / each
     /// layer's `entityIds` written once) — the T-059 O(k) shape.
     ///

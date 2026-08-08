@@ -844,10 +844,20 @@ pub struct MissionDetail {
     /// figure typed into the create dialog once; the number of seats the mission actually contains is
     /// `MissionDocCore::slot_count`, and nothing reconciles the two. `compiled_meta` below copies
     /// this one into the compiled mission, so it is not dead — it is simply not evidence about the
-    /// document. The editor now shows both side by side rather than letting either quietly win; see
-    /// `eden_settings::PLAYER_COUNT_DISAGREE_NOTE` for why that disagreement is displayed and not
-    /// resolved. There is deliberately **no** `min_players` counterpart: no column, model field or
-    /// handler has ever had one.
+    /// document. **The operator ruled on 2026-08-08 (T-782): the editor's player figure is the
+    /// DERIVED placed-slot count.** This value is no longer shown as its equal — it sits a tier below,
+    /// labelled as declared-at-creation, and `eden_settings::PLAYER_COUNT_RULING_NOTE` explains the
+    /// answer where `PLAYER_COUNT_DISAGREE_NOTE` used to explain the argument.
+    ///
+    /// **The ruling settled what is DISPLAYED, not what is COMPILED, and this field is the compiled
+    /// half — so it stays.** Whether it should remain author-typed or be derived from the document is
+    /// reserved for the operator. Evidence for that decision, measured at T-782: `flatten.rs` ALREADY
+    /// derives it when the declared value is `< 1`, so making the derivation unconditional is a
+    /// one-line change — with two nuances the operator should see first, a `.max(1)` floor and the
+    /// fact that it counts FLATTENED slots rather than authored ones.
+    ///
+    /// There is deliberately **no** `min_players` counterpart: no column, model field or handler has
+    /// ever had one.
     pub max_players: i64,
     pub status: String,
     pub terrain: String,
