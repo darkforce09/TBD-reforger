@@ -689,12 +689,220 @@ pub mod boot_progress {
 pub struct AssetPickerState {
     /// World metres — the anchor the operator aimed at (parity with the ghost/CUR unproject). The
     /// actual drop still comes from the next canvas click, so this is not a bypass of the click.
+    /// T-723: the picker row arms on `click` (after pointerup), so the next *canvas* click lands
+    /// here — these coords remain the dblclick anchor for the panel position, not a bypass place.
     pub wx: f64,
     pub wy: f64,
     /// Client pixel of the dblclick, so the panel floats at the cursor (like Eden's create menu).
     pub screen_x: f64,
     pub screen_y: f64,
 }
+
+/// T-723 — pure armed-placement gesture decisions.
+///
+/// The wasm pointer handlers in this file call these helpers; the event-SEQUENCE tests below
+/// (and in `t723_armed_place`) drive the same functions through press/move/up/Esc chains so a
+/// source pin cannot green-wash a regression. Lives here (not in `select_tool`) because that
+/// module is `#[cfg(target_arch = "wasm32")]` and a native `cargo test -p website-frontend`
+/// would never see it — the same reason `transform` sits in this file.
+pub mod armed_place {
+    /// What the armed `pointerup` branch should do for a given button + on-canvas bit.
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub enum ArmedUp {
+        /// LMB over the map — commit the place at the release world point.
+        Place,
+        /// LMB over chrome / off-canvas — keep the arm (the arming click's own release, or an
+        /// aborted drag back onto chrome). Esc / RMB cancel; off-canvas must NOT `cancel_pending`
+        /// or click-then-click is arm-then-cancel inside one click (wave-106 MAJOR-1).
+        KeepArmed,
+        /// RMB — Eden stamp-mode cancel.
+        Disarm,
+        /// MMB — do not place; fall through so pan-end cleanup can run (wave-106 MAJOR-3).
+        FallThroughPan,
+        /// Any other button — ignore.
+        Ignore,
+    }
+
+    /// Decide the armed pointerup action. `button` is `PointerEvent.button` (0/1/2).
+    pub fn decide_armed_pointerup(button: i16, on_canvas: bool) -> ArmedUp {
+        match button {
+            0 if on_canvas => ArmedUp::Place,
+            0 => ArmedUp::KeepArmed,
+            1 => ArmedUp::FallThroughPan,
+            2 => ArmedUp::Disarm,
+            _ => ArmedUp::Ignore,
+        }
+    }
+
+    /// A Pending/Ruler must not promote or commit unless a button is still held.
+    /// `buttons` is `PointerEvent.buttons` (bitfield; 0 = none down).
+    pub fn may_promote(buttons: u16) -> bool {
+        buttons != 0
+    }
+
+    /// Whether an LMB press should open a `LeftGesture` while a place is armed.
+    /// False: writing Pending/Ruler under an arm strands it (wave-106 MAJOR-2 / wave-108 MINOR-1 /
+    /// wave-109 MINOR-5).
+    pub fn open_left_gesture_while_armed(armed: bool) -> bool {
+        !armed
+    }
+
+    // ── Minimal gesture machine for event-SEQUENCE tests (mirrors the host wiring) ──────────
+
+    /// Kind of left-button gesture currently latched (test / decision mirror).
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub enum LeftKind {
+        Pending,
+        Ruler,
+        Move,
+        Marquee,
+    }
+
+    /// Observable effects a step may emit.
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub enum Effect {
+        Place,
+        Disarm,
+        PromoteMove,
+        CommitMove,
+        CommitRulerVertex,
+        PanDelta,
+        ClearLeft,
+    }
+
+    /// Compact host state the sequence runner steps.
+    #[derive(Debug, Clone, PartialEq, Eq, Default)]
+    pub struct Host {
+        pub armed: bool,
+        pub left: Option<LeftKind>,
+        pub pan: bool,
+    }
+
+    #[derive(Debug, Clone, Copy)]
+    pub enum Ev {
+        /// Palette / picker / composition arm.
+        Arm,
+        PointerDown { button: i16, on_canvas: bool },
+        /// `buttons` = buttons bitfield after the move; `past_threshold` ≈ travel ≥ 4 px.
+        PointerMove { buttons: u16, past_threshold: bool },
+        PointerUp { button: i16, on_canvas: bool },
+        Escape,
+    }
+
+    /// One step of the T-723-corrected machine. Production handlers call the same decide_* helpers.
+    pub fn step(host: &mut Host, ev: Ev) -> Vec<Effect> {
+        let mut out = Vec::new();
+        match ev {
+            Ev::Arm => {
+                host.armed = true;
+            }
+            Ev::PointerDown { button, on_canvas: _ } => {
+                if button == 1 {
+                    host.pan = true;
+                } else if button == 0 {
+                    if open_left_gesture_while_armed(host.armed) {
+                        // Ruler vs Pending is a tool-mode concern; sequences that care set Ruler
+                        // explicitly via a prior state. Default open is Pending.
+                        if host.left.is_none() {
+                            host.left = Some(LeftKind::Pending);
+                        }
+                    }
+                    // else: armed — do not latch left (T-723)
+                }
+            }
+            Ev::PointerMove {
+                buttons,
+                past_threshold,
+            } => {
+                if host.pan {
+                    out.push(Effect::PanDelta);
+                    return out;
+                }
+                if host.armed {
+                    // ghost only — no promote while armed (host returns early)
+                    return out;
+                }
+                if let Some(LeftKind::Pending) = host.left {
+                    if past_threshold {
+                        if may_promote(buttons) {
+                            host.left = Some(LeftKind::Move);
+                            out.push(Effect::PromoteMove);
+                        } else {
+                            // button-less move: drop the stranded Pending (do not promote)
+                            host.left = None;
+                            out.push(Effect::ClearLeft);
+                        }
+                    }
+                }
+            }
+            Ev::PointerUp { button, on_canvas } => {
+                if host.armed {
+                    // Always clear a stranded left on armed up (Pending/Ruler/…).
+                    if host.left.take().is_some() {
+                        out.push(Effect::ClearLeft);
+                    }
+                    match decide_armed_pointerup(button, on_canvas) {
+                        ArmedUp::Place => {
+                            out.push(Effect::Place);
+                            // one-shot disarm unless caller re-arms (Ctrl keep is outside this pure step)
+                            host.armed = false;
+                        }
+                        ArmedUp::KeepArmed => {}
+                        ArmedUp::Disarm => {
+                            host.armed = false;
+                            out.push(Effect::Disarm);
+                        }
+                        ArmedUp::FallThroughPan => {
+                            if host.pan {
+                                host.pan = false;
+                            }
+                        }
+                        ArmedUp::Ignore => {}
+                    }
+                    return out;
+                }
+                // unarmed
+                if host.pan && button == 1 {
+                    host.pan = false;
+                    return out;
+                }
+                if button != 0 {
+                    // non-LMB must not commit a left gesture
+                    if let Some(k) = host.left.take() {
+                        out.push(Effect::ClearLeft);
+                        let _ = k;
+                    }
+                    return out;
+                }
+                match host.left.take() {
+                    Some(LeftKind::Move) => out.push(Effect::CommitMove),
+                    Some(LeftKind::Ruler) => out.push(Effect::CommitRulerVertex),
+                    Some(LeftKind::Pending) | Some(LeftKind::Marquee) | None => {}
+                }
+            }
+            Ev::Escape => {
+                if host.armed {
+                    host.armed = false;
+                    out.push(Effect::Disarm);
+                }
+                if host.left.take().is_some() {
+                    out.push(Effect::ClearLeft);
+                }
+            }
+        }
+        out
+    }
+
+    /// Run a full event sequence; returns the final host + flattened effects.
+    pub fn run(mut host: Host, events: &[Ev]) -> (Host, Vec<Effect>) {
+        let mut all = Vec::new();
+        for &ev in events {
+            all.extend(step(&mut host, ev));
+        }
+        (host, all)
+    }
+}
+
 
 /// T-648 — the TRANSFORM primitives: the snap-grid quantiser, the Shift-rotate face-cursor bearing,
 /// and the transformation-widget state machine. All pure (no `web_sys`, no engine, no doc), so they
@@ -1238,12 +1446,13 @@ fn AssetPickerOverlay(
                 view! {
                     <button
                         class="block w-full truncate px-3 py-1.5 text-left text-sm text-on-surface hover:bg-primary/20"
-                        on:pointerdown=move |ev| {
+                        on:click=move |ev| {
                             ev.stop_propagation();
-                            // Arm the same place a DockRight character leaf arms, then close: the
-                            // next canvas click lands it (PLACE-001 click-then-click). `editor_ops`
-                            // is wasm-only (the eden_dock_right leaf idiom), so the arm is gated and
-                            // the native view shell just consumes the capture.
+                            // T-723 — arm on `click` (fires AFTER pointerup), not `pointerdown`.
+                            // Arming on pointerdown made the selecting release land on the canvas
+                            // (picker unmounted) and place at the ROW's screen position — wx/wy
+                            // were never read. Click-then-click: this arms; the next canvas LMB
+                            // places. `editor_ops` is wasm-only, so the arm is gated.
                             #[cfg(target_arch = "wasm32")]
                             {
                                 crate::editor_ops::begin_place(payload.clone());
@@ -2821,6 +3030,18 @@ pub fn MissionEditorPage() -> impl IntoView {
                             // no-op. Esc only "acts" (→ prevent_default) when SOMETHING was dismissed;
                             // an Esc with neither tool placed falls through untouched (never swallowed).
                             "Escape" if !modk => {
+                                // T-723 — Esc disarms an armed place BEFORE the measure-tool seam.
+                                // `cancel_pending` was unreachable from the keyboard; Eden stamp
+                                // cancel is Esc (and RMB on pointerup). Clear the ghost with the arm.
+                                let place_acted = if crate::editor_ops::has_pending() {
+                                    crate::editor_ops::cancel_pending();
+                                    if let Some(e) = engine.borrow_mut().as_mut() {
+                                        e.clear_place_preview();
+                                    }
+                                    true
+                                } else {
+                                    false
+                                };
                                 let ruler_acted = ruler.borrow_mut().escape();
                                 if ruler_acted {
                                     sync_ruler();
@@ -2840,7 +3061,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                         e.viewshed_clear();
                                     }
                                 }
-                                ruler_acted || los_acted || viewshed_acted
+                                place_acted || ruler_acted || los_acted || viewshed_acted
                             }
                             "KeyC" if modk && !ev.alt_key() && !ev.shift_key() => {
                                 crate::editor_ops::copy_selection()
@@ -3502,6 +3723,14 @@ pub fn MissionEditorPage() -> impl IntoView {
                         // contours + 8 m forest mass) until the gesture ends.
                         crate::world_assets::set_camera_gesture(true);
                     } else if ev.button() == 0 {
+                        // T-723 — while a place is armed, do NOT open LG::Pending / LG::Ruler.
+                        // A canvas press under the arm used to latch left; the armed pointerup then
+                        // returned without take(), stranding Pending (phantom Move) or Ruler/LoS
+                        // (phantom vertex / observer). `armed_place::open_left_gesture_while_armed`
+                        // is the one decision; the armed pointerup still take()s as belt-and-braces.
+                        if crate::editor_ops::has_pending() {
+                            return;
+                        }
                         // T-159.18/.19 — LMB pending-left: freeze the ortho camera at press (X-05: the
                         // live engine unproject is deleted; a live unproject would feedback-loop
                         // mid-pan). No pointer capture yet — a sub-threshold release is a click; the
@@ -3602,6 +3831,23 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 (c[0], c[1], z)
                             }),
                     );
+                    // T-723 — MMB pan must work WHILE a place is armed (wave-106 MAJOR-3). The
+                    // prior order returned at `has_pending` before the pan branch, so an MMB drag
+                    // never moved the camera and the armed pointerup then stole the place. Pan
+                    // first whenever `pan_px` is latched; the place ghost yields for the gesture.
+                    if let Some((lx, ly)) = pan_px.get() {
+                        let (cx, cy) = (ev.client_x() as f64, ev.client_y() as f64);
+                        if let Some(e) = engine.borrow_mut().as_mut() {
+                            e.pan(cx - lx, cy - ly);
+                            e.on_camera_changed();
+                        }
+                        pan_px.set(Some((cx, cy)));
+                        crate::world_assets::schedule_camera_settle(
+                            map_host.clone(),
+                            engine.clone(),
+                        );
+                        return;
+                    }
                     // T-175 B2 — palette place ghost: while an asset is being dragged from the
                     // palette (`begin_place` armed `pending`), show a live translucent slot ring at
                     // the cursor's world point so the operator sees where it will land (the drop
@@ -3615,22 +3861,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                         }
                         return;
                     }
-                    if let Some((lx, ly)) = pan_px.get() {
-                        let (cx, cy) = (ev.client_x() as f64, ev.client_y() as f64);
-                        if let Some(e) = engine.borrow_mut().as_mut() {
-                            e.pan(cx - lx, cy - ly);
-                            e.on_camera_changed(); // T-172 H5 — slot sizing/cluster gate
-                        }
-                        pan_px.set(Some((cx, cy)));
-                        // T-173 P1 — stream residency mid-drag: the debounce+max-latency arm fires a
-                        // (cheap, memo-gated) settle every ~250 ms during a continuous pan, so chunks
-                        // load as the camera crosses boundaries instead of only at pointer-up.
-                        crate::world_assets::schedule_camera_settle(
-                            map_host.clone(),
-                            engine.clone(),
-                        );
-                        return;
-                    }
+
                     // T-159.19 — LMB drag gesture. Own the gesture across the update (take → compute →
                     // put back) so a Pending→Move/Marquee transition never aliases a `&mut`, and so no
                     // `left` borrow is held across the inner `left.borrow_mut()` put-back (the `if let`
@@ -3645,6 +3876,11 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 ((px - p.start_x).powi(2) + (py - p.start_y).powi(2)).sqrt();
                             if moved < st::DRAG_THRESHOLD_PX {
                                 *left.borrow_mut() = Some(LG::Pending(p));
+                                return;
+                            }
+                            // T-723 — button-less pointermove must NOT promote a stranded Pending
+                            // into Move (wave-106 MAJOR-2). `buttons == 0` drops the gesture.
+                            if !st::may_promote_pending(ev.buttons()) {
                                 return;
                             }
                             // Real drag now: capture so it survives leaving the canvas (React :200).
@@ -3833,88 +4069,113 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // T-159.21 — no `mission_id` capture: the persist tail now runs inside
                 // `mission_history::after_local_edit`, which reads the id from its ctx.
                 move |ev: web_sys::PointerEvent| {
-                    // T-159.22 — palette drag-to-place. FIRST: a place is armed by a `pointerdown`
-                    // on a palette leaf, which the chrome host stops from reaching the map. The
-                    // ARMED state is the signal this branch keys on (`has_pending()`), checked before
-                    // any gesture branch below — NOT an assumption about what the gesture handles hold.
-                    // (Wave-109 verifier fix: the prior comment asserted the gesture handles were
-                    // necessarily unset at this point, which its own next sentence refutes — a release
-                    // over a dock bubbles here even mid-gesture. What is actually true is that
-                    // `has_pending()` short-circuits with a `return` before the gesture `match`
-                    // regardless of what the gesture handles hold, so the two paths never interleave.)
-                    //
-                    // The host stops `pointerdown` only, so a release over a dock ALSO bubbles here:
-                    // the chrome insets decide. They are the same consts `select_tool`'s probe grid
-                    // insets by, so "not under chrome" means one thing editor-wide.
+                    // T-159.22 / T-723 — palette place. FIRST: a place is armed by a palette /
+                    // picker / composition surface. The ARMED state (`has_pending()`) is checked
+                    // before any gesture branch below. This branch used to assume `left`/`pan_px`
+                    // were both None here — that was FALSE (canvas pointerdown while armed still
+                    // wrote LG::Pending/Ruler; MMB still latched pan_px) and is the root of
+                    // wave-106 MAJOR-1/2/3. Corrected contract:
+                    //   * button 0 only places; button 2 disarms; button 1 falls through to pan;
+                    //   * always `left.take()` so Pending/Ruler cannot strand;
+                    //   * off-canvas LMB keeps the arm (arming click's own release) — Esc/RMB cancel.
+                    // The host still stops `pointerdown` only, so a release over a dock bubbles here;
+                    // the chrome insets decide Place vs KeepArmed.
                     if crate::editor_ops::has_pending() {
-                        let rect = container.get_bounding_client_rect();
-                        let (px, py) = (
-                            ev.client_x() as f64 - rect.left(),
-                            ev.client_y() as f64 - rect.top(),
-                        );
-                        // T-638 — the LIVE insets (dock collapse + chrome_hidden folded in). A
-                        // collapsed dock grows the on-canvas region into the freed strip, so a drop
-                        // there lands an entity instead of being swallowed; while chrome is hidden the
-                        // whole window is on-canvas. Same accessors `select_tool`'s probe grid uses, so
-                        // "not under chrome" means one thing editor-wide.
-                        let on_canvas = px >= crate::eden_layout::dock_left_px()
-                            && px <= rect.width() - crate::eden_layout::dock_right_px()
-                            && py >= crate::eden_layout::strip_top_px()
-                            && py <= rect.height() - crate::eden_layout::toolbelt_band_px();
-                        // Same frozen-camera unproject the pick + CUR use, so the slot lands exactly
-                        // where CUR said it would.
-                        let world = if on_canvas {
-                            let g = engine.borrow();
-                            g.as_ref().map(|e| {
-                                crate::select_tool::frozen_camera(
-                                    rect.width(),
-                                    rect.height(),
-                                    e.target_x(),
-                                    e.target_y(),
-                                    e.zoom(),
-                                )
-                                .unproject_xy(px, py)
-                            })
-                        } else {
-                            None
-                        };
-                        // ══════════════════════ T-647 — the Ctrl state machine (arm ↔ Ctrl) ═══════
-                        // Ctrl is OVERLOADED across this ticket and its meaning is decided by the
-                        // ARMED state, resolved in exactly two places:
-                        //   (1) HERE, with a placement ARMED — Ctrl on release = MULTI-PLACE: land
-                        //       the entity but KEEP the pending armed so the next click drops another
-                        //       (`place_at_keep`). Without Ctrl the arm is one-shot (`place_at`
-                        //       take()s it). Eden's Ctrl-stamp behaviour.
-                        //   (2) In the LMB drag-commit (pointerup, `LG::Move` below), with NO
-                        //       placement armed — Ctrl + drag character→character = REGROUP.
-                        // The two can never fire at once: `has_pending()` gates this branch and the
-                        // drag branch runs only when it is false. That mutual exclusion is the whole
-                        // reason PLACE-004 and CONN-GROUP-001 are one row — see the pin
-                        // `t647_ctrl_state_machine`.
-                        //
-                        // T-647 PLACE-CREW-001 — Alt on release = place an EMPTY vehicle: the
-                        // per-gesture override of the DockRight crew toggle (which is the default).
-                        // Threaded to `place_at*` as `alt_empty`; for a Vehicle arm it forces
-                        // `crewed: false`, for a character/object arm it is inert.
-                        let ctrl_multi = ev.ctrl_key() || ev.meta_key();
-                        let alt_empty = ev.alt_key();
-                        match world.filter(|c| c[0].is_finite() && c[1].is_finite()) {
-                            Some(c) => {
-                                if ctrl_multi {
-                                    crate::editor_ops::place_at_keep(c[0], c[1], alt_empty);
-                                } else {
-                                    crate::editor_ops::place_at_alt(c[0], c[1], alt_empty);
-                                }
+                        // T-723 — clear ANY stranded left gesture before deciding (Pending → phantom
+                        // Move; Ruler → phantom vertex; LoS capture under the same LG::Ruler arm →
+                        // phantom observer/target). Belt-and-braces with the pointerdown skip.
+                        let _ = left.borrow_mut().take();
+
+                        let button = ev.button();
+                        // MMB: do not place — fall through to pan-end cleanup below.
+                        if button == 1 {
+                            // keep armed; pan_px cleanup runs next
+                        } else if button == 2 {
+                            // RMB — Eden stamp-mode cancel
+                            crate::editor_ops::cancel_pending();
+                            if let Some(e) = engine.borrow_mut().as_mut() {
+                                e.clear_place_preview();
                             }
-                            None => crate::editor_ops::cancel_pending(),
+                            return;
+                        } else if button != 0 {
+                            return;
+                        } else {
+                            let rect = container.get_bounding_client_rect();
+                            let (px, py) = (
+                                ev.client_x() as f64 - rect.left(),
+                                ev.client_y() as f64 - rect.top(),
+                            );
+                            // T-638 — the LIVE insets (dock collapse + chrome_hidden folded in).
+                            let on_canvas = px >= crate::eden_layout::dock_left_px()
+                                && px <= rect.width() - crate::eden_layout::dock_right_px()
+                                && py >= crate::eden_layout::strip_top_px()
+                                && py <= rect.height() - crate::eden_layout::toolbelt_band_px();
+                            let world = if on_canvas {
+                                let g = engine.borrow();
+                                g.as_ref().map(|e| {
+                                    crate::select_tool::frozen_camera(
+                                        rect.width(),
+                                        rect.height(),
+                                        e.target_x(),
+                                        e.target_y(),
+                                        e.zoom(),
+                                    )
+                                    .unproject_xy(px, py)
+                                })
+                            } else {
+                                None
+                            };
+                            let world_ok = world
+                                .filter(|c| c[0].is_finite() && c[1].is_finite());
+                            match armed_place::decide_armed_pointerup(
+                                button,
+                                world_ok.is_some(),
+                            ) {
+                                armed_place::ArmedUp::Place => {
+                                    // ══════════════════════ T-647 — the Ctrl state machine (arm ↔ Ctrl) ═══════
+                                    // Ctrl is OVERLOADED across this ticket and its meaning is decided by the
+                                    // ARMED state, resolved in exactly two places:
+                                    //   (1) HERE, with a placement ARMED — Ctrl on release = MULTI-PLACE: land
+                                    //       the entity but KEEP the pending armed so the next click drops another
+                                    //       (`place_at_keep`). Without Ctrl the arm is one-shot (`place_at`
+                                    //       take()s it). Eden's Ctrl-stamp behaviour.
+                                    //   (2) In the LMB drag-commit (pointerup, `LG::Move` below), with NO
+                                    //       placement armed — Ctrl + drag character→character = REGROUP.
+                                    // The two can never fire at once: `has_pending()` gates this branch and the
+                                    // drag branch runs only when it is false. That mutual exclusion is the whole
+                                    // reason PLACE-004 and CONN-GROUP-001 are one row — see the pin
+                                    // `t647_ctrl_state_machine`.
+                                    //
+                                    // T-647 PLACE-CREW-001 — Alt on release = place an EMPTY vehicle: the
+                                    // per-gesture override of the DockRight crew toggle (which is the default).
+                                    // Threaded to `place_at*` as `alt_empty`; for a Vehicle arm it forces
+                                    // `crewed: false`, for a character/object arm it is inert.
+                                    let ctrl_multi = ev.ctrl_key() || ev.meta_key();
+                                    let alt_empty = ev.alt_key();
+                                    let c = world_ok.expect("Place implies finite world");
+                                    if ctrl_multi {
+                                        crate::editor_ops::place_at_keep(c[0], c[1], alt_empty);
+                                    } else {
+                                        crate::editor_ops::place_at_alt(c[0], c[1], alt_empty);
+                                    }
+                                }
+                                armed_place::ArmedUp::KeepArmed => {
+                                    // Off-canvas LMB: the arming click's own release (dock /
+                                    // composition) — do NOT cancel_pending (wave-106 MAJOR-1 /
+                                    // wave-108 composition tooltip). Esc / RMB disarm.
+                                }
+                                // FallThroughPan / Disarm / Ignore are handled above by button.
+                                armed_place::ArmedUp::FallThroughPan
+                                | armed_place::ArmedUp::Disarm
+                                | armed_place::ArmedUp::Ignore => {}
+                            }
+                            // T-175 B2 — drop the ghost after a place attempt or a chrome release.
+                            // Ctrl multi-place that KEPT the pending re-shows on the next move.
+                            if let Some(e) = engine.borrow_mut().as_mut() {
+                                e.clear_place_preview();
+                            }
+                            return;
                         }
-                        // T-175 B2 — the place gesture ended (drop or cancel): drop the ghost. A
-                        // Ctrl multi-place that KEPT the pending re-shows the ghost on the next
-                        // pointermove, so clearing it here is right either way.
-                        if let Some(e) = engine.borrow_mut().as_mut() {
-                            e.clear_place_preview();
-                        }
-                        return;
                     }
                     // Pan end (MMB/RMB).
                     if pan_px.get().is_some() {
@@ -3936,6 +4197,39 @@ pub fn MissionEditorPage() -> impl IntoView {
                     let taken = left.borrow_mut().take();
                     let Some(g) = taken else { return };
                     use crate::select_tool::{self as st, LeftGesture as LG};
+                    // T-723 — only button 0 commits a left gesture. A phantom Move (stranded
+                    // Pending promoted after disarm) used to commit on RMB/MMB pointerup and
+                    // teleport the just-placed entity. Wrong-button releases abandon the gesture.
+                    if ev.button() != 0 {
+                        match &g {
+                            LG::Move { .. } => {
+                                if container.has_pointer_capture(ev.pointer_id()) {
+                                    let _ = container.release_pointer_capture(ev.pointer_id());
+                                }
+                                if let Some(e) = engine.borrow_mut().as_mut() {
+                                    st::clear_drag_preview(
+                                        e,
+                                        &crate::editor_ops::vehicle_points(),
+                                    );
+                                }
+                            }
+                            LG::Marquee { .. } => {
+                                if container.has_pointer_capture(ev.pointer_id()) {
+                                    let _ = container.release_pointer_capture(ev.pointer_id());
+                                }
+                                if let Some(e) = engine.borrow_mut().as_mut() {
+                                    e.upload_marquee(0.0, 0.0, 0.0, 0.0, false);
+                                }
+                            }
+                            LG::Rotate { .. } => {
+                                if container.has_pointer_capture(ev.pointer_id()) {
+                                    let _ = container.release_pointer_capture(ev.pointer_id());
+                                }
+                            }
+                            _ => {}
+                        }
+                        return;
+                    }
                     let rect = container.get_bounding_client_rect();
                     let up_x = ev.client_x() as f64 - rect.left();
                     let up_y = ev.client_y() as f64 - rect.top();
@@ -4310,15 +4604,12 @@ pub fn MissionEditorPage() -> impl IntoView {
                     // the pick above used, and rides `MenuTarget` to the dispatch; "Place Comment"
                     // then writes the annotation immediately at that point.
                     //
-                    // Why no arm: an armed place would join `LeftGesture`'s pointerdown/up machine,
-                    // and that machine has a known-pending defect (T-723 — the armed pointerup path
-                    // has no button filter, can strand `LG::Pending`, and has no Esc disarm; the
-                    // in-code "left/pan_px are both None here" invariant near pointerdown was
-                    // refuted in wave 106). Comments do not need an arm to be correct: unlike a
-                    // palette place, the gesture that chooses the point (the right-click) and the
-                    // gesture that confirms the action (the menu row) are already two events, so the
-                    // point is captured once and consumed once, with no in-flight state to strand.
-                    // This ticket therefore adds ZERO new state to the gesture machine.
+                    // Why no arm: comments do not need an arm to be correct. Unlike a palette place,
+                    // the gesture that chooses the point (the right-click) and the gesture that
+                    // confirms the action (the menu row) are already two events, so the point is
+                    // captured once and consumed once, with no in-flight state to strand. (T-723
+                    // repaired the armed pointerup machine — button filter, left.take(), Esc/RMB
+                    // disarm — but Place Comment still adds ZERO new state to LeftGesture.)
                     let world = cam.unproject_xy(px, py);
                     let target = crate::context_menu::resolve_target(hit.as_deref(), &sel)
                         .at_world(world[0], world[1]);
@@ -9842,5 +10133,276 @@ mod t670_scale_signal {
             scale < sample_gate && scale < hud,
             "T-670: the scale must be published BEFORE (and outside) the ~1 Hz HUD sample block"
         );
+    }
+}
+
+
+/// T-723 — event-SEQUENCE regressions for the armed-place root (wave-106 MAJOR-1/2/3,
+/// wave-108 composition tooltip + Ruler strand, wave-109 LoS strand).
+///
+/// These drive `armed_place::step` / `run` — the same decide_* helpers the wasm handlers call.
+/// Source pins are forbidden here: they could not see any of the three defects.
+#[cfg(test)]
+mod t723_armed_place {
+    use super::armed_place::{
+        decide_armed_pointerup, may_promote, open_left_gesture_while_armed, run, step, ArmedUp,
+        Effect, Ev, Host, LeftKind,
+    };
+
+    #[test]
+    fn decide_helpers_match_the_contract() {
+        assert_eq!(decide_armed_pointerup(0, true), ArmedUp::Place);
+        assert_eq!(decide_armed_pointerup(0, false), ArmedUp::KeepArmed);
+        assert_eq!(decide_armed_pointerup(1, true), ArmedUp::FallThroughPan);
+        assert_eq!(decide_armed_pointerup(2, true), ArmedUp::Disarm);
+        assert_eq!(decide_armed_pointerup(3, true), ArmedUp::Ignore);
+        assert!(may_promote(1));
+        assert!(!may_promote(0));
+        assert!(!open_left_gesture_while_armed(true));
+        assert!(open_left_gesture_while_armed(false));
+    }
+
+    /// MAJOR-1 / wave-108 composition: arm on dock, release over chrome → still armed.
+    #[test]
+    fn sequence_dock_arm_then_chrome_release_keeps_armed() {
+        let (host, effects) = run(
+            Host::default(),
+            &[
+                Ev::Arm,
+                Ev::PointerUp {
+                    button: 0,
+                    on_canvas: false,
+                },
+            ],
+        );
+        assert!(host.armed, "arming click's own release must NOT cancel");
+        assert!(
+            !effects.contains(&Effect::Place) && !effects.contains(&Effect::Disarm),
+            "chrome release is KeepArmed — no place, no disarm; got {effects:?}"
+        );
+    }
+
+    /// MAJOR-1 picker path (after on:click arm): genuine second canvas click places.
+    #[test]
+    fn sequence_arm_then_canvas_lmb_places() {
+        let (host, effects) = run(
+            Host::default(),
+            &[
+                Ev::Arm,
+                Ev::PointerDown {
+                    button: 0,
+                    on_canvas: true,
+                },
+                Ev::PointerUp {
+                    button: 0,
+                    on_canvas: true,
+                },
+            ],
+        );
+        assert!(!host.armed);
+        assert!(effects.contains(&Effect::Place), "got {effects:?}");
+        assert!(host.left.is_none(), "armed up must clear left; left={:?}", host.left);
+    }
+
+    /// MAJOR-2: canvas press while armed must NOT latch Pending; up clears anyway.
+    #[test]
+    fn sequence_armed_canvas_press_does_not_latch_pending() {
+        let mut host = Host {
+            armed: true,
+            ..Host::default()
+        };
+        let effects = step(
+            &mut host,
+            Ev::PointerDown {
+                button: 0,
+                on_canvas: true,
+            },
+        );
+        assert!(effects.is_empty());
+        assert!(
+            host.left.is_none(),
+            "must not open Pending while armed; left={:?}",
+            host.left
+        );
+        // Even if a prior bug left a Ruler stranded, armed up clears it.
+        host.left = Some(LeftKind::Ruler);
+        let effects = step(
+            &mut host,
+            Ev::PointerUp {
+                button: 0,
+                on_canvas: true,
+            },
+        );
+        assert!(effects.contains(&Effect::ClearLeft), "got {effects:?}");
+        assert!(effects.contains(&Effect::Place), "got {effects:?}");
+        assert!(host.left.is_none());
+    }
+
+    /// MAJOR-2 phantom Move: button-less move past threshold must NOT promote.
+    #[test]
+    fn sequence_buttonless_move_does_not_promote_stranded_pending() {
+        let mut host = Host {
+            left: Some(LeftKind::Pending),
+            ..Host::default()
+        };
+        let effects = step(
+            &mut host,
+            Ev::PointerMove {
+                buttons: 0,
+                past_threshold: true,
+            },
+        );
+        assert!(effects.contains(&Effect::ClearLeft), "got {effects:?}");
+        assert!(!effects.contains(&Effect::PromoteMove));
+        assert!(host.left.is_none());
+    }
+
+    /// MAJOR-2: after a real promote, non-LMB pointerup must NOT CommitMove.
+    #[test]
+    fn sequence_rmb_does_not_commit_a_move() {
+        let mut host = Host {
+            left: Some(LeftKind::Move),
+            ..Host::default()
+        };
+        let effects = step(
+            &mut host,
+            Ev::PointerUp {
+                button: 2,
+                on_canvas: true,
+            },
+        );
+        assert!(effects.contains(&Effect::ClearLeft), "got {effects:?}");
+        assert!(!effects.contains(&Effect::CommitMove));
+    }
+
+    /// MAJOR-3: MMB while armed falls through to pan; does not place; clears stranded left.
+    #[test]
+    fn sequence_mmb_while_armed_pans_without_placing() {
+        let mut host = Host {
+            armed: true,
+            left: Some(LeftKind::Pending),
+            ..Host::default()
+        };
+        step(
+            &mut host,
+            Ev::PointerDown {
+                button: 1,
+                on_canvas: true,
+            },
+        );
+        assert!(host.pan);
+        let effects = step(
+            &mut host,
+            Ev::PointerMove {
+                buttons: 4, // middle bit
+                past_threshold: true,
+            },
+        );
+        assert!(effects.contains(&Effect::PanDelta));
+        let effects = step(
+            &mut host,
+            Ev::PointerUp {
+                button: 1,
+                on_canvas: true,
+            },
+        );
+        assert!(host.armed, "MMB must not disarm");
+        assert!(!effects.contains(&Effect::Place), "got {effects:?}");
+        assert!(effects.contains(&Effect::ClearLeft));
+        assert!(!host.pan);
+        assert!(host.left.is_none());
+    }
+
+    /// MAJOR-3: RMB while armed disarms (Eden cancel), does not place.
+    #[test]
+    fn sequence_rmb_while_armed_disarms() {
+        let (host, effects) = run(
+            Host {
+                armed: true,
+                left: Some(LeftKind::Ruler),
+                ..Host::default()
+            },
+            &[Ev::PointerUp {
+                button: 2,
+                on_canvas: true,
+            }],
+        );
+        assert!(!host.armed);
+        assert!(effects.contains(&Effect::Disarm), "got {effects:?}");
+        assert!(!effects.contains(&Effect::Place));
+        assert!(host.left.is_none(), "RMB armed up clears stranded Ruler");
+    }
+
+    /// MAJOR-3: Esc disarms.
+    #[test]
+    fn sequence_escape_disarms_armed_place() {
+        let (host, effects) = run(
+            Host {
+                armed: true,
+                ..Host::default()
+            },
+            &[Ev::Escape],
+        );
+        assert!(!host.armed);
+        assert!(effects.contains(&Effect::Disarm), "got {effects:?}");
+    }
+
+    /// wave-108 MINOR-1 / wave-109 MINOR-5: armed place + measure press strands Ruler;
+    /// armed up must clear it so a later same-spot RMB cannot commit a phantom vertex/observer.
+    #[test]
+    fn sequence_armed_up_clears_stale_ruler_before_later_rmb() {
+        let mut host = Host {
+            armed: true,
+            left: Some(LeftKind::Ruler),
+            ..Host::default()
+        };
+        // place click
+        let effects = step(
+            &mut host,
+            Ev::PointerUp {
+                button: 0,
+                on_canvas: true,
+            },
+        );
+        assert!(effects.contains(&Effect::ClearLeft));
+        assert!(effects.contains(&Effect::Place));
+        assert!(host.left.is_none());
+        // later RMB at same spot — no Ruler left to commit
+        let effects = step(
+            &mut host,
+            Ev::PointerUp {
+                button: 2,
+                on_canvas: true,
+            },
+        );
+        assert!(!effects.contains(&Effect::CommitRulerVertex), "got {effects:?}");
+    }
+
+    /// Ctrl multi-place chain: each canvas up places without leaving left latched.
+    #[test]
+    fn sequence_ctrl_multi_place_never_strands_left() {
+        // Pure step one-shots the arm on Place; Ctrl-keep is a place_at_keep concern.
+        // Model keep by re-Arming after each Place (the host re-arms via place_at_keep).
+        let mut host = Host::default();
+        for _ in 0..3 {
+            step(&mut host, Ev::Arm);
+            step(
+                &mut host,
+                Ev::PointerDown {
+                    button: 0,
+                    on_canvas: true,
+                },
+            );
+            assert!(host.left.is_none(), "no Pending while armed");
+            let effects = step(
+                &mut host,
+                Ev::PointerUp {
+                    button: 0,
+                    on_canvas: true,
+                },
+            );
+            assert!(effects.contains(&Effect::Place));
+            assert!(host.left.is_none());
+        }
     }
 }
