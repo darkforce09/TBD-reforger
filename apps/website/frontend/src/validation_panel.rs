@@ -40,7 +40,10 @@
 //! 2. **List** — findings grouped by rule with a per-rule count, CLICK-TO-SELECT (not a clipboard
 //!    dump): clicking a finding routes its `subject_id` → the editor selection
 //!    (the [`register_select_by_id`] router, installed from `mission_editor.rs` where the doc /
-//!    selection handles live), so the offender is pinned on the map and in the trees.
+//!    selection handles live), so the offender is pinned on the map and in the trees. A row wears
+//!    that click affordance IFF the router resolves its subject — [`finding_is_routable`] asks
+//!    ([`register_route_probe`], the same resolution the click runs); a row it says no to renders
+//!    inert, because an affordance must not assert what it has not asked.
 //! 3. **Legend** — the severity ladder (Error / Warning / Info) with each rung's meaning.
 //! 4. **Empty state** — a quiet "No issues", never a celebratory toast (a clean mission is the
 //!    baseline, not an achievement).
@@ -73,8 +76,8 @@ pub const REEVAL_DEBOUNCE_MS: f64 = 250.0;
 ///
 /// `subject_id` is the T-657 stable entity id — the click-to-select key. `None` when the rule's
 /// subject is positional or not a single entity (`V2-FACTION-MAX`, `V4-SCHEMA-VERSION`): those rows
-/// still render and still focus via nothing (the click is a no-op selection-wise, documented on
-/// [`PanelFinding::is_selectable`]).
+/// still render, inert, because the router resolves nothing for them ([`finding_is_routable`] — the
+/// row's clickability is the router's answer, never the presence of this field).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PanelFinding {
     pub rule_id: String,
@@ -99,9 +102,17 @@ impl PanelFinding {
         }
     }
 
-    /// Whether clicking this row can select an entity: it carries a non-empty `subject_id`. A row
-    /// without one (a cardinality / schema-shape finding) has no single offender to pin — the click
-    /// still works as a UI affordance but changes no selection.
+    /// Whether this finding NAMES an offender at all — a non-empty `subject_id`.
+    ///
+    /// **This is a fact about the finding, NOT the click affordance, and must never again be used as
+    /// one.** Wave 129: the row used to style itself `cursor-pointer` off exactly this, which is a
+    /// claim ("clicking selects something") made without asking the thing that would do the
+    /// selecting — and the engine's `ASSET-RESOLVES` findings name placed-object ids the router
+    /// resolved to nothing, so the claim was false on a surface the maker reaches today. A row is
+    /// clickable IFF the ROUTER resolves its subject: see [`finding_is_routable`], which is what the
+    /// view asks. `the_row_never_guesses_at_selectability` keeps this method out of the live view
+    /// code; it survives only for callers asserting that a rule kept its subject id
+    /// (`mission_commands`' compile-findings pin).
     #[must_use]
     pub fn is_selectable(&self) -> bool {
         self.subject_id.as_deref().is_some_and(|s| !s.is_empty())
@@ -422,6 +433,50 @@ pub fn register_select_by_id(f: SelectByIdRouter) {
 /// entity). This is the panel's click-to-select seam — it holds no doc state itself.
 pub fn route_select_by_subject_id(subject_id: &str) -> bool {
     SELECT_BY_ID.with(|c| c.borrow().as_ref().is_some_and(|f| f(subject_id)))
+}
+
+/// The registered ROUTE PROBE's type — the router's resolution asked as a QUESTION: "would a click
+/// on this `subject_id` select anything?", with no side effect.
+type RouteProbe = std::rc::Rc<dyn Fn(&str) -> bool>;
+
+thread_local! {
+    /// The registered route probe. Set from `mission_editor.rs` beside [`SELECT_BY_ID`] and backed by
+    /// the SAME resolution closure the click runs (`mission_editor::route_target` over the live
+    /// document), so the answer this returns is the answer the click will act on.
+    ///
+    /// `None` on the host / pre-mount — and that resolves to "not clickable", which is the safe
+    /// direction: a row renders inert rather than advertising a click into a router that does not
+    /// exist yet.
+    static ROUTE_PROBE: std::cell::RefCell<Option<RouteProbe>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+/// Register the route probe (called once at mount, from the block that registers the router).
+pub fn register_route_probe(f: RouteProbe) {
+    ROUTE_PROBE.with(|c| *c.borrow_mut() = Some(f));
+}
+
+/// **Would a click on this `subject_id` select anything?** — the router's own resolution, asked
+/// before the affordance is drawn.
+///
+/// Empty id short-circuits to `false` (there is nothing to resolve); everything else goes to the
+/// registered probe. No probe registered ⇒ `false`.
+#[must_use]
+pub fn subject_id_routes(subject_id: &str) -> bool {
+    !subject_id.is_empty()
+        && ROUTE_PROBE.with(|c| c.borrow().as_ref().is_some_and(|f| f(subject_id)))
+}
+
+/// **Is this finding's row clickable?** — the ONE question behind both the row's `cursor-pointer`
+/// and its click, and it is [`subject_id_routes`]'s answer, never "the row names an id".
+///
+/// Wave 129, the peer of `eden_settings::owner_is_routable`: the panel used to reason "the finding
+/// carries a `subject_id`, so the row is selectable", which was false for every `ASSET-RESOLVES`
+/// finding on a placed object — the router had no `entitiesById` arm and the click silently
+/// discarded its own `false`. A view must not paint an affordance it has not asked about.
+#[must_use]
+pub fn finding_is_routable(f: &PanelFinding) -> bool {
+    f.subject_id.as_deref().is_some_and(subject_id_routes)
 }
 
 /// Build the T-658 known-asset-id catalogue from the live `registry_session` rows — the set
@@ -862,10 +917,15 @@ fn rule_group_view(group: RuleGroup) -> AnyView {
 
 /// One finding row — CLICK-TO-SELECT. Clicking routes `subject_id` → the editor selection so the
 /// offender is pinned on the map + in the trees (NOT a clipboard dump — the ticket's explicit call).
-/// A row without a `subject_id` (a cardinality / schema finding) still renders; its click is a
-/// no-op selection-wise (`route_select_by_subject_id` returns false), documented by `is_selectable`.
+///
+/// Wave 129 — the row ASKS. `selectable` is [`finding_is_routable`]'s answer (the router's own
+/// resolution of this subject), not "the finding names an id", and it gates the affordance and the
+/// click TOGETHER through [`row_cursor_class`] so the two cannot disagree. A row the router resolves
+/// nothing for — a positional/cardinality finding, a stale id, a subject kind no selection surface
+/// owns — renders INERT rather than wearing a pointer over a dead click. `data-selectable` reports
+/// the same boolean, so a gate can read the claim the row is making.
 fn finding_row_view(f: PanelFinding) -> AnyView {
-    let selectable = f.is_selectable();
+    let selectable = finding_is_routable(&f);
     // The selection key the click routes on (moved into the on:click closure).
     let click_id = f.subject_id.clone().unwrap_or_default();
     // The same id + subject as `data-` attributes (distinct owned copies — the view consumes each).
@@ -873,11 +933,7 @@ fn finding_row_view(f: PanelFinding) -> AnyView {
     let subject_attr = f.subject.clone();
     let message = f.message.clone();
     let subject_body = f.subject.clone();
-    let cursor = if selectable {
-        "cursor-pointer hover:bg-primary/10"
-    } else {
-        "cursor-default"
-    };
+    let cursor = row_cursor_class(selectable);
     view! {
         <button
             type="button"
@@ -888,8 +944,10 @@ fn finding_row_view(f: PanelFinding) -> AnyView {
             data-subject-id=subject_id_attr
             data-selectable=selectable.to_string()
             on:click=move |_| {
-                // Route to selection only for a row that names an entity. The wasm-only op is a no-op
-                // on the host; the guard keeps a positional-subject click from clearing the selection.
+                // Route only for a row the ROUTER resolved — the same boolean the styling used, so a
+                // click cannot happen where no affordance was drawn (or vice versa). The wasm-only op
+                // is a no-op on the host; the guard keeps an unresolvable click from clearing the
+                // selection.
                 if selectable {
                     select_finding_subject(&click_id);
                 }
@@ -931,6 +989,20 @@ fn legend_view() -> AnyView {
         </div>
     }
     .into_any()
+}
+
+/// The row's cursor/hover classes — **the affordance itself, as a function of one boolean**, so
+/// "clickable" and "looks clickable" cannot be decided in two places and disagree. `clickable` is
+/// [`finding_is_routable`]'s answer (the router's), never `subject_id.is_some()`. Peer of
+/// `eden_settings::row_cursor_class`, deliberately identical in shape: the two click surfaces over
+/// the one router state the rule the same way.
+#[must_use]
+fn row_cursor_class(clickable: bool) -> &'static str {
+    if clickable {
+        "cursor-pointer hover:bg-primary/10"
+    } else {
+        "cursor-default"
+    }
 }
 
 /// The Tailwind background class for a severity's dot: red / amber / muted-blue — the ladder colours.
@@ -1079,25 +1151,23 @@ mod tests {
     /* ── click-to-select routing: subject_id → selection call pins ── */
 
     #[test]
-    fn a_finding_with_a_subject_id_is_selectable() {
-        // Click-to-select routes on `subject_id` (T-657). A finding carrying one is selectable; the
-        // panel's row click passes exactly this id to the registered `route_select_by_subject_id`.
+    fn a_finding_with_a_subject_id_names_an_offender() {
+        // Click-to-select routes on `subject_id` (T-657). This is the FACT that the rule kept an
+        // offender id — NOT the claim that the row is clickable; that one belongs to the router
+        // (`finding_is_routable`), see `w129_the_panel_asks_the_router`.
         let f = pf("ORBAT-SLOT-RESOLVES", Severity::Error, Some("slot-7"));
         assert!(f.is_selectable());
         assert_eq!(f.subject_id.as_deref(), Some("slot-7"));
     }
 
     #[test]
-    fn a_positional_finding_is_not_selectable() {
-        // V2-FACTION-MAX / V4-SCHEMA-VERSION carry no entity id — their row renders but the click
-        // must not route a selection (it would clear it). `is_selectable` is the guard the row uses.
+    fn a_positional_finding_names_no_offender() {
+        // V2-FACTION-MAX / V4-SCHEMA-VERSION carry no entity id — their row renders, and renders
+        // inert, because there is nothing for the router to resolve.
         let f = pf("V2-FACTION-MAX", Severity::Warning, None);
         assert!(!f.is_selectable());
         let blank = pf("X", Severity::Warning, Some(""));
-        assert!(
-            !blank.is_selectable(),
-            "an empty subject_id is not selectable"
-        );
+        assert!(!blank.is_selectable(), "an empty subject_id names nobody");
     }
 
     #[test]
@@ -1338,5 +1408,198 @@ mod tests {
         assert_eq!(severity_tag(Severity::Error), "error");
         assert_eq!(severity_tag(Severity::Warning), "warning");
         assert_eq!(severity_tag(Severity::Info), "info");
+    }
+}
+
+/* ═══════════ wave 129 — a finding row is clickable IFF the router resolves its subject ═══════════
+ *
+ * The defect T-754 killed on the settings surface, found alive here by the wave-129 adversarial
+ * verifier and reachable today: `placed_asset_refs` emits `ASSET-RESOLVES` findings whose subject is
+ * a placed-OBJECT id, `route_target` had no `entitiesById` arm, and the row styled itself
+ * `cursor-pointer` off `subject_id.is_some()` — a GUESS about selectability rather than the router's
+ * answer. Both halves are fixed; this module is the correspondence between them.
+ *
+ * The pin is the CORRESPONDENCE, not the arm: it compares what the row WEARS against what the router
+ * RESOLVES, for every subject kind, in both directions, and refuses to be vacuous (it must have seen
+ * both clickable and inert rows). Perturbation RED, either half: revert `finding_is_routable` to
+ * `subject_id.is_some()`, or delete the Entity arm from `route_target`.
+ */
+#[cfg(test)]
+mod w129_the_panel_asks_the_router {
+    use super::{finding_is_routable, register_route_probe, row_cursor_class, PanelFinding};
+    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use crate::mission_editor::route_target;
+    use map_engine_core::mission::validate::{Primitive, Severity};
+    use serde_json::json;
+
+    /// A document root in `small_maps_json` shape carrying one row of every kind the router can meet
+    /// — plus the two shapes it must refuse: an object row with no position, and (by omission) an id
+    /// that is no longer in the document.
+    fn doc() -> serde_json::Value {
+        json!({
+            "vehiclesById": { "v1": { "position": { "x": 7.0, "y": 9.0 } } },
+            "entitiesById": {
+                "e1": {
+                    "id": "e1",
+                    "alias": "prop:ammo_crate",
+                    "position": { "x": 100.0, "y": 200.0, "z": 0.0, "rotation": 90.0 }
+                },
+                "e-nopos": { "id": "e-nopos", "alias": "prop:x" }
+            },
+            "zonesById": { "z1": { "shape": { "circle": { "x": 1.0, "z": 2.0, "r": 50.0 } } } }
+        })
+    }
+
+    /// The one fact the small-maps root cannot answer, supplied here as the editor supplies it.
+    fn is_slot(id: &str) -> bool {
+        id == "slot-7"
+    }
+
+    fn pf(rule_id: &str, subject_id: Option<&str>) -> PanelFinding {
+        PanelFinding {
+            rule_id: rule_id.to_string(),
+            severity: Severity::Error,
+            primitive: Primitive::PerObjectInvariant,
+            message: format!("{rule_id} says no"),
+            subject: format!("/x/{}", subject_id.unwrap_or("none")),
+            subject_id: subject_id.map(str::to_string),
+        }
+    }
+
+    /// Install the probe exactly as `mission_editor`'s mount installs it: the router's own
+    /// resolution over the document root, asked as a question.
+    fn install_probe(root: serde_json::Value) {
+        register_route_probe(std::rc::Rc::new(move |id: &str| {
+            route_target(&root, id, &is_slot).is_some()
+        }));
+    }
+
+    /// **THE pin: the affordance is true row by row.** What the row wears versus what the router
+    /// resolves, for every subject kind, in both directions.
+    #[test]
+    fn a_finding_row_is_clickable_iff_the_router_resolves_its_subject() {
+        let d = doc();
+        install_probe(d.clone());
+        let rows = [
+            pf("ORBAT-SLOT-RESOLVES", Some("slot-7")), // slot
+            pf("V-VEHICLE-ASSET", Some("v1")),         // vehicle
+            pf("ASSET-RESOLVES", Some("e1")),          // placed object — the wave-129 arm
+            pf("ZONE-SHAPE", Some("z1")),              // zone
+            pf("ASSET-RESOLVES", Some("e-nopos")),     // object without a position
+            pf("ASSET-RESOLVES", Some("e-deleted")),   // stale id (deleted since the last re-eval)
+            pf("V2-FACTION-MAX", None),                // positional subject — no offender at all
+            pf("X", Some("")),                         // an empty id names nobody
+        ];
+        let pointer = format!("cursor{}", "-pointer");
+        let (mut clickable_seen, mut inert_seen) = (0usize, 0usize);
+        for f in &rows {
+            let wears_pointer = row_cursor_class(finding_is_routable(f)).contains(&pointer);
+            let resolves = f
+                .subject_id
+                .as_deref()
+                .is_some_and(|id| !id.is_empty() && route_target(&d, id, &is_slot).is_some());
+            assert_eq!(
+                wears_pointer, resolves,
+                "wave 129: `{}` wears the click affordance = {wears_pointer}, but the router \
+                 resolves it = {resolves}. A row must look clickable IFF clicking it selects \
+                 something — a dead click dressed as an affordance is the whole defect.",
+                f.subject
+            );
+            if resolves {
+                clickable_seen += 1;
+            } else {
+                inert_seen += 1;
+            }
+        }
+        // Not vacuous: the fixture exercised BOTH sides of the iff.
+        assert!(
+            clickable_seen >= 4 && inert_seen >= 4,
+            "wave 129: this pin is only worth anything if it saw both clickable and inert rows \
+             (saw {clickable_seen} / {inert_seen})"
+        );
+        // The reachable case, named: a placed-object finding — the row the verifier caught wearing a
+        // pointer over nothing — is clickable now, and clickable BECAUSE the router resolves it.
+        assert!(
+            finding_is_routable(&pf("ASSET-RESOLVES", Some("e1"))),
+            "wave 129: an ASSET-RESOLVES finding on a placed object must route — the engine emits \
+             these today, which is what made this the reachable half of the defect"
+        );
+        // And the affordance is the styling, not a name: the "yes" class carries pointer AND hover,
+        // the "no" class carries neither.
+        let yes = row_cursor_class(true);
+        let no = row_cursor_class(false);
+        assert!(
+            yes.contains(&pointer) && yes.contains("hover:"),
+            "wave 129: a clickable row must actually LOOK clickable"
+        );
+        assert!(
+            !no.contains(&pointer) && !no.contains("hover:"),
+            "wave 129: an unroutable row must wear neither cursor-pointer nor a hover state"
+        );
+    }
+
+    /// With no router installed — the host build, and the editor before its mount — every row is
+    /// INERT. The safe direction: a panel that cannot ask does not claim.
+    #[test]
+    fn with_no_router_registered_every_row_renders_inert() {
+        // A probe that resolves nothing stands in for "no probe": both are the `false` answer, and
+        // this thread's thread_local is the panel's whole state.
+        register_route_probe(std::rc::Rc::new(|_: &str| false));
+        for f in [
+            pf("ASSET-RESOLVES", Some("e1")),
+            pf("ORBAT-SLOT-RESOLVES", Some("slot-7")),
+            pf("V2-FACTION-MAX", None),
+        ] {
+            assert!(
+                !finding_is_routable(&f),
+                "wave 129: with nothing to ask, a row must render inert rather than hopeful"
+            );
+        }
+    }
+
+    /// One decision, one place. The row takes its classes from [`row_cursor_class`] and its
+    /// `clickable` from [`finding_is_routable`] — which asks the SHIPPED router — and no live code in
+    /// this panel decides clickability from the mere presence of an id.
+    #[test]
+    fn the_row_never_guesses_at_selectability() {
+        let src = live_code(include_str!("validation_panel.rs"));
+        let row = only_body(&src, &format!("fn finding{}", "_row_view"));
+        assert!(
+            row.contains(&format!("finding{}", "_is_routable(")),
+            "wave 129: the row must decide clickability by asking the router"
+        );
+        assert!(
+            row.contains(&format!("row{}", "_cursor_class(")),
+            "wave 129: the row must take its cursor/hover classes from the one affordance function"
+        );
+        let routable = only_body(&src, &format!("fn finding{}", "_is_routable"));
+        assert!(
+            routable.contains(&format!("subject_id{}", "_routes")),
+            "wave 129: clickability must be the ROUTER's resolution, not a second opinion about \
+             which findings look selectable"
+        );
+        // NEGATIVE — the widest haystack in which the claim is even statable: the whole of this
+        // file's LIVE code (the test module, which legitimately asserts the FACT `is_selectable`
+        // states, is cut first). Any view or affordance code that calls it again goes red here.
+        assert_eq!(
+            src.matches(&format!(".is{}()", "_selectable")).count(),
+            0,
+            "wave 129: no live code in this panel may take `names an id` for `is clickable` — that \
+             substitution IS the defect"
+        );
+        // Literals KEPT (the class text is code that ships), over the whole file's live half: the
+        // affordance is spelled in exactly ONE place, so a second pointer class cannot appear beside
+        // a hand-rolled guard.
+        let lit = live_source(include_str!("validation_panel.rs"));
+        assert_eq!(
+            lit.matches(&format!("cursor{}", "-pointer")).count(),
+            1,
+            "wave 129: `cursor-pointer` belongs to `row_cursor_class` and nowhere else"
+        );
+        let row_lit = only_body(&lit, &format!("fn finding{}", "_row_view"));
+        assert!(
+            !row_lit.contains(&format!("cursor{}", "-pointer")),
+            "wave 129: the row must not hand-roll the affordance beside the function that owns it"
+        );
     }
 }

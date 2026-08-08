@@ -1772,6 +1772,14 @@ fn ConnectionsPanelOverlay(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> imp
  * selection is the Zones panel's own `RwSignal` (`eden_dock_right::route_select_zone`, the seam that
  * panel now exposes for exactly this) — so before this the router returned `false` for 100% of the
  * aggregation's entity rows.
+ *
+ * The ENTITY arm is the wave-129 widening, and it is the reachable half: the validation engine
+ * ALREADY emits `ASSET-RESOLVES` findings whose subject is a placed-object id (`placed_asset_refs`
+ * walks the payload's `entities[]`, the compiled copy of `entitiesById`), so every such row wore
+ * `cursor-pointer` over a click that resolved to `None`. The same defect T-754 fixed on the settings
+ * surface, live on the validation panel — and fixed the same two ways: the router grew the arm, and
+ * the panel stopped guessing (`validation_panel::register_route_probe`, fed by the SAME resolution
+ * the click runs, so the affordance and the click cannot disagree).
  */
 
 /// What [`route_target`] resolved a subject id to — i.e. WHICH selection surface owns it.
@@ -1782,11 +1790,26 @@ pub(crate) enum RouteTarget {
     Slot,
     /// A `vehiclesById` row, at its authored `position`.
     Vehicle { x: f64, y: f64 },
+    /// Wave 129 — an `entitiesById` row (a placed world object, T-254) at its authored `position`.
+    ///
+    /// Rides the SAME path as [`RouteTarget::Vehicle`] (editor selection + camera centre), because a
+    /// placed object is off the slot SoA in exactly the way a vehicle is: neither is tinted by
+    /// `slots_bind_soa`'s lane, both are real members of the editor selection the attributes /
+    /// history mirrors read. This arm is the one the ASSET-RESOLVES rule needs — `placed_asset_refs`
+    /// emits a finding per `entities[]` row with that row's id as the subject, so before this arm
+    /// every placed-object finding resolved to `None`.
+    Entity { x: f64, y: f64 },
     /// T-754 — a `zonesById` row, at its geometric centre. Selected in the Zones panel, not in the
     /// slot selection (a zone id in `select_tool`'s selection would read `SEL 1` with nothing
     /// highlighted — see `eden_dock_right`'s `zone_selected`).
     Zone { x: f64, y: f64 },
 }
+
+/// Wave 129 — [`route_target`] bound to the LIVE document and its world centre: "what would a click
+/// on this subject id find, and where?". Shared as one `Rc` by the click (which acts on the answer)
+/// and by `validation_panel`'s affordance probe (which only asks), so the two cannot drift apart.
+#[cfg(target_arch = "wasm32")]
+type SubjectResolver = std::rc::Rc<dyn Fn(&str) -> Option<(RouteTarget, f64, f64)>>;
 
 /// **Where a `subject_id` would go if it were clicked**, over the document's `small_maps_json()`
 /// root plus `is_slot` (slot ids live in the SoA, which is not in that root, so the one fact this
@@ -1796,8 +1819,9 @@ pub(crate) enum RouteTarget {
 /// selection surface owns. A view MUST NOT paint a click affordance on a row this returns `None`
 /// for; that is the T-754 defect, stated as a rule.
 ///
-/// Order is slot → vehicle → zone, the order the shipped router already tried, so the widening
-/// cannot change what an existing id resolves to.
+/// Order is slot → vehicle → entity → zone, the order the shipped router already tried with the
+/// wave-129 entity lookup appended to the by-id maps, so neither widening can change what an
+/// existing id resolves to (the id spaces are disjoint — each map is keyed by its own minted id).
 pub(crate) fn route_target(
     root: &serde_json::Value,
     subject_id: &str,
@@ -1816,6 +1840,21 @@ pub(crate) fn route_target(
             p.get("y").and_then(serde_json::Value::as_f64),
         ) {
             return Some(RouteTarget::Vehicle { x, y });
+        }
+    }
+    // Wave 129 — placed world objects. `entitiesById` rows carry the SAME `position {x, y, z,
+    // rotation}` shape `vehiclesById` rows do (`doc/store.rs::add_entity`), so this is the vehicle
+    // lookup over a second map, not a second kind of resolution.
+    if let Some(p) = root
+        .get("entitiesById")
+        .and_then(|m| m.get(subject_id))
+        .and_then(|v| v.get("position"))
+    {
+        if let (Some(x), Some(y)) = (
+            p.get("x").and_then(serde_json::Value::as_f64),
+            p.get("y").and_then(serde_json::Value::as_f64),
+        ) {
+            return Some(RouteTarget::Entity { x, y });
         }
     }
     if let Some(zone) = root.get("zonesById").and_then(|m| m.get(subject_id)) {
@@ -2505,35 +2544,68 @@ pub fn MissionEditorPage() -> impl IntoView {
             // affordance — which is the wave-115 MAJOR (`cursor-pointer` over a dead click) fixed at
             // its cause rather than papered over. This is STILL THE ONE ROUTER: no second selection
             // path was invented, the closure simply grew an arm.
+            //
+            // WAVE 129 — the panel now ASKS, and asks THIS resolution. `resolve` below is the whole
+            // of the router's question ("what would a click on this subject id find, and where?");
+            // the click ACTS on its answer and `register_route_probe` hands the same answer to
+            // `validation_panel`'s row so the affordance is the router's own resolution rather than
+            // a guess off `subject_id.is_some()`. ONE `Rc`, two callers — they cannot drift apart,
+            // which is the correspondence T-754 pinned on the settings surface, held here.
+            //
+            // The `Entity` arm is the wave-129 widening: `placed_asset_refs` emits an ASSET-RESOLVES
+            // finding per `entities[]` row keyed by that row's id, so every placed-object finding
+            // used to resolve to `None` under a `cursor-pointer` row. It rides the Vehicle path
+            // (selection + centre) because a placed object sits off the slot SoA exactly as a
+            // vehicle does.
             {
                 let doc = doc.clone();
                 let selection = selection.clone();
                 let engine = engine.clone();
+                // Pure question, live document. `None` ⇒ nothing to select (a stale finding, or a
+                // row this editor owns no selection surface for) — the click keeps the current
+                // selection intact and the row renders inert.
+                let resolve: SubjectResolver = std::rc::Rc::new(move |subject_id: &str| {
+                    let d = doc.borrow();
+                    let core = d.as_ref()?;
+                    // The one fact the small-maps root does not carry: slot-SoA membership.
+                    let soa = core.materialize();
+                    let slot_row = soa.ids.iter().position(|s| s == subject_id);
+                    let root = serde_json::from_str::<serde_json::Value>(&core.small_maps_json())
+                        .unwrap_or(serde_json::Value::Null);
+                    let target = route_target(&root, subject_id, &|_| slot_row.is_some())?;
+                    let (cx, cy) = match target {
+                        RouteTarget::Slot => {
+                            let row = slot_row.expect("Slot arm implies the SoA matched");
+                            (f64::from(soa.xs[row]), f64::from(soa.ys[row]))
+                        }
+                        RouteTarget::Vehicle { x, y }
+                        | RouteTarget::Entity { x, y }
+                        | RouteTarget::Zone { x, y } => (x, y),
+                    };
+                    Some((target, cx, cy))
+                });
+                // The AFFORDANCE seam: "would this click select anything?", answered by the same
+                // resolution the click runs. Registered before the actor so a row can never be
+                // painted clickable by a router that is not yet installed.
+                //
+                // COST, stated: this is asked once per visible finding row, and each ask re-reads
+                // the small-maps root + the slot SoA — the read the click already did once. The
+                // list only renders while the panel is expanded, behind the 250 ms re-eval
+                // debounce. If a large mission ever makes that show up, memoise it on a version
+                // counter the RESTORE path also bumps: `doc_ver` is not bumped by the IDB restore
+                // (`mission_history`, "does not mark dirty / bump `doc_ver`"), so a cache keyed on
+                // it would answer for the pre-restore document — an affordance lying again, which
+                // is the one trade this seam may not make.
+                {
+                    let probe = std::rc::Rc::clone(&resolve);
+                    crate::validation_panel::register_route_probe(std::rc::Rc::new(
+                        move |subject_id: &str| probe(subject_id).is_some(),
+                    ));
+                }
                 crate::validation_panel::register_select_by_id(std::rc::Rc::new(
                     move |subject_id: &str| {
-                        let d = doc.borrow();
-                        let Some(core) = d.as_ref() else {
+                        let Some((target, cx, cy)) = resolve(subject_id) else {
                             return false;
-                        };
-                        // The one fact the small-maps root does not carry: slot-SoA membership.
-                        let soa = core.materialize();
-                        let slot_row = soa.ids.iter().position(|s| s == subject_id);
-                        let root =
-                            serde_json::from_str::<serde_json::Value>(&core.small_maps_json())
-                                .unwrap_or(serde_json::Value::Null);
-                        // `None` ⇒ nothing to select (a stale finding, or a row this editor owns no
-                        // selection surface for). Keep the current selection intact.
-                        let Some(target) = route_target(&root, subject_id, &|_| slot_row.is_some())
-                        else {
-                            return false;
-                        };
-                        drop(d);
-                        let (cx, cy) = match target {
-                            RouteTarget::Slot => {
-                                let row = slot_row.expect("Slot arm implies the SoA matched");
-                                (f64::from(soa.xs[row]), f64::from(soa.ys[row]))
-                            }
-                            RouteTarget::Vehicle { x, y } | RouteTarget::Zone { x, y } => (x, y),
                         };
                         if matches!(target, RouteTarget::Zone { .. }) {
                             // A zone is selected in the Zones panel, never in the slot selection.
@@ -8671,6 +8743,18 @@ mod t754_router_resolves_zones {
     fn doc() -> serde_json::Value {
         json!({
             "vehiclesById": { "v1": { "position": { "x": 7.0, "y": 9.0 } } },
+            // Wave 129 — placed world objects, `add_entity`'s row shape verbatim (`doc/store.rs`).
+            "entitiesById": {
+                "e1": {
+                    "id": "e1",
+                    "alias": "prop:ammo_crate",
+                    "resourceName": "{FA}Prefabs/Props/AmmoBox.et",
+                    "position": { "x": 100.0, "y": 200.0, "z": 0.0, "rotation": 90.0 }
+                },
+                // A row mid-write / hand-authored without a position: nothing to centre on, so the
+                // router must resolve NOTHING rather than centring on (0, 0).
+                "e-nopos": { "id": "e-nopos", "alias": "prop:x" }
+            },
             "zonesById": {
                 "z-circle": { "shape": { "circle": { "x": 100.0, "z": 250.0, "r": 500.0 } } },
                 "z-poly": { "shape": { "polygon": [[0.0, 0.0], [30.0, 0.0], [0.0, 30.0]] } },
@@ -8715,6 +8799,75 @@ mod t754_router_resolves_zones {
                 &no_slots
             ),
             None
+        );
+    }
+
+    /// **Wave 129 — a placed world object resolves.** The reachable half of the same defect: the
+    /// engine emits `ASSET-RESOLVES` findings keyed by an `entities[]` row id, and before this arm
+    /// every one of them resolved to `None` under a `cursor-pointer` row.
+    ///
+    /// Perturbation RED: delete the `entitiesById` arm from [`route_target`].
+    #[test]
+    fn a_placed_object_resolves_at_its_authored_position() {
+        let d = doc();
+        let no_slots = |_: &str| false;
+        assert_eq!(
+            route_target(&d, "e1", &no_slots),
+            Some(RouteTarget::Entity { x: 100.0, y: 200.0 }),
+            "wave 129: a placed object must resolve to its authored position — an ASSET-RESOLVES \
+             finding names exactly this id"
+        );
+        // A row with no position, and a deleted one: nothing to centre on ⇒ nothing to select.
+        assert_eq!(route_target(&d, "e-nopos", &no_slots), None);
+        assert_eq!(route_target(&d, "e-deleted", &no_slots), None);
+        // The widening reorders nothing: a slot still wins, and vehicles/zones still resolve as they
+        // did (the by-id maps are keyed by disjoint minted ids, so order cannot matter).
+        assert_eq!(route_target(&d, "e1", &|_| true), Some(RouteTarget::Slot));
+        assert_eq!(
+            route_target(&d, "v1", &no_slots),
+            Some(RouteTarget::Vehicle { x: 7.0, y: 9.0 })
+        );
+        assert_eq!(
+            route_target(&d, "z-circle", &no_slots),
+            Some(RouteTarget::Zone { x: 100.0, y: 250.0 })
+        );
+    }
+
+    /// The wave-129 wiring: the panel ASKS, and asks the SAME resolution the click acts on.
+    ///
+    /// The strong form is the count — `route_target` is called ONCE in the whole editor body, and
+    /// both the probe and the click read that one `resolve`. A second resolution is how the
+    /// affordance and the click drift apart, which is the entire defect class.
+    #[test]
+    fn the_affordance_probe_and_the_click_share_one_resolution() {
+        let raw = include_str!("mission_editor.rs");
+        let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
+        let ed = live_code(&raw[raw.find(anchor.as_str()).expect("the page component")..]);
+        assert_eq!(
+            ed.matches(&format!("register{}", "_route_probe(")).count(),
+            1,
+            "wave 129: the panel's affordance seam must be registered exactly once"
+        );
+        assert_eq!(
+            ed.matches(&format!("route{}", "_target(")).count(),
+            1,
+            "wave 129: ONE resolution in the editor body — the probe and the click must both read \
+             it, not each ask their own question"
+        );
+        assert!(
+            ed.contains(&format!("Rc::clone(&resolve{}", ")")),
+            "wave 129: the probe must hold THAT resolution (the same `Rc`), not a second copy of \
+             the question"
+        );
+        assert!(
+            ed.contains(&format!("resolve{}", "(subject_id)")),
+            "wave 129: and the click acts on what that one resolution returned"
+        );
+        // And the Entity arm rides the selection path, not the Zones-panel path: only `Zone` may
+        // divert into `route_select_zone`.
+        assert!(
+            ed.contains(&format!("matches!(target, RouteTarget::Zone{}", " { .. })")),
+            "wave 129: the zone diversion must stay keyed on the Zone arm alone"
         );
     }
 
