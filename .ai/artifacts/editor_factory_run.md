@@ -74,6 +74,7 @@ diagnosis) → registry flip + `distrobox-host-exec sh -c './scripts/ticket sync
 | 119 | 103 | T-697 T-700 T-703 | PASS 30/30 (run 1) | 2M/1m/4N | SHIPPED — document search + selection filter (one query language across four surfaces), numeric nudge + shared SearchBox, **keybinding collision test that found bindings shipped undocumented for the whole programme**; T-774..T-776 filed. **RUN COMPLETE: 24/24 tickets, 8/8 gates PASS on run 1, zero quarantines, zero BLOCKERs.** |
 | 120 | 95 | T-701 T-706 | PASS (run 3; run 1 red on the ledger tripwire firing as designed, run 2 = fixup) | 0B/4M/5m/4N → all hardened pre-close | SHIPPED — per-entity hide + the one-pass 1.3 contract; ledger learned DeclaredPendingEmit; 9 reader-ambiguities + 3 prose residues fixed BEFORE any reader dispatched; unread gate live at 53 fields |
 | 127 | 104 | T-775 T-753 T-773 | PASS 30/30 (run 1; re-gated PASS 30/30 over the fix pass) | 0B/2M/1m/1N + focused re-verify 0B/0M/1m/1N | SHIPPED — **NO-DEFERRAL REGIME (operator, 2026-08-07): every verifier finding at every severity is fixed in-wave, not filed.** All 6 findings fixed across 3 fix rounds. The wave's real yield was a FOUR-INSTANCE LIVE DEFECT FAMILY: `update_slot_position` stores `pz = 0.0` on any x/y write with z=None, excused everywhere by a "DEM re-sampled JS-side" comment for a sampler that **died with the React deletion** — fixed at attrs (F-2), Align/Distribute/pattern (F-5) and the marquee drag (F-6, which passed a literal `vec![0.0; n]`). Family proven CLOSED by the re-verifier. T-777 filed and deliberately NOT fixed — it is T-743's reserved decision surface |
+| 128 | 105 | T-764 T-735 T-774 | PASS 30/30 (run 1; re-gated twice over the fix pass, PASS both) | 1M/1m/1N + focused re-verify 0B/0M/1m | SHIPPED — 4/4 findings fixed. **Every ticket this wave was a guard that could not see what it claimed to check**, and the pattern recurred one level down: T-735 shipped an audit so unimplemented keywords fail CLOSED, and that audit walked `$ref` CHAINS to the far end and pronounced the schema fully supported while the validator checked nothing (`modpackId: 123` accepted against a chained `minLength: 3`) — refused rather than followed, so cycle detection never enters the one path whose job is not to lie. Also: escaped RFC-6901 pointers silently resolved to the WRONG node. T-764's depth cap held under every attack; T-774 settled the binding count by measurement (34/32 — T-703's "39" wrong by seven). **The verifier RETRACTED its own stack measurement in favour of the fix agent's.** |
 | 121 | assign at close | T-702 T-212 T-654 | — | — | pending |
 | 122 | assign at close | T-673 T-674 T-675 | — | — | pending |
 | 123 | assign at close | T-676 T-677 T-678 | — | — | pending |
@@ -131,6 +132,35 @@ Known traps already hit: rustfmt needs the file's real edition (tools/* are 2024
 schema-validate` broken in worktrees; agent chat summaries are not artifacts — trust gates and
 the verifier; wave-101 agents running concurrent slice gates queue on the gate lock (WAITING is
 serialisation, not a hang).
+
+## T-742 (w138) — THE SHARED TARGET DIR HAS LIED SIX TIMES IN TWO WAVES
+
+Standing instruction for every remaining wave, and the evidence w138 should fix against.
+`CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target` lets concurrent worktrees execute each other's
+test binary. Observed live, 2026-08-07/08:
+
+| # | Wave | Direction | What happened |
+|---|---|---|---|
+| 1 | w127 T-753 | noise | 907 / 905 / 906+1-unreachable-failure / 907 on an UNCHANGED tree |
+| 2 | w127 T-775 | **FALSE PASS** | `14 passed` with BOTH new tests absent from the binary; `--list` confirmed |
+| 3 | w128 T-764 | **FALSE PASS** | run said `915 passed`; `--list` on the SAME dir showed 917 tests, neither of its names present |
+| 4 | w128 T-735 | false fail | a red in a SIBLING's file, mid-edit |
+| 5 | w128 T-774 | **FALSE PASS THAT HID REAL DEFECTS** | prose pin GREEN while the asserted phrase was split across a line break and could not match. On a private dir it was RED — and fixing it exposed TWO further real defects |
+| 6 | w128 verifier | phantom flake | a reported "load-dependent flake" was proven to be a foreign binary: the failing assertion (`count > 95` over a fixed 103-char literal) is unfalsifiable from shipped source. 40/40 green under 6-way load |
+
+**`touch` DOES NOT PREVENT IT — that mitigation is retired (sighting 5 had touched first).**
+
+**STANDING RULE, in every brief from wave 129:** do ad-hoc verification in a private
+`CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target-<TICKET>` (**never /tmp** — 16 GB tmpfs), delete it
+before reporting, run the mandated slice gate on the shared dir, and **cross-check the `--list`
+total against the run total every time, reporting both**. Disagreement means the binary is not yours.
+
+**MEASURED DISK FIGURES — T-742's summary is wrong and this changes its approach decision.**
+The ticket says "~4 GB shared vs ~44 GB each". Measured on the live box mid-run: shared dir **57 GB**;
+a slice-private *frontend test* dir **2.7 GB**; in-repo gate dirs ~41 GB combined (`target-gate-api`
+alone 27 GB). The ~44 GB figure is a full WORKSPACE build — a per-slice **test** dir is 2.7 GB, so
+three concurrent slices cost ~8 GB, not ~132 GB. **Per-slice test dirs are affordable**, which the
+ticket assumed they were not. The operator reserved this approach decision; give them these numbers.
 
 ## THE z = 0.0 FAMILY — discovered and closed in wave 127; bake into every later brief
 
