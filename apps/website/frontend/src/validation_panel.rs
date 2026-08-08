@@ -727,6 +727,18 @@ pub fn compile_findings() -> Vec<PanelFinding> {
     COMPILE_FINDINGS.with(|c| c.borrow().clone())
 }
 
+/// Drop the last compile's findings (and repaint the mounted panel, if any).
+///
+/// **T-761 / wave-116 finding 3.** `COMPILE_FINDINGS` is a thread_local written only by
+/// [`publish_compile_findings`] (production caller: `export_compiled_now`). A clean compile already
+/// replaces the list whole, but nothing reset the cell on editor mount/hydrate — and
+/// `/missions/:id/edit` is a client-side `leptos_router` route, so navigating mission A → mission B
+/// reuses the wasm instance. Without this clear, B's panel shows A's build report (with
+/// `subject_id`s that resolve to nothing in B). Called from `MissionEditorPage`'s hydrate path.
+pub fn clear_compile_findings() {
+    publish_compile_findings(Vec::new());
+}
+
 /// Evaluate the CURRENT registered payload source, or an empty vec when none is registered (host /
 /// pre-mount). The panel's re-eval calls this; the view never touches the engine directly.
 ///
@@ -2149,5 +2161,80 @@ mod f5_seam_lifecycle {
                 seam.name
             );
         }
+    }
+}
+
+/* ═══════════════════ T-761 — compile findings must not survive a mission switch ═══════════════════
+ *
+ * Wave-116 finding 3: `COMPILE_FINDINGS` is a thread_local written only by
+ * `publish_compile_findings` (`export_compiled_now`). A clean compile already replaces the list
+ * whole (pinned in mission_commands), but nothing reset the cell on editor hydrate. Client-side
+ * `/missions/:id/edit` remounts reuse the wasm instance, so mission B inherited A's build report —
+ * including `subject_id`s that resolve to nothing in B. This pin fails if that inheritance returns.
+ */
+#[cfg(test)]
+mod t761_compile_findings_do_not_survive_mission_switch {
+    use super::{
+        clear_compile_findings, compile_findings, evaluate_now, publish_compile_findings,
+        PanelFinding,
+    };
+    use map_engine_core::mission::validate::{Primitive, Severity};
+
+    fn mission_a_compile_row() -> PanelFinding {
+        PanelFinding {
+            rule_id: "COMPILE-DROP-SQUAD-LEADER".into(),
+            severity: Severity::Warning,
+            primitive: Primitive::PerObjectInvariant,
+            message: "mission A squad dropped".into(),
+            subject: "A/Alpha".into(),
+            // An id that exists only in mission A — clicking it on B selects nothing.
+            subject_id: Some("mission-a-squad-1".into()),
+        }
+    }
+
+    /// Behaviour: hydrate clear drops the previous mission's compile findings so evaluate_now
+    /// cannot surface their subject_ids on the next mission.
+    #[test]
+    fn a_second_mission_does_not_inherit_the_previous_missions_compile_findings() {
+        publish_compile_findings(vec![mission_a_compile_row()]);
+        assert_eq!(
+            compile_findings().len(),
+            1,
+            "precondition: mission A published a compile finding"
+        );
+        assert_eq!(
+            compile_findings()[0].subject_id.as_deref(),
+            Some("mission-a-squad-1")
+        );
+
+        // Mission B's editor hydrate — the production call site in MissionEditorPage.
+        clear_compile_findings();
+
+        assert!(
+            compile_findings().is_empty(),
+            "T-761: after hydrate clear, mission B must not inherit mission A's compile findings"
+        );
+        assert!(
+            evaluate_now()
+                .iter()
+                .all(|r| r.subject_id.as_deref() != Some("mission-a-squad-1")),
+            "T-761: evaluate_now must not surface mission A's subject_id on mission B; got {:?}",
+            evaluate_now()
+        );
+    }
+
+    /// Class-R — the clear is the named hydrate seam, not an accidental empty publish buried
+    /// only in tests.
+    #[test]
+    fn clear_compile_findings_is_the_hydrate_reset_seam() {
+        let src = include_str!("validation_panel.rs");
+        assert!(
+            src.contains("pub fn clear_compile_findings()"),
+            "T-761: clear_compile_findings must exist as the hydrate reset seam"
+        );
+        assert!(
+            src.contains("publish_compile_findings(Vec::new())"),
+            "T-761: clear_compile_findings must empty the cell via whole-list replace"
+        );
     }
 }
