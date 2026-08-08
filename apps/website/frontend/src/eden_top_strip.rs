@@ -1304,8 +1304,9 @@ pub fn TopCommandStrip(
                         let _ = mins;
                     })
                 />
-                // The live readout IS the drag feedback — the reason `Slider` needs no per-pixel
-                // callback. It re-reads the same `env` memo the scrubber paints from.
+                // Settled/authored HH:MM from `env` (recomputed on `doc_tick`). Mid-drag the
+                // thumb moves in the UA control; this span stays frozen until `on_change` commits
+                // and bumps the doc — so it is NOT live drag feedback.
                 <span class="font-mono text-xs tabular-nums text-on-surface-variant">
                     {move || env.get().time}
                 </span>
@@ -2607,8 +2608,10 @@ mod t633_aegis_controls {
     /// **The debounce is not regressed.** T-192's whole point is that a held scrubber emits ~30
     /// values/second and the `missions` row gets ONE PATCH per settle. The commit path is unchanged
     /// by this ticket — `author_env` then `row_mirror.set_time` — and it hangs off the primitive's
-    /// `on_change` (the native `change`), never an input/drag event. `ui.rs`'s own pins prove the
-    /// primitive has no `on:input`; this proves the STRIP did not grow one around it.
+    /// `on_change` (the native `change`). `ui.rs`'s own pins prove the Slider primitive has no
+    /// `on:input`; this pin only locks the strip's settle commit path (`on_change` → `author_env`
+    /// → `row_mirror.set_time`). It does not scan for strip-local `on:input` (unrelated Save-dialog
+    /// handlers exist elsewhere in this body).
     #[test]
     fn the_scrubber_still_commits_only_on_settle() {
         let code = live_code(include_str!("eden_top_strip.rs"));
@@ -2623,11 +2626,11 @@ mod t633_aegis_controls {
                 "T-633: the T-192 mirror path (`{step}`) must survive the control swap"
             );
         }
-        // The live readout is what makes a settle-only callback sufficient: the operator sees the
-        // time move during the drag because the label re-reads the same `env` memo.
+        // HH:MM span is wired to settled authored time via `env` (doc_tick). That is display of
+        // the committed value, not mid-drag preview — preview would need a local drag signal.
         assert!(
-            body.contains("env.get().time"),
-            "T-633: the HH:MM readout is the drag feedback — without it, settle-only would feel dead"
+            body.contains("{move || env.get().time}"),
+            "T-633: the HH:MM readout must stay wired to the settled env time"
         );
     }
 
