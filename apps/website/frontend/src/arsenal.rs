@@ -239,10 +239,15 @@ fn attachment_errors(picks: &HashMap<String, String>, feed: &CompatFeed) -> Vec<
         let host = picks.get(key).filter(|s| !s.is_empty());
         let label = rules::row(key).map_or(key, |r| r.label);
         for rn in attachments_of(picks, key) {
+            // The message names `rn` because the key cannot. `refusal_line` separates two stranded
+            // *rows* by prefixing their labels, but a weapon row can strand two *attachments* at
+            // once — same row, same key, same prefix — so without the resource name the author is
+            // handed the identical sentence twice and told what is wrong but not *which of their
+            // attachments* is at fault. That is exactly the defect T-737 removed, one level down.
             let message = match host {
-                None => format!("Attachment requires a {label} pick"),
+                None => format!("Attachment `{rn}` requires a {label} pick"),
                 Some(h) if !g.accepts(h, &rn, ATTACHMENT_EDGE) => {
-                    format!("Attachment not compatible with the selected {label}")
+                    format!("Attachment `{rn}` not compatible with the selected {label}")
                 }
                 Some(_) => continue,
             };
@@ -4238,13 +4243,16 @@ mod tests {
         p.insert("primary".into(), "res://rifle_vz58".into());
         let errs = attachment_errors(&p, &feed);
         assert_eq!(errs.len(), 1);
-        assert_eq!(errs[0].key, "primary"); // keyed on the row the author must change
+        // Keyed on the row the author must change — and since that key can only ever say
+        // "primary", the message is the only place the offending attachment can be named.
+        assert_eq!(errs[0].key, "primary");
         assert!(errs[0].message.contains("not compatible"));
-        // No weapon at all → the wording `validate_loadout` gives a hostless optic.
+        assert!(errs[0].message.contains("res://handguard"), "{errs:?}");
+        // No weapon at all → the wording `validate_loadout` gives a hostless optic, likewise named.
         p.remove("primary");
-        assert!(attachment_errors(&p, &feed)[0]
-            .message
-            .contains("requires a Primary"));
+        let hostless = &attachment_errors(&p, &feed)[0].message;
+        assert!(hostless.contains("requires a Primary"), "{hostless}");
+        assert!(hostless.contains("res://handguard"), "{hostless}");
         // An outage must not fail a loadout we never got compat data for.
         let dead = CompatFeed {
             status: rules::CompatStatus::Unavailable,
@@ -6024,6 +6032,75 @@ mod tests {
                 lines[0], lines[1],
                 "the exportable-but-not-importable case is where naming the row matters most"
             );
+        }
+
+        /// **The same defect one level down — the case `refusal_line` structurally cannot reach.**
+        ///
+        /// Two stranded ROWS differ in their `key`, so prefixing the row label separates them. Two
+        /// stranded ATTACHMENTS hang off the SAME weapon row: same key, therefore same prefix, and
+        /// the reason was identical too — so an author who swapped one rifle was handed
+        /// "Primary — Attachment not compatible with the selected Primary" **twice** and learned
+        /// what was wrong but not which of their two attachments to pull. The only place left to
+        /// carry the difference is the message, so the message names the attachment.
+        ///
+        /// One attachment cannot observe this, exactly as one row could not observe T-737's.
+        ///
+        /// RED (the shipped defect): drop `` `{rn}` `` from both message arms in
+        /// `attachment_errors` → "two stranded attachments must not print the same line".
+        #[test]
+        fn two_stranded_attachments_on_one_row_render_as_two_distinguishable_refusals() {
+            // Both attachments are known to this catalog — on the OTHER rifle. One swap strands
+            // both at once, which is the whole point: it is a single authoring mistake.
+            let feed = attachment_feed(&[
+                ("res://handguard", "res://rifle_ak"),
+                ("res://supp", "res://rifle_ak"),
+            ]);
+            let mut p = picks(&[("primary", "res://rifle_m16")]);
+            p.insert(
+                attachments_key("primary"),
+                pack_attachments(&["res://handguard".into(), "res://supp".into()]),
+            );
+
+            let errs = attachment_errors(&p, &feed);
+            assert_eq!(errs.len(), 2, "both attachments are stranded: {errs:?}");
+            // The premise, as a fact about the data: `refusal_line` has nothing to work with here.
+            // One row, one key — the difference cannot live where T-737 put it.
+            assert_eq!(
+                [errs[0].key, errs[1].key],
+                ["primary", "primary"],
+                "{errs:?}"
+            );
+
+            let lines: Vec<String> = errs.iter().map(refusal_line).collect();
+            assert_ne!(
+                lines[0], lines[1],
+                "two stranded attachments must not print the same line: {lines:?}"
+            );
+            // …and each line names *its own* attachment, not merely some attachment.
+            assert!(
+                lines[0].contains("res://handguard") && !lines[0].contains("res://supp"),
+                "{lines:?}"
+            );
+            assert!(
+                lines[1].contains("res://supp") && !lines[1].contains("res://handguard"),
+                "{lines:?}"
+            );
+            // Naming the item is not paid for with the row prefix T-737 added.
+            for line in &lines {
+                assert!(line.starts_with("Primary — "), "{lines:?}");
+            }
+
+            // The hostless arm carries the same burden: no Primary at all, two attachments still
+            // stranded, still two lines an author can tell apart.
+            p.remove("primary");
+            let hostless: Vec<String> = attachment_errors(&p, &feed)
+                .iter()
+                .map(refusal_line)
+                .collect();
+            assert_eq!(hostless.len(), 2, "{hostless:?}");
+            assert_ne!(hostless[0], hostless[1], "{hostless:?}");
+            assert!(hostless[0].contains("res://handguard"), "{hostless:?}");
+            assert!(hostless[1].contains("res://supp"), "{hostless:?}");
         }
 
         /// Class-R: the fix has to be in the panel, not merely available to it. Both refusal lists
