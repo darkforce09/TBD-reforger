@@ -3427,14 +3427,14 @@ pub fn seed_new_mission_template(doc: &DocHandle) -> usize {
 // arming mode on that machine would inherit all three defects and add a fourth arming source to the
 // thing that already cannot decide who owns a release.
 //
-// So the connect flow is TWO CONTEXT-MENU ACTS instead: right-click the source → `Connect ▸` → a
-// kind, which arms; right-click the target → `Connect ▸ Complete` (or `Cancel`). No new pointer
-// mode, no new keybinding, no interaction with the gesture machine whatsoever — and it is still the
-// Eden idiom, whose own connect flow starts at RMB ▸ Connect (`CONN-START-001`: "RMB → Connect →
-// type → LMB target"). What is deferred is precisely the LMB-target half. When T-723 makes the
-// armed-release path sound, wiring a pointer completion changes the CALLER of
-// [`complete_connect`] and nothing else — the arm, the mutator, the listing and the checker are all
-// already here.
+// So the connect CREATE flow starts as two context-menu acts (T-672): right-click the source →
+// `Connect ▸` → a kind, which arms; right-click the target → `Connect ▸ Complete` (or `Cancel`).
+// T-768 wires the Eden LMB-target half on top of T-723's fixed armed-pointerup machine: after arming,
+// a sub-threshold LMB pick on an entity calls [`complete_connect`] — the SAME mutator the RMB
+// Complete row uses. No new LeftGesture variant, no new Pending place-arm: only a second CALLER.
+// Esc / pointercancel / RMB Cancel / panel Cancel disarm. CONN-DEL line-select still needs a
+// connections render lane (`mission_history` rebind + `draw_order`) — panel Delete remains the
+// disclosed substitute.
 //
 // ── SEE + CHECK COME FIRST ───────────────────────────────────────────────────────────────────────
 // [`connection_list`] and [`connection_findings`] are the halves the ticket's warning is about, and
@@ -3500,12 +3500,13 @@ pub fn close_connections_panel() {
 }
 
 thread_local! {
-    /// T-672 — the armed half of the two-act connect: `Some((kind, from_id))`.
+    /// T-672 / T-768 — the armed half of the connect: `Some((kind, from_id))`.
     ///
-    /// A plain `thread_local` and NOT a variant of `Pending` (the place-arm enum): `Pending` is
-    /// consumed by `mission_editor`'s armed-pointerup branch, and putting a connect in it would hand
-    /// the connect gesture to exactly the code path this feature is routed around (see the module
-    /// note above). Nothing in the pointer machine can see this cell.
+    /// A plain `thread_local` and NOT a variant of place-arm `Pending`: place-arm is consumed by the
+    /// palette stamp path. Connect stays separate so RMB Complete/Cancel and the LMB pick CALLER
+    /// (T-768) both read the same cell without riding the place-arm enum. `mission_editor`'s
+    /// LG::Pending click path and Esc/pointercancel consult this cell; they do not promote it into
+    /// LeftGesture state.
     static PENDING_CONNECT: RefCell<Option<(String, String)>> = const { RefCell::new(None) };
 }
 
