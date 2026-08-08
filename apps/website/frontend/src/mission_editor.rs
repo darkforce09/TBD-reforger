@@ -9797,16 +9797,25 @@ mod t649_select_all_and_multi_edit {
         );
     }
 
-    /// HONESTY: inverting the `open_arsenal` guard makes the context menu's "Edit Loadout..." row
-    /// open something — but the Arsenal tab body lives in `arsenal.rs` (not this slice's to touch)
-    /// and still edits ONE slot. The modal must SAY so rather than let the "N entities selected"
-    /// header imply a fan-out that does not happen.
+    /// HONESTY (T-649 / T-771): inverting the `open_arsenal` guard makes the context menu's
+    /// "Edit Loadout..." row open something under a multi-selection. Pick and cargo rows still
+    /// edit ONE slot; T-699's Copy / Apply / Remove Everything fan out to the WHOLE selection.
+    /// The banner must say both — the old unqualified "one entity, not the whole selection" claim
+    /// is false for those three verbs and must not return.
     #[test]
-    fn the_arsenal_tab_admits_it_edits_one_entity_under_a_multi_selection() {
+    fn the_arsenal_tab_discloses_one_entity_picks_and_whole_selection_buffer_verbs() {
         let raw = include_str!("attributes.rs");
+        let modal_raw = fn_source(raw, "fn modal_view(");
+        let one = "Pick and cargo edits apply to this one entity";
+        let whole = "Copy, Apply, and Remove Everything act on the whole selection";
         assert!(
-            raw.contains("Loadout edits apply to this one entity"),
-            "the Arsenal tab must disclose that it is not multi-editing"
+            modal_raw.contains(one) && modal_raw.contains(whole),
+            "banner must disclose one-entity picks/cargo AND whole-selection buffer verbs"
+        );
+        // Hollow-pin: restoring the T-649 unqualified claim would go green on a weaker pin.
+        assert!(
+            !modal_raw.contains("Loadout edits apply to this one entity"),
+            "do not restore the unqualified one-entity claim — it contradicts the buffer verbs"
         );
         let attrs = live_code(raw);
         let modal = squash(&fn_source(&attrs, "fn modal_view("));
