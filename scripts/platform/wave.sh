@@ -32,9 +32,14 @@
 #                                             # `wave N CLOSED` commit — pass one only to widen,
 #                                             # never to narrow (T-602 refuses a narrowing base)
 #   bash scripts/platform/wave.sh gate --slice T-190   # cheap per-slice gate
+#   bash scripts/platform/wave.sh test --slice T-190 -p website-frontend
+#                                             # ad-hoc cargo test into a PER-SLICE private
+#                                             # CARGO_TARGET_DIR (T-742). Never bare cargo test
+#                                             # against the shared cache — that is the
+#                                             # cross-worktree false-binary class.
 #   bash scripts/platform/wave.sh land        # merge every ready slice (no barrier)
 #   bash scripts/platform/wave.sh reclaim     # /var/tmp agent caches + repo-root target-<SLICE>
-#                                             # orphans (live slices spared)
+#                                             # orphans (live slices spared) + ~/.cache/tbd-target-T-*
 #   bash scripts/platform/wave.sh reclaim --gate-dirs      # opt-in: repo-root target-gate-* / dist-gate-*
 #   bash scripts/platform/wave.sh reclaim --no-slice-dirs  # opt out of the target-<SLICE> sweep
 #   bash scripts/platform/wave.sh push        # push main
@@ -909,7 +914,11 @@ clippy_changed() {
   for c in "${crates[@]}"; do
     case "$c" in
       website-frontend)
-        checkrun cargo clippy -p website-frontend --target wasm32-unknown-unknown --quiet || return 1 ;;
+        # T-742: --all-targets is load-bearing (see function header) — without it, #[cfg(test)]
+        # lints are invisible here and certain to land red once T-752 teaches CI/Makefile the same
+        # flag. NO -D warnings: ci.yml website-frontend clippy is advisory (no -D), matching the
+        # wave-gate `clippy frontend` step. Align -D with CI intent, not with the other crates.
+        checkrun cargo clippy -p website-frontend --target wasm32-unknown-unknown --all-targets --quiet || return 1 ;;
       # T-614 — tbd-tools AND xtask USED TO BE SKIPPED HERE, reason "red on main, ungated by CI".
       # The first half was FALSE and contradicted by the header of this same function: T-603's
       # re-measure found the 60 workspace errors are ALL website-frontend and called these two
@@ -2673,11 +2682,11 @@ cmd_gate() {
   # --features doc,mission for the same reason as the test step below: without them clippy compiles
   # neither doc nor mission and passes on code it never read. Measured blind on flatten.rs.
   run "clippy map-engine" checkrun cargo clippy -p map-engine-core --features doc,mission,world -p map-engine-render --all-targets --quiet -- -D warnings
-  # NOTE: no `-D warnings` here, deliberately — ci.yml:113 runs frontend clippy WITHOUT it, so
-  # warnings are advisory upstream and there are 25 of them on clean main. Adding -D here would make
-  # the gate stricter than CI and red on arrival. The weakness is real but it is not this run's to
-  # fix; filed separately.
-  run "clippy frontend"  checkrun cargo clippy -p website-frontend --target wasm32-unknown-unknown --quiet
+  # NOTE: no `-D warnings` here, deliberately — ci.yml website-frontend clippy runs WITHOUT it, so
+  # warnings are advisory upstream. Adding -D here would make the gate stricter than CI and red on
+  # arrival. T-742 adds --all-targets (load-bearing for #[cfg(test)] / benches) so this step and
+  # clippy_changed stay aligned with T-752's Makefile/ci-local-leptos fix; -D stays off to match CI.
+  run "clippy frontend"  checkrun cargo clippy -p website-frontend --target wasm32-unknown-unknown --all-targets --quiet
   # Scoped per-crate rather than `--workspace`, mirroring clippy above. ci.yml tests website-api
   # and website-frontend; map-engine is covered by its own job; xtask + tools/tbd-tools are covered
   # by the `test xtask+tbd-tools` step added below.
@@ -3069,6 +3078,38 @@ cmd_reclaim() {
     [ "$unknown_n" -gt 0 ] && echo "  ${unknown_mb} MB in ${unknown_n} unattributed dir(s) NOT reclaimed — reclaim removes only what it can attribute to a slice"
   fi
 
+
+  # T-742 — orphan ad-hoc private dirs under $HOME/.cache/tbd-target-T-*. Swept by default with
+  # the same live-slice spare set as MAIN_ROOT/target-T-*. The shared cache
+  # ($HOME/.cache/tbd-target with no ticket suffix) is NEVER touched. Agents must still delete
+  # their own dir before reporting; this is the parked/killed-agent half.
+  if [ "$slice_dirs" -eq 0 ]; then
+    echo "adhoc dirs at $HOME/.cache: not swept (--no-slice-dirs)"
+  elif [ "$live_ok" -ne 1 ]; then
+    echo "adhoc dirs at $HOME/.cache: REFUSED — live-slice set unknown; nothing swept."
+  else
+    local cd_path cbase ctok ckey cskip
+    echo "adhoc dirs at $HOME/.cache:"
+    sz="$(du -sm "$HOME/.cache/tbd-target" 2>/dev/null | cut -f1)"
+    printf '  spared  %-44s %s MB  (shared agent cache — never reclaimed)\n' "$HOME/.cache/tbd-target" "${sz:-?}"
+    for cd_path in "$HOME"/.cache/tbd-target-T-*; do
+      [ -d "$cd_path" ] || continue
+      cbase="$(basename "$cd_path")"
+      if ! [[ "$cbase" =~ ^tbd-target-(T-[0-9]+)(-.*)?$ ]]; then
+        sz="$(du -sm "$cd_path" 2>/dev/null | cut -f1)"
+        printf '  spared  %-44s %s MB  (name carries no ticket id)\n' "$cd_path" "${sz:-?}"
+        continue
+      fi
+      ctok="${BASH_REMATCH[1]}"
+      ckey="$(printf '%s' "$ctok" | tr 'A-Z' 'a-z' | tr -d '-')"
+      cskip=0
+      for l in $live; do [ "$ckey" = "$l" ] && cskip=1; done
+      [ "$cskip" -eq 1 ] && { printf '  spared  %-44s (live slice %s)\n' "$cd_path" "$ctok"; continue; }
+      sz="$(du -sm "$cd_path" 2>/dev/null | cut -f1)"
+      rm -rf "$cd_path" 2>/dev/null && freed=$((freed + ${sz:-0})) && printf '  removed %-44s %s MB\n' "$cd_path" "${sz:-?}"
+    done
+  fi
+
   if [ "$gate_dirs" -eq 1 ]; then
     echo "gate dirs (--gate-dirs${gate_min_age_days:+, min age ${gate_min_age_days}d}):"
     for d in "$MAIN_ROOT"/target-gate-* "$MAIN_ROOT"/dist-gate-*; do
@@ -3367,9 +3408,108 @@ cmd_push() {
   git push --no-verify origin main
 }
 
+
+# T-742 — ad-hoc `cargo test` into a PER-SLICE private CARGO_TARGET_DIR.
+#
+# DEFECT: concurrent slice worktrees export the same shared cache
+# (`CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target` / `$MAIN_ROOT/target`). `cargo test`
+# BUILDS AND THEN RUNS a binary, so one worktree can execute another's `website_frontend-<hash>`
+# (T-649 live: arsenal.rs:4733 failure that did not exist in that tree; line tracked a sibling).
+# The per-slice gate and the wave-gate `test frontend` step already use private dirs; ad-hoc
+# agent invocations did not, and the brief only ADVISED a private dir — nothing enforced it.
+#
+# THIS PATH: `wave.sh test --slice T-nnn -p <crate> …` pins
+# `$HOME/.cache/tbd-target-<SLICE>` (override with TBD_ADHOC_TARGET_DIR), refuses /tmp and any
+# collapse onto the shared cache, mtime-bumps via touch_changed (same fingerprint cure as the
+# gate), and runs with CARGO_INCREMENTAL=0. It does NOT take the shared gate lock — that lock
+# serialises the SHARED gate dirs (target-gate-*); isolation here is the private directory
+# itself (measured: frontend-only private dir ~2.7 GB, not a 57 GB shared-cache clone).
+#
+# Keep it lean: require explicit cargo-test args (at least `-p <crate>`). Delete the private
+# dir before reporting (`rm -rf "$HOME/.cache/tbd-target-T-nnn"`). `reclaim` also sweeps
+# orphan `~/.cache/tbd-target-T-*` for dead slices.
+cmd_test() {
+  local tid="" args=() a
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --slice)
+        tid="${2:-}"
+        [ -n "$tid" ] || { echo "test: REFUSING — --slice needs a ticket id (T-nnn)" >&2; return 2; }
+        shift 2 ;;
+      --)
+        # Keep cargo's `--` separator (e.g. `… -- --list`). Dropping it made
+        # `cargo test` see `--list` as its own flag and refuse.
+        args+=("--")
+        shift
+        while [ $# -gt 0 ]; do args+=("$1"); shift; done
+        break ;;
+      *)
+        args+=("$1")
+        shift ;;
+    esac
+  done
+  if [ -z "$tid" ]; then
+    echo "test: REFUSING — --slice T-nnn is required."
+    echo "        Bare \`cargo test\` against the shared CARGO_TARGET_DIR is the T-742"
+    echo "        cross-worktree false-binary class. Sanctioned path:"
+    echo "          bash scripts/platform/wave.sh test --slice T-742 -p website-frontend"
+    return 2
+  fi
+  case "$tid" in
+    [Tt]-[0-9]*) ;;
+    *)
+      echo "test: REFUSING — slice id '$tid' (expected T-nnn)" >&2
+      return 2 ;;
+  esac
+  # Normalise t-742 → T-742 without touching digits.
+  tid="T-${tid#*[Tt]-}"
+
+  if [ "${#args[@]}" -eq 0 ]; then
+    echo "test: REFUSING — pass cargo test args (at least -p <crate>)."
+    echo "        An unbounded invocation would inflate the private dir toward a full workspace"
+    echo "        build. Keep ad-hoc dirs lean (frontend-only measured ~2.7 GB)."
+    echo "        Example: bash scripts/platform/wave.sh test --slice $tid -p website-frontend"
+    return 2
+  fi
+
+  local priv="${TBD_ADHOC_TARGET_DIR:-$HOME/.cache/tbd-target-$tid}"
+  case "$priv" in
+    /tmp/*|/var/tmp/*)
+      echo "test: REFUSING — private target dir must not be under /tmp ($priv)."
+      echo "        Host-native rule: never /tmp for CARGO_TARGET_DIR."
+      return 2 ;;
+  esac
+  mkdir -p "$priv" || { echo "test: cannot create $priv" >&2; return 2; }
+
+  local priv_r shared_r cache_r main_r
+  priv_r="$(readlink -f -- "$priv")"
+  shared_r="$(readlink -f -- "${CARGO_TARGET_DIR:-$MAIN_ROOT/target}" 2>/dev/null || printf '%s' "${CARGO_TARGET_DIR:-$MAIN_ROOT/target}")"
+  cache_r="$(readlink -f -- "$HOME/.cache/tbd-target" 2>/dev/null || printf '%s' "$HOME/.cache/tbd-target")"
+  main_r="$(readlink -f -- "$MAIN_ROOT/target" 2>/dev/null || printf '%s' "$MAIN_ROOT/target")"
+  if [ "$priv_r" = "$shared_r" ] || [ "$priv_r" = "$cache_r" ] || [ "$priv_r" = "$main_r" ]; then
+    echo "test: REFUSING — private dir collapsed onto the shared CARGO_TARGET_DIR ($priv_r)."
+    echo "        That is exactly the T-742 defect. Unset TBD_ADHOC_TARGET_DIR or point it at"
+    echo "        a per-slice path under \$HOME/.cache/tbd-target-$tid."
+    return 2
+  fi
+
+  echo "═══ ad-hoc test $tid ═══"
+  echo "CARGO_TARGET_DIR=$priv_r  (private — not the shared cache)"
+  echo "delete before report: rm -rf '$priv_r'"
+
+  # Same mtime-bump the gate uses so a WARM private dir cannot keep fingerprints from before
+  # this worktree's own edits. Cross-worktree isolation is the private dir; this covers the
+  # same-worktree stale-fingerprint half of the pattern.
+  touch_changed || return $?
+
+  # hostrun + explicit env: distrobox-host-exec does not forward the shell environment.
+  hostrun env "CARGO_TARGET_DIR=$priv_r" "CARGO_INCREMENTAL=0" cargo test "${args[@]}"
+}
+
 case "${1:-status}" in
   status) cmd_status ;;
   prep)   cmd_prep ;;
+  test)   shift; cmd_test "$@"; exit $? ;;
   # `--migrate-persist [audit|advance]` runs the T-555 populated-database step alone. It is how the
   # step was proven to go red on the real defects and green on the fix, and it is what to reach for
   # when a gate reports migration drift and you want the detail without a full gate run.

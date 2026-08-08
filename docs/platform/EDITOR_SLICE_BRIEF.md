@@ -19,7 +19,9 @@ the wording cannot drift or be lost.
 
 ```
 HARD RULES:
-1. NO sub-agents. 2. NO .py files committed. 3. Bare `cargo` fails (GLIBC): distrobox-host-exec sh -c 'cd <worktree> && CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target cargo <cmd>' — never /tmp. wasm32 check; native cargo test -p website-frontend.
+1. NO sub-agents. 2. NO .py files committed. 3. Bare `cargo` fails (GLIBC): distrobox-host-exec sh -c 'cd <worktree> && CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target cargo <cmd>' — never /tmp. wasm32 check. FORBIDDEN: bare ad-hoc `cargo test` (or any command that RUNS a test binary) against the shared CARGO_TARGET_DIR — concurrent worktrees share that cache and will execute each other's `website_frontend-*` binary (T-742 / T-649). Sanctioned ad-hoc test path ONLY:
+     bash scripts/platform/wave.sh test --slice T-xxx -p website-frontend
+   (pins CARGO_TARGET_DIR=$HOME/.cache/tbd-target-T-xxx; never /tmp; delete that dir before reporting). Cross-check `--list` total vs run total every time — disagreement means the binary is not yours. Slice gate still uses the shared/gate dirs as normal.
 4. Commit on slice/T-xxx; explicit paths; subject "T-xxx:"; end message with:
 Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
 5. Before reporting: CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target bash scripts/platform/wave.sh gate --slice T-xxx from the worktree — must end SLICE GATE: PASS. Gate lock WAITING = serialisation, not a hang.
