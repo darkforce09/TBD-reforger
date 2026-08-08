@@ -1033,7 +1033,8 @@ fn draw_batches<'a>(
                     | LaneRole::Clusters
                     | LaneRole::SlotPlacePreview
                     | LaneRole::MissionVehicles
-                    | LaneRole::MissionMarkers => slot_base_bind,
+                    | LaneRole::MissionMarkers
+                    | LaneRole::MissionComments => slot_base_bind,
                     _ => glyph_atlas_bind,
                 };
                 let Some(atlas_bg) = atlas_bg else {
@@ -4472,13 +4473,43 @@ impl RenderEngine {
         self.upload_slot_role_lane(LaneRole::MissionMarkers, &bytes, true);
     }
 
-    /// Drop slots + drag + cluster + vehicle + marker lanes.
+    /// T-748 — bind editor-only comment glyphs from interleaved map-plane `xy` (`[x0,z0,…]`).
+    /// Reuses the slot atlas + ring glyph with a fixed note tint — **not** on the pick/SoA bridge
+    /// (same hazard T-760 documented for markers). Empty clears the lane.
+    pub fn comments_bind(&mut self, xy: &[f32]) {
+        if !self.slot_bridge.atlas_ready {
+            return;
+        }
+        let n = xy.len() / 2;
+        if n == 0 {
+            self.remove_lane(LaneRole::MissionComments);
+            return;
+        }
+        let mut bytes = Vec::with_capacity(n * SLOT_ICON_STRIDE);
+        let tint = slots_gpu::pack_rgba_u32(slots_gpu::SLOT_SELECTED_RGBA);
+        for i in 0..n {
+            let x = xy[i * 2];
+            let y = xy[i * 2 + 1];
+            slots_gpu::pack_icon_instance(
+                &mut bytes,
+                x,
+                y,
+                slots_gpu::SLOT_RING_PX,
+                slots_gpu::SLOT_GLYPH_RING,
+                tint,
+            );
+        }
+        self.upload_slot_role_lane(LaneRole::MissionComments, &bytes, true);
+    }
+
+    /// Drop slots + drag + cluster + vehicle + marker + comment lanes.
     fn clear_slot_lanes(&mut self) {
         self.remove_lane(LaneRole::Slots);
         self.remove_lane(LaneRole::SlotDrag);
         self.remove_lane(LaneRole::Clusters);
         self.remove_lane(LaneRole::MissionVehicles);
         self.remove_lane(LaneRole::MissionMarkers);
+        self.remove_lane(LaneRole::MissionComments);
     }
 
     fn upload_slot_role_lane(&mut self, role: LaneRole, bytes: &[u8], visible: bool) {
