@@ -361,9 +361,23 @@ impl Debouncer {
 
 /* ═══════════ the seam idiom: registered at mount, unregistered at unmount, remount-safe ═══════════
  *
- * This file publishes FOUR thread_local seams (the payload source, the click-to-select router, the
- * route probe, the publish sink). Every one of them is a value handed over at mount by a surface
- * that owns `!Send` / reactive state the native-compiled panel cannot hold.
+ * **This block is the crate's ONLY definition of the mechanism.** It publishes the FOUR thread_local
+ * seams of this file (the payload source, the click-to-select router, the route probe, the publish
+ * sink) and, since T-783, the five owned elsewhere as well: `ruler_tool`'s `RULER_CHAIN`, `los_tool`'s
+ * `LOS_STATE` / `LOS_SAMPLER` / `VIEWSHED_STATE`, and `world_assets`'s `RENDER_CTX`. Every one of them
+ * is a value handed over at mount by a surface that owns `!Send` / reactive state the native-compiled
+ * consumer cannot hold.
+ *
+ * T-778 could not import [`install_seam`] / [`unregister_seam`] (they were module-private) and copied
+ * the six-line mechanism into `ruler_tool` instead, leaving ONE identity check and TWO mechanisms that
+ * used it. T-783 widened these three items to `pub(crate)` and deleted that copy; `ruler_tool` now
+ * re-exports them so `crate::ruler_tool::install_seam` — the path `los_tool` and `world_assets` already
+ * import — keeps resolving, to this body. A duplicated vocabulary is its own defect class, and this one
+ * guards a defect family found five times in a single wave.
+ *
+ * The home is deliberate. `validation_panel` is declared UNCONDITIONALLY in `main.rs`, so it is
+ * reachable on native and on wasm32 alike; `world_assets` and `select_tool` are `#[cfg(target_arch =
+ * "wasm32")]` and could never have hosted it.
  *
  * **Wave-129 F5, the same defect F2 fixed in `eden_dock_right`'s zone hook.** A seam registered at
  * mount and never unregistered stays CALLABLE after the surface that owns it is gone: Backspace
@@ -377,8 +391,8 @@ impl Debouncer {
  * registration, so an old cleanup can delete the LIVE surface's seam and leave it dead again. Hence
  * [`unregister_seam`]'s identity guard — only the LOSING registration is cleared.
  *
- * It is written ONCE, here, and applied four times. Four bespoke copies is how a fifth seam gets
- * added without one (which is exactly how the route probe arrived earlier in this same wave).
+ * It is written ONCE, here, and applied nine times across four files. Bespoke copies are how the next
+ * seam gets added without one (which is exactly how the route probe arrived in wave 129).
  */
 
 /// A seam's registered value, comparable for IDENTITY against whatever is currently live.
@@ -412,7 +426,7 @@ impl<T: 'static, S: 'static> SeamRegistration for RwSignal<T, S> {
 
 /// A seam's storage: one thread_local slot holding the current registration, or `None` (host build /
 /// pre-mount / everything unmounted) — which every read of it must report as HONEST FAILURE.
-type SeamCell<H> = std::thread::LocalKey<std::cell::RefCell<Option<H>>>;
+pub(crate) type SeamCell<H> = std::thread::LocalKey<std::cell::RefCell<Option<H>>>;
 
 /// Install `hook` into `cell` for the CURRENT reactive owner: register it now, and unregister it
 /// when that owner is cleaned up (i.e. at unmount).
@@ -424,8 +438,9 @@ type SeamCell<H> = std::thread::LocalKey<std::cell::RefCell<Option<H>>>;
 /// `Send + Sync`-bound and an `Rc<dyn Fn>` is `!Send`, so the cleanup cannot carry the hook itself.
 /// An owner runs its cleanup functions BEFORE it removes its arena nodes, so the read back inside
 /// the cleanup is valid; and holding that clone is what keeps the allocation alive, which is what
-/// makes the identity check in [`unregister_seam`] meaningful.
-fn install_seam<H: SeamRegistration>(cell: &'static SeamCell<H>, hook: H) {
+/// makes the identity check in [`unregister_seam`] meaningful — rather than **a bare `usize` address**
+/// a later registration could be re-allocated onto while a stale cleanup wrongly clears it (ABA).
+pub(crate) fn install_seam<H: SeamRegistration>(cell: &'static SeamCell<H>, hook: H) {
     let mine = StoredValue::new_local(hook.clone());
     cell.with(|c| *c.borrow_mut() = Some(hook));
     on_cleanup(move || {
@@ -438,7 +453,7 @@ fn install_seam<H: SeamRegistration>(cell: &'static SeamCell<H>, hook: H) {
 /// Returns whether this call is the one that cleared it; a superseded (losing) cleanup returns
 /// `false` and leaves the newer registration alone. The value is taken OUT of the cell and dropped
 /// after the borrow ends, so a `Drop` that re-enters this seam cannot hit a double borrow.
-fn unregister_seam<H: SeamRegistration>(cell: &'static SeamCell<H>, mine: &H) -> bool {
+pub(crate) fn unregister_seam<H: SeamRegistration>(cell: &'static SeamCell<H>, mine: &H) -> bool {
     let taken = cell.with(|c| {
         let mut slot = c.borrow_mut();
         if slot
@@ -2159,6 +2174,108 @@ mod f5_seam_lifecycle {
                 "F5 {}: the live mount's OWN cleanup does clear it — the guard skips losers, not \
                  everyone",
                 seam.name
+            );
+        }
+    }
+
+    /// T-783 — the mechanism is defined ONCE in the crate, and the definition is real code.
+    ///
+    /// Wave 129 wrote it here; T-778 could not import it (module-private) and copied the six lines
+    /// into `ruler_tool`, leaving one identity trait and TWO mechanisms consulting it. That is the
+    /// duplicated-vocabulary defect class, and this mechanism guards a defect family found five times
+    /// in one wave and reintroduced once by a fix. So the count is pinned rather than trusted.
+    ///
+    /// **Unscoped by construction.** The input is the crate's whole `src` tree walked from
+    /// `CARGO_MANIFEST_DIR`, not a hand-listed set of files — a third copy in `los_tool`, in
+    /// `world_assets`, in a file that does not exist yet, reddens this. Two independent counts, and
+    /// both must be 1:
+    ///
+    /// * over `live_code` — test modules cut, comments AND string literals blanked. This is the half
+    ///   that proves the surviving definition is code that SHIPS, not prose describing one;
+    /// * over the RAW bytes — which is deliberately the looser input here, because `live_code` cuts
+    ///   from the first `#[cfg(test)]` to end-of-file, so a copy parked below a test module would be
+    ///   invisible to it. As an upper bound (`<= 1`, expressed as `== 1` alongside the live count)
+    ///   including the test half is exactly right: it is the direction where seeing MORE is safer.
+    ///
+    /// Superstring names are counted too: a definition suffixed `…_seam_later`, the decoy shape that
+    /// greened wave 142's `RENDER_CTX` pin, still contains the needle and would REDDEN this one.
+    /// Over-counting is the safe direction for a "there is exactly one" question.
+    #[test]
+    fn the_seam_mechanism_is_defined_exactly_once_in_the_crate() {
+        // Fragment-assembled so this test's own body never carries the needle verbatim.
+        let needles = [
+            ["fn ", "install", "_seam"].concat(),
+            ["fn ", "unregister", "_seam"].concat(),
+        ];
+
+        fn walk(dir: &std::path::Path, out: &mut Vec<std::path::PathBuf>) {
+            let entries = std::fs::read_dir(dir)
+                .unwrap_or_else(|e| panic!("T-783: cannot read {}: {e}", dir.display()));
+            for ent in entries {
+                let path = ent.expect("read_dir entry").path();
+                if path.is_dir() {
+                    walk(&path, out);
+                } else if path.extension().and_then(|e| e.to_str()) == Some("rs") {
+                    out.push(path);
+                }
+            }
+        }
+        let src_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+        let mut files = Vec::new();
+        walk(&src_root, &mut files);
+        files.sort();
+        assert!(
+            files.len() > 40,
+            "T-783: the crate walk found only {} .rs files — the pin's input is wrong, so its \
+             green would mean nothing",
+            files.len()
+        );
+
+        // Scrub each file ONCE, not once per needle: `live_code` is O(file) with char-vector
+        // copies and the crate carries a few 5k-line modules.
+        let sources: Vec<(String, String, String)> = files
+            .iter()
+            .map(|path| {
+                let raw = std::fs::read_to_string(path)
+                    .unwrap_or_else(|e| panic!("T-783: cannot read {}: {e}", path.display()));
+                let name = path
+                    .strip_prefix(&src_root)
+                    .unwrap_or(path)
+                    .display()
+                    .to_string();
+                let live = crate::arsenal::class_r_scrub::live_code(&raw);
+                (name, raw, live)
+            })
+            .collect();
+
+        for needle in &needles {
+            let mut live_hits: Vec<String> = Vec::new();
+            let mut raw_hits: Vec<String> = Vec::new();
+            for (name, raw, live) in &sources {
+                let n_raw = raw.matches(needle.as_str()).count();
+                if n_raw > 0 {
+                    raw_hits.push(format!("{name} x{n_raw}"));
+                }
+                let n_live = live.matches(needle.as_str()).count();
+                if n_live > 0 {
+                    live_hits.push(format!("{name} x{n_live}"));
+                }
+            }
+            assert_eq!(
+                live_hits,
+                vec!["validation_panel.rs x1".to_string()],
+                "T-783: `{needle}` must be defined exactly ONCE in live crate code, beside the \
+                 SeamRegistration trait it depends on. Found: {live_hits:?}. Import it \
+                 (`crate::validation_panel::install_seam`, or the `ruler_tool` re-export the \
+                 wasm-only seams already use) instead of writing a second copy — one identity check \
+                 with two mechanisms is how the remount guard drifts out of one of them."
+            );
+            assert_eq!(
+                raw_hits,
+                vec!["validation_panel.rs x1".to_string()],
+                "T-783: `{needle}` appears outside live code as well. Found: {raw_hits:?}. The raw \
+                 count catches a copy the scrubber cannot see — it cuts from the first test-module \
+                 attribute to end of file, so a definition parked below one would hide."
             );
         }
     }

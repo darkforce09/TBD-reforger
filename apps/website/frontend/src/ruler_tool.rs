@@ -50,8 +50,6 @@
 
 use leptos::prelude::*;
 
-use crate::validation_panel::SeamRegistration;
-
 // ── Pure geometry + formatting (native-tested) ──────────────────────────────────────────────────
 
 /// A ruler vertex: world metres `(x, y)` plus an optional DEM elevation `z` (metres ASL, `None`
@@ -558,72 +556,36 @@ thread_local! {
 
 /* ═══════ the seam idiom for this editor-tool cluster — install at mount, unregister at unmount ═════
  *
- * The SAME lifecycle contract `validation_panel::install_seam` publishes for its four seams, ported
- * here for the five this cluster owns (`RULER_CHAIN`; `los_tool`'s `LOS_STATE` / `LOS_SAMPLER` /
- * `VIEWSHED_STATE`; `world_assets`'s `RENDER_CTX`). **It is a copy, and it should not stay one**:
- * `validation_panel`'s `install_seam`/`unregister_seam` are module-private and that file was not this
- * slice's to widen. What IS reused is the part that matters — the identity vocabulary. `SeamRegistration`
- * is `pub(crate)` and imported below, so the crate still has exactly ONE definition of "is the value in
- * the cell the very registration I put there", and its `Rc` impl is the one doing the work here.
- * FOLLOW-UP: lift these two functions beside that trait (or into a module both files can see) and
- * delete this copy — a duplicated vocabulary is its own defect class.
+ * The lifecycle contract for the five seams this cluster owns (`RULER_CHAIN`; `los_tool`'s
+ * `LOS_STATE` / `LOS_SAMPLER` / `VIEWSHED_STATE`; `world_assets`'s `RENDER_CTX`) is not written here.
+ * **It is `validation_panel`'s, and there is exactly one of it** — the same body that serves that
+ * file's four seams, sitting beside the `SeamRegistration` identity trait it depends on.
  *
- * THE DEFECT (wave-129 F2/F5, third recurrence — T-778). A seam registered at mount and never
- * unregistered stays READABLE after the surface that owns it is gone: Backspace hide-chrome unmounts
- * panels while dialogs deliberately survive, and SPA navigation drops the whole editor page. The stale
- * handle then reports SUCCESS — a non-empty chain, a `Some` sampler — while every `set` behind it
- * lands on a DISPOSED signal, which `reactive_graph` 0.2.14 makes a silent no-op. The operator sees a
- * click that "worked" and nothing happened.
+ * T-778 shipped a COPY of the six-line mechanism at this spot, because those two functions were
+ * module-private and `validation_panel` was not that slice's to widen. Only the identity vocabulary
+ * was shared, so the crate carried one definition of "is the value in the cell the very registration
+ * I put there" and two mechanisms asking it. T-783 widened them to `pub(crate)` and deleted the copy.
+ *
+ * The `use` below is a RE-EXPORT, not a second definition: `los_tool` and `world_assets` import
+ * `crate::ruler_tool::install_seam`, and that path still resolves — to `validation_panel`'s body.
+ * `world_assets` is `#[cfg(target_arch = "wasm32")]` while this file and `validation_panel` are
+ * declared unconditionally in `main.rs`, so the single definition is reachable from every consumer on
+ * BOTH targets.
+ *
+ * THE DEFECT it guards (wave-129 F2/F5, third recurrence — T-778). A seam registered at mount and
+ * never unregistered stays READABLE after the surface that owns it is gone: Backspace hide-chrome
+ * unmounts panels while dialogs deliberately survive, and SPA navigation drops the whole editor page.
+ * The stale handle then reports SUCCESS — a non-empty chain, a `Some` sampler — while every `set`
+ * behind it lands on a DISPOSED signal, which `reactive_graph` 0.2.14 makes a silent no-op. The
+ * operator sees a click that "worked" and nothing happened.
  *
  * The naive fix closes only half of it. An UNCONDITIONAL unregister at cleanup introduces the mirror
  * defect: leptos does not guarantee that a dying owner's cleanup runs before the REMOUNT registers, so
  * an old cleanup can delete the LIVE surface's seam and leave it dead again. Hence the identity guard
- * in [`unregister_seam`] — only the LOSING registration is cleared.
+ * in `validation_panel::unregister_seam` — only the LOSING registration is cleared. Only the entry
+ * point is re-exported; the guard is that function's private business and no caller here names it.
  */
-
-/// A seam's storage: one thread_local slot holding the current registration, or `None` (native build /
-/// pre-mount / everything unmounted) — which every read of it must report as HONEST FAILURE.
-pub(crate) type SeamCell<H> = std::thread::LocalKey<std::cell::RefCell<Option<H>>>;
-
-/// Install `hook` into `cell` for the CURRENT reactive owner: register it now, and unregister it when
-/// that owner is cleaned up (i.e. at unmount).
-///
-/// Called with no owner (the native tests, a non-reactive caller) it degrades to a bare register:
-/// `on_cleanup` outside an owner is a no-op, which is the pre-existing behaviour.
-///
-/// The hook is parked in a `StoredValue` with **LOCAL** storage because `on_cleanup` is
-/// `Send + Sync`-bound and an `Rc<…>` is `!Send`, so the cleanup cannot carry the hook itself. An owner
-/// runs its cleanup functions BEFORE it removes its arena nodes, so the read back inside the cleanup is
-/// valid; and holding that clone is what keeps the allocation alive, which is what makes the identity
-/// check in [`unregister_seam`] meaningful rather than **a bare `usize` address** a later registration
-/// could be re-allocated onto while a stale cleanup wrongly clears it (ABA).
-pub(crate) fn install_seam<H: SeamRegistration>(cell: &'static SeamCell<H>, hook: H) {
-    let mine = StoredValue::new_local(hook.clone());
-    cell.with(|c| *c.borrow_mut() = Some(hook));
-    on_cleanup(move || {
-        let _ = mine.try_with_value(|mine| unregister_seam(cell, mine));
-    });
-}
-
-/// Clear `cell` — but ONLY if `mine` is still the LIVE registration.
-///
-/// Returns whether this call is the one that cleared it; a superseded (losing) cleanup returns `false`
-/// and leaves the newer registration alone. The value is taken OUT of the cell and dropped after the
-/// borrow ends, so a `Drop` that re-enters this seam cannot hit a double borrow.
-fn unregister_seam<H: SeamRegistration>(cell: &'static SeamCell<H>, mine: &H) -> bool {
-    let taken = cell.with(|c| {
-        let mut slot = c.borrow_mut();
-        if slot
-            .as_ref()
-            .is_some_and(|live| mine.is_same_registration(live))
-        {
-            slot.take()
-        } else {
-            None
-        }
-    });
-    taken.is_some()
-}
+pub(crate) use crate::validation_panel::install_seam;
 
 /// Register the host's leaked ruler chain so [`RulerOverlay`] can read it. Called once at mount by
 /// `mission_editor` (peer of `context_menu::set_menu_signal`).
@@ -1235,8 +1197,9 @@ mod tests {
  *
  * Perturbation RED, and they redden DIFFERENTLY, which is the point: drop the `on_cleanup` from
  * [`install_seam`] and shape 2 goes red; keep the cleanup but make it unconditional (delete the
- * `is_same_registration` guard from [`unregister_seam`]) and shape 3 goes red ALONE — that is the
- * failure a naive fix ships.
+ * `is_same_registration` guard from `unregister_seam`) and shape 3 goes red ALONE — that is the
+ * failure a naive fix ships. Since T-783 both live in `validation_panel`, so either perturbation is
+ * one edit that reddens this table AND `validation_panel`'s together — they share the body now.
  *
  * The FIFTH seam, `world_assets::RENDER_CTX`, cannot join this table: `world_assets` is declared
  * `#[cfg(target_arch = "wasm32")]` in `main.rs` and its handles wrap a live `RenderEngine`/`MapHost`,
