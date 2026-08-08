@@ -31,8 +31,8 @@ use crate::models::{
 use crate::services::text::is_http_url;
 use crate::services::{
     COMPILE_DIAGNOSTICS_COUNT_HEADER, COMPILE_DIAGNOSTICS_RULES_HEADER, CompileError,
-    ModMissionDocument, compile_diagnostics_rules_header, flatten_to_mod_document_with_catalog,
-    mission_terrain_key, write_audit,
+    CompileFinding, ModMissionDocument, compile_diagnostics_rules_header,
+    flatten_to_mod_document_with_catalog, mission_terrain_key, write_audit,
 };
 use crate::state::AppState;
 
@@ -1849,24 +1849,31 @@ pub async fn get_compiled_mission(
         );
     }
 
-    let mut headers = axum::http::HeaderMap::new();
+    let mut headers = compiled_diagnostics_response_headers(&diagnostics);
     headers.insert(
         header::CONTENT_TYPE,
         axum::http::HeaderValue::from_static("application/json"),
     );
-    // The count is always sent, `0` included: "the compile reported nothing" and "this build of the
-    // API does not report" must not look the same to a caller.
+    Ok((headers, body).into_response())
+}
+
+/// Headers that ride alongside `/compiled` bytes for the compile's structured findings (T-690).
+///
+/// Count is always present — `0` included — so "the compile reported nothing" and "this build of
+/// the API does not report" cannot look the same to a caller. Rules are omitted when nothing fired.
+fn compiled_diagnostics_response_headers(diagnostics: &[CompileFinding]) -> axum::http::HeaderMap {
+    let mut headers = axum::http::HeaderMap::new();
     if let Ok(v) = axum::http::HeaderValue::from_str(&diagnostics.len().to_string()) {
         headers.insert(HeaderName::from_static(COMPILE_DIAGNOSTICS_COUNT_HEADER), v);
     }
-    if let Some(rules) = compile_diagnostics_rules_header(&diagnostics) {
+    if let Some(rules) = compile_diagnostics_rules_header(diagnostics) {
         // Rule ids are `&'static str` ASCII constants, so this cannot fail; the fallible form is
         // used anyway rather than an `expect` that would 500 the route over a header.
         if let Ok(v) = axum::http::HeaderValue::from_str(&rules) {
             headers.insert(HeaderName::from_static(COMPILE_DIAGNOSTICS_RULES_HEADER), v);
         }
     }
-    Ok((headers, body).into_response())
+    headers
 }
 
 /// A stored payload the mission compiler cannot deserialise (`CompileError::Parse`).
@@ -2400,9 +2407,17 @@ mod tests {
              means they cannot be recovered afterwards; got:\n{body}"
         );
         assert!(
-            body.contains("COMPILE_DIAGNOSTICS_COUNT_HEADER")
-                && body.contains("COMPILE_DIAGNOSTICS_RULES_HEADER"),
-            "/compiled must carry the findings alongside the bytes in both headers; got:\n{body}"
+            body.contains("compiled_diagnostics_response_headers"),
+            "/compiled must assemble diagnostics headers via compiled_diagnostics_response_headers; got:\n{body}"
+        );
+        let helper = production
+            .split("fn compiled_diagnostics_response_headers(")
+            .nth(1)
+            .expect("compiled_diagnostics_response_headers must exist");
+        assert!(
+            helper.contains("COMPILE_DIAGNOSTICS_COUNT_HEADER")
+                && helper.contains("COMPILE_DIAGNOSTICS_RULES_HEADER"),
+            "/compiled must carry the findings alongside the bytes in both headers; got:\n{helper}"
         );
         assert!(
             body.contains("tracing::warn!"),
@@ -2418,6 +2433,37 @@ mod tests {
         assert!(
             !loop_body.contains("ApiError") && !loop_body.contains("return"),
             "a finding must not refuse the compile — the document is complete and valid; got:\n{loop_body}"
+        );
+    }
+
+    /// T-763 Class-R: a clean compile's *response* carries `x-compile-diagnostics-count: 0`.
+    ///
+    /// T-690 pins the route's source shape (lift-before-serialize, both header constants, warn!,
+    /// no refusal). That is necessary but not sufficient: a source scan cannot prove the assembled
+    /// `Response` actually exposes the count header when the findings list is empty. This builds
+    /// the response the same way the route does — via [`compiled_diagnostics_response_headers`] —
+    /// and asserts the wire value.
+    ///
+    /// RED: skip the count insert when `diagnostics.is_empty()`.
+    #[test]
+    fn t763_compiled_clean_mission_response_carries_diagnostics_count_zero() {
+        let headers = compiled_diagnostics_response_headers(&[]);
+        let response = (headers, axum::body::Body::empty()).into_response();
+        let count = response
+            .headers()
+            .get(COMPILE_DIAGNOSTICS_COUNT_HEADER)
+            .and_then(|v| v.to_str().ok());
+        assert_eq!(
+            count,
+            Some("0"),
+            "clean /compiled must advertise x-compile-diagnostics-count: 0, not omit the header"
+        );
+        assert!(
+            response
+                .headers()
+                .get(COMPILE_DIAGNOSTICS_RULES_HEADER)
+                .is_none(),
+            "rules header is omitted when nothing fired"
         );
     }
 
