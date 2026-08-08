@@ -246,12 +246,22 @@ pub fn OrbatManagerDialog(
     let status = RwSignal::new(String::new());
 
     // Esc closes (Faction Manager / suite Dialog behavior).
+    // T-726 — register + is_topmost_open so a stacked dialog above ORBAT owns Esc alone.
+    let modal_id = crate::ui::modal_stack::register(move || {
+        open.try_get_untracked().unwrap_or(false)
+    });
     let esc = window_event_listener(leptos::ev::keydown, move |ev| {
-        if open.get_untracked() && ev.key() == "Escape" {
+        if open.get_untracked()
+            && ev.key() == "Escape"
+            && crate::ui::modal_stack::is_topmost_open(modal_id)
+        {
             open.set(false);
         }
     });
-    on_cleanup(move || esc.remove());
+    on_cleanup(move || {
+        esc.remove();
+        crate::ui::modal_stack::unregister(modal_id);
+    });
 
     #[cfg(target_arch = "wasm32")]
     let auth = expect_context::<crate::auth::AuthStore>();
@@ -1840,6 +1850,26 @@ mod tests {
         assert!(
             ops.contains("#![cfg(target_arch = \"wasm32\")]"),
             "editor_ops stays wasm-only, which is why the merge lives here where it is testable"
+        );
+    }
+
+    /// T-726 — ORBAT Manager Esc must gate on modal_stack topmost (wave139 F3).
+    #[test]
+    fn orbat_manager_gates_escape_on_modal_stack() {
+        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        let code = live_code(include_str!("orbat_manager.rs"));
+        let body = only_body(&code, "pub fn OrbatManagerDialog(");
+        let reg = ["modal_stack", "::", "register("].concat();
+        let top = ["modal_stack", "::", "is_topmost_open(modal_id)"].concat();
+        let unreg = ["modal_stack", "::", "unregister(modal_id)"].concat();
+        assert!(body.contains(&reg), "T-726: OrbatManagerDialog must register");
+        assert!(
+            body.contains(&top),
+            "T-726: OrbatManagerDialog must gate Escape on is_topmost_open"
+        );
+        assert!(
+            body.contains(&unreg),
+            "T-726: OrbatManagerDialog must unregister"
         );
     }
 }
