@@ -936,9 +936,9 @@ clippy_changed() {
       # is the T-329 shape this function's header says it exists to prevent, and it was living in
       # the function. They now fall through to the default arm below, like every other crate.
       #
-      # --features doc,mission is REQUIRED, for exactly the reason it is required for `cargo test`
-      # thirty lines below. lib.rs:16,23,32 gate the whole doc/mission/world modules behind features,
-      # so a featureless clippy COMPILES NONE OF THEM and reports success on code it never read.
+      # --features doc,mission,world is REQUIRED (same floor as --all-features / the gate test
+      # step). lib.rs gates doc/mission/world behind features, so a featureless clippy COMPILES
+      # NONE OF THEM and reports success on code it never read.
       # PROVED by perturbation 2026-07-26: a `format!("{}", "verify")` injected into flatten.rs:767 —
       # the file this script's own comment calls the most contended in the backlog — gave
       # `clippy (changed crates) PASS` / `SLICE GATE: PASS` without features, and
@@ -2679,8 +2679,9 @@ cmd_gate() {
   # ci.yml gates per-crate (:59 website-api, :91 map-engine, :112 website-frontend on wasm32) and
   # the three steps here mirror it; the fourth (below) covers what ci.yml has no job for at all.
   run "clippy api"       checkrun cargo clippy -p website-api --all-targets --quiet -- -D warnings
-  # --features doc,mission for the same reason as the test step below: without them clippy compiles
-  # neither doc nor mission and passes on code it never read. Measured blind on flatten.rs.
+  # --features doc,mission,world (same floor as --all-features for this crate): without them
+  # clippy compiles none of those modules and passes on code it never read. Measured blind on
+  # flatten.rs. Gate test step uses --all-features (T-747 / wave139 F2).
   run "clippy map-engine" checkrun cargo clippy -p map-engine-core --features doc,mission,world -p map-engine-render --all-targets --quiet -- -D warnings
   # NOTE: no `-D warnings` here, deliberately — ci.yml website-frontend clippy runs WITHOUT it, so
   # warnings are advisory upstream. Adding -D here would make the gate stricter than CI and red on
@@ -2719,16 +2720,14 @@ cmd_gate() {
   # gate_db_migrate_persist asserts for itself before writing.
   run "db_migrate persist" gate_db_migrate_persist advance
   run "test api"         gate_test_api
-  # --features mission is REQUIRED. The mission module is feature-gated, so a bare
-  # `cargo test -p map-engine-core` runs 116 tests and silently skips 26 — every test in flatten.rs,
-  # which is the most contended file in the backlog and the one T-182 inverted a pinning assertion
-  # in last wave. Measured 2026-07-26: bare 116, --features mission 142.
-  # AND `doc` compiles out too — T-217 measured mission-only skipping all 155 doc tests
-  # (apply_faction, store, undo). doc,mission gives 183. Both features are required.
+  # --all-features is REQUIRED (T-747 / wave139 F2). Bare `cargo test -p map-engine-core` is a
+  # vacuous pass (~140 tests; tripwire REDs). `--features doc,mission` still skips the world/dem
+  # suite (~133 tests). Makefile `ci-local` and this gate must match: `--all-features` (doc +
+  # mission + world). Measured 2026-08-08: bare 140, doc,mission 502, --all-features 635.
   # Private target dir for the same reason as `test api` and `test frontend`: this step RUNS test
   # binaries, and a shared dir lets another worktree's build be the one that runs.
   run "test map-engine"  hostrun env "CARGO_TARGET_DIR=$MAIN_ROOT/target-gate-mapengine" "CARGO_INCREMENTAL=0" \
-                                 cargo test -p map-engine-core --features doc,mission -p map-engine-render --quiet
+                                 cargo test -p map-engine-core --all-features -p map-engine-render --quiet
   # Frontend tests get a PRIVATE target dir. Two agents (T-193, T-195) independently proved that
   # with the shared CARGO_TARGET_DIR, `cargo test -p website-frontend` runs a stale
   # website_frontend-<hash> test binary built from ANOTHER worktree: T-193 saw 113 passing from a
