@@ -18,11 +18,25 @@
 //! Save with a dirty indicator and a discard path — and the answer from the rest of the SPA is no,
 //! twice over:
 //!
-//! * **Every other mission-document editor commits on the spot.** `editor_ops.rs` funnels 26 call
-//!   sites into `mission_history::after_local_edit` — measured 2026-07-31; this line said 28 and
-//!   28 is the SPA-wide total. The other two are direct calls from `mission_hydrate.rs:496` and
-//!   `mission_editor.rs:1316`, neither of them an editor commit point, so the argument below is
-//!   unaffected by the correction. The Arsenal's `set_loadout`
+//! * **Every other mission-document editor commits on the spot.** `editor_ops.rs` funnels **56**
+//!   call sites into `mission_history::after_local_edit`, out of **59** SPA-wide. The other three
+//!   are single direct calls in `mission_hydrate.rs`, `mission_commands.rs` and `mission_editor.rs`,
+//!   none of them an editor commit point, so the argument below is unaffected.
+//!
+//!   **Re-measured 2026-08-08 (T-779). The previous figures — 26 here, 28 SPA-wide, "the other
+//!   two" — were all wrong**, stale since the 2026-07-31 measurement, and the file list was wrong
+//!   too: it named `mission_editor.rs` and `mission_hydrate.rs` and missed `mission_commands.rs`.
+//!   HOW TO RE-DERIVE, because a grep over this file counts this prose and the source pins below:
+//!   remove the cfg-test modules by BRACE MATCHING — splitting at the first such attribute
+//!   truncates every file carrying more than one test module, which silently reports
+//!   `mission_editor.rs` as zero — then strip comments, blank string literals, count
+//!   `after_local_edit()` and subtract the definition in `mission_history.rs`.
+//!   (This paragraph deliberately does not spell that attribute out: `arsenal_production_src()`
+//!   splits on it, so writing it here truncates the production source and hides the cites below
+//!   from `t739::arsenal_cites_live_set_loadout_lines`. That pin caught exactly that mistake being
+//!   made in this paragraph.) Line cites are otherwise omitted on purpose: five drifted during the
+//!   127–141 remediation run, and a file+symbol survives edits that a number does not.
+//!   The Arsenal's `set_loadout`
 //!   (`editor_ops.rs:2032`) is one of them. Its own siblings in this very modal are the clearest
 //!   case: Transform X/Y/Z/rotation (`attributes.rs:265`) and Identity role/tag/stance
 //!   (`attributes.rs:335`) commit on blur/Enter with no Save of their own — `attributes.rs:7` states
