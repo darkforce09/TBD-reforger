@@ -2227,14 +2227,19 @@ mod t761_compile_findings_do_not_survive_mission_switch {
     /// only in tests.
     #[test]
     fn clear_compile_findings_is_the_hydrate_reset_seam() {
-        let src = include_str!("validation_panel.rs");
+        // wave-136 F3 — scope to the production body only. Whole-file `src.contains(…)` self-feeds
+        // off this assert's own string literal, and a string decoy in production greened without
+        // `live_code`.
+        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        let src = live_code(include_str!("validation_panel.rs"));
+        let body = only_body(&src, "pub fn clear_compile_findings(");
         assert!(
-            src.contains("pub fn clear_compile_findings()"),
-            "T-761: clear_compile_findings must exist as the hydrate reset seam"
+            body.contains("Vec::new()"),
+            "T-761: clear_compile_findings must empty via Vec::new() in the production body; got:\n{body}"
         );
         assert!(
-            src.contains("publish_compile_findings(Vec::new())"),
-            "T-761: clear_compile_findings must empty the cell via whole-list replace"
+            body.contains("publish_compile_findings"),
+            "T-761: clear must route through publish_compile_findings; got:\n{body}"
         );
     }
 }
