@@ -2790,16 +2790,15 @@ pub(crate) fn triggers_panel(
 // embedded `mission.schema.json` and `the_icon_list_is_the_schemas_own` re-reads the schema
 // independently and compares alias for alias.
 //
-// This is the same `include_str!` of the same bytes that `eden_zones` and `eden_settings` already
-// make (their headers carry the full argument). Three embeds, ONE vocabulary.
+// Read the shared crate embed (`eden_zones::MISSION_SCHEMA`) rather than a second `include_str!`
+// (wave-135 H2 / T-757 follow-through). ONE embed, ONE vocabulary.
 //
 // SCOPE: the four schema-carried fields. `$defs/marker` also declares `size` / `rotationDeg` /
 // `shape` / `area`, each stamped "T-673, lands after T-069" in its own schema description — marker
 // STYLE and Eden's second Area-marker model. This panel authors none of them.
 
-/// `mission.schema.json`, embedded — the ONE source of the marker icon vocabulary.
-const MISSION_SCHEMA_JSON: &str =
-    include_str!("../../../../packages/tbd-schema/schema/mission.schema.json");
+/// `mission.schema.json` via the crate's single embed — the ONE source of the marker icon vocabulary.
+const MISSION_SCHEMA_JSON: &str = crate::eden_zones::MISSION_SCHEMA;
 
 /// The closed `$defs/marker.icon` alias list, in schema order, parsed once.
 ///
@@ -3374,8 +3373,6 @@ mod tests {
             );
         }
     }
-
-
 
     /// E1 + E5 — exact chip list; no CIV; no F-key labels in the chip row source of truth.
     #[test]

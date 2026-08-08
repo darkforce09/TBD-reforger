@@ -1612,9 +1612,9 @@ mod tests {
     /// authority instead of against a copy of it.
     #[test]
     fn the_formation_submenu_uses_the_schema_vocabulary_verbatim() {
-        const SCHEMA: &str =
-            include_str!("../../../../packages/tbd-schema/schema/mission.schema.json");
-        let schema: serde_json::Value = serde_json::from_str(SCHEMA).expect("schema parses");
+        // Shared crate embed (wave-135 H2) — do not re-include_str the schema in this test.
+        let schema: serde_json::Value =
+            serde_json::from_str(crate::eden_zones::MISSION_SCHEMA).expect("schema parses");
         let want: Vec<String> = schema["$defs"]["group"]["properties"]["formation"]["enum"]
             .as_array()
             .expect("$defs/group.formation.enum")
