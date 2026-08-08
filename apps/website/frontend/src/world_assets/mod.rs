@@ -132,6 +132,40 @@ pub fn camera_snapshot() -> Option<(f64, f64, f64)> {
     })
 }
 
+/// T-762 — move the camera to `(x, y, zoom)` through the same `RENDER_CTX` seam as
+/// [`camera_snapshot`] / [`apply_grid`]. Body matches the T-166 `__editorCamSet` smoke-hook
+/// closure: `set_view` → `on_camera_changed` → [`flush_viewport`]. No-op before the engine mounts.
+/// Production chrome (Places fly-to / bookmarks) must call this — never the smoke hook by name.
+pub fn fly_to(x: f64, y: f64, zoom: f64) {
+    RENDER_CTX.with(|c| {
+        let Some((engine, host)) = c.borrow().as_ref().map(|(e, h)| (e.clone(), h.clone())) else {
+            return;
+        };
+        if let Some(e) = engine.borrow_mut().as_mut() {
+            e.set_view(x, y, zoom);
+            e.on_camera_changed();
+        }
+        flush_viewport(host, engine);
+    });
+}
+
+/// T-762 — the already-parsed town / named-location index from `LabelHost` boot
+/// (`/map-assets/<terrain>/locations.json`). Empty before the engine mounts or before label init.
+/// The Places dock must read this instead of re-fetching and re-parsing the same file.
+#[must_use]
+pub fn named_locations() -> Vec<map_engine_core::world::LocationLabel> {
+    RENDER_CTX.with(|c| {
+        c.borrow()
+            .as_ref()
+            .and_then(|(_, host)| {
+                host.borrow()
+                    .as_ref()
+                    .map(|mh| mh.labels.towns().to_vec())
+            })
+            .unwrap_or_default()
+    })
+}
+
 thread_local! {
     /// T-176 B2 — true while a pan gesture is active (pointer down → up). During a pan,
     /// `flush_viewport` skips the heavy zoom-band marching-squares rebuilds (DEM contour/sea +

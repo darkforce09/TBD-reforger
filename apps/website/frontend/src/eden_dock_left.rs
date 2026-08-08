@@ -178,19 +178,14 @@ pub fn DockLeft(
         bookmarks.set(next);
     };
 
-    // The one-shot index load. The named places are NOT re-sourced: this re-runs the SAME
-    // `parse_locations_json` over the SAME `/map-assets/<terrain>/locations.json` the town-label lane
-    // reads (`world_assets::labels::LabelHost::init`), because that module's parsed set is a private
-    // field of a private wasm-only module. See the section note at the foot of this file.
+    // The one-shot index load. T-762 — read the already-parsed LabelHost towns via
+    // `world_assets::named_locations()`; do not re-fetch locations.json.
     let arm_places = move || {
         if places_armed.get_untracked() {
             return;
         }
         places_armed.set(true);
-        #[cfg(target_arch = "wasm32")]
-        wasm_bindgen_futures::spawn_local(async move {
-            places.set(fetch_named_places().await);
-        });
+        places.set(load_named_places());
     };
 
     let tab_btn = move |t: LeftTab, label: &'static str, testid: &'static str| {
@@ -852,24 +847,16 @@ pub fn DockLeft(
 // draws by name. Two halves, one tab, one camera mover.
 //
 // **THE INDEX IS NOT NEW DATA.** The town names come from `/map-assets/<terrain>/locations.json`,
-// parsed by `map_engine_core::world::parse_locations_json` — the SAME file and the SAME parser
-// `world_assets::labels::LabelHost::init` reads to feed the Town-labels lane. Nothing here re-sources
-// or re-authors a location. It cannot read `LabelHost`'s already-parsed `towns` directly because
-// `world_assets` declares `mod labels` PRIVATE and `towns` is a private field, and neither file is
-// this slice's to touch — so the honest in-owns move is to re-run the shared parser over the shared
-// URL (the browser serves the second GET from cache). The proper fix is a
-// `world_assets::named_locations()` accessor over `LabelHost`; filed in the slice report.
+// parsed once at boot by `world_assets::labels::LabelHost::init`. This dock reads them through
+// `world_assets::named_locations()` (T-762) — the already-parsed `LabelHost` towns — and does not
+// re-fetch or re-parse the file.
 //
 // **THE CAMERA.** Flying to a place must not be a SECOND camera mover. The one mover is
 // `RenderEngine::set_view` followed by `on_camera_changed` and a viewport flush — the path
 // `editor_ops::center_on_selection` (Space), the validation panel's finding jump, and the
-// initial view all take. That path is reachable from this file only through the closure
-// `mission_editor::register_editor_cam` installs on `window.__editorCamSet` in the SAME block as
-// `world_assets::register_render_ctx` (unconditional, every wasm build, the moment the engine
-// exists) — `world_assets` exposes a camera READER (`camera_snapshot`) and no writer, and adding
-// one would mean editing `world_assets/mod.rs` or `mission_editor.rs`, neither of which is in this
-// slice's owns. [`fly_to`] therefore calls that closure: same `set_view`, same `on_camera_changed`,
-// same flush, zero duplicated camera math. Filed in the slice report as the seam to promote.
+// initial view all take. T-762 promotes that sequence as `world_assets::fly_to` on the same
+// `RENDER_CTX` seam as `camera_snapshot` / `apply_grid`. [`fly_to`] here only resolves the
+// optional zoom (bookmark carries one; a named location keeps the live zoom) and forwards.
 //
 // **UNDO.** Neither half is undoable, deliberately, and both are kept out of the document: a camera
 // move and a bookmark are session/overlay state, not authored content — exactly the line T-642 drew
@@ -1226,72 +1213,47 @@ pub fn live_camera() -> Option<(f64, f64, f64)> {
     }
 }
 
-/// T-696 — FLY TO `(x, y)`, optionally at `zoom` (a bookmark carries one; a named location does not,
-/// and keeps the current zoom).
+/// T-696 / T-762 — FLY TO `(x, y)`, optionally at `zoom` (a bookmark carries one; a named location
+/// does not, and keeps the current zoom).
 ///
-/// This is NOT a second camera mover. It calls the closure `mission_editor::register_editor_cam`
-/// installs on `window.__editorCamSet`, whose body is exactly `set_view` → `on_camera_changed` →
-/// `world_assets::flush_viewport` — the same sequence `editor_ops::center_on_selection` runs. See
-/// the section header for why that closure is the only reachable handle from this file's owns.
-/// A no-op before the engine mounts.
+/// This is NOT a second camera mover. It resolves zoom then forwards to `world_assets::fly_to`,
+/// which runs `set_view` → `on_camera_changed` → `flush_viewport` on the registered `RENDER_CTX`
+/// (same sequence as `editor_ops::center_on_selection` / the T-166 smoke hook body). A no-op
+/// before the engine mounts.
 #[allow(unused_variables)]
 pub fn fly_to(x: f64, y: f64, zoom: Option<f64>) {
     #[cfg(target_arch = "wasm32")]
     {
-        use wasm_bindgen::{JsCast, JsValue};
         let Some(z) = zoom.or_else(|| live_camera().map(|(_, _, z)| z)) else {
             return; // no engine yet — nothing to fly.
         };
-        let Some(win) = web_sys::window() else {
-            return;
-        };
-        let Ok(f) = js_sys::Reflect::get(&win, &JsValue::from_str("__editorCamSet")) else {
-            return;
-        };
-        let Ok(f) = f.dyn_into::<js_sys::Function>() else {
-            return;
-        };
-        let _ = f.call3(
-            &JsValue::NULL,
-            &JsValue::from_f64(x),
-            &JsValue::from_f64(y),
-            &JsValue::from_f64(z),
-        );
+        crate::world_assets::fly_to(x, y, z);
     }
 }
 
-/// T-696 — fetch + parse the named-locations index for the document's terrain, once per editor
-/// session. Same URL and same parser as the town-label lane (see the section header); a missing or
-/// unparseable file yields an empty index rather than an error state, because the index is an
-/// accelerator and the map is still fully usable without it.
-#[cfg(target_arch = "wasm32")]
-async fn fetch_named_places() -> Vec<NamedPlace> {
-    let terrain = crate::editor_ops::read_env().terrain;
-    let url = format!("/map-assets/{terrain}/locations.json");
-    let Ok(resp) = gloo_net::http::Request::get(&url).send().await else {
-        return Vec::new();
-    };
-    if !(200..300).contains(&resp.status()) {
-        return Vec::new();
+/// T-696 / T-762 — map the boot-parsed `world_assets::named_locations()` index into dock rows.
+/// Empty before the engine / label host mounts; the index is an accelerator, so an empty list is
+/// not an error state.
+fn load_named_places() -> Vec<NamedPlace> {
+    #[cfg(target_arch = "wasm32")]
+    {
+        let mut out: Vec<NamedPlace> = crate::world_assets::named_locations()
+            .into_iter()
+            .filter(|l| !l.name.trim().is_empty())
+            .map(|l| NamedPlace {
+                name: l.name,
+                x: l.x,
+                y: l.y,
+                kind: l.kind.unwrap_or_default(),
+            })
+            .collect();
+        sort_places(&mut out);
+        out
     }
-    let Ok(txt) = resp.text().await else {
-        return Vec::new();
-    };
-    let Ok(rows) = map_engine_core::world::parse_locations_json(&txt) else {
-        return Vec::new();
-    };
-    let mut out: Vec<NamedPlace> = rows
-        .into_iter()
-        .filter(|l| !l.name.trim().is_empty())
-        .map(|l| NamedPlace {
-            name: l.name,
-            x: l.x,
-            y: l.y,
-            kind: l.kind.unwrap_or_default(),
-        })
-        .collect();
-    sort_places(&mut out);
-    out
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        Vec::new()
+    }
 }
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════════
@@ -1687,14 +1649,12 @@ mod tests {
     const SRC: &str = include_str!("eden_dock_left.rs");
 
     /// T-759 — **the haystack a POSITIVE source pin is allowed to read.** `SRC` is the WHOLE file,
-    /// test module included, so `SRC.contains("parse_locations_json")` is satisfied by the very
-    /// assertion that spells it: delete the production code and the pin stays green. Every positive
-    /// needle below therefore reads the file's PRODUCTION half through `class_r_scrub`, the same
-    /// scrubber the `t697_document_search` module three tests down already uses on this same file —
-    /// its first pass cuts everything from the first `#[cfg(test)]` onward, so a needle written in a
-    /// test can no longer satisfy itself. It also drops comments, which mattered here: this file
-    /// *names* `parse_locations_json`, `camera_snapshot` and the locations URL in its section header
-    /// prose, so three of these pins were green off the commentary alone.
+    /// test module included, so a bare `SRC.contains(...)` is satisfied by the assertion that
+    /// spells the needle. Every positive needle below therefore reads the file's PRODUCTION half
+    /// through `class_r_scrub`, the same scrubber the `t697_document_search` module three tests
+    /// down already uses on this same file — its first pass cuts everything from the first
+    /// `#[cfg(test)]` onward, so a needle written in a test can no longer satisfy itself. It also
+    /// drops comments, so section-header prose cannot keep a pin green.
     ///
     /// This form keeps string literals — a `data-testid` or a URL is code that ships, and pinning
     /// one is not the defect that pinning a comment is.
@@ -1932,34 +1892,30 @@ mod tests {
         }
     }
 
-    /// T-696 — source pins for the wasm-only halves, in the `eden_tree::source_pins` idiom: the
-    /// index reads the SHIPPED source (same URL, same parser as the town-label lane) and the fly-to
-    /// rides the SHIPPED camera path rather than a second mover.
+    /// T-696 / T-762 — source pins for the wasm-only halves: the index reads the boot-parsed
+    /// `world_assets::named_locations` seam (not a second fetch), and fly-to rides
+    /// `world_assets::fly_to` (not the T-166 `__editorCamSet` smoke hook).
     #[test]
     fn the_index_and_the_fly_to_reuse_the_shipped_paths() {
-        // T-759: every positive needle here reads the scrubbed PRODUCTION half. All four facts are
-        // `#[cfg(target_arch = "wasm32")]`-only, so the native compiler never sees the code they
-        // pin — a source pin is the ONLY guarantee these have, and until this ticket it was a pin
-        // that matched its own assertion (and, for three of them, this file's own prose as well).
+        // T-759: positives read the scrubbed PRODUCTION half via class_r_scrub.
         let code = live_rust();
-        let src = live_src();
         assert!(
-            code.contains("parse_locations_json"),
-            "the index must reuse map-engine-core's locations parser, not a private one"
+            code.contains("named_locations"),
+            "the index must read world_assets::named_locations, not re-fetch locations.json"
         );
         assert!(
-            src.contains("/map-assets/{terrain}/locations.json"),
-            "the index must read the same file the town-label lane reads"
+            code.contains("world_assets::fly_to"),
+            "fly-to must call the world_assets::fly_to RENDER_CTX seam"
         );
+        // Delete-prod RED: production must not couple to the smoke-hook name.
         assert!(
-            src.contains("__editorCamSet"),
-            "fly-to must ride the installed set_view/on_camera_changed closure"
+            !code.contains("__editorCamSet"),
+            "fly-to must not invoke the T-166 __editorCamSet smoke hook"
         );
         // The NEGATIVE stays on the whole unscrubbed file on purpose: "there is no second mover"
         // is only as strong as the text it searched, and scrubbing could only hide a hit. The
         // needle is still split so this line itself is not one (the personnel.rs `production_src`
-        // idiom) — the positives above no longer need that trick, because their haystack no
-        // longer contains them.
+        // idiom).
         let second_mover = format!("{}{}", "set_view", "(");
         assert!(
             !SRC.contains(&second_mover),

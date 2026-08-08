@@ -47,6 +47,12 @@ impl LabelHost {
         }
     }
 
+    /// T-762 — Places-dock read of the already-parsed town index (`locations.json` from boot).
+    #[must_use]
+    pub(super) fn towns(&self) -> &[map_engine_core::world::LocationLabel] {
+        &self.towns
+    }
+
     /// Fetch + parse the label sources and compute DEM peaks. `road_segments` come from the world
     /// store (already loaded); `dem_meters` is the decoded 16-bit DEM raster.
     pub async fn init(
