@@ -209,7 +209,9 @@ pub const SHORTCUTS: &[Shortcut] = &[
     },
     Shortcut {
         codes: &["KeyY"],
-        chord: "Ctrl + Y  or  Ctrl/Cmd + Shift + Z",
+        // T-740 — mission_history redo uses ctrl || meta on KeyY (same mod as undo). Bare
+        // "Ctrl + Y" lied to Mac operators; document Cmd on both alternatives.
+        chord: "Ctrl/Cmd + Y  or  Ctrl/Cmd + Shift + Z",
         action: "Redo",
         group: "History",
     },
@@ -1501,6 +1503,22 @@ mod t692_help_covers_every_binding {
             phantom.is_empty(),
             "T-692: `SHORTCUTS` documents {phantom:?}, which no editor keydown arm binds. Either \
              the binding was removed (drop the row) or the code was mistyped."
+        );
+    }
+
+    /// T-740 — mission_history redo accepts ctrl OR meta on KeyY (same as undo on KeyZ). A help
+    /// chord that documents bare `Ctrl + Y` alone lies to Mac operators and is RED.
+    #[test]
+    fn redo_chord_documents_cmd_for_key_y() {
+        let row = SHORTCUTS
+            .iter()
+            .find(|s| s.codes.contains(&"KeyY") && s.action == "Redo")
+            .expect("SHORTCUTS must document KeyY redo");
+        assert!(
+            row.chord.contains("Ctrl/Cmd + Y"),
+            "T-740: KeyY redo chord must document Cmd (got `{}`); mission_history uses \
+             ctrl_key() || meta_key() — bare `Ctrl + Y` alone is a lie on Mac",
+            row.chord
         );
     }
 
