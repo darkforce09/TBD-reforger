@@ -1175,7 +1175,13 @@ mod tests {
     /// absences load-bearing.
     #[test]
     fn editor_only_and_transitional_keys_stay_absent_from_compile_known_list() {
-        for key in ["zones", "compositions", "triggers", "comments", "connections"] {
+        for key in [
+            "zones",
+            "compositions",
+            "triggers",
+            "comments",
+            "connections",
+        ] {
             assert!(
                 !is_known_editor_payload_top_level(key),
                 "T-751 — `{key}` must stay OUT of KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS; see                  store.rs is_known_editor_payload_top_level notes (T-211 / T-651 / T-672)"

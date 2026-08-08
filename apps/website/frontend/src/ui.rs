@@ -1053,7 +1053,7 @@ mod t633_range_and_select {
         );
         assert!(
             select_body.contains(&dim),
-            "T-751: the Material chevron must carry peer-disabled:opacity-30 — DISABLED_GLYPH              cannot reach a sibling"
+            "T-751: the Material chevron must carry peer-disabled:opacity-30 — DISABLED_GLYPH cannot reach a sibling"
         );
     }
 
