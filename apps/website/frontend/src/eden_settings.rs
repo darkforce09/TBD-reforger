@@ -2745,7 +2745,6 @@ mod t688_aggregated_settings {
         )
     }
 
-
     /// T-757 — zones + settings share ONE `include_str!` of mission.schema.json.
     ///
     /// Perturbation this catches: restoring a second `include_str!` in this file, or dropping the
