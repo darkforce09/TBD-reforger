@@ -5269,14 +5269,21 @@ mod tests {
             assert!(!import_summary("k.json", &unknown, "alpha").contains("modpack"));
         }
 
-        /// T-686 Class-R: the import must reach the live document through EXACTLY ONE commit, so
-        /// Ctrl+Z restores the whole pre-import loadout rather than the last field of it.
+        /// T-686 / T-736 Class-R: the import must reach the live document through EXACTLY ONE
+        /// commit, so Ctrl+Z restores the whole pre-import loadout rather than the last field of
+        /// it. The body is pinned by SYMBOL (`let apply_import =`) through `live_code` +
+        /// `only_body`: three whole-document signal writes + one `persist`, and **nothing else**.
         ///
-        /// RED (N steps): replace the three `set`s with a `for (k, v) in doc.picks` loop that
-        /// calls `persist` per pick → "an import is ONE undo step, so apply_import applies the
-        /// whole document at once and has nothing to iterate — found a `for `". A textual
-        /// `persist(` count alone does NOT catch that shape (the loop has one call site), which is
-        /// why the loop itself is what this asserts on.
+        /// A spelling blacklist of `for` / `while` / `.iter()` is NOT enough (wave-112 MINOR-1):
+        /// `.into_iter().map(|p| persist1(p)).count()`, a bare `loop {}`, or a recursive helper
+        /// all keep one textual `persist(` and dodge those four needles. The leftover-token check
+        /// below is the wide negative — any extra alphanumeric residue is the N-step class.
+        ///
+        /// RED (N steps / `for`): per-pick `persist` loop → leftover tokens (and/or persist count).
+        /// RED (N steps / `into_iter`): `doc.picks.into_iter().map(|p| persist1(p)).count()` →
+        /// leftover `into_iter` / `map` / `count` (the old blacklist missed this — `.into_iter()`
+        /// does not contain `.iter()`).
+        /// RED (N steps / `loop`): bare `loop { persist(...); break; }` → leftover `loop`/`break`.
         /// RED (ungated): call `apply_import` outside the `Ok(doc)` arm → the `try_import` pin.
         /// RED (decoy, `#[cfg(any())]`): park the picker in a dead item → same failure.
         #[test]
@@ -5296,28 +5303,42 @@ mod tests {
                 "the panel must carry an import control the author can reach"
             );
 
+            // Locate by SYMBOL — never a whole-file needle hunt that can match the test module.
             let apply = fn_body(&live, "let apply_import =");
             let commits = apply.matches("persist(").count();
             assert_eq!(
                 commits, 1,
                 "an import is ONE undo step: apply_import must commit exactly once, found {commits}"
             );
-            // The call-site count is necessary and NOT sufficient: one `persist(` inside a loop is
-            // still N undo steps. `apply_import` replaces the whole document with three signal
-            // writes, so it has nothing to iterate — and any iteration in it is the N-step shape.
-            for loopy in ["for ", "while ", "for_each", ".iter()"] {
+            // Positive shape: the whole document lands through three signal writes, then the one
+            // shared commit. Exact args so a per-field `picks.set(k, v)` walk cannot green this.
+            const WHOLE_DOC: &[&str] = &[
+                "picks.set(doc.picks)",
+                "cargo.set(doc.cargo)",
+                "cargo_present.set(doc.cargo_present)",
+                "persist(&picks.get_untracked(), items)",
+            ];
+            let mut rest = apply.to_string();
+            for needle in WHOLE_DOC {
                 assert!(
-                    !apply.contains(loopy),
-                    "an import is ONE undo step, so apply_import applies the whole document at \
-                     once and has nothing to iterate — found a `{loopy}`"
+                    rest.contains(needle),
+                    "the apply must replace the whole loadout in one commit — missing `{needle}`"
                 );
+                rest = rest.replacen(needle, "", 1);
             }
-            for needle in ["picks.set(", "cargo.set(", "cargo_present.set("] {
-                assert!(
-                    apply.contains(needle),
-                    "the apply must replace the whole loadout — missing {needle}"
-                );
-            }
+            // Wide negative (T-736): after the four known live statements are removed, no
+            // alphanumeric residue may remain. That is the class the spelling blacklist missed —
+            // `into_iter` / `map` / `loop` / a recursive helper name all leave tokens here.
+            let leftover: String = rest
+                .chars()
+                .filter(|c| c.is_ascii_alphanumeric() || *c == '_')
+                .collect();
+            assert!(
+                leftover.is_empty(),
+                "an import is ONE undo step: apply_import must be three whole-document signal \
+                 writes + one persist and nothing else — leftover tokens {leftover:?} betray an \
+                 N-step walk (for / into_iter / loop / recursion / …)"
+            );
             assert!(
                 !apply.contains("set_loadout"),
                 "the apply must go through the same `persist` every other pick uses"
