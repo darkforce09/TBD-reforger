@@ -9857,6 +9857,13 @@ mod t649_select_all_and_multi_edit {
     /// A multi-edit commit reaches EVERY selected slot, field-by-field, under ONE history tail —
     /// and an un-opted field stays `None`, so ticking Rotation cannot also stamp one member's X
     /// onto the rest.
+    ///
+    /// T-736: a bare `after_local_edit()` count == 1 is blind to "one tail *inside* the loop"
+    /// (wave-112 MINOR-2). The pin must prove the call sits AFTER the balanced `for id in ids`
+    /// body closes — locate by SYMBOL on the scrubbed `editor_ops` source.
+    ///
+    /// RED (tail-in-loop): move the single `after_local_edit()` inside `for id in ids { … }` →
+    /// "must fire the history/persist tail OUTSIDE the fan-out loop".
     #[test]
     fn multi_edit_commits_fan_out_to_every_selected_id() {
         let attrs = live_code(include_str!("attributes.rs"));
@@ -9898,6 +9905,9 @@ mod t649_select_all_and_multi_edit {
                 1,
                 "{f} must fire exactly ONE history/persist tail for the whole commit"
             );
+            // T-736 — count==1 alone greens a tail parked inside the loop. Brace-match the
+            // fan-out and demand the (single) call after it closes.
+            assert_after_local_edit_outside_ids_loop(f, &src);
             // A commit with no opted-in field is a no-op, not N writes of `None`.
             assert!(
                 src.contains("is_none()") && src.contains("return;"),
@@ -9910,6 +9920,46 @@ mod t649_select_all_and_multi_edit {
         assert!(
             diff.matches("core.materialize()").count() == 1 && diff.contains("&soa.roles)"),
             "read_attrs_diff must compare one snapshot, resolving dict columns to their strings"
+        );
+    }
+
+    /// Wave-112 MINOR-2 / T-736: `matches("after_local_edit()").count() == 1` cannot tell "one
+    /// tail after the loop" from "one tail inside it". Brace-match `for id in ids {…}` and
+    /// require the call to sit strictly after that span.
+    fn assert_after_local_edit_outside_ids_loop(fn_name: &str, src: &str) {
+        const LOOP: &str = "for id in ids {";
+        let at = src
+            .find(LOOP)
+            .unwrap_or_else(|| panic!("{fn_name} must fan out with `{LOOP}`"));
+        let open = at + LOOP.len() - 1;
+        let bytes = src.as_bytes();
+        let mut depth = 0usize;
+        let mut end = None;
+        let mut i = open;
+        while i < bytes.len() {
+            match bytes[i] {
+                b'{' => depth += 1,
+                b'}' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        end = Some(i);
+                        break;
+                    }
+                }
+                _ => {}
+            }
+            i += 1;
+        }
+        let end = end.unwrap_or_else(|| panic!("{fn_name}: unbalanced `{LOOP}`"));
+        let inside = &src[open..=end];
+        assert!(
+            !inside.contains("after_local_edit()"),
+            "{fn_name} must fire the history/persist tail OUTSIDE the fan-out loop — found \
+             after_local_edit() inside `for id in ids`"
+        );
+        assert!(
+            src[end + 1..].contains("after_local_edit()"),
+            "{fn_name} must fire the history/persist tail after the fan-out loop closes"
         );
     }
 
