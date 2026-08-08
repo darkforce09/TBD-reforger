@@ -1202,9 +1202,7 @@ mod tests {
             .find('{')
             .expect("T-744: raw gate must open an if-arm");
         let arm_tail = &after_gate[brace + 1..];
-        let close = arm_tail
-            .find('}')
-            .expect("T-744: raw-gate arm must close");
+        let close = arm_tail.find('}').expect("T-744: raw-gate arm must close");
         let arm = arm_tail[..close].trim();
         assert!(
             arm.contains("return None")
