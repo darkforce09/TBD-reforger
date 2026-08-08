@@ -23,7 +23,7 @@
 //!   28 is the SPA-wide total. The other two are direct calls from `mission_hydrate.rs:496` and
 //!   `mission_editor.rs:1316`, neither of them an editor commit point, so the argument below is
 //!   unaffected by the correction. The Arsenal's `set_loadout`
-//!   (`editor_ops.rs:777`) is one of them. Its own siblings in this very modal are the clearest
+//!   (`editor_ops.rs:2037`) is one of them. Its own siblings in this very modal are the clearest
 //!   case: Transform X/Y/Z/rotation (`attributes.rs:265`) and Identity role/tag/stance
 //!   (`attributes.rs:335`) commit on blur/Enter with no Save of their own — `attributes.rs:7` states
 //!   the contract in as many words ("rebind + persist + one undo step per commit"). Same for the
@@ -1313,7 +1313,7 @@ pub fn ArsenalTab(
                     // The three `set`s are signal writes and commit nothing; the single `persist`
                     // that follows is the only document mutation, and `persist` is one
                     // `editor_ops::set_loadout` is one `mission_history::after_local_edit`
-                    // (`editor_ops.rs:1611`) is one undo step. So Ctrl+Z after an import restores
+                    // (`editor_ops.rs:2051`) is one undo step. So Ctrl+Z after an import restores
                     // the whole loadout the author had before it — not the last wear row of it.
                     // No new atomic-batch API was needed: the Arsenal's existing commit already
                     // takes the entire `SlotLoadoutV2` document in one call, which is exactly the
@@ -6135,6 +6135,122 @@ mod tests {
                 2,
                 "both refusal lists must name the row; found: {}",
                 tab.matches("refusal_line").count()
+            );
+        }
+    }
+
+    /* ═══════════ T-739 — inverted suppress-on-multi claim cannot return ═══════════ */
+
+    /// Class-R for the wave-112 NIT that became T-739: gap_analysis asserted multi-selection
+    /// **suppresses** the Attributes modal, and a T-648 comment in `editor_ops` still said the
+    /// same after T-649 inverted the guard. Pins are semantic (no false phrase) plus live line
+    /// cites for `set_loadout` / its `after_local_edit` tail — hardcoding a stale number goes red
+    /// the moment either cite drifts again.
+    ///
+    /// RED (false comment returns): restore `(it suppresses on a multi-selection)` in
+    /// `rotate_selection_to_face`'s doc → "editor_ops must not re-claim suppress-on-multi".
+    /// RED (gap falsehood returns): restore `multi-selection **suppresses**` in gap_analysis →
+    /// "gap_analysis must not re-claim suppress-on-multi".
+    /// RED (stale arsenal cite): change either `editor_ops.rs:NNNN` cite away from the live
+    /// `pub fn set_loadout` / its tail line → "arsenal must cite the live set_loadout line".
+    mod t739 {
+        /// Production `editor_ops.rs` (comments kept — the defect lives in a doc comment).
+        fn ops_src() -> &'static str {
+            include_str!("editor_ops.rs")
+        }
+
+        fn arsenal_production_src() -> String {
+            // Keep comments (the cites live there). Truncate at the first `#[cfg(test)]` so the
+            // pin module's own RED prose cannot green or red the production-cite asserts.
+            let full = include_str!("arsenal.rs");
+            full.split("#[cfg(test)]").next().unwrap_or(full).to_string()
+        }
+
+        fn gap_src() -> &'static str {
+            include_str!("../../../../docs/specs/Mission_Creator_Architecture/eden/gap_analysis.md")
+        }
+
+        fn live_set_loadout_lines(ops: &str) -> (usize, usize) {
+            let lines: Vec<&str> = ops.lines().collect();
+            let set_idx = lines
+                .iter()
+                .position(|l| l.starts_with("pub fn set_loadout"))
+                .expect("pub fn set_loadout must exist");
+            let next_pub = lines[set_idx + 1..]
+                .iter()
+                .position(|l| l.starts_with("pub fn "))
+                .map(|i| set_idx + 1 + i)
+                .expect("a following pub fn after set_loadout");
+            let tail_idx = lines[set_idx..next_pub]
+                .iter()
+                .position(|l| l.contains("crate::mission_history::after_local_edit()"))
+                .map(|i| set_idx + i)
+                .expect("set_loadout must fire after_local_edit");
+            (set_idx + 1, tail_idx + 1)
+        }
+
+        #[test]
+        fn editor_ops_must_not_reclaim_suppress_on_multi() {
+            let ops = ops_src();
+            assert!(
+                !ops.contains("it suppresses on a multi-selection"),
+                "T-739: editor_ops must not re-claim suppress-on-multi after T-649 inverted it"
+            );
+            assert!(
+                !ops.contains("suppresses on a multi-selection"),
+                "T-739: editor_ops must not re-claim suppress-on-multi after T-649 inverted it"
+            );
+            // Positive: the shared opener still documents the inversion.
+            assert!(
+                ops.contains("T-649 (ATTR-MULTI-001)")
+                    && ops.contains("A multi-selection now OPENS the modal"),
+                "T-739: open_attrs_modal must keep the T-649 inversion prose"
+            );
+        }
+
+        #[test]
+        fn gap_analysis_must_not_reclaim_suppress_on_multi() {
+            let gap = gap_src();
+            assert!(
+                !gap.contains("multi-selection **suppresses**"),
+                "T-739: gap_analysis ATTR-OPEN-001 must not re-claim suppress-on-multi"
+            );
+            assert!(
+                !gap.contains("multi-select suppression"),
+                "T-739: gap_analysis must not re-claim multi-select suppression"
+            );
+            assert!(
+                gap.contains("a multi-selection now OPENS multi-edit")
+                    && gap.contains("T-649 ✅"),
+                "T-739: gap_analysis must state the T-649 open-on-multi truth"
+            );
+        }
+
+        #[test]
+        fn arsenal_cites_live_set_loadout_lines() {
+            let ops = ops_src();
+            // Production only — the pin module itself names the old numbers in RED prose, and
+            // include_str!(arsenal.rs) would otherwise false-fail on its own commentary.
+            let arsenal = arsenal_production_src();
+            let (set_line, tail_line) = live_set_loadout_lines(ops);
+            let set_cite = format!("editor_ops.rs:{set_line}");
+            let tail_cite = format!("editor_ops.rs:{tail_line}");
+            assert!(
+                arsenal.contains(&set_cite),
+                "T-739: arsenal module docs must cite live set_loadout at {set_cite}"
+            );
+            assert!(
+                arsenal.contains(&tail_cite),
+                "T-739: arsenal import undo note must cite live after_local_edit at {tail_cite}"
+            );
+            // Stale numbers from the wave-112 filing must stay gone from production source.
+            assert!(
+                !arsenal.contains("editor_ops.rs:777"),
+                "T-739: arsenal production source must not keep drifted cite editor_ops.rs:777"
+            );
+            assert!(
+                !arsenal.contains("editor_ops.rs:1611"),
+                "T-739: arsenal production source must not keep drifted cite editor_ops.rs:1611"
             );
         }
     }

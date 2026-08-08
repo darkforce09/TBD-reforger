@@ -241,9 +241,9 @@ table was written. `wb` marks a row whose ticket is `executor: workbench` — a 
 | SEL-LAYER-DESC-001 | — | missing | new — P-6 | Same handler; no descendant walk |
 | LAYER-CREATE-001 | LEFT-LAYER-005 | missing | new — P-6 | **Was `tbd_only`** — a claim about *semantics* standing in for a claim about *existence*. Editor Layers ≠ Eden layers is still true, and there is **no create control at all**: `store.rs:1872` `add_editor_layer`'s only SPA caller is the auto-seed `editor_ops.rs:1136`; DockLeft's five footer buttons are `disabled=true` |
 | LAYER-DEL-001 | LEFT-LAYER-007 | missing | new — P-6 | **Was `partial`.** `store.rs:1527` `remove_editor_layer` has **zero** SPA callers. `Delete` removes selected slots only (`editor_ops.rs:342`) |
-| ATTR-OPEN-001 | ATTR-OPEN-001 | partial | new — P-7 | Opens from map dblclick (`mission_editor.rs:1936-1969`) and outliner row dblclick (`eden_chrome.rs:1655-1660`). Two limits: the pick is **slot-only** (`select_tool.rs:128-130`) so vehicles/objects/zones never open it; and any multi-selection **suppresses** it (`editor_ops.rs:583-585`) |
-| ATTR-MULTI-001 | — | missing | T-082 | Not merely unbuilt — **actively refused** by that same guard. Eden reaches it via RMB ▸ `Attributes…`; TBD has no RMB menu |
-| ATTR-MULTI-CHK-001 | — | missing | T-082 | Per-field "values differ" opt-in checkbox. Presupposes ATTR-MULTI-001 |
+| ATTR-OPEN-001 | ATTR-OPEN-001 | partial | T-647 ✅ · P-7 residual | Opens from map dblclick (`mission_editor.rs:4777-4842` → `pick_slot_or_vehicle` → `open_attributes`) and outliner slot dblclick (`eden_tree.rs:858-862`). **Was:** multi-selection suppressed the modal — **T-649 inverted that** (`open_attrs_modal` `editor_ops.rs:1057-1098` / `:1075`): a multi-selection now OPENS multi-edit. Residual: objects/zones/markers still do not open Attributes; outliner activate is slot-row only |
+| ATTR-MULTI-001 | ATTR-MULTI-001 | match | T-649 ✅ | **Was `missing` / actively refused.** T-649 inverted the suppress-on-multi guard: `open_attrs_modal` (`editor_ops.rs:1057-1098`) opens multi-edit over the whole selection; Identity/Transform fan-out via `attrs_update_slot_multi` / `attrs_update_position_multi` (`:2304+`, `:1447`) |
+| ATTR-MULTI-CHK-001 | ATTR-MULTI-CHK-001 | match | T-649 ✅ | **Was `missing`.** Per-field "Multiple values" opt-in checkboxes in `attributes.rs` (banner `:359`, checkbox `:178`); disagreement via `AttrDiff` / `attrs_multi_ids` (`editor_ops.rs:2368`, `:2408`) |
 | CTX-FORMATION-001 | — | missing | T-079 (d) + P-3 | No context menu, no formation action. The single `formation` hit is a comment (`editor_ops.rs:1324`) describing an `APPLY_ANCHOR_X + 15.0 * i` line-up — placement spacing, not a formation |
 
 ## Keyboard, actions & status — KEY (4)
@@ -480,7 +480,7 @@ as local ids until the toolbar gets a real catalogue pass.
 | TOOLBAR-GRID-MOVE-001 *(minted)* | — | missing | new — P-8 | Snap grid. Same subject as `KEY-GRID-001`; **one slice, two ids** |
 | TOOLBAR-UNDO-001 *(minted)* | TOP-UNDO-001 | match | T-052 ✅ | Cmd/Ctrl+Z / Shift+Z / Ctrl+Y keyboard + toolbar buttons |
 | Eden:ATTR-ARSENAL-001 | ATTR-TAB-004 | partial | T-068.4 ✅ | Dumb loadout export (4 dropdowns + JSON download); smart Forge is T-068.10 |
-| SEL-ORBAT-DBL-001 | SEL-ORBAT-DBL-001 | match | T-054 ✅ | ORBAT slot row dbl-click → Attributes. Inherits `ATTR-OPEN-001`'s two limits (slot-only pick, multi-select suppression) |
+| SEL-ORBAT-DBL-001 | SEL-ORBAT-DBL-001 | match | T-054 ✅ | ORBAT slot row dbl-click → Attributes (`orbat_manager.rs:1190`). Inherits `ATTR-OPEN-001`'s residual (non-slot kinds do not open); multi-select opens multi-edit (T-649), not suppression |
 | MAP-TERRAIN-001 | MAP-TERRAIN-001 | match | T-049 ✅ | `meta.terrain` → viewport (key-remount, Everon/Arland bounds) |
 | ENV-SETTINGS-002 | TOP-SETTINGS-001 | **missing** | new — N8 · wb (+ N9) | **Correction 2 — was `partial`, "Thermals + view dist in dialog". Neither is in the dialog.** T-193 (`b30f5490`) removed both; `eden_chrome.rs:4622-4629` now asserts they are *not* authorable. Same subject as `ATTR-FIELD-SCN-VIEW-DIST`. `feature_inventory.md:1732` still records Status `working` and is stale for the same reason |
 | DATA-HYD-TITLE-001 | TOP-TITLE-001 | match | T-049 ✅ | `applyMissionRowMeta` hydrates title/terrain/env on load (no PATCH-back) |
