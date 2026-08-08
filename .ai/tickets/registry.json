@@ -18393,7 +18393,7 @@
    "id": "T-738",
    "order": 4614,
    "program": "eden",
-   "status": "deferred",
+   "status": "shipped",
    "stream": "mission-creator",
    "targets": [
     "website"
@@ -18600,7 +18600,7 @@
    "id": "T-748",
    "order": 4624,
    "program": "eden",
-   "status": "deferred",
+   "status": "shipped",
    "stream": "mission-creator",
    "targets": [
     "website"
