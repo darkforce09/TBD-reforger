@@ -1927,6 +1927,43 @@ mod tests {
         );
     }
 
+    /// T-762 / wave 131 F1 — dock wiring alone is hollow if `world_assets::fly_to` /
+    /// `named_locations` bodies are gutted. Pin the wasm-only `mod.rs` via `include_str!` so
+    /// HOST `cargo test` still goes RED when RENDER_CTX / towns() disappear. Needles split so
+    /// this assertion line cannot satisfy itself.
+    #[test]
+    fn fly_to_and_named_locations_bodies_are_live() {
+        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        let src = live_code(include_str!("world_assets/mod.rs"));
+        let fly = only_body(&src, "pub fn fly_to");
+        let render = format!("{}{}", "RENDER", "_CTX");
+        let set_view = format!("{}{}", "set_view", "(");
+        let on_cam = format!("{}{}", "on_camera_changed", "(");
+        let flush = format!("{}{}", "flush_viewport", "(");
+        assert!(
+            fly.contains(&render),
+            "T-762: fly_to must reach RENDER_CTX (not a gutted no-op)"
+        );
+        assert!(
+            fly.contains(&set_view),
+            "T-762: fly_to must call set_view on the live engine"
+        );
+        assert!(
+            fly.contains(&on_cam),
+            "T-762: fly_to must call on_camera_changed after set_view"
+        );
+        assert!(
+            fly.contains(&flush),
+            "T-762: fly_to must flush_viewport so residency catches up"
+        );
+        let named = only_body(&src, "pub fn named_locations");
+        let towns = format!("{}{}", "towns", "()");
+        assert!(
+            named.contains(&towns),
+            "T-762: named_locations must read LabelHost towns(), not return an empty Vec"
+        );
+    }
+
     /// T-696 — camera state is NOT authored content (T-642's ruler rule). Neither flying to a place
     /// nor any bookmark verb may enter the undo stack or touch the document, so this file must never
     /// reach the history/edit tail. Perturbation RED: add an `after_local_edit()` call and this
