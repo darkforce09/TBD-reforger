@@ -80,6 +80,7 @@ diagnosis) → registry flip + `distrobox-host-exec sh -c './scripts/ticket sync
 | 131 | 108 | T-762 T-767 T-746 | PASS 30/30 (run 1 + rustfmt fixup; re-gated PASS over F1–F3) | 0B/2M/0m/1N + focused re-verify 0 | SHIPPED — world_assets fly_to/named_locations, connection re-exports + formation prose, ShapeMirror single-flight. **Two hollow-pin MAJORs fixed**: F1 body pins on fly_to/named_locations; F2 ROW_HYDRATE detail.game_mode. Suite 972. ConnKind frontend copy remains found_not_fixed (owns). |
 | 132 | 109 | T-771 T-758 T-765 | PASS 30/30 (run 1; re-gated PASS over F1–F3) | 0B/0M/0m/2N+standing + re-verify 0 | SHIPPED — dual-scope loadout banner, inert settings/validation non-focusable rows, Unicode glob fold. Suite 981. |
 | 133 | 110 | T-750 T-766 T-756 | PASS 30/30 (run 1; re-gated PASS over F1–F2) | 0B/1M/0m/1N + re-verify 0 | SHIPPED — Favourites failure+Retry, clear_meta_briefing, scale formatter corners. **F1 MAJOR: blank clear reachability at call site was hollow — pinned.** Suite 986. |
+| 134 | 111 | T-736 T-755 T-776 | PASS 30/30 (run 1; re-gated PASS over F1–F3) | 0B/1M/1m/1N + re-verify 0 | SHIPPED — hollow-pin wave: one-commit/one-tail, narrated schema/scale/ControlsHint pins, census/search guards. **Three new hollow shapes found+fixed**: Escape predicate live-state, alias ::Schema, STRIP div-balance. Suite 987. |
 | 121 | assign at close | T-702 T-212 T-654 | — | — | pending |
 | 122 | assign at close | T-673 T-674 T-675 | — | — | pending |
 | 123 | assign at close | T-676 T-677 T-678 | — | — | pending |
