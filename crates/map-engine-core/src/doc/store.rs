@@ -12726,6 +12726,16 @@ mod tests {
         // …and it is undoable: editor-only is not untracked.
         assert!(doc.undo());
         assert_eq!(doc.comment_count(), 1, "Ctrl+Z brings the annotation back");
+        // Wave-135 H1: undo must restore L2 filing, not only the commentsById row.
+        let restored: serde_json::Value =
+            serde_json::from_str(&doc.small_maps_json()).expect("small_maps_json");
+        let ents_restored = restored["editorLayersById"]["L2"]["entityIds"]
+            .as_array()
+            .expect("entityIds after undo");
+        assert!(
+            ents_restored.iter().any(|v| v == "c1"),
+            "Ctrl+Z must put c1 back in L2 entityIds, not leave a orphaned comment row: {ents_restored:?}"
+        );
     }
 
     /// THE NEW-MISSION TEMPLATE: an empty doc seeds exactly TWO comments (what survived FNF v4's
