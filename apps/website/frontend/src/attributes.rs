@@ -1851,18 +1851,31 @@ mod tests {
     /// Wiring pin (`live_code` / `only_body`): the modal must CALL the honesty helper with both
     /// the filtered slot count and the live selection length — an inlined old `format!` cannot
     /// satisfy this (literals blanked; the call shape is what remains).
+    ///
+    /// Wave-137 F1: also pin value *flow* through `AttributesModal` — a dead
+    /// `let _ = attrs_selection_len()` (hollow B) or binding `selection_n` then passing
+    /// `multi.len()` / `multi_n` into `modal_view` (hollow B2) must go RED.
     #[test]
     fn modal_view_routes_multi_subtitle_through_the_honesty_helper() {
         let src = attrs_src();
         let body = only_body(&src, "fn modal_view(");
         assert!(
             body.contains("attrs_multi_subtitle(multi_n, selection_n)"),
-            "modal_view must format the multi header via attrs_multi_subtitle(multi_n, selection_n);              body was:\n{body}"
+            "modal_view must format the multi header via attrs_multi_subtitle(multi_n, selection_n); body was:\n{body}"
         );
         let host = only_body(&src, "pub fn AttributesModal(");
+        // (1) Assignment, not a dead call — hollow B (`let _ = attrs_selection_len(); let selection_n = multi.len()`) RED.
         assert!(
-            host.contains("attrs_selection_len()"),
-            "AttributesModal must read the live selection length for T-741 honesty; body was:\n{host}"
+            host.contains("let selection_n = crate::editor_ops::attrs_selection_len()"),
+            "AttributesModal must bind `let selection_n = crate::editor_ops::attrs_selection_len()` (not a discarded call); body was:\n{host}"
+        );
+        // (2) That binding must be the modal_view selection-length argument — hollow B2
+        // (`modal_view(..., multi.len(), ...)` while keeping the binding) RED.
+        let compact = host.split_whitespace().collect::<Vec<_>>().join(" ");
+        assert!(
+            compact.contains("modal_view( attrs, multi, selection_n,")
+                || compact.contains("modal_view(attrs, multi, selection_n,"),
+            "AttributesModal must pass `selection_n` into modal_view (not multi.len()/multi_n); body was:\n{host}"
         );
     }
 
