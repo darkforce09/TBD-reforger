@@ -68,9 +68,8 @@ pub fn FactionManagerDialog(
     // T-726 — register + is_topmost_open so a stacked dialog above Faction Manager owns Esc alone.
     #[cfg(target_arch = "wasm32")]
     {
-        let modal_id = crate::ui::modal_stack::register(move || {
-            open.try_get_untracked().unwrap_or(false)
-        });
+        let modal_id =
+            crate::ui::modal_stack::register(move || open.try_get_untracked().unwrap_or(false));
         let esc = window_event_listener(leptos::ev::keydown, move |ev| {
             if open.get_untracked()
                 && ev.key() == "Escape"
@@ -439,7 +438,10 @@ mod tests {
         let reg = ["modal_stack", "::", "register("].concat();
         let top = ["modal_stack", "::", "is_topmost_open(modal_id)"].concat();
         let unreg = ["modal_stack", "::", "unregister(modal_id)"].concat();
-        assert!(body.contains(&reg), "T-726: FactionManagerDialog must register");
+        assert!(
+            body.contains(&reg),
+            "T-726: FactionManagerDialog must register"
+        );
         assert!(
             body.contains(&top),
             "T-726: FactionManagerDialog must gate Escape on is_topmost_open"

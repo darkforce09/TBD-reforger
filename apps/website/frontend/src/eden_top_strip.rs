@@ -2973,7 +2973,11 @@ mod t726_top_strip_esc_stack {
              dialog/manager consumes Esc alone (wave139 F3). Hollow: delete the any_open guard → RED."
         );
         let any_at = esc_region.find(&any).expect("any_open present in Esc arm");
-        for needle in ["open_menu.set(None)", "export_open.set(false)", "save_open.set(false)"] {
+        for needle in [
+            "open_menu.set(None)",
+            "export_open.set(false)",
+            "save_open.set(false)",
+        ] {
             let at = esc_region
                 .find(needle)
                 .unwrap_or_else(|| panic!("missing {needle} in Esc arm"));

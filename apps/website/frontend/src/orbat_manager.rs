@@ -247,9 +247,8 @@ pub fn OrbatManagerDialog(
 
     // Esc closes (Faction Manager / suite Dialog behavior).
     // T-726 — register + is_topmost_open so a stacked dialog above ORBAT owns Esc alone.
-    let modal_id = crate::ui::modal_stack::register(move || {
-        open.try_get_untracked().unwrap_or(false)
-    });
+    let modal_id =
+        crate::ui::modal_stack::register(move || open.try_get_untracked().unwrap_or(false));
     let esc = window_event_listener(leptos::ev::keydown, move |ev| {
         if open.get_untracked()
             && ev.key() == "Escape"
@@ -1862,7 +1861,10 @@ mod tests {
         let reg = ["modal_stack", "::", "register("].concat();
         let top = ["modal_stack", "::", "is_topmost_open(modal_id)"].concat();
         let unreg = ["modal_stack", "::", "unregister(modal_id)"].concat();
-        assert!(body.contains(&reg), "T-726: OrbatManagerDialog must register");
+        assert!(
+            body.contains(&reg),
+            "T-726: OrbatManagerDialog must register"
+        );
         assert!(
             body.contains(&top),
             "T-726: OrbatManagerDialog must gate Escape on is_topmost_open"
