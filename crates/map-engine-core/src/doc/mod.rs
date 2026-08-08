@@ -37,8 +37,14 @@ mod reexport_pins {
     /// this fails to compile (the perturbation that proves the re-export is load-bearing).
     #[test]
     fn connection_and_formation_api_is_crate_public_via_doc() {
-        assert_eq!(ConnectionKind::parse("sync").map(ConnectionKind::as_str), Some("sync"));
-        assert_eq!(ConnectionKind::parse("group").map(ConnectionKind::as_str), Some("group"));
+        assert_eq!(
+            ConnectionKind::parse("sync").map(ConnectionKind::as_str),
+            Some("sync")
+        );
+        assert_eq!(
+            ConnectionKind::parse("group").map(ConnectionKind::as_str),
+            Some("group")
+        );
         assert_eq!(
             ConnectionKind::parse("triggerOwner").map(ConnectionKind::as_str),
             Some("triggerOwner")
