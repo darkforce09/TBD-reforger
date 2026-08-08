@@ -20,8 +20,8 @@ pub use apply_faction::{
 pub use place_orbat::{PlaceOrbatError, place_character_under_side};
 pub use soa::{NONE_IDX, STANCE_CROUCH, STANCE_PRONE, STANCE_STAND, SlotSoa};
 pub use store::{
-    ConnectionFinding, ConnectionKind, ConnectionRow, MissionDocCore, formation_offsets,
-    validate_connection_rows,
+    ConnectionFinding, ConnectionKind, ConnectionRow, EntityTransformPatch, MissionDocCore,
+    formation_offsets, validate_connection_rows,
 };
 
 #[cfg(test)]

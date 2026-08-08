@@ -29,7 +29,7 @@ use leptos::prelude::{GetUntracked, RwSignal, Set};
 use map_engine_core::doc::place_character_under_side;
 use map_engine_core::doc::{
     apply_faction_library, FactionLibraryInput, FactionLibraryRole, FactionLibraryVehicle,
-    MissionDocCore, APPLY_ANCHOR_X, APPLY_ANCHOR_Y, NONE_IDX,
+    EntityTransformPatch, MissionDocCore, APPLY_ANCHOR_X, APPLY_ANCHOR_Y, NONE_IDX,
 };
 
 use crate::asset_catalog::PlacePayload;
@@ -1501,23 +1501,15 @@ pub fn attrs_update_position_multi(
 /// T-648 XFORM-SHIFT-001 — rotate the whole selection to FACE the cursor `(cx, cy)` (world metres),
 /// each entity about its OWN position, quantised to the rotation ladder rung `rung`
 /// ([`crate::mission_editor::transform`]). This is the commit end of the Shift+drag gesture and the
-/// widget rotate ring; it deliberately rides the SAME per-field rotation writes the Attributes
-/// Transform tab uses (`update_slot_position` for slots — the ticket's "a GESTURE on an existing
-/// field" — and `set_vehicle_position` for vehicles, mirroring [`set_vehicle_heading`]), never a new
-/// core mutator.
+/// widget rotate ring.
 ///
 /// Returns whether anything rotated (nothing selected, or every entity sitting exactly under the
 /// cursor, is a no-op — [`crate::mission_editor::transform::bearing_to_face`] returns `None` for a
 /// degenerate aim and that entity is left untouched).
 ///
-/// **Undo granularity, stated honestly.** `MissionDocCore` builds its `UndoManager` with
-/// `capture_timeout_millis = 0`, so every core transaction is its own undo step, and map-engine-core
-/// exposes no atomic *multi-slot* rotation API (T-648's `owns` is the three frontend files; the doc
-/// store is out of scope this slice). So a **single-entity** rotate — the Eden-standard case — is exactly
-/// **one** undo step, matching the ticket's "one undo step"; a **multi-selection** rotate is one step
-/// per entity, the same shape the module header already documents for the first compound place
-/// (layer + faction + squad + slot + leader). The whole gesture still fires **one** history/persist
-/// tail (`after_local_edit` once below).
+/// **Undo (T-732):** commits through [`MissionDocCore::rotate_entities`] — one LOCAL txn — so a
+/// multi-selection rotate is **one** Ctrl+Z, matching the single-entity case. The whole gesture still
+/// fires **one** history/persist tail (`after_local_edit` once below).
 pub fn rotate_selection_to_face(cx: f64, cy: f64, rung: usize) -> bool {
     if !cx.is_finite() || !cy.is_finite() {
         return false;
@@ -1535,20 +1527,14 @@ pub fn rotate_selection_to_face(cx: f64, cy: f64, rung: usize) -> bool {
         let Some(core) = d.as_ref() else {
             return false;
         };
-        // Slot pivots come off the materialized SoA (same source `center_on_selection` reads);
-        // vehicle pivots come off `small_maps_json` (`vehiclesById`), the shape `set_vehicle_heading`
-        // reads. Both keep the entity's own x/y/z — a rotate never moves it.
         let soa = core.materialize();
         let veh_root = serde_json::from_str::<serde_json::Value>(&core.small_maps_json()).ok();
-        // `update_slot_position` needs terrain bounds to clamp x/y; a rotation-only edit passes
-        // x/y = None so they are never used, but the signature requires them — fetch once like
-        // `attrs_update_position` does (null meta → everon default via `terrain_bounds`).
         let terrain = veh_root
             .as_ref()
             .and_then(|v| v.get("meta")?.get("terrain")?.as_str().map(str::to_string))
             .unwrap_or_default();
         let tb = map_engine_core::mission::compile::terrain_bounds(&terrain);
-        let mut any = false;
+        let mut items: Vec<(String, bool, f64)> = Vec::new();
         for id in &sel {
             if let Some(row) = soa.ids.iter().position(|s| s == id) {
                 let (sx, sy) = (f64::from(soa.xs[row]), f64::from(soa.ys[row]));
@@ -1556,14 +1542,10 @@ pub fn rotate_selection_to_face(cx: f64, cy: f64, rung: usize) -> bool {
                     crate::mission_editor::transform::bearing_to_face(sx, sy, cx, cy)
                 {
                     let deg = crate::mission_editor::transform::snap_rotate(bearing, rung);
-                    // rotation-only: x/y/z = None so the slot rotates in place (update_slot_position
-                    // leaves an axis whose arg is None; the bounds are inert without an x/y edit).
-                    core.update_slot_position(id, None, None, None, Some(deg), tb[2], tb[3]);
-                    any = true;
+                    items.push((id.clone(), true, deg));
                 }
                 continue;
             }
-            // Not a slot — try the vehicle lane (its own position + heading).
             let Some(pos) = veh_root
                 .as_ref()
                 .and_then(|r| r.get("vehiclesById")?.get(id)?.get("position").cloned())
@@ -1576,18 +1558,13 @@ pub fn rotate_selection_to_face(cx: f64, cy: f64, rung: usize) -> bool {
             ) else {
                 continue;
             };
-            let vz = pos
-                .get("z")
-                .and_then(serde_json::Value::as_f64)
-                .unwrap_or(0.0);
             if let Some(bearing) = crate::mission_editor::transform::bearing_to_face(vx, vy, cx, cy)
             {
                 let deg = crate::mission_editor::transform::snap_rotate(bearing, rung);
-                core.set_vehicle_position(id, vx, vy, vz, deg);
-                any = true;
+                items.push((id.clone(), false, deg));
             }
         }
-        any
+        core.rotate_entities(&items, tb[2], tb[3]) > 0
     });
     if did {
         crate::mission_history::after_local_edit();
@@ -1602,35 +1579,18 @@ pub fn rotate_selection_to_face(cx: f64, cy: f64, rung: usize) -> bool {
 //      `small_maps_json` — the exact two sources `rotate_selection_to_face` reads),
 //   2. computes target positions/yaws with the DOM-free pure math in `crate::place_helpers`
 //      (natively golden-tested),
-//   3. CONFIRMS via `confirm_with_message` (the T-666 idiom, the same shape `orbat_manager` uses)
-//      when the op moves MORE THAN 10 entities (`place_helpers::needs_confirm`), and
-//   4. commits PER ENTITY through the existing per-field position writes — `update_slot_position`
-//      for slots (the ticket's "a GESTURE on an existing field"), `set_vehicle_position` for
-//      vehicles — then fires ONE `after_local_edit` history/persist tail.
+//   3. CONFIRMS via `confirm_with_message` when the op moves MORE THAN 10 entities, and
+//   4. commits through [`MissionDocCore::update_entity_transforms`] / [`MissionDocCore::rotate_entities`]
+//      (T-732 — one LOCAL txn = one undo step), then fires ONE `after_local_edit` history/persist tail.
 //
-// ── UNDO HONESTY (BINDING CONSTRAINT — T-732), stated in code, not faked ─────────────────────────
-// `MissionDocCore` builds its `UndoManager` with `capture_timeout_millis = 0`, so EVERY core
-// transaction is its own undo step. The doc store (out of this slice's `owns`) offers exactly two
-// one-txn batch shapes that touch many positions: `move_entities`/`move_entities_and_vehicles` apply
-// a UNIFORM `(dx, dy)` to a list — perfect for a translate, useless for a pattern (patterns need
-// PER-ENTITY positions) — and `paste_slots`, which writes many per-entity positions in one txn but
-// CREATES new slots (mints ids); it cannot REPOSITION existing ones. There is NO one-txn
-// per-entity-position API for existing slots. So a pattern / align / space over `k` entities is
-// honestly `k` undo steps (one `update_slot_position` per moved entity), NOT one — the same shape the
-// `editor_ops` module header already documents for the first compound place, and the same honesty
-// `rotate_selection_to_face` states for a multi-selection rotate. This is T-732: the ticket mandates
-// one-step-undoable bulk ops but the atomic batch API does not exist and is not ours to add. We do
-// NOT fake atomicity (no `mem::forget` on undo groups, no pretend wrapper) and we do NOT add a
-// store.rs API. When T-732 lands a per-entity-position one-txn mutator, every helper here becomes a
-// one-line swap to it and the op collapses to one undo step with no call-site change.
-//
-// Orient commands rotate in place (no move); a single-entity orient is exactly one step, a
-// multi-entity orient is one step per entity — identical to `rotate_selection_to_face`.
+// ── UNDO (T-732) ─────────────────────────────────────────────────────────────────────────────────
+// Pattern / align / space / orient / Shift-rotate all share the atomic batch API. A 50-entity
+// circular apply is ONE Ctrl+Z. The >10 confirm says so out loud (aligned with T-693's merge toast).
 
 /// One selected entity resolved to its kind + current world position, for the placement math.
 struct SelPos {
     id: String,
-    /// `true` = slot (commit via `update_slot_position`); `false` = vehicle (`set_vehicle_position`).
+    /// `true` = slot; `false` = vehicle (both commit via the T-732 atomic batch APIs).
     is_slot: bool,
     x: f64,
     y: f64,
@@ -1694,8 +1654,25 @@ fn resolve_selection_positions(core: &MissionDocCore, sel: &[String]) -> (Vec<Se
 /// is no prompt (returns `true`). The wasm build shows a real `window().confirm(...)`; a native build
 /// (no `window`) proceeds — the confirm is a UI guard, not a correctness gate, and the native path is
 /// test-only. `verb` names the op in the prompt ("apply the Circular pattern to").
+///
+/// T-732 — the prompt states the honest one-step undo (atomic batch API), matching T-693's merge
+/// toast form. Loadout bulk ops still N-step and use [`confirm_bulk_n_step`] instead.
 #[cfg(target_arch = "wasm32")]
 fn confirm_bulk(n: usize, verb: &str) -> bool {
+    if !crate::place_helpers::needs_confirm(n) {
+        return true;
+    }
+    let msg = format!(
+        "This will {verb} {n} entities. Continue? (Ctrl+Z undoes the whole op.)"
+    );
+    web_sys::window()
+        .and_then(|w| w.confirm_with_message(&msg).ok())
+        .unwrap_or(false)
+}
+
+/// Confirm for bulk ops that are still N undo steps (loadout apply/remove — no atomic batch yet).
+#[cfg(target_arch = "wasm32")]
+fn confirm_bulk_n_step(n: usize, verb: &str) -> bool {
     if !crate::place_helpers::needs_confirm(n) {
         return true;
     }
@@ -1705,25 +1682,18 @@ fn confirm_bulk(n: usize, verb: &str) -> bool {
         .unwrap_or(false)
 }
 
-/// Commit a set of target positions (index-aligned with `entities`) through the per-field position
-/// writes — `update_slot_position` for slots (x/y clamped to `[0,w]×[0,h]`, the authored z carried
-/// through), `set_vehicle_position` for vehicles (z + the NEW yaw preserved from the existing heading
-/// — a move does not re-orient). Returns whether anything committed. See the UNDO HONESTY note above:
-/// this is `k` undo steps for `k` moved entities (no one-txn per-entity-position API — T-732).
+/// Commit a set of target positions (index-aligned with `entities`) through
+/// [`MissionDocCore::update_entity_transforms`] — **one** LOCAL txn = **one** undo step (T-732).
+/// Slots: x/y clamped to `[0,w]×[0,h]`, authored z carried through. Vehicles: z + existing heading
+/// preserved (a move does not re-orient). Returns whether anything committed.
 ///
-/// **wave-127 F-5 — a placement command no longer flattens an authored slot z.** This is F-2's defect
-/// on the placement path: every slot write here is an x/y write, the one shape `update_slot_position`
-/// terrain-follows to `pz = 0.0`, and the comment that used to sit on it laundered that as "DEM
-/// sampled JS-side later". Nothing samples: `terrainZ` did not survive the React deletion, so the
-/// `0.0` was final. Align / Distribute / a placement pattern therefore dropped every selected slot to
-/// the deck — inside one operator gesture, while VEHICLES in the same selection kept their z on the
-/// branch below. The z is now resolved and passed back in, exactly as [`attrs_update_position`] does,
-/// through the same [`slot_z`] / [`keep_z_rows`] pair (one z-resolution vocabulary, not two).
+/// **wave-127 F-5 — a placement command no longer flattens an authored slot z.** Every slot write
+/// here is an x/y write; the sticky z is resolved via [`slot_z`] / [`keep_z_rows`] and passed in so
+/// the mutator cannot terrain-follow to `pz = 0.0`.
 ///
 /// The rows are read ONCE for the whole batch, not per entity: this commits `k` entities and
 /// [`raw_slot_rows`] is an O(document) JSON parse. `keep_z_rows` is asked with the FIRST moved slot's
-/// write, which is the write shape every slot here shares (x and y set, z absent) — so its answer is
-/// the per-entity answer minus `k-1` document reads, and it is not asked at all when no slot moves.
+/// write shape (x and y set, z absent).
 fn commit_positions(
     core: &MissionDocCore,
     entities: &[SelPos],
@@ -1735,31 +1705,34 @@ fn commit_positions(
         .zip(targets.iter())
         .find(|(e, t)| e.is_slot && (e.x != t.x || e.y != t.y))
         .and_then(|(_, t)| keep_z_rows(core, Some(t.x), Some(t.y), None));
-    let mut any = false;
+    let mut patches: Vec<EntityTransformPatch> = Vec::new();
     for (e, t) in entities.iter().zip(targets.iter()) {
         if e.x == t.x && e.y == t.y {
-            continue; // no move for this entity → no txn, no undo step
+            continue;
         }
         if e.is_slot {
-            // x/y move, rotation untouched; the slot's CURRENT z rides along so the mutator's
-            // terrain-follow cannot flatten an authored one. Read off the exact raw row, never
-            // `SelPos::z` — that column is the f32 SoA and would rewrite the value on every move.
             let z = z_rows.as_ref().and_then(|rows| slot_z(rows, &e.id));
-            core.update_slot_position(&e.id, Some(t.x), Some(t.y), z, None, tb[2], tb[3]);
+            patches.push(EntityTransformPatch {
+                id: e.id.clone(),
+                is_slot: true,
+                x: Some(t.x),
+                y: Some(t.y),
+                z,
+                rotation: None,
+            });
         } else {
-            // Vehicle: preserve z + existing heading; only x/y change.
             let heading = vehicle_heading_of(core, &e.id).unwrap_or(0.0);
-            core.set_vehicle_position(
-                &e.id,
-                t.x.clamp(0.0, tb[2]),
-                t.y.clamp(0.0, tb[3]),
-                e.z,
-                heading,
-            );
+            patches.push(EntityTransformPatch {
+                id: e.id.clone(),
+                is_slot: false,
+                x: Some(t.x.clamp(0.0, tb[2])),
+                y: Some(t.y.clamp(0.0, tb[3])),
+                z: Some(e.z),
+                rotation: Some(heading),
+            });
         }
-        any = true;
     }
-    any
+    core.update_entity_transforms(&patches, tb[2], tb[3]) > 0
 }
 
 /// Read a vehicle's current heading (rotation) off `small_maps_json`; `None` if absent/unplaced.
@@ -1779,7 +1752,7 @@ fn vehicle_heading_of(core: &MissionDocCore, id: &str) -> Option<f64> {
 ///
 /// Confirms when moving > 10 entities. Returns whether anything moved (a selection of `< 2`, or a
 /// pattern that lands every entity where it already is, moves nothing). **Undo: `k` steps for `k`
-/// moved entities — see the module's UNDO HONESTY note (T-732).**
+/// Undo (T-732): one step for the whole selection.**
 pub fn apply_pattern_to_selection(kind: crate::place_helpers::PatternKind) -> bool {
     let did = OPS_CTX.with(|c| {
         let guard = c.borrow();
@@ -1828,7 +1801,7 @@ pub fn apply_pattern_to_selection(kind: crate::place_helpers::PatternKind) -> bo
 
 /// T-645 (PLACE-ALIGN-001) — align the live selection to one of the six edges/centres
 /// (`place_helpers::AlignEdge`). Confirms when moving > 10. Returns whether anything moved. Undo:
-/// `k` steps (T-732 — see the module note).
+/// one step for the whole selection (T-732).
 pub fn align_selection(edge: crate::place_helpers::AlignEdge) -> bool {
     let did = OPS_CTX.with(|c| {
         let guard = c.borrow();
@@ -1863,7 +1836,7 @@ pub fn align_selection(edge: crate::place_helpers::AlignEdge) -> bool {
 
 /// T-645 (PLACE-SPACE-001) — space the live selection equally along one of the three axes
 /// (`place_helpers::SpaceAxis`). Confirms when moving > 10. Returns whether anything moved. Undo:
-/// `k` steps (T-732 — see the module note).
+/// one step for the whole selection (T-732).
 pub fn space_selection(axis: crate::place_helpers::SpaceAxis) -> bool {
     let did = OPS_CTX.with(|c| {
         let guard = c.borrow();
@@ -1898,14 +1871,13 @@ pub fn space_selection(axis: crate::place_helpers::SpaceAxis) -> bool {
 
 /// T-645 (PLACE-ORIENT-001) — orient the live selection under one of the six commands
 /// (`place_helpers::Orient`): N/E/S/W set an absolute yaw; face-centre/face-away turn each entity
-/// toward/away from the selection centroid. Rotates IN PLACE (no move), so it rides the same per-field
-/// rotation writes as `rotate_selection_to_face` — `update_slot_position` (rotation only) for slots,
-/// `set_vehicle_position` (heading only) for vehicles. An entity sitting exactly on the centroid
-/// declines a FACE command (`orient_yaw` → `None`) and is left unchanged; cardinals always apply.
+/// toward/away from the selection centroid. Rotates IN PLACE (no move) via
+/// [`MissionDocCore::rotate_entities`] (T-732 — one LOCAL txn). An entity sitting exactly on the
+/// centroid declines a FACE command (`orient_yaw` → `None`) and is left unchanged; cardinals always
+/// apply.
 ///
-/// Confirms when re-orienting > 10 entities. Returns whether anything rotated. **Undo: one step for a
-/// single entity (the Eden-standard case); one step per entity for a multi-selection — identical to
-/// `rotate_selection_to_face` (T-732 — no atomic multi-entity rotate API).**
+/// Confirms when re-orienting > 10 entities. Returns whether anything rotated.
+/// **Undo (T-732): one step for the whole selection.**
 pub fn orient_selection(cmd: crate::place_helpers::Orient) -> bool {
     let did = OPS_CTX.with(|c| {
         let guard = c.borrow();
@@ -1931,7 +1903,7 @@ pub fn orient_selection(cmd: crate::place_helpers::Orient) -> bool {
                 .map(|e| crate::place_helpers::Pt::new(e.x, e.y))
                 .collect::<Vec<_>>(),
         );
-        let mut any = false;
+        let mut items: Vec<(String, bool, f64)> = Vec::new();
         for e in &entities {
             let Some(deg) = crate::place_helpers::orient_yaw(
                 cmd,
@@ -1940,20 +1912,16 @@ pub fn orient_selection(cmd: crate::place_helpers::Orient) -> bool {
             ) else {
                 continue; // degenerate face (entity on the centroid) → leave unchanged
             };
-            if e.is_slot {
-                core.update_slot_position(&e.id, None, None, None, Some(deg), tb[2], tb[3]);
-            } else {
-                core.set_vehicle_position(&e.id, e.x, e.y, e.z, deg);
-            }
-            any = true;
+            items.push((e.id.clone(), e.is_slot, deg));
         }
-        any
+        core.rotate_entities(&items, tb[2], tb[3]) > 0
     });
     if did {
         crate::mission_history::after_local_edit();
     }
     did
 }
+
 
 /// Read a slot's embedded `loadout` JSON (Arsenal picks) from `slots_json`. `None` when unset.
 pub fn read_loadout(id: &str) -> Option<String> {
@@ -2186,7 +2154,7 @@ pub fn apply_loadout_buffer_to_selection(
     if buffer.is_empty() || targets.is_empty() {
         return Ok((0, 0));
     }
-    if !confirm_bulk(targets.len(), "overwrite the loadout of") {
+    if !confirm_bulk_n_step(targets.len(), "overwrite the loadout of") {
         return Ok((0, 0));
     }
     let writes = crate::arsenal::plan_apply(&targets, &buffer, next_apply_seed(), items, feed)?;
@@ -2208,7 +2176,7 @@ pub fn remove_all_loadouts_from_selection() -> (usize, usize) {
     if targets.is_empty() {
         return (0, 0);
     }
-    if !confirm_bulk(targets.len(), "remove every item from") {
+    if !confirm_bulk_n_step(targets.len(), "remove every item from") {
         return (0, 0);
     }
     let writes = crate::arsenal::plan_remove(&targets);
@@ -4634,19 +4602,17 @@ fn place_vehicle_in_core(
         return false;
     }
     let faction_id = ensure_side_faction(core, side);
-    core.add_vehicle(
+    // T-732 — add + factionId + crewed stamp in ONE LOCAL txn (was three Ctrl+Z for unmanned).
+    core.place_vehicle_with_crew_stamp(
         vehicle_id,
         resource_name,
-        Some(x),
-        Some(y),
-        Some(0.0),
-        Some(0.0),
+        x,
+        y,
+        0.0,
+        0.0,
+        &faction_id,
+        with_crew,
     );
-    core.set_vehicle_faction(vehicle_id, &faction_id);
-    // T-076 (RIGHT-CREW-001) — stamp the manned/unmanned placement intent. `set_vehicle_crewed`
-    // omits the key for the with-crew default, so a manned placement's row is unchanged; only the
-    // toggle-off case writes `crewed: false`. Same undo step as the place (same borrow scope).
-    core.set_vehicle_crewed(vehicle_id, with_crew);
     true
 }
 

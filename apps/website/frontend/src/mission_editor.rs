@@ -9115,9 +9115,8 @@ mod t648_transform {
         let ops_live = live_code(ops);
         let body = only_body(&ops_live, "pub fn rotate_selection_to_face(");
         assert!(
-            body.contains("update_slot_position(") && body.contains("set_vehicle_position("),
-            "rotate_selection_to_face must ride update_slot_position (slots) + set_vehicle_position \
-             (vehicles) — the existing per-field rotation writes, not a new core mutator"
+            body.contains("rotate_entities("),
+            "rotate_selection_to_face must commit via MissionDocCore::rotate_entities (T-732 one-txn batch)"
         );
     }
 }
