@@ -1681,6 +1681,14 @@ pub fn DockRight(
 //     state — the canvas release stamps it as one undo step via `place_composition`).
 //   • EDIT (COMP-EDIT-001 + the three ATTR-FIELD-COMP-* metadata fields): inline rename /
 //     recategorize / delete (the T-666 hover-actions + inline-input idiom).
+//
+// T-781 widened what a stamp can hold, and the panel says so because neither fact is visible from a
+// row's entity count: a selected COMMENT is captured as authoring metadata (the composable clause of
+// PLACE-COMMENT-001) and is stamped back into the editor-only root that never compiles, and every
+// placed entity keeps the ELEVATION it was saved at instead of landing at ground level. Both live at
+// the capture (`editor_ops::capture_selection_entities`) and the place
+// (`MissionDocCore::place_composition`); `a_composition_captures_comments_and_authored_elevation`
+// below pins that seam, because both ends are unreachable from a native test in this crate.
 
 /// T-650 — the Compositions panel. `editing` holds the composition id currently in inline-edit
 /// (rename/recategorize), or `None`.
@@ -1712,6 +1720,12 @@ pub(crate) fn compositions_panel(
         <p class="mt-0.5 text-label-sm normal-case text-outline">
             "Reusable multi-entity stamps. Select entities and Save; click a saved row to arm, then click the map to place."
         </p>
+        // T-781 — the two properties an author cannot see from the row summary, said once here:
+        // a selected comment is captured too (the composable clause of PLACE-COMMENT-001) and stays
+        // editor-only, and a placement restores the elevation each entity was saved at.
+        <p class="mt-0.5 text-label-sm normal-case text-outline">
+            "Selected comments are captured too and stay editor-only — they never reach the compiled mission. Placed entities keep the elevation they were saved at."
+        </p>
 
         // ── Save affordance (shown only when a selection exists) ──────────────────────────────
         {move || {
@@ -1721,7 +1735,7 @@ pub(crate) fn compositions_panel(
                 // showing a button that no-ops.
                 return view! {
                     <p class="mt-3 text-label-sm normal-case text-outline">
-                        "Select one or more placed entities to save a composition."
+                        "Select one or more placed entities or comments to save a composition."
                     </p>
                 }
                     .into_any();
@@ -3575,6 +3589,81 @@ mod tests {
         assert!(
             ops.contains("core.place_composition("),
             "the composition place must reach the core mutator"
+        );
+    }
+
+    /// **T-781** — a composition captures COMMENTS (the composable clause of `PLACE-COMMENT-001`)
+    /// and every placeable entry's AUTHORED ELEVATION, and the two ends of that seam agree.
+    ///
+    /// Source inspection, and it has to be. `editor_ops::capture_selection_entities` is wasm-only,
+    /// so no native test in this crate can call it; the BEHAVIOUR it feeds is pinned natively in
+    /// `map-engine-core` (`a_composed_comment_is_placed_but_never_reaches_the_mod_document` and
+    /// `placing_a_composition_keeps_each_entrys_authored_elevation`). What neither of those can see
+    /// is whether the frontend capture ever EMITS the rows they consume, and whether both sides
+    /// spell the elevation key the same — a divergence there leaves the core tests green, the
+    /// frontend pin green, and every placed composition on the ground. That gap is this test.
+    ///
+    /// The haystacks are `class_r_scrub`-scrubbed, so a needle satisfied by a code comment — this
+    /// ticket wrote several that name these very tokens — cannot make it pass, and the test modules
+    /// are cut so a needle cannot match the assertion hunting for it. Needles are assembled at run
+    /// time, this file's standing rule.
+    #[test]
+    fn a_composition_captures_comments_and_authored_elevation() {
+        use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+
+        const OPS: &str = include_str!("editor_ops.rs");
+        // The elevation key is a CONTRACT string crossing a crate boundary: both ends below are
+        // checked against this one value, so a rename that touches only one side is red.
+        let elevation_key = format!("{:?}", "elevation");
+        let comment_kind = format!("{:?}", "comment");
+        let capture = format!("fn {}(", "capture_selection_entities");
+
+        // ── The CAPTURE half (`website-frontend`, wasm-only) ─────────────────────────────────────
+        let ops_text = live_source(OPS);
+        let ops_code = live_code(OPS);
+        let capture_text = only_body(&ops_text, &capture);
+        let capture_code = only_body(&ops_code, &capture);
+        assert!(
+            capture_text.contains(&format!("{:?}", "commentsById")),
+            "the capture must read the comments root, or a selected comment is dropped in \
+             silence — the T-748 diagnosis; body was:\n{capture_text}"
+        );
+        assert!(
+            capture_text.contains(&comment_kind),
+            "the capture must emit a comment-kinded entry; body was:\n{capture_text}"
+        );
+        assert!(
+            capture_text.contains(&elevation_key),
+            "the capture must carry the authored elevation; body was:\n{capture_text}"
+        );
+        // Resolved through the SHARED reader, not a third z vocabulary, and not the f32 SoA (which
+        // rounds the value and omits hidden-layer slots, T-665). `live_code` blanks literals, so
+        // this needle means a CALL and cannot be satisfied by a mention.
+        assert!(
+            capture_code.contains(&format!("{}(", "slot_z")),
+            "the elevation must be resolved through the shared slot_z reader; body was:\n{capture_code}"
+        );
+        // A composed comment is minted an id by `mint_ids`, so the comments root joins the
+        // uniqueness union — otherwise a second placement can upsert an earlier note away.
+        let mint = only_body(&ops_text, &format!("fn {}(", "mint_ids"));
+        assert!(
+            mint.contains(&format!("{:?}", "commentsById")),
+            "mint_ids must prove uniqueness against the comments root too; body was:\n{mint}"
+        );
+
+        // ── The PLACE half (`map-engine-core`) — the same two keys, read back ────────────────────
+        let store = live_source(include_str!(
+            "../../../../crates/map-engine-core/src/doc/store.rs"
+        ));
+        let place = only_body(&store, &format!("fn {}(", "place_composition"));
+        assert!(
+            place.contains(&elevation_key),
+            "place_composition must read back the SAME elevation key the capture writes"
+        );
+        assert!(
+            place.contains(&comment_kind) && place.contains(&format!("{}(", "comment_row")),
+            "the comment arm must stamp through the shared comment_row constructor, so a composed \
+             note is the same shape as a hand-placed one"
         );
     }
 

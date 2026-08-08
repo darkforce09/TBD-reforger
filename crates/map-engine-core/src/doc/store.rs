@@ -2343,6 +2343,50 @@ impl MissionDocCore {
     /// (see the TEMPLATE-COVERAGE note on this method). Returns the ids actually written (an unknown
     /// entity `kind`, or an id/entity count mismatch, skips that entry).
     ///
+    /// ── T-781 PART A — A COMPOSITION MAY CARRY A COMMENT, AS AUTHORING METADATA ──────────────────
+    /// `PLACE-COMMENT-001` asks for comments that are "Draggable, copy/paste, layerable, composable".
+    /// T-748 closed the icon clause; the **composable** clause is this arm. A `"comment"` entry
+    /// carries `dx`/`dz` + `title`/`tooltip` and is stamped into the root `comments` map by
+    /// [`comment_row`] — the SAME constructor a place, a duplicate and the template seed use, so a
+    /// composed note cannot end up a different shape from a hand-placed one.
+    ///
+    /// **It rides the composition without ever reaching the compiled mission, and that is structural
+    /// rather than filtered.** The arm writes into `self.comments`, the editor-only root whose
+    /// never-compiles argument is on the `comments` field: `mission::flatten::EditorPayload` declares
+    /// no `comments` key, so serde drops the array before any mod-document code exists. Nothing here
+    /// filters anything — the way to break the rule is to write a composed comment into a root that
+    /// IS compiled, and `a_composed_comment_is_placed_but_never_reaches_the_mod_document` fires on
+    /// exactly that, with the same `entities[]` leak probe `comments_never_reach_the_mod_document`
+    /// uses. A composed comment therefore inherits the whole T-651 arrangement unchanged: it
+    /// persists on the EDITOR payload, hydrates back, and is absent from the wire.
+    ///
+    /// A comment FILES like a slot — its id joins `layer_entities`, because "comments support layers"
+    /// is `editorLayers[].entityIds` membership and nothing else (see [`Self::move_comment_to_layer`],
+    /// which delegates to the slot mutator for that reason). It takes neither `rotation` nor an
+    /// elevation: a comment row's position is `{x, z}`, two horizontals and no third component at
+    /// all, so Part B below has nothing to preserve for this kind.
+    ///
+    /// ── T-781 PART B — A PLACED ENTITY KEEPS THE ELEVATION IT WAS CAPTURED AT ────────────────────
+    /// All three placing arms used to write a literal ground level. The operator set the JS
+    /// byte-parity aside on 2026-08-08 (T-743/T-777): it was a migration safety net, not a contract,
+    /// and here the zero was FINAL rather than provisional — **nothing re-samples terrain after a
+    /// placement** (`terrainZ` did not survive the React deletion), so a rooftop fireteam saved as a
+    /// composition came back on the ground, silently, inside the placement's own undo step.
+    ///
+    /// Each entry's own `elevation` key is the source, read with [`any_to_f64`] off the SAME
+    /// `fields` map that yielded that entry's `dx`/`dz`/`rotation`. **That is the order proof**: the
+    /// elevation is a FIELD of the entry, not a parallel vector zipped against `ids`, so there is no
+    /// index that could drift and hand one entity another's elevation. An entry with no `elevation`
+    /// key still resolves to ground, so every composition saved before this ticket places exactly as
+    /// it did.
+    ///
+    /// **The elevation comes from the CAPTURED SNAPSHOT — the composition row — and never from a
+    /// live read of the source entity** (the T-777 question, answered harder here). A composition is
+    /// a reusable stamp: by the time it is placed the entities it was captured from are routinely
+    /// deleted, moved, or in a different mission entirely. A live read would compose the stored
+    /// `(dx, dz)` with some current elevation, or resolve to nothing — and a failed read is a
+    /// silently flattened entity.
+    ///
     /// **TEMPLATE-COVERAGE (T-657 forward constraint).** T-657's ORBAT-TEMPLATE-COVERAGE rule reads
     /// `squad.template.requiredRoles`. This placer writes NO squad — its slots are unfiled loose
     /// bodies — so there is no `squad.template` to stamp and the rule stays forward-compatible
@@ -2396,6 +2440,13 @@ impl MissionDocCore {
             let wx = (drop_x + g_num(fields, "dx")).clamp(0.0, width);
             let wy = (drop_y + g_num(fields, "dz")).clamp(0.0, height);
             let rot = g_num(fields, "rotation");
+            // T-781 Part B — the entry's AUTHORED elevation, off the entry's own map. `dz` is the
+            // second HORIZONTAL offset (the `$defs/marker` `{x, z}` vocabulary this row already
+            // speaks); the third component of a `position` is a different axis, so it is spelled
+            // `elevation` here rather than `z`. Two different axes called `z` in one entry is
+            // exactly the mix-up that hands an entity the wrong height and still looks green.
+            // Absent ⇒ 0.0, so a composition saved before this ticket places unchanged.
+            let elev = g_num(fields, "elevation");
             match kind.as_str() {
                 "slot" => {
                     let slot = self.slots.insert(
@@ -2437,7 +2488,7 @@ impl MissionDocCore {
                     if let Some(l) = fields.get("loadout").filter(|l| !matches!(l, Any::Null)) {
                         slot.insert(&mut txn, "loadout", l.clone());
                     }
-                    slot.insert(&mut txn, "position", position_any(wx, wy, 0.0, rot));
+                    slot.insert(&mut txn, "position", position_any(wx, wy, elev, rot));
                     layer_entities.push(Any::String(id.as_str().into()));
                     written.push(id.clone());
                 }
@@ -2452,7 +2503,7 @@ impl MissionDocCore {
                         MapPrelim::from([("id", id.as_str())]),
                     );
                     v.insert(&mut txn, "resourceName", resource.as_str());
-                    v.insert(&mut txn, "position", position_any(wx, wy, 0.0, rot));
+                    v.insert(&mut txn, "position", position_any(wx, wy, elev, rot));
                     v.insert(&mut txn, "factionId", faction_id.as_str());
                     // `crewed` omit idiom: only write `false` (the with-crew default is absence).
                     if fields.get("crewed") == Some(&Any::Bool(false)) {
@@ -2481,11 +2532,28 @@ impl MissionDocCore {
                     );
                     e.insert(&mut txn, "alias", alias.as_str());
                     e.insert(&mut txn, "resourceName", resource.as_str());
-                    e.insert(&mut txn, "position", position_any(wx, wy, 0.0, rot));
+                    e.insert(&mut txn, "position", position_any(wx, wy, elev, rot));
                     let faction = g_str(fields, "faction");
                     if !faction.is_empty() {
                         e.insert(&mut txn, "faction", faction.as_str());
                     }
+                    written.push(id.clone());
+                }
+                // T-781 Part A — an editor-only COMMENT, the composable clause of
+                // `PLACE-COMMENT-001`. See this method's doc: the row goes into the root `comments`
+                // map through the shared [`comment_row`] constructor, so it is the same shape a
+                // hand-placed note has, and it lands in the collection that structurally cannot
+                // compile. It files by id like a slot, and it consumes neither `rot` nor `elev` —
+                // a comment's position is `{x, z}`, two horizontals and no third component.
+                "comment" => {
+                    let title = g_str(fields, "title");
+                    let tooltip = g_str(fields, "tooltip");
+                    self.comments.insert(
+                        &mut txn,
+                        id.as_str(),
+                        Any::Map(Arc::new(comment_row(id, &title, &tooltip, wx, wy))),
+                    );
+                    layer_entities.push(Any::String(id.as_str().into()));
                     written.push(id.clone());
                 }
                 _ => {} // unknown kind — skip, do not guess a row type
@@ -11694,6 +11762,238 @@ mod tests {
             small_maps(&doc)["entitiesById"].get("p3").is_none(),
             "one undo must remove the placed object too"
         );
+    }
+
+    /// **T-781 PART A — a composition may carry a COMMENT, and the composed note NEVER COMPILES.**
+    ///
+    /// `PLACE-COMMENT-001` asks for comments that are "Draggable, copy/paste, layerable,
+    /// **composable**". T-748 closed the icon clause; this is the composable one. A comment selected
+    /// alongside entities now rides the composition as AUTHORING METADATA: it comes back at the
+    /// right offset, files into the layer like a slot, survives undo / redo / a hydrate — and is
+    /// absent from the compiled mod document.
+    ///
+    /// **The absence is the assertion, so this test FIRES the rule** rather than merely feeding
+    /// clean input. Step 4 re-routes the same token through `entities[]`, a root `EditorPayload`
+    /// DOES declare, and requires it to appear in the mod bytes. Without that probe, step 3 would
+    /// pass just as happily against a broken search, and the guard would be decorative — the exact
+    /// argument `comments_never_reach_the_mod_document` makes for the hand-placed case.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn a_composed_comment_is_placed_but_never_reaches_the_mod_document() {
+        const TOKEN: &str = "CMT-COMPOSED-ZZQ";
+        let mut doc = two_slots_visible_layer();
+        let depth0 = doc.undo_depth();
+
+        // A composition captured from a mixed selection: one entity and one annotation.
+        let entities = serde_json::json!([
+            { "kind": "slot", "dx": -12.75, "dz": 8.5, "rotation": 45.5,
+              "role": "Squad Leader", "tag": "SL", "assetId": "Prefab/SL.et", "stance": "crouch" },
+            { "kind": "comment", "dx": 20.25, "dz": -6.5,
+              "title": TOKEN, "tooltip": "the body of CMT-COMPOSED-ZZQ" },
+        ])
+        .to_string();
+        let ids = vec!["p0".to_string(), "cmp0".to_string()];
+        let (drop_x, drop_y) = (1_000.0, 2_000.0);
+        let written = doc.place_composition(
+            &entities, &ids, "BLUFOR", "L", drop_x, drop_y, 12_800.0, 12_800.0,
+        );
+        assert_eq!(
+            written,
+            vec!["p0".to_string(), "cmp0".to_string()],
+            "the comment must be PLACED, not silently dropped — the whole defect"
+        );
+
+        // 1. The note came back at drop + its captured offset, with both text fields verbatim.
+        let comments: serde_json::Value =
+            serde_json::from_str(&doc.comments_json()).expect("comments_json");
+        assert_eq!(comments["cmp0"]["title"], TOKEN, "{comments}");
+        assert_eq!(comments["cmp0"]["tooltip"], "the body of CMT-COMPOSED-ZZQ");
+        assert_eq!(comments["cmp0"]["position"]["x"], drop_x + 20.25);
+        assert_eq!(comments["cmp0"]["position"]["z"], drop_y - 6.5);
+
+        // …and it FILED like a slot: "comments support layers" is `entityIds` membership.
+        let filed = small_maps(&doc);
+        let ents = filed["editorLayersById"]["L"]["entityIds"]
+            .as_array()
+            .expect("entityIds");
+        assert!(
+            ents.iter().any(|v| v == "cmp0") && ents.iter().any(|v| v == "p0"),
+            "the composed comment files into the layer beside the composed slot: {ents:?}"
+        );
+
+        // 2. ONE undo step for the whole placement, and REDO brings the note back with it.
+        assert_eq!(
+            doc.undo_depth(),
+            depth0 + 1,
+            "a composition place is exactly one undo step, comment included"
+        );
+        assert!(doc.undo(), "the placement must be undoable");
+        assert_eq!(
+            doc.comment_count(),
+            0,
+            "one Ctrl+Z removes the composed note as well as the composed slot"
+        );
+        assert!(doc.redo(), "the placement must be redoable");
+        let after_redo: serde_json::Value =
+            serde_json::from_str(&doc.comments_json()).expect("comments_json");
+        assert_eq!(after_redo["cmp0"]["title"], TOKEN, "redo restores the note");
+        assert_eq!(after_redo["cmp0"]["position"]["x"], drop_x + 20.25);
+
+        // 3. THE WIRE. The note persists on the EDITOR payload (or an IDB restore would lose it)…
+        let payload = crate::mission::compile::compile_payload(
+            &doc.small_maps_json(),
+            &doc.slots_json(),
+            false,
+        );
+        let wire = payload["comments"]
+            .as_array()
+            .expect("comments[] at the editor-payload root");
+        assert!(
+            wire.iter().any(|c| c["title"] == TOKEN),
+            "the composed note must ride the editor payload: {payload}"
+        );
+
+        // …and an IDB RESTORE is that payload hydrated into a pristine document.
+        let reloaded = MissionDocCore::new();
+        reloaded.hydrate(&serde_json::to_string(&payload).expect("payload json"), "L");
+        let restored: serde_json::Value =
+            serde_json::from_str(&reloaded.comments_json()).expect("comments_json");
+        assert_eq!(
+            restored["cmp0"]["title"], TOKEN,
+            "the composed note survives a restore: {restored}"
+        );
+        assert_eq!(restored["cmp0"]["position"]["x"], drop_x + 20.25);
+
+        // …but the MOD DOCUMENT must not contain it, anywhere, in any field.
+        let meta = br#"{"id":"11112222333344445555666677778888","title":"t","author":"a",
+            "terrain":"everon","customTerrainName":"","maxPlayers":8,"timeOfDay":"05:30",
+            "weatherPreset":"clear"}"#;
+        let mod_text = String::from_utf8(
+            crate::mission::flatten::flatten_mod_document_json(
+                meta,
+                &serde_json::to_vec(&payload).expect("payload bytes"),
+            )
+            .expect("flatten compiles"),
+        )
+        .expect("utf-8");
+        assert!(
+            !mod_text.contains(TOKEN),
+            "a composed comment reached the compiled mission: {mod_text}"
+        );
+
+        // 4. ── FIRE THE RULE. The same token routed through `entities[]`, a root flatten DOES read.
+        //    If this does not dirty the mod bytes, step 3 cannot detect a leak and proves nothing.
+        let mut leaked = payload.clone();
+        leaked["entities"] = serde_json::json!([{
+            "id": "cmp0",
+            "alias": TOKEN,
+            "resourceName": "",
+            "position": { "x": drop_x + 20.25, "z": drop_y - 6.5 },
+            "faction": "",
+        }]);
+        let leaked_text = String::from_utf8(
+            crate::mission::flatten::flatten_mod_document_json(
+                meta,
+                &serde_json::to_vec(&leaked).expect("leaked bytes"),
+            )
+            .expect("leaked flatten compiles"),
+        )
+        .expect("utf-8");
+        assert!(
+            leaked_text.contains(TOKEN),
+            "the leak probe did not reach the mod document, so step 3 proves nothing: {leaked_text}"
+        );
+    }
+
+    /// **T-781 PART B — a placed composition keeps the elevation each entry was AUTHORED at.**
+    ///
+    /// All three placing arms hard-coded ground level. The operator set the JS byte-parity aside on
+    /// 2026-08-08 (T-743/T-777) — a migration safety net, not a contract — and here the zero was
+    /// FINAL, not provisional: nothing re-samples terrain after a placement (`terrainZ` did not
+    /// survive the React deletion), so a rooftop composition landed on the ground for good.
+    ///
+    /// **The four elevations are DISTINCT and NON-ZERO on purpose.** A composition of ground-level
+    /// sources produces byte-identical output before and after this fix, so such a test cannot
+    /// observe the defect at all; and distinct values are what makes a cross-wired entry — entity
+    /// `i` handed entry `j`'s height — a failure rather than a coincidence. `37.3` is deliberately
+    /// not exactly representable as an f32, so a value that detoured through the materialized SoA
+    /// would not compare equal here. The last entry carries NO `elevation` key: the control, which
+    /// pins that a composition saved before this ticket still places at ground.
+    #[cfg(feature = "mission")]
+    #[test]
+    fn placing_a_composition_keeps_each_entrys_authored_elevation() {
+        let doc = two_slots_visible_layer();
+
+        let entities = serde_json::json!([
+            { "kind": "slot",    "dx": -12.75, "dz": 8.5,    "rotation": 45.5,
+              "role": "Squad Leader", "tag": "SL", "assetId": "Prefab/SL.et", "stance": "crouch",
+              "elevation": 37.3 },
+            { "kind": "vehicle", "dx": 0.5,    "dz": 30.125, "rotation": 270.75,
+              "resourceName": "Prefab/Technical.et", "elevation": 121.5 },
+            { "kind": "object",  "dx": -30.5,  "dz": 0.25,   "rotation": 90.0,
+              "alias": "sandbag_wall", "resourceName": "Prefab/Sandbag.et", "faction": "blufor",
+              "elevation": -4.25 },
+            { "kind": "comment", "dx": 5.5,    "dz": -5.5,
+              "title": "note", "tooltip": "a note has no height" },
+            { "kind": "slot",    "dx": 12.25,  "dz": -8.5,   "rotation": 0.0,
+              "role": "Rifleman", "tag": "", "assetId": "Prefab/Rifleman.et", "stance": "stand" },
+        ])
+        .to_string();
+        let ids: Vec<String> = ["p0", "p1", "p2", "cmp0", "p3"]
+            .iter()
+            .map(|s| (*s).to_string())
+            .collect();
+        let written = doc.place_composition(
+            &entities, &ids, "BLUFOR", "L", 1_000.0, 2_000.0, 12_800.0, 12_800.0,
+        );
+        assert_eq!(written.len(), 5, "every entry placed: {written:?}");
+
+        // `position.z` may come back as an integer-valued number (the `Any::BigInt` encoding), so
+        // read it numerically rather than comparing JSON node shapes.
+        fn z_of(row: &serde_json::Value) -> f64 {
+            row["position"]["z"]
+                .as_f64()
+                .unwrap_or_else(|| panic!("numeric position.z on {row}"))
+        }
+
+        let slots: serde_json::Value = serde_json::from_str(&doc.slots_json()).expect("slots_json");
+        assert_eq!(z_of(&slots["p0"]), 37.3, "entry 0's own elevation");
+        let vehs = vehicles_of(&doc);
+        assert_eq!(z_of(&vehs["p1"]), 121.5, "entry 1's own elevation");
+        let small = small_maps(&doc);
+        assert_eq!(
+            z_of(&small["entitiesById"]["p2"]),
+            -4.25,
+            "entry 2's own elevation"
+        );
+        // The CONTROL: an entry with no `elevation` key still lands at ground, so every composition
+        // saved before T-781 places exactly as it always did.
+        assert_eq!(
+            z_of(&slots["p3"]),
+            0.0,
+            "an entry carrying no elevation still places at ground"
+        );
+
+        // Horizontal placement is untouched by the elevation work — the offsets still land.
+        assert_eq!(slots["p0"]["position"]["x"], 1_000.0 - 12.75);
+        assert_eq!(slots["p0"]["position"]["y"], 2_000.0 + 8.5);
+
+        // A COMMENT has no third component at all: its position is `{x, z}`, two horizontals, and
+        // Part B must not invent a height for it.
+        let comments: serde_json::Value =
+            serde_json::from_str(&doc.comments_json()).expect("comments_json");
+        let pos = comments["cmp0"]["position"]
+            .as_object()
+            .expect("comment position object");
+        let mut keys: Vec<&str> = pos.keys().map(String::as_str).collect();
+        keys.sort_unstable();
+        assert_eq!(
+            keys,
+            vec!["x", "z"],
+            "a composed note keeps the two-horizontal marker shape: {pos:?}"
+        );
+        assert_eq!(comments["cmp0"]["position"]["x"], 1_000.0 + 5.5);
+        assert_eq!(comments["cmp0"]["position"]["z"], 2_000.0 - 5.5);
     }
 
     /// A malformed composition JSON (a non-object) is refused — no row is written, mirroring the
