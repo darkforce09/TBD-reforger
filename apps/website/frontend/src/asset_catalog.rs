@@ -628,8 +628,9 @@ impl GlobPattern {
                 '?' => toks.push(GlobTok::AnyOne),
                 // Same fold as `matches` (`hay.to_lowercase()`). `to_ascii_lowercase` left non-ASCII
                 // uppercase literals untouched (É stays É) while the haystack folded them (É → é),
-                // so `CAFÉ*` missed `café_x` — wave-117 MINOR-1 / T-765. `char::to_lowercase` can
-                // expand (ß → ss); push every folded char so the token stream matches the haystack.
+                // so `CAFÉ*` missed `café_x` — wave-117 MINOR-1 / T-765. Iterate `to_lowercase()`'s
+                // chars so a multi-char fold (if the stdlib ever emits one) stays token-aligned
+                // with the haystack; Rust today maps ß → ß (not ss), so that case is one Ch.
                 _ => {
                     for lc in c.to_lowercase() {
                         toks.push(GlobTok::Ch(lc));
