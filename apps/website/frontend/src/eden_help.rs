@@ -1035,20 +1035,55 @@ pub(crate) mod keymap_census {
         false
     }
 
+    /// True when `get_untracked()` / `.escape()` appears in an `if` PREDICATE (the text between
+    /// `if` / `if let` and its opening `{`), not merely somewhere in the claim body.
+    ///
+    /// Wave-134 F1: a decoy `let _ = open.get_untracked()` inside an ungated Escape body used to
+    /// green the pin while the act stayed unconditional — the exact shared-channel collision the
+    /// exemption narrates.
+    fn live_state_in_if_predicate(site: &str) -> bool {
+        let mut from = 0usize;
+        while let Some(rel) = site[from..].find("if ") {
+            let if_at = from + rel;
+            if if_at > 0 {
+                let prev = site.as_bytes()[if_at - 1];
+                if prev.is_ascii_alphanumeric() || prev == b'_' {
+                    from = if_at + 2;
+                    continue;
+                }
+            }
+            let after = if_at + 3;
+            let Some(open_rel) = site[after..].find('{') else {
+                from = after;
+                continue;
+            };
+            let cond = &site[after..after + open_rel];
+            if cond.contains("get_untracked()") || cond.contains(".escape()") {
+                return true;
+            }
+            from = after + open_rel + 1;
+        }
+        false
+    }
+
     /// Does this listener's claim path for `code` read live state before acting?
     fn shared_channel_claim_gated(src: &str, code: &str) -> bool {
         if let Some(site) = key_equals_claim_site(src, code) {
-            return site.contains("get_untracked()") || site.contains(".escape()");
+            // Predicate that guards the act — not a body-side decoy read (wave-134 F1).
+            return live_state_in_if_predicate(&site);
         }
         if let Some((prelude, arm)) = match_arm_claim(src, code) {
-            if arm.contains("get_untracked()") || arm.contains(".escape()") {
+            if live_state_in_if_predicate(&arm) {
+                return true;
+            }
+            // `.escape()` as the act's deciding call (editor measure-tool OR-chain).
+            if arm.contains(".escape()") {
                 return true;
             }
             return early_return_live_gate(&prelude);
         }
         panic!(
-            "T-776: could not locate the `{code}` claim site in a shared-channel claimant — the \
-             census saw the binding but the live-state pin cannot find the path that answers it"
+            "T-776: could not locate the `{code}` claim site in a shared-channel claimant — the              census saw the binding but the live-state pin cannot find the path that answers it"
         );
     }
 
@@ -1059,8 +1094,10 @@ pub(crate) mod keymap_census {
     fn every_shared_channel_claimant_reads_live_state() {
         // T-776 — per CLAIM, not per listener. A substring over `l.src` was satisfied by any
         // unrelated `get_untracked()` in the same closure (cursor, snap, chrome toggles, …) while
-        // the Escape path itself stayed unconditional. The exemption this pin guards is what keeps
-        // a many-claimant Escape channel legal — the last place a weak guard should sit.
+        // the Escape path itself stayed unconditional. Wave-134 F1: a decoy untracked read *inside*
+        // an ungated Escape body is the same hollow — the latch must sit in the predicate that
+        // guards the act. The exemption this pin guards is what keeps a many-claimant Escape
+        // channel legal — the last place a weak guard should sit.
         for l in listeners() {
             for b in &l.bindings {
                 if !SHARED_CHANNELS.contains(&b.code.as_str()) {
@@ -1068,7 +1105,7 @@ pub(crate) mod keymap_census {
                 }
                 assert!(
                     shared_channel_claim_gated(&l.src, &b.code),
-                    "T-703/T-776: {}#{} claims shared channel `{}` but its claim path never reads                      live state (`get_untracked()` / `.escape()` / an early-return latch) — it will                      fire alongside every other claimant on one keypress, which is a collision and                      not a shared channel",
+                    "T-703/T-776: {}#{} claims shared channel `{}` but its claim path never gates the act on                      live state (a `get_untracked()` / `.escape()` in the `if` predicate, `.escape()` as the act, or an early-return latch) — it will                      fire alongside every other claimant on one keypress, which is a collision and                      not a shared channel",
                     l.file,
                     l.index,
                     b.code
