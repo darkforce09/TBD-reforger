@@ -145,9 +145,9 @@ const SLIDER_MOZ: &str = "[&::-moz-range-track]:h-1 [&::-moz-range-track]:rounde
 /// Uncontrolled by construction (see the block comment above): `value` is written to the DOM
 /// `value` **property**, so a caller whose signal updates 30×/second costs one property write per
 /// update and no re-render, and `on_change` fires on the native `change` event — the settle — not
-/// on `input`. A caller that needs live-drag feedback should render its own readout from the same
-/// signal (which is what the top strip's `HH:MM` label does) rather than asking for a per-pixel
-/// callback the debounce downstream would only have to throw away.
+/// on `input`. A caller that needs live-drag feedback should keep a local mid-drag preview signal
+/// (the top strip's `HH:MM` label tracks settled `env` time via `doc_tick`, not thumb drag) rather
+/// than asking for a per-pixel callback the debounce downstream would only have to throw away.
 ///
 /// `value`/`on_change` are `i32` because a `step`-quantised range emits integers; a value the
 /// control cannot have produced is dropped rather than guessed at.

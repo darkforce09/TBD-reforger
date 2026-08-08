@@ -2605,15 +2605,14 @@ mod t633_aegis_controls {
         );
     }
 
-    /// **The debounce is not regressed.** T-192's whole point is that a held scrubber emits ~30
-    /// values/second and the `missions` row gets ONE PATCH per settle. The commit path is unchanged
-    /// by this ticket — `author_env` then `row_mirror.set_time` — and it hangs off the primitive's
-    /// `on_change` (the native `change`). `ui.rs`'s own pins prove the Slider primitive has no
-    /// `on:input`; this pin only locks the strip's settle commit path (`on_change` → `author_env`
-    /// → `row_mirror.set_time`). It does not scan for strip-local `on:input` (unrelated Save-dialog
-    /// handlers exist elsewhere in this body).
+    /// **Settle commit path is not regressed.** T-192's whole point is that a held scrubber
+    /// emits ~30 values/second and the `missions` row gets ONE PATCH per settle. This pin locks
+    /// that path only: `on_change` → `author_env` → `row_mirror.set_time`, plus the HH:MM span
+    /// wired to settled `env` time. It does **not** claim strip-local `on:input` absence
+    /// (Save-dialog handlers elsewhere in `TopCommandStrip` would false-fail a whole-body scan;
+    /// `ui.rs` already pins the Slider primitive itself).
     #[test]
-    fn the_scrubber_still_commits_only_on_settle() {
+    fn the_scrubber_settle_commit_path() {
         let code = live_code(include_str!("eden_top_strip.rs"));
         let body = only_body(&code, "pub fn TopCommandStrip(");
         assert!(
