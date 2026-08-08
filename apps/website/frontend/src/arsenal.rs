@@ -6163,7 +6163,10 @@ mod tests {
             // Keep comments (the cites live there). Truncate at the first `#[cfg(test)]` so the
             // pin module's own RED prose cannot green or red the production-cite asserts.
             let full = include_str!("arsenal.rs");
-            full.split("#[cfg(test)]").next().unwrap_or(full).to_string()
+            full.split("#[cfg(test)]")
+                .next()
+                .unwrap_or(full)
+                .to_string()
         }
 
         fn gap_src() -> &'static str {
@@ -6220,8 +6223,7 @@ mod tests {
                 "T-739: gap_analysis must not re-claim multi-select suppression"
             );
             assert!(
-                gap.contains("a multi-selection now OPENS multi-edit")
-                    && gap.contains("T-649 ✅"),
+                gap.contains("a multi-selection now OPENS multi-edit") && gap.contains("T-649 ✅"),
                 "T-739: gap_analysis must state the T-649 open-on-multi truth"
             );
         }
