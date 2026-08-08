@@ -4031,4 +4031,30 @@ mod t766_clear_briefing_mirror {
             "T-766: clear_meta_briefing must be on the empty arm, not before the trim check"
         );
     }
+
+    /// Wave 133 F1 — the mirror body's clear-on-empty is load-bearing, but blank `next` must still
+    /// *reach* the call from `set_presentation`'s Ok/Briefing arm. Wrapping
+    /// `mirror_briefing_into_document(&next)` in `if !next.trim().is_empty() { … }` greens the body
+    /// pin while restoring the wave-117 defect (row PATCHes `""`, `meta.briefing` keeps the deleted
+    /// text). Pin reachability: no trim-empty gate between `Briefing =>` and the call.
+    #[test]
+    fn blank_next_reaches_the_mirror_at_the_ok_briefing_arm() {
+        let src = live_code(include_str!("eden_settings.rs"));
+        let mirror = format!("mirror{}", "_briefing_into_document");
+        let set = only_body(&src, &format!("fn set{}", "_presentation"));
+        let call = format!("{mirror}(&next)");
+        let call_idx = set
+            .find(&call)
+            .expect("T-766: Ok/Briefing arm must call mirror_briefing_into_document(&next)");
+        let briefing = format!("Presentation{}::Briefing", "Field");
+        let arm_idx = set[..call_idx]
+            .rfind(&briefing)
+            .expect("T-766: mirror call must sit in the PresentationField::Briefing arm");
+        let window = &set[arm_idx..call_idx];
+        let empty = format!("is{}", "_empty");
+        assert!(
+            !window.contains(&format!("trim().{empty}()")),
+            "T-766 / wave 133 F1: blank next must still reach the mirror — no trim().is_empty gate between Briefing => and the mirror call"
+        );
+    }
 }
