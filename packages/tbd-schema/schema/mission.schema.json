@@ -283,7 +283,7 @@
             "file",
             "diamond"
           ],
-          "description": "T-678 (ATTR-FIELD-GRP-FORMATION, schemaVersion 1.3). Group movement formation. On the wire only — the sole frontend hit for `formation` is prose in a comment (editor_ops.rs:1324); no mod reader; lands under T-678."
+          "description": "T-678 (ATTR-FIELD-GRP-FORMATION, schemaVersion 1.3). Group movement formation. Enum tokens are the shared vocabulary: T-672's editor `force_to_formation` + Transform submenu consume them (geometry via `formation_offsets`); Enfusion mod reader still lands under T-678."
         },
         "speedMode": {
           "type": "string",
