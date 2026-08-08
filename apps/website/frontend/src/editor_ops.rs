@@ -1966,10 +1966,12 @@ fn seed_cargo_in_core(
         return false;
     };
     match crate::arsenal_rules::seed_cargo(loadout, &defaults) {
-        Some(json) => {
-            core.update_slot_loadout(id, Some(json));
-            true
-        }
+        // T-779 — the SINK's answer, not a hardcoded `true`. `update_slot_loadout` returns `false`
+        // for an id the document does not hold (T-770), and "a seed was computed" is a different
+        // claim from "the document took it". Every current caller discards this bool, which is
+        // precisely why it had to stop lying: the next reader would inherit a flag that was only
+        // ever right by accident.
+        Some(json) => core.update_slot_loadout(id, Some(json)),
         None => false,
     }
 }
@@ -1991,8 +1993,12 @@ pub fn seed_slot_cargo(id: &str) -> Option<String> {
             .map(|l| l.to_string());
         let defaults = CARGO_DEFAULTS.with(|c| c.borrow().get(asset_id).cloned())?;
         let json = crate::arsenal_rules::seed_cargo(loadout.as_deref(), &defaults)?;
-        core.update_slot_loadout(id, Some(json.clone()));
-        Some(json)
+        // T-779 — `Some(json)` only if the DOCUMENT took the write. The `map.get(id)?` above makes
+        // a refusal hard to reach today, but the tail below (`after_local_edit`) mints an undo step
+        // and dirties the mission off this `Option` alone, so it must carry the sink's answer
+        // rather than the fact that we got this far.
+        core.update_slot_loadout(id, Some(json.clone()))
+            .then_some(json)
     });
     if seeded.is_some() {
         crate::mission_history::after_local_edit();
@@ -2002,22 +2008,46 @@ pub fn seed_slot_cargo(id: &str) -> Option<String> {
 
 /// Set/clear a slot's `loadout` (Arsenal commit) + the shared tail (one undo step). `None`/empty
 /// clears the key.
-pub fn set_loadout(id: &str, loadout_json: Option<String>) {
-    let did = OPS_CTX.with(|c| {
-        let guard = c.borrow();
-        let Some(ctx) = guard.as_ref() else {
-            return false;
-        };
-        let d = ctx.doc.borrow();
-        let Some(core) = d.as_ref() else {
-            return false;
-        };
-        core.update_slot_loadout(id, loadout_json);
-        true
-    });
-    if did {
-        crate::mission_history::after_local_edit();
-    }
+///
+/// **Returns whether the DOCUMENT took the write** (T-779). Until this slice `did` was a hardcoded
+/// `true` sitting directly under `core.update_slot_loadout(…);`, which threw away the `bool` T-770
+/// had just added to the mutator for exactly this purpose. Two things were wrong with that:
+///
+/// 1. The tail fired whenever [`OPS_CTX`] and the doc merely EXISTED. A write against a stale or
+///    deleted slot id — the Arsenal holds the id it opened with, and that entity can be deleted or
+///    undone out from under the modal — still dirtied the mission and minted an undo step over a
+///    document that had not changed. Ctrl+Z then had a step that restored nothing.
+/// 2. Nothing built on this path could tell a real write from a no-op, which is the whole defect
+///    T-770 was filed to close. `arsenal::commit_writes` (the multi-write sibling) counts the sink
+///    and gets this right; the single-write path did not.
+///
+/// The `bool` is returned rather than swallowed because the operator has to be able to learn about
+/// a refusal: `ArsenalTab`'s persistence line would otherwise render its green "no unsaved changes"
+/// verdict over a pick that never landed. See `arsenal.rs`'s `persist` closure.
+///
+/// The gate itself lives in [`crate::arsenal::commit_one_write`] and not in an `if` here, because
+/// this module is `cfg(target_arch = "wasm32")` from line one and a native test cannot reach it —
+/// the same reason T-770 put the batch loop in `arsenal::commit_writes`. There the refusal→no-tail
+/// arithmetic is *driven* by `arsenal::tests::t779`; here it could only be read.
+pub fn set_loadout(id: &str, loadout_json: Option<String>) -> bool {
+    crate::arsenal::commit_one_write(
+        || {
+            OPS_CTX.with(|c| {
+                let guard = c.borrow();
+                let Some(ctx) = guard.as_ref() else {
+                    return false;
+                };
+                let d = ctx.doc.borrow();
+                let Some(core) = d.as_ref() else {
+                    return false;
+                };
+                core.update_slot_loadout(id, loadout_json)
+            })
+        },
+        || {
+            crate::mission_history::after_local_edit();
+        },
+    )
 }
 
 /* ═════ T-699 (3DEN-LOAD-001 / -002 / -010) — the loadout BUFFER: Copy · Apply · Remove Everything ═════ */

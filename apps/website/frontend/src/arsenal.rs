@@ -23,7 +23,7 @@
 //!   28 is the SPA-wide total. The other two are direct calls from `mission_hydrate.rs:496` and
 //!   `mission_editor.rs:1316`, neither of them an editor commit point, so the argument below is
 //!   unaffected by the correction. The Arsenal's `set_loadout`
-//!   (`editor_ops.rs:2005`) is one of them. Its own siblings in this very modal are the clearest
+//!   (`editor_ops.rs:2032`) is one of them. Its own siblings in this very modal are the clearest
 //!   case: Transform X/Y/Z/rotation (`attributes.rs:265`) and Identity role/tag/stance
 //!   (`attributes.rs:335`) commit on blur/Enter with no Save of their own — `attributes.rs:7` states
 //!   the contract in as many words ("rebind + persist + one undo step per commit"). Same for the
@@ -73,6 +73,13 @@ const PERSIST_CLEAN: &str = "The mission has no unsaved changes.";
 /// strip's `•` reports — which this modal's backdrop is busy blurring, hence the repeat here.
 const PERSIST_UNSAVED: &str =
     "The mission has unsaved changes — Save Version publishes them to the server.";
+
+/// T-779 — the third state, and the only one that reports a FAILURE. The document refused the write
+/// because the entity this Arsenal was opened over is no longer in the mission; the picks on screen
+/// are now local to this modal and nothing else. It overrides both states above, because "the
+/// mission has no unsaved changes" is technically true and completely misleading here — the author's
+/// last pick did not become a change at all.
+const PERSIST_REFUSED: &str = "That last pick did NOT reach the mission document — this entity is no longer in the mission (deleted, or undone away while the Arsenal was open). Close this panel and re-open the Arsenal on a live entity; nothing you pick here now will be kept.";
 
 /// Does the live mission document hold work the server has not seen?
 ///
@@ -1145,6 +1152,32 @@ pub fn commit_writes(
     done
 }
 
+/// **T-779 — the single-write sibling of [`commit_writes`]: the history tail fires only if the
+/// document acknowledged the write.**
+///
+/// T-770 gave `MissionDocCore::update_slot_loadout` a `bool` return and taught the *batch* path to
+/// count it. The *single* path — `editor_ops::set_loadout`, the one every Arsenal pick and every
+/// cargo edit goes through — kept a hardcoded `true` directly under the mutator call and threw the
+/// answer away. The consequence was not cosmetic: `mission_history::after_local_edit` fired whenever
+/// the ops context and the document merely existed, so a pick against a slot id the mission no
+/// longer held still dirtied the mission and minted an undo step over a document that had not
+/// changed. Ctrl+Z then had a step in it that restored nothing.
+///
+/// This exists as a **parameterised** function in `arsenal` rather than as an `if` inside
+/// `editor_ops` for the same reason [`commit_writes`] does: `editor_ops` is `cfg(target_arch =
+/// "wasm32")` from its first line and cannot be reached by a native test at all, so a gate written
+/// there is provable only by reading source. Here the gate can be driven — a sink that refuses, the
+/// production shape for an unknown id, must produce zero tails — and `tests::t779` does exactly
+/// that. The `bool` comes back out so the caller can tell the operator; silence over a refused
+/// write is the defect this whole line of tickets exists to remove.
+pub fn commit_one_write(commit: impl FnOnce() -> bool, tail: impl FnOnce()) -> bool {
+    let took = commit();
+    if took {
+        tail();
+    }
+    took
+}
+
 /// The Copy receipt. Counts the bare sources out loud: buffering an entity with no loadout is legal
 /// and useful, but an author who selected forty soldiers and copied forty bare kits should be told
 /// before they Apply, not after.
@@ -1236,6 +1269,14 @@ pub fn ArsenalTab(
     // T-503 — commits made in this tab, purely so the persistence line below can re-run: the dirty
     // flag it reads is `try_get_untracked` and therefore not reactive on its own.
     let commits = RwSignal::new(0u32);
+    // T-779 — did the DOCUMENT refuse the last write? `set_loadout` returns `false` when the slot
+    // id this modal was opened with is no longer in the mission (deleted, or undone away while the
+    // Arsenal sat open over it). Before T-779 that case dirtied the mission anyway, so the line
+    // below at least went yellow for the wrong reason; now the tail is correctly gated and the
+    // panel would otherwise render its green "no unsaved changes" verdict over a pick that never
+    // landed. That is the wave-129 rule exactly — never report success over something that did not
+    // happen — so the refusal gets its own state rather than silence.
+    let persist_refused = RwSignal::new(false);
     // Persist the current picks + cargo as the canonical V2 loadout (one undo step). wasm-only.
     //
     // T-503 — this is THE commit, and it runs on every mutation with nothing staged in between.
@@ -1250,10 +1291,18 @@ pub fn ArsenalTab(
                 .collect();
             let rows = cargo.get_untracked();
             let rows = cargo_present.get_untracked().then_some(rows.as_slice());
-            crate::editor_ops::set_loadout(&id.get_value(), picks_to_loadout(map, &names, rows));
+            let took = crate::editor_ops::set_loadout(
+                &id.get_value(),
+                picks_to_loadout(map, &names, rows),
+            );
+            // Set on every persist, not only on a refusal: a later pick that DOES land must clear
+            // the warning, or the panel starts lying in the other direction.
+            persist_refused.set(!took);
         }
         #[cfg(not(target_arch = "wasm32"))]
         let _ = (map, items);
+        // A re-render tick, not a success claim — the verdict itself is read from the document and
+        // from `persist_refused` below, never from this counter.
         commits.update(|n| *n = n.wrapping_add(1));
     };
     // Cargo edits mark the key present, then persist through the same path.
@@ -1316,9 +1365,12 @@ pub fn ArsenalTab(
                     //
                     // The three `set`s are signal writes and commit nothing; the single `persist`
                     // that follows is the only document mutation, and `persist` is one
-                    // `editor_ops::set_loadout` is one `mission_history::after_local_edit`
-                    // (`editor_ops.rs:2019`) is one undo step. So Ctrl+Z after an import restores
-                    // the whole loadout the author had before it — not the last wear row of it.
+                    // `editor_ops::set_loadout` is **at most one** `mission_history::after_local_edit`
+                    // (`editor_ops.rs:2048`) is at most one undo step. So Ctrl+Z after an import
+                    // restores the whole loadout the author had before it — not the last wear row
+                    // of it. "At most" since T-779: the tail is gated on the document having taken
+                    // the write, so an import applied over an entity that is no longer in the
+                    // mission mints no step at all rather than an empty one.
                     // No new atomic-batch API was needed: the Arsenal's existing commit already
                     // takes the entire `SlotLoadoutV2` document in one call, which is exactly the
                     // shape an import wants. `tests::t686::the_import_applies_in_one_commit` pins it.
@@ -2027,10 +2079,20 @@ pub fn ArsenalTab(
                         // renders under a full-viewport blur scrim that dims exactly that. So the
                         // Arsenal repeats it here rather than leaving the author to guess whether a
                         // pick stuck. `data-arsenal-persist` carries the state for the gate harness.
+                        // T-779 — `refused` is checked FIRST and wins outright. The dirty flag is
+                        // a mission-wide fact and stays perfectly accurate during a refusal; it is
+                        // just the wrong question, so it must not get to answer.
                         {move || {
                             commits.track();
+                            let refused = persist_refused.get();
                             let unsaved = mission_has_unsaved_work();
-                            let (marker, cls, state) = if unsaved {
+                            let (marker, cls, state) = if refused {
+                                (
+                                    "refused",
+                                    "flex items-start gap-1.5 text-label-sm normal-case text-error",
+                                    PERSIST_REFUSED,
+                                )
+                            } else if unsaved {
                                 (
                                     "unsaved",
                                     "flex items-start gap-1.5 text-label-sm normal-case text-tactical-yellow",
@@ -2043,12 +2105,22 @@ pub fn ArsenalTab(
                                     PERSIST_CLEAN,
                                 )
                             };
+                            // The unconditional "every pick is written the moment you make it"
+                            // promise is dropped on the refused branch: repeating it beside a
+                            // refusal would be the contradiction the T-779 fix exists to remove.
+                            let lead = if refused { "" } else { PERSIST_ALWAYS };
                             view! {
                                 <p data-arsenal-persist=marker class=cls>
                                     <span class="material-symbols-outlined shrink-0 text-[14px]">
-                                        {if unsaved { "cloud_upload" } else { "check_circle" }}
+                                        {if refused {
+                                            "error"
+                                        } else if unsaved {
+                                            "cloud_upload"
+                                        } else {
+                                            "check_circle"
+                                        }}
                                     </span>
-                                    <span>{PERSIST_ALWAYS} " " {state}</span>
+                                    <span>{lead} {if refused { "" } else { " " }} {state}</span>
                                 </p>
                             }
                         }}
@@ -6278,6 +6350,217 @@ mod tests {
             assert!(
                 !arsenal.contains("editor_ops.rs:1611"),
                 "T-739: arsenal production source must not keep drifted cite editor_ops.rs:1611"
+            );
+        }
+    }
+
+    /* ═══════════ T-779 — the single write path must not fake its acknowledgement ═══════════ */
+
+    /// T-770 gave `MissionDocCore::update_slot_loadout` a `bool` and taught the BATCH path
+    /// ([`commit_writes`]) to count it. The frontend half never landed: `editor_ops::set_loadout`
+    /// called the mutator as a statement and hardcoded `true` for `did`, so the history tail fired
+    /// whenever `OPS_CTX` and the document merely existed. A pick against a slot id the mission no
+    /// longer held dirtied the mission and minted an undo step over a document that had not
+    /// changed, and no receipt on that path could tell a write from a no-op.
+    ///
+    /// Two pins, because the defect has two halves and one test cannot see both:
+    ///
+    /// * **Behaviour** — [`commit_one_write`] is driven with a refusing sink, which is the exact
+    ///   production shape for an unknown id. This is the only half that can be *run*: `editor_ops`
+    ///   is `cfg(target_arch = "wasm32")` from its first line, `MissionDocCore` is behind the
+    ///   wasm-only `doc` feature, and neither is reachable from a native test.
+    /// * **Wiring** — the live, scrubbed `editor_ops.rs` must actually route through that gate and
+    ///   must not carry the discarded-ack statement anywhere. The negative runs over the WHOLE
+    ///   live module and is never scoped to an item, so moving the offending statement elsewhere
+    ///   cannot green it.
+    ///
+    /// RED (restore the hardcoded `true`): put `core.update_slot_loadout(id, loadout_json);` back
+    /// as a statement with `true` under it → "T-779: editor_ops must not discard the
+    /// update_slot_loadout acknowledgement".
+    /// RED (ungate the tail): fire the tail unconditionally inside `commit_one_write` →
+    /// "T-779: a refused write must mint no history tail".
+    /// RED (swallow the answer): drop `-> bool` from `set_loadout` → "T-779: set_loadout must
+    /// return the document's answer".
+    /// RED (bypass the gate): call `after_local_edit` directly from `set_loadout` again →
+    /// "T-779: set_loadout must gate its tail through arsenal::commit_one_write".
+    mod t779 {
+        use super::*;
+
+        /// `editor_ops.rs` with comments and unreachable constructs removed, and string/char
+        /// literals blanked — the needles below are calls and shapes, never copy, so a decoy
+        /// parked in a literal must not match. It carries no test module of its own (asserted).
+        fn live_ops() -> String {
+            super::super::class_r_scrub::live_code(include_str!("editor_ops.rs"))
+        }
+
+        /// **The acceptance test: a write the document REFUSES mints no history tail.**
+        ///
+        /// `update_slot_loadout` returns `false` for an id the document does not hold — an entity
+        /// deleted, or undone away, while the Arsenal sat open over it. A test that only ever used
+        /// a valid id could not observe this defect at all: with the hardcoded `true` in place, the
+        /// valid-id path behaved identically before and after the fix.
+        #[test]
+        fn a_refused_write_mints_no_tail_and_does_not_dirty_the_mission() {
+            // The refusal. `tails` stands in for `mission_history::after_local_edit` — which both
+            // sets `HistoryCtx::dirty` and mints the undo step, so one counter answers both halves
+            // of the acceptance: no tail fired means nothing was dirtied and no step was minted.
+            let mut tails = 0usize;
+            let took = commit_one_write(|| false, || tails += 1);
+            assert!(
+                !took,
+                "T-779: a refused write must report itself refused, not report success"
+            );
+            assert_eq!(
+                tails, 0,
+                "T-779: a refused write must mint no history tail — the document did not change, \
+                 so there is nothing to dirty and nothing for Ctrl+Z to restore"
+            );
+
+            // The accepted write, so the pin cannot pass by never firing the tail at all.
+            let mut tails = 0usize;
+            let took = commit_one_write(|| true, || tails += 1);
+            assert!(took, "T-779: an acknowledged write must report success");
+            assert_eq!(
+                tails, 1,
+                "T-779: an acknowledged write is exactly one tail — one undo step per pick (T-732)"
+            );
+
+            // The gate must read the SINK, not the fact that a commit closure ran. Counting
+            // invocations is precisely the T-770 defect, one layer down.
+            let mut ran = 0usize;
+            let mut tails = 0usize;
+            let took = commit_one_write(
+                || {
+                    ran += 1;
+                    false
+                },
+                || tails += 1,
+            );
+            assert_eq!(ran, 1, "the commit closure must still be called");
+            assert!(!took);
+            assert_eq!(
+                tails, 0,
+                "T-779: the tail is gated on the ACK, not on the closure having been invoked"
+            );
+        }
+
+        /// The live wiring: `set_loadout` returns the document's answer and gates the tail on it.
+        #[test]
+        fn set_loadout_returns_the_documents_answer_instead_of_a_hardcoded_true() {
+            let ops = live_ops();
+            assert!(
+                !ops.contains("#[cfg(test)]"),
+                "editor_ops.rs grew a test module — this pin's SRC would now match its own \
+                 fixtures (T-759). Truncate SRC at the test module before trusting it again."
+            );
+
+            // NEGATIVE — deliberately unscoped. The defect is a statement that discards the
+            // mutator's `bool`; scoping this to `set_loadout` would let the same shape reappear in
+            // any sibling and stay green.
+            assert!(
+                !ops.contains("core.update_slot_loadout(id, loadout_json);"),
+                "T-779: editor_ops must not discard the update_slot_loadout acknowledgement — \
+                 that `bool` is what T-770 added and what tells a write from a no-op"
+            );
+
+            let item = super::super::class_r_scrub::only_item(&ops, "pub fn set_loadout(");
+            assert!(
+                item.contains("-> bool"),
+                "T-779: set_loadout must return the document's answer so the caller can surface a \
+                 refusal: {item}"
+            );
+            assert!(
+                item.contains("commit_one_write("),
+                "T-779: set_loadout must gate its tail through arsenal::commit_one_write, the one \
+                 seam where the refusal→no-tail arithmetic can be driven natively: {item}"
+            );
+            assert_eq!(
+                item.matches("after_local_edit(").count(),
+                1,
+                "T-779: exactly one tail, and it must sit inside the gate: {item}"
+            );
+            assert_eq!(
+                item.matches("update_slot_loadout(").count(),
+                1,
+                "T-779: exactly one write call site in set_loadout: {item}"
+            );
+
+            // The seed siblings carried the same shape and were fixed in the same pass.
+            assert!(
+                !ops.contains("core.update_slot_loadout(id, Some(json));"),
+                "T-779: seed_cargo_in_core must return the sink's answer, not a hardcoded true"
+            );
+            assert!(
+                !ops.contains("core.update_slot_loadout(id, Some(json.clone()));"),
+                "T-779: seed_slot_cargo's Option must carry the sink's answer — its own tail is \
+                 gated on that Option being Some"
+            );
+        }
+
+        /// The refusal has to reach the OPERATOR. Gating the tail correctly means a refused pick no
+        /// longer dirties the mission — so the persistence line, left alone, would answer the
+        /// author's "did that stick?" with a green "The mission has no unsaved changes" over a pick
+        /// that never landed. That is the wave-129 rule violated by the fix itself, so the panel
+        /// grows a third state that overrides both of the others.
+        #[test]
+        fn a_refused_pick_is_visible_in_the_panel_not_silent() {
+            let live = live_production_src();
+            let tab = fn_body(&live, "pub fn ArsenalTab(");
+            assert!(
+                tab.contains("persist_refused"),
+                "T-779: the panel must hold the refusal state, or a refused pick is silent"
+            );
+            assert!(
+                tab.contains("PERSIST_REFUSED"),
+                "T-779: the persistence line must be able to render the refusal copy"
+            );
+            // The refusal must be checked BEFORE the dirty flag: `mission_has_unsaved_work()` stays
+            // accurate during a refusal and would otherwise get to answer the wrong question.
+            let refused_at = tab.find("persist_refused.get()").expect(
+                "T-779: the persistence line must READ the refusal state, not just hold it",
+            );
+            let unsaved_at = tab
+                .find("mission_has_unsaved_work()")
+                .expect("the dirty read must still be there");
+            assert!(
+                refused_at < unsaved_at,
+                "T-779: the refusal must be decided before the dirty flag — a mission with no \
+                 unsaved work is a true statement and a misleading answer when the last pick was \
+                 refused"
+            );
+
+            // The commit must CAPTURE the answer rather than call and forget. Checked structurally
+            // (is the call bound to something?) and not by matching one formatting of one line.
+            let call_at = tab
+                .find("crate::editor_ops::set_loadout(")
+                .expect("T-779: the Arsenal must still reach set_loadout on a live path");
+            let before = &tab[..call_at];
+            assert!(
+                before.trim_end().ends_with('='),
+                "T-779: the Arsenal must not call set_loadout as a bare statement — the return is \
+                 the only thing that can tell the author the write was refused. Preceding text: {}",
+                &before[before.len().saturating_sub(80)..]
+            );
+            assert!(
+                tab.contains("persist_refused.set("),
+                "T-779: the captured answer must reach the panel state, or it is captured and \
+                 thrown away"
+            );
+
+            // The shipped copy has to say what happened and what to do, without claiming the
+            // mission is broken. Constants, so this reads the live strings.
+            assert!(
+                PERSIST_REFUSED.contains("did NOT reach"),
+                "{PERSIST_REFUSED}"
+            );
+            assert!(
+                PERSIST_REFUSED.contains("no longer in the mission"),
+                "the refusal must name the CAUSE, or the author cannot act on it: \
+                 {PERSIST_REFUSED}"
+            );
+            assert!(
+                !PERSIST_REFUSED.contains("no unsaved changes"),
+                "the refusal must not repeat the clean verdict: {PERSIST_REFUSED}"
             );
         }
     }
