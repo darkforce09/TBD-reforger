@@ -18094,7 +18094,7 @@
    "impact": [
     "ui"
    ],
-   "status": "deferred",
+   "status": "shipped",
    "stream": "mission-creator",
    "targets": [
     "website"
@@ -18850,7 +18850,7 @@
    "id": "T-760",
    "order": 4636,
    "program": "eden",
-   "status": "deferred",
+   "status": "shipped",
    "stream": "mission-creator",
    "targets": [
     "website"
@@ -19040,7 +19040,7 @@
    "id": "T-769",
    "order": 4645,
    "program": "eden",
-   "status": "deferred",
+   "status": "shipped",
    "stream": "mission-creator",
    "targets": [
     "website"
