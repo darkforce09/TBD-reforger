@@ -1448,6 +1448,15 @@ fn render_editor_prefs_body() -> AnyView {
  *     company. [`OWNER_UNRESOLVED_NOTE`] is what is left over: the race between the list being built
  *     and the click landing.
  *
+ *     **Wave 129 (F7) — and it asks the question the CLICK asks.** T-754 asked `route_target` over
+ *     the document root, which is not quite the click's question: the click goes through the
+ *     registered resolver, and F6 narrowed that to refuse a zone while the Zones panel is unmounted.
+ *     Hide the dock with Backspace (this dialog survives it) and every zone row was still wearing a
+ *     pointer over a click that did nothing. `owner_is_routable` now asks
+ *     `validation_panel::subject_id_routes` — an `Rc::clone` of the click's own resolver — so there
+ *     is ONE availability decision rather than three, and no probe registered means an INERT row,
+ *     which is the true answer rather than a fallback worth having.
+ *
  * ═══ THE DEFAULTS COME OUT OF THE SCHEMA. FULL STOP. ═══
  *
  * The claim that makes this view cheap — "the schema declares `default` on every key that has one, so
@@ -1844,6 +1853,10 @@ pub const NOT_A_SCHEMA_KEY: &str = "not a schema key (editor-local)";
 /// This note is what remains: the RACE. A row is styled from the document as it was when the list was
 /// built; the click reads the document as it is now. Delete the zone in another panel with the dialog
 /// open and the click lands on nothing. Saying so is recoverable; swallowing it is not.
+///
+/// Wave 129 (F7) narrowed what can reach this note: unmounting the dock no longer produces it as a
+/// standing outcome, because [`owner_is_routable`] asks the registered probe and such a row renders
+/// inert instead. What is left is the race proper — the owner going away under an open list.
 pub const OWNER_UNRESOLVED_NOTE: &str = "That owner could not be selected — it may have been \
                                          deleted since this list was built. Zones are selected in \
                                          the Zones panel of the right-hand dock.";
@@ -1854,20 +1867,31 @@ pub const OWNER_UNRESOLVED_NOTE: &str = "That owner could not be selected — it
 /// The wave-115 MAJOR this answers: the view used to reason "the row names an id, so it is
 /// clickable", which was true of no row at all — every entity row was a zone, and the router resolved
 /// slots and vehicles only. Guessing is what made the affordance a lie, so the view stops guessing
-/// and asks [`crate::mission_editor::route_target`], the same resolution the click will run.
+/// and asks the router.
 ///
-/// **The slot predicate is `false`, deliberately.** Slot-SoA membership is the one fact the
-/// small-maps root cannot answer, and materialising the SoA per render to ask it would be dead weight:
-/// [`aggregate_settings`] emits `Mission` and `Zone` owners and nothing else. That assumption is not
-/// left to trust — `the_view_emits_no_owner_kind_the_router_cannot_resolve` re-derives every owner
-/// kind the aggregation can produce and goes red the day a slot-owned (or any other) row appears, at
-/// which point this predicate must become a real lookup rather than a `false`.
+/// **Wave 129 (F7) — it asks the REGISTERED PROBE, not the router directly.** T-754 shipped this
+/// function calling `mission_editor::route_target` over the small-maps root, which was a THIRD
+/// independent copy of "can this subject be clicked" — and it never got F6's narrowing. The click
+/// runs [`crate::validation_panel::route_select_by_subject_id`], whose router REFUSES a
+/// `RouteTarget::Zone` while the Zones panel is unmounted, so with the dock hidden (Backspace, which
+/// this dialog deliberately survives) a zone row still painted `cursor-pointer` over a click that
+/// did nothing. [`crate::validation_panel::subject_id_routes`] is an `Rc::clone` of the very
+/// resolver the click uses, so asking it makes the affordance and the click ONE decision — including
+/// the mount state neither `route_target` nor the document root can see.
+///
+/// **No probe registered ⇒ inert, with no fallback.** On the host build and before the editor
+/// mounts there is nothing to route into, so `false` is the true answer; falling back to
+/// `route_target` "just in case" is precisely the dead click this removes.
+///
+/// The slot-SoA fact the small-maps root cannot answer now lives where it belongs — inside the
+/// probe `mission_editor` registers, beside the handles that know it — rather than being assumed
+/// `false` here. `the_view_emits_no_owner_kind_the_router_cannot_resolve` still re-derives every
+/// owner kind this aggregation can produce, so a slot-owned (or any other) row appearing is red.
 #[must_use]
-pub fn owner_is_routable(root: &serde_json::Value, owner: &SettingOwner) -> bool {
-    match owner.subject_id() {
-        None => false,
-        Some(id) => crate::mission_editor::route_target(root, id, &|_| false).is_some(),
-    }
+pub fn owner_is_routable(owner: &SettingOwner) -> bool {
+    owner
+        .subject_id()
+        .is_some_and(crate::validation_panel::subject_id_routes)
 }
 
 /// The row's cursor/hover classes — **the affordance itself, as a function of one boolean**, so
@@ -2016,9 +2040,11 @@ fn render_all_settings_body(only_diffs: RwSignal<bool>) -> AnyView {
         } else {
             rows.into_iter()
                 .map(|r| {
-                    // T-754 — the affordance is decided per ROW, by asking the router whether this
-                    // subject resolves, against the same document root the rows were built from.
-                    let clickable = owner_is_routable(&root, &r.owner);
+                    // T-754 — the affordance is decided per ROW, by asking whether this subject
+                    // resolves. Wave 129 (F7): the question goes to the registered probe, so the
+                    // row's answer includes whether the surface that would receive the selection
+                    // is actually mounted.
+                    let clickable = owner_is_routable(&r.owner);
                     setting_row_view(r, toasts, clickable)
                 })
                 .collect::<Vec<_>>()
@@ -2999,6 +3025,14 @@ mod t688_aggregated_settings {
  * out of the very function the view styles with. Perturbations it catches: styling from
  * `subject_id().is_some()` again (the original defect); `row_cursor_class` handing out the pointer
  * unconditionally; the router's Zone arm being removed.
+ *
+ * WAVE 129 (F7) — the affordance now asks the REGISTERED probe, so the "iff" holds for the UNMOUNTED
+ * case too. `a_zone_row_is_inert_when_the_probe_says_no` runs the same zone through a probe that
+ * resolves it and one that refuses it, with the document held constant, and
+ * `the_affordance_asks_the_registered_probe_and_not_the_router_directly` pins that no live code here
+ * resolves the router itself. Perturbation RED: restore `route_target(root, id, &|_| false).is_some()`
+ * in `owner_is_routable` and both go red — the behavioural one on the refusing probe, the source one
+ * on the live `route_target(` call.
  */
 #[cfg(test)]
 mod t754_click_affordance {
@@ -3008,7 +3042,22 @@ mod t754_click_affordance {
     };
     use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
     use crate::mission_editor::{route_target, RouteTarget};
+    use crate::validation_panel::register_route_probe;
     use serde_json::json;
+
+    /// Install the probe exactly as `mission_editor`'s mount installs it: the router's own
+    /// resolution over the document root, asked as a question with no side effect.
+    ///
+    /// Wave 129 (F7) — the tests below go through this rather than calling `route_target`
+    /// themselves on the affordance side, because the SHIPPED affordance goes through it. The slot
+    /// predicate is `false` here for the same reason it is in the editor's own registration for
+    /// this surface: this aggregation emits `Mission` and `Zone` owners only, which
+    /// `the_view_emits_no_owner_kind_the_router_cannot_resolve` re-derives rather than trusts.
+    fn install_probe(root: serde_json::Value) {
+        register_route_probe(std::rc::Rc::new(move |id: &str| {
+            route_target(&root, id, &|_| false).is_some()
+        }));
+    }
 
     /// A mission with a mission-level setting and three zones: a circle, a polygon, and one that was
     /// never given a shape (a draw that never committed). The third is the row a click genuinely
@@ -3067,9 +3116,14 @@ mod t754_click_affordance {
     /// `clickable` and `looks clickable` are read from the two ends — [`owner_is_routable`] → the
     /// class the row actually wears, versus the router's own resolution — and must agree for every
     /// owner, in both directions. A dead click dressed as an affordance fails here.
+    ///
+    /// Wave 129 (F7): the affordance end now runs through the REGISTERED probe (installed here as
+    /// the editor installs it), which is the same resolver the click uses. The correspondence being
+    /// pinned is unchanged; what changed is that there is no longer a second copy of it to drift.
     #[test]
     fn a_row_is_clickable_iff_the_router_resolves_its_subject() {
         let d = doc();
+        install_probe(d.clone());
         let owners = [
             SettingOwner::Mission,
             SettingOwner::Entity {
@@ -3103,7 +3157,7 @@ mod t754_click_affordance {
         let (mut clickable_seen, mut inert_seen) = (0usize, 0usize);
         for owner in &owners {
             let wears_pointer =
-                row_cursor_class(owner_is_routable(&d, owner)).contains("cursor-pointer");
+                row_cursor_class(owner_is_routable(owner)).contains("cursor-pointer");
             let resolves = owner
                 .subject_id()
                 .is_some_and(|id| route_target(&d, id, &|_| false).is_some());
@@ -3141,7 +3195,102 @@ mod t754_click_affordance {
         );
     }
 
-    /// The `false` slot predicate in [`owner_is_routable`] is an ASSUMPTION about what this
+    /// **Wave 129 (F7) — the row follows the PROBE, and goes inert when the probe says no.**
+    ///
+    /// T-754 removed the dead click for the mounted case only. Its affordance asked
+    /// `mission_editor::route_target` over the document root directly — a THIRD copy of "can this
+    /// subject be clicked", and the one copy F6 never narrowed. The click runs the REGISTERED
+    /// resolver, which since F6 refuses a `RouteTarget::Zone` while the Zones panel is unmounted.
+    /// So: open the aggregated-settings dialog (it deliberately survives Backspace hide-chrome),
+    /// press Backspace to unmount `DockRight`, click a zone-owned row → `cursor-pointer`, nothing
+    /// happens. The document is IDENTICAL across the two phases below; only the probe's answer
+    /// differs, which is exactly why the affordance must not be decided from the document.
+    ///
+    /// The "no probe at all" case (host build, before the editor mounts) is the same `false`, and
+    /// it is `subject_id_routes`'s own answer — pinned at the seam by `validation_panel`'s
+    /// `a_seam_with_nothing_installed_reports_failure`. This module reaches it the way its peer
+    /// `w129_the_panel_asks_the_router` does, with a probe that resolves nothing, so the pin does
+    /// not depend on which order the harness ran the other tests on this thread.
+    #[test]
+    fn a_zone_row_is_inert_when_the_probe_says_no() {
+        let d = doc();
+        let zone = SettingOwner::Entity {
+            kind: "Zone",
+            id: "z-circle".into(),
+            label: "Play area".into(),
+        };
+        let pointer = format!("cursor{}", "-pointer");
+
+        // MOUNTED — the probe resolves this zone, so the row wears the affordance.
+        install_probe(d.clone());
+        let mounted_clickable = row_cursor_class(owner_is_routable(&zone)).contains(&pointer);
+        assert!(
+            mounted_clickable,
+            "F7: with the Zones panel mounted the probe resolves `z-circle`, so its row must be \
+             clickable — otherwise this pin's other half proves nothing"
+        );
+
+        // UNMOUNTED (Backspace), or the host build, or before the editor mounts — F6's narrowed
+        // resolver answers `false`, and the row must render INERT rather than hopeful.
+        register_route_probe(std::rc::Rc::new(|_: &str| false));
+        let unmounted_inert = !row_cursor_class(owner_is_routable(&zone)).contains(&pointer);
+        assert!(
+            !owner_is_routable(&zone),
+            "F7: the resolver refuses this subject, so the row is not clickable — a fallback to \
+             `route_target` here IS the dead click"
+        );
+        assert!(
+            unmounted_inert,
+            "F7: a row the resolver refuses must wear no pointer. It kept `cursor-pointer` for the \
+             whole of T-754 because the affordance asked the document instead of the resolver"
+        );
+        assert!(
+            !row_cursor_class(owner_is_routable(&zone)).contains("hover:"),
+            "F7: nor a hover state — the affordance is the styling, not the name"
+        );
+
+        // The document did not move: `route_target` still resolves this zone in BOTH phases. That
+        // is the whole finding — the old direct call could not tell the two phases apart.
+        assert_eq!(
+            route_target(&d, "z-circle", &|_| false),
+            Some(RouteTarget::Zone { x: 100.0, y: 250.0 }),
+            "F7: the document resolves `z-circle` throughout; only the mount state changed"
+        );
+
+        // Not vacuous: this pin saw the affordance BOTH on and off.
+        assert!(
+            mounted_clickable && unmounted_inert,
+            "F7: this pin is only worth anything if it saw a clickable row AND an inert one \
+             (saw {mounted_clickable} / {unmounted_inert})"
+        );
+    }
+
+    /// **ONE availability decision, not three.** [`owner_is_routable`] asks
+    /// `validation_panel::subject_id_routes` — an `Rc::clone` of the resolver the click runs — and
+    /// no live code in this file calls `route_target` itself. The direct call was F7: a third,
+    /// un-narrowed copy of the decision that the click had already stopped agreeing with.
+    #[test]
+    fn the_affordance_asks_the_registered_probe_and_not_the_router_directly() {
+        let src = live_code(include_str!("eden_settings.rs"));
+        let routable = only_body(&src, &format!("fn owner{}", "_is_routable"));
+        assert!(
+            routable.contains(&format!("subject_id{}", "_routes")),
+            "F7: clickability must be the REGISTERED resolver's answer — the one the click runs — \
+             not a second resolution of the same question"
+        );
+        // NEGATIVE, over the widest haystack the claim is statable in: the whole of this file's
+        // LIVE half (the test modules, which legitimately call `route_target` to state the FACT the
+        // affordance is checked against, are cut first). Any view or affordance code that resolves
+        // the router itself re-opens F7 here.
+        assert_eq!(
+            src.matches(&format!("route{}", "_target(")).count(),
+            0,
+            "F7: no live code in this view may resolve the router itself — that is a second \
+             availability decision, and the click's is the one that counts"
+        );
+    }
+
+    /// The slot predicate the probe is registered with is an ASSUMPTION about what this
     /// aggregation emits, so it is checked rather than trusted: the walk mints exactly one entity
     /// kind, `Zone`, and every entity row it produces routes. The day a slot-owned (or any other)
     /// row appears, this goes red and that predicate must become a real lookup.
@@ -3164,7 +3313,7 @@ mod t754_click_affordance {
             "T-754: the aggregation's entity rows are zones and only zones"
         );
         // Source side: the walk mints ONE `kind:`, so a second entity family cannot slip in without
-        // this pin (and `owner_is_routable`'s predicate) being revisited.
+        // this pin (and the slot predicate the probe is registered with) being revisited.
         let src = live_source(include_str!("eden_settings.rs"));
         let body = only_body(&src, &format!("fn aggregate{}", "_settings"));
         let kind_writes = body.matches(&format!("kind{}", ": \"")).count();
@@ -3181,8 +3330,12 @@ mod t754_click_affordance {
 
     /// One decision, one place. The row styles itself through [`row_cursor_class`] (it spells no
     /// pointer/hover class of its own), and the body decides `clickable` by asking
-    /// [`owner_is_routable`] — which in turn asks the SHIPPED router's resolution rather than a local
-    /// table of kinds this file believes are selectable.
+    /// [`owner_is_routable`] — which in turn asks the SHIPPED resolution rather than a local table
+    /// of kinds this file believes are selectable.
+    ///
+    /// Wave 129 (F7): "the SHIPPED resolution" is now the REGISTERED probe rather than a direct
+    /// `route_target` call, which is what made the two questions genuinely one.
+    /// `the_affordance_asks_the_registered_probe_and_not_the_router_directly` owns that half.
     #[test]
     fn the_affordance_and_the_click_ask_the_same_question() {
         let src = live_code(include_str!("eden_settings.rs"));
@@ -3198,10 +3351,11 @@ mod t754_click_affordance {
         );
         let routable = only_body(&src, &format!("fn owner{}", "_is_routable"));
         assert!(
-            routable.contains(&format!("mission{}", "_editor"))
-                && routable.contains(&format!("route{}", "_target(")),
-            "T-754: clickability must be the ROUTER's own resolution, not a second opinion about \
-             which kinds are selectable"
+            routable.contains(&format!("validation{}", "_panel"))
+                && routable.contains(&format!("subject_id{}", "_routes")),
+            "T-754, narrowed by wave 129 (F7): clickability must be the ROUTER's own resolution as \
+             the click asks it — the registered probe — not a second opinion about which kinds are \
+             selectable, and not a second resolution of the router either"
         );
         // Literals kept: the row must not hand-roll the affordance beside the function that owns it.
         let lit = live_source(include_str!("eden_settings.rs"));
