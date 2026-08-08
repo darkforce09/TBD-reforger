@@ -1121,22 +1121,26 @@ pub fn plan_remove(targets: &[String]) -> Vec<LoadoutWrite> {
 /// this slice's to change. T-686 got one undo step for free because an import is one entity; Apply
 /// is not, and pretending otherwise would be the lie this comment exists to refuse.
 ///
-/// What this function does about it: it **counts what the sink actually took**, and
+/// What this function does about it: it **counts sink acknowledgements**, and
 /// [`apply_receipt`] reports that number to the author rather than the number that was planned. A
 /// commit path that silently dropped writes would produce a receipt that says so, instead of a
-/// receipt that says "applied 6" over 4 landed documents. `commit` is a parameter and not a direct
-/// `set_loadout` call for the same reason: it makes the arithmetic testable natively, where
-/// `editor_ops` (a wasm32-only module) cannot be reached at all. This is also the single seam a
-/// future T-732 fix touches — when a batch API exists, this loop becomes one call, the returned
-/// count becomes 1, and the receipt starts telling the truth about *that* without another edit.
+/// receipt that says "applied 6" over 4 landed documents. The sink returns `bool` (T-770) — the
+/// production path is `MissionDocCore::update_slot_loadout`, which returns `false` on an unknown
+/// id — so the WARNING arm is reachable when the document refused a write, not merely when the
+/// loop itself was skipped. `commit` is a parameter and not a direct `set_loadout` call for the
+/// same reason: it makes the arithmetic testable natively, where `editor_ops` (a wasm32-only
+/// module) cannot be reached at all. This is also the single seam a future T-732 fix touches —
+/// when a batch API exists, this loop becomes one call, the returned count becomes 1, and the
+/// receipt starts telling the truth about *that* without another edit.
 pub fn commit_writes(
     writes: &[LoadoutWrite],
-    mut commit: impl FnMut(&str, Option<String>),
+    mut commit: impl FnMut(&str, Option<String>) -> bool,
 ) -> usize {
     let mut done = 0usize;
     for w in writes {
-        commit(&w.target_id, w.loadout_json.clone());
-        done += 1;
+        if commit(&w.target_id, w.loadout_json.clone()) {
+            done += 1;
+        }
     }
     done
 }
@@ -5684,15 +5688,19 @@ mod tests {
         /// atomic multi-entity loadout write (T-732) — and the receipt says so out loud rather than
         /// claiming an atomicity nothing here provides.
         ///
-        /// RED (a dropped write): `if done == 0 { continue; }` at the top of `commit_writes`'s loop
-        /// → "3 writes planned, sink took 2".
+        /// RED (a dropped write): force the sink to return `false` for one id →
+        /// "3 writes planned, sink took 2" and the receipt WARNING arm.
+        /// RED (count invocations again): `done += 1` unconditionally → miss path no longer red.
         /// RED (a fake one-step claim): report `1` instead of the commit count → the receipt no
         /// longer names the real number of Ctrl+Z presses.
         #[test]
         fn the_receipt_counts_the_writes_the_document_actually_took() {
             let writes = plan_remove(&ids(&["a", "b", "c"]));
             let mut sink: Vec<(String, Option<String>)> = Vec::new();
-            let commits = commit_writes(&writes, |id, json| sink.push((id.to_string(), json)));
+            let commits = commit_writes(&writes, |id, json| {
+                sink.push((id.to_string(), json));
+                true
+            });
 
             assert_eq!(commits, 3, "one commit per planned write");
             assert_eq!(
@@ -5717,9 +5725,26 @@ mod tests {
             );
             assert!(!line.contains("WARNING"), "{line}");
 
-            // The honesty property: a sink that took FEWER is reported, never rounded up to the
-            // plan. This is the assertion the T-736 pin lacked.
-            let dropped = remove_receipt(writes.len(), 2);
+            // The honesty property: a sink that refuses one id (the production shape when
+            // `update_slot_loadout` returns false) must shrink the counted commits and light the
+            // WARNING arm. Counting loop invocations would keep commits==3 and hide the miss.
+            let mut miss_sink: Vec<(String, Option<String>)> = Vec::new();
+            let miss_commits = commit_writes(&writes, |id, json| {
+                if id == "b" {
+                    return false;
+                }
+                miss_sink.push((id.to_string(), json));
+                true
+            });
+            assert_eq!(miss_commits, 2, "refused ack must not count as a commit");
+            assert_eq!(
+                miss_sink.len(),
+                2,
+                "{} writes planned, sink took {}",
+                writes.len(),
+                miss_sink.len()
+            );
+            let dropped = remove_receipt(writes.len(), miss_commits);
             assert!(dropped.contains("WARNING"), "{dropped}");
             assert!(
                 dropped.contains("3 write(s) were planned and 2 reached the document"),

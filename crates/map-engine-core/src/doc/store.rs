@@ -2776,18 +2776,25 @@ impl MissionDocCore {
     /// through the same JSON→`Any` machinery as `hydrate` rows, so the object stays opaque to the
     /// core; `None`/empty clears the key. One transaction = one undo step. The pre-existing
     /// `loadoutId` (shared-template ref, unused) is deliberately untouched.
-    pub fn update_slot_loadout(&self, id: &str, loadout_json: Option<String>) {
+    ///
+    /// Returns `true` when the slot existed and the write landed, `false` when `id` is unknown
+    /// (silent no-op). Callers that report a receipt — notably arsenal `commit_writes` (T-770) —
+    /// must count this acknowledgement, not the closure invocation, or a missing id looks like a
+    /// successful commit.
+    pub fn update_slot_loadout(&self, id: &str, loadout_json: Option<String>) -> bool {
         let mut txn = self.begin();
-        if let Some(Out::YMap(slot)) = self.slots.get(&txn, id) {
-            match loadout_json.filter(|s| !s.is_empty()) {
-                Some(json) => {
-                    slot.insert(&mut txn, "loadout", json_str_to_any(&json));
-                }
-                None => {
-                    slot.remove(&mut txn, "loadout");
-                }
+        let Some(Out::YMap(slot)) = self.slots.get(&txn, id) else {
+            return false;
+        };
+        match loadout_json.filter(|s| !s.is_empty()) {
+            Some(json) => {
+                slot.insert(&mut txn, "loadout", json_str_to_any(&json));
+            }
+            None => {
+                slot.remove(&mut txn, "loadout");
             }
         }
+        true
     }
 
     /// Edit a slot's transform (Attributes Transform tab). `x`/`y` clamp to `[0,width]×[0,height]`,
@@ -8336,7 +8343,10 @@ mod tests {
             "s1", "sq1", "lyr", 0, "Rifleman", None, None, 1.0, 2.0, 0.0, 0.0,
         );
         let json = r#"{"primary":"{AAA}Rifle_M16A2.et","uniform":null,"vest":null,"helmet":null,"optic":"{BBB}Optic_Acog.et","magazine":null,"summary":"M16A2 · ACOG"}"#;
-        doc.update_slot_loadout("s1", Some(json.to_string()));
+        assert!(
+            doc.update_slot_loadout("s1", Some(json.to_string())),
+            "known slot must ack"
+        );
 
         let v: serde_json::Value = serde_json::from_str(&doc.slots_json()).expect("valid json");
         let lo = &v["s1"]["loadout"];
@@ -8351,12 +8361,16 @@ mod tests {
         assert!(v["s1"].get("loadout").is_none(), "undo cleared loadout");
         assert_eq!(v["s1"]["role"], "Rifleman", "slot itself survives");
 
-        // Explicit clear path (None removes the key), and a missing slot is a no-op.
-        doc.update_slot_loadout("s1", Some(json.to_string()));
-        doc.update_slot_loadout("s1", None);
+        // Explicit clear path (None removes the key), and a missing slot is a no-op that returns false
+        // so arsenal receipts can count document acks (T-770) rather than loop invocations.
+        assert!(doc.update_slot_loadout("s1", Some(json.to_string())));
+        assert!(doc.update_slot_loadout("s1", None));
         let v: serde_json::Value = serde_json::from_str(&doc.slots_json()).expect("valid json");
         assert!(v["s1"].get("loadout").is_none(), "None clears the key");
-        doc.update_slot_loadout("missing", Some(json.to_string()));
+        assert!(
+            !doc.update_slot_loadout("missing", Some(json.to_string())),
+            "unknown id must not ack"
+        );
     }
 
     #[test]
