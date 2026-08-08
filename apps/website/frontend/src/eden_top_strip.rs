@@ -807,8 +807,8 @@ pub fn TopCommandStrip(
         }
     });
     // T-659 — per-side slot census + generated summary line, on the SAME `doc_tick` channel as `env`
-    // above. `refresh_docks` (`editor_ops.rs:1055`) bumps `doc_tick` from `refresh_signals`
-    // (`mission_history.rs:452`) at every mutation site, so this recomputes on slot add/remove/refile
+    // above. `refresh_docks` (`editor_ops.rs:2660`) bumps `doc_tick` from `refresh_signals`
+    // (`mission_history.rs:480`) at every mutation site, so this recomputes on slot add/remove/refile
     // with no manual refresh — the "live" the ticket requires. The census is pure over the snapshot
     // rows (`census_from_rows`); the summary composes it with the terrain (from `env`, same memo the
     // scrubber reads) and the game mode when the document carries one.
@@ -1618,9 +1618,9 @@ pub fn TopCommandStrip(
 // live slot census (`WEST 78 · EAST 74 · IND 8 · TOTAL 160`) and, below it, a one-line mission
 // summary composed from the document. Both ride the SAME reactivity the inline scrubber does — the
 // `env` `Memo` above re-reads on every `doc_tick`, and `editor_ops::refresh_docks` bumps `doc_tick`
-// from `mission_history::refresh_signals` (`mission_history.rs:452`) at EVERY mutation site (place /
+// from `mission_history::refresh_signals` (`mission_history.rs:480`) at EVERY mutation site (place /
 // drag / undo / redo / refile / the IDB restore swap), so the badge is live: it updates on slot
-// add/remove/refile with no manual refresh (`editor_ops.rs:1055` is where the bump happens).
+// add/remove/refile with no manual refresh (`editor_ops.rs:2660` is where the bump happens).
 //
 // **Why this replaces two MissionAnalyzer rules rather than adding a warning.** A side count derived
 // straight off the ORBAT snapshot cannot show a malformed state — an unresolved slot lands in the
@@ -1635,7 +1635,7 @@ pub fn TopCommandStrip(
 /// The three Eden sides, in header order, paired with the schema faction `key` each derives from.
 ///
 /// The `key` half is the value `factionsById[..].key` holds (`asset_catalog` `EDEN_SIDES`, and the
-/// `orbat_add_squad` guard on `editor_ops.rs:1735`); the `label` half is the milsim-facing word the
+/// `orbat_add_squad` guard on `editor_ops.rs:4249`); the `label` half is the milsim-facing word the
 /// header shows. WOG's 94%-consistent community naming convention grew out of exactly this label
 /// vocabulary, so the labels are part of the stable format the summary line pins below.
 const CENSUS_SIDES: [(&str, &str); 3] = [("BLUFOR", "WEST"), ("OPFOR", "EAST"), ("INDFOR", "IND")];
@@ -2270,7 +2270,7 @@ mod tests {
     /// what the summary reports. This is the live-update pin's pure half — the header memos feed
     /// `census_from_rows`'s output straight into `summary_line`, and the reactivity source is the
     /// `doc_tick` channel documented on the `census`/`summary` memos (`refresh_docks` →
-    /// `editor_ops.rs:1055`), which native tests cannot drive but which the memo wiring pins.
+    /// `editor_ops.rs:2660`), which native tests cannot drive but which the memo wiring pins.
     #[test]
     fn census_and_summary_compose() {
         let factions = [
