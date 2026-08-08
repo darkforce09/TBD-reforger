@@ -598,7 +598,7 @@ enum GlobTok {
     Star,
     /// `?` — exactly one character.
     AnyOne,
-    /// A literal, already ASCII-lowercased.
+    /// A literal, already Unicode-lowercased (same fold as [`GlobPattern::matches`]'s haystack).
     Ch(char),
 }
 
@@ -626,7 +626,15 @@ impl GlobPattern {
                     }
                 }
                 '?' => toks.push(GlobTok::AnyOne),
-                _ => toks.push(GlobTok::Ch(c.to_ascii_lowercase())),
+                // Same fold as `matches` (`hay.to_lowercase()`). `to_ascii_lowercase` left non-ASCII
+                // uppercase literals untouched (É stays É) while the haystack folded them (É → é),
+                // so `CAFÉ*` missed `café_x` — wave-117 MINOR-1 / T-765. `char::to_lowercase` can
+                // expand (ß → ss); push every folded char so the token stream matches the haystack.
+                _ => {
+                    for lc in c.to_lowercase() {
+                        toks.push(GlobTok::Ch(lc));
+                    }
+                }
             }
         }
         Self { toks }
@@ -1699,6 +1707,27 @@ mod tests {
             filter_catalog(&vehicles, "mod:Arma*"),
             vehicles,
             "glob over the addon root"
+        );
+    }
+
+    /// T-765 / wave-117 MINOR-1 — glob pattern literals and the haystack must share one fold.
+    /// `to_ascii_lowercase` on the pattern left `É` untouched while `hay.to_lowercase()` folded it
+    /// to `é`, so `CAFÉ*` refused `café_x`. Failure mode was a miss (safe), not a false positive.
+    #[test]
+    fn glob_case_folding_is_symmetric_for_non_ascii() {
+        let g = GlobPattern::parse("CAFÉ*");
+        assert!(
+            g.matches("café_x"),
+            "CAFÉ* must match café_x when both sides use Unicode to_lowercase"
+        );
+        assert!(
+            g.matches("CAFÉ_x"),
+            "already-folded and mixed-case haystacks still match"
+        );
+        assert!(!g.matches("x_café"), "whole-string: leading junk is a miss");
+        assert!(
+            GlobPattern::parse("café*").matches("CAFÉ_x"),
+            "fold is symmetric the other way too"
         );
     }
 
