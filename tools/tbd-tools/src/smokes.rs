@@ -2592,7 +2592,9 @@ pub async fn smoke_outliner_palette(dist: &str, path: &str) -> Result<u8> {
 /// T-169 — the VirtualOutliner gate. Seeds a mission past `VIRTUAL_SLOT_THRESHOLD` (via the
 /// `__missionDoc.seed_slots` hook) and asserts the dock trees WINDOW: `window.__outlinerStats`
 /// reports `rendered < total` above the threshold (and `rendered === total` below it), for both
-/// the Editor Layers and ORBAT trees, while a windowed slot row still selects.
+/// the Editor Layers and ORBAT trees, while a windowed slot row still selects. T-769: v3 pins the
+/// rendered count from the measured scroller height (and that the scroller fills its flex parent),
+/// not a fixed `<= 60` cap that breaks as soon as the tree is `h-full`.
 pub async fn smoke_virtual_outliner(dist: &str, path: &str) -> Result<u8> {
     let h = Harness::new(dist, 5320, 9380, None, None, &[]).await?;
     let run = async {
@@ -2644,11 +2646,15 @@ pub async fn smoke_virtual_outliner(dist: &str, path: &str) -> Result<u8> {
                 "v2_editorLayersWindowed".into(),
                 json!(h.page.wait_for(&windowed, 40, 250).await?),
             );
-            let e_total1 = eval_i64(&h.page, &stat("editorLayers", "total")).await?;
-            let e_rend1 = eval_i64(&h.page, &stat("editorLayers", "rendered")).await?;
+            // T-769 — pin windowing from the MEASURED scroller height, not a viewport-sized magic
+            // cap. The old `e_rend1 <= 60` predates h-full (T-339) and goes red the moment the
+            // scroller fills the flex-1 region (61 at the gate's 1440×900). Formula at scrollTop=0:
+            // rendered = min(total, ceil(H/ROW_H) + 2*OVERSCAN); also require the scroller taller
+            // than the historical 420 px budget and filling its flex parent (the void absorb).
+            let v3 = "(() => { const s = window.__outlinerStats && window.__outlinerStats.editorLayers; const el = document.querySelector(\"[data-testid='outliner-window-scroller']\"); if (!s || !el || !el.parentElement) return false; const H = el.clientHeight; if (!(H > 420)) return false; const expected = Math.min(s.total, Math.ceil(H / 16) + 12); const fills = Math.abs(el.clientHeight - el.parentElement.clientHeight) <= 1; return s.rendered > 0 && s.rendered < s.total && s.rendered === expected && fills; })()";
             checks.insert(
                 "v3_windowRendersSubset".into(),
-                json!(e_rend1 > 0 && e_rend1 < e_total1 && e_rend1 <= 60),
+                json!(h.page.wait_for(v3, 40, 250).await?),
             );
             checks.insert(
                 "v4_thresholdIs50".into(),
