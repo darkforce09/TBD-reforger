@@ -1194,6 +1194,23 @@ mod tests {
             body.contains("slot_attrs_from_raw(&rows, id)"),
             "T-744: hidden-but-present slots must fall back to raw field values, not invent zeros"
         );
+        // F1: the needle alone is not an exit — an empty `if !rows.contains_key(id) {}` arm kept
+        // the pin green while missing ids still yielded Some. Require a real absence return in that
+        // arm (wave-135 adversarial).
+        let after_gate = body.split(raw_gate).nth(1).expect("raw gate present above");
+        let brace = after_gate
+            .find('{')
+            .expect("T-744: raw gate must open an if-arm");
+        let arm_tail = &after_gate[brace + 1..];
+        let close = arm_tail
+            .find('}')
+            .expect("T-744: raw-gate arm must close");
+        let arm = arm_tail[..close].trim();
+        assert!(
+            arm.contains("return None")
+                || arm.split_whitespace().collect::<Vec<_>>().join(" ") == "None",
+            "T-744: raw absence arm must exit with None (empty arm must RED); arm was:\n{arm}"
+        );
         // delete-prod control: remove the raw gate from a forged production body → needle gone →
         // the positive assert above would RED. (This forged copy is never compiled; it proves the
         // pin is load-bearing on the production token, not on a comment or this test's own source.)
