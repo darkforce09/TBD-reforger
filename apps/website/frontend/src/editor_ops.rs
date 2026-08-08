@@ -460,7 +460,21 @@ thread_local! {
     static CLIPBOARD: RefCell<Vec<serde_json::Value>> = const { RefCell::new(Vec::new()) };
 }
 
-/// Delete/Backspace — remove the selected slots in one undoable step (React `removeEntities`).
+/// Delete/Backspace — remove the selected entities in one undoable step (React `removeEntities`).
+///
+/// **T-784 — the selection can now hold a COMMENT id, so the verb PARTITIONS it.** A comment is a
+/// `commentsById` key, not a slot id: handing it to `remove_slots` removed nothing and reported
+/// success, which is the T-779 class (an acknowledgement for a write that never landed) and exactly
+/// the failure a comment click would otherwise have shipped. Each half goes to the mutator that owns
+/// it — [`crate::editor_ops::delete_comment`]'s `remove_comment` for the notes, `remove_slots` for
+/// everything else — and neither half runs when it is empty, so **Delete over a comment-only
+/// selection removes that comment and touches nothing else**. A MIXED selection removes both, which
+/// is what selecting both and pressing Delete means.
+///
+/// The membership question is asked of [`comment_details`], the same `comments_json` read the
+/// Outliner rows, the map lane and the map pick are built from — not a prefix test on the id. A
+/// `cmt-` prefix is [`mint_comment_id`]'s convention, not a document invariant, and a hydrated
+/// mission is free to carry comment ids that were never minted here.
 pub fn delete_selection() -> bool {
     let removed = OPS_CTX.with(|c| {
         let guard = c.borrow();
@@ -476,6 +490,13 @@ pub fn delete_selection() -> bool {
             let Some(core) = d.as_ref() else {
                 return false;
             };
+            let comment_ids: std::collections::HashSet<String> =
+                comment_details(core).into_iter().map(|c| c.id).collect();
+            let (comments, ids): (Vec<String>, Vec<String>) =
+                ids.into_iter().partition(|id| comment_ids.contains(id));
+            for id in &comments {
+                core.remove_comment(id);
+            }
             // T-672 — take each deleted unit's connection edges with it. Without this every delete
             // manufactures `CONN-DANGLING` findings the operator then has to clean up by hand — a
             // delete that half-finishes, which is exactly the failure class the connection graph's
@@ -491,7 +512,12 @@ pub fn delete_selection() -> bool {
             for id in &ids {
                 let _ = core.remove_connections_touching(id);
             }
-            core.remove_slots(ids);
+            // T-784 — GUARDED, because the comment-only case is the acceptance: with nothing but
+            // notes selected there is no slot half, and `remove_slots(vec![])` would still open a
+            // transaction — an empty undo step over a document this delete did not change.
+            if !ids.is_empty() {
+                core.remove_slots(ids);
+            }
         }
         ctx.selection.borrow_mut().clear();
         true

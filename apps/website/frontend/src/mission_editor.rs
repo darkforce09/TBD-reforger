@@ -2199,6 +2199,124 @@ fn live_connection_segments(core: &map_engine_core::doc::MissionDocCore) -> Vec<
     connection_segments(&core.connection_rows_json(), &positions)
 }
 
+/* ══════════ T-784 — the COMMENT GLYPH: ONE document read, drawn AND picked ══════════════════════
+ *
+ * T-651 gave a comment an Outliner row, T-748 gave it a map glyph and T-781 made it composable.
+ * Nothing gave it a way INTO the selection, so the composition lane was unreachable by clicking:
+ * the glyph had no pick path at all.
+ *
+ * The map half is fixed the way T-780 fixed the connection line, and deliberately NOT a second way.
+ * [`comment_points`] is the document read; [`comment_lane_xy`] PACKS that read for
+ * `RenderEngine::comments_bind`; [`pick_comment`] HIT-TESTS the same `Vec`. What is drawn and what
+ * a click can find are one set BY CONSTRUCTION rather than two parsers kept in step by hope —
+ * which is what they were, `mission_history` holding a private copy of this parse.
+ *
+ * WHY THEY LIVE HERE. `mission_history` is `#![cfg(target_arch = "wasm32")]` in its entirety, so a
+ * function placed there can never be unit-tested — the T-748 feed pin in
+ * `map-engine-render::draw_order` had to reach it through `include_str!` for exactly that reason,
+ * and a pick tolerance nobody can execute is how a hit box silently stops matching its picture.
+ * This module compiles natively, so both the packing and the pick are testable where they ship.
+ *
+ * WHICH UNIVERSE, AND WHY IT IS THE RIGHT ONE: `commentsById` in full, sorted by id — never
+ * `materialize()`. A comment is editor-only and is in the slot SoA at no point, so the T-665/T-701
+ * hidden-layer drop `materialize()` performs cannot apply to it and cannot be forgotten here. The
+ * lane draws every comment the document holds, the pick tests every comment the lane drew, and the
+ * Outliner (`editor_ops::comment_rows`, the same `comments_json` sorted the same way) lists the
+ * same set — one universe across all three surfaces.
+ */
+
+/// T-784 — one comment glyph in WORLD metres: the unit of BOTH the render lane and the pick.
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct CommentPoint {
+    /// The `commentsById` key — what a pick puts into the selection.
+    pub id: String,
+    /// World easting (`position.x`).
+    pub x: f64,
+    /// World northing — the row's `position.z`. A comment's position is `{x, z}`: the `$defs/marker`
+    /// vocabulary of TWO HORIZONTALS and no height (T-781's capture reads it the same way). It is
+    /// named `y` here because that is the axis it IS on the map plane; treating it as an elevation
+    /// would file the note's northing as its altitude and draw it at the origin.
+    pub y: f64,
+}
+
+/// **The document read the comment lane and the comment pick share** — `commentsById` parsed once,
+/// sorted by id so the lane's instance order cannot depend on `serde_json`'s map type (the T-748
+/// rule, kept where the parse now lives).
+#[must_use]
+pub(crate) fn comment_points(comments_json: &str) -> Vec<CommentPoint> {
+    let Ok(map) = serde_json::from_str::<serde_json::Value>(comments_json) else {
+        return Vec::new();
+    };
+    let Some(obj) = map.as_object() else {
+        return Vec::new();
+    };
+    let mut rows: Vec<_> = obj.iter().collect();
+    rows.sort_by(|a, b| a.0.cmp(b.0));
+    rows.into_iter()
+        .map(|(id, v)| {
+            let axis = |k: &str| {
+                v.get("position")
+                    .and_then(|p| p.get(k))
+                    .and_then(serde_json::Value::as_f64)
+                    .unwrap_or(0.0)
+            };
+            CommentPoint {
+                id: id.clone(),
+                x: axis("x"),
+                y: axis("z"),
+            }
+        })
+        .collect()
+}
+
+/// T-748 — flat interleaved `[x, z, …]` for `RenderEngine::comments_bind`, **packed from
+/// [`comment_points`]**. The lane is a projection of the pick's own list, so a comment cannot be
+/// drawn where it cannot be clicked, nor clicked where nothing is drawn. `mission_history`'s two
+/// bind sites (the IDB-restore rebind and `after_doc_change`) call this.
+#[must_use]
+pub(crate) fn comment_lane_xy(comments_json: &str) -> Vec<f32> {
+    let pts = comment_points(comments_json);
+    let mut xy = Vec::with_capacity(pts.len() * 2);
+    #[allow(clippy::cast_possible_truncation)]
+    for p in pts {
+        xy.push(p.x as f32);
+        xy.push(p.y as f32);
+    }
+    xy
+}
+
+/// Click tolerance for [`pick_comment`], in SCREEN pixels — the SAME radius the slot/vehicle pick
+/// uses (`MissionDocCore::PICK_RADIUS_PX`). `comments_bind` draws a comment with the slot atlas's
+/// ring glyph, so a tolerance of our own invention would give the note a hit box a different size
+/// from its picture.
+///
+/// Restated as a literal rather than referenced, because that constant lives behind `map-engine-core`'s
+/// `doc` feature and this crate enables it on wasm32 ONLY — while the pick and its tests are native.
+/// `comment_pick_px_is_the_slot_pick_radius` reads the core's own declaration back through
+/// `include_str!`, so the restatement cannot drift from the thing it restates.
+pub(crate) const COMMENT_PICK_PX: f64 = 4.0;
+
+/// The comment glyph under a world point, or `None`. `tol_m` is the click radius in world metres
+/// (the caller converts [`COMMENT_PICK_PX`] through the frozen press camera, exactly as the
+/// connection pick converts [`CONN_PICK_PX`]). NEAREST wins, so two notes within one click of each
+/// other resolve deterministically instead of by listing order.
+#[must_use]
+pub(crate) fn pick_comment(
+    points: &[CommentPoint],
+    wx: f64,
+    wy: f64,
+    tol_m: f64,
+) -> Option<String> {
+    let mut best: Option<(f64, &str)> = None;
+    for p in points {
+        let d = (wx - p.x).hypot(wy - p.y);
+        if d <= tol_m && best.is_none_or(|(bd, _)| d < bd) {
+            best = Some((d, p.id.as_str()));
+        }
+    }
+    best.map(|(_, id)| id.to_string())
+}
+
 /* ═════════════ T-754 — what the click-to-select router RESOLVES, as a pure question ═════════════
  *
  * T-655 shipped ONE click-to-select router (`validation_panel::register_select_by_id`, registered
@@ -2249,6 +2367,19 @@ pub(crate) enum RouteTarget {
     /// slot selection (a zone id in `select_tool`'s selection would read `SEL 1` with nothing
     /// highlighted — see `eden_dock_right`'s `zone_selected`).
     Zone { x: f64, y: f64 },
+    /// T-784 — a `commentsById` row: the editor-only annotation (T-651), at its authored position.
+    ///
+    /// Rides the SAME path as [`RouteTarget::Vehicle`] / [`RouteTarget::Entity`] (editor selection +
+    /// camera centre) because it belongs in the same place they do: `editor_ops`'s selection `Vec`
+    /// is what the T-781 composition capture reads, and that capture classifies each selected id as
+    /// slot / vehicle / object / COMMENT off ONE vector. A comment in a lane of its own would be a
+    /// selection the composition could never see.
+    ///
+    /// Without this arm `validation_panel::subject_id_routes` answered `false` for every comment, so
+    /// the dock-left document-search hit rendered inert (`eden_dock_left::hit_is_routable`) and the
+    /// Outliner row could not honestly paint an affordance either. The resolver learning comments is
+    /// what makes both surfaces live — neither of them grew a kind list.
+    Comment { x: f64, y: f64 },
 }
 
 /// Wave 129 — [`route_target`] bound to the LIVE document and its world centre: "what would a click
@@ -2306,6 +2437,25 @@ pub(crate) fn route_target(
     if let Some(zone) = root.get("zonesById").and_then(|m| m.get(subject_id)) {
         if let Some((x, y)) = zone_centre(zone) {
             return Some(RouteTarget::Zone { x, y });
+        }
+    }
+    // T-784 — the editor-only annotation, appended LAST for the reason stated above: a new arm may
+    // not change what an already-resolving id resolves to, and appending is the only placement that
+    // guarantees it without reasoning about id-space disjointness a second time.
+    //
+    // The axes are `{x, z}`, not `{x, y}`: a comment row carries TWO HORIZONTALS and no height (the
+    // `$defs/marker` vocabulary — see [`CommentPoint`]). Reading `y` here would find nothing, return
+    // `None`, and leave the row inert under an affordance that had already been painted.
+    if let Some(p) = root
+        .get("commentsById")
+        .and_then(|m| m.get(subject_id))
+        .and_then(|v| v.get("position"))
+    {
+        if let (Some(x), Some(y)) = (
+            p.get("x").and_then(serde_json::Value::as_f64),
+            p.get("z").and_then(serde_json::Value::as_f64),
+        ) {
+            return Some(RouteTarget::Comment { x, y });
         }
     }
     None
@@ -3141,7 +3291,10 @@ pub fn MissionEditorPage() -> impl IntoView {
                         }
                         RouteTarget::Vehicle { x, y }
                         | RouteTarget::Entity { x, y }
-                        | RouteTarget::Zone { x, y } => (x, y),
+                        | RouteTarget::Zone { x, y }
+                        // T-784 — a comment centres like a vehicle; its selection lands in the same
+                        // editor selection `Vec`, which is what makes it composable with entities.
+                        | RouteTarget::Comment { x, y } => (x, y),
                     };
                     Some((target, cx, cy))
                 });
@@ -4760,6 +4913,47 @@ pub fn MissionEditorPage() -> impl IntoView {
                                         let _ = crate::editor_ops::complete_connect(id);
                                     }
                                 }
+                                // ══════════ T-784 — pick the COMMENT GLYPH ══════════════════════
+                                //
+                                // On an entity MISS only: a slot or vehicle always wins its own
+                                // pixels, so a note parked on top of a unit can never steal the
+                                // unit's click.
+                                //
+                                // FOLDED INTO `hit`, not handled beside it. Everything downstream —
+                                // `apply_click`'s replace/toggle, the additive Ctrl branch, the SEL
+                                // readout, `refresh_selection` — then treats a comment exactly as it
+                                // treats a slot, with no new selection route to keep in step. That
+                                // is what makes Ctrl+click COMPOSE a comment with entities (the
+                                // T-781 capture reads one selection `Vec`) and what makes the map's
+                                // edge selection drop: a non-empty entity selection is the condition
+                                // `editor_ops::reconcile_connection_selection` already tests inside
+                                // `mirror_selection`, so this arm adds no clear of its own.
+                                //
+                                // DELIBERATELY AFTER the connect arm above: `complete_connect` must
+                                // keep seeing entity hits only, or an armed connection would take a
+                                // comment as an endpoint — an edge to a thing that never compiles.
+                                //
+                                // Against the FROZEN press camera (X-05), tolerance derived by
+                                // unprojecting two points `COMMENT_PICK_PX` apart, exactly as the
+                                // connection pick below derives its own. NO affordance is painted on
+                                // the strength of this pick and that is on purpose (wave 129): it is
+                                // a SELECTION gesture like a slot click, not a route to an
+                                // inspector, so there is no "can this be clicked" question here and
+                                // therefore no second answer to it.
+                                let hit = hit.or_else(|| {
+                                    let w = p.cam.unproject_xy(p.start_x, p.start_y);
+                                    let w2 =
+                                        p.cam.unproject_xy(p.start_x + COMMENT_PICK_PX, p.start_y);
+                                    let tol = (w2[0] - w[0]).hypot(w2[1] - w[1]);
+                                    doc.borrow().as_ref().and_then(|c| {
+                                        pick_comment(
+                                            &comment_points(&c.comments_json()),
+                                            w[0],
+                                            w[1],
+                                            tol,
+                                        )
+                                    })
+                                });
                                 // ══════ T-780 — pick the CONNECTION line the operator drew ══════
                                 //
                                 // Runs ONLY on a miss: an entity always wins its own pixels, so an
@@ -10006,7 +10200,8 @@ mod wave129_f6_probe_and_click_cannot_disagree {
             RouteTarget::Slot => (1.0, 2.0),
             RouteTarget::Vehicle { x, y }
             | RouteTarget::Entity { x, y }
-            | RouteTarget::Zone { x, y } => (x, y),
+            | RouteTarget::Zone { x, y }
+            | RouteTarget::Comment { x, y } => (x, y),
         };
         Some((target, x, y))
     }
@@ -11919,6 +12114,342 @@ mod t780_connection_line {
                 .replacen(&reconcile, "/* hollow */", 1)
                 .contains(&reconcile),
             "fired rule: dropping the reconcile must break the F-1 exclusivity pin"
+        );
+    }
+}
+
+// ═════ T-784 — the comment GLYPH is pickable, and the pick is the lane's own list ════════════════
+//
+// The defect was total: the glyph had no pick path at all, the Outliner comment row was `ROW_STATIC`
+// with no route to the selection, the T-697 selection filter can only NARROW an existing selection
+// (so it can never introduce a comment that was not already selected), and `route_target` had no
+// comment arm — so even the document-search hit rendered inert. Nothing could put a comment id into
+// the selection by clicking, which left T-781's composable-comment lane unreachable.
+//
+// These pins hold the three properties the fix rests on:
+//   1. the lane and the pick are ONE document read (T-780's construction, applied to the glyph);
+//   2. a comment RESOLVES, so `subject_id_routes` — the affordance behind the Outliner row and the
+//      dock-left search hit — can honestly say yes, and the existing kinds still resolve as before;
+//   3. the map click folds the comment into `hit`, so the selection it lands in is the one the
+//      composition capture reads, and Delete removes the comment rather than reporting success over
+//      an unchanged document.
+#[cfg(test)]
+mod t784_comment_glyph {
+    use super::{
+        comment_lane_xy, comment_points, pick_comment, route_target, RouteTarget, COMMENT_PICK_PX,
+    };
+    use crate::arsenal::class_r_scrub::{live_code, only_body};
+
+    /// Three notes, deliberately NOT in id order in the JSON text, so a reader that trusted the
+    /// map's iteration order would produce a different sequence from one that sorts.
+    fn comments() -> String {
+        serde_json::json!({
+            "cmt-3": { "title": "South", "position": { "x": 300.0, "z": -30.0 } },
+            "cmt-1": { "title": "North", "position": { "x": 100.0, "z": 10.0 } },
+            "cmt-2": { "title": "East",  "position": { "x": 105.0, "z": 10.0 } },
+        })
+        .to_string()
+    }
+
+    fn page() -> String {
+        let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
+        let raw = include_str!("mission_editor.rs");
+        assert_eq!(raw.matches(anchor.as_str()).count(), 1);
+        live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])
+    }
+
+    /// The T-784 glyph block, scrubbed. Sliced from the RAW source first, exactly as [`page`] is:
+    /// `live_code` truncates at the FIRST `#[cfg(test)]` and this file has one at module level
+    /// (a `cfg`-gated dev item near the top), so scrubbing the whole file yields nothing at all.
+    fn glyph_block() -> String {
+        let anchor = format!("pub(crate) struct Comment{}", "Point");
+        let raw = include_str!("mission_editor.rs");
+        assert_eq!(raw.matches(anchor.as_str()).count(), 1);
+        live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])
+    }
+
+    /// **What is drawn IS what can be picked — both directions, over the whole set.**
+    ///
+    /// The lane is `comment_points` packed, so for every glyph the lane draws there is a pick at
+    /// those very coordinates that returns that glyph's id, and every id a pick can return is a
+    /// glyph the lane drew. A second parser (which is what `mission_history` held before this
+    /// ticket) is exactly how those two sets start to differ.
+    #[test]
+    fn the_lane_is_the_pick_list_packed() {
+        let pts = comment_points(&comments());
+        let xy = comment_lane_xy(&comments());
+        assert_eq!(pts.len(), 3, "all three notes must reach both surfaces");
+        assert_eq!(
+            xy.len(),
+            pts.len() * 2,
+            "T-784: the lane is two floats per picked point — no filtering between them"
+        );
+        let ids: Vec<&str> = pts.iter().map(|p| p.id.as_str()).collect();
+        assert_eq!(
+            ids,
+            ["cmt-1", "cmt-2", "cmt-3"],
+            "T-784: sorted by id, so the lane's instance order cannot depend on serde_json's map \
+             type across undo/redo/restore"
+        );
+        for (i, p) in pts.iter().enumerate() {
+            // DRAWN ⇒ PICKABLE: hit-test at the exact coordinates the lane uploaded.
+            #[allow(clippy::cast_possible_truncation)]
+            let (lx, ly) = (f64::from(xy[i * 2]), f64::from(xy[i * 2 + 1]));
+            assert!(
+                (lx - p.x).abs() < 1e-3 && (ly - p.y).abs() < 1e-3,
+                "T-784: lane vertex {i} is not the picked point {p:?}"
+            );
+            assert_eq!(
+                pick_comment(&pts, lx, ly, 1.0).as_deref(),
+                Some(p.id.as_str()),
+                "T-784: a glyph drawn at ({lx}, {ly}) must be findable by a click there"
+            );
+        }
+    }
+
+    /// A comment's second axis is `z` — TWO HORIZONTALS, no height. Reading `y` would file every
+    /// note at northing 0 in the lane AND in the pick, which is a glyph drawn on the equator.
+    #[test]
+    fn the_second_axis_is_z_not_y() {
+        let json = serde_json::json!({
+            "cmt-1": { "position": { "x": 12.0, "y": 999.0, "z": 34.0 } }
+        })
+        .to_string();
+        let pts = comment_points(&json);
+        assert_eq!(
+            (pts[0].x, pts[0].y),
+            (12.0, 34.0),
+            "T-784: `{{x, z}}`, never `y`"
+        );
+    }
+
+    /// Nearest wins; beyond the tolerance nothing is picked (a click on empty map must stay a
+    /// deselect, not a phantom hit on the closest note in the mission).
+    #[test]
+    fn pick_takes_the_nearest_and_refuses_beyond_the_tolerance() {
+        let pts = comment_points(&comments());
+        // Between cmt-1 (100) and cmt-2 (105), one metre nearer cmt-2.
+        assert_eq!(
+            pick_comment(&pts, 103.0, 10.0, 20.0).as_deref(),
+            Some("cmt-2"),
+            "T-784: overlapping glyphs must resolve by distance, not by listing order"
+        );
+        assert_eq!(pick_comment(&pts, 103.0, 10.0, 1.0), None);
+        assert_eq!(pick_comment(&pts, -9000.0, -9000.0, 50.0), None);
+        assert_eq!(pick_comment(&[], 0.0, 0.0, 1e9), None);
+        assert!(comment_points("not json").is_empty());
+        assert!(comment_points("[]").is_empty());
+    }
+
+    /// The tolerance IS the slot pick radius, read back from the core's own declaration. A comment
+    /// is drawn with the slot ring glyph, so a hit box of a different size would be a picture that
+    /// lies about where it can be clicked — and `MissionDocCore::PICK_RADIUS_PX` is unreachable
+    /// natively (the `doc` feature is wasm32-only here), which is why this is a source read.
+    #[test]
+    fn comment_pick_px_is_the_slot_pick_radius() {
+        let store = include_str!("../../../../crates/map-engine-core/src/doc/store.rs");
+        let needle = ["PICK_RADIUS", "_PX: f64 = "].concat();
+        assert_eq!(
+            store.matches(needle.as_str()).count(),
+            1,
+            "T-784: the slot pick radius must have exactly one declaration to read back"
+        );
+        let tail = &store[store.find(needle.as_str()).expect("counted") + needle.len()..];
+        let value: f64 = tail[..tail.find(';').expect("a const ends in `;`")]
+            .trim()
+            .parse()
+            .expect("the slot pick radius must be a plain f64 literal");
+        assert!(
+            (COMMENT_PICK_PX - value).abs() < f64::EPSILON,
+            "T-784: COMMENT_PICK_PX is {COMMENT_PICK_PX} but the slot pick radius is {value} — a \
+             comment wears the slot ring glyph, so its hit box must be the same size as its picture"
+        );
+    }
+
+    /// **The resolver learned comments** — which is what lets `subject_id_routes` (the Outliner
+    /// row's affordance AND the dock-left search hit's) answer honestly, with no kind list on
+    /// either surface. The existing arms must be untouched: a widening that changed what an
+    /// already-resolving id resolves to would be a regression dressed as a feature.
+    #[test]
+    fn route_target_resolves_a_comment_without_disturbing_the_other_arms() {
+        let root = serde_json::json!({
+            "vehiclesById": { "v1": { "position": { "x": 7.0, "y": 9.0 } } },
+            "entitiesById": { "e1": { "position": { "x": 1.0, "y": 2.0 } } },
+            "zonesById": { "z1": { "shape": "circle", "center": { "x": 4.0, "y": 5.0 }, "radius": 3.0 } },
+            "commentsById": { "cmt-1": { "position": { "x": 100.0, "z": 10.0 } } },
+        });
+        let not_slot = |_: &str| false;
+        assert_eq!(
+            route_target(&root, "cmt-1", &not_slot),
+            Some(RouteTarget::Comment { x: 100.0, y: 10.0 }),
+            "T-784: a commentsById row must resolve, at `{{x, z}}`"
+        );
+        assert_eq!(route_target(&root, "cmt-404", &not_slot), None);
+        assert_eq!(
+            route_target(&root, "v1", &not_slot),
+            Some(RouteTarget::Vehicle { x: 7.0, y: 9.0 })
+        );
+        assert_eq!(
+            route_target(&root, "e1", &not_slot),
+            Some(RouteTarget::Entity { x: 1.0, y: 2.0 })
+        );
+        assert_eq!(
+            route_target(&root, "s1", &|_| true),
+            Some(RouteTarget::Slot)
+        );
+        // A comment row with no position resolves to NOTHING rather than to the origin — an
+        // affordance over a click that would fly the camera to (0,0) is the T-754 defect.
+        let broken = serde_json::json!({ "commentsById": { "cmt-2": { "title": "x" } } });
+        assert_eq!(route_target(&broken, "cmt-2", &not_slot), None);
+    }
+
+    /// **The lane and the pick are one document read, and `mission_history` no longer holds a
+    /// second parser.** That file is `#![cfg(target_arch = "wasm32")]` end to end, so this has to
+    /// be an `include_str!` pin — the same reason the T-748 feed pin in `map-engine-render` is one.
+    #[test]
+    fn mission_history_packs_the_lane_through_this_module() {
+        let hist = live_code(include_str!("mission_history.rs"));
+        let feed = only_body(&hist, &format!("fn comment_lane{}", "_xy(doc:"));
+        let shared = ["mission_editor", "::", "comment_lane_xy("].concat();
+        assert!(
+            feed.contains(&shared),
+            "T-784: the lane feed must delegate to mission_editor::comment_lane_xy — the function \
+             the pick's own list is packed from; got:\n{feed}"
+        );
+        assert!(
+            !feed.contains("serde_json"),
+            "T-784: a second parse in the feed is the two-readers shape this ticket removed; got:\n\
+             {feed}"
+        );
+        // And the packing really is a projection of the picked list, not a parallel parse.
+        let me = glyph_block();
+        let pack = only_body(&me, &format!("pub(crate) fn comment_lane{}", "_xy("));
+        assert!(
+            pack.contains(&format!("comment{}", "_points(")),
+            "T-784: comment_lane_xy must be comment_points packed; got:\n{pack}"
+        );
+    }
+
+    /// **The map click folds the comment into `hit`.** Not a branch beside it: `apply_click` then
+    /// gives a comment the same replace/toggle semantics a slot has, Ctrl+click COMPOSES it with an
+    /// entity selection (the one `Vec` `save_composition` reads), and the edge selection is dropped
+    /// by the reconcile inside `mirror_selection` rather than by a clear written here.
+    ///
+    /// ORDER IS LOAD-BEARING and pinned: the fold must come AFTER `complete_connect`, or an armed
+    /// connection would take a comment as an endpoint — an edge to a thing that never compiles.
+    #[test]
+    fn the_map_click_folds_the_comment_into_the_entity_hit() {
+        let code = page();
+        let pick = ["pick", "_comment("].concat();
+        let read = ["comment", "_points("].concat();
+        let connect = ["editor_ops", "::", "complete_connect("].concat();
+        let edge = ["pick", "_connection("].concat();
+        let apply = ["apply", "_click("].concat();
+        let at_connect = code.find(&connect).expect("the connect arm must survive");
+        let at_pick = code
+            .find(&pick)
+            .expect("T-784: the map must hit-test the comment glyph");
+        let at_edge = code.find(&edge).expect("the connection pick must survive");
+        let at_apply = code.find(&apply).expect("the click must reach apply_click");
+        assert!(
+            code.contains(&read),
+            "T-784: the pick must be fed from comment_points — the lane's own document read"
+        );
+        assert!(
+            at_connect < at_pick,
+            "T-784: the comment pick must run AFTER complete_connect, or a connect arm would take \
+             a note as an endpoint"
+        );
+        assert!(
+            at_pick < at_edge && at_pick < at_apply,
+            "T-784: the glyph must be picked before the edge (a drawn object wins over a line \
+             under it) and before apply_click consumes the hit"
+        );
+        // No second selection route: the map must not write the selection for a comment itself.
+        let fold = ["let hit = hit.", "or_else("].concat();
+        assert!(
+            code.contains(&fold),
+            "T-784: the comment hit must be FOLDED INTO `hit`; a branch of its own would be a \
+             second selection path with its own replace/toggle/compose semantics to keep in step"
+        );
+    }
+
+    /// **A comment selection COMPOSES with an entity selection, and the reconcile stays inside the
+    /// single writer.** The composition capture classifies each id in ONE `Vec` as slot / vehicle /
+    /// object / comment, so a comment in a lane of its own could never be captured — "exclusive"
+    /// would defeat T-781 outright. Nothing here adds a per-route clear: the edge selection is
+    /// dropped because `reconcile_connection_selection` tests "is the entity selection non-empty?",
+    /// a question a comment id answers by simply being in it.
+    #[test]
+    fn a_comment_composes_and_the_reconcile_is_still_the_one_writers_job() {
+        let ops = live_code(include_str!("editor_ops.rs"));
+        let capture = only_body(&ops, &format!("fn capture_selection{}", "_entities("));
+        assert!(
+            capture.contains(&format!("comments{}", ".get(id)")),
+            "T-784: the composition capture must still read a comment out of the SAME selection \
+             slice it reads slots/vehicles/objects from — that is the evidence for COMPOSES"
+        );
+        let reconcile = ["reconcile_connection", "_selection(ctx)"].concat();
+        assert!(
+            only_body(&ops, "fn mirror_selection(").contains(&reconcile),
+            "T-784: the reconcile must remain inside the one selection writer"
+        );
+        let body = only_body(&ops, "fn reconcile_connection_selection(");
+        assert!(
+            body.contains("selection.borrow().is_empty()"),
+            "T-784: the reconcile must key on the selection being NON-EMPTY, not on a kind — that \
+             is what makes a comment selection drop the edge with no code of its own"
+        );
+        for kind in ["Comment", "comment"] {
+            assert!(
+                !body.contains(kind),
+                "T-784: the reconcile must not learn about comments; a kind test there is the \
+                 per-route shape wave 129 F-7 and wave 142 F-1 were both caused by"
+            );
+        }
+        let push = ["selected_ids", ".set("].concat();
+        assert_eq!(
+            ops.matches(&push).count(),
+            1,
+            "T-784: still exactly ONE writer of selected_ids — a comment selection must reach the \
+             screen through the same mirror everything else does"
+        );
+    }
+
+    /// **Delete removes the comment, and nothing else.** The verb partitions the selection and asks
+    /// `comment_details` — the same `comments_json` read the rows, the lane and the pick share —
+    /// never a `cmt-` prefix test (that prefix is a minting convention, not a document invariant).
+    /// `remove_slots` is guarded so a comment-only Delete cannot open an empty transaction over a
+    /// document it did not change: that is the T-779 class, and it is precisely what handing a
+    /// comment id to `remove_slots` used to do.
+    #[test]
+    fn delete_partitions_the_selection_by_what_the_document_says() {
+        let ops = live_code(include_str!("editor_ops.rs"));
+        let del = only_body(&ops, "pub fn delete_selection(");
+        let ask = ["comment", "_details(core)"].concat();
+        let part = "partition(";
+        let remove = ["core.", "remove_comment("].concat();
+        let slots = ["core.", "remove_slots("].concat();
+        let at_ask = del
+            .find(&ask)
+            .expect("T-784: membership must be asked of the document's own comment map");
+        let at_part = del.find(part).expect("T-784: the selection must be split");
+        let at_remove = del
+            .find(&remove)
+            .expect("T-784: the comment half must reach the comment mutator");
+        assert!(
+            at_ask < at_part && at_part < at_remove,
+            "T-784: ask the document, split, then delete — in that order"
+        );
+        assert!(
+            del.contains(&slots) && del.contains("is_empty()"),
+            "T-784: the slot half must survive AND be guarded — an unguarded remove_slots on an \
+             empty half is an undo step over a document this delete did not touch"
+        );
+        assert!(
+            !del.contains("cmt-") && !del.contains("starts_with"),
+            "T-784: a prefix test is a second vocabulary for 'is this a comment?' and it is wrong \
+             for any hydrated mission whose ids were not minted here"
         );
     }
 }
