@@ -5795,7 +5795,6 @@ mod t750_registry_fetch_failure_signal {
     }
 }
 
-
 /// T-573 — the mixed-drag preview wiring.
 ///
 /// **Why a source pin here and a behavioural test elsewhere.** The proof that the preview moves the
