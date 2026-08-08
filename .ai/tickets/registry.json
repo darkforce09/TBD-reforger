@@ -1,5 +1,5 @@
 {
- "next_id": 784,
+ "next_id": 785,
  "tickets": [
   {
    "id": "T-001",
@@ -19290,7 +19290,7 @@
    "id": "T-781",
    "order": 4657,
    "program": "eden",
-   "status": "ready",
+   "status": "shipped",
    "stream": "mission-creator",
    "targets": [
     "website"
@@ -19334,7 +19334,7 @@
    "id": "T-783",
    "order": 4659,
    "program": "eden",
-   "status": "ready",
+   "status": "shipped",
    "stream": "mission-creator",
    "targets": [
     "website"
@@ -19351,6 +19351,28 @@
    "title": "The seam lifecycle idiom exists twice — lift install_seam beside the trait it shares",
    "summary": "Loose end disclosed by the T-778 slice (wave 142), filed rather than chased across a file it did not own. Wave 129 built the register-at-mount lifecycle idiom in validation_panel.rs: a `SeamRegistration` identity trait plus `install_seam` / `unregister_seam`, which register a thread_local hook and unregister it at `on_cleanup` behind an `Rc::ptr_eq` guard so only the LOSING registration is cleared. Wave 142 ported it to four more seams in ruler_tool.rs, los_tool.rs and world_assets/mod.rs. THE PROBLEM: `SeamRegistration` is `pub(crate)` and IS shared, but `install_seam` / `unregister_seam` are module-private to validation_panel.rs, so the T-778 slice had to COPY the six-line mechanism into ruler_tool.rs (chosen as host because it is the only one of its files that compiles natively and is visible to the other two). The crate now has ONE identity check and TWO copies of the mechanism that uses it. A duplicated vocabulary is a defect class this repo treats as its own, and this one guards a defect family that has already been found five times in one wave and INTRODUCED once by a fix agent. FIX: lift `install_seam` and `unregister_seam` to `pub(crate)` beside `SeamRegistration` (or into a small module both files can see), repoint validation_panel.rs and ruler_tool.rs at the single definition, and DELETE the copy. Marked in-source as a FOLLOW-UP at ruler_tool.rs. ACCEPTANCE: the crate contains exactly one `fn install_seam` and one `fn unregister_seam` — pin that count, unscoped, over live code — and all existing seam lifecycle tests in both files stay green, including the remount-guard case that must redden ALONE when the ptr_eq guard is removed. NOTE the second loose end from the same slice, NOT in scope here and reported separately: RENDER_CTX (world_assets/mod.rs) has no behavioural test at all because that module is wasm32-only and the crate has no wasm-bindgen-test target; it is covered by a source pin only, which wave 142's verifier showed greens on a decoy identifier.",
    "notes": "loose end disclosed by the T-778 slice (wave 142); the idiom is shipped twice, the fix is a lift and a delete"
+  },
+  {
+   "id": "T-784",
+   "order": 4660,
+   "program": "eden",
+   "status": "shipped",
+   "stream": "mission-creator",
+   "targets": [
+    "website"
+   ],
+   "executor": "claude-code",
+   "surfaces": [
+    "MAP",
+    "LEFT"
+   ],
+   "impact": [
+    "ui",
+    "mission-authoring"
+   ],
+   "title": "A comment cannot be selected by clicking it — not on the map, not in the outliner",
+   "summary": "OPERATOR-REQUESTED 2026-08-08, off the T-781 slice's own found_not_fixed. T-781 (wave 144) made comments composable and T-748 (wave 141) gave them a map glyph — but NOTHING PUTS A COMMENT ID INTO THE SELECTION BY CLICKING. Verified by the orchestrator on both surfaces: (1) the outliner's comment row is `ROW_STATIC` (apps/website/frontend/src/eden_tree.rs ~:792) — it supports drag-into-folder and dblclick-to-edit, but no click path reaches `ctx.selection`, unlike a slot row which uses the interactive class and calls `editor_ops::select_slot`; (2) the map glyph has NO pick path — a grep for comment hit-testing in mission_editor.rs returns nothing. CONSEQUENCE — CORRECTED BY THE WAVE-144 VERIFIER, WHICH FOUND THE GAP IS TOTAL, NOT PARTIAL: there is currently NO UI lane at all that puts a comment into a selection. This ticket first said the T-697 selection-filter apply was a lane; it is not — its sole caller only NARROWS an existing selection, so it cannot introduce a comment that was never selected. The search router additionally has no comment arm, so comment hits render inert. Capture and place are correct and tested (T-781); they are simply unreachable by a user. The operator asked for this fixed rather than filed. FIX, two halves. OUTLINER: make the comment row selectable the way a slot row is; the affordance and the click must be the SAME decision (wave 129's invariant — a row is clickable IFF clicking it does something). MAP: hit-test the glyph. T-780 (wave 142) is the precedent to copy, not re-derive — it added `pick_connection` (nearest point-to-segment within a tolerance) fed from the SAME function that feeds the render lane, so what is drawn and what a click can find are one set by construction. Do the same for the glyph: one document read feeding both. ⚠️ SELECTION RECONCILE IS THE TRAP HERE, AND IT HAS BITTEN TWICE. Wave 129 found dead clicks from an affordance that did not ask the router; wave 142's F-1 found an edge selection and an entity selection coexisting, so Delete removed the wrong thing. `editor_ops::mirror_selection` is now the ONE writer every entity-selection write funnels through, and it reconciles the map's edge selection. A comment selection must join that reconcile — decide and pin whether a comment selection is exclusive with an entity selection or composes with it, and make it true by CONSTRUCTION rather than by convention. Delete with a comment selected must remove the comment and nothing else. ACCEPTANCE: click a comment in the outliner and on the map — it selects, and it is the thing Delete removes; select a comment together with entities and compose them (the T-781 lane, now reachable without the search filter); the affordance matches the click for every row kind, with a non-vacuity assert that the test saw both selectable and inert rows.",
+   "notes": "operator asked for this fixed, not filed; T-780's pick_connection is the map-side precedent, wave 142 F-1 is the reconcile trap"
   }
  ]
 }
