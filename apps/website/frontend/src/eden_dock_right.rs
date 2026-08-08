@@ -878,13 +878,17 @@ fn favourite_row_view(row: FavouriteRow, favourites: RwSignal<Favourites>) -> An
     }
 }
 
-/// T-695 — the Favourites tab: the starred collection over the WHOLE catalogue, resolved live.
+/// T-695 / T-750 — the Favourites tab: the starred collection over the WHOLE catalogue, resolved live.
 ///
-/// Three states, and the middle one matters: while the registry fetch is still in flight there is
-/// nothing to resolve against, so the panel says so instead of declaring every favourite stale.
+/// Four states, and the middle two matter: while the registry fetch is still in flight there is
+/// nothing to resolve against, so the panel says so instead of declaring every favourite stale
+/// (T-695). When the fetch has *failed* (`registry_failed`), that is a terminal state with Retry —
+/// not another turn of "Resolving…" (T-750 / wave-114 MINOR-2).
 fn favourites_panel(
     favourites: RwSignal<Favourites>,
     registry_items: RwSignal<Option<Vec<RegistryItem>>>,
+    registry_failed: RwSignal<bool>,
+    registry_fetch_gen: RwSignal<u64>,
 ) -> AnyView {
     view! {
         <h3 class="mt-2 text-label-md font-semibold text-on-surface">"Favourites"</h3>
@@ -902,6 +906,29 @@ fn favourites_panel(
                         .into_any();
                 }
                 let Some(items) = registry_items.get() else {
+                    if registry_failed.get() {
+                        return view! {
+                            <div
+                                class="flex flex-col gap-2"
+                                data-testid="favourites-registry-error"
+                            >
+                                <p class="text-label-sm text-error">
+                                    "Could not load the catalogue — favourites cannot be resolved."
+                                </p>
+                                <button
+                                    type="button"
+                                    data-testid="favourites-registry-retry"
+                                    class="self-start rounded border border-outline-variant/40 px-2 py-1 text-label-sm text-on-surface transition hover:bg-surface-container-high"
+                                    on:click=move |_| {
+                                        registry_fetch_gen.update(|n| *n = n.wrapping_add(1));
+                                    }
+                                >
+                                    "Retry"
+                                </button>
+                            </div>
+                        }
+                            .into_any();
+                    }
                     let n = favourites.with(Favourites::len);
                     return view! {
                         <p class="text-label-sm text-outline">
@@ -1106,6 +1133,10 @@ pub fn DockRight(
     vehicle_catalog: RwSignal<CatalogState>,
     /// T-215 — the raw registry rows, for the placed-vehicle cargo picker's labels and options.
     registry_items: RwSignal<Option<Vec<crate::dto::RegistryItem>>>,
+    /// T-750 — terminal `/registry` failure (distinct from `registry_items == None` = still loading).
+    registry_failed: RwSignal<bool>,
+    /// T-750 — bump to re-kick the cold `/registry` fetch (Favourites Retry).
+    registry_fetch_gen: RwSignal<u64>,
     /// T-215 — the doc-change tick the placed-vehicle list re-reads on.
     doc_tick: RwSignal<u64>,
     fm_open: RwSignal<bool>,
@@ -1593,7 +1624,12 @@ pub fn DockRight(
                     5 => triggers_panel(doc_tick, trigger_selected),
                     // T-695 — the Favourites collection (NEW-F5 / 3den E3): starred assets from
                     // every palette, resolved against the live registry rows.
-                    6 => favourites_panel(favourites, registry_items),
+                    6 => favourites_panel(
+                        favourites,
+                        registry_items,
+                        registry_failed,
+                        registry_fetch_gen,
+                    ),
                     // T-069 (RIGHT-MODE-006) — the Markers palette, replacing the one-line stub
                     // that had stood here since the dock was written. `EdenSubmode::Markers` and
                     // `from_tab(2)` were already in place; only the BODY was missing.
@@ -4014,6 +4050,41 @@ mod tests {
             !SRC.contains(&format!("Marker placement {} T-069.", "lands in")),
             "the marker stub message must be gone — including from comments, where it would \
              make this test's own haystack lie"
+        );
+    }
+
+    /// T-750 — Favourites has a TERMINAL failure arm with Retry, not an indefinite Resolving…
+    /// spinner, when `registry_failed` is set. Call-shape pins run on `live_code` (literals blanked);
+    /// user-visible Retry copy is pinned on `live_source`. Needles are fragment-assembled so this
+    /// module is not its own haystack.
+    #[test]
+    fn favourites_panel_failure_arm_has_retry() {
+        use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+        let code = live_code(include_str!("eden_dock_right.rs"));
+        let body = only_body(&code, "fn favourites_panel(");
+        let failed_get = format!("{}{}", "registry_failed.", "get()");
+        let bump = format!("{}{}", "registry_fetch_gen.", "update(");
+        assert!(
+            body.contains(&failed_get),
+            "T-750: the None arm must branch on registry_failed — that is the terminal state"
+        );
+        assert!(
+            body.contains(&bump),
+            "T-750: the failure arm must bump registry_fetch_gen on Retry"
+        );
+        // User-visible copy: live_source keeps string literals; still cut test module.
+        let sourced = live_source(include_str!("eden_dock_right.rs"));
+        let sourced_body = only_body(&sourced, "fn favourites_panel(");
+        let retry = format!("{}{}", "\"", "Retry\"");
+        assert!(
+            sourced_body.contains(&retry),
+            "T-750: the failure arm must offer a Retry control"
+        );
+        let ellipsis = char::from_u32(0x2026).expect("horizontal ellipsis");
+        let resolving = format!("Resolving {{n}} favourite(s) against the catalogue{ellipsis}");
+        assert!(
+            sourced_body.contains(&resolving),
+            "T-750: the in-flight Resolving arm must remain; failure is an added arm, not a swap"
         );
     }
 

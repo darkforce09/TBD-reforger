@@ -24,6 +24,22 @@
 #![allow(dead_code)]
 use leptos::prelude::*;
 
+/// T-750 — apply the `/registry` fetch's terminal failure to the three signals the dock reads.
+///
+/// Lives OUTSIDE the wasm32 gate on purpose: the Favourites failure arm is host-testable via
+/// source pins, and `live_code` kills `#[cfg(target_arch = "wasm32")]` bodies on the native
+/// harness — a helper the Err arm *calls* is the only failure write that survives the scrub.
+fn mark_registry_fetch_failed(
+    catalog: RwSignal<crate::asset_catalog::CatalogState>,
+    vehicle_catalog: RwSignal<crate::asset_catalog::CatalogState>,
+    registry_failed: RwSignal<bool>,
+) {
+    use crate::asset_catalog::CatalogState;
+    catalog.set(CatalogState::Failed);
+    vehicle_catalog.set(CatalogState::Failed);
+    registry_failed.set(true);
+}
+
 /// T-245 — SPA-session cache for the editor's `/registry` + `/registry/compat` payloads.
 /// Survives `MissionEditorPage` remounts inside one SPA session so leaving
 /// `/missions/:id/edit` and coming back does **not** re-issue the cold fetches or rebuild
@@ -2356,6 +2372,11 @@ pub fn MissionEditorPage() -> impl IntoView {
     // T-159.27 — the flat registry gear rows for the Attributes Arsenal tab (populated by the same
     // /registry fetch that builds the Factions palette). None until it lands.
     let registry_items = RwSignal::new(None::<Vec<crate::dto::RegistryItem>>);
+    // T-750 — terminal failure of the `/registry` fetch. Distinct from `registry_items == None`
+    // (still in flight): the Favourites panel must not spin on "Resolving…" forever when the
+    // catalogue never arrives. `registry_fetch_gen` bumps re-kick the cold fetch (Retry).
+    let registry_failed = RwSignal::new(false);
+    let registry_fetch_gen = RwSignal::new(0u64);
 
     // T-255 — Factions palette is side-aware: rebuild whenever Eden chips change `active_side` or
     // the `/registry` rows land. Fetch paths below only write `registry_items` (+ vehicles); this
@@ -2434,15 +2455,38 @@ pub fn MissionEditorPage() -> impl IntoView {
         //
         // T-427 — cold path pages `GET /registry?limit=500&offset=…` until `total` is covered
         // (never the unbounded single-shot dump). Page size matches the API `REGISTRY_PAGE_MAX`.
+        //
+        // T-750 — on Err also raise `registry_failed` (Favourites used to treat bare `None` as
+        // forever-loading). Bumping `registry_fetch_gen` re-enters the cold path (Retry).
         {
             use crate::asset_catalog::{build_vehicle_catalog_tree, CatalogState};
-            if registry_session::must_fetch_registry() {
+            Effect::new(move |_| {
+                let gen = registry_fetch_gen.get();
+                if gen == 0 {
+                    if !registry_session::must_fetch_registry() {
+                        if let Some(items) = registry_session::cached_registry() {
+                            registry_items.set(Some(items.clone()));
+                            registry_failed.set(false);
+                            vehicle_catalog
+                                .set(CatalogState::Ready(build_vehicle_catalog_tree(&items)));
+                        }
+                        return;
+                    }
+                } else {
+                    // Retry: clear the terminal failure, put palettes back into Loading, and
+                    // leave `registry_items` at None so Favourites shows Resolving… again —
+                    // never mark the whole collection stale while a retry is in flight (T-695).
+                    registry_failed.set(false);
+                    catalog.set(CatalogState::Loading);
+                    vehicle_catalog.set(CatalogState::Loading);
+                }
                 spawn_local({
                     async move {
                         match fetch_registry_pages(auth).await {
                             Ok(items) => {
                                 registry_session::store_registry(items.clone());
                                 registry_items.set(Some(items.clone()));
+                                registry_failed.set(false);
                                 // T-255 — character `catalog` Ready tree is owned by the
                                 // active_side Effect (rebuilds on chip flip).
                                 // T-215 — the Vehicles tab, off the same rows.
@@ -2450,16 +2494,16 @@ pub fn MissionEditorPage() -> impl IntoView {
                                     .set(CatalogState::Ready(build_vehicle_catalog_tree(&items)));
                             }
                             Err(_) => {
-                                catalog.set(CatalogState::Failed);
-                                vehicle_catalog.set(CatalogState::Failed);
+                                mark_registry_fetch_failed(
+                                    catalog,
+                                    vehicle_catalog,
+                                    registry_failed,
+                                );
                             }
                         }
                     }
                 });
-            } else if let Some(items) = registry_session::cached_registry() {
-                registry_items.set(Some(items.clone()));
-                vehicle_catalog.set(CatalogState::Ready(build_vehicle_catalog_tree(&items)));
-            }
+            });
         }
 
         // T-167 — compat edge feed for the Smart Arsenal (optic/magazine rows + validation). Own
@@ -4936,6 +4980,8 @@ pub fn MissionEditorPage() -> impl IntoView {
                             catalog
                             vehicle_catalog
                             registry_items
+                            registry_failed
+                            registry_fetch_gen
                             doc_tick
                             fm_open
                             active_side
@@ -5678,6 +5724,77 @@ mod t245_registry_session {
         );
     }
 }
+
+/// T-750 — registry fetch Err raises a terminal failure signal the Favourites panel can read.
+///
+/// Wave-114 MINOR-2: Err only set `catalog`/`vehicle_catalog` to Failed and left `registry_items`
+/// at None, so Favourites spun on "Resolving…" forever. Pins run on `live_code` (comments +
+/// string literals blanked; test module cut) so a hollow note cannot green them. The helper is
+/// host-visible on purpose — the wasm32 Err arm is scrubbed on native, but the call site in the
+/// raw page still names it (asserted separately with a fragment-assembled needle).
+#[cfg(test)]
+mod t750_registry_fetch_failure_signal {
+    use crate::arsenal::class_r_scrub::{live_code, only_body};
+    use leptos::prelude::*;
+
+    #[test]
+    fn mark_registry_fetch_failed_writes_all_three_signals() {
+        // Helper sits above the file's first `#[cfg(test)]` (inside registry_session), so
+        // whole-file `live_code` keeps it. Body pin + behavioural flip.
+        let src = live_code(include_str!("mission_editor.rs"));
+        let body = only_body(&src, "fn mark_registry_fetch_failed(");
+        let failed_set = format!("{}{}", "registry_failed.", "set(true)");
+        assert!(
+            body.contains("CatalogState::Failed") && body.contains(&failed_set),
+            "T-750: the helper must Fail both catalogs AND raise registry_failed"
+        );
+        let owner = Owner::new();
+        owner.with(|| {
+            let catalog = RwSignal::new(crate::asset_catalog::CatalogState::Loading);
+            let vehicle = RwSignal::new(crate::asset_catalog::CatalogState::Loading);
+            let failed = RwSignal::new(false);
+            super::mark_registry_fetch_failed(catalog, vehicle, failed);
+            assert!(
+                matches!(catalog.get(), crate::asset_catalog::CatalogState::Failed)
+                    && matches!(vehicle.get(), crate::asset_catalog::CatalogState::Failed)
+                    && failed.get(),
+                "T-750: calling the helper must leave every consumer in the terminal failure state"
+            );
+        });
+    }
+
+    #[test]
+    fn err_arm_and_retry_gen_are_wired_on_the_page() {
+        let raw = include_str!("mission_editor.rs");
+        let call = format!("{}{}", "mark_registry_fetch_", "failed(");
+        assert!(
+            raw.contains(&call),
+            "T-750: the wasm Err arm must call mark_registry_fetch_failed"
+        );
+        let fetch_at = raw
+            .find("match fetch_registry_pages(auth).await")
+            .expect("registry fetch match present");
+        let fetch_window = &raw[fetch_at..fetch_at + 900];
+        assert!(
+            fetch_window.contains("Err(_) =>") && fetch_window.contains(&call),
+            "T-750: the helper call must sit in the registry-fetch Err arm"
+        );
+        let gen = format!("{}{}", "registry_fetch_", "gen.get()");
+        assert!(
+            raw.contains(&gen),
+            "T-750: Favourites Retry bumps registry_fetch_gen; the Effect must read it"
+        );
+        // Page body only: the early registry_session `#[cfg(test)]` would otherwise cut the page.
+        let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
+        assert_eq!(raw.matches(anchor.as_str()).count(), 1);
+        let live = live_code(&raw[raw.find(anchor.as_str()).expect("anchor")..]);
+        assert!(
+            live.contains("let registry_failed = RwSignal::new(false)"),
+            "T-750: registry_failed starts false so a slow load cannot look like a hard failure"
+        );
+    }
+}
+
 
 /// T-573 — the mixed-drag preview wiring.
 ///
