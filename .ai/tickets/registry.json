@@ -19226,7 +19226,7 @@
    "id": "T-778",
    "order": 4654,
    "program": "eden",
-   "status": "ready",
+   "status": "shipped",
    "stream": "mission-creator",
    "targets": [
     "website"
@@ -19247,7 +19247,7 @@
    "id": "T-779",
    "order": 4655,
    "program": "eden",
-   "status": "ready",
+   "status": "shipped",
    "stream": "mission-creator",
    "targets": [
     "website"
@@ -19268,7 +19268,7 @@
    "id": "T-780",
    "order": 4656,
    "program": "eden",
-   "status": "ready",
+   "status": "shipped",
    "stream": "mission-creator",
    "targets": [
     "website"
