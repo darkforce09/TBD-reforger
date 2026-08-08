@@ -19,7 +19,9 @@ the wording cannot drift or be lost.
 
 ```
 HARD RULES:
-1. NO sub-agents. 2. NO .py files committed. 3. Bare `cargo` fails (GLIBC): distrobox-host-exec sh -c 'cd <worktree> && CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target cargo <cmd>' — never /tmp. wasm32 check. FORBIDDEN: bare ad-hoc `cargo test` (or any command that RUNS a test binary) against the shared CARGO_TARGET_DIR — concurrent worktrees share that cache and will execute each other's `website_frontend-*` binary (T-742 / T-649). Sanctioned ad-hoc test path ONLY:
+1. NO sub-agents. 2. NO .py files committed. 3. Bare `cargo` fails (GLIBC). Shared cache is ONLY for check/clippy/build — never for running tests:
+     distrobox-host-exec sh -c 'cd <worktree> && CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target cargo check|clippy|build …' — never /tmp. wasm32 check.
+   Ad-hoc TEST must use the mechanical path (no shared-dir template on this line; cargo does NOT rebuild across worktrees sharing a target dir — shared-dir `cargo test` remains the T-742/T-649 foreign-binary class):
      bash scripts/platform/wave.sh test --slice T-xxx -p website-frontend
    (pins CARGO_TARGET_DIR=$HOME/.cache/tbd-target-T-xxx; never /tmp; delete that dir before reporting). Cross-check `--list` total vs run total every time — disagreement means the binary is not yours. Slice gate still uses the shared/gate dirs as normal.
 4. Commit on slice/T-xxx; explicit paths; subject "T-xxx:"; end message with:

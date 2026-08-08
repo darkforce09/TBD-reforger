@@ -3419,15 +3419,20 @@ cmd_push() {
 # agent invocations did not, and the brief only ADVISED a private dir — nothing enforced it.
 #
 # THIS PATH: `wave.sh test --slice T-nnn -p <crate> …` pins
-# `$HOME/.cache/tbd-target-<SLICE>` (override with TBD_ADHOC_TARGET_DIR), refuses /tmp and any
-# collapse onto the shared cache, mtime-bumps via touch_changed (same fingerprint cure as the
-# gate), and runs with CARGO_INCREMENTAL=0. It does NOT take the shared gate lock — that lock
-# serialises the SHARED gate dirs (target-gate-*); isolation here is the private directory
-# itself (measured: frontend-only private dir ~2.7 GB, not a 57 GB shared-cache clone).
+# `$HOME/.cache/tbd-target-<SLICE>` (override with TBD_ADHOC_TARGET_DIR only when it resolves to
+# that same default, or to a non-`T-*` verifier path — see F2 below), refuses /tmp and any
+# collapse onto the TRUE shared roots (`$HOME/.cache/tbd-target` and `$MAIN_ROOT/target` —
+# NEVER against whatever CARGO_TARGET_DIR currently holds; that false-refused the sanctioned
+# per-slice path when an agent had already exported it), mtime-bumps via touch_changed (same
+# fingerprint cure as the gate), and runs with CARGO_INCREMENTAL=0. It does NOT take the shared
+# gate lock — that lock serialises the SHARED gate dirs (target-gate-*); isolation here is the
+# private directory itself (measured: frontend-only private dir ~2.7 GB, not a 57 GB
+# shared-cache clone). Cargo does NOT rebuild across worktrees that share a target dir — the
+# private path is the mitigator; shared-dir `cargo test` remains the foreign-binary class.
 #
-# Keep it lean: require explicit cargo-test args (at least `-p <crate>`). Delete the private
-# dir before reporting (`rm -rf "$HOME/.cache/tbd-target-T-nnn"`). `reclaim` also sweeps
-# orphan `~/.cache/tbd-target-T-*` for dead slices.
+# Keep it lean: require an explicit `-p` / `--package` among args. Delete the private dir before
+# reporting (`rm -rf "$HOME/.cache/tbd-target-T-nnn"`) — never print that for a foreign-slice or
+# live-worktree path. `reclaim` also sweeps orphan `~/.cache/tbd-target-T-*` for dead slices.
 cmd_test() {
   local tid="" args=() a
   while [ $# -gt 0 ]; do
@@ -3472,7 +3477,22 @@ cmd_test() {
     return 2
   fi
 
-  local priv="${TBD_ADHOC_TARGET_DIR:-$HOME/.cache/tbd-target-$tid}"
+  # NIT: prose said "at least -p <crate>"; enforce it — non-empty args without -p/--package
+  # still accept unbounded / mis-aimed invocations that inflate the private dir.
+  local has_pkg=0
+  for a in "${args[@]}"; do
+    case "$a" in
+      -p|--package|-p?*|--package=*) has_pkg=1; break ;;
+    esac
+  done
+  if [ "$has_pkg" -eq 0 ]; then
+    echo "test: REFUSING — cargo test args must include -p / --package <crate>."
+    echo "        Example: bash scripts/platform/wave.sh test --slice $tid -p website-frontend"
+    return 2
+  fi
+
+  local default_priv="$HOME/.cache/tbd-target-$tid"
+  local priv="${TBD_ADHOC_TARGET_DIR:-$default_priv}"
   case "$priv" in
     /tmp/*|/var/tmp/*)
       echo "test: REFUSING — private target dir must not be under /tmp ($priv)."
@@ -3480,22 +3500,82 @@ cmd_test() {
       return 2 ;;
   esac
   mkdir -p "$priv" || { echo "test: cannot create $priv" >&2; return 2; }
+  mkdir -p "$default_priv" 2>/dev/null || true
 
-  local priv_r shared_r cache_r main_r
+  local priv_r cache_r main_r default_r
   priv_r="$(readlink -f -- "$priv")"
-  shared_r="$(readlink -f -- "${CARGO_TARGET_DIR:-$MAIN_ROOT/target}" 2>/dev/null || printf '%s' "${CARGO_TARGET_DIR:-$MAIN_ROOT/target}")"
+  default_r="$(readlink -f -- "$default_priv" 2>/dev/null || printf '%s' "$default_priv")"
+  # F1: compare ONLY against true shared roots — never against whatever CARGO_TARGET_DIR
+  # currently holds (that false-refused when env already pointed at the per-slice private dir).
   cache_r="$(readlink -f -- "$HOME/.cache/tbd-target" 2>/dev/null || printf '%s' "$HOME/.cache/tbd-target")"
   main_r="$(readlink -f -- "$MAIN_ROOT/target" 2>/dev/null || printf '%s' "$MAIN_ROOT/target")"
-  if [ "$priv_r" = "$shared_r" ] || [ "$priv_r" = "$cache_r" ] || [ "$priv_r" = "$main_r" ]; then
+  if [ "$priv_r" = "$cache_r" ] || [ "$priv_r" = "$main_r" ]; then
     echo "test: REFUSING — private dir collapsed onto the shared CARGO_TARGET_DIR ($priv_r)."
     echo "        That is exactly the T-742 defect. Unset TBD_ADHOC_TARGET_DIR or point it at"
     echo "        a per-slice path under \$HOME/.cache/tbd-target-$tid."
     return 2
   fi
 
+  # F2: TBD_ADHOC_TARGET_DIR must resolve to this slice's default
+  # (`$HOME/.cache/tbd-target-$tid`) OR a non-`T-*` verifier path (basename lacks
+  # `tbd-target-T-<digits>` — e.g. `tbd-target-wave138-verify`). A foreign-slice
+  # `tbd-target-T-739` under `--slice T-999` is REFUSED — never print rm -rf for it.
+  local base token=""
+  base="$(basename -- "$priv_r")"
+  token="$(printf '%s' "$base" | sed -n 's/^tbd-target-\([Tt]-[0-9][0-9]*\).*/\1/p')"
+  if [ -n "$token" ]; then
+    token="T-${token#*[Tt]-}"
+  fi
+  if [ -n "${TBD_ADHOC_TARGET_DIR:-}" ] && [ "$priv_r" != "$default_r" ]; then
+    if [ -n "$token" ]; then
+      echo "test: REFUSING — TBD_ADHOC_TARGET_DIR is not the default per-slice path ($priv_r)."
+      if [ "$token" != "$tid" ]; then
+        echo "        Foreign-slice token '$token' != --slice '$tid'."
+      fi
+      echo "        Allowed overrides: \$HOME/.cache/tbd-target-$tid, or a non-T-* verifier"
+      echo "        path (e.g. \$HOME/.cache/tbd-target-wave138-verify)."
+      return 2
+    fi
+    # token empty → non-T-* verifier path — allowed (documented above).
+  fi
+
+  # Never advertise rm -rf for a path whose ticket token differs from --slice or is a
+  # live worktree's foreign cache. Default per-slice for THIS tid + non-T-* verifier OK.
+  local allow_rm=1 live_tokens="" wt_line t_live
+  if [ -n "$token" ] && [ "$token" != "$tid" ]; then
+    allow_rm=0
+  fi
+  while IFS= read -r wt_line; do
+    t_live="$(printf '%s' "$wt_line" | sed -n 's|.*/\([Tt]-[0-9][0-9]*\)\(/*\)*$|\1|p')"
+    if [ -z "$t_live" ]; then
+      t_live="$(printf '%s' "$wt_line" | sed -n 's|.*/\([Tt]-[0-9][0-9]*\)/.*|\1|p')"
+    fi
+    if [ -n "$t_live" ]; then
+      t_live="T-${t_live#*[Tt]-}"
+      live_tokens="$live_tokens $t_live"
+    fi
+  done < <(git -C "$MAIN_ROOT" worktree list --porcelain 2>/dev/null | sed -n 's/^worktree //p')
+  if [ -n "$token" ] && [ "$token" != "$tid" ]; then
+    case " $live_tokens " in
+      *" $token "*) allow_rm=0 ;;
+    esac
+    allow_rm=0
+  fi
+  if [ -z "$token" ] || [ "$priv_r" = "$default_r" ]; then
+    allow_rm=1
+  fi
+  # Foreign token always blocks the banner even if somehow past the refuse (defence in depth).
+  if [ -n "$token" ] && [ "$token" != "$tid" ]; then
+    allow_rm=0
+  fi
+
   echo "═══ ad-hoc test $tid ═══"
   echo "CARGO_TARGET_DIR=$priv_r  (private — not the shared cache)"
-  echo "delete before report: rm -rf '$priv_r'"
+  if [ "$allow_rm" -eq 1 ]; then
+    echo "delete before report: rm -rf '$priv_r'"
+  else
+    echo "delete before report: (omitted — path token is foreign or live; do not rm -rf)"
+  fi
 
   # Same mtime-bump the gate uses so a WARM private dir cannot keep fingerprints from before
   # this worktree's own edits. Cross-worktree isolation is the private dir; this covers the
