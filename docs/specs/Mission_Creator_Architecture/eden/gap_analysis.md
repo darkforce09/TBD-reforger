@@ -261,8 +261,8 @@ table was written. `wb` marks a row whose ticket is `executor: workbench` — a 
 |---------|--------|--------|----------|-----------|
 | ACTION-COPY-001 | ACTION-COPY-001 | match | T-056 ✅ | `Ctrl/Cmd+C`, Alt+Shift disqualify (`mission_editor.rs:1020`) → `editor_ops.rs:394` |
 | ACTION-CUT-001 | — | missing | new — P-10 | `"KeyX"` → **0** hits. Trivially `copy_selection() && delete_selection()` |
-| ACTION-PASTE-001 | ACTION-PASTE-001 | match | T-056 ✅ | `Ctrl/Cmd+V` → `editor_ops.rs:436` `paste_at_cursor`; centroid → cursor, terrain-clamped, one undo step |
-| ACTION-PASTE-ORIG-001 | — | missing | new — P-10 | The V arm requires `!shift`, so `Ctrl+Shift+V` falls through. **The primitive exists** — `paste_at_cursor(None, None)` *is* paste-at-original. Near-free |
+| ACTION-PASTE-001 | ACTION-PASTE-001 | match | T-056 ✅ · T-743 ✅ | `Ctrl/Cmd+V` → `editor_ops.rs` `paste_at_cursor`; centroid → cursor, terrain-clamped, one undo step. T-743: with the pointer off the map (over any chrome panel) the arm anchors on the **centre of the visible map** — it resolves the fallback itself rather than passing no anchor, which now means something else |
+| ACTION-PASTE-ORIG-001 | ACTION-PASTE-ORIG-001 | match | T-669 ✅ · T-743 ✅ | `Ctrl/Cmd+Shift+V` → `paste_at_cursor(None, None)`. **Corrected by T-743 — the previous note here was false as written.** It claimed the no-anchor primitive *is* paste-at-original; in fact `paste_slots`' no-anchor arm added a fixed 20 m (`PASTE_NUDGE`, byte-parity with `ydoc.pasteSlots`) to both axes, so the command landed every slot 20 m off its source. Operator decision 2026-08-08: the JS parity was a migration safety net, not a contract. The nudge is deleted and the paste lands **exactly** on the source coordinates |
 | ACTION-LEVEL-001 | — | na | — | `LevelWithSurface` needs pitch **and** roll; the 2D doc stores yaw only and the mod re-grounds every spawn. No orientation to level |
 | ACTION-SNAP-001 | — | na | — | As XFORM-SNAP-001 — snapping is unconditional mod-side, so there is no action to invoke |
 | ACTION-SEAT-001 | — | missing | T-076 | Needs the crew model |
