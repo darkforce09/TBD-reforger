@@ -318,8 +318,20 @@ const MODEBAR: &str = "pointer-events-auto rounded-xl border border-white/10 bg-
 
 /// The full-width status bar surface — the `overlayDocked` glass (same tokens as the docks/strip),
 /// stretched edge-to-edge across the bottom. `border-t` gives it the docked seam Eden's status bar
-/// has; the height is `TOOLBELT_BAND_PX`-worth of chrome (see `eden_layout`).
+/// has. It is docked `inset-x-0 bottom-0`, so its top edge sits [`STATUSBAR_H_PX`] px up from the
+/// viewport bottom; the (much taller) [`crate::eden_layout::TOOLBELT_BAND_PX`] is the *input* band a
+/// pointer probe must clear, a separate contract from this bar's painted height.
 const STATUSBAR: &str = "pointer-events-auto bg-surface-container-lowest/55 shadow-xl backdrop-blur-xl flex h-9 w-full items-center gap-3 border-t border-white/10 px-3";
+
+/// T-787 — the status bar's rendered HEIGHT in CSS px (`h-9` in [`STATUSBAR`] → 36 px). This is the
+/// SOURCE OF TRUTH for how far the bar's top edge sits above the viewport bottom, exported so
+/// `eden_layout`'s [`crate::eden_layout::dock_bottom_px`] can inset the docks to STOP at that top
+/// edge instead of overlapping it (the O-1 defect: the transparent dock containers ran to
+/// `bottom-0` and ate clicks aimed at the readouts + right-end controls). A test below pins this to
+/// the `h-*` token in [`STATUSBAR`] so the two can never drift. Distinct from
+/// [`crate::eden_layout::TOOLBELT_BAND_PX`], which is the input-handling band (clears the taller
+/// floating [`ModeToolbar`]) and deliberately does not shrink the full-bleed canvas.
+pub const STATUSBAR_H_PX: f64 = 36.0;
 
 /// T-668 — the tool button's shared GEOMETRY (no state colour). The three states are composed from
 /// this base + the one state vocabulary: current mode = [`TOGGLED_PLATE`], a live-but-not-current
@@ -974,6 +986,24 @@ mod t636_status_bar {
         assert!(
             status_body.contains("class=STATUSBAR"),
             "T-636: StatusBar must wear the full-width STATUSBAR recipe"
+        );
+    }
+
+    /// T-787 — [`STATUSBAR_H_PX`] is the SOURCE OF TRUTH for the bar's top edge, so it must equal
+    /// the `h-*` token actually painted in [`STATUSBAR`]. `eden_layout::dock_bottom_px` insets the
+    /// docks by exactly this number so `dock.bottom == bar.y`; if someone re-heights the bar (say
+    /// `h-9` → `h-10`) without bumping the const, the docks would resume overlapping the bar and the
+    /// O-1 click-eating defect would return — this pin fails loudly instead.
+    #[test]
+    fn statusbar_height_const_tracks_the_h_token() {
+        let painted = crate::eden_layout::tw_len_px(super::STATUSBAR, "h-")
+            .expect("the STATUSBAR recipe must state an `h-*` height");
+        assert!(
+            (painted - super::STATUSBAR_H_PX).abs() < f64::EPSILON,
+            "T-787: STATUSBAR paints h-{} px but STATUSBAR_H_PX = {} — the dock-bottom inset is \
+             derived from the const, so a drift re-opens the O-1 overlap (docks eat bar clicks)",
+            painted,
+            super::STATUSBAR_H_PX
         );
     }
 

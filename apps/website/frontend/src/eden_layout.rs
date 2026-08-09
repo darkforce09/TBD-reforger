@@ -88,6 +88,25 @@ pub const TOOLBELT_BAND_PX: f64 = 96.0;
 /// accessors, the Tailwind stub size (`w-6 h-6`), and the 24×24 chevron hit-box.
 pub const STUB_PX: f64 = 24.0;
 
+/// T-787 — the dock wrappers' BOTTOM inset in CSS px: how far above the viewport bottom an expanded
+/// dock stops. It equals the status bar's painted height ([`crate::eden_toolbelt::STATUSBAR_H_PX`]),
+/// so a dock's bottom edge lands exactly on the bar's top edge (`dock.bottom == bar.y`) instead of
+/// running to `bottom-0` and overlapping it.
+///
+/// **The defect this closes (O-1).** Both docks are transparent `pointer-events` containers that ran
+/// `top-12 … bottom-0`, i.e. `y48 → viewportH`, while the status bar (`inset-x-0 bottom-0`, `h-9`)
+/// occupies the bottom [`crate::eden_toolbelt::STATUSBAR_H_PX`] px. The dock rectangles therefore
+/// covered the bar's full width and `elementFromPoint` at the bar's left/right ends resolved to a
+/// DOCK, not the bar — the containers ate clicks aimed at the readouts and the right-end controls.
+/// Insetting the wrappers by this much lifts their bottom edge off the bar.
+///
+/// NOT [`TOOLBELT_BAND_PX`] (96 px): that is the *input-handling* band a pointer probe must clear to
+/// count as on-map (it clears the taller floating [`crate::eden_toolbelt::ModeToolbar`] and does not
+/// shrink the full-bleed canvas). This is the *painted DOM* inset for the visible bar only — the two
+/// are different contracts and subtracting the full band here would leave a 60 px dead strip where a
+/// dock covers neither the bar nor the map. The DOM half of this number is the mounts' `bottom-9`.
+pub const DOCK_BOTTOM_PX: f64 = crate::eden_toolbelt::STATUSBAR_H_PX;
+
 // ── T-637 — the DOM half of the inset contract ───────────────────────────────────────────────────
 //
 // **THE SILENT FAILURE THIS CLOSES.** The insets above are input-handling numbers: `select_tool`
@@ -103,7 +122,7 @@ pub const STUB_PX: f64 = 24.0;
 // content, then the real dock markup laid out in a headless Chrome and read back through
 // `getBoundingClientRect` and `scrollWidth − clientWidth`, at a 1920×1080 viewport:
 //
-//   left dock       240.00 wide · 1032 high · horizontal overflow 0
+//   left dock       240.00 wide · 1032 high · horizontal overflow 0   ← T-637: `bottom-0`, top y48
 //     header row      223.00 available, 198.63 used (chevron 24 · Layers 57.75 · Locations 84.88 · verb 20)
 //     filter row       22.00 high
 //     tree region     958.00 high  ← the "~900 px of void", now the tree's
@@ -114,18 +133,24 @@ pub const STUB_PX: f64 = 24.0;
 // Every overflow figure is 0. The pre-ticket header wanted 228 px of a 215 px row and SQUEEZED
 // rather than reporting anything (see `eden_dock_left`'s header-budget note).
 //
+// T-787 changed ONLY the vertical span: the wrappers now end `bottom-9` (= DOCK_BOTTOM_PX = 36 px)
+// instead of `bottom-0`, so at 1920×1080 each dock is 996 high (y48 → y1044, the status bar's top)
+// and the tree region is 922 high. The WIDTHS above are unchanged — this ticket touched no `w-*`.
+//
 // So the mount classes live HERE, beside the numbers they must agree with, `mission_editor` renders
 // these consts rather than a hand-written literal, and [`tw_width_px`] reads the width back OUT of
 // the class string. `t637_dock_geometry` closes the loop: class → px → unprojected world point.
 
 /// T-637 — the LEFT dock wrapper's classes while EXPANDED. The `w-*` token is the DOM half of
-/// [`DOCK_LEFT_PX`]; `top-12` is the DOM half of [`STRIP_TOP_PX`].
-pub(crate) const DOCK_LEFT_MOUNT: &str = "absolute bottom-0 left-0 top-12 z-20 w-60";
-/// T-637 — the LEFT dock wrapper while COLLAPSED (T-638): no `w-*`, no `bottom-0`, so the wrapper
+/// [`DOCK_LEFT_PX`]; `top-12` is the DOM half of [`STRIP_TOP_PX`]; T-787's `bottom-9` is the DOM half
+/// of [`DOCK_BOTTOM_PX`] — it stops the dock at the status bar's top edge instead of `bottom-0`.
+pub(crate) const DOCK_LEFT_MOUNT: &str = "absolute bottom-9 left-0 top-12 z-20 w-60";
+/// T-637 — the LEFT dock wrapper while COLLAPSED (T-638): no `w-*`, no `bottom-*`, so the wrapper
 /// shrinks to the [`STUB_PX`] box the dock renders and the freed strip is click-through to the map.
 pub(crate) const DOCK_LEFT_MOUNT_COLLAPSED: &str = "absolute left-0 top-12 z-20";
 /// T-637 — the RIGHT dock wrapper while expanded. Same `w-60` as the left: that IS the equalisation.
-pub(crate) const DOCK_RIGHT_MOUNT: &str = "absolute bottom-0 right-0 top-12 z-20 w-60";
+/// T-787 `bottom-9` (= [`DOCK_BOTTOM_PX`]) matches the left: both docks stop at the status bar's top.
+pub(crate) const DOCK_RIGHT_MOUNT: &str = "absolute bottom-9 right-0 top-12 z-20 w-60";
 /// T-637 — the RIGHT dock wrapper while collapsed. See [`DOCK_LEFT_MOUNT_COLLAPSED`].
 pub(crate) const DOCK_RIGHT_MOUNT_COLLAPSED: &str = "absolute right-0 top-12 z-20";
 
@@ -240,6 +265,21 @@ pub fn toolbelt_band_px() -> f64 {
         0.0
     } else {
         TOOLBELT_BAND_PX
+    }
+}
+/// T-787 — the live BOTTOM inset of a dock WRAPPER (CSS px): the DOM half of the mount classes, not
+/// the input band. An expanded, shown dock ends `bottom-9` = [`DOCK_BOTTOM_PX`] above the viewport
+/// floor (landing on the status bar's top edge); a collapsed wrapper drops `bottom-*` to shrink to
+/// its stub, and a hidden chrome unmounts the wrapper — both report 0, exactly mirroring
+/// [`DOCK_LEFT_MOUNT_COLLAPSED`] / the `chrome_hidden` gate. `mission_editor` reads the MOUNT
+/// strings, not this accessor; it exists so the geometry test can assert `dock.bottom == bar.y`
+/// against the same const the DOM half is pinned to (the T-637 class↔const discipline, on the Y axis).
+#[must_use]
+pub fn dock_bottom_px() -> f64 {
+    if chrome_hidden() {
+        0.0
+    } else {
+        DOCK_BOTTOM_PX
     }
 }
 
@@ -945,13 +985,14 @@ mod t668_state_vocabulary {
 #[cfg(test)]
 mod t637_dock_geometry {
     use super::{
-        dock_left_px, dock_right_px, set_chrome_hidden, set_dock_left_collapsed,
-        set_dock_right_collapsed, strip_top_px, tw_width_px, BTN_ICON, DOCK_L, DOCK_LEFT_MOUNT,
-        DOCK_LEFT_MOUNT_COLLAPSED, DOCK_LEFT_PX, DOCK_PX, DOCK_R, DOCK_RIGHT_MOUNT,
-        DOCK_RIGHT_MOUNT_COLLAPSED, DOCK_RIGHT_PX, ROW_MENUS, ROW_MENUS_PX, ROW_TOOLS,
-        ROW_TOOLS_PX, STRIP_ROWS, STRIP_TOP_PX,
+        dock_bottom_px, dock_left_px, dock_right_px, set_chrome_hidden, set_dock_left_collapsed,
+        set_dock_right_collapsed, strip_top_px, tw_len_px, tw_width_px, BTN_ICON, DOCK_BOTTOM_PX,
+        DOCK_L, DOCK_LEFT_MOUNT, DOCK_LEFT_MOUNT_COLLAPSED, DOCK_LEFT_PX, DOCK_PX, DOCK_R,
+        DOCK_RIGHT_MOUNT, DOCK_RIGHT_MOUNT_COLLAPSED, DOCK_RIGHT_PX, ROW_MENUS, ROW_MENUS_PX,
+        ROW_TOOLS, ROW_TOOLS_PX, STRIP_ROWS, STRIP_TOP_PX,
     };
     use crate::arsenal::class_r_scrub::live_code;
+    use crate::eden_toolbelt::STATUSBAR_H_PX;
     use map_engine_core::camera::OrthoCamera;
 
     /// Both collapse latches off and the chrome shown, so the accessors report the EXPANDED consts.
@@ -1074,6 +1115,80 @@ mod t637_dock_geometry {
 
         // RESTORE: the shipped pair is the zero-drift one.
         assert!((edge_from_const - edge_from_dom).abs() < 1e-9);
+        expanded();
+    }
+
+    /// T-787 (O-1) — the docks stop AT the status bar's top edge, not over it. The bar is docked
+    /// `inset-x-0 bottom-0` at height [`STATUSBAR_H_PX`], so its top is `barY = h − STATUSBAR_H_PX`;
+    /// an expanded dock ends `bottom-9` = [`dock_bottom_px`] up, so its bottom is
+    /// `dockBottom = h − dock_bottom_px()`. The acceptance is `dockBottom <= barY` at every swept
+    /// viewport — and we hold it as EQUALITY (the dock's bottom lands exactly on the bar's top, no
+    /// gap, no overlap). This is the Y-axis twin of the class↔const width pin above: the mount's
+    /// `bottom-*` token, read back with [`tw_len_px`], must equal the accessor's number, or the DOM
+    /// and the acceptance-geometry model have drifted.
+    #[test]
+    fn the_docks_bottom_lands_on_the_status_bar_top() {
+        expanded();
+
+        // (1) class → px: both expanded mounts state `bottom-9`, and it resolves to DOCK_BOTTOM_PX
+        // (= the bar height). The collapsed mounts deliberately state NO `bottom-*` (the wrapper
+        // shrinks to its stub), exactly as they state no `w-*`.
+        let dom_bottom_left =
+            tw_len_px(DOCK_LEFT_MOUNT, "bottom-").expect("left mount must state a `bottom-*`");
+        let dom_bottom_right =
+            tw_len_px(DOCK_RIGHT_MOUNT, "bottom-").expect("right mount must state a `bottom-*`");
+        assert!(
+            (dom_bottom_left - DOCK_BOTTOM_PX).abs() < f64::EPSILON
+                && (dom_bottom_right - DOCK_BOTTOM_PX).abs() < f64::EPSILON,
+            "T-787: the mounts lay out bottom={dom_bottom_left}/{dom_bottom_right} px but \
+             DOCK_BOTTOM_PX = {DOCK_BOTTOM_PX} — the DOM half drifted from the const"
+        );
+        assert_eq!(
+            DOCK_BOTTOM_PX, STATUSBAR_H_PX,
+            "T-787: the dock-bottom inset must equal the status bar's painted height, or the dock \
+             edge cannot land on the bar's top edge"
+        );
+        assert!(
+            tw_len_px(DOCK_LEFT_MOUNT_COLLAPSED, "bottom-").is_none()
+                && tw_len_px(DOCK_RIGHT_MOUNT_COLLAPSED, "bottom-").is_none(),
+            "T-787: a collapsed dock's wrapper must state no `bottom-*` (it shrinks to its stub)"
+        );
+
+        // (2) px → geometry: the review's acceptance, at every swept viewport. dockBottom <= barY.
+        for (w, h) in [(1920.0, 1080.0), (1366.0, 768.0), (2560.0, 1440.0)] {
+            let bar_y = h - STATUSBAR_H_PX; // bar docked bottom-0, height STATUSBAR_H_PX
+            let dock_bottom = h - dock_bottom_px(); // expanded dock ends dock_bottom_px() up
+            assert!(
+                dock_bottom <= bar_y,
+                "T-787: at {w}x{h} the dock bottom ({dock_bottom}) must be <= the bar top ({bar_y})"
+            );
+            assert!(
+                (dock_bottom - bar_y).abs() < f64::EPSILON,
+                "T-787: at {w}x{h} the dock bottom ({dock_bottom}) should land exactly on the bar \
+                 top ({bar_y}) — no overlap (the O-1 defect) and no dead gap"
+            );
+        }
+
+        // (3) PERTURB — the pre-T-787 class ran `bottom-0`, i.e. a 0 px inset. Stated as a value the
+        // check must reject: it puts the dock bottom at the viewport floor, BELOW the bar top by
+        // exactly STATUSBAR_H_PX — the overlap that let the containers eat the bar's clicks.
+        let stale_bottom = tw_len_px("absolute bottom-0 left-0 top-12 z-20 w-60", "bottom-")
+            .expect("the stale `bottom-0` class still parses");
+        assert!(
+            (stale_bottom - DOCK_BOTTOM_PX).abs() > f64::EPSILON,
+            "PERTURB: the stale `bottom-0` inset must differ from the shipped one or this proves \
+             nothing"
+        );
+        let (w, h) = (1920.0, 1080.0);
+        let bar_y = h - STATUSBAR_H_PX;
+        let stale_dock_bottom = h - stale_bottom; // = 1080, the viewport floor
+        assert!(
+            stale_dock_bottom > bar_y,
+            "PERTURB: `bottom-0` puts the dock bottom at {stale_dock_bottom}, BELOW the bar top \
+             ({bar_y}) — a {STATUSBAR_H_PX} px overlap that swallows every click aimed at the bar"
+        );
+
+        // RESTORE.
         expanded();
     }
 
