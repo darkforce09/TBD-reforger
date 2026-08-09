@@ -991,8 +991,12 @@ fn stitch_row(
                 "mr-1 -rotate-90 text-[18px] text-on-surface-variant"
             };
             let vids = vehicle_by_squad.get(&id).copied().unwrap_or(0);
-            let renaming = rename_squad.get_untracked().as_deref() == Some(id.as_str());
-            let picking_vehicle = add_vehicle_squad.get_untracked().as_deref() == Some(id.as_str());
+            // Track rename_squad / add_vehicle_squad so the row re-renders when the
+            // session opens. `get_untracked` left the rename input unmounted after
+            // click (wave200 F8). Draft text stays on `rename_draft` alone so
+            // keystrokes do not remount this row (wave200 F2 remount trap).
+            let renaming = rename_squad.get().as_deref() == Some(id.as_str());
+            let picking_vehicle = add_vehicle_squad.get().as_deref() == Some(id.as_str());
             let vehicle_options = vehicle_options.clone();
             view! {
                 <div class="group flex flex-col rounded border border-border-subtle bg-surface-container-low">
@@ -1018,21 +1022,67 @@ fn stitch_row(
                         <MaterialIcon name="group" class="mr-2 text-[16px] text-secondary" />
                         {if renaming {
                             let id_commit = id_ren.clone();
+                            // T-815 — `autofocus` alone does NOT focus this input. The row is
+                            // inserted by a reactive re-render, not present at parse time, and
+                            // the browser only honours `autofocus` for the initial parse /
+                            // first document insertion. So the rename box opened UNFOCUSED,
+                            // keystrokes stayed on `<body>`, and 'g' ran as an editor chord
+                            // (wave200 F8). `on_load` fires once when Leptos mounts the node:
+                            // focus + select so the first keystroke lands in the field and
+                            // replaces the old name.
+                            let rename_ref = NodeRef::<leptos::html::Input>::new();
+                            rename_ref.on_load(|el: web_sys::HtmlInputElement| {
+                                // Focus+select immediately, then again on a 0ms timeout so
+                                // select wins against Leptos applying the initial value
+                                // (which clears the selection and parks the caret at the end).
+                                let _ = el.focus();
+                                el.select();
+                                let el2 = el.clone();
+                                if let Some(win) = web_sys::window() {
+                                    use wasm_bindgen::JsCast;
+                                    let cb = wasm_bindgen::closure::Closure::once(move || {
+                                        let _ = el2.focus();
+                                        el2.select();
+                                    });
+                                    let _ = win.set_timeout_with_callback_and_timeout_and_arguments_0(
+                                        cb.as_ref().unchecked_ref(),
+                                        0,
+                                    );
+                                    cb.forget();
+                                }
+                            });
                             view! {
                                 <input
                                     type="text"
+                                    node_ref=rename_ref
+                                    data-testid="orbat-squad-rename"
+                                    aria-label="Rename squad"
+                                    autofocus
                                     class="mr-2 flex-1 rounded border border-primary bg-surface-dim px-1 py-0.5 font-label-sm text-label-sm text-on-surface"
-                                    prop:value=move || rename_draft.get()
+                                    // Uncontrolled after mount: a reactive prop:value can land
+                                    // AFTER on_load and clear the select-all; initial value= is enough.
+                                    value=rename_draft.get_untracked()
                                     on:click=move |ev| ev.stop_propagation()
                                     on:input=move |ev| rename_draft.set(event_target_value(&ev))
                                     on:keydown=move |ev| {
-                                        if ev.key() == "Enter" {
-                                            #[cfg(target_arch = "wasm32")]
-                                            {
-                                                let name = rename_draft.get_untracked();
-                                                crate::editor_ops::orbat_rename_squad(id_commit.clone(), name);
+                                        match ev.key().as_str() {
+                                            "Enter" => {
+                                                ev.prevent_default();
+                                                ev.stop_propagation();
+                                                #[cfg(target_arch = "wasm32")]
+                                                {
+                                                    let name = rename_draft.get_untracked();
+                                                    crate::editor_ops::orbat_rename_squad(id_commit.clone(), name);
+                                                }
+                                                rename_squad.set(None);
                                             }
-                                            rename_squad.set(None);
+                                            "Escape" => {
+                                                // Abandon the draft; do not close the ORBAT dialog.
+                                                ev.prevent_default();
+                                                ev.stop_propagation();
+                                                rename_squad.set(None);
+                                            }
+                                            _ => {}
                                         }
                                     }
                                 />
@@ -1859,6 +1909,40 @@ mod tests {
         assert!(
             ops.contains("#![cfg(target_arch = \"wasm32\")]"),
             "editor_ops stays wasm-only, which is why the merge lives here where it is testable"
+        );
+    }
+
+    /// T-815 — squad rename focuses via NodeRef/on_load (wave200 F8).
+    #[test]
+    fn orbat_squad_rename_focuses_via_noderef_on_load() {
+        let src = include_str!("orbat_manager.rs");
+        assert!(
+            src.contains("NodeRef::<leptos::html::Input>::new()"),
+            "the squad rename input must carry a NodeRef so it can be focused on mount"
+        );
+        assert!(
+            src.contains("node_ref=rename_ref"),
+            "the NodeRef must be attached via node_ref=rename_ref"
+        );
+        assert!(
+            src.contains(".on_load(") && src.contains(".focus()") && src.contains(".select()"),
+            "on_load must call focus() and select() on the mounted input"
+        );
+        assert!(
+            src.contains("value=rename_draft.get_untracked()"),
+            "rename input must seed via value= (uncontrolled after mount) so select-all sticks"
+        );
+        assert!(
+            !src.contains("prop:value=move || rename_draft.get()"),
+            "reactive prop:value on squad rename clears on_load select-all — banned"
+        );
+        assert!(
+            src.contains("data-testid=\"orbat-squad-rename\""),
+            "rename input must expose data-testid=orbat-squad-rename for CDP probes"
+        );
+        assert!(
+            src.contains("\"Escape\"") && src.contains("rename_squad.set(None)"),
+            "Escape must abandon the rename session without relying on dialog close"
         );
     }
 
