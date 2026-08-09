@@ -1392,12 +1392,6 @@ mod tests {
         assert_eq!(modal_stack::depth(), start, "registrations must not leak");
     }
 
-    /// **The wiring for O-3.** The stack utility only fixes the paint order if the ORBAT surface
-    /// actually consumes it. `OrbatManagerDialog`'s scrim and panel must derive their z from
-    /// `modal_stack::z_class` rather than a literal `z-50`; a body that still hard-codes `z-50` on
-    /// the ORBAT overlay is the unfixed component (the Arsenal keeps its literal `z-50` this wave by
-    /// design — it is the surface ORBAT yields *to*).
-    #[test]
     /// T-814 — a closed→open edge fires registered transient closers (strip menu/export/hint).
     #[test]
     fn opening_an_overlay_fires_registered_transient_closers() {
@@ -1431,6 +1425,12 @@ mod tests {
         modal_stack::unregister_transient_closer(closer_id);
     }
 
+    /// **The wiring for O-3.** The stack utility only fixes the paint order if the ORBAT surface
+    /// actually consumes it. `OrbatManagerDialog`'s scrim and panel must derive their z from
+    /// `modal_stack::z_class` rather than a literal `z-50`; a body that still hard-codes `z-50` on
+    /// the ORBAT overlay is the unfixed component (the Arsenal keeps its literal `z-50` this wave by
+    /// design — it is the surface ORBAT yields *to*).
+    #[test]
     fn orbat_manager_overlay_derives_z_from_the_modal_stack() {
         use crate::arsenal::class_r_scrub::{live_code, only_body};
         let scrubbed = live_code(include_str!("orbat_manager.rs"));

@@ -1540,26 +1540,29 @@ mod tests {
         /// list-tracked id signal (wave200 F1 / F2 remount trap).
         #[test]
         fn layer_rename_uses_noderef_onload_and_decoupled_draft() {
+            // Raw TREE includes this test module, so every needle below would self-match its own
+            // assertion string (the T-759 hollow-pin class); scrub to the production half.
+            let tree = crate::arsenal::class_r_scrub::live_source(TREE);
             assert!(
-                TREE.contains("NodeRef::<leptos::html::Input>::new()"),
+                tree.contains("NodeRef::<leptos::html::Input>::new()"),
                 "the layer rename input must carry a NodeRef so it can be focused on mount"
             );
             assert!(
-                TREE.contains("node_ref=rename_ref"),
+                tree.contains("node_ref=rename_ref"),
                 "the NodeRef must be attached via node_ref=rename_ref"
             );
             assert!(
-                TREE.contains(".on_load(")
-                    && TREE.contains(".focus()")
-                    && TREE.contains(".select()"),
+                tree.contains(".on_load(")
+                    && tree.contains(".focus()")
+                    && tree.contains(".select()"),
                 "on_load must call focus() and select() on the mounted input"
             );
             assert!(
-                TREE.contains("renaming:") && TREE.contains("rename_draft:"),
+                tree.contains("renaming:") && tree.contains("rename_draft:"),
                 "rename id and draft must be separate RowAuthoring fields"
             );
             assert!(
-                TREE.contains("data-testid=\"layer-rename-input\""),
+                tree.contains("data-testid=\"layer-rename-input\""),
                 "rename input needs a stable test id for the CDP acceptance probe"
             );
         }
