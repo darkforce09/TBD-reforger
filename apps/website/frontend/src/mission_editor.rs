@@ -5089,7 +5089,23 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 }
                                 {
                                     let mut sel = selection.borrow_mut();
-                                    st::apply_click(&mut sel, hit, additive);
+                                    // T-788 F-27 — a PLAIN click that lands INSIDE the current
+                                    // multi-selection must NOT collapse it to `[hit]`. Two natural
+                                    // gestures depend on this: a group drag (the `LG::Move` arm
+                                    // below moves the whole selection via `compute_move_ids`), and a
+                                    // double-click to multi-edit (the first click's pointerup used to
+                                    // re-select the one slot BEFORE `dblclick`/`open_attributes`
+                                    // fired, so SEL9 became SEL1 and the modal opened single-edit).
+                                    // Eden keeps the marquee alive on a click within it. A plain
+                                    // click OUTSIDE the selection still REPLACES (Eden semantics), and
+                                    // Ctrl/Cmd (`additive`) still toggles — both flow through
+                                    // `apply_click` untouched, so a lone-slot click is unchanged.
+                                    let keep_multi = !additive
+                                        && sel.len() > 1
+                                        && hit.as_ref().is_some_and(|h| sel.iter().any(|s| s == h));
+                                    if !keep_multi {
+                                        st::apply_click(&mut sel, hit, additive);
+                                    }
                                 }
                                 let ids = selection.borrow().clone();
                                 if let Some(e) = engine.borrow_mut().as_mut() {
@@ -10841,6 +10857,122 @@ mod t649_select_all_and_multi_edit {
         assert!(
             src[end + 1..].contains("after_local_edit()"),
             "{fn_name} must fire the history/persist tail after the fan-out loop closes"
+        );
+    }
+
+    /// T-788 F-27 — a PLAIN (non-additive) click that lands INSIDE the current multi-selection must
+    /// NOT collapse it to `[hit]`. That collapse is what made double-click-to-multi-edit unreachable:
+    /// the first click of the dbl-click re-selected the one slot on pointerup BEFORE `dblclick` →
+    /// `open_attributes` ran, so `attrs_multi_ids` saw SEL1 and the modal opened single-edit. The
+    /// group-drag path (`compute_move_ids` in the `LG::Move` arm) has the same dependency: the whole
+    /// selection must survive the press.
+    ///
+    /// The pin is on the pointerup click arm because a wasm pointer Closure cannot run in a native
+    /// test (same reason every dbl-click/pointerup pin in this file is a scrubbed-source pin). It
+    /// requires the guard to gate on ALL of: not-additive, a real multi-selection, and the hit being
+    /// a MEMBER of it — and to still call `apply_click` otherwise, so a click OUTSIDE the selection
+    /// (or a Ctrl-click) keeps the exact Eden replace/toggle semantics.
+    ///
+    /// RED (drop the guard): restore a bare `st::apply_click(&mut sel, hit, additive);` with no
+    /// `keep_multi` → "the plain-inside-selection click must be guarded so it does not collapse".
+    #[test]
+    fn t788_plain_click_inside_a_multi_selection_does_not_collapse_it() {
+        let ed = editor_live();
+        // The guard's three conjuncts, on the scrubbed source (comments/strings gone).
+        for needle in [
+            "let keep_multi = !additive",
+            "sel.len() > 1",
+            "sel.iter().any(|s| s == h)",
+        ] {
+            assert!(
+                ed.contains(needle),
+                "F-27: the click arm must gate collapse on `{needle}` (plain click, real \
+                 multi-selection, hit is a member)"
+            );
+        }
+        // The gate wraps the replace/toggle: `apply_click` runs only when NOT keeping the multi, so
+        // an outside click / Ctrl-click still flows through Eden's `apply_click` untouched.
+        assert!(
+            squash(&ed).contains(&squash("if !keep_multi {\n st::apply_click(&mut sel, hit, additive);")),
+            "F-27: `st::apply_click` must run only under `if !keep_multi` — outside/additive clicks \
+             keep Eden replace/toggle; an inside plain click preserves the selection"
+        );
+        // HOLLOW-PIN: a bare unconditional apply_click (the pre-fix shape) would collapse SEL9→SEL1
+        // and must not return. The only apply_click in this arm is the guarded one.
+        assert_eq!(
+            ed.matches("st::apply_click(&mut sel, hit, additive)")
+                .count(),
+            1,
+            "F-27: exactly one apply_click call in the click arm, and it is the guarded one"
+        );
+        // The OUTLINER half of the same defect: the tree/ORBAT rows route their single click
+        // through `editor_ops::select_slot` and their dblclick through `open_attributes`, so the
+        // unconditional `= vec![id]` replace in select_slot collapsed SEL9→SEL1 before activate
+        // fired and the modal could only ever open single-edit from a row. Same guard, same
+        // outside-click-still-replaces Eden semantics (the contract context_menu::open documents).
+        let ops = live_code(include_str!("editor_ops.rs"));
+        let sel_fn = fn_source(&ops, "pub fn select_slot(");
+        assert!(
+            squash(&sel_fn).contains(&squash("sel.len() > 1 && sel.iter().any(|s| *s == id)")),
+            "F-27: select_slot must keep a multi-selection that already contains the clicked id"
+        );
+        assert!(
+            squash(&sel_fn).contains(&squash("if !keep_multi {")),
+            "F-27: select_slot's replace must be gated — a row click outside the selection still \
+             replaces (Eden semantics)"
+        );
+    }
+
+    /// T-788 F-29 — with the Attributes modal open, a SELECTION change (Ctrl+A, a pick, a marquee)
+    /// must re-render or close the modal, because the modal body's only render triggers are
+    /// `attrs_open` and `doc_tick` and a selection change bumps NEITHER — so the panel kept showing
+    /// the single slot it opened on while SEL climbed to 9.
+    ///
+    /// The fix lives in `refresh_selection_mirrors` — the ONE funnel every selection-only change
+    /// flows through (`mission_history::refresh_selection` → here) — and NOT in `mirror_selection`,
+    /// which `refresh_docks` also runs on every DOCUMENT change; re-poking `attrs_open` there would
+    /// wipe the operator's per-field opt-in ticks on every commit (the T-649 latch re-arms off
+    /// `attrs_open` alone, so a commit must leave the ticks intact).
+    ///
+    /// RED (delete the sync): drop the `attrs_open` re-poke/close from `refresh_selection_mirrors`
+    /// → "must re-render (or close) the open Attributes modal when the selection changes".
+    #[test]
+    fn t788_open_attributes_modal_follows_a_selection_change() {
+        let ops = live_code(include_str!("editor_ops.rs"));
+        let f = fn_source(&ops, "pub fn refresh_selection_mirrors(");
+        // Reads the open id WITHOUT subscribing (untracked — this is a plain fn, not an effect).
+        assert!(
+            f.contains("ctx.attrs_open.get_untracked()"),
+            "F-29: refresh_selection_mirrors must read the open modal id (get_untracked)"
+        );
+        // Still-selected id ⇒ re-poke `attrs_open` to force the modal body to re-render against the
+        // live selection (single-edit flips to multi within the frame).
+        assert!(
+            f.contains("ctx.attrs_open.set(Some(open_id))"),
+            "F-29: when the open id is still selected, re-poke attrs_open so the modal re-renders \
+             (header flips to `N slots · multi-edit`)"
+        );
+        // Deselected id ⇒ close, rather than strand a single-edit view on a slot the operator just
+        // deselected (spec: re-render against the live selection OR close on selection change).
+        assert!(
+            f.contains("ctx.attrs_open.set(None)"),
+            "F-29: when the open id left the selection, close the modal"
+        );
+        // Gated on the LIVE selection membership — the branch reads the selection, not a constant.
+        assert!(
+            squash(&f).contains(&squash(
+                "ctx.selection.borrow().iter().any(|s| *s == open_id)"
+            )),
+            "F-29: the re-render/close choice must test whether the live selection still contains \
+             the open id"
+        );
+        // SEPARATION PIN (the whole point): the sync must NOT be in `mirror_selection`, or every
+        // commit's `refresh_docks` → `mirror_selection` would reset the modal's opt-in latches.
+        let mirror = fn_source(&ops, "fn mirror_selection(");
+        assert!(
+            !mirror.contains("attrs_open"),
+            "F-29: mirror_selection must NOT touch attrs_open — it also runs on every doc change \
+             (refresh_docks), which would wipe the operator's per-field ticks on every commit"
         );
     }
 
