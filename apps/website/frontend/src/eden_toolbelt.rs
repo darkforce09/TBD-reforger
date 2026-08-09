@@ -241,6 +241,29 @@ pub struct EdgeLabel {
     pub pos_px: f64,
     /// 3-digit hundreds-of-metres reference.
     pub text: String,
+    /// `<For>` identity — the wave-107 **T-727** keying fix, applied to grids (T-793 / O-2).
+    /// It encodes the label's axis + its live SCREEN position (quantised to the whole pixel via
+    /// [`edge_label_key`]), NOT the display text. A key that were the text (`"090"`) would be
+    /// retained across a pan, so Leptos would reuse that node **unchanged** and its `left:` would
+    /// stay frozen at the pre-pan `pos_px` (`<For>` "avoids re-creating DOM nodes that are not being
+    /// changed", and `pos_px` is a plain field captured once by `let:l` — no inner signal re-reads).
+    /// That is exactly the O-2 defect the hostile review caught: a moved label held its old screen x
+    /// while a freshly-scrolled-in neighbour sat at the new x, leaving two km labels 70 px apart at
+    /// 4 m/px where they MUST be 250 px. Keying on the pixel means any pan/zoom that moves the label
+    /// mints a new key ⇒ a new node at the correct `left:`; the whole set updates every frame. Same
+    /// idiom as the ruler's rubber-band leg, which keys on its screen coords for the same reason.
+    pub key: String,
+}
+
+/// The [`EdgeLabel::key`] for a label of `text` on axis `axis` (`'E'`/`'N'`) at screen `pos_px`.
+/// Quantised to the whole CSS pixel: a sub-pixel pan does not churn the node every frame (below one
+/// pixel there is nothing to redraw), but any visible move — the O-2 case — changes the key and
+/// forces a freshly-positioned node. The `text` is folded in only to disambiguate the (rare) frame
+/// where two different refs momentarily round to the same pixel during a fast pan; the pixel is what
+/// makes the key bust on movement.
+#[must_use]
+fn edge_label_key(axis: char, pos_px: f64, text: &str) -> String {
+    format!("{axis}{}:{text}", pos_px.round() as i64)
 }
 
 /// Eastings for the map pane's TOP edge: the vertical grid lines whose screen-X lands inside the
@@ -271,9 +294,11 @@ pub fn edge_eastings(
         let sx = cam.project([wx, cam.target_y(), 0.0])[0];
         // Guard the float edges: keep only lines that project strictly inside the visible pane span.
         if sx >= pane_left_px - 0.5 && sx <= pane_right_px + 0.5 {
+            let text = grid_ref_3digit(wx);
             out.push(EdgeLabel {
                 pos_px: sx,
-                text: grid_ref_3digit(wx),
+                key: edge_label_key('E', sx, &text),
+                text,
             });
         }
     }
@@ -301,9 +326,11 @@ pub fn edge_northings(
     for wy in grid_lines_in_range(w_bottom, w_top) {
         let sy = cam.project([cam.target_x(), wy, 0.0])[1];
         if sy >= top_px - 0.5 && sy <= bottom_px + 0.5 {
+            let text = grid_ref_3digit(wy);
             out.push(EdgeLabel {
                 pos_px: sy,
-                text: grid_ref_3digit(wy),
+                key: edge_label_key('N', sy, &text),
+                text,
             });
         }
     }
@@ -348,6 +375,24 @@ fn fmt_coord(v: Option<f64>) -> String {
     match v {
         Some(n) => format!("{n:>9.3}"),
         None => "       —".to_string(),
+    }
+}
+
+/// F-13 (T-807 review batch, taken here by the wave-201 orchestrator addendum because the readout
+/// half lives in THIS file, not `mission_editor`): the Eden-style unit-suffixed cursor axis. Eden's
+/// status bar reads `X 8762.61 m` (review Eden reference, frame 170422) — the coordinate carries a
+/// ` m` unit. This is [`fmt_coord`] (the exact React `fmtCoord` precision, unchanged — no value or
+/// precision is lost, the readout stays correct to the metre so it remains the trusted oracle the
+/// grid-label acceptance test unprojects against) with a **presentation-only** ` m` appended to a
+/// real value. The off-map "no value" cell stays the bare em-dash — a unit on "nothing" would be a
+/// lie. Kept separate from `fmt_coord` so the pure React-parity mirror (and its sibling precision
+/// contract in `attributes.rs`) is untouched; only the on-screen presentation gains the unit.
+fn fmt_coord_eden(v: Option<f64>) -> String {
+    match v {
+        // Keep `fmt_coord`'s right-aligned numeric field (the decimal points still line up under
+        // `tabular-nums`); the ` m` trails the number exactly as Eden prints it.
+        Some(_) => format!("{} m", fmt_coord(v)),
+        None => fmt_coord(None),
     }
 }
 
@@ -521,9 +566,11 @@ pub fn StatusBar(
         let _ = ids;
         None
     });
+    // F-13: the axis readout carries Eden's ` m` unit (`fmt_coord_eden`) — presentation only; the
+    // underlying x/y/z are the exact doc/cursor values, still correct to the metre.
     let axis_val = move |i: usize| match sel_xyz.get() {
-        Some((x, y, z)) => fmt_coord(Some([x, y, z][i])),
-        None => fmt_coord(cursor.get().and_then(|c| match i {
+        Some((x, y, z)) => fmt_coord_eden(Some([x, y, z][i])),
+        None => fmt_coord_eden(cursor.get().and_then(|c| match i {
             0 => Some(c.0),
             1 => Some(c.1),
             _ => c.2,
@@ -817,10 +864,12 @@ pub fn MapGridRefs(
             class="pointer-events-none absolute inset-0 z-10 font-mono text-code-md text-primary/80"
         >
             // Eastings — pinned to the pane's TOP edge (just below the top strip), centred on the
-            // vertical line's screen X.
+            // vertical line's screen X. Keyed by SCREEN POSITION, not text (T-793 / O-2, the T-727
+            // fix): a pan moves the pixel ⇒ new key ⇒ a node with the fresh `left:`. Keying on the
+            // text would retain the node and freeze its `left:` at the pre-pan x (the O-2 defect).
             <For
                 each=move || labels().0
-                key=|l| l.text.clone()
+                key=|l| l.key.clone()
                 let:l
             >
                 <span
@@ -837,10 +886,11 @@ pub fn MapGridRefs(
                 </span>
             </For>
             // Northings — pinned to the pane's LEFT edge (just right of the left dock), centred on
-            // the horizontal line's screen Y.
+            // the horizontal line's screen Y. Keyed by SCREEN POSITION, not text — same T-793 / O-2
+            // (T-727) fix as the eastings above: the pixel busts the key on every move.
             <For
                 each=move || labels().1
-                key=|l| l.text.clone()
+                key=|l| l.key.clone()
                 let:l
             >
                 <span
@@ -1088,6 +1138,89 @@ mod t636_status_bar {
         assert!(
             !code.contains("request_animation_frame"),
             "T-667: reuse the CUR/heartbeat channel — do NOT add a new rAF loop in eden_toolbelt"
+        );
+    }
+
+    /// (T-793 / O-2) The grid-ref `<For>` rows are keyed by SCREEN POSITION, never the label text.
+    /// This is the render half of the O-2 fix and cannot be reached by the native property test (the
+    /// `<For>` is a Leptos view innard), so it is pinned on scrubbed code: the `MapGridRefs` body must
+    /// key on `l.key` and must NOT key on `l.text`. A text key is retained across a pan, so Leptos
+    /// reuses the node and freezes its `left:` (the hostile review's half-updated set); the position
+    /// key busts on every move. Proven on `live_code` (strings blanked) so the needle is the real
+    /// `key=` binding, not a mention in a comment or class string.
+    #[test]
+    fn grid_ref_for_is_keyed_by_position_not_text() {
+        let code = crate::arsenal::class_r_scrub::live_code(include_str!("eden_toolbelt.rs"));
+        let body =
+            crate::arsenal::class_r_scrub::only_body(&code, &format!("pub fn {}", "MapGridRefs("));
+        // The rows key on the position-derived identity…
+        assert!(
+            body.contains("key=|l| l.key"),
+            "T-793: MapGridRefs rows must be keyed by the position key (l.key), not the label text — \
+             a text key retains a moved node and freezes its left: (O-2)"
+        );
+        // …and never on the text (the reverted defect). Both `<For>`s (eastings + northings) count.
+        assert!(
+            !body.contains("key=|l| l.text"),
+            "T-793: a grid-ref `<For>` keyed on l.text is the O-2 defect — Leptos would reuse the \
+             node for a retained ref and hold its stale screen x across a pan"
+        );
+        let key_bindings = body.matches("key=|l| l.key").count();
+        assert!(
+            key_bindings >= 2,
+            "T-793: both the easting and northing `<For>` must key by position (found {key_bindings})"
+        );
+    }
+
+    /// (F-13, wave-201 addendum) The Eden-style coordinate unit: a real cursor/selection axis reads
+    /// `<n> m` (Eden `X 8762.61 m`, frame 170422), the off-map cell stays the bare em-dash, and the
+    /// numeric PRECISION is byte-for-byte `fmt_coord` (three decimals, correct to the metre) — the
+    /// suffix is presentation, no value is lost, so the CUR readout stays the trusted oracle the
+    /// grid-label acceptance test unprojects against.
+    #[test]
+    fn eden_coord_readout_carries_the_metre_unit() {
+        use super::{fmt_coord, fmt_coord_eden};
+        // A real value gains ` m` and keeps `fmt_coord`'s exact digits.
+        let e = fmt_coord_eden(Some(8762.61));
+        assert!(
+            e.ends_with(" m"),
+            "F-13: a coordinate axis must read Eden's `<n> m`, got `{e}`"
+        );
+        assert_eq!(
+            e.trim_end_matches(" m"),
+            fmt_coord(Some(8762.61)),
+            "F-13: the number must be EXACTLY fmt_coord's — the ` m` is presentation, not a reformat \
+             (no precision loss: the CUR readout stays the metre-accurate oracle)"
+        );
+        assert!(
+            e.contains("8762.610"),
+            "F-13: three-decimal precision is preserved under the unit, got `{e}`"
+        );
+        // The off-map "no value" cell is the bare em-dash — a unit on nothing would be a lie.
+        assert_eq!(
+            fmt_coord_eden(None),
+            fmt_coord(None),
+            "F-13: the off-map cell must stay the em-dash, with NO ` m` suffix"
+        );
+        assert!(
+            !fmt_coord_eden(None).contains('m'),
+            "F-13: no unit on the absent readout"
+        );
+    }
+
+    /// (F-13) The StatusBar's axis assembly RENDERS the unit-suffixed formatter, not the bare
+    /// `fmt_coord` — proven on the string-kept live source (the addendum's `live_source` pin), so a
+    /// future edit that drops the unit back to the un-suffixed readout fails here. The X/Y/Z cells
+    /// go through `fmt_coord_eden`.
+    #[test]
+    fn status_bar_axis_readout_uses_the_eden_unit_formatter() {
+        let src = live_source(include_str!("eden_toolbelt.rs"));
+        let body =
+            crate::arsenal::class_r_scrub::only_body(&src, &format!("pub fn {}", "StatusBar("));
+        assert!(
+            body.contains("fmt_coord_eden("),
+            "F-13: the StatusBar axis readout must render the Eden ` m`-suffixed value via \
+             fmt_coord_eden — the coordinate cells carry the unit (Eden `X … m`)"
         );
     }
 
@@ -1551,6 +1684,204 @@ mod t667_furniture_math {
         // Sanity: with 1 px ≈ 1 m and a 12.8 km terrain, the visible pane spans ~660 m, so at least
         // one 1 km line usually shows — but the hard guarantee under test is the clip, not the count.
         let _ = eastings;
+    }
+}
+
+/// T-793 (`O-2`) — grid reference labels derive from the LIVE camera every frame. The hostile UX
+/// review found a HALF-updated set after a 240 m pan: label positions held while the world moved,
+/// putting `090` and `100` 70 px apart at 4 m/px where km lines MUST be 250 px apart — two adjacent
+/// labels that cannot both be true. The pure geometry ([`edge_eastings`]) was always live; the defect
+/// was the render `<For>` keyed on the label TEXT, so Leptos retained a moved label's DOM node and
+/// froze its `left:` (the wave-107 T-727 stale-node class, on grids). The fix keys each row on its
+/// SCREEN POSITION ([`EdgeLabel::key`] via [`edge_label_key`]), so any pan/zoom that moves a label
+/// mints a new key and a freshly-positioned node.
+///
+/// This module is the ticket's ACCEPTANCE property test, with the CUR unproject as the trusted
+/// oracle (the same `OrthoCamera` the status-bar readout uses, verified to the metre by the review).
+/// For 5 scripted pans × 3 zoom levels it asserts, for every visible label `k`:
+///   * `|screen_x(k·1000) − label_x| ≤ 2 px` (the label sits on its km line, recomputed independently),
+///   * adjacent labels are exactly `1000 / m_per_px` px apart, and
+///   * under continuous pan the set updates every frame — two mid-pan samples differ correctly, and
+///     the `<For>` key of a retained ref changes so its DOM node cannot be reused stale.
+#[cfg(test)]
+mod t793_grid_labels_live_camera {
+    use super::*;
+    use crate::eden_layout::{DOCK_LEFT_PX, DOCK_RIGHT_PX, STRIP_TOP_PX};
+
+    /// The editor's real camera build (`select_tool::frozen_camera`): Everon bounds `[0,0,12800,
+    /// 12800]`, north-up, no rotation — so the projection the labels use is the one the GPU grid and
+    /// the CUR readout use.
+    fn cam(width: f64, height: f64, tx: f64, ty: f64, zoom: f64) -> OrthoCamera {
+        let mut c = OrthoCamera::new(width, height, tx, ty, zoom);
+        c.set_bounds(0.0, 0.0, 12_800.0, 12_800.0);
+        c
+    }
+
+    /// The km index each easting label names, recovered from its text (`"064"` → 6). The label's
+    /// world line is `k·1000` metres; this lets the test recompute `screen_x(k·1000)` independently
+    /// of `pos_px` for the `≤ 2 px` acceptance check.
+    fn km_index(text: &str) -> i64 {
+        // 3-digit hundreds-of-metres → metres → km. `"064"` = 6400 m = km 6.
+        text.parse::<i64>().expect("3-digit ref") * 100 / 1000
+    }
+
+    /// ACCEPTANCE — 5 pans × 3 zooms: every visible easting sits within 2 px of its km line
+    /// (CUR-unproject oracle), and adjacent labels are exactly `1000 / m_per_px` px apart.
+    #[test]
+    fn labels_track_the_live_camera_across_pans_and_zooms() {
+        let (w, h) = (1600.0, 900.0);
+        let pane_right = w - DOCK_RIGHT_PX;
+        // 3 scripted zoom levels (m/px = 2^-zoom: 4.0, 1.0, 0.5) and 5 scripted pans (world targets).
+        let zooms = [-2.0_f64, 0.0, 1.0];
+        let pans = [
+            (6400.0_f64, 6400.0_f64), // centre
+            (6640.0, 6400.0),         // +240 m east — the review's failing pan distance
+            (3000.0, 9000.0),         // NW-ish
+            (9500.0, 2500.0),         // SE-ish
+            (5120.0, 7680.0),         // off-centre
+        ];
+        for z in zooms {
+            let mpp = m_per_px(z);
+            let step_px = 1000.0 / mpp; // km-line spacing in screen px at this zoom
+            for (tx, ty) in pans {
+                let c = cam(w, h, tx, ty, z);
+                let eastings = edge_eastings(&c, DOCK_LEFT_PX, pane_right, STRIP_TOP_PX);
+                // (a) Each label is on its km line to within 2 px — recompute screen_x(k·1000) via
+                //     the SAME camera and compare to the emitted label_x. The oracle: unprojecting
+                //     that screen x returns k·1000 (the trusted CUR round-trip).
+                for lbl in &eastings {
+                    let k = km_index(&lbl.text);
+                    let screen_x = c.project([k as f64 * 1000.0, c.target_y(), 0.0])[0];
+                    assert!(
+                        (screen_x - lbl.pos_px).abs() <= 2.0,
+                        "z={z} pan=({tx},{ty}): label {} at {:.2}px is >2px off its km line's \
+                         screen x {screen_x:.2}",
+                        lbl.text,
+                        lbl.pos_px
+                    );
+                    // CUR-unproject oracle: the label's own x unprojects back to its km line.
+                    let wx = c.unproject_xy(lbl.pos_px, STRIP_TOP_PX)[0];
+                    assert!(
+                        (wx - k as f64 * 1000.0).abs() <= 2.0 * mpp,
+                        "z={z}: label {} unprojects to world x {wx:.1}, not its km line {}",
+                        lbl.text,
+                        k * 1000
+                    );
+                }
+                // (b) Adjacent labels are exactly one km-line spacing apart (1000 / m_per_px px).
+                //     Labels come out in ascending world x → ascending screen x (north-up, no rot).
+                for pair in eastings.windows(2) {
+                    let gap = pair[1].pos_px - pair[0].pos_px;
+                    assert!(
+                        (gap - step_px).abs() <= 0.5,
+                        "z={z} pan=({tx},{ty}): {} and {} are {gap:.1}px apart; km lines must be \
+                         {step_px:.1}px ({mpp} m/px). This is the O-2 arithmetic: 70px @ 4m/px is \
+                         two labels that cannot both be true.",
+                        pair[0].text,
+                        pair[1].text
+                    );
+                }
+                // Northings satisfy the same spacing on the Y axis.
+                let northings = edge_northings(&c, DOCK_LEFT_PX, STRIP_TOP_PX, h);
+                for pair in northings.windows(2) {
+                    let gap = (pair[1].pos_px - pair[0].pos_px).abs();
+                    assert!(
+                        (gap - step_px).abs() <= 0.5,
+                        "z={z} pan=({tx},{ty}): northings {} and {} are {gap:.1}px apart; must be \
+                         {step_px:.1}px",
+                        pair[0].text,
+                        pair[1].text
+                    );
+                }
+            }
+        }
+    }
+
+    /// ACCEPTANCE — under continuous pan the set updates every frame. Two mid-pan samples of the
+    /// SAME visible ref must differ correctly: its screen x moves by the pan delta, and — the fix —
+    /// its `<For>` key changes, so Leptos cannot reuse the pre-pan node with a frozen `left:` (the
+    /// O-2 half-update). A label whose position was cached across the pan would keep both.
+    #[test]
+    fn continuous_pan_moves_labels_and_busts_the_for_key() {
+        let (w, h) = (1600.0, 900.0);
+        let pane_right = w - DOCK_RIGHT_PX;
+        let z = -2.0; // 4 m/px — the review's zoom
+        let mpp = m_per_px(z);
+        // Two frames of a continuous eastward pan: the camera target moves +120 m between samples.
+        // Target east ⇒ content scrolls WEST, so a fixed grid line's screen x DROPS by 120/mpp =
+        // 30 px (`project`: a larger target_x puts the same world x further left on screen).
+        let c0 = cam(w, h, 6400.0, 6400.0, z);
+        let c1 = cam(w, h, 6520.0, 6400.0, z);
+        let a = edge_eastings(&c0, DOCK_LEFT_PX, pane_right, STRIP_TOP_PX);
+        let b = edge_eastings(&c1, DOCK_LEFT_PX, pane_right, STRIP_TOP_PX);
+        let expected_shift = -120.0 / mpp; // −30 px screen shift (target east ⇒ line x shrinks)
+                                           // At least one ref is visible in BOTH frames (a 30 px pan keeps most refs on screen).
+        let mut checked = 0;
+        for la in &a {
+            if let Some(lb) = b.iter().find(|x| x.text == la.text) {
+                // Frame-to-frame the label MOVED by the pan delta…
+                let moved = lb.pos_px - la.pos_px;
+                assert!(
+                    (moved - expected_shift).abs() <= 0.5,
+                    "ref {} moved {moved:.1}px between frames; a live label must move by the pan \
+                     delta {expected_shift:.1}px, not hold position (the O-2 stall)",
+                    la.text
+                );
+                // …and its `<For>` key changed, so the DOM node is re-created at the new x rather
+                // than reused with a stale `left:` (the actual O-2 fix — text-keyed nodes did not).
+                assert_ne!(
+                    la.key, lb.key,
+                    "ref {} kept its <For> key across the pan — a text key would, and Leptos would \
+                     then reuse the node and FREEZE its left: at the old x (the O-2 half-update)",
+                    la.text
+                );
+                checked += 1;
+            }
+        }
+        assert!(
+            checked > 0,
+            "the pan must keep at least one ref visible across both frames to compare"
+        );
+    }
+
+    /// FIRE THE KEYING RULE (perturb / fail / restore): the position-keyed identity genuinely
+    /// discriminates. A key that were the TEXT (the reverted defect) would be EQUAL across a pan —
+    /// the very thing that let Leptos freeze the node. This asserts the real key is NOT equal to the
+    /// text-only key across a move, so the fix is load-bearing, not incidental.
+    #[test]
+    fn keying_rule_fires() {
+        let (w, h) = (1600.0, 900.0);
+        let pane_right = w - DOCK_RIGHT_PX;
+        let z = -2.0;
+        let c0 = cam(w, h, 6400.0, 6400.0, z);
+        let c1 = cam(w, h, 6520.0, 6400.0, z); // +120 m pan
+        let a = edge_eastings(&c0, DOCK_LEFT_PX, pane_right, STRIP_TOP_PX);
+        let b = edge_eastings(&c1, DOCK_LEFT_PX, pane_right, STRIP_TOP_PX);
+        let la = a.first().expect("some easting visible");
+        let lb = b
+            .iter()
+            .find(|x| x.text == la.text)
+            .expect("same ref visible after a 30px pan");
+        // Baseline: the real (position) key differs across the pan — the node busts, position tracks.
+        assert_ne!(
+            la.key, lb.key,
+            "the live key must change when the label moves"
+        );
+        // Perturb: the DEFECT key is the text, which is IDENTICAL across the pan…
+        assert_eq!(
+            la.text, lb.text,
+            "the ref text is unchanged by a pan — which is exactly why text is an unsafe <For> key"
+        );
+        // …so a build that keyed on text would compare equal here and reuse the stale node. The fix
+        // is that our key does NOT: restore-check that the position component is what breaks the tie.
+        assert!(
+            la.key.ends_with(&la.text) && lb.key.ends_with(&lb.text),
+            "the key still carries the ref for disambiguation…"
+        );
+        assert_ne!(
+            la.key, lb.key,
+            "…but the pixel prefix makes it bust on movement (restore: the rule still holds)"
+        );
     }
 }
 
