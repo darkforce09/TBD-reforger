@@ -1296,13 +1296,69 @@ thread_local! {
     #[cfg(target_arch = "wasm32")]
     static TOOLBAR_DISPATCH: std::cell::RefCell<Option<ToolbarDispatch>> =
         const { std::cell::RefCell::new(None) };
+
+    /// T-797 wave-202 — the dispatch's REACTIVE PRESENCE, so the strip's toggle-plate closures can
+    /// subscribe to it from frame one — BEFORE any dispatch is registered — and re-run when one lands.
+    ///
+    /// Why this exists: the strip renders (and runs its `class=move || …` plate closures) BEFORE this
+    /// `on_load` registers the dispatch. Those closures read `widget_variant` / `snap` ONLY *through*
+    /// [`with_editor_toolbar_dispatch`], which is a no-op while the dispatch is `None` — so on their
+    /// first, and (without a signal to depend on) ONLY, run they touch no tracked signal and Leptos
+    /// never re-runs them. The plate froze at its first-render default: Translate stuck lit, Snap dark.
+    ///
+    /// The fix is a signal the closure reads FIRST, unconditionally: an [`ArcRwSignal<u32>`]
+    /// generation counter, bumped every time the dispatch is registered OR cleared. `ArcRwSignal`
+    /// (not `RwSignal`) is deliberate — it is reference-counted and owner-INDEPENDENT, so it lives for
+    /// the process and survives the editor's unmount/remount (a mission switch) without being disposed
+    /// under the plate closures. When a bump lands, the closures re-run; NOW the dispatch is present,
+    /// so they call the getters, which do a TRACKED `.get()` on `widget_variant` / `snap` and subscribe
+    /// to the real state — after which every chord-driven flip propagates on its own.
+    ///
+    /// Created lazily on first access (an `ArcRwSignal` cannot be a `const` initializer). The signal
+    /// itself carries no wasm dependency, so it exists on both targets; only register/unregister (which
+    /// need the `!Send` host state) are wasm-gated.
+    static TOOLBAR_DISPATCH_GEN: std::cell::RefCell<Option<ArcRwSignal<u32>>> =
+        const { std::cell::RefCell::new(None) };
 }
 
-/// T-797 — register the row-2 / Edit-menu dispatch (called once at mount, wasm-only: only the host
-/// has the `!Send` signals + the container to close over). Peer of [`register_widget_pivot`].
+/// T-797 wave-202 — the toolbar-dispatch generation signal (see [`TOOLBAR_DISPATCH_GEN`]), created on
+/// first access. The strip's plate closures read this BEFORE [`with_editor_toolbar_dispatch`] so they
+/// subscribe from frame one and re-run when a dispatch registers/unregisters; the bridge bumps it.
+pub(crate) fn toolbar_dispatch_generation() -> ArcRwSignal<u32> {
+    TOOLBAR_DISPATCH_GEN.with(|c| {
+        c.borrow_mut()
+            .get_or_insert_with(|| ArcRwSignal::new(0))
+            .clone()
+    })
+}
+
+/// Bump the generation → re-run every subscribed plate closure. Untracked read of the current value
+/// so the bump itself never subscribes the bumper.
+#[cfg(target_arch = "wasm32")]
+fn bump_toolbar_dispatch_generation() {
+    let gen = toolbar_dispatch_generation();
+    gen.set(gen.get_untracked().wrapping_add(1));
+}
+
+/// T-797 — register the row-2 / Edit-menu dispatch (called at each mount, wasm-only: only the host
+/// has the `!Send` signals + the container to close over). Peer of [`register_widget_pivot`]. Bumping
+/// the generation is what makes the plate reactive: the strip's closures — subscribed to the
+/// generation from their first render — re-run now that a dispatch is present and subscribe to the
+/// tracked widget/snap getters themselves.
 #[cfg(target_arch = "wasm32")]
 fn register_editor_toolbar_dispatch(d: ToolbarDispatch) {
     TOOLBAR_DISPATCH.with(|c| *c.borrow_mut() = Some(d));
+    bump_toolbar_dispatch_generation();
+}
+
+/// T-797 wave-202 — drop the registered dispatch on route-leave (editor unmount) and bump, so a
+/// re-mount (mission switch) never leaves the plate closures reading a stale, disposed dispatch: the
+/// bump re-runs them against `None` (all plates dark) until the fresh `on_load` re-registers and bumps
+/// again. Wired via `on_cleanup` at the register site — the T-189 unload-guard teardown pattern.
+#[cfg(target_arch = "wasm32")]
+fn unregister_editor_toolbar_dispatch() {
+    TOOLBAR_DISPATCH.with(|c| *c.borrow_mut() = None);
+    bump_toolbar_dispatch_generation();
 }
 
 /// T-797 — the strip's INVOKE seam. Runs `f` against the registered dispatch when it is present
@@ -3347,6 +3403,15 @@ pub fn MissionEditorPage() -> impl IntoView {
             // invoker is the KEYDOWN ARM's body verbatim (so a click and the chord agree), and the two
             // getters read the signals TRACKED (`.get()`), so the strip's toggle-plate closures
             // subscribe across the thread_local and re-render when a chord flips the state.
+            //
+            // wave-202 — `register_…` also BUMPS the generation signal ([`TOOLBAR_DISPATCH_GEN`]) the
+            // strip's plate closures subscribe to from frame one, which is what makes them reactive:
+            // they render BEFORE this `on_load` runs, so their first pass reads no getter (the dispatch
+            // is `None`) and would never re-run — the bump re-runs them now that the dispatch exists,
+            // and THAT run subscribes them to the tracked widget/snap getters. `on_cleanup` mirrors the
+            // T-189 unload-guard teardown: on route-leave (unmount) it clears the dispatch and bumps
+            // again, so a re-mount (mission switch) never freezes the plate on a stale, disposed
+            // dispatch — the plates go dark until the fresh `on_load` re-registers and re-bumps.
             {
                 let container = container.clone();
                 register_editor_toolbar_dispatch(std::rc::Rc::new(EditorToolbarDispatch {
@@ -3372,6 +3437,9 @@ pub fn MissionEditorPage() -> impl IntoView {
                     widget_is_rotate: Box::new(move || widget_variant.get().is_rotate()),
                     snap_enabled: Box::new(move || snap.get().enabled),
                 }));
+                // Route-leave teardown (T-189 pattern): drop the dispatch and bump so a mission
+                // switch's fresh mount cannot inherit a plate frozen on this mount's disposed getters.
+                on_cleanup(unregister_editor_toolbar_dispatch);
             }
 
             // T-655 — the validation panel's payload source. The engine (`mission::validate`) is pure

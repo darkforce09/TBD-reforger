@@ -1037,7 +1037,23 @@ pub fn TopCommandStrip(
     // chord (not just a click) flips the state — keyboard and toolbar cannot disagree. Native / pre-
     // mount: the dispatch is `None`, so both read `false` and no plate lights (the strip still
     // renders; the buttons just act through `run_action`, which no-ops without the bridge).
+    //
+    // THE SUBSCRIPTION-ORDER FIX (wave-202 MAJOR): the strip renders — and these closures run —
+    // BEFORE the editor's `on_load` registers the dispatch. On that first pass the dispatch is `None`,
+    // so `with_editor_toolbar_dispatch` never fires and the getter reads NO tracked signal; with
+    // nothing to depend on, Leptos would never re-run the closure, and the plate would freeze at its
+    // first-render default (Translate stuck lit, Snap dark — the exact regression). So each getter
+    // FIRST reads the dispatch GENERATION signal (`.get()`, tracked) — a subscription that exists from
+    // frame one regardless of the dispatch — and only THEN reads through the dispatch. When the
+    // dispatch registers (or a mission switch re-registers it) the generation bumps, these closures
+    // re-run, the dispatch is now present, and the getters reach the tracked `widget_variant`/`snap`
+    // getters and subscribe to the live state directly. The generation read must stay ORDERED FIRST:
+    // it is the only dependency guaranteed on the first, dispatch-less pass. Pinned by
+    // `plates_subscribe_to_dispatch_generation_before_reading_it`.
     let widget_is = move |digit: u8| -> bool {
+        // Subscribe to the dispatch's reactive presence FIRST (see the note above) — before, and
+        // independent of, whether a dispatch is registered yet.
+        let _gen = crate::mission_editor::toolbar_dispatch_generation().get();
         #[cfg(target_arch = "wasm32")]
         {
             let mut rot = false;
@@ -1056,6 +1072,8 @@ pub fn TopCommandStrip(
         }
     };
     let snap_on = move || -> bool {
+        // Subscribe to the dispatch generation FIRST (see the note above `widget_is`).
+        let _gen = crate::mission_editor::toolbar_dispatch_generation().get();
         #[cfg(target_arch = "wasm32")]
         {
             let mut on = false;
@@ -2595,7 +2613,7 @@ mod tests {
 #[cfg(test)]
 mod t668_state_vocabulary {
     use super::{MenuAction, MENUS};
-    use crate::arsenal::class_r_scrub::{live_code, live_source};
+    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
 
     /// This file with comments blanked but class STRINGS kept, so the Tailwind literals survive as
     /// the structural landmarks the class pins read.
@@ -2716,6 +2734,64 @@ mod t668_state_vocabulary {
             src.contains("with_editor_toolbar_dispatch"),
             "wave-202: the widget/snap/select-all actions must route through the editor bridge"
         );
+    }
+
+    /// **wave-202 MAJOR — the row-2 toggle plates are actually REACTIVE (the pin the verifier said was
+    /// missing).** The regression was a SUBSCRIPTION-ORDER bug, so this pins the order, not just the
+    /// presence of a signal: each plate getter (`widget_is` / `snap_on`) must read the dispatch
+    /// GENERATION signal (`toolbar_dispatch_generation()`) BEFORE it reads through
+    /// `with_editor_toolbar_dispatch`.
+    ///
+    /// Why the order is the whole fix: the strip renders — and these `class=move || …` closures run —
+    /// BEFORE `mission_editor`'s `on_load` registers the dispatch. On that first pass the dispatch is
+    /// `None`, so `with_editor_toolbar_dispatch` fires nothing and the getter reads no tracked signal;
+    /// with no dependency, Leptos never re-runs the closure and the plate freezes at its first-render
+    /// default (Translate stuck lit, Snap dark — the verifier's live finding). Reading the generation
+    /// FIRST gives the closure a dependency that exists from frame one regardless of the dispatch, so a
+    /// register/unregister bump re-runs it — and THAT run, with the dispatch now present, subscribes to
+    /// the tracked `widget_variant` / `snap` getters. If the generation read is removed or moved AFTER
+    /// the dispatch read, the frozen shape returns and this pin goes RED.
+    ///
+    /// Anti-hollow: the getter bodies are extracted from `live_code`-scrubbed source (comments folded,
+    /// string literals blanked, this test module cut) via `only_body`, which panics unless its marker
+    /// occurs EXACTLY once — a rename (0) or a shadow copy (2+) is RED, not a guess. The assertion is a
+    /// byte-offset ordering of two real calls, which no comment or literal can forge.
+    #[test]
+    fn plates_subscribe_to_dispatch_generation_before_reading_it() {
+        let code = live_code(include_str!("eden_top_strip.rs"));
+        let gen_read = "toolbar_dispatch_generation";
+        let dispatch_read = "with_editor_toolbar_dispatch";
+        // Markers carry NO trailing `{` on purpose: `only_body` splits at the FIRST `{` after the
+        // marker, so a brace in the marker would hand back the wrong (inner) block and drop the
+        // generation read that sits above it. The bare signature lets `only_body` grab the closure's
+        // own body — and it stays unique after the scrub cuts this test module + blanks its literals.
+        for (marker, getter) in [
+            ("let widget_is = move |digit: u8| -> bool", "widget_is"),
+            ("let snap_on = move || -> bool", "snap_on"),
+        ] {
+            // `only_body` isolates THIS getter's balanced body and panics on 0 (renamed/deleted) or
+            // 2+ (shadow decoy) — the pin refuses to examine code it cannot unambiguously find.
+            let body = only_body(&code, marker);
+            let gen_at = body.find(gen_read).unwrap_or_else(|| {
+                panic!(
+                    "wave-202: `{getter}` must read the dispatch generation \
+                     (`{gen_read}()`) so its plate closure subscribes from frame one — not found"
+                )
+            });
+            let dispatch_at = body.find(dispatch_read).unwrap_or_else(|| {
+                panic!(
+                    "wave-202: `{getter}` must still read the live state through `{dispatch_read}` \
+                     — not found"
+                )
+            });
+            assert!(
+                gen_at < dispatch_at,
+                "wave-202: `{getter}` must read the generation signal BEFORE reading through the \
+                 dispatch (the subscription order that makes the plate re-runnable). Found the \
+                 generation read at byte {gen_at}, the dispatch read at {dispatch_at} — reading the \
+                 dispatch first restores the frozen-plate regression."
+            );
+        }
     }
 }
 
