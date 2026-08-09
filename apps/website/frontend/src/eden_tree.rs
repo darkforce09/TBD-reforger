@@ -432,16 +432,23 @@ fn layer_flag_toggles(
 /// T-666 — per-tree authoring context threaded into [`single_row`]. Grouped into one struct so the
 /// row signature stays readable: the editor-layers tree passes `authoring = true` (create/rename/
 /// delete/reparent/refile controls live), the ORBAT tree passes `false` (its rows are inert / its
-/// own refile is the `orbat_refile` latch). `holds_slots` is the SEL-GROUP-ICON-001 set; `rename`
-/// holds the `(id, live text)` of the row being inline-renamed, `None` when nothing is being edited.
+/// own refile is the `orbat_refile` latch). `holds_slots` is the SEL-GROUP-ICON-001 set.
+///
+/// T-811 — rename state is TWO signals, not one `(id, draft)` tuple: the tree list may track
+/// [`RowAuthoring::renaming`] (which folder is open) so the input mounts/unmounts, but it must
+/// NEVER read [`RowAuthoring::rename_draft`]. A draft round-trip through the list-tracked signal
+/// remounts the input on every keystroke (wave200 F2 / the T-812 remount trap); the NodeRef
+/// `on_load` focus+select then re-selects the whole field and each next char replaces the name.
 #[derive(Clone, Copy)]
 struct RowAuthoring {
     /// Enable the Outliner layer-authoring affordances on this tree (editor-layers only).
     enabled: bool,
     /// SEL-GROUP-ICON-001 — folder ids that DIRECTLY hold a slot (distinct glyph).
     holds_slots: StoredValue<std::collections::HashSet<String>>,
-    /// The `(layer id, live text)` of the folder being inline-renamed; `None` = no edit in flight.
-    rename: RwSignal<Option<(String, String)>>,
+    /// Which folder id is being inline-renamed; `None` = no edit in flight. List-safe.
+    renaming: RwSignal<Option<String>>,
+    /// Live draft text for the open rename. Input-only — do not read from the list render.
+    rename_draft: RwSignal<String>,
 }
 
 /// T-666 — the hover row actions on a Folder row: **rename** (arms the inline input) and **delete**
@@ -451,7 +458,8 @@ struct RowAuthoring {
 fn folder_row_actions(
     id: &str,
     label: &str,
-    rename: RwSignal<Option<(String, String)>>,
+    renaming: RwSignal<Option<String>>,
+    rename_draft: RwSignal<String>,
 ) -> AnyView {
     let rename_id = id.to_string();
     let rename_seed = label.to_string();
@@ -464,7 +472,9 @@ fn folder_row_actions(
             class="flex size-4 shrink-0 cursor-pointer items-center justify-center rounded text-outline opacity-0 transition-opacity hover:bg-white/10 hover:text-on-surface group-hover:opacity-100"
             on:click=move |ev: web_sys::MouseEvent| {
                 ev.stop_propagation();
-                rename.set(Some((rename_id.clone(), rename_seed.clone())));
+                // Seed draft BEFORE arming `renaming` so the first list paint already has text.
+                rename_draft.set(rename_seed.clone());
+                renaming.set(Some(rename_id.clone()));
             }
         >
             <MaterialIcon name="edit" class="block text-sm leading-none" />
@@ -803,19 +813,53 @@ fn single_row(
                 row.locked_effective,
             );
             // T-666 — is THIS folder being inline-renamed?
+            // T-811 — track ONLY `renaming` (the id). Reading a draft-bearing signal here would
+            // re-render the whole slice on every keystroke and remount the input (F2 trap).
             let editing = {
                 let id = id.clone();
-                let rename = authoring.rename;
-                move || rename.with(|r| r.as_ref().is_some_and(|(rid, _)| rid == &id))
+                let renaming = authoring.renaming;
+                move || renaming.with(|r| r.as_ref() == Some(&id))
             };
             if authoring.enabled && editing() {
                 // Inline-rename input (armed on create, or via the row's rename action). Enter /
                 // blur commits through `rename_layer`; Escape cancels. Stops propagation so typing
                 // never reaches the row's click/drag handlers.
-                let id_input = id.clone();
-                let rename = authoring.rename;
+                //
+                // T-811 — `autofocus` alone does NOT focus this input. The row is inserted by a
+                // reactive `{move || …}` re-render, not present at parse time, and the browser only
+                // honours the `autofocus` content attribute for elements in the initial parse /
+                // first document insertion — a node created by a later reactive update is skipped
+                // (same mechanism note as eden_dock_left.rs T-785). `on_load` fires once when
+                // Leptos mounts the node: focus it and select the seed text so the first keystroke
+                // lands in the field AND replaces the old name. Draft lives in `rename_draft`,
+                // which the list render does not read — so typing cannot remount this node.
+                let renaming = authoring.renaming;
+                let rename_draft = authoring.rename_draft;
+                let rename_ref = NodeRef::<leptos::html::Input>::new();
+                rename_ref.on_load(|el: web_sys::HtmlInputElement| {
+                    // Focus+select immediately, then again on a 0ms timeout so the select
+                    // wins against Leptos applying `prop:value` (which clears the selection
+                    // and parks the caret at the end — pencil typing would otherwise append).
+                    let _ = el.focus();
+                    el.select();
+                    let el2 = el.clone();
+                    if let Some(win) = web_sys::window() {
+                        use wasm_bindgen::JsCast;
+                        let cb = wasm_bindgen::closure::Closure::once(move || {
+                            let _ = el2.focus();
+                            el2.select();
+                        });
+                        let _ = win.set_timeout_with_callback_and_timeout_and_arguments_0(
+                            cb.as_ref().unchecked_ref(),
+                            0,
+                        );
+                        cb.forget();
+                    }
+                });
                 let commit = {
                     let id = id.clone();
+                    let renaming = renaming;
+                    let rename_draft = rename_draft;
                     move |text: String| {
                         #[cfg(target_arch = "wasm32")]
                         {
@@ -823,7 +867,8 @@ fn single_row(
                         }
                         #[cfg(not(target_arch = "wasm32"))]
                         let _ = (&id, &text);
-                        rename.set(None);
+                        renaming.set(None);
+                        rename_draft.set(String::new());
                     }
                 };
                 let commit_key = commit.clone();
@@ -835,33 +880,33 @@ fn single_row(
                         <MaterialIcon name=folder_icon class="block text-sm leading-none" />
                         <input
                             r#type="text"
+                            node_ref=rename_ref
+                            data-testid="layer-rename-input"
+                            aria-label="Rename layer input"
                             class="min-w-0 flex-1 rounded bg-black/30 px-1 text-label-sm text-on-surface outline-none ring-1 ring-primary/60"
-                            prop:value=move || rename.with(|r| r.as_ref().map_or_else(String::new, |(_, t)| t.clone()))
+                            prop:value=move || rename_draft.get()
                             autofocus=true
                             on:click=|ev: web_sys::MouseEvent| ev.stop_propagation()
                             on:pointerdown=|ev: web_sys::PointerEvent| ev.stop_propagation()
                             on:input=move |ev| {
-                                let v = event_target_value(&ev);
-                                let rid = id_input.clone();
-                                rename.update(|r| { *r = Some((rid, v)); });
+                                rename_draft.set(event_target_value(&ev));
                             }
                             on:keydown=move |ev: web_sys::KeyboardEvent| {
                                 match ev.key().as_str() {
                                     "Enter" => {
                                         ev.prevent_default();
-                                        let text = rename.with(|r| r.as_ref().map_or_else(String::new, |(_, t)| t.clone()));
-                                        commit_key(text);
+                                        commit_key(rename_draft.get());
                                     }
                                     "Escape" => {
                                         ev.prevent_default();
-                                        rename.set(None);
+                                        renaming.set(None);
+                                        rename_draft.set(String::new());
                                     }
                                     _ => {}
                                 }
                             }
                             on:blur=move |_| {
-                                let text = rename.with(|r| r.as_ref().map_or_else(String::new, |(_, t)| t.clone()));
-                                commit_blur(text);
+                                commit_blur(rename_draft.get());
                             }
                         />
                     </div>
@@ -897,7 +942,7 @@ fn single_row(
             let authoring_dnd = authoring.enabled;
             // Hover row actions (rename / delete) — T-666. `group`/`group-hover` reveal them.
             let row_actions = if authoring.enabled {
-                folder_row_actions(&id, &label, authoring.rename)
+                folder_row_actions(&id, &label, authoring.renaming, authoring.rename_draft)
             } else {
                 ().into_any()
             };
@@ -1066,15 +1111,16 @@ pub(crate) fn virtual_tree(
     // Per-tree collapse state (T-172 B6). Starts EMPTY = fully expanded, exactly the pre-collapse
     // render — the T-169 windowing smoke's totals depend on the default-expanded boot state.
     let collapsed = RwSignal::new(std::collections::HashSet::<String>::new());
-    // T-666 — the inline-rename buffer for THIS tree: `(layer id, live text)` of the folder being
-    // renamed, `None` when nothing is being edited. Persists across re-renders (an RwSignal).
-    let rename = RwSignal::new(None::<(String, String)>);
+    // T-666 / T-811 — inline-rename: id signal (list-tracked) + draft signal (input-only).
+    let renaming = RwSignal::new(None::<String>);
+    let rename_draft = RwSignal::new(String::new());
     // SEL-GROUP-ICON-001 — the "folder directly holds a slot" set, recomputed with the flatten.
     let holds_slots = StoredValue::new(std::collections::HashSet::<String>::new());
     let authoring_ctx = RowAuthoring {
         enabled: authoring,
         holds_slots,
-        rename,
+        renaming,
+        rename_draft,
     };
     // Flatten once per doc/collapse change (O(n), like the mutation itself); the scroll path only
     // re-slices. Created ONCE per mount (this fn is called outside any reactive closure), so the
@@ -1096,7 +1142,8 @@ pub(crate) fn virtual_tree(
                     .iter()
                     .find(|n| n.id == new_id)
                     .map_or_else(String::new, |n| n.label.clone());
-                rename.set(Some((new_id, seed)));
+                rename_draft.set(seed);
+                renaming.set(Some(new_id));
             }
         }
         let f = collapsed.with(|c| flatten_visible(&ns, c));
@@ -1486,6 +1533,34 @@ mod tests {
             assert!(
                 TREE.contains("folders nested inside it") && TREE.contains("every unit filed"),
                 "the confirm must state the whole subtree is destroyed"
+            );
+        }
+
+        /// T-811 — layer rename focuses via NodeRef/on_load; draft is decoupled from the
+        /// list-tracked id signal (wave200 F1 / F2 remount trap).
+        #[test]
+        fn layer_rename_uses_noderef_onload_and_decoupled_draft() {
+            assert!(
+                TREE.contains("NodeRef::<leptos::html::Input>::new()"),
+                "the layer rename input must carry a NodeRef so it can be focused on mount"
+            );
+            assert!(
+                TREE.contains("node_ref=rename_ref"),
+                "the NodeRef must be attached via node_ref=rename_ref"
+            );
+            assert!(
+                TREE.contains(".on_load(")
+                    && TREE.contains(".focus()")
+                    && TREE.contains(".select()"),
+                "on_load must call focus() and select() on the mounted input"
+            );
+            assert!(
+                TREE.contains("renaming:") && TREE.contains("rename_draft:"),
+                "rename id and draft must be separate RowAuthoring fields"
+            );
+            assert!(
+                TREE.contains("data-testid=\"layer-rename-input\""),
+                "rename input needs a stable test id for the CDP acceptance probe"
             );
         }
 
