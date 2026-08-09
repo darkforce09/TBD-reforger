@@ -737,11 +737,28 @@ fn number_field(
     }
 }
 
-/// Text field committing per input event — the React `TextField` semantics (one undo step per
-/// keystroke is the oracle behavior).
+/// Text field committing on **blur/Enter**, holding a local draft while focused — the
+/// [`number_field`] focused/draft split, ported to a `String`.
+///
+/// **T-785 — why this is NOT a per-keystroke commit any more.** It used to be
+/// `on:input=move |ev| on_change(...)`, one commit per character. Each commit runs
+/// `editor_ops::attrs_update_*` → `after_local_edit()`, which bumps `doc_tick`; the whole
+/// `AttributesModal` body re-reads on every `doc_tick` (see [`AttributesModal`]) and Leptos
+/// therefore RE-CREATED this very `<input>` between keystrokes. The DOM node the operator was
+/// typing into was destroyed after character one, focus fell to `<body>`, and every following
+/// character reached the window-level keydown shortcuts as a chord: typing "AT Rifleman" into ROLE
+/// left the field holding "A" while `T`/`R`/`e`/Space/`G` collapsed docks, jumped the camera and
+/// flipped snap. `number_field` already avoided this the only way that works — commit when focus
+/// LEAVES, not while it is held (its own note calls out that a mid-focus commit "would rebuild this
+/// very input under the operator's fingers"). This is that pattern for text.
+///
+/// The trade is the same one `number_field` makes and states: one undo step per visit instead of
+/// one per keystroke, and the map/tree do not reflect the edit until the field settles.
 ///
 /// T-649 — same `gate` contract as [`number_field`]: a field the selection disagrees on renders
-/// empty with a "Multiple values" placeholder and is disabled until its checkbox is ticked.
+/// empty with a "Multiple values" placeholder and is disabled until its checkbox is ticked. A
+/// differing field also starts from an EMPTY draft, so an accidental blur cannot stamp one member's
+/// text onto the whole selection.
 #[cfg(target_arch = "wasm32")]
 fn text_field(
     label: &'static str,
@@ -750,11 +767,38 @@ fn text_field(
     gate: Gate,
     on_change: impl Fn(String) + Copy + 'static,
 ) -> impl IntoView {
-    let shown = if gate.differs() { String::new() } else { value };
+    let draft = RwSignal::new(String::new());
+    let focused = RwSignal::new(false);
+    // The doc value at render time. The modal re-invokes `text_field` with a fresh `value` on every
+    // `doc_tick`, so an unfocused field tracks undo/redo and external edits by simply re-rendering;
+    // `StoredValue` keeps that snapshot for the unfocused display without making it a fresh input.
+    let settled = StoredValue::new(value);
     let ph = if gate.differs() {
         "Multiple values"
     } else {
         placeholder
+    };
+    // Unfocused presentation: EMPTY when the selection disagrees (never one arbitrary member's
+    // string), else the settled doc value. The draft seeds from the same source on focus. Named
+    // `text_display` (not the bare `display` `number_field` uses) so the source pins can address
+    // this closure unambiguously — two `let display = move ||` in one file would be a shadow the
+    // `class_r_scrub` `only_body` extractor refuses to disambiguate.
+    let text_display = move || {
+        if gate.differs() {
+            String::new()
+        } else {
+            settled.get_value()
+        }
+    };
+    let text_commit = move || {
+        focused.set(false);
+        // Skip the write when nothing changed — a focus/blur on an untouched field must not dirty
+        // the mission or mint an undo step. A DIFFERING field is exempt: under a multi-selection the
+        // settled value is one arbitrary member's, so typing it back is a deliberate stamp onto all.
+        let next = draft.get_untracked();
+        if gate.differs() || next != settled.get_value() {
+            on_change(next);
+        }
     };
     view! {
         <div class="flex flex-col gap-1">
@@ -763,9 +807,45 @@ fn text_field(
                 type="text"
                 aria-label=label
                 disabled=move || gate.locked()
-                value=shown
                 placeholder=ph
-                on:input=move |ev| on_change(event_target_value(&ev))
+                // While focused the field shows the LOCAL draft — never a value that round-tripped
+                // through the store mid-edit, which is the remount `on:input` used to cause.
+                prop:value=move || { if focused.get() { draft.get() } else { text_display() } }
+                on:focus=move |_| {
+                    draft.set(text_display());
+                    focused.set(true);
+                }
+                on:input=move |ev| draft.set(event_target_value(&ev))
+                on:blur=move |_| text_commit()
+                on:keydown=move |ev| {
+                    // Enter commits by blurring — the ONE commit seam, shared with the blur path so
+                    // there is exactly one place text reaches the store. Escape abandons the draft.
+                    match ev.key().as_str() {
+                        "Enter" => {
+                            if let Some(t) = ev
+                                .target()
+                                .and_then(|t| {
+                                    wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlElement>(t).ok()
+                                })
+                            {
+                                t.blur().ok();
+                            }
+                        }
+                        "Escape" => {
+                            focused.set(false);
+                            draft.set(text_display());
+                            if let Some(t) = ev
+                                .target()
+                                .and_then(|t| {
+                                    wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlElement>(t).ok()
+                                })
+                            {
+                                t.blur().ok();
+                            }
+                        }
+                        _ => {}
+                    }
+                }
                 class=move || {
                     let lock = if gate.locked() { CONTROL_LOCKED } else { "" };
                     format!("{CONTROL}{lock}")
@@ -1698,6 +1778,135 @@ mod tests {
         assert!(
             !should_commit(false, f64::NAN, f64::NAN),
             "NaN != NaN, so the equality skip cannot be what stops a non-finite draft"
+        );
+    }
+
+    /// **T-785 — `text_field` commits on BLUR/ENTER, never per keystroke.** This is the whole bug.
+    ///
+    /// A source pin because `text_field` is `#[cfg(target_arch = "wasm32")]` and there is no
+    /// wasm-bindgen-test harness in this repo — the same reason `number_field`'s behaviour is pinned
+    /// this way above. The defect it guards: `on:input=move |ev| on_change(...)` committed one store
+    /// round-trip per character, each bumping `doc_tick`, which re-rendered the `AttributesModal`
+    /// body and RE-CREATED this input mid-word. Focus fell to `<body>` and the tail of the word ran
+    /// as editor chords. The fix is the `number_field` shape: a `focused`/`draft` split, `on:input`
+    /// writing the DRAFT only, and the commit on `on:blur` / Enter.
+    ///
+    /// The assertions are the anti-regression: `on_change(` must NOT be reachable from `on:input`,
+    /// and it must be reachable from the blur `commit` closure. `on:input` writing `draft.set(` is
+    /// the positive half — a `text_field` with no `on:input` at all would pass a naive "no commit on
+    /// input" check while making the field un-typeable.
+    #[test]
+    fn text_field_commits_on_blur_or_enter_and_never_remounts_mid_keystroke() {
+        let src = attrs_src();
+        let field = only_body(&src, "fn text_field(");
+        // The remount cause, banned: the input handler must not commit. It writes the draft.
+        assert!(
+            field.contains("on:input=move |ev| draft.set(event_target_value(&ev))"),
+            "text_field's on:input must write the local DRAFT, not commit; body was:\n{field}"
+        );
+        // The commit lives behind blur/Enter, exactly like number_field. Exactly one `on_change(`
+        // call site, and it is inside the `text_commit` closure the blur handler fires — a
+        // per-keystroke commit is a per-keystroke remount against the modal's `doc_tick` re-render.
+        assert_eq!(
+            field.matches("on_change(").count(),
+            1,
+            "text_field must commit from exactly one place (the blur/Enter `text_commit` closure); a \
+             per-input commit is what remounted the input and dropped focus to <body>. Body:\n{field}"
+        );
+        let commit = only_body(&src, "let text_commit = move ||");
+        assert!(
+            commit.contains("on_change(next)"),
+            "the single commit site is the blur/Enter closure; body was:\n{commit}"
+        );
+        // Enter commits by blurring — one seam shared with the blur path, never a second `on_change`.
+        // The key is a string LITERAL, so it is read from the literal-kept half (`attrs_src` /
+        // `live_code` blanks it); `.blur()` is code and survives either way.
+        let live_src = live_source(include_str!("attributes.rs"));
+        let live_field = only_body(&live_src, "fn text_field(");
+        assert!(
+            live_field.contains("\"Enter\" =>") && field.contains(".blur()"),
+            "Enter must commit by blurring the input (the shared seam), not by a second commit call"
+        );
+        // The focused/draft split itself: while focused the input shows the draft, and focus seeds
+        // the draft. Without this the input is a plain `value=` again and the remount returns.
+        assert!(
+            field.contains(
+                "prop:value=move || { if focused.get() { draft.get() } else { text_display() } }"
+            ),
+            "text_field must show the DRAFT while focused (the number_field split); body was:\n{field}"
+        );
+        assert!(
+            field.contains("draft.set(text_display())") && field.contains("focused.set(true)"),
+            "the focus handler must seed the draft and mark the field focused"
+        );
+    }
+
+    /// **T-785** — the `text_field` no-op skip and the multi-edit contract, pinned together.
+    ///
+    /// An untouched focus/blur must not write (it would dirty the mission and mint an undo step, the
+    /// same way `number_field`'s did before T-775). A DIFFERING multi-value field is EXEMPT from that
+    /// skip — typing one member's string back is a deliberate stamp onto the whole selection — and it
+    /// stays `disabled` (locked) until "Apply to all" is ticked, which the review flagged must not
+    /// regress. `field_display`/`should_commit` are `number_field`'s; text has no parse, so the skip
+    /// is a direct string comparison against the settled value.
+    #[test]
+    fn text_field_skips_the_no_op_write_but_a_differing_field_still_stamps() {
+        let src = attrs_src();
+        let field = only_body(&src, "fn text_field(");
+        let commit = only_body(&src, "let text_commit = move ||");
+        // The skip: commit only when the value CHANGED, or the field differs (multi-value stamp).
+        assert!(
+            commit.contains("gate.differs() || next != settled.get_value()"),
+            "commit must skip an unchanged value yet always write a differing (multi-value) field; \
+             body was:\n{commit}"
+        );
+        // The multi-value display is EMPTY, never one arbitrary member's string — same rule as
+        // number_field, and the seed for focus reads the same `text_display()`.
+        let display = only_body(&src, "let text_display = move ||");
+        assert!(
+            display.contains("gate.differs()") && display.contains("String::new()"),
+            "a differing field must render EMPTY, not one member's value; body was:\n{display}"
+        );
+        // The lock stays: disabled while the gate is locked (multi-edit not opted in / refused).
+        assert!(
+            field.contains("disabled=move || gate.locked()"),
+            "text_field must stay disabled while the gate is locked — the 'Multiple values' \
+             locked-state the review said must not regress"
+        );
+    }
+
+    /// **T-785 — the chord guard reads the LIVE `document.activeElement` directly.** This is the last
+    /// line of defence F-26-root asked to harden: every editor chord (E/R docks, Space camera, G
+    /// snap, Ctrl+A, copy/paste) sits behind `mission_history::in_editable_field()`, so whatever it
+    /// returns decides "typed character" vs "chord". It must read the tag and contentEditable state
+    /// off `activeElement` at the moment of the keypress — never a cached "is a field open?" flag —
+    /// so a field that has lost focus can never keep swallowing keys, and a chord can never fire
+    /// while a field genuinely holds focus.
+    ///
+    /// A cross-file source pin because `mission_history` is `#[cfg(target_arch = "wasm32")]` and does
+    /// not compile under native `cargo test`; `attributes` does, and reads it as a string here — the
+    /// same shape as the `editor_ops.rs` pins in this module.
+    #[test]
+    fn the_chord_guard_reads_active_element_tag_and_content_editable_directly() {
+        let mh = live_code(include_str!("mission_history.rs"));
+        let body = only_body(&mh, "pub fn in_editable_field() -> bool");
+        // The source of truth is the LIVE focused node, fetched every call.
+        assert!(
+            body.contains("active_element()"),
+            "in_editable_field must read document.activeElement, not a cached flag; body:\n{body}"
+        );
+        // Native form controls by tag, and contentEditable hosts by property — both direct off the
+        // element, so focus loss to <body> (neither) reads as "not editable" the instant it happens.
+        assert!(
+            body.contains("tag_name()") && body.contains("is_content_editable"),
+            "in_editable_field must check the element tag AND contentEditable directly; body:\n{body}"
+        );
+        // It must NOT gate on a cached "is a field open?" flag — reading the live activeElement is
+        // the whole point, so a field that has lost focus stops swallowing keys immediately. (The
+        // editor keydown's own guard call is pinned by mission_editor's tests, which own that file.)
+        assert!(
+            !body.contains("attrs_open") && !body.contains("renaming"),
+            "in_editable_field must not consult an 'is a field open' signal — read activeElement live"
         );
     }
 
