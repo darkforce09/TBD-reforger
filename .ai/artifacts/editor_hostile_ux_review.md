@@ -830,3 +830,71 @@ One scoping note for whoever picks up the chrome tickets: **T-142/T-157/T-158 sh
 as responsive/layout work.** The sweep in §6 shows the shell is already correct from 1280×720 to
 2560×1440. What is actually wrong is menu completeness (F-06), bottom-bar consolidation (F-09),
 map symbology (F-10) and dialog positioning (F-04) — four specific things, not a layout pass.
+
+---
+
+## 10. Ticket traceability (batch T-785…T-810, authored 2026-08-09)
+
+Every finding and decision in this report maps below. Waves 200-208 in
+`docs/platform/wave_plan.tsv`; briefs live in the registry `summary` fields; band rules in
+`docs/platform/EDITOR_FACTORY_START.md` §UX remediation band.
+
+| Finding | Disposition |
+|---|---|
+| F-01 | **T-785** (wave 200) |
+| F-02 | **T-785** |
+| F-03 | **T-790** (204) |
+| F-04 | **T-789** (203) |
+| F-05 | **T-800** (202) |
+| F-06 | **T-797** (202) |
+| F-07 | folded → **T-790** (on-map select opens the marker editor; dock-vs-map agreement in its acceptance) |
+| F-08 | **T-806** (205) |
+| F-09 | closed by operator decision 1 → **T-797/T-798** (pill removed, bar consolidated) |
+| F-10 | **T-808** (207) |
+| F-11 | **T-798** (204) |
+| F-12 | mechanism folded → **T-785** (pointerup-activation class) + dedup guard in **T-799** |
+| F-13 | **T-807** (201) |
+| F-14 | **T-797** (menu label lives in the MENUS const it rewrites) |
+| F-15 | **T-797** |
+| F-16 | **T-795** (205) |
+| F-17 | **T-807** |
+| F-18 | **T-807** |
+| F-19 | **T-807** |
+| F-20 | **T-807** |
+| F-21 | **T-800** |
+| F-22 | **T-809** (203) |
+| F-23 | **T-810** (206); the stale DEM hint line → **T-807** |
+| F-24 | **T-804** (206) |
+| F-25 | **T-795** |
+| F-26 | root → **T-785**; one-txn batching → **T-788** (202) |
+| F-27 | **T-788** |
+| F-28 | **T-799** (205) |
+| F-29 | **T-788** |
+| F-30 | **T-791** (201) |
+| F-31 | **T-792** (203) |
+| F-32 | **T-190** (rescoped in place; already wave-planned at wave 7) |
+| F-33 | **T-805** (208); API half verified safe — no backend ticket |
+| F-34 | **T-799** |
+| F-35 | **T-798** |
+| F-36 | **T-798** |
+| F-37 | **T-807** |
+| F-38 | closed by decision 1 → **T-798** (OPEN button removed with the bottom-bar consolidation) |
+| O-1 | **T-787** (200) |
+| O-2 | **T-793** (201) |
+| O-3 | **T-786** (200) |
+| O-4 | **T-794** (207) |
+| O-5 | **T-786** |
+| O-6 | **T-796** (206) |
+| O-7 | **T-801** (208) |
+| O-8 | **T-802** (207) |
+| O-9 | **T-803** (204) |
+| O-10 | **T-807** |
+| Decision 1 (pill dies, Arma-style chrome) | **T-797 + T-798** |
+| Decision 2 (ORBAT into the menu row) | **T-797** |
+| Decision 3 (validation → top-bar chip) | **T-798** |
+
+**No-ticket dispositions, by design:** Environment-menu thinness (census N8 — blocked on the
+Enfusion reader side, mod program owns it); the F-33 API half (verified 403/404 — already safe);
+T-081 superseded by T-795 (registry note); T-146 absorbed by T-809 (registry note pending its
+wave); every "verified working" item in §6 (Esc matrix, undo core, clipboard exactness, dock
+responsive geometry, schema-valid compiled export, validator copy) — correct behaviour, no ticket.

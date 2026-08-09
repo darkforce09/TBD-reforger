@@ -572,3 +572,30 @@
 144	T-781	Comments become composable, and a placed composition keeps its authored Z	crates/map-engine-core/src/doc/store.rs; apps/website/frontend/src/eden_dock_right.rs
 144	T-783	Lift install_seam beside the trait it shares — the idiom exists twice	apps/website/frontend/src/validation_panel.rs; apps/website/frontend/src/ruler_tool.rs
 145	T-784	A comment can be selected by clicking it — outliner row and map glyph	apps/website/frontend/src/eden_tree.rs; apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/mission_editor.rs
+# UX remediation band (waves 200-208) — source .ai/artifacts/editor_hostile_ux_review.md @5d30c651; authored 2026-08-09
+200	T-785	Attribute text inputs lose focus after one keystroke; the rest of the word fires global shortcuts	apps/website/frontend/src/attributes.rs; apps/website/frontend/src/eden_dock_left.rs; apps/website/frontend/src/mission_history.rs
+200	T-786	Modal z-order comes from the modal stack, and opening a dialog closes popovers	apps/website/frontend/src/ui.rs; apps/website/frontend/src/eden_help.rs; apps/website/frontend/src/eden_top_strip.rs; apps/website/frontend/src/orbat_manager.rs
+200	T-787	Docks stop at the status bar instead of overlapping it	apps/website/frontend/src/eden_layout.rs; apps/website/frontend/src/eden_toolbelt.rs
+201	T-807	Copy and consistency sweep: units, plurals, stale hints, log spam, hero gate, disabled-row tooltips	apps/website/frontend/src/orbat_manager.rs; apps/website/frontend/src/attributes.rs; apps/website/frontend/src/eden_top_strip.rs; apps/website/frontend/src/missions.rs; apps/website/frontend/src/yrs_persist.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/context_menu.rs
+201	T-791	Armed composition places on map click, and Esc disarms the arm	apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/eden_dock_right.rs
+201	T-793	Grid reference labels derive from the live camera every frame	apps/website/frontend/src/eden_toolbelt.rs
+202	T-788	Multi-edit: one undo step, reachable from double-click, and the panel follows the selection	apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/mission_editor.rs
+202	T-797	Row-2 icon toolbar, completed Edit menu, ORBAT into the menu row	apps/website/frontend/src/eden_top_strip.rs; apps/website/frontend/src/eden_layout.rs
+202	T-800	Catalog failure states name the cause and offer retry; Add Vehicle explains itself; dev seed gets vehicles	apps/website/frontend/src/eden_dock_right.rs; apps/website/frontend/src/orbat_manager.rs; apps/website/api/seeds/registry_dev.sql
+203	T-792	Esc cancels an in-progress zone draw	apps/website/frontend/src/eden_zones.rs; apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/mission_editor.rs
+203	T-789	Save Version dialog: clamped on-screen, fresh state, focus moved in and trapped	apps/website/frontend/src/eden_top_strip.rs
+203	T-809	Asset browser: one tree per faction spanning characters and vehicles, plus recently-placed	apps/website/frontend/src/eden_dock_right.rs; apps/website/frontend/src/asset_catalog.rs
+204	T-790	Markers render their icon glyph and caption on the map	apps/website/frontend/src/mission_editor.rs; crates/map-engine-core/src/doc/store.rs; crates/map-engine-render/src/scene.rs; crates/map-engine-render/src/engine.rs; crates/map-engine-render/src/lanes.rs
+204	T-798	Validation moves to a top-bar error chip; V1 evaluates from load; Backspace hides everything	apps/website/frontend/src/eden_top_strip.rs; apps/website/frontend/src/validation_panel.rs
+204	T-803	The placement drop-target layer is visible, always	apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/eden_dock_left.rs
+205	T-795	Widget keys match Eden (1 none / 2 translate / 3 rotate) and the widgets are visible and operable	apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/eden_help.rs
+205	T-799	Exports fire once and agree with the editor about the mission	apps/website/frontend/src/mission_commands.rs; apps/website/frontend/src/eden_top_strip.rs
+205	T-806	Marker picker: one row per canonical icon, real glyphs, slugs demoted	apps/website/frontend/src/eden_dock_right.rs
+206	T-796	Comments look like comments and can be moved	apps/website/frontend/src/mission_editor.rs
+206	T-804	The author can see their work is safe: draft persistence surfaced	apps/website/frontend/src/eden_top_strip.rs; apps/website/frontend/src/yrs_persist.rs
+206	T-810	Attributes Type is a searchable catalog picker with a revert path and Eden's axis colours	apps/website/frontend/src/attributes.rs; apps/website/frontend/src/asset_catalog.rs
+207	T-802	The cursor tells the hand what is grabbable	apps/website/frontend/src/mission_editor.rs
+207	T-808	Units render as role-and-side symbology, not dots	crates/map-engine-core/src/slots_gpu.rs; crates/map-engine-render/src/engine.rs
+207	T-794	Entrance animations stop moving the furniture	apps/website/frontend/style/aegis.css
+208	T-801	Squad tether lines follow the drag preview	apps/website/frontend/src/select_tool.rs; crates/map-engine-core/src/slot_line.rs; crates/map-engine-core/src/squad_links.rs
+208	T-805	The editor route enforces the tier it declares	apps/website/frontend/src/router.rs; apps/website/frontend/src/auth.rs; apps/website/frontend/src/nav.rs

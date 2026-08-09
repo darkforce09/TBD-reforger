@@ -132,3 +132,34 @@ dropped at compile.
 
 Treat any green you did not watch fail first as unproven. Every validation ticket in this program
 (T-655–T-660) ships a test that **makes the rule fire**, not one that watches it pass.
+
+## UX remediation band — waves 200-208 (authored 2026-08-09)
+
+**Source program:** the hostile UX review at `.ai/artifacts/editor_hostile_ux_review.md`
+(commit `5d30c651` + operator hands-on pass). 26 tickets **T-785…T-810**, briefs inline in the
+registry `summary` (T-784 pattern; every one carries an `ACCEPTANCE:` clause with the review's
+measured probe values). Traceability: every review finding maps to a ticket or an explicit
+no-ticket reason — `## 10. Ticket traceability` in the review artifact.
+
+Same machinery as waves 100-155: 3 agents, barrier, merge, gate, one Fable adversarial verifier
+(documents, never fixes), ledger + registry flip + close marker from git. Tickets per wave from
+`awk -F'\t' '$1==L' docs/platform/wave_plan.tsv` as always. Band-specific rules:
+
+- **Wave 200 first, strictly** — T-785 (input remount) is the batch unblocker; T-788/T-810 build
+  on its pattern, T-789 on T-786's stack, T-797 on T-787's consts, T-798 on T-797's toolbar,
+  T-806/T-808 on T-790's lane format. Dependency edges are enforced by wave order.
+- **Never `--repack` while this band is live.** It renumbers 1..N and drops every edge not in the
+  compiled `DEPS` const (`xtask/src/slice_collisions.rs`). If a repack ever becomes unavoidable,
+  add the 7 edges from the registry `notes`/plan first.
+- **T-790 is the pull-forward valve**: if it looks at risk in 204, move it earlier — T-806 (205)
+  and T-808 (207) burn their slots without its lane format.
+- **T-807 is the split valve**: degree-15 owns; if it slips a wave, split by file family —
+  807a {mission_editor, context_menu} + 807b {orbat_manager, attributes, eden_top_strip,
+  missions, yrs_persist} — both internally disjoint.
+- **`yrs_persist.rs` is READ-ONLY for T-805** (wave 208): it is owned by T-807 (201) and
+  T-804 (206). If the route-gating investigation needs a persistence write, file a follow-up
+  instead.
+- **Slice agents get the probe patterns**: the review's acceptance numbers were produced by
+  scripted CDP probes (focus probe, geometry measure, spawn-jump observer, blob intercept,
+  grid-label arithmetic). The `ACCEPTANCE:` clauses cite exact expected values — verifiers
+  re-run the measurement, not the vibe.
