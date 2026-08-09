@@ -1738,6 +1738,45 @@ pub(crate) fn compositions_panel(
             "A save takes the whole selection: placed entities keep the elevation they were saved at, and any comment in the selection is captured and stays editor-only — comments never reach the compiled mission."
         </p>
 
+        // ── Armed state (T-791) — LIVE while a composition row is armed for placement ─────────────
+        // Mirrors the Markers panel's KeepArmed block: it appears the instant a row is armed
+        // (`begin_place_composition` bumps `doc_tick`) and vanishes when the arm clears — a canvas
+        // click that stamps, RMB, a release over chrome, OR Esc (all funnel through
+        // `cancel_pending`, which bumps `doc_tick`). Without this the panel's copy above only ever
+        // PROMISED the place; nothing told the author the arm was live or that Esc had cleared it
+        // (the F-30 "the hint keeps promising the thing that never happens" report).
+        {move || {
+            let _ = doc_tick.get();
+            let Some(armed) = ops::armed_composition_id() else {
+                return ().into_any();
+            };
+            // The row's title for the readout; fall back to the id if the row was deleted out from
+            // under a live arm (an edge, but a deleted row still leaves a stale `Pending`). Never an
+            // invented placeholder — an untitled row already reads "Untitled" everywhere else.
+            let label = ops::composition_rows()
+                .into_iter()
+                .find(|r| r.id == armed)
+                .map(|r| {
+                    if r.title.trim().is_empty() {
+                        "Untitled".to_string()
+                    } else {
+                        r.title
+                    }
+                })
+                .unwrap_or(armed);
+            view! {
+                <div class="mt-3 rounded-md border border-primary/40 bg-primary/10 p-2">
+                    <p class="text-label-sm normal-case text-on-surface">
+                        {format!("Placing \u{201c}{label}\u{201d}")}
+                    </p>
+                    <p class="mt-0.5 text-label-sm normal-case text-outline">
+                        "Click the map to stamp it at the cursor. Esc or right-click to cancel."
+                    </p>
+                </div>
+            }
+                .into_any()
+        }}
+
         // ── Save affordance (shown only when a selection exists) ──────────────────────────────
         {move || {
             let _ = doc_tick.get();
@@ -3552,28 +3591,35 @@ mod tests {
     /// unfailable and a presence check unpassable. Each needle is therefore split and re-joined.
     #[test]
     fn compositions_tab_is_wired_not_stubbed() {
-        const SRC: &str = include_str!("eden_dock_right.rs");
+        // T-791 — scrub comments out of both haystacks before matching. This file's own doc comments
+        // now NAME every one of these tokens (the armed-state block, `begin_place_composition`,
+        // `save_composition`), so a raw `include_str!` haystack would let a comment satisfy a
+        // presence check — the T-759 hollow-pin class. `live_source` blanks comments and KEEPS string
+        // literals, which the `"Compositions"` / `ops::<fn>(` needles below need.
+        use crate::arsenal::class_r_scrub::live_source;
+        let src = live_source(include_str!("eden_dock_right.rs"));
+        let src = src.as_str();
         // The panel aliases `use crate::editor_ops as ops`, so the calls read `ops::<fn>(`.
         let call = |f: &str| format!("ops::{f}(");
 
         // The tab strip renders a Compositions tab at index 4.
         assert!(
-            SRC.contains(&format!("tab_btn(4, {:?})", "Compositions")),
+            src.contains(&format!("tab_btn(4, {:?})", "Compositions")),
             "a Compositions tab must be in the tab strip"
         );
         // The panel dispatch routes tab 4 to the compositions panel.
         assert!(
-            SRC.contains(&format!("4 => {}(", "compositions_panel")),
+            src.contains(&format!("4 => {}(", "compositions_panel")),
             "tab 4 must dispatch to the compositions panel"
         );
         // SAVE (COMP-SAVE-001): the panel reaches the capture seam.
         assert!(
-            SRC.contains(&call("save_composition")),
+            src.contains(&call("save_composition")),
             "the Save affordance must call save_composition"
         );
         // PLACE (COMP-PLACE-001): a row press ARMS via the T-647 arm seam.
         assert!(
-            SRC.contains(&call("begin_place_composition")),
+            src.contains(&call("begin_place_composition")),
             "a composition row must arm the place"
         );
         // EDIT (COMP-EDIT-001) + the three ATTR-FIELD-COMP-* metadata fields, inline.
@@ -3584,14 +3630,15 @@ mod tests {
             "delete_composition",
         ] {
             assert!(
-                SRC.contains(&call(f)),
+                src.contains(&call(f)),
                 "the inline edit must call {f} (COMP-EDIT-001 / metadata fields)"
             );
         }
 
         // The editor-ops seam actually exposes those functions AND the place reaches the core
-        // one-undo-step mutator (the claim the store round-trip test rests on).
-        let ops = include_str!("editor_ops.rs");
+        // one-undo-step mutator (the claim the store round-trip test rests on). Scrubbed the same
+        // way (T-791): `editor_ops.rs` documents these `pub fn`s in prose right above them.
+        let ops = live_source(include_str!("editor_ops.rs"));
         assert!(
             ops.contains("pub fn save_composition")
                 && ops.contains("pub fn begin_place_composition"),
@@ -3739,13 +3786,23 @@ mod tests {
         }
     }
 
-    /// T-650 — the composition arm rides the SAME T-647 armed-state machine as the object place: its
-    /// arm is a `Pending::Composition`, and `has_pending()` (which gates the map's place branch and
-    /// ghost) is true while one is armed. Source-inspection pin that the arm goes through `arm(…)`
-    /// like `begin_place_object`, not a bespoke path.
+    /// T-650 / T-791 — the composition arm rides the SAME T-647 armed-state machine as the object
+    /// place: its arm is a `Pending::Composition`, `has_pending()` (which gates the map's place
+    /// branch and ghost) is true while one is armed, and the canvas release stamps the members as
+    /// ONE undo step and SELECTS the stamp. Also the T-791 feedback seam: the arm is READABLE
+    /// (`armed_composition_id`) and both arming (`arm`) and disarming (`cancel_pending`) nudge the
+    /// dock tick, so the panel's armed hint appears on arm and is GONE after Esc.
+    ///
+    /// **T-791 — the haystacks are `class_r_scrub`-scrubbed.** This ticket's own doc comments now
+    /// name every token below (`arm(Pending::Composition(`, `place_composition`, `bump_doc_tick`,
+    /// `armed_composition_id`), so a raw `include_str!` would let this file's PROSE satisfy the pin —
+    /// the T-759 hollow-pin class two of these were caught as this week. `live_code` blanks comments
+    /// AND string/char literals, so every needle here means a real code token, never a mention. The
+    /// needles that carry no literal are assembled at run time so this test body cannot match itself.
     #[test]
     fn composition_arm_rides_the_shared_pending_machine() {
-        let ops = include_str!("editor_ops.rs");
+        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        let ops = live_code(include_str!("editor_ops.rs"));
         // The arm variant exists and the public arm fn routes through the shared `arm(…)`.
         assert!(
             ops.contains("Composition(String)"),
@@ -3760,6 +3817,59 @@ mod tests {
         assert!(
             ops.contains(&format!("Pending::{}(comp_id)", "Composition")),
             "place_at_impl must consume the Composition arm on a canvas release"
+        );
+
+        // ── T-791 — the acceptance wiring, pinned on the scrubbed bodies of the fns that own it ────
+        // The consume body: ONE core mutator (`place_composition` = one txn, one undo step — never a
+        // per-member loop, the F-26 mistake) AND it writes `ctx.selection` (select the stamp: OBJ +N,
+        // SEL == N). Extracted from `place_at_impl` so a match elsewhere can't stand in.
+        let consume = only_body(&ops, &format!("fn {}(", "place_at_impl"));
+        let place_call = format!("place_{}(", "composition");
+        assert!(
+            consume.contains(&place_call),
+            "the composition consume must stamp via the single core place_composition (one undo \
+             step); body was:\n{consume}"
+        );
+        assert!(
+            consume.contains(&format!("ctx.{}.borrow_mut()", "selection")),
+            "the composition consume must select the stamped set; body was:\n{consume}"
+        );
+
+        // The armed state is READABLE for the panel hint, and it reads the Composition arm.
+        let armed = only_body(&ops, &format!("fn armed_{}_id(", "composition"));
+        assert!(
+            armed.contains(&format!("Pending::{}(id)", "Composition")),
+            "armed_composition_id must report the armed Composition id; body was:\n{armed}"
+        );
+
+        // Arm + disarm both nudge the dock tick — the appear/GONE halves of the hint. `cancel_pending`
+        // is the single choke point for Esc / RMB / release-over-chrome (the sibling-owned
+        // mission_editor Esc seam routes through it), so pinning the bump here covers the Esc case
+        // without this slice touching that file.
+        let bump = format!("bump_doc_{}()", "tick");
+        let arm_body = only_body(&ops, "fn arm(");
+        assert!(
+            arm_body.contains(&bump),
+            "arm() must bump the dock tick so the armed hint appears; body was:\n{arm_body}"
+        );
+        let cancel_body = only_body(&ops, &format!("fn cancel_{}()", "pending"));
+        assert!(
+            cancel_body.contains(&bump),
+            "cancel_pending() must bump the dock tick so the armed hint is GONE after Esc; body \
+             was:\n{cancel_body}"
+        );
+
+        // The panel actually RENDERS an armed hint gated on the live arm (not just static copy).
+        // `live_code` here too: the block is documented in prose right above it, and it BLANKS the
+        // `"composition"` literal this test uses to assemble the needle — so the scrubbed haystack
+        // cannot contain this assertion's own text, only the real `ops::armed_composition_id()` call
+        // in the panel. Whole-file (not `only_body`): `compositions_panel` has a wasm def AND a
+        // native stub, which `only_body` rejects as a shadow pair by design.
+        let dock = live_code(include_str!("eden_dock_right.rs"));
+        let gated = format!("armed_{}_id()", "composition");
+        assert!(
+            dock.contains(&gated),
+            "the compositions panel must render a hint gated on the live arm (armed_composition_id)"
         );
     }
 

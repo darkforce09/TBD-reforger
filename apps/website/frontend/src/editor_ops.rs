@@ -4190,8 +4190,33 @@ pub fn begin_place_composition(composition_id: String) {
     arm(Pending::Composition(composition_id));
 }
 
+/// T-791 — the composition id currently armed for placement, or `None`. Backs the compositions
+/// panel's LIVE armed-state hint ("click the map to place… · Esc to cancel"), the mirror of
+/// [`armed_marker_icon`]. Reading it under the `doc_tick` heartbeat is what makes the hint appear on
+/// [`begin_place_composition`] and vanish on [`cancel_pending`] (Esc / RMB / release over chrome),
+/// since both bump that tick.
+#[must_use]
+pub fn armed_composition_id() -> Option<String> {
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let ctx = guard.as_ref()?;
+        let p = ctx.pending.borrow();
+        match &*p {
+            Some(Pending::Composition(id)) => Some(id.clone()),
+            _ => None,
+        }
+    })
+}
+
 /// Arm a place. Objects mode only accepts [`Pending::Object`]; side modes reject Object so a
 /// leftover Objects arm cannot commit after the chip switches away.
+///
+/// T-791 — the arm bumps the dock tick on the way out (via [`bump_doc_tick`], called OUTSIDE the
+/// `OPS_CTX` borrow so the nested borrow inside it cannot re-enter and panic). That is what lets a
+/// palette/composition surface show a LIVE armed-state hint that appears the instant a row is armed:
+/// the compositions panel reads [`armed_composition_id`] off this tick, exactly as the Markers panel
+/// reads [`armed_marker_icon`]. Arming writes no document row, so this is the light `bump_doc_tick`
+/// (dock re-read only), not `refresh_docks`/`after_local_edit` (tree rebuild + persist).
 fn arm(pending: Pending) {
     OPS_CTX.with(|c| {
         if let Some(ctx) = c.borrow().as_ref() {
@@ -4221,6 +4246,8 @@ fn arm(pending: Pending) {
             *ctx.pending.borrow_mut() = Some(pending);
         }
     });
+    // T-791 — reflect the new armed state in the dock (armed-state hint). Outside the borrow above.
+    bump_doc_tick();
 }
 
 /// T-650 — how many entities are currently selected (backs the "Save composition…" affordance,
@@ -4253,16 +4280,27 @@ pub fn has_pending() -> bool {
 /// on those would make the Close control destroy the ring it is meant to commit. A zone draw is
 /// therefore ended only by finishing it or by [`cancel_zone_draw`], which the Cancel button calls
 /// explicitly.
+///
+/// T-791 — when the arm is actually cleared (Esc / RMB / release over chrome), bump the dock tick so
+/// the armed-state hint disappears — the "hint gone" half of the composition-place acceptance. A zone
+/// draw survives (the early return), so its hint must NOT be torn down: the bump is gated on a real
+/// clear and runs OUTSIDE the `OPS_CTX` borrow (`bump_doc_tick` borrows it again).
 pub fn cancel_pending() {
-    OPS_CTX.with(|c| {
+    let cleared = OPS_CTX.with(|c| {
         if let Some(ctx) = c.borrow().as_ref() {
             let mut p = ctx.pending.borrow_mut();
             if matches!(*p, Some(Pending::Zone(_))) {
-                return;
+                return false;
             }
+            let had = p.is_some();
             *p = None;
+            return had;
         }
+        false
     });
+    if cleared {
+        bump_doc_tick();
+    }
 }
 
 /// Every slot id the document actually holds — the slot half of both minters' uniqueness universe,
