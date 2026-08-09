@@ -167,10 +167,19 @@ pub fn DockLeft(
     // Latch so the one-shot index fetch is armed by the FIRST Locations visit and never again.
     let places_armed = RwSignal::new(false);
     let bookmarks = RwSignal::new(load_bookmarks());
-    // `Some((existing name, live text))` while a bookmark row is being inline-renamed; `None` = idle.
-    let renaming = RwSignal::new(Option::<(String, String)>::None);
-    // `Some(live text)` while the "bookmark this view" input is armed; `None` = idle.
-    let adding = RwSignal::new(Option::<String>::None);
+    // T-812 — rename session id ONLY. The mid-edit draft must NOT live here: the bookmark-list
+    // closure tracks `renaming`, and writing the draft through that signal remounts the input on
+    // every keystroke. T-785's on_load then focus()+select()s the remounted node, so each typed
+    // character replaces the whole draft (wave200 F2: "Ridge OP Two" → committed "o").
+    let renaming = RwSignal::new(Option::<String>::None);
+    // Draft text for the open rename session. The list render does not track this signal.
+    let rename_draft = RwSignal::new(String::new());
+    // Latch so Escape abandons without the subsequent blur committing.
+    let rename_abandon = RwSignal::new(false);
+    // T-812 — ADD open latch (bool). Draft is separate so typing does not remount the naming input
+    // (same remount class as rename). `true` = the "name this view" box is armed.
+    let adding = RwSignal::new(false);
+    let add_draft = RwSignal::new(String::new());
 
     // Persist + re-render in one place, so no verb can mutate the collection without writing it.
     let commit_bookmarks = move |next: Bookmarks| {
@@ -267,43 +276,52 @@ pub fn DockLeft(
                     </h3>
                     // The ADD verb's inline input (no `window.prompt` — that is banned here and is not
                     // gate-driveable). Enter commits at the LIVE camera; Escape/blur cancels.
+                    // T-812 / wave200 F7 — bare `autofocus` on this reactively-inserted node does not
+                    // focus (focused_on_mount:false; 'g' flipped GRID). NodeRef + on_load focus+select,
+                    // and the draft lives in `add_draft` so the open latch is not rewritten per char.
                     {move || {
-                        adding
-                            .get()
-                            .map(|seed| {
-                                view! {
-                                    <input
-                                        type="text"
-                                        data-testid="dock-left-bookmark-name"
-                                        aria-label="Bookmark name"
-                                        autofocus
-                                        prop:value=seed
-                                        class="mx-1 my-0.5 rounded border border-primary/60 bg-black/30 px-1.5 py-1 text-label-sm text-on-surface"
-                                        on:input=move |ev| adding.set(Some(event_target_value(&ev)))
-                                        on:blur=move |_| adding.set(None)
-                                        on:keydown=move |ev: web_sys::KeyboardEvent| {
-                                            match ev.key().as_str() {
-                                                "Enter" => {
-                                                    ev.prevent_default();
-                                                    let name = adding.get_untracked().unwrap_or_default();
-                                                    if let Some((x, y, zoom)) = live_camera() {
-                                                        let mut next = bookmarks.get_untracked();
-                                                        if next.add(&name, x, y, zoom) {
-                                                            commit_bookmarks(next);
-                                                        }
-                                                    }
-                                                    adding.set(None);
+                        if !adding.get() {
+                            return None;
+                        }
+                        let add_ref = NodeRef::<leptos::html::Input>::new();
+                        add_ref.on_load(|el: web_sys::HtmlInputElement| {
+                            let _ = el.focus();
+                            el.select();
+                        });
+                        Some(view! {
+                            <input
+                                type="text"
+                                node_ref=add_ref
+                                data-testid="dock-left-bookmark-name"
+                                aria-label="Bookmark name"
+                                // Uncontrolled after mount: a reactive prop:value can land AFTER
+                                // on_load and clear the select-all; initial value= is enough.
+                                value=add_draft.get_untracked()
+                                class="mx-1 my-0.5 rounded border border-primary/60 bg-black/30 px-1.5 py-1 text-label-sm text-on-surface"
+                                on:input=move |ev| add_draft.set(event_target_value(&ev))
+                                on:blur=move |_| adding.set(false)
+                                on:keydown=move |ev: web_sys::KeyboardEvent| {
+                                    match ev.key().as_str() {
+                                        "Enter" => {
+                                            ev.prevent_default();
+                                            let name = add_draft.get_untracked();
+                                            if let Some((x, y, zoom)) = live_camera() {
+                                                let mut next = bookmarks.get_untracked();
+                                                if next.add(&name, x, y, zoom) {
+                                                    commit_bookmarks(next);
                                                 }
-                                                "Escape" => {
-                                                    ev.stop_propagation();
-                                                    adding.set(None);
-                                                }
-                                                _ => {}
                                             }
+                                            adding.set(false);
                                         }
-                                    />
+                                        "Escape" => {
+                                            ev.stop_propagation();
+                                            adding.set(false);
+                                        }
+                                        _ => {}
+                                    }
                                 }
-                            })
+                            />
+                        })
                     }}
                     <div class="max-h-40 overflow-y-auto" data-testid="dock-left-bookmark-list">
                         {move || {
@@ -321,24 +339,15 @@ pub fn DockLeft(
                             rows.into_iter()
                                 .map(|bm| {
                                     let key = bm.name.clone();
-                                    let live = editing
-                                        .as_ref()
-                                        .filter(|(rid, _)| rid == &key)
-                                        .map(|(_, text)| text.clone());
-                                    if let Some(text) = live {
-                                        let from = key.clone();
-                                        // T-785 — `autofocus` alone does NOT focus this input. The
-                                        // row is inserted by a reactive `{move || …}` re-render, not
-                                        // present at parse time, and the browser only honours the
-                                        // `autofocus` content attribute for elements in the initial
-                                        // parse / first document insertion — a node created by a
-                                        // later reactive update is skipped. So the rename box opened
-                                        // UNFOCUSED, keystrokes stayed on `<body>`, and 'g' etc. ran
-                                        // as editor chords (the review's "GRID off"→"GRID move").
-                                        // `on_load` fires once when Leptos mounts the node: focus it
-                                        // and select the existing text so the first keystroke both
-                                        // lands in the field AND replaces the old name (the rename
-                                        // affordance operators expect).
+                                    let is_editing = editing.as_ref() == Some(&key);
+                                    if is_editing {
+                                        // T-785 — `autofocus` alone does NOT focus this input (reactive
+                                        // insert). T-812 — the draft must NOT round-trip through the
+                                        // list-tracked `renaming` signal: that remounted the input on
+                                        // every keystroke, and on_load's focus+select then ate the
+                                        // typed name down to one character (wave200 F2). Draft lives
+                                        // in `rename_draft`; `renaming` holds only the row id. Select
+                                        // runs once on session mount, never again mid-edit.
                                         let rename_ref = NodeRef::<leptos::html::Input>::new();
                                         rename_ref
                                             .on_load(|el: web_sys::HtmlInputElement| {
@@ -351,24 +360,33 @@ pub fn DockLeft(
                                                 node_ref=rename_ref
                                                 data-testid="dock-left-bookmark-rename"
                                                 aria-label="Rename bookmark"
-                                                autofocus
-                                                prop:value=text
+                                                // Uncontrolled after mount (see ADD note): keeps
+                                                // on_load select-all so the first keystroke replaces.
+                                                value=rename_draft.get_untracked()
                                                 class="mx-1 my-0.5 w-[calc(100%-0.5rem)] rounded border border-primary/60 bg-black/30 px-1.5 py-1 text-label-sm text-on-surface"
-                                                on:input=move |ev| {
-                                                    let v = event_target_value(&ev);
-                                                    renaming
-                                                        .update(|r| {
-                                                            if let Some((_, t)) = r.as_mut() {
-                                                                *t = v;
-                                                            }
-                                                        });
+                                                on:input=move |ev| rename_draft.set(event_target_value(&ev))
+                                                on:blur=move |_| {
+                                                    if rename_abandon.get_untracked() {
+                                                        rename_abandon.set(false);
+                                                        renaming.set(None);
+                                                        return;
+                                                    }
+                                                    if let Some(from) = renaming.get_untracked() {
+                                                        let to = rename_draft.get_untracked();
+                                                        let mut next = bookmarks.get_untracked();
+                                                        if next.rename(&from, &to) {
+                                                            commit_bookmarks(next);
+                                                        }
+                                                        renaming.set(None);
+                                                    }
                                                 }
-                                                on:blur=move |_| renaming.set(None)
                                                 on:keydown=move |ev: web_sys::KeyboardEvent| {
                                                     match ev.key().as_str() {
                                                         "Enter" => {
                                                             ev.prevent_default();
-                                                            if let Some((_, to)) = renaming.get_untracked() {
+                                                            if let Some(from) = renaming.get_untracked()
+                                                            {
+                                                                let to = rename_draft.get_untracked();
                                                                 let mut next = bookmarks.get_untracked();
                                                                 if next.rename(&from, &to) {
                                                                     commit_bookmarks(next);
@@ -378,6 +396,7 @@ pub fn DockLeft(
                                                         }
                                                         "Escape" => {
                                                             ev.stop_propagation();
+                                                            rename_abandon.set(true);
                                                             renaming.set(None);
                                                         }
                                                         _ => {}
@@ -398,8 +417,9 @@ pub fn DockLeft(
                                                 class="flex size-5 cursor-pointer items-center justify-center rounded text-outline hover:bg-white/10 hover:text-on-surface"
                                                 on:click=move |ev: web_sys::MouseEvent| {
                                                     ev.stop_propagation();
-                                                    renaming
-                                                        .set(Some((rename_key.clone(), rename_key.clone())));
+                                                    rename_abandon.set(false);
+                                                    rename_draft.set(rename_key.clone());
+                                                    renaming.set(Some(rename_key.clone()));
                                                 }
                                             >
                                                 <MaterialIcon name="edit" class="block text-sm" />
@@ -707,10 +727,8 @@ pub fn DockLeft(
                                     class="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded text-outline transition-colors hover:bg-white/10 hover:text-on-surface"
                                     on:click=move |ev: web_sys::MouseEvent| {
                                         ev.stop_propagation();
-                                        adding
-                                            .set(
-                                                Some(bookmarks.with_untracked(default_bookmark_name)),
-                                            );
+                                        add_draft.set(bookmarks.with_untracked(default_bookmark_name));
+                                        adding.set(true);
                                     }
                                 >
                                     <MaterialIcon name="bookmark_add" class="block text-base" />
@@ -1929,36 +1947,56 @@ mod tests {
         }
     }
 
-    /// **T-785 — the inline rename input FOCUSES and SELECTS itself on mount.** The review found it
-    /// "NEVER receives focus": it is inserted by the reactive `{move || …}` list re-render, and the
-    /// browser only honours the `autofocus` content attribute for nodes present at the initial parse
-    /// / first document insertion, not ones a later reactive update creates. So the box opened
-    /// unfocused, keystrokes stayed on `<body>`, and a typed 'g' flipped 'GRID off'→'GRID move'
-    /// instead of naming the bookmark. The fix wires a `NodeRef` whose `on_load` focuses the input
-    /// and selects its text (first keystroke replaces the old name — the rename affordance expected).
+    /// **T-812 — bookmark rename + ADD: draft decoupled from list remount; NodeRef focus on mount.**
+    ///
+    /// Wave200 F2: T-785's rename on_load focus+select was correct for the unfocused insert, but the
+    /// draft still lived inside the list-tracked `renaming` signal — every keystroke remounted the
+    /// input and select() ate the name down to one character. The pin now requires `rename_draft`
+    /// (list does not track it) and `renaming: Option<String>` (id only). Select runs on mount only.
+    ///
+    /// Wave200 F7: the ADD ("name this view") input had bare autofocus on a reactive insert —
+    /// focused_on_mount:false, 'g' flipped GRID. Same NodeRef + on_load focus+select, with
+    /// `add_draft` decoupled from the `adding` open latch.
     ///
     /// A source pin because this file's view is `#[cfg(target_arch = "wasm32")]` and there is no
-    /// wasm-bindgen-test harness. `on_load`/`focus`/`select` are CODE, so they are read from the
-    /// literal-blanked production half; a comment describing the fix cannot green them.
+    /// wasm-bindgen-test harness. Mechanism tokens are CODE in the literal-blanked production half.
     #[test]
-    fn the_inline_rename_input_focuses_and_selects_on_mount() {
+    fn bookmark_rename_and_add_decouple_draft_and_focus_on_mount() {
         let code = live_rust();
-        assert!(
-            code.contains("NodeRef::<leptos::html::Input>::new()"),
-            "the rename input must carry a NodeRef so it can be focused on mount"
-        );
-        // The literal-kept half proves the ref is actually BOUND to the rename input (not created
-        // and dropped) — `node_ref=` and the testid live together on one element.
         let src = live_src();
         assert!(
-            src.contains("node_ref=rename_ref"),
-            "the NodeRef must be attached to the rename input via node_ref="
+            code.contains("let rename_draft = RwSignal::new(String::new())"),
+            "rename draft must be its own signal so the list render does not track mid-edit text"
         );
-        // `on_load` runs once when Leptos mounts the node; it must focus AND select. `autofocus`
-        // alone is what failed, so focus has to be programmatic here.
+        assert!(
+            code.contains("let renaming = RwSignal::new(Option::<String>::None)"),
+            "renaming must hold only the row id (Option<String>), not the draft pair"
+        );
+        assert!(
+            !code.contains("Option::<(String, String)>"),
+            "the (id, draft) pair shape must be gone — that was the F2 remount trap"
+        );
+        assert!(
+            src.contains("node_ref=rename_ref") && src.contains("node_ref=add_ref"),
+            "both rename and ADD inputs must bind a NodeRef"
+        );
+        assert!(
+            code.contains("let add_draft = RwSignal::new(String::new())"),
+            "ADD draft must be decoupled from the open latch"
+        );
         assert!(
             code.contains(".on_load(") && code.contains(".focus()") && code.contains(".select()"),
-            "on_load must call focus() and select() on the mounted input; body:\n{code}"
+            "on_load must call focus() and select() on the mounted inputs"
+        );
+        assert!(
+            src.contains("value=rename_draft.get_untracked()")
+                && src.contains("value=add_draft.get_untracked()"),
+            "both inputs must seed from local draft via value= (uncontrolled after mount)"
+        );
+        assert!(
+            !src.contains("prop:value=move || rename_draft.get()")
+                && !src.contains("prop:value=move || add_draft.get()"),
+            "reactive prop:value on these inputs clears on_load select-all — banned"
         );
     }
 
