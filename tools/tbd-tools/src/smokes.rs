@@ -1453,7 +1453,8 @@ pub async fn smoke_attributes(dist: &str, path: &str) -> Result<u8> {
                 ),
             );
 
-            // A2i — Identity tab → Role commit per input.
+            // A2i — Identity tab → Role commit via input + blur (T-785: text_field commits on
+            // blur/Enter, not per keystroke — a bare `input` only writes the draft).
             eval(&h.page, "[...document.querySelectorAll('button')].find(b => b.getAttribute('aria-label') === 'Identity').click()").await?;
             checks.insert(
                 "a2i_tab".into(),
@@ -1474,6 +1475,7 @@ pub async fn smoke_attributes(dist: &str, path: &str) -> Result<u8> {
       el.focus();
       el.value = 'Marksman';
       el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.blur();
     })()",
             )
             .await?;
