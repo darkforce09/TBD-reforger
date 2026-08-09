@@ -599,3 +599,8 @@
 207	T-794	Entrance animations stop moving the furniture	apps/website/frontend/style/aegis.css
 208	T-801	Squad tether lines follow the drag preview	apps/website/frontend/src/select_tool.rs; crates/map-engine-core/src/slot_line.rs; crates/map-engine-core/src/squad_links.rs
 208	T-805	The editor route enforces the tier it declares	apps/website/frontend/src/router.rs; apps/website/frontend/src/auth.rs; apps/website/frontend/src/nav.rs
+209	T-811	Layer rename never receives focus — the F-02 fix landed on the bookmark widget	apps/website/frontend/src/eden_tree.rs
+209	T-812	Bookmark rename truncates to last character; bookmark ADD input never focuses	apps/website/frontend/src/eden_dock_left.rs
+209	T-813	Multi-edit differing-field no-op wipe; field Escape also closes the modal	apps/website/frontend/src/attributes.rs
+209	T-814	Transient/dialog exclusivity, consume-aware one-layer Esc, open-order dismissal	apps/website/frontend/src/ui.rs; apps/website/frontend/src/eden_top_strip.rs
+209	T-815	ORBAT squad-rename focus; delete the two T787 probe missions	apps/website/frontend/src/orbat_manager.rs
