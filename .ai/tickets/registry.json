@@ -19523,7 +19523,7 @@
       "id": "T-788",
       "order": 4700,
       "program": "eden",
-      "status": "queued",
+      "status": "shipped",
       "stream": "mission-creator",
       "targets": [
         "website"
@@ -19541,13 +19541,13 @@
       ],
       "title": "Multi-edit: one undo step, reachable from double-click, and the panel follows the selection",
       "summary": "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). F-26/F-27/F-29 — three verified defects on T-649's multi-edit. (1) F-26 UNDO COST: apply-to-all writes ONE UNDO STEP PER SLOT — after the 9-slot fan-out, one Ctrl+Z took the validator from 9 errors to 8 (editor_ops.rs ~:1617 attrs_update_position_multi, ~:2466 attrs_update_slot_multi loop per-slot txns). Batch each apply-to-all into one transaction: 9-slot apply undone by ONE Ctrl+Z. (2) F-27 REACHABILITY: multi-edit opens ONLY via RMB>Attributes…; both natural gestures destroy the selection first — map dblclick and outliner dblclick collapse SEL9->SEL1 because the first click re-selects before activate fires; open_attrs_modal ~:1235-1258 keeps the selection only when sel.len()>1 && sel.contains(id). Fix the dblclick arms (mission_editor.rs) so a click INSIDE the current selection does not replace it — then dblclick opens multi-edit naturally. (3) F-29 STALENESS: with the panel open on one slot, Ctrl+A took SEL to 9 while the panel kept showing 'Rifleman · n2' (attrs_open ~:64/:295/:310 has no selection-change effect) — re-render against the live selection or close on selection change. ⚠️ TRAPS: T-785 (input pattern) lands FIRST — build on the fixed text_field; keep 'Multiple values' locked-until-ticked semantics and the per-field checkboxes exactly (the panel design is praised in the review — do not redesign it); single-click-outside-selection must still replace (Eden semantics). ACCEPTANCE: scripted — select 9, apply-to-all a field, ONE Ctrl+Z reverts all 9 (validator count returns); Ctrl+A then map-dblclick on a selected unit opens header 'N slots selected · multi-edit' with SEL unchanged; panel open + Ctrl+A -> header switches to multi within one frame budget.",
-      "notes": "depends_on T-785; T-649 shipped the inversion this hardens; wave-144-style: the panel copy is the best in the product — preserve verbatim"
+      "notes": "depends_on T-785; T-649 shipped the inversion this hardens; wave-144-style: the panel copy is the best in the product — preserve verbatim | SHIPPED W202: F-27 keep-multi (both dblclick arms) + F-29 panel-follows-selection by the slice; F-26 SPLIT by premise check — position path was already atomic (T-732, not re-implemented), the identity path the review measured was completed in-wave via the new core update_slots_attr_batch (one begin(), 8dbad948, T-732 pattern, wrappers delegate byte-identically). Verifier proved one-undo live for uniform AND ticked-differing 8-slot applies; batch reads the raw slot map (hidden-slot family checked); T-813 latch and armed-pointerup intact."
     },
     {
       "id": "T-797",
       "order": 4790,
       "program": "eden",
-      "status": "queued",
+      "status": "shipped",
       "stream": "mission-creator",
       "targets": [
         "website"
@@ -19564,13 +19564,13 @@
       ],
       "title": "Row-2 icon toolbar, completed Edit menu, ORBAT into the menu row",
       "summary": "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). F-06 + operator decisions 1/2 + F-14/F-15 label fixes. VERIFIED FROM EDEN PIXELS (all 16 tooltips read, frames 164000-164147): Eden's row 2 = ~25 buttons in separator groups — file ops · undo/redo · five widget modes (No Widget (1) / Translation (2) / Rotation (3) / Area Scaling (4) / Area (5)) · coordinate-space/vertical/surface-snap · three grid toggles — and 13 of 16 tooltips carry their shortcut in parentheses; the disabled Redo still tooltips. Eden's menu-bar Edit has NO clipboard verbs (frame 163508) — TBD's context menu already matches; do NOT move clipboard into the menubar. TBD TODAY: row 2 is title/scrubber/save cluster (eden_layout.rs ~:49 ROW_TOOLS under-populated), Edit menu = Undo/Redo only (eden_top_strip.rs ~:117 MENUS, ~:85 MenuAction), widgets/snap/grid are invisible keyboard secrets, ORBAT is a row-2 button. FIX: (a) populate row 2: undo/redo · widget modes (wired to T-795's keys; ship buttons now with current 1/2 arms, T-795 renumbers) · snap toggle + steps · grid-label toggle · Save Version/Export stay right; every button tooltips 'Name (Key)'; disabled buttons keep tooltips. (b) Edit menu gains Select All on Screen (Ctrl+A), widget submenu, snap/grid toggles with shown keys. (c) ORBAT Manager becomes a menu-row entry (operator decision 2). (d) F-14: the View row 'Map layers — render host (T-159.28)' — ship it or drop it; if kept inert, it must go (drop). (e) F-15: one Controls Hint home — keep Help>Keyboard Shortcuts, drop the View duplicate. ⚠️ TRAPS: eden_layout.rs consts changed by T-787 in wave 200 — build on merged main; the floating mode pill and OPEN button are T-798's removal scope, not yours; menu labels drop the '(Mission Settings)' parentheticals (F-16-copy). ACCEPTANCE: scripted — row 2 exposes >=10 buttons each with non-empty title containing its chord where bound; Edit menu lists Select All + widget/snap/grid rows with chords; ORBAT opens from the menu row; no menu row contains a T-xxx string; exactly one Controls Hint entry across all menus.",
-      "notes": "depends_on T-787; operator decisions 1&2 recorded in review section 8; supersedes the F-09 pill question via T-798 pairing"
+      "notes": "depends_on T-787; operator decisions 1&2 recorded in review section 8; supersedes the F-09 pill question via T-798 pairing | SHIPPED W202: row-2 toolbar + completed Edit menu + ORBAT into the menu row + F-14/F-15/F-16-copy by the slice (buttons disabled-first — dispatch lived in sibling-owned mission_editor.rs); completion 8a527b20 added the register_editor_toolbar_dispatch bridge and wired everything live. Verifier MAJOR: the completion's TOGGLED_PLATE reactivity claim was false (mount-order subscription gap, plates frozen) — fixed 95ee8cb7 (generation-signal subscription + teardown + the missing reactivity pin), focused re-verify RESOLVED with live click/chord/snap/remount parity. Grid-label-toggle chord correctly refused (no such binding; census rule). View menu removed whole after F-14+F-15 emptied it."
     },
     {
       "id": "T-800",
       "order": 4820,
       "program": "eden",
-      "status": "queued",
+      "status": "shipped",
       "stream": "mission-creator",
       "targets": [
         "website"
@@ -19589,7 +19589,7 @@
       ],
       "title": "Catalog failure states name the cause and offer retry; Add Vehicle explains itself; dev seed gets vehicles",
       "summary": "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). F-05/F-21 — VERIFIED: with no current modpack the Factions/Vehicles tabs show one flat line 'Could not load the catalog.' — no cause, no retry, while the search-syntax chips keep rendering above the corpse (registry 404 'no current modpack configured' swallowed). AND the committed dev seed has ZERO vehicle rows (8 characters, 13 gear — GROUP BY confirmed), so Vehicles reads 'No placeable vehicles.' even after a correct seed; ORBAT>Add Vehicle is then a SILENT NO-OP (real click at true coords: Vehicles: 0 unchanged, no picker, no toast — VERIFIED). THE FIX PATTERN ALREADY EXISTS IN-FILE: the Favourites tab ships a Retry arm at eden_dock_right.rs ~:887-928; the main tree's Failed arm (~:1451) renders flat text. FIX: (a) main-tree Failed arm distinguishes 'no modpack configured' vs request-failed, names it, offers Retry (reuse the Favourites pattern), hides search-syntax chips while failed; (b) orbat_manager.rs Add Vehicle with an empty vehicle catalog opens a small explainer ('no placeable vehicles in the active modpack') instead of no-op; (c) apps/website/api/seeds/registry_dev.sql gains 3-5 vehicle rows (category NATO/US_Army/Vehicles, kind vehicle) so dev environments can author vehicles. ⚠️ TRAPS: seed must stay ON CONFLICT DO NOTHING idempotent; do not touch asset_catalog.rs (T-809/T-810 own it later — the error surface lives in the dock file); the search-prefix hint line doubles as filter help when healthy — keep it in the healthy state. ACCEPTANCE: scripted with modpack cleared: panel names the cause + Retry present; after seed re-applied Retry populates the tree without reload; Add Vehicle on empty catalog shows the explainer; after new seed, Add Vehicle inserts a vehicle row (Vehicles: 1) and the census XFORM-DEL-001 lead becomes browser-testable.",
-      "notes": "unblocks in-browser closure of the census XFORM-DEL-001 vehicle-delete lead the review could only settle in source"
+      "notes": "unblocks in-browser closure of the census XFORM-DEL-001 vehicle-delete lead the review could only settle in source | SHIPPED W202: both catalog Failed arms share a named-cause+Retry view (no-modpack vs request-failed, in-dock 404 probe since the fetch discards the cause in sibling-owned code), grammar chips hidden while failed; Add Vehicle empty-catalog explainer inline (no z exposure); 4 vehicle seed rows applied idempotently (second apply INSERT 0 0). Verifier proved the full flip/restore cycle live incl. Retry-without-reload. T-084 grammar needle updated honestly with a compensating hides-while-failed pin."
     },
     {
       "id": "T-792",
