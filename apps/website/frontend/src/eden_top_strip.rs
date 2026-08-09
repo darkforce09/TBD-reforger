@@ -765,6 +765,11 @@ pub fn TopCommandStrip(
         export_open.set(false);
         set_hint(false);
     };
+    // T-814 — register the same closer with the modal stack so overlays opened *outside* this
+    // strip (canvas dblclick → Attributes, context-menu Arsenal, …) still clear menu/export/hint.
+    // The wasm open-edge pump in `modal_stack` observes closed→open without per-dialog wiring.
+    #[cfg(target_arch = "wasm32")]
+    let transient_closer_id = crate::ui::modal_stack::register_transient_closer(close_transients);
     // T-192 — row mirror for the inline scrubber / weather select. Setup-time, not handler-time.
     #[cfg(target_arch = "wasm32")]
     let row_mirror = RowMirror::from_route();
@@ -781,22 +786,27 @@ pub fn TopCommandStrip(
     {
         let esc = window_event_listener(leptos::ev::keydown, move |ev| {
             if ev.key() == "Escape" {
-                // T-726 — yield while any registered overlay claims Esc (ORBAT / Faction /
-                // Attributes / settings / …). Without this, one Esc closes a stacked dialog AND
-                // the strip's menus/export/save/hint in the same keydown (wave139 F3).
-                if crate::ui::modal_stack::any_open() {
+                // T-726 / T-814 — yield when a registered overlay consumed this Escape. The
+                // capture-phase sentinel marks before any bubble listener runs; checking the mark
+                // (not live `any_open()`) survives a peer Dialog closing in the same keydown
+                // (wave200 F4 / wave139 F3 pile-up).
+                if crate::ui::modal_stack::escape_consumed() {
                     return;
                 }
+                // One surface per press — each arm returns after closing its layer.
                 if open_menu.get_untracked().is_some() {
                     open_menu.set(None);
+                    return;
                 }
                 // T-634 — the export dropdown joins the strip's ONE Escape closure, for the same
                 // reason the Controls Hint did: a third window listener is the Esc pile-up.
                 if export_open.get_untracked() {
                     export_open.set(false);
+                    return;
                 }
                 if save_open.get_untracked() {
                     save_open.set(false);
+                    return;
                 }
                 // T-692 — Esc also closes the Controls Hint on this same listener.
                 if hint_open.get_untracked() {
@@ -804,7 +814,10 @@ pub fn TopCommandStrip(
                 }
             }
         });
-        on_cleanup(move || esc.remove());
+        on_cleanup(move || {
+            esc.remove();
+            crate::ui::modal_stack::unregister_transient_closer(transient_closer_id);
+        });
     }
     // Env mirror for the inline scrubber/weather — re-read on every doc change.
     let env = Memo::new(move |_| {
@@ -2972,13 +2985,13 @@ mod t634_two_rows_and_a_hierarchy {
     }
 }
 
-/// T-726 — top-strip Esc yields while modal_stack has an open overlay (wave139 F3).
+/// T-726 / T-814 — top-strip Esc yields when modal_stack consumed Escape (wave139 F3 / wave200 F4).
 #[cfg(test)]
 mod t726_top_strip_esc_stack {
     use crate::arsenal::class_r_scrub::{live_source, only_body};
 
     #[test]
-    fn top_command_strip_escape_yields_when_modal_stack_has_open() {
+    fn top_command_strip_escape_yields_when_modal_stack_consumed_escape() {
         // live_source (not live_code): Escape is a string literal; live_code blanks literals.
         let code = live_source(include_str!("eden_top_strip.rs"));
         let body = only_body(&code, "pub fn TopCommandStrip(");
@@ -2987,13 +3000,14 @@ mod t726_top_strip_esc_stack {
             .find(&esc)
             .unwrap_or_else(|| panic!("T-726: TopCommandStrip must own an Escape keydown arm"));
         let esc_region = &body[esc_at..];
-        let any = ["modal_stack", "::", "any_open()"].concat();
+        let guard = ["modal_stack", "::", "escape_consumed()"].concat();
         assert!(
-            esc_region.contains(&any),
-            "T-726: TopCommandStrip Esc must consult modal_stack::any_open() so an open \
-             dialog/manager consumes Esc alone (wave139 F3). Hollow: delete the any_open guard → RED."
+            esc_region.contains(&guard),
+            "T-814: TopCommandStrip Esc must consult modal_stack::escape_consumed() so an open \
+             dialog/manager consumes Esc alone even when a peer listener already closed it \
+             (wave200 F4). Hollow: delete the escape_consumed guard → RED."
         );
-        let any_at = esc_region.find(&any).expect("any_open present in Esc arm");
+        let guard_at = esc_region.find(&guard).expect("escape_consumed present in Esc arm");
         for needle in [
             "open_menu.set(None)",
             "export_open.set(false)",
@@ -3003,22 +3017,45 @@ mod t726_top_strip_esc_stack {
                 .find(needle)
                 .unwrap_or_else(|| panic!("missing {needle} in Esc arm"));
             assert!(
-                any_at < at,
-                "T-726: any_open() must precede `{needle}` (yield before act)"
+                guard_at < at,
+                "T-814: escape_consumed() must precede `{needle}` (yield before act)"
             );
         }
+        // Must NOT regress to live any_open() — that is the F4 pile-up (dialog closes, then strip
+        // sees any_open==false and clears the hint in the same keydown).
+        let any = ["modal_stack", "::", "any_open()"].concat();
+        assert!(
+            !esc_region.contains(&any),
+            "T-814: strip Esc must not consult live any_open() (wave200 F4 insertion-order trap)"
+        );
     }
 
     #[test]
-    fn top_strip_any_open_guard_is_load_bearing() {
+    fn top_strip_escape_consumed_guard_is_load_bearing() {
         let code = live_source(include_str!("eden_top_strip.rs"));
         let body = only_body(&code, "pub fn TopCommandStrip(");
-        let any = ["modal_stack", "::", "any_open()"].concat();
-        assert!(body.contains(&any), "canary: strip carries any_open");
-        let perturbed = body.replacen(&any, "false /* hollow */", 1);
+        let guard = ["modal_stack", "::", "escape_consumed()"].concat();
+        assert!(body.contains(&guard), "canary: strip carries escape_consumed");
+        let perturbed = body.replacen(&guard, "false /* hollow */", 1);
         assert!(
-            !perturbed.contains(&any),
-            "fired rule: deleting any_open must break the T-726 top-strip Esc pin"
+            !perturbed.contains(&guard),
+            "fired rule: deleting escape_consumed must break the T-814 top-strip Esc pin"
+        );
+    }
+
+    #[test]
+    fn top_strip_registers_transient_closer_with_modal_stack() {
+        let code = live_source(include_str!("eden_top_strip.rs"));
+        let body = only_body(&code, "pub fn TopCommandStrip(");
+        let reg = ["modal_stack", "::", "register_transient_closer"].concat();
+        assert!(
+            body.contains(&reg),
+            "T-814: strip must register close_transients with modal_stack so non-strip dialog \
+             opens clear menu/export/hint"
+        );
+        assert!(
+            body.contains("unregister_transient_closer"),
+            "T-814: strip must unregister the transient closer on cleanup"
         );
     }
 }
