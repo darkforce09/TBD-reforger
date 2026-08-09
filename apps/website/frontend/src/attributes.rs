@@ -990,24 +990,27 @@ fn transform_tab(
                     }
                 })}
             <div class="grid grid-cols-3 gap-3">
+                // F-13 — the coordinate fields carry a `m` unit suffix (the same right-aligned glyph
+                // Rotation uses for `°`), so a metre reading is not a bare number. Display rounding is
+                // already handled by `field_display`; this only adds the unit.
                 {number_field(
                     "X",
                     a.x,
-                    None,
+                    Some("m"),
                     g(diff.x, opts.x),
                     move |x| commit_position(targets, Some(x), None, None, None),
                 )}
                 {number_field(
                     "Y",
                     a.y,
-                    None,
+                    Some("m"),
                     g(diff.y, opts.y),
                     move |y| commit_position(targets, None, Some(y), None, None),
                 )}
                 {number_field(
                     "Z",
                     a.z,
-                    None,
+                    Some("m"),
                     g(diff.z, opts.z),
                     move |z| commit_position(targets, None, None, Some(z), None),
                 )}
@@ -1054,7 +1057,10 @@ fn transform_tab(
                 </select>
             </div>
             <p class="text-label-sm normal-case text-outline">
-                "Drag on the map or edit coordinates above. Z is manual until terrain elevation (DEM) ships."
+                // F-23 — DEM shipped (the status-bar Z is terrain-sampled), so the old "Z is manual
+                // until DEM ships" hint is stale. Z is still typeable here; it just no longer promises
+                // a feature that already landed.
+                "Drag on the map or edit coordinates above. Z is sampled from terrain elevation (DEM); edit it here to override."
             </p>
         </div>
     }
@@ -2353,6 +2359,46 @@ mod t726_attributes_esc_stack {
         assert!(
             body.contains(&unreg),
             "T-726: AttributesModal must unregister"
+        );
+    }
+}
+
+/// T-807 — the Transform-tab copy debts: the stale DEM hint (F-23) and the coordinate unit suffix
+/// (F-13). Both are about user-visible strings, so these pin on `live_source` (string literals
+/// KEPT — `live_code` would blank the very copy under test and make the pin hollow, the T-759 class).
+#[cfg(test)]
+mod t807_transform_tab_copy {
+    use crate::arsenal::class_r_scrub::{live_source, only_body};
+
+    /// F-23 — DEM shipped, so the "Z is manual until terrain elevation (DEM) ships" hint is stale.
+    /// The old promise must be gone from the whole live source.
+    #[test]
+    fn stale_dem_manual_hint_is_gone() {
+        let code = live_source(include_str!("attributes.rs"));
+        // Concat so this test's own literal cannot self-match.
+        let stale = ["Z is manual until terrain elevation ", "(DEM) ships"].concat();
+        assert!(
+            !code.contains(&stale),
+            "F-23: the stale 'Z is manual until DEM ships' hint must be replaced (DEM has shipped)"
+        );
+    }
+
+    /// F-13 — the X/Y/Z coordinate fields carry a metre unit suffix (Rotation already carried `°`).
+    /// Pinned to `transform_tab`'s body so it is the coordinate fields, not a stray literal.
+    #[test]
+    fn coordinate_fields_suffix_metres() {
+        let code = live_source(include_str!("attributes.rs"));
+        let body = only_body(&code, "fn transform_tab(");
+        // Three coordinate fields, each `Some("m")`; Rotation keeps its own `Some("°")`.
+        let m_suffix = body.matches("Some(\"m\")").count();
+        assert!(
+            m_suffix >= 3,
+            "F-13: X/Y/Z must each pass Some(\"m\") as the unit suffix (found {m_suffix})"
+        );
+        // The bare `None` suffix on a coordinate field is exactly the pre-fix state.
+        assert!(
+            body.contains("Some(\"\u{b0}\")"),
+            "F-13: Rotation must still carry its ° suffix"
         );
     }
 }

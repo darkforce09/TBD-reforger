@@ -338,6 +338,41 @@ impl ContextItem {
             _ => Vec::new(),
         }
     }
+
+    /// F-37 — the human "why this is dark" tooltip for a disabled row that no wave-106+ ticket owns
+    /// (the faithful-Eden rows built with `blocked: None`). The direction doc's rule is "disabled
+    /// still shows its tooltip"; the in-repo template is the top strip's History button
+    /// (`title="Version history (soon)"`) — a short reason the operator can read without leaving the
+    /// app, NOT a ticket id. Rows that DO carry a blocking ticket render that instead (see
+    /// [`render_row`]); this is only the fallback for the ticket-less disabled rows.
+    ///
+    /// `None` for rows that ship enabled today — they have no tooltip and never reach this path.
+    /// Every disabled row's reason is stated here so none can go silent; [`render_row`] treats a
+    /// disabled row with neither a ticket nor a reason as a bug the tests below catch.
+    #[must_use]
+    pub const fn why(self) -> Option<&'static str> {
+        Some(match self {
+            // Preview / play — mod-side runtime, not an editor feature.
+            ContextItem::PlayFromHere | ContextItem::PlayAsCharacter => {
+                "Preview launch is a mod-side feature, not available in the editor"
+            }
+            // Disabled submenu parents with no owning ticket.
+            ContextItem::Edit => {
+                "Copy, paste and delete are on the toolbar and keyboard; this submenu is not built yet"
+            }
+            ContextItem::Log => "Debug logging to the clipboard is not an editor feature",
+            ContextItem::Grid => "Object-dimension grid snapping is not an editor feature",
+            // Disabled leaves with no owning ticket.
+            ContextItem::FindInAssetBrowser => {
+                "The Asset Browser has no reveal-and-scroll surface yet"
+            }
+            ContextItem::FindInConfigViewer => "The editor has no config viewer surface",
+            ContextItem::ResetLoadout => "Loadout reset is not a standalone editor action yet",
+            // Everything else ships enabled today OR carries a blocking ticket that `menu_row`
+            // renders instead — no ticket-less tooltip needed.
+            _ => return None,
+        })
+    }
 }
 
 /// One rendered row: the [`ContextItem`] id, its verbatim Eden label, an optional right-aligned
@@ -1050,12 +1085,24 @@ fn render_row(
     let child = entry.child;
     let note = entry.note.clone();
     let expanded = submenu && open_submenu == Some(item);
-    // Disabled rows name their blocking ticket in the tooltip so the operator (and the next agent)
-    // sees why a row is dark. An enabled row has no tooltip.
-    let title = entry
-        .blocked
-        .map(|t| format!("Not available yet — {t}"))
-        .unwrap_or_default();
+    // F-37 — every disabled row shows WHY it is dark (the direction doc rule "disabled still shows
+    // its tooltip"; the History button `title="Version history (soon)"` is the template). A row with
+    // a blocking ticket names it (for the next agent); a ticket-less faithful-Eden row takes its
+    // human reason from [`ContextItem::why`]. An enabled row has no tooltip. The `debug_assert`
+    // makes a disabled row that is neither ticketed nor explained a test failure, not a silent gap.
+    let title = if enabled {
+        String::new()
+    } else if let Some(t) = entry.blocked {
+        format!("Not available yet — {t}")
+    } else {
+        let reason = item.why().unwrap_or_default();
+        debug_assert!(
+            !reason.is_empty(),
+            "F-37: disabled row {item:?} has neither a blocking ticket nor a `why()` reason — it \
+             would render with no tooltip"
+        );
+        reason.to_string()
+    };
 
     let is_hi = move || highlight.get() == Some(idx);
     let base = "flex w-full items-center gap-3 px-3 py-1 text-left text-label-md select-none";
@@ -1687,6 +1734,76 @@ mod t726_context_menu_esc_stack {
         assert!(
             body.contains(&unreg),
             "T-726: ContextMenuOverlay must unregister"
+        );
+    }
+}
+
+/// F-37 (T-807) — every disabled context-menu row exposes a non-empty WHY tooltip. The direction
+/// doc rule is "disabled still shows its tooltip"; TBD's disabled `Play from Here` shipped with no
+/// `title` in its chain, going silent. These pin BOTH halves: the model has a reason for every
+/// disabled row, and [`menu_row`] actually wires `item.why()` into the rendered `title`.
+#[cfg(test)]
+mod t807_disabled_rows_show_why {
+    use super::*;
+    use crate::arsenal::class_r_scrub::{live_code, only_body};
+
+    /// The one place the tooltip text is decided. A disabled row's title is the blocking ticket if
+    /// it has one, else the item's [`ContextItem::why`] reason — so this mirrors `menu_row`.
+    fn title_source(entry: &MenuEntry) -> String {
+        if entry.enabled {
+            return String::new();
+        }
+        if let Some(t) = entry.blocked {
+            return format!("Not available yet — {t}");
+        }
+        entry
+            .item
+            .and_then(ContextItem::why)
+            .unwrap_or_default()
+            .to_string()
+    }
+
+    #[test]
+    fn every_disabled_row_in_both_takes_has_a_nonempty_title() {
+        for take in [MenuTake::EmptyGround, MenuTake::OnEntity] {
+            for entry in take.entries() {
+                // Separators (item == None) are not rows; skip them.
+                if entry.item.is_none() || entry.enabled {
+                    continue;
+                }
+                let title = title_source(&entry);
+                assert!(
+                    !title.is_empty(),
+                    "F-37: disabled row {:?} ({:?}) renders with no tooltip",
+                    entry.item,
+                    entry.label,
+                );
+            }
+        }
+    }
+
+    /// The specific regression: `Play from Here` / `Play as the Character` had NO title anywhere in
+    /// their chain. Both are ticket-less, so their tooltip must come from `why()`.
+    #[test]
+    fn play_rows_now_have_a_reason() {
+        for item in [ContextItem::PlayFromHere, ContextItem::PlayAsCharacter] {
+            let why = item.why();
+            assert!(
+                why.is_some_and(|w| !w.is_empty()),
+                "F-37: {item:?} must expose a why-tooltip (it had none before T-807)"
+            );
+        }
+    }
+
+    /// `menu_row` must actually READ `item.why()` — a model reason nothing renders is the hollow
+    /// half of this fix. Source-pinned (literals kept) so removing the wiring turns this red.
+    #[test]
+    fn render_row_wires_why_into_the_title() {
+        let code = live_code(include_str!("context_menu.rs"));
+        let body = only_body(&code, "fn render_row");
+        assert!(
+            body.contains("item.why()"),
+            "F-37: render_row must fall back to item.why() for the disabled-row tooltip"
         );
     }
 }
