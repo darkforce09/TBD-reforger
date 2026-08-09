@@ -542,6 +542,18 @@ fn refresh_signals(ctx: &HistoryCtx, obj: usize) {
 /// mission" — the strip's semver `<input>` is on this very page. Mirrors the React host handler's
 /// INPUT/SELECT/TEXTAREA/contentEditable guard, read off `activeElement` (the shortcut listens on
 /// `window`, so the event target is the focused node or `<body>`).
+///
+/// **T-785 — this is the LAST line of defence, and the reason it is read directly off
+/// `document.activeElement`.** Every editor chord (E/R collapse the docks, Space recentres the
+/// camera, G flips snap, Ctrl+A / Backspace / copy-paste) sits behind this guard at the top of the
+/// `mission_editor` keydown closure and behind [`register_key_handler`] here — so whatever this
+/// returns is what decides "typed character" vs "chord". The Attributes/rename remount bug
+/// (fixed in `attributes.rs::text_field` and `eden_dock_left.rs`) worked by dropping focus to
+/// `<body>` mid-word, at which point this correctly reported "not editable" and the tail of the
+/// word ran as chords. Keeping focus is the root fix; reading the LIVE `activeElement` tag and
+/// contentEditable state here (never a cached "is a field open?" flag) is what makes the guard
+/// track focus the instant it moves, so a field that loses focus can never keep swallowing keys and
+/// a chord can never fire while a field truly holds focus.
 pub fn in_editable_field() -> bool {
     let Some(el) = web_sys::window()
         .and_then(|w| w.document())
@@ -549,11 +561,34 @@ pub fn in_editable_field() -> bool {
     else {
         return false;
     };
+    // Native form controls by tag. `activeElement` is `<body>` (or `<html>`) when nothing is
+    // focused, so this is false exactly when a chord SHOULD be allowed to fire.
     if matches!(el.tag_name().as_str(), "INPUT" | "SELECT" | "TEXTAREA") {
         return true;
     }
-    el.dyn_ref::<web_sys::HtmlElement>()
+    // contentEditable hosts (rich-text widgets). `is_content_editable` already resolves the
+    // inherited `inherit` case, so a caret inside a nested span of an editable region counts.
+    if el
+        .dyn_ref::<web_sys::HtmlElement>()
         .is_some_and(web_sys::HtmlElement::is_content_editable)
+    {
+        return true;
+    }
+    // Belt-and-braces for editable widgets that are neither a native control nor contentEditable but
+    // announce themselves as text entry (ARIA `role="textbox"`/`searchbox`, or a `contenteditable`
+    // attribute a browser has not reflected onto `isContentEditable`). Reading the attribute
+    // directly means a custom field can opt into the same typing vs chord split without being an
+    // `<input>`.
+    if el
+        .get_attribute("contenteditable")
+        .is_some_and(|v| v != "false")
+    {
+        return true;
+    }
+    matches!(
+        el.get_attribute("role").as_deref(),
+        Some("textbox" | "searchbox")
+    )
 }
 
 /// Install the window `keydown` shortcuts (spec C5): **Ctrl/Cmd+Z** undo, **Ctrl/Cmd+Shift+Z** or

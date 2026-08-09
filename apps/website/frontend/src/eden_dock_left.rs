@@ -327,9 +327,28 @@ pub fn DockLeft(
                                         .map(|(_, text)| text.clone());
                                     if let Some(text) = live {
                                         let from = key.clone();
+                                        // T-785 — `autofocus` alone does NOT focus this input. The
+                                        // row is inserted by a reactive `{move || …}` re-render, not
+                                        // present at parse time, and the browser only honours the
+                                        // `autofocus` content attribute for elements in the initial
+                                        // parse / first document insertion — a node created by a
+                                        // later reactive update is skipped. So the rename box opened
+                                        // UNFOCUSED, keystrokes stayed on `<body>`, and 'g' etc. ran
+                                        // as editor chords (the review's "GRID off"→"GRID move").
+                                        // `on_load` fires once when Leptos mounts the node: focus it
+                                        // and select the existing text so the first keystroke both
+                                        // lands in the field AND replaces the old name (the rename
+                                        // affordance operators expect).
+                                        let rename_ref = NodeRef::<leptos::html::Input>::new();
+                                        rename_ref
+                                            .on_load(|el: web_sys::HtmlInputElement| {
+                                                let _ = el.focus();
+                                                el.select();
+                                            });
                                         return view! {
                                             <input
                                                 type="text"
+                                                node_ref=rename_ref
                                                 data-testid="dock-left-bookmark-rename"
                                                 aria-label="Rename bookmark"
                                                 autofocus
@@ -1908,6 +1927,39 @@ mod tests {
         ] {
             assert!(src.contains(needle), "missing driveable testid {needle}");
         }
+    }
+
+    /// **T-785 — the inline rename input FOCUSES and SELECTS itself on mount.** The review found it
+    /// "NEVER receives focus": it is inserted by the reactive `{move || …}` list re-render, and the
+    /// browser only honours the `autofocus` content attribute for nodes present at the initial parse
+    /// / first document insertion, not ones a later reactive update creates. So the box opened
+    /// unfocused, keystrokes stayed on `<body>`, and a typed 'g' flipped 'GRID off'→'GRID move'
+    /// instead of naming the bookmark. The fix wires a `NodeRef` whose `on_load` focuses the input
+    /// and selects its text (first keystroke replaces the old name — the rename affordance expected).
+    ///
+    /// A source pin because this file's view is `#[cfg(target_arch = "wasm32")]` and there is no
+    /// wasm-bindgen-test harness. `on_load`/`focus`/`select` are CODE, so they are read from the
+    /// literal-blanked production half; a comment describing the fix cannot green them.
+    #[test]
+    fn the_inline_rename_input_focuses_and_selects_on_mount() {
+        let code = live_rust();
+        assert!(
+            code.contains("NodeRef::<leptos::html::Input>::new()"),
+            "the rename input must carry a NodeRef so it can be focused on mount"
+        );
+        // The literal-kept half proves the ref is actually BOUND to the rename input (not created
+        // and dropped) — `node_ref=` and the testid live together on one element.
+        let src = live_src();
+        assert!(
+            src.contains("node_ref=rename_ref"),
+            "the NodeRef must be attached to the rename input via node_ref="
+        );
+        // `on_load` runs once when Leptos mounts the node; it must focus AND select. `autofocus`
+        // alone is what failed, so focus has to be programmatic here.
+        assert!(
+            code.contains(".on_load(") && code.contains(".focus()") && code.contains(".select()"),
+            "on_load must call focus() and select() on the mounted input; body:\n{code}"
+        );
     }
 
     /// T-696 / T-762 — source pins for the wasm-only halves: the index reads the boot-parsed
