@@ -376,7 +376,7 @@ pub fn SearchBox(
     }
 }
 
-/// ═══════════════ T-333 — one Escape, one dialog ═══════════════
+/// ═══════════════ T-333 / T-814 — one Escape, one dialog ═══════════════
 ///
 /// [`Dialog`] and [`Sheet`] each install a **window-level** `keydown` listener, one per instance.
 /// Every listener sees every Escape, and each one's only guard was "am I open?", so pressing Esc
@@ -389,21 +389,26 @@ pub fn SearchBox(
 /// reimplemented the dismissal by hand (see the comment this replaces). So the stack is ours to
 /// hold, and this is it.
 ///
-/// **Topmost means topmost on screen, not most-recently-opened.** Every overlay in this file is
-/// `z-50`; with equal z-index the browser paints in DOM order, which is why `event_manager.rs`
-/// declares its detach confirm *last in the tree on purpose* and says so. Leptos mounts in tree
-/// order, so registration order **is** paint order, and the dialog the user sees on top is the
-/// last-registered one that is currently open. A most-recently-opened stack would be the wrong
-/// answer for a pair declared in one order and opened in the other: it would route Escape to a
-/// dialog painted underneath.
+/// **Topmost for Escape means last-opened (open order), matching paint order (T-786 / T-814).**
+/// Wave-139 / T-333 originally routed Esc by mount/DOM order because every overlay was hard-coded
+/// `z-50` and paint followed registration. T-786 made z follow open order; leaving Esc on mount
+/// order then dismissed the *hidden* underlay first (wave200 F5: ORBAT under Arsenal). Esc and z
+/// now answer the same open-order question so the surface the operator sees is the one Esc closes.
+/// One Escape still closes exactly one overlay.
 ///
 /// **Out-of-order close is not a special case here, by construction.** Nothing is pushed on open or
 /// popped on close: openness is read *live* at keydown time, so a dialog that closes from the
 /// middle of the stack simply stops being a candidate on the next keystroke, and one that reopens
-/// becomes a candidate again — in its original paint position, which is where it reopens on screen.
-/// Unmount removes **by id**, not by popping, so components torn down in any order leave a
-/// consistent registry. Both the listener and the registration are released in the same
-/// [`on_cleanup`], so neither can outlive the component.
+/// becomes a candidate again — as the new top of open order (a reopen is a fresh open). Unmount
+/// removes **by id**, not by popping, so components torn down in any order leave a consistent
+/// registry. Both the listener and the registration are released in the same [`on_cleanup`], so
+/// neither can outlive the component.
+///
+/// **T-814 — transients + consume-aware Esc.** Strip popovers (menu / export / Controls Hint) are
+/// not stack entries. The strip registers closers here; any overlay closed→open edge fires them so
+/// a canvas-opened Attributes cannot sit under a still-visible hint (wave200 F4). A capture-phase
+/// Escape sentinel marks when a registered overlay owned the keystroke so the strip yields even if
+/// a dialog's bubble listener already closed it in the same event (`any_open()` would then lie).
 pub(crate) mod modal_stack {
     use std::cell::{Cell, RefCell};
     use std::rc::Rc;
@@ -411,7 +416,8 @@ pub(crate) mod modal_stack {
     /// One registered overlay. `is_open` is read *live* (see below); `open_seq` is the monotonic
     /// stamp of the last time this overlay was observed transitioning closed→open, or `0` while it
     /// reports closed. Registration (mount) order and open order are **different** questions — Esc
-    /// routing wants the former (T-333, unchanged), z-index wants the latter (T-786).
+    /// and z-index both follow open order (T-814 / T-786); mount order is only how the Vec is laid
+    /// out for stable id lookup.
     struct Entry {
         id: u64,
         is_open: Rc<dyn Fn() -> bool>,
@@ -424,17 +430,41 @@ pub(crate) mod modal_stack {
     thread_local! {
         /// Overlays in mount order. Not a `Vec<bool>`: the flag has to be read at keydown time, not
         /// cached at registration time, or a dialog closed by a button would still be holding
-        /// Escape. `open_seq` rides alongside for the z-index question (T-786).
+        /// Escape. `open_seq` rides alongside for the z-index / Esc question (T-786 / T-814).
         static REGISTRY: RefCell<Vec<Entry>> = const { RefCell::new(Vec::new()) };
         static NEXT_ID: Cell<u64> = const { Cell::new(1) };
         /// Monotonic open-order clock. Bumped every time [`reconcile_open_order`] catches an overlay
         /// on its closed→open edge; the overlay with the highest live stamp is the last-opened, and
-        /// so the one that paints on top (T-786 O-3: "a real modal stack — last-opened wins").
+        /// so the one that paints on top and owns Escape (T-786 O-3 / T-814 F5).
         static OPEN_CLOCK: Cell<u64> = const { Cell::new(0) };
+        /// T-814 — strip-owned transient closers (menu / export / hint). Fired on every overlay
+        /// closed→open edge so dialogs opened outside the strip still clear those surfaces.
+        static TRANSIENT_CLOSERS: RefCell<Vec<(u64, Rc<dyn Fn()>)>> =
+            const { RefCell::new(Vec::new()) };
+        static NEXT_CLOSER_ID: Cell<u64> = const { Cell::new(1) };
+        /// T-814 — set in the capture-phase Escape sentinel when any overlay is open at event
+        /// start (and by overlay handlers that consume Esc). The strip reads this instead of a
+        /// live [`any_open`] after a peer listener may already have closed the dialog.
+        static ESCAPE_CONSUMED: Cell<bool> = const { Cell::new(false) };
+        /// T-814 — open-order top id snapshotted at Escape keydown (capture). [`is_topmost_open`]
+        /// answers against this id for the rest of the event so a peer overlay that closes first
+        /// cannot promote the underlay mid-keydown (dialog+dialog pile-up).
+        static ESCAPE_TOP_ID: Cell<Option<u64>> = const { Cell::new(None) };
+        #[cfg(target_arch = "wasm32")]
+        static ESCAPE_HOOKS_ARMED: Cell<bool> = const { Cell::new(false) };
+        #[cfg(target_arch = "wasm32")]
+        static OPEN_EDGE_PUMP: RefCell<Option<OpenEdgePump>> = const { RefCell::new(None) };
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    struct OpenEdgePump {
+        handle: i32,
+        _closure: wasm_bindgen::closure::Closure<dyn FnMut()>,
     }
 
     /// Register an overlay and return the id that identifies it for the rest of its life.
     pub(crate) fn register(is_open: impl Fn() -> bool + 'static) -> u64 {
+        ensure_escape_hooks();
         let id = NEXT_ID.with(|n| {
             let id = n.get();
             n.set(id + 1);
@@ -456,29 +486,169 @@ pub(crate) mod modal_stack {
         REGISTRY.with_borrow_mut(|r| r.retain(|e| e.id != id));
     }
 
-    /// Whether `id` is the last-registered overlay that is currently open — i.e. the one painted
-    /// on top. False when nothing is open, and false for `id`s that are not registered.
+    /// T-814 — register a strip transient closer. Returned id is for [`unregister_transient_closer`].
+    #[allow(dead_code)]
+    pub(crate) fn register_transient_closer(close: impl Fn() + 'static) -> u64 {
+        ensure_escape_hooks();
+        let id = NEXT_CLOSER_ID.with(|n| {
+            let id = n.get();
+            n.set(id + 1);
+            id
+        });
+        TRANSIENT_CLOSERS.with_borrow_mut(|c| c.push((id, Rc::new(close))));
+        #[cfg(target_arch = "wasm32")]
+        ensure_open_edge_pump();
+        id
+    }
+
+    /// T-814 — drop a transient closer by id (strip unmount).
+    #[allow(dead_code)]
+    pub(crate) fn unregister_transient_closer(id: u64) {
+        TRANSIENT_CLOSERS.with_borrow_mut(|c| c.retain(|(i, _)| *i != id));
+        #[cfg(target_arch = "wasm32")]
+        maybe_stop_open_edge_pump();
+    }
+
+    /// Fire every registered transient closer. Safe to call re-entrantly from an open-edge: closers
+    /// are cloned out before any runs.
+    #[allow(dead_code)]
+    pub(crate) fn close_registered_transients() {
+        let closers: Vec<Rc<dyn Fn()>> =
+            TRANSIENT_CLOSERS.with_borrow(|c| c.iter().map(|(_, f)| Rc::clone(f)).collect());
+        for f in closers {
+            f();
+        }
+    }
+
+    /// Whether Escape was claimed by a registered overlay for the current keydown (T-814).
+    #[allow(dead_code)]
+    pub(crate) fn escape_consumed() -> bool {
+        ESCAPE_CONSUMED.get()
+    }
+
+    /// Mark Escape consumed (overlay handlers that close on Esc; also the capture sentinel).
+    #[allow(dead_code)]
+    pub(crate) fn mark_escape_consumed() {
+        ESCAPE_CONSUMED.set(true);
+    }
+
+    /// Poll open edges and fire transient closers. Called by the wasm pump and by reconcile.
+    #[allow(dead_code)]
+    pub(crate) fn flush_open_edges() {
+        let _ = reconcile_open_order();
+    }
+
+    fn ensure_escape_hooks() {
+        #[cfg(target_arch = "wasm32")]
+        {
+            use wasm_bindgen::JsCast;
+            if ESCAPE_HOOKS_ARMED.get() {
+                return;
+            }
+            let Some(win) = web_sys::window() else {
+                return;
+            };
+            // Capture-phase: runs before every bubble window listener (Dialog / Sheet / strip).
+            // Snapshot "an overlay owns this Esc" before any peer can close and make any_open lie.
+            let closure = wasm_bindgen::closure::Closure::<dyn FnMut(_)>::new(
+                move |ev: web_sys::KeyboardEvent| {
+                    if ev.type_() == "keyup" {
+                        ESCAPE_TOP_ID.set(None);
+                        ESCAPE_CONSUMED.set(false);
+                        return;
+                    }
+                    if ev.key() == "Escape" {
+                        // Snapshot the open-order top BEFORE any bubble listener can close it.
+                        let top = open_order_top_id();
+                        ESCAPE_TOP_ID.set(top);
+                        ESCAPE_CONSUMED.set(top.is_some());
+                    } else {
+                        ESCAPE_TOP_ID.set(None);
+                        ESCAPE_CONSUMED.set(false);
+                    }
+                },
+            );
+            let _ = win.add_event_listener_with_callback_and_bool(
+                "keydown",
+                closure.as_ref().unchecked_ref(),
+                true,
+            );
+            let _ = win.add_event_listener_with_callback_and_bool(
+                "keyup",
+                closure.as_ref().unchecked_ref(),
+                true,
+            );
+            // Lives for the page — arm once per wasm session.
+            closure.forget();
+            ESCAPE_HOOKS_ARMED.set(true);
+        }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    fn ensure_open_edge_pump() {
+        use wasm_bindgen::JsCast;
+        OPEN_EDGE_PUMP.with(|slot| {
+            if slot.borrow().is_some() {
+                return;
+            }
+            let Some(win) = web_sys::window() else {
+                return;
+            };
+            // ~1 frame: exclusivity must land with the dialog paint, not after a noticeable flash
+            // of the Controls Hint / export menu underneath (wave200 F4).
+            let closure = wasm_bindgen::closure::Closure::<dyn FnMut()>::new(|| {
+                flush_open_edges();
+            });
+            let handle = win
+                .set_interval_with_callback_and_timeout_and_arguments_0(
+                    closure.as_ref().unchecked_ref(),
+                    16,
+                )
+                .unwrap_or(0);
+            *slot.borrow_mut() = Some(OpenEdgePump {
+                handle,
+                _closure: closure,
+            });
+        });
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    fn maybe_stop_open_edge_pump() {
+        let empty = TRANSIENT_CLOSERS.with_borrow(|c| c.is_empty());
+        if !empty {
+            return;
+        }
+        let pump = OPEN_EDGE_PUMP.with(|slot| slot.borrow_mut().take());
+        if let Some(p) = pump {
+            if let Some(win) = web_sys::window() {
+                win.clear_interval_with_handle(p.handle);
+            }
+        }
+    }
+
+    /// Whether `id` is the last-**opened** overlay that is currently open — i.e. the one painted
+    /// on top and the one Escape must dismiss (T-814). False when nothing is open, and false for
+    /// `id`s that are not registered.
     ///
     /// The predicates are cloned out from under the borrow before any of them runs: they read
     /// Leptos signals, and a signal read is arbitrary user code. Evaluating them while the
     /// `RefCell` is borrowed would make a re-entrant `register` from inside one a panic instead of
     /// a merely surprising ordering.
     pub(crate) fn is_topmost_open(id: u64) -> bool {
-        let entries: Vec<(u64, Rc<dyn Fn() -> bool>)> =
-            REGISTRY.with_borrow(|r| r.iter().map(|e| (e.id, Rc::clone(&e.is_open))).collect());
-        entries
-            .iter()
-            .rev()
-            .find(|(_, is_open)| is_open())
-            .is_some_and(|(top, _)| *top == id)
+        // During an Escape keydown the capture sentinel freezes the open-order top so every
+        // bubble listener agrees on a single owner even after that owner closes itself.
+        if let Some(top) = ESCAPE_TOP_ID.get() {
+            return id == top;
+        }
+        is_top_by_open_order(id)
     }
 
     /// Whether any registered overlay currently reports open.
     ///
     /// T-726 — non-overlay Escape consumers (the editor's shared ruler/LoS/viewshed arm) consult
     /// this so an open dialog/menu/picker owns the keystroke. Overlay handlers themselves use
-    /// [`is_topmost_open`]; this is the "is anyone claiming Esc?" half for listeners that are not
-    /// stack entries.
+    /// [`is_topmost_open`]; the strip's Esc arm (T-814) uses [`escape_consumed`] instead, because
+    /// a peer listener may have already closed the overlay in the same keydown.
     ///
     /// Same clone-out-before-call discipline as [`is_topmost_open`]: predicates may re-enter.
     #[allow(dead_code)]
@@ -519,6 +689,9 @@ pub(crate) mod modal_stack {
     /// reads) are cloned out and called with the `RefCell` **not** borrowed; the stamps are written
     /// back through the per-entry `Cell` afterward, so a re-entrant `register` from inside a
     /// predicate cannot deadlock.
+    ///
+    /// T-814: every closed→open edge also fires [`close_registered_transients`] (after stamps are
+    /// written, registry unborrowed) so Attributes opened from the canvas clears the strip hint.
     fn reconcile_open_order() -> Vec<(u64, u64)> {
         let snapshot: Vec<(u64, Rc<dyn Fn() -> bool>, u64)> = REGISTRY.with_borrow(|r| {
             r.iter()
@@ -528,9 +701,11 @@ pub(crate) mod modal_stack {
         // Decide the new stamp for each id with the registry unborrowed.
         let mut updates: Vec<(u64, u64)> = Vec::with_capacity(snapshot.len());
         let mut open_now: Vec<(u64, u64)> = Vec::new();
+        let mut saw_open_edge = false;
         for (id, is_open, prev) in snapshot {
             let new_seq = if is_open() {
                 if prev == 0 {
+                    saw_open_edge = true;
                     OPEN_CLOCK.with(|c| {
                         let next = c.get() + 1;
                         c.set(next);
@@ -555,19 +730,24 @@ pub(crate) mod modal_stack {
                 }
             }
         });
+        if saw_open_edge {
+            close_registered_transients();
+        }
         open_now
     }
 
     /// Whether `id` is the overlay that was opened **most recently** and is still open — the one
-    /// that must paint on top (T-786). This is the *open-order* question and is deliberately
-    /// separate from [`is_topmost_open`], which answers the *mount-order* question for Esc routing
-    /// (T-333) and must not change: a pair mounted in one order but opened in the other needs
-    /// opposite answers from the two, which is the whole point of O-3.
-    pub(crate) fn is_top_by_open_order(id: u64) -> bool {
+    /// that must paint on top (T-786) and own Escape (T-814). Esc routing uses this via
+    /// [`is_topmost_open`].
+    fn open_order_top_id() -> Option<u64> {
         reconcile_open_order()
             .into_iter()
             .max_by_key(|(_, seq)| *seq)
-            .is_some_and(|(top, _)| top == id)
+            .map(|(top, _)| top)
+    }
+
+    pub(crate) fn is_top_by_open_order(id: u64) -> bool {
+        open_order_top_id().is_some_and(|top| top == id)
     }
 
     /// The z-index class an overlay should carry so the last-opened surface wins the paint order
@@ -610,9 +790,16 @@ pub fn Dialog(
     // `on_cleanup`, which Leptos runs before the arena disposes the signal, but a disposed signal
     // read must answer "not open" rather than panic if that order ever changes.
     let modal_id = modal_stack::register(move || open.try_get_untracked().unwrap_or(false));
+    // T-814 — opening any Dialog clears strip transients (menu/export/hint) without per-site wiring.
+    Effect::new(move |_| {
+        if open.get() {
+            modal_stack::close_registered_transients();
+        }
+    });
     // Esc closes (base-ui behavior). Window-level like React's focus-trap dismissal.
     let esc = leptos::prelude::window_event_listener(leptos::ev::keydown, move |ev| {
         if open.get_untracked() && ev.key() == "Escape" && modal_stack::is_topmost_open(modal_id) {
+            modal_stack::mark_escape_consumed();
             open.set(false);
         }
     });
@@ -966,11 +1153,11 @@ mod tests {
 
         assert!(
             modal_stack::is_topmost_open(confirm_id),
-            "the last-registered open overlay is the one painted on top"
+            "the last-opened open overlay owns Escape (T-814 open-order)"
         );
         assert!(
             !modal_stack::is_topmost_open(form_id),
-            "the form behind an open confirm must not answer Escape — this is T-333"
+            "the form behind an open confirm must not answer Escape — this is T-333/T-814"
         );
 
         // Esc dismisses the confirm only; the form is still open and now becomes the target.
@@ -1002,10 +1189,13 @@ mod tests {
         assert!(modal_stack::is_topmost_open(confirm_id));
         assert!(!modal_stack::is_topmost_open(form_id));
 
-        // …and reopens underneath. Paint order is unchanged, so it is still not the top.
+        // …and reopens as a fresh open: open-order Esc (T-814) promotes it over the still-open confirm.
         form.set(true);
-        assert!(modal_stack::is_topmost_open(confirm_id));
-        assert!(!modal_stack::is_topmost_open(form_id));
+        assert!(
+            modal_stack::is_topmost_open(form_id),
+            "a reopen is a fresh open and takes Escape (T-814); mount-order would have kept confirm"
+        );
+        assert!(!modal_stack::is_topmost_open(confirm_id));
 
         // Unmount out of order too: the top component is torn down first, by id, not by popping.
         modal_stack::unregister(confirm_id);
@@ -1092,16 +1282,16 @@ mod tests {
         assert_eq!(modal_stack::depth(), start, "registrations must not leak");
     }
 
-    /* ═══════════════ T-786 O-3 — z-index follows open order, Esc follows mount order ══════════ */
+    /* ═══════════════ T-786 O-3 / T-814 — z-index and Esc both follow open order ══════════ */
 
     /// The O-3 defect, stated as a test. `AttributesModal` mounts *before* `OrbatManagerDialog`
     /// (`mission_editor.rs`), so with equal `z-50` the browser paints ORBAT (later in the DOM) on
     /// top — hit-testing the Arsenal's centre returns ORBAT, and the author's click hits nothing.
     /// The fix drives z from OPEN order: the Arsenal, opened last, must be the top tier and ORBAT
-    /// must drop below it. Meanwhile Esc still routes by MOUNT order (T-333, unchanged), and the two
-    /// orders genuinely disagree here — that disagreement is the whole ticket.
+    /// must drop below it. T-814 routes Esc by the same open order so Esc1 closes the Arsenal the
+    /// operator sees, not the hidden ORBAT (wave200 F5).
     #[test]
-    fn arsenal_opened_over_orbat_wins_z_while_esc_stays_mount_order() {
+    fn arsenal_opened_over_orbat_wins_z_and_escape() {
         let start = modal_stack::depth();
         // Mount order (registration): Attributes first, ORBAT second — as `mission_editor` mounts
         // them. Both start closed; the editor mounts both and toggles `open`.
@@ -1136,13 +1326,12 @@ mod tests {
         );
         assert!(!modal_stack::is_top_by_open_order(orbat_id));
 
-        // Esc still follows MOUNT order (T-333): ORBAT registered last, so it is `is_topmost_open`.
-        // The two questions answer differently for this pair, which is exactly O-3.
+        // T-814 — Esc follows the same OPEN order as z: Arsenal owns Escape while it is on top.
         assert!(
-            modal_stack::is_topmost_open(orbat_id),
-            "Esc routing is unchanged: the last-MOUNTED open overlay owns Escape"
+            modal_stack::is_topmost_open(attrs_id),
+            "Esc routing matches open order: the Arsenal opened last owns Escape (T-814 / wave200 F5)"
         );
-        assert!(!modal_stack::is_topmost_open(attrs_id));
+        assert!(!modal_stack::is_topmost_open(orbat_id));
 
         // Close the Arsenal → ORBAT is the last-open again and climbs back to the top tier.
         attrs.set(false);
@@ -1189,13 +1378,14 @@ mod tests {
         lower.set(true);
         assert!(
             modal_stack::is_top_by_open_order(lower_id),
-            "a reopen is a fresh open and takes the top of open order (z), unlike Esc's mount order"
+            "a reopen is a fresh open and takes the top of open order (z)"
         );
-        // …while Esc's mount order still puts `upper` (registered last) on top.
+        // T-814 — Esc agrees with open order, so the reopened lower owns Escape too.
         assert!(
-            modal_stack::is_topmost_open(upper_id),
-            "Esc mount order is unchanged by a reopen — matches T-333's reopen-underneath test"
+            modal_stack::is_topmost_open(lower_id),
+            "Esc follows open order: a reopen takes Escape (T-814), not mount order"
         );
+        assert!(!modal_stack::is_topmost_open(upper_id));
 
         modal_stack::unregister(lower_id);
         modal_stack::unregister(upper_id);
@@ -1208,6 +1398,39 @@ mod tests {
     /// the ORBAT overlay is the unfixed component (the Arsenal keeps its literal `z-50` this wave by
     /// design — it is the surface ORBAT yields *to*).
     #[test]
+    /// T-814 — a closed→open edge fires registered transient closers (strip menu/export/hint).
+    #[test]
+    fn opening_an_overlay_fires_registered_transient_closers() {
+        use std::cell::Cell;
+        use std::rc::Rc;
+        let fired = Rc::new(Cell::new(0u32));
+        let f = Rc::clone(&fired);
+        let closer_id = modal_stack::register_transient_closer(move || {
+            f.set(f.get() + 1);
+        });
+        let (flag, id) = overlay(false);
+        assert_eq!(fired.get(), 0, "closed overlay must not fire closers");
+        flag.set(true);
+        // reconcile runs inside is_topmost_open / z_class / flush
+        assert!(modal_stack::is_topmost_open(id));
+        assert_eq!(
+            fired.get(),
+            1,
+            "closed→open must fire transient closers exactly once"
+        );
+        // still open — no second edge
+        assert!(modal_stack::is_topmost_open(id));
+        assert_eq!(fired.get(), 1, "staying open must not re-fire");
+        flag.set(false);
+        // Reconcile between close and reopen (mirrors a real UI frame) so open_seq clears.
+        assert!(!modal_stack::is_topmost_open(id));
+        flag.set(true);
+        assert!(modal_stack::is_topmost_open(id));
+        assert_eq!(fired.get(), 2, "a reopen is a fresh edge");
+        modal_stack::unregister(id);
+        modal_stack::unregister_transient_closer(closer_id);
+    }
+
     fn orbat_manager_overlay_derives_z_from_the_modal_stack() {
         use crate::arsenal::class_r_scrub::{live_code, only_body};
         let scrubbed = live_code(include_str!("orbat_manager.rs"));
