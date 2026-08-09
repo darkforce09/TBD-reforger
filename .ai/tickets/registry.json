@@ -19982,7 +19982,7 @@
     {
       "id": "T-811",
       "title": "Layer rename never receives focus — the F-02 fix landed on the bookmark widget, not the layer tree",
-      "status": "queued",
+      "status": "shipped",
       "executor": "claude-code",
       "program": "eden",
       "stream": "mission-creator",
@@ -19999,12 +19999,12 @@
       ],
       "order": 4930,
       "summary": "WAVE-200 VERIFIER RE-TICKET (source: .ai/artifacts/editor_verify/wave200.md F1, MAJOR; hostile review F-02). VERIFIED LIVE (real per-char CDP): the actual Layers rename — pencil aria-label=\"Rename layer\" eden_tree.rs:462, input ~:836-867 — relies on bare autofocus=true on a reactively-inserted node, which browsers skip ('a node created by a later reactive update is skipped' — the mechanism note T-785 itself added at eden_dock_left.rs:330-338). Creation flow (New layer -> armed inline rename): input mounts prefilled 'New Layer 1', focused_on_mount:false, activeElement=BUTTON; real 'g' keydown flipped GRID off->move; typed 'Assault Sqd' never reached the input. Pencil flow: same — value unchanged after 11 typed chars. T-785's source-pins pin the BOOKMARK rename and pass green — a green pin on the wrong widget. FIX: check FIRST whether the rename draft round-trips through a signal the tree list renders from (the T-812 remount trap) — if so decouple the draft; then NodeRef + on_load focus+select (the eden_dock_left.rs:330-338 pattern). Cover BOTH flows. TRAPS: do not touch T-785's attributes.rs text_field work; layer-row drop-target/selection clicks must keep working while a rename is open. ACCEPTANCE (re-run the verifier probe): both flows — focused_on_mount === true; type an 11-char string with spaces -> value === typed, activeElement === the input, GRID chip byte-identical; Enter/blur commits the rename; Escape abandons.",
-      "notes": "wave 209; verifier wave200.md F1; probe harness pattern: review section 2 F-01 + scratchpad cdp.py"
+      "notes": "wave 209; verifier wave200.md F1; probe harness pattern: review section 2 F-01 + scratchpad cdp.py | SHIPPED W209: acceptance re-proved live by the Fable verifier (both rename flows focus on mount, whole-word typing, GRID immune, node survives). Its source pin shipped HOLLOW (raw include_str self-match — verifier F2, the T-759 class) — un-hollowed in-wave 27343f82, perturbation-proven RED on production node_ref deletion."
     },
     {
       "id": "T-812",
       "title": "Bookmark rename truncates the typed name to its last character; the bookmark ADD input never focuses",
-      "status": "queued",
+      "status": "shipped",
       "executor": "claude-code",
       "program": "eden",
       "stream": "mission-creator",
@@ -20021,12 +20021,12 @@
       ],
       "order": 4940,
       "summary": "WAVE-200 VERIFIER RE-TICKET (wave200.md F2 MAJOR + F7 MINOR). F2 VERIFIED LIVE: the rename input is controlled through the `renaming` signal read by the whole bookmark-list closure — every keystroke re-renders the list and rebuilds the input node, and T-785's new on_load then re-focuses AND select()s the full text on every remount, so each keystroke replaces the entire draft: typed 'Ridge OP Two' per-char -> input value 'o', committed row label 'o' (two independent reads). A name-destroying regression ON the field the wave fixed. F7 VERIFIED LIVE: the bookmark ADD ('name this view') input eden_dock_left.rs:275-304 has bare autofocus on a reactive insert — focused_on_mount:false, real 'g' flipped GRID with the naming box open. FIX: the mid-edit draft must live where the list render does not track it (local draft signal or uncontrolled input; commit on blur/Enter; Escape abandons); select-all ONLY when a rename session opens, never on remount (which must stop once decoupled); ADD input gets NodeRef + on_load focus+select and the same remount check. TRAPS: this file carries T-785's shipped pins ~:1932-1961 which currently claim layer-rename coverage — repoint/rename them honestly for the new mechanism (T-811 adds the real layer pin); bookmark jump/delete rows must keep working mid-rename. ACCEPTANCE (verifier probe): rename -> type 'Ridge OP Two' -> committed row named 'Ridge OP Two', focus kept throughout; ADD input focused_on_mount === true, 'g' lands in the field, GRID unchanged; Escape abandons without committing.",
-      "notes": "wave 209; verifier wave200.md F2+F7"
+      "notes": "wave 209; verifier wave200.md F2+F7 | SHIPPED W209: 'Ridge OP Two' commits whole (wave-200 F2 dead); ADD input focuses on mount; pins use the live_source scrub and were verified non-hollow."
     },
     {
       "id": "T-813",
       "title": "Multi-edit differing field: focus+blur with zero typing wipes the field across the selection; field Escape also closes the modal",
-      "status": "queued",
+      "status": "shipped",
       "executor": "claude-code",
       "program": "eden",
       "stream": "mission-creator",
@@ -20043,12 +20043,12 @@
       ],
       "order": 4950,
       "summary": "WAVE-200 VERIFIER RE-TICKET (wave200.md F3 MAJOR + F6 MINOR). F3 VERIFIED LIVE with digest+undo depth: 2 slots with differing roles, 'Multiple values' shown, apply-to-all ticked, click into ROLE, click the modal header (blur), NO key pressed -> undo depth +2 (one step per slot, the F-26 cost), slots_digest role fields emptied for exactly the selected slots; 2x Ctrl+Z restored byte-identical. MECHANISM attributes.rs:795-801: text_commit skips only on !gate.differs(), and a differing draft seeds from text_display()='' — the no-op skip is defeated exactly when the field differs, so a pure change-your-mind interaction stamps '' across N slots. FIX: an 'operator actually edited the draft' latch set on real input; commit only if edited. MUST PRESERVE (verifier-proven green): deliberately typing a value — including re-typing one slot's value — still stamps the whole selection; single-selection no-op skip (focus+Enter and focus+blur -> depth/digest unchanged); 'Multi Rle X' -> committed to every selected slot with no per-keystroke fan-out. F6 VERIFIED LIVE: Escape in a focused field abandons the draft (no write, no undo step — correct) but the modal ALSO closed on the same press — the field keydown (attributes.rs:834-845) does not consume the event and the modal window listener (:230-236) closes on it. FIX: field-level Escape consumes (stop_propagation): first press abandons+blurs, second closes the modal — for text_field AND number_field (same family, pre-existing there). TRAPS: ROTATION digit entry must not regress; T-814 makes the modal-side Esc consume-aware in ui.rs/eden_top_strip.rs — the field-side consume composes with it (field layer first); do NOT edit those files, T-814 owns them this wave. ACCEPTANCE (verifier probes): differing ROLE + apply-to-all + focus + blur, zero typing -> undo depth UNCHANGED, digest UNCHANGED; then type a real value -> commits to all selected; field Escape -> draft abandoned, modal STAYS open, second Escape closes it; ROTATION '135' still enters with focus kept.",
-      "notes": "wave 209; verifier wave200.md F3+F6; composes with T-814 Esc layering"
+      "notes": "wave 209; verifier wave200.md F3+F6; composes with T-814 Esc layering | SHIPPED W209: differing-field zero-typing blur now depth/digest-unchanged (wave-200 F3 dead); typed value still stamps the selection incl. re-typing a settled value; field-Esc two-stage verified; composed Esc ladder with T-814 peels one layer per press."
     },
     {
       "id": "T-814",
       "title": "Transients survive dialogs opened outside the strip; one Esc closes two layers; Esc dismisses the hidden dialog under the visual top",
-      "status": "queued",
+      "status": "shipped",
       "executor": "claude-code",
       "program": "eden",
       "stream": "mission-creator",
@@ -20066,12 +20066,12 @@
       ],
       "order": 4960,
       "summary": "WAVE-200 VERIFIER RE-TICKET (wave200.md F4 MAJOR + F5 MINOR). F4 VERIFIED LIVE at single-keydown granularity: hint open -> canvas dblclick opens Attributes -> hint still up under the dialog (export dropdown same); then ONE Escape rawKeyDown closed BOTH the dialog AND the transient — the dialog's window keydown runs first, closes, and the strip's any_open() guard (eden_top_strip.rs:787) reads false in the SAME event: the wave-139-F3 pile-up resurrected, insertion-order-fragile by construction. close_transients (:758-767) only guards the strip's own three open paths. FIX: (a) central — every Dialog already registers in ui.rs modal_stack; make registration close transients (small transient-registry in ui.rs: the strip registers closers for menu/export/hint; dialog registration fires them). Do NOT edit attributes.rs or per-dialog open sites — hook the registration point. (b) consume-aware Esc: modal_stack marks 'a dialog consumed Escape for this event'; the strip's guard checks the mark, not live any_open(), so one press closes exactly one layer regardless of listener order. F5 VERIFIED LIVE: ORBAT (z-40, under) + Arsenal (z-50, top): Esc1 closed the HIDDEN ORBAT, Esc2 the arsenal — Esc dismisses by MOUNT order while z paints by OPEN order (ui.rs:466-474 vs :566-571): a visual no-op that silently discards context on the flagship O-3 pair. FIX: Esc closes the OPEN-ORDER topmost. One-layer-per-press stays absolute. Wave-139-era pins (T-333 family) pin mount-order — update HONESTLY to open-order without weakening 'one per press'/'no pile-up'; if an update would weaken a pin, stop and report. TRAPS: the context menu is not a Dialog and keeps its own dismissal; O-3 acceptance (elementFromPoint inside arsenal) and the O-5 pair must stay green; scrim-unreachability of z-50 ties must stay true; T-813 makes the FIELD-level Escape consume in attributes.rs — a focused-field Escape is the field's layer and composes with the consume-aware guard. ACCEPTANCE (verifier probes): hint -> canvas dblclick Attributes -> hint CLOSED (export same); Esc ladder closes exactly one surface per press in every dialog+transient combination; ORBAT -> OPEN ARSENAL -> Esc1 closes the ARSENAL, ORBAT stays, Esc2 closes ORBAT; O-5 pair (hint -> Save Version -> hint absent, 'Versions are immutable' present) and O-3 elementFromPoint still pass.",
-      "notes": "wave 209; verifier wave200.md F4+F5; composes with T-813 field-Esc"
+      "notes": "wave 209; verifier wave200.md F4+F5; composes with T-813 field-Esc | SHIPPED W209: dialog registration fires transient closers on ANY open path; consume-aware Esc guard; open-order dismissal (Esc1 closes the visual top). Its O-3 wiring pin shipped DISARMED (stray #[test] orphaned the fn — verifier F1) — re-armed in-wave 27343f82, perturbation-proven RED on a literal-z-50 substitution. O-3/O-5 z-stacking unregressed."
     },
     {
       "id": "T-815",
       "title": "ORBAT squad-rename input opens unfocused; two T787 probe missions left in the dev library",
-      "status": "queued",
+      "status": "shipped",
       "executor": "claude-code",
       "program": "eden",
       "stream": "mission-creator",
@@ -20088,7 +20088,7 @@
       ],
       "order": 4970,
       "summary": "WAVE-200 VERIFIER RE-TICKET (wave200.md F8, both NITs). NIT-1 VERIFIED LIVE: the ORBAT squad-rename inline input opens unfocused — typing before clicking runs as chords ('g' flips GRID); once clicked, focus holds and typing works (no remount trap — verifier-confirmed). FIX: NodeRef + on_load focus+select on rename-session open (the eden_dock_left.rs:330-338 pattern) in orbat_manager.rs. NIT-2 (environment cleanup, no code): the T-787 slice's live checks left two missions in the dev library — 'T787 WT Probe' (85b61b6a-33f6-417f-ad50-fce2ce514a3e) and 'T787 Probe' (a121023d-7dd0-4ccc-9d10-41be3fd32ab1). Delete BOTH and ONLY these ids via DELETE /api/v1/missions/{id} with a dev-login admin token; confirm GET /api/v1/missions lists no name containing 'T787' afterward and no other mission was touched. ACCEPTANCE: squad rename focused on open, typed 11-char string lands whole, GRID chip unchanged, Enter commits / Escape abandons; the two mission ids 404 afterward.",
-      "notes": "wave 209; verifier wave200.md F8 NIT-1+NIT-2"
+      "notes": "wave 209; verifier wave200.md F8 NIT-1+NIT-2 | SHIPPED W209: squad rename focused on open; the unpoison re-land verified non-hollow (perturb->RED->restore); both T787 probe missions deleted, ids 404-confirmed."
     }
   ]
 }
