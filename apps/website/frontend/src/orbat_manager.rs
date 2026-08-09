@@ -1915,33 +1915,39 @@ mod tests {
     /// T-815 — squad rename focuses via NodeRef/on_load (wave200 F8).
     #[test]
     fn orbat_squad_rename_focuses_via_noderef_on_load() {
-        let src = include_str!("orbat_manager.rs");
+        // Scope to stitch_row live body so the ban needle cannot self-match this test's
+        // string literal (include_str of the whole file always contains the assert text).
+        use crate::arsenal::class_r_scrub::{live_source, only_body};
+        let code = live_source(include_str!("orbat_manager.rs"));
+        let body = only_body(&code, "fn stitch_row(");
         assert!(
-            src.contains("NodeRef::<leptos::html::Input>::new()"),
+            body.contains("NodeRef::<leptos::html::Input>::new()"),
             "the squad rename input must carry a NodeRef so it can be focused on mount"
         );
         assert!(
-            src.contains("node_ref=rename_ref"),
+            body.contains("node_ref=rename_ref"),
             "the NodeRef must be attached via node_ref=rename_ref"
         );
         assert!(
-            src.contains(".on_load(") && src.contains(".focus()") && src.contains(".select()"),
+            body.contains(".on_load(") && body.contains(".focus()") && body.contains(".select()"),
             "on_load must call focus() and select() on the mounted input"
         );
         assert!(
-            src.contains("value=rename_draft.get_untracked()"),
+            body.contains("value=rename_draft.get_untracked()"),
             "rename input must seed via value= (uncontrolled after mount) so select-all sticks"
         );
+        // T-726 concat pattern: fragments are not contiguous in this test source.
+        let banned = ["prop:value=move || ", "rename_draft.get()"].concat();
         assert!(
-            !src.contains("prop:value=move || rename_draft.get()"),
+            !body.contains(&banned),
             "reactive prop:value on squad rename clears on_load select-all — banned"
         );
         assert!(
-            src.contains("data-testid=\"orbat-squad-rename\""),
+            body.contains("data-testid=\"orbat-squad-rename\""),
             "rename input must expose data-testid=orbat-squad-rename for CDP probes"
         );
         assert!(
-            src.contains("\"Escape\"") && src.contains("rename_squad.set(None)"),
+            body.contains("\"Escape\"") && body.contains("rename_squad.set(None)"),
             "Escape must abandon the rename session without relying on dialog close"
         );
     }
