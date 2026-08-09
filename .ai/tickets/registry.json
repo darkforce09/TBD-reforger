@@ -1,5 +1,5 @@
 {
-  "next_id": 816,
+  "next_id": 818,
   "tickets": [
     {
       "id": "T-001",
@@ -19451,7 +19451,7 @@
       "id": "T-807",
       "order": 4890,
       "program": "eden",
-      "status": "queued",
+      "status": "shipped",
       "stream": "mission-creator",
       "targets": [
         "website"
@@ -19470,13 +19470,13 @@
       ],
       "title": "Copy and consistency sweep: units, plurals, stale hints, log spam, hero gate, disabled-row tooltips",
       "summary": "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). Bundled S3 copy debts, each observed and pinned: (1) F-13 numeric noise — marker Position field editable at '4921.268596532038'; round display to 3dp and suffix units; status-bar readouts gain ' m' suffixes + axis glyphs (Eden prints 'X 8762.61 m', frame 170422) — attributes.rs ~:943 region and the readout formatters in mission_editor.rs. (2) F-17 '1 slots · server cap 128 players' plural — orbat_manager.rs ~:297. (3) F-23-part stale hint 'Z is manual until terrain elevation (DEM) ships' — DEM shipped (status-bar Z is DEM-sampled); fix the copy, attributes.rs ~:943. (4) F-19 library hero presents a DRAFT as 'LIVE OPERATION — Command has flagged this operation as the priority deployment' — gate the hero on published status or label DRAFT, missions.rs ~:177/:379. (5) F-20 '[yrs-persist] T-374: refused to persist … do not replay' warned 8x on a brand-new empty mission — silence below first authored content or log once at debug, yrs_persist.rs ~:783-784. (6) F-37 disabled rows go silent — direction doc rule 'disabled still shows its tooltip' (Eden honours it, frame 164031 disabled Redo tooltips); TBD's disabled 'Play from Here' has NO title anywhere in its chain; give every MenuEntry::off row a why-tooltip; the History button (title='Version history (soon)') is the in-repo template — context_menu.rs. (7) O-10 'GRID off' chip names the SNAP grid while sitting beside the map-grid labels — relabel 'SNAP off/move/rot', mission_editor.rs ~:1212-1218. ⚠️ TRAPS: eden_top_strip.rs menu-label fixes (F-14 ticket-id label, F-15 Controls Hint dedup) are NOT here — they are T-797's, because those strings live inside the MENUS const it rewrites; red error-count contrast is T-798's. Do not touch shared formatting helpers other tickets own. ACCEPTANCE: greps — no 15-digit value renders in any attrs field (probe reads field values after open); '1 slots' impossible (uses pluralizer); 'DEM' hint string gone; hero card absent for status!=published (or shows DRAFT chip); fresh-mission console shows 0 yrs-persist refusals; every disabled context row exposes a non-empty title; bottom-right chip reads SNAP.",
-      "notes": "seven one-file fixes bundled; degree-15 owns is the packing liability — split valve documented in EDITOR_FACTORY_START band notes"
+      "notes": "seven one-file fixes bundled; degree-15 owns is the packing liability — split valve documented in EDITOR_FACTORY_START band notes | SHIPPED W201: all seven verified live (attrs ' m' units + display rounding with no-op discipline intact, '1 slot' plural, DEM hint gone, hero gated on status=='live' (enum value — 'published' does not exist), yrs-persist quiet on empty missions with BLOCKED_EMPTY telemetry intact, disabled context rows carry why-tooltips, SNAP chip). F-13's status-bar half lives in eden_toolbelt.rs and landed under T-793 via orchestrator addendum. found_not_fixed: FEATURED_BRIEFING_FALLBACK prose still reads live-flavored for a non-live hero (T-548 golden pins it)."
     },
     {
       "id": "T-791",
       "order": 4730,
       "program": "eden",
-      "status": "queued",
+      "status": "shipped",
       "stream": "mission-creator",
       "targets": [
         "website"
@@ -19494,13 +19494,13 @@
       ],
       "title": "Armed composition places on map click, and Esc disarms the arm",
       "summary": "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). F-30 — VERIFIED silent dead end: save works (row 'qqq by Dev O…' created, name field healthy), arming works (panel shows 'click the map'), then the map click DOES NOTHING — OBJ9->OBJ9 across a plain click at two points AND a press-drag-release, zero console/pageerror output, and the arm NEVER clears — the hint keeps promising the thing that never happens. MECHANISM: editor_ops.rs ~:76-95 Pending::Composition is set by the row (eden_dock_right.rs ~:62-97) but the map place branch (~:814-895 region) has no Composition stamp arm — only single-asset placement consumes Pending. FIX: implement the composition stamp — on armed map click, instantiate the saved members with stored offsets/elevations around the click point as ONE transaction (one undo step), select the stamped set, clear the arm; Esc clears the arm and the panel hint. ⚠️ TRAPS: comments inside a saved composition are editor-only (never compiled) — preserve that on stamp; the dock panel copy already documents elevation-keeping semantics — honour it; per-member txns would repeat the F-26 undo-cost mistake (one txn, one step). ACCEPTANCE: scripted — save a 3-entity composition, arm, click map: OBJ +3, SEL==3 (the stamp), ONE Ctrl+Z removes all 3; re-arm then Esc then click: OBJ unchanged and hint gone; console clean throughout.",
-      "notes": "census COMP-PLACE-001/T-078 is stale on the save half — cite; T-078 remains the parent idea, this ships the author-facing core"
+      "notes": "census COMP-PLACE-001/T-078 is stale on the save half — cite; T-078 remains the parent idea, this ships the author-facing core | SHIPPED W201: the ticket's mechanism premise was STALE — stamp/one-txn/select/Esc-disarm already shipped (T-650/T-723/T-781 lineage); the review's live dead-end did NOT reproduce for the verifier (full F-30 acceptance re-proved: +3/SEL==3/one-undo across click, second point and drag; stored Z 12.500 m survives). Slice shipped the genuinely missing live arm hint (armed_composition_id + doc_tick bumps + panel block) and un-hollowed two raw-include_str pins. Esc hint/arm double-consume filed T-816."
     },
     {
       "id": "T-793",
       "order": 4750,
       "program": "eden",
-      "status": "queued",
+      "status": "shipped",
       "stream": "mission-creator",
       "targets": [
         "website"
@@ -19517,7 +19517,7 @@
       ],
       "title": "Grid reference labels derive from the live camera every frame",
       "summary": "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). O-2 — VERIFIED WRONG WITH ARITHMETIC: statically labels roughly register (within one label-anchor of CUR-derived truth), but after a pan that moved the camera 240m the label set half-updated: positions held while the world moved, and the top edge showed '090' at x1593 and '100' at x1663 — 70px apart at 4 m/px where kilometre lines MUST be 250px apart. Two adjacent labels that cannot both be true. Operator: labels also drift wrong across zoom. A milsim group reads grids aloud; wrong grid labels are worse than none. MECHANISM: eden_toolbelt.rs ~:203-306 edge_eastings/edge_northings build from a cached set not the live camera; render at ~:792. FIX: compute edge labels from the current camera transform each render (world = cam.origin + px·m_per_px; label k at the km line's screen x), cull to viewport, no caching across pan/zoom. ⚠️ TRAPS: the status-bar scale bar and CUR readout are CORRECT today (verified to the metre) — reuse their transform source; label anchor = the km line, not the text box edge; keep the constant-density spot-height lesson in mind but grids are exact, not banded. ACCEPTANCE: property test (wasm unit or scripted probe): for any camera (5 random pans + 3 zoom levels scripted), every visible label k satisfies |screen_x(k·1000) − label_x| <= 2px, adjacent labels exactly 1000/m_per_px px apart, and labels under continuous pan update every frame (two mid-pan samples differ correctly).",
-      "notes": "review section 8 O-2 has the failing numbers; CUR unproject is the trusted oracle — the acceptance test uses it"
+      "notes": "review section 8 O-2 has the failing numbers; CUR unproject is the trusted oracle — the acceptance test uses it | SHIPPED W201: O-2 root-caused as text-keyed <For> DOM-node reuse (T-727 stale-node class), NOT a stale transform — fixed with a position-quantised key; verifier: 250px spacing exact, 0.00px vs the CUR oracle after the review's 240m pan, per-frame under continuous pan. Also carries F-13's status-bar ' m' suffix (orchestrator addendum), CUR metre-accuracy preserved. Wheel-zoom heartbeat lag filed T-817."
     },
     {
       "id": "T-788",
@@ -20089,6 +20089,49 @@
       "order": 4970,
       "summary": "WAVE-200 VERIFIER RE-TICKET (wave200.md F8, both NITs). NIT-1 VERIFIED LIVE: the ORBAT squad-rename inline input opens unfocused — typing before clicking runs as chords ('g' flips GRID); once clicked, focus holds and typing works (no remount trap — verifier-confirmed). FIX: NodeRef + on_load focus+select on rename-session open (the eden_dock_left.rs:330-338 pattern) in orbat_manager.rs. NIT-2 (environment cleanup, no code): the T-787 slice's live checks left two missions in the dev library — 'T787 WT Probe' (85b61b6a-33f6-417f-ad50-fce2ce514a3e) and 'T787 Probe' (a121023d-7dd0-4ccc-9d10-41be3fd32ab1). Delete BOTH and ONLY these ids via DELETE /api/v1/missions/{id} with a dev-login admin token; confirm GET /api/v1/missions lists no name containing 'T787' afterward and no other mission was touched. ACCEPTANCE: squad rename focused on open, typed 11-char string lands whole, GRID chip unchanged, Enter commits / Escape abandons; the two mission ids 404 afterward.",
       "notes": "wave 209; verifier wave200.md F8 NIT-1+NIT-2 | SHIPPED W209: squad rename focused on open; the unpoison re-land verified non-hollow (perturb->RED->restore); both T787 probe missions deleted, ids 404-confirmed."
+    },
+    {
+      "id": "T-816",
+      "title": "Esc with an armed composition and the Controls Hint open clears both in one press",
+      "status": "queued",
+      "executor": "claude-code",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "impact": [
+        "ui",
+        "mc-authoring"
+      ],
+      "surfaces": [
+        "UI",
+        "SHELL"
+      ],
+      "order": 4980,
+      "summary": "WAVE-201 VERIFIER FILING (wave201.md NIT-1, pre-existing, made visible by T-791's arm hint). VERIFIED LIVE: with a composition armed AND the Controls Hint overlay open, ONE Escape keydown clears the arm and closes the hint together. MECHANISM: the Controls Hint is not a modal_stack participant, so the editor's any_open()-gated arm-cancel (mission_editor.rs has_pending -> cancel_pending) fires in the same keydown as the strip's hint close — the T-814 consume-aware guard covers modal_stack dialogs only. FIX DIRECTION: bring the hint (and any other non-stack overlay Esc consumers) into the stack's per-event Esc accounting, or mark the event consumed when the hint closes, so the arm survives to a second press. TRAPS: T-797/T-798 (waves 202/204) rework the top strip and bottom bar — coordinate owns; the T-814 one-layer ladder for stack dialogs must stay intact. ACCEPTANCE: armed composition + hint open: Esc1 closes ONLY the hint (arm + panel armed-hint stay), Esc2 clears the arm; every press one layer.",
+      "notes": "wave201 verifier NIT-1; owns spans eden_top_strip.rs/ui.rs/mission_editor.rs — pack owns-aware"
+    },
+    {
+      "id": "T-817",
+      "title": "Grid labels lag up to ~1.4s on wheel zoom with a stationary pointer",
+      "status": "queued",
+      "executor": "claude-code",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "impact": [
+        "ui",
+        "mc-authoring"
+      ],
+      "surfaces": [
+        "SHELL"
+      ],
+      "order": 4990,
+      "summary": "WAVE-201 VERIFIER FILING (wave201.md NIT-2, outside T-793's acceptance — rest-state zoom and every-frame pan both PASS). VERIFIED LIVE: labels recompute on cursor movement + a ~1Hz zoom heartbeat, so a wheel zoom with no pointer motion waits up to ~1.4s before snapping to <0.05px correct. Self-correcting, no wrong-label window under motion. FIX DIRECTION: subscribe the label computation to the camera/m_per_px signal edge instead of the heartbeat (the signal already ticks — eden_toolbelt.rs label memo), keeping the T-793 position-quantised <For> key. ACCEPTANCE: scripted wheel zoom with pointer stationary: labels correct (<=2px vs CUR-unproject oracle) within one frame of the zoom settling, no >100ms stale window; pan behaviour unchanged.",
+      "notes": "wave201 verifier NIT-2; single-file eden_toolbelt.rs"
     }
   ]
 }
