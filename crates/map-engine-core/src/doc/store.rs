@@ -2721,17 +2721,7 @@ impl MissionDocCore {
         stance: Option<String>,
     ) {
         let mut txn = self.begin();
-        if let Some(Out::YMap(slot)) = self.slots.get(&txn, id) {
-            if let Some(r) = role {
-                slot.insert(&mut txn, "role", r);
-            }
-            if let Some(t) = tag {
-                slot.insert(&mut txn, "tag", t);
-            }
-            if let Some(s) = stance {
-                slot.insert(&mut txn, "stance", s);
-            }
-        }
+        update_slot_in_txn(&mut txn, &self.slots, id, role, tag, stance);
     }
 
     /// B2 — mutate an existing slot's role/tag/character in place (ORBAT Apply mutate
@@ -2828,16 +2818,65 @@ impl MissionDocCore {
             return; // nothing opted in — do not even open a transaction
         }
         let mut txn = self.begin();
-        if let Some(Out::YMap(slot)) = self.slots.get(&txn, id) {
-            for (key, val) in [("assetId", asset_id), ("description", description)] {
-                let Some(v) = val else { continue };
-                if v.is_empty() {
-                    slot.remove(&mut txn, key);
-                } else {
-                    slot.insert(&mut txn, key, v);
-                }
-            }
+        update_slot_object_in_txn(&mut txn, &self.slots, id, asset_id, description);
+    }
+
+    /// F-26 (T-788) — apply ONE Identity/type/description commit across MANY slots in **one** LOCAL
+    /// yrs transaction (one undo step). Mirrors [`Self::update_entity_transforms`] (T-732): the
+    /// multi-select Attributes commit used to loop [`Self::update_slot`] + [`Self::update_slot_object`]
+    /// once per id, and `capture_timeout_millis = 0` makes every txn its own undo step — so an
+    /// apply-to-all of Role/identity across 9 slots cost 9 Ctrl+Z. One call here is one Ctrl+Z.
+    ///
+    /// **Per-slot semantics are byte-identical to the loop it replaces.** Each id runs the EXACT same
+    /// [`update_slot_in_txn`] / [`update_slot_object_in_txn`] the single-target mutators call
+    /// (the two `_in_txn` helpers those wrappers now delegate to). `role`/`tag`/`stance` follow
+    /// `update_slot`'s `None`-leaves-the-column discipline; `asset_id`/`description` follow
+    /// `update_slot_object`'s `Some("")`-clears / `None`-leaves rule. Only the TRANSACTION BOUNDARY
+    /// changes: N insert-batches collapse into one `begin()`.
+    ///
+    /// `slot_half` is passed by the caller (it already computed `role.is_some() || …` for its own
+    /// opt-in guard) so a commit that opts into NEITHER half is a caller-side no-op before this is
+    /// reached; here it simply gates whether the `update_slot` write runs per id (matching the loop's
+    /// `if slot_half { … }`). Unknown ids are per-slot no-ops (the `_in_txn` helpers `get` and skip).
+    /// Returns the id count applied (every id in `ids` — the helpers do not report per-id landing;
+    /// this is a fan-out count, not a wrote-count, matching the loop's shape which counted nothing).
+    #[allow(clippy::too_many_arguments)]
+    pub fn update_slots_attr_batch(
+        &self,
+        ids: &[String],
+        slot_half: bool,
+        role: Option<String>,
+        tag: Option<String>,
+        stance: Option<String>,
+        asset_id: Option<String>,
+        description: Option<String>,
+    ) -> usize {
+        if ids.is_empty() {
+            return 0;
         }
+        let mut txn = self.begin();
+        for id in ids {
+            if slot_half {
+                update_slot_in_txn(
+                    &mut txn,
+                    &self.slots,
+                    id,
+                    role.clone(),
+                    tag.clone(),
+                    stance.clone(),
+                );
+            }
+            // T-082 — the type / role-description half, same per-field `Option` discipline as the
+            // single-target `update_slot_object`: `None` leaves that key alone on every target.
+            update_slot_object_in_txn(
+                &mut txn,
+                &self.slots,
+                id,
+                asset_id.clone(),
+                description.clone(),
+            );
+        }
+        ids.len()
     }
 
     /// Set or clear a slot's embedded `loadout` (Smart Forge picks — T-068.10). `Some(json)` parses
@@ -5544,6 +5583,58 @@ fn read_env_map<T: ReadTxn>(txn: &T, meta: &MapRef) -> HashMap<String, Any> {
     }
 }
 
+/// F-26 (T-788) — the SCALAR-slot-field apply inside an existing txn, shared by
+/// [`MissionDocCore::update_slot`] (one target, its own `begin()`) and
+/// [`MissionDocCore::update_slots_attr_batch`] (N targets, one `begin()`). The body is
+/// [`MissionDocCore::update_slot`]'s original inner logic verbatim — `None` leaves a column, an
+/// absent id is a silent no-op — so per-slot semantics are byte-identical whichever caller drives it
+/// (the T-732 `update_slot_position_in_txn` split, applied to the identity path).
+fn update_slot_in_txn(
+    txn: &mut TransactionMut,
+    slots: &MapRef,
+    id: &str,
+    role: Option<String>,
+    tag: Option<String>,
+    stance: Option<String>,
+) {
+    if let Some(Out::YMap(slot)) = slots.get(&*txn, id) {
+        if let Some(r) = role {
+            slot.insert(&mut *txn, "role", r);
+        }
+        if let Some(t) = tag {
+            slot.insert(&mut *txn, "tag", t);
+        }
+        if let Some(s) = stance {
+            slot.insert(&mut *txn, "stance", s);
+        }
+    }
+}
+
+/// F-26 (T-788) — the OBJECT-field (`assetId` / `description`) apply inside an existing txn, shared
+/// by [`MissionDocCore::update_slot_object`] and [`MissionDocCore::update_slots_attr_batch`]. The
+/// body is [`MissionDocCore::update_slot_object`]'s original inner loop verbatim: `Some("")` CLEARS
+/// the key, `Some(non-empty)` sets it, `None` leaves it, an absent id is a no-op. The wrappers keep
+/// the all-`None` early-return (do not even open a txn); the batch reaches this per id only after its
+/// own opt-in guard, and a per-id all-`None` call here is a harmless no-op walk of two `None`s.
+fn update_slot_object_in_txn(
+    txn: &mut TransactionMut,
+    slots: &MapRef,
+    id: &str,
+    asset_id: Option<String>,
+    description: Option<String>,
+) {
+    if let Some(Out::YMap(slot)) = slots.get(&*txn, id) {
+        for (key, val) in [("assetId", asset_id), ("description", description)] {
+            let Some(v) = val else { continue };
+            if v.is_empty() {
+                slot.remove(&mut *txn, key);
+            } else {
+                slot.insert(&mut *txn, key, v);
+            }
+        }
+    }
+}
+
 /// T-732 — slot transform apply inside an existing txn (shared by [`MissionDocCore::update_slot_position`]
 /// and [`MissionDocCore::update_entity_transforms`]). Returns whether a write landed.
 #[allow(clippy::too_many_arguments)]
@@ -7018,6 +7109,80 @@ mod tests {
         assert_eq!(slots.xs[i], 100.0);
         assert_eq!(slots.ys[i], 200.0);
         assert_eq!(vehicles_of(&doc)["v0"]["position"]["x"], 300.0);
+    }
+
+    /// F-26 (T-788) — an Attributes IDENTITY commit applied to MANY slots is ONE undo step (the
+    /// slot-attr twin of `update_entity_transforms_is_one_undo_step_for_mixed_batch`, T-732's shape).
+    ///
+    /// **The invariant:** `update_slots_attr_batch` writes the same field to every named slot inside
+    /// ONE local yrs transaction, so an apply-to-all is exactly ONE Ctrl+Z that restores EVERY slot
+    /// together — the fix for the review's measured 9→8 (a 9-slot Role apply cost 9 undo steps when
+    /// the caller looped per-id `update_slot`, because `capture_timeout_millis = 0` makes every txn
+    /// its own step). Deliberately THREE slots with DISTINCT starting roles so a body that only wrote
+    /// `ids[0]`, or collapsed the batch to one slot, is caught, and so the single `undo()` must
+    /// restore all three originals — not just the first.
+    #[test]
+    fn update_slots_attr_batch_is_one_undo_step_across_many_slots() {
+        let mut doc = MissionDocCore::new();
+        doc.set_origin_init(true);
+        doc.add_slot(
+            "s0", "sq", "lyr", 0, "Rifleman", None, None, 100.0, 200.0, 0.0, 0.0,
+        );
+        doc.add_slot(
+            "s1", "sq", "lyr", 1, "Medic", None, None, 300.0, 400.0, 0.0, 0.0,
+        );
+        doc.add_slot(
+            "s2", "sq", "lyr", 2, "Engineer", None, None, 500.0, 600.0, 0.0, 0.0,
+        );
+        doc.set_origin_init(false);
+
+        let depth_before = doc.undo_depth();
+        let ids = ["s0".to_string(), "s1".to_string(), "s2".to_string()];
+        // Apply-to-all of the Role identity column across all three slots (slot_half = true; the
+        // object half opts into nothing → `None`, byte-identical to the modal's per-field opt-in).
+        let n = doc.update_slots_attr_batch(
+            &ids,
+            true,
+            Some("Squad Leader".to_string()),
+            None,
+            None,
+            None,
+            None,
+        );
+        assert_eq!(n, 3, "the batch fans the commit out to every id");
+        assert_eq!(
+            doc.undo_depth(),
+            depth_before + 1,
+            "F-26: a multi-slot identity apply is EXACTLY one undo step (was N before the batch)"
+        );
+
+        // `roles` is the interned DICTIONARY; the per-row role is `roles[role_idx[row]]` (the same
+        // dict-coded read `read_attrs_diff` uses). Reading `roles[row]` directly would index the
+        // wrong array — after an apply-to-all the dict has one live entry, not one per row.
+        let role_of = |soa: &SlotSoa, id: &str| -> String {
+            let row = row_of(soa, id);
+            soa.roles[soa.role_idx[row] as usize].clone()
+        };
+        let slots = doc.materialize();
+        for id in ["s0", "s1", "s2"] {
+            assert_eq!(
+                role_of(&slots, id),
+                "Squad Leader",
+                "every slot took the applied role"
+            );
+        }
+
+        // ONE undo restores EVERY slot's original role in a single step — the whole point.
+        assert!(doc.undo());
+        let slots = doc.materialize();
+        assert_eq!(role_of(&slots, "s0"), "Rifleman");
+        assert_eq!(role_of(&slots, "s1"), "Medic");
+        assert_eq!(role_of(&slots, "s2"), "Engineer");
+        assert_eq!(
+            doc.undo_depth(),
+            depth_before,
+            "the single undo consumed the single step the batch created"
+        );
     }
 
     /// T-574 — the **behavioural** pin that replaces T-491's soft `include_str!` string check.

@@ -2492,14 +2492,22 @@ pub fn attrs_update_slot_multi(
         let Some(core) = d.as_ref() else {
             return false;
         };
-        for id in ids {
-            if slot_half {
-                core.update_slot(id, role.clone(), tag.clone(), stance.clone());
-            }
-            // T-082 — the type / role-description half of the same fan-out, same per-field
-            // `Option` discipline: `None` leaves that key alone on every target.
-            core.update_slot_object(id, asset_id.clone(), description.clone());
-        }
+        // F-26 (T-788) — ONE txn for the whole apply-to-all, so a multi-slot identity/type commit is
+        // ONE undo step (was N — the loop opened a `begin()` per id under `capture_timeout_millis =
+        // 0`, so a 9-slot Role apply cost 9 Ctrl+Z). `update_slots_attr_batch` runs the SAME per-slot
+        // `update_slot` / `update_slot_object` logic the loop called (the shared `_in_txn` helpers),
+        // so every slot's bytes are identical — only the transaction boundary collapses. The T-082
+        // object half rides the same call under the same per-field `Option` discipline. This mirrors
+        // T-732's `attrs_update_position_multi` → `update_entity_transforms` batch exactly.
+        core.update_slots_attr_batch(
+            ids,
+            slot_half,
+            role.clone(),
+            tag.clone(),
+            stance.clone(),
+            asset_id.clone(),
+            description.clone(),
+        );
         true
     });
     if did {

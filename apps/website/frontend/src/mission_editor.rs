@@ -10763,7 +10763,8 @@ mod t649_select_all_and_multi_edit {
         }
         let ops = live_code(include_str!("editor_ops.rs"));
         // T-732 — position multi is ONE LOCAL txn via update_entity_transforms (not N×
-        // update_slot_position). Identity multi still fans out per-id (no atomic slot-attr API yet).
+        // update_slot_position). F-26 (T-788) — identity multi is now ATOMIC too, via
+        // `update_slots_attr_batch` (one txn, one undo step); the per-id fan-out moved INTO the core.
         {
             let f = "pub fn attrs_update_position_multi(";
             let src = fn_source(&ops, f);
@@ -10793,19 +10794,34 @@ mod t649_select_all_and_multi_edit {
             );
         }
         {
+            // F-26 (T-788) — the NEW contract: the identity/type multi-commit is ONE LOCAL txn via
+            // `update_slots_attr_batch` (one undo step for an apply-to-all), NOT a per-id loop of
+            // `core.update_slot(id, …)` (which was N undo steps under `capture_timeout_millis = 0` —
+            // the review's measured 9→8). The per-slot byte-semantics are unchanged: the batch runs
+            // the same `update_slot` / `update_slot_object` logic per id inside the core (pinned
+            // native by `update_slots_attr_batch_is_one_undo_step_across_many_slots` in `store.rs`).
             let f = "pub fn attrs_update_slot_multi(";
-            let write = "core.update_slot(id,";
+            let batch = ["update_slots_attr", "_batch("].concat();
+            let per_id = ["core.update_slot", "(id,"].concat();
             let src = fn_source(&ops, f);
             assert!(
-                src.contains("for id in ids {") && src.contains(write),
-                "{f} must apply the commit to every id in the target set"
+                src.contains(&batch),
+                "F-26: {f} must commit via update_slots_attr_batch (one LOCAL txn, one undo step)"
+            );
+            assert!(
+                !src.contains(&per_id),
+                "F-26: {f} must NOT loop per-id core.update_slot(id, …) — that is N undo steps for \
+                 an apply-to-all (the review's 9→8). The fan-out lives in the core batch now."
+            );
+            assert!(
+                src.contains("slot_half") && src.contains("ids,"),
+                "{f} must hand the whole id set (and its opt-in `slot_half`) to the batch"
             );
             assert_eq!(
                 src.matches("after_local_edit()").count(),
                 1,
                 "{f} must fire exactly ONE history/persist tail for the whole commit"
             );
-            assert_after_local_edit_outside_ids_loop(f, &src);
             assert!(
                 src.contains("is_none()") && src.contains("return;"),
                 "{f} must no-op when nothing was opted in"
