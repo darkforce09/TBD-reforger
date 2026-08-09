@@ -105,16 +105,19 @@ enum MenuAction {
     /// Orient the selection (N/E/S/W / face-centre / face-away).
     Orient(crate::place_helpers::Orient),
     /// T-692 — toggle the Controls Hint overlay (the keyboard-shortcut reference). A CHECKED
-    /// toggle, not a one-shot command: it is the first menu row whose state shows in the T-668
-    /// checkmark gutter, and it is deliberately reachable from BOTH the View menu (as the toggle)
-    /// and the Help menu (as the reference) — one action, two entry points, because "where do I
-    /// find the shortcuts" and "turn the hint off" are different questions.
+    /// toggle, not a one-shot command: its state shows in the T-668 checkmark gutter. T-797 F-15 —
+    /// it now has ONE home, Help > Keyboard Shortcuts; the earlier View-menu duplicate (a second
+    /// door to the same overlay) was dropped as ambiguous. Still a toggle: the Help row both opens
+    /// the reference and puts it away.
     ControlsHint,
 }
 
 use crate::place_helpers::{AlignEdge, Orient, PatternKind, SpaceAxis};
 
-const MENUS: [(&str, &[MenuItem]); 7] = [
+// T-797 — six menus after the View menu was removed (F-14 + F-15 emptied it). The count is a
+// compile-time invariant; the `.enumerate()` render and the `open_menu: Option<usize>` latch index
+// by position, so shrinking the table needs no other edit.
+const MENUS: [(&str, &[MenuItem]); 6] = [
     (
         "File",
         &[
@@ -145,16 +148,64 @@ const MENUS: [(&str, &[MenuItem]); 7] = [
             },
         ],
     ),
+    // T-797 (F-06 / operator pass) — Eden's menu-bar Edit carries NO clipboard verbs (verified from
+    // pixels, frame 163508) and TBD's context menu already owns cut/copy/paste, so this menu does
+    // NOT grow clipboard rows. What it gains is the discoverability the row-2 icon toolbar cannot
+    // give a keyboard-only affordance: the on-screen Select All, and the widget / snap / grid keys
+    // that were previously invisible secrets. Each row carries its chord in the label.
+    //
+    // **The widget / snap / grid rows are chord-labelled but NOT clickable (`action: None`).** Their
+    // live state lives in `mission_editor`'s window keydown closure (`widget_variant` / `snap`,
+    // T-648/T-795) — local RwSignals with no cross-file dispatch bridge, and `mission_editor.rs` is
+    // another slice's `owns` this wave. The T-668 dead-control rule is exactly this: a control that
+    // cannot act renders disabled and keeps a tooltip rather than lying with a clickable no-op. The
+    // KEY works (the arm is bound and censused); the menu row documents where to find it. When a
+    // later slice exposes those signals, these rows wire to them without moving.
     (
         "Edit",
         &[
             MenuItem {
-                label: "Undo",
+                label: "Undo (Ctrl+Z)",
                 action: Some(MenuAction::Undo),
             },
             MenuItem {
-                label: "Redo",
+                label: "Redo (Ctrl+Shift+Z)",
                 action: Some(MenuAction::Redo),
+            },
+            // SEL-ALL-001 — the Ctrl/Cmd+A arm (mission_editor keydown) scopes Select All to the
+            // viewport, not the whole mission. Documented here because Eden's Edit menu lists it and
+            // TBD bound it invisibly. Chord-only (the arm needs the live canvas rect this menu has
+            // no handle on); the key is the dispatch, the row is the sign-post.
+            MenuItem {
+                label: "Select All on Screen (Ctrl+A)",
+                action: None,
+            },
+            // WIDGET-CYCLE-001 — the transformation-widget modes. Eden numbers five (No Widget 1 /
+            // Translation 2 / Rotation 3 / Area Scaling 4 / Area 5); TBD binds `1`/`2` today
+            // (translate / rotate — there is no area-scale target, see `WidgetVariant`). Shipped with
+            // the CURRENT arms; T-795 renumbers to Eden's 1-5 when the extra variants land.
+            MenuItem {
+                label: "Widget: Translation (1)",
+                action: None,
+            },
+            MenuItem {
+                label: "Widget: Rotation (2)",
+                action: None,
+            },
+            // KEY-GRID-001 / TOOLBAR-GRID-MOVE-001 — the snap grid: G toggles it, `[`/`]` tune the
+            // active ladder's step. One SNAP grid (move + rotation rungs), the status-bar chip labels
+            // it SNAP (O-10) — distinct from the map reference grid the View/environment owns.
+            MenuItem {
+                label: "Toggle Snap Grid (G)",
+                action: None,
+            },
+            MenuItem {
+                label: "Snap Step — Decrease ([)",
+                action: None,
+            },
+            MenuItem {
+                label: "Snap Step — Increase (])",
+                action: None,
             },
         ],
     ),
@@ -242,22 +293,15 @@ const MENUS: [(&str, &[MenuItem]); 7] = [
             },
         ],
     ),
-    (
-        "View",
-        &[
-            // T-692 (MENU-VIEW-017) — the Controls Hint's VIEW-side toggle. A checked row: the
-            // T-668 gutter carries a check while the overlay is up, which is what a View menu
-            // toggle is supposed to look like (the gutter was reserved for exactly this).
-            MenuItem {
-                label: "Controls Hint",
-                action: Some(MenuAction::ControlsHint),
-            },
-            MenuItem {
-                label: "Map layers — render host (T-159.28)",
-                action: None,
-            },
-        ],
-    ),
+    // T-797 (F-14 + F-15) — the View menu is GONE. It held exactly two rows and both had to leave:
+    //   • F-14 — `Map layers — render host (T-159.28)` was an inert, permanently-disabled row that
+    //     named an unbuilt render host. The operator pass said ship-it-or-drop-it; there is no host
+    //     to wire, so it drops. (It also carried a `T-xxx` string, which the acceptance forbids in a
+    //     menu row.)
+    //   • F-15 — `Controls Hint` was the SECOND home of the shortcut reference. One Controls Hint
+    //     home, and it is Help > Keyboard Shortcuts (below). The View-side duplicate drops.
+    // With both rows gone the menu is empty, and an empty menu-bar dropdown is a dead stub — so the
+    // whole entry is removed rather than left to open onto nothing. The MENUS count drops 7 → 6.
     (
         "Mission",
         &[
@@ -265,22 +309,23 @@ const MENUS: [(&str, &[MenuItem]); 7] = [
                 label: "Mission Settings…",
                 action: Some(MenuAction::Settings),
             },
-            // T-671 — a named route to the two attribute rows this menu previously had no word for.
-            // Same pattern, and the same reasoning, as the Environment menu's `Time & Weather
-            // (Mission Settings)…` row directly below: one dialog, but an author looking for where
-            // the mission's blurb and card picture are set should not have to guess that
-            // "Settings" is the answer. Parenthesised destination so the row does not pretend to be
-            // a second dialog, and `…` because a dialog is exactly what follows (T-668).
+            // T-671 — a named route to the two attribute rows this menu previously had no word for:
+            // an author looking for where the mission's blurb and card picture are set should not
+            // have to guess that "Settings" is the answer. Same reasoning as the Environment menu's
+            // `Time & Weather…` row. `…` because a dialog is exactly what follows (T-668).
+            // T-797 F-16-copy — the `(Mission Settings)` parenthetical is dropped (it named the
+            // dialog these rows already open, which was noise); `…` stays (a dialog still follows).
             MenuItem {
-                label: "Briefing & Thumbnail (Mission Settings)…",
+                label: "Briefing & Thumbnail…",
                 action: Some(MenuAction::Settings),
             },
         ],
     ),
     (
         "Environment",
+        // T-797 F-16-copy — `(Mission Settings)` parenthetical dropped, as on the Mission menu row.
         &[MenuItem {
-            label: "Time & Weather (Mission Settings)…",
+            label: "Time & Weather…",
             action: Some(MenuAction::Settings),
         }],
     ),
@@ -949,7 +994,8 @@ pub fn TopCommandStrip(
             // Identity and commands: what this mission IS and the eight ways into it. Nothing that
             // acts on the map lives here any more — that is row 2's job.
             <div class=ROW_MENUS>
-            // Menu bar (screen 05: File / Edit / Arrange / View / Mission / Environment / Help).
+            // Menu bar (T-797: File / Edit / Arrange / Mission / Environment / Help — the View menu
+            // was removed, F-14 + F-15). The ORBAT Manager button follows the bar, still in row 1.
             <div class="flex shrink-0 items-center">
                 {MENUS
                     .iter()
@@ -1082,15 +1128,25 @@ pub fn TopCommandStrip(
                                                                         .into_any()
                                                                 }
                                                                 None => {
-                                                                    // A genuinely-future command: rendered as a
-                                                                    // DISABLED button (not an inert span) so it
-                                                                    // keeps rule (3)'s tooltip AND the gutter — it
-                                                                    // explains itself instead of going silent.
+                                                                    // T-797 — an `action: None` row is a
+                                                                    // KEYBOARD-ONLY affordance: the label carries
+                                                                    // the chord (e.g. `Widget: Rotation (2)`) and
+                                                                    // the key is the dispatch, but the button
+                                                                    // cannot act from here — the live state lives
+                                                                    // in `mission_editor`'s keydown closure, a
+                                                                    // sibling `owns`. So it renders DISABLED (the
+                                                                    // T-668 dead-control rule — no clickable no-op)
+                                                                    // yet keeps rule (3)'s tooltip AND the gutter,
+                                                                    // pointing the operator at the key. Before
+                                                                    // T-797 the one such row was the `Map layers`
+                                                                    // future-host stub (F-14, now deleted); its
+                                                                    // "Not available yet" tooltip would have lied
+                                                                    // about these — the key IS available.
                                                                     view! {
                                                                         <button
                                                                             type="button"
                                                                             disabled=true
-                                                                            title="Not available yet"
+                                                                            title="Use the keyboard shortcut shown"
                                                                             class=cn(&[MENU_ROW, DISABLED_GLYPH])
                                                                         >
                                                                             <span class=MENU_GUTTER></span>
@@ -1111,6 +1167,37 @@ pub fn TopCommandStrip(
                     })
                     .collect_view()}
             </div>
+            // ── T-797 (operator decision 2) — ORBAT Manager, now a MENU-ROW entry ──────────────────
+            //
+            // It used to be a loud primary text-button in row 2. The operator moved it up here, into
+            // the menu bar, beside File/Edit/…: opening the faction→squad→slot tree is a top-level
+            // destination like a menu, not a row-2 map tool. It is a BUTTON, not a dropdown (there is
+            // one thing to open, not a list), so it wears the menu-bar entry idiom (`text-label-sm`
+            // + HOVER_FILL, muted like its menu neighbours) rather than the primary CTA it was — a
+            // command that opens a modal reads as a peer of the menus here. Disabled in the
+            // scaffold-only case (no `orbat_open`), keeping its tooltip (T-668 rule 3), exactly as
+            // the gear does. It still closes the strip's transient surfaces before opening (T-786).
+            <button
+                type="button"
+                aria-label="ORBAT Manager"
+                title="Open the ORBAT Manager"
+                class=cn(
+                    &[
+                        "shrink-0 rounded px-2 py-0.5 text-label-sm text-on-surface-variant",
+                        HOVER_FILL,
+                        DISABLED_GLYPH,
+                    ],
+                )
+                disabled=orbat_open.is_none()
+                on:click=move |_| {
+                    if let Some(o) = orbat_open {
+                        close_transients();
+                        o.set(true);
+                    }
+                }
+            >
+                "ORBAT Manager"
+            </button>
             <span class=DIVIDER></span>
             // Editable mission title (React setTitle) + the dirty dot.
             <div class="flex min-w-0 flex-1 items-center">
@@ -1275,36 +1362,76 @@ pub fn TopCommandStrip(
                 <MaterialIcon name="redo" class="block text-base leading-none" />
             </button>
             <span class=DIVIDER></span>
-            // T-177 B2 / T-071.0 — ORBAT Manager: opens the modal shell (browse/select the live
-            // faction → squad → slot tree). Disabled in the scaffold-only case (no `orbat_open`
-            // signal), mirroring the settings gear. T-634 — it moved off the menu row: it is a
-            // command, not a menu, and a command sitting inside the menu bar is exactly the mixing
-            // that made one 48 px row unreadable. Its styling is UNCHANGED (T-668 chose that
-            // primary-CTA text-button idiom deliberately) — only its row is new.
+            // ── T-797 (F-06 a) — the widget-mode + snap-grid icon cluster ──────────────────────────
+            //
+            // Eden's row 2 exposes these as tool icons; TBD bound the keys (T-648/T-795) but showed
+            // no button, so widget modes / snapping / grid stepping were keyboard secrets. These
+            // ICONS give them a home in the toolbar, each carrying its chord in the tooltip `Name
+            // (Key)`.
+            //
+            // **They ship DISABLED.** The live state (`widget_variant` / `snap`) is a pair of local
+            // RwSignals inside `mission_editor`'s window keydown closure — a sibling `owns` this wave
+            // — with no cross-file dispatch bridge to call from here. The T-668 dead-control rule is
+            // the honest shape for that: a control that cannot act renders disabled and KEEPS its
+            // tooltip (which points at the working key), rather than a clickable no-op that lies. The
+            // recipe is `BTN_ICON + DISABLED_GLYPH` only — no `HOVER_FILL`, because a permanently
+            // dead glyph must not offer a hover fill (that is also why the count-4 `HOVER_FILL`
+            // recipe pin below stays exact: these are not among the four live glyphs). When a later
+            // slice exposes the signals, these gain `on:click` + a `TOGGLED_PLATE` active state.
+            //
+            // WIDGET-CYCLE-001 — Translate (Digit1) / Rotate (Digit2). Shipped with the current 1/2
+            // arms; T-795 renumbers to Eden's 1-5 (No Widget / Translation / Rotation / Area Scaling
+            // / Area) when the extra variants exist.
             <button
                 type="button"
-                aria-label="ORBAT Manager"
-                // T-668 — rule (3): the disabled scaffold-only case keeps its tooltip (a disabled
-                // control that explains itself beats one that goes silent). `text-primary` +
-                // `hover:bg-primary/15` is the primary-CTA text-button hover idiom (a solid tinted
-                // fill, no border — never confusable with TOGGLED_PLATE); the disabled half is
-                // DISABLED_GLYPH.
-                title="Open the ORBAT Manager"
-                class=cn(
-                    &[
-                        "shrink-0 rounded px-2 py-0.5 text-label-sm font-semibold text-primary transition-colors hover:bg-primary/15",
-                        DISABLED_GLYPH,
-                    ],
-                )
-                disabled=orbat_open.is_none()
-                on:click=move |_| {
-                    if let Some(o) = orbat_open {
-                        close_transients();
-                        o.set(true);
-                    }
-                }
+                aria-label="Translate widget"
+                title="Translate widget (1)"
+                class=cn(&[BTN_ICON, DISABLED_GLYPH])
+                disabled=true
             >
-                "ORBAT Manager"
+                <MaterialIcon name="open_with" class="block text-base leading-none" />
+            </button>
+            <button
+                type="button"
+                aria-label="Rotate widget"
+                title="Rotate widget (2)"
+                class=cn(&[BTN_ICON, DISABLED_GLYPH])
+                disabled=true
+            >
+                <MaterialIcon name="rotate_right" class="block text-base leading-none" />
+            </button>
+            <span class=DIVIDER></span>
+            // KEY-GRID-001 / TOOLBAR-GRID-MOVE-001 — the SNAP grid: G toggles it, `[`/`]` tune the
+            // active widget's ladder step. One SNAP grid (move + rot rungs); the status-bar chip
+            // labels it SNAP (O-10), distinct from the always-on map reference grid the toolbelt
+            // frames. TBD binds no separate reference-grid-visibility key, so only these three carry
+            // chords (inventing a phantom grid-label chord would lie the way the census forbids).
+            <button
+                type="button"
+                aria-label="Toggle snap grid"
+                title="Toggle snap grid (G)"
+                class=cn(&[BTN_ICON, DISABLED_GLYPH])
+                disabled=true
+            >
+                <MaterialIcon name="grid_on" class="block text-base leading-none" />
+            </button>
+            <button
+                type="button"
+                aria-label="Decrease snap step"
+                title="Decrease snap step ([)"
+                class=cn(&[BTN_ICON, DISABLED_GLYPH])
+                disabled=true
+            >
+                <MaterialIcon name="remove" class="block text-base leading-none" />
+            </button>
+            <button
+                type="button"
+                aria-label="Increase snap step"
+                title="Increase snap step (])"
+                class=cn(&[BTN_ICON, DISABLED_GLYPH])
+                disabled=true
+            >
+                <MaterialIcon name="add" class="block text-base leading-none" />
             </button>
             <span class=DIVIDER></span>
             // Inline time scrubber + weather (screen 05 center) — same doc fields as the
@@ -2447,16 +2574,22 @@ mod t668_state_vocabulary {
     }
 
     /// Rule (3) — a disabled top-strip menu row keeps a tooltip that explains why it is dark, rather
-    /// than going silent. The future-command (`None`-action) row is a DISABLED button carrying a
-    /// `title=`, not the inert `<span>` it used to be. Proven on the string-kept source where the
-    /// title literal survives.
+    /// than going silent. The `None`-action row is a DISABLED button carrying a `title=`, not the
+    /// inert `<span>` it used to be. Proven on the string-kept source where the title literal
+    /// survives.
+    ///
+    /// T-797 — the tooltip string changed with the row's NATURE: these are now keyboard-only
+    /// affordances (the chord is in the label; the key dispatches), not the deleted `Map layers`
+    /// future-host stub, so the tooltip points at the key ("Use the keyboard shortcut shown")
+    /// instead of "Not available yet" — which would have lied, because the key IS available. The
+    /// rule the pin enforces (a disabled row keeps a tooltip and is a real button) is unchanged.
     #[test]
     fn disabled_controls_keep_their_tooltip() {
         let src = src_kept();
-        // The future-command row: a disabled button whose tooltip says it is not available yet.
+        // The disabled (keyboard-only) row keeps a tooltip that points the operator at the key.
         assert!(
-            src.contains("Not available yet"),
-            "a disabled future-command menu row must keep a tooltip (rule 3 — it must not go silent)"
+            src.contains("Use the keyboard shortcut shown"),
+            "a disabled menu row must keep a tooltip (rule 3 — it must not go silent)"
         );
         // …and it is a real button (so the tooltip shows and the row keeps its slot), not a span.
         let code = live_code(include_str!("eden_top_strip.rs"));
@@ -2467,8 +2600,10 @@ mod t668_state_vocabulary {
     }
 }
 
-/// T-692 — the help surface's TOP-STRIP half: a Help menu in the bar (MENU-BAR-008 /
-/// MENU-HELP-001) and a View-menu toggle (MENU-VIEW-017), both reaching the one Controls Hint.
+/// T-692 — the help surface's TOP-STRIP half: a Help menu in the bar (MENU-BAR-008 / MENU-HELP-001)
+/// reaching the one Controls Hint. T-797 F-15 removed the second door (the View-menu MENU-VIEW-017
+/// toggle) so the reference now has a single home; the `the_hint_has_exactly_one_home_and_it_is_help`
+/// pin below enforces that.
 ///
 /// The list's contents are pinned against the real keydown arms in `eden_help`; what this module
 /// pins is that the surface is REACHABLE — a shortcut table nothing opens documents nothing. The
@@ -2505,19 +2640,20 @@ mod t692_help_surface {
         );
     }
 
-    /// MENU-VIEW-017 — and the same overlay is a View-menu toggle, so it can be put away from the
-    /// menu that shows chrome state, not only from the card's own close button.
+    /// T-797 F-15 — the Controls Hint has ONE home, and it is Help > Keyboard Shortcuts. It used to
+    /// be reachable from BOTH Help and the View menu (the old MENU-VIEW-017 toggle), which the
+    /// operator pass called a duplicate: two doors to one overlay is the kind of "where do I find
+    /// the shortcuts" ambiguity a single home removes. The View menu itself is gone (F-14 + F-15
+    /// emptied it), so the pin now asserts Help is the SOLE menu reaching the hint — the inverse of
+    /// the "both" it used to require, and the acceptance's "exactly one Controls Hint entry".
     #[test]
-    fn the_hint_is_reachable_from_both_help_and_view() {
+    fn the_hint_has_exactly_one_home_and_it_is_help() {
         let reaching = menus_reaching_the_hint();
-        assert!(
-            reaching.contains(&"Help"),
-            "T-692: the Help menu must open the Controls Hint (found {reaching:?})"
-        );
-        assert!(
-            reaching.contains(&"View"),
-            "T-692 (MENU-VIEW-017): the View menu must carry the Controls Hint toggle (found \
-             {reaching:?})"
+        assert_eq!(
+            reaching,
+            vec!["Help"],
+            "T-797 F-15: the Controls Hint must be reachable from Help ALONE (exactly one entry \
+             across all menus); the View-menu duplicate was dropped (found {reaching:?})"
         );
     }
 
@@ -2805,12 +2941,18 @@ mod t634_two_rows_and_a_hierarchy {
             "T-634: the menu bar must render inside the MENU row, not the tool row"
         );
         // …and every tool-row citizen is inside row 2. `History` is the disabled version-list glyph,
-        // `Undo`/`Redo` the two live ones, `Mission settings` the gear, `Export` the demoted menu.
+        // `Undo`/`Redo` the two live ones; T-797 adds the widget-mode + snap-grid icon cluster
+        // (`Translate widget` / `Rotate widget` / `Toggle snap grid` / the two snap-step glyphs);
+        // `Mission settings` is the gear and `Export` the demoted menu.
         for tool in [
             r#"aria-label="History""#,
             r#"aria-label="Undo""#,
             r#"aria-label="Redo""#,
-            r#"aria-label="ORBAT Manager""#,
+            r#"aria-label="Translate widget""#,
+            r#"aria-label="Rotate widget""#,
+            r#"aria-label="Toggle snap grid""#,
+            r#"aria-label="Decrease snap step""#,
+            r#"aria-label="Increase snap step""#,
             r#"aria-label="Mission settings""#,
             r#"aria-label="Export""#,
         ] {
@@ -2824,6 +2966,14 @@ mod t634_two_rows_and_a_hierarchy {
         assert!(
             at(&b, r#"aria-label="Mission title""#) < row_tools,
             "T-634: the editable title is row-1 identity, beside the menus"
+        );
+        // T-797 (operator decision 2) — ORBAT Manager MOVED the other way: from a row-2 command to a
+        // menu-row entry. It now renders in row 1 (after the menu bar, before the title divider), so
+        // it must sit BEFORE the tool row opens — the inverse of the assertion it used to satisfy.
+        assert!(
+            at(&b, r#"aria-label="ORBAT Manager""#) < row_tools,
+            "T-797: ORBAT Manager is now a menu-row entry (row 1), not a row-2 tool — it must render \
+             before the toolbar row"
         );
     }
 
