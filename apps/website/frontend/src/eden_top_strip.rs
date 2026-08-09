@@ -110,6 +110,21 @@ enum MenuAction {
     /// door to the same overlay) was dropped as ambiguous. Still a toggle: the Help row both opens
     /// the reference and puts it away.
     ControlsHint,
+    // T-797 — the transform-widget / snap-grid / select-all verbs the Edit menu (and the row-2 icon
+    // cluster) now DISPATCH rather than merely advertise. Each routes through
+    // `mission_editor::with_editor_toolbar_dispatch`, the registered bridge to the keydown closure's
+    // `widget_variant` / `snap` signals + the live canvas rect (the fix the earlier `action: None`
+    // rows anticipated — "when a later slice exposes those signals, these rows wire to them without
+    // moving"). Bodies are wasm-gated in `run_action` (like Undo/Redo); the native build compiles the
+    // arms as no-ops (the dispatch is `None` off-wasm anyway).
+    /// Select every entity in the viewport (the Ctrl+A arm; the editor owns the canvas rect).
+    SelectAll,
+    /// Pick the transform-widget variant from its `1`/`2` digit (Translate / Rotate).
+    SetWidget(u8),
+    /// Toggle the snap-grid master latch (the `G` chord).
+    ToggleSnap,
+    /// Step the active widget's snap ladder by ±1 (the `[`/`]` chords).
+    SnapStep(i32),
 }
 
 use crate::place_helpers::{AlignEdge, Orient, PatternKind, SpaceAxis};
@@ -154,13 +169,15 @@ const MENUS: [(&str, &[MenuItem]); 6] = [
     // give a keyboard-only affordance: the on-screen Select All, and the widget / snap / grid keys
     // that were previously invisible secrets. Each row carries its chord in the label.
     //
-    // **The widget / snap / grid rows are chord-labelled but NOT clickable (`action: None`).** Their
-    // live state lives in `mission_editor`'s window keydown closure (`widget_variant` / `snap`,
-    // T-648/T-795) — local RwSignals with no cross-file dispatch bridge, and `mission_editor.rs` is
-    // another slice's `owns` this wave. The T-668 dead-control rule is exactly this: a control that
-    // cannot act renders disabled and keeps a tooltip rather than lying with a clickable no-op. The
-    // KEY works (the arm is bound and censused); the menu row documents where to find it. When a
-    // later slice exposes those signals, these rows wire to them without moving.
+    // **wave-202 — the widget / snap / grid rows now DISPATCH (they are live commands).** The slice
+    // that shipped them left them `action: None` because their live state (`widget_variant` / `snap`,
+    // T-648/T-795) lived in `mission_editor`'s keydown closure with no cross-file bridge, and
+    // `mission_editor.rs` was another slice's `owns`. That bridge now exists —
+    // `mission_editor::register_editor_toolbar_dispatch` (the `register_widget_pivot` pattern) — so
+    // each row wires to it "without moving", exactly as the previous note anticipated. Each still
+    // carries its chord in the label, and a click runs the identical keydown arm. The T-668
+    // dead-control rule no longer applies here (these ARE clickable now); it still governs the one
+    // genuinely-absent dispatch — none remain in this menu.
     (
         "Edit",
         &[
@@ -173,39 +190,42 @@ const MENUS: [(&str, &[MenuItem]); 6] = [
                 action: Some(MenuAction::Redo),
             },
             // SEL-ALL-001 — the Ctrl/Cmd+A arm (mission_editor keydown) scopes Select All to the
-            // viewport, not the whole mission. Documented here because Eden's Edit menu lists it and
-            // TBD bound it invisibly. Chord-only (the arm needs the live canvas rect this menu has
-            // no handle on); the key is the dispatch, the row is the sign-post.
+            // viewport, not the whole mission. T-797 wave-202: this row now DISPATCHES — it reaches
+            // the keydown closure through `with_editor_toolbar_dispatch`, which owns the live canvas
+            // rect the query needs. The chord and the row run the identical arm; the label keeps its
+            // chord so the key stays discoverable.
             MenuItem {
                 label: "Select All on Screen (Ctrl+A)",
-                action: None,
+                action: Some(MenuAction::SelectAll),
             },
             // WIDGET-CYCLE-001 — the transformation-widget modes. Eden numbers five (No Widget 1 /
             // Translation 2 / Rotation 3 / Area Scaling 4 / Area 5); TBD binds `1`/`2` today
-            // (translate / rotate — there is no area-scale target, see `WidgetVariant`). Shipped with
-            // the CURRENT arms; T-795 renumbers to Eden's 1-5 when the extra variants land.
+            // (translate / rotate — there is no area-scale target, see `WidgetVariant`). T-797
+            // wave-202: these rows now dispatch `from_digit(1)` / `from_digit(2)` through the bridge;
+            // T-795 renumbers to Eden's 1-5 when the extra variants land.
             MenuItem {
                 label: "Widget: Translation (1)",
-                action: None,
+                action: Some(MenuAction::SetWidget(1)),
             },
             MenuItem {
                 label: "Widget: Rotation (2)",
-                action: None,
+                action: Some(MenuAction::SetWidget(2)),
             },
             // KEY-GRID-001 / TOOLBAR-GRID-MOVE-001 — the snap grid: G toggles it, `[`/`]` tune the
             // active ladder's step. One SNAP grid (move + rotation rungs), the status-bar chip labels
-            // it SNAP (O-10) — distinct from the map reference grid the View/environment owns.
+            // it SNAP (O-10) — distinct from the map reference grid the View/environment owns. T-797
+            // wave-202: these three rows dispatch toggle / step ∓1 through the bridge.
             MenuItem {
                 label: "Toggle Snap Grid (G)",
-                action: None,
+                action: Some(MenuAction::ToggleSnap),
             },
             MenuItem {
                 label: "Snap Step — Decrease ([)",
-                action: None,
+                action: Some(MenuAction::SnapStep(-1)),
             },
             MenuItem {
                 label: "Snap Step — Increase (])",
-                action: None,
+                action: Some(MenuAction::SnapStep(1)),
             },
         ],
     ),
@@ -985,7 +1005,65 @@ pub fn TopCommandStrip(
             // the same row that opens the reference also puts it away. Ungated (no doc, no
             // web-sys) — the native view shell toggles it too.
             MenuAction::ControlsHint => set_hint(!hint_open.get_untracked()),
+            // T-797 — the transform-widget / snap / select-all verbs route to the editor's keydown
+            // closure through the registered dispatch (peer of the placement tools reaching
+            // `editor_ops` above). A click and the chord run the identical arm. `None` (native /
+            // pre-mount) is a silent no-op.
+            MenuAction::SelectAll => {
+                #[cfg(target_arch = "wasm32")]
+                crate::mission_editor::with_editor_toolbar_dispatch(|d| (d.select_all)());
+            }
+            MenuAction::SetWidget(digit) => {
+                #[cfg(target_arch = "wasm32")]
+                crate::mission_editor::with_editor_toolbar_dispatch(|d| (d.set_widget)(digit));
+                #[cfg(not(target_arch = "wasm32"))]
+                let _ = digit;
+            }
+            MenuAction::ToggleSnap => {
+                #[cfg(target_arch = "wasm32")]
+                crate::mission_editor::with_editor_toolbar_dispatch(|d| (d.toggle_snap)());
+            }
+            MenuAction::SnapStep(delta) => {
+                #[cfg(target_arch = "wasm32")]
+                crate::mission_editor::with_editor_toolbar_dispatch(|d| (d.snap_step)(delta));
+                #[cfg(not(target_arch = "wasm32"))]
+                let _ = delta;
+            }
         }
+    };
+    // T-797 wave-202 — the row-2 toggle buttons' ACTIVE-PLATE reads, reactive through the editor's
+    // registered dispatch. The getters call `widget_variant.get()` / `snap.get()` TRACKED across the
+    // thread_local, so a `class=move || …` closure that calls these subscribes and re-renders when a
+    // chord (not just a click) flips the state — keyboard and toolbar cannot disagree. Native / pre-
+    // mount: the dispatch is `None`, so both read `false` and no plate lights (the strip still
+    // renders; the buttons just act through `run_action`, which no-ops without the bridge).
+    let widget_is = move |digit: u8| -> bool {
+        #[cfg(target_arch = "wasm32")]
+        {
+            let mut rot = false;
+            crate::mission_editor::with_editor_toolbar_dispatch(|d| rot = (d.widget_is_rotate)());
+            // digit 2 = Rotate; digit 1 = Translate (the complement).
+            if digit == 2 {
+                rot
+            } else {
+                !rot
+            }
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let _ = digit;
+            false
+        }
+    };
+    let snap_on = move || -> bool {
+        #[cfg(target_arch = "wasm32")]
+        {
+            let mut on = false;
+            crate::mission_editor::with_editor_toolbar_dispatch(|d| on = (d.snap_enabled)());
+            on
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        false
     };
     let title_fallback = StoredValue::new(title);
     view! {
@@ -1128,25 +1206,24 @@ pub fn TopCommandStrip(
                                                                         .into_any()
                                                                 }
                                                                 None => {
-                                                                    // T-797 — an `action: None` row is a
-                                                                    // KEYBOARD-ONLY affordance: the label carries
-                                                                    // the chord (e.g. `Widget: Rotation (2)`) and
-                                                                    // the key is the dispatch, but the button
-                                                                    // cannot act from here — the live state lives
-                                                                    // in `mission_editor`'s keydown closure, a
-                                                                    // sibling `owns`. So it renders DISABLED (the
-                                                                    // T-668 dead-control rule — no clickable no-op)
-                                                                    // yet keeps rule (3)'s tooltip AND the gutter,
-                                                                    // pointing the operator at the key. Before
-                                                                    // T-797 the one such row was the `Map layers`
-                                                                    // future-host stub (F-14, now deleted); its
-                                                                    // "Not available yet" tooltip would have lied
-                                                                    // about these — the key IS available.
+                                                                    // wave-202 — NO menu row is `action:
+                                                                    // None` any more: the T-797 widget / snap
+                                                                    // / Select-All rows that once landed here
+                                                                    // now DISPATCH through the editor bridge
+                                                                    // (see the `edit_menu_widget_snap_rows_
+                                                                    // dispatch_not_disabled` pin). This arm
+                                                                    // is the exhaustiveness fallback for the
+                                                                    // `Option<MenuAction>` match — a DISABLED
+                                                                    // row keeping the gutter + a tooltip (the
+                                                                    // T-668 dead-control idiom) should anyone
+                                                                    // re-introduce a future-command stub, so
+                                                                    // it stays honest without asserting a
+                                                                    // keyboard chord that may not exist.
                                                                     view! {
                                                                         <button
                                                                             type="button"
                                                                             disabled=true
-                                                                            title="Use the keyboard shortcut shown"
+                                                                            title="Not available yet"
                                                                             class=cn(&[MENU_ROW, DISABLED_GLYPH])
                                                                         >
                                                                             <span class=MENU_GUTTER></span>
@@ -1369,25 +1446,33 @@ pub fn TopCommandStrip(
             // ICONS give them a home in the toolbar, each carrying its chord in the tooltip `Name
             // (Key)`.
             //
-            // **They ship DISABLED.** The live state (`widget_variant` / `snap`) is a pair of local
-            // RwSignals inside `mission_editor`'s window keydown closure — a sibling `owns` this wave
-            // — with no cross-file dispatch bridge to call from here. The T-668 dead-control rule is
-            // the honest shape for that: a control that cannot act renders disabled and KEEPS its
-            // tooltip (which points at the working key), rather than a clickable no-op that lies. The
-            // recipe is `BTN_ICON + DISABLED_GLYPH` only — no `HOVER_FILL`, because a permanently
-            // dead glyph must not offer a hover fill (that is also why the count-4 `HOVER_FILL`
-            // recipe pin below stays exact: these are not among the four live glyphs). When a later
-            // slice exposes the signals, these gain `on:click` + a `TOGGLED_PLATE` active state.
+            // **wave-202 — they are LIVE now.** The slice that shipped them left them disabled because
+            // the live state (`widget_variant` / `snap`) sat in `mission_editor`'s keydown closure
+            // with no cross-file bridge. That bridge now exists (`register_editor_toolbar_dispatch`,
+            // the `register_widget_pivot` pattern), so each button dispatches through `run_action` →
+            // `with_editor_toolbar_dispatch` — a click runs the identical keydown arm. They take the
+            // live-glyph recipe `BTN_ICON + HOVER_FILL` (NOT the count-4 `HOVER_FILL, DISABLED_GLYPH`
+            // set — those four are History/Undo/Redo/gear and their pin stays exact), and the two
+            // TOGGLE buttons (widget variant, snap latch) add a REACTIVE `TOGGLED_PLATE` when active
+            // (`widget_is` / `snap_on` above), exactly the "on:click + TOGGLED_PLATE active state" the
+            // prior note promised. The two step buttons are momentary (no plate). Each keeps its
+            // `Name (Key)` tooltip so the chord stays discoverable.
             //
-            // WIDGET-CYCLE-001 — Translate (Digit1) / Rotate (Digit2). Shipped with the current 1/2
-            // arms; T-795 renumbers to Eden's 1-5 (No Widget / Translation / Rotation / Area Scaling
-            // / Area) when the extra variants exist.
+            // WIDGET-CYCLE-001 — Translate (Digit1) / Rotate (Digit2). Wired to the current 1/2 arms;
+            // T-795 renumbers to Eden's 1-5 (No Widget / Translation / Rotation / Area Scaling / Area)
+            // when the extra variants exist.
             <button
                 type="button"
                 aria-label="Translate widget"
                 title="Translate widget (1)"
-                class=cn(&[BTN_ICON, DISABLED_GLYPH])
-                disabled=true
+                class=move || {
+                    if widget_is(1) {
+                        cn(&[BTN_ICON, HOVER_FILL, TOGGLED_PLATE])
+                    } else {
+                        cn(&[BTN_ICON, HOVER_FILL])
+                    }
+                }
+                on:click=move |_| run_action(MenuAction::SetWidget(1))
             >
                 <MaterialIcon name="open_with" class="block text-base leading-none" />
             </button>
@@ -1395,8 +1480,14 @@ pub fn TopCommandStrip(
                 type="button"
                 aria-label="Rotate widget"
                 title="Rotate widget (2)"
-                class=cn(&[BTN_ICON, DISABLED_GLYPH])
-                disabled=true
+                class=move || {
+                    if widget_is(2) {
+                        cn(&[BTN_ICON, HOVER_FILL, TOGGLED_PLATE])
+                    } else {
+                        cn(&[BTN_ICON, HOVER_FILL])
+                    }
+                }
+                on:click=move |_| run_action(MenuAction::SetWidget(2))
             >
                 <MaterialIcon name="rotate_right" class="block text-base leading-none" />
             </button>
@@ -1410,8 +1501,14 @@ pub fn TopCommandStrip(
                 type="button"
                 aria-label="Toggle snap grid"
                 title="Toggle snap grid (G)"
-                class=cn(&[BTN_ICON, DISABLED_GLYPH])
-                disabled=true
+                class=move || {
+                    if snap_on() {
+                        cn(&[BTN_ICON, HOVER_FILL, TOGGLED_PLATE])
+                    } else {
+                        cn(&[BTN_ICON, HOVER_FILL])
+                    }
+                }
+                on:click=move |_| run_action(MenuAction::ToggleSnap)
             >
                 <MaterialIcon name="grid_on" class="block text-base leading-none" />
             </button>
@@ -1419,8 +1516,8 @@ pub fn TopCommandStrip(
                 type="button"
                 aria-label="Decrease snap step"
                 title="Decrease snap step ([)"
-                class=cn(&[BTN_ICON, DISABLED_GLYPH])
-                disabled=true
+                class=cn(&[BTN_ICON, HOVER_FILL])
+                on:click=move |_| run_action(MenuAction::SnapStep(-1))
             >
                 <MaterialIcon name="remove" class="block text-base leading-none" />
             </button>
@@ -1428,8 +1525,8 @@ pub fn TopCommandStrip(
                 type="button"
                 aria-label="Increase snap step"
                 title="Increase snap step (])"
-                class=cn(&[BTN_ICON, DISABLED_GLYPH])
-                disabled=true
+                class=cn(&[BTN_ICON, HOVER_FILL])
+                on:click=move |_| run_action(MenuAction::SnapStep(1))
             >
                 <MaterialIcon name="add" class="block text-base leading-none" />
             </button>
@@ -2497,6 +2594,7 @@ mod tests {
 /// satisfy an absence check (the house rule).
 #[cfg(test)]
 mod t668_state_vocabulary {
+    use super::{MenuAction, MENUS};
     use crate::arsenal::class_r_scrub::{live_code, live_source};
 
     /// This file with comments blanked but class STRINGS kept, so the Tailwind literals survive as
@@ -2573,29 +2671,50 @@ mod t668_state_vocabulary {
         );
     }
 
-    /// Rule (3) — a disabled top-strip menu row keeps a tooltip that explains why it is dark, rather
-    /// than going silent. The `None`-action row is a DISABLED button carrying a `title=`, not the
-    /// inert `<span>` it used to be. Proven on the string-kept source where the title literal
-    /// survives.
-    ///
-    /// T-797 — the tooltip string changed with the row's NATURE: these are now keyboard-only
-    /// affordances (the chord is in the label; the key dispatches), not the deleted `Map layers`
-    /// future-host stub, so the tooltip points at the key ("Use the keyboard shortcut shown")
-    /// instead of "Not available yet" — which would have lied, because the key IS available. The
-    /// rule the pin enforces (a disabled row keeps a tooltip and is a real button) is unchanged.
+    /// **wave-202 — the Edit menu's widget / snap / Select-All rows are LIVE COMMANDS now.** They
+    /// shipped `action: None` (chord-labelled, disabled) because the editor state they drive had no
+    /// cross-file bridge; wave-202 added `register_editor_toolbar_dispatch` (the `register_widget_pivot`
+    /// pattern), so each row now carries a real `MenuAction` that dispatches through it. This pin was
+    /// "a disabled keyboard-only row keeps its tooltip" (rule 3, for `action: None`); the honest
+    /// inversion is that NO Edit row is `action: None` any more — every one of these five is an
+    /// enabled command whose label still shows its chord. The T-668 dead-control rule and its
+    /// `disabled=true`+tooltip idiom stay green on the controls where a dispatch is GENUINELY absent
+    /// (History's version-list glyph, the scaffold-only gear / ORBAT), pinned by their own tests.
     #[test]
-    fn disabled_controls_keep_their_tooltip() {
-        let src = src_kept();
-        // The disabled (keyboard-only) row keeps a tooltip that points the operator at the key.
+    fn edit_menu_widget_snap_rows_dispatch_not_disabled() {
+        // The five rows that were `action: None` now carry live actions.
+        let edit = MENUS
+            .iter()
+            .find(|(name, _)| *name == "Edit")
+            .expect("T-797: the bar must carry an Edit menu");
+        for (label, want) in [
+            ("Select All on Screen (Ctrl+A)", MenuAction::SelectAll),
+            ("Widget: Translation (1)", MenuAction::SetWidget(1)),
+            ("Widget: Rotation (2)", MenuAction::SetWidget(2)),
+            ("Toggle Snap Grid (G)", MenuAction::ToggleSnap),
+            ("Snap Step — Decrease ([)", MenuAction::SnapStep(-1)),
+            ("Snap Step — Increase (])", MenuAction::SnapStep(1)),
+        ] {
+            let row = edit
+                .1
+                .iter()
+                .find(|it| it.label == label)
+                .unwrap_or_else(|| panic!("T-797: the Edit menu must keep the `{label}` row"));
+            assert!(
+                matches!(row.action, Some(a) if std::mem::discriminant(&a) == std::mem::discriminant(&want)),
+                "wave-202: `{label}` must DISPATCH (a live MenuAction), not ship `action: None`"
+            );
+        }
+        // …and no Edit row is a dead keyboard-only affordance any longer.
         assert!(
-            src.contains("Use the keyboard shortcut shown"),
-            "a disabled menu row must keep a tooltip (rule 3 — it must not go silent)"
+            edit.1.iter().all(|it| it.action.is_some()),
+            "wave-202: every Edit row is a live command now — none may be `action: None`"
         );
-        // …and it is a real button (so the tooltip shows and the row keeps its slot), not a span.
-        let code = live_code(include_str!("eden_top_strip.rs"));
+        // The dispatch reaches the editor's registered bridge (the write path, wasm-gated).
+        let src = live_code(include_str!("eden_top_strip.rs"));
         assert!(
-            code.contains("disabled=true") && code.contains("title="),
-            "the disabled row is a button with a retained title, not an inert span"
+            src.contains("with_editor_toolbar_dispatch"),
+            "wave-202: the widget/snap/select-all actions must route through the editor bridge"
         );
     }
 }

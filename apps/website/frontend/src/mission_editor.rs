@@ -1257,6 +1257,65 @@ fn read_widget_pivot() -> Option<(f64, f64)> {
     WIDGET_PIVOT.with(|c| c.borrow().as_ref().and_then(|f| f()))
 }
 
+/// T-797 — the transformation-widget / snap-grid dispatch the row-2 toolbar + Edit menu drive.
+///
+/// The live state (`widget_variant` / `snap`) and the canvas `container` (whose CSS rect Select All
+/// needs) are `!Send` `RwSignal`s / a DOM handle owned by `MissionEditorPage`'s wasm keydown closure
+/// (T-648/T-795). `eden_top_strip` is native-compiled and another slice's `owns`, so it cannot reach
+/// them directly — the exact shape [`register_widget_pivot`] already solves for the transform-widget
+/// pivot. This is its peer: the editor registers callable INVOKERS at mount; the strip's buttons call
+/// them (write path), and reads two GETTERS for the toggle-active plate. Native builds / pre-mount see
+/// `None` and the strip's buttons no-op, exactly like `read_widget_pivot`.
+///
+/// The five invokers mirror the keydown arms one-for-one so a click and the chord do the same thing:
+/// `set_widget` (Digit1/2 → `from_digit`), `toggle_snap` (`G`), `snap_step` (`[`/`]`), and
+/// `select_all` (Ctrl+A — the closure captures the container, so the button need not measure it).
+#[cfg(target_arch = "wasm32")]
+type ToolbarDispatch = std::rc::Rc<EditorToolbarDispatch>;
+
+#[cfg(target_arch = "wasm32")]
+pub(crate) struct EditorToolbarDispatch {
+    /// Select the widget variant from its `1`/`2` digit (mirror of the Digit1/Digit2 arms).
+    pub set_widget: Box<dyn Fn(u8)>,
+    /// Toggle the snap-grid master latch (mirror of the `G` arm).
+    pub toggle_snap: Box<dyn Fn()>,
+    /// Step the ACTIVE widget's snap ladder by ±1 (mirror of the `[`/`]` arms).
+    pub snap_step: Box<dyn Fn(i32)>,
+    /// Select every entity in the viewport (mirror of the Ctrl+A arm — the closure owns the rect).
+    pub select_all: Box<dyn Fn()>,
+    /// Is the ACTIVE widget variant Rotate? (Translate is the complement.) Drives the two widget
+    /// buttons' `TOGGLED_PLATE` active state.
+    pub widget_is_rotate: Box<dyn Fn() -> bool>,
+    /// Is the snap grid enabled? Drives the snap-grid button's active state.
+    pub snap_enabled: Box<dyn Fn() -> bool>,
+}
+
+thread_local! {
+    /// T-797 — the registered toolbar dispatch (set once at mount). Peer of [`WIDGET_PIVOT`]; the
+    /// native strip reads it through the `read_*` shims below and simply sees `None` off-wasm.
+    #[cfg(target_arch = "wasm32")]
+    static TOOLBAR_DISPATCH: std::cell::RefCell<Option<ToolbarDispatch>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+/// T-797 — register the row-2 / Edit-menu dispatch (called once at mount, wasm-only: only the host
+/// has the `!Send` signals + the container to close over). Peer of [`register_widget_pivot`].
+#[cfg(target_arch = "wasm32")]
+fn register_editor_toolbar_dispatch(d: ToolbarDispatch) {
+    TOOLBAR_DISPATCH.with(|c| *c.borrow_mut() = Some(d));
+}
+
+/// T-797 — the strip's INVOKE seam. Runs `f` against the registered dispatch when it is present
+/// (wasm, post-mount); a no-op otherwise. `eden_top_strip` calls the four verbs through this.
+#[cfg(target_arch = "wasm32")]
+pub(crate) fn with_editor_toolbar_dispatch(f: impl FnOnce(&EditorToolbarDispatch)) {
+    TOOLBAR_DISPATCH.with(|c| {
+        if let Some(d) = c.borrow().as_ref() {
+            f(d);
+        }
+    });
+}
+
 /// T-648 WIDGET-CYCLE-001 / WIDGET-TRANS-001 — the TRANSFORMATION WIDGET: a lightweight
 /// `pointer-events-none` SVG gizmo drawn on the selection centroid, in the ruler/LoS overlay idiom
 /// (full-bleed SVG, reads the live camera off `world_assets::camera_snapshot`, projects world→screen
@@ -3278,6 +3337,40 @@ pub fn MissionEditorPage() -> impl IntoView {
                     } else {
                         Some((sx / n, sy / n))
                     }
+                }));
+            }
+
+            // T-797 — hand the row-2 toolbar + Edit menu their dispatch. Peer of the
+            // `register_widget_pivot` block above: `widget_variant` / `snap` (T-648/T-795) are
+            // `RwSignal`s local to this `!Send` `on_load` closure and `container` is the DOM handle
+            // whose CSS rect Select All needs, none reachable from the native-compiled strip. Each
+            // invoker is the KEYDOWN ARM's body verbatim (so a click and the chord agree), and the two
+            // getters read the signals TRACKED (`.get()`), so the strip's toggle-plate closures
+            // subscribe across the thread_local and re-render when a chord flips the state.
+            {
+                let container = container.clone();
+                register_editor_toolbar_dispatch(std::rc::Rc::new(EditorToolbarDispatch {
+                    // Digit1/Digit2 arm: `from_digit` (1 → Translate, 2 → Rotate; any other = no-op).
+                    set_widget: Box::new(move |d: u8| {
+                        widget_variant.set(widget_variant.get_untracked().from_digit(d));
+                    }),
+                    // `G` arm: flip the snap-grid master latch.
+                    toggle_snap: Box::new(move || {
+                        snap.set(snap.get_untracked().toggled());
+                    }),
+                    // `[`/`]` arms: step the ACTIVE widget variant's ladder (its `snap_axis`).
+                    snap_step: Box::new(move |delta: i32| {
+                        let axis = widget_variant.get_untracked().snap_axis();
+                        snap.set(snap.get_untracked().stepped(axis, delta));
+                    }),
+                    // Ctrl+A arm: measure the live container and delegate to `select_all_in_view`
+                    // (the closure OWNS the rect, so the button hands over nothing).
+                    select_all: Box::new(move || {
+                        let rect = container.get_bounding_client_rect();
+                        crate::editor_ops::select_all_in_view(rect.width(), rect.height());
+                    }),
+                    widget_is_rotate: Box::new(move || widget_variant.get().is_rotate()),
+                    snap_enabled: Box::new(move || snap.get().enabled),
                 }));
             }
 
