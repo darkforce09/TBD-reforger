@@ -1155,7 +1155,34 @@ fn stitch_row(
                             </button>
                         </div>
                     </div>
-                    {if picking_vehicle {
+                    {if picking_vehicle && vehicle_options.is_empty() {
+                        // T-800 — Add Vehicle with an EMPTY vehicle catalog used to open a picker
+                        // whose only option was "Pick vehicle…": a click that changed nothing and
+                        // said nothing (the silent no-op the UX review flagged). Explain it instead,
+                        // and point at the cause (the active modpack ships no placeable vehicles).
+                        // Rendered inline in the row flow like the picker it replaces — NOT an
+                        // overlay — so there is no modal-stack z-order to consume (T-786 O-3 only
+                        // bites a popover that must sit above the ORBAT dialog).
+                        view! {
+                            <div
+                                class="flex items-center gap-2 border-t border-white/5 bg-surface-dim px-2 py-1.5"
+                                data-testid="add-vehicle-empty-explainer"
+                                on:click=move |ev| ev.stop_propagation()
+                            >
+                                <span class="min-w-0 flex-1 text-label-sm text-on-surface-variant">
+                                    "No placeable vehicles in the active modpack — nothing to add. Seed or select a modpack that ships vehicles."
+                                </span>
+                                <button
+                                    type="button"
+                                    class="rounded px-2 py-1 text-label-sm text-on-surface-variant hover:text-on-surface"
+                                    on:click=move |ev| {
+                                        ev.stop_propagation();
+                                        add_vehicle_squad.set(None);
+                                    }
+                                >"Dismiss"</button>
+                            </div>
+                        }.into_any()
+                    } else if picking_vehicle {
                         let opts = vehicle_options.clone();
                         view! {
                             <div
@@ -1629,6 +1656,40 @@ mod tests {
         assert!(
             hist.contains("vehicles_bind"),
             "map presence: vehicles_bind on doc change"
+        );
+    }
+
+    /// T-800 (F-21) — Add Vehicle on an EMPTY vehicle catalog must explain itself, not open a
+    /// pick-nothing select that changes nothing (the silent no-op the UX review flagged). The
+    /// empty-catalog branch renders BEFORE the normal picker (`vehicle_options.is_empty()` first),
+    /// carries a testid the acceptance script targets, and names the cause in operator words.
+    /// The explainer is inline in the row flow — same container class as the picker — so there is
+    /// no modal-stack z-order to consume (that only bites an overlay above the ORBAT dialog).
+    /// Needles fragment-assembled; the test module is not part of this haystack because these are
+    /// live view literals, not comment text.
+    #[test]
+    fn add_vehicle_empty_catalog_shows_explainer_not_silent_noop() {
+        let src = include_str!("orbat_manager.rs");
+        let empty_guard = format!("picking_vehicle && {}", "vehicle_options.is_empty()");
+        assert!(
+            src.contains(&empty_guard),
+            "T-800: the empty-catalog branch must gate on picking_vehicle AND an empty option list"
+        );
+        let testid = format!("data-testid=\"{}\"", "add-vehicle-empty-explainer");
+        assert!(
+            src.contains(&testid),
+            "T-800: the explainer must carry the acceptance testid so a scripted click can assert it"
+        );
+        let cause = "No placeable vehicles in the active modpack";
+        assert!(
+            src.contains(cause),
+            "T-800: the explainer must NAME why there is nothing to add, not fail silently"
+        );
+        // The normal picker still exists for the non-empty case — this is an added branch, not a
+        // swap. `orbat_add_vehicle` (pinned by H8) remains reachable through the else-if arm.
+        assert!(
+            src.contains("} else if picking_vehicle {"),
+            "T-800: the populated-catalog picker must remain as the else-if arm"
         );
     }
 

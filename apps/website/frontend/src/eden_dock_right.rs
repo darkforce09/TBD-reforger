@@ -441,6 +441,52 @@ fn search_grammar_hint() -> impl IntoView {
     }
 }
 
+/// T-800 — the shared Factions/Vehicles tree failure view: name the cause and offer Retry.
+///
+/// The main tree used to render one flat line ("Could not load the catalog.") with no cause and
+/// no recovery, while the search-grammar hint kept rendering above it (F-05/F-21). This replaces
+/// that dead end. Two causes, distinguished by `no_modpack` (raised by the dock's probe when the
+/// `/registry` failure was the API's 404 "no current modpack configured", the swallowed cause):
+///   • no current modpack  → the editor has nothing to load, and says so — not a transient error.
+///   • request failed       → a network/server fault; the same rows are expected back on Retry.
+/// Retry reuses the T-750 Favourites mechanism verbatim: bump `registry_fetch_gen`, which re-enters
+/// the cold `/registry` fetch and puts both palettes back into Loading. `noun` names the palette so
+/// the copy reads in place ("vehicle catalog" / "asset catalog").
+fn catalog_failure_view(
+    noun: &'static str,
+    no_modpack: RwSignal<bool>,
+    registry_fetch_gen: RwSignal<u64>,
+) -> AnyView {
+    let cause = if no_modpack.get() {
+        format!(
+            "No modpack is configured, so the {noun} is empty. Set a current modpack, then retry."
+        )
+    } else {
+        format!("Could not load the {noun}. The request to the registry failed.")
+    };
+    view! {
+        <div class="flex flex-col gap-2" data-testid="catalog-failure">
+            <p class="text-label-sm text-error" data-testid="catalog-failure-cause">
+                {cause}
+            </p>
+            <button
+                type="button"
+                data-testid="catalog-failure-retry"
+                class="self-start rounded border border-outline-variant/40 px-2 py-1 text-label-sm text-on-surface transition hover:bg-surface-container-high"
+                on:click=move |_| {
+                    // T-750 pattern — re-kick the cold /registry fetch; the effect clears the
+                    // failure and returns both palettes to Loading. A populated seed then Readies
+                    // the tree with no page reload.
+                    registry_fetch_gen.update(|n| *n = n.wrapping_add(1));
+                }
+            >
+                "Retry"
+            </button>
+        </div>
+    }
+    .into_any()
+}
+
 // ── T-695 — Favourites: a starred-asset collection across the catalogue ──────────────────────────
 // (NEW-F5 + 3den E3 + 3DEN-CTX-001; Eden F7.)
 //
@@ -1237,6 +1283,37 @@ pub fn DockRight(
     // because it is a per-user editor preference, not mission state: nothing in the document, in
     // `editor_ops` or on the wire knows or should know what an author has starred.
     let favourites = RwSignal::new(load_favourites());
+    // T-800 — the CAUSE of a `/registry` failure, so the Factions/Vehicles Failed arms can name it
+    // instead of a flat "Could not load the catalog." The editor's cold fetch (mission_editor.rs,
+    // T-788-owned) collapses every error to a unit `CatalogState::Failed` + `registry_failed`, so
+    // the 404 "no current modpack configured" is thrown away before it reaches this dock. Rather
+    // than reach into that file, the dock re-asks: when `registry_failed` latches, a one-row probe
+    // reads the status the fetch discarded — a 404 IS the "no current modpack" case (the API's only
+    // 404 on this route: handlers/registry.rs:70), anything else is a genuine request failure. The
+    // probe is a wasm-only network call, so it lives behind the arch gate exactly like the fetch it
+    // shadows; the native `live_code` harness scrubs the body (pins gate on `live_source`).
+    let registry_no_modpack = RwSignal::new(false);
+    #[cfg(target_arch = "wasm32")]
+    {
+        let auth = use_context::<crate::auth::AuthStore>();
+        Effect::new(move |_| {
+            if !registry_failed.get() {
+                // Loading or Ready — no failure to attribute; a successful Retry clears the cause.
+                registry_no_modpack.set(false);
+                return;
+            }
+            let Some(auth) = auth else {
+                return;
+            };
+            leptos::task::spawn_local(async move {
+                // A single row is enough to learn the status; success and any non-404 both mean
+                // "not the no-modpack case", so the arm falls back to the request-failed wording.
+                let got: Result<crate::dto::RegistryResponse, crate::client::ApiErr> =
+                    crate::client::api_get(auth, "/registry?limit=1&offset=0").await;
+                registry_no_modpack.set(matches!(got, Err((404, _))));
+            });
+        });
+    }
     let tab_btn = move |i: usize, label: &'static str| {
         let icon = tab_icon(i);
         view! {
@@ -1393,7 +1470,15 @@ pub fn DockRight(
                                 }
                             }
                         />
-                        {search_grammar_hint()}
+                        // T-800 — the grammar hint doubles as filter help while healthy, so it
+                        // stays in every non-failed state; but above a named failure + Retry it was
+                        // just chrome on a corpse (F-05/F-21), so the Factions-catalog Failed state
+                        // (Objects has its own registry path) drops it.
+                        {move || {
+                            (objects_mode.get()
+                                || !matches!(catalog.get(), CatalogState::Failed))
+                                .then(search_grammar_hint)
+                        }}
                         <div class="mt-2">
                             {move || {
                                 if objects_mode.get() {
@@ -1448,14 +1533,13 @@ pub fn DockRight(
                                         }
                                             .into_any()
                                     }
-                                    CatalogState::Failed => {
-                                        view! {
-                                            <p class="text-label-sm text-outline">
-                                                "Could not load the catalog."
-                                            </p>
-                                        }
-                                            .into_any()
-                                    }
+                                    // T-800 — name the cause (no modpack vs request failed) and
+                                    // offer Retry, instead of the old flat dead-end line.
+                                    CatalogState::Failed => catalog_failure_view(
+                                        "asset catalog",
+                                        registry_no_modpack,
+                                        registry_fetch_gen,
+                                    ),
                                     CatalogState::Ready(nodes) if nodes.is_empty() => {
                                         view! {
                                             <p class="text-label-sm text-outline">"No placeable assets."</p>
@@ -1525,7 +1609,13 @@ pub fn DockRight(
                             class="mt-2 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-1.5 text-label-sm text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary/60"
                             on:input=move |ev| vehicle_search.set(event_target_value(&ev))
                         />
-                        {search_grammar_hint()}
+                        // T-800 — same rule as the Factions tab: the hint is filter help while
+                        // healthy, so it stays in Loading/Ready, but it does not sit above a named
+                        // vehicle-catalog failure + Retry.
+                        {move || {
+                            (!matches!(vehicle_catalog.get(), CatalogState::Failed))
+                                .then(search_grammar_hint)
+                        }}
                         // T-076 (RIGHT-CREW-001) — the manned/unmanned placement toggle, beside the
                         // Vehicles search. Checked ⇒ a placed vehicle is authored with crew (the Eden
                         // default); unchecked ⇒ `crewed: false` is stamped on the row. Native builds omit
@@ -1551,14 +1641,13 @@ pub fn DockRight(
                                         }
                                             .into_any()
                                     }
-                                    CatalogState::Failed => {
-                                        view! {
-                                            <p class="text-label-sm text-outline">
-                                                "Could not load the catalog."
-                                            </p>
-                                        }
-                                            .into_any()
-                                    }
+                                    // T-800 — name the cause (no modpack vs request failed) and
+                                    // offer Retry, matching the Factions tab.
+                                    CatalogState::Failed => catalog_failure_view(
+                                        "vehicle catalog",
+                                        registry_no_modpack,
+                                        registry_fetch_gen,
+                                    ),
                                     CatalogState::Ready(nodes) if nodes.is_empty() => {
                                         view! {
                                             <p class="text-label-sm text-outline">
@@ -4417,6 +4506,103 @@ mod tests {
         );
     }
 
+    // ── T-800 (F-05/F-21) — the main tree's failure states name the cause and offer Retry ──────
+
+    /// The shared `catalog_failure_view` helper is the whole of the fix's copy: it must (a) branch
+    /// on the no-modpack cause so the two failures read differently, (b) offer Retry by bumping
+    /// `registry_fetch_gen` — the SAME recovery the Favourites arm ships (T-750), reused not forked
+    /// — and (c) name both causes in operator words. Call-shape on `live_code`, copy on
+    /// `live_source`; needles fragment-assembled so this module is not its own haystack.
+    #[test]
+    fn catalog_failure_view_names_cause_and_offers_retry() {
+        use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+        let code = live_code(include_str!("eden_dock_right.rs"));
+        let body = only_body(&code, "fn catalog_failure_view(");
+        let cause_branch = format!("{}{}", "no_modpack.", "get()");
+        let bump = format!("{}{}", "registry_fetch_gen.", "update(");
+        assert!(
+            body.contains(&cause_branch),
+            "T-800: the failure view must distinguish the no-modpack cause from a request failure"
+        );
+        assert!(
+            body.contains(&bump),
+            "T-800: Retry must reuse the T-750 mechanism — bump registry_fetch_gen, not a fresh fetch"
+        );
+        // User-visible copy on live_source (literals kept, test module still cut).
+        let sourced = live_source(include_str!("eden_dock_right.rs"));
+        let sourced_body = only_body(&sourced, "fn catalog_failure_view(");
+        let retry = format!("{}{}", "\"", "Retry\"");
+        let modpack_word = "No modpack is configured";
+        let failed_word = "the request to the registry failed";
+        assert!(
+            sourced_body.contains(&retry),
+            "T-800: the failure view must offer a Retry control"
+        );
+        assert!(
+            sourced_body.contains(modpack_word),
+            "T-800: the no-modpack arm must NAME that cause, not render a flat 'could not load' line"
+        );
+        assert!(
+            sourced_body.to_lowercase().contains(failed_word),
+            "T-800: the request-failed arm must name a transient failure, distinct from no-modpack"
+        );
+    }
+
+    /// Both the Factions and Vehicles Failed arms must route through `catalog_failure_view` (so the
+    /// two cannot drift), and the old flat dead-end line must be GONE from the shipped view — a
+    /// re-introduced "Could not load the catalog." literal anywhere in the live source (the Vehicles
+    /// arm, the Factions arm, or a decoy) fails this. The doc comment on the helper mentions the old
+    /// line on purpose to explain the fix; `live_source` blanks comments, so only a real view string
+    /// can trip the negative.
+    #[test]
+    fn both_catalog_failed_arms_use_the_named_failure_view() {
+        use crate::arsenal::class_r_scrub::{live_source, only_body};
+        let sourced = live_source(include_str!("eden_dock_right.rs"));
+        let dock = only_body(&sourced, "pub fn DockRight(");
+        // Two call sites: character catalog + vehicle catalog, each naming its noun.
+        let calls = dock.matches("catalog_failure_view(").count();
+        assert!(
+            calls >= 2,
+            "T-800: both the Factions and Vehicles Failed arms must call catalog_failure_view \
+             (found {calls}); a hand-rolled second arm is how the two drift"
+        );
+        assert!(
+            dock.contains("\"asset catalog\"") && dock.contains("\"vehicle catalog\""),
+            "T-800: each arm must name its own palette so the copy reads in place"
+        );
+        // The flat dead-end line the review flagged must not ship anywhere in the module's views.
+        let dead_line = format!("{}{}", "Could not load ", "the catalog.\"");
+        assert!(
+            !sourced.contains(&dead_line),
+            "T-800: the flat 'Could not load the catalog.' line must be gone from every live view \
+             (F-05/F-21); it was the cause-less dead end this ticket replaced"
+        );
+    }
+
+    /// The search-grammar hint doubles as filter help while healthy (keep it), but it must not sit
+    /// above a named failure + Retry — the "chips over the corpse" the review named. So each of the
+    /// two tree tabs gates its `search_grammar_hint` render on the catalog NOT being `Failed`. The
+    /// hint is unconditional inside the Objects sub-mode branch (Objects has its own registry path),
+    /// so the gate needles are the two `CatalogState::Failed` matches guarding the hint.
+    #[test]
+    fn grammar_hint_hides_while_the_tree_is_failed() {
+        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        let code = live_code(include_str!("eden_dock_right.rs"));
+        let dock = only_body(&code, "pub fn DockRight(");
+        // Both tab bodies must gate the hint on a not-Failed check. `.then(search_grammar_hint)` is
+        // the render, guarded by a `matches!(… CatalogState::Failed)` negation.
+        let gated = dock.matches("then(search_grammar_hint)").count();
+        assert!(
+            gated >= 2,
+            "T-800: both the Factions and Vehicles hint renders must be state-gated (found {gated})"
+        );
+        // And the healthy render survives: the const is still referenced (filter help stays).
+        assert!(
+            dock.contains("search_grammar_hint"),
+            "T-800: the hint must remain for the healthy state — it is filter help, not chrome"
+        );
+    }
+
     // ── T-084 (RIGHT-SEARCH-002/003/004/005) — the grammar reaches all three search boxes ──────
 
     /// The grammar is a pure function in `asset_catalog` and is tested there, behaviourally. What
@@ -4454,13 +4640,17 @@ mod tests {
                 "the placeholder must name the {op} operator"
             );
         }
-        // The hint row is rendered under each of the three boxes (two call sites: the shared
-        // Factions/Objects input and the Vehicles input).
+        // The hint row is rendered under each of the two tree inputs (the shared Factions/Objects
+        // input and the Vehicles input). T-800 made the render state-gated — it hides above a named
+        // catalog failure + Retry (`grammar_hint_hides_while_the_tree_is_failed` pins that) — so the
+        // call shape is now `.then(search_grammar_hint)` rather than a bare `{search_grammar_hint()}`.
+        // Both sites still advertise the grammar in every non-failed (healthy) state, which is what
+        // this pin has always guarded.
         assert_eq!(
-            src.matches(&format!("{}()}}", "{search_grammar_hint"))
+            src.matches(&format!("{}(search_grammar_hint)", ".then"))
                 .count(),
             2,
-            "the hint row must sit under both search inputs"
+            "the hint row must sit under both search inputs (state-gated since T-800)"
         );
         // And it shows a worked example of each operator, not just its name.
         for example in [

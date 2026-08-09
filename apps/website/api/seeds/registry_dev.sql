@@ -1,8 +1,11 @@
 -- registry_dev.sql
 -- Dev seed for the T-068 Virtual Arsenal registry catalog. Mirrors the T-068.1
 -- Workbench export (packages/tbd-schema/registry/registry-items.workbench.json):
--- 21 real rows across all 5 kinds (8 character, 4 gear_primary, 3 gear_uniform,
--- 4 gear_vest, 2 gear_helmet). Idempotent and self-contained so `make seed` works
+-- 21 real rows across five gear/character kinds (8 character, 4 gear_primary,
+-- 3 gear_uniform, 4 gear_vest, 2 gear_helmet), PLUS 4 T-800 vehicle rows so the
+-- Vehicles tab and ORBAT > Add Vehicle have something to author in a dev DB (the
+-- Workbench export carried no vehicle kind, which read as "No placeable vehicles"
+-- even after a correct seed). Idempotent and self-contained so `make seed` works
 -- WITHOUT cmd/seed's mock_data.sql: it upserts the current modpack FK first.
 --
 -- modpack_id = the mock current modpack (mock_data.sql), the modpacks.is_current
@@ -35,5 +38,13 @@ INSERT INTO registry_items (modpack_id, resource_name, display_name, category, k
 ('00000000-0000-4000-a000-000000000001', '{156DC7109CEE6F69}Prefabs/Characters/Vests/Vest_ALICE/Variants/Vest_ALICE_AR.et', 'ALICE Vest (Automatic Rifleman)', 'NATO/Vest', 'gear_vest', 18),
 ('00000000-0000-4000-a000-000000000001', '{725C5E1C75CADAF4}Prefabs/Characters/Vests/Vest_M69/Vest_M69_M81woodland.et', 'M69 Vest (M81 Woodland)', 'NATO/Vest', 'gear_vest', 19),
 ('00000000-0000-4000-a000-000000000001', '{FE5C49069C2499D9}Prefabs/Characters/HeadGear/Helmet_PASGT_01/Helmet_PASGT_01_cover.et', 'PASGT Helmet (Cover)', 'NATO/Helmet', 'gear_helmet', 20),
-('00000000-0000-4000-a000-000000000001', '{E685A8D337D36204}Prefabs/Characters/HeadGear/Helmet_PASGT_01/Helmet_PASGT_01_cover_w_goggles.et', 'PASGT Helmet (Cover + Goggles)', 'NATO/Helmet', 'gear_helmet', 21)
+('00000000-0000-4000-a000-000000000001', '{E685A8D337D36204}Prefabs/Characters/HeadGear/Helmet_PASGT_01/Helmet_PASGT_01_cover_w_goggles.et', 'PASGT Helmet (Cover + Goggles)', 'NATO/Helmet', 'gear_helmet', 21),
+-- T-800 — vehicle rows: without these the Vehicles palette and ORBAT > Add Vehicle
+-- have nothing placeable in a dev DB (kind = 'vehicle', so `registry_vehicle_options`
+-- and `build_vehicle_catalog_tree` both pick them up; category groups them under the
+-- US Army folder like the character rows). Real BLUFOR/US_Army prefab GUIDs.
+('00000000-0000-4000-a000-000000000001', '{86B7B7522A75FF8B}Prefabs/Vehicles/Wheeled/M998/M1025_M2.et', 'M1025 Humvee (M2)', 'NATO/US_Army/Vehicles', 'vehicle', 22),
+('00000000-0000-4000-a000-000000000001', '{FA9635AC08876D3C}Prefabs/Vehicles/Wheeled/M998/M998.et', 'M998 Humvee (Transport)', 'NATO/US_Army/Vehicles', 'vehicle', 23),
+('00000000-0000-4000-a000-000000000001', '{15D63E9F5DE4A83D}Prefabs/Vehicles/Wheeled/M923A1/M923A1.et', 'M923A1 Cargo Truck', 'NATO/US_Army/Vehicles', 'vehicle', 24),
+('00000000-0000-4000-a000-000000000001', '{4D4D74A0BE9E8C1F}Prefabs/Vehicles/Tracked/M113/M113_M2.et', 'M113 APC (M2)', 'NATO/US_Army/Vehicles', 'vehicle', 25)
 ON CONFLICT (modpack_id, resource_name) DO NOTHING;
