@@ -3007,7 +3007,9 @@ mod t726_top_strip_esc_stack {
              dialog/manager consumes Esc alone even when a peer listener already closed it \
              (wave200 F4). Hollow: delete the escape_consumed guard → RED."
         );
-        let guard_at = esc_region.find(&guard).expect("escape_consumed present in Esc arm");
+        let guard_at = esc_region
+            .find(&guard)
+            .expect("escape_consumed present in Esc arm");
         for needle in [
             "open_menu.set(None)",
             "export_open.set(false)",
@@ -3035,7 +3037,10 @@ mod t726_top_strip_esc_stack {
         let code = live_source(include_str!("eden_top_strip.rs"));
         let body = only_body(&code, "pub fn TopCommandStrip(");
         let guard = ["modal_stack", "::", "escape_consumed()"].concat();
-        assert!(body.contains(&guard), "canary: strip carries escape_consumed");
+        assert!(
+            body.contains(&guard),
+            "canary: strip carries escape_consumed"
+        );
         let perturbed = body.replacen(&guard, "false /* hollow */", 1);
         assert!(
             !perturbed.contains(&guard),
