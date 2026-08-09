@@ -337,13 +337,23 @@ pub fn OrbatManagerDialog(
             .as_ref()
             .and_then(|id| detail_by_id.get(id).cloned());
 
+        // T-786 O-3 — z from the modal stack's open order, not a hard-coded `z-50`. When the
+        // Arsenal (Attributes) opens *over* ORBAT from a slot row it must paint on top; the stack
+        // says ORBAT is no longer last-opened, so this drops to `z-40` and the Arsenal's `z-50`
+        // wins the hit-test. Scrim and panel take the SAME tier so they stay one surface.
+        let z = crate::ui::modal_stack::z_class(modal_id);
+        let scrim_class =
+            format!("animate-overlay-fade fixed inset-0 {z} bg-black/50 backdrop-blur-sm");
+        // `DIALOG_CLASS` (outliner.rs, sibling-owned) bakes in `z-50`; swap that one token for the
+        // stack-driven tier and leave every other class it carries untouched.
+        let dialog_class = DIALOG_CLASS.replace("z-50", z);
         Some(view! {
             <div
-                class="animate-overlay-fade fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+                class=scrim_class
                 on:click=move |_| open.set(false)
             ></div>
             <div
-                class=DIALOG_CLASS
+                class=dialog_class
                 on:click=move |ev| ev.stop_propagation()
                 on:pointerup=move |_| {
                     #[cfg(target_arch = "wasm32")]

@@ -408,13 +408,29 @@ pub(crate) mod modal_stack {
     use std::cell::{Cell, RefCell};
     use std::rc::Rc;
 
+    /// One registered overlay. `is_open` is read *live* (see below); `open_seq` is the monotonic
+    /// stamp of the last time this overlay was observed transitioning closed→open, or `0` while it
+    /// reports closed. Registration (mount) order and open order are **different** questions — Esc
+    /// routing wants the former (T-333, unchanged), z-index wants the latter (T-786).
+    struct Entry {
+        id: u64,
+        is_open: Rc<dyn Fn() -> bool>,
+        /// `Cell` so [`reconcile_open_order`] can stamp it without a `&mut` to the whole registry:
+        /// the reconcile has to call `is_open` (arbitrary user code) with the registry *not*
+        /// borrowed, then write the stamps back.
+        open_seq: Cell<u64>,
+    }
+
     thread_local! {
-        /// `(id, is_open)` in mount order. Not a `Vec<bool>`: the flag has to be read at keydown
-        /// time, not cached at registration time, or a dialog closed by a button would still be
-        /// holding Escape.
-        static REGISTRY: RefCell<Vec<(u64, Rc<dyn Fn() -> bool>)>> =
-            const { RefCell::new(Vec::new()) };
+        /// Overlays in mount order. Not a `Vec<bool>`: the flag has to be read at keydown time, not
+        /// cached at registration time, or a dialog closed by a button would still be holding
+        /// Escape. `open_seq` rides alongside for the z-index question (T-786).
+        static REGISTRY: RefCell<Vec<Entry>> = const { RefCell::new(Vec::new()) };
         static NEXT_ID: Cell<u64> = const { Cell::new(1) };
+        /// Monotonic open-order clock. Bumped every time [`reconcile_open_order`] catches an overlay
+        /// on its closed→open edge; the overlay with the highest live stamp is the last-opened, and
+        /// so the one that paints on top (T-786 O-3: "a real modal stack — last-opened wins").
+        static OPEN_CLOCK: Cell<u64> = const { Cell::new(0) };
     }
 
     /// Register an overlay and return the id that identifies it for the rest of its life.
@@ -424,14 +440,20 @@ pub(crate) mod modal_stack {
             n.set(id + 1);
             id
         });
-        REGISTRY.with_borrow_mut(|r| r.push((id, Rc::new(is_open))));
+        REGISTRY.with_borrow_mut(|r| {
+            r.push(Entry {
+                id,
+                is_open: Rc::new(is_open),
+                open_seq: Cell::new(0),
+            });
+        });
         id
     }
 
     /// Drop an overlay's registration. Removes by id, so unmount order does not matter, and is a
     /// no-op on an id that is already gone (double cleanup must not panic or evict a stranger).
     pub(crate) fn unregister(id: u64) {
-        REGISTRY.with_borrow_mut(|r| r.retain(|(other, _)| *other != id));
+        REGISTRY.with_borrow_mut(|r| r.retain(|e| e.id != id));
     }
 
     /// Whether `id` is the last-registered overlay that is currently open — i.e. the one painted
@@ -443,7 +465,7 @@ pub(crate) mod modal_stack {
     /// a merely surprising ordering.
     pub(crate) fn is_topmost_open(id: u64) -> bool {
         let entries: Vec<(u64, Rc<dyn Fn() -> bool>)> =
-            REGISTRY.with_borrow(|r| r.iter().map(|(i, f)| (*i, Rc::clone(f))).collect());
+            REGISTRY.with_borrow(|r| r.iter().map(|e| (e.id, Rc::clone(&e.is_open))).collect());
         entries
             .iter()
             .rev()
@@ -462,7 +484,7 @@ pub(crate) mod modal_stack {
     #[allow(dead_code)]
     pub(crate) fn any_open() -> bool {
         let preds: Vec<Rc<dyn Fn() -> bool>> =
-            REGISTRY.with_borrow(|r| r.iter().map(|(_, f)| Rc::clone(f)).collect());
+            REGISTRY.with_borrow(|r| r.iter().map(|e| Rc::clone(&e.is_open)).collect());
         preds.iter().any(|is_open| is_open())
     }
 
@@ -476,6 +498,95 @@ pub(crate) mod modal_stack {
     #[allow(dead_code)]
     pub(crate) fn depth() -> usize {
         REGISTRY.with_borrow(Vec::len)
+    }
+
+    /// Catch every overlay on its open/close edges and keep each `open_seq` current, then hand back
+    /// `(id, open_seq)` for every overlay that is open right now.
+    ///
+    /// Newly-open overlays get the next tick of [`OPEN_CLOCK`]; overlays that have gone closed drop
+    /// back to `0` so a reopen counts as a *fresh* open (last-opened, not last-ever-opened). Because
+    /// z is read on essentially every render, an open edge is observed within a frame of happening,
+    /// so this poll-at-query scheme tracks real open order without a signal-subscription plumbed
+    /// through every call site — the registry is the only thing that has to change.
+    ///
+    /// The one thing it cannot see is a close **and** reopen collapsed into a single frame with no
+    /// render (hence no query) between them: the poll only ever sees the final state, so such an
+    /// overlay keeps the stamp it already had. That is not a real UI event — every `open` write in
+    /// the editor is a signal set that schedules a render, and the z-consuming views re-run on it —
+    /// so open order is always sampled between two distinct opens in practice.
+    ///
+    /// Same re-entrancy discipline as [`is_topmost_open`]: the predicates (arbitrary Leptos signal
+    /// reads) are cloned out and called with the `RefCell` **not** borrowed; the stamps are written
+    /// back through the per-entry `Cell` afterward, so a re-entrant `register` from inside a
+    /// predicate cannot deadlock.
+    fn reconcile_open_order() -> Vec<(u64, u64)> {
+        let snapshot: Vec<(u64, Rc<dyn Fn() -> bool>, u64)> = REGISTRY.with_borrow(|r| {
+            r.iter()
+                .map(|e| (e.id, Rc::clone(&e.is_open), e.open_seq.get()))
+                .collect()
+        });
+        // Decide the new stamp for each id with the registry unborrowed.
+        let mut updates: Vec<(u64, u64)> = Vec::with_capacity(snapshot.len());
+        let mut open_now: Vec<(u64, u64)> = Vec::new();
+        for (id, is_open, prev) in snapshot {
+            let new_seq = if is_open() {
+                if prev == 0 {
+                    OPEN_CLOCK.with(|c| {
+                        let next = c.get() + 1;
+                        c.set(next);
+                        next
+                    })
+                } else {
+                    prev // already open — keep the stamp it opened at
+                }
+            } else {
+                0 // closed — clear so the next open is a fresh edge
+            };
+            updates.push((id, new_seq));
+            if new_seq != 0 {
+                open_now.push((id, new_seq));
+            }
+        }
+        // Write the stamps back. Removals between snapshot and here are fine: we match by id.
+        REGISTRY.with_borrow(|r| {
+            for (id, seq) in &updates {
+                if let Some(e) = r.iter().find(|e| e.id == *id) {
+                    e.open_seq.set(*seq);
+                }
+            }
+        });
+        open_now
+    }
+
+    /// Whether `id` is the overlay that was opened **most recently** and is still open — the one
+    /// that must paint on top (T-786). This is the *open-order* question and is deliberately
+    /// separate from [`is_topmost_open`], which answers the *mount-order* question for Esc routing
+    /// (T-333) and must not change: a pair mounted in one order but opened in the other needs
+    /// opposite answers from the two, which is the whole point of O-3.
+    pub(crate) fn is_top_by_open_order(id: u64) -> bool {
+        reconcile_open_order()
+            .into_iter()
+            .max_by_key(|(_, seq)| *seq)
+            .is_some_and(|(top, _)| top == id)
+    }
+
+    /// The z-index class an overlay should carry so the last-opened surface wins the paint order
+    /// (T-786 O-3). The top-of-open-order surface sits at the modal tier (`z-50`, the value every
+    /// overlay hard-coded before this ticket); any overlay open *underneath* a later one drops one
+    /// tier to `z-40`, which is above page content but below the surface on top.
+    ///
+    /// Why a two-tier class and not `z-{50+rank}`: the sibling Arsenal/Attributes surface keeps its
+    /// hard-coded `z-50` this wave (T-785 owns that file), so the surfaces that *do* consume this
+    /// have to be able to go **below** 50 to let the Arsenal — opened last, over ORBAT — win. A
+    /// consumer at open-order-top ties the Arsenal at 50 only when the Arsenal is closed, so the tie
+    /// never decides a visible collision. `elementFromPoint(arsenal centre)` then lands in the
+    /// Arsenal, which is the acceptance.
+    pub(crate) fn z_class(id: u64) -> &'static str {
+        if is_top_by_open_order(id) {
+            "z-50"
+        } else {
+            "z-40"
+        }
     }
 }
 
@@ -979,6 +1090,133 @@ mod tests {
         modal_stack::unregister(settings_id);
         modal_stack::unregister(prefs_id);
         assert_eq!(modal_stack::depth(), start, "registrations must not leak");
+    }
+
+    /* ═══════════════ T-786 O-3 — z-index follows open order, Esc follows mount order ══════════ */
+
+    /// The O-3 defect, stated as a test. `AttributesModal` mounts *before* `OrbatManagerDialog`
+    /// (`mission_editor.rs`), so with equal `z-50` the browser paints ORBAT (later in the DOM) on
+    /// top — hit-testing the Arsenal's centre returns ORBAT, and the author's click hits nothing.
+    /// The fix drives z from OPEN order: the Arsenal, opened last, must be the top tier and ORBAT
+    /// must drop below it. Meanwhile Esc still routes by MOUNT order (T-333, unchanged), and the two
+    /// orders genuinely disagree here — that disagreement is the whole ticket.
+    #[test]
+    fn arsenal_opened_over_orbat_wins_z_while_esc_stays_mount_order() {
+        let start = modal_stack::depth();
+        // Mount order (registration): Attributes first, ORBAT second — as `mission_editor` mounts
+        // them. Both start closed; the editor mounts both and toggles `open`.
+        let (attrs, attrs_id) = overlay(false);
+        let (orbat, orbat_id) = overlay(false);
+
+        // Author opens ORBAT, then OPEN ARSENAL from a slot → Attributes opens on top, LAST.
+        orbat.set(true);
+        assert_eq!(
+            modal_stack::z_class(orbat_id),
+            "z-50",
+            "ORBAT alone is the last-opened surface, so it holds the top modal tier"
+        );
+        attrs.set(true);
+
+        // z-index: the Arsenal (opened last) is the top of open order; ORBAT drops one tier so the
+        // Arsenal's z-50 wins the hit-test. This is the RED assertion before the fix — the old code
+        // had every overlay pinned at z-50 with no way to drop.
+        assert_eq!(
+            modal_stack::z_class(attrs_id),
+            "z-50",
+            "the Arsenal opened last and must paint on top (T-786 O-3)"
+        );
+        assert_eq!(
+            modal_stack::z_class(orbat_id),
+            "z-40",
+            "ORBAT opened first and must drop below the Arsenal that opened over it"
+        );
+        assert!(
+            modal_stack::is_top_by_open_order(attrs_id),
+            "open order: Arsenal is on top"
+        );
+        assert!(!modal_stack::is_top_by_open_order(orbat_id));
+
+        // Esc still follows MOUNT order (T-333): ORBAT registered last, so it is `is_topmost_open`.
+        // The two questions answer differently for this pair, which is exactly O-3.
+        assert!(
+            modal_stack::is_topmost_open(orbat_id),
+            "Esc routing is unchanged: the last-MOUNTED open overlay owns Escape"
+        );
+        assert!(!modal_stack::is_topmost_open(attrs_id));
+
+        // Close the Arsenal → ORBAT is the last-open again and climbs back to the top tier.
+        attrs.set(false);
+        assert_eq!(
+            modal_stack::z_class(orbat_id),
+            "z-50",
+            "with the Arsenal gone, ORBAT is last-opened again and returns to the top tier"
+        );
+
+        modal_stack::unregister(attrs_id);
+        modal_stack::unregister(orbat_id);
+        assert_eq!(modal_stack::depth(), start, "registrations must not leak");
+    }
+
+    /// A reopen is a FRESH open: a surface that closes and reopens jumps to the top of open order,
+    /// even though its mount position never moved. This is the open-order counterpart to the
+    /// mount-order `a_dialog_closed_out_of_order_leaves_the_stack_consistent` above — and the reason
+    /// z could not simply reuse `is_topmost_open`, which (correctly, for Esc) keeps the reopened
+    /// surface underneath.
+    #[test]
+    fn a_reopen_takes_the_top_of_open_order() {
+        let start = modal_stack::depth();
+        let (lower, lower_id) = overlay(false);
+        let (upper, upper_id) = overlay(false);
+
+        lower.set(true);
+        upper.set(true);
+        assert!(
+            modal_stack::is_top_by_open_order(upper_id),
+            "upper opened last"
+        );
+
+        // Lower closes, then (in a later frame) reopens — now it is the most-recently-opened. The
+        // close and the reopen are separate renders in the live editor, and z is recomputed each
+        // render, so a reconcile lands between them; the query here stands in for that render and is
+        // what lets the reopen register as a fresh open edge (see `reconcile_open_order`'s cadence
+        // note — a close+reopen collapsed into one frame with no render between is not a real UI
+        // event and is not tracked).
+        lower.set(false);
+        assert!(
+            !modal_stack::is_top_by_open_order(lower_id),
+            "with lower closed, upper is on top"
+        );
+        lower.set(true);
+        assert!(
+            modal_stack::is_top_by_open_order(lower_id),
+            "a reopen is a fresh open and takes the top of open order (z), unlike Esc's mount order"
+        );
+        // …while Esc's mount order still puts `upper` (registered last) on top.
+        assert!(
+            modal_stack::is_topmost_open(upper_id),
+            "Esc mount order is unchanged by a reopen — matches T-333's reopen-underneath test"
+        );
+
+        modal_stack::unregister(lower_id);
+        modal_stack::unregister(upper_id);
+        assert_eq!(modal_stack::depth(), start, "registrations must not leak");
+    }
+
+    /// **The wiring for O-3.** The stack utility only fixes the paint order if the ORBAT surface
+    /// actually consumes it. `OrbatManagerDialog`'s scrim and panel must derive their z from
+    /// `modal_stack::z_class` rather than a literal `z-50`; a body that still hard-codes `z-50` on
+    /// the ORBAT overlay is the unfixed component (the Arsenal keeps its literal `z-50` this wave by
+    /// design — it is the surface ORBAT yields *to*).
+    #[test]
+    fn orbat_manager_overlay_derives_z_from_the_modal_stack() {
+        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        let scrubbed = live_code(include_str!("orbat_manager.rs"));
+        let body = only_body(&scrubbed, "pub fn OrbatManagerDialog(");
+        assert!(
+            body.contains("modal_stack::z_class(modal_id)"),
+            "OrbatManagerDialog must take its overlay z from modal_stack::z_class (T-786 O-3). \
+             Body was: {body}"
+        );
     }
 }
 
