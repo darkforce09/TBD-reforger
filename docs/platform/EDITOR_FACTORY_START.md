@@ -163,3 +163,19 @@ Same machinery as waves 100-155: 3 agents, barrier, merge, gate, one Fable adver
   scripted CDP probes (focus probe, geometry measure, spawn-jump observer, blob intercept,
   grid-label arithmetic). The `ACCEPTANCE:` clauses cite exact expected values — verifiers
   re-run the measurement, not the vibe.
+
+### Band amendment (operator, 2026-08-09): one wave at a time, operator eye-pass between waves
+
+This band ships UX/UI. Instrumented verification proved insufficient for exactly this class during
+the source review (the operator's hands-on pass found ten defects the scripted pass could not see:
+transition frames, feel, z-order as experienced). Therefore, for waves 200-208 ONLY:
+
+1. Dispatch **one wave per chat session**. After the verifier report, registry flip and close
+   commit: **STOP. Do not dispatch the next wave.**
+2. Before stopping, post an **operator eye-pass checklist** for the wave: one human-runnable step
+   per ticket, derived from its `ACCEPTANCE:` clause (the live editor on `make leptos` — release —
+   at 1920×1080), plus "anything that feels wrong is a finding".
+3. The operator's verdict gates the next wave. Findings from the eye-pass are filed as tickets
+   (deferred or folded into a later wave), never fixed ad hoc in the closed wave.
+4. The Fable adversarial verifier is unchanged — it runs BEFORE the eye-pass, documents, never
+   fixes. Two instruments: the verifier catches code rot; the operator catches feel.
