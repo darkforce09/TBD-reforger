@@ -676,6 +676,23 @@ fn number_field(
                     on:blur=move |_| commit()
                     on:keydown=move |ev| {
                         let key = ev.key();
+                        // T-813 / wave200 F6 — field Escape abandons the draft and consumes so the
+                        // modal window listener does not close on the same press (same family as
+                        // text_field).
+                        if key == "Escape" {
+                            ev.stop_propagation();
+                            focused.set(false);
+                            draft.set(seed());
+                            if let Some(t) = ev
+                                .target()
+                                .and_then(|t| {
+                                    wasm_bindgen::JsCast::dyn_into::<web_sys::HtmlElement>(t).ok()
+                                })
+                            {
+                                t.blur().ok();
+                            }
+                            return;
+                        }
                         if key == "Enter" {
                             if let Some(t) = ev
                                 .target()
@@ -790,11 +807,20 @@ fn text_field(
             settled.get_value()
         }
     };
+    // T-813 — operator-edited latch. A differing field seeds from "" (`text_display`), so the
+    // old `gate.differs()` exemption alone stamped that empty draft across every selected slot on a
+    // pure focus+blur (wave200 F3). The latch is set only on real `input`; Escape clears it so the
+    // blur that follows an abandon cannot write either.
+    let edited = RwSignal::new(false);
     let text_commit = move || {
         focused.set(false);
-        // Skip the write when nothing changed — a focus/blur on an untouched field must not dirty
-        // the mission or mint an undo step. A DIFFERING field is exempt: under a multi-selection the
-        // settled value is one arbitrary member's, so typing it back is a deliberate stamp onto all.
+        // Skip the write when the operator did not edit — a focus/blur on an untouched field must
+        // not dirty the mission or mint an undo step, INCLUDING when the field differs. A deliberate
+        // type (including re-typing one member's value under multi-edit) still stamps because the
+        // latch is set on real input, and `gate.differs()` still exempts the settled-equality skip.
+        if !edited.get_untracked() {
+            return;
+        }
         let next = draft.get_untracked();
         if gate.differs() || next != settled.get_value() {
             on_change(next);
@@ -813,13 +839,19 @@ fn text_field(
                 prop:value=move || { if focused.get() { draft.get() } else { text_display() } }
                 on:focus=move |_| {
                     draft.set(text_display());
+                    edited.set(false);
                     focused.set(true);
                 }
-                on:input=move |ev| draft.set(event_target_value(&ev))
+                on:input=move |ev| {
+                    edited.set(true);
+                    draft.set(event_target_value(&ev));
+                }
                 on:blur=move |_| text_commit()
                 on:keydown=move |ev| {
                     // Enter commits by blurring — the ONE commit seam, shared with the blur path so
-                    // there is exactly one place text reaches the store. Escape abandons the draft.
+                    // there is exactly one place text reaches the store. Escape abandons the draft
+                    // and CONSUMES the event (wave200 F6): first press abandons+blurs, second closes
+                    // the modal — without stop_propagation the modal window listener closes both.
                     match ev.key().as_str() {
                         "Enter" => {
                             if let Some(t) = ev
@@ -832,6 +864,8 @@ fn text_field(
                             }
                         }
                         "Escape" => {
+                            ev.stop_propagation();
+                            edited.set(false);
                             focused.set(false);
                             draft.set(text_display());
                             if let Some(t) = ev
@@ -846,7 +880,7 @@ fn text_field(
                         _ => {}
                     }
                 }
-                class=move || {
+                                class=move || {
                     let lock = if gate.locked() { CONTROL_LOCKED } else { "" };
                     format!("{CONTROL}{lock}")
                 }
@@ -1801,8 +1835,10 @@ mod tests {
         let field = only_body(&src, "fn text_field(");
         // The remount cause, banned: the input handler must not commit. It writes the draft.
         assert!(
-            field.contains("on:input=move |ev| draft.set(event_target_value(&ev))"),
-            "text_field's on:input must write the local DRAFT, not commit; body was:\n{field}"
+            field.contains("on:input=move |ev|")
+                && field.contains("draft.set(event_target_value(&ev))")
+                && field.contains("edited.set(true)"),
+            "text_field's on:input must write the local DRAFT and set the edited latch, not commit;              body was:\n{field}"
         );
         // The commit lives behind blur/Enter, exactly like number_field. Exactly one `on_change(`
         // call site, and it is inside the `text_commit` closure the blur handler fires — a
@@ -1854,11 +1890,19 @@ mod tests {
         let src = attrs_src();
         let field = only_body(&src, "fn text_field(");
         let commit = only_body(&src, "let text_commit = move ||");
-        // The skip: commit only when the value CHANGED, or the field differs (multi-value stamp).
+        // T-813 — an operator-edited latch gates the write. A differing field alone must NOT
+        // commit (that was wave200 F3: focus+blur stamped "" across the selection). Real input
+        // sets the latch; Escape clears it before blur.
         assert!(
-            commit.contains("gate.differs() || next != settled.get_value()"),
-            "commit must skip an unchanged value yet always write a differing (multi-value) field; \
-             body was:\n{commit}"
+            field.contains("let edited = RwSignal::new(false)")
+                && field.contains("edited.set(true)")
+                && field.contains("edited.set(false)"),
+            "text_field must latch real input edits; body was:\n{field}"
+        );
+        assert!(
+            commit.contains("if !edited.get_untracked()")
+                && commit.contains("gate.differs() || next != settled.get_value()"),
+            "commit must require the edited latch, then skip an unchanged value yet still stamp a              differing (multi-value) field once edited; body was:\n{commit}"
         );
         // The multi-value display is EMPTY, never one arbitrary member's string — same rule as
         // number_field, and the seed for focus reads the same `text_display()`.
@@ -1870,8 +1914,19 @@ mod tests {
         // The lock stays: disabled while the gate is locked (multi-edit not opted in / refused).
         assert!(
             field.contains("disabled=move || gate.locked()"),
-            "text_field must stay disabled while the gate is locked — the 'Multiple values' \
-             locked-state the review said must not regress"
+            "text_field must stay disabled while the gate is locked — the 'Multiple values'              locked-state the review said must not regress"
+        );
+        // T-813 / wave200 F6 — field Escape must consume so the modal does not close on abandon.
+        let live = live_source(include_str!("attributes.rs"));
+        let live_field = only_body(&live, "fn text_field(");
+        assert!(
+            live_field.contains("\"Escape\" =>") && live_field.contains("stop_propagation()"),
+            "text_field Escape must stop_propagation so the modal stays open; body was:\n{live_field}"
+        );
+        let live_num = only_body(&live, "fn number_field(");
+        assert!(
+            live_num.contains("key == \"Escape\"") && live_num.contains("stop_propagation()"),
+            "number_field Escape must stop_propagation (same family); body was:\n{live_num}"
         );
     }
 
