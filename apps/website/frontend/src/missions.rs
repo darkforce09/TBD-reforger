@@ -401,22 +401,39 @@ fn body(
 ) -> impl IntoView {
     view! {
         <>
-            // Featured Operation — cinematic hero ("LIVE OPERATION" is presentational).
+            // Featured Operation — cinematic hero. F-19 — the "Live Operation" pulse is gated on the
+            // mission actually being `live`: the hero spotlights the newest GLOBAL mission, which can
+            // be a DRAFT, and claiming a draft is "the priority deployment" was a lie. A non-live hero
+            // shows its real status label ("Draft", "Open for review", …) in a muted chip instead.
             {featured
                 .map(|f| {
                     let art = mission_art_url(f.thumbnail_url.as_deref());
                     let brief = featured_briefing_text(f.briefing.as_deref());
                     let fid = f.id.clone();
+                    let is_live = f.status == "live";
+                    let status_label = crate::mission_overview::mission_status_label(&f.status);
                     view! {
                         <section class="relative mb-8 flex min-h-[320px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-black/30 lg:flex-row">
                             <div class="relative z-10 flex w-full flex-col justify-center gap-4 p-8 lg:w-3/5">
-                                <div class="flex items-center gap-2 font-mono text-label-sm tracking-widest text-error-alert uppercase">
-                                    <span class="relative flex h-2.5 w-2.5">
-                                        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-error-alert opacity-60"></span>
-                                        <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-error-alert"></span>
-                                    </span>
-                                    "Live Operation"
-                                </div>
+                                {if is_live {
+                                    view! {
+                                        <div class="flex items-center gap-2 font-mono text-label-sm tracking-widest text-error-alert uppercase">
+                                            <span class="relative flex h-2.5 w-2.5">
+                                                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-error-alert opacity-60"></span>
+                                                <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-error-alert"></span>
+                                            </span>
+                                            "Live Operation"
+                                        </div>
+                                    }
+                                        .into_any()
+                                } else {
+                                    view! {
+                                        <div class="flex items-center gap-2 font-mono text-label-sm tracking-widest text-on-surface-variant uppercase">
+                                            {status_label}
+                                        </div>
+                                    }
+                                        .into_any()
+                                }}
                                 <h2 class="text-4xl font-black tracking-tighter text-on-surface uppercase xl:text-5xl">
                                     {f.title.clone()}
                                 </h2>

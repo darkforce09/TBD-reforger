@@ -233,6 +233,12 @@ thread_local! {
     /// Consulted by [`run_save`], which refuses to write over a record that is present but was not
     /// readable. Physical, not logical: it is the exact key a write would land on.
     static UNREADABLE: RefCell<BTreeSet<String>> = const { RefCell::new(BTreeSet::new()) };
+    /// F-20 — mission ids we have already noted an empty-content refusal for, so a brand-new mission
+    /// (whose every debounced tick refuses until the first authored content lands) cannot flood the
+    /// console with the same T-374 refusal 8× over. The `BLOCKED_EMPTY` counter above still tallies
+    /// EVERY refusal (the bridge reads it); this only gates the console message. Same "note once, stay
+    /// noted" shape as [`WARNED_ORPHANS`].
+    static WARNED_EMPTY: RefCell<BTreeSet<String>> = const { RefCell::new(BTreeSet::new()) };
     /// T-374 — how many writes the guards refused, by reason. Exposed on the bridge
     /// (`__missionPersist.blocked_writes()`) so a probe can prove the guard **fired**, rather than
     /// inferring it from a record that merely happens to be unchanged.
@@ -779,12 +785,19 @@ async fn run_save(id: &str, pending: PendingSave) {
     };
     if !has_content {
         BLOCKED_EMPTY.with(|c| c.set(c.get().saturating_add(1)));
-        web_sys::console::warn_1(&JsValue::from_str(&format!(
-            "[yrs-persist] T-374: refused to persist {id} — {} byte(s) that restore to a document \
-             with no authored content (or that do not replay at all). The record on disk is \
-             untouched; the live document is unaffected.",
-            bytes.len()
-        )));
+        // F-20 — a brand-new mission refuses on every debounced tick until the operator authors the
+        // first content, so warning here fired ~8× on an empty mission. Note once per id and drop it
+        // to `debug`: the refusal is expected on an empty doc (not a warning-worthy event), and the
+        // `BLOCKED_EMPTY` counter above already carries the real tally for the bridge/telemetry.
+        let first_time = WARNED_EMPTY.with(|w| w.borrow_mut().insert(id.to_string()));
+        if first_time {
+            web_sys::console::debug_1(&JsValue::from_str(&format!(
+                "[yrs-persist] T-374: not persisting {id} yet — {} byte(s) that restore to a \
+                 document with no authored content (expected on an empty mission until the first \
+                 edit lands). The record on disk is untouched; the live document is unaffected.",
+                bytes.len()
+            )));
+        }
         return;
     }
     // T-374 — and never write over a record this page lifetime FAILED to read. `load_state`

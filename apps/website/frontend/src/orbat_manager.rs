@@ -294,7 +294,12 @@ pub fn OrbatManagerDialog(
         // design (the cap is on concurrent PLAYERS, server-enforced), so this warns
         // by color only and never blocks.
         let total_slots = snap.slots.len();
-        let cap_label = format!("{total_slots} slots · server cap 128 players");
+        // F-17 — pluralize the noun so a single slot never reads "1 slots". Repo idiom is the inline
+        // `== 1` conditional (datefmt/mission_overview/eden_dock_right all do it this way).
+        let cap_label = format!(
+            "{total_slots} slot{} · server cap 128 players",
+            if total_slots == 1 { "" } else { "s" }
+        );
         let cap_cls = if total_slots > 128 {
             "rounded border border-error-alert/40 bg-error/10 px-2 py-0.5 font-mono text-label-sm tabular-nums normal-case text-error-alert"
         } else {
@@ -1972,6 +1977,30 @@ mod tests {
         assert!(
             body.contains(&unreg),
             "T-726: OrbatManagerDialog must unregister"
+        );
+    }
+
+    /// F-17 (T-807) — the player-cap chip pluralizes its noun, so a single slot never reads
+    /// "1 slots". Source-pinned (literals kept) to the `OrbatManagerDialog` body: the naked
+    /// `" slots · server cap"` literal must be gone and the `== 1` conditional present.
+    #[test]
+    fn cap_label_pluralizes_the_slot_count() {
+        use crate::arsenal::class_r_scrub::{live_source, only_body};
+        let code = live_source(include_str!("orbat_manager.rs"));
+        let body = only_body(&code, "pub fn OrbatManagerDialog(");
+        // Concat so this test's own literals cannot self-match (T-726 idiom).
+        let naked = [" slots", " \u{b7} server cap"].concat();
+        assert!(
+            !body.contains(&naked),
+            "F-17: the hard-plural \" slots · server cap\" literal must be gone"
+        );
+        assert!(
+            body.contains("if total_slots == 1"),
+            "F-17: the cap label must pluralize with the `== 1` conditional"
+        );
+        assert!(
+            body.contains("{total_slots} slot{}"),
+            "F-17: the label must interpolate the pluralized suffix after `slot`"
         );
     }
 }

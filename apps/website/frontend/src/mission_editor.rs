@@ -1209,16 +1209,20 @@ pub mod transform {
                 format!("{} {}", fmt_step(step), axis.unit())
             }
         }
-        /// The full status-bar readout: `"GRID  move 5 m · rot 15°"` when enabled, `"GRID  off"`
+        /// The full status-bar readout: `"SNAP  move 5 m · rot 15°"` when enabled, `"SNAP  off"`
         /// when the master latch is off. One string so the overlay is a single text node (the
         /// scale-bar / ruler-status idiom).
+        ///
+        /// O-10 — the chip is labelled `SNAP`, not `GRID`. It reports the SNAP grid (the move/rot
+        /// step this latch quantises to), and it sits in the same band as the map-grid labels; naming
+        /// it `GRID` made an operator read "the map grid is off" when only snapping was.
         #[must_use]
         pub fn status_readout(self) -> String {
             if !self.enabled {
-                return "GRID  off".to_string();
+                return "SNAP  off".to_string();
             }
             format!(
-                "GRID  move {} \u{b7} rot {}",
+                "SNAP  move {} \u{b7} rot {}",
                 self.rung_label(Axis::Translate),
                 self.rung_label(Axis::Rotate),
             )
@@ -1389,7 +1393,7 @@ fn TransformWidgetOverlay(
 /// status-bar band (the T-636 readout idiom). Its own tiny `pointer-events-none` element rather than
 /// a field inside `eden_toolbelt::StatusBar`, because that component is another slice's owned file —
 /// this keeps the readout inside T-648's three-file boundary while sitting in the same band. Shows
-/// `GRID  move 5 m · rot 15°` (or `GRID  off`), re-running off the `snap` signal.
+/// `SNAP  move 5 m · rot 15°` (or `SNAP  off`), re-running off the `snap` signal (O-10 relabel).
 #[component]
 fn SnapReadout(snap: RwSignal<transform::SnapState>) -> impl IntoView {
     view! {
@@ -2709,7 +2713,7 @@ pub fn MissionEditorPage() -> impl IntoView {
     // transform-widget variant (`1` translate / `2` rotate). Both are plain reactive signals read by
     // three places without a thread_local mirror: the window keydown (which toggles the grid, steps
     // the rungs, and cycles the variant), the wasm pointer handlers (which read `get_untracked()` to
-    // quantise a Shift-rotate / widget-ring drag), and the DOM overlays (the status-bar GRID readout
+    // quantise a Shift-rotate / widget-ring drag), and the DOM overlays (the status-bar SNAP readout
     // + the widget SVG, which re-run on `.get()`). The default `SnapState` is OFF, so an operator who
     // never presses `G`/`[`/`]` gets the exact pre-T-648 free move + free rotate.
     let snap = RwSignal::new(crate::mission_editor::transform::SnapState::default());
@@ -9481,13 +9485,14 @@ mod t648_transform {
 
     #[test]
     fn status_readout_names_the_active_steps() {
-        assert_eq!(SnapState::default().status_readout(), "GRID  off");
+        // O-10 — the chip reads SNAP (it names the snap grid, not the map grid).
+        assert_eq!(SnapState::default().status_readout(), "SNAP  off");
         let s = SnapState {
             enabled: true,
             translate_rung: 2, // 5 m
             rotate_rung: 2,    // 15°
         };
-        assert_eq!(s.status_readout(), "GRID  move 5 m \u{b7} rot 15\u{b0}");
+        assert_eq!(s.status_readout(), "SNAP  move 5 m \u{b7} rot 15\u{b0}");
         let off = SnapState {
             enabled: true,
             translate_rung: 0,
@@ -9495,7 +9500,7 @@ mod t648_transform {
         };
         assert_eq!(
             off.status_readout(),
-            "GRID  move off \u{b7} rot off",
+            "SNAP  move off \u{b7} rot off",
             "an enabled grid with both ladders at OFF reads 'off' per axis"
         );
     }
