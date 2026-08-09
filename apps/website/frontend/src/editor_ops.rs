@@ -2869,10 +2869,38 @@ fn mirror_selection(ctx: &OpsCtx) {
 
 /// Selection-only dock mirror: push `selected_ids` (the trees' fine-grained `is_sel` source)
 /// without rebuilding the node trees. Pairs with `mission_history::refresh_selection` (T-172 B8).
+///
+/// **T-788 F-29** — this is the one funnel every *selection-only* change flows through
+/// (`mission_history::refresh_selection` → here), so it is where an open Attributes modal is kept
+/// honest against a selection that moved under it. The modal body re-reads the live target set
+/// ([`attrs_multi_ids`] / [`attrs_selection_len`] / [`read_attrs_diff`]) on every render, but its
+/// only render triggers are `attrs_open` and `doc_tick` — and a Ctrl+A (or any pick) bumps NEITHER,
+/// so the panel used to keep showing the single slot it opened on while the SEL count climbed to 9.
+/// Re-poking `attrs_open` forces exactly that re-render (the header flips to `N slots · multi-edit`
+/// within the same frame), and if the id the modal is editing is no longer selected, the modal
+/// closes rather than stranding a single-edit view on a slot the operator just deselected.
+///
+/// It lives HERE and not in [`mirror_selection`] on purpose: `mirror_selection` also runs from
+/// [`refresh_docks`] on every DOCUMENT change (each commit), and re-poking `attrs_open` there would
+/// re-run the modal's `opts.reset()` effect and wipe the operator's per-field ticks on every commit
+/// — the T-649 latch is deliberately re-armed off `attrs_open` alone so a commit leaves the ticks
+/// intact. A selection change re-arming them is correct (the target set changed); a commit doing so
+/// is the bug that separation avoids.
 pub fn refresh_selection_mirrors() {
     OPS_CTX.with(|c| {
         if let Some(ctx) = c.borrow().as_ref() {
             mirror_selection(ctx);
+            if let Some(open_id) = ctx.attrs_open.get_untracked() {
+                if ctx.selection.borrow().iter().any(|s| *s == open_id) {
+                    // Still editing a selected slot — re-render the open modal against the live
+                    // selection so single-edit flips to multi (and back) as the set changes.
+                    ctx.attrs_open.set(Some(open_id));
+                } else {
+                    // The modal's target left the selection — close it instead of showing a stale
+                    // single slot (spec F-29: "re-render against the live selection OR close").
+                    ctx.attrs_open.set(None);
+                }
+            }
         }
     });
 }
@@ -2886,14 +2914,28 @@ pub fn select_slot(id: String) {
         let Some(ctx) = guard.as_ref() else {
             return;
         };
-        *ctx.selection.borrow_mut() = vec![id];
-        let ids = ctx.selection.borrow().clone();
-        // NAMED, not a `borrow_mut()` temporary in the `if let`: a temporary would live to the end
-        // of the closure and so drop AFTER `guard` — the borrow it reads through. A binding declared
-        // after `guard` drops before it (reverse declaration order).
-        let mut eng = ctx.engine.borrow_mut();
-        if let Some(e) = eng.as_mut() {
-            e.set_selection(ids); // tint lane
+        // T-788 F-27 (outliner half) — a click on a row whose id is ALREADY part of a
+        // multi-selection keeps the selection instead of collapsing it to `[id]`. The outliner and
+        // ORBAT rows route their single click through here and their dblclick through
+        // `open_attributes`, so the first click of that dblclick used to shrink SEL9→SEL1 before
+        // activate fired — the modal could only ever open single-edit. A click on a row OUTSIDE
+        // the selection still REPLACES (Eden semantics — the exact contract `context_menu::open`'s
+        // retarget documents: "identical to a left-click on an unselected object"). The tint lane
+        // is untouched when keeping: it already shows the multi.
+        let keep_multi = {
+            let sel = ctx.selection.borrow();
+            sel.len() > 1 && sel.iter().any(|s| *s == id)
+        };
+        if !keep_multi {
+            *ctx.selection.borrow_mut() = vec![id];
+            let ids = ctx.selection.borrow().clone();
+            // NAMED, not a `borrow_mut()` temporary in the `if let`: a temporary would live to the
+            // end of the closure and so drop AFTER `guard` — the borrow it reads through. A binding
+            // declared after `guard` drops before it (reverse declaration order).
+            let mut eng = ctx.engine.borrow_mut();
+            if let Some(e) = eng.as_mut() {
+                e.set_selection(ids); // tint lane
+            }
         }
     });
     crate::mission_history::refresh_selection(); // SEL + dock highlight only — no tree rebuild
