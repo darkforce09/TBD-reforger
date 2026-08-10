@@ -19733,7 +19733,7 @@
       "id": "T-795",
       "order": 4770,
       "program": "eden",
-      "status": "queued",
+      "status": "shipped",
       "stream": "mission-creator",
       "targets": [
         "website"
@@ -19750,13 +19750,13 @@
       ],
       "title": "Widget keys match Eden (1 none / 2 translate / 3 rotate) and the widgets are visible and operable",
       "summary": "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). F-25/F-16 — PIXEL-VERIFIED AGAINST EDEN (tooltips read off frames 164038-164107): Eden numbers its widget row 'No Widget (1) / Translation (2) / Rotation (3) / Area Scaling (4) / Area (5)'. TBD binds 1=Translate 2=Rotate (mission_editor.rs ~:3944-3949 from_digit arms; eden_help.rs ~:198-205 SHORTCUTS) — OFF BY ONE: an Eden author presses 1 to drop the gizmo and arms translate, 2 for translate and gets rotate, 3 for rotate and gets nothing. Three silent wrong-modes; muscle memory is the whole point of taking Eden's keys. AND the widgets themselves (review F-16, verified): translate mode renders NO gizmo at all; rotate mode renders a ring that is PURE DECORATION — dragging the ring edge (dead on the handle) starts a MARQUEE and destroys the selection, while the mode hides the heading arrow (the one thing rotation is about); no chrome anywhere shows which mode is active. FIX: (a) renumber 1=No Widget, 2=Translate, 3=Rotate; reserve 4/5; update SHORTCUTS + tooltips (coordinate with T-797's toolbar buttons — they read the same map); (b) translate mode renders the 2D axis gizmo (~:1257-1385 region has the render arms); (c) rotate ring becomes interactive: drag on the ring rotates the selection about its centre (live heading preview, one txn on release), heading arrow stays visible; ring/gizmo hit-tests BEFORE the marquee arm so a widget drag can never become a marquee; (d) active mode indicated (toolbar toggle state per T-797 + cursor-adjacent hint). SUPERSEDES T-081 (note added). ⚠️ TRAPS: 'No Widget' must still allow direct drag-move (Eden semantics — widget-less drag translates); Space stays centre-on-selection (census collision 1 resolved by digits); undo: ring rotate = one step. ACCEPTANCE: scripted — press 1/2/3: mode indicator shows none/translate/rotate; in rotate, drag from ring edge: SEL preserved, heading changes by the drag angle (numeric attrs confirm), ONE undo step reverts; in translate, gizmo visible on selection (screenshot non-empty diff at gizmo region); marquee still works from empty ground in all modes.",
-      "notes": "supersedes T-081; Eden numbering evidence = review F-25 table; ring-marquee destruction evidence = review F-16/rotate section"
+      "notes": "supersedes T-081; Eden numbering evidence = review F-25 table; ring-marquee destruction evidence = review F-16/rotate section | SHIPPED W205: renumber landed six-surface-consistent (binding/hint/plates/menu/help/census — verifier parity sweep exact), rotate ring is a real control (band boundary bites at 54/50px, selection preserved, one-undo), No-Widget drag-move intact, digits guarded in text fields. TWO not-reproducing claims: translate gizmo verified TRUE by the verifier; the heading-arrow claim was FALSE (made from source, not pixels — slots render yaw-less everywhere) -> T-832, folds into T-808/W207. Ring semantics shipped as face-the-aim, spec said about-centre -> operator decision T-833."
     },
     {
       "id": "T-799",
       "order": 4810,
       "program": "eden",
-      "status": "queued",
+      "status": "shipped",
       "stream": "mission-creator",
       "targets": [
         "website"
@@ -19774,13 +19774,13 @@
       ],
       "title": "Exports fire once and agree with the editor about the mission",
       "summary": "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). F-28/F-34 — VERIFIED BY BLOB INTERCEPT: Export Compiled fires TWICE per click (two createObjectURL + two anchor clicks, same 3213B payload — DOM-level double-activation; the handler itself fires once in code, mission_commands.rs ~:742/:795/:885) and the two exports DISAGREE about the same mission: JSON export carries the live editor title ('UXREVIEW-Aqqqqqq') but maxPlayers: 0 and gameMode: ''; Compiled carries playerRange [1,64] but the STALE library-row title — the RowMirror gap (eden_top_strip.rs ~:344-410 mirrors only time_of_day+weather; row meta ~:499-559). The compiled artifact itself VALIDATES CLEAN against mission.schema.json (ajv 2020-12, zero errors — verified) so this is metadata sourcing, not schema. FIX: (a) de-duplicate the compiled export activation (guard against the double pointerup/click pair — same family as the F-03/F-12 input-model note on T-785); (b) one metadata source: JSON export reads maxPlayers/gameMode from the same place the create dialog wrote (row meta), version field reports the LATEST saved version; compiled export title comes from the live doc title (extend RowMirror to PATCH title on edit, or compile-time override) — pick one source and both exports read it; cite T-192/T-746 as the RowMirror owners and reconcile rather than fork. ⚠️ TRAPS: the export JSON is the one camelCase contract exception (CLAUDE.md) — do not snake_case it; blob filename convention mission-<id>[.compiled].json stays. ACCEPTANCE: scripted intercept — one click => exactly ONE createObjectURL + ONE anchor click per export type; export both after retitling the mission: both payloads carry the new title, identical maxPlayers/gameMode/version triple, and compiled still ajv-validates clean.",
-      "notes": "RowMirror parents T-192/T-746 cited; ajv-clean baseline from review F-34 addendum must not regress"
+      "notes": "RowMirror parents T-192/T-746 cited; ajv-clean baseline from review F-34 addendum must not regress | SHIPPED W205: exports fire once per gesture (timestamp latch; real second clicks pass — 4 stamps : 4 blobs), per-field metadata unified (maxPlayers/gameMode from row, title from live doc via compile-time override), compiled stays ajv-2020-12 clean, camelCase + filenames intact. CO-TASK delivered (strip relabel + third button + census) with the pre-declared reconciliation landed at the barrier (44eb1412)."
     },
     {
       "id": "T-806",
       "order": 4880,
       "program": "eden",
-      "status": "queued",
+      "status": "shipped",
       "stream": "mission-creator",
       "targets": [
         "website"
@@ -19797,7 +19797,7 @@
       ],
       "title": "Marker picker: one row per canonical icon, real glyphs, slugs demoted",
       "summary": "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). F-08 — VERIFIED: the picker is 64 rows of raw schema slugs (eden_dock_right.rs ~:2828-2839 marker_icons() straight off the $defs/marker.icon enum): every row wears the SAME generic pin glyph, the display name truncates to 'Ob…' while the raw slug gets the space, and case-duplicates render as separate rows (Waypoint/waypoint/Waypoint2/waypoint2, Objective/Obj/Target, mark/marker/point). Choosing an icon by sight is impossible — Eden's F6 shows the actual glyphs (frame 170028). FIX: render one row per CANONICAL icon using T-790's canonical glyph mapping (the case-collapse table it documents), show the real glyph per row, human name gets the width, slug moves to tooltip + search-match only; keep 'Search icons' matching slugs and names. ⚠️ TRAPS: the schema enum is CLOSED and compiled missions may carry any alias — the picker collapses DISPLAY, the doc keeps storing the canonical slug; placed markers list below the picker keeps its caption-first rows; do not touch the map render (T-790 owns it). ACCEPTANCE: scripted — picker row count == canonical glyph count (< 64, documented number from T-790's table); no two rows differ only by case; every row's glyph pixel signature differs from the generic pin; picking 'Attack' stores the canonical slug and the map (post-T-790) shows the attack glyph.",
-      "notes": "depends_on T-790 (canonical glyph mapping is produced there); census T-069/T-213/T-673 cited as marker family"
+      "notes": "depends_on T-790 (canonical glyph mapping is produced there); census T-069/T-213/T-673 cited as marker family | SHIPPED W205: picker 64->11 canonical rows, distinct SVG per glyph (11/11 verified), canonical slug stored and the map renders it (pick-Attack -> triangle-up at 3 zooms — the T-790 handshake end-to-end), alias search works, compile-time count tie to MARKER_GLYPH_COUNT. T-825 boundary respected (no new dock editing surface)."
     },
     {
       "id": "T-796",
