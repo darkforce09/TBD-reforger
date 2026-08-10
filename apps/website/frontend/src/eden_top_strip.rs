@@ -778,6 +778,81 @@ impl RowMirror {
     }
 }
 
+/// T-789 F-04 — is the currently-focused element one of `nodes`? Used by the Save-dialog Tab trap
+/// to tell "focus is inside the dialog, wrap at the edge" from "focus escaped the dialog, pull it
+/// back to the first focusable". `active` is `document.activeElement` boxed as a `JsValue`; a plain
+/// pointer-equality walk over the NodeList is enough (the list is four items). wasm-only: the whole
+/// trap body is wasm-gated (`NodeList` / `query_selector_all` are not in the native web-sys set).
+#[cfg(target_arch = "wasm32")]
+fn within(active: &Option<wasm_bindgen::JsValue>, nodes: &web_sys::NodeList) -> bool {
+    let Some(active) = active else { return false };
+    for i in 0..nodes.length() {
+        if let Some(n) = nodes.item(i) {
+            if *active == *AsRef::<wasm_bindgen::JsValue>::as_ref(&n) {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+/// T-789 F-04 — the Save-Version dialog's Tab trap. Keeps Tab / Shift+Tab cycling inside the
+/// dialog subtree (`root`) instead of walking out into the left dock. Enumerates the dialog's own
+/// focusables in DOM order (✕ → version → notes → Save) and wraps at the edges: Shift+Tab off the
+/// first goes to the last, Tab off the last goes to the first; a Tab that arrives with focus already
+/// outside the set is pulled back to the first. Only `Tab` is acted on — Escape still bubbles to the
+/// strip's window listener, and ordinary typing is untouched. wasm-only (`NodeList` /
+/// `query_selector_all` are not in the native web-sys feature set); the native build takes the
+/// no-op below (the trap only has meaning against a live DOM).
+#[cfg(target_arch = "wasm32")]
+fn trap_tab_in_dialog(dialog_ref: NodeRef<leptos::html::Div>, ev: &web_sys::KeyboardEvent) {
+    use wasm_bindgen::JsCast;
+    if ev.key() != "Tab" {
+        return;
+    }
+    let Some(root) = dialog_ref.get_untracked() else {
+        return;
+    };
+    let root: &web_sys::Element = root.as_ref();
+    let Ok(nodes) = root.query_selector_all(
+        "button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])",
+    ) else {
+        return;
+    };
+    let len = nodes.length();
+    if len == 0 {
+        return;
+    }
+    let first = nodes.item(0);
+    let last = nodes.item(len - 1);
+    let active = web_sys::window()
+        .and_then(|w| w.document())
+        .and_then(|d| d.active_element())
+        .map(wasm_bindgen::JsValue::from);
+    let is = |a: &Option<wasm_bindgen::JsValue>, b: &Option<web_sys::Node>| match (a, b) {
+        (Some(a), Some(b)) => *a == *AsRef::<wasm_bindgen::JsValue>::as_ref(b),
+        _ => false,
+    };
+    let focus_node = |n: Option<web_sys::Node>| {
+        if let Some(el) = n.and_then(|n| n.dyn_into::<web_sys::HtmlElement>().ok()) {
+            let _ = el.focus();
+        }
+    };
+    if ev.shift_key() {
+        if is(&active, &first) || !within(&active, &nodes) {
+            ev.prevent_default();
+            focus_node(last);
+        }
+    } else if is(&active, &last) || !within(&active, &nodes) {
+        ev.prevent_default();
+        focus_node(first);
+    }
+}
+
+/// Native no-op — the Tab trap only has meaning against a live DOM (see the wasm variant above).
+#[cfg(not(target_arch = "wasm32"))]
+fn trap_tab_in_dialog(_dialog_ref: NodeRef<leptos::html::Div>, _ev: &web_sys::KeyboardEvent) {}
+
 #[component]
 pub fn TopCommandStrip(
     /// Mission title fallback — the `:id` route param; the doc's `meta.title` wins once read.
@@ -884,6 +959,27 @@ pub fn TopCommandStrip(
             crate::ui::modal_stack::unregister_transient_closer(transient_closer_id);
         });
     }
+    // T-789 F-04 — FRESH STATE on reopen. `save_status` is a shared prop (it also paints inline in
+    // the strip at the actions row) and `mission_commands::save_now` writes it to `Saved v{semver}`
+    // on success, where it STAYS — so the next time the dialog opens it greets the author with a
+    // stale "Saved v0.2.0" describing the *previous* save, before anything has happened this open.
+    // Clear it (and the rejected-save findings list) on the CLOSED→OPEN edge only: the Effect tracks
+    // `save_open`, and the `was_open` cell fires the clear once per open, never mid-save (you cannot
+    // open an already-open dialog) and never on close. The prefill/auto-bump of `save_semver` is
+    // deliberately untouched — it is the one thing about the reopened dialog that must persist.
+    let save_was_open = std::rc::Rc::new(std::cell::Cell::new(false));
+    Effect::new({
+        let save_was_open = save_was_open.clone();
+        move |_| {
+            let now = save_open.get();
+            let rising = now && !save_was_open.get();
+            save_was_open.set(now);
+            if rising {
+                save_status.set(String::new());
+                save_findings.set(Vec::new());
+            }
+        }
+    });
     // Env mirror for the inline scrubber/weather — re-read on every doc change.
     let env = Memo::new(move |_| {
         if let Some(t) = doc_tick {
@@ -1783,12 +1879,44 @@ pub fn TopCommandStrip(
                             None => format!("{obj} objects"),
                         };
                         let big = estimate.is_some_and(|b| b > 200_000_000);
+                        // T-789 F-04 — initial focus + Tab trap. The dialog is hand-rolled (it is not
+                        // the shared `ui::Dialog`, which has no focus handling of its own either), so
+                        // both live here, dialog-local.
+                        //
+                        // FOCUS-IN: the VERSION input is the one decision the dialog demands, and the
+                        // review's "blind-typeable offscreen field" is why it must own focus the
+                        // instant the dialog paints — a keyboard author lands ON the field, not on the
+                        // opener button two Tabs away. NodeRef + on_load (the T-785/T-811 lesson: a
+                        // bare `autofocus` on a reactively-inserted node does NOT fire). `.select()`
+                        // too, so the pre-filled semver is replace-ready; the input stays uncontrolled
+                        // after mount (initial `prop:value` only) so a reactive value write cannot land
+                        // after on_load and clear the selection (the wave200 F2 trap).
+                        let version_ref = NodeRef::<leptos::html::Input>::new();
+                        version_ref
+                            .on_load(|el: web_sys::HtmlInputElement| {
+                                let _ = el.focus();
+                                el.select();
+                            });
+                        // TRAP: keep Tab inside the dialog subtree. Before this, the cycle
+                        // ✕ → version → notes → Save WALKED OUT into the left dock (chevron_left →
+                        // Layers → …) with no wrap. The container NodeRef lets the handler enumerate
+                        // this dialog's own focusables in DOM order and wrap at both edges (Shift+Tab
+                        // at the first → last; Tab at the last → first). Only Tab is touched: Escape
+                        // still bubbles to the strip's window listener (`save_open.set(false)`), and
+                        // typing in the fields is untouched.
+                        let dialog_ref = NodeRef::<leptos::html::Div>::new();
+                        let trap_tab = move |ev: web_sys::KeyboardEvent| {
+                            trap_tab_in_dialog(dialog_ref, &ev);
+                        };
                         view! {
                             <div
                                 class="animate-overlay-fade fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
                                 on:click=move |_| save_open.set(false)
                             ></div>
-                            <div class="glass animate-dialog-in fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[92vw] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl shadow-2xl outline-none">
+                            <div
+                                node_ref=dialog_ref
+                                on:keydown=trap_tab
+                                class="glass animate-dialog-in fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[92vw] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl shadow-2xl outline-none">
                                 <div class="flex items-start justify-between gap-4 border-b border-outline-variant/30 px-6 py-4">
                                     <div class="min-w-0">
                                         <h2 class="text-headline-sm text-on-surface">"Save Version"</h2>
@@ -1813,8 +1941,17 @@ pub fn TopCommandStrip(
                                         <input
                                             type="text"
                                             aria-label="Version"
+                                            node_ref=version_ref
                                             class="w-32 rounded border border-outline-variant/40 bg-surface-container px-2 py-1 font-mono text-xs text-on-surface"
-                                            prop:value=move || save_semver.get()
+                                            // T-789 — uncontrolled after mount (initial `value`, not a
+                                            // reactive `prop:value`): the dialog remounts on every open
+                                            // so the prefilled / auto-bumped semver is read fresh here,
+                                            // and a reactive value write can no longer land after
+                                            // on_load and clear the focus-in `.select()` (wave200 F2).
+                                            // `save_now` reads `save_semver.get_untracked()` at click,
+                                            // and `on:input` keeps the signal current, so the typed
+                                            // value still reaches the save.
+                                            value=save_semver.get_untracked()
                                             on:input=move |ev| save_semver.set(event_target_value(&ev))
                                         />
                                     </label>
@@ -3489,5 +3626,161 @@ mod t786_dialog_closes_popovers {
                 "T-786 O-5: the `{arm}` action must close the Controls Hint when it opens its dialog"
             );
         }
+    }
+}
+
+/// T-789 F-04 — the Save Version dialog: clamped on-screen, fresh state on reopen, focus moved into
+/// the version input and Tab trapped inside the dialog. Source-scrub pins (the mechanical lane); the
+/// live-DOM acceptance (activeElement / 8-Tab / two-viewport rects) is the operator playtest lane.
+///
+/// STACK-REGISTER DECISION (recorded here so the pin file carries it): the Save dialog stays
+/// **unregistered** with `modal_stack`. It is hand-rolled markup, not the shared `ui::Dialog`, and
+/// its Esc-close already runs on the strip's proven window listener (`save_open.set(false)`, guarded
+/// by the T-814 `escape_consumed()` ladder pinned in `t726_top_strip_esc_stack`). Registering it
+/// would make that same guard swallow its own Esc (an open overlay ⇒ `escape_consumed()` true ⇒ the
+/// strip arm returns before `save_open.set(false)`) — the exact T-726 trap the wave-200 note flags —
+/// forcing a re-proof of the whole ladder for no acceptance-criteria gain: clamp/fresh-state/focus/
+/// trap are all achievable dialog-locally, which is what these pins lock.
+#[cfg(test)]
+mod t789_save_version_dialog {
+    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+
+    /// FRESH STATE. `save_status` is a shared prop (it also paints inline in the strip) and
+    /// `save_now` writes it to `Saved v{semver}`, where it stays — so on reopen the dialog would
+    /// greet the author with the *previous* save's line. An Effect on `save_open` must clear both
+    /// `save_status` and the `save_findings` list on the closed→open edge. Scrubbed `live_code`, so
+    /// the needles are the actual sets, not a mention in a comment/string.
+    #[test]
+    fn clears_stale_status_on_the_reopen_edge() {
+        let code = live_code(include_str!("eden_top_strip.rs"));
+        let body = only_body(&code, "pub fn TopCommandStrip(");
+        // The rising-edge guard: an Effect that reads save_open and a was-open cell.
+        assert!(
+            body.contains("save_was_open"),
+            "T-789: the strip must track a closed→open edge for the Save dialog (save_was_open cell)"
+        );
+        let eff_at = body
+            .find("Effect::new")
+            .and_then(|start| body[start..].find("save_open.get()").map(|o| start + o))
+            .expect("T-789: an Effect must read save_open to catch the reopen edge");
+        let region = &body[eff_at..];
+        // Within that Effect, both the status line and the findings list are cleared.
+        for needle in ["save_status.set(", "save_findings.set(", "rising"] {
+            assert!(
+                region.contains(needle),
+                "T-789 F-04: the reopen Effect must run `{needle}` so a stale `Saved vX` (and the \
+                 rejected-save findings) do not survive into the next open. Hollow: delete the \
+                 clear → this pin goes RED and the dialog reopens showing the last save."
+            );
+        }
+    }
+
+    /// FOCUS-IN. The version input is the one decision the dialog demands; it must own focus the
+    /// instant the dialog paints (the review's blind-typeable-offscreen note is why focus-first
+    /// matters). NodeRef + on_load focus/select — the T-785/T-811 pattern (a bare autofocus on a
+    /// reactive insert does not fire). Same shape the eden_tree / eden_dock_left rename pins assert.
+    #[test]
+    fn version_input_takes_focus_on_open() {
+        let code = live_code(include_str!("eden_top_strip.rs"));
+        let body = only_body(&code, "pub fn TopCommandStrip(");
+        assert!(
+            body.contains("let version_ref = NodeRef::<leptos::html::Input>::new()"),
+            "T-789: the Version input needs a NodeRef so on_load can focus it"
+        );
+        assert!(
+            body.contains("node_ref=version_ref"),
+            "T-789: the NodeRef must be attached to the Version input via node_ref=version_ref"
+        );
+        // The on_load handler that owns the version_ref calls focus() (and select()).
+        let onload_at = body
+            .find("version_ref")
+            .and_then(|s| body[s..].find(".on_load(").map(|o| s + o))
+            .expect("T-789: version_ref must carry an on_load");
+        let region = &body[onload_at..onload_at + 200.min(body.len() - onload_at)];
+        assert!(
+            region.contains(".focus()") && region.contains(".select()"),
+            "T-789 F-04: version_ref.on_load must focus() (and select()) the input so activeElement \
+             is the Version field on open, not the opener button. Hollow: drop the focus() call \
+             → RED, and focus stays on the opener."
+        );
+    }
+
+    /// TAB TRAP. Before this the Tab cycle ✕ → version → notes → Save walked out into the left dock
+    /// with no wrap. The dialog container must carry `on:keydown=trap_tab`, and `trap_tab_in_dialog`
+    /// must (a) act only on Tab, (b) enumerate the dialog's own focusables, and (c) wrap at both
+    /// edges (prevent_default + refocus). `trap_tab_in_dialog` has two cfg-gated defs, so scrub the
+    /// whole source and match on substrings rather than `only_body`.
+    #[test]
+    fn traps_tab_within_the_dialog_subtree() {
+        let code = live_code(include_str!("eden_top_strip.rs"));
+        let body = only_body(&code, "pub fn TopCommandStrip(");
+        assert!(
+            body.contains("on:keydown=trap_tab"),
+            "T-789 F-04: the Save dialog container must wire on:keydown=trap_tab so Tab is trapped. \
+             Hollow: remove the handler → RED, and Tab walks into the left dock."
+        );
+        assert!(
+            body.contains("node_ref=dialog_ref"),
+            "T-789: the trap needs the dialog container NodeRef (node_ref=dialog_ref) to scope its \
+             focusables to this subtree"
+        );
+        // The wasm trap body: Tab-only, queries focusables, wraps at the edges.
+        let full = live_code(include_str!("eden_top_strip.rs"));
+        let trap_at = full
+            .find("fn trap_tab_in_dialog")
+            .expect("T-789: trap_tab_in_dialog must exist");
+        let region = &full[trap_at..];
+        for needle in [
+            "ev.key()",             // guard: only Tab is acted on
+            "query_selector_all",   // enumerate this dialog's focusables
+            "ev.prevent_default()", // stop the browser's default Tab move at the edge
+            "ev.shift_key()",       // both directions
+            "within(",              // pull focus back if it escaped the set
+        ] {
+            assert!(
+                region.contains(needle),
+                "T-789 F-04: trap_tab_in_dialog must contain `{needle}` — the trap enumerates the \
+                 dialog focusables and wraps at both edges (Shift+Tab off first → last; Tab off \
+                 last → first)."
+            );
+        }
+    }
+
+    /// CLAMP. The dialog is centered and height-capped, so the Version field (near the top of its
+    /// content) is on-screen at any viewport by construction — `top-1/2 … -translate-y-1/2` puts the
+    /// dialog's own centre at the viewport centre and `max-h-[85vh]` bounds its height, so its top
+    /// edge never rises above ~7.5vh (>0). The review's y=-22 was a stale DOM node (it says so, and
+    /// nearly filed a false "cannot save on a laptop"); the live layout has been centered since the
+    /// T-661 split. This pin guards against a regression to an upward-anchored (`top-full`) panel.
+    /// `live_source` (layout is string classes).
+    #[test]
+    fn is_clamped_on_screen_by_construction() {
+        let code = live_source(include_str!("eden_top_strip.rs"));
+        let body = only_body(&code, "pub fn TopCommandStrip(");
+        // Anchor on the dialog's unique description copy (the button label "Save Version" also
+        // appears earlier, so it is not a unique anchor). The description sits INSIDE the popup, so
+        // the nearest centered-container class before it is the Save dialog's own.
+        let desc_at = body
+            .find("Versions are immutable")
+            .expect("T-789: the Save Version dialog description copy must exist");
+        let before = &body[..desc_at];
+        let popup_at = before
+            .rfind("fixed top-1/2 left-1/2")
+            .expect("T-789 F-04: the Save dialog popup must be centered (fixed top-1/2 left-1/2)");
+        let popup = &before[popup_at..];
+        for needle in ["-translate-y-1/2", "max-h-[85vh]"] {
+            assert!(
+                popup.contains(needle),
+                "T-789 F-04: the Save dialog popup must carry `{needle}` so it centers and caps its \
+                 height — the Version field then cannot leave the viewport. A regression to an \
+                 upward-anchored panel (top-full) would drop this."
+            );
+        }
+        // And it must NOT be anchored upward from the button (the mechanism the review described).
+        assert!(
+            !popup.contains("top-full"),
+            "T-789 F-04: the Save dialog popup must not anchor upward (top-full) — that is the \
+             offscreen-Version-field mechanism the fix forbids."
+        );
     }
 }
