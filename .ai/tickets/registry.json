@@ -1,5 +1,5 @@
 {
-  "next_id": 826,
+  "next_id": 830,
   "tickets": [
     {
       "id": "T-001",
@@ -20305,6 +20305,90 @@
       "order": 5070,
       "summary": "OPERATOR DESIGN DIRECTION (recorded 2026-08-10, from the wave-202/203 eye-passes; to be SCOPED IN AN OPERATOR-DRIVEN DESIGN SESSION after the band + wave 210 — do NOT dispatch from this summary). The unifying rule behind T-818/T-819 and the zone observations: every authored object on the map (slot, vehicle, zone, trigger, marker, comment, composition instance) is an ASSET that (a) lives as a first-class row in the LEFT outliner's layer tree — filed into any layer/folder like slots are, draggable between layers, not in kind-specific footers or dock strips; (b) EDITS via its double-click Attributes modal with kind-specific content; (c) the RIGHT dock exists only to place new things (catalog, search, favourites, history). Known deltas today: vehicles sit in a hardcoded PLACED VEHICLES outliner footer (W203 fold — superseded by this rule); zones are managed and edited in the right dock's Zones tab; markers edit via dock lanes; the operator also reports the layer tree itself 'feels disjointed' — capture specifics in the design session. SESSION INPUTS the orchestrator prepares: a decision matrix of every authored-object kind x where it lists x how it edits x what the compile/selection/undo semantics are, with Eden's answer per row. Out of scope until scoped: nothing ships from this ticket without the session's decisions filed as per-kind tickets.",
       "notes": "the post-band hyper-focus program; T-818/T-819 (wave 210) are its first two instances and proceed as filed"
+    },
+    {
+      "id": "T-826",
+      "title": "OPERATOR DECISION: should placing a marker declare a side? (the error-from-nowhere lives in faction minting)",
+      "status": "queued",
+      "executor": "claude-code",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "impact": [
+        "ui",
+        "mc-authoring"
+      ],
+      "surfaces": [
+        "SHELL"
+      ],
+      "order": 5080,
+      "summary": "WAVE-204 VERIFIER FILING (wave204.md MAJOR — 're-scope, not revert'). MEASURED truth table on a truly-fresh mission: t0 chip = '0 - No issues'; place ONE marker -> '1 error' (V1-PLAYER-SPAWN). MECHANISM: ensure_side_faction (editor_ops.rs:4654) mints faction-{SIDE} on the FIRST marker place, flipping validate.rs's deliberate declares_players gate — so the review's F-11 'error about something they didn't touch' survives T-798 (whose shipped halves all measure correct: hydrated missions show truth at t0, copy verbatim, Backspace pixel-pure, contrast fixed at plate-calc). THE DECISION (operator's): (a) markers stop minting factions — a briefing mark is not a side declaration; V1 fires only when a SLOT/faction is authored (needs an ensure_side_faction split: marker path stores side WITHOUT minting, or mints lazily at first slot); or (b) the behavior is CORRECT (marking a side commits you to spawns) and the T-798 acceptance line is re-scoped to document it. Option (a) matches the review's intent; check the compile/schema side effects of an unminted marker side before choosing (flatten.rs reads?). ACCEPTANCE (if a): fresh mission, place marker -> chip stays 0; author first slot of that side -> V1 fires; compiled export unchanged for the marker-only mission vs today minus the phantom faction.",
+      "notes": "wave204 verifier MAJOR; decision reserved for the operator; T-798 shipped-halves verified correct"
+    },
+    {
+      "id": "T-827",
+      "title": "Validation chip red measures 4.0-4.3:1 over the live glass — passes only by plate-calc",
+      "status": "queued",
+      "executor": "claude-code",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "impact": [
+        "ui",
+        "mc-authoring"
+      ],
+      "surfaces": [
+        "SHELL"
+      ],
+      "order": 5090,
+      "summary": "WAVE-204 VERIFIER FILING (wave204.md MINOR). The chip's #f87171 count passes 5.31:1 against its PLATE color (the review's calc method) but live-effective over the strip's backdrop-blur glass samples at 4.01-4.34:1 across 4 map backgrounds — under the 4.5:1 line the F-36 fix targeted. FIX: give the count an opaque-enough plate (raise plate alpha or add a solid pill behind the count) so the LIVE sample clears 4.5 on the darkest and lightest map backgrounds; keep text-error-alert. ACCEPTANCE: computed live-effective contrast (verifier's 4-sample method, screenshot-sampled) >=4.5:1 on all samples; plate-calc stays >=4.5.",
+      "notes": "wave204 verifier; measurement methodology matters — live-effective, not plate-calc"
+    },
+    {
+      "id": "T-828",
+      "title": "Marker captions are world-frozen at bind-time zoom — drift past 40px until a rebind",
+      "status": "queued",
+      "executor": "claude-code",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "impact": [
+        "ui",
+        "mc-authoring"
+      ],
+      "surfaces": [
+        "SHELL"
+      ],
+      "order": 5100,
+      "summary": "WAVE-204 VERIFIER FILING (wave204.md MINOR). The T-790 icon half is properly screen-space, but caption text positions freeze at bind-time zoom: measured 43px/52px marker-to-caption gaps at 1.30/1.06 m/px (over the ~40px acceptance) until a doc change forces a rebind. FIX: the caption half of the MarkerComposite recomputes screen offsets per frame from the live camera like the icon half (or anchors captions in the same screen-space pass) — no rebind dependency; reuse the transform the icons use, no second source. ACCEPTANCE: zoom continuously across 5.6->1.06 m/px with no doc changes: every caption stays within 40px of its marker at every sampled frame.",
+      "notes": "wave204 verifier; the icon half is the in-file template"
+    },
+    {
+      "id": "T-829",
+      "title": "Gate smoke virtual-outliner v5_orbatWindowed fails deterministically under the verifier harness — config-sensitive smoke",
+      "status": "queued",
+      "executor": "claude-code",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "impact": [
+        "ui",
+        "mc-authoring"
+      ],
+      "surfaces": [
+        "LEFT"
+      ],
+      "order": 5110,
+      "summary": "WAVE-204 VERIFIER FILING (wave204.md MINOR, PRE-EXISTING — bisected innocent: fails identically on merged AND pre-wave dists under the verifier's dist/flags, while the wave gate's own configuration passed 30/30 twice on the same tree). A smoke whose verdict flips with the harness configuration is the T-742/T-747 family: someone will eventually chase a phantom red or trust a phantom green. INVESTIGATE: diff the verifier invocation vs the gate's (dist build profile, chrome flags, viewport) to find the sensitive variable; make v5_orbatWindowed deterministic across both (or gate the check on the variable it actually depends on, stated). ACCEPTANCE: the smoke passes (or refuses loudly with a named reason) under BOTH the gate config and the verifier recipe in wave204.md.",
+      "notes": "wave204 verifier; repro recipe in the report; do not let it rot into a known-flake"
     }
   ]
 }
