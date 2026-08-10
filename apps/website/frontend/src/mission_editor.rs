@@ -3838,6 +3838,26 @@ pub fn MissionEditorPage() -> impl IntoView {
                                     } else {
                                         false
                                     };
+                                    // T-792 — Esc during an in-progress ZONE/TRIGGER draw (circle
+                                    // centre placed, or polygon with ≥1 vertex) abandons the pending
+                                    // geometry. A zone draw is multi-click and deliberately SURVIVES
+                                    // `cancel_pending` (so the panel's own Close/Undo/Cancel buttons,
+                                    // whose pointerup bubbles to the map, don't destroy the ring) —
+                                    // `has_pending()` above is therefore false-negative for a draw,
+                                    // and F-31 was: arm Circle, click centre, Esc → the "click the
+                                    // rim" hint STAYED and the next click still completed the circle.
+                                    // `cancel_zone_draw` is the ONE cancel a draw honours; it clears
+                                    // the draft and bumps the dock tick so the rim/vertex hint (gated
+                                    // on `zone_draft()` under `doc_tick`) vanishes — the same effect
+                                    // as the panel Cancel button, now on the keyboard. The draft is
+                                    // SHARED by the trigger tool (`begin_zone_draw(.., Trigger)` sets
+                                    // the identical `Pending::Zone`), so this one call also cancels an
+                                    // in-progress trigger draw. It "acts" only when a draw was in
+                                    // flight, so an Esc with no draw falls through untouched — and
+                                    // when it DOES act, feeding it to the `||` below prevents the
+                                    // browser default and stops any lower Esc layer (dialog/menu/tab)
+                                    // consuming the SAME press (one-Esc-one-layer, T-813/T-814).
+                                    let zone_draw_acted = crate::editor_ops::cancel_zone_draw();
                                     // T-768 — Esc disarms an armed connect the same way it disarms an
                                     // armed place (T-723). Completing stays LMB pick / RMB Complete.
                                     let connect_acted =
@@ -3867,6 +3887,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                         }
                                     }
                                     place_acted
+                                        || zone_draw_acted
                                         || connect_acted
                                         || ruler_acted
                                         || los_acted

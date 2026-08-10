@@ -1235,4 +1235,92 @@ mod tests {
             );
         }
     }
+
+    // ── T-792 — Esc cancels an in-progress zone (and trigger) draw ──────────────────────────────
+    // These are source pins because `editor_ops` / the `mission_editor` keydown closure are
+    // wasm-only (`#![cfg(target_arch = "wasm32")]`), the same reason `every_t211_mutator_has_a_caller`
+    // above is a source assertion — a behavioural test cannot link the module. All pins run on
+    // `class_r_scrub::live_code`, which DELETES comments and BLANKS string literals, so a needle can
+    // only be satisfied by real shipping code, never by the very comments that describe the fix (this
+    // is the T-759-class discipline: never grep the raw file for the token you just added).
+
+    /// The keydown Escape arm lives inside `MissionEditorPage`. Slice from there before scrubbing —
+    /// the same anchor `t642_ruler_wiring::editor_live` uses to keep the keydown closure intact (a
+    /// whole-file `live_code` prunes reachable-only-after-a-jump statements too aggressively for a
+    /// deep-nested match arm). `live_code` then deletes comments + blanks string literals.
+    fn editor_live_from_page() -> String {
+        use crate::arsenal::class_r_scrub::live_code;
+        let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
+        let raw = include_str!("mission_editor.rs");
+        assert_eq!(
+            raw.matches(anchor.as_str()).count(),
+            1,
+            "scrub anchor must be unambiguous"
+        );
+        live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..])
+    }
+
+    /// The keyboard Esc arm must ROUTE an in-progress draw to `cancel_zone_draw`. Before T-792 the arm
+    /// only called `cancel_pending`, which a zone draw deliberately survives — so F-31 was: arm Circle,
+    /// click the centre, press Esc, and the draft stayed armed (the panel kept prompting for the rim,
+    /// and the next click completed the circle). The pin proves the real call is present in the live
+    /// keydown closure, not in a comment.
+    #[test]
+    fn t792_escape_arm_cancels_the_zone_draw() {
+        let ed = editor_live_from_page();
+        assert!(
+            ed.contains("crate::editor_ops::cancel_zone_draw()"),
+            "T-792: the editor keydown must call editor_ops::cancel_zone_draw() (the ONE cancel a \
+             multi-click draw honours) — cancel_pending alone leaves the draft armed"
+        );
+        // It rides the SAME shared keydown Escape seam as the place/connect/measure cancels — not a
+        // new window listener (the T-726 pile-up must not grow). Proven by co-location with the
+        // keydown dispatch and the sibling place cancel it sits beside.
+        assert!(
+            ed.contains("code().as_str()")
+                && ed.contains("crate::editor_ops::has_pending()")
+                && ed.contains("crate::editor_ops::cancel_zone_draw()"),
+            "T-792: the zone-draw cancel must live in the ONE shared keydown Escape arm, beside the \
+             armed-place (has_pending) cancel — no second window keydown listener"
+        );
+    }
+
+    /// One-Esc-one-layer (T-813/T-814): when the draw cancel ACTS it must feed the arm's "handled"
+    /// result, so the press is consumed (prevent_default) and no lower Esc layer — a dialog, a menu,
+    /// the tab — also closes on the SAME keypress. The binding `zone_draw_acted` must therefore flow
+    /// into the trailing `||` chain that the arm returns.
+    #[test]
+    fn t792_zone_cancel_consumes_the_press() {
+        let ed = editor_live_from_page();
+        assert!(
+            ed.contains("let zone_draw_acted =") && ed.contains("|| zone_draw_acted"),
+            "T-792: the draw-cancel result must join the Escape arm's handled `||` chain, so a real \
+             cancel consumes the press (one Esc, one layer)"
+        );
+    }
+
+    /// The hint-clear half. `cancel_zone_draw` must, on a real clear, bump the dock tick — the Zones
+    /// AND Triggers panels re-read `zone_draft()` under `doc_tick` and their "click the rim"/vertex
+    /// hint (plus the Cancel/Close controls) vanish once the draft is `None`. Mirrors T-791's
+    /// `cancel_pending` bump. Pinned on the function's OWN body via `only_body` (unique name), so a
+    /// bump elsewhere in the file cannot satisfy it.
+    #[test]
+    fn t792_cancel_zone_draw_bumps_the_dock_tick() {
+        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        let ops = live_code(include_str!("editor_ops.rs"));
+        let body = only_body(&ops, "pub fn cancel_zone_draw() -> bool");
+        assert!(
+            body.contains("bump_doc_tick()"),
+            "T-792: cancel_zone_draw must bump the dock tick on a real clear, so the rim/vertex hint \
+             (gated on zone_draft() under doc_tick) disappears — the panel-Cancel effect, on Esc"
+        );
+        // Collection-agnostic: it clears on `Pending::Zone(_)`, so the SHARED draft cancels a TRIGGER
+        // draw exactly as it cancels a zone draw (trigger arms via begin_zone_draw(.., Trigger) into
+        // the identical Pending::Zone). This is what lets ONE Esc call cover both consumers.
+        assert!(
+            body.contains("Some(Pending::Zone(_))"),
+            "T-792: cancel_zone_draw must clear on Pending::Zone(_) regardless of collection, so a \
+             trigger draw (the second consumer) is cancelled by the same call"
+        );
+    }
 }
