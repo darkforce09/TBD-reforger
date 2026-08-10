@@ -180,8 +180,8 @@ pub fn pick(cam: &OrthoCamera, soa: &SlotSoa, px: f64, py: f64) -> Option<String
 
 /// T-425 — nearest placed vehicle id under a screen pixel, or `None`.
 ///
-/// Vehicles are off the slot SoA (`vehicle_xy_flat` / `vehicles_bind`), so the slot [`pick`] path
-/// never sees them. `points` is `(id, world_x, world_y)` from [`crate::editor_ops::vehicle_points`].
+/// Vehicles are off the slot SoA (they ride their own lane — see [`bind_vehicle_preview_lane`]), so
+/// the slot [`pick`] path never sees them. `points` is `(id, world_x, world_y)` from [`crate::editor_ops::vehicle_points`].
 /// Delegates to [`map_engine_core::doc::MissionDocCore::pick_vehicle`] (Class-R SoT).
 #[must_use]
 #[allow(dead_code)] // public host helper; live path uses pick_slot_or_vehicle
@@ -287,12 +287,10 @@ pub fn push_drag_preview(
 ) {
     #[allow(clippy::cast_possible_truncation)]
     e.set_drag(ids.to_vec(), dx as f32, dy as f32);
-    e.vehicles_bind(&map_engine_core::slots_gpu::pack_vehicle_drag_preview(
-        ids,
-        vehicle_points,
-        dx,
-        dy,
-    ));
+    bind_vehicle_preview_lane(
+        e,
+        &map_engine_core::slots_gpu::pack_vehicle_drag_preview(ids, vehicle_points, dx, dy),
+    );
 }
 
 /// T-573 — drop the live drag preview and put **both** lanes back on the authored positions.
@@ -305,12 +303,47 @@ pub fn push_drag_preview(
 /// `mission_history::after_doc_change` re-binds from the document after a *committed* drag.
 pub fn clear_drag_preview(e: &mut RenderEngine, vehicle_points: &[(String, f64, f64)]) {
     e.set_drag(Vec::new(), 0.0, 0.0);
-    e.vehicles_bind(&map_engine_core::slots_gpu::pack_vehicle_drag_preview(
-        &[],
-        vehicle_points,
-        0.0,
-        0.0,
-    ));
+    bind_vehicle_preview_lane(
+        e,
+        &map_engine_core::slots_gpu::pack_vehicle_drag_preview(&[], vehicle_points, 0.0, 0.0),
+    );
+}
+
+/// **T-808 — bind the vehicle lane at PREVIEW positions without losing its symbology.**
+///
+/// The defect: [`push_drag_preview`] and [`clear_drag_preview`] both called the old
+/// `vehicles_bind`, whose lane is one amber disc per vehicle. So the instant a drag started, every
+/// vehicle on the map — dragged or not — dropped its silhouette, its side colour and its heading,
+/// and popped back to symbology only when the pointerup commit ran `after_doc_change`. The preview
+/// described a map the drop would not produce, which is the same class of lie T-573 cured for
+/// position.
+///
+/// `xy` is the PREVIEWED lane (dragged rows already offset by
+/// [`map_engine_core::slots_gpu::pack_vehicle_drag_preview`]); the other three columns are the
+/// document's, because a drag moves vehicles and changes nothing else about them.
+///
+/// **THE COLUMN-ALIGNMENT TRAP.** The four columns must describe the same rows in the same order or
+/// every vehicle wears another's kind, side and heading — and a silhouette pointing confidently the
+/// wrong way is believed, which makes it worse than the disc it replaces.
+/// [`crate::mission_history::vehicle_lane_fields`] is the SINGLE column builder (one pass over the
+/// id-sorted `editor_ops::vehicle_rows`); this reuses it rather than growing a second one, so the
+/// preview is built by the same code as the committed render and cannot drift from it. The `xy`
+/// handed in comes from `editor_ops::vehicle_points`, which is that same `vehicle_rows` reader
+/// filtered to placed rows — the same rows in the same order. The yrs-iteration-order
+/// `vehicle_xy_flat` must never appear on this path: mixing the two orders is the trap.
+///
+/// The length gate is the one thing that is not structural. Both snapshots are read from the live
+/// document, and a drag commits nothing until pointerup, so they agree; if they ever did not, a row
+/// was added or removed between the two reads and every column after it would be shifted by one.
+/// Rather than zip a shift, fall back to the plain disc lane — less information, but never a
+/// confident lie.
+fn bind_vehicle_preview_lane(e: &mut RenderEngine, xy: &[f32]) {
+    let (doc_xy, aliases, tints, headings) = crate::mission_history::vehicle_lane_fields();
+    if doc_xy.len() == xy.len() {
+        e.vehicles_bind_symbology(xy, aliases, &tints, &headings);
+    } else {
+        e.vehicles_bind(xy);
+    }
 }
 
 /// Slot ids inside the marquee box, from the two frozen-cam screen corners. The press corner is

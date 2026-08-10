@@ -526,7 +526,12 @@ pub(crate) fn soa_roles(soa: &SlotSoa) -> Vec<String> {
 /// is the authored COMPASS heading in degrees passed through untouched — `slots_gpu` owns the
 /// screen-yaw sign flip, so converting here would double it (and `None`, an unrotated vehicle,
 /// is north).
-fn vehicle_lane_fields() -> (Vec<f32>, Vec<String>, Vec<u8>, Vec<f32>) {
+///
+/// `pub(crate)` because it is THE column builder, not this module's: T-808's drag preview
+/// ([`crate::select_tool::bind_vehicle_preview_lane`]) rebinds the same lane at dragged positions
+/// and reuses these three non-positional columns rather than growing a second builder in a second
+/// row order. Do not re-privatise it; write the second caller's columns here.
+pub(crate) fn vehicle_lane_fields() -> (Vec<f32>, Vec<String>, Vec<u8>, Vec<f32>) {
     let rows = crate::editor_ops::vehicle_rows();
     let mut xy = Vec::with_capacity(rows.len() * 2);
     let mut aliases = Vec::with_capacity(rows.len());

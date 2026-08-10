@@ -7582,8 +7582,9 @@ mod t573_mixed_drag_preview {
             "the vehicle lane must be re-packed with the dragged rows offset"
         );
         assert!(
-            push.contains("e.vehicles_bind("),
-            "…and uploaded, or the re-pack never reaches the GPU"
+            push.contains("bind_vehicle_preview_lane("),
+            "…and uploaded, or the re-pack never reaches the GPU (T-808 moved the upload itself \
+             into the shared binder so preview and restore cannot bind different lanes)"
         );
         assert!(
             !push.contains("is_vehicle_id"),
@@ -7593,7 +7594,7 @@ mod t573_mixed_drag_preview {
         // The un-committed exits must put the vehicle lane back: it is live state during a drag now.
         let clear = only_body(&tool, "pub fn clear_drag_preview(");
         assert!(
-            clear.contains("e.set_drag(Vec::new()") && clear.contains("e.vehicles_bind("),
+            clear.contains("e.set_drag(Vec::new()") && clear.contains("bind_vehicle_preview_lane("),
             "clearing the preview must drop BOTH lanes, not just the slot overlay"
         );
 
@@ -12914,6 +12915,88 @@ mod t808_symbology_feed {
             !hist.contains("vehicles_bind(&"),
             "T-808: no feeder may keep uploading the kind-less, heading-less disc lane"
         );
+    }
+
+    /// **Feeder 2b — the DRAG PREVIEW keeps the symbology.**
+    ///
+    /// `after_doc_change` binding through the symbology signature is not enough: `select_tool`'s
+    /// preview re-binds the same lane on every pointermove, and it called the old `vehicles_bind`.
+    /// So the moment a drag began, every vehicle on the map lost its silhouette, its side colour and
+    /// its heading and reverted to an amber disc — popping back only on the commit. Mid-gesture is
+    /// exactly when the operator is looking at the thing.
+    ///
+    /// The trap is the same one [`the_vehicle_lane_columns_come_from_one_sorted_reader`] names, and
+    /// the answer is to REUSE that single builder rather than grow a second one here: the preview's
+    /// positions are the dragged lane, its other three columns are the document's, and both lists
+    /// are the id-sorted `vehicle_rows` reader. `vehicle_xy_flat` (yrs iteration order) may not
+    /// appear on this path at all.
+    #[test]
+    fn the_drag_preview_binds_through_the_symbology_signature() {
+        let tool = live_code(include_str!("select_tool.rs"));
+        let bind = format!("{}{}", "vehicles_bind_", "symbology(");
+        let binder = only_body(&tool, "fn bind_vehicle_preview_lane(");
+
+        assert!(
+            binder.contains(&bind),
+            "T-808: the preview must upload through the symbology signature or the drag reverts \
+             every vehicle to a disc; body:\n{binder}"
+        );
+        // The POSITIONS bound are the previewed ones — that is the whole point of a preview. The
+        // document's xy comes back from the shared builder and must be spent on the row-count gate,
+        // never on the lane.
+        let first_arg = binder
+            .split(&bind)
+            .nth(1)
+            .expect("the symbology bind, asserted above")
+            .split(',')
+            .next()
+            .unwrap_or_default()
+            .trim()
+            .to_string();
+        assert_eq!(
+            first_arg, "xy",
+            "T-808: the lane must be bound at the DRAGGED positions, not the document's; \
+             body:\n{binder}"
+        );
+        assert!(
+            binder.contains("doc_xy.len() == xy.len()"),
+            "T-808: the two snapshots must be row-count gated before they are zipped — a row added \
+             or removed between the reads shifts every column after it; body:\n{binder}"
+        );
+
+        // ONE column builder. Not a second reader, not a second tint/heading expansion here.
+        assert!(
+            binder.contains("vehicle_lane_fields()"),
+            "T-808: the columns must come from the ONE id-sorted builder the committed render \
+             uses, so the preview cannot drift from the drop; body:\n{binder}"
+        );
+        for forbidden in ["vehicle_rows()", "side_rgba(", "faction-"] {
+            assert!(
+                !binder.contains(forbidden),
+                "T-808: `{forbidden}` here would be a SECOND column builder in a second row order \
+                 — every vehicle in another's clothes; body:\n{binder}"
+            );
+        }
+        assert!(
+            !tool.contains("vehicle_xy_flat"),
+            "T-808: the yrs-iteration-order flattener must not reach the preview path — mixing it \
+             with the id-sorted reader misaligns all four columns"
+        );
+
+        // Both gesture ends go through the one binder, so preview and restore cannot bind
+        // different lanes (the restore is what runs on a pointercancel or a zero-delta release).
+        for name in ["pub fn push_drag_preview(", "pub fn clear_drag_preview("] {
+            let body = only_body(&tool, name);
+            assert!(
+                body.contains("bind_vehicle_preview_lane("),
+                "T-808: {name} must bind through the shared binder; body:\n{body}"
+            );
+            assert!(
+                !body.contains("vehicles_bind"),
+                "T-808: {name} must not upload the lane itself — a second bind site is a second \
+                 chance to drop the symbology; body:\n{body}"
+            );
+        }
     }
 
     /// **Feeder 3 — the comment lane names its rows.** `comments_bind` with no ids marks every
