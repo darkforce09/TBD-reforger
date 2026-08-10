@@ -1,5 +1,5 @@
 {
-  "next_id": 832,
+  "next_id": 835,
   "tickets": [
     {
       "id": "T-001",
@@ -19910,7 +19910,7 @@
       ],
       "title": "Units render as role-and-side symbology, not dots",
       "summary": "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). F-10 — the map is dot soup: slots are plain circles (amber selected + heading arrow, pale blue otherwise), markers were identical circles (T-790 fixes markers), nothing distinguishes a rifleman from a medic from an AT gunner, and marker-vs-unit ambiguity was verified (operator + review agree; Eden's 2D map renders filled side-coloured entity glyphs — frame 170028 crops). A milsim author reads maps by symbology. FIX: per-slot glyph in the unit lane: side colour + role class glyph (minimum set: leader chevron, medic cross, AT, MG, rifleman default — derive role class from the slot role/kit string), distinct SHAPE class from markers (T-790's glyphs) and comments (T-796's bubble); selection ring/heading arrow render ON TOP unchanged. Consumes T-790's lane-format extension (crates/map-engine-core/src/slots_gpu.rs ~745-line instance path + crates/map-engine-render/src/engine.rs read half). ⚠️ TRAPS: engine.rs is CO-OWNED with T-790's wave — this lands 3 waves later on merged main, build on its final lane format (belt-and-braces per packing risk 5); zoom behaviour: glyphs legible at squad scale, degrade to dots only below a stated m/px; role-string mapping table lives in one place and is unit-tested (kit:us_rifleman -> rifleman etc.). ACCEPTANCE: wasm unit test on the role->glyph mapping (all seeded kits map, unknown -> default); scripted screenshot at 1.0 and 4.0 m/px: medic vs rifleman vs leader pixel signatures pairwise distinct; marker vs unit vs comment shapes pairwise distinct; selected unit still shows ring+heading.",
-      "notes": "depends_on T-790; T-157 visual-overhaul overlap cited in notes rather than absorbed (T-157 is broader) | operator note 2026-08-10: the T-790 procedural marker glyphs read \"a little weird — not wrong, but weird\"; when doing unit symbology, revisit marker glyph iconography in the same visual language"
+      "notes": "depends_on T-790; T-157 visual-overhaul overlap cited in notes rather than absorbed (T-157 is broader) | operator note 2026-08-10: the T-790 procedural marker glyphs read \"a little weird — not wrong, but weird\"; when doing unit symbology, revisit marker glyph iconography in the same visual language | wave-205 verifier: slots render NO heading in any mode (lane yaw hardcoded 0) — unit symbology MUST carry orientation (T-832 is the finding; fold the yaw lane extension into this ticket, T-790 glyph-id lane as the template)"
     },
     {
       "id": "T-794",
@@ -20432,6 +20432,69 @@
       "order": 5130,
       "summary": "OPERATOR REQUIREMENT (wave-204 eye-pass, 2026-08-10): 'I should be able to have markers for each side — markers only BLUFOR can see and markers only OPFOR can see, like Arma 3.' REPRO/AUDIT FIRST — the data model is ALREADY side-scoped: markers live on per-side briefings[] (T-069) and the dock copy says 'markers for the ACTIVE side's briefing'. Establish: (1) how the editor switches the active side today (is there a switcher? what does it author into?); (2) whether OPFOR/INDFOR marker authoring is reachable at all; (3) what the compiled mission carries per side. THEN: make per-side authoring explicit (side selector on the Markers surface; map shows the selected side's set, or all sets with side badges — pick with the operator if ambiguous); the GAME-side enforcement (each side sees only its briefing's markers) is the mod half — T-673, PARKED in the mod band (wave 150); cite it, do not build game enforcement here. ACCEPTANCE: author a BLUFOR and an OPFOR marker; each lands on its own side's briefing in the compiled export; the editor can display/author both sides' sets distinctly; T-673 named as the runtime half.",
       "notes": "operator requirement wave-204; audit-first; game half = parked T-673"
+    },
+    {
+      "id": "T-832",
+      "title": "Slots render no heading on the map — yaw never reaches the glyph lane",
+      "status": "queued",
+      "executor": "claude-code",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "impact": [
+        "ui",
+        "mc-authoring"
+      ],
+      "surfaces": [
+        "SHELL"
+      ],
+      "order": 5140,
+      "summary": "WAVE-205 VERIFIER FILING (wave205.md MAJOR — a claim-vs-pixels finding, not broken code). PROVEN LIVE: no heading renders for slots in ANY widget mode — the slot render lane hardcodes yaw 0 and glyph 0 is a symmetric ring; pixel-identical crops at heading 90 vs 180. T-795's rotate ring changes heading NUMERICALLY (attrs confirm, one undo step) but the map never shows it — the review's F-16 'heading arrow' observation was about exactly this, and T-795's not-reproducing claim was made from source reading, not pixels (the T-789 lesson, second instance — a not-reproducing verdict is only as good as its measurement). FIX: carry yaw through the slot lane (the T-790 glyph-id lane widening is the template: store->feeder->engine) and rotate the glyph (or render a heading tick) per slot. NATURAL HOME: T-808 (unit symbology, wave 207) — military symbols carry orientation; fold there rather than a standalone lane change (note added to T-808). ACCEPTANCE: place a slot, set heading 90 then 180: the map glyph visibly rotates (non-identical crops); ring-drag live-updates the visible heading; vehicles' existing heading render (if any) unregressed.",
+      "notes": "wave205 verifier; fold into T-808/W207 — the note is on that ticket"
+    },
+    {
+      "id": "T-833",
+      "title": "OPERATOR DECISION: ring drag — face-the-aim (as shipped) or rotate-about-centre (as specified)?",
+      "status": "queued",
+      "executor": "claude-code",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "impact": [
+        "ui",
+        "mc-authoring"
+      ],
+      "surfaces": [
+        "SHELL"
+      ],
+      "order": 5150,
+      "summary": "WAVE-205 VERIFIER FILING (wave205.md MINOR). MEASURED: dragging the rotate ring turns EACH selected entity to face the release bearing with positions fixed (exact bearing math verified) — the T-795 FIX text and the gesture comment both say 'rotates the selection about its centre' (positions orbit, formation preserved — Eden's model). Two defensible behaviors: (a) about-centre = formation rotation (matches the spec text and Eden); (b) face-the-aim = point the squad at a bearing (arguably the more useful milsim verb, and what shipped). DECISION IS THE OPERATOR'S; options: implement (a) as specified (per-entity positions orbit the selection centroid, one txn — the T-788 batch API fits), keep (b) and fix the spec/comment to tell the truth, or offer both (e.g. plain drag = a, modifier = b). Until decided, the shipped comment must not claim about-centre (it lies — wave205.md cites the line). ACCEPTANCE: per the chosen option; either way the comment and eden_help row describe the real behavior.",
+      "notes": "wave205 verifier; operator decision; comment currently lies about the behavior"
+    },
+    {
+      "id": "T-834",
+      "title": "Wave-205 residue: two stale pre-renumber comments, dead widget_is_rotate, marker grammar",
+      "status": "queued",
+      "executor": "claude-code",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "impact": [
+        "ui",
+        "mc-authoring"
+      ],
+      "surfaces": [
+        "SHELL"
+      ],
+      "order": 5160,
+      "summary": "WAVE-205 VERIFIER FILING (wave205.md NITs, batched). (1)+(2) two doc comments still describe the pre-renumber digit map (wave205.md cites lines) — the stale-comment class that has cost this program real time; (3) EditorToolbarDispatch.widget_is_rotate is dead after the barrier reconciliation (widget_digit is the read) — remove the field + its registration; (4) 'Placing a Attack marker' article grammar in the picker hint. All mechanical; one small slice. ACCEPTANCE: comments match the 1/2/3 map; widget_is_rotate absent from the dispatch struct and all call sites; hint reads 'Placing an Attack marker' (or reworded).",
+      "notes": "wave205 verifier NIT batch; pure cleanup"
     }
   ]
 }
