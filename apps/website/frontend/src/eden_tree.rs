@@ -1066,6 +1066,96 @@ fn single_row(
     }
 }
 
+// ── T-809 (fold c, F-22) — placed vehicles belong in the LEFT outliner, beside slots/groups ────────
+//
+// The eye-pass fold: a placed VEHICLE is a thing on the map, and things on the map live in the left
+// outliner — not on the right dock (whose Placed strip listed them only because there was nowhere
+// else). This lists every map-placed vehicle under the layer/slot tree, selectable with the SAME row
+// affordances a slot gets: single click selects (routed through `select_slot`, which is kind-agnostic
+// — it sets the selection and the engine's tint lane for whatever id it is handed), double click
+// opens Attributes. A vehicle id in `ctx.selection` is already tolerated (the wave-145 lesson: the
+// selection is pruned by DOCUMENT PRESENCE, not by kind), so nothing downstream chokes on it.
+//
+// Only MAP-PLACED vehicles appear (`xy.is_some()`): an ORBAT-only vehicle with no map position is not
+// a thing ON the map, so it does not belong in this on-the-map list (it lives in the ORBAT tree).
+// Gated on `authoring` — the LEFT outliner is the only `virtual_tree` with it set — so the ORBAT tree
+// and any future tree never grow a vehicles footer. wasm-only read: `editor_ops` is wasm32-only, so
+// the native shell renders nothing (the same reason `placed_vehicles_panel` stubs to nothing).
+
+/// T-809 (fold c) — the map-placed vehicles as selectable outliner rows, or nothing when this is not
+/// the authoring (left-outliner) tree. See the section header.
+#[cfg(target_arch = "wasm32")]
+fn placed_vehicle_rows(authoring: bool, selected: RwSignal<Vec<String>>) -> AnyView {
+    if !authoring {
+        return ().into_any();
+    }
+    let rows: Vec<crate::editor_ops::VehicleRow> = crate::editor_ops::vehicle_rows()
+        .into_iter()
+        .filter(|v| v.xy.is_some()) // on-the-map vehicles only
+        .collect();
+    if rows.is_empty() {
+        return ().into_any();
+    }
+    view! {
+        // A small-caps section marker (ROW_FACTION idiom) sets the placed vehicles off from the layer
+        // tree above without pretending to be a collapsible folder.
+        <div class=ROW_FACTION aria-hidden="true">
+            <span class="size-4 shrink-0"></span>
+            <MaterialIcon name="directions_car" class="block text-sm leading-none" />
+            <span class="truncate">"Placed vehicles"</span>
+        </div>
+        {rows
+            .into_iter()
+            .map(|v| {
+                let id = v.id.clone();
+                let id_click = id.clone();
+                let id_dbl = id.clone();
+                // Label the row by the vehicle's classname tail (`resourceName` is a GUID-headed path);
+                // the outliner shows an author-legible name, not a raw prefab path.
+                let label = {
+                    let tail = crate::asset_catalog::classname_tail(&v.resource_name);
+                    if tail.is_empty() { v.id.clone() } else { tail.to_string() }
+                };
+                let aria = label.clone();
+                let is_sel = {
+                    let id = id.clone();
+                    move || selected.get().iter().any(|s| s == &id)
+                };
+                view! {
+                    <button
+                        type="button"
+                        aria-label=aria
+                        class=move || if is_sel() { ROW_ACTIVE } else { ROW }
+                        on:click=move |_| {
+                            // Same single-click contract a slot row has: select through the
+                            // kind-agnostic `select_slot` (sets selection + engine tint).
+                            crate::editor_ops::select_slot(id_click.clone());
+                        }
+                        on:dblclick=move |_| {
+                            // SEL-ORBAT-DBL-001 — activate opens Attributes, exactly like a slot.
+                            crate::editor_ops::open_attributes(id_dbl.clone());
+                        }
+                    >
+                        // A leading spacer keeps these rows aligned with the tree's guide column.
+                        <span class="size-4 shrink-0"></span>
+                        <MaterialIcon name="directions_car" class="block text-sm leading-none" />
+                        <span class="truncate">{label}</span>
+                    </button>
+                }
+                .into_any()
+            })
+            .collect::<Vec<_>>()}
+    }
+    .into_any()
+}
+
+/// Native shell: `editor_ops` is wasm32-only, so there is no document to read — no placed-vehicle
+/// rows on the native build (the `placed_vehicles_panel` stub rule).
+#[cfg(not(target_arch = "wasm32"))]
+fn placed_vehicle_rows(_authoring: bool, _selected: RwSignal<Vec<String>>) -> AnyView {
+    ().into_any()
+}
+
 /// T-169 — publish `window.__outlinerStats[key] = {total, rendered, threshold}` for the gate.
 #[cfg(target_arch = "wasm32")]
 fn set_outliner_stats(key: &str, total: usize, rendered: usize) {
@@ -1197,11 +1287,23 @@ pub(crate) fn virtual_tree(
         rev.track(); // re-render the slice when the tree changes
         let st = scroll_top.get();
         let viewport_h = container_h.get();
+        // T-809 (fold c) — the placed-vehicle rows ride BELOW the layer/slot tree in the LEFT
+        // outliner. Built fresh in whichever branch renders (an `AnyView` moves on use, and exactly
+        // one branch runs per render), inside the `rev`-tracked closure so a placement — which
+        // rebuilds the outliner `nodes` and bumps `rev` — re-reads them. `placed_vehicle_rows` is
+        // empty on every non-authoring tree and on the native shell, so this is inert off the left
+        // dock; it is appended as a tree sibling so it never enters the windowing arithmetic.
         flat.with_value(|f| {
             let total = f.len();
             if total == 0 {
                 set_outliner_stats(stats_key, 0, 0);
-                return view! { <p class="text-label-sm text-outline">{empty_msg}</p> }.into_any();
+                return view! {
+                    <div>
+                        <p class="text-label-sm text-outline">{empty_msg}</p>
+                        {placed_vehicle_rows(authoring, selected)}
+                    </div>
+                }
+                .into_any();
             }
             if total <= VIRTUAL_SLOT_THRESHOLD {
                 set_outliner_stats(stats_key, total, total);
@@ -1211,6 +1313,7 @@ pub(crate) fn virtual_tree(
                             .iter()
                             .map(|r| single_row(r, selected, active_layer, collapsed, orbat_refile, authoring_ctx))
                             .collect::<Vec<_>>()}
+                        {placed_vehicle_rows(authoring, selected)}
                     </div>
                 }
                 .into_any();
@@ -1249,6 +1352,10 @@ pub(crate) fn virtual_tree(
                     <div style=format!("height:{top}px")></div>
                     {rows}
                     <div style=format!("height:{bottom}px")></div>
+                    // T-809 (fold c) — placed vehicles as a footer under the windowed tree. They ride
+                    // after the bottom spacer (which pads for the un-rendered slot rows), so they sit
+                    // at the true end of the list; a small addendum that need not join the windowing.
+                    {placed_vehicle_rows(authoring, selected)}
                 </div>
             }
             .into_any()
@@ -1516,6 +1623,53 @@ mod tests {
             );
             // The authoring tree is enabled (last virtual_tree arg true on this dock).
             assert!(DOCK.contains("virtual_tree"));
+        }
+
+        /// T-809 (fold c, F-22) — placed vehicles are listed in the LEFT outliner, beside slots, with
+        /// the SAME row affordances a slot gets: single-click selects through the kind-agnostic
+        /// `select_slot`, double-click opens Attributes via `open_attributes`. Read off `vehicle_rows`
+        /// and filtered to MAP-PLACED (`xy.is_some()`); gated on `authoring` so only the left outliner
+        /// grows the footer. `virtual_tree` appends the rows in every render branch (empty/eager/
+        /// windowed), so the list is present regardless of tree size.
+        #[test]
+        fn placed_vehicles_are_listed_in_the_outliner_with_slot_affordances() {
+            use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+            let code = live_code(TREE);
+            // Two cfg variants share the name; the wasm one (no leading `_` on the params) is the one
+            // with the real body — match its unique signature so `only_body` is unambiguous.
+            let body = only_body(&code, "fn placed_vehicle_rows(authoring:");
+            assert!(
+                body.contains("vehicle_rows()"),
+                "T-809: the outliner footer reads the placed vehicles off editor_ops::vehicle_rows"
+            );
+            assert!(
+                body.contains("xy.is_some()"),
+                "T-809: only MAP-PLACED vehicles belong in the on-the-map outliner"
+            );
+            assert!(
+                body.contains("select_slot(") && body.contains("open_attributes("),
+                "T-809: a vehicle row selects (single click) and opens Attributes (dbl click) like a slot"
+            );
+            // Gated on `authoring` — the ORBAT tree (authoring=false) must not grow the footer.
+            assert!(
+                body.contains("if !authoring") || body.contains("!authoring"),
+                "T-809: the footer is the left outliner's only — gated on the authoring flag"
+            );
+            // `virtual_tree` appends the footer in each render branch, so it survives windowing.
+            let vt = only_body(&code, "fn virtual_tree(");
+            let calls = vt.matches("placed_vehicle_rows(").count();
+            assert!(
+                calls >= 3,
+                "T-809: virtual_tree must append placed vehicles in the empty, eager AND windowed \
+                 branches (found {calls}); a single call would drop them under one render path"
+            );
+            // The row is labelled for the operator (a section marker + a vehicle glyph).
+            let lit = live_source(TREE);
+            let lit_body = only_body(&lit, "fn placed_vehicle_rows(authoring:");
+            assert!(
+                lit_body.contains("\"Placed vehicles\"") && lit_body.contains("directions_car"),
+                "T-809: the outliner section names itself and carries the vehicle glyph"
+            );
         }
 
         /// LAYER-DEL-001 — delete is destructive-subtree and the confirm text SAYS SO.

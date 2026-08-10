@@ -253,6 +253,209 @@ fn collapsed_seed(nodes: &[CatalogNode], out: &mut std::collections::HashSet<Str
     }
 }
 
+// ── T-809 (F-22) — recently-placed (Eden's Assets|History pair; History is the recent list) ────────
+//
+// TBD had only MANUAL Favourites; Eden also gives an AUTOMATIC recently-placed list so the asset you
+// just put down is one press away from the next. It is SESSION-SCOPED on purpose (per the UX-review
+// summary): it is a within-a-sitting convenience, not authored content, so it holds no localStorage
+// key and starts empty every mount — the same line rulers and bookmarks draw (nothing here reaches
+// the document or the wire).
+//
+// **WHAT FEEDS IT — and what cannot, stated because the seam is asymmetric.** The list is fed at the
+// one place a placement is observable from THIS dock: a palette leaf press ([`faction_palette_rows`]
+// and the standalone Vehicles view route through [`record_recent`] on `pointerdown`, right where they
+// arm the place). A composition STAMP and the ORBAT-manager's Add-Vehicle both commit through
+// `editor_ops` / `orbat_manager` — files this slice does not own and that expose no placement hook —
+// so neither feeds the list this wave. That is the honest boundary: the list holds what the author
+// dragged from the merged palette, which is exactly what the acceptance places.
+//
+// `FAVOURITES_MAX` doubles as the cap here for the same reason it bounds Favourites — a small,
+// synchronously-read working set — and it is far past any plausible session's placements.
+
+/// T-809 — one recently-placed entry: the asset id (`resource_name`) and the label to show. Same
+/// `asset_id` a leaf carries, so a recent row arms the identical place a fresh palette leaf would.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RecentPlaced {
+    pub asset_id: String,
+    pub label: String,
+}
+
+/// T-809 — the pure list transform behind [`record_recent`]: move `asset_id` to the head
+/// (most-recent-first), dedup by id so a re-place bumps the existing entry rather than duplicating it,
+/// and cap at [`FAVOURITES_MAX`]. Split out from the signal write so the ordering/dedup/cap contract
+/// is native-testable without a reactive runtime.
+fn push_recent_into(list: &mut Vec<RecentPlaced>, asset_id: String, label: String) {
+    list.retain(|r| r.asset_id != asset_id);
+    list.insert(0, RecentPlaced { asset_id, label });
+    list.truncate(FAVOURITES_MAX);
+}
+
+/// T-809 — push an asset to the head of the session recently-placed list. Thin signal wrapper over
+/// [`push_recent_into`]; no storage, no document (session-scoped, per the UX-review summary).
+fn record_recent(recent: RwSignal<Vec<RecentPlaced>>, asset_id: String, label: String) {
+    recent.update(|list| push_recent_into(list, asset_id, label));
+}
+
+/// T-809 — render the **merged Factions tree** ([`crate::asset_catalog::build_faction_catalog_tree`]):
+/// characters, vehicles and objects filed under one faction, so a vehicle leaf is reachable inside
+/// NATO. It is [`palette_rows`] with ONE difference — a leaf carries no fixed [`PaletteKind`], because
+/// the merged tree mixes kinds. Each leaf resolves its place-arm at press time from the live registry
+/// row ([`crate::asset_catalog::placeable_palette`]), the SAME resolution the Favourites collection
+/// uses ([`arm_favourite_place`]) — so a character leaf writes a `slots` row and a vehicle leaf writes
+/// a `vehiclesById` row, decided by the row's own kind, never by which folder it sits in.
+///
+/// `registry_items` is the raw `/registry` rows (already in the dock); `recent` is the session
+/// recently-placed list, fed on every leaf press. Folders reuse [`palette_rows`]' exact chrome via a
+/// shared inner helper is deliberately NOT done here — the two trees' leaves differ (fixed vs resolved
+/// kind), and the T-215 palette gate pins `palette_rows`' own leaf call expression by source, so a
+/// merge would let this path satisfy that needle. The folder arm is therefore spelled out again.
+///
+/// The recursion carries the same guide/collapse/id state `palette_rows` threads plus two extra
+/// signals (`registry_items` for per-leaf resolution, `recent` for the feed); all are `Copy`
+/// `RwSignal`s or slices, so the arg count is a threaded-context artefact, not shared mutable state.
+#[allow(clippy::too_many_arguments)]
+fn faction_palette_rows(
+    nodes: &[CatalogNode],
+    depth: usize,
+    prefix: &[bool],
+    id_prefix: &[String],
+    collapsed: RwSignal<std::collections::HashSet<String>>,
+    favourites: RwSignal<Favourites>,
+    registry_items: RwSignal<Option<Vec<crate::dto::RegistryItem>>>,
+    recent: RwSignal<Vec<RecentPlaced>>,
+) -> AnyView {
+    let len = nodes.len();
+    nodes
+        .iter()
+        .enumerate()
+        .map(|(i, n)| {
+            let label = n.label.clone();
+            let aria = n.label.clone();
+            let anc: Vec<bool> = if depth == 0 {
+                Vec::new()
+            } else {
+                let mut v = Vec::with_capacity(depth);
+                v.extend_from_slice(prefix);
+                v.push(i + 1 != len);
+                v
+            };
+            let gids = id_prefix.to_vec();
+            match n.payload.clone() {
+                None => {
+                    let open = !collapsed.with_untracked(|c| c.contains(&n.id));
+                    let toggle =
+                        chevron_or_spacer(!n.children.is_empty(), open, &n.id, collapsed);
+                    let folder_icon = if open { "folder_open" } else { "folder" };
+                    let mut child_ids = gids.clone();
+                    child_ids.push(n.id.clone());
+                    let kids = if open {
+                        faction_palette_rows(
+                            &n.children,
+                            depth + 1,
+                            &anc,
+                            &child_ids,
+                            collapsed,
+                            favourites,
+                            registry_items,
+                            recent,
+                        )
+                    } else {
+                        ().into_any()
+                    };
+                    let cid = n.id.clone();
+                    view! {
+                        <div
+                            role="button"
+                            tabindex="-1"
+                            aria-label=aria
+                            class="relative flex cursor-pointer items-center gap-1.5 px-1.5 py-1 text-label-sm text-outline transition-colors hover:text-on-surface"
+                            on:click=move |_| {
+                                collapsed
+                                    .update(|c| {
+                                        if !c.remove(&cid) {
+                                            c.insert(cid.clone());
+                                        }
+                                    });
+                            }
+                        >
+                            {guide_spans(&anc, &gids, collapsed)}
+                            {toggle}
+                            <MaterialIcon name=folder_icon class="block text-sm" />
+                            <span class="truncate">{label}</span>
+                        </div>
+                        {kids}
+                    }
+                    .into_any()
+                }
+                // A merged-tree leaf: resolve its palette from the live row so the press arms the
+                // right `editor_ops` verb (character vs vehicle vs object), then record it as
+                // recently-placed. A row whose id is no longer in the catalogue (a modpack switched
+                // off mid-session) resolves to no palette and renders as an inert label — the same
+                // honesty the Favourites stale row shows, rather than a leaf that arms nothing.
+                Some(payload) => {
+                    let star =
+                        favourite_star(favourites, payload.asset_id.clone(), payload.role.clone());
+                    let glyph_kind = registry_items
+                        .with_untracked(|opt| {
+                            opt.as_ref().and_then(|items| {
+                                crate::asset_catalog::find_catalog_item(items, &payload.asset_id)
+                                    .and_then(crate::asset_catalog::placeable_palette)
+                                    .map(PaletteKind::from_catalog)
+                            })
+                        })
+                        .unwrap_or(PaletteKind::Character);
+                    let press_payload = payload.clone();
+                    view! {
+                    <div class="group relative flex items-center gap-1">
+                    <button
+                        type="button"
+                        aria-label=aria
+                        title=glyph_kind.leaf_title()
+                        class=format!("{PALETTE_LEAF} min-w-0 flex-1")
+                        on:pointerdown=move |_| {
+                            // Resolve the palette LIVE at press time (not the cached glyph): the arm
+                            // must reflect the catalogue as it is now, and `placeable_palette` is the
+                            // same gate the tree offered the leaf through.
+                            #[cfg(target_arch = "wasm32")]
+                            {
+                                let palette = registry_items.with_untracked(|opt| {
+                                    opt.as_ref().and_then(|items| {
+                                        crate::asset_catalog::find_catalog_item(
+                                            items,
+                                            &press_payload.asset_id,
+                                        )
+                                        .and_then(crate::asset_catalog::placeable_palette)
+                                    })
+                                });
+                                if let Some(palette) = palette {
+                                    arm_favourite_place(palette, press_payload.clone());
+                                    record_recent(
+                                        recent,
+                                        press_payload.asset_id.clone(),
+                                        press_payload.role.clone(),
+                                    );
+                                }
+                            }
+                            #[cfg(not(target_arch = "wasm32"))]
+                            let _ = (&press_payload, recent, registry_items);
+                        }
+                    >
+                        {guide_spans(&anc, &gids, collapsed)}
+                        <span class="size-4 shrink-0"></span>
+                        <MaterialIcon name=glyph_kind.leaf_icon() class="block text-sm" />
+                        <span class="truncate">{label}</span>
+                    </button>
+                    {star}
+                    </div>
+                    }
+                    .into_any()
+                }
+            }
+        })
+        .collect::<Vec<_>>()
+        .into_any()
+}
+
 // ── T-180.5 — Eden side chips (no F1–F6, no CIV) ─────────────────────────────────────────────────
 
 /// Ordered chip labels the DockRight row iterates. Gate E1/E5 pin this exact list.
@@ -1001,6 +1204,111 @@ fn favourites_panel(
     .into_any()
 }
 
+/// T-809 (F-22) — the **Recently-placed** subtab (Eden's History): the session's placements,
+/// most-recent-first. Each row arms the identical place a fresh palette leaf would (resolved LIVE
+/// against the registry, so a row whose asset left the catalogue mid-session renders disabled rather
+/// than arming nothing) and re-places bump it back to the head. No star column and no unstar — this
+/// list is automatic, not curated (that is Favourites' job); the only affordance is "place it again".
+///
+/// Session-scoped: it starts empty every mount and persists nothing (see the `record_recent` block).
+/// It is fed by a merged-palette / Vehicles leaf press; a composition stamp and the ORBAT Add-Vehicle
+/// commit outside this dock's reach and so are not listed (stated at `record_recent`).
+fn recently_placed_panel(
+    recent: RwSignal<Vec<RecentPlaced>>,
+    registry_items: RwSignal<Option<Vec<RegistryItem>>>,
+) -> AnyView {
+    view! {
+        <h3 class="mt-2 text-label-md font-semibold text-on-surface">"Recently placed"</h3>
+        <p class="mt-0.5 text-label-sm normal-case text-outline">
+            "Assets you placed this session, newest first. Click one to place it again."
+        </p>
+        {move || {
+            let rows = recent.get();
+            if rows.is_empty() {
+                return view! {
+                    <p class="mt-2 text-label-sm text-outline">
+                        "Nothing placed yet this session."
+                    </p>
+                }
+                .into_any();
+            }
+            let items = registry_items.get().unwrap_or_default();
+            view! {
+                <ul class="mt-2 flex flex-col gap-0.5">
+                    {rows
+                        .into_iter()
+                        .map(|r| {
+                            // Resolve LIVE: a recent entry arms only if its row is still placeable.
+                            let palette = crate::asset_catalog::find_catalog_item(&items, &r.asset_id)
+                                .and_then(crate::asset_catalog::placeable_palette);
+                            let label = r.label.clone();
+                            match palette {
+                                Some(palette) => {
+                                    let kind = PaletteKind::from_catalog(palette);
+                                    let payload = crate::asset_catalog::PlacePayload {
+                                        asset_id: r.asset_id.clone(),
+                                        role: r.label.clone(),
+                                    };
+                                    let aria = label.clone();
+                                    view! {
+                                        <li class="relative flex items-center gap-1">
+                                            <button
+                                                type="button"
+                                                aria-label=aria
+                                                title=kind.leaf_title()
+                                                class=format!("{PALETTE_LEAF} min-w-0 flex-1")
+                                                on:pointerdown=move |_| {
+                                                    #[cfg(target_arch = "wasm32")]
+                                                    {
+                                                        arm_favourite_place(palette, payload.clone());
+                                                        record_recent(
+                                                            recent,
+                                                            payload.asset_id.clone(),
+                                                            payload.role.clone(),
+                                                        );
+                                                    }
+                                                    #[cfg(not(target_arch = "wasm32"))]
+                                                    let _ = (&payload, recent);
+                                                }
+                                            >
+                                                <MaterialIcon name=kind.leaf_icon() class="block text-sm" />
+                                                <span class="truncate">{label}</span>
+                                            </button>
+                                        </li>
+                                    }
+                                    .into_any()
+                                }
+                                // The asset left the catalogue this session — show it named and
+                                // disabled, not a leaf that arms nothing (the Favourites-stale idiom).
+                                None => {
+                                    let aria = format!("{label} — not in the current catalogue");
+                                    view! {
+                                        <li class="relative flex items-center gap-1">
+                                            <button
+                                                type="button"
+                                                disabled=true
+                                                aria-label=aria
+                                                title="This asset is not in the catalogue the editor loaded."
+                                                class="relative flex flex-1 cursor-not-allowed items-center gap-1.5 rounded px-1.5 py-1 text-left text-label-sm text-outline opacity-70"
+                                            >
+                                                <MaterialIcon name="warning" class="block text-sm" />
+                                                <span class="truncate line-through">{label}</span>
+                                            </button>
+                                        </li>
+                                    }
+                                    .into_any()
+                                }
+                            }
+                        })
+                        .collect_view()}
+                </ul>
+            }
+            .into_any()
+        }}
+    }
+    .into_any()
+}
+
 // ── T-637 — the tab strip, as a WIDTH BUDGET ─────────────────────────────────────────────────────
 //
 // The strip's cells and its gaps are consts rather than inline class strings so
@@ -1021,6 +1329,11 @@ const TAB_CELL_OFF: &str = "flex size-5 shrink-0 items-center justify-center rou
 /// verb, not an eighth tab).
 const TAB_CELL_VERB: &str =
     "flex size-5 shrink-0 items-center justify-center rounded text-primary transition-colors hover:bg-primary/15";
+/// T-809 — the Favourites|History subtab pair's selected pill (a text pill, not a glyph cell: two
+/// words fit inside the tab body where the glyph strip above does not have the room).
+const SUBTAB_ON: &str = "rounded px-2 py-0.5 text-label-sm font-medium text-primary bg-primary/15";
+/// T-809 — the subtab pill at rest.
+const SUBTAB_OFF: &str = "rounded px-2 py-0.5 text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface";
 /// T-637 — how many TAB cells the strip renders (Factions · Vehicles · Zones · Compositions ·
 /// Triggers · Favourites · Markers). Stated so the budget test costs a compile error to get wrong,
 /// and pinned against the actual `tab_btn` call count in the view.
@@ -1051,7 +1364,7 @@ fn tab_icon(i: usize) -> &'static str {
         3 => "crop_free",      // Zones — a drawn area
         4 => "dashboard",      // Compositions — prefab clusters
         5 => "bolt",           // Triggers — activation
-        6 => "star",           // Favourites — the starred collection
+        6 => "star",           // Favourites + Recently-placed (Assets|History pair, T-809)
         _ => "help",
     }
 }
@@ -1283,6 +1596,29 @@ pub fn DockRight(
     // because it is a per-user editor preference, not mission state: nothing in the document, in
     // `editor_ops` or on the wire knows or should know what an author has starred.
     let favourites = RwSignal::new(load_favourites());
+    // T-809 (F-22) — the session recently-placed list (Eden's History half of the Assets|History
+    // pair). Dock-local and NOT persisted: it is within-a-sitting convenience, not authored state.
+    // Fed by a merged-palette leaf press (see `record_recent`); read by the History subtab.
+    let recent_placed = RwSignal::new(Vec::<RecentPlaced>::new());
+    // T-809 — which half of the Favourites|History tab pair is showing (Eden's Assets|History). The
+    // pair lives under ONE tab rather than an eighth strip cell: the strip is glyph-tight (T-637), and
+    // Eden itself pairs the starred collection with the recent list under one surface.
+    let history_open = RwSignal::new(false);
+    // T-809 — the merged Factions tree's collapse set, seeded (rule 3) whenever the side-filtered tree
+    // rebuilds. Its own set, not `palette_collapsed`: that one is seeded from the character-only
+    // `catalog` signal, whose folder ids are a subset of the merged tree's.
+    let faction_collapsed = RwSignal::new(std::collections::HashSet::<String>::new());
+    Effect::new(move |_| {
+        // Re-seed on a chip flip or a registry (re)load — the merged tree is derived from the raw
+        // rows the dock already holds, so it need not wait on the character-only `catalog` signal.
+        let side = active_side.get();
+        if let Some(items) = registry_items.get() {
+            let nodes = crate::asset_catalog::build_faction_catalog_tree(&items, &side);
+            let mut set = std::collections::HashSet::new();
+            collapsed_seed(&nodes, &mut set);
+            faction_collapsed.set(set);
+        }
+    });
     // T-800 — the CAUSE of a `/registry` failure, so the Factions/Vehicles Failed arms can name it
     // instead of a flat "Could not load the catalog." The editor's cold fetch (mission_editor.rs,
     // T-788-owned) collapses every error to a unit `CatalogState::Failed` + `registry_failed`, so
@@ -1540,28 +1876,43 @@ pub fn DockRight(
                                         registry_no_modpack,
                                         registry_fetch_gen,
                                     ),
-                                    CatalogState::Ready(nodes) if nodes.is_empty() => {
-                                        view! {
-                                            <p class="text-label-sm text-outline">"No placeable assets."</p>
+                                    // T-809 (F-22) — the MERGED Factions tree: build it from the raw
+                                    // rows the dock holds, side-filtered by the chips, so characters
+                                    // and vehicles (and catalogued objects) sit under one faction.
+                                    // `catalog` (the character-only signal) still drives the STATE
+                                    // arms above — it is the fetch's Loading/Failed/Ready oracle; only
+                                    // the tree the Ready arm DRAWS comes from `build_faction_catalog_tree`.
+                                    CatalogState::Ready(_) => {
+                                        let items = registry_items.get().unwrap_or_default();
+                                        let side = active_side.get();
+                                        let nodes = crate::asset_catalog::build_faction_catalog_tree(
+                                            &items, &side,
+                                        );
+                                        if nodes.is_empty() {
+                                            return view! {
+                                                <p class="text-label-sm text-outline">"No placeable assets."</p>
+                                            }
+                                            .into_any();
                                         }
-                                            .into_any()
-                                    }
-                                    CatalogState::Ready(nodes) => {
                                         let q = search.get();
                                         if q.trim().is_empty() {
                                             // Track the collapse set so a chevron toggle re-renders the
-                                            // tree (palette_rows reads it untracked).
-                                            palette_collapsed.track();
-                                            palette_rows(
+                                            // tree (faction_palette_rows reads it untracked).
+                                            faction_collapsed.track();
+                                            faction_palette_rows(
                                                 &nodes,
                                                 0,
                                                 &[],
                                                 &[],
-                                                palette_collapsed,
-                                                PaletteKind::Character,
+                                                faction_collapsed,
                                                 favourites,
+                                                registry_items,
+                                                recent_placed,
                                             )
                                         } else {
+                                            // Search spans the MERGED tree — `class:`/`mod:` reach the
+                                            // vehicle leaves now inside the faction (filter_catalog is
+                                            // kind-agnostic; it runs over whatever tree it is handed).
                                             let filtered =
                                                 crate::asset_catalog::filter_catalog(&nodes, &q);
                                             if filtered.is_empty() {
@@ -1575,14 +1926,15 @@ pub fn DockRight(
                                                 }
                                                     .into_any()
                                             } else {
-                                                palette_rows(
+                                                faction_palette_rows(
                                                     &filtered,
                                                     0,
                                                     &[],
                                                     &[],
                                                     no_collapse,
-                                                    PaletteKind::Character,
                                                     favourites,
+                                                    registry_items,
+                                                    recent_placed,
                                                 )
                                             }
                                         }
@@ -1596,10 +1948,24 @@ pub fn DockRight(
                     // A leaf drop writes a `vehiclesById` row at the world point, owned by whichever
                     // Eden side the Factions tab's chips have selected (`active_side`) — the chips are
                     // not repeated here because there is one active side per editor, not per tab.
+                    //
+                    // T-809 (F-22) — DECISION: the Vehicles tab is KEPT as a FILTERED VIEW, not
+                    // retired. Every vehicle is now also reachable inside its faction on the Factions
+                    // tab (the merged tree), so this tab's job narrows to "all placeable vehicles at
+                    // once, across factions" — a kind-filtered cross-cut of the same catalogue, which
+                    // is exactly what `vehicle_catalog` (the `kind == "vehicle"` half of the fetch)
+                    // already is. It is kept rather than retired for two concrete reasons: (1) it is
+                    // the surface that hosts the placed-vehicle CREW editor strip below
+                    // (`placed_vehicles_panel`), which T-818/W210 rehomes — deleting the tab now would
+                    // leave crew editing homeless for a wave (the eye-pass fold's stopgap); (2) the
+                    // ORBAT picker reads vehicles through `registry_vehicle_options` off the RAW rows,
+                    // not through this tab, so the data path the picker needs is unaffected either way.
+                    // Its leaves render through `faction_palette_rows` too, so placing from here also
+                    // feeds recently-placed and resolves its arm the same way the merged tree does.
                     1 => view! {
                         <h3 class="mt-2 text-label-md font-semibold text-on-surface">"Vehicles"</h3>
                         <p class="mt-0.5 text-label-sm normal-case text-outline">
-                            "Drag a vehicle onto the map to place it."
+                            "Every placeable vehicle, across factions — a filtered view of the catalog. Drag one onto the map to place it."
                         </p>
                         <input
                             type="search"
@@ -1660,14 +2026,18 @@ pub fn DockRight(
                                         let q = vehicle_search.get();
                                         if q.trim().is_empty() {
                                             vehicle_collapsed.track();
-                                            palette_rows(
+                                            // T-809 — render through the merged-tree path so a place
+                                            // from here feeds recently-placed and resolves its arm the
+                                            // same way (every leaf here is a vehicle → Vehicle arm).
+                                            faction_palette_rows(
                                                 &nodes,
                                                 0,
                                                 &[],
                                                 &[],
                                                 vehicle_collapsed,
-                                                PaletteKind::Vehicle,
                                                 favourites,
+                                                registry_items,
+                                                recent_placed,
                                             )
                                         } else {
                                             let filtered =
@@ -1682,14 +2052,15 @@ pub fn DockRight(
                                                 }
                                                     .into_any()
                                             } else {
-                                                palette_rows(
+                                                faction_palette_rows(
                                                     &filtered,
                                                     0,
                                                     &[],
                                                     &[],
                                                     no_collapse,
-                                                    PaletteKind::Vehicle,
                                                     favourites,
+                                                    registry_items,
+                                                    recent_placed,
                                                 )
                                             }
                                         }
@@ -1713,14 +2084,46 @@ pub fn DockRight(
                     // one's name / activation / owner link / rules. The owner-link line renders while
                     // a trigger is selected.
                     5 => triggers_panel(doc_tick, trigger_selected),
-                    // T-695 — the Favourites collection (NEW-F5 / 3den E3): starred assets from
-                    // every palette, resolved against the live registry rows.
-                    6 => favourites_panel(
-                        favourites,
-                        registry_items,
-                        registry_failed,
-                        registry_fetch_gen,
-                    ),
+                    // T-695 / T-809 — the Favourites + Recently-placed PAIR (Eden's Assets|History).
+                    // One tab, two subtabs: Favourites is the manual starred collection (T-695);
+                    // History is the automatic session recently-placed list (T-809, F-22). The pair
+                    // shares a tab rather than adding an eighth strip cell — the strip is glyph-tight
+                    // (T-637), and Eden itself pairs these two under one surface.
+                    6 => view! {
+                        <div class="mt-2 flex items-center gap-0.5" role="tablist" aria-label="Assets and history">
+                            <button
+                                type="button"
+                                role="tab"
+                                aria-selected=move || (!history_open.get()).to_string()
+                                class=move || if history_open.get() { SUBTAB_OFF } else { SUBTAB_ON }
+                                on:click=move |_| history_open.set(false)
+                            >
+                                "Favourites"
+                            </button>
+                            <button
+                                type="button"
+                                role="tab"
+                                aria-selected=move || history_open.get().to_string()
+                                class=move || if history_open.get() { SUBTAB_ON } else { SUBTAB_OFF }
+                                on:click=move |_| history_open.set(true)
+                            >
+                                "Recently placed"
+                            </button>
+                        </div>
+                        {move || {
+                            if history_open.get() {
+                                recently_placed_panel(recent_placed, registry_items)
+                            } else {
+                                favourites_panel(
+                                    favourites,
+                                    registry_items,
+                                    registry_failed,
+                                    registry_fetch_gen,
+                                )
+                            }
+                        }}
+                    }
+                        .into_any(),
                     // T-069 (RIGHT-MODE-006) — the Markers palette, replacing the one-line stub
                     // that had stood here since the dock was written. `EdenSubmode::Markers` and
                     // `from_tab(2)` were already in place; only the BODY was missing.
@@ -3350,9 +3753,9 @@ pub(crate) fn markers_panel(
 mod tests {
     use super::{
         apply_eden_chip, custom_chip_visible, default_marker_icon, eden_chip_selected,
-        filter_marker_icons, marker_icon_is_authorable, marker_icons, EdenChip, EdenSubmode,
-        EDEN_CUSTOM_CHIP, EDEN_SIDE_CHIPS, MISSION_SCHEMA_JSON, SEARCH_GRAMMAR_HINT,
-        SEARCH_PLACEHOLDER_GRAMMAR,
+        filter_marker_icons, marker_icon_is_authorable, marker_icons, push_recent_into, EdenChip,
+        EdenSubmode, RecentPlaced, EDEN_CUSTOM_CHIP, EDEN_SIDE_CHIPS, FAVOURITES_MAX,
+        MISSION_SCHEMA_JSON, SEARCH_GRAMMAR_HINT, SEARCH_PLACEHOLDER_GRAMMAR,
     };
     use leptos::prelude::*;
 
@@ -4431,9 +4834,15 @@ mod tests {
             SRC.contains(&format!("tab_btn(6, {:?})", "Favourites")),
             "a Favourites tab must be in the tab strip"
         );
+        // T-809 — tab 6 became the Favourites|History PAIR: its arm is now `6 => view! { … }` and it
+        // dispatches `favourites_panel` from WITHIN that arm (behind the `history_open` subtab), not
+        // as a bare `6 => favourites_panel(`. The T-695 contract is unchanged — favourites is wired
+        // and dispatched from tab 6 — so the needle tracks the pair shape. That the pair also renders
+        // the recently-placed panel is pinned by `favourites_and_history_share_one_tab`.
         assert!(
-            SRC.contains(&format!("6 => {}(", "favourites_panel")),
-            "tab 6 must dispatch the favourites panel"
+            SRC.contains(&format!("6 => {}", "view! {"))
+                && SRC.contains(&format!("{}(\n", "favourites_panel")),
+            "tab 6 must dispatch the favourites panel (now from within the Favourites|History pair)"
         );
         // The star/unstar verb reaches every palette leaf (Factions, Vehicles and Objects all go
         // through `palette_rows`).
@@ -4600,6 +5009,140 @@ mod tests {
         assert!(
             dock.contains("search_grammar_hint"),
             "T-800: the hint must remain for the healthy state — it is filter help, not chrome"
+        );
+    }
+
+    // ── T-809 (F-22) — one asset tree per faction + recently-placed + the Vehicles-tab decision ────
+
+    /// The recently-placed list is most-recent-first, dedups by asset id (a re-place bumps the
+    /// existing entry to the head rather than duplicating it), and is capped. Pure over the list, so
+    /// this pins the ordering/dedup/cap contract directly (no reactive runtime needed).
+    #[test]
+    fn recently_placed_is_head_first_deduped_and_capped() {
+        let mut list: Vec<RecentPlaced> = Vec::new();
+        push_recent_into(&mut list, "a".into(), "Alpha".into());
+        push_recent_into(&mut list, "b".into(), "Bravo".into());
+        // Newest first.
+        assert_eq!(
+            list.iter().map(|r| r.asset_id.as_str()).collect::<Vec<_>>(),
+            vec!["b", "a"],
+            "placing puts the asset at the HEAD of recently-placed"
+        );
+        // Re-placing `a` moves it back to the head, and does NOT duplicate it.
+        push_recent_into(&mut list, "a".into(), "Alpha".into());
+        assert_eq!(
+            list.iter().map(|r| r.asset_id.as_str()).collect::<Vec<_>>(),
+            vec!["a", "b"],
+            "a re-place bumps the existing entry to the head (dedup by id)"
+        );
+        assert_eq!(list.len(), 2, "no duplicate row for a re-placed asset");
+        // Cap holds: pushing past FAVOURITES_MAX distinct ids never grows the list beyond the cap.
+        for n in 0..(FAVOURITES_MAX + 20) {
+            push_recent_into(&mut list, format!("id{n}"), format!("Item {n}"));
+        }
+        assert_eq!(
+            list.len(),
+            FAVOURITES_MAX,
+            "the session list is capped at FAVOURITES_MAX"
+        );
+    }
+
+    /// THE MERGE: the Factions tab (tab 0) draws the MERGED per-faction tree, not the character-only
+    /// `catalog` nodes — so a vehicle leaf is reachable inside its faction. The Ready arm builds the
+    /// tree via `build_faction_catalog_tree` and renders it through `faction_palette_rows`; the old
+    /// `palette_rows(… PaletteKind::Character …)` character-only draw is gone from the Factions arm.
+    #[test]
+    fn factions_tab_draws_the_merged_tree() {
+        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        let code = live_code(include_str!("eden_dock_right.rs"));
+        let dock = only_body(&code, "pub fn DockRight(");
+        assert!(
+            dock.contains("build_faction_catalog_tree("),
+            "T-809: the Factions tab must build the merged per-faction tree"
+        );
+        assert!(
+            dock.contains("faction_palette_rows("),
+            "T-809: the merged tree must render through faction_palette_rows (per-leaf kind resolution)"
+        );
+        // The merged tree is side-filtered by the chips: the Factions arm passes `active_side` into
+        // the builder, so a chip flip rebuilds the ONE tree (side chips keep filtering the merged
+        // tree, per the trap note). The builder itself is pinned natively in `asset_catalog`.
+        assert!(
+            dock.contains("active_side.get()"),
+            "T-809: the merged tree must read active_side so the chips filter the one tree"
+        );
+    }
+
+    /// The recently-placed list is FED by a merged-palette leaf press: `faction_palette_rows` records
+    /// the placement (`record_recent`) at the same press that arms it. This is the reachable seam — a
+    /// composition stamp and the ORBAT Add-Vehicle commit outside this file and cannot feed it.
+    #[test]
+    fn a_merged_leaf_press_feeds_recently_placed() {
+        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        let code = live_code(include_str!("eden_dock_right.rs"));
+        let rows = only_body(&code, "fn faction_palette_rows(");
+        assert!(
+            rows.contains("arm_favourite_place(") && rows.contains("record_recent("),
+            "T-809: a merged-tree leaf press must arm the place AND record it as recently-placed"
+        );
+        // The record is the pure head-first transform (dedup + cap), reached via the signal wrapper.
+        let rec = only_body(&code, "fn record_recent(");
+        assert!(
+            rec.contains("push_recent_into("),
+            "T-809: record_recent must go through the pure head-first/dedup/cap transform"
+        );
+    }
+
+    /// The Favourites|History PAIR (Eden's Assets|History): tab 6 hosts BOTH the manual Favourites
+    /// collection and the automatic recently-placed list, toggled by a subtab — the recent list sits
+    /// ALONGSIDE Favourites, per the summary, rather than adding an eighth glyph to the tight strip.
+    #[test]
+    fn favourites_and_history_share_one_tab() {
+        use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+        let code = live_code(include_str!("eden_dock_right.rs"));
+        let dock = only_body(&code, "pub fn DockRight(");
+        // Tab 6 calls BOTH panels behind the `history_open` toggle.
+        assert!(
+            dock.contains("favourites_panel(") && dock.contains("recently_placed_panel("),
+            "T-809: tab 6 must render both Favourites and the recently-placed panel"
+        );
+        assert!(
+            dock.contains("history_open"),
+            "T-809: a subtab toggle selects Favourites vs History within the one tab"
+        );
+        // The subtab is user-visible copy (on live_source: literals kept, comments cut).
+        let sourced = live_source(include_str!("eden_dock_right.rs"));
+        assert!(
+            sourced.contains("\"Recently placed\""),
+            "T-809: the History subtab must be labelled for the operator"
+        );
+    }
+
+    /// THE VEHICLES-TAB DECISION, PINNED: the tab is KEPT (as a filtered view), not retired — its
+    /// arm still exists (`1 => view!`) and it still hosts the placed-vehicle crew editor strip
+    /// (`placed_vehicles_panel`, the eye-pass fold's one-wave stopgap). Its leaves render through the
+    /// recent-feeding path too, so placing from it also updates recently-placed.
+    #[test]
+    fn vehicles_tab_is_kept_as_a_filtered_view_with_the_crew_strip() {
+        use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+        let code = live_code(include_str!("eden_dock_right.rs"));
+        let dock = only_body(&code, "pub fn DockRight(");
+        assert!(
+            dock.contains("placed_vehicles_panel("),
+            "T-809 fold(d): the Vehicles tab must keep the placed-vehicle crew editor this wave"
+        );
+        // Its palette renders through the recent-feeding path (so a vehicle place updates history);
+        // the old vehicle draw named `PaletteKind::Vehicle`, the merged path resolves per-leaf.
+        let vehicles_uses_faction_rows = dock.matches("faction_palette_rows(").count() >= 3; // 2 Factions arms + ≥1 Vehicles arm
+        assert!(
+            vehicles_uses_faction_rows,
+            "T-809: the Vehicles tab must render through faction_palette_rows so a place feeds history"
+        );
+        // The tab is present in the strip and labelled (kept, not retired).
+        let sourced = live_source(include_str!("eden_dock_right.rs"));
+        assert!(
+            sourced.contains("tab_btn(1, \"Vehicles\")"),
+            "T-809: the Vehicles tab button is kept in the strip (the decision is 'filtered view')"
         );
     }
 
