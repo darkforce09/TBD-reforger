@@ -425,6 +425,56 @@ pub fn normalize_clock(s: &str) -> Option<String> {
     hhmm_to_minutes(s).map(minutes_to_hhmm)
 }
 
+/* ───────────────── T-804 (F-24) — the "draft saved Ns ago" recency label ───────────────── */
+
+/// T-804 — the full chip text for a completed draft flush that happened `elapsed_ms` ago.
+///
+/// The instant comes from [`crate::yrs_persist::last_flush_ms`] (a REAL completed flush — the T-779
+/// ack discipline), and this turns "now − then" into the F-24 pre-approved copy: **"Draft saved"**
+/// plus a coarse recency. The recency is deliberately whole-unit and monotone-degrading — seconds,
+/// then minutes, then hours — because it is refreshed off a 1 s coarse tick (never a per-frame
+/// timer), so anything finer than a second would claim a precision the tick cannot honour.
+///
+/// A negative or sub-`RECENCY_JUST_NOW_MS` gap reads "just now": clock skew (the flush stamp and
+/// `Date.now()` are both wall-clock and can cross a resync) must degrade to the harmless reading, not
+/// a "-3s ago". Pure and native-testable on purpose — the acceptance's "recency <=6s after an edit"
+/// and "counts up over 30s idle" are properties of THIS function, checked without a browser.
+#[must_use]
+pub fn format_draft_recency(elapsed_ms: f64) -> String {
+    format!("Draft saved {}", draft_recency_phrase(elapsed_ms))
+}
+
+/// Under this gap the chip says "just now" rather than "0s ago" / "1s ago". Also the floor that
+/// absorbs backwards clock skew (a resync between the flush stamp and the render tick).
+const RECENCY_JUST_NOW_MS: f64 = 5_000.0;
+
+/// The recency phrase alone (no "Draft saved " prefix) — split out so the pin can assert the ladder
+/// without threading the prefix through every case.
+fn draft_recency_phrase(elapsed_ms: f64) -> String {
+    // The negative/near-zero band — and a NaN from a degenerate clock read — degrade to "just now".
+    // Past that floor `elapsed_ms` is finite and >= 5000, so `as u64` is the saturating cast we want
+    // (no `f64→int` UB).
+    if elapsed_ms.is_nan() || elapsed_ms < RECENCY_JUST_NOW_MS {
+        return "just now".to_string();
+    }
+    let secs = (elapsed_ms / 1_000.0) as u64;
+    if secs < 60 {
+        format!("{secs}s ago")
+    } else if secs < 3_600 {
+        format!("{}m ago", secs / 60)
+    } else {
+        format!("{}h ago", secs / 3_600)
+    }
+}
+
+/// T-804 — the chip's hover copy: the two-layer save model in one sentence (F-24 pre-approved
+/// wording). `local draft` (this, automatic, in this browser) versus `Save Version` (the durable
+/// library entry). Author-facing, so it names neither IndexedDB nor the debounce — it answers the
+/// only question the chip raises: "is this the same as saving?"
+const DRAFT_CHIP_TOOLTIP: &str = "Your work is auto-saved as a local draft in this browser, so \
+     closing the tab will not cost you the session — use Save Version to publish a durable version \
+     to the mission library.";
+
 /// Is the route `:id` a real mission row? T-192.
 ///
 /// The editor also mounts on synthetic ids — `mission_editor` falls back to `draft`, and the gate
@@ -948,6 +998,50 @@ pub fn TopCommandStrip(
     // strip because the Save dialog is the only place they are read; `save_status` stays a
     // one-liner because it also renders in the strip itself.
     let save_findings = RwSignal::new(Vec::<String>::new());
+    // T-804 (F-24) — the draft-safety chip's two inputs, both created HERE where the component has a
+    // reactive owner (`yrs_persist` runs in detached timers and has none, so it cannot create these):
+    //   * `last_flush` — the epoch-ms of the last COMPLETED draft flush, `None` until one lands.
+    //     Handed to `yrs_persist::set_last_flush_signal`, which seeds it from the module's ack cell
+    //     and thereafter `.set()`s it on every real flush. `None` ⇒ no flush yet ⇒ never-edited ⇒ no
+    //     chip; a value ⇒ the chip renders "Draft saved Ns ago". This is not a second dirtiness
+    //     source — the flush is downstream of the same edit that arms the dirty dot.
+    //   * `recency_tick` — a COARSE 1 s heartbeat the "Ns ago" text reads so it counts up while the
+    //     author sits idle. A 1 s interval, not a per-frame RAF (the strip must not grow a per-frame
+    //     timer): the recency is whole-seconds, so 1 Hz is exactly enough and no finer.
+    let last_flush = RwSignal::new(None::<f64>);
+    let recency_tick = RwSignal::new(0u32);
+    // `yrs_persist` is wasm32-only (IndexedDB), so the install — and thus the chip's data — exists
+    // only in the browser. On the native view shell `last_flush` stays `None`, so the chip's `move ||`
+    // renders nothing, which is the correct native behaviour (there is no draft store to report on).
+    #[cfg(target_arch = "wasm32")]
+    crate::yrs_persist::set_last_flush_signal(last_flush);
+    #[cfg(target_arch = "wasm32")]
+    {
+        use wasm_bindgen::JsCast;
+        // The coarse heartbeat. Bumps `recency_tick` once a second so the chip's `move ||` re-runs and
+        // re-derives "Ns ago" from `Date.now()`. The closure is `.forget()`ed (like the strip's other
+        // window handlers — `on_cleanup` is `Send + Sync`-bound and a `Closure` is `!Send`, the
+        // `mission_history` T-189 trap), and the interval is CLEARED on route-leave via its handle:
+        // `handle` is a plain `i32` (Copy, Send), so the cleanup captures no `!Send` state. After the
+        // clear the leaked closure is inert — it never fires against a disposed `recency_tick` again.
+        if let Some(win) = web_sys::window() {
+            let cb = wasm_bindgen::closure::Closure::<dyn FnMut()>::new(move || {
+                recency_tick.update(|n| *n = n.wrapping_add(1));
+            });
+            let handle = win
+                .set_interval_with_callback_and_timeout_and_arguments_0(
+                    cb.as_ref().unchecked_ref(),
+                    1_000,
+                )
+                .unwrap_or(0);
+            cb.forget();
+            on_cleanup(move || {
+                if let Some(w) = web_sys::window() {
+                    w.clear_interval_with_handle(handle);
+                }
+            });
+        }
+    }
     #[cfg(target_arch = "wasm32")]
     {
         let esc = window_event_listener(leptos::ev::keydown, move |ev| {
@@ -1530,6 +1624,38 @@ pub fn TopCommandStrip(
                             </span>
                         }
                     })}
+                // T-804 (F-24) — the draft-safety chip. Anchored INLINE right after the dirty dot
+                // (NOT fixed: a `position:fixed` descendant would resolve against the strip's
+                // `backdrop-filter` containing block, the T-789 trap). A passive readout — no Escape
+                // consumer, no modal_stack entry. It renders only when a real draft flush has landed
+                // (`last_flush.is_some()`), so a never-edited mission shows nothing; the recency
+                // recomputes off the 1 s `recency_tick`, never a per-frame timer.
+                {move || {
+                    recency_tick.track();
+                    last_flush
+                        .get()
+                        .map(|ts| {
+                            #[cfg(target_arch = "wasm32")]
+                            let elapsed = js_sys::Date::now() - ts;
+                            #[cfg(not(target_arch = "wasm32"))]
+                            let elapsed = {
+                                let _ = ts;
+                                0.0
+                            };
+                            let label = format_draft_recency(elapsed);
+                            let aria = label.clone();
+                            view! {
+                                <span
+                                    class="ml-2 shrink-0 whitespace-nowrap text-label-sm text-on-surface-variant"
+                                    title=DRAFT_CHIP_TOOLTIP
+                                    aria-label=aria
+                                    data-draft-chip
+                                >
+                                    {label}
+                                </span>
+                            }
+                        })
+                }}
             </div>
             // T-659 — per-side slot census + generated summary line. Same mono / tabular-nums /
             // `title=`-hook idiom as the `eden_toolbelt` StatusBar OBJ/SEL readout it mirrors, on the
@@ -2444,9 +2570,9 @@ pub fn summary_line(census: &SlotCensus, terrain: &str, mode: Option<&str>) -> S
 #[cfg(test)]
 mod tests {
     use super::{
-        census_from_rows, hhmm_to_minutes, is_mission_row_id, minutes_to_hhmm,
-        mirror_failure_message, normalize_clock, summary_line, MirrorState, SlotCensus,
-        CENSUS_SIDES, MIRROR_DEBOUNCE_MS, MIRROR_TIME, MIRROR_WEATHER,
+        census_from_rows, draft_recency_phrase, format_draft_recency, hhmm_to_minutes,
+        is_mission_row_id, minutes_to_hhmm, mirror_failure_message, normalize_clock, summary_line,
+        MirrorState, SlotCensus, CENSUS_SIDES, MIRROR_DEBOUNCE_MS, MIRROR_TIME, MIRROR_WEATHER,
     };
     use crate::outliner::{FactionRow, SquadRow};
 
@@ -2520,6 +2646,32 @@ mod tests {
         for bad in ["", "2", "24:00", "12:60", "noon", "12:00:00:00"] {
             assert_eq!(normalize_clock(bad), None, "{bad:?} must not be PATCHed");
         }
+    }
+
+    /// T-804 (F-24) — the draft-safety chip's recency ladder, the property the scripted acceptance
+    /// asserts against: "recency <=6s after an edit" and "counts up over 30s idle" are statements
+    /// about THIS pure function, so they are proven here without a browser.
+    #[test]
+    fn draft_recency_reads_up_the_ladder() {
+        // The sub-5s / negative band degrades to "just now" — the acceptance's "chip shows 'draft
+        // saved'" at <=6s recency is this arm plus the "6s ago" one below (both begin "Draft saved").
+        assert_eq!(draft_recency_phrase(0.0), "just now");
+        assert_eq!(draft_recency_phrase(4_999.0), "just now");
+        // Backwards clock skew must not print "-3s ago"; it floors to "just now".
+        assert_eq!(draft_recency_phrase(-3_000.0), "just now");
+        // Seconds — the band the acceptance's <=6s recency lands in once past the just-now floor.
+        assert_eq!(draft_recency_phrase(5_000.0), "5s ago");
+        assert_eq!(draft_recency_phrase(6_000.0), "6s ago");
+        assert_eq!(draft_recency_phrase(59_000.0), "59s ago");
+        // It COUNTS UP: 30 s idle after a flush reads a larger number than 6 s did — monotone.
+        assert_eq!(draft_recency_phrase(30_000.0), "30s ago");
+        // Minutes, then hours — whole units only (1 Hz tick, no finer claim).
+        assert_eq!(draft_recency_phrase(60_000.0), "1m ago");
+        assert_eq!(draft_recency_phrase(3_599_000.0), "59m ago");
+        assert_eq!(draft_recency_phrase(3_600_000.0), "1h ago");
+        // The full chip text carries the F-24 pre-approved "Draft saved " prefix.
+        assert_eq!(format_draft_recency(6_000.0), "Draft saved 6s ago");
+        assert_eq!(format_draft_recency(0.0), "Draft saved just now");
     }
 
     /// T-746 — the row-id predicate is crate-visible so `eden_settings` does not keep a twin.
