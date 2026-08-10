@@ -3517,6 +3517,257 @@ pub fn filter_marker_icons(query: &str) -> Vec<&'static str> {
         .collect()
 }
 
+// ── T-806 (F-08) — one picker row per CANONICAL icon ─────────────────────────────────────────────
+//
+// F-08: the picker was 64 rows of raw schema slugs, every one wearing the same generic `place` pin,
+// the human name truncated to "Ob…" while the slug got the width, and case-duplicates
+// (Waypoint/waypoint, Objective/Obj/Target, mark/marker/point) rendered as separate rows. Choosing
+// by sight was impossible. The fix collapses the DISPLAY onto T-790's canonical glyph families: one
+// row per [`map_engine_render::scene::MarkerGlyph`], each drawing that glyph's real shape (a distinct
+// inline SVG, mirroring the map's vocabulary), the human name taking the width, the slug demoted to
+// the tooltip + a search-match key. The DOCUMENT still stores the canonical slug (collapse at display
+// AND at write) — a canonical write is what makes the post-T-790 map draw the matching glyph.
+//
+// SOURCE OF TRUTH for the family set + the folding is `scene::marker_glyph_for_alias` /
+// `scene::MarkerGlyph` (T-790, a wasm32-only dep). The one representative slug per family is named
+// here so the native surface (row order, count, labels) can be tested without linking that dep; the
+// wasm side (`canonical_marker_rows`) folds the live schema list through the real mapper. Two ties
+// keep this list from silently drifting from the glyphs the map draws, and neither needs the (absent)
+// wasm-bindgen-test harness: a COMPILE-TIME `const _` assert pins the count to
+// `scene::MARKER_GLYPH_COUNT` (fails the wasm32 build on drift), and a runtime `debug_assert` +
+// self-healing fallback in `canonical_marker_rows` guarantees each row stores a slug that folds back
+// to its own glyph.
+
+/// One representative schema alias per canonical [`map_engine_render::scene::MarkerGlyph`] family,
+/// in the schema-order the families first appear in (the browse order the picker keeps).
+///
+/// Each entry is (a) a member of the closed `$defs/marker.icon` enum — so a pick validates and saves —
+/// and (b) folds back to its own family via `scene::marker_glyph_for_alias`, so picking it makes the
+/// map draw that family's glyph. Invariant (a) is asserted natively
+/// ([`tests::picker_has_one_row_per_canonical_icon`]); invariant (b) is enforced on the wasm side by
+/// the runtime `debug_assert` + self-healing fallback in [`canonical_marker_rows`] (the mapper is a
+/// wasm32-only dep the native tests cannot link).
+///
+/// The label a row shows is `humanize_token` of the slug, so the human-readable stem was chosen over
+/// the schema's paired base glyph where they differ (`objective`, not `objective_marker`; `medical`,
+/// not `cross`) — the base still lives in that family and matches search via the alias list.
+const CANONICAL_MARKER_SLUGS: [&str; CANONICAL_MARKER_GLYPH_COUNT] = [
+    "dot",               // Disc      — dot / point / mark / marker (mod FALLBACK_ICON) family
+    "objective",         // Square    — objective(_marker) / obj / target / task family
+    "point_of_interest", // Diamond   — point_of_interest / poi / intel / contact family
+    "observation_post",  // Target    — observation_post / op / observe / overwatch / recon family
+    "destroy",           // Ex        — destroy / demolish / demo / sabotage family
+    "attack",   // TriangleUp — attack / assault / capture / seize / advance / ambush family
+    "defend",   // TriangleDown — defend / hold / garrison / fallback family
+    "waypoint", // Chevron   — waypoint / move / wp / route / phase_line family
+    "flag",     // Flag      — flag / rally / rally_point / base / hq / spawn family
+    "medical",  // Cross     — cross / medical / medic / aid / casevac / medevac family
+    "circle",   // Ring      — circle / area / zone / ao family
+];
+
+/// The picker's row count: the number of canonical marker glyphs. Mirrors
+/// `map_engine_render::scene::MARKER_GLYPH_COUNT` (the source of truth, a wasm32-only dep this native
+/// const cannot reference directly); the wasm-side [`canonical_marker_rows`] asserts they agree.
+/// Well under the 64 raw schema aliases — that shrink IS the F-08 fix.
+const CANONICAL_MARKER_GLYPH_COUNT: usize = 11;
+
+/// Compile-time tie between the mirrored count above and its source of truth. This fails the
+/// `wasm32` build the moment T-790's glyph set changes without this picker following — the native
+/// test cannot link `scene`, so THIS is what keeps [`CANONICAL_MARKER_GLYPH_COUNT`] honest. (The
+/// per-slug glyph round-trip is a runtime `debug_assert` + self-healing fallback in
+/// [`canonical_marker_rows`], since `marker_glyph_for_alias` is not a `const fn`.)
+#[cfg(target_arch = "wasm32")]
+const _: () = assert!(
+    CANONICAL_MARKER_GLYPH_COUNT == map_engine_render::scene::MARKER_GLYPH_COUNT,
+    "picker row count must equal scene::MARKER_GLYPH_COUNT (T-790 source of truth)"
+);
+
+/// A canonical picker row: the glyph to draw, the slug to STORE on pick (and show in the tooltip),
+/// its human label, and every schema alias that folds into this family (the search-match set).
+#[cfg(target_arch = "wasm32")]
+struct CanonicalMarkerRow {
+    glyph: map_engine_render::scene::MarkerGlyph,
+    /// The canonical slug written to the document on pick — a closed-enum member.
+    slug: &'static str,
+    /// `humanize_token(slug)`, the label that takes the row width.
+    label: String,
+    /// Every `$defs/marker.icon` alias that folds to this glyph, for search + the tooltip.
+    aliases: Vec<&'static str>,
+}
+
+/// The canonical picker rows, built by folding the live schema alias list through the real
+/// [`map_engine_render::scene::marker_glyph_for_alias`] so DISPLAY and MAP can never disagree.
+///
+/// Row order is schema-first-seen (the same browse order [`marker_icons`] documents). Each row's
+/// `slug` is [`CANONICAL_MARKER_SLUGS`] chosen for that glyph, its `aliases` are every schema alias
+/// that folds into it, and `filter` (empty ⇒ all) keeps a row when the human label, the slug, or any
+/// alias substring-matches — so "Search icons" still matches slugs and names.
+#[cfg(target_arch = "wasm32")]
+fn canonical_marker_rows(filter: &str) -> Vec<CanonicalMarkerRow> {
+    use crate::eden_zones::humanize_token;
+    use map_engine_render::scene::{marker_glyph_for_alias, MarkerGlyph, MARKER_GLYPH_COUNT};
+
+    // The mirrored count and the source-of-truth count must agree — a wasm build fails loudly here
+    // if T-790 ever changes the glyph set without this picker following.
+    debug_assert_eq!(
+        CANONICAL_MARKER_GLYPH_COUNT, MARKER_GLYPH_COUNT,
+        "picker row count must track scene::MARKER_GLYPH_COUNT"
+    );
+
+    // Fold every authored alias into its glyph, first-seen order fixes the row order.
+    let mut order: Vec<MarkerGlyph> = Vec::with_capacity(MARKER_GLYPH_COUNT);
+    let mut aliases_by_glyph: Vec<(MarkerGlyph, Vec<&'static str>)> = Vec::new();
+    for alias in marker_icons() {
+        let g = marker_glyph_for_alias(alias);
+        if let Some(slot) = aliases_by_glyph.iter_mut().find(|(gg, _)| *gg == g) {
+            slot.1.push(alias.as_str());
+        } else {
+            order.push(g);
+            aliases_by_glyph.push((g, vec![alias.as_str()]));
+        }
+    }
+
+    let q = filter.trim().to_ascii_lowercase();
+    order
+        .into_iter()
+        .map(|g| {
+            let aliases = aliases_by_glyph
+                .iter()
+                .find(|(gg, _)| *gg == g)
+                .map(|(_, a)| a.clone())
+                .unwrap_or_default();
+            // The stored slug is this glyph's canonical representative; if (impossibly) it did not
+            // fold back to this glyph, fall back to the first alias that did, so a pick always
+            // stores something the map will render as THIS row.
+            let slug = *CANONICAL_MARKER_SLUGS
+                .iter()
+                .find(|s| marker_glyph_for_alias(s) == g)
+                .unwrap_or_else(|| aliases.first().unwrap_or(&"dot"));
+            CanonicalMarkerRow {
+                glyph: g,
+                slug,
+                label: humanize_token(slug),
+                aliases,
+            }
+        })
+        .filter(|row| {
+            q.is_empty()
+                || row.label.to_ascii_lowercase().contains(&q)
+                || row.slug.contains(&q)
+                || row.slug.replace('_', " ").contains(&q)
+                || row
+                    .aliases
+                    .iter()
+                    .any(|a| a.contains(&q) || a.replace('_', " ").contains(&q))
+        })
+        .collect()
+}
+
+/// A small inline SVG drawing one canonical [`map_engine_render::scene::MarkerGlyph`] — a distinct
+/// DOM shape per glyph, mirroring the map's glyph vocabulary (the enum names the shapes). This is the
+/// picker preview the acceptance calls "a glyph pixel signature that differs from the generic pin":
+/// the previous rows all rendered the same `place` Material pin; each shape below is drawn from
+/// different SVG primitives, so no two rows (and none vs. the old pin) share a DOM signature.
+#[cfg(target_arch = "wasm32")]
+fn marker_glyph_svg(glyph: map_engine_render::scene::MarkerGlyph) -> AnyView {
+    use map_engine_render::scene::MarkerGlyph;
+
+    // 16×16 viewBox; `currentColor` so the shape inherits the row's text colour on hover.
+    let inner = match glyph {
+        // Hollow ring.
+        MarkerGlyph::Ring => view! {
+            <circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" stroke-width="1.6" />
+        }
+        .into_any(),
+        // Solid disc (the fallback).
+        MarkerGlyph::Disc => view! {
+            <circle cx="8" cy="8" r="4" fill="currentColor" />
+        }
+        .into_any(),
+        // Filled square.
+        MarkerGlyph::Square => view! {
+            <rect x="3.5" y="3.5" width="9" height="9" fill="currentColor" />
+        }
+        .into_any(),
+        // Filled diamond.
+        MarkerGlyph::Diamond => view! {
+            <polygon points="8,2.5 13.5,8 8,13.5 2.5,8" fill="currentColor" />
+        }
+        .into_any(),
+        // Upward triangle.
+        MarkerGlyph::TriangleUp => view! {
+            <polygon points="8,2.5 14,13.5 2,13.5" fill="currentColor" />
+        }
+        .into_any(),
+        // Downward triangle.
+        MarkerGlyph::TriangleDown => view! {
+            <polygon points="2,2.5 14,2.5 8,13.5" fill="currentColor" />
+        }
+        .into_any(),
+        // Plus / medical cross.
+        MarkerGlyph::Cross => view! {
+            <path
+                d="M6.5 2.5 h3 v4 h4 v3 h-4 v4 h-3 v-4 h-4 v-3 h4 z"
+                fill="currentColor"
+            />
+        }
+        .into_any(),
+        // Diagonal X.
+        MarkerGlyph::Ex => view! {
+            <path
+                d="M3.5 3.5 L12.5 12.5 M12.5 3.5 L3.5 12.5"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                fill="none"
+            />
+        }
+        .into_any(),
+        // Pennant flag on a staff.
+        MarkerGlyph::Flag => view! {
+            <path
+                d="M4 2 v12"
+                stroke="currentColor"
+                stroke-width="1.4"
+                stroke-linecap="round"
+                fill="none"
+            />
+            <polygon points="4,2.5 13,4.5 4,7.5" fill="currentColor" />
+        }
+        .into_any(),
+        // Chevron (waypoint / move).
+        MarkerGlyph::Chevron => view! {
+            <path
+                d="M3 10 L8 4 L13 10"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                fill="none"
+            />
+        }
+        .into_any(),
+        // Concentric target (ring + centre dot).
+        MarkerGlyph::Target => view! {
+            <circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" stroke-width="1.4" />
+            <circle cx="8" cy="8" r="1.8" fill="currentColor" />
+        }
+        .into_any(),
+    };
+
+    view! {
+        <svg
+            class="block h-3.5 w-3.5 shrink-0"
+            viewBox="0 0 16 16"
+            aria-hidden="true"
+            fill="none"
+        >
+            {inner}
+        </svg>
+    }
+    .into_any()
+}
+
 /// T-069 (RIGHT-MODE-006) — the Markers panel: the icon list that arms a place, the authored-marker
 /// list, and the three-field Attributes block for the selected one.
 ///
@@ -3558,7 +3809,11 @@ pub(crate) fn markers_panel(
             on:input=move |ev| icon_search.set(event_target_value(&ev))
         />
         {move || {
-            let rows = filter_marker_icons(&icon_search.get());
+            // T-806 (F-08): one row per CANONICAL glyph, not one per raw alias. Each row draws its
+            // real glyph shape, the human name takes the width, and the canonical SLUG moves to the
+            // tooltip (still searchable). Picking arms the canonical slug — a closed-enum member the
+            // post-T-790 map renders as this row's glyph.
+            let rows = canonical_marker_rows(&icon_search.get());
             if rows.is_empty() {
                 return view! {
                     <p class="mt-2 text-label-sm normal-case text-outline">"No icon matches."</p>
@@ -3573,15 +3828,33 @@ pub(crate) fn markers_panel(
                 >
                     {rows
                         .into_iter()
-                        .map(|alias| {
-                            let armed = alias.to_string();
-                            let label = humanize_token(alias);
+                        .map(|row| {
+                            let armed = row.slug.to_string();
+                            let glyph = row.glyph;
+                            let label = row.label;
+                            let aria = format!("{label} marker");
+                            // Slug + folded aliases in the tooltip: the demoted slug stays
+                            // discoverable on hover without stealing the row width from the name.
+                            let tip = if row.aliases.len() > 1 {
+                                format!(
+                                    "{} — arm, then click the map to place. Slug: {}. Also: {}",
+                                    label,
+                                    row.slug,
+                                    row.aliases.join(", "),
+                                )
+                            } else {
+                                format!(
+                                    "{} — arm, then click the map to place. Slug: {}",
+                                    label, row.slug,
+                                )
+                            };
                             view! {
                                 <li>
                                     <button
                                         type="button"
                                         class=PALETTE_LEAF
-                                        title="Click to arm, then click the map to place this marker"
+                                        title=tip
+                                        aria-label=aria
                                         // `pointerdown`, not `click`: the palette arm/release
                                         // contract — the chrome host stops propagation here and the
                                         // map container's `pointerup` commits the drop.
@@ -3590,11 +3863,8 @@ pub(crate) fn markers_panel(
                                             doc_tick.update(|n| *n = n.wrapping_add(1));
                                         }
                                     >
-                                        <MaterialIcon name="place" class="block text-sm" />
+                                        {marker_glyph_svg(glyph)}
                                         <span class="truncate">{label}</span>
-                                        <span class="ml-auto shrink-0 font-mono text-code-md text-outline">
-                                            {alias}
-                                        </span>
                                     </button>
                                 </li>
                             }
@@ -3846,10 +4116,11 @@ pub(crate) fn markers_panel(
 mod tests {
     use super::{
         apply_eden_chip, custom_chip_visible, default_marker_icon, eden_chip_selected,
-        filter_marker_icons, marker_icon_is_authorable, marker_icons, push_recent_into, EdenChip,
-        EdenSubmode, RecentPlaced, EDEN_CUSTOM_CHIP, EDEN_SIDE_CHIPS, FAVOURITES_MAX,
-        MISSION_SCHEMA_JSON, SEARCH_GRAMMAR_HINT, SEARCH_PLACEHOLDER_GRAMMAR,
+        filter_marker_icons, marker_icon_is_authorable, marker_icons, push_recent_into,
+        CANONICAL_MARKER_GLYPH_COUNT, CANONICAL_MARKER_SLUGS, EDEN_CUSTOM_CHIP, EDEN_SIDE_CHIPS,
+        FAVOURITES_MAX, MISSION_SCHEMA_JSON, SEARCH_GRAMMAR_HINT, SEARCH_PLACEHOLDER_GRAMMAR,
     };
+    use super::{EdenChip, EdenSubmode, RecentPlaced};
     use leptos::prelude::*;
 
     /// T-646 (RIGHT-SUBMODE-001) — the Custom slot appears **only under Groups**. The predicate is
@@ -5472,6 +5743,171 @@ mod tests {
                     "the filter may only return schema aliases; {q:?} yielded {hit:?}"
                 );
             }
+        }
+    }
+
+    /// **T-806 (F-08) — the picker is one row per CANONICAL icon, not 64 raw slugs.**
+    ///
+    /// The defect was 64 rows of raw aliases, all wearing the same generic pin, with case-duplicates
+    /// (Waypoint/waypoint, Objective/Obj/Target, mark/marker/point) shown as separate rows. The fix
+    /// collapses the display onto T-790's glyph families. This test pins the NATIVE half of that
+    /// contract — the canonical slug set: its count is the documented < 64 number, every slug is a
+    /// closed-enum member (a pick validates and saves), and no two rows collapse to the same label
+    /// (which would mean two rows differing only by case slipped through). The GLYPH round-trip —
+    /// that each slug maps to a DISTINCT glyph via `scene::marker_glyph_for_alias` — cannot be
+    /// checked here (that mapper is a wasm32-only dep this native test cannot link); it is enforced
+    /// on the wasm side by the runtime `debug_assert` + self-healing fallback in
+    /// `canonical_marker_rows`, and the row COUNT is tied to `scene::MARKER_GLYPH_COUNT` by a
+    /// compile-time `const _` assert in the wasm build.
+    ///
+    /// Source of truth for the count is `map_engine_render::scene::MARKER_GLYPH_COUNT`; the mirrored
+    /// [`CANONICAL_MARKER_GLYPH_COUNT`] carries a comment saying so and the wasm build asserts they
+    /// agree.
+    ///
+    /// Perturbation RED: change any canonical slug to a non-enum value (e.g. `attack` → `assult`)
+    /// and the authorability loop fails; add a 12th slug that duplicates an existing family's label
+    /// and the case-collapse assertion fails.
+    #[test]
+    fn picker_has_one_row_per_canonical_icon() {
+        use crate::eden_zones::humanize_token;
+
+        // The documented row count — far below the 64 raw aliases (that shrink is the fix).
+        assert_eq!(
+            CANONICAL_MARKER_SLUGS.len(),
+            CANONICAL_MARKER_GLYPH_COUNT,
+            "the canonical slug table length is the picker row count"
+        );
+        assert_eq!(
+            CANONICAL_MARKER_GLYPH_COUNT, 11,
+            "the documented canonical glyph count (scene::MARKER_GLYPH_COUNT)"
+        );
+        assert!(
+            CANONICAL_MARKER_GLYPH_COUNT < marker_icons().len(),
+            "the picker must have FEWER rows than the {} raw aliases — that collapse is F-08",
+            marker_icons().len()
+        );
+
+        // Every canonical slug is a member of the closed enum: a pick validates and saves.
+        for slug in CANONICAL_MARKER_SLUGS {
+            assert!(
+                marker_icon_is_authorable(slug),
+                "canonical slug {slug:?} must be a closed `$defs/marker.icon` enum member"
+            );
+        }
+
+        // No two rows share a label: a duplicate would be exactly the "two rows differ only by case"
+        // defect surviving. Labels are what the row shows (`humanize_token` of the slug).
+        let mut labels: Vec<String> = CANONICAL_MARKER_SLUGS
+            .iter()
+            .map(|s| humanize_token(s).to_ascii_lowercase())
+            .collect();
+        labels.sort();
+        let unique = labels
+            .iter()
+            .collect::<std::collections::HashSet<_>>()
+            .len();
+        assert_eq!(
+            unique,
+            labels.len(),
+            "no two canonical rows may share a (case-folded) label: {labels:?}"
+        );
+
+        // The canonical slugs are themselves distinct strings (no accidental repeat in the table).
+        let slug_set = CANONICAL_MARKER_SLUGS
+            .iter()
+            .collect::<std::collections::HashSet<_>>();
+        assert_eq!(
+            slug_set.len(),
+            CANONICAL_MARKER_SLUGS.len(),
+            "canonical slug table has a duplicate entry"
+        );
+
+        // 'attack' — the acceptance's example pick — must be the canonical slug for its family, so
+        // picking it stores `attack` (and the post-T-790 map draws the attack glyph). We assert the
+        // STORED slug here; the glyph it maps to is the wasm sibling's job.
+        assert!(
+            CANONICAL_MARKER_SLUGS.contains(&"attack"),
+            "'Attack' must store the canonical slug `attack`"
+        );
+    }
+
+    /// **T-806 (F-08) — the picker ROW wiring: SVG glyph, canonical arm, slug demoted.**
+    ///
+    /// Source-inspection (the render is `#[cfg(target_arch = "wasm32")]`, so a native test cannot
+    /// mount it): the picker must draw a real per-glyph SVG (not the generic `place` Material pin the
+    /// 64-row version used on every row), arm the canonical slug through `begin_place_marker`, and
+    /// build its rows through the canonical folder rather than the flat alias filter.
+    ///
+    /// Haystacks are `class_r_scrub`-scrubbed so a needle satisfied by a comment or a blanked string
+    /// literal cannot pass; needles that are literals (`place`) are checked against the SCRUBBED-code
+    /// form where such literals are blanked, so only a live call satisfies them. Needles are
+    /// fragment-assembled where a contiguous spelling here would be its own decoy.
+    ///
+    /// Perturbation RED: repoint the picker back to `filter_marker_icons` and re-add the `place` pin
+    /// per row — `builds_rows` / `draws_a_glyph_svg` fail; drop `marker_glyph_svg` and the SVG
+    /// presence check fails.
+    #[test]
+    fn picker_rows_draw_glyph_svgs_and_arm_the_canonical_slug() {
+        use crate::arsenal::class_r_scrub::only_body;
+        const SRC: &str = include_str!("eden_dock_right.rs");
+
+        // `markers_panel` has two definitions (the wasm picker + the native shell), so it is not a
+        // unique `only_body` anchor. The picker rows live in the ONE `<ul aria-label="Marker icons">`
+        // list, which precedes the `Authored markers` list; slice that block out and constrain it.
+        // Fragment-assembled anchors so this test's own source is not the haystack.
+        let icons_open = format!("aria-label={}Marker icons{}", '"', '"');
+        let authored_open = format!("aria-label={}Authored markers{}", '"', '"');
+        let icons_block = SRC
+            .split(&icons_open)
+            .nth(1)
+            .and_then(|s| s.split(&authored_open).next())
+            .expect("the picker's Marker icons list precedes the Authored markers list");
+
+        // The picker builds one row per canonical glyph through the folder, not the flat filter, and
+        // draws each row's glyph SVG via the per-glyph renderer.
+        let builds_rows = format!("{}{}", "canonical_marker_rows", "(&icon_search.get())");
+        assert!(
+            SRC.contains(&builds_rows),
+            "the picker must source its rows from the canonical folder"
+        );
+        let draws_svg = format!("{}{}", "marker_glyph_svg", "(glyph)");
+        assert!(
+            icons_block.contains(&draws_svg),
+            "each picker row must render its canonical glyph SVG"
+        );
+
+        // Arming stores the canonical SLUG (the row's `armed`, built from `row.slug`).
+        assert!(
+            icons_block.contains(&format!("{}{}", "begin_place_marker", "(armed.clone())")),
+            "picking a row must arm the marker place path with the canonical slug"
+        );
+        let arm_src = format!("let armed = {}", "row.slug.to_string();");
+        assert!(
+            icons_block.contains(&arm_src),
+            "the armed value must be the canonical slug, not a raw alias"
+        );
+
+        // The old per-row generic `place` pin must be gone from the picker rows. It still exists in
+        // the AUTHORED-markers list BELOW the picker (that list keeps its caption-first rows per the
+        // trap), which is why the check is scoped to the icons block, not the whole file.
+        assert!(
+            !icons_block.contains(&format!("name={}place{}", '"', '"')),
+            "the picker rows must not paint the generic `place` pin any more"
+        );
+
+        // The glyph renderer emits an <svg> element (a DOM shape), and the glyph vocabulary draws
+        // distinct SVG primitives — the per-glyph DOM signature that differs from the old generic
+        // pin. `marker_glyph_svg` is a unique anchor.
+        let svg_fn = only_body(SRC, &format!("fn marker_glyph_svg{}", "("));
+        assert!(
+            svg_fn.contains("<svg"),
+            "marker_glyph_svg must emit an <svg> element"
+        );
+        for prim in ["<polygon", "<circle", "<rect", "<path"] {
+            assert!(
+                svg_fn.contains(prim),
+                "the glyph vocabulary must draw distinct primitives; missing {prim}"
+            );
         }
     }
 
