@@ -2,17 +2,21 @@
 //! and the toggleable **Controls Hint** overlay (rows MENU-BAR-008 / MENU-VIEW-017 /
 //! MENU-HELP-001).
 //!
-//! **The defect this closes.** The Mission Creator binds twenty-one distinct `KeyboardEvent` codes
+//! **The defect this closes.** The Mission Creator binds twenty-two distinct `KeyboardEvent` codes
 //! across thirteen window-level keydown listeners in eight editor-surface modules and, before this
 //! ticket, documented **none** of them anywhere in the UI: no Help menu, no hint overlay, and
 //! `context_menu`'s `with_shortcut` builder had zero callers. An operator's only route to `G`, `[`,
-//! `]`, `1`, `2`, `E`, `R` or Backspace was reading the Rust source.
+//! `]`, `1`, `2`, `3`, `E`, `R` or Backspace was reading the Rust source.
+//!
+//! (T-795 added the third widget digit — `Digit3` — renumbering the widget row to Eden's `No Widget
+//! (1) / Translate (2) / Rotate (3)`, which is why the distinct-code count is twenty-two, not the
+//! twenty-one T-740 last derived.)
 //!
 //! Those four numbers are **derived, not typed**: `the_prose_census_numbers_are_derived` (T-740)
 //! spells the live census counts out in words and asserts this paragraph contains them, because
 //! this sentence has already gone stale twice by being retyped. If you widen what counts as a
 //! binding, the pin tells you the new numbers — it does not let you guess them. The fourth is the
-//! total the distinct-code count hides: those thirteen listeners carry thirty-four bindings in
+//! total the distinct-code count hides: those thirteen listeners carry thirty-five bindings in
 //! total, most of the surplus being the Escape channel. (T-774 settled that one by measurement —
 //! the T-703 slice reported "39" and the wave-119 verifier's parser reported 32; the verifier was
 //! right, and 32 was the count over the eleven-listener input this ticket widened.)
@@ -193,16 +197,29 @@ pub const SHORTCUTS: &[Shortcut] = &[
         action: "Decrease / increase the snap step of the active widget",
         group: "Transform & snapping",
     },
+    // T-795 — the widget-select digits are numbered to MATCH Eden's widget row exactly (pixel-verified
+    // against Eden frames 164038-164107: `No Widget (1) / Translation (2) / Rotation (3) / Area
+    // Scaling (4) / Area (5)`). They were OFF BY ONE before (1=Translate, 2=Rotate, 3=nothing), so an
+    // Eden author's muscle memory armed the wrong mode; the renumber makes the keys mean what Eden
+    // means. `4`/`5` (Area Scaling / Area) are RESERVED-UNBOUND — no area-scale variant yet — so they
+    // get no row here (a phantom row is a lie `no_help_entry_invents_a_binding` would catch) and no
+    // keydown arm. These three chords are the same map T-799's toolbar tooltips/Edit-menu chords read.
     Shortcut {
         codes: &["Digit1"],
         chord: "1",
-        action: "Translate widget",
+        action: "No widget (bare drag still moves the selection)",
         group: "Transform & snapping",
     },
     Shortcut {
         codes: &["Digit2"],
         chord: "2",
-        action: "Rotate widget",
+        action: "Translate widget",
+        group: "Transform & snapping",
+    },
+    Shortcut {
+        codes: &["Digit3"],
+        chord: "3",
+        action: "Rotate widget (drag the ring to rotate the selection)",
         group: "Transform & snapping",
     },
     // ── History (mission_history's keydown — the second window-level editor listener) ──────────
