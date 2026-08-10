@@ -19663,7 +19663,7 @@
       "id": "T-790",
       "order": 4720,
       "program": "eden",
-      "status": "queued",
+      "status": "shipped",
       "stream": "mission-creator",
       "targets": [
         "website"
@@ -19680,13 +19680,13 @@
       ],
       "title": "Markers render their icon glyph and caption on the map",
       "summary": "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). F-03 — S1, VERIFIED at 5.58/1.30/1.06 m/px: every placed marker is an identical pale dot — icon choice has no visible effect and the caption field literally labelled 'Caption shown on the map' shows nothing on the map (doc state verified correct: dock row reads 'Attack (BLUFOR) · 4921, 5982' and caption persists — rendering is the only missing half). THE LANE ALREADY EXISTS: T-760 packs markers into a render lane with xy+tint ONLY (mission_editor.rs markers_bind / marker_lane_xy_tints, store ~ crates/map-engine-core/src/doc/store.rs:3831, consumers crates/map-engine-render/src/{scene,engine,lanes}.rs). FIX: extend the marker lane with a glyph id (map the 64-alias enum onto its canonical glyph set) and render the icon shape per marker plus the caption text beside it (screen-space, culled, readable at standard zooms); side tint stays. This is the WRITE-HALF format change T-806 (picker) and T-808 (unit symbology) build on — land the lane format cleanly. ⚠️ TRAPS: text rendering in the engine may need the existing label path the map uses for place names — reuse it, do not mint a second text pipeline; alias enum has case-duplicates (Waypoint/waypoint) — glyph mapping table must collapse them (canonical mapping documented for T-806); performance: markers are per-side briefing sets, expect dozens not thousands. ACCEPTANCE: scripted — place markers of 3 different icons + one caption: screenshot probe at 3 zooms shows 3 DISTINCT glyph pixel signatures and the caption string appears within 40px of its marker (OCR or pixel-diff vs empty-caption control); dock-vs-map position agreement stays exact.",
-      "notes": "T-069/T-213/T-673 are the marker-family parents — cite; lane format consumed by T-806/T-808 (depends_on edges) | OPERATOR DIRECTION 2026-08-10: any marker-EDITING surface this wave opens (the F-07 on-map-select fold) must be the Attributes modal (T-763 marker attrs lineage), NOT a new dock editing lane — the dock places, the outliner lists, Attributes edits."
+      "notes": "T-069/T-213/T-673 are the marker-family parents — cite; lane format consumed by T-806/T-808 (depends_on edges) | OPERATOR DIRECTION 2026-08-10: any marker-EDITING surface this wave opens (the F-07 on-map-select fold) must be the Attributes modal (T-763 marker attrs lineage), NOT a new dock editing lane — the dock places, the outliner lists, Attributes edits. | SHIPPED W204: glyphs + captions render through the pinned T-760 lane (3 distinct signatures at 3 zooms, centroid-exact dock-vs-map, 64/64 alias table for T-806/T-808, buffer lifecycle leak-checked 12x). Disclosed outside-owns edit (mission_history.rs, 6 lines at the T-760 feed sites) audited exact by the verifier, feed pins intact. Caption screen-space drift at close zoom -> T-828."
     },
     {
       "id": "T-798",
       "order": 4800,
       "program": "eden",
-      "status": "queued",
+      "status": "shipped",
       "stream": "mission-creator",
       "targets": [
         "website"
@@ -19704,13 +19704,13 @@
       ],
       "title": "Validation moves to a top-bar error chip; V1 evaluates from load; Backspace hides everything",
       "summary": "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). F-11/F-35/F-36 + operator decision 3. VERIFIED: an empty mission reports 'No issues' and placing ONE MARKER flips it to red '1 error — V1-PLAYER-SPAWN' (the empty mission was equally unspawnable — validation_panel.rs ~:885 mount eval only fires on doc content via ~:787 doc_tick, so the first mark an author makes summons an error about something they didn't touch). The panel floats bottom-left as one of FOUR bottom furniture pieces; operator decision: a top-bar count chip that drops down on click. Backspace hide-UI leaves the expanded validation legend on screen (VERIFIED: buttons 62->19 but legend persists) — the clean-screenshot feature keeps a debug panel in frame. And the red count text is the ONE WCAG failure in the app: rgb(239,68,68) on rgba(31,41,55,0.7) = 3.9:1 (every other measured pair passes; worst legit 5.96:1). FIX: (a) evaluate rules from editor load (PayloadSource seeded at hydrate) so t0 shows the true state; (b) chip in the top strip: 'N errors · M warnings', click drops the findings list; retire the floating panel; include the chip+dropdown in the chrome_hidden hide set (the strip already reads that signal — no mission_editor edit); (c) error red on its plate >=4.5:1 (darken plate or brighten red one step). KEEP THE MESSAGE COPY VERBATIM — the V1 text is the best writing in the product (operator + review agree). ⚠️ TRAPS: depends on T-797's row-2 toolbar landing first (chip home); Esc/dismiss semantics via the T-786 stack; the severity legend content stays (in the dropdown). ACCEPTANCE: scripted — fresh empty mission: chip shows '1 error' (V1) at load; place a marker: count unchanged (no error-from-nowhere); Backspace: zero non-map UI pixels including legend (screenshot diff vs pure-map baseline); contrast calc on the chip >=4.5:1; V1 copy string unchanged.",
-      "notes": "depends_on T-797; operator decision 3 + praised copy pinned; contrast numbers from review F-36 second pass"
+      "notes": "depends_on T-797; operator decision 3 + praised copy pinned; contrast numbers from review F-36 second pass | SHIPPED W204: chip in row 2 (anchored transient — no containing-block exposure), headless engine survives Backspace (pixel-pure hide verified), load-time truth on hydrated missions, V1 copy byte-verbatim, plate-calc contrast fixed. THE ACCEPTANCE LINE 'place a marker: count unchanged' IS UNACHIEVABLE AS WRITTEN — the first marker mints faction-{SIDE} outside this ticket's owns and V1 legitimately fires; measured 0->1 by the verifier; decision ticket T-826 (operator). Live-over-glass contrast 4.0-4.3 -> T-827."
     },
     {
       "id": "T-803",
       "order": 4850,
       "program": "eden",
-      "status": "queued",
+      "status": "shipped",
       "stream": "mission-creator",
       "targets": [
         "website"
@@ -19727,7 +19727,7 @@
       ],
       "title": "The placement drop-target layer is visible, always",
       "summary": "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). O-9 — operator-reported, corroborated: which layer receives the next placement is set by clicking an outliner row (editor_ops.rs ~:2902 set_active_layer/active_layer; eden_dock_left.rs ~:108) and its only indication is a hover tooltip ('Click: drop target + select units') — no persistent visual state. The author places into a guess; comments compound it (operator: 'it doesn't place in the root, and the layer doesn't always show when you have it selected'). FIX: (a) persistent visual on the active drop-target row (distinct background + small chip/glyph, not colour-only); (b) a 'placing into: <layer>' affordance near the palette or cursor-adjacent during an armed placement; (c) newly created layer becomes the drop target on creation (matches author intent), stated in the row UI. ⚠️ TRAPS: the Alt-click select-subtree behaviour on the same rows must survive; do not restyle selection state — drop-target and selection are different states and must read differently (state-vocabulary doc: two states, two treatments); virtualized rows must keep the highlight when scrolled. ACCEPTANCE: scripted — click layer B: its row background differs from siblings (computed style delta) and an on-screen text names B as the target; place a unit: it lands under B in the outliner; create layer C: C is highlighted and named as target; Alt-click still selects the subtree.",
-      "notes": "operator O-9; keep visual distinct from T-649-era selection highlight"
+      "notes": "operator O-9; keep visual distinct from T-649-era selection highlight | SHIPPED W204: 'Placing into: X' header affordance with truth-telling resolvers (names the rows.first() fallback honestly) by the slice; the ROW visual landed in the completion (2318dcf8, eden_tree.rs was off-limits mid-wave): ROW_DROP_TARGET distinct from selection on >=3 measured axes + my_location chip; create-layer default verified already-correct at ops level; Alt-click subtree intact. Verifier re-proved incl. the fallback landing."
     },
     {
       "id": "T-795",
