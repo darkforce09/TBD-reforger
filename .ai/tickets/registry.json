@@ -1,5 +1,5 @@
 {
-  "next_id": 830,
+  "next_id": 832,
   "tickets": [
     {
       "id": "T-001",
@@ -19910,7 +19910,7 @@
       ],
       "title": "Units render as role-and-side symbology, not dots",
       "summary": "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). F-10 — the map is dot soup: slots are plain circles (amber selected + heading arrow, pale blue otherwise), markers were identical circles (T-790 fixes markers), nothing distinguishes a rifleman from a medic from an AT gunner, and marker-vs-unit ambiguity was verified (operator + review agree; Eden's 2D map renders filled side-coloured entity glyphs — frame 170028 crops). A milsim author reads maps by symbology. FIX: per-slot glyph in the unit lane: side colour + role class glyph (minimum set: leader chevron, medic cross, AT, MG, rifleman default — derive role class from the slot role/kit string), distinct SHAPE class from markers (T-790's glyphs) and comments (T-796's bubble); selection ring/heading arrow render ON TOP unchanged. Consumes T-790's lane-format extension (crates/map-engine-core/src/slots_gpu.rs ~745-line instance path + crates/map-engine-render/src/engine.rs read half). ⚠️ TRAPS: engine.rs is CO-OWNED with T-790's wave — this lands 3 waves later on merged main, build on its final lane format (belt-and-braces per packing risk 5); zoom behaviour: glyphs legible at squad scale, degrade to dots only below a stated m/px; role-string mapping table lives in one place and is unit-tested (kit:us_rifleman -> rifleman etc.). ACCEPTANCE: wasm unit test on the role->glyph mapping (all seeded kits map, unknown -> default); scripted screenshot at 1.0 and 4.0 m/px: medic vs rifleman vs leader pixel signatures pairwise distinct; marker vs unit vs comment shapes pairwise distinct; selected unit still shows ring+heading.",
-      "notes": "depends_on T-790; T-157 visual-overhaul overlap cited in notes rather than absorbed (T-157 is broader)"
+      "notes": "depends_on T-790; T-157 visual-overhaul overlap cited in notes rather than absorbed (T-157 is broader) | operator note 2026-08-10: the T-790 procedural marker glyphs read \"a little weird — not wrong, but weird\"; when doing unit symbology, revisit marker glyph iconography in the same visual language"
     },
     {
       "id": "T-794",
@@ -20303,12 +20303,12 @@
         "RIGHT"
       ],
       "order": 5070,
-      "summary": "OPERATOR DESIGN DIRECTION (recorded 2026-08-10, from the wave-202/203 eye-passes; to be SCOPED IN AN OPERATOR-DRIVEN DESIGN SESSION after the band + wave 210 — do NOT dispatch from this summary). The unifying rule behind T-818/T-819 and the zone observations: every authored object on the map (slot, vehicle, zone, trigger, marker, comment, composition instance) is an ASSET that (a) lives as a first-class row in the LEFT outliner's layer tree — filed into any layer/folder like slots are, draggable between layers, not in kind-specific footers or dock strips; (b) EDITS via its double-click Attributes modal with kind-specific content; (c) the RIGHT dock exists only to place new things (catalog, search, favourites, history). Known deltas today: vehicles sit in a hardcoded PLACED VEHICLES outliner footer (W203 fold — superseded by this rule); zones are managed and edited in the right dock's Zones tab; markers edit via dock lanes; the operator also reports the layer tree itself 'feels disjointed' — capture specifics in the design session. SESSION INPUTS the orchestrator prepares: a decision matrix of every authored-object kind x where it lists x how it edits x what the compile/selection/undo semantics are, with Eden's answer per row. Out of scope until scoped: nothing ships from this ticket without the session's decisions filed as per-kind tickets.",
+      "summary": "OPERATOR DESIGN DIRECTION (recorded 2026-08-10, from the wave-202/203 eye-passes; to be SCOPED IN AN OPERATOR-DRIVEN DESIGN SESSION after the band + wave 210 — do NOT dispatch from this summary). The unifying rule behind T-818/T-819 and the zone observations: every authored object on the map (slot, vehicle, zone, trigger, marker, comment, composition instance) is an ASSET that (a) lives as a first-class row in the LEFT outliner's layer tree — filed into any layer/folder like slots are, draggable between layers, not in kind-specific footers or dock strips; (b) EDITS via its double-click Attributes modal with kind-specific content; (c) the RIGHT dock exists only to place new things (catalog, search, favourites, history). Known deltas today: vehicles sit in a hardcoded PLACED VEHICLES outliner footer (W203 fold — superseded by this rule); zones are managed and edited in the right dock's Zones tab; markers edit via dock lanes; the operator also reports the layer tree itself 'feels disjointed' — capture specifics in the design session. SESSION INPUTS the orchestrator prepares: a decision matrix of every authored-object kind x where it lists x how it edits x what the compile/selection/undo semantics are, with Eden's answer per row. Out of scope until scoped: nothing ships from this ticket without the session's decisions filed as per-kind tickets. ⟡ ADDED 2026-08-10 (wave-204 eye-pass): MARKERS are the third confirmed instance — placed markers list in the right dock's Markers tab with an inline editor (Type/Text/Position/Delete); under the rule they list in the left outliner and edit via marker Attributes (T-763 lineage).",
       "notes": "the post-band hyper-focus program; T-818/T-819 (wave 210) are its first two instances and proceed as filed"
     },
     {
       "id": "T-826",
-      "title": "OPERATOR DECISION: should placing a marker declare a side? (the error-from-nowhere lives in faction minting)",
+      "title": "Markers stop declaring sides — placing a marker must not mint a faction",
       "status": "queued",
       "executor": "claude-code",
       "program": "eden",
@@ -20324,8 +20324,8 @@
         "SHELL"
       ],
       "order": 5080,
-      "summary": "WAVE-204 VERIFIER FILING (wave204.md MAJOR — 're-scope, not revert'). MEASURED truth table on a truly-fresh mission: t0 chip = '0 - No issues'; place ONE marker -> '1 error' (V1-PLAYER-SPAWN). MECHANISM: ensure_side_faction (editor_ops.rs:4654) mints faction-{SIDE} on the FIRST marker place, flipping validate.rs's deliberate declares_players gate — so the review's F-11 'error about something they didn't touch' survives T-798 (whose shipped halves all measure correct: hydrated missions show truth at t0, copy verbatim, Backspace pixel-pure, contrast fixed at plate-calc). THE DECISION (operator's): (a) markers stop minting factions — a briefing mark is not a side declaration; V1 fires only when a SLOT/faction is authored (needs an ensure_side_faction split: marker path stores side WITHOUT minting, or mints lazily at first slot); or (b) the behavior is CORRECT (marking a side commits you to spawns) and the T-798 acceptance line is re-scoped to document it. Option (a) matches the review's intent; check the compile/schema side effects of an unminted marker side before choosing (flatten.rs reads?). ACCEPTANCE (if a): fresh mission, place marker -> chip stays 0; author first slot of that side -> V1 fires; compiled export unchanged for the marker-only mission vs today minus the phantom faction.",
-      "notes": "wave204 verifier MAJOR; decision reserved for the operator; T-798 shipped-halves verified correct"
+      "summary": "WAVE-204 VERIFIER FILING (wave204.md MAJOR — 're-scope, not revert'). MEASURED truth table on a truly-fresh mission: t0 chip = '0 - No issues'; place ONE marker -> '1 error' (V1-PLAYER-SPAWN). MECHANISM: ensure_side_faction (editor_ops.rs:4654) mints faction-{SIDE} on the FIRST marker place, flipping validate.rs's deliberate declares_players gate — so the review's F-11 'error about something they didn't touch' survives T-798 (whose shipped halves all measure correct: hydrated missions show truth at t0, copy verbatim, Backspace pixel-pure, contrast fixed at plate-calc). DECISION RECORDED (operator, 2026-08-10): OPTION (a) — 'markers aren't factions.' A briefing mark must not declare a side; V1 fires only when a slot/faction is actually authored. Original decision framing: (a) markers stop minting factions — a briefing mark is not a side declaration; V1 fires only when a SLOT/faction is authored (needs an ensure_side_faction split: marker path stores side WITHOUT minting, or mints lazily at first slot); or (b) the behavior is CORRECT (marking a side commits you to spawns) and the T-798 acceptance line is re-scoped to document it. Option (a) matches the review's intent; check the compile/schema side effects of an unminted marker side before choosing (flatten.rs reads?). ACCEPTANCE (if a): fresh mission, place marker -> chip stays 0; author first slot of that side -> V1 fires; compiled export unchanged for the marker-only mission vs today minus the phantom faction.",
+      "notes": "wave204 verifier MAJOR; decision reserved for the operator; T-798 shipped-halves verified correct | operator decided (a) 2026-08-10 during the wave-204 eye-pass; now actionable — implement the ensure_side_faction split (marker path stores side WITHOUT minting), check flatten.rs/compile reads of an unminted marker side before landing"
     },
     {
       "id": "T-827",
@@ -20389,6 +20389,49 @@
       "order": 5110,
       "summary": "WAVE-204 VERIFIER FILING (wave204.md MINOR, PRE-EXISTING — bisected innocent: fails identically on merged AND pre-wave dists under the verifier's dist/flags, while the wave gate's own configuration passed 30/30 twice on the same tree). A smoke whose verdict flips with the harness configuration is the T-742/T-747 family: someone will eventually chase a phantom red or trust a phantom green. INVESTIGATE: diff the verifier invocation vs the gate's (dist build profile, chrome flags, viewport) to find the sensitive variable; make v5_orbatWindowed deterministic across both (or gate the check on the variable it actually depends on, stated). ACCEPTANCE: the smoke passes (or refuses loudly with a named reason) under BOTH the gate config and the verifier recipe in wave204.md.",
       "notes": "wave204 verifier; repro recipe in the report; do not let it rot into a known-flake"
+    },
+    {
+      "id": "T-830",
+      "title": "Outliner rows are too cramped — density pass on the layer tree",
+      "status": "queued",
+      "executor": "claude-code",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "impact": [
+        "ui",
+        "mc-authoring"
+      ],
+      "surfaces": [
+        "LEFT"
+      ],
+      "order": 5120,
+      "summary": "OPERATOR EYE-PASS FINDING (wave-204 pass, 2026-08-10, screenshot evidence): the left outliner rows read 'very cramped' — 16px rows with per-row icon clusters (eye/camera/rename/delete/drop-chip) squeezed against truncated names. DIRECTION: a density pass on the layer tree — more row breathing room (height/padding), icon cluster shown on hover-or-active rather than always (Eden hides row tools until hover), name gets the width; keep the T-803 drop-target treatment + T-809 vehicle rows + windowing (threshold 50) intact. MAY BE ABSORBED by the T-825 design session — if that session lands first, fold this in; otherwise it is a standalone visual pass. ACCEPTANCE: row height/padding increased measurably; row tools hidden until hover (or active); no truncation of typical names at 240px dock width; windowing + all row affordances (rename, flags, drop-target, Alt-click) still work.",
+      "notes": "operator eye-pass wave-204; candidate for the T-825 session or standalone"
+    },
+    {
+      "id": "T-831",
+      "title": "Per-side markers: author for each side, visible only to that side (Arma 3 model) — establish what exists first",
+      "status": "queued",
+      "executor": "claude-code",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "impact": [
+        "ui",
+        "mc-authoring"
+      ],
+      "surfaces": [
+        "RIGHT",
+        "SHELL"
+      ],
+      "order": 5130,
+      "summary": "OPERATOR REQUIREMENT (wave-204 eye-pass, 2026-08-10): 'I should be able to have markers for each side — markers only BLUFOR can see and markers only OPFOR can see, like Arma 3.' REPRO/AUDIT FIRST — the data model is ALREADY side-scoped: markers live on per-side briefings[] (T-069) and the dock copy says 'markers for the ACTIVE side's briefing'. Establish: (1) how the editor switches the active side today (is there a switcher? what does it author into?); (2) whether OPFOR/INDFOR marker authoring is reachable at all; (3) what the compiled mission carries per side. THEN: make per-side authoring explicit (side selector on the Markers surface; map shows the selected side's set, or all sets with side badges — pick with the operator if ambiguous); the GAME-side enforcement (each side sees only its briefing's markers) is the mod half — T-673, PARKED in the mod band (wave 150); cite it, do not build game enforcement here. ACCEPTANCE: author a BLUFOR and an OPFOR marker; each lands on its own side's briefing in the compiled export; the editor can display/author both sides' sets distinctly; T-673 named as the runtime half.",
+      "notes": "operator requirement wave-204; audit-first; game half = parked T-673"
     }
   ]
 }
