@@ -120,18 +120,42 @@ pub fn pack_icon_instance_yaw(
     out.extend_from_slice(&tint.to_le_bytes());
 }
 
-/// Encode screen-CCW degrees as the lane's `snorm16` (`angle/180` clamped to `[-1,1]` × 32767).
+/// Fold any screen-CCW angle into the half-open turn `(-180, 180]` the `snorm16` lane can hold.
+///
+/// **This must never become a `clamp`.** A clamp is right for a magnitude and WRONG for an angle:
+/// clamping made every heading from 181° to 359° encode as the single saturated value, so the whole
+/// western half of the compass drew due south (T-808 measured heading 270's tip bearing at 186.0°,
+/// pixel-identical to heading 180). Wrapping is not an approximation here — −270° and +90° are the
+/// same rotation, so the fold is exact and the shader cannot tell the difference.
+///
+/// `-180` folds UP to `+180` (the interval is open at the bottom); both decode to the same drawn
+/// direction, and picking one keeps the encoding a function of the angle alone.
+fn wrap_deg_180(angle_deg: f64) -> f64 {
+    let w = angle_deg % 360.0; // truncated remainder → (-360, 360), so one step finishes the fold
+    if w > 180.0 {
+        w - 360.0
+    } else if w <= -180.0 {
+        w + 360.0
+    } else {
+        w
+    }
+}
+
+/// Encode screen-CCW degrees as the lane's `snorm16` (`angle/180` × 32767, the angle first wrapped
+/// into `(-180, 180]` by `wrap_deg_180` — see there for why this is NOT a clamp).
 ///
 /// Byte-for-byte the encoder `world::glyph_math::yaw_to_snorm16` already applies to the tree / prop /
-/// text lanes; it is re-stated here because `slots_gpu` is un-gated and `world` is behind a cargo
-/// feature, so slots may not depend on it. `yaw_encoders_agree` (a `--features world` test in this
-/// file) sweeps both over the same inputs so the copy cannot drift.
+/// text lanes ON THE WRAPPED DOMAIN; it is re-stated here because `slots_gpu` is un-gated and `world`
+/// is behind a cargo feature, so slots may not depend on it. `yaw_encoders_agree` (a `--features
+/// world` test in this file) sweeps both over the same inputs so the copy cannot drift — it composes
+/// the wrap onto the `world` call, because `world`'s copy still clamps (the same latent defect, on
+/// lanes T-808 does not own).
 #[must_use]
 pub fn yaw_to_snorm16(angle_deg: f64) -> i16 {
     if !angle_deg.is_finite() || angle_deg == 0.0 {
         return 0;
     }
-    let n = (angle_deg / 180.0).clamp(-1.0, 1.0);
+    let n = wrap_deg_180(angle_deg) / 180.0;
     #[allow(clippy::cast_possible_truncation)]
     {
         (n * 32767.0).round() as i16
@@ -1695,23 +1719,110 @@ mod tests {
         );
         assert!((screen_yaw_for_heading_deg(f64::NAN)).abs() < 1e-12);
         assert!((screen_yaw_for_heading_deg(f64::INFINITY)).abs() < 1e-12);
-        // snorm clamps rather than wrapping, so a >180° screen angle saturates.
-        assert_eq!(yaw_to_snorm16(-270.0), -32767);
+        // The sign flip stays HERE and stays un-wrapped: the encoder owns the fold, so this
+        // function's output is still the plain negated bearing that the doc comment promises.
+        assert!((screen_yaw_for_heading_deg(359.0) - -359.0).abs() < 1e-12);
+        // snorm WRAPS rather than clamping (T-808): a screen angle past ±180 is a real rotation,
+        // not a saturated magnitude. −270° is +90°, so it encodes as +90° does.
+        assert_eq!(yaw_to_snorm16(-270.0), yaw_to_snorm16(90.0));
         assert_eq!(yaw_to_snorm16(180.0), 32767);
+        assert_eq!(
+            yaw_to_snorm16(-180.0),
+            32767,
+            "-180 folds up into (-180, 180]"
+        );
+        assert_eq!(yaw_to_snorm16(540.0), yaw_to_snorm16(180.0));
+        assert_eq!(yaw_to_snorm16(-359.0), yaw_to_snorm16(1.0));
+    }
+
+    /// T-808 — HALF THE COMPASS DREW DUE SOUTH. `screen_yaw_for_heading_deg` hands the encoder
+    /// `-heading`, so headings 181..359 arrived as −181..−359; the old `clamp(-1.0, 1.0)` mapped
+    /// every one of them onto the single saturated value and they all drew exactly like heading 180
+    /// (measured: heading 270's tip bearing was 186.0°, pixel-identical to heading 180's).
+    ///
+    /// The pin is the shape of the defect, not one sample of it: a CLAMP produces a PLATEAU, so the
+    /// sweep asserts the drawn bearing keeps advancing over the whole turn and never repeats.
+    #[test]
+    fn every_heading_of_the_compass_gets_its_own_facing() {
+        // The whole round trip a pixel takes: compass heading → screen yaw → snorm16 → the angle
+        // `shader.wgsl` `vs_icon` decodes (`deg = yaw/32767*180`) → back to a compass bearing.
+        let drawn_bearing = |heading: f64| {
+            let snorm = yaw_to_snorm16(screen_yaw_for_heading_deg(heading));
+            let screen_deg = f64::from(snorm) / 32767.0 * 180.0;
+            (-screen_deg).rem_euclid(360.0)
+        };
+        let encode = |heading: f64| yaw_to_snorm16(screen_yaw_for_heading_deg(heading));
+
+        // FOUR cardinals, FOUR encodings. Before the fix, 180 and 270 were the same i16.
+        let cardinals = [encode(0.0), encode(90.0), encode(180.0), encode(270.0)];
+        for (i, a) in cardinals.iter().enumerate() {
+            for (j, b) in cardinals.iter().enumerate() {
+                assert!(
+                    i == j || a != b,
+                    "cardinals {i} and {j} share encoding {a} — the compass has collapsed"
+                );
+            }
+        }
+        assert_eq!(
+            cardinals[3],
+            encode(-90.0),
+            "270 IS -90, not the clamp floor"
+        );
+
+        // Wrap continuity, not a clamp cliff: one degree either side of north matches.
+        assert_eq!(encode(359.0), encode(-1.0));
+        assert!(
+            (drawn_bearing(359.0) - 359.0).abs() < 0.02,
+            "359 drew {}",
+            drawn_bearing(359.0)
+        );
+
+        // The full sweep: strictly advancing on the circle, never a plateau. A plateau IS the
+        // defect — the clamp made 179 consecutive headings share one bearing.
+        let mut prev = drawn_bearing(0.0);
+        for h in 1..=360 {
+            let cur = drawn_bearing(f64::from(h));
+            let step = (cur - prev).rem_euclid(360.0);
+            assert!(
+                step > 0.0,
+                "heading {h} did not move the glyph — plateau at bearing {prev} (this is T-808)"
+            );
+            assert!(
+                step < 2.0,
+                "heading {h} jumped {step}° — the fold is not continuous"
+            );
+            assert!(
+                (cur - f64::from(h % 360)).abs() < 0.02 || (cur - f64::from(h % 360)).abs() > 359.9,
+                "heading {h} drew bearing {cur}"
+            );
+            prev = cur;
+        }
     }
 
     /// The yaw encoder copied into this file must agree with `world::glyph_math`'s, forever.
     /// Feature-gated because `world` is optional; `--all-features` (the gate) runs it.
+    ///
+    /// T-808 narrowed the claim to the truth: this copy now WRAPS an out-of-range angle where
+    /// `world`'s still clamps, so the pin is that this encoder is exactly `world`'s composed with
+    /// [`wrap_deg_180`]. On the in-range domain (every angle the world lanes actually feed) the two
+    /// are still byte-identical, and any drift in `world`'s rounding still fails here.
     #[cfg(feature = "world")]
     #[test]
     fn yaw_encoders_agree() {
         for i in -400..=400 {
-            let deg = f64::from(i) * 0.9375; // sweeps well past ±180 to cover the clamp
+            let deg = f64::from(i) * 0.9375; // sweeps well past ±180 to cover the fold
             assert_eq!(
                 yaw_to_snorm16(deg),
-                crate::world::yaw_to_snorm16(deg),
+                crate::world::yaw_to_snorm16(wrap_deg_180(deg)),
                 "yaw encoders diverged at {deg}"
             );
+            if deg.abs() < 180.0 {
+                assert_eq!(
+                    yaw_to_snorm16(deg),
+                    crate::world::yaw_to_snorm16(deg),
+                    "in-range yaw encoders diverged at {deg}"
+                );
+            }
         }
         for deg in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY, 0.0, -0.0] {
             assert_eq!(yaw_to_snorm16(deg), crate::world::yaw_to_snorm16(deg));
