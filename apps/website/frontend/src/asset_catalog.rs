@@ -195,6 +195,144 @@ pub fn build_catalog_tree(items: &[RegistryItem], side: &str) -> Vec<CatalogNode
     roots
 }
 
+/// Whether a **non-character** registry row (vehicle / object) belongs under the active Eden side.
+///
+/// T-809 (F-22) — the merged Factions tree files vehicles beside characters under one faction root,
+/// so a vehicle needs the same side test a character gets from [`character_matches_eden_side`]. The
+/// live seed roots its vehicle rows the faction way (`NATO/US_Army/Vehicles`, T-800), not the
+/// addon way the standalone Vehicles tab assumed (`ArmaReforger/Vehicles/…`), so the same two
+/// conventions apply: an explicit `…/BLUFOR/…` segment in either the category or the resource_name,
+/// or the legacy `NATO`/`USSR`/`FIA` category root. A row that carries neither (an addon-rooted
+/// `ArmaReforger/…` vehicle with no faction) matches NO side and so never lands in a faction tree —
+/// which is the honest answer: nothing in the row says which faction it is.
+#[must_use]
+pub fn asset_matches_eden_side(item: &RegistryItem, side: &str) -> bool {
+    if !EDEN_SIDES.contains(&side) {
+        return false;
+    }
+    path_has_side_segment(&item.category, side)
+        || path_has_side_segment(&item.resource_name, side)
+        || legacy_category_root_side(&item.category) == Some(side)
+}
+
+/// How deep the merged Factions tree opens on first paint (T-809). Only the depth-0 faction folder
+/// opens — same rule and same reason as [`build_catalog_tree`]: depth 0 is the FACTION, the axis an
+/// author picks first, and everything under it (roles, a Vehicles sub-tree, objects) stays folded
+/// until the author drills in. This deliberately does NOT inherit the standalone Vehicles tab's
+/// `VEHICLE_OPEN_DEPTH` of 2: that value existed to skip an addon root the merged tree does not have.
+const FACTION_OPEN_DEPTH: usize = 1;
+
+/// T-809 (F-22) — the **merged Factions tree**: ONE tree per faction, characters and vehicles (and
+/// objects when catalogued) filed together under their shared faction root, so a vehicle leaf is
+/// reachable inside its faction instead of stranded on a separate tab (the "know TBD's filing system
+/// before you can find anything" defect the UX review named).
+///
+/// This is the Eden F1-Objects shape: under `NATO` sit the roles AND a Vehicles sub-tree, not three
+/// parallel tabs. It composes the three per-kind rules already proven above rather than inventing a
+/// fourth:
+///
+/// * **characters** keep [`build_catalog_tree`]'s rule 2 — the last category segment is the role and
+///   the leaf is the `display_name` (`NATO/US_Army/Rifleman` → `NATO` > `US_Army` > "US Rifleman");
+/// * **vehicles** keep [`build_vehicle_catalog_tree`]'s whole-path rule and its `abstract` exclusion
+///   (`NATO/US_Army/Vehicles/…` → the family folder survives, `*_base.et` templates are dropped);
+/// * **objects** keep [`build_object_catalog_tree`]'s whole-path rule, `abstract` exclusion, and the
+///   T-439 spawn-registry gate.
+///
+/// All three are **side-filtered** (characters via [`character_matches_eden_side`], the rest via
+/// [`asset_matches_eden_side`]) so the tree the chips draw is one faction's material only. Folder ids
+/// are the accumulated path prefix (rule 3) exactly as the per-kind builders mint them, so a folder
+/// two kinds both file into (e.g. `NATO/US_Army`) is the SAME node — that shared-id merge is what
+/// puts characters and vehicles under one `US_Army`. Rows are consumed in array order (the API
+/// pre-sorts by `sort_order`), so within a folder characters precede vehicles precede objects only
+/// where `sort_order` already puts them so; no re-sort here.
+///
+/// A leaf carries no per-kind tag: the view resolves which place-arm a leaf fires from the live
+/// registry row ([`placeable_palette`]) at press time, the same resolution the Favourites collection
+/// uses — so this builder stays pure, native-testable, and free of the view's `PaletteKind`.
+#[must_use]
+pub fn build_faction_catalog_tree(items: &[RegistryItem], side: &str) -> Vec<CatalogNode> {
+    let mut roots: Vec<CatalogNode> = Vec::new();
+
+    // File one leaf under the folder path `folder_segs`, minting shared-id folders as needed.
+    // `open_depth` decides which folders start expanded (rule 3, generalised to the merged tree).
+    fn file_leaf(
+        roots: &mut Vec<CatalogNode>,
+        folder_segs: &[&str],
+        leaf_id: &str,
+        leaf_label: &str,
+    ) {
+        let mut cur = roots;
+        let mut prefix = String::new();
+        for (depth, seg) in folder_segs.iter().enumerate() {
+            if prefix.is_empty() {
+                prefix.push_str(seg);
+            } else {
+                prefix.push('/');
+                prefix.push_str(seg);
+            }
+            let idx = match cur.iter().position(|n| n.id == prefix) {
+                Some(i) => i,
+                None => {
+                    cur.push(CatalogNode {
+                        id: prefix.clone(),
+                        label: (*seg).to_string(),
+                        default_expanded: depth < FACTION_OPEN_DEPTH,
+                        children: Vec::new(),
+                        payload: None,
+                    });
+                    cur.len() - 1
+                }
+            };
+            cur = &mut cur[idx].children;
+        }
+        cur.push(CatalogNode {
+            id: leaf_id.to_string(),
+            label: leaf_label.to_string(),
+            default_expanded: false,
+            children: Vec::new(),
+            payload: Some(PlacePayload {
+                asset_id: leaf_id.to_string(),
+                role: leaf_label.to_string(),
+            }),
+        });
+    }
+
+    for item in items {
+        let matches = if item.kind == "character" {
+            character_matches_eden_side(item, side)
+        } else {
+            asset_matches_eden_side(item, side)
+        };
+        if !matches {
+            continue;
+        }
+        let segs: Vec<&str> = item.category.split('/').filter(|s| !s.is_empty()).collect();
+        if item.kind == "character" {
+            // Rule 2 — drop the role segment; `display_name` is the leaf.
+            let folder_segs = &segs[..segs.len().saturating_sub(1)];
+            file_leaf(
+                &mut roots,
+                folder_segs,
+                &item.resource_name,
+                &item.display_name,
+            );
+        } else if item.kind == "vehicle" {
+            if item.r#abstract == Some(true) {
+                continue; // *_base.et templates the engine cannot spawn (build_vehicle_catalog_tree rule)
+            }
+            // Whole category path is the folder chain (a vehicle's last segment is its family).
+            file_leaf(&mut roots, &segs, &item.resource_name, &item.display_name);
+        } else if is_object_kind(&item.kind)
+            && item.r#abstract != Some(true)
+            && object_alias_registered(&item.resource_name, &item.display_name)
+        {
+            file_leaf(&mut roots, &segs, &item.resource_name, &item.display_name);
+        }
+    }
+
+    roots
+}
+
 /// How deep the vehicle tree opens on first paint. The character tree's rule 3 opens depth 0
 /// because depth 0 there is the FACTION — the axis an author picks first. The vehicle catalog is
 /// addon-rooted (`ArmaReforger/Vehicles/Wheeled/UAZ469`), so depth 0 is the addon and depth 1 is the
@@ -2388,6 +2526,171 @@ mod tests {
         assert!(
             !tree.iter().any(|n| n.label == "NATO"),
             "the Factions tree must not leak into the Vehicles tab"
+        );
+    }
+
+    // ── T-809 (F-22) — the merged Factions tree: one tree per faction ──────────────────────────────
+
+    /// A merged fixture in the SHAPE the live dev seed uses (`registry_dev.sql`, T-800): BLUFOR
+    /// characters and BLUFOR vehicles both rooted `NATO/US_Army/…`, plus an OPFOR character so the
+    /// side filter has something to exclude, plus an abstract vehicle template that must be dropped.
+    fn merged_items() -> Vec<RegistryItem> {
+        vec![
+            character_row(
+                "{26A9756790131354}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Rifleman.et",
+                "US Rifleman",
+                "NATO/US_Army/Rifleman",
+            ),
+            character_row(
+                "{C9E4FEAF5AAC8D8C}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Medic.et",
+                "US Medic",
+                "NATO/US_Army/Medic",
+            ),
+            character_row(
+                "{1111111111111111}Prefabs/Characters/Factions/OPFOR/USSR/Character_RU_Rifleman.et",
+                "USSR Rifleman",
+                "USSR/Motorized/Rifleman",
+            ),
+            vehicle_row(
+                "{86B7B7522A75FF8B}Prefabs/Vehicles/Wheeled/M998/M1025_M2.et",
+                "M1025 Humvee (M2)",
+                "NATO/US_Army/Vehicles",
+                false,
+            ),
+            vehicle_row(
+                "{4D4D74A0BE9E8C1F}Prefabs/Vehicles/Tracked/M113/M113_M2.et",
+                "M113 APC (M2)",
+                "NATO/US_Army/Vehicles",
+                false,
+            ),
+            vehicle_row(
+                "{9999999999999999}Prefabs/Vehicles/Wheeled/M998/M998_base.et",
+                "M998 base",
+                "NATO/US_Army/Vehicles",
+                true, // abstract template — must not reach a leaf
+            ),
+        ]
+    }
+
+    /// THE ACCEPTANCE this ticket exists for: a vehicle leaf is reachable **inside its faction**, in
+    /// the same tree as the characters — Eden's F1-Objects shape, not TBD's three-tab split. Under
+    /// `NATO` sit both the roles and a `Vehicles` sub-folder whose leaves are the placeable vehicles.
+    #[test]
+    fn merged_tree_reaches_a_vehicle_leaf_under_the_nato_subtree() {
+        let tree = build_faction_catalog_tree(&merged_items(), "BLUFOR");
+
+        // One faction root, open on first paint.
+        assert_eq!(tree.len(), 1, "one faction root for the BLUFOR chip");
+        assert_eq!(tree[0].id, "NATO");
+        assert!(tree[0].default_expanded, "the faction folder opens");
+
+        let us_army = tree[0]
+            .children
+            .iter()
+            .find(|n| n.id == "NATO/US_Army")
+            .expect("US_Army folder holds both kinds");
+        assert!(
+            !us_army.default_expanded,
+            "depth 1 stays folded until the author drills in"
+        );
+
+        // The character leaves file directly under US_Army (role segment dropped).
+        let char_leaves: Vec<&str> = us_army
+            .children
+            .iter()
+            .filter(|n| n.payload.is_some())
+            .map(|n| n.label.as_str())
+            .collect();
+        assert_eq!(
+            char_leaves,
+            vec!["US Rifleman", "US Medic"],
+            "characters file under the faction as display-name leaves"
+        );
+
+        // And a `Vehicles` sub-folder sits beside them, holding the vehicle leaves — the whole point.
+        let vehicles = us_army
+            .children
+            .iter()
+            .find(|n| n.id == "NATO/US_Army/Vehicles")
+            .expect("a Vehicles sub-folder is reachable inside NATO");
+        let veh_leaves: Vec<&str> = vehicles
+            .children
+            .iter()
+            .filter(|n| n.payload.is_some())
+            .map(|n| n.label.as_str())
+            .collect();
+        assert_eq!(
+            veh_leaves,
+            vec!["M1025 Humvee (M2)", "M113 APC (M2)"],
+            "the placeable vehicles are leaves under NATO — the abstract template is dropped"
+        );
+
+        // The leaf's payload carries the real ResourceName so a drop authors the right prefab.
+        assert_eq!(
+            vehicles.children[0].payload,
+            Some(PlacePayload {
+                asset_id: "{86B7B7522A75FF8B}Prefabs/Vehicles/Wheeled/M998/M1025_M2.et".to_string(),
+                role: "M1025 Humvee (M2)".to_string(),
+            }),
+            "a vehicle leaf drops its ResourceName, exactly like a character leaf"
+        );
+    }
+
+    /// The side chips keep filtering the ONE tree: a BLUFOR chip surfaces NATO material only, and the
+    /// OPFOR character never leaks into it. (The side filter is what makes the merged tree per-faction.)
+    #[test]
+    fn merged_tree_is_side_filtered() {
+        let blufor = build_faction_catalog_tree(&merged_items(), "BLUFOR");
+        assert!(
+            blufor.iter().all(|n| n.id == "NATO"),
+            "BLUFOR shows the NATO faction only"
+        );
+        let mut blufor_leaves = leaf_labels(&blufor);
+        blufor_leaves.sort();
+        assert_eq!(
+            blufor_leaves,
+            vec![
+                "M1025 Humvee (M2)".to_string(),
+                "M113 APC (M2)".to_string(),
+                "US Medic".to_string(),
+                "US Rifleman".to_string(),
+            ],
+            "BLUFOR leaves are its characters and its vehicles, together"
+        );
+
+        let opfor = build_faction_catalog_tree(&merged_items(), "OPFOR");
+        assert_eq!(leaf_labels(&opfor), vec!["USSR Rifleman".to_string()]);
+        assert!(
+            !opfor.iter().any(|n| n.id == "NATO"),
+            "OPFOR must not surface the NATO subtree"
+        );
+
+        // An unknown chip side surfaces nothing (the chip row admits only the three sides).
+        assert!(build_faction_catalog_tree(&merged_items(), "CIV").is_empty());
+    }
+
+    /// The search grammar (`class:` / `mod:`) must span the MERGED tree — it runs over the one tree
+    /// the chips draw, so a vehicle classname and a mod-root query both reach vehicle leaves that now
+    /// live inside the faction. (`filter_catalog` is kind-agnostic; this pins the composition.)
+    #[test]
+    fn search_spans_the_merged_tree() {
+        let tree = build_faction_catalog_tree(&merged_items(), "BLUFOR");
+
+        // `class:` reaches a vehicle leaf by its bare classname, inside the faction tree.
+        let by_class = filter_catalog(&tree, "class:M1025_M2");
+        assert_eq!(
+            leaf_labels(&by_class),
+            vec!["M1025 Humvee (M2)".to_string()],
+            "a class: query reaches a vehicle leaf in the merged tree"
+        );
+        // …and still reaches a character leaf, same grammar, same tree.
+        let by_class_char = filter_catalog(&tree, "class:Character_US_Medic");
+        assert_eq!(leaf_labels(&by_class_char), vec!["US Medic".to_string()]);
+
+        // A plain label token spans both kinds (Humvee is a vehicle; Medic is a character).
+        assert_eq!(
+            leaf_labels(&filter_catalog(&tree, "Humvee")),
+            vec!["M1025 Humvee (M2)".to_string()]
         );
     }
 
