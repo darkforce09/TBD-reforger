@@ -1285,11 +1285,9 @@ pub async fn smoke_save_dialog_rect(dist: &str, path: &str) -> Result<u8> {
         if ready {
             // The strip's ONE primary action — unique `title`, so this never hits the File-menu
             // "Save Version…" row (which carries an ellipsis and a different title).
-            const SAVE_BTN: &str =
-                "[...document.querySelectorAll('button')].find(b => b.getAttribute('title') === 'Save an immutable version of this mission')";
+            const SAVE_BTN: &str = "[...document.querySelectorAll('button')].find(b => b.getAttribute('title') === 'Save an immutable version of this mission')";
             // The dialog is open once its own <h2> and the Version input are both mounted.
-            const DIALOG_OPEN: &str =
-                "[...document.querySelectorAll('h2')].some(h => h.textContent === 'Save Version') && !!document.querySelector('input[aria-label=\"Version\"]')";
+            const DIALOG_OPEN: &str = "[...document.querySelectorAll('h2')].some(h => h.textContent === 'Save Version') && !!document.querySelector('input[aria-label=\"Version\"]')";
 
             // Both shipping viewports. `setDeviceMetricsOverride` reflows the CSS layout, so the
             // `fixed` centering is recomputed against each viewport before we read the rect.
@@ -1360,7 +1358,10 @@ pub async fn smoke_save_dialog_rect(dist: &str, path: &str) -> Result<u8> {
 
                 // Esc closes the dialog before the next viewport pass (also re-proves Esc-close).
                 key_chord(&h.page, "Escape", "Escape", 0, 27).await?;
-                let closed = h.page.wait_for(&format!("!({DIALOG_OPEN})"), 20, 250).await?;
+                let closed = h
+                    .page
+                    .wait_for(&format!("!({DIALOG_OPEN})"), 20, 250)
+                    .await?;
                 checks.insert(format!("{tag}_escClosed"), json!(closed));
             }
         } else {
