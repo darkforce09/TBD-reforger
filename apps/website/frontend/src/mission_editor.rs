@@ -2656,6 +2656,233 @@ pub(crate) fn comment_drag_lane_xy(
     xy
 }
 
+/* ══════════ T-802 (O-8) — THE HOVER CURSOR: the pointer names what is grabbable ═════════════════
+ *
+ * Until this ticket the map canvas wore `cursor: auto` over a unit, over a note and over bare
+ * ground alike: nothing on the surface said "this pixel is pickable". Every OTHER clickable thing
+ * in the editor already says so — the outliner rows, the toolbelt chips and the validation findings
+ * all wear `cursor-pointer`, and T-754 / the wave-115 MAJOR were both filed for the INVERSE lie (a
+ * `cursor-pointer` over a click that could not land). The map was the one surface making no claim
+ * at all, which is the same defect with the sign flipped.
+ *
+ * ── WHY THIS IS NOT A CSS ONE-LINER ─────────────────────────────────────────────────────────────
+ * Hover picking was DELIBERATELY REMOVED for performance at T-057 (`7adc34596`, the React era):
+ * "Removed `onHover`; cursor unprojected from the mouse on `onPointerMove`. Picking only on
+ * click/dbl-click/marquee/drag-start", with the trade recorded in the roadmap as **"the pointer no
+ * longer changes to a 'pointer' glyph over an icon (no hover pick)"**. Deck's `onHover` ran a GPU
+ * pick pass over every icon on EVERY pointer move and took the editor to ~9 fps at 200 slots.
+ * So the cursor is not the hard part; paying for it every frame is. Four things keep this cheap:
+ *
+ *   1. THROTTLE — at most one hit-test per [`HOVER_THROTTLE_MS`]. A pointer streams 60–125 moves a
+ *      second; this answers ~25 of them and drops the rest on the floor.
+ *   2. NO NEW GEOMETRY — the test is `select_tool::pick_slot_or_vehicle` (a radius query over
+ *      `PointIndex`, the spatial hash) followed by the SAME comment fold the click and drag paths
+ *      run, with the SAME tolerance derivation. There is no second point set, no second transform
+ *      and no second notion of "what is under this pixel": if the cursor says pickable, the click
+ *      that follows picks — and `the_hover_reuses_the_click_paths_pick_and_camera` holds them so.
+ *   3. ONE DOCUMENT READ PER GENERATION — [`HoverPoints`] materialises the slot SoA, the vehicle
+ *      points and the comment points ONCE per `doc_tick` and reuses them across every hit-test in
+ *      between. `doc_tick` is the exact channel `mission_history::after_doc_change` bumps in the
+ *      same tail that re-binds the glyph lanes (`refresh_signals` → `editor_ops::refresh_docks`,
+ *      pinned by `t780_connection_line`), so the hover cache is never staler than the picture the
+ *      operator is looking at. A per-move `materialize()` would be a full Y.Doc read at 25 Hz —
+ *      the T-057 cost in a new coat.
+ *   4. WRITE ONLY ON CHANGE — the DOM `style.cursor` write happens on a TRANSITION, never per tick.
+ *
+ * ── HYSTERESIS ──────────────────────────────────────────────────────────────────────────────────
+ * A bare boundary test flickers: the pick radius is 4 px, so a hand resting on the rim of a glyph
+ * crosses in and out several times a second and the cursor strobes. [`hover_next`] holds the
+ * "pickable" claim through a miss while the pointer is still within [`HOVER_RELEASE_PX`] of the
+ * pixel that last hit — a dead-band, not a timer, so a decisive move off the glyph drops it at once
+ * while jitter cannot. The band is derived from [`COMMENT_PICK_PX`] (this file's pinned restatement
+ * of `MissionDocCore::PICK_RADIUS_PX`) and NOT from a fresh pixel guess, so when T-808 changes what
+ * the glyphs look like the affordance follows the pick radius instead of drifting away from it.
+ *
+ * ── READ-ONLY WITH RESPECT TO THE GESTURE MACHINE ───────────────────────────────────────────────
+ * This runs in the same `pointermove` as T-723's arm, T-795's rotate ring and T-796's comment drag.
+ * It takes NOTHING and consumes NOTHING: it reads `left` through a shared borrow purely to ask "is
+ * a gesture in flight?", and it is SUPPRESSED (state reset, cursor back to plain) whenever one is —
+ * see [`hover_suppressed`]. A hover test that mutated or consumed gesture state would be a defect,
+ * so the only state it owns is its own [`HoverState`] cell.
+ */
+
+/// T-802 — the CSS `cursor` over a pickable entity. `pointer` (not `grab`) because it is the
+/// vocabulary the rest of this editor already speaks: every clickable chrome row wears
+/// `cursor-pointer`, and T-754 made "wears pointer" mean exactly "a click here resolves".
+pub(crate) const HOVER_CURSOR_PICKABLE: &str = "pointer";
+
+/// T-802 — the CSS `cursor` everywhere else on the map. Written EXPLICITLY rather than left as the
+/// UA default `auto`, so the resting state is a value the surface asserts (and a scripted read can
+/// distinguish "decided: nothing here" from "never asked").
+pub(crate) const HOVER_CURSOR_PLAIN: &str = "default";
+
+/// T-802 — the hover hit-test throttle floor, in milliseconds. 40 ms ⇒ at most 25 tests a second
+/// against a pointer that fires two to five times that often. Inside the 30–60 ms band the ticket
+/// names: fast enough that the cursor changes within one frame of arriving over a glyph, slow
+/// enough that the pick is not on the pointer's hot path.
+pub(crate) const HOVER_THROTTLE_MS: f64 = 40.0;
+
+/// T-802 — the hysteresis dead-band, in SCREEN pixels: how far the pointer must travel from the
+/// pixel that last HIT before a miss is believed.
+///
+/// Derived from [`COMMENT_PICK_PX`] — this file's pinned restatement of the slot pick radius
+/// (`MissionDocCore::PICK_RADIUS_PX`; see `comment_pick_px_is_the_slot_pick_radius`) — and NOT from
+/// a hand-picked pixel count, so it tracks the pick radius rather than the glyph art. 1.5× the
+/// radius: wide enough that hand tremor at the rim cannot strobe the cursor, narrow enough that
+/// leaving the glyph reads as instant.
+pub(crate) const HOVER_RELEASE_PX: f64 = COMMENT_PICK_PX * 1.5;
+
+/// T-802 — everything the hover cursor remembers between pointer moves. `Copy`, three scalars, and
+/// held in a plain `Cell` beside the gesture state it must never touch.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub(crate) struct HoverState {
+    /// Timestamp of the last hit-test (`Date::now()` ms domain) — the throttle clock. `0.0` (the
+    /// `Default`) means "never tested", which [`hover_due`] treats as due.
+    pub last_ms: f64,
+    /// Is the cursor currently CLAIMING that the pixel under the pointer is pickable?
+    pub pickable: bool,
+    /// The pixel of the most recent HIT — the anchor the hysteresis dead-band is measured from.
+    /// `None` whenever `pickable` is false; the two always move together.
+    pub anchor: Option<(f64, f64)>,
+}
+
+/// T-802 — may the hit-test run at `now_ms`? The throttle, as a pure question.
+///
+/// Due when at least [`HOVER_THROTTLE_MS`] has passed, when the clock has never been read
+/// (`last_ms == 0.0`), and when the clock went BACKWARDS or non-finite — a stalled throttle that
+/// silently stopped answering would look exactly like the feature being off, so every degenerate
+/// clock resolves to "test it".
+#[must_use]
+pub(crate) fn hover_due(prev: HoverState, now_ms: f64) -> bool {
+    if !now_ms.is_finite() || prev.last_ms <= 0.0 {
+        return true;
+    }
+    !(0.0..HOVER_THROTTLE_MS).contains(&(now_ms - prev.last_ms))
+}
+
+/// T-802 — fold one hit-test result into the hover state. **The only place the pointer/plain
+/// decision is made**, and pure so the hysteresis is provable off-target.
+///
+/// A HIT always claims pickable and re-anchors. A MISS drops the claim UNLESS the pointer is still
+/// inside [`HOVER_RELEASE_PX`] of the anchor — and a held miss deliberately does NOT move the
+/// anchor, so continued travel in one direction always escapes the band (a re-anchoring hold would
+/// let a slow drag carry the claim across the whole map).
+#[must_use]
+pub(crate) fn hover_next(prev: HoverState, hit: bool, px: f64, py: f64, now_ms: f64) -> HoverState {
+    if hit {
+        return HoverState {
+            last_ms: now_ms,
+            pickable: true,
+            anchor: Some((px, py)),
+        };
+    }
+    let held = prev.pickable
+        && prev
+            .anchor
+            .is_some_and(|(ax, ay)| (px - ax).hypot(py - ay) <= HOVER_RELEASE_PX);
+    HoverState {
+        last_ms: now_ms,
+        pickable: held,
+        anchor: if held { prev.anchor } else { None },
+    }
+}
+
+/// T-802 — the CSS cursor value for a hover verdict.
+#[must_use]
+pub(crate) fn hover_cursor_css(pickable: bool) -> &'static str {
+    if pickable {
+        HOVER_CURSOR_PICKABLE
+    } else {
+        HOVER_CURSOR_PLAIN
+    }
+}
+
+/// T-802 — is the hover read suppressed right now? Pure, so the suppression set is a readable list
+/// rather than a chain of early returns nobody can enumerate.
+///
+///   * `gesture_active` — an LMB drag / marquee / rotate / ruler capture is in flight. The pointer
+///     is committed to a gesture; re-labelling it mid-drag would be noise, and the cursor must not
+///     be left claiming "pickable" over whatever the drag happens to be passing over.
+///   * `place_armed` — a palette place (or a multi-click zone draw: both are `editor_ops::Pending`)
+///     owns the pointer, and the live affordance is the place ghost, not the cursor.
+///   * `measuring` — Ruler / LoS capture points; the map's pickable entities are not the subject.
+///
+/// `place_armed` and the zone draw are ALSO caught by the `has_pending` early return further up the
+/// handler. They are named here anyway: the predicate is the statement of intent, and a later edit
+/// that reorders the handler must not silently un-suppress them.
+#[must_use]
+pub(crate) fn hover_suppressed(gesture_active: bool, place_armed: bool, measuring: bool) -> bool {
+    gesture_active || place_armed || measuring
+}
+
+/// T-802 — write the map cursor onto the CANVAS (not the container): the canvas is the element the
+/// pointer actually hits over the map — the chrome above it is `pointer-events-none` — so the claim
+/// lands on the hit element and cannot be inherited by a chrome panel the pointer moves onto.
+///
+/// `web_sys::HtmlElement::style` is called UFCS-style on purpose: Leptos's `ElementExt::style(S)` is
+/// also in scope on this type and wins ordinary method resolution, which is a compile error rather
+/// than a silent one — but naming the intended trait keeps it that way for the next editor too.
+#[cfg(target_arch = "wasm32")]
+fn set_map_cursor(canvas: &web_sys::HtmlCanvasElement, pickable: bool) {
+    let _ = web_sys::HtmlElement::style(canvas).set_property("cursor", hover_cursor_css(pickable));
+}
+
+/// T-802 — the pick's point sets, materialised ONCE per document generation.
+///
+/// `tick` is `doc_tick`, the counter `editor_ops::refresh_docks` bumps at the end of every commit
+/// (and the render lanes re-bind on). Cache-per-generation rather than cache-per-move is what keeps
+/// a 25 Hz hover off the T-057 cliff: the expensive half of a pick is `materialize()` (a full Y.Doc
+/// read), not the radius query.
+#[cfg(target_arch = "wasm32")]
+pub(crate) struct HoverPoints {
+    tick: u64,
+    soa: map_engine_core::doc::SlotSoa,
+    vehicles: Vec<(String, f64, f64)>,
+    comments: Vec<CommentPoint>,
+}
+
+/// T-802 — is something PICKABLE under screen pixel `(px, py)`? Refreshes `cache` when `tick` has
+/// moved, then runs the click path's own pick over it.
+///
+/// Precedence does not matter here (the answer is a bool, not an id), but the SOURCES do: slots +
+/// vehicles through `select_tool::pick_slot_or_vehicle`, then comments through [`pick_comment`]
+/// with the tolerance derived by unprojecting two points [`COMMENT_PICK_PX`] apart — byte-for-byte
+/// the fold the T-796 drag arm and the T-784 click path run. Markers are deliberately ABSENT: they
+/// have no selection route at all (see the `route_target` notes), so a pointer cursor over one
+/// would be precisely the `cursor-pointer`-over-a-dead-click lie T-754 was filed for.
+#[cfg(target_arch = "wasm32")]
+pub(crate) fn hover_hit(
+    cache: &mut Option<HoverPoints>,
+    tick: u64,
+    doc: &crate::mission_doc::DocHandle,
+    cam: &map_engine_core::camera::OrthoCamera,
+    px: f64,
+    py: f64,
+) -> bool {
+    if cache.as_ref().is_none_or(|c| c.tick != tick) {
+        // Both reads are shared borrows of the same `RefCell` (`vehicle_points` goes through
+        // `OPS_CTX` to this very doc) — exactly how the click path already nests them.
+        let fresh = doc.borrow().as_ref().map(|c| HoverPoints {
+            tick,
+            soa: c.materialize(),
+            vehicles: crate::editor_ops::vehicle_points(),
+            comments: comment_points(&c.comments_json()),
+        });
+        let Some(fresh) = fresh else { return false };
+        *cache = Some(fresh);
+    }
+    let Some(pts) = cache.as_ref() else {
+        return false;
+    };
+    if crate::select_tool::pick_slot_or_vehicle(cam, &pts.soa, &pts.vehicles, px, py).is_some() {
+        return true;
+    }
+    let w = cam.unproject_xy(px, py);
+    let w2 = cam.unproject_xy(px + COMMENT_PICK_PX, py);
+    let tol = (w2[0] - w[0]).hypot(w2[1] - w[1]);
+    pick_comment(&pts.comments, w[0], w[1], tol).is_some()
+}
+
 /* ═════════════ T-754 — what the click-to-select router RESOLVES, as a pure question ═════════════
  *
  * T-655 shipped ONE click-to-select router (`validation_panel::register_select_by_id`, registered
@@ -4792,6 +5019,19 @@ pub fn MissionEditorPage() -> impl IntoView {
             // never reenter the rAF loop's `borrow_mut`.
             let pan_px: Rc<Cell<Option<(f64, f64)>>> = Rc::new(Cell::new(None));
 
+            // T-802 (O-8) — the HOVER CURSOR's two pieces of session-local state, born beside
+            // `pan_px`/`left` and owned by nothing else. `HoverState` is `Copy` (throttle clock +
+            // pickable claim + hysteresis anchor) so a `Cell` suffices; `HoverPoints` is the pick's
+            // point sets cached per `doc_tick`, so it needs a `RefCell`. NEITHER is gesture state:
+            // the hover read never takes, writes or consumes anything the T-723/T-795/T-796 arms own.
+            let hover_state: Rc<Cell<HoverState>> = Rc::new(Cell::new(HoverState::default()));
+            let hover_points: Rc<RefCell<Option<HoverPoints>>> = Rc::new(RefCell::new(None));
+            // Assert the RESTING cursor once, at mount. Without this the canvas reads the UA `auto`
+            // until the first pointer move that finds nothing — so "over empty ground" would be two
+            // different computed values depending on whether the pointer had ever been over a glyph.
+            // `hover_cursor_css(false)` (not a literal) so there is exactly one source for the value.
+            set_map_cursor(&canvas, false);
+
             // Wheel → zoom_at (engine self-clamps zoom to [-6, 6]). Capture + non-passive so we can
             // preventDefault and beat any child handler. CSS origin = the container rect (same basis
             // as the pan/pick math).
@@ -4944,6 +5184,14 @@ pub fn MissionEditorPage() -> impl IntoView {
                 let container = container.clone();
                 let dem_grid = dem_grid.clone();
                 let map_host = map_host.clone();
+                // T-802 — the hover cursor's own state: the throttle clock + hysteresis anchor, and
+                // the per-`doc_tick` point-set cache. Cloned in like every other handle here; the
+                // `pointerleave` closure below clones the state cell (and the canvas) so leaving
+                // the map resets the claim. The point CACHE is not reset there on purpose — it is
+                // keyed on `doc_tick`, so it is still valid when the pointer comes back.
+                let hover_state = hover_state.clone();
+                let hover_points = hover_points.clone();
+                let canvas = canvas.clone();
                 move |ev: web_sys::PointerEvent| {
                     use crate::select_tool::{self as st, LeftGesture as LG};
                     let rect = container.get_bounding_client_rect();
@@ -4959,7 +5207,13 @@ pub fn MissionEditorPage() -> impl IntoView {
                     // Un-throttled by design: React rAF-throttles because its cursor write
                     // re-rendered the page, whereas this feeds two text nodes through Leptos's
                     // fine-grained bindings. NaN (singular matrix) reads as off-map.
-                    let world = {
+                    //
+                    // T-802 — the camera is now HELD rather than discarded after the unproject, so
+                    // the hover hit-test below reads the SAME frozen camera this read-out and the
+                    // pick already use. One construction per move, not two: keeping it is strictly
+                    // less work than building a second one, and — the wave-201 lesson — a third
+                    // copy of the transform would be its own defect class.
+                    let hover_cam = {
                         let g = engine.borrow();
                         g.as_ref().map(|e| {
                             st::frozen_camera(
@@ -4969,9 +5223,9 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 e.target_y(),
                                 e.zoom(),
                             )
-                            .unproject_xy(px, py)
                         })
                     };
+                    let world = hover_cam.as_ref().map(|c| c.unproject_xy(px, py));
                     cursor.set(
                         world
                             .filter(|c| c[0].is_finite() && c[1].is_finite())
@@ -5015,6 +5269,55 @@ pub fn MissionEditorPage() -> impl IntoView {
                             }
                         }
                         return;
+                    }
+
+                    // T-802 (O-8) — THE HOVER CURSOR. Strictly READ-ONLY with respect to every
+                    // gesture on this handler: it borrows `left` immutably to ask one question
+                    // ("is a gesture in flight?"), drops that borrow on the same line, and owns
+                    // nothing but its own `hover_state` cell + `hover_points` cache. It sits HERE
+                    // — after the pan and armed-place early returns, before the gesture machine
+                    // takes `left` — because those two returns are themselves suppression cases and
+                    // this is the last point at which "no gesture is running" is still knowable.
+                    //
+                    // Cost per pointer move when the throttle is closed (the common case): one
+                    // `Date::now`, one `Cell` read, one shared `RefCell` borrow. When it is open:
+                    // one radius query over the cached SoA. Never a document read unless `doc_tick`
+                    // moved. See the T-802 block above for why each of those matters (T-057).
+                    {
+                        let now_ms = js_sys::Date::now();
+                        let gesture_active = left.borrow().is_some();
+                        let prev = hover_state.get();
+                        if hover_suppressed(
+                            gesture_active,
+                            crate::editor_ops::has_pending(),
+                            tool_mode.get_untracked().captures_points(),
+                        ) {
+                            // Drop the claim rather than freeze it: a drag that began on a glyph
+                            // must not leave the cursor saying "pickable" over open ground, and the
+                            // reset means the first move after release re-tests immediately.
+                            if prev.pickable {
+                                set_map_cursor(&canvas, false);
+                            }
+                            hover_state.set(HoverState::default());
+                        } else if hover_due(prev, now_ms) {
+                            let hit = hover_cam.as_ref().is_some_and(|cam| {
+                                hover_hit(
+                                    &mut hover_points.borrow_mut(),
+                                    doc_tick.get_untracked(),
+                                    &doc,
+                                    cam,
+                                    px,
+                                    py,
+                                )
+                            });
+                            let next = hover_next(prev, hit, px, py, now_ms);
+                            // Write ONLY on a transition — the churn guard. A per-tick write would
+                            // be 25 style mutations a second for a value that did not change.
+                            if next.pickable != prev.pickable {
+                                set_map_cursor(&canvas, next.pickable);
+                            }
+                            hover_state.set(next);
+                        }
                     }
 
                     // T-159.19 — LMB drag gesture. Own the gesture across the update (take → compute →
@@ -6048,8 +6351,17 @@ pub fn MissionEditorPage() -> impl IntoView {
             // correct: those px are not map coordinates.
             let onpointerleave = Closure::<dyn FnMut(web_sys::PointerEvent)>::new({
                 let engine = engine.clone();
+                // T-802 — the hover cursor is reset here for the same reason the CUR read-out is
+                // blanked: these pixels are no longer map pixels. Without it a pointer that left the
+                // map WHILE over a glyph would strand `pointer` on the canvas, and since `cursor` is
+                // an inherited property the stale claim would sit under the chrome the pointer moved
+                // onto. Dropping the state (not just the CSS) also makes the re-entry move re-test.
+                let hover_state = hover_state.clone();
+                let canvas = canvas.clone();
                 move |_ev: web_sys::PointerEvent| {
                     cursor.set(None);
+                    hover_state.set(HoverState::default());
+                    set_map_cursor(&canvas, false);
                     // T-175 B2 — hide the palette place ghost when the cursor leaves the map (a
                     // still-armed place re-shows it on re-entry; an off-canvas release cancels).
                     if let Some(e) = engine.borrow_mut().as_mut() {
@@ -13918,6 +14230,432 @@ mod w145_selection_prune {
                 at.contains(&prune),
                 "wave 145 F-1: {site} must prune through the shared prune_selection, not with a \
                  retain of its own; body was:\n{at}"
+            );
+        }
+    }
+}
+
+// ── T-802 (O-8) — the hover cursor ───────────────────────────────────────────────────────────────
+//
+// Two halves, and both are load-bearing for a different reason.
+//
+// The STATE MACHINE (`hover_due` / `hover_next` / `hover_cursor_css`) is pure, so the throttle and
+// the hysteresis are proved here rather than eyeballed in a browser — including the acceptance's
+// own churn property, which is a statement about a SEQUENCE of hit-tests and therefore exactly the
+// kind of thing a screenshot cannot check.
+//
+// The SOURCE PINS are the T-057 half. The reason hover picking was removed in the first place was
+// cost, and every one of the four things that keeps this cheap (throttle first, no second point
+// set, one document read per `doc_tick`, write only on change) is a property of the CALL SITE, not
+// of any function these tests can call. So the call site is read back out of the file: an edit that
+// hoists the pick above the throttle, or re-derives its own geometry, or writes the style every
+// tick, breaks a named assertion instead of quietly re-creating the regression that deleted this
+// feature once already.
+#[cfg(test)]
+mod t802_hover_cursor {
+    use super::{
+        hover_cursor_css, hover_due, hover_next, hover_suppressed, HoverState, COMMENT_PICK_PX,
+        HOVER_CURSOR_PICKABLE, HOVER_CURSOR_PLAIN, HOVER_RELEASE_PX, HOVER_THROTTLE_MS,
+    };
+    use crate::arsenal::class_r_scrub::{live_code, only_body};
+
+    /// The editor page, scrubbed. Sliced from the RAW source at the component anchor first (the
+    /// `t784_comment_glyph::page` idiom): `live_code` truncates at the first `#[cfg(test)]`, and
+    /// this file has one before the component.
+    fn page() -> String {
+        let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
+        let raw = include_str!("mission_editor.rs");
+        assert_eq!(raw.matches(anchor.as_str()).count(), 1);
+        live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])
+    }
+
+    /// The T-802 primitives block, scrubbed — sliced the same way, from the first constant.
+    fn hover_block() -> String {
+        let anchor = format!("pub(crate) const HOVER_CURSOR_{}", "PICKABLE");
+        let raw = include_str!("mission_editor.rs");
+        assert_eq!(raw.matches(anchor.as_str()).count(), 1);
+        live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])
+    }
+
+    /// The live body of `hover_hit`, scrubbed.
+    fn hover_hit_body() -> String {
+        let block = hover_block();
+        only_body(&block, &["pub(crate) fn hover_", "hit("].concat()).to_string()
+    }
+
+    /// The live `pointermove` closure, scrubbed.
+    fn pointermove() -> String {
+        let page = page();
+        let anchor = ["let onpointermove = ", "Closure::"].concat();
+        assert_eq!(page.matches(anchor.as_str()).count(), 1);
+        only_body(&page, &anchor).to_string()
+    }
+
+    /* ── the state machine ─────────────────────────────────────────────────────────────────── */
+
+    /// The throttle is a FLOOR, and every degenerate clock resolves to "test it". A throttle that
+    /// silently stopped answering (a clock that went backwards across a page resume, a NaN out of a
+    /// singular timer) would present as the feature being off, which is the failure mode with no
+    /// symptom — so it fails open, not closed.
+    #[test]
+    fn the_throttle_is_a_floor_and_fails_open() {
+        let fresh = HoverState::default();
+        assert!(hover_due(fresh, 0.0), "never-tested must be due");
+        assert!(hover_due(fresh, 1_000_000.0));
+
+        let tested = HoverState {
+            last_ms: 1000.0,
+            ..HoverState::default()
+        };
+        assert!(!hover_due(tested, 1000.0), "same instant is not due");
+        assert!(
+            !hover_due(tested, 1000.0 + HOVER_THROTTLE_MS - 0.001),
+            "one tick short of the window is not due"
+        );
+        assert!(
+            hover_due(tested, 1000.0 + HOVER_THROTTLE_MS),
+            "the window boundary is due"
+        );
+        assert!(
+            hover_due(tested, 999.0),
+            "a clock that went BACKWARDS must be due, not wedged shut"
+        );
+        assert!(hover_due(tested, f64::NAN), "a NaN clock must be due");
+        assert!(hover_due(tested, f64::INFINITY));
+    }
+
+    /// The ticket's band, restated as an assertion so a later "tune" that makes this a per-frame
+    /// pick has to argue with a test rather than with a comment.
+    #[test]
+    fn the_throttle_is_inside_the_tickets_30_to_60_ms_band() {
+        assert!(
+            (30.0..=60.0).contains(&HOVER_THROTTLE_MS),
+            "T-802: the hover throttle is {HOVER_THROTTLE_MS} ms — outside the 30–60 ms band the \
+             ticket sets. Below 30 ms this is a per-frame pick again (the T-057 regression); above \
+             60 ms the cursor visibly lags the pointer."
+        );
+    }
+
+    /// **The churn acceptance, as a property.** A hand resting on the rim of a glyph produces an
+    /// ALTERNATING hit/miss stream inside a couple of pixels. Fold that whole stream and the cursor
+    /// must change exactly ONCE — on acquisition — and never again.
+    #[test]
+    fn jitter_on_a_glyph_rim_changes_the_cursor_exactly_once() {
+        let (cx, cy) = (400.0, 300.0);
+        let mut st = HoverState::default();
+        let mut cur = hover_cursor_css(false);
+        let mut changes = 0;
+        // 60 ticks: hit / miss / miss / hit … all within one pixel of the anchor, which is well
+        // inside the release band. This is the sequence a 4 px pick radius produces under tremor.
+        for i in 0..60 {
+            let hit = i % 3 == 0;
+            let (px, py) = (cx + f64::from(i % 3) * 0.5, cy - f64::from(i % 2) * 0.4);
+            st = hover_next(st, hit, px, py, f64::from(i) * HOVER_THROTTLE_MS);
+            let next = hover_cursor_css(st.pickable);
+            if next != cur {
+                changes += 1;
+                cur = next;
+            }
+        }
+        assert_eq!(
+            changes, 1,
+            "T-802: hovering ONE entity must change the cursor once (default → pointer); the \
+             acceptance calls 3+ changes churn"
+        );
+        assert_eq!(cur, HOVER_CURSOR_PICKABLE);
+    }
+
+    /// The dead-band is a band, not a latch: travelling off the glyph drops the claim on the first
+    /// miss past [`HOVER_RELEASE_PX`], and a held miss does NOT re-anchor (otherwise a slow drift
+    /// would carry "pickable" across the whole map, one sub-band step at a time).
+    #[test]
+    fn leaving_the_band_drops_the_claim_and_a_held_miss_never_re_anchors() {
+        let (cx, cy) = (100.0, 100.0);
+        let acquired = hover_next(HoverState::default(), true, cx, cy, 0.0);
+        assert!(acquired.pickable);
+        assert_eq!(acquired.anchor, Some((cx, cy)));
+
+        // Inside the band: held, and the anchor is UNMOVED.
+        let inside = hover_next(acquired, false, cx + HOVER_RELEASE_PX - 0.01, cy, 40.0);
+        assert!(inside.pickable, "a miss inside the band holds the claim");
+        assert_eq!(
+            inside.anchor,
+            Some((cx, cy)),
+            "a held miss must not move the anchor"
+        );
+
+        // Walk outwards in sub-band steps. With a re-anchoring hold this would never end.
+        let mut st = acquired;
+        let mut x = cx;
+        for _ in 0..12 {
+            x += HOVER_RELEASE_PX - 0.5;
+            st = hover_next(st, false, x, cy, 40.0);
+        }
+        assert!(
+            !st.pickable,
+            "T-802: a steady walk away from the glyph must escape the dead-band"
+        );
+        assert_eq!(st.anchor, None, "a dropped claim clears its anchor");
+
+        // And a single decisive move past the band drops it immediately.
+        let gone = hover_next(acquired, false, cx + HOVER_RELEASE_PX + 0.01, cy, 40.0);
+        assert!(!gone.pickable);
+        assert!(!hover_next(HoverState::default(), false, cx, cy, 40.0).pickable);
+    }
+
+    /// The two cursor values, and the reason `default` is written rather than left as `auto`.
+    #[test]
+    fn the_cursor_is_pointer_over_pickable_and_default_over_empty() {
+        assert_eq!(hover_cursor_css(true), "pointer");
+        assert_eq!(hover_cursor_css(false), "default");
+        assert_eq!(HOVER_CURSOR_PICKABLE, "pointer");
+        assert_eq!(
+            HOVER_CURSOR_PLAIN, "default",
+            "T-802: the resting value must be an ASSERTED `default`, not the UA `auto` — `auto` is \
+             indistinguishable from never having asked, which is the O-8 defect itself"
+        );
+    }
+
+    /// **The hit radius keys off the pick radius, not off the glyph art.** T-808 is changing what
+    /// entities look like in the same wave; a hand-picked pixel count here would drift away from
+    /// what a click actually hits the moment those glyphs land.
+    #[test]
+    fn the_release_band_is_derived_from_the_pick_radius() {
+        assert!(
+            (HOVER_RELEASE_PX - COMMENT_PICK_PX * 1.5).abs() < f64::EPSILON,
+            "T-802: HOVER_RELEASE_PX is {HOVER_RELEASE_PX}, expected 1.5 × the pick radius \
+             ({COMMENT_PICK_PX})"
+        );
+        assert!(
+            HOVER_RELEASE_PX > COMMENT_PICK_PX,
+            "T-802: a dead-band no wider than the pick radius is not a dead-band"
+        );
+        // …and it must be WRITTEN as a derivation, not as a literal that happens to agree today.
+        let decl = [
+            "pub(crate) const HOVER_RELEASE_PX: f64 = ",
+            "COMMENT_PICK_PX",
+        ]
+        .concat();
+        assert!(
+            hover_block().contains(&decl),
+            "T-802: HOVER_RELEASE_PX must be declared in terms of COMMENT_PICK_PX (this file's \
+             pinned restatement of MissionDocCore::PICK_RADIUS_PX), never as a fresh pixel guess"
+        );
+    }
+
+    /// Suppression is the whole truth table: any one reason suppresses, and nothing else does.
+    #[test]
+    fn every_gesture_suppresses_the_hover_and_nothing_else_does() {
+        assert!(
+            !hover_suppressed(false, false, false),
+            "idle pointer hovers"
+        );
+        for (g, p, m) in [
+            (true, false, false),
+            (false, true, false),
+            (false, false, true),
+            (true, true, true),
+        ] {
+            assert!(
+                hover_suppressed(g, p, m),
+                "T-802: gesture={g} place={p} measuring={m} must suppress the hover read"
+            );
+        }
+    }
+
+    /* ── the call site (the T-057 half) ────────────────────────────────────────────────────── */
+
+    /// **The throttle gates the pick, not the other way round.** The whole cost argument is that
+    /// most pointer moves do NO work; a pick hoisted above `hover_due` would answer every move and
+    /// re-create the regression that deleted hover picking at T-057.
+    #[test]
+    fn the_throttle_runs_before_the_pick_and_before_the_gesture_machine() {
+        let body = pointermove();
+        let (sup, due, hit, take) = (
+            body.find("hover_suppressed("),
+            body.find("hover_due("),
+            body.find("hover_hit("),
+            body.find("left.borrow_mut().take()"),
+        );
+        let (sup, due, hit, take) = (
+            sup.expect("T-802: pointermove must ask hover_suppressed"),
+            due.expect("T-802: pointermove must ask hover_due"),
+            hit.expect("T-802: pointermove must run hover_hit"),
+            take.expect("the gesture machine still takes `left`"),
+        );
+        assert!(
+            sup < due,
+            "T-802: suppression must be decided before the throttle is consulted"
+        );
+        assert!(
+            due < hit,
+            "T-802: the hit-test must sit BEHIND the throttle — a pick on every pointermove is the \
+             T-057 cost that removed hover picking in the first place"
+        );
+        assert!(
+            hit < take,
+            "T-802: the hover read must run before the gesture machine takes `left`, so 'no \
+             gesture is in flight' is still knowable"
+        );
+    }
+
+    /// **Strictly read-only with respect to gesture state.** The hover block may ASK whether a
+    /// gesture is running; it may not take, replace or mutate one. (Its own `hover_points` cache is
+    /// a `borrow_mut`, which is why this looks for the `left` handle by name.)
+    #[test]
+    fn the_hover_read_never_touches_the_gesture_state() {
+        let body = pointermove();
+        let open = ["let now_ms = js_sys::", "Date::now()"].concat();
+        assert_eq!(
+            body.matches(open.as_str()).count(),
+            1,
+            "T-802: the hover block must open at exactly one throttle-clock read"
+        );
+        let start = body.find(open.as_str()).expect("counted");
+        let end = body
+            .find("left.borrow_mut().take()")
+            .expect("the gesture machine");
+        let block = &body[start..end];
+        assert!(
+            block.contains("left.borrow().is_some()"),
+            "T-802: the gesture probe must be a SHARED borrow of `left`; body was:\n{block}"
+        );
+        for forbidden in ["left.borrow_mut", "left.take", "*left."] {
+            assert!(
+                !block.contains(forbidden),
+                "T-802: the hover read must not `{forbidden}` — a hover test that mutates or \
+                 consumes gesture state is a defect (T-723 / T-795 / T-796 all live in this \
+                 handler); block was:\n{block}"
+            );
+        }
+    }
+
+    /// **One document read per generation.** The point sets are cached against `doc_tick` — the
+    /// counter `refresh_docks` bumps in the same commit tail that re-binds the glyph lanes — so the
+    /// hover can never be staler than the picture, and a 25 Hz `materialize()` never happens.
+    #[test]
+    fn the_point_sets_are_cached_against_the_lane_binding_tick() {
+        let body = pointermove();
+        assert!(
+            body.contains("hover_hit(") && body.contains("doc_tick.get_untracked()"),
+            "T-802: the hit-test must be keyed on doc_tick — the same channel the render lanes \
+             bind on; body was:\n{body}"
+        );
+        let hit = hover_hit_body();
+        assert!(
+            hit.contains("c.tick != tick") && hit.contains("materialize()"),
+            "T-802: hover_hit must refresh its cache ONLY when the tick moved; body was:\n{hit}"
+        );
+        assert!(
+            body.contains("doc_tick.get_untracked()") && !body.contains("doc_tick.get()"),
+            "T-802: the pointermove must read doc_tick UNTRACKED — a tracked read from inside a \
+             DOM event closure would create a subscription this handler has no business owning"
+        );
+    }
+
+    /// **No second point set and no second transform.** The hover asks the click path's own
+    /// question, through the click path's own functions, against the frozen camera the CUR read-out
+    /// already built — so "the cursor says pickable" and "the click picks" cannot disagree, and the
+    /// wave-201 third-transform-copy defect class is not re-opened.
+    #[test]
+    fn the_hover_reuses_the_click_paths_pick_and_camera() {
+        let hit = hover_hit_body();
+        let pick = ["pick_slot_or", "_vehicle("].concat();
+        assert!(
+            hit.contains(&pick),
+            "T-802: the slot/vehicle half must be select_tool's own pick; body was:\n{hit}"
+        );
+        assert!(
+            hit.contains(&["pick_", "comment("].concat()) && hit.contains("COMMENT_PICK_PX"),
+            "T-802: the comment half must be the click path's pick_comment at its own tolerance"
+        );
+        assert!(
+            hit.contains("unproject_xy(px, py)")
+                && hit.contains("unproject_xy(px + COMMENT_PICK_PX"),
+            "T-802: the comment tolerance must be derived by unprojecting two points \
+             COMMENT_PICK_PX apart — the identical derivation the T-796 drag arm and the T-784 \
+             click path use; body was:\n{hit}"
+        );
+        let body = pointermove();
+        assert_eq!(
+            body.matches("frozen_camera(").count(),
+            1,
+            "T-802: the pointermove must build the frozen camera ONCE and share it with the hover \
+             hit-test — a second construction is a second copy of the transform"
+        );
+    }
+
+    /// **Markers are deliberately absent.** They have no selection route at all, so a pointer
+    /// cursor over one would be the `cursor-pointer`-over-a-dead-click lie T-754 was filed for.
+    #[test]
+    fn the_hover_never_claims_a_marker_is_pickable() {
+        let hit = hover_hit_body();
+        assert!(
+            !hit.to_lowercase().contains("marker"),
+            "T-802: a marker has no selection route — claiming one is pickable is the T-754 lie \
+             with the sign flipped; body was:\n{hit}"
+        );
+    }
+
+    /// **The style write happens on a TRANSITION.** 25 style mutations a second for an unchanged
+    /// value is exactly the "cursor on the render path" shape T-057 removed.
+    #[test]
+    fn the_cursor_is_written_only_when_the_verdict_changes() {
+        let body = pointermove();
+        assert!(
+            body.contains("if next.pickable != prev.pickable"),
+            "T-802: the cursor write must be guarded by a change comparison; body was:\n{body}"
+        );
+        let set = ["set_map_", "cursor("].concat();
+        assert_eq!(
+            body.matches(set.as_str()).count(),
+            2,
+            "T-802: the pointermove writes the cursor in exactly two places — the suppression \
+             reset and the transition"
+        );
+    }
+
+    /// The resting cursor is asserted at MOUNT, and dropped when the pointer leaves the map. Both
+    /// go through the one writer, so there is a single source for the value.
+    #[test]
+    fn the_mount_seeds_the_resting_cursor_and_pointerleave_drops_the_claim() {
+        let page = page();
+        let mount = only_body(&page, "canvas_ref.on_load(");
+        let set = ["set_map_", "cursor("].concat();
+        assert!(
+            mount.contains(&format!("{set}&canvas, false)")),
+            "T-802: the mount must assert the resting cursor, or 'over empty ground' reads `auto` \
+             until the first miss"
+        );
+        let leave = only_body(&page, &["let onpointerleave = ", "Closure::"].concat());
+        assert!(
+            leave.contains("HoverState::default()") && leave.contains(&set),
+            "T-802: pointerleave must reset the hover state AND the cursor — `cursor` is an \
+             inherited property, so a stranded `pointer` follows the pointer onto the chrome; \
+             body was:\n{leave}"
+        );
+    }
+
+    /// Hollow canary: the source pins above are load-bearing, not decorative. Stripping the needle
+    /// from an in-memory copy of the real source breaks the assertion that found it.
+    #[test]
+    fn the_call_site_pins_are_load_bearing() {
+        let body = pointermove();
+        for needle in [
+            "hover_due(",
+            "hover_hit(",
+            "left.borrow().is_some()",
+            "if next.pickable != prev.pickable",
+            "doc_tick.get_untracked()",
+        ] {
+            assert!(
+                body.contains(needle),
+                "T-802: `{needle}` must be present in the live pointermove for its pin to mean \
+                 anything"
+            );
+            assert!(
+                !body.replace(needle, "").contains(needle),
+                "T-802: `{needle}` must be findable exactly by the pin's own needle"
             );
         }
     }
