@@ -1,5 +1,5 @@
 {
-  "next_id": 835,
+  "next_id": 840,
   "tickets": [
     {
       "id": "T-001",
@@ -19910,7 +19910,7 @@
       ],
       "title": "Units render as role-and-side symbology, not dots",
       "summary": "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). F-10 — the map is dot soup: slots are plain circles (amber selected + heading arrow, pale blue otherwise), markers were identical circles (T-790 fixes markers), nothing distinguishes a rifleman from a medic from an AT gunner, and marker-vs-unit ambiguity was verified (operator + review agree; Eden's 2D map renders filled side-coloured entity glyphs — frame 170028 crops). A milsim author reads maps by symbology. FIX: per-slot glyph in the unit lane: side colour + role class glyph (minimum set: leader chevron, medic cross, AT, MG, rifleman default — derive role class from the slot role/kit string), distinct SHAPE class from markers (T-790's glyphs) and comments (T-796's bubble); selection ring/heading arrow render ON TOP unchanged. Consumes T-790's lane-format extension (crates/map-engine-core/src/slots_gpu.rs ~745-line instance path + crates/map-engine-render/src/engine.rs read half). ⚠️ TRAPS: engine.rs is CO-OWNED with T-790's wave — this lands 3 waves later on merged main, build on its final lane format (belt-and-braces per packing risk 5); zoom behaviour: glyphs legible at squad scale, degrade to dots only below a stated m/px; role-string mapping table lives in one place and is unit-tested (kit:us_rifleman -> rifleman etc.). ACCEPTANCE: wasm unit test on the role->glyph mapping (all seeded kits map, unknown -> default); scripted screenshot at 1.0 and 4.0 m/px: medic vs rifleman vs leader pixel signatures pairwise distinct; marker vs unit vs comment shapes pairwise distinct; selected unit still shows ring+heading.",
-      "notes": "depends_on T-790; T-157 visual-overhaul overlap cited in notes rather than absorbed (T-157 is broader) | operator note 2026-08-10: the T-790 procedural marker glyphs read \"a little weird — not wrong, but weird\"; when doing unit symbology, revisit marker glyph iconography in the same visual language | wave-205 verifier: slots render NO heading in any mode (lane yaw hardcoded 0) — unit symbology MUST carry orientation (T-832 is the finding; fold the yaw lane extension into this ticket, T-790 glyph-id lane as the template)"
+      "notes": "depends_on T-790; T-157 visual-overhaul overlap cited in notes rather than absorbed (T-157 is broader) | operator note 2026-08-10: the T-790 procedural marker glyphs read \"a little weird — not wrong, but weird\"; when doing unit symbology, revisit marker glyph iconography in the same visual language | wave-205 verifier: slots render NO heading in any mode (lane yaw hardcoded 0) — unit symbology MUST carry orientation (T-832 is the finding; fold the yaw lane extension into this ticket, T-790 glyph-id lane as the template) | OPERATOR DIRECTION 2026-08-10 (symbology spec): slot glyph = circle WITH A FACING POINT (the point is the heading); vehicles = top-down SILHOUETTES per kind (a BTR looks like a BTR from above); rotation-widget usability depends on this — 'impossible to tell where you're rotating it' today"
     },
     {
       "id": "T-794",
@@ -20304,7 +20304,7 @@
       ],
       "order": 5070,
       "summary": "OPERATOR DESIGN DIRECTION (recorded 2026-08-10, from the wave-202/203 eye-passes; to be SCOPED IN AN OPERATOR-DRIVEN DESIGN SESSION after the band + wave 210 — do NOT dispatch from this summary). The unifying rule behind T-818/T-819 and the zone observations: every authored object on the map (slot, vehicle, zone, trigger, marker, comment, composition instance) is an ASSET that (a) lives as a first-class row in the LEFT outliner's layer tree — filed into any layer/folder like slots are, draggable between layers, not in kind-specific footers or dock strips; (b) EDITS via its double-click Attributes modal with kind-specific content; (c) the RIGHT dock exists only to place new things (catalog, search, favourites, history). Known deltas today: vehicles sit in a hardcoded PLACED VEHICLES outliner footer (W203 fold — superseded by this rule); zones are managed and edited in the right dock's Zones tab; markers edit via dock lanes; the operator also reports the layer tree itself 'feels disjointed' — capture specifics in the design session. SESSION INPUTS the orchestrator prepares: a decision matrix of every authored-object kind x where it lists x how it edits x what the compile/selection/undo semantics are, with Eden's answer per row. Out of scope until scoped: nothing ships from this ticket without the session's decisions filed as per-kind tickets. ⟡ ADDED 2026-08-10 (wave-204 eye-pass): MARKERS are the third confirmed instance — placed markers list in the right dock's Markers tab with an inline editor (Type/Text/Position/Delete); under the rule they list in the left outliner and edit via marker Attributes (T-763 lineage).",
-      "notes": "the post-band hyper-focus program; T-818/T-819 (wave 210) are its first two instances and proceed as filed"
+      "notes": "the post-band hyper-focus program; T-818/T-819 (wave 210) are its first two instances and proceed as filed | operator restated the rule a THIRD time at the wave-205 eye-pass (markers un-clickable on map); T-838 extracts the marker half as actionable"
     },
     {
       "id": "T-826",
@@ -20456,7 +20456,7 @@
     },
     {
       "id": "T-833",
-      "title": "OPERATOR DECISION: ring drag — face-the-aim (as shipped) or rotate-about-centre (as specified)?",
+      "title": "Ring drag: formation rotates about centre by default; Ctrl-drag faces units individually",
       "status": "queued",
       "executor": "claude-code",
       "program": "eden",
@@ -20472,8 +20472,8 @@
         "SHELL"
       ],
       "order": 5150,
-      "summary": "WAVE-205 VERIFIER FILING (wave205.md MINOR). MEASURED: dragging the rotate ring turns EACH selected entity to face the release bearing with positions fixed (exact bearing math verified) — the T-795 FIX text and the gesture comment both say 'rotates the selection about its centre' (positions orbit, formation preserved — Eden's model). Two defensible behaviors: (a) about-centre = formation rotation (matches the spec text and Eden); (b) face-the-aim = point the squad at a bearing (arguably the more useful milsim verb, and what shipped). DECISION IS THE OPERATOR'S; options: implement (a) as specified (per-entity positions orbit the selection centroid, one txn — the T-788 batch API fits), keep (b) and fix the spec/comment to tell the truth, or offer both (e.g. plain drag = a, modifier = b). Until decided, the shipped comment must not claim about-centre (it lies — wave205.md cites the line). ACCEPTANCE: per the chosen option; either way the comment and eden_help row describe the real behavior.",
-      "notes": "wave205 verifier; operator decision; comment currently lies about the behavior"
+      "summary": "WAVE-205 VERIFIER FILING (wave205.md MINOR). MEASURED: dragging the rotate ring turns EACH selected entity to face the release bearing with positions fixed (exact bearing math verified) — the T-795 FIX text and the gesture comment both say 'rotates the selection about its centre' (positions orbit, formation preserved — Eden's model). Two defensible behaviors: (a) about-centre = formation rotation (matches the spec text and Eden); (b) face-the-aim = point the squad at a bearing (arguably the more useful milsim verb, and what shipped). DECISION IS THE OPERATOR'S; options: implement (a) as specified (per-entity positions orbit the selection centroid, one txn — the T-788 batch API fits), keep (b) and fix the spec/comment to tell the truth, or offer both (e.g. plain drag = a, modifier = b). Until decided, the shipped comment must not claim about-centre (it lies — wave205.md cites the line). ACCEPTANCE: per the chosen option; either way the comment and eden_help row describe the real behavior. ⟡ DECISION RECORDED (operator, 2026-08-10): OPTION (c) BOTH — multi-select ring drag rotates the WHOLE FORMATION about the selection centre (positions orbit, formation preserved — the default), and a modifier (Ctrl held while ring-dragging) rotates units INDIVIDUALLY in place (face-the-aim, the currently-shipped behavior). Single selection: the two coincide. One txn either way (T-788 batch API for the orbit path — positions change, so the z-family rules apply: carry real z per slot through the batch). Fix the gesture comment + eden_help row to describe both. NOTE: usability depends on VISIBLE facing (T-832/T-808 heading render) — prefer packing this with or after wave 207.",
+      "notes": "wave205 verifier; operator decision; comment currently lies about the behavior | operator decided (c) 2026-08-10; default about-centre, Ctrl = individual; pack with/after W207 heading render"
     },
     {
       "id": "T-834",
@@ -20495,6 +20495,114 @@
       "order": 5160,
       "summary": "WAVE-205 VERIFIER FILING (wave205.md NITs, batched). (1)+(2) two doc comments still describe the pre-renumber digit map (wave205.md cites lines) — the stale-comment class that has cost this program real time; (3) EditorToolbarDispatch.widget_is_rotate is dead after the barrier reconciliation (widget_digit is the read) — remove the field + its registration; (4) 'Placing a Attack marker' article grammar in the picker hint. All mechanical; one small slice. ACCEPTANCE: comments match the 1/2/3 map; widget_is_rotate absent from the dispatch struct and all call sites; hint reads 'Placing an Attack marker' (or reworded).",
       "notes": "wave205 verifier NIT batch; pure cleanup"
+    },
+    {
+      "id": "T-835",
+      "title": "The No-Widget button wears the select-cursor glyph, not a 'none' symbol",
+      "status": "queued",
+      "executor": "claude-code",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "impact": [
+        "ui",
+        "mc-authoring"
+      ],
+      "surfaces": [
+        "SHELL"
+      ],
+      "order": 5170,
+      "summary": "OPERATOR EYE-PASS FINDING (wave-205, 2026-08-10): the No-Widget toolbar button's current glyph 'doesn't really make sense' — it should read as the SELECT tool, matching the select-arrow vocabulary of the floating pill's Select (which itself is dying per decision 1/T-839 — the arrow ICON is what carries over). FIX: swap the No-Widget button (and Edit-menu row) glyph to the select-cursor/arrow icon; tooltip stays 'No Widget (1)' or becomes 'Select (1)' — match Eden's naming (Eden calls digit 1 'No Widget'; the operator wants the SELECT visual). Keep plates/census intact. ACCEPTANCE: the digit-1 button shows the arrow glyph; tooltip names the mode + (1); no other button changed.",
+      "notes": "operator eye-pass wave-205; pairs naturally with T-839"
+    },
+    {
+      "id": "T-836",
+      "title": "Seeded vehicles cannot compile — no veh: alias in kit-aliases.json (T-425 refuse fires)",
+      "status": "queued",
+      "executor": "claude-code",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "impact": [
+        "ui",
+        "mc-authoring"
+      ],
+      "surfaces": [
+        "SHELL"
+      ],
+      "order": 5180,
+      "summary": "OPERATOR EYE-PASS BUG (wave-205, 2026-08-10, screenshot): compiled export REFUSES any mission containing a T-800-seeded vehicle — 'parse mission version payload: vehicle n3: resourceName {86B7B7522A75FF8B}Prefabs/Vehicles/Wheeled/M998/M1025_M2.et has no veh: alias in kit-aliases.json (T-425 — refuse silent drop/substitute)'. The refuse is CORRECT (T-425's contract); the DATA is incomplete: the wave-202 seed (registry_dev.sql, 4 vehicles M1025/M998/M923A1/M113) never got veh: aliases. FIX: add the four veh: aliases to packages/tbd-schema/registry/kit-aliases.json (consumers: flatten.rs, mission_compile.rs, editor_ops.rs — verify the alias FORMAT against an existing veh: row); add/extend a test that every seeded kind=vehicle resource_name resolves through kit-aliases (the T-425 lineage test style — make it fire first against a missing alias). ACCEPTANCE: a mission with each seeded vehicle placed exports compiled clean (ajv + no parse toast); the new test goes RED if a seed row lacks an alias.",
+      "notes": "operator eye-pass wave-205; blocks vehicle authoring exports — pack into wave 210"
+    },
+    {
+      "id": "T-837",
+      "title": "Vehicles cannot be deleted — slots can, vehicles cannot",
+      "status": "queued",
+      "executor": "claude-code",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "impact": [
+        "ui",
+        "mc-authoring"
+      ],
+      "surfaces": [
+        "SHELL",
+        "LEFT"
+      ],
+      "order": 5190,
+      "summary": "OPERATOR EYE-PASS BUG (wave-205, 2026-08-10): a placed vehicle cannot be deleted from the editor — slots delete fine (Del key, context menu); vehicles have no working delete path. This is the census XFORM-DEL-001 lead T-800's seed made browser-testable — and it fails. AUDIT FIRST: does delete_selection/Del cover vehicle ids in ctx.selection (the wave-145 prune lesson says vehicle ids LIVE there)? does the context menu offer Delete on a vehicle? the outliner PLACED VEHICLES row (W203) has no delete affordance? Find which paths exist-but-skip vs are absent. FIX: Del key + context menu + outliner row delete all remove a selected vehicle in ONE undo step (T-779 ack discipline: confirm the write); crew assignments release cleanly (crewed slots reappear — coordinates with T-819's derived hide). ACCEPTANCE: place vehicle, select (map or outliner), Del -> gone from map/outliner/compiled export, one undo restores it WITH its crew assignments.",
+      "notes": "operator eye-pass wave-205; census XFORM-DEL-001; coordinates with T-819 — wave 210/211 packing"
+    },
+    {
+      "id": "T-838",
+      "title": "Markers select on the map and list in the outliner; double-click opens marker Attributes",
+      "status": "queued",
+      "executor": "claude-code",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "impact": [
+        "ui",
+        "mc-authoring"
+      ],
+      "surfaces": [
+        "SHELL",
+        "LEFT",
+        "ATTR"
+      ],
+      "order": 5200,
+      "summary": "OPERATOR RULE, THIRD STATEMENT (wave-205 eye-pass, 2026-08-10): 'you can't select markers by clicking the map — the right panel is only for seeing what's available.' The actionable marker half of T-825: (a) map-click selects a marker (the wave-145 COMMENT click lane is the template — comment glyphs land in ctx.selection via the pick path; markers now RENDER (T-790) so they are pickable targets); (b) placed markers list in the LEFT outliner (eden_tree — the T-809 placed-vehicles footer is the interim pattern, T-825 makes them tree citizens later); (c) dblclick (map or outliner row) opens marker Attributes (T-763 lineage — exists); (d) the right-dock placed-markers list + inline editor SHRINK to nothing once (a)-(c) work — per the rule, the dock only places. TRAPS: selection prune by doc-presence (invisible is not gone); the F-07/T-790 guard note already bars new dock editing lanes; T-831 (per-side) is separate — do not build side-switching here. ACCEPTANCE: click a map marker glyph -> selected (outliner row highlights); dblclick -> marker Attributes opens with icon/caption/position; Del deletes it (one undo); the dock's marker tab retains ONLY the picker.",
+      "notes": "the T-825 marker extraction; operator stated the rule three times — priority; owns collide with T-819 (mission_editor/editor_ops) — pack 210/211 accordingly"
+    },
+    {
+      "id": "T-839",
+      "title": "The floating Select/Ruler/LoS pill still exists — decision 1 said it dies",
+      "status": "queued",
+      "executor": "claude-code",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "impact": [
+        "ui",
+        "mc-authoring"
+      ],
+      "surfaces": [
+        "SHELL"
+      ],
+      "order": 5210,
+      "summary": "EYE-PASS SCREENSHOT CATCH (wave-205, 2026-08-10): the floating bottom-centre Select/Ruler/LoS pill is still rendered — operator decision 1 (review section 8) retired it ('tools live Arma-style in the fixed chrome') and the traceability routed it to T-797/T-798, but NEITHER ticket's acceptance carried the pill removal — it fell between them (the input-never-reached-output class). FIX: move Ruler and LoS-ray into the row-2 toolbar as a tools group beside the widget cluster (BTN_ICON + chord tooltips + census rows for their chords if any); Select is the digit-1/No-Widget mode (T-835 gives it the arrow glyph) — no separate button needed; DELETE the floating pill component + its mount; Backspace hide-set shrinks accordingly. TRAPS: Ruler/LoS arming machinery (T-642/T-643 lineage) unchanged — only the BUTTONS move; the pill's pins (if any) update honestly. ACCEPTANCE: no floating pill in any mode; Ruler + LoS arm from row-2 buttons with tooltips; their gestures work unchanged; Backspace still hides all chrome.",
+      "notes": "eye-pass catch wave-205; decision-1 completion; strip+pill files — pack owns-aware"
     }
   ]
 }

@@ -606,3 +606,4 @@
 209	T-815	ORBAT squad-rename focus; delete the two T787 probe missions	apps/website/frontend/src/orbat_manager.rs
 210	T-818	Vehicle crew/heading/cargo editor into the Attributes modal; Placed strip dies	apps/website/frontend/src/attributes.rs; apps/website/frontend/src/eden_dock_right.rs
 210	T-819	Crewed slots render inside the vehicle — figures leave the map while assigned	apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/editor_ops.rs
+210	T-836	Seeded vehicles compile — veh: aliases for the four seed rows	packages/tbd-schema/registry/kit-aliases.json; crates/map-engine-core/src/mission/flatten.rs
