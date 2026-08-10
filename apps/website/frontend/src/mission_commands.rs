@@ -87,6 +87,89 @@ pub(crate) fn row_meta_missing_message(authenticated: bool) -> &'static str {
     }
 }
 
+/// **T-799 (a) — the once-per-gesture export latch, decided purely.**
+///
+/// The review's F-28/F-34 blob intercept caught **two** `createObjectURL` + two anchor clicks per
+/// single "Export Compiled" click — the same 3213-byte payload emitted twice. The handler runs
+/// once in code (`run_action` → `export_*_now` → [`download_json`] is one call), so the doubling is
+/// DOM-level: the F-12 pointerup/click-pair family the T-785 input-model note names. A menu row that
+/// removes itself mid-dispatch (the export dropdown closes on activation) is exactly the shape that
+/// re-dispatches a synthesised second activation carrying the SAME `Event.timeStamp` as the first.
+///
+/// This is the guard the spec asks for: a latch keyed on **gesture identity**, not a blind time
+/// debounce. `stamp` is the browser `Event.timeStamp` (`DOMHighResTimeStamp`, a `f64`), which is
+/// identical across the events synthesised from one physical activation and distinct for a genuine
+/// second click (a real second intent is milliseconds later with its own stamp — and MUST still
+/// fire). `last` is the stamp of the activation this latch last let through.
+///
+/// Returns `true` when `stamp` is a duplicate of `last` (drop it). A `0.0` stamp — the value
+/// `Event.timeStamp` reports when there is no live event (a chord-driven or programmatic export, and
+/// the native/test path) — is NEVER treated as a duplicate: those do not double-activate through the
+/// DOM, and coalescing two legitimately-distinct programmatic exports would be the "real second
+/// intent" this guard must not eat. Pure, so the whole rule is pinned on the native `cargo test`
+/// shell rather than only under a headless browser.
+#[must_use]
+pub(crate) fn export_gesture_is_duplicate(last: f64, stamp: f64) -> bool {
+    stamp != 0.0 && stamp == last
+}
+
+/// **T-799 (b) — unify the JSON-envelope export's metadata onto the mission ROW.**
+///
+/// The [`compile_export`](map_engine_core::mission::compile::compile_export) envelope hard-codes
+/// `gameMode: ""` and `maxPlayers: 0` (they are not in the editor CRDT it reads), so the downloaded
+/// `mission-<id>.json` disagreed with the compiled document about the same mission: the review saw
+/// JSON `maxPlayers: 0 / gameMode: ''` beside Compiled `playerRange [1,64]`. Those two fields have
+/// ONE authority — the `missions` ROW, where the create dialog wrote them (`POST /missions/:id`,
+/// hydrated into [`ROW_HYDRATE`] by [`set_row_meta`]) — and the compiled export already reads
+/// `max_players` from that same row (`MissionMeta` → `flatten`). This patches the envelope so BOTH
+/// exports source `maxPlayers`/`gameMode` from the row.
+///
+/// `version` is left as the caller set it (the current adopted semver — the latest SAVED version),
+/// which is the third leg of the acceptance's `maxPlayers/gameMode/version` triple; `title` is left
+/// as `compile_export` derived it (the LIVE doc title), which is the source the compiled export is
+/// also moved onto (see [`export_compiled_now`]). One source per field, and both exports read it.
+///
+/// Pure over an owned `Value` so the projection is pinned natively. `max_players`/`game_mode` are
+/// `None` only when the row never arrived — the export still downloads (the envelope is the
+/// re-importable superset, not the mod document, so a missing row is not the refusal it is for
+/// Export Compiled), and the fields keep `compile_export`'s defaults in that case.
+pub(crate) fn apply_row_metadata_to_export(
+    mut envelope: serde_json::Value,
+    max_players: Option<i64>,
+    game_mode: Option<&str>,
+) -> serde_json::Value {
+    if let Some(obj) = envelope.as_object_mut() {
+        if let Some(mp) = max_players {
+            obj.insert("maxPlayers".to_string(), serde_json::json!(mp));
+        }
+        if let Some(gm) = game_mode {
+            obj.insert("gameMode".to_string(), serde_json::json!(gm));
+        }
+    }
+    envelope
+}
+
+/// **T-799 (b) — the LIVE doc title from `small_maps_json`, for the compiled-export override.**
+///
+/// The non-blank, trimmed `meta.title` out of `MissionDocCore::small_maps_json` — the SAME field
+/// [`compile_export`](map_engine_core::mission::compile::compile_export) reads for the JSON export's
+/// `title`, and the same non-blank/trim rule its `meta_title_nonblank` applies (a whitespace-only
+/// title is not a title, so the caller keeps the row's — an override that blanked the compiled name
+/// on a stray space would be a new bug). `None` when the doc carries no usable title, so the compiled
+/// export falls back to the row title it already had rather than to `""`. Pure over the JSON string
+/// so the extraction is pinned natively beside the projection it feeds.
+#[must_use]
+pub(crate) fn live_doc_title(small_maps_json: &str) -> Option<String> {
+    let small: serde_json::Value = serde_json::from_str(small_maps_json).ok()?;
+    small
+        .get("meta")
+        .and_then(|m| m.get("title"))
+        .and_then(serde_json::Value::as_str)
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+}
+
 /// T-693 (MENU-SCEN-011) — format a [`MissionDocCore::merge_mission_payload_json`] report for the
 /// author: a one-line counts summary + a per-row skipped list. Class-R / ungated so native
 /// `cargo test` can pin the wording without a browser (the [`compiled_export_text`] precedent).
@@ -506,6 +589,14 @@ mod imp {
         /// invent a second GET on every dialog open. Same boot hydrate fills both cells; successful
         /// shape PATCHes refresh this one so a reopen mid-flight is not the only path to the new mode.
         static ROW_HYDRATE: RefCell<Option<HydratedRow>> = const { RefCell::new(None) };
+
+        /// **T-799 (a) — the last export activation's `Event.timeStamp`.** The single-cell state
+        /// behind [`super::export_gesture_is_duplicate`]: [`begin_export_gesture`] records the stamp
+        /// of the activation it lets through, and rejects the next one only when it carries the SAME
+        /// stamp (the DOM's synthesised pointerup/click double). A `Cell` (not a `RefCell`) because a
+        /// single `f64` copy needs no borrow, and a `thread_local` for the same wasm-single-thread
+        /// reason [`MIRROR`](crate::eden_top_strip) is.
+        static LAST_EXPORT_STAMP: std::cell::Cell<f64> = const { std::cell::Cell::new(0.0) };
     }
 
     /// T-746 — shape/presentation columns from the missions row, beside [`ROW_META`].
@@ -698,6 +789,18 @@ mod imp {
         if meta.id.is_empty() {
             meta.id = snap.mission_id.clone();
         }
+        // T-799 (b) — the compiled export's title read from `ROW_META`, which is the LIBRARY row's
+        // title (`set_row_meta`, refreshed only by `GET /missions/:id`). Retitling in the editor
+        // writes the LIVE doc (`meta.title` in `small_maps_json`) but not the row, so the two exports
+        // named the same mission differently — the RowMirror gap the review caught (F-34). One source:
+        // both exports use the live doc title. The compile-time override here (rather than a title
+        // RowMirror PATCH) is the alternative the review offered, and it needs no wire round-trip, so
+        // it agrees the instant the author types — no PATCH to confirm (the T-779 lesson), and it does
+        // not fork the T-192/T-746 RowMirror (which stays time+weather; title never joins it). The
+        // JSON export already reads its title from this same `snap.small`, via `compile_export`.
+        if let Some(live_title) = super::live_doc_title(&snap.small) {
+            meta.title = live_title;
+        }
         let payload = compile_payload(&snap.small, &snap.slots, false);
         let payload_bytes = serde_json::to_vec(&payload).map_err(|e| e.to_string())?;
         let meta_bytes = serde_json::to_vec(&meta).map_err(|e| e.to_string())?;
@@ -723,6 +826,28 @@ mod imp {
             time_of_day: m.time_of_day.clone(),
             weather_preset: m.weather_preset.clone(),
         }
+    }
+
+    /// **T-799 (a) — open one export gesture; `true` when it is a NEW one that should run.**
+    ///
+    /// The activation-site guard for the F-28/F-34 double export. `stamp` is the click's
+    /// `Event.timeStamp` (the caller passes `ev.time_stamp()` from the export row's `on:click`).
+    /// A duplicate — the second, synthesised activation of the SAME physical click, which carries
+    /// the SAME stamp — returns `false` and is dropped by the caller; a genuinely new gesture (a
+    /// different, later stamp) records itself as the latch and returns `true`. See
+    /// [`super::export_gesture_is_duplicate`] for the pure rule and why a `0.0` stamp always passes.
+    ///
+    /// Deliberately at the ONE seam both export rows funnel through in the strip, not inside
+    /// `export_now` / `export_compiled_now`: the smoke bridge and any future non-DOM caller reach
+    /// those two directly with no `Event` to key on, and must not be latched (a `0.0` stamp would
+    /// pass anyway, but keeping the guard at the DOM edge keeps the export bodies unconditional).
+    pub fn begin_export_gesture(stamp: f64) -> bool {
+        let last = LAST_EXPORT_STAMP.with(std::cell::Cell::get);
+        if super::export_gesture_is_duplicate(last, stamp) {
+            return false;
+        }
+        LAST_EXPORT_STAMP.with(|c| c.set(stamp));
+        true
     }
 
     /// Trigger the server-truth download and report the outcome (T-243).
@@ -804,6 +929,15 @@ mod imp {
             version,
             &js_date_iso(),
         );
+        // T-799 (b) — `compile_export` hard-codes `gameMode: ""` / `maxPlayers: 0` (they are not in
+        // the editor CRDT it reads). Source them from the mission ROW instead — the same place the
+        // create dialog wrote and the same place Export Compiled reads `max_players` — so the two
+        // exports stop disagreeing about the same mission. `version` (the latest saved semver) and
+        // `title` (the live doc title, which `compile_export` already read from `snap.small`) are the
+        // other two legs both exports now agree on; Export Compiled is moved onto the live title in
+        // `compiled_document_json_with_diagnostics`.
+        let game_mode = hydrated_row().map(|r| r.game_mode);
+        let doc = super::apply_row_metadata_to_export(doc, row_max_players(), game_mode.as_deref());
         let json = serde_json::to_string_pretty(&doc).unwrap_or_default();
         let filename = format!("mission-{}.json", snap.mission_id);
         let _ = download_json(&filename, &json);
@@ -1435,7 +1569,10 @@ pub use imp::*;
 
 #[cfg(test)]
 mod tests {
-    use super::{compiled_export_text, format_merge_report, row_meta_missing_message};
+    use super::{
+        apply_row_metadata_to_export, compiled_export_text, export_gesture_is_duplicate,
+        format_merge_report, live_doc_title, row_meta_missing_message,
+    };
 
     /// Measured wire key order from `GET /compiled` (ticket T-417 / ModMissionDocument field order).
     const WIRE_ORDER_COMPACT: &[u8] = br#"{"schemaVersion":"1.1","meta":{"id":"m","title":"t","author":"a","terrain":"everon","playerRange":[1,1]},"environment":{"timeOfDay":"0800","weatherPreset":"clear"},"factions":[],"orbat":{},"slots":[{"id":"s1"}],"radioPlan":{"nets":[]},"zones":[],"flow":{"briefingDurationSec":0},"winConditions":{"mode":"none"}}"#;
@@ -2201,6 +2338,149 @@ mod tests {
         assert!(
             !body.contains("let _ ="),
             "no discarded result inside the clipboard helper; got:\n{body}"
+        );
+    }
+
+    // ── T-799 (a) — the once-per-gesture export latch ──────────────────────────────────────────
+
+    #[test]
+    fn t799_same_gesture_stamp_is_a_duplicate() {
+        // Two activations of ONE physical click carry the SAME timeStamp (the DOM synthesises the
+        // second): the first is let through, the second must be dropped. This is the F-28/F-34
+        // "Export Compiled fires twice" bug, decided over the two stamps the intercept would see.
+        let stamp = 1234.5_f64;
+        assert!(
+            !export_gesture_is_duplicate(0.0, stamp),
+            "the first activation of a gesture is never a duplicate"
+        );
+        assert!(
+            export_gesture_is_duplicate(stamp, stamp),
+            "a second activation with the SAME stamp is the double-fire — drop it"
+        );
+    }
+
+    #[test]
+    fn t799_a_real_second_click_still_fires() {
+        // A genuine second intent (a later, distinct stamp) MUST run — the guard is a gesture latch,
+        // not a blind debounce that would eat "export again".
+        let first = 1000.0_f64;
+        let second = 1000.001_f64; // even a sub-ms-later real click has its own stamp
+        assert!(
+            !export_gesture_is_duplicate(first, second),
+            "a distinct later stamp is a new gesture, not a duplicate"
+        );
+    }
+
+    #[test]
+    fn t799_zero_stamp_never_latches() {
+        // `Event.timeStamp` is 0.0 when there is no live event — a chord-driven or programmatic
+        // export, and the native path. Those do not double-activate through the DOM, and two of them
+        // must both run, so 0.0 is never a duplicate (even against a stored 0.0).
+        assert!(
+            !export_gesture_is_duplicate(0.0, 0.0),
+            "a 0.0 stamp is 'no event' and must always pass — never coalesce two of them"
+        );
+        assert!(
+            !export_gesture_is_duplicate(500.0, 0.0),
+            "a 0.0 stamp passes regardless of the last real stamp"
+        );
+    }
+
+    // ── T-799 (b) — one metadata source: the row for maxPlayers/gameMode, live doc for title ────
+
+    /// A `compile_export`-shaped envelope with the hard-coded defaults the review caught.
+    fn export_envelope_with_defaults() -> serde_json::Value {
+        serde_json::json!({
+            "exportFormatVersion": 1,
+            "missionId": "m",
+            "title": "UXREVIEW-Aqqqqqq",
+            "terrain": "everon",
+            "gameMode": "",
+            "weather": "clear",
+            "timeOfDay": "06:00",
+            "maxPlayers": 0,
+            "version": "0.2.0",
+            "briefing": "",
+            "armory": [],
+            "payload": {},
+            "exportedAt": "1970-01-01T00:00:00.000Z",
+        })
+    }
+
+    #[test]
+    fn t799_json_export_sources_maxplayers_and_gamemode_from_the_row() {
+        // The bug: JSON export carried maxPlayers:0 / gameMode:'' while Compiled carried playerRange
+        // [1,64] from the row. After the projection, JSON reads BOTH from the row — the same place
+        // the create dialog wrote and Export Compiled reads max_players.
+        let out = apply_row_metadata_to_export(
+            export_envelope_with_defaults(),
+            Some(64),
+            Some("pve_coop"),
+        );
+        assert_eq!(out["maxPlayers"], serde_json::json!(64), "maxPlayers ← row");
+        assert_eq!(
+            out["gameMode"],
+            serde_json::json!("pve_coop"),
+            "gameMode ← row"
+        );
+        // The other two legs of the acceptance triple/title are untouched by the projection: version
+        // stays the caller's (latest saved semver), title stays the live doc title compile_export read.
+        assert_eq!(
+            out["version"],
+            serde_json::json!("0.2.0"),
+            "version untouched"
+        );
+        assert_eq!(
+            out["title"],
+            serde_json::json!("UXREVIEW-Aqqqqqq"),
+            "title untouched by the metadata projection"
+        );
+    }
+
+    #[test]
+    fn t799_missing_row_leaves_export_defaults_and_still_a_valid_object() {
+        // The envelope is the re-importable superset, not the mod document, so a missing row is not a
+        // refusal here (it is for Export Compiled). With no row values the defaults stand and the
+        // download still goes out.
+        let out = apply_row_metadata_to_export(export_envelope_with_defaults(), None, None);
+        assert_eq!(
+            out["maxPlayers"],
+            serde_json::json!(0),
+            "no row ⇒ keep compile_export's default"
+        );
+        assert_eq!(
+            out["gameMode"],
+            serde_json::json!(""),
+            "no row ⇒ keep default"
+        );
+        assert!(out.is_object(), "still a well-formed envelope");
+    }
+
+    #[test]
+    fn t799_compiled_title_override_reads_the_live_doc_title() {
+        // The compiled export used ROW_META.title (the stale library title); the override reads the
+        // LIVE doc title out of small_maps_json — the SAME field compile_export reads for the JSON
+        // export — so both exports name the mission identically after a retitle.
+        let small = r#"{"meta":{"id":"m","title":"UXREVIEW-Aqqqqqq","terrain":"everon"}}"#;
+        assert_eq!(
+            live_doc_title(small).as_deref(),
+            Some("UXREVIEW-Aqqqqqq"),
+            "the live doc title is what both exports must carry"
+        );
+    }
+
+    #[test]
+    fn t799_blank_or_whitespace_live_title_falls_back_to_the_row() {
+        // A whitespace-only doc title is not a title (core's meta_title_nonblank rule); the override
+        // must return None so the compiled export keeps the row title rather than blanking the name.
+        assert_eq!(live_doc_title(r#"{"meta":{"title":"   "}}"#), None);
+        assert_eq!(live_doc_title(r#"{"meta":{"title":""}}"#), None);
+        assert_eq!(live_doc_title(r#"{"meta":{}}"#), None);
+        assert_eq!(live_doc_title("not json"), None);
+        // A real title is trimmed, matching the wire emit.
+        assert_eq!(
+            live_doc_title(r#"{"meta":{"title":"  Trimmed  "}}"#).as_deref(),
+            Some("Trimmed")
         );
     }
 }
