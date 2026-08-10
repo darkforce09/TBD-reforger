@@ -148,6 +148,18 @@ pub(crate) const ROW: &str = "relative flex h-4 w-full items-center gap-1 rounde
 /// lighter primary plate PLUS the 1px dark top border that makes it distinct-by-construction from a
 /// hovered [`ROW`]). The border is inside the `h-4` box, so this row is not a pixel taller than [`ROW`].
 pub(crate) const ROW_ACTIVE: &str = "relative flex h-4 w-full items-center gap-1 rounded px-1.5 text-left text-label-sm bg-primary/20 text-primary border-t border-background/60";
+/// T-803 (fold a) — a FOLDER row that is the **active drop target** (the layer the next placement /
+/// comment lands in, `editor_ops::active_layer`). This is a DIFFERENT STATE from selection and must
+/// read differently (state-vocabulary rule): selection wears [`ROW_ACTIVE`] (the primary plate + dark
+/// top border); the drop target wears the *tertiary* plate + an INSET RING (not a top border). The two
+/// share no distinguishing token — different hue (`tertiary` vs `primary`) AND a ring vs a border — so
+/// a selected slot and the drop-target folder never read as the same thing, and `is_active` (drop
+/// target) is never confused with `is_sel` (selection). The ring is a box-shadow, so like [`ROW`] it
+/// adds no height: this recipe is still `h-4` and survives windowing at the same pitch. A small
+/// `my_location` chip (see the Folder row view) rides this state as the non-colour half of the cue.
+/// `t803_drop_target_reads_differently` pins the two folder sites onto this const and the
+/// class-distinctness (neither string contains the other's distinguishing token).
+pub(crate) const ROW_DROP_TARGET: &str = "relative flex h-4 w-full items-center gap-1 rounded px-1.5 text-left text-label-sm bg-tertiary/15 text-tertiary ring-1 ring-inset ring-tertiary/50";
 /// T-177 A2 — the palette-leaf variant of [`ROW`]: adds `cursor-grab` (→ `cursor-grabbing` while
 /// pressed) so hovering a placeable role advertises the drag affordance. Folders keep `cursor-pointer`
 /// and outliner slots keep the plain [`ROW`] default (only palette leaves are drag-to-place). Same
@@ -874,7 +886,10 @@ fn single_row(
                 let commit_key = commit.clone();
                 let commit_blur = commit.clone();
                 return view! {
-                    <div class=move || format!("{}{dim}", if is_active() { ROW_ACTIVE } else { ROW })>
+                    // T-803 (fold a) — the drop-target folder reads as ROW_DROP_TARGET, distinct from
+                    // selection's ROW_ACTIVE (state-vocabulary rule). Same predicate (`is_active`) the
+                    // normal branch uses, so the rename input never loses the target cue mid-rename.
+                    <div class=move || format!("{}{dim}", if is_active() { ROW_DROP_TARGET } else { ROW })>
                         {guide_spans(ancestors, guide_ids, collapsed)}
                         {toggle}
                         <MaterialIcon name=folder_icon class="block text-sm leading-none" />
@@ -946,9 +961,49 @@ fn single_row(
             } else {
                 ().into_any()
             };
-            let base = move || {
-                let g = if authoring_on { " group" } else { "" };
-                format!("{}{dim}{g}", if is_active() { ROW_ACTIVE } else { ROW })
+            // T-803 (fold a) — the active-drop-target folder wears ROW_DROP_TARGET (tertiary plate +
+            // inset ring), which reads DIFFERENTLY from a SELECTED row's ROW_ACTIVE (primary plate +
+            // top border). Two states, two treatments. `is_active` is per-row reactive, so the paint
+            // (and the chip below) survive scrolling in the windowed tree — the row re-renders its
+            // class on every `active_layer` change regardless of scroll position.
+            //
+            // BOTH-STATES: a folder row's paint is governed by `is_active` (drop target) ALONE — it
+            // does not read the selection signal; selection paint (ROW_ACTIVE) is worn by the SLOT
+            // rows a folder click selects, not by the folder itself. So "the drop target" and "a
+            // selected row" live on different elements here and can never collapse into one ambiguous
+            // paint. The `my_location` chip (row view below) is the redundant, non-colour half of the
+            // cue and is the tiebreaker if the two states ever share an element in future.
+            let base = {
+                let is_active = is_active.clone();
+                move || {
+                    let g = if authoring_on { " group" } else { "" };
+                    format!("{}{dim}{g}", if is_active() { ROW_DROP_TARGET } else { ROW })
+                }
+            };
+            // T-803 (fold a) — the "stated in the row UI" half of fold (c): a small target glyph that
+            // rides the drop-target state. Non-colour cue (a `my_location` crosshair) so the state is
+            // legible without relying on the tertiary tint alone. Reactive on the same `is_active`
+            // predicate as `base`, so create-layer's ops-level default (create_layer sets the new
+            // layer active, editor_ops.rs:3303) lights the chip immediately, and it moves with the
+            // target as the operator clicks other folders.
+            let target_chip = {
+                let is_active = is_active.clone();
+                move || {
+                    if is_active() {
+                        view! {
+                            <span
+                                data-testid="layer-drop-target-chip"
+                                title="Next placement lands here"
+                                class="ml-auto inline-flex h-3 shrink-0 items-center gap-0.5 rounded border border-tertiary/40 bg-tertiary/15 px-1 text-label-sm leading-none text-tertiary"
+                            >
+                                <MaterialIcon name="my_location" class="block text-sm leading-none" />
+                            </span>
+                        }
+                        .into_any()
+                    } else {
+                        ().into_any()
+                    }
+                }
             };
             view! {
                 <button
@@ -981,6 +1036,7 @@ fn single_row(
                     {toggle}
                     <MaterialIcon name=folder_icon class="block text-sm leading-none" />
                     <span class="truncate">{label}</span>
+                    {target_chip}
                     {flag_toggles}
                     {row_actions}
                 </button>
@@ -1741,6 +1797,96 @@ mod tests {
             assert!(TREE.contains("complete_layer_drop_onto_folder"));
             // SEL-GROUP-ICON-001 — the distinct slot-holder glyph.
             assert!(TREE.contains("folder_special"));
+        }
+
+        /// T-803 (fold a) — the DROP-TARGET folder row reads DIFFERENTLY from a SELECTED row.
+        ///
+        /// The active drop target (`is_active`, the layer the next placement/comment lands in) and
+        /// selection (`is_sel`) are two states, and the state-vocabulary rule says two states get two
+        /// treatments. Before this fix both folder sites painted the active row with `ROW_ACTIVE` —
+        /// the SAME class selection wears — so a drop-target folder and a selected row were the same
+        /// paint. Both folder sites now use `ROW_DROP_TARGET`, and it shares no distinguishing token
+        /// with `ROW_ACTIVE`.
+        ///
+        /// Source-scrubbed (`live_source` cuts the test module + comments, keeps class-name/`testid`
+        /// literals) so this pin can never self-match its own assertion strings — the T-759 hollow-pin
+        /// class. Scoped to `fn single_row` so the Slot arm's legitimate `if is_sel() { ROW_ACTIVE }`
+        /// (selection, preserved) is in view for the non-regression check but does not pollute the
+        /// `is_active`-predicate count.
+        #[test]
+        fn t803_drop_target_reads_differently() {
+            use crate::arsenal::class_r_scrub::{live_source, only_body};
+            let src = live_source(TREE);
+            let body = only_body(&src, "fn single_row(");
+
+            // Both folder sites (inline-rename branch + normal `base` closure) paint the ACTIVE
+            // drop-target row with ROW_DROP_TARGET, never ROW_ACTIVE. PERTURB: swap one site back to
+            // `if is_active() { ROW_ACTIVE }` and this count drops to 1 → RED.
+            let drop_sites = body.matches("if is_active() { ROW_DROP_TARGET }").count();
+            assert_eq!(
+                drop_sites, 2,
+                "T-803: both folder sites (rename branch + normal branch) must paint the active \
+                 drop target with ROW_DROP_TARGET — found {drop_sites} of 2"
+            );
+            // The old defect verbatim: the drop target wearing selection's class. Zero, exactly.
+            assert!(
+                !body.contains("if is_active() { ROW_ACTIVE }"),
+                "T-803: a folder's drop-target state must NOT reuse selection's ROW_ACTIVE — that is \
+                 the two-states-one-treatment defect this ticket closes"
+            );
+            // Non-regression: SELECTION still uses ROW_ACTIVE in the slot arm (`is_sel`). If this
+            // vanished, the fix would have collateral-damaged the T-649/T-668 selection paint.
+            assert!(
+                body.contains("if is_sel() { ROW_ACTIVE }"),
+                "T-803: a SELECTED slot row must still wear ROW_ACTIVE — the fix restyles the drop \
+                 target only, never selection"
+            );
+
+            // The non-colour half of the cue: a target chip rides the drop-target state, with a
+            // stable testid for the CDP probe and a `my_location` glyph so the state is legible
+            // without relying on the tertiary tint alone.
+            assert!(
+                body.contains("data-testid=\"layer-drop-target-chip\"")
+                    && body.contains("my_location"),
+                "T-803: the drop-target row carries a testid'd target chip + glyph (non-colour cue)"
+            );
+        }
+
+        /// T-803 (fold a) — `ROW_DROP_TARGET` and `ROW_ACTIVE` are DISTINCT recipes: not equal, and
+        /// neither contains the other's distinguishing token. Production consts, so this reads their
+        /// values directly (no scrub — same rationale as the T-668 vocabulary pin). This is the class
+        /// half of the state-vocabulary rule: the two states cannot be told apart if their classes
+        /// collapse to the same tokens.
+        #[test]
+        fn t803_drop_target_class_is_distinct_from_active() {
+            use super::{ROW, ROW_ACTIVE, ROW_DROP_TARGET};
+            assert_ne!(
+                ROW_DROP_TARGET, ROW_ACTIVE,
+                "T-803: drop-target and selection recipes must not be the same string"
+            );
+            // ROW_ACTIVE's distinguishing tokens (selection): the primary plate + the dark TOP BORDER.
+            // None may appear in ROW_DROP_TARGET.
+            for tok in ["bg-primary/20", "border-t", "border-background/60"] {
+                assert!(
+                    !ROW_DROP_TARGET.contains(tok),
+                    "T-803: ROW_DROP_TARGET must not carry selection's token `{tok}` — a shared token \
+                     is how two states start reading as one"
+                );
+            }
+            // ROW_DROP_TARGET's distinguishing tokens (drop target): the tertiary plate + the INSET
+            // RING. None may appear in ROW_ACTIVE.
+            for tok in ["bg-tertiary/15", "ring-inset", "ring-tertiary/50"] {
+                assert!(
+                    !ROW_ACTIVE.contains(tok),
+                    "T-803: ROW_ACTIVE must not carry the drop-target token `{tok}`"
+                );
+            }
+            // The ring is a box-shadow, not a border, so — like ROW — the drop-target row adds no
+            // height and survives windowing at the shared pitch (no `border-t` to grow the box).
+            assert!(
+                !ROW_DROP_TARGET.contains("border-t") && !ROW.contains("border-t"),
+                "T-803: the drop-target ring must not reintroduce a top border (box-box height drift)"
+            );
         }
     }
 
