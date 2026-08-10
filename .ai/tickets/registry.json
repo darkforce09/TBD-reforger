@@ -1,5 +1,5 @@
 {
-  "next_id": 841,
+  "next_id": 842,
   "tickets": [
     {
       "id": "T-001",
@@ -20624,6 +20624,26 @@
       "order": 5220,
       "summary": "WAVE-206 VERIFIER FILING (wave206.md NIT). On opening any content-bearing mission the hydrate persists server content to IndexedDB — a REAL flush completes (~1s, can_undo=false, edit_persist_count=0) and the T-804 chip honestly reports 'Draft saved just now' though the operator edited nothing. Truly-empty never-edited missions correctly show no chip. Legibility nuance: 'your work is safe' reads oddly when there is no work yet. FIX OPTIONS: gate the chip's FIRST appearance on the first operator-driven flush (edit_persist_count>0 or the dirty-dot arming source — one source, the wave-129 lesson), or reword the boot state ('draft synced'). Keep the ack discipline untouched. ACCEPTANCE: open a content-bearing mission, wait: no 'saved' chip until the first real edit flushes (or the boot wording differs measurably); never-edited-empty unchanged; post-edit behavior identical to today.",
       "notes": "wave206 verifier NIT; one-source rule applies"
+    },
+    {
+      "id": "T-841",
+      "title": "The Type picker popover is translucent — text blurs over the map; make it an opaque panel",
+      "status": "queued",
+      "executor": "claude-code",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "surfaces": [
+        "ATTR"
+      ],
+      "order": 5230,
+      "summary": "OPERATOR EYE-PASS FINDING (wave-206, 2026-08-10, screenshot): the T-810 TYPE picker dropdown renders on a translucent plate, so the option text blurs against whatever sits behind the modal — 'that should be a normal panel so it's easier to read.' FIX: the picker popover (attributes.rs type_picker) gets an OPAQUE panel background (the modal's solid surface token, not a /nn alpha or backdrop-blur glass); check the same for its search input plate. The T-827 lesson applies: readability is measured against the LIVE composite, not the token sheet — verify computed contrast of option text on the new plate. ACCEPTANCE: the popover's computed background is fully opaque; option text contrast >=4.5:1 live; no other picker behavior changes.",
+      "notes": "operator eye-pass wave-206; small; pairs with T-827 methodology"
     }
   ]
 }
