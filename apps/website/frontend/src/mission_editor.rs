@@ -2608,6 +2608,54 @@ pub(crate) fn pick_comment(
     best.map(|(_, id)| id.to_string())
 }
 
+/// T-796 — which of the dragged ids are COMMENTS, paired with their AUTHORED position, asked of the
+/// document's own comment map (`comment_points`) rather than a `cmt-` prefix — the same membership
+/// rule `delete_selection` uses, and for the same reason: the prefix is [`mint_comment_id`]'s
+/// convention, and a hydrated mission may carry comment ids that were never minted here. Order
+/// follows `points` (already id-sorted), so a mixed drag's comment commit is deterministic.
+///
+/// Shared by the drag PREVIEW ([`comment_drag_lane_xy`], offset by the live delta) and the drag
+/// COMMIT (base + delta → [`crate::editor_ops::move_comment`]) so the glyph that follows the cursor
+/// and the position finally stored are computed from ONE list — the parity the O-7 preview note asks
+/// for, applied to the comment lane.
+#[must_use]
+pub(crate) fn dragged_comment_points(
+    points: &[CommentPoint],
+    drag_ids: &[String],
+) -> Vec<CommentPoint> {
+    points
+        .iter()
+        .filter(|p| drag_ids.iter().any(|d| d == &p.id))
+        .cloned()
+        .collect()
+}
+
+/// T-796 — the `MissionComments` lane re-packed for a live drag: EVERY comment the document holds
+/// (so the notes not being dragged stay drawn where they are), with the dragged ones translated by
+/// the world delta `(dx, dy)`. Feeds `RenderEngine::comments_bind` mid-drag exactly as
+/// [`comment_lane_xy`] feeds it at rest — a comment has its own lane (not the slot overlay or the
+/// vehicle re-pack `push_drag_preview` drives), so its preview is this lane re-bound, and dropping
+/// the drag re-binds `comment_lane_xy` (the authored positions) the same way a committed move does
+/// through `after_doc_change`.
+#[must_use]
+pub(crate) fn comment_drag_lane_xy(
+    comments_json: &str,
+    drag_ids: &[String],
+    dx: f64,
+    dy: f64,
+) -> Vec<f32> {
+    let pts = comment_points(comments_json);
+    let mut xy = Vec::with_capacity(pts.len() * 2);
+    #[allow(clippy::cast_possible_truncation)]
+    for p in pts {
+        let dragged = drag_ids.iter().any(|d| d == &p.id);
+        let (ox, oy) = if dragged { (dx, dy) } else { (0.0, 0.0) };
+        xy.push((p.x + ox) as f32);
+        xy.push((p.y + oy) as f32);
+    }
+    xy
+}
+
 /* ═════════════ T-754 — what the click-to-select router RESOLVES, as a pure question ═════════════
  *
  * T-655 shipped ONE click-to-select router (`validation_panel::register_select_by_id`, registered
@@ -5028,6 +5076,31 @@ pub fn MissionEditorPage() -> impl IntoView {
                                         p.start_y,
                                     )
                                 });
+                                // T-796 — pick the COMMENT GLYPH so a drag STARTING on a note grabs
+                                // it, the same fold the click path (T-784) does. Precedence: the
+                                // rotate ring (T-795) short-circuited above, then slot/vehicle wins
+                                // its own pixels here, then a comment, then `None => LG::Marquee`. A
+                                // note parked on a unit can never steal the unit's drag, and a drag
+                                // on a note can never fall through to a marquee that destroys the
+                                // selection — the F-16 failure class the ring pin already names,
+                                // applied to the note. Against the FROZEN press camera, tolerance
+                                // derived by unprojecting two points `COMMENT_PICK_PX` apart, exactly
+                                // as the click-path comment pick does — so the drag grabs a note over
+                                // the identical hit box the click selects it with.
+                                let hit = hit.or_else(|| {
+                                    let w = p.cam.unproject_xy(p.start_x, p.start_y);
+                                    let w2 =
+                                        p.cam.unproject_xy(p.start_x + COMMENT_PICK_PX, p.start_y);
+                                    let tol = (w2[0] - w[0]).hypot(w2[1] - w[1]);
+                                    doc.borrow().as_ref().and_then(|c| {
+                                        pick_comment(
+                                            &comment_points(&c.comments_json()),
+                                            w[0],
+                                            w[1],
+                                            tol,
+                                        )
+                                    })
+                                });
                                 match hit {
                                     // T-648 XFORM-SHIFT-001 — SHIFT + drag grabbing an ALREADY-SELECTED
                                     // entity rotates the whole selection to face the cursor instead of
@@ -5114,6 +5187,21 @@ pub fn MissionEditorPage() -> impl IntoView {
                                     dx,
                                     dy,
                                 );
+                                // T-796 — the COMMENT half of the preview. A comment is not in the
+                                // slot overlay lane (`set_drag`) nor the vehicle re-pack, so
+                                // `push_drag_preview` cannot move it; its lane is re-bound here so a
+                                // dragged note's glyph FOLLOWS THE CURSOR (the O-7 preview-parity
+                                // note). `comment_drag_lane_xy` re-packs EVERY note — the ones not in
+                                // the drag stay drawn at rest — with the dragged ids offset by the
+                                // live delta. On a mixed drag with no comment in `ids` this re-binds
+                                // the lane to its authored positions (all offsets zero), which is a
+                                // harmless identity re-upload, so there is no branch to keep in step.
+                                let cxy = doc.borrow().as_ref().map(|c| {
+                                    comment_drag_lane_xy(&c.comments_json(), &ids, dx, dy)
+                                });
+                                if let Some(cxy) = cxy {
+                                    e.comments_bind(&cxy);
+                                }
                             }
                             LG::Move {
                                 ids,
@@ -5340,6 +5428,16 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 }
                                 if let Some(e) = engine.borrow_mut().as_mut() {
                                     st::clear_drag_preview(e, &crate::editor_ops::vehicle_points());
+                                    // T-796 — a wrong-button release is never a commit; put a dragged
+                                    // note's lane back at its authored position too (identity when the
+                                    // drag held no comment).
+                                    if let Some(cxy) = doc
+                                        .borrow()
+                                        .as_ref()
+                                        .map(|c| comment_lane_xy(&c.comments_json()))
+                                    {
+                                        e.comments_bind(&cxy);
+                                    }
                                 }
                             }
                             LG::Marquee { .. } => {
@@ -5538,9 +5636,23 @@ pub fn MissionEditorPage() -> impl IntoView {
                             // move, so Ctrl+drag keeps its move meaning everywhere regroup does not
                             // apply. The preview lanes are dropped back either way (regroup commits
                             // no position, so nothing re-binds the glyphs from a move).
+                            // T-796 — a comment id can never be a regroup SOURCE: regroup moves a
+                            // character slot into another slot's squad (`regroup_slot_onto`), and a
+                            // note is in neither the slot SoA nor a squad. Excluding it here (asked
+                            // of the document's comment map, the `delete_selection` membership rule —
+                            // not a `cmt-` prefix) means a Ctrl+drag of a lone note falls straight
+                            // through to the positional move below instead of probing for a phantom
+                            // regroup target under the drop.
+                            let single_comment_drag = ids.len() == 1
+                                && doc.borrow().as_ref().is_some_and(|c| {
+                                    crate::editor_ops::comment_details(c)
+                                        .iter()
+                                        .any(|d| d.id == ids[0])
+                                });
                             let regrouped = if (ev.ctrl_key() || ev.meta_key())
                                 && ids.len() == 1
                                 && !crate::editor_ops::is_vehicle_id(&ids[0])
+                                && !single_comment_drag
                             {
                                 let target = doc
                                     .borrow()
@@ -5572,10 +5684,66 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 return;
                             }
                             if dx != 0.0 || dy != 0.0 {
+                                // T-796 — split the COMMENTS out of the drag FIRST, asked of the
+                                // document's own comment map (`comment_details`) exactly as
+                                // `delete_selection` asks it — the prefix `cmt-` is a minting
+                                // convention, not a document invariant. A note is in neither the slot
+                                // SoA nor `vehiclesById`, so left in `ids` it would land in
+                                // `slot_ids` and be handed to `move_entities`, which reads the slot
+                                // SoA, finds nothing, and moves it NOWHERE — the exact defect O-6
+                                // pixel-verified (a 90px drag left the stored position unchanged).
+                                let comment_ids: Vec<String> = doc
+                                    .borrow()
+                                    .as_ref()
+                                    .map(|c| {
+                                        let members: std::collections::HashSet<String> =
+                                            crate::editor_ops::comment_details(c)
+                                                .into_iter()
+                                                .map(|d| d.id)
+                                                .collect();
+                                        ids.iter()
+                                            .filter(|id| members.contains(*id))
+                                            .cloned()
+                                            .collect()
+                                    })
+                                    .unwrap_or_default();
+                                // T-796 — commit each dragged note to base + delta through
+                                // `move_comment`, ONE core transaction each ⇒ one Ctrl+Z. A
+                                // SINGLE-comment drag (the O-6 case, and what `compute_move_ids`
+                                // produces for a drag of an unselected note) is therefore exactly one
+                                // undo step, the ticket's "moving must be ONE step". A drag of
+                                // SEVERAL notes is N steps — the SAME accepted per-txn class as the
+                                // `delete_selection` comment loop (the one-txn batch would be minted
+                                // core-side in `store.rs`, out of this slice), never lost work: undo
+                                // restores every moved note. The base x/z is read from the same
+                                // `comment_details` list, so the stored position and the previewed
+                                // glyph came from ONE read. `z` here is the note's NORTHING (a
+                                // comment is `{x, z}`, two horizontals) — `dy` is a plane delta, so
+                                // this passes the northing through verbatim and never zeroes an axis.
+                                if !comment_ids.is_empty() {
+                                    let moves: Vec<(String, f64, f64)> = doc
+                                        .borrow()
+                                        .as_ref()
+                                        .map(|c| {
+                                            dragged_comment_points(
+                                                &comment_points(&c.comments_json()),
+                                                &comment_ids,
+                                            )
+                                            .into_iter()
+                                            .map(|p| (p.id, p.x + dx, p.y + dy))
+                                            .collect()
+                                        })
+                                        .unwrap_or_default();
+                                    for (id, x, z) in moves {
+                                        crate::editor_ops::move_comment(id, x, z);
+                                    }
+                                }
                                 // T-491 — one LOCAL yrs txn for mixed slot+vehicle drag (T-425 split
-                                // `move_entities` then `move_vehicles` needed two Ctrl+Z).
+                                // `move_entities` then `move_vehicles` needed two Ctrl+Z). The comment
+                                // half is already committed above; this partitions the REMAINDER.
                                 let (veh_ids, slot_ids): (Vec<String>, Vec<String>) = ids
                                     .iter()
+                                    .filter(|id| !comment_ids.iter().any(|c| c == *id))
                                     .cloned()
                                     .partition(|id| crate::editor_ops::is_vehicle_id(id));
                                 if !slot_ids.is_empty() || !veh_ids.is_empty() {
@@ -5639,6 +5807,17 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 // lanes back to the authored positions (T-573 — the vehicle lane is
                                 // a live re-pack now, not a passive bind).
                                 st::clear_drag_preview(e, &crate::editor_ops::vehicle_points());
+                                // T-796 — and the comment lane: a zero-delta release still ran the
+                                // preview re-pack above, so re-bind the notes to their authored
+                                // positions (no committed move re-binds them here). Identity when the
+                                // drag held no note.
+                                if let Some(cxy) = doc
+                                    .borrow()
+                                    .as_ref()
+                                    .map(|c| comment_lane_xy(&c.comments_json()))
+                                {
+                                    e.comments_bind(&cxy);
+                                }
                             }
                         }
                         // T-159.19 M3 — marquee commit. Release capture; a ≥1×1 px box replaces the
@@ -5886,6 +6065,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 let container = container.clone();
                 let left = left.clone();
                 let engine = engine.clone();
+                let doc = doc.clone(); // T-796 — to re-bind the comment lane on a cancelled drag
                 move |ev: web_sys::PointerEvent| {
                     // T-159.22 — a cancelled pointer drops an armed place, like every other
                     // in-flight gesture below (pointercancel is never a commit).
@@ -5910,6 +6090,16 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 // re-binds: the previewed vehicle rows would otherwise stay parked
                                 // at the last offset while the document says they never moved.
                                 st::clear_drag_preview(e, &crate::editor_ops::vehicle_points());
+                                // T-796 — the comment lane, same reasoning: a cancelled drag that
+                                // held a note left its glyph at the previewed offset. Re-bind the
+                                // authored positions (identity when no note was dragged).
+                                if let Some(cxy) = doc
+                                    .borrow()
+                                    .as_ref()
+                                    .map(|c| comment_lane_xy(&c.comments_json()))
+                                {
+                                    e.comments_bind(&cxy);
+                                }
                             }
                         }
                         Some(LG::Marquee { .. }) => {
@@ -13054,7 +13244,16 @@ mod t784_comment_glyph {
     /// connection would take a comment as an endpoint — an edge to a thing that never compiles.
     #[test]
     fn the_map_click_folds_the_comment_into_the_entity_hit() {
-        let code = page();
+        // Scope to the CLICK path — the pointerup handler. T-796 added a SECOND comment pick at the
+        // drag-START (the pointermove handler, earlier in the file) so a drag grabs a note; that pick
+        // is verified by `t796_comment_drag::the_drag_start_folds_the_comment_into_the_move_hit`.
+        // This test is about the click ordering (comment after complete_connect, before the edge /
+        // apply_click), all of which live in pointerup, so anchoring here keeps that intent exact.
+        let whole = page();
+        let up = whole
+            .find("let onpointerup = ")
+            .expect("T-784: the pointerup handler must survive");
+        let code = &whole[up..];
         let pick = ["pick", "_comment("].concat();
         let read = ["comment", "_points("].concat();
         let connect = ["editor_ops", "::", "complete_connect("].concat();
@@ -13166,6 +13365,249 @@ mod t784_comment_glyph {
             !del.contains("cmt-") && !del.contains("starts_with"),
             "T-784: a prefix test is a second vocabulary for 'is this a comment?' and it is wrong \
              for any hydrated mission whose ids were not minted here"
+        );
+    }
+}
+
+// ═════ T-796 — a comment can be DRAGGED: pick → preview → one-txn move ════════════════════════════
+//
+// O-6 pixel-verified two defects. The DRAG half is fixed here (the glyph RESTYLE — neutral shape +
+// non-selection colour + selection-on-top — is the `comments_bind` glyph in `map-engine-render`'s
+// `engine.rs`, a co-owned symbology surface (T-808/T-790) outside this slice's one file; it is
+// reported found-not-fixed, not touched from here).
+//
+// Before this ticket a drag STARTING on a note resolved `pick_slot_or_vehicle` → None → LG::Marquee,
+// so the note never entered a move; and even if a comment id HAD reached the LG::Move commit it would
+// have fallen into `slot_ids` and been handed to `move_entities`, which reads the slot SoA, finds no
+// such row, and moves it nowhere — a 90px drag left the stored position unchanged (verified twice).
+//
+// These pins + the two pure-function tests hold the four properties the fix rests on:
+//   1. the drag-start FOLDS the comment pick into `hit` (the T-784 click precedent, not a fork), so a
+//      note grabs like a slot — after slot/vehicle, before the marquee fallthrough;
+//   2. the commit PARTITIONS comments out by asking the document's own map (`comment_details`, the
+//      `delete_selection` rule) and routes them to `move_comment` — never to `move_entities`;
+//   3. each note is base + delta, ONE txn per note, so a single-note drag is one Ctrl+Z (the ticket's
+//      "ONE step"; multi-note inherits `delete_selection`'s accepted per-txn class);
+//   4. the mid-drag preview re-binds the note's own lane so the glyph follows the cursor, and every
+//      non-commit exit (zero delta, wrong button, cancel) re-binds it to the authored positions.
+#[cfg(test)]
+mod t796_comment_drag {
+    use super::{comment_drag_lane_xy, comment_points, dragged_comment_points};
+    use crate::arsenal::class_r_scrub::{live_code, only_body};
+
+    /// Two notes; a hydrated mission whose ids were NOT minted with the `cmt-` prefix, to prove
+    /// membership is asked of the document, never of the id text.
+    fn comments() -> String {
+        serde_json::json!({
+            "note-a": { "title": "A", "position": { "x": 100.0, "z": 10.0 } },
+            "note-b": { "title": "B", "position": { "x": 300.0, "z": -30.0 } },
+        })
+        .to_string()
+    }
+
+    fn page() -> String {
+        let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
+        let raw = include_str!("mission_editor.rs");
+        assert_eq!(raw.matches(anchor.as_str()).count(), 1);
+        live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])
+    }
+
+    /// **The dragged set is a projection of the document's comment list, selected by id.** Base
+    /// positions ride along, so the commit's `base + delta` and the preview's offset are ONE read.
+    #[test]
+    fn dragged_points_are_the_document_notes_filtered_by_id() {
+        let pts = comment_points(&comments());
+        let got = dragged_comment_points(&pts, &["note-b".to_string()]);
+        assert_eq!(got.len(), 1, "only the dragged id is returned");
+        assert_eq!(got[0].id, "note-b");
+        assert_eq!(
+            (got[0].x, got[0].y),
+            (300.0, -30.0),
+            "with its authored x/z"
+        );
+        // An id not in the document contributes nothing (a stale selection entry cannot move a ghost).
+        assert!(dragged_comment_points(&pts, &["ghost".to_string()]).is_empty());
+        assert!(dragged_comment_points(&pts, &[]).is_empty());
+    }
+
+    /// **The preview re-packs EVERY note, offsetting only the dragged ones.** The notes not in the
+    /// drag must stay drawn where they are (this lane draws them all), and the dragged note's glyph
+    /// must sit at base + delta — the "glyph follows the cursor" the O-7 preview-parity note asks for.
+    #[test]
+    fn preview_offsets_only_the_dragged_note_and_keeps_the_rest() {
+        // Drag note-a by (+50, +5); note-b is not dragged.
+        let xy = comment_drag_lane_xy(&comments(), &["note-a".to_string()], 50.0, 5.0);
+        assert_eq!(
+            xy.len(),
+            4,
+            "both notes still in the lane — a drag hides nothing"
+        );
+        // Lane order is `comment_points` order (id-sorted): note-a then note-b.
+        assert!(
+            (xy[0] - 150.0).abs() < 1e-3 && (xy[1] - 15.0).abs() < 1e-3,
+            "T-796: the dragged note is drawn at base + delta, not at its stored position"
+        );
+        assert!(
+            (xy[2] - 300.0).abs() < 1e-3 && (xy[3] - (-30.0)).abs() < 1e-3,
+            "T-796: a note NOT in the drag keeps its authored position mid-drag"
+        );
+        // Zero delta (or an empty drag set) is the identity re-pack the non-commit exits rely on.
+        let rest = comment_drag_lane_xy(&comments(), &["note-a".to_string()], 0.0, 0.0);
+        assert_eq!(rest, super::comment_lane_xy(&comments()));
+        let none = comment_drag_lane_xy(&comments(), &[], 50.0, 5.0);
+        assert_eq!(none, super::comment_lane_xy(&comments()));
+    }
+
+    /// The northing (`z`, the note's SECOND HORIZONTAL) is a plane axis, so a drag `dy` translates it
+    /// like `dx` translates x — it is NOT an elevation to be preserved-or-zeroed. `move_comment(id, x,
+    /// z)` takes both, and the commit passes `p.y + dy` as z. This guards against the z-family trap
+    /// (a drag that wrote z=None or zeroed a stored elevation) — for a comment there is no elevation,
+    /// the second axis is northing and it moves.
+    #[test]
+    fn the_northing_translates_with_the_drag() {
+        let xy = comment_drag_lane_xy(&comments(), &["note-b".to_string()], 0.0, 100.0);
+        // note-b is second in id order; its z was -30, +100 delta ⇒ 70.
+        assert!(
+            (xy[3] - 70.0).abs() < 1e-3,
+            "T-796: dy moves the northing; it is a horizontal, not a preserved elevation"
+        );
+    }
+
+    /// **Drag-start folds the comment pick into `hit`** — after slot/vehicle, before the marquee
+    /// fallthrough. The precedence the chosen ordering makes: ring (T-795) short-circuits earlier,
+    /// then slot/vehicle wins its pixels, then a comment, then None ⇒ marquee. The fold is the same
+    /// `hit.or_else(|| … pick_comment …)` shape T-784 uses on the click path, so the drag grabs a note
+    /// over the identical hit box the click selects it with — not a second pick with its own radius.
+    #[test]
+    fn the_drag_start_folds_the_comment_into_the_move_hit() {
+        let code = page();
+        let start = code
+            .find("st::pick_slot_or_vehicle(")
+            .expect("T-796: the drag-start slot/vehicle pick must survive");
+        // The FIRST fold after the drag-start pick is the drag one (the click-path fold is later in
+        // the file, inside the pointerup selection block).
+        let region = &code[start..];
+        let fold = ["let hit = hit.", "or_else("].concat();
+        let at_fold = region
+            .find(&fold)
+            .expect("T-796: the drag-start must fold a comment pick into `hit`");
+        let pick = ["pick", "_comment("].concat();
+        let read = ["comment", "_points("].concat();
+        let at_pick = region[at_fold..]
+            .find(&pick)
+            .expect("T-796: the fold must hit-test the comment glyph");
+        assert!(
+            region[at_fold..].contains(&read),
+            "T-796: the drag-start comment pick must be fed from comment_points — the lane's read"
+        );
+        let at_marquee = region
+            .find("LG::Marquee")
+            .expect("T-796: the marquee fallthrough must survive");
+        assert!(
+            at_fold < at_marquee && at_fold + at_pick < region.find("LG::Marquee").unwrap(),
+            "T-796: a comment must be picked BEFORE the None => LG::Marquee arm, or a drag on a note \
+             falls through to a marquee that destroys the selection (the F-16 class)"
+        );
+    }
+
+    /// **The move commit routes comments to `move_comment`, and the slot/vehicle half to the atomic
+    /// translate — split by asking the document.** A comment id must never reach `move_entities`
+    /// (which reads the slot SoA and would move a note nowhere — the O-6 defect); it is partitioned
+    /// out by `comment_details` (the `delete_selection` membership rule, never a `cmt-` prefix) and
+    /// sent to `move_comment`, base + delta, one txn each.
+    #[test]
+    fn the_move_commit_partitions_comments_to_their_own_mutator() {
+        let code = page();
+        // Scope to the LG::Move pointerup commit: from the move-commit doc comment to the marquee arm.
+        let commit_start = code
+            .find("move_entities_and_vehicles(")
+            .expect("T-796: the slot/vehicle move-commit must survive");
+        // Walk BACK to the start of the drag-commit block (the comment partition sits before it).
+        let block_anchor = code[..commit_start]
+            .rfind("if dx != 0.0")
+            .expect("T-796: the drag-commit delta guard must survive");
+        let region = &code[block_anchor..];
+        let details = ["comment", "_details("].concat();
+        let mv = ["editor_ops", "::", "move_comment("].concat();
+        let at_details = region
+            .find(&details)
+            .expect("T-796: the commit must ask the document which ids are comments");
+        let at_move = region
+            .find(&mv)
+            .expect("T-796: the comment half must reach move_comment, not move_entities");
+        let at_entities = region.find("move_entities_and_vehicles(").expect("counted");
+        assert!(
+            at_details < at_move && at_move < at_entities,
+            "T-796: ask the document, move the notes, THEN move the slot/vehicle remainder — so a \
+             note is never handed to move_entities (which would move it nowhere)"
+        );
+        // The slot/vehicle partition must EXCLUDE the comment ids, or a note double-commits.
+        let veh_part = region
+            .find("partition(|id| crate::editor_ops::is_vehicle_id(id))")
+            .expect("T-796: the veh/slot partition must survive");
+        assert!(
+            region[..veh_part].contains("!comment_ids"),
+            "T-796: the slot/vehicle partition must filter the comment ids out first"
+        );
+        assert!(
+            !region[..at_move].contains("cmt-") && !region[..at_move].contains("starts_with"),
+            "T-796: membership is the document's answer, not a prefix test on the id"
+        );
+    }
+
+    /// **`move_comment` is one core transaction ⇒ one Ctrl+Z, so a single-note drag is ONE undo
+    /// step.** The ticket's "moving must be ONE step" is the single-comment case (what
+    /// `compute_move_ids` produces for a drag of an unselected note); a multi-note drag is the SAME
+    /// accepted per-txn class the `delete_selection` comment loop documents — never lost work. This
+    /// pins the mutator's one-txn contract at its source.
+    #[test]
+    fn move_comment_is_one_transaction() {
+        let ops = live_code(include_str!("editor_ops.rs"));
+        let body = only_body(&ops, "pub fn move_comment(");
+        assert!(
+            body.contains("set_comment_position("),
+            "T-796: move_comment must write through the core's set_comment_position"
+        );
+        let store = include_str!("../../../../crates/map-engine-core/src/doc/store.rs");
+        // set_comment_position delegates the write to set_comment_field (the shared read-modify-write
+        // for all three comment field edits), which is where the SINGLE transaction is opened.
+        let sp = only_body(store, "pub fn set_comment_position(");
+        assert!(
+            sp.contains("set_comment_field("),
+            "T-796: set_comment_position must route through the shared one-txn field writer"
+        );
+        let field = only_body(store, "fn set_comment_field(");
+        assert_eq!(
+            field.matches("self.begin()").count(),
+            1,
+            "T-796: the comment field write opens exactly one transaction — one drag, one undo step"
+        );
+    }
+
+    /// **Every non-commit exit re-binds the comment lane to the authored positions.** A zero-delta
+    /// release, a wrong-button release, and a pointercancel each ran the preview offset; without a
+    /// committed move re-binding the lane (which `after_doc_change` does after a real move), a
+    /// dragged-then-abandoned note would stay parked at the last preview offset — the same lie the
+    /// vehicle lane's `clear_drag_preview` exists to prevent, applied to the comment lane.
+    #[test]
+    fn abandoned_drags_re_bind_the_comment_lane() {
+        let code = page();
+        // The preview arm binds the OFFSET lane; the non-commit exits bind the AUTHORED lane.
+        assert!(
+            code.contains("comment_drag_lane_xy("),
+            "T-796: the pointermove preview must re-pack the comment lane with the live offset"
+        );
+        // Count the authored re-binds at the non-commit exits: zero-delta else, wrong-button Move,
+        // pointercancel Move. All three call comments_bind(comment_lane_xy(...)).
+        let authored = ["e.comments_bind(&", "cxy)"].concat();
+        assert!(
+            code.matches("comment_lane_xy(&c.comments_json())").count() >= 3,
+            "T-796: the three non-commit exits (zero delta, wrong button, cancel) must each re-bind \
+             the authored comment lane; found fewer than three"
+        );
+        assert!(
+            code.contains(&authored),
+            "T-796: the restore must upload through comments_bind, the lane's only entry point"
         );
     }
 }
