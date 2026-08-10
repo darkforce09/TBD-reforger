@@ -6019,16 +6019,30 @@ pub fn begin_zone_reshape(row_id: &str, shape: ZoneShape, collection: DrawTarget
 }
 
 /// Abandon the in-flight draw without writing anything. The explicit counterpart to
-/// [`cancel_pending`], which a zone draw deliberately survives.
-pub fn cancel_zone_draw() {
-    OPS_CTX.with(|c| {
+/// [`cancel_pending`], which a zone draw deliberately survives. Returns whether a draw was actually
+/// abandoned — `false` when nothing was in flight (or the ops context is not up).
+///
+/// T-792 — this is the ONE cancel a zone draw honours, so it is what the keyboard-Esc arm in
+/// `mission_editor` calls to clear an in-progress circle/polygon (matching the panel Cancel button).
+/// Like T-791's `cancel_pending`, a real clear bumps the dock tick OUTSIDE the `OPS_CTX` borrow
+/// (`bump_doc_tick` re-borrows it): the Zones/Triggers panel's "click the rim"/vertex hint re-reads
+/// [`zone_draft`] under `doc_tick` and vanishes once the draft is `None`. The panel Cancel button
+/// bumps the tick itself too, so this bump is a harmless second re-read on that path.
+pub fn cancel_zone_draw() -> bool {
+    let cleared = OPS_CTX.with(|c| {
         if let Some(ctx) = c.borrow().as_ref() {
             let mut p = ctx.pending.borrow_mut();
             if matches!(*p, Some(Pending::Zone(_))) {
                 *p = None;
+                return true;
             }
         }
+        false
     });
+    if cleared {
+        bump_doc_tick();
+    }
+    cleared
 }
 
 /// Drop the last polygon vertex (the Undo-vertex control). Returns the remaining count.
