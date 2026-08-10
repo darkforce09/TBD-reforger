@@ -977,7 +977,10 @@ fn single_row(
                 let is_active = is_active.clone();
                 move || {
                     let g = if authoring_on { " group" } else { "" };
-                    format!("{}{dim}{g}", if is_active() { ROW_DROP_TARGET } else { ROW })
+                    format!(
+                        "{}{dim}{g}",
+                        if is_active() { ROW_DROP_TARGET } else { ROW }
+                    )
                 }
             };
             // T-803 (fold a) — the "stated in the row UI" half of fold (c): a small target glyph that
