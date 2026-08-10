@@ -209,17 +209,21 @@ const MENUS: [(&str, &[MenuItem]); 6] = [
                 action: Some(MenuAction::SelectAll),
             },
             // WIDGET-CYCLE-001 — the transformation-widget modes. Eden numbers five (No Widget 1 /
-            // Translation 2 / Rotation 3 / Area Scaling 4 / Area 5); TBD binds `1`/`2` today
-            // (translate / rotate — there is no area-scale target, see `WidgetVariant`). T-797
-            // wave-202: these rows now dispatch `from_digit(1)` / `from_digit(2)` through the bridge;
-            // T-795 renumbers to Eden's 1-5 when the extra variants land.
+            // Translation 2 / Rotation 3 / Area Scaling 4 / Area 5); T-795 renumbers TBD onto Eden's
+            // FIRST THREE — `1` No Widget / `2` Translate / `3` Rotate (4/5 reserved-unbound, no
+            // area-scale target — see `WidgetVariant`). These rows dispatch `set_widget(1|2|3)` through
+            // the bridge; the digit in each label is the chord, kept so the key stays discoverable.
             MenuItem {
-                label: "Widget: Translation (1)",
+                label: "Widget: No Widget (1)",
                 action: Some(MenuAction::SetWidget(1)),
             },
             MenuItem {
-                label: "Widget: Rotation (2)",
+                label: "Widget: Translation (2)",
                 action: Some(MenuAction::SetWidget(2)),
+            },
+            MenuItem {
+                label: "Widget: Rotation (3)",
+                action: Some(MenuAction::SetWidget(3)),
             },
             // KEY-GRID-001 / TOOLBAR-GRID-MOVE-001 — the snap grid: G toggles it, `[`/`]` tune the
             // active ladder's step. One SNAP grid (move + rotation rungs), the status-bar chip labels
@@ -1075,6 +1079,27 @@ pub fn TopCommandStrip(
             None => Vec::new(),
         }
     });
+    // T-799 (a) — the once-per-gesture guard for the two EXPORT rows (F-28/F-34: Export Compiled
+    // fired TWICE per click — two `createObjectURL` + two anchor clicks of the same payload). The
+    // export rows live in conditionally-rendered menus that close on activation, so the DOM
+    // re-dispatches a synthesised second click carrying the SAME `Event.timeStamp`; this returns
+    // `false` for that duplicate and `true` for a genuinely new gesture (a real second intent has its
+    // own later stamp and still fires). Only the export rows are gated — an accidental double Undo is
+    // harmless, a double download is not, and the review named the export activation specifically. The
+    // seam is `mission_commands::begin_export_gesture` (the latch) over `export_gesture_is_duplicate`
+    // (the pure rule); native has no DOM double-activation, so this is `true` off-wasm.
+    let export_gesture_ok = move |_ev: &leptos::ev::MouseEvent| -> bool {
+        #[cfg(target_arch = "wasm32")]
+        {
+            // `MouseEvent: AsRef<Event>` — `time_stamp()` is the base `Event`'s `DOMHighResTimeStamp`.
+            let stamp = AsRef::<web_sys::Event>::as_ref(_ev).time_stamp();
+            crate::mission_commands::begin_export_gesture(stamp)
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            true
+        }
+    };
     let run_action = move |a: MenuAction| {
         open_menu.set(None);
         // T-634 — the export menu dispatches through this same function, so it closes here too.
@@ -1201,13 +1226,22 @@ pub fn TopCommandStrip(
         let _gen = crate::mission_editor::toolbar_dispatch_generation().get();
         #[cfg(target_arch = "wasm32")]
         {
+            // T-795 renumbers to `1` No Widget / `2` Translate / `3` Rotate. The dispatch this slice
+            // BUILDS AGAINST exposes only `widget_is_rotate()` (one bit); T-795 adds `widget_digit()`
+            // (the active variant's digit) precisely so a three-way plate can light the right one, and
+            // the barrier merges it. Until then this reads the one bit it has:
+            //   * `3` (Rotate)    → `rot`          — correct.
+            //   * `2` (Translate) → `!rot`         — correct while No Widget is unreachable (it is, in
+            //                                         the baseline `WidgetVariant`; post-merge the
+            //                                         No-Widget plate reconciles onto `widget_digit`).
+            //   * `1` (No Widget) → `false`        — no None state exists to light in this baseline.
+            // The dispatch getter stays the tracked read so keyboard and toolbar cannot disagree.
             let mut rot = false;
             crate::mission_editor::with_editor_toolbar_dispatch(|d| rot = (d.widget_is_rotate)());
-            // digit 2 = Rotate; digit 1 = Translate (the complement).
-            if digit == 2 {
-                rot
-            } else {
-                !rot
+            match digit {
+                3 => rot,
+                2 => !rot,
+                _ => false,
             }
         }
         #[cfg(not(target_arch = "wasm32"))]
@@ -1341,7 +1375,27 @@ pub fn TopCommandStrip(
                                                                                 &[MENU_ROW, HOVER_FILL, DISABLED_GLYPH],
                                                                             )
                                                                             disabled=disabled
-                                                                            on:click=move |_| run_action(a)
+                                                                            on:click=move |ev| {
+                                                                                // T-799 (a) — the File
+                                                                                // menu carries the same
+                                                                                // two export rows as the
+                                                                                // export dropdown, so its
+                                                                                // menu-close-on-activate
+                                                                                // double-fires them too;
+                                                                                // gate export actions on
+                                                                                // the same once-per-gesture
+                                                                                // latch. Non-export rows
+                                                                                // dispatch unchanged.
+                                                                                if matches!(
+                                                                                    a,
+                                                                                    MenuAction::Export
+                                                                                        | MenuAction::ExportCompiled
+                                                                                ) && !export_gesture_ok(&ev)
+                                                                                {
+                                                                                    return;
+                                                                                }
+                                                                                run_action(a);
+                                                                            }
                                                                         >
                                                                             <span class=MENU_GUTTER>
                                                                                 // T-692 — the gutter's first real
@@ -1621,13 +1675,16 @@ pub fn TopCommandStrip(
             // prior note promised. The two step buttons are momentary (no plate). Each keeps its
             // `Name (Key)` tooltip so the chord stays discoverable.
             //
-            // WIDGET-CYCLE-001 — Translate (Digit1) / Rotate (Digit2). Wired to the current 1/2 arms;
-            // T-795 renumbers to Eden's 1-5 (No Widget / Translation / Rotation / Area Scaling / Area)
-            // when the extra variants exist.
+            // WIDGET-CYCLE-001 — T-795 renumbers the widget chords onto Eden's first three: `1` No
+            // Widget / `2` Translate / `3` Rotate (4/5 reserved-unbound). The cluster is now THREE
+            // mutually-exclusive buttons (was two) so the No-Widget mode has a home in the toolbar and
+            // not only on the `1` key; each dispatches `set_widget(1|2|3)` through the same bridge and
+            // lights its `TOGGLED_PLATE` when it is the active variant (`widget_is` above). The digit
+            // in each tooltip is the chord, kept discoverable.
             <button
                 type="button"
-                aria-label="Translate widget"
-                title="Translate widget (1)"
+                aria-label="No widget"
+                title="No widget (1)"
                 class=move || {
                     if widget_is(1) {
                         cn(&[BTN_ICON, HOVER_FILL, TOGGLED_PLATE])
@@ -1637,12 +1694,12 @@ pub fn TopCommandStrip(
                 }
                 on:click=move |_| run_action(MenuAction::SetWidget(1))
             >
-                <MaterialIcon name="open_with" class="block text-base leading-none" />
+                <MaterialIcon name="block" class="block text-base leading-none" />
             </button>
             <button
                 type="button"
-                aria-label="Rotate widget"
-                title="Rotate widget (2)"
+                aria-label="Translate widget"
+                title="Translate widget (2)"
                 class=move || {
                     if widget_is(2) {
                         cn(&[BTN_ICON, HOVER_FILL, TOGGLED_PLATE])
@@ -1651,6 +1708,21 @@ pub fn TopCommandStrip(
                     }
                 }
                 on:click=move |_| run_action(MenuAction::SetWidget(2))
+            >
+                <MaterialIcon name="open_with" class="block text-base leading-none" />
+            </button>
+            <button
+                type="button"
+                aria-label="Rotate widget"
+                title="Rotate widget (3)"
+                class=move || {
+                    if widget_is(3) {
+                        cn(&[BTN_ICON, HOVER_FILL, TOGGLED_PLATE])
+                    } else {
+                        cn(&[BTN_ICON, HOVER_FILL])
+                    }
+                }
+                on:click=move |_| run_action(MenuAction::SetWidget(3))
             >
                 <MaterialIcon name="rotate_right" class="block text-base leading-none" />
             </button>
@@ -1936,7 +2008,11 @@ pub fn TopCommandStrip(
                                         type="button"
                                         title="The editor superset envelope — re-imports here; the mod cannot load it"
                                         class=cn(&[MENU_ROW, HOVER_FILL])
-                                        on:click=move |_| run_action(MenuAction::Export)
+                                        on:click=move |ev| {
+                                            if export_gesture_ok(&ev) {
+                                                run_action(MenuAction::Export);
+                                            }
+                                        }
                                     >
                                         <span class=MENU_GUTTER></span>
                                         <span>"Export JSON"</span>
@@ -1949,7 +2025,11 @@ pub fn TopCommandStrip(
                                         type="button"
                                         title="The compiled mission document the game server receives"
                                         class=cn(&[MENU_ROW, HOVER_FILL])
-                                        on:click=move |_| run_action(MenuAction::ExportCompiled)
+                                        on:click=move |ev| {
+                                            if export_gesture_ok(&ev) {
+                                                run_action(MenuAction::ExportCompiled);
+                                            }
+                                        }
                                     >
                                         <span class=MENU_GUTTER></span>
                                         <span>"Export Compiled"</span>
@@ -3019,8 +3099,10 @@ mod t668_state_vocabulary {
             .expect("T-797: the bar must carry an Edit menu");
         for (label, want) in [
             ("Select All on Screen (Ctrl+A)", MenuAction::SelectAll),
-            ("Widget: Translation (1)", MenuAction::SetWidget(1)),
-            ("Widget: Rotation (2)", MenuAction::SetWidget(2)),
+            // T-795 renumbering: `1` No Widget / `2` Translate / `3` Rotate.
+            ("Widget: No Widget (1)", MenuAction::SetWidget(1)),
+            ("Widget: Translation (2)", MenuAction::SetWidget(2)),
+            ("Widget: Rotation (3)", MenuAction::SetWidget(3)),
             ("Toggle Snap Grid (G)", MenuAction::ToggleSnap),
             ("Snap Step — Decrease ([)", MenuAction::SnapStep(-1)),
             ("Snap Step — Increase (])", MenuAction::SnapStep(1)),
@@ -3448,13 +3530,15 @@ mod t634_two_rows_and_a_hierarchy {
             "T-634: the menu bar must render inside the MENU row, not the tool row"
         );
         // …and every tool-row citizen is inside row 2. `History` is the disabled version-list glyph,
-        // `Undo`/`Redo` the two live ones; T-797 adds the widget-mode + snap-grid icon cluster
-        // (`Translate widget` / `Rotate widget` / `Toggle snap grid` / the two snap-step glyphs);
-        // `Mission settings` is the gear and `Export` the demoted menu.
+        // `Undo`/`Redo` the two live ones; T-797 adds the widget-mode + snap-grid icon cluster and
+        // T-795/T-799 makes it THREE widget buttons (`No widget` / `Translate widget` / `Rotate
+        // widget`) beside `Toggle snap grid` and the two snap-step glyphs; `Mission settings` is the
+        // gear and `Export` the demoted menu.
         for tool in [
             r#"aria-label="History""#,
             r#"aria-label="Undo""#,
             r#"aria-label="Redo""#,
+            r#"aria-label="No widget""#,
             r#"aria-label="Translate widget""#,
             r#"aria-label="Rotate widget""#,
             r#"aria-label="Toggle snap grid""#,
