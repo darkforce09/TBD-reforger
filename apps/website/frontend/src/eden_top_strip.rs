@@ -878,6 +878,11 @@ pub fn TopCommandStrip(
     #[prop(optional)]
     orbat_open: Option<RwSignal<bool>>,
 ) -> impl IntoView {
+    // T-789 (wave-203) — the Save Version dialog is portaled to `document.body` (see its mount
+    // below) so its `position:fixed` centering resolves against the viewport, not the strip's
+    // `backdrop-filter` glass root. Same `leptos::portal::Portal` idiom `eden_dock_right`'s
+    // `TriggerOwnerLine` uses to escape the right dock's clipping box.
+    use leptos::portal::Portal;
     let open_menu = RwSignal::new(None::<usize>);
     // T-634 — the demoted exports' dropdown. A second latch rather than an eighth `MENUS` entry:
     // the export menu hangs off a BUTTON in the tool row, not off the menu bar, and the two are
@@ -1868,7 +1873,12 @@ pub fn TopCommandStrip(
                             }
                         };
                         let obj = obj_count.map_or(0, |o| o.get());
-                        let size_line = match estimate {
+                        // `StoredValue` (Copy) so the dialog view can be a re-runnable `Fn` closure —
+                        // wave-203 wraps it in `Portal`, whose `children` is `TypedChildrenFn` and
+                        // must implement `Fn`; a plain owned `String` moved into the view would make
+                        // the closure `FnOnce`. The value is computed once per open (the size line is
+                        // a snapshot at dialog-open, not reactive), so a StoredValue read is exact.
+                        let size_line = StoredValue::new(match estimate {
                             Some(b) => {
                                 format!(
                                     "~{} · {} objects",
@@ -1877,7 +1887,7 @@ pub fn TopCommandStrip(
                                 )
                             }
                             None => format!("{obj} objects"),
-                        };
+                        });
                         let big = estimate.is_some_and(|b| b > 200_000_000);
                         // T-789 F-04 — initial focus + Tab trap. The dialog is hand-rolled (it is not
                         // the shared `ui::Dialog`, which has no focus handling of its own either), so
@@ -1908,7 +1918,35 @@ pub fn TopCommandStrip(
                         let trap_tab = move |ev: web_sys::KeyboardEvent| {
                             trap_tab_in_dialog(dialog_ref, &ev);
                         };
+                        // T-789 (wave-203 MAJOR) — PORTAL the dialog to `document.body`.
+                        //
+                        // The bug this fixes: `position:fixed` resolves against the nearest ancestor
+                        // that establishes a containing block, and `backdrop-filter` (any non-`none`
+                        // value) is exactly such an establisher. This dialog is a DOM descendant of
+                        // the strip's glass root (`STRIP_ROWS`, `…backdrop-blur-xl`), so `top-1/2
+                        // -translate-y-1/2` centered it on the 48px STRIP, not the viewport — the
+                        // Version input rendered at y=-22 (1920×1080) / y=-184 (1366×768), OFF the top
+                        // edge (verifier wave203 MAJOR; removing the ancestor filter snapped it to
+                        // y=423 — the causation proof). The wave-101 idiom is that dialogs mount
+                        // BESIDE the ungated chrome mounts (Attributes/ORBAT: `mission_editor.rs`
+                        // ~6026–6043), where no `backdrop-filter` ancestor exists and `fixed top-1/2`
+                        // centers correctly. `Portal` teleports these exact nodes to `<body>` — a
+                        // sibling of that same top-level container — so the containing block becomes
+                        // the ICB (viewport). ONLY the containing block changes: the overlay/dialog
+                        // markup, the `version_ref` focus-in, the `dialog_ref` Tab trap, the
+                        // fresh-state effect, the semver prefill and the `save_now` wiring are all
+                        // inside the children and move intact; Esc still closes via the strip's
+                        // window-level keydown listener (`save_open.set(false)`, :927), which is
+                        // position-independent, so the T-726/T-814 Esc ladder is UNTOUCHED. The
+                        // portal unmounts (Owner::on_cleanup) when `save_open` flips false and this
+                        // `.then(|| …)` returns None. The Save dialog's centering class-pin is a class
+                        // guard only; the REAL guard is the live-rect smoke `smoke_save_dialog_rect`
+                        // (`gate smoke save-dialog-rect`, tools/tbd-tools/src/smokes.rs), which reads
+                        // the Version input's getBoundingClientRect in real Chrome at 1920×1080 and
+                        // 1366×768 — "by construction" was exactly the claim that lied when the
+                        // containing block was wrong.
                         view! {
+                            <Portal>
                             <div
                                 class="animate-overlay-fade fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
                                 on:click=move |_| save_open.set(false)
@@ -1971,7 +2009,7 @@ pub fn TopCommandStrip(
                                         "font-mono text-xs text-tactical-yellow"
                                     } else {
                                         "font-mono text-xs text-on-surface-variant"
-                                    }>{size_line}</p>
+                                    }>{move || size_line.get_value()}</p>
                                     {move || {
                                         save_status
                                             .get()
@@ -2022,6 +2060,7 @@ pub fn TopCommandStrip(
                                     </button>
                                 </div>
                             </div>
+                            </Portal>
                         }
                     })
             }}
@@ -3639,8 +3678,12 @@ mod t786_dialog_closes_popovers {
 /// by the T-814 `escape_consumed()` ladder pinned in `t726_top_strip_esc_stack`). Registering it
 /// would make that same guard swallow its own Esc (an open overlay ⇒ `escape_consumed()` true ⇒ the
 /// strip arm returns before `save_open.set(false)`) — the exact T-726 trap the wave-200 note flags —
-/// forcing a re-proof of the whole ladder for no acceptance-criteria gain: clamp/fresh-state/focus/
-/// trap are all achievable dialog-locally, which is what these pins lock.
+/// forcing a re-proof of the whole ladder for no acceptance-criteria gain: fresh-state/focus/trap are
+/// all achievable dialog-locally (these pins lock them), and the wave-203 Portal move does NOT change
+/// that — the Esc-close still rides the window-level keydown listener (position-independent), so the
+/// T-726/T-814 ladder is untouched by teleporting the dialog to `document.body`. The on-screen clamp
+/// is the one property that could NOT be proven by construction (an ancestor `backdrop-filter` broke
+/// it, wave-203 MAJOR); it is now proven by the live-rect smoke in `tools/tbd-tools`, not a class pin.
 #[cfg(test)]
 mod t789_save_version_dialog {
     use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
@@ -3746,15 +3789,26 @@ mod t789_save_version_dialog {
         }
     }
 
-    /// CLAMP. The dialog is centered and height-capped, so the Version field (near the top of its
-    /// content) is on-screen at any viewport by construction — `top-1/2 … -translate-y-1/2` puts the
-    /// dialog's own centre at the viewport centre and `max-h-[85vh]` bounds its height, so its top
-    /// edge never rises above ~7.5vh (>0). The review's y=-22 was a stale DOM node (it says so, and
-    /// nearly filed a false "cannot save on a laptop"); the live layout has been centered since the
-    /// T-661 split. This pin guards against a regression to an upward-anchored (`top-full`) panel.
-    /// `live_source` (layout is string classes).
+    /// CLAMP — CLASS GUARD ONLY; THE REAL GUARD IS THE LIVE-RECT SMOKE.
+    ///
+    /// wave-203 correction: this pin's old name and old prose claimed the Version field was on-screen
+    /// "by construction" from `top-1/2 … -translate-y-1/2` + `max-h-[85vh]`. That was FALSE, and
+    /// "construction" was exactly what lied: `position:fixed` centers on the nearest containing block,
+    /// and the strip's `backdrop-filter` glass root (`STRIP_ROWS`) — an ANCESTOR of this dialog —
+    /// established one, so the dialog centered on the 48px strip and the Version input rendered at
+    /// y=-22 (1920×1080) / y=-184 (1366×768), off the top edge (verifier wave203 MAJOR, CDP-measured;
+    /// removing the ancestor filter snapped it to y=423 — causation proven). The fix PORTALS the
+    /// dialog to `document.body` (see the mount), so the containing block is now the viewport.
+    ///
+    /// A class-string pin CANNOT catch that class of failure — the offending classes were all present
+    /// and correct; the geometry was wrong because of an ancestor. So the AUTHORITATIVE guard is now
+    /// the live-Chrome rect smoke `smoke_save_dialog_rect` (`gate smoke save-dialog-rect`) in
+    /// `tools/tbd-tools/src/smokes.rs` (real `getBoundingClientRect`, both viewports, in the wave
+    /// gate). This test remains only as a cheap source-scrub sentinel: it holds the centering classes
+    /// in place and forbids the upward-anchored (`top-full`) regression — but it does NOT and cannot
+    /// prove on-screen-ness. Never re-add a "by construction" claim here. `live_source` (classes).
     #[test]
-    fn is_clamped_on_screen_by_construction() {
+    fn dialog_carries_the_centering_classes_rect_is_smoke_proven() {
         let code = live_source(include_str!("eden_top_strip.rs"));
         let body = only_body(&code, "pub fn TopCommandStrip(");
         // Anchor on the dialog's unique description copy (the button label "Save Version" also
@@ -3772,7 +3826,7 @@ mod t789_save_version_dialog {
             assert!(
                 popup.contains(needle),
                 "T-789 F-04: the Save dialog popup must carry `{needle}` so it centers and caps its \
-                 height — the Version field then cannot leave the viewport. A regression to an \
+                 height. (On-screen-ness is proven by the rect smoke, not here.) A regression to an \
                  upward-anchored panel (top-full) would drop this."
             );
         }
@@ -3781,6 +3835,19 @@ mod t789_save_version_dialog {
             !popup.contains("top-full"),
             "T-789 F-04: the Save dialog popup must not anchor upward (top-full) — that is the \
              offscreen-Version-field mechanism the fix forbids."
+        );
+        // wave-203: the dialog must be teleported OUT of the strip's `backdrop-filter` glass root so
+        // its `fixed` centering resolves against the viewport, not the 48px strip. The `<Portal>`
+        // open tag is the escape hatch; deleting it re-nests the fixed dialog under
+        // `STRIP_ROWS`'s `backdrop-blur-xl` (which establishes a containing block) → the exact
+        // wave203 MAJOR (Version input at y=-22 / y=-184). This is a cheap source companion to the
+        // authoritative rect smoke; keep both.
+        assert!(
+            body.contains("<Portal>"),
+            "T-789 (wave-203): the Save dialog must be wrapped in a leptos::portal::Portal so it \
+             mounts on document.body and escapes the strip's backdrop-filter containing block. \
+             Removing the Portal reintroduces the off-top-of-viewport MAJOR — the rect smoke \
+             (gate smoke save-dialog-rect) is the live proof; this is the source sentinel."
         );
     }
 }

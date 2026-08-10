@@ -35,7 +35,7 @@ const EDIT_PATH: &str = "/missions/smoke/edit?force=webgl&sat=preview";
 const SEED_N: i64 = 8; // must match mission_doc.rs `SEED_N`
 
 /// The Makefile glob `driver/*_editor.mjs` in shell-sort order (selfcheck sorts first).
-pub const EDITOR_SUITE: [&str; 18] = [
+pub const EDITOR_SUITE: [&str; 19] = [
     "selfcheck",
     "arsenal",
     "attributes",
@@ -50,6 +50,7 @@ pub const EDITOR_SUITE: [&str; 18] = [
     "outliner-palette",
     "pan",
     "persist",
+    "save-dialog-rect",
     "save-export",
     "select",
     "undo",
@@ -1248,6 +1249,134 @@ pub async fn smoke_save_export(dist: &str, path: &str) -> Result<u8> {
             "gate": "editor-save-export-smoke", "path": path,
             "slotCount": slot_count, "seeded": seeded, "checks": checks,
             "saveLen": save_len, "exportLen": export_len,
+            "panics": h.panics_head(), "pass": pass,
+        }));
+        Ok::<u8, anyhow::Error>(to_code(pass))
+    };
+    let code = run.await;
+    h.shutdown().await;
+    code
+}
+
+/// T-789 (wave-203 MAJOR) — the Save Version dialog's Version input must render FULLY IN-VIEWPORT.
+///
+/// This is the authoritative guard the source class-pin (`is_clamped_on_screen_by_construction`,
+/// renamed `dialog_carries_the_centering_classes_rect_is_smoke_proven`) could not be: the wave-203
+/// bug was a `position:fixed` dialog nested under the strip's `backdrop-filter` glass root, which
+/// establishes a containing block — so `top-1/2 -translate-y-1/2` centered on the 48px strip and the
+/// Version input landed at y=-22 (1920×1080) / y=-184 (1366×768), OFF the top of the screen. Every
+/// class was present and correct; only an ANCESTOR was wrong, which no class-string scrub can catch.
+/// The fix portals the dialog to `document.body`. This smoke opens the real dialog in real Chrome at
+/// BOTH shipping viewports and asserts the input's live `getBoundingClientRect` is on-screen
+/// (`top>=0 && bottom<=innerHeight`), the "Version" label is visible, `activeElement` is the input
+/// (T-789 focus-first), and 8 Tabs stay inside the dialog (T-789 Tab trap). Reintroducing the
+/// containing block (re-nest under the glass, or add a `transform`/`filter` to an ancestor) drives
+/// `v1920_inViewport` / `v1366_inViewport` false — the perturbation the class pin let through.
+pub async fn smoke_save_dialog_rect(dist: &str, path: &str) -> Result<u8> {
+    let h = Harness::new(dist, 5331, 9391, None, None, &[]).await?;
+    let run = async {
+        h.page.navigate(&h.url(path)).await?;
+        h.page
+            .wait_for("!!document.querySelector('canvas')", 80, 250)
+            .await?;
+        let ready = h.page.wait_for(ATTR_READY, 120, 250).await?;
+
+        let mut checks = Map::new();
+        if ready {
+            // The strip's ONE primary action — unique `title`, so this never hits the File-menu
+            // "Save Version…" row (which carries an ellipsis and a different title).
+            const SAVE_BTN: &str =
+                "[...document.querySelectorAll('button')].find(b => b.getAttribute('title') === 'Save an immutable version of this mission')";
+            // The dialog is open once its own <h2> and the Version input are both mounted.
+            const DIALOG_OPEN: &str =
+                "[...document.querySelectorAll('h2')].some(h => h.textContent === 'Save Version') && !!document.querySelector('input[aria-label=\"Version\"]')";
+
+            // Both shipping viewports. `setDeviceMetricsOverride` reflows the CSS layout, so the
+            // `fixed` centering is recomputed against each viewport before we read the rect.
+            for (tag, w, hpx) in [("v1920", 1920u32, 1080u32), ("v1366", 1366u32, 768u32)] {
+                h.page
+                    .send(
+                        "Emulation.setDeviceMetricsOverride",
+                        json!({ "width": w, "height": hpx, "deviceScaleFactor": 1, "mobile": false }),
+                    )
+                    .await?;
+                // Open the dialog for this viewport.
+                eval(&h.page, &format!("{SAVE_BTN}.click()")).await?;
+                let opened = h.page.wait_for(DIALOG_OPEN, 40, 250).await?;
+                checks.insert(format!("{tag}_dialogOpen"), json!(opened));
+
+                // Live rect of the Version input vs the live innerHeight. `inViewport` is the
+                // acceptance: the whole field is on-screen (top>=0 AND bottom<=innerHeight).
+                let rect_json = eval_str(
+                    &h.page,
+                    "(() => { const e = document.querySelector('input[aria-label=\"Version\"]');
+                       if (!e) return 'null'; const b = e.getBoundingClientRect();
+                       return JSON.stringify({top: b.top, bottom: b.bottom, ih: window.innerHeight}); })()",
+                )
+                .await?;
+                let r: Value = serde_json::from_str(&rect_json).unwrap_or(Value::Null);
+                let top = r["top"].as_f64().unwrap_or(-1.0);
+                let bottom = r["bottom"].as_f64().unwrap_or(f64::MAX);
+                let ih = r["ih"].as_f64().unwrap_or(0.0);
+                let in_viewport = top >= 0.0 && bottom <= ih;
+                checks.insert(format!("{tag}_inViewport"), json!(in_viewport));
+                // Emit the numbers so a red run reads like the verifier's CDP proof.
+                checks.insert(format!("{tag}_top"), json!(top));
+                checks.insert(format!("{tag}_bottom"), json!(bottom));
+                checks.insert(format!("{tag}_innerHeight"), json!(ih));
+
+                // The "Version" label the field sits under must be on-screen too (the verifier's
+                // "label visible" — the title/immutability line clipped above the edge in the bug).
+                let label_visible = eval_bool(
+                    &h.page,
+                    "(() => { const s = [...document.querySelectorAll('span')].find(n => n.textContent === 'Version');
+                       if (!s) return false; const b = s.getBoundingClientRect();
+                       return b.top >= 0 && b.bottom <= window.innerHeight; })()",
+                )
+                .await?;
+                checks.insert(format!("{tag}_labelVisible"), json!(label_visible));
+
+                // T-789 focus-first: activeElement IS the Version input on open.
+                let focused = eval_bool(
+                    &h.page,
+                    "document.activeElement === document.querySelector('input[aria-label=\"Version\"]')",
+                )
+                .await?;
+                checks.insert(format!("{tag}_focusOnVersion"), json!(focused));
+
+                // T-789 Tab trap: 8 Tabs keep focus inside the dialog subtree (its container is the
+                // nearest ancestor DIV of the Version input carrying the centering classes).
+                for _ in 0..8 {
+                    key_chord(&h.page, "Tab", "Tab", 0, 9).await?;
+                }
+                let trapped = eval_bool(
+                    &h.page,
+                    "(() => { const inp = document.querySelector('input[aria-label=\"Version\"]');
+                       const dlg = inp && inp.closest('div.fixed.top-1\\\\/2');
+                       return !!dlg && dlg.contains(document.activeElement); })()",
+                )
+                .await?;
+                checks.insert(format!("{tag}_tabTrapped"), json!(trapped));
+
+                // Esc closes the dialog before the next viewport pass (also re-proves Esc-close).
+                key_chord(&h.page, "Escape", "Escape", 0, 27).await?;
+                let closed = h.page.wait_for(&format!("!({DIALOG_OPEN})"), 20, 250).await?;
+                checks.insert(format!("{tag}_escClosed"), json!(closed));
+            }
+        } else {
+            eprintln!("smoke_save_dialog_rect: {ATTR_READY} never became true");
+        }
+        // 8 boolean checks per viewport (dialogOpen, inViewport, labelVisible, focusOnVersion,
+        // tabTrapped, escClosed) — the *_top/_bottom/_innerHeight entries are numeric diagnostics,
+        // not pass/fail, so they are excluded from the count below.
+        let bool_checks: Map<String, Value> = checks
+            .iter()
+            .filter(|(_, v)| v.is_boolean())
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect();
+        let pass = ready && h.no_panics() && checks_pass(&bool_checks, 12);
+        print_verdict(&json!({
+            "gate": "editor-save-dialog-rect-smoke", "path": path, "checks": checks,
             "panics": h.panics_head(), "pass": pass,
         }));
         Ok::<u8, anyhow::Error>(to_code(pass))
@@ -3415,6 +3544,7 @@ pub async fn run_smoke(name: &str, dist: Option<String>, path: Option<String>) -
         "persist" => smoke_persist(&dist, &path).await,
         "select" => smoke_select(&dist, &path).await,
         "save-export" => smoke_save_export(&dist, &path).await,
+        "save-dialog-rect" => smoke_save_dialog_rect(&dist, &path).await,
         "cur" => smoke_cur(&dist, &path).await,
         "attributes" => smoke_attributes(&dist, &path).await,
         "keyboard-settings" => smoke_keyboard_settings(&dist, &path).await,
