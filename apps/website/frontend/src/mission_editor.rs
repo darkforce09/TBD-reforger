@@ -1073,53 +1073,112 @@ pub mod transform {
 
     /// The transformation-widget VARIANT (`WIDGET-CYCLE-001` / `WIDGET-TRANS-001`). Eden cycles
     /// these with `Space`; TBD keeps `Space` as flyTo (`center_on_selection`) and uses the free
-    /// `1`/`2` direct keys instead (the ticket's collision decision — Eden's `1`-`5` are unbound
-    /// here). Only two variants exist: **Translate** (axis arrows, axis-constrained drag) and
-    /// **Rotate** (a ring, drag = rotate, Shift+drag = snap to the rotation ladder).
+    /// `1`/`2`/`3` direct keys instead (the ticket's collision decision — Eden's `1`-`5` are unbound
+    /// here). Three variants exist, numbered to MATCH Eden's widget row exactly (T-795, pixel-verified
+    /// against Eden frames 164038-164107 — Eden reads `No Widget (1) / Translation (2) / Rotation (3)
+    /// / Area Scaling (4) / Area (5)`): **None** (no gizmo — a bare drag still translates, Eden's
+    /// widget-less semantics), **Translate** (axis arrows, axis-constrained drag) and **Rotate** (a
+    /// ring, drag on the ring = rotate, Shift+drag = snap to the rotation ladder). An Eden author's
+    /// muscle memory — 1 drops the gizmo, 2 arms translate, 3 arms rotate — now lands right; the whole
+    /// point of taking Eden's keys is that they mean what Eden means.
     ///
-    /// **No area-scale variant, and that is scoped honestly.** The widget acts on the live
-    /// SELECTION, which the select machine only ever fills with slot + vehicle ids
+    /// **No area-scale variant (4/5 reserved-unbound), and that is scoped honestly.** The widget acts
+    /// on the live SELECTION, which the select machine only ever fills with slot + vehicle ids
     /// (`pick_slot_or_vehicle` / `marquee_ids_with_vehicles`). Neither a slot nor a vehicle carries
     /// a scalar size — only zones and triggers have a radius, and those live in their own
-    /// collections edited by the zone-draw tool, never in `selection`. So `3` (area-scale) has
-    /// nothing in a transform selection to scale; offering it would be a dead key. Eden's `1`-`5`
-    /// stay free for a later slice that gives the widget a scalable target.
+    /// collections edited by the zone-draw tool, never in `selection`. So `4`/`5` (area-scale / area)
+    /// have nothing in a transform selection to scale; offering them would be a dead key. They stay
+    /// RESERVED-UNBOUND (no keydown arm, no help row) for a later slice with a scalable target — the
+    /// numbering matches Eden so that later slice can bind them without renumbering again.
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
     pub enum WidgetVariant {
+        /// **No Widget** (Eden's `1`) — no gizmo is drawn. A drag on the selection still translates
+        /// it (the LG::Move path is variant-independent), which is Eden's widget-less drag-move.
+        None,
+        /// **Translate** (Eden's `2`) — axis arrows; a drag on an arrow is the axis-constrained move.
+        /// The default on mount so a fresh selection shows a handle rather than nothing.
         #[default]
         Translate,
+        /// **Rotate** (Eden's `3`) — a ring; a drag on the ring rotates the selection about its
+        /// centre, Shift+drag snaps to the rotation ladder.
         Rotate,
     }
 
     impl WidgetVariant {
-        /// The `1`/`2` direct-key selection (Eden's variant keys, minus Space). `1` → Translate,
-        /// `2` → Rotate; any other digit leaves the variant unchanged (returns `self`). Digit keys
-        /// beyond `2` (`3`-`5`) are deliberately inert here — see the type doc on area-scale.
+        /// The `1`/`2`/`3` direct-key selection (Eden's variant keys, minus Space). Matches Eden's
+        /// widget row exactly: `1` → No Widget, `2` → Translate, `3` → Rotate; any other digit leaves
+        /// the variant unchanged (returns `self`). Digit keys `4`/`5` are deliberately inert here —
+        /// reserved-unbound (see the type doc on area-scale). Also the seam T-799's toolbar buttons
+        /// drive through the `set_widget` dispatch, so a click and a chord agree on the mapping.
         #[must_use]
         pub fn from_digit(self, digit: u8) -> Self {
             match digit {
-                1 => WidgetVariant::Translate,
-                2 => WidgetVariant::Rotate,
+                1 => WidgetVariant::None,
+                2 => WidgetVariant::Translate,
+                3 => WidgetVariant::Rotate,
                 _ => self,
             }
         }
-        /// Whether a Shift+ring drag on this variant snaps to the rotation ladder (only Rotate has a
-        /// ring). Translate's arrows snap through the translation ladder instead. Used by the widget
-        /// gesture to pick which ladder a Shift constrains.
+        /// The `1`/`2`/`3` digit that SELECTS this variant — the inverse of [`from_digit`]. Drives the
+        /// toolbar's three-way toggle-plate active state (T-797/T-799 read it through the dispatch) and
+        /// the cursor-adjacent mode hint. `None → 1`, `Translate → 2`, `Rotate → 3`.
+        #[must_use]
+        pub const fn to_digit(self) -> u8 {
+            match self {
+                WidgetVariant::None => 1,
+                WidgetVariant::Translate => 2,
+                WidgetVariant::Rotate => 3,
+            }
+        }
+        /// The short label for the cursor-adjacent mode hint / any chrome that names the active mode.
+        #[must_use]
+        pub const fn label(self) -> &'static str {
+            match self {
+                WidgetVariant::None => "No Widget",
+                WidgetVariant::Translate => "Translate",
+                WidgetVariant::Rotate => "Rotate",
+            }
+        }
+        /// Whether a drag on this variant's ring rotates (only Rotate has a ring). Translate's arrows
+        /// and the None widget-less drag both move instead. Used by the widget gesture to decide
+        /// whether a press on the ring band opens a rotate, and which ladder a Shift constrains.
         #[must_use]
         pub const fn is_rotate(self) -> bool {
             matches!(self, WidgetVariant::Rotate)
         }
-        /// The snap [`Axis`] this variant's step keys (`[`/`]`) tune: Translate → the translation
-        /// ladder, Rotate → the rotation ladder. One mapping so the keydown and the readout agree on
-        /// "which grid am I stepping".
+        /// The snap [`Axis`] this variant's step keys (`[`/`]`) tune: Rotate → the rotation ladder,
+        /// Translate AND None → the translation ladder (None has no widget of its own, but a bare
+        /// drag still translates, so the translation grid is the meaningful one to step). One mapping
+        /// so the keydown and the readout agree on "which grid am I stepping".
         #[must_use]
         pub const fn snap_axis(self) -> Axis {
             match self {
-                WidgetVariant::Translate => Axis::Translate,
+                WidgetVariant::None | WidgetVariant::Translate => Axis::Translate,
                 WidgetVariant::Rotate => Axis::Rotate,
             }
         }
+    }
+
+    /// T-795 — the transform widget's fixed screen radius (px). The gizmo is a screen affordance, not
+    /// a world object, so it stays a constant size like a cursor (Eden's widget does too). ONE const so
+    /// the SVG overlay render and the gesture ring hit-test agree on where the ring is — the whole
+    /// reason the ring was "pure decoration" before was that nothing on the gesture side knew its
+    /// geometry, so a drag on the drawn ring fell through to the marquee. They must not diverge again.
+    pub const WIDGET_RADIUS_PX: f64 = 42.0;
+    /// T-795 — how far (px) a press may sit from the ring's stroke and still count as ON the ring. A
+    /// forgiving band (the stroke is 2 px; a bare pixel-exact test is un-hittable), symmetric so a
+    /// press just inside or just outside the drawn circle both grab it.
+    pub const RING_HIT_TOL_PX: f64 = 10.0;
+
+    /// T-795 — is a press at `(px, py)` on the rotate RING drawn around the projected pivot
+    /// `(cx, cy)`? True when the press is within [`RING_HIT_TOL_PX`] of the ring's radius
+    /// [`WIDGET_RADIUS_PX`]. This is the hit-test the gesture runs (in Rotate mode, with a live
+    /// selection) BEFORE the marquee arm, so a drag on the ring rotates instead of marquee-ing away
+    /// the selection. Pure geometry — DOM-free — so it is natively unit-tested.
+    #[must_use]
+    pub fn press_on_ring(px: f64, py: f64, cx: f64, cy: f64) -> bool {
+        let d = ((px - cx).powi(2) + (py - cy).powi(2)).sqrt();
+        (d - WIDGET_RADIUS_PX).abs() <= RING_HIT_TOL_PX
     }
 
     /// The live snap-grid state: one rung index per ladder plus a grid-ENABLED latch (KEY-GRID-001,
@@ -1275,7 +1334,10 @@ type ToolbarDispatch = std::rc::Rc<EditorToolbarDispatch>;
 
 #[cfg(target_arch = "wasm32")]
 pub(crate) struct EditorToolbarDispatch {
-    /// Select the widget variant from its `1`/`2` digit (mirror of the Digit1/Digit2 arms).
+    /// Select the widget variant from its `1`/`2`/`3` digit (mirror of the Digit1/Digit2/Digit3
+    /// arms): `1` → No Widget, `2` → Translate, `3` → Rotate (T-795). This is the seam T-799's
+    /// No-Widget button in the row-2 cluster calls — it invokes `set_widget(1)` to arm No Widget,
+    /// exactly as the `1` chord does. `4`/`5` are reserved-unbound and a no-op through here too.
     pub set_widget: Box<dyn Fn(u8)>,
     /// Toggle the snap-grid master latch (mirror of the `G` arm).
     pub toggle_snap: Box<dyn Fn()>,
@@ -1283,8 +1345,13 @@ pub(crate) struct EditorToolbarDispatch {
     pub snap_step: Box<dyn Fn(i32)>,
     /// Select every entity in the viewport (mirror of the Ctrl+A arm — the closure owns the rect).
     pub select_all: Box<dyn Fn()>,
-    /// Is the ACTIVE widget variant Rotate? (Translate is the complement.) Drives the two widget
-    /// buttons' `TOGGLED_PLATE` active state.
+    /// The ACTIVE widget variant's selecting digit — `1` No Widget / `2` Translate / `3` Rotate
+    /// (`WidgetVariant::to_digit`). T-795: the row-2 cluster is now THREE mutually-exclusive buttons,
+    /// so a single `is_rotate` boolean can no longer light the right one; each button lights its plate
+    /// when this equals its own digit. Tracked, so a chord-driven flip re-renders every plate.
+    pub widget_digit: Box<dyn Fn() -> u8>,
+    /// Is the ACTIVE widget variant Rotate? Retained for the T-797 Rotate plate that reads it directly;
+    /// `widget_digit() == 3` is the same predicate. (Translate/None are the complement.)
     pub widget_is_rotate: Box<dyn Fn() -> bool>,
     /// Is the snap grid enabled? Drives the snap-grid button's active state.
     pub snap_enabled: Box<dyn Fn() -> bool>,
@@ -1455,10 +1522,16 @@ fn TransformWidgetOverlay(
         >
             {move || projected().map(|(cx, cy, var)| {
                 // Fixed pixel radius/arm length — the gizmo is a screen affordance, not a world
-                // object, so it stays a constant size like a cursor (Eden's widget does too).
-                const R: f64 = 42.0;
+                // object, so it stays a constant size like a cursor (Eden's widget does too). The ring
+                // radius is the SHARED `WIDGET_RADIUS_PX` the gesture ring hit-test reads, so the drawn
+                // ring and the draggable ring are the same circle (T-795 — no more decoration).
+                const R: f64 = transform::WIDGET_RADIUS_PX;
                 const HEAD: f64 = 7.0;
                 match var {
+                    // NO WIDGET (Eden's `1`) — draw NOTHING. The selection still translates on a bare
+                    // drag (the LG::Move path is variant-independent); a No-Widget mode with a gizmo
+                    // would be a contradiction. An empty group keeps the `match` total.
+                    transform::WidgetVariant::None => view! { <g></g> }.into_any(),
                     // TRANSLATE — X (east, +screen-x) and Y (north, −screen-y) arrows from the centre.
                     transform::WidgetVariant::Translate => view! {
                         <g>
@@ -1501,6 +1574,45 @@ fn TransformWidgetOverlay(
                 }
             })}
         </svg>
+    }
+}
+
+/// T-795 — the CURSOR-ADJACENT MODE HINT: a tiny chip near the cursor naming the active transform
+/// widget (`No Widget` / `Translate` / `Rotate`). One of the two active-mode indicators the ticket
+/// asks for — the other is the toolbar's three-way toggle plate (T-799's owned strip, driven by the
+/// `widget_digit` dispatch getter). Before T-795 no chrome anywhere told the operator which mode was
+/// live, so pressing a digit was a silent state change (review F-16).
+///
+/// Same overlay idiom as [`TransformWidgetOverlay`]: full-bleed `pointer-events-none` band (the map's
+/// own pointer handlers still get every event), re-running off the `cursor` heartbeat so the chip
+/// tracks the pointer, and off `variant` so it relabels the instant a chord/button flips the mode.
+/// Drawn only while the pointer is over the canvas (a `cursor` value is present) AND a widget is armed
+/// — in `No Widget` mode the chip still shows, so the operator can SEE they dropped the gizmo (the
+/// whole point of `1`), but it is the one mode that draws no gizmo. Positioned below-right of the
+/// cursor, clamped nowhere (it is a hint, not a modal; a fuller clamp is later polish).
+#[component]
+fn WidgetModeHint(
+    /// Pan heartbeat + pointer position — the chip follows the cursor and re-shows on move.
+    cursor: RwSignal<Option<(f64, f64, Option<f64>)>>,
+    /// The live widget variant — decides the label and re-runs on a mode flip.
+    variant: RwSignal<transform::WidgetVariant>,
+) -> impl IntoView {
+    view! {
+        <div data-widget-mode-hint class="pointer-events-none absolute inset-0 z-10">
+            {move || {
+                let (x, y, _) = cursor.get()?;
+                let label = variant.get().label();
+                Some(view! {
+                    <div
+                        class="absolute rounded bg-surface/80 px-1.5 py-0.5 font-mono text-[11px] \
+                               tabular-nums text-on-surface-variant shadow-sm"
+                        style=move || format!("left:{:.0}px;top:{:.0}px", x + 16.0, y + 16.0)
+                    >
+                        {label}
+                    </div>
+                })
+            }}
+        </div>
     }
 }
 
@@ -3475,7 +3587,8 @@ pub fn MissionEditorPage() -> impl IntoView {
             {
                 let container = container.clone();
                 register_editor_toolbar_dispatch(std::rc::Rc::new(EditorToolbarDispatch {
-                    // Digit1/Digit2 arm: `from_digit` (1 → Translate, 2 → Rotate; any other = no-op).
+                    // Digit1/2/3 arm: `from_digit` (1 → No Widget, 2 → Translate, 3 → Rotate; 4/5 and
+                    // any other = no-op). T-799's No-Widget button calls this with `1`.
                     set_widget: Box::new(move |d: u8| {
                         widget_variant.set(widget_variant.get_untracked().from_digit(d));
                     }),
@@ -3494,6 +3607,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                         let rect = container.get_bounding_client_rect();
                         crate::editor_ops::select_all_in_view(rect.width(), rect.height());
                     }),
+                    widget_digit: Box::new(move || widget_variant.get().to_digit()),
                     widget_is_rotate: Box::new(move || widget_variant.get().is_rotate()),
                     snap_enabled: Box::new(move || snap.get().enabled),
                 }));
@@ -4177,22 +4291,32 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 snap.set(snap.get_untracked().stepped(axis, 1));
                                 true
                             }
-                            // WIDGET-CYCLE-001 — `1` / `2` select the widget VARIANT (Translate /
-                            // Rotate). This is the Space-collision decision: Eden cycles variants on
-                            // Space, but TBD's Space stays flyTo (`center_on_selection`, the arm
-                            // above), and Eden's `1`-`5` direct keys are free here (census: no
-                            // `Digit*` binding anywhere in the frontend), so `1`/`2` dissolve the
-                            // clash without touching Space. `3`-`5` are deliberately NOT bound —
-                            // there is no area-scale variant (a transform selection is slots +
-                            // vehicles, neither of which scales; see `WidgetVariant`'s doc). Bare
-                            // digit only. `from_digit` is a no-op for any other digit, but we only
-                            // reach here for 1/2 so it always changes the variant → act.
+                            // WIDGET-CYCLE-001 — `1` / `2` / `3` select the widget VARIANT, numbered
+                            // to MATCH Eden's widget row EXACTLY (T-795, pixel-verified): `1` No Widget
+                            // / `2` Translate / `3` Rotate. This is the Space-collision decision: Eden
+                            // cycles variants on Space, but TBD's Space stays flyTo
+                            // (`center_on_selection`, the arm above), and Eden's `1`-`5` direct keys
+                            // are free here (census: no `Digit*` binding anywhere in the frontend), so
+                            // `1`/`2`/`3` dissolve the clash without touching Space. Before T-795 these
+                            // were OFF BY ONE (1=Translate, 2=Rotate, 3=nothing) — an Eden author's
+                            // muscle memory armed the wrong mode three ways over; the renumber makes
+                            // the keys mean what Eden means. `4`/`5` (Area Scaling / Area) stay
+                            // RESERVED-UNBOUND — no area-scale variant yet (a transform selection is
+                            // slots + vehicles, neither of which scales; see `WidgetVariant`'s doc);
+                            // the numbering matches Eden so a later slice binds them without renumbering.
+                            // Bare digit only (behind the `in_editable_field()` guard at the top of this
+                            // closure, so a digit typed into an attribute field never flips a mode).
+                            // `from_digit` always changes the variant for 1/2/3 → act.
                             "Digit1" if !modk && !ev.alt_key() && !ev.shift_key() => {
                                 widget_variant.set(widget_variant.get_untracked().from_digit(1));
                                 true
                             }
                             "Digit2" if !modk && !ev.alt_key() && !ev.shift_key() => {
                                 widget_variant.set(widget_variant.get_untracked().from_digit(2));
+                                true
+                            }
+                            "Digit3" if !modk && !ev.alt_key() && !ev.shift_key() => {
+                                widget_variant.set(widget_variant.get_untracked().from_digit(3));
                                 true
                             }
                             _ => false,
@@ -4869,72 +4993,101 @@ pub fn MissionEditorPage() -> impl IntoView {
                             // Real drag now: capture so it survives leaving the canvas (React :200).
                             let _ = container.set_pointer_capture(ev.pointer_id());
                             let sw = p.cam.unproject_xy(p.start_x, p.start_y);
-                            let hit = doc.borrow().as_ref().and_then(|c| {
-                                st::pick_slot_or_vehicle(
-                                    &p.cam,
-                                    &c.materialize(),
-                                    &crate::editor_ops::vehicle_points(),
-                                    p.start_x,
-                                    p.start_y,
-                                )
-                            });
-                            match hit {
-                                // T-648 XFORM-SHIFT-001 — SHIFT + drag grabbing an ALREADY-SELECTED
-                                // entity rotates the whole selection to face the cursor instead of
-                                // moving it. Shift is free in this drag path (T-053 left it unbound;
-                                // the T-073 cancel note confirms it), so this steals no existing
-                                // gesture. Gated on the grabbed entity being in the CURRENT selection
-                                // so a Shift+drag on empty ground or an unselected entity still falls
-                                // through to the normal pick/marquee below (a rotate needs something
-                                // to rotate). No pointer preview: the render engine's `set_drag` is a
-                                // TRANSLATION lane only, so — like the ruler — the rotate shows its
-                                // result on release; the widget ring (mounted in the view) is the
-                                // live affordance. `LG::Rotate` carries no ids: the commit re-reads
-                                // the live selection at release.
-                                Some(ref id)
-                                    if ev.shift_key()
-                                        && selection.borrow().iter().any(|s| s == id) =>
-                                {
-                                    LG::Rotate {
-                                        start_x: p.start_x,
-                                        start_y: p.start_y,
-                                        cam: p.cam,
-                                    }
+                            // T-795 WIDGET-ROTATE-RING — a drag STARTING on the rotate ring rotates the
+                            // selection about its centre, WITHOUT Shift and REGARDLESS of what (if
+                            // anything) is under the press. This hit-test runs BEFORE the pick/marquee
+                            // arm below so a drag on the ring can never fall through to `None =>
+                            // LG::Marquee` and destroy the selection (the F-16 defect: the ring was
+                            // pure decoration; dragging its edge started a marquee). Gated on Rotate
+                            // mode + a live selection (the ring is only drawn then) and on the press
+                            // pixel sitting in the ring band around the PROJECTED pivot — the same
+                            // `WIDGET_RADIUS_PX` the overlay draws, so the drawn ring IS the draggable
+                            // ring. Commits through the identical `LG::Rotate` arm as Shift+drag: one
+                            // txn on release, one undo step, live selection re-read at release.
+                            let on_ring = widget_variant.get_untracked().is_rotate()
+                                && !selection.borrow().is_empty()
+                                && read_widget_pivot()
+                                    .map(|(wx, wy)| p.cam.project([wx, wy, 0.0]))
+                                    .filter(|pv| pv[0].is_finite() && pv[1].is_finite())
+                                    .is_some_and(|pv| {
+                                        transform::press_on_ring(p.start_x, p.start_y, pv[0], pv[1])
+                                    });
+                            if on_ring {
+                                LG::Rotate {
+                                    start_x: p.start_x,
+                                    start_y: p.start_y,
+                                    cam: p.cam,
                                 }
-                                Some(id) => {
-                                    // Drag an already-selected slot → move the whole selection; else
-                                    // replace the selection with the dragged slot (React :204).
-                                    let cur = selection.borrow().clone();
-                                    let ids = st::compute_move_ids(&id, &cur);
-                                    if !cur.iter().any(|s| *s == id) {
-                                        *selection.borrow_mut() = ids.clone();
-                                        if let Some(e) = engine.borrow_mut().as_mut() {
-                                            // Slot tint only — vehicle glyphs have no selection lane.
-                                            let slot_ids: Vec<String> = ids
-                                                .iter()
-                                                .filter(|i| !crate::editor_ops::is_vehicle_id(i))
-                                                .cloned()
-                                                .collect();
-                                            e.set_selection(slot_ids);
+                            } else {
+                                let hit = doc.borrow().as_ref().and_then(|c| {
+                                    st::pick_slot_or_vehicle(
+                                        &p.cam,
+                                        &c.materialize(),
+                                        &crate::editor_ops::vehicle_points(),
+                                        p.start_x,
+                                        p.start_y,
+                                    )
+                                });
+                                match hit {
+                                    // T-648 XFORM-SHIFT-001 — SHIFT + drag grabbing an ALREADY-SELECTED
+                                    // entity rotates the whole selection to face the cursor instead of
+                                    // moving it. Shift is free in this drag path (T-053 left it unbound;
+                                    // the T-073 cancel note confirms it), so this steals no existing
+                                    // gesture. Gated on the grabbed entity being in the CURRENT selection
+                                    // so a Shift+drag on empty ground or an unselected entity still falls
+                                    // through to the normal pick/marquee below (a rotate needs something
+                                    // to rotate). No pointer preview: the render engine's `set_drag` is a
+                                    // TRANSLATION lane only, so — like the ruler — the rotate shows its
+                                    // result on release; the widget ring (mounted in the view) is the
+                                    // live affordance. `LG::Rotate` carries no ids: the commit re-reads
+                                    // the live selection at release.
+                                    Some(ref id)
+                                        if ev.shift_key()
+                                            && selection.borrow().iter().any(|s| s == id) =>
+                                    {
+                                        LG::Rotate {
+                                            start_x: p.start_x,
+                                            start_y: p.start_y,
+                                            cam: p.cam,
                                         }
                                     }
-                                    LG::Move {
-                                        ids,
+                                    Some(id) => {
+                                        // Drag an already-selected slot → move the whole selection; else
+                                        // replace the selection with the dragged slot (React :204).
+                                        let cur = selection.borrow().clone();
+                                        let ids = st::compute_move_ids(&id, &cur);
+                                        if !cur.iter().any(|s| *s == id) {
+                                            *selection.borrow_mut() = ids.clone();
+                                            if let Some(e) = engine.borrow_mut().as_mut() {
+                                                // Slot tint only — vehicle glyphs have no selection lane.
+                                                let slot_ids: Vec<String> = ids
+                                                    .iter()
+                                                    .filter(|i| {
+                                                        !crate::editor_ops::is_vehicle_id(i)
+                                                    })
+                                                    .cloned()
+                                                    .collect();
+                                                e.set_selection(slot_ids);
+                                            }
+                                        }
+                                        LG::Move {
+                                            ids,
+                                            start_wx: sw[0],
+                                            start_wy: sw[1],
+                                            cam: p.cam,
+                                            dx: 0.0,
+                                            dy: 0.0,
+                                        }
+                                    }
+                                    None => LG::Marquee {
+                                        start_x: p.start_x,
+                                        start_y: p.start_y,
                                         start_wx: sw[0],
                                         start_wy: sw[1],
                                         cam: p.cam,
-                                        dx: 0.0,
-                                        dy: 0.0,
-                                    }
+                                    },
                                 }
-                                None => LG::Marquee {
-                                    start_x: p.start_x,
-                                    start_y: p.start_y,
-                                    start_wx: sw[0],
-                                    start_wy: sw[1],
-                                    cam: p.cam,
-                                },
-                            }
+                            } // end `else` — non-ring drag (T-795 WIDGET-ROTATE-RING short-circuits above)
                         }
                         other => other,
                     };
@@ -6167,6 +6320,10 @@ pub fn MissionEditorPage() -> impl IntoView {
                     tick=widget_tick
                     variant=widget_variant
                 />
+                // T-795 — the cursor-adjacent active-mode hint (one of the two mode indicators the
+                // review F-16 asked for; the toolbar toggle plate per T-799 is the other). Same
+                // `pointer-events-none` overlay band as the widget gizmo.
+                <WidgetModeHint cursor variant=widget_variant />
                 // T-655 — the validation panel (dispatcher-authorized SINGLE mount line; the component
                 // + all its logic live in `validation_panel`, my owned file). A floating collapsible
                 // card, bottom-left above the status bar (the overlay idiom — NOT docked; docking
@@ -9564,8 +9721,9 @@ mod t644_los_button_submode {
 mod t648_transform {
     use crate::arsenal::class_r_scrub::{live_code, only_body};
     use crate::mission_editor::transform::{
-        bearing_to_face, norm_deg, snap_rotate, snap_translate, snap_value, step, Axis, SnapState,
-        WidgetVariant, ROTATE_LADDER_DEG, TRANSLATE_LADDER_M,
+        bearing_to_face, norm_deg, press_on_ring, snap_rotate, snap_translate, snap_value, step,
+        Axis, SnapState, WidgetVariant, RING_HIT_TOL_PX, ROTATE_LADDER_DEG, TRANSLATE_LADDER_M,
+        WIDGET_RADIUS_PX,
     };
 
     fn editor_live() -> String {
@@ -9818,39 +9976,98 @@ mod t648_transform {
         assert_eq!(norm_deg(f64::NAN), 0.0);
     }
 
-    // ── WIDGET STATE MACHINE: 1/2 cycle, variant-gated gestures ───────────────────────────────
+    // ── WIDGET STATE MACHINE: 1/2/3 select, variant-gated gestures (T-795 Eden numbering) ────────
     #[test]
-    fn widget_variant_cycles_on_1_and_2_only() {
+    fn widget_variant_matches_eden_numbering() {
+        // T-795 — 1/2/3 map to Eden's widget row EXACTLY: No Widget / Translate / Rotate. Before this
+        // ticket they were off by one (1=Translate, 2=Rotate, 3=nothing).
         let v = WidgetVariant::default();
         assert_eq!(v, WidgetVariant::Translate, "default variant is Translate");
-        assert_eq!(v.from_digit(2), WidgetVariant::Rotate, "2 → Rotate");
-        assert_eq!(
-            WidgetVariant::Rotate.from_digit(1),
+        assert_eq!(v.from_digit(1), WidgetVariant::None, "1 → No Widget");
+        assert_eq!(v.from_digit(2), WidgetVariant::Translate, "2 → Translate");
+        assert_eq!(v.from_digit(3), WidgetVariant::Rotate, "3 → Rotate");
+        // from_digit is total over the three real modes regardless of the current mode.
+        assert_eq!(WidgetVariant::Rotate.from_digit(1), WidgetVariant::None);
+        assert_eq!(WidgetVariant::None.from_digit(3), WidgetVariant::Rotate);
+        // to_digit is the inverse — it selects the same digit that arms the variant (drives the
+        // toolbar's three-way plate + the cursor hint).
+        for m in [
+            WidgetVariant::None,
             WidgetVariant::Translate,
-            "1 → Translate"
-        );
-        // 3-5 (and any other digit) are INERT — there is no area-scale variant (honest scope: a
-        // transform selection is slots + vehicles, neither of which scales).
-        assert_eq!(
-            WidgetVariant::Rotate.from_digit(3),
             WidgetVariant::Rotate,
-            "3 is not bound — no area-scale variant"
+        ] {
+            assert_eq!(
+                WidgetVariant::default().from_digit(m.to_digit()),
+                m,
+                "from_digit(to_digit()) is the identity for every real mode"
+            );
+        }
+        // 4/5 (Area Scaling / Area) and any other digit are INERT — reserved-unbound, no area-scale
+        // variant yet (a transform selection is slots + vehicles, neither of which scales).
+        assert_eq!(
+            WidgetVariant::Rotate.from_digit(4),
+            WidgetVariant::Rotate,
+            "4 is reserved-unbound"
         );
         assert_eq!(
             WidgetVariant::Translate.from_digit(5),
-            WidgetVariant::Translate
+            WidgetVariant::Translate,
+            "5 is reserved-unbound"
         );
         assert_eq!(WidgetVariant::Rotate.from_digit(0), WidgetVariant::Rotate);
+        // The cursor-adjacent mode hint labels each mode; they must read as the operator expects
+        // (and match the toolbar / help wording). This also pins `label`, whose only other caller is
+        // the wasm-only hint component.
+        assert_eq!(WidgetVariant::None.label(), "No Widget");
+        assert_eq!(WidgetVariant::Translate.label(), "Translate");
+        assert_eq!(WidgetVariant::Rotate.label(), "Rotate");
     }
 
     #[test]
     fn widget_variant_gates_its_gesture_axis() {
-        // Only Rotate has a ring (Shift+ring drag snaps to the rotation ladder).
+        // Only Rotate has a ring (a drag on the ring rotates; Shift+drag snaps to the rotation
+        // ladder). None and Translate both move, so neither is a rotate.
         assert!(WidgetVariant::Rotate.is_rotate());
         assert!(!WidgetVariant::Translate.is_rotate());
-        // The step keys tune the axis matching the variant.
+        assert!(!WidgetVariant::None.is_rotate());
+        // The step keys tune the axis matching the variant; None steps the translation ladder (a bare
+        // drag still translates), Rotate the rotation ladder.
+        assert_eq!(WidgetVariant::None.snap_axis(), Axis::Translate);
         assert_eq!(WidgetVariant::Translate.snap_axis(), Axis::Translate);
         assert_eq!(WidgetVariant::Rotate.snap_axis(), Axis::Rotate);
+    }
+
+    // ── T-795 — the rotate-ring hit-test geometry (the fix for the "ring is decoration" defect) ──
+    #[test]
+    fn press_on_ring_grabs_the_ring_band_only() {
+        let (cx, cy) = (200.0, 150.0);
+        // Dead on the ring stroke (due east of the pivot) → hit.
+        assert!(
+            press_on_ring(cx + WIDGET_RADIUS_PX, cy, cx, cy),
+            "on the ring"
+        );
+        // Just inside / just outside the stroke, within tolerance → still a hit (the stroke is 2px;
+        // a pixel-exact test would be un-hittable — that was half the decoration bug).
+        assert!(press_on_ring(
+            cx + WIDGET_RADIUS_PX - RING_HIT_TOL_PX + 0.5,
+            cy,
+            cx,
+            cy
+        ));
+        assert!(press_on_ring(
+            cx + WIDGET_RADIUS_PX + RING_HIT_TOL_PX - 0.5,
+            cy,
+            cx,
+            cy
+        ));
+        // The CENTRE is not the ring — a press on the pivot dot must NOT rotate (it would be a
+        // degenerate aim anyway); it falls through to the pick/move path.
+        assert!(!press_on_ring(cx, cy, cx, cy), "the centre is not the ring");
+        // Well outside the ring (empty ground beyond it) → miss, so a marquee can still start there.
+        assert!(
+            !press_on_ring(cx + WIDGET_RADIUS_PX + RING_HIT_TOL_PX + 20.0, cy, cx, cy),
+            "beyond the band is empty ground — marquee territory"
+        );
     }
 
     // ── KEYDOWN CENSUS: G free (+ brackets + digits), Space stays flyTo ────────────────────────
@@ -9880,17 +10097,21 @@ mod t648_transform {
         let br = key("BracketRight");
         let d1 = key("Digit1");
         let d2 = key("Digit2");
+        let d3 = key("Digit3");
+        let d4 = key("Digit4");
+        let d5 = key("Digit5");
         let semicolon = key("Semicolon");
         let odiaeresis = format!("odi{}", "aeresis"); // split so it is not a verbatim literal here
 
-        // The other editor keydown (Ctrl+Z/Y) must NOT claim any T-648 key.
+        // The other editor keydown (Ctrl+Z/Y) must NOT claim any T-648/T-795 key.
         assert!(
             !history_arms.contains(&g)
                 && !history_arms.contains(&bl)
                 && !history_arms.contains(&br)
                 && !history_arms.contains(&d1)
-                && !history_arms.contains(&d2),
-            "census: mission_history's keydown (Ctrl+Z/Y) must not claim G / [ / ] / 1 / 2"
+                && !history_arms.contains(&d2)
+                && !history_arms.contains(&d3),
+            "census: mission_history's keydown (Ctrl+Z/Y) must not claim G / [ / ] / 1 / 2 / 3"
         );
         // G is the chosen grid toggle — an arm here, and NOT an Eden keysym artefact.
         assert!(
@@ -9907,11 +10128,21 @@ mod t648_transform {
                 && this_arms.contains(&format!("{br} if !modk")),
             "TOOLBAR-GRID-MOVE-001: [ and ] must be the decrease/increase keydown arms"
         );
-        // 1 / 2 cycle the widget variant (Eden's free direct keys — the Space collision decision).
+        // 1 / 2 / 3 select the widget variant, numbered to match Eden's row (No Widget / Translate /
+        // Rotate — T-795). Eden's free direct keys — the Space collision decision.
         assert!(
             this_arms.contains(&format!("{d1} if !modk"))
-                && this_arms.contains(&format!("{d2} if !modk")),
-            "WIDGET-CYCLE-001: 1 and 2 must be the widget-variant keydown arms"
+                && this_arms.contains(&format!("{d2} if !modk"))
+                && this_arms.contains(&format!("{d3} if !modk")),
+            "WIDGET-CYCLE-001: 1, 2 and 3 must be the widget-variant keydown arms (T-795 Eden numbering)"
+        );
+        // 4 / 5 (Area Scaling / Area) stay RESERVED-UNBOUND — no keydown arm binds them; a future
+        // area-scale slice adds them without renumbering. A `Digit4`/`Digit5` arm appearing here would
+        // mean the reservation was quietly spent.
+        assert!(
+            !this_arms.contains(&format!("{d4} if !modk"))
+                && !this_arms.contains(&format!("{d5} if !modk")),
+            "T-795: Digit4/Digit5 are reserved-unbound (Eden's Area Scaling / Area) — no arm yet"
         );
         // Space STAYS flyTo — it must still map to center_on_selection and must NOT cycle the widget.
         let space = key("Space");
@@ -10076,8 +10307,9 @@ mod t648_transform {
         );
         assert!(
             ed.contains("widget_variant.set(widget_variant.get_untracked().from_digit(1))")
-                && ed.contains("widget_variant.set(widget_variant.get_untracked().from_digit(2))"),
-            "1 / 2 must set the widget variant"
+                && ed.contains("widget_variant.set(widget_variant.get_untracked().from_digit(2))")
+                && ed.contains("widget_variant.set(widget_variant.get_untracked().from_digit(3))"),
+            "1 / 2 / 3 must set the widget variant (T-795 Eden numbering: No Widget / Translate / Rotate)"
         );
     }
 
