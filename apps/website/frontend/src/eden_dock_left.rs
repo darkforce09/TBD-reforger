@@ -759,6 +759,56 @@ pub fn DockLeft(
                         }
                     }}
                 </div>
+                // T-803 (O-9) — the DROP-TARGET affordance: a persistent, on-screen statement of the
+                // layer the next placement (unit OR comment) will land in. The hover tooltip on the
+                // active Folder row was the only indication before; an armed placement gave the author
+                // nothing cursor-adjacent to read, so they placed into a guess. This strip names the
+                // destination `ensure_layer` will actually resolve — the active layer if one is set,
+                // else the first top-level layer (the fallback the operator saw as "it doesn't place
+                // in the root"). On the Layers tab only: the destination is a layer concept, and the
+                // Locations tab has no drop target. `data-testid` + the "Placing into" text are the
+                // scripted acceptance hook. NB the ROW background half of O-9 (a) lives on the tree
+                // rows in `eden_tree.rs`, not here.
+                {move || {
+                    (tab.get() == LeftTab::Layers)
+                        .then(|| {
+                            let dest = active_layer.with(|a| {
+                                a.as_deref()
+                                    .and_then(|id| nodes.with(|ns| find_layer_label(ns, id)))
+                            });
+                            // Fall back to `ensure_layer`'s destination so the strip never lies: the
+                            // active pointer, else the first layer, else (empty doc) the layer a
+                            // placement would mint on the spot.
+                            let (name, muted) = match dest {
+                                Some(label) => (label, false),
+                                None => match nodes.with(|ns| first_folder_label(ns)) {
+                                    Some(label) => (label, true),
+                                    None => ("a new layer".to_string(), true),
+                                },
+                            };
+                            // Muted = the author has not chosen; still name the real destination but
+                            // read it as a hint, distinct from a deliberately-armed target.
+                            let name_cls = if muted {
+                                "min-w-0 flex-1 truncate font-medium text-on-surface-variant"
+                            } else {
+                                "min-w-0 flex-1 truncate font-medium text-primary"
+                            };
+                            view! {
+                                <div
+                                    class="mt-1 flex shrink-0 items-center gap-1 rounded bg-black/20 px-1.5 py-0.5 text-label-sm text-outline"
+                                    data-testid="dock-left-drop-target"
+                                    title="Placements (units and comments) file into this layer. Click a layer row to change it."
+                                >
+                                    <MaterialIcon
+                                        name="place"
+                                        class="block shrink-0 text-sm leading-none"
+                                    />
+                                    <span class="shrink-0">"Placing into:"</span>
+                                    <span class=name_cls>{name}</span>
+                                </div>
+                            }
+                        })
+                }}
                 // T-666 — a release that reaches this wrapper landed on NEITHER a folder row nor the
                 // header root-dropzone (both `stop_propagation` + complete their own drop), so it is a
                 // stray drag (released over empty tree space or a non-target slot row) — clear the latch
@@ -997,6 +1047,52 @@ fn keep_matching(node: &OutlinerNode, query: &str) -> Option<OutlinerNode> {
     let mut out = node.clone();
     out.children = kids;
     Some(out)
+}
+
+// ── T-803 (O-9) — name the drop target the author is placing into ─────────────────────────────────
+//
+// Which layer receives the next placement was set by clicking an outliner Folder row
+// (`editor_ops::set_active_layer`) and its ONLY indication was a hover tooltip — no persistent,
+// on-screen statement of the destination. The author placed into a guess; comments compounded it
+// (both units and comments resolve their layer through `editor_ops::ensure_layer`). These two helpers
+// resolve the destination the SAME way `ensure_layer` does, so the header strip below names the layer
+// a placement will ACTUALLY land in, not a hopeful one:
+//
+//   * `find_layer_label` — the active layer's label, if the active id still points at a live Folder
+//     (the untracked stale-pointer guard in `ensure_layer` mirrors this: a deleted/undone-away id is
+//     not the destination).
+//   * `first_folder_label` — the FALLBACK destination when nothing is active: `ensure_layer` files
+//     into `rows.first()`, i.e. the first top-level Folder — NOT the "root"/Unfiled bucket. Naming it
+//     is the fix for the operator's "it doesn't place in the root" surprise: the destination was
+//     always a real layer, just an unstated one.
+
+/// T-803 — the label of the Folder whose id is `id`, searched depth-first through the outliner tree
+/// (`Unfiled`/`Faction`/`Squad`/`Slot`/`Comment` kinds are never drop targets, so only `Folder` nodes
+/// answer). `None` when the id is absent — a stale active pointer, exactly the case `ensure_layer`
+/// clears before falling back.
+#[must_use]
+pub fn find_layer_label(nodes: &[OutlinerNode], id: &str) -> Option<String> {
+    for n in nodes {
+        if n.kind == crate::outliner::NodeKind::Folder && n.id == id {
+            return Some(n.label.clone());
+        }
+        if let Some(found) = find_layer_label(&n.children, id) {
+            return Some(found);
+        }
+    }
+    None
+}
+
+/// T-803 — the label of the first top-level `Folder`, mirroring `ensure_layer`'s `rows.first()`
+/// fallback destination. Skips the virtual `Unfiled` root and any ORBAT headers, which are not doc
+/// layers and never receive a placement. `None` only when the doc has no layer at all (the empty
+/// mission — `ensure_layer` mints `DEFAULT_LAYER` in that case, so the strip below says "a new layer").
+#[must_use]
+pub fn first_folder_label(nodes: &[OutlinerNode]) -> Option<String> {
+    nodes
+        .iter()
+        .find(|n| n.kind == crate::outliner::NodeKind::Folder)
+        .map(|n| n.label.clone())
 }
 
 /// T-696 — the named-locations index, filtered. Order is the caller's (see [`sort_places`]).
@@ -2106,8 +2202,8 @@ mod tests {
 #[cfg(test)]
 mod t637_density {
     use super::{
-        filter_outliner, matches_query, TAB_LABEL_LAYERS, TAB_LABEL_PAD_PX, TAB_LABEL_PLACES,
-        UPPERCASE_LABEL_ADVANCE_PX,
+        filter_outliner, find_layer_label, first_folder_label, matches_query, TAB_LABEL_LAYERS,
+        TAB_LABEL_PAD_PX, TAB_LABEL_PLACES, UPPERCASE_LABEL_ADVANCE_PX,
     };
     use crate::eden_layout::{tw_len_px, DOCK_L, DOCK_PX, STUB_PX};
     use crate::outliner::{NodeKind, OutlinerNode};
@@ -2347,6 +2443,83 @@ mod t637_density {
         assert!(
             UPPERCASE_LABEL_ADVANCE_PX < 10.0,
             "T-637: a ceiling loose enough to admit anything is not a ceiling"
+        );
+    }
+
+    /// T-803 (O-9) — **the drop-target resolvers name the layer `ensure_layer` actually files into.**
+    /// `find_layer_label` answers only for a live `Folder` id (a `Slot`/nested `Folder` id resolves
+    /// through the recursion; a stray or non-Folder id gives `None`, the stale-pointer case
+    /// `ensure_layer` clears before it falls back). `first_folder_label` is that fallback — the first
+    /// top-level layer, which is where a placement lands when nothing is active, and the reason the
+    /// operator saw "it doesn't place in the root": the root/Unfiled bucket is never the destination.
+    #[test]
+    fn the_drop_target_resolvers_name_the_real_destination() {
+        let t = tree();
+
+        // The active layer, by id, at any depth: top-level and nested both answer with their label.
+        assert_eq!(find_layer_label(&t, "l1").as_deref(), Some("Assault"));
+        assert_eq!(
+            find_layer_label(&t, "l2").as_deref(),
+            Some("Support"),
+            "a nested folder is a valid drop target; the walk must reach it"
+        );
+        assert_eq!(find_layer_label(&t, "l3").as_deref(), Some("Recon"));
+
+        // A SLOT id is not a layer, and a stray id is nobody: both are the `None` that sends
+        // `ensure_layer` to its fallback. If `find_layer_label` answered for a slot, the strip would
+        // name a destination that cannot receive a placement.
+        assert_eq!(
+            find_layer_label(&t, "s1"),
+            None,
+            "a slot id is not a drop target — only Folder kinds answer"
+        );
+        assert_eq!(find_layer_label(&t, "ghost"), None);
+
+        // The fallback destination is the FIRST top-level layer — the same `rows.first()`
+        // `ensure_layer` uses when nothing is active. Naming it is the fix for the "root" surprise.
+        assert_eq!(first_folder_label(&t).as_deref(), Some("Assault"));
+
+        // Empty doc ⇒ no layer to name; the strip says "a new layer" (what `ensure_layer` mints).
+        assert_eq!(first_folder_label(&[]), None);
+
+        // PERTURB the rule the operator's complaint turns on: were the fallback the ROOT/Unfiled
+        // bucket instead of the first real layer, the strip would promise a destination placements
+        // never reach. State that wrong answer and assert the real one differs from it.
+        let unfiled = node("__unfiled__", "Unfiled", NodeKind::Unfiled, vec![]);
+        let mut with_unfiled = vec![unfiled];
+        with_unfiled.extend(tree());
+        assert_eq!(
+            first_folder_label(&with_unfiled).as_deref(),
+            Some("Assault"),
+            "PERTURB: the fallback must skip the virtual Unfiled root — it is not a doc layer and \
+             receives no placement"
+        );
+    }
+
+    /// T-803 (O-9) — **the persistent drop-target affordance ships in the dock.** The active layer's
+    /// only indication was a hover tooltip; this pins the on-screen statement (the `data-testid` hook
+    /// the scripted acceptance clicks for, the "Placing into:" copy, and that it reads BOTH
+    /// `active_layer` and the resolver so it names the real destination, not a static string).
+    /// Checked on the scrubbed production half, so this test's own mention cannot keep it green.
+    #[test]
+    fn the_drop_target_affordance_ships() {
+        let src = production();
+        assert!(
+            src.contains("dock-left-drop-target"),
+            "T-803: the drop-target statement needs a stable test hook for the scripted acceptance"
+        );
+        assert!(
+            src.contains("Placing into:"),
+            "T-803: the affordance must NAME the destination on screen, not only in a hover tooltip"
+        );
+        assert!(
+            src.contains("find_layer_label"),
+            "T-803: the strip must resolve the ACTIVE layer's label, or it cannot name the target"
+        );
+        assert!(
+            src.contains("first_folder_label"),
+            "T-803: the strip must fall back to `ensure_layer`'s first-layer destination, or it \
+             would lie about where a placement lands when nothing is active"
         );
     }
 }
