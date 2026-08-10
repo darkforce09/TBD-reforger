@@ -60,6 +60,16 @@ const ACTION_PRIMARY: &str = "shrink-0 rounded bg-primary px-2.5 py-0.5 text-xs 
 /// with the choice of format a second-level decision inside its menu. Compose with [`HOVER_FILL`].
 const ACTION_SECONDARY: &str = "shrink-0 rounded border border-outline-variant/40 px-2.5 py-0.5 text-xs font-medium text-on-surface-variant";
 
+/// T-798 — the validation error chip's geometry (F-11 / operator decision 3). A compact status chip
+/// in the actions cluster: `rule` glyph · count · caret. `shrink-0` so it keeps its width against the
+/// elastic gap; `gap-1` between the three; the height matches the row's other `text-xs` controls. It
+/// carries only geometry + the on-surface text default — the COUNT's severity colour is applied on
+/// the count `<span>` itself (`text-error-alert` / `-tactical-yellow` / muted), and the open/hover
+/// STATE is composed at the call site with [`TOGGLED_PLATE`] / [`HOVER_FILL`], exactly as the row-2
+/// toggle buttons do, so "this dropdown is open" reads the same here as everywhere in the strip.
+const VALIDATION_CHIP: &str =
+    "flex shrink-0 items-center gap-1 rounded px-2 py-0.5 text-on-surface-variant transition-colors";
+
 /// T-634 — one dropdown-row recipe, shared by the menu-bar dropdowns and the demoted-export menu, so
 /// the demotion lands INSIDE the T-668 menu vocabulary instead of inventing a second dropdown
 /// language beside it. Compose with [`HOVER_FILL`] + [`DISABLED_GLYPH`]; every row that uses it
@@ -890,6 +900,12 @@ pub fn TopCommandStrip(
     let export_open = RwSignal::new(false);
     let save_open = RwSignal::new(false);
     let save_notes = RwSignal::new(String::new());
+    // T-798 — the validation error chip's dropdown latch. A transient (menu-class), exactly like the
+    // export dropdown: it hangs off a BUTTON in the tool row, joins `close_transients` + the strip's
+    // ONE Escape closure + the click-away scrim, and is NOT a `modal_stack` Dialog (a count chip is
+    // not a modal surface — it must not steal Escape from an open dialog, and its dropdown is
+    // ANCHORED, not `fixed`, so it needs no portal). `true` ⇒ the findings list is dropped open.
+    let validation_open = RwSignal::new(false);
     // T-692 — the Controls Hint's open latch. SEEDED from `eden_help`'s thread-local rather than
     // from `false`, because this whole component unmounts and remounts on every Backspace
     // hide/show cycle (`mission_editor` gates the strip on `chrome_hidden`); seeding from the
@@ -908,6 +924,7 @@ pub fn TopCommandStrip(
     let close_transients = move || {
         open_menu.set(None);
         export_open.set(false);
+        validation_open.set(false);
         set_hint(false);
     };
     // T-814 — register the same closer with the modal stack so overlays opened *outside* this
@@ -947,6 +964,12 @@ pub fn TopCommandStrip(
                 // reason the Controls Hint did: a third window listener is the Esc pile-up.
                 if export_open.get_untracked() {
                     export_open.set(false);
+                    return;
+                }
+                // T-798 — the validation dropdown rides the SAME closure (menu-class transient, not a
+                // Dialog): one surface per press, closed before the Save dialog arm below.
+                if validation_open.get_untracked() {
+                    validation_open.set(false);
                     return;
                 }
                 if save_open.get_untracked() {
@@ -1033,10 +1056,31 @@ pub fn TopCommandStrip(
         let mode: Option<String> = None;
         summary_line(&c, &terrain, mode.as_deref())
     });
+    // T-798 — the validation findings the error chip renders. The headless eval loop
+    // (`validation_panel::ValidationPanel`, mounted once from `mission_editor`) publishes into a sink
+    // this reads through `chip_findings()`; the chip is that sink's readout in the top strip.
+    //
+    // Reactivity is TWO-CHANNEL, and both matter. (1) `doc_tick.track()` FIRST — the strip mounts
+    // BEFORE the eval loop (`mission_editor` ~:5923 vs ~:6120), so on the first render `chip_findings`
+    // is `None`; the mount-seed `doc_tick` bump (`refresh_docks`) re-runs this memo, by which point
+    // the sink is registered. (2) once the sink resolves, reading its signal `.get()` SUBSCRIBES this
+    // memo to it directly, so a compile publish — which repaints the sink but bumps no `doc_tick` —
+    // still updates the chip. Native / pre-mount: `None` sink ⇒ empty ⇒ the chip reads "No issues".
+    let validation_findings = Memo::new(move |_| {
+        if let Some(t) = doc_tick {
+            t.track();
+        }
+        match crate::validation_panel::chip_findings() {
+            Some(sig) => sig.get(),
+            None => Vec::new(),
+        }
+    });
     let run_action = move |a: MenuAction| {
         open_menu.set(None);
         // T-634 — the export menu dispatches through this same function, so it closes here too.
         export_open.set(false);
+        // T-798 — and the validation dropdown, for the same one-popover-up reason.
+        validation_open.set(false);
         match a {
             // T-786 O-5 — a dialog opening closes the Controls Hint (menu/export already closed
             // above). Save Version and Mission Settings are the two dialog-opening menu actions.
@@ -1729,6 +1773,95 @@ pub fn TopCommandStrip(
             // T-634 — the elastic gap. Tools left, actions right: the two ends of the toolbar are
             // the two kinds of thing it holds, and the space between them is what says so.
             <div class="min-w-4 flex-1"></div>
+            // ── T-798 (F-11 / F-35 / F-36) — the validation error chip ─────────────────────────────
+            //
+            // Operator decision 3: the floating bottom-left card (one of four bottom furniture pieces)
+            // is retired for a top-strip count chip that drops the findings list on click. It lives
+            // HERE, at the head of the actions cluster, reading the headless eval loop's sink
+            // (`validation_findings`), so:
+            //   * (F-11) it shows the TRUE state at load — the eval loop seeds t0 from the PayloadSource
+            //     (`validation_panel` initial-eval poll), so a mission that declares a faction but has
+            //     no slots reads "1 error" (V1-PLAYER-SPAWN) immediately, not after the first edit;
+            //   * (F-35) it hides on Backspace BY CONSTRUCTION — the whole strip is gated on
+            //     `chrome_hidden` (mission_editor ~:5921), so no legend is left in a clean screenshot,
+            //     and there is no second gate to keep in step (no `mission_editor` edit needed);
+            //   * (F-36) the error count wears `text-error-alert` (#f87171, ≥4.5:1 on the chrome
+            //     plate), not `text-error` (#ef4444, the app's one 3.9:1 WCAG failure).
+            //
+            // The dropdown is ANCHORED (`MENU_PANEL`, `absolute`), like the Export menu — NOT `fixed` —
+            // so the strip's `backdrop-blur-xl` containing block (the Save-dialog portal trap) never
+            // bites it; no portal needed. The chip is a menu-class transient: it joins
+            // `close_transients`, the strip's ONE Escape closure, and the click-away scrim, and it is
+            // deliberately NOT a `modal_stack` Dialog (a count popover must not steal Escape from an
+            // open dialog). Mutually exclusive with the menu bar / export dropdown.
+            <div class="relative shrink-0">
+                <button
+                    type="button"
+                    aria-label="Validation issues"
+                    aria-haspopup="menu"
+                    aria-expanded=move || validation_open.get()
+                    title="Mission validation — click for the findings"
+                    data-validation-chip
+                    data-issue-total=move || {
+                        crate::validation_panel::Rollup::of(&validation_findings.get()).total()
+                    }
+                    class=move || {
+                        if validation_open.get() {
+                            cn(&[VALIDATION_CHIP, TOGGLED_PLATE])
+                        } else {
+                            cn(&[VALIDATION_CHIP, HOVER_FILL])
+                        }
+                    }
+                    on:click=move |_| {
+                        open_menu.set(None);
+                        export_open.set(false);
+                        validation_open.update(|o| *o = !*o);
+                    }
+                >
+                    <MaterialIcon name="rule" class="block text-sm leading-none" />
+                    // The one-line count. `text-error-alert` when an error blocks (F-36 contrast),
+                    // the advisory tactical-yellow when only warnings remain, and the muted variant on
+                    // a clean mission — where the text is the quiet "No issues" (never a 0-badge, the
+                    // ticket's empty-state call). `tabular-nums` so the count does not jitter width.
+                    <span class=move || {
+                        let r = crate::validation_panel::Rollup::of(&validation_findings.get());
+                        let accent = if r.has_blocking() {
+                            "text-error-alert"
+                        } else if r.total() > 0 {
+                            "text-tactical-yellow"
+                        } else {
+                            "text-on-surface-variant"
+                        };
+                        cn(&["text-xs font-medium tabular-nums", accent])
+                    }>
+                        {move || {
+                            let r = crate::validation_panel::Rollup::of(&validation_findings.get());
+                            if r.is_empty() { "No issues".to_string() } else { r.chip_text() }
+                        }}
+                    </span>
+                    <MaterialIcon
+                        name="expand_more"
+                        class="inline-block align-middle text-sm leading-none"
+                    />
+                </button>
+                {move || {
+                    validation_open
+                        .get()
+                        .then(|| {
+                            // The findings list + severity legend — rendered by `validation_panel`
+                            // (the pinned V1 copy + legend content live there). `w-80` matches the old
+                            // card width; `right-0` anchors the drop to the chip's right edge so a
+                            // wide list never spills off the viewport's right side.
+                            view! {
+                                <div class=cn(&[MENU_PANEL, "right-0 w-80"])>
+                                    {crate::validation_panel::findings_dropdown(
+                                        validation_findings.get(),
+                                    )}
+                                </div>
+                            }
+                        })
+                }}
+            </div>
             // The save readout keeps its `min-w-24` reservation so the actions to its right do not
             // shuffle sideways every time the status text changes length.
             <span class="min-w-24 shrink-0 font-mono text-xs text-on-surface-variant">
@@ -1839,9 +1972,11 @@ pub fn TopCommandStrip(
             // edit. The subtree — which is what the gate is — is unchanged.
             <crate::eden_help::ControlsHint open=hint_open />
             // Click-away scrim for an open dropdown (below the dropdowns' z-50). T-634 — it now
-            // covers the export menu too, so both dropdowns dismiss the same way.
+            // covers the export menu too, so both dropdowns dismiss the same way. T-798 — the
+            // validation dropdown joins it: one scrim, every strip popover dismisses on an outside
+            // click.
             {move || {
-                (open_menu.get().is_some() || export_open.get())
+                (open_menu.get().is_some() || export_open.get() || validation_open.get())
                     .then(|| {
                         view! {
                             <div
@@ -1849,6 +1984,7 @@ pub fn TopCommandStrip(
                                 on:click=move |_| {
                                     open_menu.set(None);
                                     export_open.set(false);
+                                    validation_open.set(false);
                                 }
                             ></div>
                         }
@@ -3848,6 +3984,144 @@ mod t789_save_version_dialog {
              mounts on document.body and escapes the strip's backdrop-filter containing block. \
              Removing the Portal reintroduces the off-top-of-viewport MAJOR — the rect smoke \
              (gate smoke save-dialog-rect) is the live proof; this is the source sentinel."
+        );
+    }
+}
+
+/// T-798 — the validation error chip in the top strip (F-11 / F-35 / F-36 + operator decision 3). The
+/// floating card is retired; the chip reads the headless eval loop's sink, drops the findings list on
+/// click, hides on Backspace by living inside the chrome_hidden-gated strip, and wears an AA-contrast
+/// red. Source-scrub pins (the mechanical lane); the live-DOM acceptance (chip '1 error' at load,
+/// count unchanged on a marker, Backspace clean-screenshot diff, contrast calc) is the playtest lane.
+#[cfg(test)]
+mod t798_validation_chip {
+    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+
+    /// THE CHIP EXISTS, IN THE STRIP, READING THE SEAM. The count comes from the headless eval loop
+    /// via `validation_panel::chip_findings`, and the drop is `validation_panel::findings_dropdown` —
+    /// so the strip does not re-implement the findings vocabulary, it renders the one home's output.
+    #[test]
+    fn the_chip_reads_the_validation_seam() {
+        let code = live_code(include_str!("eden_top_strip.rs"));
+        let body = only_body(&code, "pub fn TopCommandStrip(");
+        for needle in [
+            "validation_open",                     // the chip's own latch
+            "validation_panel::chip_findings",     // reads the headless eval loop's sink
+            "validation_panel::findings_dropdown", // renders the pinned list + legend
+        ] {
+            assert!(
+                body.contains(needle),
+                "T-798: the strip's validation chip must use `{needle}`. Hollow: drop it → the chip \
+                 stops reflecting validation and the F-11 fix (count at load) is gone."
+            );
+        }
+        // The chip's DOM handle for the live acceptance (the gate reads data-issue-total off it).
+        let lit = live_source(include_str!("eden_top_strip.rs"));
+        let body_lit = only_body(&lit, "pub fn TopCommandStrip(");
+        assert!(
+            body_lit.contains("data-validation-chip") && body_lit.contains("data-issue-total"),
+            "T-798: the chip needs `data-validation-chip` + `data-issue-total` so the scripted \
+             acceptance can read the count at load and after a marker place."
+        );
+    }
+
+    /// F-36 — CONTRAST. The error count must wear `text-error-alert` (#f87171, ≥4.5:1 on the chrome
+    /// plate), NOT `text-error` (#ef4444, the app's single 3.9:1 WCAG failure the review measured).
+    /// `live_source` keeps class strings (the colour is a class literal).
+    #[test]
+    fn the_error_count_uses_the_aa_contrast_red() {
+        let lit = live_source(include_str!("eden_top_strip.rs"));
+        let body = only_body(&lit, "pub fn TopCommandStrip(");
+        // Scope to the CHIP's accent decision, not the whole strip: the Save dialog's rejected-save
+        // list wears its own `text-error` on a different (passing) plate and is out of this finding's
+        // scope (the review flagged the COUNT chip alone). The chip's accent is the closure guarded on
+        // `has_blocking()` immediately after the `data-validation-chip` marker.
+        let chip_at = body
+            .find("data-validation-chip")
+            .expect("T-798: the validation chip must exist");
+        let acc_at = body[chip_at..]
+            .find("has_blocking()")
+            .map(|o| chip_at + o)
+            .expect("T-798: the chip's accent must branch on has_blocking()");
+        // The accent region: from has_blocking() through its short if/else colour ladder.
+        let mut end = (acc_at + 220).min(body.len());
+        while end < body.len() && !body.is_char_boundary(end) {
+            end += 1;
+        }
+        let region = &body[acc_at..end];
+        assert!(
+            region.contains("text-error-alert"),
+            "T-798 (F-36): the chip's blocking-error count must be `text-error-alert` (#f87171, \
+             ≥4.5:1). Hollow: swap it to `text-error` → the app's one WCAG failure returns.\n{region}"
+        );
+        // …and NOT the failing `text-error` (#ef4444, 3.9:1) inside that same accent ladder.
+        assert!(
+            !region.contains("text-error\""),
+            "T-798 (F-36): the failing `text-error` (#ef4444, 3.9:1) must not paint the chip count; \
+             use `text-error-alert`.\n{region}"
+        );
+    }
+
+    /// TRANSIENT, NOT A DIALOG. The dropdown rides the strip's existing transient machinery — it
+    /// joins `close_transients`, the ONE Escape closure, and the click-away scrim — and is
+    /// deliberately NOT registered in the modal stack (a count popover must not steal Escape from an
+    /// open dialog). This is the deviation the ticket asked be stated: dropdown = menu-class transient.
+    #[test]
+    fn the_dropdown_is_a_transient_not_a_modal_dialog() {
+        let code = live_code(include_str!("eden_top_strip.rs"));
+        let body = only_body(&code, "pub fn TopCommandStrip(");
+        // (1) close_transients clears it (opening a dialog / another popover closes the chip).
+        let ct_at = body
+            .find("let close_transients =")
+            .expect("T-798: close_transients closure must exist");
+        let ct_region = &body[ct_at..ct_at + 200.min(body.len() - ct_at)];
+        assert!(
+            ct_region.contains("validation_open.set(false)"),
+            "T-798: close_transients must clear validation_open so opening a dialog closes the chip \
+             dropdown (one popover up at a time)."
+        );
+        // (2) the ONE Escape closure closes it — one surface per press.
+        let esc_at = body
+            .find("escape_consumed()")
+            .expect("T-798: the strip's Esc arm must exist");
+        let esc_region = &body[esc_at..];
+        assert!(
+            esc_region.contains("validation_open.get_untracked()")
+                && esc_region.contains("validation_open.set(false)"),
+            "T-798: the validation dropdown must close on Esc through the strip's ONE closure — not a \
+             new window listener (the Esc pile-up the strip already avoids)."
+        );
+        // (3) NOT a modal_stack Dialog. The chip's latch must never be registered as a modal — it is
+        // a menu-class transient. (register_transient_closer is the T-814 strip-owned closer and is
+        // fine; `register(` / a Dialog wrapper around validation_open is what is forbidden.)
+        let lit = live_source(include_str!("eden_top_strip.rs"));
+        let body_lit = only_body(&lit, "pub fn TopCommandStrip(");
+        assert!(
+            !body_lit.contains("<Dialog open=validation_open")
+                && !body_lit.contains("modal_stack::register(move || validation_open"),
+            "T-798 deviation: the dropdown is a transient, not a Dialog — validation_open must not be \
+             registered in the modal stack (it must not own Escape over a real dialog)."
+        );
+    }
+
+    /// ANCHORED DROPDOWN, NO PORTAL. The drop uses `MENU_PANEL` (absolute, anchored to the chip), like
+    /// the Export menu — NOT `position:fixed`, which the strip's `backdrop-blur-xl` containing block
+    /// would mis-centre (the Save-dialog portal trap). No portal needed, no rect-smoke regression.
+    #[test]
+    fn the_dropdown_is_anchored_via_menu_panel() {
+        let lit = live_source(include_str!("eden_top_strip.rs"));
+        let body = only_body(&lit, "pub fn TopCommandStrip(");
+        // The validation dropdown's surface reuses MENU_PANEL (the export menu's anchored recipe).
+        let drop_at = body
+            .find("validation_panel::findings_dropdown")
+            .expect("T-798: the chip must render findings_dropdown");
+        // Look just before the dropdown body for its container class — MENU_PANEL, anchored right.
+        let start = drop_at.saturating_sub(200);
+        let region = &body[start..drop_at];
+        assert!(
+            region.contains("MENU_PANEL"),
+            "T-798: the chip's dropdown must reuse MENU_PANEL (absolute/anchored), the export-menu \
+             idiom — NOT a fixed-positioned panel the strip's backdrop-filter would mis-centre."
         );
     }
 }

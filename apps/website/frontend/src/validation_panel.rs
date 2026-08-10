@@ -11,18 +11,25 @@
 //! passed: the engine's `self_check` proves every rule can fire, and this panel makes what they find
 //! impossible to miss.
 //!
-//! **It FLOATS.** A collapsible floating card, bottom-left above the status bar — the overlay idiom
-//! (the ruler / LoS / transform-widget mount shape). It is NOT docked: docking collides with the
-//! dock files program-wide (the ticket's own analysis), and the panel is diagnostics, not furniture.
+//! **It IS THE TOP-BAR ERROR CHIP.** T-798 retired the floating card. The visible surface is now a
+//! count chip in `eden_top_strip`'s row-2 toolbar — `"N errors · M warnings"` — that drops the
+//! findings list (and the severity legend) on click, the operator-decision-3 shape. This module keeps
+//! the eval engine, the [`Rollup`], and the list/legend rendering; the strip renders the chip and
+//! calls [`findings_dropdown`] for the drop. [`ValidationPanel`] is now HEADLESS — it is the mounted
+//! eval loop (doc_tick → debounce → evaluate), publishing into the [`chip_findings`] sink the strip
+//! subscribes to. It renders no DOM of its own.
 //!
-//! ## Validation is ALWAYS ON, and the panel survives hide-chrome
+//! ## Why the chip lives in the strip: Backspace hides it BY CONSTRUCTION
 //!
-//! Correctness diagnostics are never gated (T-635's doctrine comment: "telemetry gates, correctness
-//! diagnostics never"). So the mount in `mission_editor.rs` is OUTSIDE the `chrome_hidden` gate,
-//! beside the ungated dialogs — a Backspace hide-interface leaves the map full-bleed but the
-//! validation card stays: a maker who hides the chrome to look at the map is exactly the maker who
-//! wants to see "3 errors" without un-hiding first. (This is the deliberate call the ticket asks be
-//! documented: the panel is diagnostics, not dock chrome, so it is not chrome-gated.)
+//! The floating card was mounted OUTSIDE the `chrome_hidden` gate (the old "diagnostics survive
+//! hide-chrome" call), so a Backspace hide-interface — the feature that exists to produce a clean
+//! map screenshot — left the expanded legend in the corner (review F-35: buttons 62→19 but the
+//! legend persisted). Moving the chip INTO the strip fixes that at its cause: `mission_editor` gates
+//! the whole strip subtree on `chrome_hidden` (it leaves the DOM on Backspace), so the chip and its
+//! dropdown hide with the rest of the chrome and there is no second gate to drift out of step — the
+//! same by-construction gating the Controls Hint and the debug HUD get from living inside gated
+//! chrome. Validation is still ALWAYS ON while the chrome is shown (T-635's doctrine); it is only
+//! that a screenshot of the bare map is now actually bare.
 //!
 //! ## Re-evaluation
 //!
@@ -67,6 +74,17 @@ use map_engine_core::mission::validate::{Finding, Primitive, Severity};
 /// once, a quarter-second after the LAST edit in a burst — live enough to feel immediate on a single
 /// edit, cheap enough that a rapid edit burst runs the engine once, not once per commit.
 pub const REEVAL_DEBOUNCE_MS: f64 = 250.0;
+
+/// T-798 (a) — the mount-seed initial-eval poll. The doc hydrates on an async path, so the load-time
+/// pass re-runs until [`read_payload_source`] resolves, then evaluates the true state once. Bounded
+/// so a host / pre-mount build (which has no source and never will) stops after a fixed budget rather
+/// than spinning: `INITIAL_EVAL_MAX_TICKS` × `INITIAL_EVAL_TICK_MS` ≈ 1.6 s, comfortably longer than
+/// a local hydrate and far shorter than any user-noticeable stall. The poll re-arms nothing on the
+/// doc_tick path, so the first genuine edit still evaluates exactly once.
+pub const INITIAL_EVAL_TICK_MS: u64 = 50;
+/// Max re-runs of the load-time pass before it gives up (host build has no source). See
+/// [`INITIAL_EVAL_TICK_MS`].
+pub const INITIAL_EVAL_MAX_TICKS: u32 = 32;
 
 /* ═══════════════════════════ pure, host-testable core ═══════════════════════════ */
 
@@ -722,6 +740,20 @@ pub fn register_panel_sink(sink: RwSignal<Vec<PanelFinding>>) {
     install_seam(&PANEL_SINK, sink);
 }
 
+/// The mounted eval loop's findings signal — the ONE the strip's error chip subscribes to (T-798).
+///
+/// `PANEL_SINK` already holds exactly this signal (the headless [`ValidationPanel`] registers it at
+/// mount, and both the doc_tick re-eval and a compile publish write it), so the chip reads its
+/// findings from the same place a compile repaints — no second signal to keep in step. Returns `None`
+/// before the eval loop has mounted (the strip renders first — `mission_editor.rs` mounts the strip
+/// at ~:5923 and `ValidationPanel` at ~:6120); the chip's `doc_tick`-driven closure re-reads this on
+/// the mount-seed tick, by which point the sink is registered, and thereafter subscribes to the
+/// signal directly so a compile publish (which bumps no `doc_tick`) still repaints the chip.
+#[must_use]
+pub fn chip_findings() -> Option<RwSignal<Vec<PanelFinding>>> {
+    PANEL_SINK.with(|c| *c.borrow())
+}
+
 /// Publish the findings a compile produced (`map_engine_core::mission::flatten`'s
 /// [`Finding`]s, flattened to panel rows) and repaint. Replaces the previous compile's list whole —
 /// a finding describes one compile, so two compiles do not accumulate.
@@ -771,28 +803,31 @@ pub fn evaluate_now() -> Vec<PanelFinding> {
 
 /* ═══════════════════════════ the view (native-compilable, like AttributesModal) ═══════════════════════════ */
 
-/// The floating validation card. Mounted ONCE from `mission_editor.rs`, OUTSIDE the `chrome_hidden`
-/// gate (diagnostics survive hide-chrome — the doctrine call). Renders bottom-left above the status
-/// bar in the overlay idiom.
+/// The HEADLESS validation eval loop (T-798). Mounted ONCE from `mission_editor.rs` (ungated, so the
+/// engine runs whether or not the chrome is shown), it renders NO DOM: the visible surface is the
+/// top-strip error chip (`eden_top_strip`), which subscribes to the [`chip_findings`] sink this
+/// component publishes. It kept its own mount rather than folding into the strip because the strip
+/// unmounts on Backspace (`chrome_hidden`) and the debounce/timer state must survive that, and
+/// because the engine must keep evaluating so the count is correct the instant the chrome returns.
 ///
 /// `doc_tick` is the re-eval trigger: a wasm-only `Effect` subscribes to it and, through the
-/// [`Debouncer`], schedules a trailing 250 ms re-evaluation. The rendered `findings` live in a local
-/// signal the effect writes and the view reads — so the panel updates only after the debounce, never
-/// per intermediate edit.
+/// [`Debouncer`], schedules a trailing 250 ms re-evaluation. The findings live in a session signal
+/// this component owns and registers as [`chip_findings`]; the strip reads it — so the chip updates
+/// only after the debounce, never per intermediate edit. A load-time poll (T-798 a) seeds the true
+/// state at t0 even though the doc hydrates async.
 ///
-/// The view itself compiles on the host (the `#[cfg]` split mirrors `AttributesModal`): the layout is
-/// native, the doc-reading re-eval is `#[cfg(target_arch = "wasm32")]`.
+/// The `#[cfg]` split mirrors `AttributesModal`: the doc-reading re-eval is
+/// `#[cfg(target_arch = "wasm32")]`; the native build compiles the shell so the strip's tests (which
+/// import [`Rollup`] / [`findings_dropdown`]) run on the host.
 #[component]
 pub fn ValidationPanel(
     /// The doc-change tick (T-666 channel) every mutation site bumps — the re-eval trigger.
     doc_tick: RwSignal<u64>,
 ) -> impl IntoView {
-    // The rendered findings + the expand/collapse state. `findings` is written by the debounced
-    // re-eval effect (wasm) and read by the view; `expanded` is the card open/closed latch (the
-    // rollup chip toggles it). Both are plain session signals owned by this component.
+    // The findings signal — written by the debounced re-eval effect (wasm) + a compile publish, read
+    // by the top-strip chip through [`chip_findings`]. A plain session signal owned by this (once-
+    // mounted, ungated) component, so it is stable for the whole editor session.
     let findings = RwSignal::new(Vec::<PanelFinding>::new());
-    // Default collapsed: the chip is the always-visible summary; the maker expands to read the list.
-    let expanded = RwSignal::new(false);
     // A subtle "re-checking…" flag while a debounce is armed (set on bump, cleared on fire).
     let rechecking = RwSignal::new(false);
 
@@ -882,11 +917,62 @@ pub fn ValidationPanel(
             })
         };
 
-        // Initial pass: evaluate once at mount so the panel reflects the freshly-hydrated doc without
-        // waiting for the first edit. Deferred a frame so the payload-source getter is registered.
+        // ── T-798 (a) — LOAD-TIME evaluation, seeded from the PayloadSource, robust to async hydrate.
+        //
+        // Before this the initial pass was a SINGLE `set_timeout(0)`. That fires one frame after
+        // mount, but the doc is hydrated on an ASYNC path (`mission_editor` restore/`hydrate_from_
+        // server`), so at frame 0 `read_payload_source()` can still return `None` (doc mid-swap) and
+        // the pass evaluates to EMPTY — the chip says "No issues" until the FIRST `doc_tick`. That is
+        // review F-11: a mission that declares a faction but has no slots is unspawnable at t0
+        // (V1-PLAYER-SPAWN), yet reported clean until an edit — and placing a marker (which mints
+        // `faction-{SIDE}`) was the edit that "summoned an error about something you didn't touch".
+        //
+        // The fix: re-run the initial pass until the source is READY, then evaluate the true state.
+        // A short bounded poll (not an unbounded spin — a host / pre-mount build has no source and
+        // must not loop forever): each tick, if the payload source resolves, do ONE real eval and
+        // stop; otherwise reschedule, up to `INITIAL_EVAL_MAX_TICKS`. This touches only the mount
+        // seed — it does NOT re-arm the debounce, so the first genuine `doc_tick` still evaluates
+        // exactly once (no double-eval on the first edit). If the source never arrives within the
+        // budget the last run leaves an empty list, which is the same conservative empty the single
+        // shot produced — never worse.
         {
             let run_eval = run_eval.clone();
-            set_timeout(run_eval, std::time::Duration::from_millis(0));
+            let disposed = disposed.clone();
+            let attempts = Rc::new(std::cell::Cell::new(0u32));
+            // `Rc<RefCell<Option<Box<dyn Fn()>>>>` so the closure can reschedule ITSELF by name.
+            let seed: Rc<RefCell<Option<Rc<dyn Fn()>>>> = Rc::new(RefCell::new(None));
+            let seed_run: Rc<dyn Fn()> = {
+                let seed = seed.clone();
+                Rc::new(move || {
+                    if disposed.load(Ordering::Relaxed) {
+                        return;
+                    }
+                    // Evaluate every tick: once the source is ready this paints the true state; while
+                    // it is `None` it is a cheap empty re-set. `run_eval` is itself disposed-guarded.
+                    run_eval();
+                    // Ready ⇒ we have the true state, stop polling. Not ready and budget left ⇒
+                    // reschedule the next frame. `read_payload_source` is the same readiness the eval
+                    // uses, so "ready" here means the eval above was real.
+                    let ready = read_payload_source().is_some();
+                    let n = attempts.get() + 1;
+                    attempts.set(n);
+                    if !ready && n < INITIAL_EVAL_MAX_TICKS {
+                        if let Some(next) = seed.borrow().as_ref().cloned() {
+                            set_timeout(
+                                move || next(),
+                                std::time::Duration::from_millis(INITIAL_EVAL_TICK_MS),
+                            );
+                        }
+                    } else {
+                        // Terminated (ready, or budget spent): drop the self-reference so the
+                        // `seed → seed_run → seed` Rc cycle is broken and the closure is freed rather
+                        // than leaked for the session.
+                        seed.borrow_mut().take();
+                    }
+                })
+            };
+            *seed.borrow_mut() = Some(seed_run.clone());
+            set_timeout(move || seed_run(), std::time::Duration::from_millis(0));
         }
 
         // Subscribe to doc_tick: each bump records into the debouncer and (re)arms the trailing timer.
@@ -915,108 +1001,49 @@ pub fn ValidationPanel(
         let _ = (doc_tick, rechecking);
     }
 
-    // ── The card view (native-compilable) ──
-    move || {
-        let rows = findings.get();
-        let rollup = Rollup::of(&rows);
-        let open = expanded.get();
-        let checking = rechecking.get();
-
-        view! {
-            <div
-                class="pointer-events-auto absolute bottom-14 left-3 z-30 w-80 max-w-[calc(100vw-1.5rem)]"
-                data-validation-panel
-                data-issue-total=move || Rollup::of(&findings.get()).total()
-            >
-                {if rollup.is_empty() {
-                    empty_state_view(checking)
-                } else {
-                    populated_view(rollup, open, checking, expanded, findings)
-                }}
-            </div>
-        }
-    }
+    // ── HEADLESS (T-798) ──
+    // The visible surface is the top-strip error chip (`eden_top_strip`), which subscribes to the
+    // [`chip_findings`] sink this component publishes; the chip owns its own open/closed latch. This
+    // component renders NO DOM: it is the mounted eval loop only, kept as its own mount (ungated,
+    // mounted once from `mission_editor.rs`) so the engine runs and repaints the sink regardless of
+    // whether the chrome is currently shown, while the chip that DISPLAYS the result rides the strip's
+    // `chrome_hidden` gate (review F-35 — Backspace now hides the legend too).
 }
 
-/// The quiet empty state — "No issues", never a celebratory toast (the ticket's explicit call). A
-/// small, low-contrast pill; a clean mission is the baseline, not an achievement to announce.
-fn empty_state_view(checking: bool) -> AnyView {
+/// The chip's dropdown BODY (T-798): the grouped findings list (or the quiet "No issues" empty state
+/// when clean) followed by the severity legend. The top-strip error chip renders this when it is
+/// dropped open; the CHIP itself (count text + accent) is strip furniture, so it lives there, but the
+/// LIST and the LEGEND — and the pinned V1 copy inside them — stay HERE so there is one home for the
+/// findings vocabulary. Callers wrap it in the strip's `MENU_PANEL` surface; this is the inner scroll
+/// column + legend only.
+///
+/// The empty state stays a quiet "No issues", never a celebratory toast (the ticket's explicit call):
+/// a clean mission is the baseline, not an achievement to announce. The legend content is retained
+/// verbatim — the review pinned it into the dropdown.
+#[must_use]
+pub fn findings_dropdown(rows: Vec<PanelFinding>) -> AnyView {
+    let empty = rows.is_empty();
     view! {
-        <div
-            class="glass flex items-center gap-2 rounded-lg border border-outline-variant/20 px-3 py-1.5 text-label-md text-on-surface-variant opacity-80"
-            data-validation-empty
-        >
-            <crate::ui::MaterialIcon name="check_circle" />
-            <span>"No issues"</span>
-            {checking
-                .then(|| {
-                    view! {
-                        <span class="ml-auto text-label-sm text-outline" data-validation-checking>
-                            "re-checking…"
-                        </span>
-                    }
-                })}
-        </div>
-    }
-    .into_any()
-}
-
-/// The populated card: the rollup chip (always visible), and — when expanded — the grouped list and
-/// the legend.
-fn populated_view(
-    rollup: Rollup,
-    open: bool,
-    checking: bool,
-    expanded: RwSignal<bool>,
-    findings: RwSignal<Vec<PanelFinding>>,
-) -> AnyView {
-    let chip = rollup.chip_text();
-    // The chip's accent: red when any error blocks, else the advisory amber.
-    let chip_accent = if rollup.has_blocking() {
-        "text-error"
-    } else {
-        "text-tactical-yellow"
-    };
-    let caret = if open { "expand_more" } else { "chevron_right" };
-
-    view! {
-        <div class="glass flex flex-col overflow-hidden rounded-lg border border-outline-variant/30 shadow-xl">
-            // ── Rollup chip — always visible when non-empty; click toggles the list ──
-            <button
-                type="button"
-                class="flex items-center gap-2 px-3 py-2 text-left outline-none transition-colors hover:bg-surface-variant/40"
-                data-validation-rollup
-                aria-expanded=move || expanded.get()
-                on:click=move |_| expanded.update(|e| *e = !*e)
-            >
-                <crate::ui::MaterialIcon name=caret />
-                <crate::ui::MaterialIcon name="rule" />
-                <span class=format!(
-                    "text-label-md font-medium tabular-nums {chip_accent}",
-                )>{chip}</span>
-                {checking
-                    .then(|| {
-                        view! {
-                            <span
-                                class="ml-auto text-label-sm text-outline"
-                                data-validation-checking
-                            >
-                                "re-checking…"
-                            </span>
-                        }
-                    })}
-            </button>
-
-            // ── The grouped list + legend, only while expanded ──
-            {open
-                .then(|| {
-                    view! {
-                        <div class="flex max-h-[22rem] flex-col overflow-y-auto border-t border-outline-variant/20">
-                            {group_list_view(findings.get())}
-                        </div>
-                        {legend_view()}
-                    }
-                })}
+        <div class="flex flex-col" data-validation-dropdown>
+            {if empty {
+                view! {
+                    <div
+                        class="flex items-center gap-2 px-3 py-2.5 text-label-md text-on-surface-variant opacity-80"
+                        data-validation-empty
+                    >
+                        <crate::ui::MaterialIcon name="check_circle" />
+                        <span>"No issues"</span>
+                    </div>
+                }
+                    .into_any()
+            } else {
+                view! {
+                    <div class="flex max-h-[22rem] flex-col overflow-y-auto">
+                        {group_list_view(rows)}
+                    </div>
+                }
+                    .into_any()
+            }} {legend_view()}
         </div>
     }
     .into_any()
@@ -2358,5 +2385,170 @@ mod t761_compile_findings_do_not_survive_mission_switch {
             body.contains("publish_compile_findings"),
             "T-761: clear must route through publish_compile_findings; got:\n{body}"
         );
+    }
+}
+
+/* ══════════════ T-798 — the top-bar chip seam, the load-time eval, and the retired card ══════════════ */
+
+#[cfg(test)]
+mod t798_top_bar_chip {
+    use super::{
+        chip_findings, findings_dropdown, register_panel_sink, PanelFinding, INITIAL_EVAL_MAX_TICKS,
+    };
+    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+    use leptos::prelude::*;
+    use map_engine_core::mission::validate::{Primitive, Severity};
+
+    /// THE CHIP SEAM. `chip_findings()` must hand back the SAME signal `register_panel_sink` stored —
+    /// that is the whole coupling between the headless eval loop (which writes it) and the top-strip
+    /// chip (which reads it). Behavioural, under a real owner: register a signal, set it, and prove
+    /// `chip_findings()` returns a handle that observes the write. Hollow the seam (return `None`) →
+    /// the chip goes permanently blank and this goes RED.
+    #[test]
+    fn chip_findings_returns_the_registered_sink() {
+        let owner = Owner::new();
+        owner.with(|| {
+            let sig = RwSignal::new(Vec::<PanelFinding>::new());
+            register_panel_sink(sig);
+            // Before any write, the chip sees an empty list (a clean mission → "No issues").
+            let got = chip_findings().expect("the sink must be registered");
+            assert!(got.get_untracked().is_empty());
+            // A write to the underlying signal is visible through the seam handle — same signal.
+            sig.set(vec![PanelFinding {
+                rule_id: "V1-PLAYER-SPAWN".into(),
+                severity: Severity::Error,
+                primitive: Primitive::RequiredEntity,
+                message: "m".into(),
+                subject: "s".into(),
+                subject_id: None,
+            }]);
+            let got = chip_findings().expect("still registered");
+            assert_eq!(
+                got.get_untracked().len(),
+                1,
+                "chip_findings observes the sink's write"
+            );
+        });
+    }
+
+    /// LOAD-TIME EVAL (a). The initial pass must RE-RUN until the payload source resolves — a single
+    /// `set_timeout(0)` shows "No issues" until the first doc_tick because the doc hydrates async
+    /// (review F-11). The pin holds the retry shape in the component body: it re-checks the payload
+    /// source's readiness (`read_payload_source()`) and reschedules against the bounded
+    /// `INITIAL_EVAL_MAX_TICKS`. `live_code` blanks comments + strings so the prose describing F-11
+    /// cannot satisfy the needles.
+    #[test]
+    fn load_time_eval_retries_until_the_source_is_ready() {
+        let code = live_code(include_str!("validation_panel.rs"));
+        let body = only_body(&code, "pub fn ValidationPanel(");
+        for needle in ["read_payload_source()", "INITIAL_EVAL_MAX_TICKS"] {
+            assert!(
+                body.contains(needle),
+                "T-798 (a): the load-time pass must retry until the source is ready — missing \
+                 `{needle}`. Hollow: collapse it back to one `set_timeout(run_eval, 0)` → RED, and \
+                 t0 shows 'No issues' until the first edit."
+            );
+        }
+        // THE RESCHEDULE ITSELF — the load-bearing structure. The poll re-arms only while the source
+        // is NOT ready AND the budget has room: `!ready && n < INITIAL_EVAL_MAX_TICKS`, guarding a
+        // `set_timeout` that calls `next()` (the self-reschedule). Deleting the reschedule (the
+        // single-shot regression) removes this exact guard. This needle is ONLY in the reschedule
+        // branch, so it cannot be satisfied by the debounce's own timer or the poll kickoff.
+        assert!(
+            body.contains("!ready && n < INITIAL_EVAL_MAX_TICKS"),
+            "T-798 (a): the poll must reschedule on the bounded not-ready condition \
+             `!ready && n < INITIAL_EVAL_MAX_TICKS`. Hollow: remove the reschedule → single-shot → \
+             RED, and t0 shows 'No issues' until the first edit."
+        );
+        let guard_at = body
+            .find("!ready && n < INITIAL_EVAL_MAX_TICKS")
+            .expect("reschedule guard present");
+        let mut end = (guard_at + 400).min(body.len());
+        while end < body.len() && !body.is_char_boundary(end) {
+            end += 1;
+        }
+        let region = &body[guard_at..end];
+        assert!(
+            region.contains("set_timeout") && region.contains("next"),
+            "T-798 (a): the not-ready branch must `set_timeout(... next() ...)` — re-arm the poll by \
+             calling itself (`next` is the self-reschedule handle). Without it the guard is inert and \
+             t0 never converges."
+        );
+        // The budget is real and bounded (a host build has no source and must not spin forever).
+        assert!(
+            INITIAL_EVAL_MAX_TICKS > 0,
+            "the poll must have a positive tick budget"
+        );
+        assert!(
+            INITIAL_EVAL_MAX_TICKS <= 200,
+            "the poll must be BOUNDED, not an unbounded spin (host build never gets a source)"
+        );
+    }
+
+    /// THE FLOATING CARD IS RETIRED. The old bottom-left overlay (`absolute bottom-14 left-3`,
+    /// `data-validation-panel`) must be GONE — the visible surface is the top-strip chip now, and a
+    /// leftover card would defeat the F-35 fix (a card outside the strip's `chrome_hidden` gate would
+    /// survive Backspace again). `live_source` keeps class strings (the geometry is a literal).
+    #[test]
+    fn the_floating_card_is_gone() {
+        let src = live_source(include_str!("validation_panel.rs"));
+        for banned in [
+            "bottom-14 left-3",
+            "data-validation-panel",
+            "data-validation-rollup",
+        ] {
+            assert!(
+                !src.contains(banned),
+                "T-798: the retired floating card's `{banned}` must not survive — the chip in \
+                 `eden_top_strip` is the surface now, and it rides the strip's chrome_hidden gate."
+            );
+        }
+    }
+
+    /// THE V1 COPY + THE LEGEND ARE PINNED VERBATIM, in the dropdown. The message copy is the best
+    /// writing in the product (operator + review agree) and must not drift; the severity legend
+    /// content stays (moved into the dropdown, not deleted). Rendered by `findings_dropdown`, so the
+    /// copy lives HERE. This asserts the copy is present in the module source (not scrubbed away).
+    #[test]
+    fn the_dropdown_keeps_the_v1_copy_and_the_legend() {
+        // The V1 message is a string literal in the engine's rule, surfaced by this panel; the
+        // panel's own pinned copy is the empty-state + the legend. `findings_dropdown` renders both.
+        let code = live_code(include_str!("validation_panel.rs"));
+        let body = only_body(&code, "pub fn findings_dropdown(");
+        for needle in ["group_list_view", "legend_view"] {
+            assert!(
+                body.contains(needle),
+                "T-798: findings_dropdown must render the grouped list AND the legend (`{needle}`) — \
+                 the review pinned the legend content into the dropdown."
+            );
+        }
+        // The quiet empty state (never a 0-badge / celebratory toast) is retained.
+        let lit = live_source(include_str!("validation_panel.rs"));
+        let body_lit = only_body(&lit, "pub fn findings_dropdown(");
+        assert!(
+            body_lit.contains("No issues"),
+            "T-798: the dropdown's empty state stays the quiet 'No issues' (the ticket's empty-state \
+             call), not a 0-badge."
+        );
+    }
+
+    /// The `findings_dropdown` renders the empty state for a clean mission and the grouped list when
+    /// there are findings — a light behavioural check the two branches produce SOME view (the view
+    /// primitives are native-compilable, so this runs on the host).
+    #[test]
+    fn findings_dropdown_renders_both_states() {
+        let owner = Owner::new();
+        owner.with(|| {
+            // Clean → empty state branch; findings → list branch. Both must build a view.
+            let _empty = findings_dropdown(Vec::new());
+            let _full = findings_dropdown(vec![PanelFinding {
+                rule_id: "V1-PLAYER-SPAWN".into(),
+                severity: Severity::Error,
+                primitive: Primitive::RequiredEntity,
+                message: "This mission declares a faction but has no slots".into(),
+                subject: "/editor/slots".into(),
+                subject_id: None,
+            }]);
+        });
     }
 }
