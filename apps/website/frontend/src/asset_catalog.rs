@@ -333,6 +333,113 @@ pub fn build_faction_catalog_tree(items: &[RegistryItem], side: &str) -> Vec<Cat
     roots
 }
 
+/// T-810 (F-23) — the **Attributes TYPE picker** tree: [`build_faction_catalog_tree`] with the Eden
+/// SIDE filter removed, so a single tree spans every faction.
+///
+/// The dock's Factions tree is side-filtered because the chips pick one faction to browse. The
+/// Attributes modal is editing an EXISTING slot whose faction the operator is not choosing here —
+/// they are re-typing what a placed entity spawns as, and constraining that to whichever chip
+/// happens to be up would hide the very leaf they mean (an OPFOR slot edited while the BLUFOR chip
+/// is active). It also lets this builder stay a pure function of the registry alone: the modal is
+/// handed `registry_items` but NOT `active_side` (that signal lives on `mission_editor.rs`, past
+/// this file's boundary), so a side-aware picker here would need a parameter the call site cannot
+/// pass. The result is `resource_name`-keyed leaves exactly like the dock tree, so a picked leaf
+/// writes the SAME canonical `assetId` a drop would and the `ASSET-RESOLVES` validator clears.
+///
+/// ADDITIVE per the T-809 boundary: this composes the three per-kind rules `build_faction_catalog_tree`
+/// already owns (via the shared filing walk) and does not touch it. The one difference is the side
+/// gate; everything else — the `abstract` exclusions, the object spawn-registry gate, the
+/// shared-id folder merge — is identical, so the picker and the dock offer the same leaves modulo side.
+#[must_use]
+pub fn build_picker_catalog_tree(items: &[RegistryItem]) -> Vec<CatalogNode> {
+    let mut roots: Vec<CatalogNode> = Vec::new();
+
+    // The same folder-minting walk `build_faction_catalog_tree` uses (duplicated as a nested fn rather
+    // than shared to keep that function's minimal T-809 surface untouched — this is the only extra
+    // caller and it needs the identical shape). `open_depth` mirrors `FACTION_OPEN_DEPTH`.
+    fn file_leaf(
+        roots: &mut Vec<CatalogNode>,
+        folder_segs: &[&str],
+        leaf_id: &str,
+        leaf_label: &str,
+    ) {
+        let mut cur = roots;
+        let mut prefix = String::new();
+        for (depth, seg) in folder_segs.iter().enumerate() {
+            if prefix.is_empty() {
+                prefix.push_str(seg);
+            } else {
+                prefix.push('/');
+                prefix.push_str(seg);
+            }
+            let idx = match cur.iter().position(|n| n.id == prefix) {
+                Some(i) => i,
+                None => {
+                    cur.push(CatalogNode {
+                        id: prefix.clone(),
+                        label: (*seg).to_string(),
+                        default_expanded: depth < FACTION_OPEN_DEPTH,
+                        children: Vec::new(),
+                        payload: None,
+                    });
+                    cur.len() - 1
+                }
+            };
+            cur = &mut cur[idx].children;
+        }
+        cur.push(CatalogNode {
+            id: leaf_id.to_string(),
+            label: leaf_label.to_string(),
+            default_expanded: false,
+            children: Vec::new(),
+            payload: Some(PlacePayload {
+                asset_id: leaf_id.to_string(),
+                role: leaf_label.to_string(),
+            }),
+        });
+    }
+
+    for item in items {
+        let segs: Vec<&str> = item.category.split('/').filter(|s| !s.is_empty()).collect();
+        if item.kind == "character" {
+            // Rule 2 — drop the role segment; `display_name` is the leaf.
+            let folder_segs = &segs[..segs.len().saturating_sub(1)];
+            file_leaf(
+                &mut roots,
+                folder_segs,
+                &item.resource_name,
+                &item.display_name,
+            );
+        } else if item.kind == "vehicle" {
+            if item.r#abstract == Some(true) {
+                continue;
+            }
+            file_leaf(&mut roots, &segs, &item.resource_name, &item.display_name);
+        } else if is_object_kind(&item.kind)
+            && item.r#abstract != Some(true)
+            && object_alias_registered(&item.resource_name, &item.display_name)
+        {
+            file_leaf(&mut roots, &segs, &item.resource_name, &item.display_name);
+        }
+    }
+
+    roots
+}
+
+/// T-810 — count the placeable LEAVES in a (possibly filtered) tree. A leaf is `payload.is_some()`
+/// (module docs), so this is "how many things could actually be picked" — the number the TYPE
+/// picker's empty-state branch turns on. Zero leaves on a NON-empty registry is a real "nothing to
+/// offer" (a modpack with only abstract rows, say); zero on an empty registry is the dev-without-seed
+/// case. Either way the picker must show the cause+retry surface, never a bare empty list (F-23 / the
+/// T-800 lesson), and this is the predicate that decides it — pure and native-testable.
+#[must_use]
+pub fn catalog_leaf_count(nodes: &[CatalogNode]) -> usize {
+    nodes
+        .iter()
+        .map(|n| usize::from(n.payload.is_some()) + catalog_leaf_count(&n.children))
+        .sum()
+}
+
 /// How deep the vehicle tree opens on first paint. The character tree's rule 3 opens depth 0
 /// because depth 0 there is the FACTION — the axis an author picks first. The vehicle catalog is
 /// addon-rooted (`ArmaReforger/Vehicles/Wheeled/UAZ469`), so depth 0 is the addon and depth 1 is the
@@ -2667,6 +2774,97 @@ mod tests {
 
         // An unknown chip side surfaces nothing (the chip row admits only the three sides).
         assert!(build_faction_catalog_tree(&merged_items(), "CIV").is_empty());
+    }
+
+    // ── T-810 (F-23) — the Attributes TYPE picker tree: side-AGNOSTIC ────────────────────────────────
+
+    /// The picker tree spans EVERY faction, because the Attributes modal is editing a placed slot's
+    /// type and is not handed the active-side chip. Where the dock's BLUFOR chip hides the USSR leaf,
+    /// the picker shows both — so an OPFOR slot's type is reachable while the BLUFOR chip is up. Same
+    /// leaves as the per-side builder, just unfiltered and merged into one tree; the abstract vehicle
+    /// template is still dropped (it composes the same per-kind rules).
+    #[test]
+    fn picker_tree_spans_all_sides_and_still_drops_abstract() {
+        let picker = build_picker_catalog_tree(&merged_items());
+        let mut leaves = leaf_labels(&picker);
+        leaves.sort();
+        assert_eq!(
+            leaves,
+            vec![
+                "M1025 Humvee (M2)".to_string(),
+                "M113 APC (M2)".to_string(),
+                "US Medic".to_string(),
+                "US Rifleman".to_string(),
+                "USSR Rifleman".to_string(), // the OPFOR leaf the side filter would have hidden
+            ],
+            "the picker spans both factions and drops the abstract *_base.et template"
+        );
+        // Both faction roots are present in the one tree (the dock's chip picks exactly one).
+        assert!(picker.iter().any(|n| n.id == "NATO"), "NATO root present");
+        assert!(picker.iter().any(|n| n.id == "USSR"), "USSR root present");
+    }
+
+    /// A picked leaf carries the canonical `resource_name` as its `payload.asset_id` — the SAME id a
+    /// dock drop writes and the id the `ASSET-RESOLVES` validator checks against, which is why picking
+    /// clears the finding. The 'rifle' search path the acceptance scripts lands on a real leaf.
+    #[test]
+    fn picker_leaf_payload_is_the_canonical_resource_name_and_search_reaches_it() {
+        let picker = build_picker_catalog_tree(&merged_items());
+        // Typing 'rifle' filters to the two Rifleman leaves across both factions.
+        let hits = filter_catalog(&picker, "rifle");
+        let mut labels = leaf_labels(&hits);
+        labels.sort();
+        assert_eq!(
+            labels,
+            vec!["US Rifleman".to_string(), "USSR Rifleman".to_string()]
+        );
+
+        // The US Rifleman leaf's payload id is the full resource_name from the fixture.
+        fn find<'a>(nodes: &'a [CatalogNode], label: &str) -> Option<&'a CatalogNode> {
+            for n in nodes {
+                if n.label == label && n.payload.is_some() {
+                    return Some(n);
+                }
+                if let Some(f) = find(&n.children, label) {
+                    return Some(f);
+                }
+            }
+            None
+        }
+        let leaf = find(&picker, "US Rifleman").expect("US Rifleman leaf");
+        assert_eq!(
+            leaf.payload.as_ref().unwrap().asset_id,
+            "{26A9756790131354}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Rifleman.et",
+            "the leaf writes the canonical resource_name assetId a drop would"
+        );
+    }
+
+    /// `catalog_leaf_count` is the empty-state predicate the picker turns on: it counts placeable
+    /// leaves (folders do not count), so a real tree is > 0 and an empty registry is 0 — the case
+    /// that must show the T-800 cause+retry surface, not a dead list.
+    #[test]
+    fn catalog_leaf_count_counts_leaves_not_folders() {
+        let picker = build_picker_catalog_tree(&merged_items());
+        assert_eq!(
+            catalog_leaf_count(&picker),
+            5,
+            "five placeable leaves across both factions; folders are not counted"
+        );
+        // An empty registry builds an empty tree with zero leaves — the dev-without-seed case.
+        assert_eq!(build_picker_catalog_tree(&[]).len(), 0);
+        assert_eq!(catalog_leaf_count(&build_picker_catalog_tree(&[])), 0);
+        // A registry of ONLY an abstract vehicle also yields zero leaves (nothing placeable), so the
+        // picker's empty branch fires even though the registry is non-empty.
+        let only_abstract = vec![vehicle_row(
+            "{9999999999999999}Prefabs/Vehicles/Wheeled/M998/M998_base.et",
+            "M998 base",
+            "NATO/US_Army/Vehicles",
+            true,
+        )];
+        assert_eq!(
+            catalog_leaf_count(&build_picker_catalog_tree(&only_abstract)),
+            0
+        );
     }
 
     /// The search grammar (`class:` / `mod:`) must span the MERGED tree — it runs over the one tree

@@ -157,6 +157,28 @@ impl Gate {
     }
 }
 
+/// T-810 (F-23 c) — Eden's spatial-axis colour for a Transform field label, or `None` for every
+/// other field. Eden colour-codes the Position/Rotation axes (X=red, Y=green, Z=blue) so an author
+/// reads which line is which without reading the letter; TBD's tab was monochrome. The chip rides
+/// the LABEL, not the value (per spec) — the value stays plain mono so a coordinate is never tinted.
+///
+/// Native and outside the wasm block for the same reason [`nudge_step`] is: it is a pure lookup, so
+/// the mapping is pinned by CALLING it, and the colour set is checked against the plate rather than
+/// asserted from a `view!` string. Returns a Tailwind background token; the four are deliberately at
+/// the `-500` step, which reads with contrast on the modal's dark glass plate — the T-827 lesson
+/// (measure against the ACTUAL surface, not paper). Rotation earns its own hue (amber) rather than
+/// reusing an axis colour: it is not X/Y/Z, and giving it a fourth distinct chip keeps every
+/// Transform row self-identifying.
+fn axis_chip_class(label: &str) -> Option<&'static str> {
+    match label {
+        "X" => Some("bg-red-500"),
+        "Y" => Some("bg-emerald-500"),
+        "Z" => Some("bg-sky-500"),
+        "Rotation" => Some("bg-amber-500"),
+        _ => None,
+    }
+}
+
 /// T-649 — the field label row: the field name plus, when the selection disagrees on this field,
 /// the checkbox that opts it into the multi-apply.
 ///
@@ -164,11 +186,27 @@ impl Gate {
 /// two inputs implicitly labels only the first — the checkbox would have stolen the click that
 /// should focus the field. The field input carries an explicit `aria-label` instead, and the
 /// checkbox gets its own `<label>`.
+///
+/// T-810 (F-23 c) — a Transform axis label ([`axis_chip_class`]) leads with a small colour chip so
+/// the row is identifiable by hue, Eden-style. `aria-hidden` on the dot: it is decoration, and the
+/// axis is already named by the adjacent text and the input's `aria-label`, so a screen reader must
+/// not announce a bare colour swatch.
 #[cfg(target_arch = "wasm32")]
 fn field_label(label: &'static str, gate: Gate) -> impl IntoView {
     view! {
         <span class="flex items-center justify-between gap-2 text-label-sm uppercase tracking-wider text-outline">
-            <span>{label}</span>
+            <span class="flex items-center gap-1.5">
+                {axis_chip_class(label)
+                    .map(|c| {
+                        view! {
+                            <span
+                                aria-hidden="true"
+                                class=format!("inline-block size-2 shrink-0 rounded-full {c}")
+                            ></span>
+                        }
+                    })}
+                {label}
+            </span>
             {gate
                 .opt
                 .map(|o| {
@@ -245,9 +283,42 @@ pub fn AttributesModal(
     // `attrs_open` and deliberately NOT `doc_tick`, so a commit (which bumps `doc_tick`) leaves the
     // operator's ticks alone while a fresh open starts from a clean slate.
     let opts = MultiOpts::new();
+    // T-810 (F-23 b) — the REVERT snapshot. Read-at-OPEN, restore-on-Revert (the T-082 lesson: the
+    // modal must never re-derive "before" from a store it has since written — it captures the
+    // pre-open values ONCE and holds them). Lives on the component like `opts`, refreshed by an
+    // `attrs_open`-only effect so a live edit (which bumps `doc_tick`, not `attrs_open`) leaves the
+    // snapshot alone — that is what makes Revert restore the state the panel opened on rather than
+    // the last keystroke. WASM-ONLY because its element type (`SlotAttrs`) and the `editor_ops` reads
+    // are; on native (the pin build) the component renders nothing, so nothing needs it there. One
+    // entry per edited id (single-edit is one entry); vehicles are excluded upstream, so all slots.
+    #[cfg(target_arch = "wasm32")]
+    let snapshot: StoredValue<Vec<crate::editor_ops::SlotAttrs>> = StoredValue::new(Vec::new());
+    // The `opts` re-arm runs on both targets (native-safe); the snapshot capture is wasm-only.
     Effect::new(move |_| {
-        let _ = attrs_open.get();
+        let open = attrs_open.get();
         opts.reset();
+        // Capture the pre-open values for the whole edited set. `attrs_multi_ids` returns the
+        // multi-edit targets (empty ⇒ single-edit), so the snapshot set is `[open_id]` in the
+        // single case and the slot subset in the multi case — the identical set the commits fan out
+        // to and the identical set Revert will write back.
+        #[cfg(target_arch = "wasm32")]
+        {
+            let snap = open
+                .as_deref()
+                .map(|id| {
+                    let mut ids = crate::editor_ops::attrs_multi_ids(id);
+                    if ids.is_empty() {
+                        ids = vec![id.to_string()];
+                    }
+                    ids.iter()
+                        .filter_map(|i| crate::editor_ops::read_attrs(i))
+                        .collect::<Vec<_>>()
+                })
+                .unwrap_or_default();
+            snapshot.set_value(snap);
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        let _ = open;
     });
     // T-167 / T-180.9 — tab lives on OpsCtx (passed in) so `open_arsenal` can select Arsenal and
     // a doc change (loadout pick bumps `doc_tick`) no longer snaps back to Identity.
@@ -273,6 +344,7 @@ pub fn AttributesModal(
                         selection_n,
                         diff,
                         opts,
+                        snapshot,
                         registry_items,
                         compat,
                         attrs_tab,
@@ -297,13 +369,19 @@ pub fn AttributesModal(
 /// T-649 — `multi` is the multi-edit target id set; EMPTY means single-edit, and every field then
 /// renders exactly as it did before this slice. `diff` says which fields the set disagrees on and
 /// `opts` carries their opt-in latches.
+// T-810 — the `snapshot` param (the Revert store) took this one over clippy's 7-arg threshold; the
+// crate's idiom for a genuinely wide render seam is the explicit allow (see event_hub / missions).
 #[cfg(target_arch = "wasm32")]
+#[allow(clippy::too_many_arguments)]
 fn modal_view(
     attrs: crate::editor_ops::SlotAttrs,
     multi: Vec<String>,
     selection_n: usize,
     diff: crate::editor_ops::AttrDiff,
     opts: MultiOpts,
+    // T-810 (F-23 b) — the pre-open snapshot the Revert button restores. Captured on open (see
+    // `AttributesModal`), one entry per edited slot.
+    snapshot: StoredValue<Vec<crate::editor_ops::SlotAttrs>>,
     registry_items: RwSignal<Option<Vec<crate::dto::RegistryItem>>>,
     compat: RwSignal<crate::arsenal_rules::CompatFeed>,
     tab: RwSignal<usize>,
@@ -354,15 +432,37 @@ fn modal_view(
                 <div class="min-w-0">
                     <h2 class="text-headline-sm text-on-surface">"Attributes"</h2>
                     <p class="mt-1 text-label-md text-on-surface-variant">{subtitle}</p>
+                    // T-810 (F-23 b) — STATE THE MODEL. TBD applies every edit live with only a ✕ to
+                    // close (no OK/Cancel — the gap the UX review named), so Revert is a bounded undo
+                    // convenience, not a transaction boundary. One line, so an operator never mistakes
+                    // it for "discard on close": edits are already saved; Revert re-writes the values
+                    // this panel opened on.
+                    <p class="mt-1 text-label-sm normal-case text-outline">
+                        "Edits apply live. Revert restores the values from when this panel opened."
+                    </p>
                 </div>
-                <button
-                    type="button"
-                    aria-label="Close"
-                    on:click=move |_| crate::editor_ops::close_attributes()
-                    class="shrink-0 rounded-md p-1 text-outline transition-colors hover:bg-surface-variant/50 hover:text-on-surface"
-                >
-                    <crate::ui::MaterialIcon name="close" />
-                </button>
+                <div class="flex shrink-0 items-center gap-1">
+                    // T-810 (F-23 b) — the Revert affordance. Restores the on-open snapshot across
+                    // every edited slot (`revert_to_snapshot`). It writes real edits, so it is a plain
+                    // button beside Close rather than a destructive dialog. `data-testid` so the
+                    // scripted acceptance can drive it.
+                    <button
+                        type="button"
+                        data-testid="attrs-revert"
+                        on:click=move |_| revert_to_snapshot(snapshot)
+                        class="rounded-md border border-outline-variant/40 px-2.5 py-1 text-label-sm text-on-surface-variant transition-colors hover:bg-surface-variant/50 hover:text-on-surface"
+                    >
+                        "Revert"
+                    </button>
+                    <button
+                        type="button"
+                        aria-label="Close"
+                        on:click=move |_| crate::editor_ops::close_attributes()
+                        class="rounded-md p-1 text-outline transition-colors hover:bg-surface-variant/50 hover:text-on-surface"
+                    >
+                        <crate::ui::MaterialIcon name="close" />
+                    </button>
+                </div>
             </div>
             <div class="custom-scrollbar flex-1 overflow-y-auto px-6 py-5">
                 <div class="flex flex-col gap-4">
@@ -405,7 +505,8 @@ fn modal_view(
                     {move || match tab.get() {
                         0 => transform_tab(targets, attrs, is_multi, diff, opts, locked_n)
                             .into_any(),
-                        1 => identity_tab(targets, attrs, is_multi, diff, opts).into_any(),
+                        1 => identity_tab(targets, attrs, is_multi, diff, opts, registry_items)
+                            .into_any(),
                         2 => states_tab().into_any(),
                         _ => {
                             let loadout = crate::editor_ops::read_loadout(&slot_id.get_value());
@@ -934,6 +1035,50 @@ fn commit_slot(
     }
 }
 
+/// T-810 (F-23 b) — restore every edited slot to the values captured when the panel opened.
+///
+/// **Why PER-SLOT single-ops and not the T-788 homogeneous batch.** The registry summary points at
+/// `update_slots_attr_batch` for a multi-slot revert, and that batch is the right tool for an
+/// apply-to-all EDIT — it stamps ONE value onto every id in one txn. A Revert is the opposite shape:
+/// the values it writes are each slot's OWN pre-open value, and under a multi-selection those differ
+/// (a field that DIFFERED on open was blank-and-locked until "Apply to all" was ticked, and undoing
+/// that tick means putting each slot's distinct original back). A homogeneous batch cannot express
+/// "give slot A its value and slot B its other value" — it would flatten the selection onto one
+/// member's number, which is the very lie the multi-edit gate exists to prevent. So Revert walks the
+/// snapshot and calls the SINGLE-slot [`attrs_update_position`]/[`attrs_update_slot`] per entry,
+/// each of which is the exact seam a typed edit uses.
+///
+/// These are REAL writes (the spec is explicit): each one runs `after_local_edit`, so Revert dirties
+/// the mission and mints undo steps like any edit — it is a bounded UNDO CONVENIENCE, not OK/Cancel
+/// transactionalism, and the panel says so in one line. `z` is passed as `Some(snap.z)` so the
+/// terrain-follow z-keep cannot re-flatten a restored elevation; every field is `Some`, so the
+/// all-`None` no-op guards never fire and a locked slot's transform half is simply dropped by the
+/// core exactly as it drops a typed transform edit (identity/type restore still lands — T-665 locks
+/// transform only). These are UNCONDITIONAL writes — `attrs_update_slot`/`attrs_update_position` do
+/// not compare against the current value, so Revert always re-stamps the snapshot and always fires
+/// the history tail; that is the intended "real write" semantics, not a bug. The end state is the
+/// readback equality the acceptance pins: after Revert, `read_attrs(id)` equals the captured snap.
+#[cfg(target_arch = "wasm32")]
+fn revert_to_snapshot(snapshot: StoredValue<Vec<crate::editor_ops::SlotAttrs>>) {
+    for snap in snapshot.get_value() {
+        crate::editor_ops::attrs_update_position(
+            &snap.id,
+            Some(snap.x),
+            Some(snap.y),
+            Some(snap.z),
+            Some(snap.rotation),
+        );
+        crate::editor_ops::attrs_update_slot(
+            &snap.id,
+            Some(snap.role.clone()),
+            Some(snap.tag.clone()),
+            Some(snap.stance.clone()),
+            Some(snap.asset_id.clone()),
+            Some(snap.description.clone()),
+        );
+    }
+}
+
 #[cfg(target_arch = "wasm32")]
 fn transform_tab(
     targets: StoredValue<Vec<String>>,
@@ -1066,6 +1211,322 @@ fn transform_tab(
     }
 }
 
+/// T-810 (F-23 a) — the entity TYPE as a **searchable catalog picker** with a freetext escape hatch.
+///
+/// Eden's Object:Type is a searchable tree with a magnifier; the author browses Cars/Drones/Men…
+/// rather than recalling an asset id. TBD's freetext field was expert-only recall and the surface a
+/// stray keystroke corrupted slots through, so this replaces the field's ENTRY affordance with a
+/// picker while keeping every T-082 wiring the pins protect (the caller hands in the read, the gate,
+/// and the one commit seam). Structure, top to bottom:
+///
+///   * a **trigger button** showing the current type — the catalog's friendly `display_name` when the
+///     id resolves ([`crate::asset_catalog::find_catalog_item`]), the raw id when it does not (a
+///     modpack-switched or hand-typed id, still shown honestly), or "Faction default" when empty.
+///     Empty = faction default stays a FIRST-CLASS option, exactly as the freetext field promised.
+///   * an **anchored popover** (this is the containing-block trap the registry names — the popover is
+///     `absolute` inside a `relative` wrapper, NOT `fixed`, so it stays inside the stack-governed
+///     modal and cannot escape to the viewport). It holds a search box (typing filters the live tree
+///     via [`crate::asset_catalog::filter_catalog`], the SAME grammar the dock search uses), a
+///     "Faction default (clear)" row, and the filtered leaves. Picking a leaf writes its canonical
+///     `resource_name` through `on_commit`; the `ASSET-RESOLVES` validator then clears live because
+///     that id is in `known_asset_ids_from_registry`.
+///   * an **Advanced** disclosure revealing the freetext [`text_field`] for ids no catalog leaf
+///     offers — the T-785 draft discipline is kept verbatim (this is the field, unchanged), so the
+///     expert path survives behind an affordance instead of being the default.
+///
+/// **Empty catalog** (dev without seed, or a modpack with no placeable rows): the popover shows the
+/// cause+retry surface, never a dead list (F-23 / the T-800 lesson). The copy MIRRORS
+/// `eden_dock_right::catalog_failure_view`'s vocabulary — it is a mirrored copy, not the shared fn,
+/// because that fn takes `registry_fetch_gen`, a signal the modal is not handed (its call site in
+/// `mission_editor.rs` is past this slice's file boundary and cannot be changed to pass one). Retry
+/// is therefore a full reload (`window.location.reload`), which the dock's own doc names as the
+/// equivalent recovery ("a populated seed then Readies the tree"); it genuinely re-runs the cold
+/// `/registry` fetch. While the registry is still LOADING (`registry_items == None`) the popover says
+/// so and the trigger stays live — the modal re-renders when the rows land because this reads
+/// `registry_items` reactively.
+///
+/// **Esc layering** (registry: picker → field → modal, one per press): the popover's search input
+/// consumes Escape and closes the POPOVER only (`stop_propagation`, so the modal window listener does
+/// not also fire); the advanced [`text_field`] keeps its own field-level Escape (abandon draft, blur);
+/// the modal's listener is the third press. Three layers, one collapse per keypress.
+///
+/// **Multi-edit**: the trigger takes the same [`Gate`] every field takes — a differing TYPE across
+/// the selection is blank+locked behind "Apply to all", and once ticked a pick writes ALL targets
+/// (`commit_slot` routes to the T-788 batch by target count). A refused gate disables the trigger.
+#[cfg(target_arch = "wasm32")]
+fn type_picker(
+    label: &'static str,
+    value: String,
+    gate: Gate,
+    registry_items: RwSignal<Option<Vec<crate::dto::RegistryItem>>>,
+    // `+ Send` because the popover is a reactive render closure (it rebuilds the leaf list as the
+    // query changes) and Leptos requires such closures to be `Send`. The only caller passes a
+    // closure capturing `targets: StoredValue<Vec<String>>` (which is `Send`), so the bound is free
+    // — and `text_field` below, which takes a bound WITHOUT `Send`, still accepts this stricter one.
+    on_commit: impl Fn(String) + Copy + Send + 'static,
+) -> impl IntoView {
+    let open = RwSignal::new(false);
+    let query = RwSignal::new(String::new());
+    let advanced = RwSignal::new(false);
+    let current = StoredValue::new(value.clone());
+    // NB: no `Effect` here on purpose — `type_picker` is called from the modal's per-`doc_tick`
+    // render closure, so an effect minted here would accumulate one per re-render. The query is
+    // instead reset inline when the trigger OPENS the popover (below), which is the only moment a
+    // stale query could leak in.
+    // The trigger's label: friendly name if the id resolves in the live catalog, else the raw id,
+    // else the first-class empty option. Reactive on `registry_items` so a late catalog load upgrades
+    // a raw id to its display name without reopening.
+    let trigger_text = move || {
+        let id = current.get_value();
+        if gate.differs() {
+            return "Multiple values".to_string();
+        }
+        if id.is_empty() {
+            return "Faction default".to_string();
+        }
+        registry_items
+            .get()
+            .as_deref()
+            .and_then(|items| crate::asset_catalog::find_catalog_item(items, &id))
+            .map_or(id, |it| it.display_name.clone())
+    };
+    // Pick a leaf / clear: commit, then close the popover. `close` first would drop the closure's
+    // capture on some paths, so commit precedes close (both are cheap).
+    let pick = move |asset_id: String| {
+        on_commit(asset_id);
+        open.set(false);
+    };
+    view! {
+        <div class="flex flex-col gap-1">
+            {field_label(label, gate)}
+            // Anchor: `relative` wrapper so the popover below is `absolute` to HERE (the containing-block
+            // trap) and stays inside the modal's stacking context.
+            <div class="relative">
+                <button
+                    type="button"
+                    aria-label=label
+                    aria-haspopup="listbox"
+                    data-testid="type-picker-trigger"
+                    disabled=move || gate.locked()
+                    on:click=move |_| {
+                        if !gate.locked_now() {
+                            // Reset the search on OPEN so a stale query never leaks into a new visit.
+                            if !open.get_untracked() {
+                                query.set(String::new());
+                            }
+                            open.update(|o| *o = !*o);
+                        }
+                    }
+                    class=move || {
+                        let lock = if gate.locked() { CONTROL_LOCKED } else { "" };
+                        // A placeholder-toned label when empty/differing, full-strength when set.
+                        format!("{CONTROL} flex items-center justify-between text-left{lock}")
+                    }
+                >
+                    <span class=move || {
+                        let id = current.get_value();
+                        if gate.differs() || id.is_empty() {
+                            "truncate text-on-surface-variant"
+                        } else {
+                            "truncate text-on-surface"
+                        }
+                    }>{trigger_text}</span>
+                    <crate::ui::MaterialIcon name="search" />
+                </button>
+                {move || {
+                    open.get().then(|| {
+                        // Backdrop: a click anywhere outside closes the popover (the same click-away
+                        // idiom the AssetPickerOverlay uses). `z-40` under the popover's `z-50`, and
+                        // scoped to the modal via the relative parent — it is `absolute inset-0` on the
+                        // wrapper, not `fixed`, so it never covers the rest of the dialog.
+                        let items = registry_items.get();
+                        let body = match items {
+                            None => view! {
+                                // Registry not yet loaded — say so; the trigger stays usable and this
+                                // re-renders when the rows arrive (reactive read above).
+                                <p
+                                    class="px-3 py-4 text-label-sm text-on-surface-variant"
+                                    data-testid="type-picker-loading"
+                                >
+                                    "Loading the asset catalog…"
+                                </p>
+                            }.into_any(),
+                            Some(items) => {
+                                let full = crate::asset_catalog::build_picker_catalog_tree(&items);
+                                if crate::asset_catalog::catalog_leaf_count(&full) == 0 {
+                                    // T-800 MIRRORED vocabulary — cause + retry, never a dead list.
+                                    view! {
+                                        <div
+                                            class="flex flex-col gap-2 px-3 py-3"
+                                            data-testid="type-picker-empty"
+                                        >
+                                            <p class="text-label-sm text-error">
+                                                "No modpack is configured, so the asset catalog is empty. Set a current modpack, then retry."
+                                            </p>
+                                            <button
+                                                type="button"
+                                                data-testid="type-picker-retry"
+                                                class="self-start rounded border border-outline-variant/40 px-2 py-1 text-label-sm text-on-surface transition hover:bg-surface-container-high"
+                                                on:click=move |_| {
+                                                    // The modal cannot re-kick the in-place cold fetch
+                                                    // (the `registry_fetch_gen` signal lives dock-side,
+                                                    // past this file's boundary). A full reload IS the
+                                                    // dock's documented equivalent recovery and really
+                                                    // re-runs `/registry`.
+                                                    if let Some(w) = web_sys::window() {
+                                                        let _ = w.location().reload();
+                                                    }
+                                                }
+                                            >
+                                                "Retry"
+                                            </button>
+                                        </div>
+                                    }.into_any()
+                                } else {
+                                    let q = query.get();
+                                    let filtered = crate::asset_catalog::filter_catalog(&full, &q);
+                                    // Flatten the (filtered) tree to placeable leaves. A folder carries
+                                    // no payload, so `payload.is_some()` is exactly "a pickable leaf".
+                                    let mut leaves: Vec<(String, String)> = Vec::new();
+                                    fn collect(
+                                        nodes: &[crate::asset_catalog::CatalogNode],
+                                        out: &mut Vec<(String, String)>,
+                                    ) {
+                                        for n in nodes {
+                                            if let Some(p) = &n.payload {
+                                                out.push((n.label.clone(), p.asset_id.clone()));
+                                            }
+                                            collect(&n.children, out);
+                                        }
+                                    }
+                                    collect(&filtered, &mut leaves);
+                                    let no_match = !q.trim().is_empty() && leaves.is_empty();
+                                    let empty_msg = crate::asset_catalog::search_empty_message(&q, "assets");
+                                    let rows = leaves
+                                        .into_iter()
+                                        .map(|(lbl, id)| {
+                                            let idc = id.clone();
+                                            view! {
+                                                <button
+                                                    type="button"
+                                                    data-testid="type-picker-leaf"
+                                                    class="block w-full truncate px-3 py-1.5 text-left text-label-md text-on-surface hover:bg-primary/20"
+                                                    title=id
+                                                    on:click=move |ev| {
+                                                        ev.stop_propagation();
+                                                        pick(idc.clone());
+                                                    }
+                                                >
+                                                    {lbl}
+                                                </button>
+                                            }
+                                        })
+                                        .collect_view();
+                                    view! {
+                                        <div class="min-h-0 flex-1 overflow-y-auto py-1">
+                                            // First-class "clear to faction default" row — always
+                                            // present so empty stays a deliberate, reachable choice.
+                                            <button
+                                                type="button"
+                                                data-testid="type-picker-clear"
+                                                class="block w-full truncate border-b border-outline-variant/20 px-3 py-1.5 text-left text-label-md text-on-surface-variant hover:bg-primary/20"
+                                                on:click=move |ev| {
+                                                    ev.stop_propagation();
+                                                    pick(String::new());
+                                                }
+                                            >
+                                                "Faction default (clear)"
+                                            </button>
+                                            {no_match
+                                                .then(|| view! {
+                                                    <p
+                                                        class="px-3 py-2 text-label-sm text-on-surface-variant"
+                                                        data-testid="type-picker-nomatch"
+                                                    >
+                                                        {empty_msg}
+                                                    </p>
+                                                })}
+                                            {rows}
+                                        </div>
+                                    }.into_any()
+                                }
+                            }
+                        };
+                        view! {
+                            <div
+                                class="absolute inset-0 z-40"
+                                on:click=move |_| open.set(false)
+                            ></div>
+                            <div
+                                class="glass absolute left-0 right-0 top-full z-50 mt-1 flex max-h-64 flex-col overflow-hidden rounded-md border border-outline-variant/30 shadow-2xl"
+                                data-testid="type-picker-popover"
+                            >
+                                <div class="border-b border-outline-variant/25 p-1.5">
+                                    <input
+                                        type="search"
+                                        // autofocus so typing filters immediately, Eden-style.
+                                        autofocus
+                                        aria-label="Search asset types"
+                                        data-testid="type-picker-search"
+                                        class="w-full rounded bg-surface/40 px-2 py-1 text-label-md text-on-surface outline-none placeholder:text-on-surface-variant"
+                                        placeholder="Search types…"
+                                        on:input=move |ev| query.set(event_target_value(&ev))
+                                        on:keydown=move |ev| {
+                                            // Esc closes THIS layer (the popover) first and consumes,
+                                            // so the modal's window listener does not also close the
+                                            // modal on the same press — picker → field → modal.
+                                            if ev.key() == "Escape" {
+                                                ev.stop_propagation();
+                                                open.set(false);
+                                            }
+                                        }
+                                    />
+                                </div>
+                                {body}
+                            </div>
+                        }
+                    })
+                }}
+            </div>
+            // The freetext escape hatch, behind an Advanced disclosure. It IS the T-785 text_field,
+            // unchanged — the draft discipline and its own Esc layer stay exactly as pinned.
+            //
+            // Shown only when the field is NOT gated behind a differ-checkbox (`!gate.differs()` ⇒
+            // `gate.opt` is None ⇒ the field_label the text_field draws carries no "Apply to all"
+            // box, so the picker's single box above is never duplicated). Under a DIFFERING
+            // multi-selection the operator ticks the picker's box and picks a catalog leaf for all;
+            // typing an UNLISTED id across a differing selection is the one corner this trades away,
+            // deliberately, to keep exactly one opt-in control on screen. A `shut` (core-refused)
+            // field still shows Advanced but the text_field disables itself through the same gate.
+            //
+            // The `text_field` is rendered EAGERLY (not inside a reactive `move ||`) and hidden via a
+            // CSS class toggle. That is deliberate: a reactive render closure must be `Send`, and
+            // `on_commit` is a bare `impl Fn` with no such bound, so wrapping the field in `move ||`
+            // fails to compile. Visibility is the class closure's job (it captures only `advanced`),
+            // and the field's own draft is untouched while hidden.
+            {(!gate.differs()).then(|| view! {
+                <button
+                    type="button"
+                    data-testid="type-picker-advanced-toggle"
+                    class="self-start text-label-sm normal-case text-primary hover:underline"
+                    on:click=move |_| advanced.update(|a| *a = !*a)
+                >
+                    {move || if advanced.get() { "Hide advanced" } else { "Advanced: enter an asset id" }}
+                </button>
+                <div class=move || if advanced.get() { "" } else { "hidden" }>
+                    {text_field(
+                        label,
+                        current.get_value(),
+                        "Asset id — empty uses the faction default",
+                        gate,
+                        on_commit,
+                    )}
+                </div>
+            })}
+        </div>
+    }
+}
+
 #[cfg(target_arch = "wasm32")]
 fn identity_tab(
     targets: StoredValue<Vec<String>>,
@@ -1073,6 +1534,8 @@ fn identity_tab(
     is_multi: bool,
     diff: crate::editor_ops::AttrDiff,
     opts: MultiOpts,
+    // T-810 (F-23 a) — the live catalog source for the TYPE picker.
+    registry_items: RwSignal<Option<Vec<crate::dto::RegistryItem>>>,
 ) -> impl IntoView {
     let a = attrs.get_value();
     let g = |differs: bool, latch| Gate::maybe(is_multi && differs, latch);
@@ -1087,21 +1550,24 @@ fn identity_tab(
     };
     view! {
         <div class="flex flex-col gap-4">
-            // T-082 ATTR-FIELD-OBJ-TYPE. The entity TYPE — the slot's `assetId`, the prefab it
-            // spawns as. It was authored on palette drop and mutable in the core all along; what
-            // was missing was the READ (`read_attrs` built its snapshot from the SoA, which has no
-            // such column), so the modal had nothing to show and therefore nothing to edit.
+            // T-082 ATTR-FIELD-OBJ-TYPE / T-810 (F-23 a). The entity TYPE — the slot's `assetId`, the
+            // prefab it spawns as. It was authored on palette drop and mutable in the core all along.
             //
-            // Free text rather than a select, deliberately: the asset vocabulary is the registry's
-            // (T-146 Asset Browser Data Wiring is what puts a real catalogue behind a picker), and a
-            // hardcoded option list here would be a SHORTER vocabulary than the one the doc already
-            // accepts — it would make types the editor can currently author unreachable. Empty
-            // clears it, and a slot with no `assetId` compiles to its faction's default kit alias.
-            {text_field(
+            // T-810 turned this from freetext into a SEARCHABLE PICKER over the live catalog (Eden's
+            // Object:Type is a searchable tree; freetext asset-id recall is expert-only and was the
+            // field a stray keystroke corrupted slots through). `type_picker` owns the popover, the
+            // "faction default" clear, the advanced-freetext escape hatch, and the empty-catalog
+            // surface; the pieces the T-082 pins fix stay HERE in `identity_tab` and are handed in:
+            // the read (`a.asset_id.clone()`), the multi-edit gate (`g(diff.asset_id, opts.asset_id)`),
+            // and the ONE commit seam — `commit_slot(targets, None, None, None, Some(asset_id), None)`
+            // — so a picked leaf and a typed id both land in the asset_id slot alone, exactly as
+            // before, and multi-edit apply-to-all batching (T-788) is unchanged (`commit_slot` routes
+            // single vs multi by target count).
+            {type_picker(
                 "Type",
                 a.asset_id.clone(),
-                "Asset id — empty uses the faction default",
                 g(diff.asset_id, opts.asset_id),
+                registry_items,
                 move |asset_id| commit_slot(targets, None, None, None, Some(asset_id), None),
             )}
             {text_field(
@@ -2399,6 +2865,217 @@ mod t807_transform_tab_copy {
         assert!(
             body.contains("Some(\"\u{b0}\")"),
             "F-13: Rotation must still carry its ° suffix"
+        );
+    }
+}
+
+/// T-810 (F-23) — the searchable TYPE picker, the Revert affordance, and Eden's axis colours.
+#[cfg(test)]
+mod t810_type_picker_revert_axes {
+    use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
+
+    /// F-23 (c) — the axis labels carry THREE DISTINCT colours (X/Y/Z), plus a fourth for Rotation,
+    /// and no other field is tinted. This is the acceptance's "3 distinct colours" pinned by CALLING
+    /// the pure mapping (the reason [`super::axis_chip_class`] lives outside the wasm block, like
+    /// `nudge_step`) rather than scraping a `view!` string.
+    #[test]
+    fn axis_chip_class_is_three_distinct_axis_colours_plus_rotation() {
+        use super::axis_chip_class;
+        let x = axis_chip_class("X").expect("X is coloured");
+        let y = axis_chip_class("Y").expect("Y is coloured");
+        let z = axis_chip_class("Z").expect("Z is coloured");
+        let rot = axis_chip_class("Rotation").expect("Rotation is coloured");
+        // Three DISTINCT axis colours (the acceptance counts three).
+        let mut axes = vec![x, y, z];
+        axes.sort_unstable();
+        axes.dedup();
+        assert_eq!(
+            axes.len(),
+            3,
+            "X/Y/Z must be three distinct colours; got {x}/{y}/{z}"
+        );
+        // Rotation is its own hue, not a re-used axis colour.
+        assert!(
+            rot != x && rot != y && rot != z,
+            "Rotation must carry a fourth distinct chip"
+        );
+        // Every NON-axis field is untinted — the chip rides only the spatial rows.
+        for other in [
+            "Role",
+            "Tag",
+            "Type",
+            "Stance",
+            "Role Description",
+            "Squad",
+            "",
+        ] {
+            assert!(
+                axis_chip_class(other).is_none(),
+                "{other} must not get an axis chip"
+            );
+        }
+    }
+
+    /// F-23 (c) — the chip rides the LABEL, not the value, and it is decorative (`aria-hidden`). Pin
+    /// `field_label`'s body: it must consult `axis_chip_class(label)` and mark the swatch aria-hidden.
+    #[test]
+    fn the_axis_chip_rides_the_label_and_is_aria_hidden() {
+        let code = live_code(include_str!("attributes.rs"));
+        let body = only_body(&code, "fn field_label(");
+        assert!(
+            body.contains("axis_chip_class(label)"),
+            "field_label must derive the chip from the label; body was:\n{body}"
+        );
+        let src = live_source(include_str!("attributes.rs"));
+        let body_src = only_body(&src, "fn field_label(");
+        assert!(
+            body_src.contains("aria-hidden"),
+            "the colour swatch must be aria-hidden — a screen reader must not announce a bare colour"
+        );
+    }
+
+    /// F-23 (a) — the TYPE field is a PICKER, and the T-082 wiring the pins protect stays in
+    /// `identity_tab`: it calls `type_picker` (not `text_field`) for Type, still reads
+    /// `a.asset_id.clone()`, still takes the multi-edit gate, and still routes the ONE commit seam.
+    /// (`identity_tab_commits_type_and_role_description_through_their_own_argument_slots` above still
+    /// pins the exact `commit_slot(...)` shape; this pins that the ENTRY became the picker.)
+    #[test]
+    fn the_type_field_is_the_searchable_picker_not_a_freetext_field() {
+        let code = live_code(include_str!("attributes.rs"));
+        let body = only_body(&code, "fn identity_tab(");
+        assert!(
+            body.contains("type_picker("),
+            "the Type entry must be `type_picker`, not a bare text_field; body was:\n{body}"
+        );
+        // The picker still receives the live catalog and the gate, and still commits via commit_slot.
+        assert!(
+            body.contains("registry_items") && body.contains("g(diff.asset_id, opts.asset_id)"),
+            "the picker must take the live catalog and the asset_id multi-edit gate"
+        );
+        // The commit seam is unchanged (also pinned by the T-082 test) — a picked leaf lands in the
+        // asset_id slot alone.
+        assert!(
+            body.contains("commit_slot(targets, None, None, None, Some(asset_id), None)"),
+            "the picker must commit into the asset_id slot alone, exactly as the field did"
+        );
+    }
+
+    /// F-23 (a) — the picker keeps the freetext escape hatch (the T-785 `text_field`) behind an
+    /// Advanced affordance, so an unlisted id is still typeable. `type_picker`'s body must still call
+    /// `text_field` (the freetext half) and offer an "advanced" control.
+    #[test]
+    fn the_picker_keeps_a_freetext_advanced_escape_hatch() {
+        let code = live_code(include_str!("attributes.rs"));
+        let body = only_body(&code, "fn type_picker(");
+        assert!(
+            body.contains("text_field("),
+            "type_picker must keep the T-785 text_field for unlisted ids; body was:\n{body}"
+        );
+        let src = live_source(include_str!("attributes.rs"));
+        let body_src = only_body(&src, "fn type_picker(");
+        assert!(
+            body_src.to_lowercase().contains("advanced"),
+            "the freetext field must sit behind an 'advanced' affordance"
+        );
+        // Empty is a first-class option: the picker offers a clear-to-faction-default row.
+        assert!(
+            body_src.contains("Faction default"),
+            "empty = faction default must stay a first-class, reachable choice"
+        );
+    }
+
+    /// F-23 (a) — the empty catalog shows CAUSE + RETRY, never a dead list, MIRRORING the T-800
+    /// dock vocabulary (`eden_dock_right::catalog_failure_view`). The empty branch turns on
+    /// `catalog_leaf_count == 0` and offers a retry.
+    #[test]
+    fn the_empty_catalog_shows_cause_and_retry_not_a_dead_list() {
+        let code = live_code(include_str!("attributes.rs"));
+        let body = only_body(&code, "fn type_picker(");
+        assert!(
+            body.contains("catalog_leaf_count("),
+            "the empty state must key on catalog_leaf_count, not render a bare list"
+        );
+        let src = live_source(include_str!("attributes.rs"));
+        let body_src = only_body(&src, "fn type_picker(");
+        // The mirrored T-800 cause + a Retry control.
+        assert!(
+            body_src.contains("No modpack is configured"),
+            "the empty state must state the cause (mirrored T-800 vocabulary)"
+        );
+        assert!(
+            body_src.contains("Retry") && body.contains("reload()"),
+            "the empty state must offer a working Retry (a full reload re-runs /registry)"
+        );
+    }
+
+    /// F-23 (a) — ESC LAYERING: the picker popover's own Escape closes the POPOVER first and CONSUMES
+    /// the event (`stop_propagation`), so the modal's window listener does not also close the modal on
+    /// the same press. Layer order: picker → field (the advanced text_field's own Esc) → modal.
+    #[test]
+    fn the_picker_popover_consumes_its_own_escape_first() {
+        let code = live_code(include_str!("attributes.rs"));
+        let body = only_body(&code, "fn type_picker(");
+        // Find the popover's keydown handler and prove it stops propagation AND closes the popover.
+        assert!(
+            body.contains("stop_propagation()"),
+            "the popover's Escape must stop_propagation so the modal listener does not fire too"
+        );
+        assert!(
+            body.contains("open.set(false)"),
+            "the popover's Escape must close the popover layer itself"
+        );
+        // The advanced field is the T-785 text_field, which carries its OWN Escape (field layer) —
+        // pinned already by `text_field_commits_on_blur_or_enter_and_never_remounts_mid_keystroke`
+        // and the modal's Esc is the third layer (`attributes_modal_none_arm_still_closes...`).
+    }
+
+    /// F-23 (b) — REVERT restores the on-open snapshot as REAL writes, PER SLOT (not the homogeneous
+    /// T-788 batch, which would flatten a differing multi-selection onto one member's value).
+    /// `revert_to_snapshot` must walk the snapshot and call the SINGLE-slot commit ops per entry.
+    #[test]
+    fn revert_restores_per_slot_through_the_single_slot_commit_ops() {
+        let code = live_code(include_str!("attributes.rs"));
+        let body = only_body(&code, "fn revert_to_snapshot(");
+        assert!(
+            body.contains("attrs_update_position(") && body.contains("attrs_update_slot("),
+            "Revert must restore BOTH the transform half and the identity/type half; body was:\n{body}"
+        );
+        // Per-slot (a loop over the snapshot), NOT the `_multi` batch — the batch is homogeneous and
+        // cannot express each slot's own pre-open value.
+        assert!(
+            body.contains("for ") && body.contains("snapshot.get_value()"),
+            "Revert must iterate the snapshot per slot"
+        );
+        assert!(
+            !body.contains("_multi("),
+            "Revert must NOT use the homogeneous multi batch — it would flatten differing slots"
+        );
+    }
+
+    /// F-23 (b) — the snapshot is READ AT OPEN (the T-082 lesson): the capture effect tracks
+    /// `attrs_open` and NOT `doc_tick`, so a live edit does not overwrite the pre-open values, and the
+    /// modal STATES the model in one line. Pin the host body.
+    #[test]
+    fn the_revert_snapshot_is_captured_on_open_and_the_model_is_stated() {
+        let code = live_code(include_str!("attributes.rs"));
+        let host = only_body(&code, "pub fn AttributesModal(");
+        // The capture reads read_attrs into the snapshot store, driven by the attrs_open effect.
+        assert!(
+            host.contains("snapshot.set_value("),
+            "AttributesModal must capture the snapshot into its store on open"
+        );
+        let src = live_source(include_str!("attributes.rs"));
+        let modal = only_body(&src, "fn modal_view(");
+        // The one-line model statement lives in the panel (per spec).
+        assert!(
+            modal.contains("Edits apply live. Revert restores"),
+            "the panel must state the revert model in one line"
+        );
+        // And a Revert control exists and calls the restore.
+        let modal_code = only_body(&code, "fn modal_view(");
+        assert!(
+            modal_code.contains("revert_to_snapshot(snapshot)"),
+            "the Revert button must call revert_to_snapshot"
         );
     }
 }
