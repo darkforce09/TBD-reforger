@@ -4450,6 +4450,23 @@ fn composition_entities_json(core: &MissionDocCore, id: &str) -> Option<String> 
     Some(entities.to_string())
 }
 
+/// T-809 wave-203 — composition `id`'s title (the label the recently-placed list shows for a stamp),
+/// or the id itself when the row carries no title. Read off the same [`MissionDocCore::compositions_json`]
+/// getter as [`composition_entities_json`] so the stamp path resolves the label without a second
+/// borrow of `OPS_CTX` (which the caller already holds).
+fn composition_title(core: &MissionDocCore, id: &str) -> String {
+    serde_json::from_str::<serde_json::Value>(&core.compositions_json())
+        .ok()
+        .and_then(|map| {
+            map.get(id)?
+                .get("title")?
+                .as_str()
+                .filter(|s| !s.is_empty())
+                .map(str::to_string)
+        })
+        .unwrap_or_else(|| id.to_string())
+}
+
 /// T-650 — how many entities an `entities` JSON array carries (0 for a non-array).
 fn composition_entity_count(entities_json: &str) -> usize {
     serde_json::from_str::<serde_json::Value>(entities_json)
@@ -5013,6 +5030,12 @@ pub fn orbat_add_vehicle(squad_id: String, resource_name: String) -> Option<Stri
     });
     if id.is_some() {
         crate::mission_history::after_local_edit();
+        // T-809 wave-203 — head the recently-placed list with the added vehicle, keyed on its
+        // `resourceName` (the SAME `asset_id` a Vehicles-palette leaf records, so a re-add through
+        // either path dedups to one entry). Recorded only on a real add, after the doc borrow closes;
+        // the ops layer knows only the resourceName, so it doubles as the label. A no-op when the dock
+        // is unmounted — not a dropped ack: the vehicle is already in the doc.
+        crate::eden_dock_right::record_placed(resource_name.clone(), resource_name.clone());
     }
     id
 }
@@ -5715,6 +5738,14 @@ fn place_at_impl(x: f64, y: f64, alt_empty: bool, keep: bool) -> bool {
     if zone_draw_armed() {
         return advance_zone_draw(x, y);
     }
+    // T-809 wave-203 — one recently-placed entry for a composition STAMP, keyed on the composition id
+    // (a 3-member stamp is ONE authoring action, so ONE entry — not one per stamped entity), with the
+    // composition's title as the label. Captured INSIDE the doc borrow (where the title is readable)
+    // and recorded AFTER it closes: the recorder writes a `!Send` Leptos signal in `eden_dock_right`
+    // and must not run under this doc borrow / write-txn scope (the read/write-txn discipline the
+    // `select` block below states). Stays `None` for every non-composition arm and when the dock is
+    // unmounted the invoke below no-ops (that is not a dropped ack — the stamp already committed).
+    let mut recent_stamp: Option<(String, String)> = None;
     let placed = OPS_CTX.with(|c| {
         let guard = c.borrow();
         let Some(ctx) = guard.as_ref() else {
@@ -5800,6 +5831,10 @@ fn place_at_impl(x: f64, y: f64, alt_empty: bool, keep: bool) -> bool {
                     if written.is_empty() {
                         return false;
                     }
+                    // T-809 wave-203 — record the stamp as ONE recently-placed entry (keyed on the
+                    // composition id, labelled with its title). Captured here where the title reads off
+                    // `core`; the invoke runs after this borrow closes (see `recent_stamp`'s decl).
+                    recent_stamp = Some((comp_id.clone(), composition_title(core, &comp_id)));
                     // Select the placed SLOTS (SEL runs over the slot SoA; vehicle/object ids would
                     // show `SEL n` with nothing highlighted — the `place_at` selection rule).
                     let slot_ids: Vec<String> = written
@@ -5845,6 +5880,12 @@ fn place_at_impl(x: f64, y: f64, alt_empty: bool, keep: bool) -> bool {
         // Rebinds the glyphs from the new SoA, bumps `doc_ver`, schedules the persist, and refreshes
         // the HUD + docks — the same tail the drag commit and undo/redo run.
         crate::mission_history::after_local_edit();
+        // T-809 wave-203 — now the doc borrow is closed, head the recently-placed list with the stamp
+        // (composition arm only; `None` otherwise). No-ops when the dock is unmounted — not a dropped
+        // ack: the stamp above already committed.
+        if let Some((asset_id, label)) = recent_stamp {
+            crate::eden_dock_right::record_placed(asset_id, label);
+        }
     }
     placed
 }

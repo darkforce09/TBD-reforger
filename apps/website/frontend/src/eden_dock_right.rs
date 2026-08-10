@@ -296,6 +296,89 @@ fn record_recent(recent: RwSignal<Vec<RecentPlaced>>, asset_id: String, label: S
     recent.update(|list| push_recent_into(list, asset_id, label));
 }
 
+// ── T-809 wave-203 — the recorder SEAM so the two OFF-DOCK placement paths feed the same list ───────
+//
+// The boundary the block above draws is honest but incomplete: the ticket's acceptance says placing
+// ANY asset heads the recent list, and two placements commit in files this dock does not own — the
+// composition STAMP (`editor_ops::place_at_impl`, the `Pending::Composition` arm) and the ORBAT
+// manager's Add-Vehicle (`editor_ops::orbat_add_vehicle`). They cannot reach `recent` (a `!Send`
+// signal declared inside `DockRight`'s body), so — exactly as the Zones panel exposes its selection
+// (`SELECT_ZONE` / `install_select_zone` / `route_select_zone`, above) and the transform toolbar
+// exposes its verbs (`register_editor_toolbar_dispatch`) — the dock REGISTERS a recorder closure at
+// mount and those paths INVOKE it through a free function. The closure still routes through
+// [`record_recent`], so the pure head/dedup/cap contract is untouched: this seam only lets a caller
+// that has no `recent` in scope run the same `push_recent_into` the leaf press already runs.
+//
+// Off-wasm, native builds, and any window where the dock is unmounted, the invoke finds no recorder
+// and is a SILENT NO-OP by design — NOT a discarded ack (the T-779 lesson). The placement it follows
+// has already committed and reported through its own `after_local_edit`; the recent list is a session
+// convenience layered on top, so "no dock listening" means "nothing to add to", not "the place
+// failed". The invoke therefore returns nothing for a caller to mis-read as success-over-a-no-op.
+
+/// T-809 — the registered recently-placed recorder: `(asset_id, label)`, the exact
+/// [`push_recent_into`] key/label. Set once at [`DockRight`] mount; `None` on the host / pre-mount /
+/// while the dock is unmounted. Peer of [`ZoneSelectHook`].
+type RecentRecorder = std::rc::Rc<dyn Fn(String, String)>;
+
+thread_local! {
+    /// The recently-placed recorder hook. Peer of [`SELECT_ZONE`]; thread_local for the same reason —
+    /// it closes over `recent`, a `!Send` `RwSignal` owned by `DockRight` that no off-dock caller can
+    /// hold.
+    static RECENT_RECORDER: std::cell::RefCell<Option<RecentRecorder>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+/// Register the recently-placed recorder (called once at [`DockRight`] mount).
+///
+/// Prefer [`install_recent_recorder`] from inside a component: a bare register with no matching
+/// unregister is the wave-129 F2 defect [`install_select_zone`] documents.
+fn register_recent_recorder(f: RecentRecorder) {
+    RECENT_RECORDER.with(|c| *c.borrow_mut() = Some(f));
+}
+
+/// Unregister the recorder at [`DockRight`] unmount — but ONLY if `f` is still the LIVE registration.
+/// The `Rc::ptr_eq` guard is [`unregister_select_zone`]'s: a remount can install its newer recorder
+/// before the old component's cleanup runs, and an unconditional clear would delete the live one.
+fn unregister_recent_recorder(f: &RecentRecorder) -> bool {
+    let taken = RECENT_RECORDER.with(|c| {
+        let mut slot = c.borrow_mut();
+        if slot
+            .as_ref()
+            .is_some_and(|live| std::rc::Rc::ptr_eq(live, f))
+        {
+            slot.take()
+        } else {
+            None
+        }
+    });
+    taken.is_some()
+}
+
+/// Install the recorder for the CURRENT reactive owner: register now, unregister at unmount. Mirrors
+/// [`install_select_zone`] — the `StoredValue` clone keeps the `Rc` alive so the `ptr_eq` identity is
+/// meaningful, and `on_cleanup` drops the registration when Backspace hide-chrome (or a mission
+/// switch) unmounts the dock, so a later placement finds `None` and no-ops rather than writing into a
+/// disposed `recent` signal.
+fn install_recent_recorder(f: RecentRecorder) {
+    let mine = StoredValue::new_local(std::rc::Rc::clone(&f));
+    register_recent_recorder(f);
+    on_cleanup(move || {
+        let _ = mine.try_with_value(unregister_recent_recorder);
+    });
+}
+
+/// T-809 — record a placement made OUTSIDE this dock (composition stamp / ORBAT Add-Vehicle) into the
+/// session recently-placed list, through the mount-registered recorder. A no-op when no dock is
+/// mounted (host / pre-mount / hidden chrome) — that is not a dropped ack (see the seam note): the
+/// placement itself already committed, and the recent list is a convenience with nothing to add to
+/// when nothing is listening. Routes through [`record_recent`], so the head/dedup/cap contract holds.
+pub(crate) fn record_placed(asset_id: String, label: String) {
+    let hook = RECENT_RECORDER.with(|c| c.borrow().clone());
+    if let Some(f) = hook {
+        f(asset_id, label);
+    }
+}
+
 /// T-809 — render the **merged Factions tree** ([`crate::asset_catalog::build_faction_catalog_tree`]):
 /// characters, vehicles and objects filed under one faction, so a vehicle leaf is reachable inside
 /// NATO. It is [`palette_rows`] with ONE difference — a leaf carries no fixed [`PaletteKind`], because
@@ -1598,8 +1681,18 @@ pub fn DockRight(
     let favourites = RwSignal::new(load_favourites());
     // T-809 (F-22) — the session recently-placed list (Eden's History half of the Assets|History
     // pair). Dock-local and NOT persisted: it is within-a-sitting convenience, not authored state.
-    // Fed by a merged-palette leaf press (see `record_recent`); read by the History subtab.
+    // Fed by a merged-palette leaf press (see `record_recent`) AND — wave-203 — by the two off-dock
+    // placement paths through the recorder seam below; read by the History subtab.
     let recent_placed = RwSignal::new(Vec::<RecentPlaced>::new());
+    // T-809 wave-203 — publish a recorder so the composition stamp and ORBAT Add-Vehicle (which commit
+    // in `editor_ops`, out of this signal's reach) can head the SAME list a leaf press feeds. The
+    // closure routes through `record_recent`, so the pure head/dedup/cap contract is unchanged; the
+    // `install_*` half unregisters on unmount so a later off-dock placement finds no recorder and
+    // no-ops rather than writing into a disposed `recent_placed` (the T-754 lesson). Mirrors
+    // `install_select_zone`.
+    install_recent_recorder(std::rc::Rc::new(move |asset_id: String, label: String| {
+        record_recent(recent_placed, asset_id, label);
+    }));
     // T-809 — which half of the Favourites|History tab pair is showing (Eden's Assets|History). The
     // pair lives under ONE tab rather than an eighth strip cell: the strip is glyph-tight (T-637), and
     // Eden itself pairs the starred collection with the recent list under one surface.
@@ -5074,8 +5167,9 @@ mod tests {
     }
 
     /// The recently-placed list is FED by a merged-palette leaf press: `faction_palette_rows` records
-    /// the placement (`record_recent`) at the same press that arms it. This is the reachable seam — a
-    /// composition stamp and the ORBAT Add-Vehicle commit outside this file and cannot feed it.
+    /// the placement (`record_recent`) at the same press that arms it. The two OFF-DOCK placements —
+    /// the composition stamp and ORBAT Add-Vehicle — feed the SAME list through the wave-203 recorder
+    /// seam (`install_recent_recorder` / `record_placed`), pinned by the two tests below.
     #[test]
     fn a_merged_leaf_press_feeds_recently_placed() {
         use crate::arsenal::class_r_scrub::{live_code, only_body};
@@ -5090,6 +5184,64 @@ mod tests {
         assert!(
             rec.contains("push_recent_into("),
             "T-809: record_recent must go through the pure head-first/dedup/cap transform"
+        );
+    }
+
+    /// T-809 wave-203 — the recorder SEAM closes the ticket's own disclosed gap: `DockRight` INSTALLS
+    /// a recorder at mount (register + unmount-unregister, the `install_select_zone` idiom, so an
+    /// off-dock placement after the dock unmounts finds `None` and no-ops instead of writing a
+    /// disposed signal), the invoke `record_placed` ROUTES through `record_recent` (so the pure
+    /// head/dedup/cap contract is preserved for the off-dock paths too), and both off-dock placement
+    /// sites in `editor_ops` CALL it. Haystacks are `class_r_scrub`-scrubbed (`live_code`), so every
+    /// needle is a real code token — this file's own prose (which now names the seam) cannot satisfy
+    /// the pins; the fn-name needles are assembled at run time so the body cannot match itself.
+    #[test]
+    fn off_dock_placements_feed_recently_placed_through_the_recorder_seam() {
+        use crate::arsenal::class_r_scrub::{live_code, only_body};
+        let dock = live_code(include_str!("eden_dock_right.rs"));
+
+        // The dock installs the recorder (register + on_cleanup unregister) at mount, and the closure
+        // routes through the pure transform via `record_recent`. Extracted from `DockRight`'s body so
+        // a match elsewhere cannot stand in.
+        let mount = only_body(&dock, "pub fn DockRight(");
+        assert!(
+            mount.contains(&format!("{}_recent_recorder(", "install")),
+            "T-809: DockRight must install the recently-placed recorder at mount (register + \
+             unmount-unregister), so the off-dock paths can feed the list; body was:\n{mount}"
+        );
+        assert!(
+            mount.contains("record_recent("),
+            "T-809: the installed recorder must route through record_recent (pure head/dedup/cap)"
+        );
+        // The invoke the off-dock paths call runs the MOUNT-REGISTERED recorder (the closure the pin
+        // above proved routes through `record_recent`) — it does not open a second write path of its
+        // own. So it reads the hook cell and calls it; the pure transform is reached via that closure.
+        let invoke = only_body(&dock, &format!("fn record_{}(", "placed"));
+        assert!(
+            invoke.contains("RECENT_RECORDER") && !invoke.contains("push_recent_into("),
+            "T-809: record_placed must invoke the registered recorder (which routes through \
+             record_recent), not write the list a second way; body was:\n{invoke}"
+        );
+
+        // Both off-dock placement sites in editor_ops call the invoke, on the scrubbed fn bodies.
+        let ops = live_code(include_str!("editor_ops.rs"));
+        let record_call = format!("record_{}(", "placed");
+
+        // Composition STAMP: `place_at_impl` records ONE entry for the stamp (keyed on the composition
+        // id — a multi-member stamp is one authoring action). The record is captured in the arm and
+        // invoked in the same fn body after the doc borrow closes.
+        let stamp = only_body(&ops, &format!("fn {}(", "place_at_impl"));
+        assert!(
+            stamp.contains(&record_call),
+            "T-809: the composition stamp path must record the placement as recently-placed; body \
+             was:\n{stamp}"
+        );
+
+        // ORBAT Add-Vehicle: `orbat_add_vehicle` records the added vehicle (keyed on its resourceName).
+        let addv = only_body(&ops, &format!("fn orbat_{}(", "add_vehicle"));
+        assert!(
+            addv.contains(&record_call),
+            "T-809: orbat_add_vehicle must record the added vehicle as recently-placed; body was:\n{addv}"
         );
     }
 
