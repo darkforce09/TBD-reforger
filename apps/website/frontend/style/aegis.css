@@ -301,12 +301,14 @@
 .animate-sheet-in-left {
   animation: sheet-in-left 250ms ease-out;
 }
+/* T-794 — 120ms, inside the review's 150ms ceiling. Both keyframes are opacity-only now (see
+   `dialog-in` below), so there is nothing left for a transform-origin to anchor: `.animate-menu-in`
+   loses the `transform-origin: top right` that existed only for the scale it no longer has. */
 .animate-dialog-in {
-  animation: dialog-in 200ms ease-out;
+  animation: dialog-in 120ms ease-out;
 }
 .animate-menu-in {
-  animation: menu-in 150ms ease-out;
-  transform-origin: top right;
+  animation: menu-in 120ms ease-out;
 }
 
 @keyframes overlay-fade {
@@ -336,27 +338,57 @@
   }
 }
 
-/* Centered dialogs position with translate(-50%,-50%), so the enter animation must carry
-   that translate or the panel would jump off-center for its first frames. */
+/* T-794 (hostile-UX review O-4) — AN ENTRANCE ANIMATION MUST NOT MOVE THE SURFACE.
+   What was here: `from { transform: translate(-50%, calc(-50% + 8px)) scale(0.96) }`, on the
+   comment's theory that a centered dialog needs the keyframe to re-state its own centering
+   translate. That was true under Tailwind v3, where `-translate-x-1/2` compiled INTO the
+   `transform` property and an animation on `transform` replaced it. Tailwind v4 (pinned 4.3.2 in
+   Trunk.toml) emits the independent `translate:` property instead — the built sheet reads
+   `.-translate-x-1\/2 { translate: var(--tw-translate-x) var(--tw-translate-y) }` — and
+   `translate` COMPOSES with `transform` rather than being replaced by it. So the keyframe stopped
+   restating the centering and started doubling it, and every surface spawned half a box away from
+   where it landed. Measured live at 1920x1080 with the review's MutationObserver (first-paint rect
+   vs settled rect): Mission Settings (512x918) first-painted at (458,-352) — off the top of the
+   screen — and settled at (704,81); ORBAT (1100x800) first-painted at (-118,-236) and settled at
+   (410,140), 528px of travel; the context menu, which carries no centering translate at all, was
+   dragged 115px left and 100px up off its own click anchor by the -50% it never asked for.
+   The rule now: no `transform`, no `translate`, no `scale` in an entrance keyframe — opacity
+   carries the entrance and the surface first-paints exactly where it settles (0.0px, any metric).
+   Note that a scale is not a free substitute: an origin-centred `scale: s` still moves the
+   measured rect corner by (1-s) x extent/2, so the review's suggested 0.97 would put the 1100px
+   ORBAT modal 16.5px off its settled x — twice the 8px the same review demands. The two keyframes
+   stay separate (and separately named) so a computed `animation-name` still says which family a
+   surface belongs to. Exit animations are untouched. */
 @keyframes dialog-in {
   from {
     opacity: 0;
-    transform: translate(-50%, calc(-50% + 8px)) scale(0.96);
   }
   to {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
   }
 }
 
 @keyframes menu-in {
   from {
     opacity: 0;
-    transform: scale(0.95);
   }
   to {
     opacity: 1;
-    transform: scale(1);
+  }
+}
+
+/* T-794 — this sheet had NO `prefers-reduced-motion` block at all. Reduced motion = opacity only:
+   pointing the whole entrance family at `overlay-fade` makes that true by construction, since a
+   reader cannot get a translation out of a keyframe that contains none. `dialog-in`/`menu-in` are
+   already opacity-only above, so the load-bearing half is the two drawer keyframes — they still
+   sweep 100% of their own width, which is exactly the motion this query exists to suppress. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-sheet-in,
+  .animate-sheet-in-left,
+  .animate-dialog-in,
+  .animate-menu-in {
+    animation-name: overlay-fade;
+    animation-duration: 120ms;
   }
 }
 
