@@ -50,6 +50,25 @@ struct SlotGpuBridge {
     /// changes, queried per camera move while in cluster mode to feed the cluster disc lane.
     cluster_index: Option<map_engine_core::spatial::cluster::ClusterIndex>,
     cluster_built_len: usize,
+    /// T-808 — atlas cell index of the appended symbology block, from
+    /// `slots_gpu::extend_atlas_with_unit_glyphs`. `None` means the host's atlas could not be
+    /// widened (see `ensure_slot_atlas`), and every lane falls back to its pre-T-808 glyph — never
+    /// to a symbology id that would sample somebody else's cell.
+    symbology_base: Option<u16>,
+    /// T-808 — per-row role / kit string, parallel to `last_ids`. Empty = the feeder has not been
+    /// wired yet (see `slots_bind_symbology`); every row then draws the rifleman default.
+    last_roles: Vec<String>,
+    /// T-832 — per-row document heading in degrees (compass, clockwise from north), parallel to
+    /// `last_ids`. Empty = no heading feed; every row then draws pointing north.
+    last_headings: Vec<f32>,
+    /// T-808 — last comment lane `xy` and ids, retained so `set_selection` can re-materialise the
+    /// comment lane (it is not row-addressable like the slot lane). Ids are empty until the feeder
+    /// calls `comments_bind_ids`.
+    comment_xy: Vec<f32>,
+    comment_ids: Vec<String>,
+    /// T-808 — whether the last slot/vehicle/comment pack ran above `SYMBOLOGY_MAX_M_PER_PX`, so a
+    /// zoom that CROSSES the threshold can re-pack and one that does not stays free.
+    last_symbology_detailed: bool,
 }
 
 /// Background clear — (51, 68, 85, 255)/255. The f64→f32→unorm8 chain error (< 1.2e-7) is
@@ -3847,8 +3866,20 @@ impl RenderEngine {
 
     // ── T-151.7.3 high-level slot GPU bridge (public wasm surface) ───────────────────────────
 
-    /// Upload dedicated slot/cluster atlas once (ring + disc). Replaces low-level
-    /// `upload_slot_atlas` as the TS entry point.
+    /// Upload dedicated slot/cluster atlas once. Replaces low-level `upload_slot_atlas` as the TS
+    /// entry point.
+    ///
+    /// **T-808 — the atlas is WIDENED here, not at the feeder.** The host uploads whatever strip it
+    /// builds (`scene::build_marker_slot_atlas` today, 11 cells; `slots_gpu::build_slot_atlas`
+    /// before T-790, 2 cells) and this call appends the unit / vehicle / comment symbology cells via
+    /// `slots_gpu::extend_atlas_with_unit_glyphs`, recording the runtime base in
+    /// `slot_bridge.symbology_base`.
+    ///
+    /// Doing the widening ENGINE-SIDE is deliberate: the symbology cells are meaningless without the
+    /// glyph ids this engine emits, so binding them together makes it impossible to ship an atlas
+    /// and a lane that disagree — and it means the symbology needs no change at any of the three
+    /// call sites that build an atlas. A strip this cannot parse is uploaded verbatim with
+    /// `symbology_base = None`, and every lane keeps its pre-T-808 glyph.
     pub fn ensure_slot_atlas(
         &mut self,
         rgba: &[u8],
@@ -3856,16 +3887,63 @@ impl RenderEngine {
         height: u32,
         uv: &[f32],
     ) -> Result<(), JsError> {
-        self.upload_slot_atlas(rgba, width, height, uv)?;
+        match slots_gpu::extend_atlas_with_unit_glyphs(rgba, width, height) {
+            Some(wide) => {
+                self.upload_slot_atlas(&wide.rgba, wide.width, wide.height, &wide.uv)?;
+                self.slot_bridge.symbology_base = Some(wide.base_cells);
+            }
+            None => {
+                self.upload_slot_atlas(rgba, width, height, uv)?;
+                self.slot_bridge.symbology_base = None;
+            }
+        }
         self.slot_bridge.atlas_ready = true;
+        self.slot_bridge.last_symbology_detailed = self.symbology_detailed();
         self.sync_slot_zoom_uniform();
         Ok(())
+    }
+
+    /// T-808 — metres per CSS pixel at the current camera, the input to the symbology zoom gate.
+    fn slot_m_per_px(&self) -> f32 {
+        slots_gpu::px_to_m_at_zoom(self.zoom())
+    }
+
+    /// T-808 — true when the camera is close enough for symbology detail (see
+    /// `slots_gpu::SYMBOLOGY_MAX_M_PER_PX`).
+    fn symbology_detailed(&self) -> bool {
+        slots_gpu::symbology_visible(self.slot_m_per_px())
     }
 
     /// Bind SoA snapshot from MissionDoc (called via wasm free fn `bind_mission_doc`).
     /// Does **not** retain the doc — only caches ids + xy + side tints until the next bind.
     /// `side_tints_rgba` is flat RGBA8 (`4·n` bytes); short / missing rows pad BLUFOR (T-180.3).
     pub fn slots_bind_soa(&mut self, ids: Vec<String>, xy: &[f32], side_tints_rgba: &[u8]) {
+        self.slots_bind_symbology(ids, xy, side_tints_rgba, Vec::new(), &[]);
+    }
+
+    /// **T-808 / T-832 — the symbology bind.** Everything `slots_bind_soa` takes, plus the two
+    /// columns the map was missing: the per-slot ROLE and the per-slot HEADING.
+    ///
+    /// * `roles[i]` — the registry kit alias (`kit:us_medic`) or the authored ORBAT role
+    ///   (`Squad Leader`); either vocabulary resolves through `slots_gpu::unit_role_class`, which is
+    ///   the single mapping table. An empty `roles` (what `slots_bind_soa` passes) draws every row
+    ///   as the rifleman default — the pre-T-808 look, minus the heading.
+    /// * `headings_deg[i]` — the document's `position.rotation` / wire `headingDeg`: a COMPASS
+    ///   bearing, clockwise from north. Not the screen angle; `slots_gpu::screen_yaw_for_heading_deg`
+    ///   owns that sign flip. An empty `headings_deg` points every glyph north.
+    ///
+    /// Both are tolerated short row-by-row rather than required, so the feeder can be wired one
+    /// column at a time without a bind that panics or silently drops rows.
+    pub fn slots_bind_symbology(
+        &mut self,
+        ids: Vec<String>,
+        xy: &[f32],
+        side_tints_rgba: &[u8],
+        roles: Vec<String>,
+        headings_deg: &[f32],
+    ) {
+        self.slot_bridge.last_roles = roles;
+        self.slot_bridge.last_headings = headings_deg.to_vec();
         let n = ids.len();
         let mut tints = Vec::with_capacity(n);
         for i in 0..n {
@@ -3976,10 +4054,12 @@ impl RenderEngine {
         if self.slot_bridge.drag_active && self.slot_bridge.drag_ids.is_empty() {
             self.slot_bridge.selected_ids = new_sel;
             self.clear_slot_drag_internal();
+            self.refresh_comment_lane();
             return;
         }
         if self.slot_bridge.drag_active {
             self.slot_bridge.selected_ids = new_sel; // drag overlay owns tint
+            self.refresh_comment_lane();
             return;
         }
         // Cluster/selection-only lane packs a dense-k row set (no full-doc row index) → can't
@@ -3987,6 +4067,7 @@ impl RenderEngine {
         if self.slot_bridge.slots_lane_selection_only {
             self.slot_bridge.selected_ids = new_sel;
             self.rematerialize_slot_lane();
+            self.refresh_comment_lane();
             return;
         }
         // Fast path: diff old vs new selection over the bound rows, patch the 12 B tint/size block
@@ -4007,25 +4088,53 @@ impl RenderEngine {
                 .collect()
         };
         if flips.is_empty() {
+            // No SLOT row changed — but the selection set did, and a comment-only select/deselect
+            // is exactly that case. Refresh the comment lane before leaving or a selected comment
+            // never gains its ring (and a deselected one never loses it).
+            self.refresh_comment_lane();
             return;
         }
+        let m_per_px = self.slot_m_per_px();
         for (row, now) in &flips {
-            let patch = if *now {
-                selected_row_patch()
-            } else {
-                let rgba = self
-                    .slot_bridge
-                    .last_side_tints
-                    .get(*row)
-                    .copied()
-                    .unwrap_or(SIDE_BLUFOR_RGBA);
-                unselected_row_patch_for(rgba)
+            let rgba = self
+                .slot_bridge
+                .last_side_tints
+                .get(*row)
+                .copied()
+                .unwrap_or(SIDE_BLUFOR_RGBA);
+            // T-808 — with symbology the patch must carry the GLYPH and the YAW too: selection swaps
+            // the role cell for its ringed twin, and the pre-T-808 patches wrote zero into both
+            // fields (correct then — slot rows had neither — but it would now blank the heading and
+            // reset every selected unit to the marker ring).
+            let patch = match self.slot_bridge.symbology_base {
+                Some(base) => slots_gpu::symbology_row_patch(
+                    *now,
+                    self.slot_bridge
+                        .last_roles
+                        .get(*row)
+                        .map_or("", String::as_str),
+                    self.slot_bridge
+                        .last_headings
+                        .get(*row)
+                        .copied()
+                        .unwrap_or(0.0),
+                    rgba,
+                    m_per_px,
+                    base,
+                ),
+                None if *now => selected_row_patch(),
+                None => unselected_row_patch_for(rgba),
             };
             #[allow(clippy::cast_possible_truncation)]
             let off = (row * SLOT_ICON_STRIDE + 8) as u32;
             self.patch_slot_lane(off, &patch);
         }
         self.damage.mark();
+        // T-808 / T-796 — the comment lane is NOT row-addressable (no ids in the lane, and the
+        // feeder may bind fewer comments than the document holds), so a selection that touches a
+        // comment re-materialises that lane instead of patching it. Cheap: comment counts are in the
+        // tens, and this runs only on a selection change.
+        self.refresh_comment_lane();
     }
 
     /// Drag ids + world-meter delta. Empty ids = clear (T-151.7.1 start/delta/end).
@@ -4147,8 +4256,15 @@ impl RenderEngine {
     pub fn clear_slots(&mut self) {
         self.clear_slot_lanes();
         let atlas_ready = self.slot_bridge.atlas_ready;
+        // T-808 — `symbology_base` is a property of the UPLOADED ATLAS, not of the slot set, so it
+        // survives a clear exactly as `atlas_ready` does. Dropping it would silently demote every
+        // lane to the pre-T-808 glyphs after the first `clear_slots`.
+        let symbology_base = self.slot_bridge.symbology_base;
+        let last_symbology_detailed = self.slot_bridge.last_symbology_detailed;
         self.slot_bridge = SlotGpuBridge {
             atlas_ready,
+            symbology_base,
+            last_symbology_detailed,
             ..SlotGpuBridge::default()
         };
     }
@@ -4276,6 +4392,22 @@ impl RenderEngine {
     fn sync_slot_zoom_uniform(&mut self) {
         let px = slots_gpu::px_to_m_at_zoom(self.zoom());
         self.set_slot_px_to_m(px);
+        // T-808 — the symbology zoom gate is a GLYPH choice, not a uniform, so crossing
+        // `SYMBOLOGY_MAX_M_PER_PX` needs a re-pack. Gated on the CROSSING (not on every zoom tick)
+        // so panning and ordinary zooming stay upload-free: the engine is damage-driven and this
+        // path runs on every camera change.
+        let detailed = self.symbology_detailed();
+        if detailed == self.slot_bridge.last_symbology_detailed {
+            return;
+        }
+        self.slot_bridge.last_symbology_detailed = detailed;
+        if self.slot_bridge.symbology_base.is_none() {
+            return;
+        }
+        if !self.slot_bridge.drag_active {
+            self.rematerialize_slot_lane();
+        }
+        self.refresh_comment_lane();
     }
 
     /// Full rematerialize from cached SoA + selection (T-151.7.2). Never OOB patch.
@@ -4295,15 +4427,31 @@ impl RenderEngine {
             self.upload_slot_lane(&bytes, vis);
             self.slot_bridge.slots_lane_selection_only = true;
         } else {
-            let bytes = pack_slot_instances(
-                &self.slot_bridge.last_xy,
-                &mask,
-                &self.slot_bridge.last_side_tints,
-            );
+            // T-808 — symbology when the atlas carries it, otherwise the pre-T-808 ring lane. The
+            // fallback is not decoration: `symbology_base` is `None` exactly when the uploaded atlas
+            // has no symbology cells, and emitting those ids anyway would sample whatever cell 31
+            // happens to be (the shader clamps rather than errors).
+            let bytes = match self.slot_bridge.symbology_base {
+                Some(base) => slots_gpu::pack_slot_symbology(
+                    &self.slot_bridge.last_xy,
+                    &mask,
+                    &self.slot_bridge.last_side_tints,
+                    &self.slot_bridge.last_roles,
+                    &self.slot_bridge.last_headings,
+                    self.slot_m_per_px(),
+                    base,
+                ),
+                None => pack_slot_instances(
+                    &self.slot_bridge.last_xy,
+                    &mask,
+                    &self.slot_bridge.last_side_tints,
+                ),
+            };
             let vis = !self.slot_bridge.last_ids.is_empty();
             self.upload_slot_lane(&bytes, vis);
             self.slot_bridge.slots_lane_selection_only = false;
         }
+        self.slot_bridge.last_symbology_detailed = self.symbology_detailed();
     }
 
     fn start_slot_drag_overlay(&mut self, dx: f32, dy: f32) {
@@ -4313,11 +4461,24 @@ impl RenderEngine {
             return;
         }
         self.slot_bridge.drag_active = true;
-        let (overlay, rows) = pack_drag_overlay(
-            &drag_ids,
-            &self.slot_bridge.last_ids,
-            &self.slot_bridge.last_xy,
-        );
+        // T-808 — the overlay must draw the same symbology the base lane does, or a dragged unit
+        // visibly degrades into a bare ring for the length of the gesture.
+        let (overlay, rows) = match self.slot_bridge.symbology_base {
+            Some(base) => slots_gpu::pack_drag_overlay_symbology(
+                &drag_ids,
+                &self.slot_bridge.last_ids,
+                &self.slot_bridge.last_xy,
+                &self.slot_bridge.last_roles,
+                &self.slot_bridge.last_headings,
+                self.slot_m_per_px(),
+                base,
+            ),
+            None => pack_drag_overlay(
+                &drag_ids,
+                &self.slot_bridge.last_ids,
+                &self.slot_bridge.last_xy,
+            ),
+        };
         let count = rows.len();
         self.upload_slot_drag_lane(&overlay, count > 0);
         // Hide base rows only on full-n detail lane (not selection-only short lane).
@@ -4481,6 +4642,57 @@ impl RenderEngine {
         self.upload_slot_role_lane(LaneRole::MissionVehicles, &bytes, true);
     }
 
+    /// **T-808 — the vehicle lane as TOP-DOWN SILHOUETTES.** `vehicles_bind` draws every vehicle as
+    /// the same tactical-yellow disc, which says "a vehicle is here" and nothing else; this says
+    /// which KIND, which SIDE, and which WAY IT FACES.
+    ///
+    /// * `aliases[i]` — the vehicle's registry alias (`veh:us_m1025`) **or** its prefab path
+    ///   (`…/Wheeled/M998/M1025.et`); `slots_gpu::vehicle_kind_for_alias` reads either and resolves
+    ///   the seeded M1025 / M998 / M923A1 / M113 roster onto the wheeled-light / truck / APC
+    ///   silhouettes. Unknown → wheeled light.
+    /// * `side_tints_rgba` — flat RGBA8 (`4·n`), the same layout `slots_bind_soa` takes; short rows
+    ///   pad BLUFOR.
+    /// * `headings_deg[i]` — the document COMPASS heading, exactly as `slots_bind_symbology`.
+    ///
+    /// Falls back to `vehicles_bind`'s disc lane when the atlas carries no symbology cells. Empty
+    /// `xy` clears the lane.
+    pub fn vehicles_bind_symbology(
+        &mut self,
+        xy: &[f32],
+        aliases: Vec<String>,
+        side_tints_rgba: &[u8],
+        headings_deg: &[f32],
+    ) {
+        if !self.slot_bridge.atlas_ready {
+            return;
+        }
+        if xy.len() < 2 {
+            self.remove_lane(LaneRole::MissionVehicles);
+            return;
+        }
+        let Some(base) = self.slot_bridge.symbology_base else {
+            self.vehicles_bind(xy);
+            return;
+        };
+        let n = xy.len() / 2;
+        let tints: Vec<[u8; 4]> = (0..n)
+            .map(|i| {
+                side_tints_rgba
+                    .get(i * 4..i * 4 + 4)
+                    .map_or(SIDE_BLUFOR_RGBA, |s| [s[0], s[1], s[2], s[3]])
+            })
+            .collect();
+        let bytes = slots_gpu::pack_vehicle_symbology(
+            xy,
+            &aliases,
+            &tints,
+            headings_deg,
+            self.slot_m_per_px(),
+            base,
+        );
+        self.upload_slot_role_lane(LaneRole::MissionVehicles, &bytes, true);
+    }
+
     /// T-760 / **T-790** — bind briefing markers from interleaved map-plane `xy` (`[x0,z0,…]`; feeder
     /// pushes x then z), packed RGBA8 side tints (`4·n` bytes, same layout as [`Self::slots_bind_soa`]),
     /// per-marker authored icon ALIASES (`icons[i]`), and one caption per marker (`captions[i]`,
@@ -4600,33 +4812,86 @@ impl RenderEngine {
         );
     }
 
-    /// T-748 — bind editor-only comment glyphs from interleaved map-plane `xy` (`[x0,z0,…]`).
-    /// Reuses the slot atlas + ring glyph with a fixed note tint — **not** on the pick/SoA bridge
-    /// (same hazard T-760 documented for markers). Empty clears the lane.
+    /// T-748 / **T-796 / T-808** — bind editor-only comment glyphs from interleaved map-plane `xy`
+    /// (`[x0,z0,…]`). **Not** on the pick/SoA bridge (same hazard T-760 documented for markers).
+    /// Empty clears the lane.
+    ///
+    /// Comments used to draw `SLOT_GLYPH_RING` in `SLOT_SELECTED_RGBA` — the selected-slot glyph in
+    /// the selection colour — so every comment looked like a permanently selected unit and a
+    /// genuinely selected comment was indistinguishable from an idle one. They now draw the neutral
+    /// speech bubble (`slots_gpu::COMMENT_NOTE_RGBA`), with the amber reserved for actual selection.
     pub fn comments_bind(&mut self, xy: &[f32]) {
         if !self.slot_bridge.atlas_ready {
             return;
         }
+        self.slot_bridge.comment_xy = xy.to_vec();
         let n = xy.len() / 2;
         if n == 0 {
+            self.slot_bridge.comment_ids.clear();
             self.remove_lane(LaneRole::MissionComments);
             return;
         }
-        let mut bytes = Vec::with_capacity(n * SLOT_ICON_STRIDE);
-        let tint = slots_gpu::pack_rgba_u32(slots_gpu::SLOT_SELECTED_RGBA);
-        for i in 0..n {
-            let x = xy[i * 2];
-            let y = xy[i * 2 + 1];
-            slots_gpu::pack_icon_instance(
-                &mut bytes,
-                x,
-                y,
-                slots_gpu::SLOT_RING_PX,
-                slots_gpu::SLOT_GLYPH_RING,
-                tint,
-            );
-        }
+        // Which bubbles are selected. Empty ids (the feeder today) ⇒ all false, and the neutral
+        // colour + bubble shape still land — the selection treatment is simply never applied.
+        let selected: Vec<bool> = (0..n)
+            .map(|i| {
+                self.slot_bridge
+                    .comment_ids
+                    .get(i)
+                    .is_some_and(|id| self.slot_bridge.selected_ids.contains(id))
+            })
+            .collect();
+        let bytes = match self.slot_bridge.symbology_base {
+            Some(base) => {
+                slots_gpu::pack_comment_instances(xy, &selected, self.slot_m_per_px(), base)
+            }
+            // No symbology cells in this atlas: keep the ring, but drop the selection amber for the
+            // neutral note tint — the COLOUR half of the T-796 fix needs no new glyph.
+            None => {
+                let mut b = Vec::with_capacity(n * SLOT_ICON_STRIDE);
+                for (i, sel) in selected.iter().enumerate() {
+                    let tint = slots_gpu::pack_rgba_u32(if *sel {
+                        slots_gpu::SLOT_SELECTED_RGBA
+                    } else {
+                        slots_gpu::COMMENT_NOTE_RGBA
+                    });
+                    slots_gpu::pack_icon_instance(
+                        &mut b,
+                        xy[i * 2],
+                        xy[i * 2 + 1],
+                        slots_gpu::SLOT_RING_PX,
+                        slots_gpu::SLOT_GLYPH_RING,
+                        tint,
+                    );
+                }
+                b
+            }
+        };
         self.upload_slot_role_lane(LaneRole::MissionComments, &bytes, true);
+    }
+
+    /// T-796 — `comments_bind` plus the comment IDS, so selection can reach the lane.
+    ///
+    /// `ids[i]` names comment `i` in the same id space [`Self::set_selection`] receives. Without
+    /// them (what [`Self::comments_bind`] passes) the bubble and its neutral colour still land, but
+    /// no comment can ever be shown as selected — the engine has no way to know which one is. Ids
+    /// shorter than `xy` mark only the rows they cover.
+    pub fn comments_bind_ids(&mut self, xy: &[f32], ids: Vec<String>) {
+        self.slot_bridge.comment_ids = ids;
+        self.comments_bind(xy);
+    }
+
+    /// T-796 — re-pack the comment lane from the cached `xy` against the live selection. Called by
+    /// `set_selection` (a newly selected comment must gain the ring, and a deselected one must lose
+    /// it) and by the symbology zoom-threshold crossing. The comment lane carries no row identity
+    /// inside the engine, so it re-materialises rather than sub-row patching like the slot lane —
+    /// affordable because comment counts are in the tens and this runs only on those two events.
+    fn refresh_comment_lane(&mut self) {
+        if self.slot_bridge.comment_xy.is_empty() {
+            return;
+        }
+        let xy = std::mem::take(&mut self.slot_bridge.comment_xy);
+        self.comments_bind(&xy);
     }
 
     /// Drop slots + drag + cluster + vehicle + marker + comment lanes.
