@@ -1,5 +1,5 @@
 {
-  "next_id": 824,
+  "next_id": 826,
   "tickets": [
     {
       "id": "T-001",
@@ -19680,7 +19680,7 @@
       ],
       "title": "Markers render their icon glyph and caption on the map",
       "summary": "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). F-03 — S1, VERIFIED at 5.58/1.30/1.06 m/px: every placed marker is an identical pale dot — icon choice has no visible effect and the caption field literally labelled 'Caption shown on the map' shows nothing on the map (doc state verified correct: dock row reads 'Attack (BLUFOR) · 4921, 5982' and caption persists — rendering is the only missing half). THE LANE ALREADY EXISTS: T-760 packs markers into a render lane with xy+tint ONLY (mission_editor.rs markers_bind / marker_lane_xy_tints, store ~ crates/map-engine-core/src/doc/store.rs:3831, consumers crates/map-engine-render/src/{scene,engine,lanes}.rs). FIX: extend the marker lane with a glyph id (map the 64-alias enum onto its canonical glyph set) and render the icon shape per marker plus the caption text beside it (screen-space, culled, readable at standard zooms); side tint stays. This is the WRITE-HALF format change T-806 (picker) and T-808 (unit symbology) build on — land the lane format cleanly. ⚠️ TRAPS: text rendering in the engine may need the existing label path the map uses for place names — reuse it, do not mint a second text pipeline; alias enum has case-duplicates (Waypoint/waypoint) — glyph mapping table must collapse them (canonical mapping documented for T-806); performance: markers are per-side briefing sets, expect dozens not thousands. ACCEPTANCE: scripted — place markers of 3 different icons + one caption: screenshot probe at 3 zooms shows 3 DISTINCT glyph pixel signatures and the caption string appears within 40px of its marker (OCR or pixel-diff vs empty-caption control); dock-vs-map position agreement stays exact.",
-      "notes": "T-069/T-213/T-673 are the marker-family parents — cite; lane format consumed by T-806/T-808 (depends_on edges)"
+      "notes": "T-069/T-213/T-673 are the marker-family parents — cite; lane format consumed by T-806/T-808 (depends_on edges) | OPERATOR DIRECTION 2026-08-10: any marker-EDITING surface this wave opens (the F-07 on-map-select fold) must be the Attributes modal (T-763 marker attrs lineage), NOT a new dock editing lane — the dock places, the outliner lists, Attributes edits."
     },
     {
       "id": "T-798",
@@ -20261,6 +20261,50 @@
       "order": 5050,
       "summary": "WAVE-203 VERIFIER FILING (wave203.md NIT; mission_history.rs:289/532). OBJ = slot_count (characters only): drag-placing an M1025 leaves OBJ unchanged while the vehicle genuinely places (outliner row, Placed strip, recently-placed all show it). Either rename the readout (SLOTS) or count entities (slots+vehicles) — pick one and pin it; the WEST/EAST/IND/TOTAL chips (operator-liked) already count slots explicitly and must not drift. ACCEPTANCE: place a vehicle -> the readout either includes it or is renamed so the exclusion is honest; chips unchanged.",
       "notes": "wave203 verifier; wording-vs-count decision, small"
+    },
+    {
+      "id": "T-824",
+      "title": "Placed zones are not visible on the map — investigate and fix the render (repro-first)",
+      "status": "queued",
+      "executor": "claude-code",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "impact": [
+        "ui",
+        "mc-authoring"
+      ],
+      "surfaces": [
+        "SHELL"
+      ],
+      "order": 5060,
+      "summary": "OPERATOR EYE-PASS FINDING (wave-203 pass, 2026-08-10): a placed zone is not visible on the map. The hostile review verified zone DRAWING works (draw -> zone count moves) but its render visibility was not probed at rest. INVESTIGATE FIRST: is the zone shape render gated (selection-only fill? layer visibility? chrome state?) or genuinely missing a lane? Measure on a real browser at rest and while selected, at 2-3 zoom levels, before writing code. If a render lane is missing, the T-760/T-790 marker-lane recipe is the template (draw_order + rebind tail — the wave-130/141 lane lessons apply: feed from after_doc_change + rebind, pin the chain). ACCEPTANCE: a placed circle and polygon zone are visibly rendered at rest (not only while selected) at the swept zooms; toggling any relevant visibility control round-trips; the zone count chip and the render never disagree.",
+      "notes": "operator eye-pass wave-203; repro-first — do not assume the mechanism"
+    },
+    {
+      "id": "T-825",
+      "title": "PROGRAM: everything placed is an outliner citizen; all editing is Attributes; the right dock only places",
+      "status": "queued",
+      "executor": "claude-code",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "impact": [
+        "ui",
+        "mc-authoring"
+      ],
+      "surfaces": [
+        "LEFT",
+        "ATTR",
+        "RIGHT"
+      ],
+      "order": 5070,
+      "summary": "OPERATOR DESIGN DIRECTION (recorded 2026-08-10, from the wave-202/203 eye-passes; to be SCOPED IN AN OPERATOR-DRIVEN DESIGN SESSION after the band + wave 210 — do NOT dispatch from this summary). The unifying rule behind T-818/T-819 and the zone observations: every authored object on the map (slot, vehicle, zone, trigger, marker, comment, composition instance) is an ASSET that (a) lives as a first-class row in the LEFT outliner's layer tree — filed into any layer/folder like slots are, draggable between layers, not in kind-specific footers or dock strips; (b) EDITS via its double-click Attributes modal with kind-specific content; (c) the RIGHT dock exists only to place new things (catalog, search, favourites, history). Known deltas today: vehicles sit in a hardcoded PLACED VEHICLES outliner footer (W203 fold — superseded by this rule); zones are managed and edited in the right dock's Zones tab; markers edit via dock lanes; the operator also reports the layer tree itself 'feels disjointed' — capture specifics in the design session. SESSION INPUTS the orchestrator prepares: a decision matrix of every authored-object kind x where it lists x how it edits x what the compile/selection/undo semantics are, with Eden's answer per row. Out of scope until scoped: nothing ships from this ticket without the session's decisions filed as per-kind tickets.",
+      "notes": "the post-band hyper-focus program; T-818/T-819 (wave 210) are its first two instances and proceed as filed"
     }
   ]
 }
