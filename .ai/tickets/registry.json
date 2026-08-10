@@ -1,5 +1,5 @@
 {
-  "next_id": 840,
+  "next_id": 841,
   "tickets": [
     {
       "id": "T-001",
@@ -19803,7 +19803,7 @@
       "id": "T-796",
       "order": 4780,
       "program": "eden",
-      "status": "queued",
+      "status": "shipped",
       "stream": "mission-creator",
       "targets": [
         "website"
@@ -19819,13 +19819,13 @@
       ],
       "title": "Comments look like comments and can be moved",
       "summary": "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). O-6 — PIXEL-VERIFIED: a placed comment renders as an AMBER RING — the selection colour — so every comment permanently reads as selected (operator caught it; colour match confirmed against the selected-unit amber), there is no comment glyph at all (Eden's Comments layer uses a distinct symbol), and comments CANNOT BE DRAGGED: a 90px drag across a placed comment left its stored position unchanged (verified twice by crop comparison; move_comment exists at mission_editor.rs ~:1554 but is not wired to the drag path). FIX: (a) neutral speech-bubble/note glyph in a non-selection colour; selected state adds the standard selection treatment ON TOP so selected-vs-idle reads correctly; (b) wire comments into the drag-move path (pick -> preview -> move_comment one-txn commit) alongside slots/vehicles; (c) comment glyph participates in the marker-vs-unit shape language (distinct from both). ⚠️ TRAPS: T-784 (comment click-select) shipped this band's precedent — build on its pick lane, do not fork; comments are editor-only (never compiled) — no schema anywhere near this; delete/undo of comments has known per-txn acceptance in delete_selection comments loop — moving must be ONE step. ACCEPTANCE: scripted — placed comment pixel signature != selection amber and != marker glyph; click selects (T-784 regression green); drag moves stored x/y by the drag delta (dock/attrs readback), ONE undo restores; mid-drag the glyph follows the cursor (preview parity with slots).",
-      "notes": "T-784/T-748/T-781 comment family cited; one-txn move matches the F-26 lesson"
+      "notes": "T-784/T-748/T-781 comment family cited; one-txn move matches the F-26 lesson | SHIPPED W206 (drag half): comments pick/preview/move through move_comment — precedence ring→unit→comment→marquee proven at the boundaries, one undo per note, three non-commit exits leave the lane byte-identical, T-784 click regression green. The GLYPH RESTYLE (a)/(c) is T-808's by band assignment (the registry cites the bubble as its shape-language deliverable) — the amber-ring look persists until W207 BY DESIGN."
     },
     {
       "id": "T-804",
       "order": 4860,
       "program": "eden",
-      "status": "queued",
+      "status": "shipped",
       "stream": "mission-creator",
       "targets": [
         "website"
@@ -19843,13 +19843,13 @@
       ],
       "title": "The author can see their work is safe: draft persistence surfaced",
       "summary": "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). F-24 — Eden ships 'Auto-save: 15 min' as a first-class preference (frame 163916); TBD has NO server autosave by design and its only net is the invisible IndexedDB draft on a ~5s debounce — the author's sole evidence anything persists is the dirty dot. The review's own reload test proved the draft restores 9 objects faithfully — the mechanism is good, the LEGIBILITY is absent. FIX: (a) beside the dirty dot, a quiet 'draft saved Ns ago' chip fed by the yrs_persist flush timestamp (bridge exists: __missionPersist; surface the last-flush time via a signal rather than polling); (b) on beforeunload-guard arming, the copy the browser will IGNORE anyway is dropped in favour of the chip being accurate; (c) hovering the chip explains the two-layer model in one sentence (local draft vs Save Version) — the review's F-24 wording is pre-approved copy. ⚠️ TRAPS: eden_top_strip.rs regions ~:724-726/:1122-1130 are the home; yrs_persist.rs edit = expose the timestamp only (T-805 holds it read-only in ITS wave; you own it this wave — keep the change additive, one signal); debounce semantics unchanged (5s is fine; the chip makes it legible). ACCEPTANCE: scripted — edit, wait <=6s: chip shows 'draft saved' with a recency <=6s; idle 30s: recency counts up; reload restores state and chip resets; flush() bridge still works; no chip on a mission that has never been edited.",
-      "notes": "review F-24 + Eden preferences frame 163916; complements F-04 fix (T-789) as the save-story pair"
+      "notes": "review F-24 + Eden preferences frame 163916; complements F-04 fix (T-789) as the save-story pair | SHIPPED W206: draft-saved chip with real ack discipline (error branch cannot stamp — single call site, source-verified), 1s coarse ticker, inline mount (rect smoke green with the chip up), two-layer tooltip copy, bridge accessor. beforeunload copy consciously left (already honestly documented as browser-ignored). Boot-flush chip nuance -> T-840."
     },
     {
       "id": "T-810",
       "order": 4920,
       "program": "eden",
-      "status": "queued",
+      "status": "shipped",
       "stream": "mission-creator",
       "targets": [
         "website"
@@ -19866,7 +19866,7 @@
       ],
       "title": "Attributes Type is a searchable catalog picker with a revert path and Eden's axis colours",
       "summary": "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). F-23 — Eden's Object:Type (frame 163121) is a searchable TREE with a magnifier — the author browses Cars/Drones/Men…; TBD asks for freetext 'Asset id — empty uses the faction default', which is expert-only recall and, combined with F-01, was the field a stray 'q' corrupted 9 slots through. Eden also commits on OK with an explicit CANCEL; TBD applies live with only ✕ — no back-out (which raised F-26's stakes). Eden colour-codes Position/Rotation axes X=red Y=green Z=blue; TBD's Transform tab is monochrome. FIX: (a) TYPE becomes a searchable picker over the live catalog (asset_catalog.rs tree source; typing filters; picking writes assetId; empty = faction default stays a first-class option); freetext remains available behind an 'advanced' affordance for unlisted ids; (b) a revert affordance: snapshot field values when the panel opens; 'Revert' restores them (live-apply semantics stay — this is a bounded undo convenience, not OK/Cancel transactionalism; state the model in the panel); (c) axis colour chips on X/Y/Z/Rotation labels per Eden. ⚠️ TRAPS: depends on T-785's healthy text_field; catalog may be empty (dev without seed) — picker shows the T-800 failure surface, not a dead list; multi-edit interaction: TYPE picker under apply-to-all writes all (F-26's batching from T-788 applies). ACCEPTANCE: scripted — open picker, type 'rifle', pick a leaf: assetId set to canonical id and validator shows no ASSET-RESOLVES error; Revert restores pre-open values across edited fields (readback equality); axis labels carry 3 distinct colours (computed styles); empty-catalog state shows cause+retry not an empty list.",
-      "notes": "depends_on T-785; Eden dialog evidence frame 163121; validator ASSET-RESOLVES copy is the error-side pair"
+      "notes": "depends_on T-785; Eden dialog evidence frame 163121; validator ASSET-RESOLVES copy is the error-side pair | SHIPPED W206: searchable side-agnostic TYPE picker (canonical write clears ASSET-RESOLVES live), snapshot-on-open Revert via per-slot ops (differing-multi restore PROVEN — the case a batch flattens), Eden axis colours, advanced freetext single-select (hidden on differing multis, documented), 3-press Esc ladder. Retry=reload verified WORK-SAFE (draft restore + conflict modal). T-785/T-813 machinery unregressed under the new surface."
     },
     {
       "id": "T-802",
@@ -20603,6 +20603,27 @@
       "order": 5210,
       "summary": "EYE-PASS SCREENSHOT CATCH (wave-205, 2026-08-10): the floating bottom-centre Select/Ruler/LoS pill is still rendered — operator decision 1 (review section 8) retired it ('tools live Arma-style in the fixed chrome') and the traceability routed it to T-797/T-798, but NEITHER ticket's acceptance carried the pill removal — it fell between them (the input-never-reached-output class). FIX: move Ruler and LoS-ray into the row-2 toolbar as a tools group beside the widget cluster (BTN_ICON + chord tooltips + census rows for their chords if any); Select is the digit-1/No-Widget mode (T-835 gives it the arrow glyph) — no separate button needed; DELETE the floating pill component + its mount; Backspace hide-set shrinks accordingly. TRAPS: Ruler/LoS arming machinery (T-642/T-643 lineage) unchanged — only the BUTTONS move; the pill's pins (if any) update honestly. ACCEPTANCE: no floating pill in any mode; Ruler + LoS arm from row-2 buttons with tooltips; their gestures work unchanged; Backspace still hides all chrome.",
       "notes": "eye-pass catch wave-205; decision-1 completion; strip+pill files — pack owns-aware"
+    },
+    {
+      "id": "T-840",
+      "title": "The draft chip says 'saved just now' on boot of a content-bearing mission — before any edit",
+      "status": "queued",
+      "executor": "claude-code",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "impact": [
+        "ui",
+        "mc-authoring"
+      ],
+      "surfaces": [
+        "SHELL"
+      ],
+      "order": 5220,
+      "summary": "WAVE-206 VERIFIER FILING (wave206.md NIT). On opening any content-bearing mission the hydrate persists server content to IndexedDB — a REAL flush completes (~1s, can_undo=false, edit_persist_count=0) and the T-804 chip honestly reports 'Draft saved just now' though the operator edited nothing. Truly-empty never-edited missions correctly show no chip. Legibility nuance: 'your work is safe' reads oddly when there is no work yet. FIX OPTIONS: gate the chip's FIRST appearance on the first operator-driven flush (edit_persist_count>0 or the dirty-dot arming source — one source, the wave-129 lesson), or reword the boot state ('draft synced'). Keep the ack discipline untouched. ACCEPTANCE: open a content-bearing mission, wait: no 'saved' chip until the first real edit flushes (or the boot wording differs measurably); never-edited-empty unchanged; post-edit behavior identical to today.",
+      "notes": "wave206 verifier NIT; one-source rule applies"
     }
   ]
 }
