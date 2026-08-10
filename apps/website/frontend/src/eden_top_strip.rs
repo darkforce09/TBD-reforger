@@ -1226,23 +1226,12 @@ pub fn TopCommandStrip(
         let _gen = crate::mission_editor::toolbar_dispatch_generation().get();
         #[cfg(target_arch = "wasm32")]
         {
-            // T-795 renumbers to `1` No Widget / `2` Translate / `3` Rotate. The dispatch this slice
-            // BUILDS AGAINST exposes only `widget_is_rotate()` (one bit); T-795 adds `widget_digit()`
-            // (the active variant's digit) precisely so a three-way plate can light the right one, and
-            // the barrier merges it. Until then this reads the one bit it has:
-            //   * `3` (Rotate)    → `rot`          — correct.
-            //   * `2` (Translate) → `!rot`         — correct while No Widget is unreachable (it is, in
-            //                                         the baseline `WidgetVariant`; post-merge the
-            //                                         No-Widget plate reconciles onto `widget_digit`).
-            //   * `1` (No Widget) → `false`        — no None state exists to light in this baseline.
-            // The dispatch getter stays the tracked read so keyboard and toolbar cannot disagree.
-            let mut rot = false;
-            crate::mission_editor::with_editor_toolbar_dispatch(|d| rot = (d.widget_is_rotate)());
-            match digit {
-                3 => rot,
-                2 => !rot,
-                _ => false,
-            }
+            // T-795's `widget_digit()` (1 No Widget / 2 Translate / 3 Rotate) is the tracked
+            // three-way read — merged at the wave-205 barrier exactly as both slices planned —
+            // so each plate lights on its own digit and keyboard and toolbar cannot disagree.
+            let mut active = 0u8;
+            crate::mission_editor::with_editor_toolbar_dispatch(|d| active = (d.widget_digit)());
+            active == digit
         }
         #[cfg(not(target_arch = "wasm32"))]
         {
