@@ -2404,6 +2404,66 @@ pub(crate) fn comment_lane_xy(comments_json: &str) -> Vec<f32> {
     xy
 }
 
+/// T-760 / **T-790** — the four parallel marker-lane arrays for [`RenderEngine::markers_bind`],
+/// parsed ONCE from `briefing_marker_rows_json` (the sole schema-legal marker surface, emitted by
+/// `MissionDocCore::briefing_marker_rows_json` with `x`/`z`/`factionId`/`icon`/`label`):
+///   * `xy` — interleaved world `[x, z, …]`,
+///   * `tints` — packed RGBA8 side tint per marker (`factionId` → [`slots_gpu::side_rgba`]),
+///   * `icons` — each marker's authored `icon` ALIAS (the T-790 write-half: the authored icon finally
+///     reaches the render lane; `markers_bind` maps the alias to its canonical glyph via the shared
+///     `map_engine_render::scene::marker_glyph_for_alias` table),
+///   * `captions` — each marker's `label` (the caption shown on the map).
+///
+/// T-790 note: before this, the feeder read only `x`/`z`/`factionId` and dropped `icon`/`label`, so
+/// every marker drew as one pale disc with no caption. The parse lives HERE (not in the
+/// `#![cfg(wasm32)]` `mission_history`) so it is natively unit-testable, matching the T-784/T-748
+/// move of `comment_lane_xy`; `mission_history`'s two bind sites (restore rebind + `after_doc_change`)
+/// call this so undo / redo / restore all share one feed — a lane fed only from authoring call sites
+/// would go stale exactly the way T-760 forbids.
+///
+/// The alias-to-glyph MAPPING is deliberately NOT done here: it lives in `map-engine-render`
+/// (`scene::marker_glyph_for_alias`, the T-806 deliverable), a wasm32-only dependency of this crate,
+/// so mapping here would break the native test build. Carrying the alias string keeps this parse
+/// native and the mapping in its single home.
+#[must_use]
+pub(crate) fn marker_lane_fields(
+    marker_rows_json: &str,
+) -> (Vec<f32>, Vec<u8>, Vec<String>, Vec<String>) {
+    let Ok(rows) = serde_json::from_str::<serde_json::Value>(marker_rows_json) else {
+        return (Vec::new(), Vec::new(), Vec::new(), Vec::new());
+    };
+    let Some(arr) = rows.as_array() else {
+        return (Vec::new(), Vec::new(), Vec::new(), Vec::new());
+    };
+    let mut xy = Vec::with_capacity(arr.len() * 2);
+    let mut tints = Vec::with_capacity(arr.len() * 4);
+    let mut icons = Vec::with_capacity(arr.len());
+    let mut captions = Vec::with_capacity(arr.len());
+    for r in arr {
+        let num = |k: &str| r.get(k).and_then(serde_json::Value::as_f64).unwrap_or(0.0);
+        #[allow(clippy::cast_possible_truncation)]
+        {
+            xy.push(num("x") as f32);
+            xy.push(num("z") as f32);
+        }
+        let faction = r
+            .get("factionId")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("");
+        let side = faction.strip_prefix("faction-").unwrap_or(faction);
+        tints.extend_from_slice(&map_engine_core::slots_gpu::side_rgba(side));
+        let str_field = |k: &str| {
+            r.get(k)
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("")
+                .to_string()
+        };
+        icons.push(str_field("icon"));
+        captions.push(str_field("label"));
+    }
+    (xy, tints, icons, captions)
+}
+
 /// Click tolerance for [`pick_comment`], in SCREEN pixels — the SAME radius the slot/vehicle pick
 /// uses (`MissionDocCore::PICK_RADIUS_PX`). `comments_bind` draws a comment with the slot atlas's
 /// ring glyph, so a tolerance of our own invention would give the note a hit box a different size
@@ -4424,18 +4484,18 @@ pub fn MissionEditorPage() -> impl IntoView {
                             // the WebGL2-fallback + future cull-counter readback honest.
                             eng.disable_frame_timing();
                             eng.set_continuous_render(false); // damage-driven, matches the prod oracle
-                                                              // T-172 B4 — upload the ring+disc slot atlas BEFORE the first SoA bind:
-                                                              // the whole slot lane (bind / selection tint / drag overlay) is gated on
+                                                              // T-172 B4 — upload the slot atlas BEFORE the first SoA bind: the whole
+                                                              // slot lane (bind / selection tint / drag overlay) is gated on
                                                               // `atlas_ready`, and no frontend ever called this — placed slots were
-                                                              // selectable but invisible. Pixels built in core (slotAtlas.ts parity).
+                                                              // selectable but invisible.
+                                                              // T-790 — the atlas is now the WIDENED marker atlas: cells 0/1
+                                                              // (ring/disc) stay byte-identical to the old two-cell `build_slot_atlas`
+                                                              // (so slots / vehicles / comments are pixel-unchanged), and cells 2..
+                                                              // add the per-icon marker glyph shapes `markers_bind` selects.
                             {
-                                let atlas = map_engine_core::slots_gpu::build_slot_atlas();
-                                if let Err(e) = eng.ensure_slot_atlas(
-                                    &atlas.rgba,
-                                    atlas.width,
-                                    atlas.height,
-                                    &atlas.uv,
-                                ) {
+                                let (rgba, width, height, uv) =
+                                    map_engine_render::scene::build_marker_slot_atlas();
+                                if let Err(e) = eng.ensure_slot_atlas(&rgba, width, height, &uv) {
                                     leptos::logging::error!("ensure_slot_atlas: {e:?}");
                                 }
                             }
@@ -12874,6 +12934,96 @@ mod t784_comment_glyph {
             !del.contains("cmt-") && !del.contains("starts_with"),
             "T-784: a prefix test is a second vocabulary for 'is this a comment?' and it is wrong \
              for any hydrated mission whose ids were not minted here"
+        );
+    }
+}
+
+// ══ T-790 — the authored icon + caption reach the marker lane (F-03 write-half) ══════════════════
+//
+// Before this ticket the feeder read only x/z/factionId and dropped `icon`/`label`, so every placed
+// marker drew as one pale disc with no caption. `marker_lane_fields` now parses all four parallel
+// arrays from `briefing_marker_rows_json`, mapping `icon` → the canonical glyph (so DIFFERENT icons
+// draw DIFFERENT shapes) and carrying `label` as the on-map caption. These pins hold that; the last
+// is a Class-R pin binding `mission_history`'s two feed sites to the widened `markers_bind` shape
+// (that module is `#![cfg(wasm32)]`, so a source pin is a native test's only reach into it).
+#[cfg(test)]
+mod t790_marker_glyph_caption {
+    use super::marker_lane_fields;
+    use crate::arsenal::class_r_scrub::{live_code, only_body};
+
+    /// Three markers of THREE different icons, one with a caption, one faction each — the acceptance
+    /// shape. Emitted in the `briefing_marker_rows_json` field vocabulary (x/z/factionId/icon/label).
+    fn rows() -> String {
+        serde_json::json!([
+            { "factionId": "faction-BLUFOR", "id": "m1", "x": 100.0, "z": 200.0,
+              "icon": "attack",  "label": "Assault Bravo" },
+            { "factionId": "faction-OPFOR",  "id": "m2", "x": 300.0, "z": 400.0,
+              "icon": "defend",  "label": "" },
+            { "factionId": "faction-INDFOR", "id": "m3", "x": 500.0, "z": 600.0,
+              "icon": "flag",    "label": "Rally" },
+        ])
+        .to_string()
+    }
+
+    /// The authored `icon` alias and `label` caption both reach the lane arrays verbatim (the T-790
+    /// write-half: before this they were dropped), and the side tints follow the faction. The
+    /// alias→glyph mapping is asserted in `map_engine_render::scene`'s own tests (a wasm32-only dep
+    /// this native test cannot link); here we prove the ALIAS is carried so the mapper can see it.
+    #[test]
+    fn all_four_arrays_carry_the_authored_marker() {
+        let (xy, tints, icons, captions) = marker_lane_fields(&rows());
+        assert_eq!(xy, vec![100.0, 200.0, 300.0, 400.0, 500.0, 600.0]);
+        assert_eq!(icons, vec!["attack", "defend", "flag"]);
+        assert_eq!(captions, vec!["Assault Bravo", "", "Rally"]);
+        // three different authored icons carried (so three distinct glyphs are reachable downstream)
+        assert_eq!(
+            icons.iter().collect::<std::collections::HashSet<_>>().len(),
+            3,
+            "three different icons must be carried distinctly"
+        );
+        // tints: BLUFOR / OPFOR / INDFOR (12 bytes), and they differ.
+        assert_eq!(tints.len(), 12);
+        assert_ne!(&tints[0..4], &tints[4..8], "BLUFOR vs OPFOR tint");
+        assert_ne!(&tints[4..8], &tints[8..12], "OPFOR vs INDFOR tint");
+    }
+
+    /// Malformed / empty inputs are inert (no panic, four empty arrays) — the same shape the wasm
+    /// feed's early returns rely on.
+    #[test]
+    fn bad_input_is_inert() {
+        for s in ["", "not json", "{}", "null", "[]"] {
+            let (xy, t, g, c) = marker_lane_fields(s);
+            assert!(
+                xy.is_empty() && t.is_empty() && g.is_empty() && c.is_empty(),
+                "{s:?}"
+            );
+        }
+    }
+
+    /// Class-R: the T-790 widening of the T-760 feed pin. Both `mission_history` feed sites must call
+    /// `markers_bind`, and the shared `marker_lane_xy_tints` builder they call must source ALL FOUR
+    /// arrays from the owned `marker_lane_fields` parse (so `icon`/`label` reach the lane). Deleting
+    /// the glyph or caption plumbing turns this RED; the map-engine-render lane-order pins never look
+    /// at `mission_history`, so this is the only guard that the write-half stays wired.
+    #[test]
+    fn both_feeds_pass_glyphs_and_captions() {
+        let hist = live_code(include_str!("mission_history.rs"));
+        let bind = format!("{}{}", "markers", "_bind");
+        let fields = format!("{}{}", "marker_lane_", "fields");
+        for site in ["pub fn rebind_engine_from_doc", "fn after_doc_change"] {
+            let body = only_body(&hist, site);
+            assert!(
+                body.contains(&bind),
+                "T-790: {site} must call markers_bind; body:\n{body}"
+            );
+        }
+        // The single builder delegates to the owned (natively tested) parse — the icon + caption
+        // arrays are read from the document exactly once, not re-derived per feed.
+        let builder = only_body(&hist, "fn marker_lane_xy_tints");
+        assert!(
+            builder.contains(&fields),
+            "T-790: marker_lane_xy_tints must source glyphs + captions from marker_lane_fields; \
+             body:\n{builder}"
         );
     }
 }

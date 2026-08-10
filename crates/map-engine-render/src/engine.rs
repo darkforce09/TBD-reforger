@@ -289,6 +289,16 @@ enum BatchPayload {
         instances: wgpu::Buffer,
         count: u32,
     },
+    /// T-790 — a briefing-marker lane carrying BOTH its slot-atlas icon glyphs AND its caption text
+    /// glyphs, drawn in one `MissionMarkers` batch so the caption reuses the existing text pipeline
+    /// without minting a second lane role (the `draw_order` enum is a fixed contract). The icon half
+    /// binds the slot atlas; the caption half binds the text atlas + the text pipeline. `captions`
+    /// is `None` when no marker carries a label (the icon-only path, byte-for-byte the old lane).
+    MarkerComposite {
+        icons: wgpu::Buffer,
+        icon_count: u32,
+        captions: Option<(wgpu::Buffer, u32)>,
+    },
 }
 
 impl BatchPayload {
@@ -299,7 +309,9 @@ impl BatchPayload {
             Self::Lines(_) => PipelineKind::Polyline,
             Self::BuildingInstanced { .. } => PipelineKind::BuildingQuad,
             Self::Polygon(_) => PipelineKind::PolygonFill,
-            Self::IconInstanced { .. } => PipelineKind::IconInstanced,
+            Self::IconInstanced { .. } | Self::MarkerComposite { .. } => {
+                PipelineKind::IconInstanced
+            }
         }
     }
 }
@@ -1046,6 +1058,33 @@ fn draw_batches<'a>(
                 pass.set_vertex_buffer(0, unit_quad_buf.slice(..));
                 pass.set_vertex_buffer(1, instances.slice(..));
                 pass.draw(0..4, 0..*count);
+            }
+            BatchPayload::MarkerComposite {
+                icons,
+                icon_count,
+                captions,
+            } => {
+                // Icon half — slot atlas (like `Slots`/`MissionMarkers` used to draw). Skip when the
+                // slot atlas is cold (same guard the `IconInstanced` slot arm applies above).
+                if let Some(slot_bg) = slot_base_bind {
+                    pass.set_pipeline(icon_pipeline);
+                    pass.set_bind_group(0, bind_group, &[]);
+                    pass.set_bind_group(2, slot_bg, &[]);
+                    pass.set_vertex_buffer(0, unit_quad_buf.slice(..));
+                    pass.set_vertex_buffer(1, icons.slice(..));
+                    pass.draw(0..4, 0..*icon_count);
+                }
+                // Caption half — the EXISTING text pipeline + text atlas (reused, never a second
+                // one). Skipped when the text atlas is not yet uploaded, exactly as the world-label
+                // arm above does.
+                if let (Some((cap_buf, cap_count)), Some(text_bg)) = (captions, text_atlas_bind) {
+                    pass.set_pipeline(text_pipeline);
+                    pass.set_bind_group(0, bind_group, &[]);
+                    pass.set_bind_group(2, text_bg, &[]);
+                    pass.set_vertex_buffer(0, unit_quad_buf.slice(..));
+                    pass.set_vertex_buffer(1, cap_buf.slice(..));
+                    pass.draw(0..4, 0..*cap_count);
+                }
             }
         }
     }
@@ -2076,6 +2115,14 @@ impl RenderEngine {
                 BatchPayload::Instanced { instances, .. }
                 | BatchPayload::BuildingInstanced { instances, .. }
                 | BatchPayload::IconInstanced { instances, .. } => instances.destroy(),
+                BatchPayload::MarkerComposite {
+                    icons, captions, ..
+                } => {
+                    icons.destroy();
+                    if let Some((cap, _)) = captions {
+                        cap.destroy();
+                    }
+                }
                 BatchPayload::Textured(l) => l.texture.destroy(),
                 BatchPayload::Lines(l) => l.verts.destroy(),
                 BatchPayload::Polygon(l) => {
@@ -4434,11 +4481,32 @@ impl RenderEngine {
         self.upload_slot_role_lane(LaneRole::MissionVehicles, &bytes, true);
     }
 
-    /// T-760 — bind briefing marker discs from interleaved map-plane `xy` (`[x0,z0,…]`; feeder pushes x then z) and packed
-    /// RGBA8 side tints (`4·n` bytes, same layout as [`Self::slots_bind_soa`]). Reuses the slot
-    /// atlas + [`slots_gpu::pack_icon_instance`] — no new pipeline, no new atlas, and **not** on
-    /// the pick/SoA bridge (markers must not be hit-testable as slots). Empty clears the lane.
-    pub fn markers_bind(&mut self, xy: &[f32], side_tints_rgba: &[u8]) {
+    /// T-760 / **T-790** — bind briefing markers from interleaved map-plane `xy` (`[x0,z0,…]`; feeder
+    /// pushes x then z), packed RGBA8 side tints (`4·n` bytes, same layout as [`Self::slots_bind_soa`]),
+    /// per-marker authored icon ALIASES (`icons[i]`), and one caption per marker (`captions[i]`,
+    /// empty = none).
+    ///
+    /// T-790 turned the "identical pale dot for every icon" into the marker's ICON SHAPE plus its
+    /// CAPTION on the map: the icon half maps `icons[i]` through [`scene::marker_glyph_for_alias`]
+    /// (the T-806 canonical table) and selects that glyph in the WIDENED slot atlas (see
+    /// [`scene::build_marker_slot_atlas`]) instead of the fixed disc, keeping the SIDE tint; the
+    /// caption half is packed by [`scene::pack_marker_caption_bytes`] into the EXISTING text pipeline
+    /// (`ensure_text_atlas`) — never a second text lane. Both halves ride one `MissionMarkers`
+    /// [`BatchPayload::MarkerComposite`], so no new `draw_order` role is minted. Still **not** on the
+    /// pick/SoA bridge (markers are not hit-testable as slots). Empty `xy` clears the lane.
+    ///
+    /// The alias arrives as a STRING (not a pre-mapped glyph id) because the mapping table lives in
+    /// this crate but the feeder that reads the document is in `website-frontend`, which links this
+    /// crate on wasm32 ONLY — mapping at the feeder would break its native test build. A short /
+    /// missing / unknown alias falls back to [`scene::MarkerGlyph::Disc`] (the mod's
+    /// `FALLBACK_ICON = DOT`); a short / missing tint row pads BLUFOR, exactly as T-760.
+    pub fn markers_bind(
+        &mut self,
+        xy: &[f32],
+        side_tints_rgba: &[u8],
+        icons: Vec<String>,
+        captions: Vec<String>,
+    ) {
         if !self.slot_bridge.atlas_ready {
             return;
         }
@@ -4447,7 +4515,8 @@ impl RenderEngine {
             self.remove_lane(LaneRole::MissionMarkers);
             return;
         }
-        let mut bytes = Vec::with_capacity(n * SLOT_ICON_STRIDE);
+        // Icon half — one slot-atlas instance per marker, carrying its per-marker glyph + side tint.
+        let mut icon_bytes = Vec::with_capacity(n * SLOT_ICON_STRIDE);
         for i in 0..n {
             let x = xy[i * 2];
             let y = xy[i * 2 + 1];
@@ -4461,16 +4530,74 @@ impl RenderEngine {
             } else {
                 slots_gpu::SIDE_BLUFOR_RGBA
             };
+            let glyph = icons.get(i).map_or(scene::MarkerGlyph::Disc, |a| {
+                scene::marker_glyph_for_alias(a)
+            }) as u16;
             slots_gpu::pack_icon_instance(
-                &mut bytes,
+                &mut icon_bytes,
                 x,
                 y,
                 slots_gpu::SLOT_RING_PX,
-                slots_gpu::SLOT_GLYPH_DISC,
+                glyph,
                 slots_gpu::pack_rgba_u32(rgba),
             );
         }
-        self.upload_slot_role_lane(LaneRole::MissionMarkers, &bytes, true);
+        // Caption half — world-space text glyphs beside each captioned marker, via the shared path.
+        let mut caption_bytes = scene::pack_marker_caption_bytes(xy, &captions, self.zoom());
+        if !caption_bytes.is_empty() {
+            let _ = self.ensure_text_atlas();
+        }
+        self.upload_marker_composite(&mut icon_bytes, &mut caption_bytes);
+    }
+
+    /// T-790 — upload the `MissionMarkers` [`BatchPayload::MarkerComposite`]: the icon bytes (already
+    /// packed slot-atlas instances) and, when present, the caption text bytes. Both are converted
+    /// world→anchor-relative in place (the same shift [`Self::upload_slot_role_lane`] /
+    /// [`Self::upload_text_labels`] apply). Empty icons clears the lane.
+    fn upload_marker_composite(&mut self, icon_bytes: &mut [u8], caption_bytes: &mut [u8]) {
+        const STRIDE: usize = SLOT_ICON_STRIDE;
+        if icon_bytes.is_empty() || !icon_bytes.len().is_multiple_of(STRIDE) {
+            self.remove_lane(LaneRole::MissionMarkers);
+            return;
+        }
+        use wgpu::util::DeviceExt;
+        Self::convert_icon_world_to_anchor(icon_bytes);
+        let icons = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("marker-icons"),
+                contents: icon_bytes,
+                usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+            });
+        #[allow(clippy::cast_possible_truncation)]
+        let icon_count = (icon_bytes.len() / STRIDE) as u32;
+        let captions = if caption_bytes.is_empty() || !caption_bytes.len().is_multiple_of(STRIDE) {
+            None
+        } else {
+            Self::convert_icon_world_to_anchor(caption_bytes);
+            let buf = self
+                .device
+                .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                    label: Some("marker-captions"),
+                    contents: caption_bytes,
+                    usage: wgpu::BufferUsages::VERTEX,
+                });
+            #[allow(clippy::cast_possible_truncation)]
+            let count = (caption_bytes.len() / STRIDE) as u32;
+            Some((buf, count))
+        };
+        self.upsert_lane(
+            LaneRole::MissionMarkers,
+            Batch {
+                role: LaneRole::MissionMarkers,
+                visible: true,
+                payload: BatchPayload::MarkerComposite {
+                    icons,
+                    icon_count,
+                    captions,
+                },
+            },
+        );
     }
 
     /// T-748 — bind editor-only comment glyphs from interleaved map-plane `xy` (`[x0,z0,…]`).

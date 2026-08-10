@@ -357,8 +357,8 @@ pub fn rebind_engine_from_doc() {
             if let Some(doc) = ctx.doc.borrow().as_ref() {
                 upload_squad_links(e, doc, &soa);
                 e.vehicles_bind(&doc.vehicle_xy_flat());
-                let (mxy, mtints) = marker_lane_xy_tints(doc);
-                e.markers_bind(&mxy, &mtints);
+                let (mxy, mtints, micons, mcaptions) = marker_lane_xy_tints(doc);
+                e.markers_bind(&mxy, &mtints, micons, mcaptions);
                 e.comments_bind(&comment_lane_xy(doc));
             }
         }
@@ -413,8 +413,8 @@ fn after_doc_change(ctx: &HistoryCtx) {
             // committed document is what puts it back on authored truth. A gesture that ends
             // WITHOUT a commit never reaches here — `select_tool::clear_drag_preview` covers those.
             e.vehicles_bind(&doc.vehicle_xy_flat());
-            let (mxy, mtints) = marker_lane_xy_tints(doc);
-            e.markers_bind(&mxy, &mtints);
+            let (mxy, mtints, micons, mcaptions) = marker_lane_xy_tints(doc);
+            e.markers_bind(&mxy, &mtints, micons, mcaptions);
             e.comments_bind(&comment_lane_xy(doc));
         }
     }
@@ -465,42 +465,17 @@ fn comment_lane_xy(doc: &MissionDocCore) -> Vec<f32> {
     crate::mission_editor::comment_lane_xy(&doc.comments_json())
 }
 
-/// T-760 — flat marker lane args for [`RenderEngine::markers_bind`]: interleaved world `[x,z,…]`
-/// plus packed RGBA8 side tints. Reads `briefing_marker_rows_json` (the only schema-legal marker
-/// surface). Kept here so undo/redo/restore share one feed with place/edit — a lane bound only
-/// from authoring call sites would go stale exactly the way the ticket forbids.
-fn marker_lane_xy_tints(doc: &MissionDocCore) -> (Vec<f32>, Vec<u8>) {
-    let Ok(rows) = serde_json::from_str::<serde_json::Value>(&doc.briefing_marker_rows_json())
-    else {
-        return (Vec::new(), Vec::new());
-    };
-    let Some(arr) = rows.as_array() else {
-        return (Vec::new(), Vec::new());
-    };
-    let mut xy = Vec::with_capacity(arr.len() * 2);
-    let mut tints = Vec::with_capacity(arr.len() * 4);
-    for r in arr {
-        let x = r
-            .get("x")
-            .and_then(serde_json::Value::as_f64)
-            .unwrap_or(0.0);
-        let z = r
-            .get("z")
-            .and_then(serde_json::Value::as_f64)
-            .unwrap_or(0.0);
-        #[allow(clippy::cast_possible_truncation)]
-        {
-            xy.push(x as f32);
-            xy.push(z as f32);
-        }
-        let faction = r
-            .get("factionId")
-            .and_then(serde_json::Value::as_str)
-            .unwrap_or("");
-        let side = faction.strip_prefix("faction-").unwrap_or(faction);
-        tints.extend_from_slice(&map_engine_core::slots_gpu::side_rgba(side));
-    }
-    (xy, tints)
+/// T-760 / **T-790** — the marker lane args for [`RenderEngine::markers_bind`]: interleaved world
+/// `[x,z,…]`, packed RGBA8 side tints, per-marker canonical glyph ids, and one caption per marker.
+///
+/// **T-790 moved the parse to `mission_editor::marker_lane_fields`** and this delegates to it, the
+/// same T-784/T-748 move that put `comment_lane_xy`'s parse in `mission_editor`: this module is
+/// `#![cfg(target_arch = "wasm32")]` end to end, so a parse living here cannot be unit-tested, and
+/// the `icon → glyph` mapping and caption extraction are exactly the logic that must be. Kept called
+/// from BOTH bind sites so undo/redo/restore share one feed — a lane bound only from authoring call
+/// sites would go stale exactly the way the ticket forbids.
+fn marker_lane_xy_tints(doc: &MissionDocCore) -> (Vec<f32>, Vec<u8>, Vec<String>, Vec<String>) {
+    crate::mission_editor::marker_lane_fields(&doc.briefing_marker_rows_json())
 }
 
 /// T-180.4 — thin dirty→upload: collect inputs from doc, geometry in core, hairline role 9.
