@@ -19595,7 +19595,7 @@
       "id": "T-792",
       "order": 4740,
       "program": "eden",
-      "status": "queued",
+      "status": "shipped",
       "stream": "mission-creator",
       "targets": [
         "website"
@@ -19612,13 +19612,13 @@
       ],
       "title": "Esc cancels an in-progress zone draw",
       "summary": "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). F-31 — VERIFIED TWICE (second time in isolation): arm Circle, click the centre, press Esc — the panel STILL prompts 'click the rim' and the next click completes the circle (zone count 2->3). Esc is honoured by every other transient surface tested (File menu, Export dropdown, Save dialog, ORBAT, context menu, Attributes — all six correct) and an armed MARKER disarms correctly on Esc; the one gap is the surface whose consequence is a permanent object. MECHANISM: the Esc arm at mission_editor.rs ~:3656 never calls the zone cancel (editor_ops.rs ~:4254 cancel path exists; armed state ~:5838; eden_zones.rs ~:37-42 panel state). FIX: Esc during an in-progress draw (circle centre placed, or polygon with >=1 vertex) cancels the pending geometry, clears the rim/vertex prompt, and disarms; a second Esc closes/leaves the tab per existing behaviour. ⚠️ TRAPS: polygon Close button flow must keep working; trigger draw shares the zone gesture ('draw exactly like a zone') — apply the same cancel to the trigger arm if it shares the state machine, and say so in the report if it does not. ACCEPTANCE: scripted — Circle armed, centre clicked, Esc, click elsewhere: zone count unchanged AND body text lacks 'click the rim'; same for polygon after 2 vertices; same for trigger circle; marker Esc-disarm regression stays green.",
-      "notes": "the review's Esc matrix (6 surfaces green) is the regression baseline"
+      "notes": "the review's Esc matrix (6 surfaces green) is the regression baseline | SHIPPED W203: Esc cancels circle/polygon/trigger draws — cancel_pending()'s deliberate zone-survival was the mechanism (Esc never reached the draw); cancel_zone_draw wired into the keydown arm under the modal-stack yield, doc_tick bump for the hint. Trigger draw CONFIRMED to share Pending::Zone (one cancel covers both). Verifier re-proved every arm live incl. ladder order (dialog first) and the marker/composition disarm regressions."
     },
     {
       "id": "T-789",
       "order": 4710,
       "program": "eden",
-      "status": "queued",
+      "status": "shipped",
       "stream": "mission-creator",
       "targets": [
         "website"
@@ -19634,13 +19634,13 @@
       ],
       "title": "Save Version dialog: clamped on-screen, fresh state, focus moved in and trapped",
       "summary": "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). F-04 — VERIFIED THREE WAYS, twice: the VERSION input sits at y=-22 and its label at y=-42 (vis:false) at BOTH 1920x1080 and 1366x768 — the one decision the dialog demands ('Versions are immutable — pick a new semver') is the one thing the author cannot see; screenshots show content starting at a clipped field edge above NOTES. The dialog also reopens showing a stale 'Saved v0.2.0' from the previous save. Keyboard: focus stays on the OPENER when the dialog opens; Tab order runs ✕ -> version(offscreen, blind-typeable) -> notes -> Save then WALKS OUT into the left dock (chevron_left -> Layers -> Locations) — no trap. MECHANISM: eden_top_strip.rs ~:1480-1601, anchored upward from the button (panel class top-full ~:70) with no viewport clamping. FIX: clamp the dialog fully into the viewport (flip to open downward or fix position centred), clear the last-save message when reopening, move initial focus to the version input, trap Tab within the dialog while open. ⚠️ TRAPS: T-786 (modal stack) landed in wave 200 — mount through its plumbing rather than a parallel mechanism; the version prefill/auto-bump behaviour is correct today (0.1.0 -> 0.2.0) — keep it; Esc-close must stay. ACCEPTANCE: scripted at 1920x1080 AND 1366x768: version input rect fully within viewport (y>=0, bottom<=innerHeight) and visible; reopened dialog shows no 'Saved vX' line until a save happens in-session; on open, activeElement === version input; 8 Tabs from open never focus an element outside the dialog subtree.",
-      "notes": "depends_on T-786; review re-verification section has the exact rects; the 'blind-typeable offscreen field' note is why focus-first matters"
+      "notes": "depends_on T-786; review re-verification section has the exact rects; the 'blind-typeable offscreen field' note is why focus-first matters | SHIPPED W203: fresh-state on reopen, NodeRef focus-first (uncontrolled input so select survives), Tab trap both edges by the slice. ITS OFFSCREEN PREMISE-CHECK WAS WRONG-WAY: 'did not reproduce' was a class-read, not a measurement — the dialog WAS off-screen (y=-22/-184; backdrop-filter containing block, proven by causation). Fixed in-wave 940698e8: Portal to document.body + gate smoke save-dialog-rect (EDITOR_SUITE 19, rect containment at both viewports) so class-string pins can never vouch for geometry again; focused re-verify RESOLVED with live rects. Kept un-registered from modal_stack (T-726 argument, Esc ladder re-proved). Auto-bump claim refuted -> T-821."
     },
     {
       "id": "T-809",
       "order": 4910,
       "program": "eden",
-      "status": "queued",
+      "status": "shipped",
       "stream": "mission-creator",
       "targets": [
         "website"
@@ -19657,7 +19657,7 @@
       ],
       "title": "Asset browser: one tree per faction spanning characters and vehicles, plus recently-placed",
       "summary": "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). F-22 — EDEN-VERIFIED (frame 165952): Eden's F1 Objects is ONE tree per faction — under NATO sit Anti-Air, APCs, Artillery, Boats, Cars, Drones, Helicopters, Men, Planes, Tanks, Turrets — plus an Assets|History tab pair where History is the recently-placed list. TBD splits the same material across Factions / Vehicles / Objects tabs, so the author must know TBD's filing system before finding anything (a question about the tool, not the mission), and TBD has only manual Favourites, nothing automatic. FIX: (a) the Factions tree gains kind-level children per faction (characters + vehicles at minimum; objects when catalogued) so a vehicle leaf is reachable inside its faction; keep the Vehicles tab as a filtered view or retire it — one behaviour, stated; (b) add a recently-placed rail or subtab (most-recent-first, session-scoped is fine) alongside Favourites. ABSORBS the open T-146 'Asset Browser Data Wiring' scope — note the absorption in T-146 rather than double-building. ⚠️ TRAPS: search must span the merged tree (search-prefix syntax class:/mod: kept); side chips keep filtering the one tree; asset_catalog.rs is shared with T-810 in a later wave — keep catalog-shape changes minimal and additive; drag-to-place from the new vehicle leaves must reuse the existing palette-drag path. ACCEPTANCE: scripted with seeded vehicles (T-800): a vehicle leaf is reachable under NATO subtree and drag-places (OBJ+1 as a vehicle); placing any asset puts it at the head of recently-placed; search 'class:' prefix still filters; Favourites star still works from the merged rows. ⟡ OPERATOR EYE-PASS FOLD (wave-202 pass, 2026-08-10): placed vehicles do NOT belong in this dock at all — placed things live in the LEFT outliner. While rebuilding the panel: (c) list placed vehicles in the left outliner (eden_tree.rs — owns widened for this) alongside slots/groups, selectable, same row affordances the outliner gives slots; (d) KEEP the right-dock Placed strip's inline crew editor functioning THIS wave (deliberate stopgap — T-818/W210 rehomes the editor into vehicle Attributes and deletes the strip; removing it here would leave crew editing homeless for a wave). The strip's LISTING role is superseded by (c); its editor role survives one more wave.",
-      "notes": "Eden evidence frames 165952/170028; T-146 absorbed — registry note added by this batch | owns widened +eden_tree.rs (free in wave 203) for the outliner listing; fold per operator instruction 2026-08-10"
+      "notes": "Eden evidence frames 165952/170028; T-146 absorbed — registry note added by this batch | owns widened +eden_tree.rs (free in wave 203) for the outliner listing; fold per operator instruction 2026-08-10 | SHIPPED W203: merged per-faction tree (vehicle leaves under NATO, drag-places), recently-placed as Favourites|History pair — completion 87e1ff94 added the recorder seam so composition stamps (one titled entry per stamp) and ORBAT Add Vehicle feed it too; FOLD delivered: placed vehicles listed in the left outliner (selectable by doc-presence), Vehicles tab kept as the crew-editor stopgap (dies with T-818/W210); ORBAT picker data path verified independent. Cause-probe nuance under headless -> T-820; outliner dblclick bubble (pre-existing, widened) -> T-822; OBJ count -> T-823."
     },
     {
       "id": "T-790",
