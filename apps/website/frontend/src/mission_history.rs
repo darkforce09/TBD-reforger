@@ -352,14 +352,21 @@ pub fn rebind_engine_from_doc() {
         let ids = ctx.selection.borrow().clone();
         if let Some(e) = ctx.engine.borrow_mut().as_mut() {
             let tints = map_engine_core::slots_gpu::side_tints_rgba_bytes(&soa.side_keys);
-            e.slots_bind_soa(soa.ids.clone(), &soa.xy, &tints);
+            e.slots_bind_symbology(
+                soa.ids.clone(),
+                &soa.xy,
+                &tints,
+                soa_roles(&soa),
+                &soa.rotations,
+            );
             e.set_selection(ids);
             if let Some(doc) = ctx.doc.borrow().as_ref() {
                 upload_squad_links(e, doc, &soa);
-                e.vehicles_bind(&doc.vehicle_xy_flat());
+                let (vxy, valiases, vtints, vheadings) = vehicle_lane_fields();
+                e.vehicles_bind_symbology(&vxy, valiases, &vtints, &vheadings);
                 let (mxy, mtints, micons, mcaptions) = marker_lane_xy_tints(doc);
                 e.markers_bind(&mxy, &mtints, micons, mcaptions);
-                e.comments_bind(&comment_lane_xy(doc));
+                e.comments_bind_ids(&comment_lane_xy(doc), comment_lane_ids(doc));
             }
         }
         refresh_signals(ctx, soa.ids.len());
@@ -403,7 +410,13 @@ fn after_doc_change(ctx: &HistoryCtx) {
     if let Some(e) = ctx.engine.borrow_mut().as_mut() {
         e.set_drag(Vec::new(), 0.0, 0.0); // clear any live drag overlay
         let tints = map_engine_core::slots_gpu::side_tints_rgba_bytes(&soa.side_keys);
-        e.slots_bind_soa(soa.ids.clone(), &soa.xy, &tints);
+        e.slots_bind_symbology(
+            soa.ids.clone(),
+            &soa.xy,
+            &tints,
+            soa_roles(&soa),
+            &soa.rotations,
+        );
         e.set_selection(ids);
         if let Some(doc) = ctx.doc.borrow().as_ref() {
             upload_squad_links(e, doc, &soa);
@@ -412,10 +425,11 @@ fn after_doc_change(ctx: &HistoryCtx) {
             // offset, the lane is live state during a drag, and this unconditional re-bind from the
             // committed document is what puts it back on authored truth. A gesture that ends
             // WITHOUT a commit never reaches here — `select_tool::clear_drag_preview` covers those.
-            e.vehicles_bind(&doc.vehicle_xy_flat());
+            let (vxy, valiases, vtints, vheadings) = vehicle_lane_fields();
+            e.vehicles_bind_symbology(&vxy, valiases, &vtints, &vheadings);
             let (mxy, mtints, micons, mcaptions) = marker_lane_xy_tints(doc);
             e.markers_bind(&mxy, &mtints, micons, mcaptions);
-            e.comments_bind(&comment_lane_xy(doc));
+            e.comments_bind_ids(&comment_lane_xy(doc), comment_lane_ids(doc));
         }
     }
     ctx.doc_ver.set(ctx.doc_ver.get().saturating_add(1));
@@ -463,6 +477,78 @@ fn after_doc_change(ctx: &HistoryCtx) {
 /// (which is why the T-748 feed pin has to reach this file through `include_str!` at all).
 fn comment_lane_xy(doc: &MissionDocCore) -> Vec<f32> {
     crate::mission_editor::comment_lane_xy(&doc.comments_json())
+}
+
+/// **T-808 — the comment lane's SECOND column: one id per bubble**, for
+/// [`RenderEngine::comments_bind_ids`]. Without it the engine holds coordinates it cannot name, so
+/// no note can ever be drawn as selected (`comments_bind`'s empty-ids path marks every row
+/// unselected and the amber treatment is simply never applied) — the half of T-796 the feeder never
+/// delivered.
+///
+/// Row-aligned with [`comment_lane_xy`] **BY CONSTRUCTION**, not by agreement: both are projections
+/// of the same `mission_editor::comment_points` list (id-sorted, so independent of `serde_json`'s
+/// map order), one taking `x`/`z` and this one taking `id`. That is the T-784/T-748 single-reader
+/// rule applied to the id column — an ids array built from any other walk of `commentsById` could
+/// hand row *i*'s selection to row *j*, which is worse than no selection treatment at all.
+fn comment_lane_ids(doc: &MissionDocCore) -> Vec<String> {
+    crate::mission_editor::comment_lane_ids(&doc.comments_json())
+}
+
+/// **T-808 — the per-row ROLE column for [`RenderEngine::slots_bind_symbology`].** The SoA stores
+/// roles interned (a `roles` dictionary + a `role_idx` per row — see `SlotSoa`), and the engine
+/// wants one string per row; this is that expansion, and nothing more.
+///
+/// An index the dictionary does not cover — `NONE_IDX` (`u32::MAX`), the sentinel for a slot with no
+/// authored role — yields the empty string, which `slots_gpu::unit_role_class` resolves to the
+/// rifleman default. That is deliberately the SAME picture the pre-T-808 `slots_bind_soa` drew, so
+/// an unauthored slot loses nothing by this wiring.
+pub(crate) fn soa_roles(soa: &SlotSoa) -> Vec<String> {
+    soa.role_idx
+        .iter()
+        .map(|&i| soa.roles.get(i as usize).cloned().unwrap_or_default())
+        .collect()
+}
+
+/// **T-808 — the four parallel vehicle-lane columns for [`RenderEngine::vehicles_bind_symbology`]**
+/// (`xy`, registry alias / prefab path, packed RGBA8 side tint, compass heading), built in ONE pass
+/// over [`crate::editor_ops::vehicle_rows`].
+///
+/// **Why one reader and not four.** `vehicle_rows` sorts by id; `MissionDocCore::vehicle_xy_flat`
+/// (what this lane used to be fed) walks the `yrs` map in ITERATION order. Keeping the old call for
+/// `xy` and adding the other three columns off `vehicle_rows` would have produced four arrays in two
+/// different row orders — every vehicle drawn wearing another vehicle's kind, side and heading. A
+/// silhouette pointing confidently the wrong way is a worse lie than the amber disc it replaces, so
+/// the alignment is not asserted here, it is structural: one iterator, one `push` per column per
+/// row, and the only `continue` (an unplaced vehicle) happens BEFORE any column is written.
+///
+/// Unplaced ORBAT vehicles (`xy == None`) are skipped, exactly as `vehicle_xy_flat` skipped rows
+/// with no `position`: a vehicle that has never been dropped on the map has no lane row. `rotation`
+/// is the authored COMPASS heading in degrees passed through untouched — `slots_gpu` owns the
+/// screen-yaw sign flip, so converting here would double it (and `None`, an unrotated vehicle,
+/// is north).
+fn vehicle_lane_fields() -> (Vec<f32>, Vec<String>, Vec<u8>, Vec<f32>) {
+    let rows = crate::editor_ops::vehicle_rows();
+    let mut xy = Vec::with_capacity(rows.len() * 2);
+    let mut aliases = Vec::with_capacity(rows.len());
+    let mut tints = Vec::with_capacity(rows.len() * 4);
+    let mut headings = Vec::with_capacity(rows.len());
+    for r in rows {
+        let Some((x, y)) = r.xy else { continue };
+        #[allow(clippy::cast_possible_truncation)]
+        {
+            xy.push(x as f32);
+            xy.push(y as f32);
+            headings.push(r.rotation.unwrap_or(0.0) as f32);
+        }
+        // `faction-{SIDE}` when map-placed (the marker feed strips the same prefix the same way).
+        let side = r
+            .faction_id
+            .strip_prefix("faction-")
+            .unwrap_or(&r.faction_id);
+        tints.extend_from_slice(&map_engine_core::slots_gpu::side_rgba(side));
+        aliases.push(r.resource_name);
+    }
+    (xy, aliases, tints, headings)
 }
 
 /// T-760 / **T-790** — the marker lane args for [`RenderEngine::markers_bind`]: interleaved world

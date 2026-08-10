@@ -2516,6 +2516,24 @@ pub(crate) fn comment_lane_xy(comments_json: &str) -> Vec<f32> {
     xy
 }
 
+/// **T-808 — the lane's id column, for `RenderEngine::comments_bind_ids`.** The sibling of
+/// [`comment_lane_xy`] and packed from the very same [`comment_points`] list: row *i* of this array
+/// names the bubble drawn at rows `2i`/`2i+1` of that one, so the pairing is a property of the
+/// shared read rather than of two feeders staying in step. `comment_drag_lane_xy` maps that list
+/// one-for-one as well (it only OFFSETS the dragged rows), so these ids are aligned with the drag
+/// preview's lane too — which is what keeps a note's selection ring on the note while it moves.
+///
+/// Without this column the engine cannot answer "is bubble *i* selected?": `comments_bind` marks
+/// every row unselected when its id cache is empty, so a selected note drew the neutral bubble and
+/// the T-796 selection treatment shipped invisible.
+#[must_use]
+pub(crate) fn comment_lane_ids(comments_json: &str) -> Vec<String> {
+    comment_points(comments_json)
+        .into_iter()
+        .map(|p| p.id)
+        .collect()
+}
+
 /// T-760 / **T-790** — the four parallel marker-lane arrays for [`RenderEngine::markers_bind`],
 /// parsed ONCE from `briefing_marker_rows_json` (the sole schema-legal marker surface, emitted by
 /// `MissionDocCore::briefing_marker_rows_json` with `x`/`z`/`factionId`/`icon`/`label`):
@@ -4910,6 +4928,12 @@ pub fn MissionEditorPage() -> impl IntoView {
                             );
                             // T-159.16 — doc→engine bind (D5): with the atlas up, this first bind
                             // materializes + draws the seeded slot set.
+                            //
+                            // T-808 — through the SYMBOLOGY bind, like the two `mission_history`
+                            // feeds. This is the bind the operator sees FIRST (and the only one a
+                            // mission that is never edited ever gets), so leaving it on
+                            // `slots_bind_soa` would have opened every mission as a field of
+                            // north-pointing riflemen until the first commit re-bound it.
                             let soa = doc.borrow().as_ref().map(|c| c.materialize());
                             if let (Some(soa), Some(e)) =
                                 (soa.as_ref(), engine.borrow_mut().as_mut())
@@ -4917,7 +4941,13 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 let tints = map_engine_core::slots_gpu::side_tints_rgba_bytes(
                                     &soa.side_keys,
                                 );
-                                e.slots_bind_soa(soa.ids.clone(), &soa.xy, &tints);
+                                e.slots_bind_symbology(
+                                    soa.ids.clone(),
+                                    &soa.xy,
+                                    &tints,
+                                    crate::mission_history::soa_roles(soa),
+                                    &soa.rotations,
+                                );
                             }
                             // T-175 B1 — engine is mounted + first-bound. If the IDB restore + hydrate
                             // already settled, rebind now from the settled doc (the first bind above
@@ -5499,11 +5529,22 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 // live delta. On a mixed drag with no comment in `ids` this re-binds
                                 // the lane to its authored positions (all offsets zero), which is a
                                 // harmless identity re-upload, so there is no branch to keep in step.
-                                let cxy = doc.borrow().as_ref().map(|c| {
-                                    comment_drag_lane_xy(&c.comments_json(), &ids, dx, dy)
+                                //
+                                // T-808 — the ids ride along: the lane's selection treatment is
+                                // per-row and the engine looks it up BY ID, so a preview bound
+                                // without them would strip the ring off a dragged note for the
+                                // whole gesture and hand it back on release. `comment_lane_ids`
+                                // packs the same `comment_points` list this re-pack offsets, so
+                                // ids[i] still names the bubble at xy[2i] mid-drag.
+                                let lane = doc.borrow().as_ref().map(|c| {
+                                    let cj = c.comments_json();
+                                    (
+                                        comment_drag_lane_xy(&cj, &ids, dx, dy),
+                                        comment_lane_ids(&cj),
+                                    )
                                 });
-                                if let Some(cxy) = cxy {
-                                    e.comments_bind(&cxy);
+                                if let Some((cxy, cids)) = lane {
+                                    e.comments_bind_ids(&cxy, cids);
                                 }
                             }
                             LG::Move {
@@ -5733,13 +5774,15 @@ pub fn MissionEditorPage() -> impl IntoView {
                                     st::clear_drag_preview(e, &crate::editor_ops::vehicle_points());
                                     // T-796 — a wrong-button release is never a commit; put a dragged
                                     // note's lane back at its authored position too (identity when the
-                                    // drag held no comment).
-                                    if let Some(cxy) = doc
-                                        .borrow()
-                                        .as_ref()
-                                        .map(|c| comment_lane_xy(&c.comments_json()))
-                                    {
-                                        e.comments_bind(&cxy);
+                                    // drag held no comment). T-808 — with its ids, or the restore
+                                    // would drop the selection ring the abandoned drag was carrying.
+                                    if let Some((cxy, cids)) = doc.borrow().as_ref().map(|c| {
+                                        (
+                                            comment_lane_xy(&c.comments_json()),
+                                            comment_lane_ids(&c.comments_json()),
+                                        )
+                                    }) {
+                                        e.comments_bind_ids(&cxy, cids);
                                     }
                                 }
                             }
@@ -6113,13 +6156,14 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 // T-796 — and the comment lane: a zero-delta release still ran the
                                 // preview re-pack above, so re-bind the notes to their authored
                                 // positions (no committed move re-binds them here). Identity when the
-                                // drag held no note.
-                                if let Some(cxy) = doc
-                                    .borrow()
-                                    .as_ref()
-                                    .map(|c| comment_lane_xy(&c.comments_json()))
-                                {
-                                    e.comments_bind(&cxy);
+                                // drag held no note. T-808 — ids ride along (see the preview arm).
+                                if let Some((cxy, cids)) = doc.borrow().as_ref().map(|c| {
+                                    (
+                                        comment_lane_xy(&c.comments_json()),
+                                        comment_lane_ids(&c.comments_json()),
+                                    )
+                                }) {
+                                    e.comments_bind_ids(&cxy, cids);
                                 }
                             }
                         }
@@ -6405,12 +6449,14 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 // T-796 — the comment lane, same reasoning: a cancelled drag that
                                 // held a note left its glyph at the previewed offset. Re-bind the
                                 // authored positions (identity when no note was dragged).
-                                if let Some(cxy) = doc
-                                    .borrow()
-                                    .as_ref()
-                                    .map(|c| comment_lane_xy(&c.comments_json()))
-                                {
-                                    e.comments_bind(&cxy);
+                                // T-808 — ids ride along (see the preview arm).
+                                if let Some((cxy, cids)) = doc.borrow().as_ref().map(|c| {
+                                    (
+                                        comment_lane_xy(&c.comments_json()),
+                                        comment_lane_ids(&c.comments_json()),
+                                    )
+                                }) {
+                                    e.comments_bind_ids(&cxy, cids);
                                 }
                             }
                         }
@@ -12700,6 +12746,224 @@ mod t760_markers_bind_feed {
     }
 }
 
+/// **T-808 — the FEEDERS, pinned to the symbology signatures.**
+///
+/// T-808 built the engine half (`slots_bind_symbology`, `vehicles_bind_symbology`,
+/// `comments_bind_ids`) but could not wire the callers, and an engine that can draw a medic facing
+/// east is worth exactly nothing while the feeder still calls `slots_bind_soa`: every slot reads as
+/// a rifleman pointing north, every vehicle as an amber disc, every note as unselected. These pins
+/// hold the wiring — the same Class-R shape as the T-760 marker pin above, and for the same reason:
+/// `mission_history` is `#![cfg(target_arch = "wasm32")]` end to end, so a scrubbed `include_str!`
+/// is a native test's only reach into it.
+#[cfg(test)]
+mod t808_symbology_feed {
+    use crate::arsenal::class_r_scrub::{live_code, only_body};
+
+    const HIST: &str = include_str!("mission_history.rs");
+
+    fn hist_live() -> String {
+        live_code(HIST)
+    }
+
+    /// This file from the page component onward, scrubbed — the mount-time first bind lives there.
+    /// The anchor is split so this module's own copy of it is not a second occurrence in the raw
+    /// file (the T-784 `glyph_block` idiom).
+    fn page() -> String {
+        let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
+        let raw = include_str!("mission_editor.rs");
+        assert_eq!(raw.matches(anchor.as_str()).count(), 1);
+        live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])
+    }
+
+    /// The comment glyph block of this file, scrubbed (see the T-784 pin's note on why the slice
+    /// has to start from a raw anchor).
+    fn glyph_block() -> String {
+        let anchor = format!("pub(crate) struct Comment{}", "Point");
+        let raw = include_str!("mission_editor.rs");
+        assert_eq!(raw.matches(anchor.as_str()).count(), 1);
+        live_code(&raw[raw.find(anchor.as_str()).expect("counted")..])
+    }
+
+    fn symbology_bind() -> String {
+        format!("{}{}", "slots_bind_", "symbology(")
+    }
+
+    fn legacy_slot_bind() -> String {
+        format!("{}{}", "slots_bind_", "soa(")
+    }
+
+    /// **Feeder 1 — the slot lane carries ROLE and HEADING.** All THREE binds: the engine-mount
+    /// first bind (this file — the only bind a mission that is never edited ever gets), the IDB /
+    /// hydrate rebind, and the post-commit rebind. A single site left on `slots_bind_soa` is not a
+    /// partial win: that path draws rifleman-north, so the symbology would flicker in and out with
+    /// whichever feed ran last.
+    #[test]
+    fn every_slot_feed_binds_role_and_heading() {
+        let hist = hist_live();
+        let bind = symbology_bind();
+        for (name, body) in [
+            (
+                "rebind_engine_from_doc",
+                only_body(&hist, "pub fn rebind_engine_from_doc"),
+            ),
+            ("after_doc_change", only_body(&hist, "fn after_doc_change")),
+        ] {
+            assert!(
+                body.contains(&bind),
+                "T-808: {name} must bind the slot lane through the symbology signature; body:\n\
+                 {body}"
+            );
+            assert!(
+                body.contains("soa_roles(&soa)"),
+                "T-808: {name} must pass the per-row role column; body:\n{body}"
+            );
+            assert!(
+                body.contains("&soa.rotations"),
+                "T-808: {name} must pass the per-row heading column; body:\n{body}"
+            );
+        }
+        let mount = page();
+        assert!(
+            mount.contains(&bind) && mount.contains("soa.rotations"),
+            "T-808: the engine-mount first bind must be the symbology bind too — a mission opened \
+             and never edited would otherwise be a field of north-pointing riflemen"
+        );
+        let legacy = legacy_slot_bind();
+        assert!(
+            !hist.contains(&legacy) && !mount.contains(&legacy),
+            "T-808: no feeder may keep calling the id-less slot bind; it passes an empty role and \
+             heading column, which the engine honours by drawing the pre-T-808 look"
+        );
+        // The heading is the DOCUMENT's compass bearing, handed over untouched: `slots_gpu`'s
+        // `screen_yaw_for_heading_deg` owns the sign flip, so a feeder that converted would flip it
+        // twice and every unit would face its own mirror image.
+        assert!(
+            !hist.contains("rotations.iter()") && !hist.contains("screen_yaw"),
+            "T-808: the feeder must not pre-convert the heading — the engine owns that flip"
+        );
+    }
+
+    /// **Feeder 2 — the vehicle lane's four columns come from ONE id-sorted reader.**
+    ///
+    /// This is the alignment pin, and it is the whole reason the ticket named a trap.
+    /// `editor_ops::vehicle_rows` sorts by id; `MissionDocCore::vehicle_xy_flat` (what this lane was
+    /// fed before) walks the `yrs` map in ITERATION order. Feeding `xy` from one and kind / tint /
+    /// heading from the other would put every vehicle in another vehicle's clothes — the wave-127
+    /// zip lesson, and strictly worse than the amber disc it replaces, because a silhouette pointing
+    /// confidently the wrong way is believed.
+    #[test]
+    fn the_vehicle_lane_columns_come_from_one_sorted_reader() {
+        let hist = hist_live();
+        let fields = only_body(&hist, "fn vehicle_lane_fields()");
+        assert!(
+            fields.contains("vehicle_rows()"),
+            "T-808: every vehicle column must come off the id-sorted row reader; body:\n{fields}"
+        );
+        assert!(
+            !hist.contains("vehicle_xy_flat"),
+            "T-808: the yrs-iteration-order xy flattener must be gone from the feed — mixing it \
+             with the id-sorted reader misaligns all four columns"
+        );
+        assert_eq!(
+            fields.matches("for r in ").count(),
+            1,
+            "T-808: one pass over one list is what makes the four columns row-aligned BY \
+             CONSTRUCTION; a second loop is a second order; body:\n{fields}"
+        );
+        // One push per column per row, and the only skip (an unplaced ORBAT vehicle) happens
+        // BEFORE any column is written — the two facts that make "row i is the same vehicle in all
+        // four arrays" a property of the code's shape rather than a claim in a comment.
+        assert_eq!(fields.matches("xy.push(").count(), 2, "body:\n{fields}");
+        assert_eq!(
+            fields.matches("headings.push(").count(),
+            1,
+            "body:\n{fields}"
+        );
+        assert_eq!(
+            fields.matches("aliases.push(").count(),
+            1,
+            "body:\n{fields}"
+        );
+        assert_eq!(
+            fields.matches("tints.extend_from_slice(").count(),
+            1,
+            "body:\n{fields}"
+        );
+        let skip = fields.find("continue").expect("the unplaced-row skip");
+        let first_write = fields.find("xy.push(").expect("counted above");
+        assert!(
+            skip < first_write,
+            "T-808: the unplaced-vehicle skip must precede every column write, or one array gets a \
+             row the others do not; body:\n{fields}"
+        );
+
+        let bind = format!("{}{}", "vehicles_bind_", "symbology(");
+        for (name, body) in [
+            (
+                "rebind_engine_from_doc",
+                only_body(&hist, "pub fn rebind_engine_from_doc"),
+            ),
+            ("after_doc_change", only_body(&hist, "fn after_doc_change")),
+        ] {
+            assert!(
+                body.contains(&bind),
+                "T-808: {name} must bind vehicles through the symbology signature; body:\n{body}"
+            );
+        }
+        assert!(
+            !hist.contains("vehicles_bind(&"),
+            "T-808: no feeder may keep uploading the kind-less, heading-less disc lane"
+        );
+    }
+
+    /// **Feeder 3 — the comment lane names its rows.** `comments_bind` with no ids marks every
+    /// bubble unselected, so T-796's selection treatment shipped invisible: the engine held
+    /// coordinates it could not match against the selection. The ids must be the PICK's own list,
+    /// or row *i*'s ring lands on row *j*.
+    #[test]
+    fn every_comment_feed_names_its_rows() {
+        let hist = hist_live();
+        let bind = format!("{}{}", "comments_bind", "_ids(");
+        for (name, body) in [
+            (
+                "rebind_engine_from_doc",
+                only_body(&hist, "pub fn rebind_engine_from_doc"),
+            ),
+            ("after_doc_change", only_body(&hist, "fn after_doc_change")),
+        ] {
+            assert!(
+                body.contains(&bind),
+                "T-808: {name} must upload the comment lane WITH its ids; body:\n{body}"
+            );
+            assert!(
+                body.contains("comment_lane_ids(doc)"),
+                "T-808: {name} must pack the ids through the shared reader; body:\n{body}"
+            );
+        }
+        assert!(
+            !hist.contains("e.comments_bind(&"),
+            "T-808: the id-less comment bind cannot remain a feed — it silently un-selects"
+        );
+        // Both columns are projections of `comment_points`, which is also what `pick_comment`
+        // hit-tests: drawn, picked and named are one list (the T-784/T-748 rule).
+        let me = glyph_block();
+        let ids = only_body(&me, &format!("pub(crate) fn comment_lane{}", "_ids("));
+        let xy = only_body(&me, &format!("pub(crate) fn comment_lane{}", "_xy("));
+        let points = format!("comment{}", "_points(");
+        assert!(
+            ids.contains(&points) && xy.contains(&points),
+            "T-808: the id column and the xy column must both be comment_points packed, or they \
+             are two readers that can disagree; ids:\n{ids}\nxy:\n{xy}"
+        );
+        // …and `mission_history` must not grow a second parser of its own (the T-784 shape).
+        let feed = only_body(&hist, &format!("fn comment_lane{}", "_ids(doc:"));
+        assert!(
+            feed.contains(&format!("mission_editor::comment_lane{}", "_ids(")),
+            "T-808: the id feed must delegate to the module that owns the pick's list; got:\n{feed}"
+        );
+    }
+}
+
 /// T-726 — window-Esc pile-up: every editor Esc consumer consults the modal stack.
 ///
 /// Defect (wave106 MINOR-2 / wave108 MAJOR-2 / wave109-110): separate window keydowns all fired on
@@ -13910,8 +14174,14 @@ mod t796_comment_drag {
             "T-796: the pointermove preview must re-pack the comment lane with the live offset"
         );
         // Count the authored re-binds at the non-commit exits: zero-delta else, wrong-button Move,
-        // pointercancel Move. All three call comments_bind(comment_lane_xy(...)).
-        let authored = ["e.comments_bind(&", "cxy)"].concat();
+        // pointercancel Move. All three call comments_bind_ids(comment_lane_xy(...), …).
+        //
+        // T-808 widened the needle from `comments_bind` to `comments_bind_ids`: the lane's entry
+        // point is now the one that carries the id column, and an exit that dropped back to the
+        // id-less `comments_bind` would restore the note's POSITION while stripping its selection
+        // ring — the T-796 defect with a different last step. `comments_bind_ids` delegates to
+        // `comments_bind`, so this is the same claim about the same upload, one call deeper.
+        let authored = ["e.comments_bind", "_ids(&cxy, cids)"].concat();
         assert!(
             code.matches("comment_lane_xy(&c.comments_json())").count() >= 3,
             "T-796: the three non-commit exits (zero delta, wrong button, cancel) must each re-bind \
@@ -13919,7 +14189,8 @@ mod t796_comment_drag {
         );
         assert!(
             code.contains(&authored),
-            "T-796: the restore must upload through comments_bind, the lane's only entry point"
+            "T-796/T-808: the restore must upload through comments_bind_ids, the lane's only entry \
+             point — and it must pass the ids, or the restored note loses its selection ring"
         );
     }
 }
