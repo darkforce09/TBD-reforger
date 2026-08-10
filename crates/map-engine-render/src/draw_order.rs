@@ -375,8 +375,8 @@ pub fn tex_lane_role_from_u32(role: u32) -> Option<LaneRole> {
 #[cfg(test)]
 mod lane_order_pins {
     use super::{
-        ALL_LANES, LaneRole as L, lane_order, lane_role_from_u32, lane_role_to_u32, role_id,
-        tex_lane_role_from_u32, tex_role_id,
+        lane_order, lane_role_from_u32, lane_role_to_u32, role_id, tex_lane_role_from_u32,
+        tex_role_id, LaneRole as L, ALL_LANES,
     };
 
     /// T-592 — the role→u32→role round trip, proved **exhaustive in both directions** rather
@@ -925,5 +925,159 @@ mod t780_connections_bind_pick_bridge {
             !body.contains("slots_bind_soa"),
             "T-780: connections_bind must not call slots_bind_soa; body:\n{body}"
         );
+    }
+}
+
+/// T-808 — the four paths the symbology work added to `engine.rs`, pinned here for the same reason
+/// T-748 and T-780 are: `engine.rs` is `#[cfg(target_arch = "wasm32")]`, so it hosts no native test
+/// of its own and `cargo test -p map-engine-render` never compiles a line of it. Before this module
+/// the new paths had NO pin at all — `ensure_slot_atlas` could stop widening the atlas,
+/// `slots_bind_symbology` could stop keeping the role/heading columns, `vehicles_bind_symbology`
+/// could lose its no-symbology fallback and `refresh_comment_lane` could stop being called, and the
+/// whole suite would stay green because none of it is native code.
+///
+/// SCRUBBED SOURCE, not raw `include_str!` self-matching: the haystack is another file
+/// (`engine.rs`) narrowed to ONE function body by brace-matching from its signature, so this
+/// module's own assertion text is never in the string being searched and a needle cannot be
+/// satisfied by the test that looks for it — the T-759 hollow-pin class, twice caught this week.
+/// One extractor serves four tests rather than four copies of the brace matcher above.
+#[cfg(test)]
+mod t808_symbology_bind_paths {
+    const ENGINE: &str = include_str!("engine.rs");
+
+    /// Brace-matched body of the unique `sig` in `engine.rs`. Panics if the signature is missing
+    /// (a renamed / deleted path is a red pin, never a silently skipped one) or ambiguous.
+    fn body(sig: &str) -> String {
+        let start = ENGINE
+            .find(sig)
+            .unwrap_or_else(|| panic!("T-808: engine.rs has no `{sig}`"));
+        assert!(
+            !ENGINE[start + sig.len()..].contains(sig),
+            "T-808: `{sig}` is not unique in engine.rs — the extractor would pin the wrong body"
+        );
+        let after = &ENGINE[start..];
+        let brace = after.find('{').expect("body");
+        let mut depth = 0usize;
+        let mut end = brace;
+        for (i, ch) in after[brace..].char_indices() {
+            match ch {
+                '{' => depth += 1,
+                '}' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        end = brace + i + 1;
+                        break;
+                    }
+                }
+                _ => {}
+            }
+        }
+        after[..end].to_string()
+    }
+
+    /// The atlas is widened ENGINE-side, so every one of the three call sites that build a strip
+    /// gets the symbology cells without knowing they exist. Both arms are load-bearing: the `Some`
+    /// arm must record the runtime base, and the `None` arm must record `None` rather than leave a
+    /// stale base pointing into an atlas that no longer has those cells (the lanes read
+    /// `symbology_base` to decide between a symbology glyph id and the pre-T-808 ring).
+    #[test]
+    fn ensure_slot_atlas_widens_and_records_the_symbology_base() {
+        let b = body("pub fn ensure_slot_atlas");
+        assert!(
+            b.contains("extend_atlas_with_unit_glyphs"),
+            "T-808: ensure_slot_atlas must widen the strip via \
+             slots_gpu::extend_atlas_with_unit_glyphs; body:\n{b}"
+        );
+        assert!(
+            b.contains("symbology_base = Some(wide.base_cells)"),
+            "T-808: ensure_slot_atlas must record the runtime symbology base; body:\n{b}"
+        );
+        assert!(
+            b.contains("symbology_base = None"),
+            "T-808: an unparseable strip must CLEAR symbology_base, not keep a stale one; \
+             body:\n{b}"
+        );
+        assert!(
+            b.contains("atlas_ready = true"),
+            "T-808: ensure_slot_atlas must still arm the slot bridge; body:\n{b}"
+        );
+    }
+
+    /// The symbology bind is the only writer of the two columns the map was missing. Losing either
+    /// store is silent — every slot just draws as the rifleman default facing north, which is
+    /// exactly the pre-T-808 look this ticket exists to replace.
+    #[test]
+    fn slots_bind_symbology_keeps_the_role_and_heading_columns() {
+        let b = body("pub fn slots_bind_symbology");
+        assert!(
+            b.contains("last_roles = roles"),
+            "T-808: slots_bind_symbology must store the ROLE column; body:\n{b}"
+        );
+        assert!(
+            b.contains("last_headings = headings_deg"),
+            "T-808: slots_bind_symbology must store the HEADING column; body:\n{b}"
+        );
+        assert!(
+            b.contains("rematerialize_slot_lane"),
+            "T-808: slots_bind_symbology must re-pack the slot lane from the new columns; \
+             body:\n{b}"
+        );
+        // The pre-T-808 entry point must keep delegating here, or every caller that was never
+        // updated silently stops carrying symbology at all.
+        let soa = body("pub fn slots_bind_soa");
+        assert!(
+            soa.contains("slots_bind_symbology"),
+            "T-808: slots_bind_soa must delegate to slots_bind_symbology; body:\n{soa}"
+        );
+    }
+
+    /// The vehicle lane packs SILHOUETTES from the symbology cells, and must degrade to
+    /// `vehicles_bind`'s disc lane when the uploaded atlas has none — emitting symbology glyph ids
+    /// against a two-cell atlas samples whatever the shader clamp lands on. Like every other
+    /// MissionVehicles path it is a RENDER lane, never a pick surface (the T-748 / T-780 hazard).
+    #[test]
+    fn vehicles_bind_symbology_uploads_its_lane_and_falls_back_without_symbology() {
+        let b = body("pub fn vehicles_bind_symbology");
+        assert!(
+            b.contains("MissionVehicles"),
+            "T-808: vehicles_bind_symbology must upload LaneRole::MissionVehicles; body:\n{b}"
+        );
+        assert!(
+            b.contains("pack_vehicle_symbology"),
+            "T-808: vehicles_bind_symbology must pack via slots_gpu::pack_vehicle_symbology; \
+             body:\n{b}"
+        );
+        assert!(
+            b.contains("symbology_base") && b.contains("self.vehicles_bind(xy)"),
+            "T-808: vehicles_bind_symbology must fall back to the disc lane when the atlas \
+             carries no symbology cells; body:\n{b}"
+        );
+        assert!(
+            !b.contains("last_ids") && !b.contains("slots_bind_soa"),
+            "T-808: vehicles_bind_symbology must not enter the slot pick / SoA bridge; body:\n{b}"
+        );
+    }
+
+    /// The comment lane carries no row identity inside the engine, so selection and the symbology
+    /// zoom crossing can only reach it by re-packing from the cached `comment_xy`. Pin the body AND
+    /// its two feeds: a private fn that nothing calls is a hollow pin.
+    #[test]
+    fn refresh_comment_lane_repacks_from_cache_and_is_actually_called() {
+        let b = body("fn refresh_comment_lane(&mut self)");
+        assert!(
+            b.contains("comment_xy"),
+            "T-808: refresh_comment_lane must re-pack from the cached comment_xy; body:\n{b}"
+        );
+        assert!(
+            b.contains("self.comments_bind(&xy)"),
+            "T-808: refresh_comment_lane must re-pack through comments_bind; body:\n{b}"
+        );
+        for feed in ["pub fn set_selection", "fn sync_slot_zoom_uniform"] {
+            let f = body(feed);
+            assert!(
+                f.contains("refresh_comment_lane"),
+                "T-808: `{feed}` must refresh the comment lane; body:\n{f}"
+            );
+        }
     }
 }
