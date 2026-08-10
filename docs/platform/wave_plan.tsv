@@ -584,7 +584,7 @@
 202	T-800	Catalog failure states name the cause and offer retry; Add Vehicle explains itself; dev seed gets vehicles	apps/website/frontend/src/eden_dock_right.rs; apps/website/frontend/src/orbat_manager.rs; apps/website/api/seeds/registry_dev.sql
 203	T-792	Esc cancels an in-progress zone draw	apps/website/frontend/src/eden_zones.rs; apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/mission_editor.rs
 203	T-789	Save Version dialog: clamped on-screen, fresh state, focus moved in and trapped	apps/website/frontend/src/eden_top_strip.rs
-203	T-809	Asset browser: one tree per faction spanning characters and vehicles, plus recently-placed	apps/website/frontend/src/eden_dock_right.rs; apps/website/frontend/src/asset_catalog.rs
+203	T-809	Asset browser: one tree per faction spanning characters and vehicles, plus recently-placed	apps/website/frontend/src/eden_dock_right.rs; apps/website/frontend/src/asset_catalog.rs; apps/website/frontend/src/eden_tree.rs
 204	T-790	Markers render their icon glyph and caption on the map	apps/website/frontend/src/mission_editor.rs; crates/map-engine-core/src/doc/store.rs; crates/map-engine-render/src/scene.rs; crates/map-engine-render/src/engine.rs; crates/map-engine-render/src/lanes.rs
 204	T-798	Validation moves to a top-bar error chip; V1 evaluates from load; Backspace hides everything	apps/website/frontend/src/eden_top_strip.rs; apps/website/frontend/src/validation_panel.rs
 204	T-803	The placement drop-target layer is visible, always	apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/eden_dock_left.rs
@@ -604,3 +604,5 @@
 209	T-813	Multi-edit differing-field no-op wipe; field Escape also closes the modal	apps/website/frontend/src/attributes.rs
 209	T-814	Transient/dialog exclusivity, consume-aware one-layer Esc, open-order dismissal	apps/website/frontend/src/ui.rs; apps/website/frontend/src/eden_top_strip.rs
 209	T-815	ORBAT squad-rename focus; delete the two T787 probe missions	apps/website/frontend/src/orbat_manager.rs
+210	T-818	Vehicle crew/heading/cargo editor into the Attributes modal; Placed strip dies	apps/website/frontend/src/attributes.rs; apps/website/frontend/src/eden_dock_right.rs
+210	T-819	Crewed slots render inside the vehicle — figures leave the map while assigned	apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/editor_ops.rs
