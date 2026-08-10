@@ -282,12 +282,78 @@ fn edge_cov(d: f64) -> f64 {
     (d + 0.5).clamp(0.0, 1.0)
 }
 
+/// T-808 — px per PICKER STROKE UNIT. The picker draws in a 16-unit viewBox; POSITIONS scale 4×
+/// (16 → 64 px), but a 1:1 stroke scale would make the picker's 2-unit X (8 px) half the weight of
+/// the plus this atlas has always drawn 16 px thick, and the two crosses are siblings on the map.
+/// The plus is 3 picker units wide, so one stroke unit is `16 / 3` px — the picker's own 2:3
+/// X-to-plus ratio, expressed in the weight the map already ships. The cell is minified to ~28 px
+/// on screen, where an 8 px stroke is under 4 device px and disappears at zoom.
+const STROKE_UNIT_PX: f64 = 16.0 / 3.0;
+/// Half-width of the picker's 2-unit stroke (`X`, chevron) in cell px.
+const STROKE_2U_HALF: f64 = STROKE_UNIT_PX;
+/// Half-width of the picker's 1.4-unit flag-staff stroke in cell px.
+const STROKE_14U_HALF: f64 = 0.7 * STROKE_UNIT_PX;
+
+/// T-808 — flag geometry scale (px per picker unit) and the recentring shift, in cell px.
+///
+/// The flag is the one canonical glyph with no symmetry to fall back on: the staff is at the far
+/// LEFT and the pennant flies RIGHT out of its top. Drawn at the picker's own 4× with no shift, the
+/// ink centroid lands 8.9 px up-and-left of the cell centre (T-808's measurement: `off=(-7.31,
+/// -5.11), |off| = 8.92` on the pre-fix arm), so a flag marker did not sit on its own anchor.
+/// `FLAG_DX` / `FLAG_DY` are exactly the offsets that put the RASTERISED ink centroid on (32, 32) —
+/// the marker's anchor — and `FLAG_SCALE` is dropped from 4.0 to 3.2 so that after the shift the
+/// staff's bottom cap still clears the cell border (measured bbox `[24..57]x[12..58]`, ≥ 5 px of
+/// margin on every side). `marker_glyphs_are_centred_and_unclipped` pins both numbers: retune the
+/// shape and the test tells you the new offsets.
+///
+/// The flag's bounding box is therefore NOT centred (its centre sits +9 px right of the anchor).
+/// That is intrinsic — a staff-plus-pennant cannot centre its box and its mass at once — and the
+/// mass is the half that matters: it is what the eye reads as "where the icon is".
+const FLAG_SCALE: f64 = 3.2;
+/// See [`FLAG_SCALE`].
+const FLAG_DX: f64 = 8.6;
+/// See [`FLAG_SCALE`].
+const FLAG_DY: f64 = 3.55;
+
+/// Coverage of one round-capped STROKE of half-width `hw` from `(ax, ay)` to `(bx, by)`, all in
+/// cell-centre-relative px — the map's answer to the picker's `stroke-width` + `stroke-linecap:
+/// round`. Distance to the segment, AA'd by [`edge_cov`], so the ramp is a true one-pixel ramp on
+/// every angle (the pre-T-808 X built its diagonals out of axis-clamped bars instead, and the two
+/// bars' clamps overlapped into a filled bowtie with no diagonal gap).
+#[must_use]
+fn stroke_cov(dx: f64, dy: f64, ax: f64, ay: f64, bx: f64, by: f64, hw: f64) -> f64 {
+    let (vx, vy) = (bx - ax, by - ay);
+    let (wx, wy) = (dx - ax, dy - ay);
+    let len2 = vx * vx + vy * vy;
+    let t = if len2 <= f64::EPSILON {
+        0.0
+    } else {
+        ((wx * vx + wy * vy) / len2).clamp(0.0, 1.0)
+    };
+    let (cx, cy) = (ax + vx * t, ay + vy * t);
+    let (qx, qy) = (dx - cx, dy - cy);
+    edge_cov(hw - (qx * qx + qy * qy).sqrt())
+}
+
 /// Straight-alpha coverage for canonical glyph `g` at cell-local pixel centre `(px, py)` in a 64 px
 /// cell whose centre is (32, 32). White-on-alpha (the tint multiplies), matching the slot atlas.
 ///
 /// Cells 0 (ring) and 1 (disc) reproduce `slots_gpu::build_slot_atlas` EXACTLY (ring outer r24 inner
 /// r10; disc r26) — `marker_atlas_cells_0_and_1_match_slot_atlas` pins the byte match so the shared
 /// slot / vehicle / comment lanes are never perturbed by the widening.
+///
+/// **T-808 — every shape here is the T-806 PICKER SVG (`eden_dock_right::marker_glyph_svg`) at 4×.**
+/// The picker is the reference and the map follows it, never the reverse: the same document icon
+/// must read as the same shape in the row that authored it and on the map that draws it. Four arms
+/// were measured wrong against that reference (rendered to ASCII, T-808's method — the test
+/// `marker_glyphs_are_centred_and_unclipped` is that measurement, mechanised):
+///
+/// | glyph | measured defect (pre-fix)                                   | reference |
+/// |-------|-------------------------------------------------------------|-----------|
+/// | 4 / 5 | one base line only, so the wedge ran off the cell and was CLIPPED at the full 64 px on row 63 / row 0 (`bbox=[0..63]`, 62.9 units of border ink) — a trapezoid bleeding into the neighbouring cell's UV | `polygon 8,2.5 14,13.5 2,13.5` |
+/// | 7     | a filled bowtie: each bar's LENGTH clamp used the perpendicular rotated axis, so both bars owned the whole central diamond and the X had no diagonal gap | `M3.5 3.5 L12.5 12.5 M12.5 3.5 L3.5 12.5` @ 2 px |
+/// | 8     | pennant drawn as a full upper quadrant triangle; all ink 8.9 px off the anchor (`centroid=(24.69, 26.89)`) | staff `M4 2 v12` + `polygon 4,2.5 13,4.5 4,7.5` |
+/// | 9     | arms overlapped into a solid slab at the apex and all ink sat in the top 2/3 (`bbox y=[6..37]`, centroid 8.7 px high) — a tent, not a movement chevron | `M3 10 L8 4 L13 10` @ 2 px |
 #[must_use]
 fn marker_glyph_coverage(g: u16, px: f64, py: f64) -> f64 {
     let dx = px + 0.5 - 32.0;
@@ -303,20 +369,24 @@ fn marker_glyph_coverage(g: u16, px: f64, py: f64) -> f64 {
         2 => edge_cov(22.0 - dx.abs()).min(edge_cov(22.0 - dy.abs())),
         // 3 DIAMOND — |dx|+|dy| ≤ 26.
         3 => edge_cov(26.0 - (dx.abs() + dy.abs())),
-        // 4 TRIANGLE UP — apex at top (dy≈-24), base at bottom; three half-plane edges.
+        // 4 TRIANGLE UP — the picker's `polygon 8,2.5 14,13.5 2,13.5` at 4×: apex (0, -22), base
+        // corners (±24, +22). BOTH horizontal lines clamp. Pre-T-808 only `dy >= -22` was bounded
+        // and the slanted sides alone kept widening, so at row 63 the shape was 64 px across and
+        // the atlas cut it off mid-wedge.
         4 => {
-            let base = edge_cov(dy + 22.0); // above the base line dy = -22
-            // left edge: dx >= slope*(dy) ... use the two slanted sides meeting at the top apex.
-            let left = edge_cov((dy + 22.0) + 1.7 * dx); // dx negative allowed
-            let right = edge_cov((dy + 22.0) - 1.7 * dx);
-            base.min(left).min(right)
+            // Half-width grows 24 px over the 44 px from apex to base (the polygon's own slope).
+            let apex = edge_cov(dy + 22.0);
+            let base = edge_cov(22.0 - dy); // ← the missing clamp: above the base line dy = +22
+            let sides = edge_cov((dy + 22.0) * (24.0 / 44.0) - dx.abs());
+            apex.min(base).min(sides)
         }
-        // 5 TRIANGLE DOWN — mirror of 4.
+        // 5 TRIANGLE DOWN — the picker's `polygon 2,2.5 14,2.5 8,13.5` at 4×: mirror of 4, base
+        // corners (±24, -22) and apex (0, +22). Same missing clamp, at the other end.
         5 => {
-            let base = edge_cov(22.0 - dy);
-            let left = edge_cov((22.0 - dy) + 1.7 * dx);
-            let right = edge_cov((22.0 - dy) - 1.7 * dx);
-            base.min(left).min(right)
+            let apex = edge_cov(22.0 - dy);
+            let base = edge_cov(dy + 22.0); // ← the missing clamp
+            let sides = edge_cov((22.0 - dy) * (24.0 / 44.0) - dx.abs());
+            apex.min(base).min(sides)
         }
         // 6 CROSS (plus) — union of a vertical and a horizontal bar, half-thickness 8, half-len 24.
         6 => {
@@ -324,30 +394,62 @@ fn marker_glyph_coverage(g: u16, px: f64, py: f64) -> f64 {
             let horiz = edge_cov(8.0 - dy.abs()).min(edge_cov(24.0 - dx.abs()));
             vert.max(horiz)
         }
-        // 7 X — union of the two diagonals (rotate the plus 45°), half-thickness 8.
+        // 7 X — the picker's two round-capped diagonal STROKES (`M3.5 3.5 L12.5 12.5` and its
+        // mirror) at 4×: corner to corner at ±18, union of the two. A stroke, not a pair of
+        // axis-clamped bars, so the diagonal gap between the arms survives.
         7 => {
-            let u = (dx + dy) * std::f64::consts::FRAC_1_SQRT_2;
-            let v = (dx - dy) * std::f64::consts::FRAC_1_SQRT_2;
-            let a = edge_cov(8.0 - u.abs()).min(edge_cov(24.0 - v.abs()));
-            let b = edge_cov(8.0 - v.abs()).min(edge_cov(24.0 - u.abs()));
-            a.max(b)
+            let hw = STROKE_2U_HALF;
+            let nw_se = stroke_cov(dx, dy, -18.0, -18.0, 18.0, 18.0, hw);
+            let ne_sw = stroke_cov(dx, dy, 18.0, -18.0, -18.0, 18.0, hw);
+            nw_se.max(ne_sw)
         }
-        // 8 FLAG — a pole (left) + a filled pennant triangle to its right.
+        // 8 FLAG — the picker's staff `M4 2 v12` + pennant `polygon 4,2.5 13,4.5 4,7.5`, scaled by
+        // FLAG_SCALE and shifted by (FLAG_DX, FLAG_DY) so the ink balances on the anchor.
         8 => {
-            let pole = edge_cov(3.0 - (dx + 16.0).abs()).min(edge_cov(24.0 - dy.abs()));
-            // pennant: x in [-13, 20], upper triangle tapering rightward, centred vertically high.
-            let fx = dx + 13.0; // 0 at pole side
-            let in_x = edge_cov(fx).min(edge_cov(30.0 - fx));
-            let taper = 16.0 - fx * 0.5; // half-height shrinks with x
-            let in_y = edge_cov(taper - (dy + 8.0).abs());
-            pole.max(in_x.min(in_y))
+            // picker (x, y) → cell-centre-relative px.
+            let p = |x: f64, y: f64| {
+                (
+                    (x - 8.0) * FLAG_SCALE + FLAG_DX,
+                    (y - 8.0) * FLAG_SCALE + FLAG_DY,
+                )
+            };
+            let (staff_x, staff_top) = p(4.0, 2.0);
+            let (_, staff_bot) = p(4.0, 14.0);
+            let staff = stroke_cov(
+                dx,
+                dy,
+                staff_x,
+                staff_top,
+                staff_x,
+                staff_bot,
+                STROKE_14U_HALF,
+            );
+            // Pennant: right of the staff, under the top edge (hoist → tip) and over the bottom
+            // one. Both slants AA on the TRUE perpendicular distance, so the taper stays clean.
+            let (_, hoist_top) = p(4.0, 2.5);
+            let (tip_x, tip_y) = p(13.0, 4.5);
+            let (_, hoist_bot) = p(4.0, 7.5);
+            let run = tip_x - staff_x;
+            let (drop_top, rise_bot) = (tip_y - hoist_top, tip_y - hoist_bot);
+            let upper = ((dy - hoist_top) * run - (dx - staff_x) * drop_top)
+                / (run * run + drop_top * drop_top).sqrt();
+            let lower = ((hoist_bot - dy) * run + (dx - staff_x) * rise_bot)
+                / (run * run + rise_bot * rise_bot).sqrt();
+            let pennant = edge_cov(dx - staff_x)
+                .min(edge_cov(upper))
+                .min(edge_cov(lower));
+            staff.max(pennant)
         }
-        // 9 CHEVRON — two thick strokes forming a ">"-rotated up arrow (apex at top).
+        // 9 CHEVRON — the picker's `M3 10 L8 4 L13 10` at 4× — apex (0, -16), ends (±20, +8) —
+        // as two round-capped strokes, shifted DOWN 2.5 px so the rasterised ink centroid lands on
+        // the anchor (the two open ends carry a full round cap each, the apex only one join, so
+        // the balance point is not the midpoint of the span). Union, not intersection: the arms
+        // meet at the apex instead of flooding it into a slab.
         9 => {
-            let arm_a = edge_cov(7.0 - ((dy + 22.0) + 1.7 * dx).abs());
-            let arm_b = edge_cov(7.0 - ((dy + 22.0) - 1.7 * dx).abs());
-            let span = edge_cov(dy + 26.0).min(edge_cov(6.0 - dy));
-            arm_a.max(arm_b).min(span)
+            let hw = STROKE_2U_HALF;
+            let left = stroke_cov(dx, dy, -20.0, 10.5, 0.0, -13.5, hw);
+            let right = stroke_cov(dx, dy, 0.0, -13.5, 20.0, 10.5, hw);
+            left.max(right)
         }
         // 10 TARGET — outer ring (r24 inner r16) plus a solid centre dot (r7).
         10 => (cov(d, 24.0) - cov(d, 16.0)).max(cov(d, 7.0)),
@@ -777,6 +879,143 @@ mod tests {
         );
         assert_ne!(prints[4], prints[8], "attack vs flag footprints identical");
         assert_ne!(prints[5], prints[8], "defend vs flag footprints identical");
+        // T-808 — and so must ALL 55 pairs: the picker gives every canonical glyph its own DOM
+        // shape, so a map that collapses two of them back onto one raster is the same defect one
+        // layer down. (Trio above kept verbatim: it is the T-790 acceptance's own wording.)
+        for a in 0..MARKER_GLYPH_COUNT {
+            for b in (a + 1)..MARKER_GLYPH_COUNT {
+                assert_ne!(
+                    prints[a], prints[b],
+                    "glyph cells {a} and {b} raster identically"
+                );
+            }
+        }
+    }
+
+    /// Render one glyph cell as ASCII (2×2 px per char, 5 coverage buckets) — T-808's own method
+    /// for *seeing* a glyph defect, kept in-tree so a red assertion below prints the shape that
+    /// failed instead of a bare number.
+    fn glyph_ascii(g: u16) -> String {
+        let mut out = String::with_capacity(33 * 32);
+        for y in (0..64).step_by(2) {
+            for x in (0..64).step_by(2) {
+                let a = (marker_glyph_coverage(g, f64::from(x), f64::from(y))
+                    + marker_glyph_coverage(g, f64::from(x + 1), f64::from(y))
+                    + marker_glyph_coverage(g, f64::from(x), f64::from(y + 1))
+                    + marker_glyph_coverage(g, f64::from(x + 1), f64::from(y + 1)))
+                    / 4.0;
+                #[allow(clippy::cast_possible_truncation)]
+                out.push(match (a * 4.0).round() as i32 {
+                    0 => '.',
+                    1 => ':',
+                    2 => '+',
+                    3 => '#',
+                    _ => '@',
+                });
+            }
+            out.push('\n');
+        }
+        out
+    }
+
+    /// Ink statistics for one glyph cell: `(centroid_dx, centroid_dy, bbox_dx, bbox_dy, border_ink)`
+    /// — all offsets relative to the cell centre (32, 32), `border_ink` summed over the 2 px frame.
+    fn glyph_ink_stats(g: u16) -> (f64, f64, f64, f64, f64) {
+        let (mut sum, mut sx, mut sy, mut border) = (0.0f64, 0.0f64, 0.0f64, 0.0f64);
+        let (mut x0, mut x1, mut y0, mut y1) = (i32::MAX, i32::MIN, i32::MAX, i32::MIN);
+        for y in 0..64i32 {
+            for x in 0..64i32 {
+                let a = marker_glyph_coverage(g, f64::from(x), f64::from(y));
+                // 1/255 — anything that survives the u8 quantisation in `build_marker_slot_atlas`.
+                if a > 1.0 / 255.0 {
+                    x0 = x0.min(x);
+                    x1 = x1.max(x);
+                    y0 = y0.min(y);
+                    y1 = y1.max(y);
+                    if x <= 1 || y <= 1 || x >= 62 || y >= 62 {
+                        border += a;
+                    }
+                }
+                sum += a;
+                sx += a * (f64::from(x) + 0.5);
+                sy += a * (f64::from(y) + 0.5);
+            }
+        }
+        assert!(sum > 0.0, "glyph {g} has no ink at all");
+        (
+            sx / sum - 32.0,
+            sy / sum - 32.0,
+            f64::from(x0 + x1) / 2.0 + 0.5 - 32.0,
+            f64::from(y0 + y1) / 2.0 + 0.5 - 32.0,
+            border,
+        )
+    }
+
+    /// **T-808 — the four marker-glyph defects, mechanised.** The operator called the T-790 glyphs
+    /// "a little weird"; rendering [`marker_glyph_coverage`] to ASCII named four measurable causes,
+    /// and this test is that measurement run on every cell so none of them can come back:
+    ///
+    /// 1. **NOT CLIPPED.** No cell may put ink in its outer 2 px frame. Pre-fix, TriangleUp and
+    ///    TriangleDown had one base line each, so the wedge kept widening to the cell edge and the
+    ///    atlas sliced it off at the full 64 px (`bbox=[0..63]`, 62.9 units of ink on the border
+    ///    row) — a trapezoid whose UV touches the NEXT cell's.
+    /// 2. **ANCHOR-HONEST.** A marker is drawn centred on its map anchor, so the glyph's centre of
+    ///    INK must be the cell centre. Pre-fix the flag measured 8.92 px off and the chevron
+    ///    8.72 px, both of which the eye reads as "the icon is not on the point it marks".
+    /// 3. The two triangles are the documented exception: a bbox-centred triangle's area centroid
+    ///    is intrinsically 1/6 of its height off centre (44/6 = 7.33 px here), exactly as the
+    ///    picker draws `polygon 8,2.5 14,13.5 2,13.5`. They are held to a centred BOUNDING BOX
+    ///    plus that exact offset instead — mirror images of one another, nothing free-floating.
+    ///
+    /// A failure prints the offending cell as ASCII, so the next reader debugs the same way T-808
+    /// did rather than guessing from a float.
+    #[test]
+    fn marker_glyphs_are_centred_and_unclipped() {
+        // The two arms whose ink centroid is intentionally off-centre (see doc above).
+        const TRIANGLES: [u16; 2] = [
+            MarkerGlyph::TriangleUp as u16,
+            MarkerGlyph::TriangleDown as u16,
+        ];
+        #[allow(clippy::cast_possible_truncation)]
+        for g in 0..MARKER_GLYPH_COUNT as u16 {
+            let (cdx, cdy, bdx, bdy, border) = glyph_ink_stats(g);
+            assert!(
+                border == 0.0,
+                "T-808: glyph {g} puts {border:.2} units of ink in the 2 px border frame — it is \
+                 clipped by its own atlas cell and bleeds into the neighbouring cell's UV:\n{}",
+                glyph_ascii(g)
+            );
+            if TRIANGLES.contains(&g) {
+                assert!(
+                    bdx.abs() <= 1.0 && bdy.abs() <= 1.0,
+                    "T-808: triangle {g} bounding box is off-anchor by ({bdx:+.2}, {bdy:+.2}) \
+                     px:\n{}",
+                    glyph_ascii(g)
+                );
+                // Sign follows the apex: up-triangle's mass hangs below the anchor, down-triangle's
+                // above. 44 px of height / 6 = 7.33.
+                let want = if g == MarkerGlyph::TriangleUp as u16 {
+                    7.33
+                } else {
+                    -7.33
+                };
+                assert!(
+                    cdx.abs() <= 0.5 && (cdy - want).abs() <= 0.5,
+                    "T-808: triangle {g} centroid ({cdx:+.2}, {cdy:+.2}) is not the intrinsic \
+                     1/6-height offset ({want:+.2}) of the picker polygon:\n{}",
+                    glyph_ascii(g)
+                );
+            } else {
+                let off = cdx.hypot(cdy);
+                assert!(
+                    off <= 2.0,
+                    "T-808: glyph {g} ink centroid is {off:.2} px off the anchor \
+                     ({cdx:+.2}, {cdy:+.2}) — a marker whose ink does not sit on the point it \
+                     marks:\n{}",
+                    glyph_ascii(g)
+                );
+            }
+        }
     }
 
     /// Caption bytes: one 20 B text instance per glyph, only for non-empty labels, placed to the
