@@ -1,5 +1,5 @@
 {
-  "next_id": 820,
+  "next_id": 824,
   "tickets": [
     {
       "id": "T-001",
@@ -20176,6 +20176,91 @@
       "order": 5010,
       "summary": "OPERATOR EYE-PASS FINDING (wave-202 pass, 2026-08-10). Slots assigned as vehicle crew keep rendering as standing figures next to the vehicle — they should be IN it (Eden hides crewed units). DIRECTION: render-lane hide DERIVED from crew assignment — a slot referenced by any placed vehicle's crew list is excluded from the map render SoA (figure + label), the T-701 editorHidden RENDER shape. ⚠️ HARD TRAPS (shipped defect families live exactly here): (1) derived state, NO new document flag — the crew assignment IS the state; unassign or vehicle delete restores visibility automatically; (2) NEVER drop crewed slots from materialize()/compile — they are crew and must compile; the T-665/T-701 materialize() drops are for operator-hidden rows, do NOT reuse them for crewed; (3) the wave-144 id-mint class: any code sourcing ids from a FILTERED view re-mints hidden ids — mint/read from slots_json only; (4) the wave-145 selection lesson: crewed slots stay outliner-reachable and selection must NOT prune them for being invisible — invisible is not gone; map-click cannot hit them (nothing rendered) but outliner click must select. ACCEPTANCE: scripted — assign 2 slots as Driver/Gunner: their figures + labels leave the map (SoA row count -2), outliner rows remain and select, compiled export still contains both with crew refs; unassign one -> figure returns at its stored position with its stored z (exact f64); delete the vehicle -> both return; undo of an assignment round-trips visibility.",
       "notes": "eye-pass wave-202; pairs with T-818 in wave 210; render lane only"
+    },
+    {
+      "id": "T-820",
+      "title": "Catalog failure view shows the generic cause with chips visible where no-modpack should fire",
+      "status": "queued",
+      "executor": "claude-code",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "impact": [
+        "ui",
+        "mc-authoring"
+      ],
+      "surfaces": [
+        "RIGHT"
+      ],
+      "order": 5020,
+      "summary": "WAVE-203 VERIFIER FILING (wave203.md MINOR; eden_dock_right.rs:1724-1742, cause branch :746). With is_current=false the probe endpoint returns 404 'no current modpack configured' (curl-confirmed) so the no_modpack branch SHOULD fire — but two fresh-token headless pages rendered the GENERIC 'The request to the registry failed.' and kept the side chips visible. The grammar hint DID hide and Retry/repopulate work. Wave-202's verifier proved the specific cause live pre-restructure, so this is either a T-809-restructure regression of the cause probe or an AuthStore-timing/headless artifact ('let Some(auth) = auth else return' in the re-probe Effect). FIRST STEP: reproduce on a real browser; if headless-only, close with the evidence; if real, fix the probe's auth/timing so the 404 cause survives to the view and chips hide. ACCEPTANCE: is_current=false on a real browser -> 'No modpack is configured' named, chips hidden; restore -> Retry repopulates.",
+      "notes": "wave203 verifier; uncertainty stated — repro-first ticket"
+    },
+    {
+      "id": "T-821",
+      "title": "Save Version prefill is a static 0.1.0 — no auto-bump, second save 409s",
+      "status": "queued",
+      "executor": "claude-code",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "impact": [
+        "ui",
+        "mc-authoring"
+      ],
+      "surfaces": [
+        "SHELL"
+      ],
+      "order": 5030,
+      "summary": "WAVE-203 VERIFIER FILING (wave203.md MINOR, PRE-EXISTING — init line untouched by any band wave). save_semver is set ONLY at mission_editor.rs:2763 (static '0.1.0') or by dialog on:input; save_now (mission_commands.rs:820) never bumps it. Live: saved 0.1.0, reopened twice -> prefill still 0.1.0; same-semver re-save 409'd (versions immutable). T-789's summary asserted '0.1.0 -> 0.2.0 auto-bump correct today' — refuted by measurement. FIX: prefill from the mission's persisted latest version + patch-bump (or bump save_semver on the save success arm); keep manual override via the input. ACCEPTANCE: save 0.1.0, reopen -> prefill 0.1.1 (or chosen scheme); no 409 on accept-the-default; manual semver still wins.",
+      "notes": "wave203 verifier; refutes a T-789 summary claim — measured"
+    },
+    {
+      "id": "T-822",
+      "title": "Outliner dblclick bubbles into the map container — asset picker opens under Attributes",
+      "status": "queued",
+      "executor": "claude-code",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "impact": [
+        "ui",
+        "mc-authoring"
+      ],
+      "surfaces": [
+        "LEFT",
+        "SHELL"
+      ],
+      "order": 5040,
+      "summary": "WAVE-203 VERIFIER FILING (wave203.md MINOR/NIT, PRE-EXISTING, now wider). The left dock is a DOM descendant of the map's dblclick container and dblclick BUBBLES (the chrome stops pointerdown, not dblclick) — mission_editor.rs ~:5790. A dblclick on an outliner row whose world coords miss an entity opens the empty-ground asset PICKER (T-647 PLACE-003) UNDER the Attributes dialog the row also opens; proven live: container-dblclick@83,135 -> attrH2=1 AND placeAsset=1; Esc peels one-per-press. Pre-existing; now ALSO reachable via the wave-203 placed-vehicle outliner rows (eden_tree.rs footer). FIX: the container dblclick handler ignores events whose target sits inside the docks (composedPath/closest check), mirroring the pointerdown chrome guard. ACCEPTANCE: outliner-row dblclick opens ONLY Attributes (no picker under it); map-ground dblclick still opens the picker.",
+      "notes": "wave203 verifier; pre-existing, widened by the placed-vehicle rows"
+    },
+    {
+      "id": "T-823",
+      "title": "OBJ readout counts slots only — placed vehicles are invisible to it",
+      "status": "queued",
+      "executor": "claude-code",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "impact": [
+        "ui",
+        "mc-authoring"
+      ],
+      "surfaces": [
+        "SHELL"
+      ],
+      "order": 5050,
+      "summary": "WAVE-203 VERIFIER FILING (wave203.md NIT; mission_history.rs:289/532). OBJ = slot_count (characters only): drag-placing an M1025 leaves OBJ unchanged while the vehicle genuinely places (outliner row, Placed strip, recently-placed all show it). Either rename the readout (SLOTS) or count entities (slots+vehicles) — pick one and pin it; the WEST/EAST/IND/TOTAL chips (operator-liked) already count slots explicitly and must not drift. ACCEPTANCE: place a vehicle -> the readout either includes it or is renamed so the exclusion is honest; chips unchanged.",
+      "notes": "wave203 verifier; wording-vs-count decision, small"
     }
   ]
 }
