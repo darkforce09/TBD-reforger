@@ -1,5 +1,5 @@
 {
-  "next_id": 842,
+  "next_id": 843,
   "tickets": [
     {
       "id": "T-001",
@@ -20644,6 +20644,26 @@
       "order": 5230,
       "summary": "OPERATOR EYE-PASS FINDING (wave-206, 2026-08-10, screenshot): the T-810 TYPE picker dropdown renders on a translucent plate, so the option text blurs against whatever sits behind the modal — 'that should be a normal panel so it's easier to read.' FIX: the picker popover (attributes.rs type_picker) gets an OPAQUE panel background (the modal's solid surface token, not a /nn alpha or backdrop-blur glass); check the same for its search input plate. The T-827 lesson applies: readability is measured against the LIVE composite, not the token sheet — verify computed contrast of option text on the new plate. ACCEPTANCE: the popover's computed background is fully opaque; option text contrast >=4.5:1 live; no other picker behavior changes.",
       "notes": "operator eye-pass wave-206; small; pairs with T-827 methodology"
+    },
+    {
+      "id": "T-842",
+      "title": "The clamp-not-wrap heading defect is live on the world lanes too (trees/props/text)",
+      "status": "queued",
+      "executor": "claude-code",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "surfaces": [
+        "SHELL"
+      ],
+      "order": 5240,
+      "summary": "WAVE-207 COMPLETION FINDING (third instance of the T-832 family, found while fixing the second). crates/map-engine-core/src/world/glyph_math.rs:105 still does the clamp-instead-of-wrap that made half the compass draw due south, and world/residency.rs:1364 feeds it deck_angle_for_rotation_deg(rotation) = -rotation — so ANY world object (tree/prop/text) authored with a rotation in 181..359 renders at due south. Same one-line shape as the fix already landed in slots_gpu.rs (wave 207, commit 0bc55dc5): fold the angle into (-180,180] before encoding; a clamp is correct for a magnitude and wrong for an angle. The slots_gpu test `yaw_encoders_agree` now DOCUMENTS this divergence rather than hiding it — update it when this lands so the two encoders agree again. ACCEPTANCE: a world object at rotation 270 renders visibly different from one at 180 (measured tip/extent bearing); the full 0..360 sweep is monotonic with no plateau (the plateau IS the defect); yaw_encoders_agree re-pins full-domain byte parity between the two encoders.",
+      "notes": "wave-207 completion C; same family as T-832; one-line fix + sweep test; small"
     }
   ]
 }
