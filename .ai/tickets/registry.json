@@ -1,5 +1,5 @@
 {
-  "next_id": 845,
+  "next_id": 846,
   "tickets": [
     {
       "id": "T-001",
@@ -20456,7 +20456,7 @@
     },
     {
       "id": "T-833",
-      "title": "Ring drag: formation rotates about centre by default; Ctrl-drag faces units individually",
+      "title": "Rotation widget: relative drag delta (not absolute aim) + live per-frame preview",
       "status": "queued",
       "executor": "claude-code",
       "program": "eden",
@@ -20472,8 +20472,8 @@
         "SHELL"
       ],
       "order": 5150,
-      "summary": "WAVE-205 VERIFIER FILING (wave205.md MINOR). MEASURED: dragging the rotate ring turns EACH selected entity to face the release bearing with positions fixed (exact bearing math verified) — the T-795 FIX text and the gesture comment both say 'rotates the selection about its centre' (positions orbit, formation preserved — Eden's model). Two defensible behaviors: (a) about-centre = formation rotation (matches the spec text and Eden); (b) face-the-aim = point the squad at a bearing (arguably the more useful milsim verb, and what shipped). DECISION IS THE OPERATOR'S; options: implement (a) as specified (per-entity positions orbit the selection centroid, one txn — the T-788 batch API fits), keep (b) and fix the spec/comment to tell the truth, or offer both (e.g. plain drag = a, modifier = b). Until decided, the shipped comment must not claim about-centre (it lies — wave205.md cites the line). ACCEPTANCE: per the chosen option; either way the comment and eden_help row describe the real behavior. ⟡ DECISION RECORDED (operator, 2026-08-10): OPTION (c) BOTH — multi-select ring drag rotates the WHOLE FORMATION about the selection centre (positions orbit, formation preserved — the default), and a modifier (Ctrl held while ring-dragging) rotates units INDIVIDUALLY in place (face-the-aim, the currently-shipped behavior). Single selection: the two coincide. One txn either way (T-788 batch API for the orbit path — positions change, so the z-family rules apply: carry real z per slot through the batch). Fix the gesture comment + eden_help row to describe both. NOTE: usability depends on VISIBLE facing (T-832/T-808 heading render) — prefer packing this with or after wave 207.",
-      "notes": "wave205 verifier; operator decision; comment currently lies about the behavior | operator decided (c) 2026-08-10; default about-centre, Ctrl = individual; pack with/after W207 heading render"
+      "summary": "WAVE-205 VERIFIER FILING (wave205.md MINOR). MEASURED: dragging the rotate ring turns EACH selected entity to face the release bearing with positions fixed (exact bearing math verified) — the T-795 FIX text and the gesture comment both say 'rotates the selection about its centre' (positions orbit, formation preserved — Eden's model). Two defensible behaviors: (a) about-centre = formation rotation (matches the spec text and Eden); (b) face-the-aim = point the squad at a bearing (arguably the more useful milsim verb, and what shipped). DECISION IS THE OPERATOR'S; options: implement (a) as specified (per-entity positions orbit the selection centroid, one txn — the T-788 batch API fits), keep (b) and fix the spec/comment to tell the truth, or offer both (e.g. plain drag = a, modifier = b). Until decided, the shipped comment must not claim about-centre (it lies — wave205.md cites the line). ACCEPTANCE: per the chosen option; either way the comment and eden_help row describe the real behavior. ⟡ DECISION RECORDED (operator, 2026-08-10): OPTION (c) BOTH — multi-select ring drag rotates the WHOLE FORMATION about the selection centre (positions orbit, formation preserved — the default), and a modifier (Ctrl held while ring-dragging) rotates units INDIVIDUALLY in place (face-the-aim, the currently-shipped behavior). Single selection: the two coincide. One txn either way (T-788 batch API for the orbit path — positions change, so the z-family rules apply: carry real z per slot through the batch). Fix the gesture comment + eden_help row to describe both. NOTE: usability depends on VISIBLE facing (T-832/T-808 heading render) — prefer packing this with or after wave 207. ⟡ DECISION REVISED AND WIDENED (operator, wave-207 eye-pass 2026-08-11) — the earlier (c) answer stands for WHAT rotates, but HOW the angle is computed was wrong and is corrected here. TWO CHANGES: (A) **RELATIVE, NOT ABSOLUTE.** Today the ring makes the entity FACE the cursor/release bearing, so grabbing the ring at a point behind the current facing SNAPS the entity around to that point before you have rotated anything. Operator, verbatim: 'I don't want it to update to where the cursor is. I want the cursor to just rotate it.' FIX: on ring press, record the grab bearing AND the entity's current heading; during the drag apply the ANGULAR DELTA (cursor bearing minus grab bearing) to the recorded heading. Grabbing anywhere on the ring must rotate by zero until the cursor moves. This is the standard widget model (Eden/Blender/Maya all do relative-from-grab). (B) **LIVE PER-FRAME PREVIEW.** The facing currently lands only on release. Operator wants it to track the drag continuously. NOTE this supersedes a prior design decision: T-648 recorded that rotate deliberately has NO engine preview and 'the ring IS the mid-drag affordance' — the operator has now overridden that. Mirror the slot/vehicle drag-preview split (GPU preview during the gesture, one txn on release — T-796/Completion-C's `bind_vehicle_preview_lane` is the in-repo pattern, and the symbology facing point is what makes the preview legible at all). UNCHANGED from the earlier decision: default = whole formation rotates about the selection centre (positions orbit); Ctrl-drag = each unit turns in place. One undo step either way. ACCEPTANCE (add to the existing clauses): press the ring at a bearing 170 degrees from the entity's facing and release without moving -> heading UNCHANGED (today it snaps ~170 degrees); drag 30 degrees around the ring from any grab point -> heading changes by exactly 30 degrees; the glyph's facing point tracks the cursor DURING the drag (sample mid-gesture, not just on release), for slots and vehicles, single and multi.",
+      "notes": "wave205 verifier; operator decision; comment currently lies about the behavior | operator decided (c) 2026-08-10; default about-centre, Ctrl = individual; pack with/after W207 heading render | REVISED at the wave-207 eye-pass: relative-delta + live preview; supersedes T-648 no-preview note; now depends on the T-808 facing point (shipped W207) to be legible"
     },
     {
       "id": "T-834",
@@ -20704,6 +20704,26 @@
       "order": 5260,
       "summary": "WAVE-207 VERIFIER OBSERVATION (pre-existing, unfiled at the time; independently corroborates the operator's wave-205 eye-pass report). `delete_selection` partitions comments and slots only, so pressing Delete with a vehicle selected silently no-ops. DUPLICATE-CHECK BEFORE STARTING: T-837 (filed from the operator's eye-pass) covers the same defect from the UI side with a wider audit (Del key + context menu + outliner row + crew release + one-undo). This ticket exists to carry the verifier's precise mechanism (the partition in delete_selection) into that work — FOLD INTO T-837 rather than building twice; close this as absorbed when T-837 is scoped. ACCEPTANCE: see T-837.",
       "notes": "wave207 verifier; explicit duplicate of T-837 — fold, do not double-build"
+    },
+    {
+      "id": "T-845",
+      "title": "A selected vehicle looks identical to an unselected one",
+      "status": "queued",
+      "executor": "claude-code",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "surfaces": [
+        "SHELL"
+      ],
+      "order": 5270,
+      "summary": "OPERATOR EYE-PASS FINDING (wave-207, 2026-08-11): a placed vehicle does not change appearance when selected — no ring, no tint shift — so there is no way to see which vehicle you have selected. Slots get the selection treatment (T-808 ships a ringed twin cell per role); comments got theirs in the same wave (Completion A verified selected-vs-unselected diff); VEHICLES WERE NEVER GIVEN ONE. Not previously ticketed and not in any wave's acceptance — a genuine gap, operator-found. FIX: the vehicle lane gets the same selection treatment shape as slots — a ringed twin cell per silhouette kind (the T-808 pattern: extra atlas cells, NOT an extra instance per selected row, which would force a full re-pack on every click and destroy the O(delta) patch), plus the selection tint. The `set_selection` patch path must reach the vehicle lane (it patches Slots today; wave-207 taught the same lesson for comments — `refresh_comment_lane` on all five exit paths). ACCEPTANCE: select a vehicle -> its crop differs measurably from unselected (ring + tint, the comment/slot method); deselect -> returns to the neutral silhouette; selecting one of three vehicles changes exactly one; heading and kind survive selection; no re-pack on selection change (measure).",
+      "notes": "operator eye-pass wave-207; T-808 lane family; pairs naturally with the wave-210 vehicle set"
     }
   ]
 }
