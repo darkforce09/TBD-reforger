@@ -136,6 +136,10 @@
       "resourceName": "{14FD2616BAB3157D}Prefabs/Vehicles/Wheeled/M923A1/M923A1_MERDC.et"
     },
     {
+      "alias": "veh:m923a1",
+      "resourceName": "{15D63E9F5DE4A83D}Prefabs/Vehicles/Wheeled/M923A1/M923A1.et"
+    },
+    {
       "alias": "veh:uaz469_uncovered",
       "resourceName": "{16A674FE31B0921C}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_uncovered.et"
     },
@@ -388,6 +392,10 @@
       "resourceName": "{4C81D7ED8F8C0D87}Prefabs/Vehicles/Wheeled/Ural4320/Ural4320_tanker.et"
     },
     {
+      "alias": "veh:m113_m2",
+      "resourceName": "{4D4D74A0BE9E8C1F}Prefabs/Vehicles/Tracked/M113/M113_M2.et"
+    },
+    {
       "alias": "veh:uaz469_covered_civ_jzd",
       "resourceName": "{5070B3749C7782D8}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_covered_CIV_JZD.et"
     },
@@ -538,6 +546,10 @@
     {
       "alias": "veh:s105_red",
       "resourceName": "{85F0BD6AF0F42D6D}Prefabs/Vehicles/Wheeled/S105/S105_red.et"
+    },
+    {
+      "alias": "veh:m1025_m2",
+      "resourceName": "{86B7B7522A75FF8B}Prefabs/Vehicles/Wheeled/M998/M1025_M2.et"
     },
     {
       "alias": "veh:m151a2_merdc",
@@ -938,6 +950,10 @@
     {
       "alias": "veh:uaz469_fia",
       "resourceName": "{F7E9AA0C813EABDA}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_FIA.et"
+    },
+    {
+      "alias": "veh:m998",
+      "resourceName": "{FA9635AC08876D3C}Prefabs/Vehicles/Wheeled/M998/M998.et"
     },
     {
       "alias": "veh:ural4320_transport_covered_civ_jzd",
