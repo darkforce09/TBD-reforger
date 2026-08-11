@@ -1,5 +1,5 @@
 {
-  "next_id": 843,
+  "next_id": 845,
   "tickets": [
     {
       "id": "T-001",
@@ -19872,7 +19872,7 @@
       "id": "T-802",
       "order": 4840,
       "program": "eden",
-      "status": "queued",
+      "status": "shipped",
       "stream": "mission-creator",
       "targets": [
         "website"
@@ -19888,13 +19888,13 @@
       ],
       "title": "The cursor tells the hand what is grabbable",
       "summary": "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). O-8 — VERIFIED: canvas cursor is 'auto' over a unit, over empty ground, everywhere — nothing signals pickability. History: hover picking was DELIBERATELY REMOVED for perf at T-057 — so this is not a CSS one-liner; it needs a cheap hover hit-test. FIX: throttled (e.g. 30-60ms) spatial-hash lookup over slot/vehicle/marker/comment points on pointermove (the marquee/pick paths already have the point sets — reuse their source, do not re-derive), set cursor pointer/grab over a pickable, default otherwise; suppress during drags/draw modes. ⚠️ TRAPS: perf budget is the whole reason this was removed — the acceptance includes a frame-time guard; the HUD rf <ms> readout is the oracle; no per-frame full picks: spatial hash or radius query only; cursor must not flicker at cell boundaries (hysteresis). ACCEPTANCE: scripted — computed cursor over a unit = pointer (or grab), over empty = default; sweep the pointer across the 9-slot line at speed: HUD rf delta vs baseline <= 1ms median (telemetry HUD Ctrl+Alt+D readback); no cursor churn (>=3 changes) while hovering one entity.",
-      "notes": "T-057 removal history is the trap; HUD is the perf oracle per CLAUDE.md editor bench notes"
+      "notes": "T-057 removal history is the trap; HUD is the perf oracle per CLAUDE.md editor bench notes | SHIPPED W207: hover cursor via a 40ms-throttled query over the EXISTING pick point-sets, hysteresis keyed off the pick radius (T-808-proof), suppressed during drag/draw/armed. Perf measured two ways (HUD rf +0.06ms; direct handler cost ~0.03ms/move) with a within-build control because cross-build variance exceeds the 1ms threshold. MARKERS DELIBERATELY EXCLUDED — route_target has no marker arm, so claiming pickability would be the T-754 dead-click lie; independently corroborates T-838."
     },
     {
       "id": "T-808",
       "order": 4900,
       "program": "eden",
-      "status": "queued",
+      "status": "shipped",
       "stream": "mission-creator",
       "targets": [
         "website"
@@ -19910,13 +19910,13 @@
       ],
       "title": "Units render as role-and-side symbology, not dots",
       "summary": "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). F-10 — the map is dot soup: slots are plain circles (amber selected + heading arrow, pale blue otherwise), markers were identical circles (T-790 fixes markers), nothing distinguishes a rifleman from a medic from an AT gunner, and marker-vs-unit ambiguity was verified (operator + review agree; Eden's 2D map renders filled side-coloured entity glyphs — frame 170028 crops). A milsim author reads maps by symbology. FIX: per-slot glyph in the unit lane: side colour + role class glyph (minimum set: leader chevron, medic cross, AT, MG, rifleman default — derive role class from the slot role/kit string), distinct SHAPE class from markers (T-790's glyphs) and comments (T-796's bubble); selection ring/heading arrow render ON TOP unchanged. Consumes T-790's lane-format extension (crates/map-engine-core/src/slots_gpu.rs ~745-line instance path + crates/map-engine-render/src/engine.rs read half). ⚠️ TRAPS: engine.rs is CO-OWNED with T-790's wave — this lands 3 waves later on merged main, build on its final lane format (belt-and-braces per packing risk 5); zoom behaviour: glyphs legible at squad scale, degrade to dots only below a stated m/px; role-string mapping table lives in one place and is unit-tested (kit:us_rifleman -> rifleman etc.). ACCEPTANCE: wasm unit test on the role->glyph mapping (all seeded kits map, unknown -> default); scripted screenshot at 1.0 and 4.0 m/px: medic vs rifleman vs leader pixel signatures pairwise distinct; marker vs unit vs comment shapes pairwise distinct; selected unit still shows ring+heading.",
-      "notes": "depends_on T-790; T-157 visual-overhaul overlap cited in notes rather than absorbed (T-157 is broader) | operator note 2026-08-10: the T-790 procedural marker glyphs read \"a little weird — not wrong, but weird\"; when doing unit symbology, revisit marker glyph iconography in the same visual language | wave-205 verifier: slots render NO heading in any mode (lane yaw hardcoded 0) — unit symbology MUST carry orientation (T-832 is the finding; fold the yaw lane extension into this ticket, T-790 glyph-id lane as the template) | OPERATOR DIRECTION 2026-08-10 (symbology spec): slot glyph = circle WITH A FACING POINT (the point is the heading); vehicles = top-down SILHOUETTES per kind (a BTR looks like a BTR from above); rotation-widget usability depends on this — 'impossible to tell where you're rotating it' today"
+      "notes": "depends_on T-790; T-157 visual-overhaul overlap cited in notes rather than absorbed (T-157 is broader) | operator note 2026-08-10: the T-790 procedural marker glyphs read \"a little weird — not wrong, but weird\"; when doing unit symbology, revisit marker glyph iconography in the same visual language | wave-205 verifier: slots render NO heading in any mode (lane yaw hardcoded 0) — unit symbology MUST carry orientation (T-832 is the finding; fold the yaw lane extension into this ticket, T-790 glyph-id lane as the template) | OPERATOR DIRECTION 2026-08-10 (symbology spec): slot glyph = circle WITH A FACING POINT (the point is the heading); vehicles = top-down SILHOUETTES per kind (a BTR looks like a BTR from above); rotation-widget usability depends on this — 'impossible to tell where you're rotating it' today | SHIPPED W207 (engine half + 3 completion passes): the operator's symbology language — slot disc with a FACING POINT, role knockouts (leader/medic/AT/MG), top-down vehicle silhouettes per kind, neutral comment bubble. T-832 DEAD (heading renders; 9-point sweep monotonic, wrap-continuous). Feeders wired in completion (3e19524f) off the id-sorted reader — column alignment held across delete/undo/drag mutations (verifier: 0.0 delta). A CLAMP-NOT-WRAP defect in the new code made headings 181-359 all draw south — caught by completion A, fixed 0bc55dc5; the same defect is live on the world lanes -> T-842. Marker glyphs rebuilt from the picker SVGs (the operator's 'weird'): zero border ink, anchor-honest centroids, 55/55 pairs distinct."
     },
     {
       "id": "T-794",
       "order": 4760,
       "program": "eden",
-      "status": "queued",
+      "status": "shipped",
       "stream": "mission-creator",
       "targets": [
         "website"
@@ -19931,7 +19931,7 @@
       ],
       "title": "Entrance animations stop moving the furniture",
       "summary": "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). O-4 — VERIFIED WITH A MUTATION OBSERVER: animate-dialog-in TRANSLATES surfaces into place over ~350ms — the right-click context menu first paints at (685,500) and settles at (800,600) = 215px of travel; Mission Settings first paints at (458,-352) — OFF-SCREEN ABOVE — and settles at (704,81) = 679px of travel. Reads as 'spawns in the wrong place and drifts in' (operator caught it by feel; animate-menu-in moves 12px and feels nearly right). Owner: apps/website/frontend/style/aegis.css keyframes (single hand-authored sheet). FIX: entrance animations for dialogs/menus/popovers limited to <=8px translation and <=120-150ms, or opacity/scale-only (scale >=0.97 origin-anchored); the context menu must first-paint at its final anchor. ⚠️ TRAPS: css-only ticket — do not touch component code; keep prefers-reduced-motion respected if present (add it if absent: reduced motion = opacity-only); exit animations may stay as-is. ACCEPTANCE: the review's MutationObserver probe re-run — max |first-paint -> settled| delta < 8px across context menu, Mission Settings, Save dialog, ORBAT; duration <= 150ms (computed animation-duration); reduced-motion media query yields 0px translation.",
-      "notes": "probe script pattern in review O-4; single-file css ticket — the wave's low-risk slot"
+      "notes": "probe script pattern in review O-4; single-file css ticket — the wave's low-risk slot | SHIPPED W207: entrance travel 215px/679px -> 0.0px at 120ms, prefers-reduced-motion added (was absent). ROOT CAUSE was a Tailwind v3->v4 migration artifact nobody had spotted: -translate-x-1/2 now emits the independent `translate:` property which COMPOSES with `transform` instead of replacing it, so the keyframe doubled the centering — every before-number is exactly 0.48x the surface's own size. Took opacity-only over the spec's scale>=0.97 because scale on an 1100x800 modal moves the rect 16.5px, twice the same spec's <8px acceptance. Its guard smoke exists but is NOT executed by anything -> T-843."
     },
     {
       "id": "T-801",
@@ -20664,6 +20664,46 @@
       "order": 5240,
       "summary": "WAVE-207 COMPLETION FINDING (third instance of the T-832 family, found while fixing the second). crates/map-engine-core/src/world/glyph_math.rs:105 still does the clamp-instead-of-wrap that made half the compass draw due south, and world/residency.rs:1364 feeds it deck_angle_for_rotation_deg(rotation) = -rotation — so ANY world object (tree/prop/text) authored with a rotation in 181..359 renders at due south. Same one-line shape as the fix already landed in slots_gpu.rs (wave 207, commit 0bc55dc5): fold the angle into (-180,180] before encoding; a clamp is correct for a magnitude and wrong for an angle. The slots_gpu test `yaw_encoders_agree` now DOCUMENTS this divergence rather than hiding it — update it when this lands so the two encoders agree again. ACCEPTANCE: a world object at rotation 270 renders visibly different from one at 180 (measured tip/extent bearing); the full 0..360 sweep is monotonic with no plateau (the plateau IS the defect); yaw_encoders_agree re-pins full-domain byte parity between the two encoders.",
       "notes": "wave-207 completion C; same family as T-832; one-line fix + sweep test; small"
+    },
+    {
+      "id": "T-843",
+      "title": "The editor smoke suite is red and nothing automated runs it — two rect smokes are dead guards",
+      "status": "queued",
+      "executor": "claude-code",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "surfaces": [
+        "SHELL"
+      ],
+      "order": 5250,
+      "summary": "WAVE-207 VERIFIER MAJOR (wave207.md F1) + ORCHESTRATOR CORRECTION. TWO FACTS, both verified: (1) `make leptos-gates` -> `gate editor-suite` CANNOT RUN GREEN on main — smoke #4 `cur` fails on a stale '6400.000' expectation vs the readout's ' m' suffix (T-793, landed 2026-08-09) and #19 `undo` on stale dock text (T-637/T-696, 2026-08-07); the suite dies before reaching later smokes. (2) `scripts/platform/wave.sh` contains ZERO occurrences of 'smoke' — THE WAVE GATE RUNS NO EDITOR SMOKES AT ALL. Consequence: the `save-dialog-rect` smoke (wave 203) and `entrance-motion-rect` smoke (wave 207) — both well-built, both perturbation-proven — are DEAD GUARDS: nothing automated executes them, and the one manual path that would is broken. The features behind the two red smokes are HEALTHY (cursor math exact to the metre, docks fine) — this is expectation rot, not tree damage. FIX: (a) update the two stale expectations to the shipped behaviour (' m' suffix, current dock text) so the suite runs to completion; (b) DECIDE and record where the rect smokes get executed — either add an editor-suite step to the wave gate (cost: chromium in every gate run — measure it) or make `make leptos-gates` a required pre-close step in the factory recipe; a guard nobody runs is the program's signature defect wearing a green hat. ACCEPTANCE: `gate editor-suite` exits 0 on main; both rect smokes actually execute (prove by perturbing one and watching the chosen path go red); the factory recipe names the path that runs them.",
+      "notes": "wave207 verifier F1 + orchestrator ledger correction; the T-742/T-759 family — a guard that examines nothing"
+    },
+    {
+      "id": "T-844",
+      "title": "Delete does nothing to a selected vehicle — delete_selection partitions comments and slots only",
+      "status": "queued",
+      "executor": "claude-code",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "surfaces": [
+        "SHELL"
+      ],
+      "order": 5260,
+      "summary": "WAVE-207 VERIFIER OBSERVATION (pre-existing, unfiled at the time; independently corroborates the operator's wave-205 eye-pass report). `delete_selection` partitions comments and slots only, so pressing Delete with a vehicle selected silently no-ops. DUPLICATE-CHECK BEFORE STARTING: T-837 (filed from the operator's eye-pass) covers the same defect from the UI side with a wider audit (Del key + context menu + outliner row + crew release + one-undo). This ticket exists to carry the verifier's precise mechanism (the partition in delete_selection) into that work — FOLD INTO T-837 rather than building twice; close this as absorbed when T-837 is scoped. ACCEPTANCE: see T-837.",
+      "notes": "wave207 verifier; explicit duplicate of T-837 — fold, do not double-build"
     }
   ]
 }
