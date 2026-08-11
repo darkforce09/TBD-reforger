@@ -345,8 +345,17 @@ pub fn rebind_engine_from_doc() {
         let Some(ctx) = guard.as_ref() else {
             return;
         };
-        let Some(soa) = ctx.doc.borrow().as_ref().map(MissionDocCore::materialize) else {
-            return;
+        // T-819 — bind the map-render SoA (crewed slots derived-hidden). OBJ still counts every
+        // authored slot via `slot_count` — invisible is not gone.
+        let (soa, obj) = {
+            let d = ctx.doc.borrow();
+            let Some(core) = d.as_ref() else {
+                return;
+            };
+            (
+                crate::mission_editor::map_render_slot_soa(core),
+                core.slot_count(),
+            )
         };
         prune_selection(ctx);
         let ids = ctx.selection.borrow().clone();
@@ -369,7 +378,7 @@ pub fn rebind_engine_from_doc() {
                 e.comments_bind_ids(&comment_lane_xy(doc), comment_lane_ids(doc));
             }
         }
-        refresh_signals(ctx, soa.ids.len());
+        refresh_signals(ctx, obj);
     });
 }
 
@@ -402,8 +411,16 @@ pub fn refresh_selection() {
 /// is in it, and the promotion assigns `selection = ids` when it isn't), so rebinding from the
 /// selection binds the same set the old code bound from `ids`.
 fn after_doc_change(ctx: &HistoryCtx) {
-    let Some(soa) = ctx.doc.borrow().as_ref().map(MissionDocCore::materialize) else {
-        return;
+    // T-819 — map-render SoA for glyph bind; `obj` stays the authored slot census.
+    let (soa, obj) = {
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return;
+        };
+        (
+            crate::mission_editor::map_render_slot_soa(core),
+            core.slot_count(),
+        )
     };
     prune_selection(ctx);
     let ids = ctx.selection.borrow().clone();
@@ -459,7 +476,7 @@ fn after_doc_change(ctx: &HistoryCtx) {
     if ctx.restore_settled.get() {
         crate::yrs_persist::schedule_edit_persist(ctx.doc.clone(), &ctx.mission_id);
     }
-    refresh_signals(ctx, soa.ids.len());
+    refresh_signals(ctx, obj);
 }
 
 /// T-748 — flat comment-lane `xy` for [`RenderEngine::comments_bind`]: interleaved world `[x,z,…]`

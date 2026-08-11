@@ -5215,6 +5215,20 @@ pub fn vehicle_rows() -> Vec<VehicleRow> {
     })
 }
 
+/// **T-819 — live crewed-slot id set** (every `vehicle.crew` value on the hosted doc).
+///
+/// Derived from [`vehicle_rows`]; the same set `mission_editor::crewed_slot_ids` computes from
+/// `small_maps_json`. Docks / diagnostics that need "who is boarded right now" read here — never
+/// invent a parallel flag on the slot row.
+#[must_use]
+pub fn crewed_slot_ids() -> std::collections::HashSet<String> {
+    vehicle_rows()
+        .into_iter()
+        .flat_map(|v| v.crew.into_values())
+        .filter(|id| !id.is_empty())
+        .collect()
+}
+
 /// T-215 — replace a vehicle's authored cargo, then the shared dirty tail (one undo step).
 /// Rows the schema cannot represent are dropped by the core mutator; an empty list clears the key.
 pub fn set_vehicle_cargo(vehicle_id: String, rows: Vec<VehicleCargoRow>) -> bool {
@@ -5375,6 +5389,11 @@ pub fn placed_slot_choices() -> Vec<PlacedSlotChoice> {
 /// shared dirty tail (one undo step). The **one-seat-per-slot** rule is enforced by the core mutator
 /// [`MissionDocCore::assign_crew_seat`], which vacates `slot_id` from any other seat of any vehicle
 /// before writing — so this reader-agnostic op cannot author a soldier into two vehicles at once.
+///
+/// **T-819 — no document hide flag.** Boarding writes ONLY the vehicle's `crew` map. The map-render
+/// lane derives "figure leaves the map" from that assignment (`mission_editor::map_render_slot_soa`);
+/// this op must never call `set_slots_editor_hidden` / stamp `editorHidden` — unassign, vehicle
+/// delete, and undo restore visibility automatically because the crew ref is gone.
 pub fn assign_crew_seat(vehicle_id: String, seat_id: String, slot_id: String) -> bool {
     let did = OPS_CTX.with(|c| {
         let guard = c.borrow();
@@ -5396,6 +5415,10 @@ pub fn assign_crew_seat(vehicle_id: String, seat_id: String, slot_id: String) ->
 
 /// T-076 — unboard: clear one vehicle seat. Core [`MissionDocCore::clear_crew_seat`] removes the
 /// `crew` key once the last seat empties, so an unboard restores the pre-board row shape.
+///
+/// **T-819 — figure returns by derivation.** Clearing the seat drops the id from
+/// [`crewed_slot_ids`]; the next map rebind puts the figure back at its stored `slots_json`
+/// position (exact f64 `z` untouched — we never wrote a hide flag or moved the slot).
 pub fn clear_crew_seat(vehicle_id: String, seat_id: String) -> bool {
     let did = OPS_CTX.with(|c| {
         let guard = c.borrow();
