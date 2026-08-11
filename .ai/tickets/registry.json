@@ -20136,7 +20136,7 @@
     {
       "id": "T-818",
       "title": "Vehicle crew/heading/cargo editor moves into the vehicle Attributes modal; the right-dock Placed strip dies",
-      "status": "queued",
+      "status": "shipped",
       "executor": "claude-code",
       "program": "eden",
       "stream": "mission-creator",
@@ -20153,12 +20153,12 @@
       ],
       "order": 5000,
       "summary": "OPERATOR EYE-PASS FINDING (wave-202 pass, 2026-08-10; direction operator-specified). The placed-vehicle crew/heading/cargo editor lives INLINE in the right dock's Placed strip \u2014 wrong home: the right dock is the get-assets surface. DIRECTION: the vehicle's double-click Attributes modal (vehicles already open Attributes on dblclick \u2014 T-647 ATTR-OPEN vehicles-only lineage) gains the vehicle editor as its content: Heading\u00b0, Add cargo, Crew dropdowns (Driver/Gunner/Commander/Cargo 1-N) \u2014 the existing dock editor's controls MOVED, not redesigned (the operator praised the menu itself). Then DELETE the right-dock Placed strip entirely (T-809/W203 lists placed vehicles in the left outliner and deliberately kept the strip's editor as a stopgap so crew editing never had a dead window \u2014 this ticket removes the stopgap). TRAPS: the modal is modal_stack-governed (consume z_class \u2014 the O-3 class); heading is a number_field (T-785 focused/draft, blur/Enter commit); crew dropdowns are plain selects; the T-649/T-788 multi-edit machinery stays untouched (vehicles are single-edit); removing the strip must not orphan the Add-cargo data path \u2014 same mutators, new call site; slot-crew assignment writes must keep their existing digest/undo shape. ACCEPTANCE: dblclick a placed vehicle -> Attributes opens with Heading/Cargo/Crew sections; assigning a slot as Driver via the modal produces the exact same document write the old strip did (digest parity); the right dock's Vehicles tab shows ONLY catalog tree + search (no Placed section anywhere); Esc/undo per the modal contract; T-819's hidden-crew figures reappear on unassign via this modal too.",
-      "notes": "eye-pass wave-202; pairs with T-819 in wave 210; depends on T-809/W203 stopgap"
+      "notes": "eye-pass wave-202; pairs with T-819 in wave 210; depends on T-809/W203 stopgap | SHIPPED W210: vehicle Heading/Cargo/Crew moved into Attributes modal (same mutators); DockRight Placed strip deleted; Vehicles tab catalog-only. Orphan panel module \u2192 T-851."
     },
     {
       "id": "T-819",
       "title": "Crewed slots render inside the vehicle \u2014 figures leave the map while assigned",
-      "status": "queued",
+      "status": "shipped",
       "executor": "claude-code",
       "program": "eden",
       "stream": "mission-creator",
@@ -20175,7 +20175,7 @@
       ],
       "order": 5010,
       "summary": "OPERATOR EYE-PASS FINDING (wave-202 pass, 2026-08-10). Slots assigned as vehicle crew keep rendering as standing figures next to the vehicle \u2014 they should be IN it (Eden hides crewed units). DIRECTION: render-lane hide DERIVED from crew assignment \u2014 a slot referenced by any placed vehicle's crew list is excluded from the map render SoA (figure + label), the T-701 editorHidden RENDER shape. \u26a0\ufe0f HARD TRAPS (shipped defect families live exactly here): (1) derived state, NO new document flag \u2014 the crew assignment IS the state; unassign or vehicle delete restores visibility automatically; (2) NEVER drop crewed slots from materialize()/compile \u2014 they are crew and must compile; the T-665/T-701 materialize() drops are for operator-hidden rows, do NOT reuse them for crewed; (3) the wave-144 id-mint class: any code sourcing ids from a FILTERED view re-mints hidden ids \u2014 mint/read from slots_json only; (4) the wave-145 selection lesson: crewed slots stay outliner-reachable and selection must NOT prune them for being invisible \u2014 invisible is not gone; map-click cannot hit them (nothing rendered) but outliner click must select. ACCEPTANCE: scripted \u2014 assign 2 slots as Driver/Gunner: their figures + labels leave the map (SoA row count -2), outliner rows remain and select, compiled export still contains both with crew refs; unassign one -> figure returns at its stored position with its stored z (exact f64); delete the vehicle -> both return; undo of an assignment round-trips visibility.",
-      "notes": "eye-pass wave-202; pairs with T-818 in wave 210; render lane only"
+      "notes": "eye-pass wave-202; pairs with T-818 in wave 210; render lane only | SHIPPED W210: derived map_render_slot_soa hide from crew assignment; materialize/compile/outliner/selection intact; mission_history wire disclosed. Completion: scrub-anchor split + T-802 pin retarget (ddbdcddd/00eea875) after gate red on duplicated MissionEditorPage literal."
     },
     {
       "id": "T-820",
@@ -20520,7 +20520,7 @@
     {
       "id": "T-836",
       "title": "Seeded vehicles cannot compile \u2014 no veh: alias in kit-aliases.json (T-425 refuse fires)",
-      "status": "queued",
+      "status": "shipped",
       "executor": "claude-code",
       "program": "eden",
       "stream": "mission-creator",
@@ -20536,7 +20536,7 @@
       ],
       "order": 5180,
       "summary": "OPERATOR EYE-PASS BUG (wave-205, 2026-08-10, screenshot): compiled export REFUSES any mission containing a T-800-seeded vehicle \u2014 'parse mission version payload: vehicle n3: resourceName {86B7B7522A75FF8B}Prefabs/Vehicles/Wheeled/M998/M1025_M2.et has no veh: alias in kit-aliases.json (T-425 \u2014 refuse silent drop/substitute)'. The refuse is CORRECT (T-425's contract); the DATA is incomplete: the wave-202 seed (registry_dev.sql, 4 vehicles M1025/M998/M923A1/M113) never got veh: aliases. FIX: add the four veh: aliases to packages/tbd-schema/registry/kit-aliases.json (consumers: flatten.rs, mission_compile.rs, editor_ops.rs \u2014 verify the alias FORMAT against an existing veh: row); add/extend a test that every seeded kind=vehicle resource_name resolves through kit-aliases (the T-425 lineage test style \u2014 make it fire first against a missing alias). ACCEPTANCE: a mission with each seeded vehicle placed exports compiled clean (ajv + no parse toast); the new test goes RED if a seed row lacks an alias.",
-      "notes": "operator eye-pass wave-205; blocks vehicle authoring exports \u2014 pack into wave 210"
+      "notes": "operator eye-pass wave-205; blocks vehicle authoring exports \u2014 pack into wave 210 | SHIPPED W210: four seed veh: aliases in kit-aliases.json; flatten Class-R RED without alias."
     },
     {
       "id": "T-837",
@@ -20836,6 +20836,46 @@
       "title": "T-801 eye-pass: squad tether did not follow drag on same-squad (auto-grouped) units",
       "summary": "WAVE-208 OPERATOR EYE-PASS (2026-08-11) against shipped T-801. Operator: tether line \"does not seem like the line moves at all\" while dragging a unit that is in the same squad (membership from asset-browser auto-group, not Connect \u25b8 Group to). T-801 shipped pack_squad_link_drag_preview + bind_squad_link_preview with Class-R packer pins; verifier could not re-prove the mid-drag 4px pixel probe (load overlay). FIX: reproduce on make leptos release with auto-grouped squad members; if preview path misses SQUAD_LINKS for that membership shape, fix; if membership was wrong (T-848), re-test after T-848. ACCEPTANCE: mid-drag screenshot \u2014 tether endpoint within 4px of dragged sprite centre for auto-grouped same-squad single-drag and 2-selected-drag.",
       "notes": "operator W208 eye-pass; T-801 follow-on; may depend on clean membership (T-848)"
+    },
+    {
+      "id": "T-851",
+      "order": 5330,
+      "program": "eden",
+      "status": "deferred",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "surfaces": [
+        "RIGHT"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "title": "Delete orphaned placed_vehicles_panel after T-818 removed the Placed strip",
+      "summary": "WAVE-210 VERIFIER NIT (wave210.md F1). T-818 deleted the DockRight Placed strip call site, but eden_vehicles_panel.rs still carries placed_vehicles_panel + seat/cargo constants under #![allow(dead_code)] with stale prose claiming cargo lives under the Vehicles tab. FIX: delete or collapse the orphan into a shared seat-model helper used only by Attributes; scrub dead_code allows and update module docs. ACCEPTANCE: rg placed_vehicles_panel finds zero live mounts; no allow(dead_code) for the strip; Vehicles-tab prose matches catalog-only.",
+      "notes": "wave210 verifier F1 NIT; functional T-818 ship intact"
+    },
+    {
+      "id": "T-852",
+      "order": 5340,
+      "program": "eden",
+      "status": "deferred",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "title": "Attributes modal paint should use modal_stack::z_class instead of hard-coded z-50",
+      "summary": "WAVE-210 VERIFIER NIT (wave210.md F2). Esc is modal_stack-gated (T-726) but Attributes (including the new vehicle body) still paints literal z-50, not modal_stack::z_class (the O-3 class). Pre-existing; not a Heading/Cargo/Crew functional miss. FIX: consume z_class for the Attributes overlay. ACCEPTANCE: attributes.rs has no literal z-50 on the modal overlay; uses z_class; Esc stack still correct.",
+      "notes": "wave210 verifier F2 NIT; pre-existing; pairs with O-3 class family"
     }
   ]
 }
