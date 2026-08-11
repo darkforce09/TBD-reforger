@@ -3536,6 +3536,99 @@ mod tests {
         );
     }
 
+    /// T-836 — every T-800 / wave-202 `registry_dev.sql` `kind=vehicle` seed row must resolve
+    /// through `kit-aliases.json`. The operator eye-pass (wave-205) hit
+    /// `vehicle n3: …M1025_M2.et has no veh: alias` — T-425's refuse is correct; the data was
+    /// incomplete. Pins are the four INSERT resource_names verbatim.
+    ///
+    /// Anti-vacuity: a resourceName that is deliberately absent returns `None` first (same
+    /// contract as [`crate::mission::kit`] T-425), then each seed must resolve to a `veh:` alias,
+    /// and a mission placing all four must compile (no parse refuse).
+    #[test]
+    fn seeded_vehicle_resource_names_resolve_through_kit_aliases() {
+        // apps/website/api/seeds/registry_dev.sql — T-800 vehicle rows (exact resource_name).
+        const SEEDED: &[(&str, &str)] = &[
+            (
+                "{86B7B7522A75FF8B}Prefabs/Vehicles/Wheeled/M998/M1025_M2.et",
+                "veh:m1025_m2",
+            ),
+            (
+                "{FA9635AC08876D3C}Prefabs/Vehicles/Wheeled/M998/M998.et",
+                "veh:m998",
+            ),
+            (
+                "{15D63E9F5DE4A83D}Prefabs/Vehicles/Wheeled/M923A1/M923A1.et",
+                "veh:m923a1",
+            ),
+            (
+                "{4D4D74A0BE9E8C1F}Prefabs/Vehicles/Tracked/M113/M113_M2.et",
+                "veh:m113_m2",
+            ),
+        ];
+
+        let aliases = load_kit_aliases();
+
+        // Fire first against a missing alias — proves the resolver is not a vacuous Some(_).
+        assert_eq!(
+            aliases.vehicle_for_resource(
+                "{DEADBEEFDEADBEEF}Prefabs/Vehicles/Wheeled/Missing/NoAlias.et"
+            ),
+            None,
+            "absent resourceName must refuse (T-425) — otherwise seed asserts are vacuous"
+        );
+
+        for (resource_name, want_alias) in SEEDED {
+            assert_eq!(
+                aliases.vehicle_for_resource(resource_name),
+                Some(*want_alias),
+                "seed vehicle {resource_name} lacks kit-aliases veh: row (T-836)"
+            );
+        }
+
+        // Placed mission with each seeded vehicle — compile must not refuse.
+        let mut p: serde_json::Value =
+            serde_json::from_str(LEDGER_FIXTURE).expect("fixture parses");
+        p["vehicles"] = serde_json::json!([
+            {
+                "id": "seed-m1025",
+                "resourceName": "{86B7B7522A75FF8B}Prefabs/Vehicles/Wheeled/M998/M1025_M2.et",
+                "position": { "x": 10.0, "y": 20.0, "z": 0.0, "rotation": 0.0 },
+                "factionId": "faction-BLUFOR"
+            },
+            {
+                "id": "seed-m998",
+                "resourceName": "{FA9635AC08876D3C}Prefabs/Vehicles/Wheeled/M998/M998.et",
+                "position": { "x": 11.0, "y": 21.0, "z": 0.0, "rotation": 90.0 },
+                "factionId": "faction-BLUFOR"
+            },
+            {
+                "id": "seed-m923a1",
+                "resourceName": "{15D63E9F5DE4A83D}Prefabs/Vehicles/Wheeled/M923A1/M923A1.et",
+                "position": { "x": 12.0, "y": 22.0, "z": 0.0, "rotation": 180.0 },
+                "factionId": "faction-BLUFOR"
+            },
+            {
+                "id": "seed-m113",
+                "resourceName": "{4D4D74A0BE9E8C1F}Prefabs/Vehicles/Tracked/M113/M113_M2.et",
+                "position": { "x": 13.0, "y": 23.0, "z": 0.0, "rotation": 270.0 },
+                "factionId": "faction-BLUFOR"
+            }
+        ]);
+        let doc = flatten_to_mod_document(&meta(), p.to_string().as_bytes())
+            .expect("seeded vehicles must compile (T-836)");
+        let veh_aliases: Vec<_> = doc
+            .entities
+            .iter()
+            .filter(|e| e.alias.starts_with("veh:"))
+            .map(|e| e.alias.as_str())
+            .collect();
+        assert_eq!(
+            veh_aliases,
+            ["veh:m1025_m2", "veh:m998", "veh:m923a1", "veh:m113_m2"],
+            "each seed vehicle must reach the wire as its veh: alias"
+        );
+    }
+
     /// T-254 — authored `entities[]` project to schema `$defs/entity` on the compiled wire
     /// (`alias`/`x`/`z`/`headingDeg`/`faction`), dropping editor-only `id`/`resourceName`/`position`.
     #[test]
