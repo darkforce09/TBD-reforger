@@ -607,3 +607,24 @@
 210	T-818	Vehicle crew/heading/cargo editor into the Attributes modal; Placed strip dies	apps/website/frontend/src/attributes.rs; apps/website/frontend/src/eden_dock_right.rs
 210	T-819	Crewed slots render inside the vehicle — figures leave the map while assigned	apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/editor_ops.rs
 210	T-836	Seeded vehicles compile — veh: aliases for the four seed rows	packages/tbd-schema/registry/kit-aliases.json; crates/map-engine-core/src/mission/flatten.rs
+211	T-843	The editor smoke suite is red and nothing automated runs it — two rect smokes are dead guards	tools/tbd-tools/src/smokes.rs; scripts/platform/wave.sh; Makefile
+211	T-842	The clamp-not-wrap heading defect is live on the world lanes too (trees/props/text)	crates/map-engine-core/src/world/glyph_math.rs
+211	T-826	Markers stop declaring sides — placing a marker must not mint a faction	apps/website/frontend/src/editor_ops.rs
+212	T-838	Markers select on the map and list in the outliner; double-click opens marker Attributes	apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/eden_tree.rs
+212	T-841	The Type picker popover is translucent — text blurs over the map; make it an opaque panel	apps/website/frontend/src/attributes.rs
+212	T-827	Validation chip red measures 4.0-4.3:1 over the live glass — passes only by plate-calc	apps/website/frontend/src/eden_top_strip.rs
+213	T-830	Outliner rows are too cramped — density pass on the layer tree	apps/website/frontend/src/eden_tree.rs
+213	T-833	Rotation widget: relative drag delta (not absolute aim) + live per-frame preview	apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/select_tool.rs
+213	T-820	Catalog failure view shows the generic cause with chips visible where no-modpack should fire	apps/website/frontend/src/eden_dock_right.rs
+214	T-837	Vehicles cannot be deleted — slots can, vehicles cannot	apps/website/frontend/src/editor_ops.rs; apps/website/frontend/src/mission_editor.rs; apps/website/frontend/src/context_menu.rs
+214	T-845	A selected vehicle looks identical to an unselected one	crates/map-engine-core/src/slots_gpu.rs; crates/map-engine-render/src/engine.rs
+214	T-824	Placed zones are not visible on the map — investigate and fix the render (repro-first)	apps/website/frontend/src/eden_zones.rs; crates/map-engine-render/src/scene.rs
+215	T-839	The floating Select/Ruler/LoS pill still exists — decision 1 said it dies	apps/website/frontend/src/eden_top_strip.rs; apps/website/frontend/src/mission_editor.rs
+215	T-828	Marker captions are world-frozen at bind-time zoom — drift past 40px until a rebind	crates/map-engine-render/src/engine.rs
+215	T-823	OBJ readout counts slots only — placed vehicles are invisible to it	apps/website/frontend/src/mission_history.rs
+216	T-816	Esc with an armed composition and the Controls Hint open clears both in one press	apps/website/frontend/src/ui.rs; apps/website/frontend/src/eden_top_strip.rs
+216	T-821	Save Version prefill is a static 0.1.0 — no auto-bump, second save 409s	apps/website/frontend/src/mission_commands.rs
+216	T-822	Outliner dblclick bubbles into the map container — asset picker opens under Attributes	apps/website/frontend/src/mission_editor.rs
+217	T-817	Grid labels lag up to ~1.4s on wheel zoom with a stationary pointer	apps/website/frontend/src/eden_toolbelt.rs
+217	T-834	Wave-205 residue: two stale pre-renumber comments, dead widget_is_rotate, marker grammar	apps/website/frontend/src/eden_top_strip.rs; apps/website/frontend/src/mission_editor.rs
+217	T-831	Per-side markers: author for each side, visible only to that side (Arma 3 model) — establish wh	apps/website/frontend/src/eden_dock_right.rs

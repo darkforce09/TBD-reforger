@@ -149,6 +149,22 @@ diagnosis) → registry flip + `distrobox-host-exec sh -c './scripts/ticket sync
 > gate from editor wave 100 to 115 had. That is expected here, not a signal. Verify the sha is the
 > previous `wave M-1 CLOSED` commit from the git ledger, then pass it.
 
+## ⚠️ HANDOFF TO CURSOR (operator instruction, 2026-08-11)
+
+**Claude Code ran editor waves 200-207 (close markers 122-130) and has handed the factory to Cursor.**
+The full handoff — state, loop, mechanics, and the traps — is
+[`docs/platform/EDITOR_FACTORY_FOR_CURSOR.md`](../../docs/platform/EDITOR_FACTORY_FOR_CURSOR.md).
+Read that, not this file's older recipe, for the editor band; this run log remains the ledger.
+
+**Queued and ready:** waves **208, 210, 211-217** — 26 tickets, rows in `wave_plan.tsv`, every wave
+verified file-disjoint. **Run 211 early**: it fixes T-843, the finding that the editor smoke suite is
+red AND that `wave.sh` runs no smokes at all, so two carefully-built rect guards currently execute
+nowhere. **T-825** (the outliner-first unification program) is an operator design session, not a slice.
+
+The band amendment still binds: **one wave per session, the operator's eye-pass gates the next.**
+
+---
+
 ## Continuation recipe (compaction-proof — execute mechanically from any fresh context)
 
 State lives in the table above: the first non-`SHIPPED` row is the current wave. **The 112–119

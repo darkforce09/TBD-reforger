@@ -20372,7 +20372,7 @@
     {
       "id": "T-829",
       "title": "Gate smoke virtual-outliner v5_orbatWindowed fails deterministically under the verifier harness — config-sensitive smoke",
-      "status": "queued",
+      "status": "deferred",
       "executor": "claude-code",
       "program": "eden",
       "stream": "mission-creator",
@@ -20388,7 +20388,7 @@
       ],
       "order": 5110,
       "summary": "WAVE-204 VERIFIER FILING (wave204.md MINOR, PRE-EXISTING — bisected innocent: fails identically on merged AND pre-wave dists under the verifier's dist/flags, while the wave gate's own configuration passed 30/30 twice on the same tree). A smoke whose verdict flips with the harness configuration is the T-742/T-747 family: someone will eventually chase a phantom red or trust a phantom green. INVESTIGATE: diff the verifier invocation vs the gate's (dist build profile, chrome flags, viewport) to find the sensitive variable; make v5_orbatWindowed deterministic across both (or gate the check on the variable it actually depends on, stated). ACCEPTANCE: the smoke passes (or refuses loudly with a named reason) under BOTH the gate config and the verifier recipe in wave204.md.",
-      "notes": "wave204 verifier; repro recipe in the report; do not let it rot into a known-flake"
+      "notes": "wave204 verifier; repro recipe in the report; do not let it rot into a known-flake | ABSORBED into T-843 — same file family (tools/tbd-tools smokes) and the same root question — which harness actually runs the editor suite. Do not dispatch separately; its acceptance clauses are carried there."
     },
     {
       "id": "T-830",
@@ -20436,7 +20436,7 @@
     {
       "id": "T-832",
       "title": "Slots render no heading on the map — yaw never reaches the glyph lane",
-      "status": "queued",
+      "status": "shipped",
       "executor": "claude-code",
       "program": "eden",
       "stream": "mission-creator",
@@ -20452,7 +20452,7 @@
       ],
       "order": 5140,
       "summary": "WAVE-205 VERIFIER FILING (wave205.md MAJOR — a claim-vs-pixels finding, not broken code). PROVEN LIVE: no heading renders for slots in ANY widget mode — the slot render lane hardcodes yaw 0 and glyph 0 is a symmetric ring; pixel-identical crops at heading 90 vs 180. T-795's rotate ring changes heading NUMERICALLY (attrs confirm, one undo step) but the map never shows it — the review's F-16 'heading arrow' observation was about exactly this, and T-795's not-reproducing claim was made from source reading, not pixels (the T-789 lesson, second instance — a not-reproducing verdict is only as good as its measurement). FIX: carry yaw through the slot lane (the T-790 glyph-id lane widening is the template: store->feeder->engine) and rotate the glyph (or render a heading tick) per slot. NATURAL HOME: T-808 (unit symbology, wave 207) — military symbols carry orientation; fold there rather than a standalone lane change (note added to T-808). ACCEPTANCE: place a slot, set heading 90 then 180: the map glyph visibly rotates (non-identical crops); ring-drag live-updates the visible heading; vehicles' existing heading render (if any) unregressed.",
-      "notes": "wave205 verifier; fold into T-808/W207 — the note is on that ticket"
+      "notes": "wave205 verifier; fold into T-808/W207 — the note is on that ticket | ABSORBED+DELIVERED by T-808 (wave 207): heading now renders and the wave-207 verifier measured a 9-point sweep, monotonic and wrap-continuous, for slots AND vehicles. Closed as done, not deferred."
     },
     {
       "id": "T-833",
@@ -20493,13 +20493,13 @@
         "SHELL"
       ],
       "order": 5160,
-      "summary": "WAVE-205 VERIFIER FILING (wave205.md NITs, batched). (1)+(2) two doc comments still describe the pre-renumber digit map (wave205.md cites lines) — the stale-comment class that has cost this program real time; (3) EditorToolbarDispatch.widget_is_rotate is dead after the barrier reconciliation (widget_digit is the read) — remove the field + its registration; (4) 'Placing a Attack marker' article grammar in the picker hint. All mechanical; one small slice. ACCEPTANCE: comments match the 1/2/3 map; widget_is_rotate absent from the dispatch struct and all call sites; hint reads 'Placing an Attack marker' (or reworded).",
+      "summary": "WAVE-205 VERIFIER FILING (wave205.md NITs, batched). (1)+(2) two doc comments still describe the pre-renumber digit map (wave205.md cites lines) — the stale-comment class that has cost this program real time; (3) EditorToolbarDispatch.widget_is_rotate is dead after the barrier reconciliation (widget_digit is the read) — remove the field + its registration; (4) 'Placing a Attack marker' article grammar in the picker hint. All mechanical; one small slice. ACCEPTANCE: comments match the 1/2/3 map; widget_is_rotate absent from the dispatch struct and all call sites; hint reads 'Placing an Attack marker' (or reworded). ⟡ ABSORBS T-835 (The No-Widget button wears the select-cursor glyph, not a 'none' symbol) — deliver its acceptance too. ⟡ ABSORBS T-840 (The draft chip says 'saved just now' on boot of a content-bearing mission — before any edit) — deliver its acceptance too.",
       "notes": "wave205 verifier NIT batch; pure cleanup"
     },
     {
       "id": "T-835",
       "title": "The No-Widget button wears the select-cursor glyph, not a 'none' symbol",
-      "status": "queued",
+      "status": "deferred",
       "executor": "claude-code",
       "program": "eden",
       "stream": "mission-creator",
@@ -20515,7 +20515,7 @@
       ],
       "order": 5170,
       "summary": "OPERATOR EYE-PASS FINDING (wave-205, 2026-08-10): the No-Widget toolbar button's current glyph 'doesn't really make sense' — it should read as the SELECT tool, matching the select-arrow vocabulary of the floating pill's Select (which itself is dying per decision 1/T-839 — the arrow ICON is what carries over). FIX: swap the No-Widget button (and Edit-menu row) glyph to the select-cursor/arrow icon; tooltip stays 'No Widget (1)' or becomes 'Select (1)' — match Eden's naming (Eden calls digit 1 'No Widget'; the operator wants the SELECT visual). Keep plates/census intact. ACCEPTANCE: the digit-1 button shows the arrow glyph; tooltip names the mode + (1); no other button changed.",
-      "notes": "operator eye-pass wave-205; pairs naturally with T-839"
+      "notes": "operator eye-pass wave-205; pairs naturally with T-839 | ABSORBED into T-834 — both are small eden_top_strip cleanups and would collide on the file. Do not dispatch separately; its acceptance clauses are carried there."
     },
     {
       "id": "T-836",
@@ -20557,7 +20557,7 @@
         "LEFT"
       ],
       "order": 5190,
-      "summary": "OPERATOR EYE-PASS BUG (wave-205, 2026-08-10): a placed vehicle cannot be deleted from the editor — slots delete fine (Del key, context menu); vehicles have no working delete path. This is the census XFORM-DEL-001 lead T-800's seed made browser-testable — and it fails. AUDIT FIRST: does delete_selection/Del cover vehicle ids in ctx.selection (the wave-145 prune lesson says vehicle ids LIVE there)? does the context menu offer Delete on a vehicle? the outliner PLACED VEHICLES row (W203) has no delete affordance? Find which paths exist-but-skip vs are absent. FIX: Del key + context menu + outliner row delete all remove a selected vehicle in ONE undo step (T-779 ack discipline: confirm the write); crew assignments release cleanly (crewed slots reappear — coordinates with T-819's derived hide). ACCEPTANCE: place vehicle, select (map or outliner), Del -> gone from map/outliner/compiled export, one undo restores it WITH its crew assignments.",
+      "summary": "OPERATOR EYE-PASS BUG (wave-205, 2026-08-10): a placed vehicle cannot be deleted from the editor — slots delete fine (Del key, context menu); vehicles have no working delete path. This is the census XFORM-DEL-001 lead T-800's seed made browser-testable — and it fails. AUDIT FIRST: does delete_selection/Del cover vehicle ids in ctx.selection (the wave-145 prune lesson says vehicle ids LIVE there)? does the context menu offer Delete on a vehicle? the outliner PLACED VEHICLES row (W203) has no delete affordance? Find which paths exist-but-skip vs are absent. FIX: Del key + context menu + outliner row delete all remove a selected vehicle in ONE undo step (T-779 ack discipline: confirm the write); crew assignments release cleanly (crewed slots reappear — coordinates with T-819's derived hide). ACCEPTANCE: place vehicle, select (map or outliner), Del -> gone from map/outliner/compiled export, one undo restores it WITH its crew assignments. ⟡ ABSORBS T-844 (Delete does nothing to a selected vehicle — delete_selection partitions comments and slots only) — deliver its acceptance too.",
       "notes": "operator eye-pass wave-205; census XFORM-DEL-001; coordinates with T-819 — wave 210/211 packing"
     },
     {
@@ -20607,7 +20607,7 @@
     {
       "id": "T-840",
       "title": "The draft chip says 'saved just now' on boot of a content-bearing mission — before any edit",
-      "status": "queued",
+      "status": "deferred",
       "executor": "claude-code",
       "program": "eden",
       "stream": "mission-creator",
@@ -20623,7 +20623,7 @@
       ],
       "order": 5220,
       "summary": "WAVE-206 VERIFIER FILING (wave206.md NIT). On opening any content-bearing mission the hydrate persists server content to IndexedDB — a REAL flush completes (~1s, can_undo=false, edit_persist_count=0) and the T-804 chip honestly reports 'Draft saved just now' though the operator edited nothing. Truly-empty never-edited missions correctly show no chip. Legibility nuance: 'your work is safe' reads oddly when there is no work yet. FIX OPTIONS: gate the chip's FIRST appearance on the first operator-driven flush (edit_persist_count>0 or the dirty-dot arming source — one source, the wave-129 lesson), or reword the boot state ('draft synced'). Keep the ack discipline untouched. ACCEPTANCE: open a content-bearing mission, wait: no 'saved' chip until the first real edit flushes (or the boot wording differs measurably); never-edited-empty unchanged; post-edit behavior identical to today.",
-      "notes": "wave206 verifier NIT; one-source rule applies"
+      "notes": "wave206 verifier NIT; one-source rule applies | ABSORBED into T-834 — same file, same class of copy/state polish. Do not dispatch separately; its acceptance clauses are carried there."
     },
     {
       "id": "T-841",
@@ -20682,13 +20682,13 @@
         "SHELL"
       ],
       "order": 5250,
-      "summary": "WAVE-207 VERIFIER MAJOR (wave207.md F1) + ORCHESTRATOR CORRECTION. TWO FACTS, both verified: (1) `make leptos-gates` -> `gate editor-suite` CANNOT RUN GREEN on main — smoke #4 `cur` fails on a stale '6400.000' expectation vs the readout's ' m' suffix (T-793, landed 2026-08-09) and #19 `undo` on stale dock text (T-637/T-696, 2026-08-07); the suite dies before reaching later smokes. (2) `scripts/platform/wave.sh` contains ZERO occurrences of 'smoke' — THE WAVE GATE RUNS NO EDITOR SMOKES AT ALL. Consequence: the `save-dialog-rect` smoke (wave 203) and `entrance-motion-rect` smoke (wave 207) — both well-built, both perturbation-proven — are DEAD GUARDS: nothing automated executes them, and the one manual path that would is broken. The features behind the two red smokes are HEALTHY (cursor math exact to the metre, docks fine) — this is expectation rot, not tree damage. FIX: (a) update the two stale expectations to the shipped behaviour (' m' suffix, current dock text) so the suite runs to completion; (b) DECIDE and record where the rect smokes get executed — either add an editor-suite step to the wave gate (cost: chromium in every gate run — measure it) or make `make leptos-gates` a required pre-close step in the factory recipe; a guard nobody runs is the program's signature defect wearing a green hat. ACCEPTANCE: `gate editor-suite` exits 0 on main; both rect smokes actually execute (prove by perturbing one and watching the chosen path go red); the factory recipe names the path that runs them.",
+      "summary": "WAVE-207 VERIFIER MAJOR (wave207.md F1) + ORCHESTRATOR CORRECTION. TWO FACTS, both verified: (1) `make leptos-gates` -> `gate editor-suite` CANNOT RUN GREEN on main — smoke #4 `cur` fails on a stale '6400.000' expectation vs the readout's ' m' suffix (T-793, landed 2026-08-09) and #19 `undo` on stale dock text (T-637/T-696, 2026-08-07); the suite dies before reaching later smokes. (2) `scripts/platform/wave.sh` contains ZERO occurrences of 'smoke' — THE WAVE GATE RUNS NO EDITOR SMOKES AT ALL. Consequence: the `save-dialog-rect` smoke (wave 203) and `entrance-motion-rect` smoke (wave 207) — both well-built, both perturbation-proven — are DEAD GUARDS: nothing automated executes them, and the one manual path that would is broken. The features behind the two red smokes are HEALTHY (cursor math exact to the metre, docks fine) — this is expectation rot, not tree damage. FIX: (a) update the two stale expectations to the shipped behaviour (' m' suffix, current dock text) so the suite runs to completion; (b) DECIDE and record where the rect smokes get executed — either add an editor-suite step to the wave gate (cost: chromium in every gate run — measure it) or make `make leptos-gates` a required pre-close step in the factory recipe; a guard nobody runs is the program's signature defect wearing a green hat. ACCEPTANCE: `gate editor-suite` exits 0 on main; both rect smokes actually execute (prove by perturbing one and watching the chosen path go red); the factory recipe names the path that runs them. ⟡ ABSORBS T-829 (Gate smoke virtual-outliner v5_orbatWindowed fails deterministically under the verifier harness — config-sensitive smoke) — deliver its acceptance too.",
       "notes": "wave207 verifier F1 + orchestrator ledger correction; the T-742/T-759 family — a guard that examines nothing"
     },
     {
       "id": "T-844",
       "title": "Delete does nothing to a selected vehicle — delete_selection partitions comments and slots only",
-      "status": "queued",
+      "status": "deferred",
       "executor": "claude-code",
       "program": "eden",
       "stream": "mission-creator",
@@ -20703,7 +20703,7 @@
       ],
       "order": 5260,
       "summary": "WAVE-207 VERIFIER OBSERVATION (pre-existing, unfiled at the time; independently corroborates the operator's wave-205 eye-pass report). `delete_selection` partitions comments and slots only, so pressing Delete with a vehicle selected silently no-ops. DUPLICATE-CHECK BEFORE STARTING: T-837 (filed from the operator's eye-pass) covers the same defect from the UI side with a wider audit (Del key + context menu + outliner row + crew release + one-undo). This ticket exists to carry the verifier's precise mechanism (the partition in delete_selection) into that work — FOLD INTO T-837 rather than building twice; close this as absorbed when T-837 is scoped. ACCEPTANCE: see T-837.",
-      "notes": "wave207 verifier; explicit duplicate of T-837 — fold, do not double-build"
+      "notes": "wave207 verifier; explicit duplicate of T-837 — fold, do not double-build | ABSORBED into T-837 — same defect (delete_selection partitions comments/slots only); T-837 carries the wider UI audit. Do not dispatch separately; its acceptance clauses are carried there."
     },
     {
       "id": "T-845",
