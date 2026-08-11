@@ -14,7 +14,6 @@ use crate::dto::RegistryItem;
 use crate::eden_dock_left::collapse_chevron;
 use crate::eden_layout::{DOCK_R, STUB_PX};
 use crate::eden_tree::{chevron_or_spacer, guide_spans, PALETTE_LEAF};
-use crate::eden_vehicles_panel::placed_vehicles_panel;
 use crate::eden_zones::zones_panel;
 use crate::ui::MaterialIcon;
 
@@ -1638,8 +1637,6 @@ pub fn DockRight(
     // T-254 — Objects chip palette (entities[]): own collapse + search, built from registry_items.
     let object_collapsed = RwSignal::new(std::collections::HashSet::<String>::new());
     let object_search = RwSignal::new(String::new());
-    // T-215 — which placed vehicles have their cargo editor open.
-    let vehicle_expanded = RwSignal::new(std::collections::HashSet::<String>::new());
     // T-582 — the selected zone (Attributes target). Its own selection, NOT `select_tool`'s: that
     // one runs over the slot SoA and drives SEL/highlight, so putting a zone id in it would show
     // `SEL 1` with nothing highlighted anywhere — the same reason `place_at` keeps vehicle and
@@ -2047,14 +2044,12 @@ pub fn DockRight(
                     // tab (the merged tree), so this tab's job narrows to "all placeable vehicles at
                     // once, across factions" — a kind-filtered cross-cut of the same catalogue, which
                     // is exactly what `vehicle_catalog` (the `kind == "vehicle"` half of the fetch)
-                    // already is. It is kept rather than retired for two concrete reasons: (1) it is
-                    // the surface that hosts the placed-vehicle CREW editor strip below
-                    // (`placed_vehicles_panel`), which T-818/W210 rehomes — deleting the tab now would
-                    // leave crew editing homeless for a wave (the eye-pass fold's stopgap); (2) the
-                    // ORBAT picker reads vehicles through `registry_vehicle_options` off the RAW rows,
-                    // not through this tab, so the data path the picker needs is unaffected either way.
-                    // Its leaves render through `faction_palette_rows` too, so placing from here also
-                    // feeds recently-placed and resolves its arm the same way the merged tree does.
+                    // already is. T-818 deleted the Placed strip (crew/heading/cargo now live in the
+                    // vehicle Attributes modal); this tab is catalog tree + search only. The ORBAT
+                    // picker reads vehicles through `registry_vehicle_options` off the RAW rows, not
+                    // through this tab. Its leaves render through `faction_palette_rows` too, so
+                    // placing from here also feeds recently-placed and resolves its arm the same way
+                    // the merged tree does.
                     1 => view! {
                         <h3 class="mt-2 text-label-md font-semibold text-on-surface">"Vehicles"</h3>
                         <p class="mt-0.5 text-label-sm normal-case text-outline">
@@ -2161,7 +2156,6 @@ pub fn DockRight(
                                 }
                             }}
                         </div>
-                        {move || placed_vehicles_panel(doc_tick, registry_items, vehicle_expanded)}
                     }
                         .into_any(),
                     // T-582 — the zone draw tool. T-211 shipped the document layer and eleven
@@ -2256,8 +2250,7 @@ pub fn DockRight(
 // ── T-650 — the Compositions palette (RIGHT-MODE-002) ────────────────────────────────────────────
 //
 // A saved composition is a reusable multi-entity stamp captured from the current selection. This
-// panel is one function (native-stubbed with the same signature, like `zones_panel` /
-// `placed_vehicles_panel`) with three jobs:
+// panel is one function (native-stubbed with the same signature, like `zones_panel`) with three jobs:
 //   • SAVE (COMP-SAVE-001): a "Save composition…" header affordance, shown only when a selection
 //     exists, that opens a small INLINE title/category form (not a new dialog file) and writes the
 //     row from the current selection.
@@ -5541,28 +5534,30 @@ mod tests {
         );
     }
 
-    /// THE VEHICLES-TAB DECISION, PINNED: the tab is KEPT (as a filtered view), not retired — its
-    /// arm still exists (`1 => view!`) and it still hosts the placed-vehicle crew editor strip
-    /// (`placed_vehicles_panel`, the eye-pass fold's one-wave stopgap). Its leaves render through the
-    /// recent-feeding path too, so placing from it also updates recently-placed.
+    /// T-818 — Vehicles tab stays as a filtered catalog view, but the Placed strip (crew/heading/
+    /// cargo editor) is GONE. Crew editing lives in the vehicle Attributes modal now.
     #[test]
-    fn vehicles_tab_is_kept_as_a_filtered_view_with_the_crew_strip() {
+    fn vehicles_tab_is_catalog_only_without_the_placed_strip() {
         use crate::arsenal::class_r_scrub::{live_code, live_source, only_body};
         let code = live_code(include_str!("eden_dock_right.rs"));
         let dock = only_body(&code, "pub fn DockRight(");
         assert!(
-            dock.contains("placed_vehicles_panel("),
-            "T-809 fold(d): the Vehicles tab must keep the placed-vehicle crew editor this wave"
+            !dock.contains("placed_vehicles_panel("),
+            "T-818: the Vehicles tab must NOT host placed_vehicles_panel — strip deleted"
         );
-        // Its palette renders through the recent-feeding path (so a vehicle place updates history);
-        // the old vehicle draw named `PaletteKind::Vehicle`, the merged path resolves per-leaf.
+        // live_source keeps string literals: the strip's visible "Placed" heading must be gone too.
+        let sourced = live_source(include_str!("eden_dock_right.rs"));
+        let dock_src = only_body(&sourced, "pub fn DockRight(");
+        assert!(
+            !dock_src.contains("\"Placed\""),
+            "T-818: no Placed section heading anywhere in DockRight"
+        );
+        // Its palette renders through the recent-feeding path (so a vehicle place updates history).
         let vehicles_uses_faction_rows = dock.matches("faction_palette_rows(").count() >= 3; // 2 Factions arms + ≥1 Vehicles arm
         assert!(
             vehicles_uses_faction_rows,
             "T-809: the Vehicles tab must render through faction_palette_rows so a place feeds history"
         );
-        // The tab is present in the strip and labelled (kept, not retired).
-        let sourced = live_source(include_str!("eden_dock_right.rs"));
         assert!(
             sourced.contains("tab_btn(1, \"Vehicles\")"),
             "T-809: the Vehicles tab button is kept in the strip (the decision is 'filtered view')"
