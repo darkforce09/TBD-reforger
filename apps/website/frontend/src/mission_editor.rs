@@ -3204,7 +3204,6 @@ pub(crate) fn map_render_keep_indices(
         .collect()
 }
 
-
 /// T-819 — the map-render SoA: `materialize()` minus every slot referenced by a vehicle crew list.
 ///
 /// **Not** a `materialize()` change. T-665 / T-701 drop operator-hidden rows inside the core; crewed
@@ -3270,7 +3269,6 @@ pub(crate) fn filter_slot_soa_excluding(
     }
     out
 }
-
 
 /// A zone's geometric centre in world metres — a circle's centre, or a polygon's vertex mean.
 /// `None` for a shapeless row (a draw that was never committed), which is exactly the row a click
@@ -6120,10 +6118,9 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 && !crate::editor_ops::is_vehicle_id(&ids[0])
                                 && !single_comment_drag
                             {
-                                let target = doc
-                                    .borrow()
-                                    .as_ref()
-                                    .and_then(|c| st::pick(&cam, &map_render_slot_soa(c), up_x, up_y));
+                                let target = doc.borrow().as_ref().and_then(|c| {
+                                    st::pick(&cam, &map_render_slot_soa(c), up_x, up_y)
+                                });
                                 match target {
                                     Some(tid) if tid != ids[0] => {
                                         // `regroup_slot_onto` runs the shared dirty tail itself
@@ -15135,7 +15132,6 @@ mod t802_hover_cursor {
     }
 }
 
-
 /* ═══════════════════════ T-819 — crewed slots leave the map render SoA ═══════════════════════
  *
  * Eden hides a unit that is boarded into a vehicle. The hide is DERIVED from `vehicle.crew` —
@@ -15236,7 +15232,10 @@ mod t819_crewed_render_hide {
 
         let ids = vec!["s0".into(), "s1".into(), "s2".into()];
         let boarded = small_with_crew(serde_json::json!({ "driver": "s0", "gunner": "s1" }));
-        assert_eq!(map_render_keep_indices(&ids, &crewed_slot_ids(&boarded)).len(), 1);
+        assert_eq!(
+            map_render_keep_indices(&ids, &crewed_slot_ids(&boarded)).len(),
+            1
+        );
 
         // Unassign Driver only — s0 returns, s1 stays hidden.
         let one_cleared = small_with_crew(serde_json::json!({ "gunner": "s1" }));
@@ -15267,9 +15266,15 @@ mod t819_crewed_render_hide {
     fn undo_assignment_round_trips_visibility() {
         let ids = vec!["s0".into(), "s1".into()];
         let assigned = small_with_crew(serde_json::json!({ "driver": "s0" }));
-        assert_eq!(map_render_keep_indices(&ids, &crewed_slot_ids(&assigned)).len(), 1);
+        assert_eq!(
+            map_render_keep_indices(&ids, &crewed_slot_ids(&assigned)).len(),
+            1
+        );
         let undone = small_no_crew();
-        assert_eq!(map_render_keep_indices(&ids, &crewed_slot_ids(&undone)).len(), 2);
+        assert_eq!(
+            map_render_keep_indices(&ids, &crewed_slot_ids(&undone)).len(),
+            2
+        );
     }
 
     /// Trap 1 — assign path must not stamp `editorHidden` / call the T-701 mutator.
@@ -15293,7 +15298,10 @@ mod t819_crewed_render_hide {
         let hist = include_str!("mission_history.rs");
         let rebind = only_body(hist, "pub fn rebind_engine_from_doc");
         let after = only_body(hist, "fn after_doc_change");
-        for (name, body) in [("rebind_engine_from_doc", rebind), ("after_doc_change", after)] {
+        for (name, body) in [
+            ("rebind_engine_from_doc", rebind),
+            ("after_doc_change", after),
+        ] {
             assert!(
                 body.contains("map_render_slot_soa"),
                 "T-819: {name} must bind via map_render_slot_soa; body:\n{body}"
