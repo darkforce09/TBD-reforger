@@ -20888,7 +20888,8 @@
       "impact": [
         "dx"
       ],
-      "status": "idea"
+      "status": "idea",
+      "notes": "PREREQUISITE (Phase 0). The agent container is debian:12 / glibc 2.36 with NO C toolchain, so cargo cannot build in-container at all and scripts/lib/hostrun.sh bridges every cargo invocation to the host via distrobox-host-exec. build-essential was installed into the running container on 2026-08-12, but the image belongs to the Claude Desktop app and NOT to this repo, so the install does not survive a container rebuild. It must be baked into the image before Phase 7: hard-zero deletes hostrun.sh, and a fresh container would then have neither a toolchain nor a bridge. In-container builds must use CARGO_TARGET_DIR=<root>/target-container -- two glibcs building into one target dir thrash fingerprints against the shared warm target (T-253/T-322). SCOPE NOTE: 'has no Makefile target' is NOT a test for a dead gate. T-462 wired verify-t437, verify-t439 and verify-t444 into wave.sh gate_slice and cmd_gate instead; grep wave.sh before proposing any deletion."
     }
   ]
 }

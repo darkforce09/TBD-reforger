@@ -230,6 +230,15 @@ jobs:
         run: make verify-no-node
       - name: verify-no-shell (T-621 shell ratchet)
         run: make verify-no-shell
+      # T-853. The registry is the source of truth for the whole ticket pipeline and NOTHING
+      # validated it on push — `grep -rn 'ticket check' .github/` returned empty, so a malformed
+      # 1.5 MB registry.json could reach main and only surface when the next agent tried to read
+      # it. Not hypothetical: `next_id` was found stale by 7 (846, while T-846..T-852 all already
+      # existed), so `ticket add` minted a DUPLICATE id and only a hand-run of this check caught
+      # it. Lives in this job because it is the same shape as the language gates — seconds long,
+      # reads the working tree, fails fast instead of riding a 25-minute job.
+      - name: ticket registry check (T-853 — schema + duplicate ids)
+        run: make ticket-check-strict
 
   # --- mod gates, HOSTED PORTION (T-209) ---
   # `scripts/mod/compile.sh` and `scripts/mod/world-boot.sh` are the mod's only regression
