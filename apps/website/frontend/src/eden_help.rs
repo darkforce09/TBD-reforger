@@ -1644,13 +1644,13 @@ mod t692_help_covers_every_binding {
         // the native shell. Hand it the region from the page fn onward, at a brace-0 boundary —
         // the same `editor_live()` manoeuvre the T-662 pins use for the same reason.
         let raw = include_str!("mission_editor.rs");
-        let anchor = "pub fn MissionEditorPage() -> impl IntoView";
+        let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
         assert_eq!(
-            raw.matches(anchor).count(),
+            raw.matches(anchor.as_str()).count(),
             1,
             "scrub anchor must be unambiguous"
         );
-        let ed = live_code(&raw[raw.find(anchor).expect("counted above")..]);
+        let ed = live_code(&raw[raw.find(anchor.as_str()).expect("counted above")..]);
         let mount = ed
             .find("TopCommandStrip")
             .expect("mission_editor mounts the top strip");

@@ -15319,8 +15319,8 @@ mod t819_crewed_render_hide {
         // Anchor past the early registry_session `#[cfg(test)]` that would otherwise cut the page
         // (T-750 idiom): the first bind + pick sites live inside `MissionEditorPage`.
         let raw = include_str!("mission_editor.rs");
-        let anchor = "pub fn MissionEditorPage() -> impl IntoView";
-        let page = live_code(&raw[raw.find(anchor).expect("MissionEditorPage")..]);
+        let anchor = format!("{}{}", "pub fn Mission", "EditorPage() -> impl IntoView");
+        let page = live_code(&raw[raw.find(anchor.as_str()).expect("MissionEditorPage")..]);
         assert!(
             page.contains("map_render_slot_soa")
                 && page.matches("map_render_slot_soa").count() >= 2,
