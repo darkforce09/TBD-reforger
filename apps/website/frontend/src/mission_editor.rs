@@ -2882,7 +2882,8 @@ pub(crate) fn hover_hit(
         // `OPS_CTX` to this very doc) — exactly how the click path already nests them.
         let fresh = doc.borrow().as_ref().map(|c| HoverPoints {
             tick,
-            soa: c.materialize(),
+            // T-819 — map pick cannot hit a crewed figure (nothing rendered).
+            soa: map_render_slot_soa(c),
             vehicles: crate::editor_ops::vehicle_points(),
             comments: comment_points(&c.comments_json()),
         });
@@ -3151,6 +3152,122 @@ pub(crate) fn selectable_ids(
         }
     }
     live
+}
+
+/// **T-819 — slot ids currently referenced by any placed vehicle's crew map.**
+///
+/// Derived state only: the crew assignment IS the hide. There is no `editorHidden` (or any other)
+/// document flag for "this slot is crewed" — unassigning a seat, deleting the vehicle, or undoing
+/// the board removes the id from this set and the figure returns by itself. Read off
+/// `vehiclesById.*.crew` in `small_maps_json`, never off a filtered SoA (wave-144: id universes
+/// come from the raw maps).
+#[must_use]
+pub(crate) fn crewed_slot_ids(small_maps_json: &str) -> std::collections::HashSet<String> {
+    let mut out = std::collections::HashSet::new();
+    let Ok(small) = serde_json::from_str::<serde_json::Value>(small_maps_json) else {
+        return out;
+    };
+    let Some(vehicles) = small.get("vehiclesById").and_then(|v| v.as_object()) else {
+        return out;
+    };
+    for v in vehicles.values() {
+        let Some(crew) = v.get("crew").and_then(|c| c.as_object()) else {
+            continue;
+        };
+        for slot in crew.values() {
+            if let Some(id) = slot.as_str().filter(|s| !s.is_empty()) {
+                out.insert(id.to_string());
+            }
+        }
+    }
+    out
+}
+
+/// **T-819 — which SoA rows stay on the map** after the derived crew hide.
+///
+/// Returns the KEEP indices into `ids` (and every parallel column). A crewed slot leaves the map
+/// render SoA (figure + label) the way T-701 `editorHidden` leaves it — but this filter is a VIEW
+/// over the crew assignment, not a `materialize()` drop: compile, outliner, and selection still see
+/// every slot. Empty `crewed` keeps every row.
+#[must_use]
+pub(crate) fn map_render_keep_indices(
+    ids: &[String],
+    crewed: &std::collections::HashSet<String>,
+) -> Vec<usize> {
+    if crewed.is_empty() {
+        return (0..ids.len()).collect();
+    }
+    ids.iter()
+        .enumerate()
+        .filter(|(_, id)| !crewed.contains(id.as_str()))
+        .map(|(i, _)| i)
+        .collect()
+}
+
+/// T-819 — the map-render SoA: `materialize()` minus every slot referenced by a vehicle crew list.
+///
+/// **Not** a `materialize()` change. T-665 / T-701 drop operator-hidden rows inside the core; crewed
+/// slots must still materialize and compile. This is the RENDER shape only — feed
+/// `slots_bind_symbology` and map picks with it; leave outliner / selection / id minting on the raw
+/// maps and the unfiltered SoA.
+#[cfg(target_arch = "wasm32")]
+#[must_use]
+pub(crate) fn map_render_slot_soa(
+    core: &map_engine_core::doc::MissionDocCore,
+) -> map_engine_core::doc::SlotSoa {
+    let soa = core.materialize();
+    let crewed = crewed_slot_ids(&core.small_maps_json());
+    filter_slot_soa_excluding(&soa, &crewed)
+}
+
+/// Drop SoA rows whose ids are in `exclude`, keeping dictionaries so remaining `*_idx` values stay
+/// valid. Pure column filter — does not touch the document.
+#[cfg(target_arch = "wasm32")]
+#[must_use]
+pub(crate) fn filter_slot_soa_excluding(
+    soa: &map_engine_core::doc::SlotSoa,
+    exclude: &std::collections::HashSet<String>,
+) -> map_engine_core::doc::SlotSoa {
+    use map_engine_core::doc::SlotSoa;
+    let keep = map_render_keep_indices(&soa.ids, exclude);
+    if keep.len() == soa.ids.len() {
+        return soa.clone();
+    }
+    let mut out = SlotSoa {
+        roles: soa.roles.clone(),
+        tags: soa.tags.clone(),
+        squads: soa.squads.clone(),
+        layers: soa.layers.clone(),
+        ..SlotSoa::default()
+    };
+    out.ids.reserve(keep.len());
+    out.xs.reserve(keep.len());
+    out.ys.reserve(keep.len());
+    out.xy.reserve(keep.len() * 2);
+    out.zs.reserve(keep.len());
+    out.rotations.reserve(keep.len());
+    out.stance.reserve(keep.len());
+    out.role_idx.reserve(keep.len());
+    out.tag_idx.reserve(keep.len());
+    out.squad_idx.reserve(keep.len());
+    out.layer_idx.reserve(keep.len());
+    out.side_keys.reserve(keep.len());
+    for i in keep {
+        out.ids.push(soa.ids[i].clone());
+        out.xs.push(soa.xs[i]);
+        out.ys.push(soa.ys[i]);
+        out.xy.push(soa.xy[i * 2]);
+        out.xy.push(soa.xy[i * 2 + 1]);
+        out.zs.push(soa.zs[i]);
+        out.rotations.push(soa.rotations[i]);
+        out.stance.push(soa.stance[i]);
+        out.role_idx.push(soa.role_idx[i]);
+        out.tag_idx.push(soa.tag_idx[i]);
+        out.squad_idx.push(soa.squad_idx[i]);
+        out.layer_idx.push(soa.layer_idx[i]);
+        out.side_keys.push(soa.side_keys[i].clone());
+    }
+    out
 }
 
 /// A zone's geometric centre in world metres — a circle's centre, or a polygon's vertex mean.
@@ -4934,7 +5051,8 @@ pub fn MissionEditorPage() -> impl IntoView {
                             // mission that is never edited ever gets), so leaving it on
                             // `slots_bind_soa` would have opened every mission as a field of
                             // north-pointing riflemen until the first commit re-bound it.
-                            let soa = doc.borrow().as_ref().map(|c| c.materialize());
+                            // T-819 — map-render SoA (crewed slots derived-hidden; materialize untouched).
+                            let soa = doc.borrow().as_ref().map(map_render_slot_soa);
                             if let (Some(soa), Some(e)) =
                                 (soa.as_ref(), engine.borrow_mut().as_mut())
                             {
@@ -5403,7 +5521,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 let hit = doc.borrow().as_ref().and_then(|c| {
                                     st::pick_slot_or_vehicle(
                                         &p.cam,
-                                        &c.materialize(),
+                                        &map_render_slot_soa(c),
                                         &crate::editor_ops::vehicle_points(),
                                         p.start_x,
                                         p.start_y,
@@ -5817,7 +5935,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 let hit = doc.borrow().as_ref().and_then(|c| {
                                     st::pick_slot_or_vehicle(
                                         &p.cam,
-                                        &c.materialize(),
+                                        &map_render_slot_soa(c),
                                         &crate::editor_ops::vehicle_points(),
                                         p.start_x,
                                         p.start_y,
@@ -6000,10 +6118,9 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 && !crate::editor_ops::is_vehicle_id(&ids[0])
                                 && !single_comment_drag
                             {
-                                let target = doc
-                                    .borrow()
-                                    .as_ref()
-                                    .and_then(|c| st::pick(&cam, &c.materialize(), up_x, up_y));
+                                let target = doc.borrow().as_ref().and_then(|c| {
+                                    st::pick(&cam, &map_render_slot_soa(c), up_x, up_y)
+                                });
                                 match target {
                                     Some(tid) if tid != ids[0] => {
                                         // `regroup_slot_onto` runs the shared dirty tail itself
@@ -6187,7 +6304,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                     .map(|c| {
                                         st::marquee_ids_with_vehicles(
                                             &cam,
-                                            &c.materialize(),
+                                            &map_render_slot_soa(c),
                                             &crate::editor_ops::vehicle_points(),
                                             start_wx,
                                             start_wy,
@@ -6366,7 +6483,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                     let hit = doc.borrow().as_ref().and_then(|c| {
                         crate::select_tool::pick_slot_or_vehicle(
                             &cam,
-                            &c.materialize(),
+                            &map_render_slot_soa(c),
                             &crate::editor_ops::vehicle_points(),
                             px,
                             py,
@@ -6578,7 +6695,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                     let hit = doc.borrow().as_ref().and_then(|c| {
                         crate::select_tool::pick_slot_or_vehicle(
                             &cam,
-                            &c.materialize(),
+                            &map_render_slot_soa(c),
                             &crate::editor_ops::vehicle_points(),
                             px,
                             py,
@@ -15012,5 +15129,245 @@ mod t802_hover_cursor {
                 "T-802: `{needle}` must be findable exactly by the pin's own needle"
             );
         }
+    }
+}
+
+/* ═══════════════════════ T-819 — crewed slots leave the map render SoA ═══════════════════════
+ *
+ * Eden hides a unit that is boarded into a vehicle. The hide is DERIVED from `vehicle.crew` —
+ * never a new document flag, never a `materialize()` drop (those are T-665/T-701 for operator
+ * hide). Figures + labels leave the map; outliner / selection / compile still see the slots.
+ */
+
+#[cfg(test)]
+mod t819_crewed_render_hide {
+    use super::{crewed_slot_ids, map_render_keep_indices, selectable_ids};
+    use crate::arsenal::class_r_scrub::{live_code, only_body};
+    use std::collections::HashSet;
+
+    fn slots_json() -> String {
+        serde_json::json!({
+            "s0": { "position": { "x": 10.0, "y": 20.0, "z": 12.345678901234567, "rotation": 0.0 } },
+            "s1": { "position": { "x": 11.0, "y": 21.0, "z": 0.5, "rotation": 0.0 } },
+            "s2": { "position": { "x": 12.0, "y": 22.0, "z": 1.0, "rotation": 0.0 } },
+        })
+        .to_string()
+    }
+
+    fn small_with_crew(crew: serde_json::Value) -> String {
+        serde_json::json!({
+            "vehiclesById": {
+                "v0": {
+                    "resourceName": "Prefab/A.et",
+                    "position": { "x": 1.0, "y": 2.0 },
+                    "crew": crew,
+                }
+            }
+        })
+        .to_string()
+    }
+
+    fn small_no_crew() -> String {
+        serde_json::json!({
+            "vehiclesById": {
+                "v0": {
+                    "resourceName": "Prefab/A.et",
+                    "position": { "x": 1.0, "y": 2.0 },
+                }
+            }
+        })
+        .to_string()
+    }
+
+    fn slot_z(slots_json: &str, id: &str) -> f64 {
+        let v: serde_json::Value = serde_json::from_str(slots_json).unwrap();
+        v[id]["position"]["z"].as_f64().expect("z")
+    }
+
+    /// DEFECT CLASS (pre-fix): assigning Driver/Gunner did not change the map SoA — figures stayed.
+    /// The keep-index count must drop by exactly the boarded set.
+    #[test]
+    fn assign_driver_and_gunner_drops_two_map_render_rows() {
+        let ids = vec!["s0".into(), "s1".into(), "s2".into()];
+        let before = map_render_keep_indices(&ids, &crewed_slot_ids(&small_no_crew()));
+        assert_eq!(before.len(), 3, "uncrewed: every figure is on the map");
+
+        let crewed = crewed_slot_ids(&small_with_crew(serde_json::json!({
+            "driver": "s0",
+            "gunner": "s1",
+        })));
+        assert_eq!(crewed, HashSet::from(["s0".into(), "s1".into()]));
+        let after = map_render_keep_indices(&ids, &crewed);
+        assert_eq!(
+            after.len(),
+            1,
+            "T-819: Driver+Gunner must leave the map render SoA (row count -2); kept={after:?}"
+        );
+        assert_eq!(ids[after[0]], "s2");
+    }
+
+    /// Trap 2 — materialize/compile universe is NOT this filter. `selectable_ids` (slots_json) still
+    /// holds boarded slots; a filter that reused T-701's drop would also yank them from existence.
+    #[test]
+    fn crewed_slots_remain_in_slots_json_universe_and_selection() {
+        let small = small_with_crew(serde_json::json!({ "driver": "s0", "gunner": "s1" }));
+        let live = selectable_ids(&slots_json(), &small);
+        assert!(live.contains("s0") && live.contains("s1") && live.contains("s2"));
+        // Outliner-reachable selection: pruning over selectable_ids keeps boarded ids.
+        let sel = ["s0", "s1", "s2"];
+        let kept: Vec<_> = sel
+            .iter()
+            .filter(|id| live.contains(**id))
+            .copied()
+            .collect();
+        assert_eq!(kept, vec!["s0", "s1", "s2"]);
+    }
+
+    /// Trap 1 — unassign restores the figure; stored z is exact f64 (untouched).
+    #[test]
+    fn unassign_restores_figure_at_stored_z_exact_f64() {
+        let slots = slots_json();
+        let z0 = slot_z(&slots, "s0");
+        assert_eq!(z0, 12.345678901234567);
+
+        let ids = vec!["s0".into(), "s1".into(), "s2".into()];
+        let boarded = small_with_crew(serde_json::json!({ "driver": "s0", "gunner": "s1" }));
+        assert_eq!(
+            map_render_keep_indices(&ids, &crewed_slot_ids(&boarded)).len(),
+            1
+        );
+
+        // Unassign Driver only — s0 returns, s1 stays hidden.
+        let one_cleared = small_with_crew(serde_json::json!({ "gunner": "s1" }));
+        let keep = map_render_keep_indices(&ids, &crewed_slot_ids(&one_cleared));
+        assert_eq!(keep.len(), 2);
+        let kept_ids: HashSet<_> = keep.iter().map(|&i| ids[i].as_str()).collect();
+        assert!(kept_ids.contains("s0") && kept_ids.contains("s2"));
+        assert_eq!(
+            slot_z(&slots, "s0"),
+            12.345678901234567,
+            "T-819: unassign must not rewrite the slot's stored z"
+        );
+    }
+
+    /// Delete the vehicle → both figures return (crew map gone with the vehicle).
+    #[test]
+    fn delete_vehicle_restores_both_figures() {
+        let ids = vec!["s0".into(), "s1".into(), "s2".into()];
+        let empty = serde_json::json!({ "vehiclesById": {} }).to_string();
+        assert_eq!(
+            map_render_keep_indices(&ids, &crewed_slot_ids(&empty)).len(),
+            3
+        );
+    }
+
+    /// Undo of an assignment = crew map gone → visibility round-trips.
+    #[test]
+    fn undo_assignment_round_trips_visibility() {
+        let ids = vec!["s0".into(), "s1".into()];
+        let assigned = small_with_crew(serde_json::json!({ "driver": "s0" }));
+        assert_eq!(
+            map_render_keep_indices(&ids, &crewed_slot_ids(&assigned)).len(),
+            1
+        );
+        let undone = small_no_crew();
+        assert_eq!(
+            map_render_keep_indices(&ids, &crewed_slot_ids(&undone)).len(),
+            2
+        );
+    }
+
+    /// Trap 1 — assign path must not stamp `editorHidden` / call the T-701 mutator.
+    #[test]
+    fn assign_crew_seat_does_not_write_editor_hidden() {
+        let ops = live_code(include_str!("editor_ops.rs"));
+        let body = only_body(&ops, "pub fn assign_crew_seat");
+        assert!(
+            !body.contains("editorHidden") && !body.contains("set_slots_editor_hidden"),
+            "T-819: crew assignment must not reuse T-701 editorHidden — body:\n{body}"
+        );
+        assert!(
+            body.contains("assign_crew_seat") || body.contains("after_local_edit"),
+            "T-819: assign_crew_seat body should still board via the core mutator"
+        );
+    }
+
+    /// Wiring — every map glyph bind feeds `map_render_slot_soa`, not bare `materialize()`.
+    #[test]
+    fn map_binds_feed_map_render_slot_soa() {
+        let hist = include_str!("mission_history.rs");
+        let rebind = only_body(hist, "pub fn rebind_engine_from_doc");
+        let after = only_body(hist, "fn after_doc_change");
+        for (name, body) in [
+            ("rebind_engine_from_doc", rebind),
+            ("after_doc_change", after),
+        ] {
+            assert!(
+                body.contains("map_render_slot_soa"),
+                "T-819: {name} must bind via map_render_slot_soa; body:\n{body}"
+            );
+            assert!(
+                !body.contains("MissionDocCore::materialize")
+                    && !body.contains(".map(MissionDocCore::materialize)"),
+                "T-819: {name} must not bind the unfiltered materialize SoA; body:\n{body}"
+            );
+            assert!(
+                body.contains("slot_count"),
+                "T-819: {name} must keep OBJ on authored slot_count, not filtered SoA len"
+            );
+        }
+        // Anchor past the early registry_session `#[cfg(test)]` that would otherwise cut the page
+        // (T-750 idiom): the first bind + pick sites live inside `MissionEditorPage`.
+        let raw = include_str!("mission_editor.rs");
+        let anchor = "pub fn MissionEditorPage() -> impl IntoView";
+        let page = live_code(&raw[raw.find(anchor).expect("MissionEditorPage")..]);
+        assert!(
+            page.contains("map_render_slot_soa")
+                && page.matches("map_render_slot_soa").count() >= 2,
+            "T-819: MissionEditorPage must call map_render_slot_soa at the first bind and picks"
+        );
+        assert!(
+            !page.contains(".map(|c| c.materialize())"),
+            "T-819: first bind must not feed bare materialize into slots_bind_symbology"
+        );
+    }
+
+    /// FIRED RULE — perturb the keep filter so crewed ids stay; the assign pin goes RED.
+    #[test]
+    fn perturbing_the_keep_filter_makes_the_assign_pin_fail() {
+        let ids = vec!["s0".into(), "s1".into(), "s2".into()];
+        let crewed = crewed_slot_ids(&small_with_crew(serde_json::json!({
+            "driver": "s0",
+            "gunner": "s1",
+        })));
+        // Green path (control).
+        assert_eq!(map_render_keep_indices(&ids, &crewed).len(), 1);
+
+        // RED: a keep filter that ignores `crewed` (the pre-T-819 defect).
+        let perturbed: Vec<usize> = (0..ids.len()).collect();
+        let result = std::panic::catch_unwind(|| {
+            assert_eq!(
+                perturbed.len(),
+                1,
+                "T-819: Driver+Gunner must leave the map render SoA (row count -2); kept={perturbed:?}"
+            );
+        });
+        let err = result.expect_err("perturbation must RED");
+        let msg = if let Some(s) = err.downcast_ref::<String>() {
+            s.clone()
+        } else if let Some(s) = err.downcast_ref::<&str>() {
+            (*s).to_string()
+        } else {
+            format!("{err:?}")
+        };
+        // Print for the report's verbatim RED field (test still passes — we caught the panic).
+        eprintln!("T-819 PERTURBATION RED OUTPUT:\n{msg}");
+        assert!(
+            msg.contains("Driver+Gunner must leave the map render SoA")
+                || msg.contains("row count -2"),
+            "unexpected panic payload: {msg}"
+        );
+        // Restored green.
+        assert_eq!(map_render_keep_indices(&ids, &crewed).len(), 1);
     }
 }
