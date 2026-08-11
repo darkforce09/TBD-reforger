@@ -8,7 +8,7 @@
 //! spent at most once at a time. The gloo-net POST + 401-retry client wire on top (wasm) in the
 //! client slice; the coordination + persist serde here are pure and unit-tested natively.
 
-use crate::nav::{has_min_role, Role};
+use crate::nav::{has_min_role, has_min_role_authed, Role};
 use futures::future::{FutureExt, LocalBoxFuture, Shared};
 use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -206,13 +206,23 @@ pub struct AuthStore {
 #[allow(dead_code)]
 impl AuthStore {
     pub fn new() -> Self {
-        Self {
+        // T-805 — if a refresh token is already on disk, treat the store as bootstrapping until
+        // `client::bootstrap` finishes. Otherwise the route guard can see `user=None` +
+        // `bootstrapping=false` for one frame and bounce an authorized deep-link.
+        #[cfg(target_arch = "wasm32")]
+        let bootstrapping = load_persisted().and_then(|p| p.refresh_token).is_some();
+        #[cfg(not(target_arch = "wasm32"))]
+        let bootstrapping = false;
+        let store = Self {
             access_token: RwSignal::new(None),
             refresh_token: RwSignal::new(None),
             expires_at: RwSignal::new(None),
             user: RwSignal::new(None),
-            bootstrapping: RwSignal::new(false),
-        }
+            bootstrapping: RwSignal::new(bootstrapping),
+        };
+        #[cfg(target_arch = "wasm32")]
+        install_route_auth_guard(store);
+        store
     }
 
     pub fn set_session(&self, s: Session) {
@@ -247,7 +257,7 @@ impl AuthStore {
     /// **The capture must precede the clear.** `yrs_persist` resolves the owner token from
     /// `localStorage["tbd-auth"]`, and a sign-out clears the signals here and that blob a moment later
     /// (`layout.rs`). Ask for the token after this function has run and the answer is `anon`: the purge
-    /// would delete a signed-out visitor's drafts — a real state, the editor route has no auth guard —
+    /// would delete a signed-out visitor's drafts — a real state (guests can still reach ad-hoc local ids) —
     /// and leave the departing account's untouched. So the `discord_id` is read off the signal first,
     /// while it still exists, and passed in explicitly. Reading the signal rather than localStorage
     /// also keeps the two orderings independent: nothing here depends on when the caller re-persists.
@@ -283,6 +293,11 @@ impl AuthStore {
         has_min_role(self.user.get().map(|u| u.role), min)
     }
 
+    /// Action / route gate — `None` never passes. T-805 editor route + AdminGate semantics.
+    pub fn has_min_role_authed(&self, min: Role) -> bool {
+        has_min_role_authed(self.user.get().map(|u| u.role), min)
+    }
+
     /// The subset persisted to localStorage (refreshToken/user/expiresAt — never accessToken).
     pub fn persist_state(&self) -> PersistState {
         PersistState {
@@ -298,6 +313,45 @@ impl Default for AuthStore {
     fn default() -> Self {
         Self::new()
     }
+}
+
+/* ─────────────────────────── T-805 route auth guard ─────────────────────────── */
+
+/// Pure decision used by the wasm Effect and by Class-R tests.
+///
+/// Returns `Some(redirect)` when the current role must leave `path`. Waits out bootstrap so an
+/// authorized deep-link is not bounced before `/me` hydrates.
+pub fn route_auth_redirect(path: &str, role: Option<Role>, bootstrapping: bool) -> Option<String> {
+    if bootstrapping {
+        return None;
+    }
+    if crate::router::role_may_enter(path, role) {
+        return None;
+    }
+    crate::router::auth_denial_redirect(path)
+}
+
+#[cfg(target_arch = "wasm32")]
+fn install_route_auth_guard(store: AuthStore) {
+    // Called from `AuthStore::new` inside `AppLayout` (under `<Router>`), so location context is live.
+    let pathname = leptos_router::hooks::use_location().pathname;
+    let navigate = leptos_router::hooks::use_navigate();
+    Effect::new(move |_| {
+        let path = pathname.get();
+        // Strip query/hash if a caller ever hands a full URL; location.pathname is path-only.
+        let path = path.split('?').next().unwrap_or(path.as_str());
+        let path = path.split('#').next().unwrap_or(path);
+        let bootstrapping = store.bootstrapping.get();
+        let role = store.user.get().map(|u| u.role);
+        let Some(dest) = route_auth_redirect(path, role, bootstrapping) else {
+            return;
+        };
+        // Role notice: toast when the shell has mounted Toasts; query param remains for deep links.
+        if let Some(toasts) = use_context::<crate::toast::Toasts>() {
+            toasts.message("Mission Maker role required to open the editor.");
+        }
+        navigate(&dest, Default::default());
+    });
 }
 
 /* ─────────────────────────── /auth/callback ─────────────────────────── */
@@ -596,6 +650,42 @@ mod tests {
         assert!(
             back == state,
             "persist → hydrate must round-trip losslessly"
+        );
+    }
+
+    /// T-805 — enlisted (and guests) are redirected off the editor; makers/admins stay.
+    #[test]
+    fn route_auth_redirect_blocks_enlisted_editor() {
+        let path = "/missions/abc/edit";
+        assert_eq!(
+            route_auth_redirect(path, Some(Role::Enlisted), false).as_deref(),
+            Some("/missions/abc?role_notice=mission_maker")
+        );
+        assert_eq!(
+            route_auth_redirect(path, None, false).as_deref(),
+            Some("/missions/abc?role_notice=mission_maker")
+        );
+        assert!(route_auth_redirect(path, Some(Role::MissionMaker), false).is_none());
+        assert!(route_auth_redirect(path, Some(Role::Admin), false).is_none());
+        // Deep-link safety: do not bounce while bootstrap is in flight.
+        assert!(route_auth_redirect(path, None, true).is_none());
+    }
+
+    /// T-805 Class-R — the wasm AuthStore must install the route guard (not declare-only).
+    #[test]
+    fn auth_store_new_installs_route_guard_on_wasm() {
+        let src = include_str!("auth.rs");
+        assert!(
+            src.contains("install_route_auth_guard(store)"),
+            "AuthStore::new must call install_route_auth_guard on wasm"
+        );
+        assert!(
+            src.contains("route_auth_redirect"),
+            "guard decision must go through route_auth_redirect"
+        );
+        assert!(
+            src.contains("crate::router::role_may_enter"),
+            "guard must reuse router RequireMinRole helpers"
         );
     }
 }

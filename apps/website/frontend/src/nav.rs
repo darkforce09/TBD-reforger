@@ -2,7 +2,7 @@
 //! Field-for-field identical to the React nav so the Sidebar renders the same items in the same
 //! order (the S-components / V-shell gates check this).
 
-#[derive(Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "snake_case")]
 // The full four-tier ladder = the API's UserRole ('enlisted' < 'leader' < 'mission_maker' <
 // 'admin'). Leader/MissionMaker aren't referenced by nav filtering yet (guest browse-mode shows
@@ -33,6 +33,18 @@ impl Role {
             Role::Leader => "leader",
             Role::MissionMaker => "mission_maker",
             Role::Admin => "admin",
+        }
+    }
+
+    /// Parse a `RouteDef.auth` tier (`"none"` | `"mission_maker"` | `"admin"` | …).
+    /// `"none"` / unknown → `None` (no client-side RequireMinRole gate).
+    pub fn from_route_auth(auth: &str) -> Option<Role> {
+        match auth {
+            "enlisted" => Some(Role::Enlisted),
+            "leader" => Some(Role::Leader),
+            "mission_maker" => Some(Role::MissionMaker),
+            "admin" => Some(Role::Admin),
+            _ => None,
         }
     }
 }
@@ -232,5 +244,16 @@ mod tests {
             Some(Role::Enlisted),
             Role::MissionMaker
         ));
+    }
+
+    #[test]
+    fn from_route_auth_parses_declared_tiers() {
+        assert_eq!(
+            Role::from_route_auth("mission_maker"),
+            Some(Role::MissionMaker)
+        );
+        assert_eq!(Role::from_route_auth("admin"), Some(Role::Admin));
+        assert_eq!(Role::from_route_auth("none"), None);
+        assert_eq!(Role::from_route_auth(""), None);
     }
 }
