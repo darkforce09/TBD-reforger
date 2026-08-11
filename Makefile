@@ -324,7 +324,7 @@ mod-world-boot-compiled: ## T-186 boot an API-COMPILED mission document (needs m
 verify-coding-standards: ## SIZE file length + doc layout + GO-7 @route/router match (CODING_STANDARDS §11)
 	$(MAKE) verify-doc-layout
 	@cargo run -q -p xtask -- verify file-length
-	@bash scripts/website/verify-no-select-star.sh
+	@cargo run -q -p xtask -- verify no-select-star
 	@bash scripts/verify-route-tags.sh
 
 verify-doc-layout: ## DOCUMENTATION_STANDARDS §8.2: no markdown spec trees under apps/**/docs or packages/**/docs

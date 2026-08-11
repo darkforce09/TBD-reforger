@@ -67,6 +67,7 @@ pub mod lock;
 pub mod pattern;
 pub mod proc;
 pub mod report;
+pub mod scan;
 pub mod verdict;
 
 pub use lock::{GateLock, flock_exclusive};

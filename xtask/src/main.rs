@@ -20,6 +20,7 @@ mod root;
 mod schema_gates;
 mod shell_free;
 mod slice_collisions;
+mod sql_gates;
 mod sync;
 
 use anyhow::{Result, bail};
@@ -121,6 +122,10 @@ enum VerifyCmd {
     /// T-621 shell ratchet: no NEW tracked .sh outside the committed inventory
     #[command(name = "no-shell")]
     NoShell,
+    /// T-145 guard: no bare SELECT */RETURNING * on nullable-column tables
+    /// (T-853 port of scripts/website/verify-no-select-star.sh)
+    #[command(name = "no-select-star")]
+    NoSelectStar,
 }
 
 #[derive(Subcommand, Debug)]
@@ -474,6 +479,7 @@ fn run() -> Result<u8> {
                 VerifyCmd::FileLength => node_free::verify_file_length()?,
                 VerifyCmd::NoNode => node_free::verify_no_node()?,
                 VerifyCmd::NoShell => shell_free::verify_no_shell()?,
+                VerifyCmd::NoSelectStar => sql_gates::verify_no_select_star(&find_repo_root()?)?,
             };
             Ok(code)
         }

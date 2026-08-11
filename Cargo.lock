@@ -6227,6 +6227,7 @@ dependencies = [
  "serde",
  "serde_json",
  "syn 2.0.118",
+ "tbd-gate",
  "tbd-tools",
  "typify",
  "walkdir",

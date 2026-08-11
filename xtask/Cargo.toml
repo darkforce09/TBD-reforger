@@ -22,6 +22,7 @@ serde_json = { version = "1", features = ["preserve_order"] }
 walkdir = "2"
 jsonschema = { version = "0.46.10", default-features = false }
 tbd-tools = { path = "../tools/tbd-tools" }
+tbd-gate = { path = "../crates/tbd-gate" }
 map-engine-core = { path = "../crates/map-engine-core", features = ["png", "world"] }
 typify = "0.7"
 schemars = "0.8"

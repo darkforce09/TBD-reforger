@@ -84,4 +84,3 @@ scripts/verify-no-python.sh
 scripts/verify-route-tags.sh
 scripts/verify-t180-coherency.sh
 scripts/website/mission-version-upload-repro.sh
-scripts/website/verify-no-select-star.sh
