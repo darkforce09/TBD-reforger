@@ -10,6 +10,12 @@
 //! The field values re-read from the doc on every `doc_ver` bump, so an undo while the modal is
 //! open refreshes the fields — and if the slot itself was undone away, the modal closes.
 //!
+//! **T-818 — vehicle Attributes.** A placed vehicle's dblclick still opens this modal (T-647
+//! ATTR-OPEN). Vehicles are off the slot SoA, so the host routes `read_attrs == None` +
+//! `is_vehicle_id` into a Heading° / Cargo / Crew body that reuses the DockRight Placed-strip
+//! mutators (`set_vehicle_heading` / `set_vehicle_cargo` / `assign_crew_seat` / `clear_crew_seat`).
+//! Heading commits through [`number_field`] (T-785). Multi-edit stays slot-only.
+//!
 //! **T-649 (ATTR-MULTI-001 / ATTR-MULTI-CHK-001) — multi-edit.** A multi-selection used to
 //! SUPPRESS this modal (the old A1 rule, a hard `return` in `editor_ops::open_attributes`). It now
 //! opens it over the whole selection, and every commit fans out to every selected slot. The Eden
@@ -351,11 +357,18 @@ pub fn AttributesModal(
                     ))
                 }
                 None => {
-                    // T-744 — `None` means the slot is GONE from the raw rows (undone / deleted),
-                    // not merely hidden. Hide keeps `read_attrs` at `Some` (raw existence), so this
-                    // arm is no longer reachable from H / layer-hide (wave-113 F-2).
-                    crate::editor_ops::close_attributes();
-                    None
+                    // T-818 — vehicles open Attributes (T-647 ATTR-OPEN) but live off the slot SoA,
+                    // so `read_attrs` is None. Route them to the vehicle editor rather than treating
+                    // the id as undone-away. True absence (undone / deleted) still closes.
+                    if crate::editor_ops::is_vehicle_id(&id) {
+                        Some(vehicle_attrs_view(id, registry_items))
+                    } else {
+                        // T-744 — `None` means the slot is GONE from the raw rows (undone / deleted),
+                        // not merely hidden. Hide keeps `read_attrs` at `Some` (raw existence), so this
+                        // arm is no longer reachable from H / layer-hide (wave-113 F-2).
+                        crate::editor_ops::close_attributes();
+                        None
+                    }
                 }
             }
         }
@@ -537,6 +550,300 @@ fn modal_view(
                             .into_any()
                         }
                     }}
+                </div>
+            </div>
+        </div>
+    }
+    .into_any()
+}
+
+/* ─────────────────────────── T-818 — vehicle Attributes (moved from DockRight Placed strip) ── */
+
+/// T-076 — the **generic** seat model shipped ahead of a per-class seat schema (copied with the
+/// controls from `eden_vehicles_panel` so the Attributes call site owns the same seat_ids the
+/// strip authored into `vehicle.crew`). `(seat_id, label)`; cargo seats append as `cargoN`.
+const FIXED_SEATS: &[(&str, &str)] = &[
+    ("driver", "Driver"),
+    ("gunner", "Gunner"),
+    ("commander", "Commander"),
+];
+
+/// T-076 — cargo seats offered when the vehicle has no declared cargo capacity.
+const DEFAULT_CARGO_SEATS: usize = 4;
+
+/// T-076 — ordered `(seat_id, label)` list: three fixed stations then `n_cargo` cargo seats.
+fn seat_model(n_cargo: usize) -> Vec<(String, String)> {
+    FIXED_SEATS
+        .iter()
+        .map(|(id, label)| ((*id).to_string(), (*label).to_string()))
+        .chain((1..=n_cargo).map(|n| (format!("cargo{n}"), format!("Cargo {n}"))))
+        .collect()
+}
+
+/// T-215 — registry kinds the vehicle cargo picker offers (same allow-list the Placed strip used).
+const VEHICLE_CARGO_KINDS: &[&str] = &[
+    "magazine",
+    "ammo",
+    "gear_item",
+    "gear_throwable",
+    "gear_explosive",
+    "gear_primary",
+    "gear_handgun",
+    "gear_launcher",
+    "gear_binoculars",
+    "gear_vest",
+    "gear_armored_vest",
+    "gear_backpack",
+    "gear_helmet",
+    "gear_jacket",
+    "gear_pants",
+    "gear_boots",
+    "gear_gloves",
+    "gear_glasses",
+    "optic",
+    "attachment",
+    "crate",
+];
+
+/// T-818 — vehicle Attributes body: Heading° / Add cargo / Crew dropdowns MOVED from the right-dock
+/// Placed strip (not redesigned). Same mutators (`set_vehicle_heading` / `set_vehicle_cargo` /
+/// `assign_crew_seat` / `clear_crew_seat`) so digest + undo shape stay identical. Vehicles are
+/// single-edit — the T-649/T-788 multi-edit machinery is untouched. Heading commits through
+/// [`number_field`] (T-785 focused/draft, blur/Enter).
+#[cfg(target_arch = "wasm32")]
+fn vehicle_attrs_view(
+    id: String,
+    registry_items: RwSignal<Option<Vec<crate::dto::RegistryItem>>>,
+) -> AnyView {
+    use crate::editor_ops::VehicleCargoRow;
+    use std::collections::HashMap;
+
+    let Some(v) = crate::editor_ops::vehicle_rows()
+        .into_iter()
+        .find(|r| r.id == id)
+    else {
+        // Race: id was a vehicle at the host gate, then vanished before this render.
+        crate::editor_ops::close_attributes();
+        return ().into_any();
+    };
+
+    let items = registry_items.get().unwrap_or_default();
+    let names: HashMap<String, String> = items
+        .iter()
+        .map(|i| (i.resource_name.clone(), i.display_name.clone()))
+        .collect();
+    let title = names
+        .get(&v.resource_name)
+        .cloned()
+        .unwrap_or_else(|| v.resource_name.clone());
+    let mut addable: Vec<(String, String)> = items
+        .iter()
+        .filter(|i| VEHICLE_CARGO_KINDS.contains(&i.kind.as_str()))
+        .filter(|i| !i.r#abstract.unwrap_or(false))
+        .map(|i| (i.resource_name.clone(), i.display_name.clone()))
+        .collect();
+    addable.sort_by(|a, b| a.1.cmp(&b.1));
+    let addable = StoredValue::new(addable);
+    let names = StoredValue::new(names);
+    let label_of =
+        move |rn: &str| names.with_value(|n| n.get(rn).cloned().unwrap_or_else(|| rn.to_string()));
+
+    let vid = v.id.clone();
+    let subtitle = format!("{title} · {vid}");
+    let heading = v.rotation;
+    let cargo = v.cargo.clone();
+    let crew = v.crew.clone();
+
+    // Heading° — number_field (T-785), not the strip's raw on:change input.
+    // `on_commit` must be `Copy` (number_field's bound) — stash the id in a StoredValue like
+    // Transform's `targets`, never capture a String by move.
+    let heading_row = if let Some(h) = heading {
+        let id_h = StoredValue::new(vid.clone());
+        number_field("Heading", h, Some("°"), Gate::open(), move |raw| {
+            let deg = ((raw % 360.0) + 360.0) % 360.0;
+            crate::editor_ops::set_vehicle_heading(id_h.get_value(), deg);
+        })
+        .into_any()
+    } else {
+        ().into_any()
+    };
+
+    let rows_for_edit = cargo.clone();
+    let id_add = vid.clone();
+    let cargo_rows = cargo
+        .into_iter()
+        .enumerate()
+        .map(|(i, row)| {
+            let label = label_of(&row.item);
+            let (base_q, base_r) = (rows_for_edit.clone(), rows_for_edit.clone());
+            let (id_q, id_r) = (vid.clone(), vid.clone());
+            view! {
+                <div class="flex items-center gap-1.5 py-0.5">
+                    <span class="min-w-0 flex-1 truncate text-label-sm text-on-surface-variant">
+                        {label}
+                    </span>
+                    <input
+                        type="number"
+                        min="1"
+                        aria-label="Quantity"
+                        class="w-14 shrink-0 rounded border border-outline-variant/40 bg-surface-container-lowest/60 px-1 py-0.5 text-right font-mono text-label-sm tabular-nums text-on-surface outline-none focus:border-primary/60"
+                        prop:value=row.qty.to_string()
+                        on:change=move |ev| {
+                            let Ok(q) = event_target_value(&ev).trim().parse::<i64>() else {
+                                return;
+                            };
+                            let mut next = base_q.clone();
+                            if let Some(r) = next.get_mut(i) {
+                                r.qty = q;
+                            }
+                            crate::editor_ops::set_vehicle_cargo(id_q.clone(), next);
+                        }
+                    />
+                    <button
+                        type="button"
+                        aria-label="Remove cargo row"
+                        class="shrink-0 rounded p-0.5 text-on-surface-variant hover:text-error-alert"
+                        on:click=move |_| {
+                            let mut next = base_r.clone();
+                            if i < next.len() {
+                                next.remove(i);
+                            }
+                            crate::editor_ops::set_vehicle_cargo(id_r.clone(), next);
+                        }
+                    >
+                        <crate::ui::MaterialIcon name="close" class="block text-sm" />
+                    </button>
+                </div>
+            }
+        })
+        .collect_view();
+
+    let seat_choices = StoredValue::new(crate::editor_ops::placed_slot_choices());
+    let n_cargo_seats = DEFAULT_CARGO_SEATS;
+    let seat_list = seat_model(n_cargo_seats)
+        .into_iter()
+        .map(|(seat_id, seat_label)| {
+            let occupant = crew.get(&seat_id).cloned().unwrap_or_default();
+            let id_seat = vid.clone();
+            let sid = seat_id.clone();
+            view! {
+                <div class="flex items-center gap-1.5 py-0.5">
+                    <span class="w-16 shrink-0 text-label-sm text-on-surface-variant">
+                        {seat_label}
+                    </span>
+                    <select
+                        aria-label=format!("Assign {seat_id}")
+                        class="min-w-0 flex-1 rounded border border-outline-variant/40 bg-surface-container-lowest/60 px-1.5 py-0.5 text-label-sm text-on-surface outline-none focus:border-primary/60"
+                        prop:value=occupant.clone()
+                        on:change=move |ev| {
+                            let slot = event_target_value(&ev);
+                            if slot.is_empty() {
+                                crate::editor_ops::clear_crew_seat(id_seat.clone(), sid.clone());
+                            } else {
+                                crate::editor_ops::assign_crew_seat(
+                                    id_seat.clone(),
+                                    sid.clone(),
+                                    slot,
+                                );
+                            }
+                        }
+                    >
+                        <option value="" selected=occupant.is_empty()>
+                            "— empty —"
+                        </option>
+                        {seat_choices
+                            .get_value()
+                            .into_iter()
+                            .map(|choice| {
+                                let is_sel = choice.id == occupant;
+                                view! {
+                                    <option value=choice.id.clone() selected=is_sel>
+                                        {choice.label}
+                                    </option>
+                                }
+                            })
+                            .collect_view()}
+                    </select>
+                </div>
+            }
+        })
+        .collect_view();
+
+    let base_add = rows_for_edit;
+    view! {
+        <div
+            class="animate-overlay-fade fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-200"
+            on:click=move |_| crate::editor_ops::close_attributes()
+        ></div>
+        <div class="glass animate-dialog-in fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[92vw] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl shadow-2xl outline-none transition-all duration-200">
+            <div class="flex items-start justify-between gap-4 border-b border-outline-variant/30 px-6 py-4">
+                <div class="min-w-0">
+                    <h2 class="text-headline-sm text-on-surface">"Attributes"</h2>
+                    <p class="mt-1 text-label-md text-on-surface-variant">{subtitle}</p>
+                    <p class="mt-1 text-label-sm normal-case text-outline">
+                        "Edits apply live."
+                    </p>
+                </div>
+                <button
+                    type="button"
+                    aria-label="Close"
+                    on:click=move |_| crate::editor_ops::close_attributes()
+                    class="rounded-md p-1 text-outline transition-colors hover:bg-surface-variant/50 hover:text-on-surface"
+                >
+                    <crate::ui::MaterialIcon name="close" />
+                </button>
+            </div>
+            <div class="custom-scrollbar flex-1 overflow-y-auto px-6 py-5">
+                <div class="flex flex-col gap-4">
+                    {heading_row}
+                    <div class="flex flex-col gap-1">
+                        <div class="flex items-center gap-1.5">
+                            <crate::ui::MaterialIcon
+                                name="inventory_2"
+                                class="block shrink-0 text-sm text-outline"
+                            />
+                            <span class="text-label-sm font-semibold text-on-surface-variant">
+                                "Cargo"
+                            </span>
+                        </div>
+                        {cargo_rows}
+                        <select
+                            aria-label="Add cargo"
+                            class="w-full rounded border border-outline-variant/40 bg-surface-container-lowest/60 px-1.5 py-0.5 text-label-sm text-on-surface outline-none focus:border-primary/60"
+                            on:change=move |ev| {
+                                let item = event_target_value(&ev);
+                                if item.is_empty() {
+                                    return;
+                                }
+                                let mut next = base_add.clone();
+                                if let Some(r) = next.iter_mut().find(|r| r.item == item) {
+                                    r.qty = r.qty.saturating_add(1);
+                                } else {
+                                    next.push(VehicleCargoRow { item, qty: 1 });
+                                }
+                                crate::editor_ops::set_vehicle_cargo(id_add.clone(), next);
+                            }
+                        >
+                            <option value="">"Add cargo…"</option>
+                            {addable
+                                .get_value()
+                                .into_iter()
+                                .map(|(rn, label)| view! { <option value=rn>{label}</option> })
+                                .collect_view()}
+                        </select>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <div class="flex items-center gap-1.5">
+                            <crate::ui::MaterialIcon
+                                name="group"
+                                class="block shrink-0 text-sm text-outline"
+                            />
+                            <span class="text-label-sm font-semibold text-on-surface-variant">
+                                "Crew"
+                            </span>
+                        </div>
+                        {seat_list}
+                    </div>
                 </div>
             </div>
         </div>
@@ -3077,5 +3384,82 @@ mod t810_type_picker_revert_axes {
             modal_code.contains("revert_to_snapshot(snapshot)"),
             "the Revert button must call revert_to_snapshot"
         );
+    }
+
+    /* ─────────── T-818 — vehicle Attributes gains the dock Placed editor ─────────── */
+
+    /// Host route: when `read_attrs` is None, a vehicle id opens the vehicle editor instead of
+    /// closing. A hollow rewrite that keeps `close_attributes` on every None path goes RED.
+    #[test]
+    fn attributes_modal_routes_vehicles_to_the_vehicle_editor() {
+        let code = live_code(include_str!("attributes.rs"));
+        let host = only_body(&code, "pub fn AttributesModal(");
+        assert!(
+            host.contains("is_vehicle_id(&id)") && host.contains("vehicle_attrs_view("),
+            "T-818: AttributesModal None arm must route vehicles to vehicle_attrs_view; body was:\n{host}"
+        );
+        assert!(
+            host.contains("close_attributes()"),
+            "true absence must still close; body was:\n{host}"
+        );
+    }
+
+    /// The moved controls call the SAME mutators the Placed strip used — digest/undo parity.
+    /// Heading commits through number_field (T-785), not a raw on:change input.
+    #[test]
+    fn vehicle_attrs_view_wires_heading_cargo_crew_through_existing_mutators() {
+        let code = live_code(include_str!("attributes.rs"));
+        let body = only_body(&code, "fn vehicle_attrs_view(");
+        for needle in [
+            "set_vehicle_heading(",
+            "set_vehicle_cargo(",
+            "assign_crew_seat(",
+            "clear_crew_seat(",
+            "number_field(",
+            "Gate::open()",
+            "placed_slot_choices()",
+            "seat_model(",
+        ] {
+            assert!(
+                body.contains(needle),
+                "T-818: vehicle_attrs_view must contain `{needle}`; body was:\n{body}"
+            );
+        }
+        // Operator-visible section labels survive on live_source (live_code blanks string literals).
+        let src = live_source(include_str!("attributes.rs"));
+        let live = only_body(&src, "fn vehicle_attrs_view(");
+        for label in ["\"Heading\"", "\"Add cargo\"", "\"Crew\"", "\"Cargo\""] {
+            assert!(
+                live.contains(label),
+                "T-818: vehicle editor must show {label}; body was:\n{live}"
+            );
+        }
+        // Multi-edit machinery must stay untouched for vehicles.
+        assert!(
+            !body.contains("attrs_multi_ids") && !body.contains("Gate::maybe"),
+            "T-818: vehicle editor must not pull in T-649 multi-edit; body was:\n{body}"
+        );
+    }
+
+    /// Seat model parity with the strip: driver/gunner/commander then cargo1..N.
+    #[test]
+    fn vehicle_attrs_seat_model_matches_the_strip() {
+        let seats = super::seat_model(super::DEFAULT_CARGO_SEATS);
+        let ids: Vec<&str> = seats.iter().map(|(id, _)| id.as_str()).collect();
+        assert_eq!(
+            ids,
+            [
+                "driver",
+                "gunner",
+                "commander",
+                "cargo1",
+                "cargo2",
+                "cargo3",
+                "cargo4"
+            ]
+        );
+        assert_eq!(seats[0].1, "Driver");
+        assert_eq!(seats[1].1, "Gunner");
+        assert_eq!(seats[2].1, "Commander");
     }
 }
