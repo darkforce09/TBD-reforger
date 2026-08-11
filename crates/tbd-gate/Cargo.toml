@@ -1,0 +1,17 @@
+# tbd-gate — the four-outcome static-check library (T-853; Rust port of
+# scripts/mod/lib/gate-grep.sh).
+#
+# Dependency-light ON PURPOSE. This crate is linked by every gate in `xtask`/`xtools` and by the
+# heavy async tooling in `tools/tbd-tools`, so anything added here is paid for by both. `regex`
+# replaces the `grep` subprocess (retiring the exit-127 class outright) and `libc` is needed for
+# two things bash gets wrong and this crate must not: killing a timed-out process GROUP rather
+# than just the child, and `flock` on the shared gate lock.
+[package]
+name = "tbd-gate"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+regex = "1"
+libc = "0.2"

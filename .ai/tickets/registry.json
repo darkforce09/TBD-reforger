@@ -1,5 +1,5 @@
 {
-  "next_id": 846,
+  "next_id": 854,
   "tickets": [
     {
       "id": "T-001",
@@ -20876,6 +20876,19 @@
       "title": "Attributes modal paint should use modal_stack::z_class instead of hard-coded z-50",
       "summary": "WAVE-210 VERIFIER NIT (wave210.md F2). Esc is modal_stack-gated (T-726) but Attributes (including the new vehicle body) still paints literal z-50, not modal_stack::z_class (the O-3 class). Pre-existing; not a Heading/Cargo/Crew functional miss. FIX: consume z_class for the Attributes overlay. ACCEPTANCE: attributes.rs has no literal z-50 on the modal overlay; uses z_class; Esc stack still correct.",
       "notes": "wave210 verifier F2 NIT; pre-existing; pairs with O-3 class family"
+    },
+    {
+      "id": "T-853",
+      "title": "Kill the shell: port all tooling to xtask, delete make, hard-zero the gate",
+      "summary": "The T-621/T-623 shell ratchet is an ALLOWLIST: it pre-blesses all 59 tracked shell files (15,845 lines) via scripts/shell-inventory.txt, so it passes over the debt it was built to stop. This program drains it. Port every shell script to Rust (xtask/tbd-tools), delete the 504-line Makefile so cargo xtask is the only entrypoint, split xtask into its own workspace behind a std-only launcher, then flip verify-no-shell to a hard zero with no allowlist and add anti-relocation gates so bash cannot reappear in Makefile recipes or CI run: blocks. All 12 scripts/python-inventory.txt entries are themselves shell scripts, so LANG-2 collapses to zero in the same motion.",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "idea"
     }
   ]
 }
