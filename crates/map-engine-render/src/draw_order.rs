@@ -375,8 +375,8 @@ pub fn tex_lane_role_from_u32(role: u32) -> Option<LaneRole> {
 #[cfg(test)]
 mod lane_order_pins {
     use super::{
-        lane_order, lane_role_from_u32, lane_role_to_u32, role_id, tex_lane_role_from_u32,
-        tex_role_id, LaneRole as L, ALL_LANES,
+        ALL_LANES, LaneRole as L, lane_order, lane_role_from_u32, lane_role_to_u32, role_id,
+        tex_lane_role_from_u32, tex_role_id,
     };
 
     /// T-592 — the role→u32→role round trip, proved **exhaustive in both directions** rather
