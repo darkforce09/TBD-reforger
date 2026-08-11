@@ -15014,8 +15014,8 @@ mod t802_hover_cursor {
         );
         let hit = hover_hit_body();
         assert!(
-            hit.contains("c.tick != tick") && hit.contains("materialize()"),
-            "T-802: hover_hit must refresh its cache ONLY when the tick moved; body was:\n{hit}"
+            hit.contains("c.tick != tick") && hit.contains("map_render_slot_soa"),
+            "T-802: hover_hit must refresh its cache ONLY when the tick moved (via map_render_slot_soa); body was:\n{hit}"
         );
         assert!(
             body.contains("doc_tick.get_untracked()") && !body.contains("doc_tick.get()"),
