@@ -210,9 +210,7 @@ impl AuthStore {
         // `client::bootstrap` finishes. Otherwise the route guard can see `user=None` +
         // `bootstrapping=false` for one frame and bounce an authorized deep-link.
         #[cfg(target_arch = "wasm32")]
-        let bootstrapping = load_persisted()
-            .and_then(|p| p.refresh_token)
-            .is_some();
+        let bootstrapping = load_persisted().and_then(|p| p.refresh_token).is_some();
         #[cfg(not(target_arch = "wasm32"))]
         let bootstrapping = false;
         let store = Self {
@@ -323,11 +321,7 @@ impl Default for AuthStore {
 ///
 /// Returns `Some(redirect)` when the current role must leave `path`. Waits out bootstrap so an
 /// authorized deep-link is not bounced before `/me` hydrates.
-pub fn route_auth_redirect(
-    path: &str,
-    role: Option<Role>,
-    bootstrapping: bool,
-) -> Option<String> {
+pub fn route_auth_redirect(path: &str, role: Option<Role>, bootstrapping: bool) -> Option<String> {
     if bootstrapping {
         return None;
     }

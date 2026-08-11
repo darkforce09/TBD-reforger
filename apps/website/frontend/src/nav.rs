@@ -248,7 +248,10 @@ mod tests {
 
     #[test]
     fn from_route_auth_parses_declared_tiers() {
-        assert_eq!(Role::from_route_auth("mission_maker"), Some(Role::MissionMaker));
+        assert_eq!(
+            Role::from_route_auth("mission_maker"),
+            Some(Role::MissionMaker)
+        );
         assert_eq!(Role::from_route_auth("admin"), Some(Role::Admin));
         assert_eq!(Role::from_route_auth("none"), None);
         assert_eq!(Role::from_route_auth(""), None);
