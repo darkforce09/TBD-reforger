@@ -2566,7 +2566,7 @@ gate_slice() {
   # would have trusted a pair of bans that had never compared anything. Wired into both
   # halves (here and cmd_gate) so neither path can drift green on its own.
   run "T-296 reporter identity" bash "$ROOT/scripts/mod/verify-t296-results-reporter-identity-comments.sh"
-  run "T-452 player identity" bash "$ROOT/scripts/mod/verify-t452-player-identity-link-comments.sh"
+  run "T-452 player identity" checkrun cargo run -q -p xtask -- verify t452
   # T-620. Hot-path twin of the cmd_gate run — see the long note there for why this gate spent four
   # waves invoked by nothing. Pure bash + git ls-files, no cargo, ~0.2 s measured, so it fits the
   # slice gate's ~10 s budget. Catching a stray .py or a new python3 call at SLICE time is the
@@ -2834,7 +2834,7 @@ cmd_gate() {
   # T-556. Cold-path twin of the gate_slice runs above — the two scripts that were dead
   # AND fail-open. Both halves, for the T-478 reason: one path alone can drift green.
   run "T-296 reporter identity" bash "$ROOT/scripts/mod/verify-t296-results-reporter-identity-comments.sh"
-  run "T-452 player identity" bash "$ROOT/scripts/mod/verify-t452-player-identity-link-comments.sh"
+  run "T-452 player identity" checkrun cargo run -q -p xtask -- verify t452
   # T-620/T-621 — THE LANGUAGE GATES, AND WHY THEY ARE HERE RATHER THAN ONLY IN ci.yml.
   #
   # `verify-no-python` existed since T-162 and was wired into one Makefile target and `make

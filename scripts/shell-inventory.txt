@@ -71,7 +71,6 @@ scripts/mod/verify-t438-deploy-staging-compose-path.sh
 scripts/mod/verify-t439-objects-registry-aliases.sh
 scripts/mod/verify-t440-faction-library-seed.sh
 scripts/mod/verify-t444-wiki-seed.sh
-scripts/mod/verify-t452-player-identity-link-comments.sh
 scripts/mod/verify-t456-mission-rest-size-gate.sh
 scripts/mod/verify-t468-ci-schema-parity.sh
 scripts/mod/verify-ui-layouts.sh

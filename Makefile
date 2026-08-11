@@ -374,7 +374,7 @@ verify-t296: ## T-296/T-556 ResultsReporter must not claim `#tbd link` is unimpl
 	@bash scripts/mod/verify-t296-results-reporter-identity-comments.sh
 
 verify-t452: ## T-452/T-556 PlayerIdentity must not claim link-confirm is future work
-	@bash scripts/mod/verify-t452-player-identity-link-comments.sh
+	@cargo run -q -p xtask -- verify t452
 
 verify-terrain: ## Manifest + anchor verify (stub mode OK for Arland-only)
 	cargo run -q -p xtask -- schema terrain-manifest --terrain everon

@@ -12,6 +12,7 @@ mod gap;
 mod golden_gate;
 mod label_gates;
 mod mcp;
+mod mod_comment_gates;
 mod node_free;
 mod prompt;
 mod registry;
@@ -126,6 +127,10 @@ enum VerifyCmd {
     /// (T-853 port of scripts/website/verify-no-select-star.sh)
     #[command(name = "no-select-star")]
     NoSelectStar,
+    /// T-452 comment contract: TBD_PlayerIdentity must not claim `#tbd link` is unimplemented
+    /// (T-853 port of scripts/mod/verify-t452-player-identity-link-comments.sh)
+    #[command(name = "t452")]
+    T452,
 }
 
 #[derive(Subcommand, Debug)]
@@ -480,6 +485,7 @@ fn run() -> Result<u8> {
                 VerifyCmd::NoNode => node_free::verify_no_node()?,
                 VerifyCmd::NoShell => shell_free::verify_no_shell()?,
                 VerifyCmd::NoSelectStar => sql_gates::verify_no_select_star(&find_repo_root()?)?,
+                VerifyCmd::T452 => mod_comment_gates::verify_t452(&find_repo_root()?)?,
             };
             Ok(code)
         }
