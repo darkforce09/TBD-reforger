@@ -2,6 +2,9 @@
 //!
 //! Pure string helper (always available — no `doc` / `mission` feature gate) so
 //! `cargo test -p map-engine-core format_slot_line` matches without feature flags.
+//!
+//! T-801 — map **tether** (leader→member hairline) drag-preview packing is NOT here; it lives in
+//! [`crate::squad_links::pack_squad_link_drag_preview`]. This module remains the ORBAT text line.
 
 /// Format a 1-based ORBAT slot line for the Stitch manager tree.
 ///

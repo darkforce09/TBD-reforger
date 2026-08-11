@@ -17,11 +17,14 @@
 //! Deferred (kept out this slice): entity drag-move commit, marquee rect, cluster drill, Attributes.
 
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::rc::Rc;
 
 use map_engine_core::camera::OrthoCamera;
 use map_engine_core::doc::SlotSoa;
 use map_engine_core::spatial::point_index::PointIndex;
+use map_engine_core::squad_links::pack_squad_link_drag_preview;
+use map_engine_render::draw_order::role_id;
 use map_engine_render::RenderEngine;
 use wasm_bindgen::prelude::*;
 
@@ -291,6 +294,9 @@ pub fn push_drag_preview(
         e,
         &map_engine_core::slots_gpu::pack_vehicle_drag_preview(ids, vehicle_points, dx, dy),
     );
+    // T-801 — tether/squad lines track the same world delta as the sprite preview. Commit still
+    // rebuilds from the document on `after_doc_change`; this is preview-only.
+    bind_squad_link_preview(e, ids, dx, dy);
 }
 
 /// T-573 — drop the live drag preview and put **both** lanes back on the authored positions.
@@ -307,6 +313,8 @@ pub fn clear_drag_preview(e: &mut RenderEngine, vehicle_points: &[(String, f64, 
         e,
         &map_engine_core::slots_gpu::pack_vehicle_drag_preview(&[], vehicle_points, 0.0, 0.0),
     );
+    // T-801 — identity re-pack puts tether endpoints back on authored xy (cancel / zero-delta).
+    bind_squad_link_preview(e, &[], 0.0, 0.0);
 }
 
 /// **T-808 — bind the vehicle lane at PREVIEW positions without losing its symbology.**
@@ -344,6 +352,34 @@ fn bind_vehicle_preview_lane(e: &mut RenderEngine, xy: &[f32]) {
     } else {
         e.vehicles_bind(xy);
     }
+}
+
+/// T-801 — re-upload squad tether hairlines with previewed endpoints for the live drag.
+///
+/// Composes with the slot `set_drag` + vehicle re-pack above: sprites already move on the GPU
+/// preview; this keeps leader→member lines attached to those provisional positions. Only squads
+/// that touch a dragged id are offset inside [`pack_squad_link_drag_preview`]; the lane upload is
+/// still wholesale (hairline API replaces the role). `doc_handle` is the same live `Rc` the commit
+/// path reads — no signature change for callers, matching `vehicle_lane_fields`.
+fn bind_squad_link_preview(e: &mut RenderEngine, drag_ids: &[String], dx: f64, dy: f64) {
+    let Some(doc_h) = crate::mission_history::doc_handle() else {
+        return;
+    };
+    let guard = doc_h.borrow();
+    let Some(doc) = guard.as_ref() else {
+        return;
+    };
+    let soa = doc.materialize();
+    let mut xy_by_slot: HashMap<String, (f32, f32)> = HashMap::with_capacity(soa.ids.len());
+    for (i, id) in soa.ids.iter().enumerate() {
+        xy_by_slot.insert(id.clone(), (soa.xy[i * 2], soa.xy[i * 2 + 1]));
+    }
+    let inputs = doc.squad_link_inputs();
+    #[allow(clippy::cast_possible_truncation)]
+    let verts = pack_squad_link_drag_preview(&inputs, &xy_by_slot, drag_ids, dx as f32, dy as f32);
+    #[allow(clippy::cast_possible_truncation)]
+    let segment_count = (verts.len() / 12) as u32;
+    e.upload_hairline_segments(role_id::SQUAD_LINKS, &verts, segment_count, true);
 }
 
 /// Slot ids inside the marquee box, from the two frozen-cam screen corners. The press corner is
