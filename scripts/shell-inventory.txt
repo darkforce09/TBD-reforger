@@ -33,7 +33,6 @@ scripts/deploy/lib/db-common.sh
 scripts/deploy/restore-db.sh
 scripts/lib/hostrun.sh
 scripts/map-assets/export-terrain.sh
-scripts/map-assets/verify-spike-all.sh
 scripts/mod/bootstrap-staging-server.sh
 scripts/mod/compile.sh
 scripts/mod/debug-direct-join.sh
