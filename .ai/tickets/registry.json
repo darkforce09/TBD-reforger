@@ -21815,7 +21815,8 @@
       "stream": "infra",
       "parallel_ok": false,
       "order": 5770,
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md"
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "notes": "BLOCKERS \u2014 three things READ the Makefile and evaporate silently if it is deleted without them moving in the SAME commit:\n  1. xtask/src/node_free.rs:290 scans it with `let Ok(text) = read_to_string else { return }` \u2014 FAIL-OPEN, so deleting the file narrows the no-node gate to nothing without any error.\n  2. scripts/platform/wave.sh:1598-1628 (and its port) parses the `schema-validate` recipe to cross-check GATE_SCHEMA_VALIDATE_GATES. Needs `xtask schema list-gates` first \u2014 T-896 owns shipping it.\n  3. xtask/src/gate_t444.rs pins the `seed:` recipe body by reading the Makefile (found by T-894). Repoint at mk_db::SEEDS or that Class-R gate evaporates.\nAlso: 12 CI `run: make \u2026` steps and ~363 live doc files reference make targets. The historical record (SHIPPED_HISTORY, TICKET_REGISTRY, verify-logs, registry.json ticket prose) must NOT be rewritten \u2014 it describes what was true then."
     }
   ]
 }
