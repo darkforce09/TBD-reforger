@@ -1,4 +1,7 @@
-//! Debug helpers for scripts/mod/debug-direct-join.sh (T-162).
+//! Debug helpers for `cargo xtask debug …` (T-162 / T-868).
+//!
+//! Low-level primitives (`a2s-probe`, `ndjson-append`, `direct-join-log`) kept as subcommands.
+//! The former `scripts/mod/debug-direct-join.sh` orchestrator is `debug direct-join`.
 
 use anyhow::{Context, Result};
 use serde_json::{Value, json};
@@ -8,14 +11,19 @@ use std::net::UdpSocket;
 use std::path::Path;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-/// UDP Source Engine Query probe → JSON on stdout.
-pub fn cmd_a2s_probe(host: &str, ports: &[u16]) -> Result<()> {
+/// UDP Source Engine Query probe → JSON object (shared by CLI + orchestrator).
+pub fn a2s_probe_json(host: &str, ports: &[u16]) -> String {
     let mut out = serde_json::Map::new();
     for &port in ports {
         let key = format!("p{port}");
         out.insert(key, probe_one(host, port));
     }
-    println!("{}", Value::Object(out));
+    Value::Object(out).to_string()
+}
+
+/// UDP Source Engine Query probe → JSON on stdout.
+pub fn cmd_a2s_probe(host: &str, ports: &[u16]) -> Result<()> {
+    println!("{}", a2s_probe_json(host, ports));
     Ok(())
 }
 
