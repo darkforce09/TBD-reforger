@@ -338,9 +338,14 @@ enum McpCmd {
     #[command(name = "wb-logs", disable_help_flag = true)]
     WbLogs {
         /// Verdict over a specific log file (no Workbench).
-        /// Bare `--file` (no path): clap MissingValue is rc=2; bash usage is rc=3.
-        /// `num_args=0..=1` + `__MISSING__` sentinel reaches run() → USAGE → 3 (T-857).
-        #[arg(long, num_args = 0..=1, default_missing_value = "__MISSING__")]
+        /// Bare `--file` / `--file ''` → usage rc=3; `--file=` → ENVIRONMENT rc=3.
+        /// Custom parser accepts empty (PathBufValueParser would clap-exit 2).
+        #[arg(
+            long,
+            num_args = 0..=1,
+            default_missing_value = "__MISSING__",
+            value_parser = gate_mcp_wb_logs::parse_file_arg
+        )]
         file: Option<PathBuf>,
         /// Prove the verdict logic can FAIL
         #[arg(long)]
@@ -520,7 +525,8 @@ fn main() -> ExitCode {
 }
 
 fn run() -> Result<u8> {
-    let cli = Cli::parse();
+    let args = gate_mcp_wb_logs::preprocess_cli_args(std::env::args_os().collect());
+    let cli = Cli::parse_from(args);
     match cli.cmd {
         TopCmd::Mcp { cmd } => {
             let code = match cmd {
@@ -811,6 +817,34 @@ fn run() -> Result<u8> {
                 }
             }
             Ok(0)
+        }
+    }
+}
+
+#[cfg(test)]
+mod t857_wb_logs_file_cli {
+    use super::*;
+    use clap::Parser;
+    use std::ffi::OsString;
+    use std::path::PathBuf;
+
+    #[test]
+    fn file_equals_empty_parses_via_clap() {
+        // Regression pin: PathBufValueParser used to reject `--file=` with clap rc=2.
+        let args = gate_mcp_wb_logs::preprocess_cli_args(
+            ["xtask", "mcp", "wb-logs", "--file="]
+                .into_iter()
+                .map(OsString::from)
+                .collect(),
+        );
+        let cli = Cli::try_parse_from(args).expect("--file= must parse (not clap empty-value)");
+        match cli.cmd {
+            TopCmd::Mcp {
+                cmd: McpCmd::WbLogs { file, .. },
+            } => {
+                assert_eq!(file, Some(PathBuf::new()));
+            }
+            other => panic!("unexpected cmd: {other:?}"),
         }
     }
 }

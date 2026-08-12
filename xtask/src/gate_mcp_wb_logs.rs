@@ -15,6 +15,7 @@
 //! (note / PARTIAL), matching bash `if [ "$status" = "0" ]` — including a hypothetical
 //! DidNotRun. Vocabulary is a HAND-SYNCED COPY of remote-logs; do not invent a shared lib.
 
+use std::ffi::OsString;
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -33,15 +34,44 @@ const PAT_ERRORS: &str = r"Can.t compile|Unknown class .TBD_|RequestSpawn failed
 const PAT_LOADOUT: &str = r"\[TBD\]\[Loadout\]\[Slot\]";
 const DEFAULT_EXTRACT: &str = r"\[TBD\]|SpawnLogic|assigned slot";
 
+/// Byte-identical to bash `sed -n '2,9p'` of former `mcp-wb-logs.sh` (wave-219 parity).
 const USAGE: &str = "\
-# cargo xtask mcp wb-logs — grep the latest Workbench Play console.log for TBD spawn diagnostics and
+# mcp-wb-logs.sh — grep the latest Workbench Play console.log for TBD spawn diagnostics and
 # assert the spawn pipeline actually ran. Run after MCP wb_play (and optional sleep) —
 # enfusion-mcp has no wb_log tool, so this is the read-back half of a wb_play loop.
 #
 # Usage:
-#   cargo xtask mcp wb-logs [extended-grep-pattern]     # latest Workbench log; pattern filters DISPLAY only
-#   cargo xtask mcp wb-logs --file <path> [pattern]     # verdict over a specific log file (no Workbench)
-#   cargo xtask mcp wb-logs --selftest                  # prove the verdict logic can FAIL";
+#   mcp-wb-logs.sh [extended-grep-pattern]     # latest Workbench log; pattern filters DISPLAY only
+#   mcp-wb-logs.sh --file <path> [pattern]     # verdict over a specific log file (no Workbench)
+#   mcp-wb-logs.sh --selftest                  # prove the verdict logic can FAIL";
+
+/// clap's `PathBufValueParser` rejects empty (`--file=` / `--file ''`) with rc=2.
+/// Accept empty so we can map those shapes to bash's ENVIRONMENT / usage (rc=3).
+pub fn parse_file_arg(s: &str) -> Result<PathBuf, String> {
+    Ok(PathBuf::from(s))
+}
+
+/// Bash: `--file ''` → usage; `--file=` → ENVIRONMENT empty path. Clap collapses both to
+/// empty, so rewrite a following empty argv token to the bare-`--file` sentinel.
+pub fn preprocess_cli_args(mut args: Vec<OsString>) -> Vec<OsString> {
+    let Some(i) = args.iter().position(|a| a == "wb-logs") else {
+        return args;
+    };
+    let mut j = i + 1;
+    while j < args.len() {
+        if args[j] == "--file" {
+            if j + 1 < args.len() && args[j + 1].is_empty() {
+                args[j + 1] = OsString::from("__MISSING__");
+            }
+            break;
+        }
+        if args[j].to_string_lossy().starts_with("--file=") {
+            break;
+        }
+        j += 1;
+    }
+    args
+}
 
 /// Entry for `xtask mcp wb-logs`.
 pub fn run(
@@ -59,9 +89,9 @@ pub fn run(
     }
     let extract = pattern.as_deref().unwrap_or(DEFAULT_EXTRACT);
     if let Some(path) = file {
-        // clap sentinel `__MISSING__` = bare `--file` (no path); empty = `--file=`.
-        // Both map to bash usage → rc=3 (not clap's MissingValue rc=2).
-        if path.as_os_str().is_empty() || path.as_os_str() == "__MISSING__" {
+        // `__MISSING__` = bare `--file` or `--file ''` (after preprocess) → bash usage.
+        // Empty path = `--file=` → check_log → ENVIRONMENT "no such log file: ".
+        if path.as_os_str() == "__MISSING__" {
             println!("{USAGE}");
             return Ok(3);
         }
@@ -476,6 +506,30 @@ mod tests {
     fn missing_file_is_environment() {
         let p = PathBuf::from("/tmp/t857-no-such-log-file-ever");
         assert_eq!(check_log(&p, DEFAULT_EXTRACT), 3);
+    }
+
+    #[test]
+    fn file_equals_empty_is_environment_rc3() {
+        // Pins `--file=` (empty path) → ENVIRONMENT 3, not clap rc=2 / usage.
+        let code = run(Some(PathBuf::new()), false, false, None).unwrap();
+        assert_eq!(code, 3);
+    }
+
+    #[test]
+    fn file_missing_sentinel_is_usage_rc3() {
+        let code = run(Some(PathBuf::from("__MISSING__")), false, false, None).unwrap();
+        assert_eq!(code, 3);
+    }
+
+    #[test]
+    fn preprocess_rewrites_file_empty_arg_to_missing_sentinel() {
+        let args = preprocess_cli_args(
+            ["xtask", "mcp", "wb-logs", "--file", ""]
+                .into_iter()
+                .map(OsString::from)
+                .collect(),
+        );
+        assert_eq!(args[4], "__MISSING__");
     }
 
     #[test]
