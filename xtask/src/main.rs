@@ -60,6 +60,7 @@ mod label_gates;
 mod mcp;
 mod mcp_daemon;
 mod mk_build;
+mod mk_ci;
 mod mk_db;
 mod mk_target_dir;
 mod mod_comment_gates;
@@ -94,9 +95,14 @@ use root::find_repo_root;
 use sync::cmd_sync;
 
 #[derive(Parser, Debug)]
+// T-896: `disable_help_subcommand` frees the `help` name for the successor to `make help`. The
+// Makefile's help target is how anyone discovers the task surface, and T-897 deletes it; clap's
+// auto-generated `help` lists CLI *groups*, not tasks, so it is not that successor. `--help`,
+// `-h` and `xtask <group> --help` are untouched — only the `xtask help <group>` spelling moves.
 #[command(
     name = "xtask",
-    about = "TBD Reforger workspace tasks (T-161 ticket + T-162 MCP/debug)"
+    about = "TBD Reforger workspace tasks (T-161 ticket + T-162 MCP/debug)",
+    disable_help_subcommand = true
 )]
 struct Cli {
     #[command(subcommand)]
@@ -192,14 +198,22 @@ enum TopCmd {
     },
     /// Makefile target equivalents (T-853 Phase 3). `cargo xtask mk <target> [--dry-run]`.
     ///
-    /// Trailing var-args rather than a `Subcommand` enum on purpose: T-894 (db lane) and T-896 (ci
-    /// lane) add their own modules in parallel, and a shared clap enum here would be a three-way
-    /// merge conflict per target. Chain them at the dispatch arm via `mk_build::handles`.
+    /// Trailing var-args rather than a `Subcommand` enum on purpose: the three Phase-3 lanes were
+    /// ported in parallel worktrees, and a shared clap enum here would have been a three-way merge
+    /// conflict per target. In the event each lane picked its own shape — `db` (T-894) is a proper
+    /// subcommand enum, `mk` (T-895) is this, `ci`/`help` (T-896) are their own — and all three
+    /// coexist. T-897 unifies them when it deletes the Makefile and there is one surface to design
+    /// against instead of three moving ones.
     #[command(name = "mk", disable_help_flag = true)]
     Mk {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
+    /// T-896: the Makefile's CI / composite / map lane. No target lists the lane.
+    Ci { target: Option<String> },
+    /// T-896: the task surface — successor to `make help`.
+    #[command(name = "help")]
+    Help,
 }
 
 #[derive(Subcommand, Debug)]
@@ -484,6 +498,11 @@ enum GenCmd {
 enum SchemaCmd {
     /// Contract codegen: JSON Schema → Rust via typify (T-165.3)
     Codegen,
+    /// T-896: print the `schema-validate` sub-gate SET, one per line.
+    /// wave.sh's drift tripwire (wave.sh:1598) parses the Makefile recipe for this today; T-897
+    /// deletes that input, and this is its replacement — derived from the code that runs them.
+    #[command(name = "list-gates")]
+    ListGates,
     /// Full contract-validation suite (validate.mjs port — T-165.2)
     Validate,
     /// Validate one mission JSON file or stdin (`-`) — validate-file.mjs port
@@ -999,8 +1018,9 @@ fn run() -> Result<u8> {
             AiCmd::Guard => Ok(ai::cmd_guard()),
             AiCmd::Run { args } => ai::cmd_run(&args),
         },
-        // T-894/T-896 seam: `if mk_build::handles(t) { … } else { mk_db::run(&args) }`.
         TopCmd::Mk { args } => mk_build::run(&args),
+        TopCmd::Ci { target } => Ok(u8::try_from(mk_ci::run(target.as_deref())).unwrap_or(1)),
+        TopCmd::Help => Ok(u8::try_from(mk_ci::help()).unwrap_or(1)),
         TopCmd::Gen { cmd } => {
             let code = match cmd {
                 GenCmd::FontTable { bdf } => node_free::gen_font_table(&bdf)?,
@@ -1010,6 +1030,7 @@ fn run() -> Result<u8> {
         TopCmd::Schema { cmd } => {
             let code = match cmd {
                 SchemaCmd::Codegen => codegen_schema::codegen()?,
+                SchemaCmd::ListGates => u8::try_from(mk_ci::schema_list_gates()).unwrap_or(1),
                 SchemaCmd::Validate => schema_gates::validate_all()?,
                 SchemaCmd::ValidateFile { target } => schema_gates::validate_file(&target)?,
                 SchemaCmd::Citations => schema_gates::citations()?,
