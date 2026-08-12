@@ -6,7 +6,7 @@
 //!
 //! Preserved oddities (byte-for-byte with bash):
 //! - `--help` is a *filename* target (MISS), not usage — clap help is disabled on this subcommand.
-//! - `--grep` with no pattern prints historical `$0` usage and exits 2.
+//! - `--grep` with missing or empty pattern prints historical `$0` usage and exits 2.
 //! - Building `map.tsv` from an index with zero href matches exits 1 (grep pipefail), after
 //!   truncating the map file empty.
 //! - HTTP misses count as `miss` and do not change the process exit code (still 0).
@@ -128,11 +128,14 @@ fn err_line(s: &str) -> Result<()> {
     Ok(())
 }
 
-/// `--grep` with no pattern → usage on stderr, exit 2 (bash).
+/// `--grep` with missing or empty pattern → usage on stderr, exit 2 (bash `[ -n "${2:-}" ]`).
 fn early_usage(args: &[String]) -> Option<u8> {
-    if args.first().map(String::as_str) == Some("--grep") && args.get(1).is_none() {
-        let _ = err_line(&format!("usage: {USAGE_SELF} --grep <pattern>"));
-        return Some(2);
+    if args.first().map(String::as_str) == Some("--grep") {
+        let pat = args.get(1).map(String::as_str).unwrap_or("");
+        if pat.is_empty() {
+            let _ = err_line(&format!("usage: {USAGE_SELF} --grep <pattern>"));
+            return Some(2);
+        }
     }
     None
 }
@@ -340,6 +343,14 @@ mod tests {
     fn grep_missing_pattern_exits_2() {
         let root = scratch("grep-miss");
         let code = run(&root, &["--grep".into()]).unwrap();
+        assert_eq!(code, 2);
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn grep_empty_pattern_exits_2() {
+        let root = scratch("grep-empty");
+        let code = run(&root, &["--grep".into(), "".into()]).unwrap();
         assert_eq!(code, 2);
         let _ = fs::remove_dir_all(root);
     }
