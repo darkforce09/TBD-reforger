@@ -62,7 +62,7 @@ See [`docs/mod/STAGING-SERVER.md`](../../docs/mod/STAGING-SERVER.md). **Staging 
 make db-up    # Postgres on :5434
 make api      # Go API on :8080
 make web      # Vite dev server on :5173
-bash scripts/mod/test-phase1-api.sh
+cargo xtask mod test-phase1-api
 ```
 
 ---

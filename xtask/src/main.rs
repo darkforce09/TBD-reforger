@@ -35,6 +35,7 @@ mod gate_t444;
 mod gate_tbd_dev_bootstrap;
 mod gate_tbd_spawn_determinism;
 mod gate_test_mission;
+mod gate_test_phase1_api;
 mod gate_ui_layouts;
 mod gate_ui_layouts_awk;
 mod golden_gate;
@@ -205,6 +206,9 @@ enum ModCmd {
     /// One-time staging-host discovery + mkdir (T-870 port of bootstrap-staging-server.sh)
     #[command(name = "bootstrap-staging")]
     BootstrapStaging,
+    /// Phase-1 game-server API smoke (T-874 port of test-phase1-api.sh)
+    #[command(name = "test-phase1-api")]
+    TestPhase1Api,
 }
 
 #[derive(Subcommand, Debug)]
@@ -742,6 +746,7 @@ fn run() -> Result<u8> {
             ModCmd::DevServer { args } => gate_run_dev_server::run(&args),
             ModCmd::TestMission { target } => gate_test_mission::run(target.as_deref()),
             ModCmd::BootstrapStaging => gate_bootstrap_staging_server::run(),
+            ModCmd::TestPhase1Api => gate_test_phase1_api::run(&find_repo_root()?),
         },
         TopCmd::Deploy { cmd } => match cmd {
             DeployCmd::Website { args } => gate_deploy_website::run(&args),
