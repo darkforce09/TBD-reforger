@@ -337,8 +337,10 @@ enum McpCmd {
     /// Exit: 0 PASS · 1 FAIL · 2 PARTIAL · 3 ENVIRONMENT.
     #[command(name = "wb-logs", disable_help_flag = true)]
     WbLogs {
-        /// Verdict over a specific log file (no Workbench)
-        #[arg(long)]
+        /// Verdict over a specific log file (no Workbench).
+        /// Bare `--file` (no path): clap MissingValue is rc=2; bash usage is rc=3.
+        /// `num_args=0..=1` + `__MISSING__` sentinel reaches run() → USAGE → 3 (T-857).
+        #[arg(long, num_args = 0..=1, default_missing_value = "__MISSING__")]
         file: Option<PathBuf>,
         /// Prove the verdict logic can FAIL
         #[arg(long)]

@@ -174,9 +174,16 @@ fn check_schema_artifacts(p: &Paths, a: &mut Acc) {
 
 fn check_env_example(p: &Paths, a: &mut Acc) {
     let path = p.web.join(".env.example");
-    let ok = fs::read_to_string(&path)
-        .map(|t| t.contains("GAME_SERVER_TOKENS"))
-        .unwrap_or(false);
+    // bash: `grep -q 'GAME_SERVER_TOKENS' "$WEB/.env.example"` — missing file still
+    // prints `grep: <path>: No such file or directory` on stderr before the FAIL line.
+    let ok = match fs::read_to_string(&path) {
+        Ok(t) => t.contains("GAME_SERVER_TOKENS"),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            eprintln!("grep: {}: No such file or directory", path.display());
+            false
+        }
+        Err(_) => false,
+    };
     if ok {
         a.pass(".env.example documents GAME_SERVER_TOKENS");
     } else {

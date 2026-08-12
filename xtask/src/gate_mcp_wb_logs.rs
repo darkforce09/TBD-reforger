@@ -59,7 +59,9 @@ pub fn run(
     }
     let extract = pattern.as_deref().unwrap_or(DEFAULT_EXTRACT);
     if let Some(path) = file {
-        if path.as_os_str().is_empty() {
+        // clap sentinel `__MISSING__` = bare `--file` (no path); empty = `--file=`.
+        // Both map to bash usage → rc=3 (not clap's MissingValue rc=2).
+        if path.as_os_str().is_empty() || path.as_os_str() == "__MISSING__" {
             println!("{USAGE}");
             return Ok(3);
         }
