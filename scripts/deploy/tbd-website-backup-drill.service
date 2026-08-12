@@ -37,7 +37,7 @@ Environment=TBD_BACKUP_DB=tbd_reforger
 Environment=TBD_BACKUP_DIR=%h/tbd-backups/website
 Environment=TBD_DB_CONTAINER=tbd_reforger_db
 ; A dedicated scratch name inside the T-381 allow-list (`*_probe`). The drill re-checks it
-; through the same guard restore-db.sh uses, so this cannot be edited into the live DB.
+; through the same T-381 guard `cargo xtask deploy db restore` uses, so this cannot be edited into the live DB.
 Environment=TBD_DRILL_DB=tbd_drill_probe
 
 ; Deliberately NO --fresh: the drill must exercise the backup that is ACTUALLY ON DISK.

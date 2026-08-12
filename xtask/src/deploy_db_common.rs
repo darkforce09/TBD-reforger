@@ -92,6 +92,9 @@ pub enum DeployDbCmd {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
+    /// Guarded pg_restore (T-886 port of scripts/deploy/restore-db.sh).
+    #[command(name = "restore")]
+    Restore(crate::deploy_db_restore::RestoreArgs),
 }
 
 pub fn run(cmd: DeployDbCmd) -> Result<u8> {
@@ -159,18 +162,23 @@ pub fn run(cmd: DeployDbCmd) -> Result<u8> {
         }
         DeployDbCmd::Ct { args } => ct_exec(false, &args),
         DeployDbCmd::CtI { args } => ct_exec(true, &args),
+        DeployDbCmd::Restore(args) => crate::deploy_db_restore::run(args),
     }
 }
 
 // ─────────────────────────── messaging (bash die / info / warn) ───────────────────────────
 
-fn die(msg: &str) -> ! {
+pub(crate) fn die(msg: &str) -> ! {
     eprintln!("FATAL: {msg}");
     std::process::exit(1);
 }
 
-fn warn(msg: &str) {
+pub(crate) fn warn(msg: &str) {
     eprintln!("WARN: {msg}");
+}
+
+pub(crate) fn info(msg: &str) {
+    println!("==> {msg}");
 }
 
 // ─────────────────────────── container runtime ───────────────────────────
@@ -179,7 +187,7 @@ fn db_container() -> String {
     env::var("TBD_DB_CONTAINER").unwrap_or_else(|_| "tbd_reforger_db".into())
 }
 
-fn db_user() -> String {
+pub(crate) fn db_user() -> String {
     env::var("TBD_DB_USER").unwrap_or_else(|_| "tbd".into())
 }
 
@@ -239,7 +247,7 @@ fn host_exec_has(tool: &str) -> bool {
         .unwrap_or(false)
 }
 
-fn require_container() -> Result<()> {
+pub(crate) fn require_container() -> Result<()> {
     let runtime = resolve_runtime();
     let container = db_container();
     let mut cmd = Command::new(&runtime[0]);
@@ -274,7 +282,7 @@ fn require_container() -> Result<()> {
     Ok(())
 }
 
-fn require_pg_tool(tool: &str) -> Result<String> {
+pub(crate) fn require_pg_tool(tool: &str) -> Result<String> {
     // bash: path="$(tbd_ct sh -c "command -v $tool" 2>/dev/null)"
     let (rc, stdout, _stderr) = ct_capture(
         false,
@@ -313,7 +321,10 @@ fn ct_exec(interactive: bool, args: &[String]) -> Result<u8> {
 }
 
 /// Capture stdout/stderr from a non-interactive container exec (tools that need parsing).
-fn ct_capture(interactive_stdin: bool, args: &[String]) -> Result<(i32, String, String)> {
+pub(crate) fn ct_capture(
+    interactive_stdin: bool,
+    args: &[String],
+) -> Result<(i32, String, String)> {
     let runtime = resolve_runtime();
     let container = db_container();
     let mut cmd = Command::new(&runtime[0]);
@@ -336,7 +347,7 @@ fn ct_capture(interactive_stdin: bool, args: &[String]) -> Result<(i32, String, 
 }
 
 /// `exec -i` with binary stdin from `input`, capturing stdout + stderr separately.
-fn ct_i_stdin_capture(args: &[String], input: &[u8]) -> Result<(i32, Vec<u8>, String)> {
+pub(crate) fn ct_i_stdin_capture(args: &[String], input: &[u8]) -> Result<(i32, Vec<u8>, String)> {
     let runtime = resolve_runtime();
     let container = db_container();
     let mut cmd = Command::new(&runtime[0]);
@@ -407,7 +418,7 @@ pub fn is_safe_scratch_database_name(name: &str) -> bool {
         || name.ends_with("_probe")
 }
 
-fn refuse_unsafe_restore_target(name: &str, confirm: Option<&str>) -> Result<()> {
+pub(crate) fn refuse_unsafe_restore_target(name: &str, confirm: Option<&str>) -> Result<()> {
     if name.is_empty() {
         die("restore target database name is empty or unparseable.\n\
        Expected a single ASCII name, e.g. --db rust_it");
@@ -445,7 +456,7 @@ REFUSING to restore into database `{name}` (T-381 allow-list).
   exported TEST_DATABASE_URL from wiping the live database.
 
   If you genuinely mean it (disaster recovery), name it twice:
-    restore-db.sh --db {name} --i-understand-this-destroys={name} <dump>
+    cargo xtask deploy db restore --db {name} --i-understand-this-destroys={name} <dump>
 ───────────────────────────────────────────────────────────────────────
 "
     );
@@ -454,9 +465,13 @@ REFUSING to restore into database `{name}` (T-381 allow-list).
 
 // ─────────────────────────── dump verification ───────────────────────────
 
-struct VerifyFail;
+pub(crate) struct VerifyFail;
 
-fn verify_dump(file: &Path, min_rows: u64, expect_db: Option<&str>) -> Result<u64, VerifyFail> {
+pub(crate) fn verify_dump(
+    file: &Path,
+    min_rows: u64,
+    expect_db: Option<&str>,
+) -> Result<u64, VerifyFail> {
     if !file.is_file() {
         eprintln!(
             "VERIFY FAIL: '{}' does not exist or is not a regular file.",
@@ -691,7 +706,7 @@ fn od_c_preview(file: &Path) -> String {
     }
 }
 
-fn count_db_rows(db: &str) -> Result<String> {
+pub(crate) fn count_db_rows(db: &str) -> Result<String> {
     let user = db_user();
     let sql = "\
 		SELECT COALESCE(sum(cnt),0) FROM (
@@ -718,7 +733,7 @@ fn count_db_rows(db: &str) -> Result<String> {
     Ok(stdout.chars().filter(|c| !c.is_whitespace()).collect())
 }
 
-fn database_exists(db: &str) -> Result<bool> {
+pub(crate) fn database_exists(db: &str) -> Result<bool> {
     let user = db_user();
     // bash interpolates $db into SQL; keep the same shape (callers already ASCII-guard names).
     let sql = format!("SELECT 1 FROM pg_database WHERE datname = '{db}';");
@@ -745,7 +760,7 @@ fn database_exists(db: &str) -> Result<bool> {
 
 /// Print bash function definitions that forward to `cargo xtask deploy db …`.
 ///
-/// Used by backup-db / restore-db / backup-drill until those tickets land. No new `.sh` library
+/// Used by backup-db / backup-drill until those tickets land (restore is T-886 Rust). No new `.sh` library
 /// file — keeps `scripts/shell-inventory.txt` at −1 for this slice.
 pub fn emit_bash_fns() -> String {
     // Resolve via `cargo run -q` so cargo status lines do not leak into script stderr.
