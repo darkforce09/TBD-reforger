@@ -11,7 +11,7 @@ Preflight is **PASS**, the program is filed, and nothing has been dispatched.
 
 ```bash
 make db-up && make api && make leptos-debug     # api :8080, spa :3000
-bash scripts/platform/preflight.sh              # must say PASS before anything
+cargo xtask platform preflight              # must say PASS before anything
 export CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target   # NOT /tmp — 16 GB tmpfs, a build will not fit
 ./scripts/platform/wave.sh status
 ```

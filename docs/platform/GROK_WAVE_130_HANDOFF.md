@@ -44,7 +44,7 @@ report the parked mod half with three slices "READY TO LAND" — NEVER run
 
 **Before wave 130:** the stack should already be up (`api` on :8080, `trunk` on :3000, postgres on
 :5434). If not: `make db-up && make api && make leptos` — **`make` is HOST-only, route it through
-`distrobox-host-exec`**. Then `bash scripts/platform/preflight.sh` must PASS (worktree warn aside).
+`distrobox-host-exec`**. Then `cargo xtask platform preflight` must PASS (worktree warn aside).
 
 **`make` and `cargo` are host binaries.** This container has no `cc`/`gcc`; the host does. Route
 everything through

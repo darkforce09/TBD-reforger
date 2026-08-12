@@ -55,6 +55,7 @@ mod label_gates;
 mod mcp;
 mod mod_comment_gates;
 mod node_free;
+mod platform_preflight;
 mod prompt;
 mod registry;
 mod repro;
@@ -159,10 +160,25 @@ enum TopCmd {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
+    /// Platform factory helpers (T-853 shell→xtask ports)
+    Platform {
+        #[command(subcommand)]
+        cmd: PlatformCmd,
+    },
     /// Agent context guards + output filtering (token-efficiency rework)
     Ai {
         #[command(subcommand)]
         cmd: AiCmd,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+enum PlatformCmd {
+    /// Unattended-run assertions (T-889 port of scripts/platform/preflight.sh)
+    Preflight {
+        /// Never exit non-zero (report only) — mirrors bash `--warn`
+        #[arg(long)]
+        warn: bool,
     },
 }
 
@@ -878,6 +894,9 @@ fn run() -> Result<u8> {
             Ok(code)
         }
         TopCmd::SliceCollisions { args } => slice_collisions::run(&args),
+        TopCmd::Platform { cmd } => match cmd {
+            PlatformCmd::Preflight { warn } => platform_preflight::run(warn),
+        },
         TopCmd::Ai { cmd } => match cmd {
             AiCmd::Guard => Ok(ai::cmd_guard()),
             AiCmd::Run { args } => ai::cmd_run(&args),

@@ -91,7 +91,7 @@ export CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target      # never /tmp (16 GB 
 release — only for the operator's eye-pass). Preflight must say PASS:
 
 ```bash
-bash scripts/platform/preflight.sh        # 2 warns are normal: CARGO_TARGET_DIR unset, 6 parked worktrees
+cargo xtask platform preflight        # 2 warns are normal: CARGO_TARGET_DIR unset, 6 parked worktrees
 ```
 
 **Per wave L:**

@@ -87,7 +87,7 @@ curl -s -o /dev/null -w "spa=%{http_code}\n" http://localhost:3000/            #
 ```bash
 # 2. Reclaim, then preflight. wave.sh runs DIRECTLY — never through distrobox-host-exec.
 bash scripts/platform/wave.sh reclaim
-bash scripts/platform/preflight.sh          # MUST print "PREFLIGHT: PASS"
+cargo xtask platform preflight          # MUST print "PREFLIGHT: PASS"
 bash scripts/platform/wave.sh status
 ```
 
@@ -444,7 +444,7 @@ bash scripts/platform/wave.sh push
 for t in T-245 T-247 T-248; do bash scripts/mod/slice-worktree.sh drop $t; done
 bash scripts/platform/wave.sh reclaim
 distrobox-host-exec podman exec tbd_reforger_db psql -U tbd -d postgres -c "DROP DATABASE IF EXISTS tbd_wave6_cold WITH (FORCE);"
-bash scripts/platform/preflight.sh      # must return to PASS
+cargo xtask platform preflight      # must return to PASS
 ```
 
 **Commit message contract:** state the gate verdict, say what the verifier found, list every filed
