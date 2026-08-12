@@ -672,9 +672,9 @@
 231	T-895	T-853 Phase 3: Makefile build lane -> xtask	xtask/src/mk_build.rs
 231	T-896	T-853 Phase 3: Makefile ci lane -> xtask	xtask/src/mk_ci.rs
 232	T-897	T-853 Phase 3: delete the Makefile	Makefile
-233	T-899	T-853 Phase 1.5: make verify file-length actually scan something	xtask/src/node_free.rs
-233	T-900	T-853 Phase 4: retire doc references to things that no longer exist	docs;apps/mod/README.md
-233	T-901	T-853 Phase 7a: gate the CI run: blocks before bash relocates there	xtask/src/verify_ci_shell.rs
-234	T-902	T-853 Phase 6: retire wave.sh — the verdict diff, then the deletion	scripts/platform/wave.sh;xtask/src/wave
-234	T-903	T-853 Phase 6: delete hostrun.sh — it dies with wave.sh	scripts/lib/hostrun.sh
-235	T-904	T-853 Phase 7b: flip the ratchet to a HARD ZERO	xtask/src/shell_free.rs
+233	T-899	T-853 Phase 1.5: make verify file-length actually scan something	xtask/src/node_free.rs;.coding-standards-allowlist.yaml
+233	T-900	T-853 Phase 4: retire doc references to things that no longer exist	docs;apps/mod/README.md;CLAUDE.md;README.md
+233	T-901	T-853 Phase 7a: gate the CI run: blocks before bash relocates there	xtask/src/verify_ci_shell.rs;xtask/src/main.rs;xtask/Cargo.toml;Cargo.lock;xtask/src/mk_ci_tasks.rs;xtask/src/wave/gate.rs;.github/workflows;xtask/src/gate_mod_compile.rs
+234	T-902	T-853 Phase 6: retire wave.sh — the verdict diff, then the deletion	scripts/platform/wave.sh;xtask/src/wave;scripts/shell-inventory.txt;scripts/python-inventory.txt
+234	T-903	T-853 Phase 6: delete hostrun.sh — it dies with wave.sh	scripts/lib/hostrun.sh;scripts/shell-inventory.txt;xtask/src/hostrun.rs;xtask/src/playtest_server.rs;xtask/src/mod_world_boot.rs;xtask/src/gate_mod_compile.rs;docs/platform/PLAYTEST_RUNBOOK.md;docs/mod/SLICE_WORKFLOW.md
+235	T-904	T-853 Phase 7b: flip the ratchet to a HARD ZERO	xtask/src/shell_free.rs;xtask/src/gate_no_python.rs;xtask/src/main.rs;xtask/src/mk_ci_tasks.rs;xtask/src/wave/gate.rs;.github/workflows;scripts/shell-inventory.txt;scripts/python-inventory.txt;docs/platform/CODING_STANDARDS.md
