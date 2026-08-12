@@ -13,27 +13,6 @@
       "branch": "ticket/T-090"
     },
     {
-      "id": "T-869",
-      "title": "T-853 port: export-terrain -> map export-terrain",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-869"
-    },
-    {
-      "id": "T-870",
-      "title": "T-853 port: bootstrap-staging-server -> mod bootstrap-staging",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-870"
-    },
-    {
-      "id": "T-871",
-      "title": "T-853 port: run-dev-server -> mod dev-server",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-871"
-    },
-    {
       "id": "T-872",
       "title": "T-853 port: seed-milestone-announcement -> mod seed-announcement",
       "status": "ready",
