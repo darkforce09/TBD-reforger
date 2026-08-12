@@ -673,6 +673,6 @@ all fine.
 | [`scripts/mod/remote-log-grep.sh`](../../scripts/mod/remote-log-grep.sh) | SSH log verification. Four outcomes — **0 / 1 / 2=PARTIAL / 3=ENV**; `!= 0` is not "failed" |
 | `cargo xtask mod bootstrap-staging` | Discovery + mkdir |
 | `cargo xtask setup server-profile` | Profile + mission fallback |
-| [`scripts/mod/setup-client-addons.sh`](../../scripts/mod/setup-client-addons.sh) | Client mod symlink + Steam launch options |
+| `cargo xtask setup client-addons` | Client mod symlink + Steam launch options |
 | `cargo xtask debug direct-join` | LAN join diagnostics (A2S, SSH, builds) |
 | [`scripts/deploy/tbd-reforger.service`](../../scripts/deploy/tbd-reforger.service) | systemd user unit template (`-a2sPort 2001`) |

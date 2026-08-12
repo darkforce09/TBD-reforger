@@ -26,6 +26,7 @@ mod gate_remote_log_grep;
 mod gate_route_tags;
 mod gate_run_dev_server;
 mod gate_seed_milestone_announcement;
+mod gate_setup_client_addons;
 mod gate_setup_mcp_game_root;
 mod gate_setup_server_profile;
 mod gate_setup_workbench_linux;
@@ -258,6 +259,9 @@ enum SetupCmd {
         /// Output symlink farm (default: $HOME/.cache/enfusion-mcp-root)
         fake: Option<PathBuf>,
     },
+    /// Local client addon staging symlink + Steam launch options (T-878).
+    #[command(name = "client-addons")]
+    ClientAddons,
 }
 
 #[derive(Subcommand, Debug)]
@@ -796,6 +800,7 @@ fn run() -> Result<u8> {
             SetupCmd::McpGameRoot { game, fake } => {
                 gate_setup_mcp_game_root::run(game.as_deref(), fake.as_deref())
             }
+            SetupCmd::ClientAddons => gate_setup_client_addons::run(),
         },
         TopCmd::Fetch { cmd } => match cmd {
             FetchCmd::VanillaSource { args } => {

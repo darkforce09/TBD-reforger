@@ -39,7 +39,6 @@ scripts/mod/lib/paths.sh
 scripts/mod/lib/xtask-run.sh
 scripts/mod/mcp-daemon.sh
 scripts/mod/run-playtest-server.sh
-scripts/mod/setup-client-addons.sh
 scripts/mod/slice-worktree.sh
 scripts/mod/verify-t456-mission-rest-size-gate.sh
 scripts/mod/verify-t468-ci-schema-parity.sh

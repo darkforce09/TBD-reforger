@@ -53,7 +53,7 @@ cp scripts/deploy/deploy.env.example scripts/deploy/deploy.env   # fill SSH + to
 bash scripts/mod/deploy-staging.sh
 ```
 
-See [`docs/mod/STAGING-SERVER.md`](../../docs/mod/STAGING-SERVER.md). **Staging is Direct-Joinable** (Workshop mod + `-config`): set `TBD_SERVER_MODE=config` + `TBD_WORKSHOP_MOD_ID` in `deploy.env`, deploy, then Direct Join `192.168.0.140:2001` — the client auto-downloads the Workshop mod. (Legacy local-`-addons` join via `setup-client-addons.sh` is **not** Direct-Joinable — see STAGING-SERVER.md.) The V2–V4 API smoke gates are **skipped until T-092** (game-server REST routes not in the current backend).
+See [`docs/mod/STAGING-SERVER.md`](../../docs/mod/STAGING-SERVER.md). **Staging is Direct-Joinable** (Workshop mod + `-config`): set `TBD_SERVER_MODE=config` + `TBD_WORKSHOP_MOD_ID` in `deploy.env`, deploy, then Direct Join `192.168.0.140:2001` — the client auto-downloads the Workshop mod. (Legacy local-`-addons` join via `cargo xtask setup client-addons` is **not** Direct-Joinable — see STAGING-SERVER.md.) The V2–V4 API smoke gates are **skipped until T-092** (game-server REST routes not in the current backend).
 
 ### Website (local dev)
 
@@ -93,7 +93,7 @@ cargo xtask mod test-phase1-api
 | `cargo xtask setup mcp-game-root` | Pak symlink farm for MCP (T-876) |
 | [`deploy-staging.sh`](../../scripts/mod/deploy-staging.sh) | Rsync → 192.168.0.140, API, game server restart |
 | `cargo xtask debug direct-join` | LAN join diagnostics (A2S, SSH, builds) |
-| [`setup-client-addons.sh`](../../scripts/mod/setup-client-addons.sh) | **Legacy** — local client mod symlink (not Direct-Joinable; use the Workshop mod instead) |
+| `cargo xtask setup client-addons` | **Legacy** — local client mod symlink (not Direct-Joinable; use the Workshop mod instead) |
 | [`remote-log-grep.sh`](../../scripts/mod/remote-log-grep.sh) | SSH log verify on staging server |
 | `cargo xtask mod bootstrap-staging` | One-time SSH discovery + mkdir |
 | `cargo xtask setup server-profile` | Dedicated server profile + mission fallback |
