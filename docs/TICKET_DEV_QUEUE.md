@@ -14,30 +14,6 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Targets:** root, website
 - **Summary:** Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
 
-## T-857 — T-853 port: mcp-wb-logs -> mcp wb-logs
-
-- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
-- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
-- **Branch:** `ticket/T-857`
-- **Targets:** root
-- **Summary:** T-853 shell->xtask slice. Port scripts/mod/mcp-wb-logs.sh (320 lines) to `cargo xtask mcp wb-logs` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). Workbench MCP log tail/scan. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
-
-## T-858 — T-853 port: deploy-website -> deploy website
-
-- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
-- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
-- **Branch:** `ticket/T-858`
-- **Targets:** root
-- **Summary:** T-853 shell->xtask slice. Port scripts/deploy/deploy-website.sh (247 lines) to `cargo xtask deploy website` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). website deploy driver. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
-
-## T-859 — T-853 port: manual-test -> mod manual-test
-
-- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
-- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
-- **Branch:** `ticket/T-859`
-- **Targets:** root
-- **Summary:** T-853 shell->xtask slice. Port scripts/mod/manual-test.sh (230 lines) to `cargo xtask mod manual-test` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). manual mod test suite. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
-
 ## T-860 — T-853 port: mcp-call -> mcp call
 
 - **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`

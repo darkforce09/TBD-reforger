@@ -13,27 +13,6 @@
       "branch": "ticket/T-090"
     },
     {
-      "id": "T-857",
-      "title": "T-853 port: mcp-wb-logs -> mcp wb-logs",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-857"
-    },
-    {
-      "id": "T-858",
-      "title": "T-853 port: deploy-website -> deploy website",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-858"
-    },
-    {
-      "id": "T-859",
-      "title": "T-853 port: manual-test -> mod manual-test",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-859"
-    },
-    {
       "id": "T-860",
       "title": "T-853 port: mcp-call -> mcp call",
       "status": "ready",
