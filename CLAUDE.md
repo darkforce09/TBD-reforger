@@ -32,7 +32,7 @@ leaderboards, doctrine wiki, CMS, and admin tooling.
 - `packages/map-assets/` — terrain DEM/sat (LFS) + rebuildable staging/tiles; served by API `/map-assets`
 - `docs/specs/` — design specs (Mission Creator, blueprints); `docs/mod/`, `docs/website/` — app docs (frontend surface specs: `docs/website/frontend/pages/`, not under `apps/`)
 - `scripts/mod/`, `scripts/website/`, `scripts/deploy/` — ops scripts (dev/staging/deploy); **`scripts/mod/mcp-call.sh`** + warm daemon for Workbench MCP (see [`docs/mod/MCP_TOOLING.md`](docs/mod/MCP_TOOLING.md))
-- `.ai/tickets/` + `scripts/ticket` — unified ticket registry at repo root; `.ai/artifacts/` pipeline **output only** (fixtures live crate-local `tests/fixtures/` — see [`WHERE_DOES_X_GO.md`](docs/platform/WHERE_DOES_X_GO.md))
+- `.ai/tickets/` + `cargo run -q -p xtask -- ticket` — unified ticket registry at repo root; `.ai/artifacts/` pipeline **output only** (fixtures live crate-local `tests/fixtures/` — see [`WHERE_DOES_X_GO.md`](docs/platform/WHERE_DOES_X_GO.md))
 - `apps/website/api/src/bin/api.rs` — entrypoint: loads `.env`, runs migrations on boot, serves `/api/v1`.
 - `apps/website/api/src/handlers/` — Axum HTTP handlers, one file per resource (auth, missions, events, telemetry, admin, …).
 - `apps/website/api/src/models/` — serde models; **JSON field names (snake_case) here are the API contract**.
@@ -77,7 +77,7 @@ open it in the browser to log in, or curl it and read `access_token` from the
   never double-spent.
 - Git: **commit directly to `main`; never create a branch** (single-ticket mode). End commit messages with
   the `Co-Authored-By` trailer. Commits are tagged `T-00x`.
-- **Ticket pipeline** ([`.ai/tickets/README.md`](.ai/tickets/README.md)): all work happens **directly on `main` — no branches** (supersedes the old `ticket/T-0xx` flow). Composer 2.5 owns doc writes/sync; Claude Code ships code + in-code comments; the registry is source of truth (`./scripts/ticket sync`).
+- **Ticket pipeline** ([`.ai/tickets/README.md`](.ai/tickets/README.md)): all work happens **directly on `main` — no branches** (supersedes the old `ticket/T-0xx` flow). Composer 2.5 owns doc writes/sync; Claude Code ships code + in-code comments; the registry is source of truth (`cargo run -q -p xtask -- ticket sync`).
 - **Documentation standards:** [`docs/platform/DOCUMENTATION_STANDARDS.md`](docs/platform/DOCUMENTATION_STANDARDS.md) — cross-boundary `@contract` / `@route` / `@model`, codegen + validation + CI (**T-123**).
 - Docs: see **§Documentation** — sync before commit. Ticket queue: [`docs/TICKET_LEAD.md`](docs/TICKET_LEAD.md).
 
@@ -93,7 +93,7 @@ Keep docs in sync **in the same commit** as the code change (or immediately befo
 > Runbook: [`docs/platform/FACTORY_FOR_CURSOR.md`](docs/platform/FACTORY_FOR_CURSOR.md) · mode switch:
 > [`.cursor/rules/platform-factory-mode.mdc`](.cursor/rules/platform-factory-mode.mdc).
 
-**CRITICAL — Executor gate:** Agents may **ONLY** execute ticket slices where `executor` is `claude-code` (Claude Code) or `cursor-docs` (Cursor documentation pass). If the active slice has `executor: workbench`, `human`, or `ci`, the agent **must stop** and wait for human completion. Do not edit `apps/mod/tbd-framework` Enfusion scripts unless the slice explicitly assigns `claude-code` to a mod script path. `./scripts/ticket run` skips non-`claude-code` rows automatically.
+**CRITICAL — Executor gate:** Agents may **ONLY** execute ticket slices where `executor` is `claude-code` (Claude Code) or `cursor-docs` (Cursor documentation pass). If the active slice has `executor: workbench`, `human`, or `ci`, the agent **must stop** and wait for human completion. Do not edit `apps/mod/tbd-framework` Enfusion scripts unless the slice explicitly assigns `claude-code` to a mod script path. `cargo run -q -p xtask -- ticket run` skips non-`claude-code` rows automatically.
 **In platform-factory mode, `executor: claude-code` means "any AI coding agent may take this" — it is not a vendor claim,** and Grok now fills that role. Do **not** mass-edit the 95 open platform tickets to `cursor-docs`. `workbench` and `human` still mean stop.
 
 **Before every T-0xx commit, check what changed:**
@@ -106,7 +106,7 @@ Keep docs in sync **in the same commit** as the code change (or immediately befo
 | UI surface (no new route) | Relevant page doc + `Live source:` path to the `apps/website/frontend/src/` page module |
 | API / model change | Backend model/handler + the matching `apps/website/frontend/src/dto.rs` DTO (R-api golden); note handler if behavior changed |
 | Mission Creator | MC README, `agent_execution.md` Decisions log, and/or `feature_inventory.md` — only if editor contract or Eden parity changed |
-| Deferred / queued work | [`.ai/tickets/registry.json`](.ai/tickets/registry.json) row `status: deferred` or `queued` — sync via `./scripts/ticket sync`; never mark shipped until verified |
+| Deferred / queued work | [`.ai/tickets/registry.json`](.ai/tickets/registry.json) row `status: deferred` or `queued` — sync via `cargo run -q -p xtask -- ticket sync`; never mark shipped until verified |
 
 **Doc hub:** [`docs/website/README.md`](docs/website/README.md) → [`docs/TICKET_LEAD.md`](docs/TICKET_LEAD.md) → domain **`ROADMAP.md`** files. Tag contract: [`docs/website/TAGS.md`](docs/website/TAGS.md). **Commit checklist:** [`docs/website/AGENT_COMMIT_CHECKLIST.md`](docs/website/AGENT_COMMIT_CHECKLIST.md).
 
@@ -121,14 +121,14 @@ Keep docs in sync **in the same commit** as the code change (or immediately befo
 | Step | Command / doc |
 |------|----------------|
 | Edit queue / status / spec | Edit `.ai/tickets/registry.json` |
-| Regenerate views + CLAUDE status block | `./scripts/ticket sync` (or `make ticket-sync`) |
-| Validate structure | `./scripts/ticket check` |
+| Regenerate views + CLAUDE status block | `cargo run -q -p xtask -- ticket sync` (or `make ticket-sync`) |
+| Validate structure | `cargo run -q -p xtask -- ticket check` |
 | Strict legacy-ID scan | `make ticket-check-strict` |
 | Operator playbook | [`.ai/tickets/AI_PLAYBOOK.md`](.ai/tickets/AI_PLAYBOOK.md) |
-| Claude Code brief | `./scripts/ticket brief T-0xx` |
-| Batch implement | `./scripts/ticket run` on `main` (claude-code slices only) |
+| Claude Code brief | `cargo run -q -p xtask -- ticket brief T-0xx` |
+| Batch implement | `cargo run -q -p xtask -- ticket run` on `main` (claude-code slices only) |
 | Mod / Workbench queue | [`docs/TICKET_MOD_QUEUE.md`](docs/TICKET_MOD_QUEUE.md) |
-| Advance slice | `./scripts/ticket advance-slice T-0xx` |
+| Advance slice | `cargo run -q -p xtask -- ticket advance-slice T-0xx` |
 
 Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:status -->` markers — change the registry and sync.
 
@@ -145,7 +145,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 > the lowest-ordered `ready` program, not the program in flight.
 
 <!-- ticket-sync:status:start -->
-**Latest shipped:** **T-878**
+**Latest shipped:** **T-883**
 
 **ACTIVE NOW:** **T-090** — T-090.6 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_6_geometry_placement_audit.md`.
 
