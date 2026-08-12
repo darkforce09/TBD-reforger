@@ -3,7 +3,7 @@ name: mod-gates
 # T-209 — the Enfusion compile gate + the headless world boot, in CI.
 #
 # ── WHY THIS IS A SEPARATE WORKFLOW ON A SELF-HOSTED RUNNER ────────────────────────────────
-# `scripts/mod/compile.sh` and `scripts/mod/world-boot.sh` are the best regression instruments
+# `scripts/mod/compile.sh` and `cargo xtask mod world-boot` are the best regression instruments
 # in this repo and neither ran in CI. They cannot run on a GitHub-hosted runner, and not for a
 # reason a clever workflow can engineer around: both drive the real **Arma Reforger dedicated
 # server** binary (`ArmaReforgerServer`) from the Steam depot for appid 1890870. That is a ~10 GB
@@ -11,7 +11,7 @@ name: mod-gates
 # `resourceDatabase.rdb` to match the script tree. So the honest options were a self-hosted runner
 # or nothing, and this is the self-hosted runner.
 #
-# The cheap half — `world-boot.sh --selftest`, which needs no engine — is NOT here. It runs in
+# The cheap half — `cargo xtask mod world-boot --selftest`, which needs no engine — is NOT here. It runs in
 # **ci.yml** (`mod-gates-hosted`) on every push, where it belongs. Read the two together.
 #
 # ── THE ONE THING THIS FILE MUST NEVER DO ──────────────────────────────────────────────────
@@ -52,7 +52,7 @@ name: mod-gates
 #            - ".github/workflows/mod-gates.yml"
 #
 # ── WHAT IS STILL NOT WIRED, AND WHY ───────────────────────────────────────────────────────
-#   * `make mod-world-boot-compiled` (world-boot.sh --compiled) — the only gate that feeds real
+#   * `make mod-world-boot-compiled` (cargo xtask mod world-boot --compiled) — the only gate that feeds real
 #     compiler output to the real Enfusion parser, and the one that would have caught T-181.46 on
 #     day one. It additionally needs Postgres up, `make api` serving, and the API's SERVICE_TOKEN,
 #     none of which exist on a bare runner. Wiring it means standing a full stack up inside this
@@ -101,7 +101,7 @@ jobs:
             echo "dedicated server: $bin"
           fi
           if ! command -v python3 >/dev/null 2>&1; then
-            echo "::error title=mod-gates runner not provisioned::python3 not on PATH — world-boot.sh needs it to generate the server config."
+            echo "::error title=mod-gates runner not provisioned::python3 not on PATH — compile.sh still shells out to it."
             fail=1
           fi
           if [ ! -s apps/mod/tbd-framework/resourceDatabase.rdb ]; then
@@ -176,11 +176,11 @@ jobs:
       # scenario headlessly and asserts the world loaded, no class failed to resolve, the
       # roll-call printed with nothing MISSING, and no TBD or unrecognised script error fired.
       # ~23 s measured. Direct invocation for the same exit-code reason as above.
-      - name: "world boot — scripts/mod/world-boot.sh (local equivalent: make mod-world-boot)"
+      - name: "world boot — cargo xtask mod world-boot (local equivalent: make mod-world-boot)"
         run: |
           set -uo pipefail
           rc=0
-          bash scripts/mod/world-boot.sh || rc=$?
+          cargo run -q -p xtask -- mod world-boot || rc=$?
           if [ "$rc" -eq 3 ]; then
             echo "::error title=mod-world-boot ENVIRONMENT failure::exit 3 — this runner's machine state, NOT the mod. The world was never booted."
           elif [ "$rc" -ne 0 ]; then

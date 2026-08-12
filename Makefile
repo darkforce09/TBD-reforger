@@ -298,13 +298,13 @@ mod-compile-selftest: ## T-181.1 prove the compile gate still catches a broken .
 	esac
 
 mod-world-boot: ## T-181.17 boot the real scenario headlessly — asserts the TBD_GameMode component roll-call
-	bash scripts/mod/world-boot.sh
+	cargo run -q -p xtask -- mod world-boot
 
 mod-world-boot-selftest: ## T-181.17 prove the world-boot verdict logic can FAIL
-	bash scripts/mod/world-boot.sh --selftest
+	cargo run -q -p xtask -- mod world-boot --selftest
 
 mod-world-boot-compiled: ## T-186 boot an API-COMPILED mission document (needs make db-up + make api) — the only gate that feeds compiler output to the real Enfusion parser
-	bash scripts/mod/world-boot.sh --compiled
+	cargo run -q -p xtask -- mod world-boot --compiled
 
 # CODING_STANDARDS §11. The Rust GO-2..9 / ERR-4 / LOG-3 analogs are covered by clippy, the
 # centralized ApiError type and `cargo fmt` — EXCEPT GO-7, which not one of them can see.

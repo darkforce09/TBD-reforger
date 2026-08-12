@@ -56,6 +56,8 @@ mod label_gates;
 mod mcp;
 mod mcp_daemon;
 mod mod_comment_gates;
+mod mod_world_boot;
+mod mod_world_boot_verdict;
 mod node_free;
 mod platform_preflight;
 mod prompt;
@@ -252,6 +254,14 @@ enum ModCmd {
     /// Phase-1 game-server API smoke (T-874 port of test-phase1-api.sh)
     #[command(name = "test-phase1-api")]
     TestPhase1Api,
+    /// Headless game-mode boot + roll-call (T-892 port of world-boot.sh).
+    /// Exit: 0 PASS · 1 CODE · 2 usage · 3 ENVIRONMENT.
+    #[command(name = "world-boot", disable_help_flag = true)]
+    WorldBoot {
+        /// Passthrough (`--selftest`, `--compiled`, `--mission=…`, `--keep-logs`).
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -831,6 +841,7 @@ fn run() -> Result<u8> {
             ModCmd::BootstrapStaging => gate_bootstrap_staging_server::run(),
             ModCmd::SeedAnnouncement => gate_seed_milestone_announcement::run(),
             ModCmd::TestPhase1Api => gate_test_phase1_api::run(&find_repo_root()?),
+            ModCmd::WorldBoot { args } => mod_world_boot::run(&args),
         },
         TopCmd::Deploy { cmd } => match cmd {
             DeployCmd::Website { args } => gate_deploy_website::run(&args),
