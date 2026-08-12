@@ -34,7 +34,6 @@ scripts/mod/lib/gate-grep.sh
 scripts/mod/lib/mcpd-bin.sh
 scripts/mod/lib/paths.sh
 scripts/mod/lib/xtask-run.sh
-scripts/mod/mcp-daemon.sh
 scripts/mod/run-playtest-server.sh
 scripts/mod/slice-worktree.sh
 scripts/mod/wave.sh

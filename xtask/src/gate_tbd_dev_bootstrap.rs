@@ -4,14 +4,14 @@
 //! for OOS bash — wave 226 option 2 parks T-879/T-880 deletes):
 //! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `MOD_SCRIPTS=scripts/mod`, `WEB=apps/website/api`.
 //!
-//! Still shells out to `mcp-daemon.sh` (bash; OOS). MCP game root is in-process
+//! Daemon pre-warm is in-process (`mcp_daemon`, T-888). MCP game root is in-process
 //! (`gate_setup_mcp_game_root`, T-876).
 //! `xtask mcp call` uses `cargo run -q -p xtask --` from mono root (former xtask-run).
 //!
 //! Fail-opens closed or pinned:
 //! - `steam -applaunch … 2>/dev/null || true` — preserved (launch attempt never fails the gate).
 //! - `npm ci || echo warn` — preserved non-fatal offline path.
-//! - `mcp-daemon.sh start || echo warn` — preserved.
+//! - `mcp daemon start || echo warn` — preserved.
 //! - `mod_validate … || true` — preserved (validate soft).
 //! - `podman start … || true` / `setup server-profile … || true` on `--api`/`--server`.
 //!
@@ -170,20 +170,11 @@ pub fn run_with_root(root: &Path, args: &[String]) -> Result<u8> {
     out_line(&format!("Port {wb_port} is listening."))?;
 
     out_line("Pre-warming MCP daemon...")?;
-    let daemon = p.mod_scripts.join("mcp-daemon.sh");
-    match Run::new("bash").arg(&daemon).arg("start").merged_output() {
-        Ok(m) => {
-            print!("{}", m.text);
-            let _ = io::stdout().flush();
-            if m.code != 0 {
-                out_line(
-                    "warn: daemon pre-warm failed — xtask mcp call will use one-shot fallback",
-                )?;
-            }
-        }
-        Err(_) => {
-            out_line("warn: daemon pre-warm failed — xtask mcp call will use one-shot fallback")?;
-        }
+    // T-888: in-process (prints like bash start). Capture via temp? bash printed
+    // start messages on stdout — call non-quiet so messages stream the same way.
+    let code = crate::mcp_daemon::start_at(&crate::mcp_daemon::resolve_sock(), false);
+    if code != 0 {
+        out_line("warn: daemon pre-warm failed — xtask mcp call will use one-shot fallback")?;
     }
 
     // Former lib/xtask-run.sh → cargo run -q -p xtask -- (mono root).
