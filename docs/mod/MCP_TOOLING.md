@@ -127,7 +127,7 @@ Old `mcp-call.sh` only exported `ENFUSION_GAME_PATH`. `wb_*` tools need all thre
 | Daemon idle timeout | Exits after 30 min idle (configurable) |
 | Daemon max-life | Hard 4 h cap — restarts transparently on next call |
 | One-shot fail-fast | Early consumer exit; timeout is a ceiling, not the common path |
-| `mcp-daemon.sh stop-all` | Kills all brokers, reaps orphaned `enfusion-mcp` children, clears sockets |
+| `cargo xtask mcp daemon stop-all` | Kills all brokers, reaps orphaned `enfusion-mcp` children, clears sockets |
 | Self-test cleanup | Short idle in tests; verifies zero stray processes after run |
 | `.gitignore` | `scripts/mod/node_modules/` — never commit npm tree |
 
