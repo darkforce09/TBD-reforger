@@ -13,27 +13,6 @@
       "branch": "ticket/T-090"
     },
     {
-      "id": "T-866",
-      "title": "T-853 port: fetch-vanilla-api -> fetch vanilla-api",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-866"
-    },
-    {
-      "id": "T-867",
-      "title": "T-853 port: mission-version-upload-repro -> repro mission-upload",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-867"
-    },
-    {
-      "id": "T-868",
-      "title": "T-853 port: debug-direct-join -> debug direct-join",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-868"
-    },
-    {
       "id": "T-869",
       "title": "T-853 port: export-terrain -> map export-terrain",
       "status": "ready",

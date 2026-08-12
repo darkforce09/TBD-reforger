@@ -21154,7 +21154,7 @@
       "impact": [
         "dx"
       ],
-      "status": "ready",
+      "status": "shipped",
       "executor": "claude-code",
       "targets": [
         "root"
@@ -21175,7 +21175,7 @@
       "impact": [
         "dx"
       ],
-      "status": "ready",
+      "status": "shipped",
       "executor": "claude-code",
       "targets": [
         "root"
@@ -21196,7 +21196,7 @@
       "impact": [
         "dx"
       ],
-      "status": "ready",
+      "status": "shipped",
       "executor": "claude-code",
       "targets": [
         "root"
