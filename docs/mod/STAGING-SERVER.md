@@ -277,7 +277,7 @@ re-added to any check — it matches nothing (T-606).
 Run discovery from dev PC:
 
 ```bash
-bash scripts/mod/bootstrap-staging-server.sh
+cargo xtask mod bootstrap-staging
 ```
 
 ### 1. Discovery
@@ -671,7 +671,7 @@ all fine.
 | [`scripts/mod/deploy-staging.sh`](../../scripts/mod/deploy-staging.sh) | Full deploy pipeline. Local-only entry points that touch no server: `--dry-run`, `--render-only <path>`, `--render-agent <dir>`, `--agent-selftest <dir>`, **`--verify-boot <console.log>`**, **`--verify-boot-selftest`** |
 | [`scripts/mod/run-playtest-server.sh`](../../scripts/mod/run-playtest-server.sh) | Boot a joinable, mod-loaded, admin-capable server **locally** (T-604). The reference for the `-addonsDir` + `-config` shape staging now uses |
 | [`scripts/mod/remote-log-grep.sh`](../../scripts/mod/remote-log-grep.sh) | SSH log verification. Four outcomes — **0 / 1 / 2=PARTIAL / 3=ENV**; `!= 0` is not "failed" |
-| [`scripts/mod/bootstrap-staging-server.sh`](../../scripts/mod/bootstrap-staging-server.sh) | Discovery + mkdir |
+| `cargo xtask mod bootstrap-staging` | Discovery + mkdir |
 | `cargo xtask setup server-profile` | Profile + mission fallback |
 | [`scripts/mod/setup-client-addons.sh`](../../scripts/mod/setup-client-addons.sh) | Client mod symlink + Steam launch options |
 | `cargo xtask debug direct-join` | LAN join diagnostics (A2S, SSH, builds) |

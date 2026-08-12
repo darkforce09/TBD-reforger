@@ -32,7 +32,6 @@ scripts/deploy/lib/db-common.sh
 scripts/deploy/restore-db.sh
 scripts/lib/hostrun.sh
 scripts/map-assets/export-terrain.sh
-scripts/mod/bootstrap-staging-server.sh
 scripts/mod/compile.sh
 scripts/mod/deploy-staging.sh
 scripts/mod/lib/gate-grep.sh
