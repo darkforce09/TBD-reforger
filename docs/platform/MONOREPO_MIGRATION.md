@@ -13,13 +13,7 @@ Migration program **M0–M3** merges `TBD_Website` + `Arma reforger` into this r
 | **G4** | After M2 ticket rewrite | V6–V10, V23–V27; `./scripts/ticket check --strict` |
 | **G5** | Before workspace switch | Full `./scripts/verify-monorepo-migration.sh` exit 0 |
 
-Run verification:
-
-```bash
-make verify-migration
-# or
-./scripts/verify-monorepo-migration.sh
-```
+G5 used `make verify-migration` / `./scripts/verify-monorepo-migration.sh` (both deleted with the Makefile / T-853 ports). The migration is complete. Current commands: root [`CLAUDE.md`](../../CLAUDE.md) §Run it locally (`cargo xtask help`).
 
 ## Layout after migration
 
@@ -30,7 +24,7 @@ make verify-migration
 ```
 TBD-Reforger/
 ├── apps/
-│   ├── website/      # Go API + React frontend (was TBD_Website)
+│   ├── website/      # Rust API + Leptos SPA (was TBD_Website)
 │   └── mod/          # tbd-framework + deploy scripts (was Arma reforger)
 ├── packages/tbd-schema/
 ├── docs/             # specs/ + platform/ + backend/ + website/ + mod/

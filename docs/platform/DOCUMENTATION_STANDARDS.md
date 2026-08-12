@@ -375,7 +375,7 @@ existing Decisions-log pattern (e.g. the UX Decisions log in
 **Rule 8.2.6 — Agent routing.** Cursor owns all paths under `docs/`. Claude Code MUST NOT create
 markdown under `apps/` except in-code comments per §1.
 
-Enforced by `cargo xtask ci verify-doc-layout` (see [`Makefile`](../../Makefile)).
+Enforced by `cargo xtask ci verify-doc-layout`.
 
 **Decisions-log entry format** (normative):
 

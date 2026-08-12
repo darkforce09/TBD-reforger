@@ -44,7 +44,7 @@ Watch logs for `[TBD][Mission] loaded id=…`, 18× `[TBD][Slots] Slot-…`, the
 joins — `[TBD] SpawnManager: assigned slot …`. (T-612: the old `[TBD] Mission loaded`,
 `built slot spawn` and `spawn requested` lines are deleted; the only `Mission loaded` still
 printed is the *failure* line `[TBD] Mission loaded but invalid — staying in LOADING.` Pin
-tags + event keys, never sentences — see `scripts/mod/remote-log-grep.sh`.)
+tags + event keys, never sentences — see `cargo xtask mod remote-logs`.)
 
 ### Staging server (192.168.0.140)
 
@@ -59,9 +59,9 @@ See [`docs/mod/STAGING-SERVER.md`](../../docs/mod/STAGING-SERVER.md). **Staging 
 
 ```bash
 # From monorepo root (see root CLAUDE.md §Run it locally):
-cargo xtask db up    # Postgres on :5434
-cargo xtask mk rust-api      # Go API on :8080
-make web      # Vite dev server on :5173
+cargo xtask db up            # Postgres on :5434
+cargo xtask mk rust-api      # Rust API on :8080
+cargo xtask mk leptos        # Leptos Trunk SPA on :3000
 cargo xtask mod test-phase1-api
 ```
 
@@ -73,7 +73,7 @@ cargo xtask mod test-phase1-api
 |---|---|
 | [`tbd-framework/`](tbd-framework/) | **Production Enfusion mod** (TBD-owned) |
 | [`packages/tbd-schema/`](../../packages/tbd-schema/) | Mission JSON schema, registry, golden missions, VOIP bridge contract |
-| [`apps/website/`](../website/) | Go API + React UI |
+| [`apps/website/`](../website/) | Rust API + Leptos SPA |
 | `Tbd_framework/` | CRF reference only, **gitignored** — do not open in Workbench |
 | [`scripts/mod/`](../../scripts/mod/) | Workbench setup, server profile, dev server, staging deploy, MCP helpers, API tests |
 | [`docs/mod/`](../../docs/mod/) | Ops docs, [`STAGING-SERVER.md`](../../docs/mod/STAGING-SERVER.md) |
@@ -86,15 +86,15 @@ cargo xtask mod test-phase1-api
 
 | Script | Purpose |
 |--------|---------|
-| [`mcp-call.sh`](../../scripts/mod/mcp-call.sh) | JSON-RPC to enfusion-mcp from shell |
-| [`mcp-wb-logs.sh`](../../scripts/mod/mcp-wb-logs.sh) | Grep latest Proton Workbench `console.log` |
+| `cargo xtask mcp call` | JSON-RPC to enfusion-mcp from shell |
+| `cargo xtask mcp wb-logs` | Grep latest Proton Workbench `console.log` |
 | `cargo xtask mod spawn-verify` | MCP `wb_play` + log grep for spawn lines (T-873) |
 | `cargo xtask mod dev-bootstrap` | MCP root + `wb_connect` + `mod_validate` |
 | `cargo xtask setup mcp-game-root` | Pak symlink farm for MCP (T-876) |
 | `cargo xtask deploy staging` | Rsync → 192.168.0.140, API, game server restart |
 | `cargo xtask debug direct-join` | LAN join diagnostics (A2S, SSH, builds) |
 | `cargo xtask setup client-addons` | **Legacy** — local client mod symlink (not Direct-Joinable; use the Workshop mod instead) |
-| [`remote-log-grep.sh`](../../scripts/mod/remote-log-grep.sh) | SSH log verify on staging server |
+| `cargo xtask mod remote-logs` | SSH log verify on staging server |
 | `cargo xtask mod bootstrap-staging` | One-time SSH discovery + mkdir |
 | `cargo xtask setup server-profile` | Dedicated server profile + mission fallback |
 | `cargo xtask mod dev-server` | Local dedicated server launcher |

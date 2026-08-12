@@ -10,7 +10,7 @@ Reliable shell access to **enfusion-mcp** for Claude Code terminal sessions. Rep
 ## Architecture
 
 ```text
-mcp-call.sh
+cargo xtask mcp call
   ├─ (default) warm daemon  →  AF_UNIX socket  →  `mcpd` (Rust, tools/tbd-tools)  →  one enfusion-mcp child
   └─ fallback one-shot      →  node …/dist/index.js  →  cargo xtask mcp consume (early exit on id==2)
 ```
@@ -22,7 +22,7 @@ mcp-call.sh
 | Daemon broker | `mcpd` (`tools/tbd-tools`, built in-process by `xtask mcp daemon`) | One index load (~35 s cold); serializes `tools/call` |
 | Daemon control | `cargo xtask mcp daemon` | `start` · `stop` · `status` · `restart` · **`stop-all`** (probe via `xtask mcp probe-sock`) |
 | Socket client | `cargo xtask mcp socket-send` | Sends framed requests to the daemon |
-| Offline gates | `scripts/mod/mcp-call-selftest.sh` | 19 fixture tests, no Workbench |
+| Offline gates | `cargo xtask mcp selftest` | 19 fixture tests, no Workbench |
 | Live smoke | `cargo xtask mcp smoke` (`cargo xtask mcp smoke`) | `wb_connect` + `wb_state` after bootstrap |
 
 **Bootstrap** (`cargo xtask mod dev-bootstrap`) runs `npm ci` in `scripts/mod/` when needed, pre-warms the daemon, then `wb_connect` + `mod_validate`.
@@ -32,20 +32,20 @@ mcp-call.sh
 ## Usage
 
 ```bash
-bash scripts/mod/mcp-call.sh <tool> '<json-args>'   # args default to {}
-cargo run -q -p xtask -- mcp daemon status
-cargo run -q -p xtask -- mcp daemon stop-all             # nuke every stray broker + orphaned server
-bash scripts/mod/mcp-call-selftest.sh               # offline — no Workbench
+cargo xtask mcp call <tool> '<json-args>'           # args default to {}
+cargo xtask mcp daemon status
+cargo xtask mcp daemon stop-all                     # nuke every stray broker + orphaned server
+cargo xtask mcp selftest                            # offline — no Workbench
 cargo xtask mcp smoke                               # live — Workbench Net API up
 ```
 
 **Examples:**
 
 ```bash
-bash scripts/mod/mcp-call.sh wb_connect '{}'
-bash scripts/mod/mcp-call.sh wb_state '{}'
-bash scripts/mod/mcp-call.sh api_search '{"query":"GetWorldBounds"}'
-bash scripts/mod/mcp-call.sh mod_validate '{"modPath":"'"$PWD"'/apps/mod/tbd-framework"}'
+cargo xtask mcp call wb_connect '{}'
+cargo xtask mcp call wb_state '{}'
+cargo xtask mcp call api_search '{"query":"GetWorldBounds"}'
+cargo xtask mcp call mod_validate '{"modPath":"'"$PWD"'/apps/mod/tbd-framework"}'
 ```
 
 Warm daemon calls return in **~0.3 s**. First call (or after daemon idle/max-life) pays the **~35 s** one-time 8,693-class index load once, then stays warm.
@@ -131,7 +131,7 @@ Old `mcp-call.sh` only exported `ENFUSION_GAME_PATH`. `wb_*` tools need all thre
 | Self-test cleanup | Short idle in tests; verifies zero stray processes after run |
 | `.gitignore` | `scripts/mod/node_modules/` — never commit npm tree |
 
-**If load spikes:** run `cargo run -q -p xtask -- mcp daemon stop-all` and confirm no `enfusion-mcp` / `mcpd` processes remain.
+**If load spikes:** run `cargo xtask mcp daemon stop-all` and confirm no `enfusion-mcp` / `mcpd` processes remain.
 
 ---
 
@@ -139,10 +139,10 @@ Old `mcp-call.sh` only exported `ENFUSION_GAME_PATH`. `wb_*` tools need all thre
 
 | Gate | Command | PASS |
 |------|---------|------|
-| **T1–T7** (offline) | `bash scripts/mod/mcp-call-selftest.sh` | exit 0, 19/19 |
+| **T1–T7** (offline) | `cargo xtask mcp selftest` | exit 0, 19/19 |
 | **S1** (live) | `cargo xtask mcp smoke` / `cargo xtask mcp smoke` | exit 0 after bootstrap |
-| **S2** | `time bash scripts/mod/mcp-call.sh wb_state '{}'` ×3 | exit 0, ~response time (not ~180 s) |
-| **S5** | `bash scripts/mod/mcp-call.sh totally_fake_tool '{}'` | exit 3 |
+| **S2** | `time cargo xtask mcp call wb_state '{}'` ×3 | exit 0, ~response time (not ~180 s) |
+| **S5** | `cargo xtask mcp call totally_fake_tool '{}'` | exit 3 |
 
 ---
 

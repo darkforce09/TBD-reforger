@@ -19,11 +19,11 @@ Budget **90 minutes**: ~45 of pre-flight you can do alone the day before, ~45 wi
 ## 1. What this proves and why it's the last thing
 
 Every claim the mod makes today is **compile-verified, not runtime-verified**. `cargo xtask mod compile`
-proves the Enfusion parses. `scripts/mod/world-boot.sh` proves the game-mode prefab wires up and a
+proves the Enfusion parses. `cargo xtask mod world-boot` proves the game-mode prefab wires up and a
 mission document parses. Neither has ever had a **player** in it: a `--mission=` boot runs with zero
 clients, so `BuildForPlayer`, `Serialise`, `Parse`, every RPC, every screen and every stage past
 LOBBY have never executed — that limit is written down at
-[`world-boot.sh:36-47`](../../scripts/mod/world-boot.sh) and again at
+`cargo xtask mod world-boot` (formerly `world-boot.sh:36-47`) and again at
 [`t181_event_mod_program.md:396-409`](../mod/t181_event_mod_program.md). One live session with two
 real clients is the only instrument that can see any of it. It is not a formality; it is the first
 observation.
@@ -208,7 +208,7 @@ legal: everybody falls to round-robin seating, and the lobby picker still works.
 > **UPDATED 2026-07-31 (T-604). There is now one command; do not hand-assemble this any more.**
 >
 > ```bash
-> bash scripts/mod/run-playtest-server.sh --mission-id=$MID
+> cargo xtask mod playtest --mission-id=$MID
 > ```
 >
 > **Start it WITHOUT `--admin`. You do not have your identityId yet and cannot get it here**
@@ -260,7 +260,7 @@ start a server, did not:
 - `scripts/mod/run-dev-server.sh` was **27 lines and never launched anything** — two preflight
   checks, then it ended. T-871 replaced the later shim with `cargo xtask mod dev-server`
   (execs `run-playtest-server.sh`, or exits 2 with a pointer / 3 if the launcher is missing).
-- [`scripts/mod/deploy-staging.sh:1153`](../../scripts/mod/deploy-staging.sh) builds the `config`-mode
+- `cargo xtask deploy staging` (formerly `deploy-staging.sh:1153`) builds the `config`-mode
   ExecStart **without `-addonsDir`**, so the local addon in `game.mods[]` is not what loads — the
   stale Workshop copy is. Its `addons`-mode branch at `:1155` does pass `-addonsDir`, but with
   `-addons`/`-server` instead of `-config`, and that mode registers no backend room: re-measured
@@ -270,7 +270,7 @@ start a server, did not:
 
 The combination that **is measured to work** is `-addonsDir <dir>` **plus** `-config <json>`, with
 the addon listed in the config's `game.mods[]` keyed by the GUID from `addon.gproj`
-([`world-boot.sh:11-27`](../../scripts/mod/world-boot.sh), engine 1.7.0.54). Confirmed 2026-07-31 to
+(`cargo xtask mod world-boot` (formerly `world-boot.sh:11-27`), engine 1.7.0.54). Confirmed 2026-07-31 to
 register a **joinable room** as well as load the mod — which `world-boot.sh` had never been asked
 to check, since it boots headless with zero players. `-config` and `-addons` together are a hard
 fatal; `-addons` + `-scenarioId` with no `-config` prints "Game successfully created" and then
@@ -284,7 +284,7 @@ cargo xtask setup server-profile "$HOME/tbd-playtest/profile"
 ```
 Expect `Profile ready at: /home/…/tbd-playtest/profile (game data under …/profile/profile)`.
 `$profile:` resolves to `<-profile-arg>/profile/`, **not** `<-profile-arg>/` — seeding one level up
-loads nothing, silently ([`world-boot.sh:383-384`](../../scripts/mod/world-boot.sh)).
+loads nothing, silently (`cargo xtask mod world-boot` (formerly `world-boot.sh:383-384`)).
 
 ```bash
 # 2.4.2 — point the mod at the API and at YOUR mission
@@ -306,7 +306,7 @@ Shape reference: [`Data/backend.example.json`](../../apps/mod/tbd-framework/Data
 > the server is elsewhere, put the API host's LAN IP here and make sure the API is reachable from it.
 
 ```bash
-# 2.4.3 — addon staging dir (a symlink, exactly like deploy-staging.sh:1100)
+# 2.4.3 — addon staging dir (a symlink, exactly like the former deploy-staging.sh:1100 (now `cargo xtask deploy staging`))
 mkdir -p "$HOME/tbd-playtest/addons"
 ln -sfn "$PWD/apps/mod/tbd-framework" "$HOME/tbd-playtest/addons/tbd-framework"
 ls -l "$HOME/tbd-playtest/addons"
@@ -352,7 +352,7 @@ cd "$HOME/.local/share/Steam/steamapps/common/Arma Reforger Server"
   -maxFPS 60 -logStats 30000 -nothrow
 ```
 
-This is [`world-boot.sh:773-778`](../../scripts/mod/world-boot.sh) with real ports and a real
+This is `cargo xtask mod world-boot` (formerly `world-boot.sh:773-778`) with real ports and a real
 profile. Leave it in the foreground so you can watch it. The log also lands at:
 
 ```bash
@@ -385,7 +385,7 @@ none needs a client.
 >
 > and `5 > 0 for msn_8f3a2c` for the bridgehead mission. Note the line above it: the mission
 > **validated**, `result=PASS errors=0`. The `FAIL` is the warning *ratchet*
-> ([`world-boot.sh:248-258`](../../scripts/mod/world-boot.sh)), not the validator.
+> (`cargo xtask mod world-boot` (formerly `world-boot.sh:248-258`)), not the validator.
 >
 > **How to tell this known FAIL from a real one — check all three:**
 >
@@ -430,7 +430,7 @@ none needs a client.
 > `bridgehead-at-levie`.
 
 ```bash
-bash scripts/mod/world-boot.sh --mission=slot-loadout-coverage --keep-logs
+cargo xtask mod world-boot --mission=slot-loadout-coverage --keep-logs
 ```
 Then in the printed run directory:
 ```bash
@@ -465,7 +465,7 @@ Now do the same against **your** mission (`--compiled` fetches from the live API
 `cargo xtask mk rust-api` must be running):
 
 ```bash
-bash scripts/mod/world-boot.sh --compiled=$MID --keep-logs
+cargo xtask mod world-boot --compiled=$MID --keep-logs
 ```
 Same greps, same verdict — **including the same expected `WORLD BOOT: FAIL`**, which on this lane
 is keyed `compiled` rather than `msn_…`. Apply the same three-part test from the box above: the
@@ -539,7 +539,7 @@ They only work when the API and the game server are **sibling `systemctl --user`
 uid on one box**. The transport is a UNIX socket in `$XDG_RUNTIME_DIR` with `SocketMode=0600`, so
 the OS is the credential and there is no secret
 ([`.env.example:123-127`](../../apps/website/api/.env.example),
-[`deploy-staging.sh:92-137`](../../scripts/mod/deploy-staging.sh)). **If your API runs under
+`cargo xtask deploy staging` (formerly `deploy-staging.sh:92-137`)). **If your API runs under
 `cargo xtask mk rust-api` on one machine and the game server on another, this cannot work at all** — the socket
 would be on the wrong box.
 
@@ -573,14 +573,14 @@ deliberate: the alternative is an ENOENT at 03:00 that reads as "the game host i
 **Step B — install the host control agent, once.**
 
 Prove it locally first (no ssh, no deploy, no `deploy.env` needed — the script exits at
-[`deploy-staging.sh:657-660`](../../scripts/mod/deploy-staging.sh) before it requires any of that):
+`cargo xtask deploy staging` (formerly `deploy-staging.sh:657-660`) before it requires any of that):
 
 ```bash
-bash scripts/mod/deploy-staging.sh --agent-selftest /tmp/tbd-agent-selftest
+cargo xtask deploy staging --agent-selftest /tmp/tbd-agent-selftest
 ```
 Expect the rendered agent to be driven against a stub `systemctl` and report the unit's **real**
 state. It must be able to report a *dead* unit as dead even when the verb exited 0 — that is the
-entire reason the agent exists ([`deploy-staging.sh:139-152`](../../scripts/mod/deploy-staging.sh)).
+entire reason the agent exists (`cargo xtask deploy staging` (formerly `deploy-staging.sh:139-152`)).
 
 Then install for real. **This runs a full deploy** — rsync, compose rebuild, game-server restart —
 and needs `scripts/deploy/deploy.env`, which **does not exist in this checkout**:
@@ -588,8 +588,8 @@ and needs `scripts/deploy/deploy.env`, which **does not exist in this checkout**
 ```bash
 cp scripts/deploy/deploy.env.example scripts/deploy/deploy.env
 $EDITOR scripts/deploy/deploy.env    # TBD_SSH_HOST, token, paths
-TBD_INSTALL_AGENT=1 bash scripts/mod/deploy-staging.sh --dry-run   # look first
-TBD_INSTALL_AGENT=1 bash scripts/mod/deploy-staging.sh
+TBD_INSTALL_AGENT=1 cargo xtask deploy staging --dry-run   # look first
+TBD_INSTALL_AGENT=1 cargo xtask deploy staging
 ```
 Expect, near the end:
 ```
@@ -598,7 +598,7 @@ Expect, near the end:
   agent socket listening at ${XDG_RUNTIME_DIR}/tbd-reforger-agent.sock
 ```
 Without `TBD_INSTALL_AGENT=1` you get `[SKIP] agent install — TBD_INSTALL_AGENT=1 to enable.`
-([`deploy-staging.sh:1229-1231`](../../scripts/mod/deploy-staging.sh)). The step deliberately fails
+(`cargo xtask deploy staging` (formerly `deploy-staging.sh:1229-1231`)). The step deliberately fails
 the deploy if the socket did not come up, rather than reporting it installed.
 
 Verify end to end from the SPA: `/admin/server` → a status/restart action should return **202** with
@@ -690,7 +690,7 @@ Then restart the server with it — the flag is repeatable. **STOP THE RUNNING S
 #    holds 2001/17777 and the next boot dies on `Unable to start replication`.
 #
 # 2. Only then:
-bash scripts/mod/run-playtest-server.sh --mission-id=$MID --admin=<your-identityId>
+cargo xtask mod playtest --mission-id=$MID --admin=<your-identityId>
 ```
 
 > **Running it before stopping the first one used to break both servers**, and silently: the
@@ -780,7 +780,7 @@ either of you doing anything — the open lobby re-asks the server every **2000 
 
 **If their screen is blank/black with no rows:** the roster arrived but the layout collapsed. That
 exact failure — a `~10px` sliver with one character per line — is a known shape from the first live
-load-in, fixed at T-181.51 and gated by `bash scripts/mod/verify-ui-layouts.sh`. Run it; if it
+load-in, fixed at T-181.51 and gated by `cargo xtask verify ui-layouts`. Run it; if it
 passes, capture a screenshot and the client log (§5) and file it.
 
 ---
@@ -1159,9 +1159,9 @@ When in doubt, keep the whole log.
 with the evidence paths in the `summary`, then `./scripts/ticket sync`. Put the log files under
 `.ai/artifacts/` (pipeline output only) and reference them by path.
 
-**Do not use `scripts/mod/remote-log-grep.sh` to decide PASS/FAIL.** It is stale: it requires the
+**Do not use `cargo xtask mod remote-logs` to decide PASS/FAIL.** It is stale: it requires the
 literals `Mission loaded` and `built slot spawn`
-([`remote-log-grep.sh:48`](../../scripts/mod/remote-log-grep.sh)), and **neither is emitted by the
+(`cargo xtask mod remote-logs` (formerly `remote-log-grep.sh:48`)), and **neither is emitted by the
 current code** — `"Mission loaded"` survives only inside an error string
 (`TBD_FrameworkManager.c:488` "Mission loaded but invalid"), and `built slot spawn` exists nowhere.
 The pass-criteria list in [`STAGING-SERVER.md` § Game log pass criteria](../mod/STAGING-SERVER.md) is stale for the
@@ -1206,12 +1206,12 @@ a stop, but you would rather know which players are short before they are standi
 
 ### 6.2 The client may silently load a STALE mod — **FIXED server-side, open client-side**
 
-**Server side: closed by T-604.** [`scripts/mod/run-playtest-server.sh`](../../scripts/mod/run-playtest-server.sh)
+**Server side: closed by T-604.** `cargo xtask mod playtest`
 starts a joinable, mod-loaded, admin-capable server in one command, and refuses to report success
 unless the room registered *and* your checkout is the copy that loaded. The old
 `run-dev-server.sh` shim is now `cargo xtask mod dev-server` (T-871). `deploy-staging.sh`'s two
 branches are both still wrong at
-[`:1153`](../../scripts/mod/deploy-staging.sh) / [`:1155`](../../scripts/mod/deploy-staging.sh) —
+`cargo xtask deploy staging` (formerly `deploy-staging.sh:1153` / `:1155`) —
 T-604 did not touch that file.
 
 **Client side: still open, and this is the live risk for the session.** The premise this section

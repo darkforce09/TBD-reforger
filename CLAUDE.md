@@ -31,7 +31,7 @@ leaderboards, doctrine wiki, CMS, and admin tooling.
 - `packages/tbd-schema/` — mission JSON schema + golden missions
 - `packages/map-assets/` — terrain DEM/sat (LFS) + rebuildable staging/tiles; served by API `/map-assets`
 - `docs/specs/` — design specs (Mission Creator, blueprints); `docs/mod/`, `docs/website/` — app docs (frontend surface specs: `docs/website/frontend/pages/`, not under `apps/`)
-- `scripts/mod/`, `scripts/website/`, `scripts/deploy/` — ops scripts (dev/staging/deploy); **`scripts/mod/mcp-call.sh`** + warm daemon for Workbench MCP (see [`docs/mod/MCP_TOOLING.md`](docs/mod/MCP_TOOLING.md))
+- `scripts/mod/`, `scripts/website/`, `scripts/deploy/` — ops scripts (dev/staging/deploy); **`cargo xtask mcp call`** + warm daemon for Workbench MCP (see [`docs/mod/MCP_TOOLING.md`](docs/mod/MCP_TOOLING.md))
 - `.ai/tickets/` + `cargo run -q -p xtask -- ticket` — unified ticket registry at repo root; `.ai/artifacts/` pipeline **output only** (fixtures live crate-local `tests/fixtures/` — see [`WHERE_DOES_X_GO.md`](docs/platform/WHERE_DOES_X_GO.md))
 - `apps/website/api/src/bin/api.rs` — entrypoint: loads `.env`, runs migrations on boot, serves `/api/v1`.
 - `apps/website/api/src/handlers/` — Axum HTTP handlers, one file per resource (auth, missions, events, telemetry, admin, …).
