@@ -2,7 +2,7 @@
 
 [Unit]
 Description=TBD website — nightly verified PostgreSQL backup
-Documentation=file://scripts/deploy/backup-db.sh
+Documentation=file://xtask/src/deploy_db_backup.rs
 
 [Timer]
 ; 03:20 local, off the hour. Nothing else in this repo is scheduled, so the offset is only
@@ -12,7 +12,7 @@ OnCalendar=*-*-* 03:20:00
 ; PERSISTENT IS THE POINT. Without it, a machine that was asleep or powered off at 03:20
 ; simply skips that night and says nothing — the backup silently does not exist. With it,
 ; the run fires as soon as the machine is back. This is the same failure the count-based
-; retention in backup-db.sh defends against, one layer up: a schedule that quietly does not
+; retention in deploy db backup defends against, one layer up: a schedule that quietly does not
 ; run is indistinguishable from one that runs and works, right until you need the backup.
 Persistent=true
 

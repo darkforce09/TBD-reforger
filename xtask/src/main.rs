@@ -8,6 +8,7 @@ mod cmds;
 mod codegen_schema;
 mod constants;
 mod debug_cmd;
+mod deploy_db_backup;
 mod deploy_db_common;
 mod gap;
 mod gate_bootstrap_staging_server;

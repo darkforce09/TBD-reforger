@@ -93,7 +93,7 @@ seed: ## Apply data seeds (Discord roles + registry catalog + starter faction li
 # typo. Dump verification + T-381 allow-list live in `cargo xtask deploy db` (T-884).
 
 db-backup: ## T-577: dump the DB through the container, VERIFY the file, prune by count (KEEP=14)
-	bash scripts/deploy/backup-db.sh $(if $(DB),--db $(DB),) $(if $(OUT),--out $(OUT),) $(if $(KEEP),--keep $(KEEP),)
+	cargo run -q -p xtask -- deploy db backup $(if $(DB),--db $(DB),) $(if $(OUT),--out $(OUT),) $(if $(KEEP),--keep $(KEEP),)
 
 db-restore: ## T-577: verify a dump then pg_restore --clean into DB=<name> (T-381 allow-list). Usage: make db-restore DUMP=path DB=rust_it
 	@if [ -z "$(DUMP)" ]; then echo "usage: make db-restore DUMP=<file.dump> DB=<target> [CREATE=1]"; exit 2; fi
@@ -105,7 +105,7 @@ db-backup-drill: ## T-577: restore the newest backup into a scratch DB and prove
 
 db-backup-verify: ## T-577: re-verify an existing dump without taking a new one. Usage: make db-backup-verify DUMP=path
 	@if [ -z "$(DUMP)" ]; then echo "usage: make db-backup-verify DUMP=<file.dump>"; exit 2; fi
-	bash scripts/deploy/backup-db.sh --verify-only $(DUMP)
+	cargo run -q -p xtask -- deploy db backup --verify-only $(DUMP)
 
 registry-import: ## Ingest the committed T-150 registry envelopes (items + compat) into the dev DB (T-068.9)
 	cd $(WEB) && cargo run --bin import-registry -- \

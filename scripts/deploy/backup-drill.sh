@@ -147,7 +147,7 @@ echo "═══ backup restore drill ═══"
 # ── 1. pick the dump ────────────────────────────────────────────────────────────────
 if [ "$FRESH" -eq 1 ]; then
 	info "taking a fresh backup of '$SOURCE_DB' first"
-	bash "$SCRIPT_DIR/backup-db.sh" --db "$SOURCE_DB" --out "$OUT" || die "the fresh backup failed; nothing to drill."
+	cargo run -q -p xtask -- deploy db backup --db "$SOURCE_DB" --out "$OUT" || die "the fresh backup failed; nothing to drill."
 fi
 if [ -z "$DUMP" ]; then
 	# Built by an explicit loop, NOT `mapfile < <(printf '%s\n' glob | sort)`: with nullglob
