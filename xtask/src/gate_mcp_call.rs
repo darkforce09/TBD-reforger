@@ -23,7 +23,7 @@ use std::process::{Command, Stdio};
 use std::time::Duration;
 
 use tbd_gate::lock::flock_exclusive;
-use tbd_gate::proc::{self, Run};
+use tbd_gate::proc;
 
 /// Byte-identical to bash usage line (T6 + `/tmp/t853/w220/t860/usage`).
 const USAGE: &str = "usage: mcp-call.sh <tool> '<json-args>'";
@@ -206,12 +206,12 @@ fn visit_depth(dir: &Path, depth: u32, max: u32, out: &mut Vec<String>) -> std::
     Ok(())
 }
 
-fn ensure_daemon(script_dir: &Path, sock: &str) -> bool {
+fn ensure_daemon(_script_dir: &Path, sock: &str) -> bool {
     if env::var("MCP_NO_DAEMON").ok().as_deref() == Some("1") {
         return false;
     }
-    let daemon = script_dir.join("mcp-daemon.sh");
-    if daemon_status(&daemon) {
+    // T-888: in-process mcp daemon (former mcp-daemon.sh).
+    if crate::mcp_daemon::is_running_at(sock) {
         return true;
     }
     // PINNED fail-open: bash opens SOCK.lock + flock -w 65 || true, then status||start.
@@ -224,18 +224,11 @@ fn ensure_daemon(script_dir: &Path, sock: &str) -> bool {
         |_| {},
     )
     .ok();
-    if !daemon_status(&daemon) {
-        let _ = Run::new("bash").arg(&daemon).arg("start").merged_output(); // bash >/dev/null 2>&1
+    if !crate::mcp_daemon::is_running_at(sock) {
+        let _ = crate::mcp_daemon::start_at(sock, true); // bash >/dev/null 2>&1
     }
     drop(_held);
-    daemon_status(&daemon)
-}
-
-fn daemon_status(daemon: &Path) -> bool {
-    matches!(
-        Run::new("bash").arg(daemon).arg("status").merged_output(),
-        Ok(m) if m.code == 0
-    )
+    crate::mcp_daemon::is_running_at(sock)
 }
 
 /// 0 success · 3 tool error · 9 fall-back-to-oneshot

@@ -54,6 +54,7 @@ mod gate_ui_layouts_awk;
 mod golden_gate;
 mod label_gates;
 mod mcp;
+mod mcp_daemon;
 mod mod_comment_gates;
 mod node_free;
 mod prompt;
@@ -491,6 +492,12 @@ enum McpCmd {
     /// Live wb_connect + wb_state smoke (T-877 port of mcp-smoke.sh).
     /// Exit: 0 OK · 1 FAIL.
     Smoke,
+    /// setsid + AF_UNIX socket lifecycle (T-888 port of mcp-daemon.sh).
+    /// Exit: 0 success · 1 stopped/fail · 2 usage.
+    Daemon {
+        /// start|stop|status|restart|stop-all (default: status)
+        action: Option<String>,
+    },
     /// Grep latest Workbench Play console.log for TBD spawn diagnostics (T-857).
     /// Exit: 0 PASS · 1 FAIL · 2 PARTIAL · 3 ENVIRONMENT.
     #[command(name = "wb-logs", disable_help_flag = true)]
@@ -715,6 +722,7 @@ fn run() -> Result<u8> {
                 McpCmd::Call { tool, args_json } => gate_mcp_call::run(tool, args_json),
                 McpCmd::Selftest => gate_mcp_call_selftest::run(),
                 McpCmd::Smoke => gate_mcp_smoke::run(),
+                McpCmd::Daemon { action } => mcp_daemon::cmd(action.as_deref()),
                 McpCmd::WbLogs {
                     file,
                     selftest,

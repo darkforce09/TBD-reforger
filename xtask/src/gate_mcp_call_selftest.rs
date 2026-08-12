@@ -5,7 +5,8 @@
 //!
 //! Wave 226 option 2: `cargo run -q -p xtask --` replaces former `lib/xtask-run.sh`;
 //! mcpd path is inlined (`cargo build -q -p tbd-tools --bin mcpd` + `CARGO_TARGET_DIR`
-//! honor — former `lib/mcpd-bin.sh`). Still shells `mcp-daemon.sh` (OOS). Warm
+//! honor — former `lib/mcpd-bin.sh`). Daemon control is in-process
+//! (`mcp_daemon`, T-888). Warm
 //! `CARGO_TARGET_DIR` keeps stdout reproducible.
 //!
 //! Fail-opens pinned (bash parity):
@@ -91,7 +92,6 @@ pub fn run_at(script_dir: &Path) -> i32 {
         .and_then(|p| p.parent())
         .map(Path::to_path_buf)
         .unwrap_or_else(|| script_dir.to_path_buf());
-    let daemon = script_dir.join("mcp-daemon.sh");
     let fix = script_dir.join("fixtures");
     let sock = format!("/tmp/tbd-mcp-selftest-{}.sock", uid());
 
@@ -125,7 +125,7 @@ pub fn run_at(script_dir: &Path) -> i32 {
         }
     };
 
-    cleanup(&daemon, &sock);
+    cleanup(&sock);
 
     println!("[T2-T5] consumer fixtures");
     match xtask_consume(&root, &fix.join("mcp-wb-state-success.jsonl")) {
@@ -298,26 +298,15 @@ pub fn run_at(script_dir: &Path) -> i32 {
         std::env::set_var("MCP_DAEMON_MAX_LIFE", "30");
     }
 
-    // PINNED fail-open: start discards streams
-    let _ = Run::new("bash")
-        .arg(&daemon)
-        .arg("start")
-        .env("ENFUSION_MCP_BIN", &stub)
-        .env("STUB_DAEMON", "1")
-        .env("MCP_SOCK", &sock)
-        .env("MCP_DAEMON_IDLE", "8")
-        .env("MCP_DAEMON_MAX_LIFE", "30")
-        .merged_output();
-
-    match Run::new("bash")
-        .arg(&daemon)
-        .arg("status")
-        .env("MCP_SOCK", &sock)
-        .merged_output()
-    {
-        Ok(m) => c.rc_is("daemon start+status", 0, m.code),
-        Err(n) => c.no(&format!("daemon status DidNotRun: {n:?}")),
+    // PINNED fail-open: start discards streams (T-888 in-process quiet start)
+    // Env for stub/idle already set above via set_var; also pin ENFUSION_MCP_BIN.
+    unsafe {
+        std::env::set_var("ENFUSION_MCP_BIN", &stub);
+        std::env::set_var("STUB_DAEMON", "1");
     }
+    let _ = crate::mcp_daemon::start_at(&sock, true);
+    let code = crate::mcp_daemon::status_at(&sock, true);
+    c.rc_is("daemon start+status", 0, code);
 
     match xtask_call(
         &root,
@@ -360,7 +349,7 @@ pub fn run_at(script_dir: &Path) -> i32 {
         Err(n) => c.no(&format!("args round-trip DidNotRun: {n:?}")),
     }
 
-    cleanup(&daemon, &sock);
+    cleanup(&sock);
 
     match xtask_call(
         &root,
@@ -401,12 +390,8 @@ pub fn run_at(script_dir: &Path) -> i32 {
 }
 
 /// PINNED fail-open: bash `cleanup() { … >/dev/null 2>&1; rm -f "$SOCK"*; }`
-fn cleanup(daemon: &Path, sock: &str) {
-    let _ = Run::new("bash")
-        .arg(daemon)
-        .arg("stop")
-        .env("MCP_SOCK", sock)
-        .merged_output();
+fn cleanup(sock: &str) {
+    let _ = crate::mcp_daemon::stop_at(sock, true);
     if let Ok(rd) = fs::read_dir("/tmp") {
         let prefix = Path::new(sock)
             .file_name()
