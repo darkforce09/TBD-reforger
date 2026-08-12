@@ -25,6 +25,7 @@ mod gate_remote_log_grep;
 mod gate_route_tags;
 mod gate_run_dev_server;
 mod gate_seed_milestone_announcement;
+mod gate_setup_mcp_game_root;
 mod gate_setup_server_profile;
 mod gate_setup_workbench_linux;
 mod gate_t180;
@@ -248,6 +249,14 @@ enum SetupCmd {
     /// Symlink Steam Arma Reforger .gproj for Proton Workbench (T-875).
     #[command(name = "workbench")]
     Workbench,
+    /// Flattened pak symlink farm for enfusion-mcp (T-876).
+    #[command(name = "mcp-game-root")]
+    McpGameRoot {
+        /// Game install with addons/ (default: Steam Arma Reforger path)
+        game: Option<PathBuf>,
+        /// Output symlink farm (default: $HOME/.cache/enfusion-mcp-root)
+        fake: Option<PathBuf>,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -779,6 +788,9 @@ fn run() -> Result<u8> {
                 gate_setup_server_profile::run(profile.as_deref())
             }
             SetupCmd::Workbench => gate_setup_workbench_linux::run(),
+            SetupCmd::McpGameRoot { game, fake } => {
+                gate_setup_mcp_game_root::run(game.as_deref(), fake.as_deref())
+            }
         },
         TopCmd::Fetch { cmd } => match cmd {
             FetchCmd::VanillaSource { args } => {
