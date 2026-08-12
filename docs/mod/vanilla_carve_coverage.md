@@ -118,7 +118,7 @@ classes are there with full member lists.
 
 ```bash
 make enf-apidoc          # fetch the class index + parse (1 request for the index)
-bash scripts/mod/fetch-vanilla-api.sh SCR_BaseGameMode SCR_PossessSpawnData   # per-class pages
+cargo xtask fetch vanilla-api SCR_BaseGameMode SCR_PossessSpawnData   # per-class pages
 rg '^SCR_PossessSpawnData\t' .ai/artifacts/enf-index/vanilla_api_members.tsv
 ```
 

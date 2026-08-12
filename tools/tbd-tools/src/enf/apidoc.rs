@@ -5,7 +5,7 @@
 //! ChimeraMenuBase) are all present in the published docs — **7,990 classes** in one index
 //! page. Signatures and inheritance, no bodies.
 //!
-//! Fetching is `scripts/mod/fetch-vanilla-api.sh` (curl; the wiki 403s a default UA). This
+//! Fetching is `cargo xtask fetch vanilla-api` (curl; the wiki 403s a default UA). This
 //! module only parses a local cache, so the index rebuild is offline and deterministic.
 //!
 //! Deliberately a small tag-stripping parser rather than a HTML crate: the Doxygen output is
@@ -128,7 +128,7 @@ pub fn build(src: &Path, out: &Path) -> Result<ApiStats> {
     let index_path = src.join("annotated.html");
     let index_html = std::fs::read_to_string(&index_path).with_context(|| {
         format!(
-            "reading {} — run scripts/mod/fetch-vanilla-api.sh first",
+            "reading {} — run `cargo xtask fetch vanilla-api` first",
             index_path.display()
         )
     })?;

@@ -45,7 +45,7 @@ enum Cmd {
         out: PathBuf,
     },
     /// Parse the cached official Script API docs into the oracle index.
-    /// Fetch them first with scripts/mod/fetch-vanilla-api.sh.
+    /// Fetch them first with `cargo xtask fetch vanilla-api`.
     Apidoc {
         #[arg(long, default_value = "apps/mod/vanilla_reference/apidoc")]
         src: PathBuf,

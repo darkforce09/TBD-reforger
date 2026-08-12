@@ -92,7 +92,7 @@ bash scripts/mod/test-phase1-api.sh
 | `cargo xtask mod dev-bootstrap` | MCP root + `wb_connect` + `mod_validate` |
 | [`setup-mcp-game-root.sh`](../../scripts/mod/setup-mcp-game-root.sh) | Pak symlink farm for MCP |
 | [`deploy-staging.sh`](../../scripts/mod/deploy-staging.sh) | Rsync → 192.168.0.140, API, game server restart |
-| [`debug-direct-join.sh`](../../scripts/mod/debug-direct-join.sh) | LAN join diagnostics (A2S, SSH, builds) |
+| `cargo xtask debug direct-join` | LAN join diagnostics (A2S, SSH, builds) |
 | [`setup-client-addons.sh`](../../scripts/mod/setup-client-addons.sh) | **Legacy** — local client mod symlink (not Direct-Joinable; use the Workshop mod instead) |
 | [`remote-log-grep.sh`](../../scripts/mod/remote-log-grep.sh) | SSH log verify on staging server |
 | [`bootstrap-staging-server.sh`](../../scripts/mod/bootstrap-staging-server.sh) | One-time SSH discovery + mkdir |
