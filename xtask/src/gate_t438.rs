@@ -565,7 +565,7 @@ mod tests {
     /// names the good path, so a gate grepping the raw file would pass on the comment alone.
     const GOOD_SCRIPT: &str = r#"echo "==> docker compose (API + Postgres)"
 # T-438: compose file lives at apps/website/docker-compose.staging.yml (T-251),
-# not under apps/website/api/. Match scripts/deploy/deploy-website.sh.
+# not under apps/website/api/. Match `cargo xtask deploy website`.
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[dry-run] cd \$TBD_REMOTE_DIR && docker compose -f apps/website/docker-compose.staging.yml up -d --build"
 else

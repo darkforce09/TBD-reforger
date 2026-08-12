@@ -1,6 +1,6 @@
 ; T-577 — nightly verified database backup for the TBD website.
 ;
-; A USER unit, not root cron, to match the API: deploy-website.sh:82 restarts
+; A USER unit, not root cron, to match the API: `cargo xtask deploy website` restarts
 ; `tbd-website-api.service` via `systemctl --user`, and scripts/mod/deploy-staging.sh:280
 ; installs its unit into ~/.config/systemd/user. Root cron would run as the wrong user,
 ; would not see the deploy user's podman socket (rootless containers live in the user
