@@ -436,7 +436,7 @@ lfs-sat: ## Pull the Everon satellite bundle from LFS (153 MB — full-res edito
 	git lfs pull --include packages/map-assets/everon/satellite/everon-sat.tbd-sat
 
 mcp-selftest: ## Offline MCP gates (19/19) — no Workbench
-	bash scripts/mod/mcp-call-selftest.sh
+	cargo run -q -p xtask -- mcp selftest
 mcp-smoke: ## Live MCP smoke — wb_connect + wb_state (Workbench Net API up)
 	bash scripts/mod/mcp-smoke.sh
 
