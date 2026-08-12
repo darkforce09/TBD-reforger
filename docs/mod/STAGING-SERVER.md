@@ -575,10 +575,10 @@ bash scripts/mod/mcp-wb-logs.sh
 bash scripts/mod/mcp-call.sh wb_stop '{}'
 ```
 
-Or: `bash scripts/mod/tbd-spawn-verify.sh`
+Or: `cargo xtask mod spawn-verify`
 
 > **Exit contract — do not read `!= 0` as failure (T-612).** `mcp-wb-logs.sh` and
-> `tbd-spawn-verify.sh` (and `remote-log-grep.sh`, same four outcomes) return:
+> `cargo xtask mod spawn-verify` (and `remote-log-grep` / `mod remote-logs`, same four outcomes) return:
 >
 > | Code | Meaning |
 > |---|---|

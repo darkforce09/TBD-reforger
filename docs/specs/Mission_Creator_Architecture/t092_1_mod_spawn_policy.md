@@ -73,7 +73,7 @@ heading = slot.headingDeg
 ```bash
 cargo xtask mod dev-bootstrap
 # Load golden or test mission with 3 slots at different elevations
-bash scripts/mod/tbd-spawn-verify.sh   # extend if needed
+cargo xtask mod spawn-verify   # extend if needed
 ```
 
 ### Manual

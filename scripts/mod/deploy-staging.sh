@@ -1867,7 +1867,7 @@ fi
 # `3` is the opposite hazard and must never be soft: it means no log was examined at all, so it
 # says nothing about the mod and cannot be allowed to read as success.
 #
-# Same contract now applies to cargo xtask mcp wb-logs (T-857) and scripts/mod/tbd-spawn-verify.sh
+# Same contract now applies to cargo xtask mcp wb-logs (T-857) and cargo xtask mod spawn-verify (T-873)
 # (T-612) — both were inverted and passed ONLY on the stale June build. Do not build a staging
 # check on a `!= 0` reading of any of the three.
 set +e
