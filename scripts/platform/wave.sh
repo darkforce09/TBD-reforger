@@ -2552,8 +2552,8 @@ gate_slice() {
   # T-468. Tripwire: ci.yml schema job must stay on `make ci-local-schema`.
   # T-478. verify-t440 pins both this gate_slice run and cmd_gate (comment-strip +
   # redirect recipe + dual-path); deleting either run must FAIL the verify script.
-  run "T-439 objects aliases" bash "$ROOT/scripts/mod/verify-t439-objects-registry-aliases.sh"
-  run "T-444 wiki seed"       bash "$ROOT/scripts/mod/verify-t444-wiki-seed.sh"
+  run "T-439 objects aliases" checkrun cargo run -q -p xtask -- verify t439
+  run "T-444 wiki seed"       checkrun cargo run -q -p xtask -- verify t444
   run "T-440 faction library seed" bash "$ROOT/scripts/mod/verify-t440-faction-library-seed.sh"
   run "T-438 deploy-staging"  bash "$ROOT/scripts/mod/verify-t438-deploy-staging-compose-path.sh"
   run "T-456 REST size gate"  bash "$ROOT/scripts/mod/verify-t456-mission-rest-size-gate.sh"
@@ -2565,7 +2565,7 @@ gate_slice() {
   # nothing — not this gate, not ci.yml, not the Makefile. So a reader who found them
   # would have trusted a pair of bans that had never compared anything. Wired into both
   # halves (here and cmd_gate) so neither path can drift green on its own.
-  run "T-296 reporter identity" bash "$ROOT/scripts/mod/verify-t296-results-reporter-identity-comments.sh"
+  run "T-296 reporter identity" checkrun cargo run -q -p xtask -- verify t296
   run "T-452 player identity" checkrun cargo run -q -p xtask -- verify t452
   # T-620. Hot-path twin of the cmd_gate run — see the long note there for why this gate spent four
   # waves invoked by nothing. Pure bash + git ls-files, no cargo, ~0.2 s measured, so it fits the
@@ -2823,8 +2823,8 @@ cmd_gate() {
   # T-463. Same pattern for T-438 deploy-staging compose path + T-456 REST size gate.
   # T-468. Tripwire: ci.yml schema job must stay on `make ci-local-schema`.
   # T-478. Cold-path twin of the gate_slice T-440 run — verify-t440 requires both.
-  run "T-439 objects aliases" bash "$ROOT/scripts/mod/verify-t439-objects-registry-aliases.sh"
-  run "T-444 wiki seed"       bash "$ROOT/scripts/mod/verify-t444-wiki-seed.sh"
+  run "T-439 objects aliases" checkrun cargo run -q -p xtask -- verify t439
+  run "T-444 wiki seed"       checkrun cargo run -q -p xtask -- verify t444
   run "T-440 faction library seed" bash "$ROOT/scripts/mod/verify-t440-faction-library-seed.sh"
   run "T-438 deploy-staging"  bash "$ROOT/scripts/mod/verify-t438-deploy-staging-compose-path.sh"
   run "T-456 REST size gate"  bash "$ROOT/scripts/mod/verify-t456-mission-rest-size-gate.sh"
@@ -2833,7 +2833,7 @@ cmd_gate() {
   run "T-586 route tags"      bash "$ROOT/scripts/verify-route-tags.sh"
   # T-556. Cold-path twin of the gate_slice runs above — the two scripts that were dead
   # AND fail-open. Both halves, for the T-478 reason: one path alone can drift green.
-  run "T-296 reporter identity" bash "$ROOT/scripts/mod/verify-t296-results-reporter-identity-comments.sh"
+  run "T-296 reporter identity" checkrun cargo run -q -p xtask -- verify t296
   run "T-452 player identity" checkrun cargo run -q -p xtask -- verify t452
   # T-620/T-621 — THE LANGUAGE GATES, AND WHY THEY ARE HERE RATHER THAN ONLY IN ci.yml.
   #

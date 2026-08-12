@@ -371,7 +371,7 @@ verify-t468: ## T-468/T-476/T-485/T-486/T-489 CI schema parity (human entry; CI 
 # nowhere). Wired into wave.sh gate_slice + cmd_gate; these are the human entry points,
 # matching the T-467 shape for verify-t438/t456.
 verify-t296: ## T-296/T-556 ResultsReporter must not claim `#tbd link` is unimplemented
-	@bash scripts/mod/verify-t296-results-reporter-identity-comments.sh
+	@cargo run -q -p xtask -- verify t296
 
 verify-t452: ## T-452/T-556 PlayerIdentity must not claim link-confirm is future work
 	@cargo run -q -p xtask -- verify t452

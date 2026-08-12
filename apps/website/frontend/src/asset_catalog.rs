@@ -590,9 +590,11 @@ pub fn build_object_catalog_tree(items: &[RegistryItem]) -> Vec<CatalogNode> {
 /// `prop:<slug>` / `comp:<slug>` from the display name (Composition path → `comp:`).
 ///
 /// T-439 — synthesis alone is not enough for spawn: [`build_object_catalog_tree`] only offers
-/// leaves whose alias is present in mod `Data/registry.json`, and
-/// `scripts/mod/verify-t439-objects-registry-aliases.sh` pins every workbench Objects-eligible
-/// kind to a matching registry row (guid == resource_name).
+/// leaves whose alias is present in mod `Data/registry.json`, and `cargo xtask verify t439` pins
+/// every workbench Objects-eligible kind to a matching registry row (guid == resource_name).
+/// That gate also pins THIS function by name, so renaming it fails the gate rather than silently
+/// unmirroring the two sides (T-853 ported it from
+/// `scripts/mod/verify-t439-objects-registry-aliases.sh`).
 #[must_use]
 pub fn derive_object_alias(resource_name: &str, display_name: &str) -> String {
     const KNOWN: &[(&str, &str)] = &[(

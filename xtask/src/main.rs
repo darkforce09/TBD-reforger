@@ -9,6 +9,9 @@ mod codegen_schema;
 mod constants;
 mod debug_cmd;
 mod gap;
+mod gate_t296;
+mod gate_t439;
+mod gate_t444;
 mod golden_gate;
 mod label_gates;
 mod mcp;
@@ -131,6 +134,15 @@ enum VerifyCmd {
     /// (T-853 port of scripts/mod/verify-t452-player-identity-link-comments.sh)
     #[command(name = "t452")]
     T452,
+    /// T-296 comment contract: ResultsReporter identity (port of verify-t296-*.sh)
+    #[command(name = "t296")]
+    T296,
+    /// T-439: Objects palette aliases pinned in the mod Data/registry.json
+    #[command(name = "t439")]
+    T439,
+    /// T-444: `make seed` must apply seeds/wiki_pages.sql
+    #[command(name = "t444")]
+    T444,
 }
 
 #[derive(Subcommand, Debug)]
@@ -486,6 +498,9 @@ fn run() -> Result<u8> {
                 VerifyCmd::NoShell => shell_free::verify_no_shell()?,
                 VerifyCmd::NoSelectStar => sql_gates::verify_no_select_star(&find_repo_root()?)?,
                 VerifyCmd::T452 => mod_comment_gates::verify_t452(&find_repo_root()?)?,
+                VerifyCmd::T296 => gate_t296::verify_t296(&find_repo_root()?)?,
+                VerifyCmd::T439 => gate_t439::verify_t439(&find_repo_root()?)?,
+                VerifyCmd::T444 => gate_t444::verify_t444(&find_repo_root()?)?,
             };
             Ok(code)
         }
