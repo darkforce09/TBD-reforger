@@ -19,7 +19,7 @@ For a one-off session with zero git noise, skip the file commits and use Cursor 
 | Folder | Role |
 |--------|------|
 | [`.ai/`](../../.ai/) | Repo-owned agent **pipeline** — [`tickets/`](../../.ai/tickets/) (registry) + [`artifacts/`](../../.ai/artifacts/) (generated research) |
-| [`.cursor/`](../../.cursor/) | **Cursor IDE mount point** — product reads `.cursor/rules/*.mdc` and `.cursor/mcp.json` only from workspace root; mod scripts ([`scripts/mod/manual-test.sh`](../../scripts/mod/manual-test.sh)) also expect root `.cursor/mcp.json` |
+| [`.cursor/`](../../.cursor/) | **Cursor IDE mount point** — product reads `.cursor/rules/*.mdc` and `.cursor/mcp.json` only from workspace root; mod tooling (`cargo xtask mod manual-test`, T-859) also expects root `.cursor/mcp.json` |
 
 Cursor will **not** auto-load rules from `.ai/`. Do not move project rules into `.ai/cursor/` unless you also keep a root `.cursor/` symlink — the IDE only discovers rules at repo root.
 
