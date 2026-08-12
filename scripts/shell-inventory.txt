@@ -48,7 +48,6 @@ scripts/mod/mcp-call-selftest.sh
 scripts/mod/mcp-call.sh
 scripts/mod/mcp-daemon.sh
 scripts/mod/mcp-smoke.sh
-scripts/mod/mcp-wb-logs.sh
 scripts/mod/run-dev-server.sh
 scripts/mod/run-playtest-server.sh
 scripts/mod/seed-milestone-announcement.sh
