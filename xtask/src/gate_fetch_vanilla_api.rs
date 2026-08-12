@@ -14,10 +14,14 @@
 //!
 //! Curl via [`tbd_gate::proc::Run`]. Offline arms prefer fixture/cache hits; live network
 //! uses the same curl recipe when a page is absent (`TBD_FETCH_DELAY`, default 0.3 s).
+//!
+//! `TBD_FETCH_VANILLA_API_CURL` — optional absolute path to a curl binary, checked before
+//! `proc::which("curl")`. Production leaves it unset. Tests use it instead of mutating `PATH`
+//! (which races under `cargo test --test-threads=N`).
 
 use std::fs::{self, OpenOptions};
 use std::io::{self, BufRead, BufReader, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::Duration;
 
@@ -195,6 +199,17 @@ fn err_line(s: &str) -> Result<()> {
 }
 
 /// `code=$(curl -sSL -A UA -o dest -w '%{http_code}' url || echo 000)`.
+/// Resolve curl: `TBD_FETCH_VANILLA_API_CURL` override, else `PATH` via [`proc::which`].
+fn resolve_curl() -> Result<PathBuf, tbd_gate::NotRun> {
+    if let Ok(override_path) = std::env::var("TBD_FETCH_VANILLA_API_CURL") {
+        let trimmed = override_path.trim();
+        if !trimmed.is_empty() {
+            return Ok(PathBuf::from(trimmed));
+        }
+    }
+    proc::which("curl")
+}
+
 fn curl_fetch(url: &str, dest: &Path) -> Result<String> {
     if let Some(parent) = dest.parent() {
         fs::create_dir_all(parent)?;
@@ -205,7 +220,7 @@ fn curl_fetch(url: &str, dest: &Path) -> Result<String> {
         .truncate(true)
         .open(dest);
 
-    match proc::which("curl") {
+    match resolve_curl() {
         Err(_) => {
             let _ = fs::remove_file(dest);
             Ok("000".to_string())
@@ -304,9 +319,8 @@ mod tests {
     #[test]
     fn index_miss_exits_1() {
         let root = scratch("index-miss");
-        // empty cache; hide real curl via PATH override in the curl wrapper — we simulate
-        // by leaving cache empty and pointing PATH at a failing curl in the test process.
-        // Unit test: call fetch logic via run after installing a stub curl on PATH.
+        // Empty cache + stub curl via TBD_FETCH_VANILLA_API_CURL (not PATH — PATH races
+        // under cargo test parallel threads and let real curl win → false green rc=0).
         let bin = root.join("bin");
         fs::create_dir_all(&bin).unwrap();
         let stub = bin.join("curl");
@@ -318,20 +332,13 @@ mod tests {
             perms.set_mode(0o755);
             fs::set_permissions(&stub, perms).unwrap();
         }
-        let old = std::env::var_os("PATH");
-        let new_path = format!(
-            "{}:{}",
-            bin.display(),
-            old.as_ref()
-                .map(|s| s.to_string_lossy())
-                .unwrap_or_default()
-        );
-        // SAFETY: single-threaded test process; restored below.
-        unsafe { std::env::set_var("PATH", &new_path) };
+        let old = std::env::var_os("TBD_FETCH_VANILLA_API_CURL");
+        // SAFETY: restored below; only this test sets the override.
+        unsafe { std::env::set_var("TBD_FETCH_VANILLA_API_CURL", &stub) };
         let code = run(&root, &[]).unwrap();
         match old {
-            Some(v) => unsafe { std::env::set_var("PATH", v) },
-            None => unsafe { std::env::remove_var("PATH") },
+            Some(v) => unsafe { std::env::set_var("TBD_FETCH_VANILLA_API_CURL", v) },
+            None => unsafe { std::env::remove_var("TBD_FETCH_VANILLA_API_CURL") },
         }
         assert_eq!(code, 1);
         let _ = fs::remove_dir_all(root);
