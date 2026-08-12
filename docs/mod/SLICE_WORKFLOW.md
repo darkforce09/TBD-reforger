@@ -121,7 +121,7 @@ bash scripts/mod/slice-worktree.sh reap             # delete every merged slice 
 
 **Worktrees branch from a commit.** Anything uncommitted on `main` is invisible inside a worktree,
 so the factory must be committed before dispatching — otherwise agents get a tree with no
-`compile.sh`, no `enf`, no docs, and will flounder.
+`mod compile`, no `enf`, no docs, and will flounder.
 
 ## Sources agents must use (and only these)
 
