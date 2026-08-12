@@ -57,7 +57,7 @@ Verify machine paths in `ENFUSION_GAME_PATH`, `ENFUSION_WORKBENCH_PATH`, `ENFUSI
 **Smoke** (after bootstrap exit 0):
 
 ```bash
-bash scripts/mod/mcp-smoke.sh
+cargo xtask mcp smoke
 bash scripts/mod/mcp-call.sh mod_validate '{"modPath":"'"$PWD"'/apps/mod/tbd-framework"}'
 ```
 

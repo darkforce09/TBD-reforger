@@ -19,6 +19,7 @@ mod gate_fetch_vanilla_source;
 mod gate_manual_test;
 mod gate_mcp_call;
 mod gate_mcp_call_selftest;
+mod gate_mcp_smoke;
 mod gate_mcp_wb_logs;
 mod gate_mission_version_upload_repro;
 mod gate_remote_log_grep;
@@ -451,6 +452,9 @@ enum McpCmd {
     /// Exit: 0 ALL PASS · 1 any arm failed.
     #[command(name = "selftest")]
     Selftest,
+    /// Live wb_connect + wb_state smoke (T-877 port of mcp-smoke.sh).
+    /// Exit: 0 OK · 1 FAIL.
+    Smoke,
     /// Grep latest Workbench Play console.log for TBD spawn diagnostics (T-857).
     /// Exit: 0 PASS · 1 FAIL · 2 PARTIAL · 3 ENVIRONMENT.
     #[command(name = "wb-logs", disable_help_flag = true)]
@@ -674,6 +678,7 @@ fn run() -> Result<u8> {
                 McpCmd::ProbeSock { sock } => mcp::cmd_probe_sock(&sock),
                 McpCmd::Call { tool, args_json } => gate_mcp_call::run(tool, args_json),
                 McpCmd::Selftest => gate_mcp_call_selftest::run(),
+                McpCmd::Smoke => gate_mcp_smoke::run(),
                 McpCmd::WbLogs {
                     file,
                     selftest,

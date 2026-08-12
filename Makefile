@@ -438,7 +438,7 @@ lfs-sat: ## Pull the Everon satellite bundle from LFS (153 MB — full-res edito
 mcp-selftest: ## Offline MCP gates (19/19) — no Workbench
 	cargo run -q -p xtask -- mcp selftest
 mcp-smoke: ## Live MCP smoke — wb_connect + wb_state (Workbench Net API up)
-	bash scripts/mod/mcp-smoke.sh
+	cargo run -q -p xtask -- mcp smoke
 
 # T-274 — spawn/equip determinism (live Workbench Net API). NOT headless, NOT in
 # ci-local / wave.sh: without Workbench the preflight exits 2 in seconds with a
