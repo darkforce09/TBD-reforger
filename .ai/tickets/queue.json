@@ -27,32 +27,18 @@
       "branch": "ticket/T-880"
     },
     {
-      "id": "T-894",
-      "title": "T-853 Phase 3: Makefile db lane -> xtask",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-894"
-    },
-    {
-      "id": "T-895",
-      "title": "T-853 Phase 3: Makefile build lane -> xtask",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-895"
-    },
-    {
-      "id": "T-896",
-      "title": "T-853 Phase 3: Makefile ci lane -> xtask",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-896"
-    },
-    {
       "id": "T-897",
       "title": "T-853 Phase 3: delete the Makefile",
       "status": "ready",
       "spec": "docs/platform/t853_shell_to_xtask_waves.md",
       "branch": "ticket/T-897"
+    },
+    {
+      "id": "T-898",
+      "title": "verify file-length scans ZERO files \u2014 SIZE-1/SIZE-3 is enforced by nothing",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-898"
     }
   ]
 }

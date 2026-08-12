@@ -1,5 +1,5 @@
 {
-  "next_id": 898,
+  "next_id": 899,
   "tickets": [
     {
       "id": "T-001",
@@ -21744,7 +21744,7 @@
       "impact": [
         "dx"
       ],
-      "status": "ready",
+      "status": "shipped",
       "executor": "claude-code",
       "targets": [
         "root"
@@ -21765,7 +21765,7 @@
       "impact": [
         "dx"
       ],
-      "status": "ready",
+      "status": "shipped",
       "executor": "claude-code",
       "targets": [
         "root"
@@ -21786,7 +21786,7 @@
       "impact": [
         "dx"
       ],
-      "status": "ready",
+      "status": "shipped",
       "executor": "claude-code",
       "targets": [
         "root"
@@ -21817,6 +21817,27 @@
       "order": 5770,
       "spec": "docs/platform/t853_shell_to_xtask_waves.md",
       "notes": "BLOCKERS \u2014 three things READ the Makefile and evaporate silently if it is deleted without them moving in the SAME commit:\n  1. xtask/src/node_free.rs:290 scans it with `let Ok(text) = read_to_string else { return }` \u2014 FAIL-OPEN, so deleting the file narrows the no-node gate to nothing without any error.\n  2. scripts/platform/wave.sh:1598-1628 (and its port) parses the `schema-validate` recipe to cross-check GATE_SCHEMA_VALIDATE_GATES. Needs `xtask schema list-gates` first \u2014 T-896 owns shipping it.\n  3. xtask/src/gate_t444.rs pins the `seed:` recipe body by reading the Makefile (found by T-894). Repoint at mk_db::SEEDS or that Class-R gate evaporates.\nAlso: 12 CI `run: make \u2026` steps and ~363 live doc files reference make targets. The historical record (SHIPPED_HISTORY, TICKET_REGISTRY, verify-logs, registry.json ticket prose) must NOT be rewritten \u2014 it describes what was true then."
+    },
+    {
+      "id": "T-898",
+      "title": "verify file-length scans ZERO files \u2014 SIZE-1/SIZE-3 is enforced by nothing",
+      "summary": "Found 2026-08-12 by the T-896 slice while porting the Makefile CI lane. `cargo xtask verify file-length` (xtask/src/node_free.rs:77) walks ONLY `apps/website` and keeps only `.go`/`.ts`/`.tsx`. After the T-145 Go->Rust and T-159 React->Leptos cutovers there are ZERO such files in the tree \u2014 measured, `find apps/website -name '*.go' -o -name '*.ts' -o -name '*.tsx' | wc -l` returns 0. So the gate has printed `0 warning(s), 0 violation(s)` over an EMPTY SET for the entire Rust era, and `.coding-standards-allowlist.yaml` has no SIZE-3 entries because nothing has ever needed one.\n\nSIZE-1 (>600 warn) and SIZE-3 (>1000 fail) are therefore enforced by nothing. Every size decision in T-853 -- agents reporting overruns, splitting gate_ui_layouts, slice_worktree and mk_build at seams -- was self-discipline against a gate that checks nothing. That discipline was real and the splits were right; the gate was theatre.\n\nThis is the same defect class the whole T-853 program is about: a check that reports success over an input it never examined. It is also line 89's `.unwrap_or(0)` fail-open in miniature, one level up -- there the read failure is swallowed, here the file set is empty.\n\nCURE: extend the walk to the Rust tree (xtask/, tools/, crates/, apps/website/*/src) and add `.rs`. MEASURE FIRST -- this turns main RED immediately on at least three pre-existing files: xtask/src/schema_gates.rs 4044, xtask/src/cmds.rs 1330, tools/tbd-tools/src/smokes.rs 3852, plus main.rs which grew past 1000 during Phase 3. So the slice is: extend the walk, then EITHER split those files OR give each an allowlist entry carrying a real reason and an expiry. Do not extend the walk and then silence it -- that reproduces the defect with extra steps.",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": false,
+      "order": 5780,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md"
     }
   ]
 }
