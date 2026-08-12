@@ -61,7 +61,7 @@ bash scripts/mod/setup-workbench-linux.sh
 **MCP verify spawn:**
 
 ```bash
-bash scripts/mod/tbd-spawn-verify.sh
+cargo xtask mod spawn-verify
 ```
 
 ---

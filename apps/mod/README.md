@@ -88,7 +88,7 @@ bash scripts/mod/test-phase1-api.sh
 |--------|---------|
 | [`mcp-call.sh`](../../scripts/mod/mcp-call.sh) | JSON-RPC to enfusion-mcp from shell |
 | [`mcp-wb-logs.sh`](../../scripts/mod/mcp-wb-logs.sh) | Grep latest Proton Workbench `console.log` |
-| [`tbd-spawn-verify.sh`](../../scripts/mod/tbd-spawn-verify.sh) | MCP `wb_play` + log grep for spawn lines |
+| `cargo xtask mod spawn-verify` | MCP `wb_play` + log grep for spawn lines (T-873) |
 | `cargo xtask mod dev-bootstrap` | MCP root + `wb_connect` + `mod_validate` |
 | [`setup-mcp-game-root.sh`](../../scripts/mod/setup-mcp-game-root.sh) | Pak symlink farm for MCP |
 | [`deploy-staging.sh`](../../scripts/mod/deploy-staging.sh) | Rsync → 192.168.0.140, API, game server restart |

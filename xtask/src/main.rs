@@ -35,6 +35,7 @@ mod gate_t440;
 mod gate_t444;
 mod gate_tbd_dev_bootstrap;
 mod gate_tbd_spawn_determinism;
+mod gate_tbd_spawn_verify;
 mod gate_test_mission;
 mod gate_ui_layouts;
 mod gate_ui_layouts_awk;
@@ -179,6 +180,15 @@ enum ModCmd {
         runs: Option<u32>,
         /// World resource path (default worlds/TBD_Dev_POC.ent)
         world: Option<String>,
+    },
+    /// Workbench play + log grep for slot spawn (T-873 port of tbd-spawn-verify.sh)
+    #[command(name = "spawn-verify")]
+    SpawnVerify {
+        /// Verdict-logic selftest via mcp wb-logs (no Workbench)
+        #[arg(long)]
+        selftest: bool,
+        /// Extended-grep display filter (default: T-612 tag/event pattern)
+        pattern: Option<String>,
     },
     /// Manual mod/website test suite (T-859 port of manual-test.sh)
     #[command(name = "manual-test")]
@@ -741,6 +751,9 @@ fn run() -> Result<u8> {
                 runs.unwrap_or(5),
                 world.as_deref().unwrap_or("worlds/TBD_Dev_POC.ent"),
             ),
+            ModCmd::SpawnVerify { selftest, pattern } => {
+                gate_tbd_spawn_verify::run(selftest, pattern)
+            }
             ModCmd::ManualTest => gate_manual_test::run(&find_repo_root()?),
             ModCmd::DevBootstrap { args } => gate_tbd_dev_bootstrap::run(&args),
             ModCmd::DevServer { args } => gate_run_dev_server::run(&args),
