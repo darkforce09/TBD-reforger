@@ -60,4 +60,3 @@ scripts/platform/preflight.sh
 scripts/platform/wave.sh
 scripts/ticket
 scripts/verify-no-python.sh
-scripts/website/mission-version-upload-repro.sh

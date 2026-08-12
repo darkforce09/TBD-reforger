@@ -561,7 +561,7 @@ again and catch it in CI.
 - **`phaseAtFailure` fix** ([`useMissionEditor.ts`](../../../apps/website/frontend/src/features/mission-creator/hooks/useMissionEditor.ts)):
   `report.phaseAtFailure = 'uploading'` on the first `onUploadProgress` tick, so a mid-upload failure
   no longer mislabels as `'preparing'`.
-- **Repro script** [`scripts/mission-version-upload-repro.sh`](../../../scripts/website/mission-version-upload-repro.sh):
+- **Repro** `cargo xtask repro mission-upload`:
   dev-login → create mission → curl `--data-binary` at 2/10/140 MB; splits server-side vs browser-side.
 - **B-4 not needed:** the route-level `BodyLimit` cap already maps `*http.MaxBytesError` → **413 JSON**
   (verified in IT); the 135 MB body binds via `ShouldBindJSON` in ~1.2 s with no OOM. No streaming rewrite.

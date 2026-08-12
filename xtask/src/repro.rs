@@ -1,4 +1,8 @@
-//! Repro helpers for scripts/website/mission-version-upload-repro.sh (T-162).
+//! Repro helpers for `cargo xtask repro mission-upload` (T-162 / T-867).
+//!
+//! `mission-id` and `mission-version-body` remain standalone subcommands (shell and
+//! the T-867 orchestrator both use them). The upload orchestrator lives in
+//! `gate_mission_version_upload_repro.rs`.
 
 use anyhow::{Context, Result, bail};
 use serde_json::Value;
@@ -6,13 +10,18 @@ use std::fs;
 use std::io::{self, Read};
 use std::path::Path;
 
+/// Parse mission-create JSON and return `.id`.
+pub fn mission_id_from_json(buf: &str) -> Result<String> {
+    let v: Value = serde_json::from_str(buf).context("parse JSON")?;
+    let id = v.get("id").and_then(|x| x.as_str()).context("missing id")?;
+    Ok(id.to_string())
+}
+
 /// Read JSON from stdin; print `.id` (mission create response).
 pub fn cmd_mission_id() -> Result<()> {
     let mut buf = String::new();
     io::stdin().read_to_string(&mut buf).context("read stdin")?;
-    let v: Value = serde_json::from_str(&buf).context("parse JSON")?;
-    let id = v.get("id").and_then(|x| x.as_str()).context("missing id")?;
-    println!("{id}");
+    println!("{}", mission_id_from_json(&buf)?);
     Ok(())
 }
 
