@@ -37,6 +37,7 @@ mod gate_tbd_dev_bootstrap;
 mod gate_tbd_spawn_determinism;
 mod gate_tbd_spawn_verify;
 mod gate_test_mission;
+mod gate_test_phase1_api;
 mod gate_ui_layouts;
 mod gate_ui_layouts_awk;
 mod golden_gate;
@@ -219,6 +220,9 @@ enum ModCmd {
     /// Insert pinned Milestone #1 website announcement (T-872 port of seed-milestone-announcement.sh)
     #[command(name = "seed-announcement")]
     SeedAnnouncement,
+    /// Phase-1 game-server API smoke (T-874 port of test-phase1-api.sh)
+    #[command(name = "test-phase1-api")]
+    TestPhase1Api,
 }
 
 #[derive(Subcommand, Debug)]
@@ -760,6 +764,7 @@ fn run() -> Result<u8> {
             ModCmd::TestMission { target } => gate_test_mission::run(target.as_deref()),
             ModCmd::BootstrapStaging => gate_bootstrap_staging_server::run(),
             ModCmd::SeedAnnouncement => gate_seed_milestone_announcement::run(),
+            ModCmd::TestPhase1Api => gate_test_phase1_api::run(&find_repo_root()?),
         },
         TopCmd::Deploy { cmd } => match cmd {
             DeployCmd::Website { args } => gate_deploy_website::run(&args),
