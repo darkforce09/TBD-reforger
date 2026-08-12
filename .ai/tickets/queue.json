@@ -27,27 +27,6 @@
       "branch": "ticket/T-880"
     },
     {
-      "id": "T-887",
-      "title": "T-853 port: restore-into-scratch recoverability proof",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-887"
-    },
-    {
-      "id": "T-888",
-      "title": "T-853 port: setsid + AF_UNIX socket lifecycle",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-888"
-    },
-    {
-      "id": "T-889",
-      "title": "T-853 port: unattended-run preflight assertions",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-889"
-    },
-    {
       "id": "T-890",
       "title": "T-853 port: the MOD wave driver (NOT platform/wave.sh)",
       "status": "ready",

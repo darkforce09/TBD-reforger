@@ -70,7 +70,7 @@ bash scripts/mod/mcp-call-selftest.sh   # 19/19 gates
 **Clean slate** if processes leak or load spikes:
 
 ```bash
-bash scripts/mod/mcp-daemon.sh stop-all
+cargo run -q -p xtask -- mcp daemon stop-all
 ```
 
 If `wb_connect` fails: reload `tbd-framework` in Workbench Resource Browser and retry.
