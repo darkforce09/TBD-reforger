@@ -58,6 +58,7 @@ mod label_gates;
 mod mcp;
 mod mcp_daemon;
 mod mod_comment_gates;
+mod mod_wave;
 mod mod_world_boot;
 mod mod_world_boot_verdict;
 mod node_free;
@@ -268,6 +269,13 @@ enum ModCmd {
     #[command(name = "world-boot", disable_help_flag = true)]
     WorldBoot {
         /// Passthrough (`--selftest`, `--compiled`, `--mission=…`, `--keep-logs`).
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+    /// T-181 mod wave driver (T-890 port of scripts/mod/wave.sh — NOT platform/wave.sh).
+    #[command(name = "wave", disable_help_flag = true)]
+    Wave {
+        /// `status` | `gate` | `land` | `prep [N]` | `push` (default status).
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
@@ -852,6 +860,7 @@ fn run() -> Result<u8> {
             ModCmd::TestPhase1Api => gate_test_phase1_api::run(&find_repo_root()?),
             ModCmd::Compile { args } => gate_mod_compile::run(&args),
             ModCmd::WorldBoot { args } => mod_world_boot::run(&args),
+            ModCmd::Wave { args } => mod_wave::run(&args),
         },
         TopCmd::Deploy { cmd } => match cmd {
             DeployCmd::Website { args } => gate_deploy_website::run(&args),
