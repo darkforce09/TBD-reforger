@@ -22,6 +22,7 @@ mod gate_mcp_wb_logs;
 mod gate_mission_version_upload_repro;
 mod gate_remote_log_grep;
 mod gate_route_tags;
+mod gate_run_dev_server;
 mod gate_setup_server_profile;
 mod gate_t180;
 mod gate_t296;
@@ -179,6 +180,13 @@ enum ModCmd {
     #[command(name = "dev-bootstrap")]
     DevBootstrap {
         /// Passthrough flags (`--api`, `--server`); unknown tokens ignored like bash.
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+    /// Shim → run-playtest-server.sh (T-871 port of run-dev-server.sh)
+    #[command(name = "dev-server", disable_help_flag = true)]
+    DevServer {
+        /// Passthrough to run-playtest-server.sh (`--mission-id=…`, `--admin=…`, …).
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
@@ -714,6 +722,7 @@ fn run() -> Result<u8> {
             ),
             ModCmd::ManualTest => gate_manual_test::run(&find_repo_root()?),
             ModCmd::DevBootstrap { args } => gate_tbd_dev_bootstrap::run(&args),
+            ModCmd::DevServer { args } => gate_run_dev_server::run(&args),
             ModCmd::TestMission { target } => gate_test_mission::run(target.as_deref()),
             ModCmd::BootstrapStaging => gate_bootstrap_staging_server::run(),
         },

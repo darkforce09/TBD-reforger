@@ -253,9 +253,11 @@ pub fn run_with_root(root: &Path, args: &[String]) -> Result<u8> {
                     .arg("server-profile")
                     .cwd(&p.mono_root)
                     .merged_output();
-                let run_dev = p.mod_scripts.join("run-dev-server.sh");
-                let _ = Command::new("bash")
-                    .arg(&run_dev)
+                // T-871: run-dev-server.sh → `cargo xtask mod dev-server` (still no args —
+                // same as the former bash spawn; the shim exits 2 with usage).
+                let _ = Command::new("cargo")
+                    .args(["run", "-q", "-p", "xtask", "--", "mod", "dev-server"])
+                    .current_dir(&p.mono_root)
                     .stdin(Stdio::null())
                     .stdout(Stdio::null())
                     .stderr(Stdio::null())

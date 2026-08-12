@@ -472,7 +472,7 @@ Living snapshot of what exists in the monorepo vs this plan. Update when phases 
 | VOIP (Phase 3, partner) | Not started |
 | Workshop publish / monetized server gates | Phase B (deferred) |
 
-**Local dev server:** `bash scripts/run-dev-server.sh` (uses `-server` + `-addons`, not `-config` for unpublished mods).
+**Local dev server:** `cargo xtask mod dev-server -- --mission-id=<id>` (shim → `run-playtest-server.sh`; needs a mission id).
 
 **Staging:** `bash scripts/deploy-staging.sh` → [`STAGING-SERVER.md`](STAGING-SERVER.md)
 
