@@ -327,7 +327,7 @@ fn assess_run_to(raw: &Path, label: &str, out: &mut dyn Write) -> u8 {
     let dups: Vec<_> = counts
         .iter()
         .filter(|(_, c)| **c > 1)
-        .map(|(k, c)| format!("{c:>4} {k}"))
+        .map(|(k, c)| format!("{c:>7} {k}"))
         .take(3)
         .collect();
     if !dups.is_empty() {
@@ -354,10 +354,11 @@ fn assess_run_to(raw: &Path, label: &str, out: &mut dyn Write) -> u8 {
 
     let census_re = Regex::new(r"\[TBD\]\[Audit\] characters=[0-9]+ bodies=[0-9]+ players=[0-9]+")
         .expect("census");
-    let census = text
-        .lines()
-        .rfind(|l| census_re.is_match(l))
-        .map(str::to_string);
+    // bash: grep -oE '…[TBD][Audit]…' | tail -1 — extract match only, not the full log line
+    let census = census_re
+        .find_iter(&text)
+        .map(|m| m.as_str().to_string())
+        .last();
     match census {
         Some(census) => {
             let c = Regex::new(r"characters=([0-9]+)")
@@ -451,6 +452,54 @@ mod tests {
         body.push_str("SCRIPT       : path=vanilla-fallthrough\n");
         fs::write(&p, body).unwrap();
         assert_eq!(assess_run_silent(&p, "t"), 1);
+        let _ = fs::remove_dir_all(&d);
+    }
+
+    /// Wave-218 REJECT pin: census mismatch must print grep -oE extract, not the full log line.
+    #[test]
+    fn assess_census_mismatch_extracts_audit_only() {
+        let d = tempfile_dir("tbd-det-test-census");
+        let p = d.join("c.log");
+        let mut body = HEALTHY.to_string();
+        body = body.replace(
+            "[TBD][Audit] characters=2 bodies=2 players=1",
+            "[TBD][Audit] characters=5 bodies=2 players=1",
+        );
+        fs::write(&p, &body).unwrap();
+        let mut buf = Vec::new();
+        assert_eq!(assess_run_to(&p, "novel", &mut buf), 1);
+        let out = String::from_utf8(buf).unwrap();
+        assert!(
+            out.contains(
+                "FAIL run novel: census mismatch [TBD][Audit] characters=5 bodies=2 players=1 (stray/missing bodies?)"
+            ),
+            "got: {out:?}"
+        );
+        assert!(
+            !out.contains("21:12:03.000"),
+            "timestamp prefix leaked into census mismatch: {out:?}"
+        );
+        let _ = fs::remove_dir_all(&d);
+    }
+
+    /// Wave-218 REJECT pin: duplicate binds must use GNU uniq -c 7-wide count field.
+    #[test]
+    fn assess_duplicate_binds_uniq_c_padding() {
+        let d = tempfile_dir("tbd-det-test-dup");
+        let p = d.join("d.log");
+        let mut body = HEALTHY.to_string();
+        body = body.replace(
+            "bound player 1 to slot blufor:Alpha:SL:0 body (kit kit:rifleman_m16)\n",
+            "bound player 1 to slot blufor:Alpha:SL:0 body (kit kit:rifleman_m16)\n21:12:02.200 SCRIPT       : [TBD] SpawnManager: bound player 1 to slot blufor:Alpha:SL:0 body (kit kit:rifleman_m16)\n",
+        );
+        fs::write(&p, &body).unwrap();
+        let mut buf = Vec::new();
+        assert_eq!(assess_run_to(&p, "novel", &mut buf), 1);
+        let out = String::from_utf8(buf).unwrap();
+        assert!(
+            out.contains("FAIL run novel: duplicate binds:\n      2 bound player 1\n"),
+            "uniq -c padding mismatch, got: {out:?}"
+        );
         let _ = fs::remove_dir_all(&d);
     }
 }
