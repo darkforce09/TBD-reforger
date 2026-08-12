@@ -48,7 +48,7 @@ Golden mission `msn_8f3a2c` defines **18 slots** with exact spawn positions.
 ## Workbench setup
 
 ```bash
-bash scripts/mod/setup-workbench-linux.sh
+cargo xtask setup workbench
 ```
 
 1. Locate `~/ArmaReforger-Base/data/ArmaReforger.gproj` as base game
