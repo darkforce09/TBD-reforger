@@ -13,6 +13,7 @@ mod gate_crf_leak;
 mod gate_route_tags;
 mod gate_t180;
 mod gate_t296;
+mod gate_t437;
 mod gate_t438;
 mod gate_t439;
 mod gate_t440;
@@ -162,6 +163,9 @@ enum VerifyCmd {
     /// T-181.51 Enfusion .layout structural gate (brace balance, slot classes, geometry)
     #[command(name = "ui-layouts")]
     UiLayouts,
+    /// T-437: destroy-inert diagnostics must not claim entities[] never spawn
+    #[command(name = "t437")]
+    T437,
     /// T-438: deploy-staging must resolve the compose file by an absolute path
     #[command(name = "t438")]
     T438,
@@ -530,6 +534,7 @@ fn run() -> Result<u8> {
                 VerifyCmd::T180 => gate_t180::verify_t180(&find_repo_root()?)?,
                 VerifyCmd::RouteTags => gate_route_tags::verify_route_tags(&find_repo_root()?)?,
                 VerifyCmd::UiLayouts => gate_ui_layouts::verify_ui_layouts(&find_repo_root()?)?,
+                VerifyCmd::T437 => gate_t437::verify_t437(&find_repo_root()?)?,
                 VerifyCmd::T438 => gate_t438::verify_t438(&find_repo_root()?)?,
                 VerifyCmd::T440 => gate_t440::verify_t440(&find_repo_root()?)?,
             };
