@@ -59,6 +59,7 @@ mod hostrun;
 mod label_gates;
 mod mcp;
 mod mcp_daemon;
+mod mk_db;
 mod mod_comment_gates;
 mod mod_wave;
 mod mod_world_boot;
@@ -131,6 +132,11 @@ enum TopCmd {
     Deploy {
         #[command(subcommand)]
         cmd: DeployCmd,
+    },
+    /// Local database lane (T-894 port of the Makefile's db-* / seed / test-it targets)
+    Db {
+        #[command(subcommand)]
+        cmd: mk_db::DbCmd,
     },
     /// Local / dedicated-server profile setup (T-853 shell→xtask ports)
     Setup {
@@ -904,6 +910,7 @@ fn run() -> Result<u8> {
             DeployCmd::Db(db_cmd) => deploy_db_common::run(db_cmd),
             DeployCmd::Staging { args } => deploy_staging::run(&args),
         },
+        TopCmd::Db { cmd } => mk_db::run(cmd),
         TopCmd::Setup { cmd } => match cmd {
             SetupCmd::ServerProfile { profile } => {
                 gate_setup_server_profile::run(profile.as_deref())
