@@ -8,11 +8,11 @@
 # Unlike Workbench, this is NOT a serial resource: several runs can execute concurrently
 # because each gets its own profile dir.
 #
-#   bash scripts/mod/compile.sh              # compile the mod, report errors
-#   bash scripts/mod/compile.sh --selftest   # ALSO prove the gate still catches a broken file
-#   bash scripts/mod/compile.sh --keep-logs  # leave the run dir in place for inspection
-#   bash scripts/mod/compile.sh --probe=/tmp/p  # ALSO compile a throwaway addon of .c files —
-#                                               # the API-existence oracle, kept OUT of the mod tree
+#   cargo run -q -p xtask -- mod compile              # compile the mod, report errors
+#   cargo run -q -p xtask -- mod compile --selftest   # ALSO prove the gate still catches a broken file
+#   cargo run -q -p xtask -- mod compile --keep-logs  # leave the run dir in place for inspection
+#   cargo run -q -p xtask -- mod compile --probe=/tmp/p  # ALSO compile a throwaway addon of .c files —
+#                                                         # the API-existence oracle, kept OUT of the mod tree
 #
 # ── EXIT CODES (identical contract to world-boot.sh — the two gates run back to back) ────
 #   0  compiled clean
