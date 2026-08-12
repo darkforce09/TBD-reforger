@@ -11,6 +11,7 @@ mod debug_cmd;
 mod gap;
 mod gate_crf_leak;
 mod gate_deploy_website;
+mod gate_manual_test;
 mod gate_mcp_wb_logs;
 mod gate_remote_log_grep;
 mod gate_route_tags;
@@ -151,6 +152,9 @@ enum ModCmd {
         /// World resource path (default worlds/TBD_Dev_POC.ent)
         world: Option<String>,
     },
+    /// Manual mod/website test suite (T-859 port of manual-test.sh)
+    #[command(name = "manual-test")]
+    ManualTest,
 }
 
 #[derive(Subcommand, Debug)]
@@ -611,6 +615,7 @@ fn run() -> Result<u8> {
                 runs.unwrap_or(5),
                 world.as_deref().unwrap_or("worlds/TBD_Dev_POC.ent"),
             ),
+            ModCmd::ManualTest => gate_manual_test::run(&find_repo_root()?),
         },
         TopCmd::Deploy { cmd } => match cmd {
             DeployCmd::Website { args } => gate_deploy_website::run(&args),

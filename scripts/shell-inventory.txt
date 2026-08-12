@@ -42,7 +42,6 @@ scripts/mod/lib/gate-grep.sh
 scripts/mod/lib/mcpd-bin.sh
 scripts/mod/lib/paths.sh
 scripts/mod/lib/xtask-run.sh
-scripts/mod/manual-test.sh
 scripts/mod/mcp-call-selftest.sh
 scripts/mod/mcp-call.sh
 scripts/mod/mcp-daemon.sh
