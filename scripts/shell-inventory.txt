@@ -27,7 +27,6 @@
 # Regenerating this file wholesale would re-bless whatever happens to exist and defeat the entire
 # mechanism. Edit it one line at a time.
 scripts/lib/hostrun.sh
-scripts/mod/compile.sh
 scripts/mod/deploy-staging.sh
 scripts/mod/lib/gate-grep.sh
 scripts/mod/lib/mcpd-bin.sh

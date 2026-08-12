@@ -26,6 +26,8 @@ mod gate_mcp_call_selftest;
 mod gate_mcp_smoke;
 mod gate_mcp_wb_logs;
 mod gate_mission_version_upload_repro;
+mod gate_mod_compile;
+mod gate_mod_compile_host;
 mod gate_no_python;
 mod gate_remote_log_grep;
 mod gate_route_tags;
@@ -252,6 +254,13 @@ enum ModCmd {
     /// Phase-1 game-server API smoke (T-874 port of test-phase1-api.sh)
     #[command(name = "test-phase1-api")]
     TestPhase1Api,
+    /// Headless Enfusion compile gate (T-891 port of compile.sh)
+    #[command(name = "compile", disable_help_flag = true)]
+    Compile {
+        /// Passthrough flags (`--selftest`, `--keep-logs`, `--probe=DIR`, `-h`/`--help`).
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -831,6 +840,7 @@ fn run() -> Result<u8> {
             ModCmd::BootstrapStaging => gate_bootstrap_staging_server::run(),
             ModCmd::SeedAnnouncement => gate_seed_milestone_announcement::run(),
             ModCmd::TestPhase1Api => gate_test_phase1_api::run(&find_repo_root()?),
+            ModCmd::Compile { args } => gate_mod_compile::run(&args),
         },
         TopCmd::Deploy { cmd } => match cmd {
             DeployCmd::Website { args } => gate_deploy_website::run(&args),

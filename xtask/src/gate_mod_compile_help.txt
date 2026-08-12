@@ -1,0 +1,43 @@
+# T-181.1 — headless Enfusion compile gate. The "HEMTT for Reforger".
+#
+# Compiles tbd-framework's Game scripts using the NATIVE Linux dedicated server
+# (ArmaReforgerServer) — no Workbench, no Proton, no GPU, no Steam client, no clicking.
+# Measured: the compile itself takes ~0.78 s and the whole gate ~1.3 s, versus a 90–120 s
+# Workbench restart that also needs a human to click "Open".
+#
+# Unlike Workbench, this is NOT a serial resource: several runs can execute concurrently
+# because each gets its own profile dir.
+#
+#   bash scripts/mod/compile.sh              # compile the mod, report errors
+#   bash scripts/mod/compile.sh --selftest   # ALSO prove the gate still catches a broken file
+#   bash scripts/mod/compile.sh --keep-logs  # leave the run dir in place for inspection
+#   bash scripts/mod/compile.sh --probe=/tmp/p  # ALSO compile a throwaway addon of .c files —
+#                                               # the API-existence oracle, kept OUT of the mod tree
+#
+# ── EXIT CODES (identical contract to world-boot.sh — the two gates run back to back) ────
+#   0  compiled clean
+#   1  CODE: Enfusion compile errors, printed as file:line. The mod is broken. Fix the mod.
+#   2  the harness could not reach a verdict at all (bad argument, or a timeout with no marker).
+#      Neither proven-broken code nor a diagnosed environment fault.
+#   3  ENVIRONMENT: this machine is not set up to run the gate. Nothing was compiled, so a 3
+#      says NOTHING about tbd-framework. Do not read it as a code failure and do not open a mod
+#      ticket for it. (T-209: the stale-rdb load-count guard below used to exit 1 — a fix agent
+#      handed that verdict spends its budget auditing sources that compile perfectly.)
+#
+# CALLER LANDMINE: `make mod-compile-selftest` inverts this script's status and treats ANY
+# non-zero as "the gate correctly rejected broken source" — so on a machine with no dedicated
+# server it prints SELFTEST OK for a run that never happened. `.github/workflows/mod-gates.yml`
+# therefore does its own three-way check instead of calling that target. Filed separately.
+#
+# ── MEASURED FACTS THIS DEPENDS ON (probed 2026-07-25, do not re-derive) ─────────────────
+#   * Diagnostics land in  <profile>/logs/logs_<ts>/error.log  as:
+#         SCRIPT    (E): @"Scripts/Game/Foo.c,12": Unknown type 'Bar'
+#         SCRIPT    (W): @"...": '...' is obsolete: ...
+#   * Success markers in console.log:  `Module: Game; loaded NNNNx files`
+#                                      `Game successfully created.`
+#   * !! The PROCESS EXITS 0 EVEN WHEN COMPILATION FAILS !!  It just never creates the game.
+#     So the verdict MUST come from the logs, never from $?.
+#   * On success the server keeps running (it goes on to host), so we kill it once we
+#     see the success marker.
+#   * `int x = ;` compiles CLEAN — Enfusion is lenient. Undefined functions/types are what
+#     actually error. That is why --selftest uses an undefined symbol, not bad punctuation.

@@ -255,7 +255,7 @@ jobs:
   #     escape the wave-4 verifier got PAST an earlier revision of the triage, including one that
   #     differed only in the case of `Scripts/Game/`. Whoever next widens a grep in that function
   #     now has a machine telling them what they broke.
-  #   * `bash -n` on both scripts — 1100 lines of load-bearing bash whose syntax nothing checked.
+  #   * `bash -n` on world-boot.sh — compile.sh ported to xtask (T-891).
   #     Weak on purpose (it is not shellcheck, which is not installed anywhere in this program and
   #     would be red on arrival unverified), but it is the difference between finding a typo here
   #     and finding it when the nightly mod gate cannot start.
@@ -269,9 +269,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
-      - name: bash syntax — compile.sh + world-boot.sh
+      - name: bash syntax — world-boot.sh
         run: |
-          bash -n scripts/mod/compile.sh
           bash -n scripts/mod/world-boot.sh
       - name: world-boot verdict logic (make mod-world-boot-selftest)
         run: make mod-world-boot-selftest

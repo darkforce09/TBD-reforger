@@ -128,21 +128,21 @@ jobs:
         run: |
           set -uo pipefail
           rc=0
-          bash scripts/mod/compile.sh --selftest || rc=$?
+          cargo run -q -p xtask -- mod compile --selftest || rc=$?
           case "$rc" in
             1)
               echo "SELFTEST OK: the gate rejected deliberately broken source"
               ;;
             0)
-              echo "::error title=compile gate is blind::compile.sh --selftest returned 0 on source that does not compile. The gate is no longer detecting errors; every green mod-compile since is suspect."
+              echo "::error title=compile gate is blind::mod compile --selftest returned 0 on source that does not compile. The gate is no longer detecting errors; every green mod-compile since is suspect."
               exit 1
               ;;
             3)
-              echo "::error title=compile gate ENVIRONMENT failure::compile.sh exited 3 — this runner's environment, not the mod. The gate never ran, so this is NOT a pass. See the log above."
+              echo "::error title=compile gate ENVIRONMENT failure::mod compile exited 3 — this runner's environment, not the mod. The gate never ran, so this is NOT a pass. See the log above."
               exit 1
               ;;
             *)
-              echo "::error title=compile gate inconclusive::compile.sh --selftest exited $rc (2 = no verdict reached). Treating as failure."
+              echo "::error title=compile gate inconclusive::mod compile --selftest exited $rc (2 = no verdict reached). Treating as failure."
               exit 1
               ;;
           esac
@@ -151,16 +151,16 @@ jobs:
       # GNU make reports its OWN status 2 for any failed recipe, which would flatten the script's
       # 1-vs-3 (code vs environment) distinction into a single uninformative code — the precise
       # confusion the exit-code contract in compile.sh exists to prevent. The make target is
-      # `bash scripts/mod/compile.sh`, so nothing is duplicated by calling it here.
+      # `cargo run -q -p xtask -- mod compile`, so nothing is duplicated by calling it here.
       #
       # First run on a fresh runner also calibrates `.compile-vanilla-baseline` (a vanilla-only
       # boot, ~4 s). actions/checkout cleans ignored files, so that recalibration happens every
       # run. It is cheap and it keeps the baseline honest per-runner.
-      - name: "compile gate — scripts/mod/compile.sh (local equivalent: make mod-compile)"
+      - name: "compile gate — cargo xtask mod compile (local equivalent: make mod-compile)"
         run: |
           set -uo pipefail
           rc=0
-          bash scripts/mod/compile.sh || rc=$?
+          cargo run -q -p xtask -- mod compile || rc=$?
           if [ "$rc" -eq 3 ]; then
             echo "::error title=mod-compile ENVIRONMENT failure::exit 3 — this runner's machine state, NOT the mod. Nothing was compiled. Do not open a mod ticket for this; read the fix printed above."
           elif [ "$rc" -eq 1 ]; then

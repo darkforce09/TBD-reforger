@@ -267,7 +267,7 @@ verify-capability: ## T-181.2.1 every CRF capability must carry a TBD verdict (f
 	cargo run -q -p tbd-tools --bin enf -- capability
 
 mod-compile: ## T-181.1 Enfusion compile gate — native headless server, ~1.3s, no Workbench/Proton/GPU
-	bash scripts/mod/compile.sh
+	cargo run -q -p xtask -- mod compile
 
 # THE INSTRUMENT BEFORE THE VERDICT. This target's entire job is to prove the absence of false
 # greens, so it must not be one. Only exit 1 — a real Enfusion rejection of the deliberately
@@ -288,13 +288,13 @@ mod-compile: ## T-181.1 Enfusion compile gate — native headless server, ~1.3s,
 # not from $?. Status capture is `|| rc=$$?`, never `cmd; rc=$$?`: the latter aborts before the
 # assignment under any -e shell, so the classification would never print.
 mod-compile-selftest: ## T-181.1 prove the compile gate still catches a broken .c (passes ONLY on exit 1)
-	@rc=0; bash scripts/mod/compile.sh --selftest || rc=$$?; \
+	@rc=0; cargo run -q -p xtask -- mod compile --selftest || rc=$$?; \
 	case "$$rc" in \
 		1) echo "SELFTEST OK: gate correctly rejected broken source (exit 1)" ;; \
 		0) echo "SELFTEST FAIL: gate returned 0 on deliberately broken source — it is no longer detecting compile errors, so every green mod-compile since is suspect."; exit 1 ;; \
 		3) echo "SELFTEST FAIL: ENVIRONMENT (exit 3) — the gate never ran. Read the ENV FAIL above: it is this machine, and it says NOTHING about tbd-framework. A check that did not happen is not a pass."; exit 1 ;; \
-		2) echo "SELFTEST FAIL: no verdict reached (exit 2 — timeout, or a bad argument to compile.sh). Inconclusive is not a pass."; exit 1 ;; \
-		*) echo "SELFTEST FAIL: compile.sh --selftest exited $$rc, outside its documented 0/1/2/3 contract."; exit 1 ;; \
+		2) echo "SELFTEST FAIL: no verdict reached (exit 2 — timeout, or a bad argument to mod compile). Inconclusive is not a pass."; exit 1 ;; \
+		*) echo "SELFTEST FAIL: mod compile --selftest exited $$rc, outside its documented 0/1/2/3 contract."; exit 1 ;; \
 	esac
 
 mod-world-boot: ## T-181.17 boot the real scenario headlessly — asserts the TBD_GameMode component roll-call
