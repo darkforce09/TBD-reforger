@@ -26,6 +26,7 @@ mod gate_t439;
 mod gate_t440;
 mod gate_t444;
 mod gate_tbd_spawn_determinism;
+mod gate_test_mission;
 mod gate_ui_layouts;
 mod gate_ui_layouts_awk;
 mod golden_gate;
@@ -168,6 +169,12 @@ enum ModCmd {
     /// Manual mod/website test suite (T-859 port of manual-test.sh)
     #[command(name = "manual-test")]
     ManualTest,
+    /// Switch Workbench profile missionId / stage a golden (T-864 port of test-mission.sh)
+    #[command(name = "test-mission")]
+    TestMission {
+        /// Golden basename (no .json), `backend`, or omit to show current
+        target: Option<String>,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -666,6 +673,7 @@ fn run() -> Result<u8> {
                 world.as_deref().unwrap_or("worlds/TBD_Dev_POC.ent"),
             ),
             ModCmd::ManualTest => gate_manual_test::run(&find_repo_root()?),
+            ModCmd::TestMission { target } => gate_test_mission::run(target.as_deref()),
         },
         TopCmd::Deploy { cmd } => match cmd {
             DeployCmd::Website { args } => gate_deploy_website::run(&args),
