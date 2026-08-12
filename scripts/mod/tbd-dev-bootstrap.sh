@@ -22,7 +22,7 @@ echo "== TBD dev bootstrap =="
 bash "$MOD_SCRIPTS/setup-mcp-game-root.sh"
 
 # Pin enfusion-mcp for the warm MCP daemon / one-shot resolver (tier-2; no npx cold-start).
-# Non-fatal offline → mcp-call.sh falls back to the npx cache / `npx -y`.
+# Non-fatal offline → xtask mcp call falls back to the npx cache / `npx -y`.
 if [ -f "$MOD_SCRIPTS/package.json" ] && [ ! -d "$MOD_SCRIPTS/node_modules/enfusion-mcp" ]; then
   (cd "$MOD_SCRIPTS" && npm ci --silent) || echo "warn: npm ci in $MOD_SCRIPTS failed (offline?) — using npx-cache fallback"
 fi
@@ -57,16 +57,16 @@ fi
 echo "Port $WB_PORT is listening."
 
 # Pre-warm the persistent MCP daemon (one-time ~35 s index load) so wb_connect + all later
-# mcp-call.sh invocations are fast. Non-fatal — calls fall back to the one-shot path.
+# mcp call invocations are fast. Non-fatal — calls fall back to the one-shot path.
 echo "Pre-warming MCP daemon..."
-bash "$MOD_SCRIPTS/mcp-daemon.sh" start || echo "warn: daemon pre-warm failed — mcp-call.sh will use one-shot fallback"
+bash "$MOD_SCRIPTS/mcp-daemon.sh" start || echo "warn: daemon pre-warm failed — xtask mcp call will use one-shot fallback"
 
-bash "$MOD_SCRIPTS/mcp-call.sh" wb_connect '{}' || {
+"$MOD_SCRIPTS/lib/xtask-run.sh" mcp call wb_connect '{}' || {
   echo "wb_connect failed — reload tbd-framework addon in Workbench Resource Browser and retry."
   exit 1
 }
 
-bash "$MOD_SCRIPTS/mcp-call.sh" mod_validate "{\"modPath\":\"$MOD\"}" || true
+"$MOD_SCRIPTS/lib/xtask-run.sh" mcp call mod_validate "{\"modPath\":\"$MOD\"}" || true
 
 for arg in "$@"; do
   case "$arg" in

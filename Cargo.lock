@@ -6219,6 +6219,7 @@ dependencies = [
  "clap",
  "flate2",
  "jsonschema",
+ "libc",
  "map-engine-core",
  "png 0.17.16",
  "prettyplease",

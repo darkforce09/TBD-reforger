@@ -15,12 +15,13 @@ use super::{
 };
 
 fn mcp(repo_root: &Path, tool: &str, args_json: &str) -> proc::Merged {
-    let script = repo_root.join("scripts/mod/mcp-call.sh");
-    // bash: `mcp … >/dev/null 2>&1` on most calls; callers inspect `.code` / `.text`.
-    match proc::Run::new("bash")
-        .arg(&script)
-        .arg(tool)
-        .arg(args_json)
+    // T-860: former scripts/mod/mcp-call.sh → cargo xtask mcp call.
+    // Callers inspect `.code` / `.text` (bash redirected most calls).
+    match proc::Run::new("cargo")
+        .args([
+            "run", "-q", "-p", "xtask", "--", "mcp", "call", tool, args_json,
+        ])
+        .cwd(repo_root)
         .merged_output()
     {
         Ok(m) => m,

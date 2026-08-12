@@ -25,8 +25,8 @@ fi
 # Display filter only — the PASS/PARTIAL/FAIL verdict never depends on this pattern.
 PATTERN="${1:-\\[TBD\\]\\[Slots\\]|\\[TBD\\]\\[Loadout\\]|\\[TBD\\]\\[Spawn\\]|assigned slot|bound player}"
 
-bash "$MOD_SCRIPTS/mcp-call.sh" wb_play '{}' || true
+"$MOD_SCRIPTS/lib/xtask-run.sh" mcp call wb_play '{}' || true
 sleep 25
-bash "$MOD_SCRIPTS/mcp-call.sh" wb_stop '{}' || true
+"$MOD_SCRIPTS/lib/xtask-run.sh" mcp call wb_stop '{}' || true
 
 cargo run -q -p xtask -- mcp wb-logs "$PATTERN"

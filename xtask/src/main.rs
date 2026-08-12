@@ -12,6 +12,7 @@ mod gap;
 mod gate_crf_leak;
 mod gate_deploy_website;
 mod gate_manual_test;
+mod gate_mcp_call;
 mod gate_mcp_wb_logs;
 mod gate_remote_log_grep;
 mod gate_route_tags;
@@ -333,6 +334,13 @@ enum McpCmd {
     /// Probe AF_UNIX socket connectability (exit 0/1)
     #[command(name = "probe-sock")]
     ProbeSock { sock: String },
+    /// Daemon-first JSON-RPC tool call (T-860 port of mcp-call.sh).
+    /// Exit: 0 success · 1 usage/empty · 2 init-failed · 3 tool error · 4 timeout.
+    Call {
+        tool: Option<String>,
+        /// JSON object; defaults to `{}` when omitted or empty.
+        args_json: Option<String>,
+    },
     /// Grep latest Workbench Play console.log for TBD spawn diagnostics (T-857).
     /// Exit: 0 PASS · 1 FAIL · 2 PARTIAL · 3 ENVIRONMENT.
     #[command(name = "wb-logs", disable_help_flag = true)]
@@ -544,6 +552,7 @@ fn run() -> Result<u8> {
                     }
                 }
                 McpCmd::ProbeSock { sock } => mcp::cmd_probe_sock(&sock),
+                McpCmd::Call { tool, args_json } => gate_mcp_call::run(tool, args_json),
                 McpCmd::WbLogs {
                     file,
                     selftest,

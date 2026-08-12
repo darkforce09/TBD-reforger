@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Offline self-test for the MCP call path (T-090.0 gates T1-T7; T-162 Rust consumer).
 # No Workbench / no real enfusion-mcp: drives `xtask mcp consume` against recorded fixtures
-# and mcp-call.sh against the Rust mcpd stub (MCP_STUB=1 — T-165.7).
+# and `xtask mcp call` against the Rust mcpd stub (MCP_STUB=1 — T-165.7).
 # Exit 0 iff every gate passes.
 set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -40,11 +40,11 @@ out=$("$XTASK" mcp consume < "$FIX/mcp-empty.jsonl"); rc=$?
 { [ "$rc" = 1 ] && [ -z "$out" ]; } && ok "T5 empty rc1 empty-out" || no "T5 empty (rc=$rc out=[$out])"
 
 echo "[T6] usage error, no spawn"
-bash "$SCRIPT_DIR/mcp-call.sh" >/dev/null 2>/tmp/.st_e; rc_is "T6 usage" 1 $?
+"$XTASK" mcp call >/dev/null 2>/tmp/.st_e; rc_is "T6 usage" 1 $?
 grep -q usage /tmp/.st_e && ok "T6 usage text on stderr" || no "T6 usage text missing"
 
 echo "[one-shot wrapper via stub] (MCP_NO_DAEMON=1)"
-osh() { MCP_NO_DAEMON=1 ENFUSION_MCP_BIN="$STUB" bash "$SCRIPT_DIR/mcp-call.sh" wb_state '{}'; }
+osh() { MCP_NO_DAEMON=1 ENFUSION_MCP_BIN="$STUB" "$XTASK" mcp call wb_state '{}'; }
 out=$(STUB_MODE=success STUB_LINGER=0.3 osh 2>/dev/null); rc=$?
 { [ "$rc" = 0 ] && [ "$out" = "STUB-OK wb_state edit 123" ]; } && ok "one-shot success rc0" || no "one-shot success (rc=$rc out=[$out])"
 STUB_MODE=error STUB_LINGER=0.3 osh >/dev/null 2>/dev/null; rc_is "one-shot error" 3 $?
@@ -58,13 +58,13 @@ echo "[daemon via stub-daemon] (short socket, offline)"
 export MCP_SOCK="$SOCK" MCP_DAEMON_IDLE=8 MCP_DAEMON_MAX_LIFE=30
 ENFUSION_MCP_BIN="$STUB" STUB_DAEMON=1 bash "$SCRIPT_DIR/mcp-daemon.sh" start >/dev/null 2>&1
 MCP_SOCK="$SOCK" bash "$SCRIPT_DIR/mcp-daemon.sh" status >/dev/null 2>&1; rc_is "daemon start+status" 0 $?
-out=$(ENFUSION_MCP_BIN="$STUB" STUB_DAEMON=1 bash "$SCRIPT_DIR/mcp-call.sh" wb_state '{}' 2>/dev/null); rc=$?
+out=$(ENFUSION_MCP_BIN="$STUB" STUB_DAEMON=1 "$XTASK" mcp call wb_state '{}' 2>/dev/null); rc=$?
 { [ "$rc" = 0 ] && [ "$out" = "STUB-DAEMON-OK wb_state args={}" ]; } && ok "daemon call rc0" || no "daemon call (rc=$rc out=[$out])"
 # regression: args-bearing call must round-trip uncorrupted (guards the ${2:-{}} extra-brace bug)
-out=$(ENFUSION_MCP_BIN="$STUB" STUB_DAEMON=1 bash "$SCRIPT_DIR/mcp-call.sh" api_search '{"query":"Ztest"}' 2>/dev/null)
+out=$(ENFUSION_MCP_BIN="$STUB" STUB_DAEMON=1 "$XTASK" mcp call api_search '{"query":"Ztest"}' 2>/dev/null)
 [ "$out" = 'STUB-DAEMON-OK api_search args={"query":"Ztest"}' ] && ok "args round-trip (no brace corruption)" || no "args round-trip (out=[$out])"
 cleanup
-out=$(MCP_NO_DAEMON=1 ENFUSION_MCP_BIN="$STUB" STUB_MODE=success STUB_LINGER=0.3 bash "$SCRIPT_DIR/mcp-call.sh" wb_state '{}' 2>/dev/null); rc=$?
+out=$(MCP_NO_DAEMON=1 ENFUSION_MCP_BIN="$STUB" STUB_MODE=success STUB_LINGER=0.3 "$XTASK" mcp call wb_state '{}' 2>/dev/null); rc=$?
 { [ "$rc" = 0 ] && [ -n "$out" ]; } && ok "fallback when no daemon" || no "fallback (rc=$rc out=[$out])"
 
 rm -f /tmp/.st_e

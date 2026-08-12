@@ -227,7 +227,7 @@ pub fn gen_font_table(bdf_path: &Path) -> Result<u8> {
 
 /// The closure gate: (1) zero tracked `.mjs`/`.cjs` outside `apps/mod`; (2) no `node `/`npx `
 /// invocations in the Makefile, scripts/, or workflows outside the enfusion-mcp floor
-/// (mcp-call.sh's `.js` runner tiers); (3) zero `actions/setup-node` in CI.
+/// (`xtask mcp call` `.js` runner tiers in gate_mcp_call.rs); (3) zero `actions/setup-node` in CI.
 pub fn verify_no_node() -> Result<u8> {
     let root = repo_root()?;
     let mut fails = 0u64;
@@ -256,7 +256,8 @@ pub fn verify_no_node() -> Result<u8> {
         "==> node/npx invocations in Makefile + scripts/ + .github/ (allowlist: enfusion-mcp floor)"
     );
     // Files allowed to invoke node/npx: the enfusion-mcp runner tiers only.
-    let allow_files = ["scripts/mod/mcp-call.sh"];
+    // Floor moved to xtask/src/gate_mcp_call.rs (not scanned here — Makefile/scripts/.github only).
+    let allow_files: &[&str] = &[];
     let mut offenders: Vec<String> = Vec::new();
     let mut scan = |path: &Path| {
         let Ok(text) = std::fs::read_to_string(path) else {
