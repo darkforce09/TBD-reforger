@@ -1,7 +1,7 @@
 # Workbench MCP shell tooling
 
 **Shipped:** `e7e7232` (2026-06-30) · **Pinned package:** `enfusion-mcp@0.6.1` in `scripts/mod/package.json`  
-**Entry for agents:** [`CLAUDE-CODE-START.md`](CLAUDE-CODE-START.md) · **Bootstrap:** `bash scripts/mod/tbd-dev-bootstrap.sh`
+**Entry for agents:** [`CLAUDE-CODE-START.md`](CLAUDE-CODE-START.md) · **Bootstrap:** `cargo xtask mod dev-bootstrap`
 
 Reliable shell access to **enfusion-mcp** for Claude Code terminal sessions. Replaces the old flaky one-shot `timeout 90 npx …` path that hung to the full timeout or returned empty mid-stream.
 
@@ -25,7 +25,7 @@ mcp-call.sh
 | Offline gates | `scripts/mod/mcp-call-selftest.sh` | 19 fixture tests, no Workbench |
 | Live smoke | `scripts/mod/mcp-smoke.sh` | `wb_connect` + `wb_state` after bootstrap |
 
-**Bootstrap** (`tbd-dev-bootstrap.sh`) runs `npm ci` in `scripts/mod/` when needed, pre-warms the daemon, then `wb_connect` + `mod_validate`.
+**Bootstrap** (`cargo xtask mod dev-bootstrap`) runs `npm ci` in `scripts/mod/` when needed, pre-warms the daemon, then `wb_connect` + `mod_validate`.
 
 ---
 

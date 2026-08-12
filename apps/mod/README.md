@@ -27,7 +27,7 @@ one greenfield Enfusion mod runs them all, and the web stack handles auth, event
 ### Claude Code (Enfusion work)
 
 1. Read [`docs/mod/CLAUDE-CODE-START.md`](../../docs/mod/CLAUDE-CODE-START.md)
-2. Run **`bash scripts/mod/tbd-dev-bootstrap.sh`** (from monorepo root) — installs gitignored `EnfusionMCP` handlers from the `enfusion-mcp` npm package (not in git)
+2. Run **`cargo xtask mod dev-bootstrap`** (from monorepo root) — installs gitignored `EnfusionMCP` handlers from the `enfusion-mcp` npm package (not in git)
 3. Enable **enfusion-mcp** before editing any `.c` file
 4. Open **only** `tbd-framework/addon.gproj` in Workbench — never the gitignored `Tbd_framework/` or `crf_framework/` reference copies
 
@@ -89,7 +89,7 @@ bash scripts/mod/test-phase1-api.sh
 | [`mcp-call.sh`](../../scripts/mod/mcp-call.sh) | JSON-RPC to enfusion-mcp from shell |
 | [`mcp-wb-logs.sh`](../../scripts/mod/mcp-wb-logs.sh) | Grep latest Proton Workbench `console.log` |
 | [`tbd-spawn-verify.sh`](../../scripts/mod/tbd-spawn-verify.sh) | MCP `wb_play` + log grep for spawn lines |
-| [`tbd-dev-bootstrap.sh`](../../scripts/mod/tbd-dev-bootstrap.sh) | MCP root + `wb_connect` + `mod_validate` |
+| `cargo xtask mod dev-bootstrap` | MCP root + `wb_connect` + `mod_validate` |
 | [`setup-mcp-game-root.sh`](../../scripts/mod/setup-mcp-game-root.sh) | Pak symlink farm for MCP |
 | [`deploy-staging.sh`](../../scripts/mod/deploy-staging.sh) | Rsync → 192.168.0.140, API, game server restart |
 | [`debug-direct-join.sh`](../../scripts/mod/debug-direct-join.sh) | LAN join diagnostics (A2S, SSH, builds) |

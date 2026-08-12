@@ -56,7 +56,7 @@ bash scripts/mod/setup-workbench-linux.sh
 3. Open **TBD_Framework** in the launcher
 4. Use **enfusion-mcp** before editing any `.c` file
 
-**New script file:** Workbench builds its script-file list at project load — a freshly added `.c` stays "Unknown class" until **Workbench cold restart** (not just `wb_reload`). Kill Workbench + re-run `tbd-dev-bootstrap.sh`.
+**New script file:** Workbench builds its script-file list at project load — a freshly added `.c` stays "Unknown class" until **Workbench cold restart** (not just `wb_reload`). Kill Workbench + re-run `cargo xtask mod dev-bootstrap`.
 
 **MCP verify spawn:**
 

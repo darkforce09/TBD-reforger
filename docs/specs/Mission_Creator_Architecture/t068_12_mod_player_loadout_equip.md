@@ -67,7 +67,7 @@ Phase 1 (`TBD_LoadoutEquipComponent`) dresses a **server-spawned test NPC** from
 ## Verify
 
 ```bash
-bash scripts/mod/tbd-dev-bootstrap.sh
+cargo xtask mod dev-bootstrap
 # wb_play with mission JSON containing slot loadout block
 ```
 
@@ -119,7 +119,7 @@ Implement **T-068.12** — Mod player loadout equip + InsertItem cargo.
 ═══ PREFLIGHT ═══
   cd /var/home/Samuel/Projects/TBD-Reforger
   git rev-parse T-068.11
-  bash scripts/mod/tbd-dev-bootstrap.sh
+  cargo xtask mod dev-bootstrap
 
 ═══ READ ═══
   1. .ai/artifacts/t068_15_fable_program_handoff.md
@@ -146,7 +146,7 @@ Implement **T-068.12** — Mod player loadout equip + InsertItem cargo.
   - Silent deferral of cargo InsertItem
 
 ═══ VERIFY ═══
-  tbd-dev-bootstrap + wb_play; M1–M4; screenshot of PLAYER (not NPC)
+  cargo xtask mod dev-bootstrap + wb_play; M1–M4; screenshot of PLAYER (not NPC)
   .ai/artifacts/t068_12_verify_log.md
 
 ═══ RETURN ═══

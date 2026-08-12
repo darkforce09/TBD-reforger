@@ -135,7 +135,7 @@ Implement **T-152.2** — Reforger map icon discovery + LANDMARK_SET art + atlas
   test "$(git rev-parse --show-toplevel)" = "$(pwd)"
   git branch --show-current    # ticket/T-152
   git status --porcelain
-  # Workbench warm: bash scripts/mod/tbd-dev-bootstrap.sh (operator)
+  # Workbench warm: cargo xtask mod dev-bootstrap (operator)
   git lfs pull
   sha256sum packages/map-assets/glyphs/svg/building-*.svg > /tmp/t152_2_pre_sha.txt
 

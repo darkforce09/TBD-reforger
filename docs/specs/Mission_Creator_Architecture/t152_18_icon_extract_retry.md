@@ -5,7 +5,7 @@
 **Executor:** **claude-code** (Claude Code) — **OPERATOR-IN-LOOP: do not start headless**
 **Authority:** T-152 program hub · audit [`t152_11_fidelity_audit_report.md`](../../../.ai/artifacts/t152_11_fidelity_audit_report.md) §6.4 (S9, A7, D2 WRONG_PATH)
 **Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.18`**
-**Depends on:** operator presence (Workbench warm via `scripts/mod/tbd-dev-bootstrap.sh`)
+**Depends on:** operator presence (Workbench warm via `cargo xtask mod dev-bootstrap`)
 
 ## In one sentence
 

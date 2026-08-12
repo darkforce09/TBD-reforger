@@ -71,7 +71,7 @@ curl -sf http://localhost:8080/api/v1/health
 - **Mission Creator:** `http://127.0.0.1:3000/missions/:id/edit` (after creating/opening a mission)
 - **Full details:** [DEV_RUNBOOK.md](DEV_RUNBOOK.md)
 
-**Mod Workbench (T-068.1 / T-068.5 / T-068.8):** Claude Code runs **`bash scripts/mod/tbd-dev-bootstrap.sh`** (auto-launches Workbench) + MCP — see [`docs/mod/CLAUDE-CODE-START.md`](../mod/CLAUDE-CODE-START.md).
+**Mod Workbench (T-068.1 / T-068.5 / T-068.8):** Claude Code runs **`cargo xtask mod dev-bootstrap`** (auto-launches Workbench) + MCP — see [`docs/mod/CLAUDE-CODE-START.md`](../mod/CLAUDE-CODE-START.md).
 
 ---
 

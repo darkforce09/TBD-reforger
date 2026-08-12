@@ -17,7 +17,7 @@
 **Workspace:** monorepo root (`TBD-Reforger/`). Mod scripts live under `scripts/mod/`; run from repo root:
 
 ```bash
-bash scripts/mod/tbd-dev-bootstrap.sh
+cargo xtask mod dev-bootstrap
 bash scripts/mod/deploy-staging.sh --dry-run
 ```
 
@@ -29,7 +29,7 @@ bash scripts/mod/deploy-staging.sh --dry-run
 
 **Full reference:** [`MCP_TOOLING.md`](MCP_TOOLING.md)
 
-`tbd-dev-bootstrap.sh` is the **single entrypoint** — Claude Code runs it at the start of every mod slice. It:
+`cargo xtask mod dev-bootstrap` is the **single entrypoint** — Claude Code runs it at the start of every mod slice. It:
 
 1. Builds MCP pak symlink farm (`setup-mcp-game-root.sh`)
 2. Runs `npm ci` in `scripts/mod/` when `enfusion-mcp` is not installed (pinned @ 0.6.1)
@@ -39,7 +39,7 @@ bash scripts/mod/deploy-staging.sh --dry-run
 6. Runs `wb_connect` + `mod_validate`
 
 ```bash
-bash scripts/mod/tbd-dev-bootstrap.sh
+cargo xtask mod dev-bootstrap
 ```
 
 **Human only if** bootstrap prints `ACTION REQUIRED` (exit 1): open `apps/mod/tbd-framework/addon.gproj` in Workbench, enable **Net API**, then Claude Code re-runs bootstrap.
@@ -80,7 +80,7 @@ If `wb_connect` fails: reload `tbd-framework` in Workbench Resource Browser and 
 ## T-068.1 typical MCP flow
 
 ```
-tbd-dev-bootstrap.sh  (auto-launch Workbench + daemon pre-warm)
+cargo xtask mod dev-bootstrap  (auto-launch Workbench + daemon pre-warm)
 → wb_connect → asset_search / game_read / game_browse
 → implement export script in tbd-framework
 → wb_reload → mod_validate → run export
@@ -104,7 +104,7 @@ go run ./cmd/import-registry-items \
 ## T-068.5 / T-068.5.1 verify flow (Phase 1 shipped)
 
 ```
-tbd-dev-bootstrap.sh
+cargo xtask mod dev-bootstrap
 → cp /tmp/loadout-export.json → $PROFILE/TBD_LoadoutTest.json   # T-068.4 download
 → wb_reload → wb_play → mcp-wb-logs.sh | grep Loadout → wb_stop
 → sha256sum "$PROFILE/TBD_LoadoutTest.json"
