@@ -16,6 +16,10 @@
 //! wave.sh / ci.yml call sites. [`VERIFY_T456`] / [`VERIFY_T468`] are the single source; test
 //! fixtures derive from them (gate_t440 precedent).
 //!
+//! `scripts/platform/wave.sh` is examined (not merely claimed): both `gate_slice` and `cmd_gate`
+//! must carry exact `checkrun` + cargo verify lines for t456 and t468 (T-478 dual-path discipline).
+//! A hollow `run "…" true` must RED this gate.
+//!
 //! ── WHAT THE PORT REMOVES ────────────────────────────────────────────────────────────────────
 //!
 //! 1. **`python3`, entirely.** The script was a heredoc owning YAML comment strip + recipe
@@ -42,6 +46,7 @@ const VERIFY_T468: &str = "cargo run -q -p xtask -- verify t468";
 
 const CI_REL: &str = ".github/workflows/ci.yml";
 const MAKE_REL: &str = "Makefile";
+const WAVE_REL: &str = "scripts/platform/wave.sh";
 const GOOD_RUN: &str = "make ci-local-schema";
 
 /// Entry point. Bash collapsed any Python non-zero to exit 1 after printing FAIL — same here.
@@ -73,7 +78,26 @@ pub fn verify_t468(repo_root: &Path) -> Result<u8> {
         None
     };
 
-    let fail = run_pins(&src, makefile.as_deref(), makefile_path.as_path());
+    let wave_path = repo_root.join(WAVE_REL);
+    let wave = if wave_path.is_file() {
+        match std::fs::read_to_string(&wave_path) {
+            Ok(s) => Some(s),
+            Err(e) => {
+                println!("FAIL: cannot read {}: {e}", wave_path.display());
+                return Ok(1);
+            }
+        }
+    } else {
+        println!("FAIL: missing {}", wave_path.display());
+        return Ok(1);
+    };
+
+    let fail = run_pins(
+        &src,
+        makefile.as_deref(),
+        makefile_path.as_path(),
+        wave.as_deref(),
+    );
     if fail != 0 {
         println!("verify-t468-ci-schema-parity: FAIL");
         return Ok(1);
@@ -83,7 +107,7 @@ pub fn verify_t468(repo_root: &Path) -> Result<u8> {
 }
 
 /// Port of the Python pin block. Returns `0` when clean, `1` when any pin failed.
-fn run_pins(ci_src: &str, makefile: Option<&str>, makefile_path: &Path) -> i32 {
+fn run_pins(ci_src: &str, makefile: Option<&str>, makefile_path: &Path, wave: Option<&str>) -> i32 {
     let stripped = strip_yaml_hash_comments(ci_src);
     let lines: Vec<&str> = stripped.lines().collect();
 
@@ -247,11 +271,9 @@ fn run_pins(ci_src: &str, makefile: Option<&str>, makefile_path: &Path) -> i32 {
                 fail = 1;
             }
             Some(live) => {
-                // Exact recipe goal: ^\t @? <VERIFY_*> (whitespace|EOL)
-                let cargo_goal_re = Regex::new(&format!(r"^\t@?{}\s*(?:\s|$)", regex::escape(cmd)))
-                    .expect("cargo goal");
-                // The escape of spaces makes `\ ` in the pattern; also accept the literal
-                // spaced form via a looser startswith check after optional @.
+                // Exact recipe goal: ^\t@?<VERIFY_*>\s*$ — trailing whitespace only (NOT --help / || true).
+                let cargo_goal_re =
+                    Regex::new(&format!(r"^\t@?{}\s*$", regex::escape(cmd))).expect("cargo goal");
                 let ok = live
                     .iter()
                     .any(|ln| cargo_goal_re.is_match(ln) || recipe_invokes_cargo(ln, cmd));
@@ -272,10 +294,22 @@ fn run_pins(ci_src: &str, makefile: Option<&str>, makefile_path: &Path) -> i32 {
         }
     }
 
+    match wave {
+        None => {
+            println!("FAIL: missing {WAVE_REL} (T-456/T-468 dual-path pin vacuous)");
+            fail = 1;
+        }
+        Some(w) => {
+            fail |= wave_pins(w);
+        }
+    }
+
     fail
 }
 
-/// `^\t@?<cmd>(?:\s|$)` after comment strip — token-exact like the old bash path pin.
+/// Token-exact / end-anchored like the old bash path pin: after optional `@`, the recipe
+/// equals `cmd` or `cmd` + trailing whitespace only — NOT `--help`, `|| true`, `&& true`,
+/// or `2>/dev/null` suffixes that would green `make` without enforcing the gate.
 fn recipe_invokes_cargo(line: &str, cmd: &str) -> bool {
     let rest = if let Some(r) = line.strip_prefix("\t@") {
         r
@@ -284,7 +318,125 @@ fn recipe_invokes_cargo(line: &str, cmd: &str) -> bool {
     } else {
         return false;
     };
-    rest == cmd || rest.starts_with(&format!("{cmd} "))
+    let trimmed = rest.trim_end();
+    trimmed == cmd
+}
+
+/// Pin `wave.sh` `gate_slice` + `cmd_gate` to exact `checkrun` + cargo verify for t456/t468
+/// (gate_t440 dual-path discipline). Hollow `run "…" true` must fail.
+fn wave_pins(wave: &str) -> i32 {
+    let stripped = strip_hash_comments(wave);
+    let mut fail = 0;
+    let pins = [("T-456", VERIFY_T456), ("T-468", VERIFY_T468)];
+    for (name, role) in [("gate_slice", "slice gate"), ("cmd_gate", "cold gate")] {
+        let Some(body) = extract_fn_body(&stripped, name) else {
+            println!("FAIL: wave.sh missing `{name}()` ({role}) after comment strip");
+            fail = 1;
+            continue;
+        };
+        for (ticket, cmd) in pins {
+            let checkrun_cmd = format!("checkrun {cmd}");
+            if !body.contains(&checkrun_cmd) {
+                println!(
+                    "FAIL: wave.sh `{name}()` ({role}) does not invoke {checkrun_cmd} \
+                     ({ticket} dual-path pin)"
+                );
+                fail = 1;
+                continue;
+            }
+            // End-anchored run line: reject `checkrun … --help` / `|| true` smuggles.
+            let re = Regex::new(&format!(
+                r#"(?m)^\s*run\s+"{ticket}[^"]*"\s+checkrun\s+{}\s*$"#,
+                regex::escape(cmd)
+            ))
+            .expect("wave pin re");
+            if !re.is_match(body) {
+                println!("FAIL: wave.sh `{name}()` ({role}) missing exact checkrun line for {cmd}");
+                fail = 1;
+            }
+        }
+    }
+    fail
+}
+
+/// Strip `#` comments outside quotes — same discipline as gate_t440 so a commented
+/// `run "T-456 …"` cannot satisfy the pin.
+fn strip_hash_comments(text: &str) -> String {
+    let chars: Vec<char> = text.chars().collect();
+    let n = chars.len();
+    let mut out = String::with_capacity(text.len());
+    let (mut i, mut in_squote, mut in_dquote) = (0usize, false, false);
+    while i < n {
+        let c = chars[i];
+        if in_squote {
+            out.push(c);
+            if c == '\'' && !(i + 1 < n && chars[i + 1] == '\'') {
+                in_squote = false;
+            } else if c == '\'' && i + 1 < n && chars[i + 1] == '\'' {
+                out.push(chars[i + 1]);
+                i += 2;
+                continue;
+            }
+            i += 1;
+            continue;
+        }
+        if in_dquote {
+            out.push(c);
+            if c == '\\' && i + 1 < n {
+                out.push(chars[i + 1]);
+                i += 2;
+                continue;
+            }
+            if c == '"' {
+                in_dquote = false;
+            }
+            i += 1;
+            continue;
+        }
+        if c == '\'' {
+            in_squote = true;
+            out.push(c);
+            i += 1;
+            continue;
+        }
+        if c == '"' {
+            in_dquote = true;
+            out.push(c);
+            i += 1;
+            continue;
+        }
+        if c == '#' {
+            while i < n && chars[i] != '\n' {
+                i += 1;
+            }
+            continue;
+        }
+        out.push(c);
+        i += 1;
+    }
+    out
+}
+
+/// Brace-balanced `{ … }` body of a shell function (gate_t440 precedent).
+fn extract_fn_body<'a>(src: &'a str, fn_name: &str) -> Option<&'a str> {
+    let opener =
+        Regex::new(&format!(r"(?m)^{}\(\)\s*\{{", regex::escape(fn_name))).expect("fn opener");
+    let m = opener.find(src)?;
+    let start = m.end() - 1;
+    let mut depth = 0i32;
+    for (offset, ch) in src[start..].char_indices() {
+        match ch {
+            '{' => depth += 1,
+            '}' => {
+                depth -= 1;
+                if depth == 0 {
+                    return Some(&src[start..start + offset + 1]);
+                }
+            }
+            _ => {}
+        }
+    }
+    None
 }
 
 /// Tab recipe lines under `target:` with `#` comments stripped; `None` if missing.
@@ -465,24 +617,32 @@ verify-t468: ## t468\n\t@{VERIFY_T468}\n"
         )
     }
 
+    /// Dual-path wave fixture derived from VERIFY_* consts (gate_t440 precedent).
+    fn wave_ok() -> String {
+        format!(
+            "gate_slice() {{\n  run \"T-456 REST size gate\"  checkrun {VERIFY_T456}\n  run \"T-468 CI schema parity\" checkrun {VERIFY_T468}\n}}\n\ncmd_gate() {{\n  run \"T-456 REST size gate\"  checkrun {VERIFY_T456}\n  run \"T-468 CI schema parity\" checkrun {VERIFY_T468}\n}}\n"
+        )
+    }
+
+    fn pins(mf: &str, wave: &str) -> i32 {
+        run_pins(&ci_ok(), Some(mf), Path::new("Makefile"), Some(wave))
+    }
+
     #[test]
     fn live_shaped_pins_hold() {
-        assert_eq!(
-            run_pins(&ci_ok(), Some(&make_ok()), Path::new("Makefile")),
-            0
-        );
+        assert_eq!(pins(&make_ok(), &wave_ok()), 0);
     }
 
     #[test]
     fn hollow_t456_recipe_fails() {
         let mf = make_ok().replace(&format!("\t@{VERIFY_T456}"), "\t@true");
-        assert_ne!(run_pins(&ci_ok(), Some(&mf), Path::new("Makefile")), 0);
+        assert_ne!(pins(&mf, &wave_ok()), 0);
     }
 
     #[test]
     fn hollow_t468_recipe_fails() {
         let mf = make_ok().replace(&format!("\t@{VERIFY_T468}"), "\t@true");
-        assert_ne!(run_pins(&ci_ok(), Some(&mf), Path::new("Makefile")), 0);
+        assert_ne!(pins(&mf, &wave_ok()), 0);
     }
 
     #[test]
@@ -491,18 +651,79 @@ verify-t468: ## t468\n\t@{VERIFY_T468}\n"
             VERIFY_T456,
             "bash scripts/mod/verify-t456-mission-rest-size-gate.sh",
         );
-        assert_ne!(run_pins(&ci_ok(), Some(&mf), Path::new("Makefile")), 0);
+        assert_ne!(pins(&mf, &wave_ok()), 0);
     }
 
     #[test]
     fn schema_job_without_ci_local_schema_fails() {
         let ci = "jobs:\n  schema:\n    steps:\n      - run: cargo run -p xtask -- schema validate\n  other:\n    steps:\n      - run: true\n";
-        assert_ne!(run_pins(ci, Some(&make_ok()), Path::new("Makefile")), 0);
+        assert_ne!(
+            run_pins(
+                ci,
+                Some(&make_ok()),
+                Path::new("Makefile"),
+                Some(&wave_ok())
+            ),
+            0
+        );
     }
 
     #[test]
     fn verify_consts_are_the_cargo_spelling() {
         assert_eq!(VERIFY_T456, "cargo run -q -p xtask -- verify t456");
         assert_eq!(VERIFY_T468, "cargo run -q -p xtask -- verify t468");
+    }
+
+    /// B1: arbitrary suffixes must NOT satisfy the Makefile cargo pin.
+    #[test]
+    fn recipe_suffix_smuggles_fail_pin() {
+        for suffix in [" --help", " || true", " && true", " 2>/dev/null"] {
+            for cmd in [VERIFY_T456, VERIFY_T468] {
+                let mf = make_ok().replace(cmd, &format!("{cmd}{suffix}"));
+                assert_ne!(
+                    pins(&mf, &wave_ok()),
+                    0,
+                    "suffix {suffix:?} on {cmd} must FAIL the pin"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn recipe_trailing_whitespace_still_passes() {
+        let mf = make_ok().replace(
+            &format!("\t@{VERIFY_T456}"),
+            &format!("\t@{VERIFY_T456}   "),
+        );
+        assert_eq!(pins(&mf, &wave_ok()), 0);
+    }
+
+    /// M2: hollow wave `run "…" true` must RED (checkrun cargo gone).
+    #[test]
+    fn wave_hollow_t456_true_fails() {
+        let wave = wave_ok().replacen(&format!("checkrun {VERIFY_T456}"), "true", 1);
+        assert_ne!(pins(&make_ok(), &wave), 0);
+    }
+
+    #[test]
+    fn wave_hollow_both_paths_required() {
+        let wave = wave_ok().replacen(&format!("checkrun {VERIFY_T456}"), "true", 1);
+        // Only gate_slice hollowed; cmd_gate still has checkrun — still must FAIL.
+        assert!(wave.matches(&format!("checkrun {VERIFY_T456}")).count() == 1);
+        assert_ne!(pins(&make_ok(), &wave), 0);
+    }
+
+    #[test]
+    fn wave_commented_run_does_not_satisfy() {
+        let wave = wave_ok().replacen("  run \"T-456", "  # run \"T-456", 1);
+        assert_ne!(pins(&make_ok(), &wave), 0);
+    }
+
+    #[test]
+    fn missing_wave_fails() {
+        assert_ne!(
+            run_pins(&ci_ok(), Some(&make_ok()), Path::new("Makefile"), None),
+            0
+        );
     }
 }
