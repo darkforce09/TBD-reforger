@@ -95,10 +95,10 @@ seed: ## Apply data seeds (Discord roles + registry catalog + starter faction li
 db-backup: ## T-577: dump the DB through the container, VERIFY the file, prune by count (KEEP=14)
 	cargo run -q -p xtask -- deploy db backup $(if $(DB),--db $(DB),) $(if $(OUT),--out $(OUT),) $(if $(KEEP),--keep $(KEEP),)
 
-db-restore: ## T-577: verify a dump then pg_restore --clean into DB=<name> (T-381 allow-list). Usage: make db-restore DUMP=path DB=rust_it
+db-restore: ## T-577/T-886: verify a dump then pg_restore --clean into DB=<name> (T-381 allow-list). Usage: make db-restore DUMP=path DB=rust_it
 	@if [ -z "$(DUMP)" ]; then echo "usage: make db-restore DUMP=<file.dump> DB=<target> [CREATE=1]"; exit 2; fi
 	@if [ -z "$(DB)" ]; then echo "usage: make db-restore DUMP=<file.dump> DB=<target> [CREATE=1]"; exit 2; fi
-	bash scripts/deploy/restore-db.sh --db $(DB) $(if $(CREATE),--create,) $(DUMP)
+	cargo run -q -p xtask -- deploy db restore --db $(DB) $(if $(CREATE),--create,) $(DUMP)
 
 db-backup-drill: ## T-577: restore the newest backup into a scratch DB and prove it is recoverable + bootable
 	bash scripts/deploy/backup-drill.sh $(if $(DB),--db $(DB),) $(if $(OUT),--out $(OUT),) $(if $(FRESH),--fresh,)

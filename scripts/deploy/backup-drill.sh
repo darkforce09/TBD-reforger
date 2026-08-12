@@ -185,9 +185,9 @@ trap cleanup_scratch EXIT INT TERM
 tbd_ct psql -U "$TBD_DB_USER" -d postgres -qc "DROP DATABASE IF EXISTS \"$SCRATCH\" WITH (FORCE);" >/dev/null 2>&1
 info "restoring into scratch database '$SCRATCH'"
 # T-588 — --expect-db is the SOURCE database, not $SCRATCH. Passed explicitly rather than
-# left to restore-db.sh's default so that `backup-drill.sh --db <other>` still checks the
+# left to deploy-db-restore's default so that `backup-drill.sh --db <other>` still checks the
 # identity of the archive it was actually pointed at.
-if ! bash "$SCRIPT_DIR/restore-db.sh" --db "$SCRATCH" --expect-db "$SOURCE_DB" --create "$DUMP"; then
+if ! cargo run -q -p xtask -- deploy db restore --db "$SCRATCH" --expect-db "$SOURCE_DB" --create "$DUMP"; then
 	echo "DRILL FAIL: the backup could NOT be restored. It is not a usable backup." >&2
 	exit 1
 fi

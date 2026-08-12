@@ -40,6 +40,9 @@ Do **not** mass-edit 95 tickets to say `cursor-docs`. `workbench` and `human` st
 
 ## What still binds — do not treat this as a free hand
 
+- [`no-duplicate-slice-agents.mdc`](no-duplicate-slice-agents.mdc) — **HARD, unchanged.** One
+ coding agent per ticket/worktree until it finishes or the operator explicitly kills/replaces it.
+ Never spawn a "fresh" twin because the first looks stuck.
 - [`no-silent-deferrals.mdc`](no-silent-deferrals.mdc) — **HARD, unchanged.** Applies to you AND to
   every slice agent you dispatch. A slice that ships half the ticket and calls it done is a failure,
   not a process. The one legal deferral is an explicit operator "defer X", quoted.
