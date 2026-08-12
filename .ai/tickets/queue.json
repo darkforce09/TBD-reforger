@@ -13,27 +13,6 @@
       "branch": "ticket/T-090"
     },
     {
-      "id": "T-875",
-      "title": "T-853 port: setup-workbench-linux -> setup workbench",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-875"
-    },
-    {
-      "id": "T-876",
-      "title": "T-853 port: setup-mcp-game-root -> setup mcp-game-root",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-876"
-    },
-    {
-      "id": "T-877",
-      "title": "T-853 port: mcp-smoke -> mcp smoke",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-877"
-    },
-    {
       "id": "T-878",
       "title": "T-853 port: setup-client-addons -> setup client-addons",
       "status": "ready",
