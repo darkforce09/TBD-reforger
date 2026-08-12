@@ -6,7 +6,7 @@
 
 use std::path::{Path, PathBuf};
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use tbd_gate::scan;
 use tbd_gate::{Kind, NotRun, Verdict};
 
@@ -609,9 +609,11 @@ mod file_length_tests {
             !files.is_empty(),
             "T-899: a zero-file walk is the defect this ticket closes"
         );
-        assert!(files
-            .iter()
-            .all(|p| p.extension().and_then(|e| e.to_str()) == Some("rs")));
+        assert!(
+            files
+                .iter()
+                .all(|p| p.extension().and_then(|e| e.to_str()) == Some("rs"))
+        );
         let joined = files
             .iter()
             .map(|p| p.to_string_lossy().into_owned())
