@@ -95,7 +95,7 @@ bash scripts/mod/test-phase1-api.sh
 | `cargo xtask debug direct-join` | LAN join diagnostics (A2S, SSH, builds) |
 | [`setup-client-addons.sh`](../../scripts/mod/setup-client-addons.sh) | **Legacy** — local client mod symlink (not Direct-Joinable; use the Workshop mod instead) |
 | [`remote-log-grep.sh`](../../scripts/mod/remote-log-grep.sh) | SSH log verify on staging server |
-| [`bootstrap-staging-server.sh`](../../scripts/mod/bootstrap-staging-server.sh) | One-time SSH discovery + mkdir |
+| `cargo xtask mod bootstrap-staging` | One-time SSH discovery + mkdir |
 | `cargo xtask setup server-profile` | Dedicated server profile + mission fallback |
 | [`run-dev-server.sh`](../../scripts/mod/run-dev-server.sh) | Local dedicated server launcher |
 

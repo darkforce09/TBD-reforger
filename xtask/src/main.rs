@@ -9,6 +9,7 @@ mod codegen_schema;
 mod constants;
 mod debug_cmd;
 mod gap;
+mod gate_bootstrap_staging_server;
 mod gate_crf_leak;
 mod gate_debug_direct_join;
 mod gate_deploy_website;
@@ -187,6 +188,9 @@ enum ModCmd {
         /// Golden basename (no .json), `backend`, or omit to show current
         target: Option<String>,
     },
+    /// One-time staging-host discovery + mkdir (T-870 port of bootstrap-staging-server.sh)
+    #[command(name = "bootstrap-staging")]
+    BootstrapStaging,
 }
 
 #[derive(Subcommand, Debug)]
@@ -711,6 +715,7 @@ fn run() -> Result<u8> {
             ModCmd::ManualTest => gate_manual_test::run(&find_repo_root()?),
             ModCmd::DevBootstrap { args } => gate_tbd_dev_bootstrap::run(&args),
             ModCmd::TestMission { target } => gate_test_mission::run(target.as_deref()),
+            ModCmd::BootstrapStaging => gate_bootstrap_staging_server::run(),
         },
         TopCmd::Deploy { cmd } => match cmd {
             DeployCmd::Website { args } => gate_deploy_website::run(&args),
