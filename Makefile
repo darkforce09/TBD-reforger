@@ -277,7 +277,7 @@ mod-compile: ## T-181.1 Enfusion compile gate — native headless server, ~1.3s,
 # Until T-312 this was `if compile.sh --selftest; then FAIL else OK fi`, which read ANY non-zero
 # as "the gate correctly rejected broken source". On a machine with no dedicated server and no
 # host bridge, compile.sh exits 3 without compiling a single line and this printed SELFTEST OK.
-# `scripts/mod/wave.sh` calls this target, so the mod wave gate reported PASS for a check that
+# `cargo xtask mod wave gate` calls this target, so the mod wave gate reported PASS for a check that
 # never happened. T-209 documented the hazard in .github/workflows/mod-gates.yml and routed CI
 # around the target instead of fixing it, then moved the stale-rdb load-count guard to exit 3 —
 # routing one more failure mode into the same swallow. The `case` below is that CI check, brought

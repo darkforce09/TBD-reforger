@@ -54,10 +54,10 @@ main ──┬── wave N ──┬── worktree slice/T-181.7   → agent A
    worktrees fill the disk — this is an operator instruction, not a preference.
 4. **Then run an aggressive verify agent** against merged `main`. It is adversarial: its job is to
    find what the slice agents got wrong, not to confirm they were right.
-5. **Push to GitHub after every wave** (`wave.sh land` does it). Work must not be trapped on one
+5. **Push to GitHub after every wave** (`cargo xtask mod wave land` does it). Work must not be trapped on one
    machine. `git-lfs` is installed on neither the container nor the host and the `pre-push` hook
    exits 2 without it, so the push uses `--no-verify` — but ONLY after confirming no commit
-   touches `packages/map-assets/**` (the only LFS-tracked path). If one does, `wave.sh push`
+   touches `packages/map-assets/**` (the only LFS-tracked path). If one does, `cargo xtask mod wave push`
    refuses rather than leaving the remote pointing at LFS objects that were never uploaded.
 6. **Verify green → automatically dispatch the next wave.** Do not wait to be asked.
 7. **Batch waves by file-disjointness.** The parallelism limit is file collisions, not Workbench.
@@ -91,10 +91,10 @@ The cycle is DATA + SCRIPT, not memory. A fresh session — or one resuming afte
 compaction — recovers full state with one command:
 
 ```bash
-bash scripts/mod/wave.sh status    # which wave, which trees ready, what is blocking, what to do
-bash scripts/mod/wave.sh prep 2    # create worktrees for wave 2
-bash scripts/mod/wave.sh land      # merge all complete slices -> run gate -> reap trees
-bash scripts/mod/wave.sh gate      # the full verification suite on its own
+cargo run -q -p xtask -- mod wave status    # which wave, which trees ready, what is blocking, what to do
+cargo run -q -p xtask -- mod wave prep 2    # create worktrees for wave 2
+cargo run -q -p xtask -- mod wave land      # merge all complete slices -> run gate -> reap trees
+cargo run -q -p xtask -- mod wave gate      # the full verification suite on its own
 ```
 
 `land` is deliberately conservative: it refuses to merge a dirty worktree (uncommitted slice work
@@ -106,7 +106,7 @@ by file-disjointness with an explicit `owns` column so write-conflicts are visib
 The post-merge adversarial reviewer is [`VERIFY_AGENT_PROMPT.md`](VERIFY_AGENT_PROMPT.md).
 
 **The loop, end to end:**
-`wave.sh prep N` → dispatch 3 slice agents → `wave.sh status` until all READY → `wave.sh land`
+`cargo xtask mod wave prep N` → dispatch 3 slice agents → `cargo xtask mod wave status` until all READY → `cargo xtask mod wave land`
 (merge → gate → reap → **push**) → dispatch the verify agent → fix any BLOCKER → `wave.sh prep N+1`.
 
 ## Worktree mechanics

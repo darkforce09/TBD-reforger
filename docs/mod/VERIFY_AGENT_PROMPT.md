@@ -24,7 +24,7 @@ cargo/make/game binaries with `distrobox-host-exec`. In-container `cargo build` 
 found"; a host binary in-container → "GLIBC_2.39 not found". NEITHER means the repo is broken.
 
 ═══ START HERE ═══
-    bash scripts/mod/wave.sh gate        # every gate must pass; if not, that IS your finding
+    cargo run -q -p xtask -- mod wave gate        # every gate must pass; if not, that IS your finding
     git log --oneline main -15
     git diff --stat HEAD~1 main          # what actually landed
 
