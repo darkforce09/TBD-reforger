@@ -10,6 +10,7 @@ mod constants;
 mod debug_cmd;
 mod gap;
 mod gate_crf_leak;
+mod gate_remote_log_grep;
 mod gate_route_tags;
 mod gate_t180;
 mod gate_t296;
@@ -76,6 +77,11 @@ enum TopCmd {
     Repro {
         #[command(subcommand)]
         cmd: ReproCmd,
+    },
+    /// Mod helpers (remote-log-grep.sh → mod remote-logs; T-855)
+    Mod {
+        #[command(subcommand)]
+        cmd: ModCmd,
     },
     /// Print a top-level registry.json field (e.g. next_id)
     #[command(name = "registry-get")]
@@ -335,6 +341,21 @@ enum ReproCmd {
 }
 
 #[derive(Subcommand, Debug)]
+enum ModCmd {
+    /// Assert a TBD dedicated-server console.log shows a HEALTHY boot (T-855).
+    /// Exit: 0 HEALTHY · 1 FAIL · 2 PARTIAL · 3 ENVIRONMENT.
+    #[command(name = "remote-logs")]
+    RemoteLogs {
+        /// Check a LOCAL log file (no SSH)
+        #[arg(long)]
+        file: Option<PathBuf>,
+        /// Prove the verdict logic can FAIL
+        #[arg(long)]
+        selftest: bool,
+    },
+}
+
+#[derive(Subcommand, Debug)]
 enum TicketCmd {
     Sync,
     Check {
@@ -516,6 +537,9 @@ fn run() -> Result<u8> {
             }
             Ok(0)
         }
+        TopCmd::Mod { cmd } => match cmd {
+            ModCmd::RemoteLogs { file, selftest } => gate_remote_log_grep::run(file, selftest),
+        },
         TopCmd::Verify { cmd } => {
             let code = match cmd {
                 VerifyCmd::FileLength => node_free::verify_file_length()?,
