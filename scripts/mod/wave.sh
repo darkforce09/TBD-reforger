@@ -117,7 +117,7 @@ cmd_gate() {
       fail=1
     fi
   }
-  run "compile"            bash scripts/mod/compile.sh
+  run "compile"            cargo run -q -p xtask -- mod compile
   run "compile-selftest"   distrobox-host-exec make mod-compile-selftest
   # The compile gate is blind to prefab wiring: a component listed on TBD_GameMode.et whose
   # class fails to resolve is dropped SILENTLY and everything still compiles clean.
