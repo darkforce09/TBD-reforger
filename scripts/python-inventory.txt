@@ -28,6 +28,4 @@
 # and deleted them, so the example is now named from memory rather than pointed at. The RULE is
 # unchanged and still load-bearing for the scripts that remain below.
 
-scripts/mod/deploy-staging.sh                        # server.json/modpack render + socket probe
-scripts/mod/run-playtest-server.sh                   # backend cfg + admin list JSON
 scripts/platform/wave.sh                             # is_shipped + wave_ledger_unshipped_at

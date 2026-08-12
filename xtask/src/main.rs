@@ -12,6 +12,7 @@ mod deploy_db_backup;
 mod deploy_db_common;
 mod deploy_db_drill;
 mod deploy_db_restore;
+mod deploy_staging;
 mod gap;
 mod gate_bootstrap_staging_server;
 mod gate_crf_leak;
@@ -63,6 +64,7 @@ mod mod_world_boot;
 mod mod_world_boot_verdict;
 mod node_free;
 mod platform_preflight;
+mod playtest_server;
 mod prompt;
 mod registry;
 mod repro;
@@ -70,6 +72,7 @@ mod root;
 mod schema_gates;
 mod shell_free;
 mod slice_collisions;
+mod slice_worktree;
 mod sql_gates;
 mod sync;
 mod test_env;
@@ -181,6 +184,12 @@ enum TopCmd {
 
 #[derive(Subcommand, Debug)]
 enum PlatformCmd {
+    /// T-853: slice worktree lifecycle (port of scripts/mod/slice-worktree.sh)
+    #[command(name = "slice-worktree", disable_help_flag = true)]
+    SliceWorktree {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
     /// Unattended-run assertions (T-889 port of scripts/platform/preflight.sh)
     Preflight {
         /// Never exit non-zero (report only) — mirrors bash `--warn`
@@ -257,6 +266,12 @@ enum ModCmd {
     /// Phase-1 game-server API smoke (T-874 port of test-phase1-api.sh)
     #[command(name = "test-phase1-api")]
     TestPhase1Api,
+    /// T-853: dedicated playtest server lifecycle (port of run-playtest-server.sh)
+    #[command(name = "playtest", disable_help_flag = true)]
+    Playtest {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
     /// Headless Enfusion compile gate (T-891 port of compile.sh)
     #[command(name = "compile", disable_help_flag = true)]
     Compile {
@@ -292,6 +307,12 @@ enum DeployCmd {
     /// Shared DB backup/restore plumbing (T-884 port of scripts/deploy/lib/db-common.sh).
     #[command(subcommand)]
     Db(deploy_db_common::DeployDbCmd),
+    /// T-853: staging deploy driver (port of scripts/mod/deploy-staging.sh)
+    #[command(name = "staging", disable_help_flag = true)]
+    Staging {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -858,6 +879,7 @@ fn run() -> Result<u8> {
             ModCmd::BootstrapStaging => gate_bootstrap_staging_server::run(),
             ModCmd::SeedAnnouncement => gate_seed_milestone_announcement::run(),
             ModCmd::TestPhase1Api => gate_test_phase1_api::run(&find_repo_root()?),
+            ModCmd::Playtest { args } => playtest_server::run(&args),
             ModCmd::Compile { args } => gate_mod_compile::run(&args),
             ModCmd::WorldBoot { args } => mod_world_boot::run(&args),
             ModCmd::Wave { args } => mod_wave::run(&args),
@@ -865,6 +887,7 @@ fn run() -> Result<u8> {
         TopCmd::Deploy { cmd } => match cmd {
             DeployCmd::Website { args } => gate_deploy_website::run(&args),
             DeployCmd::Db(db_cmd) => deploy_db_common::run(db_cmd),
+            DeployCmd::Staging { args } => deploy_staging::run(&args),
         },
         TopCmd::Setup { cmd } => match cmd {
             SetupCmd::ServerProfile { profile } => {
@@ -935,6 +958,7 @@ fn run() -> Result<u8> {
         TopCmd::SliceCollisions { args } => slice_collisions::run(&args),
         TopCmd::Platform { cmd } => match cmd {
             PlatformCmd::Preflight { warn } => platform_preflight::run(warn),
+            PlatformCmd::SliceWorktree { args } => slice_worktree::run(&args),
         },
         TopCmd::Ai { cmd } => match cmd {
             AiCmd::Guard => Ok(ai::cmd_guard()),

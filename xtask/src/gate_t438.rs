@@ -71,8 +71,14 @@ use tbd_gate::{Finding, Kind, NotRun, Pattern, Verdict, gate};
 /// logs and `make verify-t438` transcripts are grepped for exactly this string.
 const GATE_NAME: &str = "verify-t438-deploy-staging-compose-path";
 
-/// The deploy driver under inspection, repo-relative. Ported later in T-853; see the module docs.
-const DEPLOY_SCRIPT: &str = "scripts/mod/deploy-staging.sh";
+/// The deploy driver under inspection, repo-relative.
+///
+/// T-853 REPOINTED THIS, which is what the module docs below said would happen and why every
+/// message is `format!`ed from a const. `scripts/mod/deploy-staging.sh` became
+/// `cargo xtask deploy staging`; the two `docker compose -f` invocations that carry the T-438
+/// contract live in the transport module. The gate went RED on the deletion first — that was the
+/// intended alarm, and it fired.
+const DEPLOY_SCRIPT: &str = "xtask/src/deploy_staging/remote.rs";
 
 /// The one true compose file (T-251). Double duty exactly as in the bash: the string that must
 /// follow `-f`, **and** — joined onto the repo root — the file that must exist. The script spelled
@@ -93,7 +99,13 @@ const CD_INTO_API_DQ: &str = r#"cd "$TBD_REMOTE_DIR/apps/website/api""#;
 /// How the dry-run compose line is recognised: the script prints its plan with this prefix.
 const DRY_RUN_KEY: &str = "[dry-run]";
 /// How the live compose line is recognised: the remote-exec helper it is handed to.
-const LIVE_KEY: &str = "ssh_cmd";
+/// Names the live dispatch in operator-facing messages only — it is NOT a matcher any more.
+///
+/// T-853: was `ssh_cmd`, bash's one-line ssh wrapper, and `line.contains(LIVE_KEY)` was how the
+/// live compose invocation was found. The Rust equivalent is [`Runner::ssh_ok`], whose call spans
+/// lines, so classification moved to "does this compose line carry the dry-run marker". This const
+/// survives so the failure text still tells the reader WHICH invocation is wrong.
+const LIVE_KEY: &str = "ssh_ok";
 
 /// Entry point. `0` when the contract holds, `1` for every failure — bash's binary status.
 ///
@@ -303,9 +315,20 @@ fn classify(stripped: &str) -> Result<ComposeLines<'_>> {
         if !gate::probe_str(&compose, line).map_err(|cause| anyhow::anyhow!("{cause:?}"))? {
             continue;
         }
+        // T-853: classify by the PRESENCE or ABSENCE of the dry-run marker, not by a transport
+        // spelling. bash put the whole thing on one line — `ssh_cmd "… docker compose -f …"` — so
+        // `line.contains("ssh_cmd")` identified the live one. The Rust call spans several lines:
+        // `runner.ssh_ok(` is on one, the composed command string on another. A per-line marker
+        // therefore matches NEITHER, and the live line would have gone unclassified — a gate
+        // silently checking one of the two paths it exists to check.
+        //
+        // Absence is exactly equivalent here and does not depend on how the command is dispatched:
+        // there are two compose invocations, one guarded by `--dry-run` and one not. The
+        // "no live line at all" arm below still fires, because an absent live invocation leaves
+        // `live: None` either way.
         if line.contains(DRY_RUN_KEY) {
             lines.dry = Some(line);
-        } else if line.contains(LIVE_KEY) {
+        } else {
             lines.live = Some(line);
         }
     }
@@ -613,8 +636,10 @@ fi
             &[
                 "FAIL: dry-run -f path must be apps/website/docker-compose.staging.yml \
                  (got: docker-compose.staging.yml)",
-                "FAIL: live ssh_cmd -f path must be apps/website/docker-compose.staging.yml \
-                 (got: docker-compose.staging.yml)",
+                &format!(
+                    "FAIL: live {LIVE_KEY} -f path must be apps/website/docker-compose.staging.yml \
+                 (got: docker-compose.staging.yml)"
+                ),
             ],
         );
         // T-461's exact finding: live regresses to api/ while the dry-run stays clean. Three
@@ -624,8 +649,10 @@ fi
             "live-api",
             &GOOD_SCRIPT.replace(&live, &live.replace(GOOD_PATH, BAD_PATH)),
             &[
-                "FAIL: live ssh_cmd -f path must be apps/website/docker-compose.staging.yml \
-                 (got: apps/website/api/docker-compose.staging.yml)",
+                &format!(
+                    "FAIL: live {LIVE_KEY} -f path must be apps/website/docker-compose.staging.yml \
+                 (got: apps/website/api/docker-compose.staging.yml)"
+                ),
                 "FAIL: dry-run and live compose -f paths diverge:",
                 "FAIL: live compose line still references \
                  apps/website/api/docker-compose.staging.yml",
@@ -637,19 +664,25 @@ fi
             &format!("# docker compose -f {GOOD_PATH}\n// docker compose -f {GOOD_PATH}\n"),
             &[
                 "FAIL: no dry-run docker compose -f line after comment strip",
-                "FAIL: no live ssh_cmd docker compose -f line after comment strip",
+                &format!("FAIL: no live {LIVE_KEY} docker compose -f line after comment strip"),
             ],
         );
         // The banned `cd`, each quoting on its own — T-461 hole (2).
         bites(
             "cd-sq",
             &format!("{GOOD_SCRIPT}{CD_INTO_API_SQ}\n"),
-            &["FAIL: deploy-staging.sh still cds into apps/website/api (compose must not)"],
+            &[&format!(
+                "FAIL: {} still cds into apps/website/api (compose must not)",
+                script_basename()
+            )],
         );
         bites(
             "cd-dq",
             &format!("{GOOD_SCRIPT}{CD_INTO_API_DQ}\n"),
-            &["FAIL: deploy-staging.sh still cds into apps/website/api (double-quoted form)"],
+            &[&format!(
+                "FAIL: {} still cds into apps/website/api (double-quoted form)",
+                script_basename()
+            )],
         );
         // `-f` with no argument: its own message, echoing the line at the Python's six-space indent.
         bites(

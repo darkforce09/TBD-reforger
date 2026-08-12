@@ -26,10 +26,5 @@
 #
 # Regenerating this file wholesale would re-bless whatever happens to exist and defeat the entire
 # mechanism. Edit it one line at a time.
-scripts/lib/hostrun.sh
-scripts/mod/deploy-staging.sh
-scripts/mod/lib/gate-grep.sh
-scripts/mod/lib/paths.sh
-scripts/mod/run-playtest-server.sh
-scripts/mod/slice-worktree.sh
 scripts/platform/wave.sh
+scripts/lib/hostrun.sh

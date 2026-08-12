@@ -529,8 +529,8 @@ cmd_prep() {
   # host, so the same line is correct from either shell.
   hostrun $COLLIDE
   echo
-  echo "create trees with:  bash scripts/mod/slice-worktree.sh new <TICKET>"
-  echo "(slice-worktree.sh is program-agnostic; it keys off the branch name only)"
+  echo "create trees with:  cargo run -q -p xtask -- platform slice-worktree -- new <TICKET>"
+  echo "(slice-worktree is program-agnostic; it keys off the branch name only)"
 }
 
 # The changed-Rust-file list, and the one distinction the change-scoped steps kept getting wrong.
@@ -3233,7 +3233,7 @@ cmd_land() {
   # Green. Only now is it safe to destroy the evidence.
   local t2
   for t2 in "${landed[@]}"; do
-    bash scripts/mod/slice-worktree.sh drop "$t2" || echo "  (drop failed for $t2 — remove by hand)"
+    cargo run -q -p xtask -- platform slice-worktree -- drop "$t2" || echo "  (drop failed for $t2 — remove by hand)"
   done
 
   # Rule 5: work must not be trapped on one machine. This was missing entirely.

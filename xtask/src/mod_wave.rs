@@ -314,14 +314,12 @@ fn cmd_prep(root: &Path, wave_arg: &str) -> u8 {
         println!("nothing to prep");
         return 0;
     }
-    let script = root.join("scripts/mod/slice-worktree.sh");
+    // T-853: was `bash scripts/mod/slice-worktree.sh new <slice>`. Called IN-PROCESS now rather
+    // than re-spawning cargo — the script is gone, and a nested `cargo run` here would pay a second
+    // resolution and could pick a different target dir than the one this process was launched with.
     for s in wave_slices(root, &w) {
-        let status = Command::new("bash")
-            .current_dir(root)
-            .args([script.to_str().unwrap_or(""), "new", &s])
-            .status();
-        // bash without -e: continue even if new fails
-        let _ = status;
+        // bash ran without -e here: a failed `new` does not stop the other slices from prepping.
+        let _ = crate::slice_worktree::run_at(root, &["new".to_string(), s.clone()]);
     }
     0
 }
@@ -468,18 +466,16 @@ fn cmd_land(root: &Path) -> u8 {
         }
     }
 
-    let script = root.join("scripts/mod/slice-worktree.sh");
-    let script_s = script.to_str().unwrap_or("");
-
     // 2. Merge every slice that actually has commits.
     for s in wave_slices(root, &w) {
         if has_work(root, &s) {
             println!("── merging {s}");
-            let ok = Command::new("bash")
-                .current_dir(root)
-                .args([script_s, "merge", &s])
-                .status()
-                .map(|st| st.success())
+            // T-853: was `bash scripts/mod/slice-worktree.sh merge <slice>`, in-process now.
+            // The port CLOSED a fail-open here that this caller depended on: bash's dirty check
+            // used plain git, and a `git status` exiting 128 produced an empty substitution that
+            // `[ -n … ]` read as CLEAN — so a dirty worktree merged and the work was destroyed.
+            let ok = crate::slice_worktree::run_at(root, &["merge".to_string(), s.clone()])
+                .map(|rc| rc == 0)
                 .unwrap_or(false);
             if ok {
                 merged += 1;
@@ -505,10 +501,10 @@ fn cmd_land(root: &Path) -> u8 {
 
     // 4. Reap.
     println!();
-    let _ = Command::new("bash")
-        .current_dir(root)
-        .args([script_s, "reap"])
-        .status();
+    // T-853: was `bash scripts/mod/slice-worktree.sh reap`, in-process now. `reap` is the
+    // DESTRUCTIVE one, and the port left every guard intact: uncommitted work, "unstarted is not
+    // merged" (the five-worktree incident), and git's own `worktree lock` refusal.
+    let _ = crate::slice_worktree::run_at(root, &["reap".to_string()]);
 
     // 5. Push.
     println!();
