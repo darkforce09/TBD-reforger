@@ -626,9 +626,9 @@ Or: `bash scripts/mod/tbd-spawn-verify.sh`
 ### Debug Direct Join
 
 ```bash
-bash scripts/mod/debug-direct-join.sh before-join    # from dev PC
+cargo xtask debug direct-join before-join    # from dev PC
 # attempt Direct Join in game
-bash scripts/mod/debug-direct-join.sh after-join
+cargo xtask debug direct-join after-join
 ```
 
 Writes NDJSON to `.cursor/debug-8fc1e0.log` (SSH status, ping, A2S probe on 2001/17777, build IDs, mod symlink).
@@ -674,5 +674,5 @@ all fine.
 | [`scripts/mod/bootstrap-staging-server.sh`](../../scripts/mod/bootstrap-staging-server.sh) | Discovery + mkdir |
 | `cargo xtask setup server-profile` | Profile + mission fallback |
 | [`scripts/mod/setup-client-addons.sh`](../../scripts/mod/setup-client-addons.sh) | Client mod symlink + Steam launch options |
-| [`scripts/mod/debug-direct-join.sh`](../../scripts/mod/debug-direct-join.sh) | LAN join diagnostics (A2S, SSH, builds) |
+| `cargo xtask debug direct-join` | LAN join diagnostics (A2S, SSH, builds) |
 | [`scripts/deploy/tbd-reforger.service`](../../scripts/deploy/tbd-reforger.service) | systemd user unit template (`-a2sPort 2001`) |

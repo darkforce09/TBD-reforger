@@ -10,6 +10,7 @@ mod constants;
 mod debug_cmd;
 mod gap;
 mod gate_crf_leak;
+mod gate_debug_direct_join;
 mod gate_deploy_website;
 mod gate_fetch_vanilla_source;
 mod gate_manual_test;
@@ -79,7 +80,7 @@ enum TopCmd {
         #[command(subcommand)]
         cmd: McpCmd,
     },
-    /// Debug helpers (debug-direct-join.sh)
+    /// Debug helpers (T-868: debug direct-join; T-162 primitives)
     Debug {
         #[command(subcommand)]
         cmd: DebugCmd,
@@ -460,6 +461,12 @@ enum DebugCmd {
         #[arg(long)]
         a2s_json: String,
     },
+    /// Orchestrator formerly scripts/mod/debug-direct-join.sh (T-868).
+    #[command(name = "direct-join")]
+    DirectJoin {
+        /// Run id written into the NDJSON block (default: user-repro).
+        run_id: Option<String>,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -618,51 +625,52 @@ fn run() -> Result<u8> {
             };
             Ok(code as u8)
         }
-        TopCmd::Debug { cmd } => {
-            match cmd {
-                DebugCmd::A2sProbe { host, ports } => {
-                    let ports: Vec<u16> = ports
-                        .split(',')
-                        .filter_map(|s| s.trim().parse().ok())
-                        .collect();
-                    if ports.is_empty() {
-                        bail!("no ports");
-                    }
-                    debug_cmd::cmd_a2s_probe(&host, &ports)?;
+        TopCmd::Debug { cmd } => match cmd {
+            DebugCmd::A2sProbe { host, ports } => {
+                let ports: Vec<u16> = ports
+                    .split(',')
+                    .filter_map(|s| s.trim().parse().ok())
+                    .collect();
+                if ports.is_empty() {
+                    bail!("no ports");
                 }
-                DebugCmd::NdjsonAppend {
-                    log,
-                    hypothesis,
-                    message,
-                    data,
-                    run_id,
-                } => {
-                    debug_cmd::cmd_ndjson_append(&log, &hypothesis, &message, &data, &run_id)?;
-                }
-                DebugCmd::DirectJoinLog {
-                    log,
-                    run_id,
-                    remote,
-                    client_build,
-                    server_build,
-                    symlink,
-                    ping,
-                    a2s_json,
-                } => {
-                    debug_cmd::cmd_direct_join_log(
-                        &log,
-                        &run_id,
-                        &remote,
-                        &client_build,
-                        &server_build,
-                        &symlink,
-                        &ping,
-                        &a2s_json,
-                    )?;
-                }
+                debug_cmd::cmd_a2s_probe(&host, &ports)?;
+                Ok(0)
             }
-            Ok(0)
-        }
+            DebugCmd::NdjsonAppend {
+                log,
+                hypothesis,
+                message,
+                data,
+                run_id,
+            } => {
+                debug_cmd::cmd_ndjson_append(&log, &hypothesis, &message, &data, &run_id)?;
+                Ok(0)
+            }
+            DebugCmd::DirectJoinLog {
+                log,
+                run_id,
+                remote,
+                client_build,
+                server_build,
+                symlink,
+                ping,
+                a2s_json,
+            } => {
+                debug_cmd::cmd_direct_join_log(
+                    &log,
+                    &run_id,
+                    &remote,
+                    &client_build,
+                    &server_build,
+                    &symlink,
+                    &ping,
+                    &a2s_json,
+                )?;
+                Ok(0)
+            }
+            DebugCmd::DirectJoin { run_id } => gate_debug_direct_join::run(run_id.as_deref()),
+        },
         TopCmd::Repro { cmd } => {
             match cmd {
                 ReproCmd::MissionId => repro::cmd_mission_id()?,

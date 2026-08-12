@@ -34,7 +34,6 @@ scripts/lib/hostrun.sh
 scripts/map-assets/export-terrain.sh
 scripts/mod/bootstrap-staging-server.sh
 scripts/mod/compile.sh
-scripts/mod/debug-direct-join.sh
 scripts/mod/deploy-staging.sh
 scripts/mod/fetch-vanilla-api.sh
 scripts/mod/lib/gate-grep.sh
