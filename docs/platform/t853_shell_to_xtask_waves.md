@@ -175,15 +175,39 @@ hard fail); split at a seam with no shared state, as `gate_ui_layouts` / `gate_u
 
 ## Not in scope
 
-Do not touch these — they are on the human/Claude lane because they are orchestrators, destructive,
-engine-coupled, or self-referential:
+Do not touch these. They stay on the human/Claude lane because each one either runs the factory you
+are dispatching from, drives a remote host, or is blocked behind something that does:
 
-`scripts/platform/wave.sh` · `scripts/mod/wave.sh` · `scripts/platform/preflight.sh` ·
-`scripts/mod/deploy-staging.sh` · `scripts/mod/run-playtest-server.sh` · `scripts/mod/world-boot.sh` ·
-`scripts/mod/compile.sh` · `scripts/mod/slice-worktree.sh` · `scripts/mod/mcp-daemon.sh` ·
-`scripts/deploy/{backup-db,backup-drill,restore-db}.sh` + `scripts/deploy/lib/db-common.sh` ·
-`scripts/mod/verify-t456-mission-rest-size-gate.sh` · `scripts/mod/verify-t468-ci-schema-parity.sh` ·
-`scripts/verify-no-python.sh` · `scripts/lib/hostrun.sh` · `scripts/ticket`
+| script | lines | why it is not waved |
+|---|---|---|
+| `scripts/platform/wave.sh` | 3614 | **Is the factory.** Porting it while running it is an engine swap mid-flight; it also encodes 63 commits of measured fixes and needs a two-wave verdict-diff before its bash can be deleted |
+| `scripts/mod/deploy-staging.sh` | 1889 | Drives a remote host over SSH with no local reproduction |
+| `scripts/mod/run-playtest-server.sh` | 973 | Live dedicated-server lifecycle |
+| `scripts/mod/slice-worktree.sh` | 314 | Creates the worktrees the wave runner is using **right now** |
+| `scripts/lib/hostrun.sh` | 86 | The container↔host bridge; it is what makes the others runnable at all, so it dies last |
+
+**Parked, not skipped —** T-879 (`lib/paths.sh`, `lib/mcpd-bin.sh`, `lib/xtask-run.sh`) and T-880
+(`lib/gate-grep.sh`) are correct deletes that are simply not legal yet: those libs are still sourced
+by scripts above and by slices in waves 227–229. Land them only when
+`git grep -l '<lib-basename>' -- scripts/` returns nothing but the inventory. Do not force them.
+
+### Waves 227–230 moved the line
+
+The original leaf/setup/utility set is finished (waves 218–226, 47 → 22 scripts). Waves 227–230 hand
+over the deterministic-but-nontrivial remainder: the two mutually-pinned gates, the LANG-2 enforcer,
+the ticket shim, the four-script DB lane, the MCP daemon, factory preflight, the **mod** wave driver,
+and the two engine wrappers.
+
+Three of those carry a hazard the earlier waves did not — read before starting the slice:
+
+- **`restore-db.sh` is destructive.** Its T-381 allow-list *refuses* `tbd_reforger` and verifies the
+  dump before writing. Both are load-bearing; prove the refusal still fires. Test against a scratch
+  DB from `make db-up`, never the dev database.
+- **`compile.sh` / `world-boot.sh` have a 0/1/2 exit contract** that `mod-gates.yml` and `ci.yml`
+  branch on with `|| rc=$?; case $rc`. `--selftest` passes **only** on exit 1 — a selftest that exits
+  0 means the gate is hollow.
+- **`verify-t456` and `verify-t468` are one slice, not two.** t468's `bash_pins` pins t456's Makefile
+  recipe *and its own*, so porting either alone fails the other on a correct tree.
 
 You **will** edit `scripts/platform/wave.sh` and `scripts/mod/wave.sh` to repoint your own call
 sites. That is expected. Do not restructure them.

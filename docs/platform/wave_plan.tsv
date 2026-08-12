@@ -655,3 +655,15 @@
 226	T-878	T-853 port: setup-client-addons -> setup client-addons	scripts/mod/setup-client-addons.sh; xtask/src/gate_setup_client_addons.rs
 226	T-879	T-853 delete: mod/lib shims	scripts/mod/lib/paths.sh;scripts/mod/lib/mcpd-bin.sh;scripts/mod/lib/xtask-run.sh
 226	T-880	T-853 delete: gate-grep	scripts/mod/lib/gate-grep.sh
+227	T-881	T-853 port: t456 + t468 as ONE slice - they are mutually pinned	scripts/mod/verify-t456-mission-rest-size-gate.sh;scripts/mod/verify-t468-ci-schema-parity.sh
+227	T-882	T-853 port: the LANG-2 enforcer itself	scripts/verify-no-python.sh
+227	T-883	T-853 port: 49-line shim over cargo xtask ticket	scripts/ticket
+228	T-884	T-853 port: shared DB plumbing - port FIRST	scripts/deploy/lib/db-common.sh
+228	T-885	T-853 port: verified pg_dump + retention prune	scripts/deploy/backup-db.sh
+228	T-886	T-853 port: guarded pg_restore	scripts/deploy/restore-db.sh
+229	T-887	T-853 port: restore-into-scratch recoverability proof	scripts/deploy/backup-drill.sh
+229	T-888	T-853 port: setsid + AF_UNIX socket lifecycle	scripts/mod/mcp-daemon.sh
+229	T-889	T-853 port: unattended-run preflight assertions	scripts/platform/preflight.sh
+230	T-890	T-853 port: the MOD wave driver (NOT platform/wave.sh)	scripts/mod/wave.sh
+230	T-891	T-853 port: Enfusion compile gate	scripts/mod/compile.sh
+230	T-892	T-853 port: headless game-mode boot validation	scripts/mod/world-boot.sh

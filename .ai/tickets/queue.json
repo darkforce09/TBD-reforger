@@ -25,6 +25,90 @@
       "status": "ready",
       "spec": "docs/platform/t853_shell_to_xtask_waves.md",
       "branch": "ticket/T-880"
+    },
+    {
+      "id": "T-881",
+      "title": "T-853 port: t456 + t468 as ONE slice - they are mutually pinned",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-881"
+    },
+    {
+      "id": "T-882",
+      "title": "T-853 port: the LANG-2 enforcer itself",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-882"
+    },
+    {
+      "id": "T-883",
+      "title": "T-853 port: 49-line shim over cargo xtask ticket",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-883"
+    },
+    {
+      "id": "T-884",
+      "title": "T-853 port: shared DB plumbing - port FIRST",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-884"
+    },
+    {
+      "id": "T-885",
+      "title": "T-853 port: verified pg_dump + retention prune",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-885"
+    },
+    {
+      "id": "T-886",
+      "title": "T-853 port: guarded pg_restore",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-886"
+    },
+    {
+      "id": "T-887",
+      "title": "T-853 port: restore-into-scratch recoverability proof",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-887"
+    },
+    {
+      "id": "T-888",
+      "title": "T-853 port: setsid + AF_UNIX socket lifecycle",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-888"
+    },
+    {
+      "id": "T-889",
+      "title": "T-853 port: unattended-run preflight assertions",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-889"
+    },
+    {
+      "id": "T-890",
+      "title": "T-853 port: the MOD wave driver (NOT platform/wave.sh)",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-890"
+    },
+    {
+      "id": "T-891",
+      "title": "T-853 port: Enfusion compile gate",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-891"
+    },
+    {
+      "id": "T-892",
+      "title": "T-853 port: headless game-mode boot validation",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-892"
     }
   ]
 }
