@@ -36,7 +36,6 @@ scripts/mod/bootstrap-staging-server.sh
 scripts/mod/compile.sh
 scripts/mod/debug-direct-join.sh
 scripts/mod/deploy-staging.sh
-scripts/mod/fetch-vanilla-api.sh
 scripts/mod/lib/gate-grep.sh
 scripts/mod/lib/mcpd-bin.sh
 scripts/mod/lib/paths.sh

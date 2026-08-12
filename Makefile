@@ -254,7 +254,7 @@ enf-carve: ## T-181.3 carve vanilla Enfusion source from the game paks (~6min; o
 	cargo run -q -p tbd-tools --bin enf -- index vanilla --root apps/mod/vanilla_reference --out .ai/artifacts/enf-index
 
 enf-apidoc: ## T-181.3.1 mirror + parse BI's official Script API (7,990 classes; fills what carving cannot reach)
-	bash scripts/mod/fetch-vanilla-api.sh
+	cargo run -q -p xtask -- fetch vanilla-api
 	cargo run -q -p tbd-tools --bin enf -- apidoc
 
 verify-oracle: ## T-181.4 every @idx citation in docs/mod must resolve against a generated index

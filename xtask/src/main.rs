@@ -11,6 +11,7 @@ mod debug_cmd;
 mod gap;
 mod gate_crf_leak;
 mod gate_deploy_website;
+mod gate_fetch_vanilla_api;
 mod gate_fetch_vanilla_source;
 mod gate_manual_test;
 mod gate_mcp_call;
@@ -212,6 +213,12 @@ enum FetchCmd {
     /// `--help` is a filename target (MISS), matching the former bash script — not clap usage.
     #[command(name = "vanilla-source", disable_help_flag = true)]
     VanillaSource {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+    /// Mirror BI Script API Doxygen HTML (T-866).
+    #[command(name = "vanilla-api", disable_help_flag = true)]
+    VanillaApi {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
@@ -707,6 +714,25 @@ fn run() -> Result<u8> {
                     None => find_repo_root()?,
                 };
                 gate_fetch_vanilla_source::run(&root, &args)
+            }
+            FetchCmd::VanillaApi { args } => {
+                // Prefer $PWD (logical path) so cache: lines match bash `cd … && pwd`
+                // on dual-homed hosts (/home vs /var/home). TBD_FETCH_ROOT wins for fixtures.
+                let root = match std::env::var_os("TBD_FETCH_ROOT") {
+                    Some(p) => PathBuf::from(p),
+                    None => match std::env::var_os("PWD") {
+                        Some(pwd) => {
+                            let p = PathBuf::from(pwd);
+                            if p.join(".ai/tickets/registry.json").is_file() {
+                                p
+                            } else {
+                                find_repo_root()?
+                            }
+                        }
+                        None => find_repo_root()?,
+                    },
+                };
+                gate_fetch_vanilla_api::run(&root, &args)
             }
         },
         TopCmd::Verify { cmd } => {
