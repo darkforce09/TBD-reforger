@@ -23,7 +23,7 @@ No backend registry route; Factions palette was mock-only until **T-068.3** (`us
 
 1. GORM model `RegistryItem` — `modpack_id`, `resource_name`, `display_name`, `category`, `icon_url`, `kind`, `sort_order`; unique `(modpack_id, resource_name)`.
 2. Migration `internal/db/migrations/03_registry_items.sql` (idempotent).
-3. Dev seed `internal/db/seeds/registry_dev.sql` — **≥20 rows**, all five **`kind`** values (`character` + four `gear_*`); **`resource_name`** = real `{GUID}Prefabs/...` strings (seed from [`registry.json`](../../../apps/mod/tbd-framework/Data/registry.json) POC + gear from **T-068.1** or MCP — **never** mock catalog ids like `a-nato-rifleman`); FK **`modpack_id`** = current modpack (`00000000-0000-4000-a000-000000000001` in [`mock_data.sql`](../../../apps/website/internal/db/seeds/mock_data.sql) when mock modpack loaded); wire into `make seed` or document apply in DEV_RUNBOOK.
+3. Dev seed `internal/db/seeds/registry_dev.sql` — **≥20 rows**, all five **`kind`** values (`character` + four `gear_*`); **`resource_name`** = real `{GUID}Prefabs/...` strings (seed from [`registry.json`](../../../apps/mod/tbd-framework/Data/registry.json) POC + gear from **T-068.1** or MCP — **never** mock catalog ids like `a-nato-rifleman`); FK **`modpack_id`** = current modpack (`00000000-0000-4000-a000-000000000001` in [`mock_data.sql`](../../../apps/website/internal/db/seeds/mock_data.sql) when mock modpack loaded); wire into `cargo xtask db seed` or document apply in DEV_RUNBOOK.
 4. `GET /api/v1/registry?modpack=<uuid>` — mission_maker+ JWT; resolve current modpack when omitted; response `{ data, etag, modpack_id, modpack_version }`; weak ETag + **304** on `If-None-Match`.
 5. `cmd/import-registry-items` — read `registry-items` JSON file; upsert rows for modpack (admin/dev use for T-068.1 export landing).
 6. Integration test: 200 + etag; 304 repeat; 404 bad modpack.
@@ -66,8 +66,8 @@ No backend registry route; Factions palette was mock-only until **T-068.3** (`us
 ## Verify
 
 ```bash
-make db-up && make seed
-PATH="$HOME/.local/go/bin:$PATH" make test-it
+cargo xtask db up && cargo xtask db seed
+PATH="$HOME/.local/go/bin:$PATH" cargo xtask db test-it
 cd apps/website/frontend && npm run build && npm run lint
 ```
 
@@ -80,10 +80,10 @@ cd apps/website/frontend && npm run build && npm run lint
 ### Automated (exit 0)
 
 ```bash
-make db-up && make seed
-PATH="$HOME/.local/go/bin:$PATH" make test-it
+cargo xtask db up && cargo xtask db seed
+PATH="$HOME/.local/go/bin:$PATH" cargo xtask db test-it
 # Registry integration tests must pass (names may vary — grep output):
-make test-it 2>&1 | tee /tmp/t068-2-test-it.log
+cargo xtask db test-it 2>&1 | tee /tmp/t068-2-test-it.log
 grep -E 'PASS.*[Rr]egistry|ok.*registry' /tmp/t068-2-test-it.log
 cd apps/website/frontend && npm run build && npm run lint
 ```
@@ -116,7 +116,7 @@ PATH="$HOME/.local/go/bin:$PATH" go run ./cmd/import-registry-items --file packa
 
 | ID | Check | Pass condition |
 |----|-------|----------------|
-| A1 | Integration tests | `make test-it` exit 0; registry test file exists and runs |
+| A1 | Integration tests | `cargo xtask db test-it` exit 0; registry test file exists and runs |
 | A2 | Seed data | `GET /registry` returns ≥10 rows for current modpack |
 | A3 | Field contract | Each row has `resource_name`, `display_name`, `category`, `kind` |
 | A4 | ResourceName | First row (and spot-check 3) match GUID regex |
@@ -129,7 +129,7 @@ PATH="$HOME/.local/go/bin:$PATH" go run ./cmd/import-registry-items --file packa
 
 ### Verify paste (required)
 
-Full `make test-it` tail + curl/jq outputs for A2–A7.
+Full `cargo xtask db test-it` tail + curl/jq outputs for A2–A7.
 
 ---
 
@@ -153,6 +153,6 @@ Read CLAUDE.md §Status. Active slice: T-068.2.
 Implement ONLY docs/specs/Mission_Creator_Architecture/t068_2_registry_api.md
 Do not edit documentation. Branch: ticket/T-068
 LOCKED: resource_name field; ETag/304; registry_dev.sql seed; import-registry-items CLI.
-Verify: make db-up && make test-it; run ALL §Verification gate curl/jq checks; FE build/lint
+Verify: cargo xtask db up && cargo xtask db test-it; run ALL §Verification gate curl/jq checks; FE build/lint
 Return: Verify paste block with A1–A9 table + command outputs.
 ```

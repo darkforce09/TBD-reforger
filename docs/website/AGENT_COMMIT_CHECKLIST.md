@@ -14,7 +14,7 @@
 
 1. **Plan / queue change** — edit [`.ai/tickets/registry.json`](../../.ai/tickets/registry.json) (status, order, spec path, `active_slice`).
 2. **Regenerate views** — `./scripts/ticket sync` (updates `docs/TICKET_*.md`, `CLAUDE.md` status markers).
-3. **Validate** — `./scripts/ticket check` or `make ticket-check-strict`.
+3. **Validate** — `./scripts/ticket check` or `cargo xtask ticket check --strict`.
 4. **Implement** — Claude Code on **`main`**; **does not edit docs**.
 5. **Ship** — human verifies → set row `status: shipped` → `./scripts/ticket sync` → Cursor syncs narrative docs below.
 
@@ -32,7 +32,7 @@ Playbook: [`.ai/tickets/AI_PLAYBOOK.md`](../../.ai/tickets/AI_PLAYBOOK.md). Lead
 | **Backend / API** | [`docs/website/backend/ROADMAP.md`](backend/ROADMAP.md) · live code `apps/website/api/` |
 | **Conventions pin** | [`WHERE_DOES_X_GO.md`](../platform/WHERE_DOES_X_GO.md) |
 | **Cross-boundary comments** | [`DOCUMENTATION_STANDARDS.md`](../platform/DOCUMENTATION_STANDARDS.md) |
-| **Coding standards** | [`CODING_STANDARDS.md`](../platform/CODING_STANDARDS.md) — before commit: `make db-up` then `make ci-local` |
+| **Coding standards** | [`CODING_STANDARDS.md`](../platform/CODING_STANDARDS.md) — before commit: `cargo xtask db up` then `cargo xtask ci ci-local` |
 | **Tag contract** | [`docs/TAGS.md`](TAGS.md) |
 
 ---
@@ -57,7 +57,7 @@ Playbook: [`.ai/tickets/AI_PLAYBOOK.md`](../../.ai/tickets/AI_PLAYBOOK.md). Lead
 ## Mission Creator slice workflow
 
 1. **Spec** — Cursor writes `t0xx_*.md`; registry `ready`; `./scripts/ticket sync`.
-2. **Code** — Claude Code; `make ci-local-leptos` (+ `make test-it` when API touched).
+2. **Code** — Claude Code; `cargo xtask mk ci-local-leptos` (+ `cargo xtask db test-it` when API touched).
 3. **Docs** — Cursor: registry `shipped` + sync + narrative rows.
 
 ---
@@ -76,8 +76,8 @@ Live UI authority: `apps/website/frontend/src/` (Leptos page modules).
 ## Verify before commit
 
 ```bash
-make ci-local-leptos   # fmt + clippy wasm32 + cargo test + trunk release
-make test-it           # when API/DB touched (needs make db-up)
+cargo xtask mk ci-local-leptos   # fmt + clippy wasm32 + cargo test + trunk release
+cargo xtask db test-it           # when API/DB touched (needs cargo xtask db up)
 ./scripts/ticket check # when registry or authority docs changed
 ```
 

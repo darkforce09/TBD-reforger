@@ -1,5 +1,5 @@
 # T-159 — Leptos (Rust/wasm) website SPA; THE frontend since the T-159.29.3 React deletion
-# (dev: `make leptos`; prod: SPA_DIST_DIR serve). CSR-only for now (L1); links the existing
+# (dev: `cargo xtask mk leptos`; prod: SPA_DIST_DIR serve). CSR-only for now (L1); links the existing
 # map-engine crates directly from T-159.15 (the wasm-boundary collapse).
 [package]
 name = "website-frontend"

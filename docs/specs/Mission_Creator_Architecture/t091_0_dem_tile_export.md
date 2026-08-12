@@ -11,7 +11,7 @@
 
 ## In one sentence
 
-Commit Everon 16-bit DEM PNG + ≥10 engine-probed anchors under `packages/map-assets/everon/`; pass `make verify-terrain-strict`. **Tiles deferred** (T-090.1).
+Commit Everon 16-bit DEM PNG + ≥10 engine-probed anchors under `packages/map-assets/everon/`; pass `cargo xtask ci verify-terrain-strict`. **Tiles deferred** (T-090.1).
 
 ---
 
@@ -60,7 +60,7 @@ Commit Everon 16-bit DEM PNG + ≥10 engine-probed anchors under `packages/map-a
      --meta "$PROFILE/TBD_TerrainExport_meta.json" \
      --out packages/map-assets/everon/dem/everon-dem-16bit.png
    ```
-5. Re-probe anchors if needed; run `make verify-terrain-strict`.
+5. Re-probe anchors if needed; run `cargo xtask ci verify-terrain-strict`.
 
 **Spike gate:** plugin runs a probe + 40k-sample benchmark before the full 41M loop (~2.5 min @ 6400²).
 
@@ -104,9 +104,9 @@ Schema: [`terrain-anchors.schema.json`](../../../packages/tbd-schema/schema/terr
 See prior sections V1–V7 in git history @ `6d96339`. Commands:
 
 ```bash
-make verify-terrain
-make verify-terrain-strict
-make schema-validate
+cargo xtask ci verify-terrain
+cargo xtask ci verify-terrain-strict
+cargo xtask ci schema-validate
 ```
 
 **pngjs note:** read 16-bit DEM with `{ skipRescale: true }`; use `.depth` not `.bitDepth` on pngjs objects.

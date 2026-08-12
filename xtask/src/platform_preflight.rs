@@ -533,7 +533,7 @@ pub fn run(warn_only: bool) -> Result<u8> {
         soft(
             &mut c,
             "postgres :5434",
-            "down — API integration tests will skip (make db-up on the HOST)",
+            "down — API integration tests will skip (cargo xtask db up on the HOST)",
         );
     }
 

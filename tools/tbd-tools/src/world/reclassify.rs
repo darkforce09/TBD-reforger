@@ -8,7 +8,7 @@
 //! `world build-objects`, which hard-requires `packages/map-assets/<terrain>/staging/export/
 //! raw-entities.jsonl` — a ~1.2M-row Workbench export that is **gitignored** (`.gitignore:18`)
 //! and absent from every clone. So a rule edit is unverifiable and unshippable by anyone who is
-//! not sitting in front of Workbench, and `make map-export` exits 2 for everybody else.
+//! not sitting in front of Workbench, and `cargo xtask map export-terrain` exits 2 for everybody else.
 //!
 //! T-244 is the measured consequence: it added a `vehicle` kind plus wreck rules, the gates went
 //! green against the *rules*, and the shipped `prefabs.json.gz` never changed. Its own agent

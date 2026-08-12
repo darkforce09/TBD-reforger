@@ -11,17 +11,17 @@
 
 ## In one sentence
 
-Implement **`make map-export TERRAIN=<id> PHASE=Pn`** and **`make map-verify-phase`** — phased, cumulative object import with **mathematical gates only** (no eyeball sign-off). Full 1M export blocked until **P10**. See [`t090_phased_object_import.md`](t090_phased_object_import.md).
+Implement **`cargo xtask map export-terrain <id> --phase Pn`** and **`cargo run -q -p tbd-tools --bin world -- verify-phase`** — phased, cumulative object import with **mathematical gates only** (no eyeball sign-off). Full 1M export blocked until **P10**. See [`t090_phased_object_import.md`](t090_phased_object_import.md).
 
 ---
 
 ## Operator experience (target)
 
 ```bash
-make map-export TERRAIN=everon PHASE=P1_buildings
-make map-verify-phase TERRAIN=everon PHASE=P1_buildings   # exit 0 before P2
+cargo xtask map export-terrain everon --phase P1_buildings
+cargo run -q -p tbd-tools --bin world -- verify-phase --terrain everon --phase P1_buildings   # exit 0 before P2
 # … P2 trees → P9 footpaths → P10_full
-make map-export TERRAIN=arland PHASE=P1_buildings         # same phases, new map
+cargo xtask map export-terrain arland --phase P1_buildings         # same phases, new map
 ```
 
 Phased import: [`t090_phased_object_import.md`](t090_phased_object_import.md). **No full 1M until P10.**
@@ -130,7 +130,7 @@ Same layout for **every** terrain — only `terrainId` and bounds change.
 
 | Script | Purpose |
 |--------|---------|
-| `scripts/map-assets/export-terrain.sh` | **Entry point** — `make map-export` |
+| `scripts/map-assets/export-terrain.sh` | **Entry point** — `cargo xtask map export-terrain` |
 | `scripts/map-assets/export-all-terrains.sh` | Loop registry |
 | `scripts/map-assets/workbench-export.sh` | Headless Workbench / MCP wrapper |
 | `scripts/map-assets/build-tile-pyramid.sh` | Raw ortho → z/x/y WebP |
@@ -150,12 +150,12 @@ Same layout for **every** terrain — only `terrainId` and bounds change.
 
 | ID | Check | Pass |
 |----|-------|------|
-| E1 | `make map-export TERRAIN=everon PHASE=P1_buildings` → exit 0 + ops log | script |
-| E1b | `make map-verify-phase TERRAIN=everon PHASE=P1_buildings` → exit 0 (G1–G12 + P1-*) | script |
+| E1 | `cargo xtask map export-terrain everon --phase P1_buildings` → exit 0 + ops log | script |
+| E1b | `cargo run -q -p tbd-tools --bin world -- verify-phase --terrain everon --phase P1_buildings` → exit 0 (G1–G12 + P1-*) | script |
 | E2 | Second terrain in registry uses **identical** script path | script |
 | E3 | `prefabs.json.gz` — every row has `ai.*` | script |
 | E4 | `instanceCount` = sum of chunks; all `prefabId` resolve | script |
-| E5 | `make schema-validate` + `make verify-terrain` | exit 0 |
+| E5 | `cargo xtask ci schema-validate` + `cargo xtask ci verify-terrain` | exit 0 |
 | E6 | Re-export → stable prefab ordering (deterministic diff) | diff |
 
 ---

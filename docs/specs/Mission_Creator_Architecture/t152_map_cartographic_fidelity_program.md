@@ -166,7 +166,7 @@ cargo clippy -p map-engine-core -p map-engine-render -- -D warnings
 cargo test -p map-engine-core --all-features
 cargo test -p map-engine-render
 make wasm
-make map-glyphs-verify          # after .2
+cargo xtask schema map-glyphs          # after .2
 cd apps/website/frontend && npm test && npm run build && npm run lint
 ./scripts/ticket check
 ```

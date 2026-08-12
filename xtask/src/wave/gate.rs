@@ -1,7 +1,7 @@
 //! The two gate drivers: the cheap per-slice gate and the full wave gate.
 //!
 //! TIERED GATES (correction 3). A slice pays only the cheap gate (~10 s). The expensive suite runs
-//! once per wave on merged main. `make ci-local` is deliberately NOT used: it is 15-40 minutes, not
+//! once per wave on merged main. `cargo xtask ci ci-local` is deliberately NOT used: it is 15-40 minutes, not
 //! the 22.7 s the docs still claim.
 //!
 //! Every step is one `run "<label>" <cmd>` line. The runner captures stdout+stderr, prints PASS or
@@ -69,7 +69,7 @@ fn hostrun(ctx: &Ctx, cmd: &[&str]) -> i32 {
 /// gate (wave 24 adversarial — T-439 unwired; T-444 pin absent).
 /// T-463. Same pattern for T-438 deploy-staging compose path + T-456 REST size gate (wave 25 —
 /// scripts existed, cold gate never executed them).
-/// T-468. Tripwire: ci.yml schema job must stay on `make ci-local-schema`.
+/// T-468. Tripwire: ci.yml schema job must stay on `cargo xtask ci ci-local-schema`.
 /// T-478. verify-t440 pins BOTH the gate_slice run and the cmd_gate run (comment-strip + redirect
 /// recipe + dual-path); deleting either run must FAIL the verify script.
 /// T-556. The T-462/T-463 pattern once more, and the worst instance of it: T-296 and T-452 existed,
@@ -137,7 +137,7 @@ pub fn gate_slice(ctx: &Ctx, tid: &str) -> u8 {
     r.run("clippy (changed crates)", || touch::clippy_changed(ctx, ""));
     // T-420. NOT change-scoped, and it is in the CHEAP gate on purpose: this is the step that would
     // have stopped T-244, whose diff is 0 .rs files — so every other step above it is change-scoped
-    // down to nothing and its slice gate was green over a red `make schema-validate`. ~1.4 s warm.
+    // down to nothing and its slice gate was green over a red `cargo xtask ci schema-validate`. ~1.4 s warm.
     r.run("schema", || schema::gate_schema(ctx));
     // T-583/T-594. The other half of the T-244 lesson above, and the half `schema` cannot reach.
     //
@@ -155,11 +155,26 @@ pub fn gate_slice(ctx: &Ctx, tid: &str) -> u8 {
     // WORKTREE'S rules and catalogue while reporting on yours: the signature defect, with the two
     // inputs the verdict is entirely about.
     //
-    // And NOT folded into `make schema-validate`: gate_schema's drift tripwire parses that recipe
-    // for `xtask schema <name>` lines, and this is a `tbd-tools --bin world` call — it would either
-    // trip the tripwire or be silently skipped by it.
+    // And NOT folded into `xtask ci schema-validate`: gate_schema's drift tripwire reads that
+    // task's `xtask schema <name>` steps, and this is a `tbd-tools --bin world` call — it would
+    // either trip the tripwire or be silently skipped by it.
     r.run("T-278 catalogue drift", || {
-        checkrun(ctx, &["make", "map-reclassify", "TERRAIN=everon"])
+        checkrun(
+            ctx,
+            &[
+                "cargo",
+                "run",
+                "-q",
+                "-p",
+                "tbd-tools",
+                "--bin",
+                "world",
+                "--",
+                "reclassify",
+                "--terrain",
+                "everon",
+            ],
+        )
     });
     // T-515. Class-R on 0016 claim UPDATE body — db_migrate.rs is schema-count-only; a hollow claim
     // migration stays green. Unconditional (wave.sh-only slices must hit it).
@@ -556,7 +571,22 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
     // T-583/T-594 — cold-path twin of the gate_slice step. Per T-556, a step wired into only one
     // half drifts green.
     r.run("T-278 catalogue drift", || {
-        checkrun(ctx, &["make", "map-reclassify", "TERRAIN=everon"])
+        checkrun(
+            ctx,
+            &[
+                "cargo",
+                "run",
+                "-q",
+                "-p",
+                "tbd-tools",
+                "--bin",
+                "world",
+                "--",
+                "reclassify",
+                "--terrain",
+                "everon",
+            ],
+        )
     });
     r.run("ticket registry", || {
         checkrun(

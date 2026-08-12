@@ -60,7 +60,7 @@
 //!
 //! ── OUTPUT IS A CONTRACT, AND SO IS THE EXIT CODE ────────────────────────────────────────────
 //!
-//! `Makefile:341` (`make verify-t180`) is the only executable caller, and T-853 accepts ports by
+//! `Makefile:341` (`cargo xtask verify t180`) is the only executable caller, and T-853 accepts ports by
 //! diffing stdout+stderr. So failures print bash's text verbatim — one `verify-t180 FAIL: …` line
 //! on **stderr**, `ok` lines on stdout — not [`tbd_gate::Finding`]'s two-line render, and the exit
 //! status is [`Verdict::into_exit_legacy_binary`]'s **1** for both failure kinds rather than the
@@ -349,7 +349,7 @@ fn cargo_test_pin(root: &Path, path_env: &str, args: &[&str]) -> Result<(), Stri
 /// failure, so under parallel worktrees "the OOM killer shot the gate" was reported as "the gate
 /// found a problem"; and an absent cargo produced `exited 127`, the exact sentence the T-216 header
 /// spends thirty lines explaining is a lie. Both are named here instead. The exit status is still
-/// 1, so `make verify-t180` behaves identically; only the text differs, on inputs bash misdescribed.
+/// 1, so `cargo xtask verify t180` behaves identically; only the text differs, on inputs bash misdescribed.
 /// Exhaustive: a new [`NotRun`] variant is a compile error, not a silent default.
 fn not_run_clause(cause: &NotRun) -> String {
     let tail = "Refusing to report OK on a check that did not execute.";

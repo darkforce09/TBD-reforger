@@ -57,38 +57,49 @@
 //! stdout diff against the script on a clean tree AND on a tree with the wiki line deleted from
 //! the `seed:` recipe. Exit status is bash's binary 0/1 — see [`verify_t444`].
 //!
-//! ── WHEN THE SEED RECIPE LEAVES THE MAKEFILE ─────────────────────────────────────────────────
+//! ── T-897: THE SEED RECIPE LEFT THE MAKEFILE ─────────────────────────────────────────────────
 //!
-//! T-853 Phase 3 replaces `make` with `cargo xtask`, at which point the file this gate inspects
-//! stops existing. Everything the gate knows about *where* the pin points lives in the six consts
-//! below, and every message — the PASS line included — is `format!`ed from them. Repointing is:
-//! change [`RECIPE_FILE`]/[`RECIPE_TARGET`], replace [`recipe_body`] if the new host is not a
-//! tab-indented make recipe, and re-baseline `tests::failure_text_is_the_bash_scripts_byte_for_byte`.
-//! Nothing else in this file names the Makefile.
+//! T-853 Phase 3 replaced `make` with `cargo xtask`, and T-897 deleted the file this gate used to
+//! inspect. The successor is [`crate::mk_db::SEEDS`] — the const `cargo xtask db seed` iterates,
+//! one `psql < seeds/<file>` per entry. The pin therefore moves from "a tab-indented recipe line
+//! mentioning `seeds/wiki_pages.sql`" to "`wiki_pages.sql` is a member of the list the seeder
+//! actually walks", which is a STRONGER subject: the old pin was satisfied by TEXT that resembled
+//! an applier, this one is satisfied only by the thing that runs.
+//!
+//! What did NOT move: both halves are still load-bearing and still separately worded. A seed
+//! nobody applies is dead SQL (the [`SEEDS`] membership check); a listed file that is empty or
+//! lacks `field-manual` loads nothing (the file checks).
+//!
+//! [`first_failure`] takes the seed list as a PARAMETER rather than reading the const directly,
+//! for one reason: the tests have to perturb it. Hand-written fixtures of a const's expected
+//! contents are how `gate_t440`'s drifted and cost seven test failures earlier in this program —
+//! so every fixture here is DERIVED from [`SEEDS`] by removing or renaming entries.
 
 use std::path::Path;
 
 use anyhow::Result;
 use tbd_gate::{Finding, Kind, NotRun, Pattern, Verdict, gate};
 
+use crate::mk_db::SEEDS;
+
 // ── THE PIN, IN ONE PLACE ────────────────────────────────────────────────────────────────────
 
-/// The file carrying the seed recipe, relative to the repo root. Deleted by T-853 Phase 3.
-const RECIPE_FILE: &str = "Makefile";
-/// The recipe whose body must apply the wiki seed. Matched as a line PREFIX, as awk's `/^seed:/`
-/// did — so `seed-dev:` is a different target and does not open the scan.
-const RECIPE_TARGET: &str = "seed:";
-/// The seed the recipe must apply, repo-relative. Also quoted verbatim in one failure hint.
+/// The command whose seed list is pinned, for operator-facing prose.
+const RECIPE_SOURCE: &str = "cargo xtask db seed";
+/// Where that list lives, quoted in failure hints so the fix is one grep away. NAMED, never read:
+/// the list arrives as a `&[&str]`, so no arrangement of text in that file can satisfy the gate.
+const RECIPE_CONST: &str = "xtask/src/mk_db.rs SEEDS";
+/// The seed the seeder must apply, repo-relative. Also quoted verbatim in one failure hint.
 const SEED_FILE: &str = "apps/website/api/seeds/wiki_pages.sql";
-/// The reference the recipe must contain. bash grepped `seeds/wiki_pages\.sql` (BRE, escaped dot),
-/// i.e. a literal — so [`Pattern::literal`] is the exact equivalent, not an approximation.
-const SEED_REF: &str = "seeds/wiki_pages.sql";
+/// The [`SEEDS`] entry that must be present. The const holds bare file names (the seeder redirects
+/// `seeds/<entry>`), so this is the bare name — matched by EQUALITY, not substring, so a
+/// `wiki_pages.sql.disabled` entry cannot satisfy the pin.
+const SEED_ENTRY: &str = "wiki_pages.sql";
 /// The V-suite slug the seed file must carry. Pinning it stops an empty INSERT, or unrelated SQL
 /// parked at that path, from satisfying mere presence.
 const SEED_SLUG: &str = "field-manual";
-/// The line the operator is told to add. Make-shaped, so it moves with [`RECIPE_FILE`].
-const SUGGESTED_LINE: &str =
-    "cd $(WEB) && $(COMPOSE) exec -T db psql -U tbd -d tbd_reforger < seeds/wiki_pages.sql";
+/// The entry the operator is told to add, in the const's own spelling.
+const SUGGESTED_LINE: &str = "\"wiki_pages.sql\",";
 
 /// Entry point. `0` when the contract holds, `1` for every failure — bash's binary status.
 ///
@@ -98,11 +109,10 @@ const SUGGESTED_LINE: &str =
 /// same commit that was supposed to change nothing. Widening it is T-853 Phase 7's call, made once
 /// for all gates, not smuggled in here.
 pub fn verify_t444(repo_root: &Path) -> Result<u8> {
-    match first_failure(repo_root)? {
+    match first_failure(repo_root, SEEDS)? {
         Verdict::Held => {
             println!(
-                "PASS: T-444 wiki seed — {RECIPE_FILE} {RECIPE_TARGET} applies {SEED_REF}; \
-                 {SEED_SLUG} present"
+                "PASS: T-444 wiki seed — {RECIPE_SOURCE} applies {SEED_ENTRY}; {SEED_SLUG} present"
             );
             Ok(0)
         }
@@ -119,30 +129,34 @@ pub fn verify_t444(repo_root: &Path) -> Result<u8> {
 /// capturing stdout. Order is load-bearing and matches the script line for line — each message
 /// assumes the checks above it passed ("does not contain 'field-manual'" would be a misleading
 /// thing to say about a file that turned out to be empty).
-fn first_failure(repo_root: &Path) -> Result<Verdict> {
-    let makefile = repo_root.join(RECIPE_FILE);
+fn first_failure(repo_root: &Path, seeds: &[&str]) -> Result<Verdict> {
     let seed = repo_root.join(SEED_FILE);
 
-    // ── bash: `[[ ! -f "$MAKEFILE" ]]` ───────────────────────────────────────────────────────
+    // ── successor to bash's `[[ ! -f "$MAKEFILE" ]]` ─────────────────────────────────────────
     //
-    // Hand-built rather than leaning on `gate::require`'s own missing-target rendering: the
-    // library's text ("— target file missing: … / The pin could not run.") is better prose, but it
-    // is not what the script printed, and byte-identical output is the acceptance criterion. The
-    // CAUSE is still the typed one, so `Verdict::DidNotRun` is what a caller sees.
-    if !makefile.is_file() {
-        return Ok(target_missing(
-            &makefile,
-            format!("missing {}", makefile.display()),
-            format!("restore {RECIPE_FILE} so the seed recipe can be pinned."),
-        ));
+    // A gutted seed list is this gate's "the host is gone": nothing is applied, so nothing the
+    // file checks below could say would matter. Reported FIRST for the same reason the script
+    // checked the Makefile's existence first — the operator action is different.
+    if seeds.is_empty() {
+        return Ok(Verdict::Failed(Finding {
+            headline: format!("{RECIPE_CONST} is empty — {RECIPE_SOURCE} applies nothing"),
+            detail: vec![
+                "the seeder must apply Discord/registry/faction/vehicle/wiki seeds.".to_string(),
+            ],
+        }));
     }
 
     // ── bash: `[[ ! -f "$SEED" ]]` ───────────────────────────────────────────────────────────
+    //
+    // Hand-built rather than leaning on `gate::require`'s own missing-target rendering: the
+    // library's text ("— target file missing: … / The pin could not run.") is better prose, but it
+    // is not what the script printed, and byte-identical output was the port's acceptance
+    // criterion. The CAUSE is still the typed one, so `Verdict::DidNotRun` is what a caller sees.
     if !seed.is_file() {
         return Ok(target_missing(
             &seed,
             format!("missing {}", seed.display()),
-            format!("T-444 requires {SEED_FILE} for make seed."),
+            format!("T-444 requires {SEED_FILE} for {RECIPE_SOURCE}."),
         ));
     }
 
@@ -190,117 +204,27 @@ fn first_failure(repo_root: &Path) -> Result<Verdict> {
         return Ok(broken);
     }
 
-    // ── bash: `seed_recipe="$(awk … "$MAKEFILE")"` ───────────────────────────────────────────
-    let makefile_text = match std::fs::read_to_string(&makefile) {
-        Ok(text) => text,
-        Err(source) => {
-            return Ok(Verdict::did_not_run(
-                format!("cannot read {}", makefile.display()),
-                Kind::Pin,
-                NotRun::Unreadable {
-                    path: makefile,
-                    source,
-                },
-            ));
-        }
-    };
-    let body = recipe_body(&makefile_text);
-
-    // ── bash: `[[ -z "$seed_recipe" ]]` ──────────────────────────────────────────────────────
+    // ── THE CLASS-R CHECK, successor to the recipe grep ──────────────────────────────────────
     //
-    // Empty means BOTH "there is no `seed:` target" and "the target has no tab-indented lines".
-    // The script merged them under one message and so does this; they have the same fix.
-    if body.is_empty() {
+    // Membership, by EQUALITY. The bash gate grepped a text blob for `seeds/wiki_pages.sql` and
+    // had to separately strip commented-out recipe lines so a `# …wiki_pages.sql` could not
+    // satisfy it. There is no commented-out member of a `&[&str]`: an entry either is walked by
+    // `mk_db::seed()` or is not in the slice. The whole comment-smuggle class is unreachable here
+    // rather than defended against, which is the point of moving the subject to the data.
+    if !seeds.contains(&SEED_ENTRY) {
         return Ok(Verdict::Failed(Finding {
-            headline: format!(
-                "{RECIPE_FILE} has no tab-indented body under the {RECIPE_TARGET} target"
-            ),
+            headline: format!("{RECIPE_SOURCE} does not apply {SEED_ENTRY}"),
             detail: vec![
-                "make seed must apply Discord/registry/faction/vehicle/wiki seeds.".to_string(),
+                format!("Add to {RECIPE_CONST}:"),
+                // Two extra spaces: `Finding` renders detail at a six-space indent and the script
+                // put this suggestion at eight.
+                format!("  {SUGGESTED_LINE}"),
+                format!("Without this entry, {RECIPE_SOURCE} never loads doctrine wiki pages."),
             ],
         }));
     }
 
-    // ── bash: `printf … | grep -v $'^\t[[:space:]]*#' | grep -q 'seeds/wiki_pages\.sql'` ─────
-    //
-    // THE CLASS-R CHECK. Commenting the line out inside the recipe must not satisfy the pin —
-    // that is the shape a hurried edit actually takes, and `make` would not run it either.
-    let live = live_lines(&body)?;
-    let reference = gate::require_str(
-        &format!("{RECIPE_FILE} {RECIPE_TARGET} recipe does not reference {SEED_REF}"),
-        &Pattern::literal(SEED_REF),
-        &live,
-    );
-    Ok(with_detail(
-        reference,
-        vec![
-            format!("Add (under {RECIPE_TARGET}):"),
-            // Two extra spaces: `Finding` renders detail at a six-space indent and the script put
-            // this suggestion at eight.
-            format!("  {SUGGESTED_LINE}"),
-            "Without this line, make seed never loads doctrine wiki pages.".to_string(),
-        ],
-    ))
-}
-
-/// The awk recipe extractor, in Rust:
-///
-/// ```text
-/// /^seed:/                                          { in_seed=1; next }
-/// in_seed && /^[^#[:space:]\t]/ && $0 !~ /^#/       { exit }
-/// in_seed && /^\t/                                  { print }
-/// ```
-///
-/// Returns the recipe's tab-indented lines. Comments and other targets must not satisfy the pin,
-/// so the scan stops at the first line that starts a new make construct — recipe lines are
-/// tab-indented, blank lines and `#` comments are passed over, and anything else ends it.
-///
-/// The `$0 !~ /^#/` clause was already redundant in the awk (the bracket expression excludes `#`);
-/// it is dropped here rather than reproduced as dead code, and named so nobody re-adds it.
-fn recipe_body(makefile: &str) -> Vec<&str> {
-    let mut in_recipe = false;
-    let mut body = Vec::new();
-    for line in makefile.lines() {
-        if line.starts_with(RECIPE_TARGET) {
-            // Re-entering an already-open scan just restarts it, exactly as `in_seed=1` did.
-            in_recipe = true;
-            continue;
-        }
-        if !in_recipe {
-            continue;
-        }
-        if line
-            .chars()
-            .next()
-            .is_some_and(|c| c != '#' && !is_posix_space(c))
-        {
-            break;
-        }
-        if line.starts_with('\t') {
-            body.push(line);
-        }
-    }
-    body
-}
-
-/// The recipe lines `make` would actually execute — bash's `grep -v $'^\t[[:space:]]*#'`.
-fn live_lines(body: &[&str]) -> Result<String> {
-    let comment = Pattern::regex(r"^\t[[:space:]]*#")?;
-    Ok(body
-        .iter()
-        .filter(|line| !comment.is_match(line))
-        .copied()
-        .collect::<Vec<_>>()
-        .join("\n"))
-}
-
-/// POSIX `[[:space:]]` in the C locale — space, tab, newline, vertical tab, form feed, CR.
-///
-/// NOT `char::is_whitespace`, which is Unicode `White_Space` and would additionally swallow NBSP
-/// and friends. A Makefile line starting with U+00A0 is a make syntax error, not a recipe line,
-/// and the port must not quietly decide otherwise.
-fn is_posix_space(c: char) -> bool {
-    matches!(c, ' ' | '\t' | '\n' | '\x0b' | '\x0c' | '\r')
+    Ok(Verdict::Held)
 }
 
 /// A missing input, wearing the script's prose over the typed cause.
@@ -340,7 +264,7 @@ mod tests {
     use std::path::PathBuf;
 
     /// A scratch repo tree that cleans itself up. Same shape as `tbd_gate::scan`'s, and for the
-    /// same reason: six tests do not justify a dev-dependency.
+    /// same reason: a handful of tests do not justify a dev-dependency.
     struct Tree(PathBuf);
 
     impl Tree {
@@ -362,7 +286,6 @@ mod tests {
         /// A tree that satisfies the contract, so each test perturbs exactly one thing.
         fn good(name: &str) -> Tree {
             let t = Tree::new(name);
-            t.write(RECIPE_FILE, GOOD_MAKEFILE);
             t.write(
                 SEED_FILE,
                 "INSERT INTO wiki_pages (slug) VALUES ('field-manual');\n",
@@ -370,8 +293,14 @@ mod tests {
             t
         }
 
+        /// The live seed list — the tree half of the contract against the real const.
         fn verdict(&self) -> Verdict {
-            first_failure(&self.0).unwrap()
+            first_failure(&self.0, SEEDS).unwrap()
+        }
+
+        /// The same tree against a PERTURBED seed list.
+        fn verdict_with(&self, seeds: &[&str]) -> Verdict {
+            first_failure(&self.0, seeds).unwrap()
         }
     }
 
@@ -381,101 +310,60 @@ mod tests {
         }
     }
 
-    const GOOD_MAKEFILE: &str = "\
-.PHONY: seed
-seed: ## Apply data seeds to the running DB
-\tcd $(WEB) && $(COMPOSE) exec -T db psql -U tbd -d tbd_reforger < seeds/discord_roles.sql
-\tcd $(WEB) && $(COMPOSE) exec -T db psql -U tbd -d tbd_reforger < seeds/wiki_pages.sql
-
-# a comment between targets
-db-backup: ## something else
-\tbash scripts/deploy/backup-db.sh
-";
+    /// EVERY fixture below is DERIVED from [`SEEDS`], never transcribed. A hand-written copy of
+    /// the const is how `gate_t440`'s fixtures drifted and cost seven test failures earlier in
+    /// this program: the copy stayed green while the thing it claimed to mirror had moved.
+    fn seeds_without(entry: &str) -> Vec<&'static str> {
+        SEEDS.iter().copied().filter(|s| *s != entry).collect()
+    }
 
     fn text(v: &Verdict) -> String {
         v.to_string()
     }
 
     #[test]
-    fn a_correct_seed_recipe_holds() {
+    fn the_live_seed_list_holds() {
         assert!(matches!(Tree::good("ok").verdict(), Verdict::Held));
     }
 
-    /// THE WAVE 24 DEFECT. Deleting the wiki line from the recipe greened the cold gate.
+    /// THE WAVE 24 DEFECT, in its post-Makefile shape. Dropping the wiki seed from the list the
+    /// seeder walks greened the cold gate; it must not.
     #[test]
-    fn a_recipe_missing_the_wiki_line_is_caught() {
-        let t = Tree::good("no-wiki-line");
-        t.write(
-            RECIPE_FILE,
-            &GOOD_MAKEFILE
-                .lines()
-                .filter(|l| !l.contains(SEED_REF))
-                .map(|l| format!("{l}\n"))
-                .collect::<String>(),
-        );
-        let v = t.verdict();
+    fn a_seed_list_missing_the_wiki_entry_is_caught() {
+        let t = Tree::good("no-wiki-entry");
+        let v = t.verdict_with(&seeds_without(SEED_ENTRY));
         assert!(matches!(v, Verdict::Failed(_)), "{}", text(&v));
         assert!(
+            text(&v).starts_with("FAIL: cargo xtask db seed does not apply wiki_pages.sql"),
+            "{}",
             text(&v)
-                .starts_with("FAIL: Makefile seed: recipe does not reference seeds/wiki_pages.sql")
         );
     }
 
-    /// A commented-out line is what a hurried edit actually leaves behind, and `make` would not
-    /// run it either — so it must not satisfy the pin.
+    /// Membership is by EQUALITY. `wiki_pages.sql.disabled` is a plausible way to park the seed
+    /// without applying it, and a substring test would have accepted it.
     #[test]
-    fn a_commented_out_wiki_line_does_not_satisfy_the_pin() {
-        let t = Tree::good("commented");
-        t.write(
-            RECIPE_FILE,
-            &GOOD_MAKEFILE.replace(
-                "\tcd $(WEB) && $(COMPOSE) exec -T db psql -U tbd -d tbd_reforger < seeds/wiki_pages.sql",
-                "\t#  cd $(WEB) && $(COMPOSE) exec -T db psql -U tbd -d tbd_reforger < seeds/wiki_pages.sql",
-            ),
-        );
-        assert!(matches!(t.verdict(), Verdict::Failed(_)));
+    fn a_renamed_wiki_entry_does_not_satisfy_the_pin() {
+        let t = Tree::good("renamed-entry");
+        let mut seeds = seeds_without(SEED_ENTRY);
+        seeds.push("wiki_pages.sql.disabled");
+        assert!(matches!(t.verdict_with(&seeds), Verdict::Failed(_)));
     }
 
-    /// The scan must stop at the next target — otherwise a reference parked anywhere later in the
-    /// Makefile would satisfy a `seed:` recipe that applies nothing. This is the case a
-    /// strict-POSIX awk could have got wrong through the `\t`-in-a-bracket-expression hazard.
+    /// A gutted list is the successor to "the Makefile is gone": it is reported before the file
+    /// checks, because the operator action is different.
     #[test]
-    fn a_reference_under_a_later_target_does_not_count() {
-        let t = Tree::good("later-target");
-        t.write(
-            RECIPE_FILE,
-            "seed:\n\tpsql < seeds/discord_roles.sql\n\
-             tools:\n\techo seeds/wiki_pages.sql\n",
-        );
-        assert!(matches!(t.verdict(), Verdict::Failed(_)));
-    }
-
-    /// Blank lines and `#` comments between recipe lines do NOT end the scan (awk only exits on a
-    /// line starting with a non-`#`, non-space character).
-    #[test]
-    fn blank_and_comment_lines_do_not_truncate_the_recipe() {
-        let t = Tree::good("interleaved");
-        t.write(
-            RECIPE_FILE,
-            "seed:\n\tpsql < seeds/discord_roles.sql\n\n# a note\n\tpsql < seeds/wiki_pages.sql\n",
-        );
-        assert!(matches!(t.verdict(), Verdict::Held));
-    }
-
-    /// A missing Makefile is a check that did not run — never a pass.
-    #[test]
-    fn a_missing_makefile_does_not_read_as_pass() {
-        let t = Tree::new("no-makefile");
-        t.write(SEED_FILE, "field-manual\n");
-        let v = t.verdict();
-        assert!(matches!(v, Verdict::DidNotRun(NotRun::TargetMissing(_), _)));
-        assert_eq!(verify_t444(&t.0).unwrap(), 1, "bash exited 1 here");
+    fn an_empty_seed_list_does_not_read_as_pass() {
+        let t = Tree::good("empty-list");
+        let v = t.verdict_with(&[]);
+        assert!(matches!(v, Verdict::Failed(_)));
+        assert!(text(&v).contains("is empty"), "{}", text(&v));
+        assert!(text(&v).contains(RECIPE_CONST), "{}", text(&v));
     }
 
     #[test]
     fn a_missing_seed_file_does_not_read_as_pass() {
         let t = Tree::new("no-seed");
-        t.write(RECIPE_FILE, GOOD_MAKEFILE);
         let v = t.verdict();
         assert!(matches!(v, Verdict::DidNotRun(NotRun::TargetMissing(_), _)));
         assert!(text(&v).contains("T-444 requires apps/website/api/seeds/wiki_pages.sql"));
@@ -506,41 +394,26 @@ db-backup: ## something else
         assert!(text(&v).contains("does not contain 'field-manual'"));
     }
 
+    /// The stdout contract. `wave.sh` prints `tail -15` of a failed step, so the failure body is
+    /// operator-facing evidence and pinned here. Re-baselined at T-897 when the subject moved off
+    /// the Makefile recipe onto `mk_db::SEEDS`.
     #[test]
-    fn a_seed_target_with_no_tab_indented_body_is_caught() {
-        let t = Tree::good("no-body");
-        t.write(RECIPE_FILE, "seed:\ndb-up:\n\tpodman compose up -d\n");
-        let v = t.verdict();
-        assert!(matches!(v, Verdict::Failed(_)));
-        assert_eq!(
-            text(&v),
-            "FAIL: Makefile has no tab-indented body under the seed: target\n      \
-             make seed must apply Discord/registry/faction/vehicle/wiki seeds."
-        );
-    }
-
-    /// The stdout contract. `wave.sh` prints `tail -15` of a failed step, and the T-853 port was
-    /// accepted by diffing these bytes against the script's, so they are pinned here too.
-    #[test]
-    fn failure_text_is_the_bash_scripts_byte_for_byte() {
+    fn failure_text_is_pinned() {
         let t = Tree::good("bytes");
-        t.write(RECIPE_FILE, "seed:\n\tpsql < seeds/discord_roles.sql\n");
         assert_eq!(
-            text(&t.verdict()),
-            "FAIL: Makefile seed: recipe does not reference seeds/wiki_pages.sql\n      \
-             Add (under seed:):\n        \
-             cd $(WEB) && $(COMPOSE) exec -T db psql -U tbd -d tbd_reforger < seeds/wiki_pages.sql\n      \
-             Without this line, make seed never loads doctrine wiki pages."
+            text(&t.verdict_with(&seeds_without(SEED_ENTRY))),
+            "FAIL: cargo xtask db seed does not apply wiki_pages.sql\n      \
+             Add to xtask/src/mk_db.rs SEEDS:\n        \
+             \"wiki_pages.sql\",\n      \
+             Without this entry, cargo xtask db seed never loads doctrine wiki pages."
         );
     }
 
-    /// The live tree must satisfy the gate. When T-853 Phase 3 deletes the Makefile this test is
-    /// the first thing that goes red, which is the intended alarm: the pin needs repointing at the
-    /// xtask seed command, not deleting.
+    /// The live tree must satisfy the gate — const AND seed file together.
     #[test]
-    fn the_live_repo_recipe_holds() {
+    fn the_live_repo_contract_holds() {
         let repo_root = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
-        let v = first_failure(repo_root).unwrap();
+        let v = first_failure(repo_root, SEEDS).unwrap();
         assert!(matches!(v, Verdict::Held), "{}", text(&v));
     }
 }

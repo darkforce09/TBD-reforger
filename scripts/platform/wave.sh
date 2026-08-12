@@ -21,7 +21,7 @@
 #      old barrier behaviour if you ever actually want it.
 #
 #   3. TIERED GATES.  A slice pays only the cheap gate (~10 s). The expensive suite runs once per
-#      wave on merged main. `make ci-local` is deliberately NOT used: it is 15-40 minutes, not the
+#      wave on merged main. `cargo xtask ci ci-local` is deliberately NOT used: it is 15-40 minutes, not the
 #      22.7 s the docs still claim. (It was ALSO red for weeks because verify-no-python failed on
 #      scripts/mod/slice-collisions.py; T-620 ported both .py files to xtask and deleted them, so
 #      that half is green now and `verify-no-python` is a wave-gate step in its own right below.)
@@ -77,7 +77,7 @@ REGISTRY=".ai/tickets/registry.json"
 WORKTREES=".ai/artifacts/worktrees"
 # T-620: was scripts/platform/slice-collisions.py. Ported to xtask byte-identically (default,
 # --check and --repack all diffed clean against the Python before it was deleted), because the
-# factory's own tooling was the last thing keeping `make verify-no-python` red.
+# factory's own tooling was the last thing keeping `cargo xtask verify no-python` red.
 COLLIDE="cargo run -q -p xtask -- slice-collisions"
 
 # See note 1. Every worktree build must land in the MAIN repo's target dir.
@@ -139,7 +139,7 @@ GATE_TRUNK_DIST="${TBD_GATE_TRUNK_DIST:-$MAIN_ROOT/dist-gate-frontend}"
 # measurement for that is on touch_workspace. Read both before changing either.
 #
 # What this half buys: it bounds WHO CAN WRITE the artifacts these steps read. The shared dir is
-# written by every slice agent's ad-hoc `cargo check`, by `make api`, by `trunk serve` and by every
+# written by every slice agent's ad-hoc `cargo check`, by `cargo xtask mk rust-api`, by `trunk serve` and by every
 # other worktree's gate. This dir is written by the gate alone, and take_gate_lock serialises those,
 # so while a gate holds the lock nothing else can put an artifact here. That is what makes a single
 # fingerprint invalidation at the top of the critical section hold for every step below it.
@@ -213,7 +213,7 @@ checkrun() { hostrun env "CARGO_TARGET_DIR=$GATE_CHECK_TARGET" "CARGO_INCREMENTA
 
 # Bring up a gate-private test database, and REFUSE to call a skipped suite a pass.
 #
-# Its own DB, not the Makefile's `rust_it`: slice agents run `make test-it` concurrently, and that
+# Its own DB, not the Makefile's `rust_it`: slice agents run `cargo xtask db test-it` concurrently, and that
 # target DROPs and recreates rust_it, so sharing it would make the gate race them.
 #
 # T-411 / T-490: the IT database is per-wave (`tbd_gate_w<N>`), create-if-missing, with DBs older
@@ -565,7 +565,7 @@ changed_rs() {
 
 # Format-check ONLY the files this slice changed against main.
 #
-# Workspace-wide `cargo fmt --all --check` is the local/CI FMT-1 gate (`make rust-fmt` /
+# Workspace-wide `cargo fmt --all --check` is the local/CI FMT-1 gate (`cargo xtask mk rust-fmt` /
 # `.github/workflows/ci.yml` website-api; T-297 cleaned the tree, T-453 aligned CI). The wave
 # gate stays diff-scoped so a slice only fails on files it touched — not a substitute for CI
 # `--all`. Edition is NOT fixed across this workspace: apps/website/api is edition 2024, most
@@ -983,7 +983,7 @@ gate_test_api() {
   if [ "$rc" -ne 0 ]; then return "$rc"; fi
   if [ "${skips:-0}" -gt 0 ]; then
     echo "REFUSING to call this a pass: ${skips} DB-backed test(s) SKIPPED."
-    echo "TEST_DATABASE_URL=${TEST_DATABASE_URL:-<unset>} — is postgres up on :5434? (make db-up)"
+    echo "TEST_DATABASE_URL=${TEST_DATABASE_URL:-<unset>} — is postgres up on :5434? (cargo xtask db up)"
     return 1
   fi
   return 0
@@ -1197,7 +1197,7 @@ gate_db_migrate_persist() {
   fi
 
   if ! admin "SELECT 1;" >/dev/null 2>&1; then
-    echo "$label: FAIL — cannot reach Postgres (podman exec tbd_reforger_db). Is \`make db-up\` running?"
+    echo "$label: FAIL — cannot reach Postgres (podman exec tbd_reforger_db). Is \`cargo xtask db up\` running?"
     echo "        This is a FAIL and not a skip on purpose: a migration audit that silently"
     echo "        examined no database is the defect this step was built to end."
     return 1
@@ -1365,7 +1365,7 @@ persist_seed() {
 
 # `trunk build --release`, ISOLATED FROM THE OPERATOR'S DEV SERVER — read before simplifying.
 #
-# `make leptos` is `trunk serve --release`: the same binary, running the same pipeline, over the
+# `cargo xtask mk leptos` is `trunk serve --release`: the same binary, running the same pipeline, over the
 # same crate, continuously, for hours. Two trunks over one working tree collide, and the collision
 # reads exactly like a code defect — the worst failure shape there is, because an unattended fix
 # agent burns its whole retry budget on working code.
@@ -1495,7 +1495,7 @@ gate_trunk_build() {
 #   * wave 4 printed `GATE: PASS  11/11` on a wave whose HEADLINE deliverable was T-241's
 #     mission.schema.json change. The only evidence that schema was valid is that T-241's own agent
 #     ran the validator and said so. Agent reports are evidence, not testimony.
-#   * T-244 (wave 5) added a `vehicle` kind and would have merged with `make schema-validate` RED.
+#   * T-244 (wave 5) added a `vehicle` kind and would have merged with `cargo xtask ci schema-validate` RED.
 #     Its slice gate passed for the worst possible reason: its diff is 0 `.rs` files, so fmt and
 #     clippy are change-scoped and examined nothing whatsoever.
 #
@@ -1509,8 +1509,8 @@ gate_trunk_build() {
 # never opens prefab-classify.json. That is this program's signature defect — a tool reporting
 # success over an input it never examined — reproduced BY the fix for it. The step must run the SET.
 #
-# The set is `make schema-validate` (Makefile:137) plus `make verify-citations` (Makefile:151),
-# i.e. `make ci-local-schema`. NOT ci.yml: its `schema` job (ci.yml:133,135) is `validate` +
+# The set is `cargo xtask ci schema-validate` plus `cargo xtask ci verify-citations`,
+# i.e. `cargo xtask ci ci-local-schema`. NOT ci.yml: its `schema` job was `validate` +
 # `citations` only, so CI has the same hole and would not have caught T-244 either. Reported, not
 # fixed — wave.sh is T-420's only file.
 #
@@ -1531,27 +1531,27 @@ gate_trunk_build() {
 #   IN   n6                 rc=0  N6 building-geometry sentence single-source
 #   IN   n10                rc=0  N10 tile-budget single-source
 #   IN   citations          rc=0  @contract citation integrity (35 citations)
-#   CTX  height-labels      PER-CONTEXT (T-422). In make schema-validate always. GREEN on main
+#   CTX  height-labels      PER-CONTEXT (T-422). In `ci schema-validate` always. GREEN on main
 #                                 when the DEM is a real PNG (~71 MB, magic \x89PNG). In a
 #                                 worktree that still has the 133-byte LFS pointer, the same
 #                                 sub-gate is RED for an env reason, not a schema reason. T-420
 #                                 forever-excluded it off a worktree measurement and told
-#                                 maintainers to `make lfs-dem` for a main-only green gate that
+#                                 maintainers to `cargo xtask ci lfs-dem` for a main-only green gate that
 #                                 was never red on main. Runtime inclusion follows the DEM in
 #                                 THIS tree; the tripwire still demands the Makefile name.
 # Also enumerated and NOT wired, because they are not in the schema-validate contract — they belong
-# to `make verify-terrain` and the label lane, and widening the gate past its stated authority is a
+# to `cargo xtask ci verify-terrain` and the label lane, and widening the gate past its stated authority is a
 # separate decision from closing this hole:
-#   n/a  terrain-manifest   rc=0  manifest schema + terrains cross-check   (make verify-terrain)
+#   n/a  terrain-manifest   rc=0  manifest schema + terrains cross-check   (cargo xtask ci verify-terrain)
 #   n/a  locations          rc=0  locations G2-G7
 #   n/a  town-labels        rc=0  town-label gates
 #   n/a  road-names         rc=0  road-name gates
 #   n/a  terrain-alignment  — same DEM dependency as height-labels; still outside this contract.
 #   n/a  codegen / validate-file / flatten-orbat-slots — generators and tools, not gates.
 #
-# GATE_SCHEMA_VALIDATE_GATES must equal `make schema-validate`'s sub-gate SET (order = Makefile).
-# citations comes from `make verify-citations` / ci-local-schema and is layered on after the
-# tripwire. height-labels stays in VALIDATE_GATES even when a worktree skips running it.
+# GATE_SCHEMA_VALIDATE_GATES must equal `cargo xtask ci schema-validate`'s sub-gate SET (order =
+# the TASKS row). citations comes from `verify-citations` / ci-local-schema and is layered on after
+# the tripwire. height-labels stays in VALIDATE_GATES even when a worktree skips running it.
 GATE_SCHEMA_VALIDATE_GATES="validate map-object-golden map-glyphs height-labels map-object-enums type-inventory t090-specs n6 n10"
 GATE_SCHEMA_EXTRA_GATES="citations"
 # DEM path height-labels (and terrain-alignment) decode. Probe is PNG magic, not byte size —
@@ -1595,53 +1595,44 @@ schema_dem_materialized() {
   [ "$sig" = "89504e470d0a1a0a" ]
 }
 
-# Parse `make schema-validate` recipe names. Survives blank lines, column-0 `#` comments, and
-# backslash continuations — the three shapes that made T-420's awk silently narrow (3-of-9 /
-# 8-of-9) while GNU make still ran all nine. Ends the recipe only on a real next target line.
-schema_makefile_validate_gates() {
-  awk '
-    /^schema-validate:/ { i=1; next }
-    i {
-      if (/^[[:space:]]*$/) next
-      if (/^#/) next
-      if (!/^\t/) exit
-      line = $0
-      sub(/^\t+/, "", line)
-      while (line ~ /\\[[:space:]]*$/) {
-        sub(/\\[[:space:]]*$/, "", line)
-        if ((getline nxt) <= 0) break
-        sub(/^\t+/, "", nxt)
-        if (nxt ~ /^#/ || nxt ~ /^[[:space:]]*$/) continue
-        line = line nxt
-      }
-      print line
-    }
-  ' Makefile | sed -n 's/.*-p xtask -- schema \([a-z0-9-]*\).*/\1/p'
+# The sub-gate names `cargo xtask ci schema-validate` will actually run, one per line.
+#
+# T-897: this used to awk the Makefile's `schema-validate` recipe. That file is gone, and an awk
+# over a missing file prints nothing and exits 0 — a fail-open the caller only survived because it
+# separately refuses an EMPTY parse. `cargo xtask schema list-gates` (T-896) renders the same set
+# from `xtask/src/mk_ci_tasks.rs`, i.e. from the table `run_task` executes, so the cross-check now
+# reads the code that runs the gates instead of a second transcription of it.
+#
+# stderr is NOT swallowed and the status is NOT discarded: a build failure here must reach the
+# caller as an empty list, which it refuses, rather than as a narrowed one it would accept.
+schema_task_validate_gates() {
+  cargo run -q -p xtask -- schema list-gates
 }
 
 gate_schema() {
   # DRIFT TRIPWIRE. A hardcoded list is readable and greppable but it rots silently, and the way it
-  # rots is precisely this ticket: `make schema-validate` grows a tenth sub-gate, nobody adds it
-  # here, and the wave gate goes on printing PASS over whatever that gate checks. Diff the SET
-  # against the Makefile recipe every run and refuse when they disagree — including PARTIAL
-  # parses. T-420 only refused an EMPTY parse; a blank/`#`/continuation mid-recipe narrowed the
-  # awk output while make still ran all nine, and the one-way ⊆ check stayed green over the hole.
+  # rots is precisely this ticket: `schema-validate` grows a tenth sub-gate, nobody adds it here,
+  # and the wave gate goes on printing PASS over whatever that gate checks. Diff the SET against
+  # the executable task table every run and refuse when they disagree — including PARTIAL reads.
+  # T-420 only refused an EMPTY parse; a blank/`#`/continuation mid-recipe narrowed the old awk
+  # output while GNU make still ran all nine, and the one-way ⊆ check stayed green over the hole.
+  # T-897 moved the second source off the (now deleted) Makefile onto `xtask schema list-gates`.
   local mk_gates mk_sorted want_sorted
-  mk_gates="$(schema_makefile_validate_gates)"
+  mk_gates="$(schema_task_validate_gates)"
   if [ -z "$mk_gates" ]; then
-    echo "schema: read 0 sub-gates out of the schema-validate recipe in Makefile."
+    echo "schema: read 0 sub-gates out of \`cargo xtask schema list-gates\`."
     echo "        The drift check is the only thing keeping this step's list honest, so a step that"
-    echo "        could not run it must not go on to report PASS. Fix the parse, or the recipe."
+    echo "        could not run it must not go on to report PASS. Fix the read, or the task row."
     return 1
   fi
   mk_sorted="$(printf '%s\n' $mk_gates | LC_ALL=C sort | tr '\n' ' ' | sed 's/[[:space:]]*$//')"
   want_sorted="$(printf '%s\n' $GATE_SCHEMA_VALIDATE_GATES | LC_ALL=C sort | tr '\n' ' ' | sed 's/[[:space:]]*$//')"
   if [ "$mk_sorted" != "$want_sorted" ]; then
-    echo "schema: Makefile schema-validate set disagrees with GATE_SCHEMA_VALIDATE_GATES."
-    echo "        makefile: $mk_sorted"
-    echo "        wave.sh:  $want_sorted"
-    echo "        A narrowed parse or a tenth sub-gate would keep printing PASS over unchecked"
-    echo "        contracts. Fail closed: sync the list, or fix the recipe parse."
+    echo "schema: schema-validate task set disagrees with GATE_SCHEMA_VALIDATE_GATES."
+    echo "        list-gates: $mk_sorted"
+    echo "        wave.sh:    $want_sorted"
+    echo "        A narrowed read or a tenth sub-gate would keep printing PASS over unchecked"
+    echo "        contracts. Fail closed: sync the list, or fix the task row."
     return 1
   fi
 
@@ -1653,7 +1644,7 @@ gate_schema() {
       skipped="height-labels"
       echo "schema: height-labels SKIP in this tree — $GATE_SCHEMA_DEM is not a materialized PNG"
       echo "        (LFS pointer or missing). On main with a real DEM this sub-gate RUNS; do not"
-      echo "        treat a worktree skip as 'red on main' or chase make lfs-dem for that."
+      echo "        treat a worktree skip as 'red on main' or chase `xtask ci lfs-dem` for that."
       continue
     fi
     run_gates="$run_gates $g"
@@ -2512,7 +2503,7 @@ gate_slice() {
   run "clippy (changed crates)" clippy_changed
   # T-420. NOT change-scoped, and it is in the CHEAP gate on purpose: this is the step that would
   # have stopped T-244, whose diff is 0 .rs files — so every other step above it is change-scoped
-  # down to nothing and its slice gate was green over a red `make schema-validate`. ~1.4 s warm.
+  # down to nothing and its slice gate was green over a red `cargo xtask ci schema-validate`. ~1.4 s warm.
   run "schema"       gate_schema
   # T-583/T-594. The other half of the T-244 lesson above, and the half `schema` cannot reach.
   #
@@ -2531,10 +2522,10 @@ gate_slice() {
   # inputs the verdict is entirely about. `checkrun` pins $GATE_CHECK_TARGET, whose writers are
   # bounded to gates serialised by the gate lock.
   #
-  # And NOT folded into `make schema-validate`: gate_schema's drift tripwire parses that recipe for
-  # `xtask schema <name>` lines, and this is a `tbd-tools --bin world` call — it would either trip
+  # And NOT folded into `xtask ci schema-validate`: gate_schema's drift tripwire reads that task's
+  # `xtask schema <name>` steps, and this is a `tbd-tools --bin world` call — it would either trip
   # the tripwire or be silently skipped by it.
-  run "T-278 catalogue drift" checkrun make map-reclassify TERRAIN=everon
+  run "T-278 catalogue drift" checkrun cargo run -q -p tbd-tools --bin world -- reclassify --terrain everon
   # T-515. Class-R on 0016 claim UPDATE body — db_migrate.rs is schema-count-only;
   # a hollow claim migration stays green. Unconditional (wave.sh-only slices must hit it).
   run "db_migrate claim body" gate_db_migrate_claim_body
@@ -2549,7 +2540,7 @@ gate_slice() {
   # invoked by the cold gate (wave 24 adversarial — T-439 unwired; T-444 pin absent).
   # T-463. Same pattern for T-438 deploy-staging compose path + T-456 REST size gate
   # (wave 25 — scripts existed, cold gate never executed them).
-  # T-468. Tripwire: ci.yml schema job must stay on `make ci-local-schema`.
+  # T-468. Tripwire: ci.yml schema job must stay on `cargo xtask ci ci-local-schema`.
   # T-478. verify-t440 pins both this gate_slice run and cmd_gate (comment-strip +
   # redirect recipe + dual-path); deleting either run must FAIL the verify script.
   run "T-439 objects aliases" checkrun cargo run -q -p xtask -- verify t439
@@ -2799,7 +2790,7 @@ cmd_gate() {
   # The Leptos build is the single most expensive gate (2-6 min warm). Wave-level only, and only
   # when the wave actually touched the frontend — measured across the WHOLE wave, not the last merge.
   if git diff --name-only "$base..HEAD" 2>/dev/null | grep -q '^apps/website/frontend/'; then
-    # Isolated from `make leptos`, and it proves the isolation held. See gate_trunk_build — the
+    # Isolated from `cargo xtask mk leptos`, and it proves the isolation held. See gate_trunk_build — the
     # measurement, the enumerated trunk working set, and why the operator's dev server no longer
     # has to be killed before an unattended run, all live on that function.
     run "trunk build"    gate_trunk_build
@@ -2815,13 +2806,13 @@ cmd_gate() {
   # T-583/T-594 — cold-path twin of the gate_slice step. Per T-556, a step wired into only one
   # half drifts green: the half without it keeps printing PASS over the thing the other half is
   # there to catch. Same `checkrun` (compile-time `repo_root()` — see the long note in gate_slice),
-  # same placement next to `schema`, deliberately NOT inside `make schema-validate`.
-  run "T-278 catalogue drift" checkrun make map-reclassify TERRAIN=everon
+  # same placement next to `schema`, deliberately NOT inside `cargo xtask ci schema-validate`.
+  run "T-278 catalogue drift" checkrun cargo run -q -p tbd-tools --bin world -- reclassify --terrain everon
   run "ticket registry"  checkrun cargo run -q -p xtask -- ticket check
   # T-462. Same shell Class-R as gate_slice — fail-fast actionable scripts next to
   # schema/ticket so a deleted wiki seed line or Objects guid mismatch cannot stay cargo-green.
   # T-463. Same pattern for T-438 deploy-staging compose path + T-456 REST size gate.
-  # T-468. Tripwire: ci.yml schema job must stay on `make ci-local-schema`.
+  # T-468. Tripwire: ci.yml schema job must stay on `cargo xtask ci ci-local-schema`.
   # T-478. Cold-path twin of the gate_slice T-440 run — verify-t440 requires both.
   run "T-439 objects aliases" checkrun cargo run -q -p xtask -- verify t439
   run "T-444 wiki seed"       checkrun cargo run -q -p xtask -- verify t444
@@ -3024,7 +3015,7 @@ cmd_reclaim() {
   # function's blast radius is `rm -rf` on a directory. Measured at MAIN_ROOT today, three dirs
   # that a looser rule would have eaten:
   #     target/                  67 GB  the shared CARGO_TARGET_DIR for every worktree
-  #     target-dev-api          3.6 GB  the operator's live `make api` cache — no ticket in the name
+  #     target-dev-api          3.6 GB  the operator's live `cargo xtask mk rust-api` cache — no ticket in the name
   #     target-gate-schema-T422 1.7 GB  a GATE dir that CONTAINS a ticket id
   # The last one is why the ticket must be the first component after `target-`: anchoring there
   # means no target-gate-* name can be read as a slice dir even if the explicit exclusion below
@@ -3051,7 +3042,7 @@ cmd_reclaim() {
         target|target-gate-*) continue ;;
         # NOT a safety arm — the ticket-first rule below already spares this, and did so on its own
         # in this sweep's first real run. It is a REPORTING arm: target-dev-api is the operator's
-        # live `make api` cache (Makefile:134,196), permanent by design, and the generic line below
+        # live `cargo xtask mk rust-api` cache, permanent by design, and the generic line below
         # filed it under "unparseable" and advised RENAMING IT so it could be reaped. Naming one
         # known-permanent dir is cheaper than printing that about the cache behind the API the
         # operator is using right now.

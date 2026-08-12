@@ -11,4 +11,4 @@
 **Claude Code entry:** [`CLAUDE-CODE-START.md`](CLAUDE-CODE-START.md)  
 **Full handoff:** [`CLAUDE-CONTINUATION.md`](CLAUDE-CONTINUATION.md)
 
-**Verification scripts:** `scripts/mod/mcp-call-selftest.sh` (offline MCP), `cargo xtask mcp smoke` (live Workbench), `cargo xtask mod spawn-determinism` (`make mod-spawn-determinism`), `cargo xtask mod spawn-verify`, `scripts/mod/remote-log-grep.sh` (staging), `cargo xtask debug direct-join` (LAN join)
+**Verification scripts:** `scripts/mod/mcp-call-selftest.sh` (offline MCP), `cargo xtask mcp smoke` (live Workbench), `cargo xtask mod spawn-determinism`, `cargo xtask mod spawn-verify`, `scripts/mod/remote-log-grep.sh` (staging), `cargo xtask debug direct-join` (LAN join)

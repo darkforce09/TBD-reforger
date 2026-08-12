@@ -374,14 +374,14 @@ fn cmd_new(root: &Path, slice_arg: &str) -> Result<u8> {
 
     // Tempted to "fix" the LFS pointers? DON'T symlink them. Content is deliberately not smudged
     // (see [`git_lfs_safe`]), so `packages/map-assets/**` arrives as ~133-byte pointers, which makes
-    // `make schema-validate` die in a worktree at `schema height-labels` ("PNG decode: Invalid PNG
+    // `cargo xtask ci schema-validate` die in a worktree at `schema height-labels` ("PNG decode: Invalid PNG
     // signature") while passing on main — two agents burned real effort on that. Symlinking the real
     // assets DOES fix the target, and was tried and REVERTED: git then reports all 983 tracked files
     // there as DELETED, leaving every worktree permanently dirty so `wave.sh land` refuses it.
     // Hiding that with `--skip-worktree` would make working-tree changes INVISIBLE, which in a
     // program merging unattended agent work silently loses a slice.
     println!(
-        "  note: packages/map-assets is LFS pointers here — run 'xtask schema validate', not 'make schema-validate'"
+        "  note: packages/map-assets is LFS pointers here — run 'xtask schema validate', not 'cargo xtask ci schema-validate'"
     );
     println!("worktree: {r}/{dir}   branch: {branch}");
     Ok(0)

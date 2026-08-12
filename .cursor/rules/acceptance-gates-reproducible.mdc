@@ -6,7 +6,7 @@ alwaysApply: true
 # Acceptance gates must be reproducible + pinned + fail-fast
 
 A gate is only worth trusting if it runs the same way every time and tells you loudly when it can't.
-This rule exists because the editor CDP gate (`make leptos-gates`) once depended on unpinned external
+This rule exists because the editor CDP gate (`cargo xtask mk leptos-gates`) once depended on unpinned external
 state and **hung 130 s with a cryptic error** instead of failing fast — turning a routine ticket into a
 multi-hour reverse-engineering session (T-177; root cause: `chrome-headless-shell` FATAL-crashing on
 font fallback). Binds **every** agent (Claude Code, Cursor, Fable) and every human.
@@ -20,7 +20,7 @@ font fallback). Binds **every** agent (Claude Code, Cursor, Fable) and every hum
    **deliberately, in the same commit** as the thing it pins.
 2. **Fail-fast, never hang.** A gate that would wedge must fail in seconds with an **actionable
    message** (what's wrong + how to diagnose), not a multi-minute timeout. New browser/GPU gates get a
-   preflight like `gate doctor` (a prerequisite of `make leptos-gates`).
+   preflight like `gate doctor` (a prerequisite of `cargo xtask mk leptos-gates`).
 3. **A gate that can't run is a P0 infra bug — fix the harness/env.** It is **never** a silent skip, a
    "commit anyway", or a "document as deferred" (see [`no-silent-deferrals.mdc`](no-silent-deferrals.mdc)).
    If you are truly blocked (missing GPU, secrets, Workbench down): STOP and ASK.

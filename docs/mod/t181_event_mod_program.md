@@ -29,10 +29,10 @@ the website's **Aegis** tokens (`apps/website/frontend/style/aegis.css`). Full A
 ## Run this
 
 ```bash
-make mod-compile             # Enfusion compile gate — ~1.3s, native, no Workbench
-make mod-compile-selftest    # prove the gate still catches a broken .c
-make verify-capability       # fails if any CRF capability has no TBD verdict
-make enf-index               # rebuild the CRF symbol index
+cargo xtask mod compile             # Enfusion compile gate — ~1.3s, native, no Workbench
+cargo xtask mod compile-selftest    # prove the gate still catches a broken .c
+cargo run -q -p tbd-tools --bin enf -- capability       # fails if any CRF capability has no TBD verdict
+cargo run -q -p tbd-tools --bin enf -- index crf               # rebuild the CRF symbol index
 
 cargo run -q -p tbd-tools --bin enf -- lookup UpdateSlotPlayerID
 cargo run -q -p tbd-tools --bin enf -- dirs --depth 5 --min 60
@@ -59,7 +59,7 @@ Default to the fast lane. Measured: compile **780 ms**, whole gate **1.3 s** —
 | Slice | What | Gate |
 |---|---|---|
 | T-181.0 | `scripts/lib/hostrun.sh` host-aware execution | `ticket check` green from the container |
-| T-181.1 | `scripts/mod/compile.sh` + `make mod-compile` | 0 clean / 1 + `file:line` broken |
+| T-181.1 | `scripts/mod/compile.sh` + `cargo xtask mod compile` | 0 clean / 1 + `file:line` broken |
 | T-181.2 | `enf` bin + CRF index (`.ai/artifacts/enf-index/crf_*.tsv`) | real symbol resolves, invented one does not |
 | T-181.2.1 | capability matrix + UNTRIAGED gate | 57 capabilities, zero untriaged |
 
@@ -108,9 +108,9 @@ of claiming it:
 |---|---|
 | `bash scripts/mod/compile.sh` | the Enfusion actually compiles (~1.3 s, no Workbench) |
 | `enf lookup <Symbol>` | the API being called genuinely exists |
-| `make verify-no-crf-leak` | no oracle code leaked into prod — CRF (Arma Public License) **and** PlayableSelector (no licence at all); see SLICE_WORKFLOW.md §Oracle lanes |
-| `make verify-capability` | no capability silently forgotten |
-| `make verify-oracle` | no invented `file:line` in docs |
+| `cargo xtask verify no-crf-leak` | no oracle code leaked into prod — CRF (Arma Public License) **and** PlayableSelector (no licence at all); see SLICE_WORKFLOW.md §Oracle lanes |
+| `cargo run -q -p tbd-tools --bin enf -- capability` | no capability silently forgotten |
+| `cargo run -q -p tbd-tools --bin enf -- citations` | no invented `file:line` in docs |
 
 **Rules for slice agents** (put these in every prompt):
 1. **Host-aware.** Prefix builds/game binaries with `distrobox-host-exec`. Explain WHY, or the agent
@@ -450,7 +450,7 @@ picker can open would ship a mod nobody can deploy into.
 - **`SCR_CharacterDamageManagerComponent.IsDamageHandlingEnabled()` exists** and is a general-purpose
   state query, not a set-then-confirm idiom — corroborated by two shipped vanilla sites that read it
   without ever having set it (`SCR_DamageDisabledTooltipDetail.c:20`, `SCR_HealthTooltipDetail.c:21`).
-- **`make schema-validate` is a MAIN-TREE target and dies inside a slice worktree.** LFS content is
+- **`cargo xtask ci schema-validate` is a MAIN-TREE target and dies inside a slice worktree.** LFS content is
   not smudged there, so `packages/map-assets/**` is ~133-byte pointers and `schema height-labels`
   fails with `PNG decode: Invalid PNG signature` while passing on main. TWO agents burned effort on
   this. Inside a worktree run `cargo run -p xtask -- schema validate` instead. Do NOT "fix" it by

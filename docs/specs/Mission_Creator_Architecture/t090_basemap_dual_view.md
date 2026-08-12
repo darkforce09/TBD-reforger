@@ -95,7 +95,7 @@ Extend `terrain-manifest.schema.json` **`tiles`** block:
 | Pyramid | Workbench source | Notes |
 |---------|------------------|-------|
 | **Satellite** | Enhanced Map Tool / SAP / color ortho capture | Already specified in T-090.3 §A |
-| **Map** | Cartographic map export (EMT “map” layer, or stylized render — roads + terrain palette, **no** aerial photo) | Second pass in same `make map-export` |
+| **Map** | Cartographic map export (EMT “map” layer, or stylized render — roads + terrain palette, **no** aerial photo) | Second pass in same `cargo xtask map export-terrain` |
 
 Both pyramids:
 
@@ -142,7 +142,7 @@ T-090.1 may ship with Map radio **disabled** (“Coming soon”) until T-090.1.1
 | V4 | World object layer visible on both views | manual |
 | V5 | Pan ≥55 fps switching views | FpsCounter |
 | V6 | Missing map tiles → Satellite still works; Map shows toast + fallback to Satellite or grid | degraded |
-| V7 | Schema validates manifest with both `satellite` and `map` | `make schema-validate` |
+| V7 | Schema validates manifest with both `satellite` and `map` | `cargo xtask ci schema-validate` |
 
 ---
 

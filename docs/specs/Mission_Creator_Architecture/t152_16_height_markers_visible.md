@@ -94,7 +94,7 @@ Audit §6.3. The consumer chain is wired and default-on, but: labels rode the de
 cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 node scripts/map-assets/export-height-labels.mjs --terrain everon   # regen (adjust flags to actual CLI)
 cargo test -p map-engine-core     # G1–G4 unit layer
-make wasm && make schema-validate
+make wasm && cargo xtask ci schema-validate
 cd apps/website/frontend && npm test && npm run build && npm run lint
 ```
 

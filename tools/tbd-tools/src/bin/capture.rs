@@ -2,7 +2,7 @@
 //!
 //! Replaces `run_shot_gpu.sh` + `cdp2.mjs` (→ `shot`), `zoomsweep.mjs` (→ `zoomsweep`) and
 //! `crop.sh` (→ `crop`). Drives the LIVE Mission Creator over CDP on ANGLE/Vulkan; the stack must be
-//! up (`make db-up && make api && make leptos` / `leptos-debug`). See `tools/editor-capture/README.md`.
+//! up (`cargo xtask db up && cargo xtask mk rust-api && cargo xtask mk leptos` / `leptos-debug`). See `tools/editor-capture/README.md`.
 //!
 //!   capture shot <out.png> <url> <waitMs> [url waitMs ...] [--canvas] [--hide-overlay]
 //!   capture zoomsweep <out-prefix> <mission-id> <zoom,zoom,...>

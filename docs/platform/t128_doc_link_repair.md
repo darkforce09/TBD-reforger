@@ -65,7 +65,7 @@ Fix `../docs/` → `../../docs/` (or correct depth) in:
 
 ```bash
 ./scripts/ticket sync && ./scripts/ticket check
-make ticket-check-strict   # if link checker exists
+cargo xtask ticket check --strict   # if link checker exists
 # Manual: spot-check handoff links from .ai/artifacts/t126_SEND_TO_CLAUDE.md
 ```
 

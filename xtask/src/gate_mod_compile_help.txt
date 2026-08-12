@@ -24,7 +24,7 @@
 #      ticket for it. (T-209: the stale-rdb load-count guard below used to exit 1 — a fix agent
 #      handed that verdict spends its budget auditing sources that compile perfectly.)
 #
-# CALLER LANDMINE: `make mod-compile-selftest` inverts this script's status and treats ANY
+# CALLER LANDMINE: `cargo xtask mod compile-selftest` inverts this script's status and treats ANY
 # non-zero as "the gate correctly rejected broken source" — so on a machine with no dedicated
 # server it prints SELFTEST OK for a run that never happened. `.github/workflows/mod-gates.yml`
 # therefore does its own three-way check instead of calling that target. Filed separately.

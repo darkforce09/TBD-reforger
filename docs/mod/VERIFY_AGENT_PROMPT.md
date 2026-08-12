@@ -48,7 +48,7 @@ Read docs/mod/TBD_MOD_DESIGN.md (the north star) and docs/mod/SLICE_WORKFLOW.md 
    - **JSON is the contract.** Any hardcoded loadout/slot/faction data that should come from the
      mission document?
    - **No oracle code in prod** — CRF (Arma Public License) or PlayableSelector (NO licence, so no
-     permission to copy at all). `make verify-no-crf-leak` gates the `CRF_`/`PS_` prefixes and asset
+     permission to copy at all). `cargo xtask verify no-crf-leak` gates the `CRF_`/`PS_` prefixes and asset
      GUIDs, but is necessary and NOT sufficient — read the diff for structural copying too.
 
 4. **Enfusion correctness.** Every API called must exist:

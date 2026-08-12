@@ -75,7 +75,7 @@ O1 map loads (no blank/panic) · O2 fences visible @ new gate (≥ 1.5 per .15) 
 ```bash
 cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 # extended master (exact entry per .10's runner + additions)
-make ci-local || true   # platform replay
+cargo xtask ci ci-local || true   # platform replay
 cargo test -p map-engine-core && cargo test -p map-engine-render && make wasm
 scripts/website/wgpu-gpu-verify.sh || make wgpu-verify     # GPU text + readback gates
 cd apps/website/frontend && npm test && npm run build && npm run lint

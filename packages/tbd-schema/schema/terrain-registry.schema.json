@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schema.tbdevent.eu/terrain-registry/v1.json",
   "title": "TBD Terrain Registry",
-  "description": "Master list of terrains driving the one-command export pipeline (T-090.3). Adding a map = add a row here + a coords/terrains.ts bounds row, then run `make map-export TERRAIN=<id>`. Export scripts read this registry — never hard-code per-map paths.",
+  "description": "Master list of terrains driving the one-command export pipeline (T-090.3). Adding a map = add a row here + a coords/terrains.ts bounds row, then run `cargo xtask map export-terrain <id>`. Export scripts read this registry — never hard-code per-map paths.",
   "type": "object",
   "required": ["schemaVersion", "terrains"],
   "additionalProperties": false,

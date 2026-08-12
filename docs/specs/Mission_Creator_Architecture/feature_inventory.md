@@ -1047,7 +1047,7 @@
 | **Inputs** | Semver, notes |
 | **Outputs** | API |
 | **Edge cases** | 409 duplicate semver; invalid UUID; **413 payload >256 MB** → "Mission too large…" (T-060); backend `error` surfaced (no more generic-only) |
-| **Acceptance** | `- [x] Save 0.1.1 succeeds on real mission` `- [x] Save @ ~360k fully diagnosed (T-060.1.3)` `- [x] Version POST 140 MB → 201 via curl (T-060.1.4)` `- [x] Browser Save @ ~367k → 201 (2026-06-23)` `- [x] >1 MB + production-like GlobalBodyLimit version POST round-trips (make test-it)` |
+| **Acceptance** | `- [x] Save 0.1.1 succeeds on real mission` `- [x] Save @ ~360k fully diagnosed (T-060.1.3)` `- [x] Version POST 140 MB → 201 via curl (T-060.1.4)` `- [x] Browser Save @ ~367k → 201 (2026-06-23)` `- [x] >1 MB + production-like GlobalBodyLimit version POST round-trips (cargo xtask db test-it)` |
 | **Status** | **working** — T-060 shipped (`b1fd25a`); Save @ ~367k/~142 MB → 201 (browser + curl) |
 | **Eden parity** | Eden:FILE-SAVE-001 |
 | **Evidence** | `TopCommandStrip.tsx`, `useMissionEditor.ts`, `compile.ts` |

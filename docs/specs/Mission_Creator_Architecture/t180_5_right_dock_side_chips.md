@@ -45,7 +45,7 @@ cargo test -p website-frontend --lib
 cargo test -p map-engine-core --features doc place_character_under_side_opfor
 # E1: no F-key palette row (allow icon fonts unrelated):
 rg -n 'F1|F2|F3|F4|F5|F6' apps/website/frontend/src/eden_chrome.rs | head
-make ci-local-leptos
+cargo xtask mk ci-local-leptos
 ```
 
 ## Manual
@@ -97,7 +97,7 @@ Implement **T-180.5** — Eden side chips + Objects stub on DockRight.
 ═══ VERIFY ═══
   cargo test -p website-frontend --lib
   cargo test -p map-engine-core --features doc place_character_under_side_opfor
-  make ci-local-leptos
+  cargo xtask mk ci-local-leptos
 
 ═══ MANUAL ═══
   M-E1 eye-pass chips ref · M-E2 OPFOR place → red ring

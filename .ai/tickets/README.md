@@ -13,7 +13,7 @@ See [`AI_PLAYBOOK.md`](AI_PLAYBOOK.md) for operator recipes.
 
 1. **Composer 2.5 / Cursor** — edit `registry.json`, write specs, `cargo run -q -p xtask -- ticket sync`
 2. **Mark ready** — `cargo run -q -p xtask -- ticket mark-ready T-068 path/to/t068_....md`
-3. **Implement** — `cargo run -q -p xtask -- ticket run` (or `make tickets`) on **`main`**
+3. **Implement** — `cargo run -q -p xtask -- ticket run` (or `cargo xtask ticket run`) on **`main`**
 4. **Verify** — human checks gates / smoke
 5. **Done** — `cargo run -q -p xtask -- ticket done T-068` (marks shipped + sync)
 6. **Docs** — Cursor syncs narrative docs on `main`
@@ -36,11 +36,11 @@ See [`AI_PLAYBOOK.md`](AI_PLAYBOOK.md) for operator recipes.
 ## Makefile
 
 ```bash
-make ticket-sync
-make ticket-check
-make ticket-check-strict
-make tickets          # alias for cargo xtask ticket run
-make ticket-list
+cargo xtask ticket sync
+cargo xtask ticket check
+cargo xtask ticket check --strict
+cargo xtask ticket run          # alias for cargo xtask ticket run
+cargo xtask ticket list
 ```
 
 ## Status values

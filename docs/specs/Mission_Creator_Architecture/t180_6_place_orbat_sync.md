@@ -46,7 +46,7 @@ cargo test -p map-engine-core --features doc empty_squad_garbage_collected
 cargo test -p map-engine-core --features doc move_slot_bidirectional
 cargo test -p map-engine-core squad_link_segment_count
 cargo test -p website-frontend --lib
-make ci-local-leptos
+cargo xtask mk ci-local-leptos
 ```
 
 ## Manual
@@ -101,7 +101,7 @@ Implement **T-180.6** — Place/refile ↔ ORBAT + lines sync.
   cargo test -p map-engine-core --features doc move_slot_bidirectional
   cargo test -p map-engine-core squad_link_segment_count
   cargo test -p website-frontend --lib
-  make ci-local-leptos
+  cargo xtask mk ci-local-leptos
 
 ═══ MANUAL ═══
   M-F1: place two → refile merge → one squad + lines + GC

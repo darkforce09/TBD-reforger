@@ -12,16 +12,16 @@ Web suite for the TBD Arma Reforger milsim community: Discord auth, event/ORBAT 
 ## Quick start (repo root)
 
 ```bash
-make db-up    # Postgres on :5434
-make api      # Axum API on :8080
-make leptos        # Trunk SPA on :3000 (release — T-173)
-make leptos-debug  # debug wasm only (not for judging FPS)
+cargo xtask db up    # Postgres on :5434
+cargo xtask mk rust-api      # Axum API on :8080
+cargo xtask mk leptos        # Trunk SPA on :3000 (release — T-173)
+cargo xtask mk leptos-debug  # debug wasm only (not for judging FPS)
 ```
 
 - **FRONTEND_URL** (dev callback): `http://127.0.0.1:3000`
-- **Map assets:** API serves `GET /map-assets/*` from `MAP_ASSETS_DIR` (default `../../../packages/map-assets` from `api/` CWD). Trunk proxies same-origin. Pull LFS: `make lfs-dem` / `make lfs-sat` — see [`DEV_RUNBOOK.md`](../../docs/website/DEV_RUNBOOK.md) §Map assets.
+- **Map assets:** API serves `GET /map-assets/*` from `MAP_ASSETS_DIR` (default `../../../packages/map-assets` from `api/` CWD). Trunk proxies same-origin. Pull LFS: `cargo xtask ci lfs-dem` / `cargo xtask ci lfs-sat` — see [`DEV_RUNBOOK.md`](../../docs/website/DEV_RUNBOOK.md) §Map assets.
 - **Prod SPA flip:** set `SPA_DIST_DIR=../frontend/dist` (relative to `api/`) so Axum can serve the Trunk release build.
-- **Seeds:** `api/seeds/` — `make seed` applies `discord_roles.sql` + `registry_dev.sql`; `mock_data.sql` is manual `psql` only.
+- **Seeds:** `api/seeds/` — `cargo xtask db seed` applies `discord_roles.sql` + `registry_dev.sql`; `mock_data.sql` is manual `psql` only.
 
 Full commands: [`DEV_RUNBOOK.md`](../../docs/website/DEV_RUNBOOK.md) · conventions: [`WHERE_DOES_X_GO.md`](../../docs/platform/WHERE_DOES_X_GO.md)
 

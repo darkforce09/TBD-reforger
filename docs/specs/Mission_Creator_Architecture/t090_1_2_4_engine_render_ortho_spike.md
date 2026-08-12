@@ -103,7 +103,7 @@ Apron-bridge (strategy A) removes flat strips but leaves a **detectable soft ban
 | Existing raster export | `apps/mod/tbd-framework/Scripts/WorkbenchGame/TBD_SatelliteExportPlugin.c` |
 | SAP stitch (fallback) | `scripts/map-assets/stitch-sap-ortho.mjs` |
 | Alignment gates | `scripts/map-assets/verify-sap-ortho.mjs` |
-| Workbench MCP | `docs/mod/MCP_TOOLING.md` · `make mcp-smoke` |
+| Workbench MCP | `docs/mod/MCP_TOOLING.md` · `cargo xtask mcp smoke` |
 
 **API search (P0):** Enfusion Workbench — off-screen camera, terrain material color, orthographic top-down, `MapDataExporter` alternatives, render target size limits.
 
@@ -158,7 +158,7 @@ Implement **T-090.1.2.4** — engine render ortho: continuous terrain-color capt
   git pull && git lfs pull && make map-assets-link
   ./scripts/ticket brief T-090
   export ENFUSION_GAME_PATH="${ENFUSION_GAME_PATH:-$HOME/.cache/enfusion-mcp-root}"
-  make mcp-smoke
+  cargo xtask mcp smoke
   command -v magick
   test -f packages/map-assets/everon/staging/sap/everon-sap-ortho.png \
     || node scripts/map-assets/stitch-sap-ortho.mjs TERRAIN=everon

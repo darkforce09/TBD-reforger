@@ -1,7 +1,7 @@
 //! T-620 — the maximum FILE-DISJOINT set of platform tickets that can run concurrently.
 //!
 //! A byte-for-byte port of `scripts/platform/slice-collisions.py`, which was one of the two `.py`
-//! files keeping `make verify-no-python` red from the day the factory opened. The operator's
+//! files keeping `cargo xtask verify no-python` red from the day the factory opened. The operator's
 //! standing rule is that new tooling is Rust in `xtask`; this is the factory's own tooling, so it
 //! was the least defensible exception in the tree.
 //!

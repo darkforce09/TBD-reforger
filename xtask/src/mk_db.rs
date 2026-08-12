@@ -61,19 +61,20 @@
 //!
 //! ── ODDITIES PRESERVED (reproduce, pin, document — not silently "improved") ───────────────────
 //!
-//! - `seed:` applies five SQL files in a fixed order; `gate_t444` pins the wiki entry to that
-//!   recipe. [`SEEDS`] keeps the order and the [`selftest`] recipe arm keeps them in step.
-//!   **T-897 must repoint `gate_t444`'s `RECIPE_FILE`/`RECIPE_TARGET` at [`SEEDS`]** or that
-//!   Class-R gate evaporates with the Makefile.
+//! - `seed:` applies five SQL files in a fixed order; `gate_t444` pinned the wiki entry to that
+//!   recipe. [`SEEDS`] keeps the order. **T-897 repointed `gate_t444` — and `gate_t440` — at
+//!   [`SEEDS`]**, which is why both survived the Makefile's deletion instead of evaporating with
+//!   it. Editing this list moves two Class-R gates; that is deliberate, not incidental.
 //! - `rust-test-it` hardcodes `podman` (not `$(COMPOSE)`), the container name `tbd_reforger_db`,
 //!   the user `tbd`, the maintenance database `tbd_reforger`, and the URL `localhost:5434`. The
 //!   port keeps all five as defaults but routes the runtime/container/user through
 //!   `deploy_db_common`, so a docker-only or renamed-container host works instead of failing 127.
 //! - The leading `-` on the first `DROP DATABASE` (make ignores that line's status) and the `@` on
 //!   the reap block (silent) are both preserved.
-//! - `make db-restore` with no `DUMP=`/`DB=` prints a usage line naming *make* and exits 2. The
-//!   port prints that byte-for-byte, including the now-wrong `make db-restore …` spelling: rc AND
-//!   text parity is the acceptance criterion for this slice, and rewording it is T-897's call.
+//! - `make db-restore` with no `DUMP=`/`DB=` printed a usage line naming *make* and exited 2. The
+//!   port kept that byte-for-byte through T-894/T-896 because rc AND text parity was the
+//!   acceptance criterion. **T-897 reworded it** — as that note said it would — now that there is
+//!   no `make db-restore` for an operator to run. The rc is unchanged.
 //!
 //! ── FAIL-OPENS CLOSED, AND ONE LATENT BUG FIXED ──────────────────────────────────────────────
 //!
@@ -130,14 +131,36 @@ pub(crate) const SEEDS: &[&str] = &[
     "wiki_pages.sql",
 ];
 
+/// Every `cargo xtask db <cmd>` spelling, in [`DbCmd`] order.
+///
+/// A second list beside the clap enum, deliberately: clap owns the PARSE, this owns the NAMES for
+/// callers that have to resolve a citation without one — `schema_gates`' gate 7 checks that a
+/// spec's `cargo xtask db …` reference names something real, now that the Makefile it used to
+/// resolve `make …` against is gone. `lane_commands_match_the_clap_enum` diffs the two, so the
+/// copy cannot rot silently.
+pub(crate) const LANE_COMMANDS: &[&str] = &[
+    "up",
+    "down",
+    "logs",
+    "seed",
+    "backup",
+    "restore",
+    "backup-drill",
+    "backup-verify",
+    "registry-import",
+    "test-it",
+    "selftest",
+];
+
 /// `rust-test-it`'s base database (Makefile:205-207, literal).
 pub(crate) const IT_BASE_DB: &str = "rust_it";
 /// The maintenance database `psql` connects to in order to drop/create the scratch one — the LIVE
-/// dev database, per the Makefile. Preserved; nothing is written to it.
+/// dev database, as the Makefile recipe had it. Preserved; nothing is written to it.
 pub(crate) const IT_MAINT_DB: &str = "tbd_reforger";
-/// `make db-restore` / `make db-backup-verify` usage lines (Makefile:99-100, 107). Frozen text.
-const USAGE_RESTORE: &str = "usage: make db-restore DUMP=<file.dump> DB=<target> [CREATE=1]";
-const USAGE_VERIFY: &str = "usage: make db-backup-verify DUMP=<file.dump>";
+/// `db restore` / `db backup-verify` usage lines. Frozen text (Makefile:99-100, 107 pre-T-897).
+const USAGE_RESTORE: &str =
+    "usage: cargo xtask db restore --dump <file.dump> --db <target> [--create]";
+const USAGE_VERIFY: &str = "usage: cargo xtask db backup-verify --dump <file.dump>";
 
 /// Subcommands under `cargo xtask db`.
 #[derive(Subcommand, Debug)]
@@ -426,4 +449,31 @@ fn restore(dump: Option<&str>, db: Option<&str>, create: bool) -> Result<u8> {
     }
     let parsed = Argv::parse_from(argv);
     crate::deploy_db_restore::run(parsed.inner)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::CommandFactory;
+
+    /// [`LANE_COMMANDS`] is a second copy of the clap enum's names, and it exists only because
+    /// `schema_gates`' gate 7 needs the NAMES without a parse. Diff the two so the copy cannot
+    /// rot — a new `DbCmd` variant that never reaches the list would make a correct spec citation
+    /// read as a typo.
+    #[test]
+    fn lane_commands_match_the_clap_enum() {
+        #[derive(Parser)]
+        struct Argv {
+            #[command(subcommand)]
+            _cmd: DbCmd,
+        }
+        let mut from_clap: Vec<String> = Argv::command()
+            .get_subcommands()
+            .map(|c| c.get_name().to_string())
+            .collect();
+        let mut declared: Vec<String> = LANE_COMMANDS.iter().map(|s| (*s).to_string()).collect();
+        from_clap.sort();
+        declared.sort();
+        assert_eq!(declared, from_clap, "LANE_COMMANDS drifted from DbCmd");
+    }
 }

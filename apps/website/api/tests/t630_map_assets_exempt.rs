@@ -291,7 +291,7 @@ async fn the_other_static_mount_is_still_limited() {
 
 /// **The SPA-serving deployment, which dev never exercises.**
 ///
-/// `SPA_DIST_DIR` is unset under `make leptos` + `make api`, so the branch that mounts the SPA
+/// `SPA_DIST_DIR` is unset under `cargo xtask mk leptos` + `cargo xtask mk rust-api`, so the branch that mounts the SPA
 /// fallback and the COOP/COEP layers is dead on the operator's machine and would go untested by
 /// everything else in this file. T-630 moved the map-asset mount across the rate-limit seam and had
 /// to move those two header layers with it, so that branch is exactly the one place this slice

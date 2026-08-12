@@ -285,7 +285,7 @@ pub fn verify_tile_pyramid(terrain: &str, view_map: bool, expect_lossless_env: b
 
     if !tiles_dir.exists() {
         println!(
-            "verify-tile-pyramid: SKIP {terrain}/{view} — no pyramid on disk (local rebuild: make map-water-everon or the pyramid builder)"
+            "verify-tile-pyramid: SKIP {terrain}/{view} — no pyramid on disk (local rebuild: cargo xtask ci map-water-everon or the pyramid builder)"
         );
         return Ok(0);
     }

@@ -1,6 +1,6 @@
 //! `trunk build --release`, ISOLATED FROM THE OPERATOR'S DEV SERVER — read before simplifying.
 //!
-//! `make leptos` is `trunk serve --release`: the same binary, running the same pipeline, over the
+//! `cargo xtask mk leptos` is `trunk serve --release`: the same binary, running the same pipeline, over the
 //! same crate, continuously, for hours. Two trunks over one working tree collide, and the collision
 //! reads exactly like a code defect — the worst failure shape there is, because an unattended fix
 //! agent burns its whole retry budget on working code.

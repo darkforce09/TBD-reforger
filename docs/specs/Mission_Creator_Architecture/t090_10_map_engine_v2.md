@@ -115,7 +115,7 @@ Full numeric table: Claude Code delivers in **T-090.10.1** plan artifact; then C
 The plan must include:
 
 1. File-level touch list (`tactical-map/layers/*`, export plugin, schemas).
-2. Phased slices with acceptance gates (`make map-verify-phase`, vitest, manual zoom table).
+2. Phased slices with acceptance gates (`cargo run -q -p tbd-tools --bin world -- verify-phase`, vitest, manual zoom table).
 3. Migration: what happens to `tiles/map/`, `build-map-cartographic.mjs`, Mission Settings dual radio.
 4. LOD numeric table (A3 `ptsPerSquare` → Deck zoom).
 5. Chunk protocol extensions (density grid, time budget).
@@ -145,4 +145,4 @@ See [`t090_legacy_raster_pipeline.md`](t090_legacy_raster_pipeline.md).
 | Plan exists | `.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md` |
 | Legacy cancelled | `./scripts/ticket check` — slices `.1.2.9`, `.1.2.3` = `cancelled` |
 | Sat field still loads | MC boot — unified texture, no regression |
-| Spec consistency | `make verify-t090-spec-consistency` (update in T-090.10.1) |
+| Spec consistency | `cargo xtask schema t090-specs` (update in T-090.10.1) |

@@ -61,7 +61,7 @@ False-green: Outliner `guide_spans` only.
 cargo test -p map-engine-core squad_link_
 cargo test -p map-engine-core --features doc squad_link_ 2>/dev/null || true
 cargo test -p website-frontend --lib
-make ci-local-leptos
+cargo xtask mk ci-local-leptos
 ```
 
 ## Manual
@@ -118,7 +118,7 @@ Implement **T-180.4** — Map squad leader→member lines.
 ═══ VERIFY ═══
   cargo test -p map-engine-core squad_link_
   cargo test -p website-frontend --lib
-  make ci-local-leptos
+  cargo xtask mk ci-local-leptos
 
 ═══ MANUAL ═══
   M-D1: leader→members only; SL change redraws

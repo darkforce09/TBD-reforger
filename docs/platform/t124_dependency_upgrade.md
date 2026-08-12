@@ -36,18 +36,18 @@ CI: [`.github/workflows/contracts.yml`](../../.github/workflows/contracts.yml) +
 ```bash
 # Node 26 (nvm use per .nvmrc)
 cd apps/website/frontend && npm run build && npm run lint && npm run test   # 21/21
-make build
-make db-up && make test-it
-make schema-codegen   # no drift
+cargo xtask ci build
+cargo xtask db up && cargo xtask db test-it
+cargo xtask ci schema-codegen   # no drift
 cd packages/tbd-schema && npm run validate
 ```
 
 **Postgres 18:** after first upgrade, re-init local volume if migrations fail on stale PG16 data:
 
 ```bash
-make db-down
+cargo xtask db down
 # remove compose volume (podman/docker volume rm …)
-make db-up && make seed
+cargo xtask db up && cargo xtask db seed
 ```
 
 ## Slice plan (historical)

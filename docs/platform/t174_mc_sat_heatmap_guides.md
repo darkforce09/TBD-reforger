@@ -12,13 +12,13 @@
 
 | ID | Result |
 |----|--------|
-| S1 | Localhost sat = preview→full progressive (dropped `sat_dev_preview_default`). Default `make leptos` gets the full TBDS mip chain. `?sat=preview` = Range-only (CI/gates + fast local). `?sat=full` is a no-op. |
+| S1 | Localhost sat = preview→full progressive (dropped `sat_dev_preview_default`). Default `cargo xtask mk leptos` gets the full TBDS mip chain. `?sat=preview` = Range-only (CI/gates + fast local). `?sat=full` is a no-op. |
 | S2 | Density-heatmap **glow removed end-to-end** (no Mission Settings toggle). LOD rung `heatmap_trees` kept (glyph-suppression + forest-mass). Island zoom = forest mass, no green wash. |
 | S3 | Guide stems clip to tree rows (`relative` on escaping hosts); no full-dock bright rails. |
 
 Operator override during plan review: *“Remove the heatmap, it's not something I want.”* → S2 is removal, not “default off + toggle”.
 
-**Manual visual:** headless gates green; pixel-aesthetic confirm (sharp sat / no glow / no dock rails) is an operator browser pass on `make leptos` — see verify log §Manual.
+**Manual visual:** headless gates green; pixel-aesthetic confirm (sharp sat / no glow / no dock rails) is an operator browser pass on `cargo xtask mk leptos` — see verify log §Manual.
 
 ## Why (pre-ship)
 
@@ -42,6 +42,6 @@ Otherwise T-173 is generally good.
 
 | ID | Done when |
 |----|-----------|
-| S1 | `make leptos` without `?sat=preview` → sharp sat (progressive full). Gates keep `?sat=preview`. |
+| S1 | `cargo xtask mk leptos` without `?sat=preview` → sharp sat (progressive full). Gates keep `?sat=preview`. |
 | S2 | No density-heatmap glow at any zoom; path excised. |
 | S3 | No full-panel-height bright rails; hierarchy stems only. |

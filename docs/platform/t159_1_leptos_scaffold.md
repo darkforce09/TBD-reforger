@@ -17,7 +17,7 @@ Inherit hub L1–L8. Additionally:
 |---|----------|
 | S1 | Crate path: `apps/website-leptos/` (new workspace member). |
 | S2 | Leptos **0.7+** (or current stable at implement time) with `csr` feature for the first spike; trunk or leptos-friendly Vite-alternative — pick one and document in crate README. |
-| S3 | Dev: UI on a dedicated port (e.g. `:3000` or trunk default); API remains `make api` on `:8080`. CORS/proxy as needed for cookie/JWT. |
+| S3 | Dev: UI on a dedicated port (e.g. `:3000` or trunk default); API remains `cargo xtask mk rust-api` on `:8080`. CORS/proxy as needed for cookie/JWT. |
 | S4 | Root `Cargo.toml` workspace `members` gains `apps/website-leptos`. |
 | S5 | Do **not** remove or break `apps/website/frontend` React build. |
 | S6 | Minimal UI: one route showing brand string **"TBD Reforger"** + "Leptos scaffold T-159.1" + link/button that `GET`s `/api/v1/health` or equivalent if present (else a documented placeholder). |

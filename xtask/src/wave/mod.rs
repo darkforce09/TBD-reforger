@@ -106,7 +106,7 @@ pub const UNKNOWN_HELP: &str = r##"# Platform wave lifecycle — the programmati
 #      old barrier behaviour if you ever actually want it.
 #
 #   3. TIERED GATES.  A slice pays only the cheap gate (~10 s). The expensive suite runs once per
-#      wave on merged main. `make ci-local` is deliberately NOT used: it is 15-40 minutes, not the
+#      wave on merged main. `cargo xtask ci ci-local` is deliberately NOT used: it is 15-40 minutes, not the
 #      22.7 s the docs still claim. (It was ALSO red for weeks because verify-no-python failed on
 #      scripts/mod/slice-collisions.py; T-620 ported both .py files to xtask and deleted them, so
 #      that half is green now and `verify-no-python` is a wave-gate step in its own right below.)
@@ -128,7 +128,7 @@ pub const UNKNOWN_HELP: &str = r##"# Platform wave lifecycle — the programmati
 ///
 /// T-620: was `scripts/platform/slice-collisions.py`. Ported to xtask byte-identically (default,
 /// `--check` and `--repack` all diffed clean against the Python before it was deleted), because
-/// the factory's own tooling was the last thing keeping `make verify-no-python` red.
+/// the factory's own tooling was the last thing keeping `cargo xtask verify no-python` red.
 pub const COLLIDE: &str = "cargo run -q -p xtask -- slice-collisions";
 
 /// Flush stdout. Call before writing to stderr and before spawning an inheriting child — see the

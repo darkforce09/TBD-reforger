@@ -1216,6 +1216,35 @@ pub fn terrain_manifest(terrain: &str) -> Result<u8> {
 
 /* ─────────────────────────── t090 spec consistency (12 gates) ─────────────────────────── */
 
+/// `make <target>` names the T-090 spec corpus may still cite, FROZEN at T-897.
+///
+/// Every one of these named a target that had already stopped existing when the Makefile was
+/// deleted — the React-era `web`/`wasm`/`ci-local-frontend` lane and two one-off verifies. They
+/// are archival citations inside otherwise-live specs, so they are tolerated rather than rewritten
+/// into a command nobody can run. The list may only SHRINK: anything not on it is a dangling
+/// instruction, because there is no Makefile for `make` to read.
+const ARCHIVAL_MAKE_TARGETS: &[&str] = &[
+    "map-assets-link",
+    "verify-wgpu-gpu",
+    "ci-local-frontend",
+    "verify-migration",
+];
+
+/// Every task name reachable as `cargo xtask ci|mk|db <name>`, from the LIVE dispatch tables.
+///
+/// Three tables because the three T-853 Phase 3 lanes landed in parallel worktrees and each picked
+/// its own clap shape (`mk_build.rs` docs, T-895). Reading all three is what lets gate 7 resolve a
+/// spec's `cargo xtask …` citation instead of merely eyeballing it.
+fn live_xtask_task_names() -> HashSet<String> {
+    let mut out: HashSet<String> = crate::mk_ci::TASKS
+        .iter()
+        .map(|t| t.name.to_string())
+        .collect();
+    out.extend(crate::mk_build::TARGETS.iter().map(|t| (*t).to_string()));
+    out.extend(crate::mk_db::LANE_COMMANDS.iter().map(|t| (*t).to_string()));
+    out
+}
+
 pub fn t090_specs() -> Result<u8> {
     let root = repo_root()?;
     let spec = spec_dir(&root);
@@ -1364,23 +1393,25 @@ pub fn t090_specs() -> Result<u8> {
         }
     }
 
-    // Gate 7 — every referenced make target / npm script exists (frozen React allowlist).
-    let makefile = read(root.join("Makefile"))?;
-    let target_re = regex::Regex::new(r"(?m)^([A-Za-z0-9_-]+):")?;
-    let mut make_targets: HashSet<String> = target_re
-        .captures_iter(&makefile)
-        .map(|c| c[1].to_string())
+    // Gate 7 — every referenced task exists.
+    //
+    // T-897 REPOINT. This read the root `Makefile` with `?`, so it was fail-CLOSED and would have
+    // gone red the moment the file died — but red for the wrong reason, and the obvious repair
+    // ("drop the make half") would have retired the check instead of moving it. Both halves moved:
+    //
+    //   * `cargo xtask <ci|mk|db> <name>` citations are resolved against the LIVE dispatch tables,
+    //     so a typo or a renamed task in a spec is caught the way a dangling `make` target was;
+    //   * a bare `make <target>` citation is now a FAILURE unless it names something in
+    //     [`ARCHIVAL_MAKE_TARGETS`] — the frozen set that never had a live successor. There is no
+    //     Makefile, so every other `make …` in the corpus is an instruction that cannot be run.
+    //
+    // The net effect is that the gate bites HARDER after the deletion than before it, which is the
+    // bar T-853 sets for a check whose subject is removed.
+    let make_targets: HashSet<String> = ARCHIVAL_MAKE_TARGETS
+        .iter()
+        .map(|t| (*t).to_string())
         .collect();
-    for t in [
-        "map-assets-link",
-        "web",
-        "wasm",
-        "verify-wgpu-gpu",
-        "ci-local-frontend",
-        "verify-migration",
-    ] {
-        make_targets.insert(t.to_string());
-    }
+    let xtask_tasks: HashSet<String> = live_xtask_task_names();
     // T-165.9: the tbd-schema npm package is deleted (the Node eradication endpoint) — any
     // npm-script citation in the spec corpus is archival by definition, so the live-scripts
     // set is empty and the allowlist below carries every historically-cited name.
@@ -1426,13 +1457,27 @@ pub fn t090_specs() -> Result<u8> {
     }
     let make_re = regex::Regex::new(r"\bmake\s+([a-z0-9]+(?:-[a-z0-9]+)+)")?;
     let npm_re = regex::Regex::new(r"\bnpm run ([a-z0-9:_-]+)")?;
+    let xtask_re = regex::Regex::new(r"\bxtask\s+(?:ci|mk|db)\s+([a-z0-9]+(?:-[a-z0-9]+)*)")?;
     for (name, text) in &corpus {
         for c in make_re.captures_iter(text) {
             if !make_targets.contains(&c[1]) {
                 fail(
                     "7",
                     format!(
-                        "{name}: referenced `make {}` not defined in root Makefile",
+                        "{name}: referenced `make {}` — the root Makefile was deleted at T-897; \
+                         cite the `cargo xtask …` spelling instead",
+                        &c[1]
+                    ),
+                );
+            }
+        }
+        for c in xtask_re.captures_iter(text) {
+            if !xtask_tasks.contains(&c[1]) {
+                fail(
+                    "7",
+                    format!(
+                        "{name}: referenced `xtask … {}` is not a task in mk_ci::TASKS / \
+                         mk_build::TARGETS / the db lane",
                         &c[1]
                     ),
                 );
@@ -1792,7 +1837,7 @@ fn flatten_stdout_json(path: &str) -> Result<Value> {
 // game server resolves against.
 //
 // Cost of not having it, measured: `slot-loadout-coverage.json` referenced `kit:us_medic`, which no
-// registry entry defined. `make schema-validate` passed it. A real server boot rejected the mission
+// registry entry defined. `cargo xtask ci schema-validate` passed it. A real server boot rejected the mission
 // and parked the server in LOADING (T-181.36). TBD_MissionValidator.CheckSlotKit already does this
 // exact comparison at runtime; this is the same check moved to where it is cheap.
 
@@ -3730,7 +3775,7 @@ pub fn map_glyphs() -> Result<u8> {
             let r = &atlas["icons"][key];
             if r.is_null() {
                 errors.push(format!(
-                    "atlas: glyph '{key}' has no rect in world-glyphs.json (rebuild: make map-glyphs-build)"
+                    "atlas: glyph '{key}' has no rect in world-glyphs.json (rebuild: cargo run -q -p tbd-tools --bin map -- build-glyph-atlas)"
                 ));
                 continue;
             }

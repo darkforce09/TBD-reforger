@@ -358,10 +358,14 @@ fn cmd_gate(root: &Path) -> u8 {
         "cargo",
         &["run", "-q", "-p", "xtask", "--", "mod", "compile"],
     );
+    // T-897: was `distrobox-host-exec cargo xtask mod compile-selftest`. That Makefile recipe carried the
+    // rc classification (only exit 1 — a real rejection of broken source — is a pass); it now
+    // lives in `gate_mod_compile::run_selftest`. The host bridge is dropped for the same reason
+    // the `compile` arm above does not need it: the gate crosses it itself.
     run(
         "compile-selftest",
-        "distrobox-host-exec",
-        &["make", "mod-compile-selftest"],
+        "cargo",
+        &["run", "-q", "-p", "xtask", "--", "mod", "compile-selftest"],
     );
     run(
         "world boot",

@@ -38,7 +38,7 @@ Fable program **T-126 → T-128** closed docs/security/MC UX. The living tracker
 | **T-130.0** | cursor-docs | — | Registry + this hub + handoffs + worktree README |
 | **T-130.1** | claude-code | F2B-07, F2B-08, F2B-09, F2B-11 | Backend hygiene |
 | **T-130.2** | claude-code | F3-01, F3-02, F3-03 | Discord 429 + embed caps + OAuth guard |
-| **T-130.3** | claude-code | F2B-06 | CI + `make ci-local` services/middleware/realtime |
+| **T-130.3** | claude-code | F2B-06 | CI + `cargo xtask ci ci-local` services/middleware/realtime |
 | **T-130.4** | claude-code | F1-16…F1-20 | Mod loaders/exporters |
 | **T-130.5** | claude-code | F4-03, F4-07, F2F-07 | MC conflict cross-tab; non-UUID trap; admin Dialog |
 | **T-130.6** | claude-code | F2B-05, F4-04 | Mission archive/delete API + library UI |

@@ -51,7 +51,7 @@ cargo test -p map-engine-core missing_side_defaults_blufor
 # If pack path needs doc/SoA:
 cargo test -p map-engine-core --features doc side_tint_ 2>/dev/null || true
 cargo test -p website-frontend --lib
-make ci-local-leptos
+cargo xtask mk ci-local-leptos
 ```
 
 ## Manual
@@ -110,7 +110,7 @@ Implement **T-180.3** — Map side tint.
   cargo test -p map-engine-core pack_rings_side_tints
   cargo test -p map-engine-core missing_side_defaults_blufor
   cargo test -p website-frontend --lib
-  make ci-local-leptos
+  cargo xtask mk ci-local-leptos
 
 ═══ MANUAL ═══
   M-C1: three sides distinct rings; selection yellow

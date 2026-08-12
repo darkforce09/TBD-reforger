@@ -3,7 +3,7 @@
 **The north star.** One doc that states what the TBD Framework mod *is*. If a slice ever
 conflicts with this, this wins. Program hub: [`t181_event_mod_program.md`](t181_event_mod_program.md).
 
-Every factual claim about CRF or vanilla carries an `@idx <lane>#<Symbol>` marker. `make verify-oracle`
+Every factual claim about CRF or vanilla carries an `@idx <lane>#<Symbol>` marker. `cargo run -q -p tbd-tools --bin enf -- citations`
 resolves each one against a generated index and fails the build if it does not exist. **Line
 numbers are never typed by hand** — cite the name, ask the tool for coordinates:
 
@@ -58,7 +58,7 @@ hands you nothing. **That gap is the program.**
   adapt or redistribute any of it**. Read it to learn how a lobby / slot picker is *shaped*, then
   write ours. Never a line. Linked into each slice worktree as `apps/mod/playable_selector` (it
   lives outside the repo, so absence warns rather than refuses) and enforced by the `PS_` lane of
-  `make verify-no-crf-leak`. Full rules: [`SLICE_WORKFLOW.md`](SLICE_WORKFLOW.md) §Oracle lanes.
+  `cargo xtask verify no-crf-leak`. Full rules: [`SLICE_WORKFLOW.md`](SLICE_WORKFLOW.md) §Oracle lanes.
 
 ## 3. The event loop
 
@@ -77,7 +77,7 @@ Ours adds SAFESTART and replaces AAR with END, because AAR is deferred (§6).
 ## 4. What the mod must supply
 
 Full triage — 57 capabilities, every CRF file accounted for — lives in
-[`capability_verdicts.tsv`](capability_verdicts.tsv), enforced by `make verify-capability`
+[`capability_verdicts.tsv`](capability_verdicts.tsv), enforced by `cargo run -q -p tbd-tools --bin enf -- capability`
 (a CRF capability with no TBD verdict is a **build error**). The spine:
 
 | # | Capability | Why it is spine |
@@ -96,7 +96,7 @@ Full triage — 57 capabilities, every CRF file accounted for — lives in
 
 ## 5. Load-bearing Enfusion facts
 
-Proven, not remembered. Each resolves through `make verify-oracle`.
+Proven, not remembered. Each resolves through `cargo run -q -p tbd-tools --bin enf -- citations`.
 
 **Deploy is a POSSESS request, not a raw takeover.** `SCR_PossessSpawnData` @idx api#SCR_PossessSpawnData
 exposes `static SCR_PossessSpawnData FromEntity (notnull IEntity entity)`, handed to
@@ -163,7 +163,7 @@ Listed, not silently resolved. Each has a default in force so nothing is blocked
 ## 7. How to work here
 
 1. **Query before designing** — `enf lookup`, `enf dirs`, `capability_matrix.tsv`.
-2. **Compile on the fast lane** — `make mod-compile` is ~1.3 s and needs no Workbench.
+2. **Compile on the fast lane** — `cargo xtask mod compile` is ~1.3 s and needs no Workbench.
    Workbench is only for world/prefab/PIE visual work, and it is serial.
 3. **Cite what you claim** — `@idx`, or it is an opinion.
 4. **Make it work → right → fast.** Working is not half-assed.

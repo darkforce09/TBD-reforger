@@ -22,7 +22,7 @@ name: mod-gates
 #   * there is an explicit PREFLIGHT step that hard-fails when the depot is missing. It is a
 #     separate, loudly-named step so the Actions UI says "runner is not provisioned" at a glance
 #     rather than burying it in a compile log.
-#   * every gate step propagates the script's real exit status (see the make note below).
+#   * every gate step propagates the gate's real exit status.
 #   * `if:` conditions are used NOWHERE. Nothing in this file can be conditioned out of existence.
 #
 # ── UNTIL A RUNNER EXISTS, THESE RUNS QUEUE — THAT IS DELIBERATE ───────────────────────────
@@ -52,9 +52,9 @@ name: mod-gates
 #            - ".github/workflows/mod-gates.yml"
 #
 # ── WHAT IS STILL NOT WIRED, AND WHY ───────────────────────────────────────────────────────
-#   * `make mod-world-boot-compiled` (cargo xtask mod world-boot --compiled) — the only gate that feeds real
+#   * `cargo xtask mod world-boot --compiled` — the only gate that feeds real
 #     compiler output to the real Enfusion parser, and the one that would have caught T-181.46 on
-#     day one. It additionally needs Postgres up, `make api` serving, and the API's SERVICE_TOKEN,
+#     day one. It additionally needs Postgres up, `cargo xtask mk rust-api` serving, and the API's SERVICE_TOKEN,
 #     none of which exist on a bare runner. Wiring it means standing a full stack up inside this
 #     job; it is a ticket of its own, not a line in this one.
 #   * `--mission=<golden>` sweeps across every golden. Same runner, but ~25 s each; belongs on a
@@ -111,7 +111,7 @@ jobs:
       # the real tree. `--selftest` stages an extra addon calling an undefined symbol and must
       # come back with exit 1.
       #
-      # This does NOT call `make mod-compile-selftest`. That target treats ANY non-zero as "the
+      # This does NOT call `cargo xtask mod compile-selftest`. That wrapper treats ANY non-zero as "the
       # gate correctly rejected broken source", so on a machine with no server it prints
       # SELFTEST OK for a run that never happened — a false green in the one check whose entire
       # job is to prove the absence of false greens. Three-way, explicitly, instead.
@@ -143,16 +143,16 @@ jobs:
               ;;
           esac
 
-      # The real thing. Called directly rather than through `make mod-compile` for one reason:
-      # GNU make reports its OWN status 2 for any failed recipe, which would flatten the script's
+      # The real thing. Called directly rather than through a wrapper, for one reason that used
+      # to be about GNU make: it reported its OWN status 2 for any failed recipe, flattening the
       # 1-vs-3 (code vs environment) distinction into a single uninformative code — the precise
-      # confusion the exit-code contract in compile.sh exists to prevent. The make target is
+      # confusion the exit-code contract in compile.sh exists to prevent. The wrapper target is
       # `cargo run -q -p xtask -- mod compile`, so nothing is duplicated by calling it here.
       #
       # First run on a fresh runner also calibrates `.compile-vanilla-baseline` (a vanilla-only
       # boot, ~4 s). actions/checkout cleans ignored files, so that recalibration happens every
       # run. It is cheap and it keeps the baseline honest per-runner.
-      - name: "compile gate — cargo xtask mod compile (local equivalent: make mod-compile)"
+      - name: "compile gate — cargo xtask mod compile"
         run: |
           set -uo pipefail
           rc=0
@@ -172,7 +172,7 @@ jobs:
       # scenario headlessly and asserts the world loaded, no class failed to resolve, the
       # roll-call printed with nothing MISSING, and no TBD or unrecognised script error fired.
       # ~23 s measured. Direct invocation for the same exit-code reason as above.
-      - name: "world boot — cargo xtask mod world-boot (local equivalent: make mod-world-boot)"
+      - name: "world boot — cargo xtask mod world-boot"
         run: |
           set -uo pipefail
           rc=0

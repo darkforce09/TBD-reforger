@@ -167,6 +167,32 @@ pub fn find(name: &str) -> Option<&'static Task> {
     TASKS.iter().find(|t| t.name == name)
 }
 
+/// The command line a step ECHOES, or `None` for the shapes that echo nothing.
+///
+/// T-897: `gate_t468` used to pin the Makefile's `verify-t456:` / `verify-t468:` recipe BODIES
+/// against being hollowed to `@true`. Those recipes are gone; this table is their successor, and
+/// this accessor is how that gate reads it. [`Step::Native`] is deliberately `None` — it carries
+/// no command line to pin, which is exactly why no `verify-*` row uses that shape.
+pub fn step_echo(s: &Step) -> Option<&'static str> {
+    match s {
+        Step::Cmd { line, .. } => Some(line),
+        Step::Xtask { echo, .. } => Some(echo),
+        Step::Shell { script, .. } => Some(script),
+        Step::Task(_) | Step::Native { .. } => None,
+    }
+}
+
+/// The task names a row delegates to — the successor to a recipe's `$(MAKE) <target>` lines.
+pub fn invoked_tasks(t: &Task) -> Vec<&'static str> {
+    t.steps
+        .iter()
+        .filter_map(|s| match s {
+            Step::Task(n) => Some(*n),
+            _ => None,
+        })
+        .collect()
+}
+
 /// `cargo xtask ci [<target>]`. No target lists the lane, as `make` with no target would not.
 pub fn run(target: Option<&str>) -> i32 {
     let Some(name) = target else {
@@ -448,9 +474,14 @@ fn verify_doc_layout() -> i32 {
 /// visual contract survives the Makefile; grouped, because the flat 60-row list was ordered by
 /// where a target happened to sit in the file. Rendered from [`TASKS`], so a task cannot be added
 /// without appearing here.
+///
+/// T-897: this is now the ONLY task index — the Makefile it mirrored is gone. It cannot render
+/// the other two lanes' rows (T-894's `db` is a clap enum, T-895's `mk` a `&[&str]`, neither
+/// carrying help text), so it POINTS at them rather than transcribing a third copy that would
+/// rot. `cargo xtask mk` and `cargo xtask db --help` each list their own.
 pub fn help() -> i32 {
-    println!("TBD Reforger — `cargo xtask` task surface (T-853: the root Makefile is being");
-    println!("absorbed into xtask; run `cargo xtask ci <task>`).");
+    println!("TBD Reforger — `cargo xtask` task surface (T-853/T-897: the root Makefile is gone;");
+    println!("this replaces `make help`. Run `cargo xtask ci <task>`).");
     for group in ["CI", "schema", "verify", "map", "build", "db"] {
         let rows: Vec<&Task> = TASKS.iter().filter(|t| t.group == group).collect();
         if rows.is_empty() {
@@ -468,6 +499,18 @@ pub fn help() -> i32 {
     }
     println!("\n  [alias]  already a `cargo xtask verify …` command; the make name was a wrapper.");
     println!("  [T-89x]  that slice's lane — carried here so this lane's composites really run.");
+    println!("\nThe other two lanes list themselves — they are not reprinted here, because a copy");
+    println!("of a list is a list that rots:");
+    println!(
+        "  \x1b[36m{:<22}\x1b[0m build/dev-server lane: {}",
+        "cargo xtask mk",
+        crate::mk_build::TARGETS.join(" ")
+    );
+    println!(
+        "  \x1b[36m{:<22}\x1b[0m database lane: {}",
+        "cargo xtask db --help",
+        crate::mk_db::LANE_COMMANDS.join(" ")
+    );
     println!("\n`cargo xtask --help` lists the full CLI (ticket, mcp, mod, deploy, schema, …).");
     0
 }

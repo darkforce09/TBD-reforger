@@ -18,7 +18,7 @@ codegen purge) — [`t159_29_delete_verify_log.md`](../../.ai/artifacts/t159_29_
 
 | Stream | Scope | Status |
 |--------|-------|--------|
-| **T-159.24** prep | Trunk `/api` + `/map-assets` proxies · `make leptos*` · `api_put/patch/delete/post_ok` client verbs · **140 MB upload spike PASS** (940 ms via Trunk proxy → 404 after full read; no direct-:8080 bypass needed) | **shipped** |
+| **T-159.24** prep | Trunk `/api` + `/map-assets` proxies · `cargo xtask mk leptos*` · `api_put/patch/delete/post_ok` client verbs · **140 MB upload spike PASS** (940 ms via Trunk proxy → 404 after full read; no direct-:8080 bypass needed) | **shipped** |
 | **T-159.25** suite live-wire | toasts · suite mutations (Settings/ORBAT/Missions/Approvals/Personnel/EventMgr/Mortar/Content, live dev-login proofs) · SSE telemetry · Server Intel + Operations Calendar populated · CreateMissionDialog · live `smoke_mutations` gate | **shipped** (`.25a`–`.25e`) |
 | **T-159.26** editor completion | **.26a** Attributes (tag T-159.23) · **.26b** server-hydrate/conflict/dirty (data-safety, live gate) · **.26c** keyboard (Del/Space/Ctrl+C/V) + Mission Settings (environment). ORBAT squad tree (needs T-071 squad creation) + VirtualOutliner @367k folded forward | **shipped** (.26a–.26c) |
 | **T-159.27** Arsenal | ArsenalTab (12 kind-rows = React `LOADOUT_ROWS`) → canonical `SlotLoadoutV2` via `editor_ops::set_loadout`; faithful `picksToLoadout`/`loadoutToPicks` incl. `summary` + optic/magazine sticky pass-through (regression-guarded). **+ native-compile fix** (`MissionEnv` → `dto.rs`; CI `cargo test` red → green). Smart Forge (compat edge rows/paper-doll/weight/Faction Manager) folded forward | **shipped** |

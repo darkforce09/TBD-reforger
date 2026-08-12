@@ -3776,7 +3776,7 @@ pub async fn run_smoke(name: &str, dist: Option<String>, path: Option<String>) -
     }
 }
 
-/// The `make leptos-gates` smoke chain: every editor smoke in glob order, first failure stops
+/// The `cargo xtask mk leptos-gates` smoke chain: every editor smoke in glob order, first failure stops
 /// (the Makefile `set -e` semantics). Returns the first non-zero code, else 0.
 pub async fn editor_suite(dist: Option<String>) -> Result<u8> {
     for name in EDITOR_SUITE {

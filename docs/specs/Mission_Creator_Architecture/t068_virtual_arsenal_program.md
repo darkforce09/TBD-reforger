@@ -49,7 +49,7 @@ T-068.10 Forge + editor loadout ✓ @ 3bc0bd24
 | Mod slot picker | **T-068.13** ← | [`t068_13_mod_slotting_screen_poc.md`](t068_13_mod_slotting_screen_poc.md) |
 | Phase-2 E2E | **T-068.14** | (human gate) |
 
-**Ops:** `make registry-import` · see [`DEV_RUNBOOK.md`](../../website/DEV_RUNBOOK.md) §Registry.
+**Ops:** `cargo xtask db registry-import` · see [`DEV_RUNBOOK.md`](../../website/DEV_RUNBOOK.md) §Registry.
 
 **T-068.10 note:** Primary dropdown uses per-kind degrade when `character_default_loadout`
 has no weapon edges (T-150 data reality); optic/mag feeds stay strict.
@@ -109,7 +109,7 @@ Per-slice spec paths live here only — **`slice_plan` in registry has no `spec`
 
 | Slice | Executor | Spec file | Verification gate |
 |-------|----------|-----------|-------------------|
-| T-068.0 | cursor-docs | [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md) | `make ticket-check-strict` + 13 specs on disk |
+| T-068.0 | cursor-docs | [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md) | `cargo xtask ticket check --strict` + 13 specs on disk |
 | T-068.0.1 | claude-code | [`t068_0_1_registry_schemas.md`](t068_0_1_registry_schemas.md) | §Verification gate A1–A7 |
 | T-068.1 | claude-code | [`t068_1_workbench_flat_export.md`](t068_1_workbench_flat_export.md) | §Verification gate A1–A7 + **MCP preflight** |
 | T-068.2 | claude-code | [`t068_2_registry_api.md`](t068_2_registry_api.md) | §Verification gate A1–A9 + curl |
@@ -213,7 +213,7 @@ flowchart TD
 | **Exit codes** | Every listed command must exit **0** (non-zero = FAIL, stop) |
 | **Evidence** | Paste full command output (or linked log); redact tokens only |
 | **Partial pass** | Not allowed — one FAIL blocks advance |
-| **Regression** | Slices that touch the editor must confirm **no new** `assetCatalogMock` imports and `make test-it` / FE build still green where listed |
+| **Regression** | Slices that touch the editor must confirm **no new** `assetCatalogMock` imports and `cargo xtask db test-it` / FE build still green where listed |
 | **Human slices** | Paste checklist table with **PASS/FAIL** per row + proof (log line, curl output, DevTools snippet) |
 | **Cursor advance** | Cursor verifies paste against spec gate **before** `advance-slice` |
 
@@ -241,16 +241,16 @@ flowchart TD
 
 | Slice | Automated anchor | Manual / proof required |
 |-------|------------------|-------------------------|
-| T-068.0 | `make ticket-check-strict` | All 13 spec paths exist on disk |
+| T-068.0 | `cargo xtask ticket check --strict` | All 13 spec paths exist on disk |
 | T-068.0.1 | `cd packages/tbd-schema && npm run validate` | `jq` resource_name GUID regex on samples |
 | T-068.1 | `cargo xtask mod dev-bootstrap` + MCP export + `npm run validate` | MCP discovery log + A7/A8 spot-check |
-| T-068.2 | `make test-it` (registry tests) | curl 200 + 304 + jq field checks |
+| T-068.2 | `cargo xtask db test-it` (registry tests) | curl 200 + 304 + jq field checks |
 | T-068.3 | FE build/lint + `rg assetCatalogMock` | DevTools: API tree, drag, store `assetId` |
 | T-068.4 | FE build/lint + **stub grep gate** + schema validate download | Arsenal tab: **no stub**; 4 enabled dropdowns + download works |
 | T-068.5 | Mod console log grep + NPC visual | Test NPC spawn shows worn kit (T-068.5.1); not player |
 | T-068.5.1 | MCP `wb_play` + worn-verify logs | Screenshot: test NPC dressed @ spawn |
 | T-068.6 | All prior slices PASS | Full E2E table + sign-off ✅ |
-| T-068.7 | `make ticket-check-strict` | Phase 2 approval statement |
+| T-068.7 | `cargo xtask ticket check --strict` | Phase 2 approval statement |
 | T-068.8+ | Per child spec gate | Per child spec gate |
 
 Detail: each [`t068_*`](.) child spec **§Verification gate** section.

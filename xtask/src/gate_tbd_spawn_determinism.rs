@@ -79,7 +79,7 @@ fn preflight() -> u8 {
     }
     // Keep the two-space indent on continuation lines (bash heredoc contract).
     eprintln!(
-        "FATAL: Workbench Net API not listening on :{port} — spawn-determinism cannot run.\n  Prerequisite: Arma Reforger Workbench with Net API enabled on this host.\n  Start Workbench (e.g. steam -applaunch 1874910), wait until :{port} is up,\n  then: make mod-spawn-determinism\n  Docs: docs/mod/SPAWN_DETERMINISM.md\n  This gate is NOT headless and is NOT part of make ci-local / wave.sh gates.\n  Offline MCP (no Workbench): make mcp-selftest"
+        "FATAL: Workbench Net API not listening on :{port} — spawn-determinism cannot run.\n  Prerequisite: Arma Reforger Workbench with Net API enabled on this host.\n  Start Workbench (e.g. steam -applaunch 1874910), wait until :{port} is up,\n  then: cargo xtask mod spawn-determinism\n  Docs: docs/mod/SPAWN_DETERMINISM.md\n  This gate is NOT headless and is NOT part of cargo xtask ci ci-local / wave.sh gates.\n  Offline MCP (no Workbench): cargo xtask mcp selftest"
     );
     2
 }

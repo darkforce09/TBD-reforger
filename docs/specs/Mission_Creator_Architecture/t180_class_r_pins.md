@@ -1,7 +1,7 @@
 # T-180 — Class-R pin ledger
 
 **Authority companion to** [`t180_orbat_eden_program.md`](t180_orbat_eden_program.md).  
-**Wins on conflict** with older slice prose. Coherency gate: `make verify-t180`.
+**Wins on conflict** with older slice prose. Coherency gate: `cargo xtask verify t180`.
 
 ---
 
@@ -11,7 +11,7 @@
 |------------|--------------|-----|
 | `crates/map-engine-core` | **`map-engine-core`** | Graph, orbat derive, tint, squad_links, apply_faction |
 | `apps/website/frontend` | **`website-frontend`** | Place path, dock, ORBAT UI (**NOT** `website-leptos`; bin tests) |
-| `apps/website/api` | **`website-api`** | `make test-it` / factions / events |
+| `apps/website/api` | **`website-api`** | `cargo xtask db test-it` / factions / events |
 | `crates/map-engine-render` | **`map-engine-render`** | Lane order / hairline / vehicles_bind |
 
 **Feature gates:**
@@ -106,7 +106,7 @@ active_side ∈ {BLUFOR,OPFOR,INDFOR}
  → .7 Stitch UI
  → .8 apply/save/add_vehicle
  → .9 derive fill + open_arsenal(tab=3)
- → .10 coherency gate (make verify-t180)
+ → .10 coherency gate (cargo xtask verify t180)
 ```
 
 ---
@@ -114,5 +114,5 @@ active_side ∈ {BLUFOR,OPFOR,INDFOR}
 ## Permanent gate
 
 ```bash
-make verify-t180
+cargo xtask verify t180
 ```

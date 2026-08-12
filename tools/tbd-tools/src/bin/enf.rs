@@ -200,7 +200,9 @@ fn run(cli: Cli) -> anyhow::Result<ExitCode> {
                 eprintln!(
                     "\nEither the symbol does not exist (the claim is wrong) or the index is stale"
                 );
-                eprintln!("(rebuild: make enf-index / make enf-carve / make enf-apidoc).");
+                eprintln!(
+                    "(rebuild: cargo run -q -p tbd-tools --bin enf -- index crf / cargo run -q -p tbd-tools --bin enf -- carve / cargo run -q -p tbd-tools --bin enf -- apidoc)."
+                );
                 return Ok(ExitCode::from(1));
             }
             println!("all citations resolve.");

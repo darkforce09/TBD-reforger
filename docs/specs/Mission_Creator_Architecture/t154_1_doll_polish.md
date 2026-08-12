@@ -36,7 +36,7 @@ explained and deferred.
 
 ## Gates
 
-`make wasm-ci` exit 0 (core **73**: +hover/anchor/projection-agreement; render **29**:
+`cargo xtask mk wasm-ci` exit 0 (core **73**: +hover/anchor/projection-agreement; render **29**:
 +hover-flip) · `make wasm` → **4,217,176 B** (+1,104 over T-154.0) · vitest **358/358** ·
 build + `tsc --noEmit` clean · lint = pre-existing `router.tsx` only ·
 `verify-wgpu-gpu.mjs` exit 0 — **36/36 probes, allPass true** incl. `doll` with the new

@@ -14,9 +14,9 @@ App-level docs stay here; runtime config, migrations, seeds, compose, and `.env`
 ## Run from repo root
 
 ```bash
-make db-up    # Postgres :5434
-make api      # Axum API :8080 (CWD = apps/website/api)
-make leptos   # Trunk SPA :3000 (proxies /api + /map-assets → :8080)
+cargo xtask db up    # Postgres :5434
+cargo xtask mk rust-api      # Axum API :8080 (CWD = apps/website/api)
+cargo xtask mk leptos   # Trunk SPA :3000 (proxies /api + /map-assets → :8080)
 ```
 
 Do **not** use deleted targets (`make web`, Go, Vite/React). Full conventions: [`docs/platform/WHERE_DOES_X_GO.md`](../../docs/platform/WHERE_DOES_X_GO.md).

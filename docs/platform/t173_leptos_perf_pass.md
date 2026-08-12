@@ -13,7 +13,7 @@ T-172 restored dead UI and many MC fidelity gaps, but operator review 2026-07-18
 
 > pan/zoom stutter “unbearable”; glyphs/roads thrash on load/unload; Mission Library scroll still laggy with delayed catch-up; dossier side-panel open animation incredibly laggy; tree guide lines not continuous + hard to see; Mission Settings render prefs from before the rewrite are missing; fences/railings missing when zoomed in; building icons upside down (building fills OK).
 
-Also: local `make leptos` is `trunk serve` **without** `--release` (debug wasm). Gates use `trunk build --release`. That compile/profile gap is a first-class suspect — measure it, then fix tooling **and** real engine/UI jank that remains in release.
+Also: local `cargo xtask mk leptos` is `trunk serve` **without** `--release` (debug wasm). Gates use `trunk build --release`. That compile/profile gap is a first-class suspect — measure it, then fix tooling **and** real engine/UI jank that remains in release.
 
 **Operator 2026-07-18 (after `trunk serve --release`):** release “definitely made a big improvement” but is **“nowhere near good enough”** / **“not as good as it was before”** (pre-rewrite React MC). Later same session: acceptance is **better than pre-rewrite**, not “near” / “as good as”. → **P8 is necessary, not sufficient.** Phases 2–5 must beat the React baseline on the **release** serve path; do not mark P1–P5 done because debug→release alone felt better.
 
@@ -27,7 +27,7 @@ Smoothness on the **day-to-day release path** that is **better than the pre-rewr
 2. Mission Library scroll + dossier sheet **snappier than React**  
 3. Mission Settings restores pre-rewrite **render prefs** (map style / grid / hillshade / world-layer toggles — wire to live host, not placeholder copy)  
 4. Outliner + Asset Browser guide lines: **continuous** vertical stems + readable contrast  
-5. Documented local serve story so `make leptos` is not silently a debug-wasm trap (or an explicit `make leptos-release` that becomes the operator default)  
+5. Documented local serve story so `cargo xtask mk leptos` is not silently a debug-wasm trap (or an explicit `make leptos-release` that becomes the operator default)  
 6. Fence + railing markers visible when zoomed in (T-152.15 parity)  
 7. Building **icons/badges** upright (building OBB fills already correct)
 
@@ -42,7 +42,7 @@ Smoothness on the **day-to-day release path** that is **better than the pre-rewr
 | P5 | Dossier / side-panel open animation lag | Sheet enter must not hitch; **snappier than React sheet** |
 | P6 | Missing Mission Settings render prefs | `eden_chrome.rs` still says map style/grid/hillshade/world toggles “arrive with the terrain render host” — restore vs React T-091.2 / Mission Settings |
 | P7 | Tree guide lines discontinuous + low contrast | Continuous stem through open folders; higher-contrast Aegis-legal color |
-| P8 | Dev serve profile honesty | Class-R: compare `trunk serve` (debug) vs release serve FPS/hitch; make the day-to-day path release-quality (change `make leptos`, add `leptos-release`, or Trunk release-by-default — pick one, document, prove) |
+| P8 | Dev serve profile honesty | Class-R: compare `trunk serve` (debug) vs release serve FPS/hitch; make the day-to-day path release-quality (change `cargo xtask mk leptos`, add `leptos-release`, or Trunk release-by-default — pick one, document, prove) |
 | P9 | Fences / railings missing on zoom-in | Operator: fence markers + railing markers should appear when zoomed in (React/T-152.15 fence/pier strip lane). Find why Leptos host never draws them (not wired, wrong zoom gate, or strip lane off) and restore |
 | P10 | Building icons upside down | Operator: building **glyphs/badges** are inverted; building footprint/OBB rotation looks correct. Fix icon/badge upright (V-flip / atlas UV / instance yaw) without breaking OBB fills |
 
@@ -81,7 +81,7 @@ Restore fence + railing (and pier strips if the same lane) visibility on zoom-in
 
 ### Phase 6 — Verify + ship
 
-`make leptos-gates` + `make ci-local`; `.ai/artifacts/t173_verify_log.md`; tag **T-173**.
+`cargo xtask mk leptos-gates` + `cargo xtask ci ci-local`; `.ai/artifacts/t173_verify_log.md`; tag **T-173**.
 
 ## Locked
 
@@ -103,7 +103,7 @@ Implement **T-173** — Leptos SPA + Mission Creator performance + fidelity resi
 
 ═══ PREFLIGHT ═══
   git pull --ff-only
-  make db-up
+  cargo xtask db up
   ./scripts/ticket brief T-173
 
 ═══ READ ═══
@@ -121,7 +121,7 @@ Implement **T-173** — Leptos SPA + Mission Creator performance + fidelity resi
   stutter, glyph/road thrash, Mission Library scroll + sheet animation lag,
   missing Mission Settings render prefs, weak discontinuous tree guides,
   missing fence/railing markers on zoom-in, and upside-down building icons
-  (OBB fills OK). make leptos is trunk serve without --release — measure first.
+  (OBB fills OK). cargo xtask mk leptos is trunk serve without --release — measure first.
 
 ═══ SHIPPED ═══
   T-172 @ e08884f4 (tag T-172) — functional bash; residual = this ticket.
@@ -144,7 +144,7 @@ Implement **T-173** — Leptos SPA + Mission Creator performance + fidelity resi
   4. Phase 3 MC engine perf (P1/P2/P3)
   5. Phase 4 settings + tree lines (P6/P7)
   6. Phase 5 fences/railings + upright building badges (P9/P10)
-  7. make leptos-gates + make ci-local; t173_verify_log.md
+  7. cargo xtask mk leptos-gates + cargo xtask ci ci-local; t173_verify_log.md
   8. Commit on main T-173: · tag T-173 · push
   9. Cursor doc list if needed
 
@@ -152,13 +152,13 @@ Implement **T-173** — Leptos SPA + Mission Creator performance + fidelity resi
   - Edit docs/** / registry / CLAUDE sync markers
   - Touch apps/mod/**
   - Call residuals “good enough” without fixing P1–P10
-  - Leave make leptos as a silent debug-wasm trap without documenting
+  - Leave cargo xtask mk leptos as a silent debug-wasm trap without documenting
     an operator-default release path
   - Flip building OBB fills when fixing badge uprightness
 
 ═══ VERIFY ═══
-  make leptos-gates
-  make ci-local
+  cargo xtask mk leptos-gates
+  cargo xtask ci ci-local
   t173_verify_log.md: P1–P10 PASS with before/after numbers on the
   operator serve path; inventory Found-by-hunt non-empty if hunt finds more
 

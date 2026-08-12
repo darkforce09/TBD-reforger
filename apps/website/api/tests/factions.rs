@@ -1,5 +1,5 @@
 //! T-153 faction library CRUD gates: schema-validated writes, owner scoping, uniqueness,
-//! role tier. Skips unless `TEST_DATABASE_URL` points at a migrated DB (make db-up).
+//! role tier. Skips unless `TEST_DATABASE_URL` points at a migrated DB (cargo xtask db up).
 //!
 //! # Fixture ownership (T-400) + DB target guard (T-381)
 //!

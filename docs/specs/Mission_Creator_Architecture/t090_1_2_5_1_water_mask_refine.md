@@ -77,7 +77,7 @@ Same gates as T-090.1.2.5:
 node scripts/map-assets/verify-sap-ortho.mjs TERRAIN=everon
 node scripts/map-assets/verify-unified-satellite.mjs TERRAIN=everon
 EXPECT_LOSSLESS=1 node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon
-make verify-terrain
+cargo xtask ci verify-terrain
 cd apps/website/frontend && npm run build && npm run lint
 ```
 
@@ -110,7 +110,7 @@ Automated gates and **original regression coords** (town pads ~4776/9268, lake 4
 | **Residual FN** | Dry carved channels / gullies still without water tint | Same viewport — adjacent dark linear depressions without overlay; not all hill/lowland streams captured |
 | **Trade** | `.2.5` flat wetlands dropped with pavement (flatFrac 0.12) | Documented in verify log — estuaries not on operator keep-list |
 
-**Next levers (superseded @ `.2.5.2`):** `.2.5.2` @ `1c07d97a` shipped G1-B road guard + `make map-water-everon`; operator **good enough**. Far-future perfection → **T-143** (`idea`). Entity hydrology → **T-090.3** / **T-090.8**.
+**Next levers (superseded @ `.2.5.2`):** `.2.5.2` @ `1c07d97a` shipped G1-B road guard + `cargo xtask ci map-water-everon`; operator **good enough**. Far-future perfection → **T-143** (`idea`). Entity hydrology → **T-090.3** / **T-090.8**.
 
 Artifacts: [`.ai/artifacts/t090_1_2_5_1_verify_log.md`](../../../.ai/artifacts/t090_1_2_5_1_verify_log.md) · [`.ai/artifacts/t090_1_2_5_1_refine_spike.json`](../../../.ai/artifacts/t090_1_2_5_1_refine_spike.json)
 
@@ -192,7 +192,7 @@ Implement **T-090.1.2.5.1** — inland water mask refine (road exclusion + hill 
   node scripts/map-assets/verify-sap-ortho.mjs TERRAIN=everon
   node scripts/map-assets/verify-unified-satellite.mjs TERRAIN=everon
   EXPECT_LOSSLESS=1 node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon
-  make verify-terrain
+  cargo xtask ci verify-terrain
   cd apps/website/frontend && npm run build && npm run lint
 
 ═══ MANUAL ═══

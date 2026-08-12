@@ -94,7 +94,7 @@ distinguish them. Default-collapsed.
 ## Empty / "export not run" state (GAP-M7, L5)
 
 When a terrain has no `objects/` export (e.g. **Arland** today), the world layers, filter and legend show
-a first-run state: "World objects not exported for {terrain} yet — run `make map-export TERRAIN={id}`."
+a first-run state: "World objects not exported for {terrain} yet — run `cargo xtask map export-terrain {id}`."
 The basemap/grid still work; this is distinct from a tile 404 toast.
 
 ## Persistence (N8)

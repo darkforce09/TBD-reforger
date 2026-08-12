@@ -1,6 +1,6 @@
 //! Generated cross-boundary type projections (quicktype `-l rust`, from
 //! `packages/tbd-schema/schema/*.json`). DO NOT EDIT the per-schema files —
-//! regenerate with `make schema-codegen`; the `codegen-drift` CI gate diffs them.
+//! regenerate with `cargo xtask ci schema-codegen`; the `codegen-drift` CI gate diffs them.
 //! Lints are suppressed since these mirror the JSON wire shapes verbatim.
 
 #[allow(clippy::all, dead_code)]

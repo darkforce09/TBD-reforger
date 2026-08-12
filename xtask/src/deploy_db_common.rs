@@ -282,7 +282,7 @@ pub(crate) fn require_container() -> Result<()> {
         die(&format!(
             "container '{container}' not found by '{}' (rc={}).\n\
        {combined}\n\
-       Start it with: make db-up",
+       Start it with: cargo xtask db up",
             runtime.join(" "),
             output.status.code().unwrap_or(1)
         ));
@@ -290,7 +290,7 @@ pub(crate) fn require_container() -> Result<()> {
     if out_trim != "true" {
         die(&format!(
             "container '{container}' exists but is not running (State.Running={out_trim}).\n\
-       A backup taken against a stopped database is not a backup. Start it: make db-up"
+       A backup taken against a stopped database is not a backup. Start it: cargo xtask db up"
         ));
     }
     Ok(())

@@ -24,7 +24,7 @@ Spike **RoadEntity / `.topo` name attrs**; if empty ship **`road-names.json`** c
    - `RoadEntity` / `SCR_Road` attributes via Workbench MCP;
    - `.topo` record attrs beyond type/class;
    - Eden wiki / game data cross-check.
-2. **Data path A:** attrs found → extend `roads.json.gz` export with optional **`name?: string`** (schema bump + `make schema-validate`).
+2. **Data path A:** attrs found → extend `roads.json.gz` export with optional **`name?: string`** (schema bump + `cargo xtask ci schema-validate`).
 3. **Data path B (IN SCOPE if A empty):** `packages/map-assets/everon/road-names.json` — curated list:
    ```json
    { "roads": [{ "id": "...", "name": "...", "segmentIds": ["r042", ...] }] }
@@ -95,7 +95,7 @@ git lfs pull && make map-assets-link
 
 test -f .ai/artifacts/t152_9_road_name_spike.json || (echo 'G2 FAIL' && exit 1)
 
-make schema-validate
+cargo xtask ci schema-validate
 cargo test -p map-engine-core road_labels --all-features
 make wasm
 cd apps/website/frontend && npm test && npm run build && npm run lint

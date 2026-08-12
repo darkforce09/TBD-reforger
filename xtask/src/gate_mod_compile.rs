@@ -100,6 +100,66 @@ pub fn run(args: &[String]) -> Result<u8> {
     }
 }
 
+/// Entry for `xtask mod compile-selftest` — T-897's port of the Makefile's `mod-compile-selftest`.
+///
+/// THE INSTRUMENT BEFORE THE VERDICT. This check's entire job is to prove the absence of false
+/// greens, so it must not be one. Only exit **1** — a real Enfusion rejection of the deliberately
+/// broken `--selftest` addon — counts as a pass, per the contract at the top of this file:
+/// 0 compiled clean · 1 real compile failure · 2 no verdict reached · 3 environment failure.
+///
+/// Until T-312 the check was `if compile --selftest; then FAIL else OK fi`, which read ANY
+/// non-zero as "the gate correctly rejected broken source". On a machine with no dedicated server
+/// and no host bridge the gate exits 3 without compiling a line, and that printed SELFTEST OK —
+/// while `mod wave gate` called it and reported PASS for a check that never happened.
+///
+/// The classification lived in the Makefile recipe until T-897 (`Makefile:290-298`), where it had
+/// to be a shell `case` **because GNU make flattens every failed recipe to its own status 2**,
+/// destroying the 1-vs-3 distinction the whole check turns on. In-process there is no flattening:
+/// `rc` below is this gate's own. Each branch still NAMES its failure mode, because a caller
+/// should get the diagnosis from the text and not have to reconstruct it from `$?`.
+pub fn run_selftest() -> Result<u8> {
+    let opts = Opts {
+        selftest: true,
+        ..Opts::default()
+    };
+    let rc = run_with_root(&find_repo_root()?, &opts);
+    Ok(match rc {
+        1 => {
+            println!("SELFTEST OK: gate correctly rejected broken source (exit 1)");
+            0
+        }
+        0 => {
+            println!(
+                "SELFTEST FAIL: gate returned 0 on deliberately broken source — it is no longer \
+                 detecting compile errors, so every green mod-compile since is suspect."
+            );
+            1
+        }
+        3 => {
+            println!(
+                "SELFTEST FAIL: ENVIRONMENT (exit 3) — the gate never ran. Read the ENV FAIL \
+                 above: it is this machine, and it says NOTHING about tbd-framework. A check that \
+                 did not happen is not a pass."
+            );
+            1
+        }
+        2 => {
+            println!(
+                "SELFTEST FAIL: no verdict reached (exit 2 — timeout, or a bad argument to mod \
+                 compile). Inconclusive is not a pass."
+            );
+            1
+        }
+        other => {
+            println!(
+                "SELFTEST FAIL: mod compile --selftest exited {other}, outside its documented \
+                 0/1/2/3 contract."
+            );
+            1
+        }
+    })
+}
+
 /// Testable entry (no root walk).
 pub fn run_with_root(root: &Path, opts: &Opts) -> u8 {
     if require_host().is_err() {

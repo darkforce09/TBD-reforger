@@ -97,7 +97,7 @@ go run ./cmd/import-registry-items \
   --file ../../packages/tbd-schema/registry/registry-items.workbench.json
 ```
 
-(`make seed` applies `registry_dev.sql` for local API smoke without Workbench.) See [`DEV_RUNBOOK.md`](../website/DEV_RUNBOOK.md) §Registry catalog.
+(`cargo xtask db seed` applies `registry_dev.sql` for local API smoke without Workbench.) See [`DEV_RUNBOOK.md`](../website/DEV_RUNBOOK.md) §Registry catalog.
 
 ---
 
@@ -155,4 +155,4 @@ cargo xtask mod dev-bootstrap
 | Wire | `TacticalMap.tsx` → `loadDemForTerrain` |
 | Browser | `vite.config.ts` `pngjs→browser`; `buffer` in `DemTexture.ts` |
 
-Verify: `npm test` + `make verify-terrain-strict`
+Verify: `npm test` + `cargo xtask ci verify-terrain-strict`

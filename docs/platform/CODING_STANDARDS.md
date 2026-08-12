@@ -12,17 +12,17 @@
 >
 > **One exception, and it is a real one: GO-7 (`@route` ⇄ router) is LIVE.** It was ported to the
 > Axum crate at T-586 as [`scripts/verify-route-tags.sh`](../../scripts/verify-route-tags.sh) and is
-> run by `make verify-coding-standards` and both `scripts/platform/wave.sh` gate lanes. Its §2 and
+> run by `cargo xtask ci verify-coding-standards` and both `scripts/platform/wave.sh` gate lanes. Its §2 and
 > §10 rows are current, not historical. GO-7 spent the whole Go→Rust rewrite dead precisely because
 > a blanket "that's all retired" reading was easier than checking — see the §2 note (T-590).
 >
 > **Live layout:** `apps/website/api/` (`website-api`) · `apps/website/frontend/` (`website-frontend`).
 > CI jobs: `website-api` / `website-frontend`. Conventions: [`WHERE_DOES_X_GO.md`](WHERE_DOES_X_GO.md).
 >
-> **Live enforcement:** `cargo fmt --check` + `cargo clippy -D warnings` + `make wasm-ci` +
-> `make ci-local-leptos` + `make leptos-gates` + `make verify-no-python` + schema/citations +
-> `make verify-coding-standards` (file length, doc layout, no `SELECT *`, **GO-7 route tags**) +
-> editorconfig — all via **`make ci-local`** / `ci.yml`. §4 (HTTP contract), §5 (Enfusion),
+> **Live enforcement:** `cargo fmt --check` + `cargo clippy -D warnings` + `cargo xtask mk wasm-ci` +
+> `cargo xtask mk ci-local-leptos` + `cargo xtask mk leptos-gates` + `cargo xtask verify no-python` + schema/citations +
+> `cargo xtask ci verify-coding-standards` (file length, doc layout, no `SELECT *`, **GO-7 route tags**) +
+> editorconfig — all via **`cargo xtask ci ci-local`** / `ci.yml`. §4 (HTTP contract), §5 (Enfusion),
 > §6–§9 (testing/formatting/size/logging principles) remain in force, language-neutral.
 >
 > V-suite: `verify|accept` only (freeze mode retired); oracles at `tools/tbd-tools/fixtures/t159/oracle-freeze`.
@@ -47,7 +47,7 @@ returns, how big a file may grow, and — critically — **which tool checks eac
 DB/audit errors), god-files (`admin.tsx` 1628 L, `doctrine.tsx` 1289 L, `events.go` 1041 L), and
 inconsistent error envelopes. This document fixes that. Go lint is **gated by the full
 [`apps/website/.golangci.yml`](../../apps/website/.golangci.yml) set** (revive, errcheck, errorlint,
-staticcheck, govet, cyclop) on every **`ci.yml`** push/PR to `main` and via **`make ci-local`**.
+staticcheck, govet, cyclop) on every **`ci.yml`** push/PR to `main` and via **`cargo xtask ci ci-local`**.
 [`contracts.yml`](../../.github/workflows/contracts.yml) is a path-filtered supplement (no
 `only-new-issues` since **T-125.2**). §10 maps **every rule to the exact tool, config, verify command,
 and T-125 slice** that enforces it.
@@ -78,7 +78,7 @@ other and does not duplicate the text.
 | Gate | Meaning | CI behavior |
 |------|---------|-------------|
 | **CI-BLOCK** | A tool exits non-zero on violation. | Required job in [`ci.yml`](../../.github/workflows) / [`contracts.yml`](../../.github/workflows/contracts.yml). |
-| **CI-SCRIPT** | A repo script exits non-zero on violation. | `node packages/tbd-schema/scripts/…` or `scripts/website/verify-*.sh`, run by `make ci-local`. |
+| **CI-SCRIPT** | A repo script exits non-zero on violation. | `node packages/tbd-schema/scripts/…` or `scripts/website/verify-*.sh`, run by `cargo xtask ci ci-local`. |
 | **ALLOWLIST** | A CI-SCRIPT plus a checked-in allowlist file. | Reads `.coding-standards-allowlist.yaml` (§8.1); an unlisted violation exits non-zero. |
 | **MANUAL** | No static automation is possible (Enfusion runtime / Workbench only). | MUST cite why; **maximum 3** MANUAL rules repo-wide; **FORBIDDEN** for any Go/TS/API rule once T-125.5 ships. |
 
@@ -90,11 +90,12 @@ precisely is not ready to ship.
 
 - **CI-1 (Debuggability) — `only-new-issues` SHALL NOT survive.** After **T-125.2** (shipped),
   [`contracts.yml`](../../.github/workflows/contracts.yml) MUST NOT set `only-new-issues: true` on the
-  golangci job. Gate: **CI-SCRIPT** — [`scripts/website/verify-ci1.sh`](../../scripts/website/verify-ci1.sh),
-  run inside `make ci-local-backend`.
+  golangci job. **RETIRED** — the golangci job died with the Go backend at T-145;
+  `scripts/website/verify-ci1.sh` and the `ci-local-backend` target that ran it are both gone
+  (the latter with the Makefile at T-897). Row kept for the numbering, not as a live gate.
 - **CI-2 (Debuggability) — `ci.yml` SHALL gate every push/PR to `main`.** It MUST run **backend**
-  (Postgres 18, `make test-it`), **frontend** (`npm run lint`/`build`/`test`), and **schema**
-  (`make schema-validate`, `make verify-citations`). Gate: **CI-BLOCK** (the workflow itself). Slice **T-125.1**.
+  (Postgres 18, `cargo xtask db test-it`), **frontend** (`npm run lint`/`build`/`test`), and **schema**
+  (`cargo xtask ci schema-validate`, `cargo xtask ci verify-citations`). Gate: **CI-BLOCK** (the workflow itself). Slice **T-125.1**.
 
 ---
 
@@ -199,7 +200,7 @@ re-checked.
   **CI-SCRIPT** — [`scripts/verify-route-tags.sh`](../../scripts/verify-route-tags.sh), checked in
   **both** directions (every `@route` tag resolves to a registered route, **and** every registered
   route carries a matching tag) across all **102** handlers, keyed on (method, path, handler fn).
-  Wired into `make verify-coding-standards` and both `scripts/platform/wave.sh` gate lanes.
+  Wired into `cargo xtask ci verify-coding-standards` and both `scripts/platform/wave.sh` gate lanes.
   **T-590:** this rule cited `handlers.go` `Register()` and `verify-contract-citations.mjs` until
   now. T-145 deleted both, and GO-7 was unenforced for the whole rewrite — see the note under
   §Backend above for what that cost.
@@ -223,8 +224,8 @@ re-checked.
 
 > Historical: the React SPA was rewritten in Leptos (Rust/wasm) and deleted at T-159.29.3. The
 > contract-mirror intent lives on in `apps/website/frontend/src/dto.rs` (R-api golden round-trip
-> tests); UI gates are `make ci-local-leptos` (fmt + clippy wasm32 + cargo test + trunk release)
-> and `make leptos-gates` (editor CDP smokes + the frozen V-suite).
+> tests); UI gates are `cargo xtask mk ci-local-leptos` (fmt + clippy wasm32 + cargo test + trunk release)
+> and `cargo xtask mk leptos-gates` (editor CDP smokes + the frozen V-suite).
 
 **REQUIRED**
 
@@ -289,7 +290,7 @@ The API speaks **one** error shape. This section is normative for every JSON han
   **T-125.4** — caught + fixed `field_tools.go` 422 `solution`→`details`.
 - **ERR-5 (Usability) — Each status class SHALL have one named integration subtest per resource.**
   e.g. `TestCreateVersion_InvalidPayload_400`, `TestDuplicateSemver_409`, `TestMission_NotFound_404`,
-  `TestVersion_TooLarge_413`. Gate: **CI-BLOCK** (`make test-it`).
+  `TestVersion_TooLarge_413`. Gate: **CI-BLOCK** (`cargo xtask db test-it`).
 
 *The "log on 4xx/5xx" requirement formerly drafted as ERR-3 is consolidated into **LOG-3** (§9).*
 
@@ -317,19 +318,19 @@ This section covers Enfusion **code** behaviour. The networked-code **tags**
 
 **Process (from [`CLAUDE.md`](../../CLAUDE.md)):** do **not** edit `apps/mod` `.c` files unless a ticket
 slice explicitly assigns `claude-code` to that path, and **use `enfusion-mcp` before editing any `.c`
-file**. `make test-it` / the FE build do **not** cover Enfusion; mod changes need a Workbench pass —
+file**. `cargo xtask db test-it` / the FE build do **not** cover Enfusion; mod changes need a Workbench pass —
 this is precisely why ENF-1/ENF-2 are the only sanctioned **MANUAL** gates.
 
 ---
 
 ## 6. Testing — the minimum bar per layer
 
-- **TEST-1 (Debuggability) — A handler behaviour change MUST ship a green `make test-it`.**
+- **TEST-1 (Debuggability) — A handler behaviour change MUST ship a green `cargo xtask db test-it`.**
   Integration tests in `internal/handlers/*_integration_test.go` run against a live Postgres
-  (`make db-up`). Compilation (`go build`) is **not** proof of contract. Gate: **CI-BLOCK** (ci.yml backend).
+  (`cargo xtask db up`). Compilation (`go build`) is **not** proof of contract. Gate: **CI-BLOCK** (ci.yml backend).
 - **TEST-2 (Debuggability) — Non-trivial `features/` hooks & pure utils MUST have a `vitest` test.**
   Compilers, selectors, transforms. `npm test` → `vitest run` (vitest 4.1.9). Gate: **CI-BLOCK** (ci.yml frontend).
-- **TEST-3 (Usability) — A schema/DTO change MUST ship a golden fixture + green `make schema-validate`.**
+- **TEST-3 (Usability) — A schema/DTO change MUST ship a golden fixture + green `cargo xtask ci schema-validate`.**
   Gate: **CI-BLOCK** (ci.yml schema job → `scripts/validate.mjs`).
 
 ---
@@ -340,7 +341,7 @@ this is precisely why ENF-1/ENF-2 are the only sanctioned **MANUAL** gates.
   `test -z "$(gofmt -l apps/website/internal apps/website/cmd)"`.
 - **FMT-2 (Readability) — A root `.editorconfig` governs whitespace** (UTF-8, LF, final newline,
   trailing-whitespace trim; tabs for Go, 2-space for TS/JSON/YAML). Live @ **T-125.5** (`e21dac3`).
-  Gate: **CI-BLOCK** (`editorconfig-checker` via `make verify-editorconfig`).
+  Gate: **CI-BLOCK** (`editorconfig-checker` via `cargo xtask ci verify-editorconfig`).
 - **FMT-3 (Readability) — Prettier is the TS/TSX/CSS formatter-of-record.** eslint keeps lint rules,
   drops formatting opinions via `eslint-config-prettier`; `format` + `format:check` npm scripts.
   Live @ **T-125.5** (one-time repo-wide reformat diff). Gate: **CI-BLOCK** (`npm run format:check`).
@@ -428,9 +429,9 @@ Re=Readability, Us=Usability, De=Debuggability.
 | **GO-2** | De | Handle DB-read errors (no silent `_=`) | CI-BLOCK | golangci `errcheck` (`check-blank: true`) + M6 fixes | `cd apps/website && golangci-lint run ./...` | T-125.2/.4 | live |
 | **GO-3** | De | Best-effort write needs `//nolint:errcheck // best-effort:` | CI-BLOCK | golangci `errcheck` `check-blank: true` | `golangci-lint run ./...` | T-125.2 | live |
 | **GO-4** | De | Wrap propagated errors with `%w` | CI-BLOCK | golangci `errorlint` | `golangci-lint run ./...` | T-125.2 | live |
-| **GO-5** | Us | Dup key → 409 via SQLSTATE `23505` | CI-BLOCK | IT `TestDuplicateSemver_409` + `staticcheck` | `make test-it` | T-125.4 | live |
+| **GO-5** | Us | Dup key → 409 via SQLSTATE `23505` | CI-BLOCK | IT `TestDuplicateSemver_409` + `staticcheck` | `cargo xtask db test-it` | T-125.4 | live |
 | **GO-6** | Re | Exported Godoc starts with name | CI-BLOCK | golangci `revive` `exported` (no `only-new-issues`) | `golangci-lint run ./...` | T-125.2 | live |
-| **GO-7** | Re | Handler `@route` matches the `app.rs` route | CI-SCRIPT | [`scripts/verify-route-tags.sh`](../../scripts/verify-route-tags.sh), both directions (102 handlers) | `make verify-coding-standards` | T-586/T-590 | live |
+| **GO-7** | Re | Handler `@route` matches the `app.rs` route | CI-SCRIPT | [`scripts/verify-route-tags.sh`](../../scripts/verify-route-tags.sh), both directions (102 handlers) | `cargo xtask ci verify-coding-standards` | T-586/T-590 | live |
 | **GO-8** | De | `staticcheck` on; `internal/contract/**` excluded | CI-BLOCK | `.golangci.yml`: `staticcheck` + `linters.exclusions.rules` path | `golangci-lint run ./...` | T-125.2 | live |
 | **GO-9** | Sc | `handlers` imports ⊆ allowed + structural allowlist | CI-SCRIPT | `scripts/website/verify-handler-imports.sh` (import allowlist) | `bash …/verify-handler-imports.sh` | T-125.4 | live |
 | **TS-1** | De | `tsconfig.*.json` `strict:true` (`tsc -b`) | CI-BLOCK | `tsc -b` | `npm run build` | T-125.3 | live |
@@ -438,21 +439,21 @@ Re=Readability, Us=Usability, De=Debuggability.
 | **TS-3** | De | No `any` / unsafe `!` on contract data | CI-BLOCK | eslint `no-explicit-any` + `no-non-null-assertion` | `npm run lint` | T-125.3 | live |
 | **TS-4** | Us | API errors surfaced to user | CI-BLOCK | eslint `no-empty {allowEmptyCatch:false}` (mech = TS-7) | `npm run lint` | T-125.3 | live |
 | **TS-5** | Re | Contract-layer export has TSDoc block | CI-BLOCK | `eslint-plugin-jsdoc` `require-jsdoc` | `npm run lint` | — | live |
-| **TS-6** | Re | Cross-boundary export has `@contract`/`@model` | CI-SCRIPT | `cargo run -p xtask -- schema citations` (tag-content) | `make verify-citations` | T-125.3 | live |
+| **TS-6** | Re | Cross-boundary export has `@contract`/`@model` | CI-SCRIPT | `cargo run -p xtask -- schema citations` (tag-content) | `cargo xtask ci verify-citations` | T-125.3 | live |
 | **TS-7** | Us | Empty/log-only `catch` FORBIDDEN | CI-BLOCK | eslint `no-empty` + `no-empty-function` | `npm run lint` | T-125.3 | live |
-| **ERR-1** | Us | Body = `{error}` (+`details[]`) | CI-BLOCK | IT body-shape asserts on 400/404/409/413 | `make test-it` | T-125.4 | planned |
-| **ERR-2** | Us | Status codes per §4 table | CI-BLOCK | IT status-matrix subtests | `make test-it` | T-125.4 | planned |
+| **ERR-1** | Us | Body = `{error}` (+`details[]`) | CI-BLOCK | IT body-shape asserts on 400/404/409/413 | `cargo xtask db test-it` | T-125.4 | planned |
+| **ERR-2** | Us | Status codes per §4 table | CI-BLOCK | IT status-matrix subtests | `cargo xtask db test-it` | T-125.4 | planned |
 | **ERR-4** | Us | No error key outside `{error,details}` | CI-SCRIPT | `scripts/website/verify-error-envelope.sh` (awk brace-balanced) | `bash …/verify-error-envelope.sh` | T-125.4 | live |
-| **ERR-5** | Us | One named IT per status class per resource | CI-BLOCK | `make test-it` (`Test*_400/404/409/413`) | `make test-it` | T-125.4 | planned |
+| **ERR-5** | Us | One named IT per status class per resource | CI-BLOCK | `cargo xtask db test-it` (`Test*_400/404/409/413`) | `cargo xtask db test-it` | T-125.4 | planned |
 | **ENF-1** | De | Log policy; dev toggles default off | MANUAL | Enfusion runtime — no Enforce-Script static analyser | Workbench pass | T-125.4 | manual |
 | **ENF-2** | De | `// Authority only — <reason>` on gates | MANUAL | Enfusion runtime — no Enforce-Script static analyser | Workbench pass | — | manual |
-| **ENF-3** | Re | `@contract`/`@authority` resolve on `.c` | CI-SCRIPT | `cargo run -p xtask -- schema citations` | `make verify-citations` | T-125.4 | live |
-| **ENF-4** | Us | DTO has validating golden fixture | CI-SCRIPT | `validate.mjs` Enfusion DTO branch (10 fixtures) | `make schema-validate` | T-125.4 | live |
-| **TEST-1** | De | Handler change ⇒ `make test-it` green | CI-BLOCK | `ci.yml` backend (PG18) | `make test-it` | T-125.1 | live |
+| **ENF-3** | Re | `@contract`/`@authority` resolve on `.c` | CI-SCRIPT | `cargo run -p xtask -- schema citations` | `cargo xtask ci verify-citations` | T-125.4 | live |
+| **ENF-4** | Us | DTO has validating golden fixture | CI-SCRIPT | `validate.mjs` Enfusion DTO branch (10 fixtures) | `cargo xtask ci schema-validate` | T-125.4 | live |
+| **TEST-1** | De | Handler change ⇒ `cargo xtask db test-it` green | CI-BLOCK | `ci.yml` backend (PG18) | `cargo xtask db test-it` | T-125.1 | live |
 | **TEST-2** | De | features hooks/utils ⇒ vitest | CI-BLOCK | `ci.yml` frontend | `npm test` | T-125.1 | live |
-| **TEST-3** | Us | Schema change ⇒ validate + fixture | CI-BLOCK | `ci.yml` schema | `make schema-validate` | T-125.1 | live |
+| **TEST-3** | Us | Schema change ⇒ validate + fixture | CI-BLOCK | `ci.yml` schema | `cargo xtask ci schema-validate` | T-125.1 | live |
 | **FMT-1** | Re | gofmt clean | CI-BLOCK | `gofmt -l` empty | `test -z "$(gofmt -l apps/website/internal apps/website/cmd)"` | T-125.1 | live |
-| **FMT-2** | Re | `.editorconfig` honored | CI-BLOCK | `editorconfig-checker` | `make verify-editorconfig` | T-125.5 | live |
+| **FMT-2** | Re | `.editorconfig` honored | CI-BLOCK | `editorconfig-checker` | `cargo xtask ci verify-editorconfig` | T-125.5 | live |
 | **FMT-3** | Re | Prettier for TS/TSX/CSS | CI-BLOCK | `prettier --check` | `npm run format:check` | T-125.5 | live |
 | **SIZE-1** | Sc | >600 L ⇒ WARN | CI-SCRIPT | `verify-file-length.mjs` (warn band) | `node scripts/website/verify-file-length.mjs` | T-125.4 | live |
 | **SIZE-2** | Sc | `tactical-map/**` size-exempt | ALLOWLIST | `.coding-standards-allowlist.yaml` (`reason: MC-perf`) | `node scripts/website/verify-file-length.mjs` | T-125.2 | live |
@@ -460,11 +461,11 @@ Re=Readability, Us=Usability, De=Debuggability.
 | **COMP-1** | Re | Cyclomatic ≤ 15/fn (hard); inline opt-out only | CI-BLOCK | golangci `cyclop` `max-complexity:15` · eslint `complexity:["error",{max:15}]` | `golangci-lint run ./...` · `npm run lint` | T-125.2/.3 | live |
 | **LOG-2** | De | No committed FE `console.log` | CI-BLOCK | eslint `no-console {allow:["warn","error"]}` | `npm run lint` | T-125.3 | live |
 | **LOG-3** | De | 5xx + mutator 4xx log path+status+dur | CI-SCRIPT | `scripts/website/verify-handler-logging.sh` | `bash …/verify-handler-logging.sh` | T-125.4 | live |
-| **CI-1** | De | No `only-new-issues:true` post-T-125.2 | CI-SCRIPT | `scripts/website/verify-ci1.sh` (via `make ci-local-backend`) | `bash scripts/website/verify-ci1.sh` | T-125.2 | live |
-| **CI-2** | De | `ci.yml` gates every push/PR to main | CI-BLOCK | `ci.yml` backend+frontend+schema jobs | `make ci-local` (mirror) | T-125.1 | live |
-| **LANG-1** | Sc | New tooling is Rust in `xtask`; bash only for pre-cargo process glue | CI-SCRIPT | `xtask/src/shell_free.rs` vs [`shell-inventory.txt`](../../scripts/shell-inventory.txt) (58, may only shrink) | `make verify-no-shell` | T-621 | live |
-| **LANG-2** | Sc | Zero `.py`; no new `python3` in `scripts/`/`Makefile` | CI-SCRIPT | [`verify-no-python.sh`](../../scripts/verify-no-python.sh) + [`python-inventory.txt`](../../scripts/python-inventory.txt) (12) — fail-closed via `gate-grep.sh` | `make verify-no-python` | T-162/T-620 | live |
-| **LANG-3** | De | Both inventories are ratchets — new entry fails, stale entry fails | CI-SCRIPT | same two gates, both directions checked | `make verify-no-shell && make verify-no-python` | T-620/T-621 | live |
+| **CI-1** | De | No `only-new-issues:true` post-T-125.2 | — | — (script + `ci-local-backend` target both deleted; golangci job died with the Go backend at T-145) | — | T-125.2 | retired |
+| **CI-2** | De | `ci.yml` gates every push/PR to main | CI-BLOCK | `ci.yml` backend+frontend+schema jobs | `cargo xtask ci ci-local` (mirror) | T-125.1 | live |
+| **LANG-1** | Sc | New tooling is Rust in `xtask`; bash only for pre-cargo process glue | CI-SCRIPT | `xtask/src/shell_free.rs` vs [`shell-inventory.txt`](../../scripts/shell-inventory.txt) (58, may only shrink) | `cargo xtask verify no-shell` | T-621 | live |
+| **LANG-2** | Sc | Zero `.py`; no new `python3` in `scripts/`/`Makefile` | CI-SCRIPT | [`verify-no-python.sh`](../../scripts/verify-no-python.sh) + [`python-inventory.txt`](../../scripts/python-inventory.txt) (12) — fail-closed via `gate-grep.sh` | `cargo xtask verify no-python` | T-162/T-620 | live |
+| **LANG-3** | De | Both inventories are ratchets — new entry fails, stale entry fails | CI-SCRIPT | same two gates, both directions checked | `cargo xtask verify no-shell && cargo xtask verify no-python` | T-620/T-621 | live |
 
 **Count by pillar:** Scalability 8 · Readability 9 · Usability 9 · Debuggability 15 · **41 total.**
 **Count by gate:** CI-BLOCK 24 · CI-SCRIPT 14 · ALLOWLIST 1 · MANUAL 2 (ENF-1, ENF-2 — Enfusion only).
@@ -472,7 +473,7 @@ Re=Readability, Us=Usability, De=Debuggability.
 ### 10.1 CI scripts inventory
 
 Enforcement artefacts in the repo (T-125.1–.4). Primary workflow:
-[`.github/workflows/ci.yml`](../../.github/workflows/ci.yml); local mirror **`make ci-local`**
+[`.github/workflows/ci.yml`](../../.github/workflows/ci.yml); local mirror **`cargo xtask ci ci-local`**
 (CODING_STANDARDS §11).
 
 | Script / artefact | Rules it satisfies | Slice | Status |
@@ -485,48 +486,48 @@ Enforcement artefacts in the repo (T-125.1–.4). Primary workflow:
 | [`verify-handler-logging.sh`](../../scripts/website/verify-handler-logging.sh) | LOG-3 | T-125.4 | live |
 | [`verify-file-length.mjs`](../../scripts/website/verify-file-length.mjs) | SIZE-1, SIZE-3 | T-125.4 | live |
 | [`validate.mjs`](../../packages/tbd-schema/scripts/validate.mjs) Enfusion DTO branch | ENF-4 | T-125.4 | live |
-| **`make verify-coding-standards`** (meta target) | GO-1, GO-9, ERR-4, LOG-3, SIZE-1, SIZE-3 | T-125.4 | live |
+| **`cargo xtask ci verify-coding-standards`** (meta target) | GO-1, GO-9, ERR-4, LOG-3, SIZE-1, SIZE-3 | T-125.4 | live |
 | [`verify-editorconfig`](../../Makefile) (`editorconfig-checker` + `.editorconfig-checker.json`) | FMT-2 | T-125.5 | live |
 | Prettier + `eslint-config-prettier` (`apps/website/frontend/`) | FMT-3 | T-125.5 | live |
 | [`.coding-standards-allowlist.yaml`](../../.coding-standards-allowlist.yaml) | SIZE-2, SIZE-3, GO-9 structural | T-125.2/.4 | live |
 
 ## 11. Verify — replay block
 
-`make ci-local` (T-125.1) is the single command that runs the whole gate; the ordered pieces below are
+`cargo xtask ci ci-local` (T-125.1) is the single command that runs the whole gate; the ordered pieces below are
 what it wraps. Each line names the rules it satisfies; `# after T-125.X` marks a piece that does not
 exist until that slice ships.
 
 ```bash
-make ci-local                          # whole gate; needs `make db-up`
+cargo xtask ci ci-local                          # whole gate; needs `cargo xtask db up`
 
 # 0. EditorConfig (FMT-2) — first in ci-local
-make verify-editorconfig
+cargo xtask ci verify-editorconfig
 # 0b. Language gates (LANG-1/2/3) — also a dedicated `language-gates` job in ci.yml and a
 #     wave-gate step. Wired in three places on purpose: T-620 found verify-no-python had been
 #     RED for four waves while living only in ci-local, which nothing runs by default.
-make verify-no-python                  # LANG-2/3 — .py ban + ratcheted python3 inventory
-make verify-no-node                    # T-165.10 — .mjs/.cjs ban
-make verify-no-shell                   # LANG-1/3 — shell ratchet (58 .sh, may only shrink)
+cargo xtask verify no-python                  # LANG-2/3 — .py ban + ratcheted python3 inventory
+cargo xtask verify no-node                    # T-165.10 — .mjs/.cjs ban
+cargo xtask verify no-shell                   # LANG-1/3 — shell ratchet (58 .sh, may only shrink)
 
 # 1. Rust API + engine crates (website-api job)
 cd apps/website/api && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo build
-make wasm-ci                           # map-engine core/wasm/render fmt + clippy -D + tests
-make test-it                           # backend integration tests (fresh sqlx-migrated DB)
-make verify-coding-standards           # SIZE-1/SIZE-3 + doc layout + no SELECT *
+cargo xtask mk wasm-ci                           # map-engine core/wasm/render fmt + clippy -D + tests
+cargo xtask db test-it                           # backend integration tests (fresh sqlx-migrated DB)
+cargo xtask ci verify-coding-standards           # SIZE-1/SIZE-3 + doc layout + no SELECT *
 
 # 2. Leptos SPA (website-frontend / ci-local-leptos)
 cargo fmt -p website-frontend --check
 cargo clippy -p website-frontend --target wasm32-unknown-unknown
 cargo test -p website-frontend         # R-api goldens
 cd apps/website/frontend && trunk build --release
-# full editor gates (not in ci-local; chromium-driven): make leptos-gates
+# full editor gates (not in ci-local; chromium-driven): cargo xtask mk leptos-gates
 
 # 3. Schema + citations (ci-local-schema)
-make schema-validate                   # TEST-3, ENF-4
-make verify-citations                  # @contract citations + @route route-match, ENF-3
+cargo xtask ci schema-validate                   # TEST-3, ENF-4
+cargo xtask ci verify-citations                  # @contract citations + @route route-match, ENF-3
 ```
 
-> **Gate status (T-171):** Go/React-era rows retired; live `make ci-local` mirrored by **`ci.yml`**
+> **Gate status (T-171):** Go/React-era rows retired; live `cargo xtask ci ci-local` mirrored by **`ci.yml`**
 > jobs `website-api` + `map-engine` + `website-frontend` + schema + editorconfig.
 
 ---
@@ -537,11 +538,11 @@ Cross-link this from [`AGENT_COMMIT_CHECKLIST.md`](../website/AGENT_COMMIT_CHECK
 
 | Language | Before you commit |
 |----------|-------------------|
-| **Go** | Handler thin (logic in `services/`, imports allowlisted)? DB errors handled or `//nolint:errcheck // best-effort:`? Errors `%w`-wrapped? Dup key → 409 via `23505`? `@route` on the handler? `golangci-lint run ./...` + `make test-it` green? |
+| **Go** | Handler thin (logic in `services/`, imports allowlisted)? DB errors handled or `//nolint:errcheck // best-effort:`? Errors `%w`-wrapped? Dup key → 409 via `23505`? `@route` on the handler? `golangci-lint run ./...` + `cargo xtask db test-it` green? |
 | **TS/React** | strict-clean, no `any`? Right layer (`pages`/`features`/`ui`)? No empty catch? `@contract`/`@model` on cross-boundary types? `npm run format:check && npm run lint && npm test && npm run build` clean? |
 | **Errors** | `{ error, details? }` only (no other keys)? Right status from the §4 table? Named IT per status class? |
 | **Enfusion** | `enfusion-mcp` consulted? Dev toggles default off? Gates commented? Tags per DOC_STANDARDS §6–§7? Slice assigns `claude-code` to this `.c`? |
-| **Always** | File ≤ 1000 L (or allowlisted) and ≤ 600 L ideally? Function complexity ≤ 15 (or inline opt-out w/ reason)? `make verify-citations` covers `@route` + `@model`; `make ci-local` is the full gate — **no commit without `make ci-local` green** (post T-125.1). Doc-comments updated in the **same commit** (DOC_STANDARDS §1)? |
+| **Always** | File ≤ 1000 L (or allowlisted) and ≤ 600 L ideally? Function complexity ≤ 15 (or inline opt-out w/ reason)? `cargo xtask ci verify-citations` covers `@route` + `@model`; `cargo xtask ci ci-local` is the full gate — **no commit without `cargo xtask ci ci-local` green** (post T-125.1). Doc-comments updated in the **same commit** (DOC_STANDARDS §1)? |
 
 ---
 

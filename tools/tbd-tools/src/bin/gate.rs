@@ -53,7 +53,7 @@ enum Cmd {
         dist: Option<String>,
     },
     /// T-177 — fail-fast editor-gate preflight: pins + RAM/orphans + a ~15 s liveness probe.
-    /// A prerequisite of `make leptos-gates`; a wedge fails here with a diagnosis, not a 130 s hang.
+    /// A prerequisite of `cargo xtask mk leptos-gates`; a wedge fails here with a diagnosis, not a 130 s hang.
     Doctor {
         #[arg(long)]
         dist: Option<String>,

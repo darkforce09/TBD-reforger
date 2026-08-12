@@ -1,4 +1,4 @@
--- T-263 — Vehicle Database / IFF seed for `make seed`.
+-- T-263 — Vehicle Database / IFF seed for `cargo xtask db seed`.
 -- Rows match the content_golden §5 vehicle_databases block so a fresh DB has
 -- the same IFF table the GET /vehicle-database golden was captured against.
 -- Idempotent on primary key.

@@ -97,7 +97,7 @@ pub fn run() -> Result<u8> {
     }
 
     println!(
-        "==> done. Watch the `make api` terminal for: CreateVersion: mission={mid} content_length=… status=…"
+        "==> done. Watch the `cargo xtask mk rust-api` terminal for: CreateVersion: mission={mid} content_length=… status=…"
     );
     Ok(0)
 }

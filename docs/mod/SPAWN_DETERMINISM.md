@@ -17,16 +17,16 @@ PASS/FAIL results.
 
 **Prerequisite (hard):** a live **Arma Reforger Workbench** with the Net API
 listening (default `:5775`, override `ENFUSION_WORKBENCH_PORT`). There is **no
-headless / CI path** — `make ci-local` and `wave.sh gate` do **not** invoke this
+headless / CI path** — `cargo xtask ci ci-local` and `wave.sh gate` do **not** invoke this
 gate.
 
 ```bash
 # Fail-fast: is Workbench Net API up? (exit 2 + how-to if not; seconds, not minutes)
-make mod-spawn-determinism-preflight
+cargo xtask mod spawn-determinism --preflight
 
 # Full gate (preflight first, then N Workbench restart + play cycles)
-make mod-spawn-determinism              # RUNS=5 default
-make mod-spawn-determinism RUNS=3
+cargo xtask mod spawn-determinism              # 5 runs by default
+cargo xtask mod spawn-determinism 3
 
 # Direct xtask (same semantics)
 cargo run -q -p xtask -- mod spawn-determinism --preflight
@@ -39,8 +39,8 @@ cargo run -q -p xtask -- mod spawn-determinism 5 worlds/TBD_Dev_POC.ent
 | `TBD_DET_TIMEOUT` | `120` | Seconds to wait for `[TBD][Audit]` per run |
 | `TBD_DET_KEEP` | `0` | `1` keeps `/tmp/tbd-spawn-det.*` snapshots on PASS |
 
-Offline MCP (no Workbench): `make mcp-selftest`. Live connect smoke only:
-`make mcp-smoke`.
+Offline MCP (no Workbench): `cargo xtask mcp selftest`. Live connect smoke only:
+`cargo xtask mcp smoke`.
 
 ---
 

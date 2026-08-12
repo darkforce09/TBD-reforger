@@ -1,10 +1,24 @@
 //! Unit tests for [`crate::mk_ci`] (SIZE split — keep `mk_ci.rs` under 600, as `mod_wave` does).
 //!
-//! The load-bearing one is [`makefile_recipes_match_the_table`]. T-896 carries `rust-ci`,
-//! `ci-local-leptos`, `rust-test` and `rust-test-it` recipes that belong to T-894/T-895's lanes,
-//! because `ci-local` / `test` / `build` cannot honestly report a result without running them.
-//! A carried recipe is a copy, and a copy rots — so while the Makefile is still on disk, every
-//! row of [`TASKS`] is diffed against the recipe it claims to reproduce, mine and theirs alike.
+//! ── WHAT DIED WITH THE MAKEFILE, AND WHAT REPLACED IT (T-897) ────────────────────────────────
+//!
+//! T-896's load-bearing test was `makefile_recipes_match_the_table`: it parsed the root Makefile
+//! and diffed every [`TASKS`] row against the recipe it claimed to reproduce, because `ci-local` /
+//! `test` / `build` carry recipes belonging to T-894/T-895's lanes and a carried copy rots. Three
+//! more (`help_text_matches_the_makefile`, `doc_layout_recipe_message_is_pinned`,
+//! `list_gates_equals_the_makefile_schema_validate_set`) had the same subject.
+//!
+//! T-897 deleted that file. Each of the four was written with an `if !Makefile.exists() { return }`
+//! guard, i.e. each would have gone QUIET rather than red — the exact defect class this program
+//! exists to kill, sitting inside the tests written to prevent it. They are DELETED, not left to
+//! return early, and the properties worth keeping moved to subjects that still exist:
+//!
+//! | retired test | successor |
+//! |---|---|
+//! | `makefile_recipes_match_the_table` | [`ci_local_step_set_is_frozen`] — the composite's step list, by name |
+//! | `list_gates_equals_the_makefile_schema_validate_set` | [`list_gates_equals_the_wave_gate_constant`] (already existed, unguarded) |
+//! | `doc_layout_recipe_message_is_pinned` | [`doc_layout_predicate_reproduces_finds_globs`] — behaviour, not message text |
+//! | `help_text_matches_the_makefile` | nothing needed: `help` renders FROM `TASKS`, so there is no second copy left to drift |
 
 use super::*;
 
@@ -17,178 +31,44 @@ fn root() -> PathBuf {
         .to_path_buf()
 }
 
-/// Recipe lines of `<target>` from the Makefile, `$(MAKE)`/`$(WEB)` expanded, continuations
-/// joined, `@#` comment-only lines dropped.
+/// `ci-local`'s steps, in order, as `Step::Task` names plus the echo of anything that is not one.
 ///
-/// A second, deliberately independent parse: `xtask/src/wave/schema.rs` has one too, and the
-/// point of two implementations is that they must agree. Same three shapes handled — blank lines,
-/// column-0 `#`, backslash continuations (T-422).
-fn makefile_recipe(target: &str) -> Vec<String> {
-    let body = std::fs::read_to_string(root().join("Makefile")).expect("Makefile");
-    let lines: Vec<&str> = body.lines().collect();
-    let head = format!("{target}:");
-    let mut i = match lines.iter().position(|l| l.starts_with(&head)) {
-        Some(i) => i + 1,
-        None => panic!("no `{target}:` target in the Makefile"),
-    };
-    let mut out = Vec::new();
-    while i < lines.len() {
-        let l = lines[i];
-        if l.trim().is_empty() || l.starts_with('#') {
-            i += 1;
-            continue;
-        }
-        if !l.starts_with('\t') {
-            break;
-        }
-        let mut line = l[1..].to_string();
-        while line.trim_end().ends_with('\\') {
-            let t = line.trim_end();
-            line = t[..t.len() - 1].to_string();
-            i += 1;
-            if i >= lines.len() {
-                break;
-            }
-            line.push_str(lines[i].trim_start_matches('\t'));
-        }
-        // `$$` is make's escape for a literal `$` reaching the shell (`$$db` in rust-test-it's
-        // reaper loop is the shell's `$db`). Expanding it here is not cosmetic: without it the
-        // parity check would demand the port carry make's escaping into a string make never
-        // hands to sh.
-        let line = line
-            .replace("$(MAKE)", "make")
-            .replace("$(WEB)", "apps/website/api")
-            .replace("$$", "$");
-        // `@# …` is a silenced shell comment — a no-op, not a step.
-        if !line.trim_start_matches(['@', '-']).starts_with('#') {
-            out.push(line);
-        }
-        i += 1;
-    }
-    out
-}
-
-/// A step rendered back into the Makefile recipe line it claims to reproduce.
-fn render(s: &Step) -> Option<String> {
-    Some(match s {
-        Step::Task(n) => format!("make {n}"),
-        Step::Cmd { line, silent } => format!("{}{line}", if *silent { "@" } else { "" }),
-        Step::Xtask { echo, silent, .. } => format!(
-            "{}{}",
-            if *silent { "@" } else { "" },
-            echo.replace("cargo xtask ", "cargo run -q -p xtask -- ")
-        ),
-        Step::Shell {
-            script,
-            silent,
-            ignore_err,
-        } => format!(
-            "{}{script}",
-            if *ignore_err {
-                "-"
-            } else if *silent {
-                "@"
-            } else {
-                ""
-            }
-        ),
-        // The one recipe with no textual equivalent: a shell pipeline replaced by a Rust gate.
-        // Pinned separately by `doc_layout_recipe_message_is_pinned`.
-        Step::Native { .. } => return None,
-    })
-}
-
-fn squeeze(s: &str) -> String {
-    s.split_whitespace().collect::<Vec<_>>().join(" ")
-}
-
-#[test]
-fn makefile_recipes_match_the_table() {
-    if !root().join("Makefile").exists() {
-        // T-897 deletes it. After that there is nothing to diff against and the transition-period
-        // tripwire has done its job; the table is then the only source, as intended.
-        eprintln!("Makefile absent — parity check retired (T-897 deleted it).");
-        return;
-    }
-    for t in TASKS {
-        let recipe = makefile_recipe(t.name);
-        let mine: Vec<String> = t.steps.iter().filter_map(render).collect();
-        let theirs: Vec<String> = match t.steps.first() {
-            // verify-doc-layout: rendered as nothing, pinned by message instead.
-            Some(Step::Native { .. }) => continue,
-            _ => recipe,
-        };
-        assert_eq!(
-            mine.len(),
-            theirs.len(),
-            "{}: {} step(s) in TASKS vs {} recipe line(s) in the Makefile\n  TASKS:    {:#?}\n  Makefile: {:#?}",
-            t.name,
-            mine.len(),
-            theirs.len(),
-            mine,
-            theirs
-        );
-        for (got, want) in mine.iter().zip(theirs.iter()) {
-            // Shell steps carry a joined continuation whose exact whitespace make and sh both
-            // treat as insignificant; everything else is compared byte-for-byte.
-            if got.contains(" | while read -r db;") {
-                assert_eq!(squeeze(got), squeeze(want), "{}", t.name);
-            } else {
-                assert_eq!(got, want, "{} recipe drift", t.name);
-            }
-        }
-    }
-}
-
-#[test]
-fn help_text_matches_the_makefile() {
-    if !root().join("Makefile").exists() {
-        return;
-    }
-    let body = std::fs::read_to_string(root().join("Makefile")).unwrap();
-    for t in TASKS {
-        let head = format!("{}:", t.name);
-        let line = body
-            .lines()
-            .find(|l| l.starts_with(&head))
-            .unwrap_or_else(|| panic!("no `{}` target", t.name));
-        let want = line.split("## ").nth(1).unwrap_or("");
-        assert_eq!(t.help, want, "{}: help text drift", t.name);
-    }
-}
-
-#[test]
-fn doc_layout_recipe_message_is_pinned() {
-    if !root().join("Makefile").exists() {
-        return;
-    }
-    let recipe = makefile_recipe("verify-doc-layout").join(" ");
-    assert!(
-        recipe.starts_with('@'),
-        "verify-doc-layout is expected to be @-silenced; Step::Native prints no echo"
-    );
-    assert!(
-        recipe.contains(DOC_LAYOUT_MSG),
-        "the Rust gate's message no longer matches the recipe's:\n  rust: {DOC_LAYOUT_MSG}\n  make: {recipe}"
-    );
-}
-
-#[test]
-fn list_gates_equals_the_makefile_schema_validate_set() {
-    if !root().join("Makefile").exists() {
-        return;
-    }
-    // Exactly what wave.sh:1598 scrapes today: the trailing word of each `schema <name>` line.
-    let want: Vec<String> = makefile_recipe("schema-validate")
+/// THE SUCCESSOR PIN. `ci-local` is the local replay of `ci.yml`, and the way it goes wrong is
+/// silent subtraction: a step is dropped, the composite still exits 0, and the gate it used to run
+/// stops running with nothing going red. The Makefile parity test caught that by diffing against
+/// the recipe; with no recipe left, the list is frozen HERE.
+fn step_names(t: &Task) -> Vec<String> {
+    t.steps
         .iter()
-        .filter_map(|l| l.split("-p xtask -- schema ").nth(1).map(str::to_string))
-        .collect();
-    let got = validate_gate_names(find("schema-validate").unwrap());
+        .map(|s| match s {
+            Step::Task(n) => (*n).to_string(),
+            other => step_echo(other).unwrap_or("<native>").to_string(),
+        })
+        .collect()
+}
+
+#[test]
+fn ci_local_step_set_is_frozen() {
+    let t = find("ci-local").expect("ci-local row");
     assert_eq!(
-        got, want,
-        "`xtask schema list-gates` drifted from the recipe"
+        step_names(t),
+        vec![
+            "verify-editorconfig",
+            "verify-no-python",
+            "verify-no-node",
+            "verify-no-shell",
+            "rust-ci",
+            "verify-coding-standards",
+            "ci-local-leptos",
+            "ci-local-schema",
+            "verify-t438",
+            "verify-t456",
+            // T-489/T-881: a direct call, deliberately NOT Step::Task("verify-t468"). `gate_t468`
+            // enforces the same thing at runtime; this pins the ORDER and the full set with it.
+            "cargo xtask verify t468",
+        ],
+        "ci-local lost or gained a step — a dropped step silently stops running a gate"
     );
-    assert_eq!(got.len(), 9, "T-420 pinned the set at nine sub-gates");
 }
 
 #[test]

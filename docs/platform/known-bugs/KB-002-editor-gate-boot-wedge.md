@@ -3,13 +3,13 @@
 | | |
 |---|---|
 | **Status** | **RESOLVED** — T-177 (harness now uses the full `chrome` build + `--headless=new`) |
-| **Severity** | High (while active) — the entire editor acceptance gate (`make leptos-gates`) could not run |
+| **Severity** | High (while active) — the entire editor acceptance gate (`cargo xtask mk leptos-gates`) could not run |
 | **Area** | Gate harness (`tools/tbd-tools`) + headless chromium / Skia fontconfig |
 | **Discovered** | 2026-07-19, during T-177 verification |
 
 ## Symptom
 
-`make leptos-gates` (or `gate smoke <name>`) hangs, then fails after ~130 s with:
+`cargo xtask mk leptos-gates` (or `gate smoke <name>`) hangs, then fails after ~130 s with:
 
 ```
 gate: driver error: cdp: ws call timed out (Runtime.evaluate)
@@ -47,7 +47,7 @@ processes. Basic CDP + WebGL2 both worked. The decisive evidence was chromium's 
   fixed a latent path bug: playwright's full-chrome dir is `chrome-linux64`, not `chrome-linux`.)
 - **`cdp.rs` `launch`** adds **`--headless=new`** for the full build (the shell is always headless and
   ignores it).
-- **Fail-fast:** `gate doctor` (a prerequisite of `make leptos-gates`) validates the resolved chromium
+- **Fail-fast:** `gate doctor` (a prerequisite of `cargo xtask mk leptos-gates`) validates the resolved chromium
   and runs a ~15 s liveness probe, so a future recurrence fails in seconds with a diagnosis instead of
   the 130 s hang. Pins live in [`tools/tbd-tools/gate-env.json`](../../../tools/tbd-tools/gate-env.json).
 

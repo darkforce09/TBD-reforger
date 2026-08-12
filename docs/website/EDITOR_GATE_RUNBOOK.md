@@ -1,4 +1,4 @@
-# Editor gate runbook (`make leptos-gates`)
+# Editor gate runbook (`cargo xtask mk leptos-gates`)
 
 How to run the editor CDP smokes + frozen V-suite, the environment they need, and how to debug the
 one failure mode that has bitten hard (a boot wedge). Authority for the "gates must be reproducible +
@@ -8,12 +8,12 @@ Pins: [`tools/tbd-tools/gate-env.json`](../../tools/tbd-tools/gate-env.json).
 ## Run it
 
 ```bash
-make db-up          # Postgres :5434 (hydrate/mutations smokes need the API)
-make api            # Axum API :8080 (migrates on boot)
-make leptos-gates   # trunk release build → gate doctor → editor-suite (18 smokes) → v-suite verify
+cargo xtask db up          # Postgres :5434 (hydrate/mutations smokes need the API)
+cargo xtask mk rust-api            # Axum API :8080 (migrates on boot)
+cargo xtask mk leptos-gates   # trunk release build → gate doctor → editor-suite (18 smokes) → v-suite verify
 ```
 
-`make leptos-gates` runs **`gate doctor` first** (a prerequisite). The doctor validates the resolved
+`cargo xtask mk leptos-gates` runs **`gate doctor` first** (a prerequisite). The doctor validates the resolved
 chromium + toolchain against `gate-env.json`, checks free RAM + orphaned chrome, checks that
 **chromium can resolve a font at all** (T-320 — see wedge mode 4), verifies the `--dist` exists, and
 runs a ~15 s editor liveness probe — so a wedge fails in seconds with a diagnosis, not a 130 s hang.
@@ -41,7 +41,7 @@ demand + gate/editor-path PRs) runs the same, with a Postgres service + a curl-i
   fallback** (see below) — the doctor warns if it resolves to the shell. Pinned build in `gate-env.json`.
 - **Toolchain** pinned by the root [`rust-toolchain.toml`](../../rust-toolchain.toml) (rustc 1.95.0 +
   `wasm32-unknown-unknown`) + trunk. Validated by the doctor.
-- **API on :8080** (`make api`) for the `hydrate` / `mutations` smokes. Most smokes don't need it.
+- **API on :8080** (`cargo xtask mk rust-api`) for the `hydrate` / `mutations` smokes. Most smokes don't need it.
 - **map-assets** (LFS) for `fullmap` / `hillshade` (the full satellite + DEM + world objects).
 - **`?force=webgl&sat=preview`** — the smokes pin the WebGL2/SwiftShader backend (`EDIT_PATH`); the
   default WebGPU/lavapipe path is unreliable headless (`smokes.rs` §force=webgl). `sat=preview` avoids
@@ -147,7 +147,7 @@ demand + gate/editor-path PRs) runs the same, with a Postgres service + a curl-i
   `bin/gate.rs` → `RenderCheckArgs` is the fix (T-320 found it; the CLI is outside that slice).
 - **`gate smoke hydrate` / `mutations` need the API on :8080** and return exit **2** with
   `backend not reachable` when it is down. That is deliberate — they are data-safety gates and a gate
-  it could not run must not report green. Start `make api` rather than reinterpreting the code.
+  it could not run must not report green. Start `cargo xtask mk rust-api` rather than reinterpreting the code.
 - **`gate v-suite` launches its own chromium** (`vsuite.rs`) and therefore does **not** get the
   T-320 gate-owned font cache. It renders ordinary routes, which survive a broken font environment,
   so it is unaffected today; moving `ensure_gate_font_cache()` into `cdp::launch` would close it for

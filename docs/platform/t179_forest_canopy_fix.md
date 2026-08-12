@@ -20,7 +20,7 @@ T-178’s island density lifecycle was correct (one fetch → stitch → single 
 | A | Retry failed bins; arm only at `bins_ok === 625`; bridge + fullmap equality |
 | B | Linear soft fill + corner UVs + fwidth AA iso; hard Nearest path gone |
 | C | One-shot MS hairlines role 6; real `forest_outline_segments` |
-| D | Smokes rewritten; `make leptos-gates` + `make ci-local`; verify log |
+| D | Smokes rewritten; `cargo xtask mk leptos-gates` + `cargo xtask ci ci-local`; verify log |
 
 ## Explicit out of scope
 

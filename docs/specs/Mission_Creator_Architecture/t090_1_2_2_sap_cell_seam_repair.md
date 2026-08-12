@@ -220,7 +220,7 @@ scripts/map-assets/build-tile-pyramid.sh \
   --minzoom 0 --maxzoom 6 --tilesize 256 --lossless
 
 EXPECT_LOSSLESS=1 node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon
-make verify-terrain
+cargo xtask ci verify-terrain
 make ci-local-frontend
 ```
 
@@ -248,7 +248,7 @@ Log: `.ai/artifacts/t090_1_2_2_verify_log.md` (include before/after worst-edge m
 3. **`verify-sap-seams.mjs`** — automated grid-edge gate with documented threshold.
 4. **Re-stitch + verify** — `verify-sap-seams` + `verify-sap-ortho` PASS.
 5. **Pyramid rebuild** — lossless z0–6; `EXPECT_LOSSLESS=1 verify-tile-pyramid` PASS.
-6. **CI gates** — `make verify-terrain` + `make ci-local-frontend`.
+6. **CI gates** — `cargo xtask ci verify-terrain` + `make ci-local-frontend`.
 7. **Verify log** — `.ai/artifacts/t090_1_2_2_verify_log.md` with S1–S4 + analysis summary.
 8. **Commit + tag** `T-090.1.2.2` — **do not** edit docs/registry.
 
@@ -332,7 +332,7 @@ Implement **T-090.1.2.2** — SAP supertexture cell seam repair.
   3. Create verify-sap-seams.mjs (threshold from P0 baseline)
   4. Re-stitch; post-fix analyze; verify-sap-seams + verify-sap-ortho PASS
   5. Rebuild lossless z0–6 pyramid; EXPECT_LOSSLESS=1 verify-tile-pyramid
-  6. make verify-terrain && make ci-local-frontend
+  6. cargo xtask ci verify-terrain && make ci-local-frontend
   7. .ai/artifacts/t090_1_2_2_verify_log.md (S1–S4 + before/after metrics)
   8. Tag **T-090.1.2.2** · prefix **T-090.1.2.2:**
 
@@ -351,7 +351,7 @@ Implement **T-090.1.2.2** — SAP supertexture cell seam repair.
     --out packages/map-assets/everon/tiles/satellite \
     --minzoom 0 --maxzoom 6 --tilesize 256 --lossless
   EXPECT_LOSSLESS=1 node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon
-  make verify-terrain && make ci-local-frontend
+  cargo xtask ci verify-terrain && make ci-local-frontend
 
 ═══ MANUAL ═══
   S1: operator seam location invisible @ max zoom

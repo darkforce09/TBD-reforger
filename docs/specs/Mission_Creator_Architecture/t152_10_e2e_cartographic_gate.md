@@ -41,7 +41,7 @@ T-152 ships across **10+ slices** (parallel agents on `.0`–`.3`, Grok on `.4`�
 | # | Decision | Rationale |
 |---|----------|-----------|
 | L1 | **No open FAIL** in any `t152_*_verify_log.md` | User gate |
-| L2 | **`make ci-local`** (or documented subset) exit 0 on worktree tip | T-125 |
+| L2 | **`cargo xtask ci ci-local`** (or documented subset) exit 0 on worktree tip | T-125 |
 | L3 | Operator **O1–O12** required — Grok assists, cannot self-sign | Human+Grok |
 | L4 | Basemap **Map** radio + cartographic tiles unchanged (no regression to T-090.1.1) | Dual view |
 | L5 | Wasm size logged; no hard regression vs T-152.3 tip | Telemetry |
@@ -78,8 +78,8 @@ T-152 ships across **10+ slices** (parallel agents on `.0`–`.3`, Grok on `.4`�
 | **G3** | **`cd apps/website/frontend && npm test && npm run build && npm run lint` exit 0** | FE |
 | **G4** | **`make wasm` exit 0** | Wasm |
 | **G5** | **`cargo test -p map-engine-core --all-features` exit 0** | Rust |
-| **G6** | **`make map-export-validate` exit 0** | Data |
-| **G7** | **`make schema-validate` exit 0** | Schema |
+| **G6** | **`cargo run -q -p tbd-tools --bin world -- validate-exports` exit 0** | Data |
+| **G7** | **`cargo xtask ci schema-validate` exit 0** | Schema |
 | **G8** | Operator **O1–O12** signed **PASS** in `t152_10_verify_log.md` | Human |
 | **G9** | **`t152_merge_readiness.md` complete** (CI, LFS, promotion) | Process |
 | **G10** | **Zero FAIL rows** in master gate table | Closure |
@@ -96,8 +96,8 @@ git lfs pull && make map-assets-link
 node scripts/map-assets/verify-t152-cartographic.mjs
 
 # Full CI replay (timeboxed; skip db if unavailable)
-make schema-validate
-make map-export-validate
+cargo xtask ci schema-validate
+cargo run -q -p tbd-tools --bin world -- validate-exports
 cargo fmt --check
 cargo clippy --all-targets -- -D warnings
 cargo test -p map-engine-core --all-features

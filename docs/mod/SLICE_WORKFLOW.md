@@ -175,7 +175,7 @@ real. When the index is silent about something that looks engine-level, probe be
 **Do NOT** let an agent rely on training-data knowledge of Enfusion. It is a niche language and the
 model's priors are wrong. An agent asked to summarise one CRF file invented four APIs that do not
 exist (`RequestSlotChange`, `ReleaseSlot`, `GetInstance`, a wrong base class). That incident is why
-every index is mechanically generated and `make verify-oracle` gates prose citations.
+every index is mechanically generated and `cargo run -q -p tbd-tools --bin enf -- citations` gates prose citations.
 
 ## Oracle lanes — what each one is licensed for
 
@@ -205,7 +205,7 @@ legitimately absent. Refusing there would break `new` everywhere but that one ma
 that is not a correctness problem. Absence is loud, and design work that would have cited it must
 **stop and ask, not guess**. Point the lane elsewhere with `TBD_PS_ORACLE=/path/to/PlayableSelector-main`.
 
-**The gate.** `make verify-no-crf-leak` (name kept for the wave runner; it now covers every lane)
+**The gate.** `cargo xtask verify no-crf-leak` (name kept for the wave runner; it now covers every lane)
 fails the build on a `CRF_` **or** `PS_` identifier in `apps/mod/tbd-framework/**`, and on any
 oracle-only asset GUID reused in ours. Comments naming an oracle are allowed and encouraged —
 citing what you design-mirrored is the practice we want; it is the prefix in *code* that fails.
@@ -237,17 +237,17 @@ misread it "fixed" a working toolchain and destroyed 2.6 GB of build artifacts.
 
 ```bash
 cargo run -q -p xtask -- mod compile          # 0 clean
-distrobox-host-exec make mod-compile-selftest # gate still catches a broken .c
-distrobox-host-exec make verify-capability    # 0 UNTRIAGED
-distrobox-host-exec make verify-oracle        # every @idx resolves
-distrobox-host-exec make verify-no-crf-leak   # no oracle code in prod (CRF + PlayableSelector)
+distrobox-host-exec cargo xtask mod compile-selftest # gate still catches a broken .c
+distrobox-host-exec cargo run -q -p tbd-tools --bin enf -- capability    # 0 UNTRIAGED
+distrobox-host-exec cargo run -q -p tbd-tools --bin enf -- citations        # every @idx resolves
+distrobox-host-exec cargo xtask verify no-crf-leak   # no oracle code in prod (CRF + PlayableSelector)
 distrobox-host-exec ./scripts/ticket check    # registry valid
 distrobox-host-exec cargo test -p tbd-tools --lib enf::
 ```
 
 ## Known-broken, unrelated to slices
 
-`make schema-validate` exits 2 on `PNG decode: Invalid PNG signature`. **Pre-existing and not a
+`cargo xtask ci schema-validate` exits 2 on `PNG decode: Invalid PNG signature`. **Pre-existing and not a
 slice regression** — proved by stashing slice edits and re-running on a clean tree. Cause:
 `git-lfs` is not installed, so `packages/map-assets/everon/dem/everon-dem-16bit.png` is a 133-byte
 LFS pointer rather than an image. The golden-mission checks inside that target still PASS; it is the

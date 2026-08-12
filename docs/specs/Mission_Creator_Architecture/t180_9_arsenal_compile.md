@@ -115,8 +115,8 @@ cargo test -p map-engine-core derives_from_editor_sorted_by_index
 rg -n 'loadout: String::new\(\)' crates/map-engine-core/src/mission/orbat.rs && exit 1 || true
 rg -n 'loadout\.is_empty' crates/map-engine-core/src/mission/orbat.rs
 cargo test -p map-engine-core --lib
-make test-it
-make ci-local-leptos
+cargo xtask db test-it
+cargo xtask mk ci-local-leptos
 ```
 
 ## Manual
@@ -202,8 +202,8 @@ Implement **T-180.9** — Open Arsenal + orbat[] compile/derive loadout truth.
   # I5: hardcode gone
   if rg -n 'loadout: String::new\(\)' crates/map-engine-core/src/mission/orbat.rs; then exit 1; fi
   cargo test -p website-frontend open_arsenal_selects_arsenal_tab
-  make test-it
-  make ci-local-leptos
+  cargo xtask db test-it
+  cargo xtask mk ci-local-leptos
 
 ═══ MANUAL ═══
   M-I1 Event/orbat shows kit text · M-I2 Open Arsenal same as Attributes · M-I3 Export filled

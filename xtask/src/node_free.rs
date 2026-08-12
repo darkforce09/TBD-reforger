@@ -225,9 +225,29 @@ pub fn gen_font_table(bdf_path: &Path) -> Result<u8> {
 
 /* ─────────────────────────── verify no-node (T-165.10 hard gate) ─────────────────────────── */
 
+/// Files this gate declares it scans, over and above the [`SCAN_DIRS`] walk. A declared path that
+/// is MISSING is a FAILURE, never a silent narrowing — see [`verify_no_node`].
+///
+/// `Makefile` sat here until T-897 deleted it. It is removed rather than left to fail, and the
+/// fail-closed rule below is the price of that removal: the next deletion cannot quietly shrink
+/// the gate's reach the way this one could have.
+const SCAN_FILES: &[&str] = &[];
+
+/// Directory roots walked for `.sh` / `.yml` / `.yaml`. Same rule: declared-but-absent FAILS.
+const SCAN_DIRS: &[&str] = &["scripts", ".github"];
+
 /// The closure gate: (1) zero tracked `.mjs`/`.cjs` outside `apps/mod`; (2) no `node `/`npx `
-/// invocations in the Makefile, scripts/, or workflows outside the enfusion-mcp floor
+/// invocations under [`SCAN_DIRS`] / [`SCAN_FILES`] outside the enfusion-mcp floor
 /// (`xtask mcp call` `.js` runner tiers in gate_mcp_call.rs); (3) zero `actions/setup-node` in CI.
+///
+/// ── T-897: WHY THE DECLARED LIST FAILS CLOSED ────────────────────────────────────────────────
+///
+/// Check (2) used to open its subjects with `let Ok(text) = read_to_string(path) else { return }`
+/// and hardcode `scan(root.join("Makefile"))`. Deleting the Makefile would therefore have REMOVED
+/// one third of the gate's reach while it went on printing `OK (none)` — the defect class T-853
+/// exists to kill: a check whose subject is a file, where deleting the file retires the check
+/// instead of failing it. Subjects are now DECLARED ([`SCAN_FILES`] / [`SCAN_DIRS`]) and a
+/// declared subject that cannot be read is reported as a failure with its cause.
 pub fn verify_no_node() -> Result<u8> {
     let root = repo_root()?;
     let mut fails = 0u64;
@@ -252,24 +272,79 @@ pub fn verify_no_node() -> Result<u8> {
         fails += 1;
     }
 
-    println!(
-        "==> node/npx invocations in Makefile + scripts/ + .github/ (allowlist: enfusion-mcp floor)"
-    );
+    let declared: String = SCAN_FILES
+        .iter()
+        .copied()
+        .chain(SCAN_DIRS.iter().copied())
+        .collect::<Vec<&str>>()
+        .join(" + ");
+    println!("==> node/npx invocations in {declared} (allowlist: enfusion-mcp floor)");
     // Files allowed to invoke node/npx: the enfusion-mcp runner tiers only.
-    // Floor moved to xtask/src/gate_mcp_call.rs (not scanned here — Makefile/scripts/.github only).
+    // Floor moved to xtask/src/gate_mcp_call.rs (not scanned here — SCAN_DIRS/SCAN_FILES only).
     let allow_files: &[&str] = &[];
     let mut offenders: Vec<String> = Vec::new();
-    let mut scan = |path: &Path| {
-        let Ok(text) = std::fs::read_to_string(path) else {
-            return;
+    let mut unreadable: Vec<String> = Vec::new();
+    let mut missing: Vec<String> = Vec::new();
+
+    fn walk_scripts(dir: &Path, acc: &mut Vec<PathBuf>, unreadable: &mut Vec<String>) {
+        let rd = match std::fs::read_dir(dir) {
+            Ok(rd) => rd,
+            Err(e) => {
+                unreadable.push(format!("{}: {e}", dir.display()));
+                return;
+            }
         };
+        for e in rd.filter_map(|e| e.ok()) {
+            let p = e.path();
+            let name = e.file_name().to_string_lossy().into_owned();
+            if p.is_dir() {
+                if name != "node_modules" && name != "__pycache__" {
+                    walk_scripts(&p, acc, unreadable);
+                }
+            } else if name.ends_with(".sh") || name.ends_with(".yml") || name.ends_with(".yaml") {
+                acc.push(p);
+            }
+        }
+    }
+
+    // Resolve every declared subject FIRST. Absent is a failure, not a smaller scan.
+    let mut subjects: Vec<PathBuf> = Vec::new();
+    for f in SCAN_FILES {
+        let p = root.join(f);
+        if p.is_file() {
+            subjects.push(p);
+        } else {
+            missing.push((*f).to_string());
+        }
+    }
+    let mut targets: Vec<PathBuf> = Vec::new();
+    for d in SCAN_DIRS {
+        let p = root.join(d);
+        if p.is_dir() {
+            walk_scripts(&p, &mut targets, &mut unreadable);
+        } else {
+            missing.push((*d).to_string());
+        }
+    }
+    subjects.extend(targets.iter().cloned());
+
+    for path in &subjects {
         let rel = path
             .strip_prefix(&root)
             .unwrap_or(path)
             .to_string_lossy()
             .into_owned();
+        let text = match std::fs::read_to_string(path) {
+            Ok(text) => text,
+            Err(e) => {
+                // NOT a silent `continue`. A subject this gate claims to scan and cannot read is a
+                // check that did not happen, and a check that did not happen is not a pass.
+                unreadable.push(format!("{rel}: {e}"));
+                continue;
+            }
+        };
         if allow_files.contains(&rel.as_str()) {
-            return;
+            continue;
         }
         for (i, line) in text.lines().enumerate() {
             let t = line.trim_start();
@@ -277,7 +352,7 @@ pub fn verify_no_node() -> Result<u8> {
                 continue; // comments may reference the floor
             }
             // invocation shapes only: `node <arg>` / `npx <arg>` in command position
-            // (drop inline `##` help text first — Makefile target docs may NAME the ban).
+            // (drop inline `##` help text first — a task's help line may NAME the ban).
             let code = line.split("##").next().unwrap_or(line);
             let hit = code.split(&['|', ';', '&', '(', ')'][..]).any(|seg| {
                 let seg = seg.trim_start();
@@ -287,29 +362,24 @@ pub fn verify_no_node() -> Result<u8> {
                 offenders.push(format!("{rel}:{} {}", i + 1, line.trim()));
             }
         }
-    };
-    scan(&root.join("Makefile"));
-    fn walk_scripts(dir: &Path, acc: &mut Vec<PathBuf>) {
-        let Ok(rd) = std::fs::read_dir(dir) else {
-            return;
-        };
-        for e in rd.filter_map(|e| e.ok()) {
-            let p = e.path();
-            let name = e.file_name().to_string_lossy().into_owned();
-            if p.is_dir() {
-                if name != "node_modules" && name != "__pycache__" {
-                    walk_scripts(&p, acc);
-                }
-            } else if name.ends_with(".sh") || name.ends_with(".yml") || name.ends_with(".yaml") {
-                acc.push(p);
-            }
-        }
     }
-    let mut targets = Vec::new();
-    walk_scripts(&root.join("scripts"), &mut targets);
-    walk_scripts(&root.join(".github"), &mut targets);
-    for t in &targets {
-        scan(t);
+    if !missing.is_empty() {
+        println!("FAIL: declared scan subject(s) absent — the gate would have narrowed silently:");
+        for m in &missing {
+            println!("  {m}");
+        }
+        println!(
+            "      Restore the path, or delete it from SCAN_FILES/SCAN_DIRS in xtask/src/node_free.rs"
+        );
+        println!("      in the SAME commit that deletes the file. (T-897)");
+        fails += 1;
+    }
+    if !unreadable.is_empty() {
+        println!("FAIL: declared scan subject(s) unreadable — those bytes were never examined:");
+        for u in &unreadable {
+            println!("  {u}");
+        }
+        fails += 1;
     }
     if offenders.is_empty() {
         println!("  OK (none)");

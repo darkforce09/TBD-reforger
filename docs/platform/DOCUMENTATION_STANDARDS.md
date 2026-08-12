@@ -375,7 +375,7 @@ existing Decisions-log pattern (e.g. the UX Decisions log in
 **Rule 8.2.6 — Agent routing.** Cursor owns all paths under `docs/`. Claude Code MUST NOT create
 markdown under `apps/` except in-code comments per §1.
 
-Enforced by `make verify-doc-layout` (see [`Makefile`](../../Makefile)).
+Enforced by `cargo xtask ci verify-doc-layout` (see [`Makefile`](../../Makefile)).
 
 **Decisions-log entry format** (normative):
 
@@ -403,7 +403,7 @@ it remains **permanently required on hand-written Enforce DTOs** (Enforce has no
 **Mandate**
 
 1. **Generated projections (shipped, Rust-only since T-159.29.3).** Contract types are **generated from**
-   `packages/tbd-schema/schema/*.json` via `make schema-codegen`:
+   `packages/tbd-schema/schema/*.json` via `cargo xtask ci schema-codegen`:
    - Rust → `apps/website/api/src/contract/generated/` (DO NOT hand-edit).
    - Leptos SPA hand-writes `apps/website/frontend/src/dto.rs` gated by R-api golden tests.
    - Enforce Script has no codegen tooling: Enforce DTOs stay hand-written but MUST carry
@@ -422,13 +422,13 @@ it remains **permanently required on hand-written Enforce DTOs** (Enforce has no
 ## 10. CI enforcement gates
 
 Ruthless means enforced. Primary gates live in [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)
-(`make ci-local`); path-filtered supplements in `contracts.yml` / `schema.yml`.
+(`cargo xtask ci ci-local`); path-filtered supplements in `contracts.yml` / `schema.yml`.
 
 | Gate | Tool | Scope |
 |------|------|-------|
 | Rust API / SPA | `cargo fmt` + `clippy -D warnings` | `website-api` + `website-frontend` (`ci.yml` jobs) |
-| Cross-boundary tags | `make verify-citations` (`xtask schema citations`) | `@contract` in `.c/.go/.js/.mjs/.rs/.ts/.tsx` under `apps/`, `crates/`, `packages/` — **code only, never `docs/`** |
-| Route tags | `make verify-coding-standards` (route-tag check) | `@route` against registered routes in `apps/website/api/src/app.rs` |
+| Cross-boundary tags | `cargo xtask ci verify-citations` (`xtask schema citations`) | `@contract` in `.c/.go/.js/.mjs/.rs/.ts/.tsx` under `apps/`, `crates/`, `packages/` — **code only, never `docs/`** |
+| Route tags | `cargo xtask ci verify-coding-standards` (route-tag check) | `@route` against registered routes in `apps/website/api/src/app.rs` |
 | Enfusion DTO conformance | golden fixture + schema validate | each Backend `@contract` DTO has a validating fixture |
 
 > **Historical (retired T-145/T-159):** golangci `exported`, eslint TSDoc — replaced by clippy + rustdoc.
@@ -453,7 +453,7 @@ Prose is therefore held by convention:
 3. `@contract` written in prose is **illustrative**, not a checked link. Checked links live in
    code; a doc that needs one should point at the code that carries it.
 4. A prose citation that genuinely must be machine-checked belongs either in code as a comment
-   tag, or in an index gate of its own (cf. `make verify-oracle` for `@idx` in `docs/mod`).
+   tag, or in an index gate of its own (cf. `cargo run -q -p tbd-tools --bin enf -- citations` for `@idx` in `docs/mod`).
 
 The gate prints its own scope on every run. Trust that line over this section if they disagree.
 

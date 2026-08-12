@@ -49,7 +49,7 @@ exported. No per-item mod provenance.
    (ItemMode first flags), U3 (`SCR_ArsenalItem` shape + catalog coverage %), U4 (last 2
    LoadoutAreaType subclasses) — recorded in the verify log before classifier code lands.
 6. Re-export (one Workbench restart), copy envelopes, `npm run validate`,
-   `make registry-import`, gates G1–G7.
+   `cargo xtask db registry-import`, gates G1–G7.
 
 ## Out of scope
 
@@ -66,14 +66,14 @@ T-068.11 compiler (PARKED) · icons.
 | 4 | `abstract` = filename `*_base.et` OR display `* Base` — flagged, never dropped (bases carry classification signals for descendants). |
 | 5 | Missing weight/volume = `null` (class defaults not serialized) — never guessed. |
 | 6 | `addon` from the per-addon scan root; every `item.addon` ∈ `addons[].name` (validator-enforced). |
-| 7 | All Rust/TS contract changes via `make schema-codegen` — no hand edits to generated files. |
+| 7 | All Rust/TS contract changes via `cargo xtask ci schema-codegen` — no hand edits to generated files. |
 
 ## Verify (gates — all PASS with pasted evidence, `.ai/artifacts/t068_10_2_verify_log.md`)
 
 | # | Assertion | Method |
 |---|-----------|--------|
 | A1 | `cd packages/tbd-schema && npm run validate` green (v3 goldens + strict addon check) | exit 0 |
-| A2 | `make schema-codegen` → zero drift after re-run | `git status` clean |
+| A2 | `cargo xtask ci schema-codegen` → zero drift after re-run | `git status` clean |
 | A3 | `cargo check` + registry integration tests green | exit 0 |
 | G1 | H_measured == H_pred per kind (census §H_old → H_pred) | python diff, zero unexplained |
 | G2 | `gear_primary` has 0 rows in Grenades/Flares/Explosives/Mortars/Cannons/AircraftWeapons categories, 0 `Pod*`/`* Base` names | jq assert, exit 1 on hit |
@@ -89,5 +89,5 @@ T-068.11 compiler (PARKED) · icons.
 - [ ] Schema v3 + codegen + migration + ingest + API + FE types shipped.
 - [ ] Classifier rewrite live; tier counters in export log.
 - [ ] U1–U4 resolved in verify log.
-- [ ] G1–G7 PASS; envelopes committed; `make registry-import` run.
+- [ ] G1–G7 PASS; envelopes committed; `cargo xtask db registry-import` run.
 - [ ] Tag **T-068.10.2**; PAUSE for operator review (census + histogram + picker sanity).

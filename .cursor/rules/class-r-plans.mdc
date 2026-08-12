@@ -143,7 +143,7 @@ Omit only if the artifact is Mode A critique-only (still include evidence for ev
 4. **Must-ship matrix** — every fold/spec lane; close conditions
 5. **Headless CDP matrix** — smoke name, path/query, exact asserts, suite membership, false-green notes
 6. **Infra prerequisites** — e.g. Range/206 on gate serve before sat preview CI
-7. **Ship checklist** — `make leptos-gates`, `make ci-local`, `make verify-no-node`, verify log with pasted JSON/pins, registry sync, tag, push, CI watch
+7. **Ship checklist** — `cargo xtask mk leptos-gates`, `cargo xtask ci ci-local`, `cargo xtask verify no-node`, verify log with pasted JSON/pins, registry sync, tag, push, CI watch
 8. **Explicit not-in-plan** — only legal outs (ticket IDs / quoted deferrals)
 9. **WIP / dirty tree** — if checkout already half-done, first execute step restores buildability
 

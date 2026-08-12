@@ -6,11 +6,11 @@
 **Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)  
 **Spawn parity (separate hub):** [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md)  
 **UX reference:** [`t090_eden_map_reference.md`](t090_eden_map_reference.md)  
-**Export (data-only v2):** [`t090_terrain_export_pipeline.md`](t090_terrain_export_pipeline.md) — `make map-export TERRAIN=<id>`
+**Export (data-only v2):** [`t090_terrain_export_pipeline.md`](t090_terrain_export_pipeline.md) — `cargo xtask map export-terrain <id>`
 
-**Hard gate:** **T-091.0** anchor verify **PASS** (`make verify-terrain-strict` @ `6d96339`). T-071 ORBAT / T-068 Phase 2 loadout still blocked on **T-092.2** mod compile + spawn verify. **Building floor selector** explicitly **out of scope** → **T-129** (`idea`; id renumbered — **T-126** is Fable audit security).
+**Hard gate:** **T-091.0** anchor verify **PASS** (`cargo xtask ci verify-terrain-strict` @ `6d96339`). T-071 ORBAT / T-068 Phase 2 loadout still blocked on **T-092.2** mod compile + spawn verify. **Building floor selector** explicitly **out of scope** → **T-129** (`idea`; id renumbered — **T-126** is Fable audit security).
 
-**Workbench MCP:** shell tooling hardened @ `e7e7232` — [`docs/mod/MCP_TOOLING.md`](../../mod/MCP_TOOLING.md). Offline: `make mcp-selftest`. Live: `cargo xtask mod dev-bootstrap` then `make mcp-smoke`.
+**Workbench MCP:** shell tooling hardened @ `e7e7232` — [`docs/mod/MCP_TOOLING.md`](../../mod/MCP_TOOLING.md). Offline: `cargo xtask mcp selftest`. Live: `cargo xtask mod dev-bootstrap` then `cargo xtask mcp smoke`.
 
 ---
 
@@ -79,7 +79,7 @@ Each slice has its **own spec file** with locked decisions, file touch list, and
 |-------|------|----------|-----------|
 | **T-090.0** | [`t090_0_map_program_hub.md`](t090_0_map_program_hub.md) | cursor-docs | **shipped** |
 | **T-090.0.1** | this hub + slice specs below | cursor-docs | **shipped** — AI cost/taxonomy docs land |
-| **T-090.0.2** | `map-object-*.schema.json` + `golden/map-objects/*` + `verify-map-*` + `verify-t090-spec-consistency` | cursor-docs | **shipped** (this pass) — `make schema-validate` |
+| **T-090.0.2** | `map-object-*.schema.json` + `golden/map-objects/*` + `verify-map-*` + `verify-t090-spec-consistency` | cursor-docs | **shipped** (this pass) — `cargo xtask ci schema-validate` |
 | **T-091.0** | [`t091_0_dem_tile_export.md`](t091_0_dem_tile_export.md) | claude-code | **shipped** @ `6d96339` |
 | **T-091.1** | [`t091_1_dem_loader.md`](t091_1_dem_loader.md) | claude-code | **shipped** @ `2c56c2e` |
 | **T-091.2** | [`t091_2_z_axis_editor.md`](t091_2_z_axis_editor.md) | claude-code | **shipped** @ `dde589e` |
@@ -129,10 +129,10 @@ is closed by a spec + verify gate + slice. Owner constants **N1–N11** are the 
 
 | Gap | Owning spec | Verify gate | Slice |
 |-----|-------------|-------------|-------|
-| GAP-001 forests first-class | [`t090_8_forest_vegetation_regions.md`](t090_8_forest_vegetation_regions.md) | F1–F6 + `make schema-validate` (region golden) | T-090.8 |
-| GAP-002 LOD zoom space | [`t090_render_lod_contract.md`](t090_render_lod_contract.md) | `make t090-spec-verify` gate 3 | T-090.5 |
+| GAP-001 forests first-class | [`t090_8_forest_vegetation_regions.md`](t090_8_forest_vegetation_regions.md) | F1–F6 + `cargo xtask ci schema-validate` (region golden) | T-090.8 |
+| GAP-002 LOD zoom space | [`t090_render_lod_contract.md`](t090_render_lod_contract.md) | `cargo xtask schema t090-specs` gate 3 | T-090.5 |
 | GAP-003 hover/inspect UI | [`t090_9_world_object_interaction.md`](t090_9_world_object_interaction.md) | I1–I8 | T-090.9 |
-| GAP-004 dual-pyramid manifest | `terrain-manifest.schema.json` + [`t090_1_aligned_basemap.md`](t090_1_aligned_basemap.md) | `make schema-validate` (dual + legacy goldens) | T-090.0.2 / .1.1 |
+| GAP-004 dual-pyramid manifest | `terrain-manifest.schema.json` + [`t090_1_aligned_basemap.md`](t090_1_aligned_basemap.md) | `cargo xtask ci schema-validate` (dual + legacy goldens) | T-090.0.2 / .1.1 |
 | GAP-005 Workbench feasibility | [`t090_3_0_workbench_export_spike.md`](t090_3_0_workbench_export_spike.md) | K1–K7 | T-090.3.0 |
 | GAP-H1 Map source / synth | [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md) (N9) | spike S4 | T-090.1.1 |
 | GAP-H2 footprint vs OBB | N6 sentence (t090_2/.5/.6/glyphs + prefab schema) | N6 identical-sentence check | T-090.5 |
@@ -142,11 +142,11 @@ is closed by a spec + verify gate + slice. Owner constants **N1–N11** are the 
 | GAP-H6 legend | [`t090_9_world_object_interaction.md`](t090_9_world_object_interaction.md) | I6 | T-090.9 |
 | GAP-H7 filter/search | [`t090_9_world_object_interaction.md`](t090_9_world_object_interaction.md) | I4 | T-090.9 |
 | GAP-H8 per-phase budget | [`t090_phased_object_import.md`](t090_phased_object_import.md) (N11) | budget tables | T-090.3 / .8 |
-| GAP-M1 manifest closed props | `terrain-manifest.schema.json` | `make schema-validate` | T-090.0.2 |
+| GAP-M1 manifest closed props | `terrain-manifest.schema.json` | `cargo xtask ci schema-validate` | T-090.0.2 |
 | GAP-M2 tile cache/storage | N10 table (basemap + pipeline) | identical-table check | T-090.1.1 |
 | GAP-M3 Z-trust surfaced | [`t090_9_world_object_interaction.md`](t090_9_world_object_interaction.md) badge + [`t090_4_z_placement_audit.md`](t090_4_z_placement_audit.md) | I5 | T-090.9 |
 | GAP-M4 road dashing | [`t090_render_lod_contract.md`](t090_render_lod_contract.md) (PathStyleExtension) | LOD table | T-090.5 |
-| GAP-M5 enum drift | `map-object-enums.schema.json` | `make map-object-enums-verify` | T-090.0.2 |
+| GAP-M5 enum drift | `map-object-enums.schema.json` | `cargo xtask schema map-object-enums` | T-090.0.2 |
 | GAP-M6 AI context pack | [`t090_eden_ai_world_object_schema.md`](t090_eden_ai_world_object_schema.md) + region summaries | A5 | T-090.7 |
 | GAP-M7 empty/export-not-run | [`t090_9_world_object_interaction.md`](t090_9_world_object_interaction.md) | I7 | T-090.9 |
 | L1 atlas budget | [`t090_world_object_glyphs.md`](t090_world_object_glyphs.md) | G4 (atlas bounds) | T-090.5 |
@@ -160,11 +160,11 @@ is closed by a spec + verify gate + slice. Owner constants **N1–N11** are the 
 ## Verify commands (run on every doc/code pass)
 
 ```bash
-make ticket-sync ticket-check-strict
-make schema-validate          # golden missions + terrain manifest + anchors example
-make verify-terrain           # stub OK — manifest ↔ terrains.ts + anchor schema
-make verify-terrain-strict    # T-091.0 gate — GetSurfaceY plugin DEM + ≥10 anchors ±1 m
-make map-census TERRAIN=everon   # pending_export until full T-090.3 export census
+cargo xtask ticket sync ticket-check-strict
+cargo xtask ci schema-validate          # golden missions + terrain manifest + anchors example
+cargo xtask ci verify-terrain           # stub OK — manifest ↔ terrains.ts + anchor schema
+cargo xtask ci verify-terrain-strict    # T-091.0 gate — GetSurfaceY plugin DEM + ≥10 anchors ±1 m
+cargo run -q -p tbd-tools --bin world -- census --terrain everon   # pending_export until full T-090.3 export census
 make ci-local-frontend        # frontend lint + build + unit tests (apps/website/frontend)
 ```
 
@@ -205,8 +205,8 @@ Scripts live in `packages/tbd-schema/scripts/verify-terrain-*.mjs`.
 | [`.ai/artifacts/everon_object_count_baseline.md`](../../../.ai/artifacts/everon_object_count_baseline.md) | Human-readable mirror (updated @ first census) |
 
 ```bash
-make map-census TERRAIN=everon    # after export — writes/validates exact integers
-make schema-validate              # includes verify-type-inventory
+cargo run -q -p tbd-tools --bin world -- census --terrain everon    # after export — writes/validates exact integers
+cargo xtask ci schema-validate              # includes verify-type-inventory
 ```
 | Z burial audit | N/A | T-090.4 pivot + **T-090.6** OBB visibility @ 1M |
 | DEM loader | **`dem/*` + `sampleElevation()`** @ `2c56c2e` — Everon loads in editor; API not wired to toolbelt/slots yet | T-091.1 **shipped** |
@@ -236,7 +236,7 @@ make schema-validate              # includes verify-type-inventory
 
 ```text
 packages/map-assets/
-  terrain-registry.json        # all maps — add row, run make map-export
+  terrain-registry.json        # all maps — add row, run cargo xtask map export-terrain
   {terrainId}/                 # everon, arland, … — identical layout
     manifest.json
     dem/
@@ -270,7 +270,7 @@ Workbench version:
 Plugin: TBD_TerrainExportPlugin.c (GetSurfaceY resample)
 Grid: 6400×6400 @ 2 m
 DEM sha256:
-make verify-terrain-strict: PASS (maxDeltaM, anchor count)
+cargo xtask ci verify-terrain-strict: PASS (maxDeltaM, anchor count)
 Tiles: deferred (T-090.1)
 ```
 
@@ -280,7 +280,7 @@ Full runbook: [`t091_0_dem_tile_export.md`](t091_0_dem_tile_export.md).
 
 ## Acceptance checklist (program-level)
 
-Automated sign-off @ T-091.0: Claude Code completes **A1–A11** in [`t091_0_dem_tile_export.md`](t091_0_dem_tile_export.md) (`make verify-terrain-strict` exit 0). Code slices add **S/M** gates in their own specs.
+Automated sign-off @ T-091.0: Claude Code completes **A1–A11** in [`t091_0_dem_tile_export.md`](t091_0_dem_tile_export.md) (`cargo xtask ci verify-terrain-strict` exit 0). Code slices add **S/M** gates in their own specs.
 
 ---
 

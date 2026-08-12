@@ -7,7 +7,7 @@
 
 **T-071.0 (done):** left Outliner → Editor Layers only; top-strip **ORBAT Manager** browse/select shell. Spec/verify: [`t177_mc_chrome_orbat_cutover.md`](../../platform/t177_mc_chrome_orbat_cutover.md) · [`.ai/artifacts/t177_verify_log.md`](../../../.ai/artifacts/t177_verify_log.md).
 
-**T-180 delivered (was T-071.1+ intent):** foundation graph · map tint + leader lines · Eden side chips · Stitch ORBAT Manager · Faction Library Apply/Save + vehicles · Open Arsenal + `derive_orbat` loadout. Coherency: [`t180_10_program_coherency.md`](t180_10_program_coherency.md) · `make verify-t180`.
+**T-180 delivered (was T-071.1+ intent):** foundation graph · map tint + leader lines · Eden side chips · Stitch ORBAT Manager · Faction Library Apply/Save + vehicles · Open Arsenal + `derive_orbat` loadout. Coherency: [`t180_10_program_coherency.md`](t180_10_program_coherency.md) · `cargo xtask verify t180`.
 
 ---
 

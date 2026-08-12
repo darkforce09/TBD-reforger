@@ -31,7 +31,7 @@ the registry vocabulary; T-164 row registered.
 - Remote tag `T-090.1.2.6` force-pushed from the superseded WIP commit (`3de3d22f`) to the shipped
   commit the registry cites (`b958e3b4`).
 - `verify-t152-cartographic.mjs` wasm size-guard → retired-skip (pkg died with React; crates gated
-  by `make wasm-ci`).
+  by `cargo xtask mk wasm-ci`).
 - **Doc truth:** CLAUDE.md operational sections (Rust backend, real layout, cargo semantics, real
   ci.yml step list); Makefile `tidy` (Go) target deleted + comments; DEV_RUNBOOK all runnable-as-
   written; CODING_STANDARDS §2/§3 + Go/npm gate rows marked **RETIRED** with the live cargo/Leptos

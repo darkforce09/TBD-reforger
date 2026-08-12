@@ -41,7 +41,7 @@ T-060 was the **foundation** (gate, coalesce, API cap, compile progress). **T-06
 
 ### Save
 
-- **360k Save Version → 201** (manual, dev stack `make api && make web`).
+- **360k Save Version → 201** (manual, dev stack `cargo xtask mk rust-api && make web`).
 - Upload phase reaches server (not `!resp` network error).
 - Error messages include axios `code`/`message` when no response (e.g. `ECONNABORTED`, `ERR_NETWORK`).
 - Compiling progress unchanged (worked in manual test).
@@ -49,7 +49,7 @@ T-060 was the **foundation** (gate, coalesce, API cap, compile progress). **T-06
 ### Engineering
 
 - `npm run build && npm run lint` clean.
-- `make test-it` clean.
+- `cargo xtask db test-it` clean.
 - Small mission (<500 slots): no regression.
 
 ---
@@ -217,7 +217,7 @@ proxy: {
 
 ## Verification
 
-1. `make test-it`; `npm run build && npm run lint`.
+1. `cargo xtask db test-it`; `npm run build && npm run lint`.
 2. **~300k mission:** load shows **real %** through phases; completes (record ms).
 3. **Save Version 0.1.x → 201**; GET version returns payload with slot count.
 4. Small mission: instant load, save unchanged.
@@ -298,7 +298,7 @@ proxy: {
 - **`restoring` phase** (`useMissionDoc.ts`): `LoadPhase` includes `'restoring'`; re-weighted bands (restoring 0–15%, download 15–35%, apply 35–55%, local 55–100%); `restoringPhase(done)` with soft curve; rAF poll of `md.entities.slots.size` after `bindStoreToDoc`; `downloadPhase` fixed for unknown `Content-Length`.
 - **`yieldToUi`** (`tactical-map/state/yieldToUi.ts`): `scheduler.yield()` ‖ `setTimeout(0)` + `requestAnimationFrame`; used in `docToSnapshotWithProgress` and `hydrateMissionDocWithProgress` (1k reports for first 10k slots, then 5k).
 - **Overlay** (`MissionCreatorPage.tsx`): restoring → indeterminate sweep + "N objects restored"; other phases → determinate "N / M objects".
-- **Verified:** `npm run build`, `npm run lint`, `make test-it` clean.
+- **Verified:** `npm run build`, `npm run lint`, `cargo xtask db test-it` clean.
 
 ---
 
@@ -316,7 +316,7 @@ proxy: {
   `ECONNRESET` → `ERR_NETWORK`) and hits the API directly. CORS already allows `:5173` — no backend
   change. One-time dev `console.info` on first bypass; `.env.example` documents `VITE_API_DIRECT_URL`
   / `VITE_API_URL`. Small saves + prod keep the proxy default.
-- **Verified:** `npm run build`, `npm run lint`, `make test-it` clean. **Manual verify:** upload ~4% then `ERR_NETWORK` → **T-060.1.3** (measure bytes + debug).
+- **Verified:** `npm run build`, `npm run lint`, `cargo xtask db test-it` clean. **Manual verify:** upload ~4% then `ERR_NETWORK` → **T-060.1.3** (measure bytes + debug).
 
 ---
 
@@ -391,7 +391,7 @@ Requires root `.env` `ALLOWED_ORIGINS=http://localhost:5173` (already set). **Ve
 | **Symptom cheat sheet** | `ERR_NETWORK` @ **0%** in dev → proxy (E3b fixes). `ERR_NETWORK` @ **1%+** → mid-upload (size/logs — T-060.1.3). `413` → body limit. `409` → semver clash. |
 | **Optional `.env.local`** | `VITE_API_URL=http://localhost:8080/api/v1` sends **all** API traffic direct (fine for mission makers; not required after E3b). |
 | **Do NOT** | Raise proxy timeouts further and call it fixed — probe proved ECONNRESET @ ~2 MB regardless of 600s timeout. |
-- `npm run build && npm run lint`; `make test-it`.
+- `npm run build && npm run lint`; `cargo xtask db test-it`.
 
 ### Do not block on
 
@@ -410,7 +410,7 @@ Requires root `.env` `ALLOWED_ORIGINS=http://localhost:5173` (already set). **Ve
 
 **Status:** **O1–O6 complete + manual observability verify passed** @ 367k — exact bytes, route, and axios code captured; failure fully diagnosed (see §Manual verify Save). **Does not fix mid-upload** — that is **T-060.1.4**.
 
-**Implemented (O1–O6):** `lib/missionSize.ts` (`formatBytes`, `estimateCompiledBytes`, `getLocalDocBytes`, `SERVER_VERSION_BODY_LIMIT`); rich `SaveProgress` + `SaveDebugReport` + `SaveResult.debug` with per-phase `console.debug`/failure `console.error`; pre-upload 256 MB gate (exact-bytes message, no POST); `resolveVersionUpload` yields route label (`proxy`/`direct`/`configured`); `onUploadProgress` falls back `bytesTotal = e.total ?? body.size` (the "4%" red herring). UI: toolbelt **SZ** (debounced estimate), Save dialog pre-save estimate + LOC, exact MB during prepare, `loaded / total MB` + route chip during upload, amber >200 MB, copyable **Debug details** on failure. Backend: `CreateVersion` logs entry content-length + exit status/bytes/duration (413 mapping verified). `npm run build`/`lint` + `make test-it` clean.
+**Implemented (O1–O6):** `lib/missionSize.ts` (`formatBytes`, `estimateCompiledBytes`, `getLocalDocBytes`, `SERVER_VERSION_BODY_LIMIT`); rich `SaveProgress` + `SaveDebugReport` + `SaveResult.debug` with per-phase `console.debug`/failure `console.error`; pre-upload 256 MB gate (exact-bytes message, no POST); `resolveVersionUpload` yields route label (`proxy`/`direct`/`configured`); `onUploadProgress` falls back `bytesTotal = e.total ?? body.size` (the "4%" red herring). UI: toolbelt **SZ** (debounced estimate), Save dialog pre-save estimate + LOC, exact MB during prepare, `loaded / total MB` + route chip during upload, amber >200 MB, copyable **Debug details** on failure. Backend: `CreateVersion` logs entry content-length + exit status/bytes/duration (413 mapping verified). `npm run build`/`lint` + `cargo xtask db test-it` clean.
 
 ### Revised diagnosis (2026-06-23 — updated after T-060.1.3 manual verify)
 
@@ -534,7 +534,7 @@ reset the connection mid-stream, which the browser reported as `ERR_NETWORK` at 
 TCP send-buffer overshoot past the 1 MB server read point — exactly the locked
 `bytesLoaded: 5,573,612`). Payload (135 MB) was never near the 256 MB route cap.
 
-### Proven (2026-06-23, curl against `make api`)
+### Proven (2026-06-23, curl against `cargo xtask mk rust-api`)
 
 | Body | Original running binary (stale, skip not applied) | Fresh build + hardened skip |
 |------|---------------------------------------------------|-----------------------------|
@@ -566,7 +566,7 @@ again and catch it in CI.
 - **B-4 not needed:** the route-level `BodyLimit` cap already maps `*http.MaxBytesError` → **413 JSON**
   (verified in IT); the 135 MB body binds via `ShouldBindJSON` in ~1.2 s with no OOM. No streaming rewrite.
 
-**For the user:** if Save still fails after pulling this, **restart `make api`** (the bug was a stale
+**For the user:** if Save still fails after pulling this, **restart `cargo xtask mk rust-api`** (the bug was a stale
 binary) and watch for `CreateVersion: mission=… content_length=141574630 … status=201`.
 
 ---
@@ -588,13 +588,13 @@ T-060.1.3 eliminated guesswork; this slice fixes Save → **201** @ ~367k or pro
 
 ### Goal
 
-**Save Version → 201** @ ~367k / ~135 MB on dev stack (`make api && make web`), **or** fully proven root cause with API terminal log + curl reproduction.
+**Save Version → 201** @ ~367k / ~135 MB on dev stack (`cargo xtask mk rust-api && make web`), **or** fully proven root cause with API terminal log + curl reproduction.
 
 ### Implementation
 
 #### F1 — Correlate server log (mandatory first step)
 
-On Save, watch `make api` for:
+On Save, watch `cargo xtask mk rust-api` for:
 
 ```
 CreateVersion: mission=70a36667-... content_length=141574630
@@ -652,7 +652,7 @@ curl dies mid-upload → server/middleware. curl **201** → browser/axios/memor
 ### T-060.1.4 acceptance
 
 - [x] Version POST → **201** @ **140 MB** via curl (`--data-binary`), clean `content_length`/`status=201` log — the 135 MB save's size class.
-- [x] `make test-it` includes a production-like router with `GlobalBodyLimit` mounted + multi-MB version POST (201) + over-cap (413).
+- [x] `cargo xtask db test-it` includes a production-like router with `GlobalBodyLimit` mounted + multi-MB version POST (201) + over-cap (413).
 - [x] `npm run build && npm run lint` clean; `go build ./...` + `gofmt` clean.
 - [x] Load + small-mission save unchanged (no touched code on those paths; small saves keep the proxy route).
 - [x] Docs synced (see §Documentation sync).
@@ -701,7 +701,7 @@ Partner theory review: backend mid-stream reset is PLAUSIBLE. "5 MB MaxBytesRead
 - Commit until I say. Tag T-060 = single commit T-060..T-060.1.4 after Save → 201
 
 ## PART 0 — Server log (do this FIRST on next Save attempt)
-Watch make api terminal when clicking Save. Look for:
+Watch cargo xtask mk rust-api terminal when clicking Save. Look for:
   CreateVersion: mission=70a36667-... content_length=141574630
 Record whether entry log, 413, 201, or process restart appears. Paste log into commit notes.
 
@@ -732,7 +732,7 @@ Record whether entry log, 413, 201, or process restart appears. Paste log into c
 - Return a short verify report (curl output, test-it, browser Save result) so Cursor can sync docs
 
 VERIFY
-- make test-it; npm run build && npm run lint
+- cargo xtask db test-it; npm run build && npm run lint
 - ~367k Save → 201 OR fully proven with server log + curl
 - Load partial pass unchanged; small mission save unchanged
 - Do NOT commit until I say
@@ -798,7 +798,7 @@ Sync: t060_1 §T-060.1.3, agent_execution, feature_inventory PERF-SAVE-001,
 mission-editor.md, CLAUDE.md, ROADMAP, TAGS.
 
 VERIFY
-- make test-it; npm run build && npm run lint
+- cargo xtask db test-it; npm run build && npm run lint
 - ~360k: toolbelt SZ within ~10% of actual; save dialog shows exact MB
 - Failure shows debug panel (not bare ERR_NETWORK)
 - Save → 201 OR we know exact bytes + server log reason
@@ -841,7 +841,7 @@ PART 4 — DOCS (same pass, no separate commit)
 Sync §Documentation sync table + agent_execution ACTIVE SLICE → T-063 after T-062.2 ship; flip acceptance checkboxes when code lands.
 
 VERIFY
-- make test-it; npm run build && npm run lint
+- cargo xtask db test-it; npm run build && npm run lint
 - ~300k mission (return visit, IDB cache): within 1–2 s "Reading local save…" + count increasing; bar moves through all phases; record wall time
 - Save Version 0.1.x → 201; GET version returns payload
 - Small mission (<500): unchanged

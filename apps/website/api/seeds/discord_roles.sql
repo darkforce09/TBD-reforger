@@ -3,7 +3,7 @@
 -- This is DATA, not schema, so it is NOT run by the boot migration pipeline
 -- (internal/db/db.go). Apply it explicitly after the DB is up and migrated:
 --
---   make seed                       # applies this file via the compose db
+--   cargo xtask db seed                       # applies this file via the compose db
 --   # or: podman exec -i tbd_reforger_db psql -U tbd -d tbd_reforger < internal/db/seeds/discord_roles.sql
 --
 -- How resolution works (see internal/services/role_sync.go::resolveRole):
@@ -31,7 +31,7 @@
 -- Then POST /api/v1/admin/roles/sync (or wait for the T-428 nightly resync).
 --
 -- T-487: clear the orphan placeholder from dirty DBs. INSERT no longer seeds it
--- (T-428), but re-make seed must DELETE leftovers so Squad Leader/leader does not
+-- (T-428), but re-cargo xtask db seed must DELETE leftovers so Squad Leader/leader does not
 -- linger after a seed refresh.
 
 DELETE FROM discord_roles WHERE discord_role_id = '1517290000000000000';

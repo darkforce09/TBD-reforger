@@ -46,7 +46,7 @@ revoked that** — deleted or ported.
 ## Hard gate
 
 ```bash
-make verify-no-python
+cargo xtask verify no-python
 bash scripts/mod/mcp-call-selftest.sh
 cargo clippy -p xtask -- -D warnings
 ```

@@ -65,7 +65,7 @@ No deletes until this exists. Tables:
 - Move API crate root → `apps/website/api/` (src, migrations, tests, Cargo.toml, rust-toolchain as needed)
 - Rename packages to `website-frontend` / `website-api` (or document the single exception with operator ASK if truly blocked)
 - Root workspace, Makefile, CI, Trunk, compose, `.env.example`, scripts, gates — all paths updated
-- Prove `make api` + `make leptos`; `/map-assets` 200; FRONTEND_URL `:3000`
+- Prove `cargo xtask mk rust-api` + `cargo xtask mk leptos`; `/map-assets` 200; FRONTEND_URL `:3000`
 
 ### Phase 2 — Dead code + dual-SoT
 
@@ -82,7 +82,7 @@ No deletes until this exists. Tables:
 
 ### Phase 4 — Tooling one story
 
-- `./scripts/ticket *`, `make leptos-gates`, `make ci-local`, `make verify-no-node`
+- `./scripts/ticket *`, `cargo xtask mk leptos-gates`, `cargo xtask ci ci-local`, `cargo xtask verify no-node`
 - CI job names/paths match `api` + `frontend`
 
 ### Phase 5 — Return for Cursor (T-171.docs) — complete list
@@ -92,9 +92,9 @@ Every stale doc/ADR/rule/ROADMAP/checklist/CLAUDE path string + **“Where does 
 ## Verify (Claude, before tag T-171)
 
 ```bash
-make leptos-gates
-make ci-local
-make verify-no-node
+cargo xtask mk leptos-gates
+cargo xtask ci ci-local
+cargo xtask verify no-node
 ./scripts/ticket check
 test -d apps/website/frontend && test -f apps/website/frontend/Trunk.toml
 test -d apps/website/api && test -f apps/website/api/Cargo.toml

@@ -52,7 +52,7 @@
 
 ```bash
 cd frontend && npm run build && npm run lint
-# make test-it  # if backend touched
+# cargo xtask db test-it  # if backend touched
 ```
 
 **Manual:**
@@ -90,7 +90,7 @@ Read CLAUDE.md first.
 Implement **T-0xx** — {one-line title}.
 
 ═══ PREFLIGHT ═══
-  git pull && make ci-local-leptos  # (map-assets-link retired at T-159.29.3)
+  git pull && cargo xtask mk ci-local-leptos  # (map-assets-link retired at T-159.29.3)
   ./scripts/ticket brief T-0xx
 
 ═══ READ (in order — spec wins on conflict) ═══
@@ -113,7 +113,7 @@ Implement **T-0xx** — {one-line title}.
   - Edit docs/**, registry, docs/TICKET_*.md, CLAUDE status markers
 
 ═══ VERIFY (all exit 0) ═══
-  make ci-local-leptos
+  cargo xtask mk ci-local-leptos
 
 ═══ MANUAL ═══
   - …

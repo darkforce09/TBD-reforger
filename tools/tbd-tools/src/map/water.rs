@@ -884,7 +884,7 @@ pub fn analyze_water_sources() -> Result<u8> {
             "verdict": "G1-B — Eden.topo carries the full ROAD network but NO hydro layer; exact road-corridor SUBTRACTION removes the path/ditch FP class deterministically, enabling a safe wet-channel relaxation that closes the hill-stream/gully FN gap",
             "oceanMask": "A-dem-below-sea-level (UNCHANGED)",
             "inlandMask": "appearance classes (compact + grey-river + wet-channel) computed on the ROAD-SUBTRACTED pixel field; wet-channel relaxed (operator call: carved gully watercourses read as water even when seasonally dry)",
-            "automation": "fully offline: pak (.topo + supertextures) + committed DEM → make map-water-everon; terrain-parameterized (operator one-button requirement) — T-165.9 Rust",
+            "automation": "fully offline: pak (.topo + supertextures) + committed DEM → cargo xtask ci map-water-everon; terrain-parameterized (operator one-button requirement) — T-165.9 Rust",
             "forbiddenMethodsAttestation": "No hand-painted lakes, no AI-generated rivers, no solid rectangles. The subtraction layer is the engine's own map-geometry road network decoded from Eden.topo; water acceptance remains engine-rendered supertexture appearance + engine DEM filters.",
         },
         "params": {

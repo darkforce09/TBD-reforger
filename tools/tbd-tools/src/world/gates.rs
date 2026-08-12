@@ -121,7 +121,7 @@ pub fn verify_phase(terrain: &str, phase: &str) -> Result<u8> {
     let raw_path = staging.join("raw-entities.jsonl");
     if !raw_path.exists() {
         eprintln!(
-            "verify-phase: staged raw missing ({}) — run make map-export first",
+            "verify-phase: staged raw missing ({}) — run cargo xtask map export-terrain first",
             raw_path.display()
         );
         return Ok(2);

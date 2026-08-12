@@ -12,7 +12,7 @@ Post T-159→T-169 the Leptos SPA boots and the editor mounts a full map, but ev
 
 ## Goal
 
-One bug-bash pass so local `make api` + `make leptos` feels usable: shell navigation/selection works, lists scroll smoothly, Mission Creator shows slots + readable forests + CUR X/Y/Z, Arsenal matches the 3D doll reference, editor chrome catches the obvious React parity holes from the operator reference screenshot.
+One bug-bash pass so local `cargo xtask mk rust-api` + `cargo xtask mk leptos` feels usable: shell navigation/selection works, lists scroll smoothly, Mission Creator shows slots + readable forests + CUR X/Y/Z, Arsenal matches the 3D doll reference, editor chrome catches the obvious React parity holes from the operator reference screenshot.
 
 **Operator matrix is the seed, not the ceiling.** Claude Code **must hunt for more bugs** (Phase 0 + during fix), write them into the inventory, and fix them in T-172. Do not only patch the listed A/B rows and call it done.
 
@@ -71,7 +71,7 @@ The operator list is incomplete on purpose. Claude Code **owns finding the rest*
 **Hunt methods (all required in Phase 0):**
 
 1. **Code grep for stubs** — `follow-up`, `later slice`, `gate scope`, `stub`, `TODO`, `unimplemented!`, dead `<button>` with no `on:click`, `pathname.get()` once (non-reactive SPA), `selected = &…[0]` static lists  
-2. **Route click-through** — with `make api` + `make leptos` + dev-login, open every nav item; click primary controls; note dead/wrong/laggy  
+2. **Route click-through** — with `cargo xtask mk rust-api` + `cargo xtask mk leptos` + dev-login, open every nav item; click primary controls; note dead/wrong/laggy  
 3. **Narrow + wide viewport** — hamburger drawer, overlays, horizontal overflow  
 4. **MC smoke path** — place unit, select, Attributes tabs, Arsenal, undo, save dialog chrome, left/right trees expand/collapse  
 5. **Parity vs screen `05` + page docs** — controls present in React reference / docs but missing or stubbed in Leptos  
@@ -111,7 +111,7 @@ Gates green; smokes for new behaviors; verify log; tag **T-172**.
 
 ## Locked decisions
 
-1. **Local-dev focus** — prove on `make api` + `make leptos` (`:8080` / `:3000`). T-170 prod flip stays separate (`human`).
+1. **Local-dev focus** — prove on `cargo xtask mk rust-api` + `cargo xtask mk leptos` (`:8080` / `:3000`). T-170 prod flip stays separate (`human`).
 2. **3D Arsenal in scope** — operator rejected SVG-only; restore T-154 behavior in Leptos (wasm/`DollEngine`, not three.js).
 3. **React screenshot `05` is chrome SoT** for “what’s missing” — not a blank-check full Eden feature dump (markers program stays T-069; vehicles placeable stays T-070) **but** every chrome control visible in `05` that Leptos stubbed/omitted must return or be ASK’d if truly impossible.
 4. **Mod OFF LIMITS.**
@@ -121,8 +121,8 @@ Gates green; smokes for new behaviors; verify log; tag **T-172**.
 ## Verify
 
 ```bash
-make leptos-gates   # exit 0
-make ci-local       # exit 0
+cargo xtask mk leptos-gates   # exit 0
+cargo xtask ci ci-local       # exit 0
 ```
 
 Plus ticket-specific smokes / manual checks recorded in `.ai/artifacts/t172_verify_log.md` covering A1–A2, A4–A6, A9, B2–B4, B6, B10, **and every H-row** from the inventory. Empty Found-by-hunt = incomplete.
@@ -139,7 +139,7 @@ Implement **T-172** — Leptos SPA + Mission Creator bug bash
 
 ═══ PREFLIGHT ═══
   git pull --ff-only
-  make db-up
+  cargo xtask db up
   ./scripts/ticket brief T-172
 
 ═══ READ (in order — spec wins on conflict) ═══
@@ -168,7 +168,7 @@ Implement **T-172** — Leptos SPA + Mission Creator bug bash
   - Phase 0 Found-by-hunt table MUST be non-empty (empty = FAIL)
   - Hunt methods in spec §C all required before large fixes
   - 3D Arsenal via existing wgpu doll path — no three.js
-  - Local prove: make api + make leptos; not T-170
+  - Local prove: cargo xtask mk rust-api + cargo xtask mk leptos; not T-170
   - apps/mod/** OFF LIMITS
   - No inventing Out-of-scope / fold-forward
   - Markers/vehicles placement programs stay T-069/T-070; chrome tabs in
@@ -181,7 +181,7 @@ Implement **T-172** — Leptos SPA + Mission Creator bug bash
   3. Phase 2 perf (A3/B1/B8 + perf H-rows)
   4. Phase 3 MC (B2–B10 + MC H-rows) including 3D Arsenal
   5. Mid-pass: new bugs → new H-rows → fix before tag
-  6. Phase 4: make leptos-gates + make ci-local; t172_verify_log.md
+  6. Phase 4: cargo xtask mk leptos-gates + cargo xtask ci ci-local; t172_verify_log.md
      with Found-by-hunt section
   7. Commit on main T-172: · tag T-172 · push
   8. Return Cursor list only for doc/registry prose
@@ -196,8 +196,8 @@ Implement **T-172** — Leptos SPA + Mission Creator bug bash
   - Leave forest as opaque highlighter green
 
 ═══ VERIFY (all exit 0) ═══
-  make leptos-gates
-  make ci-local
+  cargo xtask mk leptos-gates
+  cargo xtask ci ci-local
   t172_verify_log.md: A1,A2,A4–A6,A9,B2–B4,B6,B10 + every H-row PASS
   Found-by-hunt section non-empty
 

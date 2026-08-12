@@ -255,7 +255,7 @@ async fn boot() -> Option<(Router, PgPool, String)> {
     .await
     .expect("seed suite user");
 
-    // Drop any previous run's rows. `make test-it` always starts from a fresh database, but a
+    // Drop any previous run's rows. `cargo xtask db test-it` always starts from a fresh database, but a
     // repeated local `cargo test` would otherwise accumulate NULL rows until a paginated list
     // endpoint stopped returning the seeded one — which would make KNOWN_OPEN_ROUTES look healed.
     // The schema carries no foreign keys, so order is free.

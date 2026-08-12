@@ -21,9 +21,9 @@
 
 ### Gate harness (same commit)
 
-`make leptos-gates` was wedging ~130 s on `chrome-headless-shell` (SkFontMgr FATAL). Fixed: full Chrome + `--headless=new`. **`gate doctor`** fail-fast preflight (pins, RAM/orphans, ~15 s liveness). Also: `gate-env.json`, root `rust-toolchain.toml`, CI `@stable`→**1.95.0**, `editor-gates.yml`, [`EDITOR_GATE_RUNBOOK.md`](../website/EDITOR_GATE_RUNBOOK.md), KB-002. Caveat: `editor-gates.yml` needs a first `workflow_dispatch` on GitHub.
+`cargo xtask mk leptos-gates` was wedging ~130 s on `chrome-headless-shell` (SkFontMgr FATAL). Fixed: full Chrome + `--headless=new`. **`gate doctor`** fail-fast preflight (pins, RAM/orphans, ~15 s liveness). Also: `gate-env.json`, root `rust-toolchain.toml`, CI `@stable`→**1.95.0**, `editor-gates.yml`, [`EDITOR_GATE_RUNBOOK.md`](../website/EDITOR_GATE_RUNBOOK.md), KB-002. Caveat: `editor-gates.yml` needs a first `workflow_dispatch` on GitHub.
 
-**Gates:** `make leptos-gates` 20/20 · `make ci-local` · 74 frontend tests · fmt/clippy clean.
+**Gates:** `cargo xtask mk leptos-gates` 20/20 · `cargo xtask ci ci-local` · 74 frontend tests · fmt/clippy clean.
 
 ## Why (pre-ship)
 

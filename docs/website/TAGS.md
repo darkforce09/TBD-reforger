@@ -74,7 +74,7 @@ Full shipped scale-program table: [`docs/TICKET_REGISTRY.md`](../TICKET_REGISTRY
 
 1. Edit [`tickets/registry.json`](../../.ai/tickets/registry.json).
 2. `./scripts/ticket sync` (regenerates `TICKET_*.md`, `CLAUDE.md` status block, queue).
-3. `./scripts/ticket check` (or `make ticket-check-strict` before doc-only merges).
+3. `./scripts/ticket check` (or `cargo xtask ticket check --strict` before doc-only merges).
 4. Sync narrative docs per [`AGENT_COMMIT_CHECKLIST.md`](AGENT_COMMIT_CHECKLIST.md).
 
 Do **not** invent a new prefix. If work is not shipped, keep it **`queued`**, **`ready`**, or **`deferred`** in the registry — never reuse a shipped T-ID for new scope.

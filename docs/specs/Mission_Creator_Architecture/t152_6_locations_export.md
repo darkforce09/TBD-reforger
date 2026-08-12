@@ -27,7 +27,7 @@ Town labels (**T-152.8**) need a stable **name + position + importance** feed. M
    - **Primary:** Workbench MCP / plugin enumerate `World/Locations/*` (or `Location` entities) → resolve display name from entity **displayName** / **name** property, not prefab class string.
    - **Fallback B:** Parse Eden `.ent` / pak `Location` resources if MCP blocked — document in `.ai/artifacts/t152_6_locations_spike.json`.
    - **Fallback C (Everon-only):** Curated seed from operator wiki list **only if** A+B fail after one operator ask — must still satisfy G3/G4.
-4. **Validation:** Wire into `make schema-validate` / `validate.mjs`.
+4. **Validation:** Wire into `cargo xtask ci schema-validate` / `validate.mjs`.
 5. **Manifest pointer:** `packages/map-assets/everon/manifest.json` gains `"locations": { "path": "locations.json" }`.
 6. Verify log `.ai/artifacts/t152_6_verify_log.md`.
 
@@ -70,14 +70,14 @@ Town labels (**T-152.8**) need a stable **name + position + importance** feed. M
 
 | Gate | Predicate | Class |
 |------|-----------|-------|
-| **G1** | `make schema-validate` exit 0 including locations schema + sample | Schema |
+| **G1** | `cargo xtask ci schema-validate` exit 0 including locations schema + sample | Schema |
 | **G2** | `locations.json` validates against schema (Ajv) | Schema |
 | **G3** | `count(locations) ≥ N_MIN` (**10** interim, bump after first export) | Census |
 | **G4** | **`REQUIRED_EVERON_TOWNS ⊆ {loc.name}`** (case-insensitive match; allow "Raccoon Rock" vs "RaccoonRock") | Coverage |
 | **G5** | **`∀ loc: name.length ≥ 2 ∧ finite(x,y)`** | Row quality |
 | **G6** | **`∀ loc: ¬/location composition/i.test(name)`** | No placeholder names |
 | **G7** | Spike JSON documents export path **A, B, or C** with evidence | Provenance |
-| **G8** | T-152.5 verify PASS; `make map-export-validate` still PASS | Regression |
+| **G8** | T-152.5 verify PASS; `cargo run -q -p tbd-tools --bin world -- validate-exports` still PASS | Regression |
 
 ---
 
@@ -91,8 +91,8 @@ git lfs pull && make map-assets-link
 node scripts/map-assets/export-locations.mjs --terrain everon
 # or documented Workbench step → locations.json
 
-make schema-validate
-make map-export-validate
+cargo xtask ci schema-validate
+cargo run -q -p tbd-tools --bin world -- validate-exports
 
 node -e "
 const fs=require('node:fs');

@@ -29,7 +29,7 @@ fn psql_argv(ctx: &Ctx, db: &str, flags: &[&str], sql: &str) -> Vec<String> {
 
 /// Bring up a gate-private test database.
 ///
-/// Its own DB, not the Makefile's `rust_it`: slice agents run `make test-it` concurrently, and that
+/// Its own DB, not the Makefile's `rust_it`: slice agents run `cargo xtask db test-it` concurrently, and that
 /// target DROPs and recreates `rust_it`, so sharing it would make the gate race them.
 ///
 /// T-411 / T-490: the IT database is per-wave (`tbd_gate_w<N>`), create-if-missing, with DBs older
@@ -303,7 +303,7 @@ pub fn gate_test_api(ctx: &Ctx) -> i32 {
     if skips > 0 {
         wprintln!("REFUSING to call this a pass: {skips} DB-backed test(s) SKIPPED.");
         wprintln!(
-            "TEST_DATABASE_URL={} — is postgres up on :5434? (make db-up)",
+            "TEST_DATABASE_URL={} — is postgres up on :5434? (cargo xtask db up)",
             std::env::var("TEST_DATABASE_URL").unwrap_or_else(|_| "<unset>".into())
         );
         return 1;

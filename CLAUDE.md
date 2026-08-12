@@ -41,18 +41,26 @@ leaderboards, doctrine wiki, CMS, and admin tooling.
 - `apps/website/frontend/src/` — one module per page + `client.rs` (gloo-net + single-flight refresh), `dto.rs` (API DTOs, R-api golden-tested), `mission_editor.rs` + editor modules (wgpu engine via `map-engine-render`).
 
 ## Run it locally
-Everything is configured in `apps/website/api/.env` (`APP_ENV=development`, DB on port 5434). Cargo lives at `~/.cargo/bin`; the root `Makefile` prepends it (plus `~/go/bin` for the editorconfig-checker binary only).
+Everything is configured in `apps/website/api/.env` (`APP_ENV=development`, DB on port 5434). Cargo lives at `~/.cargo/bin`.
+
+**There is no `Makefile`** — T-897 deleted it (T-853 Phase 3). Every task it carried is a
+`cargo xtask` subcommand: **`cargo xtask help`** is the task surface (the old `help` target) and lists the CI /
+schema / verify / map / build / db lanes; `cargo xtask mk` and `cargo xtask db` list their own.
+`cargo xtask` is the `.cargo/config.toml` alias for `cargo run --package xtask --`, so it works from
+any directory in the workspace. The `~/go/bin` PATH prepend the Makefile did for
+`editorconfig-checker` now lives in `xtask`'s own child environment.
 
 ```bash
-make db-up         # start local Postgres (podman/docker compose), port 5434
-make api           # run the Rust API on :8080 (cargo run --bin api; migrates on boot)
-make leptos        # Leptos on :3000 — trunk serve --release (T-173 P8; day-to-day perf path)
-make leptos-debug  # debug wasm rebuilds only — editor FPS NOT representative
-make test-it       # Rust integration tests (needs db-up; sets TEST_DATABASE_URL)
-make db-down       # stop Postgres (keeps volume)
+cargo xtask db up            # start local Postgres (podman/docker compose), port 5434
+cargo xtask mk rust-api      # run the Rust API on :8080 (cargo run --bin api; migrates on boot)
+cargo xtask mk leptos        # Leptos on :3000 — trunk serve --release (T-173 P8; day-to-day perf path)
+cargo xtask mk leptos-debug  # debug wasm rebuilds only — editor FPS NOT representative
+cargo xtask db test-it       # Rust integration tests (needs db up; sets TEST_DATABASE_URL)
+cargo xtask db down          # stop Postgres (keeps volume)
+cargo xtask db seed          # apply the five SQL seeds to the running DB
 ```
 
-Frontend checks: `make ci-local-leptos` (fmt + clippy wasm32 + cargo test + trunk release build); full editor gates: `make leptos-gates` (T-177: runs **`gate doctor`** first — see [`EDITOR_GATE_RUNBOOK.md`](docs/website/EDITOR_GATE_RUNBOOK.md); full Chrome `--headless=new`, not `chrome-headless-shell`). Toolchain pin: root [`rust-toolchain.toml`](rust-toolchain.toml) (**1.95.0**). Editor HUD shows `rf <ms>`; console `window.__editorBench(500)` for local pan/zoom encode samples (T-173).
+Frontend checks: `cargo xtask mk ci-local-leptos` (fmt + clippy wasm32 + cargo test + trunk release build); full editor gates: `cargo xtask mk leptos-gates` (T-177: runs **`gate doctor`** first — see [`EDITOR_GATE_RUNBOOK.md`](docs/website/EDITOR_GATE_RUNBOOK.md); full Chrome `--headless=new`, not `chrome-headless-shell`). Toolchain pin: root [`rust-toolchain.toml`](rust-toolchain.toml) (**1.95.0**). Editor HUD shows `rf <ms>`; console `window.__editorBench(500)` for local pan/zoom encode samples (T-173).
 
 ### Dev login (no Discord needed)
 `APP_ENV=development` exposes `GET /api/v1/auth/dev-login?role=admin|mission_maker|enlisted`.
@@ -65,7 +73,7 @@ open it in the browser to log in, or curl it and read `access_token` from the
 - API JSON is **snake_case** (from serde field names). The Rust models in `apps/website/api/src/models/`
   are the snake_case DB/API source of truth, and the Leptos `dto.rs` DTOs mirror them (R-api golden
   round-trip tests) — when changing a model, update the matching DTO. Cross-boundary **contract** types are **generated** from
-  `packages/tbd-schema/schema/*.json` via `make schema-codegen` into
+  `packages/tbd-schema/schema/*.json` via `cargo xtask ci schema-codegen` into
   `apps/website/api/src/contract/generated/` (DO NOT EDIT; T-123.4 — Rust-only since the T-159.29.3
   React deletion; the Leptos SPA hand-writes `dto.rs` gated by R-api golden tests). The mission
   **export** JSON (`/missions/:id/export`) is the one camelCase exception.
@@ -121,9 +129,9 @@ Keep docs in sync **in the same commit** as the code change (or immediately befo
 | Step | Command / doc |
 |------|----------------|
 | Edit queue / status / spec | Edit `.ai/tickets/registry.json` |
-| Regenerate views + CLAUDE status block | `cargo run -q -p xtask -- ticket sync` (or `make ticket-sync`) |
+| Regenerate views + CLAUDE status block | `cargo run -q -p xtask -- ticket sync` (or `cargo xtask ticket sync`) |
 | Validate structure | `cargo run -q -p xtask -- ticket check` |
-| Strict legacy-ID scan | `make ticket-check-strict` |
+| Strict legacy-ID scan | `cargo xtask ticket check --strict` |
 | Operator playbook | [`.ai/tickets/AI_PLAYBOOK.md`](.ai/tickets/AI_PLAYBOOK.md) |
 | Claude Code brief | `cargo run -q -p xtask -- ticket brief T-0xx` |
 | Batch implement | `cargo run -q -p xtask -- ticket run` on `main` (claude-code slices only) |
@@ -174,7 +182,7 @@ independent index.
 - Telemetry is ingested via service-token endpoints; no live game-server bridge wired.
 - A fresh DB is empty of content (events, missions, etc.) — seed those via the API
   or `psql`. The committed seeds live at `apps/website/api/seeds/`: `discord_roles.sql` +
-  `registry_dev.sql` via `make seed`; `mock_data.sql` (Operation Red Dawn etc., four fixed
+  `registry_dev.sql` via `cargo xtask db seed`; `mock_data.sql` (Operation Red Dawn etc., four fixed
   UUIDs) is **manual `psql` only** (the Go `cmd/seed` applier was deleted at T-145). DEV_RUNBOOK.md
   has the DELETE SQL to purge those mock missions if they leak into the live library.
 
@@ -184,7 +192,7 @@ the Leptos `dto.rs` yields to the backend on conflict. To check a wire change fo
 stack, `dev-login`, hit the endpoint, and confirm the JSON round-trips through the DTO — the
 R-api golden tests (`cargo test -p website-frontend`) pin this against committed captures.
 
-**Platform CI replay:** `make db-up` → **`make ci-local`** (mirrors
+**Platform CI replay:** `cargo xtask db up` → **`cargo xtask ci ci-local`** (mirrors
 [`ci.yml`](.github/workflows/ci.yml): verify-editorconfig, verify-no-python, rust-ci (cargo
 fmt/clippy/build + wasm-ci + test-it), verify-coding-standards, ci-local-leptos (fmt + clippy
 wasm32 + cargo test + trunk release), schema validate + citations). See

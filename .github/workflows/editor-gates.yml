@@ -1,6 +1,6 @@
 name: editor-gates
 
-# T-177 — CI coverage for the editor CDP smokes + frozen V-suite (`make leptos-gates`), closing the
+# T-177 — CI coverage for the editor CDP smokes + frozen V-suite (`xtask mk leptos-gates`), closing the
 # gap noted in ci.yml (they used to "run locally per stream; wiring them as a CI job is a follow-on").
 # Kept OUT of the required per-PR ci.yml (heavy: full map-assets LFS + a real Postgres + API + a
 # software-GL headless chrome), so it runs nightly + on demand, and on PRs that touch the gate or the
@@ -99,9 +99,9 @@ jobs:
       - name: leptos release build
         run: cargo run -q -p tbd-tools --bin gate -- serve --help >/dev/null 2>&1 || true # warm the gate bin
       - name: gate doctor (fail-fast preflight)
-        run: make gate-doctor
-      - name: editor-suite + v-suite (make leptos-gates)
-        run: make leptos-gates
+        run: cargo xtask mk gate-doctor
+      - name: editor-suite + v-suite (cargo xtask mk leptos-gates)
+        run: cargo xtask mk leptos-gates
       - name: upload smoke verdicts on failure
         if: failure()
         uses: actions/upload-artifact@v4
