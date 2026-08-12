@@ -59,6 +59,7 @@ mod hostrun;
 mod label_gates;
 mod mcp;
 mod mcp_daemon;
+mod mk_ci;
 mod mod_comment_gates;
 mod mod_wave;
 mod mod_world_boot;
@@ -91,9 +92,14 @@ use root::find_repo_root;
 use sync::cmd_sync;
 
 #[derive(Parser, Debug)]
+// T-896: `disable_help_subcommand` frees the `help` name for the successor to `make help`. The
+// Makefile's help target is how anyone discovers the task surface, and T-897 deletes it; clap's
+// auto-generated `help` lists CLI *groups*, not tasks, so it is not that successor. `--help`,
+// `-h` and `xtask <group> --help` are untouched — only the `xtask help <group>` spelling moves.
 #[command(
     name = "xtask",
-    about = "TBD Reforger workspace tasks (T-161 ticket + T-162 MCP/debug)"
+    about = "TBD Reforger workspace tasks (T-161 ticket + T-162 MCP/debug)",
+    disable_help_subcommand = true
 )]
 struct Cli {
     #[command(subcommand)]
@@ -182,6 +188,11 @@ enum TopCmd {
         #[command(subcommand)]
         cmd: AiCmd,
     },
+    /// T-896: the Makefile's CI / composite / map lane. No target lists the lane.
+    Ci { target: Option<String> },
+    /// T-896: the task surface — successor to `make help`.
+    #[command(name = "help")]
+    Help,
 }
 
 #[derive(Subcommand, Debug)]
@@ -466,6 +477,11 @@ enum GenCmd {
 enum SchemaCmd {
     /// Contract codegen: JSON Schema → Rust via typify (T-165.3)
     Codegen,
+    /// T-896: print the `schema-validate` sub-gate SET, one per line.
+    /// wave.sh's drift tripwire (wave.sh:1598) parses the Makefile recipe for this today; T-897
+    /// deletes that input, and this is its replacement — derived from the code that runs them.
+    #[command(name = "list-gates")]
+    ListGates,
     /// Full contract-validation suite (validate.mjs port — T-165.2)
     Validate,
     /// Validate one mission JSON file or stdin (`-`) — validate-file.mjs port
@@ -980,6 +996,8 @@ fn run() -> Result<u8> {
             AiCmd::Guard => Ok(ai::cmd_guard()),
             AiCmd::Run { args } => ai::cmd_run(&args),
         },
+        TopCmd::Ci { target } => Ok(u8::try_from(mk_ci::run(target.as_deref())).unwrap_or(1)),
+        TopCmd::Help => Ok(u8::try_from(mk_ci::help()).unwrap_or(1)),
         TopCmd::Gen { cmd } => {
             let code = match cmd {
                 GenCmd::FontTable { bdf } => node_free::gen_font_table(&bdf)?,
@@ -989,6 +1007,7 @@ fn run() -> Result<u8> {
         TopCmd::Schema { cmd } => {
             let code = match cmd {
                 SchemaCmd::Codegen => codegen_schema::codegen()?,
+                SchemaCmd::ListGates => u8::try_from(mk_ci::schema_list_gates()).unwrap_or(1),
                 SchemaCmd::Validate => schema_gates::validate_all()?,
                 SchemaCmd::ValidateFile { target } => schema_gates::validate_file(&target)?,
                 SchemaCmd::Citations => schema_gates::citations()?,
