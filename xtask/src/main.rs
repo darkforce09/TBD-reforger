@@ -14,6 +14,7 @@ mod gate_deploy_website;
 mod gate_fetch_vanilla_source;
 mod gate_manual_test;
 mod gate_mcp_call;
+mod gate_mcp_call_selftest;
 mod gate_mcp_wb_logs;
 mod gate_remote_log_grep;
 mod gate_route_tags;
@@ -389,6 +390,10 @@ enum McpCmd {
         /// JSON object; defaults to `{}` when omitted or empty.
         args_json: Option<String>,
     },
+    /// Offline MCP call-path selftest (T-865 port of mcp-call-selftest.sh).
+    /// Exit: 0 ALL PASS · 1 any arm failed.
+    #[command(name = "selftest")]
+    Selftest,
     /// Grep latest Workbench Play console.log for TBD spawn diagnostics (T-857).
     /// Exit: 0 PASS · 1 FAIL · 2 PARTIAL · 3 ENVIRONMENT.
     #[command(name = "wb-logs", disable_help_flag = true)]
@@ -601,6 +606,7 @@ fn run() -> Result<u8> {
                 }
                 McpCmd::ProbeSock { sock } => mcp::cmd_probe_sock(&sock),
                 McpCmd::Call { tool, args_json } => gate_mcp_call::run(tool, args_json),
+                McpCmd::Selftest => gate_mcp_call_selftest::run(),
                 McpCmd::WbLogs {
                     file,
                     selftest,
