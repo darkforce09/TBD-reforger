@@ -13,6 +13,7 @@ mod gate_bootstrap_staging_server;
 mod gate_crf_leak;
 mod gate_debug_direct_join;
 mod gate_deploy_website;
+mod gate_export_terrain;
 mod gate_fetch_vanilla_api;
 mod gate_fetch_vanilla_source;
 mod gate_manual_test;
@@ -113,6 +114,11 @@ enum TopCmd {
     Fetch {
         #[command(subcommand)]
         cmd: FetchCmd,
+    },
+    /// Map-asset pipeline helpers (T-853 shell→xtask ports)
+    Map {
+        #[command(subcommand)]
+        cmd: MapCmd,
     },
     /// Print a top-level registry.json field (e.g. next_id)
     #[command(name = "registry-get")]
@@ -233,6 +239,17 @@ enum FetchCmd {
     /// Mirror BI Script API Doxygen HTML (T-866).
     #[command(name = "vanilla-api", disable_help_flag = true)]
     VanillaApi {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+enum MapCmd {
+    /// Classify staged Workbench export for TERRAIN / PHASE (T-869).
+    /// Args mirror `export-terrain.sh` (unknown tokens → rc=1; missing raw → rc=2).
+    #[command(name = "export-terrain", disable_help_flag = true)]
+    ExportTerrain {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
@@ -763,6 +780,9 @@ fn run() -> Result<u8> {
                 };
                 gate_fetch_vanilla_api::run(&root, &args)
             }
+        },
+        TopCmd::Map { cmd } => match cmd {
+            MapCmd::ExportTerrain { args } => gate_export_terrain::run(&args),
         },
         TopCmd::Verify { cmd } => {
             let code = match cmd {
