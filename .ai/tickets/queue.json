@@ -25,27 +25,6 @@
       "status": "ready",
       "spec": "docs/platform/t853_shell_to_xtask_waves.md",
       "branch": "ticket/T-880"
-    },
-    {
-      "id": "T-890",
-      "title": "T-853 port: the MOD wave driver (NOT platform/wave.sh)",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-890"
-    },
-    {
-      "id": "T-891",
-      "title": "T-853 port: Enfusion compile gate",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-891"
-    },
-    {
-      "id": "T-892",
-      "title": "T-853 port: headless game-mode boot validation",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-892"
     }
   ]
 }
