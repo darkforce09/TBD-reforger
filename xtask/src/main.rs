@@ -8,6 +8,7 @@ mod cmds;
 mod codegen_schema;
 mod constants;
 mod debug_cmd;
+mod deploy_db_common;
 mod gap;
 mod gate_bootstrap_staging_server;
 mod gate_crf_leak;
@@ -241,6 +242,9 @@ enum DeployCmd {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
+    /// Shared DB backup/restore plumbing (T-884 port of scripts/deploy/lib/db-common.sh).
+    #[command(subcommand)]
+    Db(deploy_db_common::DeployDbCmd),
 }
 
 #[derive(Subcommand, Debug)]
@@ -803,6 +807,7 @@ fn run() -> Result<u8> {
         },
         TopCmd::Deploy { cmd } => match cmd {
             DeployCmd::Website { args } => gate_deploy_website::run(&args),
+            DeployCmd::Db(db_cmd) => deploy_db_common::run(db_cmd),
         },
         TopCmd::Setup { cmd } => match cmd {
             SetupCmd::ServerProfile { profile } => {

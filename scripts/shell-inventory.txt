@@ -28,7 +28,6 @@
 # mechanism. Edit it one line at a time.
 scripts/deploy/backup-db.sh
 scripts/deploy/backup-drill.sh
-scripts/deploy/lib/db-common.sh
 scripts/deploy/restore-db.sh
 scripts/lib/hostrun.sh
 scripts/mod/compile.sh
