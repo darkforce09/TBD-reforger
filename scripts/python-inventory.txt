@@ -31,5 +31,4 @@
 scripts/mod/deploy-staging.sh                        # server.json/modpack render + socket probe
 scripts/mod/run-playtest-server.sh                   # backend cfg + admin list JSON
 scripts/mod/wave.sh                                  # shipped-status read from registry.json
-scripts/mod/world-boot.sh                            # compiled-mission ids + server.json render
 scripts/platform/wave.sh                             # is_shipped + wave_ledger_unshipped_at

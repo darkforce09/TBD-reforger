@@ -121,15 +121,15 @@ cmd_gate() {
   run "compile-selftest"   distrobox-host-exec make mod-compile-selftest
   # The compile gate is blind to prefab wiring: a component listed on TBD_GameMode.et whose
   # class fails to resolve is dropped SILENTLY and everything still compiles clean.
-  # world-boot.sh boots the real scenario and asserts the game mode's component roll-call.
-  run "world boot"          bash scripts/mod/world-boot.sh
-  run "world-boot selftest" bash scripts/mod/world-boot.sh --selftest
+  # world-boot (cargo xtask mod world-boot) boots the real scenario and asserts the game mode's component roll-call.
+  run "world boot"          cargo run -q -p xtask -- mod world-boot
+  run "world-boot selftest" cargo run -q -p xtask -- mod world-boot --selftest
   # A bare world-boot proves only that the game mode WIRES UP — the loader refuses with no
   # missionId, so the validator, zone registry, slot materialisation and marker service never
   # run. The wave-5 verifier found two live MAJOR bugs sitting in exactly that blind spot.
   # Seeding the reference mission makes the whole document path a gated one.
-  # The other goldens are a manual sweep: world-boot.sh --mission=<name>.
-  run "world boot +mission" bash scripts/mod/world-boot.sh --mission=bridgehead-at-levie
+  # The other goldens are a manual sweep: cargo xtask mod world-boot --mission=<name>.
+  run "world boot +mission" cargo run -q -p xtask -- mod world-boot --mission=bridgehead-at-levie
   # T-181.20 shipped golden mission fixtures whose whole purpose is to make a schema regression
   # fail. Platform CI validates them; the wave gate did not, so a broken fixture landed green
   # here and was only caught later. A slice's own deliverable must be gated by its own wave.
