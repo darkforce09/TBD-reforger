@@ -24,6 +24,7 @@ mod gate_mission_version_upload_repro;
 mod gate_remote_log_grep;
 mod gate_route_tags;
 mod gate_run_dev_server;
+mod gate_seed_milestone_announcement;
 mod gate_setup_server_profile;
 mod gate_t180;
 mod gate_t296;
@@ -205,6 +206,9 @@ enum ModCmd {
     /// One-time staging-host discovery + mkdir (T-870 port of bootstrap-staging-server.sh)
     #[command(name = "bootstrap-staging")]
     BootstrapStaging,
+    /// Insert pinned Milestone #1 website announcement (T-872 port of seed-milestone-announcement.sh)
+    #[command(name = "seed-announcement")]
+    SeedAnnouncement,
 }
 
 #[derive(Subcommand, Debug)]
@@ -742,6 +746,7 @@ fn run() -> Result<u8> {
             ModCmd::DevServer { args } => gate_run_dev_server::run(&args),
             ModCmd::TestMission { target } => gate_test_mission::run(target.as_deref()),
             ModCmd::BootstrapStaging => gate_bootstrap_staging_server::run(),
+            ModCmd::SeedAnnouncement => gate_seed_milestone_announcement::run(),
         },
         TopCmd::Deploy { cmd } => match cmd {
             DeployCmd::Website { args } => gate_deploy_website::run(&args),
