@@ -118,15 +118,15 @@ done
 #                                   — ONE ssh host for BOTH deploy scripts
 #   docs/website/HOME_SERVER.md:282-304   the API is `~/.config/systemd/user/
 #                                   tbd-website-api.service`, ExecStart=…/target/release/api
-#   scripts/deploy/deploy-website.sh:230  `systemctl --user restart tbd-website-api.service`
+#   cargo xtask deploy website           `systemctl --user restart tbd-website-api.service`
 #   this script (below)             `systemctl --user restart tbd-reforger.service`
 #   this script's TBD_BACKEND_URL   http://127.0.0.1:8080 — the mod reaches the API on LOOPBACK
 #
 # So the API process and the game server are SIBLING `systemctl --user` units, same uid
 # (`sam`), same user systemd manager, same $XDG_RUNTIME_DIR. Only Postgres is in Docker
-# (deploy-website.sh runs `compose up -d postgres`, and the compose `api` service is behind
+# (`cargo xtask deploy website` runs `compose up -d postgres`, and the compose `api` service is behind
 # an opt-in `--profile api`). STAGING-SERVER.md:3's "(Docker)" reads as if the API were
-# containerised; deploy-website.sh and HOME_SERVER Phase D are the authoritative pair.
+# containerised; `cargo xtask deploy website` and HOME_SERVER Phase D are the authoritative pair.
 #
 # THAT COLLAPSES THE CREDENTIAL PROBLEM. T-269 asked for "a migration adding an agent
 # endpoint and a secret reference" because it assumed a network hop. Across a same-uid UNIX
@@ -175,7 +175,7 @@ done
 : "${TBD_AGENT_DWELL_S:=8}"
 # Absolute path the agent script lands on ON THE HOST. Referenced by ExecStart=, which
 # systemd requires to be absolute, so this cannot be derived at render time from a relative
-# path. Default matches the /home/sam/tbd/ prefix deploy-website.sh already enforces.
+# path. Default matches the /home/sam/tbd/ prefix `cargo xtask deploy website` already enforces.
 : "${TBD_AGENT_REMOTE_PATH:=/home/sam/tbd/tbd-reforger-agent.sh}"
 # Install the agent as part of a real deploy. DEFAULT OFF, deliberately: the install step
 # mutates a live host and T-289 could not exercise it (the operator is using that stack, and
@@ -1604,7 +1604,7 @@ fi
 
 echo "==> docker compose (API + Postgres)"
 # T-438: compose file lives at apps/website/docker-compose.staging.yml (T-251),
-# not under apps/website/api/. Match scripts/deploy/deploy-website.sh.
+# not under apps/website/api/. Match `cargo xtask deploy website`.
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[dry-run] cd \$TBD_REMOTE_DIR && docker compose -f apps/website/docker-compose.staging.yml up -d --build"
 else

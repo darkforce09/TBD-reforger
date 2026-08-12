@@ -119,7 +119,7 @@ ssh sam@192.168.0.140 'mkdir -p /home/sam/tbd/{repo,profile,addons-staging,websi
 
 ## Honest gaps (as of 2026-07-27)
 
-`apps/website/docker-compose.staging.yml` **exists** (T-251). Game deploy (`scripts/mod/deploy-staging.sh`) and website deploy (`scripts/deploy/deploy-website.sh`) both compose from that path (T-438). Local laptop compose remains `apps/website/docker-compose.yml` (Postgres on 5434). Remaining gaps below are still manual until SPA static hosting + COOP/COEP are one-button.
+`apps/website/docker-compose.staging.yml` **exists** (T-251). Game deploy (`scripts/mod/deploy-staging.sh`) and website deploy (`cargo xtask deploy website`) both compose from that path (T-438). Local laptop compose remains `apps/website/docker-compose.yml` (Postgres on 5434). Remaining gaps below are still manual until SPA static hosting + COOP/COEP are one-button.
 
 | Gap | Needed for “one command” website host |
 |-----|----------------------------------------|
@@ -385,7 +385,7 @@ systemctl --user restart tbd-website-api.service
 # Caddy picks up new dist automatically (static files)
 ```
 
-Website one-button path: `bash scripts/deploy/deploy-website.sh` (compose file + script both exist; see that script’s header). Keep the verification table above for manual checks.
+Website one-button path: `cargo xtask deploy website` (compose file exists; see `xtask deploy website --help`). Keep the verification table above for manual checks.
 
 ---
 
@@ -403,7 +403,7 @@ Website one-button path: `bash scripts/deploy/deploy-website.sh` (compose file +
 
 ## Suggested next code slice (not this doc)
 
-Shipped already: `apps/website/docker-compose.staging.yml` (T-251), `scripts/deploy/deploy-website.sh`, `scripts/deploy/Caddyfile.website`. Remaining:
+Shipped already: `apps/website/docker-compose.staging.yml` (T-251), `cargo xtask deploy website`, `scripts/deploy/Caddyfile.website`. Remaining:
 
 1. Wire Caddy/SPA + COOP/COEP as the default one-button host path (or Axum `ServeDir` + SPA fallback).
 2. Optional Dockerfile for release `api` if you prefer container API over host systemd.

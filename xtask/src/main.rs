@@ -10,6 +10,7 @@ mod constants;
 mod debug_cmd;
 mod gap;
 mod gate_crf_leak;
+mod gate_deploy_website;
 mod gate_mcp_wb_logs;
 mod gate_remote_log_grep;
 mod gate_route_tags;
@@ -86,6 +87,11 @@ enum TopCmd {
         #[command(subcommand)]
         cmd: ModCmd,
     },
+    /// Home-server / website deploy drivers (T-853 shell→xtask ports)
+    Deploy {
+        #[command(subcommand)]
+        cmd: DeployCmd,
+    },
     /// Print a top-level registry.json field (e.g. next_id)
     #[command(name = "registry-get")]
     RegistryGet { field: String },
@@ -144,6 +150,16 @@ enum ModCmd {
         runs: Option<u32>,
         /// World resource path (default worlds/TBD_Dev_POC.ent)
         world: Option<String>,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+enum DeployCmd {
+    /// Rsync + remote build/restart for the TBD website (T-858).
+    #[command(name = "website", disable_help_flag = true)]
+    Website {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
     },
 }
 
@@ -595,6 +611,9 @@ fn run() -> Result<u8> {
                 runs.unwrap_or(5),
                 world.as_deref().unwrap_or("worlds/TBD_Dev_POC.ent"),
             ),
+        },
+        TopCmd::Deploy { cmd } => match cmd {
+            DeployCmd::Website { args } => gate_deploy_website::run(&args),
         },
         TopCmd::Verify { cmd } => {
             let code = match cmd {
