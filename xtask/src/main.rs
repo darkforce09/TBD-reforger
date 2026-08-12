@@ -9,6 +9,9 @@ mod codegen_schema;
 mod constants;
 mod debug_cmd;
 mod gap;
+mod gate_crf_leak;
+mod gate_route_tags;
+mod gate_t180;
 mod gate_t296;
 mod gate_t439;
 mod gate_t444;
@@ -143,6 +146,15 @@ enum VerifyCmd {
     /// T-444: `make seed` must apply seeds/wiki_pages.sql
     #[command(name = "t444")]
     T444,
+    /// T-181.4/.52 oracle-leak guard: no CRF_/PS_ identifiers or oracle-only asset GUIDs
+    #[command(name = "no-crf-leak")]
+    NoCrfLeak,
+    /// T-180.10 Class-R coherency for ORBAT + Eden locks
+    #[command(name = "t180")]
+    T180,
+    /// GO-7: every @route tag resolves to a registered Axum route and back
+    #[command(name = "route-tags")]
+    RouteTags,
 }
 
 #[derive(Subcommand, Debug)]
@@ -501,6 +513,9 @@ fn run() -> Result<u8> {
                 VerifyCmd::T296 => gate_t296::verify_t296(&find_repo_root()?)?,
                 VerifyCmd::T439 => gate_t439::verify_t439(&find_repo_root()?)?,
                 VerifyCmd::T444 => gate_t444::verify_t444(&find_repo_root()?)?,
+                VerifyCmd::NoCrfLeak => gate_crf_leak::verify_crf_leak(&find_repo_root()?)?,
+                VerifyCmd::T180 => gate_t180::verify_t180(&find_repo_root()?)?,
+                VerifyCmd::RouteTags => gate_route_tags::verify_route_tags(&find_repo_root()?)?,
             };
             Ok(code)
         }

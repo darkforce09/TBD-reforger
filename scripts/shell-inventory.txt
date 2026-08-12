@@ -63,7 +63,6 @@ scripts/mod/tbd-spawn-determinism.sh
 scripts/mod/tbd-spawn-verify.sh
 scripts/mod/test-mission.sh
 scripts/mod/test-phase1-api.sh
-scripts/mod/verify-no-crf-leak.sh
 scripts/mod/verify-t437-destroy-inert-diagnostics.sh
 scripts/mod/verify-t438-deploy-staging-compose-path.sh
 scripts/mod/verify-t440-faction-library-seed.sh
@@ -76,6 +75,4 @@ scripts/platform/preflight.sh
 scripts/platform/wave.sh
 scripts/ticket
 scripts/verify-no-python.sh
-scripts/verify-route-tags.sh
-scripts/verify-t180-coherency.sh
 scripts/website/mission-version-upload-repro.sh

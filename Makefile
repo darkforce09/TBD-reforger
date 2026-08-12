@@ -261,7 +261,7 @@ verify-oracle: ## T-181.4 every @idx citation in docs/mod must resolve against a
 	cargo run -q -p tbd-tools --bin enf -- citations
 
 verify-no-crf-leak: ## T-181.4 fail if CRF (APL) code or asset GUIDs leak into the production mod
-	bash scripts/mod/verify-no-crf-leak.sh
+	cargo run -q -p xtask -- verify no-crf-leak
 
 verify-capability: ## T-181.2.1 every CRF capability must carry a TBD verdict (fails on UNTRIAGED)
 	cargo run -q -p tbd-tools --bin enf -- capability
@@ -325,7 +325,7 @@ verify-coding-standards: ## SIZE file length + doc layout + GO-7 @route/router m
 	$(MAKE) verify-doc-layout
 	@cargo run -q -p xtask -- verify file-length
 	@cargo run -q -p xtask -- verify no-select-star
-	@bash scripts/verify-route-tags.sh
+	@cargo run -q -p xtask -- verify route-tags
 
 verify-doc-layout: ## DOCUMENTATION_STANDARDS §8.2: no markdown spec trees under apps/**/docs or packages/**/docs
 	@! find apps packages -type f -path '*/docs/*.md' ! -path '*/node_modules/*' 2>/dev/null | grep -q . || \
@@ -338,7 +338,7 @@ verify-editorconfig: ## FMT-2: run editorconfig-checker from repo root (CODING_S
 	editorconfig-checker
 
 verify-t180: ## T-180.10 Class-R coherency gate (ORBAT + Eden locks A–I)
-	@bash scripts/verify-t180-coherency.sh
+	@cargo run -q -p xtask -- verify t180
 
 # T-467: Makefile + ci-local + ci.yml siblings for wave.sh-wired Class-R scripts
 # (T-463 wired them into the cold gate; pre-T-467 they had no make/CI authority).

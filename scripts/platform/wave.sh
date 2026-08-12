@@ -2559,7 +2559,7 @@ gate_slice() {
   run "T-456 REST size gate"  bash "$ROOT/scripts/mod/verify-t456-mission-rest-size-gate.sh"
   run "T-468 CI schema parity" bash "$ROOT/scripts/mod/verify-t468-ci-schema-parity.sh"
   run "T-437 destroy inert"   bash "$ROOT/scripts/mod/verify-t437-destroy-inert-diagnostics.sh"
-  run "T-586 route tags"      bash "$ROOT/scripts/verify-route-tags.sh"
+  run "T-586 route tags"      checkrun cargo run -q -p xtask -- verify route-tags
   # T-556. The T-462/T-463 pattern once more, and the worst instance of it: these two
   # existed, carried the fail-open `if rg …; then fail; fi` shape, AND were invoked by
   # nothing — not this gate, not ci.yml, not the Makefile. So a reader who found them
@@ -2830,7 +2830,7 @@ cmd_gate() {
   run "T-456 REST size gate"  bash "$ROOT/scripts/mod/verify-t456-mission-rest-size-gate.sh"
   run "T-468 CI schema parity" bash "$ROOT/scripts/mod/verify-t468-ci-schema-parity.sh"
   run "T-437 destroy inert"   bash "$ROOT/scripts/mod/verify-t437-destroy-inert-diagnostics.sh"
-  run "T-586 route tags"      bash "$ROOT/scripts/verify-route-tags.sh"
+  run "T-586 route tags"      checkrun cargo run -q -p xtask -- verify route-tags
   # T-556. Cold-path twin of the gate_slice runs above — the two scripts that were dead
   # AND fail-open. Both halves, for the T-478 reason: one path alone can drift green.
   run "T-296 reporter identity" checkrun cargo run -q -p xtask -- verify t296

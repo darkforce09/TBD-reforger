@@ -51,6 +51,19 @@ pub struct Output {
     pub duration: Duration,
 }
 
+/// What a finished process produced on ONE shared pipe — see [`Run::merged_output`].
+///
+/// Deliberately a separate type rather than an [`Output`] with an always-empty `stderr`: the whole
+/// point is that the two streams are no longer separable, and a field that is always empty is an
+/// invitation to read it and conclude the child wrote nothing to stderr.
+#[derive(Debug)]
+pub struct Merged {
+    pub code: i32,
+    /// stdout and stderr interleaved exactly as the child emitted them.
+    pub text: String,
+    pub duration: Duration,
+}
+
 /// A command to run.
 pub struct Run {
     program: String,
@@ -260,6 +273,143 @@ impl Run {
         })
     }
 
+    /// Run with **stdout and stderr on ONE pipe** — genuinely `2>&1`.
+    ///
+    /// ── WHY THIS IS NOT `output()` WITH THE TWO STRINGS CONCATENATED ─────────────────────────
+    ///
+    /// [`Run::output`] drains the two streams into two separate `String`s, which discards the
+    /// interleaving. Joining them afterwards invents an order that the child never produced.
+    ///
+    /// MEASURED 2026-08-12 while porting `verify-t180-coherency.sh` (T-853): that gate runs 25
+    /// `cargo test` invocations and diffs its whole 803-line output against the bash original.
+    /// Cargo writes `Running unittests …` to **stderr** and libtest writes `running N tests` to
+    /// **stdout**. Every package in that gate happens to have exactly one test target today, so
+    /// stderr-then-stdout coincidentally matches — and would stop matching the day any package
+    /// gains a second one, silently reordering a gate's output and breaking a diff contract that
+    /// nobody would think to re-examine.
+    ///
+    /// A single shared pipe is what the shell actually does for `2>&1`, so the ordering is the
+    /// child's own and cannot drift. `std::io::pipe` (stable 1.87; the toolchain pin is 1.95)
+    /// makes it cheap and adds no dependency.
+    ///
+    /// Reach for this whenever the captured text is compared to a shell script's output. Use
+    /// [`Run::output`] when the two streams are handled separately — a gate that reports stderr
+    /// only on failure, say.
+    pub fn merged_output(self) -> Result<Merged, NotRun> {
+        let label = self.display();
+        let started = Instant::now();
+
+        let io_err = |e: std::io::Error| NotRun::ToolError {
+            tool: label.clone(),
+            status: -1,
+            stderr: e.to_string(),
+        };
+        let (mut reader, writer) = std::io::pipe().map_err(io_err)?;
+        let writer2 = writer.try_clone().map_err(io_err)?;
+
+        let mut cmd = Command::new(&self.program);
+        cmd.args(&self.args)
+            .stdout(writer)
+            .stderr(writer2)
+            .stdin(if self.stdin.is_some() {
+                Stdio::piped()
+            } else {
+                Stdio::null()
+            });
+        if let Some(ref d) = self.cwd {
+            cmd.current_dir(d);
+        }
+        for (k, v) in &self.envs {
+            cmd.env(k, v);
+        }
+        for k in &self.env_removes {
+            cmd.env_remove(k);
+        }
+        // Own process group, so a timeout takes the whole tree. Same rationale as `output()`.
+        //
+        // SAFETY: `setsid`/`setpgid` are async-signal-safe and neither allocates.
+        unsafe {
+            cmd.pre_exec(|| {
+                if libc::setsid() == -1 && libc::setpgid(0, 0) == -1 {
+                    return Err(std::io::Error::last_os_error());
+                }
+                Ok(())
+            });
+        }
+
+        let mut child = match cmd.spawn() {
+            Ok(c) => c,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                return Err(NotRun::ToolAbsent(self.program.clone()));
+            }
+            Err(e) => return Err(io_err(e)),
+        };
+        let pgid = child.id() as i32;
+
+        if let Some(body) = self.stdin.as_ref()
+            && let Some(mut sink) = child.stdin.take()
+        {
+            use std::io::Write;
+            let _ = sink.write_all(body.as_bytes());
+        }
+
+        // Drop OUR copies of the write end. Without this the read below never sees EOF, because
+        // the pipe stays open on handles this process still holds. `cmd` owns both.
+        drop(cmd);
+
+        // One reader thread, so a timeout can still fire while the pipe fills.
+        let reader_thread = std::thread::spawn(move || {
+            let mut buf = Vec::new();
+            let _ = reader.read_to_end(&mut buf);
+            // Lossy for the same reason `drain` is: a stray non-UTF-8 byte in a compiler
+            // diagnostic must not leave the gate unable to run.
+            String::from_utf8_lossy(&buf).into_owned()
+        });
+
+        let status = match self.timeout {
+            None => child.wait().map_err(io_err)?,
+            Some(limit) => {
+                let deadline = Instant::now() + limit;
+                loop {
+                    match child.try_wait() {
+                        Ok(Some(s)) => break s,
+                        Ok(None) => {
+                            if Instant::now() >= deadline {
+                                // SAFETY: a pgid we created; failure means it is already gone.
+                                unsafe {
+                                    libc::killpg(pgid, libc::SIGKILL);
+                                }
+                                let _ = child.wait();
+                                let _ = reader_thread.join();
+                                return Err(NotRun::Timeout {
+                                    tool: label,
+                                    secs: limit.as_secs(),
+                                });
+                            }
+                            std::thread::sleep(POLL);
+                        }
+                        Err(e) => return Err(io_err(e)),
+                    }
+                }
+            }
+        };
+
+        let text = reader_thread.join().unwrap_or_default();
+
+        // A signal is NOT an exit code. See module docs §1.
+        if let Some(signal) = status.signal() {
+            return Err(NotRun::Signalled {
+                tool: label,
+                signal,
+            });
+        }
+        Ok(Merged {
+            code: status.code().unwrap_or(-1),
+            text,
+            duration: started.elapsed(),
+        })
+    }
+
     /// Run and return only the raw exit code.
     pub fn status(self) -> Result<i32, NotRun> {
         Ok(self.output()?.code)
@@ -373,6 +523,69 @@ mod tests {
             .unwrap();
         assert_eq!(out.stdout.trim(), "hello");
         assert_eq!(out.code, 3, "raw exit codes must never be collapsed");
+    }
+
+    #[test]
+    fn merged_output_preserves_interleaving() {
+        // THE POINT. `output()` would give ("a\nc\n", "b\n") and any join invents an order the
+        // child never produced. One shared pipe keeps a-b-c.
+        let m = Run::new("sh")
+            .arg("-c")
+            .arg("echo a; echo b >&2; echo c")
+            .merged_output()
+            .unwrap();
+        assert_eq!(m.text, "a\nb\nc\n");
+        assert_eq!(m.code, 0);
+    }
+
+    #[test]
+    fn merged_output_keeps_the_raw_exit_code() {
+        let m = Run::new("sh")
+            .arg("-c")
+            .arg("echo x >&2; exit 3")
+            .merged_output()
+            .unwrap();
+        assert_eq!(m.code, 3);
+        assert_eq!(m.text, "x\n");
+    }
+
+    #[test]
+    fn merged_output_reports_absent_tools_and_signals_honestly() {
+        assert!(matches!(
+            Run::new("tbd-not-real-3d91").merged_output(),
+            Err(NotRun::ToolAbsent(_))
+        ));
+        assert!(matches!(
+            Run::new("sh").arg("-c").arg("kill -9 $$").merged_output(),
+            Err(NotRun::Signalled { signal: 9, .. })
+        ));
+    }
+
+    #[test]
+    fn merged_output_times_out_without_deadlocking_on_a_full_pipe() {
+        // A shared pipe still has a finite buffer; the reader thread must keep draining or the
+        // timeout could never fire.
+        let got = Run::new("sh")
+            .arg("-c")
+            .arg("seq 1 200000; sleep 30")
+            .timeout(Duration::from_millis(300))
+            .merged_output();
+        assert!(matches!(got, Err(NotRun::Timeout { .. })));
+    }
+
+    #[test]
+    fn merged_output_honours_cwd_env_and_stdin() {
+        let m = Run::new("sh")
+            .arg("-c")
+            .arg("pwd; echo $TBD_M; cat")
+            .cwd("/tmp")
+            .env("TBD_M", "set")
+            .stdin("fed")
+            .merged_output()
+            .unwrap();
+        assert!(m.text.contains("/tmp"));
+        assert!(m.text.contains("set"));
+        assert!(m.text.contains("fed"));
     }
 
     #[test]
