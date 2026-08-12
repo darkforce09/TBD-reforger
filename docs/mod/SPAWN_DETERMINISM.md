@@ -1,7 +1,7 @@
 # Spawn / equip determinism program
 
 **Ticket:** T-274 (record / Makefile / docs — this hub)  
-**Gate script:** [`scripts/mod/tbd-spawn-determinism.sh`](../../scripts/mod/tbd-spawn-determinism.sh)  
+**Gate:** `cargo xtask mod spawn-determinism` (T-856; was `scripts/mod/tbd-spawn-determinism.sh`)  
 **Verify log (on disk):** [`.ai/artifacts/spawn_determinism_verify_log.md`](../../.ai/artifacts/spawn_determinism_verify_log.md)  
 **Related MCP tooling:** [`MCP_TOOLING.md`](MCP_TOOLING.md)
 
@@ -28,9 +28,9 @@ make mod-spawn-determinism-preflight
 make mod-spawn-determinism              # RUNS=5 default
 make mod-spawn-determinism RUNS=3
 
-# Direct script (same semantics)
-bash scripts/mod/tbd-spawn-determinism.sh --preflight
-bash scripts/mod/tbd-spawn-determinism.sh 5 worlds/TBD_Dev_POC.ent
+# Direct xtask (same semantics)
+cargo run -q -p xtask -- mod spawn-determinism --preflight
+cargo run -q -p xtask -- mod spawn-determinism 5 worlds/TBD_Dev_POC.ent
 ```
 
 | Env | Default | Meaning |
@@ -66,7 +66,7 @@ Cross-run: `sha256` of each run's normalized log must equal run 1.
 
 | Artifact | Location / pin |
 |----------|----------------|
-| Gate script | `scripts/mod/tbd-spawn-determinism.sh` (introduced `7a5ab1e3`, amended `f4b25440`, `a18eeb2e`) |
+| Gate | `cargo xtask mod spawn-determinism` (T-856 port; script introduced `7a5ab1e3`, amended `f4b25440`, `a18eeb2e`) |
 | Verify log | `.ai/artifacts/spawn_determinism_verify_log.md` (298 lines tip; started 128 lines @ `7a5ab1e3`, appended @ `a18eeb2e`) |
 | Program ship commit | `7a5ab1e3` — *Spawn determinism program: single authority, event equip, reaper, uid thread* (2026-07-24) |
 | Materialization follow-up | `f4b25440` — *Slot-body materialization…* (2026-07-24) |

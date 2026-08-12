@@ -444,9 +444,9 @@ mcp-smoke: ## Live MCP smoke — wb_connect + wb_state (Workbench Net API up)
 # ci-local / wave.sh: without Workbench the preflight exits 2 in seconds with a
 # how-to message instead of hanging on steam relaunch. Hub: docs/mod/SPAWN_DETERMINISM.md
 mod-spawn-determinism-preflight: ## T-274 fail-fast: Workbench Net API must already be listening (no CI/headless path)
-	bash scripts/mod/tbd-spawn-determinism.sh --preflight
+	cargo run -q -p xtask -- mod spawn-determinism --preflight
 mod-spawn-determinism: mod-spawn-determinism-preflight ## T-274 N-run spawn/equip determinism (Workbench required; RUNS=5 default)
-	bash scripts/mod/tbd-spawn-determinism.sh "$(or $(RUNS),5)"
+	cargo run -q -p xtask -- mod spawn-determinism "$(or $(RUNS),5)"
 
 tickets: ## Run Claude Code on ready tickets in parallel
 	./scripts/ticket run
