@@ -1,8 +1,8 @@
 //! T-877 — port of `scripts/mod/mcp-smoke.sh` → `cargo xtask mcp smoke`.
 //!
 //! Live MCP smoke (T-090.0 gate S1): `wb_connect` + `wb_state` must both return
-//! non-empty via `scripts/mod/lib/xtask-run.sh mcp call` (do **not** delete
-//! xtask-run.sh — T-879). Prefer that helper over inventing a second call path.
+//! non-empty via in-process `cargo run -q -p xtask -- mcp call` (former
+//! `lib/xtask-run.sh` parity — wave 226 option 2; libs stay on disk for OOS bash).
 //!
 //! Preserved bash shape (`set -uo pipefail`, **no** `-e`):
 //! - a failed / empty tool call does not abort the loop
@@ -12,7 +12,7 @@
 //! Exit: 0 all tools OK · 1 any tool FAIL.
 
 use std::io::{self, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use tbd_gate::NotRun;
 use tbd_gate::proc::Run;
@@ -38,12 +38,21 @@ pub fn run_at(script_dir: &Path) -> i32 {
     run_writers(script_dir, &mut io::stdout(), &mut io::stderr())
 }
 
+fn mono_root_from_script_dir(script_dir: &Path) -> PathBuf {
+    // scripts/mod → ../../ = monorepo root (former xtask-run.sh dirname climb).
+    script_dir
+        .parent()
+        .and_then(|p| p.parent())
+        .map(Path::to_path_buf)
+        .unwrap_or_else(|| script_dir.to_path_buf())
+}
+
 fn run_writers(script_dir: &Path, out: &mut dyn Write, err: &mut dyn Write) -> i32 {
-    let xtask_run = script_dir.join("lib/xtask-run.sh");
+    let root = mono_root_from_script_dir(script_dir);
     let mut fail = 0i32;
 
     for tool in TOOLS {
-        match call_tool(&xtask_run, tool) {
+        match call_tool(&root, tool) {
             Ok((rc, body, child_err)) => {
                 // Bash `$()` keeps child stderr on the smoke's stderr.
                 if !child_err.is_empty() {
@@ -84,13 +93,19 @@ fn run_writers(script_dir: &Path, out: &mut dyn Write, err: &mut dyn Write) -> i
 }
 
 /// `(rc, bash-chomped stdout, raw stderr)`.
-fn call_tool(xtask_run: &Path, tool: &str) -> Result<(i32, String, String), NotRun> {
-    // Same helper bash used: `"$SCRIPT_DIR/lib/xtask-run.sh" mcp call "$tool" '{}'`
-    let o = Run::new(xtask_run)
+/// Former `lib/xtask-run.sh mcp call TOOL '{}'` ≡ `cargo run -q -p xtask -- mcp call …`.
+fn call_tool(root: &Path, tool: &str) -> Result<(i32, String, String), NotRun> {
+    let o = Run::new("cargo")
+        .arg("run")
+        .arg("-q")
+        .arg("-p")
+        .arg("xtask")
+        .arg("--")
         .arg("mcp")
         .arg("call")
         .arg(tool)
         .arg("{}")
+        .cwd(root)
         .output()?;
     Ok((o.code, bash_chomp(&o.stdout), o.stderr))
 }
@@ -111,6 +126,8 @@ mod tests {
     use std::os::unix::fs::PermissionsExt;
     use std::path::PathBuf;
     use std::sync::{Arc, Mutex};
+
+    use crate::test_env::{PathGuard, lock_env};
 
     /// Shared buffer so stdout+stderr writes stay interleaved like `>file 2>&1`.
     #[derive(Clone)]
@@ -148,13 +165,19 @@ mod tests {
 
     fn fixture(tag: &str) -> PathBuf {
         let dir = PathBuf::from(format!(
-            "/tmp/t853/w225/t877/ut-{}-{}",
+            "/tmp/t853/w226/t877/ut-{}-{}",
             tag,
             std::process::id()
         ));
         let _ = fs::remove_dir_all(&dir);
-        fs::create_dir_all(dir.join("lib")).unwrap();
+        // scripts/mod layout so mono_root_from_script_dir → fixture root
+        fs::create_dir_all(dir.join("scripts/mod")).unwrap();
         dir
+    }
+
+    /// Stub `cargo` that only handles `run -q -p xtask -- mcp call …` (PATH-prepended).
+    fn install_cargo_stub(bin_dir: &Path, body: &str) {
+        write_exec(&bin_dir.join("cargo"), body);
     }
 
     #[test]
@@ -167,12 +190,26 @@ mod tests {
 
     #[test]
     fn both_tools_fail_arm_matches_bash() {
-        let dir = fixture("both-fail");
-        write_exec(
-            &dir.join("lib/xtask-run.sh"),
-            "#!/usr/bin/env bash\necho \"stub-fail: $*\" >&2\nexit 1\n",
+        let _g = lock_env();
+        let root = fixture("both-fail");
+        let bin = root.join("bin");
+        fs::create_dir_all(&bin).unwrap();
+        install_cargo_stub(
+            &bin,
+            "#!/usr/bin/env bash\n\
+# peel args after --\n\
+args=()\n\
+seen=\n\
+for a in \"$@\"; do\n\
+  if [ -n \"$seen\" ]; then args+=(\"$a\"); continue; fi\n\
+  [ \"$a\" = \"--\" ] && seen=1\n\
+done\n\
+echo \"stub-fail: ${args[*]}\" >&2\n\
+exit 1\n",
         );
-        let (rc, text) = capture(&dir);
+        let _path = PathGuard::prepend_dir(&bin);
+        let script_dir = root.join("scripts/mod");
+        let (rc, text) = capture(&script_dir);
         assert_eq!(rc, 1, "bash went red first on both-fail");
         assert_eq!(
             text,
@@ -184,16 +221,25 @@ mcp-smoke: wb_state FAIL (rc=1)
 mcp-smoke: FAIL
 "
         );
-        let _ = fs::remove_dir_all(&dir);
+        let _ = fs::remove_dir_all(&root);
     }
 
     #[test]
     fn one_tool_empty_arm_matches_bash() {
-        let dir = fixture("one-empty");
-        write_exec(
-            &dir.join("lib/xtask-run.sh"),
+        let _g = lock_env();
+        let root = fixture("one-empty");
+        let bin = root.join("bin");
+        fs::create_dir_all(&bin).unwrap();
+        install_cargo_stub(
+            &bin,
             "#!/usr/bin/env bash\n\
-tool=\"${3:-}\"\n\
+args=()\n\
+seen=\n\
+for a in \"$@\"; do\n\
+  if [ -n \"$seen\" ]; then args+=(\"$a\"); continue; fi\n\
+  [ \"$a\" = \"--\" ] && seen=1\n\
+done\n\
+tool=\"${args[2]:-}\"\n\
 if [ \"$tool\" = \"wb_connect\" ]; then\n\
   printf '%s\\n' '{\"ok\":true}'\n\
   exit 0\n\
@@ -201,10 +247,12 @@ fi\n\
 if [ \"$tool\" = \"wb_state\" ]; then\n\
   exit 0\n\
 fi\n\
-echo \"unexpected: $*\" >&2\n\
+echo \"unexpected: ${args[*]}\" >&2\n\
 exit 1\n",
         );
-        let (rc, text) = capture(&dir);
+        let _path = PathGuard::prepend_dir(&bin);
+        let script_dir = root.join("scripts/mod");
+        let (rc, text) = capture(&script_dir);
         assert_eq!(rc, 1, "bash went red first on one-empty");
         assert_eq!(
             text,
@@ -214,17 +262,31 @@ mcp-smoke: wb_state FAIL (rc=0)
 mcp-smoke: FAIL
 "
         );
-        let _ = fs::remove_dir_all(&dir);
+        let _ = fs::remove_dir_all(&root);
     }
 
     #[test]
     fn stub_green_arm_matches_bash() {
-        let dir = fixture("stub-green");
-        write_exec(
-            &dir.join("lib/xtask-run.sh"),
-            "#!/usr/bin/env bash\ntool=\"${3:-}\"\nprintf '%s\\n' \"STUB-OK $tool\"\nexit 0\n",
+        let _g = lock_env();
+        let root = fixture("stub-green");
+        let bin = root.join("bin");
+        fs::create_dir_all(&bin).unwrap();
+        install_cargo_stub(
+            &bin,
+            "#!/usr/bin/env bash\n\
+args=()\n\
+seen=\n\
+for a in \"$@\"; do\n\
+  if [ -n \"$seen\" ]; then args+=(\"$a\"); continue; fi\n\
+  [ \"$a\" = \"--\" ] && seen=1\n\
+done\n\
+tool=\"${args[2]:-}\"\n\
+printf '%s\\n' \"STUB-OK $tool\"\n\
+exit 0\n",
         );
-        let (rc, text) = capture(&dir);
+        let _path = PathGuard::prepend_dir(&bin);
+        let script_dir = root.join("scripts/mod");
+        let (rc, text) = capture(&script_dir);
         assert_eq!(rc, 0);
         assert_eq!(
             text,
@@ -234,6 +296,6 @@ mcp-smoke: wb_state OK
 mcp-smoke: OK
 "
         );
-        let _ = fs::remove_dir_all(&dir);
+        let _ = fs::remove_dir_all(&root);
     }
 }
