@@ -10,8 +10,19 @@
 //! > Makefile seed line still greens the cold gate.
 //!
 //! So: (1) the seed file carries a **live** `INSERT INTO user_factions` naming the starter BLUFOR
-//! faction `'US Army 1980s'` (T-256), (2) the `Makefile` `seed:` recipe **applies** it through a
-//! real shell redirect, and (3) `wave.sh` invokes this gate from **both** of its gate paths.
+//! faction `'US Army 1980s'` (T-256), (2) the seeder **applies** it, and (3) `wave.sh` invokes
+//! this gate from **both** of its gate paths.
+//!
+//! ── T-897: PIN 2'S SUBJECT MOVED OFF THE MAKEFILE ────────────────────────────────────────────
+//!
+//! Pin 2 used to parse the `Makefile` `seed:` recipe and require a real shell redirect
+//! (`< seeds/faction_library.sql`), because a recipe is TEXT and text can name a file it never
+//! applies — hence RED 2 (`echo …path… >/dev/null`) and RED 2b (the path inside a psql `-c` SQL
+//! comment). T-897 deleted the Makefile; the successor is [`crate::mk_db::SEEDS`], the const
+//! `cargo xtask db seed` iterates. That retires both smuggles as a CLASS: a `&[&str]` has no
+//! commented-out members and no echo form, so an entry is either applied or absent. The RED arms
+//! move with the subject — they now perturb the LIST (drop the entry; park a look-alike beside
+//! it) so the gate still proves it bites on every run rather than asserting that it would.
 //!
 //! ── WHY EACH PIN IS SHAPED THE WAY IT IS (T-478, wave 29 THIS-WAVE BLOCKER) ───────────────────
 //!
@@ -77,11 +88,19 @@ use std::path::Path;
 use anyhow::Result;
 use tbd_gate::{Finding, Kind, NotRun, Pattern, Verdict};
 
+use crate::mk_db::SEEDS;
+
 // ── THE PIN, IN ONE PLACE ────────────────────────────────────────────────────────────────────
 
-/// Host of the `seed:` recipe. Deleted by T-853 Phase 3; see the repointing note at the bottom.
-const MAKEFILE_REL: &str = "Makefile";
-/// The seed the recipe must apply, repo-relative.
+/// The command whose seed list is pinned, for operator-facing prose.
+const RECIPE_SOURCE: &str = "cargo xtask db seed";
+/// Where that list lives, quoted in failure hints. NAMED, never read: the list arrives as a
+/// `&[&str]`, so no arrangement of text in that file can satisfy the gate.
+const RECIPE_CONST: &str = "xtask/src/mk_db.rs SEEDS";
+/// The [`SEEDS`] entry that must be present. Bare file name (the seeder redirects `seeds/<entry>`),
+/// matched by EQUALITY so a parked `faction_library.sql.bak` cannot satisfy the pin.
+const SEED_ENTRY: &str = "faction_library.sql";
+/// The seed the seeder must apply, repo-relative.
 const SEED_REL: &str = "apps/website/api/seeds/faction_library.sql";
 /// The wave driver whose two gate paths must both invoke this gate.
 const WAVE_REL: &str = "scripts/platform/wave.sh";
@@ -95,29 +114,22 @@ const VERIFY_REL: &str = "cargo run -q -p xtask -- verify t440";
 /// The starter BLUFOR faction (T-256). Pinned as a SQL *string literal*, not a bare substring.
 const STARTER_NAME: &str = "US Army 1980s";
 
-/// The live recipe line the RED arms perturb. Matched exactly, so a reflow of the `seed:` body
-/// aborts the gate with a loud setup error rather than silently proving nothing.
-const RECIPE_LIVE: &str =
-    "\tcd $(WEB) && $(COMPOSE) exec -T db psql -U tbd -d tbd_reforger < seeds/faction_library.sql";
-/// RED 2 — the path is present, the file is never applied.
-const RECIPE_ECHO: &str = "\techo seeds/faction_library.sql >/dev/null";
-/// RED 2b — the path is present *inside a psql `-c` SQL comment*. This is the smuggle that beat
-/// the pre-T-478 substring check.
-const RECIPE_PSQL_C: &str = "\tcd $(WEB) && $(COMPOSE) exec -T db psql -U tbd -d tbd_reforger \
-                             -c \"SELECT 1 -- seeds/faction_library.sql\"";
+/// RED 2b — a look-alike entry parked beside the real one's absence. The post-T-897 analog of the
+/// `echo`/`psql -c` smuggles: it is the only way left to have the seed's NAME in the list without
+/// the seed being applied, and equality matching is what refuses it.
+const SEED_LOOKALIKE: &str = "faction_library.sql.bak";
 /// RED 3 — the `gate_slice` invocation, deleted to prove the dual-path pin is really dual. The
 /// trailing newline is part of the needle: the deletion must not leave a blank line behind.
 const WAVE_RUN_LINE: &str =
     "  run \"T-440 faction library seed\" checkrun cargo run -q -p xtask -- verify t440\n";
 
 /// Entry point. `0` when the contract holds and every RED proof bit; `1` for any failure; `2` when
-/// a RED arm could not be *set up* (see [`RECIPE_LIVE`]).
+/// a RED arm could not be *set up* (see [`delete_first_wave_run`]).
 ///
 /// The three-way status is the script's, not a widening: its RED-setup heredocs `sys.exit(2)`, and
 /// under `set -e` that became the script's status. Everything else is bash's binary 0/1, kept
 /// because `wave.sh` records pass/fail from it and the T-853 acceptance diff pins it.
 pub fn verify_t440(repo_root: &Path) -> Result<u8> {
-    let makefile = repo_root.join(MAKEFILE_REL);
     let seed = repo_root.join(SEED_REL);
     let wave = repo_root.join(WAVE_REL);
 
@@ -126,17 +138,13 @@ pub fn verify_t440(repo_root: &Path) -> Result<u8> {
     // Hand-rolled `Finding`s rather than `Verdict::did_not_run`: the library's prose ("— target
     // file missing: … / The pin could not run.") is better, but byte-identical output is the
     // acceptance criterion. The *cause* is still typed, so a caller matching on the `Verdict`
-    // sees `DidNotRun` and cannot read a deleted Makefile as a clean gate.
-    if !makefile.is_file() {
-        return Ok(emit(missing(
-            &makefile,
-            format!("restore {MAKEFILE_REL} so the seed recipe can be pinned."),
-        )));
-    }
+    // sees `DidNotRun` and cannot read a missing seed as a clean gate. The Makefile pre-flight
+    // that used to head this list died with the file at T-897; its successor is the `SEEDS`
+    // membership pin, which needs no `-f`.
     if !seed.is_file() {
         return Ok(emit(missing(
             &seed,
-            format!("T-440 requires {SEED_REL} for make seed."),
+            format!("T-440 requires {SEED_REL} for {RECIPE_SOURCE}."),
         )));
     }
     // `-s` is a BYTE-size test; `metadata().len()`, not `read_to_string().is_empty()`, so it does
@@ -171,15 +179,15 @@ pub fn verify_t440(repo_root: &Path) -> Result<u8> {
     // One read each, reused by all six arms. bash re-read inside every `python3` invocation and
     // let an I/O failure there become a traceback the RED arms then discarded; a read error is a
     // named cause here and stops the gate before any proof can be mis-reported.
-    let (seed_text, makefile_text, wave_text) = match read_trio(&seed, &makefile, &wave) {
-        Ok(trio) => trio,
+    let (seed_text, wave_text) = match read_pair(&seed, &wave) {
+        Ok(pair) => pair,
         Err(cause) => return Ok(emit(cause)),
     };
 
     let mut failed = false;
 
     // ── live ─────────────────────────────────────────────────────────────────────────────────
-    if !run_pins(&seed_text, &makefile_text, &wave_text, "live")? {
+    if !run_pins(&seed_text, SEEDS, &wave_text, "live")? {
         failed = true;
     }
 
@@ -190,34 +198,50 @@ pub fn verify_t440(repo_root: &Path) -> Result<u8> {
     // ITSELF broken instead of reporting the tree clean.
     let red1_seed = format!("-- {STARTER_NAME}\nSELECT 1;\n");
     red(
-        run_pins(&red1_seed, &makefile_text, &wave_text, "RED-comment-name")?,
+        run_pins(&red1_seed, SEEDS, &wave_text, "RED-comment-name")?,
         &format!("FAIL: RED comment-only '{STARTER_NAME}' still passed — SQL comment strip weak"),
         &format!("RED proof: comment-only '{STARTER_NAME}' + SELECT 1 → FAIL (expected)"),
         &mut failed,
     );
 
-    // ── RED 2: the recipe names the path but never applies it ────────────────────────────────
-    let Some(red2_make) = swap_recipe(&makefile_text, RECIPE_ECHO, "RED2") else {
+    // ── RED 2: the seeder no longer applies the file ─────────────────────────────────────────
+    //
+    // The post-Makefile shape of "deleting the seed line still greens the cold gate": drop the
+    // entry from the list `db seed` walks. DERIVED from the live const — a hand-written stand-in
+    // would stop testing the real list the moment the const moved.
+    let Some(red2_seeds) = seeds_without(SEEDS, SEED_ENTRY, "RED2") else {
         return Ok(2);
     };
     red(
-        run_pins(&seed_text, &red2_make, &wave_text, "RED-echo-path")?,
-        "FAIL: RED echo-path recipe still passed — redirect pin weak",
-        "RED proof: echo seeds/faction_library.sql >/dev/null → FAIL (expected)",
+        run_pins(
+            &seed_text,
+            &borrow(&red2_seeds),
+            &wave_text,
+            "RED-drop-entry",
+        )?,
+        "FAIL: RED dropped-entry seed list still passed — membership pin weak",
+        &format!("RED proof: {RECIPE_CONST} without {SEED_ENTRY} → FAIL (expected)"),
         &mut failed,
     );
 
-    // ── RED 2b: path smuggled inside a psql `-c` SQL comment ─────────────────────────────────
+    // ── RED 2b: a look-alike entry parked where the real one was ─────────────────────────────
     //
-    // Built from the LIVE Makefile, not from RED 2's output — the arms are independent, and
-    // stacking them would be testing a Makefile with no seed recipe at all.
-    let Some(red2b_make) = swap_recipe(&makefile_text, RECIPE_PSQL_C, "RED2b") else {
+    // Built from the LIVE list, not from RED 2's output — the arms are independent. This is the
+    // successor to the `echo` / `psql -c` smuggles: the name is present, the seed is not applied.
+    // Equality matching is the only thing standing between it and a false green.
+    let Some(mut red2b_seeds) = seeds_without(SEEDS, SEED_ENTRY, "RED2b") else {
         return Ok(2);
     };
+    red2b_seeds.push(SEED_LOOKALIKE);
     red(
-        run_pins(&seed_text, &red2b_make, &wave_text, "RED-psql-c-comment")?,
-        "FAIL: RED psql -c path-in-comment still passed — redirect pin weak",
-        "RED proof: psql -c with path in comment (no redirect) → FAIL (expected)",
+        run_pins(
+            &seed_text,
+            &borrow(&red2b_seeds),
+            &wave_text,
+            "RED-lookalike-entry",
+        )?,
+        "FAIL: RED look-alike entry still passed — membership pin is a substring test",
+        &format!("RED proof: {SEED_LOOKALIKE} in place of {SEED_ENTRY} → FAIL (expected)"),
         &mut failed,
     );
 
@@ -229,33 +253,29 @@ pub fn verify_t440(repo_root: &Path) -> Result<u8> {
         return Ok(2);
     };
     red(
-        run_pins(
-            &seed_text,
-            &makefile_text,
-            &red3_wave,
-            "RED-delete-one-wave-run",
-        )?,
+        run_pins(&seed_text, SEEDS, &red3_wave, "RED-delete-one-wave-run")?,
         "FAIL: RED delete-one-wave.sh-run still passed — dual-path pin weak",
         "RED proof: delete one wave.sh T-440 run (gate_slice) → FAIL (expected)",
         &mut failed,
     );
 
-    // ── GREEN: the live trio must still pass ─────────────────────────────────────────────────
+    // ── GREEN: the live inputs must still pass ───────────────────────────────────────────────
     //
     // Re-read from disk on purpose. This port cannot clobber the tree the way the script's
     // `mktemp` juggling could, but a *concurrent* edit — eight worktrees, a formatter, another
-    // agent — is still worth catching, and re-reading three files costs nothing.
-    let restored = match read_trio(&seed, &makefile, &wave) {
-        Ok((s, m, w)) => run_pins(&s, &m, &w, "live-restore")?,
+    // agent — is still worth catching, and re-reading two files costs nothing. (The seed LIST is
+    // a compile-time const now; no concurrent edit can move it under a running process.)
+    let restored = match read_pair(&seed, &wave) {
+        Ok((s, w)) => run_pins(&s, SEEDS, &w, "live-restore")?,
         // bash produced a Python traceback on stderr here and fell into the same message below.
-        // Not reachable on a tree that survived the four reads above.
+        // Not reachable on a tree that survived the reads above.
         Err(cause) => {
             emit_labelled(&cause, "live-restore");
             false
         }
     };
     if restored {
-        println!("GREEN proof: live INSERT + redirect recipe + wave dual-path → PASS");
+        println!("GREEN proof: live INSERT + seeder applies the file + wave dual-path → PASS");
     } else {
         println!("FAIL: live pins no longer pass after RED proofs (files should be untouched)");
         failed = true;
@@ -267,7 +287,7 @@ pub fn verify_t440(repo_root: &Path) -> Result<u8> {
     }
     println!(
         "PASS: T-440/T-478 faction library seed — live INSERT INTO user_factions \
-         '{STARTER_NAME}'; Makefile `< seeds/faction_library.sql`; wave.sh gate_slice + \
+         '{STARTER_NAME}'; {RECIPE_SOURCE} applies {SEED_ENTRY}; wave.sh gate_slice + \
          cmd_gate wired"
     );
     Ok(0)
@@ -279,8 +299,8 @@ pub fn verify_t440(repo_root: &Path) -> Result<u8> {
 ///
 /// Returns `true` when nothing failed — the sense of bash's `if assert_t440_pins …; then`, which
 /// keyed off the heredoc's `sys.exit(fail)`.
-fn run_pins(seed: &str, makefile: &str, wave: &str, label: &str) -> Result<bool> {
-    let verdicts = assert_t440_pins(seed, makefile, wave)?;
+fn run_pins(seed: &str, seeds: &[&str], wave: &str, label: &str) -> Result<bool> {
+    let verdicts = assert_t440_pins(seed, seeds, wave)?;
     for verdict in &verdicts {
         emit_labelled(verdict, label);
     }
@@ -292,12 +312,12 @@ fn run_pins(seed: &str, makefile: &str, wave: &str, label: &str) -> Result<bool>
 /// **Accumulating, not short-circuiting** — bash's `fail_msg` set a flag and carried on, so an
 /// operator who broke the seed *and* the recipe sees both in one run. Worth keeping: the three
 /// pins have independent causes and independent fixes.
-fn assert_t440_pins(seed: &str, makefile: &str, wave: &str) -> Result<Vec<Verdict>> {
+fn assert_t440_pins(seed: &str, seeds: &[&str], wave: &str) -> Result<Vec<Verdict>> {
     let mut out = Vec::new();
     if let Some(verdict) = seed_pin(seed)? {
         out.push(verdict);
     }
-    if let Some(verdict) = recipe_pin(makefile)? {
+    if let Some(verdict) = seed_list_pin(seeds) {
         out.push(verdict);
     }
     out.extend(wave_pin(wave)?);
@@ -338,46 +358,34 @@ fn seed_pin(seed: &str) -> Result<Option<Verdict>> {
     Ok(None)
 }
 
-/// Pin 2 — the `seed:` recipe applies the file through a shell redirect.
-fn recipe_pin(makefile: &str) -> Result<Option<Verdict>> {
-    let recipe = recipe_body(makefile);
-    if recipe.is_empty() {
-        return Ok(Some(Verdict::failed(
-            "Makefile has no tab-indented body under the seed: target",
+/// Pin 2 — the seeder applies the file.
+///
+/// Membership by EQUALITY over [`SEEDS`]. This replaced a redirect-vs-echo regex over a make
+/// recipe at T-897; the two smuggles that regex existed to refuse (`echo …path… >/dev/null`, the
+/// psql `-c` SQL-comment) cannot be expressed in a `&[&str]` at all. What remains expressible is a
+/// LOOK-ALIKE entry (`faction_library.sql.bak`), which equality refuses and a substring test would
+/// not — so the RED-2b arm perturbs exactly that.
+fn seed_list_pin(seeds: &[&str]) -> Option<Verdict> {
+    if seeds.is_empty() {
+        return Some(Verdict::failed(format!(
+            "{RECIPE_CONST} is empty — {RECIPE_SOURCE} applies nothing"
         )));
     }
-    let live = live_recipe_lines(&recipe);
-
-    // The live contract: `… < seeds/faction_library.sql`. `\b` after `.sql` so `…sql.bak` does not
-    // satisfy it; `<\s*` so it is a real redirect rather than the path merely sitting downstream
-    // of a `<` that belongs to something else.
-    let redirect = Pattern::regex(r"<\s*seeds/faction_library\.sql\b")?;
-    let echo_smuggle = Pattern::regex(r"\becho\b.*seeds/faction_library\.sql")?;
-    let has_redirect = live.iter().any(|line| redirect.is_match(line));
-
-    if live.iter().any(|line| echo_smuggle.is_match(line)) && !has_redirect {
-        // Distinct wording for the echo case: "you mentioned the file" is a different mistake from
-        // "you forgot the file", and the operator's fix differs.
-        return Ok(Some(Verdict::failed(
-            "Makefile seed: recipe echoes seeds/faction_library.sql but does not redirect-apply \
-             it (`< seeds/faction_library.sql`)",
-        )));
+    if seeds.contains(&SEED_ENTRY) {
+        return None;
     }
-    if !has_redirect {
-        // The evidence dump is part of the contract: `wave.sh` tails 15 lines of a failed gate, and
-        // without the recipe body the operator cannot see WHICH line was mistaken for an
-        // application. Six-space headline indent, two more per line — the script's shape.
-        let mut detail = vec!["found live recipe lines:".to_string()];
-        detail.extend(live.iter().map(|line| format!("  {}", py_repr(line))));
-        return Ok(Some(Verdict::Failed(Finding {
-            headline: "Makefile seed: recipe must apply seeds/faction_library.sql via shell \
-                       redirect (`< seeds/faction_library.sql`), not a bare path / echo / psql \
-                       -c comment smuggle (T-478)."
-                .to_string(),
-            detail,
-        })));
-    }
-    Ok(None)
+    // The evidence dump is part of the contract: `wave.sh` tails 15 lines of a failed gate, and
+    // without the list the operator cannot see WHICH entry was mistaken for an application.
+    // Six-space headline indent, two more per line — the script's shape.
+    let mut detail = vec![format!("found {RECIPE_CONST} entries:")];
+    detail.extend(seeds.iter().map(|entry| format!("  {}", py_repr(entry))));
+    Some(Verdict::Failed(Finding {
+        headline: format!(
+            "{RECIPE_SOURCE} must apply {SEED_ENTRY}: it is not a member of {RECIPE_CONST} \
+             (a renamed or parked look-alike does not count — T-478)."
+        ),
+        detail,
+    }))
 }
 
 /// Pin 3 — both `wave.sh` gate paths invoke this gate.
@@ -415,60 +423,6 @@ fn wave_pin(wave: &str) -> Result<Vec<Verdict>> {
         }
     }
     Ok(out)
-}
-
-// ── MAKEFILE PARSING ─────────────────────────────────────────────────────────────────────────
-
-/// The tab-indented lines under the `seed:` target.
-///
-/// bash scanned with `re.match(r"^seed:", line)` to open and `re.match(r"^[^\s#]", line)` to close.
-/// Note what that means, and it is right: **blank lines and `#` comments do not end the scan** —
-/// only the next real target does. Today the `seed:` body is followed by a blank line and eleven
-/// lines of T-577 commentary before `db-backup:`, and the scan walks straight through them, which
-/// is what make itself does.
-fn recipe_body(makefile: &str) -> Vec<&str> {
-    let mut body = Vec::new();
-    let mut in_seed = false;
-    for line in makefile.lines() {
-        // `^seed:` has no metacharacters, so `starts_with` is the exact equivalent of the script's
-        // `re.match` — and `seed-dev:` is correctly a different target that does not open a scan.
-        if line.starts_with("seed:") {
-            in_seed = true;
-            continue;
-        }
-        if !in_seed {
-            continue;
-        }
-        let opens_target = matches!(line.chars().next(), Some(c) if !c.is_whitespace() && c != '#');
-        // The script's extra `and not line.startswith("\t")` is redundant — a tab IS whitespace, so
-        // `opens_target` is already false for any recipe line. Left out rather than transcribed: it
-        // cannot change the result, and spelling it would imply it could.
-        if opens_target {
-            break;
-        }
-        if line.starts_with('\t') {
-            body.push(line);
-        }
-    }
-    body
-}
-
-/// Recipe lines with `#` comments stripped and trailing whitespace removed.
-///
-/// LATENT BUG, PRESERVED. The script filtered blank/comment-only lines with
-/// `if re.match(r"^\t\s*$", cleaned) or cleaned == "\t": continue` — but `cleaned` has already been
-/// `.rstrip()`ed, so a bare `\t` line has become `""`, and so has a `\t# note` line. Neither test
-/// can ever fire, and empty strings reach the evidence dump as `''`. It is harmless (an empty line
-/// matches neither the redirect nor the echo pattern, so it cannot flip a verdict — it only adds a
-/// `''` row to "found live recipe lines"), and today's `seed:` body has no such line, so it has
-/// never been observed. Reproduced exactly rather than fixed: fixing it changes gate output on a
-/// tree that HAS a blank recipe line, and this commit's contract is that nothing changes.
-fn live_recipe_lines(recipe: &[&str]) -> Vec<String> {
-    recipe
-        .iter()
-        .map(|line| strip_hash_comments(line).trim_end().to_string())
-        .filter(|cleaned| cleaned != "\t")
-        .collect()
 }
 
 // ── COMMENT STRIPPERS ────────────────────────────────────────────────────────────────────────
@@ -655,17 +609,23 @@ fn extract_fn_body<'a>(src: &'a str, fn_name: &str) -> Result<Option<&'a str>> {
 
 // ── RED-ARM SETUP ────────────────────────────────────────────────────────────────────────────
 
-/// Replace the live seed-application line with `replacement` (first occurrence only).
+/// [`SEEDS`] minus `entry` — the RED-2 perturbation, DERIVED from the live const.
 ///
-/// `None` means the tree no longer has the line the arm perturbs — i.e. the *proof* is broken
-/// rather than the tree. The script wrote the same sentence to stderr and `sys.exit(2)`; that
-/// status is preserved so a reflowed `seed:` recipe is loud instead of quietly proving nothing.
-fn swap_recipe(makefile: &str, replacement: &str, arm: &str) -> Option<String> {
-    if !makefile.contains(RECIPE_LIVE) {
-        eprintln!("{arm} setup failed: live redirect recipe line not found");
+/// `None` means the const no longer contains the entry the arm removes, i.e. the *proof* is
+/// broken rather than the tree — the live pin will already have said so, and a RED arm that
+/// perturbs nothing must not print "→ FAIL (expected)". The script wrote the same sentence to
+/// stderr and `sys.exit(2)`; that status is preserved.
+fn seeds_without(seeds: &[&'static str], entry: &str, arm: &str) -> Option<Vec<&'static str>> {
+    if !seeds.contains(&entry) {
+        eprintln!("{arm} setup failed: {entry} is not in {RECIPE_CONST} to begin with");
         return None;
     }
-    Some(makefile.replacen(RECIPE_LIVE, replacement, 1))
+    Some(seeds.iter().copied().filter(|s| *s != entry).collect())
+}
+
+/// `&[&'static str]` → `&[&str]`, so a perturbed `Vec` can be handed to [`run_pins`].
+fn borrow<'a>(seeds: &'a [&'static str]) -> Vec<&'a str> {
+    seeds.to_vec()
 }
 
 /// Delete the first `wave.sh` T-440 invocation, asserting exactly one survives.
@@ -732,21 +692,17 @@ fn emit_labelled(verdict: &Verdict, label: &str) {
     }
 }
 
-/// Read all three inputs, or the first named reason one could not be read.
-fn read_trio(
-    seed: &Path,
-    makefile: &Path,
-    wave: &Path,
-) -> Result<(String, String, String), Verdict> {
-    Ok((read_py(seed)?, read_py(makefile)?, read_py(wave)?))
+/// Read both file inputs, or the first named reason one could not be read.
+fn read_pair(seed: &Path, wave: &Path) -> Result<(String, String), Verdict> {
+    Ok((read_py(seed)?, read_py(wave)?))
 }
 
 /// Read a file the way Python's text mode did, or name why not.
 ///
-/// Universal newlines (`\r\n` and lone `\r` → `\n`) is not pedantry here: without it a CRLF
-/// Makefile would put a literal `\r` into every [`py_repr`] in the evidence dump, and `trim_end`
-/// would then disagree with `.rstrip()` about where a line ends. `.editorconfig` forbids CRLF in
-/// this repo, so it is belt-and-braces for a tree checked out on Windows.
+/// Universal newlines (`\r\n` and lone `\r` → `\n`) is not pedantry here: without it a CRLF input
+/// would put a literal `\r` into every [`py_repr`] in the evidence dump, and `trim_end` would then
+/// disagree with `.rstrip()` about where a line ends. `.editorconfig` forbids CRLF in this repo,
+/// so it is belt-and-braces for a tree checked out on Windows.
 fn read_py(path: &Path) -> Result<String, Verdict> {
     match std::fs::read_to_string(path) {
         Ok(text) if text.contains('\r') => Ok(text.replace("\r\n", "\n").replace('\r', "\n")),
@@ -771,7 +727,8 @@ fn read_py(path: &Path) -> Result<String, Verdict> {
 /// ASCII is exact. Above U+009F this treats every code point as printable, where CPython consults
 /// `str.isprintable()` (Unicode categories Cc/Cf/Cs/Co/Cn/Zl/Zp/Zs). Closing that gap means
 /// shipping Unicode category tables for a case that requires an unprintable non-ASCII code point
-/// inside a Makefile recipe line that has ALREADY failed the redirect pin. Noted, not implemented.
+/// inside a seed FILE NAME on a list that has ALREADY failed the membership pin. Noted, not
+/// implemented.
 fn py_repr(s: &str) -> String {
     let quote = if s.contains('\'') && !s.contains('"') {
         '"'
@@ -801,13 +758,13 @@ fn py_repr(s: &str) -> String {
     out
 }
 
-// ── WHEN THE SEED RECIPE LEAVES THE MAKEFILE ─────────────────────────────────────────────────
+// ── WHERE THE PINS POINT ─────────────────────────────────────────────────────────────────────
 //
-// T-853 Phase 3 replaces `make` with `cargo xtask` and rewrites `wave.sh`'s two call sites to
-// `cargo xtask verify t440`. Everything this gate knows about WHERE the pins point lives in the
-// nine consts at the top plus `recipe_body`. Repointing is: change `MAKEFILE_REL` / `RECIPE_LIVE` /
-// `WAVE_RUN_LINE` / `VERIFY_REL`, replace `recipe_body` if the new host is not a tab-indented make
-// recipe, and re-baseline the tests below. Nothing else in this file names the Makefile.
+// Everything this gate knows about WHERE the pins point lives in the consts at the top. Pin 1 is
+// `SEED_REL` + `STARTER_NAME`; pin 2 is `SEED_ENTRY` against `mk_db::SEEDS` (T-897 — it was the
+// Makefile `seed:` recipe until then); pin 3 is `WAVE_REL` + `VERIFY_REL` + `WAVE_RUN_LINE`.
+// Repointing any of them means changing the const and re-baselining the tests below; nothing in
+// this file parses a build file any more.
 
 #[cfg(test)]
 mod tests {
@@ -816,15 +773,14 @@ mod tests {
     /// A minimal tree in text form. Each test perturbs one field — the same discipline the gate
     /// applies to itself at runtime, at unit-test speed.
     const SEED_OK: &str = "-- starter library\nINSERT INTO user_factions (name, side)\n  VALUES ('US Army 1980s', 'BLUFOR');\n";
-    const MAKE_OK: &str = "seed: ## apply seeds\n\tpsql < seeds/discord_roles.sql\n\tcd $(WEB) && $(COMPOSE) exec -T db psql -U tbd -d tbd_reforger < seeds/faction_library.sql\n\ndb-backup:\n\techo nope\n";
     /// Built from [`WAVE_RUN_LINE`] rather than hand-written, so the fixture cannot drift from
     /// the const the way it did when T-853 repointed the real call sites to `cargo xtask`.
     fn wave_ok() -> String {
         format!("gate_slice() {{\n{WAVE_RUN_LINE}}}\n\ncmd_gate() {{\n{WAVE_RUN_LINE}}}\n")
     }
 
-    fn fails(seed: &str, make: &str, wave: &str) -> Vec<String> {
-        assert_t440_pins(seed, make, wave)
+    fn fails(seed: &str, seeds: &[&str], wave: &str) -> Vec<String> {
+        assert_t440_pins(seed, seeds, wave)
             .expect("constant patterns compile")
             .iter()
             .map(|verdict| match verdict {
@@ -835,8 +791,8 @@ mod tests {
     }
 
     #[test]
-    fn live_trio_holds() {
-        assert!(fails(SEED_OK, MAKE_OK, &wave_ok()).is_empty());
+    fn live_inputs_hold() {
+        assert!(fails(SEED_OK, SEEDS, &wave_ok()).is_empty());
     }
 
     /// RED 1, the T-478 headline defect: the name in a `--` comment must not satisfy the pin.
@@ -844,7 +800,7 @@ mod tests {
     fn comment_only_starter_name_is_not_a_seed() {
         let out = fails(
             &format!("-- {STARTER_NAME}\nSELECT 1;\n"),
-            MAKE_OK,
+            SEEDS,
             &wave_ok(),
         );
         assert_eq!(out.len(), 1);
@@ -855,53 +811,65 @@ mod tests {
     #[test]
     fn name_in_a_different_statement_is_not_a_seed() {
         let seed = "INSERT INTO user_factions (name) VALUES ('OPFOR');\nSELECT 'US Army 1980s';\n";
-        assert_eq!(fails(seed, MAKE_OK, &wave_ok()).len(), 1);
+        assert_eq!(fails(seed, SEEDS, &wave_ok()).len(), 1);
     }
 
     /// An emptied seed is caught by the pin as well as by the `-s` pre-flight.
     #[test]
     fn emptied_seed_fails_the_pin() {
-        assert_eq!(fails("", MAKE_OK, &wave_ok()).len(), 1);
+        assert_eq!(fails("", SEEDS, &wave_ok()).len(), 1);
     }
 
-    /// RED 2 and RED 2b — the two smuggles that beat the pre-T-478 substring check.
+    /// RED 2 and RED 2b, post-T-897: the seed must be a MEMBER of the list the seeder walks, and
+    /// membership is by equality. Both fixtures are DERIVED from the live const.
     #[test]
-    fn recipe_must_redirect_not_merely_mention() {
-        let echoed = MAKE_OK.replacen(RECIPE_LIVE, RECIPE_ECHO, 1);
-        assert_ne!(echoed, MAKE_OK, "fixture must contain the live recipe line");
-        let out = fails(SEED_OK, &echoed, &wave_ok());
+    fn the_seeder_must_apply_the_file_not_merely_name_it() {
+        let dropped = seeds_without(SEEDS, SEED_ENTRY, "test").expect("live const has the entry");
+        let out = fails(SEED_OK, &borrow(&dropped), &wave_ok());
         assert_eq!(out.len(), 1);
-        assert!(out[0].contains("echoes seeds/faction_library.sql"));
+        assert!(
+            out[0].contains("must apply faction_library.sql"),
+            "{}",
+            out[0]
+        );
 
-        let smuggled = MAKE_OK.replacen(RECIPE_LIVE, RECIPE_PSQL_C, 1);
-        let out = fails(SEED_OK, &smuggled, &wave_ok());
+        let mut lookalike = dropped.clone();
+        lookalike.push(SEED_LOOKALIKE);
+        let out = fails(SEED_OK, &borrow(&lookalike), &wave_ok());
         assert_eq!(out.len(), 1);
-        assert!(out[0].contains("comment smuggle (T-478)."));
+        assert!(out[0].contains("look-alike does not count"), "{}", out[0]);
     }
 
-    /// A `seed:` target with no body, and one whose scan must stop at the next target.
+    /// A gutted list gets its own message: "applies nothing" is a different fix from "applies the
+    /// wrong things".
     #[test]
-    fn recipe_body_stops_at_the_next_target() {
-        assert!(recipe_body("seed:\ndb-backup:\n\techo nope\n").is_empty());
-        // Blank lines and `#` blocks do NOT close the scan; only a real target does.
-        let body = recipe_body("seed:\n\tone\n\n# commentary\n\ttwo\ndb-backup:\n\tthree\n");
-        assert_eq!(body, vec!["\tone", "\ttwo"]);
+    fn an_empty_seed_list_is_its_own_failure() {
+        let out = fails(SEED_OK, &[], &wave_ok());
+        assert_eq!(out.len(), 1);
+        assert!(out[0].contains("is empty"), "{}", out[0]);
+    }
+
+    /// The RED-arm setup guard: a const that no longer carries the entry must abort the proof
+    /// rather than print "→ FAIL (expected)" over a perturbation that changed nothing.
+    #[test]
+    fn red_setup_refuses_a_list_it_does_not_recognise() {
+        assert!(seeds_without(&["other.sql"], SEED_ENTRY, "test").is_none());
     }
 
     /// RED 3 — dropping either wave.sh call site is reported against the right function.
     #[test]
     fn both_wave_paths_are_pinned() {
         let slice_gone = wave_ok().replacen(WAVE_RUN_LINE, "", 1);
-        let out = fails(SEED_OK, MAKE_OK, &slice_gone);
+        let out = fails(SEED_OK, SEEDS, &slice_gone);
         assert_eq!(out.len(), 1);
         assert!(out[0].starts_with("wave.sh `gate_slice()` (slice gate) does not invoke"));
 
         // A commented-out invocation is stripped before extraction, so it cannot satisfy the pin.
         let commented = wave_ok().replacen("  run \"T-440", "  # run \"T-440", 1);
-        assert!(fails(SEED_OK, MAKE_OK, &commented)[0].contains("gate_slice"));
+        assert!(fails(SEED_OK, SEEDS, &commented)[0].contains("gate_slice"));
 
-        assert!(fails(SEED_OK, MAKE_OK, "gate_slice() {\n:\n}\n")[0].contains("gate_slice"));
-        assert!(fails(SEED_OK, MAKE_OK, "")[0].contains("wave.sh missing `gate_slice()`"));
+        assert!(fails(SEED_OK, SEEDS, "gate_slice() {\n:\n}\n")[0].contains("gate_slice"));
+        assert!(fails(SEED_OK, SEEDS, "")[0].contains("wave.sh missing `gate_slice()`"));
     }
 
     #[test]
@@ -949,8 +917,7 @@ mod tests {
 
     /// The RED-arm setup guards: a reflowed tree must abort the proof, not skip it.
     #[test]
-    fn red_setup_refuses_a_tree_it_does_not_recognise() {
-        assert!(swap_recipe("nothing here", RECIPE_ECHO, "RED2").is_none());
+    fn red_setup_refuses_a_wave_it_does_not_recognise() {
         assert!(delete_first_wave_run("nothing here").is_none());
         // Exactly one invocation present: removing it leaves zero, which the count check rejects.
         let single = wave_ok().replacen(WAVE_RUN_LINE, "", 1);

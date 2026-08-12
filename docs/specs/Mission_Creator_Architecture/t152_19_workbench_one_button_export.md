@@ -85,7 +85,7 @@ Audit §9 scorecard. Towns 2/5: the Path A plugin is authored but has **never pr
 | **G3** | Diff gate: Path A ∪ crosswalk ⊇ Path B settlements; coords ≤ 25 m drift; 8 required towns present | Data parity |
 | **G4** | `make map-labels-everon` exit 0 from clean checkout + staged export; regenerates byte-stable artifacts on second run | One button |
 | **G5** | Verdict artifact: ≥ 10 logged road/taxiway queries with results; outcome A (source + follow-up filed) or B (operator-signed curated charter, M2) | Verdict |
-| **G6** | `make schema-validate` + FE suites exit 0 | Regression |
+| **G6** | `cargo xtask ci schema-validate` + FE suites exit 0 | Regression |
 
 ---
 
@@ -97,7 +97,7 @@ scripts/mod/mcp-call.sh api_search "MapDescriptor" || { echo "BLOCKED: Workbench
 make map-labels-everon
 make map-labels-everon   # byte-stability (G4)
 git diff --stat packages/map-assets/everon/   # expect empty on 2nd run
-make schema-validate
+cargo xtask ci schema-validate
 cd apps/website/frontend && npm test && npm run build && npm run lint
 ```
 

@@ -19,7 +19,7 @@
 
 **Forest render model (post T-176):** highlight = **8 m TBDD canopy mass** (`DENSITY_CELL_M=8`, box_blur_corners `r=1`, `CANOPY_MASS_ISO`); loose **32 m Path B landcover forest wash removed**. Retune: `CANOPY_KERNEL_RADIUS_CELLS` / `CANOPY_MASS_ISO` → `cargo run -p tbd-tools --bin world -- redensify --terrain everon` (committed-chunk path, no Workbench).
 
-**Gates:** `make ci-local` PASS · schema-validate (S13 density fixture) · map-engine-core tests · leptos release build. `gate editor-suite` headless lavapipe/WebGPU wedge = pre-existing (t166), not T-176 code.
+**Gates:** `cargo xtask ci ci-local` PASS · schema-validate (S13 density fixture) · map-engine-core tests · leptos release build. `gate editor-suite` headless lavapipe/WebGPU wedge = pre-existing (t166), not T-176 code.
 
 **Manual visual (operator G-A):** tight forest vs screens 01–03 · place ghost whole palette drag · `window.__editorBench(500)` on zoom+pan.
 

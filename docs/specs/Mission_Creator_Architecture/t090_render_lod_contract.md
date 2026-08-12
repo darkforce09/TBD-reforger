@@ -107,8 +107,8 @@ Pick only classes visible at current `deckZoom` per N3 (`lodGates.classVisible`)
 
 | ID | Check | Pass |
 |----|-------|------|
-| LOD1 | This file is the only `t090*.md` containing the master band table | `make t090-spec-verify` |
-| LOD2 | All thresholds expressed as deckZoom (−6…+6) | `make t090-spec-verify` |
+| LOD1 | This file is the only `t090*.md` containing the master band table | `cargo xtask schema t090-specs` |
+| LOD2 | All thresholds expressed as deckZoom (−6…+6) | `cargo xtask schema t090-specs` |
 | LOD3 | At default deckZoom **−2**: forests = **polygons**, trees = **hidden**, buildings = **OBB rects** | vitest (T-090.5.2+) |
 | LOD4 | `REF_ZOOM`, `TREE_GLYPH_MIN_ZOOM`, `FOREST_*`, `SEA_FILL_MAX_ZOOM`, `contourIntervalForZoom`, `BUILDING_*`, `INSTANCE_BUDGET` exported from `worldmap/lodGates.ts` | code review |
 | LOD5 | No `WORLD_CLUSTER_*` or world supercluster in codebase | grep + vitest |

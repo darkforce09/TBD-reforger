@@ -49,7 +49,7 @@ clickable; the SVG silhouette remains only as the engine-create error fallback.
 
 ## Gates
 
-`make wasm-ci` exit 0 (fmt · clippy native + wasm32 `-D warnings` · cargo tests: core
+`cargo xtask mk wasm-ci` exit 0 (fmt · clippy native + wasm32 `-D warnings` · cargo tests: core
 **156** incl. 7 doll + render **28** incl. 3 doll_pack) · `make wasm` →
 `map_engine_wasm_bg.wasm` **4,216,072 B** (was 4,152,125 — doll adds 63,947 B) · vitest
 **358/358** (+4 doll parity) · FE build + `tsc --noEmit` clean · lint = pre-existing

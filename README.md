@@ -20,9 +20,9 @@ Unified monorepo for the TBD Arma Reforger milsim community: web platform, Enfus
 
 ```bash
 cp apps/website/api/.env.example apps/website/api/.env   # if needed
-make db-up
-make api      # :8080
-make leptos   # :3000 (trunk serve; proxies /api + /map-assets)
+cargo xtask db up
+cargo xtask mk rust-api      # :8080
+cargo xtask mk leptos   # :3000 (trunk serve; proxies /api + /map-assets)
 ```
 
 Dev login (no Discord): `GET http://localhost:8080/api/v1/auth/dev-login?role=admin`

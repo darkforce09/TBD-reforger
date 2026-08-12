@@ -20,7 +20,7 @@ Fix **all** audit findings (C, R, T, M, D) in **one branch** — 37/41 shipped; 
 ## Verify (replay)
 
 ```bash
-make test-it
+cargo xtask db test-it
 cd apps/website/frontend && npm run build && npm run lint
 ```
 

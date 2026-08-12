@@ -89,4 +89,4 @@ Authority: [`docs/TAGS.md`](TAGS.md) · [`tickets/AI_PLAYBOOK.md`](../../.ai/tic
 
 The T-043 alias `docs/frontend/` never existed on disk; canonical path is **`docs/website/frontend/`**.
 Retired shorthand: `frontend/docs/`. See [`DOCUMENTATION_STANDARDS.md`](../platform/DOCUMENTATION_STANDARDS.md) §8.2.
-Enforced by `make verify-doc-layout`.
+Enforced by `cargo xtask ci verify-doc-layout`.

@@ -2990,7 +2990,7 @@ mod tests {
     //
     // T-180 shipped six author-facing things that never reach the game server: a squad's
     // `leaderSlotId`, a slot's `tag` / `callsign` / `rank` / `stance`, and the entire vehicle
-    // roster. `make verify-t180` was green throughout, because **not one of its twenty-two test
+    // roster. `cargo xtask verify t180` was green throughout, because **not one of its twenty-two test
     // selectors names a test in this file** — it exercises `doc::place_orbat` and `doc::store`
     // (the editor can AUTHOR it), `slots_gpu` / `map-engine-render` (the map can DRAW it) and
     // `mission::orbat` / `mission::compile` (the ORBAT derive), and then stops. The compile
@@ -4981,7 +4981,7 @@ mod tests {
     /// time so editing the fixture rebuilds these tests, matching [`COMPILER_SHAPED_GOLDEN`].
     ///
     /// This file is the reason these tests can prove schema-validity without a `jsonschema`
-    /// dev-dependency: `xtask`'s `make schema-validate` already validates every golden against
+    /// dev-dependency: `xtask`'s `cargo xtask ci schema-validate` already validates every golden against
     /// `mission.schema.json`, and `scripts/mod/world-boot.sh` already boots this one through the real
     /// Enfusion parser. So reproducing its `briefings` block EXACTLY inherits both proofs.
     const BRIDGEHEAD_GOLDEN: &str =
@@ -5092,7 +5092,7 @@ mod tests {
     /// require the output to be that block again, unchanged.
     ///
     /// This is the strongest statement available about the shape: `bridgehead-at-levie.json` is
-    /// schema-validated by `make schema-validate` and parsed by real Enfusion in
+    /// schema-validated by `cargo xtask ci schema-validate` and parsed by real Enfusion in
     /// `scripts/mod/world-boot.sh`, so an emitter that reproduces it byte-for-byte emits a document
     /// both gates already accept. It covers prose on both sides, per-side markers at the SAME
     /// coordinates (the side-discipline case), and lowercase keys that survive slugging untouched.

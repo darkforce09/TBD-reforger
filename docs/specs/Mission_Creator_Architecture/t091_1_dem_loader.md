@@ -31,7 +31,7 @@ Load the committed Everon 16-bit DEM PNG into a CPU elevation cache and expose `
 
 | Gate | Evidence |
 |------|----------|
-| **T-091.0** | ✅ `dem/everon-dem-16bit.png` 6400×6400 + `make verify-terrain-strict` PASS |
+| **T-091.0** | ✅ `dem/everon-dem-16bit.png` 6400×6400 + `cargo xtask ci verify-terrain-strict` PASS |
 | **T-090.0** | ✅ `terrain-manifest.schema.json`; this slice adds `terrainManifest.ts` types |
 
 ---
@@ -260,7 +260,7 @@ cd apps/website/frontend
 npm install                             # picks up vitest + pngjs
 npm run build && npm run lint
 npm test                                # vitest — sampleElevation.test.ts
-make verify-terrain-strict              # unchanged T-091.0 gate — must still PASS
+cargo xtask ci verify-terrain-strict              # unchanged T-091.0 gate — must still PASS
 ! rg -l 'map-assets|dem/|sampleElevation|fetch.*dem' apps/website/frontend/src/features/mission-creator/compiler/
 ```
 
@@ -316,7 +316,7 @@ for (const row of a.anchors) console.log(row.id, sampleElevationMeters(row.x, ro
 |----|-------|----------------|---------------|
 | **S1** | Build/lint | exit 0 | `npm run build && npm run lint` |
 | **S2** | Unit tests | **All 11** measured anchors + S8 + S9 + synthetic + S10 | `npm test` |
-| **S3** | Strict alignment | T-091.0 gate unchanged | `make verify-terrain-strict` |
+| **S3** | Strict alignment | T-091.0 gate unchanged | `cargo xtask ci verify-terrain-strict` |
 | **S4** | Degraded Everon | Break DEM path → **toast with Retry** + `sampleElevation` → 0 | Manual: rename `dem` → `dem_off` under symlink |
 | **S5** | No worker fetch | Compiler worker does not fetch DEM | `rg` gate — zero matches |
 | **S6** | Dev serve | PNG + manifest HTTP 200 | `curl -sfI` §Dev serve |
@@ -327,7 +327,7 @@ for (const row of a.anchors) console.log(row.id, sampleElevationMeters(row.x, ro
 
 ### Manual smoke (after S1–S6)
 
-1. `make map-assets-link && make web` + `make api`
+1. `make map-assets-link && make web` + `cargo xtask mk rust-api`
 2. Dev-login → open mission editor on Everon
 3. DevTools Network: `everon-dem-16bit.png` → **200**, **71,911,548 bytes** (~68.6 MiB on disk)
 4. Console: no uncaught decode errors
@@ -386,7 +386,7 @@ Reject load if PNG IHDR `width×height` ≠ `manifest.dem.widthPx × manifest.de
 
 **Wired in T-091.2 @ `dde589e`:** toolbelt CUR/SEL Z, `ydoc` z on place/move, hillshade. **Still deferred:** compiler worker DEM fetch.
 
-**Verify replay:** `make map-assets-link && cd apps/website/frontend && npm test && make verify-terrain-strict`
+**Verify replay:** `make map-assets-link && cd apps/website/frontend && npm test && cargo xtask ci verify-terrain-strict`
 
 ---
 

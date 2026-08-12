@@ -5,7 +5,7 @@
 -- 3 gear_uniform, 4 gear_vest, 2 gear_helmet), PLUS 4 T-800 vehicle rows so the
 -- Vehicles tab and ORBAT > Add Vehicle have something to author in a dev DB (the
 -- Workbench export carried no vehicle kind, which read as "No placeable vehicles"
--- even after a correct seed). Idempotent and self-contained so `make seed` works
+-- even after a correct seed). Idempotent and self-contained so `cargo xtask db seed` works
 -- WITHOUT cmd/seed's mock_data.sql: it upserts the current modpack FK first.
 --
 -- modpack_id = the mock current modpack (mock_data.sql), the modpacks.is_current

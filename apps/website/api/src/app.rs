@@ -968,7 +968,7 @@ pub fn router(state: AppState) -> Router {
 
     // Always serve `/map-assets` (Trunk proxies here in dev; production SPA cutover uses the same
     // path). Gating this behind SPA_DIST_DIR left the editor with 404s for DEM/sat/world under
-    // `make leptos` + `make api`.
+    // `cargo xtask mk leptos` + `cargo xtask mk rust-api`.
     //
     // T-630 — the *mount* is deliberately deferred to below the rate-limit layer. Only the
     // directory is resolved here.

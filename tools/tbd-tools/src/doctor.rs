@@ -7,7 +7,7 @@
 //! (The actual T-177 root cause: `chrome-headless-shell`'s stubbed Skia font manager FATAL-crashes on
 //! per-character font fallback; fixed in [`crate::cdp::find_chromium`].)
 //!
-//! `gate doctor` runs before the suite (a prerequisite of `make leptos-gates`) and, in ~15 s:
+//! `gate doctor` runs before the suite (a prerequisite of `cargo xtask mk leptos-gates`) and, in ~15 s:
 //! validates the resolved chromium + toolchain against the committed pins (`gate-env.json`), checks
 //! free RAM + orphaned chrome processes, checks that chromium can actually resolve a font
 //! ([`check_fonts`] — T-320; a zero-font chromium is a hard fail as of T-362), and runs a
@@ -250,7 +250,7 @@ fn tool_version(bin: &str, arg: &str) -> Option<String> {
 }
 
 /// `gate doctor`. `strict` promotes drift warnings to failures; a liveness failure is ALWAYS a hard
-/// fail (exit 1) so `make leptos-gates` is blocked with a diagnosis rather than wedging.
+/// fail (exit 1) so `cargo xtask mk leptos-gates` is blocked with a diagnosis rather than wedging.
 pub async fn run(dist: Option<String>, strict: bool) -> Result<u8> {
     println!("== gate doctor (T-177 editor-gate preflight)");
     ensure_gate_font_cache();

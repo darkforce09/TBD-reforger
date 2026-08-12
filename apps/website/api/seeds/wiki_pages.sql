@@ -1,4 +1,4 @@
--- T-444 — Doctrine wiki seed for `make seed`.
+-- T-444 — Doctrine wiki seed for `cargo xtask db seed`.
 -- Rows match the content_golden §5 wiki_pages block so a fresh DB has
 -- the same manuals the GET /wiki golden was captured against (incl. the
 -- V-suite `field-manual` slug). Idempotent on primary key.

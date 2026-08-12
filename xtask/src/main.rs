@@ -95,7 +95,7 @@ use root::find_repo_root;
 use sync::cmd_sync;
 
 #[derive(Parser, Debug)]
-// T-896: `disable_help_subcommand` frees the `help` name for the successor to `make help`. The
+// T-896: `disable_help_subcommand` frees the `help` name for the successor to `cargo xtask help`. The
 // Makefile's help target is how anyone discovers the task surface, and T-897 deletes it; clap's
 // auto-generated `help` lists CLI *groups*, not tasks, so it is not that successor. `--help`,
 // `-h` and `xtask <group> --help` are untouched — only the `xtask help <group>` spelling moves.
@@ -211,7 +211,7 @@ enum TopCmd {
     },
     /// T-896: the Makefile's CI / composite / map lane. No target lists the lane.
     Ci { target: Option<String> },
-    /// T-896: the task surface — successor to `make help`.
+    /// T-896: the task surface — successor to `cargo xtask help`.
     #[command(name = "help")]
     Help,
 }
@@ -326,6 +326,10 @@ enum ModCmd {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
+    /// Prove the compile gate still rejects a broken .c — passes ONLY on its exit 1 (T-897 port
+    /// of the Makefile's `mod-compile-selftest` rc classification).
+    #[command(name = "compile-selftest")]
+    CompileSelftest,
     /// Headless game-mode boot + roll-call (T-892 port of world-boot.sh).
     /// Exit: 0 PASS · 1 CODE · 2 usage · 3 ENVIRONMENT.
     #[command(name = "world-boot", disable_help_flag = true)]
@@ -452,7 +456,7 @@ enum VerifyCmd {
     /// T-439: Objects palette aliases pinned in the mod Data/registry.json
     #[command(name = "t439")]
     T439,
-    /// T-444: `make seed` must apply seeds/wiki_pages.sql
+    /// T-444: `cargo xtask db seed` must apply seeds/wiki_pages.sql
     #[command(name = "t444")]
     T444,
     /// T-181.4/.52 oracle-leak guard: no CRF_/PS_ identifiers or oracle-only asset GUIDs
@@ -933,6 +937,7 @@ fn run() -> Result<u8> {
             ModCmd::TestPhase1Api => gate_test_phase1_api::run(&find_repo_root()?),
             ModCmd::Playtest { args } => playtest_server::run(&args),
             ModCmd::Compile { args } => gate_mod_compile::run(&args),
+            ModCmd::CompileSelftest => gate_mod_compile::run_selftest(),
             ModCmd::WorldBoot { args } => mod_world_boot::run(&args),
             ModCmd::Wave { args } => mod_wave::run(&args),
         },

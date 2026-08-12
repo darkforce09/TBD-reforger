@@ -770,7 +770,8 @@ pub fn arm_migrate_persist(ctx: &Ctx) -> Vec<ArmResult> {
         // comparing two identical apologies.
         if b.out.contains("cannot reach Postgres") {
             return Some(
-                "Postgres is down — the step never examined a database (`make db-up`)".into(),
+                "Postgres is down — the step never examined a database (`cargo xtask db up`)"
+                    .into(),
             );
         }
         if b.out.contains("bootstrapping ") {

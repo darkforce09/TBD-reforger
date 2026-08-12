@@ -27,7 +27,7 @@
 
 ## Current strategy (updated — 2026-07-19)
 
-**ORBAT + Eden placement:** **[T-180](t180_orbat_eden_program.md) COMPLETE** through **T-180.9** @ `cba837b3` (Stitch ORBAT Manager, side chips, map tint/lines, templates/vehicles, Open Arsenal + derive loadout). Coherency: **T-180.10** · `make verify-t180`. **T-071.1+ / T-074 / T-147** absorbed — do not re-implement.
+**ORBAT + Eden placement:** **[T-180](t180_orbat_eden_program.md) COMPLETE** through **T-180.9** @ `cba837b3` (Stitch ORBAT Manager, side chips, map tint/lines, templates/vehicles, Open Arsenal + derive loadout). Coherency: **T-180.10** · `cargo xtask verify t180`. **T-071.1+ / T-074 / T-147** absorbed — do not re-implement.
 
 **Map-verify gate:** **T-091 / T-092 shipped**; T-090 continues as map engine lane. Hub: [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md).
 
@@ -311,10 +311,10 @@ Required for positioning you can trust in-game. Hub: [`t090_091_map_terrain_prog
 | **Aligned map imagery** (Satellite + Map basemap views, same origin as Reforger) | **Done (T-090.1 + T-090.1.1)** @ `564419e` / `6e06e679` | Satellite unified @ `.2.8`; Map cartographic pyramid + radio @ **T-090.1.1**. [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md). |
 | **Terrain wired to mission** (`meta.terrain` → viewport) | **Done (T-049)** | `terrainId` from `meta.terrain`, `key`-remounts `<TacticalMap>` on change. Bounds from Biki via `coords/terrains.ts`. |
 | **DEM loader / `sampleElevation`** | **Done (T-091.1)** @ `2c56c2e` | `tactical-map/dem/*`; consumed by T-091.2. |
-| **DEM assets (export)** | **Done (T-091.0)** @ `6d96339` | 16-bit PNG + 11 anchors; `make verify-terrain-strict` PASS. |
+| **DEM assets (export)** | **Done (T-091.0)** @ `6d96339` | 16-bit PNG + 11 anchors; `cargo xtask ci verify-terrain-strict` PASS. |
 | **Z on place & move** (sample DEM at x,y) | **Done (T-091.2)** @ `dde589e` | `terrainZ` in `addSlot` / `pasteSlots` / `moveEntities`; Attributes X/Y re-sample. |
 | **Z in UI** (toolbelt + Attributes, editable) | **Done (T-091.2)** @ `dde589e` | CUR/SEL + X/Y/Z @ 3 dp; hillshade + grid toggles in Mission Settings. |
-| **Satellite / Map basemap views** | **Done (T-090.1 + T-090.1.1)** @ `564419e` / `6e06e679` | Satellite unified bundle + Map cartographic pyramid; Mission Settings **Satellite | Map** switch. Rebuild: `make map-water-everon` / `make map-cartographic-everon`. [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md). |
+| **Satellite / Map basemap views** | **Done (T-090.1 + T-090.1.1)** @ `564419e` / `6e06e679` | Satellite unified bundle + Map cartographic pyramid; Mission Settings **Satellite | Map** switch. Rebuild: `cargo xtask ci map-water-everon` / `cargo xtask ci map-cartographic-everon`. [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md). |
 | **Typed world objects** (roads, trees, buildings on map) | **T-090.2–.5** — spec ready | Taxonomy → Workbench export → Z audit → Deck layers. Eden UX ref: [`t090_eden_map_reference.md`](t090_eden_map_reference.md). |
 | **Z burial / floating props** | **T-090.4** + **T-090.6** — automated @ 1M | Phase A: pivot vs DEM. Phase B: OBB samples + `visibleAboveGroundPct` (no manual verify). |
 | **Building floor selector** | **T-129** — idea | Explicit out of T-090 scope. |
@@ -404,7 +404,7 @@ Hub: [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md)
 | Event slotting UX + admin | **Partial** | **T-118** |
 | Mod slot picker (verify kits) | **Not built** | **T-068.13** (requires **T-092.2** ✓) |
 
-**T-068.13** requires compiled mod `slots[]` (**T-092.2** ✓). Gate: `make verify-t180`.
+**T-068.13** requires compiled mod `slots[]` (**T-092.2** ✓). Gate: `cargo xtask verify t180`.
 
 ---
 

@@ -279,7 +279,7 @@ pub fn gate_db_migrate_persist(ctx: &Ctx, state: &GateState, mode: &str) -> u8 {
 
     if admin("SELECT 1;").1 != 0 {
         wprintln!(
-            "{LABEL}: FAIL — cannot reach Postgres (podman exec tbd_reforger_db). Is `make db-up` running?"
+            "{LABEL}: FAIL — cannot reach Postgres (podman exec tbd_reforger_db). Is `cargo xtask db up` running?"
         );
         wprintln!(
             "        This is a FAIL and not a skip on purpose: a migration audit that silently"

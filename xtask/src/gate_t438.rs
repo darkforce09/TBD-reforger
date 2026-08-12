@@ -68,7 +68,7 @@ use tbd_gate::{Finding, Kind, NotRun, Pattern, Verdict, gate};
 // ── THE PIN, IN ONE PLACE ────────────────────────────────────────────────────────────────────
 
 /// Printed on the PASS/FAIL summary line: the script's filename stem verbatim, because operator
-/// logs and `make verify-t438` transcripts are grepped for exactly this string.
+/// logs and `cargo xtask verify t438` transcripts are grepped for exactly this string.
 const GATE_NAME: &str = "verify-t438-deploy-staging-compose-path";
 
 /// The deploy driver under inspection, repo-relative.
@@ -110,7 +110,7 @@ const LIVE_KEY: &str = "ssh_ok";
 /// Entry point. `0` when the contract holds, `1` for every failure — bash's binary status.
 ///
 /// Deliberately NOT [`Verdict::into_exit`]'s three-way code. The script `exit 1`-ed for a missing
-/// `deploy-staging.sh` just as it did for a wrong `-f` path, and `wave.sh`, `make verify-t438` and
+/// `deploy-staging.sh` just as it did for a wrong `-f` path, and `wave.sh`, `cargo xtask verify t438` and
 /// `ci.yml mod-gates-hosted` all record pass/fail from that; returning 2 for a broken checkout
 /// would change what CI says in the commit that was supposed to change nothing. Widening it is
 /// T-853 Phase 7's call, made once for all gates.

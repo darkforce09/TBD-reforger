@@ -33,7 +33,7 @@ Without these, T-068.15.2 cannot show capacity readouts or seed rifleman vest/pa
    add `character_default_cargo` to `registry-compat` `edge_type` enum (or locked spike name).
 3. **Scanner:** Always resolve container max weight when engine-readable (class default if needed);
    derive or read grid W×H per spike decision; walk character prefab storages for default cargo.
-4. **Re-export + validate + import:** `make registry-import`; Class-R gates below.
+4. **Re-export + validate + import:** `cargo xtask db registry-import`; Class-R gates below.
 
 ## Out of scope
 
@@ -60,7 +60,7 @@ Without these, T-068.15.2 cannot show capacity readouts or seed rifleman vest/pa
 3. Extend `DeriveEdges` for character default cargo (read storage slot contents from character prefab).
 4. Extend `TBD_RegistryItemsExportPlugin.c` JSON emit for new item fields + compat edges.
 5. Bump `registry-items.schema.json` + `registry-compat.schema.json`; golden samples.
-6. Re-export workbench JSON; `npm run validate`; `make registry-import`.
+6. Re-export workbench JSON; `npm run validate`; `cargo xtask db registry-import`.
 7. `.ai/artifacts/t068_15_1_verify_log.md` + tag **T-068.15.1**.
 
 ## Verify
@@ -70,7 +70,7 @@ cargo xtask mod dev-bootstrap
 bash scripts/mod/mcp-call.sh wb_connect '{}'
 # wb_reload scripts → run TBD registry export
 cd packages/tbd-schema && npm run validate
-make registry-import
+cargo xtask db registry-import
 ```
 
 ### Class-R gates
@@ -140,22 +140,22 @@ Implement **T-068.15.1** — Export cargo capacity + default contents (resume WI
 ═══ DO ═══
   1. Resume WIP in TBD_RegistryScan / ExportPlugin (do not rewrite from zero)
   2. Force Workbench to compile DISK scripts (restart WB if Script Editor line count ≠ disk)
-  3. Run Export TBD Registry Items; land workbench JSON; make schema-validate
+  3. Run Export TBD Registry Items; land workbench JSON; cargo xtask ci schema-validate
   4. Migration + model + import + GET /registry for cargo_grid_w/h; schema-codegen as needed
   5. Compat ingest preserves multiplicity/qty for character_default_cargo
-  6. make registry-import · Class-R C1–C3 · verify log · tag T-068.15.1
+  6. cargo xtask db registry-import · Class-R C1–C3 · verify log · tag T-068.15.1
   7. Continue to T-068.15.2 per program handoff (same session unless blocked)
 
 ═══ DO NOT ═══
   - Hand-author capacity rows
   - Arsenal UI / compile / player equip in this slice file set before 15.1 gates pass
   - Edit docs/** or registry.json (Cursor)
-  - Use npm validate under packages/tbd-schema (use make schema-validate)
+  - Use npm validate under packages/tbd-schema (use cargo xtask ci schema-validate)
   - Rely on wb_reload ExecuteAction=false as proof of compile
 
 ═══ VERIFY ═══
-  make schema-validate
-  make registry-import
+  cargo xtask ci schema-validate
+  cargo xtask db registry-import
   Class-R: trousers ≠ vest grid and/or max kg; US rifleman ≥1 character_default_cargo; qty>1 for duplicate mags survives import
   .ai/artifacts/t068_15_1_verify_log.md
 

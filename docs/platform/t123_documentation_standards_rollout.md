@@ -61,7 +61,7 @@ Per §4 + §3. Priority cross-boundary surfaces:
 - Godoc starts with identifier name; **rename the export envelope's `schemaVersion` → `exportFormatVersion`** (int) so it never collides with the canonical string `schemaVersion` (§2.2)
 - Package docs on touched packages
 
-**Verify:** `make test-it && go build ./...`
+**Verify:** `cargo xtask db test-it && go build ./...`
 
 ---
 
@@ -105,11 +105,11 @@ Per §9.1. **Generate** projections from `packages/tbd-schema/schema/*.json`; st
 
 **Rules:**
 
-- Generated files marked `DO NOT EDIT` + regen script in `packages/tbd-schema/scripts/` (e.g. `codegen.mjs` + root `make schema-codegen`)
+- Generated files marked `DO NOT EDIT` + regen script in `packages/tbd-schema/scripts/` (e.g. `codegen.mjs` + root `cargo xtask ci schema-codegen`)
 - Hand-written GORM models **remain** for DB/API snake_case where they differ from export camelCase — generated types used for validation/export paths; add `@contract` bridging comments
 - Enforce DTOs stay hand-written (§9.1) with `@contract` + golden fixtures
 
-**Verify:** `npm run validate` in `packages/tbd-schema`; `make test-it`; FE build/lint
+**Verify:** `npm run validate` in `packages/tbd-schema`; `cargo xtask db test-it`; FE build/lint
 
 ---
 
@@ -123,7 +123,7 @@ Per §9.2.
 - **400** with structured `{ error, details[] }` on validation failure; golden missions + invalid fixtures in integration tests
 - Align with existing `packages/tbd-schema/scripts/validate-file.mjs` semantics
 
-**Verify:** `make test-it` (new cases: golden pass, missing required field fail, wrong type fail)
+**Verify:** `cargo xtask db test-it` (new cases: golden pass, missing required field fail, wrong type fail)
 
 ---
 
@@ -135,7 +135,7 @@ Per §10. Wire all four gates:
 |------|---------|
 | Go exported-doc | `golangci-lint` + `revive` exported rules in CI (website job or new job) |
 | TS contract docs | `eslint-plugin-jsdoc` + `@microsoft/tsdoc`; rules on `src/types/`, `src/api/`, `src/hooks/` — require TSDoc + `@contract`/`@model` on cross-boundary exports |
-| Citation integrity | Node script `packages/tbd-schema/scripts/verify-contract-citations.mjs` — every `@contract` in repo resolves to schema file + valid JSON pointer; shipped as a dedicated [`.github/workflows/contracts.yml`](../../.github/workflows/contracts.yml) workflow (citation + codegen-drift + golangci + eslint jobs). **Superseded:** the `.mjs` went with the T-165.1 Node eradication — the live gate is `make verify-citations` → `xtask schema citations`, scoped to code only (DOCUMENTATION_STANDARDS §10.1) |
+| Citation integrity | Node script `packages/tbd-schema/scripts/verify-contract-citations.mjs` — every `@contract` in repo resolves to schema file + valid JSON pointer; shipped as a dedicated [`.github/workflows/contracts.yml`](../../.github/workflows/contracts.yml) workflow (citation + codegen-drift + golangci + eslint jobs). **Superseded:** the `.mjs` went with the T-165.1 Node eradication — the live gate is `cargo xtask ci verify-citations` → `xtask schema citations`, scoped to code only (DOCUMENTATION_STANDARDS §10.1) |
 | Enfusion DTO conformance | Extend `validate.mjs` or sibling check: DTO scripts with `@contract` header have matching golden fixture |
 
 **Verify:** CI green locally where possible (`npm run validate`, `golangci-lint run`, FE lint); citation script exits 0 on main after .1–.3 tags land
@@ -146,10 +146,10 @@ Per §10. Wire all four gates:
 
 - [x] Slices **T-123.0–T-123.6** shipped; registry `status: shipped`
 - [x] `@contract` / `@route` grep spot-check on priority surfaces (23 `@contract` citations resolve)
-- [x] Codegen regen documented; `make schema-codegen` works (deterministic; codegen-drift CI job)
+- [x] Codegen regen documented; `cargo xtask ci schema-codegen` works (deterministic; codegen-drift CI job)
 - [x] `CreateVersion` rejects invalid JSON against `mission-editor-payload.schema.json`
 - [x] CI runs citation verifier + lint gates (`contracts.yml`)
-- [x] `make test-it` + frontend build/lint clean
+- [x] `cargo xtask db test-it` + frontend build/lint clean
 - [x] Cursor doc pass: `CLAUDE.md` §Done, backend ROADMAP, `./scripts/ticket sync`
 
 ## Decisions log

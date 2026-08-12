@@ -83,7 +83,7 @@ Audit A8/A12: `locations.json` = 60 rows (**town 23 · peak 17 · hill 16 · vil
 | **G2** | All 8 `REQUIRED_EVERON_TOWNS` still drawn @ z=−2 | Regression (T-152.8 G2) |
 | **G3** | 4 sub-feature rows reclassified `locality`; regenerated artifact diff shows classifier provenance (no hand edit) | Data |
 | **G4** | Fade: alpha(z=2.0)=1.0, alpha(z=2.5)≈0.5, alpha(z=3.0)=0.0 — or hard-hide + operator quote (M2) | Behavior |
-| **G5** | `make schema-validate` green with `locality` enum | Schema |
+| **G5** | `cargo xtask ci schema-validate` green with `locality` enum | Schema |
 | **G6** | cargo/wasm/FE suites exit 0 | Regression |
 
 ---
@@ -95,7 +95,7 @@ cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 node scripts/map-assets/export-locations.mjs --terrain everon    # regen (flags per actual CLI)
 node scripts/map-assets/verify-town-labels.mjs
 cargo test -p map-engine-core
-make wasm && make schema-validate
+make wasm && cargo xtask ci schema-validate
 cd apps/website/frontend && npm test && npm run build && npm run lint
 ```
 

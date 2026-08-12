@@ -79,9 +79,9 @@ thread.
 ## Verify
 
 ```bash
-make db-up
+cargo xtask db up
 # import both envelopes (exact CLI as implemented — document in verify log)
-make test-it
+cargo xtask db test-it
 cd apps/website/frontend && npm test && npm run build && npm run lint
 cd packages/tbd-schema && npm run validate
 ```
@@ -116,7 +116,7 @@ Implement **T-068.9** — Registry worker + compat ingest (T-150 data).
   git status --porcelain
   git pull && git lfs pull
   git rev-parse T-150   # expect 9107bf4e
-  make db-up
+  cargo xtask db up
 
 ═══ READ (in order — spec wins on conflict) ═══
   1. .ai/artifacts/t068_9_claude_code_handoff.md

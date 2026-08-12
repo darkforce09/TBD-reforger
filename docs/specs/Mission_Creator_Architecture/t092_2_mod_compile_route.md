@@ -75,7 +75,7 @@ Worker note: flatten runs on **main thread** post-compile or worker receives ser
 
 ```bash
 cd packages/tbd-schema && npm run validate
-make test-it
+cargo xtask db test-it
 cd apps/website/frontend && npm run build && npm run lint
 
 # API smoke (dev stack)

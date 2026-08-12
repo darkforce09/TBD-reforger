@@ -2,8 +2,8 @@
 
 **Program hub:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)  
 **Registry active slice:** `./scripts/ticket brief T-090` → **T-090.1.1.1** (Map land-cover) · **queued:** **T-090.1.2.9** (Satellite roads)  
-**Water (good enough):** **T-090.1.2.5.2** @ `1c07d97a` · `make map-water-everon`  
-**Map cartographic:** **T-090.1.1** @ `6e06e679` · `make map-cartographic-everon`  
+**Water (good enough):** **T-090.1.2.5.2** @ `1c07d97a` · `cargo xtask ci map-water-everon`  
+**Map cartographic:** **T-090.1.1** @ `6e06e679` · `cargo xtask ci map-cartographic-everon`  
 **Last shipped:** **T-090.2** @ `691d9b26`
 
 ---
@@ -16,9 +16,9 @@
 | **Delivery** | **Unified** `everon-sat.tbd-sat` (205.9 MB LFS) — one fetch + GPU mip chain; pyramid fallback via `delivery: "pyramid"` |
 | **Detail @ max zoom** | Acceptable; residual soft ~256 m band is BI-baked (not fixable without new source) |
 | **Pan / zoom feel** | **T-090.1.2.8 shipped** — no tile pop-in by construction (single BitmapLayer + trilinear mips) |
-| **Water** | **T-090.1.2.5.2** @ `1c07d97a` — **good enough** (`make map-water-everon`); perfect water → **T-143** (`idea`) |
+| **Water** | **T-090.1.2.5.2** @ `1c07d97a` — **good enough** (`cargo xtask ci map-water-everon`); perfect water → **T-143** (`idea`) |
 | **Hillshade** | **T-090.1.2.6** shipped @ `b958e3b4` (Mission Settings strength slider) |
-| **Map view** | **T-090.1.1** @ `6e06e679` — cartographic pyramid + Mission Settings **Map** radio (`make map-cartographic-everon`) |
+| **Map view** | **T-090.1.1** @ `6e06e679` — cartographic pyramid + Mission Settings **Map** radio (`cargo xtask ci map-cartographic-everon`) |
 
 **Format spike:** [`.ai/artifacts/t090_1_2_8_format_spike.json`](../../../.ai/artifacts/t090_1_2_8_format_spike.json) · **Verify:** [`.ai/artifacts/t090_1_2_8_verify_log.md`](../../../.ai/artifacts/t090_1_2_8_verify_log.md)
 

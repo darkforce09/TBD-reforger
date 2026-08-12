@@ -83,8 +83,8 @@ Enfusion loader.
 Cross-boundary contract types are **generated** from `schema/*.json` — never hand-edit the outputs.
 
 ```bash
-make schema-codegen     # → apps/website/internal/contract/ + apps/website/frontend/src/types/contract/
-make verify-citations   # every @contract tag in the repo resolves to a schema file + JSON pointer
+cargo xtask ci schema-codegen     # → apps/website/internal/contract/ + apps/website/frontend/src/types/contract/
+cargo xtask ci verify-citations   # every @contract tag in the repo resolves to a schema file + JSON pointer
 ```
 
 `scripts/codegen.mjs` (TS via `json-schema-to-typescript`, Go via `quicktype`) and

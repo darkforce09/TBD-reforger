@@ -357,7 +357,7 @@ fn env_fail(msg: &str, hint: Option<&str>) -> u8 {
 
 fn api_env_fail(api_base: &str, msg: &str, hint: Option<&str>) -> GateExit {
     let default = format!(
-        "Bring the stack up and re-run:  make db-up && make api   (API expected at {api_base})"
+        "Bring the stack up and re-run:  cargo xtask db up && cargo xtask mk rust-api   (API expected at {api_base})"
     );
     println!();
     println!("COMPILED BOOT: ENV FAIL — {msg}");
@@ -393,7 +393,7 @@ fn api_http_fail(api_base: &str, code: u16, what: &str, doc_msg: &str) -> GateEx
     }
     if (500..600).contains(&code) {
         let hint = format!(
-            "Check the API log first, then:  make db-up && make api   (API expected at {api_base})"
+            "Check the API log first, then:  cargo xtask db up && cargo xtask mk rust-api   (API expected at {api_base})"
         );
         return api_env_fail(
             api_base,

@@ -81,7 +81,7 @@ compiled JSON until that block exists.
 ```bash
 cd packages/tbd-schema && npm run validate
 cd apps/website/frontend && npm test && npm run build && npm run lint
-make test-it
+cargo xtask db test-it
 # Optional: curl compiled mission after Save — slots include loadout gear when set
 ```
 
@@ -146,9 +146,9 @@ Implement **T-068.11** — Compiled mod document loadout block incl. cargo (for 
   - Revive Go/TS flatten paths
 
 ═══ VERIFY ═══
-  make schema-validate
-  make test-it
-  make ci-local-leptos
+  cargo xtask ci schema-validate
+  cargo xtask db test-it
+  cargo xtask mk ci-local-leptos
   .ai/artifacts/t068_11_verify_log.md
 
 ═══ RETURN ═══

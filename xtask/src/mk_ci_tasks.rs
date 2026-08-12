@@ -2,8 +2,11 @@
 //!
 //! Split from `mk_ci.rs` at the data/behaviour seam so both stay inside the SIZE-1 600-line
 //! guidance — the same shape as `gate_ui_layouts` / `gate_ui_layouts_awk`. Nothing here executes;
-//! [`crate::mk_ci::run_task`] is the only interpreter of these rows, and
-//! `makefile_recipes_match_the_table` diffs every one of them against the recipe it reproduces.
+//! [`crate::mk_ci::run_task`] is the only interpreter of these rows.
+//!
+//! T-896 diffed every row against the Makefile recipe it reproduced. T-897 deleted that file, so
+//! the successor pins are `ci_local_step_set_is_frozen` (`mk_ci_tests.rs`, the composite's step
+//! list) and `gate_t468`'s `task_pins` (the three Class-R rows, at runtime).
 
 use super::{Lane, Step, Task, verify_doc_layout};
 use crate::codegen_schema::codegen;
@@ -43,7 +46,7 @@ pub static TASKS: &[Task] = &[
     // ── composites ──────────────────────────────────────────────────────────────────────────
     Task {
         name: "ci-local",
-        help: "Full CI gate locally — mirrors ci.yml (run `make db-up` first)",
+        help: "Full CI gate locally — mirrors ci.yml (run `cargo xtask db up` first)",
         group: "CI",
         lane: Lane::Ci,
         // T-489/T-881: the last step is NOT `Step::Task("verify-t468")`. t468 is the tripwire that
@@ -266,6 +269,46 @@ pub static TASKS: &[Task] = &[
         lane: Lane::Alias,
         steps: &[xt!("cargo xtask verify t456", true, x_t456)],
     },
+    // T-897. These two were the only former make targets with no 1:1 xtask successor: two-line
+    // recipes with no composite behind them. Deleting the Makefile without them would have left
+    // ~20 T-090 spec citations pointing at a command nobody could run, so the composite moves
+    // here rather than being dissolved into "go run these two things yourself".
+    Task {
+        name: "verify-terrain",
+        help: "Manifest + anchor verify (stub mode OK for Arland-only)",
+        group: "verify",
+        lane: Lane::Ci,
+        steps: &[
+            xt!(
+                "cargo xtask schema terrain-manifest --terrain everon",
+                false,
+                x_terrain_manifest
+            ),
+            xt!(
+                "cargo xtask schema terrain-alignment --terrain everon",
+                false,
+                x_terrain_alignment
+            ),
+        ],
+    },
+    Task {
+        name: "verify-terrain-strict",
+        help: "Full anchor alignment gate (T-091.0 GetSurfaceY DEM + anchors)",
+        group: "verify",
+        lane: Lane::Ci,
+        steps: &[
+            xt!(
+                "cargo xtask schema terrain-manifest --terrain everon",
+                false,
+                x_terrain_manifest
+            ),
+            xt!(
+                "cargo xtask schema terrain-alignment --terrain everon --strict",
+                false,
+                x_terrain_alignment_strict
+            ),
+        ],
+    },
     // ── borrowed: T-895's build lane / T-894's db lane. See §2. ──────────────────────────────
     Task {
         name: "rust-ci",
@@ -347,7 +390,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "rust-test-it",
-        help: "Run Rust integration tests against a fresh dedicated DB (needs `make db-up` @ :5434)",
+        help: "Run Rust integration tests against a fresh dedicated DB (needs `cargo xtask db up` @ :5434)",
         group: "db",
         lane: Lane::Borrowed("T-894"),
         // T-894 owns the real port (the `while read -r db` reaper over psql output is the one
@@ -386,6 +429,15 @@ pub static TASKS: &[Task] = &[
 
 fn x_height_labels() -> anyhow::Result<u8> {
     crate::label_gates::height_labels("everon")
+}
+fn x_terrain_manifest() -> anyhow::Result<u8> {
+    crate::schema_gates::terrain_manifest("everon")
+}
+fn x_terrain_alignment() -> anyhow::Result<u8> {
+    crate::label_gates::terrain_alignment("everon", false)
+}
+fn x_terrain_alignment_strict() -> anyhow::Result<u8> {
+    crate::label_gates::terrain_alignment("everon", true)
 }
 fn x_no_select_star() -> anyhow::Result<u8> {
     crate::sql_gates::verify_no_select_star(&find_repo_root()?)

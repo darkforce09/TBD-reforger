@@ -30,10 +30,10 @@ scripts/mod/node_modules/
 apps/mod/.cursor/mcp.json
 
 # Cargo workspace build dir (T-145: the workspace root owns /target for every member crate).
-# T-253: Makefile exports CARGO_TARGET_DIR to the primary-repo /target (shared across
-# worktrees). Do not commit any target tree.
+# T-253: `cargo xtask mk` derives CARGO_TARGET_DIR as the primary-repo /target (shared across
+# worktrees; the root Makefile owned this export until T-897). Do not commit any target tree.
 /target/
-# Obsolete CI scratch dir (pre-shared-target era). Safe reclaim: `make reclaim-target-ci`
+# Obsolete CI scratch dir (pre-shared-target era). Safe reclaim: `cargo xtask mk reclaim-target-ci`
 # (never deletes the warm shared /target). No live recipe writes here.
 /target-ci/
 

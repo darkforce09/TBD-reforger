@@ -41,7 +41,7 @@ const MAIN_DIRS: &[(&str, &str)] = &[
     ("target-T-999-api", "live slice's api dir — MUST be spared"),
     (
         "target-dev-api",
-        "operator's make api cache — MUST be spared, by name",
+        "operator's cargo xtask mk rust-api cache — MUST be spared, by name",
     ),
     (
         "target-ci",

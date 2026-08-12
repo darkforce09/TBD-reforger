@@ -142,7 +142,7 @@ node scripts/map-assets/verify-sap-ortho.mjs TERRAIN=everon
 # Full pyramid + lossless
 EXPECT_LOSSLESS=1 node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon
 
-make verify-terrain
+cargo xtask ci verify-terrain
 make ci-local-frontend
 node scripts/map-assets/verify-spike-ops-log.mjs TERRAIN=everon
 ```

@@ -47,7 +47,7 @@ only — full-map export stays blocked until P1.
 
 ```bash
 # Spike artifacts present + the catalog rows they produce validate
-make schema-validate
+cargo xtask ci schema-validate
 ```
 
 | ID | Check | Pass |

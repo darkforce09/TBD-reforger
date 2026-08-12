@@ -77,7 +77,7 @@ pub fn database_name_from_url(database_url: &str) -> Option<String> {
 /// `tbd_reforger` dev DB.
 ///
 /// Measured allow-list (Makefile + `scripts/platform/wave.sh` + operator cold DBs):
-/// - `rust_it` — `make test-it` (Makefile DROP/CREATE)
+/// - `rust_it` — `cargo xtask db test-it` (Makefile DROP/CREATE)
 /// - `tbd_gate*` — wave gate (`tbd_gate_w<N>`, `tbd_gate_it`, `tbd_gate_migrate`, …)
 /// - `*_cold` — operator `TBD_GATE_DB` cold DBs (`tbd_wave6_cold`, `tbd_t399_cold`, …)
 /// - `*_it` / `*_probe` — agent throwaways that already follow the ticket convention
@@ -125,7 +125,7 @@ pub fn assert_test_database_url(database_url: &str) {
              Allowed names: rust_it, tbd_gate*, *_cold, *_it, *_probe.\n  \
              The live dev database `tbd_reforger` is never allowed — pointing the\n  \
              integration suite at it would wipe production-like rows.\n  \
-             Fix: `make test-it` (creates rust_it), or export a URL whose path\n  \
+             Fix: `cargo xtask db test-it` (creates rust_it), or export a URL whose path\n  \
              matches the allow-list (wave gate uses tbd_gate_w<N> / *_cold).\n\
              ───────────────────────────────────────────────────────────────────────"
         );
@@ -305,7 +305,7 @@ async fn provision_async(base_url: &str, derived_name: &str, derived_url: &str) 
         panic!(
             "T-534: connect to `{base_url}` to create tests/{SUITE}.rs's database: {e}\n  \
              The base database must exist — the wave gate's ensure_gate_db creates it, \
-             `make test-it` creates rust_it."
+             `cargo xtask db test-it` creates rust_it."
         )
     });
     // WITH (FORCE) so a leaked connection from a killed run cannot pin the name. The target

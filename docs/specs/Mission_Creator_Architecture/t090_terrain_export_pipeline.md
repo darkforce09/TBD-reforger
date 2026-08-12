@@ -19,13 +19,13 @@
 | Requirement | Solution |
 |-------------|----------|
 | “I shouldn’t have to fuck around redoing this per map” | Same pipeline + same folder layout for **every** terrain |
-| “AI should press a button and it’s done” | `make map-export TERRAIN=everon` (or CI job) — idempotent, logged |
+| “AI should press a button and it’s done” | `cargo xtask map export-terrain everon` (or CI job) — idempotent, logged |
 | “AI must understand exactly what each object is” | Prefab **AI metadata block** + machine taxonomy + ops log |
 | Eden ~1M objects | catalog v1 dedup + spatial chunks (not one fat JSON) |
 | Everon today, Arland tomorrow | `terrain-registry.json` — add row, run same command |
 | **One type at a time** | **Phased import P1→P10** — [`t090_phased_object_import.md`](t090_phased_object_import.md) |
 
-**Human involvement target:** zero after Workbench plugin is installed. **No phase advance without `make map-verify-phase` exit 0** — see phased import spec.
+**Human involvement target:** zero after Workbench plugin is installed. **No phase advance without `cargo run -q -p tbd-tools --bin world -- verify-phase` exit 0** — see phased import spec.
 
 ---
 
@@ -33,11 +33,11 @@
 
 ```bash
 # Full export — BLOCKED for Everon until import phase P10 (see phased import spec)
-make map-export TERRAIN=everon PHASE=P10_full
+cargo xtask map export-terrain everon --phase P10_full
 
 # Normal development: one phase at a time (cumulative)
-make map-export TERRAIN=everon PHASE=P1_buildings
-make map-verify-phase TERRAIN=everon PHASE=P1_buildings   # MUST exit 0 before P2
+cargo xtask map export-terrain everon --phase P1_buildings
+cargo run -q -p tbd-tools --bin world -- verify-phase --terrain everon --phase P1_buildings   # MUST exit 0 before P2
 
 # Equivalent
 ./scripts/map-assets/export-terrain.sh everon --phase P1_buildings
@@ -55,7 +55,7 @@ make map-verify-phase TERRAIN=everon PHASE=P1_buildings   # MUST exit 0 before P
 | 4 | `build-catalog-v1.ts` | `objects/chunks/*.json.gz`, `objects/roads.json.gz` |
 | 5 | `run-z-audit.ts` | `objects/z-audit.json` |
 | 6 | `run-geometry-audit.ts` | `objects/z-audit-geometry.json` |
-| 7 | `validate-manifest.sh` + `make schema-validate` | exit 0 or fail fast |
+| 7 | `validate-manifest.sh` + `cargo xtask ci schema-validate` | exit 0 or fail fast |
 | 8 | `write-export-ops-log.ts` | `.ai/artifacts/map_export_{terrainId}.json` |
 
 **Fail fast:** any step non-zero → abort; partial artifacts marked stale in ops log.
@@ -82,7 +82,7 @@ packages/map-assets/
     ... same layout ...
 ```
 
-**Rule:** Adding a map = **(1)** add `terrains.ts` bounds row, **(2)** add `terrain-registry.json` entry, **(3)** `make map-export TERRAIN=arland`. No new export scripts.
+**Rule:** Adding a map = **(1)** add `terrains.ts` bounds row, **(2)** add `terrain-registry.json` entry, **(3)** `cargo xtask map export-terrain arland`. No new export scripts.
 
 ### `terrain-registry.json`
 
@@ -148,7 +148,7 @@ After raw bundle lands, **Node steps 3–8** run with no Workbench — repeatabl
 
 1. Export flags `needsReview` prefabs in ops log.
 2. Agent adds rule row to `prefab-classify.json` (one line per prefab pattern).
-3. Re-run `make map-export TERRAIN=*` — no manual re-tagging of 1M instances.
+3. Re-run `cargo xtask map export-terrain *` — no manual re-tagging of 1M instances.
 
 Human override file (rare): `packages/tbd-schema/rules/prefab-overrides.json` keyed by exact `resourceName`.
 
@@ -220,7 +220,7 @@ Every row in `prefabs.json.gz` **must** include an `ai` block so LLM agents can 
 {
   "terrainId": "everon",
   "exportedAt": "2026-06-26T18:00:00Z",
-  "command": "make map-export TERRAIN=everon",
+  "command": "cargo xtask map export-terrain everon",
   "steps": [
     { "name": "dem", "status": "ok", "durationMs": 120000 },
     { "name": "tiles_satellite", "status": "ok", "durationMs": 180000 },
@@ -261,7 +261,7 @@ map-export-validate: ## Validate manifests + golden only (CI)
 
 | ID | Check | Pass |
 |----|-------|------|
-| P1 | `make map-export TERRAIN=everon` exit 0 on machine with Workbench staging | ops log |
+| P1 | `cargo xtask map export-terrain everon` exit 0 on machine with Workbench staging | ops log |
 | P2 | Arland row in registry exports with **same** steps (smaller bounds) | script |
 | P3 | Every prefab has `ai.summary` + `ai.taxonomyPath` | schema script |
 | P4 | Re-run export → deterministic prefabId ordering (git diff only counts) | diff |

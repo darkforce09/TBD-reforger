@@ -48,7 +48,7 @@ Post T-177 eye-pass 2026-07-19:
 2. Do not reintroduce 32 m landcover forest wash (T-176).  
 3. Do not expand into T-071.1.  
 4. `apps/mod/**` OFF LIMITS.  
-5. Day-to-day = `make leptos` (release).  
+5. Day-to-day = `cargo xtask mk leptos` (release).  
 6. No silent deferrals.
 
 ## Claude / Grok prompt — T-178 (copy-paste)
@@ -62,7 +62,7 @@ Implement **T-178** — Forest load consistency + YouTube guides polish + Outlin
 
 ═══ PREFLIGHT ═══
   git pull --ff-only
-  make db-up
+  cargo xtask db up
   ./scripts/ticket brief T-178
 
 ═══ READ ═══
@@ -100,7 +100,7 @@ Implement **T-178** — Forest load consistency + YouTube guides polish + Outlin
   2. A1 forest consistency
   3. A2 remove Outliner label
   4. A3 continuous guides + A4 click-to-toggle on guides
-  5. make leptos-gates + make ci-local; t178_verify_log.md
+  5. cargo xtask mk leptos-gates + cargo xtask ci ci-local; t178_verify_log.md
   6. Commit on main T-178: · tag T-178 · push
   7. Cursor doc list
 
@@ -111,8 +111,8 @@ Implement **T-178** — Forest load consistency + YouTube guides polish + Outlin
   - Leave gapped guides
 
 ═══ VERIFY ═══
-  make leptos-gates
-  make ci-local
+  cargo xtask mk leptos-gates
+  cargo xtask ci ci-local
   t178_verify_log.md: A1–A4 PASS + forest approach note + manual screens
 
 ═══ RETURN ═══

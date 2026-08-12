@@ -69,7 +69,7 @@ hands-on pass repeatedly found things scripted probes could not. So:
 1. Dispatch **one wave**. 3 slice agents in worktrees, barrier, merge all, gate, one adversarial
    verifier, close.
 2. **STOP after the close commit.** Post an **operator eye-pass checklist**: one human-runnable step
-   per ticket, derived from its `ACCEPTANCE:` clause, on `make leptos` (**release**) at 1920×1080,
+   per ticket, derived from its `ACCEPTANCE:` clause, on `cargo xtask mk leptos` (**release**) at 1920×1080,
    plus "anything that feels wrong is a finding."
 3. The operator's verdict gates the next wave. Eye-pass findings are **filed as tickets**, never
    fixed ad hoc in the closed wave.
@@ -87,7 +87,7 @@ cd /home/Samuel/Projects/TBD-Reforger
 export CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target      # never /tmp (16 GB tmpfs)
 ```
 
-**Environment.** `make db-up`; `make api`; `make leptos-debug` during a wave (`make leptos` —
+**Environment.** `cargo xtask db up`; `cargo xtask mk rust-api`; `cargo xtask mk leptos-debug` during a wave (`cargo xtask mk leptos` —
 release — only for the operator's eye-pass). Preflight must say PASS:
 
 ```bash
@@ -179,7 +179,7 @@ The wave-207 verifier proved two things the command center had gotten wrong:
 1. **`scripts/platform/wave.sh` contains zero occurrences of `smoke`.** The wave gate runs **no
    editor smokes**. `GATE PASS 30/30` is accurate for the 30 steps it does run, and never included
    the editor suite.
-2. **`make leptos-gates` → `gate editor-suite` cannot run green on main** — smoke `cur` fails on a
+2. **`cargo xtask mk leptos-gates` → `gate editor-suite` cannot run green on main** — smoke `cur` fails on a
    stale `"6400.000"` expectation vs the ` m` suffix that shipped 2026-08-09, and `undo` on stale
    dock text from 08-07. The suite dies before reaching later smokes.
 
@@ -232,7 +232,7 @@ differs from 2021 and the gate's `fmt` step will catch it. Run `rustfmt --editio
 
 **Other standing rules.** Never `--repack` the wave plan while this band is live (it renumbers and
 drops edges). No `.py` files committed (CI scans for them; scratchpad use is fine). Stage explicit
-paths. `make schema-validate` does not work in worktrees (`xtask schema validate` does). Gate lock
+paths. `cargo xtask ci schema-validate` does not work in worktrees (`xtask schema validate` does). Gate lock
 `WAITING` is serialisation, not a hang.
 
 **Headless probing.** Editor probes run through the `tools/tbd-tools` CDP harness (`smokes.rs`,

@@ -133,7 +133,7 @@ test -f .ai/artifacts/t090_1_2_decode_spike.json   # P0 recorded
 node scripts/map-assets/verify-sap-ortho.mjs TERRAIN=everon
 node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon
 make ci-local-frontend
-make verify-terrain
+cargo xtask ci verify-terrain
 node scripts/map-assets/verify-spike-ops-log.mjs TERRAIN=everon
 ```
 

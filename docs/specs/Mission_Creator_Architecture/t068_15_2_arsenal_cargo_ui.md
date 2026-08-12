@@ -60,8 +60,8 @@ whether a mag fits in the vest or seed default rifleman contents.
 ## Verify
 
 ```bash
-make schema-validate
-make ci-local-leptos
+cargo xtask ci schema-validate
+cargo xtask mk ci-local-leptos
 # Manual: dev-login → Arsenal → select vest → see max kg + grid; place rifleman → cargo seeded
 ```
 
@@ -129,8 +129,8 @@ Implement **T-068.15.2** — Arsenal capacity + cargo UI + seed (Leptos).
   - Touch deleted React apps/website/frontend npm tree patterns
 
 ═══ VERIFY ═══
-  make schema-validate
-  make ci-local-leptos
+  cargo xtask ci schema-validate
+  cargo xtask mk ci-local-leptos
   .ai/artifacts/t068_15_2_verify_log.md
 
 ═══ RETURN ═══

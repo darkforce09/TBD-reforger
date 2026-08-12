@@ -82,7 +82,7 @@ pub fn run_with_root(root: &Path, args: &[String]) -> Result<u8> {
             "       cargo run -q -p tbd-tools --bin world -- copy-export-profile --terrain {terrain} --full \\"
         );
         eprintln!("         --profile \"$PROFILE_DIR\"");
-        eprintln!("  4. Re-run: make map-export TERRAIN={terrain} PHASE={phase}");
+        eprintln!("  4. Re-run: cargo xtask map export-terrain {terrain} --phase {phase}");
         return Ok(2);
     }
 
@@ -107,7 +107,7 @@ pub fn run_with_root(root: &Path, args: &[String]) -> Result<u8> {
         return Ok(rc);
     }
     println!(
-        "export-terrain: {terrain} {phase} done — next: make map-verify-phase TERRAIN={terrain} PHASE={phase}"
+        "export-terrain: {terrain} {phase} done — next: cargo run -q -p tbd-tools --bin world -- verify-phase --terrain {terrain} --phase {phase}"
     );
     Ok(0)
 }

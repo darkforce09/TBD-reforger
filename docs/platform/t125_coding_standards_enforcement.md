@@ -23,7 +23,7 @@ Cross-link both from [`docs/platform/README.md`](README.md) and [`AGENT_COMMIT_C
 | Slice | Executor | Scope |
 |-------|----------|--------|
 | **T-125.0** | claude-code | Write `CODING_STANDARDS.md` |
-| **T-125.1** | claude-code | `ci.yml` + Postgres 18 service + `make ci-local` |
+| **T-125.1** | claude-code | `ci.yml` + Postgres 18 service + `cargo xtask ci ci-local` |
 | **T-125.2** | claude-code | golangci full set + fix all Go lint |
 | **T-125.3** | claude-code | TS `strict: true` + eslint tag enforcement + fixes |
 | **T-125.4** | claude-code | `@route` completion, error-handling, Enfusion DTO fixture gate |
@@ -57,20 +57,20 @@ New [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) — **required 
 
 | Job | Steps |
 |-----|-------|
-| **backend** | Postgres 18 service (`postgres:18-alpine`, creds `tbd/tbd`; CI reaches it at `localhost:5432` — local dev uses host `5434` via compose); Go **1.26**; gofmt (FMT-1), `go build`, `make test-it` |
+| **backend** | Postgres 18 service (`postgres:18-alpine`, creds `tbd/tbd`; CI reaches it at `localhost:5432` — local dev uses host `5434` via compose); Go **1.26**; gofmt (FMT-1), `go build`, `cargo xtask db test-it` |
 | **frontend** | Node **26**; `npm ci`, `npm run lint`, `npm run build`, `npm test` |
-| **schema** | `npm run validate`, `make verify-citations` |
+| **schema** | `npm run validate`, `cargo xtask ci verify-citations` |
 
-Add **`make ci-local`** (or `make check`) mirroring CI.
+Add **`cargo xtask ci ci-local`** (or `make check`) mirroring CI.
 
 **Shipped (T-125.1):** [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) — three jobs
-(**backend** `postgres:18-alpine` + Go **1.26** → gofmt (FMT-1) + `go build` + `make test-it`;
+(**backend** `postgres:18-alpine` + Go **1.26** → gofmt (FMT-1) + `go build` + `cargo xtask db test-it`;
 **frontend** Node **26** → `npm ci` + lint + build + test; **schema** → `npm run validate` +
 verify-citations), required on every push/PR to `main` (no path filter). Local mirror:
-**`make ci-local`** (sub-targets `ci-local-{backend,frontend,schema}`). `contracts.yml` /
+**`cargo xtask ci ci-local`** (sub-targets `ci-local-{backend,frontend,schema}`). `contracts.yml` /
 `schema.yml` stay as path-scoped supplements; golangci hardening + `only-new-issues` removal is **T-125.2**.
 
-**Verify:** ✅ `make ci-local` green locally (backend needs `make db-up`); `ci.yml` required on `main`.
+**Verify:** ✅ `cargo xtask ci ci-local` green locally (backend needs `cargo xtask db up`); `ci.yml` required on `main`.
 
 ---
 
@@ -82,7 +82,7 @@ Harden [`apps/website/.golangci.yml`](../../apps/website/.golangci.yml):
 - **Remove `only-new-issues: true`** from [`contracts.yml`](../../.github/workflows/contracts.yml) (or merge golangci into `ci.yml` and dedupe)
 - Fix **all** linter findings repo-wide
 
-**Verify:** `golangci-lint run ./...` clean; `make test-it`.
+**Verify:** `golangci-lint run ./...` clean; `cargo xtask db test-it`.
 
 **Shipped (T-125.2):** [`apps/website/.golangci.yml`](../../apps/website/.golangci.yml) enables
 **revive** (`exported`), **errcheck** (`check-blank: true`), **errorlint**, **staticcheck**, **govet**,
@@ -94,8 +94,8 @@ supplement); golangci wired into [`ci.yml`](../../.github/workflows/ci.yml) back
 before build) and `make ci-local-backend`, with the **CI-1** grep guard. **57 findings fixed**
 repo-wide: errcheck 34 → best-effort `//nolint:errcheck`; revive 12 → const-block Godoc; errorlint 7
 → `errors.Is`; cyclop 3 → `//nolint:cyclop` (events/cms/missions handlers — splits are SIZE-3/T-125.4);
-staticcheck 1 → `fmt.Fprintf`. Result: `golangci-lint run ./...` **0 issues**, `make test-it` green,
-`make build` clean. New [`.coding-standards-allowlist.yaml`](../../.coding-standards-allowlist.yaml)
+staticcheck 1 → `fmt.Fprintf`. Result: `golangci-lint run ./...` **0 issues**, `cargo xtask db test-it` green,
+`cargo xtask ci build` clean. New [`.coding-standards-allowlist.yaml`](../../.coding-standards-allowlist.yaml)
 (SIZE-2 MC-perf stub). Note: the M6 `_ = db.First(...).Error` reads are a struct **field** access (not
 a func call) so errcheck does not flag them — they stay **T-125.4** (which owns `_ = db.First` fixes).
 
@@ -130,8 +130,8 @@ a func call) so errcheck does not flag them — they stay **T-125.4** (which own
   extended: every exported `interface`/`type` in `types/`, `api/`, `hooks/` (excl. generated
   `types/contract/**`) MUST carry `@model` or `@contract`; generic envelopes (`Paginated<T>`) are
   exempt. **23 tags added** (36 exports checked); the existing 24 `@contract` citations still resolve.
-- **Verify:** `npm run build` / `npm run lint` / `npm test` (**21/21**) clean; `make verify-citations`
-  exit 0; `make ci-local` green (golangci **0 issues**, `go build`, `make test-it` ok, schema validate).
+- **Verify:** `npm run build` / `npm run lint` / `npm test` (**21/21**) clean; `cargo xtask ci verify-citations`
+  exit 0; `cargo xtask ci ci-local` green (golangci **0 issues**, `go build`, `cargo xtask db test-it` ok, schema validate).
   New devDep **`eslint-plugin-import-x`** — `eslint-plugin-import@2.32` peers eslint ≤9 and is
   incompatible with eslint 10.6.
 
@@ -142,10 +142,10 @@ a func call) so errcheck does not flag them — they stay **T-125.4** (which own
 **Goal:** Close the remaining **Go-side CI-SCRIPT** gaps in CODING_STANDARDS §10 — handler `@route`
 tags (GO-7), silent DB reads (M6 / GO-2), best-effort audit rationale (GO-3), import gate (GO-9),
 error envelope (ERR-4), consequential error logging (LOG-3: 5xx + mutator 4xx), file length (SIZE-1/3),
-and Enfusion DTO fixtures (ENF-4). Wire **`make verify-coding-standards`** into **`make ci-local`**
+and Enfusion DTO fixtures (ENF-4). Wire **`cargo xtask ci verify-coding-standards`** into **`cargo xtask ci ci-local`**
 **and** **`ci.yml` backend job**.
 
-**110% bar:** Every rule in this slice must be **enforced in CI** (`ci.yml` + `make ci-local`), not merely
+**110% bar:** Every rule in this slice must be **enforced in CI** (`ci.yml` + `cargo xtask ci ci-local`), not merely
 documented or locally runnable. No “follow-up” deferrals for items listed below.
 
 **Revised task list (110% — Claude plan, no deferrals):**
@@ -160,10 +160,10 @@ documented or locally runnable. No “follow-up” deferrals for items listed be
 | T6 | LOG-3 two-band | Timing + `logHandlerErr` (`c.FullPath()`); band 1 = **75** 5xx; band 2 = mutator **400/409/413** (~subset of **79** total 4xx sites); script (awk + grep-derived mutator set); telemetry refresh logs on 200 path |
 | T7 | SIZE | `verify-file-length.mjs` (dep-free Node); SIZE-3 rows `admin.tsx` / `doctrine.tsx` / `events.go` |
 | T8 | ENF-4 ×10 | `enfusion/{slot,meta,faction,circle,shape,zone,role,group,orbatFaction,root}.sample.json`; root = copy smallest golden; `validate.mjs` filename→pointer |
-| T9 | Wiring | `make verify-coding-standards` → `ci-local` **and** new **`ci.yml` backend step** after integration tests; GO-7/ENF-4 ride schema job |
+| T9 | Wiring | `cargo xtask ci verify-coding-standards` → `ci-local` **and** new **`ci.yml` backend step** after integration tests; GO-7/ENF-4 ride schema job |
 | T10 | Shipped note | No-deferral summary (only doc edit Claude may append) |
 
-**Acceptance:** `make ci-local` green **and** `ci.yml` passes on push. Scripts portable (**grep/awk**, dep-free Node).
+**Acceptance:** `cargo xtask ci ci-local` green **and** `ci.yml` passes on push. Scripts portable (**grep/awk**, dep-free Node).
 
 **User decisions (locked):**
 1. **LOG-3 full** — `logHandlerErr` on **every 5xx** (75 sites) **and** consequential **4xx** on mutators
@@ -171,7 +171,7 @@ documented or locally runnable. No “follow-up” deferrals for items listed be
    that return 200 but matter (e.g. `RefreshLeaderboard` after ingest) get `log.Printf` anyway.
 2. **GO-9** — extract `telemetry.go` → `services.RefreshLeaderboard`; allowlist structural
    `auth`/`realtime` on `handlers.go`, `auth.go`, `me.go` (YAML + note for CODING_STANDARDS GO-9 row).
-3. **CI** — wire **`make verify-coding-standards`** into **`ci.yml` backend job** AND **`make ci-local`**
+3. **CI** — wire **`cargo xtask ci verify-coding-standards`** into **`ci.yml` backend job** AND **`cargo xtask ci ci-local`**
    (GitHub and local must match — no “local-only” acceptance).
 
 **Authority:** [`handlers.go` `Register()`](../../apps/website/internal/handlers/handlers.go) (all paths
@@ -193,7 +193,7 @@ under `/api/v1/…`). `@route` grammar: [`DOCUMENTATION_STANDARDS.md`](DOCUMENTA
   - **mismatch** (Godoc method/path ≠ wired route);
   - **unwired** (handler has `@route` or matches `func (h *Handler) Name(c *gin.Context)` but is not
     registered in `Register()`).
-  Rides `make verify-citations` (CI **schema** job).
+  Rides `cargo xtask ci verify-citations` (CI **schema** job).
 
 ### Task 2 — M6 / GO-2: fix 15 silent `_ = h.db.First(…).Error`
 
@@ -323,13 +323,13 @@ verify-coding-standards: ## GO-1/9, ERR-4, LOG-3, SIZE-1/3 script bundle
 Wire into **`ci-local`** after **`ci-local-backend`**, before **`ci-local-schema`**.
 
 **Also edit [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml):**
-- **backend** job: add step `make verify-coding-standards` after integration tests (mirrors `ci-local`).
+- **backend** job: add step `cargo xtask ci verify-coding-standards` after integration tests (mirrors `ci-local`).
 - GO-7 + ENF-4 already ride **schema** job (`verify-citations`, `npm run validate`).
 
 Note: **`@model` on `types/api/index.ts`** completed in **T-125.3**.
 
-**Verify:** `make verify-citations` · `make verify-coding-standards` · `make schema-validate` ·
-`make test-it` · `make ci-local` · FE build/lint/test · `golangci-lint run ./...` stays 0 ·
+**Verify:** `cargo xtask ci verify-citations` · `cargo xtask ci verify-coding-standards` · `cargo xtask ci schema-validate` ·
+`cargo xtask db test-it` · `cargo xtask ci ci-local` · FE build/lint/test · `golangci-lint run ./...` stays 0 ·
 **push to `main` would pass `ci.yml`** (local replay = GitHub).
 
 **Out of scope:** Prettier (T-125.5); registry/CLAUDE hub prose (T-125.6); TS/eslint (T-125.3).
@@ -338,9 +338,9 @@ Note: **`@model` on `types/api/index.ts`** completed in **T-125.3**.
 
 Append **`Shipped (T-125.4):`** under §T-125.4 with a no-deferral summary: `@route` count + Register
 cross-check; M6 15/15; WriteAudit annotations; LOG-3 two-band counts; script paths; allowlist rows;
-ENF-4 10/10 fixtures; `ci.yml` backend step; `make ci-local` wall-clock.
+ENF-4 10/10 fixtures; `ci.yml` backend step; `cargo xtask ci ci-local` wall-clock.
 
-**Shipped (T-125.4)** — no deferrals; `make ci-local` green @ **22s** (Node 26; golangci 0 issues, FE 21/21):
+**Shipped (T-125.4)** — no deferrals; `cargo xtask ci ci-local` green @ **22s** (Node 26; golangci 0 issues, FE 21/21):
 - **GO-7 route-match:** **77** `@route` tags added (82 handlers total); `verify-contract-citations.mjs`
   parses `Register()` and asserts every `@route` **method+path matches the wired route** — "Checked 82
   handler(s) against Register() routes". Rides the schema CI job.
@@ -359,14 +359,14 @@ ENF-4 10/10 fixtures; `ci.yml` backend step; `make ci-local` wall-clock.
   3 warns (events.tsx/operations.tsx/missions.go), 0 violations.
 - **ENF-4:** **10/10** `packages/tbd-schema/enfusion/*.sample.json` (slot, meta, faction, circle, shape,
   zone, role, group, orbatFaction, root) + data-driven `validate.mjs` branch.
-- **Wiring:** `make verify-coding-standards` → `ci-local` **and** the `ci.yml` backend job (after TEST-1).
+- **Wiring:** `cargo xtask ci verify-coding-standards` → `ci-local` **and** the `ci.yml` backend job (after TEST-1).
 
 ---
 
 ## T-125.5 — Repo hygiene (FMT-2 + FMT-3)
 
 **Goal:** Ship the two remaining **Readability** formatting gates from CODING_STANDARDS §7 — root
-**`.editorconfig`** (FMT-2) and **Prettier** for TS/TSX/CSS (FMT-3) — wired into **`make ci-local`**
+**`.editorconfig`** (FMT-2) and **Prettier** for TS/TSX/CSS (FMT-3) — wired into **`cargo xtask ci ci-local`**
 and **`ci.yml`**. This closes the last CI-BLOCK rules that were **planned** after T-125.4.
 
 **Authority:** [`CODING_STANDARDS.md`](CODING_STANDARDS.md) §7 FMT-2/FMT-3, §10 matrix, §11 verify replay.
@@ -476,13 +476,13 @@ or a dedicated `verify-editorconfig` Make target invoked from `ci-local` before 
 editorconfig-checker                          # FMT-2 (repo root)
 cd apps/website/frontend && npm run format:check   # FMT-3
 cd apps/website/frontend && npm run lint && npm run build && npm test
-make ci-local                                 # full gate; report wall-clock
+cargo xtask ci ci-local                                 # full gate; report wall-clock
 ```
 
-**Acceptance:** `make ci-local` green **and** `ci.yml` would pass on push. Formatting diff is
+**Acceptance:** `cargo xtask ci ci-local` green **and** `ci.yml` would pass on push. Formatting diff is
 **style-only** (no logic changes).
 
-**Shipped (T-125.5)** — `make ci-local` green @ **22.7s** (Node 26; editorconfig 0 errors, FE 21/21):
+**Shipped (T-125.5)** — `cargo xtask ci ci-local` green @ **22.7s** (Node 26; editorconfig 0 errors, FE 21/21):
 - **FMT-2 `.editorconfig`:** root [`.editorconfig`](../../.editorconfig) — `[*]` utf-8/lf/final-newline/trim;
   `[*.go]` tab; `[*.{ts,tsx,js,mjs,cjs}]` + `[*.{json,yml,yaml}]` 2-space; `[{Makefile,*.mk}]` tab.
   **Carve-outs (engineering-correct, beyond the spec's literal example):** `[*.md]` keeps `trim_trailing_whitespace = false`
@@ -503,11 +503,11 @@ make ci-local                                 # full gate; report wall-clock
 - **ESLint compat:** `eslint-config-prettier` extended **last** in [`eslint.config.js`](../../apps/website/frontend/eslint.config.js)
   (flat config); **no** `eslint-plugin-prettier`. `npm run lint` stays green — TS-2..7 / LOG-2 / COMP-1 untouched.
 - **One-time reformat:** `npm run format` → **58 files** reformatted (style-only), incl. `src/index.css` normalized.
-- **Wiring:** `make verify-editorconfig` (new target) runs first in **`ci-local`**; `npm run format:check` added to
+- **Wiring:** `cargo xtask ci verify-editorconfig` (new target) runs first in **`ci-local`**; `npm run format:check` added to
   **`ci-local-frontend`** (after `npm ci`, before `lint`). [`ci.yml`](../../.github/workflows/ci.yml): `format:check` step in the
   **frontend** job + a dedicated **`editorconfig`** job (`setup-go` + `go install …@latest` + checker from repo root).
 - **Verify:** `editorconfig-checker` / `npm run format:check` / `npm run lint` / `npm run build` / `npm test` (**21/21**) all exit 0;
-  `make ci-local` green @ **22.7s**.
+  `cargo xtask ci ci-local` green @ **22.7s**.
 
 ---
 
@@ -524,7 +524,7 @@ make ci-local                                 # full gate; report wall-clock
 ## Acceptance criteria (11/10)
 
 - [x] `CODING_STANDARDS.md` exists and cross-linked; distinct from DOCUMENTATION_STANDARDS
-- [x] **`ci.yml` green on `main`** — includes `make test-it`, FE build/lint/test/format, schema validate, editorconfig job
+- [x] **`ci.yml` green on `main`** — includes `cargo xtask db test-it`, FE build/lint/test/format, schema validate, editorconfig job
 - [x] **golangci** runs full linter set **without** `only-new-issues`
 - [x] **TypeScript `strict: true`** — build clean (T-125.3 @ `e5fbf4b`)
 - [x] **Every handler** has `@route` matching `Register()`; GO-7 route-match live (T-125.4 @ `cb508cf`)

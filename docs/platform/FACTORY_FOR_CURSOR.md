@@ -75,10 +75,10 @@ export CARGO_TARGET_DIR=/home/Samuel/Projects/TBD-Reforger/target
 worktree that builds its own `target/` costs ~40 GB.
 
 ```bash
-# 1. Database, API, SPA. `make` is NOT on the container PATH — it goes through the host bridge.
-distrobox-host-exec sh -c 'cd /home/Samuel/Projects/TBD-Reforger && make db-up'
-nohup distrobox-host-exec sh -c 'cd /home/Samuel/Projects/TBD-Reforger && make api'    > /tmp/api.log    2>&1 & disown
-nohup distrobox-host-exec sh -c 'cd /home/Samuel/Projects/TBD-Reforger && make leptos' > /tmp/leptos.log 2>&1 & disown
+# 1. Database, API, SPA. `cargo` is NOT usable in the container — it goes through the host bridge.
+distrobox-host-exec sh -c 'cd /home/Samuel/Projects/TBD-Reforger && cargo xtask db up'
+nohup distrobox-host-exec sh -c 'cd /home/Samuel/Projects/TBD-Reforger && cargo xtask mk rust-api'    > /tmp/api.log    2>&1 & disown
+nohup distrobox-host-exec sh -c 'cd /home/Samuel/Projects/TBD-Reforger && cargo xtask mk leptos' > /tmp/leptos.log 2>&1 & disown
 # Wait ~40s, then confirm:
 curl -s -o /dev/null -w "api=%{http_code}\n" http://localhost:8080/healthz     # expect 200
 curl -s -o /dev/null -w "spa=%{http_code}\n" http://localhost:3000/            # expect 200
@@ -99,7 +99,7 @@ restart it. A stale API returns confident wrong answers that read as genuine def
 
 ```bash
 distrobox-host-exec pkill -f 'target-dev-api/debug/api' ; sleep 2
-nohup distrobox-host-exec sh -c 'cd /home/Samuel/Projects/TBD-Reforger && make api' > /tmp/api.log 2>&1 & disown
+nohup distrobox-host-exec sh -c 'cd /home/Samuel/Projects/TBD-Reforger && cargo xtask mk rust-api' > /tmp/api.log 2>&1 & disown
 ```
 
 **LEAVE `trunk serve` ON :3000 RUNNING.** Killing it before a gate is a retired ritual — T-396 made
@@ -225,7 +225,7 @@ report which file and why — do not widen silently. Siblings running right now 
 8. git-lfs is absent while filter.lfs.process is set, so plain git status/add can abort. Use
    `git -c filter.lfs.process= -c filter.lfs.required=false ...`, scoped to your own paths.
    NEVER `git add -A`.
-9. NEVER `git stash` (it deletes LFS pointer files). NEVER `make ci-local` (red for weeks for
+9. NEVER `git stash` (it deletes LFS pointer files). NEVER `cargo xtask ci ci-local` (red for weeks for
    unrelated reasons, costs 15-40 min). A test printing `skip:` is a FAIL, not a pass.
 10. Do NOT spawn subagents. Do the work yourself.
 11. trunk serve (:3000) and the dev API (:8080) are running — LEAVE BOTH UP.
@@ -263,7 +263,7 @@ report which file and why — do not widen silently. Siblings running right now 
 | 3 | It **claims to have filed a ticket**. Agents do not file. Tell it to report the finding instead. |
 | 4 | It says a test printed `skip:` and treats that as a pass. `skip:` is a **FAIL**. |
 | 5 | It touched files outside its `owns` **without calling them out**. |
-| 6 | It says it ran `make ci-local` or `git stash`. |
+| 6 | It says it ran `cargo xtask ci ci-local` or `git stash`. |
 | 7 | It reports "already fixed / a sibling did it / this already works" **without a command proving it**. |
 
 To send it back, say exactly what is missing and what evidence you need. Do not fix it yourself.
@@ -461,7 +461,7 @@ Co-Authored-By: Grok <noreply@x.ai>
 
 | Trap | What to do |
 |---|---|
-| `cargo`, `rustfmt`, `xtask`, `make`, `./scripts/ticket` **do not run in the container** (glibc 2.36 vs host 2.39) | Route through `distrobox-host-exec`. It does **not** forward env — pass it explicitly with `env VAR=…` |
+| `cargo`, `rustfmt`, `xtask` **do not run in the container** (glibc 2.36 vs host 2.39) | Route through `distrobox-host-exec`. It does **not** forward env — pass it explicitly with `env VAR=…` |
 | `wave.sh` **must NOT** be wrapped in `distrobox-host-exec` | It detects the bridge and all steps go red with a misleading error. Run it directly |
 | `CARGO_TARGET_DIR` unset in every fresh shell | `export CARGO_TARGET_DIR=/home/Samuel/Projects/TBD-Reforger/target` |
 | `git status` / `git add` can abort — git-lfs absent while `filter.lfs.process` is set | `git -c filter.lfs.process= -c filter.lfs.required=false …` |
@@ -470,7 +470,7 @@ Co-Authored-By: Grok <noreply@x.ai>
 | The shared `tbd_gate_it` DB reds the gate | Fresh cold DB + `TBD_GATE_DB`, every gate |
 | A `git checkout` restore does not re-trigger a cargo rebuild | `touch` the file after restoring. The **green** half of a perturbation loop can be stale |
 | **`rg` does not exist anywhere** — it is a shell *function* injected by the agent harness, so a gate using it passes only when an AI runs it (T-556) | Use `grep -E` and read the exit status (0/1/2/127), or the helpers in `scripts/mod/lib/gate-grep.sh`. Never `if rg …; then fail; fi` |
-| `make ci-local` | **Never.** Red for weeks for unrelated reasons; 15–40 min |
+| `cargo xtask ci ci-local` | **Never.** Red for weeks for unrelated reasons; 15–40 min |
 | A rate-limited subagent reports `completed` | Treat a rate-limit/reset string as a **FAILURE**, not a finished agent |
 
 ---

@@ -98,7 +98,7 @@ Example: 2: Medic (L85A3) | MED
 
 ```bash
 cargo test -p map-engine-core format_slot_line 2>/dev/null || cargo test format_slot_line
-make ci-local-leptos
+cargo xtask mk ci-local-leptos
 rg -n 'max-w-xl' apps/website/frontend/src/eden_chrome.rs apps/website/frontend/src/orbat_manager.rs | head
 # G4:
 rg -ni 'standardization|IFAK|Grenade Complement' apps/website/frontend/src/orbat_manager.rs apps/website/frontend/src/eden_chrome.rs && exit 1 || true
@@ -171,7 +171,7 @@ Implement **T-180.7** — Stitch ORBAT Manager UI on live data.
 ═══ VERIFY ═══
   cargo test -p map-engine-core format_slot_line
   cargo test -p website-frontend --lib
-  make ci-local-leptos
+  cargo xtask mk ci-local-leptos
   rg -n 'max-w-xl' apps/website/frontend/src/orbat_manager.rs apps/website/frontend/src/eden_chrome.rs | head
   rg -ni 'standardization|IFAK|Grenade Complement' apps/website/frontend/src/orbat_manager.rs apps/website/frontend/src/eden_chrome.rs && exit 1 || true
 

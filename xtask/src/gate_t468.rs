@@ -1,20 +1,37 @@
-//! T-468 / T-471 / T-472 / T-476 / T-486 / T-489 — CI schema job must stay on
-//! `make ci-local-schema`, and Makefile recipe bodies for the Class-R verifies must
-//! stay real (T-853 / T-881 port of `scripts/mod/verify-t468-ci-schema-parity.sh`).
+//! T-468 / T-471 / T-472 / T-476 / T-486 / T-489 — the CI schema job must stay on the FULL gate
+//! set, and the Class-R verify tasks must stay real (T-853 / T-881 port of
+//! `scripts/mod/verify-t468-ci-schema-parity.sh`).
 //!
 //! Without this tripwire, someone can revert the CI schema job to bare
 //! `cargo run -p xtask -- schema validate` + citations and reopen the map-object-enums
-//! hole while CI stays green. Recipe-body pins close hollow `@true` / `echo PASS` /
-//! `#fake` smuggles on `ci-local-schema`, `verify-t456`, and this gate's own
-//! `verify-t468` target.
+//! hole while CI stays green. The task pins close hollow `@true` / `echo PASS` /
+//! `#fake` smuggles on `ci-local-schema`, `verify-t456`, and this gate's own invocation.
 //!
 //! ── T-853 MUTUAL PIN ─────────────────────────────────────────────────────────────────────────
 //!
 //! Pre-port, `bash_pins` required `^\t@?bash <exact-script-path>` for both verify-t456 and
-//! verify-t468. Porting either alone fails the other on a CORRECT tree. Both bash pins are
-//! dropped here and re-pinned at the cargo spelling in ONE atomic change with the Makefile /
+//! verify-t468. Porting either alone fails the other on a CORRECT tree. Both bash pins were
+//! dropped and re-pinned at the cargo spelling in ONE atomic change with the Makefile /
 //! wave.sh / ci.yml call sites. [`VERIFY_T456`] / [`VERIFY_T468`] are the single source; test
 //! fixtures derive from them (gate_t440 precedent).
+//!
+//! ── T-897: THE RECIPE BODIES MOVED TO `mk_ci::TASKS` ─────────────────────────────────────────
+//!
+//! Three pins read the root `Makefile`. T-897 deleted it — and this gate was FAIL-CLOSED on that
+//! file, so it would have gone RED rather than quiet. Their successor is [`crate::mk_ci::TASKS`],
+//! the table `cargo xtask ci <task>` executes:
+//!
+//! | pinned in `Makefile` until T-897 | pinned in `TASKS` now |
+//! |---|---|
+//! | `ci-local-schema:` invokes `schema-validate` + `verify-citations` | that row's `Step::Task`s |
+//! | `verify-t456:` recipe is exactly the cargo verify line | that row's step echo |
+//! | `verify-t468:` recipe is exactly the cargo verify line (self-pin) | `ci-local`'s DIRECT `verify t468` step |
+//!
+//! The self-pin's subject MOVED rather than vanishing, and the T-489 circularity it exists for is
+//! now preserved by construction: there is deliberately no `verify-t468` row in `TASKS`, so
+//! `ci-local` reaches this gate through a direct `Step::Xtask` and never through
+//! `Step::Task("verify-t468")`. A hollowed dispatcher therefore cannot green the check that
+//! polices dispatch, and that one step is what the third pin reads.
 //!
 //! `scripts/platform/wave.sh` is examined (not merely claimed): both `gate_slice` and `cmd_gate`
 //! must carry exact `checkrun` + cargo verify lines for t456 and t468 (T-478 dual-path discipline).
@@ -29,8 +46,8 @@
 //!    directly here.
 //!
 //! T-489 circularity (preserved): CI / ci-local / wave invoke this gate *directly* (cargo),
-//! not via `make verify-t468`. A hollow make target must not green those callers. Human
-//! `make verify-t468` remains a convenience that still runs the gate.
+//! never through a dispatch table row named after it. A hollowed indirection must not green
+//! those callers.
 
 use std::collections::HashSet;
 use std::path::Path;
@@ -38,16 +55,24 @@ use std::path::Path;
 use anyhow::Result;
 use regex::Regex;
 
-/// Cargo spelling pinned into Makefile `verify-t456:` (tab + optional `@` + this exact line).
-/// Const + call sites are one atomic change — see module docs.
+use crate::mk_ci;
+
+/// Cargo spelling pinned into `wave.sh`'s checkrun lines for t456. Const + call sites are one
+/// atomic change — see module docs.
 const VERIFY_T456: &str = "cargo run -q -p xtask -- verify t456";
-/// Cargo spelling pinned into Makefile `verify-t468:` (self-pin).
+/// Cargo spelling pinned into `wave.sh`'s checkrun lines for t468 (self-pin).
 const VERIFY_T468: &str = "cargo run -q -p xtask -- verify t468";
+/// The `TASKS` step echo `verify-t456` must carry — the in-table spelling of [`VERIFY_T456`].
+const TASK_ECHO_T456: &str = "cargo xtask verify t456";
+/// The `TASKS` step echo `ci-local` must carry for t468. THE SELF-PIN (T-486/T-489): `ci-local`
+/// must reach this gate directly, not via a `verify-t468` row that could be hollowed.
+const TASK_ECHO_T468: &str = "cargo xtask verify t468";
 
 const CI_REL: &str = ".github/workflows/ci.yml";
-const MAKE_REL: &str = "Makefile";
 const WAVE_REL: &str = "scripts/platform/wave.sh";
-const GOOD_RUN: &str = "make ci-local-schema";
+/// What the ci.yml `schema` job must run. `cargo xtask` is the `.cargo/config.toml` alias for
+/// `cargo run --package xtask --`; [`ci_run_is_good`] accepts either spelling.
+const GOOD_RUN: &str = "cargo xtask ci ci-local-schema";
 
 /// Entry point. Bash collapsed any Python non-zero to exit 1 after printing FAIL — same here.
 pub fn verify_t468(repo_root: &Path) -> Result<u8> {
@@ -65,19 +90,6 @@ pub fn verify_t468(repo_root: &Path) -> Result<u8> {
         }
     };
 
-    let makefile_path = repo_root.join(MAKE_REL);
-    let makefile = if makefile_path.is_file() {
-        match std::fs::read_to_string(&makefile_path) {
-            Ok(s) => Some(s),
-            Err(e) => {
-                println!("FAIL: cannot read {}: {e}", makefile_path.display());
-                return Ok(1);
-            }
-        }
-    } else {
-        None
-    };
-
     let wave_path = repo_root.join(WAVE_REL);
     let wave = if wave_path.is_file() {
         match std::fs::read_to_string(&wave_path) {
@@ -92,12 +104,7 @@ pub fn verify_t468(repo_root: &Path) -> Result<u8> {
         return Ok(1);
     };
 
-    let fail = run_pins(
-        &src,
-        makefile.as_deref(),
-        makefile_path.as_path(),
-        wave.as_deref(),
-    );
+    let fail = run_pins(&src, wave.as_deref());
     if fail != 0 {
         println!("verify-t468-ci-schema-parity: FAIL");
         return Ok(1);
@@ -107,7 +114,7 @@ pub fn verify_t468(repo_root: &Path) -> Result<u8> {
 }
 
 /// Port of the Python pin block. Returns `0` when clean, `1` when any pin failed.
-fn run_pins(ci_src: &str, makefile: Option<&str>, makefile_path: &Path, wave: Option<&str>) -> i32 {
+fn run_pins(ci_src: &str, wave: Option<&str>) -> i32 {
     let stripped = strip_yaml_hash_comments(ci_src);
     let lines: Vec<&str> = stripped.lines().collect();
 
@@ -157,11 +164,10 @@ fn run_pins(ci_src: &str, makefile: Option<&str>, makefile_path: &Path, wave: Op
         fail = 1;
     }
 
-    let make_ws = Regex::new(r"^make\s+ci-local-schema$").expect("make ws");
-    let has_good = runs.iter().any(|r| r == GOOD_RUN || make_ws.is_match(r));
+    let has_good = runs.iter().any(|r| ci_run_is_good(r));
 
     if !has_good {
-        println!("FAIL: schema job must run `make ci-local-schema` (full gate set)");
+        println!("FAIL: schema job must run `{GOOD_RUN}` (full gate set)");
         println!("      found run steps:");
         for r in &runs {
             println!("        - {r}");
@@ -187,112 +193,7 @@ fn run_pins(ci_src: &str, makefile: Option<&str>, makefile_path: &Path, wave: Op
         fail = 1;
     }
 
-    let Some(mf) = makefile else {
-        println!("FAIL: missing Makefile at {}", makefile_path.display());
-        return 1;
-    };
-
-    if !Regex::new(r"(?m)^ci-local-schema:")
-        .expect("ci-local-schema target")
-        .is_match(mf)
-    {
-        println!("FAIL: Makefile missing `ci-local-schema:` target (CI pin would be vacuous)");
-        fail = 1;
-    } else {
-        let live = extract_recipe_live(mf, "ci-local-schema");
-        match live {
-            None => {
-                // extract returns None only when target missing — already checked above.
-                println!(
-                    "FAIL: Makefile missing `ci-local-schema:` target (CI pin would be vacuous)"
-                );
-                fail = 1;
-            }
-            Some(live) if live.is_empty() => {
-                println!("FAIL: Makefile `ci-local-schema:` has no tab-indented recipe body");
-                println!(
-                    "      hollow target names still green CI — require schema-validate + verify-citations"
-                );
-                fail = 1;
-            }
-            Some(live) => {
-                let need = ["schema-validate", "verify-citations"];
-                let goal_line_re =
-                    Regex::new(r"^\t@?(?:\$\(MAKE\)|make)\s+(.+)$").expect("goal line");
-                let mut invoked: HashSet<String> = HashSet::new();
-                for ln in &live {
-                    let Some(caps) = goal_line_re.captures(ln) else {
-                        continue;
-                    };
-                    for tok in caps[1].split_whitespace() {
-                        if tok.starts_with('-') {
-                            continue;
-                        }
-                        invoked.insert(tok.to_string());
-                    }
-                }
-                let missing: Vec<&str> = need
-                    .iter()
-                    .copied()
-                    .filter(|p| !invoked.contains(*p))
-                    .collect();
-                if !missing.is_empty() {
-                    println!(
-                        "FAIL: Makefile `ci-local-schema:` recipe must invoke: {}",
-                        missing.join(", ")
-                    );
-                    println!("      found recipe lines (comments stripped):");
-                    for ln in &live {
-                        println!("        '{}'", py_repr_ascii(ln));
-                    }
-                    println!(
-                        "      T-472: require tab + optional @ + $(MAKE)|make + exact \
-                         target schema-validate / verify-citations (not echo/true, \
-                         not -fake suffix, not # comment smuggle)."
-                    );
-                    fail = 1;
-                }
-            }
-        }
-    }
-
-    // T-853: bash_pins dropped; cargo_pins re-pin both recipes at the VERIFY_* consts.
-    let cargo_pins = [("verify-t456", VERIFY_T456), ("verify-t468", VERIFY_T468)];
-    for (target, cmd) in cargo_pins {
-        let live = extract_recipe_live(mf, target);
-        match live {
-            None => {
-                println!("FAIL: Makefile missing `{target}:` target (T-467/T-476 pin vacuous)");
-                fail = 1;
-            }
-            Some(live) if live.is_empty() => {
-                println!("FAIL: Makefile `{target}:` has no tab-indented recipe body");
-                println!("      hollow `@true` / echo greens make — require `{cmd}`");
-                fail = 1;
-            }
-            Some(live) => {
-                // Exact recipe goal: ^\t@?<VERIFY_*>\s*$ — trailing whitespace only (NOT --help / || true).
-                let cargo_goal_re =
-                    Regex::new(&format!(r"^\t@?{}\s*$", regex::escape(cmd))).expect("cargo goal");
-                let ok = live
-                    .iter()
-                    .any(|ln| cargo_goal_re.is_match(ln) || recipe_invokes_cargo(ln, cmd));
-                if !ok {
-                    println!("FAIL: Makefile `{target}:` recipe must invoke: {cmd}");
-                    println!("      found recipe lines (comments stripped):");
-                    for ln in &live {
-                        // Match Python `!r` for ASCII recipe lines (single quotes, `\t` escapes).
-                        println!("        '{}'", py_repr_ascii(ln));
-                    }
-                    println!(
-                        "      T-476/T-486: require tab + optional @ + bash + exact script path \
-                         (not @true/echo, not # comment smuggle, not -fake suffix)."
-                    );
-                    fail = 1;
-                }
-            }
-        }
-    }
+    fail |= task_pins();
 
     match wave {
         None => {
@@ -307,19 +208,135 @@ fn run_pins(ci_src: &str, makefile: Option<&str>, makefile_path: &Path, wave: Op
     fail
 }
 
-/// Token-exact / end-anchored like the old bash path pin: after optional `@`, the recipe
-/// equals `cmd` or `cmd` + trailing whitespace only — NOT `--help`, `|| true`, `&& true`,
-/// or `2>/dev/null` suffixes that would green `make` without enforcing the gate.
-fn recipe_invokes_cargo(line: &str, cmd: &str) -> bool {
-    let rest = if let Some(r) = line.strip_prefix("\t@") {
-        r
-    } else if let Some(r) = line.strip_prefix('\t') {
-        r
-    } else {
-        return false;
-    };
-    let trimmed = rest.trim_end();
-    trimmed == cmd
+/// Does this ci.yml `run:` line invoke the full schema gate set?
+///
+/// Both spellings of the same command are accepted, because `.cargo/config.toml` defines
+/// `xtask = "run --package xtask --"` and CI may use either. Nothing looser: a `|| true` or
+/// `--help` suffix must not satisfy it, which is why this is equality after normalisation and
+/// not a `contains`.
+fn ci_run_is_good(run: &str) -> bool {
+    let normalised = run.split_whitespace().collect::<Vec<_>>().join(" ");
+    normalised == GOOD_RUN || normalised == "cargo run -q -p xtask -- ci ci-local-schema"
+}
+
+/// THE RECIPE-BODY PINS, post-T-897 (see module docs for the before/after table).
+///
+/// Reads [`mk_ci::TASKS`] in-process. That is not a weaker subject than reading a file: the table
+/// is what `cargo xtask ci` executes, so hollowing it is the only way to hollow the tasks, and a
+/// hollowed row fails here. The old Makefile pins could only ever check TEXT that make happened
+/// to run; these check the thing that runs.
+fn task_pins() -> i32 {
+    let mut fail = 0;
+
+    // Pin 1 — `ci-local-schema` must delegate to both halves of the T-434 set.
+    match mk_ci::find("ci-local-schema") {
+        None => {
+            println!("FAIL: mk_ci::TASKS missing `ci-local-schema` (the CI pin would be vacuous)");
+            fail = 1;
+        }
+        Some(t) => {
+            let invoked: HashSet<&str> = mk_ci::invoked_tasks(t).into_iter().collect();
+            let missing: Vec<&str> = ["schema-validate", "verify-citations"]
+                .into_iter()
+                .filter(|need| !invoked.contains(need))
+                .collect();
+            if missing.is_empty() {
+            } else {
+                println!(
+                    "FAIL: `ci-local-schema` must invoke: {} (T-472: real Step::Task rows, \
+                     not an echo and not a comment)",
+                    missing.join(", ")
+                );
+                println!("      found steps:");
+                for s in t.steps {
+                    println!("        {}", describe_step(s));
+                }
+                fail = 1;
+            }
+        }
+    }
+
+    // Pin 2 — `verify-t456` must still carry the cargo verify call.
+    match mk_ci::find("verify-t456") {
+        None => {
+            println!("FAIL: mk_ci::TASKS missing `verify-t456` (T-467/T-476 pin vacuous)");
+            fail = 1;
+        }
+        Some(t) => {
+            if !t
+                .steps
+                .iter()
+                .any(|s| mk_ci::step_echo(s) == Some(TASK_ECHO_T456))
+            {
+                println!("FAIL: `verify-t456` must invoke: {TASK_ECHO_T456}");
+                println!("      found steps:");
+                for s in t.steps {
+                    println!("        {}", describe_step(s));
+                }
+                println!(
+                    "      T-476/T-486: exact echo, not a hollow Step::Cmd/echo and not a rename."
+                );
+                fail = 1;
+            }
+        }
+    }
+
+    // Pin 3 — THE SELF-PIN. `ci-local` must reach this gate DIRECTLY.
+    //
+    // T-489/T-881 circularity: routing t468 through a `Step::Task("verify-t468")` would let a
+    // hollowed dispatcher green the very tripwire that polices dispatch. So the row must carry an
+    // echoing step, and there must be no `verify-t468` task for anyone to reach instead.
+    match mk_ci::find("ci-local") {
+        None => {
+            println!("FAIL: mk_ci::TASKS missing `ci-local` (T-486 self-pin vacuous)");
+            fail = 1;
+        }
+        Some(t) => {
+            if !t
+                .steps
+                .iter()
+                .any(|s| mk_ci::step_echo(s) == Some(TASK_ECHO_T468))
+            {
+                println!("FAIL: `ci-local` must invoke `{TASK_ECHO_T468}` directly (T-486/T-489)");
+                println!("      found steps:");
+                for s in t.steps {
+                    println!("        {}", describe_step(s));
+                }
+                fail = 1;
+            }
+            if mk_ci::invoked_tasks(t).contains(&"verify-t468") {
+                println!(
+                    "FAIL: `ci-local` reaches t468 through Step::Task(\"verify-t468\") — the \
+                     T-489 circularity is back"
+                );
+                println!(
+                    "      A hollowed dispatch table would then green the gate that polices it."
+                );
+                fail = 1;
+            }
+        }
+    }
+    if mk_ci::find("verify-t468").is_some() {
+        println!(
+            "FAIL: mk_ci::TASKS grew a `verify-t468` row — T-489 requires t468 stay off the \
+             dispatch table it polices"
+        );
+        fail = 1;
+    }
+
+    fail
+}
+
+/// One [`mk_ci::Step`] in the evidence dump. `wave.sh` tails 15 lines of a failed gate, so the
+/// operator has to be able to see WHICH step was mistaken for an invocation.
+fn describe_step(s: &mk_ci::Step) -> String {
+    match mk_ci::step_echo(s) {
+        Some(echo) => format!("'{}'", py_repr_ascii(echo)),
+        None => match s {
+            mk_ci::Step::Task(n) => format!("Step::Task({n:?})"),
+            _ => "Step::Native".to_string(),
+        },
+    }
 }
 
 /// Pin `wave.sh` `gate_slice` + `cmd_gate` to exact `checkrun` + cargo verify for t456/t468
@@ -439,105 +456,11 @@ fn extract_fn_body<'a>(src: &'a str, fn_name: &str) -> Option<&'a str> {
     None
 }
 
-/// Tab recipe lines under `target:` with `#` comments stripped; `None` if missing.
-fn extract_recipe_live(mf: &str, target: &str) -> Option<Vec<String>> {
-    let target_re = Regex::new(&format!(r"^{}:", regex::escape(target))).expect("target");
-    let next_target = Regex::new(r"^[^\s#]").expect("next target");
-    let blank_recipe = Regex::new(r"^\t\s*$").expect("blank");
-    let mut recipe_lines: Vec<String> = Vec::new();
-    let mut in_target = false;
-    for line in mf.lines() {
-        if target_re.is_match(line) {
-            in_target = true;
-            continue;
-        }
-        if !in_target {
-            continue;
-        }
-        if next_target.is_match(line) && !line.starts_with('\t') {
-            break;
-        }
-        if line.starts_with('\t') {
-            recipe_lines.push(line.to_string());
-        }
-    }
-    if !in_target {
-        return None;
-    }
-    let mut live = Vec::new();
-    for ln in recipe_lines {
-        let cleaned = strip_recipe_hash_comment(&ln);
-        if blank_recipe.is_match(&cleaned) || cleaned == "\t" {
-            continue;
-        }
-        live.push(cleaned);
-    }
-    Some(live)
-}
-
 /// Python `!r` for the ASCII recipe lines this gate dumps (tab → `\t`, single quotes).
 fn py_repr_ascii(s: &str) -> String {
     s.replace('\\', "\\\\")
         .replace('\t', "\\t")
         .replace('\'', "\\'")
-}
-
-fn strip_recipe_hash_comment(line: &str) -> String {
-    if !line.starts_with('\t') {
-        return line.to_string();
-    }
-    let chars: Vec<char> = line.chars().collect();
-    let n = chars.len();
-    let mut out = String::from("\t");
-    let mut i = 1;
-    let mut in_squote = false;
-    let mut in_dquote = false;
-    while i < n {
-        let c = chars[i];
-        if in_squote {
-            out.push(c);
-            if c == '\'' && !(i + 1 < n && chars[i + 1] == '\'') {
-                in_squote = false;
-            } else if c == '\'' && i + 1 < n && chars[i + 1] == '\'' {
-                out.push(chars[i + 1]);
-                i += 2;
-                continue;
-            }
-            i += 1;
-            continue;
-        }
-        if in_dquote {
-            out.push(c);
-            if c == '\\' && i + 1 < n {
-                out.push(chars[i + 1]);
-                i += 2;
-                continue;
-            }
-            if c == '"' {
-                in_dquote = false;
-            }
-            i += 1;
-            continue;
-        }
-        if c == '\'' {
-            in_squote = true;
-            out.push(c);
-            i += 1;
-            continue;
-        }
-        if c == '"' {
-            in_dquote = true;
-            out.push(c);
-            i += 1;
-            continue;
-        }
-        if c == '#' {
-            break;
-        }
-        out.push(c);
-        i += 1;
-    }
-    out.trim_end().to_string()
 }
 
 /// Strip `#` comments outside quotes. Preserves newlines for line structure.
@@ -605,15 +528,8 @@ mod tests {
 
     /// Minimal CI schema job that satisfies the run-step pin.
     fn ci_ok() -> String {
-        "jobs:\n  schema:\n    steps:\n      - run: make ci-local-schema\n  other:\n    steps:\n      - run: true\n".to_string()
-    }
-
-    /// Makefile fixtures derive VERIFY_* from the consts so they cannot drift (gate_t440).
-    fn make_ok() -> String {
         format!(
-            "ci-local-schema: ## schema\n\t$(MAKE) schema-validate\n\t$(MAKE) verify-citations\n\
-verify-t456: ## t456\n\t@{VERIFY_T456}\n\
-verify-t468: ## t468\n\t@{VERIFY_T468}\n"
+            "jobs:\n  schema:\n    steps:\n      - run: {GOOD_RUN}\n  other:\n    steps:\n      - run: true\n"
         )
     }
 
@@ -624,48 +540,76 @@ verify-t468: ## t468\n\t@{VERIFY_T468}\n"
         )
     }
 
-    fn pins(mf: &str, wave: &str) -> i32 {
-        run_pins(&ci_ok(), Some(mf), Path::new("Makefile"), Some(wave))
+    fn pins(wave: &str) -> i32 {
+        run_pins(&ci_ok(), Some(wave))
     }
 
     #[test]
     fn live_shaped_pins_hold() {
-        assert_eq!(pins(&make_ok(), &wave_ok()), 0);
+        assert_eq!(pins(&wave_ok()), 0);
     }
 
+    /// THE THREE RECIPE-BODY PINS, against the LIVE table (T-897).
+    ///
+    /// They cannot be fixture-driven the way the Makefile pins were: `TASKS` is a `static`, so
+    /// there is no perturbed copy to hand in. That is the point — the table this asserts on is the
+    /// one `cargo xtask ci` runs, and `task_pins` is the same function the gate calls. Hollowing
+    /// any of the three rows turns this red, which is the perturbation proof (`ci-local-schema`
+    /// losing `verify-citations`, `verify-t456` losing its echo, `ci-local` losing its direct
+    /// `verify t468` step — each was run by hand at T-897 and each RED'd here).
     #[test]
-    fn hollow_t456_recipe_fails() {
-        let mf = make_ok().replace(&format!("\t@{VERIFY_T456}"), "\t@true");
-        assert_ne!(pins(&mf, &wave_ok()), 0);
+    fn the_live_task_table_satisfies_the_recipe_pins() {
+        assert_eq!(task_pins(), 0);
     }
 
+    /// T-489 by construction: no `verify-t468` row exists for `ci-local` to reach instead of the
+    /// direct call. `task_pins` enforces this at runtime; asserting it here names why.
     #[test]
-    fn hollow_t468_recipe_fails() {
-        let mf = make_ok().replace(&format!("\t@{VERIFY_T468}"), "\t@true");
-        assert_ne!(pins(&mf, &wave_ok()), 0);
-    }
-
-    #[test]
-    fn bash_spelling_no_longer_satisfies_pin() {
-        let mf = make_ok().replace(
-            VERIFY_T456,
-            "bash scripts/mod/verify-t456-mission-rest-size-gate.sh",
+    fn t468_stays_off_the_dispatch_table_it_polices() {
+        assert!(mk_ci::find("verify-t468").is_none());
+        let ci_local = mk_ci::find("ci-local").expect("ci-local row");
+        assert!(!mk_ci::invoked_tasks(ci_local).contains(&"verify-t468"));
+        assert!(
+            ci_local
+                .steps
+                .iter()
+                .any(|s| mk_ci::step_echo(s) == Some(TASK_ECHO_T468))
         );
-        assert_ne!(pins(&mf, &wave_ok()), 0);
+    }
+
+    /// The two echoes are the in-table spellings of the two cargo consts, and the tests would be
+    /// worthless if they drifted apart silently.
+    #[test]
+    fn task_echoes_name_the_same_gates_as_the_wave_consts() {
+        assert!(VERIFY_T456.ends_with("verify t456") && TASK_ECHO_T456.ends_with("verify t456"));
+        assert!(VERIFY_T468.ends_with("verify t468") && TASK_ECHO_T468.ends_with("verify t468"));
     }
 
     #[test]
     fn schema_job_without_ci_local_schema_fails() {
         let ci = "jobs:\n  schema:\n    steps:\n      - run: cargo run -p xtask -- schema validate\n  other:\n    steps:\n      - run: true\n";
-        assert_ne!(
-            run_pins(
-                ci,
-                Some(&make_ok()),
-                Path::new("Makefile"),
-                Some(&wave_ok())
-            ),
-            0
-        );
+        assert_ne!(run_pins(ci, Some(&wave_ok())), 0);
+    }
+
+    /// The former `make ci-local-schema` spelling names a target that no longer exists, so it must
+    /// no longer satisfy the CI pin — otherwise a stale workflow would read as covered.
+    #[test]
+    fn the_make_spelling_no_longer_satisfies_the_ci_pin() {
+        let ci = "jobs:\n  schema:\n    steps:\n      - run: make ci-local-schema\n  other:\n    steps:\n      - run: true\n";
+        assert_ne!(run_pins(ci, Some(&wave_ok())), 0);
+    }
+
+    /// Both cargo spellings of the same command are accepted; nothing looser is.
+    #[test]
+    fn ci_run_accepts_the_alias_and_the_long_form_only() {
+        assert!(ci_run_is_good("cargo xtask ci ci-local-schema"));
+        assert!(ci_run_is_good(
+            "cargo run -q -p xtask -- ci ci-local-schema"
+        ));
+        assert!(ci_run_is_good("cargo  xtask   ci  ci-local-schema"));
+        assert!(!ci_run_is_good("cargo xtask ci ci-local-schema || true"));
+        assert!(!ci_run_is_good("cargo xtask ci ci-local-schema --help"));
+        assert!(!ci_run_is_good("cargo xtask ci schema-validate"));
     }
 
     #[test]
@@ -674,14 +618,29 @@ verify-t468: ## t468\n\t@{VERIFY_T468}\n"
         assert_eq!(VERIFY_T468, "cargo run -q -p xtask -- verify t468");
     }
 
-    /// B1: arbitrary suffixes must NOT satisfy the Makefile cargo pin.
+    /// M2: hollow wave `run "…" true` must RED (checkrun cargo gone).
     #[test]
-    fn recipe_suffix_smuggles_fail_pin() {
+    fn wave_hollow_t456_true_fails() {
+        let wave = wave_ok().replacen(&format!("checkrun {VERIFY_T456}"), "true", 1);
+        assert_ne!(pins(&wave), 0);
+    }
+
+    #[test]
+    fn wave_hollow_both_paths_required() {
+        let wave = wave_ok().replacen(&format!("checkrun {VERIFY_T456}"), "true", 1);
+        // Only gate_slice hollowed; cmd_gate still has checkrun — still must FAIL.
+        assert!(wave.matches(&format!("checkrun {VERIFY_T456}")).count() == 1);
+        assert_ne!(pins(&wave), 0);
+    }
+
+    /// B1: arbitrary suffixes must NOT satisfy the wave checkrun pin.
+    #[test]
+    fn wave_suffix_smuggles_fail_pin() {
         for suffix in [" --help", " || true", " && true", " 2>/dev/null"] {
             for cmd in [VERIFY_T456, VERIFY_T468] {
-                let mf = make_ok().replace(cmd, &format!("{cmd}{suffix}"));
+                let wave = wave_ok().replace(cmd, &format!("{cmd}{suffix}"));
                 assert_ne!(
-                    pins(&mf, &wave_ok()),
+                    pins(&wave),
                     0,
                     "suffix {suffix:?} on {cmd} must FAIL the pin"
                 );
@@ -690,40 +649,13 @@ verify-t468: ## t468\n\t@{VERIFY_T468}\n"
     }
 
     #[test]
-    fn recipe_trailing_whitespace_still_passes() {
-        let mf = make_ok().replace(
-            &format!("\t@{VERIFY_T456}"),
-            &format!("\t@{VERIFY_T456}   "),
-        );
-        assert_eq!(pins(&mf, &wave_ok()), 0);
-    }
-
-    /// M2: hollow wave `run "…" true` must RED (checkrun cargo gone).
-    #[test]
-    fn wave_hollow_t456_true_fails() {
-        let wave = wave_ok().replacen(&format!("checkrun {VERIFY_T456}"), "true", 1);
-        assert_ne!(pins(&make_ok(), &wave), 0);
-    }
-
-    #[test]
-    fn wave_hollow_both_paths_required() {
-        let wave = wave_ok().replacen(&format!("checkrun {VERIFY_T456}"), "true", 1);
-        // Only gate_slice hollowed; cmd_gate still has checkrun — still must FAIL.
-        assert!(wave.matches(&format!("checkrun {VERIFY_T456}")).count() == 1);
-        assert_ne!(pins(&make_ok(), &wave), 0);
-    }
-
-    #[test]
     fn wave_commented_run_does_not_satisfy() {
         let wave = wave_ok().replacen("  run \"T-456", "  # run \"T-456", 1);
-        assert_ne!(pins(&make_ok(), &wave), 0);
+        assert_ne!(pins(&wave), 0);
     }
 
     #[test]
     fn missing_wave_fails() {
-        assert_ne!(
-            run_pins(&ci_ok(), Some(&make_ok()), Path::new("Makefile"), None),
-            0
-        );
+        assert_ne!(run_pins(&ci_ok(), None), 0);
     }
 }

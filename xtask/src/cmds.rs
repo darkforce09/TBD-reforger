@@ -64,7 +64,7 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
             );
             println!("HANDOFF: .ai/artifacts/t090_1_2_2_claude_code_handoff.md");
             println!(
-                "VERIFY: analyze-sap-seams + verify-sap-seams + verify-sap-ortho + EXPECT_LOSSLESS=1 verify-tile-pyramid + make verify-terrain"
+                "VERIFY: analyze-sap-seams + verify-sap-seams + verify-sap-ortho + EXPECT_LOSSLESS=1 verify-tile-pyramid + cargo xtask ci verify-terrain"
             );
             println!("MANUAL: S1 operator seam location invisible at max zoom");
         }
@@ -77,7 +77,7 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
             println!(
                 "RESUME: docs/specs/Mission_Creator_Architecture/t090_1_2_satellite_backlog.md"
             );
-            println!("VERIFY: make ci-local-leptos");
+            println!("VERIFY: cargo xtask mk ci-local-leptos");
             println!("MANUAL: P1 no pop-in; P2 pan fps ≥55");
         }
         ("T-090.1.2.5", _) => {
@@ -109,7 +109,7 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
             );
             println!("HANDOFF: .ai/artifacts/t090_1_2_1_claude_code_handoff.md");
             println!(
-                "VERIFY: node scripts/map-assets/verify-sap-ortho.mjs TERRAIN=everon && EXPECT_LOSSLESS=1 node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon && make verify-terrain && make ci-local-leptos"
+                "VERIFY: node scripts/map-assets/verify-sap-ortho.mjs TERRAIN=everon && EXPECT_LOSSLESS=1 node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon && cargo xtask ci verify-terrain && cargo xtask mk ci-local-leptos"
             );
             println!(
                 "MANUAL: L1 max-zoom field/road pixel-sharp; L2 north-up; L3 alignment; L4 ≥55 fps"
@@ -123,7 +123,7 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
                 "MAY EDIT: docs/platform/CODEBASE_AUDIT_2026.md (append shipped SHA under §Verification)"
             );
             println!("DO NOT: edit registry or other docs");
-            println!("VERIFY: make test-it && make ci-local-leptos");
+            println!("VERIFY: cargo xtask db test-it && cargo xtask mk ci-local-leptos");
         }
         (_, "T-123") => {
             println!(
@@ -156,7 +156,9 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
             "SCOPE: write docs/platform/CODING_STANDARDS.md — style/structure/errors/tests"
         ),
         ("T-125.1", _) => {
-            println!("SCOPE: .github/workflows/ci.yml + make ci-local; Postgres 18 service")
+            println!(
+                "SCOPE: .github/workflows/ci.yml + cargo xtask ci ci-local; Postgres 18 service"
+            )
         }
         ("T-125.2", _) => println!(
             "SCOPE: golangci errcheck/govet/staticcheck; remove only-new-issues; fix all Go lint"
@@ -189,26 +191,26 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
             );
             println!("FIX: schemaVersion int drift → string per DOCUMENTATION_STANDARDS §2.2");
             println!("DO NOT: edit docs/ or registry");
-            println!("VERIFY: make test-it && go build ./...");
+            println!("VERIFY: cargo xtask db test-it && go build ./...");
         }
         ("T-123.2", _) => {
             println!(
                 "SCOPE: frontend tsdoc.json + TSDoc on types/api/hooks + @model/@contract/@route"
             );
             println!("NOTE: eslint jsdoc CI lands in T-123.6 — add tags here first");
-            println!("VERIFY: make ci-local-leptos");
+            println!("VERIFY: cargo xtask mk ci-local-leptos");
         }
         ("T-123.4", _) => {
             println!(
                 "SCOPE: schema codegen — internal/contract/ + frontend/src/types/contract/ + regen script"
             );
             println!("SCHEMAS: registry-items, loadout-export, mission export defs first");
-            println!("VERIFY: make schema-validate && make test-it");
+            println!("VERIFY: cargo xtask ci schema-validate && cargo xtask db test-it");
         }
         ("T-123.5", _) => {
             println!("SCOPE: CreateVersion validates against mission.schema.json before persist");
             println!("LIB: santhosh-tekuri/jsonschema or equivalent; 400 on invalid payload");
-            println!("VERIFY: make test-it (golden pass + invalid fixture fail cases)");
+            println!("VERIFY: cargo xtask db test-it (golden pass + invalid fixture fail cases)");
         }
         ("T-123.6", _) => {
             println!(
@@ -244,8 +246,12 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
             println!(
                 "CONSUME: sampleElevation/isDemReady/isDemDegraded from tactical-map/dem — do not redo loader"
             );
-            println!("PREFLIGHT: make lfs-dem && cargo run -q -p xtask -- ticket brief T-091");
-            println!("VERIFY: make ci-local-leptos && make verify-terrain-strict");
+            println!(
+                "PREFLIGHT: cargo xtask ci lfs-dem && cargo run -q -p xtask -- ticket brief T-091"
+            );
+            println!(
+                "VERIFY: cargo xtask mk ci-local-leptos && cargo xtask ci verify-terrain-strict"
+            );
             println!(
                 "MANUAL: M1 CUR Z >5m; M3 Save z=123.456; M5/M6 toggles; M7 degraded; M8 Attributes X→Z re-sample"
             );
@@ -260,11 +266,15 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
             println!(
                 "REFERENCE (port, do not re-run): packages/tbd-schema/scripts/lib/dem-sample.mjs"
             );
-            println!("PREFLIGHT: make lfs-dem && cargo run -q -p xtask -- ticket brief T-091");
-            println!("VERIFY: make ci-local-leptos && make verify-terrain-strict");
+            println!(
+                "PREFLIGHT: cargo xtask ci lfs-dem && cargo run -q -p xtask -- ticket brief T-091"
+            );
+            println!(
+                "VERIFY: cargo xtask mk ci-local-leptos && cargo xtask ci verify-terrain-strict"
+            );
         }
         _ => {
-            println!("VERIFY: make ci-local-leptos");
+            println!("VERIFY: cargo xtask mk ci-local-leptos");
         }
     }
 
@@ -517,12 +527,15 @@ pub fn cmd_sparse_paths(registry: &Value, id: &str) -> Result<()> {
                 paths.insert("packages/tbd-schema".into());
             }
             "root" => {
+                // `Makefile` sat in this list until T-897 deleted it. Its successor is `xtask/`:
+                // a root slice needs that checked out or `cargo xtask` cannot build, which is
+                // now the whole task surface rather than a 504-line file at the top level.
                 for p in [
                     "scripts",
                     ".ai/tickets",
                     "docs",
                     ".ai/artifacts",
-                    "Makefile",
+                    "xtask",
                     "README.md",
                     "CLAUDE.md",
                 ] {

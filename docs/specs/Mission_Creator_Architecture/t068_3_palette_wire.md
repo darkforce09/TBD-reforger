@@ -82,7 +82,7 @@ test ! -f src/features/mission-creator/layout/RightInspector/assetCatalogMock.ts
 
 ### Manual (browser — paste DevTools evidence)
 
-Prerequisites: `make db-up && make api && make web`; dev-login `mission_maker`; open `/missions/:id/edit`.
+Prerequisites: `cargo xtask db up && cargo xtask mk rust-api && make web`; dev-login `mission_maker`; open `/missions/:id/edit`.
 
 | ID | Step | Pass condition | Evidence to paste |
 |----|------|----------------|-------------------|
@@ -117,7 +117,7 @@ Automated output + M1–M7 table with PASS + pasted `assetId` value.
 | Response | `{ data: RegistryItem[], etag, modpack_id, modpack_version }` |
 | Row fields | `resource_name`, `display_name`, `category` (slash path e.g. `NATO/US_Army/Rifleman`), `kind`, optional `icon_url` |
 | Caching | Weak `etag`; send `If-None-Match` → **304** (optional in `useRegistry`; not required for PASS) |
-| Dev data | `make seed` → 21 rows (8 `character`, 4 gear kinds for later T-068.4) |
+| Dev data | `cargo xtask db seed` → 21 rows (8 `character`, 4 gear kinds for later T-068.4) |
 | Types | [`frontend/src/types/models/registry.ts`](../../../apps/website/frontend/src/types/models/registry.ts) |
 
 **Tree builder input:** filter `data` where `kind === 'character'` only. Split each row's `category` on `/` to nest folders; leaf `id` = **`resource_name`** (full `{GUID}Prefabs/.../File.et`), leaf `label` = **`display_name`**.
@@ -140,12 +140,12 @@ Do not edit documentation. Branch: ticket/T-068 (checkout from main if needed)
 CONTEXT — T-068.2 already on main (@ 4c609fe):
   GET /api/v1/registry — mission_maker+ JWT; response { data, etag, modpack_id, modpack_version }
   Types: apps/website/frontend/src/types/models/registry.ts (RegistryItem, RegistryResponse)
-  Dev seed: make db-up && make seed → 21 rows; 8 characters with real resource_name GUIDs
+  Dev seed: cargo xtask db up && cargo xtask db seed → 21 rows; 8 characters with real resource_name GUIDs
   AssetBrowser.tsx still imports assetCatalogMock.ts — YOUR job is to replace that feed
 
 PREFLIGHT — verify stack before coding:
-  make db-up && make seed
-  make api   # restart if stale — go run does not hot-reload handlers
+  cargo xtask db up && cargo xtask db seed
+  cargo xtask mk rust-api   # restart if stale — go run does not hot-reload handlers
   make web
   Dev-login mission_maker → confirm GET /api/v1/registry returns 200 + data.length >= 10
 

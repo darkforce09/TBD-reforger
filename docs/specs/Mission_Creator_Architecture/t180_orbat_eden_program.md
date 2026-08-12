@@ -1,6 +1,6 @@
 # T-180 — ORBAT + Eden placement program (Class-R)
 
-**Status:** SHIPPED (program complete + coherency) · **Last slice:** **T-180.10** · **Code tip:** **T-180.9** @ `cba837b3` · **Gate:** `make verify-t180`  
+**Status:** SHIPPED (program complete + coherency) · **Last slice:** **T-180.10** · **Code tip:** **T-180.9** @ `cba837b3` · **Gate:** `cargo xtask verify t180`  
 
 
 **Ticket:** T-180 · **Route:** `/missions/:id/edit` · **Branch:** `main`  
@@ -16,7 +16,7 @@
 - **T-180.4** @ `63e7ef00` · **T-180.5** @ `1324799c` · **T-180.6** @ `056c9a1a`
 - **T-180.7** @ `e9c2406d` · **T-180.8** @ `cce240a5` (tag **T-180.8**) — [verify](../../../.ai/artifacts/t180_8_verify_log.md)
 - **T-180.9** @ `cba837b3` (tag **T-180.9**) — [verify](../../../.ai/artifacts/t180_9_verify_log.md) Open Arsenal + `derive_orbat` loadout
-- **T-180.10** coherency — [report](../../../.ai/artifacts/t180_10_coherency_report.md) · [verify](../../../.ai/artifacts/t180_10_verify_log.md) · `make verify-t180`
+- **T-180.10** coherency — [report](../../../.ai/artifacts/t180_10_coherency_report.md) · [verify](../../../.ai/artifacts/t180_10_verify_log.md) · `cargo xtask verify t180`
 - Placement pin (Apply/Add Vehicle): Everon `(6400, 6400)`
 - Manuals pending (operator): M-C1 · M-D1 · M-E1/M-E2 · M-F1 · M-G1..M-G4 · M-H1..M-H4 · M-I1..M-I3
 
@@ -130,9 +130,9 @@ Full pin ledger: [`t180_class_r_pins.md`](t180_class_r_pins.md). Per-slice specs
 | .5 | E1–E5 | `cargo test -p website-frontend` dock chip tests · `active_side` OPFOR · Objects empty · no F1–F6 · no CIV |
 | .6 | F1–F5 | `cargo test -p map-engine-core refile_gc` · place×2 ⇒ 2 squads · line count after merge |
 | .7 | G1–G8 | near-fullscreen ≠ max-w-xl-only · `format_slot_line_*` · `set_leader` · no Standardization · no hardcoded Stitch L85A3 as SoT |
-| .8 | H1–H9 | `cargo test -p map-engine-core apply_faction_` · `add_vehicle` exists · replace-not-merge · `make test-it` |
+| .8 | H1–H9 | `cargo test -p map-engine-core apply_faction_` · `add_vehicle` exists · replace-not-merge · `cargo xtask db test-it` |
 | .9 | I1–I9 | `derive_fills_loadout_from_summary` · no `String::new()` hardcode · invert `orbat.rs:174` · `open_arsenal` → Attributes tab **3** · `compile.rs:248` fixtures updated |
-| .10 | J1–J7 | `make verify-t180` · coherency report · hub/pins/ROADMAP absorb cleanup |
+| .10 | J1–J7 | `cargo xtask verify t180` · coherency report · hub/pins/ROADMAP absorb cleanup |
 
 ---
 

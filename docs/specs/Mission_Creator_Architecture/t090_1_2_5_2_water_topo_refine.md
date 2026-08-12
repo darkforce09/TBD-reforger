@@ -12,7 +12,7 @@
 
 ## In one sentence
 
-Decode **`Eden.topo` offline**, use the engine road network as a **deterministic subtraction guard** (`roadFrac`), relax wet-channel rules for valley gullies, and ship **`make map-water-everon`** as the one-button rebuild — accepting that **no hydro layer exists in `.topo`** (G1-B).
+Decode **`Eden.topo` offline**, use the engine road network as a **deterministic subtraction guard** (`roadFrac`), relax wet-channel rules for valley gullies, and ship **`cargo xtask ci map-water-everon`** as the one-button rebuild — accepting that **no hydro layer exists in `.topo`** (G1-B).
 
 ---
 
@@ -46,12 +46,12 @@ Artifacts: [`.ai/artifacts/t090_1_2_5_2_source_spike.json`](../../../.ai/artifac
 ## One-button pipeline
 
 ```bash
-make map-water-everon
+cargo xtask ci map-water-everon
 ```
 
 Restore → mask → composite → unified bundle → manifest bytes patch → lossless pyramid → verifies. Terrain config: `TOPO_TERRAINS` in `decode-topo.mjs` (Arland row seeded).
 
-**Not** full `make map-export` — water-only step toward T-090.3 automation.
+**Not** full `cargo xtask map export-terrain` — water-only step toward T-090.3 automation.
 
 ---
 

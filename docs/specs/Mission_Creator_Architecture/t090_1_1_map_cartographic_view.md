@@ -75,7 +75,7 @@ Match satellite zoom range (0–6) unless spike proves otherwise. **No `--flip-v
 
 ### 3. One-button rebuild (operator requirement)
 
-Add **`make map-cartographic-everon`** (mirror `map-water-everon` pattern):
+Add **`cargo xtask ci map-cartographic-everon`** (mirror `map-water-everon` pattern):
 
 ```text
 spike refresh (optional) → staging ortho → pyramid → manifest source patch → verify
@@ -126,7 +126,7 @@ Do **not** add unified delivery for Map v1 — pyramid LOD only (unified map bun
 |------|-------|
 | Satellite ortho / SAP / water composite edits | frozen @ `.2.5.2` |
 | Unified map bundle (tbd-map-v1) | optional idea |
-| Workbench `make map-export` full automation | **T-090.3** |
+| Workbench `cargo xtask map export-terrain` full automation | **T-090.3** |
 | T-090.5 road/building vector layers | **T-090.5** |
 | Pixel-perfect hydrology on Map tab | **T-143** (`idea`) |
 | MC “don’t place units in water” guard | **T-143** |
@@ -138,13 +138,13 @@ Do **not** add unified delivery for Map v1 — pyramid LOD only (unified map bun
 | ID | Check | Command / method |
 |----|-------|------------------|
 | **M1** | Map pyramid complete z0–6 | `VIEW=map node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon` (or dedicated script) |
-| **M2** | Manifest validates dual tiles | `make schema-validate` |
+| **M2** | Manifest validates dual tiles | `cargo xtask ci schema-validate` |
 | **M3** | Landmark alignment Satellite ↔ Map @ (x,y) ≤ **50 m** | Manual H2 contact sheet (reuse T-090.1 anchors) |
 | **M4** | Y-axis H2b on **map** pyramid | Manual / orientation crop |
 | **M5** | `basemapView` persists `'map'` across reload | localStorage manual |
 | **M6** | Map 404 → degraded path (toast + fallback) | Manual — delete one tile temporarily |
 | **M7** | FE build + lint | `cd apps/website/frontend && npm run build && npm run lint` |
-| **M8** | `make verify-terrain` | maxDeltaM unchanged |
+| **M8** | `cargo xtask ci verify-terrain` | maxDeltaM unchanged |
 | **M9** | Pan ≥55 fps on Map view | FpsCounter manual @ default zoom |
 
 Log → **`.ai/artifacts/t090_1_1_verify_log.md`** with spike verdict + M1–M9 table.
@@ -180,5 +180,5 @@ Log → **`.ai/artifacts/t090_1_1_verify_log.md`** with spike verdict + M1–M9 
 
 - [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md) — N8/N9/N10, V1–V7  
 - [`t090_1_aligned_basemap.md`](t090_1_aligned_basemap.md) — Y-flip + Cartesian contract  
-- [`t090_terrain_export_pipeline.md`](t090_terrain_export_pipeline.md) — future `make map-export`  
+- [`t090_terrain_export_pipeline.md`](t090_terrain_export_pipeline.md) — future `cargo xtask map export-terrain`  
 - Handoff: [`.ai/artifacts/t090_1_1_claude_code_handoff.md`](../../../.ai/artifacts/t090_1_1_claude_code_handoff.md)

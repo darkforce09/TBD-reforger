@@ -11,7 +11,7 @@ teardown are all inside the Rust binary now (via `cdp::launch_with_gpu(_, GpuBac
 so there is no wrapper script to run.
 
 ```bash
-# stack must be up: make db-up && make api && make leptos-debug
+# stack must be up: cargo xtask db up && cargo xtask mk rust-api && cargo xtask mk leptos-debug
 distrobox-host-exec sh -c 'cd /path/to/TBD-Reforger && \
   CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target \
   cargo run -q -p tbd-tools --bin capture -- shot /tmp/out.png \
@@ -76,8 +76,8 @@ All three are `cargo run -q -p tbd-tools --bin capture -- <sub> …` (via `distr
 
 ## Caveats
 
-`make leptos-debug` FPS is **not** representative — the HUD read 8–57 FPS during these captures.
-Judge layout, spacing, flow and copy on debug; switch to `make leptos` before judging map
+`cargo xtask mk leptos-debug` FPS is **not** representative — the HUD read 8–57 FPS during these captures.
+Judge layout, spacing, flow and copy on debug; switch to `cargo xtask mk leptos` before judging map
 performance.
 
 **`window.__editorCamSet(...)` panics the render engine under headless Vulkan.** The first call dies

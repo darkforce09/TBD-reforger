@@ -82,13 +82,13 @@ cd /home/Samuel/Projects/TBD-Reforger
 # Registry + docs
 ./scripts/ticket sync
 ./scripts/ticket check
-make ticket-check-strict
+cargo xtask ticket check --strict
 
 # Schema + stub manifest
-make schema-validate
+cargo xtask ci schema-validate
 
 # Terrain cross-check (stub mode OK)
-make verify-terrain
+cargo xtask ci verify-terrain
 
 # Frontend still builds
 make ci-local-frontend        # frontend lint + build + unit tests (apps/website/frontend)
@@ -105,7 +105,7 @@ make ci-local-frontend        # frontend lint + build + unit tests (apps/website
 | S5 | terrains ↔ manifest | `verify-terrain-manifest.ts` exit 0 |
 | S6 | Alignment stub | `verify-terrain-alignment.ts` exit 0 with stub warning |
 | S7 | ACTIVE NOW | `CLAUDE.md` sync block: **T-090 — T-090.3.0** |
-| S8 | No legacy IDs | `make ticket-check-strict` exit 0 |
+| S8 | No legacy IDs | `cargo xtask ticket check --strict` exit 0 |
 | S9 | LFS | `.gitattributes` covers map-assets PNG/WebP |
 
 ### Human (optional @ T-090.0)

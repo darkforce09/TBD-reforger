@@ -188,11 +188,11 @@ make map-assets-link
 ```bash
 make map-assets-link
 cd apps/website/frontend && npm run build && npm run lint && npm test
-make verify-terrain-strict              # unchanged T-091.0 gate
+cargo xtask ci verify-terrain-strict              # unchanged T-091.0 gate
 ! rg 'map-assets|fetch.*dem' apps/website/frontend/src/features/mission-creator/compiler/
 ```
 
-`make test-it` — only if compile/integration tests are touched.
+`cargo xtask db test-it` — only if compile/integration tests are touched.
 
 ### Manual (browser @ Everon, DEM loaded, dev-login)
 

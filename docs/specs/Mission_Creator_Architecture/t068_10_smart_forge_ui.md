@@ -54,7 +54,7 @@ worker exist but are **unwired** — nothing imports `registryCompatClient.ts` y
 |----------|--------|
 | Validation | Worker client only (`registryCompatClient`) before export commit |
 | UI home | Same Attributes → Arsenal tab (smart mode) |
-| Data | Live API / IDB via `initRegistryCompat` (dev DB after `make registry-import`) |
+| Data | Live API / IDB via `initRegistryCompat` (dev DB after `cargo xtask db registry-import`) |
 | Docs/registry | Claude does **not** edit (verify log OK) |
 
 ---
@@ -71,7 +71,7 @@ worker exist but are **unwired** — nothing imports `registryCompatClient.ts` y
 ## Verify
 
 ```bash
-make db-up && make registry-import && make api   # separate terminal
+cargo xtask db up && cargo xtask db registry-import && cargo xtask mk rust-api   # separate terminal
 cd apps/website/frontend && npm test && npm run build && npm run lint
 ```
 
@@ -103,7 +103,7 @@ Implement **T-068.10** — Smart Loadout Forge UI (wire T-068.9 worker into Arse
   git status --porcelain
   git pull && git lfs pull
   git rev-parse T-068.9   # expect d41418e5
-  make db-up && make registry-import
+  cargo xtask db up && cargo xtask db registry-import
 
 ═══ READ (in order — spec wins on conflict) ═══
   1. .ai/artifacts/t068_10_claude_code_handoff.md
@@ -118,7 +118,7 @@ Implement **T-068.10** — Smart Loadout Forge UI (wire T-068.9 worker into Arse
 
 ═══ SHIPPED (do not reopen) ═══
   T-068.9 @ d41418e5 — ingest, API, initRegistryCompat/canAttach/canEquip/itemsFor.
-  T-150 envelopes in DB via make registry-import.
+  T-150 envelopes in DB via cargo xtask db registry-import.
 
 ═══ DO ═══
   - Wire Arsenal tab to registryCompatClient
@@ -133,7 +133,7 @@ Implement **T-068.10** — Smart Loadout Forge UI (wire T-068.9 worker into Arse
   - Rebuild the whole Attributes modal
 
 ═══ VERIFY ═══
-  make registry-import
+  cargo xtask db registry-import
   cd apps/website/frontend && npm test && npm run build && npm run lint
   Manual M1–M3 (invalid blocked, valid exports, worker used)
 

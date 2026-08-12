@@ -27,7 +27,7 @@ HARD RULES:
 4. Commit on slice/T-xxx; explicit paths; subject "T-xxx:"; end message with:
 Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>
 5. Before reporting: CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target bash scripts/platform/wave.sh gate --slice T-xxx from the worktree — must end SLICE GATE: PASS. Gate lock WAITING = serialisation, not a hang.
-6. No make schema-validate in worktrees. 7. No doc/ticket/plan edits. 8. Tree clean at the end.
+6. No cargo xtask ci schema-validate in worktrees. 7. No doc/ticket/plan edits. 8. Tree clean at the end.
 9. CONTEXT DISCIPLINE — these are enforced by a PreToolUse hook, not by good intentions:
    - Locate before you read: Grep for the symbol, then Read with offset/limit. A whole-file Read
      of anything over ~400 lines is refused; pass offset or limit and it is allowed.

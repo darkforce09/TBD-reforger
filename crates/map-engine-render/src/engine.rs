@@ -5337,7 +5337,7 @@ impl RenderEngine {
     /// whose bodies are `if let Some(e) = …` inside Leptos effects with nowhere to put an error,
     /// and would turn a cosmetic opacity nudge into a thrown JS exception mid-effect. So: skip
     /// the write, leave the committed opacity untouched, and `debug_assert!` — which fires in
-    /// every dev/test build and in `make leptos-debug`, so a new caller passing a bad id trips
+    /// every dev/test build and in `cargo xtask mk leptos-debug`, so a new caller passing a bad id trips
     /// immediately, while release wasm degrades to an inert no-op instead of corrupting the
     /// hillshade lane with a value meant for something else.
     pub fn set_lane_opacity(&mut self, role: u32, opacity: f32, visible: bool) {

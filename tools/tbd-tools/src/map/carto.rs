@@ -39,7 +39,7 @@ pub fn build_landcover_masks(terrain: &str) -> Result<LandcoverOut> {
     let sap = root.join(sap_rel);
     if !sap.exists() {
         bail!(
-            "build-landcover-mask: SAP ortho missing: {sap_rel}\nstaging/ is gitignored — restore it (make map-water-everon rebuilds the water composite)."
+            "build-landcover-mask: SAP ortho missing: {sap_rel}\nstaging/ is gitignored — restore it (cargo xtask ci map-water-everon rebuilds the water composite)."
         );
     }
     let out_dir = root.join("packages/map-assets/everon/staging/map"); // E2c-allow
@@ -493,7 +493,7 @@ pub fn build_tile_pyramid(
 
 /* ─────────────────────────── Makefile inline-patch helpers (were `node -e`) ─────────────────────────── */
 
-/// `make map-water-everon` step 2: drop the one-shot waterComposite block from the SAP meta.
+/// `cargo xtask ci map-water-everon` step 2: drop the one-shot waterComposite block from the SAP meta.
 pub fn reset_water_meta(terrain: &str) -> Result<u8> {
     let p = repo_root()
         .join("packages/map-assets")
@@ -507,7 +507,7 @@ pub fn reset_water_meta(terrain: &str) -> Result<u8> {
     Ok(0)
 }
 
-/// `make map-water-everon` step 5: manifest.tiles.satellite.unified.bytes = bundle size.
+/// `cargo xtask ci map-water-everon` step 5: manifest.tiles.satellite.unified.bytes = bundle size.
 pub fn patch_unified_bytes(terrain: &str) -> Result<u8> {
     let root = repo_root().join("packages/map-assets").join(terrain);
     let mp = root.join("manifest.json");
@@ -522,7 +522,7 @@ pub fn patch_unified_bytes(terrain: &str) -> Result<u8> {
     Ok(0)
 }
 
-/// `make map-cartographic-everon` step 3: tiles.map {source, encoding} patch.
+/// `cargo xtask ci map-cartographic-everon` step 3: tiles.map {source, encoding} patch.
 pub fn patch_map_tiles_meta(terrain: &str) -> Result<u8> {
     let mp = repo_root()
         .join("packages/map-assets")
@@ -650,7 +650,7 @@ pub fn verify_t152() -> Result<u8> {
 
     println!("\nverify-t152-cartographic: wasm telemetry (L5)");
     println!(
-        "  SKIP  wasm size guard — retired with the React wasm pkg at T-159.29.3 (make wasm-ci owns the crates)"
+        "  SKIP  wasm size guard — retired with the React wasm pkg at T-159.29.3 (cargo xtask mk wasm-ci owns the crates)"
     );
 
     println!();

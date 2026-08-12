@@ -1,8 +1,8 @@
 # Mission Editor (2D Canvas)
 
-> **Live (T-151 / T-159 / T-171 / T-172 / T-173 / T-174 / T-175 / T-176 / T-177 / T-178 / T-179):** wgpu via `map-engine-render` + Leptos at `apps/website/frontend/src/mission_editor.rs` (yrs doc core, Trunk **`--release`** via `make leptos`). Element Inventory / milestones below retain React-era nouns (Deck.gl, Y.Doc, Vite, `React.memo`) as **ship history** — not the live stack.
+> **Live (T-151 / T-159 / T-171 / T-172 / T-173 / T-174 / T-175 / T-176 / T-177 / T-178 / T-179):** wgpu via `map-engine-render` + Leptos at `apps/website/frontend/src/mission_editor.rs` (yrs doc core, Trunk **`--release`** via `cargo xtask mk leptos`). Element Inventory / milestones below retain React-era nouns (Deck.gl, Y.Doc, Vite, `React.memo`) as **ship history** — not the live stack.
 >
-> **T-173 shipped:** Mission Settings restore (basemap Satellite/Map, hillshade on/off + strength, grid, 12 world-layer toggles); continuous outliner/palette guide stems; fence/pier/rail strips on zoom-in; upright building badges; slot clusters + town/road/height labels + airfield apron/glyphs on the Leptos host; library scroll + dossier sheet de-blurred; pan streaming settle + zoom compose memo. Day-to-day: `make leptos` (release). Debug trap: `make leptos-debug`.
+> **T-173 shipped:** Mission Settings restore (basemap Satellite/Map, hillshade on/off + strength, grid, 12 world-layer toggles); continuous outliner/palette guide stems; fence/pier/rail strips on zoom-in; upright building badges; slot clusters + town/road/height labels + airfield apron/glyphs on the Leptos host; library scroll + dossier sheet de-blurred; pan streaming settle + zoom compose memo. Day-to-day: `cargo xtask mk leptos` (release). Debug trap: `cargo xtask mk leptos-debug`.
 >
 > **T-174 shipped:** Satellite loads preview→full progressive on localhost (sharp TBDS; `?sat=preview` = Range-only for gates/fast iter; `?sat=full` no-op). Density-heatmap green glow **removed** (LOD rung kept — forest mass / glyph budget). Dock guide stems clip to tree rows (no full-height rails).
 >

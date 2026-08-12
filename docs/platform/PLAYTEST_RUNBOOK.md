@@ -18,7 +18,7 @@ Budget **90 minutes**: ~45 of pre-flight you can do alone the day before, ~45 wi
 
 ## 1. What this proves and why it's the last thing
 
-Every claim the mod makes today is **compile-verified, not runtime-verified**. `make mod-compile`
+Every claim the mod makes today is **compile-verified, not runtime-verified**. `cargo xtask mod compile`
 proves the Enfusion parses. `scripts/mod/world-boot.sh` proves the game-mode prefab wires up and a
 mission document parses. Neither has ever had a **player** in it: a `--mission=` boot runs with zero
 clients, so `BuildForPlayer`, `Serialise`, `Parse`, every RPC, every screen and every stage past
@@ -58,8 +58,8 @@ cd /home/Samuel/Projects/TBD-Reforger
 
 | # | Command | Expected | If not |
 |---|---|---|---|
-| P1 | `make mod-compile` | exits 0, ~1.3 s | non-zero + `file:line` → a `.c` is broken; do not proceed |
-| P2 | `make mod-world-boot` | last line `WORLD BOOT: PASS` | `FAIL` → read `[TBD] roll-call:` in the printed log; a `=MISSING` name is a component that did not instantiate |
+| P1 | `cargo xtask mod compile` | exits 0, ~1.3 s | non-zero + `file:line` → a `.c` is broken; do not proceed |
+| P2 | `cargo xtask mod world-boot` | last line `WORLD BOOT: PASS` | `FAIL` → read `[TBD] roll-call:` in the printed log; a `=MISSING` name is a component that did not instantiate |
 
 > **"`FAIL` → do not proceed" has exactly one documented exception, and you will hit it.** §2.5A's
 > two boots both end `WORLD BOOT: FAIL` on `validator warnings rose:` — known, pre-existing, and
@@ -67,7 +67,7 @@ cd /home/Samuel/Projects/TBD-Reforger
 > That is the *only* `FAIL` this runbook tells you to walk past; treat every other one as real.
 | P3 | `git -c filter.lfs.process= status --short` | only files you expect | a dirty mod tree means you are testing something that is not `main` |
 
-`make mod-world-boot` prints a roll-call line of the form
+`cargo xtask mod world-boot` prints a roll-call line of the form
 `[TBD] roll-call: SpawnManager=ok Safestart=ok LoadoutEquip=ok Spectator=ok Lobby=ok PlayArea=ok Markers=ok Radio=ok Objectives=ok`
 ([`TBD_FrameworkManager.c:409-459`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c)).
 All nine must read `=ok`.
@@ -78,11 +78,11 @@ Three terminals, all on the host, all from the repo root.
 
 ```bash
 # T1
-make db-up            # Postgres on :5434 (podman/docker compose)
+cargo xtask db up            # Postgres on :5434 (podman/docker compose)
 # T2
-make api              # Axum API on :8080, migrates on boot
+cargo xtask mk rust-api              # Axum API on :8080, migrates on boot
 # T3
-make leptos           # Leptos SPA on :3000 (trunk serve --release; proxies /api -> :8080)
+cargo xtask mk leptos           # Leptos SPA on :3000 (trunk serve --release; proxies /api -> :8080)
 ```
 
 Verify:
@@ -93,13 +93,13 @@ curl -s http://127.0.0.1:8080/healthz
 
 Expect a JSON body reporting database + migration state, HTTP 200
 ([`app.rs:906`](../../apps/website/api/src/app.rs), [`app.rs:1048`](../../apps/website/api/src/app.rs)).
-A non-200, or `Connection refused`, means `make api` is not up — re-read T2's output; the API
+A non-200, or `Connection refused`, means `cargo xtask mk rust-api` is not up — re-read T2's output; the API
 hard-fails at boot on a bad `DATABASE_URL` / `JWT_SECRET`.
 
 Seed the catalogue the Arsenal reads from (safe to re-run):
 
 ```bash
-make seed
+cargo xtask db seed
 ```
 
 Grab the service token the game server will use — it is one value, not a list
@@ -112,7 +112,7 @@ grep '^SERVICE_TOKEN=' apps/website/api/.env
 ```
 
 Expect one non-empty value. If the line is missing, add one (any long random string) and restart
-`make api`, or the game server will 401 on every fetch.
+`cargo xtask mk rust-api`, or the game server will 401 on every fetch.
 
 Log in to the SPA without Discord:
 
@@ -461,8 +461,8 @@ grep -E 'loadout settle|loadout delivery REFUSED|loadout SHORTFALL|loadout pass 
 - **Rule of thumb for the whole log:** a TBD loadout `SCRIPT (E)` means the session will not open;
   a TBD loadout `SCRIPT (W)` means it will, carrying less than authored.
 
-Now do the same against **your** mission (`--compiled` fetches from the live API, so `make db-up` +
-`make api` must be running):
+Now do the same against **your** mission (`--compiled` fetches from the live API, so `cargo xtask db up` +
+`cargo xtask mk rust-api` must be running):
 
 ```bash
 bash scripts/mod/world-boot.sh --compiled=$MID --keep-logs
@@ -540,7 +540,7 @@ uid on one box**. The transport is a UNIX socket in `$XDG_RUNTIME_DIR` with `Soc
 the OS is the credential and there is no secret
 ([`.env.example:123-127`](../../apps/website/api/.env.example),
 [`deploy-staging.sh:92-137`](../../scripts/mod/deploy-staging.sh)). **If your API runs under
-`make api` on one machine and the game server on another, this cannot work at all** — the socket
+`cargo xtask mk rust-api` on one machine and the game server on another, this cannot work at all** — the socket
 would be on the wrong box.
 
 **Step A — tell the API where the socket is.**
@@ -560,8 +560,8 @@ Expect `GAME_AGENT_SOCKET=/run/user/<uid>/tbd-reforger-agent.sock`. systemd expa
 the literal string to paste is documented verbatim at
 [`.env.example:135`](../../apps/website/api/.env.example).
 
-*If you are running the API with `make api`* there is no unit — put it in the env file the API
-loads, then restart `make api`:
+*If you are running the API with `cargo xtask mk rust-api`* there is no unit — put it in the env file the API
+loads, then restart `cargo xtask mk rust-api`:
 ```bash
 printf 'GAME_AGENT_SOCKET=/run/user/%s/tbd-reforger-agent.sock\n' "$(id -u)" >> apps/website/api/.env
 grep GAME_AGENT_SOCKET apps/website/api/.env

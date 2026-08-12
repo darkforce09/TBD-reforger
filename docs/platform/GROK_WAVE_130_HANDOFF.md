@@ -43,10 +43,10 @@ report the parked mod half with three slices "READY TO LAND" — NEVER run
 `wave.sh land`.** The remediation gates take `TBD_GATE_WAVE=<L>` explicitly.
 
 **Before wave 130:** the stack should already be up (`api` on :8080, `trunk` on :3000, postgres on
-:5434). If not: `make db-up && make api && make leptos` — **`make` is HOST-only, route it through
+:5434). If not: `cargo xtask db up && cargo xtask mk rust-api && cargo xtask mk leptos` — **`cargo` is HOST-only, route it through
 `distrobox-host-exec`**. Then `cargo xtask platform preflight` must PASS (worktree warn aside).
 
-**`make` and `cargo` are host binaries.** This container has no `cc`/`gcc`; the host does. Route
+**`cargo` is a host binary** (and there is no `make` any more — T-897 deleted the Makefile). This container has no `cc`/`gcc`; the host does. Route
 everything through
 `distrobox-host-exec sh -c 'cd /home/Samuel/Projects/TBD-Reforger && CARGO_TARGET_DIR=<dir> cargo <cmd>'`.
 

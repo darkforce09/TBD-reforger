@@ -76,7 +76,7 @@ Fable 5 re-verified the codebase and found **production-risk defects** T-122 did
 ## Verify
 
 ```bash
-make test-it
+cargo xtask db test-it
 cd apps/website/frontend && npm run build && npm run lint
 ```
 
@@ -148,7 +148,7 @@ Implement **T-126** — Fable audit security + auth follow-up (S1–S6).
   - Weaken T-122 visibility on GET routes
 
 ═══ VERIFY (all exit 0) ═══
-  make test-it
+  cargo xtask db test-it
   cd apps/website/frontend && npm run build && npm run lint
 
 ═══ MANUAL ═══

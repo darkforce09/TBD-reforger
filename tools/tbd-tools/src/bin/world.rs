@@ -31,9 +31,9 @@ enum Cmd {
         #[arg(long)]
         phase: String,
     },
-    /// validate-export-artifacts.mjs port (make map-export-validate)
+    /// validate-export-artifacts.mjs port (cargo run -q -p tbd-tools --bin world -- validate-exports)
     ValidateExports,
-    /// census-types.mjs port (make map-census)
+    /// census-types.mjs port (cargo run -q -p tbd-tools --bin world -- census)
     Census {
         #[arg(long)]
         terrain: String,
@@ -100,7 +100,7 @@ enum Cmd {
         terrain: String,
     },
     /// T-176 A2 — regenerate the golden S13 density fixture (bin + expectedCorners) at the current
-    /// DENSITY_CELL_M. Run after a cell-size change so `make schema-validate` (S13) stays green.
+    /// DENSITY_CELL_M. Run after a cell-size change so `cargo xtask ci schema-validate` (S13) stays green.
     GenDensityFixture,
     /// T-278 — rebuild the catalogue's classification lane from COMMITTED artifacts + the current
     /// prefab-classify.json. No Workbench, no staging, no game install. Default is a read-only

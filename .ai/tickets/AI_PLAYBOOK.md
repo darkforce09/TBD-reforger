@@ -104,7 +104,7 @@ If unclear: one question — *review only, or write ticket + handoff?*
 ## Validation
 
 ```bash
-make ticket-sync
-make ticket-check          # structural
-make ticket-check-strict   # zero legacy P/FD/BE/Track IDs
+cargo xtask ticket sync
+cargo xtask ticket check          # structural
+cargo xtask ticket check --strict   # zero legacy P/FD/BE/Track IDs
 ```

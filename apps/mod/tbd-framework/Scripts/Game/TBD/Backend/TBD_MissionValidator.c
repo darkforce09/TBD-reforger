@@ -1199,7 +1199,7 @@ class TBD_MissionValidator
 	//! to the T-250 blanket presence probes: toward warning, never toward silence. A checker that
 	//! answers "fine" about an input it never examined is the defect this file exists to prevent.
 	//!
-	//! Host gate: `make schema-validate` greps this file for the `T-250-UNCONSUMED-WARN:` markers
+	//! Host gate: `cargo xtask ci schema-validate` greps this file for the `T-250-UNCONSUMED-WARN:` markers
 	//! below and for `CheckUnconsumedKeys` being wired from `Run()`.
 	protected static void CheckUnconsumedKeys(TBD_MissionDocumentStruct mission)
 	{

@@ -80,7 +80,7 @@ cargo test -p map-engine-core place_rejects_invalid_side
 # A3 — must find ZERO matches:
 if rg -n 'ensure_default_squad' apps/website/frontend/src/editor_ops.rs; then echo 'A3 FAIL'; exit 1; fi
 cargo test -p website-frontend --lib
-make ci-local-leptos
+cargo xtask mk ci-local-leptos
 ```
 
 ## Acceptance
@@ -137,7 +137,7 @@ Implement **T-180.1** — Foundation schema + place→new squad.
   cargo test -p map-engine-core place_rejects_invalid_side
   if rg -n 'ensure_default_squad' apps/website/frontend/src/editor_ops.rs; then exit 1; fi
   cargo test -p website-frontend --lib
-  make ci-local-leptos
+  cargo xtask mk ci-local-leptos
 
 ═══ RETURN ═══
   SHA + tag T-180.1 · verify log · Ready for T-180.2

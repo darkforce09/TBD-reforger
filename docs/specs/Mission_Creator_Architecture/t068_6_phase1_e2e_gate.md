@@ -47,7 +47,7 @@ Before starting T-068.6, confirm **verify paste blocks exist** in Docs & Tickets
 Stack:
 
 ```bash
-make db-up && make api && make web
+cargo xtask db up && cargo xtask mk rust-api && make web
 curl -sf http://localhost:8080/api/v1/health
 ```
 

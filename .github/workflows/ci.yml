@@ -44,7 +44,7 @@ jobs:
     # that was wrong: every DB-backed website-api test panicked at
     # `assert_test_database_url`, and the `test` step below has been RED on every push since T-381.
     # `rust_it` is the allow-list's first entry (`name == "rust_it"`) and is exactly what
-    # `make test-it` uses (Makefile:207), so CI and the local replay now name the same base.
+    # `cargo xtask db test-it` uses, so CI and the local replay now name the same base.
     #
     # This name has to exist as a REAL database, not just a URL: `resolve_and_provision` connects
     # to the base URL to issue `CREATE DATABASE <base>_<suite>_it`. Hence POSTGRES_DB and the
@@ -74,7 +74,7 @@ jobs:
           toolchain: "1.95.0"
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
-      # T-453: workspace --all (matches `make rust-fmt` / T-297). Job default cwd is
+      # T-453: workspace --all (matches `cargo xtask mk rust-fmt` / T-297). Job default cwd is
       # apps/website/api — override so xtask/tbd-tools drift cannot slip past CI.
       - name: fmt (FMT-1 analog — workspace --all)
         working-directory: .
@@ -96,7 +96,7 @@ jobs:
         run: cargo test
 
   # --- map-engine: the T-151 crate gates (fmt + clippy native/wasm32 + native tests) ---
-  # T-151.11.4 (audit F-09): these gates previously ran only locally (`make wasm-ci`).
+  # T-151.11.4 (audit F-09): these gates previously ran only locally (`xtask mk wasm-ci`).
   # T-164: core tests read the Everon DEM (LFS, 72 MB) — pull ONLY that object (a full
   # `lfs: true` checkout would drag the 206 MB satellite bundle every run).
   map-engine:
@@ -113,11 +113,11 @@ jobs:
           components: rustfmt, clippy
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
-      - run: make wasm-ci
+      - run: cargo xtask mk wasm-ci
 
   # --- website-frontend: the Rust/Leptos SPA — THE frontend after the T-159.29.3 React deletion ---
   # fmt + clippy(wasm32) + native tests + trunk release build. The editor S/V/R/T smokes + the
-  # frozen V-suite (make leptos-gates) need a full chrome build + Postgres + map-assets LFS; they run
+  # frozen V-suite (`xtask mk leptos-gates`) need a full chrome build + Postgres + map-assets LFS; they run
   # in the dedicated **editor-gates.yml** workflow (nightly + on-demand + gate/editor-path PRs) — T-177
   # closed the old "run locally per stream" gap. `gate doctor` fails those fast if the env drifts.
   website-frontend:
@@ -146,16 +146,16 @@ jobs:
         working-directory: apps/website/frontend
         run: trunk build --release
 
-  # --- schema: full make schema-validate set + citations (T-434) ---
-  # Class-R parity: this job MUST match `make schema-validate` + `make verify-citations`
-  # (i.e. `make ci-local-schema`). Sub-gate SET = GATE_SCHEMA_VALIDATE_GATES in
-  # scripts/platform/wave.sh, same order as the Makefile recipe:
+  # --- schema: the full schema-validate set + citations (T-434) ---
+  # Class-R parity: this job MUST match `xtask ci schema-validate` + `xtask ci verify-citations`
+  # (i.e. `xtask ci ci-local-schema`). Sub-gate SET = GATE_SCHEMA_VALIDATE_GATES in
+  # scripts/platform/wave.sh, same order as the task row:
   #   validate map-object-golden map-glyphs height-labels map-object-enums
   #   type-inventory t090-specs n6 n10  (+ citations)
   # Pre-T-434 hole: only `schema validate` + `citations` — would not have caught T-244
   # (map-object-enums RED while validate stayed GREEN). Do not narrow back to validate-only.
-  # T-468 tripwire: scripts/mod/verify-t468-ci-schema-parity.sh asserts this job's `run:`
-  # stays `make ci-local-schema` (wired into wave.sh gate_slice + cmd_gate).
+  # T-468 tripwire: `cargo xtask verify t468` asserts this job's `run:` stays
+  # `cargo xtask ci ci-local-schema` (wired into wave.sh gate_slice + cmd_gate).
   # T-165.2: all steps are Rust (xtask) — no Node in this job.
   # height-labels needs the Everon DEM (LFS, ~72 MB); pull ONLY that object (same pattern
   # as the map-engine job — a full `lfs: true` checkout would drag the 206 MB sat bundle).
@@ -171,11 +171,11 @@ jobs:
         with:
           toolchain: "1.95.0" # T-177 — pin (matches root rust-toolchain.toml / gate-env.json)
       - uses: Swatinem/rust-cache@v2
-      - name: schema-validate + citations (make ci-local-schema)
-        run: make ci-local-schema
+      - name: schema-validate + citations (cargo xtask ci ci-local-schema)
+        run: cargo xtask ci ci-local-schema
 
   # --- editorconfig: FMT-2 whitespace gate across the whole repo (root .editorconfig) ---
-  # Dedicated job (mirrors `make verify-editorconfig`): the checker is a Go binary and runs
+  # Dedicated job (mirrors `xtask ci verify-editorconfig`): the checker is a Go binary and runs
   # from the repo root, so it does not belong in the Node-only frontend job. Excludes live in
   # .editorconfig-checker.json. setup-go puts $(go env GOPATH)/bin on PATH for the installed binary.
   editorconfig:
@@ -195,7 +195,7 @@ jobs:
   # --- language gates: which language new tooling may be written in (T-620 / T-621) ---
   #
   # THE POINT OF THIS JOB IS THAT IT EXISTS. `verify-no-python` was written in T-162 and wired into
-  # exactly two places: one Makefile target and `make ci-local`, the local replay nothing runs by
+  # exactly two places: one Makefile target and `ci-local`, the local replay nothing runs by
   # default. `grep verify-no-python .github/workflows/*.yml` returned NOTHING for four waves, so a
   # gate that was RED THE ENTIRE TIME — on scripts/{platform,mod}/slice-collisions.py, the factory's
   # own tooling — never once blocked a push, and the wave gate reported 28/28 straight over it.
@@ -225,11 +225,11 @@ jobs:
           toolchain: "1.95.0"
       - uses: Swatinem/rust-cache@v2
       - name: verify-no-python (T-162 + T-620 — .py ban + ratcheted interpreter check)
-        run: make verify-no-python
+        run: cargo xtask verify no-python
       - name: verify-no-node (T-165.10)
-        run: make verify-no-node
+        run: cargo xtask verify no-node
       - name: verify-no-shell (T-621 shell ratchet)
-        run: make verify-no-shell
+        run: cargo xtask verify no-shell
       # T-853. The registry is the source of truth for the whole ticket pipeline and NOTHING
       # validated it on push — `grep -rn 'ticket check' .github/` returned empty, so a malformed
       # 1.5 MB registry.json could reach main and only surface when the next agent tried to read
@@ -238,7 +238,7 @@ jobs:
       # it. Lives in this job because it is the same shape as the language gates — seconds long,
       # reads the working tree, fails fast instead of riding a 25-minute job.
       - name: ticket registry check (T-853 — schema + duplicate ids)
-        run: make ticket-check-strict
+        run: cargo xtask ticket check --strict
 
   # --- mod gates, HOSTED PORTION (T-209) ---
   # `scripts/mod/compile.sh` and `cargo xtask mod world-boot` are the mod's only regression
@@ -270,15 +270,15 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       # T-891/T-892: both scripts deleted; syntax is Rust (clippy) + world-boot --selftest below.
-      - name: world-boot verdict logic (make mod-world-boot-selftest)
-        run: make mod-world-boot-selftest
-      # T-467: Class-R siblings for wave.sh-wired verifies (same make targets as ci-local).
-      - name: T-438 deploy-staging compose path (make verify-t438)
-        run: make verify-t438
-      - name: T-456 mission REST size gate (make verify-t456)
-        run: make verify-t456
+      - name: world-boot verdict logic (cargo xtask mod world-boot --selftest)
+        run: cargo xtask mod world-boot --selftest
+      # T-467: Class-R siblings for wave.sh-wired verifies (same tasks as ci-local).
+      - name: T-438 deploy-staging compose path (cargo xtask verify t438)
+        run: cargo xtask verify t438
+      - name: T-456 mission REST size gate (cargo xtask verify t456)
+        run: cargo xtask verify t456
       # T-485: T-468 tripwire (hollow verify-t456/t468 recipes + ci-local-schema pin).
-      # T-489/T-881: invoke via direct cargo — hollow `make verify-t468` (`@true`)
-      # must not green CI (self-pin only runs when the gate itself executes).
+      # T-489/T-881: invoke DIRECTLY, never through a dispatch row named after this gate —
+      # a hollowed indirection must not green CI (the self-pin only runs when the gate does).
       - name: T-468 CI schema parity + hollow recipe tripwire (direct cargo, T-489/T-881)
         run: cargo run -q -p xtask -- verify t468

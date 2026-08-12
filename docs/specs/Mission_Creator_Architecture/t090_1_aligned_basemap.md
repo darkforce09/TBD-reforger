@@ -140,8 +140,8 @@ Document measured H1/H2 results in PR / manual verify log.
 
 ```bash
 make ci-local-frontend
-make verify-terrain
-make schema-validate
+cargo xtask ci verify-terrain
+cargo xtask ci schema-validate
 test -f packages/map-assets/everon/tiles/satellite/0/0/0.webp   # K3 sample tile minimum
 bash scripts/map-assets/verify-spike-ops-log.mjs TERRAIN=everon  # optional: update gates.K3 pass in ops log after tile lands
 ```

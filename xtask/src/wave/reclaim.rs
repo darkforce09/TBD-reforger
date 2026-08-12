@@ -250,7 +250,7 @@ pub fn cmd_reclaim(ctx: &Ctx, args: &[String]) -> u8 {
     // this function's blast radius is `rm -rf` on a directory. Measured at MAIN_ROOT today, three
     // dirs that a looser rule would have eaten:
     //     target/                  67 GB  the shared CARGO_TARGET_DIR for every worktree
-    //     target-dev-api          3.6 GB  the operator's live `make api` cache — no ticket in name
+    //     target-dev-api          3.6 GB  the operator's live `cargo xtask mk rust-api` cache — no ticket in name
     //     target-gate-schema-T422 1.7 GB  a GATE dir that CONTAINS a ticket id
     // The last one is why the ticket must be the first component after `target-`: anchoring there
     // means no target-gate-* name can be read as a slice dir even if the explicit exclusion below
@@ -294,7 +294,7 @@ pub fn cmd_reclaim(ctx: &Ctx, args: &[String]) -> u8 {
             }
             // NOT a safety arm — the ticket-first rule below already spares this, and did so on its
             // own in this sweep's first real run. It is a REPORTING arm: target-dev-api is the
-            // operator's live `make api` cache (Makefile:134,196), permanent by design, and the
+            // operator's live `cargo xtask mk rust-api` cache (Makefile:134,196), permanent by design, and the
             // generic line below filed it under "unparseable" and advised RENAMING IT so it could
             // be reaped. Naming one known-permanent dir is cheaper than printing that about the
             // cache behind the API the operator is using right now.

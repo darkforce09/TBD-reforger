@@ -38,10 +38,10 @@ file table — strictly better than carving where it works. Combined index today
 **2,099 files · 72,226 LOC · 1,659 declarations** (1,489 real-path + 610 carved blobs).
 
 ```bash
-make enf-index                                            # CRF
+cargo run -q -p tbd-tools --bin enf -- index crf                                            # CRF
 cargo run -q -p tbd-tools --bin enf -- extract            # vanilla, by real path
 cargo run -q -p tbd-tools --bin enf -- index vanilla --root apps/mod/vanilla_reference
-make enf-apidoc                                           # 7,990 class signatures
+cargo run -q -p tbd-tools --bin enf -- apidoc                                           # 7,990 class signatures
 ```
 
 ## The pak compression barrier (measured, T-181.3.2)
@@ -117,7 +117,7 @@ publishes the complete Script API as Doxygen HTML: **7,990 classes**, and all fi
 classes are there with full member lists.
 
 ```bash
-make enf-apidoc          # fetch the class index + parse (1 request for the index)
+cargo run -q -p tbd-tools --bin enf -- apidoc          # fetch the class index + parse (1 request for the index)
 cargo xtask fetch vanilla-api SCR_BaseGameMode SCR_PossessSpawnData   # per-class pages
 rg '^SCR_PossessSpawnData\t' .ai/artifacts/enf-index/vanilla_api_members.tsv
 ```

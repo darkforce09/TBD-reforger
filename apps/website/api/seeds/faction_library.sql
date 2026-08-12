@@ -1,11 +1,11 @@
 -- faction_library.sql — T-256 starter faction library for a fresh install.
 --
--- `make seed` previously only applied discord_roles + registry_dev, so
+-- `cargo xtask db seed` previously only applied discord_roles + registry_dev, so
 -- user_factions stayed empty and Load Predefined ORBAT had nothing to show
 -- until an operator hand-built a row. This seed inserts BLUFOR + OPFOR docs
 -- owned by the local Dev Operator (same discord_id as handlers/dev.rs
 -- DEV_USER_ID / content_golden §11), so GET /api/v1/factions is non-empty
--- after the first `make seed` + `dev-login`.
+-- after the first `cargo xtask db seed` + `dev-login`.
 --
 -- Companion JSON (for humans / schema checks; SQL embeds the same bytes):
 --   seeds/faction_library.blufor.json

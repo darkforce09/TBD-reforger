@@ -37,7 +37,7 @@ jobs:
         with:
           components: rustfmt
       - uses: Swatinem/rust-cache@v2
-      - run: make schema-codegen
+      - run: cargo xtask ci schema-codegen
       - name: Fail if generated contract output is stale
         run: git diff --exit-code -- apps/website/api/src/contract/generated
 

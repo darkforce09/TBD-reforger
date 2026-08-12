@@ -55,7 +55,7 @@ Phase 2 needs a written contract before Workbench compat export and worker inges
 ## Verify
 
 ```bash
-./scripts/ticket sync && make ticket-check-strict
+./scripts/ticket sync && cargo xtask ticket check --strict
 grep -E 'edge_type|registry_compat|canEquip' docs/specs/Mission_Creator_Architecture/t068_7_compat_matrix_spec.md
 ```
 
@@ -73,7 +73,7 @@ grep -E 'edge_type|registry_compat|canEquip' docs/specs/Mission_Creator_Architec
 | A2 | Edge taxonomy | ≥4 `edge_type` rows documented with definitions |
 | A3 | Postgres sketch | DDL block for `registry_compat` present |
 | A4 | Worker contract | `canEquip` / `canAttach` inputs/outputs documented |
-| A5 | Ticket sync | `make ticket-check-strict` exit 0 |
+| A5 | Ticket sync | `cargo xtask ticket check --strict` exit 0 |
 | A6 | Human approval | Paste contains literal **Phase 2 approved: YES** |
 
 ---

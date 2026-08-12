@@ -71,7 +71,7 @@ cargo test -p map-engine-core --features doc attach_vehicle_roundtrip
 cargo test -p map-engine-core --features doc slot_indices_dense_after_move
 if ! rg -n 'fn add_vehicle' crates/map-engine-core; then echo 'B8 FAIL'; exit 1; fi
 cargo test -p website-frontend --lib
-make ci-local-leptos
+cargo xtask mk ci-local-leptos
 ```
 
 ## Claude Code prompt — T-180.2 (copy-paste)
@@ -124,7 +124,7 @@ Implement **T-180.2** — Graph mutators + empty-squad GC.
   cargo test -p map-engine-core --features doc slot_indices_dense_after_move
   if ! rg -n 'fn add_vehicle' crates/map-engine-core; then exit 1; fi
   cargo test -p website-frontend --lib
-  make ci-local-leptos
+  cargo xtask mk ci-local-leptos
 
 ═══ RETURN ═══
   SHA + tag T-180.2 · .ai/artifacts/t180_2_verify_log.md · Ready for T-180.3

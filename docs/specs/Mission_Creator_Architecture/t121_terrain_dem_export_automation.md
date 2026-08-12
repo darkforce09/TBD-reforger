@@ -36,7 +36,7 @@ Follow-on automation after T-091.0: **DEM refresh**, Arland export, and Workbenc
 
 ## Out of scope
 
-- Replacing committed Everon DEM without re-running `make verify-terrain-strict`
+- Replacing committed Everon DEM without re-running `cargo xtask ci verify-terrain-strict`
 - Re-opening manual Eden Terrain Tool export (dead path)
 
 ---

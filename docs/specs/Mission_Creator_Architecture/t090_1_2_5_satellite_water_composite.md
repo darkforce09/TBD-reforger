@@ -171,7 +171,7 @@ Implement **T-090.1.2.5** — satellite water composite (ocean + inland on SAP o
   node scripts/map-assets/verify-sap-ortho.mjs TERRAIN=everon
   node scripts/map-assets/verify-unified-satellite.mjs TERRAIN=everon
   EXPECT_LOSSLESS=1 node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon
-  make verify-terrain && cd apps/website/frontend && npm run build && npm run lint
+  cargo xtask ci verify-terrain && cd apps/website/frontend && npm run build && npm run lint
 
 ═══ MANUAL ═══
   W1: coast reads as water (not grey seabed)

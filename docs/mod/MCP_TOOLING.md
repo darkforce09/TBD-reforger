@@ -23,7 +23,7 @@ mcp-call.sh
 | Daemon control | `cargo xtask mcp daemon` | `start` · `stop` · `status` · `restart` · **`stop-all`** (probe via `xtask mcp probe-sock`) |
 | Socket client | `cargo xtask mcp socket-send` | Sends framed requests to the daemon |
 | Offline gates | `scripts/mod/mcp-call-selftest.sh` | 19 fixture tests, no Workbench |
-| Live smoke | `cargo xtask mcp smoke` (`make mcp-smoke`) | `wb_connect` + `wb_state` after bootstrap |
+| Live smoke | `cargo xtask mcp smoke` (`cargo xtask mcp smoke`) | `wb_connect` + `wb_state` after bootstrap |
 
 **Bootstrap** (`cargo xtask mod dev-bootstrap`) runs `npm ci` in `scripts/mod/` when needed, pre-warms the daemon, then `wb_connect` + `mod_validate`.
 
@@ -140,7 +140,7 @@ Old `mcp-call.sh` only exported `ENFUSION_GAME_PATH`. `wb_*` tools need all thre
 | Gate | Command | PASS |
 |------|---------|------|
 | **T1–T7** (offline) | `bash scripts/mod/mcp-call-selftest.sh` | exit 0, 19/19 |
-| **S1** (live) | `cargo xtask mcp smoke` / `make mcp-smoke` | exit 0 after bootstrap |
+| **S1** (live) | `cargo xtask mcp smoke` / `cargo xtask mcp smoke` | exit 0 after bootstrap |
 | **S2** | `time bash scripts/mod/mcp-call.sh wb_state '{}'` ×3 | exit 0, ~response time (not ~180 s) |
 | **S5** | `bash scripts/mod/mcp-call.sh totally_fake_tool '{}'` | exit 3 |
 

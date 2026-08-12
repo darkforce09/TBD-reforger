@@ -137,7 +137,7 @@ Techniques: viewport cull, kind-specific LOD, worker parse, **T-112** GPU cull (
 | 4 | `features/tactical-map/state/worldLayerPrefs.ts` |
 | 5 | `features/mission-creator/WorldLayerToggles.tsx` |
 | 6 | Wire into `TacticalMap` below slots |
-| 7 | `scripts/map-assets/build-glyph-atlas.mjs` + `make map-glyphs-verify` |
+| 7 | `scripts/map-assets/build-glyph-atlas.mjs` + `cargo xtask schema map-glyphs` |
 
 ---
 
@@ -150,7 +150,7 @@ Techniques: viewport cull, kind-specific LOD, worker parse, **T-112** GPU cull (
 | R3 | Buildings @ medium zoom | manual |
 | R4 | Tree cluster @ zoom out | manual |
 | R5 | Pan ≥55 fps with sample catalog | FpsCounter |
-| R7 | Every `render.iconKey` in phase catalog has SVG + atlas entry | `make map-glyphs-verify` |
+| R7 | Every `render.iconKey` in phase catalog has SVG + atlas entry | `cargo xtask schema map-glyphs` |
 | R8 | Rotated instance @ 90° ≠ 0° in atlas pick test | vitest |
 
 ---
@@ -240,7 +240,7 @@ individual glyphs must appear only above TREE_GLYPH_MIN_ZOOM (0) per LOD v2 — 
 
 ═══ DO ═══
   1. worldmap/treePropLayer.ts — buildTreeLayers / buildPropLayers from VisibleSet typed arrays
-  2. Add missing glyph SVGs for PH-P2…P5 kinds (make map-glyphs-build + map-glyphs-verify)
+  2. Add missing glyph SVGs for PH-P2…P5 kinds (cargo run -q -p tbd-tools --bin map -- build-glyph-atlas + map-glyphs-verify)
   3. Wire viewport stream in useWorldMapLayers (chunkStore or dedicated poll of visibleInstances)
   4. Vitest: LOD3 @ −2 trees hidden; @ 0 trees visible; INSTANCE_BUDGET; R8 rotation fixture
   5. Write .ai/artifacts/t090_5_5_verify_log.md
@@ -253,8 +253,8 @@ individual glyphs must appear only above TREE_GLYPH_MIN_ZOOM (0) per LOD v2 — 
   - Commit apps/mod/tbd-framework/resourceDatabase.rdb
 
 ═══ VERIFY (all exit 0) ═══
-  make schema-validate
-  make map-glyphs-verify
+  cargo xtask ci schema-validate
+  cargo xtask schema map-glyphs
   cd apps/website/frontend
   npm run test -- --run treeProp lodGates worldObjectsCore
   npm run build

@@ -29,7 +29,7 @@ A3 does **none** of this for readability — it draws vectors from world data ev
 | T-090.1.1.1 | `018ea70d` | Legacy land-cover bake — **frozen** |
 | T-090.1.2.6 | `b958e3b4` | Hillshade slider — **keep** (layer 3 in v2) |
 
-**Rule:** No new `make map-cartographic-everon` features. No new compose passes. Sat water composite stays until v2 sea-band layer replaces it visually.
+**Rule:** No new `cargo xtask ci map-cartographic-everon` features. No new compose passes. Sat water composite stays until v2 sea-band layer replaces it visually.
 
 ---
 
@@ -47,7 +47,7 @@ A3 does **none** of this for readability — it draws vectors from world data ev
 | Path / script | v2 disposition |
 |---------------|----------------|
 | `scripts/map-assets/build-map-cartographic.mjs` | **freeze** — no new features |
-| `make map-cartographic-everon` | **freeze** — dev-only legacy rebuild |
+| `cargo xtask ci map-cartographic-everon` | **freeze** — dev-only legacy rebuild |
 | `packages/map-assets/*/tiles/map/` | **legacy** — optional fallback until v2 layers cover Map mode |
 | `scripts/map-assets/build-landcover-mask.mjs` | **replace** by export density grid (T-090.8) |
 | `docs/specs/.../t090_basemap_dual_view.md` | **supersede** — crossfade model in T-090.10 |

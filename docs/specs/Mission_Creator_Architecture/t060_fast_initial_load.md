@@ -47,7 +47,7 @@ Make **load** and **Save Version** work at scale: visible **progress bars**, fas
 - Other JSON routes **keep** the **1 MB** default (DoS protection unchanged).
 - When payload exceeds the mission-version cap: **413** with JSON `{"error": "payload too large (max … MB)"}` — not a silent connection error.
 - `CreateVersion` unchanged contract: `{ semver, payload, editor_notes }` → `201` + version row; `409` duplicate semver.
-- `make test-it` still passes; add/adjust integration test for raised limit on version route (small payload smoke; optional comment documenting scale limit).
+- `cargo xtask db test-it` still passes; add/adjust integration test for raised limit on version route (small payload smoke; optional comment documenting scale limit).
 
 ### Frontend — load
 
@@ -67,7 +67,7 @@ Make **load** and **Save Version** work at scale: visible **progress bars**, fas
 ### Engineering
 
 - `cd frontend && npm run build && npm run lint` clean.
-- Go API builds; `make test-it` if DB available.
+- Go API builds; `cargo xtask db test-it` if DB available.
 
 **Stretch:** **360k** load **≤5 s**; **1M** **≤10 s** (may need T-062/T-066 worker compile).
 

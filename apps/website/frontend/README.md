@@ -23,7 +23,7 @@ trunk serve            # http://127.0.0.1:3000  (COOP/COEP headers from Trunk.to
 trunk build            # one-off build → dist/  (add --release for wasm-opt)
 ```
 
-The API stays on `:8080` (`make api` at the repo root); dev-login works as today.
+The API stays on `:8080` (`cargo xtask mk rust-api` at the repo root); dev-login works as today.
 
 ## Verify (G gate)
 

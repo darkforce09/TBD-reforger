@@ -114,11 +114,11 @@ Forest regions are **required before P2 ships** — trees alone may not be the d
 
 | ID | Check | Pass |
 |----|-------|------|
-| F1 | Region golden validates `map-object-region.schema.json` | `make schema-validate` |
+| F1 | Region golden validates `map-object-region.schema.json` | `cargo xtask ci schema-validate` |
 | F2 | `forest.treeCount + unassignedTrees = byKind.tree.instances` (exact) | `verify-type-inventory.mjs` |
 | F3 | At deckZoom −2 a forest renders as a filled polygon (no per-tree icons drawn inside) | vitest (T-090.5) |
 | F4 | Hover tooltip matches the exact template string | vitest |
-| F5 | `dominantSpeciesClass ∈ forestClass` enum | `make map-object-enums-verify` |
+| F5 | `dominantSpeciesClass ∈ forestClass` enum | `cargo xtask schema map-object-enums` |
 | F6 | Path B derivation reproducible (same instances → same rings) | unit |
 
 ---
@@ -195,7 +195,7 @@ cover from TBDD density grids + Path B region hulls (36 regions shipped @ T-090.
   - Commit apps/mod/tbd-framework/resourceDatabase.rdb
 
 ═══ VERIFY (all exit 0) ═══
-  make schema-validate
+  cargo xtask ci schema-validate
   cd apps/website/frontend
   npm run test -- --run forestMass landCoverRegions lodGates
   npm run build

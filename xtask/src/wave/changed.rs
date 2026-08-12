@@ -89,7 +89,7 @@ pub fn file_edition(f: &str) -> String {
 
 /// Format-check ONLY the files this slice changed against main.
 ///
-/// Workspace-wide `cargo fmt --all --check` is the local/CI FMT-1 gate (`make rust-fmt` /
+/// Workspace-wide `cargo fmt --all --check` is the local/CI FMT-1 gate (`cargo xtask mk rust-fmt` /
 /// `.github/workflows/ci.yml` website-api; T-297 cleaned the tree, T-453 aligned CI). The wave gate
 /// stays diff-scoped so a slice only fails on files it touched — not a substitute for CI `--all`.
 ///

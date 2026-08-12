@@ -42,7 +42,7 @@
 //!
 //! T-556 repaired both in bash — routed the searches through `scripts/mod/lib/gate-grep.sh`
 //! (`grep`, present everywhere, with the raw exit status read rather than collapsed to a boolean)
-//! and wired the script into `wave.sh` and `make verify-t296`. Deleting it was considered and
+//! and wired the script into `wave.sh` and `cargo xtask verify t296`. Deleting it was considered and
 //! rejected: the contract is live, it is a named T-296 deliverable, and the precedent for scripts
 //! that exist but were never invoked is T-462/T-463/T-467 — wire them, do not bin them.
 //!

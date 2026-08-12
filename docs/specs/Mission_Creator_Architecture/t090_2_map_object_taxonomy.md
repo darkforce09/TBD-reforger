@@ -23,7 +23,7 @@
 | Classify rules v1 | `rules/prefab-classify.json` |
 | Census stub | `scripts/map-assets/census-types.mjs` + `everon/objects/type-inventory.json` (`pending_export`) |
 
-**Baseline:** `make schema-validate` exit 0 @ `0418d952`.
+**Baseline:** `cargo xtask ci schema-validate` exit 0 @ `0418d952`.
 
 ---
 
@@ -85,7 +85,7 @@ answer to "900k trees must read as forest at the default view" (GAP-001).
 
 Every `kind`/`class` value is a member of [`map-object-enums.schema.json`](../../../packages/tbd-schema/schema/map-object-enums.schema.json);
 prefab rows, the glyph manifest and `prefab-classify.json` are checked against it by
-`make map-object-enums-verify`. Do not redeclare enum values in this doc.
+`cargo xtask schema map-object-enums`. Do not redeclare enum values in this doc.
 
 ### Building geometry (N6)
 
@@ -537,9 +537,9 @@ If absent, T-090.6 uses **kind defaults** (see `t090_6_geometry_placement_audit.
 ## Verification
 
 ```bash
-make schema-validate
-make map-object-enums-verify
-make map-census TERRAIN=everon
+cargo xtask ci schema-validate
+cargo xtask schema map-object-enums
+cargo run -q -p tbd-tools --bin world -- census --terrain everon
 cd packages/tbd-schema && npm run verify-map-object-golden   # after T-090.2 lands script
 ```
 
@@ -585,7 +585,7 @@ cd packages/tbd-schema && npm run verify-map-object-golden   # after T-090.2 lan
 
 Tag **`T-090.2`** @ `691d9b26` · merged to `main`  
 Handoff: [`.ai/artifacts/t090_2_claude_code_handoff.md`](../../../.ai/artifacts/t090_2_claude_code_handoff.md)  
-Verify log: [`.ai/artifacts/t090_2_verify_log.md`](../../../.ai/artifacts/t090_2_verify_log.md) — S1–S10 PASS, 52 prefabs, `verify-map-object-golden.mjs` in `make schema-validate`
+Verify log: [`.ai/artifacts/t090_2_verify_log.md`](../../../.ai/artifacts/t090_2_verify_log.md) — S1–S10 PASS, 52 prefabs, `verify-map-object-golden.mjs` in `cargo xtask ci schema-validate`
 
 **Unblocks:** **T-090.3** phased Workbench export (classify rules + schema gates live).
 
@@ -603,7 +603,7 @@ Implement **T-090.2** — map object taxonomy ship (S1–S10 goldens + semantic 
 ═══ PREFLIGHT ═══
   cd .ai/artifacts/worktrees/TBD-T-090-2
   git fetch origin && git rebase main
-  make schema-validate
+  cargo xtask ci schema-validate
   ./scripts/ticket brief T-090
 
 ═══ READ (in order — spec wins on conflict) ═══
@@ -630,11 +630,11 @@ Implement **T-090.2** — map object taxonomy ship (S1–S10 goldens + semantic 
   - No docs/registry edits
 
 ═══ DO ═══
-  1. P0 — gap audit vs spec §S9 gap audit; confirm baseline make schema-validate PASS
+  1. P0 — gap audit vs spec §S9 gap audit; confirm baseline cargo xtask ci schema-validate PASS
   2. Expand map-object-prefabs-sample.json for all missing class enum examples
   3. Expand roads + regions (waterBody) + instances + resolved + catalog goldens as needed
   4. Implement packages/tbd-schema/scripts/verify-map-object-golden.mjs (S2–S9)
-  5. npm run verify-map-object-golden + fold into make schema-validate
+  5. npm run verify-map-object-golden + fold into cargo xtask ci schema-validate
   6. Extend prefab-classify.json for obvious new patterns
   7. Optional: everon manifest objects stub (schema-valid)
   8. .ai/artifacts/t090_2_verify_log.md — S1–S10 PASS table
@@ -647,9 +647,9 @@ Implement **T-090.2** — map object taxonomy ship (S1–S10 goldens + semantic 
   - Deck.gl / MC render (T-090.5)
 
 ═══ VERIFY (all exit 0) ═══
-  make schema-validate
-  make map-object-enums-verify
-  make map-census TERRAIN=everon
+  cargo xtask ci schema-validate
+  cargo xtask schema map-object-enums
+  cargo run -q -p tbd-tools --bin world -- census --terrain everon
   cd packages/tbd-schema && npm run verify-map-object-golden
 
 ═══ MANUAL ═══

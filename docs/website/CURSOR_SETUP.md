@@ -36,7 +36,7 @@ Cursor will **not** auto-load rules from `.ai/`. Do not move project rules into 
 | Ticket registry | [`.ai/tickets/registry.json`](../../.ai/tickets/registry.json) — `active_slice` + executor gate |
 | Root `.cursor/` | [`.cursor/rules/tbd-platform.mdc`](../../.cursor/rules/tbd-platform.mdc) (always-on platform rule) |
 | Stack docs | [DEV_RUNBOOK.md](DEV_RUNBOOK.md) — Go PATH gotcha |
-| Health targets | `make verify-migration`, `make ticket-check-strict`, frontend build/lint |
+| Health targets | `cargo xtask ci ci-local-schema`, `cargo xtask ticket check --strict`, frontend build/lint |
 
 Ignore sibling archived folders outside the workspace (`TBD_Website`, `Arma reforger`).
 
@@ -61,9 +61,9 @@ From repo root:
 
 ```bash
 cp apps/website/api/.env.example apps/website/api/.env   # only if .env missing
-make db-up
-make api      # background terminal — Axum :8080
-make leptos   # background terminal — Trunk :3000
+cargo xtask db up
+cargo xtask mk rust-api      # background terminal — Axum :8080
+cargo xtask mk leptos   # background terminal — Trunk :3000
 curl -sf http://localhost:8080/api/v1/health
 ```
 
@@ -127,7 +127,7 @@ Optional @ pins: `CLAUDE.md`, `docs/TICKET_LEAD.md`.
 You are in the Docs & Tickets chat for TBD Reforger.
 
 You own cursor-docs work: .ai/tickets/registry.json, specs under docs/specs/, and doc sync on main.
-Never hand-edit generated docs/TICKET_*.md. After registry edits: ./scripts/ticket sync && make ticket-check-strict.
+Never hand-edit generated docs/TICKET_*.md. After registry edits: ./scripts/ticket sync && cargo xtask ticket check --strict.
 Stop on workbench/human/ci executor slices.
 
 Claude Code runs outside Cursor (./scripts/ticket run). I paste **Verify paste blocks** (program hub §Verification contract) here; Cursor checks **§Verification gate** tables before `./scripts/ticket advance-slice T-068`.
@@ -150,15 +150,15 @@ Optional @ pins: `CLAUDE.md`, `.ai/tickets/registry.json`, `docs/TICKET_LEAD.md`
 From repo root:
 
 ```bash
-make verify-migration
-make ticket-check-strict
+cargo xtask ci ci-local-schema
+cargo xtask ticket check --strict
 cd apps/website/frontend && npm run build && npm run lint
 ```
 
 Optional deeper check:
 
 ```bash
-PATH="$HOME/.local/go/bin:$PATH" make build
+PATH="$HOME/.local/go/bin:$PATH" cargo xtask ci build
 ```
 
 All green → workspace is healthy. Use **Brainstorm** for T-068.0 ideas; **Docs & Tickets** when landing registry/spec changes.

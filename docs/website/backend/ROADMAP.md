@@ -1,6 +1,6 @@
 # Backend — ROADMAP
 
-> **SUPERSEDED (T-145 / T-171):** Live API is **Rust Axum + sqlx** at [`apps/website/api/`](../../../apps/website/api/) (pkg `website-api`). Go/`internal/`/`cmd/api` / GORM / golangci rows below are historical. Run: `make api` · SPA: `make leptos` · seeds: `apps/website/api/seeds/` · migrations: `apps/website/api/migrations/`. Conventions: [`WHERE_DOES_X_GO.md`](../../platform/WHERE_DOES_X_GO.md). Canonical status: root [`CLAUDE.md`](../../../CLAUDE.md).
+> **SUPERSEDED (T-145 / T-171):** Live API is **Rust Axum + sqlx** at [`apps/website/api/`](../../../apps/website/api/) (pkg `website-api`). Go/`internal/`/`cmd/api` / GORM / golangci rows below are historical. Run: `cargo xtask mk rust-api` · SPA: `cargo xtask mk leptos` · seeds: `apps/website/api/seeds/` · migrations: `apps/website/api/migrations/`. Conventions: [`WHERE_DOES_X_GO.md`](../../platform/WHERE_DOES_X_GO.md). Canonical status: root [`CLAUDE.md`](../../../CLAUDE.md).
 
 **Start here for planning history.** What was **shipped** under the Go era; verify paths against live `api/src/`.
 
@@ -38,7 +38,7 @@
 | **Admin** | `admin.go` | `admin.go` | Personnel, audit logs |
 | **Realtime** | — | SSE hub in `api/src/realtime/` | |
 
-**Migrations (live):** [`apps/website/api/migrations/`](../../../apps/website/api/migrations) · **Seeds:** [`apps/website/api/seeds/`](../../../apps/website/api/seeds) (`make seed` = Discord roles + registry_dev)
+**Migrations (live):** [`apps/website/api/migrations/`](../../../apps/website/api/migrations) · **Seeds:** [`apps/website/api/seeds/`](../../../apps/website/api/seeds) (`cargo xtask db seed` = Discord roles + registry_dev)
 
 ---
 
@@ -52,7 +52,7 @@
 
 | T-ID | Item | Notes |
 |------|------|-------|
-| **T-123** | **Documentation standards rollout** | [`DOCUMENTATION_STANDARDS.md`](../../platform/DOCUMENTATION_STANDARDS.md) — `@contract`/`@route`/`@authority` tags; codegen → `apps/website/api/src/contract/generated/` via `make schema-codegen`; `CreateVersion` validates payload schema; `contracts.yml` CI |
+| **T-123** | **Documentation standards rollout** | [`DOCUMENTATION_STANDARDS.md`](../../platform/DOCUMENTATION_STANDARDS.md) — `@contract`/`@route`/`@authority` tags; codegen → `apps/website/api/src/contract/generated/` via `cargo xtask ci schema-codegen`; `CreateVersion` validates payload schema; `contracts.yml` CI |
 
 ## SHIPPED (T-068.2–T-068.4 @ main)
 
@@ -99,11 +99,11 @@ Full deferred table: [`docs/TICKET_REGISTRY.md`](../../TICKET_REGISTRY.md) (`pro
 ## Verify changes
 
 ```bash
-make db-up
-PATH="/var/home/Samuel/.local/go/bin:$PATH" make api
+cargo xtask db up
+PATH="/var/home/Samuel/.local/go/bin:$PATH" cargo xtask mk rust-api
 # no /health route — confirm API is up via the dev-login 302:
 curl -si "http://localhost:8080/api/v1/auth/dev-login?role=admin" | head -1
-make test-it
+cargo xtask db test-it
 ```
 
 API contract smoke: hit endpoint, confirm JSON matches `api/src/models/` serde + `frontend/src/dto.rs`.

@@ -59,8 +59,8 @@ See [`docs/mod/STAGING-SERVER.md`](../../docs/mod/STAGING-SERVER.md). **Staging 
 
 ```bash
 # From monorepo root (see root CLAUDE.md §Run it locally):
-make db-up    # Postgres on :5434
-make api      # Go API on :8080
+cargo xtask db up    # Postgres on :5434
+cargo xtask mk rust-api      # Go API on :8080
 make web      # Vite dev server on :5173
 cargo xtask mod test-phase1-api
 ```

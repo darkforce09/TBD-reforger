@@ -24,7 +24,7 @@
 
 **Gates:** `wasm-ci` · `ci-local-leptos` · `leptos-gates` 18+24 · `ci-local` EXIT 0 · perf-strict encode floor.
 
-**Manual visual (operator):** SwiftShader proves mechanism; on-GPU `rf` / `__editorBench` + eye-pass on `make leptos` still operator G-A — zoom-out unpacks trees · forest fills fast · contours readable · cold-load slots · place ghost · live drag · selection snappy · boot loading bar.
+**Manual visual (operator):** SwiftShader proves mechanism; on-GPU `rf` / `__editorBench` + eye-pass on `cargo xtask mk leptos` still operator G-A — zoom-out unpacks trees · forest fills fast · contours readable · cold-load slots · place ghost · live drag · selection snappy · boot loading bar.
 
 ## Why (pre-ship)
 
@@ -69,4 +69,4 @@ H1–H6 documented in inventory + verify Found-by-hunt (non-empty).
 3. Language gate: engine/LOD/drag GPU in Rust.  
 4. No density-heatmap green glow (T-174).  
 5. `apps/mod/**` OFF LIMITS.  
-6. Measure on `make leptos` (release).  
+6. Measure on `cargo xtask mk leptos` (release).  

@@ -30,6 +30,7 @@ indent_size = 2
 [*.md]
 trim_trailing_whitespace = false
 
-# Make recipes require literal tabs.
+# Make recipes require literal tabs. The root Makefile was deleted at T-897; the section stays
+# for any `*.mk` fragment and for a tree that restores one.
 [{Makefile,*.mk}]
 indent_style = tab

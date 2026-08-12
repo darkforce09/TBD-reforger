@@ -724,7 +724,7 @@ pub async fn load_map_basemap(
 }
 
 /// Load satellite for `terrain`. Preview via Range first, then the full unified mip chain
-/// (preview -> full progressive) on every host, including `localhost` day-to-day (`make leptos`),
+/// (preview -> full progressive) on every host, including `localhost` day-to-day (`cargo xtask mk leptos`),
 /// so the editor is sharp instead of stuck on the <=1024 px preview: the coarse preview shows
 /// first, then `load_unified_full` replaces it in the background.
 ///

@@ -90,8 +90,8 @@ PUT /factions/:id { side, name, roles, vehicles }
 
 ```bash
 cargo test -p map-engine-core apply_faction_
-make test-it
-make ci-local-leptos
+cargo xtask db test-it
+cargo xtask mk ci-local-leptos
 ```
 
 ## Manual
@@ -157,8 +157,8 @@ Implement **T-180.8** — Templates Apply/Save (T-153) + squad vehicles.
   cargo test -p map-engine-core apply_faction_
   cargo test -p map-engine-core --features doc apply_faction_ 2>/dev/null || true
   cargo test -p website-frontend --lib
-  make test-it
-  make ci-local-leptos
+  cargo xtask db test-it
+  cargo xtask mk ci-local-leptos
 
 ═══ MANUAL ═══
   M-H1..M-H4 Apply / Save as / Add Vehicle / cancel

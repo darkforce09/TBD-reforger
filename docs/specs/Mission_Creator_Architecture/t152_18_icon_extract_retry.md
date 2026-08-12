@@ -82,7 +82,7 @@ Audit §6.4 / ledger D2 = **WRONG_PATH**. T-152.2's single MCP search timed out 
 | **G3** | `count(keys with source=="reforger") ≥ 1`; target ≥ 15 (report actual) | Extract |
 | **G4** | ∀ key with source=="redraw": key ∈ operator-approved gap list (M1 names match) | Approval |
 | **G5** | ∀ key: `source ∈ {reforger, redraw}` ∧ (`reforger` ⇒ `reforgerRef ≠ null`) | Metadata |
-| **G6** | Atlas/manifest rebuild consistent (make map-glyphs-verify or equivalent); harness badge smoke draws | Wire |
+| **G6** | Atlas/manifest rebuild consistent (cargo xtask schema map-glyphs or equivalent); harness badge smoke draws | Wire |
 | **G7** | FE/wasm suites exit 0 | Regression |
 
 ---
@@ -93,7 +93,7 @@ Audit §6.4 / ledger D2 = **WRONG_PATH**. T-152.2's single MCP search timed out 
 cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
 scripts/mod/mcp-call.sh api_search "ping" || { echo "BLOCKED: Workbench not warm"; exit 1; }   # G1 pattern
 node scripts/map-assets/build-glyph-atlas.mjs   # actual rebuild entry per repo
-make map-glyphs-verify || make schema-validate
+cargo xtask schema map-glyphs || cargo xtask ci schema-validate
 cd apps/website/frontend && npm test && npm run build && npm run lint
 ```
 

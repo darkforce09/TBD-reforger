@@ -264,7 +264,7 @@ cd /home/sam/tbd/repo/apps/website
 cargo build --release --bin api
 ```
 
-Map assets: Mission Creator satellite/DEM bundles are large LFS. For a **library-only** site you can skip `packages/map-assets` initially; for full Mission Creator, sync or build assets separately and run `make map-assets-link` on the server.
+Map assets: Mission Creator satellite/DEM bundles are large LFS. For a **library-only** site you can skip `packages/map-assets` initially; for full Mission Creator, sync or build assets separately and point `MAP_ASSETS_DIR` at them on the server.
 
 ---
 
@@ -395,7 +395,7 @@ Website one-button path: `cargo xtask deploy website` (compose file exists; see 
 |-----|------|
 | This file | **Website** on home server + Cloudflare |
 | [`docs/mod/STAGING-SERVER.md`](../mod/STAGING-SERVER.md) | Game server + LAN API smoke |
-| [`docs/website/DEV_RUNBOOK.md`](DEV_RUNBOOK.md) | Local laptop stack (`make db-up/api/web`) |
+| [`docs/website/DEV_RUNBOOK.md`](DEV_RUNBOOK.md) | Local laptop stack (`cargo xtask db up/api/web`) |
 | [`scripts/deploy/deploy.env.example`](../../scripts/deploy/deploy.env.example) | Shared SSH + paths (`TBD_REMOTE_DIR=/home/sam/tbd/repo`) |
 | PL `PrairieLearn.md` / `HandoverContext.md` | SSH + Cloudflare precedent (do not copy PL ports/paths) |
 

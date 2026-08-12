@@ -178,7 +178,7 @@ Repro: `70a36667-612f-40c5-ad56-3fb8e0613a17` (~367k).
 
 ## Manual verify — repro mission (human)
 
-Mission `70a36667-612f-40c5-ad56-3fb8e0613a17` (~367k). Stack: `make db-up && make api && make web`, dev-login `mission_maker`.
+Mission `70a36667-612f-40c5-ad56-3fb8e0613a17` (~367k). Stack: `cargo xtask db up && cargo xtask mk rust-api && make web`, dev-login `mission_maker`.
 
 | Check | How | T-067 result |
 |-------|-----|--------------|

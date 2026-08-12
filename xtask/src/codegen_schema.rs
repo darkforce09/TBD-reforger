@@ -44,7 +44,7 @@ pub fn codegen() -> Result<u8> {
         let body = prettyplease::unparse(&file);
         let banner = format!(
             "// Code generated from JSON Schema using `cargo xtask schema codegen` (typify). DO NOT EDIT.\n\
-             // Source: packages/tbd-schema/schema/{schema_file} — regenerate with: make schema-codegen\n\n"
+             // Source: packages/tbd-schema/schema/{schema_file} — regenerate with: cargo xtask ci schema-codegen\n\n"
         );
         let out_path = out_dir.join(format!("{module}.rs"));
         fs::write(&out_path, banner + &body)?;

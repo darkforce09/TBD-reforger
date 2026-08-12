@@ -24,7 +24,7 @@ Satellite view is photographic but **hard to read** at MC zoom — slot placemen
 ## Goal
 
 1. New compose step (script or extend pipeline): stroke **road/airfield tiers only** from `decode-topo.mjs` (+ `despike()`) onto **`everon-sap-ortho.png`** (post-water composite).
-2. Rebuild **unified bundle** + **lossless satellite pyramid** — extend **`make map-water-everon`** or add a **`map-satellite-roads-everon`** Makefile target (wired in this slice) that runs water restore → road overlay → bundle → pyramid → verify.
+2. Rebuild **unified bundle** + **lossless satellite pyramid** — extend **`cargo xtask ci map-water-everon`** or add a **`map-satellite-roads-everon`** Makefile target (wired in this slice) that runs water restore → road overlay → bundle → pyramid → verify.
 3. **Road style:** semi-transparent strokes (tune alpha so photo remains visible — operator bar in verify log). Reuse tier colours/widths from `build-map-cartographic.mjs` as starting point; may differ for photo backdrop.
 4. **Do not** touch `tiles/map/`, Map compose, or building/airfield footprint fills beyond centreline strokes.
 
@@ -57,7 +57,7 @@ Satellite view is photographic but **hard to read** at MC zoom — slot placemen
 | ID | Check | Pass |
 |----|-------|------|
 | **S1** | `npm run validate` / schema | Green |
-| **S2** | `make map-water-everon` or new target end-to-end | Exit 0 |
+| **S2** | `cargo xtask ci map-water-everon` or new target end-to-end | Exit 0 |
 | **S3** | `verify-unified-satellite.mjs` + `EXPECT_LOSSLESS=1 verify-tile-pyramid` | OK |
 | **R1** | Operator visual | Major roads readable on Satellite @ default zoom; photo not mud-brown |
 | **R2** | No regression | Map tab unchanged; water coastlines unchanged |

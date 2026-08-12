@@ -11,25 +11,25 @@ Conventions: [`WHERE_DOES_X_GO.md`](../platform/WHERE_DOES_X_GO.md).
 **CI replay:** Primary gate [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml). Local mirror:
 
 ```bash
-make db-up          # Postgres on host :5434
-make ci-local       # editorconfig + website-api + coding-standards + leptos + schema/citations
+cargo xtask db up          # Postgres on host :5434
+cargo xtask ci ci-local       # editorconfig + website-api + coding-standards + leptos + schema/citations
 ```
 
-**Formatting:** `make verify-editorconfig` · `cargo fmt --check` in `apps/website/api` + `-p website-frontend`. Coding-standards: `make verify-coding-standards`.
+**Formatting:** `cargo xtask ci verify-editorconfig` · `cargo fmt --check` in `apps/website/api` + `-p website-frontend`. Coding-standards: `cargo xtask ci verify-coding-standards`.
 
 ```bash
 # 1. Postgres (port 5434)
-make db-up
+cargo xtask db up
 
 # 2. Axum API on :8080 (CWD = apps/website/api; migrates on boot)
-make api
+cargo xtask mk rust-api
 
 # 3. Leptos Trunk SPA on :3000 (proxies /api + /map-assets → :8080)
-#    T-173: make leptos = trunk serve --release (day-to-day / perf-honest).
-#    Fast rebuilds only: make leptos-debug (unoptimized wasm — do not judge FPS).
+#    T-173: cargo xtask mk leptos = trunk serve --release (day-to-day / perf-honest).
+#    Fast rebuilds only: cargo xtask mk leptos-debug (unoptimized wasm — do not judge FPS).
 #    T-174: satellite = preview→full progressive by default (sharp TBDS).
 #           ?sat=preview = Range-only (gates / fast local); ?sat=full is a no-op.
-make leptos
+cargo xtask mk leptos
 ```
 
 Config: `apps/website/api/.env` (`FRONTEND_URL=http://127.0.0.1:3000`). Prod SPA flip: `SPA_DIST_DIR=../frontend/dist`.
@@ -46,9 +46,9 @@ curl -sf http://localhost:8080/api/v1/health
 ## Contract codegen, validation & CI (T-123)
 
 ```bash
-make schema-codegen    # → apps/website/api/src/contract/generated/ (DO NOT hand-edit)
-make schema-validate   # packages/tbd-schema goldens
-make verify-citations
+cargo xtask ci schema-codegen    # → apps/website/api/src/contract/generated/ (DO NOT hand-edit)
+cargo xtask ci schema-validate   # packages/tbd-schema goldens
+cargo xtask ci verify-citations
 ```
 
 CI jobs: `website-api` + `website-frontend` (renamed from `rust-backend` / `website-leptos` at T-171). Path-filtered supplements: [`contracts.yml`](../../.github/workflows/contracts.yml), [`schema.yml`](../../.github/workflows/schema.yml).
@@ -85,7 +85,7 @@ Root `CLAUDE.md`'s note that *"Real Discord OAuth credentials are blank in `.env
 client id, secret and guild id are all populated. What is unproven is whether they are *valid*.
 
 `.env` is gitignored, so a **git worktree has no `.env` at all**. Copy the main checkout's
-`apps/website/api/.env` in before `make api`, or the API won't boot (`DATABASE_URL` is required).
+`apps/website/api/.env` in before `cargo xtask mk rust-api`, or the API won't boot (`DATABASE_URL` is required).
 
 ### 1. Register the redirect URI
 
@@ -146,9 +146,9 @@ commit — source it from `.env` as above.
 ### 4. Run it
 
 ```bash
-make db-up && make seed     # role mappings must exist — see §5
-make api                    # :8080
-make leptos                 # :3000
+cargo xtask db up && cargo xtask db seed     # role mappings must exist — see §5
+cargo xtask mk rust-api                    # :8080
+cargo xtask mk leptos                 # :3000
 ```
 
 Then in a browser: open `/login` on your chosen host (e.g. `http://localhost:3000/login`), click
@@ -179,7 +179,7 @@ SELECT created_at, severity, action, message
 ### 5. Map guild roles to web tiers
 
 A flawless login still resolves to **enlisted** unless the guild's role snowflakes are mapped.
-`make seed` applies `apps/website/api/seeds/discord_roles.sql`, whose ids are specific to the TBD
+`cargo xtask db seed` applies `apps/website/api/seeds/discord_roles.sql`, whose ids are specific to the TBD
 guild (Command Staff / Mission Maker / Player). **Squad Leader / `leader` is not seeded** — the old
 placeholder snowflake `1517290000000000000` was removed at T-428 (no real guild id is committed).
 Insert the real mapping after a login (recipe is in the seed file header), then re-resolve.
@@ -195,7 +195,7 @@ curl -X POST http://localhost:8080/api/v1/admin/roles/sync \
   -H "Authorization: Bearer $ADMIN_JWT"
 ```
 
-If a dirty DB still has the old placeholder row, re-`make seed` clears it (T-487:
+If a dirty DB still has the old placeholder row, re-`cargo xtask db seed` clears it (T-487:
 `DELETE` of `1517290000000000000` before INSERT). Manual delete is still fine.
 
 `resolve_role` returns enlisted for an empty snapshot, so a user who is genuinely in no mapped
@@ -211,7 +211,7 @@ role stays enlisted by design — that is not the same failure as an unmapped sn
 | `#error=discord_unreachable` | bad/rotated secret **or** a real network failure **or** a redirect_uri mismatch caught at exchange time | §3 discriminates. **The exchange error is not logged** — `exchange_code`/`fetch_user` failures are mapped to this one reason and the cause is dropped, so the curl is your only signal |
 | `#error=missing_code` | consent was denied, or the callback URL was hand-built | retry and approve |
 | `#error=banned` | `users.is_banned` is true for that Discord id | clear the ban in admin |
-| `#error=server_error` | a DB write failed — user upsert, role sync, user reload, or session issue | also silent: the callback's `let-else` arms drop the sqlx error. Confirm Postgres is up and migrated (`make db-up`, restart `make api`), then retry |
+| `#error=server_error` | a DB write failed — user upsert, role sync, user reload, or session issue | also silent: the callback's `let-else` arms drop the sqlx error. Confirm Postgres is up and migrated (`cargo xtask db up`, restart `cargo xtask mk rust-api`), then retry |
 | Login succeeds, but you are `enlisted` | (a) role snowflakes unmapped, (b) you aren't in the guild, (c) `DISCORD_GUILD_ID` blank | (a) is the common one → §5. (b) is a **legitimate answer**: Discord 404s the member lookup, that 404 means "not a member", and demoting is correct. (c) leaves a WARN audit row — see below |
 
 ### 7. Two live hazards, fixed in code — what you'd see now
@@ -252,31 +252,31 @@ The only durable fix today is to make Discord agree — map the guild role in `d
 ## Stop
 
 ```bash
-make db-down      # stops Postgres, keeps volume
+cargo xtask db down      # stops Postgres, keeps volume
 # API + trunk: kill the background processes
 ```
 
 ## Postgres 18 upgrade (T-124)
 
-If `make api` fails migrations after pulling T-124, the local volume may still be Postgres **16** data. Re-init:
+If `cargo xtask mk rust-api` fails migrations after pulling T-124, the local volume may still be Postgres **16** data. Re-init:
 
 ```bash
-make db-down
+cargo xtask db down
 # podman volume rm tbd-reforger_db_data   # or docker — inspect compose project name
-make db-up && make seed
+cargo xtask db up && cargo xtask db seed
 ```
 
 Dev data is reseedable; mock missions are optional (see below).
 
 ## Registry catalog (T-068 / T-150 / T-068.9)
 
-**Dev seed** (`make seed` → `apps/website/api/seeds/registry_dev.sql`) is the thin 21-row smoke set.
+**Dev seed** (`cargo xtask db seed` → `apps/website/api/seeds/registry_dev.sql`) is the thin 21-row smoke set.
 
 **Full catalog** (Workbench universal export): **1,880 items** + **4,012 compat edges**.
 
 ```bash
 # From repo root — upserts both committed envelopes into the dev DB (idempotent)
-make registry-import
+cargo xtask db registry-import
 
 # Or explicit paths / prune:
 # cargo run --bin import-registry --manifest-path apps/website/api/Cargo.toml -- \
@@ -285,7 +285,7 @@ make registry-import
 #   [--modpack <uuid>] [--prune]
 ```
 
-Restart `make api` after handler changes — `cargo run` does not hot-reload.
+Restart `cargo xtask mk rust-api` after handler changes — `cargo run` does not hot-reload.
 
 | Route | Auth | Notes |
 |-------|------|--------|
@@ -309,7 +309,7 @@ Corpus: `packages/map-assets/` — Everon ~1.3 GB on disk; **tracked in LFS = ex
 | `everon/dem/everon-dem-16bit.png` | ~72 MB | DEM / hillshade / map-engine tests |
 | `everon/satellite/everon-sat.tbd-sat` | ~153 MB | Unified satellite basemap |
 
-`**/staging/` + `**/tiles/` are gitignored (rebuildable via `make map-*`). `.gitattributes` LFS patterns: `packages/map-assets/**/*.{png,r16,tbd-sat}`.
+`**/staging/` + `**/tiles/` are gitignored (rebuildable via the `cargo xtask ci map-*` tasks). `.gitattributes` LFS patterns: `packages/map-assets/**/*.{png,r16,tbd-sat}`.
 
 | Consumer | Needs | Mechanism |
 |----------|-------|-----------|
@@ -322,8 +322,8 @@ Corpus: `packages/map-assets/` — Everon ~1.3 GB on disk; **tracked in LFS = ex
 **Convenience targets:**
 
 ```bash
-make lfs-dem   # ~72 MB — enough for map-engine tests + hillshade
-make lfs-sat   # ~153 MB — full satellite bundle
+cargo xtask ci lfs-dem   # ~72 MB — enough for map-engine tests + hillshade
+cargo xtask ci lfs-sat   # ~153 MB — full satellite bundle
 # or: git lfs install && git lfs pull
 ```
 
@@ -332,14 +332,14 @@ Each terrain has a `manifest.json` validated against [`terrain-manifest.schema.j
 **Tile pyramid (optional):** not in git. Rebuild:
 
 ```bash
-make map-water-everon
-make map-cartographic-everon
-make map-cartographic-verify
+cargo xtask ci map-water-everon
+cargo xtask ci map-cartographic-everon
+cargo xtask ci map-cartographic-verify
 ```
 
-**Mission Settings → Map basemap (T-173):** the Satellite/Map radio is live. **Map** view needs the cartographic tile pyramid from `make map-cartographic-everon`; when those tiles are absent the host **falls back to satellite** (not a broken toggle).
+**Mission Settings → Map basemap (T-173):** the Satellite/Map radio is live. **Map** view needs the cartographic tile pyramid from `cargo xtask ci map-cartographic-everon`; when those tiles are absent the host **falls back to satellite** (not a broken toggle).
 
-**Satellite load (T-174):** day-to-day `make leptos` upgrades preview→full TBDS automatically (no `?sat=full`). Use `?sat=preview` only for Range-only / fast iteration (same as CI gates). Density-heatmap green glow is removed.
+**Satellite load (T-174):** day-to-day `cargo xtask mk leptos` upgrades preview→full TBDS automatically (no `?sat=full`). Use `?sat=preview` only for Range-only / fast iteration (same as CI gates). Density-heatmap green glow is removed.
 
 **Forest canopy (T-176):** island forest highlight is **8 m TBDD canopy mass** (not the old 32 m Path B landcover forest wash). Clearings stay open. Retune tightness: `CANOPY_KERNEL_RADIUS_CELLS` / `CANOPY_MASS_ISO`, then `cargo run -p tbd-tools --bin world -- redensify --terrain everon` (committed-chunk path; no Workbench).
 
@@ -348,19 +348,19 @@ See [`packages/map-assets/README.md`](../../packages/map-assets/README.md). **Op
 **Verify:**
 
 ```bash
-make verify-terrain
-make verify-terrain-strict
+cargo xtask ci verify-terrain
+cargo xtask ci verify-terrain-strict
 ```
 
-**Frontend/engine tests:** `cargo test -p website-frontend` + `cargo test -p map-engine-core --all-features` (DEM peaks need `make lfs-dem` or `git lfs pull`).
+**Frontend/engine tests:** `cargo test -p website-frontend` + `cargo test -p map-engine-core --all-features` (DEM peaks need `cargo xtask ci lfs-dem` or `git lfs pull`).
 
 ## Notes
 
-- A fresh DB only has Discord role mappings + registry smoke rows (`make seed` → `apps/website/api/seeds/`).
-- Frontend: `make ci-local-leptos`; full editor gates: `make leptos-gates` (see [`EDITOR_GATE_RUNBOOK.md`](EDITOR_GATE_RUNBOOK.md) — `gate doctor` preflight, full Chrome `--headless=new`, toolchain **1.95.0**).
-- Integration tests: `make test-it` (needs `make db-up`).
+- A fresh DB only has Discord role mappings + registry smoke rows (`cargo xtask db seed` → `apps/website/api/seeds/`).
+- Frontend: `cargo xtask mk ci-local-leptos`; full editor gates: `cargo xtask mk leptos-gates` (see [`EDITOR_GATE_RUNBOOK.md`](EDITOR_GATE_RUNBOOK.md) — `gate doctor` preflight, full Chrome `--headless=new`, toolchain **1.95.0**).
+- Integration tests: `cargo xtask db test-it` (needs `cargo xtask db up`).
 
-## Mock data (optional, not run by `make seed`)
+## Mock data (optional, not run by `cargo xtask db seed`)
 
 `apps/website/api/seeds/mock_data.sql` (Operation Red Dawn etc.) is **manual psql only** — the Go `cmd/seed` applier was deleted at T-145. Example:
 

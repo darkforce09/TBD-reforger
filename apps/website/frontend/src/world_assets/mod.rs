@@ -75,7 +75,7 @@ impl MapHost {
 
     /// T-173 P6/H8 — swap the basemap texture between the unified Satellite lane and the stylized
     /// Map cartographic pyramid. Falls back to satellite when the Map pyramid is absent (tiles not
-    /// built locally via `make map-cartographic-everon`). `&self` (only reads `terrain`) so the
+    /// built locally via `cargo xtask ci map-cartographic-everon`). `&self` (only reads `terrain`) so the
     /// caller never holds the host `RefCell` borrow across the load `.await`.
     async fn set_basemap_view(&self, engine: &EngineHandle, view: &str) {
         swap_basemap(engine, &self.terrain, view).await;

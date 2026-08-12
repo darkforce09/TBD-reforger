@@ -35,7 +35,7 @@ Creator Factions palette entirely (closes the T-074 intent).
 
 ## Verification
 
-`make test-it` 22 suites ok (T1–T8: 403 tier, 400 schema-details, 201 golden, 409 dup,
+`cargo xtask db test-it` 22 suites ok (T1–T8: 403 tier, 400 schema-details, 201 golden, 409 dup,
 owner-scoped list/get, full-doc update, 204+404 delete). Frontend vitest **340/340**
 (buildFactionTree gates incl. the structural vanilla-purge assert — the tree is a pure
 function of the library, no registry enumeration), build + tsc clean, lint pre-existing

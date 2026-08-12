@@ -26,8 +26,8 @@ N9 full synth was deferred @ `.1.1` because no offline land-cover LUT existed; `
 
 1. Extend **`scripts/map-assets/build-map-cartographic.mjs`** with at least **two distinguishable land-cover tints** (forest vs open) at 12800² before pyramid build.
 2. Optional: **DEM hillshade multiply** (subtle relief — reuse committed Everon DEM PNG; do not fetch in MC).
-3. Re-run **`make map-cartographic-everon`** → replace local `tiles/map/` (gitignored).
-4. **Do not** change Satellite ortho, unified bundle, or `make map-water-everon`.
+3. Re-run **`cargo xtask ci map-cartographic-everon`** → replace local `tiles/map/` (gitignored).
+4. **Do not** change Satellite ortho, unified bundle, or `cargo xtask ci map-water-everon`.
 5. Log chosen LUT/heuristic in **`.ai/artifacts/t090_1_1_1_source_spike.json`** + **`.ai/artifacts/t090_1_1_1_verify_log.md`**.
 
 ---
@@ -60,12 +60,12 @@ N9 full synth was deferred @ `.1.1` because no offline land-cover LUT existed; `
 
 | ID | Check | Pass |
 |----|-------|------|
-| **M1** | `make map-cartographic-verify` | Pyramid complete z0–6 |
-| **M2** | `make schema-validate` | Manifest + schema green |
+| **M1** | `cargo xtask ci map-cartographic-verify` | Pyramid complete z0–6 |
+| **M2** | `cargo xtask ci schema-validate` | Manifest + schema green |
 | **M3** | Visual | Operator: forest patch vs adjacent field **visibly different** @ default zoom (screenshot + coords in log) |
 | **M4** | Alignment | H2 contact sheet vs Satellite unchanged ≤50 m (no new flip) |
 | **M7** | FE build + lint + vitest | Clean |
-| **M8** | `make verify-terrain` | DEM untouched |
+| **M8** | `cargo xtask ci verify-terrain` | DEM untouched |
 
 ---
 
@@ -126,19 +126,19 @@ Implement **T-090.1.1.1** — Map cartographic land-cover compose (forest vs ope
 ═══ DO ═══
   1. P0 spike — try L1 (SAP RGB heuristic) ± L2 (DEM slope/elev); log rejects in spike JSON
   2. Extend `build-map-cartographic.mjs` — land-cover tint pass before/after upscale (12800²)
-  3. `make map-cartographic-everon` — staging ortho → pyramid → manifest patch
+  3. `cargo xtask ci map-cartographic-everon` — staging ortho → pyramid → manifest patch
   4. `.ai/artifacts/t090_1_1_1_verify_log.md` — M1–M4, M7, M8 + operator screenshot coords
   5. Tag **T-090.1.1.1** · commit prefix **T-090.1.1.1:**
 
 ═══ DO NOT ═══
   - Edit docs/**, `.ai/tickets/registry.json`, CLAUDE status markers
-  - Touch Satellite compose, unified bundle, or `make map-water-everon`
+  - Touch Satellite compose, unified bundle, or `cargo xtask ci map-water-everon`
   - Block ship waiting for T-090.3 export or T-090.8 forest regions
 
 ═══ VERIFY (all exit 0) ═══
-  make map-cartographic-verify
-  make schema-validate
-  make verify-terrain
+  cargo xtask ci map-cartographic-verify
+  cargo xtask ci schema-validate
+  cargo xtask ci verify-terrain
   cd apps/website/frontend && npm run build && npm run lint && npm run test
 
 ═══ MANUAL ═══

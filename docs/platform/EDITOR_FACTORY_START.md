@@ -10,7 +10,7 @@ Preflight is **PASS**, the program is filed, and nothing has been dispatched.
 ## Start here
 
 ```bash
-make db-up && make api && make leptos-debug     # api :8080, spa :3000
+cargo xtask db up && cargo xtask mk rust-api && cargo xtask mk leptos-debug     # api :8080, spa :3000
 cargo xtask platform preflight              # must say PASS before anything
 export CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target   # NOT /tmp — 16 GB tmpfs, a build will not fit
 ./scripts/platform/wave.sh status
@@ -127,7 +127,7 @@ file inside them has.
 The recurring defect in this codebase is **a tool reporting success over an input it never actually
 examined**. This program found it three more times in the wild: FNF's mission validator runs 14 of
 its 27 checks and has not verified that objectives exist for years; WOG's slot tagger has a regex
-that may never match; `make verify-t180` stayed green while six authored values were silently
+that may never match; `cargo xtask verify t180` stayed green while six authored values were silently
 dropped at compile.
 
 Treat any green you did not watch fail first as unproven. Every validation ticket in this program
@@ -173,7 +173,7 @@ transition frames, feel, z-order as experienced). Therefore, for waves 200-208 O
 1. Dispatch **one wave per chat session**. After the verifier report, registry flip and close
    commit: **STOP. Do not dispatch the next wave.**
 2. Before stopping, post an **operator eye-pass checklist** for the wave: one human-runnable step
-   per ticket, derived from its `ACCEPTANCE:` clause (the live editor on `make leptos` — release —
+   per ticket, derived from its `ACCEPTANCE:` clause (the live editor on `cargo xtask mk leptos` — release —
    at 1920×1080), plus "anything that feels wrong is a finding".
 3. The operator's verdict gates the next wave. Findings from the eye-pass are filed as tickets
    (deferred or folded into a later wave), never fixed ad hoc in the closed wave.

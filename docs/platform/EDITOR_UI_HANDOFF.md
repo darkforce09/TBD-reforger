@@ -124,14 +124,14 @@ different times, rather than designed per-flow. Expect drift. There are skills f
 ## Running the stack
 
 ```bash
-make db-up        # Postgres :5434
-make api          # Axum API :8080 — applies migrations on boot
-make leptos-debug # SPA :3000 — FAST rebuilds, use this for UI iteration
+cargo xtask db up        # Postgres :5434
+cargo xtask mk rust-api          # Axum API :8080 — applies migrations on boot
+cargo xtask mk leptos-debug # SPA :3000 — FAST rebuilds, use this for UI iteration
 ```
 
 **Use `leptos-debug`, not `leptos`.** Release takes ~30 s per rebuild, which makes design iteration
 miserable. The documented caveat is that **editor FPS in debug is not representative** — judge
-layout, spacing, flow and copy on debug; switch to `make leptos` before judging map performance.
+layout, spacing, flow and copy on debug; switch to `cargo xtask mk leptos` before judging map performance.
 
 **Log in without Discord:** open `http://localhost:8080/api/v1/auth/dev-login?role=admin`
 (also `mission_maker`, `leader`, `enlisted`). It mints a real session and redirects into the SPA.

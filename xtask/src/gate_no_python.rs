@@ -1,7 +1,7 @@
 //! T-882 — port of `scripts/verify-no-python.sh` → `cargo xtask verify no-python`.
 //!
 //! LANG-2 enforcer (T-162 / T-620): zero `.py` files, plus a **ratcheted** scan for Python
-//! interpreter invocations in `scripts/` + `Makefile` against `scripts/python-inventory.txt`.
+//! interpreter invocations in `scripts/` (plus any `EXTRA_FILES`) against `scripts/python-inventory.txt`.
 //!
 //! ── WHY THIS PORT EXISTS ─────────────────────────────────────────────────────────────────────
 //!
@@ -13,7 +13,7 @@
 //! ── PRESERVED BASH CONTRACT ──────────────────────────────────────────────────────────────────
 //!
 //! * find `*.py` with the same path exclusions; incomplete find ⇒ FAIL (never "OK (none)").
-//! * `git ls-files -z scripts/` + explicit Makefile; unreadable enumerated paths ⇒ FAIL.
+//! * `git ls-files -z scripts/` + declared `EXTRA_FILES`; unreadable enumerated paths ⇒ FAIL.
 //! * Skip `SELF` + inventory so the gate's own prose cannot self-incriminate.
 //! * Pattern `python3|#!.*python`; comment lines (not shebangs) dropped before the ratchet.
 //! * Inventory may only shrink (NEW and STALE both fail).
@@ -43,6 +43,13 @@ const SELF: &str = "scripts/verify-no-python.sh";
 
 /// Same ERE the bash used — plain alternation, no braces (ugrep/GNU agreed).
 const PAT: &str = r"python3|#!.*python";
+
+/// Files scanned in addition to `git ls-files scripts/`. Declared, so removal is a const edit and
+/// a declared-but-absent entry FAILS — see [`scan_interpreter_ratchet`].
+///
+/// `Makefile` sat here until T-897 deleted it. Nothing replaced it: `xtask` is Rust, so the
+/// interpreter-invocation surface it used to carry is now `scripts/` alone.
+const EXTRA_FILES: &[&str] = &[];
 
 /// Entry for `xtask verify no-python`.
 pub fn verify_no_python() -> Result<u8> {
@@ -74,7 +81,7 @@ pub fn run_with_root(root: &Path) -> Result<u8> {
     }
 
     // ─────────────────── 2. Python interpreter invocations (ratcheted) ───────────────────
-    println!("==> python interpreter invocations in scripts/ + Makefile");
+    println!("==> python interpreter invocations in scripts/");
     if !scan_interpreter_ratchet(root, &mut fail)? {
         // scan_interpreter_ratchet sets fail and prints; nothing more
     }
@@ -196,14 +203,22 @@ fn scan_interpreter_ratchet(root: &Path, fail: &mut bool) -> Result<bool> {
         *fail = true;
     }
 
-    let makefile = root.join("Makefile");
-    if makefile.is_file() && is_readable(&makefile) {
-        files.push(PathBuf::from("Makefile"));
-    } else {
-        println!(
-            "FAIL: Makefile is missing or unreadable, but this check reports that it scans it."
-        );
-        *fail = true;
+    // The declared extras. This loop is why T-897's Makefile removal is a one-line const edit and
+    // not a silent narrowing: an entry that is declared and absent FAILS, it does not shrink the
+    // scan. With `EXTRA_FILES` empty it is a no-op, which is the honest state of the repo.
+    for extra in EXTRA_FILES {
+        let path = root.join(extra);
+        if path.is_file() && is_readable(&path) {
+            files.push(PathBuf::from(*extra));
+        } else {
+            println!(
+                "FAIL: {extra} is missing or unreadable, but this check reports that it scans it."
+            );
+            println!(
+                "      Restore it, or drop it from EXTRA_FILES in the SAME commit that deletes it."
+            );
+            *fail = true;
+        }
     }
 
     if files.is_empty() {
@@ -350,7 +365,7 @@ mod tests {
             "#!/usr/bin/env bash\npython3 -c 'print(1)'\n",
         )
         .unwrap();
-        fs::write(root.join("Makefile"), "all:\n\t@echo ok\n").unwrap();
+
         // seed git so ls-files works
         let _ = Command::new("git")
             .args(["init", "-q"])

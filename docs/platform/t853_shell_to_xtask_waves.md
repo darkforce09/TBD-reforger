@@ -168,7 +168,7 @@ hard fail); split at a seam with no shared state, as `gate_ui_layouts` / `gate_u
 - [ ] every caller repointed; `git grep '<basename>'` returns no executable reference
 - [ ] `cargo fmt --all --check`, `cargo clippy -p xtask --all-targets -- -D warnings`, `cargo test -p xtask` all clean
 - [ ] `cargo run -q -p xtask -- verify no-shell` count dropped by exactly one
-- [ ] `make verify-no-python` still passes
+- [ ] `cargo xtask verify no-python` still passes
 - [ ] both `wave.sh` files pass `bash -n`
 
 ---
@@ -202,7 +202,7 @@ Three of those carry a hazard the earlier waves did not — read before starting
 
 - **`restore-db.sh` is destructive.** Its T-381 allow-list *refuses* `tbd_reforger` and verifies the
   dump before writing. Both are load-bearing; prove the refusal still fires. Test against a scratch
-  DB from `make db-up`, never the dev database.
+  DB from `cargo xtask db up`, never the dev database.
 - **`compile.sh` / `world-boot.sh` have a 0/1/2 exit contract** that `mod-gates.yml` and `ci.yml`
   branch on with `|| rc=$?; case $rc`. `--selftest` passes **only** on exit 1 — a selftest that exits
   0 means the gate is hollow.

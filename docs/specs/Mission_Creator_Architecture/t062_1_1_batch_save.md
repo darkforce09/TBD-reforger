@@ -71,7 +71,7 @@ Real missions (~128 ORBAT slots) are tiny; this slice targets **future object-he
 
 | Check | Result |
 |-------|--------|
-| `make test-it` | **Pass** — incl. `TestEditorOnlyOrbatDerivationIntegration` |
+| `cargo xtask db test-it` | **Pass** — incl. `TestEditorOnlyOrbatDerivationIntegration` |
 | `go test ./internal/services/...` | **Pass** |
 | FE build + lint | **Clean** |
 | Legacy explicit-orbat event attach | **Pass** (unchanged) |

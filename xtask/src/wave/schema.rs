@@ -27,9 +27,21 @@
 //! success over an input it never examined — reproduced BY the fix for it. The step must run the
 //! SET.
 //!
-//! The set is `make schema-validate` (Makefile:137) plus `make verify-citations` (Makefile:151),
-//! i.e. `make ci-local-schema`. NOT ci.yml: its `schema` job (ci.yml:133,135) is `validate` +
-//! `citations` only, so CI has the same hole and would not have caught T-244 either.
+//! The set is `cargo xtask ci schema-validate` plus `cargo xtask ci verify-citations`, i.e.
+//! `cargo xtask ci ci-local-schema`. NOT ci.yml: its `schema` job was `validate` + `citations`
+//! only, so CI had the same hole and would not have caught T-244 either.
+//!
+//! ── T-897: WHERE THE CROSS-CHECK'S SECOND SOURCE LIVES NOW ──────────────────────────────────
+//!
+//! Until T-897 the tripwire below parsed the root `Makefile`'s `schema-validate` recipe, with
+//! `std::fs::read_to_string("Makefile")` returning `Vec::new()` on any read error — a FAIL-OPEN
+//! whose only saving grace was that an empty parse was refused a few lines further down. T-897
+//! deletes the Makefile, so that input is gone. The successor is [`mk_ci::TASKS`]' own
+//! `schema-validate` row, read through [`mk_ci::validate_gate_names`] — the same list
+//! `cargo xtask schema list-gates` prints and, more to the point, the same list `run_task`
+//! actually executes. Two independent sources are still being diffed: [`VALIDATE_GATES`] here,
+//! and the executable table over in `mk_ci_tasks.rs`. Adding a tenth sub-gate to that table
+//! without adding it here still fails closed, which is the whole point of the tripwire.
 //!
 //! DELIBERATELY NOT CHANGE-SCOPED. "Only run if a .json under packages/tbd-schema changed" is how
 //! fmt and clippy came to examine nothing on T-244's diff, and it would be wrong on the facts
@@ -39,12 +51,13 @@
 use std::path::{Path, PathBuf};
 
 use super::{Ctx, host};
+use crate::mk_ci;
 use crate::wprintln;
 
-/// `GATE_SCHEMA_VALIDATE_GATES` must equal `make schema-validate`'s sub-gate SET (order =
-/// Makefile). `citations` comes from `make verify-citations` / ci-local-schema and is layered on
-/// after the tripwire. `height-labels` stays in VALIDATE_GATES even when a worktree skips running
-/// it.
+/// `GATE_SCHEMA_VALIDATE_GATES` must equal `cargo xtask ci schema-validate`'s sub-gate SET (order
+/// = the `TASKS` row). `citations` comes from `verify-citations` / `ci-local-schema` and is
+/// layered on after the tripwire. `height-labels` stays in VALIDATE_GATES even when a worktree
+/// skips running it.
 const VALIDATE_GATES: &[&str] = &[
     "validate",
     "map-object-golden",
@@ -70,90 +83,37 @@ fn dem_materialized() -> bool {
     body.len() >= 8 && body[..8] == [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
 }
 
-/// Parse `make schema-validate` recipe names.
+/// The sub-gate names `cargo xtask ci schema-validate` will actually run, in table order.
 ///
-/// Survives blank lines, column-0 `#` comments, and backslash continuations — the three shapes that
-/// made T-420's awk silently narrow (3-of-9 / 8-of-9) while GNU make still ran all nine. Ends the
-/// recipe only on a real next target line.
-pub fn makefile_validate_gates() -> Vec<String> {
-    let Ok(body) = std::fs::read_to_string("Makefile") else {
-        return Vec::new();
-    };
-    let lines: Vec<&str> = body.lines().collect();
-    let mut out: Vec<String> = Vec::new();
-    let mut i = 0usize;
-    // `/^schema-validate:/ { i=1; next }`
-    while i < lines.len() && !lines[i].starts_with("schema-validate:") {
-        i += 1;
-    }
-    if i >= lines.len() {
-        return out;
-    }
-    i += 1;
-    let extract = regex::Regex::new(r"-p xtask -- schema ([a-z0-9-]*)").expect("static regex");
-    while i < lines.len() {
-        let l = lines[i];
-        if l.trim().is_empty() {
-            i += 1;
-            continue;
-        }
-        if l.starts_with('#') {
-            i += 1;
-            continue;
-        }
-        if !l.starts_with('\t') {
-            break; // a real next target line ends the recipe
-        }
-        let mut line = l.trim_start_matches('\t').to_string();
-        // `while (line ~ /\\[[:space:]]*$/)` — join continuations, skipping comment/blank lines
-        // WITHOUT consuming the trailing backslash again (awk's `continue` re-tests the condition).
-        while ends_with_continuation(&line) {
-            line = strip_continuation(&line);
-            i += 1;
-            if i >= lines.len() {
-                break;
-            }
-            let nxt = lines[i].trim_start_matches('\t');
-            if nxt.starts_with('#') || nxt.trim().is_empty() {
-                // awk `continue`: the accumulated `line` no longer ends in a backslash here, so the
-                // loop exits. Reproduced exactly — this is the shape that made the parse narrow.
-                continue;
-            }
-            line.push_str(nxt);
-        }
-        if let Some(c) = extract.captures(&line) {
-            out.push(c[1].to_string());
-        }
-        i += 1;
-    }
-    out
-}
-
-fn ends_with_continuation(s: &str) -> bool {
-    let t = s.trim_end_matches([' ', '\t']);
-    t.ends_with('\\')
-}
-
-fn strip_continuation(s: &str) -> String {
-    let t = s.trim_end_matches([' ', '\t']);
-    t.strip_suffix('\\').unwrap_or(t).to_string()
+/// This is what `cargo xtask schema list-gates` prints. It is read from [`mk_ci::TASKS`] rather
+/// than shelled out to, because the two live in the same binary: a subprocess could only ever be
+/// the SAME list one build-freshness hazard later (the hazard `gate_schema`'s content stamp
+/// further down exists to fight). Empty means the `schema-validate` row is gone, which the caller
+/// treats as a refusal — never as "no gates to check".
+pub fn task_validate_gates() -> Vec<String> {
+    mk_ci::find("schema-validate")
+        .map(mk_ci::validate_gate_names)
+        .unwrap_or_default()
 }
 
 pub fn gate_schema(ctx: &Ctx) -> i32 {
     // DRIFT TRIPWIRE. A hardcoded list is readable and greppable but it rots silently, and the way
-    // it rots is precisely this ticket: `make schema-validate` grows a tenth sub-gate, nobody adds
-    // it here, and the wave gate goes on printing PASS over whatever that gate checks. Diff the SET
-    // against the Makefile recipe every run and refuse when they disagree — including PARTIAL
-    // parses. T-420 only refused an EMPTY parse; a blank/`#`/continuation mid-recipe narrowed the
-    // awk output while make still ran all nine, and the one-way ⊆ check stayed green over the hole.
-    let mk_gates = makefile_validate_gates();
+    // it rots is precisely this ticket: `schema-validate` grows a tenth sub-gate, nobody adds it
+    // here, and the wave gate goes on printing PASS over whatever that gate checks. Diff the SET
+    // against the executable task table every run and refuse when they disagree — including
+    // PARTIAL reads. T-420 only refused an EMPTY parse; a blank/`#`/continuation mid-recipe
+    // narrowed the old awk output while GNU make still ran all nine, and the one-way ⊆ check
+    // stayed green over the hole. T-897 moved the second source off the (now deleted) Makefile.
+    let mk_gates = task_validate_gates();
     if mk_gates.is_empty() {
-        wprintln!("schema: read 0 sub-gates out of the schema-validate recipe in Makefile.");
+        wprintln!(
+            "schema: read 0 sub-gates out of the schema-validate task (xtask/src/mk_ci_tasks.rs)."
+        );
         wprintln!(
             "        The drift check is the only thing keeping this step's list honest, so a step that"
         );
         wprintln!(
-            "        could not run it must not go on to report PASS. Fix the parse, or the recipe."
+            "        could not run it must not go on to report PASS. Fix the read, or the task row."
         );
         return 1;
     }
@@ -162,15 +122,13 @@ pub fn gate_schema(ctx: &Ctx) -> i32 {
     let mut want_sorted: Vec<String> = VALIDATE_GATES.iter().map(|s| (*s).to_string()).collect();
     want_sorted.sort();
     if mk_sorted != want_sorted {
+        wprintln!("schema: schema-validate task set disagrees with GATE_SCHEMA_VALIDATE_GATES.");
+        wprintln!("        list-gates: {}", mk_sorted.join(" "));
+        wprintln!("        wave.sh:    {}", want_sorted.join(" "));
         wprintln!(
-            "schema: Makefile schema-validate set disagrees with GATE_SCHEMA_VALIDATE_GATES."
+            "        A narrowed read or a tenth sub-gate would keep printing PASS over unchecked"
         );
-        wprintln!("        makefile: {}", mk_sorted.join(" "));
-        wprintln!("        wave.sh:  {}", want_sorted.join(" "));
-        wprintln!(
-            "        A narrowed parse or a tenth sub-gate would keep printing PASS over unchecked"
-        );
-        wprintln!("        contracts. Fail closed: sync the list, or fix the recipe parse.");
+        wprintln!("        contracts. Fail closed: sync the list, or fix the task row.");
         return 1;
     }
 
@@ -186,7 +144,7 @@ pub fn gate_schema(ctx: &Ctx) -> i32 {
                 "        (LFS pointer or missing). On main with a real DEM this sub-gate RUNS; do not"
             );
             wprintln!(
-                "        treat a worktree skip as 'red on main' or chase make lfs-dem for that."
+                "        treat a worktree skip as 'red on main' or chase `xtask ci lfs-dem` for that."
             );
             continue;
         }
@@ -433,19 +391,25 @@ mod tests {
         assert_eq!(cksum(b""), format!("{}{}", 4294967295u32, 0));
     }
 
+    /// T-420's awk read 3 of 9 and the one-way subset check stayed green over the hole, so the
+    /// set must match EXACTLY — an empty or partial read is a hard fail in `gate_schema`.
+    ///
+    /// T-897 rebased this off the Makefile recipe onto the task table. Note there is no
+    /// `if …exists()` guard any more: the old one made the test vacuous the moment the file it
+    /// named went away, which is the same defect in miniature that this ticket exists to fix.
     #[test]
-    fn the_makefile_recipe_parse_is_not_narrow() {
-        // T-420's awk read 3 of 9 and the one-way subset check stayed green over the hole. The set
-        // must match exactly, so an empty or partial parse is a hard fail in gate_schema.
-        if Path::new("Makefile").is_file() {
-            let mut got = makefile_validate_gates();
-            got.sort();
-            let mut want: Vec<String> = VALIDATE_GATES.iter().map(|s| (*s).to_string()).collect();
-            want.sort();
-            assert_eq!(
-                got, want,
-                "the Makefile recipe parse disagrees with the pinned set"
-            );
-        }
+    fn the_task_table_and_the_pinned_set_agree() {
+        let mut got = task_validate_gates();
+        assert!(
+            !got.is_empty(),
+            "the schema-validate task row vanished — gate_schema would refuse, and so does this"
+        );
+        got.sort();
+        let mut want: Vec<String> = VALIDATE_GATES.iter().map(|s| (*s).to_string()).collect();
+        want.sort();
+        assert_eq!(
+            got, want,
+            "`xtask schema list-gates` disagrees with GATE_SCHEMA_VALIDATE_GATES"
+        );
     }
 }

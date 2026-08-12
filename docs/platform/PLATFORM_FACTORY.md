@@ -309,7 +309,7 @@ record the correction in the ticket and tell the operator plainly.
   printed **50 false findings** that way before it was caught. Use `-F` literal for anything
   route-shaped or brace-bearing, and read the exit status (0/1/2/127) rather than collapsing it to a
   boolean. `scripts/mod/lib/gate-grep.sh` already does this; use it.
-- **`make` is not on the container PATH either**, alongside cargo/rustfmt/xtask. Route it through
+- **`cargo` is not usable in the container**, and neither are rustfmt/xtask. Route them through
   `distrobox-host-exec` like the rest. Only `wave.sh` runs directly, never wrapped.
 - **A slice agent running its own server instance needs a PRIVATE `CARGO_TARGET_DIR`.** Measured
   twice in one wave (T-581, T-582): two slices building the same crate into the shared `target/`
@@ -386,12 +386,12 @@ end-of-round results POST was inert without.
 `land --wave` restores the old barrier if it is ever genuinely wanted; it prints why you probably
 do not want it.
 
-### 3. Tiered gates, and never `make ci-local`
+### 3. Tiered gates, and never `cargo xtask ci ci-local`
 
 A slice pays only the **cheap gate** (`cargo check` + `cargo fmt`, ~10 s). The expensive suite runs
 once per wave on merged main.
 
-`make ci-local` is **deliberately excluded**, on cost alone: 15-40 minutes, not the 22.7 s the docs
+`cargo xtask ci ci-local` is **deliberately excluded**, on cost alone: 15-40 minutes, not the 22.7 s the docs
 still claim (that figure was measured before the Go→Rust and React→Leptos migrations). A gate
 everyone routes around teaches agents that gate failures are noise.
 
@@ -598,7 +598,7 @@ finish after the reset.
 Two tickets change the economics of everything after them, and should land early regardless of
 wave order:
 
-- **`make mod-world-boot-compiled`** (T-186) — feeds an API-compiled mission into the real Enfusion
+- **`cargo xtask mod world-boot --compiled`** (T-186) — feeds an API-compiled mission into the real Enfusion
   parser. No such test exists today, which is why the single-faction hard-reject shipped. This
   converts every future contract drift from *discovered in production* into a CI failure.
 - **Seed a populated content golden** (T-193 area) — every frontend fixture is currently an empty
