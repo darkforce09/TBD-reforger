@@ -55,6 +55,7 @@ mod gate_test_phase1_api;
 mod gate_ui_layouts;
 mod gate_ui_layouts_awk;
 mod golden_gate;
+mod hostrun;
 mod label_gates;
 mod mcp;
 mod mcp_daemon;
