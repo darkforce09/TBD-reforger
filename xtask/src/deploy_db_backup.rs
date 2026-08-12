@@ -411,10 +411,16 @@ mod tests {
 
     #[test]
     fn parse_nonneg_accepts_digits() {
-        // die() exits the process — only test the happy digit path via a local copy of the rule
-        let raw = "14";
-        assert!(raw.bytes().all(|b| b.is_ascii_digit()));
-        assert_eq!(raw.parse::<u64>().unwrap(), 14);
+        // die() process::exits on bad input — happy-path only (no invalid/exit cases).
+        assert_eq!(parse_nonneg("14", "--keep"), 14);
+    }
+
+    #[test]
+    fn parse_nonneg_uses_argument() {
+        // Would pass both if parse_nonneg ignored `raw` and returned a constant.
+        assert_eq!(parse_nonneg("0", "--min-rows"), 0);
+        assert_eq!(parse_nonneg("7", "--keep"), 7);
+        assert_ne!(parse_nonneg("3", "--keep"), parse_nonneg("9", "--keep"));
     }
 
     #[test]
