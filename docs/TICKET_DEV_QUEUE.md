@@ -13,3 +13,219 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Branch:** `ticket/T-090`
 - **Targets:** root, website
 - **Summary:** Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+
+## T-854 — T-853 port: verify-t437-destroy-inert-diagnostics -> verify t437
+
+- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Branch:** `ticket/T-854`
+- **Targets:** root
+- **Summary:** T-853 shell->xtask slice. Port scripts/mod/verify-t437-destroy-inert-diagnostics.sh (433 lines) to `cargo xtask verify t437` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). T-437 destroy-inert registry diagnostics; wave.sh x2; 7 python3 call sites. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
+
+## T-855 — T-853 port: remote-log-grep -> mod remote-logs
+
+- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Branch:** `ticket/T-855`
+- **Targets:** root
+- **Summary:** T-853 shell->xtask slice. Port scripts/mod/remote-log-grep.sh (418 lines) to `cargo xtask mod remote-logs` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). remote server log search over ssh. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
+
+## T-856 — T-853 port: tbd-spawn-determinism -> mod spawn-determinism
+
+- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Branch:** `ticket/T-856`
+- **Targets:** root
+- **Summary:** T-853 shell->xtask slice. Port scripts/mod/tbd-spawn-determinism.sh (354 lines) to `cargo xtask mod spawn-determinism` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). spawn determinism harness; make target. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
+
+## T-857 — T-853 port: mcp-wb-logs -> mcp wb-logs
+
+- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Branch:** `ticket/T-857`
+- **Targets:** root
+- **Summary:** T-853 shell->xtask slice. Port scripts/mod/mcp-wb-logs.sh (320 lines) to `cargo xtask mcp wb-logs` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). Workbench MCP log tail/scan. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
+
+## T-858 — T-853 port: deploy-website -> deploy website
+
+- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Branch:** `ticket/T-858`
+- **Targets:** root
+- **Summary:** T-853 shell->xtask slice. Port scripts/deploy/deploy-website.sh (247 lines) to `cargo xtask deploy website` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). website deploy driver. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
+
+## T-859 — T-853 port: manual-test -> mod manual-test
+
+- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Branch:** `ticket/T-859`
+- **Targets:** root
+- **Summary:** T-853 shell->xtask slice. Port scripts/mod/manual-test.sh (230 lines) to `cargo xtask mod manual-test` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). manual mod test suite. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
+
+## T-860 — T-853 port: mcp-call -> mcp call
+
+- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Branch:** `ticket/T-860`
+- **Targets:** root
+- **Summary:** T-853 shell->xtask slice. Port scripts/mod/mcp-call.sh (130 lines) to `cargo xtask mcp call` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). JSON-RPC wrapper over the enfusion-mcp socket. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
+
+## T-861 — T-853 port: setup-server-profile -> setup server-profile
+
+- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Branch:** `ticket/T-861`
+- **Targets:** root
+- **Summary:** T-853 shell->xtask slice. Port scripts/mod/setup-server-profile.sh (113 lines) to `cargo xtask setup server-profile` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). dedicated-server profile generation. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
+
+## T-862 — T-853 port: fetch-vanilla-source -> fetch vanilla-source
+
+- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Branch:** `ticket/T-862`
+- **Targets:** root
+- **Summary:** T-853 shell->xtask slice. Port scripts/mod/fetch-vanilla-source.sh (103 lines) to `cargo xtask fetch vanilla-source` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). mirror vanilla Enfusion sources. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
+
+## T-863 — T-853 port: tbd-dev-bootstrap -> mod dev-bootstrap
+
+- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Branch:** `ticket/T-863`
+- **Targets:** root
+- **Summary:** T-853 shell->xtask slice. Port scripts/mod/tbd-dev-bootstrap.sh (86 lines) to `cargo xtask mod dev-bootstrap` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). dev environment bootstrap. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
+
+## T-864 — T-853 port: test-mission -> mod test-mission
+
+- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Branch:** `ticket/T-864`
+- **Targets:** root
+- **Summary:** T-853 shell->xtask slice. Port scripts/mod/test-mission.sh (86 lines) to `cargo xtask mod test-mission` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). golden-mission id extraction + run; 4 python3 sites. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
+
+## T-865 — T-853 port: mcp-call-selftest -> mcp selftest
+
+- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Branch:** `ticket/T-865`
+- **Targets:** root
+- **Summary:** T-853 shell->xtask slice. Port scripts/mod/mcp-call-selftest.sh (73 lines) to `cargo xtask mcp selftest` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). mcp-call selftest; make target. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
+
+## T-866 — T-853 port: fetch-vanilla-api -> fetch vanilla-api
+
+- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Branch:** `ticket/T-866`
+- **Targets:** root
+- **Summary:** T-853 shell->xtask slice. Port scripts/mod/fetch-vanilla-api.sh (70 lines) to `cargo xtask fetch vanilla-api` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). vanilla API doc fetch; make target. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
+
+## T-867 — T-853 port: mission-version-upload-repro -> repro mission-upload
+
+- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Branch:** `ticket/T-867`
+- **Targets:** root
+- **Summary:** T-853 shell->xtask slice. Port scripts/website/mission-version-upload-repro.sh (62 lines) to `cargo xtask repro mission-upload` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). already has an xtask twin in repro.rs - confirm then delete. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
+
+## T-868 — T-853 port: debug-direct-join -> debug direct-join
+
+- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Branch:** `ticket/T-868`
+- **Targets:** root
+- **Summary:** T-853 shell->xtask slice. Port scripts/mod/debug-direct-join.sh (61 lines) to `cargo xtask debug direct-join` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). direct-join debug helper; xtask debug already exists. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
+
+## T-869 — T-853 port: export-terrain -> map export-terrain
+
+- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Branch:** `ticket/T-869`
+- **Targets:** root
+- **Summary:** T-853 shell->xtask slice. Port scripts/map-assets/export-terrain.sh (60 lines) to `cargo xtask map export-terrain` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). terrain export orchestrator; make map-export. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
+
+## T-870 — T-853 port: bootstrap-staging-server -> mod bootstrap-staging
+
+- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Branch:** `ticket/T-870`
+- **Targets:** root
+- **Summary:** T-853 shell->xtask slice. Port scripts/mod/bootstrap-staging-server.sh (55 lines) to `cargo xtask mod bootstrap-staging` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). staging server bootstrap. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
+
+## T-871 — T-853 port: run-dev-server -> mod dev-server
+
+- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Branch:** `ticket/T-871`
+- **Targets:** root
+- **Summary:** T-853 shell->xtask slice. Port scripts/mod/run-dev-server.sh (50 lines) to `cargo xtask mod dev-server` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). thin dev server wrapper. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
+
+## T-872 — T-853 port: seed-milestone-announcement -> mod seed-announcement
+
+- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Branch:** `ticket/T-872`
+- **Targets:** root
+- **Summary:** T-853 shell->xtask slice. Port scripts/mod/seed-milestone-announcement.sh (37 lines) to `cargo xtask mod seed-announcement` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). milestone announcement seeding. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
+
+## T-873 — T-853 port: tbd-spawn-verify -> mod spawn-verify
+
+- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Branch:** `ticket/T-873`
+- **Targets:** root
+- **Summary:** T-853 shell->xtask slice. Port scripts/mod/tbd-spawn-verify.sh (32 lines) to `cargo xtask mod spawn-verify` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). spawn verification helper. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
+
+## T-874 — T-853 port: test-phase1-api -> mod test-phase1-api
+
+- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Branch:** `ticket/T-874`
+- **Targets:** root
+- **Summary:** T-853 shell->xtask slice. Port scripts/mod/test-phase1-api.sh (31 lines) to `cargo xtask mod test-phase1-api` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). phase-1 API smoke. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
+
+## T-875 — T-853 port: setup-workbench-linux -> setup workbench
+
+- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Branch:** `ticket/T-875`
+- **Targets:** root
+- **Summary:** T-853 shell->xtask slice. Port scripts/mod/setup-workbench-linux.sh (28 lines) to `cargo xtask setup workbench` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). Workbench linux setup. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
+
+## T-876 — T-853 port: setup-mcp-game-root -> setup mcp-game-root
+
+- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Branch:** `ticket/T-876`
+- **Targets:** root
+- **Summary:** T-853 shell->xtask slice. Port scripts/mod/setup-mcp-game-root.sh (27 lines) to `cargo xtask setup mcp-game-root` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). MCP game root symlink setup. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
+
+## T-877 — T-853 port: mcp-smoke -> mcp smoke
+
+- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Branch:** `ticket/T-877`
+- **Targets:** root
+- **Summary:** T-853 shell->xtask slice. Port scripts/mod/mcp-smoke.sh (24 lines) to `cargo xtask mcp smoke` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). mcp smoke test; make target. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
+
+## T-878 — T-853 port: setup-client-addons -> setup client-addons
+
+- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Branch:** `ticket/T-878`
+- **Targets:** root
+- **Summary:** T-853 shell->xtask slice. Port scripts/mod/setup-client-addons.sh (23 lines) to `cargo xtask setup client-addons` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). client addon symlink setup. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
+
+## T-879 — T-853 delete: mod/lib shims
+
+- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Branch:** `ticket/T-879`
+- **Targets:** root
+- **Summary:** T-853 shell->xtask slice. Port scripts/mod/lib/paths.sh;scripts/mod/lib/mcpd-bin.sh;scripts/mod/lib/xtask-run.sh (27 lines) to `cargo xtask (pure delete)` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). three shims the xtask launcher does natively - delete, do not port. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
+
+## T-880 — T-853 delete: gate-grep
+
+- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
+- **Branch:** `ticket/T-880`
+- **Targets:** root
+- **Summary:** T-853 shell->xtask slice. Port scripts/mod/lib/gate-grep.sh (221 lines) to `cargo xtask (pure delete)` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). LAST: delete only once no .sh sources it; crates/tbd-gate replaced it. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.

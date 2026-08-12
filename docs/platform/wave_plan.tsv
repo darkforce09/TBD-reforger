@@ -628,3 +628,30 @@
 217	T-817	Grid labels lag up to ~1.4s on wheel zoom with a stationary pointer	apps/website/frontend/src/eden_toolbelt.rs
 217	T-834	Wave-205 residue: two stale pre-renumber comments, dead widget_is_rotate, marker grammar	apps/website/frontend/src/eden_top_strip.rs; apps/website/frontend/src/mission_editor.rs
 217	T-831	Per-side markers: author for each side, visible only to that side (Arma 3 model) — establish wh	apps/website/frontend/src/eden_dock_right.rs
+218	T-854	T-853 port: verify-t437-destroy-inert-diagnostics -> verify t437	scripts/mod/verify-t437-destroy-inert-diagnostics.sh; xtask/src/gate_verify_t437_destroy_inert_diagnostics.rs
+218	T-855	T-853 port: remote-log-grep -> mod remote-logs	scripts/mod/remote-log-grep.sh; xtask/src/gate_remote_log_grep.rs
+218	T-856	T-853 port: tbd-spawn-determinism -> mod spawn-determinism	scripts/mod/tbd-spawn-determinism.sh; xtask/src/gate_tbd_spawn_determinism.rs
+219	T-857	T-853 port: mcp-wb-logs -> mcp wb-logs	scripts/mod/mcp-wb-logs.sh; xtask/src/gate_mcp_wb_logs.rs
+219	T-858	T-853 port: deploy-website -> deploy website	scripts/deploy/deploy-website.sh; xtask/src/gate_deploy_website.rs
+219	T-859	T-853 port: manual-test -> mod manual-test	scripts/mod/manual-test.sh; xtask/src/gate_manual_test.rs
+220	T-860	T-853 port: mcp-call -> mcp call	scripts/mod/mcp-call.sh; xtask/src/gate_mcp_call.rs
+220	T-861	T-853 port: setup-server-profile -> setup server-profile	scripts/mod/setup-server-profile.sh; xtask/src/gate_setup_server_profile.rs
+220	T-862	T-853 port: fetch-vanilla-source -> fetch vanilla-source	scripts/mod/fetch-vanilla-source.sh; xtask/src/gate_fetch_vanilla_source.rs
+221	T-863	T-853 port: tbd-dev-bootstrap -> mod dev-bootstrap	scripts/mod/tbd-dev-bootstrap.sh; xtask/src/gate_tbd_dev_bootstrap.rs
+221	T-864	T-853 port: test-mission -> mod test-mission	scripts/mod/test-mission.sh; xtask/src/gate_test_mission.rs
+221	T-865	T-853 port: mcp-call-selftest -> mcp selftest	scripts/mod/mcp-call-selftest.sh; xtask/src/gate_mcp_call_selftest.rs
+222	T-866	T-853 port: fetch-vanilla-api -> fetch vanilla-api	scripts/mod/fetch-vanilla-api.sh; xtask/src/gate_fetch_vanilla_api.rs
+222	T-867	T-853 port: mission-version-upload-repro -> repro mission-upload	scripts/website/mission-version-upload-repro.sh; xtask/src/gate_mission_version_upload_repro.rs
+222	T-868	T-853 port: debug-direct-join -> debug direct-join	scripts/mod/debug-direct-join.sh; xtask/src/gate_debug_direct_join.rs
+223	T-869	T-853 port: export-terrain -> map export-terrain	scripts/map-assets/export-terrain.sh; xtask/src/gate_export_terrain.rs
+223	T-870	T-853 port: bootstrap-staging-server -> mod bootstrap-staging	scripts/mod/bootstrap-staging-server.sh; xtask/src/gate_bootstrap_staging_server.rs
+223	T-871	T-853 port: run-dev-server -> mod dev-server	scripts/mod/run-dev-server.sh; xtask/src/gate_run_dev_server.rs
+224	T-872	T-853 port: seed-milestone-announcement -> mod seed-announcement	scripts/mod/seed-milestone-announcement.sh; xtask/src/gate_seed_milestone_announcement.rs
+224	T-873	T-853 port: tbd-spawn-verify -> mod spawn-verify	scripts/mod/tbd-spawn-verify.sh; xtask/src/gate_tbd_spawn_verify.rs
+224	T-874	T-853 port: test-phase1-api -> mod test-phase1-api	scripts/mod/test-phase1-api.sh; xtask/src/gate_test_phase1_api.rs
+225	T-875	T-853 port: setup-workbench-linux -> setup workbench	scripts/mod/setup-workbench-linux.sh; xtask/src/gate_setup_workbench_linux.rs
+225	T-876	T-853 port: setup-mcp-game-root -> setup mcp-game-root	scripts/mod/setup-mcp-game-root.sh; xtask/src/gate_setup_mcp_game_root.rs
+225	T-877	T-853 port: mcp-smoke -> mcp smoke	scripts/mod/mcp-smoke.sh; xtask/src/gate_mcp_smoke.rs
+226	T-878	T-853 port: setup-client-addons -> setup client-addons	scripts/mod/setup-client-addons.sh; xtask/src/gate_setup_client_addons.rs
+226	T-879	T-853 delete: mod/lib shims	scripts/mod/lib/paths.sh;scripts/mod/lib/mcpd-bin.sh;scripts/mod/lib/xtask-run.sh
+226	T-880	T-853 delete: gate-grep	scripts/mod/lib/gate-grep.sh

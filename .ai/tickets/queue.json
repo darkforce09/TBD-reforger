@@ -11,6 +11,195 @@
       "status": "ready",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_6_geometry_placement_audit.md",
       "branch": "ticket/T-090"
+    },
+    {
+      "id": "T-854",
+      "title": "T-853 port: verify-t437-destroy-inert-diagnostics -> verify t437",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-854"
+    },
+    {
+      "id": "T-855",
+      "title": "T-853 port: remote-log-grep -> mod remote-logs",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-855"
+    },
+    {
+      "id": "T-856",
+      "title": "T-853 port: tbd-spawn-determinism -> mod spawn-determinism",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-856"
+    },
+    {
+      "id": "T-857",
+      "title": "T-853 port: mcp-wb-logs -> mcp wb-logs",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-857"
+    },
+    {
+      "id": "T-858",
+      "title": "T-853 port: deploy-website -> deploy website",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-858"
+    },
+    {
+      "id": "T-859",
+      "title": "T-853 port: manual-test -> mod manual-test",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-859"
+    },
+    {
+      "id": "T-860",
+      "title": "T-853 port: mcp-call -> mcp call",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-860"
+    },
+    {
+      "id": "T-861",
+      "title": "T-853 port: setup-server-profile -> setup server-profile",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-861"
+    },
+    {
+      "id": "T-862",
+      "title": "T-853 port: fetch-vanilla-source -> fetch vanilla-source",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-862"
+    },
+    {
+      "id": "T-863",
+      "title": "T-853 port: tbd-dev-bootstrap -> mod dev-bootstrap",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-863"
+    },
+    {
+      "id": "T-864",
+      "title": "T-853 port: test-mission -> mod test-mission",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-864"
+    },
+    {
+      "id": "T-865",
+      "title": "T-853 port: mcp-call-selftest -> mcp selftest",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-865"
+    },
+    {
+      "id": "T-866",
+      "title": "T-853 port: fetch-vanilla-api -> fetch vanilla-api",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-866"
+    },
+    {
+      "id": "T-867",
+      "title": "T-853 port: mission-version-upload-repro -> repro mission-upload",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-867"
+    },
+    {
+      "id": "T-868",
+      "title": "T-853 port: debug-direct-join -> debug direct-join",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-868"
+    },
+    {
+      "id": "T-869",
+      "title": "T-853 port: export-terrain -> map export-terrain",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-869"
+    },
+    {
+      "id": "T-870",
+      "title": "T-853 port: bootstrap-staging-server -> mod bootstrap-staging",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-870"
+    },
+    {
+      "id": "T-871",
+      "title": "T-853 port: run-dev-server -> mod dev-server",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-871"
+    },
+    {
+      "id": "T-872",
+      "title": "T-853 port: seed-milestone-announcement -> mod seed-announcement",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-872"
+    },
+    {
+      "id": "T-873",
+      "title": "T-853 port: tbd-spawn-verify -> mod spawn-verify",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-873"
+    },
+    {
+      "id": "T-874",
+      "title": "T-853 port: test-phase1-api -> mod test-phase1-api",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-874"
+    },
+    {
+      "id": "T-875",
+      "title": "T-853 port: setup-workbench-linux -> setup workbench",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-875"
+    },
+    {
+      "id": "T-876",
+      "title": "T-853 port: setup-mcp-game-root -> setup mcp-game-root",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-876"
+    },
+    {
+      "id": "T-877",
+      "title": "T-853 port: mcp-smoke -> mcp smoke",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-877"
+    },
+    {
+      "id": "T-878",
+      "title": "T-853 port: setup-client-addons -> setup client-addons",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-878"
+    },
+    {
+      "id": "T-879",
+      "title": "T-853 delete: mod/lib shims",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-879"
+    },
+    {
+      "id": "T-880",
+      "title": "T-853 delete: gate-grep",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-880"
     }
   ]
 }

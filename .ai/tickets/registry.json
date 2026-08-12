@@ -1,5 +1,5 @@
 {
-  "next_id": 854,
+  "next_id": 881,
   "tickets": [
     {
       "id": "T-001",
@@ -20890,6 +20890,573 @@
       ],
       "status": "idea",
       "notes": "PREREQUISITE (Phase 0). The agent container is debian:12 / glibc 2.36 with NO C toolchain, so cargo cannot build in-container at all and scripts/lib/hostrun.sh bridges every cargo invocation to the host via distrobox-host-exec. build-essential was installed into the running container on 2026-08-12, but the image belongs to the Claude Desktop app and NOT to this repo, so the install does not survive a container rebuild. It must be baked into the image before Phase 7: hard-zero deletes hostrun.sh, and a fresh container would then have neither a toolchain nor a bridge. In-container builds must use CARGO_TARGET_DIR=<root>/target-container -- two glibcs building into one target dir thrash fingerprints against the shared warm target (T-253/T-322). SCOPE NOTE: 'has no Makefile target' is NOT a test for a dead gate. T-462 wired verify-t437, verify-t439 and verify-t444 into wave.sh gate_slice and cmd_gate instead; grep wave.sh before proposing any deletion."
+    },
+    {
+      "id": "T-854",
+      "title": "T-853 port: verify-t437-destroy-inert-diagnostics -> verify t437",
+      "summary": "T-853 shell->xtask slice. Port scripts/mod/verify-t437-destroy-inert-diagnostics.sh (433 lines) to `cargo xtask verify t437` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). T-437 destroy-inert registry diagnostics; wave.sh x2; 7 python3 call sites. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "order": 5350
+    },
+    {
+      "id": "T-855",
+      "title": "T-853 port: remote-log-grep -> mod remote-logs",
+      "summary": "T-853 shell->xtask slice. Port scripts/mod/remote-log-grep.sh (418 lines) to `cargo xtask mod remote-logs` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). remote server log search over ssh. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "order": 5360
+    },
+    {
+      "id": "T-856",
+      "title": "T-853 port: tbd-spawn-determinism -> mod spawn-determinism",
+      "summary": "T-853 shell->xtask slice. Port scripts/mod/tbd-spawn-determinism.sh (354 lines) to `cargo xtask mod spawn-determinism` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). spawn determinism harness; make target. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "order": 5370
+    },
+    {
+      "id": "T-857",
+      "title": "T-853 port: mcp-wb-logs -> mcp wb-logs",
+      "summary": "T-853 shell->xtask slice. Port scripts/mod/mcp-wb-logs.sh (320 lines) to `cargo xtask mcp wb-logs` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). Workbench MCP log tail/scan. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "order": 5380
+    },
+    {
+      "id": "T-858",
+      "title": "T-853 port: deploy-website -> deploy website",
+      "summary": "T-853 shell->xtask slice. Port scripts/deploy/deploy-website.sh (247 lines) to `cargo xtask deploy website` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). website deploy driver. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "order": 5390
+    },
+    {
+      "id": "T-859",
+      "title": "T-853 port: manual-test -> mod manual-test",
+      "summary": "T-853 shell->xtask slice. Port scripts/mod/manual-test.sh (230 lines) to `cargo xtask mod manual-test` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). manual mod test suite. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "order": 5400
+    },
+    {
+      "id": "T-860",
+      "title": "T-853 port: mcp-call -> mcp call",
+      "summary": "T-853 shell->xtask slice. Port scripts/mod/mcp-call.sh (130 lines) to `cargo xtask mcp call` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). JSON-RPC wrapper over the enfusion-mcp socket. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "order": 5410
+    },
+    {
+      "id": "T-861",
+      "title": "T-853 port: setup-server-profile -> setup server-profile",
+      "summary": "T-853 shell->xtask slice. Port scripts/mod/setup-server-profile.sh (113 lines) to `cargo xtask setup server-profile` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). dedicated-server profile generation. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "order": 5420
+    },
+    {
+      "id": "T-862",
+      "title": "T-853 port: fetch-vanilla-source -> fetch vanilla-source",
+      "summary": "T-853 shell->xtask slice. Port scripts/mod/fetch-vanilla-source.sh (103 lines) to `cargo xtask fetch vanilla-source` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). mirror vanilla Enfusion sources. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "order": 5430
+    },
+    {
+      "id": "T-863",
+      "title": "T-853 port: tbd-dev-bootstrap -> mod dev-bootstrap",
+      "summary": "T-853 shell->xtask slice. Port scripts/mod/tbd-dev-bootstrap.sh (86 lines) to `cargo xtask mod dev-bootstrap` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). dev environment bootstrap. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "order": 5440
+    },
+    {
+      "id": "T-864",
+      "title": "T-853 port: test-mission -> mod test-mission",
+      "summary": "T-853 shell->xtask slice. Port scripts/mod/test-mission.sh (86 lines) to `cargo xtask mod test-mission` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). golden-mission id extraction + run; 4 python3 sites. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "order": 5450
+    },
+    {
+      "id": "T-865",
+      "title": "T-853 port: mcp-call-selftest -> mcp selftest",
+      "summary": "T-853 shell->xtask slice. Port scripts/mod/mcp-call-selftest.sh (73 lines) to `cargo xtask mcp selftest` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). mcp-call selftest; make target. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "order": 5460
+    },
+    {
+      "id": "T-866",
+      "title": "T-853 port: fetch-vanilla-api -> fetch vanilla-api",
+      "summary": "T-853 shell->xtask slice. Port scripts/mod/fetch-vanilla-api.sh (70 lines) to `cargo xtask fetch vanilla-api` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). vanilla API doc fetch; make target. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "order": 5470
+    },
+    {
+      "id": "T-867",
+      "title": "T-853 port: mission-version-upload-repro -> repro mission-upload",
+      "summary": "T-853 shell->xtask slice. Port scripts/website/mission-version-upload-repro.sh (62 lines) to `cargo xtask repro mission-upload` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). already has an xtask twin in repro.rs - confirm then delete. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "order": 5480
+    },
+    {
+      "id": "T-868",
+      "title": "T-853 port: debug-direct-join -> debug direct-join",
+      "summary": "T-853 shell->xtask slice. Port scripts/mod/debug-direct-join.sh (61 lines) to `cargo xtask debug direct-join` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). direct-join debug helper; xtask debug already exists. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "order": 5490
+    },
+    {
+      "id": "T-869",
+      "title": "T-853 port: export-terrain -> map export-terrain",
+      "summary": "T-853 shell->xtask slice. Port scripts/map-assets/export-terrain.sh (60 lines) to `cargo xtask map export-terrain` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). terrain export orchestrator; make map-export. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "order": 5500
+    },
+    {
+      "id": "T-870",
+      "title": "T-853 port: bootstrap-staging-server -> mod bootstrap-staging",
+      "summary": "T-853 shell->xtask slice. Port scripts/mod/bootstrap-staging-server.sh (55 lines) to `cargo xtask mod bootstrap-staging` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). staging server bootstrap. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "order": 5510
+    },
+    {
+      "id": "T-871",
+      "title": "T-853 port: run-dev-server -> mod dev-server",
+      "summary": "T-853 shell->xtask slice. Port scripts/mod/run-dev-server.sh (50 lines) to `cargo xtask mod dev-server` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). thin dev server wrapper. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "order": 5520
+    },
+    {
+      "id": "T-872",
+      "title": "T-853 port: seed-milestone-announcement -> mod seed-announcement",
+      "summary": "T-853 shell->xtask slice. Port scripts/mod/seed-milestone-announcement.sh (37 lines) to `cargo xtask mod seed-announcement` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). milestone announcement seeding. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "order": 5530
+    },
+    {
+      "id": "T-873",
+      "title": "T-853 port: tbd-spawn-verify -> mod spawn-verify",
+      "summary": "T-853 shell->xtask slice. Port scripts/mod/tbd-spawn-verify.sh (32 lines) to `cargo xtask mod spawn-verify` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). spawn verification helper. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "order": 5540
+    },
+    {
+      "id": "T-874",
+      "title": "T-853 port: test-phase1-api -> mod test-phase1-api",
+      "summary": "T-853 shell->xtask slice. Port scripts/mod/test-phase1-api.sh (31 lines) to `cargo xtask mod test-phase1-api` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). phase-1 API smoke. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "order": 5550
+    },
+    {
+      "id": "T-875",
+      "title": "T-853 port: setup-workbench-linux -> setup workbench",
+      "summary": "T-853 shell->xtask slice. Port scripts/mod/setup-workbench-linux.sh (28 lines) to `cargo xtask setup workbench` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). Workbench linux setup. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "order": 5560
+    },
+    {
+      "id": "T-876",
+      "title": "T-853 port: setup-mcp-game-root -> setup mcp-game-root",
+      "summary": "T-853 shell->xtask slice. Port scripts/mod/setup-mcp-game-root.sh (27 lines) to `cargo xtask setup mcp-game-root` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). MCP game root symlink setup. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "order": 5570
+    },
+    {
+      "id": "T-877",
+      "title": "T-853 port: mcp-smoke -> mcp smoke",
+      "summary": "T-853 shell->xtask slice. Port scripts/mod/mcp-smoke.sh (24 lines) to `cargo xtask mcp smoke` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). mcp smoke test; make target. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "order": 5580
+    },
+    {
+      "id": "T-878",
+      "title": "T-853 port: setup-client-addons -> setup client-addons",
+      "summary": "T-853 shell->xtask slice. Port scripts/mod/setup-client-addons.sh (23 lines) to `cargo xtask setup client-addons` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). client addon symlink setup. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "order": 5590
+    },
+    {
+      "id": "T-879",
+      "title": "T-853 delete: mod/lib shims",
+      "summary": "T-853 shell->xtask slice. Port scripts/mod/lib/paths.sh;scripts/mod/lib/mcpd-bin.sh;scripts/mod/lib/xtask-run.sh (27 lines) to `cargo xtask (pure delete)` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). three shims the xtask launcher does natively - delete, do not port. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "order": 5600
+    },
+    {
+      "id": "T-880",
+      "title": "T-853 delete: gate-grep",
+      "summary": "T-853 shell->xtask slice. Port scripts/mod/lib/gate-grep.sh (221 lines) to `cargo xtask (pure delete)` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). LAST: delete only once no .sh sources it; crates/tbd-gate replaced it. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "order": 5610
     }
   ]
 }
