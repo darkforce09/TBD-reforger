@@ -100,10 +100,6 @@ jobs:
           else
             echo "dedicated server: $bin"
           fi
-          if ! command -v python3 >/dev/null 2>&1; then
-            echo "::error title=mod-gates runner not provisioned::python3 not on PATH — compile.sh still shells out to it."
-            fail=1
-          fi
           if [ ! -s apps/mod/tbd-framework/resourceDatabase.rdb ]; then
             echo "::error title=mod-gates checkout incomplete::apps/mod/tbd-framework/resourceDatabase.rdb missing or empty. Without it the engine skips the loose addon and compiles none of the mod."
             fail=1

@@ -13,7 +13,7 @@
 //! - `land` dirty refuse uses `git -C "$BASE/$s"` (raw slice id), while `tree_state`
 //!   uses `parent_slice` — sub-slice path mismatch preserved.
 //! - Non-git dir under BASE that exists → `committed` (empty porcelain + `2>/dev/null`).
-//! - Status ACTION lines still name `bash scripts/mod/wave.sh` (byte parity).
+//! - Status ACTION lines name `cargo run -q -p xtask -- mod wave …` (post-shell port).
 //! - Push bypasses pre-push with `--no-verify` only when no `packages/map-assets/` paths.
 
 use std::fs;
@@ -39,13 +39,13 @@ const UNKNOWN_HELP: &str = r###"# Wave lifecycle automation — the programmatic
 # The wave cycle (dispatch 3 → merge → reap → verify → next 3) must not depend on any session
 # remembering where it was. This script reads docs/mod/wave_plan.tsv and the live git/worktree
 # state and derives the answer, so a fresh session — or one resuming after a context compaction —
-# runs `wave.sh status` and knows exactly what to do next.
+# runs `cargo run -q -p xtask -- mod wave status` and knows exactly what to do next.
 #
-#   bash scripts/mod/wave.sh status     # where are we? what is blocking?
-#   bash scripts/mod/wave.sh gate       # run every verification gate (the wave gate)
-#   bash scripts/mod/wave.sh land       # merge all complete slices, reap trees, run the gate
-#   bash scripts/mod/wave.sh prep N     # create worktrees for wave N
-#   bash scripts/mod/wave.sh push       # push main to GitHub (refuses to skip a real LFS push)
+#   cargo run -q -p xtask -- mod wave status     # where are we? what is blocking?
+#   cargo run -q -p xtask -- mod wave gate       # run every verification gate (the wave gate)
+#   cargo run -q -p xtask -- mod wave land       # merge all complete slices, reap trees, run the gate
+#   cargo run -q -p xtask -- mod wave prep N     # create worktrees for wave N
+#   cargo run -q -p xtask -- mod wave push       # push main to GitHub (refuses to skip a real LFS push)
 #
 # `land` is deliberately conservative: it REFUSES to merge a worktree with uncommitted changes,
 # and it runs the full gate AFTER merging so a bad slice is caught on main immediately.
@@ -289,7 +289,7 @@ fn cmd_status(root: &Path) -> u8 {
         } else if st == TreeState::Dirty {
             "DIRTY — agent must commit in its worktree".to_string()
         } else {
-            format!("no worktree — run: wave.sh prep {w}")
+            format!("no worktree — run: cargo run -q -p xtask -- mod wave prep {w}")
         };
         println!("  {:<12} {:<9} {}", s, st.as_str(), mark);
         println!("               {}", slice_title(root, &s));
@@ -297,7 +297,7 @@ fn cmd_status(root: &Path) -> u8 {
     println!();
     println!("ready to merge: {ready}/{total}");
     if ready == total && total > 0 {
-        println!("ACTION: bash scripts/mod/wave.sh land");
+        println!("ACTION: cargo run -q -p xtask -- mod wave land");
     } else {
         println!("ACTION: wait for slice agents, then re-run status");
     }
@@ -498,7 +498,7 @@ fn cmd_land(root: &Path) -> u8 {
     if cmd_gate(root) != 0 {
         println!();
         eprintln!(
-            "Gate FAILED after merge. Worktrees kept for inspection. Fix on main, re-run: wave.sh gate"
+            "Gate FAILED after merge. Worktrees kept for inspection. Fix on main, re-run: cargo run -q -p xtask -- mod wave gate"
         );
         return 1;
     }
