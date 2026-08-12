@@ -22,6 +22,7 @@ mod gate_mcp_call_selftest;
 mod gate_mcp_smoke;
 mod gate_mcp_wb_logs;
 mod gate_mission_version_upload_repro;
+mod gate_no_python;
 mod gate_remote_log_grep;
 mod gate_route_tags;
 mod gate_run_dev_server;
@@ -354,6 +355,9 @@ enum VerifyCmd {
     /// T-440: faction library seed reaches the DB
     #[command(name = "t440")]
     T440,
+    /// T-162/T-620 LANG-2: zero .py + ratcheted python3 invocations (port of verify-no-python.sh)
+    #[command(name = "no-python")]
+    NoPython,
 }
 
 #[derive(Subcommand, Debug)]
@@ -852,6 +856,7 @@ fn run() -> Result<u8> {
                 VerifyCmd::T437 => gate_t437::verify_t437(&find_repo_root()?)?,
                 VerifyCmd::T438 => gate_t438::verify_t438(&find_repo_root()?)?,
                 VerifyCmd::T440 => gate_t440::verify_t440(&find_repo_root()?)?,
+                VerifyCmd::NoPython => gate_no_python::verify_no_python()?,
             };
             Ok(code)
         }

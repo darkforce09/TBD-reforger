@@ -46,4 +46,3 @@ scripts/mod/wave.sh
 scripts/mod/world-boot.sh
 scripts/platform/preflight.sh
 scripts/platform/wave.sh
-scripts/verify-no-python.sh
