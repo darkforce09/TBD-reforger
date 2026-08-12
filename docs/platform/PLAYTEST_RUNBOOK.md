@@ -257,9 +257,9 @@ legal: everybody falls to round-robin seating, and the lobby picker still works.
 **Why there was no script (the original text, now fixed).** The two that looked like they would
 start a server, did not:
 
-- [`scripts/mod/run-dev-server.sh`](../../scripts/mod/run-dev-server.sh) was **27 lines and never
-  launched anything** — two preflight checks, then it ended. It is now a shim that execs
-  `run-playtest-server.sh` or exits 2 with a pointer; it can no longer look like it worked.
+- `scripts/mod/run-dev-server.sh` was **27 lines and never launched anything** — two preflight
+  checks, then it ended. T-871 replaced the later shim with `cargo xtask mod dev-server`
+  (execs `run-playtest-server.sh`, or exits 2 with a pointer / 3 if the launcher is missing).
 - [`scripts/mod/deploy-staging.sh:1153`](../../scripts/mod/deploy-staging.sh) builds the `config`-mode
   ExecStart **without `-addonsDir`**, so the local addon in `game.mods[]` is not what loads — the
   stale Workshop copy is. Its `addons`-mode branch at `:1155` does pass `-addonsDir`, but with
@@ -1208,8 +1208,9 @@ a stop, but you would rather know which players are short before they are standi
 
 **Server side: closed by T-604.** [`scripts/mod/run-playtest-server.sh`](../../scripts/mod/run-playtest-server.sh)
 starts a joinable, mod-loaded, admin-capable server in one command, and refuses to report success
-unless the room registered *and* your checkout is the copy that loaded. `run-dev-server.sh` is now
-a shim that execs it. `deploy-staging.sh`'s two branches are both still wrong at
+unless the room registered *and* your checkout is the copy that loaded. The old
+`run-dev-server.sh` shim is now `cargo xtask mod dev-server` (T-871). `deploy-staging.sh`'s two
+branches are both still wrong at
 [`:1153`](../../scripts/mod/deploy-staging.sh) / [`:1155`](../../scripts/mod/deploy-staging.sh) —
 T-604 did not touch that file.
 
