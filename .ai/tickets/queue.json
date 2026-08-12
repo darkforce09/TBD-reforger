@@ -18,6 +18,48 @@
       "status": "ready",
       "spec": "docs/platform/t853_shell_to_xtask_waves.md",
       "branch": "ticket/T-898"
+    },
+    {
+      "id": "T-899",
+      "title": "T-853 Phase 1.5: make verify file-length actually scan something",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-899"
+    },
+    {
+      "id": "T-900",
+      "title": "T-853 Phase 4: retire doc references to things that no longer exist",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-900"
+    },
+    {
+      "id": "T-901",
+      "title": "T-853 Phase 7a: gate the CI run: blocks before bash relocates there",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-901"
+    },
+    {
+      "id": "T-902",
+      "title": "T-853 Phase 6: retire wave.sh \u2014 the verdict diff, then the deletion",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-902"
+    },
+    {
+      "id": "T-903",
+      "title": "T-853 Phase 6: delete hostrun.sh \u2014 it dies with wave.sh",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-903"
+    },
+    {
+      "id": "T-904",
+      "title": "T-853 Phase 7b: flip the ratchet to a HARD ZERO",
+      "status": "ready",
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
+      "branch": "ticket/T-904"
     }
   ]
 }

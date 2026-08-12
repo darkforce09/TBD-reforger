@@ -1,5 +1,5 @@
 {
-  "next_id": 899,
+  "next_id": 905,
   "tickets": [
     {
       "id": "T-001",
@@ -21838,6 +21838,132 @@
       "stream": "infra",
       "parallel_ok": false,
       "order": 5780,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md"
+    },
+    {
+      "id": "T-899",
+      "title": "T-853 Phase 1.5: make verify file-length actually scan something",
+      "summary": "T-898 is the finding; this is the fix. Extend the walk from `apps/website` + .go/.ts/.tsx (zero files) to the Rust tree: xtask/, tools/, crates/, apps/website/*/src, keeping `.rs`. Fix the `.unwrap_or(0)` fail-open at node_free.rs:89 while you are in there. MEASURE FIRST: this turns main RED on at least schema_gates.rs 4044, cmds.rs 1330, smokes.rs 3852 and main.rs (>1000 after Phase 3). The slice is EITHER split those OR give each an allowlist entry with a real reason and an expiry. Do NOT extend the walk and then silence it \u2014 that reproduces the defect with extra steps. Prove it bites: plant a 1200-line file and watch it fail. ACCEPTANCE: prove the change BITES \u2014 perturb the new subject and watch it go red \u2014 not merely that it passes. A green run alone is not evidence (T-556). Finish with a full `cargo xtask platform wave gate` PASS: it is the only check that sees cross-crate breakage, and it has caught defects a green `cargo test -p xtask` could not. Spec: docs/platform/t853_shell_to_xtask_waves.md",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "order": 5790,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md"
+    },
+    {
+      "id": "T-900",
+      "title": "T-853 Phase 4: retire doc references to things that no longer exist",
+      "summary": "The Makefile sweep rewrote 137 live docs but did not catch references to tools deleted EARLIER. Example found 2026-08-13: apps/mod/README.md:64 says `make web  # Vite dev server on :5173` \u2014 the React app was deleted at T-159.29.3 and Vite with it. Sweep for references to: make targets, the React/Vite app, `scripts/*.sh` paths (only wave.sh and hostrun.sh remain), and `node`/`npm` outside the enfusion-mcp floor. Rewrite LIVE docs only. Do NOT touch the historical record: SHIPPED_HISTORY, generated TICKET_*.md, registry.json ticket prose, .ai/artifacts/** incl. every verify-log, wave_plan.tsv, applied migrations, and the byte-for-byte port narratives in xtask/src/mk_*.rs. Those describe what was true then. ACCEPTANCE: prove the change BITES \u2014 perturb the new subject and watch it go red \u2014 not merely that it passes. A green run alone is not evidence (T-556). Finish with a full `cargo xtask platform wave gate` PASS: it is the only check that sees cross-crate breakage, and it has caught defects a green `cargo test -p xtask` could not. Spec: docs/platform/t853_shell_to_xtask_waves.md",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "order": 5800,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md"
+    },
+    {
+      "id": "T-901",
+      "title": "T-853 Phase 7a: gate the CI run: blocks before bash relocates there",
+      "summary": "Bash does not need a .sh file to survive \u2014 with the Makefile gone, the remaining hiding place is the 39 `run:` blocks in .github/workflows/. Add `cargo xtask verify ci-shell`. Parse the YAML PROPERLY (serde_yaml/serde_norway) \u2014 do not regex YAML. Each `run:` passes iff every logical line is `cargo xtask <args>` or one of a SHORT in-Rust allowlist of genuine pre-cargo setup (rustup target/component add, pinned cargo install, git lfs pull, docker/podman compose). FAIL on: if/for/while/case, &&, ||, ;, |, backticks, $(, redirection, set -, >3 logical lines, heredocs, a `shell:` key naming bash/sh/python, or a `run:` on a step that also has `uses:`. Pin the `uses:` allowlist too so the ban cannot be routed around via a composite action. Rationale to record in the module doc: the ban is not on bash the language, it is on logic that no type checker and no local replay can see. Expect existing multi-line run: blocks to fail \u2014 port them, that is the point. ACCEPTANCE: prove the change BITES \u2014 perturb the new subject and watch it go red \u2014 not merely that it passes. A green run alone is not evidence (T-556). Finish with a full `cargo xtask platform wave gate` PASS: it is the only check that sees cross-crate breakage, and it has caught defects a green `cargo test -p xtask` could not. Spec: docs/platform/t853_shell_to_xtask_waves.md",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "order": 5810,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md"
+    },
+    {
+      "id": "T-902",
+      "title": "T-853 Phase 6: retire wave.sh \u2014 the verdict diff, then the deletion",
+      "summary": "wave.sh is ported and waves 231-232 already ran END TO END under the Rust driver (prep, three parallel slices, per-slice land with two hand-resolved conflicts, full gate, close, push). What has NOT been done is a side-by-side bash-vs-Rust verdict comparison on a real wave. Do that: run `cargo xtask platform wave diff all` (31 arms) plus `diff base` (proves base derivation identical over ALL ~2760 commits), and run one real wave's gate under BOTH drivers, diffing normalised output. Only then delete scripts/platform/wave.sh and its inventory lines (shell AND python \u2014 it is the last python3 entry). Repoint every caller; `git grep -n 'wave\\.sh'` must return only historical records afterwards. ACCEPTANCE: prove the change BITES \u2014 perturb the new subject and watch it go red \u2014 not merely that it passes. A green run alone is not evidence (T-556). Finish with a full `cargo xtask platform wave gate` PASS: it is the only check that sees cross-crate breakage, and it has caught defects a green `cargo test -p xtask` could not. Spec: docs/platform/t853_shell_to_xtask_waves.md",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": false,
+      "order": 5820,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md"
+    },
+    {
+      "id": "T-903",
+      "title": "T-853 Phase 6: delete hostrun.sh \u2014 it dies with wave.sh",
+      "summary": "hostrun.sh's last consumer is scripts/platform/wave.sh. Its Rust successor xtask/src/hostrun.rs already exists, is shared with playtest_server, and has a live test proving the bridge crosses the container wall (glibc 2.36 in-container vs 2.43 on the host). Delete the script and its inventory line ONLY after wave.sh is gone \u2014 order matters, and BLOCKED ON the wave.sh slice in this wave. This is the last tracked shell file in the repository. ACCEPTANCE: prove the change BITES \u2014 perturb the new subject and watch it go red \u2014 not merely that it passes. A green run alone is not evidence (T-556). Finish with a full `cargo xtask platform wave gate` PASS: it is the only check that sees cross-crate breakage, and it has caught defects a green `cargo test -p xtask` could not. Spec: docs/platform/t853_shell_to_xtask_waves.md",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": false,
+      "order": 5830,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md"
+    },
+    {
+      "id": "T-904",
+      "title": "T-853 Phase 7b: flip the ratchet to a HARD ZERO",
+      "summary": "The finale. Rewrite shell_free.rs from an allowlist ratchet into one TrackedLanguageBan table and DELETE scripts/shell-inventory.txt and scripts/python-inventory.txt entirely. Keep the good parts: the parsed-shebang detector (which correctly ignores Rust `#![allow(...)]`) and the fail-closed handling of an unreadable tracked path. Ban `*.sh|bash|zsh|ksh|fish|bat|ps1|py|mjs|cjs`, plus `Makefile`/`GNUmakefile`/`*.mk` so the deleted Makefile cannot return. ONE gate, so a future escape does not need a new gate written for it. Keep the apps/mod/** Enfusion exemption explicit and narrow. Also fold LANG-2 in: zero tracked .py AND zero python3 in command position. Prove it bites four ways: plant a .sh, plant an extensionless file with a bash shebang, plant a Makefile, and confirm a Rust file opening with `#![allow(...)]` does NOT trip it. Then rewrite CODING_STANDARDS \u00a71.1 LANG-1/2/3 \u2014 they are ratchets today and become bans. ACCEPTANCE: prove the change BITES \u2014 perturb the new subject and watch it go red \u2014 not merely that it passes. A green run alone is not evidence (T-556). Finish with a full `cargo xtask platform wave gate` PASS: it is the only check that sees cross-crate breakage, and it has caught defects a green `cargo test -p xtask` could not. Spec: docs/platform/t853_shell_to_xtask_waves.md",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": false,
+      "order": 5840,
       "spec": "docs/platform/t853_shell_to_xtask_waves.md"
     }
   ]
