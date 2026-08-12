@@ -37,7 +37,7 @@ one greenfield Enfusion mod runs them all, and the web stack handles auth, event
 # Prereq: Steam app 1874900 (Arma Reforger Server stable), API on :8080, Postgres for website
 # From monorepo root:
 cargo xtask setup server-profile      # default: apps/mod/.local-test-profile/
-bash scripts/mod/run-dev-server.sh            # -server + -addons (local mod)
+cargo xtask mod dev-server                    # -server + -addons (local mod)
 ```
 
 Watch logs for `[TBD][Mission] loaded id=…`, 18× `[TBD][Slots] Slot-…`, then — once a client
@@ -97,7 +97,7 @@ bash scripts/mod/test-phase1-api.sh
 | [`remote-log-grep.sh`](../../scripts/mod/remote-log-grep.sh) | SSH log verify on staging server |
 | `cargo xtask mod bootstrap-staging` | One-time SSH discovery + mkdir |
 | `cargo xtask setup server-profile` | Dedicated server profile + mission fallback |
-| [`run-dev-server.sh`](../../scripts/mod/run-dev-server.sh) | Local dedicated server launcher |
+| `cargo xtask mod dev-server` | Local dedicated server launcher |
 
 ---
 

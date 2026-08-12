@@ -70,7 +70,7 @@ bash scripts/mod/tbd-spawn-verify.sh
 
 ```bash
 cargo xtask setup server-profile     # default profile: apps/mod/.local-test-profile/
-bash scripts/mod/run-dev-server.sh
+cargo xtask mod dev-server
 ```
 
 Prereqs: Steam app **1890870** (Arma Reforger Server), website API on `:8080`.
