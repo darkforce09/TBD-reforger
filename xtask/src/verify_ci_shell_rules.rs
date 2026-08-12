@@ -23,8 +23,8 @@ pub fn logical_lines(script: &str) -> Vec<String> {
     let mut buf = String::new();
     for raw in script.lines() {
         let line = raw.trim_end();
-        if line.ends_with('\\') {
-            buf.push_str(line[..line.len() - 1].trim_end());
+        if let Some(without) = line.strip_suffix('\\') {
+            buf.push_str(without.trim_end());
             buf.push(' ');
             continue;
         }
@@ -68,17 +68,13 @@ pub fn uses_reason(uses: &str) -> Option<String> {
 
 pub fn shell_reason(shell: &str) -> Option<String> {
     let first = shell
-        .trim()
         .split_whitespace()
         .next()
         .unwrap_or("")
         .rsplit('/')
         .next()
         .unwrap_or("");
-    let base = first
-        .split(|c| c == '{' || c == '(')
-        .next()
-        .unwrap_or(first);
+    let base = first.split(['{', '(']).next().unwrap_or(first);
     match base {
         "bash" | "sh" | "python" | "python2" | "python3" => {
             Some(format!("shell: `{shell}` names bash/sh/python"))
