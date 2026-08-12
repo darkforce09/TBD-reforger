@@ -1,5 +1,5 @@
 {
-  "next_id": 893,
+  "next_id": 898,
   "tickets": [
     {
       "id": "T-001",
@@ -21730,6 +21730,90 @@
       ],
       "executor": "claude-code",
       "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md"
+    },
+    {
+      "id": "T-894",
+      "title": "T-853 Phase 3: Makefile db lane -> xtask",
+      "summary": "T-853 Phase 3. Absorb these Makefile targets into xtask: db-up db-down db-logs seed db-backup db-backup-drill db-backup-verify db-restore registry-import rust-test-it. The podman/compose lifecycle, the seed appliers, and rust-test-it's `while read -r db` loop over psql output that reaps per-binary rust_it_<suite>_it databases (Makefile:209-212) - the one piece of genuinely non-trivial shell left in the file. Each slice ADDS xtask subcommands in its own new module and does NOT edit the Makefile - the deletion is one final slice, so the three build slices stay file-disjoint. ACCEPTANCE: for every target, `make <t>` and the new `cargo xtask ...` must produce byte-identical stdout+stderr+rc on a clean tree AND on a deliberately broken one; the harness must assert the make side went red before believing a diff (T-556). Spec: docs/platform/t853_shell_to_xtask_waves.md",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "order": 5740,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md"
+    },
+    {
+      "id": "T-895",
+      "title": "T-853 Phase 3: Makefile build lane -> xtask",
+      "summary": "T-853 Phase 3. Absorb these Makefile targets into xtask: rust-api rust-build rust-test rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci leptos leptos-debug leptos-build leptos-gates ci-local-leptos verify-cargo-target print-cargo-target-dir reclaim-target-ci. verify-cargo-target (21 recipe lines) greps the Makefile for its OWN pin - that self-reference must move with it or the check evaporates. CARGO_TARGET_DIR is derived from `git rev-parse --path-format=absolute --git-common-dir` (Makefile:16) so every linked worktree shares the PRIMARY warm target; a .cargo/config.toml [env] relative=true would resolve per-worktree and silently reverse T-253/T-322. Each slice ADDS xtask subcommands in its own new module and does NOT edit the Makefile - the deletion is one final slice, so the three build slices stay file-disjoint. ACCEPTANCE: for every target, `make <t>` and the new `cargo xtask ...` must produce byte-identical stdout+stderr+rc on a clean tree AND on a deliberately broken one; the harness must assert the make side went red before believing a diff (T-556). Spec: docs/platform/t853_shell_to_xtask_waves.md",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "order": 5750,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md"
+    },
+    {
+      "id": "T-896",
+      "title": "T-853 Phase 3: Makefile ci lane -> xtask",
+      "summary": "T-853 Phase 3. Absorb these Makefile targets into xtask: ci-local ci-local-schema schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig map-water-everon map-cartographic-everon map-cartographic-verify lfs-dem lfs-sat help test build. The composites become Rust functions composed from the same leaf functions, which makes a hollow composite (the T-489 `@true` defect) structurally impossible. `make help` has no successor yet - `xtask help` must list the task groups or the Makefile deletion costs discoverability. Each slice ADDS xtask subcommands in its own new module and does NOT edit the Makefile - the deletion is one final slice, so the three build slices stay file-disjoint. ACCEPTANCE: for every target, `make <t>` and the new `cargo xtask ...` must produce byte-identical stdout+stderr+rc on a clean tree AND on a deliberately broken one; the harness must assert the make side went red before believing a diff (T-556). Spec: docs/platform/t853_shell_to_xtask_waves.md",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "order": 5760,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md"
+    },
+    {
+      "id": "T-897",
+      "title": "T-853 Phase 3: delete the Makefile",
+      "summary": "T-853 Phase 3. Absorb these Makefile targets into xtask: (delete the Makefile; repoint 12 CI run: steps and the live docs). LAST. Deleting the Makefile silently NARROWS two gates unless they move in the same commit: node_free.rs:290 scans it with `let Ok(text) = read_to_string else { return }` (fail-open), and wave.sh:1598-1628 parses its schema-validate recipe to cross-check GATE_SCHEMA_VALIDATE_GATES. Ship `xtask schema list-gates` first. Each slice ADDS xtask subcommands in its own new module and does NOT edit the Makefile - the deletion is one final slice, so the three build slices stay file-disjoint. ACCEPTANCE: for every target, `make <t>` and the new `cargo xtask ...` must produce byte-identical stdout+stderr+rc on a clean tree AND on a deliberately broken one; the harness must assert the make side went red before believing a diff (T-556). Spec: docs/platform/t853_shell_to_xtask_waves.md",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "ready",
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": false,
+      "order": 5770,
       "spec": "docs/platform/t853_shell_to_xtask_waves.md"
     }
   ]

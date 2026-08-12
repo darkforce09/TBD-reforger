@@ -668,3 +668,7 @@
 230	T-891	T-853 port: Enfusion compile gate	scripts/mod/compile.sh
 230	T-892	T-853 port: headless game-mode boot validation	scripts/mod/world-boot.sh
 0	T-893	T-853 wave 228: commit bash↔port RED-arm harness for deploy db ports	xtask/src/deploy_db_common.rs;xtask/src/deploy_db_backup.rs;xtask/src/deploy_db_restore.rs
+231	T-894	T-853 Phase 3: Makefile db lane -> xtask	xtask/src/mk_db.rs
+231	T-895	T-853 Phase 3: Makefile build lane -> xtask	xtask/src/mk_build.rs
+231	T-896	T-853 Phase 3: Makefile ci lane -> xtask	xtask/src/mk_ci.rs
+232	T-897	T-853 Phase 3: delete the Makefile	Makefile

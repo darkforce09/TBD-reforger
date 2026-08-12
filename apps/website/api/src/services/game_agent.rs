@@ -192,7 +192,17 @@ mod tests {
 
     /// The renderer that owns the other end of this protocol. Pinning against the real file
     /// (not a copy) is what makes the dwell relationship below a live constraint.
-    const DEPLOY_STAGING_SH: &str = include_str!("../../../../../scripts/mod/deploy-staging.sh");
+    ///
+    /// T-853 REPOINTED THIS. It was `scripts/mod/deploy-staging.sh`, which is now
+    /// `cargo xtask deploy staging`; the agent template moved to
+    /// `xtask/src/deploy_staging/agent.rs`. This is an `include_str!`, so it is a COMPILE-TIME
+    /// dependency across a crate boundary — deleting the script broke `website-api`, which no
+    /// `cargo test -p xtask` would ever have caught. The wave gate did, on `clippy api`.
+    ///
+    /// It is not a cargo dependency (website-api does not depend on xtask), which is the point:
+    /// the pin exists precisely because the two sides are otherwise unconnected.
+    const DEPLOY_STAGING_SH: &str =
+        include_str!("../../../../../xtask/src/deploy_staging/agent.rs");
 
     #[test]
     fn verbs_are_the_agents_four_literals() {
@@ -217,10 +227,15 @@ mod tests {
     /// started reading as `unreachable` — a check that looked at the wrong thing.
     #[test]
     fn timeout_must_exceed_the_agents_dwell() {
-        let marker = "TBD_AGENT_DWELL_S:=";
+        // T-853: the bash declared the default twice — `: "${TBD_AGENT_DWELL_S:=8}"` as the
+        // script's own env default, and `DWELL="${TBD_AGENT_DWELL_S:-8}"` inside the agent it
+        // rendered. This used to read the first. It now reads the second, which is the one that
+        // actually governs how long the agent sleeps before answering. If those two ever
+        // disagreed, the agent's own line is the one this client must not time out under.
+        let marker = "TBD_AGENT_DWELL_S:-";
         let at = DEPLOY_STAGING_SH
             .find(marker)
-            .expect("deploy-staging.sh must still declare TBD_AGENT_DWELL_S");
+            .expect("the rendered agent must still declare TBD_AGENT_DWELL_S");
         let rest = &DEPLOY_STAGING_SH[at + marker.len()..];
         let digits: String = rest.chars().take_while(char::is_ascii_digit).collect();
         let dwell: u64 = digits
