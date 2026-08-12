@@ -60,7 +60,7 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
                 "DO NOT REOPEN: T-090.1.2 decode contract, T-090.1.2.1 lossless pyramid encode (reuse --lossless rebuild)"
             );
             println!(
-                "PREFLIGHT: git lfs pull && make map-assets-link && ./scripts/ticket brief T-090"
+                "PREFLIGHT: git lfs pull && make map-assets-link && cargo run -q -p xtask -- ticket brief T-090"
             );
             println!("HANDOFF: .ai/artifacts/t090_1_2_2_claude_code_handoff.md");
             println!(
@@ -105,7 +105,7 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
                 "ORTH: packages/map-assets/everon/staging/sap/everon-sap-ortho.png (12800² — already built; do NOT re-stitch)"
             );
             println!(
-                "PREFLIGHT: git lfs pull && make map-assets-link && ./scripts/ticket brief T-090"
+                "PREFLIGHT: git lfs pull && make map-assets-link && cargo run -q -p xtask -- ticket brief T-090"
             );
             println!("HANDOFF: .ai/artifacts/t090_1_2_1_claude_code_handoff.md");
             println!(
@@ -179,7 +179,9 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
                 "SCOPE: AGENT_COMMIT_CHECKLIST link, platform README, handoff artifact — docs only"
             );
             println!("DO NOT: edit apps/website/, apps/mod/, packages/tbd-schema/ source");
-            println!("VERIFY: ./scripts/ticket sync && ./scripts/ticket check --strict");
+            println!(
+                "VERIFY: cargo run -q -p xtask -- ticket sync && cargo run -q -p xtask -- ticket check --strict"
+            );
         }
         ("T-123.1", _) => {
             println!(
@@ -228,7 +230,9 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
             println!(
                 "DO NOT REOPEN: T-091 dem/* + ydoc Z wiring (shipped @ dde589e) unless regression"
             );
-            println!("PREFLIGHT: make map-assets-link && ./scripts/ticket brief T-090");
+            println!(
+                "PREFLIGHT: make map-assets-link && cargo run -q -p xtask -- ticket brief T-090"
+            );
         }
         ("T-091.2", _) => {
             println!(
@@ -240,7 +244,7 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
             println!(
                 "CONSUME: sampleElevation/isDemReady/isDemDegraded from tactical-map/dem — do not redo loader"
             );
-            println!("PREFLIGHT: make lfs-dem && ./scripts/ticket brief T-091");
+            println!("PREFLIGHT: make lfs-dem && cargo run -q -p xtask -- ticket brief T-091");
             println!("VERIFY: make ci-local-leptos && make verify-terrain-strict");
             println!(
                 "MANUAL: M1 CUR Z >5m; M3 Save z=123.456; M5/M6 toggles; M7 degraded; M8 Attributes X→Z re-sample"
@@ -256,7 +260,7 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
             println!(
                 "REFERENCE (port, do not re-run): packages/tbd-schema/scripts/lib/dem-sample.mjs"
             );
-            println!("PREFLIGHT: make lfs-dem && ./scripts/ticket brief T-091");
+            println!("PREFLIGHT: make lfs-dem && cargo run -q -p xtask -- ticket brief T-091");
             println!("VERIFY: make ci-local-leptos && make verify-terrain-strict");
         }
         _ => {
@@ -991,7 +995,7 @@ pub fn cmd_run(root: &Path, registry: &Value, dry_run: bool, stream: Option<&str
     if ready.is_empty() {
         eprintln!("No ready tickets. Steps:");
         eprintln!("  1. Composer 2.5: write specs for next batch, commit to main");
-        eprintln!("  2. ./scripts/ticket mark-ready T-0xx path/to/spec.md");
+        eprintln!("  2. cargo run -q -p xtask -- ticket mark-ready T-0xx path/to/spec.md");
         std::process::exit(1);
     }
     println!(
@@ -1003,7 +1007,7 @@ pub fn cmd_run(root: &Path, registry: &Value, dry_run: bool, stream: Option<&str
     for id in &ready {
         run_one(root, registry, id, dry_run)?;
     }
-    println!("Batch run finished. ./scripts/ticket list");
+    println!("Batch run finished. cargo run -q -p xtask -- ticket list");
     Ok(())
 }
 
