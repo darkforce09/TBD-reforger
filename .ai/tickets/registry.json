@@ -21718,17 +21718,17 @@
       "surfaces": [
         "CI"
       ],
-      "impact": "process / gate honesty \u2014 not a live data-risk on current main (T-381 refuse + verify held under adversarial live probes)",
+      "impact": [
+        "dx"
+      ],
       "status": "deferred",
       "order": 5670,
       "stream": "infra",
       "targets": [
-        "xtask/src/deploy_db_common.rs",
-        "xtask/src/deploy_db_backup.rs",
-        "xtask/src/deploy_db_restore.rs"
+        "root"
       ],
       "executor": "claude-code",
-      "priority": "P2"
+      "priority": null
     }
   ]
 }
