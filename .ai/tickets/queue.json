@@ -13,13 +13,6 @@
       "branch": "ticket/T-090"
     },
     {
-      "id": "T-878",
-      "title": "T-853 port: setup-client-addons -> setup client-addons",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-878"
-    },
-    {
       "id": "T-879",
       "title": "T-853 delete: mod/lib shims",
       "status": "ready",
