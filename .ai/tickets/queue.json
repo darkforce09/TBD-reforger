@@ -13,27 +13,6 @@
       "branch": "ticket/T-090"
     },
     {
-      "id": "T-854",
-      "title": "T-853 port: verify-t437-destroy-inert-diagnostics -> verify t437",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-854"
-    },
-    {
-      "id": "T-855",
-      "title": "T-853 port: remote-log-grep -> mod remote-logs",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-855"
-    },
-    {
-      "id": "T-856",
-      "title": "T-853 port: tbd-spawn-determinism -> mod spawn-determinism",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-856"
-    },
-    {
       "id": "T-857",
       "title": "T-853 port: mcp-wb-logs -> mcp wb-logs",
       "status": "ready",
