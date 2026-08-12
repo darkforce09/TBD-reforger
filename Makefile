@@ -348,12 +348,12 @@ verify-t180: ## T-180.10 Class-R coherency gate (ORBAT + Eden locks A–I)
 # t438/t456 recipes fail outside wave.sh cold gate (same authority as T-467).
 # T-486: tripwire also self-pins verify-t468 recipe body — hollow `@true` must
 # FAIL when the script runs (wave.sh cold gate / direct bash).
-# T-489: circularity — the self-pin only works when this script is invoked
+# T-489/T-881: circularity — the self-pin only works when this gate is invoked
 # *without* depending on the `verify-t468` make target being intact. If
 # ci-local / ci.yml call `$(MAKE) verify-t468` / `make verify-t468`, a hollow
 # `@true` recipe greens CI while the tripwire never runs. Keep the human
-# `make verify-t468` target (still calls the script); CI/ci-local/wave use
-# direct `bash scripts/mod/verify-t468-ci-schema-parity.sh`.
+# `make verify-t468` target (still runs cargo verify t468); CI/ci-local/wave use
+# direct `cargo run -q -p xtask -- verify t468`.
 verify-t438: ## T-438/T-461 deploy-staging compose path (website/, not api/)
 	@cargo run -q -p xtask -- verify t438
 
@@ -361,10 +361,10 @@ verify-t440: ## T-440/T-478 faction library seed: live INSERT + `< seeds/…` re
 	@cargo run -q -p xtask -- verify t440
 
 verify-t456: ## T-456/T-460 mission REST body size gate before ParseMissionJson
-	@bash scripts/mod/verify-t456-mission-rest-size-gate.sh
+	@cargo run -q -p xtask -- verify t456
 
-verify-t468: ## T-468/T-476/T-485/T-486/T-489 CI schema parity (human entry; CI uses direct bash)
-	@bash scripts/mod/verify-t468-ci-schema-parity.sh
+verify-t468: ## T-468/T-476/T-485/T-486/T-489/T-881 CI schema parity (human entry; CI uses direct cargo)
+	@cargo run -q -p xtask -- verify t468
 
 # T-556: the two scripts that were both DEAD (no wave/CI/make caller) and FAIL-OPEN
 # (`if rg …; then fail; fi` reports clean when the tool is absent — and `rg` is installed
@@ -490,7 +490,7 @@ ci-local: ## Full CI gate locally — mirrors ci.yml (run `make db-up` first)
 	$(MAKE) ci-local-schema
 	$(MAKE) verify-t438
 	$(MAKE) verify-t456
-	@bash scripts/mod/verify-t468-ci-schema-parity.sh
+	@cargo run -q -p xtask -- verify t468
 
 ci-local-leptos: ## CI gate: Leptos SPA fmt + clippy(wasm32 --all-targets) + native tests + trunk release build (mirrors ci.yml website-frontend clippy --all-targets; T-752)
 	cargo fmt -p website-frontend --check

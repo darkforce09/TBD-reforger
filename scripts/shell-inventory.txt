@@ -40,8 +40,6 @@ scripts/mod/lib/xtask-run.sh
 scripts/mod/mcp-daemon.sh
 scripts/mod/run-playtest-server.sh
 scripts/mod/slice-worktree.sh
-scripts/mod/verify-t456-mission-rest-size-gate.sh
-scripts/mod/verify-t468-ci-schema-parity.sh
 scripts/mod/wave.sh
 scripts/mod/world-boot.sh
 scripts/platform/preflight.sh
