@@ -77,6 +77,7 @@ mod slice_worktree;
 mod sql_gates;
 mod sync;
 mod test_env;
+mod wave;
 
 use anyhow::{Result, bail};
 use clap::{Parser, Subcommand};
@@ -196,6 +197,19 @@ enum PlatformCmd {
         /// Never exit non-zero (report only) — mirrors bash `--warn`
         #[arg(long)]
         warn: bool,
+    },
+    /// Platform wave lifecycle (T-853 port of scripts/platform/wave.sh).
+    ///
+    /// NOT `scripts/mod/wave.sh` — that is `cargo xtask mod wave` (T-890). Same shape, different
+    /// physics; the two drivers get sibling names under their own program groups rather than one
+    /// of them squatting the bare verb.
+    #[command(name = "wave", disable_help_flag = true)]
+    Wave {
+        /// `status` | `prep` | `gate [<base>|--slice T-nnn|--migrate-persist [audit|advance]]` |
+        /// `test --slice T-nnn …` | `wave [--close]` | `verified <sha>` | `reclaim` | `land` |
+        /// `revert <sha>` | `push` | `diff <arm>`  (default `status`).
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
     },
 }
 
@@ -960,6 +974,7 @@ fn run() -> Result<u8> {
         TopCmd::Platform { cmd } => match cmd {
             PlatformCmd::Preflight { warn } => platform_preflight::run(warn),
             PlatformCmd::SliceWorktree { args } => slice_worktree::run(&args),
+            PlatformCmd::Wave { args } => wave::run(&args),
         },
         TopCmd::Ai { cmd } => match cmd {
             AiCmd::Guard => Ok(ai::cmd_guard()),
