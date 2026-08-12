@@ -1851,7 +1851,7 @@ fi
 
 echo "==> V6 remote log grep"
 if [ "$DRY_RUN" -eq 1 ]; then
-  echo "[dry-run] bash scripts/mod/remote-log-grep.sh"
+  echo "[dry-run] cargo run -q -p xtask -- mod remote-logs"
   exit 0
 fi
 
@@ -1871,7 +1871,7 @@ fi
 # (T-612) — both were inverted and passed ONLY on the stale June build. Do not build a staging
 # check on a `!= 0` reading of any of the three.
 set +e
-bash "$MOD_SCRIPTS/remote-log-grep.sh"
+cargo run -q -p xtask -- mod remote-logs
 _v6=$?
 set -e
 case "$_v6" in
