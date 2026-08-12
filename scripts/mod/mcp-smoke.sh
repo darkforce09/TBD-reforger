@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Live MCP smoke (T-090.0 gate S1): wb_connect + wb_state must both return non-empty via mcp-call.sh.
+# Live MCP smoke (T-090.0 gate S1): wb_connect + wb_state must both return non-empty via xtask mcp call.
 # Requires a running Workbench with Net API. Exit 0 = OK.
 set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 fail=0
 for tool in wb_connect wb_state; do
-  out="$(bash "$SCRIPT_DIR/mcp-call.sh" "$tool" '{}')"
+  out="$("$SCRIPT_DIR/lib/xtask-run.sh" mcp call "$tool" '{}')"
   rc=$?
   if [ "$rc" = 0 ] && [ -n "$out" ]; then
     echo "mcp-smoke: $tool OK"

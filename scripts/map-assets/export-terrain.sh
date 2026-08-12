@@ -41,7 +41,7 @@ export-terrain: staged raw export missing for '$TERRAIN':
 Operator step (one Workbench run per terrain per export):
   1. Workbench: open the terrain world with all layers loaded (wb_state should report ~1M+ entities)
   2. Run the full-world export — either:
-       MCP:    MCP_CALL_TIMEOUT=3600 bash scripts/mod/mcp-call.sh wb_execute_action \\
+       MCP:    MCP_CALL_TIMEOUT=3600 cargo run -q -p xtask -- mcp call wb_execute_action \\
                  '{"menuPath":"Plugins,TBD,Export TBD World Objects (full)"}'
        Manual: Workbench > Plugins > TBD > "Export TBD World Objects (full)"
      The plugin iterates 512 m cell passes and writes \$profile:TBD_WorldExport_full.jsonl,
