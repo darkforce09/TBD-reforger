@@ -75,29 +75,9 @@ jobs:
       - name: install pinned full chrome (Chrome-for-Testing, Node-free — NOT chrome-headless-shell)
         # The headless SHELL FATAL-crashes on per-character font fallback (see cdp.rs find_chromium);
         # the full `chrome` build has the real font backend. find_chromium honors CHROME_HEADLESS_SHELL.
-        run: |
-          set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libxkbcommon0 \
-            libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libasound2t64 \
-            libpango-1.0-0 libcairo2 libgtk-3-0 fonts-liberation fonts-noto-core fonts-noto-color-emoji
-          url="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chrome-linux64.zip"
-          curl -fsSL "$url" -o /tmp/chrome.zip
-          unzip -q /tmp/chrome.zip -d "$HOME/cft"
-          echo "CHROME_HEADLESS_SHELL=$HOME/cft/chrome-linux64/chrome" >> "$GITHUB_ENV"
+        run: cargo xtask ci ci-chrome
       - name: migrate + seed the database (via the API on boot) and start the API
-        run: |
-          set -euo pipefail
-          cargo build -p website-api --bin api
-          (cargo run -q -p website-api --bin api > /tmp/api.log 2>&1 &) || true
-          for i in $(seq 1 60); do
-            if curl -fsS -m2 http://127.0.0.1:8080/healthz >/dev/null 2>&1; then echo "api up"; break; fi
-            sleep 1
-          done
-          curl -fsS -m2 http://127.0.0.1:8080/healthz || { echo "API never came up"; tail -40 /tmp/api.log; exit 1; }
-      - name: leptos release build
-        run: cargo run -q -p tbd-tools --bin gate -- serve --help >/dev/null 2>&1 || true # warm the gate bin
+        run: cargo xtask ci editor-api-boot
       - name: gate doctor (fail-fast preflight)
         run: cargo xtask mk gate-doctor
       - name: editor-suite + v-suite (cargo xtask mk leptos-gates)

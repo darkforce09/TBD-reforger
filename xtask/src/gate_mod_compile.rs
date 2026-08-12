@@ -160,6 +160,39 @@ pub fn run_selftest() -> Result<u8> {
     })
 }
 
+/// T-901: the mod-gates.yml preflight, in Rust. Missing server or empty rdb is a hard fail
+/// (exit 1). A check that did not find the depot must not print SELFTEST OK — that is
+/// `run_selftest`'s job, and it already refuses exit 0 / 3 as a pass.
+pub fn run_preflight() -> Result<u8> {
+    Ok(preflight_with_root(&find_repo_root()?))
+}
+
+pub fn preflight_with_root(root: &Path) -> u8 {
+    let home = std::env::var("HOME").unwrap_or_default();
+    let bin = PathBuf::from(format!(
+        "{home}/.local/share/Steam/steamapps/common/Arma Reforger Server/ArmaReforgerServer"
+    ));
+    let rdb = root.join("apps/mod/tbd-framework/resourceDatabase.rdb");
+    let mut fail = 0u8;
+    if !is_executable(&bin) {
+        eprintln!(
+            "::error title=mod-gates runner not provisioned::No Arma Reforger dedicated server at '{}'. Install appid 1890870 for the runner's user, or run the runner as the user that already has it. This job cannot be made to pass without it and will not pretend otherwise.",
+            bin.display()
+        );
+        fail = 1;
+    } else {
+        println!("dedicated server: {}", bin.display());
+    }
+    let rdb_ok = rdb.is_file() && rdb.metadata().map(|m| m.len() > 0).unwrap_or(false);
+    if !rdb_ok {
+        eprintln!(
+            "::error title=mod-gates checkout incomplete::apps/mod/tbd-framework/resourceDatabase.rdb missing or empty. Without it the engine skips the loose addon and compiles none of the mod."
+        );
+        fail = 1;
+    }
+    fail
+}
+
 /// Testable entry (no root walk).
 pub fn run_with_root(root: &Path, opts: &Opts) -> u8 {
     if require_host().is_err() {

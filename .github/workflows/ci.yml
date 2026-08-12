@@ -78,22 +78,22 @@ jobs:
       # apps/website/api — override so xtask/tbd-tools drift cannot slip past CI.
       - name: fmt (FMT-1 analog — workspace --all)
         working-directory: .
-        run: cargo fmt --all --check
+        run: cargo xtask mk rust-fmt
       - name: clippy (GO-2..8 analog)
         env:
           SQLX_OFFLINE: "true"
-        run: cargo clippy --all-targets -- -D warnings
+        run: cargo xtask mk rust-clippy
       - name: build
         env:
           SQLX_OFFLINE: "true"
-        run: cargo build --all-targets
+        run: cargo xtask mk rust-build
       # T-597: `rust_it`, matching the `services.db` POSTGRES_DB above and Makefile:207.
       # The old `tbd_reforger` here is what T-381's guard refused — see the services block.
       - name: test (TEST-1 analog)
         env:
           TEST_DATABASE_URL: postgres://tbd:tbd@localhost:5432/rust_it?sslmode=disable
           SQLX_OFFLINE: "true"
-        run: cargo test
+        run: cargo xtask ci website-api-test
 
   # --- map-engine: the T-151 crate gates (fmt + clippy native/wasm32 + native tests) ---
   # T-151.11.4 (audit F-09): these gates previously ran only locally (`xtask mk wasm-ci`).
@@ -135,16 +135,8 @@ jobs:
       - uses: taiki-e/install-action@v2
         with:
           tool: trunk
-      - name: fmt
-        run: cargo fmt -p website-frontend --check
-      - name: clippy (wasm32)
-        # --all-targets: see #[cfg(test)] / native-shell lints (T-752; warn mode, no -D).
-        run: cargo clippy -p website-frontend --target wasm32-unknown-unknown --all-targets
-      - name: cargo test (native shell)
-        run: cargo test -p website-frontend
-      - name: trunk build --release
-        working-directory: apps/website/frontend
-        run: trunk build --release
+      - name: fmt + clippy(wasm32) + test + trunk (ci-local-leptos)
+        run: cargo xtask mk ci-local-leptos
 
   # --- schema: the full schema-validate set + citations (T-434) ---
   # Class-R parity: this job MUST match `xtask ci schema-validate` + `xtask ci verify-citations`
@@ -175,22 +167,21 @@ jobs:
         run: cargo xtask ci ci-local-schema
 
   # --- editorconfig: FMT-2 whitespace gate across the whole repo (root .editorconfig) ---
-  # Dedicated job (mirrors `xtask ci verify-editorconfig`): the checker is a Go binary and runs
-  # from the repo root, so it does not belong in the Node-only frontend job. Excludes live in
-  # .editorconfig-checker.json. setup-go puts $(go env GOPATH)/bin on PATH for the installed binary.
+  # Dedicated job (mirrors `xtask ci verify-editorconfig`). T-901: no setup-go — xtask installs
+  # the pinned checker if needed and runs it from the repo root. Excludes live in
+  # .editorconfig-checker.json.
   editorconfig:
     name: editorconfig (FMT-2)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-go@v6
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          go-version: "1.26"
-      - name: install editorconfig-checker
-        run: go install github.com/editorconfig-checker/editorconfig-checker/v3/cmd/editorconfig-checker@latest
+          toolchain: "1.95.0"
+      - uses: Swatinem/rust-cache@v2
       - name: editorconfig-checker (repo root)
-        run: editorconfig-checker
+        run: cargo xtask ci verify-editorconfig
 
   # --- language gates: which language new tooling may be written in (T-620 / T-621) ---
   #
@@ -213,7 +204,7 @@ jobs:
   # Needs cargo (two of the three are xtask) but no database, no LFS and no wasm target, so it is a
   # cheap job that fails fast and early rather than riding on the back of the 25-minute API job.
   language-gates:
-    name: language gates (no-python / no-node / no-shell)
+    name: language gates (no-python / no-node / no-shell / ci-shell)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -230,6 +221,8 @@ jobs:
         run: cargo xtask verify no-node
       - name: verify-no-shell (T-621 shell ratchet)
         run: cargo xtask verify no-shell
+      - name: "verify-ci-shell (T-901 — GitHub Actions run: blocks)"
+        run: cargo xtask verify ci-shell
       # T-853. The registry is the source of truth for the whole ticket pipeline and NOTHING
       # validated it on push — `grep -rn 'ticket check' .github/` returned empty, so a malformed
       # 1.5 MB registry.json could reach main and only surface when the next agent tried to read
@@ -281,4 +274,4 @@ jobs:
       # T-489/T-881: invoke DIRECTLY, never through a dispatch row named after this gate —
       # a hollowed indirection must not green CI (the self-pin only runs when the gate does).
       - name: T-468 CI schema parity + hollow recipe tripwire (direct cargo, T-489/T-881)
-        run: cargo run -q -p xtask -- verify t468
+        run: cargo xtask verify t468

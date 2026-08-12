@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - run: cargo run -q -p xtask -- schema citations
+      - run: cargo xtask schema citations
 
   codegen-drift:
     name: schema codegen up to date
@@ -39,5 +39,5 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo xtask ci schema-codegen
       - name: Fail if generated contract output is stale
-        run: git diff --exit-code -- apps/website/api/src/contract/generated
+        run: cargo xtask ci verify-codegen-fresh
 
