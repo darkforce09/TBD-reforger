@@ -24,7 +24,7 @@ revoked that** — deleted or ported.
 | `scripts/mod/lib/mcp-socket-send.py` | `mcp socket-send` |
 | `mcp-daemon.sh` AF_UNIX probe | `mcp probe-sock` |
 | `debug-direct-join.sh` A2S + NDJSON | `debug a2s-probe` / `debug direct-join-log` |
-| `mission-version-upload-repro.sh` | `repro mission-id` / `repro mission-version-body` |
+| `mission-version-upload-repro.sh` (deleted T-867) | `repro mission-upload` (+ `mission-id` / `mission-version-body`) |
 
 ### Deleted
 

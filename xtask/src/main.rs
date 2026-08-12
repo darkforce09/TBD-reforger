@@ -17,6 +17,7 @@ mod gate_manual_test;
 mod gate_mcp_call;
 mod gate_mcp_call_selftest;
 mod gate_mcp_wb_logs;
+mod gate_mission_version_upload_repro;
 mod gate_remote_log_grep;
 mod gate_route_tags;
 mod gate_setup_server_profile;
@@ -85,7 +86,7 @@ enum TopCmd {
         #[command(subcommand)]
         cmd: DebugCmd,
     },
-    /// Repro helpers (mission-version-upload-repro.sh)
+    /// Repro helpers (mission-upload + mission-id / mission-version-body)
     Repro {
         #[command(subcommand)]
         cmd: ReproCmd,
@@ -470,6 +471,7 @@ enum DebugCmd {
 }
 
 #[derive(Subcommand, Debug)]
+#[allow(clippy::enum_variant_names)] // mission-id / mission-version-body / mission-upload
 enum ReproCmd {
     /// stdin JSON → print .id
     #[command(name = "mission-id")]
@@ -484,6 +486,9 @@ enum ReproCmd {
         #[arg(long)]
         semver: String,
     },
+    /// Orchestrate mission-version upload repro (ex mission-version-upload-repro.sh)
+    #[command(name = "mission-upload")]
+    MissionUpload,
 }
 
 #[derive(Subcommand, Debug)]
@@ -670,15 +675,17 @@ fn run() -> Result<u8> {
             }
             Ok(0)
         }
-        TopCmd::Repro { cmd } => {
-            match cmd {
-                ReproCmd::MissionId => repro::cmd_mission_id()?,
-                ReproCmd::MissionVersionBody { out, mb, semver } => {
-                    repro::cmd_mission_version_body(&out, mb, &semver)?;
-                }
+        TopCmd::Repro { cmd } => match cmd {
+            ReproCmd::MissionId => {
+                repro::cmd_mission_id()?;
+                Ok(0)
             }
-            Ok(0)
-        }
+            ReproCmd::MissionVersionBody { out, mb, semver } => {
+                repro::cmd_mission_version_body(&out, mb, &semver)?;
+                Ok(0)
+            }
+            ReproCmd::MissionUpload => gate_mission_version_upload_repro::run(),
+        },
         TopCmd::Mod { cmd } => match cmd {
             ModCmd::RemoteLogs { file, selftest } => gate_remote_log_grep::run(file, selftest),
             ModCmd::SpawnDeterminism {
