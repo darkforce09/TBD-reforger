@@ -407,7 +407,7 @@ verify-t090-spec-consistency: t090-spec-verify ## Alias — spec corpus cites th
 map-export: ## T-090.3.1 — classify staged Workbench export for TERRAIN=<id> PHASE=Pn (exit 2 = run the documented Workbench step first)
 	@test -n "$(TERRAIN)" || (echo "map-export: TERRAIN=<id> required"; exit 1)
 	@test -n "$(PHASE)" || (echo "map-export: PHASE=Pn required (e.g. PHASE=P1_buildings)"; exit 1)
-	bash scripts/map-assets/export-terrain.sh "$(TERRAIN)" --phase "$(PHASE)"
+	cargo run -q -p xtask -- map export-terrain "$(TERRAIN)" --phase "$(PHASE)"
 map-export-all: ## T-090.3 stub — export every terrain in terrain-registry.json
 	@echo "map-export-all: not implemented (T-090.3)"; exit 1
 map-export-validate: ## T-090.3.1 — validate committed export artifacts for every registry terrain (CI-safe)
