@@ -10,16 +10,16 @@
 # and the verdict underneath (mcp-wb-logs.sh) additionally required `spawn requested` in its
 # only exit-0 branch, so this wrapper could not report success on ANY log. The pattern now
 # pins tags + event keys, never prose (the rule at remote-log-grep.sh:34); the verdict logic
-# and its pattern vocabulary live in mcp-wb-logs.sh — one definition, shared.
+# and its pattern vocabulary live in `cargo xtask mcp wb-logs` (T-857) — one definition, shared.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck source=lib/paths.sh
 source "$SCRIPT_DIR/lib/paths.sh"
 
-# The verdict logic under test is mcp-wb-logs.sh's — run ITS selftest without booting anything.
+# The verdict logic under test is mcp wb-logs — run ITS selftest without booting anything.
 if [ "${1:-}" = "--selftest" ]; then
-	exec bash "$MOD_SCRIPTS/mcp-wb-logs.sh" --selftest
+	exec cargo run -q -p xtask -- mcp wb-logs --selftest
 fi
 
 # Display filter only — the PASS/PARTIAL/FAIL verdict never depends on this pattern.
@@ -29,4 +29,4 @@ bash "$MOD_SCRIPTS/mcp-call.sh" wb_play '{}' || true
 sleep 25
 bash "$MOD_SCRIPTS/mcp-call.sh" wb_stop '{}' || true
 
-bash "$MOD_SCRIPTS/mcp-wb-logs.sh" "$PATTERN"
+cargo run -q -p xtask -- mcp wb-logs "$PATTERN"

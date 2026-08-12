@@ -10,6 +10,7 @@ mod constants;
 mod debug_cmd;
 mod gap;
 mod gate_crf_leak;
+mod gate_mcp_wb_logs;
 mod gate_remote_log_grep;
 mod gate_route_tags;
 mod gate_t180;
@@ -312,6 +313,22 @@ enum McpCmd {
     /// Probe AF_UNIX socket connectability (exit 0/1)
     #[command(name = "probe-sock")]
     ProbeSock { sock: String },
+    /// Grep latest Workbench Play console.log for TBD spawn diagnostics (T-857).
+    /// Exit: 0 PASS · 1 FAIL · 2 PARTIAL · 3 ENVIRONMENT.
+    #[command(name = "wb-logs", disable_help_flag = true)]
+    WbLogs {
+        /// Verdict over a specific log file (no Workbench)
+        #[arg(long)]
+        file: Option<PathBuf>,
+        /// Prove the verdict logic can FAIL
+        #[arg(long)]
+        selftest: bool,
+        /// Usage (exit 3 — matches former mcp-wb-logs.sh)
+        #[arg(short = 'h', long = "help")]
+        help: bool,
+        /// Display extract pattern only (does not affect the verdict)
+        pattern: Option<String>,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -499,6 +516,14 @@ fn run() -> Result<u8> {
                     }
                 }
                 McpCmd::ProbeSock { sock } => mcp::cmd_probe_sock(&sock),
+                McpCmd::WbLogs {
+                    file,
+                    selftest,
+                    help,
+                    pattern,
+                } => {
+                    return gate_mcp_wb_logs::run(file, selftest, help, pattern);
+                }
             };
             Ok(code as u8)
         }
