@@ -80,7 +80,7 @@ enum TopCmd {
         #[command(subcommand)]
         cmd: ReproCmd,
     },
-    /// Mod helpers (remote-log-grep.sh → mod remote-logs; T-855)
+    /// Mod / Workbench gates (T-853 shell→xtask ports)
     Mod {
         #[command(subcommand)]
         cmd: ModCmd,
@@ -115,15 +115,21 @@ enum TopCmd {
         #[command(subcommand)]
         cmd: AiCmd,
     },
-    /// Mod / Workbench gates (T-853 shell→xtask ports)
-    Mod {
-        #[command(subcommand)]
-        cmd: ModCmd,
-    },
 }
 
 #[derive(Subcommand, Debug)]
 enum ModCmd {
+    /// Assert a TBD dedicated-server console.log shows a HEALTHY boot (T-855).
+    /// Exit: 0 HEALTHY · 1 FAIL · 2 PARTIAL · 3 ENVIRONMENT.
+    #[command(name = "remote-logs")]
+    RemoteLogs {
+        /// Check a LOCAL log file (no SSH)
+        #[arg(long)]
+        file: Option<PathBuf>,
+        /// Prove the verdict logic can FAIL
+        #[arg(long)]
+        selftest: bool,
+    },
     /// Spawn/equip determinism (T-856 port of tbd-spawn-determinism.sh)
     #[command(name = "spawn-determinism")]
     SpawnDeterminism {
@@ -369,21 +375,6 @@ enum ReproCmd {
 }
 
 #[derive(Subcommand, Debug)]
-enum ModCmd {
-    /// Assert a TBD dedicated-server console.log shows a HEALTHY boot (T-855).
-    /// Exit: 0 HEALTHY · 1 FAIL · 2 PARTIAL · 3 ENVIRONMENT.
-    #[command(name = "remote-logs")]
-    RemoteLogs {
-        /// Check a LOCAL log file (no SSH)
-        #[arg(long)]
-        file: Option<PathBuf>,
-        /// Prove the verdict logic can FAIL
-        #[arg(long)]
-        selftest: bool,
-    },
-}
-
-#[derive(Subcommand, Debug)]
 enum TicketCmd {
     Sync,
     Check {
@@ -567,6 +558,18 @@ fn run() -> Result<u8> {
         }
         TopCmd::Mod { cmd } => match cmd {
             ModCmd::RemoteLogs { file, selftest } => gate_remote_log_grep::run(file, selftest),
+            ModCmd::SpawnDeterminism {
+                preflight,
+                selftest,
+                runs,
+                world,
+            } => gate_tbd_spawn_determinism::run(
+                &find_repo_root()?,
+                preflight,
+                selftest,
+                runs.unwrap_or(5),
+                world.as_deref().unwrap_or("worlds/TBD_Dev_POC.ent"),
+            ),
         },
         TopCmd::Verify { cmd } => {
             let code = match cmd {
@@ -592,20 +595,6 @@ fn run() -> Result<u8> {
         TopCmd::Ai { cmd } => match cmd {
             AiCmd::Guard => Ok(ai::cmd_guard()),
             AiCmd::Run { args } => ai::cmd_run(&args),
-        },
-        TopCmd::Mod { cmd } => match cmd {
-            ModCmd::SpawnDeterminism {
-                preflight,
-                selftest,
-                runs,
-                world,
-            } => gate_tbd_spawn_determinism::run(
-                &find_repo_root()?,
-                preflight,
-                selftest,
-                runs.unwrap_or(5),
-                world.as_deref().unwrap_or("worlds/TBD_Dev_POC.ent"),
-            ),
         },
         TopCmd::Gen { cmd } => {
             let code = match cmd {
