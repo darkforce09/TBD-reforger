@@ -100,8 +100,8 @@ db-restore: ## T-577/T-886: verify a dump then pg_restore --clean into DB=<name>
 	@if [ -z "$(DB)" ]; then echo "usage: make db-restore DUMP=<file.dump> DB=<target> [CREATE=1]"; exit 2; fi
 	cargo run -q -p xtask -- deploy db restore --db $(DB) $(if $(CREATE),--create,) $(DUMP)
 
-db-backup-drill: ## T-577: restore the newest backup into a scratch DB and prove it is recoverable + bootable
-	bash scripts/deploy/backup-drill.sh $(if $(DB),--db $(DB),) $(if $(OUT),--out $(OUT),) $(if $(FRESH),--fresh,)
+db-backup-drill: ## T-577/T-887: restore the newest backup into a scratch DB and prove it is recoverable + bootable
+	cargo run -q -p xtask -- deploy db drill $(if $(DB),--db $(DB),) $(if $(OUT),--out $(OUT),) $(if $(FRESH),--fresh,)
 
 db-backup-verify: ## T-577: re-verify an existing dump without taking a new one. Usage: make db-backup-verify DUMP=path
 	@if [ -z "$(DUMP)" ]; then echo "usage: make db-backup-verify DUMP=<file.dump>"; exit 2; fi

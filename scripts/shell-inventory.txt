@@ -26,7 +26,6 @@
 #
 # Regenerating this file wholesale would re-bless whatever happens to exist and defeat the entire
 # mechanism. Edit it one line at a time.
-scripts/deploy/backup-drill.sh
 scripts/lib/hostrun.sh
 scripts/mod/compile.sh
 scripts/mod/deploy-staging.sh
