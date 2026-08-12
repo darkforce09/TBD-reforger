@@ -19,7 +19,7 @@ Add optional slot `y` to schema + mod struct, implement spawn height policy (`js
 |------|----------|
 | **T-091.2** | **Done** @ `dde589e` — editor stores meaningful `position.z` |
 | **T-091.0** | Anchor verify PASS |
-| **Workbench** | `tbd-dev-bootstrap.sh` + wb_play |
+| **Workbench** | `cargo xtask mod dev-bootstrap` + wb_play |
 
 ---
 
@@ -71,7 +71,7 @@ heading = slot.headingDeg
 ### Workbench / MCP
 
 ```bash
-bash scripts/mod/tbd-dev-bootstrap.sh
+cargo xtask mod dev-bootstrap
 # Load golden or test mission with 3 slots at different elevations
 bash scripts/mod/tbd-spawn-verify.sh   # extend if needed
 ```

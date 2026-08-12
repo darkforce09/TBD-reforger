@@ -80,7 +80,7 @@ Downloaded loadout JSON had no in-game consumer.
 ## Verify
 
 ```bash
-bash scripts/mod/tbd-dev-bootstrap.sh
+cargo xtask mod dev-bootstrap
 bash scripts/mod/mcp-call.sh wb_connect '{}'
 
 # Canonical JSON (T-068.4 verify artifact):

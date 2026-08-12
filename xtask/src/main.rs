@@ -25,6 +25,7 @@ mod gate_t438;
 mod gate_t439;
 mod gate_t440;
 mod gate_t444;
+mod gate_tbd_dev_bootstrap;
 mod gate_tbd_spawn_determinism;
 mod gate_ui_layouts;
 mod gate_ui_layouts_awk;
@@ -168,6 +169,13 @@ enum ModCmd {
     /// Manual mod/website test suite (T-859 port of manual-test.sh)
     #[command(name = "manual-test")]
     ManualTest,
+    /// TBD mod/Workbench MCP bootstrap (T-863 port of tbd-dev-bootstrap.sh)
+    #[command(name = "dev-bootstrap")]
+    DevBootstrap {
+        /// Passthrough flags (`--api`, `--server`); unknown tokens ignored like bash.
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -666,6 +674,7 @@ fn run() -> Result<u8> {
                 world.as_deref().unwrap_or("worlds/TBD_Dev_POC.ent"),
             ),
             ModCmd::ManualTest => gate_manual_test::run(&find_repo_root()?),
+            ModCmd::DevBootstrap { args } => gate_tbd_dev_bootstrap::run(&args),
         },
         TopCmd::Deploy { cmd } => match cmd {
             DeployCmd::Website { args } => gate_deploy_website::run(&args),

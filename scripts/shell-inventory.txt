@@ -51,7 +51,6 @@ scripts/mod/setup-client-addons.sh
 scripts/mod/setup-mcp-game-root.sh
 scripts/mod/setup-workbench-linux.sh
 scripts/mod/slice-worktree.sh
-scripts/mod/tbd-dev-bootstrap.sh
 scripts/mod/tbd-spawn-verify.sh
 scripts/mod/test-mission.sh
 scripts/mod/test-phase1-api.sh

@@ -66,7 +66,7 @@ Without these, T-068.15.2 cannot show capacity readouts or seed rifleman vest/pa
 ## Verify
 
 ```bash
-bash scripts/mod/tbd-dev-bootstrap.sh
+cargo xtask mod dev-bootstrap
 bash scripts/mod/mcp-call.sh wb_connect '{}'
 # wb_reload scripts → run TBD registry export
 cd packages/tbd-schema && npm run validate
@@ -110,7 +110,7 @@ Implement **T-068.15.1** — Export cargo capacity + default contents (resume WI
   test "$(git rev-parse --show-toplevel)" = "$(pwd)"
   git status --porcelain
   ./scripts/ticket brief T-068
-  bash scripts/mod/tbd-dev-bootstrap.sh
+  cargo xtask mod dev-bootstrap
 
 ═══ READ (in order — spec wins on conflict) ═══
   1. .ai/artifacts/t068_15_1_claude_code_handoff.md

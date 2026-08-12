@@ -5,7 +5,7 @@
 **Executor:** claude-code (**enfusion-mcp required**)  
 **Authority:** [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md)
 
-**Agent roles (locked):** **Claude Code** owns the full MCP pipeline — **`tbd-dev-bootstrap.sh`**, export script, committed JSON. **Human** only on bootstrap **exit 1** (one-time Net API / open `addon.gproj`) or **T-068.6** E2E sign-off.
+**Agent roles (locked):** **Claude Code** owns the full MCP pipeline — **`cargo xtask mod dev-bootstrap`**, export script, committed JSON. **Human** only on bootstrap **exit 1** (one-time Net API / open `addon.gproj`) or **T-068.6** E2E sign-off.
 
 ---
 
@@ -31,7 +31,7 @@ Manual “Copy Resource Name” for every row is a **spot-check only** (acceptan
 Claude Code **runs** bootstrap; do not assume Workbench is already up.
 
 ```bash
-bash scripts/mod/tbd-dev-bootstrap.sh
+cargo xtask mod dev-bootstrap
 # Script: setup-mcp-game-root → copy EnfusionMCP handlers → if :5775 closed:
 #   steam -applaunch 1874910 → wait up to TBD_WB_WAIT_SEC (default 180s)
 # → wb_connect → mod_validate
@@ -66,7 +66,7 @@ API and palette need real Enfusion ResourceNames; mock catalog uses fake ids.
 
 | Step | Tool / script | Purpose |
 |------|---------------|---------|
-| Bootstrap | `bash scripts/mod/tbd-dev-bootstrap.sh` | MCP root, handlers, **auto-launch Workbench**, `wb_connect` |
+| Bootstrap | `cargo xtask mod dev-bootstrap` | MCP root, handlers, **auto-launch Workbench**, `wb_connect` |
 | Connect | `bash scripts/mod/mcp-call.sh wb_connect '{}'` | Confirm Net API session (if not already from bootstrap) |
 | Discover | MCP `asset_search` / `game_read` / `game_browse` (or `mcp-call.sh` equivalent) | Find character + gear prefab ResourceNames |
 | Implement | Edit `apps/mod/tbd-framework/` export script | Emit `registry-items` JSON |
@@ -110,7 +110,7 @@ Never guess Enfusion APIs or GUIDs — [`docs/mod/CLAUDE-CODE-START.md`](../../m
 
 ```bash
 # Preflight (must PASS before export work)
-bash scripts/mod/tbd-dev-bootstrap.sh
+cargo xtask mod dev-bootstrap
 bash scripts/mod/mcp-call.sh wb_connect '{}'
 
 cd packages/tbd-schema && npm run validate
@@ -136,7 +136,7 @@ jq -e '[.items[].resource_name | test("^\\{[0-9A-F]{16}\\}")] | all' "$EXPORT"
 
 | ID | Check | Pass condition |
 |----|-------|----------------|
-| A0 | MCP preflight | `tbd-dev-bootstrap.sh` exit 0 + `wb_connect` exit 0 (paste full bootstrap output) |
+| A0 | MCP preflight | `cargo xtask mod dev-bootstrap` exit 0 + `wb_connect` exit 0 (paste full bootstrap output) |
 | A1 | Export file exists | Committed path documented in paste |
 | A2 | Schema valid | `npm run validate` exit 0 including workbench export |
 | A3 | Row count | `items.length >= 20` |
@@ -172,7 +172,7 @@ Read CLAUDE.md §Status. Active slice: T-068.1.
 Implement ONLY docs/specs/Mission_Creator_Architecture/t068_1_workbench_flat_export.md
 
 PREFLIGHT — Claude Code runs (do not skip):
-  bash scripts/mod/tbd-dev-bootstrap.sh
+  cargo xtask mod dev-bootstrap
   bash scripts/mod/mcp-call.sh wb_connect '{}'
 Bootstrap auto-launches Workbench via steam -applaunch if :5775 is closed.
 If exit 1 after wait: report blocker; human may need Net API / open addon.gproj once — then YOU re-run bootstrap.

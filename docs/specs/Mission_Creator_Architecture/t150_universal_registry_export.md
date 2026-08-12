@@ -71,7 +71,7 @@ census + compatibility for **every loaded addon**, not a TBD-maintained allowlis
 
 ## Tasks
 
-1. MCP preflight: `bash scripts/mod/tbd-dev-bootstrap.sh` + `wb_connect` + `mod_validate`.
+1. MCP preflight: `cargo xtask mod dev-bootstrap` + `wb_connect` + `mod_validate`.
 2. Spike: find ResourceManager / prefab enumeration + weapon/magazine/vehicle component APIs
    (`api_search`). Record findings in verify log.
 3. Schema: expand `registry-items` kinds; add `registry-compat.schema.json` + goldens; wire
@@ -87,7 +87,7 @@ census + compatibility for **every loaded addon**, not a TBD-maintained allowlis
 ## Verify
 
 ```bash
-bash scripts/mod/tbd-dev-bootstrap.sh
+cargo xtask mod dev-bootstrap
 bash scripts/mod/mcp-call.sh wb_connect '{}'
 bash scripts/mod/mcp-call.sh mod_validate "{\"modPath\":\"$PWD/apps/mod/tbd-framework\"}"
 # After export + copy into packages/tbd-schema/registry/:
@@ -123,7 +123,7 @@ Implement **T-150** — Universal Enfusion registry + compat export (mod-agnosti
   test "$(git rev-parse --show-toplevel)" = "$(pwd)"
   git status --porcelain
   git pull && git lfs pull
-  bash scripts/mod/tbd-dev-bootstrap.sh
+  cargo xtask mod dev-bootstrap
   bash scripts/mod/mcp-call.sh wb_connect '{}'
   bash scripts/mod/mcp-call.sh mod_validate "{\"modPath\":\"$PWD/apps/mod/tbd-framework\"}"
 

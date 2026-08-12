@@ -77,7 +77,7 @@ Reference wiki (custom terrains only): [Terrain Creation Tool — Export Height 
 ## Optional: MCP anchor probes
 
 ```bash
-bash scripts/mod/tbd-dev-bootstrap.sh
+cargo xtask mod dev-bootstrap
 bash scripts/mod/mcp-call.sh wb_connect '{}'
 bash scripts/mod/mcp-call.sh wb_terrain '{"action":"getHeight","x":4839.2,"z":6620.8}'
 ```
