@@ -25,6 +25,7 @@ mod gate_remote_log_grep;
 mod gate_route_tags;
 mod gate_run_dev_server;
 mod gate_seed_milestone_announcement;
+mod gate_setup_mcp_game_root;
 mod gate_setup_server_profile;
 mod gate_t180;
 mod gate_t296;
@@ -243,6 +244,14 @@ enum SetupCmd {
     ServerProfile {
         /// Profile directory (default: $TBD_PROFILE or apps/mod/.local-test-profile)
         profile: Option<PathBuf>,
+    },
+    /// Flattened pak symlink farm for enfusion-mcp (T-876).
+    #[command(name = "mcp-game-root")]
+    McpGameRoot {
+        /// Game install with addons/ (default: Steam Arma Reforger path)
+        game: Option<PathBuf>,
+        /// Output symlink farm (default: $HOME/.cache/enfusion-mcp-root)
+        fake: Option<PathBuf>,
     },
 }
 
@@ -773,6 +782,9 @@ fn run() -> Result<u8> {
         TopCmd::Setup { cmd } => match cmd {
             SetupCmd::ServerProfile { profile } => {
                 gate_setup_server_profile::run(profile.as_deref())
+            }
+            SetupCmd::McpGameRoot { game, fake } => {
+                gate_setup_mcp_game_root::run(game.as_deref(), fake.as_deref())
             }
         },
         TopCmd::Fetch { cmd } => match cmd {

@@ -31,7 +31,7 @@ bash scripts/mod/deploy-staging.sh --dry-run
 
 `cargo xtask mod dev-bootstrap` is the **single entrypoint** — Claude Code runs it at the start of every mod slice. It:
 
-1. Builds MCP pak symlink farm (`setup-mcp-game-root.sh`)
+1. Builds MCP pak symlink farm (`cargo xtask setup mcp-game-root`)
 2. Runs `npm ci` in `scripts/mod/` when `enfusion-mcp` is not installed (pinned @ 0.6.1)
 3. Copies gitignored `EnfusionMCP/` handlers from the npm package
 4. **Launches Workbench** if Net API port **5775** is closed (`steam -applaunch 1874910`, wait up to **180s**)

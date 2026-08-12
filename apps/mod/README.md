@@ -90,7 +90,7 @@ cargo xtask mod test-phase1-api
 | [`mcp-wb-logs.sh`](../../scripts/mod/mcp-wb-logs.sh) | Grep latest Proton Workbench `console.log` |
 | `cargo xtask mod spawn-verify` | MCP `wb_play` + log grep for spawn lines (T-873) |
 | `cargo xtask mod dev-bootstrap` | MCP root + `wb_connect` + `mod_validate` |
-| [`setup-mcp-game-root.sh`](../../scripts/mod/setup-mcp-game-root.sh) | Pak symlink farm for MCP |
+| `cargo xtask setup mcp-game-root` | Pak symlink farm for MCP (T-876) |
 | [`deploy-staging.sh`](../../scripts/mod/deploy-staging.sh) | Rsync → 192.168.0.140, API, game server restart |
 | `cargo xtask debug direct-join` | LAN join diagnostics (A2S, SSH, builds) |
 | [`setup-client-addons.sh`](../../scripts/mod/setup-client-addons.sh) | **Legacy** — local client mod symlink (not Direct-Joinable; use the Workshop mod instead) |

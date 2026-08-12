@@ -19,7 +19,7 @@ Use **enfusion-mcp** + mod export tooling to emit validated `registry-items` JSO
 
 Mock catalog / guessed GUIDs are **invalid** for Phase 1. The web palette and loadout dropdowns need **`resource_name` strings that exist in vanilla Reforger**. Claude Code must:
 
-1. **Discover** prefab paths via MCP (`asset_search`, `game_read`, `game_browse`) against the pak symlink farm ([`scripts/mod/setup-mcp-game-root.sh`](../../../scripts/mod/setup-mcp-game-root.sh)), **or**
+1. **Discover** prefab paths via MCP (`asset_search`, `game_read`, `game_browse`) against the pak symlink farm (`cargo xtask setup mcp-game-root`), **or**
 2. **Implement + run** a Workbench export script validated with `wb_reload` + `mod_validate`, then read the emitted file.
 
 Manual “Copy Resource Name” for every row is a **spot-check only** (acceptance A7), not the primary data path.
@@ -32,7 +32,7 @@ Claude Code **runs** bootstrap; do not assume Workbench is already up.
 
 ```bash
 cargo xtask mod dev-bootstrap
-# Script: setup-mcp-game-root → copy EnfusionMCP handlers → if :5775 closed:
+# setup mcp-game-root → copy EnfusionMCP handlers → if :5775 closed:
 #   steam -applaunch 1874910 → wait up to TBD_WB_WAIT_SEC (default 180s)
 # → wb_connect → mod_validate
 bash scripts/mod/mcp-call.sh wb_connect '{}'

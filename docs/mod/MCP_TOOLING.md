@@ -70,7 +70,7 @@ Use **`MCP_DEBUG=1`** to print runner tier + captured stderr on failure.
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `ENFUSION_GAME_PATH` | `~/.cache/enfusion-mcp-root` | Pak symlink farm (see `setup-mcp-game-root.sh`) |
+| `ENFUSION_GAME_PATH` | `~/.cache/enfusion-mcp-root` | Pak symlink farm (see `cargo xtask setup mcp-game-root`) |
 | `ENFUSION_WORKBENCH_PATH` | Steam Arma Reforger Tools path | Workbench install |
 | `ENFUSION_PROJECT_PATH` | Workbench addons folder | Project/addon discovery |
 | `ENFUSION_MCP_BIN` | (auto) | Override enfusion-mcp entry |

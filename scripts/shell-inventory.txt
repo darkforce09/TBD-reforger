@@ -41,7 +41,6 @@ scripts/mod/mcp-daemon.sh
 scripts/mod/mcp-smoke.sh
 scripts/mod/run-playtest-server.sh
 scripts/mod/setup-client-addons.sh
-scripts/mod/setup-mcp-game-root.sh
 scripts/mod/setup-workbench-linux.sh
 scripts/mod/slice-worktree.sh
 scripts/mod/verify-t456-mission-rest-size-gate.sh

@@ -3,7 +3,8 @@
 //! Path pins mirror `scripts/mod/lib/paths.sh` (do **not** delete paths.sh — T-879):
 //! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `MOD_SCRIPTS=scripts/mod`, `WEB=apps/website/api`.
 //!
-//! Still shells out to `setup-mcp-game-root.sh` and `mcp-daemon.sh` (bash; T-876 later).
+//! Still shells out to `mcp-daemon.sh` (bash; later slice). MCP game root is in-process
+//! (`gate_setup_mcp_game_root`, T-876).
 //! `xtask mcp call` goes through `scripts/mod/lib/xtask-run.sh` like bash.
 //!
 //! Fail-opens closed or pinned:
@@ -85,9 +86,9 @@ pub fn run_with_root(root: &Path, args: &[String]) -> Result<u8> {
 
     out_line("== TBD dev bootstrap ==")?;
 
-    // bash: `bash "$MOD_SCRIPTS/setup-mcp-game-root.sh"` under set -e.
-    let setup = p.mod_scripts.join("setup-mcp-game-root.sh");
-    match forward_bash(&setup, &[]) {
+    // Former bash: `bash "$MOD_SCRIPTS/setup-mcp-game-root.sh"` under set -e.
+    // T-876: in-process `cargo xtask setup mcp-game-root` (same defaults).
+    match crate::gate_setup_mcp_game_root::run(None, None) {
         Ok(0) => {}
         Ok(code) => return Ok(code),
         Err(e) => return Err(e),
@@ -323,33 +324,6 @@ fn port_open(port: &str) -> bool {
     false
 }
 
-/// Run a bash script, forward stdout/stderr separately, return its exit code.
-fn forward_bash(script: &Path, args: &[&str]) -> Result<u8> {
-    // Match `bash "$script"` when the file is missing: bash prints to stderr and exits 127.
-    if !script.is_file() {
-        eprintln!("bash: {}: No such file or directory", script.display());
-        return Ok(127);
-    }
-    let mut run = Run::new("bash").arg(script);
-    for a in args {
-        run = run.arg(a);
-    }
-    match run.output() {
-        Ok(o) => {
-            print!("{}", o.stdout);
-            eprint!("{}", o.stderr);
-            let _ = io::stdout().flush();
-            let _ = io::stderr().flush();
-            Ok(code_u8(o.code))
-        }
-        Err(tbd_gate::verdict::NotRun::ToolAbsent(_)) => {
-            eprintln!("bash: {}: No such file or directory", script.display());
-            Ok(127)
-        }
-        Err(e) => Err(anyhow::anyhow!("running {}: {e:?}", script.display())),
-    }
-}
-
 fn code_u8(code: i32) -> u8 {
     if (0..=255).contains(&code) {
         code as u8
@@ -368,53 +342,12 @@ fn out_line(s: &str) -> Result<()> {
 mod tests {
     use super::*;
 
-    #[test]
-    fn arm_missing_setup_exits_127() {
-        let root = throwaway("no-setup");
-        // No setup-mcp-game-root.sh
-        let code = run_with_root(&root, &[]).unwrap();
-        assert_eq!(code, 127, "bash-red arm: missing setup must be 127");
-    }
-
-    #[test]
-    fn arm_setup_fails_exits_1() {
-        let root = throwaway("setup-fail");
-        let setup = root.join("scripts/mod/setup-mcp-game-root.sh");
-        fs::write(
-            &setup,
-            "#!/usr/bin/env bash\necho \"Game addons dir not found: /no/such/game/addons\" >&2\nexit 1\n",
-        )
-        .unwrap();
-        // executable bit not required — we invoke via `bash $script`
-        let code = run_with_root(&root, &[]).unwrap();
-        assert_eq!(code, 1, "bash-red arm: setup failure must be 1");
-    }
+    // T-876: setup-mcp-game-root is in-process (no shell script to stub). Failure arms for
+    // the port live in `gate_setup_mcp_game_root` tests. Bootstrap still covers port_open.
 
     #[test]
     fn port_open_rejects_non_numeric_needle() {
         // Needle ":not-a-port " cannot appear in ss/netstat listen tables.
         assert!(!port_open("not-a-port"));
-    }
-
-    fn throwaway(tag: &str) -> PathBuf {
-        let root = std::env::temp_dir().join(format!(
-            "t863-{tag}-{}-{}",
-            std::process::id(),
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
-        ));
-        let _ = fs::remove_dir_all(&root);
-        fs::create_dir_all(root.join(".ai/tickets")).unwrap();
-        fs::write(root.join(".ai/tickets/registry.json"), "{}").unwrap();
-        fs::create_dir_all(root.join("scripts/mod/lib")).unwrap();
-        fs::create_dir_all(root.join("apps/mod/tbd-framework")).unwrap();
-        fs::write(
-            root.join("scripts/mod/lib/paths.sh"),
-            "#!/usr/bin/env bash\nMONO_ROOT=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")/../..\" && pwd)\"\n",
-        )
-        .unwrap();
-        root
     }
 }
