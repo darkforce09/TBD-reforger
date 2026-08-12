@@ -2572,7 +2572,7 @@ gate_slice() {
   # slice gate's ~10 s budget. Catching a stray .py or a new python3 call at SLICE time is the
   # cheapest place to catch it; the no-node/no-shell twins stay wave-level because they need a
   # built xtask and this gate deliberately does not build one.
-  run "no-python (T-620)" bash "$ROOT/scripts/verify-no-python.sh"
+  run "no-python (T-620)" checkrun cargo run -q -p xtask -- verify no-python
   echo
   [ "$fail" -ne 0 ] && { gate_verdict FAIL "SLICE GATE"; return 1; }
   gate_verdict PASS "SLICE GATE"
@@ -2846,7 +2846,7 @@ cmd_gate() {
   #
   # `verify-no-python` is bash + git and costs nothing. The other two are xtask, and xtask is
   # already built by `test xtask+tbd-tools` above, so `cargo run -q` is a no-op relink here.
-  run "no-python (T-620)" bash "$ROOT/scripts/verify-no-python.sh"
+  run "no-python (T-620)" checkrun cargo run -q -p xtask -- verify no-python
   run "no-node (T-165.10)" hostrun cargo run -q -p xtask -- verify no-node
   run "no-shell (T-621)"  hostrun cargo run -q -p xtask -- verify no-shell
   echo

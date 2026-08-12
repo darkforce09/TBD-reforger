@@ -464,7 +464,7 @@ ticket-check-strict: ## Full validation including zero legacy planning IDs
 	./scripts/ticket check --strict
 
 verify-no-python: ## T-162 hard gate — zero .py files / no Python interpreter in scripts
-	./scripts/verify-no-python.sh
+	cargo run -q -p xtask -- verify no-python
 
 verify-no-node: ## T-165.10 hard gate — zero tracked .mjs/.cjs; node only as the enfusion-mcp floor
 	cargo run -q -p xtask -- verify no-node
