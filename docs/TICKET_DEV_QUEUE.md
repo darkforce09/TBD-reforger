@@ -30,14 +30,6 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Targets:** root
 - **Summary:** T-853 shell->xtask slice. Port scripts/mod/lib/gate-grep.sh (221 lines) to `cargo xtask (pure delete)` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). LAST: delete only once no .sh sources it; crates/tbd-gate replaced it. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
 
-## T-897 — T-853 Phase 3: delete the Makefile
-
-- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
-- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
-- **Branch:** `ticket/T-897`
-- **Targets:** root
-- **Summary:** T-853 Phase 3. Absorb these Makefile targets into xtask: (delete the Makefile; repoint 12 CI run: steps and the live docs). LAST. Deleting the Makefile silently NARROWS two gates unless they move in the same commit: node_free.rs:290 scans it with `let Ok(text) = read_to_string else { return }` (fail-open), and wave.sh:1598-1628 parses its schema-validate recipe to cross-check GATE_SCHEMA_VALIDATE_GATES. Ship `xtask schema list-gates` first. Each slice ADDS xtask subcommands in its own new module and does NOT edit the Makefile - the deletion is one final slice, so the three build slices stay file-disjoint. ACCEPTANCE: for every target, `make <t>` and the new `cargo xtask ...` must produce byte-identical stdout+stderr+rc on a clean tree AND on a deliberately broken one; the harness must assert the make side went red before believing a diff (T-556). Spec: docs/platform/t853_shell_to_xtask_waves.md
-
 ## T-898 — verify file-length scans ZERO files — SIZE-1/SIZE-3 is enforced by nothing
 
 - **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
