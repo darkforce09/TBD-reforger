@@ -143,7 +143,7 @@ cmd_gate() {
   run "capability"         distrobox-host-exec make verify-capability
   run "oracle citations"   distrobox-host-exec make verify-oracle
   run "no-crf-leak"        distrobox-host-exec make verify-no-crf-leak
-  run "ticket registry"    distrobox-host-exec ./scripts/ticket check
+  run "ticket registry"    distrobox-host-exec cargo run -q -p xtask -- ticket check
   run "enf unit tests"     distrobox-host-exec cargo test -q -p tbd-tools --lib enf::
   echo
   if [ "$fail" -ne 0 ]; then echo "GATE: FAIL"; return 1; fi

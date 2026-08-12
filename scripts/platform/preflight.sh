@@ -115,7 +115,7 @@ fi
 
 # 8. The registry must validate, because `ticket check` is INSIDE the wave gate. A registry that
 #    fails here fails every wave, forever, and a fix agent cannot repair it from inside a slice.
-if hostrun ./scripts/ticket check >/dev/null 2>&1; then ok "ticket check" "registry valid"
+if hostrun cargo run -q -p xtask -- ticket check >/dev/null 2>&1; then ok "ticket check" "registry valid"
 else nope "ticket check" "registry INVALID — every wave gate will fail"; fi
 
 # 9. Wave plan sanity: disjoint, no directory claims, deps satisfiable.

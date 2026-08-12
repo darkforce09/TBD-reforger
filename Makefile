@@ -449,19 +449,19 @@ mod-spawn-determinism: mod-spawn-determinism-preflight ## T-274 N-run spawn/equi
 	cargo run -q -p xtask -- mod spawn-determinism "$(or $(RUNS),5)"
 
 tickets: ## Run Claude Code on ready tickets in parallel
-	./scripts/ticket run
+	cargo run -q -p xtask -- ticket run
 
 ticket-list: ## Show ticket queue status
-	./scripts/ticket list
+	cargo run -q -p xtask -- ticket list
 
 ticket-sync: ## Regenerate all ticket-derived docs from registry.json
-	./scripts/ticket sync
+	cargo run -q -p xtask -- ticket sync
 
 ticket-check: ## Structural validation of ticket registry + outputs
-	./scripts/ticket check
+	cargo run -q -p xtask -- ticket check
 
 ticket-check-strict: ## Full validation including zero legacy planning IDs
-	./scripts/ticket check --strict
+	cargo run -q -p xtask -- ticket check --strict
 
 verify-no-python: ## T-162 hard gate — zero .py files / no Python interpreter in scripts
 	./scripts/verify-no-python.sh

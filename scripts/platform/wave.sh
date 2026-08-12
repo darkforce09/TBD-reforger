@@ -2817,7 +2817,7 @@ cmd_gate() {
   # there to catch. Same `checkrun` (compile-time `repo_root()` — see the long note in gate_slice),
   # same placement next to `schema`, deliberately NOT inside `make schema-validate`.
   run "T-278 catalogue drift" checkrun make map-reclassify TERRAIN=everon
-  run "ticket registry"  hostrun ./scripts/ticket check
+  run "ticket registry"  checkrun cargo run -q -p xtask -- ticket check
   # T-462. Same shell Class-R as gate_slice — fail-fast actionable scripts next to
   # schema/ticket so a deleted wiki seed line or Objects guid mismatch cannot stay cargo-green.
   # T-463. Same pattern for T-438 deploy-staging compose path + T-456 REST size gate.
