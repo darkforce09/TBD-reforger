@@ -13,27 +13,6 @@
       "branch": "ticket/T-090"
     },
     {
-      "id": "T-872",
-      "title": "T-853 port: seed-milestone-announcement -> mod seed-announcement",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-872"
-    },
-    {
-      "id": "T-873",
-      "title": "T-853 port: tbd-spawn-verify -> mod spawn-verify",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-873"
-    },
-    {
-      "id": "T-874",
-      "title": "T-853 port: test-phase1-api -> mod test-phase1-api",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-874"
-    },
-    {
       "id": "T-875",
       "title": "T-853 port: setup-workbench-linux -> setup workbench",
       "status": "ready",
