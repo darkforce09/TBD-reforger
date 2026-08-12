@@ -1,0 +1,32 @@
+---
+description: HARD — never dispatch a second agent onto a live ticket/worktree
+alwaysApply: true
+---
+
+# No duplicate slice / worktree agents (HARD)
+
+**Paid for three times already (T-860 wave 220).** Launching a "fresh" or "redo" agent while another is still bound to the same ticket/worktree races the tree, doubles cost, and enrages the operator. This is not a soft preference.
+
+## Forbidden
+
+```text
+❌ Task/subagent for T-XXX while any prior Task for T-XXX is still running
+❌ "Fresh redo" / "interrupt and take over" / second generalPurpose on the same
+   `.ai/artifacts/worktrees/T-XXX` because the first looks slow or stuck
+❌ Parallel agents that both write `xtask/src/main.rs` or the same owns paths
+   for the same ticket (even if you think the first is idle)
+❌ Interpreting a short transcript, long silence, or "only untracked files"
+   as permission to spawn a replacement
+```
+
+## Required instead
+
+1. **One agent per ticket worktree until it completes or the operator says kill it.**
+2. If it looks stuck: **wait**, or ask the operator one line — do **not** spawn a twin.
+3. To nudge a live agent: `resume` **that same agent id** only (no `interrupt` unless the operator explicitly says interrupt/kill/replace).
+4. Before any new `Task` for `T-XXX`, check that no in-flight subagent for `T-XXX` exists in this conversation. If one does → **do not dispatch**.
+5. Factory command center: gate/land/verify on completed commits only; never "help" a live slice agent by opening a second coding agent on its tree.
+
+## Operator override (only legal exception)
+
+The operator must **explicitly** say to kill/replace that agent, e.g. "kill T-860 and start a new one" / "interrupt and replace". Silence, anger about delay, or your own impatience is **not** override.

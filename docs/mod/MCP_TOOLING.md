@@ -17,9 +17,9 @@ mcp-call.sh
 
 | Component | Path | Role |
 |-----------|------|------|
-| Call wrapper | `scripts/mod/mcp-call.sh` | Daemon-first; one-shot fallback; exports all three `ENFUSION_*` paths |
-| JSON-RPC consumer | `cargo xtask mcp consume` (via `lib/xtask-run.sh`) | Shared parser + exit-code contract (daemon, one-shot, self-test) |
-| Daemon broker | `mcpd` (`tools/tbd-tools`, built via `scripts/mod/lib/mcpd-bin.sh`) | One index load (~35 s cold); serializes `tools/call` |
+| Call wrapper | `cargo xtask mcp call` | Daemon-first; one-shot fallback; exports all three `ENFUSION_*` paths |
+| JSON-RPC consumer | `cargo xtask mcp consume` | Shared parser + exit-code contract (daemon, one-shot, self-test) |
+| Daemon broker | `mcpd` (`tools/tbd-tools`, built in-process by `xtask mcp daemon`) | One index load (~35 s cold); serializes `tools/call` |
 | Daemon control | `cargo xtask mcp daemon` | `start` · `stop` · `status` · `restart` · **`stop-all`** (probe via `xtask mcp probe-sock`) |
 | Socket client | `cargo xtask mcp socket-send` | Sends framed requests to the daemon |
 | Offline gates | `scripts/mod/mcp-call-selftest.sh` | 19 fixture tests, no Workbench |

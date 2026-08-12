@@ -21435,7 +21435,8 @@
       "stream": "infra",
       "parallel_ok": true,
       "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "order": 5600
+      "order": 5600,
+      "notes": "T-853 PARTIAL LAND. lib/mcpd-bin.sh and lib/xtask-run.sh were verified to have ZERO consumers after wave 229 ported mcp-daemon.sh, and were deleted with their inventory lines. lib/paths.sh REMAINS: its last consumer is scripts/mod/deploy-staging.sh, which is on the Claude lane. Land the remainder when `git grep -l 'paths.sh' -- scripts/` returns nothing but the inventory. A stale 'do not delete paths.sh / xtask-run.sh' caution in xtask/src/gate_debug_direct_join.rs was corrected at the same time: that gate MIRRORS the path constants, it does not read the file."
     },
     {
       "id": "T-880",

@@ -1,6 +1,8 @@
 //! T-868 — port of `scripts/mod/debug-direct-join.sh` → `cargo xtask debug direct-join`.
 //!
-//! Path pins mirror `scripts/mod/lib/paths.sh` (do **not** delete paths.sh / xtask-run.sh — T-879):
+//! Path pins MIRROR the values `scripts/mod/lib/paths.sh` defined; nothing here reads that file.
+//! T-853 deleted `lib/xtask-run.sh` (zero consumers); `lib/paths.sh` survives only until
+//! `deploy-staging.sh`, its last consumer, is ported.
 //! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `SCHEMA=packages/tbd-schema`, `WEB=apps/website/api`,
 //! `DEPLOY_ENV=scripts/deploy/deploy.env`.
 //!
