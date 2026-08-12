@@ -90,7 +90,7 @@ seed: ## Apply data seeds (Discord roles + registry catalog + starter faction li
 #
 # db-backup VERIFIES the dump it writes by reading it back, and prunes BY COUNT.
 # db-restore carries the T-381 allow-list, so it cannot be pointed at `tbd_reforger` by a
-# typo. Read the header of scripts/deploy/lib/db-common.sh before changing either.
+# typo. Dump verification + T-381 allow-list live in `cargo xtask deploy db` (T-884).
 
 db-backup: ## T-577: dump the DB through the container, VERIFY the file, prune by count (KEEP=14)
 	bash scripts/deploy/backup-db.sh $(if $(DB),--db $(DB),) $(if $(OUT),--out $(OUT),) $(if $(KEEP),--keep $(KEEP),)

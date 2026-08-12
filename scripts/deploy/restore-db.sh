@@ -28,7 +28,8 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=/dev/null
-. "$SCRIPT_DIR/lib/db-common.sh"
+# T-884: db-common.sh deleted — load the same tbd_* names from xtask.
+eval "$(cargo run -q -p xtask -- deploy db emit-bash-fns)"
 
 TBD_DB_CONTAINER="${TBD_DB_CONTAINER:-tbd_reforger_db}"
 TBD_DB_USER="${TBD_DB_USER:-tbd}"
