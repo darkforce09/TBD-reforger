@@ -38,7 +38,18 @@ const BASE: &str = ".ai/artifacts/worktrees";
 /// `scripts/platform/wave.sh:3236` still shell out to it, so the `--force` advice below runs today.
 /// WHEN THOSE THREE CALL SITES MOVE TO `xtask`, delete the script and repoint this one constant at
 /// the `cargo xtask` spelling — that is the whole edit.
-const PROG: &str = "scripts/mod/slice-worktree.sh";
+/// How the operator re-runs this tool, as printed in every refusal message.
+///
+/// T-853 REPOINTED THIS when the bash was deleted. It was
+/// `scripts/mod/slice-worktree.sh`, which the port had to keep verbatim while the byte-for-byte
+/// diff against that script was the acceptance criterion. The moment the script went away, that
+/// contract became moot and the string became actively harmful: every guard refusal
+/// ("Merge them, or re-run with: …") was telling the operator to run a file that does not exist,
+/// at exactly the moment they are trying to get unstuck.
+///
+/// MEASURED 2026-08-12 — this was found by using the tool for real, dropping six stale slices;
+/// the refusal fired correctly and then named a deleted script.
+const PROG: &str = "cargo xtask platform slice-worktree --";
 
 /// `usage()` in the bash is `sed -n '2,14p' "$0"` — it prints its own header back.
 ///

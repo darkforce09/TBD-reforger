@@ -542,7 +542,7 @@ fn parse_rcon_command(action: &str, map: &str, command: &str) -> Result<RconComm
 ///
 /// A second game host would reintroduce both the addressing and the credential, because the OS
 /// stops vouching for the peer the moment the channel leaves the box; the migration sketch
-/// lives in `scripts/mod/deploy-staging.sh` §ADDRESSING.
+/// lives in `cargo xtask deploy staging` (xtask/src/deploy_staging/) §ADDRESSING.
 ///
 /// # What is still rejected, unchanged
 ///
@@ -569,7 +569,7 @@ const RCON_NO_TRANSPORT: &str = "rcon transport unavailable: the API could not r
 ///   RCON (a new port, an admin password in `server.config.json`, a protocol this repo cannot
 ///   exercise) or a mod-side command sink. Either is strictly larger than process control, and
 ///   neither may be smuggled into the agent: its entire safety argument is that it accepts no
-///   free text. **Separate ticket** (`deploy-staging.sh` §SCOPE GAP).
+///   free text. **Separate ticket** (`cargo xtask deploy staging` §SCOPE GAP).
 /// * `kick` is **unbuildable today for a reason upstream of transport**: [`RconInput`] has no
 ///   player field (`action`/`map`/`command` only) and the SPA posts a bare
 ///   `{"action":"kick"}` (`apps/website/frontend/src/server_control.rs:44`). Even handed a

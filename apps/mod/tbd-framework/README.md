@@ -77,7 +77,7 @@ Prereqs: Steam app **1890870** (Arma Reforger Server), website API on `:8080`.
 
 Local unpublished mods use **`-server` + `-addons`**, not `-config` + `-addons`.
 
-**Staging:** see [`docs/STAGING-SERVER.md`](../../../docs/mod/STAGING-SERVER.md) — `bash scripts/mod/deploy-staging.sh`.
+**Staging:** see [`docs/STAGING-SERVER.md`](../../../docs/mod/STAGING-SERVER.md) — `cargo xtask deploy staging`.
 
 ### Profile layout
 

@@ -73,17 +73,25 @@ fn agent_dir() -> &'static Path {
         let out = std::env::temp_dir().join(format!("t595-agent-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&out);
 
-        let script = root.join("scripts/mod/deploy-staging.sh");
-        let status = std::process::Command::new("bash")
-            .arg(&script)
+        // T-853: was `bash scripts/mod/deploy-staging.sh --render-agent <out>`. That script is now
+        // `cargo xtask deploy staging`. This test renders the agent with the REAL renderer rather
+        // than a fixture on purpose — a copy would keep passing while the thing actually deployed
+        // drifted — so the invocation had to move with it, not be stubbed out.
+        //
+        // `cargo run` and not a prebuilt path: this test must work from a clean checkout and from
+        // any worktree, and asking cargo is the only way to be sure the binary matches THIS tree.
+        // CARGO_TARGET_DIR is deliberately left alone — cargo inherits whatever the caller set, so
+        // the gate's own dir is used when the gate runs this, and the default otherwise.
+        let status = std::process::Command::new("cargo")
+            .args(["run", "-q", "-p", "xtask", "--", "deploy", "staging", "--"])
             .arg("--render-agent")
             .arg(&out)
             .current_dir(&root)
             .output()
-            .unwrap_or_else(|e| panic!("T-595: cannot run {}: {e}", script.display()));
+            .unwrap_or_else(|e| panic!("T-595: cannot run `cargo xtask deploy staging`: {e}"));
         assert!(
             status.status.success(),
-            "T-595: `deploy-staging.sh --render-agent` failed ({}):\n{}\n{}",
+            "T-595: `cargo xtask deploy staging -- --render-agent` failed ({}):\n{}\n{}",
             status.status,
             String::from_utf8_lossy(&status.stdout),
             String::from_utf8_lossy(&status.stderr),

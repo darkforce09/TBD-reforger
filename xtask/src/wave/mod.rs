@@ -405,7 +405,46 @@ pub fn subject(rev: &str) -> String {
 ///
 /// The bash tail was a `case "${1:-status}"`, so no argument means `status`. Exit codes are the
 /// command's own; the unknown arm prints the header and exits 1.
+/// Strip an inherited `CARGO_TARGET_DIR` before anything spawns.
+///
+/// ── WHY THIS IS AT THE ENTRY POINT AND NOT AT EACH CALL SITE ─────────────────────────────────
+///
+/// This driver CHOOSES target dirs; it does not take one. It has three, each for a measured
+/// reason: `GATE_CHECK_TARGET` so the gate's artifacts are written by the gate alone (that is what
+/// makes one fingerprint invalidation hold for every step under it), a per-slice private dir for
+/// ad-hoc `cargo test` (T-742, so a slice cannot read a sibling's binary), and the shared warm
+/// cache derived from `git rev-parse --git-common-dir` so every linked worktree points at the
+/// PRIMARY repo's `target/` instead of cold-building a 609-crate workspace eight times.
+///
+/// An ambient `CARGO_TARGET_DIR` can only fight all three. MEASURED 2026-08-12, and this is what
+/// motivated the guard: the driver was invoked with `CARGO_TARGET_DIR=<repo>/target-container`
+/// exported. Steps that cross the bridge run cargo ON THE HOST, so host cargo (glibc 2.43) wrote
+/// host binaries into the container's target dir, and the next in-container `cargo run` died with
+/// `GLIBC_2.39 not found` — a link error that reads exactly like a broken checkout and is not one.
+/// That is the same two-glibc trap `scripts/lib/hostrun.sh` was written for, arriving through an
+/// environment variable instead of a compiler.
+///
+/// Removing it is right rather than merely convenient: there is no value a caller could supply
+/// that this driver should honour. Announced, never silent — a tool that quietly edits its own
+/// environment is the thing that makes the next failure unexplainable.
+fn disown_ambient_target_dir() {
+    if let Ok(v) = std::env::var("CARGO_TARGET_DIR") {
+        if !v.is_empty() {
+            eprintln!("wave: ignoring inherited CARGO_TARGET_DIR={v}");
+            eprintln!(
+                "      This driver picks its own (gate-check, per-slice private, shared warm cache)."
+            );
+            eprintln!(
+                "      An inherited one crosses the container/host bridge and poisons the cache it names."
+            );
+            // SAFETY: single-threaded entry, before any child is spawned or thread started.
+            unsafe { std::env::remove_var("CARGO_TARGET_DIR") };
+        }
+    }
+}
+
 pub fn run(args: &[String]) -> Result<u8> {
+    disown_ambient_target_dir();
     let ctx = Ctx::enter()?;
     let cmd = args.first().map(String::as_str).unwrap_or("status");
     let rest: Vec<String> = args.iter().skip(1).cloned().collect();
