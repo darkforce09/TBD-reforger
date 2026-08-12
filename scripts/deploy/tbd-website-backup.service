@@ -39,7 +39,7 @@
 
 [Unit]
 Description=TBD website — verified PostgreSQL backup
-Documentation=file:///TBD_REPO_DIR_PLACEHOLDER/scripts/deploy/backup-db.sh
+Documentation=file:///TBD_REPO_DIR_PLACEHOLDER/xtask/src/deploy_db_backup.rs
 ; The dump goes through `podman exec`, so the container stack has to be up. This orders
 ; against it when present and does not require it, because the backup script already
 ; refuses loudly (and non-zero) when the container is missing or not running — a refusal
@@ -51,14 +51,14 @@ Type=oneshot
 WorkingDirectory=/TBD_REPO_DIR_PLACEHOLDER
 
 ; Retention is BY COUNT. 14 nightly dumps ~= two weeks of history that cannot be silently
-; emptied by a stopped timer — see the long comment in backup-db.sh. Override per host by
+; emptied by a stopped timer — see the long comment in xtask/src/deploy_db_backup.rs. Override per host by
 ; editing this line, not by adding a `find -mtime` sweep somewhere else.
 Environment=TBD_BACKUP_KEEP=14
 Environment=TBD_BACKUP_DB=tbd_reforger
 Environment=TBD_BACKUP_DIR=%h/tbd-backups/website
 Environment=TBD_DB_CONTAINER=tbd_reforger_db
 
-ExecStart=/usr/bin/env bash /TBD_REPO_DIR_PLACEHOLDER/scripts/deploy/backup-db.sh
+ExecStart=/usr/bin/env cargo run -q -p xtask -- deploy db backup
 
 ; A failed backup must be loud and must NOT be retried into a tight loop — the timer will
 ; come back tomorrow, and the common causes (container down, disk full) are not fixed by
