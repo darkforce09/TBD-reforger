@@ -3,9 +3,10 @@
 //! Offline MCP call-path gates (T-090.0 T1–T7; T-162 consumer). Drives `xtask mcp consume`
 //! against recorded fixtures and `xtask mcp call` against the Rust mcpd stub (`MCP_STUB=1`).
 //!
-//! Still shells the same helpers bash did (later deletes — do **not** remove here):
-//! `lib/xtask-run.sh`, `lib/mcpd-bin.sh`, `mcp-daemon.sh`. Nested `cargo run -q -p xtask`
-//! matches bash; warm `CARGO_TARGET_DIR` keeps stdout reproducible.
+//! Wave 226 option 2: `cargo run -q -p xtask --` replaces former `lib/xtask-run.sh`;
+//! mcpd path is inlined (`cargo build -q -p tbd-tools --bin mcpd` + `CARGO_TARGET_DIR`
+//! honor — former `lib/mcpd-bin.sh`). Still shells `mcp-daemon.sh` (OOS). Warm
+//! `CARGO_TARGET_DIR` keeps stdout reproducible.
 //!
 //! Fail-opens pinned (bash parity):
 //! - `cleanup` / daemon `start` discard stdout+stderr (`>/dev/null 2>&1`).
@@ -90,8 +91,6 @@ pub fn run_at(script_dir: &Path) -> i32 {
         .and_then(|p| p.parent())
         .map(Path::to_path_buf)
         .unwrap_or_else(|| script_dir.to_path_buf());
-    let xtask = script_dir.join("lib/xtask-run.sh");
-    let mcpd_bin = script_dir.join("lib/mcpd-bin.sh");
     let daemon = script_dir.join("mcp-daemon.sh");
     let fix = script_dir.join("fixtures");
     let sock = format!("/tmp/tbd-mcp-selftest-{}.sock", uid());
@@ -101,40 +100,35 @@ pub fn run_at(script_dir: &Path) -> i32 {
 
     let mut c = Counters { pass: 0, fail: 0 };
 
-    println!("[T-543] mcpd-bin CARGO_TARGET_DIR honor");
-    let mcpd_bin_s = mcpd_bin.to_string_lossy().into_owned();
-    let stub = match run_capture(&["bash", &mcpd_bin_s], None, &[]) {
-        Ok((0, out, _)) => bash_chomp(&out),
-        Ok((code, out, err)) => {
-            c.no(&format!(
-                "mcpd-bin echo (want rc0 got rc{code} out=[{}] err=[{}])",
-                bash_chomp(&out),
-                bash_chomp(&err)
-            ));
-            String::new()
-        }
-        Err(n) => {
-            c.no(&format!("mcpd-bin DidNotRun: {n:?}"));
-            String::new()
-        }
-    };
+    println!("[T-543] mcpd CARGO_TARGET_DIR honor");
     let want_stub = format!(
         "{}/debug/mcpd",
         std::env::var("CARGO_TARGET_DIR")
             .unwrap_or_else(|_| root.join("target").display().to_string())
     );
-    if !stub.is_empty() {
-        if stub == want_stub {
-            c.ok(&format!("mcpd-bin echo path ({stub})"));
-        } else {
-            c.no(&format!("mcpd-bin echo (want={want_stub} got={stub})"));
+    let stub = match resolve_mcpd_bin(&root) {
+        Ok((0, path)) => {
+            if path == want_stub {
+                c.ok(&format!("mcpd build+path ({path})"));
+            } else {
+                c.no(&format!("mcpd build+path (want={want_stub} got={path})"));
+            }
+            path
         }
-    }
+        Ok((code, path)) => {
+            c.no(&format!("mcpd build (want rc0 got rc{code} path=[{path}])"));
+            String::new()
+        }
+        Err(n) => {
+            c.no(&format!("mcpd build DidNotRun: {n:?}"));
+            String::new()
+        }
+    };
 
     cleanup(&daemon, &sock);
 
     println!("[T2-T5] consumer fixtures");
-    match xtask_consume(&xtask, &fix.join("mcp-wb-state-success.jsonl")) {
+    match xtask_consume(&root, &fix.join("mcp-wb-state-success.jsonl")) {
         Ok((rc, out, _)) => {
             let out = bash_chomp(&out);
             if rc == 0 && !out.is_empty() {
@@ -146,7 +140,7 @@ pub fn run_at(script_dir: &Path) -> i32 {
         Err(n) => c.no(&format!("T2 DidNotRun: {n:?}")),
     }
 
-    match xtask_consume(&xtask, &fix.join("mcp-tool-error.jsonl")) {
+    match xtask_consume(&root, &fix.join("mcp-tool-error.jsonl")) {
         Ok((rc, _out, err)) => {
             let _ = fs::write(ST_ERR, &err);
             c.rc_is("T3 error (rpc)", 3, rc);
@@ -159,7 +153,7 @@ pub fn run_at(script_dir: &Path) -> i32 {
         Err(n) => c.no(&format!("T3 DidNotRun: {n:?}")),
     }
 
-    match xtask_consume(&xtask, &fix.join("mcp-tool-iserror.jsonl")) {
+    match xtask_consume(&root, &fix.join("mcp-tool-iserror.jsonl")) {
         Ok((rc, _out, err)) => {
             let _ = fs::write(ST_ERR, &err);
             c.rc_is("T3b error (isError)", 3, rc);
@@ -172,12 +166,12 @@ pub fn run_at(script_dir: &Path) -> i32 {
         Err(n) => c.no(&format!("T3b DidNotRun: {n:?}")),
     }
 
-    match xtask_consume(&xtask, &fix.join("mcp-init-fail.jsonl")) {
+    match xtask_consume(&root, &fix.join("mcp-init-fail.jsonl")) {
         Ok((rc, _, _)) => c.rc_is("T4 init-fail", 2, rc),
         Err(n) => c.no(&format!("T4 DidNotRun: {n:?}")),
     }
 
-    match xtask_consume(&xtask, &fix.join("mcp-empty.jsonl")) {
+    match xtask_consume(&root, &fix.join("mcp-empty.jsonl")) {
         Ok((rc, out, _)) => {
             let out = bash_chomp(&out);
             if rc == 1 && out.is_empty() {
@@ -190,7 +184,7 @@ pub fn run_at(script_dir: &Path) -> i32 {
     }
 
     println!("[T6] usage error, no spawn");
-    match xtask_call(&xtask, &[], &[]) {
+    match xtask_call(&root, &[], &[]) {
         Ok((rc, _out, err)) => {
             let _ = fs::write(ST_ERR, &err);
             c.rc_is("T6 usage", 1, rc);
@@ -208,7 +202,7 @@ pub fn run_at(script_dir: &Path) -> i32 {
     let call_args = ["wb_state".to_string(), "{}".to_string()];
 
     match xtask_call(
-        &xtask,
+        &root,
         &call_args,
         &env_pairs(&[
             ("MCP_NO_DAEMON", "1"),
@@ -229,7 +223,7 @@ pub fn run_at(script_dir: &Path) -> i32 {
     }
 
     match xtask_call(
-        &xtask,
+        &root,
         &call_args,
         &env_pairs(&[
             ("MCP_NO_DAEMON", "1"),
@@ -243,7 +237,7 @@ pub fn run_at(script_dir: &Path) -> i32 {
     }
 
     match xtask_call(
-        &xtask,
+        &root,
         &call_args,
         &env_pairs(&[
             ("MCP_NO_DAEMON", "1"),
@@ -258,7 +252,7 @@ pub fn run_at(script_dir: &Path) -> i32 {
     }
 
     match xtask_call(
-        &xtask,
+        &root,
         &call_args,
         &env_pairs(&[
             ("MCP_NO_DAEMON", "1"),
@@ -281,7 +275,7 @@ pub fn run_at(script_dir: &Path) -> i32 {
     }
 
     match xtask_call(
-        &xtask,
+        &root,
         &call_args,
         &env_pairs(&[
             ("MCP_NO_DAEMON", "1"),
@@ -326,7 +320,7 @@ pub fn run_at(script_dir: &Path) -> i32 {
     }
 
     match xtask_call(
-        &xtask,
+        &root,
         &call_args,
         &env_pairs(&[
             ("ENFUSION_MCP_BIN", &stub),
@@ -347,7 +341,7 @@ pub fn run_at(script_dir: &Path) -> i32 {
 
     let args_rt = ["api_search".to_string(), r#"{"query":"Ztest"}"#.to_string()];
     match xtask_call(
-        &xtask,
+        &root,
         &args_rt,
         &env_pairs(&[
             ("ENFUSION_MCP_BIN", &stub),
@@ -369,7 +363,7 @@ pub fn run_at(script_dir: &Path) -> i32 {
     cleanup(&daemon, &sock);
 
     match xtask_call(
-        &xtask,
+        &root,
         &call_args,
         &env_pairs(&[
             ("MCP_NO_DAEMON", "1"),
@@ -429,18 +423,42 @@ fn cleanup(daemon: &Path, sock: &str) {
     let _ = fs::remove_file(sock);
 }
 
-fn run_capture(
-    argv: &[&str],
+/// Former `lib/mcpd-bin.sh`: build mcpd quietly, honor `CARGO_TARGET_DIR`, echo path.
+fn resolve_mcpd_bin(root: &Path) -> Result<(i32, String), NotRun> {
+    let target_dir = std::env::var("CARGO_TARGET_DIR")
+        .unwrap_or_else(|_| root.join("target").display().to_string());
+    let o = Run::new("cargo")
+        .arg("build")
+        .arg("-q")
+        .arg("-p")
+        .arg("tbd-tools")
+        .arg("--bin")
+        .arg("mcpd")
+        .cwd(root)
+        .output()?;
+    if o.code != 0 {
+        return Ok((o.code, String::new()));
+    }
+    Ok((0, format!("{target_dir}/debug/mcpd")))
+}
+
+/// Former `lib/xtask-run.sh` ≡ `cargo run -q -p xtask -- <args>` from monorepo root.
+fn cargo_xtask(
+    root: &Path,
+    args: &[&str],
     stdin: Option<&str>,
     envs: &[(String, String)],
 ) -> Result<(i32, String, String), NotRun> {
-    let Some((prog, rest)) = argv.split_first() else {
-        return Err(NotRun::ToolAbsent(String::new()));
-    };
-    let mut r = Run::new(*prog);
-    for a in rest {
+    let mut r = Run::new("cargo")
+        .arg("run")
+        .arg("-q")
+        .arg("-p")
+        .arg("xtask")
+        .arg("--");
+    for a in args {
         r = r.arg(*a);
     }
+    r = r.cwd(root);
     for (k, v) in envs {
         r = r.env(k, v);
     }
@@ -451,27 +469,20 @@ fn run_capture(
     Ok((o.code, o.stdout, o.stderr))
 }
 
-fn xtask_consume(xtask: &Path, fixture: &Path) -> Result<(i32, String, String), NotRun> {
+fn xtask_consume(root: &Path, fixture: &Path) -> Result<(i32, String, String), NotRun> {
     let body = fs::read_to_string(fixture).unwrap_or_default();
-    let xt = xtask.to_string_lossy().into_owned();
-    run_capture(&["bash", &xt, "mcp", "consume"], Some(&body), &[])
+    cargo_xtask(root, &["mcp", "consume"], Some(&body), &[])
 }
 
 fn xtask_call(
-    xtask: &Path,
+    root: &Path,
     args: &[String],
     envs: &[(String, String)],
 ) -> Result<(i32, String, String), NotRun> {
-    let xt = xtask.to_string_lossy().into_owned();
-    let mut r = Run::new("bash").arg(&xt).arg("mcp").arg("call");
-    for a in args {
-        r = r.arg(a);
-    }
-    for (k, v) in envs {
-        r = r.env(k, v);
-    }
-    let o = r.output()?;
-    Ok((o.code, o.stdout, o.stderr))
+    let mut argv: Vec<&str> = vec!["mcp", "call"];
+    let owned: Vec<&str> = args.iter().map(String::as_str).collect();
+    argv.extend(owned.iter().copied());
+    cargo_xtask(root, &argv, None, envs)
 }
 
 #[cfg(test)]

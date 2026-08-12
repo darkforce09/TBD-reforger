@@ -1,11 +1,12 @@
 //! T-863 — port of `scripts/mod/tbd-dev-bootstrap.sh` → `cargo xtask mod dev-bootstrap`.
 //!
-//! Path pins mirror `scripts/mod/lib/paths.sh` (do **not** delete paths.sh — T-879):
+//! Path pins are inlined as [`Paths`] (former `lib/paths.sh` values; lib stays on disk
+//! for OOS bash — wave 226 option 2 parks T-879/T-880 deletes):
 //! `MONO_ROOT`, `MOD_ROOT=apps/mod`, `MOD_SCRIPTS=scripts/mod`, `WEB=apps/website/api`.
 //!
-//! Still shells out to `mcp-daemon.sh` (bash; later slice). MCP game root is in-process
+//! Still shells out to `mcp-daemon.sh` (bash; OOS). MCP game root is in-process
 //! (`gate_setup_mcp_game_root`, T-876).
-//! `xtask mcp call` goes through `scripts/mod/lib/xtask-run.sh` like bash.
+//! `xtask mcp call` uses `cargo run -q -p xtask --` from mono root (former xtask-run).
 //!
 //! Fail-opens closed or pinned:
 //! - `steam -applaunch … 2>/dev/null || true` — preserved (launch attempt never fails the gate).
@@ -185,12 +186,18 @@ pub fn run_with_root(root: &Path, args: &[String]) -> Result<u8> {
         }
     }
 
-    let xtask_run = p.mod_scripts.join("lib/xtask-run.sh");
-    match Run::new(&xtask_run)
+    // Former lib/xtask-run.sh → cargo run -q -p xtask -- (mono root).
+    match Run::new("cargo")
+        .arg("run")
+        .arg("-q")
+        .arg("-p")
+        .arg("xtask")
+        .arg("--")
         .arg("mcp")
         .arg("call")
         .arg("wb_connect")
         .arg("{}")
+        .cwd(&p.mono_root)
         .merged_output()
     {
         Ok(m) => {
@@ -213,11 +220,17 @@ pub fn run_with_root(root: &Path, args: &[String]) -> Result<u8> {
 
     // Preserved fail-open: mod_validate || true
     let mod_json = format!("{{\"modPath\":\"{}\"}}", mod_dir.display());
-    if let Ok(m) = Run::new(&xtask_run)
+    if let Ok(m) = Run::new("cargo")
+        .arg("run")
+        .arg("-q")
+        .arg("-p")
+        .arg("xtask")
+        .arg("--")
         .arg("mcp")
         .arg("call")
         .arg("mod_validate")
         .arg(&mod_json)
+        .cwd(&p.mono_root)
         .merged_output()
     {
         print!("{}", m.text);
@@ -302,7 +315,7 @@ fn apply_default_env() {
 
 fn set_default(key: &str, val: &str) {
     if std::env::var_os(key).is_none() {
-        // Intentionally mutates process env so child helpers (mcp daemon / xtask-run) see the
+        // Intentionally mutates process env so child helpers (mcp daemon / cargo xtask) see the
         // same defaults the former script `export`ed.
         unsafe { std::env::set_var(key, val) };
     }
