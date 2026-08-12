@@ -19,6 +19,7 @@ mod gate_t438;
 mod gate_t439;
 mod gate_t440;
 mod gate_t444;
+mod gate_tbd_spawn_determinism;
 mod gate_ui_layouts;
 mod gate_ui_layouts_awk;
 mod golden_gate;
@@ -113,6 +114,29 @@ enum TopCmd {
     Ai {
         #[command(subcommand)]
         cmd: AiCmd,
+    },
+    /// Mod / Workbench gates (T-853 shell→xtask ports)
+    Mod {
+        #[command(subcommand)]
+        cmd: ModCmd,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+enum ModCmd {
+    /// Spawn/equip determinism (T-856 port of tbd-spawn-determinism.sh)
+    #[command(name = "spawn-determinism")]
+    SpawnDeterminism {
+        /// Fail-fast: Workbench Net API must already be listening (exit 2 if not)
+        #[arg(long)]
+        preflight: bool,
+        /// Offline per-run verdict + extraction pins (no Workbench)
+        #[arg(long)]
+        selftest: bool,
+        /// N-runs (default 5); ignored with --preflight / --selftest
+        runs: Option<u32>,
+        /// World resource path (default worlds/TBD_Dev_POC.ent)
+        world: Option<String>,
     },
 }
 
@@ -568,6 +592,20 @@ fn run() -> Result<u8> {
         TopCmd::Ai { cmd } => match cmd {
             AiCmd::Guard => Ok(ai::cmd_guard()),
             AiCmd::Run { args } => ai::cmd_run(&args),
+        },
+        TopCmd::Mod { cmd } => match cmd {
+            ModCmd::SpawnDeterminism {
+                preflight,
+                selftest,
+                runs,
+                world,
+            } => gate_tbd_spawn_determinism::run(
+                &find_repo_root()?,
+                preflight,
+                selftest,
+                runs.unwrap_or(5),
+                world.as_deref().unwrap_or("worlds/TBD_Dev_POC.ent"),
+            ),
         },
         TopCmd::Gen { cmd } => {
             let code = match cmd {
