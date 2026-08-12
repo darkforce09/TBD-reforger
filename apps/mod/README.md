@@ -36,7 +36,7 @@ one greenfield Enfusion mod runs them all, and the web stack handles auth, event
 ```bash
 # Prereq: Steam app 1874900 (Arma Reforger Server stable), API on :8080, Postgres for website
 # From monorepo root:
-bash scripts/mod/setup-server-profile.sh      # default: .local-test-profile/
+cargo xtask setup server-profile      # default: apps/mod/.local-test-profile/
 bash scripts/mod/run-dev-server.sh            # -server + -addons (local mod)
 ```
 
@@ -96,7 +96,7 @@ bash scripts/mod/test-phase1-api.sh
 | [`setup-client-addons.sh`](../../scripts/mod/setup-client-addons.sh) | **Legacy** — local client mod symlink (not Direct-Joinable; use the Workshop mod instead) |
 | [`remote-log-grep.sh`](../../scripts/mod/remote-log-grep.sh) | SSH log verify on staging server |
 | [`bootstrap-staging-server.sh`](../../scripts/mod/bootstrap-staging-server.sh) | One-time SSH discovery + mkdir |
-| [`setup-server-profile.sh`](../../scripts/mod/setup-server-profile.sh) | Dedicated server profile + mission fallback |
+| `cargo xtask setup server-profile` | Dedicated server profile + mission fallback |
 | [`run-dev-server.sh`](../../scripts/mod/run-dev-server.sh) | Local dedicated server launcher |
 
 ---

@@ -1586,14 +1586,14 @@ fi
 
 echo "==> remote profile + addon symlink"
 if [ "$DRY_RUN" -eq 1 ]; then
-  echo "[dry-run] setup-server-profile + patch TBD_BackendConfig.json"
+  echo "[dry-run] setup server-profile + patch TBD_BackendConfig.json"
 else
   ssh_cmd bash -s <<EOF
 set -euo pipefail
 mkdir -p "$TBD_ADDONS_STAGING" "$TBD_PROFILE_DIR"
 ln -sfn "$TBD_REMOTE_DIR/apps/mod/tbd-framework" "$TBD_ADDONS_STAGING/tbd-framework"
 export GAME_SERVER_TOKEN='$TBD_GAME_SERVER_TOKEN'
-bash "$TBD_REMOTE_DIR/scripts/mod/setup-server-profile.sh" "$TBD_PROFILE_DIR"
+(cd "$TBD_REMOTE_DIR" && cargo run -q -p xtask -- setup server-profile "$TBD_PROFILE_DIR")
 CFG="$TBD_PROFILE_DIR/profile/TBD_BackendConfig.json"
 sed -i "s|replace-with-GAME_SERVER_TOKENS-value|$TBD_GAME_SERVER_TOKEN|g" "\$CFG"
 sed -i 's|"backendUrl": "[^"]*"|"backendUrl": "$TBD_BACKEND_URL"|' "\$CFG"

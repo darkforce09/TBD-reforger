@@ -104,7 +104,7 @@ make seed
 
 Grab the service token the game server will use — it is one value, not a list
 ([`config.rs`](../../apps/website/api/src/config.rs) reads `SERVICE_TOKEN`;
-[`setup-server-profile.sh:33-37`](../../scripts/mod/setup-server-profile.sh) explains the
+`cargo xtask setup server-profile` / `xtask/src/gate_setup_server_profile.rs` explains the
 `GAME_SERVER_TOKENS` rename that used to break this):
 
 ```bash
@@ -126,8 +126,8 @@ callback. You should land logged in as an admin.
 ### 2.3 The mission (15 min, alone) — this is the T-068 half
 
 You need a mission whose slots carry **gear and cargo**. The mission the server seeds by default
-now has them: `setup-server-profile.sh` copies `bridgehead-at-levie.json` in as `msn_8f3a2c`
-([`setup-server-profile.sh:92-100`](../../scripts/mod/setup-server-profile.sh)), and **T-605** gave
+now has them: `cargo xtask setup server-profile` copies `bridgehead-at-levie.json` in as `msn_8f3a2c`
+(`xtask/src/gate_setup_server_profile.rs`), and **T-605** gave
 that golden real loadouts on 4 of its 18 slots — full gear + cargo (`blufor:Alpha:SL:0`), gear only
 (`blufor:Alpha:AR:0`), cargo only aimed at a container the kit does **not** wear
 (`blufor:Alpha:RFL:0` — the degrade path), the other faction (`opfor:Grom:SL:0`), and 14 left
@@ -280,7 +280,7 @@ Stage it once:
 
 ```bash
 # 2.4.1 — profile + backend config + registry fallback
-bash scripts/mod/setup-server-profile.sh "$HOME/tbd-playtest/profile"
+cargo xtask setup server-profile "$HOME/tbd-playtest/profile"
 ```
 Expect `Profile ready at: /home/…/tbd-playtest/profile (game data under …/profile/profile)`.
 `$profile:` resolves to `<-profile-arg>/profile/`, **not** `<-profile-arg>/` — seeding one level up
@@ -1197,7 +1197,7 @@ and the miss is reported per item (WARNING), per slot, once for the session, and
 loadout `SCRIPT (W)` = it will, carrying less.
 
 **And the gate now runs it.** `bridgehead-at-levie.json` — the mission `wave.sh`'s `world boot
-+mission` step boots and the one `setup-server-profile.sh` seeds — had **0 gear and 0 cargo**, which
++mission` step boots and the one `cargo xtask setup server-profile` seeds — had **0 gear and 0 cargo**, which
 is why none of this had ever executed. T-605 gave it four real loadouts including the unworn-
 container degrade, so every wave gate from now on drives the path.
 

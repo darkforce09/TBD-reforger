@@ -76,7 +76,7 @@ for arg in "$@"; do
       echo "API dev server starting on :8080"
       ;;
     --server)
-      bash "$MOD_SCRIPTS/setup-server-profile.sh" 2>/dev/null || true
+      (cd "$MONO_ROOT" && cargo run -q -p xtask -- setup server-profile) 2>/dev/null || true
       bash "$MOD_SCRIPTS/run-dev-server.sh" &
       echo "Dedicated server starting..."
       ;;

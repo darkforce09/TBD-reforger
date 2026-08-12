@@ -34,7 +34,7 @@ class TBD_Registry
 
 		if (!FileIO.FileExists(path))
 		{
-			Print("[TBD] Registry file missing (mod and profile). Run scripts/mod/setup-server-profile.sh", LogLevel.ERROR);
+			Print("[TBD] Registry file missing (mod and profile). Run: cargo xtask setup server-profile", LogLevel.ERROR);
 			return false;
 		}
 
