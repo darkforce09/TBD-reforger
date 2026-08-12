@@ -23,7 +23,7 @@ mcp-call.sh
 | Daemon control | `scripts/mod/mcp-daemon.sh` | `start` · `stop` · `status` · `restart` · **`stop-all`** (probe via `xtask mcp probe-sock`) |
 | Socket client | `cargo xtask mcp socket-send` | Sends framed requests to the daemon |
 | Offline gates | `scripts/mod/mcp-call-selftest.sh` | 19 fixture tests, no Workbench |
-| Live smoke | `scripts/mod/mcp-smoke.sh` | `wb_connect` + `wb_state` after bootstrap |
+| Live smoke | `cargo xtask mcp smoke` (`make mcp-smoke`) | `wb_connect` + `wb_state` after bootstrap |
 
 **Bootstrap** (`cargo xtask mod dev-bootstrap`) runs `npm ci` in `scripts/mod/` when needed, pre-warms the daemon, then `wb_connect` + `mod_validate`.
 
@@ -36,7 +36,7 @@ bash scripts/mod/mcp-call.sh <tool> '<json-args>'   # args default to {}
 bash scripts/mod/mcp-daemon.sh status
 bash scripts/mod/mcp-daemon.sh stop-all             # nuke every stray broker + orphaned server
 bash scripts/mod/mcp-call-selftest.sh               # offline — no Workbench
-bash scripts/mod/mcp-smoke.sh                       # live — Workbench Net API up
+cargo xtask mcp smoke                               # live — Workbench Net API up
 ```
 
 **Examples:**
@@ -140,7 +140,7 @@ Old `mcp-call.sh` only exported `ENFUSION_GAME_PATH`. `wb_*` tools need all thre
 | Gate | Command | PASS |
 |------|---------|------|
 | **T1–T7** (offline) | `bash scripts/mod/mcp-call-selftest.sh` | exit 0, 19/19 |
-| **S1** (live) | `bash scripts/mod/mcp-smoke.sh` | exit 0 after bootstrap |
+| **S1** (live) | `cargo xtask mcp smoke` / `make mcp-smoke` | exit 0 after bootstrap |
 | **S2** | `time bash scripts/mod/mcp-call.sh wb_state '{}'` ×3 | exit 0, ~response time (not ~180 s) |
 | **S5** | `bash scripts/mod/mcp-call.sh totally_fake_tool '{}'` | exit 3 |
 
