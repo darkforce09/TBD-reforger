@@ -54,6 +54,7 @@ mod shell_free;
 mod slice_collisions;
 mod sql_gates;
 mod sync;
+mod test_env;
 
 use anyhow::{Result, bail};
 use clap::{Parser, Subcommand};

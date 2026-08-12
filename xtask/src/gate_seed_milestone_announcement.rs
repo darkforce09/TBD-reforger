@@ -16,6 +16,11 @@
 //! - `podman` absent / failing / no matching name: treated as "no container" (bash
 //!   `2>/dev/null | grep -qx`), never a silent success when psql is also absent.
 //! - Child `psql` / `podman exec` nonzero: raw exit code forwarded (bash `set -e`).
+//!
+//! Test seams (prefer these over PATH stubs — PATH races `gate_crf_leak`'s `/usr/bin/grep`):
+//! - `TBD_SEED_MILESTONE_PSQL` — absolute path to a psql binary (checked before `PATH`).
+//!   A set-but-missing path forces [`NotRun::ToolAbsent`].
+//! - `TBD_SEED_MILESTONE_PODMAN` — same for podman.
 
 use std::collections::HashMap;
 use std::fs;
@@ -30,6 +35,11 @@ use crate::root::find_repo_root;
 
 /// Historical script path (error-message pin + inventory identity).
 const SCRIPT_REL: &str = "scripts/mod/seed-milestone-announcement.sh";
+
+/// Optional absolute psql path for unit tests (avoids PATH mutation).
+const ENV_PSQL: &str = "TBD_SEED_MILESTONE_PSQL";
+/// Optional absolute podman path for unit tests (avoids PATH mutation).
+const ENV_PODMAN: &str = "TBD_SEED_MILESTONE_PODMAN";
 
 /// Exact `<<'SQL'` body from the former bash (trailing newline included).
 const SQL: &str = r#"INSERT INTO announcements (title, body, pinned, published, published_at)
@@ -104,8 +114,8 @@ pub fn run_with_root(root: &Path) -> Result<u8> {
     }
 
     // bash: `if command -v psql >/dev/null 2>&1; then …`
-    match proc::which("psql") {
-        Ok(_) => {
+    match resolve_tool(ENV_PSQL, "psql") {
+        Ok(psql) => {
             let url = match database_url {
                 Some(u) => u,
                 None => {
@@ -118,7 +128,7 @@ pub fn run_with_root(root: &Path) -> Result<u8> {
                 }
             };
             run_sql(
-                Run::new("psql")
+                Run::new(psql)
                     .arg(&url)
                     .arg("-v")
                     .arg("ON_ERROR_STOP=1")
@@ -127,8 +137,15 @@ pub fn run_with_root(root: &Path) -> Result<u8> {
         }
         Err(NotRun::ToolAbsent(_)) => {
             if tbdevent_postgres_running() {
+                let podman = match resolve_tool(ENV_PODMAN, "podman") {
+                    Ok(p) => p,
+                    Err(_) => {
+                        eprintln!("{NO_PSQL}");
+                        return Ok(1);
+                    }
+                };
                 run_sql(
-                    Run::new("podman")
+                    Run::new(podman)
                         .arg("exec")
                         .arg("-i")
                         .arg("tbdevent-postgres")
@@ -150,6 +167,24 @@ pub fn run_with_root(root: &Path) -> Result<u8> {
     }
 }
 
+/// Resolve a tool: optional absolute override env, else `PATH` via [`proc::which`].
+///
+/// A set-but-missing override path is [`NotRun::ToolAbsent`] (test seam for "no psql" without
+/// wiping `PATH`). Empty / unset override falls through to `which`.
+fn resolve_tool(env_key: &str, name: &str) -> Result<PathBuf, NotRun> {
+    if let Ok(override_path) = std::env::var(env_key) {
+        let trimmed = override_path.trim();
+        if !trimmed.is_empty() {
+            let p = PathBuf::from(trimmed);
+            if p.is_file() {
+                return Ok(p);
+            }
+            return Err(NotRun::ToolAbsent(name.to_string()));
+        }
+    }
+    proc::which(name)
+}
+
 fn run_sql(run: Run) -> Result<u8> {
     match run.merged_output() {
         Ok(out) => {
@@ -169,7 +204,10 @@ fn run_sql(run: Run) -> Result<u8> {
 
 /// bash: `podman ps --format '{{.Names}}' 2>/dev/null | grep -qx tbdevent-postgres`
 fn tbdevent_postgres_running() -> bool {
-    match Run::new("podman")
+    let Ok(podman) = resolve_tool(ENV_PODMAN, "podman") else {
+        return false;
+    };
+    match Run::new(podman)
         .arg("ps")
         .arg("--format")
         .arg("{{.Names}}")
@@ -215,9 +253,7 @@ fn not_run_exit(e: &NotRun) -> u8 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::Mutex;
-
-    static LOCK: Mutex<()> = Mutex::new(());
+    use crate::test_env;
 
     fn fixture_root(tag: &str) -> PathBuf {
         let root = std::env::temp_dir().join(format!("t872-seed-{tag}-{}", std::process::id()));
@@ -235,6 +271,58 @@ mod tests {
         fs::write(root.join("apps/website/api/.env"), body).unwrap();
     }
 
+    fn chmod_755(path: &Path) {
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut p = fs::metadata(path).unwrap().permissions();
+            p.set_mode(0o755);
+            fs::set_permissions(path, p).unwrap();
+        }
+    }
+
+    fn write_stub(bin: &Path, name: &str, body: &str) -> PathBuf {
+        fs::create_dir_all(bin).unwrap();
+        let path = bin.join(name);
+        fs::write(&path, body).unwrap();
+        chmod_755(&path);
+        path
+    }
+
+    struct OverrideGuard {
+        key: &'static str,
+        previous: Option<std::ffi::OsString>,
+    }
+
+    impl OverrideGuard {
+        fn set(key: &'static str, value: &Path) -> Self {
+            let previous = std::env::var_os(key);
+            // SAFETY: caller holds test_env::lock_env; restored on drop.
+            unsafe { std::env::set_var(key, value) };
+            Self { key, previous }
+        }
+
+        fn set_absent(key: &'static str) -> Self {
+            let previous = std::env::var_os(key);
+            // Nonexistent path → resolve_tool ToolAbsent (no PATH wipe).
+            let absent =
+                std::env::temp_dir().join(format!("t872-absent-{}-{}", key, std::process::id()));
+            unsafe { std::env::set_var(key, &absent) };
+            Self { key, previous }
+        }
+    }
+
+    impl Drop for OverrideGuard {
+        fn drop(&mut self) {
+            unsafe {
+                match self.previous.take() {
+                    Some(v) => std::env::set_var(self.key, v),
+                    None => std::env::remove_var(self.key),
+                }
+            }
+        }
+    }
+
     #[test]
     fn sql_matches_former_heredoc_len() {
         assert_eq!(SQL.len(), 528); // UTF-8 bytes (3 multi-byte dashes)
@@ -244,95 +332,50 @@ mod tests {
 
     #[test]
     fn no_psql_no_container_exits_1() {
-        let _g = LOCK.lock().unwrap();
+        let _g = test_env::lock_env();
         let root = fixture_root("no-psql");
         write_env(&root, "DATABASE_URL=postgres://u:p@127.0.0.1:5432/db\n");
-        // Isolate: no psql; stub podman with empty ps list.
         let bin = root.join("bin");
-        fs::create_dir_all(&bin).unwrap();
-        fs::write(bin.join("podman"), "#!/bin/sh\nexit 0\n").unwrap();
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            let mut p = fs::metadata(bin.join("podman")).unwrap().permissions();
-            p.set_mode(0o755);
-            fs::set_permissions(bin.join("podman"), p).unwrap();
-        }
-        let old_path = std::env::var_os("PATH");
-        // SAFETY: single-threaded under LOCK; restored below.
-        unsafe {
-            std::env::set_var("PATH", bin.as_os_str());
-            std::env::remove_var("DATABASE_URL");
-        }
+        let podman = write_stub(&bin, "podman", "#!/bin/sh\nexit 0\n");
+        let _no_psql = OverrideGuard::set_absent(ENV_PSQL);
+        let _podman = OverrideGuard::set(ENV_PODMAN, &podman);
+        unsafe { std::env::remove_var("DATABASE_URL") };
         let code = run_with_root(&root).unwrap();
-        match old_path {
-            Some(p) => unsafe { std::env::set_var("PATH", p) },
-            None => unsafe { std::env::remove_var("PATH") },
-        }
         let _ = fs::remove_dir_all(&root);
         assert_eq!(code, 1);
     }
 
     #[test]
     fn missing_env_continues_then_no_psql() {
-        let _g = LOCK.lock().unwrap();
+        let _g = test_env::lock_env();
         let root = fixture_root("no-env");
         let bin = root.join("bin");
-        fs::create_dir_all(&bin).unwrap();
-        fs::write(bin.join("podman"), "#!/bin/sh\nexit 0\n").unwrap();
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            let mut p = fs::metadata(bin.join("podman")).unwrap().permissions();
-            p.set_mode(0o755);
-            fs::set_permissions(bin.join("podman"), p).unwrap();
-        }
-        let old_path = std::env::var_os("PATH");
-        unsafe {
-            std::env::set_var("PATH", bin.as_os_str());
-            std::env::remove_var("DATABASE_URL");
-        }
+        let podman = write_stub(&bin, "podman", "#!/bin/sh\nexit 0\n");
+        let _no_psql = OverrideGuard::set_absent(ENV_PSQL);
+        let _podman = OverrideGuard::set(ENV_PODMAN, &podman);
+        unsafe { std::env::remove_var("DATABASE_URL") };
         let code = run_with_root(&root).unwrap();
-        match old_path {
-            Some(p) => unsafe { std::env::set_var("PATH", p) },
-            None => unsafe { std::env::remove_var("PATH") },
-        }
         let _ = fs::remove_dir_all(&root);
         assert_eq!(code, 1);
     }
 
     #[test]
     fn bad_database_url_forwards_psql_rc() {
-        let _g = LOCK.lock().unwrap();
+        let _g = test_env::lock_env();
         let root = fixture_root("bad-url");
         write_env(
             &root,
             "DATABASE_URL=postgres://bad:bad@127.0.0.1:1/nosuch\n",
         );
         let bin = root.join("bin");
-        fs::create_dir_all(&bin).unwrap();
-        fs::write(
-            bin.join("psql"),
+        let psql = write_stub(
+            &bin,
+            "psql",
             "#!/bin/sh\ncat >/dev/null\necho 'psql: error: connection refused' >&2\nexit 2\n",
-        )
-        .unwrap();
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            let mut p = fs::metadata(bin.join("psql")).unwrap().permissions();
-            p.set_mode(0o755);
-            fs::set_permissions(bin.join("psql"), p).unwrap();
-        }
-        let old_path = std::env::var_os("PATH");
-        unsafe {
-            std::env::set_var("PATH", format!("{}:/usr/bin:/bin", bin.display()));
-            std::env::remove_var("DATABASE_URL");
-        }
+        );
+        let _psql = OverrideGuard::set(ENV_PSQL, &psql);
+        unsafe { std::env::remove_var("DATABASE_URL") };
         let code = run_with_root(&root).unwrap();
-        match old_path {
-            Some(p) => unsafe { std::env::set_var("PATH", p) },
-            None => unsafe { std::env::remove_var("PATH") },
-        }
         let _ = fs::remove_dir_all(&root);
         assert_eq!(code, 2);
     }

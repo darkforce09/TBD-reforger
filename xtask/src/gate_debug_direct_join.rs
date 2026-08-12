@@ -92,8 +92,8 @@ pub fn run(run_id: Option<&str>) -> Result<u8> {
 pub fn run_with(root: &Path, home: &Path, run_id: &str) -> Result<u8> {
     let paths = Paths::from_root(root);
 
-    // bash: PATH="$HOME/.local/bin:$PATH"
-    prepend_path(&home.join(".local/bin"));
+    // bash: PATH="$HOME/.local/bin:$PATH" — restore on drop so unit tests never leak PATH.
+    let _path = crate::test_env::PathGuard::prepend_dir(&home.join(".local/bin"));
 
     // bash: `[ -f "$ENV_FILE" ] && source "$ENV_FILE"` then read TBD_SSH_*.
     let (ssh_host, ssh_pass) = load_ssh_vars(&paths.deploy_env);
@@ -124,18 +124,6 @@ pub fn run_with(root: &Path, home: &Path, run_id: &str) -> Result<u8> {
     // bash: `echo "$REMOTE_OUT"` — empty still prints a blank line.
     println!("{remote_out}");
     Ok(0)
-}
-
-fn prepend_path(dir: &Path) {
-    let dir = dir.display().to_string();
-    let old = std::env::var("PATH").unwrap_or_default();
-    let new = if old.is_empty() {
-        dir
-    } else {
-        format!("{dir}:{old}")
-    };
-    // SAFETY: single-threaded xtask entry; mirrors bash PATH mutate for sshpass lookup.
-    unsafe { std::env::set_var("PATH", new) };
 }
 
 fn load_ssh_vars(deploy_env: &Path) -> (Option<String>, Option<String>) {
@@ -281,10 +269,7 @@ fn ping_ms(host: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::Mutex;
-
-    /// Serialise tests that mutate process PATH / rely on throwaway roots.
-    static LOCK: Mutex<()> = Mutex::new(());
+    use crate::test_env;
 
     fn fixture_root(tag: &str) -> PathBuf {
         let root = std::env::temp_dir().join(format!("t868-{tag}-{}", std::process::id()));
@@ -305,7 +290,7 @@ mod tests {
 
     #[test]
     fn arm_nocursor_exits_err() {
-        let _g = LOCK.lock().unwrap();
+        let _g = test_env::lock_env();
         let root = fixture_root("nocursor");
         // no .cursor/
         let home = empty_home("nocursor");
@@ -319,7 +304,7 @@ mod tests {
 
     #[test]
     fn arm_logdir_exits_err() {
-        let _g = LOCK.lock().unwrap();
+        let _g = test_env::lock_env();
         let root = fixture_root("logdir");
         fs::create_dir_all(root.join(".cursor/debug-8fc1e0.log")).unwrap();
         let home = empty_home("logdir");
@@ -333,7 +318,7 @@ mod tests {
 
     #[test]
     fn clean_empty_home_writes_unknown_and_missing() {
-        let _g = LOCK.lock().unwrap();
+        let _g = test_env::lock_env();
         let root = fixture_root("clean");
         fs::create_dir_all(root.join(".cursor")).unwrap();
         let home = empty_home("clean");

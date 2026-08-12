@@ -16,6 +16,11 @@
 //! - Absent `ssh` / `sshpass`: bash `set -e` would die on command-not-found. **Closed for
 //!   ToolAbsent** via `tbd_gate::proc::which` → exit 127 with an explicit message (no silent
 //!   success). Transport / remote nonzero still hard-fail like bash `set -e`.
+//!
+//! Test seams (prefer these over PATH stubs — PATH races `gate_crf_leak`'s `/usr/bin/grep`):
+//! - `TBD_BOOTSTRAP_STAGING_SSH` — absolute ssh path (checked before `PATH`). Set-but-missing
+//!   forces [`NotRun::ToolAbsent`].
+//! - `TBD_BOOTSTRAP_STAGING_SSHPASS` — same for sshpass.
 //! - Remote discovery soft probes (`ss … 2>/dev/null`, `docker … 2>/dev/null || echo`) stay inside
 //!   the remote heredoc — preserved oddities of the discovery script, not local fail-opens.
 
@@ -33,6 +38,11 @@ use crate::root::find_repo_root;
 const DEFAULT_REMOTE_DIR: &str = "/home/sam/tbd/repo";
 const DEFAULT_PROFILE_DIR: &str = "/home/sam/tbd/profile";
 const DEFAULT_ADDONS_STAGING: &str = "/home/sam/tbd/addons-staging";
+
+/// Optional absolute ssh path for unit tests (avoids PATH mutation).
+const ENV_SSH: &str = "TBD_BOOTSTRAP_STAGING_SSH";
+/// Optional absolute sshpass path for unit tests (avoids PATH mutation).
+const ENV_SSHPASS: &str = "TBD_BOOTSTRAP_STAGING_SSHPASS";
 
 /// Remote discovery body — byte-stable with the former bash `<<'DISC'` heredoc.
 const DISCOVERY_SCRIPT: &str = r#"set -euo pipefail
@@ -232,31 +242,48 @@ fn ssh_bash_s(cfg: &Cfg, script: &str) -> Result<(), u8> {
     }
 }
 
+fn resolve_tool(env_key: &str, name: &str) -> Result<PathBuf, NotRun> {
+    if let Ok(override_path) = std::env::var(env_key) {
+        let trimmed = override_path.trim();
+        if !trimmed.is_empty() {
+            let p = PathBuf::from(trimmed);
+            if p.is_file() {
+                return Ok(p);
+            }
+            return Err(NotRun::ToolAbsent(name.to_string()));
+        }
+    }
+    proc::which(name)
+}
+
 fn ssh_base(cfg: &Cfg) -> Result<(String, Vec<String>), u8> {
     if let Some(ref pass) = cfg.ssh_pass {
         // Closed fail-open: absent sshpass/ssh is NotRun, not a silent success.
-        if let Err(e) = proc::which("sshpass") {
-            return Err(not_run_exit(&e));
-        }
-        if let Err(e) = proc::which("ssh") {
-            return Err(not_run_exit(&e));
-        }
+        let sshpass = match resolve_tool(ENV_SSHPASS, "sshpass") {
+            Ok(p) => p,
+            Err(e) => return Err(not_run_exit(&e)),
+        };
+        let ssh = match resolve_tool(ENV_SSH, "ssh") {
+            Ok(p) => p,
+            Err(e) => return Err(not_run_exit(&e)),
+        };
         Ok((
-            "sshpass".into(),
+            sshpass.display().to_string(),
             vec![
                 "-p".into(),
                 pass.clone(),
-                "ssh".into(),
+                ssh.display().to_string(),
                 "-o".into(),
                 "StrictHostKeyChecking=no".into(),
             ],
         ))
     } else if let Some(ref id) = cfg.ssh_identity {
-        if let Err(e) = proc::which("ssh") {
-            return Err(not_run_exit(&e));
-        }
+        let ssh = match resolve_tool(ENV_SSH, "ssh") {
+            Ok(p) => p,
+            Err(e) => return Err(not_run_exit(&e)),
+        };
         Ok((
-            "ssh".into(),
+            ssh.display().to_string(),
             vec![
                 "-i".into(),
                 id.clone(),
@@ -265,11 +292,12 @@ fn ssh_base(cfg: &Cfg) -> Result<(String, Vec<String>), u8> {
             ],
         ))
     } else {
-        if let Err(e) = proc::which("ssh") {
-            return Err(not_run_exit(&e));
-        }
+        let ssh = match resolve_tool(ENV_SSH, "ssh") {
+            Ok(p) => p,
+            Err(e) => return Err(not_run_exit(&e)),
+        };
         Ok((
-            "ssh".into(),
+            ssh.display().to_string(),
             vec!["-o".into(), "StrictHostKeyChecking=no".into()],
         ))
     }
@@ -292,10 +320,7 @@ fn not_run_exit(e: &NotRun) -> u8 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::Mutex;
-
-    /// Serialise tests that mutate process env / rely on throwaway roots.
-    static LOCK: Mutex<()> = Mutex::new(());
+    use crate::test_env;
 
     fn fixture_root(tag: &str) -> PathBuf {
         let root = PathBuf::from(format!(
@@ -318,12 +343,41 @@ mod tests {
             std::env::remove_var("TBD_REMOTE_DIR");
             std::env::remove_var("TBD_PROFILE_DIR");
             std::env::remove_var("TBD_ADDONS_STAGING");
+            std::env::remove_var(ENV_SSH);
+            std::env::remove_var(ENV_SSHPASS);
+        }
+    }
+
+    struct OverrideGuard {
+        key: &'static str,
+        previous: Option<std::ffi::OsString>,
+    }
+
+    impl OverrideGuard {
+        fn set_absent(key: &'static str) -> Self {
+            let previous = std::env::var_os(key);
+            let absent =
+                std::env::temp_dir().join(format!("t870-absent-{}-{}", key, std::process::id()));
+            // SAFETY: caller holds test_env::lock_env; restored on drop.
+            unsafe { std::env::set_var(key, &absent) };
+            Self { key, previous }
+        }
+    }
+
+    impl Drop for OverrideGuard {
+        fn drop(&mut self) {
+            unsafe {
+                match self.previous.take() {
+                    Some(v) => std::env::set_var(self.key, v),
+                    None => std::env::remove_var(self.key),
+                }
+            }
         }
     }
 
     #[test]
     fn arm_missing_host_exits_1() {
-        let _g = LOCK.lock().unwrap();
+        let _g = test_env::lock_env();
         clear_ssh_env();
         let root = fixture_root("missing-host");
         // empty deploy.env — no TBD_SSH_HOST
@@ -334,7 +388,7 @@ mod tests {
 
     #[test]
     fn arm_prairielearn_exits_1() {
-        let _g = LOCK.lock().unwrap();
+        let _g = test_env::lock_env();
         clear_ssh_env();
         let root = fixture_root("prairielearn");
         fs::write(
@@ -348,27 +402,18 @@ mod tests {
 
     #[test]
     fn prairielearn_match_is_case_sensitive_like_bash() {
-        let _g = LOCK.lock().unwrap();
+        let _g = test_env::lock_env();
         clear_ssh_env();
         let root = fixture_root("PrairieLearn-case");
         // bash `== *prairielearn*` is case-sensitive — PrairieLearn alone must NOT refuse.
-        // We never SSH: use a host that fails ToolAbsent? Better: refuse only on lowercase.
-        // Prove the check itself via load_cfg path: if we got past refuse we'd hit ssh.
+        // Prove via ToolAbsent ssh (env override seam — never wipe PATH).
         fs::write(
             root.join("scripts/deploy/deploy.env"),
             "TBD_SSH_HOST=127.0.0.1\nTBD_REMOTE_DIR=/home/sam/PrairieLearn/tbd\n",
         )
         .unwrap();
-        // Isolate PATH so ssh is ToolAbsent → 127 (not prairielearn 1).
-        let old_path = std::env::var_os("PATH");
-        unsafe { std::env::set_var("PATH", "/tmp/t853/w223/t870/empty-bin") };
-        let _ = fs::create_dir_all("/tmp/t853/w223/t870/empty-bin");
+        let _no_ssh = OverrideGuard::set_absent(ENV_SSH);
         let code = run_with_root(&root).unwrap();
-        if let Some(p) = old_path {
-            unsafe { std::env::set_var("PATH", p) };
-        } else {
-            unsafe { std::env::remove_var("PATH") };
-        }
         assert_eq!(
             code, 127,
             "case-sensitive: PrairieLearn must not match prairielearn refuse (got ToolAbsent)"
@@ -377,7 +422,7 @@ mod tests {
 
     #[test]
     fn defaults_fill_when_unset() {
-        let _g = LOCK.lock().unwrap();
+        let _g = test_env::lock_env();
         clear_ssh_env();
         let root = fixture_root("defaults");
         fs::write(
