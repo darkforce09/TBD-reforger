@@ -107,7 +107,7 @@ The post-merge adversarial reviewer is [`VERIFY_AGENT_PROMPT.md`](VERIFY_AGENT_P
 
 **The loop, end to end:**
 `cargo xtask mod wave prep N` → dispatch 3 slice agents → `cargo xtask mod wave status` until all READY → `cargo xtask mod wave land`
-(merge → gate → reap → **push**) → dispatch the verify agent → fix any BLOCKER → `wave.sh prep N+1`.
+(merge → gate → reap → **push**) → dispatch the verify agent → fix any BLOCKER → `cargo run -q -p xtask -- mod wave prep N+1`.
 
 ## Worktree mechanics
 
@@ -134,9 +134,9 @@ Every slice prompt must point at these. They exist so an agent proves rather tha
 | Fetch more vanilla source | `bash scripts/mod/fetch-vanilla-source.sh <File.c>` — **polite: one person's site, never `--all`** |
 | How does a working framework do it? | `rg <pat> apps/mod/crf_framework/` — CRF, Arma Public License, **reference only** |
 | How is a lobby / slot picker SHAPED? | `rg <pat> apps/mod/playable_selector/` — PlayableSelector, **NO LICENCE, design-mirror only** (§Oracle lanes) |
-| Does my change compile? | `bash scripts/mod/compile.sh` — ~1.3 s, native server, **no Workbench** |
-| Probe dir hygiene | **Use a FRESH, uniquely-named dir per probe** (`/tmp/probe-$$`). Probe dirs are shared and sticky — a leftover file from another agent silently polluted a run. `compile.sh` now lists what it stages so contamination is visible. |
-| Does this API EXIST? (definitive) | `bash scripts/mod/compile.sh --probe=/tmp/p` — call it in a throwaway `.c` under `/tmp`; compiles clean = exists, errors = does not. Never put probes in the mod tree. |
+| Does my change compile? | `cargo run -q -p xtask -- mod compile` — ~1.3 s, native server, **no Workbench** |
+| Probe dir hygiene | **Use a FRESH, uniquely-named dir per probe** (`/tmp/probe-$$`). Probe dirs are shared and sticky — a leftover file from another agent silently polluted a run. `mod compile` now lists what it stages so contamination is visible. |
+| Does this API EXIST? (definitive) | `cargo run -q -p xtask -- mod compile --probe=/tmp/p` — call it in a throwaway `.c` under `/tmp`; compiles clean = exists, errors = does not. Never put probes in the mod tree. |
 
 **A GREEN PROBE IS MEANINGLESS WITHOUT A NEGATIVE CONTROL.** Always compile a variant that MUST
 fail, and confirm it does. Measured: duplicate `switch` case labels compile clean in Enfusion, so a
@@ -166,7 +166,7 @@ is not a probe.
 | Kind | Example | Where it lives | How to check it |
 |---|---|---|---|
 | **Scripted** | `SCR_BaseGameMode`, `SCR_PlayerController` | shipped `.c` source | `enf lookup` / `rg apps/mod/vanilla_reference/Source/` |
-| **Native engine** | `BaseWorld`, `Widget`, `IEntity` | compiled into the engine — **no source, not in any index** | `compile.sh --probe=/tmp/p` — the ONLY way |
+| **Native engine** | `BaseWorld`, `Widget`, `IEntity` | compiled into the engine — **no source, not in any index** | `cargo xtask mod compile --probe=/tmp/p` — the ONLY way |
 
 A native symbol returning `NOT FOUND` from `enf lookup` does **not** mean it doesn't exist. That
 confused a slice agent into thinking `BaseWorld.GetBoundBox` was unavailable; a probe proved it is
@@ -236,7 +236,7 @@ misread it "fixed" a working toolchain and destroyed 2.6 GB of build artifacts.
 ## Wave gate (all must pass before the next wave)
 
 ```bash
-bash scripts/mod/compile.sh                   # 0 clean
+cargo run -q -p xtask -- mod compile          # 0 clean
 distrobox-host-exec make mod-compile-selftest # gate still catches a broken .c
 distrobox-host-exec make verify-capability    # 0 UNTRIAGED
 distrobox-host-exec make verify-oracle        # every @idx resolves

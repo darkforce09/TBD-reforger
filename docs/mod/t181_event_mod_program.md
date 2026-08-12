@@ -1,3 +1,5 @@
+> **T-891/T-892/T-890 (2026-08):** `compile.sh` / `world-boot.sh` / `mod/wave.sh` are deleted — use `cargo run -q -p xtask -- mod compile|world-boot|wave`. Historical bash paths below are archive.
+
 # T-181 — TBD Framework: the Arma-3-parity event mod
 
 **Hub doc.** Open this to know what the program is and what to run next.
