@@ -37,5 +37,4 @@ scripts/mod/run-playtest-server.sh
 scripts/mod/slice-worktree.sh
 scripts/mod/wave.sh
 scripts/mod/world-boot.sh
-scripts/platform/preflight.sh
 scripts/platform/wave.sh

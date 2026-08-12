@@ -133,7 +133,7 @@ drops precision nobody chose to drop. Start a new chat and read state from the r
 repo has always been the source of truth, which is what makes this cheap.
 
 ```bash
-bash scripts/platform/preflight.sh          # must print PASS; fix BLOCKs before anything else
+cargo xtask platform preflight          # must print PASS; fix BLOCKs before anything else
 bash scripts/platform/wave.sh status        # what is shipped, in flight, ready
 cargo xtask slice-collisions                # the dispatch set, + any UNPLANNED warning
 ```

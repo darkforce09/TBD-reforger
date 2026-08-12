@@ -1405,7 +1405,7 @@ persist_seed() {
 # the trial count: a private dist alone left one shared writable path and so could only ever be
 # lucky, while both flags together leave none, which is why this is a cure and not a mitigation.
 # The operator's dev server stays up and serving on :3000 throughout — nothing has to be killed
-# before an unattended run, and the preflight `trunk serve` warning (preflight.sh:149-157) is now
+# before an unattended run, and the preflight `trunk serve` warning (platform preflight trunk-serve note) is now
 # describing a hazard the gate no longer has.
 #
 # CORRECTION, measured: the comment this replaces claimed the gate provokes the race itself, because
