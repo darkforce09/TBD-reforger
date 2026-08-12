@@ -40,7 +40,6 @@ scripts/mod/lib/xtask-run.sh
 scripts/mod/mcp-daemon.sh
 scripts/mod/mcp-smoke.sh
 scripts/mod/run-playtest-server.sh
-scripts/mod/seed-milestone-announcement.sh
 scripts/mod/setup-client-addons.sh
 scripts/mod/setup-mcp-game-root.sh
 scripts/mod/setup-workbench-linux.sh

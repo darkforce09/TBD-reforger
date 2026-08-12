@@ -1,7 +1,7 @@
 # Milestone #1 — Discord announcement (copy/paste)
 
 Post this in your community Discord **#announcements** (or pin in #events).  
-Website pinned announcement is inserted automatically by `scripts/mod/seed-milestone-announcement.sh`.
+Website pinned announcement is inserted automatically by `cargo xtask mod seed-announcement`.
 
 ---
 
