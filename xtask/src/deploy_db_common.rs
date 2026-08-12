@@ -14,8 +14,8 @@
 //! This module does **not** source `gate-grep.sh` (T-880 parked). `_sqlx_migrations` probes use
 //! `tbd_gate::gate::probe_str` instead.
 //!
-//! Consumer bridge until T-886/887: restore-db / backup-drill `eval` [`emit_bash_fns`] so they
-//! keep calling `tbd_*` names. T-885 (backup) calls this module from Rust directly.
+//! T-885…T-887 call this module from Rust directly. `emit-bash-fns` remains for any
+//! lingering external eval callers; the three deploy scripts no longer use it.
 
 use std::env;
 use std::fs;
@@ -101,6 +101,12 @@ pub enum DeployDbCmd {
     /// Guarded pg_restore (T-886 port of scripts/deploy/restore-db.sh).
     #[command(name = "restore")]
     Restore(crate::deploy_db_restore::RestoreArgs),
+    /// Restore-into-scratch recoverability proof (T-887 port of scripts/deploy/backup-drill.sh).
+    #[command(name = "drill", disable_help_flag = true)]
+    Drill {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
 }
 
 pub fn run(cmd: DeployDbCmd) -> Result<u8> {
@@ -170,6 +176,7 @@ pub fn run(cmd: DeployDbCmd) -> Result<u8> {
         DeployDbCmd::Ct { args } => ct_exec(false, &args),
         DeployDbCmd::CtI { args } => ct_exec(true, &args),
         DeployDbCmd::Restore(args) => crate::deploy_db_restore::run(args),
+        DeployDbCmd::Drill { args } => crate::deploy_db_drill::run(&args),
     }
 }
 
@@ -799,7 +806,8 @@ pub(crate) fn database_exists(db: &str) -> Result<bool> {
 
 /// Print bash function definitions that forward to `cargo xtask deploy db …`.
 ///
-/// Used by backup-drill until T-887 lands. Backup/restore call Rust helpers directly.
+/// Legacy bash bridge. T-885…T-887 call Rust helpers directly; no remaining in-tree
+/// `eval` caller after backup-drill.sh deletion. Kept so external wrappers do not break.
 /// No new `.sh` library file — inventory shrinks only when a script is deleted.
 pub fn emit_bash_fns() -> String {
     // Resolve via `cargo run -q` so cargo status lines do not leak into script stderr.

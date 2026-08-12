@@ -10,6 +10,7 @@ mod constants;
 mod debug_cmd;
 mod deploy_db_backup;
 mod deploy_db_common;
+mod deploy_db_drill;
 mod deploy_db_restore;
 mod gap;
 mod gate_bootstrap_staging_server;

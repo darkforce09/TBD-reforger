@@ -1,7 +1,7 @@
 ; T-577 — weekly restore DRILL. Proves the backups can actually be recovered from.
 ;
 ; WHY THIS IS A SCHEDULED LANE AND NOT THE WAVE GATE — see the reasoning recorded in
-; scripts/deploy/backup-drill.sh and the T-577 report. Briefly: the drill's input is the
+; xtask/src/deploy_db_drill.rs and the T-577 report. Briefly: the drill's input is the
 ; BACKUP FILE ON DISK, which no code change can alter, so running it per-wave would pay a
 ; recurring cost to re-answer a question the diff cannot have changed. What decays here is
 ; time and the environment — a full disk, a stopped timer, a rotated password, a migration
@@ -26,7 +26,7 @@
 
 [Unit]
 Description=TBD website — weekly backup restore drill
-Documentation=file:///TBD_REPO_DIR_PLACEHOLDER/scripts/deploy/backup-drill.sh
+Documentation=file:///TBD_REPO_DIR_PLACEHOLDER/xtask/src/deploy_db_drill.rs
 After=network-online.target
 
 [Service]
@@ -43,7 +43,7 @@ Environment=TBD_DRILL_DB=tbd_drill_probe
 ; Deliberately NO --fresh: the drill must exercise the backup that is ACTUALLY ON DISK.
 ; Taking a new dump first would prove this machine can dump right now, which is not the
 ; question you have at 3am — "can I recover from what I already have" is.
-ExecStart=/usr/bin/env bash /TBD_REPO_DIR_PLACEHOLDER/scripts/deploy/backup-drill.sh
+ExecStart=/usr/bin/env cargo run -q -p xtask -- deploy db drill
 
 Restart=no
 TimeoutStartSec=3600

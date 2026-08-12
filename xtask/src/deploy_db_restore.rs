@@ -20,35 +20,35 @@ use crate::deploy_db_common::{
 pub struct RestoreArgs {
     /// Target database name.
     #[arg(long = "db")]
-    db: Option<String>,
+    pub(crate) db: Option<String>,
 
     /// Target as a postgres:// URL (database name parsed from the path).
     #[arg(long = "url")]
-    url: Option<String>,
+    pub(crate) url: Option<String>,
 
     /// Create the target database first if it does not exist.
     #[arg(long = "create")]
-    create: bool,
+    pub(crate) create: bool,
 
     /// Parallel restore workers (`pg_restore -j`).
     #[arg(long = "jobs", default_value_t = default_jobs())]
-    jobs: u32,
+    pub(crate) jobs: u32,
 
     /// Require the dump to hold >= N data rows before restoring.
     #[arg(long = "min-rows", default_value_t = default_min_rows())]
-    min_rows: u64,
+    pub(crate) min_rows: u64,
 
     /// Database the dump must have been taken FROM (not the restore target).
     /// Pass empty string to skip the identity check.
     #[arg(long = "expect-db")]
-    expect_db: Option<String>,
+    pub(crate) expect_db: Option<String>,
 
     /// Required to target a database outside the T-381 allow-list; must equal `--db`.
     #[arg(long = "i-understand-this-destroys")]
-    confirm: Option<String>,
+    pub(crate) confirm: Option<String>,
 
     /// Custom-format dump file (`pg_dump -Fc`).
-    dump: PathBuf,
+    pub(crate) dump: PathBuf,
 }
 
 fn default_jobs() -> u32 {
