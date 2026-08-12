@@ -13,20 +13,6 @@
       "branch": "ticket/T-090"
     },
     {
-      "id": "T-879",
-      "title": "T-853 delete: mod/lib shims",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-879"
-    },
-    {
-      "id": "T-880",
-      "title": "T-853 delete: gate-grep",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-880"
-    },
-    {
       "id": "T-898",
       "title": "verify file-length scans ZERO files \u2014 SIZE-1/SIZE-3 is enforced by nothing",
       "status": "ready",
