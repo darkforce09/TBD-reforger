@@ -13,8 +13,12 @@ mod gate_crf_leak;
 mod gate_route_tags;
 mod gate_t180;
 mod gate_t296;
+mod gate_t438;
 mod gate_t439;
+mod gate_t440;
 mod gate_t444;
+mod gate_ui_layouts;
+mod gate_ui_layouts_awk;
 mod golden_gate;
 mod label_gates;
 mod mcp;
@@ -155,6 +159,15 @@ enum VerifyCmd {
     /// GO-7: every @route tag resolves to a registered Axum route and back
     #[command(name = "route-tags")]
     RouteTags,
+    /// T-181.51 Enfusion .layout structural gate (brace balance, slot classes, geometry)
+    #[command(name = "ui-layouts")]
+    UiLayouts,
+    /// T-438: deploy-staging must resolve the compose file by an absolute path
+    #[command(name = "t438")]
+    T438,
+    /// T-440: faction library seed reaches the DB
+    #[command(name = "t440")]
+    T440,
 }
 
 #[derive(Subcommand, Debug)]
@@ -516,6 +529,9 @@ fn run() -> Result<u8> {
                 VerifyCmd::NoCrfLeak => gate_crf_leak::verify_crf_leak(&find_repo_root()?)?,
                 VerifyCmd::T180 => gate_t180::verify_t180(&find_repo_root()?)?,
                 VerifyCmd::RouteTags => gate_route_tags::verify_route_tags(&find_repo_root()?)?,
+                VerifyCmd::UiLayouts => gate_ui_layouts::verify_ui_layouts(&find_repo_root()?)?,
+                VerifyCmd::T438 => gate_t438::verify_t438(&find_repo_root()?)?,
+                VerifyCmd::T440 => gate_t440::verify_t440(&find_repo_root()?)?,
             };
             Ok(code)
         }

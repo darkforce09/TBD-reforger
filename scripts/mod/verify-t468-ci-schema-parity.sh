@@ -333,7 +333,9 @@ else:
     #   ^\t @? bash <exact-script-path> (whitespace|EOL)
     # Rejects: @true, echo PASS, echo "bash …", @true # bash …, path-fake suffix.
     bash_pins = (
-        ("verify-t438", "scripts/mod/verify-t438-deploy-staging-compose-path.sh"),
+        # T-853: verify-t438 was ported to `cargo xtask verify t438` and the script deleted, so
+        # a `^\t@?bash <path>` pin on its recipe can no longer hold. Dropped in the same commit
+        # as the deletion -- leaving it would fail this gate on a tree that is CORRECT.
         ("verify-t456", "scripts/mod/verify-t456-mission-rest-size-gate.sh"),
         ("verify-t468", "scripts/mod/verify-t468-ci-schema-parity.sh"),
     )

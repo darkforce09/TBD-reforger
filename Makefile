@@ -355,10 +355,10 @@ verify-t180: ## T-180.10 Class-R coherency gate (ORBAT + Eden locks A–I)
 # `make verify-t468` target (still calls the script); CI/ci-local/wave use
 # direct `bash scripts/mod/verify-t468-ci-schema-parity.sh`.
 verify-t438: ## T-438/T-461 deploy-staging compose path (website/, not api/)
-	@bash scripts/mod/verify-t438-deploy-staging-compose-path.sh
+	@cargo run -q -p xtask -- verify t438
 
 verify-t440: ## T-440/T-478 faction library seed: live INSERT + `< seeds/…` redirect + wave dual-path
-	@bash scripts/mod/verify-t440-faction-library-seed.sh
+	@cargo run -q -p xtask -- verify t440
 
 verify-t456: ## T-456/T-460 mission REST body size gate before ParseMissionJson
 	@bash scripts/mod/verify-t456-mission-rest-size-gate.sh

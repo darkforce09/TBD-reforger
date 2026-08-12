@@ -64,11 +64,8 @@ scripts/mod/tbd-spawn-verify.sh
 scripts/mod/test-mission.sh
 scripts/mod/test-phase1-api.sh
 scripts/mod/verify-t437-destroy-inert-diagnostics.sh
-scripts/mod/verify-t438-deploy-staging-compose-path.sh
-scripts/mod/verify-t440-faction-library-seed.sh
 scripts/mod/verify-t456-mission-rest-size-gate.sh
 scripts/mod/verify-t468-ci-schema-parity.sh
-scripts/mod/verify-ui-layouts.sh
 scripts/mod/wave.sh
 scripts/mod/world-boot.sh
 scripts/platform/preflight.sh

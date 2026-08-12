@@ -2554,8 +2554,8 @@ gate_slice() {
   # redirect recipe + dual-path); deleting either run must FAIL the verify script.
   run "T-439 objects aliases" checkrun cargo run -q -p xtask -- verify t439
   run "T-444 wiki seed"       checkrun cargo run -q -p xtask -- verify t444
-  run "T-440 faction library seed" bash "$ROOT/scripts/mod/verify-t440-faction-library-seed.sh"
-  run "T-438 deploy-staging"  bash "$ROOT/scripts/mod/verify-t438-deploy-staging-compose-path.sh"
+  run "T-440 faction library seed" checkrun cargo run -q -p xtask -- verify t440
+  run "T-438 deploy-staging"  checkrun cargo run -q -p xtask -- verify t438
   run "T-456 REST size gate"  bash "$ROOT/scripts/mod/verify-t456-mission-rest-size-gate.sh"
   run "T-468 CI schema parity" bash "$ROOT/scripts/mod/verify-t468-ci-schema-parity.sh"
   run "T-437 destroy inert"   bash "$ROOT/scripts/mod/verify-t437-destroy-inert-diagnostics.sh"
@@ -2825,8 +2825,8 @@ cmd_gate() {
   # T-478. Cold-path twin of the gate_slice T-440 run — verify-t440 requires both.
   run "T-439 objects aliases" checkrun cargo run -q -p xtask -- verify t439
   run "T-444 wiki seed"       checkrun cargo run -q -p xtask -- verify t444
-  run "T-440 faction library seed" bash "$ROOT/scripts/mod/verify-t440-faction-library-seed.sh"
-  run "T-438 deploy-staging"  bash "$ROOT/scripts/mod/verify-t438-deploy-staging-compose-path.sh"
+  run "T-440 faction library seed" checkrun cargo run -q -p xtask -- verify t440
+  run "T-438 deploy-staging"  checkrun cargo run -q -p xtask -- verify t438
   run "T-456 REST size gate"  bash "$ROOT/scripts/mod/verify-t456-mission-rest-size-gate.sh"
   run "T-468 CI schema parity" bash "$ROOT/scripts/mod/verify-t468-ci-schema-parity.sh"
   run "T-437 destroy inert"   bash "$ROOT/scripts/mod/verify-t437-destroy-inert-diagnostics.sh"

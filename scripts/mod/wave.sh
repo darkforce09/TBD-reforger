@@ -138,7 +138,7 @@ cmd_gate() {
   # slot block (a child with no HorizontalAlign keeps its DESIRED size, which for a Frame is ZERO),
   # slot classes used on the wrong parent, geometry that disagrees with itself, and the
   # FindAnyWidget name contract between layout and script.
-  run "ui layouts"         bash scripts/mod/verify-ui-layouts.sh
+  run "ui layouts"         cargo run -q -p xtask -- verify ui-layouts
   run "schema validate"    distrobox-host-exec make schema-validate
   run "capability"         distrobox-host-exec make verify-capability
   run "oracle citations"   distrobox-host-exec make verify-oracle
