@@ -21728,7 +21728,8 @@
         "root"
       ],
       "executor": "claude-code",
-      "priority": null
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md"
     }
   ]
 }
