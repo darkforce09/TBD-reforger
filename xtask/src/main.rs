@@ -11,6 +11,7 @@ mod debug_cmd;
 mod gap;
 mod gate_crf_leak;
 mod gate_deploy_website;
+mod gate_fetch_vanilla_source;
 mod gate_manual_test;
 mod gate_mcp_wb_logs;
 mod gate_remote_log_grep;
@@ -93,6 +94,11 @@ enum TopCmd {
         #[command(subcommand)]
         cmd: DeployCmd,
     },
+    /// Fetch helpers (T-853 shell→xtask ports)
+    Fetch {
+        #[command(subcommand)]
+        cmd: FetchCmd,
+    },
     /// Print a top-level registry.json field (e.g. next_id)
     #[command(name = "registry-get")]
     RegistryGet { field: String },
@@ -162,6 +168,17 @@ enum DeployCmd {
     /// Rsync + remote build/restart for the TBD website (T-858).
     #[command(name = "website", disable_help_flag = true)]
     Website {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+enum FetchCmd {
+    /// Mirror vanilla Enfusion SOURCE pages from arexplorer (T-862).
+    /// `--help` is a filename target (MISS), matching the former bash script — not clap usage.
+    #[command(name = "vanilla-source", disable_help_flag = true)]
+    VanillaSource {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
@@ -627,6 +644,17 @@ fn run() -> Result<u8> {
         },
         TopCmd::Deploy { cmd } => match cmd {
             DeployCmd::Website { args } => gate_deploy_website::run(&args),
+        },
+        TopCmd::Fetch { cmd } => match cmd {
+            FetchCmd::VanillaSource { args } => {
+                // TBD_FETCH_ROOT: throwaway fixture roots for T-853 bash-vs-port arms.
+                // Production callers leave it unset → find_repo_root().
+                let root = match std::env::var_os("TBD_FETCH_ROOT") {
+                    Some(p) => PathBuf::from(p),
+                    None => find_repo_root()?,
+                };
+                gate_fetch_vanilla_source::run(&root, &args)
+            }
         },
         TopCmd::Verify { cmd } => {
             let code = match cmd {
