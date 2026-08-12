@@ -2556,8 +2556,8 @@ gate_slice() {
   run "T-444 wiki seed"       checkrun cargo run -q -p xtask -- verify t444
   run "T-440 faction library seed" checkrun cargo run -q -p xtask -- verify t440
   run "T-438 deploy-staging"  checkrun cargo run -q -p xtask -- verify t438
-  run "T-456 REST size gate"  bash "$ROOT/scripts/mod/verify-t456-mission-rest-size-gate.sh"
-  run "T-468 CI schema parity" bash "$ROOT/scripts/mod/verify-t468-ci-schema-parity.sh"
+  run "T-456 REST size gate"  checkrun cargo run -q -p xtask -- verify t456
+  run "T-468 CI schema parity" checkrun cargo run -q -p xtask -- verify t468
   run "T-437 destroy inert"   checkrun cargo run -q -p xtask -- verify t437
   run "T-586 route tags"      checkrun cargo run -q -p xtask -- verify route-tags
   # T-556. The T-462/T-463 pattern once more, and the worst instance of it: these two
@@ -2827,8 +2827,8 @@ cmd_gate() {
   run "T-444 wiki seed"       checkrun cargo run -q -p xtask -- verify t444
   run "T-440 faction library seed" checkrun cargo run -q -p xtask -- verify t440
   run "T-438 deploy-staging"  checkrun cargo run -q -p xtask -- verify t438
-  run "T-456 REST size gate"  bash "$ROOT/scripts/mod/verify-t456-mission-rest-size-gate.sh"
-  run "T-468 CI schema parity" bash "$ROOT/scripts/mod/verify-t468-ci-schema-parity.sh"
+  run "T-456 REST size gate"  checkrun cargo run -q -p xtask -- verify t456
+  run "T-468 CI schema parity" checkrun cargo run -q -p xtask -- verify t468
   run "T-437 destroy inert"   checkrun cargo run -q -p xtask -- verify t437
   run "T-586 route tags"      checkrun cargo run -q -p xtask -- verify route-tags
   # T-556. Cold-path twin of the gate_slice runs above — the two scripts that were dead

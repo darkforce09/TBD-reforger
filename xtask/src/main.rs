@@ -38,6 +38,8 @@ mod gate_t438;
 mod gate_t439;
 mod gate_t440;
 mod gate_t444;
+mod gate_t456;
+mod gate_t468;
 mod gate_tbd_dev_bootstrap;
 mod gate_tbd_spawn_determinism;
 mod gate_tbd_spawn_verify;
@@ -358,6 +360,12 @@ enum VerifyCmd {
     /// T-162/T-620 LANG-2: zero .py + ratcheted python3 invocations (port of verify-no-python.sh)
     #[command(name = "no-python")]
     NoPython,
+    /// T-456/T-460: mission REST body size gate before ParseMissionJson
+    #[command(name = "t456")]
+    T456,
+    /// T-468: CI schema parity + hollow recipe tripwire
+    #[command(name = "t468")]
+    T468,
 }
 
 #[derive(Subcommand, Debug)]
@@ -857,6 +865,8 @@ fn run() -> Result<u8> {
                 VerifyCmd::T438 => gate_t438::verify_t438(&find_repo_root()?)?,
                 VerifyCmd::T440 => gate_t440::verify_t440(&find_repo_root()?)?,
                 VerifyCmd::NoPython => gate_no_python::verify_no_python()?,
+                VerifyCmd::T456 => gate_t456::verify_t456(&find_repo_root()?)?,
+                VerifyCmd::T468 => gate_t468::verify_t468(&find_repo_root()?)?,
             };
             Ok(code)
         }
