@@ -870,26 +870,33 @@ pub fn validate_export_artifacts() -> Result<u8> {
     match other {
         Some(t) => {
             let tid = t["terrainId"].as_str().unwrap_or("");
-            let status = std::process::Command::new("bash")
+            // T-869: export-terrain.sh → `cargo run -q -p xtask -- map export-terrain …`
+            // (inherits CARGO_TARGET_DIR when set — same pin as Makefile / checkrun gates).
+            let status = std::process::Command::new("cargo")
                 .args([
-                    root.join("scripts/map-assets/export-terrain.sh")
-                        .to_string_lossy()
-                        .as_ref(),
+                    "run",
+                    "-q",
+                    "-p",
+                    "xtask",
+                    "--",
+                    "map",
+                    "export-terrain",
                     tid,
                     "--phase",
                     "P1_buildings",
                 ])
+                .current_dir(repo_root())
                 .stdout(std::process::Stdio::null())
                 .stderr(std::process::Stdio::null())
                 .status()?;
             if status.code() == Some(2) {
                 pass(format!(
-                    "E2b: export-terrain.sh {tid} -> exit 2 (operator-instructions branch, same code path)"
+                    "E2b: xtask map export-terrain {tid} -> exit 2 (operator-instructions branch, same code path)"
                 ));
             } else {
                 failures += 1;
                 fail(format!(
-                    "E2b: export-terrain.sh {tid} expected exit 2, got {:?}",
+                    "E2b: xtask map export-terrain {tid} expected exit 2, got {:?}",
                     status.code()
                 ));
             }
@@ -899,14 +906,14 @@ pub fn validate_export_artifacts() -> Result<u8> {
 
     {
         // E2c: terrain ids must flow from argv/registry — no literal id in the pipeline sources.
-        // T-165.8: the pipeline is Rust; the scanned set is the Rust modules + the bash
+        // T-165.8 / T-869: the pipeline is Rust; scanned set is the Rust modules + the xtask
         // orchestrator (topo.rs is excluded like decode-topo.mjs was — its per-terrain CONFIG
         // TABLE is the sanctioned place for ids).
         let sources = [
             "tools/tbd-tools/src/world/build.rs",
             "tools/tbd-tools/src/world/gates.rs",
             "tools/tbd-tools/src/world/aux.rs",
-            "scripts/map-assets/export-terrain.sh",
+            "xtask/src/gate_export_terrain.rs",
             "tools/tbd-tools/src/geometry.rs",
             "tools/tbd-tools/src/density.rs",
             "tools/tbd-tools/src/forest.rs",
