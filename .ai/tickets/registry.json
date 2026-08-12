@@ -21532,7 +21532,7 @@
       "impact": [
         "dx"
       ],
-      "status": "ready",
+      "status": "shipped",
       "executor": "claude-code",
       "targets": [
         "root"
@@ -21553,7 +21553,7 @@
       "impact": [
         "dx"
       ],
-      "status": "ready",
+      "status": "shipped",
       "executor": "claude-code",
       "targets": [
         "root"
@@ -21574,7 +21574,7 @@
       "impact": [
         "dx"
       ],
-      "status": "ready",
+      "status": "shipped",
       "executor": "claude-code",
       "targets": [
         "root"
@@ -21709,6 +21709,26 @@
       "parallel_ok": true,
       "order": 5730,
       "spec": "docs/platform/t853_shell_to_xtask_waves.md"
+    },
+    {
+      "id": "T-893",
+      "title": "T-853 wave 228: commit bash\u2194port RED-arm harness for deploy db ports",
+      "summary": "Wave 228 adversarial MAJOR-2: T-884/885/886 proved \u22652 broken arms in agent reports but landed no committed parity harness/fixtures under xtask. T-853 DoD asks bash-went-red asserted before trusting the port. Add Class-R tests (or committed /tmp recipe replay) for deploy db refuse/verify/backup keep that fail if the port drifts. Repro: cargo test -p xtask today has only thin deploy_db_* units; no bash-vs-port acceptance.",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": "process / gate honesty \u2014 not a live data-risk on current main (T-381 refuse + verify held under adversarial live probes)",
+      "status": "deferred",
+      "order": 5670,
+      "stream": "infra",
+      "targets": [
+        "xtask/src/deploy_db_common.rs",
+        "xtask/src/deploy_db_backup.rs",
+        "xtask/src/deploy_db_restore.rs"
+      ],
+      "executor": "claude-code",
+      "priority": "P2"
     }
   ]
 }

@@ -30,30 +30,6 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Targets:** root
 - **Summary:** T-853 shell->xtask slice. Port scripts/mod/lib/gate-grep.sh (221 lines) to `cargo xtask (pure delete)` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). LAST: delete only once no .sh sources it; crates/tbd-gate replaced it. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
 
-## T-884 — T-853 port: shared DB plumbing - port FIRST
-
-- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
-- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
-- **Branch:** `ticket/T-884`
-- **Targets:** root
-- **Summary:** T-853 shell->xtask slice. Port scripts/deploy/lib/db-common.sh to `cargo xtask deploy db (lib)` and delete the script(s), their scripts/shell-inventory.txt line(s), any scripts/python-inventory.txt line(s), and repoint every caller. 398 lines sourced by all three backup/restore scripts. Same propagation argument as gate-grep: port the library before its callers or three ports each invent their own dump-verification. Sources gate-grep.sh (T-880 blocker). ACCEPTANCE IS BYTE-FOR-BYTE: capture bash stdout+stderr+rc first, then diff on a clean tree AND on >=2 deliberately broken trees; the harness must assert the BASH side went red before believing a diff. A green run alone is not evidence (T-556). Build on crates/tbd-gate. Spec: docs/platform/t853_shell_to_xtask_waves.md
-
-## T-885 — T-853 port: verified pg_dump + retention prune
-
-- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
-- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
-- **Branch:** `ticket/T-885`
-- **Targets:** root
-- **Summary:** T-853 shell->xtask slice. Port scripts/deploy/backup-db.sh to `cargo xtask deploy db backup` and delete the script(s), their scripts/shell-inventory.txt line(s), any scripts/python-inventory.txt line(s), and repoint every caller. 252 lines. T-577 requires the dump be VERIFIED before it counts. Test against a scratch DB from `make db-up`, never tbd_reforger. ACCEPTANCE IS BYTE-FOR-BYTE: capture bash stdout+stderr+rc first, then diff on a clean tree AND on >=2 deliberately broken trees; the harness must assert the BASH side went red before believing a diff. A green run alone is not evidence (T-556). Build on crates/tbd-gate. Spec: docs/platform/t853_shell_to_xtask_waves.md
-
-## T-886 — T-853 port: guarded pg_restore
-
-- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
-- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
-- **Branch:** `ticket/T-886`
-- **Targets:** root
-- **Summary:** T-853 shell->xtask slice. Port scripts/deploy/restore-db.sh to `cargo xtask deploy db restore` and delete the script(s), their scripts/shell-inventory.txt line(s), any scripts/python-inventory.txt line(s), and repoint every caller. 207 lines. DESTRUCTIVE. T-381 allow-list REFUSES tbd_reforger and verifies the dump first - both are load-bearing and must survive the port byte-for-byte. Prove the refusal still fires. ACCEPTANCE IS BYTE-FOR-BYTE: capture bash stdout+stderr+rc first, then diff on a clean tree AND on >=2 deliberately broken trees; the harness must assert the BASH side went red before believing a diff. A green run alone is not evidence (T-556). Build on crates/tbd-gate. Spec: docs/platform/t853_shell_to_xtask_waves.md
-
 ## T-887 — T-853 port: restore-into-scratch recoverability proof
 
 - **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`

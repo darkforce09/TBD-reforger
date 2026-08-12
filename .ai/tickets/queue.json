@@ -27,27 +27,6 @@
       "branch": "ticket/T-880"
     },
     {
-      "id": "T-884",
-      "title": "T-853 port: shared DB plumbing - port FIRST",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-884"
-    },
-    {
-      "id": "T-885",
-      "title": "T-853 port: verified pg_dump + retention prune",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-885"
-    },
-    {
-      "id": "T-886",
-      "title": "T-853 port: guarded pg_restore",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-886"
-    },
-    {
       "id": "T-887",
       "title": "T-853 port: restore-into-scratch recoverability proof",
       "status": "ready",

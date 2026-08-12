@@ -667,3 +667,4 @@
 230	T-890	T-853 port: the MOD wave driver (NOT platform/wave.sh)	scripts/mod/wave.sh
 230	T-891	T-853 port: Enfusion compile gate	scripts/mod/compile.sh
 230	T-892	T-853 port: headless game-mode boot validation	scripts/mod/world-boot.sh
+0	T-893	T-853 wave 228: commit bash↔port RED-arm harness for deploy db ports	xtask/src/deploy_db_common.rs;xtask/src/deploy_db_backup.rs;xtask/src/deploy_db_restore.rs
