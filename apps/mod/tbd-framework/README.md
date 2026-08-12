@@ -69,7 +69,7 @@ bash scripts/mod/tbd-spawn-verify.sh
 ## Dedicated server (Linux)
 
 ```bash
-bash scripts/mod/setup-server-profile.sh     # default profile: ../.local-test-profile/
+cargo xtask setup server-profile     # default profile: apps/mod/.local-test-profile/
 bash scripts/mod/run-dev-server.sh
 ```
 

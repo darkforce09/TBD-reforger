@@ -15,6 +15,7 @@ mod gate_manual_test;
 mod gate_mcp_wb_logs;
 mod gate_remote_log_grep;
 mod gate_route_tags;
+mod gate_setup_server_profile;
 mod gate_t180;
 mod gate_t296;
 mod gate_t437;
@@ -93,6 +94,11 @@ enum TopCmd {
         #[command(subcommand)]
         cmd: DeployCmd,
     },
+    /// Local / dedicated-server profile setup (T-853 shell→xtask ports)
+    Setup {
+        #[command(subcommand)]
+        cmd: SetupCmd,
+    },
     /// Print a top-level registry.json field (e.g. next_id)
     #[command(name = "registry-get")]
     RegistryGet { field: String },
@@ -164,6 +170,16 @@ enum DeployCmd {
     Website {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+enum SetupCmd {
+    /// Prepare Arma Reforger dedicated-server profile files (T-861).
+    #[command(name = "server-profile")]
+    ServerProfile {
+        /// Profile directory (default: $TBD_PROFILE or apps/mod/.local-test-profile)
+        profile: Option<PathBuf>,
     },
 }
 
@@ -627,6 +643,11 @@ fn run() -> Result<u8> {
         },
         TopCmd::Deploy { cmd } => match cmd {
             DeployCmd::Website { args } => gate_deploy_website::run(&args),
+        },
+        TopCmd::Setup { cmd } => match cmd {
+            SetupCmd::ServerProfile { profile } => {
+                gate_setup_server_profile::run(profile.as_deref())
+            }
         },
         TopCmd::Verify { cmd } => {
             let code = match cmd {

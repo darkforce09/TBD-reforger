@@ -301,7 +301,7 @@ Audit after MCP executor fix (2026-06). Treat as **checklist** when advancing sl
 | 7 | **Arsenal on ammo box / props** | Rule **#14** — character-only loadout tab |
 | 8 | **MCP bootstrap** | Claude Code runs **`tbd-dev-bootstrap.sh`** every mod slice (launches Workbench if port closed); **`mcp-call.sh`** or `.mcp.json`; EnfusionMCP gitignored — bootstrap copies handlers |
 | 9 | **T-068.2 ∥ T-068.1 parallel confusion** | T-068.2 can ship first with **dev seed smoke**; **T-068.6 PASS** requires **T-068.1 verify paste** (real MCP export) unless explicitly waived in sign-off |
-| 10 | **Profile path ambiguity** | T-068.5 / E10 — paste exact `$profile` path + `sha256sum`; use [`scripts/mod/setup-server-profile.sh`](../../../scripts/mod/setup-server-profile.sh) |
+| 10 | **Profile path ambiguity** | T-068.5 / E10 — paste exact `$profile` path + `sha256sum`; use `cargo xtask setup server-profile` |
 | 11 | **Icon URLs** | Phase 1: `icon_url` optional / omit; no blocker |
 | 12 | **Phase 2 compat before schema** | T-068.8 export waits on T-068.7 spec + T-068.9 `registry-compat.schema.json` |
 | 13 | **No player loadout in mission compiler until T-068.11** | Phase 1 loadout = profile file handoff + test NPC only; per-slot loadout in compiled JSON @ **T-068.11**; **human player wear @ T-068.12**; verify via **T-068.13** slot picker + **T-068.14** E2E |

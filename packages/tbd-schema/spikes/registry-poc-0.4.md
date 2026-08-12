@@ -34,7 +34,7 @@ Attached via `TBD_GameMode.et` prefab on the dev scenario.
 ## Verification (done)
 
 ```bash
-bash scripts/setup-server-profile.sh
+cargo xtask setup server-profile
 bash scripts/run-dev-server.sh
 ```
 

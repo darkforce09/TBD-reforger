@@ -12,7 +12,7 @@ passing, which fails the run.
 They live in a separate directory on purpose. `validate_all()` walks
 `golden-missions/*.json` and asserts each file PASSES, so a must-fail fixture cannot
 simply sit alongside them — it would be reported as a broken golden. `world-boot.sh`,
-`deploy-staging.sh` and `setup-server-profile.sh` also resolve missions out of
+`deploy-staging.sh` and `cargo xtask setup server-profile` also resolve missions out of
 `golden-missions/` by name, and none of these documents is bootable.
 
 ## Format

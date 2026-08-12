@@ -51,7 +51,6 @@ scripts/mod/run-playtest-server.sh
 scripts/mod/seed-milestone-announcement.sh
 scripts/mod/setup-client-addons.sh
 scripts/mod/setup-mcp-game-root.sh
-scripts/mod/setup-server-profile.sh
 scripts/mod/setup-workbench-linux.sh
 scripts/mod/slice-worktree.sh
 scripts/mod/tbd-dev-bootstrap.sh

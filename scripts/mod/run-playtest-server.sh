@@ -588,14 +588,14 @@ mkdir -p "$RUN_DIR/addons"
 
 # ── profile ────────────────────────────────────────────────────────────────────────────────
 # `$profile:` resolves to <-profile-arg>/profile/, NOT <-profile-arg>/ (world-boot.sh:383).
-# setup-server-profile.sh already knows that; do not seed one level up.
-bash "$ROOT/scripts/mod/setup-server-profile.sh" "$RUN_DIR/profile" >/dev/null || \
-  env_fail "setup-server-profile.sh failed" "Run it directly to see why: bash scripts/mod/setup-server-profile.sh $RUN_DIR/profile"
+# `cargo xtask setup server-profile` already knows that; do not seed one level up.
+(cd "$ROOT" && cargo run -q -p xtask -- setup server-profile "$RUN_DIR/profile") >/dev/null || \
+  env_fail "setup server-profile failed" "Run it directly to see why: cargo run -q -p xtask -- setup server-profile $RUN_DIR/profile"
 
 BACKEND_CFG="$RUN_DIR/profile/profile/TBD_BackendConfig.json"
-[ -f "$BACKEND_CFG" ] || env_fail "setup-server-profile.sh did not produce $BACKEND_CFG"
+[ -f "$BACKEND_CFG" ] || env_fail "setup server-profile did not produce $BACKEND_CFG"
 
-# Token: explicit flag wins; otherwise setup-server-profile.sh already substituted the one from
+# Token: explicit flag wins; otherwise setup server-profile already substituted the one from
 # apps/website/api/.env and we leave its work alone.
 python3 - "$BACKEND_CFG" "$MISSION_ID" "$EVENT_ID" "$BACKEND_URL" "$TOKEN" <<'PY'
 import json, sys
@@ -613,8 +613,8 @@ PY
 if [ -n "$MISSION_FILE" ]; then
   [ -f "$MISSION_FILE" ] || usage_fail "--mission-file=$MISSION_FILE does not exist"
   # TBD_MissionLoader.LoadFromProfileFile reads $profile:missions/<missionId>.json, so the file
-  # on disk must be named for the ID, not for the golden it came from (setup-server-profile.sh
-  # carries the same note). Copy rather than re-serialise: the mod must parse these exact bytes.
+  # on disk must be named for the ID, not for the golden it came from (`cargo xtask setup
+  # server-profile` carries the same note). Copy rather than re-serialise: the mod must parse these exact bytes.
   mkdir -p "$RUN_DIR/profile/profile/missions"
   cp "$MISSION_FILE" "$RUN_DIR/profile/profile/missions/$MISSION_ID.json"
   echo "    staged $(wc -c <"$MISSION_FILE" | tr -d ' ') bytes as the on-disk fallback for $MISSION_ID"
