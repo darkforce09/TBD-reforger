@@ -172,7 +172,7 @@ Most “map understanding” (forests, roads, object glyphs, cartographic Map vi
 - Health check URL list
 - Document supported distros (Fedora atomic vs generic Linux)
 
-**Not:** Windows Workbench one-click (separate `scripts/mod/setup-workbench-linux.sh`).
+**Not:** Windows Workbench one-click (separate `cargo xtask setup workbench`).
 
 ---
 
