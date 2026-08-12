@@ -59,6 +59,8 @@ mod hostrun;
 mod label_gates;
 mod mcp;
 mod mcp_daemon;
+mod mk_build;
+mod mk_target_dir;
 mod mod_comment_gates;
 mod mod_wave;
 mod mod_world_boot;
@@ -181,6 +183,16 @@ enum TopCmd {
     Ai {
         #[command(subcommand)]
         cmd: AiCmd,
+    },
+    /// Makefile target equivalents (T-853 Phase 3). `cargo xtask mk <target> [--dry-run]`.
+    ///
+    /// Trailing var-args rather than a `Subcommand` enum on purpose: T-894 (db lane) and T-896 (ci
+    /// lane) add their own modules in parallel, and a shared clap enum here would be a three-way
+    /// merge conflict per target. Chain them at the dispatch arm via `mk_build::handles`.
+    #[command(name = "mk", disable_help_flag = true)]
+    Mk {
+        #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+        args: Vec<String>,
     },
 }
 
@@ -980,6 +992,8 @@ fn run() -> Result<u8> {
             AiCmd::Guard => Ok(ai::cmd_guard()),
             AiCmd::Run { args } => ai::cmd_run(&args),
         },
+        // T-894/T-896 seam: `if mk_build::handles(t) { … } else { mk_db::run(&args) }`.
+        TopCmd::Mk { args } => mk_build::run(&args),
         TopCmd::Gen { cmd } => {
             let code = match cmd {
                 GenCmd::FontTable { bdf } => node_free::gen_font_table(&bdf)?,
