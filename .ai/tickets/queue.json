@@ -13,27 +13,6 @@
       "branch": "ticket/T-090"
     },
     {
-      "id": "T-860",
-      "title": "T-853 port: mcp-call -> mcp call",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-860"
-    },
-    {
-      "id": "T-861",
-      "title": "T-853 port: setup-server-profile -> setup server-profile",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-861"
-    },
-    {
-      "id": "T-862",
-      "title": "T-853 port: fetch-vanilla-source -> fetch vanilla-source",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-862"
-    },
-    {
       "id": "T-863",
       "title": "T-853 port: tbd-dev-bootstrap -> mod dev-bootstrap",
       "status": "ready",
