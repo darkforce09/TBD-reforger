@@ -14,22 +14,6 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Targets:** root, website
 - **Summary:** Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
 
-## T-902 — T-853 Phase 6: retire wave.sh — the verdict diff, then the deletion
-
-- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
-- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
-- **Branch:** `ticket/T-902`
-- **Targets:** root
-- **Summary:** wave.sh is ported and waves 231-232 already ran END TO END under the Rust driver (prep, three parallel slices, per-slice land with two hand-resolved conflicts, full gate, close, push). What has NOT been done is a side-by-side bash-vs-Rust verdict comparison on a real wave. Do that: run `cargo xtask platform wave diff all` (31 arms) plus `diff base` (proves base derivation identical over ALL ~2760 commits), and run one real wave's gate under BOTH drivers, diffing normalised output. Only then delete scripts/platform/wave.sh and its inventory lines (shell AND python — it is the last python3 entry). Repoint every caller; `git grep -n 'wave\.sh'` must return only historical records afterwards. ACCEPTANCE: prove the change BITES — perturb the new subject and watch it go red — not merely that it passes. A green run alone is not evidence (T-556). Finish with a full `cargo xtask platform wave gate` PASS: it is the only check that sees cross-crate breakage, and it has caught defects a green `cargo test -p xtask` could not. Spec: docs/platform/t853_shell_to_xtask_waves.md
-
-## T-903 — T-853 Phase 6: delete hostrun.sh — it dies with wave.sh
-
-- **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`
-- **Program hub:** `docs/platform/t853_shell_to_xtask_waves.md`
-- **Branch:** `ticket/T-903`
-- **Targets:** root
-- **Summary:** hostrun.sh's last consumer is scripts/platform/wave.sh. Its Rust successor xtask/src/hostrun.rs already exists, is shared with playtest_server, and has a live test proving the bridge crosses the container wall (glibc 2.36 in-container vs 2.43 on the host). Delete the script and its inventory line ONLY after wave.sh is gone — order matters, and BLOCKED ON the wave.sh slice in this wave. This is the last tracked shell file in the repository. ACCEPTANCE: prove the change BITES — perturb the new subject and watch it go red — not merely that it passes. A green run alone is not evidence (T-556). Finish with a full `cargo xtask platform wave gate` PASS: it is the only check that sees cross-crate breakage, and it has caught defects a green `cargo test -p xtask` could not. Spec: docs/platform/t853_shell_to_xtask_waves.md
-
 ## T-904 — T-853 Phase 7b: flip the ratchet to a HARD ZERO
 
 - **Slice spec:** `docs/platform/t853_shell_to_xtask_waves.md`

@@ -13,20 +13,6 @@
       "branch": "ticket/T-090"
     },
     {
-      "id": "T-902",
-      "title": "T-853 Phase 6: retire wave.sh \u2014 the verdict diff, then the deletion",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-902"
-    },
-    {
-      "id": "T-903",
-      "title": "T-853 Phase 6: delete hostrun.sh \u2014 it dies with wave.sh",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-903"
-    },
-    {
       "id": "T-904",
       "title": "T-853 Phase 7b: flip the ratchet to a HARD ZERO",
       "status": "ready",
