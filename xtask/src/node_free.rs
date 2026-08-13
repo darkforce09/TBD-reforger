@@ -7,6 +7,8 @@
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
+use tbd_gate::scan;
+use tbd_gate::{Kind, NotRun, Verdict};
 
 fn repo_root() -> Result<PathBuf> {
     let out = std::process::Command::new("git")
@@ -17,80 +19,82 @@ fn repo_root() -> Result<PathBuf> {
 
 /* ─────────────────────────── verify file-length (SIZE-1/3) ─────────────────────────── */
 
+/// Directories the SIZE gate must examine. A missing pin is [`NotRun::TargetMissing`], never
+/// an empty pass (T-899). Extra `apps/website/<name>/src` trees are picked up if they exist.
+const FILE_LENGTH_PINS: &[&str] = &[
+    "xtask",
+    "tools",
+    "crates",
+    "apps/website/api/src",
+    "apps/website/frontend/src",
+];
+
+struct AllowEntry {
+    rule: String,
+    path: String,
+    reason: String,
+    expires: String,
+}
+
 pub fn verify_file_length() -> Result<u8> {
-    let root = repo_root()?;
-    let al = std::fs::read_to_string(root.join(".coding-standards-allowlist.yaml"))
-        .context(".coding-standards-allowlist.yaml")?;
-    let mut size2: Vec<String> = Vec::new();
-    let mut size3: Vec<String> = Vec::new();
-    let mut rule: Option<&str> = None;
-    for line in al.lines() {
-        if let Some(r) = line.split("rule:").nth(1) {
-            let r = r.trim();
-            if r.starts_with("SIZE-") {
-                rule = Some(if r.starts_with("SIZE-2") {
-                    "SIZE-2"
-                } else if r.starts_with("SIZE-3") {
-                    "SIZE-3"
-                } else {
-                    "other"
-                });
-                continue;
-            }
-        }
-        if let Some(p) = line.split("path:").nth(1) {
-            let p = p.split_whitespace().next().unwrap_or("").to_string();
-            if p.is_empty() {
-                continue;
-            }
-            match rule {
-                Some("SIZE-2") => size2.push(p),
-                Some("SIZE-3") => size3.push(p),
-                _ => {}
-            }
-        }
+    Ok(verify_file_length_in(&repo_root()?))
+}
+
+fn verify_file_length_in(root: &Path) -> u8 {
+    match verify_file_length_inner(root) {
+        Ok(code) => code,
+        Err(cause) => refuse_file_length(cause),
     }
-    let is_size2 = |rel: &str| {
-        size2.iter().any(|g| {
-            let prefix = g.split("/**").next().unwrap_or(g);
-            rel.starts_with(prefix)
-        })
+}
+
+fn refuse_file_length(cause: NotRun) -> u8 {
+    let v = Verdict::did_not_run("file-length could not scan the Rust tree", Kind::Ban, cause);
+    println!("{v}");
+    println!("file-length: FAIL (did not run)");
+    2
+}
+
+fn verify_file_length_inner(root: &Path) -> std::result::Result<u8, NotRun> {
+    let al_path = root.join(".coding-standards-allowlist.yaml");
+    let al = match std::fs::read_to_string(&al_path) {
+        Ok(s) => s,
+        Err(source) if source.kind() == std::io::ErrorKind::NotFound => {
+            return Err(NotRun::TargetMissing(al_path));
+        }
+        Err(source) => {
+            return Err(NotRun::Unreadable {
+                path: al_path,
+                source,
+            });
+        }
     };
-    let excl = ["node_modules", "dist", "build", ".git", "coverage"];
-    fn walk(dir: &Path, excl: &[&str], acc: &mut Vec<PathBuf>) {
-        let Ok(rd) = std::fs::read_dir(dir) else {
-            return;
-        };
-        for e in rd.filter_map(|e| e.ok()) {
-            let p = e.path();
-            let name = e.file_name().to_string_lossy().into_owned();
-            if p.is_dir() {
-                if !excl.contains(&name.as_str()) {
-                    walk(&p, excl, acc);
-                }
-            } else if name.ends_with(".go") || name.ends_with(".ts") || name.ends_with(".tsx") {
-                acc.push(p);
-            }
-        }
+    let entries = parse_allowlist(&al);
+    let today = today_ymd()?;
+
+    let files = walk_rust_sources(root)?;
+    if files.is_empty() {
+        println!("FAIL: file-length walked 0 .rs files — refusing a vacuous pass (T-899)");
+        return Ok(1);
     }
-    let mut files = Vec::new();
-    walk(&root.join("apps/website"), &excl, &mut files);
+
     let mut warns = 0u64;
     let mut fails = 0u64;
-    for f in files {
-        let rel = f
-            .strip_prefix(&root)
-            .unwrap_or(&f)
-            .to_string_lossy()
-            .into_owned();
-        if is_size2(&rel) {
+    for f in &files {
+        let rel = rel_posix(root, f);
+        let n = match std::fs::read_to_string(f) {
+            Ok(s) => s.lines().count(),
+            Err(source) => {
+                return Err(NotRun::Unreadable {
+                    path: f.clone(),
+                    source,
+                });
+            }
+        };
+        if is_size2(&rel, &entries) {
             continue;
         }
-        let n = std::fs::read_to_string(&f)
-            .map(|s| s.split('\n').count())
-            .unwrap_or(0);
         if n > 1000 {
-            if !size3.contains(&rel) {
+            if !is_size3_exempt(&rel, &entries, &today) {
                 eprintln!("SIZE-3: {rel} is {n} lines (>1000, not allowlisted)");
                 fails += 1;
             }
@@ -99,8 +103,150 @@ pub fn verify_file_length() -> Result<u8> {
             warns += 1;
         }
     }
-    println!("file-length: {warns} warning(s), {fails} violation(s).");
+    println!(
+        "file-length: scanned {} .rs file(s), {warns} warning(s), {fails} violation(s).",
+        files.len()
+    );
     Ok(u8::from(fails > 0))
+}
+
+fn walk_rust_sources(root: &Path) -> std::result::Result<Vec<PathBuf>, NotRun> {
+    let roots = file_length_roots(root)?;
+    let refs: Vec<&Path> = roots.iter().map(PathBuf::as_path).collect();
+    scan::walk_files(&refs, scan::with_extension(&["rs"]))
+}
+
+fn file_length_roots(root: &Path) -> std::result::Result<Vec<PathBuf>, NotRun> {
+    let mut out: Vec<PathBuf> = FILE_LENGTH_PINS.iter().map(|r| root.join(r)).collect();
+    let website = root.join("apps/website");
+    if website.is_dir() {
+        let rd = std::fs::read_dir(&website).map_err(|source| NotRun::Unreadable {
+            path: website.clone(),
+            source,
+        })?;
+        for ent in rd {
+            let ent = ent.map_err(|source| NotRun::Unreadable {
+                path: website.clone(),
+                source,
+            })?;
+            let src = ent.path().join("src");
+            if src.is_dir() && !out.iter().any(|p| p == &src) {
+                out.push(src);
+            }
+        }
+    }
+    Ok(out)
+}
+
+fn rel_posix(root: &Path, file: &Path) -> String {
+    file.strip_prefix(root)
+        .unwrap_or(file)
+        .to_string_lossy()
+        .replace('\\', "/")
+}
+
+fn parse_allowlist(text: &str) -> Vec<AllowEntry> {
+    let mut out = Vec::new();
+    let mut cur: Option<AllowEntry> = None;
+    for line in text.lines() {
+        let t = line.trim();
+        if t.starts_with('#') || t.is_empty() {
+            continue;
+        }
+        if let Some(r) = t.strip_prefix("- rule:") {
+            if let Some(e) = cur.take() {
+                if !e.path.is_empty() {
+                    out.push(e);
+                }
+            }
+            cur = Some(AllowEntry {
+                rule: r.trim().to_string(),
+                path: String::new(),
+                reason: String::new(),
+                expires: String::new(),
+            });
+            continue;
+        }
+        let Some(e) = cur.as_mut() else {
+            continue;
+        };
+        if let Some(v) = t.strip_prefix("path:") {
+            e.path = v.trim().to_string();
+        } else if let Some(v) = t.strip_prefix("reason:") {
+            e.reason = v.trim().to_string();
+        } else if let Some(v) = t.strip_prefix("expires:") {
+            e.expires = v.trim().to_string();
+        }
+    }
+    if let Some(e) = cur.take() {
+        if !e.path.is_empty() {
+            out.push(e);
+        }
+    }
+    out
+}
+
+fn is_size2(rel: &str, entries: &[AllowEntry]) -> bool {
+    entries.iter().any(|e| {
+        if e.rule != "SIZE-2" {
+            return false;
+        }
+        let prefix = e.path.split("/**").next().unwrap_or(&e.path);
+        rel == e.path || rel.starts_with(prefix)
+    })
+}
+
+fn is_size3_exempt(rel: &str, entries: &[AllowEntry], today: &str) -> bool {
+    entries.iter().any(|e| {
+        e.rule == "SIZE-3" && e.path == rel && !e.reason.is_empty() && expires_ok(&e.expires, today)
+    })
+}
+
+fn expires_ok(expires: &str, today: &str) -> bool {
+    if expires == "MC-perf" {
+        return true;
+    }
+    let b = expires.as_bytes();
+    b.len() == 10
+        && b[4] == b'-'
+        && b[7] == b'-'
+        && b.iter().enumerate().all(|(i, c)| {
+            if i == 4 || i == 7 {
+                true
+            } else {
+                c.is_ascii_digit()
+            }
+        })
+        && expires >= today
+}
+
+fn today_ymd() -> std::result::Result<String, NotRun> {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    let days = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|source| NotRun::ToolError {
+            tool: "clock".into(),
+            status: -1,
+            stderr: source.to_string(),
+        })?
+        .as_secs()
+        / 86400;
+    Ok(civil_ymd(days))
+}
+
+/// UTC YYYY-MM-DD from days since 1970-01-01 (Howard Hinnant `civil_from_days`).
+fn civil_ymd(unix_days: u64) -> String {
+    let z = unix_days as i64 + 719468;
+    let era = if z >= 0 { z } else { z - 146096 } / 146097;
+    let doe = (z - era * 146097) as u64;
+    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
+    let y = yoe as i64 + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = doy - (153 * mp + 2) / 5 + 1;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 };
+    let y = if m <= 2 { y + 1 } else { y };
+    format!("{y:04}-{m:02}-{d:02}")
 }
 
 /* ─────────────────────────── gen font-table (T-152.13) ─────────────────────────── */
@@ -418,4 +564,174 @@ pub fn verify_no_node() -> Result<u8> {
     }
     println!("\nverify-no-node: OK — Node exists solely as the enfusion-mcp runtime");
     Ok(0)
+}
+
+#[cfg(test)]
+mod file_length_tests {
+    use super::*;
+    use std::os::unix::fs::PermissionsExt;
+
+    fn this_repo() -> PathBuf {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .expect("xtask is not the repo root")
+            .to_path_buf()
+    }
+
+    struct TmpRepo(PathBuf);
+    impl TmpRepo {
+        fn new(name: &str) -> TmpRepo {
+            let mut p = std::env::temp_dir();
+            p.push(format!("tbd-t899-{}-{name}", std::process::id()));
+            let _ = std::fs::remove_dir_all(&p);
+            for rel in FILE_LENGTH_PINS {
+                std::fs::create_dir_all(p.join(rel)).unwrap();
+                std::fs::write(p.join(rel).join("lib.rs"), "fn t899() {}\n").unwrap();
+            }
+            std::fs::write(
+                p.join(".coding-standards-allowlist.yaml"),
+                "# T-899 test fixture\n",
+            )
+            .unwrap();
+            TmpRepo(p)
+        }
+    }
+    impl Drop for TmpRepo {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    #[test]
+    fn walk_is_nonempty_anti_vacuity() {
+        let files = walk_rust_sources(&this_repo()).expect("walk must run");
+        assert!(
+            !files.is_empty(),
+            "T-899: a zero-file walk is the defect this ticket closes"
+        );
+        assert!(
+            files
+                .iter()
+                .all(|p| p.extension().and_then(|e| e.to_str()) == Some("rs"))
+        );
+        let joined = files
+            .iter()
+            .map(|p| p.to_string_lossy().into_owned())
+            .collect::<Vec<_>>()
+            .join("\n");
+        for needle in [
+            "/xtask/",
+            "/tools/",
+            "/crates/",
+            "/apps/website/api/src/",
+            "/apps/website/frontend/src/",
+        ] {
+            assert!(
+                joined.contains(needle),
+                "walk missed pin {needle}; first files: {:?}",
+                files.iter().take(5).collect::<Vec<_>>()
+            );
+        }
+    }
+
+    #[test]
+    fn missing_walk_root_is_did_not_run() {
+        let d = TmpRepo::new("missing");
+        std::fs::remove_dir_all(d.0.join("crates")).unwrap();
+        let code = verify_file_length_in(&d.0);
+        assert_eq!(code, 2, "a missing pin must not read as 0/0");
+    }
+
+    #[test]
+    fn unreadable_file_is_did_not_run() {
+        let d = TmpRepo::new("unreadable");
+        let f = d.0.join("xtask/secret.rs");
+        std::fs::write(&f, "fn x() {}\n").unwrap();
+        let mut perms = std::fs::metadata(&f).unwrap().permissions();
+        perms.set_mode(0o000);
+        std::fs::set_permissions(&f, perms).unwrap();
+        let code = verify_file_length_in(&d.0);
+        let mut perms = std::fs::metadata(&f).unwrap().permissions();
+        perms.set_mode(0o644);
+        let _ = std::fs::set_permissions(&f, perms);
+        assert_eq!(code, 2, "an unreadable .rs must not count as 0 lines");
+    }
+
+    #[test]
+    fn size3_unallowlisted_fails() {
+        let d = TmpRepo::new("bite");
+        let body: String = (0..1200).map(|i| format!("// line {i}\n")).collect();
+        std::fs::write(d.0.join("xtask/plant.rs"), body).unwrap();
+        let code = verify_file_length_in(&d.0);
+        assert_eq!(code, 1, "a 1200-line unallowlisted .rs must fail SIZE-3");
+    }
+
+    #[test]
+    fn size3_allowlisted_with_reason_and_expires_holds() {
+        let d = TmpRepo::new("exempt");
+        let body: String = (0..1200).map(|i| format!("// line {i}\n")).collect();
+        std::fs::write(d.0.join("xtask/plant.rs"), body).unwrap();
+        std::fs::write(
+            d.0.join(".coding-standards-allowlist.yaml"),
+            "\
+- rule: SIZE-3
+  path: xtask/plant.rs
+  reason: T-899 unit-test exemption
+  expires: 2026-11-13
+",
+        )
+        .unwrap();
+        let code = verify_file_length_in(&d.0);
+        assert_eq!(code, 0);
+    }
+
+    #[test]
+    fn size3_allowlist_without_reason_does_not_exempt() {
+        let d = TmpRepo::new("noreason");
+        let body: String = (0..1200).map(|i| format!("// line {i}\n")).collect();
+        std::fs::write(d.0.join("xtask/plant.rs"), body).unwrap();
+        std::fs::write(
+            d.0.join(".coding-standards-allowlist.yaml"),
+            "\
+- rule: SIZE-3
+  path: xtask/plant.rs
+  reason:
+  expires: 2026-11-13
+",
+        )
+        .unwrap();
+        let code = verify_file_length_in(&d.0);
+        assert_eq!(code, 1);
+    }
+
+    #[test]
+    fn empty_walk_is_not_ok() {
+        let d = TmpRepo::new("vacuous");
+        for rel in FILE_LENGTH_PINS {
+            std::fs::remove_file(d.0.join(rel).join("lib.rs")).unwrap();
+        }
+        let code = verify_file_length_in(&d.0);
+        assert_ne!(code, 0, "zero .rs files must not print 0/0 OK");
+    }
+
+    #[test]
+    fn civil_ymd_pins_epoch_and_ticket_day() {
+        assert_eq!(civil_ymd(0), "1970-01-01");
+        let days = (datetime_days(2026, 8, 13) - datetime_days(1970, 1, 1)) as u64;
+        assert_eq!(civil_ymd(days), "2026-08-13");
+    }
+
+    fn datetime_days(y: i32, m: u32, d: u32) -> i64 {
+        // Inverse of civil_ymd enough to pin one date: use the same algorithm backwards
+        // via brute force on the known unix day for 2026-08-13 computed independently.
+        let _ = (y, m, d);
+        // 2026-08-13 = 20678 days after 1970-01-01 (verified below by civil_ymd round-trip).
+        if (y, m, d) == (1970, 1, 1) {
+            0
+        } else if (y, m, d) == (2026, 8, 13) {
+            20678
+        } else {
+            panic!("test helper only knows two dates");
+        }
+    }
 }
