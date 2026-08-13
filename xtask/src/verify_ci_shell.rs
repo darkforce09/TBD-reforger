@@ -47,6 +47,13 @@ pub fn verify_ci_shell() -> Result<u8> {
 pub fn run_on_workflows_dir(dir: &Path) -> u8 {
     let mut report = Report::new("verify-ci-shell");
     scan_dir(dir, &mut report);
+    // tbd-gate Report treats 0 ran as clean. A walker that skipped every job would otherwise
+    // print OK over an input it never examined.
+    if report.counts().0 == 0 {
+        report.check(Verdict::failed(
+            "no checks ran — refusing to report OK over an input that was never examined",
+        ));
+    }
     u8::try_from(report.finish()).unwrap_or(2)
 }
 
@@ -164,9 +171,10 @@ fn check_doc(rel: &str, doc: &Value, report: &mut Report, run_keys: &mut u32) {
             )));
             continue;
         };
-        // `defaults.run` lives here. We read the mapping so a missing `steps` is still examined,
-        // and we never treat `defaults.run` as a step.
+        // `defaults.run` lives here as a sibling of `steps`. It is never a step. A missing
+        // `steps` is still a check: skip would be OK-with-0-checks over a job nobody examined.
         let Some(steps_v) = map_get(job_map, "steps") else {
+            check_job_without_steps(rel, &job, job_map, report);
             continue;
         };
         let Some(steps) = steps_v.as_sequence() else {
@@ -175,10 +183,32 @@ fn check_doc(rel: &str, doc: &Value, report: &mut Report, run_keys: &mut u32) {
             )));
             continue;
         };
+        if steps.is_empty() {
+            report.check(Verdict::failed(format!(
+                "{rel}:{job}: steps: is empty — refusing to report OK over a job that was never examined"
+            )));
+            continue;
+        }
         for (idx, step_v) in steps.iter().enumerate() {
             check_step(rel, &job, idx, step_v, report, run_keys);
         }
     }
+}
+
+/// Reusable-workflow jobs (`uses:` at the job, no `steps`) must hit the same allowlist as a
+/// step `uses:`. Today none of ours do — an unlisted job-level uses is a FAIL, not a skip.
+fn check_job_without_steps(rel: &str, job: &str, job_map: &Mapping, report: &mut Report) {
+    if let Some(u) = map_get(job_map, "uses").and_then(as_string) {
+        if let Some(why) = uses_reason(&u) {
+            report.check(Verdict::failed(format!("{rel}:{job}:{why}")));
+        } else {
+            report.check(Verdict::Held);
+        }
+        return;
+    }
+    report.check(Verdict::failed(format!(
+        "{rel}:{job}: job has no steps: — refusing to report OK over a job that was never examined"
+    )));
 }
 
 fn check_step(
@@ -414,6 +444,33 @@ jobs:\n  j:\n    steps:\n      - uses: actions/checkout@v7\n        run: cargo x
         let yaml = "\
 jobs:\n  j:\n    steps:\n      - run: |\n          cargo xtask a\n          cargo xtask b\n          cargo xtask c\n          cargo xtask d\n";
         assert_ne!(rc_of(yaml), 0);
+    }
+
+    #[test]
+    fn defaults_run_only_no_steps_is_red() {
+        // BLOCKER: a job with only defaults.run and no steps used to print OK — 0 check(s).
+        let yaml = "\
+jobs:\n  j:\n    defaults:\n      run:\n        working-directory: apps/website/api\n";
+        assert_ne!(rc_of(yaml), 0, "no-steps job must not be OK with 0 checks");
+    }
+
+    #[test]
+    fn job_level_evil_uses_no_steps_is_red() {
+        let yaml = "jobs:\n  j:\n    uses: evil/composite@v1\n";
+        assert_ne!(rc_of(yaml), 0);
+    }
+
+    #[test]
+    fn ampersand_background_is_red() {
+        let yaml =
+            "jobs:\n  j:\n    steps:\n      - run: cargo xtask verify no-shell & echo pwned\n";
+        assert_ne!(rc_of(yaml), 0);
+    }
+
+    #[test]
+    fn empty_workflows_dir_is_red() {
+        let d = Tmp::dir("empty");
+        assert_ne!(run_on_workflows_dir(&d.0), 0);
     }
 
     #[test]
