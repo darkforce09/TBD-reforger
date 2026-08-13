@@ -153,8 +153,8 @@ pub fn cmd_land(ctx: &Ctx, args: &[String]) -> u8 {
             landed.len(),
             landed.join(" ")
         );
-        wprintln!("  fix on main and re-run:  bash scripts/platform/wave.sh gate {base}");
-        wprintln!("  or roll back the wave :  bash scripts/platform/wave.sh revert {base}");
+        wprintln!("  fix on main and re-run:  cargo xtask platform wave gate {base}");
+        wprintln!("  or roll back the wave :  cargo xtask platform wave revert {base}");
         return 1;
     }
 
@@ -199,7 +199,7 @@ fn is_ticket_glob(a: &str) -> bool {
 /// `revert`, never `reset --hard` — main is pushed, so history must not be rewritten.
 pub fn cmd_revert(_ctx: &Ctx, base: &str) -> u8 {
     if base.is_empty() {
-        wprintln!("usage: wave.sh revert <known-green-sha>");
+        wprintln!("usage: cargo xtask platform wave revert <known-green-sha>");
         return 1;
     }
     if git_stdout(&["rev-parse", "--verify", &format!("{base}^{{commit}}")]).is_none() {
@@ -250,7 +250,7 @@ pub fn cmd_revert(_ctx: &Ctx, base: &str) -> u8 {
 /// Record that an adversarial verifier examined `<sha>`.
 pub fn cmd_verified(ctx: &Ctx, sha: &str) -> u8 {
     if sha.is_empty() {
-        wprintln!("usage: wave.sh verified <sha>");
+        wprintln!("usage: cargo xtask platform wave verified <sha>");
         return 1;
     }
     if git_stdout(&["rev-parse", "--verify", sha]).is_none() {
@@ -297,7 +297,7 @@ pub fn cmd_wave_close(ctx: &Ctx) -> u8 {
         .unwrap_or_default();
     if vsha.is_empty() {
         wprintln!("REFUSED: no adversarial verifier recorded. Run one against main, then:");
-        wprintln!("         bash scripts/platform/wave.sh verified $(git rev-parse HEAD)");
+        wprintln!("         cargo xtask platform wave verified $(git rev-parse HEAD)");
         return 1;
     }
     // The verifier must have looked at a tree that CONTAINS this wave's work, not an older one.

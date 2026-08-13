@@ -111,18 +111,20 @@ pub const UNKNOWN_HELP: &str = r##"# Platform wave lifecycle — the programmati
 #      scripts/mod/slice-collisions.py; T-620 ported both .py files to xtask and deleted them, so
 #      that half is green now and `verify-no-python` is a wave-gate step in its own right below.)
 #
-#   bash scripts/platform/wave.sh status      # where are we? what is blocking?
-#   bash scripts/platform/wave.sh prep        # create worktrees for the next disjoint set
-#   bash scripts/platform/wave.sh gate        # full wave gate; base DERIVED from the last
-#                                             # `wave N CLOSED` commit — pass one only to widen,
-#                                             # never to narrow (T-602 refuses a narrowing base)
-#   bash scripts/platform/wave.sh gate --slice T-190   # cheap per-slice gate
-#   bash scripts/platform/wave.sh test --slice T-190 -p website-frontend
-#                                             # ad-hoc cargo test into a PER-SLICE private
-#                                             # CARGO_TARGET_DIR (T-742). Never bare cargo test
-#                                             # against the shared cache — that is the
-#                                             # cross-worktree false-binary class.
-#   bash scripts/platform/wave.sh land        # merge every ready slice (no barrier)"##;
+#   cargo xtask platform wave status      # where are we? what is blocking?
+#   cargo xtask platform wave prep        # create worktrees for the next disjoint set
+#   cargo xtask platform wave gate        # full wave gate; base DERIVED from the last
+#                                         # `wave N CLOSED` commit — pass one only to widen,
+#                                         # never to narrow (T-602 refuses a narrowing base)
+#   cargo xtask platform wave gate --slice T-190   # cheap per-slice gate
+#   cargo xtask platform wave test --slice T-190 -p website-frontend
+#                                         # ad-hoc cargo test into a PER-SLICE private
+#                                         # CARGO_TARGET_DIR (T-742). Never bare cargo test
+#                                         # against the shared cache — that is the
+#                                         # cross-worktree false-binary class.
+#   cargo xtask platform wave land        # merge every ready slice (no barrier)
+#
+#   bash scripts/platform/wave.sh was deleted at T-902."##;
 
 /// `COLLIDE` — the dispatch-set command `status` and `prep` both name.
 ///
@@ -445,6 +447,22 @@ fn disown_ambient_target_dir() {
 
 pub fn run(args: &[String]) -> Result<u8> {
     disown_ambient_target_dir();
+    // Internal probe used by the base arm: print the derived wave base and nothing else.
+    // Must NOT go through Ctx::enter — Host::detect prints a five-line HOST-shell banner on
+    // stderr, and the bash side of that arm is the extracted `prev_wave_close` functions, which
+    // never print it. Measured T-902: 11/11 "mismatches" were that banner sitting between the
+    // SHA and the disavowal skip; the SHAs themselves were identical.
+    if args.first().map(String::as_str) == Some("diff")
+        && args.get(1).map(String::as_str) == Some("base-probe")
+    {
+        return Ok(match base::prev_wave_close() {
+            Some(s) => {
+                crate::wprintln!("{s}");
+                0
+            }
+            None => 1,
+        });
+    }
     let ctx = Ctx::enter()?;
     let cmd = args.first().map(String::as_str).unwrap_or("status");
     let rest: Vec<String> = args.iter().skip(1).cloned().collect();

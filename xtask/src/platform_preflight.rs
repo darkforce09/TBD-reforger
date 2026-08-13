@@ -376,7 +376,7 @@ pub fn run(warn_only: bool) -> Result<u8> {
             &mut c,
             "reclaimable",
             &format!(
-                "{}G of build caches in /var/tmp — bash scripts/platform/wave.sh reclaim",
+                "{}G of build caches in /var/tmp — cargo xtask platform wave reclaim",
                 orphan_mb / 1024
             ),
         );
@@ -393,7 +393,7 @@ pub fn run(warn_only: bool) -> Result<u8> {
         _ => soft(
             &mut c,
             "CARGO_TARGET_DIR",
-            "unset in this shell — wave.sh exports it, but a dispatcher must too",
+            "unset in this shell — `cargo xtask platform wave` exports it, but a dispatcher must too",
         ),
     }
     let stray = stray_worktree_targets(&root);
@@ -456,7 +456,7 @@ pub fn run(warn_only: bool) -> Result<u8> {
         soft(
             &mut c,
             "worktrees",
-            &format!("{wt} left over — wave.sh land will reuse or trip on them"),
+            &format!("{wt} left over — cargo xtask platform wave land will reuse or trip on them"),
         );
     }
 

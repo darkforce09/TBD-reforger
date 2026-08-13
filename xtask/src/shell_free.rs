@@ -34,7 +34,8 @@
 //! `scripts/ticket` had been sitting in the tree in exactly that shape the entire time — see the
 //! note on `tracked_shell()`.
 //!
-//! Rewriting `wave.sh` is explicitly NOT in scope for T-621 and this gate does not ask for it.
+//! Rewriting `wave.sh` was explicitly NOT in scope for T-621. T-902 deleted it; this gate
+//! only checks the inventory still matches the tree.
 //!
 //! ── FAIL-CLOSED ──────────────────────────────────────────────────────────────────────────────
 //!

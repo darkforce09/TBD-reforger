@@ -134,7 +134,7 @@ repo has always been the source of truth, which is what makes this cheap.
 
 ```bash
 cargo xtask platform preflight          # must print PASS; fix BLOCKs before anything else
-bash scripts/platform/wave.sh status        # what is shipped, in flight, ready
+cargo xtask platform wave status        # what is shipped, in flight, ready
 cargo xtask slice-collisions                # the dispatch set, + any UNPLANNED warning
 ```
 
@@ -179,8 +179,8 @@ twelve filed** (T-409…T-426, minus the shipped ones).
 merge → triage → close. Tokens and command-center attention are the constraint, not wall clock.
 The no-barrier rule below is suspended; do not restore it without the operator.
 
-**`wave.sh land` refuses tickets promoted out of plan-wave order.** All three waves were merged by
-hand — `git merge --no-ff` per slice, then `wave.sh gate <base>` on merged main, then drop the
+**`cargo xtask platform wave land` refuses tickets promoted out of plan-wave order.** All three waves were merged by
+hand — `git merge --no-ff` per slice, then `cargo xtask platform wave gate <base>` on merged main, then drop the
 worktrees. That is `cmd_land`'s exact sequence and it keeps every safety property. The refusal is
 correct behaviour, not a bug; do not "fix" it into landing the wrong set.
 
@@ -188,7 +188,7 @@ correct behaviour, not a bug; do not "fix" it into landing the wrong set.
 because of this. The shared `tbd_gate_it` is at ~26 `pending_approval` rows and reds
 `missions.rs:1002` on any run. That is T-410/T-411, not your slice.
 
-### The three wave.sh tickets are SEQUENCED. Do not merge them into one pass.
+### The three wave.sh tickets (historical; `wave.sh` deleted at T-902) are SEQUENCED. Do not merge them into one pass.
 
 | order | ticket | why this order |
 |---|---|---|
@@ -275,7 +275,7 @@ record the correction in the ticket and tell the operator plainly.
 
 - **`slice-worktree.sh` subcommand is `new`, not `create`.** `create` prints usage and exits 2.
 - **`git push` fails** — the pre-push hook needs git-lfs, absent from the container PATH. Always
-  `bash scripts/platform/wave.sh push`.
+  `cargo xtask platform wave push`.
 - **The operator's dev API on `:8080` goes stale.** A running process keeps its old inode when cargo
   re-links, so a fresh binary on disk does not mean fresh code serving. Preflight now compares
   process start time to the last API commit. A stale API is worse than a dead one — dead fails
@@ -285,7 +285,7 @@ record the correction in the ticket and tell the operator plainly.
 - **Agents must never `git stash`** — it deletes LFS pointer files.
 - **Orphan agent processes and target dirs leak.** A dead agent's API was found still listening 53
   minutes later; ~116 GB of orphan target dirs once filled the disk and two gate steps failed with
-  "No space left on device", which reads as a build error. `wave.sh reclaim`.
+  "No space left on device", which reads as a build error. `cargo xtask platform wave reclaim`.
 - **`distrobox-host-exec` does not forward env** — pass it explicitly via an `env` whitelist.
 - **A rate-limited subagent reports `<status>completed</status>`.** Treat the reset string as a
   FAILURE or you will mark dead agents as done.
@@ -310,7 +310,7 @@ record the correction in the ticket and tell the operator plainly.
   route-shaped or brace-bearing, and read the exit status (0/1/2/127) rather than collapsing it to a
   boolean. `scripts/mod/lib/gate-grep.sh` already does this; use it.
 - **`cargo` is not usable in the container**, and neither are rustfmt/xtask. Route them through
-  `distrobox-host-exec` like the rest. Only `wave.sh` runs directly, never wrapped.
+  `distrobox-host-exec` like the rest. Only `cargo xtask platform wave` runs directly, never wrapped.
 - **A slice agent running its own server instance needs a PRIVATE `CARGO_TARGET_DIR`.** Measured
   twice in one wave (T-581, T-582): two slices building the same crate into the shared `target/`
   served each other stale binaries. Symptom is `Blocking waiting for file lock on artifact
@@ -318,7 +318,7 @@ record the correction in the ticket and tell the operator plainly.
   slice's code — one run reported `328 passed` while `--list` showed none of its own tests. It reads
   exactly like a correct fix not working. Use `target-<slice>-api`, **grep the binary for a string
   unique to your version before trusting any HTTP or test result**, and delete the dir on cleanup —
-  `wave.sh reclaim` reaps `target-<SLICE>` orphans since T-589, but only if the worktree is gone.
+  `cargo xtask platform wave reclaim` reaps `target-<SLICE>` orphans since T-589, but only if the worktree is gone.
 - **`cargo check` ITSELF can report PASS over source that does not compile.** Measured 2026-07-31
   (T-596): under sibling contention on the shared target dir, `cargo check -p website-frontend
   --target wasm32-unknown-unknown` printed `Finished ... in 8.73s`, **exit 0**, while the tree still
@@ -367,7 +367,7 @@ T-181's slices were Enfusion `.c` — worktrees cost nothing. **These slices are
 `CARGO_TARGET_DIR`, every worktree starts a cold build of a 609-crate workspace, and the repo's
 own `target/` is already 52 GB. Eight cold worktrees is a dead afternoon.
 
-`scripts/platform/wave.sh` exports `CARGO_TARGET_DIR="$ROOT/target"` for every tree. Cargo's lock
+`cargo xtask platform wave` exports `CARGO_TARGET_DIR="$ROOT/target"` for every tree. Cargo's lock
 then serialises builds instead of duplicating them — and a warm `cargo check --workspace` is
 **6.8 s measured**, so the wait is cheap and the cache stays hot for everyone.
 
@@ -382,7 +382,7 @@ between lands. Finished, gate-green slices sat blocked behind unfinished ones. A
 completed slices idled behind a single dirty tree, including the identity-linking work that the
 end-of-round results POST was inert without.
 
-`wave.sh land` merges **any** slice that is committed, clean and has commits — immediately.
+`cargo xtask platform wave land` merges **any** slice that is committed, clean and has commits — immediately.
 `land --wave` restores the old barrier if it is ever genuinely wanted; it prints why you probably
 do not want it.
 
@@ -415,10 +415,10 @@ cargo check --workspace   on host      → exit 0
 
 The container is glibc 2.36; the host is 2.39. Proc-macro build scripts and `target/debug/xtask`
 are compiled against the host and refuse to load in here. **Every cargo, rustfmt and xtask call in
-`wave.sh` goes through `hostrun` (`distrobox-host-exec`).**
+the wave driver goes through `hostrun` (`distrobox-host-exec`).**
 
 Beware the failure mode that hid this: `cargo check ... | tail -5` reports `$?` from `tail`, not
-cargo. A piped gate looks green while the build is failing. `wave.sh` captures exit status
+cargo. A piped gate looks green while the build is failing. The wave driver captures exit status
 directly for exactly this reason — do not "simplify" it into a pipeline.
 
 Related: `cargo fmt --all --check` is **not** used. 32 files are already unformatted on `main`
@@ -445,7 +445,7 @@ to the slice's own diff against `main`.
 3. **Land each slice the moment it is green.** No barrier. See correction 2.
 4. **Then run an adversarial verify agent** against merged `main`. Its job is to find what the
    slice agents got wrong, not to confirm they were right. On T-181 this caught two live MAJORs.
-5. **Push after every landing group.** Work must not be trapped on one machine. `wave.sh push`
+5. **Push after every landing group.** Work must not be trapped on one machine. `cargo xtask platform wave push`
    refuses `--no-verify` if the range touches `packages/map-assets/**` (the only LFS-tracked path).
 6. **Verify green → dispatch the next disjoint set automatically.** Do not wait to be asked.
 7. **Agents never self-ship.** They implement, gate-verify, and report. The command center owns

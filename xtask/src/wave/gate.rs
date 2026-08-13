@@ -253,9 +253,7 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
                 "        guess — it is the exact default that reported PASS 26/26 over four unexamined"
             );
             wprintln!("        frontend slices in wave 75. Pass the base explicitly:");
-            wprintln!(
-                "        bash scripts/platform/wave.sh gate <sha main was at before this wave>"
-            );
+            wprintln!("        cargo xtask platform wave gate <sha main was at before this wave>");
             return 2;
         };
         base = derived;
@@ -296,9 +294,9 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
             wprintln!(
                 "gate: '{base}' is a ticket id, not a git base — the per-slice gate is a different command."
             );
-            wprintln!("        per-slice:  bash scripts/platform/wave.sh gate --slice {base}");
+            wprintln!("        per-slice:  cargo xtask platform wave gate --slice {base}");
             wprintln!(
-                "        wave gate:  bash scripts/platform/wave.sh gate [<base>]   (derived when omitted)"
+                "        wave gate:  cargo xtask platform wave gate [<base>]   (derived when omitted)"
             );
         } else {
             wprintln!("gate: base '{base}' is not a resolvable commit — refusing to run.");

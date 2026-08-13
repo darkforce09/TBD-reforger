@@ -75,27 +75,32 @@ fn ci_local_step_set_is_frozen() {
 #[test]
 fn list_gates_equals_the_wave_gate_constant() {
     // The Makefile-parity test above dies with the Makefile. THIS one is the one that has to
-    // survive: `wave.sh`'s `gate_schema` refuses to report PASS unless its hardcoded set agrees
+    // survive: `gate_schema` refuses to report PASS unless its hardcoded set agrees
     // with a parse of the recipe, and T-897 takes that recipe away. `xtask schema list-gates` is
     // the replacement input, so it must equal the constant TODAY — otherwise the repoint would
     // hand the tripwire a set nobody had ever compared, which is the failure it exists to catch.
-    let body = std::fs::read_to_string(root().join("scripts/platform/wave.sh")).expect("wave.sh");
-    let line = body
+    // T-902: bash GATE_SCHEMA_VALIDATE_GATES died with wave.sh. Second source is
+    // VALIDATE_GATES in schema.rs — the same pin gate_schema diffs against the task table.
+    let body = std::fs::read_to_string(root().join("xtask/src/wave/schema.rs")).expect("schema.rs");
+    let key = "const VALIDATE_GATES: &[&str] = &[";
+    let start = body.find(key).expect("VALIDATE_GATES in schema.rs") + key.len();
+    let block = body[start..]
+        .split_once(']')
+        .expect("VALIDATE_GATES close")
+        .0;
+    let mut want: Vec<&str> = block
         .lines()
-        .find(|l| l.starts_with("GATE_SCHEMA_VALIDATE_GATES="))
-        .expect("GATE_SCHEMA_VALIDATE_GATES in wave.sh");
-    let mut want: Vec<&str> = line
-        .split('"')
-        .nth(1)
-        .expect("quoted value")
-        .split_whitespace()
+        .filter_map(|l| {
+            let t = l.trim().trim_end_matches(',');
+            t.strip_prefix('"').and_then(|x| x.strip_suffix('"'))
+        })
         .collect();
     let mut got = validate_gate_names(find("schema-validate").unwrap());
     want.sort_unstable();
     got.sort();
     assert_eq!(
         got, want,
-        "`xtask schema list-gates` disagrees with wave.sh's GATE_SCHEMA_VALIDATE_GATES"
+        "`xtask schema list-gates` disagrees with schema.rs VALIDATE_GATES"
     );
 }
 

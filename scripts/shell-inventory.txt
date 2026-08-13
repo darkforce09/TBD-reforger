@@ -19,12 +19,11 @@
 #   * DELETING a shell script must delete its line here in the same commit. A listed path that no
 #     longer exists also fails, so this file cannot rot into a record nobody has checked.
 #
-# This is NOT a list of files to port. There is no ticket to rewrite wave.sh and T-621 explicitly
-# excludes one. It is a line held at today's count so the next 15,000 lines do not arrive by
+# This is NOT a list of files to port. T-902 deleted scripts/platform/wave.sh. T-621 froze the
+# count; later tickets shrink it. It is a line held so the next 15,000 lines do not arrive by
 # default the way these did — there was no rule about shell until now, so nothing here was a
 # violation.
 #
 # Regenerating this file wholesale would re-bless whatever happens to exist and defeat the entire
 # mechanism. Edit it one line at a time.
-scripts/platform/wave.sh
 scripts/lib/hostrun.sh

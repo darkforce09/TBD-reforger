@@ -253,7 +253,7 @@ impl GateState {
             "        one gate database), and an unserialised verdict is the thing this lock exists to"
         );
         wprintln!(
-            "        prevent. A full disk reaches this branch — check `df` and `wave.sh reclaim`."
+            "        prevent. A full disk reaches this branch — check `df` and `cargo xtask platform wave reclaim`."
         );
         // Escape hatch, for a machine where locking genuinely is not available. It does NOT restore
         // the old behaviour: it proceeds with the verdict itself relabelled, so nothing downstream

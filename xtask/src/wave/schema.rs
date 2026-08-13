@@ -124,7 +124,7 @@ pub fn gate_schema(ctx: &Ctx) -> i32 {
     if mk_sorted != want_sorted {
         wprintln!("schema: schema-validate task set disagrees with GATE_SCHEMA_VALIDATE_GATES.");
         wprintln!("        list-gates: {}", mk_sorted.join(" "));
-        wprintln!("        wave.sh:    {}", want_sorted.join(" "));
+        wprintln!("        VALIDATE_GATES: {}", want_sorted.join(" "));
         wprintln!(
             "        A narrowed read or a tenth sub-gate would keep printing PASS over unchecked"
         );

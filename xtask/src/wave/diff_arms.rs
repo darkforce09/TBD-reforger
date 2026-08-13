@@ -8,7 +8,10 @@
 use std::path::Path;
 use std::process::Command;
 
-use super::diff::{ArmResult, Run, bash_side, compare, make_clone, normalise, rust_side, scratch};
+use super::diff::{
+    ArmResult, Run, bash_side, compare, make_clone, normalise, rust_side, scratch,
+    strip_parent_target_dir,
+};
 use super::{Ctx, host};
 
 /// THE NOISE FLOOR. Run BASH TWICE and diff it against itself.
@@ -81,6 +84,7 @@ pub fn arm_lock(ctx: &Ctx) -> Vec<ArmResult> {
         let mut c = Command::new(prog);
         c.args(args).current_dir(cwd);
         with_env(&mut c);
+        strip_parent_target_dir(&mut c);
         let o = c.output().expect("side");
         let mut s = String::from_utf8_lossy(&o.stdout).into_owned();
         s.push_str(&String::from_utf8_lossy(&o.stderr));
@@ -258,8 +262,16 @@ pub fn arm_base(ctx: &Ctx) -> ArmResult {
     };
     // Extract the pure block from the bash. Anchored on the marker constant and the end of
     // prev_wave_close so a future edit that moves the block does not silently extract prose.
-    let src =
-        std::fs::read_to_string(ctx.root.join("scripts/platform/wave.sh")).unwrap_or_default();
+    let src = match std::fs::read_to_string(ctx.root.join("scripts/platform/wave.sh")) {
+        Ok(s) => s,
+        Err(_) => {
+            return ArmResult {
+                name: "base derivation".into(),
+                ok: false,
+                note: "bash driver deleted at T-902 — refusing to extract a missing wave.sh".into(),
+            };
+        }
+    };
     let lines: Vec<&str> = src.lines().collect();
     let start = lines
         .iter()
@@ -338,11 +350,10 @@ pub fn arm_base(ctx: &Ctx) -> ArmResult {
             unprobed.push((*sha).to_string());
             continue;
         }
-        let bo = Command::new("bash")
-            .arg(&probe)
-            .current_dir(&dir)
-            .output()
-            .expect("bash probe");
+        let mut bcmd = Command::new("bash");
+        bcmd.arg(&probe).current_dir(&dir);
+        strip_parent_target_dir(&mut bcmd);
+        let bo = bcmd.output().expect("bash probe");
         // stdout AND stderr: the disavowal skip ("gate: skipping wave-close … reverted by …") is
         // written to stderr and NAMES TWO SHAS, so it is part of the derivation's observable
         // behaviour, not decoration. Comparing stdout alone would let a port that never noticed a
@@ -356,11 +367,11 @@ pub fn arm_base(ctx: &Ctx) -> ArmResult {
         .to_string();
         let bash_rc = host::status_code(&bo.status);
 
-        let ro = Command::new(&exe)
-            .args(["platform", "wave", "diff", "base-probe"])
-            .current_dir(&dir)
-            .output()
-            .expect("rust probe");
+        let mut rcmd = Command::new(&exe);
+        rcmd.args(["platform", "wave", "diff", "base-probe"])
+            .current_dir(&dir);
+        strip_parent_target_dir(&mut rcmd);
+        let ro = rcmd.output().expect("rust probe");
         let rust_out = format!(
             "{}{}",
             String::from_utf8_lossy(&ro.stdout),
@@ -399,17 +410,11 @@ pub fn arm_base(ctx: &Ctx) -> ArmResult {
         ])
         .status();
 
-    // ANTI-VACUITY: a walk in which the derivation NEVER found a marker proves nothing — that is
-    // "both sides returned empty", the exact fake-pass shape T-556 names.
-    if derived_some < 50 {
-        return ArmResult {
-            name: "base derivation".into(),
-            ok: false,
-            note: format!(
-                "VACUOUS — only {derived_some} of {checked} commits derived a base at all; both sides agreeing on 'nothing' is not evidence"
-            ),
-        };
-    }
+    // Mismatches first. T-902: an inherited CARGO_TARGET_DIR made every rust probe print a
+    // three-line ignore banner; the walk broke at 11 mismatches, then this function reported
+    // VACUOUS because derived_some was still < 50 — hiding the real DIFF behind a vacuity
+    // claim. If they disagreed, that is the result; "both sides empty" can only be claimed
+    // when they agreed.
     if !mismatches.is_empty() {
         return ArmResult {
             name: "base derivation".into(),
@@ -418,6 +423,17 @@ pub fn arm_base(ctx: &Ctx) -> ArmResult {
                 "{} mismatch(es) over {checked} commits:\n    {}",
                 mismatches.len(),
                 mismatches.join("\n    ")
+            ),
+        };
+    }
+    // ANTI-VACUITY: a walk in which the derivation NEVER found a marker proves nothing — that is
+    // "both sides returned empty", the exact fake-pass shape T-556 names.
+    if derived_some < 50 {
+        return ArmResult {
+            name: "base derivation".into(),
+            ok: false,
+            note: format!(
+                "VACUOUS — only {derived_some} of {checked} commits derived a base at all; both sides agreeing on 'nothing' is not evidence"
             ),
         };
     }

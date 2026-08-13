@@ -46,8 +46,8 @@ mod feature_gate_tripwire {
     /// Fail loudly when the feature floor is incomplete so agents cannot mistake a partial suite
     /// (~140 bare / ~502 with doc,mission) for the real ~635-test run.
     ///
-    /// Wave gate (`scripts/platform/wave.sh` test map-engine) and Makefile use `--all-features`
-    /// (sound). Ad-hoc `bash scripts/platform/wave.sh test --slice T-nnn -p map-engine-core`
+    /// Wave gate (`cargo xtask platform wave` test map-engine) and Makefile use `--all-features`
+    /// (sound). Ad-hoc `cargo xtask platform wave test --slice T-nnn -p map-engine-core`
     /// (T-742 private target dirs) does **not** auto-add features — pass `--all-features` (or
     /// `--features doc,mission,world`) yourself. `doc` alone does not compile the suite.
     #[test]
@@ -59,7 +59,7 @@ mod feature_gate_tripwire {
              Bare `cargo test -p map-engine-core` compiles out doc/mission/world and silently \
              skips hundreds of tests (~140 listed vs ~635 with --all-features). \
              `--features doc,mission` still skips the world suite. Wave gate + Makefile use \
-             --all-features; T-742 `wave.sh test --slice` still needs you to pass --all-features \
+             --all-features; T-742 `cargo xtask platform wave test --slice` still needs you to pass --all-features \
              for this crate (T-747)."
         );
     }

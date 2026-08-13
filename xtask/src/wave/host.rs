@@ -120,7 +120,7 @@ impl Host {
         if have {
             // Printed at LOAD time in the bash (it is a top-level `if`), so it lands before any
             // command's own output. Same placement here.
-            crate::werr!("wave.sh: NOTE — this is the HOST shell, not the dev container.");
+            crate::werr!("wave: NOTE — this is the HOST shell, not the dev container.");
             crate::werr!(
                 "         distrobox-host-exec is installed here too but refuses outside a container"
             );

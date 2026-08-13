@@ -214,7 +214,7 @@ pub fn current_wave(ctx: &Ctx) -> String {
         // skipping it is how the pre-T-616 mix hid. Say so and keep going.
         if w.is_empty() || !w.bytes().all(|b| b.is_ascii_digit()) {
             werr!(
-                "wave.sh: non-numeric wave label '{w}' in {} — T-616 normalised these to integers",
+                "wave: non-numeric wave label '{w}' in {} — T-616 normalised these to integers",
                 ctx.plan
             );
             continue;
@@ -317,9 +317,7 @@ pub fn git_porcelain_paths() -> Result<Vec<String>, i32> {
         Err(_) => (String::new(), 127),
     };
     if rc != 0 {
-        werr!(
-            "wave.sh: git status --porcelain failed (rc={rc}) — refusing silent empty change list"
-        );
+        werr!("wave: git status --porcelain failed (rc={rc}) — refusing silent empty change list");
         return Err(rc);
     }
     // `sed 's/^...//'` — drop the two status columns and the space. `printf '%s\n' "$out"` on an

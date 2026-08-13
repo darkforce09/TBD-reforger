@@ -80,7 +80,7 @@ pub fn cmd_status(ctx: &Ctx) -> u8 {
     }
     wprintln!();
     if ready > 0 {
-        wprintln!("→ {ready} slice(s) ready: bash scripts/platform/wave.sh land");
+        wprintln!("→ {ready} slice(s) ready: cargo xtask platform wave land");
     }
     wprintln!("→ dispatch set: {COLLIDE}");
     0
@@ -150,7 +150,7 @@ pub fn cmd_wave(ctx: &Ctx) -> u8 {
         );
     } else {
         wprintln!(
-            "STATUS: wave {w} tickets are all shipped. Run 'wave.sh wave --close' to gate and advance."
+            "STATUS: wave {w} tickets are all shipped. Run 'cargo xtask platform wave wave --close' to gate and advance."
         );
     }
     0

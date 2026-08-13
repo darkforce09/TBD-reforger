@@ -85,10 +85,10 @@ curl -s -o /dev/null -w "spa=%{http_code}\n" http://localhost:3000/            #
 ```
 
 ```bash
-# 2. Reclaim, then preflight. wave.sh runs DIRECTLY — never through distrobox-host-exec.
-bash scripts/platform/wave.sh reclaim
+# 2. Reclaim, then preflight. `cargo xtask platform wave` runs DIRECTLY — never through distrobox-host-exec.
+cargo xtask platform wave reclaim
 cargo xtask platform preflight          # MUST print "PREFLIGHT: PASS"
-bash scripts/platform/wave.sh status
+cargo xtask platform wave status
 ```
 
 **If preflight does not print PASS, fix it before anything else.** The one warning that is normal is
@@ -216,8 +216,8 @@ report which file and why — do not widen silently. Siblings running right now 
    host 2.39, E0463). Route each through distrobox-host-exec, passing env explicitly because it does
    NOT forward the environment:
      distrobox-host-exec env CARGO_TARGET_DIR=/home/Samuel/Projects/TBD-Reforger/target sh -c 'cd <worktree> && cargo check -p <pkg>'
-   BUT run wave.sh DIRECTLY, never wrapped in distrobox-host-exec.
-6. GATE with: bash scripts/platform/wave.sh gate --slice T-XXX     (run from inside the worktree)
+   BUT run `cargo xtask platform wave` DIRECTLY, never wrapped in distrobox-host-exec.
+6. GATE with: cargo xtask platform wave gate --slice T-XXX     (run from inside the worktree)
    Note: fmt/clippy hard-fail if they examined nothing. "REFUSING to pass — resolved to NO crate" or
    "rustfmt was invoked ZERO times" means your diff has no lintable Rust, not that your code is broken.
 7. Integration tests: make a FRESH COLD gate DB and point TBD_GATE_DB at it. The shared tbd_gate_it
@@ -294,7 +294,7 @@ merged out from under a live agent, which then found its own worktree deleted mi
 
 ## 6. Phase 4 — merge (all three, after all three have reported)
 
-### `wave.sh land` will refuse, and that is correct
+### `cargo xtask platform wave land` will refuse, and that is correct
 
 `cmd_land` only lands tickets belonging to the current *plan* wave. These tickets were promoted out
 of plan order, so it refuses with `not in wave N — nothing named was landed`. **That is the guard
@@ -336,7 +336,7 @@ distrobox-host-exec podman exec tbd_reforger_db psql -U tbd -d postgres \
   -c "CREATE DATABASE tbd_wave6_cold OWNER tbd;"
 
 export TBD_GATE_DB="postgres://tbd:tbd@localhost:5434/tbd_wave6_cold?sslmode=disable"
-bash scripts/platform/wave.sh gate "$BASE"        # expect GATE: PASS, 12 steps
+cargo xtask platform wave gate "$BASE"        # expect GATE: PASS, 12 steps
 ```
 
 ### Then prove the gate was not vacuous — one command
@@ -354,8 +354,8 @@ distrobox-host-exec podman exec tbd_reforger_db psql -U tbd -d tbd_wave6_cold \
 
 **If the gate is RED:** do not drop any worktree. Read which step failed. If it is `test api` and the
 failure names `approvals`, you used the wrong database — redo with a cold one. Otherwise fix on
-`main` and re-run `bash scripts/platform/wave.sh gate "$BASE"`, or roll back with
-`bash scripts/platform/wave.sh revert "$BASE"`.
+`main` and re-run `cargo xtask platform wave gate "$BASE"`, or roll back with
+`cargo xtask platform wave revert "$BASE"`.
 
 ---
 
@@ -438,11 +438,11 @@ git -c filter.lfs.process= -c filter.lfs.required=false commit   # message: see 
 
 # 3. PUSH — only ever this way. Plain `git push` fails: the pre-push hook needs git-lfs, which is
 #    absent from the container PATH.
-bash scripts/platform/wave.sh push
+cargo xtask platform wave push
 
 # 4. Teardown.
 for t in T-245 T-247 T-248; do bash scripts/mod/slice-worktree.sh drop $t; done
-bash scripts/platform/wave.sh reclaim
+cargo xtask platform wave reclaim
 distrobox-host-exec podman exec tbd_reforger_db psql -U tbd -d postgres -c "DROP DATABASE IF EXISTS tbd_wave6_cold WITH (FORCE);"
 cargo xtask platform preflight      # must return to PASS
 ```
@@ -462,10 +462,10 @@ Co-Authored-By: Grok <noreply@x.ai>
 | Trap | What to do |
 |---|---|
 | `cargo`, `rustfmt`, `xtask` **do not run in the container** (glibc 2.36 vs host 2.39) | Route through `distrobox-host-exec`. It does **not** forward env — pass it explicitly with `env VAR=…` |
-| `wave.sh` **must NOT** be wrapped in `distrobox-host-exec` | It detects the bridge and all steps go red with a misleading error. Run it directly |
+| `cargo xtask platform wave` **must NOT** be wrapped in `distrobox-host-exec` | It detects the bridge and all steps go red with a misleading error. Run it directly |
 | `CARGO_TARGET_DIR` unset in every fresh shell | `export CARGO_TARGET_DIR=/home/Samuel/Projects/TBD-Reforger/target` |
 | `git status` / `git add` can abort — git-lfs absent while `filter.lfs.process` is set | `git -c filter.lfs.process= -c filter.lfs.required=false …` |
-| `git push` fails on the pre-push hook | `bash scripts/platform/wave.sh push` |
+| `git push` fails on the pre-push hook | `cargo xtask platform wave push` |
 | `slice-worktree.sh create` prints usage and exits 2 | The subcommand is **`new`** |
 | The shared `tbd_gate_it` DB reds the gate | Fresh cold DB + `TBD_GATE_DB`, every gate |
 | A `git checkout` restore does not re-trigger a cargo rebuild | `touch` the file after restoring. The **green** half of a perturbation loop can be stale |
@@ -491,7 +491,7 @@ Do not improvise through any of these:
 
 ## 13. Sequenced work — do not merge these into one pass
 
-Three tickets live in `scripts/platform/wave.sh` and are **deliberately ordered**. Doing them
+Three tickets lived in `scripts/platform/wave.sh` (deleted at T-902) and were **deliberately ordered**. Doing them
 together produces one unreviewable diff in the tool that judges everything else.
 
 | Order | Ticket | What |
