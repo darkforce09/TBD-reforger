@@ -90,7 +90,7 @@ fn verify_file_length_inner(root: &Path) -> std::result::Result<u8, NotRun> {
                 });
             }
         };
-        if is_size2(&rel, &entries) {
+        if is_size2(&rel, &entries, &today) {
             continue;
         }
         if n > 1000 {
@@ -160,7 +160,7 @@ fn parse_allowlist(text: &str) -> Vec<AllowEntry> {
                 }
             }
             cur = Some(AllowEntry {
-                rule: r.trim().to_string(),
+                rule: yaml_scalar(r),
                 path: String::new(),
                 reason: String::new(),
                 expires: String::new(),
@@ -171,11 +171,11 @@ fn parse_allowlist(text: &str) -> Vec<AllowEntry> {
             continue;
         };
         if let Some(v) = t.strip_prefix("path:") {
-            e.path = v.trim().to_string();
+            e.path = yaml_scalar(v);
         } else if let Some(v) = t.strip_prefix("reason:") {
-            e.reason = v.trim().to_string();
+            e.reason = yaml_scalar(v);
         } else if let Some(v) = t.strip_prefix("expires:") {
-            e.expires = v.trim().to_string();
+            e.expires = yaml_scalar(v);
         }
     }
     if let Some(e) = cur.take() {
@@ -186,9 +186,31 @@ fn parse_allowlist(text: &str) -> Vec<AllowEntry> {
     out
 }
 
-fn is_size2(rel: &str, entries: &[AllowEntry]) -> bool {
+/// Strip one layer of surrounding YAML quotes and treat whitespace / `""` as empty.
+fn yaml_scalar(raw: &str) -> String {
+    let t = raw.trim();
+    let inner = if t.len() >= 2 {
+        let b = t.as_bytes();
+        let dq = b[0] == b'"' && *b.last().unwrap() == b'"';
+        let sq = b[0] == b'\'' && *b.last().unwrap() == b'\'';
+        if dq || sq {
+            t[1..t.len() - 1].trim()
+        } else {
+            t
+        }
+    } else {
+        t
+    };
+    inner.to_string()
+}
+
+fn exemption_fields_ok(e: &AllowEntry, today: &str) -> bool {
+    !e.reason.is_empty() && expires_ok(&e.expires, today)
+}
+
+fn is_size2(rel: &str, entries: &[AllowEntry], today: &str) -> bool {
     entries.iter().any(|e| {
-        if e.rule != "SIZE-2" {
+        if e.rule != "SIZE-2" || !exemption_fields_ok(e, today) {
             return false;
         }
         let prefix = e.path.split("/**").next().unwrap_or(&e.path);
@@ -197,9 +219,9 @@ fn is_size2(rel: &str, entries: &[AllowEntry]) -> bool {
 }
 
 fn is_size3_exempt(rel: &str, entries: &[AllowEntry], today: &str) -> bool {
-    entries.iter().any(|e| {
-        e.rule == "SIZE-3" && e.path == rel && !e.reason.is_empty() && expires_ok(&e.expires, today)
-    })
+    entries
+        .iter()
+        .any(|e| e.rule == "SIZE-3" && e.path == rel && exemption_fields_ok(e, today))
 }
 
 fn expires_ok(expires: &str, today: &str) -> bool {
@@ -702,6 +724,42 @@ mod file_length_tests {
         .unwrap();
         let code = verify_file_length_in(&d.0);
         assert_eq!(code, 1);
+    }
+
+    #[test]
+    fn size3_allowlist_quoted_empty_reason_does_not_exempt() {
+        let d = TmpRepo::new("quotedempty");
+        let body: String = (0..1200).map(|i| format!("// line {i}\n")).collect();
+        std::fs::write(d.0.join("xtask/plant.rs"), body).unwrap();
+        std::fs::write(
+            d.0.join(".coding-standards-allowlist.yaml"),
+            concat!(
+                "- rule: SIZE-3\n",
+                "  path: xtask/plant.rs\n",
+                "  reason: \"\"\n",
+                "  expires: 2026-11-13\n",
+            ),
+        )
+        .unwrap();
+        let code = verify_file_length_in(&d.0);
+        assert_eq!(code, 1, "reason: \"\" must not exempt SIZE-3");
+    }
+
+    #[test]
+    fn size2_without_reason_does_not_skip_size3() {
+        let d = TmpRepo::new("size2noreason");
+        let body: String = (0..1200).map(|i| format!("// line {i}\n")).collect();
+        std::fs::write(d.0.join("xtask/plant.rs"), body).unwrap();
+        std::fs::write(
+            d.0.join(".coding-standards-allowlist.yaml"),
+            "\
+- rule: SIZE-2
+  path: xtask/plant.rs
+",
+        )
+        .unwrap();
+        let code = verify_file_length_in(&d.0);
+        assert_eq!(code, 1, "a reason-less SIZE-2 row must not skip SIZE-3");
     }
 
     #[test]
