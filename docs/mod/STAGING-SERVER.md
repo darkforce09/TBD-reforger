@@ -377,7 +377,7 @@ Flow: validate mission JSON → rsync → profile + addon symlink → Docker reb
 
 | Step | Command | Pass |
 |------|---------|------|
-| V1 Mission JSON | `node packages/tbd-schema/scripts/validate-file.mjs packages/tbd-schema/golden-missions/msn_8f3a2c.json` (from monorepo root) | exit 0 |
+| V1 Mission JSON | `cargo xtask schema validate-file packages/tbd-schema/golden-missions/msn_8f3a2c.json` (from monorepo root) | exit 0 |
 | V2 API mission | SSH: `curl -sf -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8080/api/missions/msn_8f3a2c/compiled` | **BLOCKED on T-092** — route not registered; currently 404 (target: HTTP 200) |
 | V3 Roster | SSH: `curl -sf -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8080/api/game/events/b0000000-0000-4000-8000-000000000001/roster` | **BLOCKED on T-092** — route not registered; currently 404 (target: HTTP 200) |
 | V4 Auth gate | SSH: unauthenticated compiled URL | **BLOCKED on T-092** — currently 404 (target: HTTP 401) |

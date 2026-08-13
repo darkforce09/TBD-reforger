@@ -133,9 +133,8 @@ ssh sam@192.168.0.140 'mkdir -p /home/sam/tbd/{repo,profile,addons-staging,websi
 ### Dev PC
 
 ```bash
-which sshpass rsync ssh curl git node cargo docker
-node -v          # 26+ (repo .nvmrc)
-rustc --version  # toolchain per apps/website/rust-toolchain.toml
+which sshpass rsync ssh curl git cargo docker
+rustc --version  # toolchain pin: root rust-toolchain.toml
 cp scripts/deploy/deploy.env.example scripts/deploy/deploy.env
 # Set TBD_SSH_HOST=sam@192.168.0.140 and SSH pass or identity file
 ```

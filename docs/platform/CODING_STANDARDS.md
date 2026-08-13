@@ -353,11 +353,11 @@ this is precisely why ENF-1/ENF-2 are the only sanctioned **MANUAL** gates.
 - **SIZE-1 (Scalability) — Files over **600 lines** emit a WARN.** Advisory tier of the file-length
   script; it does not fail the build but flags the file for a split. Gate: **CI-SCRIPT**
   (`cargo xtask verify file-length`, warn band).
-- **SIZE-2 (Scalability) — Mission Creator hot paths are allowlisted.** Files under
-  [`src/features/tactical-map/**`](../../apps/website/frontend/src/features/tactical-map) are exempt
-  from SIZE-3 — deliberately dense performance code from the **T-057..T-067** scale program
-  (`state/ydoc.ts` 756 L, `state/slotIconCache.ts`, `tools/useSelectTool.ts`) where measured fps
-  outweighs file length. Gate: **ALLOWLIST** (`.coding-standards-allowlist.yaml`, `reason: MC-perf`).
+- **SIZE-2 (Scalability) — Mission Creator hot-path exemptions live in the allowlist.** The React-era
+  `src/features/tactical-map/**` glob is empty (T-159.29.3 deleted that tree). In the Leptos era the
+  SIZE-2 list is **empty** — do not invent SIZE-2 rows to hide SIZE-3. File-level exemptions live only
+  in [`.coding-standards-allowlist.yaml`](../../.coding-standards-allowlist.yaml). Gate: **ALLOWLIST**
+  (`cargo xtask verify file-length` reads that file).
 - **SIZE-3 (Scalability) — Files over **1000 lines** fail the build unless allowlisted.** Gate:
   **CI-SCRIPT** (`cargo xtask verify file-length` → exit 1). Standing debt carries an allowlist entry with an
   `expires` date until its split ticket lands:
@@ -375,9 +375,8 @@ this is precisely why ENF-1/ENF-2 are the only sanctioned **MANUAL** gates.
   - Go: `//nolint:cyclop // <why this function must branch this much>`
   - TS: `// eslint-disable-next-line complexity -- <why>`
 
-  This applies to `features/tactical-map/**` as well — the SIZE-2 file-size allowlist does **not**
-  extend to complexity. A dense fps hot-path function takes the inline opt-out so the exception is
-  named and auditable.
+  The SIZE-2 file-size allowlist (empty in the Leptos era) does **not** extend to complexity.
+  A dense fps hot-path function takes the inline opt-out so the exception is named and auditable.
 
 ### 8.1 Allowlist contract — `.coding-standards-allowlist.yaml`
 
@@ -456,7 +455,7 @@ Re=Readability, Us=Usability, De=Debuggability.
 | **FMT-2** | Re | `.editorconfig` honored | CI-BLOCK | `editorconfig-checker` | `cargo xtask ci verify-editorconfig` | T-125.5 | live |
 | **FMT-3** | Re | Prettier for TS/TSX/CSS | CI-BLOCK | `prettier --check` | `npm run format:check` | T-125.5 | live |
 | **SIZE-1** | Sc | >600 L ⇒ WARN | CI-SCRIPT | `xtask/src/node_free.rs` (warn band) | `cargo xtask verify file-length` | T-125.4 / T-165.10 | live |
-| **SIZE-2** | Sc | `tactical-map/**` size-exempt | ALLOWLIST | `.coding-standards-allowlist.yaml` (`reason: MC-perf`) | `cargo xtask verify file-length` | T-125.2 | live |
+| **SIZE-2** | Sc | SIZE-2 list empty (Leptos); exemptions only in allowlist | ALLOWLIST | `.coding-standards-allowlist.yaml` (no SIZE-2 rows) | `cargo xtask verify file-length` | T-125.2 | live |
 | **SIZE-3** | Sc | >1000 L ⇒ exit 1 unless allowlisted | CI-SCRIPT | `xtask/src/node_free.rs` | `cargo xtask verify file-length` | T-125.4 / T-165.10 | live |
 | **COMP-1** | Re | Cyclomatic ≤ 15/fn (hard); inline opt-out only | CI-BLOCK | golangci `cyclop` `max-complexity:15` · eslint `complexity:["error",{max:15}]` | `golangci-lint run ./...` · `npm run lint` | T-125.2/.3 | live |
 | **LOG-2** | De | No committed FE `console.log` | CI-BLOCK | eslint `no-console {allow:["warn","error"]}` | `npm run lint` | T-125.3 | live |
