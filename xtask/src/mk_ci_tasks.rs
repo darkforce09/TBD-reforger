@@ -274,7 +274,7 @@ pub static TASKS: &[Task] = &[
     // ── aliases: the make target was already a thin wrapper on an existing xtask command ─────
     Task {
         name: "verify-no-python",
-        help: "T-162 hard gate — zero .py files / no Python interpreter in scripts",
+        help: "T-904 hard zero — same TrackedLanguageBan table as verify-no-shell (.py / python3)",
         group: "verify",
         lane: Lane::Alias,
         steps: &[xt!("cargo xtask verify no-python", false, verify_no_python)],
@@ -288,7 +288,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "verify-no-shell",
-        help: "T-621 ratchet — no NEW .sh outside scripts/shell-inventory.txt (list may only shrink)",
+        help: "T-904 hard zero — no tracked shell/Make/Python/Node-script paths (no inventory)",
         group: "verify",
         lane: Lane::Alias,
         steps: &[xt!("cargo xtask verify no-shell", false, verify_no_shell)],

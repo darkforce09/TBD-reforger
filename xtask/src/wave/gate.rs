@@ -198,11 +198,10 @@ pub fn gate_slice(ctx: &Ctx, tid: &str) -> u8 {
             )
         });
     }
-    // T-620. Hot-path twin of the cmd_gate run — see the long note there for why this gate spent
-    // four waves invoked by nothing. Pure bash + git ls-files, no cargo, ~0.2 s measured, so it fits
-    // the slice gate's ~10 s budget. Catching a stray .py or a new python3 call at SLICE time is the
-    // cheapest place to catch it; the no-node/no-shell twins stay wave-level because they need a
-    // built xtask and this gate deliberately does not build one.
+    // T-620/T-904. Hot-path twin of the cmd_gate run — see the long note there for why this gate
+    // spent four waves invoked by nothing. `verify no-python` and `verify no-shell` share one
+    // TrackedLanguageBan table (hard zero, no inventory). Catching a planted .sh / Makefile /
+    // python3 at SLICE time is the cheapest place to catch it; the no-node twin stays wave-level.
     r.run("no-python (T-620)", || {
         checkrun(
             ctx,
@@ -600,7 +599,7 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
             )
         });
     }
-    // T-620/T-621 — THE LANGUAGE GATES, AND WHY THEY ARE HERE RATHER THAN ONLY IN ci.yml.
+    // T-620/T-621/T-904 — THE LANGUAGE GATES, AND WHY THEY ARE HERE RATHER THAN ONLY IN ci.yml.
     //
     // `verify-no-python` existed since T-162 and was wired into one Makefile target and `make
     // ci-local` — which this file's own header explains is deliberately NOT used by the gate. It was
@@ -609,8 +608,9 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
     // waves of "GATE PASS 28/28" were printed over a hard gate that was failing the whole time and
     // that nothing invoked. That is the exact shape T-556 and T-478 keep finding, at gate scope.
     //
-    // `verify-no-python` is cheap. The other two are xtask, and xtask is already built by
-    // `test xtask+tbd-tools` above, so `cargo run -q` is a no-op relink here.
+    // T-904: both `verify no-python` and `verify no-shell` run the same TrackedLanguageBan table
+    // (hard zero; inventories deleted). Both CLI names stay so CI job names do not break; they
+    // cannot disagree. xtask is already built by `test xtask+tbd-tools` above.
     r.run("no-python (T-620)", || {
         checkrun(
             ctx,

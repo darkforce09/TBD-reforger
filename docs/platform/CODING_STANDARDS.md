@@ -114,32 +114,37 @@ Every rule serves one primary pillar — the *why*. The rule is the *what*; §10
 
 **LANG-1 — New tooling is Rust, in `xtask`.** Anything that reads a file, parses JSON, walks the
 repo, computes a verdict or generates code is a `cargo xtask` subcommand. Not a shell script.
+Tracked `*.sh` / `*.bash` / `*.zsh` / `*.ksh` / `*.fish` / `*.bat` / `*.ps1`, extensionless files
+whose shebang names a shell, and `Makefile` / `GNUmakefile` / `*.mk` are a **hard zero** — any
+match fails `cargo xtask verify no-shell`. There is no inventory.
 
 **Bash is permitted for exactly one thing: thin process glue that must run before or without
-cargo.** Container entry points, `distrobox-host-exec` wrappers, git hooks, and the wave driver's
-own bootstrap qualify. "It was quicker to write in bash" does not. If a script parses anything, it
-is tooling, and tooling is Rust.
+cargo.** Container entry points, `distrobox-host-exec` wrappers, git hooks. Those live outside
+the git tree (untracked) or they fail this gate. "It was quicker to write in bash" does not. If a
+script parses anything, it is tooling, and tooling is Rust.
 
-**LANG-2 — No Python.** Zero `.py` files; no new `python3` invocation in `scripts/` or the
-`Makefile`. Ported to `xtask`, same as LANG-1.
+**LANG-2 — No Python.** Zero tracked `.py` files; zero `python3` in command position in tracked
+files (comment-only mentions do not count). Same `TrackedLanguageBan` table as LANG-1;
+`cargo xtask verify no-python` is an alias so CI job names stay. Ported to `xtask`, same as LANG-1.
 
-**LANG-3 — Both bans are RATCHETS against committed inventories, and the lists may only shrink.**
-[`scripts/shell-inventory.txt`](../../scripts/shell-inventory.txt) (58 `.sh`) and
-[`scripts/python-inventory.txt`](../../scripts/python-inventory.txt) (12 files invoking `python3`)
-freeze the debt as it stood on 2026-08-01. A new entry fails the gate; removing the last violation
-from a listed file must also delete its line, so an inventory cannot rot into a record nobody
-re-checked.
+**LANG-3 — Both are BANS, not ratchets.** One table in `xtask/src/shell_free.rs` covers shell,
+Python, Node script extensions (`*.mjs` / `*.cjs`), and Make. Any tracked match is FAIL. A missing
+or unreadable path is FAIL. A walk that examined zero tracked files is FAIL. There is no inventory
+and no "may only shrink". Enfusion source under `apps/mod/**` is `.c`, which is not in the table;
+the gate does **not** prefix-skip `apps/mod/**` (a planted `apps/mod/foo.sh` still fails).
 
-> **Why this rule did not exist until T-621, and why it is a ratchet.**
+> **Why this rule did not exist until T-621, and why it was a ratchet.**
 >
 > Nothing here was ever a violation — **there was no rule**. §10 had 38 entries and not one of them
 > said which language new tooling should be written in, so every slice reached for bash by default.
 > Measured 2026-08-01: **58 tracked `.sh`, 15,618 lines**, of which `scripts/platform/wave.sh` alone
-> is 3,327. That is far too much to port, and porting it is not what stops the bleeding — so the
-> ratchet holds the line at today's count instead. **`wave.sh` was deleted at T-902;** remaining
-> `.sh` files continue to ratchet (T-903 deletes `hostrun.sh`).
+> was 3,327. That was far too much to port, and porting it was not what stopped the bleeding — so
+> the ratchet held the line at that day's count instead. **`wave.sh` was deleted at T-902;** T-903
+> deleted `hostrun.sh` (the last tracked `.sh`). **T-904 flipped the ratchet to a hard zero** and
+> deleted `scripts/shell-inventory.txt` and `scripts/python-inventory.txt`. A new `.sh`, a new
+> `Makefile`, or a new `python3` invocation fails the gate with no list to join.
 >
-> The cost is not hypothetical. Waves 75–79 burned a large share of their budget on failures that
+> The cost was not hypothetical. Waves 75–79 burned a large share of their budget on failures that
 > are *specific to shell* and that a compiler would have refused at the door:
 >
 > * `rg` absent, with `|| true` converting status 127 into a silent pass — in `verify-no-python.sh`,
@@ -462,9 +467,9 @@ Re=Readability, Us=Usability, De=Debuggability.
 | **LOG-3** | De | 5xx + mutator 4xx log path+status+dur | CI-SCRIPT | `cargo xtask ci verify-coding-standards` | `cargo xtask ci verify-coding-standards` | T-125.4 | live |
 | **CI-1** | De | No `only-new-issues:true` post-T-125.2 | — | — (script + `ci-local-backend` target both deleted; golangci job died with the Go backend at T-145) | — | T-125.2 | retired |
 | **CI-2** | De | `ci.yml` gates every push/PR to main | CI-BLOCK | `ci.yml` backend+frontend+schema jobs | `cargo xtask ci ci-local` (mirror) | T-125.1 | live |
-| **LANG-1** | Sc | New tooling is Rust in `xtask`; bash only for pre-cargo process glue | CI-SCRIPT | `xtask/src/shell_free.rs` vs [`shell-inventory.txt`](../../scripts/shell-inventory.txt) (58, may only shrink) | `cargo xtask verify no-shell` | T-621 | live |
-| **LANG-2** | Sc | Zero `.py`; no new `python3` in `scripts/`/`Makefile` | CI-SCRIPT | `xtask/src/gate_no_python.rs` + [`python-inventory.txt`](../../scripts/python-inventory.txt) (12) | `cargo xtask verify no-python` | T-162/T-620 | live |
-| **LANG-3** | De | Both inventories are ratchets — new entry fails, stale entry fails | CI-SCRIPT | same two gates, both directions checked | `cargo xtask verify no-shell && cargo xtask verify no-python` | T-620/T-621 | live |
+| **LANG-1** | Sc | New tooling is Rust in `xtask`; bash only for pre-cargo process glue | CI-SCRIPT | `xtask/src/shell_free.rs` TrackedLanguageBan (hard zero; no inventory) | `cargo xtask verify no-shell` | T-621/T-904 | live |
+| **LANG-2** | Sc | Zero tracked `.py`; zero `python3` in command position | CI-SCRIPT | same TrackedLanguageBan table (`verify no-python` alias) | `cargo xtask verify no-python` | T-162/T-620/T-904 | live |
+| **LANG-3** | De | Language bans are hard zeros — any match fails; unreadable/unrun fails | CI-SCRIPT | same table, both CLI names | `cargo xtask verify no-shell && cargo xtask verify no-python` | T-620/T-621/T-904 | live |
 
 **Count by pillar:** Scalability 8 · Readability 9 · Usability 9 · Debuggability 15 · **41 total.**
 **Count by gate:** CI-BLOCK 24 · CI-SCRIPT 14 · ALLOWLIST 1 · MANUAL 2 (ENF-1, ENF-2 — Enfusion only).
@@ -504,9 +509,9 @@ cargo xtask ci verify-editorconfig
 # 0b. Language gates (LANG-1/2/3) — also a dedicated `language-gates` job in ci.yml and a
 #     wave-gate step. Wired in three places on purpose: T-620 found verify-no-python had been
 #     RED for four waves while living only in ci-local, which nothing runs by default.
-cargo xtask verify no-python                  # LANG-2/3 — .py ban + ratcheted python3 inventory
+cargo xtask verify no-python                  # LANG-2/3 — .py + python3 command-position ban
 cargo xtask verify no-node                    # T-165.10 — .mjs/.cjs ban
-cargo xtask verify no-shell                   # LANG-1/3 — shell ratchet (58 .sh, may only shrink)
+cargo xtask verify no-shell                   # LANG-1/3 — shell/Make hard zero (no inventory)
 
 # 1. Rust API + engine crates (website-api job)
 cd apps/website/api && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo build
