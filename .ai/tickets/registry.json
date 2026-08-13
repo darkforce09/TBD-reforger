@@ -1,5 +1,5 @@
 {
-  "next_id": 911,
+  "next_id": 912,
   "tickets": [
     {
       "id": "T-001",
@@ -22101,6 +22101,53 @@
       "order": 5900,
       "spec": "docs/platform/t853_shell_to_xtask_waves.md",
       "notes": "wave 235 verifier MINOR; uppercase extensions without shebang; copy-pasteable repro in summary"
+    },
+    {
+      "id": "T-911",
+      "title": "Ticket registry redesign — per-file split + typed schema",
+      "summary": "Split the ticket monolith into one TOML file per parent and per existing slice_plan/slices key, then type Scope/Status (encoding C). Phase 1 is a byte-identical JSON emit vs the committed monolith (set-equality of ids, not a hardcoded parent count). Phase 2 types the schema. Wave lockfile and metrics producers are T-912+, not this program.",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "status": "queued",
+      "order": 5910,
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": false,
+      "spec": "docs/platform/t911_ticket_registry_redesign.md",
+      "slices": [
+        "T-911.1",
+        "T-911.2"
+      ],
+      "active_slice": "T-911.1",
+      "notes": "Serial slices: T-911.1 and T-911.2 own overlapping .ai/tickets/ + xtask loader paths; do not pack in one parallel wave. Corpus-count proofs measure N from the cutover monolith (set-equality), never a hardcoded parent count.",
+      "slice_plan": {
+        "T-911.1": {
+          "targets": [
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "ready",
+          "spec": "docs/platform/t911_ticket_registry_redesign.md",
+          "notes": "Phase 1: isomorphic per-file TOML, FROZEN_27 keys, ROOT + 12 fixtures, dual-read, byte-identical JSON emit vs the cutover monolith, then delete the monolith in the same commit."
+        },
+        "T-911.2": {
+          "targets": [
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "queued",
+          "spec": "docs/platform/t911_ticket_registry_redesign.md",
+          "notes": "Phase 2: typed Scope/Status, encoding C, frozen-49, Ready prose, T-159.23 shipped, T-674/T-675 children via mapper. Depends on T-911.1 landed. No wave.lock, no metrics producer."
+        }
+      }
     }
   ]
 }
