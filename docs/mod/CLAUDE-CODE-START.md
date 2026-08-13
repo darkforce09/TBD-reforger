@@ -147,9 +147,7 @@ cargo xtask mod dev-bootstrap
 
 | Module | Path |
 |--------|------|
-| DEM modules | `src/features/tactical-map/dem/*` |
-| Tests | `dem/sampleElevation.test.ts` (15 tests; 11 anchors ±0.01 m) |
-| Wire | `TacticalMap.tsx` → `loadDemForTerrain` |
-| Browser | `vite.config.ts` `pngjs→browser`; `buffer` in `DemTexture.ts` |
+| Editor host | [`apps/website/frontend/src/mission_editor.rs`](../../apps/website/frontend/src/mission_editor.rs) + editor modules |
+| DEM / terrain | [`apps/website/frontend/src/world_assets/dem_vectors.rs`](../../apps/website/frontend/src/world_assets/dem_vectors.rs) (wgpu via `map-engine-render`) |
 
-Verify: `npm test` + `cargo xtask ci verify-terrain-strict`
+Verify: `cargo xtask mk ci-local-leptos` (fmt + clippy wasm32 + tests + trunk release) · day-to-day serve `cargo xtask mk leptos` on :3000
