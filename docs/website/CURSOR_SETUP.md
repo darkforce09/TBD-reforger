@@ -48,7 +48,7 @@ Ignore sibling archived folders outside the workspace (`TBD_Website`, `Arma refo
 
 Confirm key paths exist:
 
-- [`Makefile`](../../Makefile)
+- [`CLAUDE.md`](../../CLAUDE.md) — `cargo xtask help` is the task surface (no Makefile)
 - [`apps/website/`](../../apps/website/)
 - [`docs/specs/Mission_Creator_Architecture/`](../specs/Mission_Creator_Architecture/)
 - [`.ai/tickets/registry.json`](../../.ai/tickets/registry.json)
@@ -152,7 +152,7 @@ From repo root:
 ```bash
 cargo xtask ci ci-local-schema
 cargo xtask ticket check --strict
-cd apps/website/frontend && npm run build && npm run lint
+cargo xtask mk ci-local-leptos
 ```
 
 Optional deeper check:

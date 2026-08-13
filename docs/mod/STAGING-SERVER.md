@@ -22,7 +22,7 @@ Self-hosted TBD stack for LAN testing: **API + Postgres (Docker)** and **Arma Re
 >
 > The 2026-06-14 finding was measured on **`-addons`**, which really is mutually exclusive with
 > `-config`. It was never measured on **`-addonsDir`**, which is not. Use
-> **[`scripts/mod/run-playtest-server.sh`](../../scripts/mod/run-playtest-server.sh)**.
+> **`cargo xtask mod playtest`**.
 >
 > **2. `tbd-framework` IS on the Workshop, unlisted and STALE, and `-config` alone silently runs it.**
 > It is published under the *same* id as the local gproj GUID `B2C3D4E5F6A78901`, pinned at
@@ -39,7 +39,7 @@ Self-hosted TBD stack for LAN testing: **API + Postgres (Docker)** and **Arma Re
 > It then registers a room, reaches LOBBY and looks completely healthy **while running months-old
 > script**. Same mission, same machine, measured both ways: **7** `[TBD]` lines in June's flat
 > format versus **dozens to hundreds** in the current `[TBD][Subsystem]` format.
-> `run-playtest-server.sh` treats the packed copy winning as a hard failure and refuses to report
+> `cargo xtask mod playtest` treats the packed copy winning as a hard failure and refuses to report
 > the server up.
 >
 > **3. The "Game log pass criteria" list further down WAS the STALE build's output** — it has been
@@ -62,7 +62,7 @@ Self-hosted TBD stack for LAN testing: **API + Postgres (Docker)** and **Arma Re
 > one paragraph and **109** in another, as if one were a typo. Neither was a typo, and neither is
 > reusable, because the count drifts on **two** independent axes:
 >
-> | Boot (measured 2026-07-31, this checkout, `world-boot.sh --keep-logs`) | slots | `grep -c '\[TBD\]\['` |
+> | Boot (measured 2026-07-31, this checkout, `cargo xtask mod world-boot --keep-logs`) | slots | `grep -c '\[TBD\]\['` |
 > |---|---|---|
 > | `slot-loadout-coverage` (`msn_5c1de7`) | 7 | **147** |
 > | `bridgehead-at-levie` (`msn_8f3a2c`) | 18 | **155** |
@@ -74,7 +74,7 @@ Self-hosted TBD stack for LAN testing: **API + Postgres (Docker)** and **Arma Re
 > authored cargo and shortfalls dominate). Any exact figure written here is wrong within a wave.
 >
 > The only stable fact is the **discontinuity at zero**, because the two builds do not share a log
-> format at all. `remote-log-grep.sh` therefore hard-fails on `0` and treats everything else as a
+> format at all. `cargo xtask mod remote-logs` therefore hard-fails on `0` and treats everything else as a
 > pass, with a purely advisory floor (`TBD_MIN_TAGGED`, default 20) to flag a suspiciously quiet
 > boot. **Do not turn that floor into a pass criterion**, and do not "update" it to 147 or 155 —
 > that is how this defect is reintroduced.
@@ -119,7 +119,7 @@ Self-hosted TBD stack for LAN testing: **API + Postgres (Docker)** and **Arma Re
 > ## CORRECTED 2026-08-01 (T-607) — staging, and why the count check is now blind
 >
 > T-604 fixed the *playtest* launcher. **Staging was still broken both ways**, and
-> `deploy-staging.sh` has now been fixed the same way. Measured on engine **1.7.0.54** by
+> `cargo xtask deploy staging` has now been fixed the same way. Measured on engine **1.7.0.54** by
 > booting it three times on one machine, same mission (`msn_8f3a2c`, 18 slots).
 >
 > **1. `-config` alone made staging validate a build it never deployed.** The deploy rsyncs a
@@ -135,7 +135,7 @@ Self-hosted TBD stack for LAN testing: **API + Postgres (Docker)** and **Arma Re
 > ```
 >
 > Room registered, mission `PASS`, LOBBY reached — **every green line true about the wrong
-> code.** `deploy-staging.sh` now passes **`-addonsDir` and `-config` together** and the same
+> code.** `cargo xtask deploy staging` now passes **`-addonsDir` and `-config` together** and the same
 > boot reads:
 >
 > ```
@@ -171,15 +171,15 @@ Self-hosted TBD stack for LAN testing: **API + Postgres (Docker)** and **Arma Re
 >
 > All three are the same number to within noise, and the two that differ most in *correctness*
 > are identical at 154. The format check answers "is this build ancient" — a real question, and
-> `remote-log-grep.sh` should keep asking it. It does **not** answer "is this the build I just
+> `cargo xtask mod remote-logs` should keep asking it. It does **not** answer "is this the build I just
 > deployed", and it never did; it only appeared to while the Workshop copy was June's.
 >
 > **The only thing that answers the second question is the gproj PATH**, which is why
-> `deploy-staging.sh` asserts it and fails the deploy on it:
+> `cargo xtask deploy staging` asserts it and fails the deploy on it:
 >
 > ```bash
-> bash scripts/mod/deploy-staging.sh --verify-boot <console.log>   # verdict on a log you have
-> bash scripts/mod/deploy-staging.sh --verify-boot-selftest        # proves the verdict can FAIL
+> cargo xtask deploy staging --verify-boot <console.log>   # verdict on a log you have
+> cargo xtask deploy staging --verify-boot-selftest        # proves the verdict can FAIL
 > ```
 >
 > Do not replace the path assertion with a line count, and do not "restore" a count threshold as
@@ -194,12 +194,12 @@ Self-hosted TBD stack for LAN testing: **API + Postgres (Docker)** and **Arma Re
 > against the engine's own regex before anything is pushed.
 
 **Join status (2026-06-14, superseded by the boxes above).** Staging runs **`-config` mode**
-(`TBD_SERVER_MODE=config`, now the default in `deploy-staging.sh`) — but with `-addonsDir`
+(`TBD_SERVER_MODE=config`, now the default in `cargo xtask deploy staging`) — but with `-addonsDir`
 alongside it, so it serves **the deployed checkout**, not the Workshop copy (T-607). The claim
 that config mode "requires a Workshop publish" is **false**: it was measured on `-addons`.
 **`-addons` is not `-addonsDir`, and that distinction is the whole fix (T-604).**
 
-> **Status (2026-07-02, T-128): gates V2–V4 are BLOCKED on T-092.** `GET /api/missions/:id/compiled` and `GET /api/game/events/:id/roster` existed only in the Phase-0 REST spike backend, since removed — the current backend serves `/api/v1` only, so those curls return **404** (not 200, and no 401 auth gate). The 2026-06-14 pass ran against the spike. Real game-server routes ship with **T-092** ([`t092_spawn_transform_program.md`](../specs/Mission_Creator_Architecture/t092_spawn_transform_program.md)); until then `deploy-staging.sh` **skips** the V2–V4 smoke unless `TBD_RUN_T092_SMOKE=1`. The mission **file fallback** (`$profile:missions/`) is unaffected.
+> **Status (2026-07-02, T-128): gates V2–V4 are BLOCKED on T-092.** `GET /api/missions/:id/compiled` and `GET /api/game/events/:id/roster` existed only in the Phase-0 REST spike backend, since removed — the current backend serves `/api/v1` only, so those curls return **404** (not 200, and no 401 auth gate). The 2026-06-14 pass ran against the spike. Real game-server routes ship with **T-092** ([`t092_spawn_transform_program.md`](../specs/Mission_Creator_Architecture/t092_spawn_transform_program.md)); until then `cargo xtask deploy staging` **skips** the V2–V4 smoke unless `TBD_RUN_T092_SMOKE=1`. The mission **file fallback** (`$profile:missions/`) is unaffected.
 
 **Do not touch PrairieLearn:** all TBD paths live under `/home/sam/tbd/` only. Never deploy to `/home/sam/prairielearn/`.
 
@@ -213,7 +213,7 @@ flowchart TB
   remote[192_168_0_140]
   client[Arma_Client]
 
-  devPC -->|"deploy-staging.sh rsync"| remote
+  devPC -->|"cargo xtask deploy staging rsync"| remote
   subgraph remote
     api[API_Docker_127_0_0_1_8080]
     pg[Postgres_127_0_0_1_5432]
@@ -238,9 +238,9 @@ flowchart TB
 ### Dev PC (one-time)
 
 ```bash
-which sshpass rsync ssh curl git node
-node -v   # 18+
-cd packages/tbd-schema && npm ci
+which sshpass rsync ssh curl git cargo
+cargo --version
+cargo xtask ci schema-validate
 cp scripts/deploy/deploy.env.example scripts/deploy/deploy.env   # fill SSH + token + paths
 ```
 
@@ -348,7 +348,7 @@ curl -s -o /dev/null -w '%{http_code}\n' \
 sudo loginctl enable-linger sam
 ```
 
-`deploy-staging.sh` installs `~/.config/systemd/user/tbd-reforger.service` from `scripts/deploy/tbd-reforger.service`.
+`cargo xtask deploy staging` installs `~/.config/systemd/user/tbd-reforger.service` from `scripts/deploy/tbd-reforger.service`.
 
 ### 8. Firewall (game port)
 
@@ -365,8 +365,8 @@ sudo firewall-cmd --reload
 ```bash
 cp scripts/deploy/deploy.env.example scripts/deploy/deploy.env   # if not done
 # Fill TBD_SSH_PASS (or SSH key), TBD_GAME_SERVER_TOKEN, paths
-bash scripts/mod/deploy-staging.sh
-bash scripts/mod/deploy-staging.sh --dry-run   # preview only
+cargo xtask deploy staging
+cargo xtask deploy staging --dry-run   # preview only
 ```
 
 Flow: validate mission JSON → rsync → profile + addon symlink → Docker rebuild → API smoke (**skipped by default until T-092** — `TBD_RUN_T092_SMOKE=1` to force) → restart game server → remote log grep.
@@ -382,9 +382,9 @@ Flow: validate mission JSON → rsync → profile + addon symlink → Docker reb
 | V3 Roster | SSH: `curl -sf -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8080/api/game/events/b0000000-0000-4000-8000-000000000001/roster` | **BLOCKED on T-092** — route not registered; currently 404 (target: HTTP 200) |
 | V4 Auth gate | SSH: unauthenticated compiled URL | **BLOCKED on T-092** — currently 404 (target: HTTP 401) |
 | V5 Game listening | SSH: `ss -ulnp \| grep -E '2001\|17777'` — **both** game (2001) and A2S (17777) bound | yes |
-| V6 Game logs | `bash scripts/mod/remote-log-grep.sh` | exit **0** (player seated) or **2** (booted, nobody joined yet). **1** = fail, **3** = log unreachable. **2 is not a failure** — see the exit contract below |
+| V6 Game logs | `cargo xtask mod remote-logs` | exit **0** (player seated) or **2** (booted, nobody joined yet). **1** = fail, **3** = log unreachable. **2 is not a failure** — see the exit contract below |
 | V7 Server healthy (not crashed) | log reaches LOBBY (`[TBD][Stage]` … `LOBBY`) and has **no** `Unable to start replication` | yes |
-| **V9 Right build, joinable, admin-capable** (T-607) | `bash scripts/mod/deploy-staging.sh --verify-boot <console.log>` — run automatically at the end of every config-mode deploy | exit **0**. Asserts the **deployed checkout** won (not the Workshop copy), a room registered, and the engine accepted the config carrying `game.admins[]` |
+| **V9 Right build, joinable, admin-capable** (T-607) | `cargo xtask deploy staging --verify-boot <console.log>` — run automatically at the end of every config-mode deploy | exit **0**. Asserts the **deployed checkout** won (not the Workshop copy), a room registered, and the engine accepted the config carrying `game.admins[]` |
 | V8 Client join | `-addonsDir` + `-config` (no publish needed for the SERVER); log shows `Server registered with address:`, then Direct Connect `192.168.0.140:2001` | spawn at slot + kit |
 
 ### Game log pass criteria
@@ -395,7 +395,7 @@ Flow: validate mission JSON → rsync → profile + addon symlink → Docker reb
 LOADING."`, so the criterion was satisfied only when the mission had **failed**), plus
 `built slot spawn` and `SpawnManager: spawn requested`, **neither of which exists in any `Print`
 today**. An operator following it on a healthy server got nothing back and concluded the mod was
-broken. Measured on `world-boot.sh --mission=slot-loadout-coverage`: mission validated `PASS`,
+broken. Measured on `cargo xtask mod world-boot --mission=slot-loadout-coverage`: mission validated `PASS`,
 7/7 bodies materialized, reached LOBBY — and 2 of the 3 required strings were absent.
 
 Match the **prefix**, not the sentence. Everything after each prefix is expected to vary.
@@ -424,12 +424,12 @@ Match the **prefix**, not the sentence. Everything after each prefix is expected
   `[TBD] RosterLoader: eventId not configured — using round-robin slot assignment.` instead.
   That is **not** a failure.
 
-To check a log you already have (a downloaded `console.log`, or one from `world-boot.sh
+To check a log you already have (a downloaded `console.log`, or one from `cargo xtask mod world-boot`
 --keep-logs`) without SSH, run the same verdict locally:
 
 ```bash
-bash scripts/mod/remote-log-grep.sh --file <path/to/console.log>
-bash scripts/mod/remote-log-grep.sh --selftest   # proves the verdict logic can FAIL
+cargo xtask mod remote-logs --file <path/to/console.log>
+cargo xtask mod remote-logs --selftest   # proves the verdict logic can FAIL
 ```
 
 (`TBD_RegistryPocComponent` is not on `TBD_GameMode.et` — do not expect Registry POC spawn lines.)
@@ -441,7 +441,7 @@ bash scripts/mod/remote-log-grep.sh --selftest   # proves the verdict logic can 
 ### The one command (T-604, 2026-07-31)
 
 ```bash
-bash scripts/mod/run-playtest-server.sh \
+cargo xtask mod playtest \
   --mission-id=<compiled-mission-id> \
   --admin=<your-identityId-or-17-digit-SteamID>
 ```
@@ -538,7 +538,7 @@ deployed checkout is what runs — so a script change reaches the server with a 
 
 1. **Verify compile in Workbench** (the local server's compile check skips new files — see
    Troubleshooting): MCP `wb_connect` → `wb_reload {scripts}` → grep the WB log for `Can't compile`.
-2. **Redeploy:** `bash scripts/mod/deploy-staging.sh`. The rsynced checkout is what loads, and the
+2. **Redeploy:** `cargo xtask deploy staging`. The rsynced checkout is what loads, and the
    deploy now **asserts** that before reporting success (V9). `game.admins[]` comes from
    `TBD_ADMIN_IDENTITY_IDS`.
 3. **Test:** Direct Join → play.
@@ -568,16 +568,16 @@ after a publish as evidence that `-addonsDir` is working.
 enfusion-mcp has no `wb_log` tool — grep Proton console.log after play:
 
 ```bash
-bash scripts/mod/mcp-call.sh wb_connect '{}'
-bash scripts/mod/mcp-call.sh wb_play '{}'
+cargo xtask mcp call wb_connect '{}'
+cargo xtask mcp call wb_play '{}'
 sleep 25
-bash scripts/mod/mcp-wb-logs.sh
-bash scripts/mod/mcp-call.sh wb_stop '{}'
+cargo xtask mcp wb-logs
+cargo xtask mcp call wb_stop '{}'
 ```
 
 Or: `cargo xtask mod spawn-verify`
 
-> **Exit contract — do not read `!= 0` as failure (T-612).** `mcp-wb-logs.sh` and
+> **Exit contract — do not read `!= 0` as failure (T-612).** `cargo xtask mcp wb-logs` and
 > `cargo xtask mod spawn-verify` (and `remote-log-grep` / `mod remote-logs`, same four outcomes) return:
 >
 > | Code | Meaning |
@@ -589,11 +589,11 @@ Or: `cargo xtask mod spawn-verify`
 >
 > A `!= 0` test turns a correct headless **PARTIAL** into a break, and — worse — turns a **3**
 > into something a reader may wave through. Both scripts were **fully inverted** before T-612:
-> on a real healthy boot the old `mcp-wb-logs.sh` printed `FAIL: expected TBD spawn lines
+> on a real healthy boot the old `cargo xtask mcp wb-logs` printed `FAIL: expected TBD spawn lines
 > missing` and exited 1, while on a stale June-era log it printed `PASS` and exited 0. It passed
-> **only** when the mod was wrong. That is the same defect T-607 fixed in `deploy-staging.sh`, and
+> **only** when the mod was wrong. That is the same defect T-607 fixed in `cargo xtask deploy staging`, and
 > staging runs these — so a deploy could go green on a check that only worked on a stale build.
-> `deploy-staging.sh` now switches on the code explicitly rather than inheriting it.
+> `cargo xtask deploy staging` now switches on the code explicitly rather than inheriting it.
 
 `.cursor/mcp.json` should set `ENFUSION_GAME_PATH`, `ENFUSION_WORKBENCH_PATH`, `ENFUSION_PROJECT_PATH` (parity with `.mcp.json`).
 
@@ -604,7 +604,7 @@ Or: `cargo xtask mod spawn-verify`
 | Symptom | Fix |
 |---------|-----|
 | **Direct Join "No server found"** | Expected with `-server`+`-addons` (no backend room). Direct Join needs **`-config`** so the server registers a room (`Server registered with address:` in the log). **No Workshop publish needed for the server** — pair `-config` with `-addonsDir` (T-604/T-607). |
-| **Staging "passes" but behaves like old code** | The server resolved the mod from the **Workshop**, not from your checkout — the `-addonsDir` flag is missing from the unit. Check `systemctl --user cat tbd-reforger.service \| grep ExecStart`; it must carry **both** `-addonsDir` and `-config`. Confirm with `deploy-staging.sh --verify-boot <console.log>`. A `[TBD][` line count will **not** catch this (T-607). |
+| **Staging "passes" but behaves like old code** | The server resolved the mod from the **Workshop**, not from your checkout — the `-addonsDir` flag is missing from the unit. Check `systemctl --user cat tbd-reforger.service \| grep ExecStart`; it must carry **both** `-addonsDir` and `-config`. Confirm with `cargo xtask deploy staging --verify-boot <console.log>`. A `[TBD][` line count will **not** catch this (T-607). |
 | **`#tbd` answers "TBD: admin only." for everyone** | `game.admins[]` is empty, or the server is in `addons` mode (which loads no config at all, so it can never have admins). Set `TBD_ADMIN_IDENTITY_IDS` in `deploy.env` and use config mode. `passwordAdmin` is a **different** mechanism and does not feed that list. |
 | **`Unable to initialize the game` right after `Server config loaded`** | Look for `does not match the required pattern` — usually `game.scenarioId`. If the value stops right after the GUID (`{69A85365FC09E2CA`), `TBD_SCENARIO` was truncated by brace parsing in the shell (fixed in T-607; the renderer now rejects it locally). |
 | Server dies with `Unable to start replication` | `a2sPort` equals `bindPort` (e.g. both `2001`). Set `-a2sPort 17777` (≠ game port) and restart. The `Starting RPL server … 2001` line is printed even on this failure — check for the `(E)` line right after. |
@@ -650,7 +650,7 @@ room, and only `-config` does that.
 
 Current state:
 
-- ✅ **`-config` server mode** — done. `deploy-staging.sh` defaults to it and pairs it with
+- ✅ **`-config` server mode** — done. `cargo xtask deploy staging` defaults to it and pairs it with
   `-addonsDir`, so the server registers a room *and* runs the deployed checkout.
 - ✅ **Workshop publish is NOT required for the server.** It is still required for a **client** to
   resolve `game.mods[]` — see the version-skew warning under "Client join".
@@ -668,9 +668,9 @@ all fine.
 
 | Script | Purpose |
 |--------|---------|
-| [`scripts/mod/deploy-staging.sh`](../../scripts/mod/deploy-staging.sh) | Full deploy pipeline. Local-only entry points that touch no server: `--dry-run`, `--render-only <path>`, `--render-agent <dir>`, `--agent-selftest <dir>`, **`--verify-boot <console.log>`**, **`--verify-boot-selftest`** |
-| [`scripts/mod/run-playtest-server.sh`](../../scripts/mod/run-playtest-server.sh) | Boot a joinable, mod-loaded, admin-capable server **locally** (T-604). The reference for the `-addonsDir` + `-config` shape staging now uses |
-| [`scripts/mod/remote-log-grep.sh`](../../scripts/mod/remote-log-grep.sh) | SSH log verification. Four outcomes — **0 / 1 / 2=PARTIAL / 3=ENV**; `!= 0` is not "failed" |
+| `cargo xtask deploy staging` | Full deploy pipeline. Local-only entry points that touch no server: `--dry-run`, `--render-only <path>`, `--render-agent <dir>`, `--agent-selftest <dir>`, **`--verify-boot <console.log>`**, **`--verify-boot-selftest`** |
+| `cargo xtask mod playtest` | Boot a joinable, mod-loaded, admin-capable server **locally** (T-604). The reference for the `-addonsDir` + `-config` shape staging now uses |
+| `cargo xtask mod remote-logs` | SSH log verification. Four outcomes — **0 / 1 / 2=PARTIAL / 3=ENV**; `!= 0` is not "failed" |
 | `cargo xtask mod bootstrap-staging` | Discovery + mkdir |
 | `cargo xtask setup server-profile` | Profile + mission fallback |
 | `cargo xtask setup client-addons` | Client mod symlink + Steam launch options |

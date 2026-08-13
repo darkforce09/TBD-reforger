@@ -112,11 +112,11 @@ The post-merge adversarial reviewer is [`VERIFY_AGENT_PROMPT.md`](VERIFY_AGENT_P
 ## Worktree mechanics
 
 ```bash
-bash scripts/mod/slice-worktree.sh new  T-181.7      # create  .ai/artifacts/worktrees/T-181.7
-bash scripts/mod/slice-worktree.sh list
-bash scripts/mod/slice-worktree.sh merge T-181.7     # merge to main (verifies first)
-bash scripts/mod/slice-worktree.sh drop  T-181.7     # delete worktree + branch
-bash scripts/mod/slice-worktree.sh reap             # delete every merged slice worktree
+cargo xtask platform slice-worktree -- new  T-181.7      # create  .ai/artifacts/worktrees/T-181.7
+cargo xtask platform slice-worktree -- list
+cargo xtask platform slice-worktree -- merge T-181.7     # merge to main (verifies first)
+cargo xtask platform slice-worktree -- drop  T-181.7     # delete worktree + branch
+cargo xtask platform slice-worktree -- reap             # delete every merged slice worktree
 ```
 
 **Worktrees branch from a commit.** Anything uncommitted on `main` is invisible inside a worktree,
@@ -131,7 +131,7 @@ Every slice prompt must point at these. They exist so an agent proves rather tha
 |---|---|
 | Does this Enfusion API exist? | `enf lookup <Symbol>` (CRF) · `--index …/vanilla_symbols.tsv` · `…/vanilla_api_classes.tsv` |
 | What does vanilla actually DO? | `rg <pat> apps/mod/vanilla_reference/Source/` — real source **with bodies** |
-| Fetch more vanilla source | `bash scripts/mod/fetch-vanilla-source.sh <File.c>` — **polite: one person's site, never `--all`** |
+| Fetch more vanilla source | `cargo xtask fetch vanilla-source -- <File.c>` — **polite: one person's site, never `--all`** |
 | How does a working framework do it? | `rg <pat> apps/mod/crf_framework/` — CRF, Arma Public License, **reference only** |
 | How is a lobby / slot picker SHAPED? | `rg <pat> apps/mod/playable_selector/` — PlayableSelector, **NO LICENCE, design-mirror only** (§Oracle lanes) |
 | Does my change compile? | `cargo run -q -p xtask -- mod compile` — ~1.3 s, native server, **no Workbench** |
@@ -179,7 +179,7 @@ every index is mechanically generated and `cargo run -q -p tbd-tools --bin enf -
 
 ## Oracle lanes — what each one is licensed for
 
-`scripts/mod/slice-worktree.sh new` symlinks these into every worktree; they are all gitignored, so
+`cargo xtask platform slice-worktree -- new` symlinks these into every worktree; they are all gitignored, so
 a fresh tree has none of them until that step runs. **They are not equivalent, and the difference is
 legal, not stylistic.** Read the row before you read the code.
 
@@ -210,15 +210,15 @@ fails the build on a `CRF_` **or** `PS_` identifier in `apps/mod/tbd-framework/*
 oracle-only asset GUID reused in ours. Comments naming an oracle are allowed and encouraged —
 citing what you design-mirrored is the practice we want; it is the prefix in *code* that fails.
 
-**The other half of the gate is the deploy.** `scripts/mod/deploy-staging.sh` `--exclude`s every
+**The other half of the gate is the deploy.** `cargo xtask deploy staging` `--exclude`s every
 lane from the rsync. The staging server only ever runs `apps/mod/tbd-framework`, so an oracle on
 that box is pure licence exposure for zero benefit — and unlike a worktree, the main checkout holds
 these as *real directories*, so a missing exclude ships the whole tree. Measured at T-181.52: only
 `crf_framework` was excluded, and every deploy was rsyncing **3,797** carved Bohemia source files
 to staging.
 
-**Adding an oracle lane means three edits, not one:** the link step in `slice-worktree.sh`, the
-prefix in `verify-no-crf-leak.sh`, and the `--exclude` in `deploy-staging.sh`. A lane missing any
+**Adding an oracle lane means three edits, not one:** the link step in `xtask/src/slice_worktree.rs`, the
+prefix in `xtask/src/gate_crf_leak.rs`, and the `--exclude` in `cargo xtask deploy staging`. A lane missing any
 of the three is a liability, not a convenience.
 
 ## The environment fact every prompt must carry

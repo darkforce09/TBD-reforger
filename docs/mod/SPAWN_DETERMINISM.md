@@ -1,6 +1,6 @@
 # Spawn / equip determinism program
 
-**Ticket:** T-274 (record / Makefile / docs — this hub)  
+**Ticket:** T-274 (record / xtask / docs — this hub)  
 **Gate:** `cargo xtask mod spawn-determinism` (T-856; was `scripts/mod/tbd-spawn-determinism.sh`)  
 **Verify log (on disk):** [`.ai/artifacts/spawn_determinism_verify_log.md`](../../.ai/artifacts/spawn_determinism_verify_log.md)  
 **Related MCP tooling:** [`MCP_TOOLING.md`](MCP_TOOLING.md)
@@ -8,7 +8,7 @@
 This program asserts that Workbench play → spawn → equip produces the **same
 player-visible outcome** across N fresh Workbench processes. It was implemented
 and measured on `main` **without a ticket id on the commits**; T-274 only wires
-Makefile targets + this hub. It does **not** re-run Workbench or invent new
+the xtask gate + this hub. It does **not** re-run Workbench or invent new
 PASS/FAIL results.
 
 ---

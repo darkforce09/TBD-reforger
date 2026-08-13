@@ -18,7 +18,7 @@
 
 ```bash
 cargo xtask mod dev-bootstrap
-bash scripts/mod/deploy-staging.sh --dry-run
+cargo xtask deploy staging --dry-run
 ```
 
 **Rules:** production mod = `apps/mod/tbd-framework/` only; **never guess Enfusion APIs or ResourceNames** — use **enfusion-mcp** first.
@@ -48,7 +48,7 @@ Expect ~19 `.c` files under `EnfusionMCP/` after first run. Staging deploy exclu
 
 | Method | When |
 |--------|------|
-| **`bash scripts/mod/mcp-call.sh <tool> '<json>'`** | Claude Code **terminal** (daemon-first; warm ~0.3 s) |
+| **`cargo xtask mcp call <tool> '<json>'`** | Claude Code **terminal** (daemon-first; warm ~0.3 s) |
 | Copy [`apps/mod/.mcp.json`](../../apps/mod/.mcp.json) → project `.mcp.json` | Optional native MCP tools in IDE session |
 | Copy → `.cursor/mcp.json` (gitignored — local only) | Cursor IDE Workbench chats only |
 
@@ -58,19 +58,19 @@ Verify machine paths in `ENFUSION_GAME_PATH`, `ENFUSION_WORKBENCH_PATH`, `ENFUSI
 
 ```bash
 cargo xtask mcp smoke
-bash scripts/mod/mcp-call.sh mod_validate '{"modPath":"'"$PWD"'/apps/mod/tbd-framework"}'
+cargo xtask mcp call mod_validate '{"modPath":"'"$PWD"'/apps/mod/tbd-framework"}'
 ```
 
 **Offline self-test** (no Workbench):
 
 ```bash
-bash scripts/mod/mcp-call-selftest.sh   # 19/19 gates
+cargo xtask mcp selftest   # 19/19 gates
 ```
 
 **Clean slate** if processes leak or load spikes:
 
 ```bash
-cargo run -q -p xtask -- mcp daemon stop-all
+cargo xtask mcp daemon stop-all
 ```
 
 If `wb_connect` fails: reload `tbd-framework` in Workbench Resource Browser and retry.
@@ -85,16 +85,13 @@ cargo xtask mod dev-bootstrap  (auto-launch Workbench + daemon pre-warm)
 → implement export script in tbd-framework
 → wb_reload → mod_validate → run export
 → commit packages/tbd-schema/registry/registry-items.workbench.json
-→ npm run validate in packages/tbd-schema
+→ cargo xtask ci schema-validate
 ```
 
 Do not hand-author 20+ GUIDs. After export, upsert into Postgres from **`apps/website`** module root:
 
 ```bash
-cd apps/website
-export PATH="$HOME/.local/go/bin:$PATH"
-go run ./cmd/import-registry-items \
-  --file ../../packages/tbd-schema/registry/registry-items.workbench.json
+cargo xtask db registry-import
 ```
 
 (`cargo xtask db seed` applies `registry_dev.sql` for local API smoke without Workbench.) See [`DEV_RUNBOOK.md`](../website/DEV_RUNBOOK.md) §Registry catalog.

@@ -1,6 +1,6 @@
 # Home-server website setup — LAN (`dooley`)
 
-Deploy the **TBD Reforger website** (Rust API + React SPA) on the same home server used for PrairieLearn and the Reforger game staging stack.
+Deploy the **TBD Reforger website** (Rust API + Leptos SPA) on the same home server used for PrairieLearn and the Reforger game staging stack.
 
 **Scope of this doc:** LAN website (Postgres + API + SPA). Cloudflare Tunnel is optional later — not required for LAN.  
 **Out of scope:** Arma dedicated server — see [`docs/mod/STAGING-SERVER.md`](../mod/STAGING-SERVER.md).
@@ -119,12 +119,12 @@ ssh sam@192.168.0.140 'mkdir -p /home/sam/tbd/{repo,profile,addons-staging,websi
 
 ## Honest gaps (as of 2026-07-27)
 
-`apps/website/docker-compose.staging.yml` **exists** (T-251). Game deploy (`scripts/mod/deploy-staging.sh`) and website deploy (`cargo xtask deploy website`) both compose from that path (T-438). Local laptop compose remains `apps/website/docker-compose.yml` (Postgres on 5434). Remaining gaps below are still manual until SPA static hosting + COOP/COEP are one-button.
+`apps/website/docker-compose.staging.yml` **exists** (T-251). Game deploy (`cargo xtask deploy staging`) and website deploy (`cargo xtask deploy website`) both compose from that path (T-438). Local laptop compose remains `apps/website/docker-compose.yml` (Postgres on 5434). Remaining gaps below are still manual until SPA static hosting + COOP/COEP are one-button.
 
 | Gap | Needed for “one command” website host |
 |-----|----------------------------------------|
 | Serve SPA from API **or** Caddy/nginx | `/` → `index.html`, `/api` → Axum (`scripts/deploy/Caddyfile.website` exists; wire still manual) |
-| COOP/COEP headers on SPA | Same as Vite (`same-origin` + `credentialless`) — required for map wasm / SAB |
+| COOP/COEP headers on SPA | Same as Trunk (`same-origin` + `credentialless`) — required for map wasm / SAB |
 
 ---
 
@@ -223,7 +223,7 @@ SERVICE_TOKEN=<shared-with-game-server-if-used>
 Notes:
 
 - `APP_ENV=production` **disables** `GET /api/v1/auth/dev-login`. Use Discord OAuth for real users.
-- For a first LAN-only smoke you may temporarily use `APP_ENV=development` + `FRONTEND_URL=http://192.168.0.140:5173` — do **not** leave that on a public tunnel.
+- For a first LAN-only smoke you may temporarily use `APP_ENV=development` + `FRONTEND_URL=http://192.168.0.140:3000` — do **not** leave that on a public tunnel.
 - Game token must match `TBD_GAME_SERVER_TOKEN` in `scripts/deploy/deploy.env` when the Reforger server calls the API (see staging doc).
 
 Generate secrets:
@@ -258,9 +258,9 @@ Then on the **server**:
 
 ```bash
 cd /home/sam/tbd/repo
-# Toolchain: install Rust + Node 26 if missing (nvm or nodesource), then:
-cd apps/website/frontend && npm ci && npm run build
-cd /home/sam/tbd/repo/apps/website
+# Toolchain: install Rust if missing, then from repo root:
+cargo xtask mk leptos-build
+cd /home/sam/tbd/repo/apps/website/api
 cargo build --release --bin api
 ```
 
@@ -317,7 +317,7 @@ Until the API serves `frontend/dist`, put Caddy (or nginx) on `127.0.0.1:3080` (
 
 ```caddy
 :3080 {
-  # Mission Creator wasm / SharedArrayBuffer parity with Vite
+  # Mission Creator wasm / SharedArrayBuffer parity with Trunk
   header Cross-Origin-Opener-Policy same-origin
   header Cross-Origin-Embedder-Policy credentialless
 
@@ -379,7 +379,7 @@ Match `DISCORD_REDIRECT_URL` and `FRONTEND_URL` / `ALLOWED_ORIGINS`.
 ```bash
 # Dev PC: sync (same rsync as Phase C)
 # Server:
-cd /home/sam/tbd/repo/apps/website/frontend && npm ci && npm run build
+cd /home/sam/tbd/repo && cargo xtask mk leptos-build
 cd /home/sam/tbd/repo/apps/website && cargo build --release --bin api
 systemctl --user restart tbd-website-api.service
 # Caddy picks up new dist automatically (static files)

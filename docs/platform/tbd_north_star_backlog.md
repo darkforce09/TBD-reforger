@@ -165,7 +165,7 @@ Most “map understanding” (forests, roads, object glyphs, cartographic Map vi
 
 **Problem:** Another community cloning the repo should reach a working stack with minimal steps — aspirational one-command install with no manual configuration across Podman, `.env`, migrations, map assets, and mod profile.
 
-**Partial coverage:** **T-124** shipped deps/toolchain; `cargo xtask db up` / `cargo xtask mk rust-api` / `make web` documented in CLAUDE.md; mod scripts under `scripts/mod/`.
+**Partial coverage:** **T-124** shipped deps/toolchain; `cargo xtask db up` / `cargo xtask mk rust-api` / `cargo xtask mk leptos` documented in CLAUDE.md; mod scripts under `scripts/mod/`.
 
 **Promotion sketch:**
 - Single entry script: check deps → copy `.env.example` → db-up → migrate → seed roles → optional map-assets fetch (LFS)
