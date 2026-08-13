@@ -679,7 +679,7 @@ pub fn demand_base_confirmation(ctx: &Ctx, bsha: &str, why: &str) -> u8 {
     wprintln!(
         "        Read the subject above. If that is genuinely where this wave opened, re-run with:"
     );
-    wprintln!("            TBD_GATE_BASE_CONFIRM={bsha} bash scripts/platform/wave.sh gate ...");
+    wprintln!("            TBD_GATE_BASE_CONFIRM={bsha} cargo xtask platform wave gate ...");
     wprintln!(
         "        The better fix is to give the ledger something to say: add this wave's rows to"
     );
@@ -801,7 +801,7 @@ pub fn gate_base_covers_wave(ctx: &Ctx, base: &str) -> u8 {
         "        and the verdict would describe a fraction of the wave. That is T-602 verbatim."
     );
     wprintln!(
-        "        Fix: run 'wave.sh gate' with NO base (it derives {}),",
+        "        Fix: run 'cargo xtask platform wave gate' with NO base (it derives {}),",
         short(&psha)
     );
     wprintln!("             or pass a base at or before {}.", short(&psha));

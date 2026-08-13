@@ -1196,7 +1196,7 @@ and the miss is reported per item (WARNING), per slot, once for the session, and
 (`#tbd audit`). Log level is the contract — loadout `SCRIPT (E)` = the session will not open,
 loadout `SCRIPT (W)` = it will, carrying less.
 
-**And the gate now runs it.** `bridgehead-at-levie.json` — the mission `wave.sh`'s `world boot
+**And the gate now runs it.** `bridgehead-at-levie.json` — the mission the wave driver's `world boot
 +mission` step boots and the one `cargo xtask setup server-profile` seeds — had **0 gear and 0 cargo**, which
 is why none of this had ever executed. T-605 gave it four real loadouts including the unworn-
 container degrade, so every wave gate from now on drives the path.

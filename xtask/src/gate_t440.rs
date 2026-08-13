@@ -103,14 +103,12 @@ const SEED_ENTRY: &str = "faction_library.sql";
 /// The seed the seeder must apply, repo-relative.
 const SEED_REL: &str = "apps/website/api/seeds/faction_library.sql";
 /// The wave driver whose two gate paths must both invoke this gate.
-const WAVE_REL: &str = "scripts/platform/wave.sh";
-/// How `wave.sh` names this gate. T-853 rewrote both call sites from
-/// `bash "$ROOT/scripts/mod/verify-t440-faction-library-seed.sh"` to the xtask invocation in the
-/// same commit that deleted the script — this gate READS those call sites, so the const and the
-/// call sites are one atomic change. `checkrun` (not bare `cargo`) is part of the pin: it sets
-/// CARGO_TARGET_DIR=$GATE_CHECK_TARGET, and a bare cargo in wave.sh writes into the shared cache,
-/// which is the cross-worktree false-binary class T-742 exists to prevent.
-const VERIFY_REL: &str = "cargo run -q -p xtask -- verify t440";
+/// T-902 deleted `scripts/platform/wave.sh`; both paths now live in `xtask/src/wave/gate.rs`
+/// as `VERIFY_STEPS` iterated by `gate_slice` and `cmd_gate`.
+const WAVE_REL: &str = "xtask/src/wave/gate.rs";
+/// How the rust driver names this gate in `VERIFY_STEPS`. Const + call sites are one atomic
+/// change — this gate READS those call sites.
+const VERIFY_REL: &str = r#"("T-440 faction library seed", "t440")"#;
 /// The starter BLUFOR faction (T-256). Pinned as a SQL *string literal*, not a bare substring.
 const STARTER_NAME: &str = "US Army 1980s";
 
@@ -120,8 +118,8 @@ const STARTER_NAME: &str = "US Army 1980s";
 const SEED_LOOKALIKE: &str = "faction_library.sql.bak";
 /// RED 3 — the `gate_slice` invocation, deleted to prove the dual-path pin is really dual. The
 /// trailing newline is part of the needle: the deletion must not leave a blank line behind.
-const WAVE_RUN_LINE: &str =
-    "  run \"T-440 faction library seed\" checkrun cargo run -q -p xtask -- verify t440\n";
+const WAVE_RUN_LINE: &str = "    (\"T-440 faction library seed\", \"t440\"),\n";
+const VERIFY_LOOP: &str = "for (label, name) in VERIFY_STEPS";
 
 /// Entry point. `0` when the contract holds and every RED proof bit; `1` for any failure; `2` when
 /// a RED arm could not be *set up* (see [`delete_first_wave_run`]).
@@ -172,7 +170,8 @@ pub fn verify_t440(repo_root: &Path) -> Result<u8> {
     if !wave.is_file() {
         return Ok(emit(missing(
             &wave,
-            "T-478 requires wave.sh cold + slice wiring for this verify script.".to_string(),
+            "T-478 requires gate.rs cold + slice wiring for this verify (wave.sh deleted at T-902)."
+                .to_string(),
         )));
     }
 
@@ -245,7 +244,7 @@ pub fn verify_t440(repo_root: &Path) -> Result<u8> {
         &mut failed,
     );
 
-    // ── RED 3: delete ONE of the two wave.sh invocations ─────────────────────────────────────
+    // ── RED 3: delete the VERIFY_STEPS t440 row ──────────────────────────────────────────────
     //
     // The point of the dual-path pin: a gate wired into `gate --slice` but not into the cold
     // `gate` runs on the slice that adds it and never again.
@@ -254,8 +253,8 @@ pub fn verify_t440(repo_root: &Path) -> Result<u8> {
     };
     red(
         run_pins(&seed_text, SEEDS, &red3_wave, "RED-delete-one-wave-run")?,
-        "FAIL: RED delete-one-wave.sh-run still passed — dual-path pin weak",
-        "RED proof: delete one wave.sh T-440 run (gate_slice) → FAIL (expected)",
+        "FAIL: RED delete-VERIFY_STEPS-t440-row still passed — dual-path pin weak",
+        "RED proof: delete VERIFY_STEPS t440 row → FAIL (expected)",
         &mut failed,
     );
 
@@ -287,8 +286,7 @@ pub fn verify_t440(repo_root: &Path) -> Result<u8> {
     }
     println!(
         "PASS: T-440/T-478 faction library seed — live INSERT INTO user_factions \
-         '{STARTER_NAME}'; {RECIPE_SOURCE} applies {SEED_ENTRY}; wave.sh gate_slice + \
-         cmd_gate wired"
+         '{STARTER_NAME}'; {RECIPE_SOURCE} applies {SEED_ENTRY}; gate.rs VERIFY_STEPS +          gate_slice + cmd_gate wired"
     );
     Ok(0)
 }
@@ -388,37 +386,29 @@ fn seed_list_pin(seeds: &[&str]) -> Option<Verdict> {
     }))
 }
 
-/// Pin 3 — both `wave.sh` gate paths invoke this gate.
+/// Pin 3 — both rust gate paths invoke this gate via the shared `VERIFY_STEPS` table.
 ///
-/// Returns up to two verdicts: the script reported `gate_slice` and `cmd_gate` independently,
-/// because losing one is a *silent* coverage hole and the operator needs to know which.
+/// Returns up to two verdicts: `gate_slice` and `cmd_gate` independently, because losing one
+/// is a *silent* coverage hole and the operator needs to know which. T-902: the table is the
+/// dual-path pin — both functions iterate it, so a row cannot be wired into only one half.
 fn wave_pin(wave: &str) -> Result<Vec<Verdict>> {
     let stripped = strip_hash_comments(wave);
-    let loose = Pattern::literal(VERIFY_REL);
-    let strict = Pattern::regex(&format!(
-        r#"run\s+"T-440[^"]*"\s+checkrun\s+{}"#,
-        regex::escape(VERIFY_REL)
-    ))?;
-
     let mut out = Vec::new();
+    if !stripped.contains(VERIFY_REL) {
+        out.push(Verdict::failed(
+            "gate.rs VERIFY_STEPS missing t440 (T-478 dual-path pin)",
+        ));
+    }
     for (name, role) in [("gate_slice", "slice gate"), ("cmd_gate", "cold gate")] {
         let Some(body) = extract_fn_body(&stripped, name)? else {
             out.push(Verdict::failed(format!(
-                "wave.sh missing `{name}()` ({role}) after comment strip"
+                "gate.rs missing `{name}()` ({role}) after comment strip"
             )));
             continue;
         };
-        if !loose.is_match(body) {
+        if !body.contains(VERIFY_LOOP) {
             out.push(Verdict::failed(format!(
-                "wave.sh `{name}()` ({role}) does not invoke {VERIFY_REL} (T-478 dual-path pin)"
-            )));
-        } else if !strict.is_match(body) && !body.contains(VERIFY_REL) {
-            // BASH ODDITY, PRESERVED: also unreachable. `loose` IS the literal `VERIFY_REL`, so
-            // reaching this arm needs the substring to be simultaneously present and absent. The
-            // script plainly meant `&&`→`||`, or meant to drop the second clause; either is a
-            // behaviour change and belongs in a ticket, not in a byte-for-byte port.
-            out.push(Verdict::failed(format!(
-                "wave.sh `{name}()` missing verify script path {VERIFY_REL}"
+                "gate.rs `{name}()` ({role}) does not iterate VERIFY_STEPS (T-478 dual-path pin)"
             )));
         }
     }
@@ -568,6 +558,14 @@ fn strip_hash_comments(text: &str) -> String {
             }
             continue;
         }
+        // T-902: gate.rs is Rust. `//` is the comment form a commented-out VERIFY_STEPS
+        // row uses; treating it like bash `#` keeps the dual-path pin fail-closed.
+        if c == '/' && i + 1 < n && chars[i + 1] == '/' {
+            while i < n && chars[i] != '\n' {
+                i += 1;
+            }
+            continue;
+        }
         out.push(c);
         i += 1;
     }
@@ -584,13 +582,18 @@ fn strip_hash_comments(text: &str) -> String {
 /// because its function bodies are balanced; a `"}"` inside a string would truncate the body early,
 /// which fails CLOSED — a shorter body cannot contain the invocation.
 fn extract_fn_body<'a>(src: &'a str, fn_name: &str) -> Result<Option<&'a str>> {
-    let opener = regex::Regex::new(&format!(r"(?m)^{}\(\)\s*\{{", regex::escape(fn_name)))?;
+    let opener = regex::Regex::new(&format!(
+        r"(?m)^(?:pub\s+)?fn {}\s*\(",
+        regex::escape(fn_name)
+    ))?;
     let Some(m) = opener.find(src) else {
         return Ok(None);
     };
-    // The pattern ends at the literal `{`, so `end() - 1` is its byte offset. `{` and `}` are
-    // ASCII, so a byte walk lands on the same brace a Python code-point walk would.
-    let start = m.end() - 1;
+    // T-902: rust `pub fn name(` — signature may span lines (`-> u8 {`). Find the body brace.
+    let Some(brace) = src[m.start()..].find('{') else {
+        return Ok(None);
+    };
+    let start = m.start() + brace;
     let mut depth = 0i32;
     for (offset, ch) in src[start..].char_indices() {
         match ch {
@@ -628,19 +631,19 @@ fn borrow<'a>(seeds: &'a [&'static str]) -> Vec<&'a str> {
     seeds.to_vec()
 }
 
-/// Delete the first `wave.sh` T-440 invocation, asserting exactly one survives.
+/// Delete the VERIFY_STEPS t440 row. T-902: one shared table, so zero copies remain.
 ///
-/// The count check is the arm's own integrity test: with zero left the RED proof would pass for the
-/// wrong reason (both paths unwired), and with two left nothing was actually removed.
+/// The count check is the arm's own integrity test: if the row is still present, nothing was
+/// actually removed; if it was never present, the proof would pass for the wrong reason.
 fn delete_first_wave_run(wave: &str) -> Option<String> {
     let Some(idx) = wave.find(WAVE_RUN_LINE) else {
-        eprintln!("RED3 setup failed: wave.sh T-440 run line not found");
+        eprintln!("RED3 setup failed: gate.rs T-440 VERIFY_STEPS row not found");
         return None;
     };
     let out = format!("{}{}", &wave[..idx], &wave[idx + WAVE_RUN_LINE.len()..]);
     let left = out.matches(WAVE_RUN_LINE).count();
-    if left != 1 {
-        eprintln!("RED3 setup failed: expected exactly 1 remaining run, got {left}");
+    if left != 0 {
+        eprintln!("RED3 setup failed: expected 0 remaining t440 rows, got {left}");
         return None;
     }
     Some(out)
@@ -776,7 +779,11 @@ mod tests {
     /// Built from [`WAVE_RUN_LINE`] rather than hand-written, so the fixture cannot drift from
     /// the const the way it did when T-853 repointed the real call sites to `cargo xtask`.
     fn wave_ok() -> String {
-        format!("gate_slice() {{\n{WAVE_RUN_LINE}}}\n\ncmd_gate() {{\n{WAVE_RUN_LINE}}}\n")
+        format!(
+            "const VERIFY_STEPS: &[(&str, &str)] = &[\n{WAVE_RUN_LINE}];\n\n\
+pub fn gate_slice(ctx: &Ctx, tid: &str) -> u8 {{\n    {VERIFY_LOOP} {{ let _ = (label, name); }}\n    0\n}}\n\n\
+pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {{\n    {VERIFY_LOOP} {{ let _ = (label, name); }}\n    0\n}}\n"
+        )
     }
 
     fn fails(seed: &str, seeds: &[&str], wave: &str) -> Vec<String> {
@@ -856,20 +863,43 @@ mod tests {
         assert!(seeds_without(&["other.sql"], SEED_ENTRY, "test").is_none());
     }
 
-    /// RED 3 — dropping either wave.sh call site is reported against the right function.
+    /// RED 3 — dropping the VERIFY_STEPS row, or either function's loop, is reported.
     #[test]
     fn both_wave_paths_are_pinned() {
-        let slice_gone = wave_ok().replacen(WAVE_RUN_LINE, "", 1);
-        let out = fails(SEED_OK, SEEDS, &slice_gone);
-        assert_eq!(out.len(), 1);
-        assert!(out[0].starts_with("wave.sh `gate_slice()` (slice gate) does not invoke"));
+        let row_gone = wave_ok().replacen(WAVE_RUN_LINE, "", 1);
+        let out = fails(SEED_OK, SEEDS, &row_gone);
+        assert!(
+            out.iter().any(|h| h.contains("VERIFY_STEPS missing t440")),
+            "{out:?}"
+        );
 
-        // A commented-out invocation is stripped before extraction, so it cannot satisfy the pin.
-        let commented = wave_ok().replacen("  run \"T-440", "  # run \"T-440", 1);
-        assert!(fails(SEED_OK, SEEDS, &commented)[0].contains("gate_slice"));
+        let commented = wave_ok().replacen(VERIFY_REL, &format!("// {VERIFY_REL}"), 1);
+        assert!(
+            fails(SEED_OK, SEEDS, &commented)
+                .iter()
+                .any(|h| h.contains("VERIFY_STEPS missing t440")),
+            "commented row must not satisfy the pin"
+        );
 
-        assert!(fails(SEED_OK, SEEDS, "gate_slice() {\n:\n}\n")[0].contains("gate_slice"));
-        assert!(fails(SEED_OK, SEEDS, "")[0].contains("wave.sh missing `gate_slice()`"));
+        let slice_unwired = wave_ok().replacen(
+            &format!("pub fn gate_slice(ctx: &Ctx, tid: &str) -> u8 {{\n    {VERIFY_LOOP}"),
+            "pub fn gate_slice(ctx: &Ctx, tid: &str) -> u8 {\n    // loop removed",
+            1,
+        );
+        assert!(
+            fails(SEED_OK, SEEDS, &slice_unwired)
+                .iter()
+                .any(|h| h.contains("gate_slice") && h.contains("VERIFY_STEPS")),
+            "unwired slice path must RED"
+        );
+
+        let empty = fails(SEED_OK, SEEDS, "");
+        assert!(
+            empty
+                .iter()
+                .any(|h| h.contains("gate.rs missing `gate_slice()`")),
+            "{empty:?}"
+        );
     }
 
     #[test]
@@ -885,6 +915,11 @@ mod tests {
         assert_eq!(strip_hash_comments("a # b\nc"), "a \nc");
         assert_eq!(strip_hash_comments("\"a # b\""), "\"a # b\"");
         assert_eq!(strip_hash_comments("\t# only"), "\t");
+        assert_eq!(
+            strip_hash_comments("    (\"t440\"), // gone\n"),
+            "    (\"t440\"), \n"
+        );
+        assert_eq!(strip_hash_comments("\"https://x\""), "\"https://x\"");
     }
 
     /// The evidence dump is byte-compared against the script, so `repr` must match CPython.
@@ -903,15 +938,18 @@ mod tests {
 
     #[test]
     fn fn_body_extraction_is_brace_balanced() {
-        let src = "gate_slice() {\n  if x; then { y; }\n  fi\n}\ncmd_gate() {\n  z\n}\n";
+        let src = "pub fn gate_slice(ctx: &Ctx, tid: &str) -> u8 {\n  if x { y; }\n}\npub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {\n  z\n}\n";
         let body = extract_fn_body(src, "gate_slice").unwrap().unwrap();
         assert!(body.starts_with('{') && body.ends_with('}'));
         assert!(!body.contains('z'), "must not run into the next function");
         assert!(extract_fn_body(src, "absent").unwrap().is_none());
         assert!(
-            extract_fn_body("gate_slice() {\n", "gate_slice")
-                .unwrap()
-                .is_none()
+            extract_fn_body(
+                "pub fn gate_slice(ctx: &Ctx, tid: &str) -> u8 {\n",
+                "gate_slice"
+            )
+            .unwrap()
+            .is_none()
         );
     }
 
@@ -919,7 +957,7 @@ mod tests {
     #[test]
     fn red_setup_refuses_a_wave_it_does_not_recognise() {
         assert!(delete_first_wave_run("nothing here").is_none());
-        // Exactly one invocation present: removing it leaves zero, which the count check rejects.
+        // Row already gone: delete_first_wave_run must refuse rather than perturb nothing.
         let single = wave_ok().replacen(WAVE_RUN_LINE, "", 1);
         assert!(delete_first_wave_run(&single).is_none());
         assert!(delete_first_wave_run(&wave_ok()).is_some());

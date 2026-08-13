@@ -12,7 +12,7 @@
 >
 > **One exception, and it is a real one: GO-7 (`@route` ⇄ router) is LIVE.** It was ported to the
 > Axum crate at T-586 as `cargo xtask verify route-tags` and is
-> run by `cargo xtask ci verify-coding-standards` and both `scripts/platform/wave.sh` gate lanes. Its §2 and
+> run by `cargo xtask ci verify-coding-standards` and both `cargo xtask platform wave` gate lanes. Its §2 and
 > §10 rows are current, not historical. GO-7 spent the whole Go→Rust rewrite dead precisely because
 > a blanket "that's all retired" reading was easier than checking — see the §2 note (T-590).
 >
@@ -136,8 +136,8 @@ re-checked.
 > said which language new tooling should be written in, so every slice reached for bash by default.
 > Measured 2026-08-01: **58 tracked `.sh`, 15,618 lines**, of which `scripts/platform/wave.sh` alone
 > is 3,327. That is far too much to port, and porting it is not what stops the bleeding — so the
-> ratchet holds the line at today's count instead. **Rewriting `wave.sh` is explicitly out of
-> scope.**
+> ratchet holds the line at today's count instead. **`wave.sh` was deleted at T-902;** remaining
+> `.sh` files continue to ratchet (T-903 deletes `hostrun.sh`).
 >
 > The cost is not hypothetical. Waves 75–79 burned a large share of their budget on failures that
 > are *specific to shell* and that a compiler would have refused at the door:
@@ -200,7 +200,7 @@ re-checked.
   **CI-SCRIPT** — `cargo xtask verify route-tags`, checked in
   **both** directions (every `@route` tag resolves to a registered route, **and** every registered
   route carries a matching tag) across all **102** handlers, keyed on (method, path, handler fn).
-  Wired into `cargo xtask ci verify-coding-standards` and both `scripts/platform/wave.sh` gate lanes.
+  Wired into `cargo xtask ci verify-coding-standards` and both `cargo xtask platform wave` gate lanes.
   **T-590:** this rule cited `handlers.go` `Register()` and `verify-contract-citations.mjs` until
   now. T-145 deleted both, and GO-7 was unenforced for the whole rewrite — see the note under
   §Backend above for what that cost.

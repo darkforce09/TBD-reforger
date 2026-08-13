@@ -62,5 +62,5 @@ found nothing in a category, say which falsification attempts you made — vague
 failed verification.
 
 Report → `.ai/artifacts/editor_verify/wave<L>.md`. Then the orchestrator runs
-`bash scripts/platform/wave.sh verified $(git rev-parse HEAD)`; the close refuses if any commit
+`cargo xtask platform wave verified $(git rev-parse HEAD)`; the close refuses if any commit
 landed after the verifier ran, because the verifier examines **merged main**.

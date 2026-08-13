@@ -33,9 +33,9 @@
 //! `Step::Task("verify-t468")`. A hollowed dispatcher therefore cannot green the check that
 //! polices dispatch, and that one step is what the third pin reads.
 //!
-//! `scripts/platform/wave.sh` is examined (not merely claimed): both `gate_slice` and `cmd_gate`
-//! must carry exact `checkrun` + cargo verify lines for t456 and t468 (T-478 dual-path discipline).
-//! A hollow `run "…" true` must RED this gate.
+//! `xtask/src/wave/gate.rs` is examined (not merely claimed): both `gate_slice` and `cmd_gate`
+//! iterate `VERIFY_STEPS`, which must carry the t456 and t468 rows (T-478 dual-path discipline).
+//! A hollow loop body (checkrun argv gone) must RED this gate. T-902 deleted `wave.sh`.
 //!
 //! ── WHAT THE PORT REMOVES ────────────────────────────────────────────────────────────────────
 //!
@@ -57,10 +57,12 @@ use regex::Regex;
 
 use crate::mk_ci;
 
-/// Cargo spelling pinned into `wave.sh`'s checkrun lines for t456. Const + call sites are one
+/// Cargo spelling pinned into TASKS echoes / historical checkrun lines for t456. Const + call sites are one
 /// atomic change — see module docs.
+#[cfg(test)]
 const VERIFY_T456: &str = "cargo run -q -p xtask -- verify t456";
-/// Cargo spelling pinned into `wave.sh`'s checkrun lines for t468 (self-pin).
+/// Cargo spelling pinned into TASKS echoes / historical checkrun lines for t468 (self-pin).
+#[cfg(test)]
 const VERIFY_T468: &str = "cargo run -q -p xtask -- verify t468";
 /// The `TASKS` step echo `verify-t456` must carry — the in-table spelling of [`VERIFY_T456`].
 const TASK_ECHO_T456: &str = "cargo xtask verify t456";
@@ -69,7 +71,12 @@ const TASK_ECHO_T456: &str = "cargo xtask verify t456";
 const TASK_ECHO_T468: &str = "cargo xtask verify t468";
 
 const CI_REL: &str = ".github/workflows/ci.yml";
-const WAVE_REL: &str = "scripts/platform/wave.sh";
+const WAVE_REL: &str = "xtask/src/wave/gate.rs";
+/// T-902: both gate paths iterate this table. Const + call sites are one atomic change.
+const ROW_T456: &str = r#"("T-456 REST size gate", "t456")"#;
+const ROW_T468: &str = r#"("T-468 CI schema parity", "t468")"#;
+const VERIFY_LOOP: &str = "for (label, name) in VERIFY_STEPS";
+const CHECKRUN_ARGV: &str = r#"&["cargo", "run", "-q", "-p", "xtask", "--", "verify", name]"#;
 /// What the ci.yml `schema` job must run. `cargo xtask` is the `.cargo/config.toml` alias for
 /// `cargo run --package xtask --`; [`ci_run_is_good`] accepts either spelling.
 const GOOD_RUN: &str = "cargo xtask ci ci-local-schema";
@@ -327,7 +334,7 @@ fn task_pins() -> i32 {
     fail
 }
 
-/// One [`mk_ci::Step`] in the evidence dump. `wave.sh` tails 15 lines of a failed gate, so the
+/// One [`mk_ci::Step`] in the evidence dump. the wave driver tails 15 lines of a failed gate, so the
 /// operator has to be able to see WHICH step was mistaken for an invocation.
 fn describe_step(s: &mk_ci::Step) -> String {
     match mk_ci::step_echo(s) {
@@ -339,38 +346,34 @@ fn describe_step(s: &mk_ci::Step) -> String {
     }
 }
 
-/// Pin `wave.sh` `gate_slice` + `cmd_gate` to exact `checkrun` + cargo verify for t456/t468
-/// (gate_t440 dual-path discipline). Hollow `run "…" true` must fail.
+/// Pin rust `gate_slice` + `cmd_gate` to VERIFY_STEPS rows + checkrun argv for t456/t468
+/// (gate_t440 dual-path discipline). Hollow `r.run(label, || 0)` must fail.
 fn wave_pins(wave: &str) -> i32 {
     let stripped = strip_hash_comments(wave);
     let mut fail = 0;
-    let pins = [("T-456", VERIFY_T456), ("T-468", VERIFY_T468)];
+    for (ticket, row) in [("T-456", ROW_T456), ("T-468", ROW_T468)] {
+        if !stripped.contains(row) {
+            println!("FAIL: gate.rs VERIFY_STEPS missing {ticket} row (dual-path pin)");
+            fail = 1;
+        }
+    }
     for (name, role) in [("gate_slice", "slice gate"), ("cmd_gate", "cold gate")] {
         let Some(body) = extract_fn_body(&stripped, name) else {
-            println!("FAIL: wave.sh missing `{name}()` ({role}) after comment strip");
+            println!("FAIL: gate.rs missing `{name}()` ({role}) after comment strip");
             fail = 1;
             continue;
         };
-        for (ticket, cmd) in pins {
-            let checkrun_cmd = format!("checkrun {cmd}");
-            if !body.contains(&checkrun_cmd) {
-                println!(
-                    "FAIL: wave.sh `{name}()` ({role}) does not invoke {checkrun_cmd} \
-                     ({ticket} dual-path pin)"
-                );
-                fail = 1;
-                continue;
-            }
-            // End-anchored run line: reject `checkrun … --help` / `|| true` smuggles.
-            let re = Regex::new(&format!(
-                r#"(?m)^\s*run\s+"{ticket}[^"]*"\s+checkrun\s+{}\s*$"#,
-                regex::escape(cmd)
-            ))
-            .expect("wave pin re");
-            if !re.is_match(body) {
-                println!("FAIL: wave.sh `{name}()` ({role}) missing exact checkrun line for {cmd}");
-                fail = 1;
-            }
+        if !body.contains(VERIFY_LOOP) {
+            println!(
+                "FAIL: gate.rs `{name}()` ({role}) does not iterate VERIFY_STEPS                  (T-456/T-468 dual-path pin)"
+            );
+            fail = 1;
+        }
+        if !body.contains(CHECKRUN_ARGV) {
+            println!(
+                "FAIL: gate.rs `{name}()` ({role}) does not invoke checkrun verify via                  VERIFY_STEPS name"
+            );
+            fail = 1;
         }
     }
     fail
@@ -428,6 +431,12 @@ fn strip_hash_comments(text: &str) -> String {
             }
             continue;
         }
+        if c == '/' && i + 1 < n && chars[i + 1] == '/' {
+            while i < n && chars[i] != '\n' {
+                i += 1;
+            }
+            continue;
+        }
         out.push(c);
         i += 1;
     }
@@ -436,10 +445,15 @@ fn strip_hash_comments(text: &str) -> String {
 
 /// Brace-balanced `{ … }` body of a shell function (gate_t440 precedent).
 fn extract_fn_body<'a>(src: &'a str, fn_name: &str) -> Option<&'a str> {
-    let opener =
-        Regex::new(&format!(r"(?m)^{}\(\)\s*\{{", regex::escape(fn_name))).expect("fn opener");
+    let opener = Regex::new(&format!(
+        r"(?m)^(?:pub\s+)?fn {}\s*\(",
+        regex::escape(fn_name),
+    ))
+    .expect("fn opener");
     let m = opener.find(src)?;
-    let start = m.end() - 1;
+    // T-902: rust `pub fn name(` — signature may span lines (`-> u8 {`).
+    let brace = src[m.start()..].find('{')?;
+    let start = m.start() + brace;
     let mut depth = 0i32;
     for (offset, ch) in src[start..].char_indices() {
         match ch {
@@ -533,10 +547,10 @@ mod tests {
         )
     }
 
-    /// Dual-path wave fixture derived from VERIFY_* consts (gate_t440 precedent).
+    /// Dual-path fixture derived from the live gate.rs needles (T-902).
     fn wave_ok() -> String {
         format!(
-            "gate_slice() {{\n  run \"T-456 REST size gate\"  checkrun {VERIFY_T456}\n  run \"T-468 CI schema parity\" checkrun {VERIFY_T468}\n}}\n\ncmd_gate() {{\n  run \"T-456 REST size gate\"  checkrun {VERIFY_T456}\n  run \"T-468 CI schema parity\" checkrun {VERIFY_T468}\n}}\n"
+            "const VERIFY_STEPS: &[(&str, &str)] = &[\n    {ROW_T456},\n    {ROW_T468},\n];\n\npub fn gate_slice(ctx: &Ctx, tid: &str) -> u8 {{\n    {VERIFY_LOOP} {{\n        r.run(label, || {{\n            checkrun(\n                ctx,\n                {CHECKRUN_ARGV},\n            )\n        }});\n    }}\n    0\n}}\n\npub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {{\n    {VERIFY_LOOP} {{\n        r.run(label, || {{\n            checkrun(\n                ctx,\n                {CHECKRUN_ARGV},\n            )\n        }});\n    }}\n    0\n}}\n"
         )
     }
 
@@ -618,39 +632,32 @@ mod tests {
         assert_eq!(VERIFY_T468, "cargo run -q -p xtask -- verify t468");
     }
 
-    /// M2: hollow wave `run "…" true` must RED (checkrun cargo gone).
+    /// M2: hollow checkrun argv must RED.
     #[test]
     fn wave_hollow_t456_true_fails() {
-        let wave = wave_ok().replacen(&format!("checkrun {VERIFY_T456}"), "true", 1);
+        let wave = wave_ok().replacen(CHECKRUN_ARGV, "&[]", 1);
         assert_ne!(pins(&wave), 0);
     }
 
     #[test]
     fn wave_hollow_both_paths_required() {
-        let wave = wave_ok().replacen(&format!("checkrun {VERIFY_T456}"), "true", 1);
-        // Only gate_slice hollowed; cmd_gate still has checkrun — still must FAIL.
-        assert!(wave.matches(&format!("checkrun {VERIFY_T456}")).count() == 1);
+        let wave = wave_ok().replacen(CHECKRUN_ARGV, "&[]", 1);
+        // Only gate_slice hollowed; cmd_gate still has the argv — still must FAIL.
+        assert_eq!(wave.matches(CHECKRUN_ARGV).count(), 1);
         assert_ne!(pins(&wave), 0);
     }
 
-    /// B1: arbitrary suffixes must NOT satisfy the wave checkrun pin.
+    /// B1: extra argv entries must NOT satisfy the checkrun pin.
     #[test]
     fn wave_suffix_smuggles_fail_pin() {
-        for suffix in [" --help", " || true", " && true", " 2>/dev/null"] {
-            for cmd in [VERIFY_T456, VERIFY_T468] {
-                let wave = wave_ok().replace(cmd, &format!("{cmd}{suffix}"));
-                assert_ne!(
-                    pins(&wave),
-                    0,
-                    "suffix {suffix:?} on {cmd} must FAIL the pin"
-                );
-            }
-        }
+        let smuggled = r#"&["cargo", "run", "-q", "-p", "xtask", "--", "verify", name, "--help"]"#;
+        let wave = wave_ok().replace(CHECKRUN_ARGV, smuggled);
+        assert_ne!(pins(&wave), 0, "extra --help argv must FAIL the pin");
     }
 
     #[test]
     fn wave_commented_run_does_not_satisfy() {
-        let wave = wave_ok().replacen("  run \"T-456", "  # run \"T-456", 1);
+        let wave = wave_ok().replacen(ROW_T456, &format!("// {ROW_T456}"), 1);
         assert_ne!(pins(&wave), 0);
     }
 

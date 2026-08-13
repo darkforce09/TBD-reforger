@@ -17,7 +17,7 @@ PASS/FAIL results.
 
 **Prerequisite (hard):** a live **Arma Reforger Workbench** with the Net API
 listening (default `:5775`, override `ENFUSION_WORKBENCH_PORT`). There is **no
-headless / CI path** — `cargo xtask ci ci-local` and `wave.sh gate` do **not** invoke this
+headless / CI path** — `cargo xtask ci ci-local` and `cargo xtask platform wave gate` do **not** invoke this
 gate.
 
 ```bash

@@ -12,10 +12,11 @@
 #   * Removing the last python3 call from a listed file must ALSO delete its line. A stale entry
 #     fails, so the inventory cannot rot into a record nobody has re-checked.
 #
-# WHY A RATCHET AND NOT A HARD RED: these 12 are load-bearing — the wave driver, the staging
-# deploy, the world-boot harness and five mod gates. Porting them is real work and is not T-620,
-# which was scoped to make the rule ENFORCEABLE, not to pay off the debt in one commit. A gate
-# that is red on arrival gets disabled; a gate that freezes the line gets obeyed.
+# WHY A RATCHET AND NOT A HARD RED: the original 12 were load-bearing — the wave driver, the
+# staging deploy, the world-boot harness and five mod gates. T-902 deleted the last python3 path
+# (`scripts/platform/wave.sh`). T-904 deletes this inventory file. T-620 froze the line; later
+# tickets shrink it. A gate that is red on arrival gets disabled; a gate that freezes the line
+# gets obeyed.
 #
 # WHY `jq` IS NOT THE ANSWER: measured — jq is NOT installed here either, and hand-rolled JSON in
 # bash silently emits invalid documents (see the note in deploy-staging.sh). The port target is
@@ -28,4 +29,4 @@
 # and deleted them, so the example is now named from memory rather than pointed at. The RULE is
 # unchanged and still load-bearing for the scripts that remain below.
 
-scripts/platform/wave.sh                             # is_shipped + wave_ledger_unshipped_at
+# T-902: last python3 path (scripts/platform/wave.sh) removed. No paths remain. T-904 deletes this file.

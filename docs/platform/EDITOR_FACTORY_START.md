@@ -13,7 +13,7 @@ Preflight is **PASS**, the program is filed, and nothing has been dispatched.
 cargo xtask db up && cargo xtask mk rust-api && cargo xtask mk leptos-debug     # api :8080, spa :3000
 cargo xtask platform preflight              # must say PASS before anything
 export CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target   # NOT /tmp — 16 GB tmpfs, a build will not fit
-./scripts/platform/wave.sh status
+cargo xtask platform wave status
 ```
 
 **Wave 100 is `T-661` — split `eden_chrome.rs` into ten modules. It runs alone.** Every later wave
@@ -114,9 +114,9 @@ file inside them has.
 - **`cargo test -p map-engine-core` without features is a vacuous pass (T-747).** The `doc`
   (and `mission` / `world`) modules are feature-gated — a bare run lists ~140 tests and never
   compiles the hundreds under `doc::`. `--features doc,mission` still skips the world suite
-  (~133 tests). The wave gate (`wave.sh` test map-engine) and Makefile both use
+  (~133 tests). The wave gate (`cargo xtask platform wave` test map-engine) and Makefile both use
   `--all-features`. Always pass `--all-features` (or `--features doc,mission,world`) for this
-  crate — `doc` alone does not compile. **T-742 note:** `bash scripts/platform/wave.sh test
+  crate — `doc` alone does not compile. **T-742 note:** `cargo xtask platform wave test
   --slice T-nnn -p map-engine-core …` isolates the target dir but does **not** inject features —
   you still must pass `--all-features` on that command. An ungated tripwire in
   `crates/map-engine-core/src/lib.rs` fails bare / incomplete feature sets so the hole announces

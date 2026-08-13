@@ -46,12 +46,22 @@ pub fn scratch() -> PathBuf {
     p
 }
 
+/// Drop the parent driver's exported `CARGO_TARGET_DIR` so a child starts as a user invocation
+/// would. `Ctx::enter` re-exports it; leaving the parent's value in place makes the Rust child
+/// print `wave: ignoring inherited CARGO_TARGET_DIR=…` (three lines bash never emits) and the
+/// comparison reports a DIFF that is the harness talking to itself. Measured T-902: 2/31 arms
+/// identical until this strip, every DIFF the ignore banner vs the host-shell note.
+pub fn strip_parent_target_dir(c: &mut Command) {
+    c.env_remove("CARGO_TARGET_DIR");
+}
+
 /// Run `bash scripts/platform/wave.sh <args>` in `cwd`, merged output + rc.
 pub fn bash_side(cwd: &Path, args: &[&str]) -> Run {
     let mut c = Command::new("bash");
     c.arg("scripts/platform/wave.sh")
         .args(args)
         .current_dir(cwd);
+    strip_parent_target_dir(&mut c);
     let out = c.output().expect("bash");
     let mut s = String::from_utf8_lossy(&out.stdout).into_owned();
     s.push_str(&String::from_utf8_lossy(&out.stderr));
@@ -66,6 +76,7 @@ pub fn rust_side(cwd: &Path, args: &[&str]) -> Run {
     let exe = std::env::current_exe().expect("current_exe");
     let mut c = Command::new(exe);
     c.args(["platform", "wave"]).args(args).current_dir(cwd);
+    strip_parent_target_dir(&mut c);
     let out = c.output().expect("xtask");
     let mut s = String::from_utf8_lossy(&out.stdout).into_owned();
     s.push_str(&String::from_utf8_lossy(&out.stderr));
@@ -182,6 +193,18 @@ pub fn make_clone(ctx: &Ctx, name: &str) -> Option<PathBuf> {
     Some(dst)
 }
 
+/// Operator-facing `wave diff` after T-902: the bash driver is gone. Internal probes
+/// (`base-probe`, `hold-lock`) still run; every comparison arm must refuse rather than
+/// compare against a missing file, an empty string, or a 0-arm OK.
+fn require_bash_driver(ctx: &Ctx) -> Option<u8> {
+    if ctx.root.join("scripts/platform/wave.sh").is_file() {
+        return None;
+    }
+    wprintln!("wave diff: bash driver deleted at T-902 (scripts/platform/wave.sh gone)");
+    wprintln!("  The verdict-diff harness compared against the bash driver; it cannot run.");
+    Some(2)
+}
+
 pub fn cmd_diff(ctx: &Ctx, args: &[String]) -> u8 {
     let arm = args.first().map(String::as_str).unwrap_or("all");
     match arm {
@@ -209,28 +232,35 @@ pub fn cmd_diff(ctx: &Ctx, args: &[String]) -> u8 {
             std::thread::sleep(std::time::Duration::from_secs(secs));
             0
         }
-        "lock" => report(super::diff_arms::arm_lock(ctx)),
-        "reclaim" => report(super::diff_reclaim::arm_reclaim(ctx)),
-        "migrate" => report(super::diff_arms::arm_migrate_persist(ctx)),
-        "status" => report(vec![super::diff_arms::arm_status(ctx)]),
-        "base" => report(vec![super::diff_arms::arm_base(ctx)]),
-        "refusals" => report(super::diff_arms::arm_refusals(ctx)),
-        "push-guard" => report(super::diff_arms::arm_push_guard(ctx)),
-        "noise-floor" => report(vec![super::diff_arms::arm_noise_floor(ctx)]),
-        "all" => {
-            use super::diff_arms::*;
-            let mut v = vec![arm_noise_floor(ctx), arm_status(ctx), arm_base(ctx)];
-            v.extend(arm_refusals(ctx));
-            v.extend(arm_push_guard(ctx));
-            v.extend(arm_lock(ctx));
-            v.extend(super::diff_reclaim::arm_reclaim(ctx));
-            v.extend(arm_migrate_persist(ctx));
-            report(v)
-        }
-        other => {
-            wprintln!("wave diff: unknown arm '{other}'");
-            wprintln!("  arms: status | base | refusals | push-guard | noise-floor | all");
-            2
+        _ => {
+            if let Some(rc) = require_bash_driver(ctx) {
+                return rc;
+            }
+            match arm {
+                "lock" => report(super::diff_arms::arm_lock(ctx)),
+                "reclaim" => report(super::diff_reclaim::arm_reclaim(ctx)),
+                "migrate" => report(super::diff_arms::arm_migrate_persist(ctx)),
+                "status" => report(vec![super::diff_arms::arm_status(ctx)]),
+                "base" => report(vec![super::diff_arms::arm_base(ctx)]),
+                "refusals" => report(super::diff_arms::arm_refusals(ctx)),
+                "push-guard" => report(super::diff_arms::arm_push_guard(ctx)),
+                "noise-floor" => report(vec![super::diff_arms::arm_noise_floor(ctx)]),
+                "all" => {
+                    use super::diff_arms::*;
+                    let mut v = vec![arm_noise_floor(ctx), arm_status(ctx), arm_base(ctx)];
+                    v.extend(arm_refusals(ctx));
+                    v.extend(arm_push_guard(ctx));
+                    v.extend(arm_lock(ctx));
+                    v.extend(super::diff_reclaim::arm_reclaim(ctx));
+                    v.extend(arm_migrate_persist(ctx));
+                    report(v)
+                }
+                other => {
+                    wprintln!("wave diff: unknown arm '{other}'");
+                    wprintln!("  arms: status | base | refusals | push-guard | noise-floor | all");
+                    2
+                }
+            }
         }
     }
 }

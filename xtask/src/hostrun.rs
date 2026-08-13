@@ -85,8 +85,8 @@
 //! over the session bus). Reimplementing that is a large, fragile job with no upside; the shim's own
 //! job was only ever "pick the right one and exec it", which is four lines. So this module spawns it.
 //!
-//! `scripts/lib/hostrun.sh` is left ON DISK untouched — `scripts/platform/wave.sh` still sources it,
-//! and T-853's own wave plan lists it as "dies last". Do not delete it until that port lands.
+//! `scripts/lib/hostrun.sh` is left ON DISK untouched — `scripts/platform/wave.sh` sourced it until
+//! T-902 deleted the bash driver. T-903 deletes this leftover. Do not delete it in T-902.
 //!
 //! cwd is preserved by `distrobox-host-exec`, so relative paths behave the same either way.
 

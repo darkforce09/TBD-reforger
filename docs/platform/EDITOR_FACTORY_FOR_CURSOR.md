@@ -103,7 +103,7 @@ bash scripts/mod/slice-worktree.sh new T-xxx            # one per ticket
 git merge --no-ff slice/T-xxx -m "T-xxx: <title>"       # each
 BASE=$(git rev-list --extended-regexp --grep='^wave [0-9]+ CLOSED' -1 HEAD)
 CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target TBD_WAVE_GENERATION_FLOOR=100 \
-  TBD_GATE_WAVE=L TBD_GATE_BASE_CONFIRM=$BASE bash scripts/platform/wave.sh gate
+  TBD_GATE_WAVE=L TBD_GATE_BASE_CONFIRM=$BASE cargo xtask platform wave gate
 ```
 
 The gate **will** demand `TBD_GATE_BASE_CONFIRM` — markers past 121 have no corroborating plan rows.
@@ -113,7 +113,7 @@ refuses an abbreviated or misremembered sha, and has).
 **Close:**
 
 ```bash
-bash scripts/platform/wave.sh verified $(git rev-parse HEAD)   # no commit may land after the verifier ran
+cargo xtask platform wave verified $(git rev-parse HEAD)   # no commit may land after the verifier ran
 # registry: wave tickets -> shipped (with an honest note); verifier findings filed at the next free id
 ./scripts/ticket sync
 # add the ledger row to .ai/artifacts/editor_factory_run.md ; echo L > docs/platform/factory_pack_wave
@@ -124,10 +124,10 @@ git diff --name-only origin/main..HEAD | grep map-assets       # must be empty
 git -c core.hooksPath=/dev/null push origin main               # plain push dies on the absent-LFS hook
 ```
 
-**Environment note:** this box runs the repo inside a container but `wave.sh`, `cargo`, and
+**Environment note:** this box runs the repo inside a container but `cargo xtask platform wave`, `cargo`, and
 `./scripts/ticket` are **host** binaries. From the container, prefix with
 `distrobox-host-exec sh -c 'cd /home/Samuel/Projects/TBD-Reforger && PATH=$HOME/.cargo/bin:$PATH …'`.
-Run natively if your shell is already the host — `wave.sh` detects and says so.
+Run natively if your shell is already the host — the wave driver detects and says so.
 
 ---
 
@@ -176,7 +176,7 @@ on merged main to close it. Used five times this band; wave 207 needed three. Co
 
 The wave-207 verifier proved two things the command center had gotten wrong:
 
-1. **`scripts/platform/wave.sh` contains zero occurrences of `smoke`.** The wave gate runs **no
+1. **The wave driver contains zero occurrences of `smoke` (`wave.sh` was deleted at T-902).** The wave gate runs **no
    editor smokes**. `GATE PASS 30/30` is accurate for the 30 steps it does run, and never included
    the editor suite.
 2. **`cargo xtask mk leptos-gates` → `gate editor-suite` cannot run green on main** — smoke `cur` fails on a
@@ -212,7 +212,7 @@ the dialog rendered at y=−22. If the claim is about pixels, the guard must mea
 
 **The shared target dir lies.** Concurrent worktrees sharing `CARGO_TARGET_DIR` can execute each
 other's test binary — six false verdicts in two waves. Ad-hoc tests go through
-`bash scripts/platform/wave.sh test --slice T-xxx -p <pkg>` (private dir; delete it after), and
+`cargo xtask platform wave test --slice T-xxx -p <pkg>` (private dir; delete it after), and
 **cross-check the `--list` total against the run total every time**.
 
 **`cargo test -p map-engine-core` without `--all-features` is a vacuous pass** — feature-gated modules
@@ -246,7 +246,7 @@ page/profile per probe), and `__editorCamSet` panics under headless vulkan.
 
 Stop and hand back to the operator when: a wave closes (always — post the eye-pass checklist), real
 data loss is possible, or a decision is the operator's to make rather than yours. **Quarantine, don't
-stop**: a second red on the same ticket means revert that slice (`wave.sh revert` keeps the branch),
+stop**: a second red on the same ticket means revert that slice (`cargo xtask platform wave revert` keeps the branch),
 defer its ticket with the full diagnosis, close the wave with the rest, continue.
 
 Do not dispatch the next wave on your own initiative. The operator's eye-pass is the gate, and it has
