@@ -115,7 +115,7 @@ Every rule serves one primary pillar — the *why*. The rule is the *what*; §10
 **LANG-1 — New tooling is Rust, in `xtask`.** Anything that reads a file, parses JSON, walks the
 repo, computes a verdict or generates code is a `cargo xtask` subcommand. Not a shell script.
 Tracked `*.sh` / `*.bash` / `*.zsh` / `*.ksh` / `*.fish` / `*.bat` / `*.ps1`, extensionless files
-whose shebang names a shell, and `Makefile` / `GNUmakefile` / `*.mk` are a **hard zero** — any
+whose shebang names a shell, and `GNUmakefile` / `makefile` / `Makefile` / `*.mk` are a **hard zero** — any
 match fails `cargo xtask verify no-shell`. There is no inventory.
 
 **Bash is permitted for exactly one thing: thin process glue that must run before or without

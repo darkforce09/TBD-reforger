@@ -178,6 +178,22 @@ mod tests {
     }
 
     #[test]
+    fn lowercase_makefile_is_banned() {
+        // GNU make searches GNUmakefile, then makefile, then Makefile. T-904 originally
+        // banned only the camel/GNU names; lowercase `makefile` was a Make-return path.
+        let root = throwaway("lcmake");
+        write_min_tree(&root);
+        fs::write(root.join("makefile"), "all:\n\t@echo no\n").unwrap();
+        let _ = Command::new("git")
+            .args(["add", "makefile"])
+            .current_dir(&root)
+            .status();
+        let code = run_with_root(&root).unwrap();
+        assert_eq!(code, 1, "lowercase makefile must FAIL");
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
     fn planted_sh_fails() {
         let root = throwaway("sh");
         write_min_tree(&root);

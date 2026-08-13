@@ -59,7 +59,7 @@ const SCAN_CAP: u64 = 512 * 1024;
 enum TrackedLanguageBan {
     /// `*.sh`, `*.py`, `*.mk`, …
     Extension(&'static str),
-    /// Exact basename: `Makefile`, `GNUmakefile`.
+    /// Exact basename: GNU make's default search order — `GNUmakefile`, `makefile`, `Makefile`.
     Basename(&'static str),
 }
 
@@ -76,8 +76,9 @@ const TRACKED_LANGUAGE_BANS: &[TrackedLanguageBan] = &[
     TrackedLanguageBan::Extension("mjs"),
     TrackedLanguageBan::Extension("cjs"),
     TrackedLanguageBan::Extension("mk"),
-    TrackedLanguageBan::Basename("Makefile"),
     TrackedLanguageBan::Basename("GNUmakefile"),
+    TrackedLanguageBan::Basename("makefile"),
+    TrackedLanguageBan::Basename("Makefile"),
 ];
 
 #[derive(Clone, Copy)]
