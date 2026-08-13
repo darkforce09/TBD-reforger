@@ -446,7 +446,7 @@ enum VerifyCmd {
     /// T-165.10 hard gate: zero tracked .mjs/.cjs; no node/npx outside the enfusion-mcp floor
     #[command(name = "no-node")]
     NoNode,
-    /// T-621 shell ratchet: no NEW tracked .sh outside the committed inventory
+    /// T-904 LANG-1: tracked shell/Make hard zero (same TrackedLanguageBan table as no-python)
     #[command(name = "no-shell")]
     NoShell,
     /// T-901: every GitHub Actions `run:` is `cargo xtask` or a short pre-cargo allowlist
@@ -490,7 +490,7 @@ enum VerifyCmd {
     /// T-440: faction library seed reaches the DB
     #[command(name = "t440")]
     T440,
-    /// T-162/T-620 LANG-2: zero .py + ratcheted python3 invocations (port of verify-no-python.sh)
+    /// T-904 LANG-2: zero tracked .py + zero python3 in command position (alias of the language ban)
     #[command(name = "no-python")]
     NoPython,
     /// T-456/T-460: mission REST body size gate before ParseMissionJson

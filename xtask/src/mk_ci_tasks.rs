@@ -8,14 +8,14 @@
 //! the successor pins are `ci_local_step_set_is_frozen` (`mk_ci_tests.rs`, the composite's step
 //! list) and `gate_t468`'s `task_pins` (the three Class-R rows, at runtime).
 
-use super::{Lane, Step, Task, verify_doc_layout};
+use super::{verify_doc_layout, Lane, Step, Task};
 use crate::codegen_schema::codegen;
 use crate::gate_no_python::verify_no_python;
 use crate::golden_gate::map_object_golden;
 use crate::node_free::{verify_file_length, verify_no_node};
 use crate::root::find_repo_root;
 use crate::schema_gates::{
-    citations, map_glyphs, map_object_enums, n6_sentence, n10_tile_budget, t090_specs,
+    citations, map_glyphs, map_object_enums, n10_tile_budget, n6_sentence, t090_specs,
     type_inventory, validate_all,
 };
 use crate::shell_free::verify_no_shell;
@@ -274,7 +274,7 @@ pub static TASKS: &[Task] = &[
     // ── aliases: the make target was already a thin wrapper on an existing xtask command ─────
     Task {
         name: "verify-no-python",
-        help: "T-162 hard gate — zero .py files / no Python interpreter in scripts",
+        help: "T-904 hard zero — same TrackedLanguageBan table as verify-no-shell (.py / python3)",
         group: "verify",
         lane: Lane::Alias,
         steps: &[xt!("cargo xtask verify no-python", false, verify_no_python)],
@@ -288,7 +288,7 @@ pub static TASKS: &[Task] = &[
     },
     Task {
         name: "verify-no-shell",
-        help: "T-621 ratchet — no NEW .sh outside scripts/shell-inventory.txt (list may only shrink)",
+        help: "T-904 hard zero — no tracked shell/Make/Python/Node-script paths (no inventory)",
         group: "verify",
         lane: Lane::Alias,
         steps: &[xt!("cargo xtask verify no-shell", false, verify_no_shell)],
