@@ -97,6 +97,11 @@ fn forbidden_reason(line: &str) -> Option<String> {
     if t.contains("&&") {
         return Some("`&&`".into());
     }
+    if t.contains('&') {
+        // A lone `&` backgrounds the preceding command (`cmd & echo pwned`). Checked AFTER
+        // `&&` so `cargo xtask foo && true` still reports `&&`, not `&`.
+        return Some("`&`".into());
+    }
     if t.contains("||") {
         return Some("`||`".into());
     }
@@ -201,6 +206,22 @@ mod tests {
         assert_eq!(
             line_reason("cargo xtask verify no-shell | tee log").as_deref(),
             Some("pipe")
+        );
+    }
+
+    #[test]
+    fn ampersand_background_is_red() {
+        assert_eq!(
+            line_reason("cargo xtask verify no-shell & echo pwned").as_deref(),
+            Some("`&`")
+        );
+    }
+
+    #[test]
+    fn double_ampersand_still_reports_and_and() {
+        assert_eq!(
+            line_reason("cargo xtask verify no-shell && true").as_deref(),
+            Some("`&&`")
         );
     }
 }
