@@ -234,7 +234,7 @@ fn override_scope(id: &str) -> Option<Scope> {
 }
 
 pub enum MapOutcome {
-    Mapped(Ticket),
+    Mapped(Box<Ticket>),
     NeedsOperator,
 }
 
@@ -276,7 +276,7 @@ pub fn map_value(id: &str, v: &Value) -> MapOutcome {
         return MapOutcome::NeedsOperator;
     }
     if id == "T-159.23" {
-        return MapOutcome::Mapped(force_t159_23(v));
+        return MapOutcome::Mapped(Box::new(force_t159_23(v)));
     }
     let children = if id == "T-674" {
         vec!["T-674.1".into(), "T-674.2".into()]
@@ -327,7 +327,7 @@ pub fn map_value(id: &str, v: &Value) -> MapOutcome {
     }
 
     if is_program {
-        return MapOutcome::Mapped(Ticket::Program(ProgramTicket {
+        return MapOutcome::Mapped(Box::new(Ticket::Program(ProgramTicket {
             id: id.to_string(),
             title: opt_s(v, "title").unwrap_or_else(|| id.to_string()),
             summary: opt_s(v, "summary").unwrap_or_default(),
@@ -344,7 +344,7 @@ pub fn map_value(id: &str, v: &Value) -> MapOutcome {
             priority: v.get("priority").and_then(Value::as_i64),
             owns: str_list(v, "owns"),
             pack_last: v.get("pack_last").and_then(Value::as_bool),
-        }));
+        })));
     }
 
     let scope = override_scope(id)
@@ -352,7 +352,7 @@ pub fn map_value(id: &str, v: &Value) -> MapOutcome {
         .unwrap_or(Scope::Repo {
             layers: vec![RepoLayer::Docs],
         });
-    MapOutcome::Mapped(Ticket::Work(WorkTicket {
+    MapOutcome::Mapped(Box::new(Ticket::Work(WorkTicket {
         id: id.to_string(),
         title: opt_s(v, "title").unwrap_or_else(|| id.to_string()),
         summary: opt_s(v, "summary").unwrap_or_default(),
@@ -370,7 +370,7 @@ pub fn map_value(id: &str, v: &Value) -> MapOutcome {
         priority: v.get("priority").and_then(Value::as_i64),
         owns: str_list(v, "owns"),
         pack_last: v.get("pack_last").and_then(Value::as_bool),
-    }))
+    })))
 }
 
 fn park_unmappable(id: &str, v: &Value) -> Ticket {
@@ -715,7 +715,7 @@ pub fn migrate_live_tree(root: &Path) -> Result<(usize, BTreeSet<String>)> {
         files.insert(id.clone(), v.clone());
         match map_value(&id, &v) {
             MapOutcome::Mapped(t) => {
-                mapped.insert(id, t);
+                mapped.insert(id, *t);
             }
             MapOutcome::NeedsOperator => {
                 needs.insert(id.clone());
