@@ -644,6 +644,14 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
             ],
         )
     });
+    r.run("ci-shell (T-901)", || {
+        hostrun(
+            ctx,
+            &[
+                "cargo", "run", "-q", "-p", "xtask", "--", "verify", "ci-shell",
+            ],
+        )
+    });
 
     wprintln!();
     if r.fail {

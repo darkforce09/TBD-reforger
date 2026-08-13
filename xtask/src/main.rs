@@ -4,6 +4,8 @@
 
 mod ai;
 mod check;
+mod ci_chrome;
+mod ci_editor_api;
 mod cmds;
 mod codegen_schema;
 mod constants;
@@ -81,6 +83,8 @@ mod slice_worktree;
 mod sql_gates;
 mod sync;
 mod test_env;
+mod verify_ci_shell;
+mod verify_ci_shell_rules;
 mod wave;
 
 use anyhow::{Result, bail};
@@ -330,6 +334,9 @@ enum ModCmd {
     /// of the Makefile's `mod-compile-selftest` rc classification).
     #[command(name = "compile-selftest")]
     CompileSelftest,
+    /// T-901: loud preflight that the dedicated server + resourceDatabase.rdb exist (mod-gates.yml).
+    #[command(name = "compile-preflight")]
+    CompilePreflight,
     /// Headless game-mode boot + roll-call (T-892 port of world-boot.sh).
     /// Exit: 0 PASS · 1 CODE · 2 usage · 3 ENVIRONMENT.
     #[command(name = "world-boot", disable_help_flag = true)]
@@ -442,6 +449,9 @@ enum VerifyCmd {
     /// T-621 shell ratchet: no NEW tracked .sh outside the committed inventory
     #[command(name = "no-shell")]
     NoShell,
+    /// T-901: every GitHub Actions `run:` is `cargo xtask` or a short pre-cargo allowlist
+    #[command(name = "ci-shell")]
+    CiShell,
     /// T-145 guard: no bare SELECT */RETURNING * on nullable-column tables
     /// (T-853 port of scripts/website/verify-no-select-star.sh)
     #[command(name = "no-select-star")]
@@ -938,6 +948,7 @@ fn run() -> Result<u8> {
             ModCmd::Playtest { args } => playtest_server::run(&args),
             ModCmd::Compile { args } => gate_mod_compile::run(&args),
             ModCmd::CompileSelftest => gate_mod_compile::run_selftest(),
+            ModCmd::CompilePreflight => gate_mod_compile::run_preflight(),
             ModCmd::WorldBoot { args } => mod_world_boot::run(&args),
             ModCmd::Wave { args } => mod_wave::run(&args),
         },
@@ -995,6 +1006,7 @@ fn run() -> Result<u8> {
                 VerifyCmd::FileLength => node_free::verify_file_length()?,
                 VerifyCmd::NoNode => node_free::verify_no_node()?,
                 VerifyCmd::NoShell => shell_free::verify_no_shell()?,
+                VerifyCmd::CiShell => verify_ci_shell::verify_ci_shell()?,
                 VerifyCmd::NoSelectStar => sql_gates::verify_no_select_star(&find_repo_root()?)?,
                 VerifyCmd::T452 => mod_comment_gates::verify_t452(&find_repo_root()?)?,
                 VerifyCmd::T296 => gate_t296::verify_t296(&find_repo_root()?)?,

@@ -19,6 +19,7 @@ use crate::schema_gates::{
     type_inventory, validate_all,
 };
 use crate::shell_free::verify_no_shell;
+use crate::verify_ci_shell::verify_ci_shell;
 
 /// An echoed recipe line. The map lane stays a subprocess on purpose: `map` is a `tbd-tools`
 /// binary, and reaching into another crate's clap wiring to save a fork would be drift.
@@ -58,6 +59,7 @@ pub static TASKS: &[Task] = &[
             Step::Task("verify-no-python"),
             Step::Task("verify-no-node"),
             Step::Task("verify-no-shell"),
+            Step::Task("verify-ci-shell"),
             Step::Task("rust-ci"),
             Step::Task("verify-coding-standards"),
             Step::Task("ci-local-leptos"),
@@ -142,7 +144,43 @@ pub static TASKS: &[Task] = &[
         help: "FMT-2: run editorconfig-checker from repo root (CODING_STANDARDS §7)",
         group: "verify",
         lane: Lane::Ci,
-        steps: &[sh!("editorconfig-checker")],
+        steps: &[Step::Native {
+            run: crate::ci_editor_api::verify_editorconfig,
+        }],
+    },
+    Task {
+        name: "verify-codegen-fresh",
+        help: "Fail if apps/website/api/src/contract/generated is stale after schema-codegen",
+        group: "schema",
+        lane: Lane::Ci,
+        steps: &[Step::Native {
+            run: crate::ci_editor_api::verify_codegen_fresh,
+        }],
+    },
+    Task {
+        name: "ci-chrome",
+        help: "T-901: install pinned Chrome-for-Testing (editor-gates.yml)",
+        group: "CI",
+        lane: Lane::Ci,
+        steps: &[Step::Native {
+            run: crate::ci_chrome::run,
+        }],
+    },
+    Task {
+        name: "editor-api-boot",
+        help: "T-901: build+spawn website-api and wait on /healthz (editor-gates.yml)",
+        group: "CI",
+        lane: Lane::Ci,
+        steps: &[Step::Native {
+            run: crate::ci_editor_api::run,
+        }],
+    },
+    Task {
+        name: "website-api-test",
+        help: "T-901: cargo test in apps/website/api (honours TEST_DATABASE_URL)",
+        group: "build",
+        lane: Lane::Ci,
+        steps: &[sh!("cd apps/website/api && cargo test")],
     },
     // ── map lane ────────────────────────────────────────────────────────────────────────────
     Task {
@@ -254,6 +292,13 @@ pub static TASKS: &[Task] = &[
         group: "verify",
         lane: Lane::Alias,
         steps: &[xt!("cargo xtask verify no-shell", false, verify_no_shell)],
+    },
+    Task {
+        name: "verify-ci-shell",
+        help: "T-901 — every GitHub Actions run: is cargo xtask or a short pre-cargo allowlist",
+        group: "verify",
+        lane: Lane::Alias,
+        steps: &[xt!("cargo xtask verify ci-shell", false, verify_ci_shell)],
     },
     Task {
         name: "verify-t438",

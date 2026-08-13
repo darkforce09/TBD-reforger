@@ -90,58 +90,18 @@ jobs:
       # ZERO of our scripts when it is stale, and compile.sh's load-count guard is the only thing
       # standing between that and a green "compiled clean".
       - name: preflight — runner must be provisioned for the mod gates
-        run: |
-          set -uo pipefail
-          bin="$HOME/.local/share/Steam/steamapps/common/Arma Reforger Server/ArmaReforgerServer"
-          fail=0
-          if [ ! -x "$bin" ]; then
-            echo "::error title=mod-gates runner not provisioned::No Arma Reforger dedicated server at '$bin'. Install appid 1890870 for the runner's user, or run the runner as the user that already has it. This job cannot be made to pass without it and will not pretend otherwise."
-            fail=1
-          else
-            echo "dedicated server: $bin"
-          fi
-          if [ ! -s apps/mod/tbd-framework/resourceDatabase.rdb ]; then
-            echo "::error title=mod-gates checkout incomplete::apps/mod/tbd-framework/resourceDatabase.rdb missing or empty. Without it the engine skips the loose addon and compiles none of the mod."
-            fail=1
-          fi
-          exit "$fail"
+        run: cargo xtask mod compile-preflight
 
       # THE INSTRUMENT BEFORE THE VERDICT. A gate that has never been seen to fail is not a gate,
       # so prove compile.sh still rejects deliberately broken source before trusting it to bless
       # the real tree. `--selftest` stages an extra addon calling an undefined symbol and must
       # come back with exit 1.
       #
-      # This does NOT call `cargo xtask mod compile-selftest`. That wrapper treats ANY non-zero as "the
-      # gate correctly rejected broken source", so on a machine with no server it prints
-      # SELFTEST OK for a run that never happened — a false green in the one check whose entire
-      # job is to prove the absence of false greens. Three-way, explicitly, instead.
-      #
-      # LANDMINE: this and every `run:` block below capture status as `|| rc=$?`, never `cmd; rc=$?`.
-      # Actions runs these under `bash -e`, and a bare `cmd; rc=$?` aborts the step on the failing
-      # command BEFORE the assignment — so the classification these blocks exist for would never
-      # print. `|| rc=$?` is a condition context, which `set -e` is defined to leave alone.
+      # T-901: classification is `cargo xtask mod compile-selftest`. Only Enfusion exit 1 is a
+      # pass; 0 (gate is blind), 2 (no verdict), and 3 (environment — no server) print SELFTEST
+      # FAIL and exit 1. YAML must not treat any nonzero as success.
       - name: compile gate SELFTEST — prove the gate still catches a broken .c
-        run: |
-          set -uo pipefail
-          rc=0
-          cargo run -q -p xtask -- mod compile --selftest || rc=$?
-          case "$rc" in
-            1)
-              echo "SELFTEST OK: the gate rejected deliberately broken source"
-              ;;
-            0)
-              echo "::error title=compile gate is blind::mod compile --selftest returned 0 on source that does not compile. The gate is no longer detecting errors; every green mod-compile since is suspect."
-              exit 1
-              ;;
-            3)
-              echo "::error title=compile gate ENVIRONMENT failure::mod compile exited 3 — this runner's environment, not the mod. The gate never ran, so this is NOT a pass. See the log above."
-              exit 1
-              ;;
-            *)
-              echo "::error title=compile gate inconclusive::mod compile --selftest exited $rc (2 = no verdict reached). Treating as failure."
-              exit 1
-              ;;
-          esac
+        run: cargo xtask mod compile-selftest
 
       # The real thing. Called directly rather than through a wrapper, for one reason that used
       # to be about GNU make: it reported its OWN status 2 for any failed recipe, flattening the
@@ -153,18 +113,7 @@ jobs:
       # boot, ~4 s). actions/checkout cleans ignored files, so that recalibration happens every
       # run. It is cheap and it keeps the baseline honest per-runner.
       - name: "compile gate — cargo xtask mod compile"
-        run: |
-          set -uo pipefail
-          rc=0
-          cargo run -q -p xtask -- mod compile || rc=$?
-          if [ "$rc" -eq 3 ]; then
-            echo "::error title=mod-compile ENVIRONMENT failure::exit 3 — this runner's machine state, NOT the mod. Nothing was compiled. Do not open a mod ticket for this; read the fix printed above."
-          elif [ "$rc" -eq 1 ]; then
-            echo "::error title=mod-compile CODE failure::exit 1 — real Enfusion compile errors, listed above as file:line."
-          elif [ "$rc" -ne 0 ]; then
-            echo "::error title=mod-compile inconclusive::exit $rc — the harness reached no verdict (timeout or bad invocation)."
-          fi
-          exit "$rc"
+        run: cargo xtask mod compile
 
       # Compiling is not wiring. A component listed on TBD_GameMode.et whose class fails to
       # resolve is dropped SILENTLY, compiles clean, and shows up only as a feature that never
@@ -173,13 +122,4 @@ jobs:
       # roll-call printed with nothing MISSING, and no TBD or unrecognised script error fired.
       # ~23 s measured. Direct invocation for the same exit-code reason as above.
       - name: "world boot — cargo xtask mod world-boot"
-        run: |
-          set -uo pipefail
-          rc=0
-          cargo run -q -p xtask -- mod world-boot || rc=$?
-          if [ "$rc" -eq 3 ]; then
-            echo "::error title=mod-world-boot ENVIRONMENT failure::exit 3 — this runner's machine state, NOT the mod. The world was never booted."
-          elif [ "$rc" -ne 0 ]; then
-            echo "::error title=mod-world-boot CODE failure::exit $rc — an assertion about the real booted world failed. See the ok/FAIL lines above."
-          fi
-          exit "$rc"
+        run: cargo xtask mod world-boot

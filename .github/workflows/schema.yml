@@ -18,4 +18,4 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       # T-165.2: the validate suite is Rust (xtask) — no Node in this workflow.
-      - run: cargo run -q -p xtask -- schema validate
+      - run: cargo xtask schema validate
