@@ -225,7 +225,7 @@ of the three is a liability, not a convenience.
 
 Agent shells run inside a **`debian:12` podman container**: glibc 2.36, **no C toolchain**. The real
 machine is Bazzite/Fedora (glibc 2.43, gcc). Prefix builds/game binaries with `distrobox-host-exec`
-(or `source scripts/lib/hostrun.sh` then `hostrun`).
+(or `cargo xtask` / the Rust bridge in `xtask/src/hostrun.rs`).
 
 - in-container `cargo build` → `linker cc not found`
 - host-built binary in-container → `GLIBC_2.39 not found`

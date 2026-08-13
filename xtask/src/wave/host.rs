@@ -7,7 +7,7 @@
 //! exactly this, and flags the one difference:
 //!
 //! > NOTE for the `wave.sh` port: `scripts/platform/wave.sh:168` carries a THIRD clause,
-//! > `|| [ -n "${container:-}" ]`, which `scripts/lib/hostrun.sh` does not. The two-clause form
+//! > `|| [ -n "${container:-}" ]`, which `scripts/lib/hostrun.sh` did not. The two-clause form
 //! > here is the one both existing Rust callers were built and measured against, so the lift keeps
 //! > it exactly. Widening it is a behaviour change and belongs in its own ticket.
 //!
