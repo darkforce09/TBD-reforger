@@ -1,0 +1,15 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-090.9"
+parent = "T-090"
+spec = "docs/specs/Mission_Creator_Architecture/t090_9_world_object_interaction.md"
+status = "ready"
+targets = ["website"]

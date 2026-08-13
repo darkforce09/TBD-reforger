@@ -1,0 +1,20 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-152.9"
+notes = "Road names discovery spike."
+parent = "T-152"
+spec = "docs/specs/Mission_Creator_Architecture/t152_9_road_names.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]

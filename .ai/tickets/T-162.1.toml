@@ -1,0 +1,17 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "spec",
+    "notes",
+]
+__ord = 0
+executor = "cursor-docs"
+id = "T-162.1"
+notes = "MCP consume/socket-send/probe-sock → xtask; flip mcp-call/daemon/selftest."
+parent = "T-162"
+spec = "docs/platform/t162_python_eradication.md"
+status = "shipped"
+targets = ["root"]

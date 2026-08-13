@@ -1,0 +1,32 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "status",
+    "stream",
+    "targets",
+    "executor",
+    "route",
+    "impact",
+    "title",
+    "summary",
+    "surfaces",
+    "notes",
+]
+__ord = 673
+executor = "claude-code"
+id = "T-700"
+impact = ["ui"]
+notes = "— SHIPPED wave 119 (editor factory), c7c4b8d6; verifier wave119.md. PageUp/PageDown nudge on number_field with a first-match finest-first step scale (Ctrl 0.1 / Shift 10 / Alt 100 / bare 1), asserted as a property over the whole 2^3 modifier space; the refusal gate is checked BEFORE any arithmetic, and a field whose multi-selection disagrees refuses rather than stamping an absolute number. Bursts coalesce into the existing blur/Enter commit for two mechanical reasons (capture_timeout_millis=0 would mint an undo step per keypress; a mid-focus commit would rebuild the focused input and drop the focus the next nudge needs). Shared SearchBox primitive in ui.rs beside T-633's Slider/Select. The Ctrl+F binding and tree tooltips were blocked by sibling ownership and are reported, not silently dropped. ⚠️ It also found the pre-existing rounding bug — see T-775."
+order = 4540
+program = "eden"
+route = "/missions/:id/edit"
+status = "shipped"
+stream = "mission-creator"
+summary = "3den E8, the best value-per-effort in that sweep — hours each. 3DEN-PLACE-013: every numeric field nudges by PageUp/PageDown with Ctrl/Alt/Shift scaling the step; TBD number_field (attributes.rs:167-228) has no keyboard affordance at all. Plus one shared Ctrl+F search box rather than per-panel boxes, and tooltips on truncated tree rows."
+surfaces = [
+    "ATTR",
+    "UI",
+]
+targets = ["website"]
+title = "Small-UI idioms — numeric nudge, one shared search box, tree tooltips"

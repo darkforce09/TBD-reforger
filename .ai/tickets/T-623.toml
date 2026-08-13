@@ -1,0 +1,67 @@
+__keys = [
+    "program",
+    "impact",
+    "stream",
+    "targets",
+    "executor",
+    "surfaces",
+    "id",
+    "title",
+    "summary",
+    "status",
+    "priority",
+    "order",
+]
+__ord = 596
+executor = "claude-code"
+id = "T-623"
+impact = ["platform-lifecycle"]
+order = 3702
+priority = 3
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = '''
+FOUND by wave 80's adversarial verifier, in wave 80's own fix, and closed in-wave.
+
+**F1 (LOW-MED, new) — the gate silently dropped C-quoted paths.** `git ls-files` C-quotes paths with
+non-ASCII, control chars, `"` or `\`, emitting e.g. `"scripts/pyth\303\266n.sh"`. The script's
+`[ -f "$f" ]` was false for that mangled string, so the file was dropped from `FILES` **with no
+complaint** and the gate reported OK. A tracked, python3-invoking `scripts/python.sh` PASSED.
+Fixed with `git ls-files -z` (NUL-delimited, via a temp file, since bash discards NULs in `$(...)`)
+-- and, the half that matters, **any enumerated path that does not resolve to a readable file is now
+a FAIL, not a silent skip.** Tested two ways: tracked-but-deleted, and `chmod 000`. Spaces were never
+affected and still behave.
+
+**F3 (LOW, new) — the shell ratchet only counted `*.sh`.** An extensionless bash tool was invisible,
+and the repo already ships one: `scripts/ticket`. Now counts `*.sh` OR a real shell shebang.
+**The trap, worth recording:** a naive `starts_with("#!")` files `xtask/src/main.rs` into the shell
+inventory, because it opens `#![allow(clippy::collapsible_if)]`. The shebang is therefore parsed --
+first token, basename, follow `env` past its flags, closed list of sh/bash/dash/zsh -- reading 256
+bytes, binary-tolerant, with three unit tests including that case. A sweep of all 2,530 tracked files
+found exactly two non-`.sh` files starting `#!`, and the second was that Rust attribute.
+Inventory now 59 (58 by extension + `scripts/ticket` by shebang).
+
+**F5 (LOW, latent) — the xtask port was more lenient than the Python it replaced.** A non-numeric wave
+label made the Python exit 1; the port exited 0 with `next wave is .`, and `preflight.sh` check 9 keys
+on the exit code -- so a reintroduced `wNN` label would have passed preflight silently. T-616 exists
+precisely because a bad label went unnoticed for five waves. Now nonzero, naming the offending rows,
+checked over every parsed row rather than the dispatchable subset; `--repack` is exempt because it
+regenerates the column and is the only way back from a rotted plan.
+**The empty-set case was split deliberately:** no rows parsed at all is a hard error (the tool has no
+input -- wrong `TBD_WAVE_PLAN`, truncation, a column shift). Rows parsed with none dispatchable exits
+0: *that case is the factory finishing, not breaking, and wedging preflight red the day the backlog
+empties would be a bug of our own making.*
+
+Byte-identity did not regress: 10 streams plus the repacked file diffed against the pre-change binary,
+all IDENTICAL (repacked plan 61,078 B, sha d5b815f3...). Every repack ran on a copy; the live plan is
+untouched and waves 76-81 intact.
+
+STILL OPEN, filed rather than fixed (verifier F2/F4, both LOW): the `.py` ban excludes nested
+`target/`, `node_modules/`, `.ai/artifacts/worktrees/`, so a tracked importable `.py` under
+`scripts/target/` evades it -- **pre-existing**, byte-identical to the pre-T-620 exclusions. And the
+pattern misses a bareword `python run.py`. Also cosmetic: `CODING_STANDARDS.md:126`, `Makefile:472`
+and `ci.yml:209` still say "58 .sh"; the gate reports the true count at runtime.'''
+surfaces = ["INFRA"]
+targets = ["website"]
+title = "The language ratchets had three holes of their own — C-quoted paths, extensionless shell, a lenient port"

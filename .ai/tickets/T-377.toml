@@ -1,0 +1,40 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 351
+executor = "claude-code"
+id = "T-377"
+impact = ["platform-lifecycle"]
+order = 3193
+priority = 1
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+TWO HALVES OF ONE T-192 FIX DISAGREEING, and the only defence is client-side.
+
+handlers/missions.rs:48-56 — `valid_weather` maps `"" | "clear"` to `WeatherType::Clear`. So PATCH /missions/:id with `{"weather": ""}` **silently rewrites a stored `dense_fog` to `clear` and answers 200.**
+
+services/mission_compile.rs:127-136 does the opposite, deliberately, and says so at :126: `weather_preset("")` returns None so that 'an absent value must fall through to the row, not overwrite it.' And :32-36 documents that the editor MIRRORS meta.environment.weather to the row through this exact PATCH. So the compiler treats "" as 'not authored, keep the row' and the PATCH treats it as 'set clear'.
+
+**The defence is in the client, not the server:** frontend/src/eden_chrome.rs:706-710 guards with `if value.is_empty() || !is_mission_row_id(&id) { return; }`. Any direct API caller — curl, the mod, a future client — reaches the hole.
+
+Fix: drop "" from valid_weather's clear arm so both halves agree that blank means not-authored. Same handler, also unguarded and worth the same pass: `title` (:393-395, and create at :296 DOES reject empty, so the two disagree), `custom_terrain_name`, `briefing`, `thumbnail_url` (:430-435 — defensible for the last two). And `time_of_day: ""` binds `''::time`, a Postgres cast error, so it 500s rather than blanking — already relayed to T-367.
+
+== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
+Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
+This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now."""
+surfaces = ["API"]
+targets = ["website"]
+title = "PATCH and the compiler hold opposite meanings for an empty weather string"

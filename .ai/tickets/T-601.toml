@@ -1,0 +1,74 @@
+__keys = [
+    "program",
+    "surfaces",
+    "impact",
+    "stream",
+    "targets",
+    "executor",
+    "id",
+    "title",
+    "summary",
+    "status",
+    "priority",
+    "order",
+]
+__ord = 574
+executor = "claude-code"
+id = "T-601"
+impact = ["platform-lifecycle"]
+order = 3482
+priority = 2
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+FOUND by wave 75's adversarial verifier (Fable 5), which defeated THREE separate pins shipped in that
+same wave — after each slice had proven its own pin against the attacks it knew about.
+
+=== F2 (MAJOR) T-570's new executing pin, `mission_title_prefer.rs:442-499` `item()` ===
+The extractor's anti-decoy ambiguity check counts only COLUMN-0 signature heads (`:453-465`), and its
+`cfg`-refusal scans only INSIDE the extracted `[start..=end]` span (`:489-496`). An attribute on the
+line ABOVE the signature is outside both. Demonstrated live: move the real `adopt_payload` into a
+`mod` with `pub use` re-export and cut its briefing (`opt(&row.briefing)` -> `None`), then plant a
+pristine copy at column 0 under `#[cfg(any())]`. The wasm build ships the CUT wire; the pin extracts
+and executes the COMPILED-OUT decoy and reports ok. This defeats the pin's own stated defense at
+`:447-450`. NOTE the guard is otherwise strong -- `cfg_attr(target_arch…, cfg(any()))` INSIDE an item
+IS caught; the gap is strictly the pre-signature attribute.
+
+=== F3 (MAJOR) T-503's scrubber, `arsenal.rs:2641-2672` + `:2676-2720` ===
+`strip_cfg_any_items` matches the LITERAL `#[cfg(any())]`; `strip_const_false_blocks` whitelists 7
+conditions. Measured, running the scrubber verbatim:
+    cfg any with space   -> SURVIVES      if 1 > 2            -> SURVIVES
+    cfg spaced brackets  -> SURVIVES      if black_box(false) -> SURVIVES
+    while false          -> SURVIVES      baseline cfg exact  -> stripped
+A `set_loadout` decoy in any surviving shape greens `cargo_mutations_commit_without_a_staging_gate`
+(`:2801`) and `the_panel_states_the_persistence_contract` (`:2833`) over dead persistence wiring.
+Defeated by trivial spelling variation.
+
+=== F4 (MINOR) T-598's wiring pin, `server_control.rs:1051-1064` ===
+Polarity-blind. Swap the success/error arm bodies (undelivered -> green success toast) and all 11
+t270 tests stay GREEN. It proves the guard string exists and that there is exactly one
+`toasts.success(` -- not WHICH arm it sits in. Nothing native compiles the wasm-only block (`:402`).
+
+=== THE SCOPE, which is the real finding ===
+T-570's agent independently catalogued ~20 SIBLING pins sharing the identical `include_str!` +
+`contains()` shape, each walkable by the same dead-code decoys: `client.rs:642`, `content.rs:938`,
+`sse.rs:254`, `event_hub.rs:1663`, `mission_commands.rs:542`, and more. This is not three bugs. It is
+one defect class with ~23 known instances, and it is the SIGNATURE DEFECT of this codebase wearing a
+test's uniform: *a tool reports success over an input it never actually examined.*
+
+=== TWO PROVEN PATTERNS EXIST -- do not invent a third ===
+1. EXECUTE THE CODE (T-570, `mission_title_prefer.rs`): lift the items verbatim, compile them against
+   a recording stand-in, RUN them, assert on the arguments actually received. Dead code produces no
+   behaviour, so wrappers die by construction rather than by enumeration. Strongest; use for
+   high-value invariants. Fix F2's pre-signature-attribute gap before reusing it.
+2. SCRUB THEN GREP (T-503, `arsenal.rs`): strip comments, string literals, cfg'd items, constant-false
+   blocks and post-`break`/`return` dead code before matching, AND give the scrubber its own test so
+   it cannot go hollow silently. Cheap; use for bulk. Fix F3's literal-matching first.
+
+DO NOT respond to this ticket by blocklisting the specific shapes above. That is the fourth round of
+that game (T-517 -> T-567 -> T-570) and a fifth wrapper always exists. Fix the two patterns, then
+convert the ~20 siblings."""
+surfaces = ["INFRA"]
+targets = ["website"]
+title = "Class-R pin hollowness is systemic, not a bug in three pins"

@@ -1,0 +1,18 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-181.2.1"
+notes = "docs/mod/capability_verdicts.tsv + make verify-capability. 57 capabilities, zero untriaged. A forgotten CRF capability is now a build error."
+parent = "T-181"
+status = "shipped"
+targets = [
+    "mod",
+    "root",
+]

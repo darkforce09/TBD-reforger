@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 220
+executor = "claude-code"
+id = "T-246"
+impact = ["discord"]
+order = 2640
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "cms.rs:268-289 force-pushes any announcement — unlike the create and patch paths it does not verify status is published, so a draft or archived post can be broadcast to the guild. It is unreachable from the SPA today, which is the only thing hiding it."
+surfaces = ["CONN"]
+targets = ["website"]
+title = "push-discord skips the published check"

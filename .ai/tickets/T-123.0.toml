@@ -1,0 +1,17 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+__ord = 0
+executor = "cursor-docs"
+id = "T-123.0"
+parent = "T-123"
+shipped_at = "f0af31a"
+spec = "docs/platform/t123_documentation_standards_rollout.md"
+status = "shipped"
+targets = ["root"]

@@ -1,0 +1,27 @@
+__keys = [
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "stream",
+    "targets",
+    "executor",
+    "id",
+    "order",
+    "title",
+    "summary",
+    "notes",
+]
+__ord = 687
+executor = "claude-code"
+id = "T-714"
+impact = ["ui"]
+notes = "filed by wave-102 adversarial verifier (editor factory)"
+order = 4307
+program = "eden"
+status = "deferred"
+stream = "mission-creator"
+summary = "T-640's contour_rings re-marches the full 1601-square grid per level plus an O(n^2) segment chainer: measured 660 ms @ 10 m interval / 1.33 s @ 5 m native vs 15-25 ms for the old single-sweep path (43-54x). last_interval correctly gates it to log2-rung crossings (T-639 quantizes, so not per zoom tick), but every ~x2 zoom crosses a rung — a recurring main-thread hitch during interaction. Fix directions: chain from the existing single sweep (segments already computed), hash-grid the chainer to O(n), or move the march off the interaction path; contour_segments is now production-dead — either delete it or make it the shared fast path again. Diagnosis: editor_verify/wave102.md F-2 (+ NOTE on dead contour_segments)."
+surfaces = ["EDITOR"]
+targets = ["website"]
+title = "Contour re-march hitch: 0.66-1.3 s native per rung crossing (est 1-4 s wasm)"

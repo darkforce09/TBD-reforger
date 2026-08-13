@@ -1,0 +1,81 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "status",
+    "active_slice",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "spec",
+    "slices",
+    "depends_on",
+    "unblocks",
+    "route",
+    "branch",
+    "stream",
+    "targets",
+    "executor",
+    "slice_plan",
+]
+__ord = 118
+active_slice = "__tbd_null__"
+branch = "main"
+depends_on = []
+executor = "claude-code"
+id = "T-144"
+impact = [
+    "ui",
+    "infra",
+]
+order = 1440
+program = "infra"
+route = "/missions/:id/edit"
+slices = [
+    "T-144.0",
+    "T-144.1",
+]
+spec = "docs/specs/Mission_Creator_Architecture/t144_arma3_map_architecture_study.md"
+status = "shipped"
+stream = "infra"
+summary = "A3 2D Arcade map architecture study @ `b1949182` — live GLandscape draw, no basemap tiles; pivot T-090 to export+vectors. Report: .ai/artifacts/t144_arma3_map_architecture_report.md."
+surfaces = [
+    "MAP",
+    "DATA",
+]
+targets = ["root"]
+title = "Arma 3 map architecture study"
+unblocks = ["T-090"]
+
+[slice_plan]
+__keys = [
+    "T-144.0",
+    "T-144.1",
+]
+
+[slice_plan."T-144.0"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+]
+executor = "cursor-docs"
+spec = "docs/specs/Mission_Creator_Architecture/t144_arma3_map_architecture_study.md"
+status = "shipped"
+targets = ["root"]
+
+[slice_plan."T-144.1"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+executor = "claude-code"
+shipped_at = "b1949182"
+spec = "docs/specs/Mission_Creator_Architecture/t144_arma3_map_architecture_study.md"
+status = "shipped"
+targets = ["root"]

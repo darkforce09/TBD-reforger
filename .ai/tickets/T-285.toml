@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 259
+executor = "claude-code"
+id = "T-285"
+impact = ["platform-pages"]
+order = 3030
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "POST /fire-missions and GET /events/{id}/fire-missions are orphaned, so every computed solution is lost on reload. The mortar map preview is fixed CSS that never moves with the inputs, and weapon_system is hardcoded while the heading claims to show the returned system. POST /missions/{id}/inject writes a mission.json nothing reads."
+surfaces = ["SHELL"]
+targets = ["website"]
+title = "Field tools — solutions never persist and inject writes to a dead directory"

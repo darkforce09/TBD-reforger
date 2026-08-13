@@ -1,0 +1,20 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "notes",
+]
+__ord = 0
+executor = "human"
+id = "T-152.10"
+notes = "Automated G1–G7/G9–G10 PASS @ T-152.10; operator O1–O12 PENDING; merge readiness doc shipped."
+parent = "T-152"
+spec = "docs/specs/Mission_Creator_Architecture/t152_10_e2e_cartographic_gate.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]

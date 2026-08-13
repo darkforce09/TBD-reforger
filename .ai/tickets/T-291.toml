@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 265
+executor = "claude-code"
+id = "T-291"
+impact = ["contract"]
+order = 3090
+program = "eden"
+status = "idea"
+stream = "mission-creator"
+summary = "environment.windDirDeg, factions[].color, roles[].radio, layers[], and settings.{respawn,spectatorPolicy,nightVision} are declared in the contract with zero implementation in flatten or the mod. spectatorPolicy is dead despite Spectator/ being a shipped seven-file subsystem."
+surfaces = ["DATA"]
+targets = ["root"]
+title = "Resolve five schema fields implemented on no surface"

@@ -1,0 +1,34 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "shipped_at",
+]
+__ord = 178
+executor = "claude-code"
+id = "T-204"
+impact = ["contract"]
+order = 2220
+program = "eden"
+shipped_at = "2026-07-26"
+status = "shipped"
+stream = "mission-creator"
+summary = """
+Emit mission flow instead of hardcoding it. RE-SCOPED 2026-07-26 to compiler-only: T-181.38 made the MOD parse and honour the flow block, so the consumer is ready and waiting. flatten.rs:682-688 still hardcodes briefing_seconds=600, safe_start_seconds=300, time_limit_seconds=5400, jip=until_safestart_end. timeLimitSeconds is the operator's mission duration. NOTE: the winConditions half of the original title is already handled by T-181.46 — do not touch endOn. HANDOFF FROM T-224 (shipped 2026-07-26): the UI half is done. Mission Settings now authors timeLimitSeconds, jip, safeStartSeconds and briefingSeconds into meta.environment under those exact key names — deliberately meta.environment and not a meta.flow sibling, because compile_payload builds the saved version from exactly meta.terrain + meta.environment and hydrate restores exactly those two, so a sibling would be dropped on Save and gone on reload. ModFlow in flatten.rs still splices in 600/300/5400/'until_safestart_end' and never reads the payload, so TODAY an authored duration is stored, saved, reloaded and displayed back correctly and the compiled document still says 5400. This ticket is now purely: read those four keys off the saved payload's top-level environment instead of hardcoding.
+
+SHIPPED. ModFlow is now derive_flow(&parsed.environment); flatten.rs only, +366/-6. ENGINE-VERIFIED, not just unit-tested: booted --compiled=<uuid> on a 900/120/2700/disabled mission and the mod logged all four as `(authored)` (SRC_AUTHORED not SRC_DEFAULT), with TBD_SafestartManager quoting `next arm = 2:00` back from its own m_iConfiguredSeconds. WORLD BOOT: PASS, errors=0, warnings=1 (T-299's baseline stub, not this slice).
+Non-vacuity PROVEN empirically: the agent restored the hardcode and watched its new tests fail (left: 600, right: 480), then restored from the commit — the check I have had to demand five times this run, done unprompted.
+Deliberately emits DEFAULTS rather than omitting: `flow` declares no required properties so omission is legal, but it is NOT behaviour-preserving — absent `jip` parses to "" and PolicyFromString returns ALWAYS (TBD_FrameworkManager.c:185-194), holding the JIP door open all round, and absent `timeLimitSeconds` leaves ArmRoundClock unarmed AND trips a new CheckTimeLimitReachable warning that moves the boot gate off baseline.
+Authored 0 passes through (the only way to say 'no limit'); negative/wrong-typed reads as unauthored, mirroring read_flow_seconds exactly so dialog and compiler cannot disagree. environment stays a bare Value, so T-367's scan_editor_payload_types accept set is unchanged — a typed Option<i64> would have replayed the T-202 regression on payloads carrying 5400.0.
+Units are seconds at every rung with no conversion anywhere. Not proven: that a round actually ends at 2700s or a joiner is refused — world-boot has no players and never leaves LOADING. Needs executor: human."""
+surfaces = ["DATA"]
+targets = ["website"]
+title = "Emit mission flow and winConditions instead of hardcoding them"

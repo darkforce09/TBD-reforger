@@ -1,0 +1,29 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "status",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "route",
+    "branch",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 70
+branch = "ticket/T-083"
+executor = "claude-code"
+id = "T-083"
+impact = ["ui"]
+order = 830
+program = "eden"
+route = "/missions/:id/edit"
+status = "deferred"
+stream = "mission-creator"
+summary = "Eden-style top menu bar with file/edit/view stubs."
+surfaces = ["TOP"]
+targets = ["website"]
+title = "Top menu bar"

@@ -1,0 +1,32 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "status",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "route",
+    "branch",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 80
+branch = "ticket/T-093"
+executor = "claude-code"
+id = "T-093"
+impact = [
+    "persistence",
+    "ui",
+]
+order = 930
+program = "scale"
+route = "/missions/:id/edit"
+status = "deferred"
+stream = "mission-creator"
+summary = "Background autosave UX and conflict handling polish."
+surfaces = ["DATA"]
+targets = ["website"]
+title = "Continuous autosave polish"

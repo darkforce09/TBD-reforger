@@ -1,0 +1,27 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "shipped_at",
+]
+__ord = 168
+executor = "claude-code"
+id = "T-194"
+impact = ["platform-pages"]
+order = 2120
+program = "platform"
+shipped_at = "716bb79d"
+status = "shipped"
+stream = "web-platform"
+summary = "Seed a populated content golden. CORRECTED 2026-07-26: the earlier claim that EVERY fixture is empty was wrong — 9 of 22 carry real rows (GET__registry.json 7,802 B, GET__missions__*, GET__events__*, GET__me.json, GET__dashboard.json, GET__modpacks*, GET__admin__users.json, GET__me__link__status.json). 11 ARE empty, and those are the ones whose pages were shipped with only an empty-state branch. DO NOT DELETE the populated fixtures. Add rows for the empty ones (servers, events, announcements, leaderboards, audit-logs, vehicle-database, me/deployments) and capture populated goldens so the dead-page tickets have something to render."
+surfaces = ["SHELL"]
+targets = ["website"]
+title = "Seed a populated content golden — root cause of every dead page"

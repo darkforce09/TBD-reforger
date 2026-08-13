@@ -1,0 +1,31 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 179
+executor = "workbench"
+id = "T-205"
+impact = ["data-pipeline"]
+order = 2230
+program = "eden"
+status = "deferred"
+stream = "mission-creator"
+summary = """
+BLOCKED ON WORKBENCH (2026-07-26, refused by its slice agent with evidence). Two ticket claims were wrong: cargo capacity ALREADY EXISTS — max_weight_kg/max_volume_cm3/cargo_grid_w/cargo_grid_h on 211 of 218 vehicle rows, added by migrations/0007_registry_cargo.sql at T-068.15.1 — and vehicles carry 9 keys vs a helmet's 8, not an identical 14. Genuinely missing: seats, crew_roles, turret bindings. The 87 vehicle_weapon rows ARE the turrets but carry no parent field; the link exists only as a path prefix in resource_name, derivable but unmodelled. ORDER (step 2 is why this is blocked): (1) registry-items.schema.json $defs/item is additionalProperties:false with no per-kind branch, so it must open first; (2) TBD_RegistryItemsExportPlugin.c + TBD_RegistryScan.c — the ONLY place the real data exists, and a WORKBENCH plugin, so executor:workbench and not runnable unattended; (3) regenerate the workbench export; (4) new registry migration modelled on 0007; (5) models/registry.rs + contract/generated + registry_import.rs. DO NOT wire vehicles.rs to GET /vehicle-database: that table has no INSERT path anywhere in the repo, and the API returns 7 fields where the page renders 13 — wiring it would DROP short_desc, critical_directive, mobility, defense, capacity, armament and threats to render an empty list. That page is a wiki IFF table (T-263), not the editor's asset registry. OVERLAPS to dedupe before scheduling: T-242 (entity inventory), T-215 (placement/cargo), T-216 (flatten never reads vehiclesById at all, so authored vehicles are silently discarded), T-244 (no vehicle kind in the map-object catalogue), T-076.
+
+BLOCKED ON WORKBENCH (2026-07-26). A slice agent took this and refused rather than guessing: the missing data is only obtainable from a Workbench export pass, which no agent can run. T-206's agent went further and proved the pak data IS obtainable, reproducing 323/323 rows exactly — so this is a data-acquisition task, not a code task. Executor flipped to `workbench` so it stops entering the dispatch set. Operator action required."""
+surfaces = ["REG"]
+targets = [
+    "root",
+    "mod",
+]
+title = "Vehicle data has no seats, crew roles, cargo capacity or turret bindings"

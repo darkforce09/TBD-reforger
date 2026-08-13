@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 223
+executor = "claude-code"
+id = "T-249"
+impact = ["e2e"]
+order = 2670
+program = "eden"
+status = "shipped"
+stream = "mod-framework"
+summary = "No golden authors slots[].y, so the entire schema-1.2 path — Y_ABSENT sentinel (TBD_MissionSlotStruct.c:47,57), HasJsonY(), TBD_SpawnManager.c:957-973 — is untested end to end despite T-092.1 shipping it."
+surfaces = ["MOD"]
+targets = ["root"]
+title = "Add a slot.y fixture"

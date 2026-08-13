@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 262
+executor = "claude-code"
+id = "T-288"
+impact = ["platform-server"]
+order = 3060
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "The database modpack concept and the server's actual mod list are unconnected universes. deploy-staging.sh:258-260 hardcodes a single mod from an env var and never reads the modpacks table."
+surfaces = ["SHELL"]
+targets = ["website"]
+title = "Modpack to server-config renderer and push"

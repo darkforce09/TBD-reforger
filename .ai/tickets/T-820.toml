@@ -1,0 +1,30 @@
+__keys = [
+    "id",
+    "title",
+    "status",
+    "executor",
+    "program",
+    "stream",
+    "targets",
+    "impact",
+    "surfaces",
+    "order",
+    "summary",
+    "notes",
+]
+__ord = 793
+executor = "claude-code"
+id = "T-820"
+impact = [
+    "ui",
+    "mc-authoring",
+]
+notes = "wave203 verifier; uncertainty stated — repro-first ticket"
+order = 5020
+program = "eden"
+status = "queued"
+stream = "mission-creator"
+summary = "WAVE-203 VERIFIER FILING (wave203.md MINOR; eden_dock_right.rs:1724-1742, cause branch :746). With is_current=false the probe endpoint returns 404 'no current modpack configured' (curl-confirmed) so the no_modpack branch SHOULD fire — but two fresh-token headless pages rendered the GENERIC 'The request to the registry failed.' and kept the side chips visible. The grammar hint DID hide and Retry/repopulate work. Wave-202's verifier proved the specific cause live pre-restructure, so this is either a T-809-restructure regression of the cause probe or an AuthStore-timing/headless artifact ('let Some(auth) = auth else return' in the re-probe Effect). FIRST STEP: reproduce on a real browser; if headless-only, close with the evidence; if real, fix the probe's auth/timing so the 404 cause survives to the view and chips hide. ACCEPTANCE: is_current=false on a real browser -> 'No modpack is configured' named, chips hidden; restore -> Retry repopulates."
+surfaces = ["RIGHT"]
+targets = ["website"]
+title = "Catalog failure view shows the generic cause with chips visible where no-modpack should fire"

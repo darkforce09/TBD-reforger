@@ -1,0 +1,27 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "shipped_at",
+]
+__ord = 202
+executor = "claude-code"
+id = "T-228"
+impact = ["platform-lifecycle"]
+order = 2460
+program = "platform"
+shipped_at = "a9f3c34a"
+status = "shipped"
+stream = "web-platform"
+summary = "idx_orbat_slot is (event_mission_id, squad, slot_index) with no faction column, so two factions each with a squad named Alpha 1-1 produce a duplicate key and the attach returns 500. The same blindness affects get_orbat grouping, orbat_reservations uniqueness and can_manage_squad."
+surfaces = ["DATA"]
+targets = ["website"]
+title = "ORBAT unique index omits faction — cross-faction squad names 500 on attach"

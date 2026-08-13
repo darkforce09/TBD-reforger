@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 243
+executor = "claude-code"
+id = "T-269"
+impact = ["platform-server"]
+order = 2870
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "POST /admin/servers/{id}/rcon (admin.rs:331-379) validates the action enum, explicitly discards the command at admin.rs:361, writes an audit row and returns 202 accepted:true. Grep for std::process, Command::new, tokio::process or ssh over the api returns zero hits."
+surfaces = ["SHELL"]
+targets = ["website"]
+title = "Real RCON transport — the current endpoint is a no-op that reports success"

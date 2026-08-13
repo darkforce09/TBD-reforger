@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 234
+executor = "claude-code"
+id = "T-260"
+impact = ["platform-lifecycle"]
+order = 2780
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "Grep for server_id or modpack_id over events.rs and models/event.rs returns zero, and the events table has no such columns. The Event Hub modpack chip fetches the global /modpacks/current, so every event shows the same pack."
+surfaces = ["DATA"]
+targets = ["website"]
+title = "Events carry no server or modpack"

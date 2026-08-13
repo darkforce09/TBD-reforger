@@ -1,0 +1,29 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "executor",
+    "targets",
+    "stream",
+    "parallel_ok",
+    "spec",
+    "order",
+]
+__ord = 827
+executor = "claude-code"
+id = "T-854"
+impact = ["dx"]
+order = 5350
+parallel_ok = true
+program = "infra"
+spec = "docs/platform/t853_shell_to_xtask_waves.md"
+status = "shipped"
+stream = "infra"
+summary = "T-853 shell->xtask slice. Port scripts/mod/verify-t437-destroy-inert-diagnostics.sh (433 lines) to `cargo xtask verify t437` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). T-437 destroy-inert registry diagnostics; wave.sh x2; 7 python3 call sites. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling."
+surfaces = ["CI"]
+targets = ["root"]
+title = "T-853 port: verify-t437-destroy-inert-diagnostics -> verify t437"

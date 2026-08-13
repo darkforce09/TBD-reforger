@@ -1,0 +1,19 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-180.6"
+notes = "Tag T-180.6. refile_slot→move_slot_to_squad; OrbatManager pointer-refile; SL badge; F1–F5. Verify: .ai/artifacts/t180_6_verify_log.md. Manual M-F1 operator-pending."
+parent = "T-180"
+shipped_at = "056c9a1a"
+spec = "docs/specs/Mission_Creator_Architecture/t180_6_place_orbat_sync.md"
+status = "shipped"
+targets = ["website"]

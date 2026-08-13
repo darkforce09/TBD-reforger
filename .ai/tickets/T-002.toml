@@ -1,0 +1,28 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 1
+executor = "cursor-docs"
+id = "T-002"
+impact = [
+    "api",
+    "ui",
+]
+order = 20
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "Discord OAuth2 callback end-to-end."
+surfaces = ["SHELL"]
+targets = ["website"]
+title = "Discord OAuth2"

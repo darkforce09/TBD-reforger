@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 227
+executor = "claude-code"
+id = "T-253"
+impact = ["infra"]
+order = 2710
+program = "infra"
+status = "shipped"
+stream = "infra"
+summary = "target/ is 52GB, target-ci/ another 12GB, and .git/lfs holds 1.6GB of objects from tile pyramids untracked back on 2026-07-03. Disk is at 87%. Also no CARGO_TARGET_DIR is set, so the moment Rust work is sliced across worktrees each one starts a cold build."
+surfaces = ["DATA"]
+targets = ["root"]
+title = "Reclaim 65GB and stop double-compiling"

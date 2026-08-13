@@ -1,0 +1,20 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-152.1"
+notes = "Implementing agent: Grok 4.5 in Cursor (not ./scripts/ticket run)."
+parent = "T-152"
+spec = "docs/specs/Mission_Creator_Architecture/t152_1_wgpu_text_lane.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]

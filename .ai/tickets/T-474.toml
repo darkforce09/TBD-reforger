@@ -1,0 +1,42 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 448
+executor = "claude-code"
+id = "T-474"
+impact = [
+    "mod",
+    "tests",
+]
+order = 3313
+priority = 1
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+Residual from wave 27 adversarial BLOCKER. verify-t437 forbids exact historical lie strings and requires DiagnoseEmptyDestroyTargets / out-of-zone as substrings — comment-only pins and paraphrased lies (`entities[] are never placed…`) still PASS; collapsed DiagnoseEmpty returns leave comment needles green.
+
+Repro: paraphrase lie or comment-only DiagnoseEmptyDestroyTargets → verify PASS.
+
+Cure: structural pins (live fn body must contain distinct return arms / out-of-zone string in executable path not only comments); broaden forbidden lie paraphrases; RED→GREEN on verifier perturbations."""
+surfaces = [
+    "MOD",
+    "tests",
+    "INFRA",
+]
+targets = [
+    "mod",
+    "root",
+]
+title = "T-437 verify-t437 presence-only; paraphrased lies still PASS"

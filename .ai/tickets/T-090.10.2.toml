@@ -1,0 +1,15 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-090.10.2"
+parent = "T-090"
+spec = "docs/specs/Mission_Creator_Architecture/t090_10_map_engine_v2.md"
+status = "queued"
+targets = ["website"]

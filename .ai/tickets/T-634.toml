@@ -1,0 +1,31 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "route",
+    "stream",
+    "targets",
+    "executor",
+    "notes",
+    "depends_on",
+]
+__ord = 638
+depends_on = ["T-661"]
+executor = "claude-code"
+id = "T-634"
+impact = ["ui"]
+notes = "editor-UI program wave 15 (wave_plan.tsv row 115) — SHIPPED wave 115 (editor factory), 34cbc653; verifier wave115.md. Two-row strip (menus / icon toolbar) inside the SAME 48px — the height contract was re-derived independently and the strip did not grow. One primary action (Save Version), both exports demoted behind one secondary trigger, tool glyphs brightened, gear moved beside the environment it opens. NO pre-existing pin was weakened: the verifier proved this from the hunk map (final hunk is a pure append, zero deleted lines), not from a green run. Also removed a false T-668 ellipsis from 'Export Compiled Mission…', which promised a dialog that never appears."
+order = 4170
+program = "eden"
+route = "/missions/:id/edit"
+status = "shipped"
+stream = "mission-creator"
+summary = """RESCOPED by editor_chrome_direction.md from "no action hierarchy" to Eden's two-row structure. Eden fits 8 menus (y 0-22) AND 25 tool icons (y 22-40, its own row) into 40 px. We fit 5 menus, the title, a time scrubber, a weather select, undo/redo/history, three buttons and a gear into ONE 48 px strip — which is why it reads as crowded. Menus on row 1, an icon toolbar on row 2. The original hierarchy complaint stands and is part of the same work: `Save Version` :1179, `Export JSON` :1189 and `Export Compiled` :1203 sit at near-equal visual weight so the routine and the consequential read the same — one primary, demote the two exports (menu, split button, or secondary styling); the undo/redo/history glyphs :1160-1173 are too dim to find; the settings gear after :1206 is stranded alone at the far right. All inside `TopCommandStrip` (post-split eden_top_strip.rs, from eden_chrome.rs:831-1372), with the menu descriptor table `MENUS` :112-166 for any menu/split-button demotion. Build against the finished state vocabulary (T-668) — the menu rules in it (reserved checkmark gutter, `...` means dialog, drop-vs-grey by verb) are this ticket's rules too."""
+surfaces = ["TOP"]
+targets = ["website"]
+title = "Top strip: split into two rows and give the actions a hierarchy"

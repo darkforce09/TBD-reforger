@@ -1,0 +1,17 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-124.2"
+parent = "T-124"
+shipped_at = "d81ed9c"
+spec = "docs/platform/t124_dependency_upgrade.md"
+status = "shipped"
+targets = ["website"]

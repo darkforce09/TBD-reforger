@@ -1,0 +1,30 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "shipped_at",
+]
+__ord = 160
+executor = "claude-code"
+id = "T-186"
+impact = ["e2e"]
+order = 2040
+program = "eden"
+shipped_at = "9ceade54"
+status = "shipped"
+stream = "mod-framework"
+summary = "No test anywhere feeds compiler output to the mod. world-boot.sh already supports --mission=<path>, meta.id derivation and console-log assertion; only the curl-the-compiled-doc step is new (~15 lines). This single test would have caught the single-faction hard-reject on day one."
+surfaces = ["MOD"]
+targets = [
+    "mod",
+    "website",
+]
+title = "Add make mod-world-boot-compiled — API output into the real Enfusion parser"

@@ -1,0 +1,20 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-152.17"
+notes = "Shipped @ 45e4d247 (tag T-152.17). Settlement-only town lane (23 @ z=−2); fade [2,3]; band min −4.5; engine remove_lane fix; Highstone peak/required 8→7. Verify t152_17_verify_log.md; operator looks good 2026-07-13."
+parent = "T-152"
+spec = "docs/specs/Mission_Creator_Architecture/t152_17_town_label_correctness.md"
+status = "shipped"
+targets = [
+    "root",
+    "shared",
+]

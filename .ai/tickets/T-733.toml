@@ -1,0 +1,27 @@
+__keys = [
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "stream",
+    "targets",
+    "executor",
+    "id",
+    "order",
+    "title",
+    "summary",
+    "notes",
+]
+__ord = 706
+executor = "claude-code"
+id = "T-733"
+impact = ["ui"]
+notes = "filed from wave-111 residue (editor factory)"
+order = 4326
+program = "eden"
+status = "shipped"
+stream = "mission-creator"
+summary = "Two wiring residues from wave 111, one slice. (1) T-693's merge command is complete (merge_mission_now + picker + report toast) but has no UI entry: add the 'Merge Mission…' row to the MENUS table (eden_top_strip) and the Ctrl+M arm to the mission_editor keydown (census first — the T-648 idiom). (2) T-645's drag-to-garrison kernel shipped (#[allow(dead_code)] with citation) but live wiring needs a building-at-point -> (centre, half-extents, rotation) accessor that does not exist: world/store.rs keeps only last_chunk and residency.rs exposes buildings solely as pre-tessellated GPU vertex buffers — the scope discovery the ticket predicted. Add the accessor (world store) + the thin drop-target lookup + wire the kernel. Diagnosis: wave111.md residue notes + T-645's report."
+surfaces = ["EDITOR"]
+targets = ["website"]
+title = "Merge Mission wiring: menu item + Ctrl+M binding; garrison building-at-point accessor"

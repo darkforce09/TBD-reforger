@@ -1,0 +1,58 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 313
+executor = "claude-code"
+id = "T-339"
+impact = ["platform-lifecycle"]
+order = 3155
+priority = 2
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+Both found and diagnosed by T-320, both left because the files were outside its ownership. Neither is red today; both are one small change.
+
+1. **`vsuite.rs:366` launches its own chromium** and therefore does NOT get T-320's `ensure_gate_font_cache()`. It is green only because it renders ordinary routes, which survive a zero-font environment — the mission editor is the one route that reaches a per-character fallback and aborts. Moving `ensure_gate_font_cache()` into `cdp::launch` closes it for EVERY caller in one line. `cdp.rs` was not T-320's file. Do this one first; it is the durable form of the fix.
+
+2. **`smokes.rs render_check` builds its Harness with `api_proxy: None`**, so render-check cannot reach an API at all (T-226 hit this independently and had to drive Chrome by hand). T-320 confirmed it is NOT a wedge — the editor boots, installs all three bridges and answers --assert-js with no backend — but any assertion needing live data is impossible. The flag has to be threaded through `bin/gate.rs` -> `RenderCheckArgs`, and `bin/gate.rs` was outside T-320's list.
+
+Leave `gate smoke hydrate` returning exit 2 on 'backend not reachable' alone: T-320 judged it correct, and it is — a data-safety gate that could not run must not report green.
+
+T-339 BITES HARDER THAN 'no API' — sharpened by T-338, which hit it and worked around it.
+
+With api_proxy: None, `--seed-auth` leaves the session HALF-hydrated: bootstrap sets `user` from localStorage but /me fails, so `access_token` stays None, `is_authenticated()` is false, and THE WHOLE USER MENU — including Sign Out — never renders. So it is not merely 'no live data'; any probe of an authenticated surface silently tests a signed-out page.
+
+T-338's workaround, using the app's own path, worth keeping until this is fixed: boot at `--path '/auth/callback#access_token=x&refresh_token=y&expires_at=2036-01-01T00:00:00Z' --seed-auth`, or history.pushState plus a synthetic PopStateEvent to it. set_tokens writes only the three token signals, so `user` is untouched.
+
+Two more harness facts from the same slice:
+  - leptos_router DROPS THE FRAGMENT on anchor-click navigation (location.hash empty, parse_callback_hash fails). pushState + PopStateEvent carries it.
+  - Navigating the TOP-LEVEL document into the editor and then doing IndexedDB + wasm-bridge work in that same document WEDGED the renderer on four separate attempts, including with per-step timeout races. Hosting the editor in an iframe and driving IDB from the top level is stable and boots in ~2 polls. Root cause not chased — it is not that ticket's, but it will bite the next frontend probe, and it is a DIFFERENT wedge from the fontconfig abort T-320 fixed.
+
+T-354 ASSESSED THE ONE-LINE MOVE AND RECOMMENDS AGAINST cdp::launch, with a real safety argument rather than a preference:
+
+Putting `ensure_gate_font_cache()` in cdp::launch would relocate an `unsafe { set_var }` from a single-threaded prologue INTO A MULTI-THREADED WINDOW — `launch` runs AFTER start_server has spawned live tokio tasks, and `reqwest::Client::new()` (which reads proxy env vars) is called inside `launch` itself. The existing SAFETY comment's claim that 'nothing else reads the environment' stops being true there. OnceLock limits the race to the first launch per process, which for vsuite is the only launch, but that is luck rather than design.
+
+BETTER ONE-LINER: `bin/gate.rs::main`, before `Runtime::block_on` — provably single-threaded, covers every subcommand permanently, and lets the other three call sites go. Both files are in this ticket's scope; T-354 changed neither.
+
+T-362 UNBLOCKED THIS AND SUPPLIED THE MECHANISM. It made ensure_gate_font_cache's decision independent of ambient env, so moving the call is now BEHAVIOUR-PRESERVING (before, a call from main vs from run() could see a different XDG_CACHE_HOME and pick differently). T-354's suggestion — call it in bin/gate.rs::main before Runtime::block_on — is correct and now safe to execute.
+
+BETTER STILL, and T-362 exposed `pub fn gate_font_cache_dir()` for exactly this: have cdp::launch do `.env("XDG_CACHE_HOME", doctor::gate_font_cache_dir())` on the Command rather than calling set_var at all. That closes vsuite's separate-chromium gap AND deletes the unsafe block AND removes the multi-threaded-window question entirely, instead of relocating it. Prefer this over the move.
+
+== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
+Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
+This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now."""
+surfaces = ["CI"]
+targets = ["website"]
+title = "Two gate-harness gaps T-320 could not reach from its own files"

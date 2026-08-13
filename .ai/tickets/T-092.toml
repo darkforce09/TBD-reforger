@@ -1,0 +1,108 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "status",
+    "active_slice",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "spec",
+    "slices",
+    "depends_on",
+    "unblocks",
+    "route",
+    "branch",
+    "stream",
+    "targets",
+    "executor",
+    "slice_plan",
+]
+__ord = 79
+active_slice = "__tbd_null__"
+branch = "ticket/T-092"
+depends_on = ["T-091"]
+executor = "claude-code"
+id = "T-092"
+impact = [
+    "schema",
+    "api",
+    "compiler",
+]
+order = 920
+program = "infra"
+route = "/missions/:id/edit"
+slices = [
+    "T-092.0",
+    "T-092.1",
+    "T-092.2",
+]
+spec = "docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md"
+status = "shipped"
+stream = "infra"
+summary = "T-092 complete @ `a73224f2` — schema 1.2 optional `y`, spawn policy (T-092.1 @ `4eefc169`), flatten + GET /api/v1/missions/:id/compiled (T-092.2). wb_play E2E PASS 2026-07-04. Unblocks T-071 + T-068.13. Hub: t092_spawn_transform_program.md."
+surfaces = ["DATA"]
+targets = [
+    "root",
+    "website",
+    "mod",
+]
+title = "Spawn transform parity + mod mission compile"
+unblocks = [
+    "T-071",
+    "T-068",
+]
+
+[slice_plan]
+__keys = [
+    "T-092.0",
+    "T-092.1",
+    "T-092.2",
+]
+
+[slice_plan."T-092.0"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+]
+executor = "cursor-docs"
+spec = "docs/specs/Mission_Creator_Architecture/t092_0_spawn_contract.md"
+status = "shipped"
+targets = ["root"]
+
+[slice_plan."T-092.1"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+executor = "claude-code"
+shipped_at = "4eefc169"
+spec = "docs/specs/Mission_Creator_Architecture/t092_1_mod_spawn_policy.md"
+status = "shipped"
+targets = [
+    "mod",
+    "shared",
+]
+
+[slice_plan."T-092.2"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+executor = "claude-code"
+shipped_at = "a73224f2"
+spec = "docs/specs/Mission_Creator_Architecture/t092_2_mod_compile_route.md"
+status = "shipped"
+targets = [
+    "website",
+    "shared",
+]

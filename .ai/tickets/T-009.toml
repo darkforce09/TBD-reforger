@@ -1,0 +1,28 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 7
+executor = "cursor-docs"
+id = "T-009"
+impact = ["ui"]
+order = 90
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "Faction/squad/slot selector inline on Event Hub."
+surfaces = [
+    "SHELL",
+    "ORBAT",
+]
+targets = ["website"]
+title = "Inline ORBAT on Event Hub"

@@ -1,0 +1,30 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 469
+executor = "claude-code"
+id = "T-495"
+impact = ["tests"]
+order = 3334
+priority = 2
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = 'Wave 37 residual from T-412. Handler Class-R pins limit/offset + envelope. apps/website/api/tests/events.rs:~275 still only assert!(mem["data"].is_array()). Cure: seed >20 members on a cold IT DB and assert offset=20 returns member 21 / envelope total.'
+surfaces = [
+    "API",
+    "CI",
+]
+targets = ["website"]
+title = "GET /members IT still only asserts data is_array (no offset exercise)"

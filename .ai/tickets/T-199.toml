@@ -1,0 +1,27 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "shipped_at",
+]
+__ord = 173
+executor = "claude-code"
+id = "T-199"
+impact = ["arsenal"]
+order = 2170
+program = "eden"
+shipped_at = "b53866e0"
+status = "shipped"
+stream = "mission-creator"
+summary = "arsenal.rs:557-579 writes {version,wear,weapons,cargo,summary} — missing required loadoutVersion, modpackId and gear, and adding two keys against additionalProperties:false. It fails both oneOf branches and TBD_LoadoutEquipComponent.c:112-114 would reject it. Nothing in the repo generates a conforming loadout export."
+surfaces = ["ARS"]
+targets = ["website"]
+title = "The Arsenal download button emits a file that violates its own schema"

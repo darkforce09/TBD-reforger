@@ -1,0 +1,35 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 443
+executor = "claude-code"
+id = "T-469"
+impact = ["tests"]
+order = 3308
+priority = 3
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+Residual from wave 25 adversarial N4 / observed cold-gate flake. admin_field.rs:37 indexes LOCATION without Option — one gate run panicked 'no entry found for key location'; re-run PASS.
+
+Repro: intermittent when APP_ENV/dev-login does not 302 (or header absent).
+
+Cure: assert status+LOCATION with actionable message; fail soft instead of IndexMap panic."""
+surfaces = [
+    "BE",
+    "tests",
+]
+targets = ["website"]
+title = "admin_field admin_token panics on missing LOCATION from dev-login"

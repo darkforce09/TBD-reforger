@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 18
+executor = "cursor-docs"
+id = "T-024"
+impact = ["ui"]
+order = 240
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "Calendar + per-day op list replaces form-over-list."
+surfaces = ["SHELL"]
+targets = ["website"]
+title = "Event Manager calendar anti-pattern fix"

@@ -1,0 +1,38 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "executor",
+    "priority",
+    "stream",
+    "targets",
+]
+__ord = 543
+executor = "claude-code"
+id = "T-569"
+impact = [
+    "tests",
+    "auth",
+]
+order = 3422
+priority = 2
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+FOUND by W66 adversarial verifier (DIRTY MAJOR) after T-566.
+
+// and /* */ arm comments now RED; ignore-helper DEV_USER_ID bind RED. Still GREEN: live match collapses to `_` while arms exist only inside r#" "enlisted" => … "# decoys (comment strip keeps string contents).
+
+Repro: park arms in raw-string decoy; match `_ => DEV_USER_ID`; Class-R green."""
+surfaces = [
+    "API",
+    "tests",
+]
+targets = ["website"]
+title = "T-566 Class-R still hollow — match arms only in raw-string decoys"

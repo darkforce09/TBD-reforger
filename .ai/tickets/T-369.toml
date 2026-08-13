@@ -1,0 +1,46 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+    "shipped_at",
+]
+__ord = 343
+executor = "claude-code"
+id = "T-369"
+impact = ["platform-lifecycle"]
+order = 3185
+priority = 2
+program = "platform"
+shipped_at = "80120c1d"
+status = "shipped"
+stream = "web-platform"
+summary = """
+FOUND by the adversarial verifier, and it contradicts T-316's own stated rule.
+
+On the re-ingest branch, `upsert_match` (telemetry.rs:555-582) OMITS `event_id`, `mission_id`, `terrain` and `started_at` from the UPDATE and returns the STORED `ev`. So: a first POST carrying a `source_match_id` but no `event_id`, followed by a corrected re-POST carrying the right one, **silently skips attendance forever** — `if let Some(eid) = event_id` at :489 sees `None` because the stored row still has none.
+
+That is the opposite of what T-316 decided for the sibling fields: for `ended_at`, `winning_faction` and `aar_replay_url` a PRESENT field wins; for these four it is discarded. T-316's per-struct reasoning was careful and deliberate, so this is very likely an oversight in the re-ingest branch rather than a decision — but read that reasoning before changing it, and if the asymmetry IS intentional, document it, because nothing currently says so.
+
+Low practical reach today (the mod re-sends an identical payload), which is why it is P2 rather than P1. But attendance is the thing operators actually check after an op, and a correction that silently does nothing is worse than one that errors.
+
+SHIPPED. OVERSIGHT, NOT INTENT — settled by ARCHAEOLOGY rather than inference. The agent read the pre-Rust Go original (c05ddbc9e^:apps/website/internal/handlers/telemetry.go) and found the four-column list is a VERBATIM CARRY-OVER of T-001's `Updates(map[string]any{"ended_at","outcome","winning_faction","aar_replay_url"})`, commented 'mutable result fields'. T-316 changed what those four columns MEAN and never revisited which columns were IN the list. It also noted T-316 named and justified five of MatchInput's nine fields and never mentions these four — a ticket that careful did not silently decide them.
+
+Reproduced with real values: both POSTs returned 200 with the SAME match_id, so the dedupe key worked and only the correction was thrown away. event_id/mission_id/terrain stayed NULL, started_at kept POST 1's now(), state stayed `registered`, attendance_rate 0.0.
+
+TWO STRUCTURAL CARES: started_at binds m.started_at and NEVER the create path's unwrap_or_else(Utc::now) — it MOVED that default down into the INSERT so it cannot be in scope beside the UPDATE and look right there. And `RETURNING event_id` now gives the caller the MERGED value; returning the pre-update column was the other half of why the correction did nothing.
+
+All six T-316 decisions re-verified individually on a live server, plus T-347's blank-dedupe test. 119/119. attendance_rate 0.00 -> 50.00; leaderboard_totals checked and correctly unaffected (it aggregates match_player_stats, not attendance).
+
+NEW CONSEQUENCE ITS OWN FIX CREATED, flagged not hidden: the re-point is now reachable, and the attendance UPDATE only ever SETS attended, never retracts. Re-pointing a match from EV1 to EV2 marks EV2 attended and LEAVES EV1 attended, inflating attendance_rate to 100%. There is no record of which match marked a registration, so the write is not currently reversible — a contract decision, filed as T-384."""
+surfaces = ["API"]
+targets = ["website"]
+title = "A corrected match re-POST silently skips attendance forever"

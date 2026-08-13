@@ -1,0 +1,28 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 187
+executor = "claude-code"
+id = "T-213"
+impact = ["mc-authoring"]
+order = 2310
+program = "eden"
+status = "cancelled"
+stream = "mission-creator"
+summary = """CANCELLED 2026-08-01 — MERGED INTO T-069, which keeps the id because it owns the in-code stub message (eden_chrome.rs:3337, "Marker placement lands in T-069.") and the test that pins it at :4499-4502. Both sweeps concluded these are the same job under two names. This row's own summary also cited a dead line number and a `state/schema.ts` that no longer exists — the React tree was deleted at T-159.29.3 — which is a second reason not to dispatch it as written."""
+surfaces = [
+    "MAP",
+    "PLACE",
+]
+targets = ["website"]
+title = "Marker placement"

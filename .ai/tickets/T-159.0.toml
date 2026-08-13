@@ -1,0 +1,19 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "shipped_at",
+    "spec",
+    "notes",
+]
+__ord = 0
+executor = "cursor-docs"
+id = "T-159.0"
+notes = "Hub + standing worktree."
+parent = "T-159"
+shipped_at = "f95b01ad"
+spec = "docs/platform/t159_leptos_ui_program.md"
+status = "shipped"
+targets = ["root"]

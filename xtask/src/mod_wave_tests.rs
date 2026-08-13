@@ -24,7 +24,8 @@ fn write_registry(root: &Path, slice_plan: &str) {
         open = r#"{"tickets":[{"id":"T-181","slice_plan":{"#,
         close = r#"}}]}"#,
     );
-    fs::write(root.join(".ai/tickets/registry.json"), body).unwrap();
+    let v: serde_json::Value = serde_json::from_str(&body).unwrap();
+    crate::tickets_store::save_toml_tree(root, &v).unwrap();
 }
 
 #[test]

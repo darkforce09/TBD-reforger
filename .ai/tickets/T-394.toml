@@ -1,0 +1,34 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 368
+executor = "claude-code"
+id = "T-394"
+impact = ["platform-lifecycle"]
+order = 3210
+priority = 1
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+GATE DEFECT, verified structurally on main. `MissionCard` (handlers/missions.rs:132-134) carries `#[serde(flatten)] pub mission: Mission` alongside named sibling fields. When a named field duplicates a key the flattened struct also emits, DELETING THE NAMED FIELD LEAVES THE JSON BYTE-IDENTICAL — the flattened struct re-emits the same key. So `assert_golden` stays GREEN while the field is gone from the type.
+
+PROVEN by T-389 as a negative control: with `#[serde(skip)]` on `rejection_reason`, the byte-equality golden test passed and only its explicit 'is this a named field with a value' assertion failed. That is the T-306 lesson in a new shape, and the same family as this run's signature defect — a gate reporting success on something it structurally cannot see.
+
+SCOPE THIS BEFORE FIXING: the exposure is every golden-backed struct using flatten, not just MissionCard. Enumerate `#[serde(flatten)]` across the API and check which are golden-asserted.
+
+Cheapest durable fix is not more assertions (T-389 hand-wrote per-field ones, which does not generalise): assert on the DESERIALIZED type, or deny_unknown_fields on a mirror struct, so the check is structural rather than textual. Note T-359's related hazard — a golden captured from a DRAFT mission has these fields absent, so it proves nothing about them either way; goldens must be captured from a row that actually populates the field under test."""
+surfaces = ["API"]
+targets = ["website"]
+title = "assert_golden cannot detect a dropped field on any struct with #[serde(flatten)]"

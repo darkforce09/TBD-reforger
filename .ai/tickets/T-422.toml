@@ -1,0 +1,51 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 396
+executor = "claude-code"
+id = "T-422"
+impact = ["platform-lifecycle"]
+order = 3261
+priority = 1
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = '''
+Wave 5's T-420 added the first schema step the wave gate has ever had -- a genuinely good change, proven end-to-end by the verifier. It also shipped three defects, two of them the same family the step exists to prevent.
+
+1. MAJOR -- `wave.sh:715-725` excludes `height-labels` recording `OUT height-labels rc=1  RED ON MAIN, and not because of any slice`, diagnosing a 133-byte LFS pointer DEM. THE MEASUREMENT WAS TAKEN IN ITS OWN WORKTREE, NOT ON MAIN.
+     main:   packages/map-assets/everon/dem/everon-dem-16bit.png -> 71,911,548 bytes, magic \x89PNG
+     T-420 worktree: same path -> 133 bytes, Jul 26 20:57 (an LFS pointer)
+     from main: `cargo run -q -p xtask -- schema height-labels`     -> rc=0  'verify-height-labels: OK'
+     from main: `cargo run -q -p xtask -- schema terrain-alignment` -> rc=0  maxDeltaM=0.204
+   So the wave gate now permanently skips a GREEN gate, and the remediation comment ('put git-lfs on PATH, make lfs-dem') sends the next maintainer after a problem that does not exist on main. NUANCE THAT MUST SURVIVE THE FIX: the concern IS real for `gate_slice`, which calls `gate_schema` from a worktree where the DEM genuinely is a pointer. The correct shape is probably per-context inclusion, not a flat exclusion list.
+
+2. MAJOR -- `wave.sh:747-756`, the drift tripwire SILENTLY NARROWS. It refuses on an EMPTY parse (that half is well-behaved and fails closed with an actionable message) but does not notice a PARTIAL one. Measured against the real Makefile, with `make -n` confirming GNU make still runs all nine:
+     blank line inside the recipe          -> tripwire sees 3 of 9   (make runs 9)
+     `# comment` at column 0 in the recipe -> tripwire sees 3 of 9   (make runs 9)
+     `... schema \` + continuation line    -> tripwire sees 8 of 9   (make runs 9)
+   A tenth sub-gate added after a blank line is invisible to the tripwire and the gate keeps printing PASS over whatever it checks -- exactly the rot the tripwire exists to catch. The guard tests for zero when it should compare the SET.
+   MINOR, same parse: `$(XTASK) schema validate`, `--package xtask`, or renaming the target yield the empty set -> hard refuse -> every future wave red. Fails closed, so this half is acceptable.
+
+3. MINOR -- the `GATE_SCHEMA_TARGET` content stamp (`wave.sh:785-787`) hashes only `xtask/src/**.rs` + `xtask/Cargo.toml` + `Cargo.lock`, but `xtask/Cargo.toml` depends on `tbd-tools` and `map-engine-core` BY PATH. Measured: the T-215 and T-216 worktrees compute the SAME stamp (1509000383434579) while their `map-engine-core` differs, and `GATE_SCHEMA_TARGET` is `$MAIN_ROOT/target-gate-schema` for every tree -- so two slice gates can share that dir without the stamp noticing. Needs both trees to run gate_schema and the schema gates lean on map-engine-core only lightly, hence MINOR. Do not copy this stamp as a model for T-421.
+
+4. From T-420, unfixed: `.github/workflows/ci.yml:133,135` runs only `schema validate` + `citations` while `make schema-validate` runs nine. CI HAS THE SAME HOLE THIS TICKET'S PARENT CLOSED -- it would not have caught T-244 either. T-420 deliberately mirrored `make ci-local-schema` rather than ci.yml and said so.
+
+CONFIRMED SOUND, do not re-audit: the verifier reverted map-object-enums.schema.json on merged main and ran the FULL wave gate -- `schema FAIL`, `GATE: FAIL`, 9 sub-gates run, non-vacuous end to end. `GATE_SCHEMA_GATES` covers exactly `make schema-validate`'s nine minus the one declared exclusion; NO sub-gate was quietly dropped. The Makefile parse also survives @-prefixed recipes, `$(CARGO) run`, and tab-indented comments.
+
+== MITIGATED IN PART 2026-07-26 by T-421, which landed after this was filed ==
+T-421's `touch_workspace` touches `xtask/src`, so `gate_schema` now genuinely rebuilds xtask every run (measured 0.11s -> 1.52s). CONSEQUENCE: defect 3 (the incomplete content stamp) can no longer hand the gate a FOREIGN xtask binary -- the mtime path it depended on is closed. The stamp is still incomplete and should still be fixed, but it is no longer the live hazard it was when filed. Defects 1 (height-labels wrongly excluded, green on main) and 2 (the silently-narrowing Makefile tripwire) are UNCHANGED and remain the reason to dispatch this.'''
+surfaces = ["INFRA"]
+targets = ["website"]
+title = "gate_schema shipped with three defects: a wrongly-excluded green gate, a silently-narrowing tripwire, and an incomplete stamp"

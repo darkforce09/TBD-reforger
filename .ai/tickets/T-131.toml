@@ -1,0 +1,34 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "stream",
+    "targets",
+    "executor",
+    "status",
+    "surfaces",
+    "impact",
+    "depends_on",
+    "spec",
+    "route",
+    "branch",
+]
+__ord = 105
+branch = "ticket/T-131"
+depends_on = ["T-090"]
+executor = "claude-code"
+id = "T-131"
+impact = ["ui"]
+program = "eden"
+route = "/missions/:id/edit"
+spec = "docs/platform/tbd_north_star_backlog.md"
+status = "idea"
+stream = "mission-creator"
+summary = "MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5."
+surfaces = [
+    "MAP",
+    "UI",
+]
+targets = ["website"]
+title = "Route planner tool"

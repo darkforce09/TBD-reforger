@@ -1,0 +1,29 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "status",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "route",
+    "branch",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 83
+branch = "ticket/T-096"
+executor = "claude-code"
+id = "T-096"
+impact = ["api"]
+order = 960
+program = "backend"
+route = "/api/v1/telemetry"
+status = "deferred"
+stream = "web-platform"
+summary = "Bridge live game-server events into telemetry ingest."
+surfaces = ["DATA"]
+targets = ["website"]
+title = "Live game-server telemetry bridge"

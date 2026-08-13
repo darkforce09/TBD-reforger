@@ -1,0 +1,27 @@
+__keys = [
+    "id",
+    "order",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "depends_on",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 134
+depends_on = ["T-159"]
+executor = "claude-code"
+id = "T-160"
+impact = ["ui"]
+order = 1575
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "Found during T-159.15.1: GpuTimer map_async err-path unmaps only on res.is_ok() but clears in_flight unconditionally — latent double-map when HUD/timer returns. Editor currently uses disable_frame_timing(). Fix in map-engine-render when re-enabling frame timing."
+surfaces = ["DATA"]
+targets = ["root"]
+title = "wgpu GpuTimer readback err-path (unmap / in_flight)"

@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 175
+executor = "claude-code"
+id = "T-201"
+impact = ["contract"]
+order = 2190
+program = "eden"
+status = "shipped"
+stream = "mission-creator"
+summary = "flatten hardcodes type=spawn and r=150.0 at the slot centroid (flatten.rs:300,584-600); ModZoneShape has no polygon variant (flatten.rs:142-145). The mod already enforces boundary and base_protection in both circle and polygon (TBD_ZoneRegistry.c). Consequence today: every website mission ships with zero play-area restriction."
+surfaces = ["DATA"]
+targets = ["website"]
+title = "Emit zones[] beyond the synthetic spawn circle"

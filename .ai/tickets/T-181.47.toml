@@ -1,0 +1,15 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-181.47"
+notes = "Rebuilt the UI layout foundation on the idiom shipped layouts actually use. ROOT CAUSE WAS ONE EMPTY BLOCK: TBD_ListRow.layout had `Slot ButtonWidgetSlot { }` with no HorizontalAlign, and a child with no align keeps its DESIRED size — which for the FrameWidgetClass inside it is ZERO. So every row collapsed to a sliver, and with no `Wrap 0` the text wrapped one character per line: the vertical column the operator saw. Same defect class 6x in the shell, where four button Body/Background/Label widgets had NO Slot block at all. HorizontalAlign 3 = Stretch CONFIRMED from vanilla_reference/Scripts/Core/generated/UI/LayoutHorizontalAlign.c rather than inferred from CRF frequency. Row body is now SizeLayout > Overlay > (Background, Accent, HorizontalLayout) because Overlay is the stacking primitive and stretches while a Frame has no intrinsic size; Title/Detail ride LayoutSlot { SizeMode Fill FillWeight 1 }. CORRECTED THE COMMAND CENTER'S ORACLE: the brief said Anchor/SizeX/SizeY are absent from the engine string table and therefore invalid — but with controls, ImageWidgetClass, TextWidgetClass, HorizontalAlign, Padding and HeightOverride ALL miss too and are all valid, so a miss is evidence of nothing; and the first probe returned a SILENT all-miss because `strings` is absent in the container with stderr suppressed. Anchor IS honoured, proven by PrimaryAction (Anchor 1 1 1 1, OffsetLeft -288) rendering bottom-right on the operator's screen. Built scripts/mod/verify-ui-layouts.sh (brace balance, slot-class whitelist, geometry invariant, container children missing a slot or an align, and the FindAnyWidget name contract) — and its FIRST CUT PASSED THE KNOWN-BROKEN FILES because GUID strings desynced the brace counter; fixed, it lands C6 on TBD_ListRow.layout:13, the exact empty slot block, and rejects five injected defects one per arm. Now gate step 6 of 12. Widget-name contract preserved with zero renames, 16 names. ADMITTED GUESSES, each with blast radius: `Size 3 44` for the accent rail, AlignableSlot for SizeLayout/ScrollLayout children (their specific slot classes exist in the generated API but appear in NO shipped layout), the 2px row-gap padding, and FocusAnchor deliberately not added."
+parent = "T-181"
+status = "shipped"
+targets = ["mod"]

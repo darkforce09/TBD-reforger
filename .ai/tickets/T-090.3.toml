@@ -1,0 +1,18 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-090.3"
+parent = "T-090"
+spec = "docs/specs/Mission_Creator_Architecture/t090_3_map_asset_export.md"
+status = "deferred"
+targets = [
+    "root",
+    "mod",
+]

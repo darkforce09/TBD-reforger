@@ -1,0 +1,22 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-151.8.1"
+notes = "WebGPU VERTEX|STORAGE + draw_indirect tree cull; Class R CPU AABB oracle (1k frusta). WebGL2 keeps chunk draw-set."
+parent = "T-151"
+shipped_at = "ec59d10e"
+spec = "docs/specs/Mission_Creator_Architecture/t151_8_culling_density.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]

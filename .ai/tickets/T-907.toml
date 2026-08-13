@@ -1,0 +1,29 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "status",
+    "order",
+    "program",
+    "surfaces",
+    "impact",
+    "executor",
+    "targets",
+    "stream",
+    "parallel_ok",
+    "spec",
+]
+__ord = 880
+executor = "claude-code"
+id = "T-907"
+impact = ["dx"]
+order = 5870
+parallel_ok = true
+program = "infra"
+spec = "docs/platform/t853_shell_to_xtask_waves.md"
+status = "queued"
+stream = "infra"
+summary = "T-899 allowlisted 11 map-engine files over 1000 lines. Split them; drop the SIZE-3 rows. crates/map-engine-core: dem/sample.rs, doc/apply_faction.rs, doc/store.rs, mission/compile.rs, mission/flatten.rs, mission/validate.rs, slots_gpu.rs, world/residency.rs. crates/map-engine-render: draw_order.rs, engine.rs, scene.rs. Not dispatched in T-853 waves 234-235. Not the registry-split program."
+surfaces = ["CI"]
+targets = ["root"]
+title = "Split T-151 map-engine SIZE-3 files (11) the T-899 allowlist is holding"

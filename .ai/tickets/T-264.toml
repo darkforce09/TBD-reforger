@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 238
+executor = "claude-code"
+id = "T-264"
+impact = ["platform-pages"]
+order = 2820
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "missions.rs:21 ships a bookmarked scope with backend support, but there is no bookmark control anywhere in the SPA and POST/DELETE /missions/{id}/bookmark are orphaned, so the tab can only ever be empty."
+surfaces = ["SHELL"]
+targets = ["website"]
+title = "Bookmarked tab with no bookmark button"

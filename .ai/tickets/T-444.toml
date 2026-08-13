@@ -1,0 +1,32 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 418
+executor = "claude-code"
+id = "T-444"
+impact = ["website"]
+order = 3283
+priority = 2
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+Residual from T-263 / wave 12 adversarial MINOR. make seed now applies vehicle_database.sql, but wiki manuals remain only in content_golden.sql (not in the seed recipe). Fresh seed DB → GET /wiki empty → SPA "No manuals yet." (explicit empty, not silent mock).
+
+Repro: make db-up + make seed on empty DB; curl GET /api/v1/wiki → data:[]; vehicles have rows.
+
+Cure: extract wiki INSERT seed (or include content_golden wiki section) into seeds/ + Makefile seed line, same shape as vehicle_database.sql."""
+surfaces = ["INFRA"]
+targets = ["website"]
+title = "make seed does not apply wiki pages (content_golden only)"

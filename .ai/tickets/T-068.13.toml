@@ -1,0 +1,15 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-068.13"
+notes = "SUPERSEDED by T-181.9.1 (TBD lobby / slot picker). Scope MOVED, not dropped — the picker ships inside the T-181 event-mod program on the new gamemode state machine, with macOS-methodology UI on Aegis tokens. ClaimSlot in TBD_SpawnManager is already the backend it binds to. See docs/mod/t181_event_mod_program.md."
+parent = "T-068"
+status = "cancelled"
+targets = ["mod"]

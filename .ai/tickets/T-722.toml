@@ -1,0 +1,27 @@
+__keys = [
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "stream",
+    "targets",
+    "executor",
+    "id",
+    "order",
+    "title",
+    "summary",
+    "notes",
+]
+__ord = 695
+executor = "claude-code"
+id = "T-722"
+impact = ["dx"]
+notes = "filed by wave-105 adversarial verifier (editor factory)"
+order = 4315
+program = "eden"
+status = "deferred"
+stream = "mission-creator"
+summary = "Structural, pre-existing, program-wide (surfaced by the wave-105 verifier probing the T-683 sweep entry): null_tolerance.rs's route_sweep only FAILS on 5xx, and every_get_route_is_swept_or_skipped_with_a_reason validates the TEMPLATE list against src/app.rs but never that each entry's CONCRETE URI resolves to its template — a typo'd URI 404s and passes GREEN, the vacuous-pass shape this repo hunts. Fix: assert per entry that the response is NOT 404/405 (or resolve the URI against the router), so a sweep entry that never reaches its handler is a red. The T-683 entry itself was proven live (200 admin / 403 enlisted / 401 anon) — this ticket is about the frame, not that entry. Diagnosis: editor_verify/wave105.md NOTE-2."
+surfaces = ["EDITOR"]
+targets = ["website"]
+title = "Route sweep passes on a typo-d URI — completeness gate never validates URIs"

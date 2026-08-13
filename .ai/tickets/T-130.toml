@@ -1,0 +1,177 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "stream",
+    "targets",
+    "executor",
+    "status",
+    "active_slice",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "spec",
+    "depends_on",
+    "unblocks",
+    "branch",
+    "shipped_at",
+    "slice_plan",
+]
+__ord = 103
+active_slice = "__tbd_null__"
+branch = "ticket/T-130"
+depends_on = ["T-128"]
+executor = "cursor-docs"
+id = "T-130"
+impact = [
+    "api",
+    "ui",
+    "security",
+    "docs",
+]
+order = 1300
+program = "platform"
+shipped_at = "90c9f261"
+spec = "docs/platform/t130_fable_audit_remainder.md"
+status = "shipped"
+stream = "web-platform"
+summary = "Shipped @ 90c9f261 (tag T-130). Batch 1: backend hygiene, Discord, CI. Batch 2: mod exporters, MC UX, mission archive/delete. T-130.7 doc nits. Hub: docs/platform/t130_fable_audit_remainder.md."
+surfaces = [
+    "DATA",
+    "SHELL",
+    "MAP",
+    "UI",
+]
+targets = [
+    "root",
+    "website",
+    "mod",
+]
+title = "Fable audit — remainder (OPEN + PARTIAL)"
+unblocks = []
+
+[slice_plan]
+__keys = [
+    "T-130.0",
+    "T-130.1",
+    "T-130.2",
+    "T-130.3",
+    "T-130.4",
+    "T-130.5",
+    "T-130.6",
+    "T-130.7",
+]
+
+[slice_plan."T-130.0"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+]
+executor = "cursor-docs"
+spec = "docs/platform/t130_fable_audit_remainder.md"
+status = "shipped"
+targets = ["root"]
+
+[slice_plan."T-130.1"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+executor = "claude-code"
+shipped_at = "6426600f"
+spec = "docs/platform/t130_fable_audit_remainder.md"
+status = "shipped"
+targets = ["website"]
+
+[slice_plan."T-130.2"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+executor = "claude-code"
+shipped_at = "9db1b9e1"
+spec = "docs/platform/t130_fable_audit_remainder.md"
+status = "shipped"
+targets = ["website"]
+
+[slice_plan."T-130.3"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+executor = "claude-code"
+shipped_at = "755a889b"
+spec = "docs/platform/t130_fable_audit_remainder.md"
+status = "shipped"
+targets = ["root"]
+
+[slice_plan."T-130.4"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+executor = "claude-code"
+shipped_at = "b62a66b7"
+spec = "docs/platform/t130_fable_audit_remainder.md"
+status = "shipped"
+targets = ["mod"]
+
+[slice_plan."T-130.5"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+executor = "claude-code"
+shipped_at = "bb40a61a"
+spec = "docs/platform/t130_fable_audit_remainder.md"
+status = "shipped"
+targets = ["website"]
+
+[slice_plan."T-130.6"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+executor = "claude-code"
+shipped_at = "c8b2fd6e"
+spec = "docs/platform/t130_fable_audit_remainder.md"
+status = "shipped"
+targets = ["website"]
+
+[slice_plan."T-130.7"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+executor = "cursor-docs"
+shipped_at = "5e0c7754"
+spec = "docs/platform/t130_fable_audit_remainder.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]

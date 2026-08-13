@@ -1,0 +1,22 @@
+__keys = [
+    "id",
+    "parent",
+    "executor",
+    "targets",
+    "status",
+    "shipped_at",
+    "spec",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-153.0"
+notes = "Backend: faction-library.schema.json + goldens/codegen; migration 0006 user_factions; /api/v1/factions CRUD (owner-scoped, contract-validated); tests T1-T8."
+parent = "T-153"
+shipped_at = "e2aec2de"
+spec = "docs/specs/Mission_Creator_Architecture/t153_faction_library.md"
+status = "shipped"
+targets = [
+    "website",
+    "shared",
+]

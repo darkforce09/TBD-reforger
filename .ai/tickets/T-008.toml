@@ -1,0 +1,32 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 6
+executor = "cursor-docs"
+id = "T-008"
+impact = [
+    "api",
+    "schema",
+    "ui",
+]
+order = 80
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "Multi-mission events, event_missions, automated ORBAT."
+surfaces = [
+    "SHELL",
+    "ORBAT",
+]
+targets = ["website"]
+title = "Event to Campaign refactor"

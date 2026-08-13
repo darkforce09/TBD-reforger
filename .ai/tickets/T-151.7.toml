@@ -1,0 +1,20 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-151.7"
+parent = "T-151"
+shipped_at = "ab6bcb11"
+spec = "docs/specs/Mission_Creator_Architecture/t151_7_interaction_rewire.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]

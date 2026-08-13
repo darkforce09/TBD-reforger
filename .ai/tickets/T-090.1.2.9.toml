@@ -1,0 +1,18 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-090.1.2.9"
+parent = "T-090"
+spec = "docs/specs/Mission_Creator_Architecture/t090_1_2_9_satellite_road_overlay.md"
+status = "cancelled"
+targets = [
+    "website",
+    "root",
+]

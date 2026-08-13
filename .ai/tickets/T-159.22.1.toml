@@ -1,0 +1,22 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "shipped_at",
+    "spec",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-159.22.1"
+notes = "No core defect — CDP keyChord double-fire. Gate rebased + undo_depth. Verify: .ai/artifacts/t159_22_1_verify_log.md"
+parent = "T-159"
+shipped_at = "ce73c5bc"
+spec = "docs/platform/t159_22_1_undo_granularity.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]

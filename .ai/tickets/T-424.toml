@@ -1,0 +1,39 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 398
+executor = "claude-code"
+id = "T-424"
+impact = ["platform-lifecycle"]
+order = 3263
+priority = 1
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = '''
+Found by T-216 during wave 5 while restoring `scripts/verify-t180-coherency.sh`, and independently replicated by the wave's adversarial verifier.
+
+  cargo test -p map-engine-core --lib --features doc,mission -- zzz_no_such_test_exists_anywhere
+  # test result: ok. 0 passed; 254 filtered out          rc=0
+
+`verify-t180-coherency.sh` pins 25 such selector invocations. A typo'd or RENAMED test name prints `verify-t180 OK` having run nothing, with no guard anywhere. Same family as everything else this weekend: a check reporting success over an input it never examined.
+
+MEASURED CURRENT STATE: `grep -c 'test result: ok\. 0 passed'` across a full run -> 0, so all 25 selectors match at least one test TODAY. Nothing holds that. A rename of any pinned test silently empties its check and the script still prints ALL PASS.
+
+CURE: a wrapper asserting `passed >= 1` per line. T-216 judged it a third structural change to that file and deliberately left it -- correctly, it belongs here.
+
+CONTEXT: this is the third gate-integrity defect found in that one script this wave. The other two are FIXED and shipped in wave 5 -- `--features doc` not enabling `mission` (the script had not compiled since T-344, so sections C/D/G/I and the whole frontend block never ran), and three static bans in `if rg ...; then fail; fi` form that printed OK when `rg` was absent from the host. Both now green: `verify-t180: ALL PASS`, rc=0, end to end, verified independently.'''
+surfaces = ["INFRA"]
+targets = ["website"]
+title = "cargo test --lib <selector> exits 0 when the selector matches zero tests, so 25 pinned checks can silently empty"

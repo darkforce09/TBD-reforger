@@ -1,0 +1,17 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-090.5.3"
+parent = "T-090"
+shipped_at = "155651b9"
+spec = "docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md"
+status = "shipped"
+targets = ["website"]

@@ -1,0 +1,49 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 263
+executor = "claude-code"
+id = "T-289"
+impact = ["platform-server"]
+order = 3070
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+The only start/stop in the repo is out-of-band bash (deploy-staging.sh:287-289 systemctl restart). The API has no shell-out, no SSH and no container control. Needs an authenticated agent or a token-guarded local socket the API can drive.
+
+== WHAT T-269 NEEDS FROM THIS TICKET (added 2026-07-31 after T-269 stopped at this boundary) ==
+T-269 could not build a real RCON transport and proved why rather than guessing: no RCON port is
+bound anywhere (`ss -lntu` shows only :8080/:3000/:5434), `deploy-staging.sh` renders server.config.json
+with NO `rcon` block and `battlEye: false`, the `servers` table is six columns with no rcon port and
+no credential, `config.rs` declares 16 env vars and none are RCON, and traffic runs ONE WAY ONLY --
+the mod POSTs to /api/v1/ingest/* and the API's only outbound client is Discord. It closed the lie
+(503 RCON_NO_TRANSPORT naming this ticket) and left the transport to you.
+
+THIS TICKET MUST PROVIDE:
+ - A channel openable from INSIDE the API process -- an authenticated agent on the game host or a
+   token-guarded local socket. NOT an SSH shell reachable from a session cookie: T-269 rejected that
+   as "remote code execution with an admin checkbox in front of it", and it is right.
+ - Per-server addressing and a credential. `servers` has neither; needs a migration adding an agent
+   endpoint and a secret reference, resolvable from the row `send_rcon` already loads.
+ - A DELIVERY RESULT, not fire-and-forget: accepted / rejected / unreachable, so the 503 can become a
+   real 202 only when something actually took the command, and the audit row records the OUTCOME
+   rather than the attempt.
+ - SCOPE GAP TO DECIDE: this ticket's title covers start/stop/status only. RCON's four actions
+   include `change_map` and `custom`, which need a live admin channel INTO the running server --
+   strictly larger than process control. Decide whether those need a fifth scope or a mod-side
+   command sink. Related: `kick` has no target at all -- `RconInput` has no player field and
+   `server_control.rs:43` posts bare {"action":"kick"}, so even with a transport it cannot name who."""
+surfaces = ["SHELL"]
+targets = ["website"]
+title = "Server-host deploy agent for start, stop and status"

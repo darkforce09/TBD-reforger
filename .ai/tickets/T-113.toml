@@ -1,0 +1,27 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "stream",
+    "targets",
+    "executor",
+    "status",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "milestone",
+]
+__ord = 87
+executor = "cursor-docs"
+id = "T-113"
+impact = ["schema"]
+milestone = "M1"
+order = 1130
+program = "infra"
+status = "shipped"
+stream = "infra"
+summary = "Merge website + mod into TBD-Reforger; unified ticketing; path rewrites."
+surfaces = ["DATA"]
+targets = ["root"]
+title = "Monorepo migration (M0–M3)"

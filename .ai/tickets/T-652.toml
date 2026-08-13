@@ -1,0 +1,27 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "stream",
+    "targets",
+    "executor",
+    "notes",
+    "order",
+]
+__ord = 653
+executor = "claude-code"
+id = "T-652"
+impact = ["ui"]
+notes = "not factory-dispatchable; no owns, no wave row"
+order = 4240
+program = "eden"
+status = "deferred"
+stream = "mission-creator"
+summary = """DEFERRED by operator decision — "doesn't matter if they're rocks, that's fine." Recorded because it is cheaper than it sounds and someone will re-derive it otherwise: the data ALREADY SHIPS. `packages/map-assets/everon/manifest.json` lists `P4_rocks` in `importPhaseShipped` and carries a `rockLarge` type-inventory entry, so the chunks contain rocks and nothing draws them. This is a RENDER gap, not an export gap. No framework evidence bears on it. If promoted it would land in `crates/map-engine-render/src/engine.rs` plus the world glyph atlas — INFERRED, not derived; it carries no owns and takes no wave slot."""
+surfaces = ["MAP"]
+targets = ["website"]
+title = "Rocks are not rendered"

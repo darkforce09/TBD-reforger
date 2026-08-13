@@ -1,0 +1,43 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 554
+executor = "claude-code"
+id = "T-580"
+impact = ["platform-lifecycle"]
+order = 3424
+priority = 3
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+T-280 extended `/healthz` with two independent failable checks -- a genuine improvement -- but it is
+UNAUTHENTICATED and exposed publicly through Caddy (`Caddyfile.website:27`).
+
+MEASURED LIVE by wave 69's verifier against `app.rs:1021`:
+    version=0.1.0  uptime=396  pool={connections:5, idle:4}  migrations.applied=18
+Low-risk fingerprinting / information disclosure: it tells an unauthenticated caller the exact build,
+how recently it restarted, connection-pool depth, and how many migrations have run.
+
+DELIBERATE TENSION, do not "fix" it by simply adding auth: `/healthz` is probed WITHOUT credentials
+by `preflight.sh:140`, `Caddyfile.website:27`, `editor-gates.yml:95` and
+`tools/tbd-tools/src/smokes.rs:2714`. T-280 gated `/metrics` behind `X-Service-Token` and left
+`/healthz` open for exactly this reason.
+
+LIKELY ANSWER: keep the 200/503 + `status` field public (that is all any prober needs) and move the
+detail behind the same `X-Service-Token` gate `/metrics` uses, or behind a `?verbose=1` that requires
+it. Confirm every listed prober still passes afterwards."""
+surfaces = ["API"]
+targets = ["website"]
+title = "/healthz is unauthenticated and now reports version, uptime, pool depth and migration counts"

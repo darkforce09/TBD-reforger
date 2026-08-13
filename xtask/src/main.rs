@@ -83,6 +83,7 @@ mod slice_worktree;
 mod sql_gates;
 mod sync;
 mod test_env;
+mod tickets_store;
 mod verify_ci_shell;
 mod verify_ci_shell_rules;
 mod wave;
@@ -986,7 +987,9 @@ fn run() -> Result<u8> {
                     None => match std::env::var_os("PWD") {
                         Some(pwd) => {
                             let p = PathBuf::from(pwd);
-                            if p.join(".ai/tickets/registry.json").is_file() {
+                            if p.join(".ai/tickets/ROOT").is_file()
+                                || p.join(".ai/tickets/registry.json").is_file()
+                            {
                                 p
                             } else {
                                 find_repo_root()?

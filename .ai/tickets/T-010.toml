@@ -1,0 +1,29 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 8
+executor = "cursor-docs"
+id = "T-010"
+impact = [
+    "api",
+    "schema",
+    "ui",
+]
+order = 100
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "Per-slot loadout/tag schema and leader squad holds."
+surfaces = ["ORBAT"]
+targets = ["website"]
+title = "Rich ORBAT slots + squad reservation"

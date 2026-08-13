@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 15
+executor = "cursor-docs"
+id = "T-021"
+impact = ["ui"]
+order = 210
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "Full-bleed routes and SplitPane migration."
+surfaces = ["SHELL"]
+targets = ["website"]
+title = "R1/R2 full-bleed + SplitPane"

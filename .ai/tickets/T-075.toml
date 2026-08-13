@@ -1,0 +1,29 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "status",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "route",
+    "branch",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 62
+branch = "ticket/T-075"
+executor = "claude-code"
+id = "T-075"
+impact = ["ui"]
+order = 750
+program = "eden"
+route = "/missions/:id/edit"
+status = "cancelled"
+stream = "mission-creator"
+summary = "CANCELLED 2026-08-01 — SUPERSEDED BY T-648. `WIDGET-CYCLE-001`, `KEY-WIDGET-001` and `WIDGET-TRANS-001` are T-648's ids, and the Space collision this ticket existed to resolve (Eden cycles widget variants, TBD flies to selection) is decided inside T-648 — Eden's 1-5 direct keys are free, so using them dissolves the clash."
+surfaces = ["MAP"]
+targets = ["website"]
+title = "Spacebar flyTo vs widget"

@@ -1,0 +1,35 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 459
+executor = "claude-code"
+id = "T-485"
+impact = ["website"]
+order = 3324
+priority = 2
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = '''
+Wave 32 verifier NIT (T-476). Tripwire lives in verify-t468-ci-schema-parity.sh and runs in wave.sh cold gate, but hollow `@true` verify-t438 still greens `make verify-t438` and GitHub mod-gates-hosted (ci.yml runs make verify-t438 only). Not in Makefile target, ci-local, or CI as a step that catches hollow recipes outside cold gate.
+
+Repro: recipe `verify-t438:\n\t@true` → make verify-t438 rc=0; bash verify-t468 → FAIL.
+
+Cure: add Makefile verify-t468 (or fold pin into ci-local + ci.yml) so hollow recipes fail without waiting for wave.sh gate.'''
+surfaces = [
+    "CI",
+    "INFRA",
+]
+targets = ["website"]
+title = "Wire verify-t468 into Makefile / ci-local / CI so hollow t438/t456 recipes fail outside cold gate"

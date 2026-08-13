@@ -1,0 +1,15 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-181.31"
+notes = """/compiled is now schema-validated before it is served. get_compiled_mission serializes ONCE, validates those bytes, and serves THE SAME BYTES — so the checked value and the shipped value cannot drift. validate_mission_document went from zero production callers (only #[cfg(test)]) to gating the one route the mod consumes. PROVED THE GATE REJECTS SOMETHING REAL by short-circuiting it: 200 carrying "uid":"" (a minLength:1 violation) served straight to the game server; with the gate, 500 naming /slots/0/uid. THE FINDING THAT SHAPED THE SLICE: turning this on WOULD have broken working missions, because the mod and the schema disagree — blank role and groupCallsign are AddWarning in TBD_MissionValidator (mission loads) but minLength:1 violations in the schema, and a >120-char title is unchecked in the mod but maxLength:120 in the schema. All three are reachable because mission-editor-payload.schema.json deliberately leaves editor.slots[] unconstrained to keep write-side validation O(1) on 100k-slot missions, so the write-side gate cannot catch them. Rather than ship a gate that fires on inputs the generator routinely produces, the agent fixed the GENERATOR (map-engine-core/mission/flatten.rs) to substitute those three display values — with callsign falling back to the SQUAD ID not a literal, because a constant would collapse two unnamed squads onto one callsign and collide their derived slot ids, and a duplicate slot id IS a hard error in the mod. Blank uid deliberately NOT substituted: it is the durable identity the mod keys spawns, rosters and logs on, and inventing one is worse than refusing to serve. DECISIONS: 500 not 409, because the handler cannot distinguish bad stored data from a flatten bug and calling both 409 would let a compile regression hide as 'your mission is misconfigured'; findings returned deduped (the schema reaches slots[] twice so an undeduped count is exactly 2x wrong) and capped at 20 with the full count. COST MEASURED release-mode: 1k slots 6.9 ms, 10k 40 ms, 100k 410 ms, 367k 1.49 s on top of an existing 0.98 s flatten — ~1.4x an already-O(n) endpoint, once per mission load. Save-time validation CANNOT replace this: the document is a function of (version payload, mission row, flatten code, kit-alias table) and the last three change independently of a saved version. CAVEAT: TBD_MissionLoader.OnBackendFetchError discards the response body and fails over to its profile cache, so the mod never reads these findings — the tracing::error! line is the load-bearing diagnostic."""
+parent = "T-181"
+status = "shipped"
+targets = ["website"]

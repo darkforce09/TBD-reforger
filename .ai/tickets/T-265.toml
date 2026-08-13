@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 239
+executor = "claude-code"
+id = "T-265"
+impact = ["platform-pages"]
+order = 2830
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "Four endpoints and the leave_requests table are fully implemented and tested, with no page, no nav entry and no caller. An entire shipped backend feature nobody can reach."
+surfaces = ["SHELL"]
+targets = ["website"]
+title = "Leave-of-Absence feature has zero UI"

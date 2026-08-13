@@ -1,0 +1,50 @@
+__keys = [
+    "program",
+    "impact",
+    "stream",
+    "targets",
+    "executor",
+    "id",
+    "title",
+    "summary",
+    "status",
+    "priority",
+    "order",
+    "surfaces",
+]
+__ord = 589
+executor = "claude-code"
+id = "T-616"
+impact = ["platform-lifecycle"]
+order = 3632
+priority = 3
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+FOUND by T-613 (wave 78). Cosmetic today, wrong in a way that will mislead.
+
+`docs/platform/wave_plan.tsv` column 1 carries **two incompatible label formats**: bare numbers
+(`0`-`11`, `43`-`68`, `99`) from the original packing, and `w76`/`w77`/`w78` from the recent waves.
+`current_wave()` sorts with `sort -n`, under which **`w78` evaluates to 0**, so the newest waves sort
+below the oldest. T-613 measured `current_wave` returning **3** from its worktree, with
+`wave.sh wave` printing "wave 3 is OPEN".
+
+**It reads correctly on `main` right now** (`wave w78 — 0/4 shipped`) because the w78 rows exist and
+whatever tiebreak applies lands on the right answer -- so this is latent, not live. It is filed
+because the underlying mix is real and the next person to add a differently-shaped label gets a
+different wrong answer.
+
+It also feeds `gate_wave_number`'s fallback. That path is guarded by `factory_pack_wave`, so the gate
+DB naming is unaffected -- verified by T-613, not assumed.
+
+FIX: pick one format and migrate the file, or make `current_wave()` strip a leading `w` before the
+numeric sort. Prefer migrating the data -- a parser that tolerates two formats invites a third.
+
+NOTE the new wave-78 base-derivation cross-checks read `wave_plan.tsv` as one of their oracles
+(`ticket ledger`). They key on the `wN` form and worked correctly this wave ("wave 77 has 5
+ticket(s)… all shipped — corroborated"), but anything that normalises these labels must keep that
+check working -- see T-613's implementation before touching the format."""
+surfaces = ["INFRA"]
+targets = ["website"]
+title = "wave_plan.tsv mixes bare-number and wN wave labels, so current_wave() sorts the recent ones as zero"

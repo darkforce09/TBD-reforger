@@ -1,0 +1,17 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "notes",
+]
+__ord = 0
+executor = "cursor-docs"
+id = "T-180.0"
+notes = "Hub + per-slice specs + t180_class_r_pins.md (measured packages/RGBA/APIs) + stitch artifacts"
+parent = "T-180"
+spec = "docs/specs/Mission_Creator_Architecture/t180_orbat_eden_program.md"
+status = "shipped"
+targets = ["root"]

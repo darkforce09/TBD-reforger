@@ -1,0 +1,17 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "spec",
+    "notes",
+]
+__ord = 0
+executor = "cursor-docs"
+id = "T-162.3"
+notes = "Replace inline python3 in verify-monorepo/upload-repro/debug-direct-join."
+parent = "T-162"
+spec = "docs/platform/t162_python_eradication.md"
+status = "shipped"
+targets = ["root"]

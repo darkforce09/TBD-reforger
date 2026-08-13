@@ -1,0 +1,32 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "status",
+    "stream",
+    "targets",
+    "executor",
+    "route",
+    "impact",
+    "title",
+    "summary",
+    "surfaces",
+    "notes",
+]
+__ord = 665
+executor = "claude-code"
+id = "T-692"
+impact = ["ui"]
+notes = "— SHIPPED wave 112 (editor factory), d4b6dd4d + merge fix 4973de19; verifier wave112.md. Help menu + Controls Hint overlay, chrome-gated by mount site; coverage pinned by a test that fails when a keydown arm has no help row — it fired on merge for T-649's KeyA exactly as predicted."
+order = 4460
+program = "eden"
+route = "/missions/:id/edit"
+status = "shipped"
+stream = "mission-creator"
+summary = "NEW-F3. Rows MENU-BAR-008, MENU-VIEW-017, MENU-HELP-001. TBD binds 10 keyboard shortcuts and documents none of them in the UI. Eden has both a Help menu and a toggleable Controls Hint. Pairs with T-668 (state vocabulary) and with 3den E10 — a keybinding collision test is worth little if the bindings are invisible."
+surfaces = [
+    "TOP",
+    "UI",
+]
+targets = ["website"]
+title = "Editor help surface — Help menu and a Controls Hint overlay"

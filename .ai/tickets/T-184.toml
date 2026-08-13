@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 158
+executor = "claude-code"
+id = "T-184"
+impact = ["contract"]
+order = 2020
+program = "eden"
+status = "cancelled"
+stream = "mission-creator"
+summary = "CANCELLED — premise fixed by T-181.46 (c4fabcb2, 2026-07-25 19:09), 43 minutes after this ticket was filed. flatten.rs:617-635 now derives endOn from flattened slots and only emits faction_eliminated when >=2 factions actually hold slots, which is exactly the zero-slot-stub case described here."
+surfaces = ["DATA"]
+targets = ["website"]
+title = "Single-faction missions compile clean then hard-reject in game"

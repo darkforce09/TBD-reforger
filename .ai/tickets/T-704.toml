@@ -1,0 +1,30 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "status",
+    "stream",
+    "targets",
+    "executor",
+    "route",
+    "impact",
+    "title",
+    "summary",
+    "surfaces",
+]
+__ord = 677
+executor = "claude-code"
+id = "T-704"
+impact = ["ui"]
+order = 4580
+program = "eden"
+route = "/missions/:id/edit"
+status = "idea"
+stream = "mission-creator"
+summary = "3den E2 (3DEN-TOOL-013/014). Fuzzy search over every menu command, ALT+SPACE. The largest of the 3den slices and the highest ceiling — it directly answers T-668 complaint that the chrome is hard to navigate, and 3den own version learns from usage frequency. Filed as `idea` because it is a product call, not a scoping question: it changes how the editor is driven."
+surfaces = [
+    "TOP",
+    "UI",
+]
+targets = ["website"]
+title = "Command palette over every editor command"

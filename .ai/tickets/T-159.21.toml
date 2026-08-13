@@ -1,0 +1,19 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "shipped_at",
+    "spec",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-159.21"
+notes = "Eden chrome + undo/redo; 9 smokes; probe inset under docks. Verify: .ai/artifacts/t159_21_verify_log.md"
+parent = "T-159"
+shipped_at = "f02fed5a"
+spec = "docs/platform/t159_21_eden_chrome_undo.md"
+status = "shipped"
+targets = ["website"]

@@ -1,0 +1,17 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "spec",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-165.7"
+notes = "MCP broker + stub -> Rust; selftest 19/19 frozen."
+parent = "T-165"
+spec = "docs/platform/t165_node_eradication.md"
+status = "shipped"
+targets = ["root"]

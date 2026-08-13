@@ -1,0 +1,17 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-130.4"
+parent = "T-130"
+shipped_at = "b62a66b7"
+spec = "docs/platform/t130_fable_audit_remainder.md"
+status = "shipped"
+targets = ["mod"]

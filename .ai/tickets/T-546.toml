@@ -1,0 +1,38 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "executor",
+    "priority",
+    "stream",
+    "targets",
+]
+__ord = 520
+executor = "claude-code"
+id = "T-546"
+impact = [
+    "tests",
+    "cms",
+]
+order = 3386
+priority = 2
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+FOUND by W55 adversarial verifier (CLEAN MINOR-NIT) after T-498.
+
+sanitize_discord_embed_field + include_str wire pins exist; no services_http / CMS IT asserts a leading '=title' becomes ZWSP-prefixed in the outbound embed JSON.
+
+Repro: rg sanitize_discord apps/website/api/tests — no hit."""
+surfaces = [
+    "API",
+    "tests",
+]
+targets = ["website"]
+title = "T-498 Class-R only — no HTTP IT for Discord formula-title sanitize"

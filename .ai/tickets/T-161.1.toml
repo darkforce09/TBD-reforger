@@ -1,0 +1,17 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "spec",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-161.1"
+notes = "xtask sync/check. Cursor Grok override. Verify t161_1_verify_log.md (executed by Cursor Grok 4.5 override)"
+parent = "T-161"
+spec = "docs/platform/t161_1_xtask_scaffold_sync.md"
+status = "shipped"
+targets = ["root"]

@@ -1,0 +1,30 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "spec",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 53
+executor = "claude-code"
+id = "T-066"
+impact = [
+    "perf",
+    "compiler",
+]
+order = 660
+program = "scale"
+spec = "docs/specs/Mission_Creator_Architecture/t066_worker_compile.md"
+status = "shipped"
+stream = "mission-creator"
+summary = "Save/Export compile in Comlink worker via pickMapSnapshot."
+surfaces = ["DATA"]
+targets = ["website"]
+title = "Worker compile offload"

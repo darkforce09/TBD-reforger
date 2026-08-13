@@ -1,0 +1,22 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-151.10.1"
+notes = "Round-2 code-level completeness audit (X/P findings). Same tracker."
+parent = "T-151"
+shipped_at = "40def01a"
+spec = "docs/specs/Mission_Creator_Architecture/t151_10_fable_program_audit.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]

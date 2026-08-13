@@ -1,0 +1,18 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-090.6"
+parent = "T-090"
+spec = "docs/specs/Mission_Creator_Architecture/t090_6_geometry_placement_audit.md"
+status = "ready"
+targets = [
+    "root",
+    "mod",
+]

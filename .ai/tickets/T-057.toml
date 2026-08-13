@@ -1,0 +1,35 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "spec",
+    "route",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 44
+executor = "claude-code"
+id = "T-057"
+impact = [
+    "perf",
+    "ui",
+]
+order = 570
+program = "eden"
+route = "/missions/:id/edit"
+spec = "docs/specs/Mission_Creator_Architecture/t057_map_performance_hotfix.md"
+status = "shipped"
+stream = "mission-creator"
+summary = "Cursor off render path, no hover pick, pan coalescing, memo."
+surfaces = [
+    "MAP",
+    "BOTTOM",
+]
+targets = ["website"]
+title = "Map performance hotfix"

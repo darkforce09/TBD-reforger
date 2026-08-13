@@ -1,0 +1,30 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 470
+executor = "claude-code"
+id = "T-496"
+impact = ["tests"]
+order = 3331
+priority = 2
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "Wave 38 adversarial NIT. find_in_approvals page-1-only RED on tbd_gate_it (26 pending). Disabling prefer-mine RED on dashboard. But find_id_in_missions_list→page-1 limit=20 stayed GREEN on mission_lifecycle_and_compiled because only 2 NULL updated_at rows — DESC puts fresh missions on page 1. Cure: Class-R that forces >20 NULL-updated_at residue (or source ratchet that the helper always paginates) so library/bookmark pins fail without relying on shared-DB residue."
+surfaces = [
+    "API",
+    "CI",
+]
+targets = ["website"]
+title = "T-410 library/bookmark page-1 Class-R weak without NULL updated_at residue"

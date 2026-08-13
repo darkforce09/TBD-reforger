@@ -1,0 +1,47 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+    "shipped_at",
+]
+__ord = 333
+executor = "claude-code"
+id = "T-359"
+impact = ["platform-lifecycle"]
+order = 3175
+priority = 1
+program = "platform"
+shipped_at = "3a653fd5"
+status = "shipped"
+stream = "web-platform"
+summary = """
+FOUND by T-306 while typing the DTOs. `server_intel.rs` reads a `terrain` field that the backend has NO COLUMN for, so the fallback fires unconditionally and the page renders "Theater Unknown" for every server, always. Not an edge case — the normal and only outcome.
+
+Decide which side is wrong before writing anything. Either the column should exist (in which case this is a migration plus an ingest change, and the game server has to send it), or the field should not be read (in which case remove the readout rather than leaving a permanent placeholder). A third possibility worth checking: the terrain may be derivable from the current mission, which the server status already references via current_match_id.
+
+Same family as T-306 itself: a DTO asserting something the backend never provides. T-306 removed the `#[serde(flatten)] extra` catch-all specifically so this class fails a gate in future rather than rendering a placeholder — check whether that now catches this one, and if not, why not.
+
+SHIPPED. It answered the question better than the question was posed: **answer 3 is right about the data and wrong about reachability, so the in-file fix is answer 2.**
+
+NOT a migration — `servers` has exactly six columns, and a `servers.terrain` would be the wrong SHAPE anyway: a server's theater belongs to the match running on it and rotates per match, while `servers` is static config. The terrain IS real and already populated in `matches.terrain`, keyed by `server_statuses.current_match_id`, and the join yields data right now.
+
+BUT IT IS NOT REACHABLE FROM THE PAGE: the only `matches` route in the whole router is POST /ingest/match-results (service-token, write-only). There is no GET /matches/{id}. The SPA holds the foreign key with no way to dereference it. So a client-side derivation was impossible, and half-building the server side was not an option — it removed the assertion and left a `#[cfg(test)]` TRIPWIRE that fails with instructions the day the join lands.
+
+BROWSER-VERIFIED that the placeholder was not merely in the DOM but occupied a real painted box: 'Theater Unknown' at 122x20 px, 14 px, rgb(221,226,247), visible=true. After: 1 span instead of 2, and the string absent from document.body. PNG capture was attempted and abandoned honestly — headless Chrome's --virtual-time-budget stalls indefinitely on this wasm SPA — so it substituted a computed-style plus geometry capture, which is grep-checkable in a way a screenshot is not.
+
+THE DURABLE INSIGHT, and it is the mirror of T-306's own rule: **a DTO that only its own golden reads proves the wire, not the page.** T-306 DID build the correct type — dto.rs:283 ServerRowDto has exactly the eight fields the backend serves and no `terrain`, pinned byte-exact. But it has exactly TWO references in the crate, its own definition and its own test, because server_intel.rs:73 fetches DataEnvelope<Value>. So the gate already encoded the truth that refutes the buggy code, and the page never met it. Three reasons it could not fire: direction (catch-all removal catches backend-has / DTO-lacks, this is page-asserts / backend-lacks — nothing to drop, bytes match, green), adoption, and `v_str`'s unwrap_or_default() collapsing absent/null/non-string/empty into one "" — the same conflation T-306 split apart one layer up for the status object, left in place for the row's scalars."""
+surfaces = [
+    "FRONTEND",
+    "API",
+]
+targets = ["website"]
+title = 'Server Intel always renders "Theater Unknown" — it reads a field the backend has no column for'

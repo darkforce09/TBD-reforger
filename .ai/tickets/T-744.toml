@@ -1,0 +1,27 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "status",
+    "stream",
+    "targets",
+    "executor",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "notes",
+]
+__ord = 717
+executor = "claude-code"
+id = "T-744"
+impact = ["ui"]
+notes = "filed by wave-113 adversarial verifier (editor factory)"
+order = 4620
+program = "eden"
+status = "shipped"
+stream = "mission-creator"
+summary = "MINOR from the wave-113 verifier; found and reported by the T-082 slice agent, which did not cause it. MissionDocCore::materialize() (store.rs:596-599) drops T-665 layer-hidden and T-701 editorHidden rows. read_attrs locates the slot through materialize(), so for a hidden slot it returns None, and the modal's None arm calls close_attributes() on itself — the SAME path written for 'the slot was undone away'. REPRO: open Attributes on a slot, then hide it (H, or hide its layer in the Outliner). The modal vanishes on a still-existing entity and the user cannot tell which of the two things happened. Discards modal state (active tab, per-field opt-in latches, focused draft); no data loss, since text commits land per keystroke. FIX SHAPE: have read_attrs consult the RAW rows for existence — T-082 already parses them for assetId/description, so the accessor exists; the SoA-sourced fields would still come from materialize(). The row lookup is load-bearing for every SoA field, which is why T-082 correctly did not re-point it inside a scoped ticket. Diagnosis: editor_verify/wave113.md F-2."
+surfaces = ["ATTR"]
+targets = ["website"]
+title = "Hiding a slot silently closes its open Attributes modal, indistinguishable from undo-away"

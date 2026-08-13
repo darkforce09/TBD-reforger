@@ -1,0 +1,32 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "status",
+    "stream",
+    "targets",
+    "executor",
+    "route",
+    "impact",
+    "title",
+    "summary",
+    "surfaces",
+    "notes",
+]
+__ord = 667
+executor = "claude-code"
+id = "T-694"
+impact = ["ui"]
+notes = "— SHIPPED wave 113 (editor factory), f91d8854; verifier wave113.md. REINTERPRETED BY THE OPERATOR: game_mode editable after creation + player count DERIVED from MissionDocCore::slot_count(); NO min_players, no migration, no backend change (dto.rs is comment-only, R-api goldens untouched). Both figures shown side by side with the disagreement stated and neither enforced; a source-scan pin fails the build if clamp/128/.min(/.max(/min_players ever appears in that section. The authoritative-player-cap question is left open for the operator."
+order = 4480
+program = "eden"
+route = "/missions/:id/edit"
+status = "shipped"
+stream = "mission-creator"
+summary = "NEW-F6. Rows DLG-MP-001..003, the one genuine gap the Edit: Multiplayer dialog surfaced. game_mode and max_players are create-dialog only (create_mission_dialog.rs:158-166, :199-215) and reach a compiled mission through the row, not the document (dto.rs:895). A mission cannot change shape after creation. PATCH /missions/:id already accepts both."
+surfaces = [
+    "TOP",
+    "DATA",
+]
+targets = ["website"]
+title = "Mission shape editable after creation — game mode, min/max players"

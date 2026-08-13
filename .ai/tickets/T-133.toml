@@ -1,0 +1,40 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "stream",
+    "targets",
+    "executor",
+    "status",
+    "surfaces",
+    "impact",
+    "depends_on",
+    "spec",
+    "route",
+    "branch",
+]
+__ord = 107
+branch = "ticket/T-133"
+depends_on = ["T-115"]
+executor = "claude-code"
+id = "T-133"
+impact = [
+    "schema",
+    "ui",
+]
+program = "platform"
+route = "/missions/:id/edit"
+spec = "docs/platform/tbd_north_star_backlog.md"
+status = "idea"
+stream = "mod-framework"
+summary = "Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph."
+surfaces = [
+    "DATA",
+    "MAP",
+]
+targets = [
+    "website",
+    "mod",
+]
+title = "OFCR timed objectives"

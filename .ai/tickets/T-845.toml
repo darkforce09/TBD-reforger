@@ -1,0 +1,27 @@
+__keys = [
+    "id",
+    "title",
+    "status",
+    "executor",
+    "program",
+    "stream",
+    "targets",
+    "impact",
+    "surfaces",
+    "order",
+    "summary",
+    "notes",
+]
+__ord = 818
+executor = "claude-code"
+id = "T-845"
+impact = ["ui"]
+notes = "operator eye-pass wave-207; T-808 lane family; pairs naturally with the wave-210 vehicle set"
+order = 5270
+program = "eden"
+status = "queued"
+stream = "mission-creator"
+summary = "OPERATOR EYE-PASS FINDING (wave-207, 2026-08-11): a placed vehicle does not change appearance when selected — no ring, no tint shift — so there is no way to see which vehicle you have selected. Slots get the selection treatment (T-808 ships a ringed twin cell per role); comments got theirs in the same wave (Completion A verified selected-vs-unselected diff); VEHICLES WERE NEVER GIVEN ONE. Not previously ticketed and not in any wave's acceptance — a genuine gap, operator-found. FIX: the vehicle lane gets the same selection treatment shape as slots — a ringed twin cell per silhouette kind (the T-808 pattern: extra atlas cells, NOT an extra instance per selected row, which would force a full re-pack on every click and destroy the O(delta) patch), plus the selection tint. The `set_selection` patch path must reach the vehicle lane (it patches Slots today; wave-207 taught the same lesson for comments — `refresh_comment_lane` on all five exit paths). ACCEPTANCE: select a vehicle -> its crop differs measurably from unselected (ring + tint, the comment/slot method); deselect -> returns to the neutral silhouette; selecting one of three vehicles changes exactly one; heading and kind survive selection; no re-pack on selection change (measure)."
+surfaces = ["SHELL"]
+targets = ["website"]
+title = "A selected vehicle looks identical to an unselected one"

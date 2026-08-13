@@ -1,0 +1,33 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "spec",
+    "route",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 41
+executor = "claude-code"
+id = "T-054"
+impact = ["ui"]
+order = 540
+program = "eden"
+route = "/missions/:id/edit"
+spec = "docs/specs/Mission_Creator_Architecture/t054_attributes_entry_points.md"
+status = "shipped"
+stream = "mission-creator"
+summary = "Native dblclick on map and ORBAT opens Attributes."
+surfaces = [
+    "MAP",
+    "LEFT",
+    "ATTR",
+]
+targets = ["website"]
+title = "Attributes modal entry points"

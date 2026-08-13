@@ -1,0 +1,35 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "stream",
+    "targets",
+    "executor",
+    "status",
+    "surfaces",
+    "impact",
+    "depends_on",
+    "spec",
+    "branch",
+]
+__ord = 112
+branch = "ticket/T-138"
+depends_on = []
+executor = "claude-code"
+id = "T-138"
+impact = [
+    "deps",
+    "ci",
+]
+program = "infra"
+spec = "docs/platform/tbd_north_star_backlog.md"
+status = "idea"
+stream = "infra"
+summary = "Single script: deps check, .env, db-up, migrate, seed, optional map-assets fetch (git lfs pull for DEM+bundle; optional GitHub Release tarball for tile pyramids after slim-LFS @ 2026-07) — fork-friendly community install story."
+surfaces = ["DATA"]
+targets = [
+    "root",
+    "website",
+]
+title = "One-command self-host install"

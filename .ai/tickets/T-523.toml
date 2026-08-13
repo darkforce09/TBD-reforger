@@ -1,0 +1,34 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 497
+executor = "claude-code"
+id = "T-523"
+impact = [
+    "infra",
+    "ci",
+    "tests",
+]
+order = 3363
+priority = 0
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "Wave 46 verifier MAJOR. gate_db_migrate_claim_body in scripts/platform/wave.sh uses grep -qF (comment-blind). Hollow bait with the three claim needles only inside -- line comments PASSes while live UPDATE is gone — same failure class as T-513/514. Cure: strip SQL line/block comments (or otherwise refuse comment-only matches) before needle search. Perturbation: TBD_GATE_MIGRATION_0016=/tmp/bait with needles only in comments → FAIL; real 0016 → PASS. Owns: scripts/platform/wave.sh only."
+surfaces = [
+    "CI",
+    "INFRA",
+]
+targets = ["website"]
+title = "W46 hotfix: T-515 db_migrate claim body must strip SQL comments"

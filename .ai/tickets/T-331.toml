@@ -1,0 +1,56 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 305
+executor = "claude-code"
+id = "T-331"
+impact = ["platform-lifecycle"]
+order = 3147
+priority = 1
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+FOUND by T-228 while constraining role_played; blocking two thirds of that work and not in its owned directory.
+
+`seeds/content_golden.sql:358-369` inserts literal NULL into `matches.aar_replay_url` (2 rows) and `matches.winning_faction` (1 row), under ON CONFLICT (id) DO UPDATE SET ... = EXCLUDED.... **That seed is where the operator's live NULLs came from.** T-228 measured both branches on a pg_dump copy rather than arguing them:
+  - WITH the NOT NULL constraint: `psql < seeds/content_golden.sql` fails `ERROR: null value in column "aar_replay_url" ... violates not-null constraint`, exit 3, failing row rf-match-20260704-01.
+  - WITHOUT it: the backfill clears the NULLs, then re-running the seed puts all three back. A backfill-only migration is self-defeating.
+
+So three `NULL` -> `''` edits at seeds/content_golden.sql:358-369 must land in the SAME commit as the constraint. The exact DDL is already recorded as a comment block at the foot of migrations/0009_role_played_not_null.sql so it does not need re-deriving.
+
+`''` destroys no meaning here and that was checked, not assumed: the mod omits winning_faction from the payload entirely when there is no winner (TBD_ResultsReporter.c:18,546), `outcome` carries pending/failure/aborted, and telemetry.rs:519 already writes COALESCE($8, '') on create — `''` is the canonical no-winner on the only write path that exists.
+
+NOT urgent: `make seed` (Makefile:25-26) does NOT apply content_golden.sql — it is a manual operator tool, so this is not CI-red today. It would make the golden DB un-rebuildable once the constraint lands. Do NOT touch match_player_stats.command_win, which T-228 checked and left alone: NULL there is a real third state (not a command slot / not adjudicated), distinct from false, and already Option<bool> on both sides.
+
+SCOPE WIDENED 2026-07-26 by T-324, which found a SECOND fixture bug in the same file and corrected my diagnosis of it.
+
+seeds/content_golden.sql:623 and :650 hand-INSERT user 000000000000000005 onto BLUFOR/Alpha#1 AND OPFOR/Recon#1 (fixture UUIDs 00000000-0000-4000-5000-0000000000{05,15}) — one user, two seats. I had told T-324 this row came from the assign_slot handler. IT CANNOT HAVE: assign_slot upserts the registration (slot_id = EXCLUDED.slot_id), so it would have repointed the row at OPFOR, and the registration names the EARLIER seat. Neither handler can produce this shape. It is hand-written fixture data.
+
+WHY THIS MATTERS BEYOND TIDINESS: it means T-228's partial unique index on orbat_slots(event_mission_id, assigned_to) WHERE assigned_to IS NOT NULL is NOT blocked by production data — it is blocked by this one seed file. T-324 verified the index against every handler path in a scratch DB (register move, bench, idempotent re-claim, assign, withdraw promotion, race-loser 409, reservation 409) and its fix COMPOSES with it. It also proved the ordering is what makes it compose: release-then-claim commits cleanly, claim-then-release raises 23505.
+
+So fixing these two seed rows converts the double-seat invariant from handler DISCIPLINE into a STRUCTURAL guarantee. That is the real prize here.
+
+ONE BLOCKER when the index lands: tests/events.rs:540 seeds the legacy two-seat state that T-318's recovery regression needs, and a partial unique index cannot be DEFERRABLE. Either drop the index around that seed or retire the assertion — decide deliberately, it is testing a real recovery path.
+
+THIRD SCOPE ITEM, from T-330: `missions.created_at` AND `missions.updated_at` are `timestamp with time zone` with NO NOT NULL and NO DEFAULT (0001_initial_schema.sql:374-375). That is structurally unlike 0003_registry_compat.sql:14 and 0006_user_factions.sql:13, which are both `DEFAULT now() NOT NULL`. So ANY hand-written INSERT that omits either column stores NULL — and CLAUDE.md documents `psql` as an ops path, so hand-written INSERTs are expected.
+
+T-330 hit this concretely: a two-argument COALESCE(updated_at, created_at) would STILL have 500'd, because created_at can be NULL too. It needed a three-link chain terminating in the Go zero time. The durable fix is `SET DEFAULT now()` + `SET NOT NULL` on both columns after a backfill — the same conclusion T-325 reached for the text columns, in the same directory, so do them together.
+
+== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
+Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
+This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now."""
+surfaces = ["DATA"]
+targets = ["website"]
+title = "content_golden.sql seeds literal NULLs, so the matches columns cannot be constrained"

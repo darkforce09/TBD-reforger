@@ -1,0 +1,48 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 383
+executor = "claude-code"
+id = "T-409"
+impact = ["platform-lifecycle"]
+order = 3230
+priority = 1
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = '''
+Found by wave 3's adversarial verifier against merged main. T-406 correctly closed the gate's ways of passing code it never examined, but three of the new HARD FAILS refuse work that is genuinely fine. Inverse of the signature defect: not a false green, a false red. A gate that refuses legitimate slices blocks every subsequent wave and teaches agents that gate failures are noise.
+
+F1 MAJOR -- scripts/platform/wave.sh:477 (clippy_changed). A slice whose only changed .rs file is apps/website/shared/is_http_url_cases.rs hard-fails. That path resolves to no crate (the crate walk stops before '.', and neither apps/ nor apps/website/ has a Cargo.toml), so crates[] is empty and the new branch returns 1. NOT hypothetical: T-405 created that file in wave 3, three crates include! it (api/src/services/text.rs:226, frontend/src/url_guard.rs:112, frontend/src/deployments.rs:542), and its own header says 'ADDING A CASE: put it in the group it belongs to' -- it invites exactly the slice shape that now reds. T-406's report framed this as 'a .rs file at the repo root'; there are none. It missed the reachable instance its own sibling shipped in the same wave. Asymmetry worth noting: fmt_changed handles the file fine (rustfmt checked 1 of 1). Only clippy reds.
+  REPRO: printf '\n// probe\n' >> apps/website/shared/is_http_url_cases.rs
+         ( source scripts/platform/wave.sh status >/dev/null 2>&1; clippy_changed HEAD; echo rc=$? )
+         git -c filter.lfs.process= checkout -- apps/website/shared/is_http_url_cases.rs
+         observed: 'clippy: REFUSING to pass -- resolved to NO crate'  rc=1
+
+F2 MAJOR -- wave.sh:385 (fmt_changed) and wave.sh:428 (touch_changed). A deletion-only slice ('remove a dead integration test') hard-fails TWO steps at once on a tree where nothing is wrong. clippy_changed deliberately stays green for this case and documents why at :470-474; fmt_changed and touch_changed key on the file EXISTING and refuse. touch_changed's rc is now honoured at gate_slice/cmd_gate, so this is two independent reds plus SLICE GATE: FAIL.
+  REPRO: V=apps/website/api/tests/aar_replay_url_backfill.rs; rm -f $V
+         ( source scripts/platform/wave.sh status >/dev/null 2>&1; fmt_changed HEAD; echo fmt=$?; touch_changed HEAD; echo touch=$?; clippy_changed HEAD; echo clippy=$? )
+         git -c filter.lfs.process= checkout -- $V
+         observed: fmt rc=1, touch rc=1, clippy rc=0
+
+F3 MINOR -- wave.sh:800-806 vs wave.sh:181. TBD_GATE_ALLOW_UNSERIALISED=1 works for `gate --slice` but is INERT for the full gate. The branch returns 0 without setting GATE_LOCK_HELD=1 (only set at :835, after the flock), so ensure_gate_db refuses at :181, cmd_gate sets fail=1 at :955, and the full gate can only ever print GATE: FAIL -- UNSERIALISED. The comment at :795-798 claims it 'proceeds with the verdict itself relabelled' -- true for the slice gate, false for the full gate.
+  REPRO: TBD_GATE_LOCK=/proc/1/nope/x TBD_GATE_ALLOW_UNSERIALISED=1 bash -c 'source scripts/platform/wave.sh status >/dev/null 2>&1; take_gate_lock probe; echo rc=$? HELD=$GATE_LOCK_HELD; unset TEST_DATABASE_URL; ensure_gate_db; echo ensure=$?'
+         observed: lock rc=0 HELD=0, ensure_gate_db rc=2
+
+NIT -- refuse_empty_range (PRE-EXISTING, not T-406) rejects `gate --slice` when a slice has working-tree changes but no commits, which contradicts the stated purpose of changed_rs's working-tree union.
+
+CONFIRMED NOT BROKEN, do not re-audit: docs-only, scripts/-only, .sql-only and Cargo.toml-only slices all hit the `[ -z "$files" ]` early return BEFORE the new checks and pass for the right reason -- verified on real commits 2c946d59, 9b154096 and 95c0265b. Renames are safe (the `R old -> new` pseudo-path costs one phantom 'listed'; the new path exists so checked >= 1).'''
+surfaces = ["INFRA"]
+targets = ["website"]
+title = "wave.sh's new non-vacuity guards false-red on legitimate slices"

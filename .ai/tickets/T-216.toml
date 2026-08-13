@@ -1,0 +1,28 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 190
+executor = "claude-code"
+id = "T-216"
+impact = ["mc-authoring"]
+order = 2340
+program = "eden"
+status = "shipped"
+stream = "mission-creator"
+summary = "Three T-180 headline features die at the compile boundary that verify-t180 never crosses. The ORBAT block reaches the mod as a count-parity skeleton only."
+surfaces = [
+    "MAP",
+    "PLACE",
+]
+targets = ["website"]
+title = "flatten drops leaderSlotId, tag, callsign, rank, stance and all vehicles"

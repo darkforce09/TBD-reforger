@@ -1,0 +1,27 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "shipped_at",
+]
+__ord = 161
+executor = "claude-code"
+id = "T-187"
+impact = ["e2e"]
+order = 2050
+program = "eden"
+shipped_at = "02d95c7f"
+status = "shipped"
+stream = "mod-framework"
+summary = "scripts/mod/setup-server-profile.sh:38 copies golden-missions/msn_8f3a2c.json, which is nowhere in the repo. With set -euo pipefail the script aborts. This is the script that prepares a server profile for testing missions. ALSO (merged from T-252): :31 reads GAME_SERVER_TOKENS but apps/website/api/src/config.rs:89 reads SERVICE_TOKEN — fix both in one pass. Related stale docs: deploy.env.example references a docker-compose.staging.yml that does not exist."
+surfaces = ["MOD"]
+targets = ["mod"]
+title = "Fix setup-server-profile.sh — it copies a golden that does not exist"

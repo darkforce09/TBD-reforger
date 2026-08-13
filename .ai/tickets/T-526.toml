@@ -1,0 +1,33 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 500
+executor = "claude-code"
+id = "T-526"
+impact = [
+    "frontend",
+    "tests",
+]
+order = 3366
+priority = 0
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "Wave 46 cold gate FAIL fmt after T-522/523 merge. apps/website/frontend/src/mission_title_prefer.rs fails rustfmt --check (split chain wrapping in adopt_payload_wires_prefer_helper). Cure: rustfmt that file only. Owns: apps/website/frontend/src/mission_title_prefer.rs."
+surfaces = [
+    "FE",
+    "tests",
+]
+targets = ["website"]
+title = "W46 hotfix: rustfmt mission_title_prefer.rs after T-522"

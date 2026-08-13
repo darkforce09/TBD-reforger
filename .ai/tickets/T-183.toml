@@ -1,0 +1,27 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "shipped_at",
+]
+__ord = 157
+executor = "claude-code"
+id = "T-183"
+impact = ["arsenal"]
+order = 2010
+program = "eden"
+shipped_at = "f2dc5b1a"
+status = "shipped"
+stream = "mission-creator"
+summary = "INDFOR squads spawn as US Army bodies. packages/tbd-schema/registry/kit-aliases.json:39-42 has only blufor/opfor with fallbackFaction=blufor; kit.rs:52-57 falls back, kit.rs:107-110 has a test asserting it, and flatten.rs:471 consumes it — while the mod assigns engine faction FIA. CONSTRAINT (T-181.36): kit: gets a build-time GATE, not an enum. Adding an indfor alias WITHOUT a matching row in apps/mod/tbd-framework/Data/registry.json will FAIL xtask schema validate closed. Add both, or the gate stops the wave."
+surfaces = ["ARS"]
+targets = ["root"]
+title = "INDFOR squads spawn as US Army bodies"

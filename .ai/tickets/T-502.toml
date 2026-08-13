@@ -1,0 +1,33 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 476
+executor = "claude-code"
+id = "T-502"
+impact = [
+    "tests",
+    "security",
+]
+order = 3342
+priority = 2
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "Wave 40 residual from T-372. Class-R pins resync_ids_from_snapshot empty→None. Existing roles/sync IT only asserts 200. Cure: cold IT — promote admin with zero user_discord_roles, POST sync, assert role still admin."
+surfaces = [
+    "API",
+    "CI",
+]
+targets = ["website"]
+title = "POST /admin/roles/sync IT does not prove empty-snapshot admin survives"

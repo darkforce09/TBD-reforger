@@ -1,0 +1,44 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "stream",
+    "targets",
+    "executor",
+    "status",
+    "active_slice",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "spec",
+    "shipped_at",
+    "depends_on",
+    "unblocks",
+    "branch",
+]
+__ord = 100
+active_slice = "__tbd_null__"
+branch = "main"
+depends_on = []
+executor = "claude-code"
+id = "T-126"
+impact = [
+    "api",
+    "ui",
+    "security",
+]
+order = 1260
+program = "platform"
+shipped_at = "4a47688e"
+spec = "docs/platform/t126_audit_security_followup.md"
+status = "shipped"
+stream = "web-platform"
+summary = "Shipped @ 4a47688e (tag T-126): S1–S6 — export canViewMission, atomic refresh + family revoke, ORBAT slot race 409, banned refresh 403, frontend setTokens/bootstrap. Verify: .ai/artifacts/t126_verify_log.md. Spec: docs/platform/t126_audit_security_followup.md."
+surfaces = [
+    "DATA",
+    "SHELL",
+]
+targets = ["website"]
+title = "Fable audit — security + auth follow-up"
+unblocks = ["T-127"]

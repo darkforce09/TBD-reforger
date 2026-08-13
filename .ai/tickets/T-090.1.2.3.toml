@@ -1,0 +1,15 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-090.1.2.3"
+parent = "T-090"
+spec = "docs/specs/Mission_Creator_Architecture/t090_1_2_3_basemap_tile_prefetch.md"
+status = "cancelled"
+targets = ["website"]

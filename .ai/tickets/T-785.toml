@@ -1,0 +1,35 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "status",
+    "stream",
+    "targets",
+    "executor",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "notes",
+]
+__ord = 758
+executor = "claude-code"
+id = "T-785"
+impact = [
+    "ui",
+    "mc-authoring",
+    "state",
+]
+notes = "root cause of F-26 fan-out; T-788 and T-810 depend on this pattern; probe harness pattern in review section 2 F-01 | SHIPPED W200 PARTIAL: core F-01 CLOSED (verifier re-proved with real per-char CDP, ~60 chars, zero focus losses); F-02 landed on the WRONG WIDGET (bookmark rename, eden_dock_left.rs) — the real layer rename is eden_tree.rs, outside owns. Re-ticketed: T-811 (layer rename), T-812 (bookmark rename now truncates to last char), T-813 (differing-field no-op wipe + field-Esc). Verifier: editor_verify/wave200.md F1/F2/F3/F6/F7."
+order = 4670
+program = "eden"
+status = "shipped"
+stream = "mission-creator"
+summary = "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). F-01/F-02/F-26-root — THE BATCH UNBLOCKER. REPRODUCED TWICE: click Attributes>Identity ROLE, type 'AT Rifleman' -> field holds 'A', activeElement=BODY, and the tail keystrokes ran as chords (R collapsed the right dock, 'e' the left, Space jumped the camera, G flipped snap). ALL FOUR Identity text fields affected (probe typed 'qqq' -> q/Aq/q/q, tagged DOM node GONE after keystroke 1 = element remounts). Layer rename worse: field NEVER receives focus — with it open, 'g' flipped 'GRID off'->'GRID move' (eden_dock_left.rs rename input). MECHANISM: attributes.rs ~:746 text_field commits on:input -> store round-trip -> Leptos re-creates the input each keystroke. THE SAFE PATTERN IS ALREADY IN THE SAME FILE: ~:609 number_field keeps a focused/draft/exact split and commits on blur/Enter — typing '135' into ROTATION survives with focus retained (verified). FIX: (a) text_field adopts the number_field focused/draft pattern (commit on blur/Enter/debounce, never remount mid-focus); (b) layer-rename input focuses+selects on mount; (c) harden mission_history.rs ~:545 in_editable_field to check document.activeElement tag/contenteditable directly so lost focus can never convert typing into chords. ⚠️ TRAPS: number_field must NOT regress (it is correct today); marker caption, mission title, mission search, ORBAT inspector and composition-name fields are all HEALTHY today (probed) — do not 'unify' them onto a new widget; multi-edit 'Multiple values' locked-state must stay locked until apply-to-all ticked. ACCEPTANCE: scripted probe (CDP or wasm test): for each of ROLE / ROLE DESCRIPTION / TAG / Asset id / layer rename — click, type an 11-char string with spaces -> value === typed string, activeElement === the input, dock states and GRID readout unchanged; plus regression: ROTATION digit entry still works."
+surfaces = [
+    "ATTR",
+    "LEFT",
+    "UI",
+]
+targets = ["website"]
+title = "Attribute text inputs lose focus after one keystroke; the rest of the word fires global shortcuts"

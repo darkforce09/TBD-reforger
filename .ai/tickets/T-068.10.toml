@@ -1,0 +1,19 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "shipped_at",
+    "spec",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-068.10"
+notes = "Smart Forge + per-slot loadout in editor doc/Save/Export. Verify: .ai/artifacts/t068_10_verify_log.md. Mission-embed pulled forward from T-068.11."
+parent = "T-068"
+shipped_at = "3bc0bd24"
+spec = "docs/specs/Mission_Creator_Architecture/t068_10_smart_forge_ui.md"
+status = "shipped"
+targets = ["website"]

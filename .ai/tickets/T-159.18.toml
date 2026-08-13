@@ -1,0 +1,19 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "shipped_at",
+    "spec",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-159.18"
+notes = "LMB click-select; frozen cam; PointIndex pick_rect+argmin. Verify: .ai/artifacts/t159_18_verify_log.md. S8 persist notify deferred to mutator (.19)."
+parent = "T-159"
+shipped_at = "eb30ebea"
+spec = "docs/platform/t159_18_select_tools.md"
+status = "shipped"
+targets = ["website"]

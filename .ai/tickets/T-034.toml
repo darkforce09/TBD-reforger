@@ -1,0 +1,27 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "route",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 25
+executor = "claude-code"
+id = "T-034"
+impact = ["schema"]
+order = 340
+program = "eden"
+route = "/missions/:id/edit"
+status = "shipped"
+stream = "mission-creator"
+summary = "Eden UX spec and agent execution plan documentation."
+surfaces = ["DATA"]
+targets = ["website"]
+title = "MC doc alignment"

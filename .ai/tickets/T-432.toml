@@ -1,0 +1,32 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 406
+executor = "claude-code"
+id = "T-432"
+impact = ["mission-creator"]
+order = 3271
+priority = 3
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+MINOR from wave 7 verifier on T-219. is_known_editor_payload_top_level does not include payloadExtras; an authored top-level payloadExtras object is parked and re-emitted onto the wire.
+
+Repro: hydrate payload with payloadExtras:{nested:true}; compile re-emits that key. Empty map still omitted.
+
+Cure: treat payloadExtras as reserved internal, or pick a non-colliding storage name."""
+surfaces = ["FE"]
+targets = ["website"]
+title = "Reserve or rename payloadExtras so authored wire keys cannot collide"

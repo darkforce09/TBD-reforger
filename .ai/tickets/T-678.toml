@@ -1,0 +1,44 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "notes",
+    "depends_on",
+]
+__ord = 647
+depends_on = ["T-677"]
+executor = "claude-code"
+id = "T-678"
+impact = [
+    "mod",
+    "schema",
+    "mission-authoring",
+]
+notes = "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row"
+order = 4350
+program = "eden"
+status = "queued"
+stream = "mod-framework"
+summary = """
+OPERATOR DECISION 2026-08-02: AI units ARE coming — this ticket has a subject now. Previously gated behind the same question as T-677.
+
+Four attribute ids: `ATTR-FIELD-GRP-COMBAT-MODE`, `-GRP-BEHAVIOUR`, `-GRP-FORMATION`, `-GRP-SPEED-MODE`. Same AI gate as waypoints, and the sweep says they should ship together or not at all. Evidence that nothing exists to hang these on: word-boundary `combatMode` and `speedMode` return ZERO in both the frontend and the mod tree; `formation` returns one frontend hit and it is prose in a comment at editor_ops.rs:1324. `$defs/group` is closed, so each field is a widening plus an Enfusion reader. EXECUTOR IS `workbench` DELIBERATELY: this modifies `packages/tbd-schema/schema/mission.schema.json` and/or `apps/mod/tbd-framework/`, which the CLAUDE.md executor gate puts out of reach of any coding agent. The factory filters on executor, so this tagging is the safety mechanism — do not flip it to claude-code.
+
+EXECUTOR CORRECTED 2026-08-02: was filed `workbench` on the mistaken reading that any .c file needs the Arma Workbench GUI. It does not — scripts/mod/compile.sh compiles tbd-framework against the native Linux dedicated server headlessly, verified: "OK: compiled clean, 5707 files, 11182 classes, 832 ms, no Workbench". Schema edits are plain JSON. This is factory work. Per the model-routing rule, the .c portion routes to Fable 5 even though the executor is claude-code.
+
+SCHEMA HALF SPLIT OUT to T-706 (one widening pass for the whole program). This ticket is the Enfusion reader plus any editor UI; it does not touch packages/tbd-schema."""
+surfaces = [
+    "MOD",
+    "SCHEMA",
+    "ORBAT",
+]
+targets = ["mod"]
+title = "Group AI state: combat mode, behaviour, formation, speed"

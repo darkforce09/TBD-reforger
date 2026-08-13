@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 2
+executor = "cursor-docs"
+id = "T-003"
+impact = ["api"]
+order = 30
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "Development dev-login endpoint for local testing."
+surfaces = ["SHELL"]
+targets = ["website"]
+title = "Dev login shortcut"

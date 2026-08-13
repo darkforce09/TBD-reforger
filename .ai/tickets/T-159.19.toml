@@ -1,0 +1,19 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "shipped_at",
+    "spec",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-159.19"
+notes = "Marquee + move_entities + edit persist. Verify: .ai/artifacts/t159_19_verify_log.md. Soft-WebGPU marquee smoke uses ?force=webgl."
+parent = "T-159"
+shipped_at = "f444b878"
+spec = "docs/platform/t159_19_marquee_drag.md"
+status = "shipped"
+targets = ["website"]

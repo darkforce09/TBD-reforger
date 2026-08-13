@@ -1108,7 +1108,7 @@ mod tests {
     fn set_status_refuses_empty_without_write() {
         // T-383 Class-R: empty status must not overwrite a live registry field.
         let root = worktree_root();
-        let registry_path = root.join(".ai/tickets/registry.json");
+        let registry_path = root.join(".ai/tickets/T-001.toml");
         let before = fs::read_to_string(&registry_path).expect("read registry before");
         let mut registry = load_registry(&root).expect("load tip registry");
         let status_before = opt_str(require_ticket(&registry, "T-001"), "status")
@@ -1131,17 +1131,14 @@ mod tests {
             "empty set-status must not mutate in-memory status"
         );
         let after = fs::read_to_string(&registry_path).expect("read registry after");
-        assert_eq!(
-            before, after,
-            "empty set-status must not write registry.json"
-        );
+        assert_eq!(before, after, "empty set-status must not write T-001.toml");
     }
 
     #[test]
     fn set_status_refuses_invalid_enum_without_write() {
         // T-383 Class-R: invalid enum must not overwrite a live registry field.
         let root = worktree_root();
-        let registry_path = root.join(".ai/tickets/registry.json");
+        let registry_path = root.join(".ai/tickets/T-001.toml");
         let before = fs::read_to_string(&registry_path).expect("read registry before");
         let mut registry = load_registry(&root).expect("load tip registry");
 
@@ -1156,14 +1153,14 @@ mod tests {
         let after = fs::read_to_string(&registry_path).expect("read registry after");
         assert_eq!(
             before, after,
-            "invalid set-status must not write registry.json"
+            "invalid set-status must not write T-001.toml"
         );
     }
 
     #[test]
     fn set_status_refuses_invalid_registry_without_write() {
         let root = worktree_root();
-        let registry_path = root.join(".ai/tickets/registry.json");
+        let registry_path = root.join(".ai/tickets/T-001.toml");
         let before = fs::read_to_string(&registry_path).expect("read registry before");
         let mut registry = red_registry(&root);
 
@@ -1190,7 +1187,7 @@ mod tests {
         let after = fs::read_to_string(&registry_path).expect("read registry after");
         assert_eq!(
             before, after,
-            "set-status must not write registry.json when check is red"
+            "set-status must not write T-001.toml when check is red"
         );
     }
 
@@ -1210,7 +1207,7 @@ mod tests {
     #[test]
     fn add_refuses_invalid_registry_without_write() {
         let root = worktree_root();
-        let registry_path = root.join(".ai/tickets/registry.json");
+        let registry_path = root.join(".ai/tickets/T-001.toml");
         let before = fs::read_to_string(&registry_path).expect("read registry before");
         let mut registry = red_registry(&root);
         let next_before = registry
@@ -1256,14 +1253,14 @@ mod tests {
         let after = fs::read_to_string(&registry_path).expect("read registry after");
         assert_eq!(
             before, after,
-            "add must not write registry.json when check is red"
+            "add must not write T-001.toml when check is red"
         );
     }
 
     #[test]
     fn remove_refuses_invalid_registry_without_write() {
         let root = worktree_root();
-        let registry_path = root.join(".ai/tickets/registry.json");
+        let registry_path = root.join(".ai/tickets/T-001.toml");
         let before = fs::read_to_string(&registry_path).expect("read registry before");
         let mut registry = red_registry(&root);
         let tickets_before = tickets(&registry).len();
@@ -1288,7 +1285,7 @@ mod tests {
         let after = fs::read_to_string(&registry_path).expect("read registry after");
         assert_eq!(
             before, after,
-            "remove must not write registry.json when check is red"
+            "remove must not write T-001.toml when check is red"
         );
     }
 
@@ -1297,7 +1294,7 @@ mod tests {
         // T-459: advance-slice must share the add/remove preflight — red registry
         // never mutates active_slice in-memory or on disk.
         let root = worktree_root();
-        let registry_path = root.join(".ai/tickets/registry.json");
+        let registry_path = root.join(".ai/tickets/T-001.toml");
         let before = fs::read_to_string(&registry_path).expect("read registry before");
         let mut registry = red_registry(&root);
 
@@ -1326,7 +1323,7 @@ mod tests {
         let after = fs::read_to_string(&registry_path).expect("read registry after");
         assert_eq!(
             before, after,
-            "advance-slice must not write registry.json when check is red"
+            "advance-slice must not write T-001.toml when check is red"
         );
     }
 

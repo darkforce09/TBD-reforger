@@ -1,0 +1,30 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "spec",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 49
+executor = "claude-code"
+id = "T-062"
+impact = [
+    "perf",
+    "state",
+]
+order = 620
+program = "scale"
+spec = "docs/specs/Mission_Creator_Architecture/t062_incremental_bindings.md"
+status = "shipped"
+stream = "mission-creator"
+summary = "O(k) Zustand patches instead of full docToSnapshot on edits."
+surfaces = ["DATA"]
+targets = ["website"]
+title = "Incremental bindings at 360k"

@@ -1,0 +1,16 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+]
+__ord = 0
+executor = "cursor-docs"
+id = "T-068.0"
+parent = "T-068"
+status = "shipped"
+targets = [
+    "shared",
+    "root",
+]

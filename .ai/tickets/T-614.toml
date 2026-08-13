@@ -1,0 +1,52 @@
+__keys = [
+    "program",
+    "surfaces",
+    "impact",
+    "stream",
+    "targets",
+    "executor",
+    "id",
+    "title",
+    "summary",
+    "status",
+    "priority",
+    "order",
+]
+__ord = 587
+executor = "claude-code"
+id = "T-614"
+impact = ["platform-lifecycle"]
+order = 3612
+priority = 3
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+Three lesser findings from wave 77's adversarial verifier. None is a live defect.
+
+1. **`scripts/platform/wave.sh:875` -- the SLICE gate still skips clippy for `tbd-tools|xtask`**, giving
+   the reason "red on main, ungated by CI". **"Red on main" is now contradicted by lines 830-831 of the
+   same file** ("they are clean" -- T-603's own re-measure, independently confirmed: baseline
+   `clippy -p xtask -p tbd-tools --all-targets -- -D warnings` rc=0 from a cold dir, 50 real compile
+   units). So a slice that edits ONLY those crates has its own gate lint none of its code, and the lint
+   lands later at the wave gate -- the exact T-329 shape this function's header says it exists to
+   prevent. ("Ungated by CI" remains true: the ci.yml change was comment-only.)
+2. **Commit `d9c666e1` says "14 across 4 files"; it is 14 across EIGHT files.** Re-measured by reverting
+   `tools/ xtask/` to `efc3851cc` in a clone: plain run = 9, all in `tools/tbd-tools/src/enf/`
+   (truncation confirmed -- the failed lib blocks dependents from compiling at all, even with
+   `--keep-going`); with the lib fixed, 5 more -- `bin/enf.rs` 1, `xtask/src/schema_gates.rs` 3,
+   `xtask/src/sync.rs` 1. The lib's own 9 spread over FIVE files (apidoc 2, capability 2, citations 2,
+   source 1, symbols 2). Every lint type matches the commit's breakdown; only the file spread is wrong.
+3. **`scripts/mod/remote-log-grep.sh:118` -- `PAT_ASSIGNED` pins the legacy flat format plus prose** of
+   `TBD_SpawnManager.c:675`, in the very file whose own rule (line 34) is *"pin the prefix, never the
+   sentence."* Demonstrated: rewording that Print to the tagged vocabulary -- the file's own stated
+   direction of travel -- flips a healthy player-seated log from PASS to PARTIAL (`rc=2, was 0`). Fails
+   toward PARTIAL rather than false-PASS, and the header documents the dependency, so it is a nit.
+
+ALSO NOTED, deliberate and not a defect (verifier F5): `.world-boot-warning-baseline` budgets sit
+below boot reality on purpose, as a forcing function, so `world-boot.sh --mission=…` fails on clean
+main by design. Confirmed live (`5 > baseline 1 for msn_2d91be`). The cost, worth knowing: while a row
+is red, a NEW regression on it (5->6) is indistinguishable from the standing red. See T-609."""
+surfaces = ["INFRA"]
+targets = ["website"]
+title = "Wave 77 residue: the slice gate lints none of a tooling slice, and two counts/pins are off"

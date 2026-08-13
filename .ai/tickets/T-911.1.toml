@@ -1,0 +1,17 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "spec",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-911.1"
+notes = "Phase 1: isomorphic per-file TOML, FROZEN_27 keys, ROOT + 12 fixtures, dual-read, byte-identical JSON emit vs the cutover monolith, then delete the monolith in the same commit."
+parent = "T-911"
+spec = "docs/platform/t911_ticket_registry_redesign.md"
+status = "ready"
+targets = ["root"]

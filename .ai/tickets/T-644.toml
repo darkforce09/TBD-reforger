@@ -1,0 +1,34 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "route",
+    "stream",
+    "targets",
+    "executor",
+    "notes",
+    "depends_on",
+]
+__ord = 629
+depends_on = [
+    "T-661",
+    "T-643",
+]
+executor = "claude-code"
+id = "T-644"
+impact = ["ui"]
+notes = "editor-UI program wave 10 (wave_plan.tsv row 110) — SHIPPED wave 110 (editor factory), 7e49f0fd + wiring 29685978 + flip fix (blocker); verifier wave110.md"
+order = 4070
+program = "eden"
+route = "/missions/:id/edit"
+status = "shipped"
+stream = "mission-creator"
+summary = "Follow-up to T-643 and a hard dependency on it — T-643 proves the DEM sampling path this reuses. Pick an observer, shade everything it can and cannot see. It is the better planning tool by some way and the DEM supports it. THE HARD PART IS THE COLOUR LANGUAGE, not the compute: a visible/hidden wash must not fight the contours (T-640) or the landcover, both of which already use the same map surface. Prototype the palette BEFORE building the compute. Code: second mode on the same tool surface (`apps/website/frontend/src/los_tool.rs`); bulk sampling in `crates/map-engine-core/src/dem/sample.rs`; and a new raster lane in `crates/map-engine-render/src/engine.rs` — that last path is graded LOW: the engine is 6,302 lines and it was not confirmed that no existing lane can carry the wash. Check that first; if a lane can be reused, this ticket drops the engine path entirely."
+surfaces = ["MAP"]
+targets = ["website"]
+title = "Line of Sight: viewshed raster"

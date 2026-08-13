@@ -1,0 +1,51 @@
+__keys = [
+    "program",
+    "impact",
+    "stream",
+    "targets",
+    "executor",
+    "id",
+    "title",
+    "summary",
+    "status",
+    "priority",
+    "order",
+    "surfaces",
+]
+__ord = 582
+executor = "claude-code"
+id = "T-609"
+impact = ["platform-lifecycle"]
+order = 3562
+priority = 2
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+Surfaced by T-605 and independently confirmed by wave 76's verifier (F3 root cause). Both refused to
+widen the baseline, which was the right call -- this row exists so the decision is deliberate.
+
+`bash scripts/mod/world-boot.sh --mission=<any golden>` ends `WORLD BOOT: FAIL` on `main` today:
+    FAIL  validator warnings rose: 5 > baseline 0 for msn_8f3a2c   (bridgehead-at-levie)
+    FAIL  validator warnings rose: 4 > baseline 0 for msn_5c1de7   (slot-loadout-coverage)
+in both cases alongside `ok  mission validated: mission result=PASS errors=0` and `ok  no TBD script
+errors` -- the missions are fine; the WARNING RATCHET is stale.
+
+The warnings are one family, unconsumed authored keys: `environment`, `settings`, `layers`,
+`factions.tickets`, `orbat.roles.radio` -- "authored but the mission does not model it"
+(`TBD_MissionValidator.c:1168,1175,1185`). `.world-boot-warning-baseline` is 111 rows of
+`<mission-id> <budget>`, last touched at `d297f3a39`, a confirmed ancestor of wave 76's base; the
+validator sites likewise predate it. So this went red at some earlier commit and no gate noticed --
+`cmd_gate` has no world-boot step, so the wave gate has been green over it the whole time.
+
+DECIDE, do not just widen: either (a) the validator is right and those five keys genuinely are
+authored-but-unmodelled, in which case fix the missions or the modelling and the ratchet returns to 0;
+or (b) the warnings are noise, in which case fix the validator and explain why the family is benign.
+Widening the baseline to 5 makes the red go away while preserving whatever it was warning about, and
+guarantees the next real regression hides inside the new budget.
+
+RELATED: T-608 makes `PLAYTEST_RUNBOOK.md` §2.5A tell the operator this specific FAIL is known, so the
+playtest is not blocked on this ticket."""
+surfaces = ["MOD"]
+targets = ["website"]
+title = "world-boot ratchet has been red for every golden mission since before wave 76"

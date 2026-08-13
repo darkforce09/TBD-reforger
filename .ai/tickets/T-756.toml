@@ -1,0 +1,27 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "status",
+    "stream",
+    "targets",
+    "executor",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "notes",
+]
+__ord = 729
+executor = "claude-code"
+id = "T-756"
+impact = ["ui"]
+notes = "filed by wave-115 adversarial verifier (editor factory)"
+order = 4632
+program = "eden"
+status = "shipped"
+stream = "mission-creator"
+summary = "MINOR from the wave-115 verifier. Two edge cases in T-670's format_m_per_px, both outside the live zoom clamp and neither reachable today. (1) A NON-FINITE zoom prints a confident `1.00 m/px` rather than the em-dash the degenerate path is supposed to produce. This inherits T-667's pre-existing convention rather than being introduced by T-670, but the readout now claims three significant figures, so a fabricated number reads as a measured one. (2) Band-top carry yields four significant figures instead of three: 9.996 formats as `10.00` (verified with a compiled probe). Every value INSIDE the real clamp (64.0 m/px at MIN_ZOOM down to 0.015625 at MAX_ZOOM) was verified correct at both endpoints and at the 0.0625 regression case that drove the precision rework mid-slice. Also fold in the verifier's mechanism corrections to the slice's own notes: the native fallback is misdescribed (scale_mpp is SEEDED to 4.0, not absent, and the camera_snapshot() path is now dead code with an identical outcome); the first rAF frame performs one redundant write; and the SCL cell's static fallback would diverge from ScaleBar's live fallback for a future caller that omits the prop — no such caller exists. Diagnosis: editor_verify/wave115.md MINOR-4 + NIT-3."
+surfaces = ["BOTTOM"]
+targets = ["website"]
+title = "Scale readout formatter corners: non-finite prints a confident number, band-top carries to 4 sig figs"

@@ -1,0 +1,32 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "status",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "route",
+    "branch",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 73
+branch = "ticket/T-086"
+executor = "cursor-docs"
+id = "T-086"
+impact = [
+    "ui",
+    "api",
+]
+order = 860
+program = "platform"
+route = "/server-control"
+status = "deferred"
+stream = "web-platform"
+summary = "Live server control panel wired to RCON backend."
+surfaces = ["SHELL"]
+targets = ["website"]
+title = "Server Control + RCON API"

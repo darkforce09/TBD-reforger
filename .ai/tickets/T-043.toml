@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 32
+executor = "cursor-docs"
+id = "T-043"
+impact = ["schema"]
+order = 430
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "Docs hub, domain ROADMAPs, FD vs T split."
+surfaces = ["DATA"]
+targets = ["website"]
+title = "Platform documentation reorg"

@@ -1,0 +1,18 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-181.6"
+notes = "claude-code slices only; verify must exit 0 incl. mod-compile; never auto-ship; Workbench lockfile."
+parent = "T-181"
+status = "deferred"
+targets = [
+    "mod",
+    "root",
+]

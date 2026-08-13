@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 266
+executor = "claude-code"
+id = "T-292"
+impact = ["contract"]
+order = 3100
+program = "eden"
+status = "shipped"
+stream = "mission-creator"
+summary = "TBD_RadioService.c:214-220 maps only long to a nonzero value; short and any both collapse to 0 and are behaviourally identical. The schema advertises a three-value enum (mission.schema.json:308) the runtime does not honour."
+surfaces = ["DATA"]
+targets = ["mod"]
+title = "net.range short is parsed then discarded"

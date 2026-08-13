@@ -1,0 +1,53 @@
+__keys = [
+    "program",
+    "impact",
+    "stream",
+    "targets",
+    "executor",
+    "id",
+    "title",
+    "summary",
+    "status",
+    "priority",
+    "order",
+    "surfaces",
+]
+__ord = 592
+executor = "claude-code"
+id = "T-619"
+impact = ["platform-lifecycle"]
+order = 3662
+priority = 3
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = '''
+FOUND by wave 78's adversarial verifier -- the cross-slice class that wave 77 also shipped (T-604's
+detector quoted a Print T-605 reworded).
+
+`scripts/mod/mcp-wb-logs.sh:44` states: *"The check vocabulary — shared with remote-log-grep.sh.
+**ONE definition per pattern**."* Five of the six shared patterns match. `PAT_ASSIGNED` does not:
+
+    mcp-wb-logs.sh:57   '\[TBD\] SpawnManager: assigned slot'                          # flat only
+    remote-log-grep.sh:136 '\[TBD\]\[Spawn\].*assigned|\[TBD\] SpawnManager: assigned'  # both formats
+
+They are **not sourced from a common lib** -- the "one definition" is a claim, not a mechanism.
+T-614 broadened the sibling THIS WAVE, with the reasoning that `TBD_SpawnManager.c` is 70/74 tagged
+and `:675` is a flat straggler, so *"the reword is the direction the file is already travelling."*
+
+**When `:675` moves to `[TBD][Spawn]`, `mcp-wb-logs.sh` reports PARTIAL over a boot where a player
+really was seated** -- measured:
+
+    $ bash scripts/mod/mcp-wb-logs.sh --file tagged_seat.log   # player WAS seated (tagged format)
+      exit=2  (PARTIAL: slot bodies built; no player has deployed yet.)
+
+That is the latent false-amber T-614 inoculated its own file against, and a partial regression of the
+inversion T-612 had just fixed in this same file.
+
+FIX: broaden `mcp-wb-logs.sh:57` to match its sibling -- **or better, make the claim true** by
+extracting the six shared patterns into one sourced file (`scripts/mod/lib/` already exists;
+`gate-grep.sh` lives there from T-556). A comment asserting a shared definition, over two divergent
+copies, is the signature defect in miniature: it reports agreement it never checked.'''
+surfaces = ["MOD"]
+targets = ["website"]
+title = "PAT_ASSIGNED diverged between two sibling scripts that both claim ONE shared definition"

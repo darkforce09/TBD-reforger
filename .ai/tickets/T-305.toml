@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 279
+executor = "claude-code"
+id = "T-305"
+impact = ["data-pipeline"]
+order = 2305
+program = "infra"
+status = "idea"
+stream = "infra"
+summary = "Found by T-206. tools/tbd-tools/src/world/pak.rs read_file/read_raw seek `data_start + entry.offset`, but entry offsets are ABSOLUTE from the start of the pak. Measured over 300 compressed entries: 300/300 inflate correctly at `entry.offset`, only 3/300 at `data_start + offset`. Uncompressed reads come back rotated by exactly 56 bytes, which is data_start in every shipped pak. `enf extract` goes through this path, so anything built on it is reading shifted bytes. The pak reader is otherwise sound — the T-206 probe used it to resolve all 1,857 registry prefabs with zero misses once the offset was corrected."
+surfaces = ["REG"]
+targets = ["root"]
+title = "pak.rs reads at the wrong offset — entry offsets are absolute, not relative to data_start"

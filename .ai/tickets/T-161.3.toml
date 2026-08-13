@@ -1,0 +1,17 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "spec",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-161.3"
+notes = "Mutators. Verify t161_3_verify_log.md (executed by Cursor Grok 4.5 override)"
+parent = "T-161"
+spec = "docs/platform/t161_ticket_xtask_program.md"
+status = "shipped"
+targets = ["root"]

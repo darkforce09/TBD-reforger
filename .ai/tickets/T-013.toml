@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 11
+executor = "cursor-docs"
+id = "T-013"
+impact = ["ui"]
+order = 130
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "Glass bento dashboards and mission library grid."
+surfaces = ["SHELL"]
+targets = ["website"]
+title = "macOS dashboards and grids restyle"

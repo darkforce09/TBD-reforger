@@ -166,9 +166,7 @@ fn plan_rows(plan: &Path) -> Result<Vec<Row>> {
 /// Registry tickets keyed by id, in file order (Python dict comprehension preserves it, and
 /// `unplanned` reports in that order before sorting).
 fn registry(root: &Path) -> Result<(Vec<String>, HashMap<String, Value>)> {
-    let p = root.join(".ai/tickets/registry.json");
-    let text = std::fs::read_to_string(&p).with_context(|| p.display().to_string())?;
-    let v: Value = serde_json::from_str(&text).with_context(|| p.display().to_string())?;
+    let v = crate::registry::load_registry(root)?;
     let mut order = Vec::new();
     let mut map = HashMap::new();
     for t in v["tickets"].as_array().cloned().unwrap_or_default() {

@@ -1,0 +1,26 @@
+__keys = [
+    "id",
+    "order",
+    "status",
+    "program",
+    "title",
+    "summary",
+    "surfaces",
+    "impact",
+    "depends_on",
+    "executor",
+]
+__ord = 121
+depends_on = ["T-180"]
+executor = "cursor-docs"
+id = "T-147"
+impact = ["ui"]
+order = 1480
+program = "eden"
+status = "cancelled"
+summary = "CANCELLED (2026-07-26 audit). Already ABSORBED by T-180.4 per its own summary, but left deferred so it still appears in status sweeps."
+surfaces = [
+    "MAP",
+    "ORBAT",
+]
+title = "Simplified Squad Connections"

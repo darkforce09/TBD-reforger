@@ -1,0 +1,29 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "spec",
+    "route",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 45
+executor = "claude-code"
+id = "T-058"
+impact = ["ui"]
+order = 580
+program = "eden"
+route = "/missions/:id/edit"
+spec = "docs/specs/Mission_Creator_Architecture/t058_entity_count_readout.md"
+status = "shipped"
+stream = "mission-creator"
+summary = "OBJ total and SEL selected counts in toolbelt."
+surfaces = ["BOTTOM"]
+targets = ["website"]
+title = "Entity count readout"

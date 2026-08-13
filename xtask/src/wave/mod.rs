@@ -353,7 +353,7 @@ impl Ctx {
             gate_lock_max: envn("TBD_GATE_LOCK_MAX", 3600).max(0) as u64,
             verify_debt_nag: envn("TBD_VERIFY_DEBT_NAG", 8),
             generation_floor: envn("TBD_WAVE_GENERATION_FLOOR", 76),
-            registry_view: ledger::Registry::load(Path::new(".ai/tickets/registry.json")),
+            registry_view: ledger::Registry::load_repo(Path::new(".")),
             host,
             cargo_target_dir,
             main_root,

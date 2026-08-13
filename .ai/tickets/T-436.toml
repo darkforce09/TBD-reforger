@@ -1,0 +1,32 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 410
+executor = "claude-code"
+id = "T-436"
+impact = ["platform-lifecycle"]
+order = 3275
+priority = 1
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+In-wave hotfix from wave 9 adversarial verify (M2/M3). deploy-website.sh refused only substring prairielearn (case-sensitive) and did not enforce the documented /home/sam/tbd/ prefix, so a filled deploy.env could dry-run/rsync --delete to arbitrary paths (e.g. /tmp/not-tbd-at-all). PrairieLearn mixed-case paths also slipped through.
+
+Repro before fix: DEPLOY_ENV with TBD_REMOTE_DIR=/tmp/not-tbd-at-all → --dry-run rc=0.
+
+Cure: fail-closed prefix check under /home/sam/tbd/ + case-insensitive prairielearn refuse."""
+surfaces = ["INFRA"]
+targets = ["website"]
+title = "Harden deploy-website.sh: require /home/sam/tbd/ prefix + case-insensitive prairielearn refuse"

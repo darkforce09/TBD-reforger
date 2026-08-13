@@ -1,0 +1,20 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-151.2"
+parent = "T-151"
+shipped_at = "a51e9dcb"
+spec = "docs/specs/Mission_Creator_Architecture/t151_2_world_parser.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]

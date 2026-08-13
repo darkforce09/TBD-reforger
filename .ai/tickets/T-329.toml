@@ -1,0 +1,50 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+    "shipped_at",
+]
+__ord = 303
+executor = "claude-code"
+id = "T-329"
+impact = ["platform-lifecycle"]
+order = 3145
+priority = 0
+program = "platform"
+shipped_at = "367fcaf2"
+status = "shipped"
+stream = "web-platform"
+summary = """
+FIRING RIGHT NOW ON LIVE DATA. Found by T-325's sweep and captured, not inferred:
+  `error occurred while decoding column "callsign": unexpected null`
+
+handlers/dashboard.rs:101 does `SELECT orbat_slots.*`. It is the ONLY one of six OrbatSlot read sites that uses a bare `*` instead of the coalescing column list — the other five, e.g. deployments.rs:103, spell the columns out and COALESCE the nullable ones.
+
+In the operator's `tbd_reforger` today: 9 of 16 orbat_slots rows carry a NULL in callsign/loadout/tag, and TWO of those have `assigned_to` set. So GET /api/v1/dashboard 500s right now for discord_ids ...002 and ...005. The dashboard is the landing page after login.
+
+Fix is small: copy the coalescing column list from deployments.rs:103. Do NOT 'fix' it by making the model fields Option — T-325 established why that is wrong (the wire cannot express the distinction; `skip_serializing_if = String::is_empty` already omits the key, so None and "" would be two encodings of one state, and the committed goldens depend on the current shape).
+
+ALSO IN SCOPE, because it is the reason this survived: tests/null_tolerance.rs is a purpose-built regression suite for exactly this bug class and MISSES all three instances T-325 found. It also never touches `matches` or `match_player_stats` at all. Extend it so this class cannot recur silently — that is worth more than the one-line query fix.
+
+TWO CORRECTIONS TO THIS TICKET, from the agent that fixed it. The captured error I quoted names the WRONG COLUMN: `callsign` is NOT NULL on all 18 of the operator's orbat_slots rows. It is `tag` that is NULL — on 9 rows, including exactly the two with assigned_to set. Users and mechanism right, column wrong. And there are SEVEN OrbatSlot read sites, not six; dashboard.rs was the only bare one, the other six all coalesce.
+
+WHY null_tolerance.rs MISSED ALL THREE — three structural failures, not a forgotten case:
+  1. It LISTED endpoints — 5 of 44 GET routes, and none of the three defects lived in those 5.
+  2. ITS ROWS WERE UNREACHABLE. It authenticated as dev-login (...001) but seeded rows against ...099, and never set orbat_slots.assigned_to. Every `WHERE assigned_to = $me` branch — exactly where this bug lived — was dead. Calling /dashboard would have passed VACUOUSLY. tests/dashboard_reads.rs:80 still does that today.
+  3. It LISTED tables, never inserting matches/match_player_stats at all, and ASSUMED omitting an INSERT column yields NULL — true only while no nullable column has a DEFAULT, and never verified.
+
+Now it mints its own session so caller-scoped predicates resolve to its own rows; NULLs every nullable column from information_schema by explicit UPDATE and asserts the NULLs landed; sweeps every GET route with a guard that parses src/app.rs and fails when a route is added uncovered; and adds a STATIC ENUMERATOR cross-referencing every SELECT literal in src/ against information_schema, failing on a bare `*` or an un-COALESCEd nullable column. That half needs no predicate, so it reaches handlers no test exercises. Proven: reinstating the bare `*` turns both red, the static one naming the file and line. Catches all three known instances, each by both halves independently.
+
+Honest about residual gaps: select lists assembled past their literal prefix (QueryBuilder::push), untyped query/query_scalar, and non-GET handlers behaviourally (three OrbatSlot reads live in POST handlers, caught only by the static half)."""
+surfaces = ["API"]
+targets = ["website"]
+title = "GET /api/v1/dashboard 500s in production for two real users"

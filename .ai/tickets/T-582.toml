@@ -1,0 +1,65 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 556
+executor = "claude-code"
+id = "T-582"
+impact = ["platform-lifecycle"]
+order = 3431
+priority = 1
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+T-211 delivered the `zones` document root, 11 mutators, and proof that authored zones reach the mod
+through flatten. It did NOT deliver a product surface, and the commit carries the full ticket title
+"Zone and play-area draw tool" -- an overclaim the verifier called out.
+
+MEASURED: zero references to any zone mutator in `crates/map-engine-core/src/js.rs`, no wasm wrapper,
+no frontend caller anywhere in `apps/website/frontend/src`. **Zones are authorable only from native
+test code today.**
+
+DO NOT START THIS UNTIL T-581 LANDS. Without save-time validation, the first thing this UI does is
+let an author permanently 500 their own mission.
+
+TWO PIECES:
+1. `crates/map-engine-core/src/js.rs` -- wasm bindings for the 11 mutators. Polygons already cross as
+   a flat `&[f64]`.
+2. `eden_chrome.rs` + `editor_ops.rs` -- circle drag-to-radius, polygon click-to-place with
+   COMMIT-ON-CLOSE ONLY AT >=3 VERTICES (the doc layer deliberately does not guard this), zone
+   selection/render, and an Attributes panel over the 16 declared `rules` keys **driven by the
+   schema, not a hand-typed list** -- a hand-typed list is the second vocabulary T-241 exists to
+   prevent.
+
+BUDGET FOR THE 0.1 m QUANTISATION: the mod boundary rounds every vertex and radius
+(`flatten.rs` round_coord). A precision affordance finer than 0.1 m would be quietly wrong. See T-581
+for the r=0.04 -> r=0.0 edge that a click-without-drag produces.
+
+=== A LANDMINE, VERIFIED ARMED BY THE WAVE 70 VERIFIER ===
+`zones` is in store.rs's `is_known_editor_payload_top_level` but deliberately NOT in compile.rs's
+`KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS`. Today the round trip works via a projection into
+`payloadExtras.zones` that compile_payload promotes to the payload root (T-219).
+**ADDING "zones" TO compile.rs's KNOWN-KEYS LIST *ALONE* SILENTLY DROPS EVERY AUTHORED ZONE.**
+The verifier armed it deliberately: zones vanish from the wire and 4 tests fail loudly -- so the trap
+cannot be stepped on silently while tests run, but it CAN be stepped on by someone "tidying" the key
+list without running them.
+THE RETIREMENT IS TWO EDITS OR NEITHER: add `"zones"` to KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS **and**
+`"zones": values_of_ordered(&small, "zonesById", "zones")` to compile_payload's json!, then delete the
+projection block in small_maps_json. Do that first, in its own commit, before the UI work."""
+surfaces = [
+    "FRONTEND",
+    "DATA",
+]
+targets = ["website"]
+title = "The zone draw tool: T-211 shipped the document layer, nothing reaches it"

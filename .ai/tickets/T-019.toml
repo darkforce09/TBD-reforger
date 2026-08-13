@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 13
+executor = "cursor-docs"
+id = "T-019"
+impact = ["ui"]
+order = 190
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "Mission dossier moved to shared Sheet component."
+surfaces = ["SHELL"]
+targets = ["website"]
+title = "R5 shared Sheet primitive"

@@ -1,0 +1,19 @@
+__keys = [
+    "id",
+    "parent",
+    "executor",
+    "targets",
+    "status",
+    "spec",
+    "notes",
+    "shipped_at",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-068.10.3"
+notes = "Arsenal polish B: Forge picker rows on v3 kinds - grouped/sorted/searchable, abstracts hidden. Row counts must equal DB counts (vitest). SHIPPED @ e6f8a9bb (tag T-068.10.3): F1-F5 PASS, vitest 325/325; F6 operator visual at pause. Jacket row = gear_jacket into v1 uniform field; remaining kind rows arrive with .10.4 fields."
+parent = "T-068"
+shipped_at = "e6f8a9bb"
+spec = "docs/specs/Mission_Creator_Architecture/t068_10_3_forge_picker_ux.md"
+status = "shipped"
+targets = ["website"]

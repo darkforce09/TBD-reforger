@@ -1,0 +1,38 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "executor",
+    "priority",
+    "stream",
+    "targets",
+]
+__ord = 544
+executor = "claude-code"
+id = "T-570"
+impact = [
+    "tests",
+    "mission-authoring",
+]
+order = 3423
+priority = 2
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+FOUND by W67 adversarial verifier (DIRTY MAJOR) after T-567.
+
+Exact `if false { … }` now RED. Still GREEN with live None + unreachable `if true == false` / `loop { break; apply… }` / `#[cfg(any())]` / `while false` / `if !true` wrapping apply_row_meta(…, opt(&row.briefing)).
+
+Repro: live briefing → None; wrap decoy call in `if true == false { … }`; pin green."""
+surfaces = [
+    "FRONTEND",
+    "tests",
+]
+targets = ["website"]
+title = "T-567 Class-R still hollow — unreachable if true==false / loop-break / cfg(any())"

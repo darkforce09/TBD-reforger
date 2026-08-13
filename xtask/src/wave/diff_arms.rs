@@ -621,7 +621,10 @@ pub fn arm_push_guard(ctx: &Ctx) -> Vec<ArmResult> {
         ctx.root.join("scripts/platform/wave.sh"),
         repo.join("scripts/platform/wave.sh"),
     );
-    let _ = std::fs::write(repo.join(".ai/tickets/registry.json"), r#"{"tickets":[]}"#);
+    let _ = std::fs::write(
+        repo.join(".ai/tickets/ROOT"),
+        "# ticket-registry root marker\n",
+    );
     let _ = std::fs::write(
         repo.join("docs/platform/wave_plan.tsv"),
         "wave\tticket\ttitle\towns\n",

@@ -4,11 +4,12 @@ use std::path::{Path, PathBuf};
 pub fn find_repo_root() -> Result<PathBuf> {
     let mut cur = std::env::current_dir().context("cwd")?;
     loop {
-        if cur.join(".ai/tickets/registry.json").is_file() {
+        if cur.join(".ai/tickets/ROOT").is_file() || cur.join(".ai/tickets/registry.json").is_file()
+        {
             return Ok(cur);
         }
         if !cur.pop() {
-            bail!("could not find repo root (.ai/tickets/registry.json)");
+            bail!("could not find repo root (.ai/tickets/ROOT)");
         }
     }
 }

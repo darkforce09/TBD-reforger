@@ -1,0 +1,31 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "stream",
+    "targets",
+    "executor",
+    "notes",
+]
+__ord = 654
+executor = "cursor-docs"
+id = "T-653"
+impact = [
+    "dx",
+    "docs",
+]
+notes = "not factory-dispatchable; no owns, no wave row"
+program = "eden"
+status = "idea"
+stream = "infra"
+summary = "Three non-obvious fixes were needed to screenshot the editor headless and all three will be re-discovered by the next person otherwise. (1) `XDG_CACHE_HOME` must be writable — the ostree host's default fontconfig cache is not, so Chrome finds zero fonts and the renderer aborts on first text layout (KB-002). (2) `--use-angle=vulkan` ONLY: swiftshader's WebGPU refuses `createBuffer` and wgpu panics, and `--use-angle=gl` gives `webgl2 not available` so `RenderEngine::create` fails. (3) The map must be read via `canvas.toDataURL()` — headless logs `Failed to initialize vulkan surface` and `Page.captureScreenshot`, with EITHER `fromSurface` value, returns a BLACK MAP OVER CORRECT DOM CHROME, which is indistinguishable from a dead engine; 3.7 MB vs 45 KB is the tell. SCOPE CORRECTION on the draft, which proposed promoting the capture scripts into `tools/`: THEY CANNOT LIVE IN THIS REPO. `Makefile:466` `verify-no-python` is a hard gate wired into `ci-local` at :484, and the working scripts are Python. The deliverable is therefore DOCUMENTATION, and `docs/website/EDITOR_GATE_RUNBOOK.md` already exists as its home — which makes this `cursor-docs`, not a code ticket. Left `idea` because the two source artifacts disagree on disposition (one says superseded, one says leave as idea) and neither is an operator decision; it carries no owns and takes no wave slot either way."
+surfaces = [
+    "OPS",
+    "CI",
+]
+targets = ["root"]
+title = "Preserve the three headless editor-screenshot findings"

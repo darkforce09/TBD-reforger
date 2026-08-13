@@ -1,0 +1,38 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "executor",
+    "priority",
+    "stream",
+    "targets",
+]
+__ord = 542
+executor = "claude-code"
+id = "T-568"
+impact = [
+    "tests",
+    "auth",
+]
+order = 3421
+priority = 2
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+FOUND by W66 adversarial verifier (DIRTY MAJOR) after T-565.
+
+SELECT -- comment decoy now RED. Still GREEN: (1) dead helper retaining COALESCE UPDATE while live path SET arma_id = $2; (2) SELECT … WHERE 'UPDATE users SET arma_id = COALESCE…' (needle inside SQL string literal survives comment strip).
+
+Repro: move COALESCE UPDATE into unused fn; live UPDATE uses $2; Class-R green."""
+surfaces = [
+    "API",
+    "tests",
+]
+targets = ["website"]
+title = "T-565 Class-R still hollow — dead helper UPDATE / SQL string-literal decoy"

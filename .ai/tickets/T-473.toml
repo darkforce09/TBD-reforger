@@ -1,0 +1,41 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 447
+executor = "claude-code"
+id = "T-473"
+impact = [
+    "website",
+    "tests",
+]
+order = 3312
+priority = 1
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+Residual from wave 27 adversarial BLOCKER/MAJOR. Class-R pins exact `list_seeded.set(true)` only:
+(1) early `list_seeded.set( true )` + keep Ok set → PASS
+(2) Err `set( true )` / `set((true))` / `set(seed)` → PASS
+(3) wrap Retry UI in `if false { … }` (no filter) → PASS
+
+Repro: spaced set( true ) before match → Class-R green.
+
+Cure: normalize whitespace for seed pin; forbid any list_seeded.set outside Ok arm; ban if false / unreachable Retry; RED→GREEN on verifier perturbations."""
+surfaces = [
+    "FE",
+    "tests",
+]
+targets = ["website"]
+title = "T-470 Class-R still greens spaced/indirect Err seed + if-false Retry"

@@ -1,0 +1,517 @@
+__keys = [
+    "id",
+    "order",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "shipped_at",
+    "spec",
+    "branch",
+    "targets",
+    "executor",
+    "unblocks",
+    "slices",
+    "slice_plan",
+]
+__ord = 125
+branch = "t-151-wgpu-spike"
+executor = "cursor-docs"
+id = "T-151"
+impact = [
+    "perf",
+    "ui",
+]
+order = 1500
+program = "Platform"
+shipped_at = "c4831451"
+slices = [
+    "T-151.0",
+    "T-151.1",
+    "T-151.2",
+    "T-151.3",
+    "T-151.4",
+    "T-151.4.1",
+    "T-151.5",
+    "T-151.5.1",
+    "T-151.6",
+    "T-151.7",
+    "T-151.7.1",
+    "T-151.7.2",
+    "T-151.7.3",
+    "T-151.8",
+    "T-151.8.1",
+    "T-151.9",
+    "T-151.10",
+    "T-151.10.1",
+    "T-151.11.1",
+    "T-151.11.2",
+    "T-151.11.3",
+    "T-151.11.4",
+    "T-151.11.5",
+    "T-151.11.6",
+]
+spec = "docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md"
+status = "shipped"
+summary = "wgpu Mission Creator engine: W0–W9 shipped @ c4831451 (T-151.9); W10 audit T-151.10/10.1 shipped; W11 remediations T-151.11.1–.6 complete @ 8237cda6. Operator sign-off + polish next. Hub: t151_wgpu_engine_program.md. Worktree tbd-reforger-wgpu-spike/. D5 LANGUAGE GATE."
+surfaces = ["MAP"]
+targets = [
+    "root",
+    "website",
+]
+title = "WebGPU (wgpu/wasm) render engine spike - replace Deck.gl"
+unblocks = [
+    "T-069",
+    "T-070",
+    "T-071",
+]
+
+[slice_plan]
+__keys = [
+    "T-151.0",
+    "T-151.1",
+    "T-151.2",
+    "T-151.3",
+    "T-151.4",
+    "T-151.5",
+    "T-151.6",
+    "T-151.7",
+    "T-151.8",
+    "T-151.8.1",
+    "T-151.9",
+    "T-151.10",
+    "T-151.10.1",
+    "T-151.11.1",
+    "T-151.11.2",
+    "T-151.11.3",
+    "T-151.11.4",
+    "T-151.11.5",
+    "T-151.11.6",
+    "T-151.4.1",
+    "T-151.5.1",
+    "T-151.7.1",
+    "T-151.7.2",
+    "T-151.7.3",
+]
+
+[slice_plan."T-151.0"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+executor = "claude-code"
+shipped_at = "f019512d"
+spec = "docs/specs/Mission_Creator_Architecture/t151_0_wasm_merge_dual_mount.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]
+
+[slice_plan."T-151.1"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+executor = "claude-code"
+shipped_at = "3ab81587"
+spec = "docs/specs/Mission_Creator_Architecture/t151_1_basemap_lane.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]
+
+[slice_plan."T-151.10"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+    "notes",
+]
+executor = "claude-code"
+notes = "Fable 5 full-program audit W0–W9. Tracker: .ai/artifacts/t151_10_fable_audit_report.md. Verify: .ai/artifacts/t151_10_verify_log.md"
+shipped_at = "6adbd4bf"
+spec = "docs/specs/Mission_Creator_Architecture/t151_10_fable_program_audit.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]
+
+[slice_plan."T-151.10.1"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+    "notes",
+]
+executor = "claude-code"
+notes = "Round-2 code-level completeness audit (X/P findings). Same tracker."
+shipped_at = "40def01a"
+spec = "docs/specs/Mission_Creator_Architecture/t151_10_fable_program_audit.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]
+
+[slice_plan."T-151.11.1"]
+__keys = [
+    "targets",
+    "executor",
+    "status",
+    "shipped_at",
+    "notes",
+]
+executor = "claude-code"
+notes = "Draw order (grid + compute-culled trees) + marquee fill/border parity. Verify: .ai/artifacts/t151_11_verify_log.md"
+shipped_at = "b81317c5"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]
+
+[slice_plan."T-151.11.2"]
+__keys = [
+    "targets",
+    "executor",
+    "status",
+    "shipped_at",
+    "notes",
+]
+executor = "claude-code"
+notes = "Camera bounds, prod hygiene (DEV HUD/spike), dead-code sweep + corrections"
+shipped_at = "b78205c0"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]
+
+[slice_plan."T-151.11.3"]
+__keys = [
+    "targets",
+    "executor",
+    "status",
+    "shipped_at",
+    "notes",
+]
+executor = "claude-code"
+notes = "D5 collapse (wasm policy exports), buildings full-lane toggle, forest LRU"
+shipped_at = "c7bb5bd0"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]
+
+[slice_plan."T-151.11.4"]
+__keys = [
+    "targets",
+    "executor",
+    "status",
+    "shipped_at",
+    "notes",
+]
+executor = "claude-code"
+notes = "GPU harness + CI + tree gate + compute cull readback + Range satellite preview"
+shipped_at = "2c3237fd"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]
+
+[slice_plan."T-151.11.5"]
+__keys = [
+    "targets",
+    "executor",
+    "status",
+    "shipped_at",
+    "notes",
+]
+executor = "claude-code"
+notes = "Tracker accounting + operator sign-off checklist + program verify log"
+shipped_at = "b5b94c12"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]
+
+[slice_plan."T-151.11.6"]
+__keys = [
+    "targets",
+    "executor",
+    "status",
+    "shipped_at",
+    "notes",
+]
+executor = "claude-code"
+notes = "Wheel-zoom mid-pan rebase (operator hotfix). Tip acceptance 8237cda6. Verify: .ai/artifacts/t151_11_verify_log.md"
+shipped_at = "dd9a98d5"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]
+
+[slice_plan."T-151.2"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+executor = "claude-code"
+shipped_at = "a51e9dcb"
+spec = "docs/specs/Mission_Creator_Architecture/t151_2_world_parser.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]
+
+[slice_plan."T-151.3"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+executor = "claude-code"
+shipped_at = "32bf5ac5"
+spec = "docs/specs/Mission_Creator_Architecture/t151_3_world_residency.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]
+
+[slice_plan."T-151.4"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+executor = "claude-code"
+shipped_at = "723490a0"
+spec = "docs/specs/Mission_Creator_Architecture/t151_4_vector_layers.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]
+
+[slice_plan."T-151.4.1"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+executor = "claude-code"
+shipped_at = "552e68aa"
+spec = "docs/specs/Mission_Creator_Architecture/t151_4_1_building_road_hotfix.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]
+
+[slice_plan."T-151.5"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+executor = "claude-code"
+shipped_at = "0b7621ed"
+spec = "docs/specs/Mission_Creator_Architecture/t151_5_glyph_atlas.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]
+
+[slice_plan."T-151.5.1"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+executor = "claude-code"
+shipped_at = "a98fb421"
+spec = "docs/specs/Mission_Creator_Architecture/t151_5_1_forest_fidelity.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]
+
+[slice_plan."T-151.6"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+executor = "claude-code"
+shipped_at = "033ff715"
+spec = "docs/specs/Mission_Creator_Architecture/t151_6_mission_entities.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]
+
+[slice_plan."T-151.7"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+executor = "claude-code"
+shipped_at = "ab6bcb11"
+spec = "docs/specs/Mission_Creator_Architecture/t151_7_interaction_rewire.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]
+
+[slice_plan."T-151.7.1"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+executor = "claude-code"
+shipped_at = "fa6ad959"
+spec = "docs/specs/Mission_Creator_Architecture/t151_7_1_interaction_hotfix.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]
+
+[slice_plan."T-151.7.2"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+    "notes",
+]
+executor = "claude-code"
+notes = "Residual tint + zoom SoT; wheel restore @ 69ca1c08. Spec shared with 7.1 corrective lane."
+shipped_at = "64c64d98"
+spec = "docs/specs/Mission_Creator_Architecture/t151_7_1_interaction_hotfix.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]
+
+[slice_plan."T-151.7.3"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+executor = "claude-code"
+shipped_at = "804f779a"
+spec = "docs/specs/Mission_Creator_Architecture/t151_7_3_rust_collapse.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]
+
+[slice_plan."T-151.8"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+    "notes",
+]
+executor = "claude-code"
+notes = "CPU draw-set + density ladder + damage skip. Compute cull completed in T-151.8.1 (no silent deferral)."
+shipped_at = "f4ffbfff"
+spec = "docs/specs/Mission_Creator_Architecture/t151_8_culling_density.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]
+
+[slice_plan."T-151.8.1"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+    "notes",
+]
+executor = "claude-code"
+notes = "WebGPU VERTEX|STORAGE + draw_indirect tree cull; Class R CPU AABB oracle (1k frusta). WebGL2 keeps chunk draw-set."
+shipped_at = "ec59d10e"
+spec = "docs/specs/Mission_Creator_Architecture/t151_8_culling_density.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]
+
+[slice_plan."T-151.9"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+    "notes",
+]
+executor = "claude-code"
+notes = "Always WgpuTacticalMap; Deck runtime deleted; deck.gl+luma → devDependencies; vitest 281; dist Deck-free. Verify: .ai/artifacts/t151_9_verify_log.md"
+shipped_at = "c4831451"
+spec = "docs/specs/Mission_Creator_Architecture/t151_9_deck_retirement.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]

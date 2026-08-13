@@ -1,0 +1,50 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 564
+executor = "claude-code"
+id = "T-590"
+impact = ["platform-lifecycle"]
+order = 3451
+priority = 3
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+Documentation drift found across wave 72. None is a live defect; every one is a sentence that will
+mislead the next reader, and two of them are the sentences that let real defects rot.
+
+1. **`Makefile:304` still claims** the Rust GO-2..9 analogs are "enforced by clippy + the centralized
+   ApiError type + `cargo fmt`". GO-7 is now genuinely enforced by `scripts/verify-route-tags.sh`
+   (wired into both gates). **That sentence is the one that let GO-7 stay dead for the whole Go->Rust
+   rewrite** — three handlers carried `@route` tags to routes that did not exist, and one live route
+   carried no tag at all, because the Makefile said something was watching.
+2. **`docs/platform/CODING_STANDARDS.md:138-141 / 369 / 415`** point GO-7 at deleted Go artefacts
+   (`handlers.go Register()`, `verify-contract-citations.mjs`, "82 handlers"). Should read
+   `scripts/verify-route-tags.sh` and 102 handlers.
+3. **Three drifted `content_golden.sql` line citations** after T-585's reorder:
+   `apps/website/api/tests/events.rs:16` cites 162-167 -> now **174-180**;
+   `apps/website/api/src/handlers/events.rs:787` and `:1741`, plus
+   `apps/website/frontend/src/mission_overview.rs:118`, cite 605 -> now **638**.
+4. **`content_golden.sql` header** says `total_deployments` agrees with "the 17 match_player_stats
+   rows"; the file seeds **11**. Pre-existing, untouched by T-585.
+5. **`apps/website/frontend/src/mission_doc.rs:27` and `:51`** attribute encode stability to "the
+   core's fixed `CLIENT_ID`". T-222 made the id random. The asserted BEHAVIOUR still holds (same-doc
+   re-encode is byte-identical) but the stated REASONING is now wrong.
+6. **`crates/map-engine-core/src/lib.rs:5`** says "the JS boundary lives in the `map-engine-wasm`
+   shim". That crate was deleted at T-418. This sentence made the T-582 brief ask for a wasm binding
+   that could not exist — the agent had to discover the deletion itself."""
+surfaces = ["INFRA"]
+targets = ["website"]
+title = "Wave 72 residue: stale GO-7 documentation, drifted seed citations, and three prose comments now false"

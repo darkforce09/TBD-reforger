@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 9
+executor = "cursor-docs"
+id = "T-011"
+impact = ["ui"]
+order = 110
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "macOS Aegis palette, glass primitives, shared UI components."
+surfaces = ["SHELL"]
+targets = ["website"]
+title = "Aegis design system foundation"

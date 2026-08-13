@@ -1,0 +1,29 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "spec",
+    "route",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 38
+executor = "claude-code"
+id = "T-050"
+impact = ["ui"]
+order = 500
+program = "eden"
+route = "/missions/:id/edit"
+spec = "docs/specs/Mission_Creator_Architecture/t050_cursor_z_readout.md"
+status = "shipped"
+stream = "mission-creator"
+summary = "Toolbelt shows X/Y/Z including cursor Z on flat map."
+surfaces = ["BOTTOM"]
+targets = ["website"]
+title = "Cursor Z readout"

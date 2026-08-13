@@ -1,0 +1,41 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "route",
+    "stream",
+    "targets",
+    "executor",
+    "notes",
+    "depends_on",
+    "branch",
+]
+__ord = 66
+branch = "ticket/T-079"
+depends_on = ["T-661"]
+executor = "claude-code"
+id = "T-079"
+impact = [
+    "ui",
+    "state",
+    "mc-authoring",
+]
+notes = "editor-UI program wave 9 (wave_plan.tsv row 109) — SHIPPED wave 109 (editor factory), slice 4f37145c; verifier wave109.md"
+order = 4040
+program = "eden"
+route = "/missions/:id/edit"
+status = "shipped"
+stream = "mission-creator"
+summary = "PROMOTED AND SPLIT FOUR WAYS. T-079 as filed absorbed 14 ids across three unrelated entity families — the largest single absorber in the interactions sweep — and could not be dispatched as one ticket. This row is the TRIGGERS slice and the EDITOR HALF ONLY: `RIGHT-MODE-003` and `CONN-TRG-OWNER-001`. The other three: waypoints and the trigger activation/effects runtime are workbench tickets (waypoints are blocked on AI units existing at all — TBD_SpawnManager.c:963,1166 spawns every body with AI disabled, so a waypoint has no subject; the activation model is a new Enfusion runtime); the connection graph is its own factory ticket; systems/modules is NOT FILED because the SYS family declares no ids in attributes.md:223-225 and cannot be sized. Code: another PaletteKind variant + tab strip entry in post-split eden_dock_right.rs (eden_chrome.rs:1833, :3041-3046). Trigger GEOMETRY rides the SHIPPED T-582 zone draw tool rather than inventing a second one: `zones_panel` (eden_chrome.rs:2228), `ZoneShape` :3660, `circle_from_clicks` :3626, `zone_rule_fields` :3443, now in eden_zones.rs; the command surface is large and already in editor_ops.rs (`zone_draw_armed` :2325, `begin_zone_draw` :2350, `begin_zone_reshape` :2378, `cancel_zone_draw` :2400, `zone_draw_pop_vertex` :2412, `advance_zone_draw` :2436, `close_zone_polygon` :2499, `zone_rows` :2579, `set_zone_rule` :2688, `delete_zone` :2717) and a trigger area is a second consumer of all of it. A trigger entity map in store.rs follows the markersById :355 / zones precedent. NOTE for scoping: $defs/zoneRules' 16 keys have no ATTR-FIELD id and were never triaged against Eden, but they are the closest thing TBD has to trigger semantics and belong in this ticket's reading."
+surfaces = [
+    "MAP",
+    "RIGHT",
+    "DATA",
+]
+targets = ["website"]
+title = "Triggers — the editor half: palette mode, area geometry, owner link"

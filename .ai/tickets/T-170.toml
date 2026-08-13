@@ -1,0 +1,44 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "slices",
+    "depends_on",
+    "unblocks",
+    "status",
+    "implements",
+    "user_story",
+    "route",
+    "stream",
+    "branch",
+    "executor",
+    "targets",
+    "spec",
+]
+__ord = 144
+branch = "main"
+depends_on = ["T-159"]
+executor = "human"
+id = "T-170"
+impact = [
+    "ui",
+    "state",
+]
+implements = []
+order = 1670
+program = "eden"
+route = "/missions/:id/edit"
+slices = []
+spec = ".ai/artifacts/missed_items_handoff.md"
+status = "queued"
+stream = "web-platform"
+summary = "Make the Leptos SPA the production default: set `SPA_DIST_DIR` to the trunk release dist in the prod env, move the Discord OAuth redirect origin, staging soak, then flip. OPERATOR-GATED (env + Discord app settings are operator-held); claude-code prepares configs/runbook + verifies the staging soak gates. Runbook anchor: docs/website/DEV_RUNBOOK.md §SPA serving; T-159 finish program left this as the sole operator-gated residual."
+surfaces = ["TOP"]
+targets = ["website"]
+title = "Prod default flip to Leptos SPA"
+unblocks = []
+user_story = "As the operator I flip production to the Leptos SPA with a tested rollback path."

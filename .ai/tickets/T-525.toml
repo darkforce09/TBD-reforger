@@ -1,0 +1,33 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 499
+executor = "claude-code"
+id = "T-525"
+impact = [
+    "docs",
+    "data",
+]
+order = 3365
+priority = 2
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "Wave 46 verifier NIT. apps/website/api/seeds/content_golden.sql ~655–656 still says orbat assigned partial unique deferred / events.rs still seeds two-seat — obsolete after 0017 + T-511 seed retirement. Cure: update seed comments to match live index."
+surfaces = [
+    "API",
+    "DATA",
+]
+targets = ["website"]
+title = "content_golden.sql obsolete two-seat / index-deferred comments after T-511"

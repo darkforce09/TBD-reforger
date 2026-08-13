@@ -1,0 +1,17 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-152.20"
+notes = "Shipped @ 4ec87d1b (tag T-152.20) UI 12/12 + T-152.20.1 @ 1a750cdd wiring (roads/forest/contours/sea); M1 PASS 3f78968e. O10 closed. Verify t152_20_1_verify_log.md."
+parent = "T-152"
+spec = "docs/specs/Mission_Creator_Architecture/t152_20_settings_completeness.md"
+status = "shipped"
+targets = ["website"]

@@ -1,0 +1,20 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-151.7.3"
+parent = "T-151"
+shipped_at = "804f779a"
+spec = "docs/specs/Mission_Creator_Architecture/t151_7_3_rust_collapse.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]

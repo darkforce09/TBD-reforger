@@ -1,0 +1,22 @@
+__keys = [
+    "id",
+    "order",
+    "status",
+    "program",
+    "title",
+    "summary",
+    "surfaces",
+    "impact",
+]
+__ord = 123
+id = "T-149"
+impact = [
+    "ui",
+    "perf",
+]
+order = 1490
+program = "eden"
+status = "idea"
+summary = "Upgrade the V1 blocky Path B forest hulls. Increase the density grid resolution (e.g., down to 8m) and apply a curve-smoothing algorithm (like Chaikin's) to the marching squares output so the forest edges look like natural, curved cartography."
+surfaces = ["MAP"]
+title = "Forest Mass Polygon Smoothing"

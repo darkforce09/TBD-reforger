@@ -1,0 +1,27 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "shipped_at",
+]
+__ord = 156
+executor = "claude-code"
+id = "T-182"
+impact = ["arsenal"]
+order = 2000
+program = "eden"
+shipped_at = "0bdfc096"
+status = "shipped"
+stream = "mission-creator"
+summary = 'Arsenal silently drops three of four weapon slots at compile. mod_slot_loadout (crates/map-engine-core/src/mission/flatten.rs:397-410) reads only slotIndex==0 && slotType=="primary". Launcher, handgun and throwable are authorable, persisted and discarded — ModSlotGear (flatten.rs:67-88) has no fields for them. The player spawns without them with no warning. SCOPE LOCKED 2026-07-26: fix ONLY the three missing weapon slots. DO NOT touch the armoredVest||vest collapse — mission.schema.json:91 states armoredVest is deliberately NOT a key because it shares the vest container (T-181.34). Reversing that is an operator decision and it has been declined.'
+surfaces = ["ARS"]
+targets = ["website"]
+title = "Arsenal silently drops three of four weapon slots at compile"

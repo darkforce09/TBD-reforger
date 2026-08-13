@@ -1,0 +1,34 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "status",
+    "stream",
+    "targets",
+    "executor",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "notes",
+]
+__ord = 822
+executor = "claude-code"
+id = "T-849"
+impact = [
+    "ui",
+    "mc-authoring",
+]
+notes = "operator W208 eye-pass; pairs with T-848"
+order = 5310
+program = "eden"
+status = "queued"
+stream = "mission-creator"
+summary = 'WAVE-208 OPERATOR EYE-PASS (2026-08-11). Asset-browser placement auto-joins an open squad (place_character_under_side); operator then had "no way to ungroup them", which makes re-organising through the editor "very tricky". Locate: no ungroup / leave-squad / remove-from-squad command exists — only ORBAT Remove Slot (deletes), Remove Squad, or refile onto another squad. FIX: an explicit Ungroup / Leave squad verb (context menu and/or ORBAT) that clears membership into a solo/new squad or unassigned state without deleting the slot, per Eden-like expectation. ACCEPTANCE: after auto-place into a squad, Ungroup leaves the slot on the map with no SQUAD_LINKS tether to the old leader; slot survives; can Group to / refile again.'
+surfaces = [
+    "ORBAT",
+    "MAP",
+    "SHELL",
+]
+targets = ["website"]
+title = "Ungroup / leave-squad — no editor verb to take a slot out of a squad without deleting it"

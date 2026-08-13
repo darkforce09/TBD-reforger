@@ -1,0 +1,30 @@
+__keys = [
+    "id",
+    "title",
+    "status",
+    "executor",
+    "program",
+    "stream",
+    "targets",
+    "impact",
+    "surfaces",
+    "order",
+    "summary",
+    "notes",
+]
+__ord = 801
+executor = "claude-code"
+id = "T-828"
+impact = [
+    "ui",
+    "mc-authoring",
+]
+notes = "wave204 verifier; the icon half is the in-file template"
+order = 5100
+program = "eden"
+status = "queued"
+stream = "mission-creator"
+summary = "WAVE-204 VERIFIER FILING (wave204.md MINOR). The T-790 icon half is properly screen-space, but caption text positions freeze at bind-time zoom: measured 43px/52px marker-to-caption gaps at 1.30/1.06 m/px (over the ~40px acceptance) until a doc change forces a rebind. FIX: the caption half of the MarkerComposite recomputes screen offsets per frame from the live camera like the icon half (or anchors captions in the same screen-space pass) — no rebind dependency; reuse the transform the icons use, no second source. ACCEPTANCE: zoom continuously across 5.6->1.06 m/px with no doc changes: every caption stays within 40px of its marker at every sampled frame."
+surfaces = ["SHELL"]
+targets = ["website"]
+title = "Marker captions are world-frozen at bind-time zoom — drift past 40px until a rebind"

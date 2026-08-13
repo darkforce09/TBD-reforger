@@ -1,0 +1,27 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "shipped_at",
+]
+__ord = 171
+executor = "claude-code"
+id = "T-197"
+impact = ["arsenal"]
+order = 2150
+program = "eden"
+shipped_at = "slice/T-197"
+status = "shipped"
+stream = "mission-creator"
+summary = "Only three of nine compat edge types are read by the UI; arsenal.rs:198 hardcodes attachments to an empty array. ammo_in_mag has zero edges generated."
+surfaces = ["ARS"]
+targets = ["website"]
+title = "241 attachment edges and 26 attachment items are unreachable"

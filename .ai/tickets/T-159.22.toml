@@ -1,0 +1,19 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "shipped_at",
+    "spec",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-159.22"
+notes = "Outliner+palette live; wheel+CUR gates. Found undo-merge defect (pre-existing). Verify: .ai/artifacts/t159_22_verify_log.md"
+parent = "T-159"
+shipped_at = "0154b4e9"
+spec = "docs/platform/t159_22_outliner_asset_palette.md"
+status = "shipped"
+targets = ["website"]

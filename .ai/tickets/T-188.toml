@@ -1,0 +1,30 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "shipped_at",
+]
+__ord = 162
+executor = "claude-code"
+id = "T-188"
+impact = ["mc-authoring"]
+order = 2060
+program = "eden"
+shipped_at = "6c822f87"
+status = "shipped"
+stream = "mission-creator"
+summary = "orbat_add_slot (editor_ops.rs:1189-1191) passes None, None, 0.0, 0.0, 0.0, 0.0 — every ORBAT-Manager slot lands at (0,0) with no character, while orbat_add_vehicle:1386 correctly uses squad_anchor_xy. No UI anywhere sets a character after placement."
+surfaces = [
+    "MAP",
+    "PLACE",
+]
+targets = ["website"]
+title = "ORBAT Manager slots spawn at world origin with no character"

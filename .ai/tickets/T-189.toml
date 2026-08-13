@@ -1,0 +1,27 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "shipped_at",
+]
+__ord = 163
+executor = "claude-code"
+id = "T-189"
+impact = ["mc-integrity"]
+order = 2070
+program = "eden"
+shipped_at = "7a51fdda"
+status = "shipped"
+stream = "mission-creator"
+summary = "mission_history.rs:53 documents 'the beforeunload guard'; a repo-wide grep finds only that comment. There is no SPA navigation guard either. Worse, the IDB-restored doc calls refresh_hud() rather than after_local_edit() (mission_editor.rs:436), so dirty starts false while unsaved edits exist and the user sees no dot."
+surfaces = ["DATA"]
+targets = ["website"]
+title = "No beforeunload guard, and the dirty flag lies after reload"

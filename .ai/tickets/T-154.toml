@@ -1,0 +1,91 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "depends_on",
+    "route",
+    "branch",
+    "spec",
+    "slices",
+    "stream",
+    "targets",
+    "executor",
+    "active_slice",
+    "slice_plan",
+    "order",
+]
+__ord = 128
+active_slice = "T-154.1"
+branch = "ticket/T-154"
+depends_on = ["T-151"]
+executor = "claude-code"
+id = "T-154"
+impact = [
+    "ui",
+    "infra",
+]
+order = 1515
+program = "Platform"
+route = "/missions/:id/edit"
+slices = [
+    "T-154.0",
+    "T-154.1",
+]
+spec = "docs/specs/Mission_Creator_Architecture/t154_0_wgpu_doll_engine.md"
+status = "shipped"
+stream = "mission-creator"
+summary = "SHIPPED @ a65529b3 (tag T-154.0): the arsenal doll is a rotatable 3D primitive soldier on a second wgpu engine instance (DollEngine) - the engine's first 3D pipeline (perspective, depth, instancing, Rust picking). Operator call 2026-07-13: one GPU stack, no three.js; D5 holds (TS mount 163 LOC). Original idea text: extend map_engine_wasm with a 3D pipeline replacing the SVG SoldierSilhouette; contract pure in arsenalDollModel.ts."
+surfaces = [
+    "ARS",
+    "EDITOR",
+]
+targets = ["website"]
+title = "Rust/wgpu 3D arsenal doll (T-151-adjacent 3D pipeline spike)"
+
+[slice_plan]
+__keys = [
+    "T-154.0",
+    "T-154.1",
+]
+
+[slice_plan."T-154.0"]
+__keys = [
+    "executor",
+    "targets",
+    "status",
+    "shipped_at",
+    "spec",
+    "notes",
+]
+executor = "claude-code"
+notes = "DollEngine: first 3D pass in the wgpu engine (perspective camera via glmat4 perspective_no, Depth32Float, instanced cube/cylinder soldier, Rust ray picking, damage-driven render, byte-exact doll self-check w/ depth kill-shot). SoldierModel3D replaces the SVG doll in ArsenalTab (SVG = engine-create fallback). Contract: core REGION_KEYS == frontend RAIL_REGIONS (vitest+cargo pinned). SHIPPED @ a65529b3 (tag T-154.0). GPU harness 9/9 incl. doll on SwiftShader."
+shipped_at = "a65529b3"
+spec = "docs/specs/Mission_Creator_Architecture/t154_0_wgpu_doll_engine.md"
+status = "shipped"
+targets = [
+    "website",
+    "root",
+]
+
+[slice_plan."T-154.1"]
+__keys = [
+    "executor",
+    "targets",
+    "status",
+    "shipped_at",
+    "spec",
+    "notes",
+]
+executor = "claude-code"
+notes = "Operator-review polish: mid-light backdrop (dark-on-dark unreadable), drag turns the character (yaw sign), hover highlight (Rust palette lift + cursor name chip), active-part callout chip + leader line tracked from Rust-projected anchors. Pitch/zoom declined; mesh fidelity deferred. SHIPPED @ 3b3e4d16 (tag T-154.1). GPU harness 36/36 allPass."
+shipped_at = "3b3e4d16"
+spec = "docs/specs/Mission_Creator_Architecture/t154_1_doll_polish.md"
+status = "shipped"
+targets = [
+    "website",
+    "root",
+]

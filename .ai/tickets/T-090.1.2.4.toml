@@ -1,0 +1,20 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-090.1.2.4"
+parent = "T-090"
+shipped_at = "0d6fe485"
+spec = "docs/specs/Mission_Creator_Architecture/t090_1_2_4_engine_render_ortho_spike.md"
+status = "shipped"
+targets = [
+    "root",
+    "mod",
+]

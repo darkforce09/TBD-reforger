@@ -1,0 +1,29 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "executor",
+    "targets",
+    "stream",
+    "parallel_ok",
+    "order",
+    "spec",
+]
+__ord = 856
+executor = "claude-code"
+id = "T-883"
+impact = ["dx"]
+order = 5640
+parallel_ok = true
+program = "infra"
+spec = "docs/platform/t853_shell_to_xtask_waves.md"
+status = "shipped"
+stream = "infra"
+summary = "T-853 shell->xtask slice. Port scripts/ticket to `cargo xtask ticket (launcher)` and delete the script(s), their scripts/shell-inventory.txt line(s), any scripts/python-inventory.txt line(s), and repoint every caller. Thin wrapper, already delegates. Delete it and repoint make tickets/ticket-list/ticket-sync/ticket-check/ticket-check-strict plus ci.yml's registry step and .ai/tickets/README.md + CLAUDE.md. It is the documented agent entrypoint, so update the docs in the same commit. ACCEPTANCE IS BYTE-FOR-BYTE: capture bash stdout+stderr+rc first, then diff on a clean tree AND on >=2 deliberately broken trees; the harness must assert the BASH side went red before believing a diff. A green run alone is not evidence (T-556). Build on crates/tbd-gate. Spec: docs/platform/t853_shell_to_xtask_waves.md"
+surfaces = ["CI"]
+targets = ["root"]
+title = "T-853 port: 49-line shim over cargo xtask ticket"

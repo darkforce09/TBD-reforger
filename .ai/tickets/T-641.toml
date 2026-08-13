@@ -1,0 +1,31 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "route",
+    "stream",
+    "targets",
+    "executor",
+    "notes",
+    "depends_on",
+]
+__ord = 612
+depends_on = ["T-661"]
+executor = "claude-code"
+id = "T-641"
+impact = ["ui"]
+notes = "editor-UI program wave 3 (wave_plan.tsv row 103) — SHIPPED wave 103 (editor factory), slice 9700f170; verifier wave103.md (1 BLOCKER fixed in-wave, 2 MAJOR deferred: T-717/T-718)"
+order = 3890
+program = "eden"
+route = "/missions/:id/edit"
+status = "shipped"
+stream = "mission-creator"
+summary = """Operator-requested; the render half of the split T-641 (the furniture half is its own ticket). Eden never labels a contour: every number is a POINT annotation — dot + integer (`· 97`, `· 184`), or black triangle + integer for named hilltops (`△234`) — always drawn horizontally, never rotated to the line. Values are not multiples of any interval, which proves they are spot heights and not contour labels. Density is ~1 per 150x150 px CULLED IN SCREEN SPACE, so it is identical at every zoom, and that constant density is what reads as "heights shown clearly". CORRECTION TO THE DRAFT, carried from parity/README.md: the draft claimed "we currently render zero height annotations" and that is FALSE. The machinery is live — `crates/map-engine-core/src/dem/peaks.rs` (`HeightLabelKind` :25, `find_peaks` :84, `height_labels_to_specs` :225) and `apps/website/frontend/src/world_assets/labels.rs` (LabelHost :24, `pack_height_label_glyphs` :13, memo key at :31) — and `Height labels` is a live user-toggleable world layer (world_layer_prefs.rs:72). The gate is `should_draw_height_label` :51 against HEIGHT_LABEL_MIN_ZOOM = -2.0 :19 / MAX = 3.0 :21, and the DEFAULT ZOOM IS -2 — exactly on the boundary. Open the running editor and look before scoping: this is far more likely a zoom-band defect than greenfield work. The real change is that the declutter rule is WORLD-space (HEIGHT_LABEL_MIN_SEP_M = 80.0 :13, `height_label_min_sep_m(deck_zoom)` :45, `declutter_height_labels` :184, invariant :205) where Eden's is screen-space."""
+surfaces = ["MAP"]
+targets = ["website"]
+title = "Spot heights — Eden-parity screen-space label density"

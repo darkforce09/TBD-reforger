@@ -1,0 +1,37 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "stream",
+    "targets",
+    "executor",
+    "status",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "spec",
+    "depends_on",
+    "unblocks",
+]
+__ord = 95
+depends_on = ["T-091.0"]
+executor = "claude-code"
+id = "T-121"
+impact = ["schema"]
+order = 1210
+program = "infra"
+spec = "docs/specs/Mission_Creator_Architecture/t121_terrain_dem_export_automation.md"
+status = "deferred"
+stream = "infra"
+summary = "Follow-ons: Arland re-export, optional game-mode heightmap fallback. MCP hardening shipped @ e7e7232 (mcp-call/daemon/consume/selftest). Core GetSurfaceY plugin shipped in T-091.0. Spec: t121_terrain_dem_export_automation.md."
+surfaces = [
+    "DATA",
+    "MAP",
+]
+targets = [
+    "mod",
+    "root",
+]
+title = "Terrain DEM export automation"
+unblocks = []

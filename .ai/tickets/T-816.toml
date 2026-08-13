@@ -1,0 +1,33 @@
+__keys = [
+    "id",
+    "title",
+    "status",
+    "executor",
+    "program",
+    "stream",
+    "targets",
+    "impact",
+    "surfaces",
+    "order",
+    "summary",
+    "notes",
+]
+__ord = 789
+executor = "claude-code"
+id = "T-816"
+impact = [
+    "ui",
+    "mc-authoring",
+]
+notes = "wave201 verifier NIT-1; owns spans eden_top_strip.rs/ui.rs/mission_editor.rs — pack owns-aware"
+order = 4980
+program = "eden"
+status = "queued"
+stream = "mission-creator"
+summary = "WAVE-201 VERIFIER FILING (wave201.md NIT-1, pre-existing, made visible by T-791's arm hint). VERIFIED LIVE: with a composition armed AND the Controls Hint overlay open, ONE Escape keydown clears the arm and closes the hint together. MECHANISM: the Controls Hint is not a modal_stack participant, so the editor's any_open()-gated arm-cancel (mission_editor.rs has_pending -> cancel_pending) fires in the same keydown as the strip's hint close — the T-814 consume-aware guard covers modal_stack dialogs only. FIX DIRECTION: bring the hint (and any other non-stack overlay Esc consumers) into the stack's per-event Esc accounting, or mark the event consumed when the hint closes, so the arm survives to a second press. TRAPS: T-797/T-798 (waves 202/204) rework the top strip and bottom bar — coordinate owns; the T-814 one-layer ladder for stack dialogs must stay intact. ACCEPTANCE: armed composition + hint open: Esc1 closes ONLY the hint (arm + panel armed-hint stay), Esc2 clears the arm; every press one layer."
+surfaces = [
+    "UI",
+    "SHELL",
+]
+targets = ["website"]
+title = "Esc with an armed composition and the Controls Hint open clears both in one press"

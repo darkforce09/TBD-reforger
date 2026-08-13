@@ -1,0 +1,30 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "route",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 22
+executor = "claude-code"
+id = "T-031"
+impact = ["ui"]
+order = 310
+program = "eden"
+route = "/missions/:id/edit"
+status = "shipped"
+stream = "mission-creator"
+summary = "Full-bleed map under frosted command strip and toolbelt."
+surfaces = [
+    "TOP",
+    "BOTTOM",
+]
+targets = ["website"]
+title = "Aegis-glass editor shell"

@@ -1,0 +1,30 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 462
+executor = "claude-code"
+id = "T-488"
+impact = ["website"]
+order = 3327
+priority = 2
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+Wave 33 residual (T-428). api.rs arms role resync via ROLE_RESYNC_INTERVAL_SECS (default 24h) but apps/website/api/.env.example only documents SERVER_STATUS_PUBLISH_INTERVAL_SECS and LEADERBOARD_REFRESH_INTERVAL_SECS.
+
+Cure: add commented ROLE_RESYNC_INTERVAL_SECS=86400 next to sibling interval knobs."""
+surfaces = ["API"]
+targets = ["website"]
+title = "Document ROLE_RESYNC_INTERVAL_SECS in .env.example"

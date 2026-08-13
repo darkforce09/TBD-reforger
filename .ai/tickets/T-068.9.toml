@@ -1,0 +1,19 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "shipped_at",
+    "spec",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-068.9"
+notes = "1,880 items / 4,012 edges in DB; GET /registry/compat; worker canEquip/canAttach. make registry-import. Verify: .ai/artifacts/t068_9_verify_log.md"
+parent = "T-068"
+shipped_at = "d41418e5"
+spec = "docs/specs/Mission_Creator_Architecture/t068_9_registry_worker_ingest.md"
+status = "shipped"
+targets = ["website"]

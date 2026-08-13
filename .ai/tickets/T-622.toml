@@ -1,0 +1,70 @@
+__keys = [
+    "id",
+    "program",
+    "surfaces",
+    "impact",
+    "stream",
+    "targets",
+    "executor",
+    "status",
+    "priority",
+    "order",
+    "title",
+    "summary",
+]
+__ord = 595
+executor = "claude-code"
+id = "T-622"
+impact = ["platform-lifecycle"]
+order = 3692
+priority = 1
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+FOUND by wave 79's adversarial verifier, inside T-601's own fix, and closed in-wave as T-622.
+
+**Round FIVE of the same defect** (T-517 -> T-567 -> T-570 -> W77-F2/F3 -> here). Every earlier round
+lost by enumerating dead-code shapes; a sixth shape always existed.
+
+=== THE BUG: THE EVALUATOR FAILED OPEN ===
+`eval_bool` returned `None` for any expression it could not fold, and the caller treated `None` as
+"not provably dead" -- so it kept the block and the pin greened over dead code. Two root causes:
+`bool_bindings` folded each initialiser against an **empty** const map, so `const B = A` never
+resolved; and `lex` emitted `Tok::Other` for `+`, `|` and a leading `:`, so any unrecognised token
+bailed out. Measured survivors included **three named in T-601's own brief** and none in its
+documented residual list:
+
+    const A = false; const B = A; if B { ... }        const NEVER: bool = { false }; if NEVER
+    if (true, false).1 { ... }                        if 1 + 1 > 3 { ... }
+    if false | false { ... }                          if ::std::hint::black_box(false) { ... }
+
+Reproduced live on the **real** sse.rs pin -- wrapping the live `init.set_signal(Some(&signal));` in
+`const W_A: bool = false; const W_B: bool = W_A; if W_B { ... }` gave `pin_holds = true`. The pin
+reported the abort wire live while it sat in dead code, so the SSE stream would leak on route-leave.
+
+=== THE FIX: UNKNOWN FAILS CLOSED ===
+`constant_shaped` (`arsenal.rs:2209`) decides on a rule, not a list: **every identifier must be
+compile-time material** -- a const/static name (Rust's own proof of constness), a folded value, a
+primitive cast target, or a modelled transparent call. **Operators are deliberately NOT enumerated**,
+so the rule covers shapes nobody has invented; the agent's three invented attacks went RED for free.
+
+Scrub was chosen over refuse: a scrub is local and still loud (a scrubbed needle REDs as "needle
+missing"), where a refusal would panic an entire pin over one unrelated condition in a 2000-line file.
+Consts now fixpoint-fold over 8 rounds.
+
+RESULT: 9 wrappers x 6 real production pins -- **FALSE GREENS 54/54 -> 0/54**. All six pins still
+GREEN on unmodified main; a census over every SPA .rs file found **0** live conditions newly scrubbed;
+368 tests pass.
+
+=== REMAINING, DISCLOSED RATHER THAN HIDDEN ===
+- **Build-conditional compilation** (`#[cfg(feature = "...")]`, `#[cfg(target_arch = "...")]`) is
+  deliberately still fail-open. Scrubbing it would delete the shipped wasm32 SPA.
+- `if Option::<bool>::None.unwrap_or(false)` stays GREEN: to a text pass it is the same three tokens
+  as `if resp.ok()`, and folding calls by name is the blocklist one level down. Pinned by a test at
+  `arsenal.rs:4321` so it cannot grow in silence.
+- The `the_*_rejects_every_dead_code_wrapper` batteries certify **twelve enumerated shapes and nothing
+  more**; `the_unknown_condition_fails_closed` (`arsenal.rs:4253`) states the actual property."""
+surfaces = ["INFRA"]
+targets = ["website"]
+title = "The Class-R evaluator failed OPEN — an expression it could not fold was treated as live code"

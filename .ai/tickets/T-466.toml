@@ -1,0 +1,32 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 440
+executor = "claude-code"
+id = "T-466"
+impact = ["website"]
+order = 3305
+priority = 3
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+Residual from wave 25 adversarial N1. Content LocalResource uses .ok(); failed GET → empty 'No announcements yet', list_seeded=true, no retry.
+
+Repro: force GET /cms/announcements 500/network fail → UI looks like zero announcements forever.
+
+Cure: surface error + retry; do not set list_seeded on Err."""
+surfaces = ["FE"]
+targets = ["website"]
+title = "CMS Content list fails closed to empty with no retry"

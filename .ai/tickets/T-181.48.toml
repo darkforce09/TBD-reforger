@@ -1,0 +1,15 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-181.48"
+notes = "The picker and the auto-deploy wave cannot both be on. m_bAutoDeploy shipped as 1 and TBD_GameMode.et never overrode it, so the dev wave seated everyone ~250ms into LOBBY; T-181.29's ShouldStandDown() then closed the picker ~500ms after it opened. Operator saw no UI and no reason. TBD_GameMode.et now overrides to 0 (code default stays 1 for a bare prefab) and OnStageChanged names the live route into the world on every LOBBY entry. Confirmed in the operator's 20:39 session: action=PICKER-auto-deploy-off. Necessary but NOT sufficient - the picker still does not raise (T-181.49)."
+parent = "T-181"
+status = "shipped"
+targets = ["mod"]

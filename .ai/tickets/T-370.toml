@@ -1,0 +1,59 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 344
+executor = "claude-code"
+id = "T-370"
+impact = ["platform-lifecycle"]
+order = 3186
+priority = 3
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+FOLLOW-UP from T-352, which deliberately left this and explained why. **The sequencing is the whole ticket; getting it wrong strands data in users' browsers permanently.**
+
+`mark_adopted` no longer writes anything — T-352 deleted the storage and made the function purge `tbd-editor-adopted:*` residue instead. Eight call sites remain: mission_hydrate.rs 187, 213, 226, 246, 279, 299, 888 and mission_commands.rs:141.
+
+**DO NOT simply delete them.** `purge_legacy_markers` is reachable ONLY via `mark_adopted`. Every browser that ever opened the editor still holds `tbd-editor-adopted:<missionId>` in localStorage, and those calls are currently what erases it. Removing them in the same release leaves that residue stranded forever — and residue readable by whichever account signs in next was the original leak.
+
+Correct order:
+  1. Move the purge to a boot hook (`main.rs` or `mission_editor.rs`), so it runs regardless of hydrate path.
+  2. Ship that. Give it a release to reach users' browsers.
+  3. THEN delete the eight call sites and the shim.
+
+Steps 1 and 3 must not be the same release. If you judge one release insufficient for step 2, say so and pick a longer gap — this is data in other people's browsers, not a refactor.
+
+Note mission_hydrate.rs is assigned to T-191/T-223/T-338 in the wave plan, so check nothing else holds it when you take this.
+
+== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
+Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
+This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
+
+=== WAVE 81: STEP 1 DONE, STEP 3 DELIBERATELY NOT ===
+The purge has MOVED, which was the ticket's stated precondition. `mission_hydrate.rs:178` now calls
+`crate::editor_session::purge_legacy_markers()` at the top of `hydrate_from_server` -- **before** the
+`is_uuid` guard and **before** the fetch, so it runs on every editor boot on every branch (closing
+T-388's three skip paths), and it is called **directly, not through `mark_adopted`**, so the eight
+dead call sites are now safely deletable.
+**What remains is only the deletion of those eight sites.** It was not done in wave 81 because the
+purge move should bake for a release first -- deleting the sites in the same commit that moves the
+behaviour off them removes the ability to revert one without the other.
+CAVEAT recorded honestly by the slice: the compile-level proof (a real path expression to a `pub fn`,
+which a comment cannot produce) does NOT prove the ORDERING claim (before-fetch / before-`is_uuid`);
+that rests on review of the 4-line prologue. Every file involved is wasm32-only, so no native test can
+call it."""
+surfaces = ["FRONTEND"]
+targets = ["website"]
+title = "Remove the 8 dead mark_adopted call sites — but move the purge first"

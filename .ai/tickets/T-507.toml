@@ -1,0 +1,30 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 481
+executor = "claude-code"
+id = "T-507"
+impact = [
+    "mission-creator",
+    "frontend",
+]
+order = 3347
+priority = 1
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "Wave 42 residual (CLEAN MINOR / admitted by T-358). faction_manager.rs rejects empty via doc.name.trim().is_empty() then posts serde_json::to_value(&doc) untrimmed. API validated_side_name rejects pad → 400; no UNIQUE twin stored. UX only: client lets pad through, API stops it. Cure: trim (or reject pad) before serialize on create/update."
+surfaces = ["FE"]
+targets = ["website"]
+title = "Faction manager posts untrimmed name after trim-empty check"

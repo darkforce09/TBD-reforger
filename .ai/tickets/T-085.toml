@@ -1,0 +1,29 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "status",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "route",
+    "branch",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 72
+branch = "ticket/T-085"
+executor = "cursor-docs"
+id = "T-085"
+impact = ["ui"]
+order = 850
+program = "platform"
+route = "/wiki"
+status = "deferred"
+stream = "web-platform"
+summary = "Render doctrine wiki pages from markdown at /wiki."
+surfaces = ["SHELL"]
+targets = ["website"]
+title = "Wiki markdown renderer"

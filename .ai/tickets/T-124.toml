@@ -1,0 +1,99 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "stream",
+    "targets",
+    "executor",
+    "status",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "spec",
+    "slices",
+    "slice_plan",
+    "depends_on",
+    "active_slice",
+    "unblocks",
+]
+__ord = 98
+active_slice = "__tbd_null__"
+depends_on = []
+executor = "claude-code"
+id = "T-124"
+impact = [
+    "deps",
+    "ci",
+    "infra",
+]
+order = 1240
+program = "platform"
+slices = [
+    "T-124.1",
+    "T-124.2",
+    "T-124.3",
+]
+spec = "docs/platform/t124_dependency_upgrade.md"
+status = "cancelled"
+stream = "web-platform"
+summary = "CANCELLED — falsely shipped. Every dependency it upgraded has since been deleted: FE npm (vitest/deck.gl/vite) died with the React tree at 50bba633; Go modules (gin/gorm/pgx) died with the Go backend at c05ddbc9; Node eradicated at T-165. Only survivors are .nvmrc=26 and postgres:18-alpine. Its own spec doc still links a dead apps/website/go.mod."
+surfaces = ["DATA"]
+targets = [
+    "root",
+    "website",
+]
+title = "Dependency & toolchain upgrade (latest everything)"
+unblocks = ["T-125"]
+
+[slice_plan]
+__keys = [
+    "T-124.1",
+    "T-124.2",
+    "T-124.3",
+]
+
+[slice_plan."T-124.1"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+executor = "claude-code"
+shipped_at = "1d85f46"
+spec = "docs/platform/t124_dependency_upgrade.md"
+status = "shipped"
+targets = ["website"]
+
+[slice_plan."T-124.2"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+executor = "claude-code"
+shipped_at = "d81ed9c"
+spec = "docs/platform/t124_dependency_upgrade.md"
+status = "shipped"
+targets = ["website"]
+
+[slice_plan."T-124.3"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+executor = "claude-code"
+shipped_at = "cd11db0"
+spec = "docs/platform/t124_dependency_upgrade.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]

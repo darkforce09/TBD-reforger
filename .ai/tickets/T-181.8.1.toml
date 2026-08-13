@@ -1,0 +1,18 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-181.8.1"
+notes = "SUPERSEDED — triaged 2026-07-25 and closed without its own implementation, because later slices built everything it named. Its whole note was 'Slotting depends on it.' with no title anywhere (it was never in wave_plan.tsv), so the scope had to be recovered from its parent T-181.8: 'Remaining gap is stage CONTENT: BRIEFING and SAFE_START are enum-only (no logic).' Both are now closed, verified in TBD_FrameworkManager: OnEnterLobby/OnEnterBriefing/OnEnterLive exist as real entry handlers; BRIEFING carries content (:778, :811) via T-181.23 (payload), T-181.27 (ORDERS), T-181.28 (JIP catch-up) and T-181.38 (flow.briefingSeconds); SAFE_START is owned by TBD_SafestartManager (T-181.17, hardened by T-181.33) and SetStage refuses the transition outright when that manager is absent (:732). The stated dependency — slotting — shipped in T-181.9.x. Kept as a shipped row rather than deleted so the supersession is visible to anyone who finds the reference."
+parent = "T-181"
+status = "shipped"
+targets = [
+    "mod",
+    "root",
+]

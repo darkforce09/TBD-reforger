@@ -1,0 +1,20 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-090.8.1"
+parent = "T-090"
+shipped_at = "e28d073a"
+spec = "docs/specs/Mission_Creator_Architecture/t090_8_forest_vegetation_regions.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]

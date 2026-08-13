@@ -116,27 +116,17 @@ pub struct Registry {
 }
 
 impl Registry {
-    pub fn load(path: &Path) -> Registry {
+    pub fn from_value(v: &Value) -> Registry {
         let mut r = Registry {
             poisoned: true,
             by_id: Default::default(),
-        };
-        let Ok(body) = std::fs::read_to_string(path) else {
-            return r;
-        };
-        let Ok(v) = serde_json::from_str::<Value>(&body) else {
-            return r;
         };
         let Some(tickets) = v.get("tickets").and_then(Value::as_array) else {
             return r;
         };
         for t in tickets {
-            // `x['id']` on a non-dict is a TypeError, and on a dict without `id` a KeyError.
-            // Both poison every later query.
             let Some(obj) = t.as_object() else { return r };
             let Some(id) = obj.get("id") else { return r };
-            // python compares `x['id'] == sys.argv[1]`, a str-vs-str compare. A non-string id can
-            // never equal the argument, so it simply does not match.
             let key = match id.as_str() {
                 Some(s) => s.to_string(),
                 None => continue,
@@ -149,6 +139,33 @@ impl Registry {
         }
         r.poisoned = false;
         r
+    }
+
+    #[allow(dead_code)]
+    pub fn load(path: &Path) -> Registry {
+        let Ok(body) = std::fs::read_to_string(path) else {
+            return Registry {
+                poisoned: true,
+                by_id: Default::default(),
+            };
+        };
+        let Ok(v) = serde_json::from_str::<Value>(&body) else {
+            return Registry {
+                poisoned: true,
+                by_id: Default::default(),
+            };
+        };
+        Self::from_value(&v)
+    }
+
+    pub fn load_repo(root: &Path) -> Registry {
+        match crate::registry::load_registry(root) {
+            Ok(v) => Self::from_value(&v),
+            Err(_) => Registry {
+                poisoned: true,
+                by_id: Default::default(),
+            },
+        }
     }
 
     /// `is_shipped` — rc 0 for `shipped`/`cancelled`, non-zero for everything else.

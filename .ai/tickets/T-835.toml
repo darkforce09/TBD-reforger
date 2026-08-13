@@ -1,0 +1,30 @@
+__keys = [
+    "id",
+    "title",
+    "status",
+    "executor",
+    "program",
+    "stream",
+    "targets",
+    "impact",
+    "surfaces",
+    "order",
+    "summary",
+    "notes",
+]
+__ord = 808
+executor = "claude-code"
+id = "T-835"
+impact = [
+    "ui",
+    "mc-authoring",
+]
+notes = "operator eye-pass wave-205; pairs naturally with T-839 | ABSORBED into T-834 — both are small eden_top_strip cleanups and would collide on the file. Do not dispatch separately; its acceptance clauses are carried there."
+order = 5170
+program = "eden"
+status = "deferred"
+stream = "mission-creator"
+summary = "OPERATOR EYE-PASS FINDING (wave-205, 2026-08-10): the No-Widget toolbar button's current glyph 'doesn't really make sense' — it should read as the SELECT tool, matching the select-arrow vocabulary of the floating pill's Select (which itself is dying per decision 1/T-839 — the arrow ICON is what carries over). FIX: swap the No-Widget button (and Edit-menu row) glyph to the select-cursor/arrow icon; tooltip stays 'No Widget (1)' or becomes 'Select (1)' — match Eden's naming (Eden calls digit 1 'No Widget'; the operator wants the SELECT visual). Keep plates/census intact. ACCEPTANCE: the digit-1 button shows the arrow glyph; tooltip names the mode + (1); no other button changed."
+surfaces = ["SHELL"]
+targets = ["website"]
+title = "The No-Widget button wears the select-cursor glyph, not a 'none' symbol"

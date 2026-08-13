@@ -1,0 +1,33 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 403
+executor = "claude-code"
+id = "T-429"
+impact = [
+    "auth",
+    "tests",
+]
+order = 3268
+priority = 3
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+Follow-on from T-248 (wave 6). Product path now clears oauth_state via callback_csrf_reject wired into discord_callback. apps/website/api/tests/oauth_redirect.rs asserts Location/missing_code/invalid_state but NOT Set-Cookie Max-Age=0 — so a future handler bypass of the helper could stay green at IT level.
+
+Repro: read oauth_redirect.rs CSRF cases; no Set-Cookie assertion. Unit tests in handlers/oauth.rs cover the helper; IT does not."""
+surfaces = ["BE"]
+targets = ["website"]
+title = "oauth_redirect IT must assert oauth_state Set-Cookie clear on CSRF rejects"

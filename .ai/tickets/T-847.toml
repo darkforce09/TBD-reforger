@@ -1,0 +1,31 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "status",
+    "stream",
+    "targets",
+    "executor",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "notes",
+]
+__ord = 820
+executor = "claude-code"
+id = "T-847"
+impact = ["ui"]
+notes = "wave208 verifier F2 NIT; functional T-801 ship is intact"
+order = 5290
+program = "eden"
+status = "deferred"
+stream = "mission-creator"
+summary = "WAVE-208 VERIFIER NIT (wave208.md F2). T-801 wires `bind_squad_link_preview` into `push_drag_preview`/`clear_drag_preview` (select_tool.rs), and packer Class-R pins cover `pack_squad_link_drag_preview`. The host Class-R battery at mission_editor.rs (T-573/T-808 push_drag_preview pins) still only requires `set_drag` + `bind_vehicle_preview_lane` — dropping only the squad-link bind stays green on that pin. FIX: extend the pin to require `bind_squad_link_preview` / `pack_squad_link_drag_preview` (scrub test module; perturbation-prove). ACCEPTANCE: pin goes red when the select_tool bind call is removed; restored green."
+surfaces = [
+    "MAP",
+    "XFORM",
+    "CONN",
+]
+targets = ["website"]
+title = "push_drag_preview Class-R pins omit bind_squad_link_preview"

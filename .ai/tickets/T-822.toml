@@ -1,0 +1,33 @@
+__keys = [
+    "id",
+    "title",
+    "status",
+    "executor",
+    "program",
+    "stream",
+    "targets",
+    "impact",
+    "surfaces",
+    "order",
+    "summary",
+    "notes",
+]
+__ord = 795
+executor = "claude-code"
+id = "T-822"
+impact = [
+    "ui",
+    "mc-authoring",
+]
+notes = "wave203 verifier; pre-existing, widened by the placed-vehicle rows"
+order = 5040
+program = "eden"
+status = "queued"
+stream = "mission-creator"
+summary = "WAVE-203 VERIFIER FILING (wave203.md MINOR/NIT, PRE-EXISTING, now wider). The left dock is a DOM descendant of the map's dblclick container and dblclick BUBBLES (the chrome stops pointerdown, not dblclick) — mission_editor.rs ~:5790. A dblclick on an outliner row whose world coords miss an entity opens the empty-ground asset PICKER (T-647 PLACE-003) UNDER the Attributes dialog the row also opens; proven live: container-dblclick@83,135 -> attrH2=1 AND placeAsset=1; Esc peels one-per-press. Pre-existing; now ALSO reachable via the wave-203 placed-vehicle outliner rows (eden_tree.rs footer). FIX: the container dblclick handler ignores events whose target sits inside the docks (composedPath/closest check), mirroring the pointerdown chrome guard. ACCEPTANCE: outliner-row dblclick opens ONLY Attributes (no picker under it); map-ground dblclick still opens the picker."
+surfaces = [
+    "LEFT",
+    "SHELL",
+]
+targets = ["website"]
+title = "Outliner dblclick bubbles into the map container — asset picker opens under Attributes"

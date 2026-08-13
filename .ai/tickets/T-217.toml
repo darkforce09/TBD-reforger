@@ -1,0 +1,30 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "shipped_at",
+]
+__ord = 191
+executor = "claude-code"
+id = "T-217"
+impact = ["mc-authoring"]
+order = 2350
+program = "eden"
+shipped_at = "8e07338f"
+status = "shipped"
+stream = "mission-creator"
+summary = "FactionDoc has no squad level — flat roles[] plus vehicles[]. Apply reuses the side's first squad and deletes every other squad on that side (apply_faction.rs:102-107); the inverse flattens all squads into one list, dropping boundaries, leader, callsign, rank and positions. Save-as then Apply collapses N squads into 1. APPLY_ANCHOR_X/Y is an Everon constant, so applying on Arland places everything off-map."
+surfaces = [
+    "MAP",
+    "PLACE",
+]
+targets = ["website"]
+title = "Apply Template silently deletes squads"

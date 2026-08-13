@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 14
+executor = "cursor-docs"
+id = "T-020"
+impact = ["ui"]
+order = 200
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "Replace off-palette colors with Aegis tokens."
+surfaces = ["SHELL"]
+targets = ["website"]
+title = "R4 token sweep (phase 1)"

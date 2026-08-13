@@ -1,0 +1,32 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 426
+executor = "claude-code"
+id = "T-452"
+impact = ["mod"]
+order = 3291
+priority = 2
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+Residual from T-296 / wave 17 adversarial. ResultsReporter banner/comments now tell the truth about shipped `#tbd link` (TBD_IdentityLink + MissionLoader Arm()), but TBD_PlayerIdentity.c:9 still says the mod does not implement link-confirm / that is T-181.35.
+
+Repro: rg 'does not implement|T-181.35' apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_PlayerIdentity.c
+
+Cure: rewrite the stale header to match IdentityLink (same honesty bar as T-296)."""
+surfaces = ["MOD"]
+targets = ["mod"]
+title = "TBD_PlayerIdentity still claims link unimplemented after T-181.35"

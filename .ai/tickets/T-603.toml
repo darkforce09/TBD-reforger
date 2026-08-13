@@ -1,0 +1,45 @@
+__keys = [
+    "program",
+    "surfaces",
+    "impact",
+    "stream",
+    "targets",
+    "executor",
+    "id",
+    "title",
+    "summary",
+    "status",
+    "priority",
+    "order",
+]
+__ord = 576
+executor = "claude-code"
+id = "T-603"
+impact = ["platform-lifecycle"]
+order = 3502
+priority = 3
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+Ground truth measured by wave 75's verifier (F8), after two slice agents reported conflicting counts.
+
+`cargo clippy -p xtask -p tbd-tools --all-targets -- -D warnings` -> **9 real errors, ALL in
+`tools/tbd-tools/src/enf/`**:
+    apidoc.rs:164, apidoc.rs:169      capability.rs:88, capability.rs:137
+    citations.rs:41, citations.rs:62  source.rs:52
+    symbols.rs:120, symbols.rs:169
+Breakdown: 4x collapsible-if, 2x sort_by_key, 1x consecutive `str::replace`, 1x manual char
+comparison, 1x replacing-text-with-itself. **`xtask` is clean.** All mechanical.
+
+T-361's agent reported "9 in src/enf/*" -- exact. T-597's reported "~11" -- it counted the two
+`could not compile` summary lines as errors. `wave.sh:2040-2044` cites "~45 errors" workspace-wide
+"almost all in tools/tbd-tools and xtask"; that figure is stale.
+
+CONTEXT THAT MAKES THIS WORTH DOING: T-597 established that **nothing** ran `cargo test` on these two
+crates -- `ci.yml:46`'s job-level `working-directory: apps/website/api` means the bare `cargo test` at
+`:71` selects only `website-api`. T-597 added a test step to the wave gate; there is still **no lint
+step**. Clean the 9, then add `clippy xtask+tbd-tools` alongside it. One small cleanup away."""
+surfaces = ["INFRA"]
+targets = ["website"]
+title = "9 clippy errors in tools/tbd-tools/src/enf/ and nothing lints those crates"

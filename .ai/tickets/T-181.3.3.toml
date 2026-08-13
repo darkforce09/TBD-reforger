@@ -1,0 +1,15 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-181.3.3"
+notes = "SOLVED — but not by cracking the codec. Operator found arexplorer.zeroy.com: a Doxygen build of the SAME game version (1.7.0.54) with SOURCE_BROWSER on, 6,495 *_source.html pages exactly matching the pak script count, each with FULL METHOD BODIES. Built scripts/mod/fetch-vanilla-source.sh (curated by default, cached, rate-limited — it is one person's site) + `enf source` (Doxygen page -> real .c, incl. name demangling _s_c_r___base_game_mode_8c -> SCR_BaseGameMode.c). Vanilla index now 2,116 files / 88,670 LOC / 1,702 decls. SCR_BaseGameMode, SCR_RespawnSystemComponent, ChimeraMenuBase, SCR_SpawnRequestComponent all resolve to real source. The pak-codec RE is now MOOT — negative results retained in docs/mod/vanilla_carve_coverage.md only so nobody repeats them."
+parent = "T-181"
+status = "shipped"
+targets = ["root"]

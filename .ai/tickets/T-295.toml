@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 269
+executor = "claude-code"
+id = "T-295"
+impact = ["mc-collab"]
+order = 3130
+program = "eden"
+status = "idea"
+stream = "mission-creator"
+summary = "yrs is wired to IndexedDB only; apply_update has two callers. No websocket anywhere — axum is built without the ws feature and there is no yrs-sync or awareness dependency. The server has no optimistic concurrency: POST /versions is a bare INSERT and the only 409 means you reused a semver, not someone edited since you loaded."
+surfaces = ["SHELL"]
+targets = ["website"]
+title = "Realtime collaborative editing"

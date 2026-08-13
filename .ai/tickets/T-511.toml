@@ -1,0 +1,34 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 485
+executor = "claude-code"
+id = "T-511"
+impact = [
+    "website",
+    "tests",
+]
+order = 3351
+priority = 1
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "Wave 43 residual (CLEAN). T-331 cleared content_golden double-seat and left the partial unique on orbat_slots(event_mission_id, assigned_to) WHERE assigned_to IS NOT NULL unlanded because tests/events.rs:540 still seeds legacy two-seat for T-318 recovery and a partial unique cannot be DEFERRABLE. Cure: deliberately update/retire that assertion (or drop index around the seed), then CREATE UNIQUE INDEX in a migration. Repro: create index on clean DB, UPDATE second seat assigned_to → 23505."
+surfaces = [
+    "API",
+    "DATA",
+    "tests",
+]
+targets = ["website"]
+title = "Land orbat_slots partial unique (assigned_to) + retire events.rs two-seat seed"

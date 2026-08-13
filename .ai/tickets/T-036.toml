@@ -1,0 +1,30 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "route",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 27
+executor = "claude-code"
+id = "T-036"
+impact = [
+    "ui",
+    "state",
+]
+order = 360
+program = "eden"
+route = "/missions/:id/edit"
+status = "shipped"
+stream = "mission-creator"
+summary = "Drag-move, marquee select, group move/delete ops."
+surfaces = ["MAP"]
+targets = ["website"]
+title = "Map drag and multi-select"

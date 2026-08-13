@@ -1,0 +1,48 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "slices",
+    "depends_on",
+    "unblocks",
+    "status",
+    "implements",
+    "user_story",
+    "route",
+    "stream",
+    "branch",
+    "executor",
+    "targets",
+    "spec",
+]
+__ord = 152
+branch = "main"
+depends_on = ["T-177"]
+executor = "claude-code"
+id = "T-178"
+impact = [
+    "ui",
+    "perf",
+]
+implements = []
+order = 1750
+program = "eden"
+route = "/missions/:id/edit"
+slices = []
+spec = "docs/platform/t178_forest_guides_chrome.md"
+status = "shipped"
+stream = "mission-creator"
+summary = "SHIPPED @ tag T-178 / 58d839c7. A1 island TBDD density texture + fs_forest_density (Nearest, iso 2.0, fwidth rim; pins 1601/625/density); progressive mesh fill retired. A2 Outliner label removed. A3 continuous YouTube spines. A4 data-guide-toggle. Verify: .ai/artifacts/t178_verify_log.md. Hub: docs/platform/t178_forest_guides_chrome.md."
+surfaces = [
+    "MAP",
+    "LEFT",
+    "RIGHT",
+]
+targets = ["website"]
+title = "Forest load consistency + YouTube guides + Outliner label"
+unblocks = []
+user_story = "As a mission maker I see consistent forest canopy, a single Editor Layers title, and continuous clickable YouTube-style tree guides."

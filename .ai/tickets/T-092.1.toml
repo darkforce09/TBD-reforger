@@ -1,0 +1,20 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-092.1"
+parent = "T-092"
+shipped_at = "4eefc169"
+spec = "docs/specs/Mission_Creator_Architecture/t092_1_mod_spawn_policy.md"
+status = "shipped"
+targets = [
+    "mod",
+    "shared",
+]

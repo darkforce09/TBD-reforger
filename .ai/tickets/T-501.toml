@@ -1,0 +1,33 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 475
+executor = "claude-code"
+id = "T-501"
+impact = [
+    "tests",
+    "telemetry",
+]
+order = 3341
+priority = 2
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "Wave 39 residual from T-402. parse_terrain_opt + unit Class-R pin unknown terrain → None. No IT proves POST match ingest with terrain kolguyev/anizay returns 200 and stores NULL terrain. Cure: apps/website/api/tests/telemetry.rs case on cold DB."
+surfaces = [
+    "API",
+    "CI",
+]
+targets = ["website"]
+title = "Community-terrain soft-fail has no match-ingest HTTP IT"

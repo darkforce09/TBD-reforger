@@ -1,0 +1,40 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 337
+executor = "claude-code"
+id = "T-363"
+impact = ["platform-lifecycle"]
+order = 3179
+priority = 1
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+BOTH CONFIRMED END TO END by T-348, and both worse than the ticket that sent it looking.
+
+1. **missions.rs:393-395 — PATCH `title` has NO GUARD WHATSOEVER**, so an empty string clobbers a real title, not merely whitespace. The `is_empty()` check that was assumed to be here is actually on the CREATE path at :296, and that one is untrimmed. There is no CHECK constraint and no trigger in migrations 0001-0009, so nothing downstream catches it. A blank title is unrecoverable and sorts FIRST in the in-game mission browser.
+
+2. **missions.rs:587/:598 — semver is never parsed.** No `semver` crate, no validator anywhere. Uniqueness is enforced by a DB unique index (0001_initial_schema.sql:803) on a `text` column, so `' 0.1.0 '` and `'0.1.0'` are DISTINCT btree keys: no 23505, the duplicate-version 409 never fires, the request returns 201 — and then :611-615 runs unconditionally and makes that shadow version the mission's `current_version_id`. So a padded version silently becomes the live one.
+
+The semver half is the more interesting fix: validate the string as a real semver rather than only trimming it, because trimming leaves `"1"`, `"1.2"` and `"banana"` all acceptable. Check whether any existing row would fail validation before you enforce it — T-228 and T-357 both established that discipline, and T-357 measured that a naive tightening would have 400'd six real live missions.
+
+Note T-346 owns handlers/missions.rs for the armory work and has SHIPPED, so the file is free.
+
+== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
+Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
+This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now."""
+surfaces = ["API"]
+targets = ["website"]
+title = "PATCH /missions/:id title has no guard at all, and semver is never validated"

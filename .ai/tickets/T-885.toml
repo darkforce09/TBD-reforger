@@ -1,0 +1,29 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "executor",
+    "targets",
+    "stream",
+    "parallel_ok",
+    "order",
+    "spec",
+]
+__ord = 858
+executor = "claude-code"
+id = "T-885"
+impact = ["dx"]
+order = 5660
+parallel_ok = true
+program = "infra"
+spec = "docs/platform/t853_shell_to_xtask_waves.md"
+status = "shipped"
+stream = "infra"
+summary = "T-853 shell->xtask slice. Port scripts/deploy/backup-db.sh to `cargo xtask deploy db backup` and delete the script(s), their scripts/shell-inventory.txt line(s), any scripts/python-inventory.txt line(s), and repoint every caller. 252 lines. T-577 requires the dump be VERIFIED before it counts. Test against a scratch DB from `make db-up`, never tbd_reforger. ACCEPTANCE IS BYTE-FOR-BYTE: capture bash stdout+stderr+rc first, then diff on a clean tree AND on >=2 deliberately broken trees; the harness must assert the BASH side went red before believing a diff. A green run alone is not evidence (T-556). Build on crates/tbd-gate. Spec: docs/platform/t853_shell_to_xtask_waves.md"
+surfaces = ["CI"]
+targets = ["root"]
+title = "T-853 port: verified pg_dump + retention prune"

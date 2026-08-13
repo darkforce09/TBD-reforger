@@ -1,0 +1,20 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "spec",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-159.1"
+notes = "Scaffold + later page waves through 24 routes on worktree (aggregate)."
+parent = "T-159"
+spec = "docs/platform/t159_1_leptos_scaffold.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]

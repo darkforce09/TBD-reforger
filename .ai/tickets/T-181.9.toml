@@ -1,0 +1,18 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-181.9"
+notes = "Slotting authority completed. ClaimSlot already existed (PS-shaped first-come guard). Added: ReleaseSlot (lobby-only change-of-mind; refused once deployed), BuildSlotRoster (per-slot key/faction/group/role/state/holder as TSV — the data T-181.9.1's picker binds to, deliberately plain text so authority is testable from the server log before any widget exists; state = OPEN|HELD|DEAD), and a ONE-LIFE INTEGRITY FIX: ClaimSlot and ReleaseSlot now both refuse a dead player. Without it a dead player could release their slot and claim a fresh one, bypassing one life entirely. Landmine caught by the compile gate in 1.3s: `out` is a RESERVED KEYWORD in Enfusion (out-param modifier) and cannot be a variable name."
+parent = "T-181"
+status = "shipped"
+targets = [
+    "mod",
+    "root",
+]

@@ -329,7 +329,7 @@ mod tests {
         ));
         let _ = fs::remove_dir_all(&root);
         fs::create_dir_all(root.join(".ai/tickets")).unwrap();
-        fs::write(root.join(".ai/tickets/registry.json"), "{}").unwrap();
+        fs::write(root.join(".ai/tickets/ROOT"), "{}").unwrap();
         fs::create_dir_all(root.join("scripts/deploy")).unwrap();
         fs::create_dir_all(root.join("apps/mod")).unwrap();
         root

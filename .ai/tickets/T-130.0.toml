@@ -1,0 +1,15 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+]
+__ord = 0
+executor = "cursor-docs"
+id = "T-130.0"
+parent = "T-130"
+spec = "docs/platform/t130_fable_audit_remainder.md"
+status = "shipped"
+targets = ["root"]

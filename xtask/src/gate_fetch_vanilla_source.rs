@@ -335,7 +335,7 @@ mod tests {
         let _ = fs::remove_dir_all(&p);
         fs::create_dir_all(p.join("apps/mod/vanilla_reference/source_html")).unwrap();
         fs::create_dir_all(p.join(".ai/tickets")).unwrap();
-        fs::write(p.join(".ai/tickets/registry.json"), "{}").unwrap();
+        fs::write(p.join(".ai/tickets/ROOT"), "{}").unwrap();
         p
     }
 

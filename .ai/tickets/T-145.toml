@@ -1,0 +1,28 @@
+__keys = [
+    "id",
+    "order",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "shipped_at",
+]
+__ord = 124
+id = "T-145"
+impact = [
+    "api",
+    "infra",
+    "compiler",
+]
+order = 1495
+program = "Platform"
+shipped_at = "a228ed98"
+status = "shipped"
+summary = "Rewrite the Go backend to Rust (Axum + sqlx) and move the mission document core into a Rust/wasm yrs doc. The F1->F4 flip made the yrs wasm doc authoritative and removed yjs + y-indexeddb from the app."
+surfaces = [
+    "SHELL",
+    "DATA",
+]
+title = "Rust/Wasm Doc Core (Yjs replacement)"

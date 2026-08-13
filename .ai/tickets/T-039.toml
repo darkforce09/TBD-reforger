@@ -1,0 +1,30 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "route",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 30
+executor = "claude-code"
+id = "T-039"
+impact = [
+    "ui",
+    "api",
+]
+order = 390
+program = "eden"
+route = "/missions/:id/edit"
+status = "shipped"
+stream = "mission-creator"
+summary = "Backend error messages and invalid mission id banner."
+surfaces = ["TOP"]
+targets = ["website"]
+title = "Save Version error surfacing"

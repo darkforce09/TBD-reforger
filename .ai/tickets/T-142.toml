@@ -1,0 +1,34 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "stream",
+    "targets",
+    "executor",
+    "status",
+    "surfaces",
+    "impact",
+    "depends_on",
+    "spec",
+    "route",
+    "branch",
+]
+__ord = 116
+branch = "ticket/T-142"
+depends_on = []
+executor = "claude-code"
+id = "T-142"
+impact = ["ui"]
+program = "eden"
+route = "/missions/:id/edit"
+spec = "docs/platform/tbd_north_star_backlog.md"
+status = "idea"
+stream = "mission-creator"
+summary = "Toolbelt placement, Attributes modal grouping, stub tool visibility — layout UX without full T-082 field parity."
+surfaces = [
+    "UI",
+    "TOP",
+]
+targets = ["website"]
+title = "MC shell layout polish"

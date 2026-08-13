@@ -1,0 +1,30 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "shipped_at",
+]
+__ord = 167
+executor = "claude-code"
+id = "T-193"
+impact = ["mc-settings"]
+order = 2110
+program = "eden"
+shipped_at = "b30f5490"
+status = "shipped"
+stream = "mission-creator"
+summary = "eden_chrome.rs:1726-1741,1769-1784 write meta.environment.{viewDistance,thermals}, but mission.schema.json:138 sets environment.additionalProperties:false with only dateTime, weatherPreset and windDirDeg. Two working UI controls produce data no downstream surface can carry."
+surfaces = ["ATTR"]
+targets = [
+    "root",
+    "website",
+]
+title = "viewDistance and thermals are authored into a schema-forbidden field"

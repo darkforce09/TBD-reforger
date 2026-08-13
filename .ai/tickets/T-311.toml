@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 285
+executor = "claude-code"
+id = "T-311"
+impact = ["e2e"]
+order = 2311
+program = "eden"
+status = "idea"
+stream = "web-platform"
+summary = "handlers/leaderboards.rs:44-50 — none of the five ORDER BY arms has a tie-breaker, so with LIMIT/OFFSET the row SET is unstable, not merely the order within it. T-194's content golden introduces 4-way ties in team_kills, missions_played and command_win_rate, so this is now reachable with the committed seed. Fix: append `, lt.discord_id ASC` to each arm."
+surfaces = ["MOD"]
+targets = ["website"]
+title = "Leaderboard ORDER BY has no tie-breaker, so paging is unstable"

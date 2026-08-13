@@ -1,0 +1,20 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "notes",
+]
+__ord = 0
+executor = "human"
+id = "T-152.22"
+notes = "Shipped 2026-07-14 — operator GO (bulk O1–O12 PASS; screenshot pack + extended master re-suite waived with dated quotes). Verify t152_22_verify_log.md. Merge ticket/T-152 → main next."
+parent = "T-152"
+spec = "docs/specs/Mission_Creator_Architecture/t152_22_e2e_regate_operator.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]

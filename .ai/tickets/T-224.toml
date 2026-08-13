@@ -1,0 +1,27 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "shipped_at",
+]
+__ord = 198
+executor = "claude-code"
+id = "T-224"
+impact = ["mc-settings"]
+order = 2420
+program = "eden"
+shipped_at = "dde40f91"
+status = "shipped"
+stream = "mission-creator"
+summary = "Six contract fields with no control anywhere. flow is four hardcoded constants and tickets is a hardcoded 0. Ship the UI, doc fields and flatten emission together; half of settings also needs mod readers."
+surfaces = ["ATTR"]
+targets = ["website"]
+title = "Mission settings block — duration, respawn, spectator policy, NVG, tickets, JIP"

@@ -1,0 +1,35 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "status",
+    "stream",
+    "targets",
+    "executor",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "notes",
+]
+__ord = 762
+executor = "claude-code"
+id = "T-791"
+impact = [
+    "ui",
+    "mc-authoring",
+]
+notes = "census COMP-PLACE-001/T-078 is stale on the save half — cite; T-078 remains the parent idea, this ships the author-facing core | SHIPPED W201: the ticket's mechanism premise was STALE — stamp/one-txn/select/Esc-disarm already shipped (T-650/T-723/T-781 lineage); the review's live dead-end did NOT reproduce for the verifier (full F-30 acceptance re-proved: +3/SEL==3/one-undo across click, second point and drag; stored Z 12.500 m survives). Slice shipped the genuinely missing live arm hint (armed_composition_id + doc_tick bumps + panel block) and un-hollowed two raw-include_str pins. Esc hint/arm double-consume filed T-816."
+order = 4730
+program = "eden"
+status = "shipped"
+stream = "mission-creator"
+summary = "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). F-30 — VERIFIED silent dead end: save works (row 'qqq by Dev O…' created, name field healthy), arming works (panel shows 'click the map'), then the map click DOES NOTHING — OBJ9->OBJ9 across a plain click at two points AND a press-drag-release, zero console/pageerror output, and the arm NEVER clears — the hint keeps promising the thing that never happens. MECHANISM: editor_ops.rs ~:76-95 Pending::Composition is set by the row (eden_dock_right.rs ~:62-97) but the map place branch (~:814-895 region) has no Composition stamp arm — only single-asset placement consumes Pending. FIX: implement the composition stamp — on armed map click, instantiate the saved members with stored offsets/elevations around the click point as ONE transaction (one undo step), select the stamped set, clear the arm; Esc clears the arm and the panel hint. ⚠️ TRAPS: comments inside a saved composition are editor-only (never compiled) — preserve that on stamp; the dock panel copy already documents elevation-keeping semantics — honour it; per-member txns would repeat the F-26 undo-cost mistake (one txn, one step). ACCEPTANCE: scripted — save a 3-entity composition, arm, click map: OBJ +3, SEL==3 (the stamp), ONE Ctrl+Z removes all 3; re-arm then Esc then click: OBJ unchanged and hint gone; console clean throughout."
+surfaces = [
+    "RIGHT",
+    "COMP",
+    "PLACE",
+    "MAP",
+]
+targets = ["website"]
+title = "Armed composition places on map click, and Esc disarms the arm"

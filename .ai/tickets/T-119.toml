@@ -1,0 +1,27 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "stream",
+    "targets",
+    "executor",
+    "status",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "milestone",
+]
+__ord = 93
+executor = "workbench"
+id = "T-119"
+impact = ["schema"]
+milestone = "M1"
+order = 1190
+program = "platform"
+status = "shipped"
+stream = "mod-framework"
+summary = "SHIPPED (closed 2026-07-26 by audit). Delivered by T-181: loadouts (TBD_LoadoutEquipComponent.c, T-068.12), safe start (TBD_SafestartManager.c 1143 lines, T-181.17/.33), boundary (TBD_ZoneRegistry.c + TBD_PlayAreaComponent.c, T-181.18), admin commands (TBD_AdminCommands.c + AdminService + AdminScreen, T-181.11.2). All four M1 items present."
+surfaces = ["DATA"]
+targets = ["mod"]
+title = "Framework MVP remainder"

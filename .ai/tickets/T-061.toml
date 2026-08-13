@@ -1,0 +1,30 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "spec",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 48
+executor = "claude-code"
+id = "T-061"
+impact = [
+    "perf",
+    "ui",
+]
+order = 610
+program = "scale"
+spec = "docs/specs/Mission_Creator_Architecture/t061_drag_move_hotfix.md"
+status = "shipped"
+stream = "mission-creator"
+summary = "Dual IconLayer drag preview at ~60fps for 360k slots."
+surfaces = ["MAP"]
+targets = ["website"]
+title = "Drag-move performance at 360k"

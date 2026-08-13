@@ -343,21 +343,17 @@ pub fn wave_plan_tickets_at(ctx: &Ctx, rev: &str, n: i64) -> Vec<String> {
 /// a checkout and the wrong one for this caller — it would turn an unreadable blob into a
 /// CONTRADICTION and hard-refuse the gate over a file it never actually examined.
 pub fn wave_ledger_unshipped_at(ctx: &Ctx, rev: &str, tickets: &[String]) -> Option<String> {
-    let blob = git_stdout(&["show", &format!("{rev}:{}", ctx.registry)])?;
-    let v: serde_json::Value = serde_json::from_str(&blob).ok()?;
-    // The python used `.get` throughout, so a missing `tickets` key is an EMPTY map rather than an
-    // error — every queried ticket then reads as unshipped, which contradicts and refuses.
-    let mut by: std::collections::HashMap<&str, &str> = Default::default();
-    if let Some(arr) = v.get("tickets").and_then(|t| t.as_array()) {
-        for t in arr {
-            let id = t.get("id").and_then(|x| x.as_str()).unwrap_or("");
-            let st = t.get("status").and_then(|x| x.as_str()).unwrap_or("");
-            by.insert(id, st);
-        }
-    }
+    let _ = ctx;
+    let repo = std::path::Path::new(".");
+    let by = crate::tickets_store::status_map_at_rev(repo, rev)?;
     let open: Vec<&str> = tickets
         .iter()
-        .filter(|t| !matches!(by.get(t.as_str()), Some(&"shipped") | Some(&"cancelled")))
+        .filter(|t| {
+            !matches!(
+                by.get(t.as_str()).map(String::as_str),
+                Some("shipped") | Some("cancelled")
+            )
+        })
         .map(String::as_str)
         .collect();
     Some(open.join(" "))

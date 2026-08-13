@@ -1,0 +1,22 @@
+__keys = [
+    "id",
+    "order",
+    "status",
+    "program",
+    "title",
+    "summary",
+    "surfaces",
+    "impact",
+]
+__ord = 122
+id = "T-148"
+impact = [
+    "ui",
+    "state",
+]
+order = 1490
+program = "eden"
+status = "cancelled"
+summary = "CANCELLED — exact duplicate of T-073 (Shift + map rotation). Both were queued with identical scope."
+surfaces = ["MAP"]
+title = "Shift+Drag Rotation Tool"

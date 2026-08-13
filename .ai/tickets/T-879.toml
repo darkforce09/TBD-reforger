@@ -1,0 +1,31 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "executor",
+    "targets",
+    "stream",
+    "parallel_ok",
+    "spec",
+    "order",
+    "notes",
+]
+__ord = 852
+executor = "claude-code"
+id = "T-879"
+impact = ["dx"]
+notes = "T-853 PARTIAL LAND. lib/mcpd-bin.sh and lib/xtask-run.sh were verified to have ZERO consumers after wave 229 ported mcp-daemon.sh, and were deleted with their inventory lines. lib/paths.sh REMAINS: its last consumer is scripts/mod/deploy-staging.sh, which is on the Claude lane. Land the remainder when `git grep -l 'paths.sh' -- scripts/` returns nothing but the inventory. A stale 'do not delete paths.sh / xtask-run.sh' caution in xtask/src/gate_debug_direct_join.rs was corrected at the same time: that gate MIRRORS the path constants, it does not read the file. T-853: LANDED. All four shims (paths.sh, mcpd-bin.sh, xtask-run.sh, gate-grep.sh) were deleted once their last consumers were ported — mcp-daemon.sh freed two, deploy-staging.sh freed the other two. scripts/mod/lib/ no longer exists."
+order = 5600
+parallel_ok = true
+program = "infra"
+spec = "docs/platform/t853_shell_to_xtask_waves.md"
+status = "shipped"
+stream = "infra"
+summary = "T-853 shell->xtask slice. Port scripts/mod/lib/paths.sh;scripts/mod/lib/mcpd-bin.sh;scripts/mod/lib/xtask-run.sh (27 lines) to `cargo xtask (pure delete)` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). three shims the xtask launcher does natively - delete, do not port. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling."
+surfaces = ["CI"]
+targets = ["root"]
+title = "T-853 delete: mod/lib shims"

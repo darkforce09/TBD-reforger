@@ -1,0 +1,51 @@
+__keys = [
+    "program",
+    "surfaces",
+    "impact",
+    "stream",
+    "targets",
+    "executor",
+    "id",
+    "title",
+    "summary",
+    "status",
+    "priority",
+    "order",
+]
+__ord = 578
+executor = "claude-code"
+id = "T-605"
+impact = ["platform-lifecycle"]
+order = 3522
+priority = 0
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+FOUND while writing `docs/platform/PLAYTEST_RUNBOOK.md` (2026-07-31). Second playtest blocker.
+
+`IsComplete()` = `m_aFailures.IsEmpty() && m_aDegraded.IsEmpty()` (`TBD_LoadoutEquipHelper.c:209-212`).
+T-541 turned that into a **hard gate at the spawn boundary** (`TBD_SpawnManager.c:1076`, `:1600`): if
+it returns false, `m_bSlotBodiesMaterialized` stays false and **NOBODY leaves LOADING** -- not just
+the player whose loadout degraded. One bad cargo row bricks the session for every client.
+
+**That gate has never executed against a loadout-carrying mission.** `wave.sh:132` boots only
+`bridgehead-at-levie`, which has **0 gear and 0 cargo**, so every green boot to date has taken the
+trivially-complete path. The first real exercise will be the playtest itself, with a second person
+waiting.
+
+Compounding it, T-504 (shipped wave 75) establishes that the Arsenal **warns but does not refuse** on
+cargo targeting an unworn container -- deliberately and correctly, because
+`TBD_LoadoutEquipHelper.c:407-408` retains the kit garment so "picks no vest" != "no vest worn". So an
+author CAN save a loadout that the mod will later mark DEGRADED, and the authoring side is the wrong
+place to stop it. The spawn side treating degraded-for-one as fatal-for-all is the defect.
+
+REPRO: author a mission with one slot whose cargo targets an unworn container; compile it; boot with
+`world-boot.sh --compiled=<MID>`; observe LOADING never clears for any client.
+
+FIX (design call, not obvious): degrade that ONE player's loadout and let the session start, log it
+loudly, and surface it to the admin -- rather than refusing the world. Whatever is chosen, run it
+against a loadout-carrying mission in the gate, which no current gate step does."""
+surfaces = ["MOD"]
+targets = ["website"]
+title = "A single DEGRADED cargo row hard-gates the LOBBY for everyone, and that gate has never run against a loadout mission"

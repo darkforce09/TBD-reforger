@@ -1,0 +1,18 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-152.7"
+parent = "T-152"
+spec = "docs/specs/Mission_Creator_Architecture/t152_7_height_markers.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]

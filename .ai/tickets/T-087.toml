@@ -1,0 +1,29 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "status",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "route",
+    "branch",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 74
+branch = "ticket/T-087"
+executor = "cursor-docs"
+id = "T-087"
+impact = ["ui"]
+order = 870
+program = "platform"
+route = "/admin/content"
+status = "deferred"
+stream = "web-platform"
+summary = "Rich text editor for announcements and CMS content."
+surfaces = ["SHELL"]
+targets = ["website"]
+title = "CMS rich text editor"

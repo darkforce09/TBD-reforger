@@ -1,0 +1,33 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 467
+executor = "claude-code"
+id = "T-493"
+impact = [
+    "tests",
+    "infra",
+]
+order = 3332
+priority = 2
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "Wave 37 adversarial NIT. insert_without_counters_stores_null_not_zero holds. leaderboard_mv_does_not_invent_deaths_from_null went RED when INSERT bound 0, but poisoning the MV to sum(COALESCE(deaths,0)) with a mixed NULL+measured fixture still left the Class-R GREEN (0+3=3). Cure: pin all-NULL row set → kd_ratio IS NULL and/or source-ratchet migration 0014 / live MV for FILTER (WHERE deaths IS NOT NULL) / no COALESCE(deaths,0) in the aggregate."
+surfaces = [
+    "API",
+    "DATA",
+]
+targets = ["website"]
+title = "T-397 Class-R blind to sum(COALESCE(deaths,0)) on leaderboard_totals"

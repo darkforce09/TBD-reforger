@@ -1,0 +1,33 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 478
+executor = "claude-code"
+id = "T-504"
+impact = [
+    "mission-creator",
+    "frontend",
+]
+order = 3344
+priority = 2
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "Wave 40 residual from T-417. arsenal UI shows 'no garment worn' with total and no limit; arsenal_rules deliberate silence; mod TBD_LoadoutEquipHelper already degrades. Author never hears undeliverable cargo. Cure: authoring-time warning/refuse when cargo targets unworn container."
+surfaces = [
+    "ATTR",
+    "DATA",
+]
+targets = ["website"]
+title = "Silent no-garment cargo in Arsenal (T-417 structural)"

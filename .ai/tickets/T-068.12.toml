@@ -1,0 +1,22 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "shipped_at",
+    "spec",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-068.12"
+notes = "SHIPPED @ 0be53e16 (tag T-068.12). TBD_LoadoutApplication shared path; player equip + cargo InsertItem live WB. Operator residual: M2 screenshot + optional M4 NPC toggle. Verify: .ai/artifacts/t068_12_verify_log.md"
+parent = "T-068"
+shipped_at = "0be53e16"
+spec = "docs/specs/Mission_Creator_Architecture/t068_12_mod_player_loadout_equip.md"
+status = "shipped"
+targets = [
+    "mod",
+    "shared",
+]

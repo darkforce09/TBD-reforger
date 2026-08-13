@@ -1,0 +1,31 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 228
+executor = "claude-code"
+id = "T-254"
+impact = ["mc-authoring"]
+order = 2720
+program = "eden"
+status = "shipped"
+stream = "mission-creator"
+summary = "The Objects chip is a stub (eden_chrome.rs:1466-1470), place_at no-ops in objects mode (editor_ops.rs:1598-1602), the palette filters to kind==character (asset_catalog.rs:63), and the doc has no entities map. The mod has no reader either. Also blocks objective_destroy, which resolves rules.targetAlias against entities[]."
+surfaces = [
+    "MAP",
+    "PLACE",
+]
+targets = [
+    "website",
+    "mod",
+]
+title = "Entity and object placement — the whole entities[] block"

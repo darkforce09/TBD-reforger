@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 19
+executor = "cursor-docs"
+id = "T-025"
+impact = ["ui"]
+order = 250
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "Final token and layout consistency pass."
+surfaces = ["SHELL"]
+targets = ["website"]
+title = "Global Aegis consistency (final batch)"

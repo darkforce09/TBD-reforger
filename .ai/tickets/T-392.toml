@@ -1,0 +1,34 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 366
+executor = "claude-code"
+id = "T-392"
+impact = ["mission-authoring"]
+order = 3208
+priority = 1
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+`frontend/src/event_hub.rs:359` renders the event briefing as `if briefing.is_empty() { PLACEHOLDER_LORE }` (the const at `:38`). T-344/T-345 just made briefings authorable end to end, which turns this from harmless demo scaffolding into a live bug: an author who deliberately clears a briefing does not get an empty section, they get paragraphs of fictional lore that looks like real operational copy. Same shape as the T-373 finding — a fallback that cannot distinguish 'not authored yet' from 'authored empty'.
+
+The sibling consts on the same page are the same mechanism and should go with it: `PLACEHOLDER_MAKER`/`PLACEHOLDER_DURATION` (`:26-27`, rendered `:324,326`), `PLACEHOLDER_BLUFOR`/`PLACEHOLDER_OPFOR` (`:28,33`, rendered `:374,393`) and `PLACEHOLDER_VEHICLES` (`:41`, rendered `:470`). Objectives in particular now have a real authoring path, so hardcoded ones are actively wrong.
+
+Right shape: render nothing (or an explicit 'No briefing' affordance) when the field is empty, the way `mission_overview.rs:930` already does with `"No briefing provided."`. Do NOT back-fill — see T-373 for why an absent value must stay distinguishable from a default.
+
+Found by the T-239 provenance sweep; full map at docs/platform/frontend_data_provenance.md."""
+surfaces = ["FRONTEND"]
+targets = ["website"]
+title = "An empty authored briefing renders as PLACEHOLDER_LORE, so clearing one is impossible"

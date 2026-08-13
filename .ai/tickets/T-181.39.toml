@@ -1,0 +1,15 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-181.39"
+notes = "Objectives — all three types, server-authoritative, built ON TOP of T-181.18's zones with NO geometry of its own (containment is TBD_Zone.Contains everywhere). Reads its rules via a SECOND JsonLoadContext pass over GetRawJson(), because TBD_MissionZoneRulesStruct is structurally blind to captureSeconds/contestable/holdSeconds/targetAlias/points and Backend/** was another agent's lane; joins by index with id verification, seam to consolidate is one function. SIX DESIGN DECISIONS with no prior art, each justified in-code and each JSON-overridable — notably progress HOLDS when uncontested-but-empty (under one life, decay favours the side with more bodies and punishes casualties permanently) and taking an enemy-held objective is TWO-STAGE (neutralise then capture) so holding ground is worth something. Missing rules treated ASYMMETRICALLY on purpose: absent captureSeconds defaults to 120s loudly (an inert capture objective takes all_objectives_captured with it and the round silently runs to the time limit), but absent holdSeconds goes INERT with a diagnostic (no defensible default for a whole-round timer — guessing ends the event at the wrong moment). Destruction signal is vanilla's own: DamageManagerComponent.GetState() != EDamageState.DESTROYED, cited at SpectateTargetComponent.c:26. RUNTIME-PROVEN that the second pass populates: capture=120, contestable=1, hold=2700, targetAlias are values the loader's struct CANNOT SEE, and bounds match the golden's circle exactly. DELIBERATELY LEFT OUT, each with a reason: no objective RPC (no consumer can exist while .layout is rdb-gated, and it would add to the unsettled 6x modded SCR_PlayerController risk) — the seam BuildBoardForPlayer resolves the viewer's side server-side so there is no faction parameter to forge; objective_destroy CANNOT COMPLETE on today's build and it refused to fake it (the signal is real, the TARGET does not exist — entities[] is unmodelled and comp:ammo_cache is not in the registry) so it arms, finds nothing, goes inert and says why; points parsed and exposed but not scored, because winConditions.mode 'points_then_attrition' implies a scoring system that does not exist. NONE OF THE BEHAVIOUR HAS EVER RUN — zero players means no presence sample, no capture, no contest, no hold clock, no end trigger, not once."
+parent = "T-181"
+status = "shipped"
+targets = ["mod"]

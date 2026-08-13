@@ -1,0 +1,27 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "shipped_at",
+]
+__ord = 286
+executor = "claude-code"
+id = "T-312"
+impact = ["e2e"]
+order = 2312
+program = "infra"
+shipped_at = "223e5604"
+status = "shipped"
+stream = "infra"
+summary = "Found by T-209, and it is the sharpest instance of the pattern: the one check whose entire purpose is proving the compile gate can FAIL will print SELFTEST OK and exit 0 when it never ran at all. Reproduced. T-209's new workflow deliberately avoids the target and calls the script directly, but the Makefile target is still there for anyone who trusts it."
+surfaces = ["MOD"]
+targets = ["root"]
+title = "make mod-compile-selftest reports OK when the gate never ran"

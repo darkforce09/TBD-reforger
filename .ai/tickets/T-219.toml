@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 193
+executor = "claude-code"
+id = "T-219"
+impact = ["mc-integrity"]
+order = 2370
+program = "eden"
+status = "shipped"
+stream = "mission-creator"
+summary = "mission-editor-payload.schema.json has no additionalProperties:false and no required, so the API stores arbitrary keys. But hydrate reads exactly seven paths (store.rs:1097-1158) and compile_payload rebuilds from a json! literal (compile.rs:85-99). A server-first field or migration will appear to work, persist, and be quietly erased on next Save. MissionDocCore::hydrate has zero unit tests."
+surfaces = ["DATA"]
+targets = ["website"]
+title = "The editor silently deletes any top-level key it does not understand"

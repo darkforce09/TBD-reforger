@@ -1,0 +1,36 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 361
+executor = "claude-code"
+id = "T-387"
+impact = ["platform-lifecycle"]
+order = 3203
+priority = 2
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+NARROWED after W61 (T-339 shipped). api_proxy half-hydrate CLOSED (smokes.rs defaults api_proxy to :8080; gate --api-proxy).
+
+MEASURED residual (W64 attempt, STOP — owns collide with T-560):
+- apps/website/api/src/handlers/dev.rs:14 DEV_USER_ID fixed for all roles
+- ON CONFLICT updates role on same discord_id; issue_session does not revoke prior family
+- IT corpus documents landmine: misc_integration.rs:288-293, missions.rs:1105-1111
+
+Fix lives in handlers/dev.rs — sequence AFTER T-560 (same owns). Do not re-litigate api_proxy.
+Owns for the real fix: apps/website/api/src/handlers/dev.rs (+ ITs that assume one discord_id)."""
+surfaces = ["CI"]
+targets = ["website"]
+title = "render-check / gate residual after T-339: dev-login single Discord id (not api_proxy)"

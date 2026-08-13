@@ -1,0 +1,15 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-181.3.2"
+notes = "enf extract — pulls vanilla scripts BY REAL PATH from the pak FILE table (operator asked 'what about the MCP?' — the MCP's game_browse DOES list them; its game_read fails). Fixed PakVfs to fall back zlib->raw deflate. Result: 2,483/6,495 scripts extracted (all the UNCOMPRESSED ones); combined vanilla index now 2,099 files / 72,226 LOC / 1,659 declarations. BARRIER: the 4,012 compressed entries use a codec that is neither zlib nor deflate, with no method flag (all-zero method bytes). enfusion-mcp only calls inflateSync so it cannot read them either — that error is why vanilla source looked unavailable. Follow-up T-181.3.3: identify the codec (LZ4 block is the hypothesis) to unlock the gameplay layer."
+parent = "T-181"
+status = "shipped"
+targets = ["root"]

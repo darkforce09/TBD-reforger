@@ -1,0 +1,75 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 559
+executor = "claude-code"
+id = "T-585"
+impact = ["platform-lifecycle"]
+order = 3440
+priority = 1
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+FULLY SPECIFIED BY T-576, which did not merely claim these are unblocked -- it REHEARSED them,
+creating all three constraints by hand on a scratch DB and driving them over HTTP. Each returns its
+400 with ZERO handler changes, because telemetry.rs is pre-armed with the constraint names and pinned
+by `fk_constant_names_follow_migration_convention`. Wave 71's verifier independently re-derived that
+conventional auto-naming produces exactly those names.
+
+=== THE MIGRATION (0019_ingest_pointer_foreign_keys.sql) ===
+1. Three constraints, `DROP CONSTRAINT IF EXISTS` before each `ADD` (0018's idempotency rule),
+   VALIDATING not NOT VALID (0018's decision):
+     server_statuses_current_match_id_fkey -> matches(id)   ON DELETE SET NULL
+     matches_event_id_fkey                 -> events(id)    ON DELETE SET NULL
+     matches_mission_id_fkey               -> missions(id)  ON DELETE SET NULL
+2. **NAMES MUST BE EXACTLY `<table>_<column>_fkey`.** telemetry.rs branches on these literal strings;
+   any other name matches nothing and SILENTLY RESTORES THE 500.
+3. ON DELETE SET NULL for all three -- all three columns are nullable (verified). RESTRICT would make
+   deleting an event impossible once a match points at it; CASCADE would delete scorelines and a
+   server's live status row.
+4. ORPHAN PRE-CLEAN IS MANDATORY (0018:212 established the pattern). These columns have been
+   unconstrained since 0001, so live data may hold dangling pointers:
+     UPDATE matches SET event_id = NULL WHERE event_id IS NOT NULL AND event_id NOT IN (SELECT id FROM events)
+     ... same for mission_id, same for server_statuses.current_match_id
+
+=== THE SEED REORDER — THIS SLICE OWNS seeds/content_golden.sql TOO ===
+T-262 flagged ONE ordering blocker. T-576 measured a SECOND:
+    server_statuses (line 226) sets current_match_id = ...f000-000000000003, but `matches` is
+      inserted at line 354.
+    matches (line 354) names mission ...c000-000000000001, inserted at line 450.
+    matches.event_id is NULL in all three golden rows -> no blocker there.
+`persist_seed` feeds the file statement-by-statement in AUTOCOMMIT, so DEFERRABLE INITIALLY DEFERRED
+does not help. Required order: missions(104) -> missions(450) -> matches(354) -> servers(213) ->
+server_statuses(226). **Without this reorder every fresh environment fails to seed.**
+
+=== NOT UNBLOCKED, AND WHY ===
+The fourth abstention, `fire_missions.event_id`, is NOT covered. It is written in field_tools.rs:256
+and needs its own `foreign_key_error` arm first. T-576 also corrected the record: `save_fire` takes
+AuthUser (POST /api/v1/fire-missions), so it is a JWT-authenticated HUMAN route, not a
+no-human-in-the-loop service-token ingest -- a 500 there costs a fire-mission record, not a scoreline.
+
+=== A BRIDGE CONTRACT CHANGE THE OPERATOR MUST KNOW ABOUT ===
+For matches.event_id / mission_id the FK makes the write FAIL EITHER WAY -- a 400 does NOT save the
+scoreline T-262 was protecting. What it buys is a LEGIBLE, RETRIABLE failure: the bridge learns which
+pointer is wrong, and upsert_match is idempotent on source_match_id, so a corrected re-POST lands the
+row. Weighed against today's behaviour (200, row stored with a dangling event_id, attendance then
+silently never marked) that is the better failure -- but it changes what the game-server bridge sees
+and should be announced, not slipped in."""
+surfaces = [
+    "DATA",
+    "API",
+]
+targets = ["website"]
+title = "Migration 0019: the three ingest-pointer FKs T-576 unblocked, plus the seed reorder they require"

@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 257
+executor = "claude-code"
+id = "T-283"
+impact = ["mc-collab"]
+order = 3010
+program = "eden"
+status = "shipped"
+stream = "mission-creator"
+summary = "No comments table in any migration. approvals.rs:274-284 is a reviewer comment box backed by a local signal, explicitly marked mock until a review-comments API lands, never POSTed. missions.rs:884-896 reads 'Comments coming soon'. Coarse approve/reject exists; the iterative loop does not."
+surfaces = ["SHELL"]
+targets = ["website"]
+title = "Mission review and commenting workflow"

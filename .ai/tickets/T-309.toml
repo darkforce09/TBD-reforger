@@ -1,0 +1,28 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 283
+executor = "claude-code"
+id = "T-309"
+impact = ["mc-authoring"]
+order = 2309
+program = "eden"
+status = "idea"
+stream = "mission-creator"
+summary = "The real fix T-217 could not make. FactionDoc is flat (roles[] + vehicles[]) with no squad level, and faction-library.schema.json is additionalProperties:false with required [side,name,roles,vehicles]; dto.rs:386 mirrors it flat. So save-as-template followed by Apply cannot round-trip N squads — T-217 made it refuse loudly instead of collapsing silently, which is correct but is not the feature. Needs: a squad level in faction-library.schema.json + FactionDoc, then BOTH sides of editor_ops — orbat_apply_faction and the flattening faction_doc_from_side_core. Until then, Apply is single-squad-only by contract."
+surfaces = ["ORBAT"]
+targets = [
+    "website",
+    "root",
+]
+title = "Preserve squads through Apply Template — needs a squad level in FactionDoc"

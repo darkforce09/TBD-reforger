@@ -152,12 +152,7 @@ fn unique_sorted_waves(root: &Path) -> Vec<String> {
 
 /// Shipped slice ids for T-181 (python3 one-liner → serde). On any error → empty (2>/dev/null).
 fn shipped_slices(root: &Path) -> Vec<String> {
-    let path = root.join(".ai/tickets/registry.json");
-    let text = match fs::read_to_string(&path) {
-        Ok(t) => t,
-        Err(_) => return Vec::new(),
-    };
-    let v: Value = match serde_json::from_str(&text) {
+    let v: Value = match crate::registry::load_registry(root) {
         Ok(v) => v,
         Err(_) => return Vec::new(),
     };

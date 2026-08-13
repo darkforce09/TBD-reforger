@@ -1,0 +1,27 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "status",
+    "stream",
+    "targets",
+    "executor",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "notes",
+]
+__ord = 731
+executor = "claude-code"
+id = "T-758"
+impact = ["ui"]
+notes = "filed by wave-115 adversarial verifier (editor factory)"
+order = 4634
+program = "eden"
+status = "shipped"
+stream = "mission-creator"
+summary = "MINOR from the wave-115 verifier. eden_settings.rs:1623-1640: rows whose owner is the mission document itself name no entity and are explicitly not click targets (data-selectable=false), but they still render as focusable <button> elements. A keyboard user tabs onto them and activating does nothing. Correct shapes: render non-interactive rows as a non-focusable element, or keep the button and mark it aria-disabled with the reason. Related and worth doing in the same pass — T-754 covers the larger problem that the rows which DO name an entity are also inert, but for a different reason (the router cannot resolve zones). Together the two mean every row in the view is currently a dead click; fixing the styling and focusability without fixing T-754's router would make the view honest but still unhelpful, so sequence T-754 first. Diagnosis: editor_verify/wave115.md MINOR-6."
+surfaces = ["EDITOR"]
+targets = ["website"]
+title = "Aggregated-settings a11y: mission-owned rows are inert focusable buttons"

@@ -1,0 +1,73 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "executor",
+    "targets",
+    "stream",
+    "parallel_ok",
+    "spec",
+    "slices",
+    "active_slice",
+    "notes",
+    "slice_plan",
+]
+__ord = 884
+active_slice = "T-911.1"
+executor = "claude-code"
+id = "T-911"
+impact = ["dx"]
+notes = "Serial slices: T-911.1 and T-911.2 own overlapping .ai/tickets/ + xtask loader paths; do not pack in one parallel wave. Corpus-count proofs measure N from the cutover monolith (set-equality), never a hardcoded parent count."
+order = 5910
+parallel_ok = false
+program = "infra"
+slices = [
+    "T-911.1",
+    "T-911.2",
+]
+spec = "docs/platform/t911_ticket_registry_redesign.md"
+status = "queued"
+stream = "infra"
+summary = "Split the ticket monolith into one TOML file per parent and per existing slice_plan/slices key, then type Scope/Status (encoding C). Phase 1 is a byte-identical JSON emit vs the committed monolith (set-equality of ids, not a hardcoded parent count). Phase 2 types the schema. Wave lockfile and metrics producers are T-912+, not this program."
+surfaces = ["CI"]
+targets = ["root"]
+title = "Ticket registry redesign — per-file split + typed schema"
+
+[slice_plan]
+__keys = [
+    "T-911.1",
+    "T-911.2",
+]
+
+[slice_plan."T-911.1"]
+__keys = [
+    "targets",
+    "executor",
+    "status",
+    "spec",
+    "notes",
+]
+executor = "claude-code"
+notes = "Phase 1: isomorphic per-file TOML, FROZEN_27 keys, ROOT + 12 fixtures, dual-read, byte-identical JSON emit vs the cutover monolith, then delete the monolith in the same commit."
+spec = "docs/platform/t911_ticket_registry_redesign.md"
+status = "ready"
+targets = ["root"]
+
+[slice_plan."T-911.2"]
+__keys = [
+    "targets",
+    "executor",
+    "status",
+    "spec",
+    "notes",
+]
+executor = "claude-code"
+notes = "Phase 2: typed Scope/Status, encoding C, frozen-49, Ready prose, T-159.23 shipped, T-674/T-675 children via mapper. Depends on T-911.1 landed. No wave.lock, no metrics producer."
+spec = "docs/platform/t911_ticket_registry_redesign.md"
+status = "queued"
+targets = ["root"]

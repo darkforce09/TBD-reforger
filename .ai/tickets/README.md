@@ -1,6 +1,8 @@
 # Ticket pipeline
 
-**Source of truth:** [`registry.json`](registry.json) — never hand-edit generated `docs/TICKET_*.md`.
+**Source of truth:** one `T-*.toml` file per parent and per existing slice_plan/slices child, plus the [`ROOT`](ROOT) marker. Never hand-edit generated `docs/TICKET_*.md`.
+
+**Monolith cutover:** last commit that contained `.ai/tickets/registry.json` is `5035931ce80324db81d84fb9535433689d72f208` (`git show 5035931ce80324db81d84fb9535433689d72f208:.ai/tickets/registry.json`).
 
 **Implementation (T-161 / T-883):** `cargo run -q -p xtask -- ticket …` (shell shim deleted).
 No Python ticket libs remain.
@@ -11,7 +13,7 @@ See [`AI_PLAYBOOK.md`](AI_PLAYBOOK.md) for operator recipes.
 
 ## KISS summary
 
-1. **Composer 2.5 / Cursor** — edit `registry.json`, write specs, `cargo run -q -p xtask -- ticket sync`
+1. **Composer 2.5 / Cursor** — edit the relevant `T-*.toml`, write specs, `cargo run -q -p xtask -- ticket sync`
 2. **Mark ready** — `cargo run -q -p xtask -- ticket mark-ready T-068 path/to/t068_....md`
 3. **Implement** — `cargo run -q -p xtask -- ticket run` (or `cargo xtask ticket run`) on **`main`**
 4. **Verify** — human checks gates / smoke

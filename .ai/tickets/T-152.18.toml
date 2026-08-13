@@ -1,0 +1,21 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-152.18"
+notes = "DEFERRED 2026-07-13 — operator: no icons to extract from Workbench; slice skipped. T-152.2 redraw art retained. Verify t152_18_verify_log.md (skip record). D2 extract remedy waived this pass."
+parent = "T-152"
+spec = "docs/specs/Mission_Creator_Architecture/t152_18_icon_extract_retry.md"
+status = "deferred"
+targets = [
+    "root",
+    "shared",
+    "mod",
+]

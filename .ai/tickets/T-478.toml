@@ -1,0 +1,41 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 452
+executor = "claude-code"
+id = "T-478"
+impact = [
+    "infra",
+    "tests",
+]
+order = 3317
+priority = 1
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+Residual from wave 29 adversarial MAJOR×2 (+ MINOR). verify-t440-faction-library-seed.sh:
+(1) `'US Army 1980s'` is raw grep — SQL `-- US Army 1980s` + `SELECT 1;` PASS
+(2) recipe pin is path substring on any non-#-prefixed line — `echo seeds/faction_library.sql >/dev/null` PASS; psql -c SELECT with path in comment PASS
+(3) MINOR: script never pins wave.sh cold/slice `run "T-440…"` wiring
+
+Repro: comment-only starter name or echo-path recipe → verify-t440 PASS.
+
+Cure: strip SQL comments before name pin; require live INSERT INTO user_factions (or measured table) with name column value; require recipe line that actually redirects/applies the file to psql (same shape as verify-t444 if tighter); pin wave.sh both gate paths invoke the script. RED→GREEN on verifier perturbations."""
+surfaces = [
+    "INFRA",
+    "tests",
+]
+targets = ["root"]
+title = "T-440 verify greened on comment name + path-echo seed recipe"

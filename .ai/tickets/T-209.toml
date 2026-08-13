@@ -1,0 +1,27 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "shipped_at",
+]
+__ord = 183
+executor = "claude-code"
+id = "T-209"
+impact = ["e2e"]
+order = 2270
+program = "eden"
+shipped_at = "7a6df0b1"
+status = "shipped"
+stream = "mod-framework"
+summary = "compile.sh and world-boot.sh are the best regression instruments in the repo and grep of .github/workflows for mod-compile or mod-world-boot returns nothing. 29k lines of mod code have zero automated verification on push."
+surfaces = ["MOD"]
+targets = ["mod"]
+title = "Run the mod compile and world-boot gates in CI"

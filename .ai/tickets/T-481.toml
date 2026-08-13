@@ -1,0 +1,32 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 455
+executor = "claude-code"
+id = "T-481"
+impact = ["website"]
+order = 3320
+priority = 2
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+Wave 30 adversarial verifier (T-430): production validate guards discord_client_id.is_empty() only (config.rs). A whitespace-only id (" ") with APP_ENV=production validates Ok and is not treated as oauth_unconfigured. Same pattern as prior secret/redirect whitespace nits.
+
+Repro: set discord_client_id=" " + env=production → validate() Ok.
+
+Cure: trim (or reject if trim empty) before the Missing check; Class-R pin."""
+surfaces = ["API"]
+targets = ["website"]
+title = "Reject whitespace-only DISCORD_CLIENT_ID in Config::validate"

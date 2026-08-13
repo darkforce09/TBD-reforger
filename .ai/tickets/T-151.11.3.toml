@@ -1,0 +1,20 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "shipped_at",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-151.11.3"
+notes = "D5 collapse (wasm policy exports), buildings full-lane toggle, forest LRU"
+parent = "T-151"
+shipped_at = "c7bb5bd0"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]

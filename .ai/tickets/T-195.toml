@@ -1,0 +1,27 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "shipped_at",
+]
+__ord = 169
+executor = "claude-code"
+id = "T-195"
+impact = ["platform-pages"]
+order = 2130
+program = "platform"
+shipped_at = "c0c357e2"
+status = "shipped"
+stream = "web-platform"
+summary = "leaderboards.rs:307-309 sets rows to an empty vec whenever the API returns anything, so a populated ladder renders 'No operators match your search'. Until then an eight-row fabricated table displays as the real ladder. All five tabs, the search box and View Dossier are dead, and GET /users/{id}/stats has no caller anywhere."
+surfaces = ["SHELL"]
+targets = ["website"]
+title = "Leaderboards actively throws away real data"

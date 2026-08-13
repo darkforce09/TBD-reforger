@@ -1,0 +1,278 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "status",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "spec",
+    "slices",
+    "slice_plan",
+    "depends_on",
+    "unblocks",
+    "implements",
+    "user_story",
+    "acceptance",
+    "route",
+    "branch",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 154
+acceptance = [
+    "Each T-180.N Class-R gate table PASS before next slice",
+    "Place mints new squad under active side with leaderSlotId",
+    "Map: side tint + leader→member lines only",
+    "Dock: BLUFOR/OPFOR/INDFOR + Objects stub",
+    "Stitch ORBAT Manager on live data; templates via T-153",
+    "derive_orbat fills loadout; no standardization UI this program",
+]
+branch = "main"
+depends_on = [
+    "T-177",
+    "T-153",
+    "T-151",
+]
+executor = "claude-code"
+id = "T-180"
+impact = [
+    "ui",
+    "state",
+    "schema",
+    "compiler",
+]
+implements = [
+    "LEFT-ORBAT-001",
+    "CONN-GROUP-001",
+    "RIGHT-SUBMODE-001",
+    "API-ORBAT-001",
+]
+order = 1760
+program = "eden"
+route = "/missions/:id/edit"
+slices = [
+    "T-180.0",
+    "T-180.1",
+    "T-180.2",
+    "T-180.3",
+    "T-180.4",
+    "T-180.5",
+    "T-180.6",
+    "T-180.7",
+    "T-180.8",
+    "T-180.9",
+    "T-180.10",
+]
+spec = "docs/specs/Mission_Creator_Architecture/t180_orbat_eden_program.md"
+status = "shipped"
+stream = "mission-creator"
+summary = "ORBAT + Eden placement program COMPLETE. .1–.9 @ cba837b3 · **T-180.10** coherency (make verify-t180). Pins: t180_class_r_pins.md. Hub: t180_orbat_eden_program.md. Report: .ai/artifacts/t180_10_coherency_report.md."
+surfaces = [
+    "ORBAT",
+    "RIGHT",
+    "MAP",
+    "TOP",
+    "VEH",
+    "CONN",
+    "ATTR",
+]
+targets = [
+    "website",
+    "root",
+]
+title = "ORBAT + Eden placement program"
+unblocks = [
+    "T-068",
+    "T-070",
+]
+user_story = "As a mission maker I place units by side, see squad-leader lines on the map, and author the full ORBAT in a Stitch manager that saves/loads templates and compiles cleanly."
+
+[slice_plan]
+__keys = [
+    "T-180.0",
+    "T-180.1",
+    "T-180.2",
+    "T-180.3",
+    "T-180.4",
+    "T-180.5",
+    "T-180.6",
+    "T-180.7",
+    "T-180.8",
+    "T-180.9",
+    "T-180.10",
+]
+
+[slice_plan."T-180.0"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "notes",
+]
+executor = "cursor-docs"
+notes = "Hub + per-slice specs + t180_class_r_pins.md (measured packages/RGBA/APIs) + stitch artifacts"
+spec = "docs/specs/Mission_Creator_Architecture/t180_orbat_eden_program.md"
+status = "shipped"
+targets = ["root"]
+
+[slice_plan."T-180.1"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+    "notes",
+]
+executor = "claude-code"
+notes = "Tag T-180.1. Core place_orbat + set_leader + callsign/rank; FE active_side; A1–A5 + A3 rg; ci-local-leptos. Verify: .ai/artifacts/t180_1_verify_log.md. Note: cargo test needs --features doc."
+shipped_at = "aeb51209"
+spec = "docs/specs/Mission_Creator_Architecture/t180_1_foundation_schema.md"
+status = "shipped"
+targets = ["website"]
+
+[slice_plan."T-180.10"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "notes",
+]
+executor = "cursor-docs"
+notes = "Coherency report + make verify-t180 + doc/registry remediations. Zero P0 → no 10.1. Verify: .ai/artifacts/t180_10_verify_log.md"
+spec = "docs/specs/Mission_Creator_Architecture/t180_10_program_coherency.md"
+status = "shipped"
+targets = ["root"]
+
+[slice_plan."T-180.2"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+    "notes",
+]
+executor = "claude-code"
+notes = "Tag T-180.2. set_leader hardened; move_slot_to_squad+GC; rename/reorder/remove_squad; add_vehicle/attach/detach; vehicleIds; B1–B8. Verify: .ai/artifacts/t180_2_verify_log.md."
+shipped_at = "83557768"
+spec = "docs/specs/Mission_Creator_Architecture/t180_2_graph_mutators.md"
+status = "shipped"
+targets = ["website"]
+
+[slice_plan."T-180.3"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+    "notes",
+]
+executor = "claude-code"
+notes = "Tag T-180.3. SIDE_* RGBA + pack_rings side_tints; SlotSoa.side_keys; engine bind; C1–C4. Verify: .ai/artifacts/t180_3_verify_log.md. Manual M-C1 operator-pending."
+shipped_at = "19acc593"
+spec = "docs/specs/Mission_Creator_Architecture/t180_3_map_side_tint.md"
+status = "shipped"
+targets = ["website"]
+
+[slice_plan."T-180.4"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+    "notes",
+]
+executor = "claude-code"
+notes = "Tag T-180.4. squad_links.rs D1–D6; LaneRole::SquadLinks=9; wire dirty upload. Verify: .ai/artifacts/t180_4_verify_log.md. Manual M-D1 operator-pending."
+shipped_at = "63e7ef00"
+spec = "docs/specs/Mission_Creator_Architecture/t180_4_squad_leader_lines.md"
+status = "shipped"
+targets = ["website"]
+
+[slice_plan."T-180.5"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+    "notes",
+]
+executor = "claude-code"
+notes = "Tag T-180.5. apply_eden_chip→active_side; objects_mode; E1–E5; catalog unfiltered E-L2b. Verify: .ai/artifacts/t180_5_verify_log.md. Manual M-E1/M-E2 operator-pending."
+shipped_at = "1324799c"
+spec = "docs/specs/Mission_Creator_Architecture/t180_5_right_dock_side_chips.md"
+status = "shipped"
+targets = ["website"]
+
+[slice_plan."T-180.6"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+    "notes",
+]
+executor = "claude-code"
+notes = "Tag T-180.6. refile_slot→move_slot_to_squad; OrbatManager pointer-refile; SL badge; F1–F5. Verify: .ai/artifacts/t180_6_verify_log.md. Manual M-F1 operator-pending."
+shipped_at = "056c9a1a"
+spec = "docs/specs/Mission_Creator_Architecture/t180_6_place_orbat_sync.md"
+status = "shipped"
+targets = ["website"]
+
+[slice_plan."T-180.7"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+    "notes",
+]
+executor = "claude-code"
+notes = "Tag T-180.7. orbat_manager.rs Stitch shell; format_slot_line; live mutators; OPEN ARSENAL→open_attributes; template/vehicle shell. Verify: .ai/artifacts/t180_7_verify_log.md. Manual M-G1..M-G4 operator-pending."
+shipped_at = "e9c2406d"
+spec = "docs/specs/Mission_Creator_Architecture/t180_7_orbat_manager_ui.md"
+status = "shipped"
+targets = ["website"]
+
+[slice_plan."T-180.8"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+    "notes",
+]
+executor = "claude-code"
+notes = "Tag T-180.8. apply_faction_library REPLACE; MissionVehicles lane; Apply/Save/Save as; Add Vehicle. Placement (6400,6400). Verify: .ai/artifacts/t180_8_verify_log.md. Manual M-H1..M-H4 operator-pending."
+shipped_at = "cce240a5"
+spec = "docs/specs/Mission_Creator_Architecture/t180_8_templates_vehicles.md"
+status = "shipped"
+targets = ["website"]
+
+[slice_plan."T-180.9"]
+__keys = [
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+    "notes",
+]
+executor = "claude-code"
+notes = "Tag T-180.9. Sl.loadout + loadout_summary_from_value; open_arsenal→attrs_tab=3; I1–I9. Verify: .ai/artifacts/t180_9_verify_log.md. Manual M-I1..M-I3 operator-pending. Program complete."
+shipped_at = "cba837b3"
+spec = "docs/specs/Mission_Creator_Architecture/t180_9_arsenal_compile.md"
+status = "shipped"
+targets = ["website"]

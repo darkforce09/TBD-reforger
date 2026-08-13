@@ -1,0 +1,47 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "slices",
+    "depends_on",
+    "unblocks",
+    "status",
+    "implements",
+    "user_story",
+    "route",
+    "stream",
+    "branch",
+    "executor",
+    "targets",
+    "spec",
+]
+__ord = 150
+branch = "main"
+depends_on = ["T-175"]
+executor = "claude-code"
+id = "T-176"
+impact = [
+    "ui",
+    "perf",
+]
+implements = []
+order = 1730
+program = "eden"
+route = "/missions/:id/edit"
+slices = []
+spec = "docs/platform/t176_forest_place_ghost_zoompan.md"
+status = "shipped"
+stream = "mission-creator"
+summary = "SHIPPED @ tag T-176 / a5940fad. A1 landcover after set_viewport; A2 8m TBDD canopy mass + drop forest-kind landcover wash (clearings=holes); B1 SlotPlacePreview↔slot atlas; B2 CAMERA_GESTURE defers DEM/forest recompute. Verify: .ai/artifacts/t176_verify_log.md. Hub: docs/platform/t176_forest_place_ghost_zoompan.md."
+surfaces = [
+    "MAP",
+    "RIGHT",
+]
+targets = ["website"]
+title = "Forest wash fidelity + place ghost + zoom+pan stutter"
+unblocks = []
+user_story = "As a mission maker I see forest highlight tight to real trees without a zoom ritual, a live place ghost when dragging from the palette, and smooth zoom+pan."

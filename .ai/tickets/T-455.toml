@@ -1,0 +1,32 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 429
+executor = "claude-code"
+id = "T-455"
+impact = ["platform-lifecycle"]
+order = 3294
+priority = 2
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+Residual from T-451 / wave 20 adversarial. set-status/mark-ready/reorder/ship now call require_check_ok before write, but cmd_add (and cmd_remove) still mutate the registry without loading .ai/tickets/schema.json.
+
+Repro: break a required field; ticket check RED; ticket add still inserts a row.
+
+Cure: gate add/remove through require_check_ok (or document intentional escape hatch + --force)."""
+surfaces = ["INFRA"]
+targets = ["root"]
+title = "ticket add/remove mutate without schema check preflight"

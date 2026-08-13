@@ -1,0 +1,20 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-123.6"
+parent = "T-123"
+shipped_at = "102a835"
+spec = "docs/platform/t123_documentation_standards_rollout.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]

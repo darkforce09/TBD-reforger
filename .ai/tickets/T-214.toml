@@ -1,0 +1,48 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "shipped_at",
+]
+__ord = 188
+executor = "claude-code"
+id = "T-214"
+impact = ["mc-authoring"]
+order = 2320
+program = "eden"
+shipped_at = "ba0aba5c"
+status = "shipped"
+stream = "mission-creator"
+summary = """
+No control exists and the export envelope hardcodes briefing to an empty string (compile.rs:166). The mod's briefing screen reads situation/mission/execution per faction.
+
+SHIPPED AS AN HONEST PARTIAL 2026-07-26, and it corrected the ticket's central premise.
+
+THE SINGULAR/PLURAL MISMATCH IS NOT A BUG. They are two different fields:
+  `briefing` (envelope, STRING) = the `missions.briefing` DB COLUMN — the library dossier blurb. Authority handlers/missions.rs:1113 build_mission_doc; consumers frontend mission_overview.rs:124 ("No briefing provided.") and approvals.rs:388.
+  `briefings` (mission.schema.json:466, OBJECT keyed by faction) = the in-game briefing screen prose. That is T-202's.
+So compile.rs:166 was a separate, smaller defect — the client envelope dropped a field the API's envelope carries. It now reads meta.briefing, the established channel (title/terrain/environment all arrive that way via apply_row_meta). Putting an object there would have broken the mirror with build_mission_doc.
+
+THE ASYMMETRY THAT MADE THIS CHEAP, verified by running not reading: the doc's READ and HYDRATE halves already round-trip a per-faction briefing object with ZERO change to store.rs. small_maps_json() emits factions via to_json() verbatim; compile.rs values_of() clones each row whole; load_row() (:1555) re-inserts every non-id field verbatim with nested objects staying opaque Any::Maps. The agent proved it using `hydrate` as the writer. Only a WRITE MUTATOR is missing — split to T-344.
+
+SHAPES, for diffing against T-202: doc `factionsById[<id>].briefing = {situation?, mission?, execution?}`, absent when unauthored so "none" is distinguishable from "empty"; payload `editor.factions[i].briefing` with key `slug_key(f.key)` — the SAME slug orbat and slots[].faction use, confirmed across all four goldens.
+
+Prose hangs on the faction ROW rather than a sibling map because `briefings` is additionalProperties-open: a stale entry naming a DELETED faction still validates and would ship prose for a side that no longer exists. On the row that state is unrepresentable.
+
+MUTATION PROBE, so the newline claim is not vacuous: a newline->space sanitiser in values_of fails all three new tests AND the other 209 pass under it — so these are the ONLY guard on newline survival in the tree. Applied out of git, restored by cp, md5-verified.
+
+CORRECTION TO MY OWN BRIEF: the `doc` feature adds 54 lib tests, not ~155. A mission-only run reports 157, not ~142. Baseline 209 was exact; this took it to 212."""
+surfaces = [
+    "MAP",
+    "PLACE",
+]
+targets = ["website"]
+title = "Briefing text editor — situation, mission, execution, per faction"

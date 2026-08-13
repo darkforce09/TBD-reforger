@@ -1,0 +1,30 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 325
+executor = "claude-code"
+id = "T-351"
+impact = ["platform-lifecycle"]
+order = 3167
+priority = 1
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "Padded arma_id trim pinned in identity_link IT (T-351). Live padded rows were 0; btrim of users.arma_id already shipped in migration 0016 (T-335) — no new mig in this slice. T-516/T-517 fixed parallel-suite races on this IT. Original ask covered."
+surfaces = [
+    "API",
+    "DATA",
+]
+targets = ["website"]
+title = "Nothing pins the arma_id trim, and legacy whitespace rows are still in the tables"

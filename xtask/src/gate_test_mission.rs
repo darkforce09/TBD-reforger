@@ -275,7 +275,7 @@ mod tests {
     fn throwaway_root(tag: &str, with_golden: bool) -> PathBuf {
         let root = tempfile_dir(tag);
         fs::create_dir_all(root.join(".ai/tickets")).unwrap();
-        fs::write(root.join(".ai/tickets/registry.json"), "{}").unwrap();
+        fs::write(root.join(".ai/tickets/ROOT"), "{}").unwrap();
         fs::create_dir_all(root.join("apps/mod/tbd-framework/Data")).unwrap();
         fs::create_dir_all(root.join("packages/tbd-schema/golden-missions")).unwrap();
         fs::write(

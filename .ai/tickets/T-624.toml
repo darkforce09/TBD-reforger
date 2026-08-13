@@ -1,0 +1,64 @@
+__keys = [
+    "program",
+    "impact",
+    "stream",
+    "targets",
+    "executor",
+    "id",
+    "title",
+    "summary",
+    "status",
+    "priority",
+    "order",
+    "surfaces",
+]
+__ord = 597
+executor = "claude-code"
+id = "T-624"
+impact = ["platform-lifecycle"]
+order = 3732
+priority = 3
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+FOUND by wave 81's adversarial verifier; fixed the same wave. **The signature defect in prose** --
+the one form of it this program never systematically hunted.
+
+**F1 -- the claim that decides whether a cascade is safe.** `handlers/events.rs:1391` and
+`tests/t579_event_delete_is_soft.rs:34` both stated that `matches.event_id` has **no foreign key at
+all**, so a hard delete would silently orphan AAR and leaderboard rows. False. Measured on a
+freshly-migrated database:
+
+    matches_event_id_fkey   | FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE SET NULL
+
+`0019_ingest_pointer_foreign_keys.sql:222-224` (T-585, commit `4ed5eb942`) added it at 2026-07-31
+07:02. The false sentence was written in `a189ac39` at 2026-08-01 04:48 -- **the FK had been on main
+for 22 hours.** A hard delete orphans nothing; it NULLs the attribution, a weaker and different loss.
+The soft-delete decision stands on its other legs and did not change; the `matches` leg is now marked
+the weakest on the page, with the text telling the reader not to re-derive the decision from it.
+
+**F2 -- what a lost refresh race actually costs.** `client.rs:277-278` said spending a stale token
+"costs one 401 in this tab". `handlers/auth.rs:149-152` treats presentation of a revoked token as
+**reuse** and runs `revoke_token_family` -- `UPDATE refresh_tokens SET revoked_at = now() WHERE
+discord_id = $1 AND revoked_at IS NULL` -- so the cost is **every tab logged out, the winner''s fresh
+pair included.** The 2026-07-13 incident class. Now stated accurately, together with the narrowness
+(broadcast before unlock; persist only after unlock via `on_refreshed`; ordering not spec-guaranteed),
+the credit T-155 is due (a guaranteed double-spend became a rare two-lost-races event), and the fact
+that **the native harness cannot reach the losing interleaving** -- it is single-threaded, so the
+winner''s persist always lands before the waiter resumes.
+
+**AND THE COMMAND CENTER DID IT AGAIN, IN THIS TICKET''S OWN BRIEF.** I told the agent "every other
+admin delete on the platform is soft." It checked instead of copying: only `events` and `missions`
+stamp `deleted_at`; `delete_announcement` sets `status=''archived''`, `deactivate_server` sets
+`is_active=false`, and `delete_modpack` is a genuine `DELETE FROM modpacks`. It wrote the verified
+version -- *keeping the row is the platform''s shape for a delete* -- naming each mechanism. An
+unverified claim, in the ticket about unverified claims, caught by the agent.
+
+STILL OPEN, reported not fixed (both outside the slice''s owns):
+- **A third copy of F1''s false claim** at `frontend/src/event_manager.rs:238-240`.
+- F4, cosmetic: `tests/t578_ratelimit.rs:389` is named `migration_0020_is_the_ddl_constant_verbatim`
+  while correctly reading `0021_rate_limit_buckets.sql`; `app.rs:468-469` cites it by that name."""
+surfaces = ["INFRA"]
+targets = ["website"]
+title = "Two load-bearing comments asserted a schema and a backend neither author had checked"

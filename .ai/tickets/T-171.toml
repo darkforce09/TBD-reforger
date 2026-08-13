@@ -1,0 +1,44 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "slices",
+    "depends_on",
+    "unblocks",
+    "status",
+    "implements",
+    "user_story",
+    "route",
+    "stream",
+    "branch",
+    "executor",
+    "targets",
+    "spec",
+]
+__ord = 145
+branch = "main"
+depends_on = ["T-169"]
+executor = "claude-code"
+id = "T-171"
+impact = [
+    "docs",
+    "dx",
+]
+implements = []
+order = 1680
+program = "platform"
+route = "__tbd_null__"
+slices = []
+spec = "docs/platform/t171_monorepo_hygiene_program.md"
+status = "shipped"
+stream = "web-platform"
+summary = "Shipped @ 2421b335 (tag T-171). Nest apps/website/{api,frontend}; crates website-api/website-frontend; Go internal/ + nested Makefile purged; fixtures consolidated; map-assets LFS story + CI job renames (website-api/website-frontend). Cursor T-171.docs: WHERE_DOES_X_GO pin + CLAUDE/rules/docs/MC banners. Inventory: .ai/artifacts/t171_inventory.md. Hub: docs/platform/t171_monorepo_hygiene_program.md."
+surfaces = ["TOP"]
+targets = ["website"]
+title = "Monorepo / website hygiene (full pass)"
+unblocks = []
+user_story = "As a developer I open a coherent apps/website/{api crate, frontend/} tree with no dead React/Go/Vite residue so new work does not land in the wrong place."

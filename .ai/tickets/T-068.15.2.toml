@@ -1,0 +1,19 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "shipped_at",
+    "spec",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-068.15.2"
+notes = "SHIPPED @ 4fb156b7 (tag T-068.15.2). Capacity badge + cargo editor + seed. Verify: .ai/artifacts/t068_15_2_verify_log.md"
+parent = "T-068"
+shipped_at = "4fb156b7"
+spec = "docs/specs/Mission_Creator_Architecture/t068_15_2_arsenal_cargo_ui.md"
+status = "shipped"
+targets = ["website"]

@@ -1,0 +1,30 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "spec",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 52
+executor = "claude-code"
+id = "T-065"
+impact = [
+    "perf",
+    "ui",
+]
+order = 650
+program = "scale"
+spec = "docs/specs/Mission_Creator_Architecture/t065_cluster_lod.md"
+status = "shipped"
+stream = "mission-creator"
+summary = "Supercluster index with pan-stable cache for 367k missions."
+surfaces = ["MAP"]
+targets = ["website"]
+title = "Cluster LOD at extreme zoom"

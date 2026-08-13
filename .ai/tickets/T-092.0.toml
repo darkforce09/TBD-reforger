@@ -1,0 +1,15 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+]
+__ord = 0
+executor = "cursor-docs"
+id = "T-092.0"
+parent = "T-092"
+spec = "docs/specs/Mission_Creator_Architecture/t092_0_spawn_contract.md"
+status = "shipped"
+targets = ["root"]

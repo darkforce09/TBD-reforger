@@ -1,0 +1,29 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+    "shipped_at",
+]
+__ord = 292
+executor = "claude-code"
+id = "T-318"
+impact = ["platform-lifecycle"]
+order = 3134
+priority = 1
+program = "platform"
+shipped_at = "538b9ad4"
+status = "shipped"
+stream = "web-platform"
+summary = "FOUND by T-218's sweep. handlers/events.rs:786 collapses the JsonRejection for RegisterBody, so a bad body still runs the registration upsert and sets an existing row's `slot_id = NULL` while `orbat_slots.assigned_to` still names the user. `withdraw` only releases the seat via `if let Some(sid)`, so with slot_id NULL it takes no action: the seat reads as occupied forever and the occupant cannot release it. Requires an admin DB edit to unstick. Fix the extractor (map_err → 400), and separately make withdraw fall back to clearing orbat_slots.assigned_to by user id so already-orphaned seats can be freed."
+surfaces = ["API"]
+targets = ["website"]
+title = "Event registration upsert orphans an ORBAT seat nobody can free"

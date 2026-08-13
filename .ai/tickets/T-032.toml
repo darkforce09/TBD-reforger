@@ -1,0 +1,31 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "route",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 23
+executor = "claude-code"
+id = "T-032"
+impact = ["ui"]
+order = 320
+program = "eden"
+route = "/missions/:id/edit"
+status = "shipped"
+stream = "mission-creator"
+summary = "Outliner, asset browser, Attributes modal tree UI."
+surfaces = [
+    "LEFT",
+    "RIGHT",
+    "ATTR",
+]
+targets = ["website"]
+title = "Eden Editor tree paradigm"

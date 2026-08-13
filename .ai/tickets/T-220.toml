@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 194
+executor = "claude-code"
+id = "T-220"
+impact = ["mc-integrity"]
+order = 2380
+program = "eden"
+status = "shipped"
+stream = "mission-creator"
+summary = "schemaVersion is regenerated as literal 1 so a stored 2 downgrades; map.bounds is recomputed and other map.* keys dropped; array order is not preserved (preserve_order is on in xtask/tools but not in map-engine-core, frontend or api); position sub-keys die on first edit; copy/paste strips unknown slot fields. A hydrate-then-compile property test catches all of them."
+surfaces = ["DATA"]
+targets = ["website"]
+title = "Five more silent round-trip losses"

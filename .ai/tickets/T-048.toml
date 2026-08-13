@@ -1,0 +1,29 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "spec",
+    "route",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 36
+executor = "claude-code"
+id = "T-048"
+impact = ["ui"]
+order = 480
+program = "eden"
+route = "/missions/:id/edit"
+spec = "docs/specs/Mission_Creator_Architecture/t048_library_create_dialog.md"
+status = "shipped"
+stream = "mission-creator"
+summary = "CreateMissionDialog replaces standalone create route."
+surfaces = ["SHELL"]
+targets = ["website"]
+title = "Mission create from Library dialog"

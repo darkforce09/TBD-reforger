@@ -1,0 +1,35 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "stream",
+    "targets",
+    "executor",
+    "status",
+    "surfaces",
+    "impact",
+    "depends_on",
+    "spec",
+    "branch",
+]
+__ord = 114
+branch = "ticket/T-140"
+depends_on = ["T-092"]
+executor = "claude-code"
+id = "T-140"
+impact = [
+    "schema",
+    "api",
+]
+program = "infra"
+spec = "docs/platform/tbd_north_star_backlog.md"
+status = "idea"
+stream = "infra"
+summary = "Spike: compiled mission size vs slot count; max entities for console; server-only bulk vs client sync policy. Post T-092."
+surfaces = ["DATA"]
+targets = [
+    "mod",
+    "website",
+]
+title = "Mission client payload budget"

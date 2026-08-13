@@ -1,0 +1,51 @@
+__keys = [
+    "program",
+    "surfaces",
+    "impact",
+    "stream",
+    "targets",
+    "executor",
+    "id",
+    "title",
+    "summary",
+    "status",
+    "priority",
+    "order",
+]
+__ord = 579
+executor = "claude-code"
+id = "T-606"
+impact = ["platform-lifecycle"]
+order = 3532
+priority = 2
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+FOUND while writing `docs/platform/PLAYTEST_RUNBOOK.md` (2026-07-31). Individually trivial, together
+they guarantee a confusing playtest: the operator greps for what the docs say, gets nothing, and
+concludes the feature is broken when it worked.
+
+1. **The loadout tag is wrong in the spec.** `TBD_SpawnManager.c:1179` prints `[TBD][Loadout][Slot]`.
+   The T-068.14 spec AND `TBD_LoadoutEquipComponent.c:17` both say `[Player]` -- a string that appears
+   in **no `Print` anywhere in the codebase**. Following the spec returns zero lines and reads exactly
+   like "the loadout never applied", which is the single most important thing T-068.14 must confirm.
+
+2. **`scripts/mod/remote-log-grep.sh:48`** requires `Mission loaded`. That string now survives only
+   inside `TBD_FrameworkManager.c:488`'s **error** string -- so the health check passes only when
+   something failed.
+
+3. **`docs/mod/STAGING-SERVER.md:192-203`** requires `built slot spawn`, which has been **deleted**.
+
+`docs/platform/PLAYTEST_RUNBOOK.md` §5 already carries corrected greps for all three; this ticket is
+to fix them at the source so the runbook is not the only correct copy.
+
+ALSO, same family, documented in the runbook §6 rather than filed separately:
+- **Radio automatic tuning cannot work** -- `worlds/TBD_Dev_POC.ent` is a 62-byte bare SubScene with
+  no `RadioManagerEntity`. Net assignment and display work; tuning does not. Known limitation.
+- **`modded class SCR_PlayerController` runtime coexistence has never been observed at any N.** Six
+  blocks now exist and no gate can see it -- `world-boot.sh` boots with zero players. If one screen
+  works and another silently does nothing during the playtest, this is the first suspect."""
+surfaces = ["MOD"]
+targets = ["website"]
+title = "Three ops greps report a healthy server as broken, and the T-068.14 spec names a log tag that does not exist"

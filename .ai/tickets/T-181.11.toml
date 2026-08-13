@@ -1,0 +1,18 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-181.11"
+notes = "ONE LIFE in TBD_SpawnManager: m_bOneLife attribute (default on), m_mDeadPlayers map, OnPlayerKilled now terminal — slot STAYS claimed so the seat is not recycled and reconnect still resolves. Added IsPlayerDead() and CountAliveForFaction() (the primitive T-181.13 side-eliminated needs; counts claimed slots so a never-deployed player cannot silently end the round). m_bAutoDeploy path retained for PIE."
+parent = "T-181"
+status = "shipped"
+targets = [
+    "mod",
+    "root",
+]

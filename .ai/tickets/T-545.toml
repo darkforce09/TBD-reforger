@@ -1,0 +1,38 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "executor",
+    "priority",
+    "stream",
+    "targets",
+]
+__ord = 519
+executor = "claude-code"
+id = "T-545"
+impact = [
+    "docs",
+    "dx",
+]
+order = 3385
+priority = 2
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+FOUND by W55 adversarial verifier (CLEAN MINOR-NIT) after T-543.
+
+Runtime is correct (T-328/T-543). Residual: scripts/mod/mcp-daemon.sh comment still says mcpd-bin ignores CARGO_TARGET_DIR. Cure: update the comment to match live honor of CARGO_TARGET_DIR.
+
+Repro: rg 'ignores CARGO_TARGET_DIR' scripts/mod/"""
+surfaces = [
+    "INFRA",
+    "MOD",
+]
+targets = ["website"]
+title = "mcp-daemon.sh comment still claims mcpd-bin ignores CARGO_TARGET_DIR"

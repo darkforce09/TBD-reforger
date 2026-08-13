@@ -1,0 +1,28 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 185
+executor = "claude-code"
+id = "T-211"
+impact = ["mc-authoring"]
+order = 2290
+program = "eden"
+status = "shipped"
+stream = "mission-creator"
+summary = "No draw tool, no circle, no polygon anywhere in the editor, and the doc has no zone root at all (store.rs:51-65). The mod already implements union semantics, per-faction boundaries, strictest-wins and base_protection. Needs a doc root, mutators, a map tool and an Attributes panel for rules."
+surfaces = [
+    "MAP",
+    "PLACE",
+]
+targets = ["website"]
+title = "Zone and play-area draw tool"

@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 17
+executor = "cursor-docs"
+id = "T-023"
+impact = ["ui"]
+order = 230
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "Token sweep and SplitPane on remaining pages."
+surfaces = ["SHELL"]
+targets = ["website"]
+title = "Global Aegis consistency (batch 3)"

@@ -1,0 +1,36 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 338
+executor = "claude-code"
+id = "T-364"
+impact = ["platform-lifecycle"]
+order = 3180
+priority = 2
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+Two narrow findings from T-348, both precise about mechanism rather than pattern-matched.
+
+1. **telemetry.rs:488-498 and :511, :522-523.** The mechanism here is NOT `is_empty()` — it is SQL COALESCE-on-NULL keyed on Rust `None`, and per the doc comment at :259-263 an explicit `""` clear is INTENTIONAL. So the defect is narrower than the family it looks like: `Some("   ")` is non-NULL, so COALESCE admits a THIRD state that is neither keep nor clear. Fix it without breaking the deliberate two-state contract T-316 designed — read that reasoning first; T-316 chose COALESCE for heartbeats specifically because a partial heartbeat is honest.
+
+2. **cms.rs — `snippet` goes stale after a body-only PATCH.** Create derives it via `snippet_from`; PATCH only writes it when explicitly supplied. So the list view keeps the OLD snippet under a NEW body — a preview that contradicts the article. Either derive it on PATCH whenever `body` changes, or stop storing it and derive on read. Deriving on write is probably right (the list view should not pay for it), but say which and why.
+
+== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
+Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
+This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now."""
+surfaces = ["API"]
+targets = ["website"]
+title = "COALESCE-on-None admits a third state, and a body-only PATCH leaves the snippet stale"

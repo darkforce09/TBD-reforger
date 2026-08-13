@@ -1,0 +1,31 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "executor",
+    "targets",
+    "stream",
+    "parallel_ok",
+    "order",
+    "spec",
+    "notes",
+]
+__ord = 883
+executor = "claude-code"
+id = "T-910"
+impact = ["dx"]
+notes = "wave 235 verifier MINOR; uppercase extensions without shebang; copy-pasteable repro in summary"
+order = 5900
+parallel_ok = true
+program = "infra"
+spec = "docs/platform/t853_shell_to_xtask_waves.md"
+status = "deferred"
+stream = "infra"
+summary = '''Wave 235 adversarial verifier MINOR on 94593f72 / 63820ef6. TRACKED_LANGUAGE_BANS compares `e == ext` case-sensitively. Planted scripts/_t904_nosh.SH (echo, no shebang), .PY, .MK all stayed GREEN (rc=0). The same .SH WITH #!/usr/bin/env bash is RED via parsed shebang. GNU make `makefile` basename was fixed in-wave (T-904 8ff5d1e1). REPRO: printf 'echo x\n' > scripts/_case.SH && git add scripts/_case.SH && cargo xtask verify no-shell  # expect FAIL on a ban; today OK. git rm the plant. Not dispatched. Do not start the registry-split program.'''
+surfaces = ["CI"]
+targets = ["root"]
+title = "Language ban extension match is case-sensitive (.SH/.PY/.MK without shebang stay green)"

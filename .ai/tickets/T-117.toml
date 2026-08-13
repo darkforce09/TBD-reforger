@@ -1,0 +1,32 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "stream",
+    "targets",
+    "executor",
+    "status",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "milestone",
+    "priority",
+]
+__ord = 91
+executor = "claude-code"
+id = "T-117"
+impact = [
+    "ui",
+    "api",
+]
+milestone = "M1"
+order = 1170
+priority = 2
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "Web UI for mission upload and schema validation (API exists)."
+surfaces = ["DATA"]
+targets = ["website"]
+title = "Mission upload + validation UI"

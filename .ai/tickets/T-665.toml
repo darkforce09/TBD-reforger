@@ -1,0 +1,37 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "route",
+    "stream",
+    "targets",
+    "executor",
+    "notes",
+    "depends_on",
+]
+__ord = 609
+depends_on = ["T-661"]
+executor = "claude-code"
+id = "T-665"
+impact = [
+    "ui",
+    "state",
+]
+notes = "editor-UI program wave 2 (wave_plan.tsv row 102) — SHIPPED wave 102 (editor factory), slice 6f479a41; verifier wave102.md (4 MAJOR deferred: T-713..T-716)"
+order = 3850
+program = "eden"
+route = "/missions/:id/edit"
+status = "shipped"
+stream = "mission-creator"
+summary = "Closes `ATTR-FIELD-LYR-ENABLE-VIS` and `-LYR-ENABLE-XFORM`. There is no layer visibility toggle in the editor today; the 12 world-layer checkboxes in world_layer_prefs.rs are a different object entirely. `add_editor_layer` at `crates/map-engine-core/src/doc/store.rs`:1872 writes exactly id / name / parentId / entityIds — two booleans plus their setters go beside `rename_editor_layer` :1886. Visibility is enforced in `apps/website/frontend/src/editor_ops.rs`, NOT in the renderer: every slot upload goes through `core.materialize()` (:368, :637, :941), so a hidden layer's slots are filtered before the SoA reaches the engine — cheaper than a render-side visibility mask and it keeps this ticket out of the 6,302-line engine.rs. Transform lock refuses in `move_entities` / `attrs_update_position` :667. The flags reach the row renderer through `LayerRow` :45 / `OutlinerNode` :75 / `build_outliner` :105 in outliner.rs (note `layer_rows` at editor_ops.rs:824 reads no flag today, and its own comment :819-823 explains there is no public editor_layers accessor). The eye/lock glyphs are per-row controls in eden_tree.rs — `single_row` (which already takes a per-call `orbat_refile: bool`) and `virtual_tree`. eden_dock_left.rs is deliberately NOT claimed: the flags ride inside `nodes`, which DockLeft already passes, so no parameter changes there."
+surfaces = [
+    "LEFT",
+    "EDITOR",
+]
+targets = ["website"]
+title = "Editor layer flags: per-layer visibility and transform lock"

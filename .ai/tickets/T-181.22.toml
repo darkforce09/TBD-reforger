@@ -1,0 +1,15 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-181.22"
+notes = "ONE-LIFE hardened @ 1e301f89. Closed the possess route by modding SCR_PossessSpawnHandlerComponent's CanHandleRequest_S AND HandleRequest_S — calls vanilla routes through unconditionally, so the fix holds whether m_bIgnoreConditions is 0 or 1 (the packed value could not be read offline; it is now self-reported at runtime). Ticket made load-bearing: entity-keyed and consumed once, so a forged RplId matches nothing. Identity policy now matches its comment. adminOverride moved off the public signature so the compiler enforces the single bypass. NOT CLOSED, stated: one life is not durably enforceable on a listen/hosted server — engine limit."
+parent = "T-181"
+status = "shipped"
+targets = ["mod"]

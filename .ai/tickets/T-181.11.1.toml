@@ -1,0 +1,18 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-181.11.1"
+notes = "AdminRespawn(playerId, byAdmin) — server-authority only, refuses non-dead and disconnected players, re-materializes a dressed body on the player's own slot, writes an audit line, and re-marks dead on FAILED rather than leaving limbo. Chat: `#tbd respawn <playerId>` and `#tbd dead`. Permission reuses vanilla SCR_PlayerListedAdminManagerComponent.IsPlayerOnAdminList (so T-181.11.1 permissions were already HAVE)."
+parent = "T-181"
+status = "shipped"
+targets = [
+    "mod",
+    "root",
+]

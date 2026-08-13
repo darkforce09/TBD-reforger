@@ -261,7 +261,7 @@ mod tests {
         fs::create_dir_all(root.join(".ai/tickets")).unwrap();
         fs::create_dir_all(root.join("apps/website/api")).unwrap();
         fs::create_dir_all(root.join("scripts/mod")).unwrap();
-        fs::write(root.join(".ai/tickets/registry.json"), "{}").unwrap();
+        fs::write(root.join(".ai/tickets/ROOT"), "{}").unwrap();
         // Script path exists only for error-message pin (port does not execute it).
         fs::write(root.join(SCRIPT_REL), "# stub\n").unwrap();
         root

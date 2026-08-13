@@ -1,0 +1,42 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "executor",
+    "priority",
+    "stream",
+    "targets",
+]
+__ord = 534
+executor = "claude-code"
+id = "T-560"
+impact = [
+    "tests",
+    "auth",
+]
+order = 3413
+priority = 2
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+FOUND by W63 adversarial verifier (DIRTY MAJOR) after T-557.
+
+t534_dev_login_prime_literals_still_match_handler greps COALESCE(arma_id and bans only the literal '', 'dev-arma-…' stamp.
+Comment `// COALESCE(arma_id` + remove real UPDATE → PASS.
+INSERT arma_id = $3 + comment COALESCE (no real UPDATE) → PASS; barrier probe 3× idx_users_arma_id hits.
+
+Product NULL+COALESCE path holds (0 race hits). Pin does not.
+
+Repro: keep ON CONFLICT (discord_id), stamp arma_id via bind $N in INSERT VALUES, replace live COALESCE UPDATE with a comment containing COALESCE(arma_id; Class-R green; concurrent cold dev-login 23505 again."""
+surfaces = [
+    "API",
+    "tests",
+]
+targets = ["website"]
+title = "T-557 Class-R hollow — comment COALESCE / bind-form INSERT still races"

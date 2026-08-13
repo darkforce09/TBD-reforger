@@ -1,0 +1,17 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "spec",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-165.3"
+notes = "codegen -> typify; loadout.rs hand-frozen; drift job -> cargo."
+parent = "T-165"
+spec = "docs/platform/t165_node_eradication.md"
+status = "shipped"
+targets = ["root"]

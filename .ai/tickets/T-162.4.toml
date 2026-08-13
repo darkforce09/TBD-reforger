@@ -1,0 +1,17 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "spec",
+    "notes",
+]
+__ord = 0
+executor = "cursor-docs"
+id = "T-162.4"
+notes = "verify-no-python.sh + docs + ship."
+parent = "T-162"
+spec = "docs/platform/t162_python_eradication.md"
+status = "shipped"
+targets = ["root"]

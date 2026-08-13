@@ -1,0 +1,42 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "stream",
+    "targets",
+    "executor",
+    "status",
+    "active_slice",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "spec",
+    "slices",
+    "depends_on",
+    "unblocks",
+    "route",
+    "branch",
+]
+__ord = 104
+active_slice = "__tbd_null__"
+branch = "ticket/T-129"
+depends_on = ["T-090"]
+executor = "claude-code"
+id = "T-129"
+impact = ["ui"]
+order = 1290
+program = "infra"
+route = "/missions/:id/edit"
+slices = []
+spec = "docs/specs/Mission_Creator_Architecture/t090_eden_map_reference.md"
+status = "idea"
+stream = "mission-creator"
+summary = "Per-building floor slice in Mission Creator map (which floor am I editing?). Deferred from T-090 — requires multi-floor metadata + clip/render. Depends on T-090.5. (Renumbered from T-126 id.)"
+surfaces = [
+    "MAP",
+    "UI",
+]
+targets = ["website"]
+title = "Building floor selector"
+unblocks = []

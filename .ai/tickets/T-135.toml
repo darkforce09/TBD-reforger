@@ -1,0 +1,36 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "stream",
+    "targets",
+    "executor",
+    "status",
+    "surfaces",
+    "impact",
+    "depends_on",
+    "spec",
+    "branch",
+]
+__ord = 109
+branch = "ticket/T-135"
+depends_on = ["T-092"]
+executor = "claude-code"
+id = "T-135"
+impact = [
+    "schema",
+    "ui",
+    "api",
+]
+program = "platform"
+spec = "docs/platform/tbd_north_star_backlog.md"
+status = "idea"
+stream = "mod-framework"
+summary = "Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan."
+surfaces = ["DATA"]
+targets = [
+    "website",
+    "mod",
+]
+title = "Mission modset manager"

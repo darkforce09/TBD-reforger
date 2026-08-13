@@ -1,0 +1,28 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 3
+executor = "cursor-docs"
+id = "T-004"
+impact = [
+    "api",
+    "ui",
+]
+order = 40
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "Typed hooks, auth bootstrap, all pages on live data."
+surfaces = ["SHELL"]
+targets = ["website"]
+title = "Frontend wired to backend"

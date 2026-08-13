@@ -1,0 +1,17 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-144.1"
+parent = "T-144"
+shipped_at = "b1949182"
+spec = "docs/specs/Mission_Creator_Architecture/t144_arma3_map_architecture_study.md"
+status = "shipped"
+targets = ["root"]

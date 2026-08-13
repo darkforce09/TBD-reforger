@@ -1,0 +1,18 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-181.17"
+notes = "Safestart / warmup phase. Damage suppressed via EnableDamageHandling(false) with VERIFIED restoration and a watchdog, so a failed restore cannot leave an event permanently invulnerable. Admin surface: '#tbd safestart [status|go|<seconds>]' answers 'is damage actually off right now' in one command. THE MOST VALUABLE THING THIS SLICE PRODUCED WAS A HOLE, NOT A FEATURE: the agent reported that it could not verify its component instantiates, because -scenarioId alone does not load the world on the headless server. Chasing that found the real cause — -config and -addons are MUTUALLY EXCLUSIVE, and -addons+-scenarioId with no -config prints 'Game successfully created' and then idles without ever hosting. Three slices had by then added components to TBD_GameMode.et with NOTHING proving any of them instantiates. Closed by T-181.17.1."
+parent = "T-181"
+status = "shipped"
+targets = [
+    "mod",
+    "root",
+]

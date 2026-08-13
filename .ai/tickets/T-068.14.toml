@@ -1,0 +1,18 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "notes",
+]
+__ord = 0
+executor = "human"
+id = "T-068.14"
+notes = "Phase-2 E2E gate — do not ticket-done T-068 until this passes. Satisfied by T-181.16 (dedicated server + 2 real clients)."
+parent = "T-068"
+status = "queued"
+targets = [
+    "mod",
+    "website",
+]

@@ -1,0 +1,34 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+    "shipped_at",
+]
+__ord = 293
+executor = "claude-code"
+id = "T-319"
+impact = ["platform-lifecycle"]
+order = 3135
+priority = 2
+program = "platform"
+shipped_at = "538b9ad4"
+status = "shipped"
+stream = "web-platform"
+summary = """
+FOUND by T-218's sweep — the low-severity tail, grouped because they are one-line fixes in the same shape.
+  handlers/wiki.rs:66,70 — `icon` and `nav_order` are unguarded while their siblings ARE guarded at :84. A PATCH omitting nav_order writes 0 and silently reshuffles the whole SOP navigation.
+  handlers/me.rs:149 — `arma_character` is unguarded while `code`/`arma_id` are guarded at :161; an omitted field blanks the stored character name.
+  services/discord.rs:69 — DiscordUser.username defaulted; a malformed profile response blanks users.username / discord_handle. This is the door T-185 closed one field over. Self-heals on next login, so lowest priority of the three, but it is the same class.
+Apply the guarded-Option pattern already used at wiki.rs:84 and me.rs:161."""
+surfaces = ["API"]
+targets = ["website"]
+title = "Unguarded defaulted fields reshuffle the wiki nav and blank a character name"

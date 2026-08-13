@@ -1,0 +1,17 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "spec",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-165.5"
+notes = "CDP harness core; v-suite 25/25 parity vs Node."
+parent = "T-165"
+spec = "docs/platform/t165_node_eradication.md"
+status = "shipped"
+targets = ["root"]

@@ -1,0 +1,30 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "route",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 31
+executor = "claude-code"
+id = "T-040"
+impact = [
+    "ui",
+    "api",
+]
+order = 400
+program = "eden"
+route = "/missions/:id/edit"
+status = "shipped"
+stream = "mission-creator"
+summary = "Create wizard sends max_players and real weather enums."
+surfaces = ["SHELL"]
+targets = ["website"]
+title = "Create mission wizard wiring"

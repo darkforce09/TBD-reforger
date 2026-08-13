@@ -1,0 +1,33 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "depends_on",
+    "route",
+    "branch",
+    "spec",
+    "stream",
+    "targets",
+    "executor",
+    "order",
+]
+__ord = 86
+branch = "ticket/T-112"
+depends_on = ["T-067"]
+executor = "claude-code"
+id = "T-112"
+impact = ["perf"]
+order = 1500
+program = "scale"
+route = "/missions/:id/edit"
+spec = "docs/specs/Mission_Creator_Architecture/t067_spatial_chunks.md"
+status = "cancelled"
+stream = "mission-creator"
+summary = "CANCELLED (2026-07-26 audit). DataFilterExtension is a Deck.gl API with ZERO code hits repo-wide; @deck.gl/extensions is in no lockfile; Deck was retired at T-151.9."
+surfaces = ["MAP"]
+targets = ["website"]
+title = "GPU viewport cull (DataFilterExtension)"

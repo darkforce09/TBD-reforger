@@ -1,0 +1,15 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-181.44"
+notes = "Save-time control-char scan + surfacing /compiled rejections. BOTH HALVES, argued: they serve disjoint humans and disjoint failure sets — the mod path is the only place the 500 body reaches the game host and covers rejections the author could never anticipate (a flatten regression, a dangling kit alias, the live faction_eliminated rejection), while the Creator path covers the one class the author can fix, at the moment they can fix it. O(1) CONSTRAINT RESPECTED AND MEASURED: the rule lives in code not the schema, because the schema form costs a per-item object walk plus a regex per slot; instead a single linear pass over the already-parsed serde_json::Value, byte-scanning two short strings per slot (every UTF-8 continuation byte is >= 0x80, so byte scan == char scan over C0+DEL). At 367k slots / 65.7 MB: parse 615.6 ms, scan 34.5 ms = 5.6% of a parse that has to happen anyway. Body capped at 900 B because Print() DISCARDS a line over 1024 B rather than truncating — an uncapped body would log nothing, which is the very failure being fixed. THE LOAD-BEARING TEST is save_scan_agrees_with_the_compiled_schema: it runs the REAL compiler against the REAL schema over a matrix of authored defects and asserts the save-time scan fires exactly when the compiled document would be rejected, both directions, with anti-vacuity guards (>=4 cases must reach the schema pattern, >=2 must compile clean) so an A==B over cases that never fire cannot pass. Integration test proven failing on base: 201 CREATED with a tab stored in the callsign."
+parent = "T-181"
+status = "shipped"
+targets = ["root"]

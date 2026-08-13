@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 237
+executor = "claude-code"
+id = "T-263"
+impact = ["platform-pages"]
+order = 2810
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "wiki.rs makes zero API calls; content is a const and EDIT mode writes to a session signal with no Save button and no PUT. vehicles.rs likewise makes zero API calls. Meanwhile GET/PUT /wiki, GET /wiki/{slug} and GET /vehicle-database all exist and work. vehicle_databases also has no INSERT path and no seed."
+surfaces = ["SHELL"]
+targets = ["website"]
+title = "Wiki and Vehicle Database are fully hardcoded"

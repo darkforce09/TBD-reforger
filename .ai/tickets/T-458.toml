@@ -1,0 +1,34 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 432
+executor = "claude-code"
+id = "T-458"
+impact = ["website"]
+order = 3297
+priority = 2
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+Residual from T-454 / wave 21 adversarial NIT. wiki/modpacks/event_hub action gates now use has_min_role_authed, but ui.rs AdminGate still calls auth.has_min_role(Role::Admin) (browse-mode None=>true via auth.rs).
+
+Mitigation today: AdminGate is nested under AuthGate, which only renders children when is_authenticated() (user is Some), so guests cannot flash admin UI via None=>true.
+
+Repro: read apps/website/frontend/src/ui.rs:244-264 and auth.rs has_min_role.
+
+Cure: switch AdminGate to has_min_role_authed (or equivalent None=>false) while keeping the reactive move || auth path."""
+surfaces = ["FE"]
+targets = ["website"]
+title = "AdminGate still uses browse-mode has_min_role"

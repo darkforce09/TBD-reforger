@@ -1,0 +1,30 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "status",
+    "stream",
+    "targets",
+    "executor",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "notes",
+]
+__ord = 737
+executor = "claude-code"
+id = "T-764"
+impact = [
+    "ui",
+    "perf",
+]
+notes = "filed by wave-117 adversarial verifier (editor factory)"
+order = 4640
+program = "eden"
+status = "shipped"
+stream = "mission-creator"
+summary = "MAJOR from the wave-117 adversarial verifier, and it was proved by BUILDING A RIG rather than by reading: the verifier extracted the engine (asset_catalog.rs:594-1015) VERBATIM into a native harness and ran it on a 1 MiB thread, the conventional wasm32 stack size. FINDING: the 200k-step budget bounds STEPS, NOT STACK DEPTH. The matcher recurses one native frame per step through boxed continuations, and `step()` only decrements the budget — nothing caps recursion depth. Measured overflow thresholds, each of which ABORTS THE PROCESS rather than returning 'no match': `(((...)))` nesting at ~2500-3000 parens; `^^^...` at ~20000-25000 carets; `.?.?...` at ~3000 repeats (~7000-char pattern); `(x+x+)+y` against a plain `x...` haystack at ~2700 haystack chars. So the slice's field note ('exceeding the budget returns no-match instead of hanging') is FALSE for deep input — the real behaviour is a wasm trap that kills Leptos and takes unsaved placements with it. WHY THIS IS MAJOR AND NOT A BLOCKER, per the verifier: none of it is reachable from catalogue data — shipped resource names run ~100-150 chars and the matcher stays shallow on short haystacks — so every vector requires the operator to deliberately TYPE OR PASTE a multi-thousand-character pattern into the asset search box. Self-inflicted, local, reload-recoverable; no server exposure, no data at rest, and no silent wrong answer. THE FIX IS A DEPTH CAP, NOT A BIGGER BUDGET: thread a depth counter alongside the step budget and refuse past a bound (a few hundred is far beyond any real query), returning the same Invalid/no-match path the parser already has. Consider also capping pattern length at the input. Everything ELSE about the engine was attacked and held — see the verified-clean register: 37 correctness cases with zero wrong answers, `{n,m}` literal in both escaped and unescaped forms, dangling quantifiers refused rather than silently literal, and no multibyte panic (the wave-105 BLOCKER class). Diagnosis: editor_verify/wave117.md MAJOR-1."
+surfaces = ["RIGHT"]
+targets = ["website"]
+title = "Asset-search regex engine overflows the wasm stack — the budget bounds steps, not depth"

@@ -1,0 +1,30 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 494
+executor = "claude-code"
+id = "T-520"
+impact = [
+    "website",
+    "tests",
+]
+order = 3360
+priority = 0
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = "Wave 46 cold gate FAIL on fmt (changed). T-511 apps/website/api/tests/events.rs fails rustfmt --check (indent/wrapping around the new 23505 probe). Cure: rustfmt that file only; no logic change. Owns: apps/website/api/tests/events.rs."
+surfaces = ["tests"]
+targets = ["website"]
+title = "W46 hotfix: rustfmt events.rs after T-511"

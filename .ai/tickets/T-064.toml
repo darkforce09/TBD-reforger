@@ -1,0 +1,30 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "spec",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 51
+executor = "claude-code"
+id = "T-064"
+impact = [
+    "perf",
+    "ui",
+]
+order = 640
+program = "scale"
+spec = "docs/specs/Mission_Creator_Architecture/t064_virtualized_outliner.md"
+status = "shipped"
+stream = "mission-creator"
+summary = "TanStack virtual outliner replaces leaf cap band-aid."
+surfaces = ["LEFT"]
+targets = ["website"]
+title = "Virtualized outliner at 367k"

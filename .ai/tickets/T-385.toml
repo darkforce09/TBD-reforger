@@ -1,0 +1,43 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 359
+executor = "claude-code"
+id = "T-385"
+impact = ["platform-lifecycle"]
+order = 3201
+priority = 2
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+HANDOFF from T-359, which removed the phantom readout and left a tripwire test that FAILS with instructions the day this lands. Do not restore the UI before the route.
+
+The data exists and is populated: `matches.terrain` (terrain_type, nullable), keyed by `server_statuses.current_match_id`. T-359 ran the join on the live dev DB and got `TBD Primary — Everon | everon`. No migration and no ingest change needed — terrain already arrives at handlers/telemetry.rs:341 (MatchInput.terrain), validated at :22, bound at :597.
+
+  1. handlers/servers.rs:29 `server_intel()` — add `LEFT JOIN matches ON matches.id = server_statuses.current_match_id` and expose it on ServerIntelDto (:20).
+  2. frontend/src/dto.rs:283 — the field must land in the SAME COMMIT as the recaptured golden, never ahead of the route. An Option + skip_serializing_if round-trips absent -> None -> absent, so the gate would stay GREEN over a fictional field. That is precisely the defect T-306 removed the catch-all to prevent, and it would recur.
+  3. Then delete T-359's tripwire and restore the readout.
+
+WORTH DOING AT THE SAME TIME, because it is why this bug was invisible: `ServerRowDto` has exactly two references in the crate — its own definition and its own golden test — while server_intel.rs:73 fetches `DataEnvelope<Value>`. A DTO only its own golden reads proves the wire, not the page. Adopting it is blocked on `ServerRowDto.status` keeping a TOLERANT parse, or one unparseable status fails the whole envelope and the page renders 'Failed to load data.' for every server. Also `v_str` (server_intel.rs:19-21) ends in unwrap_or_default(), collapsing absent/null/non-string/empty into one "" — the conflation T-306 split apart for the status object and left on the row's scalars.
+
+== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
+Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
+This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now."""
+surfaces = [
+    "API",
+    "FRONTEND",
+]
+targets = ["website"]
+title = "Join matches.terrain into /servers so the theater readout can come back"

@@ -1,0 +1,32 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "status",
+    "stream",
+    "targets",
+    "executor",
+    "route",
+    "impact",
+    "title",
+    "summary",
+    "surfaces",
+    "notes",
+]
+__ord = 672
+executor = "claude-code"
+id = "T-699"
+impact = ["ui"]
+notes = "— SHIPPED wave 118 (editor factory), 8b40ba53; verifier wave118.md. Copy/Apply/Remove-Everything over the selection. The randomisation is specified rather than gestured at: uniform by widening multiply (not modulo), independent per entity, deterministic in (seed, ordinal, len) via SplitMix64 with no wall clock, degenerate at one buffered loadout — and the accept/refuse gate runs over the WHOLE buffer BEFORE any draw, so a validation verdict can never depend on a die roll. Strip ships an explicit cargo:[] to stop seed_cargo re-seeding default magazines. NO inheritance was built (T-687 is operator-CANCELLED, not deferred) and the nine per-category strip variants are absent, both pinned. Undo cost stated honestly: N entities is N steps, cited to T-732."
+order = 4530
+program = "eden"
+route = "/missions/:id/edit"
+status = "shipped"
+stream = "mission-creator"
+summary = "3den E7 (3DEN-LOAD-001/002/010). TBD has no way to move a loadout between slots at all. Copy buffers the loadout of every selected entity; Apply writes it to a selection, picking at random per entity when several are buffered (the randomisation is the novel part). Remove Everything is the one strip verb worth building — the nine per-category variants (NVGs, vests, goggles, headgear, weapons) are marked maybe and deliberately excluded."
+surfaces = [
+    "ATTR",
+    "DATA",
+]
+targets = ["website"]
+title = "Loadout buffer — copy, apply, and strip-everything"

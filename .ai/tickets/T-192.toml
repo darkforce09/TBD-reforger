@@ -1,0 +1,27 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "shipped_at",
+]
+__ord = 166
+executor = "claude-code"
+id = "T-192"
+impact = ["mc-settings"]
+order = 2100
+program = "eden"
+shipped_at = "bbb910be"
+status = "shipped"
+stream = "mission-creator"
+summary = "The dialog writes meta.environment.{time,weather} into the CRDT doc (eden_chrome.rs:1707-1765) but flatten reads the DB missions row instead (mission_compile.rs:24-29). No editor path PATCHes the row, and apply_row_meta overwrites the doc from the row on every hydrate. The author's edit is dropped on the wire and lost locally on reload. MERGED FROM T-089: this ticket owns BOTH halves — add the PATCH /missions/{id} path that writes time_of_day/weather back to the missions row, AND make the compile path read the authored value. Do not ship one without the other."
+surfaces = ["ATTR"]
+targets = ["website"]
+title = "Mission settings never reach the compiled document and are silently reverted"

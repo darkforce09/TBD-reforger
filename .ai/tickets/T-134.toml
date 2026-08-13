@@ -1,0 +1,40 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "stream",
+    "targets",
+    "executor",
+    "status",
+    "surfaces",
+    "impact",
+    "depends_on",
+    "spec",
+    "branch",
+    "order",
+]
+__ord = 108
+branch = "ticket/T-134"
+depends_on = [
+    "T-069",
+    "T-092",
+]
+executor = "workbench"
+id = "T-134"
+impact = [
+    "schema",
+    "ui",
+]
+order = 1500
+program = "platform"
+spec = "docs/platform/tbd_north_star_backlog.md"
+status = "shipped"
+stream = "mod-framework"
+summary = "SHIPPED (closed 2026-07-26 by audit). Delivered by T-181.19: five-file replicated marker pipeline (TBD_MarkerData/Icons/Client/Component/Controller.c), side-scoped, capped at 64."
+surfaces = [
+    "MAP",
+    "UI",
+]
+targets = ["mod"]
+title = "In-game marker system (mod)"

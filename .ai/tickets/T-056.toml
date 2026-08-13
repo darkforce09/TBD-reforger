@@ -1,0 +1,32 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "spec",
+    "route",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 43
+executor = "claude-code"
+id = "T-056"
+impact = [
+    "ui",
+    "state",
+]
+order = 560
+program = "eden"
+route = "/missions/:id/edit"
+spec = "docs/specs/Mission_Creator_Architecture/t056_copy_paste.md"
+status = "shipped"
+stream = "mission-creator"
+summary = "Copy slot selection and paste at cursor preserving layout."
+surfaces = ["MAP"]
+targets = ["website"]
+title = "Ctrl+C/V copy-paste"

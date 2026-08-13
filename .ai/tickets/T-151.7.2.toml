@@ -1,0 +1,22 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "spec",
+    "status",
+    "shipped_at",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-151.7.2"
+notes = "Residual tint + zoom SoT; wheel restore @ 69ca1c08. Spec shared with 7.1 corrective lane."
+parent = "T-151"
+shipped_at = "64c64d98"
+spec = "docs/specs/Mission_Creator_Architecture/t151_7_1_interaction_hotfix.md"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]

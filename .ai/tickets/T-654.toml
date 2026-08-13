@@ -1,0 +1,41 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "stream",
+    "targets",
+    "executor",
+    "notes",
+    "order",
+]
+__ord = 655
+executor = "claude-code"
+id = "T-654"
+impact = [
+    "schema",
+    "mod",
+    "mission-authoring",
+]
+notes = "not factory-dispatchable; no owns, no wave row T-853 2026-08-12: the prepped slice worktree for this ticket was DROPPED, not landed. It carried one unmerged commit from 2026-08-02 that had sat unlanded for 10 days and was blocking the wave queue at 150. The work was NOT reviewed and NOT merged; the ticket stays queued so it can be redone. The commit is recoverable: `git checkout -b redo/T-654 salvage/t853-dropped/T-654` (tagged before the branch was deleted). Note T-674 and T-675 pointed at the SAME commit 113108a1, so whichever is redone first should check whether it subsumes the other."
+order = 4610
+program = "eden"
+status = "queued"
+stream = "shared-schema"
+summary = """
+STATUS 2026-08-02: promoted idea->queued during the final verification pass — it holds a wave row (runtime half of the T-706 schema pass) and an idea ticket in the plan is inconsistent. Was idea per synthesis §D.1 (salvage of semantic layers as conditional inclusion); the operator direction is to finish the Mission Creator, so it ships.
+
+A DESIGN TICKET FIRST — no owns until the design lands. An entity or subtree carries an optional variant predicate and the compiler emits it only when that variant is selected. This generalises what FNF v3 actually built with Eden layers: the template ships 12 named layers, 7 of them `FNF Gamemode: <Mode>`, and `fn_setupGame.sqf`:92-154 deletes every object and marker belonging to the modes you did not pick, making the layer name a HARD RUNTIME CONTRACT (which is why config.sqf:43-44 warns "DO NOT DELETE ANY OF THE OTHER TEMPLATE OBJECTIVE OBJECTS"). FNF THEN DELETED THE ENTIRE MODE ARCHITECTURE at v4 — `modes/` (15 files) and `mode_config/` (9) are gone — and calls the replacement "the single largest expressive gain" in the framework's history. So DO NOT make Editor Layers semantic; the mechanism was abandoned by the community that invented it, and while it lived it capped objective counts at 3, fixed object and marker names as literals, and forbade makers from deleting content they were not using. The salvageable idea is conditional inclusion itself, which serves mode presets, day/night variants, player-count bands, OFCRA's one-artefact-many-run-modes, and T-110's base + sparse delta. Separately: `gap_analysis.md`'s `LAYER-CREATE-001` is graded `tbd_only` and that is WRONG — Eden has layers and three of the four studied frameworks use them (FNF v3 semantic, FNF v4 structural, WOG organisational at 2,396 layers across 171 missions); it should read `partial`. EXECUTOR IS `workbench`: variant predicates are a document-shape change against a schema carrying 25 `"additionalProperties": false`, so it needs a widening AND an Enfusion reader.
+
+EXECUTOR CORRECTED 2026-08-02: was filed `workbench` on the mistaken reading that any .c file needs the Arma Workbench GUI. It does not — scripts/mod/compile.sh compiles tbd-framework against the native Linux dedicated server headlessly, verified: "OK: compiled clean, 5707 files, 11182 classes, 832 ms, no Workbench". Schema edits are plain JSON. This is factory work. Per the model-routing rule, the .c portion routes to Fable 5 even though the executor is claude-code.
+
+SCHEMA HALF SPLIT OUT to T-706 (one widening pass for the whole program). This ticket is the Enfusion reader plus any editor UI; it does not touch packages/tbd-schema."""
+surfaces = [
+    "SCHEMA",
+    "DATA",
+]
+targets = ["mod"]
+title = "Conditional inclusion: variant-gated document subtrees"

@@ -1,0 +1,33 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 480
+executor = "claude-code"
+id = "T-506"
+impact = [
+    "website",
+    "tests",
+]
+order = 3346
+priority = 1
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = 'Wave 42 residual (CLEAN MINOR). require_role_played is called in ingest_match_results (telemetry.rs ~688 and ~722). Unit tests blank_role_played_is_rejected / non_blank_role_played_ok only exercise the helper. RED: delete both ingest call sites → those tests still PASS. No include_str call-site pin; no HTTP IT asserting "role_played must not be blank". Live ship is correct; cure: Class-R pin that both call sites invoke require_role_played and/or HTTP IT for blank role_played → 400.'
+surfaces = [
+    "API",
+    "tests",
+]
+targets = ["website"]
+title = "T-379 Class-R only tests require_role_played helper, not ingest call sites"

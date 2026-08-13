@@ -1,0 +1,37 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "status",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "spec",
+    "route",
+    "branch",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 84
+branch = "ticket/T-110"
+executor = "cursor-docs"
+id = "T-110"
+impact = [
+    "schema",
+    "persistence",
+]
+order = 1100
+program = "infra"
+route = "/missions/:id/edit"
+spec = "docs/specs/Mission_Creator_Architecture/t110_terrain_base_mission_layers.md"
+status = "deferred"
+stream = "infra"
+summary = "Binary terrain base layer plus sparse delta props for 1M+ map objects."
+surfaces = [
+    "MAP",
+    "DATA",
+]
+targets = ["root"]
+title = "Terrain base + sparse deltas"

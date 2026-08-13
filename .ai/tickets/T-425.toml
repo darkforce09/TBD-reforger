@@ -1,0 +1,43 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 399
+executor = "claude-code"
+id = "T-425"
+impact = ["platform-lifecycle"]
+order = 3264
+priority = 1
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+Residue of wave 5's T-215, which shipped real vehicle map placement (position, faction, cargo) with a proven save/reload round trip. All of the below is disclosed by the agent or the verifier, none of it is a regression.
+
+1. BLOCKS THE EMISSION PATH -- there is no ResourceName -> `veh:` alias table. `$defs/entity.alias` is `^(kit|comp|veh|preset|layer|prop|item):[a-z0-9_]+$`, a REGISTRY ALIAS, not a ResourceName. `kit-aliases.json` maps characters to `kit:` only; the sole `veh:m151_mg` in the repo is hardcoded in two sample files. Flatten cannot emit a valid `entity.alias` for T-215's rows until a table mirroring kit-aliases.json's shape exists. Mapping ResourceName->alias without one would drop every vehicle but m151_mg, or substitute a different one -- the T-200 silent-substitution defect with a vehicle instead of a rifleman.
+
+2. THE FLATTEN DELTA, worked out and ready to use: `cargo[]` -> `entity.inventory` byte-identical, no transform (T-215 emitted `$defs/entityInventory` verbatim). `faction` <- `factionId` stripped of the `faction-` prefix and lowercased, falling back to `squadId -> squad.factionId`. `entity.faction` is optional, so a squad-less vehicle is schema-valid without it.
+
+3. STALE PROSE in `mission.schema.json` (T-242's file, left alone): the top-level `entities` description still asserts 'the editor's vehicle row is {id, resourceName, position, squadId} ... with nowhere to author contents'. As of T-215 there is somewhere.
+
+4. PLACED VEHICLES ARE NOT SELECTABLE OR DRAGGABLE. They render (`vehicle_xy_flat` -> `vehicles_bind`) but are off the slot SoA, so pick/marquee/drag skip them. Position is authored at drop and edited only by delete-and-replace; rotation stays 0.0 because the Placed row has no heading field. Deliberate -- putting them in the slot selection would read 'SEL 1' with nothing highlighted, since that selection is the slot SoA.
+
+5. NOT VERIFIED LIVE, and it should be. Neither T-215 (its worktree could not be served -- :3000 runs from the main checkout) nor the wave verifier (browser tooling unavailable: `list_connected_browsers` returned empty on four attempts) placed a vehicle in a browser. What IS established: the served bundle is post-merge (dist rebuilt 21:17 vs merge 21:16:32) and contains `vehiclesById` x5, `factionId` x3, `cargo` x14. UNVERIFIED: that a vehicle can be placed, that it persists across reload, that cargo authoring works, and T-215's four claims in item 4. A browser pass is cheap and would close it.
+
+CONFIRMED SOUND, do not re-audit: T-215's design call that a map-placed vehicle carries NO squadId is correct and the verifier proved why. Attaching would have hit `place_orbat.rs:157-161`, where `is_open_for_placement` counts a squad holding ANY vehicle as authored -- so attaching closes the side's current squad and the next character placement mints a fresh one, silently splitting the fireteam being built around it. That is the T-321 one-squad-per-click defect."""
+surfaces = [
+    "FRONTEND",
+    "DATA",
+]
+targets = ["website"]
+title = "T-215's vehicle placement: the alias table flatten needs, and four authoring gaps it disclosed"

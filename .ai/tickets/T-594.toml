@@ -1,0 +1,66 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 568
+executor = "claude-code"
+id = "T-594"
+impact = ["platform-lifecycle"]
+order = 3461
+priority = 1
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+**THESE MUST LAND TOGETHER.** T-583 shipped `make map-reclassify` and specified the gate step, but the
+step was DELIBERATELY NOT WIRED because the tree is in drift TODAY -- wiring it alone would turn every
+slice gate red. Verified by the command center: `make map-reclassify TERRAIN=everon` exits 1 with
+`DRIFT — 16 prefab(s) classify differently than the committed catalogue`.
+
+T-244 added a `vehicle` kind and classify rules weeks ago. The change has been LATENT ever since --
+the rules changed, the committed artifact did not, and T-278 later measured that regenerating would
+have PANICKED (`.expect("kind bucket")` against an 8-element array with no `vehicle`).
+
+=== THE TWO BLOCKERS, both confirmed still blocking by wave 73's verifier ===
+1. `packages/tbd-schema/schema/map-object-type-inventory.schema.json:54` -- `byKind` is
+   `additionalProperties: false` with 8 required keys and no `vehicle`. A regenerated inventory
+   carrying `byKind.vehicle` is REJECTED.
+2. `xtask/src/schema_gates.rs:428` -- `INSTANCE_KINDS: [&str; 8]`, no `vehicle`, feeding the I1 sum
+   gate, which then comes up short by exactly 176 (= `byKind.vehicle.instances`).
+   **AND IT HAS NO LOCKSTEP TEST.** Its twin at `tools/tbd-tools/src/world/mod.rs:34` is `[&str; 9]`
+   WITH `vehicle` and IS pinned by `instance_kinds_match_enums_schema`. Same name, same purpose, and
+   the UNGUARDED copy is the one feeding the gate. Pin it in the same commit or it drifts again.
+
+=== THE ORDER ===
+(a) fix both blockers; (b) `make map-reclassify TERRAIN=everon WRITE=1` to regenerate the catalogue --
+16 rows change, 13 -> vehicle/{armor,car,truck,boat} and 3 -> prop/debris, 1607 of 1623 byte-identical;
+(c) confirm `make map-reclassify TERRAIN=everon` now exits 0; (d) ONLY THEN wire the gate step.
+
+=== T-583's EXACT GATE STEP, and three load-bearing details ===
+    run "T-278 catalogue drift" checkrun make map-reclassify TERRAIN=everon
+Placement: immediately after `run "schema" gate_schema`, in BOTH `gate_slice()` (~wave.sh:1917) and
+`cmd_gate()` (~wave.sh:2086) -- per T-556, a step in only one half drifts green.
+ - **`checkrun`, NOT `hostrun`.** `hostrun` bakes in the SHARED CARGO_TARGET_DIR, and
+   `tools/tbd-tools/src/serve.rs:326` `repo_root()` is `env!("CARGO_MANIFEST_DIR")` -- a COMPILE-TIME
+   constant. A shared target dir can therefore serve a `world` binary that reads a DIFFERENT
+   WORKTREE'S rules and catalogue while reporting on yours. `checkrun` pins `$GATE_CHECK_TARGET`.
+ - **Not into `schema-validate`**: `gate_schema`'s tripwire parses `xtask schema <name>` lines and
+   `map-reclassify` is a `tbd-tools --bin world` call -- it would trip or silently miss it.
+ - Cost ~12 s.
+Run on the day T-244 landed, this step would have gone RED immediately."""
+surfaces = [
+    "DATA",
+    "INFRA",
+]
+targets = ["website"]
+title = "Activate T-244's vehicle lane: two blockers plus T-583's gate step, all in one slice"

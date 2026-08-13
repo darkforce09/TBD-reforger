@@ -1,0 +1,56 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+    "shipped_at",
+]
+__ord = 348
+executor = "claude-code"
+id = "T-374"
+impact = ["platform-lifecycle"]
+order = 3190
+priority = 0
+program = "platform"
+shipped_at = "28e9fbb6"
+status = "shipped"
+stream = "web-platform"
+summary = """
+The guard that exists to prevent exactly this does not implement it.
+
+frontend/src/yrs_persist.rs:516-534 `run_save` ends with:
+    let bytes = (pending.get_bytes)();
+    if bytes.is_empty() { return; }  // 'never overwrite a good record with an empty/truncated blob'
+
+`bytes.is_empty()` is a BYTE test, not a CONTENT test. `encode_state()` is `encode_state_as_update_v1(&StateVector::default())`, which writes a var-int client count then the delete set — so **an empty document encodes to `[0, 0]`, two bytes, non-empty**, and sails straight past the guard. `get_bytes` only yields `Vec::new()` when the doc Option is None, which `is_cancelled` already catches. So the module header's stated promise at :12 is not implemented.
+
+**The predicate already exists and is not consulted:** `has_content()` (crates/map-engine-core/src/doc/store.rs:1293-1303) has exactly ONE call site — mission_hydrate::classify_local:344 — and is never used on the write path. Use it.
+
+Same byte-level test in the snapshot pair: `snapshot_local` (mission_hydrate.rs:740-760) captures a content-empty doc, and `has_snapshot` (:768-775) reports true for it — so `__missionBackup.restore()` can put an empty document over a good live doc, and the re-armed persist writes it 5s later. Mitigated (console-only, exact `live_editor_is` guard, and the displaced doc is banked so `undoRestore()` recovers it) but the same root cause.
+
+Also worth fixing while in there: `get_raw` (:238-247) collapses 'record absent' and 'IDB read failed' into the same None, and `load_state` reports that as 'no local content' — a false negative that then drives the boot down the cold path.
+
+== KEPT IN THE RUN 2026-07-26 while 41 sibling findings were deferred: can lose an authored mission — empty doc overwrites a populated record. ==
+
+SHIPPED. `MissionDocCore::new().encode_state()` = **[0, 0]** — length 2, is_empty() FALSE. Proven twice against shipped code: natively via a probe whose src is the guard functions extracted verbatim (yrs_persist is wasm-gated so an in-file #[cfg(test)] would never compile — the trap sse.rs:25 already documents), and in the real browser wasm. Old guard WRITE, new guard reject. Also rejected, all of which the byte test passed: a meta-only 124 B content-empty doc, a 50%-truncated unreplayable blob, 0xff garbage, a single 0x00.
+
+POSITIVE CONTROL — the loss itself, prevented end to end: 8 real click+Delete gestures, beforeSlots 8 -> afterSlots 0, editCount 0 -> 8 (the writer WAS armed), guard fired, stored record unchanged at 1069 bytes. Read from assertValue directly; it did not cite render-check's exit code (T-386).
+
+IT REFUSED TO SHIP AN UNCALLED `pub` MECHANISM for T-380, citing this module's own T-338 header: T-221 shipped purge_owner as pub, tested, documented as wired, and nothing called it for two waves.
+
+COST MEASURED, and it shaped the design: decode is 19us at 8 slots, 35ms at 10k, 466ms at 100k — too much for a writer that re-arms on every edit. So schedule_edit_persist passes an O(1) ContentProbe over the live core and only the once-per-boot arming path pays the decode; the [0,0] blob is rejected by an O(1) var-int tier with no decode at all (100k rejections in 145us).
+
+ONE BEHAVIOUR CHANGE, flagged rather than discovered later: a DELIBERATE select-all+Delete now also fails the guard, because at the blob level an intentionally emptied document and a never-populated one are the same content-empty document. A full delete no longer propagates to the local autosave. That is the side the codebase already errs on (classify_local maps content-empty to Local::Empty), the delete is still an undo step, and the failure traded away is an authored mission overwritten with nothing. The distinction exists if ever wanted — a never-populated doc has no delete set — but that is a delete-set parse, not a length check.
+
+mission_hydrate.rs needs THREE instances, not the two filed: snapshot_local:746, has_snapshot:774, and restore_snapshot:859 — the third would RESTORE a content-empty backup over the live document."""
+surfaces = ["FRONTEND"]
+targets = ["website"]
+title = "The persist guard is byte-level, so an empty document overwrites a populated record"

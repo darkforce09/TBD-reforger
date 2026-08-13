@@ -1,0 +1,20 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "shipped_at",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-151.11.4"
+notes = "GPU harness + CI + tree gate + compute cull readback + Range satellite preview"
+parent = "T-151"
+shipped_at = "2c3237fd"
+status = "shipped"
+targets = [
+    "root",
+    "website",
+]

@@ -1,0 +1,29 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "spec",
+    "route",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 42
+executor = "claude-code"
+id = "T-055"
+impact = ["ui"]
+order = 550
+program = "eden"
+route = "/missions/:id/edit"
+spec = "docs/specs/Mission_Creator_Architecture/t055_asset_browser_search.md"
+status = "shipped"
+stream = "mission-creator"
+summary = "Case-insensitive label search in Factions asset tree."
+surfaces = ["RIGHT"]
+targets = ["website"]
+title = "Asset browser search"

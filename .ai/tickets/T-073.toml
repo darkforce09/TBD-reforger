@@ -1,0 +1,32 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "status",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "route",
+    "branch",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 60
+branch = "ticket/T-073"
+executor = "claude-code"
+id = "T-073"
+impact = ["ui"]
+order = 730
+program = "eden"
+route = "/missions/:id/edit"
+status = "cancelled"
+stream = "mission-creator"
+summary = "CANCELLED 2026-08-01 — SUPERSEDED BY T-648. `XFORM-SHIFT-001` and `WIDGET-ROT-001` are two of the five ids T-648 closes, and it owns the same files. Shift is entirely free in the drag path and rotation already round-trips numerically (attributes.rs:292, editor_ops.rs:1841), so this was always a gesture on an existing field rather than a ticket of its own."
+surfaces = [
+    "MAP",
+    "XFORM",
+]
+targets = ["website"]
+title = "Shift + map rotation"

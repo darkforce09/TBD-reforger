@@ -1,0 +1,32 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "status",
+    "stream",
+    "targets",
+    "executor",
+    "route",
+    "impact",
+    "title",
+    "summary",
+    "surfaces",
+    "notes",
+]
+__ord = 674
+executor = "claude-code"
+id = "T-701"
+impact = ["ui"]
+notes = " — SHIPPED wave 120 (editor factory), a16e9188; verifier wave120.md"
+order = 4550
+program = "eden"
+route = "/missions/:id/edit"
+status = "shipped"
+stream = "mission-creator"
+summary = "3den E9. An editor-local hidden flag that never compiles, so a maker can declutter a dense area while authoring. Distinct from T-665 layer visibility: that is per-layer, this is per-entity. Eden Layer attributes carry Enable Visibility for exactly this."
+surfaces = [
+    "LEFT",
+    "DATA",
+]
+targets = ["website"]
+title = "Editor-only visibility override — hide without deleting"

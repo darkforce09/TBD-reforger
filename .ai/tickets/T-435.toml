@@ -1,0 +1,32 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 409
+executor = "claude-code"
+id = "T-435"
+impact = ["mission-creator"]
+order = 3274
+priority = 3
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+MINOR from wave 8 verifier on T-201. Everon z_bounds is pinned ([[0,0],[12800,0],…]); arland uses terrain_bounds("arland")→4096² but no flatten-level test asserts that polygon.
+
+Repro: cargo test -p map-engine-core --features mission — no arland z_bounds size assert.
+
+Cure: unit test with terrain=arland expecting 4096² ring."""
+surfaces = ["FE"]
+targets = ["website"]
+title = "Pin arland z_bounds polygon in flatten zone tests"

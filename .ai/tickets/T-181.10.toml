@@ -1,0 +1,18 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-181.10"
+notes = "JSON loadouts @ 4b1ff732. optic+magazine were parsed and DISCARDED — now mounted into weapon storage. Honest per-field failure lines naming slot+item; nakedness guard. Closed a real hole: body reuse now keyed on IDENTITY, so a player taking a vacated slot cannot inherit the previous occupant's fired mags/damage, while a mid-life reconnect still gets its own body. AdminRespawn forces a fresh body. IsBodyDead treated a missing CharacterControllerComponent as ALIVE (bug). COMPILE-VERIFIED ONLY — magazine chambering and optic mounting need eyes."
+parent = "T-181"
+status = "shipped"
+targets = [
+    "mod",
+    "root",
+]

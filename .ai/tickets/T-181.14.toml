@@ -1,0 +1,18 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-181.14"
+notes = "Mission validation @ 915b78a8. TBD_MissionValidator (27 checks, all run in one pass, ERROR vs WARNING) + TBD_Log. Rejected mission holds the server in LOADING via the existing IsValid gate — no FrameworkManager edit. '#tbd validate' replays findings in game; every #tbd reply leads with a failure banner. Decision table verified offline against both golden missions + 14 mutations (proves the table, NOT the Enfusion runtime). Needs a hook: TBD_Log.Stage(prev,next) has no caller."
+parent = "T-181"
+status = "shipped"
+targets = [
+    "mod",
+    "root",
+]

@@ -246,7 +246,7 @@ mod tests {
     fn throwaway_root(tag: &str, with_framework: bool) -> PathBuf {
         let root = tempfile_dir(tag);
         fs::create_dir_all(root.join(".ai/tickets")).unwrap();
-        fs::write(root.join(".ai/tickets/registry.json"), "{}\n").unwrap();
+        fs::write(root.join(".ai/tickets/ROOT"), "{}\n").unwrap();
         fs::create_dir_all(root.join("apps/mod")).unwrap();
         if with_framework {
             fs::create_dir_all(root.join("apps/mod/tbd-framework")).unwrap();

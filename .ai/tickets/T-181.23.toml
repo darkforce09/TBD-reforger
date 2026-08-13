@@ -1,0 +1,15 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-181.23"
+notes = "Parser gaps @ 94e72e3d. briefings/markers/zone label/ORBAT callsign+slot+kit all added, every field name verified against mission.schema.json rather than assumed. CAUGHT AN ERROR IN ITS BRIEF: wiring only OnStageReplicated would have regressed the LISTEN HOST, because onRplName fires only on the proxy and on a listen host authority IS the local player — so both the callback and the authority setter now call one guarded helper. Poll deleted. schema-validate's golden missions still PASS; that target's overall exit 2 is a pre-existing LFS/DEM issue, proved on a clean tree. || CORRECTION (wave-3 verifier, confirmed independently): the headline deliverable is DEAD CODE. GetBriefingForFaction() has ZERO callers; TBD_MissionBriefingStruct/TBD_MissionMarkerStruct/ORBAT callsign+slot+kit are referenced nowhere outside their declarations; TBD_BriefingPayload has no situation/mission/execution fields and TBD_BriefingScreen has no ORDERS section. Only zone `label` is actually consumed. The parse layer landed; the briefing screen STILL shows structure without orders. My earlier note said 'all added', which was true of the structs and misleading about the outcome. Consuming it is T-181.27."
+parent = "T-181"
+status = "shipped"
+targets = ["mod"]

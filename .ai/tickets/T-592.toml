@@ -1,0 +1,50 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+]
+__ord = 566
+executor = "claude-code"
+id = "T-592"
+impact = ["platform-lifecycle"]
+order = 3453
+priority = 3
+program = "platform"
+status = "shipped"
+stream = "web-platform"
+summary = """
+Both from T-582, which shipped the zone draw tool and named exactly what it could not reach.
+
+1. **No zone outlines on the map canvas.** `LaneRole` / `lane_role_from_u32` map only roles 0-9 and
+   all ten are taken; reusing SquadLinks or Marquee would collide. Drawing zone rings needs one enum
+   variant plus a lane in `crates/map-engine-render/{draw_order.rs,engine.rs}` — outside T-582's
+   files. Shipped instead: the dock list with selection, geometry summaries, and the existing
+   `set_place_preview` ghost tracking where the next click lands. **An author can create and edit a
+   zone but cannot see its footprint on the map**, which is the obvious next thing to want.
+2. **Circle is centre-click then rim-click, not press-drag-release.** The `has_pending()` seam hands
+   `editor_ops` the RELEASE point only; the press point is captured privately in
+   `mission_editor.rs`'s `left` gesture cell. True drag-to-radius needs a small hook there — not
+   T-582's file, and no sibling owned it. Two-click closes the r=0 hazard identically and avoids a
+   second pointer state machine racing the first, so this is a polish item, not a defect.
+3. **PRE-EXISTING, untouched:** `cancel_pending()` returns early on a release over chrome without
+   clearing `mission_editor.rs`'s `left` gesture cell, leaving a stale `Pending` that the next
+   `pointermove` can promote to a marquee. T-582 did not worsen it and did not own the file.
+4. **KNOWN LIMIT of the new route-tag gate**, recorded so nobody rediscovers it: a future sub-router
+   mounted via `.nest("/x", other_fn())` would false-red as an unwired tag, because the extractor
+   only reads `fn api_routes`'s body. The script header documents this and the crate uses one flat
+   `api_routes` today."""
+surfaces = [
+    "FRONTEND",
+    "INFRA",
+]
+targets = ["website"]
+title = "Zones have no map-canvas outline, and the circle tool is two-click rather than drag"

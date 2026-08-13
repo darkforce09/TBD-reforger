@@ -1547,7 +1547,7 @@ pub fn t090_specs() -> Result<u8> {
 
     // Gate 10 — hub header names the registry active slice.
     let mut active_slice = "T-090.1.2.5".to_string();
-    if let Ok(reg) = read_json(&root.join(".ai/tickets/registry.json")) {
+    if let Ok(reg) = crate::registry::load_registry(&root) {
         if let Some(t090) = reg["tickets"]
             .as_array()
             .and_then(|a| a.iter().find(|t| t["id"] == "T-090"))

@@ -97,7 +97,7 @@ fn resolve_root() -> Result<PathBuf> {
     // Prefer $PWD (logical path) so dual-homed hosts (/home vs /var/home) match bash `cd … && pwd`.
     if let Some(pwd) = env::var_os("PWD") {
         let p = PathBuf::from(pwd);
-        if p.join(".ai/tickets/registry.json").is_file() {
+        if p.join(".ai/tickets/ROOT").is_file() || p.join(".ai/tickets/registry.json").is_file() {
             return Ok(p);
         }
     }

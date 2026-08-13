@@ -7,21 +7,50 @@ use crate::root::registry_path;
 
 pub type Registry = Value;
 
-pub fn load_registry(root: &Path) -> Result<Registry> {
-    let path = registry_path(root);
-    let text = fs::read_to_string(&path).with_context(|| format!("read {}", path.display()))?;
-    let v: Value = serde_json::from_str(&text).context("parse registry.json")?;
-    Ok(v)
+pub fn load_json_monolith(path: &Path) -> Result<Registry> {
+    let text = fs::read_to_string(path).with_context(|| format!("read {}", path.display()))?;
+    serde_json::from_str(&text).with_context(|| format!("parse {}", path.display()))
 }
 
-/// Match Python save_registry: indent=2, ensure_ascii=False, trailing newline.
+pub fn load_registry(root: &Path) -> Result<Registry> {
+    let json = registry_path(root);
+    let has_toml = crate::tickets_store::root_marker_path(root).is_file()
+        || json
+            .parent()
+            .map(|d| {
+                d.read_dir().ok().is_some_and(|rd| {
+                    rd.filter_map(|e| e.ok()).any(|e| {
+                        let n = e.file_name();
+                        let n = n.to_string_lossy();
+                        n.starts_with("T-") && n.ends_with(".toml")
+                    })
+                })
+            })
+            .unwrap_or(false);
+    if has_toml {
+        return crate::tickets_store::load_toml_tree(root);
+    }
+    if json.is_file() {
+        return load_json_monolith(&json);
+    }
+    anyhow::bail!(
+        "no ticket registry (ROOT/T-*.toml or registry.json) under {}",
+        root.display()
+    )
+}
+
+/// After the per-file split, write the TOML tree and remove a leftover monolith.
 pub fn save_registry(root: &Path, data: &Registry) -> Result<()> {
-    let path = registry_path(root);
-    fs::write(&path, format_json_unicode_preserve(data)?)?;
+    crate::tickets_store::save_toml_tree(root, data)?;
+    let json = registry_path(root);
+    if json.is_file() {
+        fs::remove_file(&json).with_context(|| format!("remove {}", json.display()))?;
+    }
     Ok(())
 }
 
-fn format_json_unicode_preserve(data: &Value) -> Result<String> {
+#[allow(dead_code)]
+pub fn format_json_unicode_preserve(data: &Value) -> Result<String> {
     // Produce indent-2 JSON with unicode preserved (like ensure_ascii=False).
     let mut buf = String::new();
     write_value(&mut buf, data, 0)?;
@@ -29,6 +58,7 @@ fn format_json_unicode_preserve(data: &Value) -> Result<String> {
     Ok(buf)
 }
 
+#[allow(dead_code)]
 fn write_value(buf: &mut String, v: &Value, indent: usize) -> Result<()> {
     match v {
         Value::Null => buf.push_str("null"),

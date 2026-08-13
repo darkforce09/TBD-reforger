@@ -1,0 +1,15 @@
+__keys = [
+    "id",
+    "parent",
+    "targets",
+    "executor",
+    "status",
+    "notes",
+]
+__ord = 0
+executor = "claude-code"
+id = "T-159.2"
+notes = "Aegis shell — absorbed into page-migration arc on branch."
+parent = "T-159"
+status = "shipped"
+targets = ["website"]

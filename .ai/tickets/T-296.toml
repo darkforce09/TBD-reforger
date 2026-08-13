@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 270
+executor = "claude-code"
+id = "T-296"
+impact = ["registry-hygiene"]
+order = 2296
+program = "infra"
+status = "shipped"
+stream = "infra"
+summary = "TBD_ResultsReporter.c:23, :28-29 and :422-423 still state that identity linking is unimplemented and that 'there is no #tbd link command'. T-181.35 landed TBD_IdentityLink.c (780 lines) at 17:46 on 2026-07-25 and the command exists. The :422-423 line prints once per round into the operator log, so it actively misleads whoever reads the round output. Correct all three sites to describe what the results POST actually does today."
+surfaces = ["MOD"]
+targets = ["mod"]
+title = "TBD_ResultsReporter banner now contradicts shipped code"

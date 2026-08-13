@@ -1,0 +1,50 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "slices",
+    "depends_on",
+    "unblocks",
+    "status",
+    "implements",
+    "user_story",
+    "route",
+    "stream",
+    "branch",
+    "executor",
+    "targets",
+    "spec",
+]
+__ord = 147
+branch = "main"
+depends_on = ["T-172"]
+executor = "claude-code"
+id = "T-173"
+impact = [
+    "perf",
+    "ui",
+]
+implements = []
+order = 1700
+program = "platform"
+route = "/missions/:id/edit"
+slices = []
+spec = "docs/platform/t173_leptos_perf_pass.md"
+status = "shipped"
+stream = "web-platform"
+summary = "SHIPPED @ tag T-173 / dddf3158. P1–P10 + H1/H2/H5/H6: release-default make leptos; pan/zoom streaming settle + compose memo (−71% zoom block); thrash-free residency; library scroll + sheet de-blur; Mission Settings basemap/hillshade/grid + 12 world toggles; continuous tree guides; fence/pier/rail strips; upright building badges; density/clusters/labels/airfield bridged. Verify: .ai/artifacts/t173_verify_log.md. Operator G-A: HUD rf + window.__editorBench(500) on RTX. Hub: docs/platform/t173_leptos_perf_pass.md."
+surfaces = [
+    "MAP",
+    "SHELL",
+    "TOP",
+    "LEFT",
+    "RIGHT",
+]
+targets = ["website"]
+title = "Leptos SPA + Mission Creator performance pass"
+unblocks = []
+user_story = "As a mission maker I pan/zoom and scroll smoother than the old React editor, with full Mission Settings render toggles and correct fence/building glyphs."

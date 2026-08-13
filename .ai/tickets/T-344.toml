@@ -1,0 +1,68 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+    "priority",
+    "shipped_at",
+]
+__ord = 318
+executor = "claude-code"
+id = "T-344"
+impact = ["platform-lifecycle"]
+order = 3160
+priority = 1
+program = "platform"
+shipped_at = "71359721"
+status = "shipped"
+stream = "web-platform"
+summary = """
+SPLIT FROM T-214, which proved everything around it already works and refused to reach into a file it did not own.
+
+NEEDS EXACTLY ONE MUTATOR in crates/map-engine-core/src/doc/store.rs, e.g.
+  set_faction_briefing(faction_id, situation, mission, execution)
+inserting an `Any::Map` under `briefing` on the faction row.
+
+WHAT YOU DO NOT NEED TO CHANGE, and T-214 verified each by running it:
+  - `hydrate` / `load_row` (:1555) — already re-inserts every non-id field verbatim, nested objects staying opaque Any::Maps.
+  - `small_maps_json()` (:166) — already emits the faction map via to_json() verbatim.
+  - `compile.rs values_of()` — already clones each faction row whole.
+So doc -> payload -> server -> hydrate -> doc round-trips the object today. T-214's test `briefing_prose_round_trips_through_the_document_core` proves it using hydrate AS the writer, which is precisely why only the author-side write is missing.
+
+`factions` is already in undo scope (store.rs:103), so authoring is undoable for free — do not add a second scope.
+
+SHAPE IS FIXED, do not renegotiate it: `factionsById[<factionId>].briefing = {situation?, mission?, execution?, markers?}`, absent when unauthored. NOTE `markers` — T-202 added it after T-214, and the command center confirmed from the schema that $defs/briefing DECLARES markers and carries additionalProperties:false, so that is the only legal placement. T-214's prose-only shape was a strict subset, not a rival. T-202 emits from it and T-214 writes the payload from it; a third shape here breaks both.
+
+OPTIONAL AND SEPARABLE, mentioned by T-214: apply_row_meta (:1042) could thread the row's `briefing` DB column into `meta.briefing` to light up the envelope field, which currently always resolves to "" because nothing writes it. Decide deliberately whether that belongs here.
+
+NOTE store.rs is the second most contended file in this backlog — keep the diff to the one mutator.
+
+== KEPT IN THE RUN 2026-07-26 while 41 sibling findings were deferred: UNBLOCKS the briefings feature — T-202 emits, nothing can author. ==
+
+T-345 SHIPPED FIRST AND SET THE PATTERN — copy it rather than inventing one.
+  `set_faction_briefing` must READ the existing `briefing` map, set its prose keys, and write it back WHOLE. This is mandatory, not stylistic: the value is an opaque Any::Map, so a naive insert of a fresh briefing SILENTLY DELETES the markers T-345 just made authorable. `a_marker_edit_preserves_authored_prose_on_the_same_briefing` already pins the converse.
+  `read_any_map` / `briefing_markers` / `marker_row_id` are already factored for reuse.
+  INHERIT THE NO-OP TRAP, in reverse: setting all-empty prose on an unauthored faction would flip FactionIn::briefing from None to Some and make derive_briefings emit an entry for a side that authored nothing — a compiled-output change from a write that wrote nothing. `removing_from_an_unauthored_faction_does_not_mint_a_briefing` is the template.
+  And note load_row was never a blocker here either: nested objects under `briefing` round-trip verbatim without descending, which is why T-214 needed no store.rs change and why T-345 needed no relaxation.
+
+SHIPPED. **BRIEFINGS ARE NOW AUTHORABLE END TO END** — prose and markers both have real mutators, both reach the compiled mod document keyed by slug_key(faction.key), newlines intact, with no emitter change. 238 tests (233 baseline).
+
+It GENERALISED T-345's no-op guard from 'return when the new prose is empty' to 'return when the briefing map is UNCHANGED'. That subsumes the mint hazard AND swallows a redundant re-set of identical prose without stacking an undo step — while still NOT no-opping when the briefing genuinely exists, so clearing every box on a briefing that has markers is a real edit and correctly leaves {markers:[...]}.
+
+DECISION: "" REMOVES THE KEY rather than writing Some(""). ModBriefing's fields are Option<String> specifically to keep 'never filled in' distinct from 'deliberately blanked' in the compiled bytes, and a three-textbox editor cannot express that difference — so Some("") would stamp 'deliberately blanked' onto every box the author simply never filled. Still reachable via hydrate.
+
+Its round-trip fixture carries BOTH blank-line paragraph breaks AND a single-newline break inside one paragraph, because the mod treats them differently (SplitLines drops blank parts) and a sanitiser that only ate doubled newlines would still corrupt the second case. Four mutation probes prove the guards load-bearing: a newline sanitiser trips 4 tests, removing the unchanged-map guard trips 1, a fresh insert instead of read-modify-write trips 2, writing Some("") trips 2.
+
+REFUSED apply_row_meta with a blocking reason, not a preference: T-214 recorded that build_mission_doc omits meta.briefing when empty while compile_export always emits it, and left that divergence alone. It is currently INVISIBLE because both sides are empty — threading a real value in makes the mirror wrong in a newly visible way. Given T-367 landed a 400 for exactly the string-where-the-object-goes mistake, mixing them here is how that confusion gets re-minted.
+
+Environment note worth keeping: /var/tmp is NOT shared between container and host, so a dir created in the container is invisible to host cargo."""
+surfaces = ["DATA"]
+targets = ["website"]
+title = "One doc mutator to author per-faction briefing prose"

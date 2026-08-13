@@ -1,0 +1,25 @@
+__keys = [
+    "id",
+    "title",
+    "summary",
+    "program",
+    "surfaces",
+    "impact",
+    "status",
+    "order",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 271
+executor = "claude-code"
+id = "T-297"
+impact = ["registry-hygiene"]
+order = 2297
+program = "infra"
+status = "shipped"
+stream = "infra"
+summary = "tools/tbd-tools and xtask are workspace members (Cargo.toml:8-16) but no gate covers their formatting: Makefile:80 wasm-ci scopes to map-engine crates, Makefile:105 rust-fmt cds into apps/website/api, Makefile:284 ci-local-leptos scopes to website-frontend, and ci.yml:55 runs cargo fmt --check under working-directory apps/website/api. Nobody runs cargo fmt --all. Result: 12 files / 32 hunks are unformatted on main. Format them and add an --all check to the workspace gate so it cannot drift again."
+surfaces = ["REG"]
+targets = ["root"]
+title = "cargo fmt --all is ungated — 12 files drifted"

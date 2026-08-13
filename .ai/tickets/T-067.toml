@@ -1,0 +1,45 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "status",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "spec",
+    "slices",
+    "unblocks",
+    "route",
+    "branch",
+    "stream",
+    "targets",
+    "executor",
+]
+__ord = 54
+branch = "ticket/T-067"
+executor = "claude-code"
+id = "T-067"
+impact = [
+    "perf",
+    "state",
+]
+order = 670
+program = "scale"
+route = "/missions/:id/edit"
+slices = [
+    "T-067.0",
+    "T-067.0.1",
+    "T-067.1",
+]
+spec = "docs/specs/Mission_Creator_Architecture/t067_spatial_chunks.md"
+status = "shipped"
+stream = "mission-creator"
+summary = "Bulk-paste slot-add-bulk patch; chunk bucket scaffolding; CPU viewport cull deferred (T-067.0.1 revert). Lazy RAM + GPU cull follow-on."
+surfaces = [
+    "MAP",
+    "DATA",
+]
+targets = ["website"]
+title = "Spatial chunks"
+unblocks = ["T-068"]

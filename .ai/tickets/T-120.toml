@@ -1,0 +1,36 @@
+__keys = [
+    "id",
+    "order",
+    "program",
+    "stream",
+    "targets",
+    "executor",
+    "status",
+    "surfaces",
+    "impact",
+    "title",
+    "summary",
+    "milestone",
+    "depends_on",
+]
+__ord = 94
+depends_on = [
+    "T-114",
+    "T-115",
+    "T-117",
+]
+executor = "human"
+id = "T-120"
+impact = ["api"]
+milestone = "M1"
+order = 1200
+program = "infra"
+status = "queued"
+stream = "infra"
+summary = "Pinned game/mod version soak; golden-mission smoke on staging server."
+surfaces = ["DATA"]
+targets = [
+    "mod",
+    "website",
+]
+title = "Staging soak + golden mission smoke"
