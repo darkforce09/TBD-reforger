@@ -1,4 +1,4 @@
-//! The container↔host bridge — the shared Rust form of `scripts/lib/hostrun.sh`.
+//! The container↔host bridge. This module IS the bridge — `scripts/lib/hostrun.sh` is gone (T-903).
 //!
 //! T-853 lifted this out of `playtest_server/host.rs` so the playtest server and the `wave.sh` port
 //! depend on ONE implementation. Before the lift there were two, and the second was about to be
@@ -85,8 +85,9 @@
 //! over the session bus). Reimplementing that is a large, fragile job with no upside; the shim's own
 //! job was only ever "pick the right one and exec it", which is four lines. So this module spawns it.
 //!
-//! `scripts/lib/hostrun.sh` is left ON DISK untouched — `scripts/platform/wave.sh` sourced it until
-//! T-902 deleted the bash driver. T-903 deletes this leftover. Do not delete it in T-902.
+//! T-903 deleted `scripts/lib/hostrun.sh`. This module is the only remaining bridge: callers go
+//! through [`Host`], not a sourced bash shim. `scripts/platform/wave.sh` sourced the `.sh` until
+//! T-902 deleted the bash driver.
 //!
 //! cwd is preserved by `distrobox-host-exec`, so relative paths behave the same either way.
 
@@ -116,7 +117,7 @@ const BRIDGES: &[&str] = &["distrobox-host-exec", "host-spawn"];
 /// two can never disagree about what "in a container" means.
 ///
 /// NOTE for the `wave.sh` port: `scripts/platform/wave.sh:168` carries a THIRD clause,
-/// `|| [ -n "${container:-}" ]`, which `scripts/lib/hostrun.sh` does not. The two-clause form here
+/// `|| [ -n "${container:-}" ]`, which `scripts/lib/hostrun.sh` did not. The two-clause form here
 /// is the one both existing Rust callers were built and measured against, so the lift keeps it
 /// exactly. Widening it is a behaviour change and belongs in its own ticket with its own measurement.
 pub fn in_container() -> bool {

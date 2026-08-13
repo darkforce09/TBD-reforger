@@ -99,7 +99,7 @@ fn boot(root: &Path, mut opts: Opts) -> Result<u8> {
         return Ok(env_fail(
             "no host bridge (distrobox-host-exec/host-spawn) — cannot reach the real machine",
             Some(
-                "See scripts/lib/hostrun.sh: the container has no C toolchain and an older glibc, so the game binary cannot run in here at all.",
+                "See xtask/src/hostrun.rs: the container has no C toolchain and an older glibc, so the game binary cannot run in here at all.",
             ),
         ));
     }

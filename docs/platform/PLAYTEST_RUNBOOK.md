@@ -45,7 +45,7 @@ factory's 339+ tickets have nothing left blocking them.
 **Everything in this runbook runs on the HOST** — your Bazzite/Fedora machine, not an agent
 container. Agent shells are `debian:12` with glibc 2.36 and no C toolchain; `cargo` dies with
 `linker cc not found` and host binaries die with `GLIBC_2.39 not found`
-([`scripts/lib/hostrun.sh:5-17`](../../scripts/lib/hostrun.sh)). Neither means anything is broken.
+([`xtask/src/hostrun.rs`](../../xtask/src/hostrun.rs)). Neither means anything is broken.
 You are the host, so just run them.
 
 Repo root is `/home/Samuel/Projects/TBD-Reforger`. Every command below assumes you are there:

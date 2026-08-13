@@ -69,7 +69,7 @@
 //! | file | owns |
 //! |---|---|
 //! | `playtest_server.rs` | the header record, CLI parsing, `usage_fail`/`env_fail`, preflight, orchestration |
-//! | `playtest_server/host.rs` | the `scripts/lib/hostrun.sh` bridge — container detection, `distrobox-host-exec`/`host-spawn` |
+//! | `playtest_server/host.rs` | re-export of [`crate::hostrun`] — container detection, `distrobox-host-exec`/`host-spawn` |
 //! | `playtest_server/lifecycle.rs` | the tri-state liveness probe, `kill_run`, the run lock, `assert_no_live_server`, `--selftest` |
 //! | `playtest_server/render.rs` | the three former `python3` sites — backend config patch, admin list, `server.json` |
 //! | `playtest_server/logread.rs` | every `grep` against `server.out` — boot phase, the addon hard gate, the error dump |
@@ -394,7 +394,7 @@ fn main_with(root: &Path, home: &str, host: &Host, o: Opts) -> u8 {
     if !host.require_host() {
         return env_fail(
             "no host bridge (distrobox-host-exec/host-spawn) — cannot reach the real machine",
-            "See scripts/lib/hostrun.sh: the container has an older glibc, so the game binary cannot run in here at all.",
+            "See xtask/src/hostrun.rs: the container has an older glibc, so the game binary cannot run in here at all.",
         );
     }
     if !is_executable(&server_bin) {
