@@ -9,7 +9,7 @@
 //! fail-fast, every step runs.
 
 use super::{
-    base, changed, db, git_stdout_lossy, host, lock::GateState, migrate, schema, touch, trunk, Ctx,
+    Ctx, base, changed, db, git_stdout_lossy, host, lock::GateState, migrate, schema, touch, trunk,
 };
 use crate::{wprint, wprintln};
 

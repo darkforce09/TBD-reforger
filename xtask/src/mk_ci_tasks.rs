@@ -8,14 +8,14 @@
 //! the successor pins are `ci_local_step_set_is_frozen` (`mk_ci_tests.rs`, the composite's step
 //! list) and `gate_t468`'s `task_pins` (the three Class-R rows, at runtime).
 
-use super::{verify_doc_layout, Lane, Step, Task};
+use super::{Lane, Step, Task, verify_doc_layout};
 use crate::codegen_schema::codegen;
 use crate::gate_no_python::verify_no_python;
 use crate::golden_gate::map_object_golden;
 use crate::node_free::{verify_file_length, verify_no_node};
 use crate::root::find_repo_root;
 use crate::schema_gates::{
-    citations, map_glyphs, map_object_enums, n10_tile_budget, n6_sentence, t090_specs,
+    citations, map_glyphs, map_object_enums, n6_sentence, n10_tile_budget, t090_specs,
     type_inventory, validate_all,
 };
 use crate::shell_free::verify_no_shell;

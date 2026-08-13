@@ -125,7 +125,12 @@ fn repo_root() -> Result<PathBuf> {
 
 fn run_at(root: &Path, label: Label) -> Result<u8> {
     println!("==> tracked language ban (T-904 hard zero; no inventory)");
-    let (examined, hits, unreadable, ls_ok) = walk(root)?;
+    let Walk {
+        examined,
+        hits,
+        unreadable,
+        ls_ok,
+    } = walk(root)?;
 
     if !ls_ok {
         println!("FAIL: git ls-files -z exited non-zero — the walk did not run.");
@@ -200,15 +205,27 @@ fn ok_footer(label: Label, examined: usize) {
     }
 }
 
+struct Walk {
+    examined: usize,
+    hits: Vec<(String, String)>,
+    unreadable: Vec<String>,
+    ls_ok: bool,
+}
+
 /// Walk every tracked path. `ls_ok` is false when git itself failed.
-fn walk(root: &Path) -> Result<(usize, Vec<(String, String)>, Vec<String>, bool)> {
+fn walk(root: &Path) -> Result<Walk> {
     let out = std::process::Command::new("git")
         .args(["ls-files", "-z"])
         .current_dir(root)
         .output()
         .context("git ls-files -z")?;
     if !out.status.success() {
-        return Ok((0, Vec::new(), Vec::new(), false));
+        return Ok(Walk {
+            examined: 0,
+            hits: Vec::new(),
+            unreadable: Vec::new(),
+            ls_ok: false,
+        });
     }
     let mut examined = 0usize;
     let mut hits = Vec::new();
@@ -225,7 +242,12 @@ fn walk(root: &Path) -> Result<(usize, Vec<(String, String)>, Vec<String>, bool)
             Err(_) => unreadable.push(p),
         }
     }
-    Ok((examined, hits, unreadable, true))
+    Ok(Walk {
+        examined,
+        hits,
+        unreadable,
+        ls_ok: true,
+    })
 }
 
 fn classify(root: &Path, rel: &str) -> std::io::Result<Option<String>> {
