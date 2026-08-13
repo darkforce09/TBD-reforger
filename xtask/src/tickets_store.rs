@@ -480,16 +480,34 @@ mod tests {
         let original = if json_path.is_file() {
             fs::read_to_string(&json_path).expect("read monolith")
         } else {
-            let out = std::process::Command::new("git")
-                .args(["show", "HEAD:.ai/tickets/registry.json"])
+            // After the cutover commit deletes the blob, gold is the parent of that delete.
+            let del = std::process::Command::new("git")
+                .args([
+                    "log",
+                    "-1",
+                    "--diff-filter=D",
+                    "--pretty=%H",
+                    "--",
+                    ".ai/tickets/registry.json",
+                ])
                 .current_dir(root)
                 .output()
-                .expect("git show");
+                .expect("git log delete");
+            let sha = String::from_utf8_lossy(&del.stdout).trim().to_string();
             assert!(
-                out.status.success(),
-                "need a cutover monolith: working tree or HEAD:.ai/tickets/registry.json"
+                !sha.is_empty(),
+                "no deleting commit for .ai/tickets/registry.json"
             );
-            String::from_utf8(out.stdout).unwrap()
+            let shown = std::process::Command::new("git")
+                .args(["show", &format!("{sha}^:.ai/tickets/registry.json")])
+                .current_dir(root)
+                .output()
+                .expect("git show cutover monolith");
+            assert!(
+                shown.status.success(),
+                "git show {sha}^:.ai/tickets/registry.json failed"
+            );
+            String::from_utf8(shown.stdout).unwrap()
         };
         let parsed: Value = serde_json::from_str(&original).expect("parse monolith");
         let gold = format_json_unicode_preserve(&parsed).expect("emit gold");
