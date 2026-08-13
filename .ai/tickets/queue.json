@@ -13,34 +13,6 @@
       "branch": "ticket/T-090"
     },
     {
-      "id": "T-898",
-      "title": "verify file-length scans ZERO files \u2014 SIZE-1/SIZE-3 is enforced by nothing",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-898"
-    },
-    {
-      "id": "T-899",
-      "title": "T-853 Phase 1.5: make verify file-length actually scan something",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-899"
-    },
-    {
-      "id": "T-900",
-      "title": "T-853 Phase 4: retire doc references to things that no longer exist",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-900"
-    },
-    {
-      "id": "T-901",
-      "title": "T-853 Phase 7a: gate the CI run: blocks before bash relocates there",
-      "status": "ready",
-      "spec": "docs/platform/t853_shell_to_xtask_waves.md",
-      "branch": "ticket/T-901"
-    },
-    {
       "id": "T-902",
       "title": "T-853 Phase 6: retire wave.sh \u2014 the verdict diff, then the deletion",
       "status": "ready",

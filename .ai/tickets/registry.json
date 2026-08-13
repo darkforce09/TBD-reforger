@@ -1,5 +1,5 @@
 {
-  "next_id": 905,
+  "next_id": 910,
   "tickets": [
     {
       "id": "T-001",
@@ -21830,7 +21830,7 @@
       "impact": [
         "dx"
       ],
-      "status": "ready",
+      "status": "shipped",
       "executor": "claude-code",
       "targets": [
         "root"
@@ -21851,7 +21851,7 @@
       "impact": [
         "dx"
       ],
-      "status": "ready",
+      "status": "shipped",
       "executor": "claude-code",
       "targets": [
         "root"
@@ -21872,7 +21872,7 @@
       "impact": [
         "dx"
       ],
-      "status": "ready",
+      "status": "shipped",
       "executor": "claude-code",
       "targets": [
         "root"
@@ -21893,7 +21893,7 @@
       "impact": [
         "dx"
       ],
-      "status": "ready",
+      "status": "shipped",
       "executor": "claude-code",
       "targets": [
         "root"
@@ -21964,6 +21964,112 @@
       "stream": "infra",
       "parallel_ok": false,
       "order": 5840,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md"
+    },
+    {
+      "id": "T-905",
+      "title": "Split T-159 frontend SIZE-3 files (37) the T-899 allowlist is holding",
+      "summary": "T-899 walked the Rust tree and allowlisted 37 apps/website/frontend/src/*.rs files over 1000 lines with reason+expires. Do not raise the threshold. Split them so the SIZE-3 rows can drop. Files: arsenal.rs, arsenal_rules.rs, asset_catalog.rs, attributes.rs, client.rs, content.rs, context_menu.rs, deployments.rs, dto.rs, eden_dock_left.rs, eden_dock_right.rs, eden_help.rs, eden_layout.rs, eden_settings.rs, eden_toolbelt.rs, eden_top_strip.rs, eden_tree.rs, eden_zones.rs, editor_ops.rs, event_hub.rs, event_manager.rs, los_tool.rs, mission_commands.rs, mission_editor.rs, mission_hydrate.rs, mission_overview.rs, missions.rs, mortar.rs, orbat_manager.rs, outliner.rs, personnel.rs, place_helpers.rs, ruler_tool.rs, server_control.rs, ui.rs, validation_panel.rs, yrs_persist.rs. Not dispatched in T-853 waves 234-235 (would collide with live editor work). Not Track B.",
+      "status": "queued",
+      "order": 5850,
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md"
+    },
+    {
+      "id": "T-906",
+      "title": "Split T-145 API SIZE-3 files (7) the T-899 allowlist is holding",
+      "summary": "T-899 allowlisted 7 live website-api files over 1000 lines. Split them; drop the SIZE-3 rows. Files: apps/website/api/src/app.rs, handlers/admin.rs, handlers/events.rs, handlers/missions.rs, handlers/oauth.rs, handlers/telemetry.rs, services/mission_compile.rs. Do NOT split apps/website/api/src/contract/generated/faction_library.rs \u2014 generated schema-codegen output, expires 2027-08-13, do-not-split. Not dispatched in waves 234-235. Not Track B.",
+      "status": "queued",
+      "order": 5860,
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md"
+    },
+    {
+      "id": "T-907",
+      "title": "Split T-151 map-engine SIZE-3 files (11) the T-899 allowlist is holding",
+      "summary": "T-899 allowlisted 11 map-engine files over 1000 lines. Split them; drop the SIZE-3 rows. crates/map-engine-core: dem/sample.rs, doc/apply_faction.rs, doc/store.rs, mission/compile.rs, mission/flatten.rs, mission/validate.rs, slots_gpu.rs, world/residency.rs. crates/map-engine-render: draw_order.rs, engine.rs, scene.rs. Not dispatched in T-853 waves 234-235. Not Track B.",
+      "status": "queued",
+      "order": 5870,
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md"
+    },
+    {
+      "id": "T-908",
+      "title": "Split T-853 xtask/tools SIZE-3 files (8) the T-899 allowlist is holding",
+      "summary": "T-899 allowlisted 8 xtask/tools files over 1000 lines. Split them; drop the SIZE-3 rows. xtask/src: cmds.rs, main.rs, schema_gates.rs. tools/tbd-tools/src: map/sap.rs, smokes.rs, world/aux.rs, world/build.rs, world/gates.rs. Do not split in waves 234-235 \u2014 T-902/T-903/T-904 own overlapping xtask paths. Not Track B.",
+      "status": "queued",
+      "order": 5880,
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
+      "spec": "docs/platform/t853_shell_to_xtask_waves.md"
+    },
+    {
+      "id": "T-909",
+      "title": "T-468 still regex-walks ci.yml run: \u2014 not T-901 serde_norway",
+      "summary": "Wave 233 adversarial verifier NIT on f649f50d / 5a974bc6. xtask/src/gate_t468.rs still matches `^\\s+run:` on ci.yml. T-901 production path is serde_norway::from_str in xtask/src/verify_ci_shell.rs. The two can disagree on mapping-form `run:`. Scoped to the schema-job pin; fail-closed. REPRO: rg -n \"run_re|^\\\\s+run:\" xtask/src/gate_t468.rs ; contrast verify_ci_shell.rs serde_norway::from_str. Not a T-901 miss \u2014 T-468 is a different gate. Filed deferred; do not fix in 233-235.",
+      "status": "deferred",
+      "order": 5890,
+      "notes": "wave 233 verifier NIT; T-468 regex vs T-901 serde_norway; copy-pasteable repro in summary",
+      "program": "infra",
+      "surfaces": [
+        "CI"
+      ],
+      "impact": [
+        "dx"
+      ],
+      "executor": "claude-code",
+      "targets": [
+        "root"
+      ],
+      "stream": "infra",
+      "parallel_ok": true,
       "spec": "docs/platform/t853_shell_to_xtask_waves.md"
     }
   ]
