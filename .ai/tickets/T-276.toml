@@ -1,28 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 250
-executor = "claude-code"
 id = "T-276"
-impact = ["contract"]
-order = 2940
-program = "eden"
-status = "shipped"
-stream = "mission-creator"
-summary = "mission.schema.json:446 is a bare string with no enum and no minLength. TBD_MarkerIcons.c:43-45,165 falls back to a dot and logs once. This is the exact degradation cargoContainer was closed to prevent."
-surfaces = ["DATA"]
-targets = [
-    "root",
-    "mod",
-]
+kind = "work"
 title = "Close the marker.icon vocabulary"
+summary = "mission.schema.json:446 is a bare string with no enum and no minLength. TBD_MarkerIcons.c:43-45,165 falls back to a dot and logs once. This is the exact degradation cargoContainer was closed to prevent."
+status = "shipped"
+order = 2940
+executor = "claude-code"
+
+[scope.repo]
+layers = ["docs"]

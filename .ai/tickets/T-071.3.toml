@@ -1,7 +1,10 @@
-__keys = [
-    "id",
-    "parent",
-]
-__ord = 0
 id = "T-071.3"
+kind = "work"
+title = "T-071.3"
+summary = "T-071.3"
+status = "shipped"
+order = 710
 parent = "T-071"
+
+[scope.repo]
+layers = ["docs"]

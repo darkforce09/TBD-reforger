@@ -1,27 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "shipped_at",
-]
-__ord = 177
-executor = "claude-code"
 id = "T-203"
-impact = ["contract"]
-order = 2210
-program = "eden"
-shipped_at = "d039a6fe"
-status = "shipped"
-stream = "mission-creator"
-summary = "TBD_RadioPlan.c:46-67, TBD_RadioService.c:119-135 and TBD_RadioTuner are complete and read all five net fields. flatten emits nothing and no UI authors nets. This is also the partner VOIP bridge contract (mission.schema.json:285)."
-surfaces = ["DATA"]
-targets = ["website"]
+kind = "work"
 title = "Emit radioPlan — unlocks the seven-file radio subsystem"
+summary = "TBD_RadioPlan.c:46-67, TBD_RadioService.c:119-135 and TBD_RadioTuner are complete and read all five net fields. flatten emits nothing and no UI authors nets. This is also the partner VOIP bridge contract (mission.schema.json:285)."
+status = "shipped"
+order = 2210
+executor = "claude-code"
+shipped_at = "d039a6fe"
+
+[scope.website.editor]
+chrome = []

@@ -1,27 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 501
-executor = "claude-code"
 id = "T-527"
-impact = ["frontend"]
-order = 3367
-priority = 0
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "Wave 47 cold gate FAIL fmt (changed). apps/website/frontend/src/event_manager.rs import order (badge_class/cn vs AdminGate) fails rustfmt --check after T-332 Attach Mission UI. Cure: rustfmt that file only. Owns: apps/website/frontend/src/event_manager.rs."
-surfaces = ["FE"]
-targets = ["website"]
+kind = "work"
 title = "W47 hotfix: rustfmt event_manager.rs imports after T-332"
+summary = "Wave 47 cold gate FAIL fmt (changed). apps/website/frontend/src/event_manager.rs import order (badge_class/cn vs AdminGate) fails rustfmt --check after T-332 Attach Mission UI. Cure: rustfmt that file only. Owns: apps/website/frontend/src/event_manager.rs."
+status = "shipped"
+order = 3367
+executor = "claude-code"
+priority = 0
+
+[scope.website.editor]
+chrome = []

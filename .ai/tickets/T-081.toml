@@ -1,34 +1,10 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "status",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "route",
-    "branch",
-    "stream",
-    "targets",
-    "executor",
-    "notes",
-]
-__ord = 68
-branch = "ticket/T-081"
-executor = "claude-code"
 id = "T-081"
-impact = ["ui"]
-notes = "SUPERSEDED BY T-795 (2026-08-09 UX batch): widget keys renumbered to Eden's 1/2/3, gizmo render + interactive rotate ring land there; close this when T-795 ships"
-order = 810
-program = "eden"
-route = "/missions/:id/edit"
-status = "idea"
-stream = "mission-creator"
-summary = "On-map transform gizmo and snap grid."
-surfaces = [
-    "MAP",
-    "XFORM",
-]
-targets = ["website"]
+kind = "work"
 title = "Transform widget + snap grid"
+summary = "On-map transform gizmo and snap grid."
+status = "idea"
+executor = "claude-code"
+notes = "SUPERSEDED BY T-795 (2026-08-09 UX batch): widget keys renumbered to Eden's 1/2/3, gizmo render + interactive rotate ring land there; close this when T-795 ships"
+
+[scope.website.editor]
+chrome = []

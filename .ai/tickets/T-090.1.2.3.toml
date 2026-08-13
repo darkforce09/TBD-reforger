@@ -1,15 +1,12 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-090.1.2.3"
-parent = "T-090"
-spec = "docs/specs/Mission_Creator_Architecture/t090_1_2_3_basemap_tile_prefetch.md"
+kind = "work"
+title = "T-090.1.2.3 — Basemap tile prefetch & pan stability"
+summary = "T-090.1.2.3 — Basemap tile prefetch & pan stability"
 status = "cancelled"
-targets = ["website"]
+order = 900
+spec = "docs/specs/Mission_Creator_Architecture/t090_1_2_3_basemap_tile_prefetch.md"
+executor = "claude-code"
+parent = "T-090"
+
+[scope.website.editor]
+chrome = []

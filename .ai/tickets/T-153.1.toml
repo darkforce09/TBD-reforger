@@ -1,19 +1,14 @@
-__keys = [
-    "id",
-    "parent",
-    "executor",
-    "targets",
-    "status",
-    "shipped_at",
-    "spec",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-153.1"
+kind = "work"
+title = "T-153 — Faction Library (reusable factions + palette swap)"
+summary = "T-153 — Faction Library (reusable factions + palette swap)"
+status = "shipped"
+order = 1510
+spec = "docs/specs/Mission_Creator_Architecture/t153_faction_library.md"
+executor = "claude-code"
 notes = "Frontend: FactionManagerDialog (+ArsenalPicksPanel extraction), buildFactionTree palette (vanilla dump deleted), drop path ensureFaction/ensureSquadFor + role loadout on slot. Vehicles listed, placement = T-070."
 parent = "T-153"
 shipped_at = "c4ccb9c3"
-spec = "docs/specs/Mission_Creator_Architecture/t153_faction_library.md"
-status = "shipped"
-targets = ["website"]
+
+[scope.website.editor]
+chrome = []

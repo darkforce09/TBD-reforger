@@ -1,6 +1,6 @@
 # Ticket pipeline
 
-**Source of truth:** one `T-*.toml` file per parent and per existing slice_plan/slices child, plus the [`ROOT`](ROOT) marker. Never hand-edit generated `docs/TICKET_*.md`.
+**Source of truth:** one `T-*.toml` file per parent and per child, plus the [`ROOT`](ROOT) marker. Files are encoding C (flat `status` + sibling `order`, `[scope.*]` tables, `kind = "program"|"work"`). Never hand-edit generated `docs/TICKET_*.md`.
 
 **Monolith cutover:** last commit that contained `.ai/tickets/registry.json` is `5035931ce80324db81d84fb9535433689d72f208` (`git show 5035931ce80324db81d84fb9535433689d72f208:.ai/tickets/registry.json`).
 

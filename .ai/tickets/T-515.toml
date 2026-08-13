@@ -1,33 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 489
-executor = "claude-code"
 id = "T-515"
-impact = [
-    "infra",
-    "tests",
-]
-order = 3355
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "Wave 44 residual (CLEAN after T-513/514; MINOR from verifier). db_migrate in wave.sh only checks schema/object counts. A SQL-only claim migration like T-335 0016 can drop the claim UPDATE yet keep REFRESH and still gate-green when claimable orphans are 0. Mitigated by synthetic non-vacuity in the slice report, not by the gate. Cure: gate asserts migration body contains the claim UPDATE (Class-R on 0016) and/or runs a planted-orphan migrate probe."
-surfaces = [
-    "CI",
-    "INFRA",
-]
-targets = ["website"]
+kind = "work"
 title = "Cold gate db_migrate hollow for SQL-only claim migrations"
+summary = "Wave 44 residual (CLEAN after T-513/514; MINOR from verifier). db_migrate in wave.sh only checks schema/object counts. A SQL-only claim migration like T-335 0016 can drop the claim UPDATE yet keep REFRESH and still gate-green when claimable orphans are 0. Mitigated by synthetic non-vacuity in the slice report, not by the gate. Cure: gate asserts migration body contains the claim UPDATE (Class-R on 0016) and/or runs a planted-orphan migrate probe."
+status = "shipped"
+order = 3355
+executor = "claude-code"
+priority = 1
+
+[scope.website.editor]
+chrome = []

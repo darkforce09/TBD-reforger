@@ -1,19 +1,14 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "shipped_at",
-    "spec",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-159.20"
+kind = "work"
+title = "T-159.20 — Save Version + Export (compile from MissionDoc)"
+summary = "T-159.20 — Save Version + Export (compile from MissionDoc)"
+status = "shipped"
+order = 1570
+spec = "docs/platform/t159_20_save_export.md"
+executor = "claude-code"
 notes = "Rust compile + Export + Save POST live 201/409/400. Verify: .ai/artifacts/t159_20_verify_log.md"
 parent = "T-159"
 shipped_at = "c0e11d54"
-spec = "docs/platform/t159_20_save_export.md"
-status = "shipped"
-targets = ["website"]
+
+[scope.website.editor]
+chrome = []

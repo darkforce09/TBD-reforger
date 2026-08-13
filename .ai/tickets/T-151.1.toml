@@ -1,20 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-151.1"
+kind = "work"
+title = "T-151.1 — basemap lane: TBDS satellite, hillshade, grid, pyramid fallback"
+summary = "T-151.1 — basemap lane: TBDS satellite, hillshade, grid, pyramid fallback"
+status = "shipped"
+order = 1500
+spec = "docs/specs/Mission_Creator_Architecture/t151_1_basemap_lane.md"
+executor = "claude-code"
 parent = "T-151"
 shipped_at = "3ab81587"
-spec = "docs/specs/Mission_Creator_Architecture/t151_1_basemap_lane.md"
-status = "shipped"
-targets = [
-    "root",
-    "website",
-]
+
+[scope.repo]
+layers = ["docs"]

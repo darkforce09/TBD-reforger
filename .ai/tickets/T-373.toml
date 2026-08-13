@@ -1,28 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-    "shipped_at",
-]
-__ord = 347
-executor = "claude-code"
 id = "T-373"
-impact = ["platform-lifecycle"]
-order = 3189
-priority = 0
-program = "platform"
-shipped_at = "b2a29e43"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Updating a library faction from a side destroys its emblem and every vehicle label"
 summary = """
 The sharpest finding of the CRDT/round-trip audit. `PUT /factions/:id` is a WHOLE-DOCUMENT replace, and the body handed to it is derived entirely from the mission document with two fields hardcoded to None.
 
@@ -49,9 +27,11 @@ THE EMPTY SIDE is refused before any request, and scoped deliberately to a NO-CO
 20/20 assertions driving the REAL button in headless Chrome, every verdict read back out of the stored document over HTTP, and each assertValue read by hand rather than trusting an exit code (T-386). Two probe traps recorded: `document.querySelector('select')` and `button[aria-label="OPFOR"]` are both AMBIGUOUS in the editor — the Eden top strip carries its own selects and its own faction chips and wins document order, so both silently drove the wrong widget.
 
 Worth knowing: NO UI AUTHORS AN EMBLEM TODAY — it appears nowhere in the frontend except dto.rs:583 and the schema calls it 'UI later'. So it is populated only by seeds and direct writes, yet two live rows carry one, which is exactly why the loss was silent and would have stayed unnoticed."""
-surfaces = [
-    "FRONTEND",
-    "API",
-]
-targets = ["website"]
-title = "Updating a library faction from a side destroys its emblem and every vehicle label"
+status = "shipped"
+order = 3189
+executor = "claude-code"
+priority = 0
+shipped_at = "b2a29e43"
+
+[scope.website.editor]
+chrome = []

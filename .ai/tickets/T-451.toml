@@ -1,32 +1,16 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 425
-executor = "claude-code"
 id = "T-451"
-impact = ["platform-lifecycle"]
-order = 3290
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "ticket set-status mutates without schema check preflight"
 summary = """
 Residual from T-237 / wave 16 adversarial. ticket ship/done now call require_check_ok before status write, but cmd_set_status (and mark_ready etc.) still mutate registry without loading .ai/tickets/schema.json — an operator can force a red registry to a status.
 
 Repro: break a required field in registry.json; ./scripts/ticket check RED; ./scripts/ticket set-status T-001 shipped still mutates.
 
 Cure: gate mutators through require_check_ok (or document intentional escape hatch + refuse in CI)."""
-surfaces = ["INFRA"]
-targets = ["root"]
-title = "ticket set-status mutates without schema check preflight"
+status = "shipped"
+order = 3290
+executor = "claude-code"
+priority = 2
+
+[scope.repo]
+layers = ["xtask"]

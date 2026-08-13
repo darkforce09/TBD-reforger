@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "shipped_at",
-]
-__ord = 207
-executor = "claude-code"
 id = "T-233"
-impact = ["platform-pages"]
-order = 2510
-program = "platform"
-shipped_at = "2026-07-26"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Deployments page shows fabricated K/D and win rate as real telemetry"
 summary = """
 deployments.rs:18-23 defines MOCK_KD 2.45, MOCK_WIN_RATE 68% and fake favourite weapon/asset, rendered at :132-133 as live stats. Only total_operations is real.
 
@@ -41,6 +21,10 @@ Strong hypothesis for its reported 126/0, from T-235's measurement: the shared C
 Everything else about the slice stands and I want it back — the command_win_rate naming call, read-the-view-rather-than-recompute, and null-over-0.00.
 
 RE-LANDED and green. I reverted this earlier because its test failed on a fresh isolated DB, and T-235's hypothesis was that the SHARED CARGO_TARGET_DIR served a stale or foreign binary so its original '126 passed' was never trustworthy. T-390 fixed exactly that (private target-gate-api/target-gate-mapengine with CARGO_INCREMENTAL=0) and the gate now runs the DB suite against a real provisioned database instead of skipping it. It passes under both fixes, which is the first time this ticket has been *meaningfully* tested. The revert was correct on the evidence available then; the evidence was the defective gate."""
-surfaces = ["SHELL"]
-targets = ["website"]
-title = "Deployments page shows fabricated K/D and win rate as real telemetry"
+status = "shipped"
+order = 2510
+executor = "claude-code"
+shipped_at = "2026-07-26"
+
+[scope.website.editor]
+chrome = []

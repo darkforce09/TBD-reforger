@@ -1,15 +1,12 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-181.20"
+kind = "work"
+title = "T-181.20"
+summary = "T-181.20"
+status = "shipped"
+order = 1810
+executor = "claude-code"
 notes = "Golden fixtures @ bae5d1d1. slot-loadout-coverage.json is the FIRST golden to carry a slot loadout block (all 10 gear refs, cargo at the schema minimum, the primary/optic/magazine triple T-181.10 fixed, plus a no-loadout control); resource names are real vanilla GUIDs from the registry export, not invented. empty-warning-fields.json carries every empty the SCHEMA actually permits. Goldens are globbed (xtask/src/schema_gates.rs:1316) so both are auto-discovered — 4/4 PASS. Twelve negative-control mutants each failed with the exact expected message, proving the loadout fixture reaches the loadout $defs rather than passing vacuously. DISPROVED THE BRIEF'S PREMISE by measurement — see T-181.26 and T-181.31."
 parent = "T-181"
-status = "shipped"
-targets = ["shared"]
+
+[scope.schema]
+layers = ["mission"]

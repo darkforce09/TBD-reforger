@@ -1,24 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 263
-executor = "claude-code"
 id = "T-289"
-impact = ["platform-server"]
-order = 3070
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Server-host deploy agent for start, stop and status"
 summary = """
 The only start/stop in the repo is out-of-band bash (deploy-staging.sh:287-289 systemctl restart). The API has no shell-out, no SSH and no container control. Needs an authenticated agent or a token-guarded local socket the API can drive.
 
@@ -44,6 +26,9 @@ THIS TICKET MUST PROVIDE:
    strictly larger than process control. Decide whether those need a fifth scope or a mod-side
    command sink. Related: `kick` has no target at all -- `RconInput` has no player field and
    `server_control.rs:43` posts bare {"action":"kick"}, so even with a transport it cannot name who."""
-surfaces = ["SHELL"]
-targets = ["website"]
-title = "Server-host deploy agent for start, stop and status"
+status = "shipped"
+order = 3070
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

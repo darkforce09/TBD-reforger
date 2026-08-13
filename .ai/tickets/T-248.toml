@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 222
-executor = "claude-code"
 id = "T-248"
-impact = ["discord"]
-order = 2660
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "The clear-cookie string is built after the missing_code and invalid_state early returns, so both leave the ten-minute CSRF cookie live. DISCORD_CLIENT_SECRET and DISCORD_REDIRECT_URL also have no startup guard, so a misconfigured secret is reported to the user as discord_unreachable — a misconfig disguised as an outage."
-surfaces = ["CONN"]
-targets = ["website"]
+kind = "work"
 title = "oauth_state cookie survives the two early-return error paths"
+summary = "The clear-cookie string is built after the missing_code and invalid_state early returns, so both leave the ten-minute CSRF cookie live. DISCORD_CLIENT_SECRET and DISCORD_REDIRECT_URL also have no startup guard, so a misconfigured secret is reported to the user as discord_unreachable — a misconfig disguised as an outage."
+status = "shipped"
+order = 2660
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

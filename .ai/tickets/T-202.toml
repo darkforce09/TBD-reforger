@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "shipped_at",
-]
-__ord = 176
-executor = "claude-code"
 id = "T-202"
-impact = ["contract"]
-order = 2200
-program = "eden"
-shipped_at = "a2e6c690"
-status = "shipped"
-stream = "mission-creator"
+kind = "work"
+title = "Emit briefings[] — unlocks briefing prose and all map markers"
 summary = '''
 briefings is absent from ModMissionDocument (flatten.rs:204-218). The mod's briefing screen (TBD_BriefingData.c:423-432) and the entire five-file replicated marker pipeline (TBD_MarkerData.c:132-160) read only this block. Two shipped mod subsystems are dark because of one missing emitter.
 
@@ -41,6 +21,10 @@ VERIFICATION: 218 lib tests --features doc,mission (baseline exactly 209, +9); m
 One licensed contract difference pinned explicitly: hand-authored goldens write `5402`, the emitter writes `5402.0`. Both are {"type":"number"} and both bind to the mod's float x/z; f64 is right because a fractional marker would otherwise be silently moved. The test compares numerically.
 
 OPERATOR-ONLY, and the agent was explicit that NONE of it is verified in-game: icon RENDERING is client-side (TBD_MarkerIcons.Resolve reads the running game's 91-icon config) so a headless server never draws — "spawn" is a compile-verified registered alias to FLAG but the glyph is unproven; markers appearing on a real client map; prose paragraph layout on the briefing screen; and two-client side discipline (BLUFOR not receiving OPFOR's markers).'''
-surfaces = ["DATA"]
-targets = ["website"]
-title = "Emit briefings[] — unlocks briefing prose and all map markers"
+status = "shipped"
+order = 2200
+executor = "claude-code"
+shipped_at = "a2e6c690"
+
+[scope.website.editor]
+chrome = []

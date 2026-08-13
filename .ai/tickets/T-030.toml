@@ -1,33 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "route",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 21
-executor = "claude-code"
 id = "T-030"
-impact = [
-    "state",
-    "persistence",
-]
-order = 300
-program = "eden"
-route = "/missions/:id/edit"
-status = "shipped"
-stream = "mission-creator"
-summary = "Normalized Y.Doc store mirrored to Zustand with persistence."
-surfaces = [
-    "DATA",
-    "MAP",
-]
-targets = ["website"]
+kind = "work"
 title = "Y.Doc state foundation"
+summary = "Normalized Y.Doc store mirrored to Zustand with persistence."
+status = "shipped"
+order = 300
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

@@ -1,22 +1,14 @@
-__keys = [
-    "id",
-    "parent",
-    "executor",
-    "targets",
-    "status",
-    "shipped_at",
-    "spec",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-153.0"
+kind = "work"
+title = "T-153 — Faction Library (reusable factions + palette swap)"
+summary = "T-153 — Faction Library (reusable factions + palette swap)"
+status = "shipped"
+order = 1510
+spec = "docs/specs/Mission_Creator_Architecture/t153_faction_library.md"
+executor = "claude-code"
 notes = "Backend: faction-library.schema.json + goldens/codegen; migration 0006 user_factions; /api/v1/factions CRUD (owner-scoped, contract-validated); tests T1-T8."
 parent = "T-153"
 shipped_at = "e2aec2de"
-spec = "docs/specs/Mission_Creator_Architecture/t153_faction_library.md"
-status = "shipped"
-targets = [
-    "website",
-    "shared",
-]
+
+[scope.repo]
+layers = ["docs"]

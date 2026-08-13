@@ -1,30 +1,11 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "status",
-    "stream",
-    "targets",
-    "executor",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "notes",
-]
-__ord = 719
-executor = "claude-code"
 id = "T-746"
-impact = [
-    "ui",
-    "api",
-]
-notes = "filed by wave-113 adversarial verifier (editor factory)"
-order = 4622
-program = "eden"
-status = "shipped"
-stream = "mission-creator"
-summary = "NIT from the wave-113 verifier. eden_settings.rs ShapeMirror fires GET /missions/:id on each dialog-open edge and PATCHes game_mode optimistically with revert-on-refusal. There is no single-flight between the two: reopening the dialog while a PATCH is still in flight can land a PRE-PATCH row after the optimistic set, so the select shows the old mode until the next open. NOT a request storm — the Effect tracks only the `open` signal, so it is one GET per open edge — and a failed GET honestly clears to SHAPE_UNAVAILABLE_NOTE rather than showing a stale or invented value. The T-694 agent deliberately declined to reuse eden_top_strip::RowMirror's dedupe/debounce/single-flight machinery, correctly noting it exists for the ~30Hz time scrubber and that a <select> emits one settled value; the residue is only this reopen race. Related and worth folding in: eden_top_strip::is_mission_row_id is private, so T-694 carries a byte-identical copy as is_row_id (verified identical today, but two copies of one rule can drift) — making the original pub(crate) deletes the copy. Also mission_commands::ROW_META already holds the row's max_players from boot hydrate but is private with no getter and drops game_mode entirely, which is why the extra GET exists at all. Diagnosis: editor_verify/wave113.md F-5."
-surfaces = ["EDITOR"]
-targets = ["website"]
+kind = "work"
 title = "ShapeMirror has no single-flight between the open-GET and an in-flight game_mode PATCH"
+summary = "NIT from the wave-113 verifier. eden_settings.rs ShapeMirror fires GET /missions/:id on each dialog-open edge and PATCHes game_mode optimistically with revert-on-refusal. There is no single-flight between the two: reopening the dialog while a PATCH is still in flight can land a PRE-PATCH row after the optimistic set, so the select shows the old mode until the next open. NOT a request storm — the Effect tracks only the `open` signal, so it is one GET per open edge — and a failed GET honestly clears to SHAPE_UNAVAILABLE_NOTE rather than showing a stale or invented value. The T-694 agent deliberately declined to reuse eden_top_strip::RowMirror's dedupe/debounce/single-flight machinery, correctly noting it exists for the ~30Hz time scrubber and that a <select> emits one settled value; the residue is only this reopen race. Related and worth folding in: eden_top_strip::is_mission_row_id is private, so T-694 carries a byte-identical copy as is_row_id (verified identical today, but two copies of one rule can drift) — making the original pub(crate) deletes the copy. Also mission_commands::ROW_META already holds the row's max_players from boot hydrate but is private with no getter and drops game_mode entirely, which is why the extra GET exists at all. Diagnosis: editor_verify/wave113.md F-5."
+status = "shipped"
+order = 4622
+executor = "claude-code"
+notes = "filed by wave-113 adversarial verifier (editor factory)"
+
+[scope.website.editor]
+chrome = []

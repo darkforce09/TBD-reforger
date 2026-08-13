@@ -1,68 +1,26 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "slices",
-    "depends_on",
-    "unblocks",
-    "status",
-    "implements",
-    "user_story",
-    "route",
-    "branch",
-    "stream",
-    "targets",
-    "executor",
-    "spec",
-]
-__ord = 58
-branch = "ticket/T-071"
+id = "T-071"
+kind = "program"
+title = "ORBAT Manager modal"
+summary = "ORBAT Manager. T-071.0 SHIPPED via T-177 @ e97a01c6. Remaining authoring SHIPPED via T-180.1–.9 @ cba837b3 (supersedes T-071.1+). Hub: t180_orbat_eden_program.md. Do not implement T-071.1–.4 separately."
+status = "shipped"
+order = 710
+spec = "docs/specs/Mission_Creator_Architecture/t071_orbat_manager_program.md"
+executor = "cursor-docs"
+notes = "needs-operator: frozen unmappable Scope. "
 depends_on = [
     "T-092",
     "T-177",
 ]
-executor = "cursor-docs"
-id = "T-071"
-impact = [
-    "ui",
-    "state",
-    "schema",
-    "compiler",
+unblocks = [
+    "T-068",
+    "T-069",
+    "T-180",
 ]
-implements = [
-    "LEFT-ORBAT-001",
-    "CONN-GROUP-001",
-    "API-ORBAT-001",
-    "ATTR-TAB-004",
-]
-order = 710
-program = "eden"
-route = "/missions/:id/edit"
-slices = [
+children = [
     "T-071.0",
     "T-071.1",
     "T-071.2",
     "T-071.3",
     "T-071.4",
-]
-spec = "docs/specs/Mission_Creator_Architecture/t071_orbat_manager_program.md"
-status = "shipped"
-stream = "mission-creator"
-summary = "ORBAT Manager. T-071.0 SHIPPED via T-177 @ e97a01c6. Remaining authoring SHIPPED via T-180.1–.9 @ cba837b3 (supersedes T-071.1+). Hub: t180_orbat_eden_program.md. Do not implement T-071.1–.4 separately."
-surfaces = [
-    "TOP",
-    "ORBAT",
-    "ATTR",
-]
-targets = ["website"]
-title = "ORBAT Manager modal"
-unblocks = [
-    "T-068",
-    "T-069",
-    "T-180",
 ]
 user_story = "As a mission maker I open ORBAT Manager once to configure all factions, squads, kits, and slotting order without hunting the same slots in two left trees."

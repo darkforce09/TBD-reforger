@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 236
-executor = "claude-code"
 id = "T-262"
-impact = ["platform-lifecycle"]
-order = 2800
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "Grep for FOREIGN KEY or REFERENCES across all seven migrations returns zero. Deleting a mission, event or user orphans every dependent row, and DELETE /events/{id} sets deleted_at only while the confirm dialog claims a cascade. assigned_to, discord_id and reserved_by are unconstrained free text."
-surfaces = ["DATA"]
-targets = ["website"]
+kind = "work"
 title = "Zero foreign keys in the entire schema"
+summary = "Grep for FOREIGN KEY or REFERENCES across all seven migrations returns zero. Deleting a mission, event or user orphans every dependent row, and DELETE /events/{id} sets deleted_at only while the confirm dialog claims a cascade. assigned_to, discord_id and reserved_by are unconstrained free text."
+status = "shipped"
+order = 2800
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

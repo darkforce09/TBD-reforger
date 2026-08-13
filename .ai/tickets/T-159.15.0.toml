@@ -1,20 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "shipped_at",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-159.15.0"
+kind = "work"
+title = "T-159.15.0"
+summary = "T-159.15.0"
+status = "shipped"
+order = 1570
+executor = "claude-code"
 notes = "wgpu boundary collapse; RenderEngine in Leptos wasm."
 parent = "T-159"
 shipped_at = "3066f14c"
-status = "shipped"
-targets = [
-    "root",
-    "website",
-]
+
+[scope.repo]
+layers = ["docs"]

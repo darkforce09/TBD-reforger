@@ -1,0 +1,5 @@
+error[E0599]: no variant or associated item named `Frontend` found for enum `ModLayer` in the current scope
+ --> tests/fail/mod_frontend.rs:6:23
+  |
+6 |     let _ = ModLayer::Frontend;
+  |                       ^^^^^^^^ variant or associated item not found in `ModLayer`

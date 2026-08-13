@@ -1,31 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 474
-executor = "claude-code"
 id = "T-500"
-impact = [
-    "api",
-    "mission-creator",
-    "tests",
-]
-order = 3340
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "Wave 39 adversarial residual (CLEAN). T-416 wires Save Version via load_cargo_phys_catalog + validate_mission_editor_payload_with_catalog. Production mission_compile.rs does not call scan_cargo_capacity — pre-existing over-capacity versions can still compile until re-saved. Cure: pass CargoPhysCatalog into the compile gate (same table as Save) or document compile-as-trust-saved with a Class-R that compile path mentions the Save refuse."
-surfaces = ["API"]
-targets = ["website"]
+kind = "work"
 title = "mission_compile does not run cargo wire_safety (Save-only refuse)"
+summary = "Wave 39 adversarial residual (CLEAN). T-416 wires Save Version via load_cargo_phys_catalog + validate_mission_editor_payload_with_catalog. Production mission_compile.rs does not call scan_cargo_capacity — pre-existing over-capacity versions can still compile until re-saved. Cure: pass CargoPhysCatalog into the compile gate (same table as Save) or document compile-as-trust-saved with a Class-R that compile path mentions the Save refuse."
+status = "shipped"
+order = 3340
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

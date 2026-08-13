@@ -1,27 +1,11 @@
-__keys = [
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "stream",
-    "targets",
-    "executor",
-    "id",
-    "order",
-    "title",
-    "summary",
-    "notes",
-]
-__ord = 683
-executor = "claude-code"
 id = "T-710"
-impact = ["dx"]
-notes = "filed by wave-100 adversarial verifier (editor factory)"
-order = 4303
-program = "eden"
-status = "deferred"
-stream = "mission-creator"
-summary = "657 ported lines in tools/tbd-tools/src/capture.rs carry zero new tests; the parity claims rest on source review alone. Unpinned pure fns: ztag (replacen first-occurrence semantics mirroring JS .replace), canvas_path suffixing, crop geometry/scale math, zoom step parsing. The crate's 51 existing tests exercise none of them. Fix: table-driven #[test]s for those four; no CDP or GPU needed. Diagnosis: editor_verify/wave100.md F-5."
-surfaces = ["EDITOR"]
-targets = ["website"]
+kind = "work"
 title = "capture port: pin the parity-bearing pure functions with tests"
+summary = "657 ported lines in tools/tbd-tools/src/capture.rs carry zero new tests; the parity claims rest on source review alone. Unpinned pure fns: ztag (replacen first-occurrence semantics mirroring JS .replace), canvas_path suffixing, crop geometry/scale math, zoom step parsing. The crate's 51 existing tests exercise none of them. Fix: table-driven #[test]s for those four; no CDP or GPU needed. Diagnosis: editor_verify/wave100.md F-5."
+status = "deferred"
+order = 4303
+executor = "claude-code"
+notes = "filed by wave-100 adversarial verifier (editor factory)"
+
+[scope.website.editor]
+chrome = []

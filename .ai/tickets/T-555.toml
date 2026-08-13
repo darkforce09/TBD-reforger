@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 529
-executor = "claude-code"
 id = "T-555"
-impact = ["platform-lifecycle"]
-order = 3400
-priority = 0
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "BLOCKER: migrations are only ever tested forward from empty, so two live defects break every populated database"
 summary = '''
 THE ALWAYS-BLOCKER CLASS. Found 2026-07-27 by the command center when the dev API would not boot. Two independent defects, one root cause, and the wave gate is STRUCTURALLY INCAPABLE of catching either.
 
@@ -49,10 +29,10 @@ The command center applied two throwaway fixes by hand to restore the dev API, t
   - 0009 is back to its BROKEN (post-T-331) state on disk -- the defect is live and reproducible.
   - The dev database row was already fixed: `UPDATE orbat_slots SET assigned_to=NULL WHERE id='00000000-0000-4000-5000-000000000015'`. So defect 2 NO LONGER REPRODUCES on the dev DB. Recreate it in a scratch DB to verify your fix -- do not assume it is gone because the dev DB is clean.
   - The running API on :8080 booted from that hand-patched state. It will fail to boot again on restart until this ships.'''
-surfaces = [
-    "API",
-    "DATA",
-    "INFRA",
-]
-targets = ["website"]
-title = "BLOCKER: migrations are only ever tested forward from empty, so two live defects break every populated database"
+status = "shipped"
+order = 3400
+executor = "claude-code"
+priority = 0
+
+[scope.website.editor]
+chrome = []

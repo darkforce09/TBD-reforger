@@ -1,31 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "shipped_at",
-]
-__ord = 172
-executor = "claude-code"
 id = "T-198"
-impact = ["arsenal"]
-order = 2160
-program = "eden"
-shipped_at = "2070eecd"
-status = "shipped"
-stream = "mission-creator"
-summary = "The enum is closed to four worn garments — vest, pants, jacket, backpack — in both mission.schema.json:89 and loadout-export.schema.json:67, and GarmentForContainer resolves only to worn areas. No code path anywhere puts an item into a vehicle, and the 311 crate rows are unreachable from any UI."
-surfaces = ["ARS"]
-targets = [
-    "root",
-    "mod",
-    "website",
-]
+kind = "work"
 title = "cargoContainer cannot express a vehicle or a crate"
+summary = "The enum is closed to four worn garments — vest, pants, jacket, backpack — in both mission.schema.json:89 and loadout-export.schema.json:67, and GarmentForContainer resolves only to worn areas. No code path anywhere puts an item into a vehicle, and the 311 crate rows are unreachable from any UI."
+status = "shipped"
+order = 2160
+executor = "claude-code"
+shipped_at = "2070eecd"
+
+[scope.repo]
+layers = ["docs"]

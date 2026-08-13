@@ -1,28 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-    "shipped_at",
-]
-__ord = 299
-executor = "claude-code"
 id = "T-325"
-impact = ["platform-lifecycle"]
-order = 3141
-priority = 2
-program = "platform"
-shipped_at = "2bd4d748"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Two telemetry models are non-Option String over nullable columns"
 summary = """
 PREMISE FALSE — the agent refused the stated fix and was right. Kept in full because the wrong version was mine.
 
@@ -33,9 +11,11 @@ The mismatch is nonetheless real — dropping the COALESCE in a probe against th
 Correct fix is at the schema (NOT NULL DEFAULT '' after a backfill), which is T-228's directory — handed to it. What shipped here is comment-only: the invariant, the measured evidence and the rejected alternative, recorded in models/telemetry.rs where the next person writes a read query. No type, no serde attribute, no wire byte changed.
 
 THE REAL PAYLOAD was the sweep: three genuine 500s elsewhere in the same class, all captured live — T-329 (dashboard, FIRING IN PRODUCTION for two real users), T-307 (events briefing, reachable from any fresh seed), T-330 (approvals updated_at, latent). And tests/null_tolerance.rs, which exists for exactly this class, misses all three."""
-surfaces = [
-    "API",
-    "DATA",
-]
-targets = ["website"]
-title = "Two telemetry models are non-Option String over nullable columns"
+status = "shipped"
+order = 3141
+executor = "claude-code"
+priority = 2
+shipped_at = "2bd4d748"
+
+[scope.website.editor]
+chrome = []

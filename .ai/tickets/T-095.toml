@@ -1,32 +1,10 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "status",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "route",
-    "branch",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 82
-branch = "ticket/T-095"
-executor = "claude-code"
 id = "T-095"
-impact = [
-    "api",
-    "schema",
-]
-order = 950
-program = "backend"
-route = "/api/v1"
-status = "cancelled"
-stream = "web-platform"
-summary = "CANCELLED (2026-07-26 audit). Target file does not exist: docs/website/backend/api.md and docs/backend/api.md are both absent, and docs/website/backend/ROADMAP.md:3 marks the whole Go-era doc tree SUPERSEDED by T-145/T-171."
-surfaces = ["DATA"]
-targets = ["website"]
+kind = "work"
 title = "Per-handler API reference doc"
+summary = "CANCELLED (2026-07-26 audit). Target file does not exist: docs/website/backend/api.md and docs/backend/api.md are both absent, and docs/website/backend/ROADMAP.md:3 marks the whole Go-era doc tree SUPERSEDED by T-145/T-171."
+status = "cancelled"
+order = 950
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

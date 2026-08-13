@@ -1,35 +1,16 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 510
-executor = "claude-code"
 id = "T-536"
-impact = [
-    "ci",
-    "dx",
-]
-order = 3376
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "touch_changed still masks changed_rs porcelain failure as empty list"
 summary = """
 FOUND by W50 adversarial verifier (MINOR-NIT) after T-492.
 
 fmt_changed/clippy_changed now propagate changed_rs rc. touch_changed still does `for f in $(changed_rs …)` and can return 0 with listed=0 when porcelain fails. Same mask class.
 
 Cure: `files=$(changed_rs) || return $?` (or equivalent) in touch_changed."""
-surfaces = ["CI"]
-targets = ["website"]
-title = "touch_changed still masks changed_rs porcelain failure as empty list"
+status = "shipped"
+order = 3376
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

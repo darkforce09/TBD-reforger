@@ -1,28 +1,9 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 231
-executor = "claude-code"
 id = "T-257"
-impact = ["mc-authoring"]
-order = 2750
-program = "eden"
-status = "idea"
-stream = "mission-creator"
-summary = "hydrate clears loadouts, items, objectives and markers (store.rs:1102-1120) but those four roots are not in the UndoManager expand_scope (store.rs:101-106). Harmless today because nothing mutates them — a silent trap for the marker and objective work."
-surfaces = [
-    "MAP",
-    "PLACE",
-]
-targets = ["website"]
+kind = "work"
 title = "Markers and objectives will be non-undoable the day they land"
+summary = "hydrate clears loadouts, items, objectives and markers (store.rs:1102-1120) but those four roots are not in the UndoManager expand_scope (store.rs:101-106). Harmless today because nothing mutates them — a silent trap for the marker and objective work."
+status = "idea"
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

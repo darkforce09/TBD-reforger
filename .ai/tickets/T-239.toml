@@ -1,24 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 213
-executor = "claude-code"
 id = "T-239"
-impact = ["registry-hygiene"]
-order = 2570
-program = "infra"
-status = "shipped"
-stream = "infra"
+kind = "work"
+title = "Unticketed XSS hardening item from the Go purge"
 summary = """
 T-015 is used in commits but absent from the registry. The bluemonday sanitisation survived the Go purge as ammonia (services/text.rs:10-16, wired at cms.rs:109,194), and text.rs:6-9 records an open security item: the exact UGCPolicy-to-ammonia allowlist mapping plus a golden corpus and a no-XSS property test.
 
@@ -38,6 +20,9 @@ The live vector is a URL scheme, not an HTML body — filed as T-391 (P0).
 Negative findings worth not re-investigating: no nickname/bio/pronouns column exists; telemetry ingests NO player display name, squad name, or chat text (only the engine GUID and role_played, confirmed against TBD_ResultsReporter.c:566-569) so the 'anyone who joins a server' attack does not exist; and handlers/servers.rs's write handlers are NOT registered in app.rs, which independently confirms T-235's handoff is still outstanding.
 
 A fourth subagent mapped EVERY render site in the frontend by data provenance — recorded at docs/platform/frontend_data_provenance.md so it is not re-derived. It confirms T-391 is the only live vector (no HTML sink beyond arsenal.rs:1392's const table) and corrects three priors: arsenal.rs is mixed not mock, leaderboards.rs is fully API-fed since T-195 deleted its MOCK, and content.rs has ZERO API-fed renders (its list is mock_docs(), so an author cannot see what they just published — T-267). Placeholder-fallback family filed as T-392."""
-surfaces = ["REG"]
-targets = ["website"]
-title = "Unticketed XSS hardening item from the Go purge"
+status = "shipped"
+order = 2570
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

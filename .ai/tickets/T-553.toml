@@ -1,29 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "executor",
-    "priority",
-    "stream",
-    "targets",
-]
-__ord = 527
-executor = "claude-code"
 id = "T-553"
-impact = [
-    "docs",
-    "mod",
-]
-order = 3393
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "TBD_ZoneRegistry still claims zoneRules additionalProperties: true (T-419 residual)"
 summary = """
 FOUND by W62 adversarial verifier (DIRTY MINOR) after T-419.
 
@@ -35,6 +12,10 @@ Live pin: packages/tbd-schema/schema/mission.schema.json $defs.zoneRules.additio
 Repro:
   rg -n 'additionalProperties: true' apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c
   # expect hit at line 39; schema says false."""
-surfaces = ["MOD"]
-targets = ["mod"]
-title = "TBD_ZoneRegistry still claims zoneRules additionalProperties: true (T-419 residual)"
+status = "shipped"
+order = 3393
+executor = "claude-code"
+priority = 2
+
+[scope.mod]
+layers = ["feature"]

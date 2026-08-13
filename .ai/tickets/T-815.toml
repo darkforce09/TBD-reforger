@@ -1,31 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "status",
-    "executor",
-    "program",
-    "stream",
-    "targets",
-    "impact",
-    "surfaces",
-    "order",
-    "summary",
-    "notes",
-]
-__ord = 788
-executor = "claude-code"
 id = "T-815"
-impact = [
-    "ui",
-    "mc-authoring",
-    "state",
-]
-notes = "wave 209; verifier wave200.md F8 NIT-1+NIT-2 | SHIPPED W209: squad rename focused on open; the unpoison re-land verified non-hollow (perturb->RED->restore); both T787 probe missions deleted, ids 404-confirmed."
-order = 4970
-program = "eden"
-status = "shipped"
-stream = "mission-creator"
-summary = "WAVE-200 VERIFIER RE-TICKET (wave200.md F8, both NITs). NIT-1 VERIFIED LIVE: the ORBAT squad-rename inline input opens unfocused — typing before clicking runs as chords ('g' flips GRID); once clicked, focus holds and typing works (no remount trap — verifier-confirmed). FIX: NodeRef + on_load focus+select on rename-session open (the eden_dock_left.rs:330-338 pattern) in orbat_manager.rs. NIT-2 (environment cleanup, no code): the T-787 slice's live checks left two missions in the dev library — 'T787 WT Probe' (85b61b6a-33f6-417f-ad50-fce2ce514a3e) and 'T787 Probe' (a121023d-7dd0-4ccc-9d10-41be3fd32ab1). Delete BOTH and ONLY these ids via DELETE /api/v1/missions/{id} with a dev-login admin token; confirm GET /api/v1/missions lists no name containing 'T787' afterward and no other mission was touched. ACCEPTANCE: squad rename focused on open, typed 11-char string lands whole, GRID chip unchanged, Enter commits / Escape abandons; the two mission ids 404 afterward."
-surfaces = ["UI"]
-targets = ["website"]
+kind = "work"
 title = "ORBAT squad-rename input opens unfocused; two T787 probe missions left in the dev library"
+summary = "WAVE-200 VERIFIER RE-TICKET (wave200.md F8, both NITs). NIT-1 VERIFIED LIVE: the ORBAT squad-rename inline input opens unfocused — typing before clicking runs as chords ('g' flips GRID); once clicked, focus holds and typing works (no remount trap — verifier-confirmed). FIX: NodeRef + on_load focus+select on rename-session open (the eden_dock_left.rs:330-338 pattern) in orbat_manager.rs. NIT-2 (environment cleanup, no code): the T-787 slice's live checks left two missions in the dev library — 'T787 WT Probe' (85b61b6a-33f6-417f-ad50-fce2ce514a3e) and 'T787 Probe' (a121023d-7dd0-4ccc-9d10-41be3fd32ab1). Delete BOTH and ONLY these ids via DELETE /api/v1/missions/{id} with a dev-login admin token; confirm GET /api/v1/missions lists no name containing 'T787' afterward and no other mission was touched. ACCEPTANCE: squad rename focused on open, typed 11-char string lands whole, GRID chip unchanged, Enter commits / Escape abandons; the two mission ids 404 afterward."
+status = "shipped"
+order = 4970
+executor = "claude-code"
+notes = "wave 209; verifier wave200.md F8 NIT-1+NIT-2 | SHIPPED W209: squad rename focused on open; the unpoison re-land verified non-hollow (perturb->RED->restore); both T787 probe missions deleted, ids 404-confirmed."
+
+[scope.website.editor]
+chrome = []

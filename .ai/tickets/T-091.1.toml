@@ -1,17 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-091.1"
+kind = "work"
+title = "T-091.1 — DEM loader + sampleElevation"
+summary = "T-091.1 — DEM loader + sampleElevation"
+status = "shipped"
+order = 910
+spec = "docs/specs/Mission_Creator_Architecture/t091_1_dem_loader.md"
+executor = "claude-code"
 parent = "T-091"
 shipped_at = "2c56c2e"
-spec = "docs/specs/Mission_Creator_Architecture/t091_1_dem_loader.md"
-status = "shipped"
-targets = ["website"]
+
+[scope.website.editor]
+chrome = []

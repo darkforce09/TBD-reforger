@@ -1,30 +1,15 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "status",
-    "stream",
-    "targets",
-    "executor",
-    "impact",
-    "title",
-    "summary",
-    "surfaces",
-]
-__ord = 678
-executor = "claude-code"
 id = "T-705"
-impact = ["ui"]
-order = 4590
-program = "eden"
-status = "queued"
-stream = "mission-creator"
+kind = "work"
+title = "Player gadget flags — map, compass, watch, GPS, radio"
 summary = """
 NEW-W1, 5 screenshot rows from Edit: General States. Eden lets a scenario decide which gadgets a player has. Every one needs a mission.schema.json field plus an Enfusion reader in apps/mod/tbd-framework/, so none is dispatchable. Grouped rather than split because they share one schema shape.
 
 EXECUTOR CORRECTED 2026-08-02: was filed `workbench` on the mistaken reading that any .c file needs the Arma Workbench GUI. It does not — scripts/mod/compile.sh compiles tbd-framework against the native Linux dedicated server headlessly, verified: "OK: compiled clean, 5707 files, 11182 classes, 832 ms, no Workbench". Schema edits are plain JSON. This is factory work. Per the model-routing rule, the .c portion routes to Fable 5 even though the executor is claude-code.
 
 SCHEMA HALF SPLIT OUT to T-706 (one widening pass for the whole program). This ticket is the Enfusion reader plus any editor UI; it does not touch packages/tbd-schema."""
-surfaces = ["ATTR"]
-targets = ["mod"]
-title = "Player gadget flags — map, compass, watch, GPS, radio"
+status = "queued"
+order = 4590
+executor = "claude-code"
+
+[scope.mod]
+layers = ["feature"]

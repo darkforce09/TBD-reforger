@@ -1,20 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-152.4"
+kind = "work"
+title = "T-152.4 — Fence / pier / bridge cartographic vectors"
+summary = "T-152.4 — Fence / pier / bridge cartographic vectors"
+status = "shipped"
+order = 1520
+spec = "docs/specs/Mission_Creator_Architecture/t152_4_fence_pier_bridge.md"
+executor = "claude-code"
 notes = "Spec file authored by Cursor when T-152.3 ships."
 parent = "T-152"
-spec = "docs/specs/Mission_Creator_Architecture/t152_4_fence_pier_bridge.md"
-status = "shipped"
-targets = [
-    "root",
-    "website",
-]
+
+[scope.repo]
+layers = ["docs"]

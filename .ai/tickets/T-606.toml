@@ -1,26 +1,6 @@
-__keys = [
-    "program",
-    "surfaces",
-    "impact",
-    "stream",
-    "targets",
-    "executor",
-    "id",
-    "title",
-    "summary",
-    "status",
-    "priority",
-    "order",
-]
-__ord = 579
-executor = "claude-code"
 id = "T-606"
-impact = ["platform-lifecycle"]
-order = 3532
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Three ops greps report a healthy server as broken, and the T-068.14 spec names a log tag that does not exist"
 summary = """
 FOUND while writing `docs/platform/PLAYTEST_RUNBOOK.md` (2026-07-31). Individually trivial, together
 they guarantee a confusing playtest: the operator greps for what the docs say, gets nothing, and
@@ -46,6 +26,11 @@ ALSO, same family, documented in the runbook §6 rather than filed separately:
 - **`modded class SCR_PlayerController` runtime coexistence has never been observed at any N.** Six
   blocks now exist and no gate can see it -- `world-boot.sh` boots with zero players. If one screen
   works and another silently does nothing during the playtest, this is the first suspect."""
-surfaces = ["MOD"]
-targets = ["website"]
-title = "Three ops greps report a healthy server as broken, and the T-068.14 spec names a log tag that does not exist"
+status = "shipped"
+order = 3532
+executor = "claude-code"
+notes = "needs-operator: frozen unmappable Scope. "
+priority = 2
+
+[scope.repo]
+layers = ["docs"]

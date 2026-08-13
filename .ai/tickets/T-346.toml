@@ -1,28 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-    "shipped_at",
-]
-__ord = 320
-executor = "claude-code"
 id = "T-346"
-impact = ["platform-lifecycle"]
-order = 3162
-priority = 0
-program = "platform"
-shipped_at = "59c0beba"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "set_armory binds the faction join key untrimmed and defaulted"
 summary = """
 HIGHEST-SEVERITY find of T-343's sweep, and the one to do first.
 
@@ -49,6 +27,11 @@ BOTH PRE-FIX PATHS MEASURED, with the Event Hub card replayed faithfully from ev
 TWO CORRECTIONS. The ticket's framing of events.rs:796 as an equality match is imprecise — it GROUPS by the row's own raw value into a HashMap with no normalisation; the real cross-source join is frontend/event_hub.rs:415, matching against a list built from a DIFFERENT TABLE (orbat_slots). And T-315's comment in this file had grouped `faction` with the presentation hints as 'an absent one degrades a row without making it a lie' — that was wrong and is corrected in place. category/icon/sort_order keep their defaults, verified matched by no equality join.
 
 mission_overview.rs:218 does not trim either but is SELF-CONSISTENT: its tab list derives from the armory rows themselves, so a padded value produces a padded tab its own filter matches. Cosmetic only."""
-surfaces = ["API"]
-targets = ["website"]
-title = "set_armory binds the faction join key untrimmed and defaulted"
+status = "shipped"
+order = 3162
+executor = "claude-code"
+priority = 0
+shipped_at = "59c0beba"
+
+[scope.website.editor]
+chrome = []

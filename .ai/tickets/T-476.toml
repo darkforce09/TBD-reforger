@@ -1,38 +1,16 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 450
-executor = "claude-code"
 id = "T-476"
-impact = [
-    "infra",
-    "tests",
-]
-order = 3315
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "verify-t438/t456 Makefile recipes lack hollow-body tripwire"
 summary = """
 NIT from wave 28 adversarial. T-467 wired real bash recipes into Makefile + ci-local + ci.yml, but there is no T-471/T-472-style recipe-body tripwire — a future hollow `@true` / `echo PASS` / `#fake` recipe would green until noticed.
 
 Repro (hypothetical): replace verify-t438 recipe with `@true` → make verify-t438 PASS while script never runs.
 
 Cure: extend verify-t468-style (or sibling) tripwire to assert Makefile verify-t438/verify-t456 recipes invoke the real bash scripts (not echo/@true/#)."""
-surfaces = [
-    "INFRA",
-    "tests",
-]
-targets = ["root"]
-title = "verify-t438/t456 Makefile recipes lack hollow-body tripwire"
+status = "shipped"
+order = 3315
+executor = "claude-code"
+priority = 2
+
+[scope.repo]
+layers = ["xtask"]

@@ -59,7 +59,6 @@ SCHEMA HALF SPLIT OUT to T-706 (one widening pass for the whole program). This t
 
 ```mermaid
 flowchart LR
-  T661[T-661] --> T069[T-069]
   T118[T-118] --> T114[T-114]
   T114[T-114] --> T120[T-120]
   T115[T-115] --> T120[T-120]

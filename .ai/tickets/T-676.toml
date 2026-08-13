@@ -1,42 +1,17 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "notes",
-    "depends_on",
-]
-__ord = 645
-depends_on = ["T-079"]
-executor = "claude-code"
 id = "T-676"
-impact = [
-    "mod",
-    "schema",
-    "mission-authoring",
-]
-notes = "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row"
-order = 4330
-program = "eden"
-status = "queued"
-stream = "mod-framework"
+kind = "work"
+title = "Trigger activation and effects — the Enfusion runtime"
 summary = """
 Twelve of the thirteen `ATTR-FIELD-TRG-*` ids: everything except the geometry/palette half, which is the factory ticket T-079. An activation model (condition, repeat, timeout, owner side) and an effects model are a NEW ENFUSION RUNTIME in `apps/mod/tbd-framework/` plus the schema keys to carry them. Geometry can ride the shipped T-582 zone draw tool, which is why the editor half was separable at all. Read `$defs/zoneRules`' 16 keys before designing this: they have no ATTR-FIELD id and were never triaged against Eden, but they are the closest thing TBD already has to trigger semantics. EXECUTOR IS `workbench` DELIBERATELY: this modifies `packages/tbd-schema/schema/mission.schema.json` and/or `apps/mod/tbd-framework/`, which the CLAUDE.md executor gate puts out of reach of any coding agent. The factory filters on executor, so this tagging is the safety mechanism — do not flip it to claude-code.
 
 EXECUTOR CORRECTED 2026-08-02: was filed `workbench` on the mistaken reading that any .c file needs the Arma Workbench GUI. It does not — scripts/mod/compile.sh compiles tbd-framework against the native Linux dedicated server headlessly, verified: "OK: compiled clean, 5707 files, 11182 classes, 832 ms, no Workbench". Schema edits are plain JSON. This is factory work. Per the model-routing rule, the .c portion routes to Fable 5 even though the executor is claude-code.
 
 SCHEMA HALF SPLIT OUT to T-706 (one widening pass for the whole program). This ticket is the Enfusion reader plus any editor UI; it does not touch packages/tbd-schema."""
-surfaces = [
-    "MOD",
-    "SCHEMA",
-    "MAP",
-]
-targets = ["mod"]
-title = "Trigger activation and effects — the Enfusion runtime"
+status = "queued"
+order = 4330
+executor = "claude-code"
+notes = "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row"
+depends_on = ["T-079"]
+
+[scope.mod]
+layers = ["feature"]

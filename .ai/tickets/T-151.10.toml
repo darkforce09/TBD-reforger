@@ -1,22 +1,14 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-151.10"
+kind = "work"
+title = "T-151.10 — Fable 5 full-program audit (W10)"
+summary = "T-151.10 — Fable 5 full-program audit (W10)"
+status = "shipped"
+order = 1500
+spec = "docs/specs/Mission_Creator_Architecture/t151_10_fable_program_audit.md"
+executor = "claude-code"
 notes = "Fable 5 full-program audit W0–W9. Tracker: .ai/artifacts/t151_10_fable_audit_report.md. Verify: .ai/artifacts/t151_10_verify_log.md"
 parent = "T-151"
 shipped_at = "6adbd4bf"
-spec = "docs/specs/Mission_Creator_Architecture/t151_10_fable_program_audit.md"
-status = "shipped"
-targets = [
-    "root",
-    "website",
-]
+
+[scope.repo]
+layers = ["docs"]

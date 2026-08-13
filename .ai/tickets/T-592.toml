@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 566
-executor = "claude-code"
 id = "T-592"
-impact = ["platform-lifecycle"]
-order = 3453
-priority = 3
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Zones have no map-canvas outline, and the circle tool is two-click rather than drag"
 summary = """
 Both from T-582, which shipped the zone draw tool and named exactly what it could not reach.
 
@@ -42,9 +22,10 @@ Both from T-582, which shipped the zone draw tool and named exactly what it coul
    mounted via `.nest("/x", other_fn())` would false-red as an unwired tag, because the extractor
    only reads `fn api_routes`'s body. The script header documents this and the crate uses one flat
    `api_routes` today."""
-surfaces = [
-    "FRONTEND",
-    "INFRA",
-]
-targets = ["website"]
-title = "Zones have no map-canvas outline, and the circle tool is two-click rather than drag"
+status = "shipped"
+order = 3453
+executor = "claude-code"
+priority = 3
+
+[scope.website.editor]
+chrome = []

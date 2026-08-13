@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 564
-executor = "claude-code"
 id = "T-590"
-impact = ["platform-lifecycle"]
-order = 3451
-priority = 3
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Wave 72 residue: stale GO-7 documentation, drifted seed citations, and three prose comments now false"
 summary = """
 Documentation drift found across wave 72. None is a live defect; every one is a sentence that will
 mislead the next reader, and two of them are the sentences that let real defects rot.
@@ -45,6 +25,10 @@ mislead the next reader, and two of them are the sentences that let real defects
 6. **`crates/map-engine-core/src/lib.rs:5`** says "the JS boundary lives in the `map-engine-wasm`
    shim". That crate was deleted at T-418. This sentence made the T-582 brief ask for a wasm binding
    that could not exist — the agent had to discover the deletion itself."""
-surfaces = ["INFRA"]
-targets = ["website"]
-title = "Wave 72 residue: stale GO-7 documentation, drifted seed citations, and three prose comments now false"
+status = "shipped"
+order = 3451
+executor = "claude-code"
+priority = 3
+
+[scope.website.editor]
+chrome = []

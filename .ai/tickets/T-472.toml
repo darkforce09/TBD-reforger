@@ -1,39 +1,16 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 446
-executor = "claude-code"
 id = "T-472"
-impact = [
-    "infra",
-    "tests",
-]
-order = 3311
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "T-471 verify-t468 still greens echo/@true/#fake Makefile recipes"
 summary = '''
 Residual from wave 27 adversarial BLOCKER. verify-t468 recipe pin uses `^\t.*(?:\$\(MAKE\)|make)\s+schema-validate\b` — matches `@echo "$(MAKE) schema-validate"`, `schema-validate-fake`, `@true # $(MAKE) schema-validate`.
 
 Repro: hollow echo of make lines / -fake targets / comment-only → tripwire PASS.
 
 Cure: require real recipe invocations (tab + optional @ + $(MAKE)|make + exact target, no echo, ignore # comments); RED→GREEN on verifier recipes.'''
-surfaces = [
-    "INFRA",
-    "CI",
-    "tests",
-]
-targets = ["root"]
-title = "T-471 verify-t468 still greens echo/@true/#fake Makefile recipes"
+status = "shipped"
+order = 3311
+executor = "claude-code"
+priority = 1
+
+[scope.repo]
+layers = ["xtask"]

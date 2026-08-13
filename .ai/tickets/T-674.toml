@@ -1,40 +1,17 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "notes",
-]
-__ord = 643
-executor = "claude-code"
 id = "T-674"
-impact = [
-    "schema",
-    "mod",
-    "contract",
-]
-notes = "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row — WAVE-A DISPATCH PIN: owns extends to crates/map-engine-core/src/mission/flatten.rs (the emit half; T-674 first, T-675 after it reports) AND the TBD_MissionValidator.c SCHEMA_1_3 allowlist bump rides whichever of these first emits 1.3 (schema description names this). T-853 2026-08-12: the prepped slice worktree for this ticket was DROPPED, not landed. It carried one unmerged commit from 2026-08-02 that had sat unlanded for 10 days and was blocking the wave queue at 150. The work was NOT reviewed and NOT merged; the ticket stays queued so it can be redone. The commit is recoverable: `git checkout -b redo/T-674 salvage/t853-dropped/T-674` (tagged before the branch was deleted). Note T-674 and T-675 pointed at the SAME commit 113108a1, so whichever is redone first should check whether it subsumes the other."
-order = 4310
-program = "eden"
-status = "queued"
-stream = "shared-schema"
+kind = "program"
+title = "T-216 follow-on: slot identity reaches the wire"
 summary = """
 Four attribute ids — `ATTR-FIELD-OBJ-CALLSIGN`, `-OBJ-RANK`, `-OBJ-STANCE`, `-OBJ-UNIT-NAME` — plus the two TBD-only keys `tag` and `leaderSlotId`. `OBJ-UNIT-NAME` rides this slice rather than standing alone; the sweep says so explicitly. THE CONTRACT DELTA IS ALREADY WRITTEN OUT at `crates/map-engine-core/src/mission/flatten.rs`:2620-2632 — five `$defs/slot` / `$defs/group` keys. T-216 is `shipped`, but it shipped THE LEDGER AND ITS TRIPWIRE, not the fix: flatten.rs:2584-2649 enumerates six author-facing values the compile silently drops (a squad's leaderSlotId, a slot's tag / callsign / rank / stance, and the entire vehicle roster) and records that `make verify-t180` stayed green throughout BECAUSE NOT ONE OF ITS 22 TESTS CHECKED. `stance` additionally needs an Enfusion spawn-pose call — word-boundary `stance` in apps/mod is ZERO (the 39-file `grep -rl stance` result is every hit being the substring inside `instance`). Widening `/compiled` without care 500s every mission. Related: T-242. EXECUTOR IS `workbench` DELIBERATELY: this modifies `packages/tbd-schema/schema/mission.schema.json` and/or `apps/mod/tbd-framework/`, which the CLAUDE.md executor gate puts out of reach of any coding agent. The factory filters on executor, so this tagging is the safety mechanism — do not flip it to claude-code.
 
 EXECUTOR CORRECTED 2026-08-02: was filed `workbench` on the mistaken reading that any .c file needs the Arma Workbench GUI. It does not — scripts/mod/compile.sh compiles tbd-framework against the native Linux dedicated server headlessly, verified: "OK: compiled clean, 5707 files, 11182 classes, 832 ms, no Workbench". Schema edits are plain JSON. This is factory work. Per the model-routing rule, the .c portion routes to Fable 5 even though the executor is claude-code.
 
 SCHEMA HALF SPLIT OUT to T-706 (one widening pass for the whole program). This ticket is the Enfusion reader plus any editor UI; it does not touch packages/tbd-schema."""
-surfaces = [
-    "SCHEMA",
-    "MOD",
-    "ATTR",
+status = "queued"
+order = 4310
+executor = "claude-code"
+notes = "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row — WAVE-A DISPATCH PIN: owns extends to crates/map-engine-core/src/mission/flatten.rs (the emit half; T-674 first, T-675 after it reports) AND the TBD_MissionValidator.c SCHEMA_1_3 allowlist bump rides whichever of these first emits 1.3 (schema description names this). T-853 2026-08-12: the prepped slice worktree for this ticket was DROPPED, not landed. It carried one unmerged commit from 2026-08-02 that had sat unlanded for 10 days and was blocking the wave queue at 150. The work was NOT reviewed and NOT merged; the ticket stays queued so it can be redone. The commit is recoverable: `git checkout -b redo/T-674 salvage/t853-dropped/T-674` (tagged before the branch was deleted). Note T-674 and T-675 pointed at the SAME commit 113108a1, so whichever is redone first should check whether it subsumes the other."
+children = [
+    "T-674.1",
+    "T-674.2",
 ]
-targets = ["mod"]
-title = "T-216 follow-on: slot identity reaches the wire"

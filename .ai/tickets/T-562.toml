@@ -1,29 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "executor",
-    "priority",
-    "stream",
-    "targets",
-]
-__ord = 536
-executor = "claude-code"
 id = "T-562"
-impact = [
-    "tests",
-    "auth",
-]
-order = 3415
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "T-560 Class-R still hollow — string/format! SET arma_id = COALESCE decoy"
 summary = """
 FOUND by W64 adversarial verifier (DIRTY MAJOR) after T-560.
 
@@ -32,9 +9,10 @@ Delete live UPDATE + leave needle in let _decoy = "…" or format!("…") → PA
 Claimed // + bind attacks still RED.
 
 Repro: remove COALESCE UPDATE; add string/format! decoy with the needle; Class-R green; concurrent cold race can return."""
-surfaces = [
-    "API",
-    "tests",
-]
-targets = ["website"]
-title = "T-560 Class-R still hollow — string/format! SET arma_id = COALESCE decoy"
+status = "shipped"
+order = 3415
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

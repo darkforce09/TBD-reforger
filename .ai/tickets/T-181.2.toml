@@ -1,18 +1,12 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-181.2"
+kind = "work"
+title = "T-181.2"
+summary = "T-181.2"
+status = "shipped"
+order = 1810
+executor = "claude-code"
 notes = "enf bin in tools/tbd-tools; 266 files / 71,606 LOC / 3,359 symbols / 119 RplProps / 78 modded overrides -> .ai/artifacts/enf-index/crf_*.tsv."
 parent = "T-181"
-status = "shipped"
-targets = [
-    "mod",
-    "root",
-]
+
+[scope.repo]
+layers = ["docs"]

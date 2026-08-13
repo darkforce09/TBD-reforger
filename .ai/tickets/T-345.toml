@@ -1,28 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-    "shipped_at",
-]
-__ord = 319
-executor = "claude-code"
 id = "T-345"
-impact = ["platform-lifecycle"]
-order = 3161
-priority = 1
-program = "platform"
-shipped_at = "79829ddf"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "The doc cannot hold a marker at all — load_row requires a string id"
 summary = """
 FOUND by T-202 while emitting the briefings block, and it is a harder blocker than the prose mutator (T-344).
 
@@ -53,6 +31,11 @@ ROOT MAP vs PER-FACTION ARRAY — the array is authoritative, and it is CHECKABL
 233 tests. The round-trip uses the MUTATOR as the writer — stronger than T-214's hydrate-as-writer — and coordinates are deliberately NON-INTEGRAL, because yrs writes Any::Number(300.0) as the JSON token `300`, so an integral fixture can pass while a real 3-decimal map click silently loses its fraction. Documented on marker_any rather than papered over.
 
 FOR T-344, which shares this file: read-modify-write-WHOLE is mandatory, not stylistic — the value is an opaque Any::Map, so a naive insert of a fresh briefing silently deletes the other half. `a_marker_edit_preserves_authored_prose_on_the_same_briefing` pins it from this side, both directions. And inherit the trap: `remove` NO-OPS when nothing matches, including on an unauthored faction, because writing `briefing: {markers: []}` there would flip FactionIn::briefing from None to Some and make derive_briefings emit an entry for a side that authored nothing — a compiled-output change from a delete that deleted nothing. T-344 has the same hazard in reverse."""
-surfaces = ["DATA"]
-targets = ["website"]
-title = "The doc cannot hold a marker at all — load_row requires a string id"
+status = "shipped"
+order = 3161
+executor = "claude-code"
+priority = 1
+shipped_at = "79829ddf"
+
+[scope.website.editor]
+chrome = []

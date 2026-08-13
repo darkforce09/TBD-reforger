@@ -1,105 +1,15 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "status",
-    "active_slice",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "spec",
-    "slices",
-    "depends_on",
-    "unblocks",
-    "route",
-    "branch",
-    "stream",
-    "targets",
-    "executor",
-    "slice_plan",
-]
-__ord = 78
-active_slice = "__tbd_null__"
-branch = "ticket/T-091"
-depends_on = ["T-090"]
-executor = "claude-code"
 id = "T-091"
-impact = [
-    "ui",
-    "schema",
-]
-order = 910
-program = "infra"
-route = "/missions/:id/edit"
-slices = [
-    "T-091.0",
-    "T-091.1",
-    "T-091.2",
-]
-spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
-status = "shipped"
-stream = "infra"
-summary = "T-091 complete @ dde589e — DEM export (.0), loader (.1), Z UX (.2). Hub: t090_091_map_terrain_program.md."
-surfaces = [
-    "MAP",
-    "DATA",
-]
-targets = [
-    "root",
-    "website",
-]
+kind = "program"
 title = "DEM + auto Z"
+summary = "T-091 complete @ dde589e — DEM export (.0), loader (.1), Z UX (.2). Hub: t090_091_map_terrain_program.md."
+status = "shipped"
+order = 910
+spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
+executor = "claude-code"
+depends_on = ["T-090"]
 unblocks = ["T-092"]
-
-[slice_plan]
-__keys = [
+children = [
     "T-091.0",
     "T-091.1",
     "T-091.2",
 ]
-
-[slice_plan."T-091.0"]
-__keys = [
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-]
-executor = "claude-code"
-shipped_at = "6d96339"
-spec = "docs/specs/Mission_Creator_Architecture/t091_0_dem_tile_export.md"
-status = "shipped"
-targets = [
-    "root",
-    "mod",
-]
-
-[slice_plan."T-091.1"]
-__keys = [
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-]
-executor = "claude-code"
-shipped_at = "2c56c2e"
-spec = "docs/specs/Mission_Creator_Architecture/t091_1_dem_loader.md"
-status = "shipped"
-targets = ["website"]
-
-[slice_plan."T-091.2"]
-__keys = [
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-]
-executor = "claude-code"
-shipped_at = "dde589e"
-spec = "docs/specs/Mission_Creator_Architecture/t091_2_z_axis_editor.md"
-status = "shipped"
-targets = ["website"]

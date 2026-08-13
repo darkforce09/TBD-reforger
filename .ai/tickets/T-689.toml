@@ -1,42 +1,17 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "notes",
-    "depends_on",
-]
-__ord = 661
-depends_on = ["T-685"]
-executor = "claude-code"
 id = "T-689"
-impact = [
-    "schema",
-    "mod",
-    "mission-authoring",
-]
-notes = "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row. Filed 2026-08-01 by the framework_synthesis coverage audit (parity/coverage_audit.md)"
-order = 4410
-program = "eden"
-status = "queued"
-stream = "shared-schema"
+kind = "work"
+title = "Play-area enforcement gains a vehicle-class axis: the aircraft exemption"
 summary = """
 The U6 item from framework_synthesis.md C.2, ranked 8 of 16 ("Medium value, Small effort, needs a mod-side read"). TBD already models play-area enforcement properly — `$defs/zoneRules` carries `graceSeconds` (default 30, ceiling 3600 = `TBD_ZoneRegistry.MAX_GRACE_SECONDS`), `warnEverySeconds` (default 5, must be > 0) and `penalty` (`none` | `warn` | `kill`, resolved at TBD_ZoneRegistry.c:419-438, where an out-of-enum value resolves to `warn` and never `kill` because the mod refuses to guess toward ending a player's only life). THE MISSING AXIS IS WHICH VEHICLE CLASSES THE RULE APPLIES TO, and FNF v4 documents exactly why it exists. fnf_v4.md:469 and :473-477: `fn_addRestrictionGroup.sqf` takes per-group flags [teleport, weaponDisable, air, selectors]; the SAFE-ZONE group is `[true, true, true, true]` but THE PLAY-ZONE GROUP'S AIR FLAG IS `false` — "which is exactly why aircraft may leave the play area, and why a player exiting an aircraft outside it is teleported back to the last in-zone position, possibly mid-air" (behaviour documented to players at `fn_initBreifing.sqf:630-635`). So the exemption is a deliberate design decision with a known, documented side effect, not an oversight. Corroboration that boundary enforcement is a first-class authored concern: 3 of 4 frameworks enforce a play area — FNF v3 kills after a 20 s countdown outside it, WOG ships `WOG_IslandRestriction` in 34 of 171 missions with `_Timer` / `_Height` / `_Otstup` (margin) parameters, and OFCRA has none at all (framework_synthesis.md A.9). Scope: one authored field on `boundary` / `base_protection` zones saying which vehicle classes the penalty applies to (at minimum on-foot / ground / air), plus the WOG `_Height` idea if T-685 lands the volume first. EXECUTOR IS `workbench` DELIBERATELY: `$defs/zoneRules` is `additionalProperties: false` and a key Enfusion's typed reader does not declare is invisible rather than rejected, so this is a schema property plus a field in `TBD_MissionLoader.c` and a branch in `TBD_ZoneRegistry.c`. Pairs naturally with T-685 — same `$defs`, same reader, and shipping them together costs one widening instead of two.
 
 EXECUTOR CORRECTED 2026-08-02: was filed `workbench` on the mistaken reading that any .c file needs the Arma Workbench GUI. It does not — scripts/mod/compile.sh compiles tbd-framework against the native Linux dedicated server headlessly, verified: "OK: compiled clean, 5707 files, 11182 classes, 832 ms, no Workbench". Schema edits are plain JSON. This is factory work. Per the model-routing rule, the .c portion routes to Fable 5 even though the executor is claude-code.
 
 SCHEMA HALF SPLIT OUT to T-706 (one widening pass for the whole program). This ticket is the Enfusion reader plus any editor UI; it does not touch packages/tbd-schema."""
-surfaces = [
-    "SCHEMA",
-    "MOD",
-    "MAP",
-]
-targets = ["mod"]
-title = "Play-area enforcement gains a vehicle-class axis: the aircraft exemption"
+status = "queued"
+order = 4410
+executor = "claude-code"
+notes = "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row. Filed 2026-08-01 by the framework_synthesis coverage audit (parity/coverage_audit.md)"
+depends_on = ["T-685"]
+
+[scope.mod]
+layers = ["feature"]

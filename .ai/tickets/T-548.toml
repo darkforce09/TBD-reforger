@@ -1,38 +1,16 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "executor",
-    "priority",
-    "stream",
-    "targets",
-]
-__ord = 522
-executor = "claude-code"
 id = "T-548"
-impact = [
-    "frontend",
-    "ui",
-]
-order = 3388
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "missions.rs featured-card briefing still uses !b.is_empty() without trim"
 summary = '''
 FOUND by W56 adversarial verifier (CLEAN residual, outside T-494 owns) after T-494.
 
 mission_overview / event_hub / schedule (events.rs) now trim-ratchet briefing emptiness. Library hero featured card in apps/website/frontend/src/missions.rs still uses .filter(|b| !b.is_empty()) without trim.
 
 Repro: rg 'filter\(\|b\| !b\.is_empty\(\)\)' apps/website/frontend/src/missions.rs'''
-surfaces = [
-    "FRONTEND",
-    "FE",
-]
-targets = ["website"]
-title = "missions.rs featured-card briefing still uses !b.is_empty() without trim"
+status = "shipped"
+order = 3388
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

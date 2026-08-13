@@ -1,39 +1,16 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 445
-executor = "claude-code"
 id = "T-471"
-impact = [
-    "infra",
-    "tests",
-]
-order = 3310
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "T-468 tripwire accepts hollow Makefile ci-local-schema recipe"
 summary = """
 Residual from wave 26 adversarial MAJOR. verify-t468-ci-schema-parity.sh requires ci.yml run: make ci-local-schema and that Makefile has a ci-local-schema: target name — not that the recipe still invokes schema-validate + verify-citations.
 
 Repro: replace ci-local-schema recipe with `echo hollow-only` → tripwire PASS; CI green while map-object-enums unrun.
 
 Cure: pin Makefile recipe body contains schema-validate (and citations) or expand GATE set check; RED→GREEN on hollow recipe."""
-surfaces = [
-    "INFRA",
-    "CI",
-    "tests",
-]
-targets = ["root"]
-title = "T-468 tripwire accepts hollow Makefile ci-local-schema recipe"
+status = "shipped"
+order = 3310
+executor = "claude-code"
+priority = 2
+
+[scope.repo]
+layers = ["xtask"]

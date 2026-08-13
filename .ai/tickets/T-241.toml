@@ -1,25 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 215
-executor = "claude-code"
 id = "T-241"
-impact = ["contract"]
-order = 2590
-program = "eden"
-status = "shipped"
-stream = "mission-creator"
-summary = "mission.schema.json:369-373 declares rules as an open object with zero properties, while the mod reads 16 named keys: graceSeconds, warnEverySeconds, penalty (TBD_MissionLoader.c:102-104) and 14 objective keys (TBD_ObjectiveRules.c:85-100). A typo validates clean and degrades silently at runtime."
-surfaces = ["DATA"]
-targets = ["root"]
+kind = "work"
 title = "Declare zones[].rules properties in the schema"
+summary = "mission.schema.json:369-373 declares rules as an open object with zero properties, while the mod reads 16 named keys: graceSeconds, warnEverySeconds, penalty (TBD_MissionLoader.c:102-104) and 14 objective keys (TBD_ObjectiveRules.c:85-100). A typo validates clean and degrades silently at runtime."
+status = "shipped"
+order = 2590
+executor = "claude-code"
+notes = "needs-operator: frozen unmappable Scope. "
+
+[scope.repo]
+layers = ["docs"]

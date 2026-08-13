@@ -1,28 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-001"
-impact = [
-    "api",
-    "schema",
-]
-order = 10
-program = "backend"
-status = "shipped"
-stream = "web-platform"
-summary = "Full schema, handlers, and API scaffold."
-surfaces = ["DATA"]
-targets = ["website"]
+kind = "work"
 title = "Initial backend"
+summary = "Full schema, handlers, and API scaffold."
+status = "shipped"
+order = 10
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

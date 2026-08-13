@@ -1,31 +1,15 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 388
-executor = "claude-code"
 id = "T-414"
-impact = ["platform-lifecycle"]
-order = 3235
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "The approvals page ordering has no unique tiebreaker, and the paged walk permits 1000 round trips"
 summary = """
 Two NITs from wave 3's adversarial verifier. Filed rather than dropped because the first is latent for every future paged assertion.
 
 1. handlers/approvals.rs:~105 -- ORDER BY COALESCE(updated_at, created_at, ...) ASC has NO unique tiebreaker, so LIMIT/OFFSET paging over tied keys is not a stable total order: a row can appear on two pages or none across successive requests. Does NOT affect T-399's fixed test (its target row holds the strictly-largest key, so it is last in every valid ordering) but it is latent for any future paged assertion. Tied rows already exist -- null_tolerance.rs:77 leaves rows that all collapse to the same sentinel. Fix is a trailing ', id ASC'.
 2. apps/website/api/tests/admin_field.rs find_in_approvals -- the offset < 100_000 guard permits 1000 HTTP round trips before failing. Correct but slow to fail; a tighter bound would diagnose faster."""
-surfaces = ["API"]
-targets = ["website"]
-title = "The approvals page ordering has no unique tiebreaker, and the paged walk permits 1000 round trips"
+status = "shipped"
+order = 3235
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

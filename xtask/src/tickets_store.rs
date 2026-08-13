@@ -516,7 +516,11 @@ mod tests {
 
     #[test]
     fn frozen_27_matches_live_corpus() {
-        let v = load_json_or_toml(&repo_root()).expect("load");
+        let root = repo_root();
+        if crate::phase2::tree_is_phase2(&root) {
+            return;
+        }
+        let v = load_json_or_toml(&root).expect("load");
         let got = union_ticket_keys(&v);
         let expect: BTreeSet<String> = FROZEN_27.iter().map(|s| (*s).to_string()).collect();
         assert_eq!(got, expect, "corpus keys drifted from FROZEN_27");

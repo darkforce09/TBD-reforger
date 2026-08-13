@@ -1,43 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "depends_on",
-    "route",
-    "branch",
-    "spec",
-    "slices",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 117
-branch = "ticket/T-143"
-depends_on = ["T-090"]
-executor = "claude-code"
 id = "T-143"
-impact = [
-    "ui",
-    "state",
-    "infra",
-]
-program = "infra"
-route = "/missions/:id/edit"
-slices = []
-spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
-status = "idea"
-stream = "mission-creator"
-summary = "Far-future polish on the T-090.1.2.5.x water composite (operator: good-enough 2026-07-03, ship @ 1c07d97a). (a) Exact water geometry: Eden.ent water entities via Workbench export or pak-codec crack (zlib/zstd/brotli/LZ4 all fail today), .Rivers/*_flow.edds placements, PWLN/Eden.smap leads — full trail in .ai/artifacts/t090_1_2_5_2_source_spike.json; replaces the appearance classifier with pixel-perfect ocean/lake/river masks. (b) Editor placement guard: block/warn placing units in ocean or large water bodies in the Mission Creator (ship the water mask to the frontend alongside the DEM). Minor mask misses acceptable — missions get playtested."
-surfaces = [
-    "MAP",
-    "DATA",
-]
-targets = [
-    "website",
-    "root",
-]
+kind = "work"
 title = "Perfect water — exact hydrology + water placement guard"
+summary = "Far-future polish on the T-090.1.2.5.x water composite (operator: good-enough 2026-07-03, ship @ 1c07d97a). (a) Exact water geometry: Eden.ent water entities via Workbench export or pak-codec crack (zlib/zstd/brotli/LZ4 all fail today), .Rivers/*_flow.edds placements, PWLN/Eden.smap leads — full trail in .ai/artifacts/t090_1_2_5_2_source_spike.json; replaces the appearance classifier with pixel-perfect ocean/lake/river masks. (b) Editor placement guard: block/warn placing units in ocean or large water bodies in the Mission Creator (ship the water mask to the frontend alongside the DEM). Minor mask misses acceptable — missions get playtested."
+status = "idea"
+spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
+executor = "claude-code"
+depends_on = ["T-090"]
+
+[scope.repo]
+layers = ["docs"]

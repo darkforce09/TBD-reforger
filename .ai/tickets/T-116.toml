@@ -1,36 +1,15 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "stream",
-    "targets",
-    "executor",
-    "status",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "milestone",
-    "depends_on",
-]
-__ord = 90
-depends_on = ["T-115"]
-executor = "human"
 id = "T-116"
-impact = ["api"]
-milestone = "M1"
-order = 1160
-program = "platform"
-status = "shipped"
-stream = "mod-framework"
+kind = "work"
+title = "Results POST to backend"
 summary = """
 SPLIT 2026-07-26. Mod half SHIPPED: TBD_ResultsReporter.c (682 lines, T-181.13.1) POSTs to /api/v1/ingest/match-results. Website half OPEN and folded into T-232 — event_hub.rs renders no result/outcome/match data at all. This row now tracks only the website half.
 
 == CLOSED 2026-07-31 — ALREADY DONE, this row was a stale pointer ==
 The mod half shipped at T-181.13.1. This row tracked only the WEBSITE half, which its own summary says was folded into T-232 — and T-232 is SHIPPED ('Five pages render literally nothing when real data arrives'). Verified before closing. No work remains under this id; do not dispatch it."""
-surfaces = ["DATA"]
-targets = [
-    "mod",
-    "website",
-]
-title = "Results POST to backend"
+status = "shipped"
+order = 1160
+executor = "human"
+depends_on = ["T-115"]
+
+[scope.repo]
+layers = ["docs"]

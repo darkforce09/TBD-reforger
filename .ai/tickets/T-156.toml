@@ -1,38 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "depends_on",
-    "route",
-    "branch",
-    "spec",
-    "slices",
-    "stream",
-    "targets",
-    "executor",
-    "order",
-]
-__ord = 130
-branch = "ticket/T-156"
-depends_on = []
-executor = "claude-code"
 id = "T-156"
-impact = ["ui"]
-order = 3722
-program = "platform"
-route = "__tbd_null__"
-slices = []
-spec = "docs/website/DEV_RUNBOOK.md"
-status = "shipped"
-stream = "web-platform"
-summary = 'Sibling of T-155 (same 2026-07-13 incident): when auth dies, GET /registry and GET /factions fail and the UI silently degrades - the Arsenal shows the non-character guard ("Loadout applies to placed characters") because the catalog is empty, and the Factions palette shows the "No factions yet" author-CTA. Operator read it as data loss. Fix: distinguish query-error (esp. 401 after failed refresh) from genuinely-empty responses; surface one clear "session expired - log in again" banner/toast with a dev-login shortcut in dev, and make useRegistry/useFactionLibrary consumers render an error state, never the empty-state copy, on failure.'
-surfaces = [
-    "SHELL",
-    "DATA",
-]
-targets = ["website"]
+kind = "work"
 title = "Session-expired UX - 401s must not masquerade as empty data"
+summary = 'Sibling of T-155 (same 2026-07-13 incident): when auth dies, GET /registry and GET /factions fail and the UI silently degrades - the Arsenal shows the non-character guard ("Loadout applies to placed characters") because the catalog is empty, and the Factions palette shows the "No factions yet" author-CTA. Operator read it as data loss. Fix: distinguish query-error (esp. 401 after failed refresh) from genuinely-empty responses; surface one clear "session expired - log in again" banner/toast with a dev-login shortcut in dev, and make useRegistry/useFactionLibrary consumers render an error state, never the empty-state copy, on failure.'
+status = "shipped"
+order = 3722
+spec = "docs/website/DEV_RUNBOOK.md"
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

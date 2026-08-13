@@ -1,27 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "shipped_at",
-]
-__ord = 165
-executor = "claude-code"
 id = "T-191"
-impact = ["mc-integrity"]
-order = 2090
-program = "eden"
-shipped_at = "7de3ed57"
-status = "shipped"
-stream = "mission-creator"
-summary = "mission_hydrate.rs:164-185 runs under INIT origin while the UndoManager tracks only LOCAL, so Ctrl+Z cannot recover it. hydrate clears all nine root maps, then after_local_edit overwrites the local IndexedDB blob about five seconds later. The conflict modal offers two buttons with no diff, no change count and no backup."
-surfaces = ["DATA"]
-targets = ["website"]
+kind = "work"
 title = "Load server version destroys local work non-undoably, then overwrites the backup"
+summary = "mission_hydrate.rs:164-185 runs under INIT origin while the UndoManager tracks only LOCAL, so Ctrl+Z cannot recover it. hydrate clears all nine root maps, then after_local_edit overwrites the local IndexedDB blob about five seconds later. The conflict modal offers two buttons with no diff, no change count and no backup."
+status = "shipped"
+order = 2090
+executor = "claude-code"
+shipped_at = "7de3ed57"
+
+[scope.website.editor]
+chrome = []

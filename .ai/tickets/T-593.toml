@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 567
-executor = "claude-code"
 id = "T-593"
-impact = ["platform-lifecycle"]
-order = 3460
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Wire api_post_raw — it ships with no caller and is dead code until this lands"
 summary = """
 T-591 shipped `api_post_raw` in `apps/website/frontend/src/client.rs` and FLAGGED IT HONESTLY: it has
 no caller, carries `#[allow(dead_code)]`, and the agent cited `map-engine-wasm` by name — the entire
@@ -93,6 +73,10 @@ ALSO FOUND: the 201 response echoes the whole `json_payload` back (`models/missi
    written; `version_body` and `version_body_to_writer` are thin wrappers over it, pinned by a
    byte-equality test over 36 adversarial input pairs. `mission_commands.rs:301` (the editor's Save)
    still pays `version_body`'s clone — safe, drift-proof via the shared struct, and outside scope."""
-surfaces = ["FRONTEND"]
-targets = ["website"]
-title = "Wire api_post_raw — it ships with no caller and is dead code until this lands"
+status = "shipped"
+order = 3460
+executor = "claude-code"
+priority = 1
+
+[scope.website.editor]
+chrome = []

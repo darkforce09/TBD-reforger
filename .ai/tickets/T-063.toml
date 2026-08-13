@@ -1,30 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "spec",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 50
-executor = "claude-code"
 id = "T-063"
-impact = [
-    "perf",
-    "ui",
-]
-order = 630
-program = "scale"
-spec = "docs/specs/Mission_Creator_Architecture/t063_spatial_index.md"
-status = "shipped"
-stream = "mission-creator"
-summary = "rbush R-tree pickNearest/pickRect replaces Deck GPU pick."
-surfaces = ["MAP"]
-targets = ["website"]
+kind = "work"
 title = "Spatial index for pick"
+summary = "rbush R-tree pickNearest/pickRect replaces Deck GPU pick."
+status = "shipped"
+order = 630
+spec = "docs/specs/Mission_Creator_Architecture/t063_spatial_index.md"
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

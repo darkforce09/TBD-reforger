@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "shipped_at",
-]
-__ord = 208
-executor = "claude-code"
 id = "T-234"
-impact = ["platform-pages"]
-order = 2520
-program = "platform"
-shipped_at = "49c877fe"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Mission approvals queue can never fill"
 summary = """
 POST /missions/{id}/submit (missions.rs:541) is the only writer of pending_approval and nothing in the SPA calls it. So /admin/approvals is permanently empty in production while the page displays mock approved and rejected lists that also drive the tab counters. Two destructive-sounding buttons do nothing.
 
@@ -38,6 +18,10 @@ AUTHORISATION, measured: GET /approvals as the AUTHOR (mission_maker) is **403**
 **125 passed, 0 failed, 0 SKIPPED** across 22 binaries with both TEST_DATABASE_URL and MIGRATE_TEST_DATABASE_URL set — the first agent to report against the gate's new honesty. Its new test was falsified: reverting only the handler makes it fail on the reviewer-stamp assertion.
 
 RECORDED, NOT FIXED: /approvals `submitted_at` is actually missions.updated_at (approvals.rs:101), and PATCH bumps it — measured, editing a pending mission's title moved its queue timestamp forward and REORDERED the oldest-first queue. Real fix is a submitted_at column, same column T-337 wants. The new audit row preserves the true submission time meanwhile. Also: an author can PATCH content while pending_approval, so a reviewer may approve something other than what was submitted, and there is no withdraw endpoint so blocking it would strand authors — a policy call. And T-283 is BLOCKED: no endpoint can list approved/rejected missions, because ListQuery has no status param and push_filters' global scope is `status='live' OR (author_id=me AND status<>'archived')`."""
-surfaces = ["SHELL"]
-targets = ["website"]
-title = "Mission approvals queue can never fill"
+status = "shipped"
+order = 2520
+executor = "claude-code"
+shipped_at = "49c877fe"
+
+[scope.website.editor]
+chrome = []

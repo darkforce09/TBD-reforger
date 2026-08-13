@@ -1,28 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-    "shipped_at",
-]
-__ord = 294
-executor = "claude-code"
 id = "T-320"
-impact = ["platform-lifecycle"]
-order = 3136
-priority = 0
-program = "platform"
-shipped_at = "ccbcda8b"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Editor gate harness wedges on /missions/:id/edit — every browser leg is unverifiable"
 summary = """
 PROVEN PRE-EXISTING by T-221 via A/B, not inferred. `gate smoke persist`, `gate doctor` and `render-check` against /missions/smoke/edit all fail with Page.loadEventFired / Runtime.evaluate timeouts. T-221 checked out HEAD~1's yrs_persist.rs, rebuilt, and the baseline dist wedges IDENTICALLY — so this is not that slice's doing. Also unchanged by serving map assets, by debug vs release dist, and by chromium-1223 vs 1228. The non-editor route / loads and evaluates fine, so CDP itself works; it is specific to the editor page. `gate doctor` reports FAIL on liveness with zero strays and 20 GB free, so its own diagnosis is not the answer either.
 
@@ -45,9 +23,11 @@ VERIFIED INDEPENDENTLY from the command center: `gate doctor: OK`, with `livenes
 AND IT PAID THE DEBT: T-221's persistence probe ran for real — `gate render-check --seed-auth --assert-js`, 30 assertions, PASS=true. Legacy record withheld-and-warned, adopt claimed 1, scoped keys present, restore/undoRestore round-tripped, second account saw none of it. Dist provenance checked: wasm md5 identical to the operator's live dist, so no stale cross-worktree artifact.
 
 OPERATOR NOTE: `rm -rf ~/.cache/fontconfig` fixes this outside the gate, but any fontconfig run inside the Debian container re-poisons it. The gate no longer depends on it either way."""
-surfaces = [
-    "FRONTEND",
-    "CI",
-]
-targets = ["website"]
-title = "Editor gate harness wedges on /missions/:id/edit — every browser leg is unverifiable"
+status = "shipped"
+order = 3136
+executor = "claude-code"
+priority = 0
+shipped_at = "ccbcda8b"
+
+[scope.website.editor]
+chrome = []

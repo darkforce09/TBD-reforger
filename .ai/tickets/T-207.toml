@@ -1,27 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "shipped_at",
-]
-__ord = 181
-executor = "claude-code"
 id = "T-207"
-impact = ["discord"]
-order = 2250
-program = "platform"
-shipped_at = "slice/T-207"
-status = "shipped"
-stream = "web-platform"
-summary = "The OAuth2 implementation is complete — state cookie, constant-time compare, token exchange, role sync, bounded 429 retry — but has never been run against live Discord in this tree. This is a credentials and verification task, not a build task."
-surfaces = ["CONN"]
-targets = ["website"]
+kind = "work"
 title = "Point the OAuth flow at real Discord and prove it"
+summary = "The OAuth2 implementation is complete — state cookie, constant-time compare, token exchange, role sync, bounded 429 retry — but has never been run against live Discord in this tree. This is a credentials and verification task, not a build task."
+status = "shipped"
+order = 2250
+executor = "claude-code"
+shipped_at = "slice/T-207"
+
+[scope.website.editor]
+chrome = []

@@ -25,6 +25,7 @@ walkdir = "2"
 jsonschema = { version = "0.46.10", default-features = false }
 tbd-tools = { path = "../tools/tbd-tools" }
 tbd-gate = { path = "../crates/tbd-gate" }
+tbd-tickets = { path = "../crates/tbd-tickets" }
 libc = "0.2"
 map-engine-core = { path = "../crates/map-engine-core", features = ["png", "world"] }
 typify = "0.7"

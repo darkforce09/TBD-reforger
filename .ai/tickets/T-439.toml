@@ -1,38 +1,17 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 413
-executor = "claude-code"
 id = "T-439"
-impact = ["mission-creator"]
-order = 3278
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Objects palette aliases need prop:/comp: rows in mod Data/registry.json"
 summary = """
 Residual from T-254 / wave 9 N5. Editor synthesises prop:*/comp:* aliases for crate|other (~333 workbench kinds); mod Data/registry.json has 1 comp: (comp:checkpoint_small) and 0 prop: entries. SpawnMissionEntities warn+skips unknown aliases.
 
 Repro: place a non-checkpoint Objects leaf → compile entities[] → world-boot → spawn warns and skips; only checkpoint_small resolves.
 
 Cure: export/register prop: and comp: rows for Objects-eligible kinds (or narrow palette to known aliases until registry catches up)."""
-surfaces = [
-    "MOD",
-    "FE",
-]
-targets = [
-    "website",
-    "mod",
-]
-title = "Objects palette aliases need prop:/comp: rows in mod Data/registry.json"
+status = "shipped"
+order = 3278
+executor = "claude-code"
+notes = "needs-operator: frozen unmappable Scope. "
+priority = 2
+
+[scope.repo]
+layers = ["docs"]

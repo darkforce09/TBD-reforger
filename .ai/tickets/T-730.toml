@@ -1,27 +1,11 @@
-__keys = [
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "stream",
-    "targets",
-    "executor",
-    "id",
-    "order",
-    "title",
-    "summary",
-    "notes",
-]
-__ord = 703
-executor = "claude-code"
 id = "T-730"
-impact = ["ui"]
-notes = "filed by wave-110 adversarial verifier (editor factory)"
-order = 4323
-program = "eden"
-status = "deferred"
-stream = "mission-creator"
-summary = "Wave-110 residue, one ticket. (1) Ray->Viewshed toggle keeps the placed ray (Viewshed->Ray clears) — both lanes non-empty is a two-click repro, one Esc double-dismisses; the UX doc's 'and vice-versa' and the Esc arm's 'only one non-empty' comment are both refuted — make the clear symmetric. (2) T-648's SnapReadout (bottom-11 right-3 z-20, mounted last) paints OVER the expanded right dock — the same corner the file's own :3678 history note marks as the old HUD's failure spot; move it into the status bar's clear span (T-721 pending on the dock/bar z-order). (3) ViewshedState is write-only (no consumers, no observer dot, z clobbered by place_viewshed) and one NEW false comment shipped in the toolbar wiring ('stays present on both paths') — wire the observer dot or trim the state, fix the comment. (4) off-DEM observers still upload an all-Unknown wash — guard or document. Diagnosis: editor_verify/wave110.md MINOR-1/3 + NOTEs."
-surfaces = ["EDITOR"]
-targets = ["website"]
+kind = "work"
 title = "LoS sub-mode residue: asymmetric clear, SnapReadout in the cursed corner, write-only ViewshedState"
+summary = "Wave-110 residue, one ticket. (1) Ray->Viewshed toggle keeps the placed ray (Viewshed->Ray clears) — both lanes non-empty is a two-click repro, one Esc double-dismisses; the UX doc's 'and vice-versa' and the Esc arm's 'only one non-empty' comment are both refuted — make the clear symmetric. (2) T-648's SnapReadout (bottom-11 right-3 z-20, mounted last) paints OVER the expanded right dock — the same corner the file's own :3678 history note marks as the old HUD's failure spot; move it into the status bar's clear span (T-721 pending on the dock/bar z-order). (3) ViewshedState is write-only (no consumers, no observer dot, z clobbered by place_viewshed) and one NEW false comment shipped in the toolbar wiring ('stays present on both paths') — wire the observer dot or trim the state, fix the comment. (4) off-DEM observers still upload an all-Unknown wash — guard or document. Diagnosis: editor_verify/wave110.md MINOR-1/3 + NOTEs."
+status = "deferred"
+order = 4323
+executor = "claude-code"
+notes = "filed by wave-110 adversarial verifier (editor factory)"
+
+[scope.website.editor]
+chrome = []

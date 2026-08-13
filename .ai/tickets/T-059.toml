@@ -1,35 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "spec",
-    "route",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 46
-executor = "claude-code"
 id = "T-059"
-impact = [
-    "perf",
-    "state",
-]
-order = 590
-program = "eden"
-route = "/missions/:id/edit"
-spec = "docs/specs/Mission_Creator_Architecture/t059_bulk_paste_operations.md"
-status = "shipped"
-stream = "mission-creator"
-summary = "O(n) pasteSlots batch writes and selection cap at 10k paste."
-surfaces = [
-    "MAP",
-    "LEFT",
-]
-targets = ["website"]
+kind = "work"
 title = "Bulk paste/delete at scale"
+summary = "O(n) pasteSlots batch writes and selection cap at 10k paste."
+status = "shipped"
+order = 590
+spec = "docs/specs/Mission_Creator_Architecture/t059_bulk_paste_operations.md"
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

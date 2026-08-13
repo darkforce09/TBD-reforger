@@ -1,28 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-    "shipped_at",
-]
-__ord = 318
-executor = "claude-code"
 id = "T-344"
-impact = ["platform-lifecycle"]
-order = 3160
-priority = 1
-program = "platform"
-shipped_at = "71359721"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "One doc mutator to author per-faction briefing prose"
 summary = """
 SPLIT FROM T-214, which proved everything around it already works and refused to reach into a file it did not own.
 
@@ -63,6 +41,11 @@ Its round-trip fixture carries BOTH blank-line paragraph breaks AND a single-new
 REFUSED apply_row_meta with a blocking reason, not a preference: T-214 recorded that build_mission_doc omits meta.briefing when empty while compile_export always emits it, and left that divergence alone. It is currently INVISIBLE because both sides are empty — threading a real value in makes the mirror wrong in a newly visible way. Given T-367 landed a 400 for exactly the string-where-the-object-goes mistake, mixing them here is how that confusion gets re-minted.
 
 Environment note worth keeping: /var/tmp is NOT shared between container and host, so a dir created in the container is invisible to host cargo."""
-surfaces = ["DATA"]
-targets = ["website"]
-title = "One doc mutator to author per-faction briefing prose"
+status = "shipped"
+order = 3160
+executor = "claude-code"
+priority = 1
+shipped_at = "71359721"
+
+[scope.website.editor]
+chrome = []

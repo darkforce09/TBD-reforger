@@ -1,35 +1,16 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 407
-executor = "claude-code"
 id = "T-433"
-impact = ["cms"]
-order = 3272
-priority = 3
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "cms.rs announcement_body_persist_contract unit test is tautological"
 summary = """
 MINOR from wave 7 verifier. handlers/cms.rs announcement_body_persist_contract_is_identity_not_ammonia sets stored = authored.to_string() then asserts equality — never calls create/update. Real pin is IT cms_announcement_body + admin_field.
 
 Repro: read the unit test; it cannot fail if handlers regress to sanitize_html.
 
 Cure: delete it or replace with a non-vacuous pin (handler/IT only)."""
-surfaces = [
-    "BE",
-    "tests",
-]
-targets = ["website"]
-title = "cms.rs announcement_body_persist_contract unit test is tautological"
+status = "shipped"
+order = 3272
+executor = "claude-code"
+priority = 3
+
+[scope.website.editor]
+chrome = []

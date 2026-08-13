@@ -1,20 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-152.6"
+kind = "work"
+title = "T-152.6 — Locations export (`locations.json`)"
+summary = "T-152.6 — Locations export (`locations.json`)"
+status = "shipped"
+order = 1520
+spec = "docs/specs/Mission_Creator_Architecture/t152_6_locations_export.md"
+executor = "claude-code"
 notes = "Town names discovery spike."
 parent = "T-152"
-spec = "docs/specs/Mission_Creator_Architecture/t152_6_locations_export.md"
-status = "shipped"
-targets = [
-    "root",
-    "website",
-]
+
+[scope.repo]
+layers = ["docs"]

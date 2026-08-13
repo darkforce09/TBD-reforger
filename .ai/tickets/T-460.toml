@@ -1,30 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 434
-executor = "claude-code"
 id = "T-460"
-impact = [
-    "website",
-    "mod",
-    "tests",
-]
-order = 3299
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Class-R pins for T-456/T-458 are false-green"
 summary = """
 Residual from wave 22 adversarial. Live T-456/T-458 behavior holds, but Class-R pins accept stubs:
 (1) verify-t456-mission-rest-size-gate.sh treats a // comment containing MISSION_FILE_MAX_BYTES as the pre-ParseMissionJson size check, and only requires the IsMissionBodyWithinCap signature (return true; still greens).
@@ -34,14 +10,11 @@ Repro T-456: move size if after ParseMissionJson but leave T-456 comment with MI
 Repro T-458: let _dead = has_min_role_authed(...); if true { children } → Class-R PASS.
 
 Cure: strip // comments before order assert; require non-comment IsMissionBodyWithinCap( before ParseMissionJson(; pin helper body to Length() <= MISSION_FILE_MAX_BYTES. Bind AdminGate Class-R to if has_min_role_authed(auth.user.get().map(|u| u.role), Role::Admin)."""
-surfaces = [
-    "FE",
-    "tests",
-    "MOD",
-]
-targets = [
-    "website",
-    "mod",
-    "root",
-]
-title = "Class-R pins for T-456/T-458 are false-green"
+status = "shipped"
+order = 3299
+executor = "claude-code"
+notes = "needs-operator: frozen unmappable Scope. "
+priority = 1
+
+[scope.repo]
+layers = ["docs"]

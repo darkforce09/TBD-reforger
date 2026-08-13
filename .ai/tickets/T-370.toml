@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 344
-executor = "claude-code"
 id = "T-370"
-impact = ["platform-lifecycle"]
-order = 3186
-priority = 3
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Remove the 8 dead mark_adopted call sites — but move the purge first"
 summary = """
 FOLLOW-UP from T-352, which deliberately left this and explained why. **The sequencing is the whole ticket; getting it wrong strands data in users' browsers permanently.**
 
@@ -54,6 +34,10 @@ CAVEAT recorded honestly by the slice: the compile-level proof (a real path expr
 which a comment cannot produce) does NOT prove the ORDERING claim (before-fetch / before-`is_uuid`);
 that rests on review of the 4-line prologue. Every file involved is wasm32-only, so no native test can
 call it."""
-surfaces = ["FRONTEND"]
-targets = ["website"]
-title = "Remove the 8 dead mark_adopted call sites — but move the purge first"
+status = "shipped"
+order = 3186
+executor = "claude-code"
+priority = 3
+
+[scope.website.editor]
+chrome = []

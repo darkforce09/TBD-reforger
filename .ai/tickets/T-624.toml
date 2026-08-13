@@ -1,26 +1,6 @@
-__keys = [
-    "program",
-    "impact",
-    "stream",
-    "targets",
-    "executor",
-    "id",
-    "title",
-    "summary",
-    "status",
-    "priority",
-    "order",
-    "surfaces",
-]
-__ord = 597
-executor = "claude-code"
 id = "T-624"
-impact = ["platform-lifecycle"]
-order = 3732
-priority = 3
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Two load-bearing comments asserted a schema and a backend neither author had checked"
 summary = """
 FOUND by wave 81's adversarial verifier; fixed the same wave. **The signature defect in prose** --
 the one form of it this program never systematically hunted.
@@ -59,6 +39,10 @@ STILL OPEN, reported not fixed (both outside the slice''s owns):
 - **A third copy of F1''s false claim** at `frontend/src/event_manager.rs:238-240`.
 - F4, cosmetic: `tests/t578_ratelimit.rs:389` is named `migration_0020_is_the_ddl_constant_verbatim`
   while correctly reading `0021_rate_limit_buckets.sql`; `app.rs:468-469` cites it by that name."""
-surfaces = ["INFRA"]
-targets = ["website"]
-title = "Two load-bearing comments asserted a schema and a backend neither author had checked"
+status = "shipped"
+order = 3732
+executor = "claude-code"
+priority = 3
+
+[scope.website.editor]
+chrome = []

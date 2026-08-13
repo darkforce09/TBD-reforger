@@ -76,9 +76,16 @@ fn validate_row(row: &serde_json::Value) -> Vec<String> {
     let mut errors = vec![];
     let tid = opt_str(row, "id").unwrap_or("?");
     let status = opt_str(row, "status").unwrap_or("");
-    for key in [
-        "id", "title", "summary", "program", "surfaces", "impact", "status",
-    ] {
+    let typed = is_truthy(row.get("kind"));
+    let required = if typed {
+        ["id", "title", "summary", "kind", "status"].as_slice()
+    } else {
+        [
+            "id", "title", "summary", "program", "surfaces", "impact", "status",
+        ]
+        .as_slice()
+    };
+    for key in required {
         if !is_truthy(row.get(key)) {
             errors.push(format!("{tid}: missing {key}"));
         }
@@ -88,6 +95,24 @@ fn validate_row(row: &serde_json::Value) -> Vec<String> {
             "{}: order required for status {status}",
             opt_str(row, "id").unwrap_or("?")
         ));
+    }
+    if typed && matches!(status, "ready" | "running" | "review") {
+        if opt_str(row, "spec").unwrap_or("").trim().is_empty() {
+            errors.push(format!("{tid}: ready-class requires spec"));
+        }
+        if opt_str(row, "user_story").unwrap_or("").trim().is_empty() {
+            errors.push(format!("{tid}: ready-class requires user_story"));
+        }
+        let acc_ok = row
+            .get("acceptance")
+            .and_then(Value::as_array)
+            .is_some_and(|a| {
+                a.iter()
+                    .any(|s| s.as_str().is_some_and(|x| !x.trim().is_empty()))
+            });
+        if !acc_ok {
+            errors.push(format!("{tid}: ready-class requires acceptance"));
+        }
     }
     if let Some(id) = opt_str(row, "id") {
         if FORBIDDEN_PHANTOM_IDS.contains(&id) {
@@ -100,6 +125,7 @@ fn validate_row(row: &serde_json::Value) -> Vec<String> {
 fn validate_registry(registry: &serde_json::Value) -> Vec<String> {
     let mut errors = vec![];
     let mut ids = std::collections::HashSet::new();
+    let mut live_orders: HashMap<i64, String> = HashMap::new();
     for row in tickets(registry) {
         errors.extend(validate_row(row));
         let tid = str_field(row, "id");
@@ -107,7 +133,15 @@ fn validate_registry(registry: &serde_json::Value) -> Vec<String> {
             if ids.contains(&tid) {
                 errors.push(format!("Duplicate id {tid}"));
             }
-            ids.insert(tid);
+            ids.insert(tid.clone());
+        }
+        let status = opt_str(row, "status").unwrap_or("");
+        if matches!(status, "queued" | "ready" | "running" | "review") {
+            if let Some(order) = row.get("order").and_then(Value::as_i64) {
+                if let Some(other) = live_orders.insert(order, tid.clone()) {
+                    errors.push(format!("duplicate live order {order} on {other} and {tid}"));
+                }
+            }
         }
     }
     errors

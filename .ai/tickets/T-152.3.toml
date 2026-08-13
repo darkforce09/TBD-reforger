@@ -1,18 +1,12 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-152.3"
-parent = "T-152"
-spec = "docs/specs/Mission_Creator_Architecture/t152_3_wire_landmark_glyphs.md"
+kind = "work"
+title = "T-152.3 — Wire landmark building glyphs (residency + badges)"
+summary = "T-152.3 — Wire landmark building glyphs (residency + badges)"
 status = "shipped"
-targets = [
-    "root",
-    "website",
-]
+order = 1520
+spec = "docs/specs/Mission_Creator_Architecture/t152_3_wire_landmark_glyphs.md"
+executor = "claude-code"
+parent = "T-152"
+
+[scope.repo]
+layers = ["docs"]

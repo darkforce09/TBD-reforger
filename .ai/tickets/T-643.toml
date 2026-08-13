@@ -1,34 +1,12 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "route",
-    "stream",
-    "targets",
-    "executor",
-    "notes",
-    "depends_on",
-]
-__ord = 626
-depends_on = ["T-661"]
-executor = "claude-code"
 id = "T-643"
-impact = ["ui"]
-notes = "editor-UI program wave 9 (wave_plan.tsv row 109) — SHIPPED wave 109 (editor factory), slice efe403b4; verifier wave109.md"
-order = 4030
-program = "eden"
-route = "/missions/:id/edit"
-status = "shipped"
-stream = "mission-creator"
-summary = 'Operator-requested; ships BEFORE the viewshed. The second of the two dead buttons — the LoS stub is eden_chrome.rs:3715-3717 (`TOOL_DISABLED disabled=true`, MaterialIcon name="visibility"), adjacent to the ruler stub, which is why this and T-642 are one wave apart. Click observer, click target -> clear/blocked plus the terrain profile between them. Samples the loaded DEM (`crates/map-engine-core`, 6400^2 uint16, +/-0.204 m against 11 survey anchors at T-091.0). Cheap, immediately useful for checking a firing position, and it PROVES the DEM sampling path that T-644 then reuses. Code: the button in post-split eden_toolbelt.rs; two-click capture in the same pointer handlers as the ruler (mission_editor.rs); the ray walk and profile in a NEW `apps/website/frontend/src/los_tool.rs` (module name INFERRED; wave 0 pre-declares the stub); `crates/map-engine-core/src/dem/sample.rs` (232 lines, holds DemManifest and the elevation sampler) needs a SEGMENT sampler, not a point sampler. DECIDE INSIDE THE TICKET: eye height above ground for observer and target — a standing soldier is not the terrain surface — and whether the profile renders as an inline chart or an overlay. Same honesty rule as T-642: do not un-disable the button until the tool works.'
-surfaces = [
-    "BOTTOM",
-    "MAP",
-]
-targets = ["website"]
+kind = "work"
 title = "Line of Sight: point-to-point ray"
+summary = 'Operator-requested; ships BEFORE the viewshed. The second of the two dead buttons — the LoS stub is eden_chrome.rs:3715-3717 (`TOOL_DISABLED disabled=true`, MaterialIcon name="visibility"), adjacent to the ruler stub, which is why this and T-642 are one wave apart. Click observer, click target -> clear/blocked plus the terrain profile between them. Samples the loaded DEM (`crates/map-engine-core`, 6400^2 uint16, +/-0.204 m against 11 survey anchors at T-091.0). Cheap, immediately useful for checking a firing position, and it PROVES the DEM sampling path that T-644 then reuses. Code: the button in post-split eden_toolbelt.rs; two-click capture in the same pointer handlers as the ruler (mission_editor.rs); the ray walk and profile in a NEW `apps/website/frontend/src/los_tool.rs` (module name INFERRED; wave 0 pre-declares the stub); `crates/map-engine-core/src/dem/sample.rs` (232 lines, holds DemManifest and the elevation sampler) needs a SEGMENT sampler, not a point sampler. DECIDE INSIDE THE TICKET: eye height above ground for observer and target — a standing soldier is not the terrain surface — and whether the profile renders as an inline chart or an overlay. Same honesty rule as T-642: do not un-disable the button until the tool works.'
+status = "shipped"
+order = 4030
+executor = "claude-code"
+notes = "editor-UI program wave 9 (wave_plan.tsv row 109) — SHIPPED wave 109 (editor factory), slice efe403b4; verifier wave109.md"
+depends_on = ["T-661"]
+
+[scope.website.editor]
+chrome = []

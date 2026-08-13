@@ -1,18 +1,12 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-181.8"
+kind = "work"
+title = "T-181.8"
+summary = "T-181.8"
+status = "shipped"
+order = 1810
+executor = "claude-code"
 notes = 'MOSTLY ALREADY BUILT — the factory caught this before a rewrite. TBD_FrameworkManager already has enum TBD_EGameStage{LOADING,LOBBY,BRIEFING,SAFE_START,LIVE,END,DEBRIEF}, a replicated [RplProp(onRplName:"OnStageReplicated")] m_Stage, SetStage()+Replication.BumpMe(), and IsFrameworkWorld(). Remaining gap is stage CONTENT: BRIEFING and SAFE_START are enum-only (no logic).'
 parent = "T-181"
-status = "shipped"
-targets = [
-    "mod",
-    "root",
-]
+
+[scope.repo]
+layers = ["docs"]

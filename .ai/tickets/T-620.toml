@@ -1,26 +1,6 @@
-__keys = [
-    "program",
-    "impact",
-    "stream",
-    "targets",
-    "executor",
-    "surfaces",
-    "id",
-    "title",
-    "summary",
-    "status",
-    "priority",
-    "order",
-]
-__ord = 593
-executor = "claude-code"
 id = "T-620"
-impact = ["platform-lifecycle"]
-order = 3672
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "verify-no-python has been RED since the factory started, is in no CI job, and half of it cannot fire"
 summary = """
 OPERATOR-RAISED 2026-08-01: *"I thought I had made a rule to make future scripts be in Rust using
 xtask. That does not seem like it's the case."* **The rule exists and is correct. It has simply never
@@ -66,6 +46,10 @@ interpreter-invocation half of this gate has never once run.
 RELATED: T-621 (no rule at all for shell), T-611 (`verify-citations` scoped so it never read Rust),
 T-606/T-612 (health checks satisfied only by a stale build). Same class each time: **a tool reports
 success over an input it never actually examined.**"""
-surfaces = ["INFRA"]
-targets = ["website"]
-title = "verify-no-python has been RED since the factory started, is in no CI job, and half of it cannot fire"
+status = "shipped"
+order = 3672
+executor = "claude-code"
+priority = 1
+
+[scope.website.editor]
+chrome = []

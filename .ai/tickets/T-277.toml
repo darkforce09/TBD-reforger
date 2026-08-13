@@ -1,25 +1,9 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 251
-executor = "claude-code"
 id = "T-277"
-impact = ["data-pipeline"]
-order = 2950
-program = "eden"
-status = "idea"
-stream = "mission-creator"
-summary = "444 of 1,623 prefabs fall through to the fallback rule against only 66 classify rules. vegetation and utility are both zero despite P3_vegetation being listed as shipped, and the road census reports zero while roads.json.gz ships 888 segments across five classes."
-surfaces = ["REG"]
-targets = ["root"]
+kind = "work"
 title = "27.4% of the shipped map catalogue is unclassified"
+summary = "444 of 1,623 prefabs fall through to the fallback rule against only 66 classify rules. vegetation and utility are both zero despite P3_vegetation being listed as shipped, and the road census reports zero while roads.json.gz ships 888 segments across five classes."
+status = "idea"
+executor = "claude-code"
+
+[scope.repo]
+layers = ["xtask"]

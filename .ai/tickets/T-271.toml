@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 245
-executor = "claude-code"
 id = "T-271"
-impact = ["platform-server"]
-order = 2890
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "/modpacks is get-only and the handler contains no DML; the only INSERT is the offline registry importer. modpack_mods has name, is_key_dependency and sort_order but no workshop_id, mod_guid or version, so it structurally cannot express a Reforger game.mods[] entry. The frontend page is fully mock and its Save writes to an in-memory map while toasting success."
-surfaces = ["SHELL"]
-targets = ["website"]
+kind = "work"
 title = "Modpack CRUD plus workshop-id columns"
+summary = "/modpacks is get-only and the handler contains no DML; the only INSERT is the offline registry importer. modpack_mods has name, is_key_dependency and sort_order but no workshop_id, mod_guid or version, so it structurally cannot express a Reforger game.mods[] entry. The frontend page is fully mock and its Save writes to an in-memory map while toasting success."
+status = "shipped"
+order = 2890
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

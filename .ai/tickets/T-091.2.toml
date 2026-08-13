@@ -1,17 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-091.2"
+kind = "work"
+title = "T-091.2 — Z-axis editor UX"
+summary = "T-091.2 — Z-axis editor UX"
+status = "shipped"
+order = 910
+spec = "docs/specs/Mission_Creator_Architecture/t091_2_z_axis_editor.md"
+executor = "claude-code"
 parent = "T-091"
 shipped_at = "dde589e"
-spec = "docs/specs/Mission_Creator_Architecture/t091_2_z_axis_editor.md"
-status = "shipped"
-targets = ["website"]
+
+[scope.website.editor]
+chrome = []

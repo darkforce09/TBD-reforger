@@ -1,30 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 435
-executor = "claude-code"
 id = "T-461"
-impact = [
-    "website",
-    "infra",
-    "tests",
-]
-order = 3300
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Class-R pins for T-438/T-448 are false-green"
 summary = """
 Residual from wave 23 adversarial. Live T-438/T-448 behavior holds, but Class-R pins accept stubs:
 (1) verify-t438-deploy-staging-compose-path.sh accepts apps/website/docker-compose.staging.yml anywhere (including comments) and only bans one exact cd .../api string — live can use apps/website/api/docker-compose.staging.yml while dry-run stays good and still PASS. Script also unwired from Makefile/CI/cold gate.
@@ -34,14 +10,10 @@ Repro T-438: keep good path in comment/dry-run; set live -f apps/website/api/doc
 Repro T-448: zero→em-dash conditional → dossier Class-R PASS; fake SELECT 0::bigint → check green.
 
 Cure: strip comments; require good compose path on both dry-run and live lines; reject apps/website/api/docker-compose.staging.yml; wire verify into slice/Makefile if natural. Forbid em-dash near Deployments / require exact single bind; pin/IT that roster total_deployments equals seeded users.total_deployments."""
-surfaces = [
-    "FE",
-    "tests",
-    "INFRA",
-    "API",
-]
-targets = [
-    "website",
-    "root",
-]
-title = "Class-R pins for T-438/T-448 are false-green"
+status = "shipped"
+order = 3300
+executor = "claude-code"
+priority = 1
+
+[scope.repo]
+layers = ["docs"]

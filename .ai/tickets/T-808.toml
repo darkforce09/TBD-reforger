@@ -1,33 +1,11 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "status",
-    "stream",
-    "targets",
-    "executor",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "notes",
-]
-__ord = 780
-executor = "claude-code"
 id = "T-808"
-impact = [
-    "ui",
-    "mission-creator",
-]
-notes = """depends_on T-790; T-157 visual-overhaul overlap cited in notes rather than absorbed (T-157 is broader) | operator note 2026-08-10: the T-790 procedural marker glyphs read "a little weird — not wrong, but weird"; when doing unit symbology, revisit marker glyph iconography in the same visual language | wave-205 verifier: slots render NO heading in any mode (lane yaw hardcoded 0) — unit symbology MUST carry orientation (T-832 is the finding; fold the yaw lane extension into this ticket, T-790 glyph-id lane as the template) | OPERATOR DIRECTION 2026-08-10 (symbology spec): slot glyph = circle WITH A FACING POINT (the point is the heading); vehicles = top-down SILHOUETTES per kind (a BTR looks like a BTR from above); rotation-widget usability depends on this — 'impossible to tell where you're rotating it' today | SHIPPED W207 (engine half + 3 completion passes): the operator's symbology language — slot disc with a FACING POINT, role knockouts (leader/medic/AT/MG), top-down vehicle silhouettes per kind, neutral comment bubble. T-832 DEAD (heading renders; 9-point sweep monotonic, wrap-continuous). Feeders wired in completion (3e19524f) off the id-sorted reader — column alignment held across delete/undo/drag mutations (verifier: 0.0 delta). A CLAMP-NOT-WRAP defect in the new code made headings 181-359 all draw south — caught by completion A, fixed 0bc55dc5; the same defect is live on the world lanes -> T-842. Marker glyphs rebuilt from the picker SVGs (the operator's 'weird'): zero border ink, anchor-honest centroids, 55/55 pairs distinct."""
-order = 4900
-program = "eden"
-status = "shipped"
-stream = "mission-creator"
-summary = "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). F-10 — the map is dot soup: slots are plain circles (amber selected + heading arrow, pale blue otherwise), markers were identical circles (T-790 fixes markers), nothing distinguishes a rifleman from a medic from an AT gunner, and marker-vs-unit ambiguity was verified (operator + review agree; Eden's 2D map renders filled side-coloured entity glyphs — frame 170028 crops). A milsim author reads maps by symbology. FIX: per-slot glyph in the unit lane: side colour + role class glyph (minimum set: leader chevron, medic cross, AT, MG, rifleman default — derive role class from the slot role/kit string), distinct SHAPE class from markers (T-790's glyphs) and comments (T-796's bubble); selection ring/heading arrow render ON TOP unchanged. Consumes T-790's lane-format extension (crates/map-engine-core/src/slots_gpu.rs ~745-line instance path + crates/map-engine-render/src/engine.rs read half). ⚠️ TRAPS: engine.rs is CO-OWNED with T-790's wave — this lands 3 waves later on merged main, build on its final lane format (belt-and-braces per packing risk 5); zoom behaviour: glyphs legible at squad scale, degrade to dots only below a stated m/px; role-string mapping table lives in one place and is unit-tested (kit:us_rifleman -> rifleman etc.). ACCEPTANCE: wasm unit test on the role->glyph mapping (all seeded kits map, unknown -> default); scripted screenshot at 1.0 and 4.0 m/px: medic vs rifleman vs leader pixel signatures pairwise distinct; marker vs unit vs comment shapes pairwise distinct; selected unit still shows ring+heading."
-surfaces = [
-    "MAP",
-    "XFORM",
-]
-targets = ["website"]
+kind = "work"
 title = "Units render as role-and-side symbology, not dots"
+summary = "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). F-10 — the map is dot soup: slots are plain circles (amber selected + heading arrow, pale blue otherwise), markers were identical circles (T-790 fixes markers), nothing distinguishes a rifleman from a medic from an AT gunner, and marker-vs-unit ambiguity was verified (operator + review agree; Eden's 2D map renders filled side-coloured entity glyphs — frame 170028 crops). A milsim author reads maps by symbology. FIX: per-slot glyph in the unit lane: side colour + role class glyph (minimum set: leader chevron, medic cross, AT, MG, rifleman default — derive role class from the slot role/kit string), distinct SHAPE class from markers (T-790's glyphs) and comments (T-796's bubble); selection ring/heading arrow render ON TOP unchanged. Consumes T-790's lane-format extension (crates/map-engine-core/src/slots_gpu.rs ~745-line instance path + crates/map-engine-render/src/engine.rs read half). ⚠️ TRAPS: engine.rs is CO-OWNED with T-790's wave — this lands 3 waves later on merged main, build on its final lane format (belt-and-braces per packing risk 5); zoom behaviour: glyphs legible at squad scale, degrade to dots only below a stated m/px; role-string mapping table lives in one place and is unit-tested (kit:us_rifleman -> rifleman etc.). ACCEPTANCE: wasm unit test on the role->glyph mapping (all seeded kits map, unknown -> default); scripted screenshot at 1.0 and 4.0 m/px: medic vs rifleman vs leader pixel signatures pairwise distinct; marker vs unit vs comment shapes pairwise distinct; selected unit still shows ring+heading."
+status = "shipped"
+order = 4900
+executor = "claude-code"
+notes = """depends_on T-790; T-157 visual-overhaul overlap cited in notes rather than absorbed (T-157 is broader) | operator note 2026-08-10: the T-790 procedural marker glyphs read "a little weird — not wrong, but weird"; when doing unit symbology, revisit marker glyph iconography in the same visual language | wave-205 verifier: slots render NO heading in any mode (lane yaw hardcoded 0) — unit symbology MUST carry orientation (T-832 is the finding; fold the yaw lane extension into this ticket, T-790 glyph-id lane as the template) | OPERATOR DIRECTION 2026-08-10 (symbology spec): slot glyph = circle WITH A FACING POINT (the point is the heading); vehicles = top-down SILHOUETTES per kind (a BTR looks like a BTR from above); rotation-widget usability depends on this — 'impossible to tell where you're rotating it' today | SHIPPED W207 (engine half + 3 completion passes): the operator's symbology language — slot disc with a FACING POINT, role knockouts (leader/medic/AT/MG), top-down vehicle silhouettes per kind, neutral comment bubble. T-832 DEAD (heading renders; 9-point sweep monotonic, wrap-continuous). Feeders wired in completion (3e19524f) off the id-sorted reader — column alignment held across delete/undo/drag mutations (verifier: 0.0 delta). A CLAMP-NOT-WRAP defect in the new code made headings 181-359 all draw south — caught by completion A, fixed 0bc55dc5; the same defect is live on the world lanes -> T-842. Marker glyphs rebuilt from the picker SVGs (the operator's 'weird'): zero border ink, anchor-honest centroids, 55/55 pairs distinct."""
+
+[scope.website.editor]
+chrome = []

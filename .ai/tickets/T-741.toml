@@ -1,27 +1,11 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "status",
-    "stream",
-    "targets",
-    "executor",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "notes",
-]
-__ord = 714
-executor = "claude-code"
 id = "T-741"
-impact = ["ui"]
-notes = "filed by wave-112 adversarial verifier (editor factory)"
-order = 4617
-program = "eden"
-status = "shipped"
-stream = "mission-creator"
-summary = "NIT from the wave-112 verifier. editor_ops.rs:1826-1842 attrs_multi_ids filters the selection down to slots, because vehicles carry none of the SoA columns the multi-edit writes. But the Attributes modal header reports 'N entities selected' from the FULL selection and the per-field copy says 'every selected entity'. Under a Ctrl+A select-all — which T-649 shipped this wave, and which deliberately includes vehicles — those two strings overclaim: the user is told N entities will be changed when only the slot subset will be. Either count the filtered set in the header or say explicitly that vehicles are excluded. Low severity but it is the same honesty class as T-716 (a control that says it does more than it does). Diagnosis: editor_verify/wave112.md NIT-4."
-surfaces = ["ATTR"]
-targets = ["website"]
+kind = "work"
 title = "Multi-edit overclaims its scope on mixed slot+vehicle selections"
+summary = "NIT from the wave-112 verifier. editor_ops.rs:1826-1842 attrs_multi_ids filters the selection down to slots, because vehicles carry none of the SoA columns the multi-edit writes. But the Attributes modal header reports 'N entities selected' from the FULL selection and the per-field copy says 'every selected entity'. Under a Ctrl+A select-all — which T-649 shipped this wave, and which deliberately includes vehicles — those two strings overclaim: the user is told N entities will be changed when only the slot subset will be. Either count the filtered set in the header or say explicitly that vehicles are excluded. Low severity but it is the same honesty class as T-716 (a control that says it does more than it does). Diagnosis: editor_verify/wave112.md NIT-4."
+status = "shipped"
+order = 4617
+executor = "claude-code"
+notes = "filed by wave-112 adversarial verifier (editor factory)"
+
+[scope.website.editor]
+chrome = []

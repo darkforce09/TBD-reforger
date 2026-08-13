@@ -1,25 +1,9 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 268
-executor = "claude-code"
 id = "T-294"
-impact = ["data-pipeline"]
-order = 3120
-program = "eden"
-status = "idea"
-stream = "mission-creator"
-summary = "terrain-registry.json declares everon (active, all five phases shipped) and arland (queued, P1 only) but arland has only a 756-byte manifest and zero object data."
-surfaces = ["REG"]
-targets = ["root"]
+kind = "work"
 title = "Only one of two registered terrains has object data"
+summary = "terrain-registry.json declares everon (active, all five phases shipped) and arland (queued, P1 only) but arland has only a 756-byte manifest and zero object data."
+status = "idea"
+executor = "claude-code"
+
+[scope.repo]
+layers = ["xtask"]

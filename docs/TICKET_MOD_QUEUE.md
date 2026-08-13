@@ -5,4 +5,3 @@
 
 Tickets for Workbench or human execution (`apps/mod/` targets).
 
-- **T-120** (queued) — Staging soak + golden mission smoke [human] — milestone M1

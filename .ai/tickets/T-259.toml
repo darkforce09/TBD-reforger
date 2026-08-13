@@ -1,25 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 233
-executor = "claude-code"
 id = "T-259"
-impact = ["mc-settings"]
-order = 2770
-program = "eden"
-status = "shipped"
-stream = "mission-creator"
-summary = "mission.schema.json:451-462 defines respawn, spectatorPolicy and nightVision. TBD_MissionDocumentStruct has no settings member and flatten has no settings field. The block appears only in the schema, the four hand-written goldens and one doc."
-surfaces = ["ATTR"]
-targets = ["mod"]
+kind = "work"
 title = "The mod has no reader for the settings block"
+summary = "mission.schema.json:451-462 defines respawn, spectatorPolicy and nightVision. TBD_MissionDocumentStruct has no settings member and flatten has no settings field. The block appears only in the schema, the four hand-written goldens and one doc."
+status = "shipped"
+order = 2770
+executor = "claude-code"
+notes = "needs-operator: frozen unmappable Scope. "
+
+[scope.repo]
+layers = ["docs"]

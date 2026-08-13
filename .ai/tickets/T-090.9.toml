@@ -1,15 +1,17 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-090.9"
-parent = "T-090"
-spec = "docs/specs/Mission_Creator_Architecture/t090_9_world_object_interaction.md"
+kind = "work"
+title = "T-090.9 — World-object interaction (hover, inspect, filter, legend)"
+summary = "T-090.9 — World-object interaction (hover, inspect, filter, legend)"
 status = "ready"
-targets = ["website"]
+order = 900
+spec = "docs/specs/Mission_Creator_Architecture/t090_9_world_object_interaction.md"
+executor = "claude-code"
+parent = "T-090"
+user_story = "Static world objects become read-only context you can interrogate — hover for a tooltip, click for a read-only inspect panel with Ask AI about this object, filter/search by taxonomy, a legend, and a Z-trust badge — without ever moving them."
+acceptance = [
+    "Hover tooltip, click inspect, filter, legend, Z-trust badge.",
+    "Move/delete/edit terrain props remain Workbench-only.",
+]
+
+[scope.website.editor]
+chrome = []

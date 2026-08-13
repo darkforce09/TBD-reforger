@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 394
-executor = "claude-code"
 id = "T-420"
-impact = ["platform-lifecycle"]
-order = 3250
-priority = 0
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "The wave gate validates no schema — 11 green steps over a schema change it never examined"
 summary = """
 BLOCKER by the standing rule: a gate that reports success on code it never examined. Found 2026-07-26 during wave 5 when T-244's slice turned `xtask schema map-object-enums` RED and NOTHING in the gate noticed.
 
@@ -35,6 +15,10 @@ THE OBVIOUS FIX IS ITSELF VACUOUS -- this is the trap, do not fall into it. On T
 CONSTRAINT that makes this non-trivial: at least one schema sub-gate is red on main today for unrelated reasons. `xtask schema height-labels` fails with 'PNG decode: Invalid PNG signature' because the DEM asset is an LFS pointer and git-lfs is absent from the container PATH. Adding a step that is already red would red every future wave -- which is precisely T-409's failure mode (guards that refuse legitimate work). So the slice must determine which sub-gates are BOTH meaningful AND currently green, add those, and record why each excluded one is excluded.
 
 NOT THIS TICKET: T-409 covers wave.sh's false-red hard-fails from T-406. Same file, different defect. Sequence them; do not merge the two."""
-surfaces = ["INFRA"]
-targets = ["website"]
-title = "The wave gate validates no schema — 11 green steps over a schema change it never examined"
+status = "shipped"
+order = 3250
+executor = "claude-code"
+priority = 0
+
+[scope.website.editor]
+chrome = []

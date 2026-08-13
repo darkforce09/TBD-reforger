@@ -1,22 +1,14 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-151.9"
+kind = "work"
+title = "T-151.9 — Deck flip + retirement (W9)"
+summary = "T-151.9 — Deck flip + retirement (W9)"
+status = "shipped"
+order = 1500
+spec = "docs/specs/Mission_Creator_Architecture/t151_9_deck_retirement.md"
+executor = "claude-code"
 notes = "Always WgpuTacticalMap; Deck runtime deleted; deck.gl+luma → devDependencies; vitest 281; dist Deck-free. Verify: .ai/artifacts/t151_9_verify_log.md"
 parent = "T-151"
 shipped_at = "c4831451"
-spec = "docs/specs/Mission_Creator_Architecture/t151_9_deck_retirement.md"
-status = "shipped"
-targets = [
-    "root",
-    "website",
-]
+
+[scope.repo]
+layers = ["docs"]

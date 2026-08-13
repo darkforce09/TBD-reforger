@@ -1,0 +1,11 @@
+id = "T-674.2"
+kind = "work"
+title = "T-674 Enfusion reader"
+summary = "T-674 Enfusion reader"
+status = "queued"
+order = 4310
+executor = "claude-code"
+parent = "T-674"
+
+[scope.mod]
+layers = ["backend"]

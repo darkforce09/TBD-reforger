@@ -1,29 +1,10 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "stream",
-    "targets",
-    "executor",
-    "status",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "milestone",
-    "depends_on",
-]
-__ord = 89
-depends_on = []
-executor = "workbench"
 id = "T-115"
-impact = ["schema"]
-milestone = "M1"
-order = 1150
-program = "platform"
-status = "shipped"
-stream = "mod-framework"
-summary = "SHIPPED (closed 2026-07-26 by audit). Delivered by T-181.39: TBD_ObjectiveRegistry.c (956 lines) implements capture/destroy/hold-until with end triggers wired through TBD_ObjectivesComponent.c:761 -> EvaluateEndTriggers -> SetStage(END)."
-surfaces = ["DATA"]
-targets = ["mod"]
+kind = "work"
 title = "Capture win condition"
+summary = "SHIPPED (closed 2026-07-26 by audit). Delivered by T-181.39: TBD_ObjectiveRegistry.c (956 lines) implements capture/destroy/hold-until with end triggers wired through TBD_ObjectivesComponent.c:761 -> EvaluateEndTriggers -> SetStage(END)."
+status = "shipped"
+order = 1150
+executor = "workbench"
+
+[scope.mod]
+layers = ["feature"]

@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 530
-executor = "claude-code"
 id = "T-556"
-impact = ["platform-lifecycle"]
-order = 3401
-priority = 0
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "BLOCKER: the gate depends on `rg`, which is installed nowhere — it resolves only via an agent-injected shell function"
 summary = """
 Found 2026-07-27 while gating T-555. **The wave gate is RED on merged main** and has been before T-555 touched anything — proven by running both scripts from a clean checkout with no slice changes (both exit 1).
 
@@ -71,6 +51,10 @@ SCOPE: verify-t456, verify-t437, verify-t296, verify-t452, plus a sweep of scrip
 and scripts/platform/*.sh for any other `rg` use or `if grep ...; then fail; fi` shape. Decide
 deliberately whether the two dead scripts get wired into the gate or deleted -- do not leave them
 dead AND broken."""
-surfaces = ["INFRA"]
-targets = ["website"]
-title = "BLOCKER: the gate depends on `rg`, which is installed nowhere — it resolves only via an agent-injected shell function"
+status = "shipped"
+order = 3401
+executor = "claude-code"
+priority = 0
+
+[scope.website.editor]
+chrome = []

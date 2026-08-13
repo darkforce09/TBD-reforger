@@ -1,19 +1,14 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-180.1"
+kind = "work"
+title = "T-180.1 — Foundation schema + place→new squad"
+summary = "T-180.1 — Foundation schema + place→new squad"
+status = "shipped"
+order = 1760
+spec = "docs/specs/Mission_Creator_Architecture/t180_1_foundation_schema.md"
+executor = "claude-code"
 notes = "Tag T-180.1. Core place_orbat + set_leader + callsign/rank; FE active_side; A1–A5 + A3 rg; ci-local-leptos. Verify: .ai/artifacts/t180_1_verify_log.md. Note: cargo test needs --features doc."
 parent = "T-180"
 shipped_at = "aeb51209"
-spec = "docs/specs/Mission_Creator_Architecture/t180_1_foundation_schema.md"
-status = "shipped"
-targets = ["website"]
+
+[scope.website.editor]
+chrome = []

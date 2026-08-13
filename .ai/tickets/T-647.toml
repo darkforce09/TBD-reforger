@@ -1,34 +1,12 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "route",
-    "stream",
-    "targets",
-    "executor",
-    "notes",
-    "depends_on",
-]
-__ord = 618
-depends_on = ["T-661"]
-executor = "claude-code"
 id = "T-647"
-impact = ["ui"]
-notes = "editor-UI program wave 6 (wave_plan.tsv row 106) — SHIPPED wave 106 (2863186d) WITH PARTIALS: PLACE-001 click-then-click NOT delivered end-to-end and ATTR-OPEN-001 vehicles-only (verifier wave106.md MAJOR-1..4 → T-723/T-724); Ctrl resolution + Alt-empty + regroup + picker sound"
-order = 3950
-program = "eden"
-route = "/missions/:id/edit"
-status = "shipped"
-stream = "mission-creator"
-summary = "SUPERSEDES T-072 and T-077 (both cancelled in favour of this row) and absorbs three interaction-sweep slices, because they are all the same seam: what a click or a double-click on the map MEANS. Ids: `PLACE-001` (TBD is drag-only; Eden also supports click-then-click), `PLACE-003` (double-click empty ground -> asset picker), `PLACE-004` (Ctrl multi-place), `PLACE-CREW-001` (Alt = place empty vehicle), `ATTR-OPEN-001` (double-click opens Attributes for vehicles/objects/zones, not just slots) and `CONN-GROUP-001`'s map half (Ctrl + drag character->character to regroup). Code: the place is consumed on canvas release — `apps/website/frontend/src/mission_editor.rs` `onpointerup` :1644 with the on-canvas guard :1668-1671 and the palette-drag comment :1655-1662; the dblclick at :1934. `ATTR-OPEN-001` is a ONE-CALL-SITE SWAP, verified: the dblclick handler at :1963 calls `crate::select_tool::pick(...)` while the click path already uses `st::pick_slot_or_vehicle` at :1537 and :1733 (both exist, select_tool.rs:128 and :150). `Alt` is genuinely free: all three word-boundary `alt_key` hits were read (mission_history.rs:490, mission_editor.rs:1020 and :1023) and not one is a placement modifier. In editor_ops.rs the arm/consume lifecycle is `begin_place` :1037, `begin_place_vehicle` :1044, `begin_place_object` :1049, `has_pending` :1079, `cancel_pending` :1096, `place_at` :2191 (the `take()` is at :2204) — Ctrl-multi-place = do not clear pending on release; Alt-empty = a flag through `place_at`; regrouping is a squad-membership write on the shape of `orbat_add_vehicle` :1616 (core side already exists: store.rs:835 `attach_vehicle`, :880 `detach_vehicle`). Ctrl is overloaded by multi-place AND map grouping — resolve that inside this ticket; it is the reason they are one row."
-surfaces = [
-    "PLACE",
-    "MAP",
-]
-targets = ["website"]
+kind = "work"
 title = "Placement interactions: click-then-click, Ctrl multi-place, Alt empty vehicle, dbl-click entry points"
+summary = "SUPERSEDES T-072 and T-077 (both cancelled in favour of this row) and absorbs three interaction-sweep slices, because they are all the same seam: what a click or a double-click on the map MEANS. Ids: `PLACE-001` (TBD is drag-only; Eden also supports click-then-click), `PLACE-003` (double-click empty ground -> asset picker), `PLACE-004` (Ctrl multi-place), `PLACE-CREW-001` (Alt = place empty vehicle), `ATTR-OPEN-001` (double-click opens Attributes for vehicles/objects/zones, not just slots) and `CONN-GROUP-001`'s map half (Ctrl + drag character->character to regroup). Code: the place is consumed on canvas release — `apps/website/frontend/src/mission_editor.rs` `onpointerup` :1644 with the on-canvas guard :1668-1671 and the palette-drag comment :1655-1662; the dblclick at :1934. `ATTR-OPEN-001` is a ONE-CALL-SITE SWAP, verified: the dblclick handler at :1963 calls `crate::select_tool::pick(...)` while the click path already uses `st::pick_slot_or_vehicle` at :1537 and :1733 (both exist, select_tool.rs:128 and :150). `Alt` is genuinely free: all three word-boundary `alt_key` hits were read (mission_history.rs:490, mission_editor.rs:1020 and :1023) and not one is a placement modifier. In editor_ops.rs the arm/consume lifecycle is `begin_place` :1037, `begin_place_vehicle` :1044, `begin_place_object` :1049, `has_pending` :1079, `cancel_pending` :1096, `place_at` :2191 (the `take()` is at :2204) — Ctrl-multi-place = do not clear pending on release; Alt-empty = a flag through `place_at`; regrouping is a squad-membership write on the shape of `orbat_add_vehicle` :1616 (core side already exists: store.rs:835 `attach_vehicle`, :880 `detach_vehicle`). Ctrl is overloaded by multi-place AND map grouping — resolve that inside this ticket; it is the reason they are one row."
+status = "shipped"
+order = 3950
+executor = "claude-code"
+notes = "editor-UI program wave 6 (wave_plan.tsv row 106) — SHIPPED wave 106 (2863186d) WITH PARTIALS: PLACE-001 click-then-click NOT delivered end-to-end and ATTR-OPEN-001 vehicles-only (verifier wave106.md MAJOR-1..4 → T-723/T-724); Ctrl resolution + Alt-empty + regroup + picker sound"
+depends_on = ["T-661"]
+
+[scope.website.editor]
+chrome = []

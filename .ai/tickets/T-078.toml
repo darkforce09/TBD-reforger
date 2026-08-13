@@ -1,32 +1,10 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "status",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "route",
-    "branch",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 65
-branch = "ticket/T-078"
-executor = "claude-code"
 id = "T-078"
-impact = [
-    "ui",
-    "state",
-]
-order = 780
-program = "eden"
-route = "/missions/:id/edit"
-status = "cancelled"
-stream = "mission-creator"
-summary = """CANCELLED 2026-08-01 — MERGED INTO T-650 ("Compositions: save and place"), which is the same ticket under another name and carries all six of this row's ids (`RIGHT-MODE-002`, `COMP-SAVE-001`, `COMP-EDIT-001`, `COMP-PLACE-001`, and Workshop/Subscribe as explicitly deferred) plus the three `ATTR-FIELD-COMP-*` metadata fields. No mission-contract blocker: `comp:` already exists in $defs/alias and asset_catalog.rs already classifies Bohemia's compositions."""
-surfaces = ["COMP"]
-targets = ["website"]
+kind = "work"
 title = "Custom compositions"
+summary = """CANCELLED 2026-08-01 — MERGED INTO T-650 ("Compositions: save and place"), which is the same ticket under another name and carries all six of this row's ids (`RIGHT-MODE-002`, `COMP-SAVE-001`, `COMP-EDIT-001`, `COMP-PLACE-001`, and Workshop/Subscribe as explicitly deferred) plus the three `ATTR-FIELD-COMP-*` metadata fields. No mission-contract blocker: `comp:` already exists in $defs/alias and asset_catalog.rs already classifies Bohemia's compositions."""
+status = "cancelled"
+order = 780
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

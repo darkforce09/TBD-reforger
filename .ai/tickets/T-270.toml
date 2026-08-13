@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 244
-executor = "claude-code"
 id = "T-270"
-impact = ["platform-server"]
-order = 2880
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "server_control.rs is 312 lines with zero on: handlers, and selected is bound to MOCK_SERVERS[0] as a compile-time constant. Restart, Stop, Launch, four Quick Actions, the RCON input and send are all inert, and there is no Start control at all. The console renders a fabricated log including a fake RCON listener line."
-surfaces = ["SHELL"]
-targets = ["website"]
+kind = "work"
 title = "Wire the Server Control page — ten dead controls"
+summary = "server_control.rs is 312 lines with zero on: handlers, and selected is bound to MOCK_SERVERS[0] as a compile-time constant. Restart, Stop, Launch, four Quick Actions, the RCON input and send are all inert, and there is no Start control at all. The console renders a fabricated log including a fake RCON listener line."
+status = "shipped"
+order = 2880
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

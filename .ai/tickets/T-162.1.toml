@@ -1,17 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "spec",
-    "notes",
-]
-__ord = 0
-executor = "cursor-docs"
 id = "T-162.1"
+kind = "work"
+title = "T-162 — Eradicate all remaining Python (→ Rust)"
+summary = "T-162 — Eradicate all remaining Python (→ Rust)"
+status = "shipped"
+order = 1590
+spec = "docs/platform/t162_python_eradication.md"
+executor = "cursor-docs"
 notes = "MCP consume/socket-send/probe-sock → xtask; flip mcp-call/daemon/selftest."
 parent = "T-162"
-spec = "docs/platform/t162_python_eradication.md"
-status = "shipped"
-targets = ["root"]
+
+[scope.repo]
+layers = ["xtask"]

@@ -1,38 +1,14 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "stream",
-    "targets",
-    "executor",
-    "status",
-    "surfaces",
-    "impact",
-    "depends_on",
-    "spec",
-    "branch",
-]
-__ord = 113
-branch = "ticket/T-139"
+id = "T-139"
+kind = "work"
+title = "Lobby loadout visual preview"
+summary = "In-game lobby: kit preview (icon grid → 2D mannequin → stretch 3D). After T-068.13 production slot picker."
+status = "idea"
+spec = "docs/platform/tbd_north_star_backlog.md"
+executor = "workbench"
 depends_on = [
     "T-068.13",
     "T-114",
 ]
-executor = "workbench"
-id = "T-139"
-impact = ["ui"]
-program = "platform"
-spec = "docs/platform/tbd_north_star_backlog.md"
-status = "idea"
-stream = "mod-framework"
-summary = "In-game lobby: kit preview (icon grid → 2D mannequin → stretch 3D). After T-068.13 production slot picker."
-surfaces = [
-    "UI",
-    "ORBAT",
-]
-targets = [
-    "mod",
-    "website",
-]
-title = "Lobby loadout visual preview"
+
+[scope.repo]
+layers = ["docs"]

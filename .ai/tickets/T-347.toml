@@ -1,28 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-    "shipped_at",
-]
-__ord = 321
-executor = "claude-code"
 id = "T-347"
-impact = ["platform-lifecycle"]
-order = 3163
-priority = 0
-program = "platform"
-shipped_at = "57f9c7ca"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "A whitespace source_match_id becomes a live dedupe key and destroys match history"
 summary = """
 FOUND by T-343's sweep. The worst mechanism in the whole family.
 
@@ -55,9 +33,11 @@ T-316 HELD, all re-verified by running: absent still creates (a UNIQUE btree tre
 TRIM SAFETY CHECKED AGAINST THE T-343 HAZARD: matches.source_match_id has exactly one writer and one lookup-by-value, both now this function's return value, and a repo-wide sweep confirms nothing compares against it — deployments.rs:134 and models::Match only carry it outward, and the mod's TBD_ResultsReporter.c:533 only sends it. Unlike orbat_reservations.squad there is no second site to disagree with. Live blast radius measured read-only on the operator's DB: 3 matches, 0 blank, 0 padded — no migration exposure.
 
 FOUND AND FIXED IN PASSING: parse_uuid_opt did NOT trim while server_id's path did, so a padded event_id failed the parse, fell out as None, and the attendance UPDATE was silently skipped on a 200."""
-surfaces = [
-    "API",
-    "DATA",
-]
-targets = ["website"]
-title = "A whitespace source_match_id becomes a live dedupe key and destroys match history"
+status = "shipped"
+order = 3163
+executor = "claude-code"
+priority = 0
+shipped_at = "57f9c7ca"
+
+[scope.website.editor]
+chrome = []

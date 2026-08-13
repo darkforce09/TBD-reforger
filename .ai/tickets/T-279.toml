@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 253
-executor = "claude-code"
 id = "T-279"
-impact = ["discord"]
-order = 2970
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "There is no bot skeleton at all. Grep for serenity, twilight, poise, discord.js, gateway, application command or ed25519 across every file type returns zero hits. DISCORD_BOT_TOKEN is loaded at config.rs:46,87 and never read by any consumer. No interactions endpoint, no signature verification, no inbound Discord surface."
-surfaces = ["CONN"]
-targets = ["website"]
+kind = "work"
 title = "Discord bot — greenfield"
+summary = "There is no bot skeleton at all. Grep for serenity, twilight, poise, discord.js, gateway, application command or ed25519 across every file type returns zero hits. DISCORD_BOT_TOKEN is loaded at config.rs:46,87 and never read by any consumer. No interactions endpoint, no signature verification, no inbound Discord surface."
+status = "shipped"
+order = 2970
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

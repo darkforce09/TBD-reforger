@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 396
-executor = "claude-code"
 id = "T-422"
-impact = ["platform-lifecycle"]
-order = 3261
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "gate_schema shipped with three defects: a wrongly-excluded green gate, a silently-narrowing tripwire, and an incomplete stamp"
 summary = '''
 Wave 5's T-420 added the first schema step the wave gate has ever had -- a genuinely good change, proven end-to-end by the verifier. It also shipped three defects, two of them the same family the step exists to prevent.
 
@@ -46,6 +26,10 @@ CONFIRMED SOUND, do not re-audit: the verifier reverted map-object-enums.schema.
 
 == MITIGATED IN PART 2026-07-26 by T-421, which landed after this was filed ==
 T-421's `touch_workspace` touches `xtask/src`, so `gate_schema` now genuinely rebuilds xtask every run (measured 0.11s -> 1.52s). CONSEQUENCE: defect 3 (the incomplete content stamp) can no longer hand the gate a FOREIGN xtask binary -- the mtime path it depended on is closed. The stamp is still incomplete and should still be fixed, but it is no longer the live hazard it was when filed. Defects 1 (height-labels wrongly excluded, green on main) and 2 (the silently-narrowing Makefile tripwire) are UNCHANGED and remain the reason to dispatch this.'''
-surfaces = ["INFRA"]
-targets = ["website"]
-title = "gate_schema shipped with three defects: a wrongly-excluded green gate, a silently-narrowing tripwire, and an incomplete stamp"
+status = "shipped"
+order = 3261
+executor = "claude-code"
+priority = 1
+
+[scope.website.editor]
+chrome = []

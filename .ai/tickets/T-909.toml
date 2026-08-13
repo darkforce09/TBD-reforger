@@ -1,31 +1,12 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "status",
-    "order",
-    "notes",
-    "program",
-    "surfaces",
-    "impact",
-    "executor",
-    "targets",
-    "stream",
-    "parallel_ok",
-    "spec",
-]
-__ord = 882
-executor = "claude-code"
 id = "T-909"
-impact = ["dx"]
-notes = "wave 233 verifier NIT; T-468 regex vs T-901 serde_norway; copy-pasteable repro in summary"
-order = 5890
-parallel_ok = true
-program = "infra"
-spec = "docs/platform/t853_shell_to_xtask_waves.md"
-status = "deferred"
-stream = "infra"
-summary = 'Wave 233 adversarial verifier NIT on f649f50d / 5a974bc6. xtask/src/gate_t468.rs still matches `^\s+run:` on ci.yml. T-901 production path is serde_norway::from_str in xtask/src/verify_ci_shell.rs. The two can disagree on mapping-form `run:`. Scoped to the schema-job pin; fail-closed. REPRO: rg -n "run_re|^\\s+run:" xtask/src/gate_t468.rs ; contrast verify_ci_shell.rs serde_norway::from_str. Not a T-901 miss — T-468 is a different gate. Filed deferred; do not fix in 233-235.'
-surfaces = ["CI"]
-targets = ["root"]
+kind = "work"
 title = "T-468 still regex-walks ci.yml run: — not T-901 serde_norway"
+summary = 'Wave 233 adversarial verifier NIT on f649f50d / 5a974bc6. xtask/src/gate_t468.rs still matches `^\s+run:` on ci.yml. T-901 production path is serde_norway::from_str in xtask/src/verify_ci_shell.rs. The two can disagree on mapping-form `run:`. Scoped to the schema-job pin; fail-closed. REPRO: rg -n "run_re|^\\s+run:" xtask/src/gate_t468.rs ; contrast verify_ci_shell.rs serde_norway::from_str. Not a T-901 miss — T-468 is a different gate. Filed deferred; do not fix in 233-235.'
+status = "deferred"
+order = 5890
+spec = "docs/platform/t853_shell_to_xtask_waves.md"
+executor = "claude-code"
+notes = "wave 233 verifier NIT; T-468 regex vs T-901 serde_norway; copy-pasteable repro in summary"
+
+[scope.repo]
+layers = ["xtask"]

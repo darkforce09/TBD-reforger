@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "shipped_at",
-]
-__ord = 203
-executor = "claude-code"
 id = "T-229"
-impact = ["platform-lifecycle"]
-order = 2470
-program = "platform"
-shipped_at = "2026-07-26"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Match ingest silently drops unlinked players and never backfills"
 summary = """
 telemetry.rs:243-247 skips a player whose arma_id does not resolve, still inserts the row with a null discord_id and reports only the submitted count. leaderboard_totals filters on non-null discord_id so those rows are permanently invisible, and because the upsert key includes arma_id, linking later does not backfill.
 
@@ -29,6 +9,10 @@ THE TICKET'S PREMISE WAS HALF STALE: 'because the upsert key includes arma_id, l
 Chose to keep the row and the 200 and end the silence, NOT 400: the row is recoverable by T-326, the transaction is atomic so there is no per-player 400, and decisively the shipping mod implements no link flow at all (TBD_ResultsReporter.c:23-35), so an unresolved arma_id is EVERY player in EVERY production match — a 400 would reject 100% of live ingest and dropping the row would make the loss permanent. Response gains linked/unlinked/unlinked_arma_ids beside the unchanged players count (linked+unlinked==players always), plus one audit row per affected ingest, written FIRST after the commit because recompute_user_stats propagates with `?`. Deliberately Info not Warn — with no link flow it fires every ingest, and an always-on warning is the false server.low_fps WARN that T-316 was filed to delete.
 Fixed a flake it caused: T-347's test asserted count(*) FROM matches, a cross-test assertion in a parallel suite that its legitimate row tripped 2-in-11. Scoped to the actual invariant (source_match_id IS NULL OR btrim = ''); 8/8 stable after. Full website-api suite 134 passed, 0 failed, 0 DB tests SKIPPED.
 Its production-400 flag is real and is now T-393 (P0) — it said it had filed a task and had not."""
-surfaces = ["DATA"]
-targets = ["website"]
-title = "Match ingest silently drops unlinked players and never backfills"
+status = "shipped"
+order = 2470
+executor = "claude-code"
+shipped_at = "2026-07-26"
+
+[scope.website.editor]
+chrome = []

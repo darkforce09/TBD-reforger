@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 267
-executor = "claude-code"
 id = "T-293"
-impact = ["contract"]
-order = 3110
-program = "eden"
-status = "shipped"
-stream = "mission-creator"
-summary = "TBD_RadioPlan.c:4-6 claims the document struct has no radioPlan member. It does — TBD_MissionLoader.c:262. The class re-parses GetRawJson() through a separate projection (:233,258-264), so there are now two parse paths for one block."
-surfaces = ["DATA"]
-targets = ["mod"]
+kind = "work"
 title = "TBD_RadioPlan re-parses raw JSON instead of the parsed field"
+summary = "TBD_RadioPlan.c:4-6 claims the document struct has no radioPlan member. It does — TBD_MissionLoader.c:262. The class re-parses GetRawJson() through a separate projection (:233,258-264), so there are now two parse paths for one block."
+status = "shipped"
+order = 3110
+executor = "claude-code"
+
+[scope.mod]
+layers = ["feature"]

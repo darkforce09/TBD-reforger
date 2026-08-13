@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 532
-executor = "claude-code"
 id = "T-558"
-impact = ["platform-lifecycle"]
-order = 3411
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Test-harness residue after T-534: a DB consumer the Class-R cannot see, unpruned rust_it DBs, and one shared migrate DB"
 summary = """
 Four findings from T-534, none of them regressions, all of them the same shape it just fixed.
 
@@ -45,6 +25,10 @@ Four findings from T-534, none of them regressions, all of them the same shape i
 4. Two concurrent `cargo test` runs against the same base still race, now on `<base>_<suite>_it`
    rather than on `<base>`. No worse than before, and the gate lock already serialises the gate --
    recorded so nobody rediscovers it as new."""
-surfaces = ["INFRA"]
-targets = ["website"]
-title = "Test-harness residue after T-534: a DB consumer the Class-R cannot see, unpruned rust_it DBs, and one shared migrate DB"
+status = "shipped"
+order = 3411
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

@@ -1,31 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 504
-executor = "claude-code"
 id = "T-530"
-impact = ["tests"]
-order = 3370
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "Wave 47 verifier P3/NIT. T-332 BE/FE Class-R partly asserts doc comment phrases (T-332 clear contract). Behavior covered by IT + stronger FE pins. Cure: pin live code paths only (body.insert / is_unique_violation / SQL), not comment prose."
-surfaces = [
-    "API",
-    "FE",
-    "tests",
-]
-targets = ["website"]
+kind = "work"
 title = "T-332 Class-R partly pins doc comment strings"
+summary = "Wave 47 verifier P3/NIT. T-332 BE/FE Class-R partly asserts doc comment phrases (T-332 clear contract). Behavior covered by IT + stronger FE pins. Cure: pin live code paths only (body.insert / is_unique_violation / SQL), not comment prose."
+status = "shipped"
+order = 3370
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

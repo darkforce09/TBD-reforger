@@ -1,26 +1,6 @@
-__keys = [
-    "program",
-    "surfaces",
-    "impact",
-    "stream",
-    "targets",
-    "executor",
-    "id",
-    "title",
-    "summary",
-    "status",
-    "priority",
-    "order",
-]
-__ord = 574
-executor = "claude-code"
 id = "T-601"
-impact = ["platform-lifecycle"]
-order = 3482
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Class-R pin hollowness is systemic, not a bug in three pins"
 summary = """
 FOUND by wave 75's adversarial verifier (Fable 5), which defeated THREE separate pins shipped in that
 same wave — after each slice had proven its own pin against the attacks it knew about.
@@ -69,6 +49,10 @@ test's uniform: *a tool reports success over an input it never actually examined
 DO NOT respond to this ticket by blocklisting the specific shapes above. That is the fourth round of
 that game (T-517 -> T-567 -> T-570) and a fifth wrapper always exists. Fix the two patterns, then
 convert the ~20 siblings."""
-surfaces = ["INFRA"]
-targets = ["website"]
-title = "Class-R pin hollowness is systemic, not a bug in three pins"
+status = "shipped"
+order = 3482
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

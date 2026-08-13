@@ -1,32 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "spec",
-    "route",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 40
-executor = "claude-code"
 id = "T-053"
-impact = [
-    "ui",
-    "state",
-]
-order = 530
-program = "eden"
-route = "/missions/:id/edit"
-spec = "docs/specs/Mission_Creator_Architecture/t053_additive_select.md"
-status = "shipped"
-stream = "mission-creator"
-summary = "Modifier-click toggles slot in/out of selection."
-surfaces = ["MAP"]
-targets = ["website"]
+kind = "work"
 title = "Ctrl/Cmd additive select"
+summary = "Modifier-click toggles slot in/out of selection."
+status = "shipped"
+order = 530
+spec = "docs/specs/Mission_Creator_Architecture/t053_additive_select.md"
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

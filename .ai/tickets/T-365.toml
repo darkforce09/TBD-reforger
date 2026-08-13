@@ -1,28 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-    "shipped_at",
-]
-__ord = 339
-executor = "claude-code"
 id = "T-365"
-impact = ["platform-lifecycle"]
-order = 3181
-priority = 1
-program = "platform"
-shipped_at = "c789ac0c"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "mortar.rs still asserts the silent weapon fallback as intended behaviour"
 summary = """
 HANDOFF from T-349, which could not reach this file. T-349 guarded the boundary in field_tools.rs by comparing the weapon solve_fire_mission RETURNS against the one requested — deliberately avoiding a duplicate weapon table, which would have planted the exact drift T-347 closed. That works, but it is indirect and it should not have to be.
 
@@ -41,6 +19,11 @@ KNOWN WEAPONS BIT-IDENTICAL: a 17-case table across all four tubes dumped with r
 THE TEST WAS REWRITTEN IN PLACE, not deleted: unknown_weapon_falls_back -> unknown_weapon_is_refused_not_substituted, with a doc comment recording that it PREVIOUSLY ASSERTED THE SUBSTITUTION AS INTENDED BEHAVIOUR. Four more added, including one pinning the 1300/1228 pair AND that their difference is 72 mils.
 
 T-349's guard live-verified on a real binary including the composite case — unknown AND out of range returns 400, not 422. Its weapon comparison is now UNREACHABLE (sol.weapon_system is always the requested weapon); left in place per brief with a note marking it safe to collapse later."""
-surfaces = ["API"]
-targets = ["website"]
-title = "mortar.rs still asserts the silent weapon fallback as intended behaviour"
+status = "shipped"
+order = 3181
+executor = "claude-code"
+priority = 1
+shipped_at = "c789ac0c"
+
+[scope.website.editor]
+chrome = []

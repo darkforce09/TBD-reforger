@@ -1,28 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-    "shipped_at",
-]
-__ord = 348
-executor = "claude-code"
 id = "T-374"
-impact = ["platform-lifecycle"]
-order = 3190
-priority = 0
-program = "platform"
-shipped_at = "28e9fbb6"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "The persist guard is byte-level, so an empty document overwrites a populated record"
 summary = """
 The guard that exists to prevent exactly this does not implement it.
 
@@ -51,6 +29,11 @@ COST MEASURED, and it shaped the design: decode is 19us at 8 slots, 35ms at 10k,
 ONE BEHAVIOUR CHANGE, flagged rather than discovered later: a DELIBERATE select-all+Delete now also fails the guard, because at the blob level an intentionally emptied document and a never-populated one are the same content-empty document. A full delete no longer propagates to the local autosave. That is the side the codebase already errs on (classify_local maps content-empty to Local::Empty), the delete is still an undo step, and the failure traded away is an authored mission overwritten with nothing. The distinction exists if ever wanted — a never-populated doc has no delete set — but that is a delete-set parse, not a length check.
 
 mission_hydrate.rs needs THREE instances, not the two filed: snapshot_local:746, has_snapshot:774, and restore_snapshot:859 — the third would RESTORE a content-empty backup over the live document."""
-surfaces = ["FRONTEND"]
-targets = ["website"]
-title = "The persist guard is byte-level, so an empty document overwrites a populated record"
+status = "shipped"
+order = 3190
+executor = "claude-code"
+priority = 0
+shipped_at = "28e9fbb6"
+
+[scope.website.editor]
+chrome = []

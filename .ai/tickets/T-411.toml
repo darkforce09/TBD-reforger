@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 385
-executor = "claude-code"
 id = "T-411"
-impact = ["platform-lifecycle"]
-order = 3232
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Nothing resets the gate database -- per-wave DB names, not a periodic reset"
 summary = """
 T-399 fixed one ratchet; this is the mechanism that guarantees the class recurs. ensure_gate_db (scripts/platform/wave.sh:~93-105 pre-T-406) deliberately never drops tbd_gate_it for speed, so every suite's residue accumulates forever. T-406 was dispatched over that same file in wave 3 and EXPLICITLY DID NOT add a reset -- it scoped finding 6 down to asserting the flock invariant instead, and said so. So this is unowned and unreconciled by design, not by oversight.
 
@@ -32,6 +12,10 @@ RECOMMENDATION from T-399's agent, whose reasoning the command center endorses: 
   KEEP the operator TEST_DATABASE_URL override exactly as it is; it is the escape hatch wave 1 shipped against.
 
 Related: T-410 is the catalogue of ratchets this mechanism will keep producing."""
-surfaces = ["INFRA"]
-targets = ["website"]
-title = "Nothing resets the gate database -- per-wave DB names, not a periodic reset"
+status = "shipped"
+order = 3232
+executor = "claude-code"
+priority = 1
+
+[scope.website.editor]
+chrome = []

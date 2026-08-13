@@ -1,28 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-    "shipped_at",
-]
-__ord = 331
-executor = "claude-code"
 id = "T-357"
-impact = ["platform-lifecycle"]
-order = 3173
-priority = 2
-program = "platform"
-shipped_at = "b19a4634"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "The editor payload schema constrains nothing, and the compiled schema would reject live data"
 summary = """
 FOUND by T-346, and it explains WHY the whole T-346/T-356 defect family is reachable at all.
 
@@ -33,6 +11,11 @@ AND THE SHARPER HALF: live `orbat_slots` holds uppercase `BLUFOR` / `OPFOR`, whi
 Note `slug_key()` exists and IS applied on the compiled `briefings`/`orbat` path (T-202 confirmed all four goldens key identically through it). So the lowercase pattern is probably correct for the COMPILED document and simply does not describe orbat_slots. Say which layer each schema is describing — that distinction is the actual deliverable here, and getting it wrong would either reject valid missions or bless invalid ones.
 
 Do NOT tighten the editor payload schema without checking it against the committed golden missions and the live rows; a schema that rejects production data fails every request rather than catching a bug."""
-surfaces = ["DATA"]
-targets = ["website"]
-title = "The editor payload schema constrains nothing, and the compiled schema would reject live data"
+status = "shipped"
+order = 3173
+executor = "claude-code"
+priority = 2
+shipped_at = "b19a4634"
+
+[scope.website.editor]
+chrome = []

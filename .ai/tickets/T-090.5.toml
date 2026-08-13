@@ -1,15 +1,12 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-090.5"
-parent = "T-090"
-spec = "docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md"
+kind = "work"
+title = "T-090.5 — Map object render layer (Eden-like static world)"
+summary = "T-090.5 — Map object render layer (Eden-like static world)"
 status = "deferred"
-targets = ["website"]
+order = 900
+spec = "docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md"
+executor = "claude-code"
+parent = "T-090"
+
+[scope.website.editor]
+chrome = []

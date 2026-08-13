@@ -1,28 +1,13 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 180
-executor = "workbench"
 id = "T-206"
-impact = ["data-pipeline"]
-order = 2240
-program = "eden"
-status = "deferred"
-stream = "mission-creator"
+kind = "work"
+title = "Item data is 78% empty"
 summary = """
 BLOCKED, but PROVEN OBTAINABLE (2026-07-26, refused by its slice agent with measured evidence). The paks are readable offline and the data is there: all 1,857 registry prefabs resolve to a pak entry, zero misses, across 222,536 entries / 19,422 .et prefabs. Obtainable WITHOUT Workbench: weight_kg/volume_cm3 (+423 fillable, 103/107 weapons), magazine capacity, calibre and ammo type (113/125 magazines, from MagazineComponent), weapon-mag compat (88/107), attachment slots (99/107), arsenal_type (373/1857 via the EntityCatalog configs). NOT obtainable: icon_url — paks carry .edds assets, a served URL needs extraction/transcoding/hosting, which is an asset pipeline. CORRECTNESS CONTROL: on chains where exactly one component class serializes ItemPhysAttributes the extractor reproduced the existing Workbench value 323/323 EXACTLY; it disagrees only on the 66 ambiguous chains, and there the export is wrong. BLOCKED ON: (1) registry-items.schema.json is additionalProperties:false with no properties for ammo type, calibre, magazine capacity or attachment slots — a schema slice must land first; (2) the extractor has no in-tree home (verify-no-python bans .py repo-wide) so writing 455 hand-computed numbers into a file labelled a Workbench export would be an unreproducible artifact and would pre-empt T-278, the paks->registry pipeline. ORDER: fix pak.rs offset -> fix ReadPhysAttrsPass (workbench) -> schema slice -> build the T-278 extractor in Rust and regenerate. The extraction logic is proven; it needs a home that is not /tmp.
 
 BLOCKED ON WORKBENCH (2026-07-26). A slice agent took this and refused rather than guessing: the missing data is only obtainable from a Workbench export pass, which no agent can run. T-206's agent went further and proved the pak data IS obtainable, reproducing 323/323 rows exactly — so this is a data-acquisition task, not a code task. Executor flipped to `workbench` so it stops entering the dispatch set. Operator action required."""
-surfaces = ["REG"]
-targets = ["root"]
-title = "Item data is 78% empty"
+status = "deferred"
+order = 2240
+executor = "workbench"
+
+[scope.repo]
+layers = ["xtask"]

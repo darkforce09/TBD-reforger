@@ -1,35 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 496
-executor = "claude-code"
 id = "T-522"
-impact = [
-    "frontend",
-    "tests",
-    "mission-creator",
-]
-order = 3362
-priority = 0
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = 'Wave 46 verifier MAJOR. mission_hydrate::t505_tests / adopt_payload prefer-payload Class-R live under #[cfg(target_arch = "wasm32")] (main.rs). Native cargo test -p website-frontend (cold gate) runs 0 t505 tests — prefer→&row.title regression stays green. Cure: move prefer-payload Class-R to a path that executes in cold/CI (native unit in map-engine-core store, or ungated tests module, or wasm32 gate job that actually runs these). Perturbation: prefer→row.title must RED under the same command the cold gate uses. Owns: apps/website/frontend/src/mission_hydrate.rs and/or apps/website/frontend/src/main.rs; may touch crates/map-engine-core/src/doc/store.rs if pin moves there.'
-surfaces = [
-    "FE",
-    "EDITOR",
-    "tests",
-]
-targets = ["website"]
+kind = "work"
 title = "W46 hotfix: T-505 prefer-payload Class-R must run on native CI"
+summary = 'Wave 46 verifier MAJOR. mission_hydrate::t505_tests / adopt_payload prefer-payload Class-R live under #[cfg(target_arch = "wasm32")] (main.rs). Native cargo test -p website-frontend (cold gate) runs 0 t505 tests — prefer→&row.title regression stays green. Cure: move prefer-payload Class-R to a path that executes in cold/CI (native unit in map-engine-core store, or ungated tests module, or wasm32 gate job that actually runs these). Perturbation: prefer→row.title must RED under the same command the cold gate uses. Owns: apps/website/frontend/src/mission_hydrate.rs and/or apps/website/frontend/src/main.rs; may touch crates/map-engine-core/src/doc/store.rs if pin moves there.'
+status = "shipped"
+order = 3362
+executor = "claude-code"
+priority = 0
+
+[scope.website.editor]
+chrome = []

@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "program",
-    "surfaces",
-    "impact",
-    "stream",
-    "targets",
-    "executor",
-    "status",
-    "priority",
-    "order",
-    "title",
-    "summary",
-]
-__ord = 584
-executor = "claude-code"
 id = "T-611"
-impact = ["platform-lifecycle"]
-order = 3582
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "verify-citations checks only .c files in a Rust repo, and prints a reassuring total while doing it"
 summary = """
 FOUND by T-610 (wave 77) while fixing the citations the gate could not see. The ticket assumed the
 gate simply "did not cover bare file.c:NNN forms in prose." The real scope is larger.
@@ -58,6 +38,10 @@ green that a human reasonably trusted.
 
 Owner note: `Makefile` + the xtask verifier. T-610 owned neither and correctly reported instead of
 building."""
-surfaces = ["INFRA"]
-targets = ["website"]
-title = "verify-citations checks only .c files in a Rust repo, and prints a reassuring total while doing it"
+status = "shipped"
+order = 3582
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 184
-executor = "claude-code"
 id = "T-210"
-impact = ["infra"]
-order = 2280
-program = "infra"
-status = "cancelled"
-stream = "infra"
-summary = "CANCELLED — premise fixed by T-181.51. TBD_MissionListLoader.c:38 now calls /api/v1/ingest/missions; the /api/missions path this ticket describes no longer exists."
-surfaces = ["DATA"]
-targets = ["mod"]
+kind = "work"
 title = "In-game admin mission switch calls a route that does not exist"
+summary = "CANCELLED — premise fixed by T-181.51. TBD_MissionListLoader.c:38 now calls /api/v1/ingest/missions; the /api/missions path this ticket describes no longer exists."
+status = "cancelled"
+order = 2280
+executor = "claude-code"
+
+[scope.mod]
+layers = ["feature"]

@@ -1,27 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 495
-executor = "claude-code"
 id = "T-521"
-impact = ["website"]
-order = 3361
-priority = 0
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "Wave 46 cold re-gate after T-520 still FAIL fmt (changed). apps/website/api/src/handlers/missions.rs else-branch UPDATE (no title mirror) fails rustfmt --check around create_version ~951. Cure: rustfmt that file only. Owns: apps/website/api/src/handlers/missions.rs."
-surfaces = ["API"]
-targets = ["website"]
+kind = "work"
 title = "W46 hotfix: rustfmt missions.rs create_version after T-505"
+summary = "Wave 46 cold re-gate after T-520 still FAIL fmt (changed). apps/website/api/src/handlers/missions.rs else-branch UPDATE (no title mirror) fails rustfmt --check around create_version ~951. Cure: rustfmt that file only. Owns: apps/website/api/src/handlers/missions.rs."
+status = "shipped"
+order = 3361
+executor = "claude-code"
+priority = 0
+
+[scope.website.editor]
+chrome = []

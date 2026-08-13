@@ -1,34 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "stream",
-    "targets",
-    "executor",
-    "status",
-    "surfaces",
-    "impact",
-    "depends_on",
-    "spec",
-    "route",
-    "branch",
-]
-__ord = 115
-branch = "ticket/T-141"
-depends_on = ["T-071"]
-executor = "claude-code"
 id = "T-141"
-impact = ["ui"]
-program = "eden"
-route = "/missions/:id/edit"
-spec = "docs/platform/tbd_north_star_backlog.md"
-status = "idea"
-stream = "mission-creator"
-summary = "Adjective/nickname word packs for auto slot display names; manual override wins. After T-071 ORBAT numbering."
-surfaces = [
-    "ORBAT",
-    "UI",
-]
-targets = ["website"]
+kind = "work"
 title = "Procedural slot naming"
+summary = "Adjective/nickname word packs for auto slot display names; manual override wins. After T-071 ORBAT numbering."
+status = "idea"
+spec = "docs/platform/tbd_north_star_backlog.md"
+executor = "claude-code"
+depends_on = ["T-071"]
+
+[scope.website.editor]
+chrome = []

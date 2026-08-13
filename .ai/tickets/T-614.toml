@@ -1,26 +1,6 @@
-__keys = [
-    "program",
-    "surfaces",
-    "impact",
-    "stream",
-    "targets",
-    "executor",
-    "id",
-    "title",
-    "summary",
-    "status",
-    "priority",
-    "order",
-]
-__ord = 587
-executor = "claude-code"
 id = "T-614"
-impact = ["platform-lifecycle"]
-order = 3612
-priority = 3
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Wave 77 residue: the slice gate lints none of a tooling slice, and two counts/pins are off"
 summary = """
 Three lesser findings from wave 77's adversarial verifier. None is a live defect.
 
@@ -47,6 +27,10 @@ ALSO NOTED, deliberate and not a defect (verifier F5): `.world-boot-warning-base
 below boot reality on purpose, as a forcing function, so `world-boot.sh --mission=…` fails on clean
 main by design. Confirmed live (`5 > baseline 1 for msn_2d91be`). The cost, worth knowing: while a row
 is red, a NEW regression on it (5->6) is indistinguishable from the standing red. See T-609."""
-surfaces = ["INFRA"]
-targets = ["website"]
-title = "Wave 77 residue: the slice gate lints none of a tooling slice, and two counts/pins are off"
+status = "shipped"
+order = 3612
+executor = "claude-code"
+priority = 3
+
+[scope.website.editor]
+chrome = []

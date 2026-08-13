@@ -1,20 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-151.0"
+kind = "work"
+title = "T-151.0 — wasm packaging merge + engine batch list + editor dual mount"
+summary = "T-151.0 — wasm packaging merge + engine batch list + editor dual mount"
+status = "shipped"
+order = 1500
+spec = "docs/specs/Mission_Creator_Architecture/t151_0_wasm_merge_dual_mount.md"
+executor = "claude-code"
 parent = "T-151"
 shipped_at = "f019512d"
-spec = "docs/specs/Mission_Creator_Architecture/t151_0_wasm_merge_dual_mount.md"
-status = "shipped"
-targets = [
-    "root",
-    "website",
-]
+
+[scope.repo]
+layers = ["docs"]

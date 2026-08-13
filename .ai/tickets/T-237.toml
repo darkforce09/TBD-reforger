@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 211
-executor = "claude-code"
 id = "T-237"
-impact = ["registry-hygiene"]
-order = 2550
-program = "infra"
-status = "shipped"
-stream = "infra"
-summary = "xtask/src/cmds.rs:534 sets status to shipped and returns. xtask/src/check.rs contains zero references to schema.json and hand-rolls a narrower subset, so 314 schema violations are invisible: program Platform, invented impact and surfaces values, shipped_at which is not in the schema at all, and 13 null active_slice entries."
-surfaces = ["REG"]
-targets = ["root"]
+kind = "work"
 title = "ticket ship verifies nothing and check ignores the schema"
+summary = "xtask/src/cmds.rs:534 sets status to shipped and returns. xtask/src/check.rs contains zero references to schema.json and hand-rolls a narrower subset, so 314 schema violations are invisible: program Platform, invented impact and surfaces values, shipped_at which is not in the schema at all, and 13 null active_slice entries."
+status = "shipped"
+order = 2550
+executor = "claude-code"
+
+[scope.repo]
+layers = ["xtask"]

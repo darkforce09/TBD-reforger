@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 377
-executor = "claude-code"
 id = "T-403"
-impact = ["platform-lifecycle"]
-order = 3219
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Golden corpus has vacuous fixtures — ArmoryFaction/ArmoryItem have literally zero coverage"
 summary = """
 T-394 made assert_golden structurally able to see a dropped field under #[serde(flatten)]. It cannot rescue a golden that has no rows to check, and several do not. This is T-359's draft-capture hazard, measured at struct granularity instead of field granularity.
 
@@ -35,9 +15,10 @@ Field-level gaps in the same family, all confirmed:
 THE FIX IS FIXTURE CAPTURE, NOT MORE TEST CODE: recapture the event golden from an event whose missions actually carry armory rows, and the mission goldens from rows that populate the fields under test. T-359's warning applies directly — a golden captured from a row that does not populate a field proves nothing about that field in either direction, so capturing must be deliberate about WHICH row, not just which endpoint.
 
 Note the honest limit of T-394's own fix while you are here: its module header slightly oversells, in that the structural check covers types the goldens instantiate and says nothing about types they do not. This ticket is that gap."""
-surfaces = [
-    "FRONTEND",
-    "DATA",
-]
-targets = ["website"]
-title = "Golden corpus has vacuous fixtures — ArmoryFaction/ArmoryItem have literally zero coverage"
+status = "shipped"
+order = 3219
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

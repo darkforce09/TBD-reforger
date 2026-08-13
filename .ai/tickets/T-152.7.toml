@@ -1,18 +1,12 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-152.7"
-parent = "T-152"
-spec = "docs/specs/Mission_Creator_Architecture/t152_7_height_markers.md"
+kind = "work"
+title = "T-152.7 — Height markers (DEM peaks + ASL labels)"
+summary = "T-152.7 — Height markers (DEM peaks + ASL labels)"
 status = "shipped"
-targets = [
-    "root",
-    "website",
-]
+order = 1520
+spec = "docs/specs/Mission_Creator_Architecture/t152_7_height_markers.md"
+executor = "claude-code"
+parent = "T-152"
+
+[scope.repo]
+layers = ["docs"]

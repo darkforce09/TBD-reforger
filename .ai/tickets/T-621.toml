@@ -1,26 +1,6 @@
-__keys = [
-    "program",
-    "impact",
-    "stream",
-    "targets",
-    "executor",
-    "surfaces",
-    "id",
-    "title",
-    "summary",
-    "status",
-    "priority",
-    "order",
-]
-__ord = 594
-executor = "claude-code"
 id = "T-621"
-impact = ["platform-lifecycle"]
-order = 3682
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "There is no Rust-first rule for shell — 58 scripts, 15,415 lines, no gate, no convention"
 summary = """
 OPERATOR-RAISED 2026-08-01, alongside T-620. Python has a rule (T-162, and see T-620 for why it never
 bound). **Shell has none at all** -- no `verify-no-shell`, no "new tooling goes in xtask" convention,
@@ -59,6 +39,10 @@ None of these failure modes survive contact with a typed language and a test har
 
 **Do not start by rewriting `wave.sh`.** Write the rule, add the ratchet, then port when a script next
 needs real work."""
-surfaces = ["INFRA"]
-targets = ["website"]
-title = "There is no Rust-first rule for shell — 58 scripts, 15,415 lines, no gate, no convention"
+status = "shipped"
+order = 3682
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

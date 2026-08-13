@@ -1,28 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-    "shipped_at",
-]
-__ord = 364
-executor = "claude-code"
 id = "T-390"
-impact = ["platform-lifecycle"]
-order = 3206
-priority = 0
-program = "platform"
-shipped_at = "c07ca278"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "The shared cargo target dir clobbers artifacts across worktrees, so the gate can pass on code it never compiled"
 summary = """
 FIFTH INSTANCE OF THIS RUN'S SIGNATURE DEFECT, found by T-235, and it is in the gate I fixed four hours ago. **`gate_test_api` runs `cargo test -p website-api` to clear a slice, so the gate can pass on code it never compiled.**
 
@@ -46,6 +24,11 @@ DISK WAS THE REAL CONSTRAINT AND THE FIRST ATTEMPT HIT IT. The gate failed with 
 Bought the isolation cheaply rather than at full price: CARGO_INCREMENTAL=0 on both, since incremental caches are a large fraction of a target dir and are useless for a one-shot gate run.
 
 AND CLOSED THE CAUSE, not just the instance:  removes orphan build caches while sparing any dir whose slice worktree still exists, and preflight now NAMES the reclaimable space rather than only reporting the shortfall — a disk warning that does not say where the space went sends someone hunting, and "No space left on device" mid-gate reads exactly like a build error."""
-surfaces = ["CI"]
-targets = ["website"]
-title = "The shared cargo target dir clobbers artifacts across worktrees, so the gate can pass on code it never compiled"
+status = "shipped"
+order = 3206
+executor = "claude-code"
+priority = 0
+shipped_at = "c07ca278"
+
+[scope.website.editor]
+chrome = []

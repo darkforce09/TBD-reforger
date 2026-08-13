@@ -1,35 +1,11 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "status",
-    "stream",
-    "targets",
-    "executor",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "notes",
-]
-__ord = 777
-executor = "claude-code"
 id = "T-804"
-impact = [
-    "ui",
-    "persistence",
-    "mc-integrity",
-]
-notes = "review F-24 + Eden preferences frame 163916; complements F-04 fix (T-789) as the save-story pair | SHIPPED W206: draft-saved chip with real ack discipline (error branch cannot stamp — single call site, source-verified), 1s coarse ticker, inline mount (rect smoke green with the chip up), two-layer tooltip copy, bridge accessor. beforeunload copy consciously left (already honestly documented as browser-ignored). Boot-flush chip nuance -> T-840."
-order = 4860
-program = "eden"
-status = "shipped"
-stream = "mission-creator"
-summary = "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). F-24 — Eden ships 'Auto-save: 15 min' as a first-class preference (frame 163916); TBD has NO server autosave by design and its only net is the invisible IndexedDB draft on a ~5s debounce — the author's sole evidence anything persists is the dirty dot. The review's own reload test proved the draft restores 9 objects faithfully — the mechanism is good, the LEGIBILITY is absent. FIX: (a) beside the dirty dot, a quiet 'draft saved Ns ago' chip fed by the yrs_persist flush timestamp (bridge exists: __missionPersist; surface the last-flush time via a signal rather than polling); (b) on beforeunload-guard arming, the copy the browser will IGNORE anyway is dropped in favour of the chip being accurate; (c) hovering the chip explains the two-layer model in one sentence (local draft vs Save Version) — the review's F-24 wording is pre-approved copy. ⚠️ TRAPS: eden_top_strip.rs regions ~:724-726/:1122-1130 are the home; yrs_persist.rs edit = expose the timestamp only (T-805 holds it read-only in ITS wave; you own it this wave — keep the change additive, one signal); debounce semantics unchanged (5s is fine; the chip makes it legible). ACCEPTANCE: scripted — edit, wait <=6s: chip shows 'draft saved' with a recency <=6s; idle 30s: recency counts up; reload restores state and chip resets; flush() bridge still works; no chip on a mission that has never been edited."
-surfaces = [
-    "TOP",
-    "DATA",
-    "UI",
-]
-targets = ["website"]
+kind = "work"
 title = "The author can see their work is safe: draft persistence surfaced"
+summary = "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). F-24 — Eden ships 'Auto-save: 15 min' as a first-class preference (frame 163916); TBD has NO server autosave by design and its only net is the invisible IndexedDB draft on a ~5s debounce — the author's sole evidence anything persists is the dirty dot. The review's own reload test proved the draft restores 9 objects faithfully — the mechanism is good, the LEGIBILITY is absent. FIX: (a) beside the dirty dot, a quiet 'draft saved Ns ago' chip fed by the yrs_persist flush timestamp (bridge exists: __missionPersist; surface the last-flush time via a signal rather than polling); (b) on beforeunload-guard arming, the copy the browser will IGNORE anyway is dropped in favour of the chip being accurate; (c) hovering the chip explains the two-layer model in one sentence (local draft vs Save Version) — the review's F-24 wording is pre-approved copy. ⚠️ TRAPS: eden_top_strip.rs regions ~:724-726/:1122-1130 are the home; yrs_persist.rs edit = expose the timestamp only (T-805 holds it read-only in ITS wave; you own it this wave — keep the change additive, one signal); debounce semantics unchanged (5s is fine; the chip makes it legible). ACCEPTANCE: scripted — edit, wait <=6s: chip shows 'draft saved' with a recency <=6s; idle 30s: recency counts up; reload restores state and chip resets; flush() bridge still works; no chip on a mission that has never been edited."
+status = "shipped"
+order = 4860
+executor = "claude-code"
+notes = "review F-24 + Eden preferences frame 163916; complements F-04 fix (T-789) as the save-story pair | SHIPPED W206: draft-saved chip with real ack discipline (error branch cannot stamp — single call site, source-verified), 1s coarse ticker, inline mount (rect smoke green with the chip up), two-layer tooltip copy, bridge accessor. beforeunload copy consciously left (already honestly documented as browser-ignored). Boot-flush chip nuance -> T-840."
+
+[scope.website.editor]
+chrome = []

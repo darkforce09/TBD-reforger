@@ -1,30 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 511
-executor = "claude-code"
 id = "T-537"
-impact = [
-    "dx",
-    "ci",
-    "data-pipeline",
-]
-order = 3377
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "xtask empty/lossy write residuals outside T-383 owns (enf/world/map)"
 summary = """
 FOUND as T-383 residual (W51 CLEAN). Owns fixed cmds/sync/schema_gates; still open:
 - enf/apidoc.rs header-only TSV overwrite exits 0
@@ -32,9 +8,10 @@ FOUND as T-383 residual (W51 CLEAN). Owns fixed cmds/sync/schema_gates; still op
 - map/labels.rs:455, map/sap.rs:1007
 
 Same shape: success path writing structurally empty/lossy content over committed files. Cure: refuse_empty_write (or equivalent) at each site. Repro: see T-383 summary."""
-surfaces = [
-    "INFRA",
-    "SCHEMA",
-]
-targets = ["website"]
-title = "xtask empty/lossy write residuals outside T-383 owns (enf/world/map)"
+status = "shipped"
+order = 3377
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

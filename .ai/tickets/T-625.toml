@@ -1,26 +1,6 @@
-__keys = [
-    "program",
-    "impact",
-    "stream",
-    "targets",
-    "executor",
-    "id",
-    "title",
-    "summary",
-    "status",
-    "priority",
-    "order",
-    "surfaces",
-]
-__ord = 598
-executor = "claude-code"
 id = "T-625"
-impact = ["platform-lifecycle"]
-order = 3742
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Behind Caddy every public client shares one auth rate-limit bucket"
 summary = """
 FOUND by wave 81''s verifier (F5). **Pre-existing and self-documented**, but worth knowing before a
 big event night.
@@ -43,6 +23,10 @@ bucket) -- it did not create the sharing.
 **FIX:** wire `X-Forwarded-For` behind `Config::trusted_proxies`, which exists and is **read by
 nothing**. That is what makes per-IP mean per-client. T-578''s module header defers it explicitly
 rather than doing it silently."""
-surfaces = ["INFRA"]
-targets = ["website"]
-title = "Behind Caddy every public client shares one auth rate-limit bucket"
+status = "shipped"
+order = 3742
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

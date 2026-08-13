@@ -1,32 +1,10 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "status",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "route",
-    "branch",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 59
-branch = "ticket/T-072"
-executor = "claude-code"
 id = "T-072"
-impact = ["ui"]
-order = 720
-program = "eden"
-route = "/missions/:id/edit"
-status = "cancelled"
-stream = "mission-creator"
-summary = "CANCELLED 2026-08-01 — SUPERSEDED BY T-647, which owns the same two files (mission_editor.rs + editor_ops.rs) and the same seam. `PLACE-004` Ctrl multi-place is one of six ids T-647 closes; its scope here was `place_at`'s `take()` at editor_ops.rs:2204 (re-arm instead of consuming while Ctrl is held), which is exactly T-647's work, and Ctrl is ALSO the map-grouping modifier, so the two had to be decided in one ticket or collide. Filing both would have guaranteed a two-file collision for one modifier."
-surfaces = [
-    "MAP",
-    "PLACE",
-]
-targets = ["website"]
+kind = "work"
 title = "Ctrl multi-place"
+summary = "CANCELLED 2026-08-01 — SUPERSEDED BY T-647, which owns the same two files (mission_editor.rs + editor_ops.rs) and the same seam. `PLACE-004` Ctrl multi-place is one of six ids T-647 closes; its scope here was `place_at`'s `take()` at editor_ops.rs:2204 (re-arm instead of consuming while Ctrl is held), which is exactly T-647's work, and Ctrl is ALSO the map-grouping modifier, so the two had to be decided in one ticket or collide. Filing both would have guaranteed a two-file collision for one modifier."
+status = "cancelled"
+order = 720
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

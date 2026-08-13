@@ -1,24 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 214
-executor = "claude-code"
 id = "T-240"
-impact = ["arsenal"]
-order = 2580
-program = "eden"
-status = "shipped"
-stream = "mission-creator"
+kind = "work"
+title = "Cargo capacity is warn-only and never blocks"
 summary = """
 A real capacity model exists — CARGO_CONTAINERS (arsenal_rules.rs:595), grid dims, VOLUME_PER_CELL_CM3=50, CargoBudget (:721-754) — but over() (:729) never blocks save, export or compile, and nothing is recursive.
 
@@ -75,6 +57,9 @@ vest, collapsed to 'vest'.
 SO T-240 IS NOW FULLY SCOPED WITHOUT AN AGENT: recursion needs nothing; the frontend block is the
 wrong layer (the mod silently drops the row and nobody reads IsComplete); the two findings above are
 the only actionable items and neither is what the ticket asked for. Re-scope or close on next read."""
-surfaces = ["ARS"]
-targets = ["website"]
-title = "Cargo capacity is warn-only and never blocks"
+status = "shipped"
+order = 2580
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

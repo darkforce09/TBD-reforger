@@ -1,38 +1,16 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "executor",
-    "priority",
-    "stream",
-    "targets",
-]
-__ord = 518
-executor = "claude-code"
 id = "T-544"
-impact = [
-    "tests",
-    "mission-authoring",
-]
-order = 3384
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "T-532 Class-R only — no HTTP IT for set-current version re-point"
 summary = """
 FOUND by W54 adversarial verifier (CLEAN MINOR-NIT) after T-532.
 
 POST /missions/:id/versions/:vid/set-current is covered by in-handler Class-R source pins only. Cure: HTTP IT in tests/missions.rs that creates two versions, calls set-current to the older, asserts current_version_id + /compiled behavior.
 
 Repro: rg set_current_version apps/website/api/tests — no hit."""
-surfaces = [
-    "API",
-    "tests",
-]
-targets = ["website"]
-title = "T-532 Class-R only — no HTTP IT for set-current version re-point"
+status = "shipped"
+order = 3384
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

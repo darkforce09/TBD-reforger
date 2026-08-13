@@ -1,35 +1,16 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 505
-executor = "claude-code"
 id = "T-531"
-impact = ["tests"]
-order = 3371
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "null_tolerance still lists deployments.* as KNOWN_OPEN after T-341"
 summary = """
 FOUND by W48 adversarial verifier (MINOR) after T-341 shipped.
 
 `apps/website/api/tests/null_tolerance.rs` still has `KNOWN_OPEN` entry `("src/handlers/deployments.rs", "*", "T-341 — open")` and `BASELINE_CAP=1`, while deployments.rs no longer has bare `event_registrations.*`. Comments still claim "BASELINE_CAP is now 0" / "T-341 takes this to 0".
 
 The stale path is `eprintln!` only today (not a hard fail); cold gate PASS saw it. Prune the entry, set `BASELINE_CAP=0`, fix the lying comments. Repro: `rg 'T-341 — open|BASELINE_CAP' apps/website/api/tests/null_tolerance.rs`."""
-surfaces = [
-    "API",
-    "tests",
-]
-targets = ["website"]
-title = "null_tolerance still lists deployments.* as KNOWN_OPEN after T-341"
+status = "shipped"
+order = 3371
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

@@ -1,17 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "spec",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-165.10"
+kind = "work"
+title = "T-165 — Node/JS eradication: every .mjs tool → Rust"
+summary = "T-165 — Node/JS eradication: every .mjs tool → Rust"
+status = "shipped"
+order = 1620
+spec = "docs/platform/t165_node_eradication.md"
+executor = "claude-code"
 notes = "Bash logic + closure: 0 .mjs, no-node gate, zero setup-node CI."
 parent = "T-165"
-spec = "docs/platform/t165_node_eradication.md"
-status = "shipped"
-targets = ["root"]
+
+[scope.repo]
+layers = ["xtask"]

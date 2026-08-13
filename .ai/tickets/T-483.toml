@@ -1,38 +1,16 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 457
-executor = "claude-code"
 id = "T-483"
-impact = [
-    "website",
-    "tests",
-]
-order = 3322
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Harden oauth.rs unit clears_oauth_state to exact OAUTH_STATE_CLEAR"
 summary = """
 Wave 31 residual from T-480. IT assert_oauth_state_cleared is byte-equality to OAUTH_STATE_CLEAR, but unit helper clears_oauth_state in apps/website/api/src/handlers/oauth.rs (~449) still soft-contains oauth_state=/Max-Age=0/HttpOnly with no Path=/ pin. Path=/api clear cookie still greens the unit helper.
 
 Repro: soft check accepts 'oauth_state=; Path=/api; Max-Age=0; HttpOnly'.
 
 Cure: assert equality to OAUTH_STATE_CLEAR (or require Path=/ exact) in the unit helper."""
-surfaces = [
-    "API",
-    "tests",
-]
-targets = ["website"]
-title = "Harden oauth.rs unit clears_oauth_state to exact OAUTH_STATE_CLEAR"
+status = "shipped"
+order = 3322
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

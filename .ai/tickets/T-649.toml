@@ -1,38 +1,12 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "route",
-    "stream",
-    "targets",
-    "executor",
-    "notes",
-    "depends_on",
-]
-__ord = 633
-depends_on = ["T-661"]
-executor = "claude-code"
 id = "T-649"
-impact = [
-    "ui",
-    "state",
-]
-notes = "editor-UI program wave 12 (wave_plan.tsv row 112) — SHIPPED wave 112 (editor factory), e4fefb38; verifier wave112.md. Ctrl+A viewport-scoped through the marquee primitive; BOTH suppress-on-multi guards inverted (T-716 rows now honest); per-field opt-in checkboxes. Arsenal tab still writes one slot under a multi-selection — disclosed with a UI banner, fan-out deferred to T-737's family."
-order = 4110
-program = "eden"
-route = "/missions/:id/edit"
-status = "shipped"
-stream = "mission-creator"
-summary = "Closes `SEL-ALL-001` and `ATTR-MULTI-001` / `ATTR-MULTI-CHK-001`. Eden scopes Select All to what is ON SCREEN, not to the whole mission — copy that; it is a viewport-rect query and the marquee already has the exact primitive (`marquee_ids` select_tool.rs:276, `marquee_ids_with_vehicles` :308). `Ctrl+A` joins the existing keydown arms in mission_editor.rs:1019-1031 beside `KeyC` :1020 and `KeyV` :1023. Multi-edit: fields with differing values disable until a per-field checkbox opts them in; `apps/website/frontend/src/attributes.rs` has ZERO checkbox inputs today (tabs :16, field bodies :255-348). THE BLOCKING GUARD IS TWO IDENTICAL THREE-LINE BLOCKS in editor_ops.rs: `if ctx.selection.borrow().len() > 1 { return; }` at :583-585 in `open_attributes` and at :605-607 in `open_arsenal` — multi-select today SUPPRESSES THE MODAL ENTIRELY, and this ticket inverts that. Note T-082 collides with this row on attributes.rs and editor_ops.rs and is deliberately one wave later; if the operator prefers one ticket, fold T-082 in — the combined owns is unchanged from this row's and the program loses a wave slot for free."
-surfaces = [
-    "ATTR",
-    "MAP",
-    "EDITOR",
-]
-targets = ["website"]
+kind = "work"
 title = "Select All in view, and multi-edit per-field checkboxes"
+summary = "Closes `SEL-ALL-001` and `ATTR-MULTI-001` / `ATTR-MULTI-CHK-001`. Eden scopes Select All to what is ON SCREEN, not to the whole mission — copy that; it is a viewport-rect query and the marquee already has the exact primitive (`marquee_ids` select_tool.rs:276, `marquee_ids_with_vehicles` :308). `Ctrl+A` joins the existing keydown arms in mission_editor.rs:1019-1031 beside `KeyC` :1020 and `KeyV` :1023. Multi-edit: fields with differing values disable until a per-field checkbox opts them in; `apps/website/frontend/src/attributes.rs` has ZERO checkbox inputs today (tabs :16, field bodies :255-348). THE BLOCKING GUARD IS TWO IDENTICAL THREE-LINE BLOCKS in editor_ops.rs: `if ctx.selection.borrow().len() > 1 { return; }` at :583-585 in `open_attributes` and at :605-607 in `open_arsenal` — multi-select today SUPPRESSES THE MODAL ENTIRELY, and this ticket inverts that. Note T-082 collides with this row on attributes.rs and editor_ops.rs and is deliberately one wave later; if the operator prefers one ticket, fold T-082 in — the combined owns is unchanged from this row's and the program loses a wave slot for free."
+status = "shipped"
+order = 4110
+executor = "claude-code"
+notes = "editor-UI program wave 12 (wave_plan.tsv row 112) — SHIPPED wave 112 (editor factory), e4fefb38; verifier wave112.md. Ctrl+A viewport-scoped through the marquee primitive; BOTH suppress-on-multi guards inverted (T-716 rows now honest); per-field opt-in checkboxes. Arsenal tab still writes one slot under a multi-selection — disclosed with a UI banner, fan-out deferred to T-737's family."
+depends_on = ["T-661"]
+
+[scope.website.editor]
+chrome = []

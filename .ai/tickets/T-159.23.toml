@@ -1,17 +1,14 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "spec",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-159.23"
+kind = "work"
+title = "T-159.23 — Attributes modal"
+summary = "T-159.23 — Attributes modal"
+status = "shipped"
+order = 1570
+spec = "docs/platform/t159_23_attributes_modal.md"
+executor = "claude-code"
 notes = "Attributes Transform+Identity; Arsenal stub. Handoff: .ai/artifacts/t159_23_claude_code_handoff.md"
 parent = "T-159"
-spec = "docs/platform/t159_23_attributes_modal.md"
-status = "ready"
-targets = ["website"]
+shipped_at = "69dc5da5"
+
+[scope.website.editor]
+chrome = ["attr"]

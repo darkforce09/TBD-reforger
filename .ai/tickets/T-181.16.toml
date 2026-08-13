@@ -1,18 +1,12 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "notes",
-]
-__ord = 0
-executor = "human"
 id = "T-181.16"
+kind = "work"
+title = "T-181.16"
+summary = "T-181.16"
+status = "queued"
+order = 1810
+executor = "human"
 notes = "Dedicated server + 2 real clients, full loop."
 parent = "T-181"
-status = "queued"
-targets = [
-    "mod",
-    "root",
-]
+
+[scope.repo]
+layers = ["docs"]

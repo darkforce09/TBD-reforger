@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 16
-executor = "cursor-docs"
 id = "T-022"
-impact = ["ui"]
-order = 220
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "Mono telemetry and token fixes across pages."
-surfaces = ["SHELL"]
-targets = ["website"]
+kind = "work"
 title = "Global Aegis consistency (batch 2)"
+summary = "Mono telemetry and token fixes across pages."
+status = "shipped"
+order = 220
+executor = "cursor-docs"
+
+[scope.website.editor]
+chrome = []

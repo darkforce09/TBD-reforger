@@ -1,19 +1,14 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-180.5"
+kind = "work"
+title = "T-180.5 — Right dock Eden side chips (absorbs T-074)"
+summary = "T-180.5 — Right dock Eden side chips (absorbs T-074)"
+status = "shipped"
+order = 1760
+spec = "docs/specs/Mission_Creator_Architecture/t180_5_right_dock_side_chips.md"
+executor = "claude-code"
 notes = "Tag T-180.5. apply_eden_chip→active_side; objects_mode; E1–E5; catalog unfiltered E-L2b. Verify: .ai/artifacts/t180_5_verify_log.md. Manual M-E1/M-E2 operator-pending."
 parent = "T-180"
 shipped_at = "1324799c"
-spec = "docs/specs/Mission_Creator_Architecture/t180_5_right_dock_side_chips.md"
-status = "shipped"
-targets = ["website"]
+
+[scope.website.editor]
+chrome = []

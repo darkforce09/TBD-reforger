@@ -1,28 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-    "shipped_at",
-]
-__ord = 341
-executor = "claude-code"
 id = "T-367"
-impact = ["platform-lifecycle"]
-order = 3183
-priority = 1
-program = "platform"
-shipped_at = "3a653fd5"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "T-202 turned a silently-ignored field into a permanent 500 on compile"
 summary = """
 REGRESSION INTRODUCED BY T-202, found by an independent audit of its emptiness claim.
 
@@ -49,9 +27,11 @@ It kept /compiled at 500 deliberately rather than overturning validated_compiled
 FOLDED IN FROM T-366 and found a THIRD case: "25:00" also 500'd. Its valid_time_of_day is deliberately NARROWER than the column — measured on Postgres 18, `time` also accepts 24:00, 0600, '4:05 PM', 'allballs', 06:00:60 (leap second, silently renormalised) — each storing fine and then parking the author's scrubber at 06:00 in silence, which is the T-192 bug. It also requires ASCII digits because Rust's u32::from_str accepts a leading '+', so "+6:00" would have parsed and still 500'd.
 
 It reverted a `cargo fmt --all` that reformatted 11 files it did not own, rather than committing them."""
-surfaces = [
-    "API",
-    "DATA",
-]
-targets = ["website"]
-title = "T-202 turned a silently-ignored field into a permanent 500 on compile"
+status = "shipped"
+order = 3183
+executor = "claude-code"
+priority = 1
+shipped_at = "3a653fd5"
+
+[scope.website.editor]
+chrome = []

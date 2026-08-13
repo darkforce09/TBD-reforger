@@ -1,15 +1,12 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-]
-__ord = 0
-executor = "cursor-docs"
 id = "T-090.0.2"
-parent = "T-090"
-spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
+kind = "work"
+title = "T-090 / T-091 — Map & terrain program (hub)"
+summary = "T-090 / T-091 — Map & terrain program (hub)"
 status = "shipped"
-targets = ["root"]
+order = 900
+spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
+executor = "cursor-docs"
+parent = "T-090"
+
+[scope.repo]
+layers = ["xtask"]

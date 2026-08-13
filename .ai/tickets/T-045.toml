@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 33
-executor = "cursor-docs"
 id = "T-045"
-impact = ["schema"]
-order = 450
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "Domain ROADMAP.md files replace numbered doc paths."
-surfaces = ["DATA"]
-targets = ["website"]
+kind = "work"
 title = "Roadmap-centric naming"
+summary = "Domain ROADMAP.md files replace numbered doc paths."
+status = "shipped"
+order = 450
+executor = "cursor-docs"
+
+[scope.website.editor]
+chrome = []

@@ -1,33 +1,12 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "route",
-    "stream",
-    "targets",
-    "executor",
-    "notes",
-    "depends_on",
-    "branch",
-]
-__ord = 71
-branch = "ticket/T-084"
-depends_on = ["T-661"]
-executor = "claude-code"
 id = "T-084"
-impact = ["ui"]
-notes = "editor-UI program wave 17 (wave_plan.tsv row 117) — SHIPPED wave 117 (editor factory), cf237bbd; verifier wave117.md. Grammar is field x pattern: class:/mod: crossed with literal, glob and regex. THE DEFERRED SEMANTICS DECISION IS MADE: class: now matches the full resource_name prefix OR the classname-TAIL prefix (last path segment minus extension), OR'd — pinned against the real GUID-headed catalogue id. Tail matching is PREFIX not substring, deliberately, so T-646's shipped assertion that class:Rifleman matches nothing survives unchanged; mid-classname search gets class:*Rifleman and class:/rifleman/ instead. RIGHT-SEARCH-005 was implemented despite interactions_sweep.md marking it deferred (agent-authored deferrals are barred; the verifier judged the override correct). ⚠️ The hand-rolled regex engine can OVERFLOW THE WASM STACK on deep patterns — see T-764."
-order = 4210
-program = "eden"
-route = "/missions/:id/edit"
-status = "shipped"
-stream = "mission-creator"
-summary = 'PROMOTED — the cheapest ratio in the interactions sweep: four ids against one function. `RIGHT-SEARCH-002/003/004/005` are all pattern parsing in front of `pub fn filter_catalog(nodes, query)` at `apps/website/frontend/src/asset_catalog.rs`:396, read in full (:390-414): it lowercases the query and does a LABEL SUBSTRING match with a self-match/descendant-match rule, and there is NO PREFIX PARSING OF ANY KIND. Add the grammar in front of it. The three call sites are all inside DockRight (post-split eden_dock_right.rs): :3163 Objects, :3218 Factions, :3306 Vehicles; the two `type="search"` inputs are :3112 (shared Factions/Objects, signals `search` :2990 / `object_search` :3012) and :3253 (`vehicle_search` :3009) — placeholder and hint copy change there. COORDINATE WITH T-646, which lands earlier and also touches filter_catalog for `class:` search and the submode chips: T-646 owns the submode/crew work, this row owns the prefix/pattern grammar, and whichever runs second builds on the other. `Ctrl+F`-focuses-search was considered for this ticket and deliberately routed elsewhere — folding it in here would have cost a full wave (see T-662).'
-surfaces = ["RIGHT"]
-targets = ["website"]
+kind = "work"
 title = "Classname / mod prefix search in the asset browser"
+summary = 'PROMOTED — the cheapest ratio in the interactions sweep: four ids against one function. `RIGHT-SEARCH-002/003/004/005` are all pattern parsing in front of `pub fn filter_catalog(nodes, query)` at `apps/website/frontend/src/asset_catalog.rs`:396, read in full (:390-414): it lowercases the query and does a LABEL SUBSTRING match with a self-match/descendant-match rule, and there is NO PREFIX PARSING OF ANY KIND. Add the grammar in front of it. The three call sites are all inside DockRight (post-split eden_dock_right.rs): :3163 Objects, :3218 Factions, :3306 Vehicles; the two `type="search"` inputs are :3112 (shared Factions/Objects, signals `search` :2990 / `object_search` :3012) and :3253 (`vehicle_search` :3009) — placeholder and hint copy change there. COORDINATE WITH T-646, which lands earlier and also touches filter_catalog for `class:` search and the submode chips: T-646 owns the submode/crew work, this row owns the prefix/pattern grammar, and whichever runs second builds on the other. `Ctrl+F`-focuses-search was considered for this ticket and deliberately routed elsewhere — folding it in here would have cost a full wave (see T-662).'
+status = "shipped"
+order = 4210
+executor = "claude-code"
+notes = "editor-UI program wave 17 (wave_plan.tsv row 117) — SHIPPED wave 117 (editor factory), cf237bbd; verifier wave117.md. Grammar is field x pattern: class:/mod: crossed with literal, glob and regex. THE DEFERRED SEMANTICS DECISION IS MADE: class: now matches the full resource_name prefix OR the classname-TAIL prefix (last path segment minus extension), OR'd — pinned against the real GUID-headed catalogue id. Tail matching is PREFIX not substring, deliberately, so T-646's shipped assertion that class:Rifleman matches nothing survives unchanged; mid-classname search gets class:*Rifleman and class:/rifleman/ instead. RIGHT-SEARCH-005 was implemented despite interactions_sweep.md marking it deferred (agent-authored deferrals are barred; the verifier judged the override correct). ⚠️ The hand-rolled regex engine can OVERFLOW THE WASM STACK on deep patterns — see T-764."
+depends_on = ["T-661"]
+
+[scope.website.editor]
+chrome = []

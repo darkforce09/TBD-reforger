@@ -1,27 +1,11 @@
-__keys = [
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "stream",
-    "targets",
-    "executor",
-    "id",
-    "order",
-    "title",
-    "summary",
-    "notes",
-]
-__ord = 689
-executor = "claude-code"
 id = "T-716"
-impact = ["ui"]
-notes = "filed by wave-102 adversarial verifier (editor factory)"
-order = 4309
-program = "eden"
-status = "deferred"
-stream = "mission-creator"
-summary = "Three defects in T-664's shipped menu, one honesty rule: an enabled row must do what it says on the target it names. (1) Empty-ground 'Go Here' dispatches center_on_selection() — with a selection elsewhere the camera jumps AWAY from the clicked point; with none, enabled no-op. The variant doc claims a set_view-to-clicked-point wiring that does not exist. Wire the event pixel through resolve_target into a real set-view. (2) 'Attributes...' and 'Edit Loadout...' are enabled for multi-selection targets but open_attributes/open_arsenal silently no-op at len()>1 — disable-with-reason or make them act (ATTR-MULTI-001 is the extender; coordinate with T-649 wave 112). (3) The menu's window keydown lacks the in_editable_field guard T-662 established — with a dock field focused, Arrows/Enter hijack into menu nav and Enter fires a row. Related, filed for T-082's brief (wave 113): refused locked-slot Transform edits display as accepted in the Attributes modal (one-shot snapshot, no re-read, no disabled affordance) — wave102.md F-7. Diagnosis: editor_verify/wave102.md F-4, F-5, F-6."
-surfaces = ["EDITOR"]
-targets = ["website"]
+kind = "work"
 title = "Context menu honesty: Go Here goes elsewhere; enabled rows dead on multi-select; keydown hijacks fields"
+summary = "Three defects in T-664's shipped menu, one honesty rule: an enabled row must do what it says on the target it names. (1) Empty-ground 'Go Here' dispatches center_on_selection() — with a selection elsewhere the camera jumps AWAY from the clicked point; with none, enabled no-op. The variant doc claims a set_view-to-clicked-point wiring that does not exist. Wire the event pixel through resolve_target into a real set-view. (2) 'Attributes...' and 'Edit Loadout...' are enabled for multi-selection targets but open_attributes/open_arsenal silently no-op at len()>1 — disable-with-reason or make them act (ATTR-MULTI-001 is the extender; coordinate with T-649 wave 112). (3) The menu's window keydown lacks the in_editable_field guard T-662 established — with a dock field focused, Arrows/Enter hijack into menu nav and Enter fires a row. Related, filed for T-082's brief (wave 113): refused locked-slot Transform edits display as accepted in the Attributes modal (one-shot snapshot, no re-read, no disabled affordance) — wave102.md F-7. Diagnosis: editor_verify/wave102.md F-4, F-5, F-6."
+status = "deferred"
+order = 4309
+executor = "claude-code"
+notes = "filed by wave-102 adversarial verifier (editor factory)"
+
+[scope.website.editor]
+chrome = []

@@ -1,35 +1,16 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 422
-executor = "claude-code"
 id = "T-448"
-impact = ["website"]
-order = 3287
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Personnel dossier Deployments stat has no API field"
 summary = """
 Residual from T-268 / wave 14. Dossier Deployments cell stays em-dash because RosterRow/AdminUserRow omit total_deployments. Not a fake count — honest empty — but ticket summary asked for the hardcoded stat.
 
 Repro: Personnel dossier → Deployments always —.
 
 Cure: project count in admin list_users + dto AdminUserRow + personnel.rs bind."""
-surfaces = [
-    "FE",
-    "BE",
-]
-targets = ["website"]
-title = "Personnel dossier Deployments stat has no API field"
+status = "shipped"
+order = 3287
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

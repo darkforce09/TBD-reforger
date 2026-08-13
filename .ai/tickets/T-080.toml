@@ -1,32 +1,9 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "status",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "route",
-    "branch",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 67
-branch = "ticket/T-080"
-executor = "claude-code"
 id = "T-080"
-impact = [
-    "ui",
-    "state",
-]
-order = 800
-program = "eden"
-route = "/missions/:id/edit"
-status = "idea"
-stream = "mission-creator"
-summary = "Entity connection lines and sync group authoring."
-surfaces = ["CONN"]
-targets = ["website"]
+kind = "work"
 title = "Connection / sync UI"
+summary = "Entity connection lines and sync group authoring."
+status = "idea"
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

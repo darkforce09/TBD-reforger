@@ -1,17 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-090.10.1"
+kind = "work"
+title = "T-090.10 — Map Engine v2 (A3-aligned render spine)"
+summary = "T-090.10 — Map Engine v2 (A3-aligned render spine)"
+status = "shipped"
+order = 900
+spec = "docs/specs/Mission_Creator_Architecture/t090_10_map_engine_v2.md"
+executor = "claude-code"
 parent = "T-090"
 shipped_at = "a222a146"
-spec = "docs/specs/Mission_Creator_Architecture/t090_10_map_engine_v2.md"
-status = "shipped"
-targets = ["root"]
+
+[scope.repo]
+layers = ["xtask"]

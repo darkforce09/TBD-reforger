@@ -1,19 +1,14 @@
-__keys = [
-    "id",
-    "parent",
-    "executor",
-    "targets",
-    "status",
-    "shipped_at",
-    "spec",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-068.10.8"
+kind = "work"
+title = "T-068.10.8 — Arsenal UX pass 2 (no-scroll modal, A3 slot rail, clean doll)"
+summary = "T-068.10.8 — Arsenal UX pass 2 (no-scroll modal, A3 slot rail, clean doll)"
+status = "shipped"
+order = 680
+spec = "docs/specs/Mission_Creator_Architecture/t068_10_8_arsenal_ux_pass2.md"
+executor = "claude-code"
 notes = "Mode D pass 2 after operator screenshot review: Arsenal opens with zero scrolling (modal pinned h-[85vh], flex chain, panes scroll internally); A3-style vertical slot rail (RAIL_REGIONS, 14 keys, completeness-gated) shares activeKey with the doll; doll is text-free (labels moved to rail/list/context/caption). 3D doll deferred to T-154 (Rust/wgpu, operator call - no three.js). SHIPPED @ 574fc63d (tag T-068.10.8). T-068.11 remains PARKED."
 parent = "T-068"
 shipped_at = "574fc63d"
-spec = "docs/specs/Mission_Creator_Architecture/t068_10_8_arsenal_ux_pass2.md"
-status = "shipped"
-targets = ["website"]
+
+[scope.website.editor]
+chrome = []

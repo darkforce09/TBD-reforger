@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 393
-executor = "claude-code"
 id = "T-419"
-impact = ["platform-lifecycle"]
-order = 3244
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Six mod comments now assert the schema is open, and four tickets will read them as the contract"
 summary = """
 Filed by wave 4's T-241 agent, which correctly reported rather than fixed (the mod .c files were in its owns but changing mod prose was out of its scope).
 
@@ -36,6 +16,11 @@ Comment-only edit, zero behavioural risk.
 ALSO IN THE SAME FILES: TBD_MissionLoader.c:88 documents graceSeconds as 'number >= 0' but the code at :389 also rejects > MAX_GRACE_SECONDS. The header omits the ceiling. T-275-adjacent.
 
 RECORDED DECISION so it is not re-litigated: T-241 deliberately did NOT encode conditional `required` for holdSeconds and targetAlias, though both are effectively mandatory (without them the objective goes inert with an operator-facing reason). Reason: it is a different defect from T-241's, and conditional requires are the shape most likely to collide with T-201/T-211/T-212. Both keys carry the requirement in prose instead. The command center endorsed this. Enforce it when a consumer actually needs it, not before."""
-surfaces = ["MOD"]
-targets = ["website"]
-title = "Six mod comments now assert the schema is open, and four tickets will read them as the contract"
+status = "shipped"
+order = 3244
+executor = "claude-code"
+notes = "needs-operator: frozen unmappable Scope. "
+priority = 2
+
+[scope.repo]
+layers = ["docs"]

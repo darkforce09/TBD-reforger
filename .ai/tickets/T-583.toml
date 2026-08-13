@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 557
-executor = "claude-code"
 id = "T-583"
-impact = ["platform-lifecycle"]
-order = 3432
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "make map-reclassify: T-278's tool exists but is undiscoverable"
 summary = """
 T-278 built `tbd-tools world reclassify` -- rebuilds the map catalogue's classification lane from
 COMMITTED artifacts with no Workbench and no staging directory, read-only drift check by default.
@@ -46,6 +26,10 @@ outside T-278's files): `packages/tbd-schema/schema/map-object-type-inventory.sc
 INSTANCE_KINDS is an 8-element array feeding the I1 sum gate, which comes up short by exactly 176 --
 `byKind.vehicle.instances`. T-278 shipped an `instance_kinds_match_enums_schema` lockstep test that
 pins the fix against the enums schema."""
-surfaces = ["INFRA"]
-targets = ["website"]
-title = "make map-reclassify: T-278's tool exists but is undiscoverable"
+status = "shipped"
+order = 3432
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 423
-executor = "claude-code"
 id = "T-449"
-impact = ["platform-lifecycle"]
-order = 3288
-priority = 2
-program = "platform"
-status = "cancelled"
-stream = "web-platform"
+kind = "work"
+title = "Wire ./scripts/ticket check to .ai/tickets/schema.json"
 summary = """
 Residual from T-273 / wave 15 adversarial NIT (also T-237 territory). Regenerated schema validates 423 tickets via python jsonschema, but xtask/src/check.rs never loads .ai/tickets/schema.json — wave gate ticket registry PASS does not examine the schema file.
 
@@ -29,6 +9,10 @@ Repro: break schema.json required fields; ./scripts/ticket check still OK; pytho
 Cure: load Draft 2020-12 schema in ticket check (or make verify-ticket-schema target + wave gate step).
 
 CANCELLED 2026-07-27: duplicate of T-237 (promoted wave 16)."""
-surfaces = ["INFRA"]
-targets = ["root"]
-title = "Wire ./scripts/ticket check to .ai/tickets/schema.json"
+status = "cancelled"
+order = 3288
+executor = "claude-code"
+priority = 2
+
+[scope.repo]
+layers = ["xtask"]

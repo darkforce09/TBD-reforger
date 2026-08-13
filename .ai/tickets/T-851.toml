@@ -1,27 +1,11 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "status",
-    "stream",
-    "targets",
-    "executor",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "notes",
-]
-__ord = 824
-executor = "claude-code"
 id = "T-851"
-impact = ["ui"]
-notes = "wave210 verifier F1 NIT; functional T-818 ship intact"
-order = 5330
-program = "eden"
-status = "deferred"
-stream = "mission-creator"
-summary = "WAVE-210 VERIFIER NIT (wave210.md F1). T-818 deleted the DockRight Placed strip call site, but eden_vehicles_panel.rs still carries placed_vehicles_panel + seat/cargo constants under #![allow(dead_code)] with stale prose claiming cargo lives under the Vehicles tab. FIX: delete or collapse the orphan into a shared seat-model helper used only by Attributes; scrub dead_code allows and update module docs. ACCEPTANCE: rg placed_vehicles_panel finds zero live mounts; no allow(dead_code) for the strip; Vehicles-tab prose matches catalog-only."
-surfaces = ["RIGHT"]
-targets = ["website"]
+kind = "work"
 title = "Delete orphaned placed_vehicles_panel after T-818 removed the Placed strip"
+summary = "WAVE-210 VERIFIER NIT (wave210.md F1). T-818 deleted the DockRight Placed strip call site, but eden_vehicles_panel.rs still carries placed_vehicles_panel + seat/cargo constants under #![allow(dead_code)] with stale prose claiming cargo lives under the Vehicles tab. FIX: delete or collapse the orphan into a shared seat-model helper used only by Attributes; scrub dead_code allows and update module docs. ACCEPTANCE: rg placed_vehicles_panel finds zero live mounts; no allow(dead_code) for the strip; Vehicles-tab prose matches catalog-only."
+status = "deferred"
+order = 5330
+executor = "claude-code"
+notes = "wave210 verifier F1 NIT; functional T-818 ship intact"
+
+[scope.website.editor]
+chrome = []

@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "program",
-    "surfaces",
-    "impact",
-    "stream",
-    "targets",
-    "executor",
-    "status",
-    "priority",
-    "order",
-    "title",
-    "summary",
-]
-__ord = 595
-executor = "claude-code"
 id = "T-622"
-impact = ["platform-lifecycle"]
-order = 3692
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "The Class-R evaluator failed OPEN — an expression it could not fold was treated as live code"
 summary = """
 FOUND by wave 79's adversarial verifier, inside T-601's own fix, and closed in-wave as T-622.
 
@@ -65,6 +45,10 @@ GREEN on unmodified main; a census over every SPA .rs file found **0** live cond
   `arsenal.rs:4321` so it cannot grow in silence.
 - The `the_*_rejects_every_dead_code_wrapper` batteries certify **twelve enumerated shapes and nothing
   more**; `the_unknown_condition_fails_closed` (`arsenal.rs:4253`) states the actual property."""
-surfaces = ["INFRA"]
-targets = ["website"]
-title = "The Class-R evaluator failed OPEN — an expression it could not fold was treated as live code"
+status = "shipped"
+order = 3692
+executor = "claude-code"
+priority = 1
+
+[scope.website.editor]
+chrome = []

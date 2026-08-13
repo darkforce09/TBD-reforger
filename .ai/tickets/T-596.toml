@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 570
-executor = "claude-code"
 id = "T-596"
-impact = ["platform-lifecycle"]
-order = 3463
-priority = 3
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Wave 73 residue: a reclaim crash on newline names, two fail-open harness checks, and eight hand-copied role ids"
 summary = '''
 Small items from wave 73, none live.
 
@@ -64,9 +44,10 @@ Small items from wave 73, none live.
     a slice ever writes a private `dist-`, it leaks exactly as `target-<SLICE>` did. Also a residual
     window: sparing keys off worktree existence, so a slice whose worktree is removed while its agent
     is still PARKED has its dir eligible. An age guard would close it.'''
-surfaces = [
-    "INFRA",
-    "FRONTEND",
-]
-targets = ["website"]
-title = "Wave 73 residue: a reclaim crash on newline names, two fail-open harness checks, and eight hand-copied role ids"
+status = "shipped"
+order = 3463
+executor = "claude-code"
+priority = 3
+
+[scope.website.editor]
+chrome = []

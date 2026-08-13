@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 241
-executor = "claude-code"
 id = "T-267"
-impact = ["platform-pages"]
-order = 2850
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "content.rs makes exactly one API call and discards the returned id, so re-clicking Publish duplicates. PATCH, DELETE, uploads and push-discord are all orphaned. The SOP category never hits the API at all — it toasts success with no network call. Five markdown tools toast mock."
-surfaces = ["SHELL"]
-targets = ["website"]
+kind = "work"
 title = "CMS announcements can be created but never edited, deleted or re-pushed"
+summary = "content.rs makes exactly one API call and discards the returned id, so re-clicking Publish duplicates. PATCH, DELETE, uploads and push-discord are all orphaned. The SOP category never hits the API at all — it toasts success with no network call. Five markdown tools toast mock."
+status = "shipped"
+order = 2850
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

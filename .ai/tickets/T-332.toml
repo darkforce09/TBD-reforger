@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 306
-executor = "claude-code"
 id = "T-332"
-impact = ["platform-lifecycle"]
-order = 3148
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "PATCH /events/:id cannot clear a briefing or banner, and a mission cannot be re-attached"
 summary = """
 Two gaps found by T-226 while wiring the Event Manager's edit path. Both are backend; T-226 owned only the frontend file and correctly left them.
 
@@ -31,9 +11,10 @@ Two gaps found by T-226 while wiring the Event Manager's edit path. Both are bac
 == DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
 Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
 This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now."""
-surfaces = [
-    "API",
-    "FRONTEND",
-]
-targets = ["website"]
-title = "PATCH /events/:id cannot clear a briefing or banner, and a mission cannot be re-attached"
+status = "shipped"
+order = 3148
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

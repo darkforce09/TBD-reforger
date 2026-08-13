@@ -1,26 +1,6 @@
-__keys = [
-    "program",
-    "surfaces",
-    "impact",
-    "stream",
-    "targets",
-    "executor",
-    "id",
-    "title",
-    "summary",
-    "status",
-    "priority",
-    "order",
-]
-__ord = 578
-executor = "claude-code"
 id = "T-605"
-impact = ["platform-lifecycle"]
-order = 3522
-priority = 0
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "A single DEGRADED cargo row hard-gates the LOBBY for everyone, and that gate has never run against a loadout mission"
 summary = """
 FOUND while writing `docs/platform/PLAYTEST_RUNBOOK.md` (2026-07-31). Second playtest blocker.
 
@@ -46,6 +26,11 @@ REPRO: author a mission with one slot whose cargo targets an unworn container; c
 FIX (design call, not obvious): degrade that ONE player's loadout and let the session start, log it
 loudly, and surface it to the admin -- rather than refusing the world. Whatever is chosen, run it
 against a loadout-carrying mission in the gate, which no current gate step does."""
-surfaces = ["MOD"]
-targets = ["website"]
-title = "A single DEGRADED cargo row hard-gates the LOBBY for everyone, and that gate has never run against a loadout mission"
+status = "shipped"
+order = 3522
+executor = "claude-code"
+notes = "needs-operator: frozen unmappable Scope. "
+priority = 0
+
+[scope.repo]
+layers = ["docs"]

@@ -1,21 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-152.19"
+kind = "work"
+title = "T-152.19 — One-button Workbench label export (Path A E2E)"
+summary = "T-152.19 — One-button Workbench label export (Path A E2E)"
+status = "deferred"
+order = 1520
+spec = "docs/specs/Mission_Creator_Architecture/t152_19_workbench_one_button_export.md"
+executor = "claude-code"
 notes = "DEFERRED 2026-07-13 — operator: Workbench label/road extract not needed now; revisit future. Path B sidecars retained. Verify t152_19_verify_log.md (skip record)."
 parent = "T-152"
-spec = "docs/specs/Mission_Creator_Architecture/t152_19_workbench_one_button_export.md"
-status = "deferred"
-targets = [
-    "root",
-    "mod",
-    "shared",
-]
+
+[scope.repo]
+layers = ["docs"]

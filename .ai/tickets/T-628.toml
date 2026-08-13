@@ -1,27 +1,11 @@
-__keys = [
-    "program",
-    "impact",
-    "stream",
-    "targets",
-    "executor",
-    "id",
-    "title",
-    "summary",
-    "status",
-    "priority",
-    "surfaces",
-    "order",
-]
-__ord = 601
-executor = "claude-code"
 id = "T-628"
-impact = ["platform-lifecycle"]
-order = 3772
-priority = 3
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = 'Backfilled 2026-08-01. Shipped in commit `646a54de8` but never written to the registry, so `next_id` and every "next free id" reading were four short. Code is authoritative; this row exists so the registry stops disagreeing with git.'
-surfaces = ["INFRA"]
-targets = ["website"]
+kind = "work"
 title = "one loading bar, 0 to 100, across the whole Mission Creator boot"
+summary = 'Backfilled 2026-08-01. Shipped in commit `646a54de8` but never written to the registry, so `next_id` and every "next free id" reading were four short. Code is authoritative; this row exists so the registry stops disagreeing with git.'
+status = "shipped"
+order = 3772
+executor = "claude-code"
+priority = 3
+
+[scope.website.editor]
+chrome = []

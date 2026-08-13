@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 411
-executor = "claude-code"
 id = "T-437"
-impact = ["mission-creator"]
-order = 3276
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Destroy-target inert diagnostics still claim entities[] never spawn"
 summary = """
 Residual from T-254 / wave 9 adversarial MAJOR M1. After T-254, TBD_MissionDocumentStruct models entities[] and SpawnMissionEntities runs on parse, but operator-facing inert strings still blame a build that does not spawn/model entities.
 
@@ -29,12 +9,10 @@ Live lie at apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegi
 Repro: author a destroy objective whose alias fails for zone/timing/registry reasons; inertReason still says the build does not spawn entities[] — misdiagnoses live failures.
 
 Cure: rewrite diagnostics to distinguish missing spawn vs unresolved alias vs out-of-zone; update schema prose."""
-surfaces = [
-    "MOD",
-    "SCHEMA",
-]
-targets = [
-    "website",
-    "mod",
-]
-title = "Destroy-target inert diagnostics still claim entities[] never spawn"
+status = "shipped"
+order = 3276
+executor = "claude-code"
+priority = 2
+
+[scope.repo]
+layers = ["docs"]

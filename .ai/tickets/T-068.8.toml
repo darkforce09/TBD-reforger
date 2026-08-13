@@ -1,20 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "shipped_at",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-068.8"
+kind = "work"
+title = "T-068.8"
+summary = "T-068.8"
+status = "shipped"
+order = 680
+executor = "claude-code"
 notes = "Superseded/implemented by T-150 universal export (compat envelope + items). Tag T-150."
 parent = "T-068"
 shipped_at = "9107bf4e"
-status = "shipped"
-targets = [
-    "mod",
-    "shared",
-]
+
+[scope.repo]
+layers = ["docs"]

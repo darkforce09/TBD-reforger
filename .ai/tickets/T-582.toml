@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 556
-executor = "claude-code"
 id = "T-582"
-impact = ["platform-lifecycle"]
-order = 3431
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "The zone draw tool: T-211 shipped the document layer, nothing reaches it"
 summary = """
 T-211 delivered the `zones` document root, 11 mutators, and proof that authored zones reach the mod
 through flatten. It did NOT deliver a product surface, and the commit carries the full ticket title
@@ -57,9 +37,10 @@ list without running them.
 THE RETIREMENT IS TWO EDITS OR NEITHER: add `"zones"` to KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS **and**
 `"zones": values_of_ordered(&small, "zonesById", "zones")` to compile_payload's json!, then delete the
 projection block in small_maps_json. Do that first, in its own commit, before the UI work."""
-surfaces = [
-    "FRONTEND",
-    "DATA",
-]
-targets = ["website"]
-title = "The zone draw tool: T-211 shipped the document layer, nothing reaches it"
+status = "shipped"
+order = 3431
+executor = "claude-code"
+priority = 1
+
+[scope.website.editor]
+chrome = []

@@ -1,15 +1,12 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-159.3"
+kind = "work"
+title = "T-159.3"
+summary = "T-159.3"
+status = "shipped"
+order = 1570
+executor = "claude-code"
 notes = "Auth + refresh — shipped on branch."
 parent = "T-159"
-status = "shipped"
-targets = ["website"]
+
+[scope.website.editor]
+chrome = []

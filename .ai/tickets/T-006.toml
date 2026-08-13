@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 5
-executor = "cursor-docs"
 id = "T-006"
-impact = ["schema"]
-order = 60
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "Documentation and seed work between T-004 scaffold and T-008 campaign refactor."
-surfaces = ["DATA"]
-targets = ["website"]
+kind = "work"
 title = "Platform documentation seed (pass 2)"
+summary = "Documentation and seed work between T-004 scaffold and T-008 campaign refactor."
+status = "shipped"
+order = 60
+executor = "cursor-docs"
+
+[scope.website.editor]
+chrome = []

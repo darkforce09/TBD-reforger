@@ -1,40 +1,13 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "stream",
-    "targets",
-    "executor",
-    "status",
-    "active_slice",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "spec",
-    "depends_on",
-    "unblocks",
-    "branch",
-    "shipped_at",
-]
-__ord = 102
-active_slice = "__tbd_null__"
-branch = "main"
-depends_on = ["T-127"]
-executor = "cursor-docs"
 id = "T-128"
-impact = ["docs"]
-order = 1280
-program = "platform"
-shipped_at = "T-128"
-spec = "docs/platform/t128_doc_link_repair.md"
-status = "shipped"
-stream = "web-platform"
-summary = "Shipped (tag T-128): P0 handoff/ticket link depths, STAGING-SERVER + MILESTONES + build-plan T-092 gate honesty (deploy smoke skip-guarded), apps/mod + apps/website README monorepo rewrite, orphan frontend/docs deleted, floor picker T-126→T-129 renumber, extended docs/** link sweep. Log: .ai/artifacts/t128_doc_link_repair_log.md. Spec: docs/platform/t128_doc_link_repair.md."
-surfaces = ["DATA"]
-targets = [
-    "root",
-    "website",
-]
+kind = "work"
 title = "Fable audit — doc link repair + staging honesty"
-unblocks = []
+summary = "Shipped (tag T-128): P0 handoff/ticket link depths, STAGING-SERVER + MILESTONES + build-plan T-092 gate honesty (deploy smoke skip-guarded), apps/mod + apps/website README monorepo rewrite, orphan frontend/docs deleted, floor picker T-126→T-129 renumber, extended docs/** link sweep. Log: .ai/artifacts/t128_doc_link_repair_log.md. Spec: docs/platform/t128_doc_link_repair.md."
+status = "shipped"
+order = 1280
+spec = "docs/platform/t128_doc_link_repair.md"
+executor = "cursor-docs"
+depends_on = ["T-127"]
+shipped_at = "T-128"
+
+[scope.repo]
+layers = ["docs"]

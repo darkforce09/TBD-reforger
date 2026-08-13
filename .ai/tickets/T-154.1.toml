@@ -1,22 +1,14 @@
-__keys = [
-    "id",
-    "parent",
-    "executor",
-    "targets",
-    "status",
-    "shipped_at",
-    "spec",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-154.1"
+kind = "work"
+title = "T-154.1 — Doll polish (contrast, rotation direction, hover + callout)"
+summary = "T-154.1 — Doll polish (contrast, rotation direction, hover + callout)"
+status = "shipped"
+order = 1515
+spec = "docs/specs/Mission_Creator_Architecture/t154_1_doll_polish.md"
+executor = "claude-code"
 notes = "Operator-review polish: mid-light backdrop (dark-on-dark unreadable), drag turns the character (yaw sign), hover highlight (Rust palette lift + cursor name chip), active-part callout chip + leader line tracked from Rust-projected anchors. Pitch/zoom declined; mesh fidelity deferred. SHIPPED @ 3b3e4d16 (tag T-154.1). GPU harness 36/36 allPass."
 parent = "T-154"
 shipped_at = "3b3e4d16"
-spec = "docs/specs/Mission_Creator_Architecture/t154_1_doll_polish.md"
-status = "shipped"
-targets = [
-    "website",
-    "root",
-]
+
+[scope.repo]
+layers = ["docs"]

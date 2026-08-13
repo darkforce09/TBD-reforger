@@ -1,26 +1,6 @@
-__keys = [
-    "program",
-    "impact",
-    "stream",
-    "targets",
-    "executor",
-    "id",
-    "title",
-    "summary",
-    "status",
-    "priority",
-    "order",
-    "surfaces",
-]
-__ord = 583
-executor = "claude-code"
 id = "T-610"
-impact = ["platform-lifecycle"]
-order = 3572
-priority = 3
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Stale file:line citations across the runbook and arsenal_rules, and verify-citations does not cover them"
 summary = """
 FOUND by wave 76's verifier (F4). Individually trivial; the reason to record it is that
 `make verify-citations` passes (`Checked 41 @contract citation(s)`) while ~19 citations are wrong --
@@ -47,6 +27,10 @@ Also in this bucket, from the same report:
 
 FIX SHAPE: either extend `verify-citations` to cover bare `file.c:NNN` forms in docs, or stop citing
 line numbers in prose and cite stable symbol names instead. The second is cheaper and does not rot."""
-surfaces = ["INFRA"]
-targets = ["website"]
-title = "Stale file:line citations across the runbook and arsenal_rules, and verify-citations does not cover them"
+status = "shipped"
+order = 3572
+executor = "claude-code"
+priority = 3
+
+[scope.website.editor]
+chrome = []

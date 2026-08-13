@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 308
-executor = "claude-code"
 id = "T-334"
-impact = ["platform-lifecycle"]
-order = 3150
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "events.rs integration tests flake on a cold database via dev-login"
 summary = """
 OBSERVED ONCE by T-324 and reported rather than buried: on a COLD database, the two-test parallel run of apps/website/api/tests/events.rs failed with `dev-login` returning no `Location` header. Never reproduced on a warm DB across four subsequent runs.
 
@@ -61,9 +41,10 @@ THE REAL COLLISIONS, from an 18-file inventory (not 19):
 NO SHARED TEST-SUPPORT MODULE EXISTS — 18 files, zero subdirectories, zero `mod` declarations, no [dev-dependencies] or [[test]] in Cargo.toml. The dev-login extractor is copy-pasted 9x plus 4 inline copies. Conventional home is tests/common/mod.rs (cargo does not compile tests/<dir>/mod.rs as its own binary). null_tolerance.rs is the model to copy: it deliberately avoids dev-login entirely, owns discord_id ...099, and serialises its DB tests with a lock. misc_integration.rs is the other: T-235 mints via state.jwt.issue_access, which writes nothing.
 
 So the fix is per-suite actor ids plus a shared helper — and admin_field.rs's roles/sync call has to go or be scoped, because no amount of actor isolation survives a handler that rewrites every row."""
-surfaces = [
-    "CI",
-    "API",
-]
-targets = ["website"]
-title = "events.rs integration tests flake on a cold database via dev-login"
+status = "shipped"
+order = 3150
+executor = "claude-code"
+priority = 1
+
+[scope.website.editor]
+chrome = []

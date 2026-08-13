@@ -1,30 +1,11 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "status",
-    "stream",
-    "targets",
-    "executor",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "notes",
-]
-__ord = 740
-executor = "claude-code"
 id = "T-767"
-impact = [
-    "docs",
-    "dx",
-]
-notes = "filed by wave-117 adversarial verifier (editor factory)"
-order = 4643
-program = "eden"
-status = "shipped"
-stream = "mission-creator"
-summary = "Two small items from wave 117. (1) NIT from the verifier: mission.schema.json:286's `formation` enum description says 'no mod reader... prose only', which went stale the moment T-672 shipped `force_to_formation`. The enum VALUES are correct and agree across the schema, the store and the menu (T-672's test reads the enum out of the schema at compile time rather than restating it) — only the description is wrong. Cursor-owned prose. (2) Reported by the T-672 slice: `ConnectionKind`, `ConnectionRow`, `ConnectionFinding`, `validate_connection_rows` and `formation_offsets` are `pub` INSIDE the private `store` module, so `crates/map-engine-core/src/doc/mod.rs:23` does not re-export them and the frontend cannot name them. T-672 therefore carries `context_menu::ConnKind::parse` as an editor-side copy of the kind vocabulary. It is documented and non-divergent by construction (anything the copy accepts that the core rejects simply fails at write, visibly, rather than silently diverging) — but it is a second spelling of one vocabulary, which is the drift shape this programme keeps filing. A ONE-LINE re-export in doc/mod.rs retires the copy; that file was outside T-672's owns. Diagnosis: editor_verify/wave117.md NIT-1 + T-672 found_not_fixed."
-surfaces = ["EDITOR"]
-targets = ["website"]
+kind = "work"
 title = "Wave-117 residue: stale formation prose, and a private-module re-export that forces a duplicate vocabulary"
+summary = "Two small items from wave 117. (1) NIT from the verifier: mission.schema.json:286's `formation` enum description says 'no mod reader... prose only', which went stale the moment T-672 shipped `force_to_formation`. The enum VALUES are correct and agree across the schema, the store and the menu (T-672's test reads the enum out of the schema at compile time rather than restating it) — only the description is wrong. Cursor-owned prose. (2) Reported by the T-672 slice: `ConnectionKind`, `ConnectionRow`, `ConnectionFinding`, `validate_connection_rows` and `formation_offsets` are `pub` INSIDE the private `store` module, so `crates/map-engine-core/src/doc/mod.rs:23` does not re-export them and the frontend cannot name them. T-672 therefore carries `context_menu::ConnKind::parse` as an editor-side copy of the kind vocabulary. It is documented and non-divergent by construction (anything the copy accepts that the core rejects simply fails at write, visibly, rather than silently diverging) — but it is a second spelling of one vocabulary, which is the drift shape this programme keeps filing. A ONE-LINE re-export in doc/mod.rs retires the copy; that file was outside T-672's owns. Diagnosis: editor_verify/wave117.md NIT-1 + T-672 found_not_fixed."
+status = "shipped"
+order = 4643
+executor = "claude-code"
+notes = "filed by wave-117 adversarial verifier (editor factory)"
+
+[scope.website.editor]
+chrome = []

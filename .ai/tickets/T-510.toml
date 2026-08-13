@@ -1,33 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 484
-executor = "claude-code"
 id = "T-510"
-impact = [
-    "website",
-    "tests",
-]
-order = 3350
-priority = 0
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "Wave 43 re-gate FAIL after T-509. T-331 0015 SET NOT NULL on missions.created_at/updated_at. tests/null_tolerance.rs approvals_queue_reports_an_honest_submitted_at_over_null_timestamps still INSERTs NULL timestamps to discriminate COALESCE(updated_at, created_at, sentinel) — seed fails 23502 on created_at. Cure: rewrite the test for the post-0015 world — pin that NULL created_at/updated_at inserts are rejected (23502); retire or replace the both-NULL / updated_at-NULL discriminator rows (those states can no longer exist in production). Keep COALESCE Class-R on the query source if still useful with non-null data. Do not weaken 0015."
-surfaces = [
-    "API",
-    "tests",
-]
-targets = ["website"]
+kind = "work"
 title = "W43 hotfix: null_tolerance approvals NULL timestamp plant vs T-331 NOT NULL"
+summary = "Wave 43 re-gate FAIL after T-509. T-331 0015 SET NOT NULL on missions.created_at/updated_at. tests/null_tolerance.rs approvals_queue_reports_an_honest_submitted_at_over_null_timestamps still INSERTs NULL timestamps to discriminate COALESCE(updated_at, created_at, sentinel) — seed fails 23502 on created_at. Cure: rewrite the test for the post-0015 world — pin that NULL created_at/updated_at inserts are rejected (23502); retire or replace the both-NULL / updated_at-NULL discriminator rows (those states can no longer exist in production). Keep COALESCE Class-R on the query source if still useful with non-null data. Do not weaken 0015."
+status = "shipped"
+order = 3350
+executor = "claude-code"
+priority = 0
+
+[scope.website.editor]
+chrome = []

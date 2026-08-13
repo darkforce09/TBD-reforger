@@ -104,7 +104,9 @@ fn generate_ticket_registry_md(registry: &Value) -> String {
             str_field(t, "id"),
             em_dash_or_order(t),
             str_field(t, "status"),
-            opt_str(t, "program").unwrap_or(""),
+            opt_str(t, "kind")
+                .or_else(|| opt_str(t, "program"))
+                .unwrap_or(""),
             opt_str(t, "title").unwrap_or(""),
             summary,
         ));
@@ -332,7 +334,10 @@ fn generate_ticket_brainstorm_md(registry: &Value) -> String {
     let mut by_program: BTreeMap<String, Vec<&Value>> = BTreeMap::new();
     for t in tickets(registry) {
         if matches!(opt_str(t, "status"), Some("idea" | "deferred")) {
-            let prog = opt_str(t, "program").unwrap_or("platform").to_string();
+            let prog = opt_str(t, "kind")
+                .or_else(|| opt_str(t, "program"))
+                .unwrap_or("work")
+                .to_string();
             by_program.entry(prog).or_default().push(t);
         }
     }

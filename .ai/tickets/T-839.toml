@@ -1,30 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "status",
-    "executor",
-    "program",
-    "stream",
-    "targets",
-    "impact",
-    "surfaces",
-    "order",
-    "summary",
-    "notes",
-]
-__ord = 812
-executor = "claude-code"
 id = "T-839"
-impact = [
-    "ui",
-    "mc-authoring",
-]
-notes = "eye-pass catch wave-205; decision-1 completion; strip+pill files — pack owns-aware"
-order = 5210
-program = "eden"
-status = "queued"
-stream = "mission-creator"
-summary = "EYE-PASS SCREENSHOT CATCH (wave-205, 2026-08-10): the floating bottom-centre Select/Ruler/LoS pill is still rendered — operator decision 1 (review section 8) retired it ('tools live Arma-style in the fixed chrome') and the traceability routed it to T-797/T-798, but NEITHER ticket's acceptance carried the pill removal — it fell between them (the input-never-reached-output class). FIX: move Ruler and LoS-ray into the row-2 toolbar as a tools group beside the widget cluster (BTN_ICON + chord tooltips + census rows for their chords if any); Select is the digit-1/No-Widget mode (T-835 gives it the arrow glyph) — no separate button needed; DELETE the floating pill component + its mount; Backspace hide-set shrinks accordingly. TRAPS: Ruler/LoS arming machinery (T-642/T-643 lineage) unchanged — only the BUTTONS move; the pill's pins (if any) update honestly. ACCEPTANCE: no floating pill in any mode; Ruler + LoS arm from row-2 buttons with tooltips; their gestures work unchanged; Backspace still hides all chrome."
-surfaces = ["SHELL"]
-targets = ["website"]
+kind = "work"
 title = "The floating Select/Ruler/LoS pill still exists — decision 1 said it dies"
+summary = "EYE-PASS SCREENSHOT CATCH (wave-205, 2026-08-10): the floating bottom-centre Select/Ruler/LoS pill is still rendered — operator decision 1 (review section 8) retired it ('tools live Arma-style in the fixed chrome') and the traceability routed it to T-797/T-798, but NEITHER ticket's acceptance carried the pill removal — it fell between them (the input-never-reached-output class). FIX: move Ruler and LoS-ray into the row-2 toolbar as a tools group beside the widget cluster (BTN_ICON + chord tooltips + census rows for their chords if any); Select is the digit-1/No-Widget mode (T-835 gives it the arrow glyph) — no separate button needed; DELETE the floating pill component + its mount; Backspace hide-set shrinks accordingly. TRAPS: Ruler/LoS arming machinery (T-642/T-643 lineage) unchanged — only the BUTTONS move; the pill's pins (if any) update honestly. ACCEPTANCE: no floating pill in any mode; Ruler + LoS arm from row-2 buttons with tooltips; their gestures work unchanged; Backspace still hides all chrome."
+status = "queued"
+order = 5210
+executor = "claude-code"
+notes = "eye-pass catch wave-205; decision-1 completion; strip+pill files — pack owns-aware"
+
+[scope.website.editor]
+chrome = []

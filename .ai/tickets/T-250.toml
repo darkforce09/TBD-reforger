@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 224
-executor = "claude-code"
 id = "T-250"
-impact = ["e2e"]
-order = 2680
-program = "eden"
-status = "shipped"
-stream = "mod-framework"
-summary = "TBD_MissionValidator has no unconsumed-key warning, so nothing tells an author that environment, settings, entities, layers, tickets or roles[].radio were silently discarded on load."
-surfaces = ["MOD"]
-targets = ["mod"]
+kind = "work"
 title = "Warn on unconsumed mission-document keys"
+summary = "TBD_MissionValidator has no unconsumed-key warning, so nothing tells an author that environment, settings, entities, layers, tickets or roles[].radio were silently discarded on load."
+status = "shipped"
+order = 2680
+executor = "claude-code"
+
+[scope.mod]
+layers = ["feature"]

@@ -1,32 +1,11 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "status",
-    "stream",
-    "targets",
-    "executor",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "notes",
-]
-__ord = 760
-executor = "claude-code"
 id = "T-787"
-impact = ["ui"]
-notes = "review section 8 O-1; the 1032px dock height sat unflagged in the responsive sweep — acceptance intentionally re-runs that sweep | SHIPPED W200 CLEAN: every acceptance clause re-measured (dock.bottom == bar.y exactly at 3 viewports, hit-tests, scroll, chevrons); 36px STATUSBAR_H_PX inset vindicated over 96px by measurement. Its two probe missions in the dev DB -> T-815. Verifier: wave200.md."
-order = 4690
-program = "eden"
-status = "shipped"
-stream = "mission-creator"
-summary = "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). O-1 — VERIFIED WITH NUMBERS: both docks render y48->y1080 while the status bar starts at y1044 — 36px overlap at every viewport swept (2560x1440..1280x720), and elementFromPoint at the bar's left end (120,1055) and right end (1800,1055) returns DOCK elements — the transparent dock containers eat clicks aimed at the readouts and right-end controls. MECHANISM: eden_layout.rs ~:64-82 dock height consts never subtract the toolbelt band (eden_toolbelt.rs ~:459 StatusBar). FIX: dock containers end at the bar's top edge — subtract TOOLBELT_BAND_PX (or equivalent) in eden_layout.rs so dock.bottom <= bar.y; docks read the consts via accessors so no dock-file edit should be needed. ⚠️ TRAPS: keep the collapse chevrons and dock scroll behaviour intact; the validation panel and mode pill live in the band area and are NOT this ticket (T-798 owns their future); do not touch eden_dock_left.rs / eden_dock_right.rs (other tickets own them) — if an edit there seems required, the layout-const route is the intended one. ACCEPTANCE: scripted at 1920x1080 + 1366x768 + 2560x1440: dockRect.bottom <= barRect.y for both docks; elementFromPoint((120, barY+10)) and ((width-120, barY+10)) resolve inside the status bar subtree; dock inner scroll still reaches its last row."
-surfaces = [
-    "LEFT",
-    "RIGHT",
-    "BOTTOM",
-    "SHELL",
-]
-targets = ["website"]
+kind = "work"
 title = "Docks stop at the status bar instead of overlapping it"
+summary = "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). O-1 — VERIFIED WITH NUMBERS: both docks render y48->y1080 while the status bar starts at y1044 — 36px overlap at every viewport swept (2560x1440..1280x720), and elementFromPoint at the bar's left end (120,1055) and right end (1800,1055) returns DOCK elements — the transparent dock containers eat clicks aimed at the readouts and right-end controls. MECHANISM: eden_layout.rs ~:64-82 dock height consts never subtract the toolbelt band (eden_toolbelt.rs ~:459 StatusBar). FIX: dock containers end at the bar's top edge — subtract TOOLBELT_BAND_PX (or equivalent) in eden_layout.rs so dock.bottom <= bar.y; docks read the consts via accessors so no dock-file edit should be needed. ⚠️ TRAPS: keep the collapse chevrons and dock scroll behaviour intact; the validation panel and mode pill live in the band area and are NOT this ticket (T-798 owns their future); do not touch eden_dock_left.rs / eden_dock_right.rs (other tickets own them) — if an edit there seems required, the layout-const route is the intended one. ACCEPTANCE: scripted at 1920x1080 + 1366x768 + 2560x1440: dockRect.bottom <= barRect.y for both docks; elementFromPoint((120, barY+10)) and ((width-120, barY+10)) resolve inside the status bar subtree; dock inner scroll still reaches its last row."
+status = "shipped"
+order = 4690
+executor = "claude-code"
+notes = "review section 8 O-1; the 1032px dock height sat unflagged in the responsive sweep — acceptance intentionally re-runs that sweep | SHIPPED W200 CLEAN: every acceptance clause re-measured (dock.bottom == bar.y exactly at 3 viewports, hit-tests, scroll, chevrons); 36px STATUSBAR_H_PX inset vindicated over 96px by measurement. Its two probe missions in the dev DB -> T-815. Verifier: wave200.md."
+
+[scope.website.editor]
+chrome = []

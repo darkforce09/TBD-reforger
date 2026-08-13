@@ -1,26 +1,6 @@
-__keys = [
-    "program",
-    "surfaces",
-    "impact",
-    "stream",
-    "targets",
-    "executor",
-    "id",
-    "title",
-    "summary",
-    "status",
-    "priority",
-    "order",
-]
-__ord = 576
-executor = "claude-code"
 id = "T-603"
-impact = ["platform-lifecycle"]
-order = 3502
-priority = 3
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "9 clippy errors in tools/tbd-tools/src/enf/ and nothing lints those crates"
 summary = """
 Ground truth measured by wave 75's verifier (F8), after two slice agents reported conflicting counts.
 
@@ -40,6 +20,10 @@ CONTEXT THAT MAKES THIS WORTH DOING: T-597 established that **nothing** ran `car
 crates -- `ci.yml:46`'s job-level `working-directory: apps/website/api` means the bare `cargo test` at
 `:71` selects only `website-api`. T-597 added a test step to the wave gate; there is still **no lint
 step**. Clean the 9, then add `clippy xtask+tbd-tools` alongside it. One small cleanup away."""
-surfaces = ["INFRA"]
-targets = ["website"]
-title = "9 clippy errors in tools/tbd-tools/src/enf/ and nothing lints those crates"
+status = "shipped"
+order = 3502
+executor = "claude-code"
+priority = 3
+
+[scope.website.editor]
+chrome = []

@@ -1,17 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-152.11"
+kind = "work"
+title = "T-152.11 — Operator fidelity audit (analysis only)"
+summary = "T-152.11 — Operator fidelity audit (analysis only)"
+status = "shipped"
+order = 1520
+spec = "docs/specs/Mission_Creator_Architecture/t152_11_operator_fidelity_audit.md"
+executor = "claude-code"
 notes = "Audit report @ a8a7a22c (tag T-152.11); D1–D13 ledger zero DONE; fix matrix → remediation ladder T-152.12–.22."
 parent = "T-152"
-spec = "docs/specs/Mission_Creator_Architecture/t152_11_operator_fidelity_audit.md"
-status = "shipped"
-targets = ["root"]
+
+[scope.repo]
+layers = ["xtask"]

@@ -1,20 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "shipped_at",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-151.11.4"
+kind = "work"
+title = "T-151.11.4"
+summary = "T-151.11.4"
+status = "shipped"
+order = 1500
+executor = "claude-code"
 notes = "GPU harness + CI + tree gate + compute cull readback + Range satellite preview"
 parent = "T-151"
 shipped_at = "2c3237fd"
-status = "shipped"
-targets = [
-    "root",
-    "website",
-]
+
+[scope.repo]
+layers = ["docs"]

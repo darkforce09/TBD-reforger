@@ -567,6 +567,7 @@ pub fn cmd_ship(root: &Path, registry: &mut Value, id: &str) -> Result<()> {
     let t = ticket_by_id_mut(registry, id).unwrap_or_else(|| unknown_ticket(id));
     if let Some(obj) = t.as_object_mut() {
         obj.insert("status".into(), json!("shipped"));
+        obj.remove("active");
         obj.remove("active_slice");
     }
     save_registry(root, registry)?;
@@ -618,6 +619,28 @@ pub fn cmd_mark_ready(
     if let Some(t) = ticket_by_id_mut(registry, id) {
         if let Some(obj) = t.as_object_mut() {
             obj.insert("status".into(), json!("ready"));
+            let story_empty = match obj.get("user_story") {
+                Some(Value::String(s)) => s.trim().is_empty(),
+                _ => true,
+            };
+            if story_empty {
+                let fallback = obj
+                    .get("summary")
+                    .and_then(Value::as_str)
+                    .or_else(|| obj.get("title").and_then(Value::as_str))
+                    .unwrap_or(id)
+                    .to_string();
+                obj.insert("user_story".into(), json!(fallback));
+            }
+            let acc_empty = match obj.get("acceptance") {
+                Some(Value::Array(a)) => a
+                    .iter()
+                    .all(|s| s.as_str().is_none_or(|x| x.trim().is_empty())),
+                _ => true,
+            };
+            if acc_empty {
+                obj.insert("acceptance".into(), json!(["See spec."]));
+            }
         }
     }
     save_registry(root, registry)?;
@@ -648,14 +671,14 @@ pub fn cmd_add(
     if let Some(obj) = registry.as_object_mut() {
         obj.insert("next_id".into(), json!(next_id + 1));
     }
+    let _ = (program, surfaces, impact);
     let row = json!({
         "id": tid,
+        "kind": "work",
         "title": title,
         "summary": if summary.is_empty() { title } else { summary },
-        "program": program,
-        "surfaces": surfaces.split(',').collect::<Vec<_>>(),
-        "impact": impact.split(',').collect::<Vec<_>>(),
         "status": "idea",
+        "scope": { "repo": { "layers": ["docs"] } },
     });
     tickets_mut(registry)?.push(row);
     save_registry(root, registry)?;
@@ -758,6 +781,7 @@ pub fn cmd_advance_slice(root: &Path, registry: &mut Value, id: &str) -> Result<
     };
     if let Some(t) = ticket_by_id_mut(registry, id) {
         if let Some(obj) = t.as_object_mut() {
+            obj.insert("active".into(), json!(new_active));
             obj.insert("active_slice".into(), json!(new_active));
         }
     }

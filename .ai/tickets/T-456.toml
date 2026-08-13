@@ -1,32 +1,16 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 430
-executor = "claude-code"
 id = "T-456"
-impact = ["mod"]
-order = 3295
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "OnBackendFetchSuccess does not re-check MISSION_FILE_MAX_BYTES"
 summary = """
 Residual from T-450 / wave 20 adversarial. Compiled missions are pinned at 8MiB via x-tbd-missionFileMaxBytes + validate_mission_document + profile LoadFromProfileFile, but OnBackendFetchSuccess → ParseMissionJson does not re-check body size. A compromised/stale API path could still hand the mod an oversized JSON.
 
 Repro: read TBD_MissionLoader OnBackendFetchSuccess vs LoadFromProfileFile size gate.
 
 Cure: apply the same MISSION_FILE_MAX_BYTES check on the REST success path before ParseMissionJson."""
-surfaces = ["MOD"]
-targets = ["mod"]
-title = "OnBackendFetchSuccess does not re-check MISSION_FILE_MAX_BYTES"
+status = "shipped"
+order = 3295
+executor = "claude-code"
+priority = 2
+
+[scope.mod]
+layers = ["feature"]

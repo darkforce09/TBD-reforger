@@ -1,29 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 444
-executor = "claude-code"
 id = "T-470"
-impact = [
-    "website",
-    "tests",
-]
-order = 3309
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "T-466 Class-R order-blind / unreachable error UI false-green"
 summary = """
 Residual from wave 26 adversarial MAJOR. Live Content list keeps Result, seeds only on Ok, surfaces error+Retry. Class-R content_list_error_does_not_seed_as_empty_success is needle-soft:
 (1) list_seeded.set(true) before match / outside Ok → PASS
@@ -33,9 +10,10 @@ Residual from wave 26 adversarial MAJOR. Live Content list keeps Result, seeds o
 Repro: move list_seeded.set(true) before Ok arm → Class-R still green.
 
 Cure: order-sensitive / structural pins (seed only inside Ok arm AST or window); pin Retry reachable (not filtered out); RED→GREEN on verifier perturbations."""
-surfaces = [
-    "FE",
-    "tests",
-]
-targets = ["website"]
-title = "T-466 Class-R order-blind / unreachable error UI false-green"
+status = "shipped"
+order = 3309
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

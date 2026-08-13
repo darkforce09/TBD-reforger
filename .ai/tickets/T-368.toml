@@ -1,28 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-    "shipped_at",
-]
-__ord = 342
-executor = "claude-code"
 id = "T-368"
-impact = ["platform-lifecycle"]
-order = 3184
-priority = 2
-program = "platform"
-shipped_at = "d92ea44d"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "The mission armory cannot be set from the UI at all — the endpoint has no frontend caller"
 summary = """
 FOUND by the adversarial verifier while checking T-346's blast radius, and it reframes that ticket.
 `PUT /missions/:id/armory` has **ZERO frontend callers** — repo-wide the only callers are tests/missions.rs, tests/null_tolerance.rs and docs. Live `mission_armories` holds **zero rows**.
@@ -53,6 +31,11 @@ Visibility mirrors handlers::missions::can_edit EXACTLY — author or admin, del
 Browser-verified round trip ending where it matters: Event Hub dossier cards read BLUFOR itemCount 3, OPFOR itemCount 1. DB shows sort_order 0-3 in draft order and quantity NULL for unlimited, not 0.
 
 DECLARED, not done: the V-suite `missionview` golden will now diff by exactly one header element (the fixture's author_id equals the seeded admin, so the button renders); it needs a re-freeze plus an acceptedDelta note, and the manifest was outside its file. The V-suite is in neither the slice nor the wave gate."""
-surfaces = ["FRONTEND"]
-targets = ["website"]
-title = "The mission armory cannot be set from the UI at all — the endpoint has no frontend caller"
+status = "shipped"
+order = 3184
+executor = "claude-code"
+priority = 2
+shipped_at = "d92ea44d"
+
+[scope.website.editor]
+chrome = []

@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 315
-executor = "claude-code"
 id = "T-341"
-impact = ["platform-lifecycle"]
-order = 3157
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "deployments.rs has a bare SELECT * and swallows decode errors, in the file held up as the good example"
 summary = """
 FOUND by T-329 while fixing the sibling bug. The irony is the point: deployments.rs:103 is what every other read site was told to copy, and two other statements in the same file are the defects it was supposed to model against.
 
@@ -35,6 +15,10 @@ T-329's static enumerator will name :76 once it runs; check whether it is in the
 == DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
 Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
 This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now."""
-surfaces = ["API"]
-targets = ["website"]
-title = "deployments.rs has a bare SELECT * and swallows decode errors, in the file held up as the good example"
+status = "shipped"
+order = 3157
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

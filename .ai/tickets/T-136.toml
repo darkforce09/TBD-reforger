@@ -1,42 +1,14 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "stream",
-    "targets",
-    "executor",
-    "status",
-    "surfaces",
-    "impact",
-    "depends_on",
-    "spec",
-    "branch",
-]
-__ord = 110
-branch = "ticket/T-136"
+id = "T-136"
+kind = "work"
+title = "3D AAR / OCAP-style replay"
+summary = "Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built."
+status = "idea"
+spec = "docs/platform/tbd_north_star_backlog.md"
+executor = "claude-code"
 depends_on = [
     "T-116",
     "T-119",
 ]
-executor = "claude-code"
-id = "T-136"
-impact = [
-    "api",
-    "ui",
-    "schema",
-]
-program = "platform"
-spec = "docs/platform/tbd_north_star_backlog.md"
-status = "idea"
-stream = "web-platform"
-summary = "Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built."
-surfaces = [
-    "DATA",
-    "SHELL",
-]
-targets = [
-    "website",
-    "mod",
-]
-title = "3D AAR / OCAP-style replay"
+
+[scope.repo]
+layers = ["docs"]

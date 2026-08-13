@@ -1,29 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 464
-executor = "claude-code"
 id = "T-490"
-impact = [
-    "infra",
-    "tests",
-]
-order = 3329
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "T-411 gate DB wave stuck on plan wave 3 while deferred tickets remain"
 summary = """
 Wave 35 adversarial MAJOR. gate_wave_number() falls back to current_wave() = lowest plan wave with any ticket status not in {shipped,cancelled}. Wave 3 still has deferred T-397/400/403/410/412–414 (+ was T-411), so default IT DB is permanently tbd_gate_w3 for every gate until those clear. Factory packing waves (30–35) do not advance N. Residue isolation fails on the default path; only TBD_GATE_WAVE / TBD_GATE_DB escape (cold gates used tbd_wave35_cold). Prune keep N/N-1 is correct when N advances.
 
@@ -33,9 +10,10 @@ Repro:
   # observes 3 forever while wave-3 deferreds exist
 
 Cure: do not key default N solely on current_wave() while deferred residue can pin an old plan wave. Prefer (1) TBD_GATE_WAVE, (2) committed packing counter docs/platform/factory_pack_wave (integer; command center bumps on promote), (3) only then current_wave(). Seed factory_pack_wave to 35. Keep prune last-two + operator URL overrides."""
-surfaces = [
-    "CI",
-    "INFRA",
-]
-targets = ["root"]
-title = "T-411 gate DB wave stuck on plan wave 3 while deferred tickets remain"
+status = "shipped"
+order = 3329
+executor = "claude-code"
+priority = 1
+
+[scope.repo]
+layers = ["xtask"]

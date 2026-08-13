@@ -1,27 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "shipped_at",
-]
-__ord = 174
-executor = "claude-code"
 id = "T-200"
-impact = ["arsenal"]
-order = 2180
-program = "eden"
-shipped_at = "0d4a2ae7"
-status = "shipped"
-stream = "mission-creator"
-summary = "flatten.rs:489-491 silently substitutes the faction default for the other 346 and, unlike the file's own $comment, emits no warning."
-surfaces = ["ARS"]
-targets = ["website"]
+kind = "work"
 title = "Only 8 of 354 registry characters have a kit alias"
+summary = "flatten.rs:489-491 silently substitutes the faction default for the other 346 and, unlike the file's own $comment, emits no warning."
+status = "shipped"
+order = 2180
+executor = "claude-code"
+shipped_at = "0d4a2ae7"
+
+[scope.website.editor]
+chrome = []

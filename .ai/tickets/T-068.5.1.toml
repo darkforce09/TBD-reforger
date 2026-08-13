@@ -1,13 +1,11 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-068.5.1"
-parent = "T-068"
+kind = "work"
+title = "T-068.5.1"
+summary = "T-068.5.1"
 status = "shipped"
-targets = ["mod"]
+order = 680
+executor = "claude-code"
+parent = "T-068"
+
+[scope.mod]
+layers = ["feature"]

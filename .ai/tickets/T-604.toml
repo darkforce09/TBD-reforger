@@ -1,26 +1,6 @@
-__keys = [
-    "program",
-    "surfaces",
-    "impact",
-    "stream",
-    "targets",
-    "executor",
-    "id",
-    "title",
-    "summary",
-    "status",
-    "priority",
-    "order",
-]
-__ord = 577
-executor = "claude-code"
 id = "T-604"
-impact = ["platform-lifecycle"]
-order = 3512
-priority = 0
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Nothing in this repo starts a joinable server with the mod — the playtest cannot be run"
 summary = '''
 FOUND while writing `docs/platform/PLAYTEST_RUNBOOK.md` (2026-07-31). **This blocks T-181.16 and
 T-068.14, which are the only two things standing between this program and finished.**
@@ -52,6 +32,11 @@ boots headless with zero players and has never been asked to accept a connection
 FIX: one script that starts a joinable, mod-loaded, admin-capable dedicated server, and a documented
 answer for how a second machine reaches it (LAN Direct Join vs backend room). Until this exists the
 playtest is not runnable and both remaining programs stay blocked.'''
-surfaces = ["MOD"]
-targets = ["website"]
-title = "Nothing in this repo starts a joinable server with the mod — the playtest cannot be run"
+status = "shipped"
+order = 3512
+executor = "claude-code"
+notes = "needs-operator: frozen unmappable Scope. "
+priority = 0
+
+[scope.repo]
+layers = ["docs"]

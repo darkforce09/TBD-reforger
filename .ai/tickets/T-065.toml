@@ -1,30 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "spec",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 52
-executor = "claude-code"
 id = "T-065"
-impact = [
-    "perf",
-    "ui",
-]
-order = 650
-program = "scale"
-spec = "docs/specs/Mission_Creator_Architecture/t065_cluster_lod.md"
-status = "shipped"
-stream = "mission-creator"
-summary = "Supercluster index with pan-stable cache for 367k missions."
-surfaces = ["MAP"]
-targets = ["website"]
+kind = "work"
 title = "Cluster LOD at extreme zoom"
+summary = "Supercluster index with pan-stable cache for 367k missions."
+status = "shipped"
+order = 650
+spec = "docs/specs/Mission_Creator_Architecture/t065_cluster_lod.md"
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

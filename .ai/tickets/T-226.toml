@@ -1,27 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "shipped_at",
-]
-__ord = 200
-executor = "claude-code"
 id = "T-226"
-impact = ["platform-lifecycle"]
-order = 2440
-program = "platform"
-shipped_at = "191fd0df"
-status = "shipped"
-stream = "web-platform"
-summary = "PATCH /events/{id} has no caller so events can never be edited and status can never be set; DELETE /events/{id}/missions/{emid} has no caller so missions can never be detached; the /events list page renders nothing."
-surfaces = ["DATA"]
-targets = ["website"]
+kind = "work"
 title = "Events can never be edited or detached from the UI"
+summary = "PATCH /events/{id} has no caller so events can never be edited and status can never be set; DELETE /events/{id}/missions/{emid} has no caller so missions can never be detached; the /events list page renders nothing."
+status = "shipped"
+order = 2440
+executor = "claude-code"
+shipped_at = "191fd0df"
+
+[scope.website.editor]
+chrome = []

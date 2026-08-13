@@ -1,32 +1,10 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "status",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "route",
-    "branch",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 81
-branch = "ticket/T-094"
-executor = "claude-code"
 id = "T-094"
-impact = ["perf"]
-order = 940
-program = "scale"
-route = "/missions/:id/edit"
-status = "deferred"
-stream = "mission-creator"
-summary = "Typed-array slot icon buffer for mega-mission render path."
-surfaces = [
-    "MAP",
-    "DATA",
-]
-targets = ["website"]
+kind = "work"
 title = "Typed-array IconLayer"
+summary = "Typed-array slot icon buffer for mega-mission render path."
+status = "deferred"
+order = 940
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

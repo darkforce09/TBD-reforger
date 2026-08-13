@@ -1,40 +1,15 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "route",
-    "stream",
-    "targets",
-    "executor",
-    "notes",
-    "depends_on",
-]
-__ord = 625
+id = "T-658"
+kind = "work"
+title = "Validation: every placed asset resolves in the live catalogue"
+summary = """Rule content in the T-656 engine — modifies only `crates/map-engine-core/src/mission/validate.rs`. Revives the MissionAnalyzer's dead rule D13: every placed asset must resolve in the live registry, which catches modset drift the MOMENT an asset is placed rather than at compile. The upstream analysis marked this `on-save` "only as the conservative default for a cold registry" — THAT CAVEAT DOES NOT APPLY HERE: `apps/website/frontend/src/mission_editor.rs`:36-93 holds `mod registry_session`, a `thread_local!` SPA-session cache of the catalogue, so the check is live and free. Depends on T-656."""
+status = "shipped"
+order = 4020
+executor = "claude-code"
+notes = "editor-UI program wave 8 (wave_plan.tsv row 108) — SHIPPED wave 108 (editor factory), slice bc7121c2; verifier wave108.md"
 depends_on = [
     "T-661",
     "T-656",
 ]
-executor = "claude-code"
-id = "T-658"
-impact = [
-    "mc-integrity",
-    "tests",
-]
-notes = "editor-UI program wave 8 (wave_plan.tsv row 108) — SHIPPED wave 108 (editor factory), slice bc7121c2; verifier wave108.md"
-order = 4020
-program = "eden"
-route = "/missions/:id/edit"
-status = "shipped"
-stream = "mission-creator"
-summary = """Rule content in the T-656 engine — modifies only `crates/map-engine-core/src/mission/validate.rs`. Revives the MissionAnalyzer's dead rule D13: every placed asset must resolve in the live registry, which catches modset drift the MOMENT an asset is placed rather than at compile. The upstream analysis marked this `on-save` "only as the conservative default for a cold registry" — THAT CAVEAT DOES NOT APPLY HERE: `apps/website/frontend/src/mission_editor.rs`:36-93 holds `mod registry_session`, a `thread_local!` SPA-session cache of the catalogue, so the check is live and free. Depends on T-656."""
-surfaces = [
-    "DATA",
-    "REG",
-]
-targets = ["website"]
-title = "Validation: every placed asset resolves in the live catalogue"
+
+[scope.website.editor]
+chrome = []

@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 10
-executor = "cursor-docs"
 id = "T-012"
-impact = ["ui"]
-order = 120
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "Split-pane master/detail across platform pages."
-surfaces = ["SHELL"]
-targets = ["website"]
+kind = "work"
 title = "macOS page split-pane redesigns"
+summary = "Split-pane master/detail across platform pages."
+status = "shipped"
+order = 120
+executor = "cursor-docs"
+
+[scope.website.editor]
+chrome = []

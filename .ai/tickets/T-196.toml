@@ -1,27 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "shipped_at",
-]
-__ord = 170
-executor = "claude-code"
 id = "T-196"
-impact = ["registry-hygiene"]
-order = 2140
-program = "infra"
-shipped_at = "7b98232b"
-status = "shipped"
-stream = "infra"
-summary = "SHIPPED by the Phase 0 registry pass (7b98232b) before the fleet started. T-181.slices[] backfilled 39 -> 66 (all slice_plan entries), and active_slice corrected from T-181.15 — which was already shipped — to null. Verified: slice_plan 66, slices[] 66, active_slice null."
-surfaces = ["REG"]
-targets = ["root"]
+kind = "work"
 title = "T-181 slices[] lists 39 of 54 slices"
+summary = "SHIPPED by the Phase 0 registry pass (7b98232b) before the fleet started. T-181.slices[] backfilled 39 -> 66 (all slice_plan entries), and active_slice corrected from T-181.15 — which was already shipped — to null. Verified: slice_plan 66, slices[] 66, active_slice null."
+status = "shipped"
+order = 2140
+executor = "claude-code"
+shipped_at = "7b98232b"
+
+[scope.repo]
+layers = ["xtask"]

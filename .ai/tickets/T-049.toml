@@ -1,37 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "spec",
-    "route",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 37
-executor = "claude-code"
 id = "T-049"
-impact = [
-    "ui",
-    "state",
-]
-order = 490
-program = "eden"
-route = "/missions/:id/edit"
-spec = "docs/specs/Mission_Creator_Architecture/t049_terrain_title_position.md"
-status = "shipped"
-stream = "mission-creator"
-summary = "Terrain viewport, row meta hydrate, editable transform fields."
-surfaces = [
-    "MAP",
-    "ATTR",
-    "TOP",
-    "DATA",
-]
-targets = ["website"]
+kind = "work"
 title = "Terrain, title, numeric position"
+summary = "Terrain viewport, row meta hydrate, editable transform fields."
+status = "shipped"
+order = 490
+spec = "docs/specs/Mission_Creator_Architecture/t049_terrain_title_position.md"
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

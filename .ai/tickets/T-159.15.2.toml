@@ -1,19 +1,14 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "shipped_at",
-    "spec",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-159.15.2"
+kind = "work"
+title = "T-159.15.2 — Mission Creator camera pan + pointer foundation"
+summary = "T-159.15.2 — Mission Creator camera pan + pointer foundation"
+status = "shipped"
+order = 1570
+spec = "docs/platform/t159_15_2_camera_pan.md"
+executor = "claude-code"
 notes = "MMB/RMB pan + wheel rebase; smoke_pan_editor Class R. Verify: .ai/artifacts/t159_15_2_verify_log.md"
 parent = "T-159"
 shipped_at = "ebcabe1d"
-spec = "docs/platform/t159_15_2_camera_pan.md"
-status = "shipped"
-targets = ["website"]
+
+[scope.website.editor]
+chrome = []

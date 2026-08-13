@@ -1,15 +1,12 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-]
-__ord = 0
-executor = "cursor-docs"
 id = "T-144.0"
-parent = "T-144"
-spec = "docs/specs/Mission_Creator_Architecture/t144_arma3_map_architecture_study.md"
+kind = "work"
+title = "T-144 — Arma 3 map architecture study (reference analysis)"
+summary = "T-144 — Arma 3 map architecture study (reference analysis)"
 status = "shipped"
-targets = ["root"]
+order = 1440
+spec = "docs/specs/Mission_Creator_Architecture/t144_arma3_map_architecture_study.md"
+executor = "cursor-docs"
+parent = "T-144"
+
+[scope.repo]
+layers = ["xtask"]

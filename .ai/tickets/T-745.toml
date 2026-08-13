@@ -1,30 +1,11 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "status",
-    "stream",
-    "targets",
-    "executor",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "notes",
-]
-__ord = 718
-executor = "claude-code"
 id = "T-745"
-impact = [
-    "ui",
-    "state",
-]
-notes = "filed by wave-113 adversarial verifier (editor factory)"
-order = 4621
-program = "eden"
-status = "shipped"
-stream = "mission-creator"
-summary = "NIT from the wave-113 verifier. editor_ops.rs:1855-1880: `did` is set true whenever the ops context and document exist, so an all-None call, or a call against a nonexistent id, still bumps doc_ver, dirties the mission and arms a persist. T-082 added the widened no-op guard to the _multi variant but not to the single-target one. UNREACHABLE from the modal today — every current caller passes exactly one Some — so this is latent, not live. One-line guard: mirror the _multi variant's 'only fire the tail when something actually changed' check. Worth doing because a false 'saved' is the defect class this program cares most about, and the multi path proves the shape. Diagnosis: editor_verify/wave113.md F-3."
-surfaces = ["ATTR"]
-targets = ["website"]
+kind = "work"
 title = "attrs_update_slot (single-target) fires the history tail unconditionally"
+summary = "NIT from the wave-113 verifier. editor_ops.rs:1855-1880: `did` is set true whenever the ops context and document exist, so an all-None call, or a call against a nonexistent id, still bumps doc_ver, dirties the mission and arms a persist. T-082 added the widened no-op guard to the _multi variant but not to the single-target one. UNREACHABLE from the modal today — every current caller passes exactly one Some — so this is latent, not live. One-line guard: mirror the _multi variant's 'only fire the tail when something actually changed' check. Worth doing because a false 'saved' is the defect class this program cares most about, and the multi path proves the shape. Diagnosis: editor_verify/wave113.md F-3."
+status = "shipped"
+order = 4621
+executor = "claude-code"
+notes = "filed by wave-113 adversarial verifier (editor factory)"
+
+[scope.website.editor]
+chrome = []

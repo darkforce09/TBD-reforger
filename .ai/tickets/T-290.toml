@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 264
-executor = "claude-code"
 id = "T-290"
-impact = ["contract"]
-order = 3080
-program = "eden"
-status = "idea"
-stream = "mission-creator"
-summary = "meta.author, meta.templateId, meta.playerRange, the whole environment block, factions[].tickets, orbat[].type, winConditions.mode, flow.briefingSeconds (advisory only), and the entire orbat block (parity-check only). Either add mod readers or annotate them non-consumed so the next audit does not re-derive this."
-surfaces = ["DATA"]
-targets = ["root"]
+kind = "work"
 title = "Resolve nine dead-output fields flatten emits that the mod never reads"
+summary = "meta.author, meta.templateId, meta.playerRange, the whole environment block, factions[].tickets, orbat[].type, winConditions.mode, flow.briefingSeconds (advisory only), and the entire orbat block (parity-check only). Either add mod readers or annotate them non-consumed so the next audit does not re-derive this."
+status = "idea"
+executor = "claude-code"
+notes = "needs-operator: frozen unmappable Scope. "
+
+[scope.repo]
+layers = ["docs"]

@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 383
-executor = "claude-code"
 id = "T-409"
-impact = ["platform-lifecycle"]
-order = 3230
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "wave.sh's new non-vacuity guards false-red on legitimate slices"
 summary = '''
 Found by wave 3's adversarial verifier against merged main. T-406 correctly closed the gate's ways of passing code it never examined, but three of the new HARD FAILS refuse work that is genuinely fine. Inverse of the signature defect: not a false green, a false red. A gate that refuses legitimate slices blocks every subsequent wave and teaches agents that gate failures are noise.
 
@@ -43,6 +23,10 @@ F3 MINOR -- wave.sh:800-806 vs wave.sh:181. TBD_GATE_ALLOW_UNSERIALISED=1 works 
 NIT -- refuse_empty_range (PRE-EXISTING, not T-406) rejects `gate --slice` when a slice has working-tree changes but no commits, which contradicts the stated purpose of changed_rs's working-tree union.
 
 CONFIRMED NOT BROKEN, do not re-audit: docs-only, scripts/-only, .sql-only and Cargo.toml-only slices all hit the `[ -z "$files" ]` early return BEFORE the new checks and pass for the right reason -- verified on real commits 2c946d59, 9b154096 and 95c0265b. Renames are safe (the `R old -> new` pseudo-path costs one phantom 'listed'; the new path exists so checked >= 1).'''
-surfaces = ["INFRA"]
-targets = ["website"]
-title = "wave.sh's new non-vacuity guards false-red on legitimate slices"
+status = "shipped"
+order = 3230
+executor = "claude-code"
+priority = 1
+
+[scope.website.editor]
+chrome = []

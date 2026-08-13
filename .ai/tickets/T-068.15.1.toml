@@ -1,23 +1,14 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "shipped_at",
-    "spec",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-068.15.1"
+kind = "work"
+title = "T-068.15.1 — Export cargo capacity + default contents"
+summary = "T-068.15.1 — Export cargo capacity + default contents"
+status = "shipped"
+order = 680
+spec = "docs/specs/Mission_Creator_Architecture/t068_15_1_cargo_capacity_export.md"
+executor = "claude-code"
 notes = "SHIPPED @ 85acbb13 (tag T-068.15.1). 1257 grids; 16223 cargo edges; qty conservation; ReadPhysAttrs two-pass (flashlight shadow fix). Verify: .ai/artifacts/t068_15_1_verify_log.md"
 parent = "T-068"
 shipped_at = "85acbb13"
-spec = "docs/specs/Mission_Creator_Architecture/t068_15_1_cargo_capacity_export.md"
-status = "shipped"
-targets = [
-    "mod",
-    "shared",
-    "website",
-]
+
+[scope.repo]
+layers = ["docs"]

@@ -1,29 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "status",
-    "order",
-    "program",
-    "surfaces",
-    "impact",
-    "executor",
-    "targets",
-    "stream",
-    "parallel_ok",
-    "spec",
-]
-__ord = 879
-executor = "claude-code"
 id = "T-906"
-impact = ["dx"]
-order = 5860
-parallel_ok = true
-program = "infra"
-spec = "docs/platform/t853_shell_to_xtask_waves.md"
-status = "queued"
-stream = "infra"
-summary = "T-899 allowlisted 7 live website-api files over 1000 lines. Split them; drop the SIZE-3 rows. Files: apps/website/api/src/app.rs, handlers/admin.rs, handlers/events.rs, handlers/missions.rs, handlers/oauth.rs, handlers/telemetry.rs, services/mission_compile.rs. Do NOT split apps/website/api/src/contract/generated/faction_library.rs — generated schema-codegen output, expires 2027-08-13, do-not-split. Not dispatched in waves 234-235. Not the registry-split program."
-surfaces = ["CI"]
-targets = ["root"]
+kind = "work"
 title = "Split T-145 API SIZE-3 files (7) the T-899 allowlist is holding"
+summary = "T-899 allowlisted 7 live website-api files over 1000 lines. Split them; drop the SIZE-3 rows. Files: apps/website/api/src/app.rs, handlers/admin.rs, handlers/events.rs, handlers/missions.rs, handlers/oauth.rs, handlers/telemetry.rs, services/mission_compile.rs. Do NOT split apps/website/api/src/contract/generated/faction_library.rs — generated schema-codegen output, expires 2027-08-13, do-not-split. Not dispatched in waves 234-235. Not the registry-split program."
+status = "queued"
+order = 5860
+spec = "docs/platform/t853_shell_to_xtask_waves.md"
+executor = "claude-code"
+
+[scope.repo]
+layers = ["xtask"]

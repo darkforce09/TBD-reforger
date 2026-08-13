@@ -1,26 +1,6 @@
-__keys = [
-    "program",
-    "impact",
-    "stream",
-    "targets",
-    "executor",
-    "id",
-    "title",
-    "summary",
-    "status",
-    "priority",
-    "order",
-    "surfaces",
-]
-__ord = 582
-executor = "claude-code"
 id = "T-609"
-impact = ["platform-lifecycle"]
-order = 3562
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "world-boot ratchet has been red for every golden mission since before wave 76"
 summary = """
 Surfaced by T-605 and independently confirmed by wave 76's verifier (F3 root cause). Both refused to
 widen the baseline, which was the right call -- this row exists so the decision is deliberate.
@@ -46,6 +26,11 @@ guarantees the next real regression hides inside the new budget.
 
 RELATED: T-608 makes `PLAYTEST_RUNBOOK.md` §2.5A tell the operator this specific FAIL is known, so the
 playtest is not blocked on this ticket."""
-surfaces = ["MOD"]
-targets = ["website"]
-title = "world-boot ratchet has been red for every golden mission since before wave 76"
+status = "shipped"
+order = 3562
+executor = "claude-code"
+notes = "needs-operator: frozen unmappable Scope. "
+priority = 2
+
+[scope.repo]
+layers = ["docs"]

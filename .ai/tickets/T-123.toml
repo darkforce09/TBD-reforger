@@ -1,61 +1,12 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "stream",
-    "targets",
-    "executor",
-    "status",
-    "active_slice",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "spec",
-    "slices",
-    "slice_plan",
-    "depends_on",
-    "unblocks",
-    "branch",
-]
-__ord = 97
-active_slice = "__tbd_null__"
-branch = "ticket/T-123"
-depends_on = []
-executor = "cursor-docs"
 id = "T-123"
-impact = [
-    "docs",
-    "schema",
-    "api",
-    "ci",
-]
-order = 1230
-program = "platform"
-slices = [
-    "T-123.0",
-    "T-123.1",
-    "T-123.2",
-    "T-123.3",
-    "T-123.4",
-    "T-123.5",
-    "T-123.6",
-]
-spec = "docs/platform/t123_documentation_standards_rollout.md"
-status = "shipped"
-stream = "web-platform"
-summary = "Shipped @ 169e47d — full DOCUMENTATION_STANDARDS.md program: in-code @contract/@route/@authority tags (Go/TS/Enfusion), schema codegen (Go+TS via make schema-codegen), Go-side editor-payload validation in CreateVersion, contracts.yml CI gates. Slices T-123.0–.6. Hub: t123_documentation_standards_rollout.md."
-surfaces = ["DATA"]
-targets = [
-    "root",
-    "website",
-    "mod",
-]
+kind = "program"
 title = "Documentation standards rollout (full program)"
-unblocks = []
-
-[slice_plan]
-__keys = [
+summary = "Shipped @ 169e47d — full DOCUMENTATION_STANDARDS.md program: in-code @contract/@route/@authority tags (Go/TS/Enfusion), schema codegen (Go+TS via make schema-codegen), Go-side editor-payload validation in CreateVersion, contracts.yml CI gates. Slices T-123.0–.6. Hub: t123_documentation_standards_rollout.md."
+status = "shipped"
+order = 1230
+spec = "docs/platform/t123_documentation_standards_rollout.md"
+executor = "cursor-docs"
+children = [
     "T-123.0",
     "T-123.1",
     "T-123.2",
@@ -63,108 +14,4 @@ __keys = [
     "T-123.4",
     "T-123.5",
     "T-123.6",
-]
-
-[slice_plan."T-123.0"]
-__keys = [
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-]
-executor = "cursor-docs"
-shipped_at = "f0af31a"
-spec = "docs/platform/t123_documentation_standards_rollout.md"
-status = "shipped"
-targets = ["root"]
-
-[slice_plan."T-123.1"]
-__keys = [
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-]
-executor = "claude-code"
-shipped_at = "04a73a1"
-spec = "docs/platform/t123_documentation_standards_rollout.md"
-status = "shipped"
-targets = ["website"]
-
-[slice_plan."T-123.2"]
-__keys = [
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-]
-executor = "claude-code"
-shipped_at = "030cece"
-spec = "docs/platform/t123_documentation_standards_rollout.md"
-status = "shipped"
-targets = ["website"]
-
-[slice_plan."T-123.3"]
-__keys = [
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-]
-executor = "claude-code"
-shipped_at = "169e47d"
-spec = "docs/platform/t123_documentation_standards_rollout.md"
-status = "shipped"
-targets = ["mod"]
-
-[slice_plan."T-123.4"]
-__keys = [
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-]
-executor = "claude-code"
-shipped_at = "dd4e4d0"
-spec = "docs/platform/t123_documentation_standards_rollout.md"
-status = "shipped"
-targets = [
-    "root",
-    "website",
-]
-
-[slice_plan."T-123.5"]
-__keys = [
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-]
-executor = "claude-code"
-shipped_at = "b5211f2"
-spec = "docs/platform/t123_documentation_standards_rollout.md"
-status = "shipped"
-targets = ["website"]
-
-[slice_plan."T-123.6"]
-__keys = [
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-]
-executor = "claude-code"
-shipped_at = "102a835"
-spec = "docs/platform/t123_documentation_standards_rollout.md"
-status = "shipped"
-targets = [
-    "root",
-    "website",
 ]

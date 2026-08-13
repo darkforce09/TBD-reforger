@@ -1,32 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "spec",
-    "route",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 39
-executor = "claude-code"
 id = "T-052"
-impact = [
-    "ui",
-    "state",
-]
-order = 520
-program = "eden"
-route = "/missions/:id/edit"
-spec = "docs/specs/Mission_Creator_Architecture/t052_undo_shortcuts.md"
-status = "shipped"
-stream = "mission-creator"
-summary = "Ctrl/Cmd+Z/Y undo-redo with StrictMode lifecycle fix."
-surfaces = ["TOP"]
-targets = ["website"]
+kind = "work"
 title = "Undo/redo keyboard shortcuts"
+summary = "Ctrl/Cmd+Z/Y undo-redo with StrictMode lifecycle fix."
+status = "shipped"
+order = 520
+spec = "docs/specs/Mission_Creator_Architecture/t052_undo_shortcuts.md"
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

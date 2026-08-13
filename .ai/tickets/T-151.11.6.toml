@@ -1,20 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "shipped_at",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-151.11.6"
+kind = "work"
+title = "T-151.11.6"
+summary = "T-151.11.6"
+status = "shipped"
+order = 1500
+executor = "claude-code"
 notes = "Wheel-zoom mid-pan rebase (operator hotfix). Tip acceptance 8237cda6. Verify: .ai/artifacts/t151_11_verify_log.md"
 parent = "T-151"
 shipped_at = "dd9a98d5"
-status = "shipped"
-targets = [
-    "root",
-    "website",
-]
+
+[scope.repo]
+layers = ["docs"]

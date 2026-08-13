@@ -1,20 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-151.7.1"
+kind = "work"
+title = "T-151.7.1 — interaction hotfix (selection tint / drag FPS / zoom-at-cursor)"
+summary = "T-151.7.1 — interaction hotfix (selection tint / drag FPS / zoom-at-cursor)"
+status = "shipped"
+order = 1500
+spec = "docs/specs/Mission_Creator_Architecture/t151_7_1_interaction_hotfix.md"
+executor = "claude-code"
 parent = "T-151"
 shipped_at = "fa6ad959"
-spec = "docs/specs/Mission_Creator_Architecture/t151_7_1_interaction_hotfix.md"
-status = "shipped"
-targets = [
-    "root",
-    "website",
-]
+
+[scope.repo]
+layers = ["docs"]

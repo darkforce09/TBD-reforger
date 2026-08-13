@@ -1,27 +1,11 @@
-__keys = [
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "stream",
-    "targets",
-    "executor",
-    "id",
-    "order",
-    "title",
-    "summary",
-    "notes",
-]
-__ord = 682
-executor = "claude-code"
 id = "T-709"
-impact = ["dx"]
-notes = "filed by wave-100 adversarial verifier (editor factory)"
-order = 4302
-program = "eden"
-status = "deferred"
-stream = "mission-creator"
-summary = "zoomsweep.mjs attached a Runtime console listener and printed up to two console errors per zoom step — which is exactly where the documented __editorCamSet headless-vulkan panic surfaces next to its black frames. The ported capture::zoomsweep (tools/tbd-tools/src/capture.rs) attaches no tap, so the panic is now invisible in sweep output and a black capture has no adjacent cause line. Fix: reuse the console-tap idiom smokes.rs already has, cap 2 lines/step. Diagnosis: editor_verify/wave100.md F-4."
-surfaces = ["EDITOR"]
-targets = ["website"]
+kind = "work"
 title = "capture zoomsweep lost the per-zoom console error tap"
+summary = "zoomsweep.mjs attached a Runtime console listener and printed up to two console errors per zoom step — which is exactly where the documented __editorCamSet headless-vulkan panic surfaces next to its black frames. The ported capture::zoomsweep (tools/tbd-tools/src/capture.rs) attaches no tap, so the panic is now invisible in sweep output and a black capture has no adjacent cause line. Fix: reuse the console-tap idiom smokes.rs already has, cap 2 lines/step. Diagnosis: editor_verify/wave100.md F-4."
+status = "deferred"
+order = 4302
+executor = "claude-code"
+notes = "filed by wave-100 adversarial verifier (editor factory)"
+
+[scope.website.editor]
+chrome = []

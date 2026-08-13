@@ -1,30 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "status",
-    "executor",
-    "program",
-    "stream",
-    "targets",
-    "impact",
-    "surfaces",
-    "order",
-    "summary",
-    "notes",
-]
-__ord = 797
-executor = "claude-code"
 id = "T-824"
-impact = [
-    "ui",
-    "mc-authoring",
-]
-notes = "operator eye-pass wave-203; repro-first — do not assume the mechanism"
-order = 5060
-program = "eden"
-status = "queued"
-stream = "mission-creator"
-summary = "OPERATOR EYE-PASS FINDING (wave-203 pass, 2026-08-10): a placed zone is not visible on the map. The hostile review verified zone DRAWING works (draw -> zone count moves) but its render visibility was not probed at rest. INVESTIGATE FIRST: is the zone shape render gated (selection-only fill? layer visibility? chrome state?) or genuinely missing a lane? Measure on a real browser at rest and while selected, at 2-3 zoom levels, before writing code. If a render lane is missing, the T-760/T-790 marker-lane recipe is the template (draw_order + rebind tail — the wave-130/141 lane lessons apply: feed from after_doc_change + rebind, pin the chain). ACCEPTANCE: a placed circle and polygon zone are visibly rendered at rest (not only while selected) at the swept zooms; toggling any relevant visibility control round-trips; the zone count chip and the render never disagree."
-surfaces = ["SHELL"]
-targets = ["website"]
+kind = "work"
 title = "Placed zones are not visible on the map — investigate and fix the render (repro-first)"
+summary = "OPERATOR EYE-PASS FINDING (wave-203 pass, 2026-08-10): a placed zone is not visible on the map. The hostile review verified zone DRAWING works (draw -> zone count moves) but its render visibility was not probed at rest. INVESTIGATE FIRST: is the zone shape render gated (selection-only fill? layer visibility? chrome state?) or genuinely missing a lane? Measure on a real browser at rest and while selected, at 2-3 zoom levels, before writing code. If a render lane is missing, the T-760/T-790 marker-lane recipe is the template (draw_order + rebind tail — the wave-130/141 lane lessons apply: feed from after_doc_change + rebind, pin the chain). ACCEPTANCE: a placed circle and polygon zone are visibly rendered at rest (not only while selected) at the swept zooms; toggling any relevant visibility control round-trips; the zone count chip and the render never disagree."
+status = "queued"
+order = 5060
+executor = "claude-code"
+notes = "operator eye-pass wave-203; repro-first — do not assume the mechanism"
+
+[scope.website.editor]
+chrome = []

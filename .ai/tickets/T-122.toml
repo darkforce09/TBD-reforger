@@ -1,49 +1,11 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "stream",
-    "targets",
-    "executor",
-    "status",
-    "active_slice",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "spec",
-    "depends_on",
-    "unblocks",
-    "branch",
-]
-__ord = 96
-active_slice = "__tbd_null__"
-branch = "ticket/T-122"
-depends_on = []
-executor = "claude-code"
 id = "T-122"
-impact = [
-    "api",
-    "ui",
-    "schema",
-    "docs",
-]
-order = 1220
-program = "platform"
-spec = "docs/platform/audit/t122_codebase_audit_hotfix.md"
-status = "shipped"
-stream = "web-platform"
-summary = "Shipped @ f131770 (tag T-122) — 37/41 audit findings; T1/T3/T8/T15 deferred. Spec: docs/platform/CODEBASE_AUDIT_2026.md."
-surfaces = [
-    "DATA",
-    "SHELL",
-    "ORBAT",
-    "MAP",
-]
-targets = [
-    "root",
-    "website",
-    "mod",
-]
+kind = "work"
 title = "Codebase audit hotfix (single bundle)"
-unblocks = []
+summary = "Shipped @ f131770 (tag T-122) — 37/41 audit findings; T1/T3/T8/T15 deferred. Spec: docs/platform/CODEBASE_AUDIT_2026.md."
+status = "shipped"
+order = 1220
+spec = "docs/platform/audit/t122_codebase_audit_hotfix.md"
+executor = "claude-code"
+
+[scope.repo]
+layers = ["docs"]

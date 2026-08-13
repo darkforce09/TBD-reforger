@@ -1,17 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-125.2"
+kind = "work"
+title = "T-125 — Coding standards + 11/10 enforcement"
+summary = "T-125 — Coding standards + 11/10 enforcement"
+status = "shipped"
+order = 1250
+spec = "docs/platform/t125_coding_standards_enforcement.md"
+executor = "claude-code"
 parent = "T-125"
 shipped_at = "80c7f07"
-spec = "docs/platform/t125_coding_standards_enforcement.md"
-status = "shipped"
-targets = ["website"]
+
+[scope.website.editor]
+chrome = []

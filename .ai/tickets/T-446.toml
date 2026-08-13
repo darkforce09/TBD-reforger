@@ -1,32 +1,16 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 420
-executor = "claude-code"
 id = "T-446"
-impact = ["website"]
-order = 3285
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "CMS hero image upload needs web-sys FormData features"
 summary = """
 Residual from T-267 / wave 14. Hero upload button now errors honestly instead of fake success; multipart POST /cms/uploads needs web-sys FormData/File features in apps/website/frontend/Cargo.toml (+ likely client helper). Outside T-267 owns.
 
 Repro: CMS Content → hero upload → error toast; /cms/uploads never called.
 
 Cure: enable FormData/File features, wire multipart api helper, POST /cms/uploads and set thumbnail_url."""
-surfaces = ["FE"]
-targets = ["website"]
-title = "CMS hero image upload needs web-sys FormData features"
+status = "shipped"
+order = 3285
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

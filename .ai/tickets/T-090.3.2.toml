@@ -1,20 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-090.3.2"
+kind = "work"
+title = "T-090.3 — Map asset export (Workbench → repo)"
+summary = "T-090.3 — Map asset export (Workbench → repo)"
+status = "shipped"
+order = 900
+spec = "docs/specs/Mission_Creator_Architecture/t090_3_map_asset_export.md"
+executor = "claude-code"
 parent = "T-090"
 shipped_at = "a055df95"
-spec = "docs/specs/Mission_Creator_Architecture/t090_3_map_asset_export.md"
-status = "shipped"
-targets = [
-    "root",
-    "mod",
-]
+
+[scope.repo]
+layers = ["docs"]

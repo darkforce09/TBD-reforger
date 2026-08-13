@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 386
-executor = "claude-code"
 id = "T-412"
-impact = ["platform-lifecycle"]
-order = 3233
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "GET /api/v1/members cannot return member 21, and list_servers is N+1 over a growing table"
 summary = """
 Two product-side scaling defects found by T-399's agent during the ratchet sweep. Neither is a test problem; both are live API behaviour.
 
@@ -28,6 +8,10 @@ Two product-side scaling defects found by T-399's agent during the ratchet sweep
 2. handlers/servers.rs:99 (list_servers) -- no LIMIT, so misc_integration.rs:333's .find(id) is safe, but it calls server_intel() IN A LOOP, one round trip per row, over a monotonically growing table. MEASURED 63 rows. Runtime creep rather than a correctness fault, flagged because it degrades on the same curve as everything else in T-410.
 
 Note the asymmetry with T-410: those are tests that will fail. These are endpoints that will silently under-serve and never fail anything."""
-surfaces = ["API"]
-targets = ["website"]
-title = "GET /api/v1/members cannot return member 21, and list_servers is N+1 over a growing table"
+status = "shipped"
+order = 3233
+executor = "claude-code"
+priority = 1
+
+[scope.website.editor]
+chrome = []

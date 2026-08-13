@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 219
-executor = "claude-code"
 id = "T-245"
-impact = ["data-pipeline"]
-order = 2630
-program = "eden"
-status = "shipped"
-stream = "mission-creator"
-summary = "mission_editor.rs:196,215 fetch /registry and /registry/compat whole: 1,857 items and 20,908 edges. cargo_defaults_by_character then walks all 20,908 to build a seed map."
-surfaces = ["REG"]
-targets = ["website"]
+kind = "work"
 title = "Registry fetch is unpaginated — about 7MB on every editor open"
+summary = "mission_editor.rs:196,215 fetch /registry and /registry/compat whole: 1,857 items and 20,908 edges. cargo_defaults_by_character then walks all 20,908 to build a seed map."
+status = "shipped"
+order = 2630
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

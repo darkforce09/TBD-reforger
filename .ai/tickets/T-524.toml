@@ -1,34 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 498
-executor = "claude-code"
 id = "T-524"
-impact = [
-    "mission-creator",
-    "compiler",
-    "docs",
-]
-order = 3364
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "Wave 46 verifier NIT. After T-505, store.rs loads payload title and lists title as known, but crates/map-engine-core/src/mission/compile.rs still omits title from KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS and retains stale T-375 comment that hydrate does not load title. Cure: add title to known keys + fix comment."
-surfaces = [
-    "EDITOR",
-    "SCHEMA",
-]
-targets = ["website"]
+kind = "work"
 title = "T-505 compile.rs KNOWN keys / hydrate-title comment lockstep"
+summary = "Wave 46 verifier NIT. After T-505, store.rs loads payload title and lists title as known, but crates/map-engine-core/src/mission/compile.rs still omits title from KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS and retains stale T-375 comment that hydrate does not load title. Cure: add title to known keys + fix comment."
+status = "shipped"
+order = 3364
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

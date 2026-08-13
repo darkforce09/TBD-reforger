@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 252
-executor = "claude-code"
 id = "T-278"
-impact = ["data-pipeline"]
-order = 2960
-program = "eden"
-status = "shipped"
-stream = "mission-creator"
-summary = "Data comes out of the game via Enfusion Workbench plugins, then a human copies two files by hand into packages/tbd-schema/registry/ and commits them. make registry-import ingests the committed artifacts. A PakVfs reader exists and is used for terrain, satellite and roads, but nothing in the repo parses .et prefab structure."
-surfaces = ["REG"]
-targets = ["root"]
+kind = "work"
 title = "No paks-to-registry pipeline and no Makefile target to regenerate the catalogue"
+summary = "Data comes out of the game via Enfusion Workbench plugins, then a human copies two files by hand into packages/tbd-schema/registry/ and commits them. make registry-import ingests the committed artifacts. A PakVfs reader exists and is used for terrain, satellite and roads, but nothing in the repo parses .et prefab structure."
+status = "shipped"
+order = 2960
+executor = "claude-code"
+
+[scope.repo]
+layers = ["xtask"]

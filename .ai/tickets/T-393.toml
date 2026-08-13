@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 367
-executor = "claude-code"
 id = "T-393"
-impact = ["platform-lifecycle"]
-order = 3209
-priority = 0
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "T-316 made five player fields required that the shipping mod has never sent — all production match ingest 400s"
 summary = """
 P0, and it is arithmetic rather than a hypothesis. VERIFIED BY THE COMMAND CENTER ON MAIN, not taken on report.
 
@@ -39,12 +19,10 @@ NEEDS A CONTRACT DECISION, NOT A PATCH — do not just re-add `#[serde(default)]
 T-229 flagged this and stated it had filed a task; it had NOT — no registry row existed. Verified and filed here. Landing T-229 (unlinked-player reporting) on top of an endpoint that 400s for every real request means that feature is also unreachable in production until this is fixed.
 
 Test gap that let this through: every telemetry test builds its own complete JSON body, so the suite has NO fixture asserting the actual shipping mod payload is accepted. A single golden-payload test copied verbatim from BuildPlayerRow's output would have caught it and would catch the next contract drift. Add it as part of the fix — that is the durable half."""
-surfaces = [
-    "API",
-    "MOD",
-]
-targets = [
-    "website",
-    "mod",
-]
-title = "T-316 made five player fields required that the shipping mod has never sent — all production match ingest 400s"
+status = "shipped"
+order = 3209
+executor = "claude-code"
+priority = 0
+
+[scope.repo]
+layers = ["docs"]

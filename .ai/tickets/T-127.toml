@@ -1,42 +1,14 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "stream",
-    "targets",
-    "executor",
-    "status",
-    "active_slice",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "spec",
-    "shipped_at",
-    "depends_on",
-    "unblocks",
-    "route",
-    "branch",
-]
-__ord = 101
-active_slice = "__tbd_null__"
-branch = "ticket/T-127"
-depends_on = ["T-126"]
-executor = "claude-code"
 id = "T-127"
-impact = ["ui"]
-order = 1270
-program = "platform"
-route = "/missions/:id/edit"
-shipped_at = "0515aabb"
-spec = "docs/platform/t127_mc_ux_audit_fixes.md"
-status = "shipped"
-stream = "mission-creator"
-summary = "Shipped @ 0515aabb (tag T-127): U1–U5 MC UX — conflict IDB persist, export toasts, basemap coerce, folder delete confirm, ORBAT 409 messages. Verify: .ai/artifacts/t127_verify_log.md."
-surfaces = [
-    "MAP",
-    "UI",
-]
-targets = ["website"]
+kind = "work"
 title = "Fable audit — Mission Creator UX fixes"
+summary = "Shipped @ 0515aabb (tag T-127): U1–U5 MC UX — conflict IDB persist, export toasts, basemap coerce, folder delete confirm, ORBAT 409 messages. Verify: .ai/artifacts/t127_verify_log.md."
+status = "shipped"
+order = 1270
+spec = "docs/platform/t127_mc_ux_audit_fixes.md"
+executor = "claude-code"
+depends_on = ["T-126"]
 unblocks = ["T-128"]
+shipped_at = "0515aabb"
+
+[scope.website.editor]
+chrome = []

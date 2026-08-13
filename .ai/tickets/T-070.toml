@@ -1,39 +1,10 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "status",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "depends_on",
-    "route",
-    "branch",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 57
-branch = "ticket/T-070"
-depends_on = ["T-068"]
-executor = "claude-code"
 id = "T-070"
-impact = [
-    "ui",
-    "state",
-    "schema",
-]
-order = 700
-program = "eden"
-route = "/missions/:id/edit"
-status = "idea"
-stream = "mission-creator"
-summary = "Drag vehicles from palette onto map with crew hooks."
-surfaces = [
-    "MAP",
-    "VEH",
-    "RIGHT",
-]
-targets = ["website"]
+kind = "work"
 title = "Vehicles placeable"
+summary = "Drag vehicles from palette onto map with crew hooks."
+status = "idea"
+executor = "claude-code"
+depends_on = ["T-068"]
+
+[scope.website.editor]
+chrome = []

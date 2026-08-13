@@ -1,28 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-    "shipped_at",
-]
-__ord = 340
-executor = "claude-code"
 id = "T-366"
-impact = ["platform-lifecycle"]
-order = 3182
-priority = 2
-program = "platform"
-shipped_at = "1128c1e3"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "time_of_day whitespace 500s, and username() lets a blank actor into every audit line"
 summary = """
 Both proven live by T-349, both in files it did not own.
 
@@ -39,6 +17,11 @@ IT ESTABLISHED THERE IS NO COUNTERPART TRIM TO DISAGREE WITH, rather than assumi
 IT REJECTED TRIMMING THE RETURN VALUE ON EVIDENCE, not style: admin.rs:342-344 hand-rolls the same `SELECT COALESCE(username, '')` for target_name WITHOUT the fallback and WITHOUT trimming. Trimming the return would have rendered one audit message's actor trimmed and its target padded — a fresh two-site disagreement, in a file this slice does not own. So `'  Sam  '` still displays as `[  Sam  ]` and is never turned into a discord_id; padding is cosmetic, namelessness is not.
 
 REACHABLE IN PRODUCTION, and it found the live mechanism: services/discord.rs:113 `display_name()` selects on `global_name.is_empty()` — an untrimmed FIELD-SELECTION test — so a Discord global_name of "   " wins that branch and is stored verbatim. Not hypothetical."""
-surfaces = ["API"]
-targets = ["website"]
-title = "time_of_day whitespace 500s, and username() lets a blank actor into every audit line"
+status = "shipped"
+order = 3182
+executor = "claude-code"
+priority = 2
+shipped_at = "1128c1e3"
+
+[scope.website.editor]
+chrome = []

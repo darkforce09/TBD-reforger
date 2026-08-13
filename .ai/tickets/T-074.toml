@@ -1,31 +1,11 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "status",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "route",
-    "branch",
-    "stream",
-    "targets",
-    "executor",
-    "depends_on",
-]
-__ord = 61
-branch = "ticket/T-074"
-depends_on = ["T-180"]
-executor = "cursor-docs"
 id = "T-074"
-impact = ["ui"]
-order = 740
-program = "eden"
-route = "/missions/:id/edit"
-status = "cancelled"
-stream = "mission-creator"
-summary = "CANCELLED (2026-07-26 audit). Already ABSORBED by T-180.5 per its own summary, but left deferred so it still appears in status sweeps."
-surfaces = ["RIGHT"]
-targets = ["website"]
+kind = "work"
 title = "Faction submode / catalog filter"
+summary = "CANCELLED (2026-07-26 audit). Already ABSORBED by T-180.5 per its own summary, but left deferred so it still appears in status sweeps."
+status = "cancelled"
+order = 740
+executor = "cursor-docs"
+depends_on = ["T-180"]
+
+[scope.website.editor]
+chrome = []

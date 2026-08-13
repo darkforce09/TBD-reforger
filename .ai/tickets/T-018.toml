@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 12
-executor = "cursor-docs"
 id = "T-018"
-impact = ["ui"]
-order = 180
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "JetBrains Mono for player counts and ORBAT slot counts."
-surfaces = ["SHELL"]
-targets = ["website"]
+kind = "work"
 title = "R3 mono telemetry"
+summary = "JetBrains Mono for player counts and ORBAT slot counts."
+status = "shipped"
+order = 180
+executor = "cursor-docs"
+
+[scope.website.editor]
+chrome = []

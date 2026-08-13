@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 381
-executor = "claude-code"
 id = "T-407"
-impact = ["platform-lifecycle"]
-order = 3223
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Fabricated stats still render beside real ones on /me/deployments — the T-392 defect, one page over"
 summary = '''
 Same defect family as T-392 (shipped): mock values sitting on a real user's screen next to real data, indistinguishable from it. T-392 cleared the Event Hub; this is the page it did not own.
 
@@ -33,6 +13,10 @@ TWO SMALLER ONES ON THE SAME THEME, both found by T-392's agent:
 `apps/website/frontend/src/event_hub.rs` (whole file) — the event's OWN briefing has no consumer on its own page. `EventHub.briefing` is authorable through a real textarea (`event_manager.rs:1177`, PATCHed at `:539-541`) and renders on the schedule LIST card (`events.rs:334`, honestly, via unwrap_or_default), but `/events/:id` — the hub that card links to — never reads it. Repro: create an operation, type an operation-level briefing, save, open the hub; only the per-mission briefing appears. Needs a design call about where operation-level prose belongs on the hero, which is why T-392 did not add it.
 
 `apps/website/frontend/src/mission_overview.rs:894` — uses `.filter(|b| !b.is_empty())` where `approvals.rs:389` uses `.trim().is_empty()`. Repro: `dossier_body` with `briefing: Some("\n\n  ")` renders a "Tactical Briefing" heading over blank space in a whitespace-pre-wrap `<p>`. T-392 made event_hub.rs the third behaviour in this family; two of three now trim. Pick one and make it the rule.'''
-surfaces = ["FRONTEND"]
-targets = ["website"]
-title = "Fabricated stats still render beside real ones on /me/deployments — the T-392 defect, one page over"
+status = "shipped"
+order = 3223
+executor = "claude-code"
+priority = 1
+
+[scope.website.editor]
+chrome = []

@@ -1,39 +1,14 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "stream",
-    "targets",
-    "executor",
-    "status",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "milestone",
-    "depends_on",
-]
-__ord = 88
+id = "T-114"
+kind = "work"
+title = "Slot roster enforcement + production slot picker"
+summary = "SHIPPED (closed 2026-07-26 by audit). Delivered by T-181: slot picker T-181.9.1 (56ad6d16, supersedes T-068.13), roster enforcement TBD_RosterLoader.c via T-181.51, identity-linked claims TBD_IdentityLink.c via T-181.35. Residual is runtime proof only = T-181.16 (executor: human)."
+status = "shipped"
+order = 1140
+executor = "workbench"
 depends_on = [
     "T-068.13",
     "T-118",
 ]
-executor = "workbench"
-id = "T-114"
-impact = [
-    "api",
-    "schema",
-    "ui",
-]
-milestone = "M1"
-order = 1140
-program = "platform"
-status = "shipped"
-stream = "mod-framework"
-summary = "SHIPPED (closed 2026-07-26 by audit). Delivered by T-181: slot picker T-181.9.1 (56ad6d16, supersedes T-068.13), roster enforcement TBD_RosterLoader.c via T-181.51, identity-linked claims TBD_IdentityLink.c via T-181.35. Residual is runtime proof only = T-181.16 (executor: human)."
-surfaces = [
-    "DATA",
-    "UI",
-]
-targets = ["mod"]
-title = "Slot roster enforcement + production slot picker"
+
+[scope.mod]
+layers = ["feature"]

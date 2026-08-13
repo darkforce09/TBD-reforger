@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 431
-executor = "claude-code"
 id = "T-457"
-impact = ["website"]
-order = 3296
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Class-R pins for T-287/T-454 are false-green"
 summary = """
 Residual from wave 21 adversarial MAJOR. Live T-287/T-454 behavior holds, but Class-R source guards accept stubs:
 (1) sse.rs INTEL contains-check matches a commented-out on_cleanup(abort_server_status_stream);
@@ -30,9 +10,10 @@ Repro T-287: comment out server_intel on_cleanup registration but leave the stri
 Repro T-454: keep Memo+has_min_role_authed unused; drive is_admin via has_min_role → admin_affordance Class-R PASSes while Edit uses None=>true.
 
 Cure: strip // comments (or require a non-comment production line) for the on_cleanup pin; bind wiki/modpacks/event_hub pins to the is_admin/is_leader Memo assignment used at .get() call sites and ban free has_min_role( in those files' production sections."""
-surfaces = [
-    "FE",
-    "tests",
-]
-targets = ["website"]
-title = "Class-R pins for T-287/T-454 are false-green"
+status = "shipped"
+order = 3296
+executor = "claude-code"
+priority = 1
+
+[scope.website.editor]
+chrome = []

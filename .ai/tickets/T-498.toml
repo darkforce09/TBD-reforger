@@ -1,30 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 472
-executor = "claude-code"
 id = "T-498"
-impact = [
-    "security",
-    "api",
-]
-order = 3333
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "Wave 38 residual from T-408. Audit CSV now escape_csv_formula. Live Discord sink is services/webhook.rs title: cap_runes(&a.title) via cms push_to_discord — user title into embed, not formula-escaped. Ticket cited stale cms.rs:64. Cure: sanitize embed fields for formula/control chars or document Discord as non-spreadsheet sink with Class-R."
-surfaces = ["API"]
-targets = ["website"]
+kind = "work"
 title = "Discord webhook title not CSV/formula-safe (sibling of T-408)"
+summary = "Wave 38 residual from T-408. Audit CSV now escape_csv_formula. Live Discord sink is services/webhook.rs title: cap_runes(&a.title) via cms push_to_discord — user title into embed, not formula-escaped. Ticket cited stale cms.rs:64. Cure: sanitize embed fields for formula/control chars or document Discord as non-spreadsheet sink with Class-R."
+status = "shipped"
+order = 3333
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

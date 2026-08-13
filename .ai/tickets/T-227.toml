@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "shipped_at",
-]
-__ord = 201
-executor = "claude-code"
 id = "T-227"
-impact = ["platform-lifecycle"]
-order = 2450
-program = "platform"
-shipped_at = "28e9fbb6"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Silent zero-slot event attach allows unlimited registration"
 summary = """
 orbat_template_for_mission returns an empty vec on a missing version, a swallowed DB error or an unparseable orbat — and add_event_mission still commits and returns 201 with the admin UI toasting success. Capacity is then count(orbat_slots)=0, so the capacity guard never fires. events.max_slots is validated on create and never consulted for capacity anywhere.
 
@@ -35,6 +15,10 @@ DECISION 1, refuse — decided on a fact rather than a preference: materialize_s
 DECISION 3, max_slots WIRED not removed — and it caught that MY suggested wiring ('capacity when there is no ORBAT') is DEAD CODE under decision 1. It bounds the EVENT instead: max_slots is on the container, orbat_slots on one mission, so it is a genuine second bound, counted in DISTINCT PEOPLE because a second mission of the same operation is one person attending once. That count spans missions, which is why the event row is now taken FOR UPDATE OF e, with the lock order documented (event_missions -> events, and nothing takes the reverse).
 
 It had to change tests/lifecycle_extra.rs:142 — one hunk — because that test's SETUP depended on the silent zero-slot success: it attached an ORBAT-less mission and discarded the status. Now attaches an explicit one-slot ORBAT and asserts 201; the test's subject is unchanged. Also flagged: a duplicate attach returns 500 rather than 409, because idx_event_mission's violation is unmapped."""
-surfaces = ["DATA"]
-targets = ["website"]
-title = "Silent zero-slot event attach allows unlimited registration"
+status = "shipped"
+order = 2450
+executor = "claude-code"
+shipped_at = "28e9fbb6"
+
+[scope.website.editor]
+chrome = []

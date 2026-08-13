@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 256
-executor = "claude-code"
 id = "T-282"
-impact = ["mc-collab"]
-order = 3000
-program = "eden"
-status = "shipped"
-stream = "mission-creator"
-summary = "mission_versions already stores immutable full JSON snapshots per semver, so this is build a differ, not build versioning. Blockers: no parent_version_id, no list-versions endpoint (only POST and GET-by-id), the by-id GET is never called, and the History button is present but disabled. Old versions are retained and unreachable from any UI."
-surfaces = ["SHELL"]
-targets = ["website"]
+kind = "work"
 title = "Mission version history — differ and timeline"
+summary = "mission_versions already stores immutable full JSON snapshots per semver, so this is build a differ, not build versioning. Blockers: no parent_version_id, no list-versions endpoint (only POST and GET-by-id), the by-id GET is never called, and the History button is present but disabled. Old versions are retained and unreachable from any UI."
+status = "shipped"
+order = 3000
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

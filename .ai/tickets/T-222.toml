@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 196
-executor = "claude-code"
 id = "T-222"
-impact = ["mc-integrity"]
-order = 2400
-program = "eden"
-status = "shipped"
-stream = "mission-creator"
-summary = "store.rs:26. Sound only because no peer updates ever arrive. Any sync transport must fix this first or merges will corrupt documents. Hard blocker on realtime collaboration."
-surfaces = ["DATA"]
-targets = ["website"]
+kind = "work"
 title = "CLIENT_ID is hardcoded to 1 for every peer"
+summary = "store.rs:26. Sound only because no peer updates ever arrive. Any sync transport must fix this first or merges will corrupt documents. Hard blocker on realtime collaboration."
+status = "shipped"
+order = 2400
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

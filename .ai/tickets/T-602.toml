@@ -1,26 +1,6 @@
-__keys = [
-    "program",
-    "surfaces",
-    "impact",
-    "stream",
-    "targets",
-    "executor",
-    "id",
-    "title",
-    "summary",
-    "status",
-    "priority",
-    "order",
-]
-__ord = 575
-executor = "claude-code"
 id = "T-602"
-impact = ["platform-lifecycle"]
-order = 3492
-priority = 3
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "wave.sh narrows its own scope by changed-file detection, and three of its comments are stale"
 summary = """
 FOUND by wave 75's verifier (F5/F6/F7), partly by the command center walking into it live.
 
@@ -56,6 +36,10 @@ signature defect -- *a tool reports success over an input it never examined.*
   it at **T-145, 2026-07-06**; T-381 (07-27) made it refuse, T-534 (07-28) derived per-binary names.
   The mechanism is right, the date is wrong.
 - `wave.sh:2126` says "81 tests"; measured **84** (T-361 added 3 serve tests)."""
-surfaces = ["INFRA"]
-targets = ["website"]
-title = "wave.sh narrows its own scope by changed-file detection, and three of its comments are stale"
+status = "shipped"
+order = 3492
+executor = "claude-code"
+priority = 3
+
+[scope.website.editor]
+chrome = []

@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 34
-executor = "cursor-docs"
 id = "T-046"
-impact = ["schema"]
-order = 460
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "Stale numbered cross-refs and relative link depths fixed."
-surfaces = ["DATA"]
-targets = ["website"]
+kind = "work"
 title = "Doc link integrity pass"
+summary = "Stale numbered cross-refs and relative link depths fixed."
+status = "shipped"
+order = 460
+executor = "cursor-docs"
+
+[scope.website.editor]
+chrome = []

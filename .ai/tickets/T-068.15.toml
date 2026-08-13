@@ -1,23 +1,14 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "shipped_at",
-    "spec",
-    "notes",
-]
-__ord = 0
-executor = "cursor-docs"
 id = "T-068.15"
+kind = "work"
+title = "T-068.15 — Arsenal cargo capacity + default contents program"
+summary = "T-068.15 — Arsenal cargo capacity + default contents program"
+status = "shipped"
+order = 680
+spec = "docs/specs/Mission_Creator_Architecture/t068_15_cargo_program.md"
+executor = "cursor-docs"
 notes = "Meta hub — cargo ladder complete through T-068.12. Specs under t068_15_*.md."
 parent = "T-068"
 shipped_at = "0be53e16"
-spec = "docs/specs/Mission_Creator_Architecture/t068_15_cargo_program.md"
-status = "shipped"
-targets = [
-    "mod",
-    "shared",
-    "website",
-]
+
+[scope.repo]
+layers = ["docs"]

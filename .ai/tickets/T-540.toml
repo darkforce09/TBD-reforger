@@ -1,38 +1,16 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 514
-executor = "claude-code"
 id = "T-540"
-impact = [
-    "telemetry",
-    "tests",
-]
-order = 3380
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "T-384 Class-R only — no IT for attendance retract on match re-point"
 summary = """
 FOUND by W53 adversarial verifier (CLEAN MINOR-NIT) after T-384.
 
 ingest_match_results retracts prior event_mission attendance on re-point with a NOT EXISTS other-match guard. Coverage is Class-R source pin only; pin comment falsely cites an IT in tests/telemetry.rs. Cure: HTTP/IT that re-POSTs a match EV1→EV2 and asserts EV1 returns to registered while EV2 is attended.
 
 Repro: rg retract_from apps/website/api — no IT exercises the path."""
-surfaces = [
-    "API",
-    "tests",
-]
-targets = ["website"]
-title = "T-384 Class-R only — no IT for attendance retract on match re-point"
+status = "shipped"
+order = 3380
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

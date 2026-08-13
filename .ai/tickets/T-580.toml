@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 554
-executor = "claude-code"
 id = "T-580"
-impact = ["platform-lifecycle"]
-order = 3424
-priority = 3
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "/healthz is unauthenticated and now reports version, uptime, pool depth and migration counts"
 summary = """
 T-280 extended `/healthz` with two independent failable checks -- a genuine improvement -- but it is
 UNAUTHENTICATED and exposed publicly through Caddy (`Caddyfile.website:27`).
@@ -38,6 +18,10 @@ by `preflight.sh:140`, `Caddyfile.website:27`, `editor-gates.yml:95` and
 LIKELY ANSWER: keep the 200/503 + `status` field public (that is all any prober needs) and move the
 detail behind the same `X-Service-Token` gate `/metrics` uses, or behind a `?verbose=1` that requires
 it. Confirm every listed prober still passes afterwards."""
-surfaces = ["API"]
-targets = ["website"]
-title = "/healthz is unauthenticated and now reports version, uptime, pool depth and migration counts"
+status = "shipped"
+order = 3424
+executor = "claude-code"
+priority = 3
+
+[scope.website.editor]
+chrome = []

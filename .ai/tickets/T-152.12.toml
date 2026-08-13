@@ -1,17 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-152.12"
+kind = "work"
+title = "T-152.12 — Text lane resurrection (16 B uniform) + upright orientation"
+summary = "T-152.12 — Text lane resurrection (16 B uniform) + upright orientation"
+status = "shipped"
+order = 1520
+spec = "docs/specs/Mission_Creator_Architecture/t152_12_text_lane_orientation.md"
+executor = "claude-code"
 notes = "Shipped @ dca239cb (tag T-152.12). Text lane alive (16 B uniform) + upright (vs_text V-flip); WebGL2 harness byte-exact + operator real-WebGPU upright PASS (screenshots t152_12_operator/). Legibility -> .13/.16/.17 addenda."
 parent = "T-152"
-spec = "docs/specs/Mission_Creator_Architecture/t152_12_text_lane_orientation.md"
-status = "shipped"
-targets = ["root"]
+
+[scope.repo]
+layers = ["xtask"]

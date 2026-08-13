@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 365
-executor = "claude-code"
 id = "T-391"
-impact = ["platform-lifecycle"]
-order = 3207
-priority = 0
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Live javascript: XSS via aar_replay_url, and zero URL validation anywhere in the API"
 summary = """
 LIVE. Found by a paid-for subagent during the T-239 sweep (parent slice was cut for budget).
 
@@ -35,9 +15,10 @@ Tier: service-token, so it needs the game-server token — real but not anonymou
 FIX: validate scheme at the write boundary (allow http/https only), and reject at 400 rather than storing. Do it once in a shared helper — five columns and five sinks share this.
 
 ALSO FOUND, same sweep, different mechanism: **CSV formula injection** at `handlers/audit.rs:111` and `:113`. The audit-log CSV export writes user-controlled text unescaped, so a value beginning `=`, `+`, `-` or `@` is a live formula in Excel/Sheets. That path escapes the Leptos-escaping argument entirely, as does the Discord webhook consumer at cms.rs:64."""
-surfaces = [
-    "API",
-    "FRONTEND",
-]
-targets = ["website"]
-title = "Live javascript: XSS via aar_replay_url, and zero URL validation anywhere in the API"
+status = "shipped"
+order = 3207
+executor = "claude-code"
+priority = 0
+
+[scope.website.editor]
+chrome = []

@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 217
-executor = "claude-code"
 id = "T-243"
-impact = ["contract"]
-order = 2610
-program = "eden"
-status = "shipped"
-stream = "mission-creator"
-summary = "flatten_mod_document is exported at crates/map-engine-wasm/src/lib.rs:766-771 as the client twin of /compiled but has zero call sites. Export downloads the editor-superset envelope instead. There is no way for an author to preview the document the game server will actually receive."
-surfaces = ["DATA"]
-targets = ["website"]
+kind = "work"
 title = "Wire or delete the unused wasm flatten binding"
+summary = "flatten_mod_document is exported at crates/map-engine-wasm/src/lib.rs:766-771 as the client twin of /compiled but has zero call sites. Export downloads the editor-superset envelope instead. There is no way for an author to preview the document the game server will actually receive."
+status = "shipped"
+order = 2610
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

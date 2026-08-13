@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "shipped_at",
-]
-__ord = 280
-executor = "claude-code"
 id = "T-306"
-impact = ["platform-lifecycle"]
-order = 2306
-program = "platform"
-shipped_at = "cb8a95f5"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "server_fps type mismatch silently blanks the whole Server Intel page"
 summary = """
 REPRODUCED by T-194 against a populated fixture, not inferred. models/telemetry.rs:102 serializes numeric(5,1) cast to float8; frontend/src/dto.rs:101 deserializes i64. A probe using the DTO verbatim: 'TBD Primary — Everon server_fps: 58.7 -> DROPPED (invalid type: floating point `58.7`, expected i64)'. Both read sites swallow the error — server_intel.rs:150 uses .ok() and sse.rs:80 uses `if let Ok(...)` — so against a COMPLETE, HEALTHY frame the page renders 0/0 players and '—' for uptime, FPS, time and weather, and the SSE stream reports connected while updating nothing. The whole page looks like a dead server. Fix the DTO to f64 (do not round the wire value). NOTE: the R-api golden gate CANNOT catch this — it types /servers as DataEnvelope<Value>, so the round-trip passes while the real DTO fails. Consider typing that fixture properly at the same time.
 
@@ -45,6 +25,10 @@ A STRUCTURAL INSIGHT WORTH KEEPING: the decode lives in dto.rs, not sse.rs, beca
 THE GOLDEN GATE — the more valuable half, and enumerated rather than eyeballed. Every `api_get::<T>` cross-referenced against its r_api test: SIX goldens were `Value` while a DTO read them live. All six typed. Typing them found TWO MORE latent drifts nobody had hit — EventListItem::percent was f64 over an integer wire (the golden's `37` re-serialised as `37.0`), and OrbatSlot::assigned_to carried skip_serializing_if over a field the backend emits as explicit null.
 
 It also distinguished escape hatches from accurate statements: /announcements, /wiki, /vehicle-database, /modpacks and /admin/audit-logs stay `Value` because they have NO typed consumer, and three of them are not fetched by any page at all. Each test now says so. And the SSE payload had NO FIXTURE OF ANY KIND — the corpus is all GET bodies — so one captured live frame is now pinned as LIVE_SSE_FRAME."""
-surfaces = ["DATA"]
-targets = ["website"]
-title = "server_fps type mismatch silently blanks the whole Server Intel page"
+status = "shipped"
+order = 2306
+executor = "claude-code"
+shipped_at = "cb8a95f5"
+
+[scope.website.editor]
+chrome = []

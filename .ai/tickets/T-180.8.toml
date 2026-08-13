@@ -1,19 +1,14 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-180.8"
+kind = "work"
+title = "T-180.8 — Faction Library templates + squad vehicles"
+summary = "T-180.8 — Faction Library templates + squad vehicles"
+status = "shipped"
+order = 1760
+spec = "docs/specs/Mission_Creator_Architecture/t180_8_templates_vehicles.md"
+executor = "claude-code"
 notes = "Tag T-180.8. apply_faction_library REPLACE; MissionVehicles lane; Apply/Save/Save as; Add Vehicle. Placement (6400,6400). Verify: .ai/artifacts/t180_8_verify_log.md. Manual M-H1..M-H4 operator-pending."
 parent = "T-180"
 shipped_at = "cce240a5"
-spec = "docs/specs/Mission_Creator_Architecture/t180_8_templates_vehicles.md"
-status = "shipped"
-targets = ["website"]
+
+[scope.website.editor]
+chrome = []

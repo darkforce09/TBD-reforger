@@ -1,31 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "route",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 26
-executor = "claude-code"
 id = "T-035"
-impact = ["ui"]
-order = 350
-program = "eden"
-route = "/missions/:id/edit"
-status = "shipped"
-stream = "mission-creator"
-summary = "Chromeless route, docked sidebars, always-on asset palette."
-surfaces = [
-    "LEFT",
-    "RIGHT",
-    "TOP",
-]
-targets = ["website"]
+kind = "work"
 title = "Eden docked shell"
+summary = "Chromeless route, docked sidebars, always-on asset palette."
+status = "shipped"
+order = 350
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

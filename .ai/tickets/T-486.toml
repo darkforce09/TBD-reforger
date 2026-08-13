@@ -1,35 +1,16 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 460
-executor = "claude-code"
 id = "T-486"
-impact = ["website"]
-order = 3325
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Tripwire hollow make verify-t468 recipe body (self-pin)"
 summary = '''
 Wave 33 verifier NIT (T-485). verify-t468 pins t438/t456 recipe bodies but not its own. Hollow `verify-t468:\n\t@true` greens make verify-t468 / ci-local / ci.yml step; wave.sh cold gate still runs the bash script directly so cold gate stays honest.
 
 Repro: replace verify-t468 recipe with @true → make verify-t468 rc=0.
 
 Cure: extend verify-t468 (or sibling) to assert Makefile verify-t468 recipe invokes the real script.'''
-surfaces = [
-    "CI",
-    "INFRA",
-]
-targets = ["website"]
-title = "Tripwire hollow make verify-t468 recipe body (self-pin)"
+status = "shipped"
+order = 3325
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

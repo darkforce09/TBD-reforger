@@ -1,27 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "shipped_at",
-]
-__ord = 195
-executor = "claude-code"
 id = "T-221"
-impact = ["mc-integrity"]
-order = 2390
-program = "eden"
-shipped_at = "67982250"
-status = "shipped"
-stream = "mission-creator"
-summary = "The key is the mission id alone (yrs_persist.rs:60-69). Sign-out clears auth but leaves the doc blob, adopted markers and session marker. On a shared machine user B opening the same mission restores user A's unsaved draft, and a Save posts it under B's account."
-surfaces = ["DATA"]
-targets = ["website"]
+kind = "work"
 title = "IndexedDB is not user-scoped and survives sign-out"
+summary = "The key is the mission id alone (yrs_persist.rs:60-69). Sign-out clears auth but leaves the doc blob, adopted markers and session marker. On a shared machine user B opening the same mission restores user A's unsaved draft, and a Save posts it under B's account."
+status = "shipped"
+order = 2390
+executor = "claude-code"
+shipped_at = "67982250"
+
+[scope.website.editor]
+chrome = []

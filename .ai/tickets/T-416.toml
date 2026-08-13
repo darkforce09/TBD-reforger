@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 390
-executor = "claude-code"
 id = "T-416"
-impact = ["platform-lifecycle"]
-order = 3241
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Cargo capacity belongs in wire_safety.rs, server-side, covering save and compile in one place"
 summary = '''
 Recommendation from T-240's agent, endorsed by the command center, deliberately NOT built in wave 4 because it crosses files T-240 did not own.
 
@@ -33,9 +13,10 @@ WHY IT IS BETTER: natively testable (the frontend seam is #![cfg(target_arch = \
 THE ONE REAL DESIGN QUESTION: it needs the registry for weights and capacities, which the API has and the pure core crate does not. Resolve that before building -- either thread a registry handle in, or split the rule so core holds the arithmetic and the API supplies the table.
 
 Once this lands, T-240's frontend block becomes a nicety on top rather than the only line of defence.'''
-surfaces = [
-    "API",
-    "FRONTEND",
-]
-targets = ["website"]
-title = "Cargo capacity belongs in wire_safety.rs, server-side, covering save and compile in one place"
+status = "shipped"
+order = 3241
+executor = "claude-code"
+priority = 1
+
+[scope.website.editor]
+chrome = []

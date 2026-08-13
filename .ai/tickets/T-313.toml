@@ -1,24 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 287
-executor = "claude-code"
 id = "T-313"
-impact = ["mc-collab"]
-order = 2313
-program = "platform"
-status = "cancelled"
-stream = "web-platform"
+kind = "work"
+title = "The author can never read why their mission was rejected"
 summary = """
 Found by T-218 after making the reason reach the database. GET /missions/:id DOES serve rejection_reason — confirmed by curl — but the SPA drops it: dto.rs MissionDetail declares no rejection_reason field and has no #[serde(flatten)] catch-all (unlike MissionCard in the same file), so serde discards it at parse time, and mission_overview.rs:171 renders only detail("Status", m.status). The author sees the word 'rejected' and nothing else. So the whole review loop is: reviewer types a reason, it now persists correctly, and the one person who needs it cannot see it. Add the DTO field and render it. Both files were outside T-218's slice.
 
@@ -27,6 +9,9 @@ Recording a bug is most of its value; fixing it now is optional. The audits that
 This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
 
 CANCELLED — DELIVERED BY T-389, which shipped the RETURNED badge, the reason text on the author's own card and dossier, and a working resubmit that clears the stamp. Verified in a browser end to end. Nothing left in this ticket's ask."""
-surfaces = ["SHELL"]
-targets = ["website"]
-title = "The author can never read why their mission was rejected"
+status = "cancelled"
+order = 2313
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

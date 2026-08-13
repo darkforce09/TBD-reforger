@@ -1,18 +1,12 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-181.9.2"
+kind = "work"
+title = "T-181.9.2"
+summary = "T-181.9.2"
+status = "shipped"
+order = 1810
+executor = "claude-code"
 notes = "Briefing screen @ d42eb681. Side discipline enforced AT THE WIRE: clients hold no mission document at all, the enemy ORBAT is never serialised, delivery is RplRcver.Owner, and the request carries no faction so a modified client cannot ask for the other side. ORBAT derived from slots[] not orbat{} because the latter models only roles/count, dropping callsign/slot/kit. GAP: `briefings` prose is unparsed — the screen shows structure without orders (T-181.23)."
 parent = "T-181"
-status = "shipped"
-targets = [
-    "mod",
-    "root",
-]
+
+[scope.repo]
+layers = ["docs"]

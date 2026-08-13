@@ -1,28 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-    "shipped_at",
-]
-__ord = 314
-executor = "claude-code"
 id = "T-340"
-impact = ["platform-lifecycle"]
-order = 3156
-priority = 1
-program = "platform"
-shipped_at = "d223ae3b"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "GET /events/:id still 500s on a NULL briefing OR thumbnail_url"
 summary = """
 T-307 IS STILL OPEN and now has a second instance. Confirmed by T-329 against main at ccbcda8b: T-324 shipped without fixing it.
 
@@ -47,6 +25,11 @@ SWEPT ALL 44 value-decoding sites in the file against information_schema (27 que
 ENUMERATOR CLEARED, NOT TOLERATED, and verified in BOTH directions: with the fix and the tolerance entries pruned the static test passes; with COALESCE reverted and the tolerance still pruned it hard fails naming both columns. File then restored and sha256-verified byte-exact.
 
 T-307 is closed by this — it was the same defect, and thumbnail_url was a second instance nobody had reported."""
-surfaces = ["API"]
-targets = ["website"]
-title = "GET /events/:id still 500s on a NULL briefing OR thumbnail_url"
+status = "shipped"
+order = 3156
+executor = "claude-code"
+priority = 1
+shipped_at = "d223ae3b"
+
+[scope.website.editor]
+chrome = []

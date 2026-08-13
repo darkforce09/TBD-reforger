@@ -1,100 +1,17 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "status",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "depends_on",
-    "unblocks",
-    "implements",
-    "route",
-    "branch",
-    "spec",
-    "slices",
-    "stream",
-    "targets",
-    "executor",
-    "parallel_ok",
-    "slice_plan",
-]
-__ord = 127
-branch = "main"
-depends_on = ["T-068"]
-executor = "claude-code"
 id = "T-153"
-impact = [
-    "api",
-    "schema",
-    "frontend",
-]
-implements = "__tbd_null__"
-order = 1510
-parallel_ok = "__tbd_null__"
-program = "eden"
-route = "__tbd_null__"
-slices = [
-    "T-153.0",
-    "T-153.1",
-]
-spec = "docs/specs/Mission_Creator_Architecture/t153_faction_library.md"
-status = "shipped"
-stream = "mission-creator"
-summary = "Operator-authored reusable factions (side -> faction -> ORBAT role templates with SlotLoadout v2 + vehicle pool) stored in user_factions and rendered by the Mission Creator Factions palette instead of the raw vanilla registry dump (closes the T-074 intent). NOTE: commit messages e2aec2de/c4ccb9c3 say T-152 - renumbered to T-153 post-commit after discovering the legacy cartographic T-152.x tag namespace; git tags T-153.0/T-153.1 are authoritative."
-surfaces = [
-    "EDITOR",
-    "ARS",
-    "DATA",
-]
-targets = [
-    "website",
-    "shared",
-]
+kind = "program"
 title = "Faction Library (reusable factions + palette swap)"
+summary = "Operator-authored reusable factions (side -> faction -> ORBAT role templates with SlotLoadout v2 + vehicle pool) stored in user_factions and rendered by the Mission Creator Factions palette instead of the raw vanilla registry dump (closes the T-074 intent). NOTE: commit messages e2aec2de/c4ccb9c3 say T-152 - renumbered to T-153 post-commit after discovering the legacy cartographic T-152.x tag namespace; git tags T-153.0/T-153.1 are authoritative."
+status = "shipped"
+order = 1510
+spec = "docs/specs/Mission_Creator_Architecture/t153_faction_library.md"
+executor = "claude-code"
+depends_on = ["T-068"]
 unblocks = [
     "T-070",
     "T-071",
 ]
-
-[slice_plan]
-__keys = [
+children = [
     "T-153.0",
     "T-153.1",
 ]
-
-[slice_plan."T-153.0"]
-__keys = [
-    "executor",
-    "targets",
-    "status",
-    "shipped_at",
-    "spec",
-    "notes",
-]
-executor = "claude-code"
-notes = "Backend: faction-library.schema.json + goldens/codegen; migration 0006 user_factions; /api/v1/factions CRUD (owner-scoped, contract-validated); tests T1-T8."
-shipped_at = "e2aec2de"
-spec = "docs/specs/Mission_Creator_Architecture/t153_faction_library.md"
-status = "shipped"
-targets = [
-    "website",
-    "shared",
-]
-
-[slice_plan."T-153.1"]
-__keys = [
-    "executor",
-    "targets",
-    "status",
-    "shipped_at",
-    "spec",
-    "notes",
-]
-executor = "claude-code"
-notes = "Frontend: FactionManagerDialog (+ArsenalPicksPanel extraction), buildFactionTree palette (vanilla dump deleted), drop path ensureFaction/ensureSquadFor + role loadout on slot. Vehicles listed, placement = T-070."
-shipped_at = "c4ccb9c3"
-spec = "docs/specs/Mission_Creator_Architecture/t153_faction_library.md"
-status = "shipped"
-targets = ["website"]

@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "program",
-    "surfaces",
-    "impact",
-    "stream",
-    "targets",
-    "executor",
-    "status",
-    "priority",
-    "order",
-    "title",
-    "summary",
-]
-__ord = 585
-executor = "claude-code"
 id = "T-612"
-impact = ["platform-lifecycle"]
-order = 3592
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Four more scripts and six docs still gate on log strings the mod stopped printing"
 summary = """
 FOUND by T-606 (wave 77), which fixed the three sites its ticket named and measured the rest. Same
 defect class as T-606/T-607/T-611: **a check pinned on a log string someone later reworded.**
@@ -61,6 +41,11 @@ add a `--selftest` asserting stale->fail, healthy->pass, invalid->fail; and veri
 Also from T-606, worth heeding: **do not pin a tagged-line COUNT.** Measured 147 and 155 on the two
 goldens, having drifted **+47 on an unchanged mission**; it is not monotonic in slot count. Use
 0-vs-nonzero."""
-surfaces = ["MOD"]
-targets = ["website"]
-title = "Four more scripts and six docs still gate on log strings the mod stopped printing"
+status = "shipped"
+order = 3592
+executor = "claude-code"
+notes = "needs-operator: frozen unmappable Scope. "
+priority = 2
+
+[scope.repo]
+layers = ["docs"]

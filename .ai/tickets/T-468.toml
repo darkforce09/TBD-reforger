@@ -1,39 +1,16 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 442
-executor = "claude-code"
 id = "T-468"
-impact = [
-    "infra",
-    "tests",
-]
-order = 3307
-priority = 3
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "No tripwire that ci.yml schema job stays on make ci-local-schema"
 summary = """
 Residual from wave 25 adversarial N3. T-434 aligned CI to make ci-local-schema, but nothing fails if someone reverts the job to xtask validate+citations only.
 
 Repro: change ci.yml schema step back to cargo run … schema validate only → CI green locally for enums hole until map-object-enums RED is noticed elsewhere.
 
 Cure: Class-R or verify script that ci.yml schema job invokes make ci-local-schema / full gate set."""
-surfaces = [
-    "INFRA",
-    "CI",
-    "tests",
-]
-targets = ["root"]
-title = "No tripwire that ci.yml schema job stays on make ci-local-schema"
+status = "shipped"
+order = 3307
+executor = "claude-code"
+priority = 3
+
+[scope.repo]
+layers = ["xtask"]

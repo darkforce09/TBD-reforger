@@ -1,18 +1,12 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-181.13"
+kind = "work"
+title = "T-181.13"
+summary = "T-181.13"
+status = "shipped"
+order = 1810
+executor = "claude-code"
 notes = "JSON-driven round end. TBD_MissionWinConditionsStruct {mode, endOn[]} added to the mission document (@contract mission.schema.json#/$defs/winConditions) + TBD_MissionLoader.HasEndTrigger(). TickWinConditions in TBD_FrameworkManager (2s, armed only on LIVE and only if the mission declared faction_eliminated). Guards: ignores factions with 0 claimed slots (unfielded != eliminated), requires >=2 contesting factions (a solo test cannot end the round), unregisters itself off LIVE. time_limit and the other three enum triggers parse but are not evaluated yet — declared, not silently dropped."
 parent = "T-181"
-status = "shipped"
-targets = [
-    "mod",
-    "root",
-]
+
+[scope.repo]
+layers = ["docs"]

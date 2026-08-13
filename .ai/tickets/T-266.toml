@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 240
-executor = "claude-code"
 id = "T-266"
-impact = ["platform-pages"]
-order = 2840
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "Every list endpoint returns data, total, limit and offset (audit uses next_cursor), but no page reads any of them — audit.rs fetches a cursor list and discards next_cursor. Every list is silently truncated at the default limit of 20."
-surfaces = ["SHELL"]
-targets = ["website"]
+kind = "work"
 title = "No pagination anywhere in the SPA"
+summary = "Every list endpoint returns data, total, limit and offset (audit uses next_cursor), but no page reads any of them — audit.rs fetches a cursor list and discards next_cursor. Every list is silently truncated at the default limit of 20."
+status = "shipped"
+order = 2840
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

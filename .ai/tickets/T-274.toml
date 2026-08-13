@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 248
-executor = "claude-code"
 id = "T-274"
-impact = ["registry-hygiene"]
-order = 2920
-program = "infra"
-status = "shipped"
-stream = "infra"
-summary = "57 commits carry no ticket id, including a full spawn determinism program (7a5ab1e3 1065 lines, f4b25440, a18eeb2e), a new gate scripts/mod/tbd-spawn-determinism.sh with an 18.7KB verify log and no Makefile target, the B2 ORBAT mutate-in-place rewrite, and the map-assets LFS slim."
-surfaces = ["REG"]
-targets = ["root"]
+kind = "work"
 title = "Record the untracked spawn-determinism program"
+summary = "57 commits carry no ticket id, including a full spawn determinism program (7a5ab1e3 1065 lines, f4b25440, a18eeb2e), a new gate scripts/mod/tbd-spawn-determinism.sh with an 18.7KB verify log and no Makefile target, the B2 ORBAT mutate-in-place rewrite, and the map-assets LFS slim."
+status = "shipped"
+order = 2920
+executor = "claude-code"
+
+[scope.repo]
+layers = ["xtask"]

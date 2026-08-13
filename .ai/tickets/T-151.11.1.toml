@@ -1,20 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "shipped_at",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-151.11.1"
+kind = "work"
+title = "T-151.11.1"
+summary = "T-151.11.1"
+status = "shipped"
+order = 1500
+executor = "claude-code"
 notes = "Draw order (grid + compute-culled trees) + marquee fill/border parity. Verify: .ai/artifacts/t151_11_verify_log.md"
 parent = "T-151"
 shipped_at = "b81317c5"
-status = "shipped"
-targets = [
-    "root",
-    "website",
-]
+
+[scope.repo]
+layers = ["docs"]

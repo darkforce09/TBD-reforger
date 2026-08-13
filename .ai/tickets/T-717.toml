@@ -1,27 +1,11 @@
-__keys = [
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "stream",
-    "targets",
-    "executor",
-    "id",
-    "order",
-    "title",
-    "summary",
-    "notes",
-]
-__ord = 690
-executor = "claude-code"
 id = "T-717"
-impact = ["ui"]
-notes = "filed by wave-103 adversarial verifier (editor factory)"
-order = 4310
-program = "eden"
-status = "deferred"
-stream = "mission-creator"
-summary = "T-631's Continue button writes boot.set(Ready) directly (mission_editor.rs:2375) — the one write that bypasses the sticky advance() fold, and Ready is not sticky. Engine failure is fast; if the operator clicks Continue while the server hydrate is still in flight, the doc task's later advance(LoadingMap) (:1241) brings the spinner back permanently: world_ready (:1384) sits in the Ok-arm and can never fire, and the bar state has no buttons. Editor stays clickable underneath (bar is pointer-events-none) but is occluded forever — the misleading-event class T-631 exists to ban, re-opened via its own escape hatch. Fix: make Continue arm a sticky ContinuedWithoutMap state (or advance() treats a Ready that follows Failed as sticky) so later LoadingMap/Ready writes fold to no-ops; test the race explicitly (Failed -> Continue -> LoadingMap arrives -> overlay stays down). Diagnosis: editor_verify/wave103.md MAJOR-1."
-surfaces = ["EDITOR"]
-targets = ["website"]
+kind = "work"
 title = "Continue-without-map before hydrate resurrects the boot overlay forever"
+summary = "T-631's Continue button writes boot.set(Ready) directly (mission_editor.rs:2375) — the one write that bypasses the sticky advance() fold, and Ready is not sticky. Engine failure is fast; if the operator clicks Continue while the server hydrate is still in flight, the doc task's later advance(LoadingMap) (:1241) brings the spinner back permanently: world_ready (:1384) sits in the Ok-arm and can never fire, and the bar state has no buttons. Editor stays clickable underneath (bar is pointer-events-none) but is occluded forever — the misleading-event class T-631 exists to ban, re-opened via its own escape hatch. Fix: make Continue arm a sticky ContinuedWithoutMap state (or advance() treats a Ready that follows Failed as sticky) so later LoadingMap/Ready writes fold to no-ops; test the race explicitly (Failed -> Continue -> LoadingMap arrives -> overlay stays down). Diagnosis: editor_verify/wave103.md MAJOR-1."
+status = "deferred"
+order = 4310
+executor = "claude-code"
+notes = "filed by wave-103 adversarial verifier (editor factory)"
+
+[scope.website.editor]
+chrome = []

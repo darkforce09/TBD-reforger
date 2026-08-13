@@ -1,20 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-090.1.1.1"
+kind = "work"
+title = "T-090.1.1.1 — Map cartographic land-cover compose"
+summary = "T-090.1.1.1 — Map cartographic land-cover compose"
+status = "shipped"
+order = 900
+spec = "docs/specs/Mission_Creator_Architecture/t090_1_1_1_map_landcover_compose.md"
+executor = "claude-code"
 parent = "T-090"
 shipped_at = "018ea70d"
-spec = "docs/specs/Mission_Creator_Architecture/t090_1_1_1_map_landcover_compose.md"
-status = "shipped"
-targets = [
-    "website",
-    "root",
-]
+
+[scope.repo]
+layers = ["docs"]

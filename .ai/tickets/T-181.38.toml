@@ -1,15 +1,12 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-181.38"
+kind = "work"
+title = "T-181.38"
+summary = "T-181.38"
+status = "shipped"
+order = 1810
+executor = "claude-code"
 notes = "The mission `flow` block is parsed and honoured. ABSENT sentinel (-1000000) distinguishes an unauthored field from an authored 0, which matters because timeLimitSeconds:0 is a real statement ('no limit'). ResolveSeconds returns authored/default/INVALID (negative is illegal under the schema and is reported at ERROR, never clamped). PROVED BY READ-BACK, not by claim: the safestart line quotes TBD_SafestartManager.StatusLine()'s own m_iConfiguredSeconds, and three goldens produced three DISTINCT clocks (5:00 / 3:00 / 2:00) where the old hardcoded 300 had matched bridgehead by coincidence. Round clock proven at runtime with TWO NEGATIVE CONTROLS: duration without trigger, and trigger without duration, both correctly refusing to arm. Also fixed OnEnterLive returning early without faction_eliminated, which is why empty-warning-fields entered LIVE with nothing watching it. JIP REVERSES PART OF T-181.15, deliberately and stated: always/absent = today's behaviour byte-for-byte, until_safestart_end shuts at LIVE, disabled = LOBBY only (the third rung is a judgement call — BRIEFING is where a side plans around a fixed roster). last-stand-at-montfort authors disabled, so a reconnect after BRIEFING there now gets no body; they still connect, nobody is kicked. Placed T-181.32's SetStage hook itself. safeStartSeconds needed ZERO lines in TBD_SafestartManager — used the existing AdminSetSeconds seam."
 parent = "T-181"
-status = "shipped"
-targets = ["mod"]
+
+[scope.mod]
+layers = ["feature"]

@@ -1,40 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "depends_on",
-    "route",
-    "branch",
-    "spec",
-    "slices",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 85
-branch = "ticket/T-111"
-depends_on = ["T-067"]
-executor = "claude-code"
 id = "T-111"
-impact = [
-    "perf",
-    "state",
-    "persistence",
-]
-program = "scale"
-route = "/missions/:id/edit"
-slices = ["T-067.1"]
-spec = "docs/specs/Mission_Creator_Architecture/t067_spatial_chunks.md"
-status = "idea"
-stream = "mission-creator"
-summary = "T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred."
-surfaces = [
-    "MAP",
-    "DATA",
-]
-targets = ["website"]
+kind = "program"
 title = "Lazy chunk residency @ 1M"
+summary = "T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred."
+status = "idea"
+spec = "docs/specs/Mission_Creator_Architecture/t067_spatial_chunks.md"
+executor = "claude-code"
+notes = "needs-operator: frozen unmappable Scope. "
+depends_on = ["T-067"]
+children = ["T-067.1"]

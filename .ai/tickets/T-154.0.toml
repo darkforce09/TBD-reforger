@@ -1,22 +1,14 @@
-__keys = [
-    "id",
-    "parent",
-    "executor",
-    "targets",
-    "status",
-    "shipped_at",
-    "spec",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-154.0"
+kind = "work"
+title = "T-154.0 — Rust/wgpu 3D arsenal doll (DollEngine)"
+summary = "T-154.0 — Rust/wgpu 3D arsenal doll (DollEngine)"
+status = "shipped"
+order = 1515
+spec = "docs/specs/Mission_Creator_Architecture/t154_0_wgpu_doll_engine.md"
+executor = "claude-code"
 notes = "DollEngine: first 3D pass in the wgpu engine (perspective camera via glmat4 perspective_no, Depth32Float, instanced cube/cylinder soldier, Rust ray picking, damage-driven render, byte-exact doll self-check w/ depth kill-shot). SoldierModel3D replaces the SVG doll in ArsenalTab (SVG = engine-create fallback). Contract: core REGION_KEYS == frontend RAIL_REGIONS (vitest+cargo pinned). SHIPPED @ a65529b3 (tag T-154.0). GPU harness 9/9 incl. doll on SwiftShader."
 parent = "T-154"
 shipped_at = "a65529b3"
-spec = "docs/specs/Mission_Creator_Architecture/t154_0_wgpu_doll_engine.md"
-status = "shipped"
-targets = [
-    "website",
-    "root",
-]
+
+[scope.repo]
+layers = ["docs"]

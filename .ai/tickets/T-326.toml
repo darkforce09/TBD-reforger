@@ -1,28 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-    "shipped_at",
-]
-__ord = 300
-executor = "claude-code"
 id = "T-326"
-impact = ["platform-lifecycle"]
-order = 3142
-priority = 1
-program = "platform"
-shipped_at = "5538efce"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Matches played before an identity link never backfill, so deployments undercount"
 summary = """
 SPLIT FROM T-231 (c). VERIFIED by the T-231 agent: there is NO `UPDATE match_player_stats` anywhere in apps/website/api/ — zero hits across the crate.
 
@@ -31,9 +9,11 @@ telemetry.rs:376-381 resolves `discord_id` at INGEST time. So every match a play
 This is not a corruption bug, it is a missing step: nothing ever goes back and claims the historical rows once the link exists. Fix is one statement in the existing confirm transaction in `handlers/me.rs` — UPDATE match_player_stats SET discord_id = ... WHERE arma_id = ... AND discord_id IS NULL — followed by a recompute. Do it inside the transaction that consumes the link code, so a failure cannot half-link.
 
 Check whether attendance/leaderboard rows need the same treatment, and whether unlinking (if that exists) should reverse it."""
-surfaces = [
-    "API",
-    "DATA",
-]
-targets = ["website"]
-title = "Matches played before an identity link never backfill, so deployments undercount"
+status = "shipped"
+order = 3142
+executor = "claude-code"
+priority = 1
+shipped_at = "5538efce"
+
+[scope.website.editor]
+chrome = []

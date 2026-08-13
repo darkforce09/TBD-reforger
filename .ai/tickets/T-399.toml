@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 373
-executor = "claude-code"
 id = "T-399"
-impact = ["platform-lifecycle"]
-order = 3215
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "admin_field.rs approvals assertion fails deterministically once the gate DB accumulates 20 pending_approval rows"
 summary = """
 Filed 2026-07-26 after it turned the wave-1 post-merge gate red for a reason that had nothing to do with the wave. Diagnosed by T-334's agent and independently confirmed by the command center against both the handler and the live DB.
 
@@ -37,9 +17,10 @@ TWO THINGS TO FIX, and the second matters more:
  2. NOTHING resets the gate database. ensure_gate_db (wave.sh:93-105) deliberately never drops tbd_gate_it for speed, so every suite's residue accumulates forever and this class of ratchet is guaranteed to recur in a different suite. Consider a periodic reset, or per-wave DB names, alongside T-398 whose mechanism 2 is the same shared database.
 
 Immediate operational workaround, no permission needed: create a fresh DB and set TBD_GATE_DB to it. That is what wave 1 shipped against."""
-surfaces = [
-    "API",
-    "INFRA",
-]
-targets = ["website"]
-title = "admin_field.rs approvals assertion fails deterministically once the gate DB accumulates 20 pending_approval rows"
+status = "shipped"
+order = 3215
+executor = "claude-code"
+priority = 1
+
+[scope.website.editor]
+chrome = []

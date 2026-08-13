@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 378
-executor = "workbench"
 id = "T-404"
-impact = ["platform-lifecycle"]
-order = 3220
-priority = 3
-program = "platform"
-status = "deferred"
-stream = "web-platform"
+kind = "work"
+title = "Doc/comment hygiene: three in-code statements that are now false"
 summary = """
 NITs from wave 1, batched so they cost one sitting rather than three. Each is a comment or citation that asserts something untrue about the code beside it — cheap to fix, and the kind of thing that costs a future reader a re-derivation.
 
@@ -33,12 +13,10 @@ NITs from wave 1, batched so they cost one sitting rather than three. Each is a 
 == TWO MORE, from wave 2 ==
 4. `apps/website/frontend/src/event_hub.rs:411` — the comment justifying the objectives-panel deletion says the `objectivesById` root "is still the closed hydrate→emit loop with no mutator". `crates/map-engine-core/src/doc/store.rs:1102,1122,1130` show `hydrate()` calling `objectives.clear(&mut txn)` then `load_rows(...)` — that IS a mutator; what is absent is an INCREMENTAL, user-facing one. The deletion decision survives on the stronger ground the same comment already gives (the DTO carries no objectives field on either side of the wire, verified at handlers/events.rs:952-972 and dto.rs:781-800), so this is a wording defect in a load-bearing comment, not a wrong call.
 5. `docs/platform/frontend_data_provenance.md:41,62` — its event_hub.rs citations drifted by ~5-50 lines, and `:62` names `event_hub.rs:211` as an `events.briefing` render site when `:211` is the `name_override` fallback and the Event Hub never read the event briefing at all. The `:41` row is invalidated wholesale by T-392's removals. Same drift on its `orbat_selection.rs:90` citation."""
-surfaces = [
-    "API",
-    "MOD",
-]
-targets = [
-    "website",
-    "mod",
-]
-title = "Doc/comment hygiene: three in-code statements that are now false"
+status = "deferred"
+order = 3220
+executor = "workbench"
+priority = 3
+
+[scope.repo]
+layers = ["docs"]

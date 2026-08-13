@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 246
-executor = "claude-code"
 id = "T-272"
-impact = ["platform-server"]
-order = 2900
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "The whole SSE chain is built (realtime.rs hub, the stream route, sse.rs client) but the only publisher is inside POST /ingest/server-status, and nothing calls it. The stream connects, flips connected=true and delivers zero frames forever."
-surfaces = ["SHELL"]
-targets = ["website"]
+kind = "work"
 title = "Server-status producer — close the SSE loop"
+summary = "The whole SSE chain is built (realtime.rs hub, the stream route, sse.rs client) but the only publisher is inside POST /ingest/server-status, and nothing calls it. The stream connects, flips connected=true and delivers zero frames forever."
+status = "shipped"
+order = 2900
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

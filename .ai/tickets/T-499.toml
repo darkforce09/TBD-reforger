@@ -1,30 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 473
-executor = "claude-code"
 id = "T-499"
-impact = ["tests"]
-order = 3334
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "Wave 38 residual from T-400. identity_link/factions/telemetry isolated. admin_field.rs POST /admin/roles/sync still loops every users row and demotes anyone without user_discord_roles — fires inside the suite against shared rows. Cure: scope sync to fixture actors or skip in IT / use private actors for asserts."
-surfaces = [
-    "API",
-    "CI",
-]
-targets = ["website"]
+kind = "work"
 title = "admin_field roles/sync still demotes all users in shared IT DB"
+summary = "Wave 38 residual from T-400. identity_link/factions/telemetry isolated. admin_field.rs POST /admin/roles/sync still loops every users row and demotes anyone without user_discord_roles — fires inside the suite against shared rows. Cure: scope sync to fixture actors or skip in IT / use private actors for asserts."
+status = "shipped"
+order = 3334
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

@@ -1,0 +1,16 @@
+[package]
+name = "tbd-tickets"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+license = "UNLICENSED"
+publish = false
+description = "Typed ticket Scope/Status (T-911.2)"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+toml = { version = "0.8", features = ["preserve_order"] }
+
+[dev-dependencies]
+proptest = "1"
+trybuild = "1"

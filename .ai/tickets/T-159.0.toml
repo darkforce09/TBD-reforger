@@ -1,19 +1,14 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "shipped_at",
-    "spec",
-    "notes",
-]
-__ord = 0
-executor = "cursor-docs"
 id = "T-159.0"
+kind = "work"
+title = "T-159 — Leptos UI rewrite program"
+summary = "T-159 — Leptos UI rewrite program"
+status = "shipped"
+order = 1570
+spec = "docs/platform/t159_leptos_ui_program.md"
+executor = "cursor-docs"
 notes = "Hub + standing worktree."
 parent = "T-159"
 shipped_at = "f95b01ad"
-spec = "docs/platform/t159_leptos_ui_program.md"
-status = "shipped"
-targets = ["root"]
+
+[scope.repo]
+layers = ["xtask"]

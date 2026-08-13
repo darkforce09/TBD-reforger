@@ -1,28 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-    "shipped_at",
-]
-__ord = 326
-executor = "claude-code"
 id = "T-352"
-impact = ["platform-lifecycle"]
-order = 3168
-priority = 3
-program = "platform"
-shipped_at = "2f30b475"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Two unscoped per-account editor keys: one dead, one live"
 summary = """
 FOUND by T-338 while scoping the RAM cache; the last piece of per-account editor state still keyed globally. The `tbd-editor-adopted:<id>` localStorage marker in editor_session.rs is not account-scoped.
 
@@ -49,6 +27,11 @@ Browser-verified: the only session key is u18:000000000000000001|tbd-editor-sess
 IT DECLINED TO REMOVE THE 8 WRITE SITES, with a sequencing argument worth keeping: `purge_legacy_markers` is reachable ONLY via `mark_adopted`, so deleting those calls in the same release would STRAND the existing residue in users' localStorage permanently. Doing it safely means first moving the purge to a boot hook. Filed as T-370.
 
 PROCESS FAILURE ON MY SIDE, recorded because it nearly cost the work: I landed this agent's first two commits, dropped its worktree, and THEN resumed it. It found its own worktree and branch gone mid-session, its commits surviving only as unreferenced objects, and had to recreate the branch and restore the worktree itself before it could finish. It reported that rather than losing the work, which is the only reason it was noticed. `slice-worktree.sh drop` now REFUSES when the branch holds commits not on main (--force overrides), proven by probe."""
-surfaces = ["FRONTEND"]
-targets = ["website"]
-title = "Two unscoped per-account editor keys: one dead, one live"
+status = "shipped"
+order = 3168
+executor = "claude-code"
+priority = 3
+shipped_at = "2f30b475"
+
+[scope.website.editor]
+chrome = []

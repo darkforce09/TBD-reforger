@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 370
-executor = "claude-code"
 id = "T-396"
-impact = ["platform-lifecycle"]
-order = 3212
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Cure the trunk serve / gate race instead of killing the operator's dev server"
 summary = """
 The gate's `trunk build --release` and the operator's `make leptos` (`trunk serve --release`) race over the same staging paths. OBSERVED 2026-07-26: the wave gate failed with "error writing JS loader file to stage dir / No such file or directory" while PID 158382 held it, and the identical build passed seconds later. Worst possible failure shape — an ENVIRONMENT race that reads exactly like a code defect, so an unattended fix agent burns its whole retry budget on working code.
 
@@ -31,9 +11,10 @@ DEAD END, ALREADY TRIED — DO NOT RETRY: I claimed a private `--dist` for the g
 So the cure has to isolate the whole trunk working set, not just the output dir. Candidates worth measuring before committing to one: give the gate its own private CARGO_TARGET_DIR *and* TRUNK_STAGING/tmp dir (verify which env var trunk actually honours for staging in the pinned version — do not assume); or run the gate's frontend build from a throwaway copy of the crate; or have the gate detect a live trunk serve and take a lock rather than colliding.
 
 ACCEPTANCE: with `make leptos` running the whole time, run the frontend gate 10x consecutively with zero staging failures, and confirm the operator's :3000 stays up and serving throughout. Anything less is not a cure — the current state already passes 'usually works'."""
-surfaces = [
-    "INFRA",
-    "FRONTEND",
-]
-targets = ["website"]
-title = "Cure the trunk serve / gate race instead of killing the operator's dev server"
+status = "shipped"
+order = 3212
+executor = "claude-code"
+priority = 1
+
+[scope.website.editor]
+chrome = []

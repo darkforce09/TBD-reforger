@@ -1,20 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-151.2"
+kind = "work"
+title = "T-151.2 — world parser in Rust (`world/` module; W2 Piece 1)"
+summary = "T-151.2 — world parser in Rust (`world/` module; W2 Piece 1)"
+status = "shipped"
+order = 1500
+spec = "docs/specs/Mission_Creator_Architecture/t151_2_world_parser.md"
+executor = "claude-code"
 parent = "T-151"
 shipped_at = "a51e9dcb"
-spec = "docs/specs/Mission_Creator_Architecture/t151_2_world_parser.md"
-status = "shipped"
-targets = [
-    "root",
-    "website",
-]
+
+[scope.repo]
+layers = ["docs"]

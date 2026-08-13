@@ -1,20 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-090.1"
+kind = "work"
+title = "T-090.1 — Aligned Cartesian basemap"
+summary = "T-090.1 — Aligned Cartesian basemap"
+status = "shipped"
+order = 900
+spec = "docs/specs/Mission_Creator_Architecture/t090_1_aligned_basemap.md"
+executor = "claude-code"
 parent = "T-090"
 shipped_at = "564419e"
-spec = "docs/specs/Mission_Creator_Architecture/t090_1_aligned_basemap.md"
-status = "shipped"
-targets = [
-    "website",
-    "root",
-]
+
+[scope.repo]
+layers = ["docs"]

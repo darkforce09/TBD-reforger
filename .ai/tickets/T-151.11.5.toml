@@ -1,20 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "shipped_at",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-151.11.5"
+kind = "work"
+title = "T-151.11.5"
+summary = "T-151.11.5"
+status = "shipped"
+order = 1500
+executor = "claude-code"
 notes = "Tracker accounting + operator sign-off checklist + program verify log"
 parent = "T-151"
 shipped_at = "b5b94c12"
-status = "shipped"
-targets = [
-    "root",
-    "website",
-]
+
+[scope.repo]
+layers = ["docs"]

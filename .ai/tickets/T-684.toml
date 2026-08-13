@@ -1,30 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "notes",
-]
-__ord = 663
-executor = "claude-code"
 id = "T-684"
-impact = [
-    "schema",
-    "mod",
-    "mission-authoring",
-]
-notes = "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row. Ranked 16 of 16 by framework_synthesis.md C.5; filed as `idea` deliberately. Filed 2026-08-01 by the framework_synthesis coverage audit (parity/coverage_audit.md)"
-order = 4440
-program = "eden"
-status = "queued"
-stream = "shared-schema"
+kind = "work"
+title = "Mission parameters as first-class document objects"
 summary = """
 STATUS 2026-08-02: promoted idea->queued during the final verification pass — same inconsistency as T-654. Was idea because the synthesis rated B9 "weakest evidence in the set"; FNF-DTAS nonetheless proved parameter-schema drift bites (2 of 17 lobby params shipped broken), and the fail-on-demand validation pattern covers the risk.
 
@@ -33,9 +9,10 @@ The B9 item from framework_synthesis.md C.3, and C.5 RANKS IT LAST OF 16 — "Lo
 EXECUTOR CORRECTED 2026-08-02: was filed `workbench` on the mistaken reading that any .c file needs the Arma Workbench GUI. It does not — scripts/mod/compile.sh compiles tbd-framework against the native Linux dedicated server headlessly, verified: "OK: compiled clean, 5707 files, 11182 classes, 832 ms, no Workbench". Schema edits are plain JSON. This is factory work. Per the model-routing rule, the .c portion routes to Fable 5 even though the executor is claude-code.
 
 SCHEMA HALF SPLIT OUT to T-706 (one widening pass for the whole program). This ticket is the Enfusion reader plus any editor UI; it does not touch packages/tbd-schema."""
-surfaces = [
-    "SCHEMA",
-    "DATA",
-]
-targets = ["mod"]
-title = "Mission parameters as first-class document objects"
+status = "queued"
+order = 4440
+executor = "claude-code"
+notes = "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row. Ranked 16 of 16 by framework_synthesis.md C.5; filed as `idea` deliberately. Filed 2026-08-01 by the framework_synthesis coverage audit (parity/coverage_audit.md)"
+
+[scope.mod]
+layers = ["feature"]

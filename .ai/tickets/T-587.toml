@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 561
-executor = "claude-code"
 id = "T-587"
-impact = ["platform-lifecycle"]
-order = 3442
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "fire_missions cannot store a solution: no coordinates, no TOF, no charge"
 summary = """
 Surfaced by T-285, which wired the orphaned /fire-missions endpoints and had to work around the
 schema to do it.
@@ -45,9 +25,10 @@ ALSO FROM T-285, same surface:
    is dto.rs; `SavedFire` is currently pinned only by T-285's captured-live-response test.
  - `dto::FireSolution` has no `Debug` derive, so `SaveResponse` cannot have one. Cosmetic.
  - field_tools.rs:106-112 documents a now-unreachable guard and says it is safe to delete."""
-surfaces = [
-    "DATA",
-    "FRONTEND",
-]
-targets = ["website"]
-title = "fire_missions cannot store a solution: no coordinates, no TOF, no charge"
+status = "shipped"
+order = 3442
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

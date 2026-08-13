@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 374
-executor = "claude-code"
 id = "T-400"
-impact = ["platform-lifecycle"]
-order = 3216
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Integration-test shared-fixture isolation — the 17 suites T-334 did not cover"
 summary = """
 The residual of T-334, filed by the command center at dispatch time (NOT by the slice agent — three agents claimed to have filed follow-ups on 2026-07-26 and none had, so this one is filed by the party that owns the registry). T-334 was deliberately narrowed to its owns row: it created tests/common/mod.rs with a diagnostic dev-login helper and gave tests/events.rs private actor ids. Everything below is what it did not touch. Nothing here was judged wrong — only not now.
 
@@ -43,6 +23,10 @@ CORRECTION TO THE RECORD, verified twice: T-365's stated mechanism is WRONG. dev
 `tests/admin_field.rs:289` (`admin_approvals_cms_field`) looks up a shared fixed user by discord_id and asserts a GLOBAL `role` value that it also mutates — not row-isolated even to the degree registry_compat.rs attempts. Two concurrent gates produced:
     panicked at apps/website/api/tests/admin_field.rs:289: left: String("leader")  right: "enlisted"
 Control: the same test alone on the same clean DB passed 3/3, so this is the collision and not T-399's residue. Now masked by T-396's gate flock, but the suite is still not safe to run concurrently by hand."""
-surfaces = ["API"]
-targets = ["website"]
-title = "Integration-test shared-fixture isolation — the 17 suites T-334 did not cover"
+status = "shipped"
+order = 3216
+executor = "claude-code"
+priority = 1
+
+[scope.website.editor]
+chrome = []

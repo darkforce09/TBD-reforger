@@ -1,34 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "spec",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 47
-executor = "claude-code"
 id = "T-060"
-impact = [
-    "api",
-    "perf",
-    "ui",
-]
-order = 600
-program = "scale"
-spec = "docs/specs/Mission_Creator_Architecture/t060_fast_initial_load.md"
-status = "shipped"
-stream = "mission-creator"
-summary = "256MB body limit, bulk sync load overlay, save progress UX."
-surfaces = [
-    "DATA",
-    "TOP",
-]
-targets = ["website"]
+kind = "work"
 title = "Fast load and save at scale"
+summary = "256MB body limit, bulk sync load overlay, save progress UX."
+status = "shipped"
+order = 600
+spec = "docs/specs/Mission_Creator_Architecture/t060_fast_initial_load.md"
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

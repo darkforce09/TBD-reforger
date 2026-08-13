@@ -1,31 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "route",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 29
-executor = "claude-code"
 id = "T-038"
-impact = [
-    "compiler",
-    "persistence",
-    "api",
-]
-order = 380
-program = "eden"
-route = "/missions/:id/edit"
-status = "shipped"
-stream = "mission-creator"
-summary = "Mission compile/export, hydrate, Save Version POST flow."
-surfaces = ["DATA"]
-targets = ["website"]
+kind = "work"
 title = "Compiler and persistence"
+summary = "Mission compile/export, hydrate, Save Version POST flow."
+status = "shipped"
+order = 380
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

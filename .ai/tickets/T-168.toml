@@ -1,44 +1,13 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "slices",
-    "depends_on",
-    "unblocks",
-    "status",
-    "implements",
-    "user_story",
-    "route",
-    "stream",
-    "branch",
-    "executor",
-    "targets",
-    "spec",
-]
-__ord = 142
-branch = "main"
-depends_on = ["T-159"]
-executor = "claude-code"
 id = "T-168"
-impact = [
-    "ui",
-    "state",
-]
-implements = []
-order = 1650
-program = "eden"
-route = "/missions/:id/edit"
-slices = []
-spec = ".ai/artifacts/missed_items_handoff.md"
-status = "shipped"
-stream = "mission-creator"
-summary = "SHIPPED @ tag T-168: left-dock ORBAT browse/select tree (`build_orbat`; NodeKind::Faction/Squad). Historical note: early place minted via ensure_default_squad — superseded by T-180 place→new-squad under active_side. Squad management / Stitch ORBAT Manager completed by T-180 (not a remaining T-071 task). smoke_outliner_palette o3/o4/o5; build_orbat unit-tested."
-surfaces = ["ORBAT"]
-targets = ["website"]
+kind = "work"
 title = "Leptos ORBAT tree in the left dock"
-unblocks = []
+summary = "SHIPPED @ tag T-168: left-dock ORBAT browse/select tree (`build_orbat`; NodeKind::Faction/Squad). Historical note: early place minted via ensure_default_squad — superseded by T-180 place→new-squad under active_side. Squad management / Stitch ORBAT Manager completed by T-180 (not a remaining T-071 task). smoke_outliner_palette o3/o4/o5; build_orbat unit-tested."
+status = "shipped"
+order = 1650
+spec = ".ai/artifacts/missed_items_handoff.md"
+executor = "claude-code"
+depends_on = ["T-159"]
 user_story = "As a mission maker I browse and select squads/slots from the left ORBAT tree like in the React editor."
+
+[scope.website.editor]
+chrome = []

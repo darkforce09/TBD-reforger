@@ -1,22 +1,14 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "shipped_at",
-    "spec",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-068.11"
+kind = "work"
+title = "T-068.11 — Compiled mod document loadout block"
+summary = "T-068.11 — Compiled mod document loadout block"
+status = "shipped"
+order = 680
+spec = "docs/specs/Mission_Creator_Architecture/t068_11_compiler_loadout_export.md"
+executor = "claude-code"
 notes = "SHIPPED @ c66494c6 (tag T-068.11). Compiled slot loadout {gear,cargo[]} via Rust flatten; no schemaVersion bump. Verify: .ai/artifacts/t068_11_verify_log.md"
 parent = "T-068"
 shipped_at = "c66494c6"
-spec = "docs/specs/Mission_Creator_Architecture/t068_11_compiler_loadout_export.md"
-status = "shipped"
-targets = [
-    "website",
-    "shared",
-]
+
+[scope.repo]
+layers = ["docs"]

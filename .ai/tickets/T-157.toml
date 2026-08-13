@@ -1,25 +1,9 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 131
-executor = "cursor-docs"
 id = "T-157"
-impact = ["ui"]
-order = 1550
-program = "platform"
-status = "idea"
-stream = "web-platform"
-summary = "Visual map picker with thumbnails, modset selection, remove time/weather/max players from menu."
-surfaces = ["SHELL"]
-targets = ["website"]
+kind = "work"
 title = "Mission Create visual overhaul"
+summary = "Visual map picker with thumbnails, modset selection, remove time/weather/max players from menu."
+status = "idea"
+executor = "cursor-docs"
+
+[scope.website.editor]
+chrome = []

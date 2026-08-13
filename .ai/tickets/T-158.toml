@@ -1,28 +1,9 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 132
-executor = "cursor-docs"
 id = "T-158"
-impact = ["ui"]
-order = 1560
-program = "eden"
-status = "idea"
-stream = "mission-creator"
-summary = "Consolidate Settings buttons, wire up top bar, remove redundant Assets tab."
-surfaces = [
-    "SHELL",
-    "TOP",
-]
-targets = ["website"]
+kind = "work"
 title = "Editor shell UX consolidation"
+summary = "Consolidate Settings buttons, wire up top bar, remove redundant Assets tab."
+status = "idea"
+executor = "cursor-docs"
+
+[scope.website.editor]
+chrome = []

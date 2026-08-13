@@ -1,0 +1,11 @@
+id = "T-674.1"
+kind = "work"
+title = "T-674 engine flatten emit"
+summary = "T-674 engine flatten emit"
+status = "queued"
+order = 4310
+executor = "claude-code"
+parent = "T-674"
+
+[scope.engine]
+layers = ["core"]

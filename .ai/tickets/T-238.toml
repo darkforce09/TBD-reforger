@@ -1,25 +1,9 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 212
-executor = "claude-code"
 id = "T-238"
-impact = ["registry-hygiene"]
-order = 2560
-program = "infra"
-status = "idea"
-stream = "infra"
-summary = "make ticket-check exists but grep of .github/workflows for ticket returns nothing, so nothing prevents the registry drifting again."
-surfaces = ["REG"]
-targets = ["root"]
+kind = "work"
 title = "Add ticket check to CI"
+summary = "make ticket-check exists but grep of .github/workflows for ticket returns nothing, so nothing prevents the registry drifting again."
+status = "idea"
+executor = "claude-code"
+
+[scope.repo]
+layers = ["xtask"]

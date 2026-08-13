@@ -1,17 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "spec",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-161.2"
+kind = "work"
+title = "T-161 — Ticket CLI: Python → Rust xtask"
+summary = "T-161 — Ticket CLI: Python → Rust xtask"
+status = "shipped"
+order = 1580
+spec = "docs/platform/t161_ticket_xtask_program.md"
+executor = "claude-code"
 notes = "Read cmds. Verify t161_2_verify_log.md (executed by Cursor Grok 4.5 override)"
 parent = "T-161"
-spec = "docs/platform/t161_ticket_xtask_program.md"
-status = "shipped"
-targets = ["root"]
+
+[scope.repo]
+layers = ["xtask"]

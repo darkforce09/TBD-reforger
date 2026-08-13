@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 261
-executor = "claude-code"
 id = "T-287"
-impact = ["platform-pages"]
-order = 3050
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "Self-documented at sse.rs:8-12: the stream is never torn down on route change because Leptos on_cleanup is Send-bound and AbortController is not. Harmless today only because the stream never emits."
-surfaces = ["SHELL"]
-targets = ["website"]
+kind = "work"
 title = "SSE reader leaks one connection per SPA navigation"
+summary = "Self-documented at sse.rs:8-12: the stream is never torn down on route change because Leptos on_cleanup is Send-bound and AbortController is not. Harmless today only because the stream never emits."
+status = "shipped"
+order = 3050
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

@@ -1,26 +1,6 @@
-__keys = [
-    "program",
-    "impact",
-    "stream",
-    "targets",
-    "executor",
-    "id",
-    "title",
-    "summary",
-    "status",
-    "priority",
-    "order",
-    "surfaces",
-]
-__ord = 599
-executor = "claude-code"
 id = "T-626"
-impact = ["platform-lifecycle"]
-order = 3752
-priority = 3
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "T-587 backfill regex is not character-for-character with parse_grid"
 summary = """
 FOUND by wave 81''s verifier (F3). Divergence is entirely in the **safe** direction; filed for accuracy.
 
@@ -42,6 +22,10 @@ forms -- **the equivalence claim is untested precisely where it is false.**
 
 Pathological edge, recorded: a >~309-digit grid string matches the regex but overflows
 `::double precision`, which would abort the migration. No realistic row has that shape."""
-surfaces = ["INFRA"]
-targets = ["website"]
-title = "T-587 backfill regex is not character-for-character with parse_grid"
+status = "shipped"
+order = 3752
+executor = "claude-code"
+priority = 3
+
+[scope.website.editor]
+chrome = []

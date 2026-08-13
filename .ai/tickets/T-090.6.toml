@@ -1,18 +1,17 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-090.6"
-parent = "T-090"
-spec = "docs/specs/Mission_Creator_Architecture/t090_6_geometry_placement_audit.md"
+kind = "work"
+title = "T-090.6 — Geometry-aware placement audit (simplified 3D bounds)"
+summary = "T-090.6 — Geometry-aware placement audit (simplified 3D bounds)"
 status = "ready"
-targets = [
-    "root",
-    "mod",
+order = 900
+spec = "docs/specs/Mission_Creator_Architecture/t090_6_geometry_placement_audit.md"
+executor = "claude-code"
+parent = "T-090"
+user_story = "For every exported map object (Eden-scale 1M+), use center + rotation + simplified 3D bounds (not full meshes) to compute which parts are above terrain, buried, or inside another object — fully automated, no manual eyeballing."
+acceptance = [
+    "OBB from spatial.halfExtentsM + rotationDeg; classify above/buried/inside.",
+    "Fully automated; no manual eyeballing of 1M objects.",
 ]
+
+[scope.engine]
+layers = ["world"]

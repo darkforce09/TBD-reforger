@@ -13,6 +13,9 @@ pub fn load_json_monolith(path: &Path) -> Result<Registry> {
 }
 
 pub fn load_registry(root: &Path) -> Result<Registry> {
+    if crate::phase2::tree_is_phase2(root) {
+        return crate::phase2::load_phase2_tree(root);
+    }
     let json = registry_path(root);
     let has_toml = crate::tickets_store::root_marker_path(root).is_file()
         || json
@@ -39,9 +42,13 @@ pub fn load_registry(root: &Path) -> Result<Registry> {
     )
 }
 
-/// After the per-file split, write the TOML tree and remove a leftover monolith.
+/// After the typed cutover, write encoding-C TOML. Phase-1 trees keep the isomorphic writer.
 pub fn save_registry(root: &Path, data: &Registry) -> Result<()> {
-    crate::tickets_store::save_toml_tree(root, data)?;
+    if crate::phase2::tree_is_phase2(root) {
+        crate::phase2::save_tree(root, data)?;
+    } else {
+        crate::tickets_store::save_toml_tree(root, data)?;
+    }
     let json = registry_path(root);
     if json.is_file() {
         fs::remove_file(&json).with_context(|| format!("remove {}", json.display()))?;

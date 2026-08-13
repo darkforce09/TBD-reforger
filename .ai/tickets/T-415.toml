@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 389
-executor = "claude-code"
 id = "T-415"
-impact = ["platform-lifecycle"]
-order = 3240
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "The mod never checks whether it delivered the authored loadout, and IsComplete has zero callers"
 summary = """
 THE DURABLE FIX for T-240, which shipped the client half only. Confirmed twice by independent agents on 2026-07-26, and re-confirmed against the source during wave 4.
 
@@ -35,6 +15,11 @@ RESULT: the operator gets a body in the field missing kit they authored, with a 
 FIX: consume IsComplete, or pre-check with the Can* family. Either closes it. Until then, EVERY client-side refusal (T-240's export gate included) is a heuristic over an export the mod never reads back -- the website's CargoBudget derives from Workbench export-time data (TBD_RegistryScan.c:896-909, cells = Ceil(maxVolume/50), hardcoded grid w=4) which the mod NEVER READS.
 
 NOT AN ISSUE, do not re-derive (two paid subagent runs already answered it): recursion is NOT REACHABLE. CargoRow is three scalars (container, item, qty) with no id/parent/path so a tree is not expressible even in principle (arsenal_rules.rs:586); mission.schema.json cargoContainer is a flat 4-token enum; additionalProperties:false rejects a children/parentId key outright."""
-surfaces = ["MOD"]
-targets = ["website"]
-title = "The mod never checks whether it delivered the authored loadout, and IsComplete has zero callers"
+status = "shipped"
+order = 3240
+executor = "claude-code"
+notes = "needs-operator: frozen unmappable Scope. "
+priority = 1
+
+[scope.repo]
+layers = ["docs"]

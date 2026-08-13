@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "status",
-    "stream",
-    "targets",
-    "executor",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "notes",
-]
-__ord = 679
-executor = "claude-code"
 id = "T-706"
-impact = ["ui"]
-notes = " — SHIPPED wave 120 (editor factory), 843f3438 + ledger 9228a458 + hardening 6382c69c + prose 955a281d; verifier wave120.md (contract hardened against the hostile reading before any reader dispatched); unread-fields gate live at 53 fields"
-order = 4600
-program = "eden"
-status = "shipped"
-stream = "mission-creator"
+kind = "work"
+title = "Widen mission.schema.json once for the whole editor program"
 summary = """
 All 16 mod-side tickets add a $def or a property to packages/tbd-schema/schema/mission.schema.json. Left per-ticket, that one file forces 16 sequential waves and roughly doubles the program (22 -> 38). This lands every schema change in one pass so the 16 Enfusion-runtime halves pack freely afterwards.
 
@@ -47,6 +27,10 @@ ACCEPTED RISK, stated because the repo has been bitten by it before: this briefl
   2. A test asserts each new field is currently unread, so the day a reader lands the test fails and      forces the comment to be removed. That is the fail-on-demand shape this program uses everywhere      else — a green you did not watch fail is unproven.
 
 Additive only: no existing field changes shape, so no migration and no compiled-document break. Run early, before the runtime halves. Each of the 16 keeps its own ticket for the Enfusion reader and any editor UI, and its owns drops packages/tbd-schema."""
-surfaces = ["SCHEMA"]
-targets = ["shared"]
-title = "Widen mission.schema.json once for the whole editor program"
+status = "shipped"
+order = 4600
+executor = "claude-code"
+notes = " — SHIPPED wave 120 (editor factory), 843f3438 + ledger 9228a458 + hardening 6382c69c + prose 955a281d; verifier wave120.md (contract hardened against the hostile reading before any reader dispatched); unread-fields gate live at 53 fields"
+
+[scope.schema]
+layers = ["mission"]

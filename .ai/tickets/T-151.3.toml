@@ -1,20 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-151.3"
+kind = "work"
+title = "T-151.3 — chunk residency + world spatial index + first world instances (W3)"
+summary = "T-151.3 — chunk residency + world spatial index + first world instances (W3)"
+status = "shipped"
+order = 1500
+spec = "docs/specs/Mission_Creator_Architecture/t151_3_world_residency.md"
+executor = "claude-code"
 parent = "T-151"
 shipped_at = "32bf5ac5"
-spec = "docs/specs/Mission_Creator_Architecture/t151_3_world_residency.md"
-status = "shipped"
-targets = [
-    "root",
-    "website",
-]
+
+[scope.repo]
+layers = ["docs"]

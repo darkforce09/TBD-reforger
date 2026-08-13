@@ -1,27 +1,11 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "status",
-    "stream",
-    "targets",
-    "executor",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "notes",
-]
-__ord = 727
-executor = "claude-code"
 id = "T-754"
-impact = ["ui"]
-notes = "filed by wave-115 adversarial verifier (editor factory)"
-order = 4630
-program = "eden"
-status = "shipped"
-stream = "mission-creator"
-summary = "MAJOR from the wave-115 verifier. T-688's ticket constraint is that rows must click through to the owning entity, citing wog.md 14.6 ('a findings list which only prints is worse than one that selects'). The slice reuses the shipped T-655 router (validation_panel::route_select_by_subject_id, validation_panel.rs:423 -> mission_editor.rs:2140-2179), which is the right instinct — no second router was invented. But that router resolves SLOTS and VEHICLES only, and the aggregation's sole SettingOwner::Entity is kind 'Zone' (eden_settings.rs:1367). So 100% of entity-owned rows fail to select and fall through to a toast (eden_settings.rs:1634-1640), and toast.rs:55-57 is TEXT ONLY — no navigation, no panel open. Meanwhile the rows still wear `cursor-pointer hover:` styling. The verifier's summary: a dead click dressed as an affordance. The constraint is true of zero rows. The slice DISCLOSED this rather than hiding it, and could not fix it inside its owns (widening the router needs mission_editor.rs, which was T-670's file that wave; zone selection is a panel-local RwSignal at eden_dock_right.rs:978). TWO FIX PATHS: (a) widen route_select_by_subject_id to resolve zone ids by driving the Zones panel's selection signal — the real fix, and it also serves T-655's validation panel, which has the same blind spot for zone-subject findings; (b) as an immediate honesty patch, strip cursor-pointer/hover from rows the router cannot resolve so the affordance stops lying. Do (b) now even if (a) waits. Diagnosis: editor_verify/wave115.md MAJOR-2."
-surfaces = ["EDITOR"]
-targets = ["website"]
+kind = "work"
 title = "Aggregated settings rows look clickable and are not — click-through is undelivered for every owned row"
+summary = "MAJOR from the wave-115 verifier. T-688's ticket constraint is that rows must click through to the owning entity, citing wog.md 14.6 ('a findings list which only prints is worse than one that selects'). The slice reuses the shipped T-655 router (validation_panel::route_select_by_subject_id, validation_panel.rs:423 -> mission_editor.rs:2140-2179), which is the right instinct — no second router was invented. But that router resolves SLOTS and VEHICLES only, and the aggregation's sole SettingOwner::Entity is kind 'Zone' (eden_settings.rs:1367). So 100% of entity-owned rows fail to select and fall through to a toast (eden_settings.rs:1634-1640), and toast.rs:55-57 is TEXT ONLY — no navigation, no panel open. Meanwhile the rows still wear `cursor-pointer hover:` styling. The verifier's summary: a dead click dressed as an affordance. The constraint is true of zero rows. The slice DISCLOSED this rather than hiding it, and could not fix it inside its owns (widening the router needs mission_editor.rs, which was T-670's file that wave; zone selection is a panel-local RwSignal at eden_dock_right.rs:978). TWO FIX PATHS: (a) widen route_select_by_subject_id to resolve zone ids by driving the Zones panel's selection signal — the real fix, and it also serves T-655's validation panel, which has the same blind spot for zone-subject findings; (b) as an immediate honesty patch, strip cursor-pointer/hover from rows the router cannot resolve so the affordance stops lying. Do (b) now even if (a) waits. Diagnosis: editor_verify/wave115.md MAJOR-2."
+status = "shipped"
+order = 4630
+executor = "claude-code"
+notes = "filed by wave-115 adversarial verifier (editor factory)"
+
+[scope.website.editor]
+chrome = []

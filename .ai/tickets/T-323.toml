@@ -1,28 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-    "shipped_at",
-]
-__ord = 297
-executor = "claude-code"
 id = "T-323"
-impact = ["platform-lifecycle"]
-order = 3139
-priority = 1
-program = "platform"
-shipped_at = "367fcaf2"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Admin ban button sends `{}` and now 400s — the ban UI is broken on main"
 summary = """
 CAUSED BY T-317, which landed at 62a804e4 and correctly made `reason` required on POST /admin/users/:id/ban. The frontend was not updated in the same wave because it is a different file with a different owner.
 
@@ -31,6 +9,11 @@ apps/website/frontend/src/personnel.rs:342-378 prompts "Ban reason (optional):" 
 The backend is right and should not be reverted: an unexplained ban is exactly what T-317 set out to stop. The UI is what is stale. Make the reason required client-side too: change the prompt copy off "(optional)", reject or re-prompt on empty rather than posting `{}`, and surface the server's actual error message instead of a flat "Ban failed" — the 400 body already carries a usable one.
 
 Found and reported by the T-317 agent, which correctly refused to edit a file it did not own."""
-surfaces = ["FRONTEND"]
-targets = ["website"]
-title = "Admin ban button sends `{}` and now 400s — the ban UI is broken on main"
+status = "shipped"
+order = 3139
+executor = "claude-code"
+priority = 1
+shipped_at = "367fcaf2"
+
+[scope.website.editor]
+chrome = []

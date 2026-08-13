@@ -1,32 +1,16 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 416
-executor = "claude-code"
 id = "T-442"
-impact = ["website"]
-order = 3281
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Event Hub SPA still fetches global /modpacks/current ignoring event.modpack_id"
 summary = """
 Residual from T-260 / wave 11 adversarial MINOR W11-V1. API now returns events.server_id and events.modpack_id (migration 0011 + handlers), but apps/website/frontend/src/event_hub.rs still GETs /modpacks/current for the Hub chip; EventHub DTO lacks those fields.
 
 Repro: create event with modpack_id set; Hub UI still shows global current pack.
 
 Cure: wire event_hub.rs (+ dto) to prefer event.modpack_id when present, fall back to /modpacks/current only when null."""
-surfaces = ["FE"]
-targets = ["website"]
-title = "Event Hub SPA still fetches global /modpacks/current ignoring event.modpack_id"
+status = "shipped"
+order = 3281
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

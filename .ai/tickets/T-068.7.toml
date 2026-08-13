@@ -1,16 +1,11 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-]
-__ord = 0
-executor = "cursor-docs"
 id = "T-068.7"
-parent = "T-068"
+kind = "work"
+title = "T-068.7"
+summary = "T-068.7"
 status = "shipped"
-targets = [
-    "shared",
-    "root",
-]
+order = 680
+executor = "cursor-docs"
+parent = "T-068"
+
+[scope.repo]
+layers = ["docs"]

@@ -1,17 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-124.1"
+kind = "work"
+title = "T-124 — Dependency & toolchain upgrade (latest everything)"
+summary = "T-124 — Dependency & toolchain upgrade (latest everything)"
+status = "shipped"
+order = 1240
+spec = "docs/platform/t124_dependency_upgrade.md"
+executor = "claude-code"
 parent = "T-124"
 shipped_at = "1d85f46"
-spec = "docs/platform/t124_dependency_upgrade.md"
-status = "shipped"
-targets = ["website"]
+
+[scope.website.editor]
+chrome = []

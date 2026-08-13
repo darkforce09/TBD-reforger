@@ -1,27 +1,11 @@
-__keys = [
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "stream",
-    "targets",
-    "executor",
-    "id",
-    "order",
-    "title",
-    "summary",
-    "notes",
-]
-__ord = 688
-executor = "claude-code"
 id = "T-715"
-impact = ["ui"]
-notes = "filed by wave-102 adversarial verifier (editor factory)"
-order = 4308
-program = "eden"
-status = "deferred"
-stream = "mission-creator"
-summary = "T-665 filters hidden layers' slots inside materialize() (correct for the GPU upload), but slot_rows() feeds the Outliner and ORBAT docks from that same filtered output — hidden ids read as dangling and are skipped, so squads silently lose members in the dock views. The slice's dimmed-slot styling and its outliner unit test assert a state the live pipeline cannot produce (the test hand-builds SlotRows, bypassing the filter). Fix: docks must read the UNFILTERED doc with effective-hidden carried per row (dim, don't drop); route the outliner test through the live materialize->slot_rows pipeline so it can catch this class. WAVE-104 NOTE: T-666 (outliner authoring) claims the same files — its brief carries this as known-pending; do not double-fix. Diagnosis: editor_verify/wave102.md F-3. AMENDED wave 104 (MAJOR-3, wave104.md): the lane is wider than the docks — T-666's selection ops put hidden slots INTO the selection by documented design, and every consumer then acts on them sight-unseen: Delete removes them without confirm; drag-move folds them in with zero preview (SoA doesn't carry them, pack_drag_overlay skips); toolbelt SEL counts them while the map tints fewer; after_doc_change prunes selection against the FILTERED SoA so the next doc edit silently evicts them. Product decision needed: hidden = selectable-but-inert, or fully live with dimmed preview. Resolve the whole lane in one design, not per-symptom."
-surfaces = ["EDITOR"]
-targets = ["website"]
+kind = "work"
 title = "Hidden-layer slots vanish from Outliner/ORBAT docks instead of dimming"
+summary = "T-665 filters hidden layers' slots inside materialize() (correct for the GPU upload), but slot_rows() feeds the Outliner and ORBAT docks from that same filtered output — hidden ids read as dangling and are skipped, so squads silently lose members in the dock views. The slice's dimmed-slot styling and its outliner unit test assert a state the live pipeline cannot produce (the test hand-builds SlotRows, bypassing the filter). Fix: docks must read the UNFILTERED doc with effective-hidden carried per row (dim, don't drop); route the outliner test through the live materialize->slot_rows pipeline so it can catch this class. WAVE-104 NOTE: T-666 (outliner authoring) claims the same files — its brief carries this as known-pending; do not double-fix. Diagnosis: editor_verify/wave102.md F-3. AMENDED wave 104 (MAJOR-3, wave104.md): the lane is wider than the docks — T-666's selection ops put hidden slots INTO the selection by documented design, and every consumer then acts on them sight-unseen: Delete removes them without confirm; drag-move folds them in with zero preview (SoA doesn't carry them, pack_drag_overlay skips); toolbelt SEL counts them while the map tints fewer; after_doc_change prunes selection against the FILTERED SoA so the next doc edit silently evicts them. Product decision needed: hidden = selectable-but-inert, or fully live with dimmed preview. Resolve the whole lane in one design, not per-symptom."
+status = "deferred"
+order = 4308
+executor = "claude-code"
+notes = "filed by wave-102 adversarial verifier (editor factory)"
+
+[scope.website.editor]
+chrome = []

@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 569
-executor = "claude-code"
 id = "T-595"
-impact = ["platform-lifecycle"]
-order = 3462
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "The API side of the game-server agent: T-289 built the channel, nothing calls it"
 summary = """
 T-289 shipped a token-guarded UNIX-socket agent in `scripts/mod/deploy-staging.sh` (660 insertions,
 0 deletions) serving four process verbs. **The API cannot reach it yet.** This is the other half, and
@@ -57,6 +37,10 @@ per-server addressing + secret migration T-269 asked for: there is no secret to 
    code -- consume the agent's `result`/`state`, which is why it returns both.
  - Install is opt-in behind `TBD_INSTALL_AGENT=1` because it mutates the live host. Someone has to
    run it before any of this works end to end."""
-surfaces = ["API"]
-targets = ["website"]
-title = "The API side of the game-server agent: T-289 built the channel, nothing calls it"
+status = "shipped"
+order = 3462
+executor = "claude-code"
+priority = 1
+
+[scope.website.editor]
+chrome = []

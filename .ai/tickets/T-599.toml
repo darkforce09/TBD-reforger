@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 573
-executor = "claude-code"
 id = "T-599"
-impact = ["platform-lifecycle"]
-order = 3472
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "wave.sh push refuses on the LFS PATH, not on LFS attributes — a false positive that blocks a legitimate push"
 summary = """
 Hit for real on 2026-07-31 closing wave 74. `wave.sh push` refused:
 
@@ -53,6 +33,10 @@ naming WHICH files tripped it, so the next operator can verify rather than trust
 
 The command center overrode it by hand this once, after confirming zero LFS files in the range --
 recorded here so the override is auditable rather than folklore."""
-surfaces = ["INFRA"]
-targets = ["website"]
-title = "wave.sh push refuses on the LFS PATH, not on LFS attributes — a false positive that blocks a legitimate push"
+status = "shipped"
+order = 3472
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

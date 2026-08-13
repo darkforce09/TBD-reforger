@@ -1,28 +1,9 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 273
-executor = "claude-code"
 id = "T-299"
-impact = ["contract"]
-order = 2299
-program = "eden"
-status = "idea"
-stream = "mission-creator"
-summary = "Found by T-186's compiled->mod boot lane, the first time API compiler output was ever put in front of the real validator. flatten pads a stub opposing faction to satisfy the schema's >=2-factions rule (flatten.rs:583-598), and the validator correctly reports it: '[TBD][Validate] WARNING faction:opfor - declared but has no slots - nobody can play this side'. So every mission authored with one faction ships a side that appears in the briefing and the ORBAT and that no player can join. This is NOT the T-181.46 hard-reject (that was endOn, already fixed) - the document loads fine, it is just wrong. Decide whether the schema should permit a single faction, or whether the compiler should mark the stub as non-playable so the UI hides it."
-surfaces = ["DATA"]
-targets = [
-    "website",
-    "root",
-]
+kind = "work"
 title = "Every single-faction compile ships a phantom, unplayable opfor"
+summary = "Found by T-186's compiled->mod boot lane, the first time API compiler output was ever put in front of the real validator. flatten pads a stub opposing faction to satisfy the schema's >=2-factions rule (flatten.rs:583-598), and the validator correctly reports it: '[TBD][Validate] WARNING faction:opfor - declared but has no slots - nobody can play this side'. So every mission authored with one faction ships a side that appears in the briefing and the ORBAT and that no player can join. This is NOT the T-181.46 hard-reject (that was endOn, already fixed) - the document loads fine, it is just wrong. Decide whether the schema should permit a single faction, or whether the compiler should mark the stub as non-playable so the UI hides it."
+status = "idea"
+executor = "claude-code"
+
+[scope.repo]
+layers = ["docs"]

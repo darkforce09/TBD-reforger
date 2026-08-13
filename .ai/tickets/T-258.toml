@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 232
-executor = "claude-code"
 id = "T-258"
-impact = ["mc-collab"]
-order = 2760
-program = "eden"
-status = "shipped"
-stream = "mission-creator"
-summary = "No trail of who saved what. The mission library orders by updated_at and the approvals queue reports it as submitted_at, so both show stale ordering. editor_notes is write-only — typed, POSTed, never read back, not even on the DTO."
-surfaces = ["SHELL"]
-targets = ["website"]
+kind = "work"
 title = "POST /versions is unaudited and does not bump updated_at"
+summary = "No trail of who saved what. The mission library orders by updated_at and the approvals queue reports it as submitted_at, so both show stale ordering. editor_notes is write-only — typed, POSTed, never read back, not even on the DTO."
+status = "shipped"
+order = 2760
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

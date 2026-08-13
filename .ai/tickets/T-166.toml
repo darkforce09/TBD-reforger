@@ -1,44 +1,13 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "slices",
-    "depends_on",
-    "unblocks",
-    "status",
-    "implements",
-    "user_story",
-    "route",
-    "stream",
-    "branch",
-    "executor",
-    "targets",
-    "spec",
-]
-__ord = 140
-branch = "main"
-depends_on = ["T-159"]
-executor = "claude-code"
 id = "T-166"
-impact = [
-    "ui",
-    "state",
-]
-implements = []
-order = 1630
-program = "eden"
-route = "/missions/:id/edit"
-slices = []
-spec = ".ai/artifacts/missed_items_handoff.md"
-status = "shipped"
-stream = "mission-creator"
-summary = "SHIPPED: Leptos W1–W5 map-asset host (TBDS sat + hillshade + DEM sea/contours + WorldStore/Residency buildings + TBDD forest + glyph atlas). Gate serve Range/206; smoke_fullmap Class-R matrix green. Verify: .ai/artifacts/t166_verify_log.md."
-surfaces = ["MAP"]
-targets = ["website"]
+kind = "work"
 title = "Leptos editor full map (satellite + world objects)"
-unblocks = []
+summary = "SHIPPED: Leptos W1–W5 map-asset host (TBDS sat + hillshade + DEM sea/contours + WorldStore/Residency buildings + TBDD forest + glyph atlas). Gate serve Range/206; smoke_fullmap Class-R matrix green. Verify: .ai/artifacts/t166_verify_log.md."
+status = "shipped"
+order = 1630
+spec = ".ai/artifacts/missed_items_handoff.md"
+executor = "claude-code"
+depends_on = ["T-159"]
 user_story = "As a mission maker I see the real Everon map (satellite + roads/buildings/trees) under my slots in the editor, not just hillshade relief."
+
+[scope.website.editor]
+chrome = []

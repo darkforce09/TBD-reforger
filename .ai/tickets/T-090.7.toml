@@ -1,15 +1,17 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-090.7"
-parent = "T-090"
-spec = "docs/specs/Mission_Creator_Architecture/t090_eden_ai_world_object_schema.md"
+kind = "work"
+title = "T-090 — Eden AI world object schema (exact field contract)"
+summary = "T-090 — Eden AI world object schema (exact field contract)"
 status = "ready"
-targets = ["website"]
+order = 900
+spec = "docs/specs/Mission_Creator_Architecture/t090_eden_ai_world_object_schema.md"
+executor = "claude-code"
+parent = "T-090"
+user_story = "Mission Creator will expose AI inside the Eden-style editor. The AI must read the world base layer (1M+ map objects) with the same certainty a human gets from selecting an entity in Workbench."
+acceptance = [
+    "ResolvedWorldObject is the exact AI tool shape.",
+    "Do not invent parallel field names in frontend AI code.",
+]
+
+[scope.website.editor]
+chrome = []

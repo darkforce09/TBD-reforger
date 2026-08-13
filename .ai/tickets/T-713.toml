@@ -1,27 +1,11 @@
-__keys = [
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "stream",
-    "targets",
-    "executor",
-    "id",
-    "order",
-    "title",
-    "summary",
-    "notes",
-]
-__ord = 686
-executor = "claude-code"
 id = "T-713"
-impact = ["ui"]
-notes = "filed by wave-102 adversarial verifier (editor factory)"
-order = 4306
-program = "eden"
-status = "deferred"
-stream = "mission-creator"
-summary = "T-640's summit_ring_indices (crates/map-engine-core/src/geometry/contours.rs) selects a closed ring iff no higher closed ring nests inside it. For a depression the containment inverts (higher rings sit OUTSIDE lower ones), so every closed contour of a crater/basin qualifies: verifier harness against the real code got 5-of-5 rings selected [50,60,70,80,90] for a crater in a 100 m plateau — the whole basin renders in the dark summit tint. The 4 shipped tests cover only bumps and ramps. Fix: a summit ring must also verify its interior is HIGHER than the ring level (sample the DEM inside, or require the enclosing-ring level to be lower); add a crater fixture + a rim-with-twin-peaks fixture. Diagnosis: editor_verify/wave102.md F-1."
-surfaces = ["EDITOR"]
-targets = ["website"]
+kind = "work"
 title = "Summit-ring rule inverts on depressions — every crater ring renders dark"
+summary = "T-640's summit_ring_indices (crates/map-engine-core/src/geometry/contours.rs) selects a closed ring iff no higher closed ring nests inside it. For a depression the containment inverts (higher rings sit OUTSIDE lower ones), so every closed contour of a crater/basin qualifies: verifier harness against the real code got 5-of-5 rings selected [50,60,70,80,90] for a crater in a 100 m plateau — the whole basin renders in the dark summit tint. The 4 shipped tests cover only bumps and ramps. Fix: a summit ring must also verify its interior is HIGHER than the ring level (sample the DEM inside, or require the enclosing-ring level to be lower); add a crater fixture + a rim-with-twin-peaks fixture. Diagnosis: editor_verify/wave102.md F-1."
+status = "deferred"
+order = 4306
+executor = "claude-code"
+notes = "filed by wave-102 adversarial verifier (editor factory)"
+
+[scope.website.editor]
+chrome = []

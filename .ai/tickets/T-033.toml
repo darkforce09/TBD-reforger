@@ -1,34 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "route",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 24
-executor = "claude-code"
 id = "T-033"
-impact = [
-    "state",
-    "ui",
-]
-order = 330
-program = "eden"
-route = "/missions/:id/edit"
-status = "shipped"
-stream = "mission-creator"
-summary = "Editor layers entity map and palette drop creates slots."
-surfaces = [
-    "LEFT",
-    "RIGHT",
-    "MAP",
-]
-targets = ["website"]
+kind = "work"
 title = "Wire Outliner and asset drag-to-map"
+summary = "Editor layers entity map and palette drop creates slots."
+status = "shipped"
+order = 330
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

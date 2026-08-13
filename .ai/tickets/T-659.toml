@@ -1,37 +1,12 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "route",
-    "stream",
-    "targets",
-    "executor",
-    "notes",
-    "depends_on",
-]
-__ord = 621
-depends_on = ["T-661"]
-executor = "claude-code"
 id = "T-659"
-impact = [
-    "ui",
-    "mc-authoring",
-]
-notes = "editor-UI program wave 7 (wave_plan.tsv row 107) — SHIPPED wave 107 (editor factory), slice 12fa342b; verifier wave107.md"
-order = 3980
-program = "eden"
-route = "/missions/:id/edit"
-status = "shipped"
-stream = "mission-creator"
-summary = """Per-side live counts in the editor header (`WEST 78 · EAST 74 · IND 8 · TOTAL 160`) plus a summary line composed from the document. This REPLACES two of the MissionAnalyzer's rules by making the malformed state unreachable rather than caught — the "should be unrepresentable" pile — and WOG got a 94%-consistent community naming convention out of the counter alone. Code: the header is `TopCommandStrip` (post-split eden_top_strip.rs, from eden_chrome.rs:831); the existing OBJ/SEL/SZ counters in BottomToolbelt :3745-3766 are the pattern to copy. Per-side counts derive from the ORBAT snapshot — `orbat_manager_snapshot` (editor_ops.rs:1190) and `vehicle_rows` :1751. Cheap and visible, which is why it is early in the validation group's internal order (panel -> engine -> census -> rule content)."""
-surfaces = [
-    "TOP",
-    "ORBAT",
-]
-targets = ["website"]
+kind = "work"
 title = "Slot census badge + generated mission summary line"
+summary = """Per-side live counts in the editor header (`WEST 78 · EAST 74 · IND 8 · TOTAL 160`) plus a summary line composed from the document. This REPLACES two of the MissionAnalyzer's rules by making the malformed state unreachable rather than caught — the "should be unrepresentable" pile — and WOG got a 94%-consistent community naming convention out of the counter alone. Code: the header is `TopCommandStrip` (post-split eden_top_strip.rs, from eden_chrome.rs:831); the existing OBJ/SEL/SZ counters in BottomToolbelt :3745-3766 are the pattern to copy. Per-side counts derive from the ORBAT snapshot — `orbat_manager_snapshot` (editor_ops.rs:1190) and `vehicle_rows` :1751. Cheap and visible, which is why it is early in the validation group's internal order (panel -> engine -> census -> rule content)."""
+status = "shipped"
+order = 3980
+executor = "claude-code"
+notes = "editor-UI program wave 7 (wave_plan.tsv row 107) — SHIPPED wave 107 (editor factory), slice 12fa342b; verifier wave107.md"
+depends_on = ["T-661"]
+
+[scope.website.editor]
+chrome = []

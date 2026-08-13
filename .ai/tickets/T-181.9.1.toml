@@ -1,18 +1,12 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-181.9.1"
+kind = "work"
+title = "T-181.9.1"
+summary = "T-181.9.1"
+status = "shipped"
+order = 1810
+executor = "claude-code"
 notes = "Lobby slot picker @ 56ad6d16. SUPERSEDES T-068.13. Server-fed roster parsed from BuildSlotRoster() and nothing else, so it cannot disagree with the authority. Optimistic claim held as a pending intent keyed on the slot until the authority rules on THAT seat — without it a refresh in flight makes the seat flicker away and back, which reads exactly like losing it. Refusal names the actual winner off the authority's own roster. Deploy is deliberately NOT optimistic. Back button hidden (the stack is empty beneath LOBBY, so 'back' is a trap). Deliberately does NOT filter the other side — you cannot pick a side you cannot see; side discipline starts at the briefing. m_bAutoDeploy REPORTED not flipped: the wave is currently the only working way into the world."
 parent = "T-181"
-status = "shipped"
-targets = [
-    "mod",
-    "root",
-]
+
+[scope.repo]
+layers = ["docs"]

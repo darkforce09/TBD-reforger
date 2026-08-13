@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 414
-executor = "claude-code"
 id = "T-440"
-impact = ["platform-lifecycle"]
-order = 3279
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Cold/schema gates never apply make seed / faction_library.sql"
 summary = """
 Residual from T-256 / wave 10 adversarial MAJOR. Cold wave gate validates faction-library.sample.json via schema but never runs `make seed` or applies apps/website/api/seeds/faction_library.sql. Deleting the Makefile seed line still greens the cold gate — false authority that T-256's seed wiring was examined.
 
@@ -29,9 +9,10 @@ Repro: remove `seeds/faction_library.sql` from Makefile seed recipe; `bash scrip
 Manual prove seed works: apply SQL on throwaway DB → 2 starter rows.
 
 Cure: gate tripwire (Makefile verify target + wave.sh step, or IT that asserts seed recipe + applies SQL on cold DB)."""
-surfaces = [
-    "INFRA",
-    "CI",
-]
-targets = ["website"]
-title = "Cold/schema gates never apply make seed / faction_library.sql"
+status = "shipped"
+order = 3279
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

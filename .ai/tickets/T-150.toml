@@ -1,50 +1,18 @@
-__keys = [
-    "id",
-    "order",
-    "status",
-    "shipped_at",
-    "program",
-    "title",
-    "summary",
-    "surfaces",
-    "impact",
-    "depends_on",
-    "unblocks",
-    "targets",
-    "executor",
-    "branch",
-    "stream",
-    "spec",
-]
-__ord = 119
-branch = "main"
-depends_on = ["T-068"]
-executor = "claude-code"
 id = "T-150"
-impact = [
-    "schema",
-    "mod",
-    "data",
-]
-order = 685
-program = "eden"
-shipped_at = "9107bf4e"
-spec = "docs/specs/Mission_Creator_Architecture/t150_universal_registry_export.md"
-status = "shipped"
-stream = "mission-creator"
-summary = "SHIPPED @ 9107bf4e (tag T-150; schema e358777a). 1880 items / 4012 edges; mod-agnostic scanner. OPEN: ammo_in_mag. Verify: .ai/artifacts/t150_verify_log.md. Next: T-068.9 ingest."
-surfaces = [
-    "MOD",
-    "REG",
-    "ARS",
-]
-targets = [
-    "mod",
-    "shared",
-]
+kind = "work"
 title = "Universal Enfusion registry + compat export"
+summary = "SHIPPED @ 9107bf4e (tag T-150; schema e358777a). 1880 items / 4012 edges; mod-agnostic scanner. OPEN: ammo_in_mag. Verify: .ai/artifacts/t150_verify_log.md. Next: T-068.9 ingest."
+status = "shipped"
+order = 685
+spec = "docs/specs/Mission_Creator_Architecture/t150_universal_registry_export.md"
+executor = "claude-code"
+depends_on = ["T-068"]
 unblocks = [
     "T-068.9",
     "T-146",
     "T-070",
 ]
+shipped_at = "9107bf4e"
+
+[scope.repo]
+layers = ["docs"]

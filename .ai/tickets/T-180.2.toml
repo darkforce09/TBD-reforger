@@ -1,19 +1,14 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-180.2"
+kind = "work"
+title = "T-180.2 — Graph mutators + empty-squad GC"
+summary = "T-180.2 — Graph mutators + empty-squad GC"
+status = "shipped"
+order = 1760
+spec = "docs/specs/Mission_Creator_Architecture/t180_2_graph_mutators.md"
+executor = "claude-code"
 notes = "Tag T-180.2. set_leader hardened; move_slot_to_squad+GC; rename/reorder/remove_squad; add_vehicle/attach/detach; vehicleIds; B1–B8. Verify: .ai/artifacts/t180_2_verify_log.md."
 parent = "T-180"
 shipped_at = "83557768"
-spec = "docs/specs/Mission_Creator_Architecture/t180_2_graph_mutators.md"
-status = "shipped"
-targets = ["website"]
+
+[scope.website.editor]
+chrome = []

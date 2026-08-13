@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 372
-executor = "claude-code"
 id = "T-398"
-impact = ["platform-lifecycle"]
-order = 3214
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Concurrent slices share mutable gate state — one worktree's build and DB writes silently corrupt another's gate result"
 summary = '''
 BLOCKER-severity by the always-blocker rule (a gate reporting on code it never examined), but DEFERRED by operator triage 2026-07-26 because its only manifestation is CONCURRENT gates, and wave 1's authoritative verification was a single serial gate on merged main. Promote before any wave that gates more than one slice at a time. Two independent mechanisms, one root cause.
 
@@ -34,6 +14,10 @@ One process fails, the other passes; run alone it always passes.
 Both are FALSE-RED rather than false-green, so they waste budget rather than hide bugs — which is why this is deferred rather than fixed. But false-red is the most expensive failure shape this program has: the honest response to a red gate is to go looking for a bug in your own diff, and an unattended fix agent will spend its entire retry budget doing exactly that.
 
 CHEAPEST DURABLE FIX: serialise the gate with an flock around gate_slice/cmd_gate, so two worktrees cannot gate concurrently. That closes both mechanisms at once and costs a few lines. It trades wall clock for trustworthiness, which is the correct trade here — a gate nobody can believe is worth less than a slow one. The alternatives (per-worktree CARGO_TARGET_DIR, per-slice gate DB) both fight PLATFORM_FACTORY correction 1's shared-target-dir economics and cost ~40 GB per tree.'''
-surfaces = ["INFRA"]
-targets = ["website"]
-title = "Concurrent slices share mutable gate state — one worktree's build and DB writes silently corrupt another's gate result"
+status = "shipped"
+order = 3214
+executor = "claude-code"
+priority = 1
+
+[scope.website.editor]
+chrome = []

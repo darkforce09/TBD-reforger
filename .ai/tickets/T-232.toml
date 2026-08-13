@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "shipped_at",
-]
-__ord = 206
-executor = "claude-code"
 id = "T-232"
-impact = ["platform-pages"]
-order = 2500
-program = "platform"
-shipped_at = "5954bd76"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Five pages render literally nothing when real data arrives"
 summary = """
 The content-golden-gated branches are not untested code, they are absent — each is a literal ().into_any(): announcements.rs:67, events.rs:63,72, audit.rs:68,72, deployments.rs:163,189, dashboard.rs:341. Three also have an unconditionally empty detail pane with no selection state.
 
@@ -41,6 +21,10 @@ IDIOM DECISIONS, all taken from event_manager.rs (T-226) and split_pane.rs, no n
 VERIFIED 69/69 IN A BROWSER: 45/45 populated assertions with 0 console errors, then the same stack rebuilt against an empty-payload stub for 24/24 on the empty branches — so 'empty goldens unchanged' is measured, not asserted. Stale-wasm check done: all 11 new strings grepped present in the built artifact.
 
 Honest split: the audit inspector's metadata <pre> is reasoned only — the seeded audit_logs rows carry no metadata key at all (the committed fixture does, the DB does not), so only the Option gate rendering nothing could be asserted. Markdown bodies in announcements render inline **bold** and backticks literally."""
-surfaces = ["SHELL"]
-targets = ["website"]
-title = "Five pages render literally nothing when real data arrives"
+status = "shipped"
+order = 2500
+executor = "claude-code"
+shipped_at = "5954bd76"
+
+[scope.website.editor]
+chrome = []

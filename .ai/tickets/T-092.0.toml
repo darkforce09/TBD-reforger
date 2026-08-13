@@ -1,15 +1,12 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-]
-__ord = 0
-executor = "cursor-docs"
 id = "T-092.0"
-parent = "T-092"
-spec = "docs/specs/Mission_Creator_Architecture/t092_0_spawn_contract.md"
+kind = "work"
+title = "T-092.0 — Spawn + compile contract (docs)"
+summary = "T-092.0 — Spawn + compile contract (docs)"
 status = "shipped"
-targets = ["root"]
+order = 920
+spec = "docs/specs/Mission_Creator_Architecture/t092_0_spawn_contract.md"
+executor = "cursor-docs"
+parent = "T-092"
+
+[scope.repo]
+layers = ["xtask"]

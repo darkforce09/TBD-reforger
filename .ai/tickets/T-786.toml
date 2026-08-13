@@ -1,35 +1,11 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "status",
-    "stream",
-    "targets",
-    "executor",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "notes",
-]
-__ord = 759
-executor = "claude-code"
 id = "T-786"
-impact = [
-    "ui",
-    "state",
-]
-notes = "wave-142-style honesty: cite the existing modal_stack registry rather than inventing a new one; deferred T-333 (modal z) if present should be folded/closed by this | SHIPPED W200: O-3/O-5 acceptance pairs re-proved (stack-driven, not DOM luck; every z-50 tie scrim-unreachable). Adjacent-pair leaks re-ticketed T-814 (transients under non-strip dialogs, one-Esc-two-layers, mount-vs-open-order Esc). Verifier: wave200.md F4/F5."
-order = 4680
-program = "eden"
-status = "shipped"
-stream = "mission-creator"
-summary = "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). O-3/O-5 — VERIFIED: ORBAT > slot > OPEN ARSENAL opens the Attributes/Arsenal surface at z-50 — the SAME z as the ORBAT modal (both hardcode z-50) — and ORBAT wins the paint order: elementFromPoint at the arsenal centre returns an ORBAT node. The author clicks a button and sees nothing happen. Separately, Help (Controls — keyboard shortcuts) and the Save Version dialog stack simultaneously — no surface exclusivity (VERIFIED both visible at once). ui.rs ~:407 modal_stack ALREADY tracks open surfaces for shared-Esc; z and exclusivity just do not consume it. FIX: (a) drive z-index from modal_stack order (last-opened on top) instead of hardcoded z-50 across attributes.rs / orbat_manager.rs / eden_help.rs / eden_top_strip.rs ~:784 overlays; (b) opening a Dialog closes open popovers/help surfaces (menus, Controls Hint) — dialogs may stack over dialogs per stack order. ⚠️ TRAPS: shared-Esc dismissal order must keep dismissing ONLY the topmost; the context menu is not a Dialog and must keep its own dismissal; do not edit attributes.rs (T-785 owns it this wave) — z classes on the OTHER surfaces + the stack utility are enough, attributes picks the fix up via the shared wrapper. ACCEPTANCE: scripted — open ORBAT, select slot, OPEN ARSENAL: elementFromPoint(arsenal centre) is inside the arsenal surface; open Help then Save Version: Help is closed (body text lacks 'Controls — keyboard shortcuts' while 'Versions are immutable' present); Esc still closes topmost-only, one layer per press."
-surfaces = [
-    "SHELL",
-    "UI",
-    "ORBAT",
-    "ARS",
-]
-targets = ["website"]
+kind = "work"
 title = "Modal z-order comes from the modal stack, and opening a dialog closes popovers"
+summary = "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). O-3/O-5 — VERIFIED: ORBAT > slot > OPEN ARSENAL opens the Attributes/Arsenal surface at z-50 — the SAME z as the ORBAT modal (both hardcode z-50) — and ORBAT wins the paint order: elementFromPoint at the arsenal centre returns an ORBAT node. The author clicks a button and sees nothing happen. Separately, Help (Controls — keyboard shortcuts) and the Save Version dialog stack simultaneously — no surface exclusivity (VERIFIED both visible at once). ui.rs ~:407 modal_stack ALREADY tracks open surfaces for shared-Esc; z and exclusivity just do not consume it. FIX: (a) drive z-index from modal_stack order (last-opened on top) instead of hardcoded z-50 across attributes.rs / orbat_manager.rs / eden_help.rs / eden_top_strip.rs ~:784 overlays; (b) opening a Dialog closes open popovers/help surfaces (menus, Controls Hint) — dialogs may stack over dialogs per stack order. ⚠️ TRAPS: shared-Esc dismissal order must keep dismissing ONLY the topmost; the context menu is not a Dialog and must keep its own dismissal; do not edit attributes.rs (T-785 owns it this wave) — z classes on the OTHER surfaces + the stack utility are enough, attributes picks the fix up via the shared wrapper. ACCEPTANCE: scripted — open ORBAT, select slot, OPEN ARSENAL: elementFromPoint(arsenal centre) is inside the arsenal surface; open Help then Save Version: Help is closed (body text lacks 'Controls — keyboard shortcuts' while 'Versions are immutable' present); Esc still closes topmost-only, one layer per press."
+status = "shipped"
+order = 4680
+executor = "claude-code"
+notes = "wave-142-style honesty: cite the existing modal_stack registry rather than inventing a new one; deferred T-333 (modal z) if present should be folded/closed by this | SHIPPED W200: O-3/O-5 acceptance pairs re-proved (stack-driven, not DOM luck; every z-50 tie scrim-unreachable). Adjacent-pair leaks re-ticketed T-814 (transients under non-strip dialogs, one-Esc-two-layers, mount-vs-open-order Esc). Verifier: wave200.md F4/F5."
+
+[scope.website.editor]
+chrome = []

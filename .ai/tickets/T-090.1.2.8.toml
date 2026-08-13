@@ -1,20 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-090.1.2.8"
+kind = "work"
+title = "T-090.1.2.8 — Unified satellite texture (binary + GPU mips, no tile flicker)"
+summary = "T-090.1.2.8 — Unified satellite texture (binary + GPU mips, no tile flicker)"
+status = "shipped"
+order = 900
+spec = "docs/specs/Mission_Creator_Architecture/t090_1_2_8_unified_satellite_texture.md"
+executor = "claude-code"
 parent = "T-090"
 shipped_at = "db9057ef"
-spec = "docs/specs/Mission_Creator_Architecture/t090_1_2_8_unified_satellite_texture.md"
-status = "shipped"
-targets = [
-    "website",
-    "root",
-]
+
+[scope.repo]
+layers = ["docs"]

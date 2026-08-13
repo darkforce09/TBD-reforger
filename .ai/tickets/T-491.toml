@@ -1,35 +1,16 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 465
-executor = "claude-code"
 id = "T-491"
-impact = [
-    "website",
-    "tests",
-]
-order = 3330
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "T-425 mixed slot+vehicle drag commits two undo txns; pick/marquee untested"
 summary = """
 Wave 35 adversarial MAJOR (deferred). mission_editor Move commit calls move_entities(slots) then move_vehicles(vehs) — each its own yrs txn — so one mixed gesture needs two Ctrl+Z. New pick_slot_or_vehicle / marquee_* helpers have no unit tests (only flatten/kit Class-R). Vehicle drag also skips GPU set_drag preview (slots only).
 
 Repro: select one slot + one vehicle, drag, undo once — only one kind moves back.
 
 Cure: single atomic move for mixed selection (one txn) + Class-R tests on pick/marquee helpers; optional vehicle drag preview."""
-surfaces = ["tests"]
-targets = ["website"]
-title = "T-425 mixed slot+vehicle drag commits two undo txns; pick/marquee untested"
+status = "shipped"
+order = 3330
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

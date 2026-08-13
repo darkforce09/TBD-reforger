@@ -1,20 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-151.4"
+kind = "work"
+title = "T-151.4 — vector layers: sea, contours, roads, forest, landcover, marquee (W4)"
+summary = "T-151.4 — vector layers: sea, contours, roads, forest, landcover, marquee (W4)"
+status = "shipped"
+order = 1500
+spec = "docs/specs/Mission_Creator_Architecture/t151_4_vector_layers.md"
+executor = "claude-code"
 parent = "T-151"
 shipped_at = "723490a0"
-spec = "docs/specs/Mission_Creator_Architecture/t151_4_vector_layers.md"
-status = "shipped"
-targets = [
-    "root",
-    "website",
-]
+
+[scope.repo]
+layers = ["docs"]

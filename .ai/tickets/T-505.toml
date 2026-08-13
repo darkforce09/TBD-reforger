@@ -1,35 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 479
-executor = "claude-code"
 id = "T-505"
-impact = [
-    "mission-creator",
-    "api",
-    "frontend",
-]
-order = 3345
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "Wave 41 residual (CLEAN). T-375 emits non-blank trimmed meta.title on compile_payload. hydrate/apply_row_meta still does not load payload title into meta; create_version does not PATCH missions.title. Reload can overwrite authored title with stale row. Cure: adopt_payload/apply_row_meta prefer payload title (trim-aware) and/or mirror title to row on Save with non-blank guard."
-surfaces = [
-    "EDITOR",
-    "API",
-    "DATA",
-]
-targets = ["website"]
+kind = "work"
 title = "Hydrate/row-mirror still stomps authored title after T-375 compile emit"
+summary = "Wave 41 residual (CLEAN). T-375 emits non-blank trimmed meta.title on compile_payload. hydrate/apply_row_meta still does not load payload title into meta; create_version does not PATCH missions.title. Reload can overwrite authored title with stale row. Cure: adopt_payload/apply_row_meta prefer payload title (trim-aware) and/or mirror title to row on Save with non-blank guard."
+status = "shipped"
+order = 3345
+executor = "claude-code"
+priority = 1
+
+[scope.website.editor]
+chrome = []

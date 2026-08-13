@@ -1,31 +1,12 @@
-__keys = [
-    "id",
-    "order",
-    "status",
-    "program",
-    "title",
-    "summary",
-    "surfaces",
-    "impact",
-    "depends_on",
-    "targets",
-    "executor",
-]
-__ord = 120
-depends_on = ["T-150"]
-executor = "claude-code"
 id = "T-146"
-impact = [
-    "ui",
-    "data",
-]
-order = 1470
-program = "eden"
-status = "queued"
-summary = "Hook up T-150 registry items (vehicles/crates/…) to Asset Browser for map drag-place. Unblocked by T-150; after or parallel T-068.9 ingest preferred."
-surfaces = [
-    "RIGHT",
-    "MAP",
-]
-targets = ["website"]
+kind = "work"
 title = "Asset Browser Data Wiring"
+summary = "Hook up T-150 registry items (vehicles/crates/…) to Asset Browser for map drag-place. Unblocked by T-150; after or parallel T-068.9 ingest preferred."
+status = "queued"
+order = 1470
+executor = "claude-code"
+notes = "needs-operator: frozen unmappable Scope. "
+depends_on = ["T-150"]
+
+[scope.repo]
+layers = ["docs"]

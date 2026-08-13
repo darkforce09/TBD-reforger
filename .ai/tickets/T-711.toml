@@ -1,27 +1,11 @@
-__keys = [
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "stream",
-    "targets",
-    "id",
-    "order",
-    "executor",
-    "title",
-    "summary",
-    "notes",
-]
-__ord = 684
-executor = "cursor-docs"
 id = "T-711"
-impact = ["dx"]
-notes = "filed by wave-101 adversarial verifier (editor factory); MAJOR doc/claim divergence, no behavioral defect"
-order = 4304
-program = "eden"
-status = "deferred"
-stream = "mission-creator"
-summary = "T-639 (wave 101) replaced the fixed contour zoom ladder with a screen-space band (contour_interval_for_zoom now takes m_per_px, nearest-log2 snap onto {5,10,20,40,80}). t090_render_lod_contract.md:56-71 still pins 100/50/20/10 m by zoom and is marked canonical — every value is now wrong (shipped: 80 m @ z=-6, 40 @ -4, 5 m @ 0..+3). t152_7_height_markers.md:28 still says to label every contour_interval_for_zoom level under a deckZoom gate — passing deck_zoom compiles and silently clamps to 5 m (the name kept its export, the parameter changed meaning). Rewrite §N3 to the band model (TARGET_SPACING_PX=16.31, slope constant, rung-boundary range [11.5,23] px) and fix the t152_7 call convention. Diagnosis: editor_verify/wave101.md F-1, N-2."
-surfaces = ["EDITOR"]
-targets = ["website"]
+kind = "work"
 title = "Doc sync: t090_render_lod_contract §N3 superseded by T-639; t152_7 stale contour reference"
+summary = "T-639 (wave 101) replaced the fixed contour zoom ladder with a screen-space band (contour_interval_for_zoom now takes m_per_px, nearest-log2 snap onto {5,10,20,40,80}). t090_render_lod_contract.md:56-71 still pins 100/50/20/10 m by zoom and is marked canonical — every value is now wrong (shipped: 80 m @ z=-6, 40 @ -4, 5 m @ 0..+3). t152_7_height_markers.md:28 still says to label every contour_interval_for_zoom level under a deckZoom gate — passing deck_zoom compiles and silently clamps to 5 m (the name kept its export, the parameter changed meaning). Rewrite §N3 to the band model (TARGET_SPACING_PX=16.31, slope constant, rung-boundary range [11.5,23] px) and fix the t152_7 call convention. Diagnosis: editor_verify/wave101.md F-1, N-2."
+status = "deferred"
+order = 4304
+executor = "cursor-docs"
+notes = "filed by wave-101 adversarial verifier (editor factory); MAJOR doc/claim divergence, no behavioral defect"
+
+[scope.website.editor]
+chrome = []

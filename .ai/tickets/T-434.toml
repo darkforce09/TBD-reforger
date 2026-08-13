@@ -1,35 +1,16 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 408
-executor = "claude-code"
 id = "T-434"
-impact = ["platform-lifecycle"]
-order = 3273
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "CI schema job still only validate+citations while make schema-validate runs nine"
 summary = """
 Residual from T-420/T-422. Wave gate now runs the full schema-validate set (incl. per-context height-labels). .github/workflows/ci.yml schema job still only `xtask schema validate` + citations — same hole T-420 documented.
 
 Repro: compare ci.yml schema job vs Makefile schema-validate recipe / GATE_SCHEMA_VALIDATE_GATES in wave.sh.
 
 Cure: align CI with make schema-validate (or document intentional narrowing with a tripwire)."""
-surfaces = [
-    "INFRA",
-    "CI",
-]
-targets = ["website"]
-title = "CI schema job still only validate+citations while make schema-validate runs nine"
+status = "shipped"
+order = 3273
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

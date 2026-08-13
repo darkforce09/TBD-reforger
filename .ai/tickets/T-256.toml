@@ -1,28 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 230
-executor = "claude-code"
 id = "T-256"
-impact = ["mc-authoring"]
-order = 2740
-program = "eden"
-status = "shipped"
-stream = "mission-creator"
-summary = "faction-library.sample.json is one faction, two roles, one vehicle, and both roles point at the same prefab. It is a schema fixture. There is no seed and no import path, so Load Predefined ORBAT has zero entries until someone hand-builds one."
-surfaces = [
-    "MAP",
-    "PLACE",
-]
-targets = ["website"]
+kind = "work"
 title = "Faction library is empty on every fresh install"
+summary = "faction-library.sample.json is one faction, two roles, one vehicle, and both roles point at the same prefab. It is a schema fixture. There is no seed and no import path, so Load Predefined ORBAT has zero entries until someone hand-builds one."
+status = "shipped"
+order = 2740
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

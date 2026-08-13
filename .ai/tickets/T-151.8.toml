@@ -1,22 +1,14 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-151.8"
+kind = "work"
+title = "T-151.8 — culling + density ladder (W8)"
+summary = "T-151.8 — culling + density ladder (W8)"
+status = "shipped"
+order = 1500
+spec = "docs/specs/Mission_Creator_Architecture/t151_8_culling_density.md"
+executor = "claude-code"
 notes = "CPU draw-set + density ladder + damage skip. Compute cull completed in T-151.8.1 (no silent deferral)."
 parent = "T-151"
 shipped_at = "f4ffbfff"
-spec = "docs/specs/Mission_Creator_Architecture/t151_8_culling_density.md"
-status = "shipped"
-targets = [
-    "root",
-    "website",
-]
+
+[scope.repo]
+layers = ["docs"]

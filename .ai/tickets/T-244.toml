@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 218
-executor = "claude-code"
 id = "T-244"
-impact = ["data-pipeline"]
-order = 2620
-program = "eden"
-status = "shipped"
-stream = "mission-creator"
-summary = "The Workbench export plus Rust classifier pipeline is real and produces 1,623 prefabs and 1.2M instances for Everon, but the kind enum covers building, tree, vegetation, rock, prop, utility, water and road — there is no vehicle kind. This is adding a lane to an existing pipeline, not building one."
-surfaces = ["REG"]
-targets = ["root"]
+kind = "work"
 title = "No vehicle lane in the map-object catalogue"
+summary = "The Workbench export plus Rust classifier pipeline is real and produces 1,623 prefabs and 1.2M instances for Everon, but the kind enum covers building, tree, vegetation, rock, prop, utility, water and road — there is no vehicle kind. This is adding a lane to an existing pipeline, not building one."
+status = "shipped"
+order = 2620
+executor = "claude-code"
+
+[scope.repo]
+layers = ["xtask"]

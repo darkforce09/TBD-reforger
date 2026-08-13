@@ -1,33 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 487
-executor = "claude-code"
 id = "T-513"
-impact = [
-    "website",
-    "tests",
-]
-order = 3353
-priority = 0
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "Wave 44 verifier MAJOR. ingest_match_results_invokes_require_role_played_at_both_sites whitespace-collapses include_str and counts require_role_played(&p.role_played) inside // comments. Mutation: delete UPSERT bind, leave // require_role_played(&p.role_played) → PASS with one live call; delete both live calls + two bait comments → PASS. Cure: strip line comments (and block comments if needed) from the extracted production body before counting, or otherwise refuse comment-only matches. Perturbation RED with bait must fail; bare live calls still green."
-surfaces = [
-    "API",
-    "tests",
-]
-targets = ["website"]
+kind = "work"
 title = "W44 hotfix: T-506 Class-R must not count comment bait for require_role_played"
+summary = "Wave 44 verifier MAJOR. ingest_match_results_invokes_require_role_played_at_both_sites whitespace-collapses include_str and counts require_role_played(&p.role_played) inside // comments. Mutation: delete UPSERT bind, leave // require_role_played(&p.role_played) → PASS with one live call; delete both live calls + two bait comments → PASS. Cure: strip line comments (and block comments if needed) from the extracted production body before counting, or otherwise refuse comment-only matches. Perturbation RED with bait must fail; bare live calls still green."
+status = "shipped"
+order = 3353
+executor = "claude-code"
+priority = 0
+
+[scope.website.editor]
+chrome = []

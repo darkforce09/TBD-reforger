@@ -1,20 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-151.5.1"
+kind = "work"
+title = "T-151.5.1 — forest mass / landcover fidelity (W5 corrective)"
+summary = "T-151.5.1 — forest mass / landcover fidelity (W5 corrective)"
+status = "shipped"
+order = 1500
+spec = "docs/specs/Mission_Creator_Architecture/t151_5_1_forest_fidelity.md"
+executor = "claude-code"
 parent = "T-151"
 shipped_at = "a98fb421"
-spec = "docs/specs/Mission_Creator_Architecture/t151_5_1_forest_fidelity.md"
-status = "shipped"
-targets = [
-    "root",
-    "website",
-]
+
+[scope.repo]
+layers = ["docs"]

@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 558
-executor = "claude-code"
 id = "T-584"
-impact = ["platform-lifecycle"]
-order = 3433
-priority = 3
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Two weak test controls from wave 70"
 summary = """
 Both NITs from wave 70's adversarial verifier. Neither is a live defect; both are tests that are
 weaker than they read.
@@ -41,9 +21,10 @@ weaker than they read.
    payloads (e.g. a yrs BigInt<->Number coercion across an editor change) would report unchanged rows
    as "edited". Unreachable today because both sides come from one pipeline, but the differ's whole
    value is not crying wolf."""
-surfaces = [
-    "API",
-    "FRONTEND",
-]
-targets = ["website"]
-title = "Two weak test controls from wave 70"
+status = "shipped"
+order = 3433
+executor = "claude-code"
+priority = 3
+
+[scope.website.editor]
+chrome = []

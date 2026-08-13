@@ -1,42 +1,18 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "notes",
-    "depends_on",
-]
-__ord = 644
-depends_on = ["T-076"]
-executor = "claude-code"
 id = "T-675"
-impact = [
-    "schema",
-    "mod",
-    "contract",
-]
-notes = "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row — WAVE-A DISPATCH PIN: owns extends to crates/map-engine-core/src/mission/flatten.rs (the emit half; T-674 first, T-675 after it reports) AND the TBD_MissionValidator.c SCHEMA_1_3 allowlist bump rides whichever of these first emits 1.3 (schema description names this). T-853 2026-08-12: the prepped slice worktree for this ticket was DROPPED, not landed. It carried one unmerged commit from 2026-08-02 that had sat unlanded for 10 days and was blocking the wave queue at 150. The work was NOT reviewed and NOT merged; the ticket stays queued so it can be redone. The commit is recoverable: `git checkout -b redo/T-675 salvage/t853-dropped/T-675` (tagged before the branch was deleted). Note T-674 and T-675 pointed at the SAME commit 113108a1, so whichever is redone first should check whether it subsumes the other."
-order = 4320
-program = "eden"
-status = "queued"
-stream = "shared-schema"
+kind = "program"
+title = "Vehicle roster reaches the game — the compile half of T-076"
 summary = """
 The cross-boundary half that was split out of T-076 so the crew UI could be dispatched. No attribute ids of its own; it closes the sixth entry in the T-216 drop ledger. BLOCKING EVIDENCE: `crates/map-engine-core/src/mission/flatten.rs`:2631 states the delta as "document root + a new $def", key `vehicles`, and :2634-2640 PROVES the already-declared `entities[]` cannot carry it — `$defs/alias` is `^(kit|comp|veh|preset|layer|prop|item):[a-z0-9_]+$` and `apps/mod/tbd-framework/Data/registry.json` holds exactly ONE `veh:` row, so alias substitution would reproduce the T-200 silent-substitution defect with a 10-tonne vehicle. Without this, T-076's crew UI authors state the game never sees. EXECUTOR IS `workbench` DELIBERATELY: this modifies `packages/tbd-schema/schema/mission.schema.json` and/or `apps/mod/tbd-framework/`, which the CLAUDE.md executor gate puts out of reach of any coding agent. The factory filters on executor, so this tagging is the safety mechanism — do not flip it to claude-code.
 
 EXECUTOR CORRECTED 2026-08-02: was filed `workbench` on the mistaken reading that any .c file needs the Arma Workbench GUI. It does not — scripts/mod/compile.sh compiles tbd-framework against the native Linux dedicated server headlessly, verified: "OK: compiled clean, 5707 files, 11182 classes, 832 ms, no Workbench". Schema edits are plain JSON. This is factory work. Per the model-routing rule, the .c portion routes to Fable 5 even though the executor is claude-code.
 
 SCHEMA HALF SPLIT OUT to T-706 (one widening pass for the whole program). This ticket is the Enfusion reader plus any editor UI; it does not touch packages/tbd-schema."""
-surfaces = [
-    "VEH",
-    "SCHEMA",
-    "MOD",
+status = "queued"
+order = 4320
+executor = "claude-code"
+notes = "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row — WAVE-A DISPATCH PIN: owns extends to crates/map-engine-core/src/mission/flatten.rs (the emit half; T-674 first, T-675 after it reports) AND the TBD_MissionValidator.c SCHEMA_1_3 allowlist bump rides whichever of these first emits 1.3 (schema description names this). T-853 2026-08-12: the prepped slice worktree for this ticket was DROPPED, not landed. It carried one unmerged commit from 2026-08-02 that had sat unlanded for 10 days and was blocking the wave queue at 150. The work was NOT reviewed and NOT merged; the ticket stays queued so it can be redone. The commit is recoverable: `git checkout -b redo/T-675 salvage/t853-dropped/T-675` (tagged before the branch was deleted). Note T-674 and T-675 pointed at the SAME commit 113108a1, so whichever is redone first should check whether it subsumes the other."
+depends_on = ["T-076"]
+children = [
+    "T-675.1",
+    "T-675.2",
 ]
-targets = ["mod"]
-title = "Vehicle roster reaches the game — the compile half of T-076"

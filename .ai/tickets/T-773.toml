@@ -1,27 +1,11 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "status",
-    "stream",
-    "targets",
-    "executor",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "notes",
-]
-__ord = 746
-executor = "claude-code"
 id = "T-773"
-impact = ["ui"]
-notes = "filed by wave-118 adversarial verifier (editor factory)"
-order = 4649
-program = "eden"
-status = "shipped"
-stream = "mission-creator"
-summary = """PRE-EXISTING DEFECT, found by the T-698 slice while being warned not to introduce one, and independently confirmed by the wave-118 verifier. apps/website/frontend/src/server_intel.rs:215-223: `let _ = win.navigator().clipboard().write_text(&copy_text.get_value());` immediately followed by `toasts.success("Server address copied")`. The promise is DROPPED. `navigator.clipboard.writeText` rejects on an insecure context, on an unfocused document, and on denied permission — in every one of those cases the rejection is discarded and the operator is told the copy worked. REPRO: load the Server Intel page over plain http on a non-localhost host (or blur the document) and click Copy — the toast says copied, the clipboard is unchanged. This is the programme's signature defect class (a tool reporting success over something it never did) and it was the live in-repo precedent a new exporter would have copied. THE FIX ALREADY EXISTS IN THE REPO: T-698 wrote `write_clipboard` in mission_commands.rs, which resolves the API through Reflect and refuses with a message when `navigator.clipboard` is undefined, awaits the promise via JsFuture, and toasts success on the RESOLVE ARM ONLY. Promote it to a shared helper and repoint server_intel.rs at it. Not fixed in wave 118 because server_intel.rs was outside every slice's owns. Diagnosis: editor_verify/wave118.md (pre-existing, claim verified)."""
-surfaces = ["SHELL"]
-targets = ["website"]
+kind = "work"
 title = "Server Intel's copy button reports success over a clipboard write it never confirmed"
+summary = """PRE-EXISTING DEFECT, found by the T-698 slice while being warned not to introduce one, and independently confirmed by the wave-118 verifier. apps/website/frontend/src/server_intel.rs:215-223: `let _ = win.navigator().clipboard().write_text(&copy_text.get_value());` immediately followed by `toasts.success("Server address copied")`. The promise is DROPPED. `navigator.clipboard.writeText` rejects on an insecure context, on an unfocused document, and on denied permission — in every one of those cases the rejection is discarded and the operator is told the copy worked. REPRO: load the Server Intel page over plain http on a non-localhost host (or blur the document) and click Copy — the toast says copied, the clipboard is unchanged. This is the programme's signature defect class (a tool reporting success over something it never did) and it was the live in-repo precedent a new exporter would have copied. THE FIX ALREADY EXISTS IN THE REPO: T-698 wrote `write_clipboard` in mission_commands.rs, which resolves the API through Reflect and refuses with a message when `navigator.clipboard` is undefined, awaits the promise via JsFuture, and toasts success on the RESOLVE ARM ONLY. Promote it to a shared helper and repoint server_intel.rs at it. Not fixed in wave 118 because server_intel.rs was outside every slice's owns. Diagnosis: editor_verify/wave118.md (pre-existing, claim verified)."""
+status = "shipped"
+order = 4649
+executor = "claude-code"
+notes = "filed by wave-118 adversarial verifier (editor factory)"
+
+[scope.website.editor]
+chrome = []

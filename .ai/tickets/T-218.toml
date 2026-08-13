@@ -1,27 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "shipped_at",
-]
-__ord = 192
-executor = "claude-code"
 id = "T-218"
-impact = ["mc-collab"]
-order = 2360
-program = "eden"
-shipped_at = "ca7c1319"
-status = "shipped"
-stream = "mission-creator"
-summary = "The backend expects RejectInput{reason} (api/handlers/approvals.rs:126-130); the frontend posts an empty json object (approvals.rs:317). The reviewer types a reason and it evaporates."
-surfaces = ["SHELL"]
-targets = ["website"]
+kind = "work"
 title = "Rejection reasons are silently discarded"
+summary = "The backend expects RejectInput{reason} (api/handlers/approvals.rs:126-130); the frontend posts an empty json object (approvals.rs:317). The reviewer types a reason and it evaporates."
+status = "shipped"
+order = 2360
+executor = "claude-code"
+shipped_at = "ca7c1319"
+
+[scope.website.editor]
+chrome = []

@@ -1,17 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "spec",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-911.2"
+kind = "work"
+title = "T-911 — Ticket registry redesign: per-file split + typed schema"
+summary = "T-911 — Ticket registry redesign: per-file split + typed schema"
+status = "queued"
+order = 5910
+spec = "docs/platform/t911_ticket_registry_redesign.md"
+executor = "claude-code"
 notes = "Phase 2: typed Scope/Status, encoding C, frozen-49, Ready prose, T-159.23 shipped, T-674/T-675 children via mapper. Depends on T-911.1 landed. No wave.lock, no metrics producer."
 parent = "T-911"
-spec = "docs/platform/t911_ticket_registry_redesign.md"
-status = "queued"
-targets = ["root"]
+
+[scope.repo]
+layers = ["xtask"]

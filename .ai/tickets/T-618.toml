@@ -1,26 +1,6 @@
-__keys = [
-    "program",
-    "impact",
-    "stream",
-    "targets",
-    "executor",
-    "id",
-    "title",
-    "summary",
-    "status",
-    "priority",
-    "order",
-    "surfaces",
-]
-__ord = 591
-executor = "claude-code"
 id = "T-618"
-impact = ["platform-lifecycle"]
-order = 3652
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "The gate base can still self-approve: the ticket ledger reads files the forging commit wrote"
 summary = """
 FOUND by wave 78's adversarial verifier. **Third round of the same defect** (T-602 -> T-613 -> here),
 and the fix this time is small and specific -- do not redesign the oracles.
@@ -68,6 +48,10 @@ stated threat model ("the gate base can no longer approve itself"), it requires 
 interaction, and the design only half-discloses the gap: it admits "no fully independent oracle
 exists" while making a specific false independence claim about oracle 2. Fix the read, fix the
 comment, stop."""
-surfaces = ["INFRA"]
-targets = ["website"]
-title = "The gate base can still self-approve: the ticket ledger reads files the forging commit wrote"
+status = "shipped"
+order = 3652
+executor = "claude-code"
+priority = 1
+
+[scope.website.editor]
+chrome = []

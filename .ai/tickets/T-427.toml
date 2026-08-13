@@ -1,38 +1,16 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 401
-executor = "claude-code"
 id = "T-427"
-impact = [
-    "mission-creator",
-    "perf",
-]
-order = 3266
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Paginate or slim GET /registry and /registry/compat for editor first open"
 summary = """
 Follow-on from T-245 (wave 6). T-245 session-caches registry+compat so editor REMOUNTS skip the ~7MB dual fetch, but the first SPA open in a session still GETs both unpaginated endpoints and walks all compat edges for cargo_defaults_by_character.
 
 Repro: cold-load /missions/:id/edit; Network shows full GET /api/v1/registry and /api/v1/registry/compat (~1.8k items / ~20k edges). Remount within the same wasm session does not re-fetch (covered by t245_registry_session).
 
 Cure lives in API pagination / narrower endpoints + frontend DTO/client — outside T-245 owns (mission_editor.rs only)."""
-surfaces = [
-    "FE",
-    "BE",
-]
-targets = ["website"]
-title = "Paginate or slim GET /registry and /registry/compat for editor first open"
+status = "shipped"
+order = 3266
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

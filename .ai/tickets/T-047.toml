@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 35
-executor = "cursor-docs"
 id = "T-047"
-impact = ["schema"]
-order = 470
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "agent_execution and wiki manifest deduped."
-surfaces = ["DATA"]
-targets = ["website"]
+kind = "work"
 title = "Doc authority alignment"
+summary = "agent_execution and wiki manifest deduped."
+status = "shipped"
+order = 470
+executor = "cursor-docs"
+
+[scope.website.editor]
+chrome = []

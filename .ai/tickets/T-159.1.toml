@@ -1,20 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "spec",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-159.1"
+kind = "work"
+title = "T-159.1 — Leptos app scaffold (workspace member)"
+summary = "T-159.1 — Leptos app scaffold (workspace member)"
+status = "shipped"
+order = 1570
+spec = "docs/platform/t159_1_leptos_scaffold.md"
+executor = "claude-code"
 notes = "Scaffold + later page waves through 24 routes on worktree (aggregate)."
 parent = "T-159"
-spec = "docs/platform/t159_1_leptos_scaffold.md"
-status = "shipped"
-targets = [
-    "root",
-    "website",
-]
+
+[scope.repo]
+layers = ["docs"]

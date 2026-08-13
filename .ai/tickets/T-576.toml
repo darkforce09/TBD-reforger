@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 550
-executor = "claude-code"
 id = "T-576"
-impact = ["platform-lifecycle"]
-order = 3420
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "No 23503 handler: every foreign-key violation surfaces as a 500"
 summary = """
 Found by T-262 (filed-not-fixed) and independently confirmed by wave 69's adversarial verifier.
 
@@ -52,6 +32,10 @@ register the server a heartbeat needs. Worth resolving in the same pass.
 
 WANTED: an `is_foreign_key_violation` sibling, mapped to 400/409 with a message naming the missing
 parent; then revisit T-262's four abstentions."""
-surfaces = ["API"]
-targets = ["website"]
-title = "No 23503 handler: every foreign-key violation surfaces as a 500"
+status = "shipped"
+order = 3420
+executor = "claude-code"
+priority = 1
+
+[scope.website.editor]
+chrome = []

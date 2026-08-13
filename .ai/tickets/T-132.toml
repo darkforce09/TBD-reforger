@@ -1,40 +1,14 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "stream",
-    "targets",
-    "executor",
-    "status",
-    "surfaces",
-    "impact",
-    "depends_on",
-    "spec",
-    "route",
-    "branch",
-]
-__ord = 106
-branch = "ticket/T-132"
+id = "T-132"
+kind = "work"
+title = "Multiplayer MC + visual git"
+summary = "Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap."
+status = "idea"
+spec = "docs/platform/tbd_north_star_backlog.md"
+executor = "claude-code"
 depends_on = [
     "T-062",
     "T-066",
 ]
-executor = "claude-code"
-id = "T-132"
-impact = [
-    "state",
-    "ui",
-]
-program = "eden"
-route = "/missions/:id/edit"
-spec = "docs/platform/tbd_north_star_backlog.md"
-status = "idea"
-stream = "mission-creator"
-summary = "Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap."
-surfaces = [
-    "DATA",
-    "CONN",
-]
-targets = ["website"]
-title = "Multiplayer MC + visual git"
+
+[scope.website.editor]
+chrome = []

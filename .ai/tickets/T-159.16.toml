@@ -1,22 +1,14 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "shipped_at",
-    "spec",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-159.16"
+kind = "work"
+title = "T-159.16 — MissionDoc host in Leptos editor"
+summary = "T-159.16 — MissionDoc host in Leptos editor"
+status = "shipped"
+order = 1570
+spec = "docs/platform/t159_16_mission_doc_host.md"
+executor = "claude-code"
 notes = "MissionDocCore same-wasm host; smoke_doc_editor Class R. Verify: .ai/artifacts/t159_16_verify_log.md"
 parent = "T-159"
 shipped_at = "f2cd6178"
-spec = "docs/platform/t159_16_mission_doc_host.md"
-status = "shipped"
-targets = [
-    "website",
-    "root",
-]
+
+[scope.repo]
+layers = ["docs"]

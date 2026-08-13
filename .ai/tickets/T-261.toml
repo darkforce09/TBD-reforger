@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 235
-executor = "claude-code"
 id = "T-261"
-impact = ["platform-lifecycle"]
-order = 2790
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "refresh_leaderboard has exactly one caller, inside results ingest. If ingest never fires the ladder is frozen at the WITH NO DATA state from migration 0002 forever. No cron, no interval, no admin refresh button."
-surfaces = ["DATA"]
-targets = ["website"]
+kind = "work"
 title = "Leaderboard materialized view has no scheduled refresh"
+summary = "refresh_leaderboard has exactly one caller, inside results ingest. If ingest never fires the ladder is frozen at the WITH NO DATA state from migration 0002 forever. No cron, no interval, no admin refresh button."
+status = "shipped"
+order = 2790
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

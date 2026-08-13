@@ -1,33 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 490
-executor = "claude-code"
 id = "T-516"
-impact = [
-    "website",
-    "tests",
-]
-order = 3356
-priority = 0
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "Wave 45 cold gate FAIL. arma_link_flow seed_user(400001, identity-link-seed-400001) hit duplicate key idx_users_arma_id while padded_arma_id_is_stored_trimmed_and_resolvable runs in parallel (both call setup() which seeds ACTOR with the same placeholder arma_id without releasing it first). Cure: serialize the async identity_link tests (Mutex like null_tolerance) AND release identity-link-seed-40000{1,2,3} in setup before seed_user. Perturbation/repro: parallel runs under shared TBD_GATE_DB. Owns: identity_link.rs only."
-surfaces = [
-    "API",
-    "tests",
-]
-targets = ["website"]
+kind = "work"
 title = "W45 hotfix: identity_link IT race on idx_users_arma_id after T-351"
+summary = "Wave 45 cold gate FAIL. arma_link_flow seed_user(400001, identity-link-seed-400001) hit duplicate key idx_users_arma_id while padded_arma_id_is_stored_trimmed_and_resolvable runs in parallel (both call setup() which seeds ACTOR with the same placeholder arma_id without releasing it first). Cure: serialize the async identity_link tests (Mutex like null_tolerance) AND release identity-link-seed-40000{1,2,3} in setup before seed_user. Perturbation/repro: parallel runs under shared TBD_GATE_DB. Owns: identity_link.rs only."
+status = "shipped"
+order = 3356
+executor = "claude-code"
+priority = 0
+
+[scope.website.editor]
+chrome = []

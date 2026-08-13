@@ -1,15 +1,12 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-181.35"
+kind = "work"
+title = "T-181.35"
+summary = "T-181.35"
+status = "shipped"
+order = 1810
+executor = "claude-code"
 notes = "In-game identity linking — and THE FIRST END-TO-END PROOF AGAINST THE REAL BACKEND in this program. The agent found the dev stack already live (Axum on :8080, db on 5434) and refused to settle for a mirror: POST /me/link on the real backend minted code 457879; the MOD posted to the real /ingest/link-confirm and got the real handler's body back ({linked:true,discord_id:...}); users.arma_id was written, identity_link_codes.consumed_at set, an audit_logs identity.link row created; replaying the code returned the real 404; the exact join telemetry.rs:238 runs now returns a discord_id instead of zero rows; and a match-results POST in the byte shape TBD_ResultsReporter emits populated match_player_stats.discord_id (previously NULL) and moved users.total_deployments 0 -> 1, proving the stat recompute ran. ONE HONEST GAP NAMED RATHER THAN GLOSSED: the attendance UPDATE additionally needs a non-empty event_id resolving to a registration, and the proof payload had event_id:'' — so the resolved list going non-empty was observed (which is what everything hangs off and what was broken) but not that final UPDATE. Dev DB restored to exactly as found. REFUSES to link an empty or synthetic (00bbbddd- name hash) identity, because users.arma_id is UNIQUE so a seat lease or name hash is a PERMANENT mis-binding, not a recoverable mistake. Branches on RestCallback.GetHttpCode(), never on response text — six distinct outcomes plus a watchdog. Serial bounded queue because RestCallbackFunc carries no user data, so a response cannot otherwise be correlated to a player, plus a recycled-player-id guard on async replies. Caught a real bug in its own code via a probe control: it had written `code.Trim();` as a bare statement, which does nothing. KNOWN LIMIT, not fixable from script: the code is typed in PUBLIC chat and OnNewMessage is the receive-side display hook, so consuming it suppresses nothing — on success the backend consumes the code in the same transaction, and every failure reply tells the player to generate a new one. Real fix is a UI field, blocked on the rdb pass. Declined to add a second modded SCR_ChatComponent, since both blocks would override OnNewMessage and the downside is silently killing the shipped admin surface."
 parent = "T-181"
-status = "shipped"
-targets = ["mod"]
+
+[scope.mod]
+layers = ["feature"]

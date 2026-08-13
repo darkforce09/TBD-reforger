@@ -1,18 +1,12 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-181.11.2"
+kind = "work"
+title = "T-181.11.2"
+summary = "T-181.11.2"
+status = "shipped"
+order = 1810
+executor = "claude-code"
 notes = "Admin menu @ c4708f72. A FRONT-END onto the same server authority as the chat commands, not a second implementation — TBD_AdminService is the single choke point and permission is checked at four entry points including the READ gate, so a non-admin's snapshot contains a refusal string and nothing else (no roster to render even with a patched client). Deploy and Respawn deliberately kept separate: AdminRespawn refuses anyone not dead and DeployPlayerEx refuses anyone who is, so one button would silently no-op half the time. Force-stage is armed-then-confirmed. Audit ring is capped at 60 with repeat refusals console-only, so a client spamming refusals cannot flush real actions out of an admin's view. Avoided a 4th modded SCR_PlayerController by extending the existing block. PERMISSION IS PROVEN BY CONSTRUCTION, NOT BY A LIVE NON-ADMIN ATTEMPT — needs the operator."
 parent = "T-181"
-status = "shipped"
-targets = [
-    "mod",
-    "root",
-]
+
+[scope.repo]
+layers = ["docs"]

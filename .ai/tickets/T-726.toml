@@ -1,27 +1,11 @@
-__keys = [
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "stream",
-    "targets",
-    "executor",
-    "id",
-    "order",
-    "title",
-    "summary",
-    "notes",
-]
-__ord = 699
-executor = "claude-code"
 id = "T-726"
-impact = ["ui"]
-notes = "filed by wave-106 adversarial verifier (editor factory)"
-order = 4319
-program = "eden"
-status = "shipped"
-stream = "mission-creator"
-summary = "T-691's EditorPreferencesDialog stacks over MissionSettingsDialog and copies the bare window-Esc idiom both dialogs use — one Esc closes BOTH. ui.rs modal_stack::is_topmost_open exists for exactly this and is unused by either dialog. Route both dialogs' Esc through it (topmost closes first, second Esc closes the parent); pin with a stacked-Esc test. Diagnosis: editor_verify/wave106.md MINOR-2. WIDENED wave 108 (MAJOR-2): the ruler's Esc arm is another unguarded window-keydown that never consults the T-333 one-Esc-one-dialog stack — deterministic repro: place a ruler, RMB (context menu opens), Esc to close the menu → the menu closes AND the placed measurement clears; the two-step Esc escalation is defeated by the first overlay. The fix is one design across ALL window-Esc listeners (both dialogs, context menu, asset picker, ruler): consult modal_stack::is_topmost_open / register as stack entries, topmost consumes. (3rd victim, wave109 MINOR-1: Esc-to-close-the-context-menu also deletes a placed LoS shot — the shared ruler/LoS Esc seam is correctly single-listener, so the one T-726 fix covers all.) (4th victim, wave110 MINOR-2: closing the context menu with Esc also deletes a placed viewshed wash.)"
-surfaces = ["EDITOR"]
-targets = ["website"]
+kind = "work"
 title = "Window-Esc pile-up: route every Esc listener through the modal stack"
+summary = "T-691's EditorPreferencesDialog stacks over MissionSettingsDialog and copies the bare window-Esc idiom both dialogs use — one Esc closes BOTH. ui.rs modal_stack::is_topmost_open exists for exactly this and is unused by either dialog. Route both dialogs' Esc through it (topmost closes first, second Esc closes the parent); pin with a stacked-Esc test. Diagnosis: editor_verify/wave106.md MINOR-2. WIDENED wave 108 (MAJOR-2): the ruler's Esc arm is another unguarded window-keydown that never consults the T-333 one-Esc-one-dialog stack — deterministic repro: place a ruler, RMB (context menu opens), Esc to close the menu → the menu closes AND the placed measurement clears; the two-step Esc escalation is defeated by the first overlay. The fix is one design across ALL window-Esc listeners (both dialogs, context menu, asset picker, ruler): consult modal_stack::is_topmost_open / register as stack entries, topmost consumes. (3rd victim, wave109 MINOR-1: Esc-to-close-the-context-menu also deletes a placed LoS shot — the shared ruler/LoS Esc seam is correctly single-listener, so the one T-726 fix covers all.) (4th victim, wave110 MINOR-2: closing the context menu with Esc also deletes a placed viewshed wash.)"
+status = "shipped"
+order = 4319
+executor = "claude-code"
+notes = "filed by wave-106 adversarial verifier (editor factory)"
+
+[scope.website.editor]
+chrome = []

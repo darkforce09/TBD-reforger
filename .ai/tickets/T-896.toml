@@ -1,29 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "executor",
-    "targets",
-    "stream",
-    "parallel_ok",
-    "order",
-    "spec",
-]
-__ord = 869
-executor = "claude-code"
 id = "T-896"
-impact = ["dx"]
-order = 5760
-parallel_ok = true
-program = "infra"
-spec = "docs/platform/t853_shell_to_xtask_waves.md"
-status = "shipped"
-stream = "infra"
-summary = "T-853 Phase 3. Absorb these Makefile targets into xtask: ci-local ci-local-schema schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig map-water-everon map-cartographic-everon map-cartographic-verify lfs-dem lfs-sat help test build. The composites become Rust functions composed from the same leaf functions, which makes a hollow composite (the T-489 `@true` defect) structurally impossible. `make help` has no successor yet - `xtask help` must list the task groups or the Makefile deletion costs discoverability. Each slice ADDS xtask subcommands in its own new module and does NOT edit the Makefile - the deletion is one final slice, so the three build slices stay file-disjoint. ACCEPTANCE: for every target, `make <t>` and the new `cargo xtask ...` must produce byte-identical stdout+stderr+rc on a clean tree AND on a deliberately broken one; the harness must assert the make side went red before believing a diff (T-556). Spec: docs/platform/t853_shell_to_xtask_waves.md"
-surfaces = ["CI"]
-targets = ["root"]
+kind = "work"
 title = "T-853 Phase 3: Makefile ci lane -> xtask"
+summary = "T-853 Phase 3. Absorb these Makefile targets into xtask: ci-local ci-local-schema schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig map-water-everon map-cartographic-everon map-cartographic-verify lfs-dem lfs-sat help test build. The composites become Rust functions composed from the same leaf functions, which makes a hollow composite (the T-489 `@true` defect) structurally impossible. `make help` has no successor yet - `xtask help` must list the task groups or the Makefile deletion costs discoverability. Each slice ADDS xtask subcommands in its own new module and does NOT edit the Makefile - the deletion is one final slice, so the three build slices stay file-disjoint. ACCEPTANCE: for every target, `make <t>` and the new `cargo xtask ...` must produce byte-identical stdout+stderr+rc on a clean tree AND on a deliberately broken one; the harness must assert the make side went red before believing a diff (T-556). Spec: docs/platform/t853_shell_to_xtask_waves.md"
+status = "shipped"
+order = 5760
+spec = "docs/platform/t853_shell_to_xtask_waves.md"
+executor = "claude-code"
+
+[scope.repo]
+layers = ["xtask"]

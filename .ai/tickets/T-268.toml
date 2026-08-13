@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 242
-executor = "claude-code"
 id = "T-268"
-impact = ["platform-pages"]
-order = 2860
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "personnel.rs:379-382 toasts 'Warning issued (mock)' while POST /admin/users/{id}/warnings exists and works. DELETE ban (unban) has no control at all, so a ban is irreversible from the UI. Sort and Filter are stubs and the Deployments dossier stat is hardcoded."
-surfaces = ["SHELL"]
-targets = ["website"]
+kind = "work"
 title = "Personnel — Issue Warning is a mock over a working endpoint, and there is no unban"
+summary = "personnel.rs:379-382 toasts 'Warning issued (mock)' while POST /admin/users/{id}/warnings exists and works. DELETE ban (unban) has no control at all, so a ban is irreversible from the UI. Sort and Filter are stubs and the Deployments dossier stat is hardcoded."
+status = "shipped"
+order = 2860
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

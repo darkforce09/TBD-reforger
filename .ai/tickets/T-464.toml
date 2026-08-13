@@ -1,38 +1,16 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 438
-executor = "claude-code"
 id = "T-464"
-impact = [
-    "website",
-    "tests",
-]
-order = 3303
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Null-tolerance sweep for GET /cms/announcements"
 summary = """
 Residual from T-447 / wave 25 cold gate. Admin GET /cms/announcements is registered but null_tolerance every_get_route_is_swept_or_skipped_with_a_reason fails: path neither in route_sweep() nor ROUTE_SWEEP_SKIP.
 
 Repro: after T-447 merge, `wave.sh gate` → test api FAIL — `GET routes … neither swept …: ["/cms/announcements"]`.
 
 Cure: add `/cms/announcements` to route_sweep() (admin list; drafts+published) with Seed auth as other admin GETs; prove RED→GREEN. Do not skip unless sweep is impossible."""
-surfaces = [
-    "BE",
-    "tests",
-]
-targets = ["website"]
-title = "Null-tolerance sweep for GET /cms/announcements"
+status = "shipped"
+order = 3303
+executor = "claude-code"
+priority = 1
+
+[scope.website.editor]
+chrome = []

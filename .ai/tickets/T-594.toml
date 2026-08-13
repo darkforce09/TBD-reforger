@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 568
-executor = "claude-code"
 id = "T-594"
-impact = ["platform-lifecycle"]
-order = 3461
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Activate T-244's vehicle lane: two blockers plus T-583's gate step, all in one slice"
 summary = """
 **THESE MUST LAND TOGETHER.** T-583 shipped `make map-reclassify` and specified the gate step, but the
 step was DELIBERATELY NOT WIRED because the tree is in drift TODAY -- wiring it alone would turn every
@@ -58,9 +38,10 @@ Placement: immediately after `run "schema" gate_schema`, in BOTH `gate_slice()` 
    `map-reclassify` is a `tbd-tools --bin world` call -- it would trip or silently miss it.
  - Cost ~12 s.
 Run on the day T-244 landed, this step would have gone RED immediately."""
-surfaces = [
-    "DATA",
-    "INFRA",
-]
-targets = ["website"]
-title = "Activate T-244's vehicle lane: two blockers plus T-583's gate step, all in one slice"
+status = "shipped"
+order = 3461
+executor = "claude-code"
+priority = 1
+
+[scope.website.editor]
+chrome = []

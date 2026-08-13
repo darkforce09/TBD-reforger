@@ -1,29 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "executor",
-    "targets",
-    "stream",
-    "parallel_ok",
-    "order",
-    "spec",
-]
-__ord = 854
-executor = "claude-code"
 id = "T-881"
-impact = ["dx"]
-order = 5620
-parallel_ok = true
-program = "infra"
-spec = "docs/platform/t853_shell_to_xtask_waves.md"
-status = "shipped"
-stream = "infra"
-summary = '''T-853 shell->xtask slice. Port scripts/mod/verify-t456-mission-rest-size-gate.sh;scripts/mod/verify-t468-ci-schema-parity.sh to `cargo xtask verify t456 / verify t468` and delete the script(s), their scripts/shell-inventory.txt line(s), any scripts/python-inventory.txt line(s), and repoint every caller. t468's bash_pins pins t456's Makefile recipe as ^\t@?bash <path> AND its own. Porting either alone fails the other on a CORRECT tree, so they are one atomic slice: port both, drop both tuples, repoint both recipes and both wave.sh sites, and re-pin t468 at the cargo spelling. 654 lines, 5 python3 sites. ACCEPTANCE IS BYTE-FOR-BYTE: capture bash stdout+stderr+rc first, then diff on a clean tree AND on >=2 deliberately broken trees; the harness must assert the BASH side went red before believing a diff. A green run alone is not evidence (T-556). Build on crates/tbd-gate. Spec: docs/platform/t853_shell_to_xtask_waves.md'''
-surfaces = ["CI"]
-targets = ["root"]
+kind = "work"
 title = "T-853 port: t456 + t468 as ONE slice - they are mutually pinned"
+summary = '''T-853 shell->xtask slice. Port scripts/mod/verify-t456-mission-rest-size-gate.sh;scripts/mod/verify-t468-ci-schema-parity.sh to `cargo xtask verify t456 / verify t468` and delete the script(s), their scripts/shell-inventory.txt line(s), any scripts/python-inventory.txt line(s), and repoint every caller. t468's bash_pins pins t456's Makefile recipe as ^\t@?bash <path> AND its own. Porting either alone fails the other on a CORRECT tree, so they are one atomic slice: port both, drop both tuples, repoint both recipes and both wave.sh sites, and re-pin t468 at the cargo spelling. 654 lines, 5 python3 sites. ACCEPTANCE IS BYTE-FOR-BYTE: capture bash stdout+stderr+rc first, then diff on a clean tree AND on >=2 deliberately broken trees; the harness must assert the BASH side went red before believing a diff. A green run alone is not evidence (T-556). Build on crates/tbd-gate. Spec: docs/platform/t853_shell_to_xtask_waves.md'''
+status = "shipped"
+order = 5620
+spec = "docs/platform/t853_shell_to_xtask_waves.md"
+executor = "claude-code"
+
+[scope.repo]
+layers = ["xtask"]

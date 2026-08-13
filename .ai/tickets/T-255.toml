@@ -1,28 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 229
-executor = "claude-code"
 id = "T-255"
-impact = ["mc-authoring"]
-order = 2730
-program = "eden"
-status = "shipped"
-stream = "mission-creator"
-summary = "build_catalog_tree (asset_catalog.rs:60) takes no side and filters kind==character, so a BLUFOR chip plus a USSR character is accepted silently — even though the registry categories already encode the side. T-153 specified the Faction Library should replace the raw registry dump here; the Leptos port reverted it and documents the revert in its own header."
-surfaces = [
-    "MAP",
-    "PLACE",
-]
-targets = ["website"]
+kind = "work"
 title = "Asset palette is not side-aware"
+summary = "build_catalog_tree (asset_catalog.rs:60) takes no side and filters kind==character, so a BLUFOR chip plus a USSR character is accepted silently — even though the registry categories already encode the side. T-153 specified the Faction Library should replace the raw registry dump here; the Leptos port reverted it and documents the revert in its own header."
+status = "shipped"
+order = 2730
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

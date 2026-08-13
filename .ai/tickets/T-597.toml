@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 571
-executor = "claude-code"
 id = "T-597"
-impact = ["platform-lifecycle"]
-order = 3470
-priority = 0
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "CI has been RED since T-534 and the wave gate cannot see it — two causes, one structural gap"
 summary = """
 **The local loop everyone trusts is green while the remote job nobody watches is red.** Found by
 T-594, sharpened by the command center, and a second independent cause found by wave 74's verifier.
@@ -58,6 +38,10 @@ never executed.** T-594 worked around it for its own case by moving the check to
 FIX, in order: (1) correct CI's `TEST_DATABASE_URL`; (2) fix the stale `401`; (3) add
 `cargo test -p xtask -p tbd-tools` to the wave gate so the two crates stop being invisible locally.
 Do NOT do (3) before (2) or the gate lands red."""
-surfaces = ["INFRA"]
-targets = ["website"]
-title = "CI has been RED since T-534 and the wave gate cannot see it — two causes, one structural gap"
+status = "shipped"
+order = 3470
+executor = "claude-code"
+priority = 0
+
+[scope.website.editor]
+chrome = []

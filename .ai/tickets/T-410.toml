@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 384
-executor = "claude-code"
 id = "T-410"
-impact = ["platform-lifecycle"]
-order = 3231
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Residual ORDER BY ASC ratchets in the integration suites, and the dashboard next_event coverage hole"
 summary = '''
 Found by T-399's agent while fixing the approvals ratchet, measured against the live tbd_gate_it -- not inferred. T-399 fixed ONE instance; these are the rest of the class. The one-line rule: ASC ordering over a never-pruned table is the poison. (Inversion worth recording: handlers/audit.rs:65 orders id DESC, so residue pushes OLD rows off the page and never new ones -- missions.rs:1067 is safe by construction because of it.)
 
@@ -41,9 +21,10 @@ apps/website/api/tests/missions.rs:1002 `mission_submit_is_the_only_door_into_th
     panicked at apps/website/api/tests/missions.rs:1002
     submitted mission missing from GET /approvals: {... "limit":20,"offset":0,"total":26}
 T-399's sweep caught missions.rs:151 and :249 but MISSED this one. Every wave gate on this machine is red against the shared DB until the residue clears or the test paginates; waves 3, 4 and 5 all passed only because the command center pointed TBD_GATE_DB at a fresh cold database each time. That workaround is exactly why T-411 (per-wave DB names) matters.'''
-surfaces = [
-    "API",
-    "INFRA",
-]
-targets = ["website"]
-title = "Residual ORDER BY ASC ratchets in the integration suites, and the dashboard next_event coverage hole"
+status = "shipped"
+order = 3231
+executor = "claude-code"
+priority = 1
+
+[scope.website.editor]
+chrome = []

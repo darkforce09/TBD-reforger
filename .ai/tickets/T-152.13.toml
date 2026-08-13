@@ -1,17 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-152.13"
+kind = "work"
+title = "T-152.13 — Readable text atlas (font fidelity)"
+summary = "T-152.13 — Readable text atlas (font fidelity)"
+status = "shipped"
+order = 1520
+spec = "docs/specs/Mission_Creator_Architecture/t152_13_text_atlas_fidelity.md"
+executor = "claude-code"
 notes = "Shipped @ 2240148d (tag T-152.13) + T-152.13.1 @ fe81b676 (halo + 20px floor). Verify 494b0838 — M1/M2 operator PASS. Spleen 16×32 in 32px cells; render 40/40; wasm +4 KiB."
 parent = "T-152"
-spec = "docs/specs/Mission_Creator_Architecture/t152_13_text_atlas_fidelity.md"
-status = "shipped"
-targets = ["root"]
+
+[scope.repo]
+layers = ["xtask"]

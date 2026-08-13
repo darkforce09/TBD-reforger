@@ -1,32 +1,16 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 417
-executor = "claude-code"
 id = "T-443"
-impact = ["platform-lifecycle"]
-order = 3282
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "IT coverage for POST /vehicle-database (T-263 write path)"
 summary = """
 In-wave hotfix from wave 12 adversarial MAJOR. T-263 added create_vehicle + POST /api/v1/vehicle-database in handlers/wiki.rs and app.rs, but no IT/unit calls the write path. Cold gate cargo test -p website-api can PASS without ever inserting via this handler (content_read.rs only GETs vehicles + PUTs wiki).
 
 Repro: delete .post(create_vehicle) from app.rs or stub create_vehicle to always 500; wave gate still PASS.
 
 Cure: extend apps/website/api/tests/content_read.rs (or sibling) with admin POST happy path + 400 on missing name/faction/armor_type + GET list contains the new row. Perturbation must RED if route/handler missing."""
-surfaces = ["INFRA"]
-targets = ["website"]
-title = "IT coverage for POST /vehicle-database (T-263 write path)"
+status = "shipped"
+order = 3282
+executor = "claude-code"
+priority = 1
+
+[scope.website.editor]
+chrome = []

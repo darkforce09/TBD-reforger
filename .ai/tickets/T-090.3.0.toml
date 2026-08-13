@@ -1,20 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-090.3.0"
+kind = "work"
+title = "T-090.3.0 — Workbench world-export feasibility spike"
+summary = "T-090.3.0 — Workbench world-export feasibility spike"
+status = "shipped"
+order = 900
+spec = "docs/specs/Mission_Creator_Architecture/t090_3_0_workbench_export_spike.md"
+executor = "claude-code"
 parent = "T-090"
 shipped_at = "b342c35"
-spec = "docs/specs/Mission_Creator_Architecture/t090_3_0_workbench_export_spike.md"
-status = "shipped"
-targets = [
-    "root",
-    "mod",
-]
+
+[scope.repo]
+layers = ["docs"]

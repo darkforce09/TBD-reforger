@@ -1,24 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 216
-executor = "claude-code"
 id = "T-242"
-impact = ["contract"]
-order = 2600
-program = "eden"
-status = "idea"
-stream = "mission-creator"
+kind = "work"
+title = "Add vehicle and entity inventory to the entity schema"
 summary = """
 == STALE IN PART, corrected 2026-07-26 by the command center after T-215 (wave 5) contradicted it and was right ==
 THIS TICKET'S PREMISE IS OUT OF DATE. It claims `$defs/entity` is {alias,x,z,headingDeg,faction} with NO INVENTORY MODEL. On main today it is {alias, x, z, headingDeg, faction, INVENTORY}, and `$defs/entityInventory` exists ([{item,qty}], no container key -- 'the container IS the entity'). T-198 landed it in commit 2070eecdd, 'vehicle and crate inventory gets a home on $defs/entity'.
@@ -27,6 +9,9 @@ WHAT IS STILL OPEN AND WAS NOT INVALIDATED: see T-216's schema deltas ($defs/slo
 
 == ORIGINAL SUMMARY BELOW ==
 $defs/entity is {alias,x,z,headingDeg,faction} (mission.schema.json:376-387) with no inventory model. The editor's vehicle row is {id,resourceName,position,squadId} (store.rs:527-548), also with no cargo. Vehicle inventory has no representation on any of the three surfaces."""
-surfaces = ["DATA"]
-targets = ["root"]
-title = "Add vehicle and entity inventory to the entity schema"
+status = "idea"
+executor = "claude-code"
+notes = "needs-operator: frozen unmappable Scope. "
+
+[scope.repo]
+layers = ["docs"]

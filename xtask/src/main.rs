@@ -70,6 +70,7 @@ mod mod_wave;
 mod mod_world_boot;
 mod mod_world_boot_verdict;
 mod node_free;
+mod phase2;
 mod platform_preflight;
 mod playtest_server;
 mod prompt;

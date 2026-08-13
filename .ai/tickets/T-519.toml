@@ -1,33 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 493
-executor = "claude-code"
 id = "T-519"
-impact = [
-    "website",
-    "tests",
-]
-order = 3359
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "Wave 45 residual (T-360 NIT). DashboardResponse.server_status is typed Option<ServerStatusDto> end-to-end; dto::r_api::dashboard green. Remaining typed DTOs Member, RegistryCompatResponse, FireSolution still lack fixtures under apps/website/frontend/tests/fixtures/api/ (ls | rg -i 'member|compat|fire|solve' → empty). Owns when filed: apps/website/frontend/tests/fixtures/api/ + matching dto.rs R-api modules. Outside T-360 owns at ship time."
-surfaces = [
-    "FE",
-    "tests",
-]
-targets = ["website"]
+kind = "work"
 title = "R-api fixture goldens for Member / RegistryCompat / FireSolution"
+summary = "Wave 45 residual (T-360 NIT). DashboardResponse.server_status is typed Option<ServerStatusDto> end-to-end; dto::r_api::dashboard green. Remaining typed DTOs Member, RegistryCompatResponse, FireSolution still lack fixtures under apps/website/frontend/tests/fixtures/api/ (ls | rg -i 'member|compat|fire|solve' → empty). Owns when filed: apps/website/frontend/tests/fixtures/api/ + matching dto.rs R-api modules. Outside T-360 owns at ship time."
+status = "shipped"
+order = 3359
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

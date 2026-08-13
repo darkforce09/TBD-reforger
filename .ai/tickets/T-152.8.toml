@@ -1,20 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-152.8"
+kind = "work"
+title = "T-152.8 — Town labels (locations + importance declutter)"
+summary = "T-152.8 — Town labels (locations + importance declutter)"
+status = "shipped"
+order = 1520
+spec = "docs/specs/Mission_Creator_Architecture/t152_8_town_labels.md"
+executor = "claude-code"
 notes = "T-144 G8 importance-distance precompute."
 parent = "T-152"
-spec = "docs/specs/Mission_Creator_Architecture/t152_8_town_labels.md"
-status = "shipped"
-targets = [
-    "root",
-    "website",
-]
+
+[scope.repo]
+layers = ["docs"]

@@ -1,26 +1,6 @@
-__keys = [
-    "program",
-    "surfaces",
-    "impact",
-    "stream",
-    "targets",
-    "executor",
-    "id",
-    "title",
-    "summary",
-    "status",
-    "priority",
-    "order",
-]
-__ord = 586
-executor = "claude-code"
 id = "T-613"
-impact = ["platform-lifecycle"]
-order = 3602
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "wave.sh derives its gate base and verifies it with the SAME oracle, so a fake marker self-approves"
 summary = '''
 FOUND by wave 77's adversarial verifier. **The signature defect of this codebase, sitting inside the
 fix for it.** Latent today; blocker-shaped if it ever fires.
@@ -56,6 +36,10 @@ FIX SHAPE: anchor the subject match (`CLOSED` at end, or `CLOSED:` / `CLOSED —
 verifier an INDEPENDENT oracle -- e.g. cross-check the derived base against the merge structure or
 the tag history rather than re-asking `prev_wave_close()`. A checker that consults the thing it is
 checking is not a check.'''
-surfaces = ["INFRA"]
-targets = ["website"]
-title = "wave.sh derives its gate base and verifies it with the SAME oracle, so a fake marker self-approves"
+status = "shipped"
+order = 3602
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

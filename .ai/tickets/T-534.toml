@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 508
-executor = "claude-code"
 id = "T-534"
-impact = ["tests"]
-order = 3374
-priority = 0
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "IT suites still seed fixed arma_ids via shared seed_user (cross-binary race residual)"
 summary = '''
 FOUND by W49 adversarial verifier (CLEAN MINOR-NIT) after T-479.
 
@@ -86,9 +66,10 @@ baseline, and it converts a race into a STABLE LATENT ordering dependence, which
 A SECOND interference class surfaced only because isolation exposed it: POST /admin/roles/sync walks
 every users row, so two whole-table snapshot->sync->restore tests in the SAME binary race each other.
 Database isolation cannot reach that by construction; fixed with a suite lock in admin_field.rs.'''
-surfaces = [
-    "API",
-    "tests",
-]
-targets = ["website"]
-title = "IT suites still seed fixed arma_ids via shared seed_user (cross-binary race residual)"
+status = "shipped"
+order = 3374
+executor = "claude-code"
+priority = 0
+
+[scope.website.editor]
+chrome = []

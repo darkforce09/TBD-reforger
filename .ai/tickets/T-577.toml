@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 551
-executor = "claude-code"
 id = "T-577"
-impact = ["platform-lifecycle"]
-order = 3421
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Database backups: none exist, and the spec is written"
 summary = """
 T-280 established there is no pg_dump/pg_restore tooling anywhere in the repo -- the only hits are
 three comments describing the Go->Rust schema parity check. It stopped at the boundary because
@@ -42,6 +22,10 @@ backups live outside `app.rs`. This is that work, and T-280 already specified it
    same way -- not root cron.
 5. **A restore DRILL in CI or the wave gate**: dump -> restore into a scratch DB -> run `db_migrate`
    against it. Without this the backup is untested and you discover that during an incident."""
-surfaces = ["INFRA"]
-targets = ["website"]
-title = "Database backups: none exist, and the spec is written"
+status = "shipped"
+order = 3421
+executor = "claude-code"
+priority = 1
+
+[scope.website.editor]
+chrome = []

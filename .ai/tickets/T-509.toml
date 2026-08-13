@@ -1,33 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 483
-executor = "claude-code"
 id = "T-509"
-impact = [
-    "website",
-    "tests",
-]
-order = 3349
-priority = 0
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = 'Wave 43 re-gate FAIL after T-508. T-377 dropped "" from valid_weather clear arm so PATCH {"weather":""} no longer rewrites dense_fog→clear. CreateMissionInput.weather is #[serde(default)] String — omitted weather becomes "" → create_mission 400 invalid weather. Cold evidence: admin_field.rs:413 unwrap None on POST /missions without weather. Cure: CREATE treats empty as Clear (canonical new-mission default); PATCH still rejects "". Do not restore ""|clear in valid_weather. Class-R + IT pin. Perturbation RED required.'
-surfaces = [
-    "API",
-    "tests",
-]
-targets = ["website"]
+kind = "work"
 title = "W43 hotfix: CREATE omitted weather must still default Clear after T-377"
+summary = 'Wave 43 re-gate FAIL after T-508. T-377 dropped "" from valid_weather clear arm so PATCH {"weather":""} no longer rewrites dense_fog→clear. CreateMissionInput.weather is #[serde(default)] String — omitted weather becomes "" → create_mission 400 invalid weather. Cold evidence: admin_field.rs:413 unwrap None on POST /missions without weather. Cure: CREATE treats empty as Clear (canonical new-mission default); PATCH still rejects "". Do not restore ""|clear in valid_weather. Class-R + IT pin. Perturbation RED required.'
+status = "shipped"
+order = 3349
+executor = "claude-code"
+priority = 0
+
+[scope.website.editor]
+chrome = []

@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 555
-executor = "claude-code"
 id = "T-581"
-impact = ["platform-lifecycle"]
-order = 3430
-priority = 0
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "BLOCKS THE ZONE DRAW TOOL: a bad zone saves 201 then 500s /compiled forever"
 summary = '''
 MAJOR, found by wave 70's adversarial verifier by driving the real HTTP path. **This must land BEFORE
 any zone authoring UI ships.** It is unreachable today only because T-211 shipped the document layer
@@ -63,9 +43,10 @@ immediately rather than a permanent 500 a game server discovers. Keep `rules` op
 
 CONFIRMED SOUND, do not re-audit: quantisation is otherwise faithful (1000.256->1000.3,
 175.789->175.8, vertex count and order preserved, verified over the real HTTP path).'''
-surfaces = [
-    "API",
-    "DATA",
-]
-targets = ["website"]
-title = "BLOCKS THE ZONE DRAW TOOL: a bad zone saves 201 then 500s /compiled forever"
+status = "shipped"
+order = 3430
+executor = "claude-code"
+priority = 0
+
+[scope.website.editor]
+chrome = []

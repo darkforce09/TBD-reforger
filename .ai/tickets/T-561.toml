@@ -1,29 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "executor",
-    "priority",
-    "stream",
-    "targets",
-]
-__ord = 535
-executor = "claude-code"
 id = "T-561"
-impact = [
-    "tests",
-    "mission-authoring",
-]
-order = 3414
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "T-559 Class-R still hollow — block-comment / string decoy opt(&row.briefing)"
 summary = """
 FOUND by W64 adversarial verifier (DIRTY MAJOR) after T-559.
 
@@ -33,9 +10,10 @@ strip_rust_line_comments only drops // lines. Both wires → None plus:
 // decoy still RED (T-559 held).
 
 Repro: replace both opt(&row.briefing) with None; leave /* opt(&row.briefing) */ in adopt_payload and apply_row; cargo test hydrate_wires_row_briefing green."""
-surfaces = [
-    "FRONTEND",
-    "tests",
-]
-targets = ["website"]
-title = "T-559 Class-R still hollow — block-comment / string decoy opt(&row.briefing)"
+status = "shipped"
+order = 3414
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 277
-executor = "claude-code"
 id = "T-303"
-impact = ["discord"]
-order = 2303
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Dev config guarantees the first live Discord login fails invalid_state"
 summary = """
 Found by T-207 while writing the OAuth runbook. apps/website/api/.env has FRONTEND_URL on 127.0.0.1 and DISCORD_REDIRECT_URL on localhost. The oauth_state cookie is host-only (no Domain attribute), and 127.0.0.1 and localhost are DIFFERENT cookie hosts — so the cookie set when the flow starts is never sent to the callback, and the very first live login fails with invalid_state. That error reads like CSRF tampering, not a misconfiguration, so it will be misdiagnosed. One-line fix: align the two to the same host. Worse, exchange_code and fetch_user errors are DROPPED rather than logged (T-207 corrected the earlier belief that they were logged), so the server log cannot distinguish a bad secret from a Discord outage — add tracing::error! to the callback's error paths so the runbook's diagnosis table can be simplified.
 
@@ -34,6 +14,10 @@ apps/website/api/.env.example:71  DISCORD_REDIRECT_URL=http://localhost:8080/api
 The command center hand-edited the operator's local .env (gitignored) on 2026-07-27 to unblock testing, so THE BUG NO LONGER REPRODUCES ON THIS MACHINE. It reproduces for every new checkout. Do not conclude it is fixed because a live login works here.
 Second half still open: handlers/oauth.rs:113,116 use `let Ok(..) = .. else` and DROP the exchange_code / fetch_user error, so a real Discord failure is indistinguishable from a config one.
 WANTED: align the two hosts in the committed example, log the dropped errors, and add a startup check that REFUSES TO BOOT when FRONTEND_URL and DISCORD_REDIRECT_URL disagree on host — a config that guarantees a broken first login should not start silently."""
-surfaces = ["CONN"]
-targets = ["website"]
-title = "Dev config guarantees the first live Discord login fails invalid_state"
+status = "shipped"
+order = 2303
+executor = "claude-code"
+priority = 1
+
+[scope.website.editor]
+chrome = []

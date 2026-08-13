@@ -1,26 +1,6 @@
-__keys = [
-    "program",
-    "impact",
-    "stream",
-    "targets",
-    "executor",
-    "id",
-    "title",
-    "summary",
-    "status",
-    "priority",
-    "order",
-    "surfaces",
-]
-__ord = 581
-executor = "claude-code"
 id = "T-608"
-impact = ["platform-lifecycle"]
-order = 3552
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "Playtest launcher can orphan its own server, and the runbook strands the operator at three steps"
 summary = """
 FOUND by wave 76's adversarial verifier (Fable 5), whose verdict on the runbook was: **"NO, would not
 survive a real session."** BEING FIXED IN-WAVE -- this row records the diagnosis.
@@ -66,6 +46,11 @@ the first command; the script tolerates omission, the runbook never says to omit
 And S3's "restart with it": run the new command before Ctrl-C'ing the old and `:273`'s `rm -f
 "$PIDFILE"` orphans the running group (the old instance then reads no pidfile and exits "server
 exited" while alive); the new boot dies on the port. No lock, fixed run dir."""
-surfaces = ["MOD"]
-targets = ["website"]
-title = "Playtest launcher can orphan its own server, and the runbook strands the operator at three steps"
+status = "shipped"
+order = 3552
+executor = "claude-code"
+notes = "needs-operator: frozen unmappable Scope. "
+priority = 1
+
+[scope.repo]
+layers = ["docs"]

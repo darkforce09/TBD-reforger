@@ -1,28 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-    "shipped_at",
-]
-__ord = 336
-executor = "claude-code"
 id = "T-362"
-impact = ["platform-lifecycle"]
-order = 3178
-priority = 1
-program = "platform"
-shipped_at = "0a2ebf4b"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "XDG_CACHE_HOME silently disables T-320's fontconfig fix, and this container sets it"
 summary = """
 FOUND by T-354 while working next door, and it means a SHIPPED fix is conditional in the very environment it was written for.
 
@@ -50,6 +28,11 @@ Reproduction was honest about two of its own vacuous attempts: /var/tmp is CONTA
 For T-339 it gave an honest NO: the change does not make the function multi-thread safe (set_var races every concurrent getenv regardless). What it does change is that the DECISION no longer depends on ambient env, so MOVING the call is now behaviour-preserving — before, a call from main vs from run() could see different XDG_CACHE_HOME and pick differently. It exposed `pub fn gate_font_cache_dir()` so the real fix can land: once cdp::launch does `.env("XDG_CACHE_HOME", ...)` on the Command, the unsafe set_var and the whole question disappear.
 
 It created ~50 orphan chrome processes and killed them surgically by unique probe path, reporting that its first kill severed the distrobox bridge instead of the host process — the inverse of the trap wave.sh documents. Never used pkill chrome."""
-surfaces = ["CI"]
-targets = ["website"]
-title = "XDG_CACHE_HOME silently disables T-320's fontconfig fix, and this container sets it"
+status = "shipped"
+order = 3178
+executor = "claude-code"
+priority = 1
+shipped_at = "0a2ebf4b"
+
+[scope.website.editor]
+chrome = []

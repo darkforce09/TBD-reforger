@@ -1,35 +1,11 @@
-__keys = [
-    "id",
-    "order",
-    "program",
-    "status",
-    "stream",
-    "targets",
-    "executor",
-    "surfaces",
-    "impact",
-    "title",
-    "summary",
-    "notes",
-]
-__ord = 821
-executor = "claude-code"
 id = "T-848"
-impact = [
-    "ui",
-    "mc-authoring",
-    "state",
-]
-notes = "operator W208 eye-pass; supersedes treating CONN Group as ORBAT; related shipped T-672 (connection graph) + T-647 (Ctrl+drag regroup)"
-order = 5300
-program = "eden"
-status = "queued"
-stream = "mission-creator"
-summary = """WAVE-208 OPERATOR EYE-PASS (2026-08-11). Screenshots show one rifleman with TWO blue lines to TWO different squad nodes — operator: "you should only be in one squad at a time". MECHANISM (measured): Connect ▸ Group to / Sync to arm via context_menu.rs → editor_ops::arm_connect/complete_connect → MissionDocCore::add_connection, which writes a connectionsById edge (ConnectionKind::Group = directed connection-graph join, NOT ORBAT). Core tests explicitly allow stacking multiple group edges on the same endpoints. ORBAT membership is a separate field (slot.squadId + squad.slotIds) mutated only by place_character_under_side / regroup_slot_onto (Ctrl+drag) / move_slot_to_squad (ORBAT refile). Squad tether hairlines (SQUAD_LINKS) derive from ORBAT; MissionConnections draw the connection-graph edges — both read as "blue lines", so Group to LOOKS like multi-squad. Operator also reported Group to "didn't work" on unassigned units, and Sync to is "surely" broken the same way. FIX: make Connect ▸ Group to perform exclusive ORBAT regroup (move_slot_to_squad / equivalent) — one squad at a time; refuse or replace prior membership; do not leave a second group-connection edge that draws a second tether-like line. Sync to must be audited in the same pass (peer sync edge vs operator expectation). ACCEPTANCE: Group to from A onto squad-leader B puts A in B's squad only (slot.squadId + slotIds); no second connection-group line to another squad; repeating Group to onto C moves A from B to C (exclusive); Sync to has an explicit pass/fail matrix in the verify log; unassigned source can Group to a squad (or a clear refusal toast — not a silent no-op)."""
-surfaces = [
-    "MAP",
-    "CONN",
-    "ORBAT",
-]
-targets = ["website"]
+kind = "work"
 title = "Connect ▸ Group to must mean exclusive ORBAT squad membership — not stackable connection edges"
+summary = """WAVE-208 OPERATOR EYE-PASS (2026-08-11). Screenshots show one rifleman with TWO blue lines to TWO different squad nodes — operator: "you should only be in one squad at a time". MECHANISM (measured): Connect ▸ Group to / Sync to arm via context_menu.rs → editor_ops::arm_connect/complete_connect → MissionDocCore::add_connection, which writes a connectionsById edge (ConnectionKind::Group = directed connection-graph join, NOT ORBAT). Core tests explicitly allow stacking multiple group edges on the same endpoints. ORBAT membership is a separate field (slot.squadId + squad.slotIds) mutated only by place_character_under_side / regroup_slot_onto (Ctrl+drag) / move_slot_to_squad (ORBAT refile). Squad tether hairlines (SQUAD_LINKS) derive from ORBAT; MissionConnections draw the connection-graph edges — both read as "blue lines", so Group to LOOKS like multi-squad. Operator also reported Group to "didn't work" on unassigned units, and Sync to is "surely" broken the same way. FIX: make Connect ▸ Group to perform exclusive ORBAT regroup (move_slot_to_squad / equivalent) — one squad at a time; refuse or replace prior membership; do not leave a second group-connection edge that draws a second tether-like line. Sync to must be audited in the same pass (peer sync edge vs operator expectation). ACCEPTANCE: Group to from A onto squad-leader B puts A in B's squad only (slot.squadId + slotIds); no second connection-group line to another squad; repeating Group to onto C moves A from B to C (exclusive); Sync to has an explicit pass/fail matrix in the verify log; unassigned source can Group to a squad (or a clear refusal toast — not a silent no-op)."""
+status = "queued"
+order = 5300
+executor = "claude-code"
+notes = "operator W208 eye-pass; supersedes treating CONN Group as ORBAT; related shipped T-672 (connection graph) + T-647 (Ctrl+drag regroup)"
+
+[scope.website.editor]
+chrome = []

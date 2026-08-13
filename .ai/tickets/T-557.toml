@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 531
-executor = "claude-code"
 id = "T-557"
-impact = ["platform-lifecycle"]
-order = 3410
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "dev-login 500s on concurrent first use: ON CONFLICT (discord_id) cannot arbitrate idx_users_arma_id"
 summary = """
 A REAL APPLICATION DEFECT, found by T-534 while chasing a flaky gate. T-534 removed it from the TEST
 path with a serialised prime; the handler is unchanged and a real client still hits it.
@@ -48,6 +28,10 @@ can never disagree. T-534 pinned the current literals with a Class-R test
 (`t534_dev_login_prime_literals_still_match_handler`) that greps dev.rs for both the literals AND the
 `ON CONFLICT (discord_id) DO UPDATE` shape -- IT WILL GO RED when you change this, deliberately.
 Update it in the same commit rather than deleting it."""
-surfaces = ["API"]
-targets = ["website"]
-title = "dev-login 500s on concurrent first use: ON CONFLICT (discord_id) cannot arbitrate idx_users_arma_id"
+status = "shipped"
+order = 3410
+executor = "claude-code"
+priority = 1
+
+[scope.website.editor]
+chrome = []

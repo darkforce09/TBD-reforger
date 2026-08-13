@@ -1,28 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-    "shipped_at",
-]
-__ord = 303
-executor = "claude-code"
 id = "T-329"
-impact = ["platform-lifecycle"]
-order = 3145
-priority = 0
-program = "platform"
-shipped_at = "367fcaf2"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "GET /api/v1/dashboard 500s in production for two real users"
 summary = """
 FIRING RIGHT NOW ON LIVE DATA. Found by T-325's sweep and captured, not inferred:
   `error occurred while decoding column "callsign": unexpected null`
@@ -45,6 +23,11 @@ WHY null_tolerance.rs MISSED ALL THREE — three structural failures, not a forg
 Now it mints its own session so caller-scoped predicates resolve to its own rows; NULLs every nullable column from information_schema by explicit UPDATE and asserts the NULLs landed; sweeps every GET route with a guard that parses src/app.rs and fails when a route is added uncovered; and adds a STATIC ENUMERATOR cross-referencing every SELECT literal in src/ against information_schema, failing on a bare `*` or an un-COALESCEd nullable column. That half needs no predicate, so it reaches handlers no test exercises. Proven: reinstating the bare `*` turns both red, the static one naming the file and line. Catches all three known instances, each by both halves independently.
 
 Honest about residual gaps: select lists assembled past their literal prefix (QueryBuilder::push), untyped query/query_scalar, and non-GET handlers behaviourally (three OrbatSlot reads live in POST handlers, caught only by the static half)."""
-surfaces = ["API"]
-targets = ["website"]
-title = "GET /api/v1/dashboard 500s in production for two real users"
+status = "shipped"
+order = 3145
+executor = "claude-code"
+priority = 0
+shipped_at = "367fcaf2"
+
+[scope.website.editor]
+chrome = []

@@ -1,26 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 375
-executor = "claude-code"
 id = "T-401"
-impact = ["platform-lifecycle"]
-order = 3217
-priority = 2
-program = "platform"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = "git-lfs is absent while filter.lfs.process is set, so git status silently returns nothing and wave.sh change detection is half dead"
 summary = """
 Found independently by two wave-1 slice agents. Not a repo defect — an environment one — but it degrades a gate SILENTLY, which puts it in the family this program cares about most.
 
@@ -36,6 +16,10 @@ Practical consequences today:
  - PLATFORM_FACTORY.md already records that plain `git push` fails for this reason (hence wave.sh push); add/status/diff are the same family and are not recorded.
 
 TWO FIXES, do both: install git-lfs (the real answer, and it also un-breaks push), and stop swallowing the error at wave.sh:283 and in fmt_changed so a dead working-tree probe is loud instead of empty. The second matters even with lfs installed — any future git failure there is currently indistinguishable from "nothing changed"."""
-surfaces = ["INFRA"]
-targets = ["website"]
-title = "git-lfs is absent while filter.lfs.process is set, so git status silently returns nothing and wave.sh change detection is half dead"
+status = "shipped"
+order = 3217
+executor = "claude-code"
+priority = 2
+
+[scope.website.editor]
+chrome = []

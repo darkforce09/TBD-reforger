@@ -1,33 +1,11 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-]
-__ord = 486
-executor = "claude-code"
 id = "T-512"
-impact = [
-    "website",
-    "tests",
-]
-order = 3352
-priority = 1
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = 'Wave 43 residual (CLEAN NIT). T-377/T-509 covered by Class-R + admin_field omit-create. No committed HTTP IT that PATCH dense_fog then weather:"" stays dense_fog / 400, and CREATE omit weather returns clear. Cure: add missions IT cases. Ad-hoc HTTP was green at verify.'
-surfaces = [
-    "API",
-    "tests",
-]
-targets = ["website"]
+kind = "work"
 title = "HTTP IT for blank weather PATCH reject + CREATE omit→Clear"
+summary = 'Wave 43 residual (CLEAN NIT). T-377/T-509 covered by Class-R + admin_field omit-create. No committed HTTP IT that PATCH dense_fog then weather:"" stays dense_fog / 400, and CREATE omit weather returns clear. Cure: add missions IT cases. Ad-hoc HTTP was green at verify.'
+status = "shipped"
+order = 3352
+executor = "claude-code"
+priority = 1
+
+[scope.website.editor]
+chrome = []

@@ -1,20 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "spec",
-    "status",
-    "shipped_at",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-090.1.1"
+kind = "work"
+title = "T-090.1.1 — Map cartographic view (pyramid + UI switch)"
+summary = "T-090.1.1 — Map cartographic view (pyramid + UI switch)"
+status = "shipped"
+order = 900
+spec = "docs/specs/Mission_Creator_Architecture/t090_1_1_map_cartographic_view.md"
+executor = "claude-code"
 parent = "T-090"
 shipped_at = "6e06e679"
-spec = "docs/specs/Mission_Creator_Architecture/t090_1_1_map_cartographic_view.md"
-status = "shipped"
-targets = [
-    "website",
-    "root",
-]
+
+[scope.repo]
+layers = ["docs"]

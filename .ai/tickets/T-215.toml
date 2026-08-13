@@ -1,28 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 189
-executor = "claude-code"
 id = "T-215"
-impact = ["mc-authoring"]
-order = 2330
-program = "eden"
-status = "shipped"
-stream = "mission-creator"
-summary = "Vehicle placement exists but is ORBAT-only with an auto-derived position (leader +/-30m, editor_ops.rs:1386-1388); the map palette is a stub (eden_chrome.rs:1520-1525). add_vehicle writes only {id,resourceName,position,squadId} (store.rs:527-548) and flatten never reads vehiclesById at all, so squad vehicles are silently discarded at compile."
-surfaces = [
-    "MAP",
-    "PLACE",
-]
-targets = ["website"]
+kind = "work"
 title = "Vehicle placement on the map with position and cargo"
+summary = "Vehicle placement exists but is ORBAT-only with an auto-derived position (leader +/-30m, editor_ops.rs:1386-1388); the map palette is a stub (eden_chrome.rs:1520-1525). add_vehicle writes only {id,resourceName,position,squadId} (store.rs:527-548) and flatten never reads vehiclesById at all, so squad vehicles are silently discarded at compile."
+status = "shipped"
+order = 2330
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

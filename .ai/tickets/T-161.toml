@@ -1,50 +1,13 @@
-__keys = [
-    "id",
-    "order",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "spec",
-    "branch",
-    "stream",
-    "targets",
-    "executor",
-    "parallel_ok",
-    "slices",
-    "slice_plan",
-]
-__ord = 135
-branch = "t-161-ticket-xtask"
-executor = "cursor-docs"
 id = "T-161"
-impact = ["schema"]
-order = 1580
-parallel_ok = true
-program = "platform"
-slices = [
-    "T-161.0",
-    "T-161.1",
-    "T-161.2",
-    "T-161.3",
-    "T-161.4",
-    "T-161.5",
-]
-spec = "docs/platform/t161_ticket_xtask_program.md"
-status = "shipped"
-stream = "infra"
-summary = "SHIPPED: Python ticket CLI → Rust xtask (Grok 4.5). scripts/ticket → cargo xtask; verify t161_1..4_verify_log.md. Hub: docs/platform/t161_ticket_xtask_program.md."
-surfaces = [
-    "DATA",
-    "SHELL",
-]
-targets = ["root"]
+kind = "program"
 title = "Ticket CLI: Python → Rust xtask"
-
-[slice_plan]
-__keys = [
+summary = "SHIPPED: Python ticket CLI → Rust xtask (Grok 4.5). scripts/ticket → cargo xtask; verify t161_1..4_verify_log.md. Hub: docs/platform/t161_ticket_xtask_program.md."
+status = "shipped"
+order = 1580
+spec = "docs/platform/t161_ticket_xtask_program.md"
+executor = "cursor-docs"
+notes = "needs-operator: frozen unmappable Scope. "
+children = [
     "T-161.0",
     "T-161.1",
     "T-161.2",
@@ -52,87 +15,3 @@ __keys = [
     "T-161.4",
     "T-161.5",
 ]
-
-[slice_plan."T-161.0"]
-__keys = [
-    "targets",
-    "executor",
-    "status",
-    "spec",
-    "notes",
-]
-executor = "cursor-docs"
-notes = "Hub + worktree."
-spec = "docs/platform/t161_ticket_xtask_program.md"
-status = "shipped"
-targets = ["root"]
-
-[slice_plan."T-161.1"]
-__keys = [
-    "targets",
-    "executor",
-    "status",
-    "spec",
-    "notes",
-]
-executor = "claude-code"
-notes = "xtask sync/check. Cursor Grok override. Verify t161_1_verify_log.md (executed by Cursor Grok 4.5 override)"
-spec = "docs/platform/t161_1_xtask_scaffold_sync.md"
-status = "shipped"
-targets = ["root"]
-
-[slice_plan."T-161.2"]
-__keys = [
-    "targets",
-    "executor",
-    "status",
-    "spec",
-    "notes",
-]
-executor = "claude-code"
-notes = "Read cmds. Verify t161_2_verify_log.md (executed by Cursor Grok 4.5 override)"
-spec = "docs/platform/t161_ticket_xtask_program.md"
-status = "shipped"
-targets = ["root"]
-
-[slice_plan."T-161.3"]
-__keys = [
-    "targets",
-    "executor",
-    "status",
-    "spec",
-    "notes",
-]
-executor = "claude-code"
-notes = "Mutators. Verify t161_3_verify_log.md (executed by Cursor Grok 4.5 override)"
-spec = "docs/platform/t161_ticket_xtask_program.md"
-status = "shipped"
-targets = ["root"]
-
-[slice_plan."T-161.4"]
-__keys = [
-    "targets",
-    "executor",
-    "status",
-    "spec",
-    "notes",
-]
-executor = "claude-code"
-notes = "Flip + delete Python. Verify t161_4_verify_log.md (executed by Cursor Grok 4.5 override)"
-spec = "docs/platform/t161_ticket_xtask_program.md"
-status = "shipped"
-targets = ["root"]
-
-[slice_plan."T-161.5"]
-__keys = [
-    "targets",
-    "executor",
-    "status",
-    "spec",
-    "notes",
-]
-executor = "cursor-docs"
-notes = "Doc closeout + program shipped."
-spec = "docs/platform/t161_ticket_xtask_program.md"
-status = "shipped"
-targets = ["root"]

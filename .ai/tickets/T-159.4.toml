@@ -1,15 +1,12 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-159.4"
+kind = "work"
+title = "T-159.4"
+summary = "T-159.4"
+status = "shipped"
+order = 1570
+executor = "claude-code"
 notes = "Route table + page V-suite (24 routes byte-identical)."
 parent = "T-159"
-status = "shipped"
-targets = ["website"]
+
+[scope.website.editor]
+chrome = []

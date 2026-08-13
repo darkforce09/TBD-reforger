@@ -1,25 +1,10 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-]
-__ord = 221
-executor = "claude-code"
 id = "T-247"
-impact = ["discord"]
-order = 2650
-program = "platform"
-status = "shipped"
-stream = "web-platform"
-summary = "resync_all_roles works and is routed but has no frontend caller — it is curl-only. There is no scheduled sync either; the architecture doc claims a nightly cron, which is aspirational. The seed also ships a placeholder snowflake for the leader role."
-surfaces = ["CONN"]
-targets = ["website"]
+kind = "work"
 title = "POST /admin/roles/sync has no UI and no scheduler"
+summary = "resync_all_roles works and is routed but has no frontend caller — it is curl-only. There is no scheduled sync either; the architecture doc claims a nightly cron, which is aspirational. The seed also ships a placeholder snowflake for the leader role."
+status = "shipped"
+order = 2650
+executor = "claude-code"
+
+[scope.website.editor]
+chrome = []

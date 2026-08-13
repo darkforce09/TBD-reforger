@@ -1,15 +1,12 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-181.28"
+kind = "work"
+title = "T-181.28"
+summary = "T-181.28"
+status = "shipped"
+order = 1810
+executor = "claude-code"
 notes = "Briefing JIP catch-up. Hooks vanilla's OWN one-shot latch: UpdateLocalPlayerController, which SCR_PlayerController.OnUpdate calls every frame while s_pLocalPlayerController is null and which then binds vanilla's local input listeners (vanilla_reference/SCR_PlayerController.c:532-556). So the waiting loop is the engine's — no timer added, the deleted 500 ms poll not reinstated, and it is as reliable as vanilla's own input binding because it IS that binding. Rejected OnOwnershipChanged with a cited reason: vanilla states at :111 that a listen server/SP client never calls it, which would have fixed dedicated clients and silently skipped a listen host — this program's recorded both-paths landmine in its original shape. ORDERS ride along STRUCTURALLY: the catch-up calls TBD_OnStageChanged, the screen re-requests on open, so there is one delivery path rather than two to keep in step. No seventh modded SCR_PlayerController block; invariants re-checked mechanically (6 blocks, 22 unique RPC names, no duplicate methods). jip:disabled deliberately does NOT gate the briefing, with a decisive reason: ReclaimDepartedSeat runs at TBD_SpawnManager.c:1613 BEFORE the JIP decision at :1616, so a reconnecting player is refused a BODY but KEEPS THEIR SEAT — they are on the roster and their squad is planning around them, and gating would blind exactly that player. FOUND THE ROOT CAUSE OF THE world-boot FLAKE: GetGame().GetWorkspace() is NON-NULL on a headless dedicated server, and TBD_LobbyStage.Start() uses it as a dedicated-server test. Proved it pre-existing by running the BASELINE at TBD_WORLDBOOT_SETTLE=12 (fails 3/3) vs default (passes 6/6). Fix handed to T-181.42, which owns UI/Lobby/**."
 parent = "T-181"
-status = "shipped"
-targets = ["mod"]
+
+[scope.mod]
+layers = ["feature"]

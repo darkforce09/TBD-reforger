@@ -1,28 +1,6 @@
-__keys = [
-    "id",
-    "title",
-    "summary",
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "order",
-    "stream",
-    "targets",
-    "executor",
-    "priority",
-    "shipped_at",
-]
-__ord = 333
-executor = "claude-code"
 id = "T-359"
-impact = ["platform-lifecycle"]
-order = 3175
-priority = 1
-program = "platform"
-shipped_at = "3a653fd5"
-status = "shipped"
-stream = "web-platform"
+kind = "work"
+title = 'Server Intel always renders "Theater Unknown" — it reads a field the backend has no column for'
 summary = """
 FOUND by T-306 while typing the DTOs. `server_intel.rs` reads a `terrain` field that the backend has NO COLUMN for, so the fallback fires unconditionally and the page renders "Theater Unknown" for every server, always. Not an edge case — the normal and only outcome.
 
@@ -39,9 +17,11 @@ BUT IT IS NOT REACHABLE FROM THE PAGE: the only `matches` route in the whole rou
 BROWSER-VERIFIED that the placeholder was not merely in the DOM but occupied a real painted box: 'Theater Unknown' at 122x20 px, 14 px, rgb(221,226,247), visible=true. After: 1 span instead of 2, and the string absent from document.body. PNG capture was attempted and abandoned honestly — headless Chrome's --virtual-time-budget stalls indefinitely on this wasm SPA — so it substituted a computed-style plus geometry capture, which is grep-checkable in a way a screenshot is not.
 
 THE DURABLE INSIGHT, and it is the mirror of T-306's own rule: **a DTO that only its own golden reads proves the wire, not the page.** T-306 DID build the correct type — dto.rs:283 ServerRowDto has exactly the eight fields the backend serves and no `terrain`, pinned byte-exact. But it has exactly TWO references in the crate, its own definition and its own test, because server_intel.rs:73 fetches DataEnvelope<Value>. So the gate already encoded the truth that refutes the buggy code, and the page never met it. Three reasons it could not fire: direction (catch-all removal catches backend-has / DTO-lacks, this is page-asserts / backend-lacks — nothing to drop, bytes match, green), adoption, and `v_str`'s unwrap_or_default() collapsing absent/null/non-string/empty into one "" — the same conflation T-306 split apart one layer up for the status object, left in place for the row's scalars."""
-surfaces = [
-    "FRONTEND",
-    "API",
-]
-targets = ["website"]
-title = 'Server Intel always renders "Theater Unknown" — it reads a field the backend has no column for'
+status = "shipped"
+order = 3175
+executor = "claude-code"
+priority = 1
+shipped_at = "3a653fd5"
+
+[scope.website.editor]
+chrome = []

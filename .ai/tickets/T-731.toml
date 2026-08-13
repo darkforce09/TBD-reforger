@@ -1,27 +1,11 @@
-__keys = [
-    "program",
-    "surfaces",
-    "impact",
-    "status",
-    "stream",
-    "targets",
-    "executor",
-    "id",
-    "order",
-    "title",
-    "summary",
-    "notes",
-]
-__ord = 704
-executor = "claude-code"
 id = "T-731"
-impact = ["ui"]
-notes = "filed by wave-110 adversarial verifier (editor factory)"
-order = 4324
-program = "eden"
-status = "deferred"
-stream = "mission-creator"
-summary = "T-668's distinct-by-construction border (correct vocabulary) adds 1px of flow height to each selected row while eden_tree's virtual window hardcodes ROW_H=24 — a 1px shift under every selection, k-px window skew on multi-select, propagating to every tree consumer. Fix: border inside the box (box-border + height-inclusive border, or an inset shadow/pseudo-element that costs no flow height); pin with a row-height test at ROW_H under selection. Diagnosis: editor_verify/wave110.md MINOR-4."
-surfaces = ["EDITOR"]
-targets = ["website"]
+kind = "work"
 title = "ROW_ACTIVE border-t skews the virtual tree window by 1px per selected row"
+summary = "T-668's distinct-by-construction border (correct vocabulary) adds 1px of flow height to each selected row while eden_tree's virtual window hardcodes ROW_H=24 — a 1px shift under every selection, k-px window skew on multi-select, propagating to every tree consumer. Fix: border inside the box (box-border + height-inclusive border, or an inset shadow/pseudo-element that costs no flow height); pin with a row-height test at ROW_H under selection. Diagnosis: editor_verify/wave110.md MINOR-4."
+status = "deferred"
+order = 4324
+executor = "claude-code"
+notes = "filed by wave-110 adversarial verifier (editor factory)"
+
+[scope.website.editor]
+chrome = []

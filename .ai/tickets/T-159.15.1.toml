@@ -1,20 +1,13 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "shipped_at",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-159.15.1"
+kind = "work"
+title = "T-159.15.1"
+summary = "T-159.15.1"
+status = "shipped"
+order = 1570
+executor = "claude-code"
 notes = "Damage-driven rAF + wheel + resize. Fix=disable_frame_timing (GpuTimer double-map on Dawn), not poll(). Verify: .ai/artifacts/t159_15_1_verify_log.md"
 parent = "T-159"
 shipped_at = "a425936d"
-status = "shipped"
-targets = [
-    "root",
-    "website",
-]
+
+[scope.repo]
+layers = ["docs"]

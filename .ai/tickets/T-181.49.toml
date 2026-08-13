@@ -1,15 +1,12 @@
-__keys = [
-    "id",
-    "parent",
-    "targets",
-    "executor",
-    "status",
-    "notes",
-]
-__ord = 0
-executor = "claude-code"
 id = "T-181.49"
+kind = "work"
+title = "T-181.49"
+summary = "T-181.49"
+status = "shipped"
+order = 1810
+executor = "claude-code"
 notes = "Make the lobby raise path survivable and observable. MEASURED: TBD_GameMode is constructed TWICE per Workbench session (World Editor 20:39:34, Play 20:39:59) while all TBD_LobbyStage state is static and survives between them. TBD_LobbyStage.Start is a one-shot CallLater(...,false) behind three guards that log NOTHING, and it fires ~200ms BEFORE the framework manager is ready (Start ~20:40:01.32 vs roll-call 20:40:01.523) - losing that race is permanent and silent. Nine of eleven guards on the path emit no log at all. Also: TBD_MenuStack.Reset()/CloseAll() have ZERO callers, so a stale weak entry makes Raise()'s IsOpen check true forever. Fix: self-healing retry arm, statics reset on arm not only teardown, wire up MenuStack.Reset, log every guard, and replace the GetWorkspace() authority test with RplSession.Mode()==RplMode.Dedicated (neither oracle ever used GetWorkspace for this)."
 parent = "T-181"
-status = "shipped"
-targets = ["mod"]
+
+[scope.mod]
+layers = ["feature"]
