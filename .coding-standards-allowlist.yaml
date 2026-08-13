@@ -7,10 +7,12 @@
 # T-899: the gate now walks xtask/, tools/, crates/, apps/website/*/src keeping `.rs`.
 # SIZE-3 (>1000 lines) fails unless the path is listed here with a non-empty `reason` AND
 # an `expires` date (YYYY-MM-DD, or MC-perf). Expired / reason-less entries do not exempt.
+# Quoted empty (`reason: ""`) is reason-less. Surrounding YAML quotes are stripped.
 # Allowlisted files are still walked and counted; they just do not fail.
 # SIZE-1 (>600) is warn-only and has no allowlist.
 #
-# SIZE-2 (MC-perf hot paths) — empty. Do not invent SIZE-2 rows to hide SIZE-3.
+# SIZE-2 (MC-perf hot paths) — empty. A SIZE-2 row also needs reason AND expires or it
+# does not skip SIZE-3. Do not invent SIZE-2 rows to hide SIZE-3.
 
 # --- Generated schema-codegen output — do not split. ---
 - rule: SIZE-3
