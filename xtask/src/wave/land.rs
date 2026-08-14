@@ -25,17 +25,23 @@ pub fn cmd_land(ctx: &Ctx, args: &[String]) -> u8 {
     // wide. A filter-shaped argument MUST filter or MUST refuse — silently ignoring it is the one
     // option that cannot be discovered before it does damage.
     let mut barrier = false;
+    let mut bookkeeping = false;
     let mut only: Vec<String> = Vec::new();
     for a in args {
         if a == "--wave" {
             barrier = true;
+        } else if a == "--bookkeeping" {
+            // T-913.2 escape hatch: a command-center/manual bookkeeping land may proceed
+            // without slice-run receipts. It stamps only receipts that already exist and
+            // NEVER fabricates a run file or token counts. Default is strict.
+            bookkeeping = true;
         } else if a.is_empty() {
             // `'')` — an empty positional is dropped, not refused.
         } else if is_ticket_glob(a) {
             only.push(a.clone());
         } else {
             werr!(
-                "land: refusing unknown argument '{a}' (expected --wave and/or T-nnn ticket ids)"
+                "land: refusing unknown argument '{a}' (expected --wave, --bookkeeping and/or T-nnn ticket ids)"
             );
             return 2;
         }
@@ -108,12 +114,30 @@ pub fn cmd_land(ctx: &Ctx, args: &[String]) -> u8 {
         );
         return 0;
     }
+    // T-913.2: a factory land is STRICT about run receipts — every landing ticket must
+    // have a slice-run file under .ai/tickets/metrics/<id>/ or the land refuses before
+    // touching main. `--bookkeeping` waives the requirement for manual/command-center
+    // lands; land still never invents a receipt it does not have.
+    if let Some(refusal) = crate::metrics::land_receipt_refusal(&ctx.root, &ready, bookkeeping) {
+        werr!("{refusal}");
+        return 2;
+    }
+    if bookkeeping {
+        let missing = crate::metrics::missing_receipts(&ctx.root, &ready);
+        if !missing.is_empty() {
+            wprintln!(
+                "--bookkeeping: landing WITHOUT run receipts for: {} (nothing will be stamped for these)",
+                missing.join(" ")
+            );
+        }
+    }
 
     // The base is the last known-GREEN main. It is the gate's diff anchor and the revert target.
     let base = git_stdout_lossy(&["rev-parse", "HEAD"]);
     wprintln!("wave base: {base}");
 
     let mut landed: Vec<String> = Vec::new();
+    let mut stamped: Vec<String> = Vec::new();
     for t in &ready {
         let title = ledger::ticket_title(ctx, t);
         wprintln!("── landing {t}: {title}");
@@ -130,12 +154,39 @@ pub fn cmd_land(ctx: &Ctx, args: &[String]) -> u8 {
             .map(|s| s.success())
             .unwrap_or(false);
         if ok {
+            // T-913.2: the merge succeeded — stamp the harness receipt NOW (outcome +
+            // land sha + finished), before repack_after_land. Land never invents token
+            // counts: a bookkeeping ticket without a receipt is skipped, and a receipt
+            // that exists but cannot be stamped is a hard stop, not a silent shrug.
+            if crate::metrics::has_receipt(&ctx.root, t) {
+                let land_sha = git_stdout_lossy(&["rev-parse", "HEAD"]);
+                match crate::metrics::stamp_land(&ctx.root, t, &land_sha) {
+                    Ok(p) => {
+                        let rel = p
+                            .strip_prefix(&ctx.root)
+                            .unwrap_or(&p)
+                            .display()
+                            .to_string();
+                        wprintln!("  receipt stamped landed @ {}: {rel}", short(&land_sha));
+                        stamped.push(rel);
+                    }
+                    Err(e) => {
+                        werr!("  receipt stamp FAILED for {t}: {e:#}");
+                        werr!("  (merge is on main; fix the receipt, stamp by hand, re-run land)");
+                        return 1;
+                    }
+                }
+            }
             landed.push(t.clone());
         } else {
             wprintln!("  MERGE FAILED — resolve by hand, then re-run land");
             wprintln!("  (nothing dropped; every worktree is intact)");
             return 1;
         }
+    }
+
+    if !stamped.is_empty() {
+        commit_stamped_receipts(&stamped);
     }
 
     wprintln!();
@@ -222,6 +273,34 @@ fn repack_after_land(ctx: &Ctx) -> u8 {
     }
     wprintln!("wave.lock refreshed and committed (rides this land)");
     0
+}
+
+/// T-913.2: commit the land-stamped run receipts so they ride the land — one commit,
+/// EXPLICIT paths only (never `-A`), placed before the gate so a later `wave revert` of
+/// the merges rolls the stamps back with them.
+///
+/// Warn-and-continue on failure, deliberately unlike [`repack_after_land`]: a stale lock
+/// makes `ticket check` red for everyone, but an uncommitted stamp is still a valid
+/// on-disk receipt — blocking the land over its commit would hold real work hostage to
+/// bookkeeping.
+fn commit_stamped_receipts(paths: &[String]) {
+    super::flush();
+    let mut add = std::process::Command::new("git");
+    add.args(["add", "--"]);
+    for p in paths {
+        add.arg(p);
+    }
+    let ok = add.status().map(|s| s.success()).unwrap_or(false)
+        && std::process::Command::new("git")
+            .args(["commit", "-m", "metrics: stamp land receipts"])
+            .status()
+            .map(|s| s.success())
+            .unwrap_or(false);
+    if ok {
+        wprintln!("run receipt(s) committed (ride this land)");
+    } else {
+        wprintln!("could not commit the stamped receipt(s) — commit .ai/tickets/metrics/ by hand");
+    }
 }
 
 /// The bash `case` glob `T-[0-9]*` — literal `T-`, then a digit, then anything.

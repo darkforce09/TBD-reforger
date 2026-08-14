@@ -1,0 +1,7 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "result": "agent exited 0 but its final JSON carries no usage object",
+  "session_id": "5b1a2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d"
+}

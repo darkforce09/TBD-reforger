@@ -1120,10 +1120,12 @@ fn run_one(root: &Path, registry: &Value, id: &str, dry_run: bool) -> Result<()>
     if dry_run {
         return Ok(());
     }
-    // Full Claude Code invoke is environment-specific; mark running + note
-    eprintln!(
-        "[{id}] run: invoke Claude Code manually / ticket pipeline (xtask run is scaffolding)"
-    );
+    // T-913.2: `ticket run` DELEGATES to the slice-run producer — same configured agent
+    // CLI, same fail-closed usage rule, same run receipt under .ai/tickets/metrics/<id>/.
+    // The pre-913 scaffolding printed an instruction and invoked nothing, which meant
+    // zero receipts and zero token accounting.
+    let opts = crate::slice_run::SliceRunOpts::default();
+    crate::slice_run::run_slice(root, registry, id, &opts)?;
     Ok(())
 }
 

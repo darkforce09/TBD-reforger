@@ -1,0 +1,21 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "duration_ms": 4321,
+  "duration_api_ms": 3987,
+  "num_turns": 3,
+  "result": "Implemented the slice and committed on the slice branch.",
+  "session_id": "1f9d9e2c-6a05-4c92-9e3b-7c41d8a2b5f0",
+  "total_cost_usd": 0.1099,
+  "usage": {
+    "input_tokens": 10,
+    "cache_creation_input_tokens": 1,
+    "cache_read_input_tokens": 5,
+    "output_tokens": 20,
+    "server_tool_use": {
+      "web_search_requests": 0
+    },
+    "service_tier": "standard"
+  }
+}

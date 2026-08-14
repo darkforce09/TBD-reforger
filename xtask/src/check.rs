@@ -367,6 +367,10 @@ pub fn check(root: &Path, registry: &serde_json::Value, strict: bool) -> Vec<Str
     // MISSING lock is a DidNotRun refusal — wired into the base check so every registry mutator
     // preflight and CI's `ticket check --strict` cover it.
     errors.extend(crate::wave_lock::check_as_errors(root));
+    // T-913.2: every run receipt under .ai/tickets/metrics/ must satisfy
+    // .ai/tickets/metrics.schema.json plus the token-sum / RFC 3339 UTC invariants —
+    // a malformed receipt is red, named by file.
+    errors.extend(crate::metrics::check_as_errors(root));
     errors.extend(fossil_paths_check(root));
 
     for row in tickets(registry) {

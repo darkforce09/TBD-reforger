@@ -1,0 +1,15 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "isError": false,
+  "sessionId": "0189f2ce-5b7e-7f7d-b0a5-2f9d4c31a8e2",
+  "result": "Implemented the slice and committed on the slice branch.",
+  "usage": {
+    "inputTokens": 12000,
+    "outputTokens": 3400,
+    "cacheReadTokens": 8000,
+    "cacheWriteTokens": 200,
+    "reasoningTokens": 0,
+    "totalTokens": 23600
+  }
+}

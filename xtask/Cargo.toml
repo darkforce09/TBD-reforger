@@ -21,6 +21,10 @@ serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 toml = "0.8"
 serde_norway = "0.9"
+# T-913.2 run-receipt elapsed math (finished - started). Already in the workspace lockfile
+# via tbd-tickets (0.3.x), so this adds zero new supply chain; the acceptance rule itself
+# reuses tbd_tickets::timestamp so the two cannot fork.
+time = { version = "0.3", features = ["parsing"] }
 walkdir = "2"
 jsonschema = { version = "0.46.10", default-features = false }
 tbd-tools = { path = "../tools/tbd-tools" }

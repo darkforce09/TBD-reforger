@@ -61,6 +61,7 @@ mod hostrun;
 mod label_gates;
 mod mcp;
 mod mcp_daemon;
+mod metrics;
 mod mk_build;
 mod mk_ci;
 mod mk_db;
@@ -80,6 +81,7 @@ mod root;
 mod schema_gates;
 mod shell_free;
 mod slice_collisions;
+mod slice_run;
 mod slice_worktree;
 mod sql_gates;
 mod sync;
@@ -263,10 +265,27 @@ enum PlatformCmd {
     #[command(name = "wave", disable_help_flag = true)]
     Wave {
         /// `status` | `prep` | `gate [<base>|--slice T-nnn|--migrate-persist [audit|advance]]` |
-        /// `test --slice T-nnn …` | `wave [--close]` | `verified <sha>` | `reclaim` | `land` |
-        /// `revert <sha>` | `push` | `diff <arm>`  (default `status`).
+        /// `test --slice T-nnn …` | `wave [--close]` | `verified <sha>` | `reclaim` |
+        /// `land [--bookkeeping]` | `revert <sha>` | `push` | `diff <arm>`  (default `status`).
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
+    },
+    /// T-913.2: run ONE slice through the agent CLI and write its run receipt under
+    /// `.ai/tickets/metrics/<id>/`. Exit-0-without-usage FAILS the run (no file, never
+    /// tokens 0). `ticket run` delegates here per ready slice.
+    #[command(name = "slice-run")]
+    SliceRun {
+        /// Ticket id (executor must be claude-code)
+        id: String,
+        /// Replay mode: parse this recorded agent-CLI JSON instead of spawning
+        #[arg(long)]
+        fixture: Option<PathBuf>,
+        /// Replay knob: fixed RFC 3339 UTC `started` stamp instead of now
+        #[arg(long)]
+        started: Option<String>,
+        /// Print the plan, invoke nothing, write nothing
+        #[arg(long)]
+        dry_run: bool,
     },
 }
 
@@ -838,6 +857,13 @@ enum TicketCmd {
     Clean {
         id: String,
     },
+    /// T-913.2: report per-run receipts from `.ai/tickets/metrics/` (elapsed + token
+    /// sums come from the real files; a broken file is an ERROR, never `tokens=0`).
+    Metrics {
+        /// Group sums (`agent` is the only supported key)
+        #[arg(long)]
+        by: Option<String>,
+    },
 }
 
 fn main() -> ExitCode {
@@ -1060,6 +1086,23 @@ fn run() -> Result<u8> {
             PlatformCmd::Preflight { warn } => platform_preflight::run(warn),
             PlatformCmd::SliceWorktree { args } => slice_worktree::run(&args),
             PlatformCmd::Wave { args } => wave::run(&args),
+            PlatformCmd::SliceRun {
+                id,
+                fixture,
+                started,
+                dry_run,
+            } => {
+                let root = find_repo_root()?;
+                let reg = load_registry(&root)?;
+                let opts = slice_run::SliceRunOpts {
+                    fixture,
+                    started,
+                    agent_cmd_override: None,
+                    dry_run,
+                };
+                slice_run::run_slice(&root, &reg, &id, &opts)?;
+                Ok(0)
+            }
         },
         TopCmd::Ai { cmd } => match cmd {
             AiCmd::Guard => Ok(ai::cmd_guard()),
@@ -1230,6 +1273,9 @@ fn run() -> Result<u8> {
                 TicketCmd::Clean { id } => {
                     let reg = load_registry(&root)?;
                     cmd_clean(&root, &reg, &id)?;
+                }
+                TicketCmd::Metrics { by } => {
+                    metrics::cmd_metrics(&root, by.as_deref())?;
                 }
             }
             Ok(0)

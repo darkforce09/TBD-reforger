@@ -10,6 +10,8 @@ Design contract: approved plan “Metrics (phase 3)”. Depends on **T-912** lan
 
 In-chat Task dispatch (command-center subagents) is **not** captured. Coverage is the `platform slice-run` / `ticket run` harness and `platform wave land` stamps. Do not claim 100% factory-token accounting. Do not coerce missing usage to `0`.
 
+Factory lands are **strict** (T-913.2): `platform wave land` refuses any landing ticket that has no run file under `.ai/tickets/metrics/<id>/`. The escape hatch for command-center / manual bookkeeping lands is the explicit **`--bookkeeping`** flag on `platform wave land` — it waives the receipt requirement for that invocation, stamps only receipts that already exist, and never fabricates a run file or token counts. Shipped-schema note (supersedes the field list in must-ship 2, per the T-913.2 dispatch prompt): required keys are `id`, `agent`, `started`, `tokens_consumed`; `finished`, `outcome` and `git_sha` are optional stamps that `platform wave land` writes; `ended`/`elapsed_sec` are not stored — elapsed is derived as `finished − started` at query time by `ticket metrics`.
+
 ## Slices
 
 `parallel_ok` is **false**. Both slices own xtask ticket writers and `.ai/tickets/`. Serial waves only. T-913.1 depends on T-912.2 landed; T-913.2 depends on T-913.1 landed.
