@@ -2,7 +2,7 @@ id = "T-917.1"
 kind = "work"
 title = "Scope vocabulary file + check rule"
 summary = "Author .ai/tickets/scope-vocab.toml (the 4-level domain/layer/component/surface tree from the spec draft, grounded in real modules) plus the check rule validating the file itself: sorted, duplicate-free, every level's parent exists. Additive slice — no ticket parses change; vocab-vs-ticket legality lands with the S.2 cutover."
-status = "ready"
+status = "shipped"
 order = 5971
 spec = "docs/platform/t917_ticket_schema_v2.md"
 executor = "claude-code"
@@ -14,7 +14,9 @@ acceptance = [
     "Planted duplicate surface under one parent in a scratch tree prints a red naming file, parent path and value; restore prints check OK",
     "A test prints the counted shape: D domains, L layers, C components, F surfaces — numbers read from the file at run time",
 ]
+shipped_at = "64c054a6"
 created_at = "2026-08-14T21:54:38Z"
+completed_at = "2026-08-14T22:11:28Z"
 owns = [
     ".ai/tickets/scope-vocab.toml",
     "xtask/src/vocab_check.rs",
