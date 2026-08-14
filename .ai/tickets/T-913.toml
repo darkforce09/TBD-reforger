@@ -2,7 +2,7 @@ id = "T-913"
 kind = "program"
 title = "Ticket run metrics"
 summary = "created_at/completed_at on ticket files (RFC 3339 UTC, deliberate ALLOWED_NEW widen) plus per-run token files under .ai/tickets/metrics/<id>/ produced by cargo xtask platform slice-run. platform wave land stamps outcome and git_sha on the run file, then runs wave repack. ticket metrics --by agent sums elapsed and tokens_consumed.total over real files only — a missing usage object fails the run, never tokens 0."
-status = "queued"
+status = "shipped"
 order = 5930
 spec = "docs/platform/t913_ticket_run_metrics.md"
 executor = "claude-code"
@@ -12,4 +12,5 @@ children = [
     "T-913.1",
     "T-913.2",
 ]
-active = "T-913.2"
+shipped_at = "efcff4e5"
+completed_at = "2026-08-14T05:21:53Z"
