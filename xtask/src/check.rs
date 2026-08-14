@@ -150,45 +150,72 @@ fn validate_registry(registry: &serde_json::Value) -> Vec<String> {
 /// T-912.1: every open work ticket must own its collision surface — the wave packer reads ticket
 /// `owns` now, and an owns-empty ticket is invisible to every dispatch set it computes.
 ///
-/// Globs EVERY `.ai/tickets/T-*.toml` on disk. `tickets(registry)` walks the parents-only phase-2
-/// view, which would silently exempt children (T-181.16, T-912.2, …) from the rule.
+/// Reads EVERY `.ai/tickets/T-*.toml` through the shared typed corpus (T-916.2 — the store
+/// replaced this fn's own glob). `tickets(registry)` walks the parents-only phase-2 view,
+/// which would silently exempt children (T-181.16, T-912.2, …) from the rule. Fail-closed on
+/// an unloadable corpus: the load error (naming the first offending file) is the finding — a
+/// guard that cannot scan must not report clean.
 fn check_open_work_owns(root: &Path) -> Vec<String> {
-    let dir = crate::tickets_store::tickets_dir(root);
-    let mut errors = Vec::new();
-    let entries = match fs::read_dir(&dir) {
-        Ok(rd) => rd,
-        Err(e) => return vec![format!("read tickets dir {}: {e}", dir.display())],
+    let corpus = match tbd_tickets::Corpus::load(root) {
+        Ok(c) => c,
+        Err(e) => return vec![e],
     };
-    let mut files: Vec<PathBuf> = entries
-        .filter_map(|e| e.ok())
-        .map(|e| e.path())
-        .filter(|p| {
-            p.file_name().is_some_and(|n| {
-                let n = n.to_string_lossy();
-                n.starts_with("T-") && n.ends_with(".toml")
-            })
-        })
-        .collect();
-    files.sort();
-    for path in files {
-        let text = match fs::read_to_string(&path) {
-            Ok(t) => t,
-            Err(e) => {
-                errors.push(format!("read {}: {e}", path.display()));
-                continue;
-            }
-        };
-        let ticket = match tbd_tickets::parse_ticket_toml(&text) {
-            Ok(t) => t,
-            Err(e) => {
-                errors.push(format!("{}: {e}", path.display()));
-                continue;
-            }
-        };
-        if let tbd_tickets::Ticket::Work(w) = &ticket {
+    let mut errors = Vec::new();
+    for ticket in corpus.tickets.values() {
+        if let tbd_tickets::Ticket::Work(w) = ticket {
             let status = w.status.name().as_str();
             if matches!(status, "queued" | "ready" | "running" | "review") && w.owns.is_empty() {
                 errors.push(format!("{}: owns required for {status} work ticket", w.id));
+            }
+        }
+    }
+    errors
+}
+
+/// T-916.2 — parent↔child referential integrity over EVERY `.ai/tickets/T-*.toml` (the typed
+/// corpus; parents-only walks cannot see either half of the relation). Two rules, both naming
+/// the pair:
+///
+/// - every `children[]` entry must have an on-disk `T-<child>.toml` — with `save_tree`'s
+///   delete pass gone (T-916.2 demoted it to migration/test duty) a mangled `children[]` can
+///   no longer mass-delete files, but a listing without a file was previously INVISIBLE:
+///   nothing checked parent↔child at all;
+/// - every child file's `parent` must exist on disk — a removed parent would otherwise strand
+///   its children as permanently unreachable rows.
+///
+/// Measured against the live tree 2026-08-14: ZERO violations, so no allowlist. The one
+/// pre-known oddity — T-111 (frozen-unmappable parking) cross-listing T-067.1 — satisfies both
+/// rules because the file and its parent both exist; only a dotted-extension SHAPE rule would
+/// red it, and that rule deliberately lives in the ops post-image gate (changed programs only),
+/// not here, exactly so frozen history stays green.
+///
+/// Fail-closed: a corpus that cannot load reports the load error — a guard that cannot scan
+/// must not report clean (the fossil-guard precedent).
+fn check_children_integrity(root: &Path) -> Vec<String> {
+    let corpus = match tbd_tickets::Corpus::load(root) {
+        Ok(c) => c,
+        Err(e) => return vec![e],
+    };
+    let mut errors = Vec::new();
+    for (id, ticket) in &corpus.tickets {
+        match ticket {
+            tbd_tickets::Ticket::Program(p) => {
+                for child in &p.children {
+                    if !corpus.tickets.contains_key(child) {
+                        errors.push(format!(
+                            "{id}: children[] names {child}, which has no .ai/tickets/{child}.toml on disk"
+                        ));
+                    }
+                }
+            }
+            tbd_tickets::Ticket::Work(w) => {
+                if let Some(parent) = &w.parent {
+                    if !corpus.tickets.contains_key(parent) {
+                        errors.push(format!(
+                            "{id}: parent {parent} has no .ai/tickets/{parent}.toml on disk"
+                        ));
+                    }
+                }
             }
         }
     }
@@ -363,6 +390,9 @@ pub fn check(root: &Path, registry: &serde_json::Value, strict: bool) -> Vec<Str
     let mut errors = validate_registry_schema(root, registry);
     errors.extend(validate_registry(registry));
     errors.extend(check_open_work_owns(root));
+    // T-916.2: children[] must reference on-disk files and child files must reference on-disk
+    // parents — the referential rule the save_tree delete-pass retirement makes load-bearing.
+    errors.extend(check_children_integrity(root));
     // T-912.2: the committed wave.lock must match the tickets it was compiled from, and a
     // MISSING lock is a DidNotRun refusal — wired into the base check so every registry mutator
     // preflight and CI's `ticket check --strict` cover it.
@@ -625,6 +655,75 @@ layers = ["docs"]
             check_open_work_owns(&tmp).is_empty(),
             "nonempty owns must restore green"
         );
+        fs::remove_dir_all(&tmp).unwrap();
+    }
+
+    /// T-916.2: the referential-integrity rule. The live tree must be green (measured: zero
+    /// violations, T-111→T-067.1 included — file and parent both exist); a children[] entry
+    /// without a file and a child whose parent file is missing must each go red naming BOTH
+    /// ids; restoring the files restores green.
+    #[test]
+    fn children_integrity_red_green() {
+        let root = worktree_root();
+        let errs = check_children_integrity(&root);
+        assert!(
+            errs.is_empty(),
+            "live tree must be referentially intact; got:\n{}",
+            errs.join("\n")
+        );
+
+        let tmp = std::env::temp_dir().join(format!("t916-refint-check-{}", std::process::id()));
+        let dir = tmp.join(".ai/tickets");
+        fs::create_dir_all(&dir).unwrap();
+        let program = r#"id = "T-009"
+kind = "program"
+title = "x"
+summary = "x"
+status = "idea"
+children = [
+    "T-009.1",
+    "T-009.2",
+]
+"#;
+        let child = |id: &str, parent: &str| {
+            format!(
+                "id = \"{id}\"\nkind = \"work\"\ntitle = \"x\"\nsummary = \"x\"\nstatus = \"idea\"\nparent = \"{parent}\"\n\n[scope.repo]\nlayers = [\"docs\"]\n"
+            )
+        };
+        fs::write(dir.join("T-009.toml"), program).unwrap();
+        fs::write(dir.join("T-009.1.toml"), child("T-009.1", "T-009")).unwrap();
+        // T-009.2 listed but missing on disk → red naming lister and child.
+        let errs = check_children_integrity(&tmp);
+        assert_eq!(
+            errs,
+            vec![
+                "T-009: children[] names T-009.2, which has no .ai/tickets/T-009.2.toml on disk"
+                    .to_string()
+            ],
+            "dangling children[] entry must be red"
+        );
+        fs::write(dir.join("T-009.2.toml"), child("T-009.2", "T-009")).unwrap();
+        assert!(
+            check_children_integrity(&tmp).is_empty(),
+            "restored child file must be green"
+        );
+
+        // A child whose parent file is absent → red naming child and parent.
+        fs::write(dir.join("T-010.4.toml"), child("T-010.4", "T-010")).unwrap();
+        let errs = check_children_integrity(&tmp);
+        assert_eq!(
+            errs,
+            vec!["T-010.4: parent T-010 has no .ai/tickets/T-010.toml on disk".to_string()],
+            "orphaned child must be red"
+        );
+        fs::remove_file(dir.join("T-010.4.toml")).unwrap();
+        assert!(check_children_integrity(&tmp).is_empty());
+
+        // Fail-closed: an unparseable corpus reports the load error, never a clean scan.
+        fs::write(dir.join("T-011.toml"), "id = \"T-011\"\nkind = \"nope\"\n").unwrap();
+        let errs = check_children_integrity(&tmp);
+        assert_eq!(errs.len(), 1, "one load refusal: {errs:?}");
+        assert!(errs[0].contains("T-011"), "must name the file: {}", errs[0]);
         fs::remove_dir_all(&tmp).unwrap();
     }
 

@@ -42,13 +42,21 @@ pub fn load_registry(root: &Path) -> Result<Registry> {
     )
 }
 
-/// After the typed cutover, write encoding-C TOML. Phase-1 trees keep the isomorphic writer.
+/// Phase-1 / migration writer ONLY since T-916.2. The live phase-2 tree is written exclusively
+/// by the typed ops (`tbd_tickets::ops` + `Corpus::write_back` in `cmds.rs`); this fn REFUSES
+/// phase-2 trees so `phase2::save_tree` — and with it the Value round-trip through
+/// `value_to_ticket` and the stale-file delete pass — can never come back as a second writer.
+/// No live caller remains (the mutators were rewired); kept for the write-path pin test and
+/// any future phase-1 migration replay.
+#[allow(dead_code)]
 pub fn save_registry(root: &Path, data: &Registry) -> Result<()> {
     if crate::phase2::tree_is_phase2(root) {
-        crate::phase2::save_tree(root, data)?;
-    } else {
-        crate::tickets_store::save_toml_tree(root, data)?;
+        anyhow::bail!(
+            "save_registry on a phase-2 tree: registry mutations go through the tbd-tickets \
+             typed ops (T-916.2); phase2::save_tree is migration/test-only"
+        );
     }
+    crate::tickets_store::save_toml_tree(root, data)?;
     let json = registry_path(root);
     if json.is_file() {
         fs::remove_file(&json).with_context(|| format!("remove {}", json.display()))?;
@@ -174,22 +182,13 @@ pub fn tickets(reg: &Registry) -> &[Value] {
         .unwrap_or(&[])
 }
 
-pub fn tickets_mut(reg: &mut Registry) -> Result<&mut Vec<Value>> {
-    reg.get_mut("tickets")
-        .and_then(|t| t.as_array_mut())
-        .context("registry.tickets missing")
-}
+// `tickets_mut` / `ticket_by_id_mut` died with T-916.2: no code path mutates the Value
+// projection anymore — writers go through `tbd_tickets::ops` on the typed corpus, and the
+// Value is reloaded from disk afterwards (read-only from that point on).
 
 pub fn ticket_by_id<'a>(reg: &'a Registry, tid: &str) -> Option<&'a Value> {
     tickets(reg)
         .iter()
-        .find(|t| t.get("id").and_then(|i| i.as_str()) == Some(tid))
-}
-
-pub fn ticket_by_id_mut<'a>(reg: &'a mut Registry, tid: &str) -> Option<&'a mut Value> {
-    tickets_mut(reg)
-        .ok()?
-        .iter_mut()
         .find(|t| t.get("id").and_then(|i| i.as_str()) == Some(tid))
 }
 

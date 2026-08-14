@@ -807,8 +807,23 @@ enum TicketCmd {
         #[arg(long, default_value = "")]
         summary: String,
     },
+    /// T-916.2: mint the next free dotted child under an existing parent.
+    #[command(name = "add-child")]
+    AddChild {
+        parent: String,
+        title: String,
+        #[arg(long, default_value = "")]
+        summary: String,
+        /// Required for a `kind = "work"` parent: atomically rewrites it work→program while
+        /// adding the first child (its `[scope]` is dropped — programs forbid scope).
+        #[arg(long)]
+        promote: bool,
+    },
     Remove {
         id: String,
+        /// Required to remove a program: cascade-deletes every descendant ticket file.
+        #[arg(long)]
+        force: bool,
     },
     Reorder {
         id: String,
@@ -1221,9 +1236,18 @@ fn run() -> Result<u8> {
                         &root, &mut reg, &title, &program, &surfaces, &impact, &summary,
                     )?;
                 }
-                TicketCmd::Remove { id } => {
+                TicketCmd::AddChild {
+                    parent,
+                    title,
+                    summary,
+                    promote,
+                } => {
                     let mut reg = load_registry(&root)?;
-                    cmd_remove(&root, &mut reg, &id)?;
+                    cmd_add_child(&root, &mut reg, &parent, &title, &summary, promote)?;
+                }
+                TicketCmd::Remove { id, force } => {
+                    let mut reg = load_registry(&root)?;
+                    cmd_remove(&root, &mut reg, &id, force)?;
                 }
                 TicketCmd::Reorder { id, after } => {
                     let mut reg = load_registry(&root)?;

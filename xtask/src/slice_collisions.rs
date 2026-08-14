@@ -26,7 +26,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
-use tbd_tickets::{Ticket, parse_ticket_toml};
+use tbd_tickets::Ticket;
 
 use crate::wave_lock;
 
@@ -60,22 +60,16 @@ impl TicketFacts {
 }
 
 fn ticket_facts(root: &Path) -> Result<TicketFacts> {
-    let dir = crate::tickets_store::tickets_dir(root);
+    // T-916.2: read through the shared typed corpus (`tbd_tickets::store::Corpus`) — this was
+    // one of the three near-duplicate directory walks the store now replaces. Same fail-closed
+    // contract: one unparseable ticket file refuses the load, naming it.
+    let corpus = tbd_tickets::Corpus::load(root).map_err(|e| anyhow::anyhow!(e))?;
     let mut facts = TicketFacts {
         owns: HashMap::new(),
         depends_on: HashMap::new(),
         pack_last: HashSet::new(),
     };
-    for ent in std::fs::read_dir(&dir).with_context(|| dir.display().to_string())? {
-        let ent = ent?;
-        let name = ent.file_name();
-        let name = name.to_string_lossy();
-        if !name.starts_with("T-") || !name.ends_with(".toml") {
-            continue;
-        }
-        let text = std::fs::read_to_string(ent.path())?;
-        let t = parse_ticket_toml(&text)
-            .map_err(|e| anyhow::anyhow!("{}: {e}", ent.path().display()))?;
+    for t in corpus.tickets.into_values() {
         let (id, owns, depends_on, pack_last) = match t {
             Ticket::Program(p) => (p.id, p.owns, p.depends_on, p.pack_last),
             Ticket::Work(w) => (w.id, w.owns, w.depends_on, w.pack_last),

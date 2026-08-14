@@ -3,6 +3,7 @@ use serde_json::{Value, json};
 use std::fs;
 use std::path::Path;
 use std::process::Command;
+use tbd_tickets::{Corpus, Ticket, ops};
 
 use crate::check::require_check_ok;
 use crate::gap::test_gap_analysis_round_trip;
@@ -567,24 +568,59 @@ fn refresh_wave_lock(root: &Path) -> Result<()> {
         .context("refresh wave.lock after status write (`cargo xtask wave repack`)")
 }
 
+/// T-916.2 — typed corpus load for the mutators. Fail-closed like [`Corpus::load`]: one
+/// unparseable ticket file refuses the whole load, naming the file. The full corpus (parents
+/// AND children) is what makes dotted child ids resolve — the parents-only `require_ticket`
+/// view was the "`ticket ship T-912.2` → Unknown ticket" hole.
+fn load_corpus(root: &Path) -> Result<Corpus> {
+    Corpus::load(root).map_err(anyhow::Error::msg)
+}
+
+/// T-916.2 — refusals the pre-typed mutators printed BARE on stderr + exit 1 (mark-ready's
+/// spec/deps gates, reorder's anchor, advance-slice's slice walk). The typed ops return the
+/// same strings as `Err`; this shim keeps the exit shape byte-identical for external callers
+/// instead of adding anyhow's `xtask:` prefix.
+fn refuse_verbatim(msg: &str) -> ! {
+    eprintln!("{msg}");
+    std::process::exit(1);
+}
+
+/// T-916.2 — the reload-before-sync invariant (t915_ticketboard_design.md §Write path,
+/// "Rewiring sequence invariant"). By the time any post-write step runs, the typed op has
+/// ALREADY landed its files; the `Value` those steps consume MUST be re-read from disk.
+/// Passing the pre-mutation Value to `cmd_sync` / `generate_queue_json` regenerates queue.json
+/// and every generated doc from the OLD state — pinned by
+/// `ship_regenerates_docs_from_post_state_reload_pin` below. The reload is also what surfaces
+/// a typed CHILD write into the parents-only Value view: `attach_slice_plan` re-synthesizes
+/// `slice_plan` from the child files.
+fn reload_registry(root: &Path, registry: &mut Value) -> Result<()> {
+    *registry = crate::phase2::load_phase2_tree(root)?;
+    Ok(())
+}
+
 pub fn cmd_ship(root: &Path, registry: &mut Value, id: &str) -> Result<()> {
+    // Membership first (the pre-T-916 `require_ticket`-before-check order), but against the
+    // full typed corpus so dotted child ids resolve (T-916.2).
+    let mut corpus = load_corpus(root)?;
+    if corpus.get(id).is_none() {
+        unknown_ticket(id);
+    }
     // T-237: refuse to mark shipped when the registry fails ticket check
     // (including Draft 2020-12 .ai/tickets/schema.json). Check runs first so a
     // red registry never gets a status write + sync.
-    let _ = require_ticket(registry, id);
     require_check_ok(root, registry, &format!("ship {id}"))?;
 
-    let t = ticket_by_id_mut(registry, id).unwrap_or_else(|| unknown_ticket(id));
-    if let Some(obj) = t.as_object_mut() {
-        obj.insert("status".into(), json!("shipped"));
-        // T-913.1: completed_at rides the same mutation as the status write (and lands
-        // before refresh_wave_lock — timestamps are not lock fields, so the lock bytes
-        // only change if the STATUS change moves waves). `shipped_at` stays a bare SHA.
-        obj.insert("completed_at".into(), json!(tbd_tickets::now_utc_rfc3339()));
-        obj.remove("active");
-        obj.remove("active_slice");
-    }
-    save_registry(root, registry)?;
+    // Typed op (T-916.1): status→shipped preserving shipped_at + order (the SHA stays
+    // hand-edited — T-913.1: completed_at rides the same mutation, `shipped_at` stays a bare
+    // SHA), clear `active` on the ticket AND on any program whose `active` names it. The op's
+    // post-image validation is a second net behind the preflight above, not a replacement.
+    let outcome =
+        ops::ship(&mut corpus, id, &tbd_tickets::now_utc_rfc3339()).map_err(anyhow::Error::msg)?;
+    corpus
+        .write_back(&outcome.changed)
+        .map_err(anyhow::Error::msg)?;
+
+    reload_registry(root, registry)?;
     cmd_sync(root, registry)?;
     refresh_wave_lock(root)?;
     println!("{id} -> shipped");
@@ -597,68 +633,37 @@ pub fn cmd_mark_ready(
     id: &str,
     spec_arg: Option<&str>,
 ) -> Result<()> {
+    let mut corpus = load_corpus(root)?;
+    if corpus.get(id).is_none() {
+        unknown_ticket(id);
+    }
     // T-451: refuse ready promotion when the registry fails ticket check.
-    let _ = require_ticket(registry, id);
     require_check_ok(root, registry, &format!("mark-ready {id}"))?;
+
+    // Typed op (T-916.1): spec-arg set, spec-on-disk + deps gates, ready promotion with the
+    // exact user_story (summary→title→id) and acceptance (["See spec."]) backfills. The
+    // legacy refusals — "Ticket {id} needs a spec path", "Spec file not found: …",
+    // "Blocked by …" — come back verbatim and exit exactly as before.
+    let outcome = match ops::mark_ready(&mut corpus, id, spec_arg, &tbd_tickets::now_utc_rfc3339())
     {
-        let t = ticket_by_id_mut(registry, id).unwrap_or_else(|| unknown_ticket(id));
-        if let Some(s) = spec_arg {
-            if !s.is_empty() {
-                if let Some(obj) = t.as_object_mut() {
-                    obj.insert("spec".into(), json!(s));
-                }
-            }
-        }
+        Ok(o) => o,
+        Err(msg) => refuse_verbatim(&msg),
+    };
+    let spec = match corpus.get(id) {
+        Some(Ticket::Work(w)) => w.spec.clone(),
+        Some(Ticket::Program(p)) => p.spec.clone(),
+        None => None,
     }
-    let t = require_ticket(registry, id);
-    let spec = opt_str(t, "spec").unwrap_or("").trim().to_string();
-    if spec.is_empty() {
-        eprintln!("Ticket {id} needs a spec path");
-        std::process::exit(1);
-    }
-    if !root.join(&spec).is_file() {
-        eprintln!("Spec file not found: {}", root.join(&spec).display());
-        std::process::exit(1);
-    }
-    if let Some(deps) = string_list(t, "depends_on") {
-        for dep in deps {
-            if let Some(dep_row) = ticket_by_id(registry, &dep) {
-                let st = opt_str(dep_row, "status").unwrap_or("");
-                if st != "shipped" && st != "cancelled" {
-                    eprintln!("Blocked by {dep} (status={st})");
-                    std::process::exit(1);
-                }
-            }
-        }
-    }
-    if let Some(t) = ticket_by_id_mut(registry, id) {
-        if let Some(obj) = t.as_object_mut() {
-            obj.insert("status".into(), json!("ready"));
-            let story_empty = match obj.get("user_story") {
-                Some(Value::String(s)) => s.trim().is_empty(),
-                _ => true,
-            };
-            if story_empty {
-                let fallback = obj
-                    .get("summary")
-                    .and_then(Value::as_str)
-                    .or_else(|| obj.get("title").and_then(Value::as_str))
-                    .unwrap_or(id)
-                    .to_string();
-                obj.insert("user_story".into(), json!(fallback));
-            }
-            let acc_empty = match obj.get("acceptance") {
-                Some(Value::Array(a)) => a
-                    .iter()
-                    .all(|s| s.as_str().is_none_or(|x| x.trim().is_empty())),
-                _ => true,
-            };
-            if acc_empty {
-                obj.insert("acceptance".into(), json!(["See spec."]));
-            }
-        }
-    }
-    save_registry(root, registry)?;
+    .unwrap_or_default()
+    .trim()
+    .to_string();
+    corpus
+        .write_back(&outcome.changed)
+        .map_err(anyhow::Error::msg)?;
+
+    // Preserved asymmetry (t915 design §Write path): mark-ready syncs but does NOT repack
+    // (queued→ready is dispatchability-neutral).
+    reload_registry(root, registry)?;
     cmd_sync(root, registry)?;
     println!("{id} -> ready ({spec})");
     Ok(())
@@ -675,82 +680,127 @@ pub fn cmd_add(
 ) -> Result<()> {
     // T-455: refuse insert when the registry fails ticket check (same bar as
     // set-status/mark-ready/reorder/ship — T-451 / T-237). Check runs first so a
-    // red registry never gets a next_id bump + row write + sync.
+    // red registry never gets a row write + sync.
     require_check_ok(root, registry, "add")?;
 
-    let next_id = registry
-        .get("next_id")
-        .and_then(|n| n.as_u64())
-        .unwrap_or(1);
-    let tid = format!("T-{:03}", next_id);
-    if let Some(obj) = registry.as_object_mut() {
-        obj.insert("next_id".into(), json!(next_id + 1));
-    }
+    let mut corpus = load_corpus(root)?;
     let _ = (program, surfaces, impact);
+    // Typed op (T-916.1): mints max PARENT numeric + 1 (children never affect it —
+    // `derive_next_id` semantics preserved), kind work, status idea, repo/docs scope.
     // T-913.1: every minted ticket gets its birth stamp (RFC 3339 UTC). Existing tickets
-    // get NO backfill — only `ticket add` writes created_at.
-    let row = json!({
-        "id": tid,
-        "kind": "work",
-        "title": title,
-        "summary": if summary.is_empty() { title } else { summary },
-        "status": "idea",
-        "created_at": tbd_tickets::now_utc_rfc3339(),
-        "scope": { "repo": { "layers": ["docs"] } },
-    });
-    tickets_mut(registry)?.push(row);
-    save_registry(root, registry)?;
+    // get NO backfill — only the minting verbs write created_at.
+    let (tid, outcome) = ops::add(&mut corpus, title, summary, &tbd_tickets::now_utc_rfc3339())
+        .map_err(anyhow::Error::msg)?;
+    corpus
+        .write_back(&outcome.changed)
+        .map_err(anyhow::Error::msg)?;
+
+    reload_registry(root, registry)?;
     cmd_sync(root, registry)?;
     println!("Added {tid}: {title}");
     Ok(())
 }
 
-pub fn cmd_remove(root: &Path, registry: &mut Value, id: &str) -> Result<()> {
+/// T-916.2 new verb: `ticket add-child <PARENT> <TITLE> [--summary S] [--promote]`.
+/// Appends a freshly minted child (next free dotted extension, status idea, created_at
+/// stamped) under an existing program. A `kind = "work"` parent refuses unless `--promote`
+/// performs the atomic work→program rewrite plus first child in one op (design Decisions #4;
+/// the refusal text comes from the op). Syncs like `add`; no repack — a minted idea child is
+/// in wave limbo, and a `--promote` of a LIVE work parent is reconciled by the next
+/// `cargo xtask wave repack` exactly like a `remove` of a live ticket (neither verb repacked
+/// before T-916 either).
+pub fn cmd_add_child(
+    root: &Path,
+    registry: &mut Value,
+    parent_id: &str,
+    title: &str,
+    summary: &str,
+    promote: bool,
+) -> Result<()> {
+    let mut corpus = load_corpus(root)?;
+    if corpus.get(parent_id).is_none() {
+        unknown_ticket(parent_id);
+    }
+    require_check_ok(root, registry, &format!("add-child {parent_id}"))?;
+
+    let was_work = matches!(corpus.get(parent_id), Some(Ticket::Work(_)));
+    let (cid, outcome) = ops::add_child(
+        &mut corpus,
+        parent_id,
+        title,
+        summary,
+        promote,
+        &tbd_tickets::now_utc_rfc3339(),
+    )
+    .map_err(anyhow::Error::msg)?;
+    corpus
+        .write_back(&outcome.changed)
+        .map_err(anyhow::Error::msg)?;
+
+    reload_registry(root, registry)?;
+    cmd_sync(root, registry)?;
+    if was_work {
+        println!("Added {cid}: {title} ({parent_id} promoted work -> program)");
+    } else {
+        println!("Added {cid}: {title}");
+    }
+    Ok(())
+}
+
+pub fn cmd_remove(root: &Path, registry: &mut Value, id: &str, force: bool) -> Result<()> {
+    let mut corpus = load_corpus(root)?;
+    if corpus.get(id).is_none() {
+        unknown_ticket(id);
+    }
     // T-455: refuse delete when the registry fails ticket check (same bar as
     // add / set-status — T-451). Check runs first so a red registry never loses
     // a row on disk.
-    let _ = require_ticket(registry, id);
     require_check_ok(root, registry, &format!("remove {id}"))?;
 
-    let before = tickets(registry).len();
-    let list = tickets_mut(registry)?;
-    list.retain(|t| opt_str(t, "id") != Some(id));
-    if list.len() == before {
-        unknown_ticket(id);
-    }
-    save_registry(root, registry)?;
+    // Typed op (T-916.1): a work ticket deletes surgically and scrubs its parent's
+    // children[]; a program REFUSES unless --force cascade-deletes the descendant closure
+    // deliberately (design Decisions #3 — the documented divergence from the old save path,
+    // whose stale-file pass cascade-deleted silently).
+    let outcome = ops::remove(&mut corpus, id, force, &tbd_tickets::now_utc_rfc3339())
+        .map_err(anyhow::Error::msg)?;
+    corpus
+        .write_back(&outcome.changed)
+        .map_err(anyhow::Error::msg)?;
+    corpus
+        .delete_files(&outcome.deleted)
+        .map_err(anyhow::Error::msg)?;
+
+    reload_registry(root, registry)?;
     cmd_sync(root, registry)?;
     println!("Removed {id}");
     Ok(())
 }
 
 pub fn cmd_reorder(root: &Path, registry: &mut Value, id: &str, after: &str) -> Result<()> {
+    let mut corpus = load_corpus(root)?;
+    if corpus.get(id).is_none() {
+        unknown_ticket(id);
+    }
     // T-451: reorder may flip idea→queued; refuse when check is red.
-    let _ = require_ticket(registry, id);
     require_check_ok(root, registry, &format!("reorder {id}"))?;
 
-    let anchor_order = {
-        let anchor = ticket_by_id(registry, after);
-        match anchor {
-            Some(a) if a.get("order").is_some() && !matches!(a.get("order"), Some(Value::Null)) => {
-                order_or(a, 0)
-            }
-            _ => {
-                eprintln!("Unknown anchor ticket: {after}");
-                std::process::exit(1);
-            }
-        }
+    // Typed op (T-916.1): order = anchor + 1, idea flips to queued, every other status keeps
+    // its variant. "Unknown anchor ticket: {after}" comes back verbatim on the legacy exit
+    // path; the op's OTHER refusal — duplicate live order — is the sanctioned divergence
+    // where the old CLI wrote red state on disk (the cmd_reorder wedge).
+    let outcome = match ops::reorder(&mut corpus, id, after, &tbd_tickets::now_utc_rfc3339()) {
+        Ok(o) => o,
+        Err(msg) => refuse_verbatim(&msg),
     };
-    let was_idea = opt_str(require_ticket(registry, id), "status") == Some("idea");
-    let t = ticket_by_id_mut(registry, id).unwrap_or_else(|| unknown_ticket(id));
-    let new_order = anchor_order + 1;
-    if let Some(obj) = t.as_object_mut() {
-        obj.insert("order".into(), json!(new_order));
-        if was_idea {
-            obj.insert("status".into(), json!("queued"));
-        }
-    }
-    save_registry(root, registry)?;
+    let new_order = corpus
+        .get(id)
+        .and_then(|t| t.status().order())
+        .expect("reorder always lands an order");
+    corpus
+        .write_back(&outcome.changed)
+        .map_err(anyhow::Error::msg)?;
+
+    reload_registry(root, registry)?;
     cmd_sync(root, registry)?;
     println!("{id} order -> {new_order} (after {after})");
     Ok(())
@@ -759,51 +809,30 @@ pub fn cmd_reorder(root: &Path, registry: &mut Value, id: &str, after: &str) -> 
 pub fn cmd_advance_slice(root: &Path, registry: &mut Value, id: &str) -> Result<()> {
     // T-459: refuse advance when the registry fails ticket check (same bar as
     // add/remove/set-status/mark-ready/reorder/ship — T-455 / T-451 / T-237).
-    // Check runs first so a red registry never gets an active_slice write + sync.
+    // Check runs first so a red registry never gets an active write + sync.
     require_check_ok(root, registry, &format!("advance-slice {id}"))?;
 
-    let (slices, active) = {
-        let t = require_ticket(registry, id);
-        let slices: Vec<String> = t
-            .get("slices")
-            .and_then(|s| s.as_array())
-            .map(|a| {
-                a.iter()
-                    .filter_map(|v| v.as_str().map(|s| s.to_string()))
-                    .collect()
-            })
-            .unwrap_or_default();
-        let active = opt_str(t, "active_slice").map(|s| s.to_string());
-        (slices, active)
-    };
-    if slices.is_empty() {
-        eprintln!("{id} has no slices[]");
-        std::process::exit(1);
+    let mut corpus = load_corpus(root)?;
+    if corpus.get(id).is_none() {
+        unknown_ticket(id);
     }
-    let new_active = if active.is_none() {
-        slices[0].clone()
-    } else {
-        let a = active.unwrap();
-        let idx = match slices.iter().position(|s| s == &a) {
-            Some(i) => i,
-            None => {
-                eprintln!("active_slice {a} not in slices[]");
-                std::process::exit(1);
-            }
-        };
-        if idx + 1 >= slices.len() {
-            eprintln!("{id}: no slice after {a}");
-            std::process::exit(1);
-        }
-        slices[idx + 1].clone()
+    // Typed op (T-916.1): walks `ProgramTicket::children` (the Value path read the mirrored
+    // `slices` key) — no active → first child, else the next one; the legacy refusals
+    // ("{id} has no slices[]", "active_slice {a} not in slices[]", "{id}: no slice after {a}")
+    // come back verbatim on the legacy exit path.
+    let outcome = match ops::advance_slice(&mut corpus, id, &tbd_tickets::now_utc_rfc3339()) {
+        Ok(o) => o,
+        Err(msg) => refuse_verbatim(&msg),
     };
-    if let Some(t) = ticket_by_id_mut(registry, id) {
-        if let Some(obj) = t.as_object_mut() {
-            obj.insert("active".into(), json!(new_active));
-            obj.insert("active_slice".into(), json!(new_active));
-        }
-    }
-    save_registry(root, registry)?;
+    let new_active = match corpus.get(id) {
+        Some(Ticket::Program(p)) => p.active.clone().unwrap_or_default(),
+        Some(Ticket::Work(_)) | None => String::new(),
+    };
+    corpus
+        .write_back(&outcome.changed)
+        .map_err(anyhow::Error::msg)?;
+
+    reload_registry(root, registry)?;
     cmd_sync(root, registry)?;
     println!("{id} active_slice -> {new_active}");
     Ok(())
@@ -875,23 +904,31 @@ pub fn cmd_set_status(root: &Path, registry: &mut Value, id: &str, status: &str)
         );
     }
 
+    let mut corpus = load_corpus(root)?;
+    if corpus.get(id).is_none() {
+        unknown_ticket(id);
+    }
     // T-451: refuse status writes when the registry fails ticket check
     // (same bar as ship/done — T-237). No silent escape hatch; a red registry
     // must be fixed before any status mutator may write.
-    let _ = require_ticket(registry, id);
     require_check_ok(root, registry, &format!("set-status {id}"))?;
 
-    let t = ticket_by_id_mut(registry, id).unwrap_or_else(|| unknown_ticket(id));
-    if let Some(obj) = t.as_object_mut() {
-        obj.insert("status".into(), json!(status));
-        // T-913.1: a cancel is a completion — stamp it in the same mutation as the status
-        // write, before the wave-lock refresh below. Other set-status targets do not
-        // stamp; `ticket ship` / `ticket done` own the shipped stamp.
-        if status == "cancelled" {
-            obj.insert("completed_at".into(), json!(tbd_tickets::now_utc_rfc3339()));
-        }
-    }
-    save_registry(root, registry)?;
+    // Typed op (T-916.1): the enum gate again (second net); T-913.1: a cancel is a
+    // completion — the op stamps completed_at in the same mutation, before the wave-lock
+    // refresh below; other set-status targets do not stamp (`ticket ship` / `ticket done`
+    // own the shipped stamp) and `active` is untouched (also ship's job). Transitions the
+    // ticket lacks data for refuse UP FRONT instead of the legacy mid-save wedge.
+    let outcome = ops::set_status(&mut corpus, id, status, &tbd_tickets::now_utc_rfc3339())
+        .map_err(anyhow::Error::msg)?;
+    corpus
+        .write_back(&outcome.changed)
+        .map_err(anyhow::Error::msg)?;
+
+    // Preserved asymmetry (t915 design §Write path): set-status regenerates queue.json +
+    // repacks ONLY — no full cmd_sync (generated docs go stale by current design;
+    // rationalizing that is its own ticket). Reload first: queue.json must come from the
+    // post-state, not the pre-mutation Value.
+    reload_registry(root, registry)?;
     let queue = generate_queue_json(registry);
     write_json_ascii(&root.join(".ai/tickets/queue.json"), &queue)?;
     // T-912.2: `set-status cancelled` (and `shipped`) must repack or `wave check` goes red on a
@@ -1220,7 +1257,7 @@ mod tests {
         let mut registry = red_registry(&root);
 
         // Preflight must fail before any mutator body runs — if this Err is missing,
-        // cmd_set_status would save_registry over the live tip (see T-451 perturbation).
+        // cmd_set_status would write the live tip (see T-451 perturbation).
         let preflight = require_check_ok(&root, &registry, "set-status T-001");
         assert!(
             preflight.is_err(),
@@ -1320,7 +1357,7 @@ mod tests {
         let mut registry = red_registry(&root);
         let tickets_before = tickets(&registry).len();
 
-        let err = cmd_remove(&root, &mut registry, "T-001")
+        let err = cmd_remove(&root, &mut registry, "T-001", false)
             .expect_err("remove must refuse a schema-red registry");
         let msg = format!("{err:#}");
         assert!(
@@ -1391,5 +1428,280 @@ mod tests {
         let err = require_check_ok(&root, &registry, "set-status T-001")
             .expect_err("red registry must fail require_check_ok");
         assert!(format!("{err:#}").contains("refusing set-status T-001"));
+    }
+
+    /// Pinned-identity git for scratch registries — the check preflight runs `git grep`
+    /// (fossil guard) and `wave repack` derives its ledger base from history, so mutator
+    /// fixtures must be real repos (the wave_lock test pattern).
+    fn git_in_dir(dir: &Path, args: &[&str]) {
+        let out = std::process::Command::new("git")
+            .args([
+                "-c",
+                "user.email=t916@test",
+                "-c",
+                "user.name=t916",
+                "-c",
+                "commit.gpgsign=false",
+            ])
+            .args(args)
+            .current_dir(dir)
+            .output()
+            .expect("spawn git");
+        assert!(
+            out.status.success(),
+            "git {args:?}: {}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+    }
+
+    /// T-916.2 scratch registry — a real git repo carrying the REAL `.ai/tickets/schema.json`
+    /// plus a minimal 4-ticket tree (program T-001 with a ready active child and an idea
+    /// child; ready parent T-002), wave.lock freshly repacked and everything committed.
+    /// Mutator tests run HERE only: the live registry gets zero writes from the suite.
+    fn scratch_registry(tag: &str) -> PathBuf {
+        use tbd_tickets::{ProgramTicket, RepoLayer, Scope, Status, Ticket, WorkTicket};
+        let dir = std::env::temp_dir().join(format!("t916-cmds-{tag}-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(dir.join(".ai/tickets")).unwrap();
+        fs::create_dir_all(dir.join("docs")).unwrap();
+        fs::write(
+            dir.join(".ai/tickets/ROOT"),
+            "# ticket-registry root marker\n",
+        )
+        .unwrap();
+        // The real schema: a stub would silently weaken the very preflight these tests keep
+        // in front of the typed ops.
+        fs::copy(
+            worktree_root().join(".ai/tickets/schema.json"),
+            dir.join(".ai/tickets/schema.json"),
+        )
+        .unwrap();
+        fs::write(dir.join("docs/spec.md"), "# spec\n").unwrap();
+        fs::write(dir.join("docs/child-spec.md"), "# child spec\n").unwrap();
+        let ready = |order: i64, spec: &str| Status::Ready {
+            order,
+            spec: spec.into(),
+            user_story: "story".into(),
+            acceptance: vec!["gate".into()],
+        };
+        let work =
+            |id: &str, status: Status, spec: Option<&str>, parent: Option<&str>, owns: &[&str]| {
+                // Parsed work tickets carry the ready-class prose BOTH in the status and in the
+                // standalone fields — mirror that or the write_back round-trip gate refuses.
+                let ready_class = matches!(status, Status::Ready { .. });
+                Ticket::Work(WorkTicket {
+                    id: id.into(),
+                    title: format!("{id} title"),
+                    summary: format!("{id} summary"),
+                    status,
+                    executor: Some("claude-code".into()),
+                    notes: None,
+                    spec: spec.map(str::to_string),
+                    depends_on: vec![],
+                    unblocks: vec![],
+                    parent: parent.map(str::to_string),
+                    scope: Scope::Repo {
+                        layers: vec![RepoLayer::Docs],
+                    },
+                    user_story: ready_class.then(|| "story".to_string()),
+                    acceptance: if ready_class {
+                        vec!["gate".into()]
+                    } else {
+                        vec![]
+                    },
+                    shipped_at: None,
+                    priority: None,
+                    created_at: None,
+                    completed_at: None,
+                    owns: owns.iter().map(|s| (*s).to_string()).collect(),
+                    pack_last: None,
+                })
+            };
+        let mut corpus = Corpus::new(&dir);
+        for t in [
+            Ticket::Program(ProgramTicket {
+                id: "T-001".into(),
+                title: "T-001 title".into(),
+                summary: "T-001 summary".into(),
+                status: ready(10, "docs/spec.md"),
+                executor: Some("claude-code".into()),
+                notes: None,
+                spec: Some("docs/spec.md".into()),
+                depends_on: vec![],
+                unblocks: vec![],
+                children: vec!["T-001.1".into(), "T-001.2".into()],
+                active: Some("T-001.1".into()),
+                user_story: Some("story".into()),
+                acceptance: vec!["gate".into()],
+                priority: None,
+                created_at: None,
+                completed_at: None,
+                owns: vec![],
+                pack_last: None,
+            }),
+            work(
+                "T-001.1",
+                ready(20, "docs/child-spec.md"),
+                Some("docs/child-spec.md"),
+                Some("T-001"),
+                &["a.rs"],
+            ),
+            work("T-001.2", Status::Idea, None, Some("T-001"), &[]),
+            work(
+                "T-002",
+                ready(30, "docs/spec.md"),
+                Some("docs/spec.md"),
+                None,
+                &["b.rs"],
+            ),
+        ] {
+            corpus.tickets.insert(t.id().to_string(), t);
+        }
+        let all: Vec<String> = corpus.tickets.keys().cloned().collect();
+        corpus.write_back(&all).expect("seed scratch tree");
+        git_in_dir(&dir, &["init", "-q"]);
+        git_in_dir(&dir, &["add", "-A"]);
+        git_in_dir(&dir, &["commit", "-q", "-m", "seed scratch registry"]);
+        crate::wave_lock::repack_quiet(&dir).expect("seed wave.lock");
+        // Seed queue.json + generated docs so the fixture starts from a synced state.
+        let reg = load_registry(&dir).expect("load scratch registry");
+        crate::sync::cmd_sync(&dir, &reg).expect("seed sync");
+        git_in_dir(&dir, &["add", "-A"]);
+        git_in_dir(&dir, &["commit", "-q", "-m", "seed lock + sync outputs"]);
+        dir
+    }
+
+    fn parse_scratch_ticket(root: &Path, id: &str) -> tbd_tickets::Ticket {
+        tbd_tickets::parse_ticket_toml(
+            &fs::read_to_string(root.join(format!(".ai/tickets/{id}.toml"))).unwrap(),
+        )
+        .unwrap_or_else(|e| panic!("{id}: {e}"))
+    }
+
+    fn queue_rows(root: &Path) -> Vec<(String, String)> {
+        let queue: Value =
+            serde_json::from_str(&fs::read_to_string(root.join(".ai/tickets/queue.json")).unwrap())
+                .unwrap();
+        queue["tickets"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|t| {
+                (
+                    t["id"].as_str().unwrap_or("").to_string(),
+                    t["spec"].as_str().unwrap_or("").to_string(),
+                )
+            })
+            .collect()
+    }
+
+    /// T-916.2 — the reload-before-sync invariant, pinned (t915 design §Write path,
+    /// "Rewiring sequence invariant"). The typed op writes files FIRST; if cmd_ship then fed
+    /// the pre-mutation Value to cmd_sync, queue.json and the generated docs would still call
+    /// T-002 ready. The regenerated outputs must reflect the POST-state.
+    #[test]
+    fn ship_regenerates_docs_from_post_state_reload_pin() {
+        let root = scratch_registry("reload-pin");
+        let mut registry = load_registry(&root).expect("scratch registry loads");
+        assert!(
+            queue_rows(&root).iter().any(|(id, _)| id == "T-002"),
+            "pre-state: ready T-002 sits in queue.json"
+        );
+
+        cmd_ship(&root, &mut registry, "T-002").expect("ship on scratch");
+
+        // The in-memory Value was reloaded from disk (not hand-patched):
+        assert_eq!(
+            opt_str(require_ticket(&registry, "T-002"), "status"),
+            Some("shipped")
+        );
+        assert!(
+            !queue_rows(&root).iter().any(|(id, _)| id == "T-002"),
+            "queue.json regenerated from the POST-state must drop the shipped ticket"
+        );
+        let reg_md = fs::read_to_string(root.join("docs/TICKET_REGISTRY.md")).unwrap();
+        assert!(
+            reg_md
+                .lines()
+                .any(|l| l.starts_with("| T-002 |") && l.contains("| shipped |")),
+            "generated docs must show the post-state row:\n{reg_md}"
+        );
+        // The ship hook repacked: T-002 is parked at wave 0, out of the open waves.
+        let lock = crate::wave_lock::load(&root).expect("lock");
+        assert!(lock.tickets_in_wave(0).contains(&"T-002".to_string()));
+        assert!(!lock.open_ids().contains(&"T-002".to_string()));
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    /// T-916.2 acceptance 3 — dotted child ship end-to-end through the rewired verb. The
+    /// pre-T-916 binary refused this exact invocation with "Unknown ticket: T-001.1"
+    /// (`require_ticket` walked the parents-only Value; children were shipped by hand TOML
+    /// edit + repack — the documented hole this program closes).
+    #[test]
+    fn child_ship_end_to_end_typed_path() {
+        let root = scratch_registry("child-ship");
+        let mut registry = load_registry(&root).expect("scratch registry loads");
+        // Pre-state: T-001's queue row carries the ACTIVE CHILD's spec via slice_plan.
+        assert!(
+            queue_rows(&root)
+                .iter()
+                .any(|(id, spec)| id == "T-001" && spec == "docs/child-spec.md"),
+            "pre-state: active slice spec reaches queue.json"
+        );
+
+        cmd_ship(&root, &mut registry, "T-001.1").expect("dotted child ship must resolve");
+
+        // Child file flipped: shipped, completed_at stamped, order preserved, no SHA invented.
+        match parse_scratch_ticket(&root, "T-001.1") {
+            Ticket::Work(w) => {
+                assert_eq!(
+                    w.status,
+                    tbd_tickets::Status::Shipped {
+                        shipped_at: None,
+                        order: Some(20)
+                    }
+                );
+                assert!(w.completed_at.is_some(), "completed_at stamped");
+            }
+            Ticket::Program(_) => panic!("T-001.1 must stay work"),
+        }
+        // Parent active cleared because it named the shipped child.
+        match parse_scratch_ticket(&root, "T-001") {
+            Ticket::Program(p) => assert_eq!(p.active, None, "stale active cleared"),
+            Ticket::Work(_) => panic!("T-001 must stay program"),
+        }
+        // Repack ran (the ship hook): the lock parks the child id.
+        let lock = crate::wave_lock::load(&root).expect("lock");
+        assert!(lock.tickets_in_wave(0).contains(&"T-001.1".to_string()));
+        assert!(!lock.open_ids().contains(&"T-001.1".to_string()));
+        // queue.json regenerated post-state THROUGH the reload: with the active slice gone,
+        // T-001's row falls back to the parent's own spec. A stale pre-mutation Value would
+        // still print docs/child-spec.md here.
+        assert!(
+            queue_rows(&root)
+                .iter()
+                .any(|(id, spec)| id == "T-001" && spec == "docs/spec.md"),
+            "post-state: {:?}",
+            queue_rows(&root)
+        );
+
+        // Child set-status rides the same wiring: defer the idea sibling by dotted id.
+        cmd_set_status(&root, &mut registry, "T-001.2", "deferred").expect("child set-status");
+        match parse_scratch_ticket(&root, "T-001.2") {
+            Ticket::Work(w) => {
+                assert_eq!(
+                    w.status,
+                    tbd_tickets::Status::Deferred { order: None },
+                    "idea child deferred (order-less)"
+                );
+            }
+            Ticket::Program(_) => panic!("T-001.2 must stay work"),
+        }
+        let lock = crate::wave_lock::load(&root).expect("lock after set-status repack");
+        assert!(
+            lock.tickets_in_wave(0).contains(&"T-001.2".to_string()),
+            "set-status repacked the deferred child into wave 0"
+        );
+        let _ = fs::remove_dir_all(&root);
     }
 }

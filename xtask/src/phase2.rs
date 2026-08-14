@@ -517,6 +517,13 @@ pub fn ticket_to_value(t: &Ticket) -> Value {
     v
 }
 
+/// MIGRATION/TEST-ONLY since T-916.2 (the file-top `allow(dead_code)` pattern): the registry
+/// mutators write through `tbd_tickets::ops` + `Corpus::write_back` now, so no mutator path
+/// reaches this Value→typed conversion anymore — `save_registry` refuses phase-2 trees, and
+/// `mutators_never_reach_the_value_writer_pin` keeps both facts pinned. It stays compiled
+/// because the T-912.2 alias-clash regression pin below still exercises it against the whole
+/// loaded registry: the mirrored-keys condition must STAY representable-and-handled on the
+/// read path even though no writer consumes the result.
 pub fn value_to_ticket(v: &Value) -> Result<Ticket> {
     // T-912.2 fix for a T-911.2 round-trip regression that broke EVERY registry mutator:
     // `ticket_to_value` mirrors `children` → `slices` and `active` → `active_slice` for the
@@ -579,6 +586,15 @@ pub fn load_phase2_tree(root: &Path) -> Result<Value> {
     }))
 }
 
+/// MIGRATION/TEST-ONLY since T-916.2 — the retired Value write path. Live mutations go through
+/// `tbd_tickets::ops` + `Corpus::write_back` (surgical per-file temp+rename writes); nothing
+/// live calls this, and `registry::save_registry` refuses phase-2 trees so it cannot be
+/// reached by accident. Note what retiring it kills: the final stale-file pass below deletes
+/// EVERY `T-*.toml` not in {parents ∪ children[]}, which is how a mangled `children[]` once
+/// cascade-deleted child files (the hazard class t915_ticketboard_design.md Decisions #3
+/// names); the typed path deletes only ids an op explicitly returns, and
+/// `check_children_integrity` now surfaces the stray files this pass used to erase silently.
+///
 /// Write encoding-C parents from the in-memory registry. Existing child files are kept.
 pub fn save_tree(root: &Path, registry: &Value) -> Result<()> {
     let dir = crate::tickets_store::tickets_dir(root);
@@ -969,10 +985,14 @@ mod tests {
         }
     }
 
-    /// T-912.2 regression pin: `ticket_to_value` mirrors `children`/`active` into their legacy
-    /// spellings, and `value_to_ticket` must accept its own output — the alias-vs-mirror clash
-    /// made `duplicate field \`children\`` out of every loaded program and broke every registry
-    /// mutator (`ticket ship T-905` → `save T-067` refuse, measured at the T-912.1 tip).
+    /// T-912.2 regression pin, RETARGETED by T-916.2: `ticket_to_value` mirrors
+    /// `children`/`active` into their legacy spellings, and `value_to_ticket` must accept its
+    /// own output — the alias-vs-mirror clash made `duplicate field \`children\`` out of every
+    /// loaded program and broke every registry mutator (`ticket ship T-905` → `save T-067`
+    /// refuse, measured at the T-912.1 tip). Since T-916.2 no MUTATOR reaches
+    /// `value_to_ticket` (see `mutators_never_reach_the_value_writer_pin`), but the mirrored
+    /// Value is still what brief/show/get/sync/queue.json consume — this pin keeps the alias
+    /// class dead on that read surface.
     #[test]
     fn value_to_ticket_accepts_ticket_to_value_output() {
         let root = repo_root();
@@ -987,5 +1007,37 @@ mod tests {
             let back = value_to_ticket(t).unwrap_or_else(|e| panic!("{id}: {e:#}"));
             assert_eq!(back.id(), id);
         }
+    }
+
+    /// T-916.2 — the write path is the TYPED one. Two facts, pinned together:
+    ///
+    /// 1. `registry::save_registry` REFUSES a phase-2 tree (in-memory probe against the live
+    ///    root — nothing is written on the refusal path), so `save_tree` / `value_to_ticket`
+    ///    are unreachable as writers even if a caller sneaks back;
+    /// 2. `cmds.rs` — the mutator surface — no longer names `save_registry` at all: every
+    ///    verb writes through `tbd_tickets::ops` + `Corpus::write_back`. Needle assembled at
+    ///    runtime (the T-912.1 tripwire trick) so this test's own source cannot satisfy it.
+    #[test]
+    fn mutators_never_reach_the_value_writer_pin() {
+        let root = repo_root();
+        if !tree_is_phase2(&root) {
+            return;
+        }
+        let reg = crate::registry::load_registry(&root).expect("load live registry");
+        let err = crate::registry::save_registry(&root, &reg)
+            .expect_err("save_registry must refuse a phase-2 tree");
+        let msg = format!("{err:#}");
+        assert!(
+            msg.contains("typed ops") && msg.contains("migration/test-only"),
+            "refusal must name the typed path: {msg}"
+        );
+
+        let cmds_src = include_str!("cmds.rs");
+        let needle = format!("save_{}", "registry");
+        assert!(
+            !cmds_src.contains(&needle),
+            "cmds.rs names `{needle}` again — mutators must write through tbd_tickets ops \
+             (T-916.2), never the Value round-trip"
+        );
     }
 }

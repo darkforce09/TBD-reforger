@@ -89,7 +89,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 use serde::{Deserialize, Serialize};
-use tbd_tickets::{StatusName, Ticket, parse_ticket_toml};
+use tbd_tickets::{StatusName, Ticket};
 
 pub const LOCK_REL: &str = ".ai/tickets/wave.lock";
 pub const LOCK_VERSION: u32 = 1;
@@ -182,19 +182,19 @@ impl TicketView {
 }
 
 pub fn load_views(root: &Path) -> Result<Vec<TicketView>> {
-    let dir = crate::tickets_store::tickets_dir(root);
-    let mut views = Vec::new();
-    for ent in std::fs::read_dir(&dir).with_context(|| dir.display().to_string())? {
-        let ent = ent?;
-        let name = ent.file_name();
-        let name = name.to_string_lossy();
-        if !name.starts_with("T-") || !name.ends_with(".toml") {
-            continue;
-        }
-        let text = std::fs::read_to_string(ent.path())?;
-        let t = parse_ticket_toml(&text)
-            .map_err(|e| anyhow::anyhow!("{}: {e}", ent.path().display()))?;
-        let v = match t {
+    // T-916.2: the shared typed corpus (`tbd_tickets::store::Corpus`) replaced this module's
+    // own directory walk — three near-duplicate walks existed (here, `check_open_work_owns`,
+    // `slice_collisions::ticket_facts`) and the store is now the one substrate. Same
+    // fail-closed contract (one unparseable file refuses the load, naming it), plus the
+    // stem==id guarantee the raw walk never had. BTreeMap iteration is id-sorted — the same
+    // stable order the old post-walk sort produced; it is diagnostics order only and NEVER a
+    // packing sort key (candidates sort by (order, id) below; glob order is forbidden by the
+    // program spec).
+    let corpus = tbd_tickets::Corpus::load(root).map_err(|e| anyhow::anyhow!(e))?;
+    let views = corpus
+        .tickets
+        .into_values()
+        .map(|t| match t {
             Ticket::Program(p) => TicketView {
                 id: p.id,
                 title: p.title,
@@ -217,12 +217,8 @@ pub fn load_views(root: &Path) -> Result<Vec<TicketView>> {
                 depends_on: w.depends_on,
                 pack_last: w.pack_last == Some(true),
             },
-        };
-        views.push(v);
-    }
-    // Sorted for stable iteration in diagnostics. NEVER used as a packing sort key — candidates
-    // sort by (order, id) below, and glob order is forbidden by the program spec.
-    views.sort_by(|a, b| a.id.cmp(&b.id));
+        })
+        .collect();
     Ok(views)
 }
 
