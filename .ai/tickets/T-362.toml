@@ -33,6 +33,7 @@ order = 3178
 executor = "claude-code"
 priority = 1
 shipped_at = "0a2ebf4b"
+owns = ["tools/tbd-tools/src/doctor.rs"]
 
 [scope.website.editor]
 chrome = []

@@ -13,6 +13,7 @@ status = "shipped"
 order = 3208
 executor = "claude-code"
 priority = 1
+owns = ["apps/website/frontend/src/event_hub.rs"]
 
 [scope.website.editor]
 chrome = []

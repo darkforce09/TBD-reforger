@@ -47,6 +47,10 @@ status = "shipped"
 order = 3430
 executor = "claude-code"
 priority = 0
+owns = [
+    "apps/website/api/src/contract/validate.rs",
+    "packages/tbd-schema/schema/mission-editor-payload.schema.json",
+]
 
 [scope.website.editor]
 chrome = []

@@ -35,6 +35,7 @@ status = "shipped"
 order = 3260
 executor = "claude-code"
 priority = 0
+owns = ["scripts/platform/wave.sh"]
 
 [scope.website.editor]
 chrome = []

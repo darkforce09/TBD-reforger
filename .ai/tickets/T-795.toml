@@ -6,6 +6,10 @@ status = "shipped"
 order = 4770
 executor = "claude-code"
 notes = "supersedes T-081; Eden numbering evidence = review F-25 table; ring-marquee destruction evidence = review F-16/rotate section | SHIPPED W205: renumber landed six-surface-consistent (binding/hint/plates/menu/help/census — verifier parity sweep exact), rotate ring is a real control (band boundary bites at 54/50px, selection preserved, one-undo), No-Widget drag-move intact, digits guarded in text fields. TWO not-reproducing claims: translate gizmo verified TRUE by the verifier; the heading-arrow claim was FALSE (made from source, not pixels — slots render yaw-less everywhere) -> T-832, folds into T-808/W207. Ring semantics shipped as face-the-aim, spec said about-centre -> operator decision T-833."
+owns = [
+    "apps/website/frontend/src/mission_editor.rs",
+    "apps/website/frontend/src/eden_help.rs",
+]
 
 [scope.website.editor]
 chrome = []

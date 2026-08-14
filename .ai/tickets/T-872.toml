@@ -6,6 +6,10 @@ status = "shipped"
 order = 5530
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+owns = [
+    "scripts/mod/seed-milestone-announcement.sh",
+    "xtask/src/gate_seed_milestone_announcement.rs",
+]
 
 [scope.repo]
 layers = ["xtask"]

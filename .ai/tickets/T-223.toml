@@ -6,6 +6,7 @@ status = "shipped"
 order = 2410
 executor = "claude-code"
 shipped_at = "c24e9e35"
+owns = ["apps/website/frontend/src/mission_hydrate.rs"]
 
 [scope.website.editor]
 chrome = []

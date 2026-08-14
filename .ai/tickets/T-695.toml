@@ -6,6 +6,7 @@ status = "shipped"
 order = 4490
 executor = "claude-code"
 notes = "— SHIPPED wave 114 (editor factory), 0fa3b530; verifier wave114.md. Starred-asset collection over the live catalogue, localStorage key tbd-mc-editor-favourites with a version stamp and one migration chokepoint; identity is resource_name so a modpack re-ingest cannot orphan the collection. Stale favourites are KEPT AND MARKED, never pruned (a toggled-off modpack is reversible); resolve_favourites is count-preserving by construction and pinned."
+owns = ["apps/website/frontend/src/eden_dock_right.rs"]
 
 [scope.website.editor]
 chrome = []

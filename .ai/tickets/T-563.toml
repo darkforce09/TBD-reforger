@@ -11,6 +11,10 @@ status = "shipped"
 order = 3416
 executor = "claude-code"
 priority = 2
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",
+]
 
 [scope.mod]
 layers = ["feature"]

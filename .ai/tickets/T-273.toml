@@ -5,6 +5,7 @@ summary = "Last touched 2026-06-26; it predates slice_plan.status, notes and shi
 status = "shipped"
 order = 2910
 executor = "claude-code"
+owns = [".ai/tickets/schema.json"]
 
 [scope.repo]
 layers = ["xtask"]

@@ -6,6 +6,10 @@ status = "shipped"
 order = 2710
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
+owns = [
+    "Makefile",
+    ".gitignore",
+]
 
 [scope.repo]
 layers = ["docs"]

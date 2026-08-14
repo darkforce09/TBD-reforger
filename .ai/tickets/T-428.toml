@@ -9,6 +9,11 @@ status = "shipped"
 order = 3267
 executor = "claude-code"
 priority = 2
+owns = [
+    "apps/website/api/src/services/role_sync.rs",
+    "apps/website/api/seeds/discord_roles.sql",
+    "apps/website/api/src/bin/api.rs",
+]
 
 [scope.website.editor]
 chrome = []

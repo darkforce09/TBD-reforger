@@ -9,6 +9,12 @@ executor = "claude-code"
 notes = "Depends on T-913.1 landed. Malformed started, missing id or missing tokens_consumed in a run file is ticket check red. Printing tokens=0 for a missing object is forbidden. Two runs in one second yield two files (sha or increment suffix). LIMITS: command-center in-chat subagent dispatch is not captured."
 depends_on = ["T-913.1"]
 parent = "T-913"
+owns = [
+    ".ai/tickets/metrics",
+    "xtask/src/wave",
+    "xtask/src/cmds.rs",
+    "xtask/src/check.rs",
+]
 
 [scope.repo]
 layers = ["xtask"]

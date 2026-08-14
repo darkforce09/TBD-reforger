@@ -6,6 +6,10 @@ status = "shipped"
 order = 3945
 executor = "claude-code"
 notes = "editor-UI program wave 5 (wave_plan.tsv row 105); filed 2026-08-01 by the framework_synthesis coverage audit (parity/coverage_audit.md) — SHIPPED wave 105 (editor factory), 5ca91425 + sweep a7d91fca; verifier wave105.md"
+owns = [
+    "apps/website/api/src/handlers/missions.rs",
+    "apps/website/api/src/models/mission.rs",
+]
 
 [scope.website.editor]
 chrome = []

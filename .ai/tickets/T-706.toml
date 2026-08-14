@@ -31,6 +31,7 @@ status = "shipped"
 order = 4600
 executor = "claude-code"
 notes = " — SHIPPED wave 120 (editor factory), 843f3438 + ledger 9228a458 + hardening 6382c69c + prose 955a281d; verifier wave120.md (contract hardened against the hostile reading before any reader dispatched); unread-fields gate live at 53 fields"
+owns = ["packages/tbd-schema/schema/mission.schema.json"]
 
 [scope.schema]
 layers = ["mission"]

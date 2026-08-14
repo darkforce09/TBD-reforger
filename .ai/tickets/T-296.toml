@@ -5,6 +5,10 @@ summary = "TBD_ResultsReporter.c:23, :28-29 and :422-423 still state that identi
 status = "shipped"
 order = 2296
 executor = "claude-code"
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_ResultsReporter.c",
+    "scripts/mod/verify-t296-results-reporter-identity-comments.sh",
+]
 
 [scope.mod]
 layers = ["feature"]

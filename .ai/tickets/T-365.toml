@@ -24,6 +24,7 @@ order = 3181
 executor = "claude-code"
 priority = 1
 shipped_at = "c789ac0c"
+owns = ["apps/website/api/src/services/mortar.rs"]
 
 [scope.website.editor]
 chrome = []

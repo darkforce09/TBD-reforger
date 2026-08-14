@@ -11,6 +11,12 @@ status = "shipped"
 order = 3289
 executor = "claude-code"
 priority = 2
+owns = [
+    "packages/tbd-schema/schema/mission.schema.json",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
+    "apps/website/api/src/contract/validate.rs",
+    "xtask/src/schema_gates.rs",
+]
 
 [scope.repo]
 layers = ["docs"]

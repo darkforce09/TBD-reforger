@@ -5,6 +5,11 @@ summary = "build_catalog_tree (asset_catalog.rs:60) takes no side and filters ki
 status = "shipped"
 order = 2730
 executor = "claude-code"
+owns = [
+    "apps/website/frontend/src/asset_catalog.rs",
+    "apps/website/frontend/src/eden_chrome.rs",
+    "apps/website/frontend/src/mission_editor.rs",
+]
 
 [scope.website.editor]
 chrome = []

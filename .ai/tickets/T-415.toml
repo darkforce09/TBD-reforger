@@ -20,6 +20,7 @@ order = 3240
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 priority = 1
+owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c"]
 
 [scope.repo]
 layers = ["docs"]

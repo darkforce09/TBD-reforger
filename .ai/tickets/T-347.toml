@@ -38,6 +38,7 @@ order = 3163
 executor = "claude-code"
 priority = 0
 shipped_at = "57f9c7ca"
+owns = ["apps/website/api/src/handlers/telemetry.rs"]
 
 [scope.website.editor]
 chrome = []

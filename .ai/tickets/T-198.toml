@@ -6,6 +6,7 @@ status = "shipped"
 order = 2160
 executor = "claude-code"
 shipped_at = "2070eecd"
+owns = ["packages/tbd-schema/schema/mission.schema.json"]
 
 [scope.repo]
 layers = ["docs"]

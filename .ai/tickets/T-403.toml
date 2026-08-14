@@ -19,6 +19,10 @@ status = "shipped"
 order = 3219
 executor = "claude-code"
 priority = 2
+owns = [
+    "apps/website/frontend/src/dto.rs",
+    "apps/website/frontend/tests/fixtures/api/GET__events__c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7.json",
+]
 
 [scope.website.editor]
 chrome = []

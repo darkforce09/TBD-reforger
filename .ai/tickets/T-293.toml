@@ -5,6 +5,10 @@ summary = "TBD_RadioPlan.c:4-6 claims the document struct has no radioPlan membe
 status = "shipped"
 order = 3110
 executor = "claude-code"
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioPlan.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
+]
 
 [scope.mod]
 layers = ["feature"]

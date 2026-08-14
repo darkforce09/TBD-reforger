@@ -6,6 +6,10 @@ status = "shipped"
 order = 5440
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+owns = [
+    "scripts/mod/tbd-dev-bootstrap.sh",
+    "xtask/src/gate_tbd_dev_bootstrap.rs",
+]
 
 [scope.repo]
 layers = ["xtask"]

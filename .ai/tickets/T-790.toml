@@ -6,6 +6,13 @@ status = "shipped"
 order = 4720
 executor = "claude-code"
 notes = "T-069/T-213/T-673 are the marker-family parents — cite; lane format consumed by T-806/T-808 (depends_on edges) | OPERATOR DIRECTION 2026-08-10: any marker-EDITING surface this wave opens (the F-07 on-map-select fold) must be the Attributes modal (T-763 marker attrs lineage), NOT a new dock editing lane — the dock places, the outliner lists, Attributes edits. | SHIPPED W204: glyphs + captions render through the pinned T-760 lane (3 distinct signatures at 3 zooms, centroid-exact dock-vs-map, 64/64 alias table for T-806/T-808, buffer lifecycle leak-checked 12x). Disclosed outside-owns edit (mission_history.rs, 6 lines at the T-760 feed sites) audited exact by the verifier, feed pins intact. Caption screen-space drift at close zoom -> T-828."
+owns = [
+    "apps/website/frontend/src/mission_editor.rs",
+    "crates/map-engine-core/src/doc/store.rs",
+    "crates/map-engine-render/src/scene.rs",
+    "crates/map-engine-render/src/engine.rs",
+    "crates/map-engine-render/src/lanes.rs",
+]
 
 [scope.website.editor]
 chrome = []

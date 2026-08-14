@@ -5,6 +5,12 @@ summary = "No golden authors slots[].y, so the entire schema-1.2 path — Y_ABSE
 status = "shipped"
 order = 2670
 executor = "claude-code"
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",
+    "packages/tbd-schema/golden-missions/slot-y-absent-and-present.json",
+    "xtask/src/schema_gates.rs",
+]
 
 [scope.repo]
 layers = ["xtask"]

@@ -6,6 +6,7 @@ status = "shipped"
 order = 2140
 executor = "claude-code"
 shipped_at = "7b98232b"
+owns = [".ai/tickets/registry.json"]
 
 [scope.repo]
 layers = ["xtask"]

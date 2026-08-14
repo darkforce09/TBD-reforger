@@ -8,6 +8,12 @@ spec = "docs/platform/t913_ticket_run_metrics.md"
 executor = "claude-code"
 notes = "New test: every on-disk TOML key is a mapped encoding-C key or in ALLOWED_NEW — planting created_at without the widen commit is check-red. Timestamp parser crate arrives in the same commit as the fields (no chrono/time in xtask or tbd-tickets today). shipped_at stays a SHA."
 parent = "T-913"
+owns = [
+    ".ai/tickets/schema.json",
+    "crates/tbd-tickets",
+    "xtask/src/cmds.rs",
+    "xtask/src/check.rs",
+]
 
 [scope.repo]
 layers = ["xtask"]

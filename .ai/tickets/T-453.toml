@@ -11,6 +11,11 @@ status = "shipped"
 order = 3292
 executor = "claude-code"
 priority = 2
+owns = [
+    ".github/workflows/ci.yml",
+    "scripts/platform/wave.sh",
+    "Makefile",
+]
 
 [scope.repo]
 layers = ["xtask"]

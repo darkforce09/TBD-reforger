@@ -14,6 +14,12 @@ status = "shipped"
 order = 3317
 executor = "claude-code"
 priority = 1
+owns = [
+    "scripts/mod/verify-t440-faction-library-seed.sh",
+    "scripts/platform/wave.sh",
+    "Makefile",
+    "apps/website/api/seeds/faction_library.sql",
+]
 
 [scope.repo]
 layers = ["xtask"]

@@ -12,6 +12,10 @@ order = 3383
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 priority = 2
+owns = [
+    "scripts/mod/lib/mcpd-bin.sh",
+    "scripts/mod/mcp-call-selftest.sh",
+]
 
 [scope.repo]
 layers = ["docs"]

@@ -40,6 +40,12 @@ status = "shipped"
 order = 3492
 executor = "claude-code"
 priority = 3
+owns = [
+    "scripts/platform/wave.sh",
+    "tools/tbd-tools/src/enf",
+    ".github/workflows/ci.yml",
+    "apps/website/frontend/src/arsenal.rs",
+]
 
 [scope.website.editor]
 chrome = []

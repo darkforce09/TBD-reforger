@@ -15,6 +15,11 @@ order = 3299
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 priority = 1
+owns = [
+    "scripts/mod/verify-t456-mission-rest-size-gate.sh",
+    "apps/website/frontend/src/ui.rs",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
+]
 
 [scope.repo]
 layers = ["docs"]

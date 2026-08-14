@@ -7,6 +7,11 @@ order = 5600
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
 notes = "T-853 PARTIAL LAND. lib/mcpd-bin.sh and lib/xtask-run.sh were verified to have ZERO consumers after wave 229 ported mcp-daemon.sh, and were deleted with their inventory lines. lib/paths.sh REMAINS: its last consumer is scripts/mod/deploy-staging.sh, which is on the Claude lane. Land the remainder when `git grep -l 'paths.sh' -- scripts/` returns nothing but the inventory. A stale 'do not delete paths.sh / xtask-run.sh' caution in xtask/src/gate_debug_direct_join.rs was corrected at the same time: that gate MIRRORS the path constants, it does not read the file. T-853: LANDED. All four shims (paths.sh, mcpd-bin.sh, xtask-run.sh, gate-grep.sh) were deleted once their last consumers were ported — mcp-daemon.sh freed two, deploy-staging.sh freed the other two. scripts/mod/lib/ no longer exists."
+owns = [
+    "scripts/mod/lib/paths.sh",
+    "scripts/mod/lib/mcpd-bin.sh",
+    "scripts/mod/lib/xtask-run.sh",
+]
 
 [scope.repo]
 layers = ["xtask"]

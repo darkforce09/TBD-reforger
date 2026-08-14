@@ -7,6 +7,14 @@ order = 4220
 executor = "claude-code"
 notes = "editor-UI program wave 18 (wave_plan.tsv row 118) — SHIPPED wave 118 (editor factory), e0fcaec4; verifier wave118.md. Docks equalised to ONE 240px constant (DOCK_LEFT_PX/DOCK_RIGHT_PX both resolve to DOCK_PX, so 'equal' is a definition rather than two matching literals), mount classes bound to those consts, tree pitch 24->16 with ROW_H read back from the class, five 'visual only' decoration buttons deleted, right-dock word tabs became glyph cells. Layout MEASURED in real Chromium inside the container, not assumed. The T-634 tripwire fired as designed and was INVERTED rather than weakened, moving the enforcement from four call sites to the shared BTN_ICON recipe so every caller gets the fix. ⚠️ Its CONTAINER_H justification is FALSE — see T-769."
 depends_on = ["T-661"]
+owns = [
+    "apps/website/frontend/src/eden_dock_left.rs",
+    "apps/website/frontend/src/eden_dock_right.rs",
+    "apps/website/frontend/src/eden_tree.rs",
+    "apps/website/frontend/src/eden_layout.rs",
+    "apps/website/frontend/src/mission_editor.rs",
+    "apps/website/frontend/src/select_tool.rs",
+]
 
 [scope.website.editor]
 chrome = []

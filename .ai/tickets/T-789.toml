@@ -6,6 +6,7 @@ status = "shipped"
 order = 4710
 executor = "claude-code"
 notes = "depends_on T-786; review re-verification section has the exact rects; the 'blind-typeable offscreen field' note is why focus-first matters | SHIPPED W203: fresh-state on reopen, NodeRef focus-first (uncontrolled input so select survives), Tab trap both edges by the slice. ITS OFFSCREEN PREMISE-CHECK WAS WRONG-WAY: 'did not reproduce' was a class-read, not a measurement — the dialog WAS off-screen (y=-22/-184; backdrop-filter containing block, proven by causation). Fixed in-wave 940698e8: Portal to document.body + gate smoke save-dialog-rect (EDITOR_SUITE 19, rect containment at both viewports) so class-string pins can never vouch for geometry again; focused re-verify RESOLVED with live rects. Kept un-registered from modal_stack (T-726 argument, Esc ladder re-proved). Auto-bump claim refuted -> T-821."
+owns = ["apps/website/frontend/src/eden_top_strip.rs"]
 
 [scope.website.editor]
 chrome = []

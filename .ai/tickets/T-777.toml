@@ -6,6 +6,7 @@ status = "shipped"
 order = 4653
 executor = "claude-code"
 notes = "OPERATOR DECISION 2026-08-08 — same ruling as T-743: the JS byte-parity was a migration safety net, not a contract. A pasted or composed entity must KEEP ITS AUTHORED Z rather than landing at 0.0. Fix editor_ops.rs paste_at_cursor's `zs.push(0.0)` and place_composition (store.rs) to carry the source z, exactly as wave 127 did for the four move/edit paths. Wave 127's rules still bind: fix at the frontend caller where possible, reuse keep_z_rows()/slot_z(), read z off slots_json (exact f64) and NOT the SoA (f32, omits hidden-layer slots per T-665). Sequence with T-743 — they are one behaviour change on two axes and should land together."
+owns = ["apps/website/frontend/src/editor_ops.rs"]
 
 [scope.website.editor]
 chrome = []

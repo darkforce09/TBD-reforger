@@ -29,6 +29,13 @@ status = "shipped"
 order = 3411
 executor = "claude-code"
 priority = 2
+owns = [
+    "apps/website/api/tests/db_migrate.rs",
+    "apps/website/api/tests/models_fromrow.rs",
+    "apps/website/api/tests/common/mod.rs",
+    "apps/website/api/src/services/registry_import.rs",
+    "Makefile",
+]
 
 [scope.website.editor]
 chrome = []

@@ -14,6 +14,10 @@ status = "shipped"
 order = 3329
 executor = "claude-code"
 priority = 1
+owns = [
+    "scripts/platform/wave.sh",
+    "docs/platform/factory_pack_wave",
+]
 
 [scope.repo]
 layers = ["xtask"]

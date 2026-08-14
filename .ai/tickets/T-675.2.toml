@@ -6,6 +6,10 @@ status = "queued"
 order = 4320
 executor = "claude-code"
 parent = "T-675"
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",
+]
 
 [scope.mod]
 layers = ["backend"]

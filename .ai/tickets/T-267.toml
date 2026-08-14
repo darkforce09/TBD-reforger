@@ -5,6 +5,7 @@ summary = "content.rs makes exactly one API call and discards the returned id, s
 status = "shipped"
 order = 2850
 executor = "claude-code"
+owns = ["apps/website/frontend/src/content.rs"]
 
 [scope.website.editor]
 chrome = []

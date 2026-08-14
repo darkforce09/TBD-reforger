@@ -10,6 +10,7 @@ depends_on = [
     "T-661",
     "T-656",
 ]
+owns = ["crates/map-engine-core/src/mission/validate.rs"]
 
 [scope.website.editor]
 chrome = []

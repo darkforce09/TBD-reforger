@@ -6,6 +6,11 @@ status = "queued"
 order = 5070
 executor = "claude-code"
 notes = "the post-band hyper-focus program; T-818/T-819 (wave 210) are its first two instances and proceed as filed | operator restated the rule a THIRD time at the wave-205 eye-pass (markers un-clickable on map); T-838 extracts the marker half as actionable"
+owns = [
+    "apps/website/frontend/src/outliner.rs",
+    "apps/website/frontend/src/eden_dock_right.rs",
+    "apps/website/frontend/src/attributes.rs",
+]
 
 [scope.website.editor]
 chrome = []

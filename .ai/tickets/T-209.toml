@@ -5,7 +5,12 @@ summary = "compile.sh and world-boot.sh are the best regression instruments in t
 status = "shipped"
 order = 2270
 executor = "claude-code"
+depends_on = ["T-186"]
 shipped_at = "7a6df0b1"
+owns = [
+    "scripts/mod/compile.sh",
+    "scripts/mod/world-boot.sh",
+]
 
 [scope.mod]
 layers = ["feature"]

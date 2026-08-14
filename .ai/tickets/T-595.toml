@@ -41,6 +41,11 @@ status = "shipped"
 order = 3462
 executor = "claude-code"
 priority = 1
+owns = [
+    "apps/website/api/src/services/game_agent.rs",
+    "apps/website/api/src/handlers/admin.rs",
+    "apps/website/api/src/config.rs",
+]
 
 [scope.website.editor]
 chrome = []

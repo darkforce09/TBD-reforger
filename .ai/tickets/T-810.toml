@@ -6,6 +6,10 @@ status = "shipped"
 order = 4920
 executor = "claude-code"
 notes = "depends_on T-785; Eden dialog evidence frame 163121; validator ASSET-RESOLVES copy is the error-side pair | SHIPPED W206: searchable side-agnostic TYPE picker (canonical write clears ASSET-RESOLVES live), snapshot-on-open Revert via per-slot ops (differing-multi restore PROVEN — the case a batch flattens), Eden axis colours, advanced freetext single-select (hidden on differing multis, documented), 3-press Esc ladder. Retry=reload verified WORK-SAFE (draft restore + conflict modal). T-785/T-813 machinery unregressed under the new surface."
+owns = [
+    "apps/website/frontend/src/attributes.rs",
+    "apps/website/frontend/src/asset_catalog.rs",
+]
 
 [scope.website.editor]
 chrome = []

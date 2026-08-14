@@ -6,6 +6,10 @@ status = "shipped"
 order = 4860
 executor = "claude-code"
 notes = "review F-24 + Eden preferences frame 163916; complements F-04 fix (T-789) as the save-story pair | SHIPPED W206: draft-saved chip with real ack discipline (error branch cannot stamp — single call site, source-verified), 1s coarse ticker, inline mount (rect smoke green with the chip up), two-layer tooltip copy, bridge accessor. beforeunload copy consciously left (already honestly documented as browser-ignored). Boot-flush chip nuance -> T-840."
+owns = [
+    "apps/website/frontend/src/eden_top_strip.rs",
+    "apps/website/frontend/src/yrs_persist.rs",
+]
 
 [scope.website.editor]
 chrome = []

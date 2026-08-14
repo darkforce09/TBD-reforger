@@ -6,6 +6,11 @@ status = "shipped"
 order = 4910
 executor = "claude-code"
 notes = "Eden evidence frames 165952/170028; T-146 absorbed — registry note added by this batch | owns widened +eden_tree.rs (free in wave 203) for the outliner listing; fold per operator instruction 2026-08-10 | SHIPPED W203: merged per-faction tree (vehicle leaves under NATO, drag-places), recently-placed as Favourites|History pair — completion 87e1ff94 added the recorder seam so composition stamps (one titled entry per stamp) and ORBAT Add Vehicle feed it too; FOLD delivered: placed vehicles listed in the left outliner (selectable by doc-presence), Vehicles tab kept as the crew-editor stopgap (dies with T-818/W210); ORBAT picker data path verified independent. Cause-probe nuance under headless -> T-820; outliner dblclick bubble (pre-existing, widened) -> T-822; OBJ count -> T-823."
+owns = [
+    "apps/website/frontend/src/eden_dock_right.rs",
+    "apps/website/frontend/src/asset_catalog.rs",
+    "apps/website/frontend/src/eden_tree.rs",
+]
 
 [scope.website.editor]
 chrome = []

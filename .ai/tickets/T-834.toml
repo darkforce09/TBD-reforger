@@ -6,6 +6,10 @@ status = "queued"
 order = 5160
 executor = "claude-code"
 notes = "wave205 verifier NIT batch; pure cleanup"
+owns = [
+    "apps/website/frontend/src/eden_top_strip.rs",
+    "apps/website/frontend/src/mission_editor.rs",
+]
 
 [scope.website.editor]
 chrome = []

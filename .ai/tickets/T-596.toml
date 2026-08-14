@@ -48,6 +48,14 @@ status = "shipped"
 order = 3463
 executor = "claude-code"
 priority = 3
+owns = [
+    "crates/map-engine-render/src/engine.rs",
+    "crates/map-engine-render/src/world_assets/dem_vectors.rs",
+    "crates/map-engine-render/src/world_host.rs",
+    "crates/map-engine-render/src/forest_mass.rs",
+    "crates/map-engine-render/src/mission_history.rs",
+    "crates/map-engine-render/src/draw_order.rs",
+]
 
 [scope.website.editor]
 chrome = []

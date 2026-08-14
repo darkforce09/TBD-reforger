@@ -12,6 +12,7 @@ order = 4330
 executor = "claude-code"
 notes = "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row"
 depends_on = ["T-079"]
+owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_TriggerRuntime.c"]
 
 [scope.mod]
 layers = ["feature"]

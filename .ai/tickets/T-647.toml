@@ -7,6 +7,10 @@ order = 3950
 executor = "claude-code"
 notes = "editor-UI program wave 6 (wave_plan.tsv row 106) — SHIPPED wave 106 (2863186d) WITH PARTIALS: PLACE-001 click-then-click NOT delivered end-to-end and ATTR-OPEN-001 vehicles-only (verifier wave106.md MAJOR-1..4 → T-723/T-724); Ctrl resolution + Alt-empty + regroup + picker sound"
 depends_on = ["T-661"]
+owns = [
+    "apps/website/frontend/src/mission_editor.rs",
+    "apps/website/frontend/src/editor_ops.rs",
+]
 
 [scope.website.editor]
 chrome = []

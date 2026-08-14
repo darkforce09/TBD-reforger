@@ -33,6 +33,11 @@ status = "shipped"
 order = 3400
 executor = "claude-code"
 priority = 0
+owns = [
+    "apps/website/api/migrations/0009_role_played_not_null.sql",
+    "apps/website/api/migrations/0017_orbat_slots_assigned_partial_unique.sql",
+    "scripts/platform/wave.sh",
+]
 
 [scope.website.editor]
 chrome = []

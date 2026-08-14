@@ -5,6 +5,10 @@ summary = "refresh_leaderboard has exactly one caller, inside results ingest. If
 status = "shipped"
 order = 2790
 executor = "claude-code"
+owns = [
+    "apps/website/api/src/db.rs",
+    "apps/website/api/src/bin/api.rs",
+]
 
 [scope.website.editor]
 chrome = []

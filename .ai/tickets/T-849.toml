@@ -6,6 +6,11 @@ status = "queued"
 order = 5310
 executor = "claude-code"
 notes = "operator W208 eye-pass; pairs with T-848"
+owns = [
+    "apps/website/frontend/src/context_menu.rs",
+    "apps/website/frontend/src/orbat_manager.rs",
+    "crates/map-engine-core/src/doc/place_orbat.rs",
+]
 
 [scope.website.editor]
 chrome = []

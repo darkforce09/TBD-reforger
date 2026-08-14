@@ -60,6 +60,7 @@ the only actionable items and neither is what the ticket asked for. Re-scope or 
 status = "shipped"
 order = 2580
 executor = "claude-code"
+owns = ["apps/website/frontend/src/arsenal_rules.rs"]
 
 [scope.website.editor]
 chrome = []

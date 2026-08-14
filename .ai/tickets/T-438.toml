@@ -11,6 +11,11 @@ status = "shipped"
 order = 3277
 executor = "claude-code"
 priority = 2
+owns = [
+    "scripts/mod/deploy-staging.sh",
+    "scripts/mod/verify-t438-deploy-staging-compose-path.sh",
+    "docs/website/HOME_SERVER.md",
+]
 
 [scope.website.editor]
 chrome = []

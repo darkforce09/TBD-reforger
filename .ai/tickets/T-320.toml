@@ -28,6 +28,11 @@ order = 3136
 executor = "claude-code"
 priority = 0
 shipped_at = "ccbcda8b"
+owns = [
+    "tools/tbd-tools/src/doctor.rs",
+    "tools/tbd-tools/src/smokes.rs",
+    "docs/website/EDITOR_GATE_RUNBOOK.md",
+]
 
 [scope.website.editor]
 chrome = []

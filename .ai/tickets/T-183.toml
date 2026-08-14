@@ -7,6 +7,12 @@ order = 2010
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 shipped_at = "f2dc5b1a"
+owns = [
+    "packages/tbd-schema/registry/kit-aliases.json",
+    "apps/mod/tbd-framework/Data/registry.json",
+    "apps/website/api/src/services/mission_compile.rs",
+    "crates/map-engine-core/src/mission/kit.rs",
+]
 
 [scope.repo]
 layers = ["docs"]

@@ -6,6 +6,11 @@ status = "shipped"
 order = 4830
 executor = "claude-code"
 notes = "mechanism note from census GPU-preview design; mid-drag screenshot method in review O-7 | SHIPPED W208: pack_squad_link_drag_preview offsets affected endpoints with sprite dx/dy; push/clear_drag_preview bind SQUAD_LINKS; Class-R packer pins perturbation-proven. Live mid-drag 4px CDP + rf<=1ms left to eye-pass (slice disclosed). MissionConnections hairline still doc_tick-only (outside owns)."
+owns = [
+    "apps/website/frontend/src/select_tool.rs",
+    "crates/map-engine-core/src/slot_line.rs",
+    "crates/map-engine-core/src/squad_links.rs",
+]
 
 [scope.website.editor]
 chrome = []

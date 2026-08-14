@@ -25,6 +25,15 @@ status = "shipped"
 order = 3213
 executor = "claude-code"
 priority = 1
+owns = [
+    "apps/website/api/src/handlers/telemetry.rs",
+    "apps/website/api/migrations",
+    "apps/website/api/src/models/telemetry.rs",
+    "apps/website/api/src/handlers/leaderboards.rs",
+    "apps/website/api/src/handlers/deployments.rs",
+    "apps/website/api/tests/telemetry.rs",
+    "apps/website/api/tests/null_tolerance.rs",
+]
 
 [scope.repo]
 layers = ["docs"]

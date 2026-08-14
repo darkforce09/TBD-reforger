@@ -16,6 +16,7 @@ order = 3173
 executor = "claude-code"
 priority = 2
 shipped_at = "b19a4634"
+owns = ["packages/tbd-schema/schema/mission-editor-payload.schema.json"]
 
 [scope.website.editor]
 chrome = []

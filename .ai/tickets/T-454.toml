@@ -11,6 +11,12 @@ status = "shipped"
 order = 3293
 executor = "claude-code"
 priority = 2
+owns = [
+    "apps/website/frontend/src/wiki.rs",
+    "apps/website/frontend/src/modpacks.rs",
+    "apps/website/frontend/src/event_hub.rs",
+    "apps/website/frontend/src/nav.rs",
+]
 
 [scope.website.editor]
 chrome = []

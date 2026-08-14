@@ -6,6 +6,11 @@ status = "queued"
 order = 5250
 executor = "claude-code"
 notes = "wave207 verifier F1 + orchestrator ledger correction; the T-742/T-759 family — a guard that examines nothing"
+owns = [
+    "tools/tbd-tools/src/smokes.rs",
+    "scripts/platform/wave.sh",
+    "Makefile",
+]
 
 [scope.website.editor]
 chrome = []

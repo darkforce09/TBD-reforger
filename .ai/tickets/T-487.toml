@@ -11,6 +11,7 @@ status = "shipped"
 order = 3326
 executor = "claude-code"
 priority = 2
+owns = ["apps/website/api/seeds/discord_roles.sql"]
 
 [scope.website.editor]
 chrome = []

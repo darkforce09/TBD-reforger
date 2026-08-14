@@ -6,6 +6,10 @@ status = "queued"
 order = 5270
 executor = "claude-code"
 notes = "operator eye-pass wave-207; T-808 lane family; pairs naturally with the wave-210 vehicle set"
+owns = [
+    "crates/map-engine-core/src/slots_gpu.rs",
+    "crates/map-engine-render/src/engine.rs",
+]
 
 [scope.website.editor]
 chrome = []

@@ -6,6 +6,45 @@ status = "queued"
 order = 5850
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+owns = [
+    "apps/website/frontend/src/arsenal.rs",
+    "apps/website/frontend/src/arsenal_rules.rs",
+    "apps/website/frontend/src/asset_catalog.rs",
+    "apps/website/frontend/src/attributes.rs",
+    "apps/website/frontend/src/client.rs",
+    "apps/website/frontend/src/content.rs",
+    "apps/website/frontend/src/context_menu.rs",
+    "apps/website/frontend/src/deployments.rs",
+    "apps/website/frontend/src/dto.rs",
+    "apps/website/frontend/src/eden_dock_left.rs",
+    "apps/website/frontend/src/eden_dock_right.rs",
+    "apps/website/frontend/src/eden_help.rs",
+    "apps/website/frontend/src/eden_layout.rs",
+    "apps/website/frontend/src/eden_settings.rs",
+    "apps/website/frontend/src/eden_toolbelt.rs",
+    "apps/website/frontend/src/eden_top_strip.rs",
+    "apps/website/frontend/src/eden_tree.rs",
+    "apps/website/frontend/src/eden_zones.rs",
+    "apps/website/frontend/src/editor_ops.rs",
+    "apps/website/frontend/src/event_hub.rs",
+    "apps/website/frontend/src/event_manager.rs",
+    "apps/website/frontend/src/los_tool.rs",
+    "apps/website/frontend/src/mission_commands.rs",
+    "apps/website/frontend/src/mission_editor.rs",
+    "apps/website/frontend/src/mission_hydrate.rs",
+    "apps/website/frontend/src/mission_overview.rs",
+    "apps/website/frontend/src/missions.rs",
+    "apps/website/frontend/src/mortar.rs",
+    "apps/website/frontend/src/orbat_manager.rs",
+    "apps/website/frontend/src/outliner.rs",
+    "apps/website/frontend/src/personnel.rs",
+    "apps/website/frontend/src/place_helpers.rs",
+    "apps/website/frontend/src/ruler_tool.rs",
+    "apps/website/frontend/src/server_control.rs",
+    "apps/website/frontend/src/ui.rs",
+    "apps/website/frontend/src/validation_panel.rs",
+    "apps/website/frontend/src/yrs_persist.rs",
+]
 
 [scope.repo]
 layers = ["xtask"]

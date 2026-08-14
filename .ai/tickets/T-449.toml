@@ -13,6 +13,11 @@ status = "cancelled"
 order = 3288
 executor = "claude-code"
 priority = 2
+owns = [
+    "xtask/src/check.rs",
+    ".ai/tickets/schema.json",
+    "scripts/ticket",
+]
 
 [scope.repo]
 layers = ["xtask"]

@@ -6,6 +6,7 @@ status = "queued"
 order = 5090
 executor = "claude-code"
 notes = "wave204 verifier; measurement methodology matters — live-effective, not plate-calc"
+owns = ["apps/website/frontend/src/eden_top_strip.rs"]
 
 [scope.website.editor]
 chrome = []

@@ -19,6 +19,18 @@ status = "shipped"
 order = 3169
 executor = "claude-code"
 priority = 2
+owns = [
+    "apps/website/frontend/src/event_hub.rs",
+    "apps/website/frontend/src/router.rs",
+    "apps/website/frontend/src/app_routes.rs",
+    "apps/website/frontend/src/datefmt.rs",
+    "apps/website/frontend/src/announcements.rs",
+    "apps/website/frontend/src/server_intel.rs",
+    "apps/website/frontend/src/dashboard.rs",
+    "apps/website/frontend/src/events.rs",
+    "apps/website/frontend/src/audit.rs",
+    "tools/tbd-tools/fixtures/t159/manifests/routes.csv",
+]
 
 [scope.website.editor]
 chrome = []

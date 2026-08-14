@@ -14,6 +14,7 @@ order = 4350
 executor = "claude-code"
 notes = "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row"
 depends_on = ["T-677"]
+owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/AI/TBD_GroupState.c"]
 
 [scope.mod]
 layers = ["feature"]

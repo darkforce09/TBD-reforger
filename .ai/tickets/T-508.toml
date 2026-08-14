@@ -6,6 +6,10 @@ status = "shipped"
 order = 3348
 executor = "claude-code"
 priority = 0
+owns = [
+    "apps/website/api/tests/aar_replay_url_backfill.rs",
+    "apps/website/api/migrations/0010_backfill_aar_replay_url_scheme.sql",
+]
 
 [scope.website.editor]
 chrome = []

@@ -6,6 +6,10 @@ status = "shipped"
 order = 3333
 executor = "claude-code"
 priority = 2
+owns = [
+    "apps/website/api/src/services/webhook.rs",
+    "apps/website/api/src/handlers/cms.rs",
+]
 
 [scope.website.editor]
 chrome = []

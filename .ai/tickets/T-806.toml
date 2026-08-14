@@ -6,6 +6,7 @@ status = "shipped"
 order = 4880
 executor = "claude-code"
 notes = "depends_on T-790 (canonical glyph mapping is produced there); census T-069/T-213/T-673 cited as marker family | SHIPPED W205: picker 64->11 canonical rows, distinct SVG per glyph (11/11 verified), canonical slug stored and the map renders it (pick-Attack -> triangle-up at 3 zooms — the T-790 handshake end-to-end), alias search works, compile-time count tie to MARKER_GLYPH_COUNT. T-825 boundary respected (no new dock editing surface)."
+owns = ["apps/website/frontend/src/eden_dock_right.rs"]
 
 [scope.website.editor]
 chrome = []

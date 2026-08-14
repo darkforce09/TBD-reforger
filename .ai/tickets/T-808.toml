@@ -6,6 +6,10 @@ status = "shipped"
 order = 4900
 executor = "claude-code"
 notes = """depends_on T-790; T-157 visual-overhaul overlap cited in notes rather than absorbed (T-157 is broader) | operator note 2026-08-10: the T-790 procedural marker glyphs read "a little weird — not wrong, but weird"; when doing unit symbology, revisit marker glyph iconography in the same visual language | wave-205 verifier: slots render NO heading in any mode (lane yaw hardcoded 0) — unit symbology MUST carry orientation (T-832 is the finding; fold the yaw lane extension into this ticket, T-790 glyph-id lane as the template) | OPERATOR DIRECTION 2026-08-10 (symbology spec): slot glyph = circle WITH A FACING POINT (the point is the heading); vehicles = top-down SILHOUETTES per kind (a BTR looks like a BTR from above); rotation-widget usability depends on this — 'impossible to tell where you're rotating it' today | SHIPPED W207 (engine half + 3 completion passes): the operator's symbology language — slot disc with a FACING POINT, role knockouts (leader/medic/AT/MG), top-down vehicle silhouettes per kind, neutral comment bubble. T-832 DEAD (heading renders; 9-point sweep monotonic, wrap-continuous). Feeders wired in completion (3e19524f) off the id-sorted reader — column alignment held across delete/undo/drag mutations (verifier: 0.0 delta). A CLAMP-NOT-WRAP defect in the new code made headings 181-359 all draw south — caught by completion A, fixed 0bc55dc5; the same defect is live on the world lanes -> T-842. Marker glyphs rebuilt from the picker SVGs (the operator's 'weird'): zero border ink, anchor-honest centroids, 55/55 pairs distinct."""
+owns = [
+    "crates/map-engine-core/src/slots_gpu.rs",
+    "crates/map-engine-render/src/engine.rs",
+]
 
 [scope.website.editor]
 chrome = []

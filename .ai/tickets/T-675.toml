@@ -16,3 +16,4 @@ children = [
     "T-675.1",
     "T-675.2",
 ]
+owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c"]

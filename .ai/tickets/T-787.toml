@@ -6,6 +6,10 @@ status = "shipped"
 order = 4690
 executor = "claude-code"
 notes = "review section 8 O-1; the 1032px dock height sat unflagged in the responsive sweep — acceptance intentionally re-runs that sweep | SHIPPED W200 CLEAN: every acceptance clause re-measured (dock.bottom == bar.y exactly at 3 viewports, hit-tests, scroll, chevrons); 36px STATUSBAR_H_PX inset vindicated over 96px by measurement. Its two probe missions in the dev DB -> T-815. Verifier: wave200.md."
+owns = [
+    "apps/website/frontend/src/eden_layout.rs",
+    "apps/website/frontend/src/eden_toolbelt.rs",
+]
 
 [scope.website.editor]
 chrome = []

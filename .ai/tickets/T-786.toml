@@ -6,6 +6,12 @@ status = "shipped"
 order = 4680
 executor = "claude-code"
 notes = "wave-142-style honesty: cite the existing modal_stack registry rather than inventing a new one; deferred T-333 (modal z) if present should be folded/closed by this | SHIPPED W200: O-3/O-5 acceptance pairs re-proved (stack-driven, not DOM luck; every z-50 tie scrim-unreachable). Adjacent-pair leaks re-ticketed T-814 (transients under non-strip dialogs, one-Esc-two-layers, mount-vs-open-order Esc). Verifier: wave200.md F4/F5."
+owns = [
+    "apps/website/frontend/src/ui.rs",
+    "apps/website/frontend/src/eden_help.rs",
+    "apps/website/frontend/src/eden_top_strip.rs",
+    "apps/website/frontend/src/orbat_manager.rs",
+]
 
 [scope.website.editor]
 chrome = []

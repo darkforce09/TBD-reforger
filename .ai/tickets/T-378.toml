@@ -19,6 +19,10 @@ status = "shipped"
 order = 3194
 executor = "claude-code"
 priority = 1
+owns = [
+    "tools/tbd-tools/src/vsuite.rs",
+    "tools/tbd-tools/src/world/build.rs",
+]
 
 [scope.website.editor]
 chrome = []

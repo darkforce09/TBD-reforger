@@ -5,6 +5,10 @@ summary = "The clear-cookie string is built after the missing_code and invalid_s
 status = "shipped"
 order = 2660
 executor = "claude-code"
+owns = [
+    "apps/website/api/src/handlers/oauth.rs",
+    "apps/website/api/src/config.rs",
+]
 
 [scope.website.editor]
 chrome = []

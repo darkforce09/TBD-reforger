@@ -6,6 +6,11 @@ status = "shipped"
 order = 3345
 executor = "claude-code"
 priority = 1
+owns = [
+    "crates/map-engine-core/src/doc/store.rs",
+    "apps/website/frontend/src/mission_hydrate.rs",
+    "apps/website/api/src/handlers/missions.rs",
+]
 
 [scope.website.editor]
 chrome = []

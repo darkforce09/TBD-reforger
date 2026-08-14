@@ -14,6 +14,7 @@ status = "shipped"
 order = 3321
 executor = "claude-code"
 priority = 1
+owns = ["scripts/verify-t180-coherency.sh"]
 
 [scope.website.editor]
 chrome = []

@@ -6,6 +6,16 @@ status = "queued"
 order = 5880
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+owns = [
+    "xtask/src/cmds.rs",
+    "xtask/src/main.rs",
+    "xtask/src/schema_gates.rs",
+    "tools/tbd-tools/src/map/sap.rs",
+    "tools/tbd-tools/src/smokes.rs",
+    "tools/tbd-tools/src/world/aux.rs",
+    "tools/tbd-tools/src/world/build.rs",
+    "tools/tbd-tools/src/world/gates.rs",
+]
 
 [scope.repo]
 layers = ["xtask"]

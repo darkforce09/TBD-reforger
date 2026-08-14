@@ -25,6 +25,14 @@ status = "shipped"
 order = 2500
 executor = "claude-code"
 shipped_at = "5954bd76"
+owns = [
+    "apps/website/frontend/src/announcements.rs",
+    "apps/website/frontend/src/dashboard.rs",
+    "apps/website/frontend/src/audit.rs",
+    "apps/website/frontend/src/deployments.rs",
+    "apps/website/frontend/src/events.rs",
+    "apps/website/frontend/src/modpacks.rs",
+]
 
 [scope.website.editor]
 chrome = []

@@ -5,6 +5,14 @@ summary = "schemaVersion is regenerated as literal 1 so a stored 2 downgrades; m
 status = "shipped"
 order = 2380
 executor = "claude-code"
+owns = [
+    "crates/map-engine-core/src/doc/store.rs",
+    "crates/map-engine-core/src/mission/compile.rs",
+    "crates/map-engine-core/Cargo.toml",
+    "apps/website/frontend/src/editor_ops.rs",
+    "crates/map-engine-wasm/src/lib.rs",
+    "crates/map-engine-core/src/mission/flatten.rs",
+]
 
 [scope.website.editor]
 chrome = []

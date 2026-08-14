@@ -36,6 +36,7 @@ order = 3184
 executor = "claude-code"
 priority = 2
 shipped_at = "d92ea44d"
+owns = ["apps/website/frontend/src/mission_overview.rs"]
 
 [scope.website.editor]
 chrome = []

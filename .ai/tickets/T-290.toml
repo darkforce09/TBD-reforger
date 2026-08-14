@@ -5,6 +5,8 @@ summary = "meta.author, meta.templateId, meta.playerRange, the whole environment
 status = "idea"
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
+owns = ["crates/map-engine-core/src/mission/flatten.rs"]
+pack_last = true
 
 [scope.repo]
 layers = ["docs"]

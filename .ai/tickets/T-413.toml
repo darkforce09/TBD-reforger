@@ -20,6 +20,19 @@ status = "shipped"
 order = 3234
 executor = "claude-code"
 priority = 1
+owns = [
+    "apps/website/api/src/handlers/missions.rs",
+    "apps/website/api/src/handlers/events.rs",
+    "apps/website/frontend/src/leaderboards.rs",
+    "apps/website/frontend/src/layout.rs",
+    "apps/website/frontend/src/settings.rs",
+    "apps/website/frontend/src/announcements.rs",
+    "apps/website/frontend/src/events.rs",
+    "apps/website/frontend/src/missions.rs",
+    "apps/website/frontend/src/event_hub.rs",
+    "apps/website/api/tests/events_url_guard.rs",
+    "apps/website/api/tests/missions_url_guard.rs",
+]
 
 [scope.website.editor]
 chrome = []

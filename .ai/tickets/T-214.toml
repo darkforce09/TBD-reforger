@@ -24,6 +24,7 @@ status = "shipped"
 order = 2320
 executor = "claude-code"
 shipped_at = "ba0aba5c"
+owns = ["crates/map-engine-core/src/mission/compile.rs"]
 
 [scope.website.editor]
 chrome = []

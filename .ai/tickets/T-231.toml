@@ -13,6 +13,7 @@ status = "shipped"
 order = 2490
 executor = "claude-code"
 shipped_at = "f44b602a"
+owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_IdentityLink.c"]
 
 [scope.repo]
 layers = ["docs"]

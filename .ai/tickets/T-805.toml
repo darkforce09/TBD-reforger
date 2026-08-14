@@ -6,6 +6,11 @@ status = "shipped"
 order = 4870
 executor = "claude-code"
 notes = "yrs_persist.rs READ-ONLY here (owned by T-804/T-807 waves) — packing risk 3 guard; API-half evidence: 403/404 verified in review sixth pass | SHIPPED W208: client route guard redirects sub-mission_maker away from /missions/:id/edit with toast; maker+admin unchanged; deep-link bootstrap avoids false-deny. Draft '8 objects on 404' REFUTED as sync seed stay-local (not IDB leak). yrs_persist.rs untouched. F1 dead role_notice consumer → T-846."
+owns = [
+    "apps/website/frontend/src/router.rs",
+    "apps/website/frontend/src/auth.rs",
+    "apps/website/frontend/src/nav.rs",
+]
 
 [scope.website.editor]
 chrome = []

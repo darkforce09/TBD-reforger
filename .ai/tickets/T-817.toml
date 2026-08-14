@@ -6,6 +6,7 @@ status = "queued"
 order = 4990
 executor = "claude-code"
 notes = "wave201 verifier NIT-2; single-file eden_toolbelt.rs"
+owns = ["apps/website/frontend/src/eden_toolbelt.rs"]
 
 [scope.website.editor]
 chrome = []

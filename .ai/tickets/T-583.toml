@@ -30,6 +30,7 @@ status = "shipped"
 order = 3432
 executor = "claude-code"
 priority = 2
+owns = ["Makefile"]
 
 [scope.website.editor]
 chrome = []

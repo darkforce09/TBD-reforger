@@ -6,6 +6,10 @@ status = "shipped"
 order = 2170
 executor = "claude-code"
 shipped_at = "b53866e0"
+owns = [
+    "apps/website/frontend/src/arsenal.rs",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c",
+]
 
 [scope.website.editor]
 chrome = []

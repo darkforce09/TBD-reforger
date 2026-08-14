@@ -5,6 +5,7 @@ summary = "resync_all_roles works and is routed but has no frontend caller — i
 status = "shipped"
 order = 2650
 executor = "claude-code"
+owns = ["apps/website/frontend/src/personnel.rs"]
 
 [scope.website.editor]
 chrome = []

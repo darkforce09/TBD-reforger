@@ -6,6 +6,12 @@ status = "shipped"
 order = 4654
 executor = "claude-code"
 notes = "filed by the orchestrator during wave 129's fix pass; fix idiom already shipped at validation_panel.rs (dac84b03) and eden_dock_right.rs (f6a2b687)"
+owns = [
+    "apps/website/frontend/src/ruler_tool.rs",
+    "apps/website/frontend/src/los_tool.rs",
+    "apps/website/frontend/src/world_assets/mod.rs",
+    "apps/website/frontend/src/select_tool.rs",
+]
 
 [scope.website.editor]
 chrome = []

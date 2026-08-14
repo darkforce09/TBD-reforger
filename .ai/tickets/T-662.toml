@@ -7,6 +7,7 @@ order = 3810
 executor = "claude-code"
 notes = "editor-UI program wave 1 (wave_plan.tsv row 101) — SHIPPED wave 101 (editor factory), merge 421eae91; verifier wave101.md"
 depends_on = ["T-661"]
+owns = ["apps/website/frontend/src/mission_editor.rs"]
 
 [scope.website.editor]
 chrome = []

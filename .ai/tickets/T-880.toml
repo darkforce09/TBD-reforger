@@ -7,6 +7,7 @@ order = 5610
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
 notes = "T-853: LANDED. All four shims (paths.sh, mcpd-bin.sh, xtask-run.sh, gate-grep.sh) were deleted once their last consumers were ported — mcp-daemon.sh freed two, deploy-staging.sh freed the other two. scripts/mod/lib/ no longer exists."
+owns = ["scripts/mod/lib/gate-grep.sh"]
 
 [scope.repo]
 layers = ["xtask"]

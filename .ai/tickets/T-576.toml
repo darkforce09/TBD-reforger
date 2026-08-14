@@ -36,6 +36,10 @@ status = "shipped"
 order = 3420
 executor = "claude-code"
 priority = 1
+owns = [
+    "apps/website/api/src/handlers/mod.rs",
+    "apps/website/api/src/handlers/telemetry.rs",
+]
 
 [scope.website.editor]
 chrome = []

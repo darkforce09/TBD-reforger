@@ -6,6 +6,10 @@ status = "shipped"
 order = 2050
 executor = "claude-code"
 shipped_at = "02d95c7f"
+owns = [
+    "scripts/mod/setup-server-profile.sh",
+    "golden-missions/msn_8f3a2c.json",
+]
 
 [scope.mod]
 layers = ["feature"]

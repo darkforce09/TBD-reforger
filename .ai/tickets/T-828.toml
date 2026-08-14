@@ -6,6 +6,7 @@ status = "queued"
 order = 5100
 executor = "claude-code"
 notes = "wave204 verifier; the icon half is the in-file template"
+owns = ["crates/map-engine-render/src/engine.rs"]
 
 [scope.website.editor]
 chrome = []

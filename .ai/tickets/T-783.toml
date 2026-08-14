@@ -6,6 +6,10 @@ status = "shipped"
 order = 4659
 executor = "claude-code"
 notes = "loose end disclosed by the T-778 slice (wave 142); the idiom is shipped twice, the fix is a lift and a delete"
+owns = [
+    "apps/website/frontend/src/validation_panel.rs",
+    "apps/website/frontend/src/ruler_tool.rs",
+]
 
 [scope.website.editor]
 chrome = []

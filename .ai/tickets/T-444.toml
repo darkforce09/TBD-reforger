@@ -11,6 +11,11 @@ status = "shipped"
 order = 3283
 executor = "claude-code"
 priority = 2
+owns = [
+    "Makefile",
+    "apps/website/api/seeds",
+    "scripts/mod/verify-t444-wiki-seed.sh",
+]
 
 [scope.website.editor]
 chrome = []

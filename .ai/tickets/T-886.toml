@@ -6,6 +6,7 @@ status = "shipped"
 order = 5670
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+owns = ["scripts/deploy/restore-db.sh"]
 
 [scope.repo]
 layers = ["xtask"]

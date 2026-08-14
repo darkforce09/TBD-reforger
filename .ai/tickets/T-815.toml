@@ -6,6 +6,7 @@ status = "shipped"
 order = 4970
 executor = "claude-code"
 notes = "wave 209; verifier wave200.md F8 NIT-1+NIT-2 | SHIPPED W209: squad rename focused on open; the unpoison re-land verified non-hollow (perturb->RED->restore); both T787 probe missions deleted, ids 404-confirmed."
+owns = ["apps/website/frontend/src/orbat_manager.rs"]
 
 [scope.website.editor]
 chrome = []

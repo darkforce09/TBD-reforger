@@ -32,6 +32,7 @@ status = "shipped"
 order = 3443
 executor = "claude-code"
 priority = 3
+owns = ["scripts/deploy/tbd-website-backup.service"]
 
 [scope.website.editor]
 chrome = []

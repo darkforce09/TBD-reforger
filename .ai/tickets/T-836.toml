@@ -6,6 +6,10 @@ status = "shipped"
 order = 5180
 executor = "claude-code"
 notes = "operator eye-pass wave-205; blocks vehicle authoring exports — pack into wave 210 | SHIPPED W210: four seed veh: aliases in kit-aliases.json; flatten Class-R RED without alias."
+owns = [
+    "packages/tbd-schema/registry/kit-aliases.json",
+    "crates/map-engine-core/src/mission/flatten.rs",
+]
 
 [scope.website.editor]
 chrome = []

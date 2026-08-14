@@ -6,6 +6,17 @@ status = "shipped"
 order = 5840
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+owns = [
+    "xtask/src/shell_free.rs",
+    "xtask/src/gate_no_python.rs",
+    "xtask/src/main.rs",
+    "xtask/src/mk_ci_tasks.rs",
+    "xtask/src/wave/gate.rs",
+    ".github/workflows",
+    "scripts/shell-inventory.txt",
+    "scripts/python-inventory.txt",
+    "docs/platform/CODING_STANDARDS.md",
+]
 
 [scope.repo]
 layers = ["xtask"]

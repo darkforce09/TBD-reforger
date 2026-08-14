@@ -5,6 +5,11 @@ summary = "Four endpoints and the leave_requests table are fully implemented and
 status = "shipped"
 order = 2830
 executor = "claude-code"
+owns = [
+    "apps/website/frontend/src/deployments.rs",
+    "apps/website/frontend/src/nav.rs",
+    "apps/website/frontend/src/dto.rs",
+]
 
 [scope.website.editor]
 chrome = []

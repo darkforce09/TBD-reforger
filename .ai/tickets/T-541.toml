@@ -12,6 +12,11 @@ order = 3381
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 priority = 2
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c",
+    "apps/website/frontend/src/arsenal_rules.rs",
+]
 
 [scope.repo]
 layers = ["docs"]

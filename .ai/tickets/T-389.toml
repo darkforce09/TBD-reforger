@@ -27,6 +27,10 @@ order = 3205
 executor = "claude-code"
 priority = 1
 shipped_at = "2026-07-26"
+owns = [
+    "apps/website/frontend/src/missions.rs",
+    "apps/website/frontend/src/dto.rs",
+]
 
 [scope.website.editor]
 chrome = []

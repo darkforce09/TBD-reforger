@@ -6,6 +6,10 @@ status = "shipped"
 order = 5410
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+owns = [
+    "scripts/mod/mcp-call.sh",
+    "xtask/src/gate_mcp_call.rs",
+]
 
 [scope.repo]
 layers = ["xtask"]

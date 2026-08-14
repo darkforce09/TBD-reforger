@@ -30,6 +30,11 @@ status = "shipped"
 order = 3441
 executor = "claude-code"
 priority = 1
+owns = [
+    "scripts/verify-route-tags.sh",
+    "apps/website/api/src/app.rs",
+    "apps/website/api/src/handlers/servers.rs",
+]
 
 [scope.website.editor]
 chrome = []

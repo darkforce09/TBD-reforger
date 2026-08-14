@@ -5,6 +5,7 @@ summary = "POST /fire-missions and GET /events/{id}/fire-missions are orphaned, 
 status = "shipped"
 order = 3030
 executor = "claude-code"
+owns = ["apps/website/frontend/src/mortar.rs"]
 
 [scope.website.editor]
 chrome = []

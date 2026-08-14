@@ -7,6 +7,18 @@ order = 4080
 executor = "claude-code"
 notes = "editor-UI program wave 10 (wave_plan.tsv row 110) — SHIPPED wave 110 (editor factory), 158eb691; verifier wave110.md"
 depends_on = ["T-661"]
+owns = [
+    "apps/website/frontend/src/eden_layout.rs",
+    "apps/website/frontend/src/eden_top_strip.rs",
+    "apps/website/frontend/src/eden_toolbelt.rs",
+    "apps/website/frontend/src/eden_dock_left.rs",
+    "apps/website/frontend/src/eden_dock_right.rs",
+    "apps/website/frontend/src/eden_tree.rs",
+    "apps/website/frontend/src/eden_settings.rs",
+    "apps/website/frontend/src/eden_zones.rs",
+    "apps/website/frontend/src/eden_vehicles_panel.rs",
+    "apps/website/frontend/src/ui.rs",
+]
 
 [scope.website.editor]
 chrome = []

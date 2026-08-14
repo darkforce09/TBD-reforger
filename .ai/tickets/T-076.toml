@@ -7,6 +7,12 @@ order = 3880
 executor = "claude-code"
 notes = "editor-UI program wave 3 (wave_plan.tsv row 103) — SHIPPED wave 103 (editor factory), slice 434d05a4; verifier wave103.md (1 BLOCKER fixed in-wave, 2 MAJOR deferred: T-717/T-718)"
 depends_on = ["T-661"]
+owns = [
+    "apps/website/frontend/src/eden_vehicles_panel.rs",
+    "apps/website/frontend/src/editor_ops.rs",
+    "crates/map-engine-core/src/doc/store.rs",
+    "apps/website/frontend/src/eden_dock_right.rs",
+]
 
 [scope.website.editor]
 chrome = []

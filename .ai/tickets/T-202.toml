@@ -25,6 +25,11 @@ status = "shipped"
 order = 2200
 executor = "claude-code"
 shipped_at = "a2e6c690"
+owns = [
+    "crates/map-engine-core/src/mission/flatten.rs",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/UI/TBD_BriefingData.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerData.c",
+]
 
 [scope.website.editor]
 chrome = []

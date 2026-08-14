@@ -11,6 +11,7 @@ status = "shipped"
 order = 3378
 executor = "claude-code"
 priority = 2
+owns = ["xtask/src/schema_gates.rs"]
 
 [scope.website.editor]
 chrome = []

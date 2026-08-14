@@ -26,6 +26,14 @@ status = "shipped"
 order = 3426
 executor = "claude-code"
 priority = 2
+owns = [
+    "apps/website/frontend/src/mission_editor.rs",
+    "crates/map-engine-render",
+    "crates/map-engine-core/src/slots_gpu.rs",
+    "apps/website/frontend/src/mission_history.rs",
+    "apps/website/frontend/src/editor_ops.rs",
+    "apps/website/frontend/src/select_tool.rs",
+]
 
 [scope.website.editor]
 chrome = []

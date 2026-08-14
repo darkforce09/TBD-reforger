@@ -7,6 +7,10 @@ order = 3830
 executor = "claude-code"
 notes = "editor-UI program wave 1 (wave_plan.tsv row 101) — SHIPPED wave 101 (editor factory), merge 1e1da547; verifier wave101.md"
 depends_on = ["T-661"]
+owns = [
+    "crates/map-engine-core/src/world/lod_gates.rs",
+    "apps/website/frontend/src/world_assets/dem_vectors.rs",
+]
 
 [scope.website.editor]
 chrome = []

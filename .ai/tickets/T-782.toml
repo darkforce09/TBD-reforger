@@ -6,6 +6,7 @@ status = "shipped"
 order = 4658
 executor = "claude-code"
 notes = "closes the T-694 player-cap question; editor half actionable now, library presentation deferred to the operator"
+owns = ["apps/website/frontend/src/eden_settings.rs"]
 
 [scope.website.editor]
 chrome = []

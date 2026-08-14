@@ -5,6 +5,15 @@ summary = "TBD_RadioService.c:214-220 maps only long to a nonzero value; short a
 status = "shipped"
 order = 3100
 executor = "claude-code"
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioService.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioPlan.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioTuner.c",
+    "packages/tbd-schema/schema/mission.schema.json",
+    "packages/tbd-schema/golden-missions-invalid/net-range-any.json",
+    "packages/tbd-schema/bridge/bridge-contract.md",
+    "crates/map-engine-core/src/mission/flatten.rs",
+]
 
 [scope.mod]
 layers = ["feature"]

@@ -15,3 +15,4 @@ children = [
     "T-674.1",
     "T-674.2",
 ]
+owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c"]

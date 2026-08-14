@@ -6,6 +6,10 @@ status = "queued"
 order = 5320
 executor = "claude-code"
 notes = "operator W208 eye-pass; T-801 follow-on; may depend on clean membership (T-848)"
+owns = [
+    "crates/map-engine-core/src/squad_links.rs",
+    "apps/website/frontend/src/select_tool.rs",
+]
 
 [scope.website.editor]
 chrome = []

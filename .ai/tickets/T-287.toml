@@ -5,6 +5,12 @@ summary = "Self-documented at sse.rs:8-12: the stream is never torn down on rout
 status = "shipped"
 order = 3050
 executor = "claude-code"
+owns = [
+    "apps/website/frontend/src/sse.rs",
+    "apps/website/frontend/src/server_intel.rs",
+    "apps/website/frontend/src/main.rs",
+    "apps/website/frontend/Cargo.toml",
+]
 
 [scope.website.editor]
 chrome = []

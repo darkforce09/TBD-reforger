@@ -6,6 +6,10 @@ status = "shipped"
 order = 2980
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
+owns = [
+    "apps/website/api/src/app.rs",
+    "apps/website/api/Cargo.toml",
+]
 
 [scope.repo]
 layers = ["docs"]

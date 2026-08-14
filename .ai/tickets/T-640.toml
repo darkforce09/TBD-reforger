@@ -7,6 +7,11 @@ order = 3860
 executor = "claude-code"
 notes = "editor-UI program wave 2 (wave_plan.tsv row 102) — SHIPPED wave 102 (editor factory), slice 8722916e; verifier wave102.md (4 MAJOR deferred: T-713..T-716)"
 depends_on = ["T-661"]
+owns = [
+    "apps/website/frontend/src/world_assets/dem_vectors.rs",
+    "crates/map-engine-core/src/geometry/contours.rs",
+    "crates/map-engine-core/src/geometry/vector_compose.rs",
+]
 
 [scope.website.editor]
 chrome = []

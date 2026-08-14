@@ -10,6 +10,7 @@ depends_on = [
     "T-661",
     "T-636",
 ]
+owns = ["apps/website/frontend/src/eden_toolbelt.rs"]
 
 [scope.website.editor]
 chrome = []

@@ -5,6 +5,10 @@ summary = "telemetry.rs:279-288 sets attended for all event_missions of the even
 status = "shipped"
 order = 2480
 executor = "claude-code"
+owns = [
+    "apps/website/api/src/handlers/telemetry.rs",
+    "apps/website/api/tests/telemetry.rs",
+]
 
 [scope.website.editor]
 chrome = []

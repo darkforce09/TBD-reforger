@@ -6,6 +6,11 @@ status = "shipped"
 order = 4628
 executor = "claude-code"
 notes = "reported by three slice agents across waves 112-114; scope confirmed by the orchestrator"
+owns = [
+    "Makefile",
+    "apps/website/frontend/src/eden_layout.rs",
+    "apps/website/frontend/src/eden_tree.rs",
+]
 
 [scope.website.editor]
 chrome = []

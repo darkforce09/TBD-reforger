@@ -13,6 +13,7 @@ status = "queued"
 order = 4440
 executor = "claude-code"
 notes = "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row. Ranked 16 of 16 by framework_synthesis.md C.5; filed as `idea` deliberately. Filed 2026-08-01 by the framework_synthesis coverage audit (parity/coverage_audit.md)"
+owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionParams.c"]
 
 [scope.mod]
 layers = ["feature"]

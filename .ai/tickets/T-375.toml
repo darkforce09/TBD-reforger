@@ -19,6 +19,7 @@ status = "shipped"
 order = 3191
 executor = "claude-code"
 priority = 1
+owns = ["crates/map-engine-core/src/mission/compile.rs"]
 
 [scope.website.editor]
 chrome = []

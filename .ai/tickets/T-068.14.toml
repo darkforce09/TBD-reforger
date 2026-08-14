@@ -7,6 +7,7 @@ order = 680
 executor = "human"
 notes = "Phase-2 E2E gate — do not ticket-done T-068 until this passes. Satisfied by T-181.16 (dedicated server + 2 real clients)."
 parent = "T-068"
+owns = ["docs/mod/capability_verdicts.tsv"]
 
 [scope.repo]
 layers = ["docs"]

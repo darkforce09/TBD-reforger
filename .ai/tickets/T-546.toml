@@ -11,6 +11,13 @@ status = "shipped"
 order = 3386
 executor = "claude-code"
 priority = 2
+owns = [
+    "apps/website/api/tests",
+    "apps/website/api/src/services/webhook.rs",
+    "apps/website/api/tests/common/mod.rs",
+    "apps/website/api/tests/misc_integration.rs",
+    "apps/website/api/tests/webhook_it.rs",
+]
 
 [scope.website.editor]
 chrome = []

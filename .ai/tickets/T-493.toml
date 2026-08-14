@@ -6,6 +6,12 @@ status = "shipped"
 order = 3332
 executor = "claude-code"
 priority = 2
+owns = [
+    "apps/website/api/tests/telemetry.rs",
+    "apps/website/api/migrations/0014_nullable_match_player_stat_counters.sql",
+    "apps/website/api/tests/identity_link.rs",
+    "apps/website/api/src/handlers/telemetry.rs",
+]
 
 [scope.website.editor]
 chrome = []

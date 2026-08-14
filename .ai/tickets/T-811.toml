@@ -6,6 +6,7 @@ status = "shipped"
 order = 4930
 executor = "claude-code"
 notes = "wave 209; verifier wave200.md F1; probe harness pattern: review section 2 F-01 + scratchpad cdp.py | SHIPPED W209: acceptance re-proved live by the Fable verifier (both rename flows focus on mount, whole-word typing, GRID immune, node survives). Its source pin shipped HOLLOW (raw include_str self-match — verifier F2, the T-759 class) — un-hollowed in-wave 27343f82, perturbation-proven RED on production node_ref deletion."
+owns = ["apps/website/frontend/src/eden_tree.rs"]
 
 [scope.website.editor]
 chrome = []

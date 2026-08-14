@@ -6,6 +6,10 @@ status = "shipped"
 order = 3351
 executor = "claude-code"
 priority = 1
+owns = [
+    "apps/website/api/migrations",
+    "apps/website/api/tests/events.rs",
+]
 
 [scope.website.editor]
 chrome = []

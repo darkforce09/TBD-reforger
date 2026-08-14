@@ -6,6 +6,7 @@ status = "shipped"
 order = 4520
 executor = "claude-code"
 notes = "— SHIPPED wave 118 (editor factory), e1111c26; verifier wave118.md. Three exporters over navigator.clipboard, reusing T-667's grid_ref_3digit rather than inventing a second convention — pinned BEHAVIOURALLY against the map furniture's own edge labels through a real OrthoCamera. The clipboard write is AWAITED with success toasted only on the resolve arm, and an insecure context refuses with a message. Multi-selection exports one line per entity, never a centroid (a centroid is a grid reference no entity is at). Also found the same fire-and-forget defect live elsewhere — see T-773."
+owns = ["apps/website/frontend/src/mission_commands.rs"]
 
 [scope.website.editor]
 chrome = []

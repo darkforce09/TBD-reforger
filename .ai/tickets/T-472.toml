@@ -11,6 +11,7 @@ status = "shipped"
 order = 3311
 executor = "claude-code"
 priority = 1
+owns = ["scripts/mod/verify-t468-ci-schema-parity.sh"]
 
 [scope.repo]
 layers = ["xtask"]

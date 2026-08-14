@@ -11,6 +11,10 @@ status = "shipped"
 order = 3275
 executor = "claude-code"
 priority = 1
+owns = [
+    "scripts/deploy/deploy-website.sh",
+    "scripts/deploy/deploy.env.example",
+]
 
 [scope.website.editor]
 chrome = []

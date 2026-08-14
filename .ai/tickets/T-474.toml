@@ -11,6 +11,10 @@ status = "shipped"
 order = 3313
 executor = "claude-code"
 priority = 1
+owns = [
+    "scripts/mod/verify-t437-destroy-inert-diagnostics.sh",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c",
+]
 
 [scope.repo]
 layers = ["docs"]

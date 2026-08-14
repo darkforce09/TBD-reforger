@@ -13,6 +13,12 @@ status = "shipped"
 order = 3279
 executor = "claude-code"
 priority = 2
+owns = [
+    "Makefile",
+    "scripts/platform/wave.sh",
+    "apps/website/api/seeds/faction_library.sql",
+    "scripts/mod/verify-t440-faction-library-seed.sh",
+]
 
 [scope.website.editor]
 chrome = []

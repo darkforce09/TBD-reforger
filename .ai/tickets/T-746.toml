@@ -6,6 +6,11 @@ status = "shipped"
 order = 4622
 executor = "claude-code"
 notes = "filed by wave-113 adversarial verifier (editor factory)"
+owns = [
+    "apps/website/frontend/src/eden_settings.rs",
+    "apps/website/frontend/src/eden_top_strip.rs",
+    "apps/website/frontend/src/mission_commands.rs",
+]
 
 [scope.website.editor]
 chrome = []

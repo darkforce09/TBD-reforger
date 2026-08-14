@@ -6,6 +6,7 @@ status = "shipped"
 order = 4500
 executor = "claude-code"
 notes = "— SHIPPED wave 116 (editor factory), 032513af; verifier wave116.md. Locations tab (named places re-read through the SAME url and parser as LabelHost::init, nothing hardcoded) plus persistent camera bookmarks storing x/y/zoom, not undoable and not document edits. ⚠️ TWO DEFECTS: its headline source pins are HOLLOW (see T-759) and fly_to rides the T-166 smoke hook in production (see T-762)."
+owns = ["apps/website/frontend/src/eden_dock_left.rs"]
 
 [scope.website.editor]
 chrome = []

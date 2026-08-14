@@ -6,6 +6,7 @@ status = "shipped"
 order = 4950
 executor = "claude-code"
 notes = "wave 209; verifier wave200.md F3+F6; composes with T-814 Esc layering | SHIPPED W209: differing-field zero-typing blur now depth/digest-unchanged (wave-200 F3 dead); typed value still stamps the selection incl. re-typing a settled value; field-Esc two-stage verified; composed Esc ladder with T-814 peels one layer per press."
+owns = ["apps/website/frontend/src/attributes.rs"]
 
 [scope.website.editor]
 chrome = []

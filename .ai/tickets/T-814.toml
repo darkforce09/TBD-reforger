@@ -6,6 +6,10 @@ status = "shipped"
 order = 4960
 executor = "claude-code"
 notes = "wave 209; verifier wave200.md F4+F5; composes with T-813 field-Esc | SHIPPED W209: dialog registration fires transient closers on ANY open path; consume-aware Esc guard; open-order dismissal (Esc1 closes the visual top). Its O-3 wiring pin shipped DISARMED (stray #[test] orphaned the fn — verifier F1) — re-armed in-wave 27343f82, perturbation-proven RED on a literal-z-50 substitution. O-3/O-5 z-stacking unregressed."
+owns = [
+    "apps/website/frontend/src/ui.rs",
+    "apps/website/frontend/src/eden_top_strip.rs",
+]
 
 [scope.website.editor]
 chrome = []

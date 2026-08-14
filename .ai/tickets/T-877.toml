@@ -6,6 +6,10 @@ status = "shipped"
 order = 5580
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+owns = [
+    "scripts/mod/mcp-smoke.sh",
+    "xtask/src/gate_mcp_smoke.rs",
+]
 
 [scope.repo]
 layers = ["xtask"]

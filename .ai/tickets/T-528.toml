@@ -6,6 +6,10 @@ status = "shipped"
 order = 3368
 executor = "claude-code"
 priority = 0
+owns = [
+    "apps/website/api/src/handlers/me.rs",
+    "apps/website/api/tests/t528_me_whitespace_linked.rs",
+]
 
 [scope.website.editor]
 chrome = []

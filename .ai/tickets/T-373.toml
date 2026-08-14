@@ -32,6 +32,10 @@ order = 3189
 executor = "claude-code"
 priority = 0
 shipped_at = "b2a29e43"
+owns = [
+    "apps/website/frontend/src/editor_ops.rs",
+    "apps/website/frontend/src/orbat_manager.rs",
+]
 
 [scope.website.editor]
 chrome = []

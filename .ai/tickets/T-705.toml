@@ -10,6 +10,7 @@ SCHEMA HALF SPLIT OUT to T-706 (one widening pass for the whole program). This t
 status = "queued"
 order = 4590
 executor = "claude-code"
+owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_GadgetFlags.c"]
 
 [scope.mod]
 layers = ["feature"]

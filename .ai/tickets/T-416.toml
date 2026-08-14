@@ -17,6 +17,11 @@ status = "shipped"
 order = 3241
 executor = "claude-code"
 priority = 1
+owns = [
+    "crates/map-engine-core/src/mission/wire_safety.rs",
+    "apps/website/api/src/contract/validate.rs",
+    "apps/website/api/src/handlers/missions.rs",
+]
 
 [scope.website.editor]
 chrome = []

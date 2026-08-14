@@ -6,6 +6,11 @@ status = "shipped"
 order = 4740
 executor = "claude-code"
 notes = "the review's Esc matrix (6 surfaces green) is the regression baseline | SHIPPED W203: Esc cancels circle/polygon/trigger draws — cancel_pending()'s deliberate zone-survival was the mechanism (Esc never reached the draw); cancel_zone_draw wired into the keydown arm under the modal-stack yield, doc_tick bump for the hint. Trigger draw CONFIRMED to share Pending::Zone (one cancel covers both). Verifier re-proved every arm live incl. ladder order (dialog first) and the marker/composition disarm regressions."
+owns = [
+    "apps/website/frontend/src/eden_zones.rs",
+    "apps/website/frontend/src/editor_ops.rs",
+    "apps/website/frontend/src/mission_editor.rs",
+]
 
 [scope.website.editor]
 chrome = []

@@ -6,6 +6,7 @@ status = "shipped"
 order = 2110
 executor = "claude-code"
 shipped_at = "b30f5490"
+owns = ["apps/website/frontend/src/eden_chrome.rs"]
 
 [scope.repo]
 layers = ["docs"]

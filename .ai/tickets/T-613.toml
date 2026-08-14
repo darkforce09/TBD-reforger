@@ -40,6 +40,10 @@ status = "shipped"
 order = 3602
 executor = "claude-code"
 priority = 2
+owns = [
+    "scripts/platform/wave.sh",
+    "scripts/mod/remote-log-grep.sh",
+]
 
 [scope.website.editor]
 chrome = []

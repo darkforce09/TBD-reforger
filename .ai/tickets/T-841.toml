@@ -6,6 +6,7 @@ status = "queued"
 order = 5230
 executor = "claude-code"
 notes = "operator eye-pass wave-206; small; pairs with T-827 methodology"
+owns = ["apps/website/frontend/src/attributes.rs"]
 
 [scope.website.editor]
 chrome = []

@@ -6,6 +6,7 @@ status = "queued"
 order = 5030
 executor = "claude-code"
 notes = "wave203 verifier; refutes a T-789 summary claim — measured"
+owns = ["apps/website/frontend/src/mission_commands.rs"]
 
 [scope.website.editor]
 chrome = []

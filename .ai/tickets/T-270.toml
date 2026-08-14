@@ -5,6 +5,7 @@ summary = "server_control.rs is 312 lines with zero on: handlers, and selected i
 status = "shipped"
 order = 2880
 executor = "claude-code"
+owns = ["apps/website/frontend/src/server_control.rs"]
 
 [scope.website.editor]
 chrome = []

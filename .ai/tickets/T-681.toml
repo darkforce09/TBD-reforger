@@ -11,6 +11,7 @@ status = "queued"
 order = 4380
 executor = "claude-code"
 notes = "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row"
+owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_EntityState.c"]
 
 [scope.mod]
 layers = ["feature"]

@@ -6,6 +6,13 @@ status = "shipped"
 order = 2000
 executor = "claude-code"
 shipped_at = "0bdfc096"
+owns = [
+    "packages/tbd-schema/schema/mission.schema.json",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionValidator.c",
+    "crates/map-engine-core/src/mission/flatten.rs",
+]
 
 [scope.website.editor]
 chrome = []

@@ -38,6 +38,11 @@ status = "shipped"
 order = 3186
 executor = "claude-code"
 priority = 3
+owns = [
+    "apps/website/frontend/src/mission_hydrate.rs",
+    "apps/website/frontend/src/mission_commands.rs",
+    "apps/website/frontend/src/editor_session.rs",
+]
 
 [scope.website.editor]
 chrome = []

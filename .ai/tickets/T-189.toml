@@ -6,6 +6,10 @@ status = "shipped"
 order = 2070
 executor = "claude-code"
 shipped_at = "7a51fdda"
+owns = [
+    "apps/website/frontend/src/mission_history.rs",
+    "apps/website/frontend/src/mission_editor.rs",
+]
 
 [scope.website.editor]
 chrome = []

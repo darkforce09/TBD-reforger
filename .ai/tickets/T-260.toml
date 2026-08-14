@@ -5,6 +5,14 @@ summary = "Grep for server_id or modpack_id over events.rs and models/event.rs r
 status = "shipped"
 order = 2780
 executor = "claude-code"
+owns = [
+    "apps/website/api/src/handlers/events.rs",
+    "apps/website/api/src/models/event.rs",
+    "apps/website/api/migrations/0011_events_server_modpack.sql",
+    "apps/website/api/tests/events.rs",
+    "apps/website/api/src/handlers/dashboard.rs",
+    "apps/website/api/src/handlers/deployments.rs",
+]
 
 [scope.website.editor]
 chrome = []

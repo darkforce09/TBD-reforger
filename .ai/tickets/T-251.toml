@@ -6,6 +6,14 @@ status = "shipped"
 order = 2690
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
+depends_on = ["T-209"]
+owns = [
+    "scripts/deploy/deploy-website.sh",
+    "apps/website/Dockerfile",
+    "apps/website/docker-compose.staging.yml",
+    "scripts/deploy/deploy.env.example",
+    "scripts/deploy/Caddyfile.website",
+]
 
 [scope.repo]
 layers = ["docs"]

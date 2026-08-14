@@ -5,6 +5,13 @@ summary = "The whole SSE chain is built (realtime.rs hub, the stream route, sse.
 status = "shipped"
 order = 2900
 executor = "claude-code"
+owns = [
+    "apps/website/api/src/realtime.rs",
+    "apps/website/frontend/src/sse.rs",
+    "apps/website/api/src/bin/api.rs",
+    "apps/website/api/src/handlers/telemetry.rs",
+    "apps/website/api/.env.example",
+]
 
 [scope.website.editor]
 chrome = []

@@ -6,6 +6,7 @@ status = "shipped"
 order = 4760
 executor = "claude-code"
 notes = "probe script pattern in review O-4; single-file css ticket — the wave's low-risk slot | SHIPPED W207: entrance travel 215px/679px -> 0.0px at 120ms, prefers-reduced-motion added (was absent). ROOT CAUSE was a Tailwind v3->v4 migration artifact nobody had spotted: -translate-x-1/2 now emits the independent `translate:` property which COMPOSES with `transform` instead of replacing it, so the keyframe doubled the centering — every before-number is exactly 0.48x the surface's own size. Took opacity-only over the spec's scale>=0.97 because scale on an 1100x800 modal moves the rect 16.5px, twice the same spec's <8px acceptance. Its guard smoke exists but is NOT executed by anything -> T-843."
+owns = ["apps/website/frontend/style/aegis.css"]
 
 [scope.website.editor]
 chrome = []

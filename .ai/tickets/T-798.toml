@@ -6,6 +6,10 @@ status = "shipped"
 order = 4800
 executor = "claude-code"
 notes = "depends_on T-797; operator decision 3 + praised copy pinned; contrast numbers from review F-36 second pass | SHIPPED W204: chip in row 2 (anchored transient — no containing-block exposure), headless engine survives Backspace (pixel-pure hide verified), load-time truth on hydrated missions, V1 copy byte-verbatim, plate-calc contrast fixed. THE ACCEPTANCE LINE 'place a marker: count unchanged' IS UNACHIEVABLE AS WRITTEN — the first marker mints faction-{SIDE} outside this ticket's owns and V1 legitimately fires; measured 0->1 by the verifier; decision ticket T-826 (operator). Live-over-glass contrast 4.0-4.3 -> T-827."
+owns = [
+    "apps/website/frontend/src/eden_top_strip.rs",
+    "apps/website/frontend/src/validation_panel.rs",
+]
 
 [scope.website.editor]
 chrome = []

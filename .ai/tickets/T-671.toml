@@ -7,6 +7,11 @@ order = 4200
 executor = "claude-code"
 notes = "editor-UI program wave 17 (wave_plan.tsv row 117) — SHIPPED wave 117 (editor factory), e0f9cd31; verifier wave117.md. Briefing + thumbnail authored in the editor (the operator-decision alternative was the Mission Library dossier; the editor path was taken because the wave plan's owns encoded it — mission_overview.rs remains unable to author these). Found and fixed THREE live bugs, all reproduced on base by the verifier: create_mission_dialog never sent briefing though POST has always accepted it; compile_export reads meta.briefing whose only writer was boot hydrate, so an in-session edit never reached an export; Escape closed the dialog without blurring, silently discarding typed text. No backend change. The CMS upload path was checked and does NOT apply (AdminUser-gated, returns a site-relative path the server's own validator refuses)."
 depends_on = ["T-661"]
+owns = [
+    "apps/website/frontend/src/eden_settings.rs",
+    "apps/website/frontend/src/eden_top_strip.rs",
+    "apps/website/frontend/src/create_mission_dialog.rs",
+]
 
 [scope.website.editor]
 chrome = []

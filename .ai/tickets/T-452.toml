@@ -11,6 +11,10 @@ status = "shipped"
 order = 3291
 executor = "claude-code"
 priority = 2
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_PlayerIdentity.c",
+    "scripts/mod/verify-t452-player-identity-link-comments.sh",
+]
 
 [scope.mod]
 layers = ["feature"]

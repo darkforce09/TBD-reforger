@@ -6,6 +6,10 @@ status = "shipped"
 order = 4657
 executor = "claude-code"
 notes = "WIDENED 2026-08-08 by the operator's paste ruling. In addition to the composable clause, this ticket now owns the COMPOSITION Z: place_composition hard-codes `position_any(wx, wy, 0.0, rot)` in ALL THREE arms (slot, vehicle, object) in crates/map-engine-core/src/doc/store.rs. T-777 deferred it here explicitly because store.rs was a sibling's file that wave. The operator ruled (T-743/T-777) that the JS byte-parity was a migration safety net, not a contract, and that a pasted entity keeps its authored elevation — the same reasoning applies to a placed composition. Nothing re-samples terrain afterwards (terrainZ died with the React deletion), so a 0.0 written here is final. Wave-127 rules bind: reuse slot_z, read exact f64 rows and NOT the f32 SoA (which omits hidden-layer slots per T-665), and if you build a zs vector prove zs[i] matches ids[i] structurally."
+owns = [
+    "crates/map-engine-core/src/doc/store.rs",
+    "apps/website/frontend/src/eden_dock_right.rs",
+]
 
 [scope.website.editor]
 chrome = []

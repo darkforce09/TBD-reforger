@@ -21,6 +21,12 @@ Residual, NOT a live defect but a live class of blind spot: server_intel.rs:11-2
 status = "cancelled"
 order = 2540
 executor = "claude-code"
+owns = [
+    "apps/website/api/src/models/telemetry.rs",
+    "apps/website/frontend/src/dto.rs",
+    "apps/website/frontend/src/sse.rs",
+    "apps/website/frontend/src/server_intel.rs",
+]
 
 [scope.website.editor]
 chrome = []

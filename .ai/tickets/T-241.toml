@@ -6,6 +6,11 @@ status = "shipped"
 order = 2590
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
+owns = [
+    "packages/tbd-schema/schema/mission.schema.json",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRules.c",
+]
 
 [scope.repo]
 layers = ["docs"]

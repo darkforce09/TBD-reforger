@@ -54,6 +54,11 @@ status = "shipped"
 order = 3622
 executor = "cursor-docs"
 priority = 3
+owns = [
+    "docs/platform/DOCUMENTATION_STANDARDS.md",
+    "docs/specs/Mission_Creator_Architecture/t123_documentation_standards_rollout.md",
+    "apps/mod/tbd-framework/Missions/TBD_Dev_POC.conf",
+]
 
 [scope.website.editor]
 chrome = []

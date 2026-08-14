@@ -6,6 +6,10 @@ status = "shipped"
 order = 5550
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+owns = [
+    "scripts/mod/test-phase1-api.sh",
+    "xtask/src/gate_test_phase1_api.rs",
+]
 
 [scope.repo]
 layers = ["xtask"]

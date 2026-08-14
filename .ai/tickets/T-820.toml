@@ -6,6 +6,7 @@ status = "queued"
 order = 5020
 executor = "claude-code"
 notes = "wave203 verifier; uncertainty stated — repro-first ticket"
+owns = ["apps/website/frontend/src/eden_dock_right.rs"]
 
 [scope.website.editor]
 chrome = []

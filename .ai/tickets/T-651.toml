@@ -10,6 +10,13 @@ depends_on = [
     "T-661",
     "T-664",
 ]
+owns = [
+    "crates/map-engine-core/src/doc/store.rs",
+    "apps/website/frontend/src/editor_ops.rs",
+    "apps/website/frontend/src/outliner.rs",
+    "apps/website/frontend/src/mission_editor.rs",
+    "apps/website/frontend/src/context_menu.rs",
+]
 
 [scope.website.editor]
 chrome = []

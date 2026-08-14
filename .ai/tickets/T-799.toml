@@ -6,6 +6,10 @@ status = "shipped"
 order = 4810
 executor = "claude-code"
 notes = "RowMirror parents T-192/T-746 cited; ajv-clean baseline from review F-34 addendum must not regress | SHIPPED W205: exports fire once per gesture (timestamp latch; real second clicks pass — 4 stamps : 4 blobs), per-field metadata unified (maxPlayers/gameMode from row, title from live doc via compile-time override), compiled stays ajv-2020-12 clean, camelCase + filenames intact. CO-TASK delivered (strip relabel + third button + census) with the pre-declared reconciliation landed at the barrier (44eb1412)."
+owns = [
+    "apps/website/frontend/src/mission_commands.rs",
+    "apps/website/frontend/src/eden_top_strip.rs",
+]
 
 [scope.website.editor]
 chrome = []

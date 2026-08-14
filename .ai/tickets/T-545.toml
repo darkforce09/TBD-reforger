@@ -12,6 +12,7 @@ order = 3385
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 priority = 2
+owns = ["scripts/mod/mcp-daemon.sh"]
 
 [scope.repo]
 layers = ["docs"]

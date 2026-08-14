@@ -26,6 +26,10 @@ status = "shipped"
 order = 3421
 executor = "claude-code"
 priority = 1
+owns = [
+    "scripts/deploy/backup-db.sh",
+    "Makefile",
+]
 
 [scope.website.editor]
 chrome = []

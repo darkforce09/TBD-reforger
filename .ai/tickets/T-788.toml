@@ -6,6 +6,10 @@ status = "shipped"
 order = 4700
 executor = "claude-code"
 notes = "depends_on T-785; T-649 shipped the inversion this hardens; wave-144-style: the panel copy is the best in the product — preserve verbatim | SHIPPED W202: F-27 keep-multi (both dblclick arms) + F-29 panel-follows-selection by the slice; F-26 SPLIT by premise check — position path was already atomic (T-732, not re-implemented), the identity path the review measured was completed in-wave via the new core update_slots_attr_batch (one begin(), 8dbad948, T-732 pattern, wrappers delegate byte-identically). Verifier proved one-undo live for uniform AND ticked-differing 8-slot applies; batch reads the raw slot map (hidden-slot family checked); T-813 latch and armed-pointerup intact."
+owns = [
+    "apps/website/frontend/src/editor_ops.rs",
+    "apps/website/frontend/src/mission_editor.rs",
+]
 
 [scope.website.editor]
 chrome = []

@@ -13,6 +13,11 @@ status = "shipped"
 order = 3276
 executor = "claude-code"
 priority = 2
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c",
+    "packages/tbd-schema/schema/mission.schema.json",
+]
 
 [scope.repo]
 layers = ["docs"]

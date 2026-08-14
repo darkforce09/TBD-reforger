@@ -32,6 +32,10 @@ order = 3183
 executor = "claude-code"
 priority = 1
 shipped_at = "3a653fd5"
+owns = [
+    "apps/website/api/src/handlers/missions.rs",
+    "crates/map-engine-core/src/mission/flatten.rs",
+]
 
 [scope.website.editor]
 chrome = []

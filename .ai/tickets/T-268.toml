@@ -5,6 +5,7 @@ summary = "personnel.rs:379-382 toasts 'Warning issued (mock)' while POST /admin
 status = "shipped"
 order = 2860
 executor = "claude-code"
+owns = ["apps/website/frontend/src/personnel.rs"]
 
 [scope.website.editor]
 chrome = []

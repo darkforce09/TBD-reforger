@@ -6,6 +6,10 @@ status = "queued"
 order = 4980
 executor = "claude-code"
 notes = "wave201 verifier NIT-1; owns spans eden_top_strip.rs/ui.rs/mission_editor.rs — pack owns-aware"
+owns = [
+    "apps/website/frontend/src/ui.rs",
+    "apps/website/frontend/src/eden_top_strip.rs",
+]
 
 [scope.website.editor]
 chrome = []

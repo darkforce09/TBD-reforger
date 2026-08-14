@@ -7,6 +7,10 @@ order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_10_map_engine_v2.md"
 executor = "claude-code"
 parent = "T-090"
+owns = [
+    "crates/map-engine-render",
+    "apps/website/frontend/src/world_assets",
+]
 
 [scope.website.editor]
 chrome = []

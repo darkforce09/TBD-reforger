@@ -6,6 +6,10 @@ status = "shipped"
 order = 3343
 executor = "claude-code"
 priority = 2
+owns = [
+    "apps/website/frontend/src/arsenal.rs",
+    "apps/website/frontend/src/arsenal_rules.rs",
+]
 
 [scope.website.editor]
 chrome = []

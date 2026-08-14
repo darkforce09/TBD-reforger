@@ -5,6 +5,7 @@ summary = "POST /admin/servers/{id}/rcon (admin.rs:331-379) validates the action
 status = "shipped"
 order = 2870
 executor = "claude-code"
+owns = ["apps/website/api/src/handlers/admin.rs"]
 
 [scope.website.editor]
 chrome = []

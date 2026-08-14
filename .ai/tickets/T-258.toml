@@ -5,6 +5,10 @@ summary = "No trail of who saved what. The mission library orders by updated_at 
 status = "shipped"
 order = 2760
 executor = "claude-code"
+owns = [
+    "apps/website/api/src/handlers/missions.rs",
+    "apps/website/api/tests/missions.rs",
+]
 
 [scope.website.editor]
 chrome = []

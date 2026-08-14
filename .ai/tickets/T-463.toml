@@ -11,6 +11,11 @@ status = "shipped"
 order = 3302
 executor = "claude-code"
 priority = 2
+owns = [
+    "scripts/platform/wave.sh",
+    "scripts/mod/verify-t438-deploy-staging-compose-path.sh",
+    "scripts/mod/verify-t456-mission-rest-size-gate.sh",
+]
 
 [scope.repo]
 layers = ["xtask"]

@@ -7,6 +7,10 @@ order = 4210
 executor = "claude-code"
 notes = "editor-UI program wave 17 (wave_plan.tsv row 117) — SHIPPED wave 117 (editor factory), cf237bbd; verifier wave117.md. Grammar is field x pattern: class:/mod: crossed with literal, glob and regex. THE DEFERRED SEMANTICS DECISION IS MADE: class: now matches the full resource_name prefix OR the classname-TAIL prefix (last path segment minus extension), OR'd — pinned against the real GUID-headed catalogue id. Tail matching is PREFIX not substring, deliberately, so T-646's shipped assertion that class:Rifleman matches nothing survives unchanged; mid-classname search gets class:*Rifleman and class:/rifleman/ instead. RIGHT-SEARCH-005 was implemented despite interactions_sweep.md marking it deferred (agent-authored deferrals are barred; the verifier judged the override correct). ⚠️ The hand-rolled regex engine can OVERFLOW THE WASM STACK on deep patterns — see T-764."
 depends_on = ["T-661"]
+owns = [
+    "apps/website/frontend/src/asset_catalog.rs",
+    "apps/website/frontend/src/eden_dock_right.rs",
+]
 
 [scope.website.editor]
 chrome = []

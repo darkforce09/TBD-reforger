@@ -10,6 +10,10 @@ depends_on = [
     "T-115",
     "T-117",
 ]
+owns = [
+    "packages/tbd-schema/golden-missions",
+    "docs/mod/STAGING-SERVER.md",
+]
 
 [scope.repo]
 layers = ["docs"]

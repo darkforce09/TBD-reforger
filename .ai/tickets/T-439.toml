@@ -12,6 +12,11 @@ order = 3278
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 priority = 2
+owns = [
+    "apps/mod/tbd-framework/Data/registry.json",
+    "apps/website/frontend/src/asset_catalog.rs",
+    "scripts/mod/verify-t439-objects-registry-aliases.sh",
+]
 
 [scope.repo]
 layers = ["docs"]

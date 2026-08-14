@@ -28,6 +28,10 @@ order = 3145
 executor = "claude-code"
 priority = 0
 shipped_at = "367fcaf2"
+owns = [
+    "apps/website/api/src/handlers/dashboard.rs",
+    "apps/website/api/tests/null_tolerance.rs",
+]
 
 [scope.website.editor]
 chrome = []

@@ -5,6 +5,10 @@ summary = "The Workbench export plus Rust classifier pipeline is real and produc
 status = "shipped"
 order = 2620
 executor = "claude-code"
+owns = [
+    "packages/tbd-schema/schema/map-object-enums.schema.json",
+    "packages/tbd-schema/rules/prefab-classify.json",
+]
 
 [scope.repo]
 layers = ["xtask"]

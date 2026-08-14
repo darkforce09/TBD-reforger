@@ -11,6 +11,12 @@ status = "shipped"
 order = 3306
 executor = "claude-code"
 priority = 3
+owns = [
+    "Makefile",
+    ".github/workflows/ci.yml",
+    "scripts/mod/verify-t438-deploy-staging-compose-path.sh",
+    "scripts/mod/verify-t456-mission-rest-size-gate.sh",
+]
 
 [scope.repo]
 layers = ["xtask"]

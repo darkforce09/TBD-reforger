@@ -5,6 +5,7 @@ summary = "missions.rs:21 ships a bookmarked scope with backend support, but the
 status = "shipped"
 order = 2820
 executor = "claude-code"
+owns = ["apps/website/frontend/src/missions.rs"]
 
 [scope.website.editor]
 chrome = []

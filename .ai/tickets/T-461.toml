@@ -14,6 +14,12 @@ status = "shipped"
 order = 3300
 executor = "claude-code"
 priority = 1
+owns = [
+    "scripts/mod/verify-t438-deploy-staging-compose-path.sh",
+    "scripts/mod/deploy-staging.sh",
+    "apps/website/frontend/src/personnel.rs",
+    "apps/website/api/src/handlers/admin.rs",
+]
 
 [scope.repo]
 layers = ["docs"]

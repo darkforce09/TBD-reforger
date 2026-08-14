@@ -11,6 +11,10 @@ status = "shipped"
 order = 3290
 executor = "claude-code"
 priority = 2
+owns = [
+    "xtask/src/cmds.rs",
+    "xtask/src/check.rs",
+]
 
 [scope.repo]
 layers = ["xtask"]

@@ -6,6 +6,11 @@ status = "queued"
 order = 5190
 executor = "claude-code"
 notes = "operator eye-pass wave-205; census XFORM-DEL-001; coordinates with T-819 — wave 210/211 packing"
+owns = [
+    "apps/website/frontend/src/editor_ops.rs",
+    "apps/website/frontend/src/mission_editor.rs",
+    "apps/website/frontend/src/context_menu.rs",
+]
 
 [scope.website.editor]
 chrome = []

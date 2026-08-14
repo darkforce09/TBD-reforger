@@ -22,6 +22,7 @@ order = 3175
 executor = "claude-code"
 priority = 1
 shipped_at = "3a653fd5"
+owns = ["apps/website/frontend/src/server_intel.rs"]
 
 [scope.website.editor]
 chrome = []

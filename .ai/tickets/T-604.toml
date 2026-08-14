@@ -37,6 +37,11 @@ order = 3512
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 priority = 0
+owns = [
+    "scripts/mod/deploy-staging.sh",
+    "scripts/mod/run-dev-server.sh",
+    "docs/mod/STAGING-SERVER.md",
+]
 
 [scope.repo]
 layers = ["docs"]

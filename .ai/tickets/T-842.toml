@@ -6,6 +6,7 @@ status = "queued"
 order = 5240
 executor = "claude-code"
 notes = "wave-207 completion C; same family as T-832; one-line fix + sweep test; small"
+owns = ["crates/map-engine-core/src/world/glyph_math.rs"]
 
 [scope.website.editor]
 chrome = []

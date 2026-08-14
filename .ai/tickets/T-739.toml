@@ -6,6 +6,11 @@ status = "shipped"
 order = 4615
 executor = "claude-code"
 notes = "filed by wave-112 adversarial verifier (editor factory)"
+owns = [
+    "docs/specs/Mission_Creator_Architecture/eden/gap_analysis.md",
+    "apps/website/frontend/src/editor_ops.rs",
+    "apps/website/frontend/src/arsenal.rs",
+]
 
 [scope.website.editor]
 chrome = []

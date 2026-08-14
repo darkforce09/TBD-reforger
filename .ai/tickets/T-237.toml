@@ -5,6 +5,12 @@ summary = "xtask/src/cmds.rs:534 sets status to shipped and returns. xtask/src/c
 status = "shipped"
 order = 2550
 executor = "claude-code"
+depends_on = ["T-273"]
+owns = [
+    "xtask/src/cmds.rs",
+    "xtask/src/check.rs",
+    ".ai/tickets/schema.json",
+]
 
 [scope.repo]
 layers = ["xtask"]

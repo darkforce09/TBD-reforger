@@ -5,6 +5,14 @@ summary = "wiki.rs makes zero API calls; content is a const and EDIT mode writes
 status = "shipped"
 order = 2810
 executor = "claude-code"
+owns = [
+    "apps/website/frontend/src/wiki.rs",
+    "apps/website/frontend/src/vehicles.rs",
+    "apps/website/api/src/handlers/wiki.rs",
+    "apps/website/api/src/app.rs",
+    "apps/website/api/seeds/vehicle_database.sql",
+    "Makefile",
+]
 
 [scope.website.editor]
 chrome = []

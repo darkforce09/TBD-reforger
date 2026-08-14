@@ -6,6 +6,10 @@ status = "shipped"
 order = 5350
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+owns = [
+    "scripts/mod/verify-t437-destroy-inert-diagnostics.sh",
+    "xtask/src/gate_verify_t437_destroy_inert_diagnostics.rs",
+]
 
 [scope.repo]
 layers = ["xtask"]

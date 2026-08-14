@@ -7,6 +7,7 @@ order = 1470
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 depends_on = ["T-150"]
+owns = ["apps/website/frontend/src/asset_catalog.rs"]
 
 [scope.repo]
 layers = ["docs"]

@@ -12,6 +12,10 @@ acceptance = [
     "Hover tooltip, click inspect, filter, legend, Z-trust badge.",
     "Move/delete/edit terrain props remain Workbench-only.",
 ]
+owns = [
+    "apps/website/frontend/src/world_assets",
+    "apps/website/frontend/src/mission_editor.rs",
+]
 
 [scope.website.editor]
 chrome = []

@@ -6,6 +6,7 @@ status = "queued"
 order = 5080
 executor = "claude-code"
 notes = "wave204 verifier MAJOR; decision reserved for the operator; T-798 shipped-halves verified correct | operator decided (a) 2026-08-10 during the wave-204 eye-pass; now actionable — implement the ensure_side_faction split (marker path stores side WITHOUT minting), check flatten.rs/compile reads of an unminted marker side before landing"
+owns = ["apps/website/frontend/src/editor_ops.rs"]
 
 [scope.website.editor]
 chrome = []

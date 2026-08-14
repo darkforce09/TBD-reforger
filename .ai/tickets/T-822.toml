@@ -6,6 +6,7 @@ status = "queued"
 order = 5040
 executor = "claude-code"
 notes = "wave203 verifier; pre-existing, widened by the placed-vehicle rows"
+owns = ["apps/website/frontend/src/mission_editor.rs"]
 
 [scope.website.editor]
 chrome = []

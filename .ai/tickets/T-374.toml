@@ -34,6 +34,7 @@ order = 3190
 executor = "claude-code"
 priority = 0
 shipped_at = "28e9fbb6"
+owns = ["apps/website/frontend/src/yrs_persist.rs"]
 
 [scope.website.editor]
 chrome = []

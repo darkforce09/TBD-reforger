@@ -18,6 +18,10 @@ status = "shipped"
 order = 2303
 executor = "claude-code"
 priority = 1
+owns = [
+    "apps/website/api/.env.example",
+    "apps/website/api/src/handlers/oauth.rs",
+]
 
 [scope.website.editor]
 chrome = []

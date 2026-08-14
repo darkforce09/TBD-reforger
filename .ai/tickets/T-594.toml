@@ -42,6 +42,11 @@ status = "shipped"
 order = 3461
 executor = "claude-code"
 priority = 1
+owns = [
+    "packages/tbd-schema/schema/map-object-type-inventory.schema.json",
+    "xtask/src/schema_gates.rs",
+    "scripts/platform/wave.sh",
+]
 
 [scope.website.editor]
 chrome = []

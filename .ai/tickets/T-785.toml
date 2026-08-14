@@ -6,6 +6,11 @@ status = "shipped"
 order = 4670
 executor = "claude-code"
 notes = "root cause of F-26 fan-out; T-788 and T-810 depend on this pattern; probe harness pattern in review section 2 F-01 | SHIPPED W200 PARTIAL: core F-01 CLOSED (verifier re-proved with real per-char CDP, ~60 chars, zero focus losses); F-02 landed on the WRONG WIDGET (bookmark rename, eden_dock_left.rs) — the real layer rename is eden_tree.rs, outside owns. Re-ticketed: T-811 (layer rename), T-812 (bookmark rename now truncates to last char), T-813 (differing-field no-op wipe + field-Esc). Verifier: editor_verify/wave200.md F1/F2/F3/F6/F7."
+owns = [
+    "apps/website/frontend/src/attributes.rs",
+    "apps/website/frontend/src/eden_dock_left.rs",
+    "apps/website/frontend/src/mission_history.rs",
+]
 
 [scope.website.editor]
 chrome = []

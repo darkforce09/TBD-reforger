@@ -12,6 +12,10 @@ acceptance = [
     "OBB from spatial.halfExtentsM + rotationDeg; classify above/buried/inside.",
     "Fully automated; no manual eyeballing of 1M objects.",
 ]
+owns = [
+    "tools/tbd-tools/src/world",
+    "packages/map-assets/everon/objects",
+]
 
 [scope.engine]
 layers = ["world"]

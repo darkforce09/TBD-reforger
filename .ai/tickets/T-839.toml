@@ -6,6 +6,10 @@ status = "queued"
 order = 5210
 executor = "claude-code"
 notes = "eye-pass catch wave-205; decision-1 completion; strip+pill files — pack owns-aware"
+owns = [
+    "apps/website/frontend/src/eden_top_strip.rs",
+    "apps/website/frontend/src/mission_editor.rs",
+]
 
 [scope.website.editor]
 chrome = []

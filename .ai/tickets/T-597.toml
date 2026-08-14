@@ -42,6 +42,11 @@ status = "shipped"
 order = 3470
 executor = "claude-code"
 priority = 0
+owns = [
+    ".github/workflows/ci.yml",
+    "tools/tbd-tools/src/density.rs",
+    "scripts/platform/wave.sh",
+]
 
 [scope.website.editor]
 chrome = []

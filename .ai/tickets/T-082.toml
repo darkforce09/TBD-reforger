@@ -7,6 +7,10 @@ order = 4130
 executor = "claude-code"
 notes = "editor-UI program wave 13 (wave_plan.tsv row 113) — SHIPPED wave 113 (editor factory), 5d7f334a; verifier wave113.md. Entity Type + a real Role Description field, both on T-649's per-field opt-in gate. Required a NEW core mutator update_slot_object (store.rs, OUTSIDE the planned owns — no description key existed and no existing mutator could write one without clobbering tag/assetId; the HARD GATE bars shipping half a ticket). Also closed forward-constraint F-7 as the disabled affordance: a refused locked-slot Transform edit can no longer be typed, and no longer dirties the document."
 depends_on = ["T-661"]
+owns = [
+    "apps/website/frontend/src/attributes.rs",
+    "apps/website/frontend/src/editor_ops.rs",
+]
 
 [scope.website.editor]
 chrome = []

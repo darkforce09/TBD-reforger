@@ -5,6 +5,11 @@ summary = "faction-library.sample.json is one faction, two roles, one vehicle, a
 status = "shipped"
 order = 2740
 executor = "claude-code"
+owns = [
+    "packages/tbd-schema/registry/faction-library.sample.json",
+    "apps/website/api/seeds",
+    "Makefile",
+]
 
 [scope.website.editor]
 chrome = []

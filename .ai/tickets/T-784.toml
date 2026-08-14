@@ -6,6 +6,11 @@ status = "shipped"
 order = 4660
 executor = "claude-code"
 notes = "operator asked for this fixed, not filed; T-780's pick_connection is the map-side precedent, wave 142 F-1 is the reconcile trap"
+owns = [
+    "apps/website/frontend/src/eden_tree.rs",
+    "apps/website/frontend/src/editor_ops.rs",
+    "apps/website/frontend/src/mission_editor.rs",
+]
 
 [scope.website.editor]
 chrome = []

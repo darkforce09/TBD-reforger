@@ -5,6 +5,14 @@ summary = "/modpacks is get-only and the handler contains no DML; the only INSER
 status = "shipped"
 order = 2890
 executor = "claude-code"
+owns = [
+    "apps/website/api/src/handlers/modpacks.rs",
+    "apps/website/api/migrations",
+    "apps/website/api/src/models/content.rs",
+    "apps/website/api/src/app.rs",
+    "apps/website/api/tests/modpacks_crud.rs",
+    "apps/website/frontend/src/modpacks.rs",
+]
 
 [scope.website.editor]
 chrome = []

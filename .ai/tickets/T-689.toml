@@ -12,6 +12,7 @@ order = 4410
 executor = "claude-code"
 notes = "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row. Filed 2026-08-01 by the framework_synthesis coverage audit (parity/coverage_audit.md)"
 depends_on = ["T-685"]
+owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_PlayAreaVehicleAxis.c"]
 
 [scope.mod]
 layers = ["feature"]

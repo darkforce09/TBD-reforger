@@ -6,6 +6,7 @@ status = "shipped"
 order = 3712
 spec = "docs/website/DEV_RUNBOOK.md"
 executor = "claude-code"
+owns = ["apps/website/frontend/src/client.rs"]
 
 [scope.website.editor]
 chrome = []

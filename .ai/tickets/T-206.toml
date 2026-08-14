@@ -8,6 +8,7 @@ BLOCKED ON WORKBENCH (2026-07-26). A slice agent took this and refused rather th
 status = "deferred"
 order = 2240
 executor = "workbench"
+owns = ["packages/tbd-schema/registry/registry-items.workbench.json"]
 
 [scope.repo]
 layers = ["xtask"]

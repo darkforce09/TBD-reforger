@@ -5,6 +5,10 @@ summary = "No comments table in any migration. approvals.rs:274-284 is a reviewe
 status = "shipped"
 order = 3010
 executor = "claude-code"
+owns = [
+    "apps/website/api/src/handlers/approvals.rs",
+    "apps/website/api/src/handlers/missions.rs",
+]
 
 [scope.website.editor]
 chrome = []

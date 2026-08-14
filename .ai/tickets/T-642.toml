@@ -7,6 +7,12 @@ order = 4000
 executor = "claude-code"
 notes = "editor-UI program wave 8 (wave_plan.tsv row 108) — SHIPPED wave 108 (editor factory), slice f3a6aa5a; verifier wave108.md (Esc-stack MAJOR routed to T-726; stale-LG::Ruler strand routed to T-723)"
 depends_on = ["T-661"]
+owns = [
+    "apps/website/frontend/src/eden_toolbelt.rs",
+    "apps/website/frontend/src/mission_editor.rs",
+    "apps/website/frontend/src/select_tool.rs",
+    "apps/website/frontend/src/ruler_tool.rs",
+]
 
 [scope.website.editor]
 chrome = []

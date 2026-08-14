@@ -11,6 +11,7 @@ status = "shipped"
 order = 3295
 executor = "claude-code"
 priority = 2
+owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c"]
 
 [scope.mod]
 layers = ["feature"]

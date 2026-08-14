@@ -20,6 +20,7 @@ status = "shipped"
 order = 3192
 executor = "claude-code"
 priority = 1
+owns = ["apps/website/api/src/services/registry_import.rs"]
 
 [scope.website.editor]
 chrome = []

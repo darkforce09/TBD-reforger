@@ -6,6 +6,10 @@ status = "shipped"
 order = 3369
 executor = "claude-code"
 priority = 2
+owns = [
+    "apps/website/api/src/handlers/events.rs",
+    "apps/website/api/tests/t529_roster_whitespace_arma.rs",
+]
 
 [scope.website.editor]
 chrome = []

@@ -15,6 +15,11 @@ acceptance = [
     "Each of the 11 DEPS edges is present on the dependent ticket's depends_on; T-290 has pack_last = true",
     "cargo xtask ticket check --strict prints check OK",
 ]
+owns = [
+    ".ai/tickets",
+    "xtask/src/slice_collisions.rs",
+    "xtask/src/check.rs",
+]
 
 [scope.repo]
 layers = ["xtask"]

@@ -5,6 +5,11 @@ summary = "57 commits carry no ticket id, including a full spawn determinism pro
 status = "shipped"
 order = 2920
 executor = "claude-code"
+owns = [
+    "scripts/mod/tbd-spawn-determinism.sh",
+    "Makefile",
+    "docs/mod",
+]
 
 [scope.repo]
 layers = ["xtask"]

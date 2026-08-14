@@ -5,6 +5,7 @@ summary = "store.rs:26. Sound only because no peer updates ever arrive. Any sync
 status = "shipped"
 order = 2400
 executor = "claude-code"
+owns = ["crates/map-engine-core/src/doc/store.rs"]
 
 [scope.website.editor]
 chrome = []

@@ -10,6 +10,13 @@ depends_on = [
     "T-661",
     "T-662",
 ]
+owns = [
+    "apps/website/frontend/src/eden_dock_left.rs",
+    "apps/website/frontend/src/eden_dock_right.rs",
+    "apps/website/frontend/src/eden_layout.rs",
+    "apps/website/frontend/src/mission_editor.rs",
+    "apps/website/frontend/src/select_tool.rs",
+]
 
 [scope.website.editor]
 chrome = []

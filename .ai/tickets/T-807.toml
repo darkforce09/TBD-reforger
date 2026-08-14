@@ -6,6 +6,15 @@ status = "shipped"
 order = 4890
 executor = "claude-code"
 notes = "seven one-file fixes bundled; degree-15 owns is the packing liability — split valve documented in EDITOR_FACTORY_START band notes | SHIPPED W201: all seven verified live (attrs ' m' units + display rounding with no-op discipline intact, '1 slot' plural, DEM hint gone, hero gated on status=='live' (enum value — 'published' does not exist), yrs-persist quiet on empty missions with BLOCKED_EMPTY telemetry intact, disabled context rows carry why-tooltips, SNAP chip). F-13's status-bar half lives in eden_toolbelt.rs and landed under T-793 via orchestrator addendum. found_not_fixed: FEATURED_BRIEFING_FALLBACK prose still reads live-flavored for a non-live hero (T-548 golden pins it)."
+owns = [
+    "apps/website/frontend/src/orbat_manager.rs",
+    "apps/website/frontend/src/attributes.rs",
+    "apps/website/frontend/src/eden_top_strip.rs",
+    "apps/website/frontend/src/missions.rs",
+    "apps/website/frontend/src/yrs_persist.rs",
+    "apps/website/frontend/src/mission_editor.rs",
+    "apps/website/frontend/src/context_menu.rs",
+]
 
 [scope.website.editor]
 chrome = []

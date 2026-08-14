@@ -50,6 +50,16 @@ status = "shipped"
 order = 3672
 executor = "claude-code"
 priority = 1
+owns = [
+    "scripts/verify-no-python.sh",
+    "scripts/platform/slice-collisions.py",
+    "scripts/mod/slice-collisions.py",
+    "xtask/src",
+    "Makefile",
+    "docs/platform/CODING_STANDARDS.md",
+    "scripts/platform/wave.sh",
+    "docs/platform/wave_plan.tsv",
+]
 
 [scope.website.editor]
 chrome = []

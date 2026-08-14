@@ -5,6 +5,7 @@ summary = "flatten_mod_document is exported at crates/map-engine-wasm/src/lib.rs
 status = "shipped"
 order = 2610
 executor = "claude-code"
+owns = ["crates/map-engine-wasm/src/lib.rs"]
 
 [scope.website.editor]
 chrome = []

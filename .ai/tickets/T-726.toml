@@ -6,6 +6,7 @@ status = "shipped"
 order = 4319
 executor = "claude-code"
 notes = "filed by wave-106 adversarial verifier (editor factory)"
+owns = ["apps/website/frontend/src/mission_editor.rs"]
 
 [scope.website.editor]
 chrome = []

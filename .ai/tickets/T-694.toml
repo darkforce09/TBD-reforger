@@ -6,6 +6,10 @@ status = "shipped"
 order = 4480
 executor = "claude-code"
 notes = "— SHIPPED wave 113 (editor factory), f91d8854; verifier wave113.md. REINTERPRETED BY THE OPERATOR: game_mode editable after creation + player count DERIVED from MissionDocCore::slot_count(); NO min_players, no migration, no backend change (dto.rs is comment-only, R-api goldens untouched). Both figures shown side by side with the disagreement stated and neither enforced; a source-scan pin fails the build if clamp/128/.min(/.max(/min_players ever appears in that section. The authoritative-player-cap question is left open for the operator."
+owns = [
+    "apps/website/frontend/src/eden_settings.rs",
+    "apps/website/frontend/src/dto.rs",
+]
 
 [scope.website.editor]
 chrome = []

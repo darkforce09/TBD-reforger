@@ -36,6 +36,10 @@ order = 3170
 executor = "claude-code"
 priority = 1
 shipped_at = "b19a4634"
+owns = [
+    "docs/website/EDITOR_GATE_RUNBOOK.md",
+    "tools/tbd-tools/src/cdp.rs",
+]
 
 [scope.website.editor]
 chrome = []

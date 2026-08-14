@@ -6,6 +6,10 @@ status = "shipped"
 order = 5560
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+owns = [
+    "scripts/mod/setup-workbench-linux.sh",
+    "xtask/src/gate_setup_workbench_linux.rs",
+]
 
 [scope.repo]
 layers = ["xtask"]

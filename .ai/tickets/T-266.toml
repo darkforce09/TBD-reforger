@@ -5,6 +5,7 @@ summary = "Every list endpoint returns data, total, limit and offset (audit uses
 status = "shipped"
 order = 2840
 executor = "claude-code"
+owns = ["apps/website/frontend/src/audit.rs"]
 
 [scope.website.editor]
 chrome = []

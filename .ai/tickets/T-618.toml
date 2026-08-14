@@ -52,6 +52,10 @@ status = "shipped"
 order = 3652
 executor = "claude-code"
 priority = 1
+owns = [
+    "scripts/platform/wave.sh",
+    "scripts/mod/mcp-wb-logs.sh",
+]
 
 [scope.website.editor]
 chrome = []

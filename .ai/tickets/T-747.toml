@@ -6,6 +6,10 @@ status = "shipped"
 order = 4623
 executor = "claude-code"
 notes = "filed by wave-113 adversarial verifier (editor factory)"
+owns = [
+    "crates/map-engine-core/src/lib.rs",
+    "docs/platform/EDITOR_FACTORY_START.md",
+]
 
 [scope.website.editor]
 chrome = []

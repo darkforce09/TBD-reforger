@@ -13,6 +13,7 @@ status = "shipped"
 order = 2470
 executor = "claude-code"
 shipped_at = "2026-07-26"
+owns = ["apps/website/api/src/handlers/telemetry.rs"]
 
 [scope.website.editor]
 chrome = []

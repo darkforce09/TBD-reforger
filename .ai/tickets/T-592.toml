@@ -26,6 +26,7 @@ status = "shipped"
 order = 3453
 executor = "claude-code"
 priority = 3
+owns = ["crates/map-engine-render/src/draw_order.rs"]
 
 [scope.website.editor]
 chrome = []

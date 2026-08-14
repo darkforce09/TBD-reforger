@@ -7,6 +7,10 @@ order = 4115
 executor = "claude-code"
 notes = "editor-UI program wave 12 (wave_plan.tsv row 112); filed 2026-08-01 by the framework_synthesis coverage audit (parity/coverage_audit.md) — SHIPPED wave 112 (editor factory), 2a3288c3; verifier wave112.md. Import gate reuses the shipped loadout-export v2 schema via include_str!, refuses whole-document on any fault, runs validate_loadout/attachment/capacity before commit, one undo step via set_loadout. NOTE: the hand-rolled schema subset checker fails OPEN in three forms — see T-735."
 depends_on = ["T-661"]
+owns = [
+    "apps/website/frontend/src/arsenal.rs",
+    "apps/website/frontend/src/arsenal_rules.rs",
+]
 
 [scope.website.editor]
 chrome = []

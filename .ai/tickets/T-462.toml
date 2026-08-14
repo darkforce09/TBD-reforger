@@ -15,6 +15,13 @@ order = 3301
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 priority = 1
+owns = [
+    "Makefile",
+    "scripts/platform/wave.sh",
+    "scripts/mod/verify-t439-objects-registry-aliases.sh",
+    "scripts/mod/verify-t444-wiki-seed.sh",
+    "apps/website/frontend/src/event_hub.rs",
+]
 
 [scope.repo]
 layers = ["docs"]

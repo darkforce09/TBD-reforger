@@ -6,6 +6,10 @@ status = "shipped"
 order = 4618
 executor = "claude-code"
 notes = "filed by the T-649 slice agent, wave 112 (editor factory) — factory infrastructure, needs operator decision"
+owns = [
+    "scripts/platform/wave.sh",
+    "docs/platform/EDITOR_SLICE_BRIEF.md",
+]
 
 [scope.website.editor]
 chrome = []

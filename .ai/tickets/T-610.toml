@@ -31,6 +31,10 @@ status = "shipped"
 order = 3572
 executor = "claude-code"
 priority = 3
+owns = [
+    "docs/platform/PLAYTEST_RUNBOOK.md",
+    "apps/website/frontend/src/arsenal_rules.rs",
+]
 
 [scope.website.editor]
 chrome = []

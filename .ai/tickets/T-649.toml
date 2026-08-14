@@ -7,6 +7,12 @@ order = 4110
 executor = "claude-code"
 notes = "editor-UI program wave 12 (wave_plan.tsv row 112) — SHIPPED wave 112 (editor factory), e4fefb38; verifier wave112.md. Ctrl+A viewport-scoped through the marquee primitive; BOTH suppress-on-multi guards inverted (T-716 rows now honest); per-field opt-in checkboxes. Arsenal tab still writes one slot under a multi-selection — disclosed with a UI banner, fan-out deferred to T-737's family."
 depends_on = ["T-661"]
+owns = [
+    "apps/website/frontend/src/mission_editor.rs",
+    "apps/website/frontend/src/select_tool.rs",
+    "apps/website/frontend/src/attributes.rs",
+    "apps/website/frontend/src/editor_ops.rs",
+]
 
 [scope.website.editor]
 chrome = []

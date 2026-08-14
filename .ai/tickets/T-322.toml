@@ -21,6 +21,7 @@ order = 3138
 executor = "claude-code"
 priority = 0
 shipped_at = "fe899dca"
+owns = ["Makefile"]
 
 [scope.website.editor]
 chrome = []

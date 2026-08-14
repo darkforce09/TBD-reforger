@@ -6,6 +6,7 @@ status = "shipped"
 order = 3354
 executor = "claude-code"
 priority = 0
+owns = ["apps/website/frontend/src/faction_manager.rs"]
 
 [scope.website.editor]
 chrome = []

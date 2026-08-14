@@ -5,6 +5,10 @@ summary = "TBD_MissionValidator has no unconsumed-key warning, so nothing tells 
 status = "shipped"
 order = 2680
 executor = "claude-code"
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionValidator.c",
+    "xtask/src/schema_gates.rs",
+]
 
 [scope.mod]
 layers = ["feature"]

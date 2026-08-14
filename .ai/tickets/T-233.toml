@@ -25,6 +25,10 @@ status = "shipped"
 order = 2510
 executor = "claude-code"
 shipped_at = "2026-07-26"
+owns = [
+    "apps/website/api/src/handlers/deployments.rs",
+    "apps/website/api/tests/deployments_combat.rs",
+]
 
 [scope.website.editor]
 chrome = []

@@ -13,6 +13,7 @@ status = "shipped"
 order = 2220
 executor = "claude-code"
 shipped_at = "2026-07-26"
+owns = ["crates/map-engine-core/src/mission/flatten.rs"]
 
 [scope.website.editor]
 chrome = []

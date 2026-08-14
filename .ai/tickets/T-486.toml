@@ -11,6 +11,10 @@ status = "shipped"
 order = 3325
 executor = "claude-code"
 priority = 2
+owns = [
+    "Makefile",
+    "scripts/mod/verify-t468-ci-schema-parity.sh",
+]
 
 [scope.website.editor]
 chrome = []

@@ -10,6 +10,10 @@ depends_on = [
     "T-661",
     "T-656",
 ]
+owns = [
+    "crates/map-engine-core/src/mission/validate.rs",
+    "crates/map-engine-core/src/mission/wire_safety.rs",
+]
 
 [scope.website.editor]
 chrome = []

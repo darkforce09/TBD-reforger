@@ -7,6 +7,7 @@ order = 1810
 executor = "claude-code"
 notes = "10 .meta sidecars for the input .conf files. CONFResourceClass is not a guess — enumerated every *ResourceClass string in the server binary; there is no Action/ActionContext-specific class. RETIRED A RECORDED LANDMINE: '.meta is only honoured after Workbench rewrites the rdb' is FALSE. Proved with two probes on a loose addon — repointed a .meta to a GUID present nowhere in the rdb and the world still loaded by that GUID, then pointed scenarioId at one of the NEW GUIDs and the engine echoed the path back and reached class inspection, which it could only do from a GUID->path mapping the new sidecar supplied. So the engine scans and reads .meta at startup; no operator pass needed. ALSO ESTABLISHED registration alone IS enough here, unlike the menu presets: vanilla's gproj names only three Configs/System resources (two single-valued InputManagerSettings fields a mod cannot append to, plus the MenuConfigs list), and its own 26 ActionContext confs and all Actions confs appear nowhere in it — the directory is the contract. Data/*.json correctly left alone, TESTED not assumed: added a JSONResourceClass sidecar for registry.json and reproduced the identical failure, because TBD_Registry.Load uses FileIO.FileExists on a $TBD_Framework: alias — a filesystem call, not a resource lookup, so GUID identity is irrelevant to it."
 parent = "T-181"
+owns = ["apps/mod/tbd-framework/Configs/**"]
 
 [scope.mod]
 layers = ["feature"]

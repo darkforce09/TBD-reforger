@@ -8,6 +8,7 @@ BLOCKED ON WORKBENCH (2026-07-26). A slice agent took this and refused rather th
 status = "deferred"
 order = 2230
 executor = "workbench"
+owns = ["apps/website/frontend/src/vehicles.rs"]
 
 [scope.repo]
 layers = ["docs"]

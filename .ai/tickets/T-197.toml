@@ -6,6 +6,7 @@ status = "shipped"
 order = 2150
 executor = "claude-code"
 shipped_at = "slice/T-197"
+owns = ["apps/website/frontend/src/arsenal.rs"]
 
 [scope.website.editor]
 chrome = []

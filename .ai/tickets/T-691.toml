@@ -6,6 +6,10 @@ status = "shipped"
 order = 4450
 executor = "claude-code"
 notes = " — SHIPPED wave 106 (a68d02a0); verifier wave106.md"
+owns = [
+    "apps/website/frontend/src/eden_settings.rs",
+    "apps/website/frontend/src/world_layer_prefs.rs",
+]
 
 [scope.website.editor]
 chrome = []

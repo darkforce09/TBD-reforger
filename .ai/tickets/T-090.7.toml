@@ -12,6 +12,10 @@ acceptance = [
     "ResolvedWorldObject is the exact AI tool shape.",
     "Do not invent parallel field names in frontend AI code.",
 ]
+owns = [
+    "apps/website/frontend/src/world_assets",
+    "packages/tbd-schema/schema/map-object-resolved.schema.json",
+]
 
 [scope.website.editor]
 chrome = []

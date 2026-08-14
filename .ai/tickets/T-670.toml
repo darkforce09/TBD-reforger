@@ -7,6 +7,10 @@ order = 4160
 executor = "claude-code"
 notes = "editor-UI program wave 15 (wave_plan.tsv row 115) — SHIPPED wave 115 (editor factory), f2acb1aa; verifier wave115.md. Metres-per-pixel readout in the status bar, sampled from the rAF loop but written ONLY when the formatted string changes (an unguarded per-frame write would re-render the chrome at 60fps; the perturbation was deleting that guard). Reconciled with T-667 by making the shared signal the single source — ScaleBar now resolves from it, so one number drives both the graphic bar and the numeric cell, and the bar no longer waits for the ~1Hz HUD heartbeat. The printed value IS the contour ladder's input (both literally 2^(-zoom)), not a lookalike."
 depends_on = ["T-661"]
+owns = [
+    "apps/website/frontend/src/eden_toolbelt.rs",
+    "apps/website/frontend/src/mission_editor.rs",
+]
 
 [scope.website.editor]
 chrome = []

@@ -5,6 +5,12 @@ summary = "PageStub and ApiPage are defined and routed nowhere. missions.rs:87 i
 status = "shipped"
 order = 3040
 executor = "claude-code"
+owns = [
+    "apps/website/frontend/src/nav.rs",
+    "apps/website/frontend/src/faction_manager.rs",
+    "apps/website/frontend/src/app_routes.rs",
+    "apps/website/frontend/src/missions.rs",
+]
 
 [scope.website.editor]
 chrome = []

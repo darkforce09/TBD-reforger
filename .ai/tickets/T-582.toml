@@ -41,6 +41,11 @@ status = "shipped"
 order = 3431
 executor = "claude-code"
 priority = 1
+owns = [
+    "crates/map-engine-core/src/js.rs",
+    "apps/website/frontend/src/eden_chrome.rs",
+    "apps/website/frontend/src/editor_ops.rs",
+]
 
 [scope.website.editor]
 chrome = []

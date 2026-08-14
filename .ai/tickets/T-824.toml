@@ -6,6 +6,10 @@ status = "queued"
 order = 5060
 executor = "claude-code"
 notes = "operator eye-pass wave-203; repro-first — do not assume the mechanism"
+owns = [
+    "apps/website/frontend/src/eden_zones.rs",
+    "crates/map-engine-render/src/scene.rs",
+]
 
 [scope.website.editor]
 chrome = []

@@ -6,6 +6,10 @@ status = "shipped"
 order = 4655
 executor = "claude-code"
 notes = "residue of T-770 (wave 140); core half shipped, frontend half did not"
+owns = [
+    "apps/website/frontend/src/editor_ops.rs",
+    "apps/website/frontend/src/arsenal.rs",
+]
 
 [scope.website.editor]
 chrome = []

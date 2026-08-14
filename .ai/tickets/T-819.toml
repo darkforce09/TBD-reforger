@@ -6,6 +6,10 @@ status = "shipped"
 order = 5010
 executor = "claude-code"
 notes = "eye-pass wave-202; pairs with T-818 in wave 210; render lane only | SHIPPED W210: derived map_render_slot_soa hide from crew assignment; materialize/compile/outliner/selection intact; mission_history wire disclosed. Completion: scrub-anchor split + T-802 pin retarget (ddbdcddd/00eea875) after gate red on duplicated MissionEditorPage literal."
+owns = [
+    "apps/website/frontend/src/mission_editor.rs",
+    "apps/website/frontend/src/editor_ops.rs",
+]
 
 [scope.website.editor]
 chrome = []

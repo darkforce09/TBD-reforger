@@ -12,6 +12,7 @@ order = 3146
 executor = "claude-code"
 priority = 2
 shipped_at = "5538efce"
+owns = ["apps/website/api/src/handlers/approvals.rs"]
 
 [scope.website.editor]
 chrome = []

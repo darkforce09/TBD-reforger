@@ -17,6 +17,11 @@ status = "deferred"
 order = 3220
 executor = "workbench"
 priority = 3
+owns = [
+    "apps/website/api/tests/common/mod.rs",
+    "apps/website/api/src/handlers/deployments.rs",
+    "docs/platform/frontend_data_provenance.md",
+]
 
 [scope.repo]
 layers = ["docs"]

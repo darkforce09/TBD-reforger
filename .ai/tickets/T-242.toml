@@ -12,6 +12,7 @@ $defs/entity is {alias,x,z,headingDeg,faction} (mission.schema.json:376-387) wit
 status = "idea"
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
+owns = ["crates/map-engine-core/src/doc/store.rs"]
 
 [scope.repo]
 layers = ["docs"]

@@ -6,6 +6,7 @@ status = "shipped"
 order = 2350
 executor = "claude-code"
 shipped_at = "8e07338f"
+owns = ["crates/map-engine-core/src/doc/apply_faction.rs"]
 
 [scope.website.editor]
 chrome = []

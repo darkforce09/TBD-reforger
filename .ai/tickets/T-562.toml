@@ -13,6 +13,7 @@ status = "shipped"
 order = 3415
 executor = "claude-code"
 priority = 2
+owns = ["apps/website/api/tests/common/mod.rs"]
 
 [scope.website.editor]
 chrome = []

@@ -17,6 +17,7 @@ status = "shipped"
 order = 3177
 executor = "claude-code"
 priority = 2
+owns = ["tools/tbd-tools/src/smokes.rs"]
 
 [scope.website.editor]
 chrome = []

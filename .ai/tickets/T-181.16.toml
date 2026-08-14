@@ -7,6 +7,10 @@ order = 1810
 executor = "human"
 notes = "Dedicated server + 2 real clients, full loop."
 parent = "T-181"
+owns = [
+    "docs/mod/capability_verdicts.tsv",
+    "docs/mod/t181_event_mod_program.md",
+]
 
 [scope.repo]
 layers = ["docs"]

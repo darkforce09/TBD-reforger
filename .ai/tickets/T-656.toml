@@ -7,6 +7,10 @@ order = 3920
 executor = "claude-code"
 notes = "editor-UI program wave 4 (wave_plan.tsv row 104) — SHIPPED wave 104 (editor factory), slice e4341d38; verifier wave104.md (3 MAJOR deferred: T-719/T-720/T-715-amended)"
 depends_on = ["T-661"]
+owns = [
+    "crates/map-engine-core/src/mission/validate.rs",
+    "crates/map-engine-core/src/mission/mod.rs",
+]
 
 [scope.website.editor]
 chrome = []

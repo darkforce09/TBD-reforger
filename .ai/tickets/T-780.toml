@@ -6,6 +6,12 @@ status = "shipped"
 order = 4656
 executor = "claude-code"
 notes = "scope gap disclosed by T-768 (wave 140); render lane recipe already shipped by T-760 and T-748"
+owns = [
+    "crates/map-engine-render/src/draw_order.rs",
+    "crates/map-engine-render/src/engine.rs",
+    "apps/website/frontend/src/mission_editor.rs",
+    "apps/website/frontend/src/context_menu.rs",
+]
 
 [scope.website.editor]
 chrome = []

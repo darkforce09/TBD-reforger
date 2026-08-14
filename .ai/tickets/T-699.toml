@@ -6,6 +6,10 @@ status = "shipped"
 order = 4530
 executor = "claude-code"
 notes = "— SHIPPED wave 118 (editor factory), 8b40ba53; verifier wave118.md. Copy/Apply/Remove-Everything over the selection. The randomisation is specified rather than gestured at: uniform by widening multiply (not modulo), independent per entity, deterministic in (seed, ordinal, len) via SplitMix64 with no wall clock, degenerate at one buffered loadout — and the accept/refuse gate runs over the WHOLE buffer BEFORE any draw, so a validation verdict can never depend on a die roll. Strip ships an explicit cargo:[] to stop seed_cargo re-seeding default magazines. NO inheritance was built (T-687 is operator-CANCELLED, not deferred) and the nine per-category strip variants are absent, both pinned. Undo cost stated honestly: N entities is N steps, cited to T-732."
+owns = [
+    "apps/website/frontend/src/arsenal.rs",
+    "apps/website/frontend/src/editor_ops.rs",
+]
 
 [scope.website.editor]
 chrome = []

@@ -11,6 +11,7 @@ status = "queued"
 order = 4400
 executor = "claude-code"
 notes = "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row. Filed 2026-08-01 by the framework_synthesis coverage audit (parity/coverage_audit.md)"
+owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneVolume.c"]
 
 [scope.mod]
 layers = ["feature"]

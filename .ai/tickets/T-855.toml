@@ -6,6 +6,10 @@ status = "shipped"
 order = 5360
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+owns = [
+    "scripts/mod/remote-log-grep.sh",
+    "xtask/src/gate_remote_log_grep.rs",
+]
 
 [scope.repo]
 layers = ["xtask"]

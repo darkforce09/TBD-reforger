@@ -5,6 +5,11 @@ summary = "mission.schema.json:446 is a bare string with no enum and no minLengt
 status = "shipped"
 order = 2940
 executor = "claude-code"
+owns = [
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerIcons.c",
+    "packages/tbd-schema/schema/mission.schema.json",
+    "packages/tbd-schema/golden-missions/empty-warning-fields.json",
+]
 
 [scope.repo]
 layers = ["docs"]

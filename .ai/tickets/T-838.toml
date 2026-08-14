@@ -6,6 +6,11 @@ status = "queued"
 order = 5200
 executor = "claude-code"
 notes = "the T-825 marker extraction; operator stated the rule three times — priority; owns collide with T-819 (mission_editor/editor_ops) — pack 210/211 accordingly"
+owns = [
+    "apps/website/frontend/src/mission_editor.rs",
+    "apps/website/frontend/src/editor_ops.rs",
+    "apps/website/frontend/src/eden_tree.rs",
+]
 
 [scope.website.editor]
 chrome = []

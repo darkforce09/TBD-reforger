@@ -8,6 +8,10 @@ spec = ".ai/artifacts/missed_items_handoff.md"
 executor = "human"
 depends_on = ["T-159"]
 user_story = "As the operator I flip production to the Leptos SPA with a tested rollback path."
+owns = [
+    "docs/website/DEV_RUNBOOK.md",
+    "scripts/deploy",
+]
 
 [scope.website.editor]
 chrome = []

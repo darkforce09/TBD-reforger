@@ -19,6 +19,7 @@ status = "shipped"
 order = 2450
 executor = "claude-code"
 shipped_at = "28e9fbb6"
+owns = ["apps/website/api/src/handlers/events.rs"]
 
 [scope.website.editor]
 chrome = []

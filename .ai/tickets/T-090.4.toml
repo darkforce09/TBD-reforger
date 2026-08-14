@@ -12,6 +12,10 @@ acceptance = [
     "Each catalog instance gets demZ vs z with per-kind warn/fail thresholds.",
     "Missing z is warn; no auto-fix (geometry-aware pass is T-090.6).",
 ]
+owns = [
+    "tools/tbd-tools/src/world",
+    "packages/map-assets/everon/objects",
+]
 
 [scope.repo]
 layers = ["xtask"]

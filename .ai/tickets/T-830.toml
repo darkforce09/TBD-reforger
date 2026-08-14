@@ -6,6 +6,7 @@ status = "queued"
 order = 5120
 executor = "claude-code"
 notes = "operator eye-pass wave-204; candidate for the T-825 session or standalone"
+owns = ["apps/website/frontend/src/eden_tree.rs"]
 
 [scope.website.editor]
 chrome = []

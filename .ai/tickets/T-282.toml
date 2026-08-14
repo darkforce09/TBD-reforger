@@ -5,6 +5,7 @@ summary = "mission_versions already stores immutable full JSON snapshots per sem
 status = "shipped"
 order = 3000
 executor = "claude-code"
+owns = ["apps/website/frontend/src/missions.rs"]
 
 [scope.website.editor]
 chrome = []

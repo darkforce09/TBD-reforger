@@ -6,6 +6,7 @@ status = "shipped"
 order = 3365
 executor = "claude-code"
 priority = 2
+owns = ["apps/website/api/seeds/content_golden.sql"]
 
 [scope.website.editor]
 chrome = []

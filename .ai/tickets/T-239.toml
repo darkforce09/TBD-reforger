@@ -23,6 +23,13 @@ A fourth subagent mapped EVERY render site in the frontend by data provenance â€
 status = "shipped"
 order = 2570
 executor = "claude-code"
+owns = [
+    "apps/website/api/src/services/text.rs",
+    "apps/website/api/src/handlers/cms.rs",
+    "apps/website/frontend/src/announcements.rs",
+    "apps/website/api/tests/cms_announcement_body.rs",
+    "apps/website/api/tests/admin_field.rs",
+]
 
 [scope.website.editor]
 chrome = []

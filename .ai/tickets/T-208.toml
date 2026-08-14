@@ -6,6 +6,7 @@ status = "shipped"
 order = 2260
 executor = "claude-code"
 shipped_at = "d297f3a3"
+owns = ["packages/tbd-schema/golden-missions"]
 
 [scope.repo]
 layers = ["xtask"]

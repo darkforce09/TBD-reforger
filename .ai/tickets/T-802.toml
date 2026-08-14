@@ -6,6 +6,7 @@ status = "shipped"
 order = 4840
 executor = "claude-code"
 notes = "T-057 removal history is the trap; HUD is the perf oracle per CLAUDE.md editor bench notes | SHIPPED W207: hover cursor via a 40ms-throttled query over the EXISTING pick point-sets, hysteresis keyed off the pick radius (T-808-proof), suppressed during drag/draw/armed. Perf measured two ways (HUD rf +0.06ms; direct handler cost ~0.03ms/move) with a within-build control because cross-build variance exceeds the 1ms threshold. MARKERS DELIBERATELY EXCLUDED — route_target has no marker arm, so claiming pickability would be the T-754 dead-click lie; independently corroborates T-838."
+owns = ["apps/website/frontend/src/mission_editor.rs"]
 
 [scope.website.editor]
 chrome = []

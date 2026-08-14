@@ -7,6 +7,10 @@ order = 4150
 executor = "claude-code"
 notes = "editor-UI program wave 14 (wave_plan.tsv row 114) — SHIPPED wave 114 (editor factory), 17fe692e; verifier wave114.md. New Slider + Select primitives in ui.rs (available platform-wide), replacing the raw range/select in the top strip; on:change only, so the ~30Hz RowMirror debounce is intact. Tailwind pseudo-element output verified out-of-band by the slice AND re-verified independently against the built dist CSS. NOTE: ui.rs now imports two &'static str class recipes from eden_layout — an accepted layering inversion, no cycle, nothing runtime."
 depends_on = ["T-661"]
+owns = [
+    "apps/website/frontend/src/eden_top_strip.rs",
+    "apps/website/frontend/src/ui.rs",
+]
 
 [scope.website.editor]
 chrome = []

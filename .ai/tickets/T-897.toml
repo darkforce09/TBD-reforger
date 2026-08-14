@@ -12,6 +12,7 @@ BLOCKERS — three things READ the Makefile and evaporate silently if it is dele
   2. scripts/platform/wave.sh:1598-1628 (and its port) parses the `schema-validate` recipe to cross-check GATE_SCHEMA_VALIDATE_GATES. Needs `xtask schema list-gates` first — T-896 owns shipping it.
   3. xtask/src/gate_t444.rs pins the `seed:` recipe body by reading the Makefile (found by T-894). Repoint at mk_db::SEEDS or that Class-R gate evaporates.
 Also: 12 CI `run: make …` steps and ~363 live doc files reference make targets. The historical record (SHIPPED_HISTORY, TICKET_REGISTRY, verify-logs, registry.json ticket prose) must NOT be rewritten — it describes what was true then."""
+owns = ["Makefile"]
 
 [scope.repo]
 layers = ["xtask"]

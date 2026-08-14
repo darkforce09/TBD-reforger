@@ -5,6 +5,7 @@ summary = "Data comes out of the game via Enfusion Workbench plugins, then a hum
 status = "shipped"
 order = 2960
 executor = "claude-code"
+owns = ["tools/tbd-tools/src/world"]
 
 [scope.repo]
 layers = ["xtask"]

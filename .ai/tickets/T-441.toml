@@ -11,6 +11,7 @@ status = "shipped"
 order = 3280
 executor = "claude-code"
 priority = 1
+owns = ["apps/website/api/tests/null_tolerance.rs"]
 
 [scope.website.editor]
 chrome = []

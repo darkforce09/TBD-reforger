@@ -22,6 +22,7 @@ status = "shipped"
 order = 3151
 executor = "claude-code"
 priority = 1
+owns = ["apps/website/api/migrations"]
 
 [scope.website.editor]
 chrome = []

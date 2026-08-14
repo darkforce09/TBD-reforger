@@ -5,6 +5,7 @@ summary = "The database modpack concept and the server's actual mod list are unc
 status = "shipped"
 order = 3060
 executor = "claude-code"
+owns = ["scripts/mod/deploy-staging.sh"]
 
 [scope.website.editor]
 chrome = []

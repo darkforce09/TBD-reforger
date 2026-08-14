@@ -5,6 +5,11 @@ summary = "apps/mod/tbd-framework/README.md:23 says the route is not in the curr
 status = "shipped"
 order = 2990
 executor = "claude-code"
+owns = [
+    "apps/mod/tbd-framework/README.md",
+    "apps/website/api/src/app.rs",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
+]
 
 [scope.mod]
 layers = ["feature"]

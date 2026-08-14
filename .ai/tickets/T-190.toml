@@ -5,6 +5,8 @@ summary = "yrs_persist.rs:60-69 is a bare whole-blob put that never reads and me
 status = "idea"
 executor = "claude-code"
 notes = "UX review F-32 evidence + verified conflict-prompt copy in .ai/artifacts/editor_hostile_ux_review.md section F-32"
+depends_on = ["T-222"]
+owns = ["apps/website/frontend/src/yrs_persist.rs"]
 
 [scope.website.editor]
 chrome = []

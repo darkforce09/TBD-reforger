@@ -5,6 +5,10 @@ summary = "cms.rs:268-289 force-pushes any announcement — unlike the create an
 status = "shipped"
 order = 2640
 executor = "claude-code"
+owns = [
+    "apps/website/api/src/handlers/cms.rs",
+    "apps/website/api/tests/cms_announcement_body.rs",
+]
 
 [scope.website.editor]
 chrome = []

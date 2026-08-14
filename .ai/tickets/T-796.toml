@@ -6,6 +6,7 @@ status = "shipped"
 order = 4780
 executor = "claude-code"
 notes = "T-784/T-748/T-781 comment family cited; one-txn move matches the F-26 lesson | SHIPPED W206 (drag half): comments pick/preview/move through move_comment — precedence ring→unit→comment→marquee proven at the boundaries, one undo per note, three non-commit exits leave the lane byte-identical, T-784 click regression green. The GLYPH RESTYLE (a)/(c) is T-808's by band assignment (the registry cites the bubble as its shape-language deliverable) — the amber-ring look persists until W207 BY DESIGN."
+owns = ["apps/website/frontend/src/mission_editor.rs"]
 
 [scope.website.editor]
 chrome = []

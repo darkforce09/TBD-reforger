@@ -6,6 +6,7 @@ status = "shipped"
 order = 2040
 executor = "claude-code"
 shipped_at = "9ceade54"
+owns = ["scripts/mod/world-boot.sh"]
 
 [scope.repo]
 layers = ["docs"]

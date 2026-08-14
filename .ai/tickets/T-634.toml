@@ -7,6 +7,7 @@ order = 4170
 executor = "claude-code"
 notes = "editor-UI program wave 15 (wave_plan.tsv row 115) — SHIPPED wave 115 (editor factory), 34cbc653; verifier wave115.md. Two-row strip (menus / icon toolbar) inside the SAME 48px — the height contract was re-derived independently and the strip did not grow. One primary action (Save Version), both exports demoted behind one secondary trigger, tool glyphs brightened, gear moved beside the environment it opens. NO pre-existing pin was weakened: the verifier proved this from the hunk map (final hunk is a pure append, zero deleted lines), not from a green run. Also removed a false T-668 ellipsis from 'Export Compiled Mission…', which promised a dialog that never appears."
 depends_on = ["T-661"]
+owns = ["apps/website/frontend/src/eden_top_strip.rs"]
 
 [scope.website.editor]
 chrome = []

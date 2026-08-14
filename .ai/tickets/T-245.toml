@@ -5,6 +5,7 @@ summary = "mission_editor.rs:196,215 fetch /registry and /registry/compat whole:
 status = "shipped"
 order = 2630
 executor = "claude-code"
+owns = ["apps/website/frontend/src/mission_editor.rs"]
 
 [scope.website.editor]
 chrome = []

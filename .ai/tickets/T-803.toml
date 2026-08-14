@@ -6,6 +6,10 @@ status = "shipped"
 order = 4850
 executor = "claude-code"
 notes = "operator O-9; keep visual distinct from T-649-era selection highlight | SHIPPED W204: 'Placing into: X' header affordance with truth-telling resolvers (names the rows.first() fallback honestly) by the slice; the ROW visual landed in the completion (2318dcf8, eden_tree.rs was off-limits mid-wave): ROW_DROP_TARGET distinct from selection on >=3 measured axes + my_location chip; create-layer default verified already-correct at ops level; Alt-click subtree intact. Verifier re-proved incl. the fallback landing."
+owns = [
+    "apps/website/frontend/src/editor_ops.rs",
+    "apps/website/frontend/src/eden_dock_left.rs",
+]
 
 [scope.website.editor]
 chrome = []

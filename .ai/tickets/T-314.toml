@@ -10,6 +10,12 @@ This is findable, fully diagnosed, and reproducible from the notes above. Promot
 status = "shipped"
 order = 2314
 executor = "claude-code"
+owns = [
+    "crates/map-engine-core",
+    "crates/map-engine-render",
+    "apps/website/frontend/src/editor_ops.rs",
+    "apps/website/frontend/src/mission_hydrate.rs",
+]
 
 [scope.website.editor]
 chrome = []

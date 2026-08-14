@@ -5,6 +5,11 @@ summary = "tools/tbd-tools and xtask are workspace members (Cargo.toml:8-16) but
 status = "shipped"
 order = 2297
 executor = "claude-code"
+owns = [
+    "tools/tbd-tools/src",
+    "xtask/src",
+    "Makefile",
+]
 
 [scope.repo]
 layers = ["xtask"]

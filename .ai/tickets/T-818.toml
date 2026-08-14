@@ -6,6 +6,10 @@ status = "shipped"
 order = 5000
 executor = "claude-code"
 notes = "eye-pass wave-202; pairs with T-819 in wave 210; depends on T-809/W203 stopgap | SHIPPED W210: vehicle Heading/Cargo/Crew moved into Attributes modal (same mutators); DockRight Placed strip deleted; Vehicles tab catalog-only. Orphan panel module → T-851."
+owns = [
+    "apps/website/frontend/src/attributes.rs",
+    "apps/website/frontend/src/eden_dock_right.rs",
+]
 
 [scope.website.editor]
 chrome = []

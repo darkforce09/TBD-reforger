@@ -7,6 +7,7 @@ order = 4120
 executor = "claude-code"
 notes = "editor-UI program wave 13 (wave_plan.tsv row 113) — SHIPPED wave 113 (editor factory), 35c2845f; verifier wave113.md. Ctrl+X cut (copy_selection() && delete_selection() — the short-circuit is what stops a failed copy becoming a silent Delete) and Ctrl+Shift+V. CAVEAT: paste-at-original actually lands +20m — see T-743; ACTION-PASTE-ORIG-001 is NOT closed as literally named. Touched eden_help.rs too (dispatcher-extended), so the summary's 'exactly one file' claim is stale."
 depends_on = ["T-661"]
+owns = ["apps/website/frontend/src/mission_editor.rs"]
 
 [scope.website.editor]
 chrome = []

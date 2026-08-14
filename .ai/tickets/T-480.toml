@@ -11,6 +11,10 @@ status = "shipped"
 order = 3319
 executor = "claude-code"
 priority = 2
+owns = [
+    "apps/website/api/tests/oauth_redirect.rs",
+    "apps/website/api/src/handlers/oauth.rs",
+]
 
 [scope.website.editor]
 chrome = []

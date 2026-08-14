@@ -7,6 +7,11 @@ order = 3940
 executor = "claude-code"
 notes = "editor-UI program wave 5 (wave_plan.tsv row 105) — SHIPPED wave 105 (editor factory), 62b55d93 + fix c2a902dd; verifier wave105.md"
 depends_on = ["T-661"]
+owns = [
+    "apps/website/frontend/src/asset_catalog.rs",
+    "apps/website/frontend/src/eden_dock_right.rs",
+    "apps/website/frontend/src/editor_ops.rs",
+]
 
 [scope.website.editor]
 chrome = []

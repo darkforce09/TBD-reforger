@@ -5,6 +5,7 @@ summary = "There is no bot skeleton at all. Grep for serenity, twilight, poise, 
 status = "shipped"
 order = 2970
 executor = "claude-code"
+owns = ["apps/website/api/src/config.rs"]
 
 [scope.website.editor]
 chrome = []

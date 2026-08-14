@@ -7,6 +7,7 @@ order = 1810
 executor = "claude-code"
 notes = "Two backend calls share ONE root cause, not two URL typos. ServiceAuth (middleware/auth.rs:108) reads only x-service-token; TBD_MissionListLoader:99 and TBD_RosterLoader:127 both send 'Authorization, Bearer' while the three loaders that work all send X-Service-Token. Fixing only the URLs turns 404 into 401. list_missions is owner-scoped (push_filters ... me) so ServiceAuth cannot be bolted onto it, and NO roster route has ever existed (full-crate grep). Add GET /api/v1/ingest/missions and GET /api/v1/ingest/events/{id}/roster, both ServiceAuth, mirroring the /ingest/link-confirm pattern; repoint both mod loaders and fix their stale @route comments."
 parent = "T-181"
+owns = ["apps/website/api/** + Scripts/Game/TBD/Backend/**"]
 
 [scope.repo]
 layers = ["docs"]

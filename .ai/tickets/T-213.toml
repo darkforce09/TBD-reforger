@@ -5,6 +5,12 @@ summary = """CANCELLED 2026-08-01 — MERGED INTO T-069, which keeps the id beca
 status = "cancelled"
 order = 2310
 executor = "claude-code"
+depends_on = ["T-257"]
+owns = [
+    "apps/website/frontend/src/eden_chrome.rs",
+    "crates/map-engine-core/src/doc/store.rs",
+    "crates/map-engine-core/src/mission/compile.rs",
+]
 
 [scope.website.editor]
 chrome = []

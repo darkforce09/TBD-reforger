@@ -6,6 +6,10 @@ status = "shipped"
 order = 4730
 executor = "claude-code"
 notes = "census COMP-PLACE-001/T-078 is stale on the save half — cite; T-078 remains the parent idea, this ships the author-facing core | SHIPPED W201: the ticket's mechanism premise was STALE — stamp/one-txn/select/Esc-disarm already shipped (T-650/T-723/T-781 lineage); the review's live dead-end did NOT reproduce for the verifier (full F-30 acceptance re-proved: +3/SEL==3/one-undo across click, second point and drag; stored Z 12.500 m survives). Slice shipped the genuinely missing live arm hint (armed_composition_id + doc_tick bumps + panel block) and un-hollowed two raw-include_str pins. Esc hint/arm double-consume filed T-816."
+owns = [
+    "apps/website/frontend/src/editor_ops.rs",
+    "apps/website/frontend/src/eden_dock_right.rs",
+]
 
 [scope.website.editor]
 chrome = []

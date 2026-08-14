@@ -6,6 +6,10 @@ status = "queued"
 order = 5150
 executor = "claude-code"
 notes = "wave205 verifier; operator decision; comment currently lies about the behavior | operator decided (c) 2026-08-10; default about-centre, Ctrl = individual; pack with/after W207 heading render | REVISED at the wave-207 eye-pass: relative-delta + live preview; supersedes T-648 no-preview note; now depends on the T-808 facing point (shipped W207) to be legible"
+owns = [
+    "apps/website/frontend/src/mission_editor.rs",
+    "apps/website/frontend/src/select_tool.rs",
+]
 
 [scope.website.editor]
 chrome = []

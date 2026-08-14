@@ -23,6 +23,10 @@ status = "shipped"
 order = 3172
 executor = "claude-code"
 priority = 1
+owns = [
+    "crates/map-engine-core/src/mission/orbat.rs",
+    "apps/website/api/src/handlers/events.rs",
+]
 
 [scope.website.editor]
 chrome = []

@@ -6,6 +6,7 @@ status = "queued"
 order = 5130
 executor = "claude-code"
 notes = "operator requirement wave-204; audit-first; game half = parked T-673"
+owns = ["apps/website/frontend/src/eden_dock_right.rs"]
 
 [scope.website.editor]
 chrome = []

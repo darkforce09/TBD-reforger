@@ -46,6 +46,16 @@ order = 3592
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 priority = 2
+owns = [
+    "scripts/mod/mcp-wb-logs.sh",
+    "scripts/mod/tbd-spawn-verify.sh",
+    "scripts/mod/tbd-spawn-determinism.sh",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c",
+    "apps/mod/tbd-framework/Scripts/Game/TBD/Core/TBD_Log.c",
+    "docs/specs/Mission_Creator_Architecture",
+    "apps/mod/README.md",
+    "apps/mod/tbd-framework/README.md",
+]
 
 [scope.repo]
 layers = ["docs"]

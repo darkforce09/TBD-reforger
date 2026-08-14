@@ -11,6 +11,10 @@ status = "shipped"
 order = 3273
 executor = "claude-code"
 priority = 2
+owns = [
+    ".github/workflows/ci.yml",
+    "Makefile",
+]
 
 [scope.website.editor]
 chrome = []

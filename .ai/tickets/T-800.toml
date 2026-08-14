@@ -6,6 +6,11 @@ status = "shipped"
 order = 4820
 executor = "claude-code"
 notes = "unblocks in-browser closure of the census XFORM-DEL-001 vehicle-delete lead the review could only settle in source | SHIPPED W202: both catalog Failed arms share a named-cause+Retry view (no-modpack vs request-failed, in-dock 404 probe since the fetch discards the cause in sibling-owned code), grammar chips hidden while failed; Add Vehicle empty-catalog explainer inline (no z exposure); 4 vehicle seed rows applied idempotently (second apply INSERT 0 0). Verifier proved the full flip/restore cycle live incl. Retry-without-reload. T-084 grammar needle updated honestly with a compensating hides-while-failed pin."
+owns = [
+    "apps/website/frontend/src/eden_dock_right.rs",
+    "apps/website/frontend/src/orbat_manager.rs",
+    "apps/website/api/seeds/registry_dev.sql",
+]
 
 [scope.website.editor]
 chrome = []

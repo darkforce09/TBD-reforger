@@ -10,6 +10,7 @@ order = 3137
 executor = "claude-code"
 priority = 1
 shipped_at = "f33ef5c1"
+owns = ["crates/map-engine-core/src/doc/place_orbat.rs"]
 
 [scope.website.editor]
 chrome = []

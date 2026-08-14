@@ -29,6 +29,10 @@ status = "shipped"
 order = 3451
 executor = "claude-code"
 priority = 3
+owns = [
+    "Makefile",
+    "docs/platform/CODING_STANDARDS.md",
+]
 
 [scope.website.editor]
 chrome = []

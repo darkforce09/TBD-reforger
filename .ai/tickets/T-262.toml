@@ -5,6 +5,7 @@ summary = "Grep for FOREIGN KEY or REFERENCES across all seven migrations return
 status = "shipped"
 order = 2800
 executor = "claude-code"
+owns = ["apps/website/api/migrations"]
 
 [scope.website.editor]
 chrome = []

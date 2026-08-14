@@ -6,6 +6,10 @@ status = "shipped"
 order = 4460
 executor = "claude-code"
 notes = "— SHIPPED wave 112 (editor factory), d4b6dd4d + merge fix 4973de19; verifier wave112.md. Help menu + Controls Hint overlay, chrome-gated by mount site; coverage pinned by a test that fails when a keydown arm has no help row — it fired on merge for T-649's KeyA exactly as predicted."
+owns = [
+    "apps/website/frontend/src/eden_help.rs",
+    "apps/website/frontend/src/eden_top_strip.rs",
+]
 
 [scope.website.editor]
 chrome = []

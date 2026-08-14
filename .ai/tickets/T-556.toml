@@ -55,6 +55,12 @@ status = "shipped"
 order = 3401
 executor = "claude-code"
 priority = 0
+owns = [
+    "scripts/mod/verify-t456-mission-rest-size-gate.sh",
+    "scripts/mod/verify-t437-destroy-inert-diagnostics.sh",
+    "scripts/mod/verify-t296-results-reporter-identity-comments.sh",
+    "scripts/mod/verify-t452-player-identity-link-comments.sh",
+]
 
 [scope.website.editor]
 chrome = []

@@ -5,6 +5,16 @@ summary = "events.match_id is selected in every event query and never written by
 status = "shipped"
 order = 3020
 executor = "claude-code"
+owns = [
+    "apps/website/api/src/handlers/events.rs",
+    "apps/website/api/src/models/event.rs",
+    "apps/website/api/migrations/0013_drop_events_match_id.sql",
+    "apps/website/api/src/handlers/dashboard.rs",
+    "apps/website/api/src/handlers/deployments.rs",
+    "apps/website/api/tests/events.rs",
+    "apps/website/api/tests/null_tolerance.rs",
+    "apps/website/frontend/src/event_hub.rs",
+]
 
 [scope.website.editor]
 chrome = []

@@ -6,6 +6,10 @@ status = "shipped"
 order = 4790
 executor = "claude-code"
 notes = "depends_on T-787; operator decisions 1&2 recorded in review section 8; supersedes the F-09 pill question via T-798 pairing | SHIPPED W202: row-2 toolbar + completed Edit menu + ORBAT into the menu row + F-14/F-15/F-16-copy by the slice (buttons disabled-first — dispatch lived in sibling-owned mission_editor.rs); completion 8a527b20 added the register_editor_toolbar_dispatch bridge and wired everything live. Verifier MAJOR: the completion's TOGGLED_PLATE reactivity claim was false (mount-order subscription gap, plates frozen) — fixed 95ee8cb7 (generation-signal subscription + teardown + the missing reactivity pin), focused re-verify RESOLVED with live click/chord/snap/remount parity. Grid-label-toggle chord correctly refused (no such binding; census rule). View menu removed whole after F-14+F-15 emptied it."
+owns = [
+    "apps/website/frontend/src/eden_top_strip.rs",
+    "apps/website/frontend/src/eden_layout.rs",
+]
 
 [scope.website.editor]
 chrome = []
