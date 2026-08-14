@@ -1,16 +1,20 @@
-//! eframe shell (T-915.1 / T-915.2) — thin UI over the pure modules.
+//! eframe shell (T-915.1 / T-915.2 / T-915.3) — thin UI over the pure modules.
 //!
 //! States: NoRepo refusal (both discovery mechanisms + native folder picker),
 //! Loading, parse Refusal (the trust surface: file path + verbatim error), Board.
 //! Board carries three tabs — Board / Waves / Tree — one shared detail panel, and a
 //! composable filter bar (filters hide board cards and tree rows, and dim wave
-//! chips). All IO happens on worker threads (`std::thread` + `mpsc`,
+//! chips). Above everything sits the trust banner (T-915.3): the streamed result
+//! of `cargo xtask ticket check --strict` plus the git-dirty chip, refreshed by
+//! the `.ai/tickets` file watch (debounced, coalesced), which also auto-reloads
+//! the corpus in place. All IO happens on worker threads (`std::thread` + `mpsc`,
 //! `request_repaint` on completion); the paint path only reads strings precomputed
 //! at load or filter-change time.
 
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, Receiver};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use eframe::egui::{
     self, Align, Align2, Button, Color32, ComboBox, FontId, Id, Layout, Panel, Rect, RichText,
@@ -23,7 +27,11 @@ use crate::board::{self, BoardModel, Card};
 use crate::corpus::{self, Corpus, LoadBundle, LoadError};
 use crate::discovery;
 use crate::filters::{FilterIndex, Filters, KindFilter};
+use crate::gitstatus::{self, GitChip};
+use crate::subproc::{self, LogRing, ProcEvent, ProcHandle};
 use crate::tree::{self, TreeModel};
+use crate::trust::{self, CheckModel, Coalescer, Tone};
+use crate::watch::{self, Debouncer};
 use crate::wavelock::{self, LockState};
 use crate::waves::{Lane, Wave0, WaveChip, WavesModel};
 
@@ -39,6 +47,9 @@ const TREE_ROW_H: f32 = 18.0;
 const TREE_INDENT: f32 = 16.0;
 const WAVE0_ROW_H: f32 = 18.0;
 const WAVE0_LIST_MAX_H: f32 = 320.0;
+const OUTPUT_ROW_H: f32 = 15.0;
+const OUTPUT_MAX_H: f32 = 260.0;
+const GIT_LIST_MAX_H: f32 = 160.0;
 
 /// Collision verdict / `ready`-family accent colors (dark-theme legible).
 const VERDICT_OK: Color32 = Color32::from_rgb(120, 205, 130);
@@ -192,6 +203,12 @@ impl BoardState {
 /// UI events, collected during paint and applied afterwards.
 enum Action {
     Reload,
+    /// Manual trust-banner re-run (coalesced while a check is in flight).
+    Recheck,
+    /// Kill the in-flight strict check.
+    CancelCheck,
+    ToggleOutput,
+    ToggleGitList,
     PickFolder,
     Select(usize),
     SelectId(String),
@@ -224,6 +241,26 @@ pub struct TicketboardApp {
     tab: Tab,
     load_rx: Option<Receiver<LoadBundle>>,
     pick_rx: Option<Receiver<Option<PathBuf>>>,
+    // ---- T-915.3: trust banner + watch ----
+    /// Resolved once at startup ($CARGO → PATH → ~/.cargo/bin — GUI PATH is bare).
+    cargo: PathBuf,
+    check: CheckModel,
+    check_log: LogRing,
+    check_handle: Option<ProcHandle>,
+    /// Verbatim-output pane toggle (auto-opens when a check lands red).
+    show_output: bool,
+    git_chip: GitChip,
+    git_lines: Vec<String>,
+    git_handle: Option<ProcHandle>,
+    git_flight: Coalescer,
+    git_expanded: bool,
+    watch: Option<watch::WatchHandle>,
+    watch_rx: Option<Receiver<()>>,
+    /// The load-bearing `.ai/tickets` watch failed to arm — banner note.
+    watch_error: Option<String>,
+    debounce: Debouncer,
+    /// Millisecond clock base for the debouncer (monotonic).
+    epoch: Instant,
 }
 
 impl TicketboardApp {
@@ -238,11 +275,25 @@ impl TicketboardApp {
             tab: Tab::default(),
             load_rx: None,
             pick_rx: None,
+            cargo: subproc::resolve_cargo(),
+            check: CheckModel::default(),
+            check_log: LogRing::new(subproc::LOG_CAP),
+            check_handle: None,
+            show_output: false,
+            git_chip: GitChip::default(),
+            git_lines: Vec::new(),
+            git_handle: None,
+            git_flight: Coalescer::default(),
+            git_expanded: false,
+            watch: None,
+            watch_rx: None,
+            watch_error: None,
+            debounce: Debouncer::new(watch::DEBOUNCE_MS),
+            epoch: Instant::now(),
         };
         match discovery::resolve_repo_root(arg, cwd.as_deref()) {
             Some(root) if discovery::has_tickets_dir(&root) => {
-                app.repo_root = Some(root);
-                app.start_load(&cc.egui_ctx);
+                app.adopt_root(root, &cc.egui_ctx);
             }
             Some(root) => {
                 app.state = State::NoRepo {
@@ -261,8 +312,7 @@ impl TicketboardApp {
                     .map(PathBuf::from);
                 match saved {
                     Some(root) if discovery::has_tickets_dir(&root) => {
-                        app.repo_root = Some(root);
-                        app.start_load(&cc.egui_ctx);
+                        app.adopt_root(root, &cc.egui_ctx);
                     }
                     Some(root) => {
                         app.state = State::NoRepo {
@@ -280,14 +330,122 @@ impl TicketboardApp {
         app
     }
 
-    /// Kick the corpus + lock load on a worker thread; the UI shows Loading.
-    fn start_load(&mut self, ctx: &egui::Context) {
+    /// A validated repo root becomes active: arm the watch, load the corpus, and
+    /// run the launch strict check (T-915.3 acceptance 1).
+    fn adopt_root(&mut self, root: PathBuf, ctx: &egui::Context) {
+        self.repo_root = Some(root);
+        self.arm_watch(ctx);
+        self.start_load(ctx, false);
+        self.trigger_check(ctx);
+    }
+
+    /// Monotonic milliseconds since app start — the debouncer's clock.
+    fn now_ms(&self) -> u64 {
+        u64::try_from(self.epoch.elapsed().as_millis()).unwrap_or(u64::MAX)
+    }
+
+    /// T-915.4 hook: the verb runner sets this while a mutation subprocess is in
+    /// flight. Watch fires keep reloading, but check re-runs stay suppressed for
+    /// the flag's duration plus one debounce window after clear — the app's own
+    /// writes must not trigger a strict-check storm.
+    #[allow(dead_code)] // wired by the T-915.4 verb runner
+    pub fn set_verb_in_flight(&mut self, in_flight: bool) {
+        let now = self.now_ms();
+        self.debounce.set_suppressed(in_flight, now);
+    }
+
+    /// Kick the corpus + lock load on a worker thread. `in_place` (watch-triggered)
+    /// keeps the current surface up — the Board keeps rendering, a Refusal keeps
+    /// naming the file — and swaps on arrival, so an external edit lands without a
+    /// Loading flash and a fixed-on-disk file auto-recovers the board.
+    fn start_load(&mut self, ctx: &egui::Context, in_place: bool) {
         if let Some(root) = self.repo_root.clone() {
             let repaint_ctx = ctx.clone();
             self.load_rx = Some(corpus::spawn_load(root, move || {
                 repaint_ctx.request_repaint()
             }));
-            self.state = State::Loading;
+            if !in_place {
+                self.state = State::Loading;
+            }
+        }
+    }
+
+    // ---- strict check (trust banner) ----
+
+    /// Request a strict-check run. Single-flight: while one is in flight the
+    /// trigger sets the dirty flag and the run exit starts exactly one follow-up.
+    fn trigger_check(&mut self, ctx: &egui::Context) {
+        if self.repo_root.is_none() {
+            return;
+        }
+        if self.check.coalescer.trigger() {
+            self.start_check(ctx);
+        }
+    }
+
+    /// Spawn `cargo xtask ticket check --strict` (alias-expanded argv) at the repo
+    /// root — the app never re-implements check, it invokes it.
+    fn start_check(&mut self, ctx: &egui::Context) {
+        let Some(root) = self.repo_root.clone() else {
+            return;
+        };
+        self.check.on_start();
+        self.check_log.clear();
+        let repaint_ctx = ctx.clone();
+        self.check_handle = Some(subproc::spawn_streaming(
+            &self.cargo,
+            &trust::CHECK_ARGS,
+            &root,
+            move || repaint_ctx.request_repaint(),
+        ));
+    }
+
+    // ---- git-dirty chip ----
+
+    /// Refresh the git chip (runs after every reload and every check exit).
+    /// Same single-flight coalescing as the check.
+    fn trigger_git(&mut self, ctx: &egui::Context) {
+        if self.repo_root.is_none() {
+            return;
+        }
+        if self.git_flight.trigger() {
+            self.start_git(ctx);
+        }
+    }
+
+    fn start_git(&mut self, ctx: &egui::Context) {
+        let Some(root) = self.repo_root.clone() else {
+            return;
+        };
+        self.git_lines.clear();
+        let repaint_ctx = ctx.clone();
+        self.git_handle = Some(subproc::spawn_streaming(
+            "git",
+            &gitstatus::GIT_ARGS,
+            &root,
+            move || repaint_ctx.request_repaint(),
+        ));
+    }
+
+    // ---- file watch ----
+
+    /// Arm the notify watches for the active root. Only the `.ai/tickets` watch is
+    /// load-bearing; its failure is surfaced in the banner, never a crash.
+    fn arm_watch(&mut self, ctx: &egui::Context) {
+        self.watch = None;
+        self.watch_rx = None;
+        self.watch_error = None;
+        let Some(root) = self.repo_root.clone() else {
+            return;
+        };
+        let (tx, rx) = mpsc::channel();
+        let repaint_ctx = ctx.clone();
+        match watch::spawn(&root, tx, move || repaint_ctx.request_repaint()) {
+            Ok(handle) => {
+                self.watch = Some(handle);
+                self.watch_rx = Some(rx);
+            }
+            Err(e) => self.watch_error = Some(e),
         }
     }
 
@@ -316,16 +474,30 @@ impl TicketboardApp {
             self.load_rx = None;
             self.state = match bundle.corpus {
                 Ok(corpus) => {
-                    // Filters survive a reload (T-915.3 will reload on every file
-                    // change); selection indices do not — they may be stale.
-                    let filters = match &self.state {
-                        State::Board(b) => b.filters.clone(),
-                        _ => Filters::default(),
+                    // Filters AND the selection survive a reload (T-915.3 reloads
+                    // on every watched change) — the selection re-resolves by id,
+                    // because raw indices are stale against the new corpus.
+                    let (filters, selected_id, compare_id) = match &self.state {
+                        State::Board(b) => (
+                            b.filters.clone(),
+                            b.selected
+                                .map(|i| b.corpus.tickets[i].ticket.id().to_owned()),
+                            b.compare
+                                .map(|i| b.corpus.tickets[i].ticket.id().to_owned()),
+                        ),
+                        _ => (Filters::default(), None, None),
                     };
-                    State::Board(Box::new(BoardState::new(corpus, bundle.lock, filters)))
+                    let mut board = BoardState::new(corpus, bundle.lock, filters);
+                    board.selected =
+                        selected_id.and_then(|id| board.board.id_to_index.get(&id).copied());
+                    board.compare =
+                        compare_id.and_then(|id| board.board.id_to_index.get(&id).copied());
+                    State::Board(Box::new(board))
                 }
                 Err(e) => State::Refused(e),
             };
+            // Registry files may have changed under git too — refresh the chip.
+            self.trigger_git(ctx);
         }
         if let Some(rx) = &self.pick_rx
             && let Ok(picked) = rx.try_recv()
@@ -333,8 +505,7 @@ impl TicketboardApp {
             self.pick_rx = None;
             if let Some(root) = picked {
                 if discovery::has_tickets_dir(&root) {
-                    self.repo_root = Some(root);
-                    self.start_load(ctx);
+                    self.adopt_root(root, ctx);
                 } else {
                     self.state = State::NoRepo {
                         note: Some(format!(
@@ -346,12 +517,114 @@ impl TicketboardApp {
                 }
             }
         }
+        self.poll_check(ctx);
+        self.poll_git(ctx);
+        self.poll_watch(ctx);
+    }
+
+    /// Drain the strict-check stream: lines advance the building→checking phase
+    /// split and the ERROR count; the exit resolves green/red and may start the
+    /// single coalesced follow-up run.
+    fn poll_check(&mut self, ctx: &egui::Context) {
+        let mut finished = false;
+        if let Some(handle) = &self.check_handle {
+            while let Ok(event) = handle.rx.try_recv() {
+                match event {
+                    ProcEvent::Line(line) => {
+                        self.check.on_line(&line);
+                        self.check_log.push(line);
+                    }
+                    ProcEvent::Exited { code } => {
+                        self.check.on_exit(code, trust::utc_hms(epoch_secs()));
+                        if code != Some(0) {
+                            // Red auto-opens the verbatim pane — the errors are
+                            // the point, not a number.
+                            self.show_output = true;
+                        }
+                        finished = true;
+                    }
+                    ProcEvent::SpawnFailed(error) => {
+                        self.check
+                            .on_spawn_failed(error, trust::utc_hms(epoch_secs()));
+                        finished = true;
+                    }
+                }
+            }
+        }
+        if finished {
+            self.check_handle = None;
+            self.trigger_git(ctx);
+            if self.check.coalescer.finished() {
+                self.start_check(ctx);
+            }
+        }
+    }
+
+    /// Drain the git-status stream into the chip.
+    fn poll_git(&mut self, ctx: &egui::Context) {
+        let mut finished = false;
+        if let Some(handle) = &self.git_handle {
+            while let Ok(event) = handle.rx.try_recv() {
+                match event {
+                    ProcEvent::Line(line) => self.git_lines.push(line),
+                    ProcEvent::Exited { code } => {
+                        self.git_chip = gitstatus::chip_from_exit(
+                            code,
+                            self.git_lines.iter().map(String::as_str),
+                        );
+                        finished = true;
+                    }
+                    ProcEvent::SpawnFailed(error) => {
+                        // Git absent — the chip says so; never a crash.
+                        self.git_chip = GitChip::Unavailable(error);
+                        finished = true;
+                    }
+                }
+            }
+        }
+        if finished {
+            self.git_lines.clear();
+            self.git_handle = None;
+            if self.git_flight.finished() {
+                self.start_git(ctx);
+            }
+        }
+    }
+
+    /// Feed raw watch events into the debouncer; a fire reloads corpus+lock in
+    /// place and (unless suppressed) re-runs the check through the coalescer.
+    fn poll_watch(&mut self, ctx: &egui::Context) {
+        let now = self.now_ms();
+        if let Some(rx) = &self.watch_rx {
+            while rx.try_recv().is_ok() {
+                self.debounce.on_event(now);
+            }
+        }
+        if let Some(fire) = self.debounce.poll(now) {
+            self.start_load(ctx, true);
+            if fire.run_check {
+                self.trigger_check(ctx);
+            }
+        }
+        // The fire needs a frame after the quiet window even when the user is
+        // idle — schedule the wakeup.
+        if let Some(due) = self.debounce.due_in(now) {
+            ctx.request_repaint_after(Duration::from_millis(due + 5));
+        }
     }
 
     fn apply(&mut self, actions: Vec<Action>, ctx: &egui::Context) {
         for action in actions {
             match action {
-                Action::Reload => self.start_load(ctx),
+                Action::Reload => self.start_load(ctx, false),
+                Action::Recheck => self.trigger_check(ctx),
+                Action::CancelCheck => {
+                    if let Some(handle) = &self.check_handle {
+                        handle.kill();
+                    }
+                }
+                Action::ToggleOutput => self.show_output = !self.show_output,
+                Action::ToggleGitList => self.git_expanded = !self.git_expanded,
                 Action::PickFolder => self.start_pick(ctx),
                 Action::OpenPath(path) => open_path(&path),
                 Action::SetTab(tab) => self.tab = tab,
@@ -419,6 +692,72 @@ impl TicketboardApp {
             }
         }
     }
+
+    /// The trust banner strip (T-915.3 §UI shape): STRICT badge + doc-tooltip,
+    /// the phase/result headline (building xtask… / checking… / green / red with
+    /// exit code), Re-check + cancel, the expandable verbatim-output pane, watch
+    /// health, and the git-dirty chip with its expandable file list.
+    fn trust_banner_ui(&self, ui: &mut Ui, actions: &mut Vec<Action>) {
+        let (headline, tone) = self.check.banner();
+        ui.horizontal(|ui| {
+            let color = tone_color(ui, tone);
+            // STRICT, prominently — this banner is the --strict bar, NOT the
+            // (non-strict) mutator preflight.
+            ui.label(
+                RichText::new(" STRICT ")
+                    .strong()
+                    .monospace()
+                    .background_color(color.gamma_multiply(0.22))
+                    .color(color),
+            )
+            .on_hover_text(trust::STRICT_TOOLTIP);
+            if self.check_handle.is_some() {
+                ui.add(Spinner::new().size(12.0));
+            }
+            ui.label(RichText::new(&headline).color(color).strong());
+            if ui
+                .button("Re-check")
+                .on_hover_text(trust::CHECK_COMMAND)
+                .clicked()
+            {
+                actions.push(Action::Recheck);
+            }
+            if self.check_handle.is_some() && ui.small_button("✕ cancel").clicked() {
+                actions.push(Action::CancelCheck);
+            }
+            let output_label = format!("output ({})", self.check_log.len());
+            if ui
+                .selectable_label(self.show_output, RichText::new(output_label).small())
+                .clicked()
+            {
+                actions.push(Action::ToggleOutput);
+            }
+            if let Some(error) = &self.watch_error {
+                ui.label(
+                    RichText::new("watch unavailable")
+                        .color(ui.visuals().warn_fg_color)
+                        .small(),
+                )
+                .on_hover_text(error);
+            } else if let Some(watch) = &self.watch
+                && !watch.degraded.is_empty()
+            {
+                ui.label(RichText::new("watch degraded").weak().small())
+                    .on_hover_text(watch.degraded.join("\n"));
+            }
+            ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                git_chip_ui(ui, &self.git_chip, self.git_expanded, actions);
+            });
+        });
+        if self.show_output {
+            output_pane_ui(ui, &self.check_log);
+        }
+        if self.git_expanded
+            && let GitChip::Dirty(files) = &self.git_chip
+        {
+            git_list_ui(ui, files);
+        }
+    }
 }
 
 impl eframe::App for TicketboardApp {
@@ -430,6 +769,13 @@ impl eframe::App for TicketboardApp {
         let busy = self.load_rx.is_some();
         let tab = self.tab;
 
+        // Trust banner ABOVE the tabs — persistent on every tab and every state
+        // once a repo is active (T-915.3 §UI shape).
+        if self.repo_root.is_some() {
+            Panel::top(Id::new("trustbanner")).show(ui, |ui| {
+                self.trust_banner_ui(ui, &mut actions);
+            });
+        }
         Panel::top(Id::new("topbar")).show(ui, |ui| {
             topbar_ui(ui, self.repo_root.as_deref(), busy, tab, &mut actions);
         });
@@ -481,6 +827,78 @@ impl eframe::App for TicketboardApp {
 }
 
 // ---- chrome ----
+
+/// Banner accent per tone. Raw egui text colors elsewhere; the green/red pair
+/// reuses the verdict palette so "check OK" and "no collision" read the same.
+fn tone_color(ui: &Ui, tone: Tone) -> Color32 {
+    match tone {
+        Tone::Neutral => ui.visuals().weak_text_color(),
+        Tone::Busy => Color32::from_rgb(245, 175, 80),
+        Tone::Green => VERDICT_OK,
+        Tone::Red => VERDICT_COLLIDE,
+    }
+}
+
+/// Git-dirty chip: subdued "clean", loud "N uncommitted registry file(s)" (click
+/// expands the verbatim porcelain list), "git unavailable" when git is absent or
+/// refuses — never a crash, never a fake clean.
+fn git_chip_ui(ui: &mut Ui, chip: &GitChip, expanded: bool, actions: &mut Vec<Action>) {
+    let dirty = matches!(chip, GitChip::Dirty(_));
+    let text = match chip {
+        GitChip::Dirty(_) => RichText::new(chip.label()).color(ui.visuals().warn_fg_color),
+        GitChip::Unavailable(_) => RichText::new(chip.label()).weak().italics(),
+        GitChip::Clean | GitChip::Unknown => RichText::new(chip.label()).weak(),
+    };
+    let response = ui.selectable_label(expanded && dirty, text);
+    let response = match chip {
+        GitChip::Unavailable(reason) => response.on_hover_text(reason),
+        _ => response.on_hover_text(format!("git {}", gitstatus::GIT_ARGS.join(" "))),
+    };
+    if response.clicked() && dirty {
+        actions.push(Action::ToggleGitList);
+    }
+}
+
+/// Verbatim merged stdout+stderr of the strict check — the last ~500 lines,
+/// never paraphrased; drops are named, not hidden.
+fn output_pane_ui(ui: &mut Ui, log: &LogRing) {
+    ui.separator();
+    if log.dropped() > 0 {
+        ui.label(
+            RichText::new(format!("… {} earlier line(s) dropped", log.dropped()))
+                .weak()
+                .small(),
+        );
+    }
+    if log.is_empty() {
+        ui.label(RichText::new("no output yet").weak().small());
+        return;
+    }
+    ScrollArea::vertical()
+        .id_salt("check_output")
+        .max_height(OUTPUT_MAX_H)
+        .stick_to_bottom(true)
+        .auto_shrink([false, true])
+        .show_rows(ui, OUTPUT_ROW_H, log.len(), |ui, row_range| {
+            for line in log.lines().skip(row_range.start).take(row_range.len()) {
+                ui.label(RichText::new(line).monospace().small());
+            }
+        });
+}
+
+/// The expanded git-dirty file list — porcelain entries verbatim (`XY path`).
+fn git_list_ui(ui: &mut Ui, files: &[String]) {
+    ui.separator();
+    ScrollArea::vertical()
+        .id_salt("git_dirty_list")
+        .max_height(GIT_LIST_MAX_H)
+        .auto_shrink([false, true])
+        .show_rows(ui, OUTPUT_ROW_H, files.len(), |ui, row_range| {
+            for line in &files[row_range] {
+                ui.label(RichText::new(line).monospace().small());
+            }
+        });
+}
 
 fn topbar_ui(
     ui: &mut Ui,
@@ -1326,6 +1744,15 @@ fn owns_section(ui: &mut Ui, owns: &[String]) {
 }
 
 // ---- OS integration ----
+
+/// Wall-clock seconds since the Unix epoch — the banner's timestamp source
+/// (rendered as explicit UTC; the registry's own timestamps are UTC too).
+fn epoch_secs() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0)
+}
 
 /// Open a path with the OS handler: `xdg-open` (cfg-gated `start` on Windows).
 /// Spawn-and-forget — the UI thread never waits on the child.

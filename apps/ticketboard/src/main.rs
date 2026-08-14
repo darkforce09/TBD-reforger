@@ -3,18 +3,24 @@
 //! Read-only projection: every `T-*.toml` (parents AND children) is parsed through
 //! `tbd-tickets` and rendered as a status board with a full-field detail panel,
 //! plus (T-915.2) verbatim wave lanes off `wave.lock`, a program tree, composable
-//! filters, and the owns-collision explainer. The app writes nothing under the
-//! repo; the only preference store is eframe Storage in the user config dir.
-//! Design authority: `docs/platform/t915_ticketboard_design.md`.
+//! filters, and the owns-collision explainer, plus (T-915.3) the trust banner —
+//! `cargo xtask ticket check --strict` as a streamed subprocess, a notify file
+//! watch with debounced auto-reload, and the git-dirty chip. The app writes
+//! nothing under the repo; the only preference store is eframe Storage in the
+//! user config dir. Design authority: `docs/platform/t915_ticketboard_design.md`.
 
 mod app;
 mod board;
 mod corpus;
 mod discovery;
 mod filters;
+mod gitstatus;
+mod subproc;
 #[cfg(test)]
 mod testutil;
 mod tree;
+mod trust;
+mod watch;
 mod wavelock;
 mod waves;
 

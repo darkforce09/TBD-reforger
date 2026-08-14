@@ -6,7 +6,7 @@
 #
 # egui/eframe (with winit/wgpu) is a first-time dependency family for this workspace —
 # a named supply-chain and build-time event (docs/platform/t915_ticketboard_design.md
-# §Framework). Keep this tree lean on purpose: no tokio, no notify (watch is T-915.3).
+# §Framework). Keep this tree lean on purpose: no tokio.
 [package]
 name = "ticketboard"
 version = "0.1.0"
@@ -23,6 +23,10 @@ eframe = { version = "0.36.1", features = ["persistence"] }
 # Detail-panel field table. default-features = false drops mime_guess2 (image-loader
 # support the app does not use).
 egui_extras = { version = "0.36.1", default-features = false }
+# File watch on .ai/tickets + the sync targets (T-915.3 §Read architecture). The
+# default feature set only selects the macOS backend flavor (fsevent) — on Linux this
+# is inotify with no extra runtime: no crossbeam, no mio, no tokio.
+notify = "8"
 # Native folder picker for the no-repo refusal screen (xdg-portal + pollster on Linux;
 # no async runtime).
 rfd = "0.17.2"
