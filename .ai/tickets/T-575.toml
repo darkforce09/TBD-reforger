@@ -1,20 +1,22 @@
 id = "T-575"
 kind = "work"
 title = "wave.sh still exports dead MIGRATE_TEST_DATABASE_URL after T-558"
-summary = """
-FOUND by W68 adversarial verifier (CLEAN NIT) after T-558.
-
-Gate script still exports `MIGRATE_TEST_DATABASE_URL` (wave.sh ~341). `db_migrate` / `models_fromrow` now use per-binary provision and no longer read it. Harmless leftover — not a silent gate skip.
-
-Repro: rg MIGRATE_TEST_DATABASE_URL in wave.sh vs api tests; export is live, consumers gone.
-
-Cure: drop the dead export (and any docs that still describe the shared migrate URL)."""
+summary = "wave.sh still exports dead MIGRATE_TEST_DATABASE_URL after T-558"
 class = "docs"
 status = "shipped"
 order = 3428
 executor = "claude-code"
 priority = 3
 estimated = ["scope"]
+migration_legacy = [
+    "FOUND by W68 adversarial verifier (CLEAN NIT) after T-558.",
+    "",
+    "Gate script still exports `MIGRATE_TEST_DATABASE_URL` (wave.sh ~341). `db_migrate` / `models_fromrow` now use per-binary provision and no longer read it. Harmless leftover — not a silent gate skip.",
+    "",
+    "Repro: rg MIGRATE_TEST_DATABASE_URL in wave.sh vs api tests; export is live, consumers gone.",
+    "",
+    "Cure: drop the dead export (and any docs that still describe the shared migrate URL).",
+]
 owns = ["scripts/platform/wave.sh"]
 
 [scope]

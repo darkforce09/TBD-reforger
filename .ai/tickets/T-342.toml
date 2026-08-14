@@ -1,28 +1,30 @@
 id = "T-342"
 kind = "work"
 title = "Replace the ban window.prompt with a real dialog — the gate provably cannot drive a native prompt"
-summary = """
-RECOMMENDED by T-323 with a hard engineering reason rather than a taste argument, which is why it is filed rather than dismissed.
-
-personnel.rs's ban flow uses `window.prompt`. T-323 established, by trying: **overriding window.prompt from JS does NOT intercept the web_sys call** (patching Window.prototype.prompt does not either), and with the CDP Page domain enabled and no dialog handler a real prompt BLOCKS THE RENDERER. So the browser gate cannot drive this destructive admin action at all, in principle, while it remains a native prompt. T-323 had to prove its fix with host-side unit tests on an extracted `classify_ban_reason` instead — good work, but it means the actual click path is untested forever.
-
-A shared Dialog/Sheet also lets the required-reason rule be INLINE — disable the confirm button — rather than teaching it through an error toast after the fact, which is what T-323 had to settle for. The platform already has the Dialog vocabulary; T-226's Event Manager edit dialog (landed today, 31/31 browser assertions) is the freshest reference.
-
-Two smaller items in the same file, worth folding in:
-  - personnel.rs:333 — the role editor still does `Err(_) => toasts.error("Failed to update role")`, discarding the server message exactly as the ban did. One-line api_error_message fix.
-  - 'Issue Warning' is still a mock toast although POST /admin/users/:id/warnings exists.
-
-Note the browser gate is HEALTHY as of T-320, so a Dialog version IS testable end to end — that is the payoff.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now."""
+summary = "Replace the ban window.prompt with a real dialog — the gate provably cannot drive a native prompt"
 class = "bug"
 status = "shipped"
 order = 3158
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "RECOMMENDED by T-323 with a hard engineering reason rather than a taste argument, which is why it is filed rather than dismissed.",
+    "",
+    "personnel.rs's ban flow uses `window.prompt`. T-323 established, by trying: **overriding window.prompt from JS does NOT intercept the web_sys call** (patching Window.prototype.prompt does not either), and with the CDP Page domain enabled and no dialog handler a real prompt BLOCKS THE RENDERER. So the browser gate cannot drive this destructive admin action at all, in principle, while it remains a native prompt. T-323 had to prove its fix with host-side unit tests on an extracted `classify_ban_reason` instead — good work, but it means the actual click path is untested forever.",
+    "",
+    "A shared Dialog/Sheet also lets the required-reason rule be INLINE — disable the confirm button — rather than teaching it through an error toast after the fact, which is what T-323 had to settle for. The platform already has the Dialog vocabulary; T-226's Event Manager edit dialog (landed today, 31/31 browser assertions) is the freshest reference.",
+    "",
+    "Two smaller items in the same file, worth folding in:",
+    '  - personnel.rs:333 — the role editor still does `Err(_) => toasts.error("Failed to update role")`, discarding the server message exactly as the ban did. One-line api_error_message fix.',
+    "  - 'Issue Warning' is still a mock toast although POST /admin/users/:id/warnings exists.",
+    "",
+    "Note the browser gate is HEALTHY as of T-320, so a Dialog version IS testable end to end — that is the payoff.",
+    "",
+    "== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==",
+    "Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.",
+    "This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.",
+]
 owns = ["apps/website/frontend/src/personnel.rs"]
 
 [scope]

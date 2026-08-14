@@ -1,7 +1,7 @@
 id = "T-912.1"
 kind = "work"
 title = "Owns required + dependency graph on tickets"
-summary = "Populate owns from both wave_plan.tsv files onto every matching ticket (any status), merge the 11 const DEPS edges into ticket depends_on, set pack_last = true on T-290, then delete const DEPS and RUN_LAST so the packer reads ticket depends_on/pack_last/owns. ticket check goes red on queued/ready/running/review Work with empty owns, globbing all T-*.toml including children."
+summary = "Owns required + dependency graph on tickets"
 class = "chore"
 status = "shipped"
 order = 5920
@@ -18,6 +18,7 @@ acceptance = [
 ]
 shipped_at = "bc670acc"
 estimated = ["scope"]
+migration_legacy = ["Populate owns from both wave_plan.tsv files onto every matching ticket (any status), merge the 11 const DEPS edges into ticket depends_on, set pack_last = true on T-290, then delete const DEPS and RUN_LAST so the packer reads ticket depends_on/pack_last/owns. ticket check goes red on queued/ready/running/review Work with empty owns, globbing all T-*.toml including children."]
 owns = [
     ".ai/tickets",
     "xtask/src/slice_collisions.rs",

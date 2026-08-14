@@ -236,6 +236,118 @@ fn check_live_work_surface(root: &Path) -> Vec<String> {
     errors
 }
 
+/// T-917.3 quarantine cutover — the one-shot `ticket quarantine-walls` pass ran on
+/// history created BEFORE this date; a work ticket carrying `migration_legacy` with a
+/// later `created_at` is a NEW ticket minting the field, which is red (new tickets
+/// never quarantine — they write the ten typed body fields). Bare-date string
+/// comparison is sound: stamps are validated RFC 3339 UTC (`...T..:..:..Z`), which
+/// sorts lexically, and any stamp on/after the cutover day compares greater than the
+/// bare date by the prefix rule.
+const QUARANTINE_CUTOVER: &str = "2026-08-15";
+
+/// T-917.3 — body word caps, anti-blend rules and the quarantine-mint tripwire
+/// (spec §Body + §Wall quarantine; Decisions log #6: CHECK-enforced, never
+/// parse-enforced — old git revisions must stay readable). Warnings (the
+/// command-shaped-acceptance rule) are eprinted, never errors. Fail-closed on an
+/// unloadable corpus, same as every corpus rule here.
+fn check_body_rules(root: &Path) -> Vec<String> {
+    let corpus = match tbd_tickets::Corpus::load(root) {
+        Ok(c) => c,
+        Err(e) => return vec![e],
+    };
+    let (errors, warnings) = body_findings(&corpus);
+    for w in &warnings {
+        eprintln!("WARNING: {w}");
+    }
+    errors
+}
+
+/// The pure rule set over a loaded corpus → (errors, warnings). Split from
+/// [`check_body_rules`] so tests can assert the warning channel.
+///
+/// Scoping decisions (measured against the live tree 2026-08-15 — zero nonempty
+/// body-list fields existed, so every scoping choice starts live-green):
+///
+/// - **Caps bind on WORK tickets only** (prompt + spec §Wall quarantine: the pass is
+///   work-only; program summaries stay uncapped and the verb reports over-cap ones as
+///   a future note). Counting instrument: `split_whitespace().count()` on the
+///   TOML-parsed string — the same instrument as the verb, ops gate and ratchet pin.
+/// - **A nonempty `migration_legacy` exempts EXACTLY the summary cap** (quarantined
+///   tickets carry `summary := title`, which may itself exceed the cap and must not
+///   be truncated). Every other cap still binds on quarantined tickets.
+/// - **Anti-blend rules bind on BOTH kinds** — they are field-relationship rules, not
+///   caps, and programs carry `citations`/`owns`/`acceptance` too: a `citations[]`
+///   entry duplicating an `owns[]` entry is red (ownership facts must not split
+///   across fields); a command-shaped `acceptance[]` line (starts `cargo `/`$ `/`./`)
+///   WARNS pointing at `verify[]`.
+fn body_findings(corpus: &tbd_tickets::Corpus) -> (Vec<String>, Vec<String>) {
+    use tbd_tickets::{BODY_LINE_WORD_CAP, CITATION_WORD_CAP, SUMMARY_WORD_CAP, Ticket};
+    let mut errors = Vec::new();
+    let mut warnings = Vec::new();
+    let words = |s: &str| s.split_whitespace().count();
+    for (id, ticket) in &corpus.tickets {
+        let (citations, owns, acceptance) = match ticket {
+            Ticket::Program(p) => (&p.citations, &p.owns, &p.acceptance),
+            Ticket::Work(w) => (&w.citations, &w.owns, &w.acceptance),
+        };
+        for (i, c) in citations.iter().enumerate() {
+            if owns.iter().any(|o| o == c) {
+                errors.push(format!(
+                    "{id}: citations[{i}] \"{c}\" duplicates an owns[] entry — ownership facts must not split across fields"
+                ));
+            }
+        }
+        for (i, a) in acceptance.iter().enumerate() {
+            if a.starts_with("cargo ") || a.starts_with("$ ") || a.starts_with("./") {
+                let first = a.split_whitespace().next().unwrap_or("");
+                warnings.push(format!(
+                    "{id}: acceptance[{i}] is command-shaped (starts \"{first}\") — commands to run belong in verify[]; acceptance states outcomes"
+                ));
+            }
+        }
+        let Ticket::Work(w) = ticket else { continue };
+        if w.migration_legacy.is_empty() {
+            let n = words(&w.summary);
+            if n > SUMMARY_WORD_CAP {
+                errors.push(format!(
+                    "{id}: summary is {n} words (cap {SUMMARY_WORD_CAP})"
+                ));
+            }
+        } else if let Some(created) = w.created_at.as_deref()
+            && created > QUARANTINE_CUTOVER
+        {
+            errors.push(format!(
+                "{id}: migration_legacy on a ticket created {created} — past the {QUARANTINE_CUTOVER} quarantine cutover; new tickets never quarantine, write the ten typed body fields instead"
+            ));
+        }
+        for (field, lines) in [
+            ("context", &w.context),
+            ("requirement", &w.requirement),
+            ("current_state", &w.current_state),
+            ("approach", &w.approach),
+            ("verify", &w.verify),
+        ] {
+            for (i, line) in lines.iter().enumerate() {
+                let n = words(line);
+                if n > BODY_LINE_WORD_CAP {
+                    errors.push(format!(
+                        "{id}: {field}[{i}] is {n} words (cap {BODY_LINE_WORD_CAP})"
+                    ));
+                }
+            }
+        }
+        for (i, c) in w.citations.iter().enumerate() {
+            let n = words(c);
+            if n > CITATION_WORD_CAP {
+                errors.push(format!(
+                    "{id}: citations[{i}] is {n} words (cap {CITATION_WORD_CAP})"
+                ));
+            }
+        }
+    }
+    (errors, warnings)
+}
+
 /// T-916.2 — parent↔child referential integrity over EVERY `.ai/tickets/T-*.toml` (the typed
 /// corpus; parents-only walks cannot see either half of the relation). Two rules, both naming
 /// the pair:
@@ -458,6 +570,10 @@ pub fn check(root: &Path, registry: &serde_json::Value, strict: bool) -> Vec<Str
     // a component (the estimated-marker escape documented on the fns).
     errors.extend(check_work_class(root));
     errors.extend(check_live_work_surface(root));
+    // T-917.3: body word caps (summary ≤40 on work, migration_legacy-exempt; body
+    // lines ≤30; citations ≤8), anti-blend rules, and the post-cutover
+    // quarantine-mint tripwire.
+    errors.extend(check_body_rules(root));
     // T-916.2: children[] must reference on-disk files and child files must reference on-disk
     // parents — the referential rule the save_tree delete-pass retirement makes load-bearing.
     errors.extend(check_children_integrity(root));
@@ -880,6 +996,152 @@ component = "mission_creator"
             check_live_work_surface(&tmp).is_empty(),
             "empty vocab surface list is exempt until widened"
         );
+        fs::remove_dir_all(&tmp).unwrap();
+    }
+
+    /// T-917.3: the body cap rules. The live tree is green (post-quarantine); a
+    /// planted 41-word summary reds naming ticket, field, count and cap; a 31-word
+    /// context line, a 9-word citation and an owns-duplicating citation each red; a
+    /// command-shaped acceptance line WARNS (never errors); nonempty
+    /// migration_legacy exempts the summary cap ONLY.
+    #[test]
+    fn body_caps_red_green_and_warning_channel() {
+        let root = worktree_root();
+        let errs = check_body_rules(&root);
+        assert!(
+            errs.is_empty(),
+            "live tree must satisfy the body caps; got:\n{}",
+            errs.join("\n")
+        );
+
+        let (tmp, dir) = scratch_tickets_dir("t917-body-caps");
+        let with_summary = |summary: &str, extra: &str| {
+            format!(
+                "id = \"T-001\"\nkind = \"work\"\ntitle = \"short title\"\nsummary = \"{summary}\"\nclass = \"chore\"\nstatus = \"idea\"\n{extra}\n[scope]\ndomain = \"repo\"\nlayer = \"docs\"\n"
+            )
+        };
+        let wall41 = (1..=41)
+            .map(|i| format!("w{i}"))
+            .collect::<Vec<_>>()
+            .join(" ");
+        let load = |tmp: &Path| tbd_tickets::Corpus::load(tmp).expect("scratch corpus loads");
+
+        // 41-word summary → red naming ticket, field, count, cap.
+        fs::write(dir.join("T-001.toml"), with_summary(&wall41, "")).unwrap();
+        let (errs, warns) = body_findings(&load(&tmp));
+        assert_eq!(errs.len(), 1, "{errs:?}");
+        assert!(
+            errs[0].contains("T-001") && errs[0].contains("summary is 41 words (cap 40)"),
+            "{}",
+            errs[0]
+        );
+        assert!(warns.is_empty(), "{warns:?}");
+
+        // Nonempty migration_legacy exempts the summary cap — and ONLY the summary
+        // cap: a 31-word context line on the same ticket still reds.
+        let line31 = (1..=31)
+            .map(|i| format!("c{i}"))
+            .collect::<Vec<_>>()
+            .join(" ");
+        fs::write(
+            dir.join("T-001.toml"),
+            with_summary(
+                &wall41,
+                &format!(
+                    "migration_legacy = [\"parked wall\"]\ncontext = [\"why now\", \"{line31}\"]\n"
+                ),
+            ),
+        )
+        .unwrap();
+        let (errs, _) = body_findings(&load(&tmp));
+        assert_eq!(
+            errs.len(),
+            1,
+            "summary exempt, context line still red: {errs:?}"
+        );
+        assert!(
+            errs[0].contains("T-001") && errs[0].contains("context[1] is 31 words (cap 30)"),
+            "{}",
+            errs[0]
+        );
+
+        // 9-word citation and an owns-duplicating citation each red.
+        fs::write(
+            dir.join("T-001.toml"),
+            with_summary(
+                "fine",
+                "owns = [\"docs/README.md\"]\ncitations = [\"one two three four five six seven eight nine\", \"docs/README.md\"]\n",
+            ),
+        )
+        .unwrap();
+        let (errs, _) = body_findings(&load(&tmp));
+        assert_eq!(errs.len(), 2, "{errs:?}");
+        assert!(
+            errs.iter()
+                .any(|e| e.contains("citations[0] is 9 words (cap 8)")),
+            "{errs:?}"
+        );
+        assert!(
+            errs.iter()
+                .any(|e| e.contains("citations[1]") && e.contains("duplicates an owns[] entry")),
+            "{errs:?}"
+        );
+
+        // Command-shaped acceptance → WARNING pointing at verify[], never an error.
+        fs::write(
+            dir.join("T-001.toml"),
+            with_summary(
+                "fine",
+                "acceptance = [\"cargo xtask ticket check prints check OK\", \"board renders ten fields\"]\n",
+            ),
+        )
+        .unwrap();
+        let (errs, warns) = body_findings(&load(&tmp));
+        assert!(errs.is_empty(), "warning must not be an error: {errs:?}");
+        assert_eq!(warns.len(), 1, "{warns:?}");
+        assert!(
+            warns[0].contains("T-001")
+                && warns[0].contains("acceptance[0]")
+                && warns[0].contains("verify[]"),
+            "{}",
+            warns[0]
+        );
+        fs::remove_dir_all(&tmp).unwrap();
+    }
+
+    /// T-917.3: the quarantine is one-shot history migration — a work ticket carrying
+    /// migration_legacy with created_at past the 2026-08-15 cutover is red (new
+    /// tickets never quarantine); a pre-cutover stamp (or no stamp) stays green.
+    #[test]
+    fn quarantine_mint_past_cutover_is_red() {
+        let (tmp, dir) = scratch_tickets_dir("t917-quarantine-mint");
+        let quarantined = |created: &str| {
+            format!(
+                "id = \"T-001\"\nkind = \"work\"\ntitle = \"short title\"\nsummary = \"short title\"\nclass = \"chore\"\nstatus = \"idea\"\n{created}migration_legacy = [\"parked wall\"]\n\n[scope]\ndomain = \"repo\"\nlayer = \"docs\"\n"
+            )
+        };
+        fs::write(
+            dir.join("T-001.toml"),
+            quarantined("created_at = \"2026-08-16T00:00:00Z\"\n"),
+        )
+        .unwrap();
+        let (errs, _) = body_findings(&tbd_tickets::Corpus::load(&tmp).unwrap());
+        assert_eq!(errs.len(), 1, "{errs:?}");
+        assert!(
+            errs[0].contains("T-001")
+                && errs[0].contains("2026-08-16T00:00:00Z")
+                && errs[0].contains("cutover"),
+            "{}",
+            errs[0]
+        );
+        for green in [
+            "created_at = \"2026-08-14T23:59:59Z\"\n",
+            "", // stampless history is exempt (988 shipped lack created_at until S.4)
+        ] {
+            fs::write(dir.join("T-001.toml"), quarantined(green)).unwrap();
+            let (errs, _) = body_findings(&tbd_tickets::Corpus::load(&tmp).unwrap());
+            assert!(errs.is_empty(), "{green:?} must be green: {errs:?}");
+        }
         fs::remove_dir_all(&tmp).unwrap();
     }
 

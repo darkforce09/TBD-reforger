@@ -1,7 +1,7 @@
 id = "T-318"
 kind = "work"
 title = "Event registration upsert orphans an ORBAT seat nobody can free"
-summary = "FOUND by T-218's sweep. handlers/events.rs:786 collapses the JsonRejection for RegisterBody, so a bad body still runs the registration upsert and sets an existing row's `slot_id = NULL` while `orbat_slots.assigned_to` still names the user. `withdraw` only releases the seat via `if let Some(sid)`, so with slot_id NULL it takes no action: the seat reads as occupied forever and the occupant cannot release it. Requires an admin DB edit to unstick. Fix the extractor (map_err → 400), and separately make withdraw fall back to clearing orbat_slots.assigned_to by user id so already-orphaned seats can be freed."
+summary = "Event registration upsert orphans an ORBAT seat nobody can free"
 class = "bug"
 status = "shipped"
 order = 3134
@@ -9,6 +9,7 @@ executor = "claude-code"
 priority = 1
 shipped_at = "538b9ad4"
 estimated = ["scope"]
+migration_legacy = ["FOUND by T-218's sweep. handlers/events.rs:786 collapses the JsonRejection for RegisterBody, so a bad body still runs the registration upsert and sets an existing row's `slot_id = NULL` while `orbat_slots.assigned_to` still names the user. `withdraw` only releases the seat via `if let Some(sid)`, so with slot_id NULL it takes no action: the seat reads as occupied forever and the occupant cannot release it. Requires an admin DB edit to unstick. Fix the extractor (map_err → 400), and separately make withdraw fall back to clearing orbat_slots.assigned_to by user id so already-orphaned seats can be freed."]
 owns = [
     "apps/website/api/src/handlers/events.rs",
     "apps/website/api/tests/events.rs",

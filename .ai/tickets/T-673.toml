@@ -1,12 +1,7 @@
 id = "T-673"
 kind = "work"
 title = "Marker style and Area markers — the $defs/marker widening"
-summary = """
-Six attribute ids: `ATTR-FIELD-MRK-SIZE`, `-MRK-ROTATION`, `-MRK-SHAPE`, `-MRK-BRUSH`, `-MRK-COLOR`, `-MRK-ALPHA`. BLOCKING EVIDENCE: `$defs/marker` in the compiled schema is exactly {x, z, icon, label} and CLOSED — the compiled schema carries 25 `"additionalProperties": false`, so these fields are contract-blocked, not merely unbuilt. Icon-vs-Area is Eden's entire second marker model, so this is a widening plus a mod-side reader, not a UI ticket. MUST SHIP AFTER T-069, which authors the four schema-carried fields; folding these into T-069 would convert a factory-dispatchable ticket into a workbench one, which is the specific mistake this split exists to prevent. EXECUTOR IS `workbench` DELIBERATELY: this modifies `packages/tbd-schema/schema/mission.schema.json` and/or `apps/mod/tbd-framework/`, which the CLAUDE.md executor gate puts out of reach of any coding agent. The factory filters on executor, so this tagging is the safety mechanism — do not flip it to claude-code.
-
-EXECUTOR CORRECTED 2026-08-02: was filed `workbench` on the mistaken reading that any .c file needs the Arma Workbench GUI. It does not — scripts/mod/compile.sh compiles tbd-framework against the native Linux dedicated server headlessly, verified: "OK: compiled clean, 5707 files, 11182 classes, 832 ms, no Workbench". Schema edits are plain JSON. This is factory work. Per the model-routing rule, the .c portion routes to Fable 5 even though the executor is claude-code.
-
-SCHEMA HALF SPLIT OUT to T-706 (one widening pass for the whole program). This ticket is the Enfusion reader plus any editor UI; it does not touch packages/tbd-schema."""
+summary = "Marker style and Area markers — the $defs/marker widening"
 class = "chore"
 status = "queued"
 order = 4300
@@ -14,6 +9,13 @@ executor = "claude-code"
 notes = "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row T-853 2026-08-12: the prepped slice worktree for this ticket was DROPPED, not landed. It carried one unmerged commit from 2026-08-02 that had sat unlanded for 10 days and was blocking the wave queue at 150. The work was NOT reviewed and NOT merged; the ticket stays queued so it can be redone. The commit is recoverable: `git checkout -b redo/T-673 salvage/t853-dropped/T-673` (tagged before the branch was deleted). Note T-674 and T-675 pointed at the SAME commit 113108a1, so whichever is redone first should check whether it subsumes the other."
 depends_on = ["T-069"]
 estimated = ["scope"]
+migration_legacy = [
+    """Six attribute ids: `ATTR-FIELD-MRK-SIZE`, `-MRK-ROTATION`, `-MRK-SHAPE`, `-MRK-BRUSH`, `-MRK-COLOR`, `-MRK-ALPHA`. BLOCKING EVIDENCE: `$defs/marker` in the compiled schema is exactly {x, z, icon, label} and CLOSED — the compiled schema carries 25 `"additionalProperties": false`, so these fields are contract-blocked, not merely unbuilt. Icon-vs-Area is Eden's entire second marker model, so this is a widening plus a mod-side reader, not a UI ticket. MUST SHIP AFTER T-069, which authors the four schema-carried fields; folding these into T-069 would convert a factory-dispatchable ticket into a workbench one, which is the specific mistake this split exists to prevent. EXECUTOR IS `workbench` DELIBERATELY: this modifies `packages/tbd-schema/schema/mission.schema.json` and/or `apps/mod/tbd-framework/`, which the CLAUDE.md executor gate puts out of reach of any coding agent. The factory filters on executor, so this tagging is the safety mechanism — do not flip it to claude-code.""",
+    "",
+    'EXECUTOR CORRECTED 2026-08-02: was filed `workbench` on the mistaken reading that any .c file needs the Arma Workbench GUI. It does not — scripts/mod/compile.sh compiles tbd-framework against the native Linux dedicated server headlessly, verified: "OK: compiled clean, 5707 files, 11182 classes, 832 ms, no Workbench". Schema edits are plain JSON. This is factory work. Per the model-routing rule, the .c portion routes to Fable 5 even though the executor is claude-code.',
+    "",
+    "SCHEMA HALF SPLIT OUT to T-706 (one widening pass for the whole program). This ticket is the Enfusion reader plus any editor UI; it does not touch packages/tbd-schema.",
+]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerData.c",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Markers/TBD_MarkerClient.c",

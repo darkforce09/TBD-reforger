@@ -1,20 +1,22 @@
 id = "T-574"
 kind = "work"
 title = "T-491 host Class-R soft include_str — comment-only move_entities_and_vehicles survives"
-summary = """
-FOUND by W68 adversarial verifier (CLEAN NIT) after T-491.
-
-`select_tool_and_mission_editor_delegate_to_atomic_mix_apis` (store.rs ~2912–2940) only string-presence / Move-arm absence checks via include_str. A comment-only `move_entities_and_vehicles` mention would keep the pin green; it also does not pin that mission_editor calls pick_slot_or_vehicle / marquee_* helpers.
-
-Behavioral one-undo Class-R is real and PASS. Soft host-delegation pin is the residue.
-
-Repro: replace live call with comment containing the symbol (or keep call but drop pick/marquee delegation asserts); soft pin stays green."""
+summary = "T-491 host Class-R soft include_str — comment-only move_entities_and_vehicles survives"
 class = "feature"
 status = "shipped"
 order = 3427
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "FOUND by W68 adversarial verifier (CLEAN NIT) after T-491.",
+    "",
+    "`select_tool_and_mission_editor_delegate_to_atomic_mix_apis` (store.rs ~2912–2940) only string-presence / Move-arm absence checks via include_str. A comment-only `move_entities_and_vehicles` mention would keep the pin green; it also does not pin that mission_editor calls pick_slot_or_vehicle / marquee_* helpers.",
+    "",
+    "Behavioral one-undo Class-R is real and PASS. Soft host-delegation pin is the residue.",
+    "",
+    "Repro: replace live call with comment containing the symbol (or keep call but drop pick/marquee delegation asserts); soft pin stays green.",
+]
 owns = ["crates/map-engine-core/src/doc/store.rs"]
 
 [scope]

@@ -1,12 +1,13 @@
 id = "T-077"
 kind = "work"
 title = "Alt + empty vehicle"
-summary = "CANCELLED 2026-08-01 — SUPERSEDED BY T-647, whose owns is byte-identical to this ticket's (mission_editor.rs + editor_ops.rs). `PLACE-CREW-001` Alt-place-empty-vehicle is one of six ids T-647 closes. Alt is genuinely free — all three word-boundary `alt_key` hits were read (mission_history.rs:490, mission_editor.rs:1020, :1023) and not one is a placement modifier — and the flag threads begin_place_vehicle :1044 -> place_at :2191, which is T-647's lifecycle work. Depends on T-076 either way: there must be a crew to suppress."
+summary = "Alt + empty vehicle"
 class = "feature"
 status = "cancelled"
 order = 770
 executor = "claude-code"
 estimated = ["scope"]
+migration_legacy = ["CANCELLED 2026-08-01 — SUPERSEDED BY T-647, whose owns is byte-identical to this ticket's (mission_editor.rs + editor_ops.rs). `PLACE-CREW-001` Alt-place-empty-vehicle is one of six ids T-647 closes. Alt is genuinely free — all three word-boundary `alt_key` hits were read (mission_history.rs:490, mission_editor.rs:1020, :1023) and not one is a placement modifier — and the flag threads begin_place_vehicle :1044 -> place_at :2191, which is T-647's lifecycle work. Depends on T-076 either way: there must be a crew to suppress."]
 
 [scope]
 domain = "website"

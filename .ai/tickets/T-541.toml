@@ -1,18 +1,20 @@
 id = "T-541"
 kind = "work"
 title = "SpawnManager never calls IsComplete after T-415 helper consume"
-summary = """
-FOUND as T-415 residual (W53). ReportVerdict now consumes IsComplete and ERROR-refuses incomplete delivery. SpawnManager / MaterializeSlotBodies still do not call IsComplete — spawn proceeds to LOBBY regardless. Cure: abort or surface incomplete at spawn boundary.
-
-Also: stale 'IsComplete zero callers' prose in docs/TICKET_LEAD.md and apps/website/frontend/src/arsenal_rules.rs after T-415.
-
-Owns hint: apps/mod/tbd-framework/Scripts/Game/TBD/ spawn path + FE comment sync."""
+summary = "SpawnManager never calls IsComplete after T-415 helper consume"
 class = "docs"
 status = "shipped"
 order = 3381
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 priority = 2
+migration_legacy = [
+    "FOUND as T-415 residual (W53). ReportVerdict now consumes IsComplete and ERROR-refuses incomplete delivery. SpawnManager / MaterializeSlotBodies still do not call IsComplete — spawn proceeds to LOBBY regardless. Cure: abort or surface incomplete at spawn boundary.",
+    "",
+    "Also: stale 'IsComplete zero callers' prose in docs/TICKET_LEAD.md and apps/website/frontend/src/arsenal_rules.rs after T-415.",
+    "",
+    "Owns hint: apps/mod/tbd-framework/Scripts/Game/TBD/ spawn path + FE comment sync.",
+]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c",

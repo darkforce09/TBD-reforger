@@ -1,13 +1,14 @@
 id = "T-867"
 kind = "work"
 title = "T-853 port: mission-version-upload-repro -> repro mission-upload"
-summary = "T-853 shell->xtask slice. Port scripts/website/mission-version-upload-repro.sh (62 lines) to `cargo xtask repro mission-upload` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). already has an xtask twin in repro.rs - confirm then delete. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling."
+summary = "T-853 port: mission-version-upload-repro -> repro mission-upload"
 class = "chore"
 status = "shipped"
 order = 5480
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
 estimated = ["scope"]
+migration_legacy = ["T-853 shell->xtask slice. Port scripts/website/mission-version-upload-repro.sh (62 lines) to `cargo xtask repro mission-upload` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). already has an xtask twin in repro.rs - confirm then delete. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling."]
 owns = [
     "scripts/website/mission-version-upload-repro.sh",
     "xtask/src/gate_mission_version_upload_repro.rs",

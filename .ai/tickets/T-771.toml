@@ -1,13 +1,14 @@
 id = "T-771"
 kind = "work"
 title = "The Attributes multi-select banner is now false for the three loadout-buffer verbs"
-summary = "MINOR from the wave-118 verifier. T-649 (wave 112) added an honesty banner at attributes.rs:374 telling a multi-selection 'Loadout edits apply to this one entity (<id>), not to the whole selection.' That was true and remains true of every pick row and cargo row. It is now FALSE of the three verbs T-699 added directly beneath it — Copy, Apply and Remove Everything all act on the WHOLE selection. T-699 could not fix the banner (attributes.rs was outside its owns) and mitigated inside its own file with a counter-note at arsenal.rs:1909-1911 reading 'These three act on the whole selection, not on this one entity — unlike every pick above.' So the modal currently states a rule and then contradicts it two inches lower, which is a worse read than either statement alone. NOTE FOR WHOEVER FIXES IT: the banner text is PINNED at mission_editor.rs:8745, so the wording and the pin must be amended together or the slice gate goes red. Rated MINOR rather than MAJOR because the contradiction is locally corrected, deliberate, and disclosed. Diagnosis: editor_verify/wave118.md MINOR-2 / item 18."
+summary = "The Attributes multi-select banner is now false for the three loadout-buffer verbs"
 class = "bug"
 status = "shipped"
 order = 4647
 executor = "claude-code"
 notes = "filed by wave-118 adversarial verifier (editor factory)"
 estimated = ["scope"]
+migration_legacy = ["MINOR from the wave-118 verifier. T-649 (wave 112) added an honesty banner at attributes.rs:374 telling a multi-selection 'Loadout edits apply to this one entity (<id>), not to the whole selection.' That was true and remains true of every pick row and cargo row. It is now FALSE of the three verbs T-699 added directly beneath it — Copy, Apply and Remove Everything all act on the WHOLE selection. T-699 could not fix the banner (attributes.rs was outside its owns) and mitigated inside its own file with a counter-note at arsenal.rs:1909-1911 reading 'These three act on the whole selection, not on this one entity — unlike every pick above.' So the modal currently states a rule and then contradicts it two inches lower, which is a worse read than either statement alone. NOTE FOR WHOEVER FIXES IT: the banner text is PINNED at mission_editor.rs:8745, so the wording and the pin must be amended together or the slice gate goes red. Rated MINOR rather than MAJOR because the contradiction is locally corrected, deliberate, and disclosed. Diagnosis: editor_verify/wave118.md MINOR-2 / item 18."]
 owns = [
     "apps/website/frontend/src/attributes.rs",
     "apps/website/frontend/src/mission_editor.rs",

@@ -1,33 +1,35 @@
 id = "T-577"
 kind = "work"
 title = "Database backups: none exist, and the spec is written"
-summary = """
-T-280 established there is no pg_dump/pg_restore tooling anywhere in the repo -- the only hits are
-three comments describing the Go->Rust schema parity check. It stopped at the boundary because
-backups live outside `app.rs`. This is that work, and T-280 already specified it precisely.
-
-1. `scripts/deploy/backup-db.sh` (new). Neither host has `pg_dump`, so go through the compose
-   container: `podman exec tbd_reforger_db pg_dump -U tbd -Fc -d "$DB" > "$OUT/tbd_reforger-$(date -u +%Y%m%dT%H%M%SZ).dump"`.
-   Custom format (-Fc) for parallel and selective restore. Retention BY COUNT, not `find -mtime` --
-   a stopped cron then silently keeps nothing fresh rather than keeping the last N.
-   **IT MUST VERIFY THE DUMP IT JUST WROTE** -- `pg_restore --list` over the file plus a non-zero-rows
-   check -- or it is this program's signature defect in a new hat: a backup script reporting success
-   over a file it never opened.
-2. `scripts/deploy/restore-db.sh` (new). `pg_restore --clean --if-exists -d`, carrying the SAME
-   T-381 allow-list guard the test harness uses (`tests/common/mod.rs:88`) so a restore can never be
-   pointed at the wrong database by a typo.
-3. `Makefile`: `db-backup` / `db-restore` targets beside `db-up`/`seed` (Makefile:69-83).
-4. A schedule. `deploy-website.sh:82` shows the API runs as a USER systemd unit
-   (`tbd-website-api.service`), so pair it with `tbd-website-backup.timer` + `.service` installed the
-   same way -- not root cron.
-5. **A restore DRILL in CI or the wave gate**: dump -> restore into a scratch DB -> run `db_migrate`
-   against it. Without this the backup is untested and you discover that during an incident."""
+summary = "Database backups: none exist, and the spec is written"
 class = "chore"
 status = "shipped"
 order = 3421
 executor = "claude-code"
 priority = 1
 estimated = ["scope"]
+migration_legacy = [
+    "T-280 established there is no pg_dump/pg_restore tooling anywhere in the repo -- the only hits are",
+    "three comments describing the Go->Rust schema parity check. It stopped at the boundary because",
+    "backups live outside `app.rs`. This is that work, and T-280 already specified it precisely.",
+    "",
+    "1. `scripts/deploy/backup-db.sh` (new). Neither host has `pg_dump`, so go through the compose",
+    '   container: `podman exec tbd_reforger_db pg_dump -U tbd -Fc -d "$DB" > "$OUT/tbd_reforger-$(date -u +%Y%m%dT%H%M%SZ).dump"`.',
+    "   Custom format (-Fc) for parallel and selective restore. Retention BY COUNT, not `find -mtime` --",
+    "   a stopped cron then silently keeps nothing fresh rather than keeping the last N.",
+    "   **IT MUST VERIFY THE DUMP IT JUST WROTE** -- `pg_restore --list` over the file plus a non-zero-rows",
+    "   check -- or it is this program's signature defect in a new hat: a backup script reporting success",
+    "   over a file it never opened.",
+    "2. `scripts/deploy/restore-db.sh` (new). `pg_restore --clean --if-exists -d`, carrying the SAME",
+    "   T-381 allow-list guard the test harness uses (`tests/common/mod.rs:88`) so a restore can never be",
+    "   pointed at the wrong database by a typo.",
+    "3. `Makefile`: `db-backup` / `db-restore` targets beside `db-up`/`seed` (Makefile:69-83).",
+    "4. A schedule. `deploy-website.sh:82` shows the API runs as a USER systemd unit",
+    "   (`tbd-website-api.service`), so pair it with `tbd-website-backup.timer` + `.service` installed the",
+    "   same way -- not root cron.",
+    "5. **A restore DRILL in CI or the wave gate**: dump -> restore into a scratch DB -> run `db_migrate`",
+    "   against it. Without this the backup is untested and you discover that during an incident.",
+]
 owns = [
     "scripts/deploy/backup-db.sh",
     "Makefile",

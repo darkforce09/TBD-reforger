@@ -1,29 +1,31 @@
 id = "T-393"
 kind = "work"
 title = "T-316 made five player fields required that the shipping mod has never sent — all production match ingest 400s"
-summary = """
-P0, and it is arithmetic rather than a hypothesis. VERIFIED BY THE COMMAND CENTER ON MAIN, not taken on report.
-
-`handlers/telemetry.rs:400-411` `PlayerStatInput` requires NINE fields. `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_ResultsReporter.c:565-570` `BuildPlayerRow` emits FOUR, and the JSON is hand-built by string concatenation so there is no serializer to quietly fill the rest:
-    sent      : arma_id, role_played, deaths, source_event_id
-    REQUIRED, NEVER SENT: kills, team_kills, longest_kill_m, vehicles_destroyed, is_command
-`command_win` is `Option<bool>` so it is genuinely fine. Serde rejects on the first missing field, so **every match report from every production server 400s**, and the whole telemetry pipeline — match rows, per-player stats, attendance marking, user-stat recompute, leaderboard refresh — is dead on arrival. Nothing downstream of ingest can work.
-
-This is not a defect in T-316's reasoning, which is written out at telemetry.rs:375-398 and is sound: full replace with the fields required beats GREATEST (half the struct is not a counter, and it makes the row a permanent high-water mark no anti-cheat correction can lower) and beats 409 (retry safety is the contract). The defect is that it changed a wire contract WITHOUT CHECKING THE ONLY CLIENT. Its own justification — 'an incomplete body is a bug in the sender, now answered with a 400 instead of a silent zeroing' — inverts here: the sender is not broken, the contract moved under it. The header at telemetry.rs still describes these as `#[serde(default)]`, so the file documents the pre-T-316 shape.
-
-NEEDS A CONTRACT DECISION, NOT A PATCH — do not just re-add `#[serde(default)]`, because that restores exactly the silent-zeroing corruption T-316 was filed to kill (a re-ingest omitting them wrote kills=0 over a real scoreline, which refresh_leaderboard then summed in the same request). The two honest options:
-  (a) MOD SENDS ALL NINE. Correct long-term, and the mod may not have the data — check whether       Enfusion exposes kills/team_kills/longest_kill/vehicles_destroyed per player at all before       committing to this. If it does not, (a) is impossible and the choice is made.
-  (b) SPLIT THE CONTRACT into a required identity/role core and an OPTIONAL counters sub-object,       so an absent counters block means 'not reported' (leave stored values alone) while a present       one is authoritative and fully replaces. That preserves T-316's anti-corruption property       exactly — omission stops being a write — without requiring data the sender may not have.
-(b) is the smaller and safer change and does not depend on unknown engine capability.
-
-T-229 flagged this and stated it had filed a task; it had NOT — no registry row existed. Verified and filed here. Landing T-229 (unlinked-player reporting) on top of an endpoint that 400s for every real request means that feature is also unreachable in production until this is fixed.
-
-Test gap that let this through: every telemetry test builds its own complete JSON body, so the suite has NO fixture asserting the actual shipping mod payload is accepted. A single golden-payload test copied verbatim from BuildPlayerRow's output would have caught it and would catch the next contract drift. Add it as part of the fix — that is the durable half."""
+summary = "T-316 made five player fields required that the shipping mod has never sent — all production match ingest 400s"
 class = "bug"
 status = "shipped"
 order = 3209
 executor = "claude-code"
 priority = 0
+migration_legacy = [
+    "P0, and it is arithmetic rather than a hypothesis. VERIFIED BY THE COMMAND CENTER ON MAIN, not taken on report.",
+    "",
+    "`handlers/telemetry.rs:400-411` `PlayerStatInput` requires NINE fields. `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_ResultsReporter.c:565-570` `BuildPlayerRow` emits FOUR, and the JSON is hand-built by string concatenation so there is no serializer to quietly fill the rest:",
+    "    sent      : arma_id, role_played, deaths, source_event_id",
+    "    REQUIRED, NEVER SENT: kills, team_kills, longest_kill_m, vehicles_destroyed, is_command",
+    "`command_win` is `Option<bool>` so it is genuinely fine. Serde rejects on the first missing field, so **every match report from every production server 400s**, and the whole telemetry pipeline — match rows, per-player stats, attendance marking, user-stat recompute, leaderboard refresh — is dead on arrival. Nothing downstream of ingest can work.",
+    "",
+    "This is not a defect in T-316's reasoning, which is written out at telemetry.rs:375-398 and is sound: full replace with the fields required beats GREATEST (half the struct is not a counter, and it makes the row a permanent high-water mark no anti-cheat correction can lower) and beats 409 (retry safety is the contract). The defect is that it changed a wire contract WITHOUT CHECKING THE ONLY CLIENT. Its own justification — 'an incomplete body is a bug in the sender, now answered with a 400 instead of a silent zeroing' — inverts here: the sender is not broken, the contract moved under it. The header at telemetry.rs still describes these as `#[serde(default)]`, so the file documents the pre-T-316 shape.",
+    "",
+    "NEEDS A CONTRACT DECISION, NOT A PATCH — do not just re-add `#[serde(default)]`, because that restores exactly the silent-zeroing corruption T-316 was filed to kill (a re-ingest omitting them wrote kills=0 over a real scoreline, which refresh_leaderboard then summed in the same request). The two honest options:",
+    "  (a) MOD SENDS ALL NINE. Correct long-term, and the mod may not have the data — check whether       Enfusion exposes kills/team_kills/longest_kill/vehicles_destroyed per player at all before       committing to this. If it does not, (a) is impossible and the choice is made.",
+    "  (b) SPLIT THE CONTRACT into a required identity/role core and an OPTIONAL counters sub-object,       so an absent counters block means 'not reported' (leave stored values alone) while a present       one is authoritative and fully replaces. That preserves T-316's anti-corruption property       exactly — omission stops being a write — without requiring data the sender may not have.",
+    "(b) is the smaller and safer change and does not depend on unknown engine capability.",
+    "",
+    "T-229 flagged this and stated it had filed a task; it had NOT — no registry row existed. Verified and filed here. Landing T-229 (unlinked-player reporting) on top of an endpoint that 400s for every real request means that feature is also unreachable in production until this is fixed.",
+    "",
+    "Test gap that let this through: every telemetry test builds its own complete JSON body, so the suite has NO fixture asserting the actual shipping mod payload is accepted. A single golden-payload test copied verbatim from BuildPlayerRow's output would have caught it and would catch the next contract drift. Add it as part of the fix — that is the durable half.",
+]
 owns = [
     "apps/website/api/src/handlers/telemetry.rs",
     "apps/website/api/tests/telemetry.rs",

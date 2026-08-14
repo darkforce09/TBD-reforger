@@ -1,12 +1,13 @@
 id = "T-219"
 kind = "work"
 title = "The editor silently deletes any top-level key it does not understand"
-summary = "mission-editor-payload.schema.json has no additionalProperties:false and no required, so the API stores arbitrary keys. But hydrate reads exactly seven paths (store.rs:1097-1158) and compile_payload rebuilds from a json! literal (compile.rs:85-99). A server-first field or migration will appear to work, persist, and be quietly erased on next Save. MissionDocCore::hydrate has zero unit tests."
+summary = "The editor silently deletes any top-level key it does not understand"
 class = "chore"
 status = "shipped"
 order = 2370
 executor = "claude-code"
 estimated = ["scope"]
+migration_legacy = ["mission-editor-payload.schema.json has no additionalProperties:false and no required, so the API stores arbitrary keys. But hydrate reads exactly seven paths (store.rs:1097-1158) and compile_payload rebuilds from a json! literal (compile.rs:85-99). A server-first field or migration will appear to work, persist, and be quietly erased on next Save. MissionDocCore::hydrate has zero unit tests."]
 owns = [
     "crates/map-engine-core/src/doc/store.rs",
     "crates/map-engine-core/src/mission/compile.rs",

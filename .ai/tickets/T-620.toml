@@ -1,57 +1,59 @@
 id = "T-620"
 kind = "work"
 title = "verify-no-python has been RED since the factory started, is in no CI job, and half of it cannot fire"
-summary = """
-OPERATOR-RAISED 2026-08-01: *"I thought I had made a rule to make future scripts be in Rust using
-xtask. That does not seem like it's the case."* **The rule exists and is correct. It has simply never
-been able to bind.** Three independent reasons, all measured.
-
-=== 1. THE GATE IS RED, AND HAS BEEN SINCE THE DAY THE FACTORY STARTED ===
-    $ make verify-no-python
-    FAIL: leftover .py files:
-      ./scripts/mod/slice-collisions.py
-      ./scripts/platform/slice-collisions.py
-    verify-no-python: FAIL
-    make: *** [Makefile:467: verify-no-python] Error 1
-Both files landed in `1e3ea1f6` (**2026-07-26**) -- the day the platform factory opened -- and they are
-**the factory's own tooling**. The command center has invoked `slice-collisions.py` throughout.
-
-=== 2. IT IS IN NO CI JOB ===
-`grep verify-no-python .github/workflows/*.yml` -> **no hits.** It exists only at `Makefile:466-467`
-and inside `make ci-local` (`Makefile:481`), the local replay that nothing runs by default. It is
-**not a wave-gate step**, which is why the factory's gate kept reporting 28/28 over a red rule for
-three straight waves.
-
-=== 3. HALF OF IT PHYSICALLY CANNOT FIRE -- THE SIGNATURE DEFECT, INSIDE THE RULE'S OWN GATE ===
-`scripts/verify-no-python.sh:29` greps with **`rg`**, which does not exist in this environment (it is
-a harness-injected shell function; `bash -c 'command -v rg'` finds nothing -- documented three times
-in `docs/platform/PLATFORM_FACTORY.md`). Measured:
-    ./scripts/verify-no-python.sh: line 29: rg: command not found
-      OK (none)
-`|| true` swallows the failure and the check reports **"OK (none)"** -- not because there are no
-`python3` invocations in `scripts/` and the `Makefile`, but **because it never looked.** So the
-interpreter-invocation half of this gate has never once run.
-
-=== FIX, IN ORDER ===
-1. **Replace `rg` with `grep`** at `:29` and make the check **fail closed** on a non-zero exit that is
-   not "no matches" (see `scripts/mod/lib/gate-grep.sh` from T-556, which already reads exit status
-   0/1/2/127 correctly -- reuse it rather than re-deriving). Expect it to go red immediately; that is
-   the point.
-2. **Decide the two `.py` files.** Either port `slice-collisions.py` to `xtask` (it is the operator's
-   stated intent and it is ~one command: disjoint-set packing over the `owns` column), or add an
-   explicit, dated, justified exemption in the gate. **Do not silently delete the finding.**
-3. **Wire it somewhere that runs.** CI job, or a wave-gate step, or both. A gate in `ci-local` only is
-   a gate nobody runs -- exactly how this stayed red for three waves.
-
-RELATED: T-621 (no rule at all for shell), T-611 (`verify-citations` scoped so it never read Rust),
-T-606/T-612 (health checks satisfied only by a stale build). Same class each time: **a tool reports
-success over an input it never actually examined.**"""
+summary = "verify-no-python has been RED since the factory started, is in no CI job, and half of it cannot fire"
 class = "bug"
 status = "shipped"
 order = 3672
 executor = "claude-code"
 priority = 1
 estimated = ["scope"]
+migration_legacy = [
+    'OPERATOR-RAISED 2026-08-01: *"I thought I had made a rule to make future scripts be in Rust using',
+    """xtask. That does not seem like it's the case."* **The rule exists and is correct. It has simply never""",
+    "been able to bind.** Three independent reasons, all measured.",
+    "",
+    "=== 1. THE GATE IS RED, AND HAS BEEN SINCE THE DAY THE FACTORY STARTED ===",
+    "    $ make verify-no-python",
+    "    FAIL: leftover .py files:",
+    "      ./scripts/mod/slice-collisions.py",
+    "      ./scripts/platform/slice-collisions.py",
+    "    verify-no-python: FAIL",
+    "    make: *** [Makefile:467: verify-no-python] Error 1",
+    "Both files landed in `1e3ea1f6` (**2026-07-26**) -- the day the platform factory opened -- and they are",
+    "**the factory's own tooling**. The command center has invoked `slice-collisions.py` throughout.",
+    "",
+    "=== 2. IT IS IN NO CI JOB ===",
+    "`grep verify-no-python .github/workflows/*.yml` -> **no hits.** It exists only at `Makefile:466-467`",
+    "and inside `make ci-local` (`Makefile:481`), the local replay that nothing runs by default. It is",
+    "**not a wave-gate step**, which is why the factory's gate kept reporting 28/28 over a red rule for",
+    "three straight waves.",
+    "",
+    "=== 3. HALF OF IT PHYSICALLY CANNOT FIRE -- THE SIGNATURE DEFECT, INSIDE THE RULE'S OWN GATE ===",
+    "`scripts/verify-no-python.sh:29` greps with **`rg`**, which does not exist in this environment (it is",
+    "a harness-injected shell function; `bash -c 'command -v rg'` finds nothing -- documented three times",
+    "in `docs/platform/PLATFORM_FACTORY.md`). Measured:",
+    "    ./scripts/verify-no-python.sh: line 29: rg: command not found",
+    "      OK (none)",
+    '`|| true` swallows the failure and the check reports **"OK (none)"** -- not because there are no',
+    "`python3` invocations in `scripts/` and the `Makefile`, but **because it never looked.** So the",
+    "interpreter-invocation half of this gate has never once run.",
+    "",
+    "=== FIX, IN ORDER ===",
+    "1. **Replace `rg` with `grep`** at `:29` and make the check **fail closed** on a non-zero exit that is",
+    '   not "no matches" (see `scripts/mod/lib/gate-grep.sh` from T-556, which already reads exit status',
+    "   0/1/2/127 correctly -- reuse it rather than re-deriving). Expect it to go red immediately; that is",
+    "   the point.",
+    "2. **Decide the two `.py` files.** Either port `slice-collisions.py` to `xtask` (it is the operator's",
+    "   stated intent and it is ~one command: disjoint-set packing over the `owns` column), or add an",
+    "   explicit, dated, justified exemption in the gate. **Do not silently delete the finding.**",
+    "3. **Wire it somewhere that runs.** CI job, or a wave-gate step, or both. A gate in `ci-local` only is",
+    "   a gate nobody runs -- exactly how this stayed red for three waves.",
+    "",
+    "RELATED: T-621 (no rule at all for shell), T-611 (`verify-citations` scoped so it never read Rust),",
+    "T-606/T-612 (health checks satisfied only by a stale build). Same class each time: **a tool reports",
+    "success over an input it never actually examined.**",
+]
 owns = [
     "scripts/verify-no-python.sh",
     "scripts/platform/slice-collisions.py",

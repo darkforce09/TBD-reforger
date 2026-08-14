@@ -1,7 +1,7 @@
 id = "T-635"
 kind = "work"
 title = "Debug HUD overlaps the toolbelt readouts"
-summary = """`z -2.00 · c0 · glyph 0 · 57 FPS · rf 0.92ms (1086 eq)` renders on top of CUR X/Y/Z and OBJ/SEL/SZ — two independent readouts in one pixel space. The HUD is NOT in the toolbelt: it is a sibling `<div class="pointer-events-none absolute right-3 bottom-2 ...">` at `apps/website/frontend/src/mission_editor.rs`:2077-2088, inside the SAME `absolute bottom-5 left-1/2` wrapper that mounts BottomToolbelt at :2070-2076 — that shared wrapper IS the overlap. Signal `debug_hud` is declared :664 and written :2234 in the rAF sampler. Give the HUD its own slot or gate it behind a toggle bound in the editor keydown at :1005-1030. CORRECTION carried from parity/README.md: the draft cites an existing `Ctrl+Alt+D` HUD toggle — IT DOES NOT EXIST. The only match in the whole frontend is an unrelated comment at mission_editor.rs:1003; the toggle died with React's FpsCounter.tsx at T-159.29.3. This ticket must CREATE the binding, not reuse one. Keep one distinction explicit while doing it (framework_synthesis §D.4 #7): gating TELEMETRY behind a key is right, but mission-correctness diagnostics are never gated — so the pattern must not later be copied onto validation."""
+summary = "Debug HUD overlaps the toolbelt readouts"
 class = "docs"
 status = "shipped"
 order = 3900
@@ -9,6 +9,7 @@ executor = "claude-code"
 notes = "editor-UI program wave 4 (wave_plan.tsv row 104) — SHIPPED wave 104 (editor factory), slice 215e39d1; verifier wave104.md (3 MAJOR deferred: T-719/T-720/T-715-amended)"
 depends_on = ["T-661"]
 estimated = ["scope"]
+migration_legacy = ["""`z -2.00 · c0 · glyph 0 · 57 FPS · rf 0.92ms (1086 eq)` renders on top of CUR X/Y/Z and OBJ/SEL/SZ — two independent readouts in one pixel space. The HUD is NOT in the toolbelt: it is a sibling `<div class="pointer-events-none absolute right-3 bottom-2 ...">` at `apps/website/frontend/src/mission_editor.rs`:2077-2088, inside the SAME `absolute bottom-5 left-1/2` wrapper that mounts BottomToolbelt at :2070-2076 — that shared wrapper IS the overlap. Signal `debug_hud` is declared :664 and written :2234 in the rAF sampler. Give the HUD its own slot or gate it behind a toggle bound in the editor keydown at :1005-1030. CORRECTION carried from parity/README.md: the draft cites an existing `Ctrl+Alt+D` HUD toggle — IT DOES NOT EXIST. The only match in the whole frontend is an unrelated comment at mission_editor.rs:1003; the toggle died with React's FpsCounter.tsx at T-159.29.3. This ticket must CREATE the binding, not reuse one. Keep one distinction explicit while doing it (framework_synthesis §D.4 #7): gating TELEMETRY behind a key is right, but mission-correctness diagnostics are never gated — so the pattern must not later be copied onto validation."""]
 owns = ["apps/website/frontend/src/mission_editor.rs"]
 
 [scope]

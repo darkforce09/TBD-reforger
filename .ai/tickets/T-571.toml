@@ -1,18 +1,20 @@
 id = "T-571"
 kind = "work"
 title = "T-568 Class-R still hollow — nested fn dev_login / PG dollar-quote COALESCE"
-summary = """
-FOUND by W67 adversarial verifier (DIRTY MAJOR) after T-568.
-
-Plain string/r# let decoys RED. Still GREEN: (1) nested `mod { async fn dev_login() { COALESCE } }` first-match + live SET $2; (2) SELECT $decoy$UPDATE…COALESCE…$decoy$ (blanker only handles '/").
-
-Repro: nest decoy fn named dev_login with COALESCE; live path SET $2; Class-R green."""
+summary = "T-568 Class-R still hollow — nested fn dev_login / PG dollar-quote COALESCE"
 class = "feature"
 status = "shipped"
 order = 3424
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "FOUND by W67 adversarial verifier (DIRTY MAJOR) after T-568.",
+    "",
+    """Plain string/r# let decoys RED. Still GREEN: (1) nested `mod { async fn dev_login() { COALESCE } }` first-match + live SET $2; (2) SELECT $decoy$UPDATE…COALESCE…$decoy$ (blanker only handles '/").""",
+    "",
+    "Repro: nest decoy fn named dev_login with COALESCE; live path SET $2; Class-R green.",
+]
 owns = ["apps/website/api/tests/common/mod.rs"]
 
 [scope]

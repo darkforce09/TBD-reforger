@@ -1,24 +1,26 @@
 id = "T-361"
 kind = "work"
 title = "The gate cannot browser-test any SSE page — its proxy awaits the whole body"
-summary = '''
-FOUND by T-306, which had to hand-roll a driver to verify its own fix.
-
-`gate serve`'s proxy does `upstream.bytes().await`, so it CANNOT proxy an endless event stream — the request never completes. Combined with `render-check` hardcoding `api_proxy: None` (T-339), there is no supported way to browser-test a page driven by Server-Sent Events. T-306 worked around it with a shim that replays captured frame bytes plus a close, so the body is finite; the bytes are real and the only deviation is the close, which the `\n\n` splitter is indifferent to.
-
-That workaround is sound for one slice but should not be the standing answer: the SSE hub is the realtime spine of Server Intel and the dashboard, and it is currently unverifiable by the gate. Make the proxy stream rather than buffer (`bytes_stream()` rather than `bytes()`), which also fixes it for any future long-poll or chunked endpoint.
-
-Sequence this with T-339, which threads `api_proxy` through `bin/gate.rs` -> RenderCheckArgs — without that, a streaming proxy still has no caller. Both are in tools/tbd-tools; do them together or T-339 first.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.'''
+summary = "The gate cannot browser-test any SSE page — its proxy awaits the whole body"
 class = "bug"
 status = "shipped"
 order = 3177
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "FOUND by T-306, which had to hand-roll a driver to verify its own fix.",
+    "",
+    '''`gate serve`'s proxy does `upstream.bytes().await`, so it CANNOT proxy an endless event stream — the request never completes. Combined with `render-check` hardcoding `api_proxy: None` (T-339), there is no supported way to browser-test a page driven by Server-Sent Events. T-306 worked around it with a shim that replays captured frame bytes plus a close, so the body is finite; the bytes are real and the only deviation is the close, which the `\n\n` splitter is indifferent to.''',
+    "",
+    "That workaround is sound for one slice but should not be the standing answer: the SSE hub is the realtime spine of Server Intel and the dashboard, and it is currently unverifiable by the gate. Make the proxy stream rather than buffer (`bytes_stream()` rather than `bytes()`), which also fixes it for any future long-poll or chunked endpoint.",
+    "",
+    "Sequence this with T-339, which threads `api_proxy` through `bin/gate.rs` -> RenderCheckArgs — without that, a streaming proxy still has no caller. Both are in tools/tbd-tools; do them together or T-339 first.",
+    "",
+    "== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==",
+    "Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.",
+    "This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.",
+]
 owns = ["tools/tbd-tools/src/smokes.rs"]
 
 [scope]

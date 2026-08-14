@@ -1,13 +1,14 @@
 id = "T-770"
 kind = "work"
 title = "commit_writes counts closure calls, not sink acknowledgements, so its warning arm is unreachable"
-summary = "MINOR from the wave-118 verifier. T-699's `commit_writes` (arsenal.rs:1100-1110) is built around the right idea — the receipt is composed from what the commit sink returned rather than from the plan length, precisely so the author is never told more landed than did, and it carries a WARNING arm for when planned and committed disagree. But it counts CLOSURE INVOCATIONS, and the production sink `update_slot_loadout` (store.rs:2733) returns `()` and silently no-ops on an unknown id. So in production `commits` always equals plan length and the WARNING arm is UNREACHABLE. Not currently exploitable: plan and commit run in one synchronous task (the `window.confirm` included), so nothing can invalidate an id between them, and the NATIVE pin has real teeth — the verifier re-ran the slice's own skip-perturbation and it went red with '3 writes planned, sink took 2'. The gap is that the sink offers no acknowledgement to count. FIX: when T-732 lands the atomic batch API, have the write path RETURN an acknowledgement (a bool, or the count it actually applied) so the receipt is measuring the document rather than the loop. Diagnosis: editor_verify/wave118.md MINOR-1."
+summary = "commit_writes counts closure calls, not sink acknowledgements, so its warning arm is unreachable"
 class = "bug"
 status = "shipped"
 order = 4646
 executor = "claude-code"
 notes = "filed by wave-118 adversarial verifier (editor factory)"
 estimated = ["scope"]
+migration_legacy = ["MINOR from the wave-118 verifier. T-699's `commit_writes` (arsenal.rs:1100-1110) is built around the right idea — the receipt is composed from what the commit sink returned rather than from the plan length, precisely so the author is never told more landed than did, and it carries a WARNING arm for when planned and committed disagree. But it counts CLOSURE INVOCATIONS, and the production sink `update_slot_loadout` (store.rs:2733) returns `()` and silently no-ops on an unknown id. So in production `commits` always equals plan length and the WARNING arm is UNREACHABLE. Not currently exploitable: plan and commit run in one synchronous task (the `window.confirm` included), so nothing can invalidate an id between them, and the NATIVE pin has real teeth — the verifier re-ran the slice's own skip-perturbation and it went red with '3 writes planned, sink took 2'. The gap is that the sink offers no acknowledgement to count. FIX: when T-732 lands the atomic batch API, have the write path RETURN an acknowledgement (a bool, or the count it actually applied) so the receipt is measuring the document rather than the loop. Diagnosis: editor_verify/wave118.md MINOR-1."]
 owns = [
     "apps/website/frontend/src/arsenal.rs",
     "crates/map-engine-core/src/doc/store.rs",

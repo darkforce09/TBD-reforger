@@ -1,18 +1,20 @@
 id = "T-443"
 kind = "work"
 title = "IT coverage for POST /vehicle-database (T-263 write path)"
-summary = """
-In-wave hotfix from wave 12 adversarial MAJOR. T-263 added create_vehicle + POST /api/v1/vehicle-database in handlers/wiki.rs and app.rs, but no IT/unit calls the write path. Cold gate cargo test -p website-api can PASS without ever inserting via this handler (content_read.rs only GETs vehicles + PUTs wiki).
-
-Repro: delete .post(create_vehicle) from app.rs or stub create_vehicle to always 500; wave gate still PASS.
-
-Cure: extend apps/website/api/tests/content_read.rs (or sibling) with admin POST happy path + 400 on missing name/faction/armor_type + GET list contains the new row. Perturbation must RED if route/handler missing."""
+summary = "IT coverage for POST /vehicle-database (T-263 write path)"
 class = "chore"
 status = "shipped"
 order = 3282
 executor = "claude-code"
 priority = 1
 estimated = ["scope"]
+migration_legacy = [
+    "In-wave hotfix from wave 12 adversarial MAJOR. T-263 added create_vehicle + POST /api/v1/vehicle-database in handlers/wiki.rs and app.rs, but no IT/unit calls the write path. Cold gate cargo test -p website-api can PASS without ever inserting via this handler (content_read.rs only GETs vehicles + PUTs wiki).",
+    "",
+    "Repro: delete .post(create_vehicle) from app.rs or stub create_vehicle to always 500; wave gate still PASS.",
+    "",
+    "Cure: extend apps/website/api/tests/content_read.rs (or sibling) with admin POST happy path + 400 on missing name/faction/armor_type + GET list contains the new row. Perturbation must RED if route/handler missing.",
+]
 owns = ["apps/website/api/tests/content_read.rs"]
 
 [scope]

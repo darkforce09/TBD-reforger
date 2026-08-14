@@ -1,7 +1,7 @@
 id = "T-915.1"
 kind = "work"
 title = "Viewer core: board + detail, typed corpus load, repo discovery"
-summary = "New workspace member apps/ticketboard (egui/eframe, wgpu default + glow fallback). Typed corpus load of ALL T-*.toml (parents and children) via tbd-tickets — deliberately not load_phase2_tree. Fail-closed load: any parse failure is a full-window refusal naming the file with the verbatim error and reveal-in-file-manager; the watcher keeps running so an on-disk fix auto-recovers. Status board (8 raw-status columns, shipped/cancelled collapsed to count chips) + detail panel. Repo discovery: positional arg, else upward walk for .ai/tickets/, else refusal + native folder picker, persisted to eframe Storage."
+summary = "Viewer core: board + detail, typed corpus load, repo discovery"
 class = "bug"
 status = "shipped"
 order = 5961
@@ -20,6 +20,7 @@ acceptance = [
 shipped_at = "100bacd9"
 created_at = "2026-08-14T08:39:30Z"
 completed_at = "2026-08-14T09:11:46Z"
+migration_legacy = ["New workspace member apps/ticketboard (egui/eframe, wgpu default + glow fallback). Typed corpus load of ALL T-*.toml (parents and children) via tbd-tickets — deliberately not load_phase2_tree. Fail-closed load: any parse failure is a full-window refusal naming the file with the verbatim error and reveal-in-file-manager; the watcher keeps running so an on-disk fix auto-recovers. Status board (8 raw-status columns, shipped/cancelled collapsed to count chips) + detail panel. Repo discovery: positional arg, else upward walk for .ai/tickets/, else refusal + native folder picker, persisted to eframe Storage."]
 owns = [
     "apps/ticketboard",
     "Cargo.toml",

@@ -1,20 +1,22 @@
 id = "T-458"
 kind = "work"
 title = "AdminGate still uses browse-mode has_min_role"
-summary = """
-Residual from T-454 / wave 21 adversarial NIT. wiki/modpacks/event_hub action gates now use has_min_role_authed, but ui.rs AdminGate still calls auth.has_min_role(Role::Admin) (browse-mode None=>true via auth.rs).
-
-Mitigation today: AdminGate is nested under AuthGate, which only renders children when is_authenticated() (user is Some), so guests cannot flash admin UI via None=>true.
-
-Repro: read apps/website/frontend/src/ui.rs:244-264 and auth.rs has_min_role.
-
-Cure: switch AdminGate to has_min_role_authed (or equivalent None=>false) while keeping the reactive move || auth path."""
+summary = "AdminGate still uses browse-mode has_min_role"
 class = "chore"
 status = "shipped"
 order = 3297
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "Residual from T-454 / wave 21 adversarial NIT. wiki/modpacks/event_hub action gates now use has_min_role_authed, but ui.rs AdminGate still calls auth.has_min_role(Role::Admin) (browse-mode None=>true via auth.rs).",
+    "",
+    "Mitigation today: AdminGate is nested under AuthGate, which only renders children when is_authenticated() (user is Some), so guests cannot flash admin UI via None=>true.",
+    "",
+    "Repro: read apps/website/frontend/src/ui.rs:244-264 and auth.rs has_min_role.",
+    "",
+    "Cure: switch AdminGate to has_min_role_authed (or equivalent None=>false) while keeping the reactive move || auth path.",
+]
 owns = [
     "apps/website/frontend/src/ui.rs",
     "apps/website/frontend/src/auth.rs",

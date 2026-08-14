@@ -1,18 +1,20 @@
 id = "T-681"
 kind = "work"
 title = "Entity states: health, allow-damage, show-model, size, stamina"
-summary = """
-Five attribute ids: `ATTR-FIELD-OBJ-HEALTH`, `-OBJ-ALLOW-DAMAGE`, `-OBJ-SHOW-MODEL`, `-OBJ-SIZE`, `-OBJ-STAMINA`. GATED ON `entities[]` ACQUIRING A CONSUMER: mission.schema.json:72 records that nothing on any shipped build reads that array, so adding fields to it authors state with no destination. `OBJ-STAMINA` carries a further UNRESOLVED question — whether Reforger exposes a per-character stamina toggle at all — which is a Workbench API question and not answerable by code search in this repo. Answer that before sizing. EXECUTOR IS `workbench` DELIBERATELY: this modifies `packages/tbd-schema/schema/mission.schema.json` and/or `apps/mod/tbd-framework/`, which the CLAUDE.md executor gate puts out of reach of any coding agent. The factory filters on executor, so this tagging is the safety mechanism — do not flip it to claude-code.
-
-EXECUTOR CORRECTED 2026-08-02: was filed `workbench` on the mistaken reading that any .c file needs the Arma Workbench GUI. It does not — scripts/mod/compile.sh compiles tbd-framework against the native Linux dedicated server headlessly, verified: "OK: compiled clean, 5707 files, 11182 classes, 832 ms, no Workbench". Schema edits are plain JSON. This is factory work. Per the model-routing rule, the .c portion routes to Fable 5 even though the executor is claude-code.
-
-SCHEMA HALF SPLIT OUT to T-706 (one widening pass for the whole program). This ticket is the Enfusion reader plus any editor UI; it does not touch packages/tbd-schema."""
+summary = "Entity states: health, allow-damage, show-model, size, stamina"
 class = "chore"
 status = "queued"
 order = 4380
 executor = "claude-code"
 notes = "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row"
 estimated = ["scope"]
+migration_legacy = [
+    "Five attribute ids: `ATTR-FIELD-OBJ-HEALTH`, `-OBJ-ALLOW-DAMAGE`, `-OBJ-SHOW-MODEL`, `-OBJ-SIZE`, `-OBJ-STAMINA`. GATED ON `entities[]` ACQUIRING A CONSUMER: mission.schema.json:72 records that nothing on any shipped build reads that array, so adding fields to it authors state with no destination. `OBJ-STAMINA` carries a further UNRESOLVED question — whether Reforger exposes a per-character stamina toggle at all — which is a Workbench API question and not answerable by code search in this repo. Answer that before sizing. EXECUTOR IS `workbench` DELIBERATELY: this modifies `packages/tbd-schema/schema/mission.schema.json` and/or `apps/mod/tbd-framework/`, which the CLAUDE.md executor gate puts out of reach of any coding agent. The factory filters on executor, so this tagging is the safety mechanism — do not flip it to claude-code.",
+    "",
+    'EXECUTOR CORRECTED 2026-08-02: was filed `workbench` on the mistaken reading that any .c file needs the Arma Workbench GUI. It does not — scripts/mod/compile.sh compiles tbd-framework against the native Linux dedicated server headlessly, verified: "OK: compiled clean, 5707 files, 11182 classes, 832 ms, no Workbench". Schema edits are plain JSON. This is factory work. Per the model-routing rule, the .c portion routes to Fable 5 even though the executor is claude-code.',
+    "",
+    "SCHEMA HALF SPLIT OUT to T-706 (one widening pass for the whole program). This ticket is the Enfusion reader plus any editor UI; it does not touch packages/tbd-schema.",
+]
 owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_EntityState.c"]
 
 [scope]

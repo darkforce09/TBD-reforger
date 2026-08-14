@@ -1,18 +1,20 @@
 id = "T-569"
 kind = "work"
 title = "T-566 Class-R still hollow — match arms only in raw-string decoys"
-summary = """
-FOUND by W66 adversarial verifier (DIRTY MAJOR) after T-566.
-
-// and /* */ arm comments now RED; ignore-helper DEV_USER_ID bind RED. Still GREEN: live match collapses to `_` while arms exist only inside r#" "enlisted" => … "# decoys (comment strip keeps string contents).
-
-Repro: park arms in raw-string decoy; match `_ => DEV_USER_ID`; Class-R green."""
+summary = "T-566 Class-R still hollow — match arms only in raw-string decoys"
 class = "feature"
 status = "shipped"
 order = 3422
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "FOUND by W66 adversarial verifier (DIRTY MAJOR) after T-566.",
+    "",
+    '// and /* */ arm comments now RED; ignore-helper DEV_USER_ID bind RED. Still GREEN: live match collapses to `_` while arms exist only inside r#" "enlisted" => … "# decoys (comment strip keeps string contents).',
+    "",
+    "Repro: park arms in raw-string decoy; match `_ => DEV_USER_ID`; Class-R green.",
+]
 owns = ["apps/website/api/tests/misc_integration.rs"]
 
 [scope]

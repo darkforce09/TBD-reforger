@@ -1,24 +1,26 @@
 id = "T-416"
 kind = "work"
 title = "Cargo capacity belongs in wire_safety.rs, server-side, covering save and compile in one place"
-summary = '''
-Recommendation from T-240's agent, endorsed by the command center, deliberately NOT built in wave 4 because it crosses files T-240 did not own.
-
-T-240 shipped the rule (arsenal_rules.rs:810 cargo_capacity_errors) and wired it to the Arsenal's loadout export (arsenal.rs:477 try_export). That is the only authoring-time refusal point the client HAS -- see the two structural findings in T-417. It is not the right home.
-
-THE PRECEDENT IS EXACT: crates/map-engine-core/src/mission/wire_safety.rs is a rule expressed in code rather than schema, one linear pass over the already-parsed editor payload, wired into apps/website/api/src/contract/validate.rs:101 (Save Version -> 400 carrying per-problem findings) and apps/website/api/src/services/mission_compile.rs:498 (the compiled gate). Its own header states the reason: the schema rejects the value 'long after the author pressed Save, in front of the wrong human.' The frontend already renders those findings -- mission_commands.rs:112-120 feeds them to the Save dialog. Cargo already reaches that payload (flatten.rs:1103-1126, ModSlotCargo).
-
-WHY IT IS BETTER: natively testable (the frontend seam is #![cfg(target_arch = \"wasm32\")] and cannot be proven by the gate), and it covers save AND compile in one place instead of one export button.
-
-THE ONE REAL DESIGN QUESTION: it needs the registry for weights and capacities, which the API has and the pure core crate does not. Resolve that before building -- either thread a registry handle in, or split the rule so core holds the arithmetic and the API supplies the table.
-
-Once this lands, T-240's frontend block becomes a nicety on top rather than the only line of defence.'''
+summary = "Cargo capacity belongs in wire_safety.rs, server-side, covering save and compile in one place"
 class = "chore"
 status = "shipped"
 order = 3241
 executor = "claude-code"
 priority = 1
 estimated = ["scope"]
+migration_legacy = [
+    "Recommendation from T-240's agent, endorsed by the command center, deliberately NOT built in wave 4 because it crosses files T-240 did not own.",
+    "",
+    "T-240 shipped the rule (arsenal_rules.rs:810 cargo_capacity_errors) and wired it to the Arsenal's loadout export (arsenal.rs:477 try_export). That is the only authoring-time refusal point the client HAS -- see the two structural findings in T-417. It is not the right home.",
+    "",
+    "THE PRECEDENT IS EXACT: crates/map-engine-core/src/mission/wire_safety.rs is a rule expressed in code rather than schema, one linear pass over the already-parsed editor payload, wired into apps/website/api/src/contract/validate.rs:101 (Save Version -> 400 carrying per-problem findings) and apps/website/api/src/services/mission_compile.rs:498 (the compiled gate). Its own header states the reason: the schema rejects the value 'long after the author pressed Save, in front of the wrong human.' The frontend already renders those findings -- mission_commands.rs:112-120 feeds them to the Save dialog. Cargo already reaches that payload (flatten.rs:1103-1126, ModSlotCargo).",
+    "",
+    'WHY IT IS BETTER: natively testable (the frontend seam is #![cfg(target_arch = \"wasm32\")] and cannot be proven by the gate), and it covers save AND compile in one place instead of one export button.',
+    "",
+    "THE ONE REAL DESIGN QUESTION: it needs the registry for weights and capacities, which the API has and the pure core crate does not. Resolve that before building -- either thread a registry handle in, or split the rule so core holds the arithmetic and the API supplies the table.",
+    "",
+    "Once this lands, T-240's frontend block becomes a nicety on top rather than the only line of defence.",
+]
 owns = [
     "crates/map-engine-core/src/mission/wire_safety.rs",
     "apps/website/api/src/contract/validate.rs",

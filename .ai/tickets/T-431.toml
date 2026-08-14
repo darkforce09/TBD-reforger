@@ -1,18 +1,20 @@
 id = "T-431"
 kind = "work"
 title = "Identity-link attendance backfill still marks every mission on the event"
-summary = """
-MAJOR residual from T-230 (wave 7). Match ingest now scopes attendance via matches.(event_id, mission_id), but apps/website/api/src/handlers/me.rs BACKFILL_ATTENDANCE (≈59–65) still UPDATEs all event_missions for any event_id found on the player's matches — no mission_id join.
-
-Repro: multi-mission event; play one; identity-link path runs BACKFILL_ATTENDANCE; sibling event_mission registrations flip to attended.
-
-Cure: same JOIN shape as T-230 telemetry ingest."""
+summary = "Identity-link attendance backfill still marks every mission on the event"
 class = "feature"
 status = "shipped"
 order = 3270
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "MAJOR residual from T-230 (wave 7). Match ingest now scopes attendance via matches.(event_id, mission_id), but apps/website/api/src/handlers/me.rs BACKFILL_ATTENDANCE (≈59–65) still UPDATEs all event_missions for any event_id found on the player's matches — no mission_id join.",
+    "",
+    "Repro: multi-mission event; play one; identity-link path runs BACKFILL_ATTENDANCE; sibling event_mission registrations flip to attended.",
+    "",
+    "Cure: same JOIN shape as T-230 telemetry ingest.",
+]
 owns = ["apps/website/api/src/handlers/me.rs"]
 
 [scope]

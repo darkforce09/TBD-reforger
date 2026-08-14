@@ -1,13 +1,14 @@
 id = "T-738"
 kind = "work"
 title = "Help census is blind to ev.key() listeners — Escape is bound in at least three places it cannot see"
-summary = "MINOR from the wave-112 verifier. eden_help.rs:303-342 bound_codes()/all_bound() scrapes only the two `match ev.code().as_str()` blocks (mission_editor + mission_history). The editor already binds Escape in at least three listeners OUTSIDE them, all via ev.key(): mission_editor.rs:1200-1201 (asset picker), attributes.rs:167-171 (modal), and eden_top_strip.rs:680-696 (menus / Save / the Controls Hint itself — T-692's OWN close path). All are invisible to the coverage pin, so a future listener added anywhere but those two match blocks ships undocumented with both direction-pins green. Live consequence today: the Escape help row documents only measurement dismissal and omits the hint, the menus, the Save dialog, the modal and the picker — while the hint's own close button advertises Esc. The arm-extraction logic itself was attacked and held (or-patterns, guards, multi-line arms, body literals all handled; the >=14 / no-'(' honesty floor is real), so the defect is the SCOPE of the scrape, not its parsing. Note for T-703 (keybinding collision test, wave 119): consume this extractor rather than writing a third copy, and widen it to ev.key() listeners as part of that work. Diagnosis: editor_verify/wave112.md MINOR-4."
+summary = "Help census is blind to ev.key() listeners — Escape is bound in at least three places it cannot see"
 class = "feature"
 status = "shipped"
 order = 4614
 executor = "claude-code"
 notes = "filed by wave-112 adversarial verifier (editor factory)"
 estimated = ["scope"]
+migration_legacy = ["MINOR from the wave-112 verifier. eden_help.rs:303-342 bound_codes()/all_bound() scrapes only the two `match ev.code().as_str()` blocks (mission_editor + mission_history). The editor already binds Escape in at least three listeners OUTSIDE them, all via ev.key(): mission_editor.rs:1200-1201 (asset picker), attributes.rs:167-171 (modal), and eden_top_strip.rs:680-696 (menus / Save / the Controls Hint itself — T-692's OWN close path). All are invisible to the coverage pin, so a future listener added anywhere but those two match blocks ships undocumented with both direction-pins green. Live consequence today: the Escape help row documents only measurement dismissal and omits the hint, the menus, the Save dialog, the modal and the picker — while the hint's own close button advertises Esc. The arm-extraction logic itself was attacked and held (or-patterns, guards, multi-line arms, body literals all handled; the >=14 / no-'(' honesty floor is real), so the defect is the SCOPE of the scrape, not its parsing. Note for T-703 (keybinding collision test, wave 119): consume this extractor rather than writing a third copy, and widen it to ev.key() listeners as part of that work. Diagnosis: editor_verify/wave112.md MINOR-4."]
 owns = ["apps/website/frontend/src/eden_help.rs"]
 
 [scope]

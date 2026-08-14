@@ -1,18 +1,20 @@
 id = "T-455"
 kind = "work"
 title = "ticket add/remove mutate without schema check preflight"
-summary = """
-Residual from T-451 / wave 20 adversarial. set-status/mark-ready/reorder/ship now call require_check_ok before write, but cmd_add (and cmd_remove) still mutate the registry without loading .ai/tickets/schema.json.
-
-Repro: break a required field; ticket check RED; ticket add still inserts a row.
-
-Cure: gate add/remove through require_check_ok (or document intentional escape hatch + --force)."""
+summary = "ticket add/remove mutate without schema check preflight"
 class = "chore"
 status = "shipped"
 order = 3294
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "Residual from T-451 / wave 20 adversarial. set-status/mark-ready/reorder/ship now call require_check_ok before write, but cmd_add (and cmd_remove) still mutate the registry without loading .ai/tickets/schema.json.",
+    "",
+    "Repro: break a required field; ticket check RED; ticket add still inserts a row.",
+    "",
+    "Cure: gate add/remove through require_check_ok (or document intentional escape hatch + --force).",
+]
 owns = [
     "xtask/src/cmds.rs",
     "xtask/src/check.rs",

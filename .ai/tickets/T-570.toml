@@ -1,18 +1,20 @@
 id = "T-570"
 kind = "work"
 title = "T-567 Class-R still hollow — unreachable if true==false / loop-break / cfg(any())"
-summary = """
-FOUND by W67 adversarial verifier (DIRTY MAJOR) after T-567.
-
-Exact `if false { … }` now RED. Still GREEN with live None + unreachable `if true == false` / `loop { break; apply… }` / `#[cfg(any())]` / `while false` / `if !true` wrapping apply_row_meta(…, opt(&row.briefing)).
-
-Repro: live briefing → None; wrap decoy call in `if true == false { … }`; pin green."""
+summary = "T-567 Class-R still hollow — unreachable if true==false / loop-break / cfg(any())"
 class = "feature"
 status = "shipped"
 order = 3423
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "FOUND by W67 adversarial verifier (DIRTY MAJOR) after T-567.",
+    "",
+    "Exact `if false { … }` now RED. Still GREEN with live None + unreachable `if true == false` / `loop { break; apply… }` / `#[cfg(any())]` / `while false` / `if !true` wrapping apply_row_meta(…, opt(&row.briefing)).",
+    "",
+    "Repro: live briefing → None; wrap decoy call in `if true == false { … }`; pin green.",
+]
 owns = ["apps/website/frontend/src/mission_title_prefer.rs"]
 
 [scope]

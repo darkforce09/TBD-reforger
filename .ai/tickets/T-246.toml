@@ -1,12 +1,13 @@
 id = "T-246"
 kind = "work"
 title = "push-discord skips the published check"
-summary = "cms.rs:268-289 force-pushes any announcement — unlike the create and patch paths it does not verify status is published, so a draft or archived post can be broadcast to the guild. It is unreachable from the SPA today, which is the only thing hiding it."
+summary = "push-discord skips the published check"
 class = "feature"
 status = "shipped"
 order = 2640
 executor = "claude-code"
 estimated = ["scope"]
+migration_legacy = ["cms.rs:268-289 force-pushes any announcement — unlike the create and patch paths it does not verify status is published, so a draft or archived post can be broadcast to the guild. It is unreachable from the SPA today, which is the only thing hiding it."]
 owns = [
     "apps/website/api/src/handlers/cms.rs",
     "apps/website/api/tests/cms_announcement_body.rs",

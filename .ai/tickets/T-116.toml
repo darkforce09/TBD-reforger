@@ -1,16 +1,18 @@
 id = "T-116"
 kind = "work"
 title = "Results POST to backend"
-summary = """
-SPLIT 2026-07-26. Mod half SHIPPED: TBD_ResultsReporter.c (682 lines, T-181.13.1) POSTs to /api/v1/ingest/match-results. Website half OPEN and folded into T-232 — event_hub.rs renders no result/outcome/match data at all. This row now tracks only the website half.
-
-== CLOSED 2026-07-31 — ALREADY DONE, this row was a stale pointer ==
-The mod half shipped at T-181.13.1. This row tracked only the WEBSITE half, which its own summary says was folded into T-232 — and T-232 is SHIPPED ('Five pages render literally nothing when real data arrives'). Verified before closing. No work remains under this id; do not dispatch it."""
+summary = "Results POST to backend"
 class = "feature"
 status = "shipped"
 order = 1160
 executor = "human"
 depends_on = ["T-115"]
+migration_legacy = [
+    "SPLIT 2026-07-26. Mod half SHIPPED: TBD_ResultsReporter.c (682 lines, T-181.13.1) POSTs to /api/v1/ingest/match-results. Website half OPEN and folded into T-232 — event_hub.rs renders no result/outcome/match data at all. This row now tracks only the website half.",
+    "",
+    "== CLOSED 2026-07-31 — ALREADY DONE, this row was a stale pointer ==",
+    "The mod half shipped at T-181.13.1. This row tracked only the WEBSITE half, which its own summary says was folded into T-232 — and T-232 is SHIPPED ('Five pages render literally nothing when real data arrives'). Verified before closing. No work remains under this id; do not dispatch it.",
+]
 
 [scope]
 domain = "repo"

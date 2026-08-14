@@ -76,6 +76,7 @@ mod phase2;
 mod platform_preflight;
 mod playtest_server;
 mod prompt;
+mod quarantine_walls;
 mod registry;
 mod repro;
 mod root;
@@ -889,6 +890,11 @@ enum TicketCmd {
     /// counters + class distribution, from the typed corpus (read-only).
     #[command(name = "scope-histogram")]
     ScopeHistogram,
+    /// T-917.3: wall quarantine pass 1 — move every work-ticket summary over the
+    /// 40-word cap verbatim into migration_legacy[] (byte-reversible, proved per
+    /// file), summary := title. Idempotent by emptiness; regenerates the sync surface.
+    #[command(name = "quarantine-walls")]
+    QuarantineWalls,
 }
 
 fn main() -> ExitCode {
@@ -1319,6 +1325,11 @@ fn run() -> Result<u8> {
                 }
                 TicketCmd::ScopeHistogram => {
                     migrate_v2::cmd_scope_histogram(&root)?;
+                }
+                // Like migrate-v2: no registry pre-load — the pass itself reloads and
+                // regenerates the sync surface after the write.
+                TicketCmd::QuarantineWalls => {
+                    quarantine_walls::cmd_quarantine_walls(&root)?;
                 }
             }
             Ok(0)

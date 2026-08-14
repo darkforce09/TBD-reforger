@@ -1,18 +1,20 @@
 id = "T-487"
 kind = "work"
 title = "Seed DELETE for orphan Discord Squad Leader placeholder snowflake"
-summary = """
-Wave 33 verifier NIT (T-428). Seed no longer INSERTs placeholder 1517290000000000000, but has no DELETE — dirty DBs retain Squad Leader/leader orphan after re-make seed. Live DB was observed still holding the row.
-
-Repro: DB with placeholder row; make seed; SELECT still returns the row.
-
-Cure: add DELETE FROM discord_roles WHERE discord_role_id = '1517290000000000000' (or equivalent) to discord_roles.sql before INSERT."""
+summary = "Seed DELETE for orphan Discord Squad Leader placeholder snowflake"
 class = "chore"
 status = "shipped"
 order = 3326
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "Wave 33 verifier NIT (T-428). Seed no longer INSERTs placeholder 1517290000000000000, but has no DELETE — dirty DBs retain Squad Leader/leader orphan after re-make seed. Live DB was observed still holding the row.",
+    "",
+    "Repro: DB with placeholder row; make seed; SELECT still returns the row.",
+    "",
+    "Cure: add DELETE FROM discord_roles WHERE discord_role_id = '1517290000000000000' (or equivalent) to discord_roles.sql before INSERT.",
+]
 owns = ["apps/website/api/seeds/discord_roles.sql"]
 
 [scope]

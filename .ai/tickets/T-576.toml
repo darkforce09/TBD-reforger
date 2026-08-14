@@ -1,43 +1,45 @@
 id = "T-576"
 kind = "work"
 title = "No 23503 handler: every foreign-key violation surfaces as a 500"
-summary = """
-Found by T-262 (filed-not-fixed) and independently confirmed by wave 69's adversarial verifier.
-
-`apps/website/api/src/handlers/mod.rs:51` defines `is_unique_violation` (23505) and NOTHING for
-23503 (foreign_key_violation). Since T-262 landed the schema's first 25 FKs in `0018`, any FK
-violation now reaches the client as a **500 internal error** instead of a 4xx.
-
-LIVE REPRO (verifier, own API instance on a scratch DB):
-  POST /api/v1/ingest/server-status with a random server_id  ->  500 {"error":"internal error"}
-  same heartbeat for a REGISTERED server                     ->  200
-Cause: `handlers/telemetry.rs:229` inserts into `server_statuses` with no existence check, and 0018
-constraint 10 (server_statuses.server_id -> servers, CASCADE) now enforces it.
-
-WHY IT IS ONLY MINOR TODAY: those rows were invisible no-op orphans before 0018 -- no read path
-returned them -- so this is not a legitimate happy-path write. The verifier drove the full happy
-path (version create, event attach + 16 slots, register, seat claim, squad reserve, bookmark,
-armory, fire mission, role resync, token refresh, registered-server heartbeat) and found ZERO FK
-500s. So this is a sharp edge, not a live outage.
-
-WHY IT MATTERS ANYWAY: it is the reason T-262 had to ABSTAIN from four otherwise-correct FKs
-(matches.event_id, matches.mission_id, server_statuses.current_match_id, fire_missions.event_id).
-Those all bind straight from a request body on ingest endpoints with no human in the loop, where a
-500 loses a scoreline. Add the 23503 mapping and those four become safe to constrain -- that is the
-real prize here, not the error code.
-
-COMPOUNDING, pre-existing: `handlers/servers.rs:456` `create_server` (@route POST /api/v1/servers)
-is NOT WIRED INTO THE ROUTER. Servers can only exist via seed or raw SQL, so there is no API to
-register the server a heartbeat needs. Worth resolving in the same pass.
-
-WANTED: an `is_foreign_key_violation` sibling, mapped to 400/409 with a message naming the missing
-parent; then revisit T-262's four abstentions."""
+summary = "No 23503 handler: every foreign-key violation surfaces as a 500"
 class = "bug"
 status = "shipped"
 order = 3420
 executor = "claude-code"
 priority = 1
 estimated = ["scope"]
+migration_legacy = [
+    "Found by T-262 (filed-not-fixed) and independently confirmed by wave 69's adversarial verifier.",
+    "",
+    "`apps/website/api/src/handlers/mod.rs:51` defines `is_unique_violation` (23505) and NOTHING for",
+    "23503 (foreign_key_violation). Since T-262 landed the schema's first 25 FKs in `0018`, any FK",
+    "violation now reaches the client as a **500 internal error** instead of a 4xx.",
+    "",
+    "LIVE REPRO (verifier, own API instance on a scratch DB):",
+    '  POST /api/v1/ingest/server-status with a random server_id  ->  500 {"error":"internal error"}',
+    "  same heartbeat for a REGISTERED server                     ->  200",
+    "Cause: `handlers/telemetry.rs:229` inserts into `server_statuses` with no existence check, and 0018",
+    "constraint 10 (server_statuses.server_id -> servers, CASCADE) now enforces it.",
+    "",
+    "WHY IT IS ONLY MINOR TODAY: those rows were invisible no-op orphans before 0018 -- no read path",
+    "returned them -- so this is not a legitimate happy-path write. The verifier drove the full happy",
+    "path (version create, event attach + 16 slots, register, seat claim, squad reserve, bookmark,",
+    "armory, fire mission, role resync, token refresh, registered-server heartbeat) and found ZERO FK",
+    "500s. So this is a sharp edge, not a live outage.",
+    "",
+    "WHY IT MATTERS ANYWAY: it is the reason T-262 had to ABSTAIN from four otherwise-correct FKs",
+    "(matches.event_id, matches.mission_id, server_statuses.current_match_id, fire_missions.event_id).",
+    "Those all bind straight from a request body on ingest endpoints with no human in the loop, where a",
+    "500 loses a scoreline. Add the 23503 mapping and those four become safe to constrain -- that is the",
+    "real prize here, not the error code.",
+    "",
+    "COMPOUNDING, pre-existing: `handlers/servers.rs:456` `create_server` (@route POST /api/v1/servers)",
+    "is NOT WIRED INTO THE ROUTER. Servers can only exist via seed or raw SQL, so there is no API to",
+    "register the server a heartbeat needs. Worth resolving in the same pass.",
+    "",
+    "WANTED: an `is_foreign_key_violation` sibling, mapped to 400/409 with a message naming the missing",
+    "parent; then revisit T-262's four abstentions.",
+]
 owns = [
     "apps/website/api/src/handlers/mod.rs",
     "apps/website/api/src/handlers/telemetry.rs",

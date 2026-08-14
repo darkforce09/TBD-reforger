@@ -1,23 +1,25 @@
 id = "T-554"
 kind = "work"
 title = "T-418 FE hydrate→briefing wire has no Class-R pin (core only)"
-summary = """
-FOUND by W62 adversarial verifier (DIRTY MINOR) after T-418.
-
-mission_hydrate.rs threads MissionDetail.briefing into apply_row_meta via opt(&row.briefing). Core Class-R t418_apply_row_meta_threads_briefing_into_meta covers apply_row_meta/compile_export, not the FE call site.
-
-Mutation probe: replace both opt(&row.briefing) with None → cargo test -p website-frontend briefing|hydrate still PASS.
-
-Repro:
-  # Temporarily return None for briefing in mission_hydrate RowMeta construction;
-  # website-frontend tests that mention briefing/hydrate still green;
-  # only map-engine-core Class-R fails if apply_row_meta itself is gutted."""
+summary = "T-418 FE hydrate→briefing wire has no Class-R pin (core only)"
 class = "feature"
 status = "shipped"
 order = 3394
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "FOUND by W62 adversarial verifier (DIRTY MINOR) after T-418.",
+    "",
+    "mission_hydrate.rs threads MissionDetail.briefing into apply_row_meta via opt(&row.briefing). Core Class-R t418_apply_row_meta_threads_briefing_into_meta covers apply_row_meta/compile_export, not the FE call site.",
+    "",
+    "Mutation probe: replace both opt(&row.briefing) with None → cargo test -p website-frontend briefing|hydrate still PASS.",
+    "",
+    "Repro:",
+    "  # Temporarily return None for briefing in mission_hydrate RowMeta construction;",
+    "  # website-frontend tests that mention briefing/hydrate still green;",
+    "  # only map-engine-core Class-R fails if apply_row_meta itself is gutted.",
+]
 owns = [
     "apps/website/frontend/src/mission_hydrate.rs",
     "apps/website/frontend/src/mission_title_prefer.rs",

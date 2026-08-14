@@ -1,12 +1,13 @@
 id = "T-253"
 kind = "work"
 title = "Reclaim 65GB and stop double-compiling"
-summary = "target/ is 52GB, target-ci/ another 12GB, and .git/lfs holds 1.6GB of objects from tile pyramids untracked back on 2026-07-03. Disk is at 87%. Also no CARGO_TARGET_DIR is set, so the moment Rust work is sliced across worktrees each one starts a cold build."
+summary = "Reclaim 65GB and stop double-compiling"
 class = "chore"
 status = "shipped"
 order = 2710
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
+migration_legacy = ["target/ is 52GB, target-ci/ another 12GB, and .git/lfs holds 1.6GB of objects from tile pyramids untracked back on 2026-07-03. Disk is at 87%. Also no CARGO_TARGET_DIR is set, so the moment Rust work is sliced across worktrees each one starts a cold build."]
 owns = [
     "Makefile",
     ".gitignore",

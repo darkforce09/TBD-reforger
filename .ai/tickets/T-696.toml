@@ -1,13 +1,14 @@
 id = "T-696"
 kind = "work"
 title = "Map bookmarks and a named-locations index"
-summary = "NEW-F7 + 3den E1. The cheapest large win in the 3den sweep: a 12.8 km map with zero bookmarks today. TBD ALREADY HAS THE DATA for the locations half — world_assets/labels.rs and the Town labels layer (world_layer_prefs.rs) carry named places; nothing lets you list or fly to one. Eden has a Locations tab beside Entities."
+summary = "Map bookmarks and a named-locations index"
 class = "feature"
 status = "shipped"
 order = 4500
 executor = "claude-code"
 notes = "— SHIPPED wave 116 (editor factory), 032513af; verifier wave116.md. Locations tab (named places re-read through the SAME url and parser as LabelHost::init, nothing hardcoded) plus persistent camera bookmarks storing x/y/zoom, not undoable and not document edits. ⚠️ TWO DEFECTS: its headline source pins are HOLLOW (see T-759) and fly_to rides the T-166 smoke hook in production (see T-762)."
 estimated = ["scope"]
+migration_legacy = ["NEW-F7 + 3den E1. The cheapest large win in the 3den sweep: a 12.8 km map with zero bookmarks today. TBD ALREADY HAS THE DATA for the locations half — world_assets/labels.rs and the Town labels layer (world_layer_prefs.rs) carry named places; nothing lets you list or fly to one. Eden has a Locations tab beside Entities."]
 owns = ["apps/website/frontend/src/eden_dock_left.rs"]
 
 [scope]

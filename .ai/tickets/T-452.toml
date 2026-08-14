@@ -1,18 +1,20 @@
 id = "T-452"
 kind = "work"
 title = "TBD_PlayerIdentity still claims link unimplemented after T-181.35"
-summary = """
-Residual from T-296 / wave 17 adversarial. ResultsReporter banner/comments now tell the truth about shipped `#tbd link` (TBD_IdentityLink + MissionLoader Arm()), but TBD_PlayerIdentity.c:9 still says the mod does not implement link-confirm / that is T-181.35.
-
-Repro: rg 'does not implement|T-181.35' apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_PlayerIdentity.c
-
-Cure: rewrite the stale header to match IdentityLink (same honesty bar as T-296)."""
+summary = "TBD_PlayerIdentity still claims link unimplemented after T-181.35"
 class = "feature"
 status = "shipped"
 order = 3291
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "Residual from T-296 / wave 17 adversarial. ResultsReporter banner/comments now tell the truth about shipped `#tbd link` (TBD_IdentityLink + MissionLoader Arm()), but TBD_PlayerIdentity.c:9 still says the mod does not implement link-confirm / that is T-181.35.",
+    "",
+    "Repro: rg 'does not implement|T-181.35' apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_PlayerIdentity.c",
+    "",
+    "Cure: rewrite the stale header to match IdentityLink (same honesty bar as T-296).",
+]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_PlayerIdentity.c",
     "scripts/mod/verify-t452-player-identity-link-comments.sh",

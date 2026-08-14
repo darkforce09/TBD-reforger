@@ -1,18 +1,20 @@
 id = "T-547"
 kind = "work"
 title = "datefmt format_uptime doc overclaims server-control sharing"
-summary = """
-FOUND by W55 adversarial verifier (CLEAN MINOR-NIT) after T-353.
-
-Gap 3 correctly shared format_uptime/log_stamp for dashboard/server_intel/audit. datefmt docs overclaim server-control uses the same HH:MM:SS helper; that page still has a different private helper. Cure: fix the doc comment or unify the helper.
-
-Repro: rg format_uptime apps/website/frontend/src/"""
+summary = "datefmt format_uptime doc overclaims server-control sharing"
 class = "bug"
 status = "shipped"
 order = 3387
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "FOUND by W55 adversarial verifier (CLEAN MINOR-NIT) after T-353.",
+    "",
+    "Gap 3 correctly shared format_uptime/log_stamp for dashboard/server_intel/audit. datefmt docs overclaim server-control uses the same HH:MM:SS helper; that page still has a different private helper. Cure: fix the doc comment or unify the helper.",
+    "",
+    "Repro: rg format_uptime apps/website/frontend/src/",
+]
 owns = [
     "apps/website/frontend/src/datefmt.rs",
     "apps/website/frontend/src/server_control.rs",

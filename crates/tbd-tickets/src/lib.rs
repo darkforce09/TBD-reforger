@@ -87,6 +87,26 @@ pub const ESTIMATED_VALUES: &[&str] = &[
     "scope",
 ];
 
+/// T-917.3 word caps (spec §Body, Decisions log #6) — CHECK-enforced (`ticket check`)
+/// plus an `ops::validate_post_image` refusal on tickets an op rewrites; NEVER
+/// parse-enforced, so old git revisions stay readable. The counting instrument is
+/// `split_whitespace().count()` over the TOML-PARSED string everywhere (quarantine
+/// verb, check rules, ops gate, ratchet pin) — one instrument, no raw-regex-vs-parse
+/// method disagreement (the spec's measured-facts table documents that trap).
+///
+/// `summary` cap on WORK tickets; a nonempty `migration_legacy` exempts exactly the
+/// summary cap (quarantined tickets got `summary := title`, which may itself exceed
+/// the cap — truncation is forbidden). Program summaries are uncapped this pass
+/// (work-only per spec §Wall quarantine; over-cap program summaries are reported by
+/// the verb as a future note, never moved).
+pub const SUMMARY_WORD_CAP: usize = 40;
+/// Per-line cap on `context[]`/`requirement[]`/`current_state[]`/`approach[]`/
+/// `verify[]` (spec §Body). `acceptance`/`notes`/`user_story` are uncapped —
+/// grandfathering by *field choice*, never by ticket class.
+pub const BODY_LINE_WORD_CAP: usize = 30;
+/// Per-entry cap on `citations[]` (reference-only strings).
+pub const CITATION_WORD_CAP: usize = 8;
+
 /// Conservative-deterministic class triage from title/summary prose (same input →
 /// same class; metadata triage, not provenance — T-917.2 migrator header documents
 /// why this carries no `estimated[]` marker). Token-boundary matching on purpose:

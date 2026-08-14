@@ -1,20 +1,22 @@
 id = "T-562"
 kind = "work"
 title = "T-560 Class-R still hollow — string/format! SET arma_id = COALESCE decoy"
-summary = """
-FOUND by W64 adversarial verifier (DIRTY MAJOR) after T-560.
-
-Comment strip works; contains("SET arma_id = COALESCE(arma_id") keeps string literals.
-Delete live UPDATE + leave needle in let _decoy = "…" or format!("…") → PASS while INSERT stays NULL.
-Claimed // + bind attacks still RED.
-
-Repro: remove COALESCE UPDATE; add string/format! decoy with the needle; Class-R green; concurrent cold race can return."""
+summary = "T-560 Class-R still hollow — string/format! SET arma_id = COALESCE decoy"
 class = "chore"
 status = "shipped"
 order = 3415
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "FOUND by W64 adversarial verifier (DIRTY MAJOR) after T-560.",
+    "",
+    'Comment strip works; contains("SET arma_id = COALESCE(arma_id") keeps string literals.',
+    'Delete live UPDATE + leave needle in let _decoy = "…" or format!("…") → PASS while INSERT stays NULL.',
+    "Claimed // + bind attacks still RED.",
+    "",
+    "Repro: remove COALESCE UPDATE; add string/format! decoy with the needle; Class-R green; concurrent cold race can return.",
+]
 owns = ["apps/website/api/tests/common/mod.rs"]
 
 [scope]

@@ -1,34 +1,36 @@
 id = "T-406"
 kind = "work"
 title = "wave.sh residual hardening — the gate's remaining ways to be wrong about what it examined"
-summary = """
-Seven findings against `scripts/platform/wave.sh` from wave 2's slice agent and adversarial verifier. All MINOR/NIT individually; grouped because they are one file and one sitting, and because collectively they are the same theme this program keeps paying for — the gate being confidently wrong about its own coverage. None is currently reachable in the normal path; each is one small change away from being reachable.
-
-1. `wave.sh:36` — `ROOT` derives from `$0`, not `${BASH_SOURCE[0]}`. Sourced or piped, `$0` is `bash`, so ROOT becomes `cwd/../..`. MEASURED: `bash -c 'source .../wave.sh status'` from a scratch dir printed `open: 0 / 0 tickets` and `ALL WAVES COMPLETE` about a directory that is not the repo. Blast radius is `status`/`wave` only — the verifier specifically checked whether the new lock/private-path logic makes this worse and it does NOT: `MAIN_ROOT` (:50) comes from `git rev-parse --git-common-dir`, so the lock and gate dirs are correct whenever git resolves, and `cmd_gate` refuses at rev-parse/refuse_empty_range before `take_gate_lock` when it does not. There is no path where the gate locks the wrong place and reports PASS on the wrong tree.
-
-2. `wave.sh:555-563` — `take_gate_lock` degrades to UNSERIALISED on two of its three failure branches. Measured by extracting and running the function: lock path unwritable -> WARNING, **returns 0, gate proceeds**; flock not on PATH -> WARNING, **returns 0, gate proceeds**; held by another gate -> refuses with rc 2 (correct). The gate then prints `GATE: PASS` with the serialisation guarantee silently void. The commit's "REFUSES rather than degrading" is scoped to the wait, so this is a claim/behaviour gap rather than a lie — but the unwritable-path branch is reachable on a full disk, which `cmd_reclaim`'s own header records as having actually happened (252 MB free mid-wave).
-
-3. `wave.sh:547,565` — "a killed gate cannot wedge the queue" is false in general. `exec 9>>` does not set close-on-exec, so any container-side descendant outliving the gate inherits the lock. Repro: `bash -c 'exec 9>>/t/l; flock -n 9; setsid sleep 45 & kill -9 $$'` then `flock -n /t/l -c true` fails. MITIGATED TODAY, and this was tested: `distrobox-host-exec` does not propagate fd 9 to the host, so every cargo/trunk step is safe. Cost if a future step ever backgrounds something container-side: every subsequent gate waits GATE_LOCK_MAX=3600 then refuses.
-
-4. `wave.sh:272,307` — the closest thing to a fourth vacuity hole, deliberately NOT promoted. `fmt_changed` does `[ -f "$f" ] || continue` and `touch_changed` does `[ -f "$f" ] && touch "$f"`. A range whose Rust files were all deleted or renamed passes `refuse_empty_range` (the list is non-empty), then the fmt loop skips every entry and returns 0 — `fmt (changed) PASS` with rustfmt never invoked — and touch_changed invalidates no fingerprint, which is the only thing it exists to do. Judged low-risk because a pure-deletion slice must also edit a mod/use site which IS in the diff. `clippy_changed:345` has the sibling shape but at least prints `no crate resolved`.
-
-5. `wave.sh:454` — the dist collapse guard compares `GATE_TRUNK_DIST` against `"$ROOT/apps/website/frontend/dist"`, but from a worktree that is the WORKTREE's dist while `trunk serve` owns MAIN's. Both guards are also plain string compares, so a symlink or a `./` spelling defeats them. Only bites if someone sets TBD_GATE_TRUNK_DIST; the defaults never collapse.
-
-6. `wave.sh:108` — `ensure_gate_db` runs `DROP DATABASE IF EXISTS tbd_gate_migrate WITH (FORCE)` at EVERY gate start. That is a third concurrency mechanism T-398 did not name: gate B's startup force-drops the DB gate A's db_migrate test is connected to. Now masked by the flock, but still destructive to any other consumer.
-
-7. `wave.sh:86-92` — `command -v distrobox-host-exec` also succeeds ON THE HOST, so running the gate from a host shell defines `hostrun` as the bridge and every step fails with "You must run distrobox-host-exec inside a container!", which `run()` reports as an ordinary step FAIL. Observed: 10/10 steps red that way. Repro: `distrobox-host-exec bash scripts/platform/wave.sh gate --slice T-392`. Worth a detection + named error, because 10/10 red reads as a catastrophically broken tree.
-
-8. NIT `wave.sh:471,476` — the 5-second freshness slack is unnecessary; `date +%s` truncates downward so `-newermt "@$t0"` is already safe.
-
-WHAT SURVIVED ATTACK, so nobody re-audits it: the verifier could not get PASS out of a fourth entry point — `gate T-999`, `gate HEAD`, `gate <HEAD-sha>`, `gate --slice T-392` on main, `gate --slice` with no id and `gate --wave` all refuse with rc 2, and `cmd_land` treats rc 2 as red so it fails safe. T-396's "complete write set" claim also held under independent sweep: gate builds wrote to `dist-gate-frontend/` and `target-gate-trunk/` and nowhere else, with shared `target/`, `~/.cache/trunk` and `~/.cargo/registry` all untouched and the dev server's dist unchanged. The post-build freshness guard cannot pass on a stale artifact — a second no-op build still rewrote both wasm outputs.
-
-UNVERIFIED, worth knowing: whether trunk writes outside the two private paths on a COLD `~/.cache/trunk`. It is currently populated (tailwindcss-4.3.2, wasm-bindgen-0.2.126, wasm-opt-version_123) and took no writes, but a tool-version bump in Trunk.toml would make it a shared download target. Test that before assuming isolation holds across a toolchain bump."""
+summary = "wave.sh residual hardening — the gate's remaining ways to be wrong about what it examined"
 class = "audit"
 status = "shipped"
 order = 3222
 executor = "claude-code"
 priority = 1
 estimated = ["scope"]
+migration_legacy = [
+    "Seven findings against `scripts/platform/wave.sh` from wave 2's slice agent and adversarial verifier. All MINOR/NIT individually; grouped because they are one file and one sitting, and because collectively they are the same theme this program keeps paying for — the gate being confidently wrong about its own coverage. None is currently reachable in the normal path; each is one small change away from being reachable.",
+    "",
+    "1. `wave.sh:36` — `ROOT` derives from `$0`, not `${BASH_SOURCE[0]}`. Sourced or piped, `$0` is `bash`, so ROOT becomes `cwd/../..`. MEASURED: `bash -c 'source .../wave.sh status'` from a scratch dir printed `open: 0 / 0 tickets` and `ALL WAVES COMPLETE` about a directory that is not the repo. Blast radius is `status`/`wave` only — the verifier specifically checked whether the new lock/private-path logic makes this worse and it does NOT: `MAIN_ROOT` (:50) comes from `git rev-parse --git-common-dir`, so the lock and gate dirs are correct whenever git resolves, and `cmd_gate` refuses at rev-parse/refuse_empty_range before `take_gate_lock` when it does not. There is no path where the gate locks the wrong place and reports PASS on the wrong tree.",
+    "",
+    """2. `wave.sh:555-563` — `take_gate_lock` degrades to UNSERIALISED on two of its three failure branches. Measured by extracting and running the function: lock path unwritable -> WARNING, **returns 0, gate proceeds**; flock not on PATH -> WARNING, **returns 0, gate proceeds**; held by another gate -> refuses with rc 2 (correct). The gate then prints `GATE: PASS` with the serialisation guarantee silently void. The commit's "REFUSES rather than degrading" is scoped to the wait, so this is a claim/behaviour gap rather than a lie — but the unwritable-path branch is reachable on a full disk, which `cmd_reclaim`'s own header records as having actually happened (252 MB free mid-wave).""",
+    "",
+    """3. `wave.sh:547,565` — "a killed gate cannot wedge the queue" is false in general. `exec 9>>` does not set close-on-exec, so any container-side descendant outliving the gate inherits the lock. Repro: `bash -c 'exec 9>>/t/l; flock -n 9; setsid sleep 45 & kill -9 $$'` then `flock -n /t/l -c true` fails. MITIGATED TODAY, and this was tested: `distrobox-host-exec` does not propagate fd 9 to the host, so every cargo/trunk step is safe. Cost if a future step ever backgrounds something container-side: every subsequent gate waits GATE_LOCK_MAX=3600 then refuses.""",
+    "",
+    '4. `wave.sh:272,307` — the closest thing to a fourth vacuity hole, deliberately NOT promoted. `fmt_changed` does `[ -f "$f" ] || continue` and `touch_changed` does `[ -f "$f" ] && touch "$f"`. A range whose Rust files were all deleted or renamed passes `refuse_empty_range` (the list is non-empty), then the fmt loop skips every entry and returns 0 — `fmt (changed) PASS` with rustfmt never invoked — and touch_changed invalidates no fingerprint, which is the only thing it exists to do. Judged low-risk because a pure-deletion slice must also edit a mod/use site which IS in the diff. `clippy_changed:345` has the sibling shape but at least prints `no crate resolved`.',
+    "",
+    """5. `wave.sh:454` — the dist collapse guard compares `GATE_TRUNK_DIST` against `"$ROOT/apps/website/frontend/dist"`, but from a worktree that is the WORKTREE's dist while `trunk serve` owns MAIN's. Both guards are also plain string compares, so a symlink or a `./` spelling defeats them. Only bites if someone sets TBD_GATE_TRUNK_DIST; the defaults never collapse.""",
+    "",
+    "6. `wave.sh:108` — `ensure_gate_db` runs `DROP DATABASE IF EXISTS tbd_gate_migrate WITH (FORCE)` at EVERY gate start. That is a third concurrency mechanism T-398 did not name: gate B's startup force-drops the DB gate A's db_migrate test is connected to. Now masked by the flock, but still destructive to any other consumer.",
+    "",
+    '7. `wave.sh:86-92` — `command -v distrobox-host-exec` also succeeds ON THE HOST, so running the gate from a host shell defines `hostrun` as the bridge and every step fails with "You must run distrobox-host-exec inside a container!", which `run()` reports as an ordinary step FAIL. Observed: 10/10 steps red that way. Repro: `distrobox-host-exec bash scripts/platform/wave.sh gate --slice T-392`. Worth a detection + named error, because 10/10 red reads as a catastrophically broken tree.',
+    "",
+    '8. NIT `wave.sh:471,476` — the 5-second freshness slack is unnecessary; `date +%s` truncates downward so `-newermt "@$t0"` is already safe.',
+    "",
+    """WHAT SURVIVED ATTACK, so nobody re-audits it: the verifier could not get PASS out of a fourth entry point — `gate T-999`, `gate HEAD`, `gate <HEAD-sha>`, `gate --slice T-392` on main, `gate --slice` with no id and `gate --wave` all refuse with rc 2, and `cmd_land` treats rc 2 as red so it fails safe. T-396's "complete write set" claim also held under independent sweep: gate builds wrote to `dist-gate-frontend/` and `target-gate-trunk/` and nowhere else, with shared `target/`, `~/.cache/trunk` and `~/.cargo/registry` all untouched and the dev server's dist unchanged. The post-build freshness guard cannot pass on a stale artifact — a second no-op build still rewrote both wasm outputs.""",
+    "",
+    "UNVERIFIED, worth knowing: whether trunk writes outside the two private paths on a COLD `~/.cache/trunk`. It is currently populated (tailwindcss-4.3.2, wasm-bindgen-0.2.126, wasm-opt-version_123) and took no writes, but a tool-version bump in Trunk.toml would make it a shared download target. Test that before assuming isolation holds across a toolchain bump.",
+]
 owns = ["scripts/platform/wave.sh"]
 
 [scope]

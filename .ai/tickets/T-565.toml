@@ -1,18 +1,20 @@
 id = "T-565"
 kind = "work"
 title = "T-562 Class-R still hollow — COALESCE needle in unrelated sqlx::query string"
-summary = """
-FOUND by W65 adversarial verifier (DIRTY MAJOR) after T-562.
-
-Drop the COALESCE UPDATE; replace with executed `sqlx::query("SELECT 1 -- SET arma_id = COALESCE(arma_id, $2) decoy")` → t534_dev_login_prime_literals_still_match_handler stays GREEN. Any sqlx::query("…") payload containing the needle is enough; need not be the first-create UPDATE.
-
-Repro: delete COALESCE UPDATE; add SELECT query string with needle in SQL comment; Class-R green."""
+summary = "T-562 Class-R still hollow — COALESCE needle in unrelated sqlx::query string"
 class = "chore"
 status = "shipped"
 order = 3418
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "FOUND by W65 adversarial verifier (DIRTY MAJOR) after T-562.",
+    "",
+    'Drop the COALESCE UPDATE; replace with executed `sqlx::query("SELECT 1 -- SET arma_id = COALESCE(arma_id, $2) decoy")` → t534_dev_login_prime_literals_still_match_handler stays GREEN. Any sqlx::query("…") payload containing the needle is enough; need not be the first-create UPDATE.',
+    "",
+    "Repro: delete COALESCE UPDATE; add SELECT query string with needle in SQL comment; Class-R green.",
+]
 owns = ["apps/website/api/tests/common/mod.rs"]
 
 [scope]

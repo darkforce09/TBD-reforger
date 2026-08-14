@@ -1,18 +1,20 @@
 id = "T-427"
 kind = "work"
 title = "Paginate or slim GET /registry and /registry/compat for editor first open"
-summary = """
-Follow-on from T-245 (wave 6). T-245 session-caches registry+compat so editor REMOUNTS skip the ~7MB dual fetch, but the first SPA open in a session still GETs both unpaginated endpoints and walks all compat edges for cargo_defaults_by_character.
-
-Repro: cold-load /missions/:id/edit; Network shows full GET /api/v1/registry and /api/v1/registry/compat (~1.8k items / ~20k edges). Remount within the same wasm session does not re-fetch (covered by t245_registry_session).
-
-Cure lives in API pagination / narrower endpoints + frontend DTO/client — outside T-245 owns (mission_editor.rs only)."""
+summary = "Paginate or slim GET /registry and /registry/compat for editor first open"
 class = "feature"
 status = "shipped"
 order = 3266
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "Follow-on from T-245 (wave 6). T-245 session-caches registry+compat so editor REMOUNTS skip the ~7MB dual fetch, but the first SPA open in a session still GETs both unpaginated endpoints and walks all compat edges for cargo_defaults_by_character.",
+    "",
+    "Repro: cold-load /missions/:id/edit; Network shows full GET /api/v1/registry and /api/v1/registry/compat (~1.8k items / ~20k edges). Remount within the same wasm session does not re-fetch (covered by t245_registry_session).",
+    "",
+    "Cure lives in API pagination / narrower endpoints + frontend DTO/client — outside T-245 owns (mission_editor.rs only).",
+]
 owns = [
     "apps/website/api/src/handlers/registry.rs",
     "apps/website/frontend/src/mission_editor.rs",

@@ -1,38 +1,40 @@
 id = "T-405"
 kind = "work"
 title = "T-391 closed the write boundary but not the live XSS — the frontend sink and stored rows are unremediated"
-summary = '''
-MAJOR, found by wave 2's adversarial verifier against merged main. THE TOP ITEM OF THIS BATCH. Do not read "T-391 shipped" as "the XSS is closed".
-
-T-391 added `is_http_url` and validates `aar_replay_url` at the write boundary in `upsert_match`. That half is genuinely solid — the verifier threw 40 adversarial inputs at the guard (case variants, interior tab/CR/LF/NUL, ZWSP/BOM/NBSP/soft-hyphen, `java%73cript:`, `data:`, `vbscript:`, `blob:`, `file:`, `//evil.com`, hostless `http://`) and found no scheme bypass, and confirmed by mutation testing that the 400 path stores nothing on BOTH the INSERT and UPDATE branches.
-
-WHAT IT DOES NOT DO, and its ticket title claims it does ("Live javascript: XSS via aar_replay_url"):
-  1. `apps/website/frontend/src/deployments.rs:471` still binds `href=replay` with NO scheme check. The sink is unchanged.
-  2. There is no backfill migration. Any row already holding a `javascript:` URL still executes on click.
-The verifier demonstrated the gap by neutering one line and putting two working payloads into `matches` in under five seconds; nothing shipped would remove them or refuse to render them.
-
-Ingress is now closed, so no NEW payload can arrive through the API, and the write tier is service-token (needs the game-server token) — which is why this is MAJOR and deferred rather than fixed in-wave. Residual risk is confined to rows written before the guard.
-
-THREE PIECES TO CLOSE IT:
-  a. Guard the render site. `deployments.rs:471` should refuse a non-http(s) href — belt and braces, because output-side defence is what survives a future writer that forgets the input guard.
-  b. Backfill migration: NULL out or quarantine any existing `matches.aar_replay_url` failing the same predicate. Check production, not just local DBs — the verifier could only check local.
-  c. Adopt the guard at the four remaining unguarded writers, all currently `<img src>` (weaker, browsers do not run javascript: in img src, but the guard is absent identically):
-       announcements.thumbnail_url — handlers/cms.rs:164 create, :260 update — admin tier — frontend/src/announcements.rs:295
-       events.banner_image_url     — handlers/events.rs:624 create, :1215 update — admin tier — frontend/src/events.rs:346
-       missions.thumbnail_url      — handlers/missions.rs:396 create, :509 update — create is mission_maker+, PATCH is AuthUser+ownership — frontend/src/missions.rs:402,:546,:912
-       users.avatar_url            — handlers/oauth.rs:119 — PUBLIC TIER — frontend/src/leaderboards.rs:200, layout.rs:230, settings.rs:192, event_hub.rs:1418
-
-RELATED, same family: `services/discord.rs:131-141` `format!`s Discord's raw `id` and `avatar` response strings into `https://cdn.discordapp.com/avatars/{id}/{avatar}.png` with no character validation, stored on a public-tier route. An `avatar` containing `../` or `?`/`#` yields a URL pointing off the intended CDN path. The trust boundary ("we trust Discord's API") is probably fine but is undocumented and unenforced.
-
-CONFIRMED NOT AN ISSUE: `modpacks.workshop_url` reaches an `<a href>` at `frontend/src/event_hub.rs:236` but has NO HTTP WRITER — `services/registry_import.rs:82`'s INSERT omits the column and there is no `UPDATE modpacks` anywhere in the API crate. Only operator psql seeds populate it. Genuinely latent. (`frontend/src/modpacks.rs:346` also renders it in an `<a href>` but that page is hardcoded MOCK_MODPACKS and never calls the API.)
-
-`is_http_url`'s DISCLAIMED non-promises, all deliberate and pinned by tests — do not treat them as bugs: not an SSRF guard (127.0.0.1, 169.254.169.254 pass), no domain allowlist, nothing about path/query/fragment, not an output encoder. Also accepted-by-design and worth knowing: `http:/\evil.com` normalises to `http://evil.com` (WHATWG backslash), `https://expected.com@evil.com/x`, `https://evil。com/x` (U+3002 folds to `.`), `http://2130706433/x` (= 127.0.0.1).'''
+summary = "T-391 closed the write boundary but not the live XSS — the frontend sink and stored rows are unremediated"
 class = "bug"
 status = "shipped"
 order = 3221
 executor = "claude-code"
 priority = 0
 estimated = ["scope"]
+migration_legacy = [
+    """MAJOR, found by wave 2's adversarial verifier against merged main. THE TOP ITEM OF THIS BATCH. Do not read "T-391 shipped" as "the XSS is closed".""",
+    "",
+    "T-391 added `is_http_url` and validates `aar_replay_url` at the write boundary in `upsert_match`. That half is genuinely solid — the verifier threw 40 adversarial inputs at the guard (case variants, interior tab/CR/LF/NUL, ZWSP/BOM/NBSP/soft-hyphen, `java%73cript:`, `data:`, `vbscript:`, `blob:`, `file:`, `//evil.com`, hostless `http://`) and found no scheme bypass, and confirmed by mutation testing that the 400 path stores nothing on BOTH the INSERT and UPDATE branches.",
+    "",
+    'WHAT IT DOES NOT DO, and its ticket title claims it does ("Live javascript: XSS via aar_replay_url"):',
+    "  1. `apps/website/frontend/src/deployments.rs:471` still binds `href=replay` with NO scheme check. The sink is unchanged.",
+    "  2. There is no backfill migration. Any row already holding a `javascript:` URL still executes on click.",
+    "The verifier demonstrated the gap by neutering one line and putting two working payloads into `matches` in under five seconds; nothing shipped would remove them or refuse to render them.",
+    "",
+    "Ingress is now closed, so no NEW payload can arrive through the API, and the write tier is service-token (needs the game-server token) — which is why this is MAJOR and deferred rather than fixed in-wave. Residual risk is confined to rows written before the guard.",
+    "",
+    "THREE PIECES TO CLOSE IT:",
+    "  a. Guard the render site. `deployments.rs:471` should refuse a non-http(s) href — belt and braces, because output-side defence is what survives a future writer that forgets the input guard.",
+    "  b. Backfill migration: NULL out or quarantine any existing `matches.aar_replay_url` failing the same predicate. Check production, not just local DBs — the verifier could only check local.",
+    "  c. Adopt the guard at the four remaining unguarded writers, all currently `<img src>` (weaker, browsers do not run javascript: in img src, but the guard is absent identically):",
+    "       announcements.thumbnail_url — handlers/cms.rs:164 create, :260 update — admin tier — frontend/src/announcements.rs:295",
+    "       events.banner_image_url     — handlers/events.rs:624 create, :1215 update — admin tier — frontend/src/events.rs:346",
+    "       missions.thumbnail_url      — handlers/missions.rs:396 create, :509 update — create is mission_maker+, PATCH is AuthUser+ownership — frontend/src/missions.rs:402,:546,:912",
+    "       users.avatar_url            — handlers/oauth.rs:119 — PUBLIC TIER — frontend/src/leaderboards.rs:200, layout.rs:230, settings.rs:192, event_hub.rs:1418",
+    "",
+    """RELATED, same family: `services/discord.rs:131-141` `format!`s Discord's raw `id` and `avatar` response strings into `https://cdn.discordapp.com/avatars/{id}/{avatar}.png` with no character validation, stored on a public-tier route. An `avatar` containing `../` or `?`/`#` yields a URL pointing off the intended CDN path. The trust boundary ("we trust Discord's API") is probably fine but is undocumented and unenforced.""",
+    "",
+    "CONFIRMED NOT AN ISSUE: `modpacks.workshop_url` reaches an `<a href>` at `frontend/src/event_hub.rs:236` but has NO HTTP WRITER — `services/registry_import.rs:82`'s INSERT omits the column and there is no `UPDATE modpacks` anywhere in the API crate. Only operator psql seeds populate it. Genuinely latent. (`frontend/src/modpacks.rs:346` also renders it in an `<a href>` but that page is hardcoded MOCK_MODPACKS and never calls the API.)",
+    "",
+    '''`is_http_url`'s DISCLAIMED non-promises, all deliberate and pinned by tests — do not treat them as bugs: not an SSRF guard (127.0.0.1, 169.254.169.254 pass), no domain allowlist, nothing about path/query/fragment, not an output encoder. Also accepted-by-design and worth knowing: `http:/\evil.com` normalises to `http://evil.com` (WHATWG backslash), `https://expected.com@evil.com/x`, `https://evil。com/x` (U+3002 folds to `.`), `http://2130706433/x` (= 127.0.0.1).''',
+]
 owns = [
     "apps/website/frontend/src/deployments.rs",
     "apps/website/api/src/handlers/cms.rs",

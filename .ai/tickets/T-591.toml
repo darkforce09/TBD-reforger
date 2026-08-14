@@ -1,31 +1,33 @@
 id = "T-591"
 kind = "work"
 title = "Mission upload cannot reach the API's real ceiling, and there is no streaming route"
-summary = """
-From T-117, which shipped the upload UI and was precise about where it had to stop.
-
-1. **The SPA refuses at 32 MiB; the API accepts 256 MB.** `missions.rs:1354` `UPLOAD_MAX_BYTES =
-   32 << 20` vs `DEFAULT_MISSION_VERSION_MAX_BODY_BYTES = 256 << 20`. **A legitimate 32-256 MB export
-   is refused client-side even though the server would take it.** The client limit is honestly
-   argued, not arbitrary: `api_post` takes an owned `serde_json::Value`, so a document exists in the
-   tab FOUR times over (JS string -> Rust String -> Value tree -> re-serialised body) on wasm32.
-2. **`client.rs` has no raw-body POST.** An `api_post_raw(store, path, body: String)` would roughly
-   halve peak memory and let the budget rise materially. One function, outside T-117's scope.
-3. **No streaming or multipart mission route exists** — `/cms/uploads` is the only multipart endpoint
-   in the crate. This is the only real fix for the ~367k-slot / hundreds-of-MB missions in this
-   codebase's own history, which **cannot** come through a browser JSON parse however the button is
-   written.
-4. **`POST /missions` is capped at 1 MiB** (`middleware/mod.rs:23` `MAX_JSON_BODY`), so "import a
-   document as a NEW mission" is structurally impossible at scale — upload has to target an existing
-   mission and add a version.
-5. **`GET /missions/:id/versions` is still 405** (no list route). T-282 flagged it; T-117 sharpens the
-   case, because the upload panel now writes versions the dossier still cannot list."""
+summary = "Mission upload cannot reach the API's real ceiling, and there is no streaming route"
 class = "bug"
 status = "shipped"
 order = 3452
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "From T-117, which shipped the upload UI and was precise about where it had to stop.",
+    "",
+    "1. **The SPA refuses at 32 MiB; the API accepts 256 MB.** `missions.rs:1354` `UPLOAD_MAX_BYTES =",
+    "   32 << 20` vs `DEFAULT_MISSION_VERSION_MAX_BODY_BYTES = 256 << 20`. **A legitimate 32-256 MB export",
+    "   is refused client-side even though the server would take it.** The client limit is honestly",
+    "   argued, not arbitrary: `api_post` takes an owned `serde_json::Value`, so a document exists in the",
+    "   tab FOUR times over (JS string -> Rust String -> Value tree -> re-serialised body) on wasm32.",
+    "2. **`client.rs` has no raw-body POST.** An `api_post_raw(store, path, body: String)` would roughly",
+    "   halve peak memory and let the budget rise materially. One function, outside T-117's scope.",
+    "3. **No streaming or multipart mission route exists** — `/cms/uploads` is the only multipart endpoint",
+    "   in the crate. This is the only real fix for the ~367k-slot / hundreds-of-MB missions in this",
+    "   codebase's own history, which **cannot** come through a browser JSON parse however the button is",
+    "   written.",
+    '4. **`POST /missions` is capped at 1 MiB** (`middleware/mod.rs:23` `MAX_JSON_BODY`), so "import a',
+    '   document as a NEW mission" is structurally impossible at scale — upload has to target an existing',
+    "   mission and add a version.",
+    "5. **`GET /missions/:id/versions` is still 405** (no list route). T-282 flagged it; T-117 sharpens the",
+    "   case, because the upload panel now writes versions the dossier still cannot list.",
+]
 owns = ["apps/website/frontend/src/client.rs"]
 
 [scope]

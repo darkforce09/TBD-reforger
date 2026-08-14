@@ -1,18 +1,20 @@
 id = "T-454"
 kind = "work"
 title = "wiki/modpacks/event_hub still one-shot has_min_role"
-summary = '''
-Residual from T-286 / wave 18 adversarial NIT. Mission Library now uses reactive `has_min_role_authed` (None=>false). wiki.rs / modpacks.rs / event_hub.rs still one-shot `store.has_min_role` (browse-mode None=>true). Behind AuthGate today so Mission-Library freeze is not reproduced, but the pattern debt remains.
-
-Repro: rg 'has_min_role\(' apps/website/frontend/src/{wiki,modpacks,event_hub}.rs — still browse-mode helper.
-
-Cure: switch action gates to `has_min_role_authed` + reactive Memo where affordances depend on role.'''
+summary = "wiki/modpacks/event_hub still one-shot has_min_role"
 class = "chore"
 status = "shipped"
 order = 3293
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "Residual from T-286 / wave 18 adversarial NIT. Mission Library now uses reactive `has_min_role_authed` (None=>false). wiki.rs / modpacks.rs / event_hub.rs still one-shot `store.has_min_role` (browse-mode None=>true). Behind AuthGate today so Mission-Library freeze is not reproduced, but the pattern debt remains.",
+    "",
+    '''Repro: rg 'has_min_role\(' apps/website/frontend/src/{wiki,modpacks,event_hub}.rs — still browse-mode helper.''',
+    "",
+    "Cure: switch action gates to `has_min_role_authed` + reactive Memo where affordances depend on role.",
+]
 owns = [
     "apps/website/frontend/src/wiki.rs",
     "apps/website/frontend/src/modpacks.rs",

@@ -1,18 +1,20 @@
 id = "T-453"
 kind = "work"
 title = "CI rust-backend fmt still misses workspace cargo fmt --all"
-summary = """
-Residual from T-297 / wave 18 adversarial MINOR. Local `make rust-fmt` now runs `cargo fmt --all --check`, but `.github/workflows/ci.yml` rust-backend still uses `working-directory: apps/website/api` + package-scoped `cargo fmt --check`, so GitHub CI can miss tbd-tools/xtask drift. Also `scripts/platform/wave.sh` still comments that `cargo fmt --all` is deliberately unused (stale).
-
-Repro: format-break tools/tbd-tools/src/lib.rs; local rust-fmt RED; push and watch CI rust-backend still GREEN if only api fmt runs.
-
-Cure: root/workspace fmt step in ci.yml (or drop working-directory for fmt); refresh wave.sh comment."""
+summary = "CI rust-backend fmt still misses workspace cargo fmt --all"
 class = "chore"
 status = "shipped"
 order = 3292
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "Residual from T-297 / wave 18 adversarial MINOR. Local `make rust-fmt` now runs `cargo fmt --all --check`, but `.github/workflows/ci.yml` rust-backend still uses `working-directory: apps/website/api` + package-scoped `cargo fmt --check`, so GitHub CI can miss tbd-tools/xtask drift. Also `scripts/platform/wave.sh` still comments that `cargo fmt --all` is deliberately unused (stale).",
+    "",
+    "Repro: format-break tools/tbd-tools/src/lib.rs; local rust-fmt RED; push and watch CI rust-backend still GREEN if only api fmt runs.",
+    "",
+    "Cure: root/workspace fmt step in ci.yml (or drop working-directory for fmt); refresh wave.sh comment.",
+]
 owns = [
     ".github/workflows/ci.yml",
     "scripts/platform/wave.sh",

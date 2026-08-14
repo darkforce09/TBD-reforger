@@ -1,13 +1,14 @@
 id = "T-708"
 kind = "work"
 title = "capture shot: hang-fallback latency regressed 25s to 130s"
-summary = "tools/tbd-tools/src/capture.rs shoot() takes Page.captureScreenshot through page.send's 130s default timeout; the deleted cdp2.mjs gave that call its own 25s deadline so the fromSurface:true wedge (the case the fallback chain exists for) fell through in 25s. Parity of order/params/labels is proven; only the deadline regressed — worst-case wedge now 5.2x slower before the fromSurface:false and jpeg fallbacks fire. Fix: send_with_timeout(25s) on the first attempt (cdp.rs already exposes the machinery). Diagnosis: editor_verify/wave100.md F-3."
+summary = "capture shot: hang-fallback latency regressed 25s to 130s"
 class = "bug"
 status = "deferred"
 order = 4301
 executor = "claude-code"
 notes = "filed by wave-100 adversarial verifier (editor factory)"
 estimated = ["scope"]
+migration_legacy = ["tools/tbd-tools/src/capture.rs shoot() takes Page.captureScreenshot through page.send's 130s default timeout; the deleted cdp2.mjs gave that call its own 25s deadline so the fromSurface:true wedge (the case the fallback chain exists for) fell through in 25s. Parity of order/params/labels is proven; only the deadline regressed — worst-case wedge now 5.2x slower before the fromSurface:false and jpeg fallbacks fire. Fix: send_with_timeout(25s) on the first attempt (cdp.rs already exposes the machinery). Diagnosis: editor_verify/wave100.md F-3."]
 
 [scope]
 domain = "website"

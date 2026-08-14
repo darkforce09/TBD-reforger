@@ -1,12 +1,13 @@
 id = "T-285"
 kind = "work"
 title = "Field tools — solutions never persist and inject writes to a dead directory"
-summary = "POST /fire-missions and GET /events/{id}/fire-missions are orphaned, so every computed solution is lost on reload. The mortar map preview is fixed CSS that never moves with the inputs, and weapon_system is hardcoded while the heading claims to show the returned system. POST /missions/{id}/inject writes a mission.json nothing reads."
+summary = "Field tools — solutions never persist and inject writes to a dead directory"
 class = "bug"
 status = "shipped"
 order = 3030
 executor = "claude-code"
 estimated = ["scope"]
+migration_legacy = ["POST /fire-missions and GET /events/{id}/fire-missions are orphaned, so every computed solution is lost on reload. The mortar map preview is fixed CSS that never moves with the inputs, and weapon_system is hardcoded while the heading claims to show the returned system. POST /missions/{id}/inject writes a mission.json nothing reads."]
 owns = ["apps/website/frontend/src/mortar.rs"]
 
 [scope]

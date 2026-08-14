@@ -1,24 +1,7 @@
 id = "T-365"
 kind = "work"
 title = "mortar.rs still asserts the silent weapon fallback as intended behaviour"
-summary = """
-HANDOFF from T-349, which could not reach this file. T-349 guarded the boundary in field_tools.rs by comparing the weapon solve_fire_mission RETURNS against the one requested — deliberately avoiding a duplicate weapon table, which would have planted the exact drift T-347 closed. That works, but it is indirect and it should not have to be.
-
-  services/mortar.rs:46-52 — the `None` arm that substitutes DEFAULT_MORTAR. Preferred fix: make solve_fire_mission return `Result<FireSolution, SolveError>` with distinct UnknownWeapon and OutOfRange variants, deleting the arm entirely. Fallback if that ripples too far: `pub fn is_known_weapon(&str) -> bool`.
-  services/mortar.rs:21 — DEFAULT_MORTAR loses its only caller either way.
-  services/mortar.rs:126-131 — `unknown_weapon_falls_back` currently ASSERTS THE SUBSTITUTION AS INTENDED BEHAVIOUR. That test is precisely why this is mortar.rs's decision and not T-349's, and it must be rewritten rather than deleted: the replacement should assert the error.
-
-Context that makes the severity concrete: a 120mm crew mistyping its own tube got the 81mm solution, 72 mils low, on a 200. And the live SPA had been sending an invalid key for the feature's entire life without anyone noticing, because the fallback happened to be the weapon that page displays.
-
-SHIPPED. It chose Result<FireSolution, SolveError> over the is_known_weapon fallback, and the reason is the good part: a predicate would have LEFT THE None ARM IN PLACE, so 'solve without checking' stays SPELLABLE — and that spelling is precisely what shipped this bug for the feature's whole life. The Result also makes T-349's ordering STRUCTURAL rather than conventional: an unknown weapon never reaches the charge loop, so no range verdict exists to report first. OutOfRange(FireSolution) carries the partial solution because field_tools serialises it into the 422 details — dropping it would have changed the wire.
-
-DEFAULT_MORTAR DELETED, and 'keep it as a UI default' refused as fiction: website-frontend has no dependency on website-api (verified in Cargo.toml), so no UI could ever reach it.
-
-KNOWN WEAPONS BIT-IDENTICAL: a 17-case table across all four tubes dumped with raw f64 bit patterns, pre-fix and post-fix files sharing the same sha256. The diff of the whole arithmetic region is three lines, none of them arithmetic. That matters because this is ballistics — a fix that shifts a correct solution by one mil is worse than the bug.
-
-THE TEST WAS REWRITTEN IN PLACE, not deleted: unknown_weapon_falls_back -> unknown_weapon_is_refused_not_substituted, with a doc comment recording that it PREVIOUSLY ASSERTED THE SUBSTITUTION AS INTENDED BEHAVIOUR. Four more added, including one pinning the 1300/1228 pair AND that their difference is 72 mils.
-
-T-349's guard live-verified on a real binary including the composite case — unknown AND out of range returns 400, not 422. Its weapon comparison is now UNREACHABLE (sol.weapon_system is always the requested weapon); left in place per brief with a note marking it safe to collapse later."""
+summary = "mortar.rs still asserts the silent weapon fallback as intended behaviour"
 class = "bug"
 status = "shipped"
 order = 3181
@@ -26,6 +9,25 @@ executor = "claude-code"
 priority = 1
 shipped_at = "c789ac0c"
 estimated = ["scope"]
+migration_legacy = [
+    "HANDOFF from T-349, which could not reach this file. T-349 guarded the boundary in field_tools.rs by comparing the weapon solve_fire_mission RETURNS against the one requested — deliberately avoiding a duplicate weapon table, which would have planted the exact drift T-347 closed. That works, but it is indirect and it should not have to be.",
+    "",
+    "  services/mortar.rs:46-52 — the `None` arm that substitutes DEFAULT_MORTAR. Preferred fix: make solve_fire_mission return `Result<FireSolution, SolveError>` with distinct UnknownWeapon and OutOfRange variants, deleting the arm entirely. Fallback if that ripples too far: `pub fn is_known_weapon(&str) -> bool`.",
+    "  services/mortar.rs:21 — DEFAULT_MORTAR loses its only caller either way.",
+    "  services/mortar.rs:126-131 — `unknown_weapon_falls_back` currently ASSERTS THE SUBSTITUTION AS INTENDED BEHAVIOUR. That test is precisely why this is mortar.rs's decision and not T-349's, and it must be rewritten rather than deleted: the replacement should assert the error.",
+    "",
+    "Context that makes the severity concrete: a 120mm crew mistyping its own tube got the 81mm solution, 72 mils low, on a 200. And the live SPA had been sending an invalid key for the feature's entire life without anyone noticing, because the fallback happened to be the weapon that page displays.",
+    "",
+    "SHIPPED. It chose Result<FireSolution, SolveError> over the is_known_weapon fallback, and the reason is the good part: a predicate would have LEFT THE None ARM IN PLACE, so 'solve without checking' stays SPELLABLE — and that spelling is precisely what shipped this bug for the feature's whole life. The Result also makes T-349's ordering STRUCTURAL rather than conventional: an unknown weapon never reaches the charge loop, so no range verdict exists to report first. OutOfRange(FireSolution) carries the partial solution because field_tools serialises it into the 422 details — dropping it would have changed the wire.",
+    "",
+    "DEFAULT_MORTAR DELETED, and 'keep it as a UI default' refused as fiction: website-frontend has no dependency on website-api (verified in Cargo.toml), so no UI could ever reach it.",
+    "",
+    "KNOWN WEAPONS BIT-IDENTICAL: a 17-case table across all four tubes dumped with raw f64 bit patterns, pre-fix and post-fix files sharing the same sha256. The diff of the whole arithmetic region is three lines, none of them arithmetic. That matters because this is ballistics — a fix that shifts a correct solution by one mil is worse than the bug.",
+    "",
+    "THE TEST WAS REWRITTEN IN PLACE, not deleted: unknown_weapon_falls_back -> unknown_weapon_is_refused_not_substituted, with a doc comment recording that it PREVIOUSLY ASSERTED THE SUBSTITUTION AS INTENDED BEHAVIOUR. Four more added, including one pinning the 1300/1228 pair AND that their difference is 72 mils.",
+    "",
+    "T-349's guard live-verified on a real binary including the composite case — unknown AND out of range returns 400, not 422. Its weapon comparison is now UNREACHABLE (sol.weapon_system is always the requested weapon); left in place per brief with a note marking it safe to collapse later.",
+]
 owns = ["apps/website/api/src/services/mortar.rs"]
 
 [scope]

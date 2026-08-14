@@ -1,13 +1,14 @@
 id = "T-508"
 kind = "work"
 title = "W43 hotfix: aar_replay_url_backfill IT vs T-331 NOT NULL"
-summary = "Wave 43 cold gate FAIL. T-331 migration 0015 SET NOT NULL on matches.aar_replay_url (canonical empty is ''). tests/aar_replay_url_backfill.rs still plants NULL and expects migration 0010 to SET NULL for scrubbed rows — INSERT fails 23502. Cure: align 0010 scrub target to '' (same canonical empty as T-331/telemetry COALESCE), rewrite the IT plant/assert for NOT NULL (prove NULL insert rejected; scrubbed rows become '' not NULL; kept '' still kept). Do not weaken 0015. Perturbation RED required."
+summary = "W43 hotfix: aar_replay_url_backfill IT vs T-331 NOT NULL"
 class = "chore"
 status = "shipped"
 order = 3348
 executor = "claude-code"
 priority = 0
 estimated = ["scope"]
+migration_legacy = ["Wave 43 cold gate FAIL. T-331 migration 0015 SET NOT NULL on matches.aar_replay_url (canonical empty is ''). tests/aar_replay_url_backfill.rs still plants NULL and expects migration 0010 to SET NULL for scrubbed rows — INSERT fails 23502. Cure: align 0010 scrub target to '' (same canonical empty as T-331/telemetry COALESCE), rewrite the IT plant/assert for NOT NULL (prove NULL insert rejected; scrubbed rows become '' not NULL; kept '' still kept). Do not weaken 0015. Perturbation RED required."]
 owns = [
     "apps/website/api/tests/aar_replay_url_backfill.rs",
     "apps/website/api/migrations/0010_backfill_aar_replay_url_scheme.sql",

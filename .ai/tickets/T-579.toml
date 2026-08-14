@@ -1,29 +1,31 @@
 id = "T-579"
 kind = "work"
 title = "Post-wave-69 UI honesty: dead RCON success path, and a delete dialog that still lies"
-summary = """
-Two frontend items from wave 69, neither a regression, both cosmetic-but-dishonest.
-
-1. MINOR -- dead code after T-269 flipped RCON to 503. `frontend/src/server_control.rs:116`
-   `rcon_accepted_message` ("RCON accepted ... transport pending T-269"), the `Ok(resp)` arm at
-   `:313`, and the `RconAccepted` DTO at `:21` are all UNREACHABLE now that the API never returns
-   2xx for RCON. T-269's agent flagged this itself. VERIFIED SAFE by the verifier: `busy.set(false)`
-   runs on both branches (`:324`) so there is no stuck spinner, and the 503 message surfaces
-   honestly via a toast. Delete the dead path, or leave it and say why in a comment.
-
-2. NIT -- `frontend/src/event_manager.rs:985` still promises that deleting an event removes "its
-   attached missions' ORBATs, and all registrations ... This cannot be undone." It does not:
-   `handlers/events.rs:1380` sets `deleted_at = now()` and nothing else. Driven by the verifier:
-   DELETE /events -> 204, `deleted_at` set, `event_missions` SURVIVE, CASCADE never fires.
-   Pre-existing. T-262's constraint 1 means the cascade is already correct for the day that handler
-   becomes a hard delete -- but today the dialog is wrong. Either fix the copy or make the handler
-   match it; decide which, do not leave both."""
+summary = "Post-wave-69 UI honesty: dead RCON success path, and a delete dialog that still lies"
 class = "bug"
 status = "shipped"
 order = 3423
 executor = "claude-code"
 priority = 3
 estimated = ["scope"]
+migration_legacy = [
+    "Two frontend items from wave 69, neither a regression, both cosmetic-but-dishonest.",
+    "",
+    "1. MINOR -- dead code after T-269 flipped RCON to 503. `frontend/src/server_control.rs:116`",
+    '   `rcon_accepted_message` ("RCON accepted ... transport pending T-269"), the `Ok(resp)` arm at',
+    "   `:313`, and the `RconAccepted` DTO at `:21` are all UNREACHABLE now that the API never returns",
+    "   2xx for RCON. T-269's agent flagged this itself. VERIFIED SAFE by the verifier: `busy.set(false)`",
+    "   runs on both branches (`:324`) so there is no stuck spinner, and the 503 message surfaces",
+    "   honestly via a toast. Delete the dead path, or leave it and say why in a comment.",
+    "",
+    '2. NIT -- `frontend/src/event_manager.rs:985` still promises that deleting an event removes "its',
+    """   attached missions' ORBATs, and all registrations ... This cannot be undone." It does not:""",
+    "   `handlers/events.rs:1380` sets `deleted_at = now()` and nothing else. Driven by the verifier:",
+    "   DELETE /events -> 204, `deleted_at` set, `event_missions` SURVIVE, CASCADE never fires.",
+    "   Pre-existing. T-262's constraint 1 means the cascade is already correct for the day that handler",
+    "   becomes a hard delete -- but today the dialog is wrong. Either fix the copy or make the handler",
+    "   match it; decide which, do not leave both.",
+]
 owns = [
     "apps/website/frontend/src/server_control.rs",
     "apps/website/frontend/src/event_manager.rs",

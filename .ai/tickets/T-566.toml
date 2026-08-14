@@ -1,18 +1,20 @@
 id = "T-566"
 kind = "work"
 title = "T-387 Class-R hollow — comment-arm / ignore-helper still greens (live IT covers)"
-summary = """
-FOUND by W65 adversarial verifier (DIRTY MAJOR) after T-387.
-
-t387_dev_login_roles_use_distinct_discord_ids stays GREEN if live match arms are moved into // comments and match collapses to DEV_USER_ID, or if discord_id = DEV_USER_ID while helpers remain as dead code. Live IT t387_dev_login_roles_do_not_rewrite_each_other goes RED on both (product covered when ITs run; Class-R is not).
-
-Repro: collapse discord_id_for_role to always DEV_USER_ID but leave old arms in comments; Class-R green; live IT red."""
+summary = "T-387 Class-R hollow — comment-arm / ignore-helper still greens (live IT covers)"
 class = "feature"
 status = "shipped"
 order = 3419
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "FOUND by W65 adversarial verifier (DIRTY MAJOR) after T-387.",
+    "",
+    "t387_dev_login_roles_use_distinct_discord_ids stays GREEN if live match arms are moved into // comments and match collapses to DEV_USER_ID, or if discord_id = DEV_USER_ID while helpers remain as dead code. Live IT t387_dev_login_roles_do_not_rewrite_each_other goes RED on both (product covered when ITs run; Class-R is not).",
+    "",
+    "Repro: collapse discord_id_for_role to always DEV_USER_ID but leave old arms in comments; Class-R green; live IT red.",
+]
 owns = ["apps/website/api/tests/misc_integration.rs"]
 
 [scope]

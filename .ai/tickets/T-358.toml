@@ -1,40 +1,42 @@
 id = "T-358"
 kind = "work"
 title = "factions.rs defeats its own unique index, and both sweeps were structurally blind to it"
-summary = '''
-THE MISSED INSTANCE. Seven shipped tickets and six filed ones (T-346..T-351) all enumerate this bug class, and NONE of them names apps/website/api/src/handlers/factions.rs.
-
-WHY BOTH SWEEPS MISSED IT, which is the interesting part: it is the ONLY handler in the crate that takes a raw `Json<Value>` body (:87, :114) and delegates all required-field and emptiness validation to JSON Schema. So it has ZERO #[serde(default)] — invisible to the T-218/T-315..T-319 sweep — and ZERO string is_empty() — invisible to T-343's 100-site enumeration. Its one is_empty() (:29) is on `details: Vec<String>`, so a mechanical pass saw the file, classified that site as benign, and emitted nothing. It also has zero trim(). A file can be swept twice and still be unexamined.
-
-THE DEFECT: `name` is projected out at :37 with `as_str().unwrap_or_default().to_string()` — no trim, no emptiness check — and bound untrimmed into three places, one of which is a UNIQUE KEY:
-  :93-94 INSERT ... ON CONFLICT (owner_id, name) DO NOTHING
-  :121   SELECT id FROM user_factions WHERE owner_id = $1 AND name = $2 AND id <> $3  (clash check)
-  :140   UPDATE ... SET name = $2
-backed by migrations/0006_user_factions.sql:16-17 CREATE UNIQUE INDEX idx_user_factions_owner_name.
-
-The only server-side guard is "minLength": 1 at packages/tbd-schema/schema/faction-library.schema.json:17 — a LENGTH check, not a CONTENT check, with no pattern. Verified against the real schema: "   ", a single tab, a single newline, and "Soviet Army 1980s " all validate. So POST with name "\t" returns 201 with a faction whose entire display name is a tab; and POST "USA" then "USA " returns 201 TWICE — ON CONFLICT never fires because the byte strings differ, and the :121 clash check misses for the same reason, silently bypassing the 409 at :103.
-
-IT DEFEATS A GATE THAT ALREADY EXISTS: tests/factions.rs:136-145 case T4 asserts a duplicate name returns CONFLICT. One trailing space turns that assertion's subject into a 201. Exactly T-351's complaint about arma_id — the test only ever posts clean values, so nothing pins it.
-
-THE FIRST-PARTY SPA IS THE DELIVERY VECTOR: frontend/src/faction_manager.rs:92 already has the CORRECT guard (`doc.name.trim().is_empty()`) but only CHECKS — :106 then serialises the UNTRIMMED name. Typing a trailing space passes the client guard and ships the padding. Same second defect T-343 called out for warn_user: the platform normalises the same operator text two different ways depending which side you ask.
-
-SEVERITY BOUND, checked rather than assumed — this is NOT T-346-class. The ORBAT/mission-doc faction key derives from `side`, not `name` (editor_ops.rs:1139-1145 `format!("faction-{side}")` and :1536 `f.key == side`), and `side` is enum-constrained so padding is rejected there. orbat_manager.rs:228 selects library rows by UUID and only LABELS with name. The sole equality comparison on user_factions.name anywhere in the repo is factions.rs:121 itself. So there is no clobber and no cross-table join collapse. The harm is a defeated unique constraint, two palette rows whose labels render IDENTICALLY because HTML collapses whitespace (so the operator cannot tell them apart or know which one an edit hit), and a padded name propagating into the mission doc at orbat_manager.rs:319 and :377.
-
-FIX DIRECTION: the DO-NOT-NAIVELY-TRIM warning does NOT bind here — `name` has no other side to disagree with. But T-346's SHAPE argument does: a trim-only fix leaves name "\t" reachable, because that is a content problem, not a padding problem. Both halves are needed — reject a name empty after trimming, AND reject one not equal to its trimmed form — or normalise at the single :37 projection point. Add the test that tests/factions.rs:136-145 is missing.
-
-LOAD-BEARING FOR WHOEVER FIXES THIS, from the adversarial verifier: adopting the generated contract type closes only HALF. `TbdFactionLibraryEntryName` (contract/generated/faction_library.rs:1089-1100) rejects len < 1 but does NOT TRIM — "\t" still passes. A fix that swaps in the generated type and stops there leaves the padding half open.
-
-AND THE MECHANISM THAT HID THIS IS STILL LIVE, which is the more general finding: contract/generated/mod.rs declares five modules under a blanket #[allow(clippy::all, dead_code)] and only two are referenced anywhere. faction_library.rs (1282 lines), mission_editor.rs and loadout.rs are DEAD. So for the two HTTP write paths that have a schema at all, a typed, serde-enforcing, CI-drift-gated projection ALREADY EXISTS and is bypassed in favour of the runtime jsonschema validator — which is exactly why factions.rs has zero #[serde(default)] for a grep to find. Consider whether adopting the generated types is the real fix for the whole class rather than patching this one handler.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.'''
+summary = "factions.rs defeats its own unique index, and both sweeps were structurally blind to it"
 class = "bug"
 status = "shipped"
 order = 3174
 executor = "claude-code"
 priority = 1
 estimated = ["scope"]
+migration_legacy = [
+    "THE MISSED INSTANCE. Seven shipped tickets and six filed ones (T-346..T-351) all enumerate this bug class, and NONE of them names apps/website/api/src/handlers/factions.rs.",
+    "",
+    "WHY BOTH SWEEPS MISSED IT, which is the interesting part: it is the ONLY handler in the crate that takes a raw `Json<Value>` body (:87, :114) and delegates all required-field and emptiness validation to JSON Schema. So it has ZERO #[serde(default)] — invisible to the T-218/T-315..T-319 sweep — and ZERO string is_empty() — invisible to T-343's 100-site enumeration. Its one is_empty() (:29) is on `details: Vec<String>`, so a mechanical pass saw the file, classified that site as benign, and emitted nothing. It also has zero trim(). A file can be swept twice and still be unexamined.",
+    "",
+    "THE DEFECT: `name` is projected out at :37 with `as_str().unwrap_or_default().to_string()` — no trim, no emptiness check — and bound untrimmed into three places, one of which is a UNIQUE KEY:",
+    "  :93-94 INSERT ... ON CONFLICT (owner_id, name) DO NOTHING",
+    "  :121   SELECT id FROM user_factions WHERE owner_id = $1 AND name = $2 AND id <> $3  (clash check)",
+    "  :140   UPDATE ... SET name = $2",
+    "backed by migrations/0006_user_factions.sql:16-17 CREATE UNIQUE INDEX idx_user_factions_owner_name.",
+    "",
+    'The only server-side guard is "minLength": 1 at packages/tbd-schema/schema/faction-library.schema.json:17 — a LENGTH check, not a CONTENT check, with no pattern. Verified against the real schema: "   ", a single tab, a single newline, and "Soviet Army 1980s " all validate. So POST with name "\t" returns 201 with a faction whose entire display name is a tab; and POST "USA" then "USA " returns 201 TWICE — ON CONFLICT never fires because the byte strings differ, and the :121 clash check misses for the same reason, silently bypassing the 409 at :103.',
+    "",
+    "IT DEFEATS A GATE THAT ALREADY EXISTS: tests/factions.rs:136-145 case T4 asserts a duplicate name returns CONFLICT. One trailing space turns that assertion's subject into a 201. Exactly T-351's complaint about arma_id — the test only ever posts clean values, so nothing pins it.",
+    "",
+    "THE FIRST-PARTY SPA IS THE DELIVERY VECTOR: frontend/src/faction_manager.rs:92 already has the CORRECT guard (`doc.name.trim().is_empty()`) but only CHECKS — :106 then serialises the UNTRIMMED name. Typing a trailing space passes the client guard and ships the padding. Same second defect T-343 called out for warn_user: the platform normalises the same operator text two different ways depending which side you ask.",
+    "",
+    'SEVERITY BOUND, checked rather than assumed — this is NOT T-346-class. The ORBAT/mission-doc faction key derives from `side`, not `name` (editor_ops.rs:1139-1145 `format!("faction-{side}")` and :1536 `f.key == side`), and `side` is enum-constrained so padding is rejected there. orbat_manager.rs:228 selects library rows by UUID and only LABELS with name. The sole equality comparison on user_factions.name anywhere in the repo is factions.rs:121 itself. So there is no clobber and no cross-table join collapse. The harm is a defeated unique constraint, two palette rows whose labels render IDENTICALLY because HTML collapses whitespace (so the operator cannot tell them apart or know which one an edit hit), and a padded name propagating into the mission doc at orbat_manager.rs:319 and :377.',
+    "",
+    '''FIX DIRECTION: the DO-NOT-NAIVELY-TRIM warning does NOT bind here — `name` has no other side to disagree with. But T-346's SHAPE argument does: a trim-only fix leaves name "\t" reachable, because that is a content problem, not a padding problem. Both halves are needed — reject a name empty after trimming, AND reject one not equal to its trimmed form — or normalise at the single :37 projection point. Add the test that tests/factions.rs:136-145 is missing.''',
+    "",
+    'LOAD-BEARING FOR WHOEVER FIXES THIS, from the adversarial verifier: adopting the generated contract type closes only HALF. `TbdFactionLibraryEntryName` (contract/generated/faction_library.rs:1089-1100) rejects len < 1 but does NOT TRIM — "\t" still passes. A fix that swaps in the generated type and stops there leaves the padding half open.',
+    "",
+    "AND THE MECHANISM THAT HID THIS IS STILL LIVE, which is the more general finding: contract/generated/mod.rs declares five modules under a blanket #[allow(clippy::all, dead_code)] and only two are referenced anywhere. faction_library.rs (1282 lines), mission_editor.rs and loadout.rs are DEAD. So for the two HTTP write paths that have a schema at all, a typed, serde-enforcing, CI-drift-gated projection ALREADY EXISTS and is bypassed in favour of the runtime jsonschema validator — which is exactly why factions.rs has zero #[serde(default)] for a grep to find. Consider whether adopting the generated types is the real fix for the whole class rather than patching this one handler.",
+    "",
+    "== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==",
+    "Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.",
+    "This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.",
+]
 owns = [
     "apps/website/api/src/handlers/factions.rs",
     "apps/website/api/tests/factions.rs",

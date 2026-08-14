@@ -1,13 +1,14 @@
 id = "T-524"
 kind = "work"
 title = "T-505 compile.rs KNOWN keys / hydrate-title comment lockstep"
-summary = "Wave 46 verifier NIT. After T-505, store.rs loads payload title and lists title as known, but crates/map-engine-core/src/mission/compile.rs still omits title from KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS and retains stale T-375 comment that hydrate does not load title. Cure: add title to known keys + fix comment."
+summary = "T-505 compile.rs KNOWN keys / hydrate-title comment lockstep"
 class = "bug"
 status = "shipped"
 order = 3364
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = ["Wave 46 verifier NIT. After T-505, store.rs loads payload title and lists title as known, but crates/map-engine-core/src/mission/compile.rs still omits title from KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS and retains stale T-375 comment that hydrate does not load title. Cure: add title to known keys + fix comment."]
 owns = ["crates/map-engine-core/src/mission/compile.rs"]
 
 [scope]

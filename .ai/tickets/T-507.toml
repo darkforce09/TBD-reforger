@@ -1,13 +1,14 @@
 id = "T-507"
 kind = "work"
 title = "Faction manager posts untrimmed name after trim-empty check"
-summary = "Wave 42 residual (CLEAN MINOR / admitted by T-358). faction_manager.rs rejects empty via doc.name.trim().is_empty() then posts serde_json::to_value(&doc) untrimmed. API validated_side_name rejects pad → 400; no UNIQUE twin stored. UX only: client lets pad through, API stops it. Cure: trim (or reject pad) before serialize on create/update."
+summary = "Faction manager posts untrimmed name after trim-empty check"
 class = "docs"
 status = "shipped"
 order = 3347
 executor = "claude-code"
 priority = 1
 estimated = ["scope"]
+migration_legacy = ["Wave 42 residual (CLEAN MINOR / admitted by T-358). faction_manager.rs rejects empty via doc.name.trim().is_empty() then posts serde_json::to_value(&doc) untrimmed. API validated_side_name rejects pad → 400; no UNIQUE twin stored. UX only: client lets pad through, API stops it. Cure: trim (or reject pad) before serialize on create/update."]
 owns = ["apps/website/frontend/src/faction_manager.rs"]
 
 [scope]

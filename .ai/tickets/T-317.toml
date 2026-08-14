@@ -1,7 +1,7 @@
 id = "T-317"
 kind = "work"
 title = "Ban reason erased on re-ban; malformed body still bans"
-summary = "FOUND by T-218's sweep. handlers/admin.rs:168 collapses the JsonRejection instead of returning 400, so a malformed or wrong-Content-Type body still executes `UPDATE users SET is_banned=true, ban_reason=$1` with an empty reason — erasing a prior reason on re-ban and leaving an unexplained ban in the audit trail. Two-part fix: `map_err` the extractor like the other ~25 handlers in the crate, AND drop the #[serde(default)] on BanInput.reason at :155 — a well-formed `{}` does the same damage. Same pattern T-218 closed in approvals.rs; this is the last extractor-collapse site."
+summary = "Ban reason erased on re-ban; malformed body still bans"
 class = "bug"
 status = "shipped"
 order = 3133
@@ -9,6 +9,7 @@ executor = "claude-code"
 priority = 1
 shipped_at = "62a804e4"
 estimated = ["scope"]
+migration_legacy = ["FOUND by T-218's sweep. handlers/admin.rs:168 collapses the JsonRejection instead of returning 400, so a malformed or wrong-Content-Type body still executes `UPDATE users SET is_banned=true, ban_reason=$1` with an empty reason — erasing a prior reason on re-ban and leaving an unexplained ban in the audit trail. Two-part fix: `map_err` the extractor like the other ~25 handlers in the crate, AND drop the #[serde(default)] on BanInput.reason at :155 — a well-formed `{}` does the same damage. Same pattern T-218 closed in approvals.rs; this is the last extractor-collapse site."]
 owns = [
     "apps/website/api/src/handlers/admin.rs",
     "apps/website/api/tests/admin_field.rs",

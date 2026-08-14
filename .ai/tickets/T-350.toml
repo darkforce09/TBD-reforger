@@ -1,28 +1,30 @@
 id = "T-350"
 kind = "work"
 title = "Four sites report an identity as linked when it is whitespace"
-summary = """
-FOUND by T-343. auth.rs:165, oauth.rs:152, me.rs:77 and me.rs:160 all gate "linked" on `Option::is_some()` with no content check. A legacy whitespace row therefore reads as LINKED at all four and RESOLVES at none — the exact silent-uselessness T-326 found, surviving in the read path after T-326 fixed the write path.
-
-Related and in the same family: events.rs:2039 — the roster guards `u.arma_id <> ''` rather than `btrim(...) <> ''` and emits the value verbatim as the seating key at :2050, while all five other arma_id sites trim. Latent for rows written today, live for anything predating T-326.
-
-Also: deployments.rs:241 `submit_leave.reason` has no guard — the fourth `reason` field in this family after T-218, T-317 and T-343.
-
-══ DO NOT NAIVELY TRIM — two sites where a one-sided trim CREATES the catastrophe ══
-T-343 found these and they bind on any ticket in this family:
-  events.rs:1735 — orbat_reservations.squad must stay BYTE-IDENTICAL to orbat_slots.squad, which is written untrimmed by crates/map-engine-core/src/mission/orbat.rs:163.
-  events.rs:1923 — must mirror `or_fallback` at crates/map-engine-core/src/mission/flatten.rs:626. Disagreement means the seat VANISHES, the assignment round-robins, and the request still returns 200.
-Trimming on write and trimming on read must agree. T-326's bug was not an untrimmed value per se — it was a DISAGREEMENT between two sites. Check both halves before changing either.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now."""
+summary = "Four sites report an identity as linked when it is whitespace"
 class = "bug"
 status = "shipped"
 order = 3166
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    'FOUND by T-343. auth.rs:165, oauth.rs:152, me.rs:77 and me.rs:160 all gate "linked" on `Option::is_some()` with no content check. A legacy whitespace row therefore reads as LINKED at all four and RESOLVES at none — the exact silent-uselessness T-326 found, surviving in the read path after T-326 fixed the write path.',
+    "",
+    "Related and in the same family: events.rs:2039 — the roster guards `u.arma_id <> ''` rather than `btrim(...) <> ''` and emits the value verbatim as the seating key at :2050, while all five other arma_id sites trim. Latent for rows written today, live for anything predating T-326.",
+    "",
+    "Also: deployments.rs:241 `submit_leave.reason` has no guard — the fourth `reason` field in this family after T-218, T-317 and T-343.",
+    "",
+    "══ DO NOT NAIVELY TRIM — two sites where a one-sided trim CREATES the catastrophe ══",
+    "T-343 found these and they bind on any ticket in this family:",
+    "  events.rs:1735 — orbat_reservations.squad must stay BYTE-IDENTICAL to orbat_slots.squad, which is written untrimmed by crates/map-engine-core/src/mission/orbat.rs:163.",
+    "  events.rs:1923 — must mirror `or_fallback` at crates/map-engine-core/src/mission/flatten.rs:626. Disagreement means the seat VANISHES, the assignment round-robins, and the request still returns 200.",
+    "Trimming on write and trimming on read must agree. T-326's bug was not an untrimmed value per se — it was a DISAGREEMENT between two sites. Check both halves before changing either.",
+    "",
+    "== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==",
+    "Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.",
+    "This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.",
+]
 owns = [
     "apps/website/api/src/handlers/auth.rs",
     "apps/website/api/src/handlers/oauth.rs",

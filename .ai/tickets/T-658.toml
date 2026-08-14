@@ -1,7 +1,7 @@
 id = "T-658"
 kind = "work"
 title = "Validation: every placed asset resolves in the live catalogue"
-summary = """Rule content in the T-656 engine — modifies only `crates/map-engine-core/src/mission/validate.rs`. Revives the MissionAnalyzer's dead rule D13: every placed asset must resolve in the live registry, which catches modset drift the MOMENT an asset is placed rather than at compile. The upstream analysis marked this `on-save` "only as the conservative default for a cold registry" — THAT CAVEAT DOES NOT APPLY HERE: `apps/website/frontend/src/mission_editor.rs`:36-93 holds `mod registry_session`, a `thread_local!` SPA-session cache of the catalogue, so the check is live and free. Depends on T-656."""
+summary = "Validation: every placed asset resolves in the live catalogue"
 class = "feature"
 status = "shipped"
 order = 4020
@@ -12,6 +12,7 @@ depends_on = [
     "T-656",
 ]
 estimated = ["scope"]
+migration_legacy = ["""Rule content in the T-656 engine — modifies only `crates/map-engine-core/src/mission/validate.rs`. Revives the MissionAnalyzer's dead rule D13: every placed asset must resolve in the live registry, which catches modset drift the MOMENT an asset is placed rather than at compile. The upstream analysis marked this `on-save` "only as the conservative default for a cold registry" — THAT CAVEAT DOES NOT APPLY HERE: `apps/website/frontend/src/mission_editor.rs`:36-93 holds `mod registry_session`, a `thread_local!` SPA-session cache of the catalogue, so the check is live and free. Depends on T-656."""]
 owns = ["crates/map-engine-core/src/mission/validate.rs"]
 
 [scope]

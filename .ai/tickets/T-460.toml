@@ -1,21 +1,23 @@
 id = "T-460"
 kind = "work"
 title = "Class-R pins for T-456/T-458 are false-green"
-summary = """
-Residual from wave 22 adversarial. Live T-456/T-458 behavior holds, but Class-R pins accept stubs:
-(1) verify-t456-mission-rest-size-gate.sh treats a // comment containing MISSION_FILE_MAX_BYTES as the pre-ParseMissionJson size check, and only requires the IsMissionBodyWithinCap signature (return true; still greens).
-(2) ui.rs AdminGate Class-R requires has_min_role_authed(auth.user.get()…) somewhere, not on the live if — dead pin + if true still greens (W21 T-454 class).
-
-Repro T-456: move size if after ParseMissionJson but leave T-456 comment with MISSION_FILE_MAX_BYTES before parse → verify exits 0; or replace helper body with return true → PASS.
-Repro T-458: let _dead = has_min_role_authed(...); if true { children } → Class-R PASS.
-
-Cure: strip // comments before order assert; require non-comment IsMissionBodyWithinCap( before ParseMissionJson(; pin helper body to Length() <= MISSION_FILE_MAX_BYTES. Bind AdminGate Class-R to if has_min_role_authed(auth.user.get().map(|u| u.role), Role::Admin)."""
+summary = "Class-R pins for T-456/T-458 are false-green"
 class = "chore"
 status = "shipped"
 order = 3299
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 priority = 1
+migration_legacy = [
+    "Residual from wave 22 adversarial. Live T-456/T-458 behavior holds, but Class-R pins accept stubs:",
+    "(1) verify-t456-mission-rest-size-gate.sh treats a // comment containing MISSION_FILE_MAX_BYTES as the pre-ParseMissionJson size check, and only requires the IsMissionBodyWithinCap signature (return true; still greens).",
+    "(2) ui.rs AdminGate Class-R requires has_min_role_authed(auth.user.get()…) somewhere, not on the live if — dead pin + if true still greens (W21 T-454 class).",
+    "",
+    "Repro T-456: move size if after ParseMissionJson but leave T-456 comment with MISSION_FILE_MAX_BYTES before parse → verify exits 0; or replace helper body with return true → PASS.",
+    "Repro T-458: let _dead = has_min_role_authed(...); if true { children } → Class-R PASS.",
+    "",
+    "Cure: strip // comments before order assert; require non-comment IsMissionBodyWithinCap( before ParseMissionJson(; pin helper body to Length() <= MISSION_FILE_MAX_BYTES. Bind AdminGate Class-R to if has_min_role_authed(auth.user.get().map(|u| u.role), Role::Admin).",
+]
 owns = [
     "scripts/mod/verify-t456-mission-rest-size-gate.sh",
     "apps/website/frontend/src/ui.rs",

@@ -1,16 +1,7 @@
 id = "T-357"
 kind = "work"
 title = "The editor payload schema constrains nothing, and the compiled schema would reject live data"
-summary = """
-FOUND by T-346, and it explains WHY the whole T-346/T-356 defect family is reachable at all.
-
-`packages/tbd-schema/schema/mission-editor-payload.schema.json` constrains `editor.factions` to a bare `{"type":"array"}` with NO item constraints. Meanwhile `mission.schema.json` `$defs/factionKey` is `^[a-z][a-z0-9_]*$`. The editor payload is what feeds `parse_orbat_template`, so the strict pattern NEVER APPLIES on the path that actually writes orbat_slots.faction. That asymmetry is the reason a padded or empty faction key can exist in the first place.
-
-AND THE SHARPER HALF: live `orbat_slots` holds uppercase `BLUFOR` / `OPFOR`, which the compiled schema's own `^[a-z]...` pattern WOULD REJECT. So the two schemas do not merely differ in strictness — the strict one contradicts the data in production. Before tightening anything, work out which is right: is the wire vocabulary lowercase (in which case something is meant to be slugging these and is not), or is the pattern wrong?
-
-Note `slug_key()` exists and IS applied on the compiled `briefings`/`orbat` path (T-202 confirmed all four goldens key identically through it). So the lowercase pattern is probably correct for the COMPILED document and simply does not describe orbat_slots. Say which layer each schema is describing — that distinction is the actual deliverable here, and getting it wrong would either reject valid missions or bless invalid ones.
-
-Do NOT tighten the editor payload schema without checking it against the committed golden missions and the live rows; a schema that rejects production data fails every request rather than catching a bug."""
+summary = "The editor payload schema constrains nothing, and the compiled schema would reject live data"
 class = "bug"
 status = "shipped"
 order = 3173
@@ -18,6 +9,17 @@ executor = "claude-code"
 priority = 2
 shipped_at = "b19a4634"
 estimated = ["scope"]
+migration_legacy = [
+    "FOUND by T-346, and it explains WHY the whole T-346/T-356 defect family is reachable at all.",
+    "",
+    '`packages/tbd-schema/schema/mission-editor-payload.schema.json` constrains `editor.factions` to a bare `{"type":"array"}` with NO item constraints. Meanwhile `mission.schema.json` `$defs/factionKey` is `^[a-z][a-z0-9_]*$`. The editor payload is what feeds `parse_orbat_template`, so the strict pattern NEVER APPLIES on the path that actually writes orbat_slots.faction. That asymmetry is the reason a padded or empty faction key can exist in the first place.',
+    "",
+    "AND THE SHARPER HALF: live `orbat_slots` holds uppercase `BLUFOR` / `OPFOR`, which the compiled schema's own `^[a-z]...` pattern WOULD REJECT. So the two schemas do not merely differ in strictness — the strict one contradicts the data in production. Before tightening anything, work out which is right: is the wire vocabulary lowercase (in which case something is meant to be slugging these and is not), or is the pattern wrong?",
+    "",
+    "Note `slug_key()` exists and IS applied on the compiled `briefings`/`orbat` path (T-202 confirmed all four goldens key identically through it). So the lowercase pattern is probably correct for the COMPILED document and simply does not describe orbat_slots. Say which layer each schema is describing — that distinction is the actual deliverable here, and getting it wrong would either reject valid missions or bless invalid ones.",
+    "",
+    "Do NOT tighten the editor payload schema without checking it against the committed golden missions and the live rows; a schema that rejects production data fails every request rather than catching a bug.",
+]
 owns = ["packages/tbd-schema/schema/mission-editor-payload.schema.json"]
 
 [scope]

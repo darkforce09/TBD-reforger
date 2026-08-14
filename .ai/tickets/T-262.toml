@@ -1,12 +1,13 @@
 id = "T-262"
 kind = "work"
 title = "Zero foreign keys in the entire schema"
-summary = "Grep for FOREIGN KEY or REFERENCES across all seven migrations returns zero. Deleting a mission, event or user orphans every dependent row, and DELETE /events/{id} sets deleted_at only while the confirm dialog claims a cascade. assigned_to, discord_id and reserved_by are unconstrained free text."
+summary = "Zero foreign keys in the entire schema"
 class = "chore"
 status = "shipped"
 order = 2800
 executor = "claude-code"
 estimated = ["scope"]
+migration_legacy = ["Grep for FOREIGN KEY or REFERENCES across all seven migrations returns zero. Deleting a mission, event or user orphans every dependent row, and DELETE /events/{id} sets deleted_at only while the confirm dialog claims a cascade. assigned_to, discord_id and reserved_by are unconstrained free text."]
 owns = ["apps/website/api/migrations"]
 
 [scope]

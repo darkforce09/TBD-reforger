@@ -1,41 +1,7 @@
 id = "T-348"
 kind = "work"
 title = "Five PATCH handlers let a whitespace value overwrite real content"
-summary = """
-FOUND by T-343's sweep — the destructive-write group. Each is a value that passes an `is_empty()` guard as whitespace and overwrites something real:
-
-  events.rs:483 and :968 — `name_override`. Defeats SIX downstream is_empty() fallbacks at once, and is one keystroke away in the admin UI. **Fix the two WRITES, not the readers** — all readers already handle "" correctly.
-  missions.rs:393 — PATCH `title`. Unrecoverable, and a blank title sorts FIRST in the in-game mission browser.
-  cms.rs:190 — PATCH `title`/`body`. A blank body can ship to Discord.
-  telemetry.rs:497-498 — `winning_faction` / `aar_replay_url`, the same pair T-316 hardened against absence but not against blankness.
-
-Also in this group, the same shape one level down: missions.rs:587/598 semver — `" 0.1.0 "` is not `"0.1.0"`, so a padded version returns 201 instead of 409 and then goes live.
-
-══ DO NOT NAIVELY TRIM — two sites where a one-sided trim CREATES the catastrophe ══
-T-343 found these and they bind on any ticket in this family:
-  events.rs:1735 — orbat_reservations.squad must stay BYTE-IDENTICAL to orbat_slots.squad, which is written untrimmed by crates/map-engine-core/src/mission/orbat.rs:163.
-  events.rs:1923 — must mirror `or_fallback` at crates/map-engine-core/src/mission/flatten.rs:626. Disagreement means the seat VANISHES, the assignment round-robins, and the request still returns 200.
-Trimming on write and trimming on read must agree. T-326's bug was not an untrimmed value per se — it was a DISAGREEMENT between two sites. Check both halves before changing either.
-
-THE CREATE PATH IS ALSO UNGUARDED, and this ticket only covers the PATCH at cms.rs:190:
-  cms.rs:101 — `if input.title.is_empty() || input.body.is_empty()`, untrimmed, gating the INSERT at :113-137. A whitespace-only title or body creates an announcement, and if status is "published" with push_to_discord, :140-141 SHIPS IT TO DISCORD. Lower severity than the PATCH (creates rather than clobbers) but the same one-line shape.
-  cms.rs:87 with :111 — `status` is #[serde(default)] and :111 is `let published = input.status == "published"`, so an UNRECOGNISED status silently becomes Draft. The PATCH at :213-218 returns 400 for the same value. Inconsistent between two handlers on one resource; not destructive.
-
-SHIPPED 2026-07-26 with a DELIBERATELY NARROWER fix than T-346's, and the per-field reasoning is the point: refuse blank, ALLOW padding, store verbatim.
-  Not trimming — trimming "   " to "" still discards the operator's name, just less visibly. Refusing is the only option that leaves the sentinel standing.
-  Not refusing padding — T-346 refused a padded `faction` because it is a JOIN KEY, where canonicalising one side CREATES the disagreement. `name_override` is matched by nothing and "  Padded Op  " renders correctly today, so refusing it would break a working case — T-346's own pinned over-rejection direction. Compare T-346's `item_name`, a label, which it TRIMMED rather than refused.
-  Not requiring — "" is legitimate and documented (content_golden.sql:551).
-
-THE HARM, measured: whitespace defeats SIX is_empty() fallbacks at once (deployments.rs:97, dashboard.rs:79 and :142, and the SPA's event_hub.rs:200, orbat_selection.rs:71, event_manager.rs:831). HTML collapses whitespace, so the name does not render as a space — it renders as NOTHING. And because Event::name_override is skip_serializing_if, "" is an absent key the SPA reads as None while "   " IS serialised and walks straight through every client-side `.filter(|s| !s.is_empty())`. One keystroke away: event_manager.rs:536 diffs against the loaded original, so a single typed space is a rename the SPA will PATCH.
-
-cms.rs status: it judged CREATE the wrong one, not the PATCH. An unrecognised status is a caller mistake and silently downgrading it hides that — an admin sending "PUBLISHED" got a draft and a 201 saying it worked. Both handlers now share one validator, and "archived" is honoured at create instead of becoming a draft.
-
-THREE CORRECTIONS TO THE TICKET:
-  missions.rs:393-395 PATCH title is WORSE than filed — there is NO guard at all, so "" clobbers too. The is_empty() I cited is the CREATE path at :296, also untrimmed. No CHECK constraint or trigger in migrations 0001-0009.
-  telemetry.rs:488-498 — the mechanism is NOT is_empty(); it is SQL COALESCE-on-NULL keyed on Rust None, and per the doc comment at :259-263 an explicit "" clear is INTENTIONAL. So the real defect is narrower: Some("   ") is non-NULL, so COALESCE admits a THIRD state that is neither keep nor clear.
-  missions.rs:587/:598 semver — confirmed and BROADER than whitespace: semver is never parsed at all (no semver crate, no validator), and uniqueness is a DB unique index rather than a SELECT. The column is text, so ' 0.1.0 ' and '0.1.0' are distinct btree keys — no 23505, falls through to 201, and then :611-615 runs unconditionally and makes the SHADOW version the mission's current_version_id.
-
-One claim of its report was already stale at merge: telemetry.rs:476 source_match_id. T-347 restructured that code after T-348's branch point, and the command center verified the cited lines no longer exist on main."""
+summary = "Five PATCH handlers let a whitespace value overwrite real content"
 class = "bug"
 status = "shipped"
 order = 3164
@@ -43,6 +9,42 @@ executor = "claude-code"
 priority = 1
 shipped_at = "2c1021a5"
 estimated = ["scope"]
+migration_legacy = [
+    "FOUND by T-343's sweep — the destructive-write group. Each is a value that passes an `is_empty()` guard as whitespace and overwrites something real:",
+    "",
+    '  events.rs:483 and :968 — `name_override`. Defeats SIX downstream is_empty() fallbacks at once, and is one keystroke away in the admin UI. **Fix the two WRITES, not the readers** — all readers already handle "" correctly.',
+    "  missions.rs:393 — PATCH `title`. Unrecoverable, and a blank title sorts FIRST in the in-game mission browser.",
+    "  cms.rs:190 — PATCH `title`/`body`. A blank body can ship to Discord.",
+    "  telemetry.rs:497-498 — `winning_faction` / `aar_replay_url`, the same pair T-316 hardened against absence but not against blankness.",
+    "",
+    'Also in this group, the same shape one level down: missions.rs:587/598 semver — `" 0.1.0 "` is not `"0.1.0"`, so a padded version returns 201 instead of 409 and then goes live.',
+    "",
+    "══ DO NOT NAIVELY TRIM — two sites where a one-sided trim CREATES the catastrophe ══",
+    "T-343 found these and they bind on any ticket in this family:",
+    "  events.rs:1735 — orbat_reservations.squad must stay BYTE-IDENTICAL to orbat_slots.squad, which is written untrimmed by crates/map-engine-core/src/mission/orbat.rs:163.",
+    "  events.rs:1923 — must mirror `or_fallback` at crates/map-engine-core/src/mission/flatten.rs:626. Disagreement means the seat VANISHES, the assignment round-robins, and the request still returns 200.",
+    "Trimming on write and trimming on read must agree. T-326's bug was not an untrimmed value per se — it was a DISAGREEMENT between two sites. Check both halves before changing either.",
+    "",
+    "THE CREATE PATH IS ALSO UNGUARDED, and this ticket only covers the PATCH at cms.rs:190:",
+    '  cms.rs:101 — `if input.title.is_empty() || input.body.is_empty()`, untrimmed, gating the INSERT at :113-137. A whitespace-only title or body creates an announcement, and if status is "published" with push_to_discord, :140-141 SHIPS IT TO DISCORD. Lower severity than the PATCH (creates rather than clobbers) but the same one-line shape.',
+    '  cms.rs:87 with :111 — `status` is #[serde(default)] and :111 is `let published = input.status == "published"`, so an UNRECOGNISED status silently becomes Draft. The PATCH at :213-218 returns 400 for the same value. Inconsistent between two handlers on one resource; not destructive.',
+    "",
+    "SHIPPED 2026-07-26 with a DELIBERATELY NARROWER fix than T-346's, and the per-field reasoning is the point: refuse blank, ALLOW padding, store verbatim.",
+    """  Not trimming — trimming "   " to "" still discards the operator's name, just less visibly. Refusing is the only option that leaves the sentinel standing.""",
+    """  Not refusing padding — T-346 refused a padded `faction` because it is a JOIN KEY, where canonicalising one side CREATES the disagreement. `name_override` is matched by nothing and "  Padded Op  " renders correctly today, so refusing it would break a working case — T-346's own pinned over-rejection direction. Compare T-346's `item_name`, a label, which it TRIMMED rather than refused.""",
+    '  Not requiring — "" is legitimate and documented (content_golden.sql:551).',
+    "",
+    """THE HARM, measured: whitespace defeats SIX is_empty() fallbacks at once (deployments.rs:97, dashboard.rs:79 and :142, and the SPA's event_hub.rs:200, orbat_selection.rs:71, event_manager.rs:831). HTML collapses whitespace, so the name does not render as a space — it renders as NOTHING. And because Event::name_override is skip_serializing_if, "" is an absent key the SPA reads as None while "   " IS serialised and walks straight through every client-side `.filter(|s| !s.is_empty())`. One keystroke away: event_manager.rs:536 diffs against the loaded original, so a single typed space is a rename the SPA will PATCH.""",
+    "",
+    'cms.rs status: it judged CREATE the wrong one, not the PATCH. An unrecognised status is a caller mistake and silently downgrading it hides that — an admin sending "PUBLISHED" got a draft and a 201 saying it worked. Both handlers now share one validator, and "archived" is honoured at create instead of becoming a draft.',
+    "",
+    "THREE CORRECTIONS TO THE TICKET:",
+    '  missions.rs:393-395 PATCH title is WORSE than filed — there is NO guard at all, so "" clobbers too. The is_empty() I cited is the CREATE path at :296, also untrimmed. No CHECK constraint or trigger in migrations 0001-0009.',
+    '  telemetry.rs:488-498 — the mechanism is NOT is_empty(); it is SQL COALESCE-on-NULL keyed on Rust None, and per the doc comment at :259-263 an explicit "" clear is INTENTIONAL. So the real defect is narrower: Some("   ") is non-NULL, so COALESCE admits a THIRD state that is neither keep nor clear.',
+    "  missions.rs:587/:598 semver — confirmed and BROADER than whitespace: semver is never parsed at all (no semver crate, no validator), and uniqueness is a DB unique index rather than a SELECT. The column is text, so ' 0.1.0 ' and '0.1.0' are distinct btree keys — no 23505, falls through to 201, and then :611-615 runs unconditionally and makes the SHADOW version the mission's current_version_id.",
+    "",
+    "One claim of its report was already stale at merge: telemetry.rs:476 source_match_id. T-347 restructured that code after T-348's branch point, and the command center verified the cited lines no longer exist on main.",
+]
 owns = [
     "apps/website/api/src/handlers/events.rs",
     "apps/website/api/src/handlers/cms.rs",

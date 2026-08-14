@@ -1,27 +1,29 @@
 id = "T-401"
 kind = "work"
 title = "git-lfs is absent while filter.lfs.process is set, so git status silently returns nothing and wave.sh change detection is half dead"
-summary = """
-Found independently by two wave-1 slice agents. Not a repo defect — an environment one — but it degrades a gate SILENTLY, which puts it in the family this program cares about most.
-
-git-lfs is installed on neither the container nor the host PATH, while filter.lfs.process is configured globally. Any git operation that refreshes the index over an LFS path aborts:
-  packages/map-assets/everon/dem/everon-dem-16bit.png: clean filter 'lfs' failed
-Repro: `git status --porcelain; echo $?` -> exit 128, NO STDOUT.
-
-THE SILENT PART: wave.sh:283 (wasm_changed) and the identical union in fmt_changed compute their change set as the union of `git diff --name-only <base>` and `git status --porcelain 2>/dev/null`. The 2>/dev/null swallows the abort, so the working-tree half contributes nothing and UNCOMMITTED changes are invisible to the gate even when the base resolves correctly. A pre-commit gate run in this container therefore examines only what is already committed, while reporting as though it examined everything. wave.sh:146-152 already works around this for tree_state, so the workaround is known — it is just not applied at the change-detection sites.
-
-Practical consequences today:
- - Committing before gating is mandatory, and nothing says so. Every wave-1 slice happened to do it.
- - git add/commit need -c filter.lfs.process= -c filter.lfs.clean=cat -c filter.lfs.smudge=cat -c filter.lfs.required=false. All three slice agents discovered this independently and scoped it to their own non-LFS paths so no pointer was re-hashed.
- - PLATFORM_FACTORY.md already records that plain `git push` fails for this reason (hence wave.sh push); add/status/diff are the same family and are not recorded.
-
-TWO FIXES, do both: install git-lfs (the real answer, and it also un-breaks push), and stop swallowing the error at wave.sh:283 and in fmt_changed so a dead working-tree probe is loud instead of empty. The second matters even with lfs installed — any future git failure there is currently indistinguishable from "nothing changed"."""
+summary = "git-lfs is absent while filter.lfs.process is set, so git status silently returns nothing and wave.sh change detection is half dead"
 class = "bug"
 status = "shipped"
 order = 3217
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "Found independently by two wave-1 slice agents. Not a repo defect — an environment one — but it degrades a gate SILENTLY, which puts it in the family this program cares about most.",
+    "",
+    "git-lfs is installed on neither the container nor the host PATH, while filter.lfs.process is configured globally. Any git operation that refreshes the index over an LFS path aborts:",
+    "  packages/map-assets/everon/dem/everon-dem-16bit.png: clean filter 'lfs' failed",
+    "Repro: `git status --porcelain; echo $?` -> exit 128, NO STDOUT.",
+    "",
+    "THE SILENT PART: wave.sh:283 (wasm_changed) and the identical union in fmt_changed compute their change set as the union of `git diff --name-only <base>` and `git status --porcelain 2>/dev/null`. The 2>/dev/null swallows the abort, so the working-tree half contributes nothing and UNCOMMITTED changes are invisible to the gate even when the base resolves correctly. A pre-commit gate run in this container therefore examines only what is already committed, while reporting as though it examined everything. wave.sh:146-152 already works around this for tree_state, so the workaround is known — it is just not applied at the change-detection sites.",
+    "",
+    "Practical consequences today:",
+    " - Committing before gating is mandatory, and nothing says so. Every wave-1 slice happened to do it.",
+    " - git add/commit need -c filter.lfs.process= -c filter.lfs.clean=cat -c filter.lfs.smudge=cat -c filter.lfs.required=false. All three slice agents discovered this independently and scoped it to their own non-LFS paths so no pointer was re-hashed.",
+    " - PLATFORM_FACTORY.md already records that plain `git push` fails for this reason (hence wave.sh push); add/status/diff are the same family and are not recorded.",
+    "",
+    'TWO FIXES, do both: install git-lfs (the real answer, and it also un-breaks push), and stop swallowing the error at wave.sh:283 and in fmt_changed so a dead working-tree probe is loud instead of empty. The second matters even with lfs installed — any future git failure there is currently indistinguishable from "nothing changed".',
+]
 owns = ["scripts/platform/wave.sh"]
 
 [scope]

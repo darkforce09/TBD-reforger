@@ -1,13 +1,14 @@
 id = "T-187"
 kind = "work"
 title = "Fix setup-server-profile.sh — it copies a golden that does not exist"
-summary = "scripts/mod/setup-server-profile.sh:38 copies golden-missions/msn_8f3a2c.json, which is nowhere in the repo. With set -euo pipefail the script aborts. This is the script that prepares a server profile for testing missions. ALSO (merged from T-252): :31 reads GAME_SERVER_TOKENS but apps/website/api/src/config.rs:89 reads SERVICE_TOKEN — fix both in one pass. Related stale docs: deploy.env.example references a docker-compose.staging.yml that does not exist."
+summary = "Fix setup-server-profile.sh — it copies a golden that does not exist"
 class = "bug"
 status = "shipped"
 order = 2050
 executor = "claude-code"
 shipped_at = "02d95c7f"
 estimated = ["scope"]
+migration_legacy = ["scripts/mod/setup-server-profile.sh:38 copies golden-missions/msn_8f3a2c.json, which is nowhere in the repo. With set -euo pipefail the script aborts. This is the script that prepares a server profile for testing missions. ALSO (merged from T-252): :31 reads GAME_SERVER_TOKENS but apps/website/api/src/config.rs:89 reads SERVICE_TOKEN — fix both in one pass. Related stale docs: deploy.env.example references a docker-compose.staging.yml that does not exist."]
 owns = [
     "scripts/mod/setup-server-profile.sh",
     "golden-missions/msn_8f3a2c.json",

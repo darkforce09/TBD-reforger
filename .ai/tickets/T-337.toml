@@ -1,24 +1,26 @@
 id = "T-337"
 kind = "work"
 title = "Approving or rejecting a mission never touches updated_at"
-summary = """
-FOUND by T-330 in its own file, and deliberately NOT shipped there because it is a write-semantics change rather than the read fix that ticket was for. Confirmed live, not inferred: approving a mission whose updated_at was NULL left it NULL.
-
-handlers/approvals.rs:105 (approve) and :170 (reject) both UPDATE the mission's status without setting `updated_at`. Every sibling write does — handlers/missions.rs:392 and :543 both set `updated_at = now()`.
-
-Consequences: the approvals queue orders by that timestamp (T-330 made the ORDER BY match the displayed value), so a mission's position never reflects that it was actioned; and any consumer using updated_at for cache invalidation or sync will not see an approval at all. It is also the reason a NULL can persist through a state transition that plainly modified the row.
-
-Small fix, but decide one thing deliberately: whether `updated_at` should also move on a REJECT, or whether rejection wants its own timestamp column. T-313 (the author can never read why their mission was rejected) is adjacent and may want the same row touched.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now."""
+summary = "Approving or rejecting a mission never touches updated_at"
 class = "bug"
 status = "shipped"
 order = 3153
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "FOUND by T-330 in its own file, and deliberately NOT shipped there because it is a write-semantics change rather than the read fix that ticket was for. Confirmed live, not inferred: approving a mission whose updated_at was NULL left it NULL.",
+    "",
+    "handlers/approvals.rs:105 (approve) and :170 (reject) both UPDATE the mission's status without setting `updated_at`. Every sibling write does — handlers/missions.rs:392 and :543 both set `updated_at = now()`.",
+    "",
+    "Consequences: the approvals queue orders by that timestamp (T-330 made the ORDER BY match the displayed value), so a mission's position never reflects that it was actioned; and any consumer using updated_at for cache invalidation or sync will not see an approval at all. It is also the reason a NULL can persist through a state transition that plainly modified the row.",
+    "",
+    "Small fix, but decide one thing deliberately: whether `updated_at` should also move on a REJECT, or whether rejection wants its own timestamp column. T-313 (the author can never read why their mission was rejected) is adjacent and may want the same row touched.",
+    "",
+    "== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==",
+    "Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.",
+    "This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.",
+]
 owns = ["apps/website/api/src/handlers/approvals.rs"]
 
 [scope]

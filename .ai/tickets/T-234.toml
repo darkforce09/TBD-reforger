@@ -1,29 +1,31 @@
 id = "T-234"
 kind = "work"
 title = "Mission approvals queue can never fill"
-summary = """
-POST /missions/{id}/submit (missions.rs:541) is the only writer of pending_approval and nothing in the SPA calls it. So /admin/approvals is permanently empty in production while the page displays mock approved and rejected lists that also drive the tab counters. Two destructive-sounding buttons do nothing.
-
-SHIPPED. THE QUEUE REALLY CANNOT FILL, proven BOTH directions: submitting over real HTTP filled GET /approvals (total 0->1->3), approve -> live, reject -> rejected + reason, resubmit -> back in queue; and the only other candidate writer is refused — PATCH with status pending_approval returns 400, because apply_status_patch whitelists archived/draft only. The frontend has ZERO references to /submit (the 10 'submit' hits are HTML on:submit, submitted_at, and wgpu queue.submit).
-
-THE TICKET'S SECOND HALF WAS STALE: the mock approved/rejected lists were CLIENT-side and T-218 already deleted them, along with the counters and both fake buttons. `mock_approved`/`mock_rejected` survive only in comments, deferred to T-283. The API never served mock mission data, so the 'more serious half' I flagged as possibly API-side never existed.
-
-THREE GENUINE DEFECTS FOUND AND FIXED IN THE HANDLER:
-  1. Resubmit left the PREVIOUS review round on the row — it cleared rejection_reason but not reviewed_by/reviewed_at. Driven: reject -> resubmit -> GET served `pending_approval` WITH the rejection's reviewer stamp. Both are skip_serializing_if, so NULLing them makes the wire identical to a never-reviewed mission — no shape change.
-  2. THE STATUS GUARD WAS ADVISORY — it tested a row loaded by an earlier statement while the UPDATE named the id alone. Now `AND status IN ('draft','rejected') AND deleted_at IS NULL` with rows_affected()==0 -> the same 409, measured across all five statuses plus a soft-deleted draft (1/0/0/1/0/0). The reachable clobber was a concurrent PATCH-to-archived (accepted from ANY status) leaving a mission un-archived AND queued.
-  3. Nothing recorded a submission. approve and reject both audit; the transition that CREATES the reviewer's work did not, and the row has no submitted_by/submitted_at. Added mission.submit, naming the caller and — when they differ — the author.
-
-AUTHORISATION, measured: GET /approvals as the AUTHOR (mission_maker) is **403** — admin-tier, so the author cannot see the queue they fed. submit by a non-author is 403; by an admin on someone else's mission is 200 (the same override PATCH/DELETE grant); from pending_approval/live/archived is 409 each.
-
-**125 passed, 0 failed, 0 SKIPPED** across 22 binaries with both TEST_DATABASE_URL and MIGRATE_TEST_DATABASE_URL set — the first agent to report against the gate's new honesty. Its new test was falsified: reverting only the handler makes it fail on the reviewer-stamp assertion.
-
-RECORDED, NOT FIXED: /approvals `submitted_at` is actually missions.updated_at (approvals.rs:101), and PATCH bumps it — measured, editing a pending mission's title moved its queue timestamp forward and REORDERED the oldest-first queue. Real fix is a submitted_at column, same column T-337 wants. The new audit row preserves the true submission time meanwhile. Also: an author can PATCH content while pending_approval, so a reviewer may approve something other than what was submitted, and there is no withdraw endpoint so blocking it would strand authors — a policy call. And T-283 is BLOCKED: no endpoint can list approved/rejected missions, because ListQuery has no status param and push_filters' global scope is `status='live' OR (author_id=me AND status<>'archived')`."""
+summary = "Mission approvals queue can never fill"
 class = "bug"
 status = "shipped"
 order = 2520
 executor = "claude-code"
 shipped_at = "49c877fe"
 estimated = ["scope"]
+migration_legacy = [
+    "POST /missions/{id}/submit (missions.rs:541) is the only writer of pending_approval and nothing in the SPA calls it. So /admin/approvals is permanently empty in production while the page displays mock approved and rejected lists that also drive the tab counters. Two destructive-sounding buttons do nothing.",
+    "",
+    "SHIPPED. THE QUEUE REALLY CANNOT FILL, proven BOTH directions: submitting over real HTTP filled GET /approvals (total 0->1->3), approve -> live, reject -> rejected + reason, resubmit -> back in queue; and the only other candidate writer is refused — PATCH with status pending_approval returns 400, because apply_status_patch whitelists archived/draft only. The frontend has ZERO references to /submit (the 10 'submit' hits are HTML on:submit, submitted_at, and wgpu queue.submit).",
+    "",
+    "THE TICKET'S SECOND HALF WAS STALE: the mock approved/rejected lists were CLIENT-side and T-218 already deleted them, along with the counters and both fake buttons. `mock_approved`/`mock_rejected` survive only in comments, deferred to T-283. The API never served mock mission data, so the 'more serious half' I flagged as possibly API-side never existed.",
+    "",
+    "THREE GENUINE DEFECTS FOUND AND FIXED IN THE HANDLER:",
+    "  1. Resubmit left the PREVIOUS review round on the row — it cleared rejection_reason but not reviewed_by/reviewed_at. Driven: reject -> resubmit -> GET served `pending_approval` WITH the rejection's reviewer stamp. Both are skip_serializing_if, so NULLing them makes the wire identical to a never-reviewed mission — no shape change.",
+    "  2. THE STATUS GUARD WAS ADVISORY — it tested a row loaded by an earlier statement while the UPDATE named the id alone. Now `AND status IN ('draft','rejected') AND deleted_at IS NULL` with rows_affected()==0 -> the same 409, measured across all five statuses plus a soft-deleted draft (1/0/0/1/0/0). The reachable clobber was a concurrent PATCH-to-archived (accepted from ANY status) leaving a mission un-archived AND queued.",
+    "  3. Nothing recorded a submission. approve and reject both audit; the transition that CREATES the reviewer's work did not, and the row has no submitted_by/submitted_at. Added mission.submit, naming the caller and — when they differ — the author.",
+    "",
+    "AUTHORISATION, measured: GET /approvals as the AUTHOR (mission_maker) is **403** — admin-tier, so the author cannot see the queue they fed. submit by a non-author is 403; by an admin on someone else's mission is 200 (the same override PATCH/DELETE grant); from pending_approval/live/archived is 409 each.",
+    "",
+    "**125 passed, 0 failed, 0 SKIPPED** across 22 binaries with both TEST_DATABASE_URL and MIGRATE_TEST_DATABASE_URL set — the first agent to report against the gate's new honesty. Its new test was falsified: reverting only the handler makes it fail on the reviewer-stamp assertion.",
+    "",
+    "RECORDED, NOT FIXED: /approvals `submitted_at` is actually missions.updated_at (approvals.rs:101), and PATCH bumps it — measured, editing a pending mission's title moved its queue timestamp forward and REORDERED the oldest-first queue. Real fix is a submitted_at column, same column T-337 wants. The new audit row preserves the true submission time meanwhile. Also: an author can PATCH content while pending_approval, so a reviewer may approve something other than what was submitted, and there is no withdraw endpoint so blocking it would strand authors — a policy call. And T-283 is BLOCKED: no endpoint can list approved/rejected missions, because ListQuery has no status param and push_filters' global scope is `status='live' OR (author_id=me AND status<>'archived')`.",
+]
 owns = ["apps/website/api/src/handlers/missions.rs"]
 
 [scope]

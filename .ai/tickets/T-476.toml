@@ -1,18 +1,20 @@
 id = "T-476"
 kind = "work"
 title = "verify-t438/t456 Makefile recipes lack hollow-body tripwire"
-summary = """
-NIT from wave 28 adversarial. T-467 wired real bash recipes into Makefile + ci-local + ci.yml, but there is no T-471/T-472-style recipe-body tripwire — a future hollow `@true` / `echo PASS` / `#fake` recipe would green until noticed.
-
-Repro (hypothetical): replace verify-t438 recipe with `@true` → make verify-t438 PASS while script never runs.
-
-Cure: extend verify-t468-style (or sibling) tripwire to assert Makefile verify-t438/verify-t456 recipes invoke the real bash scripts (not echo/@true/#)."""
+summary = "verify-t438/t456 Makefile recipes lack hollow-body tripwire"
 class = "chore"
 status = "shipped"
 order = 3315
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "NIT from wave 28 adversarial. T-467 wired real bash recipes into Makefile + ci-local + ci.yml, but there is no T-471/T-472-style recipe-body tripwire — a future hollow `@true` / `echo PASS` / `#fake` recipe would green until noticed.",
+    "",
+    "Repro (hypothetical): replace verify-t438 recipe with `@true` → make verify-t438 PASS while script never runs.",
+    "",
+    "Cure: extend verify-t468-style (or sibling) tripwire to assert Makefile verify-t438/verify-t456 recipes invoke the real bash scripts (not echo/@true/#).",
+]
 owns = [
     "Makefile",
     "scripts/mod/verify-t468-ci-schema-parity.sh",

@@ -1,7 +1,7 @@
 id = "T-173"
 kind = "work"
 title = "Leptos SPA + Mission Creator performance pass"
-summary = "SHIPPED @ tag T-173 / dddf3158. P1–P10 + H1/H2/H5/H6: release-default make leptos; pan/zoom streaming settle + compose memo (−71% zoom block); thrash-free residency; library scroll + sheet de-blur; Mission Settings basemap/hillshade/grid + 12 world toggles; continuous tree guides; fence/pier/rail strips; upright building badges; density/clusters/labels/airfield bridged. Verify: .ai/artifacts/t173_verify_log.md. Operator G-A: HUD rf + window.__editorBench(500) on RTX. Hub: docs/platform/t173_leptos_perf_pass.md."
+summary = "Leptos SPA + Mission Creator performance pass"
 class = "docs"
 status = "shipped"
 order = 1700
@@ -10,6 +10,7 @@ executor = "claude-code"
 depends_on = ["T-172"]
 user_story = "As a mission maker I pan/zoom and scroll smoother than the old React editor, with full Mission Settings render toggles and correct fence/building glyphs."
 estimated = ["scope"]
+migration_legacy = ["SHIPPED @ tag T-173 / dddf3158. P1–P10 + H1/H2/H5/H6: release-default make leptos; pan/zoom streaming settle + compose memo (−71% zoom block); thrash-free residency; library scroll + sheet de-blur; Mission Settings basemap/hillshade/grid + 12 world toggles; continuous tree guides; fence/pier/rail strips; upright building badges; density/clusters/labels/airfield bridged. Verify: .ai/artifacts/t173_verify_log.md. Operator G-A: HUD rf + window.__editorBench(500) on RTX. Hub: docs/platform/t173_leptos_perf_pass.md."]
 
 [scope]
 domain = "website"

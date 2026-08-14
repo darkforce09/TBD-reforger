@@ -1,11 +1,12 @@
 id = "T-311"
 kind = "work"
 title = "Leaderboard ORDER BY has no tie-breaker, so paging is unstable"
-summary = "handlers/leaderboards.rs:44-50 — none of the five ORDER BY arms has a tie-breaker, so with LIMIT/OFFSET the row SET is unstable, not merely the order within it. T-194's content golden introduces 4-way ties in team_kills, missions_played and command_win_rate, so this is now reachable with the committed seed. Fix: append `, lt.discord_id ASC` to each arm."
+summary = "Leaderboard ORDER BY has no tie-breaker, so paging is unstable"
 class = "bug"
 status = "idea"
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
+migration_legacy = ["handlers/leaderboards.rs:44-50 — none of the five ORDER BY arms has a tie-breaker, so with LIMIT/OFFSET the row SET is unstable, not merely the order within it. T-194's content golden introduces 4-way ties in team_kills, missions_played and command_win_rate, so this is now reachable with the committed seed. Fix: append `, lt.discord_id ASC` to each arm."]
 
 [scope]
 domain = "repo"

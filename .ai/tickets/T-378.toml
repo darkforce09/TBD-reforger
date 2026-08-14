@@ -1,26 +1,28 @@
 id = "T-378"
 kind = "work"
 title = "gate v-suite accept can write the literal string null over a committed golden"
-summary = """
-The worst of the tooling cluster, because it destroys the baselines every other gate is measured against.
-
-tools/tbd-tools/src/vsuite.rs:390 — `std::fs::write(&gold_file, &cap.dom)?` with NO validity check. inject.rs:107-108 returns the 4-byte string `"null"` when the SPA fails to mount, and the stability loop BREAKS on the second identical `"null"` — which is the fast path, so a broken mount reaches the write quickly and confidently. `gate v-suite accept` then writes `null` over a committed golden.
-
-**`verify` mode parses the DOM (:430); `accept` does not.** That asymmetry is the bug: the mode that only reads is careful, and the mode that writes is not.
-
-This is the same class as T-352's 8-byte wasm and T-320's zero-font browser: a build or capture that produces something structurally empty, on a success path, which then overwrites something good. Add the same check `verify` already has, plus a floor on plausible DOM size.
-
-Also fold in the sibling with real blast radius: tools/tbd-tools/src/world/build.rs:529 — `} else { let _ = std::fs::remove_dir_all(&density_dir); }`. A non-density `--phase` **deletes all 625 committed packages/map-assets/everon/objects/density/*.bin**, the error is discarded, and the manifest is left dangling. Those are LFS-adjacent build artifacts that took a Workbench export to produce.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now."""
+summary = "gate v-suite accept can write the literal string null over a committed golden"
 class = "bug"
 status = "shipped"
 order = 3194
 executor = "claude-code"
 priority = 1
 estimated = ["scope"]
+migration_legacy = [
+    "The worst of the tooling cluster, because it destroys the baselines every other gate is measured against.",
+    "",
+    'tools/tbd-tools/src/vsuite.rs:390 — `std::fs::write(&gold_file, &cap.dom)?` with NO validity check. inject.rs:107-108 returns the 4-byte string `"null"` when the SPA fails to mount, and the stability loop BREAKS on the second identical `"null"` — which is the fast path, so a broken mount reaches the write quickly and confidently. `gate v-suite accept` then writes `null` over a committed golden.',
+    "",
+    "**`verify` mode parses the DOM (:430); `accept` does not.** That asymmetry is the bug: the mode that only reads is careful, and the mode that writes is not.",
+    "",
+    "This is the same class as T-352's 8-byte wasm and T-320's zero-font browser: a build or capture that produces something structurally empty, on a success path, which then overwrites something good. Add the same check `verify` already has, plus a floor on plausible DOM size.",
+    "",
+    "Also fold in the sibling with real blast radius: tools/tbd-tools/src/world/build.rs:529 — `} else { let _ = std::fs::remove_dir_all(&density_dir); }`. A non-density `--phase` **deletes all 625 committed packages/map-assets/everon/objects/density/*.bin**, the error is discarded, and the manifest is left dangling. Those are LFS-adjacent build artifacts that took a Workbench export to produce.",
+    "",
+    "== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==",
+    "Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.",
+    "This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.",
+]
 owns = [
     "tools/tbd-tools/src/vsuite.rs",
     "tools/tbd-tools/src/world/build.rs",

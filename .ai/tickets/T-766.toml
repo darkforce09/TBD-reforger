@@ -1,13 +1,14 @@
 id = "T-766"
 kind = "work"
 title = "Clearing a briefing leaves the export envelope carrying the deleted text for the rest of the session"
-summary = """MINOR from the wave-117 verifier, disclosed by the T-671 slice rather than found against it. eden_settings.rs:399-409 `mirror_briefing_into_document` writes a saved briefing through to `meta.briefing` so that an in-session edit reaches `compile_export` — which fixed a real bug. But it SKIPS BLANK, because the mutator it uses (`apply_row_meta`) treats a blank value as 'not supplied', deliberately, so that hydrate cannot wipe a good briefing. Consequence: CLEARING a briefing PATCHes the `missions` row to `""` (so the library card, dossier and approval queue all update correctly) while `meta.briefing` keeps the old text — and `compile_export` reads `meta.briefing`. Export Compiled Mission before reloading and the envelope still carries the briefing the author just deleted. Authored content diverging from what ships is exactly the class this programme cares about, though the window is narrow (same session, pre-reload) and the guard it derives from is defensible on its own terms. FIX: a clearing mutator in crates/map-engine-core/src/doc/store.rs that can distinguish 'set to empty' from 'not supplied' — outside T-671's owns, which is why it was documented in the function's doc comment rather than half-fixed. Diagnosis: editor_verify/wave117.md MINOR-2."""
+summary = "Clearing a briefing leaves the export envelope carrying the deleted text for the rest of the session"
 class = "bug"
 status = "shipped"
 order = 4642
 executor = "claude-code"
 notes = "filed by wave-117 adversarial verifier (editor factory)"
 estimated = ["scope"]
+migration_legacy = ["""MINOR from the wave-117 verifier, disclosed by the T-671 slice rather than found against it. eden_settings.rs:399-409 `mirror_briefing_into_document` writes a saved briefing through to `meta.briefing` so that an in-session edit reaches `compile_export` — which fixed a real bug. But it SKIPS BLANK, because the mutator it uses (`apply_row_meta`) treats a blank value as 'not supplied', deliberately, so that hydrate cannot wipe a good briefing. Consequence: CLEARING a briefing PATCHes the `missions` row to `""` (so the library card, dossier and approval queue all update correctly) while `meta.briefing` keeps the old text — and `compile_export` reads `meta.briefing`. Export Compiled Mission before reloading and the envelope still carries the briefing the author just deleted. Authored content diverging from what ships is exactly the class this programme cares about, though the window is narrow (same session, pre-reload) and the guard it derives from is defensible on its own terms. FIX: a clearing mutator in crates/map-engine-core/src/doc/store.rs that can distinguish 'set to empty' from 'not supplied' — outside T-671's owns, which is why it was documented in the function's doc comment rather than half-fixed. Diagnosis: editor_verify/wave117.md MINOR-2."""]
 owns = [
     "crates/map-engine-core/src/doc/store.rs",
     "apps/website/frontend/src/eden_settings.rs",

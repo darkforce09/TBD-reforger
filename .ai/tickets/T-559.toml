@@ -1,19 +1,21 @@
 id = "T-559"
 kind = "work"
 title = "T-554 Class-R soft contains — comment decoy opt(&row.briefing) stays green"
-summary = """
-FOUND by W63 adversarial verifier (DIRTY MAJOR) after T-554.
-
-hydrate_wires_row_briefing_into_apply_row_meta only asserts body.contains("opt(&row.briefing)").
-W62 None mutation FAILS (good). Both wires → None + `// decoy opt(&row.briefing)` inside each fn → PASS.
-
-Repro: in mission_hydrate.rs replace both opt(&row.briefing) with None but leave a comment containing the substring in adopt_payload and apply_row; cargo test -p website-frontend hydrate_wires_row_briefing still green."""
+summary = "T-554 Class-R soft contains — comment decoy opt(&row.briefing) stays green"
 class = "feature"
 status = "shipped"
 order = 3412
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "FOUND by W63 adversarial verifier (DIRTY MAJOR) after T-554.",
+    "",
+    'hydrate_wires_row_briefing_into_apply_row_meta only asserts body.contains("opt(&row.briefing)").',
+    "W62 None mutation FAILS (good). Both wires → None + `// decoy opt(&row.briefing)` inside each fn → PASS.",
+    "",
+    "Repro: in mission_hydrate.rs replace both opt(&row.briefing) with None but leave a comment containing the substring in adopt_payload and apply_row; cargo test -p website-frontend hydrate_wires_row_briefing still green.",
+]
 owns = [
     "apps/website/frontend/src/mission_title_prefer.rs",
     "apps/website/frontend/src/mission_hydrate.rs",

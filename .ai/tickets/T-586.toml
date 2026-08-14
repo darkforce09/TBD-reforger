@@ -1,37 +1,39 @@
 id = "T-586"
 kind = "work"
 title = "The @route tag is unpoliced in the Rust era — three handlers point at routes that do not exist"
-summary = """
-Found by T-576 while scoping. `handlers/servers.rs` carries `@route` doc tags on THREE handlers that
-are NOT WIRED INTO THE ROUTER: `create_server` (:433, POST /api/v1/servers), `update_server` (:500,
-PATCH), `deactivate_server` (:606, DELETE). Verified by the command center -- all three return 0 hits
-in app.rs. The entire admin server-CRUD triple is missing, so wiring only `create_server` would ship a
-register-but-never-edit-or-retire API.
-
-=== THE ROOT CAUSE, AND IT IS THE INTERESTING PART ===
-T-125's GO-7 route-match verifier DID NOT SURVIVE THE Go->Rust REWRITE. There is no @route-vs-router
-check anywhere in `scripts/`, and Makefile:279 claims the GO-2..9 analogs are "enforced by clippy +
-ApiError + fmt" -- none of which can see this. THAT is how three handlers carried a route tag to a
-route that does not exist without anything going red. T-576 wrote a throwaway cross-check that found
-exactly the three.
-
-WANTED: (a) the ~20-line @route-vs-router cross-check, wired into the gate so this cannot recur;
-(b) a decision on the three handlers -- wire the CRUD triple with its auth tier and audit surface
-reviewed, or delete the tags. Note T-576's 400 message says "no server is registered with that id",
-which implies a remedy the API does not currently offer: server registration is seed or psql only
-(seeds/content_golden.sql:213 seeds two). That raises this ticket's priority.
-
-RELATED, same family, from T-285: `POST /missions/{id}/inject` is a DEAD ROUTE. field_tools.rs:23
-`MISSION_STAGE_DIR = "missions"` is RELATIVE (CWD-dependent), written at :320-322, and has NO READER
--- zero `mission.json` references under apps/mod/tbd-framework/, and the mod's real path is
-GET /api/v1/missions/:id/compiled. No frontend caller either. Decide: delete the route, or point the
-mod at it."""
+summary = "The @route tag is unpoliced in the Rust era — three handlers point at routes that do not exist"
 class = "audit"
 status = "shipped"
 order = 3441
 executor = "claude-code"
 priority = 1
 estimated = ["scope"]
+migration_legacy = [
+    "Found by T-576 while scoping. `handlers/servers.rs` carries `@route` doc tags on THREE handlers that",
+    "are NOT WIRED INTO THE ROUTER: `create_server` (:433, POST /api/v1/servers), `update_server` (:500,",
+    "PATCH), `deactivate_server` (:606, DELETE). Verified by the command center -- all three return 0 hits",
+    "in app.rs. The entire admin server-CRUD triple is missing, so wiring only `create_server` would ship a",
+    "register-but-never-edit-or-retire API.",
+    "",
+    "=== THE ROOT CAUSE, AND IT IS THE INTERESTING PART ===",
+    "T-125's GO-7 route-match verifier DID NOT SURVIVE THE Go->Rust REWRITE. There is no @route-vs-router",
+    'check anywhere in `scripts/`, and Makefile:279 claims the GO-2..9 analogs are "enforced by clippy +',
+    'ApiError + fmt" -- none of which can see this. THAT is how three handlers carried a route tag to a',
+    "route that does not exist without anything going red. T-576 wrote a throwaway cross-check that found",
+    "exactly the three.",
+    "",
+    "WANTED: (a) the ~20-line @route-vs-router cross-check, wired into the gate so this cannot recur;",
+    "(b) a decision on the three handlers -- wire the CRUD triple with its auth tier and audit surface",
+    """reviewed, or delete the tags. Note T-576's 400 message says "no server is registered with that id",""",
+    "which implies a remedy the API does not currently offer: server registration is seed or psql only",
+    "(seeds/content_golden.sql:213 seeds two). That raises this ticket's priority.",
+    "",
+    "RELATED, same family, from T-285: `POST /missions/{id}/inject` is a DEAD ROUTE. field_tools.rs:23",
+    '`MISSION_STAGE_DIR = "missions"` is RELATIVE (CWD-dependent), written at :320-322, and has NO READER',
+    "-- zero `mission.json` references under apps/mod/tbd-framework/, and the mod's real path is",
+    "GET /api/v1/missions/:id/compiled. No frontend caller either. Decide: delete the route, or point the",
+    "mod at it.",
+]
 owns = [
     "scripts/verify-route-tags.sh",
     "apps/website/api/src/app.rs",

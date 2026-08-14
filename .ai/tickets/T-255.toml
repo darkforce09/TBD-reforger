@@ -1,12 +1,13 @@
 id = "T-255"
 kind = "work"
 title = "Asset palette is not side-aware"
-summary = "build_catalog_tree (asset_catalog.rs:60) takes no side and filters kind==character, so a BLUFOR chip plus a USSR character is accepted silently — even though the registry categories already encode the side. T-153 specified the Faction Library should replace the raw registry dump here; the Leptos port reverted it and documents the revert in its own header."
+summary = "Asset palette is not side-aware"
 class = "chore"
 status = "shipped"
 order = 2730
 executor = "claude-code"
 estimated = ["scope"]
+migration_legacy = ["build_catalog_tree (asset_catalog.rs:60) takes no side and filters kind==character, so a BLUFOR chip plus a USSR character is accepted silently — even though the registry categories already encode the side. T-153 specified the Faction Library should replace the raw registry dump here; the Leptos port reverted it and documents the revert in its own header."]
 owns = [
     "apps/website/frontend/src/asset_catalog.rs",
     "apps/website/frontend/src/eden_chrome.rs",

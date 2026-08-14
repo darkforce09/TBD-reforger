@@ -1,20 +1,22 @@
 id = "T-440"
 kind = "work"
 title = "Cold/schema gates never apply make seed / faction_library.sql"
-summary = """
-Residual from T-256 / wave 10 adversarial MAJOR. Cold wave gate validates faction-library.sample.json via schema but never runs `make seed` or applies apps/website/api/seeds/faction_library.sql. Deleting the Makefile seed line still greens the cold gate — false authority that T-256's seed wiring was examined.
-
-Repro: remove `seeds/faction_library.sql` from Makefile seed recipe; `bash scripts/platform/wave.sh gate <base>` still PASS; `make schema-validate` still PASS sample.
-
-Manual prove seed works: apply SQL on throwaway DB → 2 starter rows.
-
-Cure: gate tripwire (Makefile verify target + wave.sh step, or IT that asserts seed recipe + applies SQL on cold DB)."""
+summary = "Cold/schema gates never apply make seed / faction_library.sql"
 class = "chore"
 status = "shipped"
 order = 3279
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "Residual from T-256 / wave 10 adversarial MAJOR. Cold wave gate validates faction-library.sample.json via schema but never runs `make seed` or applies apps/website/api/seeds/faction_library.sql. Deleting the Makefile seed line still greens the cold gate — false authority that T-256's seed wiring was examined.",
+    "",
+    "Repro: remove `seeds/faction_library.sql` from Makefile seed recipe; `bash scripts/platform/wave.sh gate <base>` still PASS; `make schema-validate` still PASS sample.",
+    "",
+    "Manual prove seed works: apply SQL on throwaway DB → 2 starter rows.",
+    "",
+    "Cure: gate tripwire (Makefile verify target + wave.sh step, or IT that asserts seed recipe + applies SQL on cold DB).",
+]
 owns = [
     "Makefile",
     "scripts/platform/wave.sh",

@@ -1,21 +1,23 @@
 id = "T-473"
 kind = "work"
 title = "T-470 Class-R still greens spaced/indirect Err seed + if-false Retry"
-summary = """
-Residual from wave 27 adversarial BLOCKER/MAJOR. Class-R pins exact `list_seeded.set(true)` only:
-(1) early `list_seeded.set( true )` + keep Ok set → PASS
-(2) Err `set( true )` / `set((true))` / `set(seed)` → PASS
-(3) wrap Retry UI in `if false { … }` (no filter) → PASS
-
-Repro: spaced set( true ) before match → Class-R green.
-
-Cure: normalize whitespace for seed pin; forbid any list_seeded.set outside Ok arm; ban if false / unreachable Retry; RED→GREEN on verifier perturbations."""
+summary = "T-470 Class-R still greens spaced/indirect Err seed + if-false Retry"
 class = "feature"
 status = "shipped"
 order = 3312
 executor = "claude-code"
 priority = 1
 estimated = ["scope"]
+migration_legacy = [
+    "Residual from wave 27 adversarial BLOCKER/MAJOR. Class-R pins exact `list_seeded.set(true)` only:",
+    "(1) early `list_seeded.set( true )` + keep Ok set → PASS",
+    "(2) Err `set( true )` / `set((true))` / `set(seed)` → PASS",
+    "(3) wrap Retry UI in `if false { … }` (no filter) → PASS",
+    "",
+    "Repro: spaced set( true ) before match → Class-R green.",
+    "",
+    "Cure: normalize whitespace for seed pin; forbid any list_seeded.set outside Ok arm; ban if false / unreachable Retry; RED→GREEN on verifier perturbations.",
+]
 owns = ["apps/website/frontend/src/content.rs"]
 
 [scope]

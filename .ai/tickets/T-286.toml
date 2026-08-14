@@ -1,12 +1,13 @@
 id = "T-286"
 kind = "work"
 title = "Dead scaffolding and a non-reactive role read"
-summary = "PageStub and ApiPage are defined and routed nowhere. missions.rs:87 is a one-shot non-reactive role read evaluated before AuthGate resolves; combined with nav.rs:41-46 returning true for None, a not-yet-bootstrapped session yields is_maker=true and never corrects. faction_manager.rs deletes with no confirmation dialog, unlike every sibling page."
+summary = "Dead scaffolding and a non-reactive role read"
 class = "chore"
 status = "shipped"
 order = 3040
 executor = "claude-code"
 estimated = ["scope"]
+migration_legacy = ["PageStub and ApiPage are defined and routed nowhere. missions.rs:87 is a one-shot non-reactive role read evaluated before AuthGate resolves; combined with nav.rs:41-46 returning true for None, a not-yet-bootstrapped session yields is_maker=true and never corrects. faction_manager.rs deletes with no confirmation dialog, unlike every sibling page."]
 owns = [
     "apps/website/frontend/src/nav.rs",
     "apps/website/frontend/src/faction_manager.rs",

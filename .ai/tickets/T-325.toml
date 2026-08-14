@@ -1,16 +1,7 @@
 id = "T-325"
 kind = "work"
 title = "Two telemetry models are non-Option String over nullable columns"
-summary = """
-PREMISE FALSE — the agent refused the stated fix and was right. Kept in full because the wrong version was mine.
-
-I claimed a NULL in matches.winning_faction or match_player_stats.role_played would 500 the read path, held safe only by T-316 politely writing ''. Measured: `GET /api/v1/me/deployments` returns **200**. The only read of either struct — deployments.rs:127 and :134 — already COALESCEs both columns (plus aar_replay_url and created_at). The safety was never on the write side; it is in the query. Stronger: the operator's live DB ALREADY HOLDS a real NULL in matches.winning_faction (rf-match-20260726-01, outcome pending) plus two NULL aar_replay_urls, and has been serving 200 the whole time.
-
-The mismatch is nonetheless real — dropping the COALESCE in a probe against those same rows gives `unexpected null; try decoding as an Option` for both columns. But Option<String> is the WRONG fix, and this is the durable part: the wire cannot express the distinction it would add. `skip_serializing_if = "String::is_empty"` already omits the key for "", byte-identically to an omitted None, so None and "" would be two encodings of one state. The committed golden GET__me__deployments.json proves it — its first record came from a row whose aar_replay_url IS NULL and the golden simply lacks the key. "No winner" is also already carried by `outcome`, and T-316 designated "" as the clear-the-winner re-adjudication signal.
-
-Correct fix is at the schema (NOT NULL DEFAULT '' after a backfill), which is T-228's directory — handed to it. What shipped here is comment-only: the invariant, the measured evidence and the rejected alternative, recorded in models/telemetry.rs where the next person writes a read query. No type, no serde attribute, no wire byte changed.
-
-THE REAL PAYLOAD was the sweep: three genuine 500s elsewhere in the same class, all captured live — T-329 (dashboard, FIRING IN PRODUCTION for two real users), T-307 (events briefing, reachable from any fresh seed), T-330 (approvals updated_at, latent). And tests/null_tolerance.rs, which exists for exactly this class, misses all three."""
+summary = "Two telemetry models are non-Option String over nullable columns"
 class = "bug"
 status = "shipped"
 order = 3141
@@ -18,6 +9,17 @@ executor = "claude-code"
 priority = 2
 shipped_at = "2bd4d748"
 estimated = ["scope"]
+migration_legacy = [
+    "PREMISE FALSE — the agent refused the stated fix and was right. Kept in full because the wrong version was mine.",
+    "",
+    "I claimed a NULL in matches.winning_faction or match_player_stats.role_played would 500 the read path, held safe only by T-316 politely writing ''. Measured: `GET /api/v1/me/deployments` returns **200**. The only read of either struct — deployments.rs:127 and :134 — already COALESCEs both columns (plus aar_replay_url and created_at). The safety was never on the write side; it is in the query. Stronger: the operator's live DB ALREADY HOLDS a real NULL in matches.winning_faction (rf-match-20260726-01, outcome pending) plus two NULL aar_replay_urls, and has been serving 200 the whole time.",
+    "",
+    'The mismatch is nonetheless real — dropping the COALESCE in a probe against those same rows gives `unexpected null; try decoding as an Option` for both columns. But Option<String> is the WRONG fix, and this is the durable part: the wire cannot express the distinction it would add. `skip_serializing_if = "String::is_empty"` already omits the key for "", byte-identically to an omitted None, so None and "" would be two encodings of one state. The committed golden GET__me__deployments.json proves it — its first record came from a row whose aar_replay_url IS NULL and the golden simply lacks the key. "No winner" is also already carried by `outcome`, and T-316 designated "" as the clear-the-winner re-adjudication signal.',
+    "",
+    "Correct fix is at the schema (NOT NULL DEFAULT '' after a backfill), which is T-228's directory — handed to it. What shipped here is comment-only: the invariant, the measured evidence and the rejected alternative, recorded in models/telemetry.rs where the next person writes a read query. No type, no serde attribute, no wire byte changed.",
+    "",
+    "THE REAL PAYLOAD was the sweep: three genuine 500s elsewhere in the same class, all captured live — T-329 (dashboard, FIRING IN PRODUCTION for two real users), T-307 (events briefing, reachable from any fresh seed), T-330 (approvals updated_at, latent). And tests/null_tolerance.rs, which exists for exactly this class, misses all three.",
+]
 owns = ["apps/website/api/src/models/telemetry.rs"]
 
 [scope]

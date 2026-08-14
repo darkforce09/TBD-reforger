@@ -1,20 +1,22 @@
 id = "T-552"
 kind = "work"
 title = "0015 migration comment still narrates deferred two-seat (pre-0017 lore)"
-summary = """
-FOUND by W60 adversarial verifier (CLEAN MINOR outside T-525 owns) after T-525.
-
-content_golden.sql comments fixed. Migration 0015 comments still claim tests/events.rs seeds legacy two-seat / index deferred — obsolete after 0017 + T-511.
-
-Cure: update 0015 comment block to historical past-tense or point at 0017.
-
-Repro: rg 'two-seat|deferred' apps/website/api/migrations/0015*"""
+summary = "0015 migration comment still narrates deferred two-seat (pre-0017 lore)"
 class = "bug"
 status = "shipped"
 order = 3392
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "FOUND by W60 adversarial verifier (CLEAN MINOR outside T-525 owns) after T-525.",
+    "",
+    "content_golden.sql comments fixed. Migration 0015 comments still claim tests/events.rs seeds legacy two-seat / index deferred — obsolete after 0017 + T-511.",
+    "",
+    "Cure: update 0015 comment block to historical past-tense or point at 0017.",
+    "",
+    "Repro: rg 'two-seat|deferred' apps/website/api/migrations/0015*",
+]
 owns = ["apps/website/api/migrations"]
 
 [scope]

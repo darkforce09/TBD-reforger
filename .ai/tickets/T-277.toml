@@ -1,11 +1,12 @@
 id = "T-277"
 kind = "work"
 title = "27.4% of the shipped map catalogue is unclassified"
-summary = "444 of 1,623 prefabs fall through to the fallback rule against only 66 classify rules. vegetation and utility are both zero despite P3_vegetation being listed as shipped, and the road census reports zero while roads.json.gz ships 888 segments across five classes."
+summary = "27.4% of the shipped map catalogue is unclassified"
 class = "feature"
 status = "idea"
 executor = "claude-code"
 estimated = ["scope"]
+migration_legacy = ["444 of 1,623 prefabs fall through to the fallback rule against only 66 classify rules. vegetation and utility are both zero despite P3_vegetation being listed as shipped, and the road census reports zero while roads.json.gz ships 888 segments across five classes."]
 owns = ["packages/tbd-schema/rules/prefab-classify.json"]
 
 [scope]

@@ -1,18 +1,20 @@
 id = "T-469"
 kind = "work"
 title = "admin_field admin_token panics on missing LOCATION from dev-login"
-summary = """
-Residual from wave 25 adversarial N4 / observed cold-gate flake. admin_field.rs:37 indexes LOCATION without Option — one gate run panicked 'no entry found for key location'; re-run PASS.
-
-Repro: intermittent when APP_ENV/dev-login does not 302 (or header absent).
-
-Cure: assert status+LOCATION with actionable message; fail soft instead of IndexMap panic."""
+summary = "admin_field admin_token panics on missing LOCATION from dev-login"
 class = "chore"
 status = "shipped"
 order = 3308
 executor = "claude-code"
 priority = 3
 estimated = ["scope"]
+migration_legacy = [
+    "Residual from wave 25 adversarial N4 / observed cold-gate flake. admin_field.rs:37 indexes LOCATION without Option — one gate run panicked 'no entry found for key location'; re-run PASS.",
+    "",
+    "Repro: intermittent when APP_ENV/dev-login does not 302 (or header absent).",
+    "",
+    "Cure: assert status+LOCATION with actionable message; fail soft instead of IndexMap panic.",
+]
 owns = ["apps/website/api/tests/admin_field.rs"]
 
 [scope]

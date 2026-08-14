@@ -1,18 +1,20 @@
 id = "T-467"
 kind = "work"
 title = "verify-t438/t456 still unwired from Makefile/CI siblings"
-summary = """
-Residual from wave 25 adversarial N2. wave.sh wires verify-t438 and verify-t456 (T-463), but Makefile/CI have no sibling targets (same shape as pre-T-452 for other verifies).
-
-Repro: make ci-local / ci.yml pass while scripts/mod/verify-t438*.sh is deleted.
-
-Cure: add Makefile + CI steps mirroring wave.sh, or document intentional wave-only scope with a pin."""
+summary = "verify-t438/t456 still unwired from Makefile/CI siblings"
 class = "chore"
 status = "shipped"
 order = 3306
 executor = "claude-code"
 priority = 3
 estimated = ["scope"]
+migration_legacy = [
+    "Residual from wave 25 adversarial N2. wave.sh wires verify-t438 and verify-t456 (T-463), but Makefile/CI have no sibling targets (same shape as pre-T-452 for other verifies).",
+    "",
+    "Repro: make ci-local / ci.yml pass while scripts/mod/verify-t438*.sh is deleted.",
+    "",
+    "Cure: add Makefile + CI steps mirroring wave.sh, or document intentional wave-only scope with a pin.",
+]
 owns = [
     "Makefile",
     ".github/workflows/ci.yml",

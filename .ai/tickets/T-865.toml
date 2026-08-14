@@ -1,13 +1,14 @@
 id = "T-865"
 kind = "work"
 title = "T-853 port: mcp-call-selftest -> mcp selftest"
-summary = "T-853 shell->xtask slice. Port scripts/mod/mcp-call-selftest.sh (73 lines) to `cargo xtask mcp selftest` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). mcp-call selftest; make target. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling."
+summary = "T-853 port: mcp-call-selftest -> mcp selftest"
 class = "chore"
 status = "shipped"
 order = 5460
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
 estimated = ["scope"]
+migration_legacy = ["T-853 shell->xtask slice. Port scripts/mod/mcp-call-selftest.sh (73 lines) to `cargo xtask mcp selftest` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). mcp-call selftest; make target. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling."]
 owns = [
     "scripts/mod/mcp-call-selftest.sh",
     "xtask/src/gate_mcp_call_selftest.rs",

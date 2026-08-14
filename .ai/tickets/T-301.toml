@@ -1,11 +1,12 @@
 id = "T-301"
 kind = "work"
 title = "Briefing kit list shows 7 of 13 gear fields — an RPG is invisible on the planning screen"
-summary = "T-182 widened the gear vocabulary to thirteen fields (adding launcher/handgun/throwable), but TBD_BriefingData.BuildKit still lists seven. A player carrying a launcher, handgun or throwable will not see it on the briefing/planning screen. Note BuildKit already omits pants/boots/handwear deliberately as progressive disclosure, so this is a UI judgement call rather than a correctness break — decide whether secondary weapons belong in the planning view (they almost certainly do; a launcher changes what a squad can attempt) and add them."
+summary = "Briefing kit list shows 7 of 13 gear fields — an RPG is invisible on the planning screen"
 class = "feature"
 status = "idea"
 executor = "claude-code"
 estimated = ["scope"]
+migration_legacy = ["T-182 widened the gear vocabulary to thirteen fields (adding launcher/handgun/throwable), but TBD_BriefingData.BuildKit still lists seven. A player carrying a launcher, handgun or throwable will not see it on the briefing/planning screen. Note BuildKit already omits pants/boots/handwear deliberately as progressive disclosure, so this is a UI judgement call rather than a correctness break — decide whether secondary weapons belong in the planning view (they almost certainly do; a launcher changes what a squad can attempt) and add them."]
 
 [scope]
 domain = "mod"

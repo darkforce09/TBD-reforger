@@ -1,13 +1,14 @@
 id = "T-182"
 kind = "work"
 title = "Arsenal silently drops three of four weapon slots at compile"
-summary = 'Arsenal silently drops three of four weapon slots at compile. mod_slot_loadout (crates/map-engine-core/src/mission/flatten.rs:397-410) reads only slotIndex==0 && slotType=="primary". Launcher, handgun and throwable are authorable, persisted and discarded — ModSlotGear (flatten.rs:67-88) has no fields for them. The player spawns without them with no warning. SCOPE LOCKED 2026-07-26: fix ONLY the three missing weapon slots. DO NOT touch the armoredVest||vest collapse — mission.schema.json:91 states armoredVest is deliberately NOT a key because it shares the vest container (T-181.34). Reversing that is an operator decision and it has been declined.'
+summary = "Arsenal silently drops three of four weapon slots at compile"
 class = "bug"
 status = "shipped"
 order = 2000
 executor = "claude-code"
 shipped_at = "0bdfc096"
 estimated = ["scope"]
+migration_legacy = ['Arsenal silently drops three of four weapon slots at compile. mod_slot_loadout (crates/map-engine-core/src/mission/flatten.rs:397-410) reads only slotIndex==0 && slotType=="primary". Launcher, handgun and throwable are authorable, persisted and discarded — ModSlotGear (flatten.rs:67-88) has no fields for them. The player spawns without them with no warning. SCOPE LOCKED 2026-07-26: fix ONLY the three missing weapon slots. DO NOT touch the armoredVest||vest collapse — mission.schema.json:91 states armoredVest is deliberately NOT a key because it shares the vest container (T-181.34). Reversing that is an operator decision and it has been declined.']
 owns = [
     "packages/tbd-schema/schema/mission.schema.json",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c",

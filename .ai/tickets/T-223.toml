@@ -1,13 +1,14 @@
 id = "T-223"
 kind = "work"
 title = "Conflict detection is marker-based, not content-based"
-summary = "mission_hydrate.rs:88-99 compares only an adopted localStorage semver against the server's. has_content() exists with zero callers. Clearing site data produces a spurious conflict on an unmodified doc, and two people who both adopted the same semver and both edited will both silently take the trust-local branch with no warning."
+summary = "Conflict detection is marker-based, not content-based"
 class = "docs"
 status = "shipped"
 order = 2410
 executor = "claude-code"
 shipped_at = "c24e9e35"
 estimated = ["scope"]
+migration_legacy = ["mission_hydrate.rs:88-99 compares only an adopted localStorage semver against the server's. has_content() exists with zero callers. Clearing site data produces a spurious conflict on an unmodified doc, and two people who both adopted the same semver and both edited will both silently take the trust-local branch with no warning."]
 owns = ["apps/website/frontend/src/mission_hydrate.rs"]
 
 [scope]

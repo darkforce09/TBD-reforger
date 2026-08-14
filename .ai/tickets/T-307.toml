@@ -1,16 +1,18 @@
 id = "T-307"
 kind = "work"
 title = "GET /events/:id 500s on a NULL mission briefing and takes the Event Hub down"
-summary = """
-Found by T-194 while seeding the content golden. The dossier lookup in handlers/events.rs get_event is the one mission query in that file that does not COALESCE the nullable briefing/thumbnail_url, so a NULL decodes into String and the whole endpoint fails: 'error occurred while decoding column 3: unexpected null'. That is the entire Event Hub, not one card. The API's own create path always writes '', so only seeded rows or hand-written SQL reach it — which is exactly what a fresh environment or a restored backup looks like. T-194's seed writes '' to match the API and documents the workaround at the point of use; the handler is still wrong.
-
-INDEPENDENTLY REPRODUCED 2026-07-26 by T-325's sweep, which reached it from the other direction (nullable column vs non-Option model). Captured error at handlers/events.rs:832: `decoding column 3` (= briefing). Latent on the operator's DB because `missions` has no NULLs there — BUT `seeds/mock_data.sql:25` omits `thumbnail_url` from its INSERT column list, so ANY freshly-seeded database reproduces it. That is why it looked unreachable and is not."""
+summary = "GET /events/:id 500s on a NULL mission briefing and takes the Event Hub down"
 class = "feature"
 status = "shipped"
 order = 2307
 executor = "claude-code"
 shipped_at = "d223ae3b"
 estimated = ["scope"]
+migration_legacy = [
+    "Found by T-194 while seeding the content golden. The dossier lookup in handlers/events.rs get_event is the one mission query in that file that does not COALESCE the nullable briefing/thumbnail_url, so a NULL decodes into String and the whole endpoint fails: 'error occurred while decoding column 3: unexpected null'. That is the entire Event Hub, not one card. The API's own create path always writes '', so only seeded rows or hand-written SQL reach it — which is exactly what a fresh environment or a restored backup looks like. T-194's seed writes '' to match the API and documents the workaround at the point of use; the handler is still wrong.",
+    "",
+    "INDEPENDENTLY REPRODUCED 2026-07-26 by T-325's sweep, which reached it from the other direction (nullable column vs non-Option model). Captured error at handlers/events.rs:832: `decoding column 3` (= briefing). Latent on the operator's DB because `missions` has no NULLs there — BUT `seeds/mock_data.sql:25` omits `thumbnail_url` from its INSERT column list, so ANY freshly-seeded database reproduces it. That is why it looked unreachable and is not.",
+]
 
 [scope]
 domain = "website"

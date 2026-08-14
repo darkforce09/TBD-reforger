@@ -1,12 +1,7 @@
 id = "T-330"
 kind = "work"
 title = "GET /api/v1/approvals 500s on a NULL mission updated_at"
-summary = """
-FOUND by T-325's sweep, captured not inferred: `error occurred while decoding column "updated_at": unexpected null` from handlers/approvals.rs:55, which selects a bare `m.updated_at` where the sibling read sites COALESCE.
-
-Latent on the operator's data today — `missions` has no NULL updated_at there — but it is the same defect as T-329 (live) and T-307 (reachable from any fresh seed), and 'latent' here means 'nothing has written that value yet', not 'cannot happen'.
-
-Same fix shape as T-329: COALESCE at the query, not Option on the model. See T-325's reasoning recorded in models/telemetry.rs for why the model-level change is wrong."""
+summary = "GET /api/v1/approvals 500s on a NULL mission updated_at"
 class = "bug"
 status = "shipped"
 order = 3146
@@ -14,6 +9,13 @@ executor = "claude-code"
 priority = 2
 shipped_at = "5538efce"
 estimated = ["scope"]
+migration_legacy = [
+    """FOUND by T-325's sweep, captured not inferred: `error occurred while decoding column "updated_at": unexpected null` from handlers/approvals.rs:55, which selects a bare `m.updated_at` where the sibling read sites COALESCE.""",
+    "",
+    "Latent on the operator's data today — `missions` has no NULL updated_at there — but it is the same defect as T-329 (live) and T-307 (reachable from any fresh seed), and 'latent' here means 'nothing has written that value yet', not 'cannot happen'.",
+    "",
+    "Same fix shape as T-329: COALESCE at the query, not Option on the model. See T-325's reasoning recorded in models/telemetry.rs for why the model-level change is wrong.",
+]
 owns = ["apps/website/api/src/handlers/approvals.rs"]
 
 [scope]

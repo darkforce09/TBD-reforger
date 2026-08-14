@@ -1,23 +1,25 @@
 id = "T-553"
 kind = "work"
 title = "TBD_ZoneRegistry still claims zoneRules additionalProperties: true (T-419 residual)"
-summary = """
-FOUND by W62 adversarial verifier (DIRTY MINOR) after T-419.
-
-T-419 closed open-schema lore in TBD_ObjectiveRules.c + TBD_MissionLoader.c, but TBD_ZoneRegistry.c:39 still says:
-  //! `rules.penalty` vocabulary. Additive under the schema's `additionalProperties: true`.
-
-Live pin: packages/tbd-schema/schema/mission.schema.json $defs.zoneRules.additionalProperties = false.
-
-Repro:
-  rg -n 'additionalProperties: true' apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c
-  # expect hit at line 39; schema says false."""
+summary = "TBD_ZoneRegistry still claims zoneRules additionalProperties: true (T-419 residual)"
 class = "feature"
 status = "shipped"
 order = 3393
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "FOUND by W62 adversarial verifier (DIRTY MINOR) after T-419.",
+    "",
+    "T-419 closed open-schema lore in TBD_ObjectiveRules.c + TBD_MissionLoader.c, but TBD_ZoneRegistry.c:39 still says:",
+    "  //! `rules.penalty` vocabulary. Additive under the schema's `additionalProperties: true`.",
+    "",
+    "Live pin: packages/tbd-schema/schema/mission.schema.json $defs.zoneRules.additionalProperties = false.",
+    "",
+    "Repro:",
+    "  rg -n 'additionalProperties: true' apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c",
+    "  # expect hit at line 39; schema says false.",
+]
 owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c"]
 
 [scope]

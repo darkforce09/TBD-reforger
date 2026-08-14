@@ -1,24 +1,26 @@
 id = "T-360"
 kind = "work"
 title = "DashboardResponse.server_status is the third read of one payload and still Option<Value>"
-summary = """
-FOUND by T-306. The server-status payload has THREE read sites. T-306 typed two of them (ServerStatusDto for the SSE stream, ServerRowDto for /servers) and could not type the third: `DashboardResponse::server_status` is still `Option<Value>` because typing it requires changing `dashboard.rs`, outside T-306's ownership.
-
-This is not cosmetic — it is why T-232 needed a `vf64` helper to read the FPS by hand off an untyped Value, and it is the last place the same numeric mismatch can silently recur. T-232 already fixed a confident `FPS: 0` on that card; typing the field is what stops the next one.
-
-Also from T-306, and cheap to do here: `/members`, `/registry/compat` and `POST /fire-missions/solve` are live-typed with NO fixture at all, so nothing pins their wire shape. Adding those captures is the same job.
-
-Read T-306's work first — it established which goldens legitimately stay `Value` (no typed consumer) versus which are escape hatches, and its per-test annotations say which is which. Do not undo that distinction.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now."""
+summary = "DashboardResponse.server_status is the third read of one payload and still Option<Value>"
 class = "bug"
 status = "shipped"
 order = 3176
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "FOUND by T-306. The server-status payload has THREE read sites. T-306 typed two of them (ServerStatusDto for the SSE stream, ServerRowDto for /servers) and could not type the third: `DashboardResponse::server_status` is still `Option<Value>` because typing it requires changing `dashboard.rs`, outside T-306's ownership.",
+    "",
+    "This is not cosmetic — it is why T-232 needed a `vf64` helper to read the FPS by hand off an untyped Value, and it is the last place the same numeric mismatch can silently recur. T-232 already fixed a confident `FPS: 0` on that card; typing the field is what stops the next one.",
+    "",
+    "Also from T-306, and cheap to do here: `/members`, `/registry/compat` and `POST /fire-missions/solve` are live-typed with NO fixture at all, so nothing pins their wire shape. Adding those captures is the same job.",
+    "",
+    "Read T-306's work first — it established which goldens legitimately stay `Value` (no typed consumer) versus which are escape hatches, and its per-test annotations say which is which. Do not undo that distinction.",
+    "",
+    "== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==",
+    "Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.",
+    "This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.",
+]
 owns = [
     "apps/website/frontend/src/dashboard.rs",
     "apps/website/frontend/src/dto.rs",

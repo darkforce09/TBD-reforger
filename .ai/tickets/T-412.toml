@@ -1,19 +1,21 @@
 id = "T-412"
 kind = "work"
 title = "GET /api/v1/members cannot return member 21, and list_servers is N+1 over a growing table"
-summary = """
-Two product-side scaling defects found by T-399's agent during the ratchet sweep. Neither is a test problem; both are live API behaviour.
-
-1. handlers/events.rs:2161 (GET /api/v1/members) -- hard ORDER BY username ASC LIMIT 20 with NO OFFSET PARAMETER AT ALL. The member directory is STRUCTURALLY INCAPABLE of returning member 21. events.rs:275 only asserts is_array(), so nothing is red today and nothing will be: any future 'my user is in the directory' assertion is born broken. This is a product bug wearing a test-ratchet costume.
-2. handlers/servers.rs:99 (list_servers) -- no LIMIT, so misc_integration.rs:333's .find(id) is safe, but it calls server_intel() IN A LOOP, one round trip per row, over a monotonically growing table. MEASURED 63 rows. Runtime creep rather than a correctness fault, flagged because it degrades on the same curve as everything else in T-410.
-
-Note the asymmetry with T-410: those are tests that will fail. These are endpoints that will silently under-serve and never fail anything."""
+summary = "GET /api/v1/members cannot return member 21, and list_servers is N+1 over a growing table"
 class = "bug"
 status = "shipped"
 order = 3233
 executor = "claude-code"
 priority = 1
 estimated = ["scope"]
+migration_legacy = [
+    "Two product-side scaling defects found by T-399's agent during the ratchet sweep. Neither is a test problem; both are live API behaviour.",
+    "",
+    "1. handlers/events.rs:2161 (GET /api/v1/members) -- hard ORDER BY username ASC LIMIT 20 with NO OFFSET PARAMETER AT ALL. The member directory is STRUCTURALLY INCAPABLE of returning member 21. events.rs:275 only asserts is_array(), so nothing is red today and nothing will be: any future 'my user is in the directory' assertion is born broken. This is a product bug wearing a test-ratchet costume.",
+    "2. handlers/servers.rs:99 (list_servers) -- no LIMIT, so misc_integration.rs:333's .find(id) is safe, but it calls server_intel() IN A LOOP, one round trip per row, over a monotonically growing table. MEASURED 63 rows. Runtime creep rather than a correctness fault, flagged because it degrades on the same curve as everything else in T-410.",
+    "",
+    "Note the asymmetry with T-410: those are tests that will fail. These are endpoints that will silently under-serve and never fail anything.",
+]
 owns = [
     "apps/website/api/src/handlers/events.rs",
     "apps/website/api/src/handlers/servers.rs",

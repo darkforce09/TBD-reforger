@@ -1,16 +1,18 @@
 id = "T-428"
 kind = "work"
 title = "Schedule Discord role resync; replace placeholder leader snowflake in seed"
-summary = """
-Follow-on from T-247 (wave 6). UI caller for POST /admin/roles/sync shipped in personnel.rs. Still missing: (1) nightly/cron scheduler claimed in docs/website/backend/architecture.md but no API job wires resync_all_roles; (2) apps/website/api/seeds/discord_roles.sql:23 ships placeholder snowflake 1517290000000000000 for Squad Leader/leader.
-
-Repro: grep apps/website/api and scripts for a timer/cron calling resync_all_roles — none. Seed row: ('1517290000000000000', 'Squad Leader', 'leader', 30)."""
+summary = "Schedule Discord role resync; replace placeholder leader snowflake in seed"
 class = "docs"
 status = "shipped"
 order = 3267
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "Follow-on from T-247 (wave 6). UI caller for POST /admin/roles/sync shipped in personnel.rs. Still missing: (1) nightly/cron scheduler claimed in docs/website/backend/architecture.md but no API job wires resync_all_roles; (2) apps/website/api/seeds/discord_roles.sql:23 ships placeholder snowflake 1517290000000000000 for Squad Leader/leader.",
+    "",
+    "Repro: grep apps/website/api and scripts for a timer/cron calling resync_all_roles — none. Seed row: ('1517290000000000000', 'Squad Leader', 'leader', 30).",
+]
 owns = [
     "apps/website/api/src/services/role_sync.rs",
     "apps/website/api/seeds/discord_roles.sql",

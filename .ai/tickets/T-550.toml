@@ -1,20 +1,22 @@
 id = "T-550"
 kind = "work"
 title = "Events roster still compiles with empty CargoPhysCatalog (T-549 residual)"
-summary = """
-FOUND by W59 adversarial verifier (CLEAN MINOR outside owns) after T-549.
-
-GET /missions/:id/compiled now loads load_cargo_phys_catalog. Events roster in handlers/events.rs still calls no-arg flatten_to_mod_document (empty catalog), so pre-T-416 over-capacity payloads can still compile on that path.
-
-Cure: same wire as T-549 — load catalog → flatten_to_mod_document_with_catalog.
-
-Repro: rg flatten_to_mod_document apps/website/api/src/handlers/events.rs"""
+summary = "Events roster still compiles with empty CargoPhysCatalog (T-549 residual)"
 class = "feature"
 status = "shipped"
 order = 3390
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "FOUND by W59 adversarial verifier (CLEAN MINOR outside owns) after T-549.",
+    "",
+    "GET /missions/:id/compiled now loads load_cargo_phys_catalog. Events roster in handlers/events.rs still calls no-arg flatten_to_mod_document (empty catalog), so pre-T-416 over-capacity payloads can still compile on that path.",
+    "",
+    "Cure: same wire as T-549 — load catalog → flatten_to_mod_document_with_catalog.",
+    "",
+    "Repro: rg flatten_to_mod_document apps/website/api/src/handlers/events.rs",
+]
 owns = ["apps/website/api/src/handlers/events.rs"]
 
 [scope]

@@ -1,27 +1,29 @@
 id = "T-376"
 kind = "work"
 title = "The registry importer NULLs ten populated columns from a partial envelope"
-summary = """
-services/registry_import.rs:201-219 — the `ON CONFLICT DO UPDATE` sets ten columns that bind from `#[serde(default)] Option<T>` fields (contract/generated/registry_items.rs:196-238, bound at :167-189). Absent in the envelope -> None -> NULL -> **written over a populated column.** The file's own comment at :166 states the mechanism: 'v2 envelopes bind NULL columns.'
-
-THREE THINGS MAKE THIS A DEFECT RATHER THAN A CHOICE:
-  1. `icon_url` is the ONE column deliberately excluded from the DO UPDATE, with the rationale spelled out at :110-114 ('curated icons survive re-imports'). Preserve-semantics were reasoned about for exactly one column and never extended.
-  2. The schema says absent means UNKNOWN, not clear: weight_kg/volume_cm3/max_* all carry 'Absent when the value is an engine class default not serialized in the prefab — never guessed.'
-  3. `IS DISTINCT FROM` at :210-219 does not protect — it is the TRIGGER. Stored-non-NULL vs incoming-NULL IS distinct, so the row updates and counts as `updated`.
-
-No envelope-version gate exists: `import_items` never reads `env.registry_items_version`. And the idempotency test (tests/registry_compat.rs:387) re-imports the SAME BYTES — precisely the case where the NULLs match — so the downgrade path is untested.
-
-Blast radius: handlers/registry.rs:82-94 serves all ten; weight_kg and cargo_grid_w/h drive the Arsenal capacity UI. Fix precedent is in the file already: `COALESCE(EXCLUDED.col, registry_items.col)`, matching icon_url. Secondary, same statement: display_name/category are minLength:1, which blocks "" but not "   ", and :153 binds untrimmed.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now."""
+summary = "The registry importer NULLs ten populated columns from a partial envelope"
 class = "bug"
 status = "shipped"
 order = 3192
 executor = "claude-code"
 priority = 1
 estimated = ["scope"]
+migration_legacy = [
+    "services/registry_import.rs:201-219 — the `ON CONFLICT DO UPDATE` sets ten columns that bind from `#[serde(default)] Option<T>` fields (contract/generated/registry_items.rs:196-238, bound at :167-189). Absent in the envelope -> None -> NULL -> **written over a populated column.** The file's own comment at :166 states the mechanism: 'v2 envelopes bind NULL columns.'",
+    "",
+    "THREE THINGS MAKE THIS A DEFECT RATHER THAN A CHOICE:",
+    "  1. `icon_url` is the ONE column deliberately excluded from the DO UPDATE, with the rationale spelled out at :110-114 ('curated icons survive re-imports'). Preserve-semantics were reasoned about for exactly one column and never extended.",
+    "  2. The schema says absent means UNKNOWN, not clear: weight_kg/volume_cm3/max_* all carry 'Absent when the value is an engine class default not serialized in the prefab — never guessed.'",
+    "  3. `IS DISTINCT FROM` at :210-219 does not protect — it is the TRIGGER. Stored-non-NULL vs incoming-NULL IS distinct, so the row updates and counts as `updated`.",
+    "",
+    "No envelope-version gate exists: `import_items` never reads `env.registry_items_version`. And the idempotency test (tests/registry_compat.rs:387) re-imports the SAME BYTES — precisely the case where the NULLs match — so the downgrade path is untested.",
+    "",
+    'Blast radius: handlers/registry.rs:82-94 serves all ten; weight_kg and cargo_grid_w/h drive the Arsenal capacity UI. Fix precedent is in the file already: `COALESCE(EXCLUDED.col, registry_items.col)`, matching icon_url. Secondary, same statement: display_name/category are minLength:1, which blocks "" but not "   ", and :153 binds untrimmed.',
+    "",
+    "== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==",
+    "Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.",
+    "This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.",
+]
 owns = ["apps/website/api/src/services/registry_import.rs"]
 
 [scope]

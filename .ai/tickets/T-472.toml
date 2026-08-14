@@ -1,18 +1,20 @@
 id = "T-472"
 kind = "work"
 title = "T-471 verify-t468 still greens echo/@true/#fake Makefile recipes"
-summary = '''
-Residual from wave 27 adversarial BLOCKER. verify-t468 recipe pin uses `^\t.*(?:\$\(MAKE\)|make)\s+schema-validate\b` — matches `@echo "$(MAKE) schema-validate"`, `schema-validate-fake`, `@true # $(MAKE) schema-validate`.
-
-Repro: hollow echo of make lines / -fake targets / comment-only → tripwire PASS.
-
-Cure: require real recipe invocations (tab + optional @ + $(MAKE)|make + exact target, no echo, ignore # comments); RED→GREEN on verifier recipes.'''
+summary = "T-471 verify-t468 still greens echo/@true/#fake Makefile recipes"
 class = "feature"
 status = "shipped"
 order = 3311
 executor = "claude-code"
 priority = 1
 estimated = ["scope"]
+migration_legacy = [
+    'Residual from wave 27 adversarial BLOCKER. verify-t468 recipe pin uses `^\t.*(?:\$\(MAKE\)|make)\s+schema-validate\b` — matches `@echo "$(MAKE) schema-validate"`, `schema-validate-fake`, `@true # $(MAKE) schema-validate`.',
+    "",
+    "Repro: hollow echo of make lines / -fake targets / comment-only → tripwire PASS.",
+    "",
+    "Cure: require real recipe invocations (tab + optional @ + $(MAKE)|make + exact target, no echo, ignore # comments); RED→GREEN on verifier recipes.",
+]
 owns = ["scripts/mod/verify-t468-ci-schema-parity.sh"]
 
 [scope]

@@ -1,13 +1,14 @@
 id = "T-906"
 kind = "work"
 title = "Split T-145 API SIZE-3 files (7) the T-899 allowlist is holding"
-summary = "T-899 allowlisted 7 live website-api files over 1000 lines. Split them; drop the SIZE-3 rows. Files: apps/website/api/src/app.rs, handlers/admin.rs, handlers/events.rs, handlers/missions.rs, handlers/oauth.rs, handlers/telemetry.rs, services/mission_compile.rs. Do NOT split apps/website/api/src/contract/generated/faction_library.rs — generated schema-codegen output, expires 2027-08-13, do-not-split. Not dispatched in waves 234-235. Not the registry-split program."
+summary = "Split T-145 API SIZE-3 files (7) the T-899 allowlist is holding"
 class = "feature"
 status = "queued"
 order = 5860
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
 estimated = ["scope"]
+migration_legacy = ["T-899 allowlisted 7 live website-api files over 1000 lines. Split them; drop the SIZE-3 rows. Files: apps/website/api/src/app.rs, handlers/admin.rs, handlers/events.rs, handlers/missions.rs, handlers/oauth.rs, handlers/telemetry.rs, services/mission_compile.rs. Do NOT split apps/website/api/src/contract/generated/faction_library.rs — generated schema-codegen output, expires 2027-08-13, do-not-split. Not dispatched in waves 234-235. Not the registry-split program."]
 owns = [
     "apps/website/api/src/app.rs",
     "apps/website/api/src/handlers/admin.rs",

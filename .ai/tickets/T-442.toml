@@ -1,18 +1,20 @@
 id = "T-442"
 kind = "work"
 title = "Event Hub SPA still fetches global /modpacks/current ignoring event.modpack_id"
-summary = """
-Residual from T-260 / wave 11 adversarial MINOR W11-V1. API now returns events.server_id and events.modpack_id (migration 0011 + handlers), but apps/website/frontend/src/event_hub.rs still GETs /modpacks/current for the Hub chip; EventHub DTO lacks those fields.
-
-Repro: create event with modpack_id set; Hub UI still shows global current pack.
-
-Cure: wire event_hub.rs (+ dto) to prefer event.modpack_id when present, fall back to /modpacks/current only when null."""
+summary = "Event Hub SPA still fetches global /modpacks/current ignoring event.modpack_id"
 class = "chore"
 status = "shipped"
 order = 3281
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "Residual from T-260 / wave 11 adversarial MINOR W11-V1. API now returns events.server_id and events.modpack_id (migration 0011 + handlers), but apps/website/frontend/src/event_hub.rs still GETs /modpacks/current for the Hub chip; EventHub DTO lacks those fields.",
+    "",
+    "Repro: create event with modpack_id set; Hub UI still shows global current pack.",
+    "",
+    "Cure: wire event_hub.rs (+ dto) to prefer event.modpack_id when present, fall back to /modpacks/current only when null.",
+]
 owns = [
     "apps/website/frontend/src/event_hub.rs",
     "apps/website/frontend/src/dto.rs",

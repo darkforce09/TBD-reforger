@@ -1,13 +1,14 @@
 id = "T-849"
 kind = "work"
 title = "Ungroup / leave-squad — no editor verb to take a slot out of a squad without deleting it"
-summary = 'WAVE-208 OPERATOR EYE-PASS (2026-08-11). Asset-browser placement auto-joins an open squad (place_character_under_side); operator then had "no way to ungroup them", which makes re-organising through the editor "very tricky". Locate: no ungroup / leave-squad / remove-from-squad command exists — only ORBAT Remove Slot (deletes), Remove Squad, or refile onto another squad. FIX: an explicit Ungroup / Leave squad verb (context menu and/or ORBAT) that clears membership into a solo/new squad or unassigned state without deleting the slot, per Eden-like expectation. ACCEPTANCE: after auto-place into a squad, Ungroup leaves the slot on the map with no SQUAD_LINKS tether to the old leader; slot survives; can Group to / refile again.'
+summary = "Ungroup / leave-squad — no editor verb to take a slot out of a squad without deleting it"
 class = "bug"
 status = "queued"
 order = 5310
 executor = "claude-code"
 notes = "operator W208 eye-pass; pairs with T-848"
 estimated = ["scope"]
+migration_legacy = ['WAVE-208 OPERATOR EYE-PASS (2026-08-11). Asset-browser placement auto-joins an open squad (place_character_under_side); operator then had "no way to ungroup them", which makes re-organising through the editor "very tricky". Locate: no ungroup / leave-squad / remove-from-squad command exists — only ORBAT Remove Slot (deletes), Remove Squad, or refile onto another squad. FIX: an explicit Ungroup / Leave squad verb (context menu and/or ORBAT) that clears membership into a solo/new squad or unassigned state without deleting the slot, per Eden-like expectation. ACCEPTANCE: after auto-place into a squad, Ungroup leaves the slot on the map with no SQUAD_LINKS tether to the old leader; slot survives; can Group to / refile again.']
 owns = [
     "apps/website/frontend/src/context_menu.rs",
     "apps/website/frontend/src/orbat_manager.rs",

@@ -1,16 +1,18 @@
 id = "T-429"
 kind = "work"
 title = "oauth_redirect IT must assert oauth_state Set-Cookie clear on CSRF rejects"
-summary = """
-Follow-on from T-248 (wave 6). Product path now clears oauth_state via callback_csrf_reject wired into discord_callback. apps/website/api/tests/oauth_redirect.rs asserts Location/missing_code/invalid_state but NOT Set-Cookie Max-Age=0 — so a future handler bypass of the helper could stay green at IT level.
-
-Repro: read oauth_redirect.rs CSRF cases; no Set-Cookie assertion. Unit tests in handlers/oauth.rs cover the helper; IT does not."""
+summary = "oauth_redirect IT must assert oauth_state Set-Cookie clear on CSRF rejects"
 class = "feature"
 status = "shipped"
 order = 3268
 executor = "claude-code"
 priority = 3
 estimated = ["scope"]
+migration_legacy = [
+    "Follow-on from T-248 (wave 6). Product path now clears oauth_state via callback_csrf_reject wired into discord_callback. apps/website/api/tests/oauth_redirect.rs asserts Location/missing_code/invalid_state but NOT Set-Cookie Max-Age=0 — so a future handler bypass of the helper could stay green at IT level.",
+    "",
+    "Repro: read oauth_redirect.rs CSRF cases; no Set-Cookie assertion. Unit tests in handlers/oauth.rs cover the helper; IT does not.",
+]
 owns = ["apps/website/api/tests/oauth_redirect.rs"]
 
 [scope]

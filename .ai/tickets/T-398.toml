@@ -1,25 +1,27 @@
 id = "T-398"
 kind = "work"
 title = "Concurrent slices share mutable gate state — one worktree's build and DB writes silently corrupt another's gate result"
-summary = '''
-BLOCKER-severity by the always-blocker rule (a gate reporting on code it never examined), but DEFERRED by operator triage 2026-07-26 because its only manifestation is CONCURRENT gates, and wave 1's authoritative verification was a single serial gate on merged main. Promote before any wave that gates more than one slice at a time. Two independent mechanisms, one root cause.
-
-MECHANISM 1 — ARTIFACT CLOBBERING. Observed directly by T-334's agent: target/debug/deps/events-120088c1974e0f68 AND target-gate-api/debug/deps/events-12108c0722165edc were both overwritten mid-session by a sibling worktree's build; the binaries contained main's t324-/t227- literals minutes after its own had been built there, with ps confirming a concurrent gate_test_api from another tree. The per-STEP private dirs (target-gate-api, -frontend, -mapengine) are private per step but SHARED ACROSS WORKTREES, so same package + same version = same artifact hash = clobbering. wave.sh:398-407 documents this hazard as already fixed; it is not. Consequence: a slice's "N passed" may not be its own code — the exact entry already in PLATFORM_FACTORY.md's signature-defect table. Only an immediate post-run byte-scan of the binary can tell you what a gate actually tested.
-
-MECHANISM 2 — SHARED GATE DATABASE. wave.sh:93-105 (ensure_gate_db) hands every slice the same tbd_gate_it and deliberately does not drop it, while tests/registry_compat.rs:38-60 DELETEs and re-imports two FIXED modpack UUIDs. Two gates at once make each other fail. Three distinct symptoms observed by T-393's agent: registry_compat.rs:255 inserted 0 vs 10604; registry_compat.rs:511 (0,5) vs (16,7); an ETag assertion 200 vs 304. Deterministic repro, roughly 1 in 2:
-  distrobox-host-exec env TEST_DATABASE_URL=postgres://tbd:tbd@localhost:5434/tbd_gate_it?sslmode=disable \
-    bash -c 'B=/home/Samuel/Projects/TBD-Reforger/target/debug/deps/registry_compat-*; ("$B" &) ; "$B"'
-One process fails, the other passes; run alone it always passes.
-
-Both are FALSE-RED rather than false-green, so they waste budget rather than hide bugs — which is why this is deferred rather than fixed. But false-red is the most expensive failure shape this program has: the honest response to a red gate is to go looking for a bug in your own diff, and an unattended fix agent will spend its entire retry budget doing exactly that.
-
-CHEAPEST DURABLE FIX: serialise the gate with an flock around gate_slice/cmd_gate, so two worktrees cannot gate concurrently. That closes both mechanisms at once and costs a few lines. It trades wall clock for trustworthiness, which is the correct trade here — a gate nobody can believe is worth less than a slow one. The alternatives (per-worktree CARGO_TARGET_DIR, per-slice gate DB) both fight PLATFORM_FACTORY correction 1's shared-target-dir economics and cost ~40 GB per tree.'''
+summary = "Concurrent slices share mutable gate state — one worktree's build and DB writes silently corrupt another's gate result"
 class = "bug"
 status = "shipped"
 order = 3214
 executor = "claude-code"
 priority = 1
 estimated = ["scope"]
+migration_legacy = [
+    "BLOCKER-severity by the always-blocker rule (a gate reporting on code it never examined), but DEFERRED by operator triage 2026-07-26 because its only manifestation is CONCURRENT gates, and wave 1's authoritative verification was a single serial gate on merged main. Promote before any wave that gates more than one slice at a time. Two independent mechanisms, one root cause.",
+    "",
+    """MECHANISM 1 — ARTIFACT CLOBBERING. Observed directly by T-334's agent: target/debug/deps/events-120088c1974e0f68 AND target-gate-api/debug/deps/events-12108c0722165edc were both overwritten mid-session by a sibling worktree's build; the binaries contained main's t324-/t227- literals minutes after its own had been built there, with ps confirming a concurrent gate_test_api from another tree. The per-STEP private dirs (target-gate-api, -frontend, -mapengine) are private per step but SHARED ACROSS WORKTREES, so same package + same version = same artifact hash = clobbering. wave.sh:398-407 documents this hazard as already fixed; it is not. Consequence: a slice's "N passed" may not be its own code — the exact entry already in PLATFORM_FACTORY.md's signature-defect table. Only an immediate post-run byte-scan of the binary can tell you what a gate actually tested.""",
+    "",
+    "MECHANISM 2 — SHARED GATE DATABASE. wave.sh:93-105 (ensure_gate_db) hands every slice the same tbd_gate_it and deliberately does not drop it, while tests/registry_compat.rs:38-60 DELETEs and re-imports two FIXED modpack UUIDs. Two gates at once make each other fail. Three distinct symptoms observed by T-393's agent: registry_compat.rs:255 inserted 0 vs 10604; registry_compat.rs:511 (0,5) vs (16,7); an ETag assertion 200 vs 304. Deterministic repro, roughly 1 in 2:",
+    '  distrobox-host-exec env TEST_DATABASE_URL=postgres://tbd:tbd@localhost:5434/tbd_gate_it?sslmode=disable \',
+    """    bash -c 'B=/home/Samuel/Projects/TBD-Reforger/target/debug/deps/registry_compat-*; ("$B" &) ; "$B"'""",
+    "One process fails, the other passes; run alone it always passes.",
+    "",
+    "Both are FALSE-RED rather than false-green, so they waste budget rather than hide bugs — which is why this is deferred rather than fixed. But false-red is the most expensive failure shape this program has: the honest response to a red gate is to go looking for a bug in your own diff, and an unattended fix agent will spend its entire retry budget doing exactly that.",
+    "",
+    "CHEAPEST DURABLE FIX: serialise the gate with an flock around gate_slice/cmd_gate, so two worktrees cannot gate concurrently. That closes both mechanisms at once and costs a few lines. It trades wall clock for trustworthiness, which is the correct trade here — a gate nobody can believe is worth less than a slow one. The alternatives (per-worktree CARGO_TARGET_DIR, per-slice gate DB) both fight PLATFORM_FACTORY correction 1's shared-target-dir economics and cost ~40 GB per tree.",
+]
 
 [scope]
 domain = "website"

@@ -1,33 +1,7 @@
 id = "T-362"
 kind = "work"
 title = "XDG_CACHE_HOME silently disables T-320's fontconfig fix, and this container sets it"
-summary = """
-FOUND by T-354 while working next door, and it means a SHIPPED fix is conditional in the very environment it was written for.
-
-`ensure_gate_font_cache()` (doctor.rs, T-320) RETURNS EARLY when XDG_CACHE_HOME is set — a deliberate respect-the-operator's-setting escape hatch. But this container EXPORTS XDG_CACHE_HOME as `~/.cache`, which is precisely the shared host/container path whose poisoned fontconfig cache caused the original bug: chromium resolved ZERO fonts while `fc-list` reported 783, and the browser process took SIGABRT in Skia's per-character fallback.
-
-T-354 measured the current state: the doctor still passes that way TODAY, so `~/.cache/fontconfig` is not currently poisoned. **The hazard is latent, not active.** But T-320's fix reads as unconditional and is not, so the next time anything inside the Debian container runs fontconfig — which is what poisoned it originally — the fix silently does not apply and the failure returns wearing its old misleading face ('the browser DIED' / Runtime.evaluate timeout).
-
-DECIDE THE PRECEDENCE, do not just remove the escape hatch. An operator who sets XDG_CACHE_HOME deliberately has a reason. Options: honour it but VERIFY the cache resolves fonts and fall back loudly if not (probably right — it makes the guarantee unconditional without ignoring the setting); or ignore it for the gate specifically, since the gate's cache is an implementation detail rather than user data.
-
-The `fonts` doctor check T-320 added is what makes either option safe: it launches chromium and watches for the marker, so a wrong precedence decision fails loudly at preflight instead of mid-run.
-
-SHIPPED, and it REJECTED the option this ticket called 'probably right' — honour XDG_CACHE_HOME but verify — on three grounds, two of them measured:
-  1. A SHARED CACHE IS A TOCTOU, and verification only samples it. The poisoning write takes ~4s from the container. A gate that verifies at t=0 and runs smokes at t=60 has proved nothing; the third party that writes that path is still there. Owning the directory removes the race rather than sampling it — an argument this ticket's premise ('the fonts check is what makes either safe') did not cover.
-  2. FALLING BACK LOUDLY WOULD HAVE TO HAPPEN LATE. Discovering a bad cache requires launching chromium, so switching afterwards means a SECOND set_var once the browser is up — inside exactly the multi-threaded window T-354 warned about. 'Honour but verify' structurally requires the one thing that must not be done.
-  3. The operator never expressed intent ABOUT THE GATE. XDG_CACHE_HOME means 'put caches here'; it says nothing about whether sharing a fontconfig cache across distros is acceptable. The new TBD_GATE_FONT_CACHE can only mean one thing.
-
-WHY THE HAZARD WAS LATENT is sharper than 'the cache is clean today': host font dirs are ostree mtime-0, the container's are real, and fontconfig rejects a cache whose recorded mtime does not match — so today each side quietly rescans. That is a coincidence of this machine's layout, one `fc-cache` from ending. Chromium DOES run in-container (measured), so the writer was always available.
-
-TWO MORE DEFECTS FOUND IN ITS OWN FILE:
-  A FONTS FAILURE WAS ONLY A WARNING — with a passing liveness, `x fonts` exited 0 and handed the wedge to the suite. That is the FOURTH instance of this run's signature defect. check_fonts now returns a three-state FontProbe: NoFonts is a hard fail that short-circuits liveness (which otherwise burns 15s to report 'browser DIED' — true, but reads as a renderer bug); Inconclusive stays a warning.
-  /tmp IS ITSELF SHARED host<->container, so the bare `tbd-gate-cache` was the same bug one directory over. Now keyed on /etc/os-release ID+VERSION_ID (bazzite-44 vs debian-12). The old path is left in place deliberately so other agents' baselines are unaffected.
-
-Reproduction was honest about two of its own vacuous attempts: /var/tmp is CONTAINER-PRIVATE, so host-side runs silently created a fresh empty dir and rescanned. Redone under /home. Poisoned, pre-fix: `gate doctor` FAIL and `gate smoke selfcheck` HUNG for 2m10s with exit 3. Post-fix: both green, and a deliberately poisoned TBD_GATE_FONT_CACHE is honoured AND hard-fails in ~6s.
-
-For T-339 it gave an honest NO: the change does not make the function multi-thread safe (set_var races every concurrent getenv regardless). What it does change is that the DECISION no longer depends on ambient env, so MOVING the call is now behaviour-preserving — before, a call from main vs from run() could see different XDG_CACHE_HOME and pick differently. It exposed `pub fn gate_font_cache_dir()` so the real fix can land: once cdp::launch does `.env("XDG_CACHE_HOME", ...)` on the Command, the unsafe set_var and the whole question disappear.
-
-It created ~50 orphan chrome processes and killed them surgically by unique probe path, reporting that its first kill severed the distrobox bridge instead of the host process — the inverse of the trap wave.sh documents. Never used pkill chrome."""
+summary = "XDG_CACHE_HOME silently disables T-320's fontconfig fix, and this container sets it"
 class = "bug"
 status = "shipped"
 order = 3178
@@ -35,6 +9,34 @@ executor = "claude-code"
 priority = 1
 shipped_at = "0a2ebf4b"
 estimated = ["scope"]
+migration_legacy = [
+    "FOUND by T-354 while working next door, and it means a SHIPPED fix is conditional in the very environment it was written for.",
+    "",
+    "`ensure_gate_font_cache()` (doctor.rs, T-320) RETURNS EARLY when XDG_CACHE_HOME is set — a deliberate respect-the-operator's-setting escape hatch. But this container EXPORTS XDG_CACHE_HOME as `~/.cache`, which is precisely the shared host/container path whose poisoned fontconfig cache caused the original bug: chromium resolved ZERO fonts while `fc-list` reported 783, and the browser process took SIGABRT in Skia's per-character fallback.",
+    "",
+    "T-354 measured the current state: the doctor still passes that way TODAY, so `~/.cache/fontconfig` is not currently poisoned. **The hazard is latent, not active.** But T-320's fix reads as unconditional and is not, so the next time anything inside the Debian container runs fontconfig — which is what poisoned it originally — the fix silently does not apply and the failure returns wearing its old misleading face ('the browser DIED' / Runtime.evaluate timeout).",
+    "",
+    "DECIDE THE PRECEDENCE, do not just remove the escape hatch. An operator who sets XDG_CACHE_HOME deliberately has a reason. Options: honour it but VERIFY the cache resolves fonts and fall back loudly if not (probably right — it makes the guarantee unconditional without ignoring the setting); or ignore it for the gate specifically, since the gate's cache is an implementation detail rather than user data.",
+    "",
+    "The `fonts` doctor check T-320 added is what makes either option safe: it launches chromium and watches for the marker, so a wrong precedence decision fails loudly at preflight instead of mid-run.",
+    "",
+    "SHIPPED, and it REJECTED the option this ticket called 'probably right' — honour XDG_CACHE_HOME but verify — on three grounds, two of them measured:",
+    "  1. A SHARED CACHE IS A TOCTOU, and verification only samples it. The poisoning write takes ~4s from the container. A gate that verifies at t=0 and runs smokes at t=60 has proved nothing; the third party that writes that path is still there. Owning the directory removes the race rather than sampling it — an argument this ticket's premise ('the fonts check is what makes either safe') did not cover.",
+    "  2. FALLING BACK LOUDLY WOULD HAVE TO HAPPEN LATE. Discovering a bad cache requires launching chromium, so switching afterwards means a SECOND set_var once the browser is up — inside exactly the multi-threaded window T-354 warned about. 'Honour but verify' structurally requires the one thing that must not be done.",
+    "  3. The operator never expressed intent ABOUT THE GATE. XDG_CACHE_HOME means 'put caches here'; it says nothing about whether sharing a fontconfig cache across distros is acceptable. The new TBD_GATE_FONT_CACHE can only mean one thing.",
+    "",
+    "WHY THE HAZARD WAS LATENT is sharper than 'the cache is clean today': host font dirs are ostree mtime-0, the container's are real, and fontconfig rejects a cache whose recorded mtime does not match — so today each side quietly rescans. That is a coincidence of this machine's layout, one `fc-cache` from ending. Chromium DOES run in-container (measured), so the writer was always available.",
+    "",
+    "TWO MORE DEFECTS FOUND IN ITS OWN FILE:",
+    "  A FONTS FAILURE WAS ONLY A WARNING — with a passing liveness, `x fonts` exited 0 and handed the wedge to the suite. That is the FOURTH instance of this run's signature defect. check_fonts now returns a three-state FontProbe: NoFonts is a hard fail that short-circuits liveness (which otherwise burns 15s to report 'browser DIED' — true, but reads as a renderer bug); Inconclusive stays a warning.",
+    "  /tmp IS ITSELF SHARED host<->container, so the bare `tbd-gate-cache` was the same bug one directory over. Now keyed on /etc/os-release ID+VERSION_ID (bazzite-44 vs debian-12). The old path is left in place deliberately so other agents' baselines are unaffected.",
+    "",
+    "Reproduction was honest about two of its own vacuous attempts: /var/tmp is CONTAINER-PRIVATE, so host-side runs silently created a fresh empty dir and rescanned. Redone under /home. Poisoned, pre-fix: `gate doctor` FAIL and `gate smoke selfcheck` HUNG for 2m10s with exit 3. Post-fix: both green, and a deliberately poisoned TBD_GATE_FONT_CACHE is honoured AND hard-fails in ~6s.",
+    "",
+    'For T-339 it gave an honest NO: the change does not make the function multi-thread safe (set_var races every concurrent getenv regardless). What it does change is that the DECISION no longer depends on ambient env, so MOVING the call is now behaviour-preserving — before, a call from main vs from run() could see different XDG_CACHE_HOME and pick differently. It exposed `pub fn gate_font_cache_dir()` so the real fix can land: once cdp::launch does `.env("XDG_CACHE_HOME", ...)` on the Command, the unsafe set_var and the whole question disappear.',
+    "",
+    "It created ~50 orphan chrome processes and killed them surgically by unique probe path, reporting that its first kill severed the distrobox bridge instead of the host process — the inverse of the trap wave.sh documents. Never used pkill chrome.",
+]
 owns = ["tools/tbd-tools/src/doctor.rs"]
 
 [scope]

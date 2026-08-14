@@ -1,13 +1,14 @@
 id = "T-528"
 kind = "work"
 title = "W47 hotfix: me.rs arma_linked still is_some() after T-350"
-summary = "Wave 47 verifier P1/MAJOR vs T-350 ticket claim. T-350 fixed auth/oauth (+ leave reason) but title/summary name four linked sites including me.rs:87 and me.rs:170 which still use u.arma_id.is_some() — planted whitespace arma_id reports linked=true on GET /me and /me/link/status. Cure: use arma_id_is_linked (or same trim/nonempty helper) at both me.rs sites; Class-R/IT that RED on is_some()-only. Owns: apps/website/api/src/handlers/me.rs (and tests if needed). Do not touch events.rs roster (T-529)."
+summary = "W47 hotfix: me.rs arma_linked still is_some() after T-350"
 class = "bug"
 status = "shipped"
 order = 3368
 executor = "claude-code"
 priority = 0
 estimated = ["scope"]
+migration_legacy = ["Wave 47 verifier P1/MAJOR vs T-350 ticket claim. T-350 fixed auth/oauth (+ leave reason) but title/summary name four linked sites including me.rs:87 and me.rs:170 which still use u.arma_id.is_some() — planted whitespace arma_id reports linked=true on GET /me and /me/link/status. Cure: use arma_id_is_linked (or same trim/nonempty helper) at both me.rs sites; Class-R/IT that RED on is_some()-only. Owns: apps/website/api/src/handlers/me.rs (and tests if needed). Do not touch events.rs roster (T-529)."]
 owns = [
     "apps/website/api/src/handlers/me.rs",
     "apps/website/api/tests/t528_me_whitespace_linked.rs",

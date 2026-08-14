@@ -1,12 +1,13 @@
 id = "T-078"
 kind = "work"
 title = "Custom compositions"
-summary = """CANCELLED 2026-08-01 — MERGED INTO T-650 ("Compositions: save and place"), which is the same ticket under another name and carries all six of this row's ids (`RIGHT-MODE-002`, `COMP-SAVE-001`, `COMP-EDIT-001`, `COMP-PLACE-001`, and Workshop/Subscribe as explicitly deferred) plus the three `ATTR-FIELD-COMP-*` metadata fields. No mission-contract blocker: `comp:` already exists in $defs/alias and asset_catalog.rs already classifies Bohemia's compositions."""
+summary = "Custom compositions"
 class = "feature"
 status = "cancelled"
 order = 780
 executor = "claude-code"
 estimated = ["scope"]
+migration_legacy = ["""CANCELLED 2026-08-01 — MERGED INTO T-650 ("Compositions: save and place"), which is the same ticket under another name and carries all six of this row's ids (`RIGHT-MODE-002`, `COMP-SAVE-001`, `COMP-EDIT-001`, `COMP-PLACE-001`, and Workshop/Subscribe as explicitly deferred) plus the three `ATTR-FIELD-COMP-*` metadata fields. No mission-contract blocker: `comp:` already exists in $defs/alias and asset_catalog.rs already classifies Bohemia's compositions."""]
 
 [scope]
 domain = "website"

@@ -1,13 +1,14 @@
 id = "T-211"
 kind = "work"
 title = "Zone and play-area draw tool"
-summary = "No draw tool, no circle, no polygon anywhere in the editor, and the doc has no zone root at all (store.rs:51-65). The mod already implements union semantics, per-faction boundaries, strictest-wins and base_protection. Needs a doc root, mutators, a map tool and an Attributes panel for rules."
+summary = "Zone and play-area draw tool"
 class = "docs"
 status = "shipped"
 order = 2290
 executor = "claude-code"
 depends_on = ["T-241"]
 estimated = ["scope"]
+migration_legacy = ["No draw tool, no circle, no polygon anywhere in the editor, and the doc has no zone root at all (store.rs:51-65). The mod already implements union semantics, per-faction boundaries, strictest-wins and base_protection. Needs a doc root, mutators, a map tool and an Attributes panel for rules."]
 owns = ["crates/map-engine-core/src/doc/store.rs"]
 
 [scope]

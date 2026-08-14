@@ -1,18 +1,20 @@
 id = "T-448"
 kind = "work"
 title = "Personnel dossier Deployments stat has no API field"
-summary = """
-Residual from T-268 / wave 14. Dossier Deployments cell stays em-dash because RosterRow/AdminUserRow omit total_deployments. Not a fake count — honest empty — but ticket summary asked for the hardcoded stat.
-
-Repro: Personnel dossier → Deployments always —.
-
-Cure: project count in admin list_users + dto AdminUserRow + personnel.rs bind."""
+summary = "Personnel dossier Deployments stat has no API field"
 class = "feature"
 status = "shipped"
 order = 3287
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "Residual from T-268 / wave 14. Dossier Deployments cell stays em-dash because RosterRow/AdminUserRow omit total_deployments. Not a fake count — honest empty — but ticket summary asked for the hardcoded stat.",
+    "",
+    "Repro: Personnel dossier → Deployments always —.",
+    "",
+    "Cure: project count in admin list_users + dto AdminUserRow + personnel.rs bind.",
+]
 owns = [
     "apps/website/api/src/handlers/admin.rs",
     "apps/website/frontend/src/dto.rs",

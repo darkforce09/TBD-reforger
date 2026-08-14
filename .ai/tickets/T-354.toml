@@ -1,36 +1,7 @@
 id = "T-354"
 kind = "work"
 title = "Chrome's stderr pipe must be drained or CDP deadlocks with no error anywhere"
-summary = '''
-FOUND by T-232 the hard way — its second harness hung silently until it worked this out. This is a harness-authoring trap that will cost every future agent hours if it is not written down.
-
-**Chrome's stderr pipe must be drained, or it blocks at 64 KB and deadlocks mid-CDP with no error surfaced anywhere.** The symptom is indistinguishable from the page hanging — which is precisely the misdiagnosis that cost this program five sessions on T-320, where the real cause was the browser process aborting on a font lookup.
-
-Two more from the same slice, both of which produced a misleading 26/44 score on its first run:
-  - Chrome's `innerText` APPLIES CSS `text-transform: uppercase`, so an assertion against 'Attached Missions' fails against a rendered 'ATTACHED MISSIONS'. T-226 hit this independently and 'fixed' a non-bug because of it.
-  - The platform sidebar (`layout.rs:296`) and the mobile drawer (`:97`) are BOTH `<aside>`, so an `<aside>` selector is ambiguous.
-
-Where this belongs: `docs/website/EDITOR_GATE_RUNBOOK.md` §Known harness gaps, which T-320 created for exactly this purpose, and `tools/tbd-tools/src/cdp.rs` if the drain is missing there too — check whether the committed harness has this bug, because if it does it is a live intermittent gate failure, not just a trap for hand-rolled probes.
-
-SHIPPED 2026-07-26 — and the committed harness WAS deadlocking live, not merely trapping hand-rolled probes.
-
-`cdp::launch` piped BOTH stdout (:181) and stderr (:182) and NOTHING anywhere read either. `Browser` held `child: Child` and only ever called .id() and .wait().
-
-MEASURED, not inspected: with --enable-logging=stderr --v=1 redirected to a FILE so nothing throttled it, chrome emitted 87,583 bytes of stderr IN THE FIRST SECOND on about:blank alone, 109,581 by t+6s. The pipe holds 65,536. Chrome crosses it before a page exists.
-
-THE BLOCK CAUGHT LIVE: browser main thread (tid == pid) in syscall=1 (write), wchan=anon_pipe_write, fd/2 -> pipe:[62837202]. All 32 threads in state S — `ps` alone tells you nothing, which is why this was invisible.
-
-A/B ON THE COMMITTED CODE, isolated runs identical but for cdp.rs: undrained 4 PASS / 2 FAIL of 6; drained 18 PASS / 0 FAIL of 18. Wall time also fell 11-16s to 6s, because the launch poll was stalling on the same block. Intermittent because whichever thread owns the threshold-crossing write is the one that parks — a pool thread is survivable, the main thread is fatal. It drove the real `gate doctor` binary via CHROME_HEADLESS_SHELL pointed at a wrapper that execs the pinned chrome with logging flags appended, so it was a true control with zero code changes.
-
-IT REPRODUCES THE EXACT MISDIAGNOSIS: gate doctor printed 'the headless browser process DIED during the probe' and `cdp: ws call timed out (Runtime.evaluate)` — T-320's font-abort signature — while the browser sat ALIVE AND BLOCKED. So two independent root causes wear the same face.
-
-NEW P-1 DISCRIMINATOR, measured: wedged browser -> curl exit 52 (empty reply, socket accepted); genuinely dead browser -> exit 7 (refused).
-
-IMPLEMENTATION CARE WORTH KEEPING: drain uses read_until(b'\n') + lossy decode, deliberately NOT `lines()`, which returns Err on invalid UTF-8 — and a drain that can stop early re-opens the deadlock, because chrome's logs carry page-controlled console text. A bounded 200-line tail is kept and exposed as Browser::recent_output(), because chrome's stderr was the only copy of its own abort reason and launch was discarding it.
-
-VERIFIED INDEPENDENTLY from the command center after merge: `gate doctor: OK — 0 warning(s)` with liveness green.
-
-It also determined this does NOT explain T-338's top-level-document wedge: that wedged four CONSECUTIVE times, while this gap is scheduling roulette that passed 4 of 6 pre-fix, and document topology has no path to stderr volume. Worth re-running T-338's repro now, since recent_output() would show what chrome said.'''
+summary = "Chrome's stderr pipe must be drained or CDP deadlocks with no error anywhere"
 class = "bug"
 status = "shipped"
 order = 3170
@@ -38,6 +9,37 @@ executor = "claude-code"
 priority = 1
 shipped_at = "b19a4634"
 estimated = ["scope"]
+migration_legacy = [
+    "FOUND by T-232 the hard way — its second harness hung silently until it worked this out. This is a harness-authoring trap that will cost every future agent hours if it is not written down.",
+    "",
+    "**Chrome's stderr pipe must be drained, or it blocks at 64 KB and deadlocks mid-CDP with no error surfaced anywhere.** The symptom is indistinguishable from the page hanging — which is precisely the misdiagnosis that cost this program five sessions on T-320, where the real cause was the browser process aborting on a font lookup.",
+    "",
+    "Two more from the same slice, both of which produced a misleading 26/44 score on its first run:",
+    "  - Chrome's `innerText` APPLIES CSS `text-transform: uppercase`, so an assertion against 'Attached Missions' fails against a rendered 'ATTACHED MISSIONS'. T-226 hit this independently and 'fixed' a non-bug because of it.",
+    "  - The platform sidebar (`layout.rs:296`) and the mobile drawer (`:97`) are BOTH `<aside>`, so an `<aside>` selector is ambiguous.",
+    "",
+    "Where this belongs: `docs/website/EDITOR_GATE_RUNBOOK.md` §Known harness gaps, which T-320 created for exactly this purpose, and `tools/tbd-tools/src/cdp.rs` if the drain is missing there too — check whether the committed harness has this bug, because if it does it is a live intermittent gate failure, not just a trap for hand-rolled probes.",
+    "",
+    "SHIPPED 2026-07-26 — and the committed harness WAS deadlocking live, not merely trapping hand-rolled probes.",
+    "",
+    "`cdp::launch` piped BOTH stdout (:181) and stderr (:182) and NOTHING anywhere read either. `Browser` held `child: Child` and only ever called .id() and .wait().",
+    "",
+    "MEASURED, not inspected: with --enable-logging=stderr --v=1 redirected to a FILE so nothing throttled it, chrome emitted 87,583 bytes of stderr IN THE FIRST SECOND on about:blank alone, 109,581 by t+6s. The pipe holds 65,536. Chrome crosses it before a page exists.",
+    "",
+    "THE BLOCK CAUGHT LIVE: browser main thread (tid == pid) in syscall=1 (write), wchan=anon_pipe_write, fd/2 -> pipe:[62837202]. All 32 threads in state S — `ps` alone tells you nothing, which is why this was invisible.",
+    "",
+    "A/B ON THE COMMITTED CODE, isolated runs identical but for cdp.rs: undrained 4 PASS / 2 FAIL of 6; drained 18 PASS / 0 FAIL of 18. Wall time also fell 11-16s to 6s, because the launch poll was stalling on the same block. Intermittent because whichever thread owns the threshold-crossing write is the one that parks — a pool thread is survivable, the main thread is fatal. It drove the real `gate doctor` binary via CHROME_HEADLESS_SHELL pointed at a wrapper that execs the pinned chrome with logging flags appended, so it was a true control with zero code changes.",
+    "",
+    "IT REPRODUCES THE EXACT MISDIAGNOSIS: gate doctor printed 'the headless browser process DIED during the probe' and `cdp: ws call timed out (Runtime.evaluate)` — T-320's font-abort signature — while the browser sat ALIVE AND BLOCKED. So two independent root causes wear the same face.",
+    "",
+    "NEW P-1 DISCRIMINATOR, measured: wedged browser -> curl exit 52 (empty reply, socket accepted); genuinely dead browser -> exit 7 (refused).",
+    "",
+    '''IMPLEMENTATION CARE WORTH KEEPING: drain uses read_until(b'\n') + lossy decode, deliberately NOT `lines()`, which returns Err on invalid UTF-8 — and a drain that can stop early re-opens the deadlock, because chrome's logs carry page-controlled console text. A bounded 200-line tail is kept and exposed as Browser::recent_output(), because chrome's stderr was the only copy of its own abort reason and launch was discarding it.''',
+    "",
+    "VERIFIED INDEPENDENTLY from the command center after merge: `gate doctor: OK — 0 warning(s)` with liveness green.",
+    "",
+    "It also determined this does NOT explain T-338's top-level-document wedge: that wedged four CONSECUTIVE times, while this gap is scheduling roulette that passed 4 of 6 pre-fix, and document topology has no path to stderr volume. Worth re-running T-338's repro now, since recent_output() would show what chrome said.",
+]
 owns = [
     "docs/website/EDITOR_GATE_RUNBOOK.md",
     "tools/tbd-tools/src/cdp.rs",

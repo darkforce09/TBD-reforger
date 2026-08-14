@@ -1,16 +1,18 @@
 id = "T-395"
 kind = "work"
 title = "mission_overview stat grid renders STATUS as raw lowercase `rejected`"
-summary = """
-MINOR/cosmetic — filed deferred per Rule 12, not worth this week's budget.
-
-`frontend/src/mission_overview.rs` renders the `STATUS` stat-grid cell as the raw DB enum (`rejected`, lowercase) a few hundred pixels below the correct 'RETURNED BY REVIEW' callout that T-389 added. Same defect class T-389 fixed, different file, so it was out of that slice's owns. Two labels for one state, disagreeing on the same screen. Needs the same label mapper the badge uses. Found by T-389, which reported filing it but did not."""
+summary = "mission_overview stat grid renders STATUS as raw lowercase `rejected`"
 class = "bug"
 status = "shipped"
 order = 3211
 executor = "claude-code"
 priority = 3
 estimated = ["scope"]
+migration_legacy = [
+    "MINOR/cosmetic — filed deferred per Rule 12, not worth this week's budget.",
+    "",
+    "`frontend/src/mission_overview.rs` renders the `STATUS` stat-grid cell as the raw DB enum (`rejected`, lowercase) a few hundred pixels below the correct 'RETURNED BY REVIEW' callout that T-389 added. Same defect class T-389 fixed, different file, so it was out of that slice's owns. Two labels for one state, disagreeing on the same screen. Needs the same label mapper the badge uses. Found by T-389, which reported filing it but did not.",
+]
 
 [scope]
 domain = "website"

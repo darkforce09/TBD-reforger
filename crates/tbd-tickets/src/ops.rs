@@ -228,6 +228,28 @@ fn validate_post_image(
             ));
         }
     }
+    // T-917.3: no op may write a NEW summary wall. Scoped to `changed` — the same
+    // don't-retro-police carve-out the fn header documents: after the one-shot
+    // `ticket quarantine-walls` pass the live tree carries no unquarantined wall, so
+    // this binds exactly on prose an op introduces (`add`/`add_child` summaries, or a
+    // future summary-editing verb). Nonempty `migration_legacy` exempts exactly the
+    // summary cap (quarantined tickets carry `summary := title`, which may itself
+    // exceed the cap); the field is minted only by the quarantine pass — a
+    // post-cutover mint is red in `ticket check`, not here (ops never set it).
+    // Work-only: program summaries are uncapped this pass (spec §Wall quarantine).
+    for id in changed {
+        if let Some(Ticket::Work(w)) = post.get(id)
+            && w.migration_legacy.is_empty()
+        {
+            let words = w.summary.split_whitespace().count();
+            if words > crate::SUMMARY_WORD_CAP {
+                return Err(format!(
+                    "post-image {id}: summary is {words} words (cap {}) — write the ten typed body fields instead of a wall (caps: T-917 spec §Body)",
+                    crate::SUMMARY_WORD_CAP
+                ));
+            }
+        }
+    }
     // Structural children rules.
     for (pid, t) in post {
         if let Ticket::Program(p) = t {
@@ -1766,5 +1788,40 @@ active_slice = "T-1.1"
             vec!["T-2.toml".to_string()],
             "only the survivor remains"
         );
+    }
+
+    /// T-917.3: an op may not mint a NEW summary wall — `add` with a >40-word summary
+    /// refuses pre-write (corpus byte-untouched, the ops refusal-test pattern), naming
+    /// the count and the cap.
+    #[test]
+    fn add_refuses_wall_summary_pre_write() {
+        let mut c = corpus(vec![Ticket::Work(work("T-1", Status::Idea))]);
+        let before = c.clone();
+        let wall = "wall ".repeat(crate::SUMMARY_WORD_CAP + 1);
+        let err = add(&mut c, "Short title", wall.trim(), CLOCK).expect_err("wall must refuse");
+        assert!(
+            err.contains("41 words") && err.contains("cap 40"),
+            "must name count and cap: {err}"
+        );
+        assert_eq!(c, before, "refused op must leave the corpus untouched");
+    }
+
+    /// T-917.3: nonempty `migration_legacy` exempts exactly the summary cap — an op
+    /// touching a quarantined ticket (summary := title, possibly >40 words) commits.
+    #[test]
+    fn quarantined_ticket_is_exempt_from_summary_cap() {
+        let mut w = work("T-1", Status::Queued { order: 5 });
+        w.summary = "word ".repeat(50).trim().to_string();
+        w.migration_legacy = vec!["the original wall".into()];
+        let mut c = corpus(vec![Ticket::Work(w)]);
+        set_status(&mut c, "T-1", "deferred", CLOCK).expect("quarantined ticket must stay mutable");
+
+        // The same summary WITHOUT the quarantine marker refuses.
+        let mut unmarked = work("T-2", Status::Queued { order: 6 });
+        unmarked.summary = "word ".repeat(50).trim().to_string();
+        let mut c = corpus(vec![Ticket::Work(unmarked)]);
+        let err = set_status(&mut c, "T-2", "deferred", CLOCK)
+            .expect_err("unquarantined wall in a changed ticket must refuse");
+        assert!(err.contains("50 words") && err.contains("cap 40"), "{err}");
     }
 }

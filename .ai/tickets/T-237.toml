@@ -1,13 +1,14 @@
 id = "T-237"
 kind = "work"
 title = "ticket ship verifies nothing and check ignores the schema"
-summary = "xtask/src/cmds.rs:534 sets status to shipped and returns. xtask/src/check.rs contains zero references to schema.json and hand-rolls a narrower subset, so 314 schema violations are invisible: program Platform, invented impact and surfaces values, shipped_at which is not in the schema at all, and 13 null active_slice entries."
+summary = "ticket ship verifies nothing and check ignores the schema"
 class = "feature"
 status = "shipped"
 order = 2550
 executor = "claude-code"
 depends_on = ["T-273"]
 estimated = ["scope"]
+migration_legacy = ["xtask/src/cmds.rs:534 sets status to shipped and returns. xtask/src/check.rs contains zero references to schema.json and hand-rolls a narrower subset, so 314 schema violations are invisible: program Platform, invented impact and surfaces values, shipped_at which is not in the schema at all, and 13 null active_slice entries."]
 owns = [
     "xtask/src/cmds.rs",
     "xtask/src/check.rs",

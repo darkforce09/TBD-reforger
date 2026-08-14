@@ -1,17 +1,19 @@
 id = "T-314"
 kind = "work"
 title = "Nothing reads doc.kit_substitutions — the last mile of T-200"
-summary = """
-T-200 attached a KitSubstitutionReport to the compiled document so the compiler stops silently swapping an authored character for the faction default (342 of 354 registry characters have no kit alias). It rides the returned value with #[serde(skip)], so every existing caller already holds it and the /compiled wire contract is unchanged — pinned by a test asserting the top-level key set is exactly the schema's ten properties. But no caller surfaces it yet. The last mile is a tracing::warn! in get_compiled_mission (apps/website/api/src/handlers/missions.rs) reading doc.kit_substitutions.details(), which T-200 did not own. Until then the report exists and nobody sees it. details() returns the same shape as wire_safety::scan_editor_payload so a caller can render both identically.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now."""
+summary = "Nothing reads doc.kit_substitutions — the last mile of T-200"
 class = "bug"
 status = "shipped"
 order = 2314
 executor = "claude-code"
 estimated = ["scope"]
+migration_legacy = [
+    "T-200 attached a KitSubstitutionReport to the compiled document so the compiler stops silently swapping an authored character for the faction default (342 of 354 registry characters have no kit alias). It rides the returned value with #[serde(skip)], so every existing caller already holds it and the /compiled wire contract is unchanged — pinned by a test asserting the top-level key set is exactly the schema's ten properties. But no caller surfaces it yet. The last mile is a tracing::warn! in get_compiled_mission (apps/website/api/src/handlers/missions.rs) reading doc.kit_substitutions.details(), which T-200 did not own. Until then the report exists and nobody sees it. details() returns the same shape as wire_safety::scan_editor_payload so a caller can render both identically.",
+    "",
+    "== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==",
+    "Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.",
+    "This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.",
+]
 owns = [
     "crates/map-engine-core",
     "crates/map-engine-render",

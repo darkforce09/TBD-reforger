@@ -1,7 +1,7 @@
 id = "T-917.4"
 kind = "work"
 title = "Stamp backfill: git miner over shipped history"
-summary = "Mine immutable git metadata for every shipped ticket missing stamps: created_at/completed_at from first/last exact-id boundary-matched commit subjects (UTC-normalized), shipped_at from the last subject SHA; id_interpolation fallback between nearest id-adjacent dated tickets where no subjects exist. Every derived value listed in estimated[] with per-source accounting. The 4 date-shaped shipped_at strays resolved (date -> completed_at estimated; SHA re-mined or marked)."
+summary = "Stamp backfill: git miner over shipped history"
 class = "feature"
 status = "queued"
 order = 5974
@@ -18,6 +18,7 @@ acceptance = [
     "git diff -- .ai/tickets/wave.lock prints empty",
 ]
 created_at = "2026-08-14T21:54:38Z"
+migration_legacy = ["Mine immutable git metadata for every shipped ticket missing stamps: created_at/completed_at from first/last exact-id boundary-matched commit subjects (UTC-normalized), shipped_at from the last subject SHA; id_interpolation fallback between nearest id-adjacent dated tickets where no subjects exist. Every derived value listed in estimated[] with per-source accounting. The 4 date-shaped shipped_at strays resolved (date -> completed_at estimated; SHA re-mined or marked)."]
 owns = [
     ".ai/tickets",
     "xtask/src",

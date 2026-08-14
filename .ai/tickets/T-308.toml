@@ -1,13 +1,14 @@
 id = "T-308"
 kind = "work"
 title = "Apply Template's refusal message never reaches the operator"
-summary = "T-217 stopped Apply Template from silently deleting squads: apply_faction_library now returns WouldCollapseSquads{side, squad_ids, slots_destroyed} BEFORE the first write, so the doc is byte-identical on refusal, and Display names exactly what would have been lost. But the explanation is discarded on the way out — editor_ops.rs:1424 does .is_ok() and orbat_manager.rs:276 prints a bare 'Apply failed.' The data loss is stopped either way; the guidance is not shown. Thread the error through to the toast."
+summary = "Apply Template's refusal message never reaches the operator"
 class = "docs"
 status = "shipped"
 order = 2308
 executor = "claude-code"
 shipped_at = "8d723aa9"
 estimated = ["scope"]
+migration_legacy = ["T-217 stopped Apply Template from silently deleting squads: apply_faction_library now returns WouldCollapseSquads{side, squad_ids, slots_destroyed} BEFORE the first write, so the doc is byte-identical on refusal, and Display names exactly what would have been lost. But the explanation is discarded on the way out — editor_ops.rs:1424 does .is_ok() and orbat_manager.rs:276 prints a bare 'Apply failed.' The data loss is stopped either way; the guidance is not shown. Thread the error through to the toast."]
 
 [scope]
 domain = "website"

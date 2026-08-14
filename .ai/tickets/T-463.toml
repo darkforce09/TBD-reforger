@@ -1,18 +1,20 @@
 id = "T-463"
 kind = "work"
 title = "verify-t438/t456 shell gates still unwired from wave cold gate"
-summary = """
-Residual from T-462 / wave 24. wave.sh now runs verify-t439 and verify-t444 after schema, but scripts/mod/verify-t438-deploy-staging-compose-path.sh and verify-t456-mission-rest-size-gate.sh remain agent-local only — cold gate never executes them.
-
-Repro: corrupt deploy-staging compose path or strip REST size check → wave.sh gate still PASS until those scripts are invoked manually.
-
-Cure: wire both into wave.sh gate_slice + cmd_gate next to the T-439/T-444 steps (same pattern)."""
+summary = "verify-t438/t456 shell gates still unwired from wave cold gate"
 class = "chore"
 status = "shipped"
 order = 3302
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "Residual from T-462 / wave 24. wave.sh now runs verify-t439 and verify-t444 after schema, but scripts/mod/verify-t438-deploy-staging-compose-path.sh and verify-t456-mission-rest-size-gate.sh remain agent-local only — cold gate never executes them.",
+    "",
+    "Repro: corrupt deploy-staging compose path or strip REST size check → wave.sh gate still PASS until those scripts are invoked manually.",
+    "",
+    "Cure: wire both into wave.sh gate_slice + cmd_gate next to the T-439/T-444 steps (same pattern).",
+]
 owns = [
     "scripts/platform/wave.sh",
     "scripts/mod/verify-t438-deploy-staging-compose-path.sh",

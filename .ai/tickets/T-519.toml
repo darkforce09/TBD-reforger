@@ -1,13 +1,14 @@
 id = "T-519"
 kind = "work"
 title = "R-api fixture goldens for Member / RegistryCompat / FireSolution"
-summary = "Wave 45 residual (T-360 NIT). DashboardResponse.server_status is typed Option<ServerStatusDto> end-to-end; dto::r_api::dashboard green. Remaining typed DTOs Member, RegistryCompatResponse, FireSolution still lack fixtures under apps/website/frontend/tests/fixtures/api/ (ls | rg -i 'member|compat|fire|solve' → empty). Owns when filed: apps/website/frontend/tests/fixtures/api/ + matching dto.rs R-api modules. Outside T-360 owns at ship time."
+summary = "R-api fixture goldens for Member / RegistryCompat / FireSolution"
 class = "feature"
 status = "shipped"
 order = 3359
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = ["Wave 45 residual (T-360 NIT). DashboardResponse.server_status is typed Option<ServerStatusDto> end-to-end; dto::r_api::dashboard green. Remaining typed DTOs Member, RegistryCompatResponse, FireSolution still lack fixtures under apps/website/frontend/tests/fixtures/api/ (ls | rg -i 'member|compat|fire|solve' → empty). Owns when filed: apps/website/frontend/tests/fixtures/api/ + matching dto.rs R-api modules. Outside T-360 owns at ship time."]
 owns = [
     "apps/website/frontend/tests/fixtures/api/",
     "apps/website/frontend/src/dto.rs",

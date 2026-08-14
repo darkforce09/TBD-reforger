@@ -1,7 +1,7 @@
 id = "T-918.4"
 kind = "work"
 title = "In-app markdown viewer"
-summary = "Clicking spec, plan or a citation path renders the markdown file inside a board pane via egui_commonmark — no external hop. Raw-text fallback on parse trouble; external-open still offered as a secondary action. Renders the T-917.6 plan documents as the primary use case."
+summary = "In-app markdown viewer"
 class = "feature"
 status = "queued"
 order = 5984
@@ -19,6 +19,7 @@ acceptance = [
     "git status --porcelain unchanged after a full session",
 ]
 created_at = "2026-08-14T21:54:38Z"
+migration_legacy = ["Clicking spec, plan or a citation path renders the markdown file inside a board pane via egui_commonmark — no external hop. Raw-text fallback on parse trouble; external-open still offered as a secondary action. Renders the T-917.6 plan documents as the primary use case."]
 owns = ["apps/ticketboard"]
 
 [scope]

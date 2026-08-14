@@ -1,13 +1,14 @@
 id = "T-163"
 kind = "work"
 title = "Merge integration: t-159 + t-161 → main"
-summary = "SHIPPED: both worktree branches merged to main (t-159 @ df181120 clean, t-161 @ 3cec57ee 6-conflict resolution). xtask dead-React-reference purge (10 lines), V13 web→leptos, template fixes, T-152.5 compose_roads caller restored (map-engine-wasm compiled on no head since), registry truth (T-159 shipped, T-154 order). Verify: .ai/artifacts/t163_merge_verify_log.md."
+summary = "Merge integration: t-159 + t-161 → main"
 class = "bug"
 status = "shipped"
 order = 1600
 spec = "docs/platform/t163_merge_integration.md"
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
+migration_legacy = ["SHIPPED: both worktree branches merged to main (t-159 @ df181120 clean, t-161 @ 3cec57ee 6-conflict resolution). xtask dead-React-reference purge (10 lines), V13 web→leptos, template fixes, T-152.5 compose_roads caller restored (map-engine-wasm compiled on no head since), registry truth (T-159 shipped, T-154 order). Verify: .ai/artifacts/t163_merge_verify_log.md."]
 
 [scope]
 domain = "repo"

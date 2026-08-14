@@ -1,12 +1,13 @@
 id = "T-247"
 kind = "work"
 title = "POST /admin/roles/sync has no UI and no scheduler"
-summary = "resync_all_roles works and is routed but has no frontend caller — it is curl-only. There is no scheduled sync either; the architecture doc claims a nightly cron, which is aspirational. The seed also ships a placeholder snowflake for the leader role."
+summary = "POST /admin/roles/sync has no UI and no scheduler"
 class = "docs"
 status = "shipped"
 order = 2650
 executor = "claude-code"
 estimated = ["scope"]
+migration_legacy = ["resync_all_roles works and is routed but has no frontend caller — it is curl-only. There is no scheduled sync either; the architecture doc claims a nightly cron, which is aspirational. The seed also ships a placeholder snowflake for the leader role."]
 owns = ["apps/website/frontend/src/personnel.rs"]
 
 [scope]

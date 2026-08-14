@@ -1,47 +1,49 @@
 id = "T-602"
 kind = "work"
 title = "wave.sh narrows its own scope by changed-file detection, and three of its comments are stale"
-summary = """
-FOUND by wave 75's verifier (F5/F6/F7), partly by the command center walking into it live.
-
-=== THE LIVE INCIDENT ===
-The command center ran `wave.sh gate` with NO base argument to close wave 75. It defaults to `HEAD~1`
-(`:1983`), which after FIVE merges saw only the last one -- `serve.rs`. GATE reported PASS 26/26 over
-a wave in which 4 of 5 slices changed the frontend. Re-running with the real base `2f0167b9` gave
-PASS 27/27 with `trunk build` actually running.
-
-`wave.sh:1977-1981` ALREADY documents this trap and already takes the base as an argument -- the fix
-exists, the default is the hazard. This is user error the tool invites.
-
-=== FOUR STEPS NARROW, NOT THE TWO FIRST BLAMED ===
-All change-scoped steps key off `$base`: `touch_changed` (`:2020`), `wasm32 (frontend)` (`:2036` ->
-`wasm_changed:573-586`), `fmt (changed)` (`:2037`), and the trunk conditional (`:2134`). With a wrong
-base, `wasm_changed` prints "frontend untouched" and PASSES; `touch_changed` invalidates no frontend
-fingerprints, re-exposing the T-421 cached-verdict hole. `test xtask+tbd-tools` (`:2130`) is
-unconditional as claimed. No other step narrows.
-
-=== THE SAME BUG, STILL LATENT ===
-`cmd_wave_close` gates against `HEAD~${WAVE_GATE_DEPTH:-40}` (`:2247`). A wave exceeding 40 commits
-silently narrows the same way. Wave 75 was 10 commits, so it did not bite. It will.
-
-FIX: make the base mandatory, or derive it (merge-base against `origin/main`), or refuse to run when
-the computed base does not contain every slice merge. A gate whose scope silently shrinks is the
-signature defect -- *a tool reports success over an input it never examined.*
-
-=== STALE COMMENTS, same file family, trivial ===
-- `arsenal.rs:21-22` claims `editor_ops.rs` funnels **28** sites into `after_local_edit`. Measured
-  **26** (the other 2 are direct calls in `mission_editor.rs` / `mission_hydrate.rs`). Conclusion
-  unaffected -- every cited sibling commit site is real and no staging counter-example exists.
-- `.github/workflows/ci.yml:39-40` claims CI shipped `tbd_reforger` "since T-534". `git log -S` puts
-  it at **T-145, 2026-07-06**; T-381 (07-27) made it refuse, T-534 (07-28) derived per-binary names.
-  The mechanism is right, the date is wrong.
-- `wave.sh:2126` says "81 tests"; measured **84** (T-361 added 3 serve tests)."""
+summary = "wave.sh narrows its own scope by changed-file detection, and three of its comments are stale"
 class = "bug"
 status = "shipped"
 order = 3492
 executor = "claude-code"
 priority = 3
 estimated = ["scope"]
+migration_legacy = [
+    "FOUND by wave 75's verifier (F5/F6/F7), partly by the command center walking into it live.",
+    "",
+    "=== THE LIVE INCIDENT ===",
+    "The command center ran `wave.sh gate` with NO base argument to close wave 75. It defaults to `HEAD~1`",
+    "(`:1983`), which after FIVE merges saw only the last one -- `serve.rs`. GATE reported PASS 26/26 over",
+    "a wave in which 4 of 5 slices changed the frontend. Re-running with the real base `2f0167b9` gave",
+    "PASS 27/27 with `trunk build` actually running.",
+    "",
+    "`wave.sh:1977-1981` ALREADY documents this trap and already takes the base as an argument -- the fix",
+    "exists, the default is the hazard. This is user error the tool invites.",
+    "",
+    "=== FOUR STEPS NARROW, NOT THE TWO FIRST BLAMED ===",
+    "All change-scoped steps key off `$base`: `touch_changed` (`:2020`), `wasm32 (frontend)` (`:2036` ->",
+    "`wasm_changed:573-586`), `fmt (changed)` (`:2037`), and the trunk conditional (`:2134`). With a wrong",
+    'base, `wasm_changed` prints "frontend untouched" and PASSES; `touch_changed` invalidates no frontend',
+    "fingerprints, re-exposing the T-421 cached-verdict hole. `test xtask+tbd-tools` (`:2130`) is",
+    "unconditional as claimed. No other step narrows.",
+    "",
+    "=== THE SAME BUG, STILL LATENT ===",
+    "`cmd_wave_close` gates against `HEAD~${WAVE_GATE_DEPTH:-40}` (`:2247`). A wave exceeding 40 commits",
+    "silently narrows the same way. Wave 75 was 10 commits, so it did not bite. It will.",
+    "",
+    "FIX: make the base mandatory, or derive it (merge-base against `origin/main`), or refuse to run when",
+    "the computed base does not contain every slice merge. A gate whose scope silently shrinks is the",
+    "signature defect -- *a tool reports success over an input it never examined.*",
+    "",
+    "=== STALE COMMENTS, same file family, trivial ===",
+    "- `arsenal.rs:21-22` claims `editor_ops.rs` funnels **28** sites into `after_local_edit`. Measured",
+    "  **26** (the other 2 are direct calls in `mission_editor.rs` / `mission_hydrate.rs`). Conclusion",
+    "  unaffected -- every cited sibling commit site is real and no staging counter-example exists.",
+    '- `.github/workflows/ci.yml:39-40` claims CI shipped `tbd_reforger` "since T-534". `git log -S` puts',
+    "  it at **T-145, 2026-07-06**; T-381 (07-27) made it refuse, T-534 (07-28) derived per-binary names.",
+    "  The mechanism is right, the date is wrong.",
+    '- `wave.sh:2126` says "81 tests"; measured **84** (T-361 added 3 serve tests).',
+]
 owns = [
     "scripts/platform/wave.sh",
     "tools/tbd-tools/src/enf",

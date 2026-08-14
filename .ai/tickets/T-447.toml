@@ -1,18 +1,20 @@
 id = "T-447"
 kind = "work"
 title = "CMS content page still seeds from mock_docs; no GET list"
-summary = """
-Residual from T-267 / wave 14 adversarial NIT. Write paths (POST/PATCH/DELETE/push-discord) are live, but the CMS Content master list still uses mock_docs() and GET /cms/announcements is 405 — session cannot see server-persisted announcements after reload.
-
-Repro: Publish announcement; reload /content → mock seed only.
-
-Cure: add list route if missing + FE LocalResource GET /cms/announcements."""
+summary = "CMS content page still seeds from mock_docs; no GET list"
 class = "docs"
 status = "shipped"
 order = 3286
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "Residual from T-267 / wave 14 adversarial NIT. Write paths (POST/PATCH/DELETE/push-discord) are live, but the CMS Content master list still uses mock_docs() and GET /cms/announcements is 405 — session cannot see server-persisted announcements after reload.",
+    "",
+    "Repro: Publish announcement; reload /content → mock seed only.",
+    "",
+    "Cure: add list route if missing + FE LocalResource GET /cms/announcements.",
+]
 owns = [
     "apps/website/frontend/src/content.rs",
     "apps/website/api/src/handlers/cms.rs",

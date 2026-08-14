@@ -1,18 +1,20 @@
 id = "T-484"
 kind = "work"
 title = "Reject whitespace-only DISCORD_CLIENT_SECRET and DISCORD_REDIRECT_URL"
-summary = """
-Wave 32 verifier residual (T-481 shipped client_id trim). Production validate still uses bare is_empty() for discord_client_secret and discord_redirect_url (config.rs ~120-125). Whitespace-only secret/redirect validates Ok — same disguise class as pre-T-481 client id.
-
-Repro: env=production, secret=" " or redirect=" " → validate() Ok.
-
-Cure: trim().is_empty() (or reject trim-empty) for both; Class-R pins."""
+summary = "Reject whitespace-only DISCORD_CLIENT_SECRET and DISCORD_REDIRECT_URL"
 class = "feature"
 status = "shipped"
 order = 3323
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "Wave 32 verifier residual (T-481 shipped client_id trim). Production validate still uses bare is_empty() for discord_client_secret and discord_redirect_url (config.rs ~120-125). Whitespace-only secret/redirect validates Ok — same disguise class as pre-T-481 client id.",
+    "",
+    'Repro: env=production, secret=" " or redirect=" " → validate() Ok.',
+    "",
+    "Cure: trim().is_empty() (or reject trim-empty) for both; Class-R pins.",
+]
 owns = ["apps/website/api/src/config.rs"]
 
 [scope]

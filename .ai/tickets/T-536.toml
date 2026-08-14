@@ -1,18 +1,20 @@
 id = "T-536"
 kind = "work"
 title = "touch_changed still masks changed_rs porcelain failure as empty list"
-summary = """
-FOUND by W50 adversarial verifier (MINOR-NIT) after T-492.
-
-fmt_changed/clippy_changed now propagate changed_rs rc. touch_changed still does `for f in $(changed_rs …)` and can return 0 with listed=0 when porcelain fails. Same mask class.
-
-Cure: `files=$(changed_rs) || return $?` (or equivalent) in touch_changed."""
+summary = "touch_changed still masks changed_rs porcelain failure as empty list"
 class = "feature"
 status = "shipped"
 order = 3376
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "FOUND by W50 adversarial verifier (MINOR-NIT) after T-492.",
+    "",
+    "fmt_changed/clippy_changed now propagate changed_rs rc. touch_changed still does `for f in $(changed_rs …)` and can return 0 with listed=0 when porcelain fails. Same mask class.",
+    "",
+    "Cure: `files=$(changed_rs) || return $?` (or equivalent) in touch_changed.",
+]
 owns = ["scripts/platform/wave.sh"]
 
 [scope]

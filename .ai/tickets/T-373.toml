@@ -1,32 +1,7 @@
 id = "T-373"
 kind = "work"
 title = "Updating a library faction from a side destroys its emblem and every vehicle label"
-summary = """
-The sharpest finding of the CRDT/round-trip audit. `PUT /factions/:id` is a WHOLE-DOCUMENT replace, and the body handed to it is derived entirely from the mission document with two fields hardcoded to None.
-
-frontend/src/editor_ops.rs:1589-1605 — `faction_doc_from_side_core` builds a `FactionDoc` with `emblem: None` and `label: None` on every vehicle. frontend/src/orbat_manager.rs:309-327 — the 'Update selected library faction from this side' button PUTs that derived doc, reading the STORED library doc for exactly one field (`name`).
-
-Because the PUT replaces the whole document and `skip_serializing_if = "Option::is_none"` omits the keys:
-  - **the stored emblem is destroyed on every Save**;
-  - **every authored vehicle label in the template is destroyed**;
-  - a role whose slot carries no loadout/tag loses the template's authored loadout for that role;
-  - if the mission's side has no squads or vehicles, `roles: []` / `vehicles: []` ARE serialized (no skip on Vec) and faction-library.schema.json has no `minItems`, so **the entire library faction is emptied** and still validates.
-
-The sibling path is safe and shows what right looks like: faction_manager.rs:90-121 round-trips the full FactionDoc it loaded at :84-88. And the reverse direction is defended — `apply_faction_library` refuses with WouldCollapseSquads before its first write (doc/apply_faction.rs:211-240, T-217/T-308). So this direction is the only unguarded one.
-
-FIX: read the stored doc and merge, rather than deriving a replacement — or make the endpoint accept a partial. Do NOT simply stop sending the button's data; the feature is legitimate. Note handlers/factions.rs is T-358's this wave (it is fixing the untrimmed name on the same endpoint) — coordinate, and consider whether the endpoint should take an If-Match/ETag, since there is currently no versioning and a stale client write is unrecoverable.
-
-== KEPT IN THE RUN 2026-07-26 while 41 sibling findings were deferred: destroys an authored emblem and every vehicle label on every save. ==
-
-SHIPPED, and it was LIVE data loss rather than a latent contract issue. Two of the operator's three real user_factions rows carry an emblem and all three of their vehicles are labelled — `US Army — Light Infantry` (emblem, 2/2 labelled, 4 roles) and `USSR — Motor Rifle` (emblem, 1/1 labelled, 2 roles). One press on either destroyed all of it, 200 OK. Reproduced with a sentinel emblem and sentinel labels; read the operator's rows with SELECTs only, still 3 and unmutated.
-
-THE LINE IT DREW: derive every field the ORBAT can express; preserve the ones it cannot. And it DISAGREED WITH MY FRAMING on one of them, correctly — I listed a role losing its authored loadout as part of the bug. It is not: role/tag/character/loadout all live on the slot, Apply writes them there, and the Arsenal edits them, so a role that comes back without a loadout GENUINELY HAS NONE. Back-filling it would have made 'clear this role's loadout' impossible through the only UI that can do it. Its formulation is the one to keep: **preserving what CAN be authored elsewhere is a different act from preserving what can never be authored here.** emblem (nothing in MissionDocCore stores one) and vehicles[].label (apply_faction.rs:358 discards it — 'label is UI-only; resourceName is the graph pin') are preserved; labels re-paired by resourceName in stored order so duplicate vehicles keep distinct ones.
-
-THE EMPTY SIDE is refused before any request, and scoped deliberately to a NO-CONTENT write rather than to any list shrinking to zero — a vehicle-only motor-pool template is legitimate. A write that merely SHRINKS now confirms, mirroring APPLY TEMPLATE, which has confirmed since T-180.8 while this direction replaced a whole document silently.
-
-20/20 assertions driving the REAL button in headless Chrome, every verdict read back out of the stored document over HTTP, and each assertValue read by hand rather than trusting an exit code (T-386). Two probe traps recorded: `document.querySelector('select')` and `button[aria-label="OPFOR"]` are both AMBIGUOUS in the editor — the Eden top strip carries its own selects and its own faction chips and wins document order, so both silently drove the wrong widget.
-
-Worth knowing: NO UI AUTHORS AN EMBLEM TODAY — it appears nowhere in the frontend except dto.rs:583 and the schema calls it 'UI later'. So it is populated only by seeds and direct writes, yet two live rows carry one, which is exactly why the loss was silent and would have stayed unnoticed."""
+summary = "Updating a library faction from a side destroys its emblem and every vehicle label"
 class = "bug"
 status = "shipped"
 order = 3189
@@ -34,6 +9,33 @@ executor = "claude-code"
 priority = 0
 shipped_at = "b2a29e43"
 estimated = ["scope"]
+migration_legacy = [
+    "The sharpest finding of the CRDT/round-trip audit. `PUT /factions/:id` is a WHOLE-DOCUMENT replace, and the body handed to it is derived entirely from the mission document with two fields hardcoded to None.",
+    "",
+    "frontend/src/editor_ops.rs:1589-1605 — `faction_doc_from_side_core` builds a `FactionDoc` with `emblem: None` and `label: None` on every vehicle. frontend/src/orbat_manager.rs:309-327 — the 'Update selected library faction from this side' button PUTs that derived doc, reading the STORED library doc for exactly one field (`name`).",
+    "",
+    'Because the PUT replaces the whole document and `skip_serializing_if = "Option::is_none"` omits the keys:',
+    "  - **the stored emblem is destroyed on every Save**;",
+    "  - **every authored vehicle label in the template is destroyed**;",
+    "  - a role whose slot carries no loadout/tag loses the template's authored loadout for that role;",
+    "  - if the mission's side has no squads or vehicles, `roles: []` / `vehicles: []` ARE serialized (no skip on Vec) and faction-library.schema.json has no `minItems`, so **the entire library faction is emptied** and still validates.",
+    "",
+    "The sibling path is safe and shows what right looks like: faction_manager.rs:90-121 round-trips the full FactionDoc it loaded at :84-88. And the reverse direction is defended — `apply_faction_library` refuses with WouldCollapseSquads before its first write (doc/apply_faction.rs:211-240, T-217/T-308). So this direction is the only unguarded one.",
+    "",
+    "FIX: read the stored doc and merge, rather than deriving a replacement — or make the endpoint accept a partial. Do NOT simply stop sending the button's data; the feature is legitimate. Note handlers/factions.rs is T-358's this wave (it is fixing the untrimmed name on the same endpoint) — coordinate, and consider whether the endpoint should take an If-Match/ETag, since there is currently no versioning and a stale client write is unrecoverable.",
+    "",
+    "== KEPT IN THE RUN 2026-07-26 while 41 sibling findings were deferred: destroys an authored emblem and every vehicle label on every save. ==",
+    "",
+    "SHIPPED, and it was LIVE data loss rather than a latent contract issue. Two of the operator's three real user_factions rows carry an emblem and all three of their vehicles are labelled — `US Army — Light Infantry` (emblem, 2/2 labelled, 4 roles) and `USSR — Motor Rifle` (emblem, 1/1 labelled, 2 roles). One press on either destroyed all of it, 200 OK. Reproduced with a sentinel emblem and sentinel labels; read the operator's rows with SELECTs only, still 3 and unmutated.",
+    "",
+    "THE LINE IT DREW: derive every field the ORBAT can express; preserve the ones it cannot. And it DISAGREED WITH MY FRAMING on one of them, correctly — I listed a role losing its authored loadout as part of the bug. It is not: role/tag/character/loadout all live on the slot, Apply writes them there, and the Arsenal edits them, so a role that comes back without a loadout GENUINELY HAS NONE. Back-filling it would have made 'clear this role's loadout' impossible through the only UI that can do it. Its formulation is the one to keep: **preserving what CAN be authored elsewhere is a different act from preserving what can never be authored here.** emblem (nothing in MissionDocCore stores one) and vehicles[].label (apply_faction.rs:358 discards it — 'label is UI-only; resourceName is the graph pin') are preserved; labels re-paired by resourceName in stored order so duplicate vehicles keep distinct ones.",
+    "",
+    "THE EMPTY SIDE is refused before any request, and scoped deliberately to a NO-CONTENT write rather than to any list shrinking to zero — a vehicle-only motor-pool template is legitimate. A write that merely SHRINKS now confirms, mirroring APPLY TEMPLATE, which has confirmed since T-180.8 while this direction replaced a whole document silently.",
+    "",
+    """20/20 assertions driving the REAL button in headless Chrome, every verdict read back out of the stored document over HTTP, and each assertValue read by hand rather than trusting an exit code (T-386). Two probe traps recorded: `document.querySelector('select')` and `button[aria-label="OPFOR"]` are both AMBIGUOUS in the editor — the Eden top strip carries its own selects and its own faction chips and wins document order, so both silently drove the wrong widget.""",
+    "",
+    "Worth knowing: NO UI AUTHORS AN EMBLEM TODAY — it appears nowhere in the frontend except dto.rs:583 and the schema calls it 'UI later'. So it is populated only by seeds and direct writes, yet two live rows carry one, which is exactly why the loss was silent and would have stayed unnoticed.",
+]
 owns = [
     "apps/website/frontend/src/editor_ops.rs",
     "apps/website/frontend/src/orbat_manager.rs",

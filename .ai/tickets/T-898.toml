@@ -1,20 +1,22 @@
 id = "T-898"
 kind = "work"
 title = "verify file-length scans ZERO files — SIZE-1/SIZE-3 is enforced by nothing"
-summary = """
-Found 2026-08-12 by the T-896 slice while porting the Makefile CI lane. `cargo xtask verify file-length` (xtask/src/node_free.rs:77) walks ONLY `apps/website` and keeps only `.go`/`.ts`/`.tsx`. After the T-145 Go->Rust and T-159 React->Leptos cutovers there are ZERO such files in the tree — measured, `find apps/website -name '*.go' -o -name '*.ts' -o -name '*.tsx' | wc -l` returns 0. So the gate has printed `0 warning(s), 0 violation(s)` over an EMPTY SET for the entire Rust era, and `.coding-standards-allowlist.yaml` has no SIZE-3 entries because nothing has ever needed one.
-
-SIZE-1 (>600 warn) and SIZE-3 (>1000 fail) are therefore enforced by nothing. Every size decision in T-853 -- agents reporting overruns, splitting gate_ui_layouts, slice_worktree and mk_build at seams -- was self-discipline against a gate that checks nothing. That discipline was real and the splits were right; the gate was theatre.
-
-This is the same defect class the whole T-853 program is about: a check that reports success over an input it never examined. It is also line 89's `.unwrap_or(0)` fail-open in miniature, one level up -- there the read failure is swallowed, here the file set is empty.
-
-CURE: extend the walk to the Rust tree (xtask/, tools/, crates/, apps/website/*/src) and add `.rs`. MEASURE FIRST -- this turns main RED immediately on at least three pre-existing files: xtask/src/schema_gates.rs 4044, xtask/src/cmds.rs 1330, tools/tbd-tools/src/smokes.rs 3852, plus main.rs which grew past 1000 during Phase 3. So the slice is: extend the walk, then EITHER split those files OR give each an allowlist entry carrying a real reason and an expiry. Do not extend the walk and then silence it -- that reproduces the defect with extra steps."""
+summary = "verify file-length scans ZERO files — SIZE-1/SIZE-3 is enforced by nothing"
 class = "chore"
 status = "shipped"
 order = 5780
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
 estimated = ["scope"]
+migration_legacy = [
+    "Found 2026-08-12 by the T-896 slice while porting the Makefile CI lane. `cargo xtask verify file-length` (xtask/src/node_free.rs:77) walks ONLY `apps/website` and keeps only `.go`/`.ts`/`.tsx`. After the T-145 Go->Rust and T-159 React->Leptos cutovers there are ZERO such files in the tree — measured, `find apps/website -name '*.go' -o -name '*.ts' -o -name '*.tsx' | wc -l` returns 0. So the gate has printed `0 warning(s), 0 violation(s)` over an EMPTY SET for the entire Rust era, and `.coding-standards-allowlist.yaml` has no SIZE-3 entries because nothing has ever needed one.",
+    "",
+    "SIZE-1 (>600 warn) and SIZE-3 (>1000 fail) are therefore enforced by nothing. Every size decision in T-853 -- agents reporting overruns, splitting gate_ui_layouts, slice_worktree and mk_build at seams -- was self-discipline against a gate that checks nothing. That discipline was real and the splits were right; the gate was theatre.",
+    "",
+    "This is the same defect class the whole T-853 program is about: a check that reports success over an input it never examined. It is also line 89's `.unwrap_or(0)` fail-open in miniature, one level up -- there the read failure is swallowed, here the file set is empty.",
+    "",
+    "CURE: extend the walk to the Rust tree (xtask/, tools/, crates/, apps/website/*/src) and add `.rs`. MEASURE FIRST -- this turns main RED immediately on at least three pre-existing files: xtask/src/schema_gates.rs 4044, xtask/src/cmds.rs 1330, tools/tbd-tools/src/smokes.rs 3852, plus main.rs which grew past 1000 during Phase 3. So the slice is: extend the walk, then EITHER split those files OR give each an allowlist entry carrying a real reason and an expiry. Do not extend the walk and then silence it -- that reproduces the defect with extra steps.",
+]
 
 [scope]
 domain = "repo"

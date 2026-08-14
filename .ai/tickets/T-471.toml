@@ -1,18 +1,20 @@
 id = "T-471"
 kind = "work"
 title = "T-468 tripwire accepts hollow Makefile ci-local-schema recipe"
-summary = """
-Residual from wave 26 adversarial MAJOR. verify-t468-ci-schema-parity.sh requires ci.yml run: make ci-local-schema and that Makefile has a ci-local-schema: target name — not that the recipe still invokes schema-validate + verify-citations.
-
-Repro: replace ci-local-schema recipe with `echo hollow-only` → tripwire PASS; CI green while map-object-enums unrun.
-
-Cure: pin Makefile recipe body contains schema-validate (and citations) or expand GATE set check; RED→GREEN on hollow recipe."""
+summary = "T-468 tripwire accepts hollow Makefile ci-local-schema recipe"
 class = "chore"
 status = "shipped"
 order = 3310
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "Residual from wave 26 adversarial MAJOR. verify-t468-ci-schema-parity.sh requires ci.yml run: make ci-local-schema and that Makefile has a ci-local-schema: target name — not that the recipe still invokes schema-validate + verify-citations.",
+    "",
+    "Repro: replace ci-local-schema recipe with `echo hollow-only` → tripwire PASS; CI green while map-object-enums unrun.",
+    "",
+    "Cure: pin Makefile recipe body contains schema-validate (and citations) or expand GATE set check; RED→GREEN on hollow recipe.",
+]
 owns = [
     "scripts/mod/verify-t468-ci-schema-parity.sh",
     "Makefile",

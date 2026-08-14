@@ -1,13 +1,14 @@
 id = "T-312"
 kind = "work"
 title = "make mod-compile-selftest reports OK when the gate never ran"
-summary = "Found by T-209, and it is the sharpest instance of the pattern: the one check whose entire purpose is proving the compile gate can FAIL will print SELFTEST OK and exit 0 when it never ran at all. Reproduced. T-209's new workflow deliberately avoids the target and calls the script directly, but the Makefile target is still there for anyone who trusts it."
+summary = "make mod-compile-selftest reports OK when the gate never ran"
 class = "chore"
 status = "shipped"
 order = 2312
 executor = "claude-code"
 shipped_at = "223e5604"
 estimated = ["scope"]
+migration_legacy = ["Found by T-209, and it is the sharpest instance of the pattern: the one check whose entire purpose is proving the compile gate can FAIL will print SELFTEST OK and exit 0 when it never ran at all. Reproduced. T-209's new workflow deliberately avoids the target and calls the script directly, but the Makefile target is still there for anyone who trusts it."]
 
 [scope]
 domain = "repo"

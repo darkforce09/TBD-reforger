@@ -410,6 +410,77 @@ mod tests {
         }
     }
 
+    /// T-917.3 shrink-only ratchet: the number of tickets carrying a nonempty
+    /// `migration_legacy` — the walls the one-shot `cargo xtask ticket
+    /// quarantine-walls` pass parked, measured on the live tree at the pass
+    /// (instrument: typed corpus scan, `!migration_legacy.is_empty()`). The
+    /// `HAND_EDITED_NOT_CANONICAL` self-tightening pattern, red BOTH ways:
+    ///
+    /// - **Growth is impossible by rule**: new tickets never quarantine — a
+    ///   post-cutover mint is red in `ticket check` (`check_quarantine_mint`) and the
+    ///   ops post-image gate refuses new wall summaries outright, so nothing can
+    ///   legitimately add a carrier. A count above the pin means somebody hand-minted
+    ///   the field.
+    /// - **Every Program T drain batch SHRINKS this pin in the same commit** (spec
+    ///   §Programs, Program T: decompose the wall into the typed fields, delete
+    ///   `migration_legacy`, shrink the pin by exactly the batch size).
+    const MIGRATION_LEGACY_PIN: usize = 694; // measured by the T-917.3 quarantine run
+
+    /// T-917.3 permanent reversibility + ratchet proof over the live tree. The verb's
+    /// own in-run assertion proved join("\n") == the pre-move summary bytes while it
+    /// still held the original in memory; what stays provable forever is: (a) the
+    /// carrier count equals the pin exactly, (b) every carrier is a WORK ticket (only
+    /// the work-only quarantine pass may mint the field), (c) every parked wall is
+    /// still an actual wall (>SUMMARY_WORD_CAP words — the move criterion), and (d)
+    /// the wall survives a render → re-parse cycle byte-identically, so the
+    /// newline-join stays stable through every future canonical rewrite.
+    #[test]
+    fn migration_legacy_ratchet_pin() {
+        let root = repo_root();
+        let corpus = Corpus::load(&root).expect("fail-closed load of the live tree");
+        let mut carriers = 0usize;
+        for (id, t) in &corpus.tickets {
+            let legacy = match t {
+                Ticket::Program(p) => {
+                    assert!(
+                        p.migration_legacy.is_empty(),
+                        "{id}: program carries migration_legacy — only the work-only quarantine pass may mint the field"
+                    );
+                    continue;
+                }
+                Ticket::Work(w) => &w.migration_legacy,
+            };
+            if legacy.is_empty() {
+                continue;
+            }
+            carriers += 1;
+            let wall = legacy.join("\n");
+            assert!(
+                wall.split_whitespace().count() > crate::SUMMARY_WORD_CAP,
+                "{id}: parked migration_legacy joins to {} words — not a wall; the quarantine only moves >{} word summaries",
+                wall.split_whitespace().count(),
+                crate::SUMMARY_WORD_CAP
+            );
+            let rendered = render_ticket_toml(t).expect("render carrier");
+            let back = parse_ticket_toml(&rendered)
+                .unwrap_or_else(|e| panic!("{id}: carrier render does not re-parse: {e}"));
+            let back_legacy = match &back {
+                Ticket::Work(w) => w.migration_legacy.clone(),
+                Ticket::Program(_) => panic!("{id}: carrier re-parsed as program"),
+            };
+            assert_eq!(
+                back_legacy.join("\n"),
+                wall,
+                "{id}: migration_legacy newline-join is not render-stable"
+            );
+        }
+        assert_eq!(
+            carriers, MIGRATION_LEGACY_PIN,
+            "migration_legacy carrier count drifted from the pin — a drain commit must \
+             SHRINK the pin in the same commit; growth means an illegal hand-mint"
+        );
+    }
+
     /// `derive_next_parent_id` mirrors `tickets_store::derive_next_id`: max PARENT
     /// numeric + 1; children never affect it.
     #[test]

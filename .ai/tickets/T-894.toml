@@ -1,13 +1,14 @@
 id = "T-894"
 kind = "work"
 title = "T-853 Phase 3: Makefile db lane -> xtask"
-summary = "T-853 Phase 3. Absorb these Makefile targets into xtask: db-up db-down db-logs seed db-backup db-backup-drill db-backup-verify db-restore registry-import rust-test-it. The podman/compose lifecycle, the seed appliers, and rust-test-it's `while read -r db` loop over psql output that reaps per-binary rust_it_<suite>_it databases (Makefile:209-212) - the one piece of genuinely non-trivial shell left in the file. Each slice ADDS xtask subcommands in its own new module and does NOT edit the Makefile - the deletion is one final slice, so the three build slices stay file-disjoint. ACCEPTANCE: for every target, `make <t>` and the new `cargo xtask ...` must produce byte-identical stdout+stderr+rc on a clean tree AND on a deliberately broken one; the harness must assert the make side went red before believing a diff (T-556). Spec: docs/platform/t853_shell_to_xtask_waves.md"
+summary = "T-853 Phase 3: Makefile db lane -> xtask"
 class = "docs"
 status = "shipped"
 order = 5740
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
 estimated = ["scope"]
+migration_legacy = ["T-853 Phase 3. Absorb these Makefile targets into xtask: db-up db-down db-logs seed db-backup db-backup-drill db-backup-verify db-restore registry-import rust-test-it. The podman/compose lifecycle, the seed appliers, and rust-test-it's `while read -r db` loop over psql output that reaps per-binary rust_it_<suite>_it databases (Makefile:209-212) - the one piece of genuinely non-trivial shell left in the file. Each slice ADDS xtask subcommands in its own new module and does NOT edit the Makefile - the deletion is one final slice, so the three build slices stay file-disjoint. ACCEPTANCE: for every target, `make <t>` and the new `cargo xtask ...` must produce byte-identical stdout+stderr+rc on a clean tree AND on a deliberately broken one; the harness must assert the make side went red before believing a diff (T-556). Spec: docs/platform/t853_shell_to_xtask_waves.md"]
 owns = ["xtask/src/mk_db.rs"]
 
 [scope]

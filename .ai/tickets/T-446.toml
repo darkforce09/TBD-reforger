@@ -1,18 +1,20 @@
 id = "T-446"
 kind = "work"
 title = "CMS hero image upload needs web-sys FormData features"
-summary = """
-Residual from T-267 / wave 14. Hero upload button now errors honestly instead of fake success; multipart POST /cms/uploads needs web-sys FormData/File features in apps/website/frontend/Cargo.toml (+ likely client helper). Outside T-267 owns.
-
-Repro: CMS Content → hero upload → error toast; /cms/uploads never called.
-
-Cure: enable FormData/File features, wire multipart api helper, POST /cms/uploads and set thumbnail_url."""
+summary = "CMS hero image upload needs web-sys FormData features"
 class = "feature"
 status = "shipped"
 order = 3285
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "Residual from T-267 / wave 14. Hero upload button now errors honestly instead of fake success; multipart POST /cms/uploads needs web-sys FormData/File features in apps/website/frontend/Cargo.toml (+ likely client helper). Outside T-267 owns.",
+    "",
+    "Repro: CMS Content → hero upload → error toast; /cms/uploads never called.",
+    "",
+    "Cure: enable FormData/File features, wire multipart api helper, POST /cms/uploads and set thumbnail_url.",
+]
 owns = [
     "apps/website/frontend/Cargo.toml",
     "apps/website/frontend/src/client.rs",

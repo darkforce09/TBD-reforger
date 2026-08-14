@@ -1,20 +1,22 @@
 id = "T-475"
 kind = "work"
 title = "T-446 Class-R greens comment-out FormData + unpinned absolute URL"
-summary = '''
-Residual from wave 28 adversarial MAJOR×2 on T-446.
-(1) content.rs Class-R uses raw CARGO.contains("\"FormData\"") — commenting the feature line (`# "FormData",`) still PASS because the string remains in the file. Same comment-needle class as T-460/T-461.
-(2) Live handle_hero calls absolute_cms_upload_url(&raw) so Publish gets http(s) for T-405 validated_thumbnail, but Class-R never mentions absolute_cms_upload_url — replacing with `let url = raw;` still greens all content::tests (11/11).
-
-Repro: `# "FormData",` in Cargo.toml → hero_multipart_upload_is_wired_not_stubbed PASS; `let url = raw;` → content::tests PASS.
-
-Cure: strip // and # comments (and TOML string-safe comment lines) before Cargo FormData/File/FileList pins; require live prod call absolute_cms_upload_url(…) on the upload Ok path (not comment-only). RED→GREEN on both verifier perturbations.'''
+summary = "T-446 Class-R greens comment-out FormData + unpinned absolute URL"
 class = "feature"
 status = "shipped"
 order = 3314
 executor = "claude-code"
 priority = 1
 estimated = ["scope"]
+migration_legacy = [
+    "Residual from wave 28 adversarial MAJOR×2 on T-446.",
+    '(1) content.rs Class-R uses raw CARGO.contains("\"FormData\"") — commenting the feature line (`# "FormData",`) still PASS because the string remains in the file. Same comment-needle class as T-460/T-461.',
+    "(2) Live handle_hero calls absolute_cms_upload_url(&raw) so Publish gets http(s) for T-405 validated_thumbnail, but Class-R never mentions absolute_cms_upload_url — replacing with `let url = raw;` still greens all content::tests (11/11).",
+    "",
+    'Repro: `# "FormData",` in Cargo.toml → hero_multipart_upload_is_wired_not_stubbed PASS; `let url = raw;` → content::tests PASS.',
+    "",
+    "Cure: strip // and # comments (and TOML string-safe comment lines) before Cargo FormData/File/FileList pins; require live prod call absolute_cms_upload_url(…) on the upload Ok path (not comment-only). RED→GREEN on both verifier perturbations.",
+]
 owns = ["apps/website/frontend/src/content.rs"]
 
 [scope]

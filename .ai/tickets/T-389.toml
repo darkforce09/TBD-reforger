@@ -1,27 +1,7 @@
 id = "T-389"
 kind = "work"
 title = "Wire the Submit for Approval button, and let the author read the verdict"
-summary = """
-MAKES T-234's WORK REACHABLE. T-234 proved POST /missions/{id}/submit is the sole door into the approvals queue and that the SPA never calls it, so /admin/approvals is permanently empty in production. It hardened the endpoint (SQL-enforced status guard, cleared stale review stamps, added a mission.submit audit) and specified the caller precisely.
-
-THE BUTTON: apps/website/frontend/src/missions.rs:833 — the `<div class="flex flex-wrap gap-2">` row in the can_edit Manage section (Archive :834-845, Delete :846-853). Gate on `m.status == "draft" || m.status == "rejected"`; handler mirrors toggle_archive (:676-715) but calls `api_post_ok(store, &format!("/missions/{id}/submit"), json!({}))` then `changed.run(())`. approvals.rs:302 already uses that exact shape.
-
-TWO SUPPORTING GAPS — wiring the button without these gives the author a button and NO FEEDBACK LOOP, which is worse than no button:
-  missions.rs:46-55 `visibility_badge` has no "rejected" arm, so it falls through to `other => (other.to_string(), "neutral")` and renders the raw string `rejected`.
-  dto.rs has NO rejection_reason / reviewed_by / reviewed_at on MissionCard (:312) or MissionDetail (:657). The API writes rejection_reason (approvals.rs:217) and **it is the only thing an author is ever told about why their mission came back.** That is T-313's subject (deferred); this is the cheapest useful slice of it, so do that much here.
-
-Also: missions.rs:615 gates on `is_maker && (is_owner || is_admin)`, stricter than the API's `author || admin` — so a non-maker author is shown no Manage section for their own mission.
-
-NOTE the DTO mirror is R-api golden-tested, so a shape change needs the golden recaptured in the SAME commit, never ahead of the route. T-306 removed a #[serde(flatten)] catch-all precisely so a DTO asserting a field the backend lacks fails a gate rather than rendering a placeholder.
-
-And one thing T-234 measured that shapes the UX: GET /approvals is admin-tier, so **the author cannot see the queue they fed.** Decide whether the author needs a view of their own pending submission, or whether the status badge plus the rejection reason on their own mission card is sufficient. The second is probably right and is what this ticket describes.
-
-SHIPPED (a4f78a49, merged 7a0003f2). BROWSER-VERIFIED round trip with a real mouse click, run twice: author submits draft -> pending_approval -> admin sees it in GET /approvals while the AUTHOR gets 403 -> reviewer rejects with a reason -> author's card shows RETURNED plus the reason text and the dossier shows the RETURNED BY REVIEW callout with reviewed_at -> Resubmit clears rejection_reason/reviewed_by/reviewed_at and re-queues. T-234's `mission.submit` audit row was written by that click.
-UX decision: status badge + reason on the author's OWN card and dossier, NOT an author-facing queue view — GET /approvals is RequireMinRole(admin) and 403s for the author (confirmed both before and after), so a queue view means a new endpoint or a tier change, a bigger ticket than 'tell the author what happened'.
-SPLIT THE is_maker GATE, deliberately: can_edit = is_maker && (is_owner || is_admin) still gates the Mission Creator CTA and collaboration, and a NEW can_manage = is_owner || is_admin gates lifecycle (submit/archive/delete) and the rejection feedback. That mirrors the API exactly — submit_mission, update_mission and delete_mission all take a plain AuthUser and test author||admin; only create_mission requires MissionMakerUser. Without the split, a DEMOTED maker who still owns missions would see neither the Manage row nor the rejection reason — the one person who needs it.
-Two new goldens captured off the real submit->reject path; the two pre-existing mission goldens left untouched because they back the missions.dom.json/missionview.dom.json oracle freeze. Frontend suite 168/168, R-api 31/31, SLICE GATE PASS.
-Its golden-flatten finding is now T-394; the mission_overview raw-status render is T-395 (it reported filing that and did not). Superseded T-313.
-NOT browser-verified, by its own account: the 409/403 strings surfacing through a toast (driven over HTTP but not through the UI), and the success-toast text (expired before first poll). Known rough edge left deliberately: after a successful submit the OPEN SHEET still offers 'Submit for review' until reopened — changed.run(()) refetches the grid but not the dossier's own resource. Mirrors pre-existing toggle_archive behaviour; a second click gets a real 409 message, not silence."""
+summary = "Wire the Submit for Approval button, and let the author read the verdict"
 class = "audit"
 status = "shipped"
 order = 3205
@@ -29,6 +9,28 @@ executor = "claude-code"
 priority = 1
 shipped_at = "2026-07-26"
 estimated = ["scope"]
+migration_legacy = [
+    "MAKES T-234's WORK REACHABLE. T-234 proved POST /missions/{id}/submit is the sole door into the approvals queue and that the SPA never calls it, so /admin/approvals is permanently empty in production. It hardened the endpoint (SQL-enforced status guard, cleared stale review stamps, added a mission.submit audit) and specified the caller precisely.",
+    "",
+    'THE BUTTON: apps/website/frontend/src/missions.rs:833 — the `<div class="flex flex-wrap gap-2">` row in the can_edit Manage section (Archive :834-845, Delete :846-853). Gate on `m.status == "draft" || m.status == "rejected"`; handler mirrors toggle_archive (:676-715) but calls `api_post_ok(store, &format!("/missions/{id}/submit"), json!({}))` then `changed.run(())`. approvals.rs:302 already uses that exact shape.',
+    "",
+    "TWO SUPPORTING GAPS — wiring the button without these gives the author a button and NO FEEDBACK LOOP, which is worse than no button:",
+    '  missions.rs:46-55 `visibility_badge` has no "rejected" arm, so it falls through to `other => (other.to_string(), "neutral")` and renders the raw string `rejected`.',
+    "  dto.rs has NO rejection_reason / reviewed_by / reviewed_at on MissionCard (:312) or MissionDetail (:657). The API writes rejection_reason (approvals.rs:217) and **it is the only thing an author is ever told about why their mission came back.** That is T-313's subject (deferred); this is the cheapest useful slice of it, so do that much here.",
+    "",
+    "Also: missions.rs:615 gates on `is_maker && (is_owner || is_admin)`, stricter than the API's `author || admin` — so a non-maker author is shown no Manage section for their own mission.",
+    "",
+    "NOTE the DTO mirror is R-api golden-tested, so a shape change needs the golden recaptured in the SAME commit, never ahead of the route. T-306 removed a #[serde(flatten)] catch-all precisely so a DTO asserting a field the backend lacks fails a gate rather than rendering a placeholder.",
+    "",
+    "And one thing T-234 measured that shapes the UX: GET /approvals is admin-tier, so **the author cannot see the queue they fed.** Decide whether the author needs a view of their own pending submission, or whether the status badge plus the rejection reason on their own mission card is sufficient. The second is probably right and is what this ticket describes.",
+    "",
+    "SHIPPED (a4f78a49, merged 7a0003f2). BROWSER-VERIFIED round trip with a real mouse click, run twice: author submits draft -> pending_approval -> admin sees it in GET /approvals while the AUTHOR gets 403 -> reviewer rejects with a reason -> author's card shows RETURNED plus the reason text and the dossier shows the RETURNED BY REVIEW callout with reviewed_at -> Resubmit clears rejection_reason/reviewed_by/reviewed_at and re-queues. T-234's `mission.submit` audit row was written by that click.",
+    "UX decision: status badge + reason on the author's OWN card and dossier, NOT an author-facing queue view — GET /approvals is RequireMinRole(admin) and 403s for the author (confirmed both before and after), so a queue view means a new endpoint or a tier change, a bigger ticket than 'tell the author what happened'.",
+    "SPLIT THE is_maker GATE, deliberately: can_edit = is_maker && (is_owner || is_admin) still gates the Mission Creator CTA and collaboration, and a NEW can_manage = is_owner || is_admin gates lifecycle (submit/archive/delete) and the rejection feedback. That mirrors the API exactly — submit_mission, update_mission and delete_mission all take a plain AuthUser and test author||admin; only create_mission requires MissionMakerUser. Without the split, a DEMOTED maker who still owns missions would see neither the Manage row nor the rejection reason — the one person who needs it.",
+    "Two new goldens captured off the real submit->reject path; the two pre-existing mission goldens left untouched because they back the missions.dom.json/missionview.dom.json oracle freeze. Frontend suite 168/168, R-api 31/31, SLICE GATE PASS.",
+    "Its golden-flatten finding is now T-394; the mission_overview raw-status render is T-395 (it reported filing that and did not). Superseded T-313.",
+    "NOT browser-verified, by its own account: the 409/403 strings surfacing through a toast (driven over HTTP but not through the UI), and the success-toast text (expired before first poll). Known rough edge left deliberately: after a successful submit the OPEN SHEET still offers 'Submit for review' until reopened — changed.run(()) refetches the grid but not the dossier's own resource. Mirrors pre-existing toggle_archive behaviour; a second click gets a real 409 message, not silence.",
+]
 owns = [
     "apps/website/frontend/src/missions.rs",
     "apps/website/frontend/src/dto.rs",

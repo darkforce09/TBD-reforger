@@ -1,28 +1,30 @@
 id = "T-399"
 kind = "work"
 title = "admin_field.rs approvals assertion fails deterministically once the gate DB accumulates 20 pending_approval rows"
-summary = """
-Filed 2026-07-26 after it turned the wave-1 post-merge gate red for a reason that had nothing to do with the wave. Diagnosed by T-334's agent and independently confirmed by the command center against both the handler and the live DB.
-
-tests/admin_field.rs:377 asserts its just-submitted mission appears on the FIRST PAGE of GET /api/v1/approvals. handlers/approvals.rs:99-105 pages LIMIT 20 OFFSET 0 ORDER BY COALESCE(updated_at, created_at, ...) ASC — oldest first. Nothing ever deletes pending_approval missions from tbd_gate_it, and admin_field.rs:369 plus missions.rs:963/1138/1156 all write them. Every run adds one; once the count exceeds 20 the newest is off page 1 and the assertion fails FOREVER, on every branch, for everyone.
-
-CONFIRMED on the shared gate DB 2026-07-26: 23 pending_approval rows, all titled "T234 draft by 999000000000000009", accumulating one per run since 12:25. The wave-1 merge gate failed on exactly this test; the same tree then passed 11/11 against a fresh cold database (tbd_wave1_cold). So the fix is not in any slice's code.
-
-This is the "green then red on an identical tree" shape the program keeps paying for, with an unusually nasty property: it is not a flake but a RATCHET — once crossed it never goes back, so it reads as "the change I just made broke approvals".
-
-Repro: psql -d tbd_gate_it -c "SELECT count(*) FROM missions WHERE status='pending_approval' AND deleted_at IS NULL" — if > 20, cargo test -p website-api --test admin_field admin_approvals_cms_field fails.
-
-TWO THINGS TO FIX, and the second matters more:
- 1. The test should not assume page 1 — query with a filter, or assert over the paged set, or clean up after itself.
- 2. NOTHING resets the gate database. ensure_gate_db (wave.sh:93-105) deliberately never drops tbd_gate_it for speed, so every suite's residue accumulates forever and this class of ratchet is guaranteed to recur in a different suite. Consider a periodic reset, or per-wave DB names, alongside T-398 whose mechanism 2 is the same shared database.
-
-Immediate operational workaround, no permission needed: create a fresh DB and set TBD_GATE_DB to it. That is what wave 1 shipped against."""
+summary = "admin_field.rs approvals assertion fails deterministically once the gate DB accumulates 20 pending_approval rows"
 class = "bug"
 status = "shipped"
 order = 3215
 executor = "claude-code"
 priority = 1
 estimated = ["scope"]
+migration_legacy = [
+    "Filed 2026-07-26 after it turned the wave-1 post-merge gate red for a reason that had nothing to do with the wave. Diagnosed by T-334's agent and independently confirmed by the command center against both the handler and the live DB.",
+    "",
+    "tests/admin_field.rs:377 asserts its just-submitted mission appears on the FIRST PAGE of GET /api/v1/approvals. handlers/approvals.rs:99-105 pages LIMIT 20 OFFSET 0 ORDER BY COALESCE(updated_at, created_at, ...) ASC — oldest first. Nothing ever deletes pending_approval missions from tbd_gate_it, and admin_field.rs:369 plus missions.rs:963/1138/1156 all write them. Every run adds one; once the count exceeds 20 the newest is off page 1 and the assertion fails FOREVER, on every branch, for everyone.",
+    "",
+    """CONFIRMED on the shared gate DB 2026-07-26: 23 pending_approval rows, all titled "T234 draft by 999000000000000009", accumulating one per run since 12:25. The wave-1 merge gate failed on exactly this test; the same tree then passed 11/11 against a fresh cold database (tbd_wave1_cold). So the fix is not in any slice's code.""",
+    "",
+    'This is the "green then red on an identical tree" shape the program keeps paying for, with an unusually nasty property: it is not a flake but a RATCHET — once crossed it never goes back, so it reads as "the change I just made broke approvals".',
+    "",
+    """Repro: psql -d tbd_gate_it -c "SELECT count(*) FROM missions WHERE status='pending_approval' AND deleted_at IS NULL" — if > 20, cargo test -p website-api --test admin_field admin_approvals_cms_field fails.""",
+    "",
+    "TWO THINGS TO FIX, and the second matters more:",
+    " 1. The test should not assume page 1 — query with a filter, or assert over the paged set, or clean up after itself.",
+    " 2. NOTHING resets the gate database. ensure_gate_db (wave.sh:93-105) deliberately never drops tbd_gate_it for speed, so every suite's residue accumulates forever and this class of ratchet is guaranteed to recur in a different suite. Consider a periodic reset, or per-wave DB names, alongside T-398 whose mechanism 2 is the same shared database.",
+    "",
+    "Immediate operational workaround, no permission needed: create a fresh DB and set TBD_GATE_DB to it. That is what wave 1 shipped against.",
+]
 owns = ["apps/website/api/tests/admin_field.rs"]
 
 [scope]

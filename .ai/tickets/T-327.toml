@@ -1,18 +1,20 @@
 id = "T-327"
 kind = "work"
 title = "`#tbd link` code is visible in chat before TBD can suppress it"
-summary = """
-SPLIT FROM T-231 (b). The agent verified the load-bearing claim AT THE CALL SITE rather than trusting the header: TBD_AdminCommands.c:30-46 calls `super.OnNewMessage(...)` at line 32, BEFORE `TBD_IdentityLink.TryHandleChat(...)` at line 45. The message is already distributed by the time TBD sees it, so returning true suppresses NOTHING. There is no script-side fix.
-
-Existing mitigations are correct and complete for a chat surface and should NOT be redone: the usage text warns, every failure path emits NewCodeAdvice(), success consumes the code in the same transaction so a leaked code is single-use and already spent, and the code is never logged (the HTTP_CODE_NULL branch deliberately drops the body because GetData() returns the REQUEST on transport failure).
-
-The real fix is an in-game UI field instead of a chat line, which is blocked on `resourceDatabase.rdb` regeneration — the same blocker TBD_AdminScreen carries (TBD_AdminCommands.c:23-25). OPERATOR/WORKBENCH ONLY."""
+summary = "`#tbd link` code is visible in chat before TBD can suppress it"
 class = "bug"
 status = "deferred"
 order = 3143
 executor = "workbench"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "SPLIT FROM T-231 (b). The agent verified the load-bearing claim AT THE CALL SITE rather than trusting the header: TBD_AdminCommands.c:30-46 calls `super.OnNewMessage(...)` at line 32, BEFORE `TBD_IdentityLink.TryHandleChat(...)` at line 45. The message is already distributed by the time TBD sees it, so returning true suppresses NOTHING. There is no script-side fix.",
+    "",
+    "Existing mitigations are correct and complete for a chat surface and should NOT be redone: the usage text warns, every failure path emits NewCodeAdvice(), success consumes the code in the same transaction so a leaked code is single-use and already spent, and the code is never logged (the HTTP_CODE_NULL branch deliberately drops the body because GetData() returns the REQUEST on transport failure).",
+    "",
+    "The real fix is an in-game UI field instead of a chat line, which is blocked on `resourceDatabase.rdb` regeneration — the same blocker TBD_AdminScreen carries (TBD_AdminCommands.c:23-25). OPERATOR/WORKBENCH ONLY.",
+]
 
 [scope]
 domain = "mod"

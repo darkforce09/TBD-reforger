@@ -1,16 +1,7 @@
 id = "T-324"
 kind = "work"
 title = "Claiming a second ORBAT seat does not release the first, so one user holds two"
-summary = """
-FOUND by T-318 while fixing the orphan bug, and it is the bigger half. MEASURED, not inferred: claim slot0, then claim slot1, both with entirely VALID requests — the user ends up holding 2 seats while their registration row names 1. Pre-fix, withdraw then left one stranded.
-
-So T-318's part 1 (rejecting malformed bodies) does not stop all new orphans, only the accidental ones. The valid-request path mints them too. T-318's withdraw fix makes them recoverable — it releases by occupant, and its test asserts BOTH seats are freed — but the seat is wrongly occupied until someone withdraws, and a capacity display reading it will be wrong meanwhile.
-
-Fixing it properly means reconciling `assigned_to` inside register's existing `SELECT ... FOR UPDATE` transaction and deciding the waitlist interaction. That is a design change to a concurrency-sensitive handler, not a line edit — which is why T-318 reported it rather than folding it in.
-
-Two related structural notes from the same agent, both worth resolving with this:
-  - `withdraw` does NOT take the `SELECT ... FOR UPDATE` on `event_missions` that `register` does, though both do check-then-write on capacity.
-  - `event_registrations.slot_id` and `orbat_slots.assigned_to` are a denormalized duplicate of ONE fact with no constraint forcing agreement. A partial unique index on `orbat_slots(event_mission_id, assigned_to) WHERE assigned_to IS NOT NULL` would make double-claiming impossible at the DB level. That is a migration, so it wants coordinating with T-228, which owns apps/website/api/migrations."""
+summary = "Claiming a second ORBAT seat does not release the first, so one user holds two"
 class = "bug"
 status = "shipped"
 order = 3140
@@ -18,6 +9,17 @@ executor = "claude-code"
 priority = 1
 shipped_at = "a9f3c34a"
 estimated = ["scope"]
+migration_legacy = [
+    "FOUND by T-318 while fixing the orphan bug, and it is the bigger half. MEASURED, not inferred: claim slot0, then claim slot1, both with entirely VALID requests — the user ends up holding 2 seats while their registration row names 1. Pre-fix, withdraw then left one stranded.",
+    "",
+    "So T-318's part 1 (rejecting malformed bodies) does not stop all new orphans, only the accidental ones. The valid-request path mints them too. T-318's withdraw fix makes them recoverable — it releases by occupant, and its test asserts BOTH seats are freed — but the seat is wrongly occupied until someone withdraws, and a capacity display reading it will be wrong meanwhile.",
+    "",
+    "Fixing it properly means reconciling `assigned_to` inside register's existing `SELECT ... FOR UPDATE` transaction and deciding the waitlist interaction. That is a design change to a concurrency-sensitive handler, not a line edit — which is why T-318 reported it rather than folding it in.",
+    "",
+    "Two related structural notes from the same agent, both worth resolving with this:",
+    "  - `withdraw` does NOT take the `SELECT ... FOR UPDATE` on `event_missions` that `register` does, though both do check-then-write on capacity.",
+    "  - `event_registrations.slot_id` and `orbat_slots.assigned_to` are a denormalized duplicate of ONE fact with no constraint forcing agreement. A partial unique index on `orbat_slots(event_mission_id, assigned_to) WHERE assigned_to IS NOT NULL` would make double-claiming impossible at the DB level. That is a migration, so it wants coordinating with T-228, which owns apps/website/api/migrations.",
+]
 owns = ["apps/website/api/src/handlers/events.rs"]
 
 [scope]

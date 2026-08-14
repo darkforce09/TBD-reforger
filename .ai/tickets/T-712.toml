@@ -1,13 +1,14 @@
 id = "T-712"
 kind = "work"
 title = "Contour band: honest constant annotations + sample the default view in acceptance"
-summary = "Three claim-accuracy defects on lod_gates.rs shipped by T-639, behaviorally nil but false-as-annotated: (1) :111 comment claims tan(11 deg) but the literal 0.1943803091472314 fabricates digits after the 10th place (true 0.19438030913771848); (2) the provenance story is circular — the test's synthetic sinusoid AMP=1.184 is tuned to yield ~11 deg, yet declares itself 'a real terrain statistic, not a fudge factor' and the production comment says 'DEM slope statistics'; the value is actually fitted to the 3.41/6.20 corpus anchors. Fix: correct digits, rewrite both comments to name the fit honestly, optionally measure the real Everon DEM median slope and cite it. (3) The acceptance test samples only rung centres; the DEFAULT boot view (zoom -2.0 = 4.0 m/px) sits near the 10->20 switch at 12.9 px, below the 14 px floor — add the default view as a sampled point and decide (retune or accept-with-comment). Diagnosis: editor_verify/wave101.md F-2, F-3, N-1."
+summary = "Contour band: honest constant annotations + sample the default view in acceptance"
 class = "bug"
 status = "deferred"
 order = 4305
 executor = "claude-code"
 notes = "filed by wave-101 adversarial verifier (editor factory)"
 estimated = ["scope"]
+migration_legacy = ["Three claim-accuracy defects on lod_gates.rs shipped by T-639, behaviorally nil but false-as-annotated: (1) :111 comment claims tan(11 deg) but the literal 0.1943803091472314 fabricates digits after the 10th place (true 0.19438030913771848); (2) the provenance story is circular — the test's synthetic sinusoid AMP=1.184 is tuned to yield ~11 deg, yet declares itself 'a real terrain statistic, not a fudge factor' and the production comment says 'DEM slope statistics'; the value is actually fitted to the 3.41/6.20 corpus anchors. Fix: correct digits, rewrite both comments to name the fit honestly, optionally measure the real Everon DEM median slope and cite it. (3) The acceptance test samples only rung centres; the DEFAULT boot view (zoom -2.0 = 4.0 m/px) sits near the 10->20 switch at 12.9 px, below the 14 px floor — add the default view as a sampled point and decide (retune or accept-with-comment). Diagnosis: editor_verify/wave101.md F-2, F-3, N-1."]
 
 [scope]
 domain = "website"

@@ -1,19 +1,21 @@
 id = "T-537"
 kind = "work"
 title = "xtask empty/lossy write residuals outside T-383 owns (enf/world/map)"
-summary = """
-FOUND as T-383 residual (W51 CLEAN). Owns fixed cmds/sync/schema_gates; still open:
-- enf/apidoc.rs header-only TSV overwrite exits 0
-- world/aux.rs:1009/1022/1050, world/build.rs:664/958
-- map/labels.rs:455, map/sap.rs:1007
-
-Same shape: success path writing structurally empty/lossy content over committed files. Cure: refuse_empty_write (or equivalent) at each site. Repro: see T-383 summary."""
+summary = "xtask empty/lossy write residuals outside T-383 owns (enf/world/map)"
 class = "bug"
 status = "shipped"
 order = 3377
 executor = "claude-code"
 priority = 2
 estimated = ["scope"]
+migration_legacy = [
+    "FOUND as T-383 residual (W51 CLEAN). Owns fixed cmds/sync/schema_gates; still open:",
+    "- enf/apidoc.rs header-only TSV overwrite exits 0",
+    "- world/aux.rs:1009/1022/1050, world/build.rs:664/958",
+    "- map/labels.rs:455, map/sap.rs:1007",
+    "",
+    "Same shape: success path writing structurally empty/lossy content over committed files. Cure: refuse_empty_write (or equivalent) at each site. Repro: see T-383 summary.",
+]
 owns = [
     "tools/tbd-tools/src/enf",
     "tools/tbd-tools/src/world",
