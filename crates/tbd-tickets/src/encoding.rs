@@ -195,6 +195,16 @@ pub struct TicketFile {
     pub acceptance: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub shipped_at: Option<String>,
+    /// T-913.1 lifecycle stamps, canonical slot: after `shipped_at` (still a bare commit
+    /// SHA — untouched semantics), before `owns`. RFC 3339 UTC only; validated in
+    /// [`TicketFile::into_ticket`], so a malformed value refuses the tree instead of
+    /// being coerced to now. Widening the on-disk key set like this also requires
+    /// `ALLOWED_NEW` (xtask tickets_store) and `.ai/tickets/schema.json` in the same
+    /// deliberate commit.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub completed_at: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub owns: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -235,8 +245,24 @@ fn status_from_file(f: &TicketFile) -> Result<Status, String> {
     }
 }
 
+/// T-913.1: malformed lifecycle stamps are parse errors that NAME the ticket — the load
+/// refuses; nothing ever substitutes now.
+fn validate_timestamps(f: &TicketFile) -> Result<(), String> {
+    for (field, value) in [
+        ("created_at", f.created_at.as_deref()),
+        ("completed_at", f.completed_at.as_deref()),
+    ] {
+        if let Some(s) = value {
+            crate::timestamp::validate_rfc3339_utc(field, s)
+                .map_err(|e| format!("{}: {e}", f.id))?;
+        }
+    }
+    Ok(())
+}
+
 impl TicketFile {
     pub fn into_ticket(self) -> Result<Ticket, String> {
+        validate_timestamps(&self)?;
         let status = status_from_file(&self)?;
         match self.kind.as_str() {
             "program" => {
@@ -261,6 +287,8 @@ impl TicketFile {
                     user_story: self.user_story,
                     acceptance: self.acceptance,
                     priority: self.priority,
+                    created_at: self.created_at,
+                    completed_at: self.completed_at,
                     owns: self.owns,
                     pack_last: self.pack_last,
                 }))
@@ -286,6 +314,8 @@ impl TicketFile {
                     acceptance: self.acceptance,
                     shipped_at: self.shipped_at,
                     priority: self.priority,
+                    created_at: self.created_at,
+                    completed_at: self.completed_at,
                     owns: self.owns,
                     pack_last: self.pack_last,
                 }))
@@ -324,6 +354,8 @@ impl TicketFile {
                     | Status::Deferred { .. }
                     | Status::Cancelled { .. } => None,
                 },
+                created_at: p.created_at.clone(),
+                completed_at: p.completed_at.clone(),
                 owns: p.owns.clone(),
                 pack_last: p.pack_last,
                 scope: None,
@@ -347,6 +379,8 @@ impl TicketFile {
                 user_story: w.user_story.clone(),
                 acceptance: w.acceptance.clone(),
                 shipped_at: w.shipped_at.clone(),
+                created_at: w.created_at.clone(),
+                completed_at: w.completed_at.clone(),
                 owns: w.owns.clone(),
                 pack_last: w.pack_last,
                 scope: Some(ScopeFile::from_scope(&w.scope)),
@@ -390,6 +424,8 @@ mod tests {
             acceptance: vec![],
             shipped_at: None,
             priority: None,
+            created_at: None,
+            completed_at: None,
             owns: vec![],
             pack_last: None,
         });
@@ -424,12 +460,112 @@ mod tests {
             acceptance: vec![],
             shipped_at: None,
             priority: None,
+            created_at: None,
+            completed_at: None,
             owns: vec![],
             pack_last: None,
         });
         let s = render_ticket_toml(&t).unwrap();
         assert!(s.contains("[scope.website.editor]"), "{s}");
         assert_eq!(t, parse_ticket_toml(&s).unwrap());
+    }
+
+    /// T-913.1: stamps round-trip and land in the canonical slot — after `shipped_at`
+    /// (still a bare SHA), before `owns`.
+    #[test]
+    fn timestamps_roundtrip_in_canonical_slot() {
+        let t = Ticket::Work(WorkTicket {
+            id: "T-914".into(),
+            title: "stamped".into(),
+            summary: "stamped".into(),
+            status: Status::Shipped {
+                shipped_at: Some("abc123def".into()),
+                order: Some(6000),
+            },
+            executor: Some("claude-code".into()),
+            notes: None,
+            spec: None,
+            depends_on: vec![],
+            unblocks: vec![],
+            parent: None,
+            scope: Scope::Repo {
+                layers: vec![RepoLayer::Tickets],
+            },
+            user_story: None,
+            acceptance: vec![],
+            shipped_at: Some("abc123def".into()),
+            priority: None,
+            created_at: Some("2026-08-14T10:00:00Z".into()),
+            completed_at: Some("2026-08-14T11:30:00+00:00".into()),
+            owns: vec!["xtask/src/cmds.rs".into()],
+            pack_last: None,
+        });
+        let s = render_ticket_toml(&t).unwrap();
+        let pos = |needle: &str| {
+            s.find(needle)
+                .unwrap_or_else(|| panic!("{needle} in:\n{s}"))
+        };
+        assert!(
+            pos("shipped_at = ") < pos("created_at = ")
+                && pos("created_at = ") < pos("completed_at = ")
+                && pos("completed_at = ") < pos("owns = "),
+            "canonical slot violated:\n{s}"
+        );
+        assert_eq!(t, parse_ticket_toml(&s).unwrap());
+    }
+
+    /// T-913.1: program arm carries the stamps too.
+    #[test]
+    fn program_timestamps_roundtrip() {
+        let toml_in = r#"
+id = "T-913"
+kind = "program"
+title = "metrics"
+summary = "metrics"
+status = "queued"
+order = 5920
+children = ["T-913.1"]
+created_at = "2026-08-10T09:00:00Z"
+completed_at = "2026-08-14T12:00:00Z"
+"#;
+        let t = parse_ticket_toml(toml_in).unwrap();
+        match &t {
+            Ticket::Program(p) => {
+                assert_eq!(p.created_at.as_deref(), Some("2026-08-10T09:00:00Z"));
+                assert_eq!(p.completed_at.as_deref(), Some("2026-08-14T12:00:00Z"));
+            }
+            Ticket::Work(_) => panic!("T-913 must parse as Program"),
+        }
+        let rendered = render_ticket_toml(&t).unwrap();
+        assert_eq!(t, parse_ticket_toml(&rendered).unwrap());
+    }
+
+    /// T-913.1: malformed stamps are load errors that NAME the ticket — never now.
+    #[test]
+    fn malformed_timestamp_is_parse_error_naming_ticket() {
+        for bad in [
+            "2026-13-99T25:61:00Z",
+            "2026-08-14 10:00",
+            "2026-08-14T10:00:00+05:00",
+        ] {
+            let err = parse_ticket_toml(&format!(
+                r#"
+id = "T-901"
+kind = "work"
+title = "x"
+summary = "x"
+status = "queued"
+order = 1
+created_at = "{bad}"
+owns = ["docs/x.md"]
+[scope.repo]
+layers = ["docs"]
+"#
+            ))
+            .unwrap_err();
+            assert!(err.contains("T-901"), "must name the ticket: {err}");
+            assert!(err.contains("created_at"), "must name the field: {err}");
+        }
     }
 
     #[test]

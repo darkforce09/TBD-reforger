@@ -266,6 +266,10 @@ fn force_t159_23(v: &Value) -> Ticket {
         acceptance: vec![],
         shipped_at: Some("69dc5da5".into()),
         priority: v.get("priority").and_then(Value::as_i64),
+        // T-913.1: migration mappers never stamp lifecycle timestamps — that would be
+        // backfill, and phase-1 values never carried them.
+        created_at: None,
+        completed_at: None,
         owns: vec![],
         pack_last: None,
     })
@@ -342,6 +346,8 @@ pub fn map_value(id: &str, v: &Value) -> MapOutcome {
             user_story,
             acceptance,
             priority: v.get("priority").and_then(Value::as_i64),
+            created_at: None,
+            completed_at: None,
             owns: str_list(v, "owns"),
             pack_last: v.get("pack_last").and_then(Value::as_bool),
         })));
@@ -368,6 +374,8 @@ pub fn map_value(id: &str, v: &Value) -> MapOutcome {
         acceptance,
         shipped_at: opt_s(v, "shipped_at"),
         priority: v.get("priority").and_then(Value::as_i64),
+        created_at: None,
+        completed_at: None,
         owns: str_list(v, "owns"),
         pack_last: v.get("pack_last").and_then(Value::as_bool),
     })))
@@ -399,6 +407,8 @@ fn park_unmappable(id: &str, v: &Value) -> Ticket {
             user_story: opt_s(v, "user_story"),
             acceptance: str_list(v, "acceptance"),
             priority: v.get("priority").and_then(Value::as_i64),
+            created_at: None,
+            completed_at: None,
             owns: vec![],
             pack_last: None,
         });
@@ -421,6 +431,8 @@ fn park_unmappable(id: &str, v: &Value) -> Ticket {
         acceptance: str_list(v, "acceptance"),
         shipped_at: opt_s(v, "shipped_at"),
         priority: v.get("priority").and_then(Value::as_i64),
+        created_at: None,
+        completed_at: None,
         owns: vec![],
         pack_last: None,
     })
@@ -717,6 +729,8 @@ fn synthetic_child(id: &str, title: &str, parent: &str, scope: Scope, order: i64
         acceptance: vec![],
         shipped_at: None,
         priority: None,
+        created_at: None,
+        completed_at: None,
         owns: vec![],
         pack_last: None,
     })

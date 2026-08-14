@@ -9,6 +9,10 @@ description = "Typed ticket Scope/Status (T-911.2)"
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
+# T-913.1 timestamp parse/format: `time` is already in the workspace lockfile as a
+# transitive dependency (0.3.53), so this adds zero new supply chain; its well-known
+# Rfc3339 parser is strict and exposes the offset for the UTC-only rule.
+time = { version = "0.3", features = ["parsing", "formatting"] }
 toml = { version = "0.8", features = ["preserve_order"] }
 
 [dev-dependencies]

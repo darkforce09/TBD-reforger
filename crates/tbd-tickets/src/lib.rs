@@ -7,7 +7,9 @@ use serde::{Deserialize, Serialize};
 mod encoding;
 #[cfg(test)]
 mod proptest_roundtrip;
+mod timestamp;
 pub use encoding::{TicketFile, parse_ticket_toml, render_ticket_toml};
+pub use timestamp::{now_utc_rfc3339, validate_rfc3339_utc};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -310,6 +312,13 @@ pub struct ProgramTicket {
     pub user_story: Option<String>,
     pub acceptance: Vec<String>,
     pub priority: Option<i64>,
+    /// T-913.1 lifecycle stamps — RFC 3339 UTC strings validated on parse (see
+    /// [`validate_rfc3339_utc`]); malformed values refuse the load, never become now.
+    /// `ProgramTicket` carries no `shipped_at` field (that lives inside
+    /// [`Status::Shipped`]), so the canonical slot is immediately before `owns` — the
+    /// same position all three ticket types use.
+    pub created_at: Option<String>,
+    pub completed_at: Option<String>,
     pub owns: Vec<String>,
     pub pack_last: Option<bool>,
 }
@@ -331,6 +340,10 @@ pub struct WorkTicket {
     pub acceptance: Vec<String>,
     pub shipped_at: Option<String>,
     pub priority: Option<i64>,
+    /// T-913.1 lifecycle stamps — after `shipped_at` (which stays a bare commit SHA),
+    /// immediately before `owns`; RFC 3339 UTC, validated on parse, never backfilled.
+    pub created_at: Option<String>,
+    pub completed_at: Option<String>,
     pub owns: Vec<String>,
     pub pack_last: Option<bool>,
 }

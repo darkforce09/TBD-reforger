@@ -577,6 +577,10 @@ pub fn cmd_ship(root: &Path, registry: &mut Value, id: &str) -> Result<()> {
     let t = ticket_by_id_mut(registry, id).unwrap_or_else(|| unknown_ticket(id));
     if let Some(obj) = t.as_object_mut() {
         obj.insert("status".into(), json!("shipped"));
+        // T-913.1: completed_at rides the same mutation as the status write (and lands
+        // before refresh_wave_lock — timestamps are not lock fields, so the lock bytes
+        // only change if the STATUS change moves waves). `shipped_at` stays a bare SHA.
+        obj.insert("completed_at".into(), json!(tbd_tickets::now_utc_rfc3339()));
         obj.remove("active");
         obj.remove("active_slice");
     }
@@ -683,12 +687,15 @@ pub fn cmd_add(
         obj.insert("next_id".into(), json!(next_id + 1));
     }
     let _ = (program, surfaces, impact);
+    // T-913.1: every minted ticket gets its birth stamp (RFC 3339 UTC). Existing tickets
+    // get NO backfill — only `ticket add` writes created_at.
     let row = json!({
         "id": tid,
         "kind": "work",
         "title": title,
         "summary": if summary.is_empty() { title } else { summary },
         "status": "idea",
+        "created_at": tbd_tickets::now_utc_rfc3339(),
         "scope": { "repo": { "layers": ["docs"] } },
     });
     tickets_mut(registry)?.push(row);
@@ -877,6 +884,12 @@ pub fn cmd_set_status(root: &Path, registry: &mut Value, id: &str, status: &str)
     let t = ticket_by_id_mut(registry, id).unwrap_or_else(|| unknown_ticket(id));
     if let Some(obj) = t.as_object_mut() {
         obj.insert("status".into(), json!(status));
+        // T-913.1: a cancel is a completion — stamp it in the same mutation as the status
+        // write, before the wave-lock refresh below. Other set-status targets do not
+        // stamp; `ticket ship` / `ticket done` own the shipped stamp.
+        if status == "cancelled" {
+            obj.insert("completed_at".into(), json!(tbd_tickets::now_utc_rfc3339()));
+        }
     }
     save_registry(root, registry)?;
     let queue = generate_queue_json(registry);

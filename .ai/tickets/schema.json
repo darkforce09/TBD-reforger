@@ -26,6 +26,12 @@
       "type": "array",
       "items": { "type": "string" }
     },
+    "rfc3339Utc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?(Z|\\+00:00)$",
+      "description": "T-913.1 lifecycle stamp: RFC 3339 UTC only (Z or +00:00, uppercase T). Deep field-range validation happens in tbd-tickets on load; malformed values refuse the tree."
+    },
     "executor": {
       "type": "string",
       "enum": ["claude-code", "cursor-docs", "workbench", "human", "ci"]
@@ -226,6 +232,8 @@
         "user_story": { "type": "string" },
         "acceptance": { "$ref": "#/$defs/stringList" },
         "shipped_at": { "type": "string", "minLength": 1 },
+        "created_at": { "$ref": "#/$defs/rfc3339Utc" },
+        "completed_at": { "$ref": "#/$defs/rfc3339Utc" },
         "owns": { "$ref": "#/$defs/stringList" },
         "pack_last": { "type": "boolean" },
         "scope": { "$ref": "#/$defs/scope" },

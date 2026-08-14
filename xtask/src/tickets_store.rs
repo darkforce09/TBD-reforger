@@ -358,6 +358,42 @@ pub const FROZEN_27: &[&str] = &[
     "acceptance",
 ];
 
+/// T-911.2 mapped encoding-C key set — every top-level key `TicketFile` carried at the
+/// typed cutover, in canonical spelling (`slices` / `active_slice` are parse-time serde
+/// aliases and never appear on disk). FROZEN: a new ticket key goes in [`ALLOWED_NEW`],
+/// never here.
+#[allow(dead_code)] // governance consts; consumed by the key-governance tests below
+pub const ENCODING_C_KEYS: &[&str] = &[
+    "id",
+    "kind",
+    "title",
+    "summary",
+    "status",
+    "order",
+    "spec",
+    "executor",
+    "notes",
+    "priority",
+    "depends_on",
+    "unblocks",
+    "parent",
+    "children",
+    "active",
+    "user_story",
+    "acceptance",
+    "shipped_at",
+    "owns",
+    "pack_last",
+    "scope",
+];
+
+/// T-913.1 deliberate widen: the ONLY keys legal on disk beyond [`ENCODING_C_KEYS`].
+/// Inventing a ticket key means adding it here AND to `TicketFile` AND to
+/// `.ai/tickets/schema.json` in one commit that says so —
+/// `on_disk_keys_are_mapped_or_allowed_new` stays red until you do.
+#[allow(dead_code)] // governance consts; consumed by the key-governance tests below
+pub const ALLOWED_NEW: &[&str] = &["created_at", "completed_at"];
+
 #[allow(dead_code)]
 pub fn union_ticket_keys(registry: &Value) -> std::collections::BTreeSet<String> {
     let mut keys = std::collections::BTreeSet::new();
@@ -524,6 +560,117 @@ mod tests {
         let got = union_ticket_keys(&v);
         let expect: BTreeSet<String> = FROZEN_27.iter().map(|s| (*s).to_string()).collect();
         assert_eq!(got, expect, "corpus keys drifted from FROZEN_27");
+    }
+
+    /// T-913.1 key governance — this is the gate `frozen_27_matches_live_corpus` cannot be
+    /// on a phase-2 tree (it early-returns above). Globs EVERY on-disk `.ai/tickets/T-*.toml`
+    /// — children included, no registry loader in the way — and demands each top-level key
+    /// be a mapped encoding-C key or a deliberate [`ALLOWED_NEW`] entry. The NEXT key someone
+    /// invents is red here until they consciously widen `ALLOWED_NEW` + `TicketFile` +
+    /// `.ai/tickets/schema.json` in a commit that says so.
+    #[test]
+    fn on_disk_keys_are_mapped_or_allowed_new() {
+        let root = repo_root();
+        let dir = tickets_dir(&root);
+        let legal: BTreeSet<&str> = ENCODING_C_KEYS
+            .iter()
+            .chain(ALLOWED_NEW.iter())
+            .copied()
+            .collect();
+        let mut paths: Vec<PathBuf> = fs::read_dir(&dir)
+            .expect("read tickets dir")
+            .filter_map(|e| e.ok())
+            .map(|e| e.path())
+            .filter(|p| {
+                p.file_name().is_some_and(|n| {
+                    let n = n.to_string_lossy();
+                    n.starts_with("T-") && n.ends_with(".toml")
+                })
+            })
+            .collect();
+        paths.sort();
+        let mut offenders = Vec::new();
+        for path in &paths {
+            let name = path.file_name().unwrap().to_string_lossy().to_string();
+            let text = fs::read_to_string(path).expect("read ticket file");
+            let parsed: toml::Value = text
+                .parse()
+                .unwrap_or_else(|e| panic!("{name}: not TOML: {e}"));
+            let table = parsed
+                .as_table()
+                .unwrap_or_else(|| panic!("{name}: root is not a table"));
+            for key in table.keys() {
+                if !legal.contains(key.as_str()) {
+                    offenders.push(format!("{name}: unmapped key `{key}`"));
+                }
+            }
+        }
+        assert!(
+            paths.len() > 800,
+            "governance scan must actually see the corpus (saw {} files)",
+            paths.len()
+        );
+        assert!(
+            offenders.is_empty(),
+            "on-disk ticket keys outside ENCODING_C_KEYS ∪ ALLOWED_NEW — widen deliberately \
+             (ALLOWED_NEW + TicketFile + schema.json, one commit) or remove the key:\n{}",
+            offenders.join("\n")
+        );
+    }
+
+    /// Pins the consts to the real `TicketFile`: a TOML doc carrying EXACTLY
+    /// `ENCODING_C_KEYS ∪ ALLOWED_NEW` must deserialize and re-serialize to that same key
+    /// set. A const key `TicketFile` does not know is silently dropped on parse (no
+    /// `deny_unknown_fields` — the save path tolerates `slice_plan`), so it would vanish
+    /// from the output set and fail here.
+    #[test]
+    fn ticket_file_key_set_matches_consts() {
+        let legal: BTreeSet<String> = ENCODING_C_KEYS
+            .iter()
+            .chain(ALLOWED_NEW.iter())
+            .map(|s| (*s).to_string())
+            .collect();
+        let maximal = r#"
+id = "T-001"
+kind = "work"
+title = "t"
+summary = "s"
+status = "queued"
+order = 1
+spec = "docs/x.md"
+executor = "claude-code"
+notes = "n"
+priority = 1
+depends_on = ["T-002"]
+unblocks = ["T-003"]
+parent = "T-000"
+children = ["T-001.1"]
+active = "T-001.1"
+user_story = "u"
+acceptance = ["a"]
+shipped_at = "abc123"
+created_at = "2026-08-14T10:00:00Z"
+completed_at = "2026-08-14T11:00:00Z"
+owns = ["docs/x.md"]
+pack_last = true
+
+[scope.repo]
+layers = ["docs"]
+"#;
+        let doc: toml::Value = maximal.parse().expect("maximal doc parses");
+        let doc_keys: BTreeSet<String> = doc.as_table().unwrap().keys().cloned().collect();
+        assert_eq!(
+            doc_keys, legal,
+            "maximal doc must exercise exactly ENCODING_C_KEYS ∪ ALLOWED_NEW"
+        );
+        let file: tbd_tickets::TicketFile =
+            toml::from_str(maximal).expect("maximal doc deserializes as TicketFile");
+        let out = serde_json::to_value(&file).expect("TicketFile serializes");
+        let out_keys: BTreeSet<String> = out.as_object().unwrap().keys().cloned().collect();
+        assert_eq!(
+            out_keys, legal,
+            "TicketFile round-trip key set drifted from ENCODING_C_KEYS ∪ ALLOWED_NEW"
+        );
     }
 
     #[test]

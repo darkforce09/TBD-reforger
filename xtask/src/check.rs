@@ -624,6 +624,52 @@ layers = ["docs"]
         fs::remove_dir_all(&tmp).unwrap();
     }
 
+    /// T-913.1: a malformed lifecycle stamp is a parse error that names the ticket — the
+    /// every-file walk (`check_open_work_owns` reuses `parse_ticket_toml`) goes red, and
+    /// nothing coerces the value to now. Valid stamps restore green.
+    #[test]
+    fn malformed_timestamp_is_red() {
+        let tmp = std::env::temp_dir().join(format!("t913-timestamp-check-{}", std::process::id()));
+        let dir = tmp.join(".ai/tickets");
+        fs::create_dir_all(&dir).unwrap();
+        let bad = r#"id = "T-001.1"
+kind = "work"
+title = "x"
+summary = "x"
+status = "queued"
+order = 10
+created_at = "2026-13-99T25:61:00Z"
+owns = ["docs/README.md"]
+
+[scope.repo]
+layers = ["docs"]
+"#;
+        fs::write(dir.join("T-001.1.toml"), bad).unwrap();
+        let errs = check_open_work_owns(&tmp);
+        assert_eq!(errs.len(), 1, "exactly one parse error: {errs:?}");
+        assert!(
+            errs[0].contains("T-001.1") && errs[0].contains("created_at"),
+            "error must name ticket and field: {}",
+            errs[0]
+        );
+
+        let naive = bad.replace("2026-13-99T25:61:00Z", "2026-08-14 10:00");
+        fs::write(dir.join("T-001.1.toml"), naive).unwrap();
+        let errs = check_open_work_owns(&tmp);
+        assert!(
+            errs.len() == 1 && errs[0].contains("created_at"),
+            "naive datetime must be red: {errs:?}"
+        );
+
+        let good = bad.replace("2026-13-99T25:61:00Z", "2026-08-14T10:00:00Z");
+        fs::write(dir.join("T-001.1.toml"), good).unwrap();
+        assert!(
+            check_open_work_owns(&tmp).is_empty(),
+            "valid RFC 3339 UTC must restore green"
+        );
+        fs::remove_dir_all(&tmp).unwrap();
+    }
+
     #[test]
     fn require_check_ok_blocks_invalid_registry() {
         let root = worktree_root();
