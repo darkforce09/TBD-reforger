@@ -5,10 +5,14 @@
 use serde::{Deserialize, Serialize};
 
 mod encoding;
+pub mod ops;
 #[cfg(test)]
 mod proptest_roundtrip;
+pub mod store;
 mod timestamp;
 pub use encoding::{TicketFile, parse_ticket_toml, render_ticket_toml};
+pub use ops::OpOutcome;
+pub use store::Corpus;
 pub use timestamp::{now_utc_rfc3339, validate_rfc3339_utc};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

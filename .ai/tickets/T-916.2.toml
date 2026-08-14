@@ -23,4 +23,7 @@ owns = [
 ]
 
 [scope.repo]
-layers = ["xtask", "tickets"]
+layers = [
+    "xtask",
+    "tickets",
+]
