@@ -2,13 +2,22 @@ id = "T-913.2"
 kind = "work"
 title = "Per-run metrics files + slice-run producer"
 summary = "Per-run JSON at .ai/tickets/metrics/<id>/<ts>-<sha>.json (never a single jsonl), required tokens_consumed with total == input+output+cache_read+cache_write, optional git_sha, optional reasoning sibling outside total. cargo xtask platform slice-run <id> parses usage from agent/claude --output-format json pinned by recorded fixtures; missing usage exits nonzero and writes no file. platform wave land stamps outcome+git_sha then runs wave repack; ticket metrics --by agent sums real files."
-status = "queued"
+status = "ready"
 order = 5930
 spec = "docs/platform/t913_ticket_run_metrics.md"
 executor = "claude-code"
 notes = "Depends on T-913.1 landed. Malformed started, missing id or missing tokens_consumed in a run file is ticket check red. Printing tokens=0 for a missing object is forbidden. Two runs in one second yield two files (sha or increment suffix). LIMITS: command-center in-chat subagent dispatch is not captured."
 depends_on = ["T-913.1"]
 parent = "T-913"
+user_story = "Every factory slice run leaves a token receipt on disk so spend per ticket and per agent is measurable from real files, never invented."
+acceptance = [
+    "Recorded fixture with usage yields a correct run file: input matches and total == input+output+cache_read+cache_write",
+    "Fixture without usage exits nonzero and writes NO file — tokens 0 is forbidden",
+    "Two runs in one second yield two files; parallel lands never touch ticket TOMLs",
+    "Malformed started, missing id or missing tokens_consumed in a run file is ticket check red",
+    "ticket metrics --by agent sums elapsed and tokens_consumed.total over real files (100+50, 20 fixture proof)",
+    "platform wave land stamps outcome+git_sha on the harness-created run file, then runs wave repack",
+]
 owns = [
     ".ai/tickets/metrics",
     "xtask/src/wave",
