@@ -3,7 +3,7 @@ kind = "work"
 title = "Wall quarantine + word caps + shrink-only ratchet"
 summary = "Wall quarantine + word caps + shrink-only ratchet"
 class = "chore"
-status = "ready"
+status = "shipped"
 order = 5973
 spec = "docs/platform/t917_ticket_schema_v2.md"
 executor = "claude-code"
@@ -18,7 +18,9 @@ acceptance = [
     "Planted 41-word summary in a scratch tree reds naming ticket, field, count and cap; live tree prints check OK",
     "docs/TICKET_*.md regenerated in the same commit",
 ]
+shipped_at = "b071c49e"
 created_at = "2026-08-14T21:54:38Z"
+completed_at = "2026-08-14T23:08:26Z"
 migration_legacy = ["Mechanical byte-reversible pass over every work ticket whose TOML-parsed summary exceeds 40 whitespace-split words: summary moved verbatim into migration_legacy[] split on newlines only (join reproduces original bytes, proved per file), summary := existing title. Word-cap check rules land: summary <=40, context/requirement/current_state/approach/verify <=30 per line, citations <=8; acceptance/notes/user_story uncapped. Shrink-only pinned ratchet on migration_legacy count; a new ticket minting the field is red."]
 owns = [
     ".ai/tickets",
