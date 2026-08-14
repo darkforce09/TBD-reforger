@@ -1,0 +1,26 @@
+id = "T-914"
+kind = "work"
+title = "Wave numbering continues from the close-marker ledger"
+summary = "wave repack derives wave_base from the newest non-disavowed close marker (including HEAD) and numbers open waves base+1 onward, so the next close ceremony prints the oracle-exact next number. wave check recomputes the base; a fresh marker without repack is check-red. No marker (stub and test trees) means base 0 and today's 1..N."
+status = "ready"
+order = 5940
+spec = "docs/platform/t912_wave_lockfile.md"
+executor = "claude-code"
+notes = "Operator decision 2026-08-14: continue the ledger. Measured newest marker is wave 235 at d21197d2 — the 233 in the decision text was a stale count; deriving from history makes the constant irrelevant. No hardcoded wave numbers outside fabricated test histories. Oracle 1 marker semantics untouched: wave_close_subject_ok stays the authority."
+user_story = "Lock wave labels continue the historical close-marker ledger so the close ceremony and its exactly-one-step oracle keep working after the TSV cutover."
+acceptance = [
+    "wave repack on main writes wave_base = 235 and numbers the first open wave 236 (derived, not hardcoded)",
+    "A new close marker without repack turns ticket check red; repack renumbers from the new base and goes green",
+    "No-marker trees keep base 0 and waves 1..N — existing stub and unit-test locks unaffected",
+    "Double repack stays byte-identical; cargo xtask ticket check --strict prints check OK",
+]
+created_at = "2026-08-14T05:41:49Z"
+owns = [
+    "xtask/src/wave_lock.rs",
+    "xtask/src/wave/base.rs",
+    "xtask/src/check.rs",
+    "docs/platform/t912_wave_lockfile.md",
+]
+
+[scope.repo]
+layers = ["xtask"]

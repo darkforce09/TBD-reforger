@@ -11,6 +11,13 @@
       "status": "ready",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_6_geometry_placement_audit.md",
       "branch": "ticket/T-090"
+    },
+    {
+      "id": "T-914",
+      "title": "Wave numbering continues from the close-marker ledger",
+      "status": "ready",
+      "spec": "docs/platform/t912_wave_lockfile.md",
+      "branch": "ticket/T-914"
     }
   ]
 }
