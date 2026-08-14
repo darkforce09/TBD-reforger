@@ -1,0 +1,27 @@
+id = "T-915.4"
+kind = "work"
+title = "Mutation UI over subprocess xtask verbs"
+summary = "Transition affordances mirroring the CLI verbs: idea->queued via drag-after-anchor (reorder semantics), queued->ready via a Ready-prose form (spec-on-disk + user_story + acceptance) surfacing the deps-unshipped refusal, ship/cancel/defer and demotions with confirm, running hidden as a manual target, raw set-status behind an advanced affordance, add-ticket and add-child [--promote] forms. Single-flight subprocess queue, UI compare-and-swap before dispatch, verbatim stderr on any nonzero exit, no auto-repack ever (the app must not become a second wave writer)."
+status = "queued"
+order = 5964
+spec = "docs/platform/t915_ticketboard_design.md"
+executor = "claude-code"
+notes = "Depends on T-916.2 for the child-resolving verbs and add-child/remove flags. Any nonzero exit = reload + show stderr verbatim (several refusal paths are process::exit(1) before anyhow). Mid-verb crash recovery is operator-run wave repack, shown as text."
+depends_on = [
+    "T-915.3",
+    "T-916.2",
+]
+parent = "T-915"
+user_story = "The operator steers the registry from the board — promote, ship, cancel, defer, mint — with every write going through the one audited CLI path and every refusal shown verbatim."
+acceptance = [
+    "Every offered transition maps to one xtask verb; refusals stream verbatim; any nonzero exit reloads and shows stderr",
+    "Ready promotion goes through the Ready-prose form and surfaces the deps-unshipped refusal",
+    "running is not offered as a manual target; raw set-status is behind an advanced affordance",
+    "CAS guard: a card whose file changed since render refuses dispatch with a reload prompt",
+    "Mid-verb SIGKILL between save and repack: the app shows check-red with the wave-stale error text and the recovery command; it does not auto-repack",
+]
+created_at = "2026-08-14T08:39:30Z"
+owns = ["apps/ticketboard"]
+
+[scope.repo]
+layers = ["tickets"]

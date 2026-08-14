@@ -1,0 +1,14 @@
+id = "T-916"
+kind = "program"
+title = "Typed registry ops"
+summary = "Extract the registry mutation logic out of the xtask Value round-trip into typed ops in crates/tbd-tickets: a full-corpus typed store (parents + children), pure ops with injected clock and post-image validation, surgical temp+rename per-file writes. Then rewire cmds.rs onto the typed ops with a byte-parity harness over the full write surface, add the child-resolving ship/set-status plus add-child [--promote] and remove --force verbs, and land the parent/child referential-integrity check rule."
+status = "queued"
+order = 5950
+spec = "docs/platform/t915_ticketboard_design.md"
+executor = "claude-code"
+notes = "Design contract agreed 2026-08-14 (see spec Decisions log). Split out of the T-915 UI program deliberately: registry-core rewrite at T-911 scale must not ride as UI slices in the wave ledger. Serial slices: T-916.2 depends on T-916.1 and both own crates/tbd-tickets. Parity bar: old-vs-new byte diff over .ai/tickets plus docs/TICKET_*.md, MILESTONES.md, CLAUDE.md, ROADMAP, gap file, queue.json, wave.lock, timestamps normalized; red trees refuse with zero writes."
+children = [
+    "T-916.1",
+    "T-916.2",
+]
+created_at = "2026-08-14T08:39:30Z"

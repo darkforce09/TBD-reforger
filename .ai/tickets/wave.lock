@@ -34,19 +34,23 @@ tickets = ["T-831", "T-834", "T-841", "T-845", "T-848", "T-850", "T-906", "T-908
 
 [[waves]]
 n = 139
-tickets = ["T-837", "T-907"]
+tickets = ["T-837", "T-907", "T-916.1", "T-915.1"]
 
 [[waves]]
 n = 140
-tickets = ["T-838", "T-849"]
+tickets = ["T-838", "T-849", "T-916.2", "T-915.2"]
 
 [[waves]]
 n = 141
-tickets = ["T-839"]
+tickets = ["T-839", "T-915.3"]
 
 [[waves]]
 n = 142
-tickets = ["T-905"]
+tickets = ["T-905", "T-915.4"]
+
+[[waves]]
+n = 143
+tickets = ["T-915.5"]
 
 [owns]
 "T-068.14" = ["docs/mod/capability_verdicts.tsv"]
@@ -762,6 +766,13 @@ T-908 = ["xtask/src/cmds.rs", "xtask/src/main.rs", "xtask/src/schema_gates.rs", 
 "T-913.1" = [".ai/tickets/schema.json", "crates/tbd-tickets", "xtask/src/cmds.rs", "xtask/src/check.rs"]
 "T-913.2" = [".ai/tickets/metrics", "xtask/src/wave", "xtask/src/cmds.rs", "xtask/src/check.rs"]
 T-914 = ["xtask/src/wave_lock.rs", "xtask/src/wave/base.rs", "xtask/src/check.rs", "docs/platform/t912_wave_lockfile.md"]
+"T-915.1" = ["apps/ticketboard", "Cargo.toml"]
+"T-915.2" = ["apps/ticketboard"]
+"T-915.3" = ["apps/ticketboard"]
+"T-915.4" = ["apps/ticketboard"]
+"T-915.5" = ["apps/ticketboard"]
+"T-916.1" = ["crates/tbd-tickets"]
+"T-916.2" = ["xtask/src", "crates/tbd-tickets"]
 
 [depends_on]
 T-068 = ["T-067"]
@@ -879,3 +890,8 @@ T-690 = ["T-661", "T-655"]
 "T-912.2" = ["T-912.1"]
 T-913 = ["T-912"]
 "T-913.2" = ["T-913.1"]
+"T-915.2" = ["T-915.1"]
+"T-915.3" = ["T-915.1"]
+"T-915.4" = ["T-915.3", "T-916.2"]
+"T-915.5" = ["T-915.1"]
+"T-916.2" = ["T-916.1"]

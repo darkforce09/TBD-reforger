@@ -1,0 +1,17 @@
+id = "T-915"
+kind = "program"
+title = "Ticketboard"
+summary = "Native Rust egui/eframe GUI projection over the ticket registry: status board, wave lanes rendered verbatim from wave.lock, program tree, detail panel with owns-collision explainer, strict-check trust banner with file watch, mutation UI via subprocess xtask verbs, metrics dashboard. Pure projection: no sidecar state, no cache-as-truth, app never commits, prefs in the user config dir. Lives at apps/ticketboard as a workspace member."
+status = "queued"
+order = 5960
+spec = "docs/platform/t915_ticketboard_design.md"
+executor = "claude-code"
+notes = "Design contract agreed 2026-08-14 (spec Decisions log: subprocess verbs over linked writers, three viewer slices, remove --force, add-child --promote, T-916 program split, no ambiguous acceptance numbers, pinned repo discovery). All T-915 slices own apps/ticketboard — serial among themselves; T-916.1 packs parallel to the viewer slices. Mutation UI (T-915.4) additionally depends on T-916.2. GUI acceptance items needing a live display (60fps scroll, screenshots) are operator-verified."
+children = [
+    "T-915.1",
+    "T-915.2",
+    "T-915.3",
+    "T-915.4",
+    "T-915.5",
+]
+created_at = "2026-08-14T08:39:30Z"
