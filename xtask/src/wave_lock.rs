@@ -403,10 +403,12 @@ fn greedy_waves(
 /// a tree before its first close), which keeps open waves at the pre-T-914 1..N. The u32
 /// conversion is total in practice — the subject authority admits digits only, and no ledger
 /// approaches the boundary; a number that somehow overflows is treated as no marker.
-fn ledger_base(root: &Path) -> u32 {
-    crate::wave::base::newest_close_base(root)
+fn ledger_base(root: &Path) -> Result<u32> {
+    // Err is the shallow-clone refusal — an unreadable ledger never derives a base.
+    Ok(crate::wave::base::newest_close_base(root)
+        .map_err(|e| anyhow::anyhow!(e))?
         .and_then(|n| u32::try_from(n).ok())
-        .unwrap_or(0)
+        .unwrap_or(0))
 }
 
 fn assemble(
@@ -454,7 +456,7 @@ pub fn compile(root: &Path, baseline: &BTreeSet<String>) -> Result<WaveLock> {
     for w in &warnings {
         eprintln!("wave repack: warning: {w}");
     }
-    Ok(assemble(&views, baseline, open, cap, ledger_base(root)))
+    Ok(assemble(&views, baseline, open, cap, ledger_base(root)?))
 }
 
 pub fn render(lock: &WaveLock) -> Result<String> {
@@ -547,7 +549,7 @@ fn migrate_from_tsv(root: &Path) -> Result<WaveLock> {
         &wave0_tsv,
         open,
         max_concurrent(),
-        ledger_base(root),
+        ledger_base(root)?,
     );
     write(root, &lock)?;
     crate::wave::legacy_plan::delete_tsvs(root)?;
@@ -606,12 +608,16 @@ pub fn check_as_errors(root: &Path) -> Vec<String> {
     // loop. Deliberately NOT a contiguity rule: beyond the strictly-increasing check below,
     // open-wave labels are the packer's recorded choice, and raw-TOML stubs with arbitrary n
     // (mod_wave_tests uses 99) must stay green.
-    let want_base = ledger_base(root);
-    if lock.wave_base != want_base {
-        errors.push(format!(
-            "wave.lock wave_base {} is stale — the close-marker ledger derives {want_base}: run `cargo xtask wave repack`",
-            lock.wave_base
-        ));
+    match ledger_base(root) {
+        Ok(want_base) => {
+            if lock.wave_base != want_base {
+                errors.push(format!(
+                    "wave.lock wave_base {} is stale — the close-marker ledger derives {want_base}: run `cargo xtask wave repack`",
+                    lock.wave_base
+                ));
+            }
+        }
+        Err(e) => errors.push(format!("wave.lock base derivation refused: {e}")),
     }
 
     // Wave numbering: strictly increasing, wave 0 first when present, no duplicate n.
@@ -1086,6 +1092,43 @@ mod tests {
             "wave_base is always emitted: {text}"
         );
         let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn shallow_clone_refuses_base_derivation() {
+        // A depth-1 clone hides the ledger. Deriving base 0 there would be a wrong answer,
+        // not a fallback (red against a full-history lock, silently green if the committed
+        // base happens to be 0) — so both repack and check refuse loudly instead.
+        let dir = scratch_git(
+            "shallow-src",
+            &[("T-1.toml", &work("T-1", 10, &["a.rs"], &[], "queued"))],
+            &["wave 41 CLOSED — test ledger", "post-close housekeeping"],
+        );
+        let lock = repack_quiet(&dir).unwrap();
+        assert_eq!(lock.wave_base, 41, "full history derives the marker");
+        let clone = dir.with_file_name("t914-shallow-clone");
+        let _ = fs::remove_dir_all(&clone);
+        git_in_dir(
+            dir.parent().unwrap(),
+            &[
+                "clone",
+                "-q",
+                "--depth",
+                "1",
+                &format!("file://{}", dir.display()),
+                clone.file_name().unwrap().to_str().unwrap(),
+            ],
+        );
+        let err = repack_quiet(&clone).unwrap_err().to_string();
+        assert!(err.contains("shallow"), "repack refuses on shallow: {err}");
+        fs::copy(lock_path(&dir), lock_path(&clone)).unwrap();
+        let errors = check_as_errors(&clone);
+        assert!(
+            errors.iter().any(|e| e.contains("base derivation refused")),
+            "check refuses, never derives 0: {errors:?}"
+        );
+        let _ = fs::remove_dir_all(&dir);
+        let _ = fs::remove_dir_all(&clone);
     }
 
     #[test]

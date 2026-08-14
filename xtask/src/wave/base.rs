@@ -286,10 +286,22 @@ fn git_in_lossy(root: &Path, args: &[&str]) -> String {
 ///     the marker before it — but without the "gate:" stderr narration, which would be
 ///     wrong-context noise in every `ticket check` and repack on a history that holds one.
 ///
-/// `None` when no marker is reachable: scratch/stub/test roots, no-git dirs, or a real tree
+/// `Ok(None)` when no marker is reachable: scratch/stub/test roots, no-git dirs, or a real tree
 /// before its first close. The lock compiler maps that to base 0, so open waves number 1..N —
 /// byte-for-byte the pre-T-914 shape.
-pub fn newest_close_base(root: &Path) -> Option<i64> {
+///
+/// `Err` on a SHALLOW clone. A depth-limited history hides the ledger, and deriving base 0
+/// there is not a fallback — it is a wrong answer that turns `wave check` into a coin flip
+/// (red against a full-history lock, or silently green if the committed base happens to be 0).
+/// Same refusal class as the missing-lock DidNotRun: unreadable evidence never derives.
+pub fn newest_close_base(root: &Path) -> Result<Option<i64>, String> {
+    if git_in_lossy(root, &["rev-parse", "--is-shallow-repository"]).trim() == "true" {
+        return Err(
+            "shallow clone: the close-marker ledger is unreadable — fetch full history \
+             (fetch-depth: 0 in CI) before wave repack/check"
+                .into(),
+        );
+    }
     let list = git_in_lossy(
         root,
         &[
@@ -309,9 +321,9 @@ pub fn newest_close_base(root: &Path) -> Option<i64> {
         if wave_close_disavowed_in(root, sha).is_some() {
             continue;
         }
-        return Some(n);
+        return Ok(Some(n));
     }
-    None
+    Ok(None)
 }
 
 // ── T-613: DOES ANYTHING OTHER THAN THE MARKER AGREE? ───────────────────────────────────────────
