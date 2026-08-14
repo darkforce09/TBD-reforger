@@ -137,7 +137,7 @@ hint: use git add to stage
 
         // Nonzero exit (e.g. "fatal: not a git repository" on stderr): the
         // stream is NOT parsed into a count.
-        let unavailable = chip_from_exit(Some(128), ["fatal: not a git repository"].into_iter());
+        let unavailable = chip_from_exit(Some(128), ["fatal: not a git repository"]);
         assert_eq!(
             unavailable,
             GitChip::Unavailable("git exited 128".to_owned())

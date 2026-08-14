@@ -1,8 +1,10 @@
-# Ticketboard — native egui viewer over the ticket registry (T-915.1).
+# Ticketboard — native egui projection of the ticket registry (T-915).
 #
-# Read-only projection: parses every .ai/tickets/T-*.toml via `tbd-tickets` and renders
-# a status board + detail panel. The app makes NO writes anywhere under the repo; the
-# only preference store is eframe Storage in the user config dir ("persistence").
+# Parses every .ai/tickets/T-*.toml via `tbd-tickets` and renders a status board +
+# detail panel; T-915.4 mutations shell `cargo xtask ticket <verb>` subprocesses —
+# the app itself writes NO ticket bytes anywhere under the repo; the only direct
+# file write is the preference store (eframe Storage in the user config dir,
+# "persistence").
 #
 # egui/eframe (with winit/wgpu) is a first-time dependency family for this workspace —
 # a named supply-chain and build-time event (docs/platform/t915_ticketboard_design.md

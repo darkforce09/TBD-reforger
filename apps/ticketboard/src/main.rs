@@ -1,13 +1,16 @@
-//! Ticketboard — native egui viewer over the `.ai/tickets/` registry (T-915.1).
+//! Ticketboard — native egui projection of the `.ai/tickets/` registry (T-915).
 //!
-//! Read-only projection: every `T-*.toml` (parents AND children) is parsed through
-//! `tbd-tickets` and rendered as a status board with a full-field detail panel,
-//! plus (T-915.2) verbatim wave lanes off `wave.lock`, a program tree, composable
-//! filters, and the owns-collision explainer, plus (T-915.3) the trust banner —
+//! Every `T-*.toml` (parents AND children) is parsed through `tbd-tickets` and
+//! rendered as a status board with a full-field detail panel, plus (T-915.2)
+//! verbatim wave lanes off `wave.lock`, a program tree, composable filters, and
+//! the owns-collision explainer, plus (T-915.3) the trust banner —
 //! `cargo xtask ticket check --strict` as a streamed subprocess, a notify file
-//! watch with debounced auto-reload, and the git-dirty chip. The app writes
-//! nothing under the repo; the only preference store is eframe Storage in the
-//! user config dir. Design authority: `docs/platform/t915_ticketboard_design.md`.
+//! watch with debounced auto-reload, and the git-dirty chip. T-915.4 adds the
+//! mutation UI: every write shells `cargo xtask ticket <verb>` as a subprocess
+//! (single-flight queue, CAS guard, verbatim refusals, no auto-repack ever) —
+//! the app itself writes no ticket bytes; its only direct file write is the
+//! picked-repo preference in eframe Storage in the user config dir. Design
+//! authority: `docs/platform/t915_ticketboard_design.md`.
 
 mod app;
 mod board;
@@ -15,11 +18,13 @@ mod corpus;
 mod discovery;
 mod filters;
 mod gitstatus;
+mod mutate;
 mod subproc;
 #[cfg(test)]
 mod testutil;
 mod tree;
 mod trust;
+mod verbs;
 mod watch;
 mod wavelock;
 mod waves;

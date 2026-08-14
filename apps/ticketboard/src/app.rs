@@ -1,4 +1,5 @@
-//! eframe shell (T-915.1 / T-915.2 / T-915.3) — thin UI over the pure modules.
+//! eframe shell (T-915.1 / T-915.2 / T-915.3 / T-915.4) — thin UI over the pure
+//! modules.
 //!
 //! States: NoRepo refusal (both discovery mechanisms + native folder picker),
 //! Loading, parse Refusal (the trust surface: file path + verbatim error), Board.
@@ -7,7 +8,11 @@
 //! chips). Above everything sits the trust banner (T-915.3): the streamed result
 //! of `cargo xtask ticket check --strict` plus the git-dirty chip, refreshed by
 //! the `.ai/tickets` file watch (debounced, coalesced), which also auto-reloads
-//! the corpus in place. All IO happens on worker threads (`std::thread` + `mpsc`,
+//! the corpus in place. T-915.4 adds the mutation surface: card context menus and
+//! a detail-panel action strip whose every write shells `cargo xtask ticket
+//! <verb>` through a single-flight queue (CAS-guarded, streamed into a bottom
+//! drawer, watch-suppressed while in flight) — the app itself never writes ticket
+//! files. All IO happens on worker threads (`std::thread` + `mpsc`,
 //! `request_repaint` on completion); the paint path only reads strings precomputed
 //! at load or filter-change time.
 
@@ -17,8 +22,8 @@ use std::sync::mpsc::{self, Receiver};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use eframe::egui::{
-    self, Align, Align2, Button, Color32, ComboBox, FontId, Id, Layout, Panel, Rect, RichText,
-    ScrollArea, Sense, Spinner, StrokeKind, TextEdit, Ui, pos2, vec2,
+    self, Align, Align2, Button, Color32, ComboBox, DragAndDrop, FontId, Id, Layout, Panel, Rect,
+    RichText, ScrollArea, Sense, Spinner, StrokeKind, TextEdit, Ui, pos2, vec2,
 };
 use egui_extras::{Column as TableColumn, TableBuilder};
 use tbd_tickets::StatusName;
@@ -28,9 +33,11 @@ use crate::corpus::{self, Corpus, LoadBundle, LoadError};
 use crate::discovery;
 use crate::filters::{FilterIndex, Filters, KindFilter};
 use crate::gitstatus::{self, GitChip};
+use crate::mutate::{self, Dialog, DragCard, MutCtx, Toast, VerbOutcome, VerbRunner};
 use crate::subproc::{self, LogRing, ProcEvent, ProcHandle};
 use crate::tree::{self, TreeModel};
 use crate::trust::{self, CheckModel, Coalescer, Tone};
+use crate::verbs;
 use crate::watch::{self, Debouncer};
 use crate::wavelock::{self, LockState};
 use crate::waves::{Lane, Wave0, WaveChip, WavesModel};
@@ -52,8 +59,9 @@ const OUTPUT_MAX_H: f32 = 260.0;
 const GIT_LIST_MAX_H: f32 = 160.0;
 
 /// Collision verdict / `ready`-family accent colors (dark-theme legible).
-const VERDICT_OK: Color32 = Color32::from_rgb(120, 205, 130);
-const VERDICT_COLLIDE: Color32 = Color32::from_rgb(235, 110, 100);
+/// pub(crate): the T-915.4 mutation UI reuses the same green/red pair.
+pub(crate) const VERDICT_OK: Color32 = Color32::from_rgb(120, 205, 130);
+pub(crate) const VERDICT_COLLIDE: Color32 = Color32::from_rgb(235, 110, 100);
 
 /// Status accent for tree rows, wave chips, and the status filter toggles. The RAW
 /// status name stays the label everywhere — color is an accent, never a rename.
@@ -71,7 +79,7 @@ fn status_color(status: StatusName) -> Color32 {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-enum Tab {
+pub(crate) enum Tab {
     #[default]
     Board,
     Waves,
@@ -95,9 +103,10 @@ enum State {
     Board(Box<BoardState>),
 }
 
-struct BoardState {
-    corpus: Corpus,
-    board: BoardModel,
+pub(crate) struct BoardState {
+    /// pub(crate): the T-915.4 mutation UI reads tickets + paths for dialogs.
+    pub(crate) corpus: Corpus,
+    pub(crate) board: BoardModel,
     /// wave.lock outcome — Waves-view-local; refusals never blank the board.
     lock: LockState,
     /// Built only when the lock loaded (rendered verbatim, never recomputed).
@@ -201,7 +210,7 @@ impl BoardState {
 }
 
 /// UI events, collected during paint and applied afterwards.
-enum Action {
+pub(crate) enum Action {
     Reload,
     /// Manual trust-banner re-run (coalesced while a check is in flight).
     Recheck,
@@ -224,6 +233,13 @@ enum Action {
     /// Copy a lane's `n<TAB>id` lines to the clipboard (acceptance 1).
     CopyTsv(String),
     FiltersChanged,
+    // ---- T-915.4 mutation surface ----
+    /// Open a mutation dialog (built at click/menu-render time, guard included).
+    OpenDialog(Box<Dialog>),
+    /// Dispatch a verb: CAS-check, then feed the single-flight queue. Closes the
+    /// dialog.
+    Dispatch(verbs::VerbRequest),
+    ToggleVerbDrawer,
 }
 
 /// Plain click selects; shift-click picks the comparison ticket.
@@ -261,6 +277,14 @@ pub struct TicketboardApp {
     debounce: Debouncer,
     /// Millisecond clock base for the debouncer (monotonic).
     epoch: Instant,
+    // ---- T-915.4: mutation UI over subprocess xtask verbs ----
+    /// Single-flight verb queue + in-flight subprocess + verbatim log + drawer.
+    verb: VerbRunner,
+    /// The one open mutation dialog (confirm / form), CAS guard inside.
+    dialog: Option<Dialog>,
+    toasts: Vec<Toast>,
+    /// Advanced raw set-status dropdown selection (detail panel).
+    advanced_status: Option<StatusName>,
 }
 
 impl TicketboardApp {
@@ -290,6 +314,10 @@ impl TicketboardApp {
             watch_error: None,
             debounce: Debouncer::new(watch::DEBOUNCE_MS),
             epoch: Instant::now(),
+            verb: VerbRunner::new(),
+            dialog: None,
+            toasts: Vec::new(),
+            advanced_status: None,
         };
         match discovery::resolve_repo_root(arg, cwd.as_deref()) {
             Some(root) if discovery::has_tickets_dir(&root) => {
@@ -348,7 +376,6 @@ impl TicketboardApp {
     /// flight. Watch fires keep reloading, but check re-runs stay suppressed for
     /// the flag's duration plus one debounce window after clear — the app's own
     /// writes must not trigger a strict-check storm.
-    #[allow(dead_code)] // wired by the T-915.4 verb runner
     pub fn set_verb_in_flight(&mut self, in_flight: bool) {
         let now = self.now_ms();
         self.debounce.set_suppressed(in_flight, now);
@@ -520,6 +547,141 @@ impl TicketboardApp {
         self.poll_check(ctx);
         self.poll_git(ctx);
         self.poll_watch(ctx);
+        self.poll_verb(ctx);
+    }
+
+    // ---- verb runner (T-915.4) ----
+
+    fn toast(&mut self, text: String, error: bool) {
+        self.toasts.push(Toast::new(text, error));
+    }
+
+    /// Dispatch a verb request from the UI: re-hash the CAS guard NOW; a
+    /// mismatch refuses the dispatch (no subprocess) and reloads. Otherwise the
+    /// request enters the single-flight queue — spawned immediately when idle,
+    /// parked FIFO when a verb is already running.
+    fn dispatch_verb(&mut self, req: verbs::VerbRequest, ctx: &egui::Context) {
+        if !verbs::cas_ok(req.guard.as_ref()) {
+            self.toast(
+                format!("{} — file changed on disk — reloading", req.display),
+                true,
+            );
+            self.start_load(ctx, true);
+            return;
+        }
+        match self.verb.queue.submit(req) {
+            Some(start) => self.spawn_verb(start, ctx),
+            None => {
+                let pending = self.verb.queue.pending_len();
+                self.toast(
+                    format!("queued behind the running verb ({pending} pending)"),
+                    false,
+                );
+            }
+        }
+    }
+
+    /// Spawn `cargo <alias-expanded verb argv>` at the repo root through the
+    /// T-915.3 subproc helper. Sets the watch-suppression flag and opens the
+    /// drawer so the streamed log is visible while the verb runs.
+    fn spawn_verb(&mut self, req: verbs::VerbRequest, ctx: &egui::Context) {
+        let Some(root) = self.repo_root.clone() else {
+            // No repo root — the queue slot must not stay claimed forever.
+            let _ = self.verb.queue.finish(false);
+            return;
+        };
+        self.verb.log.clear();
+        self.verb.last = None;
+        self.verb.dropped_note = None;
+        self.verb.drawer_open = true;
+        self.set_verb_in_flight(true);
+        let args: Vec<&str> = req.args.iter().map(String::as_str).collect();
+        let repaint_ctx = ctx.clone();
+        self.verb.handle = Some(subproc::spawn_streaming(
+            &self.cargo,
+            &args,
+            &root,
+            move || repaint_ctx.request_repaint(),
+        ));
+    }
+
+    /// Drain the in-flight verb stream. On exit — success or refusal — ALWAYS
+    /// reload corpus+lock and refresh the git chip. Success shows the stdout
+    /// tail as a toast; a nonzero exit keeps the drawer open with the FULL
+    /// verbatim output + exit code, drops the pending queue (never auto-retry),
+    /// triggers ONE strict re-check (the T-915.3 banner goes red on wave-stale
+    /// state), and — when the log carries the wave-stale signature — shows the
+    /// recovery command as text. The app never runs `wave repack` itself.
+    fn poll_verb(&mut self, ctx: &egui::Context) {
+        let mut term: Option<(Option<i32>, Option<String>)> = None;
+        if let Some(handle) = &self.verb.handle {
+            while let Ok(event) = handle.rx.try_recv() {
+                match event {
+                    ProcEvent::Line(line) => self.verb.log.push(line),
+                    ProcEvent::Exited { code } => term = Some((code, None)),
+                    ProcEvent::SpawnFailed(error) => term = Some((None, Some(error))),
+                }
+            }
+        }
+        let Some((code, spawn_error)) = term else {
+            return;
+        };
+        self.verb.handle = None;
+        let display = self
+            .verb
+            .queue
+            .running_display()
+            .unwrap_or("verb")
+            .to_owned();
+        let success = code == Some(0) && spawn_error.is_none();
+        // Signal-killed (the mid-verb SIGKILL between save and repack) counts as
+        // the wave-stale hazard even though the dead process printed nothing.
+        let killed = code.is_none() && spawn_error.is_none();
+        let hint = !success
+            && verbs::recovery_hint_applies(killed, self.verb.log.iter().map(String::as_str));
+        self.verb.last = Some(VerbOutcome {
+            display: display.clone(),
+            code,
+            at: trust::utc_hms(epoch_secs()),
+            spawn_error,
+            hint,
+        });
+        // ALWAYS — even (especially) after a refusal: the verb may have exited
+        // between save and sync/repack, and the board must show the disk truth.
+        self.start_load(ctx, true);
+        self.trigger_git(ctx);
+        if success {
+            let tail = verbs::success_tail(self.verb.log.iter().map(String::as_str))
+                .unwrap_or_else(|| format!("exit 0 — {display}"));
+            self.toast(tail, false);
+            self.verb.drawer_open = false;
+        } else {
+            self.verb.drawer_open = true;
+            // One deliberate strict re-check (coalesced) — the T-915.3 banner is
+            // how mid-verb-crash wave-stale state surfaces as check-red.
+            self.trigger_check(ctx);
+        }
+        let mut fin = self.verb.queue.finish(success);
+        if fin.dropped > 0 {
+            self.verb.dropped_note = Some(format!(
+                "{} pending verb request(s) dropped after this failure — nothing auto-retries",
+                fin.dropped
+            ));
+        }
+        while let Some(next) = fin.next {
+            if verbs::cas_ok(next.guard.as_ref()) {
+                self.spawn_verb(next, ctx);
+                break;
+            }
+            self.toast(
+                format!("{} — file changed on disk — reloading", next.display),
+                true,
+            );
+            fin = self.verb.queue.finish(true);
+        }
+        if !self.verb.queue.busy() {
+            self.set_verb_in_flight(false);
+        }
     }
 
     /// Drain the strict-check stream: lines advance the building→checking phase
@@ -689,6 +851,12 @@ impl TicketboardApp {
                         b.compare = None;
                     }
                 }
+                Action::OpenDialog(dialog) => self.dialog = Some(*dialog),
+                Action::Dispatch(req) => {
+                    self.dialog = None;
+                    self.dispatch_verb(req, ctx);
+                }
+                Action::ToggleVerbDrawer => self.verb.drawer_open = !self.verb.drawer_open,
             }
         }
     }
@@ -768,6 +936,10 @@ impl eframe::App for TicketboardApp {
         let mut actions: Vec<Action> = Vec::new();
         let busy = self.load_rx.is_some();
         let tab = self.tab;
+        // T-915.4: while a verb subprocess is in flight, every mutation
+        // affordance (menus, strip, dialog Run, drag, New ticket) is disabled.
+        let verb_busy = self.verb.queue.busy();
+        let board_active = matches!(self.state, State::Board(_));
 
         // Trust banner ABOVE the tabs — persistent on every tab and every state
         // once a repo is active (T-915.3 §UI shape).
@@ -777,9 +949,17 @@ impl eframe::App for TicketboardApp {
             });
         }
         Panel::top(Id::new("topbar")).show(ui, |ui| {
-            topbar_ui(ui, self.repo_root.as_deref(), busy, tab, &mut actions);
+            topbar_ui(
+                ui,
+                self.repo_root.as_deref(),
+                busy,
+                tab,
+                board_active,
+                verb_busy,
+                &mut actions,
+            );
         });
-        if matches!(self.state, State::Board(_)) {
+        if board_active {
             Panel::top(Id::new("filterbar")).show(ui, |ui| {
                 if let State::Board(b) = &mut self.state
                     && filter_bar_ui(ui, &mut b.filters, &b.filter_index.executors)
@@ -790,14 +970,36 @@ impl eframe::App for TicketboardApp {
         }
         if let State::Board(b) = &self.state {
             Panel::bottom(Id::new("footer")).show(ui, |ui| {
-                ui.horizontal(|ui| ui.label(&b.footer));
+                ui.horizontal(|ui| {
+                    ui.label(&b.footer);
+                    ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                        mutate::verb_chip_ui(ui, &self.verb, &mut actions);
+                    });
+                });
             });
+            // Verb drawer ABOVE the footer: streamed log while a verb runs;
+            // stays open with the full verbatim output on a nonzero exit.
+            if self.verb.drawer_open {
+                Panel::bottom(Id::new("verb_drawer")).show(ui, |ui| {
+                    mutate::drawer_ui(ui, &self.verb, &mut actions);
+                });
+            }
             if let Some(selected) = b.selected {
                 Panel::right(Id::new("detail"))
                     .resizable(true)
                     .default_size(DETAIL_W)
                     .show(ui, |ui| {
-                        detail_ui(ui, self.repo_root.as_deref(), b, selected, &mut actions);
+                        detail_ui(
+                            ui,
+                            MutCtx {
+                                repo_root: self.repo_root.as_deref(),
+                                busy: verb_busy,
+                            },
+                            b,
+                            selected,
+                            &mut self.advanced_status,
+                            &mut actions,
+                        );
                     });
             }
         }
@@ -807,18 +1009,43 @@ impl eframe::App for TicketboardApp {
             }
             State::Loading => loading_ui(ui, self.repo_root.as_deref()),
             State::Refused(e) => refusal_ui(ui, e, &mut actions),
-            State::Board(b) => match tab {
-                Tab::Board => board_ui(ui, b, &mut actions),
-                Tab::Waves => waves_ui(ui, b, &mut actions),
-                Tab::Tree => tree_ui(ui, b, &mut actions),
-            },
+            State::Board(b) => {
+                let mctx = MutCtx {
+                    repo_root: self.repo_root.as_deref(),
+                    busy: verb_busy,
+                };
+                match tab {
+                    Tab::Board => board_ui(ui, b, mctx, &mut actions),
+                    Tab::Waves => waves_ui(ui, b, &mut actions),
+                    Tab::Tree => tree_ui(ui, b, &mut actions),
+                }
+            }
         });
+
+        // T-915.4 dialog pass — one modal above everything, closed on Cancel /
+        // Esc / backdrop / dispatch (dialogs only exist over a loaded board).
+        if let Some(dialog) = &mut self.dialog {
+            let mut keep = false;
+            if let State::Board(b) = &self.state {
+                let mctx = MutCtx {
+                    repo_root: self.repo_root.as_deref(),
+                    busy: verb_busy,
+                };
+                keep = !mutate::dialog_ui(&ctx, b, mctx, dialog, &mut actions);
+            }
+            if !keep {
+                self.dialog = None;
+            }
+        }
+        mutate::toasts_ui(&ctx, &mut self.toasts);
 
         self.apply(actions, &ctx);
     }
 
     /// Persist the active repo root (revalidated on next launch). This is the
-    /// app's ONLY write, and it goes to the user config dir — never the repo.
+    /// app's ONLY direct file write, and it goes to the user config dir — never
+    /// the repo (T-915.4 mutations shell the xtask verbs; the app writes no
+    /// ticket bytes itself).
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         if let Some(root) = &self.repo_root {
             storage.set_string(REPO_ROOT_KEY, root.display().to_string());
@@ -905,6 +1132,8 @@ fn topbar_ui(
     repo_root: Option<&Path>,
     busy: bool,
     tab: Tab,
+    board_active: bool,
+    verb_busy: bool,
     actions: &mut Vec<Action>,
 ) {
     ui.horizontal(|ui| {
@@ -928,6 +1157,17 @@ fn topbar_ui(
         }
         if busy {
             ui.add(Spinner::new().size(14.0));
+        }
+        // T-915.4: mint a new ticket through the one write path.
+        if board_active {
+            ui.separator();
+            if ui
+                .add_enabled(!verb_busy, Button::new("New ticket…"))
+                .on_hover_text("cargo xtask ticket add <title> [--summary …]")
+                .clicked()
+            {
+                actions.push(Action::OpenDialog(Box::new(mutate::add_dialog())));
+            }
         }
     });
 }
@@ -1085,7 +1325,7 @@ fn refusal_ui(ui: &mut Ui, error: &LoadError, actions: &mut Vec<Action>) {
 
 // ---- board ----
 
-fn board_ui(ui: &mut Ui, b: &BoardState, actions: &mut Vec<Action>) {
+fn board_ui(ui: &mut Ui, b: &BoardState, mctx: MutCtx<'_>, actions: &mut Vec<Action>) {
     ScrollArea::horizontal()
         .id_salt("board")
         .auto_shrink([false, false])
@@ -1093,14 +1333,7 @@ fn board_ui(ui: &mut Ui, b: &BoardState, actions: &mut Vec<Action>) {
             ui.horizontal_top(|ui| {
                 for (col_index, column) in b.board.columns.iter().enumerate() {
                     if b.expanded[col_index] {
-                        column_ui(
-                            ui,
-                            col_index,
-                            column,
-                            &b.visible[col_index],
-                            b.selected,
-                            actions,
-                        );
+                        column_ui(ui, b, col_index, mctx, actions);
                     } else {
                         chip_column_ui(ui, col_index, column, actions);
                     }
@@ -1111,14 +1344,16 @@ fn board_ui(ui: &mut Ui, b: &BoardState, actions: &mut Vec<Action>) {
 
 fn column_ui(
     ui: &mut Ui,
+    b: &BoardState,
     col_index: usize,
-    column: &board::Column,
-    visible: &[usize],
-    selected: Option<usize>,
+    mctx: MutCtx<'_>,
     actions: &mut Vec<Action>,
 ) {
+    let column = &b.board.columns[col_index];
+    let visible = &b.visible[col_index];
+    let selected = b.selected;
     ui.push_id(col_index, |ui| {
-        ui.vertical(|ui| {
+        let inner = ui.vertical(|ui| {
             ui.set_width(COL_W);
             ui.horizontal(|ui| {
                 ui.label(RichText::new(&column.header).strong());
@@ -1134,13 +1369,43 @@ fn column_ui(
                 .show_rows(ui, CARD_H, visible.len(), |ui, row_range| {
                     for &row in &visible[row_range] {
                         let card = &column.cards[row];
-                        let response = card_ui(ui, card, selected == Some(card.index));
+                        // T-915.4: idea cards drag onto the queued column — the
+                        // drop opens the same anchor picker as "Queue after…".
+                        let draggable = !mctx.busy && column.status == StatusName::Idea;
+                        let response = card_ui(ui, card, selected == Some(card.index), draggable);
                         if response.clicked() {
                             actions.push(select_or_compare(ui, card.index));
                         }
+                        if draggable && response.drag_started() {
+                            DragAndDrop::set_payload(ui.ctx(), DragCard(card.index));
+                        }
+                        response.context_menu(|ui| {
+                            mutate::card_menu_ui(ui, b, mctx, card.index, actions);
+                        });
                     }
                 });
         });
+        // The queued column is the drag target (drag-target only — no
+        // drag-to-position; the popup anchor picker is the acceptance surface).
+        if column.status == StatusName::Queued {
+            let rect = inner.response.rect;
+            let drop = ui.interact(rect, ui.id().with("queued_drop"), Sense::hover());
+            if drop.dnd_hover_payload::<DragCard>().is_some() {
+                ui.painter().rect_stroke(
+                    rect,
+                    4.0,
+                    ui.visuals().selection.stroke,
+                    StrokeKind::Inside,
+                );
+            }
+            if let Some(payload) = drop.dnd_release_payload::<DragCard>()
+                && !mctx.busy
+            {
+                actions.push(Action::OpenDialog(Box::new(mutate::anchor_dialog(
+                    b, payload.0,
+                ))));
+            }
+        }
     });
 }
 
@@ -1162,10 +1427,16 @@ fn chip_column_ui(
 }
 
 /// Card paint: one allocated rect, painter-only text — no nested widgets, so a
-/// virtualized column stays well inside the 17 ms frame budget.
-fn card_ui(ui: &mut Ui, card: &Card, selected: bool) -> egui::Response {
+/// virtualized column stays well inside the 17 ms frame budget. `draggable`
+/// (idea cards, T-915.4) adds drag sense for the drag-onto-queued affordance.
+fn card_ui(ui: &mut Ui, card: &Card, selected: bool, draggable: bool) -> egui::Response {
     let width = ui.available_width();
-    let (rect, response) = ui.allocate_exact_size(vec2(width, CARD_H), Sense::click());
+    let sense = if draggable {
+        Sense::click_and_drag()
+    } else {
+        Sense::click()
+    };
+    let (rect, response) = ui.allocate_exact_size(vec2(width, CARD_H), sense);
     if !ui.is_rect_visible(rect) {
         return response;
     }
@@ -1451,14 +1722,16 @@ enum Cell {
 
 fn detail_ui(
     ui: &mut Ui,
-    repo_root: Option<&Path>,
+    mctx: MutCtx<'_>,
     b: &BoardState,
     selected: usize,
+    advanced_status: &mut Option<StatusName>,
     actions: &mut Vec<Action>,
 ) {
     let Some(loaded) = b.corpus.tickets.get(selected) else {
         return;
     };
+    let repo_root = mctx.repo_root;
     let v = board::view(&loaded.ticket);
     let ids = &b.board.id_to_index;
 
@@ -1474,6 +1747,9 @@ fn detail_ui(
     });
     ui.label(RichText::new(v.title).size(14.0).strong());
     ui.add_space(4.0);
+    ui.separator();
+    // T-915.4 action strip: offered transitions + Add child + Advanced.
+    mutate::action_strip_ui(ui, b, mctx, selected, advanced_status, actions);
     ui.separator();
 
     ScrollArea::vertical()
