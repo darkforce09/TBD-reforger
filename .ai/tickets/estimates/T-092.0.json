@@ -1,0 +1,13 @@
+{
+  "cohort": {
+    "class": "docs",
+    "domain": "repo",
+    "layer": "xtask"
+  },
+  "cohort_size": 25,
+  "factor": 150,
+  "generated_at": "2026-08-14T23:48:32Z",
+  "id": "T-092.0",
+  "source": "cohort_median",
+  "tokens_estimated": 180900
+}

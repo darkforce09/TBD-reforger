@@ -19,6 +19,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["""The connection-graph quarter of the split T-079. Ids: `CONN-START-001`, `CONN-SYNC-001`, `CONN-DEL-001`, `ACTION-FORM-001`, `CTX-FORMATION-001`. HARD DEPENDENCY on T-664 — two of those are context-menu items by definition. Code: drag-from-entity-to-entity is a third gesture mode in `onpointerdown` (mission_editor.rs:1395) / `onpointerup` :1644; link create / sync / delete mutators in editor_ops.rs; a link map in store.rs; menu items in context_menu.rs. THE RENDER LANE MAY ALREADY EXIST: `LaneRole::SquadLinks` (crates/map-engine-render/src/draw_order.rs:57) is "T-180.4 — squad leader->member hairline links (under slot rings)" and its doc comment :49 groups it with Contours / ForestOutline as a flat LineList lane — exactly the primitive a connection graph needs. Either reuse it and drop draw_order.rs from owns, or add a MissionConnections peer. WARNING carried from the framework corpus: `CONN-SYNC-001` is a bare `missing` row in gap_analysis.md with no note, and FNF v4's ENTIRE defect cluster lives on exactly this mechanism — the inspector and the validation rules must precede the edges. Do not ship edges you cannot see or check."""]

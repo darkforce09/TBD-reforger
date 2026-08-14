@@ -15,6 +15,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 1 commit subject(s)"
 migration_legacy = ["WAVE-205 VERIFIER FILING (wave205.md MAJOR — a claim-vs-pixels finding, not broken code). PROVEN LIVE: no heading renders for slots in ANY widget mode — the slot render lane hardcodes yaw 0 and glyph 0 is a symmetric ring; pixel-identical crops at heading 90 vs 180. T-795's rotate ring changes heading NUMERICALLY (attrs confirm, one undo step) but the map never shows it — the review's F-16 'heading arrow' observation was about exactly this, and T-795's not-reproducing claim was made from source reading, not pixels (the T-789 lesson, second instance — a not-reproducing verdict is only as good as its measurement). FIX: carry yaw through the slot lane (the T-790 glyph-id lane widening is the template: store->feeder->engine) and rotate the glyph (or render a heading tick) per slot. NATURAL HOME: T-808 (unit symbology, wave 207) — military symbols carry orientation; fold there rather than a standalone lane change (note added to T-808). ACCEPTANCE: place a slot, set heading 90 then 180: the map glyph visibly rotates (non-identical crops); ring-drag live-updates the visible heading; vehicles' existing heading render (if any) unregressed."]

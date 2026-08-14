@@ -15,6 +15,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["3den E10. A test that fails when two editor actions claim the same key. Cheap insurance, and this program already found real collisions the hard way: Backspace deletes the selection while Eden uses it to hide the interface (T-662), and Space is flyTo here but widget-cycle in Eden (T-648). Pairs with T-692 — invisible bindings collide silently."]

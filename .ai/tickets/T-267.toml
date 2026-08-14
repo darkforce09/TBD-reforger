@@ -14,6 +14,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = ["content.rs makes exactly one API call and discards the returned id, so re-clicking Publish duplicates. PATCH, DELETE, uploads and push-discord are all orphaned. The SOP category never hits the API at all — it toasts success with no network call. Five markdown tools toast mock."]

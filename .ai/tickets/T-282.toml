@@ -14,6 +14,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["mission_versions already stores immutable full JSON snapshots per semver, so this is build a differ, not build versioning. Blockers: no parent_version_id, no list-versions endpoint (only POST and GET-by-id), the by-id GET is never called, and the History button is present but disabled. Old versions are retained and unreachable from any UI."]

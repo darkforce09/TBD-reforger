@@ -20,6 +20,7 @@ acceptance = [
 shipped_at = "26d91641"
 created_at = "2026-08-14T08:39:30Z"
 completed_at = "2026-08-14T09:38:10Z"
+estimated = ["tokens"]
 migration_legacy = ["Wave lanes rendered verbatim from wave.lock (one lane per open n; wave 0 always a count chip; header shows wave_base / max_concurrent / pack_last; missing lock renders the DidNotRun refusal text, never empty lanes; Unplanned side bucket = dispatchable ids absent from the lock, set arithmetic only). Program tree parent->children, status-colored, expandable. Composable filters: executor, kind, program/parent, scope family, free text over precomputed lowercase haystacks."]
 owns = ["apps/ticketboard"]
 

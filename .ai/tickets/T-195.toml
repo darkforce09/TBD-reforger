@@ -13,6 +13,7 @@ estimated = [
     "scope",
     "created_at",
     "completed_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 5 commit subject(s)"
 migration_legacy = ["leaderboards.rs:307-309 sets rows to an empty vec whenever the API returns anything, so a populated ladder renders 'No operators match your search'. Until then an eight-row fabricated table displays as the real ladder. All five tabs, the search box and View Dossier are dead, and GET /users/{id}/stats has no caller anywhere."]

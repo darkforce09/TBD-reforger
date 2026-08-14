@@ -16,6 +16,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["""The time scrubber is a raw `<input type="range">` at eden_chrome.rs:1084-1104 (`min=0 max=1439`, `class="w-28 accent-[--color-primary]"`) rendering in browser blue — off-palette against Aegis #adc6ff — and weather is a raw `<select>` at :1108-1120 with a native arrow. Two unstyled browser controls in an otherwise custom UI. Both live inside `TopCommandStrip` (post-split eden_top_strip.rs). "Replace with Aegis primitives" means CREATE them: `apps/website/frontend/src/ui.rs` has no slider and no select primitive — its components are MaterialIcon :27, PageHeader :38, AuthGate :52, Dialog :193, Sheet :273, AdminGate :356 — and ui.rs is where the suite's shared primitives live, so the new controls belong there and become available to the rest of the platform. DO NOT claim eden_chrome.rs:4143 (the hillshade range inside MissionSettingsDialog) — it is outside this ticket's TOP surface and is a same-file edit either way, so it costs nothing to leave for a follow-up. Build against the finished state vocabulary (T-668), which lands earlier."""]

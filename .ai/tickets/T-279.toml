@@ -14,6 +14,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ["There is no bot skeleton at all. Grep for serenity, twilight, poise, discord.js, gateway, application command or ed25519 across every file type returns zero hits. DISCORD_BOT_TOKEN is loaded at config.rs:46,87 and never read by any consumer. No interactions endpoint, no signature verification, no inbound Discord surface."]

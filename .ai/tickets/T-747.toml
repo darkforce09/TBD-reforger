@@ -15,6 +15,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ["FACTORY HAZARD, caught by the wave-113 verifier as a near-miss (no live defect). `cargo test -p map-engine-core` WITHOUT `--all-features` compiles ZERO of the doc-module tests, because the `doc` module is feature-gated: 139 tests run instead of 600. Wave 113 added new store.rs tests (T-082's update_slot_object and slot_layer_is_locked pins) that live entirely inside that gate. The WAVE GATE IS SOUND — it runs --all-features (Makefile:183), so it genuinely examined the new code — but an agent or reviewer hand-running the crate's tests to check a claim gets a confident green over code that was never compiled. That is precisely this program's signature defect ('a tool reporting success over an input it never actually examined'), pointed at the verification step rather than at the product. Cheap mitigations: state the --all-features requirement in the slice brief's rule 3 alongside the wasm32/native split; or add a `#[test]` in the ungated part of map-engine-core that fails when the doc feature is off, so the vacuous configuration announces itself instead of passing quietly. Related to T-742 (shared CARGO_TARGET_DIR cross-talk) — both are ways an ad-hoc cargo invocation lies to an agent. Diagnosis: editor_verify/wave113.md verified-clean register item 13."]

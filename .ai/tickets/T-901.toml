@@ -15,6 +15,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 6 commit subject(s)"
 migration_legacy = ["Bash does not need a .sh file to survive — with the Makefile gone, the remaining hiding place is the 39 `run:` blocks in .github/workflows/. Add `cargo xtask verify ci-shell`. Parse the YAML PROPERLY (serde_yaml/serde_norway) — do not regex YAML. Each `run:` passes iff every logical line is `cargo xtask <args>` or one of a SHORT in-Rust allowlist of genuine pre-cargo setup (rustup target/component add, pinned cargo install, git lfs pull, docker/podman compose). FAIL on: if/for/while/case, &&, ||, ;, |, backticks, $(, redirection, set -, >3 logical lines, heredocs, a `shell:` key naming bash/sh/python, or a `run:` on a step that also has `uses:`. Pin the `uses:` allowlist too so the ban cannot be routed around via a composite action. Rationale to record in the module doc: the ban is not on bash the language, it is on logic that no type checker and no local replay can see. Expect existing multi-line run: blocks to fail — port them, that is the point. ACCEPTANCE: prove the change BITES — perturb the new subject and watch it go red — not merely that it passes. A green run alone is not evidence (T-556). Finish with a full `cargo xtask platform wave gate` PASS: it is the only check that sees cross-crate breakage, and it has caught defects a green `cargo test -p xtask` could not. Spec: docs/platform/t853_shell_to_xtask_waves.md"]

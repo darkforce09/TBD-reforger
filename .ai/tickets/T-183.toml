@@ -13,6 +13,7 @@ completed_at = "2026-07-26T05:21:00Z"
 estimated = [
     "created_at",
     "completed_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ["INDFOR squads spawn as US Army bodies. packages/tbd-schema/registry/kit-aliases.json:39-42 has only blufor/opfor with fallbackFaction=blufor; kit.rs:52-57 falls back, kit.rs:107-110 has a test asserting it, and flatten.rs:471 consumes it — while the mod assigns engine faction FIA. CONSTRAINT (T-181.36): kit: gets a build-time GATE, not an enum. Adding an indfor alias WITHOUT a matching row in apps/mod/tbd-framework/Data/registry.json will FAIL xtask schema validate closed. Add both, or the gate stops the wave."]

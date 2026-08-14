@@ -13,6 +13,7 @@ estimated = [
     "scope",
     "created_at",
     "completed_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ["FactionDoc has no squad level — flat roles[] plus vehicles[]. Apply reuses the side's first squad and deletes every other squad on that side (apply_faction.rs:102-107); the inverse flattens all squads into one list, dropping boundaries, leader, callsign, rank and positions. Save-as then Apply collapses N squads into 1. APPLY_ANCHOR_X/Y is an Everon constant, so applying on Arland places everything off-map."]

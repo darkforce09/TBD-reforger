@@ -19,6 +19,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["""Rule content in the T-656 engine — modifies only `crates/map-engine-core/src/mission/validate.rs`. Revives the MissionAnalyzer's dead rule D13: every placed asset must resolve in the live registry, which catches modset drift the MOMENT an asset is placed rather than at compile. The upstream analysis marked this `on-save` "only as the conservative default for a cold registry" — THAT CAVEAT DOES NOT APPLY HERE: `apps/website/frontend/src/mission_editor.rs`:36-93 holds `mod registry_session`, a `thread_local!` SPA-session cache of the catalogue, so the check is live and free. Depends on T-656."""]

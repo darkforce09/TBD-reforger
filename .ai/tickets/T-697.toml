@@ -15,6 +15,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["3den E4 + 3DEN-TOOL-011. Search the text attributes of every entity in the mission, and filter a selection down by type or faction. TBD has search over the asset catalogue (T-055) but nothing over placed entities. At 19,627 slots median 137 per mission in the WOG corpus, find-by-name is not optional."]

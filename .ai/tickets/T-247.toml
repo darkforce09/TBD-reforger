@@ -14,6 +14,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = ["resync_all_roles works and is routed but has no frontend caller — it is curl-only. There is no scheduled sync either; the architecture doc claims a nightly cron, which is aspirational. The seed also ships a placeholder snowflake for the leader role."]

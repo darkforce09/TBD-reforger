@@ -14,6 +14,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
 migration_legacy = ["Grep for FOREIGN KEY or REFERENCES across all seven migrations returns zero. Deleting a mission, event or user orphans every dependent row, and DELETE /events/{id} sets deleted_at only while the confirm dialog claims a cascade. assigned_to, discord_id and reserved_by are unconstrained free text."]

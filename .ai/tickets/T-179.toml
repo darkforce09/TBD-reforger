@@ -17,6 +17,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["SHIPPED @ tag T-179 / 8f45ee83. A bins_ok===625 + retry; B Linear soft fs_forest_density (RGBA8 count-in-R, corner UV, fwidth AA iso); C one-shot MS hairlines role 6 (real forest_outline_segments; measured 99374 @ z=-1); D fullmap A_bins + outline floor ≥50000. Verify: .ai/artifacts/t179_verify_log.md. Hub: docs/platform/t179_forest_canopy_fix.md."]

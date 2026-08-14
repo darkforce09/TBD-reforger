@@ -14,6 +14,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["wiki.rs makes zero API calls; content is a const and EDIT mode writes to a session signal with no Save button and no PUT. vehicles.rs likewise makes zero API calls. Meanwhile GET/PUT /wiki, GET /wiki/{slug} and GET /vehicle-database all exist and work. vehicle_databases also has no INSERT path and no seed."]

@@ -26,6 +26,7 @@ estimated = [
     "scope",
     "created_at",
     "completed_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = ["cargo xtask wave repack (new top-level group) compiles .ai/tickets/wave.lock as deterministic TOML; wave check recomputes and structural-equals, missing lock is a DidNotRun refuse wired into ticket check, platform wave gate and platform_preflight. The same commit as the first lock deletes docs/platform/wave_plan.tsv and docs/mod/wave_plan.tsv and retargets every reader. platform wave land runs wave repack as its final step so the lock update rides the land commit."]

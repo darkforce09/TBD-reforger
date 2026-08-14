@@ -13,6 +13,7 @@ estimated = [
     "scope",
     "created_at",
     "completed_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = ["T-217 stopped Apply Template from silently deleting squads: apply_faction_library now returns WouldCollapseSquads{side, squad_ids, slots_destroyed} BEFORE the first write, so the doc is byte-identical on refusal, and Display names exactly what would have been lost. But the explanation is discarded on the way out — editor_ops.rs:1424 does .is_ok() and orbat_manager.rs:276 prints a bare 'Apply failed.' The data loss is stopped either way; the guidance is not shown. Thread the error through to the toast."]

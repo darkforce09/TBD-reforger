@@ -14,6 +14,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = ["The clear-cookie string is built after the missing_code and invalid_state early returns, so both leave the ten-minute CSRF cookie live. DISCORD_CLIENT_SECRET and DISCORD_REDIRECT_URL also have no startup guard, so a misconfigured secret is reported to the user as discord_unreachable — a misconfig disguised as an outage."]

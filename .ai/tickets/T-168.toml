@@ -17,6 +17,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["SHIPPED @ tag T-168: left-dock ORBAT browse/select tree (`build_orbat`; NodeKind::Faction/Squad). Historical note: early place minted via ensure_default_squad — superseded by T-180 place→new-squad under active_side. Squad management / Stitch ORBAT Manager completed by T-180 (not a remaining T-071 task). smoke_outliner_palette o3/o4/o5; build_orbat unit-tested."]

@@ -17,6 +17,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["SHIPPED @ tag T-173 / dddf3158. P1–P10 + H1/H2/H5/H6: release-default make leptos; pan/zoom streaming settle + compose memo (−71% zoom block); thrash-free residency; library scroll + sheet de-blur; Mission Settings basemap/hillshade/grid + 12 world toggles; continuous tree guides; fence/pier/rail strips; upright building badges; density/clusters/labels/airfield bridged. Verify: .ai/artifacts/t173_verify_log.md. Operator G-A: HUD rf + window.__editorBench(500) on RTX. Hub: docs/platform/t173_leptos_perf_pass.md."]

@@ -14,6 +14,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["PageStub and ApiPage are defined and routed nowhere. missions.rs:87 is a one-shot non-reactive role read evaluated before AuthGate resolves; combined with nav.rs:41-46 returning true for None, a not-yet-bootstrapped session yields is_maker=true and never corrects. faction_manager.rs deletes with no confirmation dialog, unlike every sibling page."]

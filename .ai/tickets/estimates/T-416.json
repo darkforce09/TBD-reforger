@@ -1,0 +1,16 @@
+{
+  "derived_from_shas": [
+    "61bd7e4f48fb5827fe78f8e0bba10aab5a217fe3",
+    "b515059bc219a950c002c5da7578885dce56ca75",
+    "9734721bb582a193d8a6ef0752a33e5bffdd9f51",
+    "bbc7164186952b440ab3f5be0e94f3e44f800918",
+    "9f2cffd26027fa4e2e93636357911c173d295f92",
+    "0ee70fa873a4e374177a0579bcc298d2909086a3"
+  ],
+  "factor": 150,
+  "generated_at": "2026-08-14T23:48:32Z",
+  "id": "T-416",
+  "loc_changed": 635,
+  "source": "diff_loc",
+  "tokens_estimated": 95250
+}

@@ -21,6 +21,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ["T-853 Phase 3. Absorb these Makefile targets into xtask: (delete the Makefile; repoint 12 CI run: steps and the live docs). LAST. Deleting the Makefile silently NARROWS two gates unless they move in the same commit: node_free.rs:290 scans it with `let Ok(text) = read_to_string else { return }` (fail-open), and wave.sh:1598-1628 parses its schema-validate recipe to cross-check GATE_SCHEMA_VALIDATE_GATES. Ship `xtask schema list-gates` first. Each slice ADDS xtask subcommands in its own new module and does NOT edit the Makefile - the deletion is one final slice, so the three build slices stay file-disjoint. ACCEPTANCE: for every target, `make <t>` and the new `cargo xtask ...` must produce byte-identical stdout+stderr+rc on a clean tree AND on a deliberately broken one; the harness must assert the make side went red before believing a diff (T-556). Spec: docs/platform/t853_shell_to_xtask_waves.md"]

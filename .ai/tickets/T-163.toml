@@ -15,6 +15,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 1 commit subject(s)"
 migration_legacy = ["SHIPPED: both worktree branches merged to main (t-159 @ df181120 clean, t-161 @ 3cec57ee 6-conflict resolution). xtask dead-React-reference purge (10 lines), V13 web→leptos, template fixes, T-152.5 compose_roads caller restored (map-engine-wasm compiled on no head since), registry truth (T-159 shipped, T-154 order). Verify: .ai/artifacts/t163_merge_verify_log.md."]

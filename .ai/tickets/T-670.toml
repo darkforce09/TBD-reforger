@@ -16,6 +16,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ['Closes `STATUS-ZOOM-001`. Eden prints metres-per-pixel in its status bar; we print nothing, which is also why the contour-ladder work (T-639) has no on-screen check. The sweep calls this "one <span>" — IT IS NOT, and the difference is a whole file. The toolbelt half is genuinely one cell: `BottomToolbelt` (post-split eden_toolbelt.rs, from eden_chrome.rs:3672) has two mono groups, CUR/SEL + X/Y/Z at :3720-3740 and OBJ/SEL/SZ at :3741-3766, and a scale span is a fourth cell in the second group. But THE COMPONENT HAS NO ZOOM INPUT: the full signature at :3672-3682 takes `cursor`, `sel_count`, `obj_count`, `selected_ids` and an optional `sz_bytes` — no camera. `RenderEngine::zoom()` exists (crates/map-engine-render/src/engine.rs:1720) but is only reachable from the rAF sampler in mission_editor.rs (mount at :2070), so this ticket adds a signal there and a prop here.']

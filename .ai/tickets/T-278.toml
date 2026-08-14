@@ -14,6 +14,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 6 commit subject(s)"
 migration_legacy = ["Data comes out of the game via Enfusion Workbench plugins, then a human copies two files by hand into packages/tbd-schema/registry/ and commits them. make registry-import ingests the committed artifacts. A PakVfs reader exists and is used for terrain, satellite and roads, but nothing in the repo parses .et prefab structure."]

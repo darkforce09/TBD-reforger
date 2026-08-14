@@ -14,6 +14,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ["build_catalog_tree (asset_catalog.rs:60) takes no side and filters kind==character, so a BLUFOR chip plus a USSR character is accepted silently — even though the registry categories already encode the side. T-153 specified the Faction Library should replace the raw registry dump here; the Leptos port reverted it and documents the revert in its own header."]

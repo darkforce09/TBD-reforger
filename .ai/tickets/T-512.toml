@@ -15,6 +15,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = ['Wave 43 residual (CLEAN NIT). T-377/T-509 covered by Class-R + admin_field omit-create. No committed HTTP IT that PATCH dense_fog then weather:"" stays dense_fog / 400, and CREATE omit weather returns clear. Cure: add missions IT cases. Ad-hoc HTTP was green at verify.']

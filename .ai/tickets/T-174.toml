@@ -17,6 +17,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 1 commit subject(s)"
 migration_legacy = ["SHIPPED @ tag T-174 / bbb99526. S1: localhost sat preview→full progressive (dropped sat_dev_preview_default); ?sat=preview = gate/fast Range-only; ?sat=full no-op. S2: density-heatmap glow removed end-to-end (no toggle); heatmap_trees LOD kept. S3: guide stems clip to rows — no dock rails. Verify: .ai/artifacts/t174_verify_log.md. Hub: docs/platform/t174_mc_sat_heatmap_guides.md."]

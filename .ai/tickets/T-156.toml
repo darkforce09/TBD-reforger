@@ -15,6 +15,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ['Sibling of T-155 (same 2026-07-13 incident): when auth dies, GET /registry and GET /factions fail and the UI silently degrades - the Arsenal shows the non-character guard ("Loadout applies to placed characters") because the catalog is empty, and the Factions palette shows the "No factions yet" author-CTA. Operator read it as data loss. Fix: distinguish query-error (esp. 401 after failed refresh) from genuinely-empty responses; surface one clear "session expired - log in again" banner/toast with a dev-login shortcut in dev, and make useRegistry/useFactionLibrary consumers render an error state, never the empty-state copy, on failure.']

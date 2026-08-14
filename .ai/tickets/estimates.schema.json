@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Ticket token estimates — one JSON estimate per shipped ticket without a run receipt (T-917.5)",
+  "description": "Files live at .ai/tickets/estimates/<ticket-id>.json — deliberately OUTSIDE .ai/tickets/metrics/: the receipt walkers are deny_unknown_fields over every file there and has_receipt treats ANY file under metrics/<id>/ as a measured receipt, so a colocated estimate would impersonate one (the T-913 violation). source=diff_loc carries loc_changed + derived_from_shas and tokens_estimated must equal loc_changed x factor (factor pinned by docs/platform/token_estimate_factor.md); source=cohort_median carries the WIDENED cohort key actually used ({} = all diff_loc tickets) + cohort_size. Validated by ticket check via xtask/src/estimate_tokens.rs; estimates are never summed with receipts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "source", "factor", "tokens_estimated", "generated_at"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^T-[0-9]+([.][0-9]+)*$" },
+    "source": { "enum": ["diff_loc", "cohort_median"] },
+    "factor": { "type": "integer", "minimum": 1 },
+    "tokens_estimated": { "type": "integer", "minimum": 0 },
+    "generated_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "loc_changed": { "type": "integer", "minimum": 0 },
+    "derived_from_shas": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "pattern": "^[0-9a-f]{7,40}$" }
+    },
+    "cohort": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "class": { "type": "string", "minLength": 1 },
+        "domain": { "type": "string", "minLength": 1 },
+        "layer": { "type": "string", "minLength": 1 }
+      }
+    },
+    "cohort_size": { "type": "integer", "minimum": 1 }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "source": { "const": "diff_loc" } },
+        "required": ["source"]
+      },
+      "then": {
+        "required": ["loc_changed", "derived_from_shas"],
+        "properties": { "cohort": false, "cohort_size": false }
+      }
+    },
+    {
+      "if": {
+        "properties": { "source": { "const": "cohort_median" } },
+        "required": ["source"]
+      },
+      "then": {
+        "required": ["cohort", "cohort_size"],
+        "properties": { "loc_changed": false, "derived_from_shas": false }
+      }
+    }
+  ]
+}

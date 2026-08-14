@@ -15,6 +15,7 @@ estimated = [
     "scope",
     "created_at",
     "completed_at",
+    "tokens",
 ]
 estimate_note = "no subject commits; created_at/completed_at from parent T-123 (day precision)"
 

@@ -15,6 +15,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["T-853 shell->xtask slice. Port scripts/verify-no-python.sh to `cargo xtask verify no-python` and delete the script(s), their scripts/shell-inventory.txt line(s), any scripts/python-inventory.txt line(s), and repoint every caller. 245 lines, 7 python3 sites - a Python ban written in bash that shells to python3. Port makes LANG-2 enforcement compiled-in. Must keep reading scripts/python-inventory.txt as its ratchet and stay fail-closed: T-620 kept it green over `rg: command not found` for four waves. Sources gate-grep.sh, so this is one of four blockers on T-880. ACCEPTANCE IS BYTE-FOR-BYTE: capture bash stdout+stderr+rc first, then diff on a clean tree AND on >=2 deliberately broken trees; the harness must assert the BASH side went red before believing a diff. A green run alone is not evidence (T-556). Build on crates/tbd-gate. Spec: docs/platform/t853_shell_to_xtask_waves.md"]

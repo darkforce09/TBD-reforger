@@ -216,7 +216,9 @@ fn estimated_of(t: &Ticket) -> &[String] {
     }
 }
 
-fn is_sha_shaped(v: &str) -> bool {
+/// 7–40 lowercase hex — the repo's stamp/estimate SHA shape (shared with the
+/// T-917.5 estimates check).
+pub(crate) fn is_sha_shaped(v: &str) -> bool {
     (7..=40).contains(&v.len())
         && v.chars()
             .all(|c| c.is_ascii_digit() || ('a'..='f').contains(&c))

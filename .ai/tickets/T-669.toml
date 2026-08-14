@@ -16,6 +16,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ['Closes `ACTION-CUT-001` and `ACTION-PASTE-ORIG-001`. Hours, not days: two match arms in the editor keydown, read in full at `apps/website/frontend/src/mission_editor.rs`:1019-1031 beside the existing `"KeyC" if modk && !alt && !shift` :1020 and `"KeyV" if modk && !alt && !shift` :1023. BOTH PRIMITIVES ALREADY EXIST — cut is `copy_selection` (editor_ops.rs:394) followed by `delete_selection` :327, and `paste_at_cursor(None, None)` :436 is LITERALLY paste-at-original because the anchor is optional. editor_ops.rs is deliberately NOT claimed: nothing there changes, which makes this one of only three tickets in the program that touch exactly one file.']

@@ -15,6 +15,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["NEW-F2 + 3den E6. Eight screenshot rows (MENU-BAR-006, MENU-SET-001, DLG-SHELL-003, DLG-PREF-001/003/004/005/009). Eden separates Settings>Preferences (editor-local, per-user) from Attributes (mission document). TBD mixes both in one dialog: basemap and the 12 world-layer toggles are already localStorage, while time/weather/flow are document keys behind author_env. Give the editor-local half its own surface. 3den E6 is the same need from the other direction (a preferences store) and folds in here rather than being built standalone."]

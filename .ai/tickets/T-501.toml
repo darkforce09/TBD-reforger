@@ -14,6 +14,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "no subject commits; created_at/completed_at id-interpolated between T-500 and T-502 (midpoint, day precision); shipped_at left absent — no subject commits, a SHA is never invented"
 owns = ["apps/website/api/tests/telemetry.rs"]

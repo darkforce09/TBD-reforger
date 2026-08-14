@@ -31,5 +31,6 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "no subject commits; created_at/completed_at id-interpolated between T-158 and T-160 (midpoint, day precision); shipped_at left absent — no subject commits, a SHA is never invented"

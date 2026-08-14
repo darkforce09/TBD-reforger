@@ -15,6 +15,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ["UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). O-8 — VERIFIED: canvas cursor is 'auto' over a unit, over empty ground, everywhere — nothing signals pickability. History: hover picking was DELIBERATELY REMOVED for perf at T-057 — so this is not a CSS one-liner; it needs a cheap hover hit-test. FIX: throttled (e.g. 30-60ms) spatial-hash lookup over slot/vehicle/marker/comment points on pointermove (the marquee/pick paths already have the point sets — reuse their source, do not re-derive), set cursor pointer/grab over a pickable, default otherwise; suppress during drags/draw modes. ⚠️ TRAPS: perf budget is the whole reason this was removed — the acceptance includes a frame-time guard; the HUD rf <ms> readout is the oracle; no per-frame full picks: spatial hash or radius query only; cursor must not flicker at cell boundaries (hysteresis). ACCEPTANCE: scripted — computed cursor over a unit = pointer (or grab), over empty = default; sweep the pointer across the 9-slot line at speed: HUD rf delta vs baseline <= 1ms median (telemetry HUD Ctrl+Alt+D readback); no cursor churn (>=3 changes) while hovering one entity."]

@@ -14,6 +14,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["target/ is 52GB, target-ci/ another 12GB, and .git/lfs holds 1.6GB of objects from tile pyramids untracked back on 2026-07-03. Disk is at 87%. Also no CARGO_TARGET_DIR is set, so the moment Rust work is sliced across worktrees each one starts a cold build."]

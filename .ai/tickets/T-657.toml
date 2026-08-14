@@ -19,6 +19,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["Rule content in the T-656 engine, so it modifies only `crates/map-engine-core/src/mission/validate.rs`; it READS `crates/map-engine-core/src/mission/orbat.rs` (359 lines) and doc/store.rs and modifies neither. Rules: every slot resolves a role and a squad; no default/empty identity fields; no leaderless squads; no duplicate callsigns within a side. This COLLAPSES the MissionAnalyzer's R3+R4+R5 — three overlapping rules with hardcoded name lists that exist ONLY because Eden packs role and callsign into one string — into one query over TBD's typed fields; R3 is the one rule FNF rated `error` rather than `warning`. It also revives D3-D8, six commented-out per-squad coverage rules, as ONE rule parameterised by squad template. Depends on T-656 for the primitives; collides with T-656 / T-658 / T-660 on validate.rs, which is why the four are in four different waves. Validation is ALWAYS ON — not behind a debug flag, not on save, not on export."]

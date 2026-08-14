@@ -14,6 +14,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["schemaVersion is regenerated as literal 1 so a stored 2 downgrades; map.bounds is recomputed and other map.* keys dropped; array order is not preserved (preserve_order is on in xtask/tools but not in map-engine-core, frontend or api); position sub-keys die on first edit; copy/paste strips unknown slot fields. A hydrate-then-compile property test catches all of them."]

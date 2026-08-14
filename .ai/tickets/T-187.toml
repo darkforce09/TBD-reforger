@@ -13,6 +13,7 @@ estimated = [
     "scope",
     "created_at",
     "completed_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = ["scripts/mod/setup-server-profile.sh:38 copies golden-missions/msn_8f3a2c.json, which is nowhere in the repo. With set -euo pipefail the script aborts. This is the script that prepares a server profile for testing missions. ALSO (merged from T-252): :31 reads GAME_SERVER_TOKENS but apps/website/api/src/config.rs:89 reads SERVICE_TOKEN — fix both in one pass. Related stale docs: deploy.env.example references a docker-compose.staging.yml that does not exist."]

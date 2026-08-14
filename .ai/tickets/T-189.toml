@@ -13,6 +13,7 @@ estimated = [
     "scope",
     "created_at",
     "completed_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 1 commit subject(s)"
 migration_legacy = ["mission_history.rs:53 documents 'the beforeunload guard'; a repo-wide grep finds only that comment. There is no SPA navigation guard either. Worse, the IDB-restored doc calls refresh_hud() rather than after_local_edit() (mission_editor.rs:436), so dirty starts false while unsaved edits exist and the user sees no dot."]

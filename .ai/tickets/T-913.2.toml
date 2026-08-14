@@ -25,6 +25,7 @@ completed_at = "2026-08-14T05:21:53Z"
 estimated = [
     "scope",
     "created_at",
+    "tokens",
 ]
 estimate_note = "created_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = ["Per-run JSON at .ai/tickets/metrics/<id>/<ts>-<sha>.json (never a single jsonl), required tokens_consumed with total == input+output+cache_read+cache_write, optional git_sha, optional reasoning sibling outside total. cargo xtask platform slice-run <id> parses usage from agent/claude --output-format json pinned by recorded fixtures; missing usage exits nonzero and writes no file. platform wave land stamps outcome+git_sha then runs wave repack; ticket metrics --by agent sums real files."]

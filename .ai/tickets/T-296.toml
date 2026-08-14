@@ -14,6 +14,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["TBD_ResultsReporter.c:23, :28-29 and :422-423 still state that identity linking is unimplemented and that 'there is no #tbd link command'. T-181.35 landed TBD_IdentityLink.c (780 lines) at 17:46 on 2026-07-25 and the command exists. The :422-423 line prints once per round into the operator log, so it actively misleads whoever reads the round output. Correct all three sites to describe what the results POST actually does today."]

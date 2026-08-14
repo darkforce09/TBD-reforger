@@ -15,6 +15,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["3den E8, the best value-per-effort in that sweep — hours each. 3DEN-PLACE-013: every numeric field nudges by PageUp/PageDown with Ctrl/Alt/Shift scaling the step; TBD number_field (attributes.rs:167-228) has no keyboard affordance at all. Plus one shared Ctrl+F search box rather than per-panel boxes, and tooltips on truncated tree rows."]

@@ -16,6 +16,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 69 commit subject(s)"
 migration_legacy = ["The T-621/T-623 shell ratchet is an ALLOWLIST: it pre-blesses all 59 tracked shell files (15,845 lines) via scripts/shell-inventory.txt, so it passes over the debt it was built to stop. This program drains it. Port every shell script to Rust (xtask/tbd-tools), delete the 504-line Makefile so cargo xtask is the only entrypoint, split xtask into its own workspace behind a std-only launcher, then flip verify-no-shell to a hard zero with no allowlist and add anti-relocation gates so bash cannot reappear in Makefile recipes or CI run: blocks. All 12 scripts/python-inventory.txt entries are themselves shell scripts, so LANG-2 collapses to zero in the same motion."]

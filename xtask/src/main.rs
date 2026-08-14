@@ -16,6 +16,7 @@ mod deploy_db_common;
 mod deploy_db_drill;
 mod deploy_db_restore;
 mod deploy_staging;
+mod estimate_tokens;
 mod gap;
 mod gate_bootstrap_staging_server;
 mod gate_crf_leak;
@@ -902,6 +903,13 @@ enum TicketCmd {
     /// in estimated[]. One-shot, idempotent by emptiness.
     #[command(name = "backfill-stamps")]
     BackfillStamps,
+    /// T-917.5: token estimates — every SHIPPED ticket with neither a run receipt
+    /// under metrics/<id>/ nor an estimates/<id>.json gets one: diff_loc (LOC changed
+    /// across its subject commits × the documented factor, bookkeeping paths
+    /// excluded) with cohort_median fallback. Writes .ai/tickets/estimates/<id>.json
+    /// + the "tokens" estimated[] marker. One-shot, idempotent by emptiness.
+    #[command(name = "estimate-tokens")]
+    EstimateTokens,
 }
 
 fn main() -> ExitCode {
@@ -1342,6 +1350,11 @@ fn run() -> Result<u8> {
                 // typed corpus directly, and stamps feed no generated view.
                 TicketCmd::BackfillStamps => {
                     backfill_stamps::cmd_backfill_stamps(&root)?;
+                }
+                // Same shape as backfill-stamps: git metadata + typed corpus only;
+                // estimates and markers feed no generated view.
+                TicketCmd::EstimateTokens => {
+                    estimate_tokens::cmd_estimate_tokens(&root)?;
                 }
             }
             Ok(0)

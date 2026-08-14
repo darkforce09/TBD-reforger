@@ -651,6 +651,12 @@ pub fn check(root: &Path, registry: &serde_json::Value, strict: bool) -> Vec<Str
     // .ai/tickets/metrics.schema.json plus the token-sum / RFC 3339 UTC invariants —
     // a malformed receipt is red, named by file.
     errors.extend(crate::metrics::check_as_errors(root));
+    // T-917.5: every token estimate under .ai/tickets/estimates/ must satisfy
+    // estimates.schema.json + the business rules (factor == the documented constant,
+    // diff_loc arithmetic, shipped-only, receipt/estimate mutual exclusion, and the
+    // "tokens" marker ⇔ file coherence). Structurally OUTSIDE metrics/ so an
+    // estimate can never impersonate a receipt (T-913).
+    errors.extend(crate::estimate_tokens::check_as_errors(root));
     // T-917.1/.2: the scope vocabulary (.ai/tickets/scope-vocab.toml) must EXIST and be
     // shape-valid — BASE tier since the S.2 cutover (S.1 parked existence at --strict
     // only while pre-v2 scratch registries still lacked the file): scope legality now

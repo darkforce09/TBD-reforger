@@ -17,6 +17,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 1 commit subject(s)"
 migration_legacy = ["SHIPPED @ tag T-169 (T-064 parity): outliner.rs gains `flatten` (pre-order rows) + `VIRTUAL_SLOT_THRESHOLD=50`; eden_chrome renders each dock tree via `virtual_tree` — eager below the threshold, a fixed-height scroll container drawing only the visible slice (+overscan) between spacer divs above it, so a mission-scale tree never builds N DOM rows. Applies to BOTH Editor Layers and ORBAT; `window.__outlinerStats.{editorLayers,orbat} = {total,rendered,threshold}` for the gate. New smoke_virtual_outliner (6/6): eager==total below, rendered<total above, threshold 50, both trees windowed, windowed row still selects. `__missionDoc.seed_slots(n)` smoke hook added to push past the threshold."]

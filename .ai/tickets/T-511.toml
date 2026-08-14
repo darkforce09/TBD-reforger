@@ -15,6 +15,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 6 commit subject(s)"
 migration_legacy = ["Wave 43 residual (CLEAN). T-331 cleared content_golden double-seat and left the partial unique on orbat_slots(event_mission_id, assigned_to) WHERE assigned_to IS NOT NULL unlanded because tests/events.rs:540 still seeds legacy two-seat for T-318 recovery and a partial unique cannot be DEFERRABLE. Cure: deliberately update/retire that assertion (or drop index around the seed), then CREATE UNIQUE INDEX in a migration. Repro: create index on clean DB, UPDATE second seat assigned_to → 23505."]

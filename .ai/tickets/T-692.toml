@@ -15,6 +15,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ["NEW-F3. Rows MENU-BAR-008, MENU-VIEW-017, MENU-HELP-001. TBD binds 10 keyboard shortcuts and documents none of them in the UI. Eden has both a Help menu and a toggleable Controls Hint. Pairs with T-668 (state vocabulary) and with 3den E10 — a keybinding collision test is worth little if the bindings are invisible."]

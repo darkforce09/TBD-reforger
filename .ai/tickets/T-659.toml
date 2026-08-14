@@ -16,6 +16,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["""Per-side live counts in the editor header (`WEST 78 · EAST 74 · IND 8 · TOTAL 160`) plus a summary line composed from the document. This REPLACES two of the MissionAnalyzer's rules by making the malformed state unreachable rather than caught — the "should be unrepresentable" pile — and WOG got a 94%-consistent community naming convention out of the counter alone. Code: the header is `TopCommandStrip` (post-split eden_top_strip.rs, from eden_chrome.rs:831); the existing OBJ/SEL/SZ counters in BottomToolbelt :3745-3766 are the pattern to copy. Per-side counts derive from the ORBAT snapshot — `orbat_manager_snapshot` (editor_ops.rs:1190) and `vehicle_rows` :1751. Cheap and visible, which is why it is early in the validation group's internal order (panel -> engine -> census -> rule content)."""]

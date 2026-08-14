@@ -15,6 +15,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
 migration_legacy = ["Wave 43 cold gate FAIL. T-331 migration 0015 SET NOT NULL on matches.aar_replay_url (canonical empty is ''). tests/aar_replay_url_backfill.rs still plants NULL and expects migration 0010 to SET NULL for scrubbed rows — INSERT fails 23502. Cure: align 0010 scrub target to '' (same canonical empty as T-331/telemetry COALESCE), rewrite the IT plant/assert for NOT NULL (prove NULL insert rejected; scrubbed rows become '' not NULL; kept '' still kept). Do not weaken 0015. Perturbation RED required."]

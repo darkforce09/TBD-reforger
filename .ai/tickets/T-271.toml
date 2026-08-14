@@ -14,6 +14,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["/modpacks is get-only and the handler contains no DML; the only INSERT is the offline registry importer. modpack_mods has name, is_key_dependency and sort_order but no workshop_id, mod_guid or version, so it structurally cannot express a Reforger game.mods[] entry. The frontend page is fully mock and its Save writes to an in-memory map while toasting success."]

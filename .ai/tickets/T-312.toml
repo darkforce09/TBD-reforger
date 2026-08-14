@@ -13,6 +13,7 @@ estimated = [
     "scope",
     "created_at",
     "completed_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ["Found by T-209, and it is the sharpest instance of the pattern: the one check whose entire purpose is proving the compile gate can FAIL will print SELFTEST OK and exit 0 when it never ran at all. Reproduced. T-209's new workflow deliberately avoids the target and calls the script directly, but the Makefile target is still there for anyone who trusts it."]

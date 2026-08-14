@@ -15,6 +15,7 @@ estimated = [
     "completed_at",
     "created_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "completed_at from stray date-shaped shipped_at 2026-07-26; created_at/shipped_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = [

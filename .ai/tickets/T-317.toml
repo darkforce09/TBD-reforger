@@ -14,6 +14,7 @@ estimated = [
     "scope",
     "created_at",
     "completed_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ["FOUND by T-218's sweep. handlers/admin.rs:168 collapses the JsonRejection instead of returning 400, so a malformed or wrong-Content-Type body still executes `UPDATE users SET is_banned=true, ban_reason=$1` with an empty reason — erasing a prior reason on re-ban and leaving an unexplained ban in the audit trail. Two-part fix: `map_err` the extractor like the other ~25 handlers in the crate, AND drop the #[serde(default)] on BanInput.reason at :155 — a well-formed `{}` does the same damage. Same pattern T-218 closed in approvals.rs; this is the last extractor-collapse site."]

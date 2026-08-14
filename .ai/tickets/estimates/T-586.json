@@ -1,0 +1,13 @@
+{
+  "derived_from_shas": [
+    "9378ccd50f8450a307cc4bce01c75873f3ccf7a5",
+    "91d5512fb5e9bdc428b0d09b38b0ad9e5e2003e5",
+    "f5e9ba01d6f0d608c57bb7e416617559d979d9dd"
+  ],
+  "factor": 150,
+  "generated_at": "2026-08-14T23:48:32Z",
+  "id": "T-586",
+  "loc_changed": 512,
+  "source": "diff_loc",
+  "tokens_estimated": 76800
+}

@@ -19,6 +19,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["Rule content plus one extension. Rules: vehicle inventories match policy (the MissionAnalyzer's R9, a PvP fairness check) plus WOG's `fn_check_weapon` set — below-standard magazine counts, no vest, no uniform, missing map/compass/radio. TBD already holds the cargo model (T-068.15.1). Code: rule content in `crates/map-engine-core/src/mission/validate.rs`, and EXTEND rather than duplicate `crates/map-engine-core/src/mission/wire_safety.rs` where the cargo policy check already half-exists: `scan_cargo_capacity` :360, `CargoPhys` :338, `CARGO_CONTAINERS` :326, `CARGO_CAPACITY_CAVEAT` :331. The no-vest / no-uniform / missing-map-compass-radio rules read `apps/website/frontend/src/arsenal_rules.rs`:49-162 (the 14 pick rows) — read-only, not claimed, since the engine lives in core. Worth keeping in view while building: FNF's version of this compares against a serialised sentinel string `[[[[],[]],...],false]`, which is exactly the brittleness a typed model deletes. Depends on T-656."]

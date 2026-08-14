@@ -15,6 +15,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["3den E5. Both WOG (wog3_3den Log entries) and 3den Enhanced ship clipboard exporters, and the milsim-relevant one is grid position — a mission maker reads a grid ref out of the editor and types it into a briefing or a radio message. Cheap: the data is in the document, the target is navigator.clipboard."]

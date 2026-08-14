@@ -15,6 +15,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ["UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). O-4 — VERIFIED WITH A MUTATION OBSERVER: animate-dialog-in TRANSLATES surfaces into place over ~350ms — the right-click context menu first paints at (685,500) and settles at (800,600) = 215px of travel; Mission Settings first paints at (458,-352) — OFF-SCREEN ABOVE — and settles at (704,81) = 679px of travel. Reads as 'spawns in the wrong place and drifts in' (operator caught it by feel; animate-menu-in moves 12px and feels nearly right). Owner: apps/website/frontend/style/aegis.css keyframes (single hand-authored sheet). FIX: entrance animations for dialogs/menus/popovers limited to <=8px translation and <=120-150ms, or opacity/scale-only (scale >=0.97 origin-anchored); the context menu must first-paint at its final anchor. ⚠️ TRAPS: css-only ticket — do not touch component code; keep prefers-reduced-motion respected if present (add it if absent: reduced motion = opacity-only); exit animations may stay as-is. ACCEPTANCE: the review's MutationObserver probe re-run — max |first-paint -> settled| delta < 8px across context menu, Mission Settings, Save dialog, ORBAT; duration <= 150ms (computed animation-duration); reduced-motion media query yields 0px translation."]

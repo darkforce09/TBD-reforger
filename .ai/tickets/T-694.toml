@@ -15,6 +15,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["NEW-F6. Rows DLG-MP-001..003, the one genuine gap the Edit: Multiplayer dialog surfaced. game_mode and max_players are create-dialog only (create_mission_dialog.rs:158-166, :199-215) and reach a compiled mission through the row, not the document (dto.rs:895). A mission cannot change shape after creation. PATCH /missions/:id already accepts both."]

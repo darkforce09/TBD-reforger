@@ -20,7 +20,10 @@ acceptance = [
 shipped_at = "dfaf4d4b"
 created_at = "2026-08-14T08:39:30Z"
 completed_at = "2026-08-14T09:46:32Z"
-estimated = ["scope"]
+estimated = [
+    "scope",
+    "tokens",
+]
 migration_legacy = ["Rewire the xtask registry mutators (ship, set-status, mark-ready, add, remove, reorder, advance-slice) onto the T-916.1 typed ops with the reload-before-sync sequence (typed write -> reload load_phase2_tree -> cmd_sync -> repack_quiet). New verbs: add-child [--promote], remove --force, child-resolving ship/set-status. Referential-integrity check rule (children[] naming a missing file, child file with absent parent). Parity harness: old-vs-new byte diff per verb over the full write surface with timestamp normalization; red trees refuse exit 1 with zero writes."]
 owns = [
     "xtask/src",

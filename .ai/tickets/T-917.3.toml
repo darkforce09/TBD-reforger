@@ -21,6 +21,7 @@ acceptance = [
 shipped_at = "b071c49e"
 created_at = "2026-08-14T21:54:38Z"
 completed_at = "2026-08-14T23:08:26Z"
+estimated = ["tokens"]
 migration_legacy = ["Mechanical byte-reversible pass over every work ticket whose TOML-parsed summary exceeds 40 whitespace-split words: summary moved verbatim into migration_legacy[] split on newlines only (join reproduces original bytes, proved per file), summary := existing title. Word-cap check rules land: summary <=40, context/requirement/current_state/approach/verify <=30 per line, citations <=8; acceptance/notes/user_story uncapped. Shrink-only pinned ratchet on migration_legacy count; a new ticket minting the field is red."]
 owns = [
     ".ai/tickets",

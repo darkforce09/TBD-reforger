@@ -13,6 +13,7 @@ estimated = [
     "scope",
     "created_at",
     "completed_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ["The key is the mission id alone (yrs_persist.rs:60-69). Sign-out clears auth but leaves the doc blob, adopted markers and session marker. On a shared machine user B opening the same mission restores user A's unsaved draft, and a Save posts it under B's account."]

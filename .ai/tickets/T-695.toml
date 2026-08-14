@@ -15,6 +15,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["NEW-F5 + 3den E3 + 3DEN-CTX-001. Eden F7. Pure SPA over the live catalogue with localStorage. Deliberately NOT folded into T-646: that ticket is search and submode filtering over the existing tree, this is a separate persistent collection with its own add/remove verbs."]

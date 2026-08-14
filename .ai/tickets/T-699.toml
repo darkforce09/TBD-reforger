@@ -15,6 +15,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["3den E7 (3DEN-LOAD-001/002/010). TBD has no way to move a loadout between slots at all. Copy buffers the loadout of every selected entity; Apply writes it to a selection, picking at random per entity when several are buffered (the randomisation is the novel part). Remove Everything is the one strip verb worth building — the nine per-category variants (NVGs, vests, goggles, headgear, weapons) are marked maybe and deliberately excluded."]

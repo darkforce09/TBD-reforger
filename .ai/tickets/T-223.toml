@@ -13,6 +13,7 @@ estimated = [
     "scope",
     "created_at",
     "completed_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ["mission_hydrate.rs:88-99 compares only an adopted localStorage semver against the server's. has_content() exists with zero callers. Clearing site data produces a spurious conflict on an unmodified doc, and two people who both adopted the same semver and both edited will both silently take the trust-local branch with no warning."]

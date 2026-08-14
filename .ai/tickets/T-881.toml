@@ -15,6 +15,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ['''T-853 shell->xtask slice. Port scripts/mod/verify-t456-mission-rest-size-gate.sh;scripts/mod/verify-t468-ci-schema-parity.sh to `cargo xtask verify t456 / verify t468` and delete the script(s), their scripts/shell-inventory.txt line(s), any scripts/python-inventory.txt line(s), and repoint every caller. t468's bash_pins pins t456's Makefile recipe as ^\t@?bash <path> AND its own. Porting either alone fails the other on a CORRECT tree, so they are one atomic slice: port both, drop both tuples, repoint both recipes and both wave.sh sites, and re-pin t468 at the cargo spelling. 654 lines, 5 python3 sites. ACCEPTANCE IS BYTE-FOR-BYTE: capture bash stdout+stderr+rc first, then diff on a clean tree AND on >=2 deliberately broken trees; the harness must assert the BASH side went red before believing a diff. A green run alone is not evidence (T-556). Build on crates/tbd-gate. Spec: docs/platform/t853_shell_to_xtask_waves.md''']

@@ -14,6 +14,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["telemetry.rs:279-288 sets attended for all event_missions of the event, not the one played, and only when match.event_id parses. Side effect: decorate_events and the dashboard count only registered and waitlisted, so a completed op's roster collapses to zero. Withdraw also stops promoting the waitlist once state is attended, and the withdrawn and no_show enum values are never written by anything."]

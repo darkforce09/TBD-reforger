@@ -15,6 +15,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ["Wave 37 adversarial NIT on T-407. dossier_body_uses_trim_aware_briefing_helper only bans .filter(|b| !b.is_empty()); a match-arm !b.is_empty() stayed GREEN while the behavioral trim test went RED. Also residual from T-407 report: schedule events.rs briefing still uses (!briefing.is_empty()) without trim (out of T-407 owns). Cure: widen source ratchet to ban non-trim empty checks on briefing paths; align schedule card trim with event_hub/mission_overview."]

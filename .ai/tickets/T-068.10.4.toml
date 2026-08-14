@@ -15,6 +15,7 @@ completed_at = "2026-07-12T22:12:47Z"
 estimated = [
     "created_at",
     "completed_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 

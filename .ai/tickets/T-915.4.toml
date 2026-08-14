@@ -24,6 +24,7 @@ acceptance = [
 shipped_at = "99441394"
 created_at = "2026-08-14T08:39:30Z"
 completed_at = "2026-08-14T10:27:28Z"
+estimated = ["tokens"]
 migration_legacy = ["Transition affordances mirroring the CLI verbs: idea->queued via drag-after-anchor (reorder semantics), queued->ready via a Ready-prose form (spec-on-disk + user_story + acceptance) surfacing the deps-unshipped refusal, ship/cancel/defer and demotions with confirm, running hidden as a manual target, raw set-status behind an advanced affordance, add-ticket and add-child [--promote] forms. Single-flight subprocess queue, UI compare-and-swap before dispatch, verbatim stderr on any nonzero exit, no auto-repack ever (the app must not become a second wave writer)."]
 owns = ["apps/ticketboard"]
 

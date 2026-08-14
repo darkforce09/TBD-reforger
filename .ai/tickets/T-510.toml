@@ -15,6 +15,7 @@ estimated = [
     "created_at",
     "completed_at",
     "shipped_at",
+    "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ["Wave 43 re-gate FAIL after T-509. T-331 0015 SET NOT NULL on missions.created_at/updated_at. tests/null_tolerance.rs approvals_queue_reports_an_honest_submitted_at_over_null_timestamps still INSERTs NULL timestamps to discriminate COALESCE(updated_at, created_at, sentinel) — seed fails 23502 on created_at. Cure: rewrite the test for the post-0015 world — pin that NULL created_at/updated_at inserts are rejected (23502); retire or replace the both-NULL / updated_at-NULL discriminator rows (those states can no longer exist in production). Keep COALESCE Class-R on the query source if still useful with non-null data. Do not weaken 0015."]
