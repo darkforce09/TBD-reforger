@@ -3,7 +3,7 @@ kind = "work"
 title = "Breadcrumb scope + facet filters + class chips"
 summary = "Breadcrumb scope + facet filters + class chips"
 class = "bug"
-status = "ready"
+status = "shipped"
 order = 5981
 spec = "docs/platform/t917_ticket_schema_v2.md"
 executor = "claude-code"
@@ -17,7 +17,9 @@ acceptance = [
     "Class chip on every work card; class facet filter works",
     "git status --porcelain unchanged after a full session",
 ]
+shipped_at = "ec17a8d1"
 created_at = "2026-08-14T21:54:38Z"
+completed_at = "2026-08-14T23:31:09Z"
 migration_legacy = ["Cards and detail render scope as the domain > layer > component > surface breadcrumb; filters become per-facet (one dropdown per level, values from the vocab file, composable with the existing filters); class renders as a colored chip (bug/feature/chore/audit/docs) on cards and as a filter facet."]
 owns = ["apps/ticketboard"]
 

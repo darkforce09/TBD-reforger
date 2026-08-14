@@ -3,7 +3,7 @@ kind = "work"
 title = "Stamp backfill: git miner over shipped history"
 summary = "Stamp backfill: git miner over shipped history"
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 5974
 spec = "docs/platform/t917_ticket_schema_v2.md"
 executor = "claude-code"
@@ -17,7 +17,9 @@ acceptance = [
     "The 4 shipped_at strays printed before/after",
     "git diff -- .ai/tickets/wave.lock prints empty",
 ]
+shipped_at = "7f7101cf"
 created_at = "2026-08-14T21:54:38Z"
+completed_at = "2026-08-14T23:31:07Z"
 migration_legacy = ["Mine immutable git metadata for every shipped ticket missing stamps: created_at/completed_at from first/last exact-id boundary-matched commit subjects (UTC-normalized), shipped_at from the last subject SHA; id_interpolation fallback between nearest id-adjacent dated tickets where no subjects exist. Every derived value listed in estimated[] with per-source accounting. The 4 date-shaped shipped_at strays resolved (date -> completed_at estimated; SHA re-mined or marked)."]
 owns = [
     ".ai/tickets",
