@@ -2,7 +2,7 @@ id = "T-915.3"
 kind = "work"
 title = "Trust banner + file watch"
 summary = "Trust banner running cargo xtask ticket check --strict as a streamed subprocess on launch and on watched change: green/red plus exit code, labeled strict (mutator preflight is non-strict — never conflate). Distinct building-xtask vs checking states with streamed cargo output. notify watch on .ai/tickets/ and the sync targets (docs/TICKET_*.md, CLAUDE.md, ROADMAP), debounce >=500ms, coalesced re-runs, self-suppression while a verb subprocess is in flight plus one debounce window. Git-dirty chip summarizing git status --porcelain -- .ai/tickets docs CLAUDE.md."
-status = "queued"
+status = "ready"
 order = 5963
 spec = "docs/platform/t915_ticketboard_design.md"
 executor = "claude-code"
