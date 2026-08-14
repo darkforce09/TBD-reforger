@@ -2,7 +2,7 @@ id = "T-915.3"
 kind = "work"
 title = "Trust banner + file watch"
 summary = "Trust banner running cargo xtask ticket check --strict as a streamed subprocess on launch and on watched change: green/red plus exit code, labeled strict (mutator preflight is non-strict — never conflate). Distinct building-xtask vs checking states with streamed cargo output. notify watch on .ai/tickets/ and the sync targets (docs/TICKET_*.md, CLAUDE.md, ROADMAP), debounce >=500ms, coalesced re-runs, self-suppression while a verb subprocess is in flight plus one debounce window. Git-dirty chip summarizing git status --porcelain -- .ai/tickets docs CLAUDE.md."
-status = "ready"
+status = "shipped"
 order = 5963
 spec = "docs/platform/t915_ticketboard_design.md"
 executor = "claude-code"
@@ -16,7 +16,9 @@ acceptance = [
     "External edit of a ticket TOML reflects in the UI within one debounce window; events coalesce to one re-run per burst; the app's own verb writes do not re-trigger a check storm",
     "Git-dirty chip shows the uncommitted-registry-file count",
 ]
+shipped_at = "1e503f53"
 created_at = "2026-08-14T08:39:30Z"
+completed_at = "2026-08-14T09:59:55Z"
 owns = ["apps/ticketboard"]
 
 [scope.repo]
