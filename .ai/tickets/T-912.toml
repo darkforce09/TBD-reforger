@@ -2,7 +2,7 @@ id = "T-912"
 kind = "program"
 title = "Wave Lockfile Architecture"
 summary = "Compile .ai/tickets/wave.lock (TOML) from ticket-owned owns/depends_on/pack_last and make it the single wave plan for platform and mod. wave repack is the only legal writer and platform wave land runs it as its final step; wave check recomputes and structural-equals with missing lock a refuse. Both wave_plan.tsv files and const DEPS/RUN_LAST die. First lock set-equals today's TSV packing; later repacks order open candidates by ticket order, tie-broken by id."
-status = "queued"
+status = "shipped"
 order = 5920
 spec = "docs/platform/t912_wave_lockfile.md"
 executor = "claude-code"
@@ -11,4 +11,4 @@ children = [
     "T-912.1",
     "T-912.2",
 ]
-active = "T-912.2"
+shipped_at = "4a2f3426"
