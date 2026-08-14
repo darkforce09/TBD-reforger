@@ -1,23 +1,31 @@
-//! eframe shell (T-915.1) — thin UI over the pure modules.
+//! eframe shell (T-915.1 / T-915.2) — thin UI over the pure modules.
 //!
 //! States: NoRepo refusal (both discovery mechanisms + native folder picker),
 //! Loading, parse Refusal (the trust surface: file path + verbatim error), Board.
-//! All IO happens on worker threads (`std::thread` + `mpsc`, `request_repaint` on
-//! completion); the paint path only reads strings precomputed at load time.
+//! Board carries three tabs — Board / Waves / Tree — one shared detail panel, and a
+//! composable filter bar (filters hide board cards and tree rows, and dim wave
+//! chips). All IO happens on worker threads (`std::thread` + `mpsc`,
+//! `request_repaint` on completion); the paint path only reads strings precomputed
+//! at load or filter-change time.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, Receiver};
 
 use eframe::egui::{
-    self, Align, Align2, Button, FontId, Id, Layout, Panel, Rect, RichText, ScrollArea, Sense,
-    Spinner, StrokeKind, Ui, pos2, vec2,
+    self, Align, Align2, Button, Color32, ComboBox, FontId, Id, Layout, Panel, Rect, RichText,
+    ScrollArea, Sense, Spinner, StrokeKind, TextEdit, Ui, pos2, vec2,
 };
 use egui_extras::{Column as TableColumn, TableBuilder};
+use tbd_tickets::StatusName;
 
 use crate::board::{self, BoardModel, Card};
-use crate::corpus::{self, Corpus, LoadError, LoadResult};
+use crate::corpus::{self, Corpus, LoadBundle, LoadError};
 use crate::discovery;
+use crate::filters::{FilterIndex, Filters, KindFilter};
+use crate::tree::{self, TreeModel};
+use crate::wavelock::{self, LockState};
+use crate::waves::{Lane, Wave0, WaveChip, WavesModel};
 
 /// eframe Storage key for the picked repo root (user config dir — never the repo).
 const REPO_ROOT_KEY: &str = "repo_root";
@@ -27,6 +35,43 @@ const CARD_GAP: f32 = 6.0;
 const COL_W: f32 = 236.0;
 const CHIP_COL_W: f32 = 92.0;
 const DETAIL_W: f32 = 420.0;
+const TREE_ROW_H: f32 = 18.0;
+const TREE_INDENT: f32 = 16.0;
+const WAVE0_ROW_H: f32 = 18.0;
+const WAVE0_LIST_MAX_H: f32 = 320.0;
+
+/// Collision verdict / `ready`-family accent colors (dark-theme legible).
+const VERDICT_OK: Color32 = Color32::from_rgb(120, 205, 130);
+const VERDICT_COLLIDE: Color32 = Color32::from_rgb(235, 110, 100);
+
+/// Status accent for tree rows, wave chips, and the status filter toggles. The RAW
+/// status name stays the label everywhere — color is an accent, never a rename.
+fn status_color(status: StatusName) -> Color32 {
+    match status {
+        StatusName::Idea => Color32::from_gray(150),
+        StatusName::Queued => Color32::from_rgb(120, 165, 225),
+        StatusName::Ready => VERDICT_OK,
+        StatusName::Running => Color32::from_rgb(245, 175, 80),
+        StatusName::Review => Color32::from_rgb(195, 150, 235),
+        StatusName::Shipped => Color32::from_rgb(105, 150, 115),
+        StatusName::Deferred => Color32::from_rgb(180, 150, 110),
+        StatusName::Cancelled => Color32::from_rgb(215, 115, 105),
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+enum Tab {
+    #[default]
+    Board,
+    Waves,
+    Tree,
+}
+
+const TABS: [(Tab, &str); 3] = [
+    (Tab::Board, "Board"),
+    (Tab::Waves, "Waves"),
+    (Tab::Tree, "Tree"),
+];
 
 enum State {
     /// No repo resolved (or an invalid one named in `note`) — full-window refusal.
@@ -42,29 +87,105 @@ enum State {
 struct BoardState {
     corpus: Corpus,
     board: BoardModel,
+    /// wave.lock outcome — Waves-view-local; refusals never blank the board.
+    lock: LockState,
+    /// Built only when the lock loaded (rendered verbatim, never recomputed).
+    waves: Option<WavesModel>,
+    tree: TreeModel,
+    filter_index: FilterIndex,
+    filters: Filters,
+    /// Per-corpus-index filter verdicts (all true when no filter is active).
+    matches: Vec<bool>,
+    matched_count: usize,
+    /// Board virtualization under filters: per column, the visible card rows.
+    visible: [Vec<usize>; 8],
+    /// Flattened tree rows for the virtualized tree view.
+    tree_flat: Vec<tree::FlatRow>,
+    /// Manual tree expansion by corpus index (filters force-expand match paths).
+    tree_expanded: Vec<bool>,
+    /// Wave 0 id list visibility — ALWAYS collapsed on load (acceptance 2).
+    wave0_expanded: bool,
     selected: Option<usize>,
+    /// Second selection (shift-click) — the owns-collision explainer pair.
+    compare: Option<usize>,
     expanded: [bool; 8],
-    /// Precomputed footer: the acceptance surface against
+    /// Precomputed footer base: the acceptance surface against
     /// `ls .ai/tickets/T-*.toml | wc -l`.
+    footer_base: String,
+    /// Rendered footer — prefixed with `matched/total` while filters are active.
     footer: String,
 }
 
 impl BoardState {
-    fn new(corpus: Corpus) -> Self {
+    fn new(corpus: Corpus, lock: LockState, filters: Filters) -> Self {
         let board = BoardModel::build(&corpus);
+        let waves = match &lock {
+            LockState::Loaded(l) => Some(WavesModel::build(&corpus, &board.id_to_index, l)),
+            _ => None,
+        };
+        let tree = TreeModel::build(&corpus, &board.id_to_index);
+        let filter_index = FilterIndex::build(&corpus);
         let expanded = board::STATUS_ORDER.map(|s| !board::collapsed_by_default(s));
         let c = corpus.counts;
-        let footer = format!(
+        let footer_base = format!(
             "{} ticket files — {} parents / {} children",
             c.total, c.parents, c.children
         );
-        Self {
+        let total = corpus.tickets.len();
+        let mut state = Self {
             corpus,
             board,
+            lock,
+            waves,
+            tree,
+            filter_index,
+            filters,
+            matches: vec![true; total],
+            matched_count: total,
+            visible: Default::default(),
+            tree_flat: Vec::new(),
+            tree_expanded: vec![false; total],
+            wave0_expanded: false,
             selected: None,
+            compare: None,
             expanded,
-            footer,
+            footer: footer_base.clone(),
+            footer_base,
+        };
+        state.refilter();
+        state
+    }
+
+    /// Recompute every filter-derived surface: verdicts, board rows, tree rows,
+    /// footer. Runs on filter change only — never per frame.
+    fn refilter(&mut self) {
+        let (matches, matched_count) = self.filters.apply(&self.filter_index);
+        self.matches = matches;
+        self.matched_count = matched_count;
+        for (col, column) in self.board.columns.iter().enumerate() {
+            self.visible[col] = column
+                .cards
+                .iter()
+                .enumerate()
+                .filter(|(_, card)| self.matches[card.index])
+                .map(|(row, _)| row)
+                .collect();
         }
+        self.reflatten();
+        self.footer = if self.filters.is_active() {
+            format!(
+                "{}/{} tickets match · {}",
+                self.matched_count, self.corpus.counts.total, self.footer_base
+            )
+        } else {
+            self.footer_base.clone()
+        };
+    }
+
+    /// Recompute the flattened tree rows (expansion toggle or filter change).
+    fn reflatten(&mut self) {
+        let filter = self.filters.is_active().then_some(self.matches.as_slice());
+        self.tree_flat = tree::flatten(&self.tree, &self.tree_expanded, filter);
     }
 }
 
@@ -74,15 +195,34 @@ enum Action {
     PickFolder,
     Select(usize),
     SelectId(String),
+    /// Shift-click: pick the second ticket of the owns-collision pair.
+    Compare(usize),
+    ClearCompare,
     ToggleColumn(usize),
     OpenPath(PathBuf),
     CloseDetail,
+    SetTab(Tab),
+    ToggleNode(usize),
+    ToggleWave0,
+    /// Copy a lane's `n<TAB>id` lines to the clipboard (acceptance 1).
+    CopyTsv(String),
+    FiltersChanged,
+}
+
+/// Plain click selects; shift-click picks the comparison ticket.
+fn select_or_compare(ui: &Ui, index: usize) -> Action {
+    if ui.input(|i| i.modifiers.shift) {
+        Action::Compare(index)
+    } else {
+        Action::Select(index)
+    }
 }
 
 pub struct TicketboardApp {
     repo_root: Option<PathBuf>,
     state: State,
-    load_rx: Option<Receiver<LoadResult>>,
+    tab: Tab,
+    load_rx: Option<Receiver<LoadBundle>>,
     pick_rx: Option<Receiver<Option<PathBuf>>>,
 }
 
@@ -95,6 +235,7 @@ impl TicketboardApp {
         let mut app = Self {
             repo_root: None,
             state: State::NoRepo { note: None },
+            tab: Tab::default(),
             load_rx: None,
             pick_rx: None,
         };
@@ -139,7 +280,7 @@ impl TicketboardApp {
         app
     }
 
-    /// Kick the corpus load on a worker thread; the UI shows Loading meanwhile.
+    /// Kick the corpus + lock load on a worker thread; the UI shows Loading.
     fn start_load(&mut self, ctx: &egui::Context) {
         if let Some(root) = self.repo_root.clone() {
             let repaint_ctx = ctx.clone();
@@ -170,11 +311,19 @@ impl TicketboardApp {
     /// Drain worker results (non-blocking) and advance the state machine.
     fn poll(&mut self, ctx: &egui::Context) {
         if let Some(rx) = &self.load_rx
-            && let Ok(result) = rx.try_recv()
+            && let Ok(bundle) = rx.try_recv()
         {
             self.load_rx = None;
-            self.state = match result {
-                Ok(corpus) => State::Board(Box::new(BoardState::new(corpus))),
+            self.state = match bundle.corpus {
+                Ok(corpus) => {
+                    // Filters survive a reload (T-915.3 will reload on every file
+                    // change); selection indices do not — they may be stale.
+                    let filters = match &self.state {
+                        State::Board(b) => b.filters.clone(),
+                        _ => Filters::default(),
+                    };
+                    State::Board(Box::new(BoardState::new(corpus, bundle.lock, filters)))
+                }
                 Err(e) => State::Refused(e),
             };
         }
@@ -205,9 +354,14 @@ impl TicketboardApp {
                 Action::Reload => self.start_load(ctx),
                 Action::PickFolder => self.start_pick(ctx),
                 Action::OpenPath(path) => open_path(&path),
+                Action::SetTab(tab) => self.tab = tab,
+                Action::CopyTsv(tsv) => ctx.copy_text(tsv),
                 Action::Select(index) => {
                     if let State::Board(b) = &mut self.state {
                         b.selected = Some(index);
+                        if b.compare == Some(index) {
+                            b.compare = None;
+                        }
                     }
                 }
                 Action::SelectId(id) => {
@@ -215,6 +369,24 @@ impl TicketboardApp {
                         && let Some(&index) = b.board.id_to_index.get(&id)
                     {
                         b.selected = Some(index);
+                        if b.compare == Some(index) {
+                            b.compare = None;
+                        }
+                    }
+                }
+                Action::Compare(index) => {
+                    if let State::Board(b) = &mut self.state {
+                        match b.selected {
+                            // Nothing selected yet: shift-click behaves like select.
+                            None => b.selected = Some(index),
+                            Some(sel) if sel == index => {}
+                            Some(_) => b.compare = Some(index),
+                        }
+                    }
+                }
+                Action::ClearCompare => {
+                    if let State::Board(b) = &mut self.state {
+                        b.compare = None;
                     }
                 }
                 Action::ToggleColumn(col) => {
@@ -222,9 +394,26 @@ impl TicketboardApp {
                         b.expanded[col] = !b.expanded[col];
                     }
                 }
+                Action::ToggleNode(index) => {
+                    if let State::Board(b) = &mut self.state {
+                        b.tree_expanded[index] = !b.tree_expanded[index];
+                        b.reflatten();
+                    }
+                }
+                Action::ToggleWave0 => {
+                    if let State::Board(b) = &mut self.state {
+                        b.wave0_expanded = !b.wave0_expanded;
+                    }
+                }
+                Action::FiltersChanged => {
+                    if let State::Board(b) = &mut self.state {
+                        b.refilter();
+                    }
+                }
                 Action::CloseDetail => {
                     if let State::Board(b) = &mut self.state {
                         b.selected = None;
+                        b.compare = None;
                     }
                 }
             }
@@ -239,10 +428,20 @@ impl eframe::App for TicketboardApp {
 
         let mut actions: Vec<Action> = Vec::new();
         let busy = self.load_rx.is_some();
+        let tab = self.tab;
 
         Panel::top(Id::new("topbar")).show(ui, |ui| {
-            topbar_ui(ui, self.repo_root.as_deref(), busy, &mut actions);
+            topbar_ui(ui, self.repo_root.as_deref(), busy, tab, &mut actions);
         });
+        if matches!(self.state, State::Board(_)) {
+            Panel::top(Id::new("filterbar")).show(ui, |ui| {
+                if let State::Board(b) = &mut self.state
+                    && filter_bar_ui(ui, &mut b.filters, &b.filter_index.executors)
+                {
+                    actions.push(Action::FiltersChanged);
+                }
+            });
+        }
         if let State::Board(b) = &self.state {
             Panel::bottom(Id::new("footer")).show(ui, |ui| {
                 ui.horizontal(|ui| ui.label(&b.footer));
@@ -262,7 +461,11 @@ impl eframe::App for TicketboardApp {
             }
             State::Loading => loading_ui(ui, self.repo_root.as_deref()),
             State::Refused(e) => refusal_ui(ui, e, &mut actions),
-            State::Board(b) => board_ui(ui, b, &mut actions),
+            State::Board(b) => match tab {
+                Tab::Board => board_ui(ui, b, &mut actions),
+                Tab::Waves => waves_ui(ui, b, &mut actions),
+                Tab::Tree => tree_ui(ui, b, &mut actions),
+            },
         });
 
         self.apply(actions, &ctx);
@@ -279,9 +482,21 @@ impl eframe::App for TicketboardApp {
 
 // ---- chrome ----
 
-fn topbar_ui(ui: &mut Ui, repo_root: Option<&Path>, busy: bool, actions: &mut Vec<Action>) {
+fn topbar_ui(
+    ui: &mut Ui,
+    repo_root: Option<&Path>,
+    busy: bool,
+    tab: Tab,
+    actions: &mut Vec<Action>,
+) {
     ui.horizontal(|ui| {
         ui.label(RichText::new("Ticketboard").strong());
+        ui.separator();
+        for (t, label) in TABS {
+            if ui.selectable_label(tab == t, label).clicked() {
+                actions.push(Action::SetTab(t));
+            }
+        }
         ui.separator();
         match repo_root {
             Some(root) => ui.monospace(root.display().to_string()),
@@ -297,6 +512,60 @@ fn topbar_ui(ui: &mut Ui, repo_root: Option<&Path>, busy: bool, actions: &mut Ve
             ui.add(Spinner::new().size(14.0));
         }
     });
+}
+
+/// Composable filter bar — mutates `filters` in place; returns true when anything
+/// changed this frame (the caller then refilters once, outside the paint).
+fn filter_bar_ui(ui: &mut Ui, filters: &mut Filters, executors: &[String]) -> bool {
+    let before = filters.clone();
+    ui.horizontal_wrapped(|ui| {
+        ui.add(
+            TextEdit::singleline(&mut filters.text)
+                .desired_width(190.0)
+                .hint_text("filter id / title / summary"),
+        );
+        ComboBox::from_id_salt("executor_filter")
+            .selected_text(filters.executor.as_deref().unwrap_or("any executor"))
+            .show_ui(ui, |ui| {
+                ui.selectable_value(&mut filters.executor, None, "any executor");
+                for executor in executors {
+                    ui.selectable_value(&mut filters.executor, Some(executor.clone()), executor);
+                }
+            });
+        ComboBox::from_id_salt("kind_filter")
+            .selected_text(filters.kind.label())
+            .show_ui(ui, |ui| {
+                for kind in KindFilter::ALL {
+                    ui.selectable_value(&mut filters.kind, kind, kind.label());
+                }
+            });
+        for (i, status) in board::STATUS_ORDER.iter().enumerate() {
+            let on = filters.statuses[i];
+            let text = if on {
+                RichText::new(status.as_str())
+                    .small()
+                    .color(status_color(*status))
+            } else {
+                RichText::new(status.as_str()).small().weak()
+            };
+            if ui.selectable_label(on, text).clicked() {
+                filters.statuses[i] = !on;
+            }
+        }
+        ui.add(
+            TextEdit::singleline(&mut filters.parent)
+                .desired_width(90.0)
+                .hint_text("parent id"),
+        );
+        // One-click clear — restores the full measured count (acceptance 4).
+        if ui
+            .add_enabled(filters.is_active(), Button::new("clear"))
+            .clicked()
+        {
+            filters.clear();
+        }
+    });
+    *filters != before
 }
 
 // ---- full-window states ----
@@ -406,7 +675,14 @@ fn board_ui(ui: &mut Ui, b: &BoardState, actions: &mut Vec<Action>) {
             ui.horizontal_top(|ui| {
                 for (col_index, column) in b.board.columns.iter().enumerate() {
                     if b.expanded[col_index] {
-                        column_ui(ui, col_index, column, b.selected, actions);
+                        column_ui(
+                            ui,
+                            col_index,
+                            column,
+                            &b.visible[col_index],
+                            b.selected,
+                            actions,
+                        );
                     } else {
                         chip_column_ui(ui, col_index, column, actions);
                     }
@@ -419,6 +695,7 @@ fn column_ui(
     ui: &mut Ui,
     col_index: usize,
     column: &board::Column,
+    visible: &[usize],
     selected: Option<usize>,
     actions: &mut Vec<Action>,
 ) {
@@ -436,11 +713,12 @@ fn column_ui(
             ScrollArea::vertical()
                 .id_salt("cards")
                 .auto_shrink([false, false])
-                .show_rows(ui, CARD_H, column.cards.len(), |ui, row_range| {
-                    for card in &column.cards[row_range] {
+                .show_rows(ui, CARD_H, visible.len(), |ui, row_range| {
+                    for &row in &visible[row_range] {
+                        let card = &column.cards[row];
                         let response = card_ui(ui, card, selected == Some(card.index));
                         if response.clicked() {
-                            actions.push(Action::Select(card.index));
+                            actions.push(select_or_compare(ui, card.index));
                         }
                     }
                 });
@@ -528,6 +806,220 @@ fn card_ui(ui: &mut Ui, card: &Card, selected: bool) -> egui::Response {
     response
 }
 
+// ---- waves ----
+
+fn waves_ui(ui: &mut Ui, b: &BoardState, actions: &mut Vec<Action>) {
+    match &b.lock {
+        LockState::Missing { message } => lock_missing_ui(ui, message),
+        LockState::Refused { path, error } => lock_refused_ui(ui, path, error),
+        LockState::Loaded(_) => {
+            if let Some(model) = &b.waves {
+                waves_body_ui(ui, b, model, actions);
+            }
+        }
+    }
+}
+
+/// A deleted/renamed wave.lock renders the DidNotRun refusal — never empty lanes
+/// (acceptance 3).
+fn lock_missing_ui(ui: &mut Ui, message: &str) {
+    ui.add_space(24.0);
+    ui.heading("No wave plan");
+    ui.add_space(8.0);
+    // The DidNotRun refusal, VERBATIM (mirrors wave_lock::missing_lock_error).
+    ui.label(RichText::new(message).monospace().size(14.0));
+    ui.add_space(8.0);
+    ui.label(
+        RichText::new("The lock is rendered verbatim; the app never recomputes packing.")
+            .weak()
+            .small(),
+    );
+}
+
+fn lock_refused_ui(ui: &mut Ui, path: &Path, error: &str) {
+    ui.add_space(24.0);
+    ui.heading("wave.lock refused to parse");
+    ui.add_space(8.0);
+    ui.label(
+        RichText::new(path.display().to_string())
+            .monospace()
+            .size(15.0)
+            .strong(),
+    );
+    ui.add_space(8.0);
+    ScrollArea::vertical()
+        .id_salt("lock_error")
+        .auto_shrink([false, true])
+        .show(ui, |ui| {
+            // The parse error, VERBATIM — never paraphrased.
+            ui.label(RichText::new(error).monospace());
+        });
+}
+
+fn waves_body_ui(ui: &mut Ui, b: &BoardState, model: &WavesModel, actions: &mut Vec<Action>) {
+    ScrollArea::vertical()
+        .id_salt("waves")
+        .auto_shrink([false, false])
+        .show(ui, |ui| {
+            ui.add_space(4.0);
+            // Header strip: wave_base / max_concurrent / pack_last, off the lock.
+            ui.horizontal_wrapped(|ui| {
+                ui.label(RichText::new(&model.header).monospace().strong());
+                ui.separator();
+                ui.label(RichText::new("pack_last:").weak().small());
+                if model.pack_last.is_empty() {
+                    ui.label(RichText::new("—").weak());
+                }
+                for chip in &model.pack_last {
+                    wave_chip_ui(ui, b, chip, actions);
+                }
+            });
+            ui.separator();
+            for lane in &model.lanes {
+                lane_ui(ui, b, lane, actions);
+            }
+            if let Some(w0) = &model.wave0 {
+                wave0_ui(ui, b, w0, actions);
+            }
+            ui.add_space(8.0);
+            ui.separator();
+            ui.label(RichText::new("Unplanned").strong());
+            ui.label(
+                RichText::new(
+                    "derived from the ticket files, not from the lock — dispatchable ids \
+                     absent from every lock wave",
+                )
+                .weak()
+                .small(),
+            );
+            if model.unplanned.is_empty() {
+                ui.label(RichText::new("—").weak());
+            } else {
+                ui.horizontal_wrapped(|ui| {
+                    for chip in &model.unplanned {
+                        wave_chip_ui(ui, b, chip, actions);
+                    }
+                });
+            }
+            ui.add_space(12.0);
+        });
+}
+
+fn lane_ui(ui: &mut Ui, b: &BoardState, lane: &Lane, actions: &mut Vec<Action>) {
+    // The lock's wave number salts the lane's widget ids (stable across repaints).
+    ui.push_id(lane.n, |ui| {
+        ui.add_space(4.0);
+        ui.horizontal(|ui| {
+            ui.label(RichText::new(&lane.label).strong());
+            // The acceptance surface: paste against the lock's [[waves]] block.
+            if ui.small_button("copy TSV").clicked() {
+                actions.push(Action::CopyTsv(lane.tsv.clone()));
+            }
+        });
+        ui.horizontal_wrapped(|ui| {
+            for chip in &lane.chips {
+                wave_chip_ui(ui, b, chip, actions);
+            }
+        });
+    });
+}
+
+/// Wave 0 — ALWAYS a count chip; click expands a virtualized flat id list, never
+/// cards (acceptance 2).
+fn wave0_ui(ui: &mut Ui, b: &BoardState, w0: &Wave0, actions: &mut Vec<Action>) {
+    ui.add_space(4.0);
+    ui.horizontal(|ui| {
+        ui.label(RichText::new("wave 0").strong());
+        if ui.button(&w0.label).clicked() {
+            actions.push(Action::ToggleWave0);
+        }
+        if ui.small_button("copy TSV").clicked() {
+            actions.push(Action::CopyTsv(w0.tsv.clone()));
+        }
+    });
+    if b.wave0_expanded {
+        ScrollArea::vertical()
+            .id_salt("wave0_ids")
+            .max_height(WAVE0_LIST_MAX_H)
+            .auto_shrink([false, true])
+            .show_rows(ui, WAVE0_ROW_H, w0.chips.len(), |ui, row_range| {
+                for chip in &w0.chips[row_range] {
+                    wave_chip_ui(ui, b, chip, actions);
+                }
+            });
+    }
+}
+
+/// One lock-verbatim ticket chip: status-colored when the ticket file exists,
+/// struck through when the lock names an id with no file (display-only, no
+/// judgment). Active filters dim non-matching chips instead of hiding them — the
+/// lane must always show the lock's exact membership.
+fn wave_chip_ui(ui: &mut Ui, b: &BoardState, chip: &WaveChip, actions: &mut Vec<Action>) {
+    let dimmed = b.filters.is_active() && chip.corpus_index.is_none_or(|i| !b.matches[i]);
+    let mut text = RichText::new(&chip.id).monospace();
+    match chip.status {
+        Some(status) => {
+            let mut color = status_color(status);
+            if dimmed {
+                color = color.gamma_multiply(0.35);
+            }
+            text = text.color(color);
+        }
+        None => text = text.strikethrough().weak(),
+    }
+    let selected_now = chip.corpus_index.is_some()
+        && (b.selected == chip.corpus_index || b.compare == chip.corpus_index);
+    let response = ui
+        .selectable_label(selected_now, text)
+        .on_hover_text(chip.tooltip.as_str());
+    if response.clicked()
+        && let Some(index) = chip.corpus_index
+    {
+        actions.push(select_or_compare(ui, index));
+    }
+}
+
+// ---- program tree ----
+
+fn tree_ui(ui: &mut Ui, b: &BoardState, actions: &mut Vec<Action>) {
+    ScrollArea::vertical()
+        .id_salt("tree")
+        .auto_shrink([false, false])
+        .show_rows(ui, TREE_ROW_H, b.tree_flat.len(), |ui, row_range| {
+            for row in &b.tree_flat[row_range] {
+                tree_row_ui(ui, b, *row, actions);
+            }
+        });
+}
+
+fn tree_row_ui(ui: &mut Ui, b: &BoardState, row: tree::FlatRow, actions: &mut Vec<Action>) {
+    ui.horizontal(|ui| {
+        ui.add_space(f32::from(row.depth) * TREE_INDENT);
+        if row.has_children {
+            let glyph = if row.expanded { "▼" } else { "▶" };
+            if ui.small_button(glyph).clicked() {
+                actions.push(Action::ToggleNode(row.index));
+            }
+        } else {
+            ui.add_space(24.0);
+        }
+        let ticket = &b.corpus.tickets[row.index].ticket;
+        let mut color = status_color(ticket.status().name());
+        if row.dimmed {
+            color = color.gamma_multiply(0.45);
+        }
+        let selected_now = b.selected == Some(row.index) || b.compare == Some(row.index);
+        let response = ui.selectable_label(
+            selected_now,
+            RichText::new(ticket.id()).monospace().color(color),
+        );
+        if response.clicked() {
+            actions.push(select_or_compare(ui, row.index));
+        }
+        ui.label(RichText::new(&b.tree.titles[row.index]).weak().small());
+    });
+}
+
 // ---- detail panel ----
 
 /// One detail-row value; ids and paths are live links.
@@ -570,6 +1062,20 @@ fn detail_ui(
         .id_salt("detail")
         .auto_shrink([false, false])
         .show(ui, |ui| {
+            match b.compare {
+                Some(compare) if compare != selected => {
+                    compare_ui(ui, b, selected, compare, actions);
+                    ui.separator();
+                }
+                _ => {
+                    // The compare affordance, discoverable where it acts.
+                    ui.label(
+                        RichText::new("shift-click another ticket to compare owns")
+                            .weak()
+                            .small(),
+                    );
+                }
+            }
             let resolve = |p: &str| match repo_root {
                 Some(root) => root.join(p),
                 None => PathBuf::from(p),
@@ -644,6 +1150,88 @@ fn detail_ui(
             owns_section(ui, v.owns);
             ui.add_space(12.0);
         });
+}
+
+/// Owns-collision explainer (design §UI shape): with exactly two tickets selected,
+/// both owns lists plus EVERY colliding pair under the prefix-containment rule
+/// (`wavelock::paths_collide`, the `wave_lock::collides` mirror) and the verdict —
+/// why these two can never share a wave, or that they can.
+fn compare_ui(
+    ui: &mut Ui,
+    b: &BoardState,
+    selected: usize,
+    compare: usize,
+    actions: &mut Vec<Action>,
+) {
+    let a = board::view(&b.corpus.tickets[selected].ticket);
+    let z = board::view(&b.corpus.tickets[compare].ticket);
+    ui.horizontal(|ui| {
+        ui.label(RichText::new("owns collision").strong().small());
+        ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+            if ui.small_button("✕ stop comparing").clicked() {
+                actions.push(Action::ClearCompare);
+            }
+        });
+    });
+    ui.monospace(format!("{}  vs  {}", a.id, z.id));
+    // The verdict IS the mirrored rule; the pairs are its explanation.
+    let pairs = wavelock::colliding_pairs(a.owns, z.owns);
+    if !wavelock::collides(a.owns, z.owns) {
+        ui.label(RichText::new("no collision").color(VERDICT_OK).strong());
+        ui.label(
+            RichText::new(
+                "owns paths are disjoint — the packer may put these two in the same wave",
+            )
+            .weak()
+            .small(),
+        );
+    } else {
+        ui.label(
+            RichText::new("never the same wave")
+                .color(VERDICT_COLLIDE)
+                .strong(),
+        );
+        ui.label(
+            RichText::new(
+                "colliding pairs — equal, or one prefix-contains the other on a '/' boundary:",
+            )
+            .weak()
+            .small(),
+        );
+        for (x, y) in &pairs {
+            ui.label(
+                RichText::new(format!("{x}  ×  {y}"))
+                    .monospace()
+                    .small()
+                    .color(VERDICT_COLLIDE),
+            );
+        }
+    }
+    let left: HashSet<&String> = pairs.iter().map(|(x, _)| x).collect();
+    let right: HashSet<&String> = pairs.iter().map(|(_, y)| y).collect();
+    owns_compare_list(ui, a.id, a.owns, &left);
+    owns_compare_list(ui, z.id, z.owns, &right);
+    ui.add_space(6.0);
+}
+
+fn owns_compare_list(ui: &mut Ui, id: &str, owns: &[String], colliding: &HashSet<&String>) {
+    ui.add_space(6.0);
+    ui.label(
+        RichText::new(format!("{id} owns ({})", owns.len()))
+            .strong()
+            .small(),
+    );
+    if owns.is_empty() {
+        missing_marker(ui);
+        return;
+    }
+    for path in owns {
+        let mut text = RichText::new(path).monospace().small();
+        if colliding.contains(path) {
+            text = text.color(VERDICT_COLLIDE);
+        }
+        ui.label(text);
+    }
 }
 
 fn cell_ui(ui: &mut Ui, cell: &Cell, ids: &HashMap<String, usize>, actions: &mut Vec<Action>) {

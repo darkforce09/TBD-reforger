@@ -17,6 +17,7 @@ use std::thread;
 use tbd_tickets::Ticket;
 
 use crate::discovery::TICKETS_SUBDIR;
+use crate::wavelock::{self, LockState};
 
 /// One parsed ticket plus the file it came from (the refusal / reveal surface).
 #[derive(Debug)]
@@ -54,6 +55,15 @@ impl fmt::Display for LoadError {
 }
 
 pub type LoadResult = Result<Corpus, LoadError>;
+
+/// Corpus + wave.lock, loaded together on the worker thread (T-915.2). The lock
+/// rides alongside because its refusals are Waves-view-local: a missing lock is a
+/// PLAN refusal (the DidNotRun text), not a corpus refusal — the board must still
+/// render.
+pub struct LoadBundle {
+    pub corpus: LoadResult,
+    pub lock: LockState,
+}
 
 /// Child = dotted id (`T-915.1`); parent = undotted (`T-915`).
 pub fn is_child_id(id: &str) -> bool {
@@ -125,17 +135,20 @@ pub fn load_corpus(repo_root: &Path) -> LoadResult {
     })
 }
 
-/// Run `load_corpus` on a worker thread; the UI thread never touches the disk.
-/// `on_done` fires after the result is sent (the app passes
+/// Run `load_corpus` + the wave.lock load on a worker thread; the UI thread never
+/// touches the disk. `on_done` fires after the result is sent (the app passes
 /// `egui::Context::request_repaint`).
 pub fn spawn_load(
     repo_root: PathBuf,
     on_done: impl FnOnce() + Send + 'static,
-) -> mpsc::Receiver<LoadResult> {
+) -> mpsc::Receiver<LoadBundle> {
     let (tx, rx) = mpsc::channel();
     thread::spawn(move || {
-        let result = load_corpus(&repo_root);
-        let _ = tx.send(result);
+        let bundle = LoadBundle {
+            corpus: load_corpus(&repo_root),
+            lock: wavelock::load_lock(&repo_root),
+        };
+        let _ = tx.send(bundle);
         on_done();
     });
     rx

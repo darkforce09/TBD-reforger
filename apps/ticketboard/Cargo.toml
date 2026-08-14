@@ -26,7 +26,12 @@ egui_extras = { version = "0.36.1", default-features = false }
 # Native folder picker for the no-repo refusal screen (xdg-portal + pollster on Linux;
 # no async runtime).
 rfd = "0.17.2"
+# wave.lock mirror parse (T-915.2) — the same serde derive + toml 0.8 lines xtask and
+# tbd-tickets already use, so the verbatim lock render can never disagree with the
+# writer on TOML dialect. Both crates were already in the workspace graph.
+serde = { version = "1", features = ["derive"] }
 tbd-tickets = { path = "../../crates/tbd-tickets" }
+toml = "0.8"
 
 [features]
 # Driver-quirk fallback (design §Framework): `--features glow` builds the glow backend
