@@ -9,7 +9,6 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
-- **T-914** (5940) — Wave numbering continues from the close-marker ledger [ready] — wave repack derives wave_base from the newest non-disavowed close marker (including HEAD) and numbers open waves base+1 onward, so the next close ceremony prints the oracle-exact next number. wave check recomputes the base; a fresh marker without repack is check-red. No marker (stub and test trees) means base 0 and today's 1..N.
 
 ## Next queued (top 10)
 
