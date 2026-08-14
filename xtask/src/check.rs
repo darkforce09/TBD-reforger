@@ -147,6 +147,54 @@ fn validate_registry(registry: &serde_json::Value) -> Vec<String> {
     errors
 }
 
+/// T-912.1: every open work ticket must own its collision surface — the wave packer reads ticket
+/// `owns` now, and an owns-empty ticket is invisible to every dispatch set it computes.
+///
+/// Globs EVERY `.ai/tickets/T-*.toml` on disk. `tickets(registry)` walks the parents-only phase-2
+/// view, which would silently exempt children (T-181.16, T-912.2, …) from the rule.
+fn check_open_work_owns(root: &Path) -> Vec<String> {
+    let dir = crate::tickets_store::tickets_dir(root);
+    let mut errors = Vec::new();
+    let entries = match fs::read_dir(&dir) {
+        Ok(rd) => rd,
+        Err(e) => return vec![format!("read tickets dir {}: {e}", dir.display())],
+    };
+    let mut files: Vec<PathBuf> = entries
+        .filter_map(|e| e.ok())
+        .map(|e| e.path())
+        .filter(|p| {
+            p.file_name().is_some_and(|n| {
+                let n = n.to_string_lossy();
+                n.starts_with("T-") && n.ends_with(".toml")
+            })
+        })
+        .collect();
+    files.sort();
+    for path in files {
+        let text = match fs::read_to_string(&path) {
+            Ok(t) => t,
+            Err(e) => {
+                errors.push(format!("read {}: {e}", path.display()));
+                continue;
+            }
+        };
+        let ticket = match tbd_tickets::parse_ticket_toml(&text) {
+            Ok(t) => t,
+            Err(e) => {
+                errors.push(format!("{}: {e}", path.display()));
+                continue;
+            }
+        };
+        if let tbd_tickets::Ticket::Work(w) = &ticket {
+            let status = w.status.name().as_str();
+            if matches!(status, "queued" | "ready" | "running" | "review") && w.owns.is_empty() {
+                errors.push(format!("{}: owns required for {status} work ticket", w.id));
+            }
+        }
+    }
+    errors
+}
+
 fn scan_legacy_ids(root: &Path) -> HashMap<String, Vec<String>> {
     let mut hits: HashMap<String, Vec<String>> = HashMap::new();
     let scan_roots: Vec<PathBuf> = vec![
@@ -204,6 +252,7 @@ pub fn check(root: &Path, registry: &serde_json::Value, strict: bool) -> Vec<Str
     // Hand-rolled checks below add business rules (order, phantoms, on-disk specs, markers).
     let mut errors = validate_registry_schema(root, registry);
     errors.extend(validate_registry(registry));
+    errors.extend(check_open_work_owns(root));
 
     for row in tickets(registry) {
         let tid = str_field(row, "id");
@@ -415,6 +464,49 @@ mod tests {
             !errs.is_empty(),
             "type=array schema must reject object registry"
         );
+    }
+
+    /// T-912.1: the owns rule sees CHILD ticket files. The live tree must be green, and an
+    /// owns-empty queued work ticket dropped into a synthetic tickets dir must go red — including
+    /// a dotted child id the parents-only registry view never loads.
+    #[test]
+    fn open_work_without_owns_is_red() {
+        let root = worktree_root();
+        let errs = check_open_work_owns(&root);
+        assert!(
+            errs.is_empty(),
+            "live tree must have owns on every open work ticket; got:\n{}",
+            errs.join("\n")
+        );
+
+        let tmp = std::env::temp_dir().join(format!("t912-owns-check-{}", std::process::id()));
+        let dir = tmp.join(".ai/tickets");
+        fs::create_dir_all(&dir).unwrap();
+        let bad = r#"id = "T-001.1"
+kind = "work"
+title = "x"
+summary = "x"
+status = "queued"
+order = 10
+
+[scope.repo]
+layers = ["docs"]
+"#;
+        fs::write(dir.join("T-001.1.toml"), bad).unwrap();
+        let errs = check_open_work_owns(&tmp);
+        assert_eq!(
+            errs,
+            vec!["T-001.1: owns required for queued work ticket".to_string()],
+            "owns-empty queued child must be red"
+        );
+
+        let good = bad.replace("order = 10\n", "order = 10\nowns = [\"docs/README.md\"]\n");
+        fs::write(dir.join("T-001.1.toml"), good).unwrap();
+        assert!(
+            check_open_work_owns(&tmp).is_empty(),
+            "nonempty owns must restore green"
+        );
+        fs::remove_dir_all(&tmp).unwrap();
     }
 
     #[test]

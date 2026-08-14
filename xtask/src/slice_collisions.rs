@@ -7,8 +7,9 @@
 //!
 //! The parallelism limit on this program is not disk and not CPU — it is merge conflicts. Worktrees
 //! make concurrent edits *safe* (no clobbering) but do nothing to prevent two agents editing the
-//! same file and colliding at merge. That is a mechanical property of the `owns` column in
-//! docs/platform/wave_plan.tsv, so it is computed here rather than eyeballed.
+//! same file and colliding at merge. That is a mechanical property of each ticket's `owns` field
+//! (T-912.1; until then the `owns` column of docs/platform/wave_plan.tsv), so it is computed here
+//! rather than eyeballed.
 //!
 //!   cargo xtask slice-collisions                 # max concurrent set from the next wave
 //!   cargo xtask slice-collisions T-190 T-191     # what may JOIN those already in flight
@@ -56,6 +57,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
 use serde_json::Value;
+use tbd_tickets::{Ticket, parse_ticket_toml};
 
 /// Integration attention, not disk, is the real ceiling: every agent returns a dense report the
 /// command center must actually read. Measured on T-181: three was far too low, twenty is too many
@@ -67,42 +69,71 @@ fn max_concurrent() -> usize {
         .unwrap_or(8)
 }
 
-/// Ordering constraints that file-disjointness cannot express. Each of these is a case where two
-/// tickets touch DIFFERENT files but one still has to land first, so the collision computation
-/// alone would happily run them together and produce a broken tree.
+/// Per-ticket packing facts — `owns`, `depends_on`, `pack_last` — read from EVERY
+/// `.ai/tickets/T-*.toml`, children included.
 ///
-///   T-273 -> T-237 -> T-238  `ticket check` is inside the wave gate. T-237 wires it to validate
-///                            against schema.json, and schema.json is a month stale — every one of
-///                            the 113 tickets violates it today. Land T-237 first and the gate goes
-///                            red on the whole registry, failing every subsequent wave.
-///   T-241 -> zones consumers The doc has no `zones` root at all. Four tickets would each invent a
-///                            different one; T-241 declares the vocabulary once.
-///   T-222 -> sync consumers  CLIENT_ID is hardcoded to 1. Any sync transport that lands first
-///                            corrupts documents on every multi-peer merge.
-///   T-257 -> undo consumers  `objectives`/`markers` are cleared by hydrate but not undo-scoped, so
-///                            both features would ship non-undoable.
-///   T-186 -> T-209 -> T-251  test lane, then CI wiring, then deploy.
-///   T-290 LAST               it annotates fields as non-consumed that five earlier tickets build.
-const DEPS: &[(&str, &[&str])] = &[
-    ("T-237", &["T-273"]),
-    ("T-238", &["T-273", "T-237"]),
-    ("T-201", &["T-241"]),
-    ("T-211", &["T-241"]),
-    ("T-212", &["T-241", "T-257"]),
-    ("T-275", &["T-241"]),
-    ("T-190", &["T-222"]),
-    ("T-295", &["T-222"]),
-    ("T-213", &["T-257"]),
-    ("T-209", &["T-186"]),
-    ("T-251", &["T-209"]),
-];
-const RUN_LAST: &[&str] = &["T-290"];
+/// Until T-912.1 the ordering constraints that file-disjointness cannot express (two tickets touch
+/// DIFFERENT files but one must land first) were a hardcoded 11-row dependency table plus a
+/// run-last list in this file, and `owns` lived only in the wave-plan TSV column. All three are
+/// ticket fields now; the TSV remains the wave-label / candidate-order source until T-912.2
+/// compiles the lockfile.
+///
+/// NOT `registry()` below: `load_phase2_tree` walks PARENT files only, so child ids like T-181.23
+/// — which is every row of the mod plan — are absent from its map. Glob the directory directly.
+struct TicketFacts {
+    owns: HashMap<String, Vec<String>>,
+    depends_on: HashMap<String, Vec<String>>,
+    pack_last: HashSet<String>,
+}
 
-fn deps_of(id: &str) -> &'static [&'static str] {
-    DEPS.iter()
-        .find(|(k, _)| *k == id)
-        .map(|(_, v)| *v)
-        .unwrap_or(&[])
+impl TicketFacts {
+    fn deps_of(&self, id: &str) -> &[String] {
+        self.depends_on.get(id).map(Vec::as_slice).unwrap_or(&[])
+    }
+}
+
+fn ticket_facts(root: &Path) -> Result<TicketFacts> {
+    let dir = crate::tickets_store::tickets_dir(root);
+    let mut facts = TicketFacts {
+        owns: HashMap::new(),
+        depends_on: HashMap::new(),
+        pack_last: HashSet::new(),
+    };
+    for ent in std::fs::read_dir(&dir).with_context(|| dir.display().to_string())? {
+        let ent = ent?;
+        let name = ent.file_name();
+        let name = name.to_string_lossy();
+        if !name.starts_with("T-") || !name.ends_with(".toml") {
+            continue;
+        }
+        let text = std::fs::read_to_string(ent.path())?;
+        let t = parse_ticket_toml(&text)
+            .map_err(|e| anyhow::anyhow!("{}: {e}", ent.path().display()))?;
+        let (id, owns, depends_on, pack_last) = match t {
+            Ticket::Program(p) => (p.id, p.owns, p.depends_on, p.pack_last),
+            Ticket::Work(w) => (w.id, w.owns, w.depends_on, w.pack_last),
+        };
+        if !owns.is_empty() {
+            facts.owns.insert(id.clone(), owns);
+        }
+        if !depends_on.is_empty() {
+            facts.depends_on.insert(id.clone(), depends_on);
+        }
+        if pack_last == Some(true) {
+            facts.pack_last.insert(id);
+        }
+    }
+    Ok(facts)
+}
+
+/// Tickets are the `owns` source since T-912.1; the TSV cell is a fallback for a row whose id has
+/// no ticket file (measured 2026-08-14: zero such rows in either plan).
+fn adopt_ticket_owns(rows: &mut [Row], facts: &TicketFacts) {
+    for r in rows {
+        if let Some(owns) = facts.owns.get(&r.id) {
+            r.owns = owns.clone();
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -230,25 +261,28 @@ fn collides(a: &[String], b: &[String]) -> bool {
     false
 }
 
-/// Greedy maximum disjoint set, honouring plan order (which is priority order) and DEPS.
+/// Greedy maximum disjoint set, honouring plan order (which is priority order) and ticket
+/// `depends_on` / `pack_last`.
 ///
 /// `landed` is everything already shipped and MUST NOT be empty by default: repack() seeded it
 /// explicitly but main() did not, so `wave.sh prep` — the only dispatch view — silently skipped
-/// every ticket carrying a DEPS edge, forever. 11 tickets were unreachable, including T-209 whose
-/// dependency T-186 had already shipped. Both callers pass it here, so the hole cannot reopen.
+/// every ticket carrying a dependency edge, forever. 11 tickets were unreachable, including T-209
+/// whose dependency T-186 had already shipped. Both callers pass it here, so the hole cannot
+/// reopen.
 fn pack<'r>(
     cands: &[&'r Row],
     already: &[Vec<String>],
     landed: &HashSet<String>,
+    facts: &TicketFacts,
     max: usize,
 ) -> Vec<&'r Row> {
     let mut chosen: Vec<&Row> = Vec::new();
     let mut used: Vec<Vec<String>> = already.to_vec();
     for c in cands {
-        if RUN_LAST.contains(&c.id.as_str()) {
+        if facts.pack_last.contains(&c.id) {
             continue;
         }
-        if deps_of(&c.id).iter().any(|d| !landed.contains(*d)) {
+        if facts.deps_of(&c.id).iter().any(|d| !landed.contains(d)) {
             continue;
         }
         if used.iter().any(|u| collides(&c.owns, u)) {
@@ -400,42 +434,48 @@ never a bare directory)."
 
 /// Rebuild the plan from the registry, re-packing every unshipped ticket by disjointness.
 /// Preserves each row's `owns` — only the wave numbers move.
-fn repack(plan: &Path, order: &[String], reg: &HashMap<String, Value>, all: &[Row]) -> Result<u8> {
+fn repack(
+    plan: &Path,
+    order: &[String],
+    reg: &HashMap<String, Value>,
+    facts: &TicketFacts,
+    all: &[Row],
+) -> Result<u8> {
     let max = max_concurrent();
     let rows: Vec<&Row> = all.iter().filter(|r| dispatchable(&r.id, reg)).collect();
     let done: Vec<&Row> = all.iter().filter(|r| !dispatchable(&r.id, reg)).collect();
 
-    // Seed `landed` with everything already shipped. Without this, a DEPS edge pointing at a shipped
-    // ticket can never be satisfied — the dependency is filtered out of `rows` as done, so it never
-    // enters `landed`, and every dependent deadlocks. Hit for real on 2026-07-26 once T-186 shipped:
-    // T-209 -> T-186 and T-251 -> T-209 both became unschedulable.
+    // Seed `landed` with everything already shipped. Without this, a dependency edge pointing at a
+    // shipped ticket can never be satisfied — the dependency is filtered out of `rows` as done, so
+    // it never enters `landed`, and every dependent deadlocks. Hit for real on 2026-07-26 once
+    // T-186 shipped: T-209 -> T-186 and T-251 -> T-209 both became unschedulable.
     let mut landed = landed_set(reg);
     let last: Vec<&Row> = rows
         .iter()
         .copied()
-        .filter(|r| RUN_LAST.contains(&r.id.as_str()))
+        .filter(|r| facts.pack_last.contains(&r.id))
         .collect();
     let mut remaining: Vec<&Row> = rows
         .iter()
         .copied()
-        .filter(|r| !RUN_LAST.contains(&r.id.as_str()))
+        .filter(|r| !facts.pack_last.contains(&r.id))
         .collect();
 
     let mut waves: Vec<Vec<&Row>> = Vec::new();
     while !remaining.is_empty() {
-        let mut w = pack(&remaining, &[], &landed, max);
+        let mut w = pack(&remaining, &[], &landed, facts, max);
         if w.is_empty() {
             // Everything left is either colliding or dep-blocked. Take the first whose deps are
-            // satisfied; if none are, the DEPS table has a cycle and that is a bug worth shouting
-            // about.
+            // satisfied; if none are, the ticket depends_on graph has a cycle (or an edge onto a
+            // ticket that can never land) and that is a bug worth shouting about.
             let free: Vec<&Row> = remaining
                 .iter()
                 .copied()
-                .filter(|r| deps_of(&r.id).iter().all(|d| landed.contains(*d)))
+                .filter(|r| facts.deps_of(&r.id).iter().all(|d| landed.contains(d)))
                 .collect();
             if free.is_empty() {
                 let ids: Vec<&str> = remaining.iter().take(8).map(|r| r.id.as_str()).collect();
-                bail!("DEPS deadlock: {ids:?} — check the DEPS table");
+                bail!("depends_on deadlock: {ids:?} — check those tickets' depends_on edges");
             }
             w = vec![free[0]];
         }
@@ -498,14 +538,16 @@ pub fn run(argv: &[String]) -> Result<u8> {
         .map(String::as_str)
         .collect();
 
-    let all = plan_rows(&plan)?;
+    let mut all = plan_rows(&plan)?;
     let (order, reg) = registry(&root)?;
+    let facts = ticket_facts(&root)?;
+    adopt_ticket_owns(&mut all, &facts);
 
     // --repack is exempt from the two checks below: it REGENERATES the wave column outright, and
     // it is the only way back from a plan whose labels have rotted. Refusing to run the repair
     // tool on the thing it repairs would leave no path forward.
     if flags.contains("--repack") {
-        return repack(&plan, &order, &reg, &all);
+        return repack(&plan, &order, &reg, &facts, &all);
     }
 
     // ── T-623 F5: AN EMPTY PLAN IS AN ERROR; AN EMPTY DISPATCH SET IS NOT ────────────────────
@@ -571,7 +613,7 @@ set was computed and none will be printed.",
         .collect();
     let already: Vec<Vec<String>> = running.iter().map(|r| r.owns.clone()).collect();
     let landed = landed_set(&reg);
-    let picked = pack(&cands, &already, &landed, max);
+    let picked = pack(&cands, &already, &landed, &facts, max);
 
     if !running.is_empty() {
         println!("already in flight ({}):", running.len());
@@ -661,4 +703,46 @@ fn pathdiff(plan: &Path, root: &Path) -> String {
         .unwrap_or(plan)
         .to_string_lossy()
         .into_owned()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn worktree_root() -> PathBuf {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .expect("xtask parent = repo/worktree root")
+            .to_path_buf()
+    }
+
+    /// T-912.1: the hardcoded dependency/run-last tables must not come back — the packer reads
+    /// ticket `depends_on` / `pack_last` / `owns`. The needle is assembled at runtime so this
+    /// test's own source cannot satisfy the scan it performs.
+    #[test]
+    fn hardcoded_dep_tables_stay_deleted() {
+        let src = include_str!("slice_collisions.rs");
+        for name in ["DEPS", "RUN_LAST"] {
+            let needle = format!("const {name}");
+            assert!(
+                !src.contains(&needle),
+                "`{needle}` is back in slice_collisions.rs — T-912.1 moved it onto the tickets"
+            );
+        }
+    }
+
+    /// The packing facts come from the ticket files, children included — the parents-only
+    /// registry loader would return no owns for any mod-plan row.
+    #[test]
+    fn facts_come_from_ticket_files() {
+        let facts = ticket_facts(&worktree_root()).expect("ticket facts");
+        assert!(facts.pack_last.contains("T-290"), "T-290 lost pack_last");
+        assert_eq!(facts.deps_of("T-212").join(","), "T-685,T-241,T-257");
+        assert_eq!(facts.deps_of("T-238").join(","), "T-273,T-237");
+        assert_eq!(facts.deps_of("T-251").join(","), "T-209");
+        assert!(
+            facts.owns.contains_key("T-181.23"),
+            "child ticket owns must be globbed, not read through the parents-only loader"
+        );
+    }
 }
