@@ -1,0 +1,34 @@
+# Ticketboard — native egui viewer over the ticket registry (T-915.1).
+#
+# Read-only projection: parses every .ai/tickets/T-*.toml via `tbd-tickets` and renders
+# a status board + detail panel. The app makes NO writes anywhere under the repo; the
+# only preference store is eframe Storage in the user config dir ("persistence").
+#
+# egui/eframe (with winit/wgpu) is a first-time dependency family for this workspace —
+# a named supply-chain and build-time event (docs/platform/t915_ticketboard_design.md
+# §Framework). Keep this tree lean on purpose: no tokio, no notify (watch is T-915.3).
+[package]
+name = "ticketboard"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+description = "Native egui viewer for the .ai/tickets registry (T-915)."
+license = "UNLICENSED"
+publish = false
+
+[dependencies]
+# wgpu is eframe 0.36's default backend (design §Framework). "persistence" enables
+# eframe Storage (ron + serde + directories) — the picked-repo-path memory.
+eframe = { version = "0.36.1", features = ["persistence"] }
+# Detail-panel field table. default-features = false drops mime_guess2 (image-loader
+# support the app does not use).
+egui_extras = { version = "0.36.1", default-features = false }
+# Native folder picker for the no-repo refusal screen (xdg-portal + pollster on Linux;
+# no async runtime).
+rfd = "0.17.2"
+tbd-tickets = { path = "../../crates/tbd-tickets" }
+
+[features]
+# Driver-quirk fallback (design §Framework): `--features glow` builds the glow backend
+# in and the app then selects it; the default build stays pure wgpu.
+glow = ["eframe/glow"]
