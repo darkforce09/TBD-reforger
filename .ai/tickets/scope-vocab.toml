@@ -1,0 +1,149 @@
+# .ai/tickets/scope-vocab.toml — the Scope v2 vocabulary tree (T-917.1).
+# Authority: docs/platform/t917_ticket_schema_v2.md §Scope v2 (draft tree, finalized here).
+#
+# Four levels: domain → layer → component → surface. This file is DATA, not compiled
+# enums — vocabulary is content that grows weekly with the codebase; only `domain` stays
+# a closed Rust enum. From the S.2 cutover on, ticket [scope] blocks are validated
+# against this tree (T-917.2); until then this file's own shape is the only contract.
+#
+# ENCODING — one uniform shape:
+#   * every layer is a TOML table `[domain.layer]` whose keys are components, each
+#     mapping to an array of surface strings;
+#   * a layer written as a bare `[domain.layer]` header with NO keys is component-free
+#     (no component tier; the draft gives such layers no surfaces either — a future
+#     surface need there is met by adding component keys, a widening edit).
+# Chosen over mixed array/table layers: TOML cannot place inline array keys after
+# sub-table headers, so a mixed domain could not keep its layers in sorted document
+# order without out-of-order super-table definitions. One shape, one serde read.
+#
+# RULES — validated by xtask/src/vocab_check.rs, wired into `cargo xtask ticket check`
+# (shape is checked wherever the file exists; existence itself is required at the
+# --strict tier from T-917.1 on):
+#   * top-level tables come only from the closed domain set:
+#     engine, mod, repo, schema, website;
+#   * keys sorted ascending at every level (domains, layers, components);
+#   * no duplicate values within any surface array; no empty strings anywhere;
+#   * surface ARRAYS keep the spec draft's order — sortedness binds keys, not values.
+#
+# WIDENING is a one-line edit: add the new surface (or component/layer) in sorted key
+# position and commit. REMOVING a value still used by any ticket becomes red at
+# T-917.2 (vocab-vs-ticket legality) — do not prune without migrating the tickets.
+
+[engine.core]
+
+[engine.render]
+
+[engine.world]
+
+[mod.assets]
+configs = []
+data = []
+missions = []
+prefabs = []
+
+[mod.scripts]
+backend = []
+core = []
+gamemode = []
+markers = []
+objectives = []
+radio = []
+registry = []
+spectator = []
+ui = []
+zones = []
+
+[mod.workbench]
+
+[mod.worlds]
+
+[repo.ci]
+
+[repo.docs]
+
+[repo.scripts]
+
+[repo.tickets]
+
+[repo.tools]
+
+[repo.xtask]
+check = []
+ci = []
+db = []
+deploy = []
+gates = []
+mcp = []
+metrics = []
+tickets = []
+wave = []
+
+[schema.contract]
+
+[schema.mission]
+
+[schema.registry]
+
+[website.backend]
+auth = []
+contract = []
+db = []
+# http_api surfaces = the Axum handler modules (apps/website/api/src/handlers/, one file
+# per resource) — the draft enumerates none; widen with module names as tickets need them.
+http_api = []
+middleware = []
+realtime = []
+services = []
+
+[website.frontend]
+mission_creator = [
+    "map_canvas",
+    "top_strip",
+    "toolbelt",
+    "dock_left",
+    "dock_right",
+    "attr_panel",
+    "outliner",
+    "asset_browser",
+    "env_settings",
+    "tools",
+    "doc_store",
+    "ops_undo",
+    "validation",
+    "layout_chrome",
+]
+shell = [
+    "router",
+    "nav",
+    "layout",
+    "client_transport",
+    "toast",
+]
+site_pages = [
+    "events",
+    "missions",
+    "wiki",
+    "leaderboards",
+    "dashboard",
+    "orbat",
+    "personnel",
+    "arsenal",
+    "modpacks",
+    "servers",
+    "announcements",
+    "deployments",
+    "approvals",
+    "auth_pages",
+]
+world_render = [
+    "satellite",
+    "forest_mass",
+    "dem_vectors",
+    "labels",
+    "bridge",
+    "world_host",
+]
+
+[website.shared]
+
+[website.tests]

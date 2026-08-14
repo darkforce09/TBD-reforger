@@ -89,6 +89,7 @@ mod test_env;
 mod tickets_store;
 mod verify_ci_shell;
 mod verify_ci_shell_rules;
+mod vocab_check;
 mod wave;
 mod wave_lock;
 

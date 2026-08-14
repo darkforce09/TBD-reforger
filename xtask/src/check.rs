@@ -401,6 +401,15 @@ pub fn check(root: &Path, registry: &serde_json::Value, strict: bool) -> Vec<Str
     // .ai/tickets/metrics.schema.json plus the token-sum / RFC 3339 UTC invariants —
     // a malformed receipt is red, named by file.
     errors.extend(crate::metrics::check_as_errors(root));
+    // T-917.1: the scope vocabulary (.ai/tickets/scope-vocab.toml) must be shape-valid
+    // wherever it exists — sorted, duplicate-free, closed domain set (vocab_check.rs).
+    // Its EXISTENCE is enforced at the --strict tier, the single gate authority (t917
+    // spec, Decisions log 8): the pre-v2 scratch registries (cmds.rs mutator fixtures)
+    // carry no vocab file and must stay green until the S.2 cutover makes scope legality
+    // — and with it the file — load-bearing for every corpus load.
+    if strict || crate::vocab_check::vocab_path(root).is_file() {
+        errors.extend(crate::vocab_check::check_as_errors(root));
+    }
     errors.extend(fossil_paths_check(root));
 
     for row in tickets(registry) {
