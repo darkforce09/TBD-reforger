@@ -506,7 +506,25 @@ pub fn ticket_to_value(t: &Ticket) -> Value {
 }
 
 pub fn value_to_ticket(v: &Value) -> Result<Ticket> {
-    let file: TicketFile = serde_json::from_value(v.clone()).context("ticket value → file")?;
+    // T-912.2 fix for a T-911.2 round-trip regression that broke EVERY registry mutator:
+    // `ticket_to_value` mirrors `children` → `slices` and `active` → `active_slice` for the
+    // legacy readers (`ticket advance-slice` reads `slices`, `ticket brief` reads
+    // `active_slice`), and `TicketFile` declares those legacy names as serde ALIASES — so a
+    // value carrying both spellings deserialized as `duplicate field \`children\`` and
+    // `ticket ship`/`set-status`/`mark-ready`/`reorder` all refused to save (measured at the
+    // T-912.1 tip: `ticket ship T-905` → `save T-067: ticket value → file: duplicate field
+    // \`children\``). Strip the mirror when the canonical key is present; a value carrying
+    // ONLY the legacy spelling still lands through the alias.
+    let mut v = v.clone();
+    if let Some(obj) = v.as_object_mut() {
+        if obj.contains_key("children") {
+            obj.remove("slices");
+        }
+        if obj.contains_key("active") {
+            obj.remove("active_slice");
+        }
+    }
+    let file: TicketFile = serde_json::from_value(v).context("ticket value → file")?;
     file.into_ticket().map_err(anyhow::Error::msg)
 }
 
@@ -934,6 +952,26 @@ mod tests {
                 w.scope
             ),
             Ticket::Program(_) => panic!("T-090.6 must be Work"),
+        }
+    }
+
+    /// T-912.2 regression pin: `ticket_to_value` mirrors `children`/`active` into their legacy
+    /// spellings, and `value_to_ticket` must accept its own output — the alias-vs-mirror clash
+    /// made `duplicate field \`children\`` out of every loaded program and broke every registry
+    /// mutator (`ticket ship T-905` → `save T-067` refuse, measured at the T-912.1 tip).
+    #[test]
+    fn value_to_ticket_accepts_ticket_to_value_output() {
+        let root = repo_root();
+        if !tree_is_phase2(&root) {
+            return;
+        }
+        // T-067 is the program the live failure named; round-trip the whole loaded registry so
+        // any ticket whose value carries mirrored keys is covered, not just one.
+        let reg = load_phase2_tree(&root).expect("load phase2 tree");
+        for t in reg["tickets"].as_array().expect("tickets") {
+            let id = t["id"].as_str().unwrap_or("?");
+            let back = value_to_ticket(t).unwrap_or_else(|e| panic!("{id}: {e:#}"));
+            assert_eq!(back.id(), id);
         }
     }
 }
