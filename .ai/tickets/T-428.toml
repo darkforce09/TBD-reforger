@@ -7,7 +7,16 @@ status = "shipped"
 order = 3267
 executor = "claude-code"
 priority = 2
-estimated = ["scope"]
+shipped_at = "b2b1739e"
+created_at = "2026-07-27T05:10:18Z"
+completed_at = "2026-07-27T05:13:42Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = [
     "Follow-on from T-247 (wave 6). UI caller for POST /admin/roles/sync shipped in personnel.rs. Still missing: (1) nightly/cron scheduler claimed in docs/website/backend/architecture.md but no API job wires resync_all_roles; (2) apps/website/api/seeds/discord_roles.sql:23 ships placeholder snowflake 1517290000000000000 for Squad Leader/leader.",
     "",

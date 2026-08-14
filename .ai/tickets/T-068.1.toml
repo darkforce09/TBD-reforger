@@ -7,6 +7,15 @@ status = "shipped"
 order = 680
 executor = "claude-code"
 parent = "T-068"
+shipped_at = "ca4f2cd0"
+created_at = "2026-06-26T16:56:53Z"
+completed_at = "2026-06-26T17:38:25Z"
+estimated = [
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 
 [scope]
 domain = "repo"

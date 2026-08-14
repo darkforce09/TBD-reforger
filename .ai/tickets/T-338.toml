@@ -8,7 +8,14 @@ order = 3154
 executor = "claude-code"
 priority = 1
 shipped_at = "94c66915"
-estimated = ["scope"]
+created_at = "2026-07-26T08:34:14Z"
+completed_at = "2026-07-26T08:38:25Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = [
     "FOUND by T-320 and REPRODUCED, not inferred. This is the T-221 bug surviving in the in-memory half — T-221 scoped the IndexedDB records; it did not scope the RAM cache in front of them.",
     "",

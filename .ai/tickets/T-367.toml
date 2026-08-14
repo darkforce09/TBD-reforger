@@ -8,7 +8,14 @@ order = 3183
 executor = "claude-code"
 priority = 1
 shipped_at = "3a653fd5"
-estimated = ["scope"]
+created_at = "2026-07-26T10:40:43Z"
+completed_at = "2026-07-26T11:24:06Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 5 commit subject(s)"
 migration_legacy = [
     "REGRESSION INTRODUCED BY T-202, found by an independent audit of its emptiness claim.",
     "",

@@ -7,7 +7,16 @@ status = "shipped"
 order = 3309
 executor = "claude-code"
 priority = 2
-estimated = ["scope"]
+shipped_at = "9fd41083"
+created_at = "2026-07-27T02:51:06Z"
+completed_at = "2026-07-27T02:59:24Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = [
     "Residual from wave 26 adversarial MAJOR. Live Content list keeps Result, seeds only on Ok, surfaces error+Retry. Class-R content_list_error_does_not_seed_as_empty_success is needle-soft:",
     "(1) list_seeded.set(true) before match / outside Ok → PASS",

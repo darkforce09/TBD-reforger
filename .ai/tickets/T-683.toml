@@ -7,7 +7,16 @@ status = "shipped"
 order = 3945
 executor = "claude-code"
 notes = "editor-UI program wave 5 (wave_plan.tsv row 105); filed 2026-08-01 by the framework_synthesis coverage audit (parity/coverage_audit.md) — SHIPPED wave 105 (editor factory), 5ca91425 + sweep a7d91fca; verifier wave105.md"
-estimated = ["scope"]
+shipped_at = "a7d91fca"
+created_at = "2026-08-02T02:56:50Z"
+completed_at = "2026-08-02T03:09:39Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ["""The B7 item from framework_synthesis.md C.3/C.5 rank 9, and THE ONE RECOMMENDATION IN THE CORPUS NO ARMA FRAMEWORK CAN IMPLEMENT. Evidence: WOG's single most-used API across 171 shipped missions is the one that turns a WOG feature OFF — `wog3_no_auto_long_range_radio = true` appears in 74 of 171 missions (wog.md:603, :774-775, :853, :987), and wog.md:1078 draws the conclusion verbatim: "if 43% of missions disable your default, the default is wrong — so make such toggles visible mission settings, not magic globals." WOG could only learn that because an outside analyst machine-parsed 171 shipped PBOs; TBD OWNS ITS CORPUS IN A DATABASE, so "what fraction of missions override X" is a query rather than an argument. Scope: one read-only aggregation over `mission_versions.json_payload` reporting, per authored key, the fraction of missions whose latest version differs from the schema default, plus the value histogram. THE QUERY SHAPE ALREADY EXISTS AND IS PROVEN — `apps/website/api/src/handlers/missions.rs`:1563-1564 already runs `jsonb_typeof(v.json_payload -> 'editor' -> 'slots')` + `jsonb_array_length` over exactly that column, so this is a second query beside a working one, not new machinery. The defaults side is READ-ONLY: `packages/tbd-schema/schema/mission.schema.json` already declares a `default` on every `zoneRules` key and on the flow/settings keys, so this ticket reads the schema and MUST NOT widen it (a widening would flip the executor to workbench). Admin tier. NOTE THE ABSENT `depends_on`: this is the only row in the editor-UI block that touches no editor file, so the T-661 eden_chrome split does not gate it and its owns is disjoint from all 43 other rows."""]
 owns = [
     "apps/website/api/src/handlers/missions.rs",

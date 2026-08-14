@@ -7,7 +7,14 @@ status = "shipped"
 order = 2450
 executor = "claude-code"
 shipped_at = "28e9fbb6"
-estimated = ["scope"]
+created_at = "2026-07-26T12:27:47Z"
+completed_at = "2026-07-26T12:32:56Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = [
     "orbat_template_for_mission returns an empty vec on a missing version, a swallowed DB error or an unparseable orbat — and add_event_mission still commits and returns 201 with the admin UI toasting success. Capacity is then count(orbat_slots)=0, so the capacity guard never fires. events.max_slots is validated on create and never consulted for capacity anywhere.",
     "",

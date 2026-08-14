@@ -10,6 +10,13 @@ executor = "claude-code"
 notes = "SHIPPED @ 0be53e16 (tag T-068.12). TBD_LoadoutApplication shared path; player equip + cargo InsertItem live WB. Operator residual: M2 screenshot + optional M4 NPC toggle. Verify: .ai/artifacts/t068_12_verify_log.md"
 parent = "T-068"
 shipped_at = "0be53e16"
+created_at = "2026-07-24T13:58:14Z"
+completed_at = "2026-07-24T13:58:14Z"
+estimated = [
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 1 commit subject(s)"
 
 [scope]
 domain = "repo"

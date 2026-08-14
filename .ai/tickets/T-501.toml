@@ -7,7 +7,15 @@ status = "shipped"
 order = 3341
 executor = "claude-code"
 priority = 2
-estimated = ["scope"]
+created_at = "2026-07-27T00:00:00Z"
+completed_at = "2026-07-27T00:00:00Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "no subject commits; created_at/completed_at id-interpolated between T-500 and T-502 (midpoint, day precision); shipped_at left absent — no subject commits, a SHA is never invented"
 owns = ["apps/website/api/tests/telemetry.rs"]
 
 [scope]

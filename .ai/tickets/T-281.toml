@@ -6,7 +6,16 @@ class = "docs"
 status = "shipped"
 order = 2990
 executor = "claude-code"
-estimated = ["scope"]
+shipped_at = "7f9e494f"
+created_at = "2026-07-27T00:13:59Z"
+completed_at = "2026-07-27T00:15:05Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 owns = [
     "apps/mod/tbd-framework/README.md",
     "apps/website/api/src/app.rs",

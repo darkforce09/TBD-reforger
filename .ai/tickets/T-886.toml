@@ -7,7 +7,16 @@ status = "shipped"
 order = 5670
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
-estimated = ["scope"]
+shipped_at = "d083d3d9"
+created_at = "2026-08-12T09:40:13Z"
+completed_at = "2026-08-12T09:43:13Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["T-853 shell->xtask slice. Port scripts/deploy/restore-db.sh to `cargo xtask deploy db restore` and delete the script(s), their scripts/shell-inventory.txt line(s), any scripts/python-inventory.txt line(s), and repoint every caller. 207 lines. DESTRUCTIVE. T-381 allow-list REFUSES tbd_reforger and verifies the dump first - both are load-bearing and must survive the port byte-for-byte. Prove the refusal still fires. ACCEPTANCE IS BYTE-FOR-BYTE: capture bash stdout+stderr+rc first, then diff on a clean tree AND on >=2 deliberately broken trees; the harness must assert the BASH side went red before believing a diff. A green run alone is not evidence (T-556). Build on crates/tbd-gate. Spec: docs/platform/t853_shell_to_xtask_waves.md"]
 owns = ["scripts/deploy/restore-db.sh"]
 

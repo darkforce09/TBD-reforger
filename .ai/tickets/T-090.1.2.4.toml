@@ -9,6 +9,13 @@ spec = "docs/specs/Mission_Creator_Architecture/t090_1_2_4_engine_render_ortho_s
 executor = "claude-code"
 parent = "T-090"
 shipped_at = "0d6fe485"
+created_at = "2026-06-30T22:21:09Z"
+completed_at = "2026-07-01T22:17:28Z"
+estimated = [
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 2 commit subject(s)"
 
 [scope]
 domain = "repo"

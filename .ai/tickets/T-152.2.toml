@@ -9,6 +9,15 @@ spec = "docs/specs/Mission_Creator_Architecture/t152_2_reforger_icon_art.md"
 executor = "claude-code"
 notes = "Workbench MCP icon discovery spike + LANDMARK_SET atlas rebuild."
 parent = "T-152"
+shipped_at = "102e78c8"
+created_at = "2026-07-12T23:50:12Z"
+completed_at = "2026-07-12T23:50:12Z"
+estimated = [
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 1 commit subject(s)"
 
 [scope]
 domain = "repo"

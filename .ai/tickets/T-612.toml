@@ -8,6 +8,15 @@ order = 3592
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 priority = 2
+shipped_at = "1d166bb4"
+created_at = "2026-07-31T21:38:37Z"
+completed_at = "2026-07-31T22:47:06Z"
+estimated = [
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = [
     "FOUND by T-606 (wave 77), which fixed the three sites its ticket named and measured the rest. Same",
     "defect class as T-606/T-607/T-611: **a check pinned on a log string someone later reworded.**",

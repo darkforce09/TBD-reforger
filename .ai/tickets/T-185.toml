@@ -7,7 +7,14 @@ status = "shipped"
 order = 2030
 executor = "claude-code"
 shipped_at = "5ee9bab0"
-estimated = ["scope"]
+created_at = "2026-07-25T23:58:38Z"
+completed_at = "2026-07-26T00:40:09Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = ["oauth.rs:83-90 collapses an error and an empty result into one empty vec; sync_roles then deletes all user_discord_roles rows, resolves Enlisted and persists it. A timeout during login destroys the snapshot so resync_all_roles cannot restore it. A blank DISCORD_GUILD_ID silently makes everyone enlisted with no log line, and manual role edits are clobbered at next login."]
 owns = ["apps/website/api/src/handlers/oauth.rs"]
 

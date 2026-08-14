@@ -7,7 +7,14 @@ status = "shipped"
 order = 2530
 executor = "claude-code"
 shipped_at = "b2a29e43"
-estimated = ["scope"]
+created_at = "2026-07-26T12:18:02Z"
+completed_at = "2026-07-26T13:07:43Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 7 commit subject(s)"
 migration_legacy = [
     "No code path anywhere creates a servers row — INSERT INTO servers exists only in three test files. There is no POST/PUT/DELETE route and no seed, so GET /servers returns an empty list on any production database forever.",
     "",

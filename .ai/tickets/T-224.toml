@@ -7,7 +7,14 @@ status = "shipped"
 order = 2420
 executor = "claude-code"
 shipped_at = "dde40f91"
-estimated = ["scope"]
+created_at = "2026-07-26T06:06:02Z"
+completed_at = "2026-07-26T06:08:58Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 owns = ["apps/website/frontend/src/eden_chrome.rs"]
 
 [scope]

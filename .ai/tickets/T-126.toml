@@ -9,7 +9,14 @@ spec = "docs/platform/t126_audit_security_followup.md"
 executor = "claude-code"
 unblocks = ["T-127"]
 shipped_at = "4a47688e"
-estimated = ["scope"]
+created_at = "2026-07-01T22:45:48Z"
+completed_at = "2026-07-02T16:40:53Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 
 [scope]
 domain = "website"

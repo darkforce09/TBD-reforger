@@ -10,7 +10,14 @@ executor = "claude-code"
 notes = "Tag T-180.3. SIDE_* RGBA + pack_rings side_tints; SlotSoa.side_keys; engine bind; C1–C4. Verify: .ai/artifacts/t180_3_verify_log.md. Manual M-C1 operator-pending."
 parent = "T-180"
 shipped_at = "19acc593"
-estimated = ["scope"]
+created_at = "2026-07-19T20:05:53Z"
+completed_at = "2026-07-19T20:05:53Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 1 commit subject(s)"
 
 [scope]
 domain = "website"

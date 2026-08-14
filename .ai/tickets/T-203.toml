@@ -7,7 +7,14 @@ status = "shipped"
 order = 2210
 executor = "claude-code"
 shipped_at = "d039a6fe"
-estimated = ["scope"]
+created_at = "2026-07-26T05:40:37Z"
+completed_at = "2026-07-26T05:42:42Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 owns = ["crates/map-engine-core/src/mission/flatten.rs"]
 
 [scope]

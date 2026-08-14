@@ -9,6 +9,13 @@ executor = "claude-code"
 notes = "D5 collapse (wasm policy exports), buildings full-lane toggle, forest LRU"
 parent = "T-151"
 shipped_at = "c7bb5bd0"
+created_at = "2026-07-10T01:37:44Z"
+completed_at = "2026-07-10T01:37:44Z"
+estimated = [
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 1 commit subject(s)"
 
 [scope]
 domain = "repo"

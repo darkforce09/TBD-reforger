@@ -6,6 +6,15 @@ class = "feature"
 status = "shipped"
 order = 710
 parent = "T-071"
+shipped_at = "e97a01c6"
+created_at = "2026-07-19T09:06:26Z"
+completed_at = "2026-07-19T09:06:26Z"
+estimated = [
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 1 commit subject(s)"
 
 [scope]
 domain = "repo"

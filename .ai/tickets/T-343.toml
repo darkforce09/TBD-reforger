@@ -8,7 +8,14 @@ order = 3159
 executor = "claude-code"
 priority = 2
 shipped_at = "a0199601"
-estimated = ["scope"]
+created_at = "2026-07-26T08:06:23Z"
+completed_at = "2026-07-26T08:10:24Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = [
     "FOUND by T-323. `handlers/admin.rs:284-286` — `warn_user` checks `input.reason.is_empty()` WITHOUT trimming, so a whitespace-only warning reason is accepted and stored. That is precisely the defect T-317 closed for `ban_user` in the same file this morning, one handler down.",
     "",

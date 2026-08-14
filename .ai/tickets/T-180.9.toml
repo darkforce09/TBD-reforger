@@ -10,7 +10,14 @@ executor = "claude-code"
 notes = "Tag T-180.9. Sl.loadout + loadout_summary_from_value; open_arsenal→attrs_tab=3; I1–I9. Verify: .ai/artifacts/t180_9_verify_log.md. Manual M-I1..M-I3 operator-pending. Program complete."
 parent = "T-180"
 shipped_at = "cba837b3"
-estimated = ["scope"]
+created_at = "2026-07-19T20:52:54Z"
+completed_at = "2026-07-19T20:53:42Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 2 commit subject(s)"
 
 [scope]
 domain = "website"

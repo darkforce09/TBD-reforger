@@ -10,7 +10,14 @@ executor = "claude-code"
 notes = "Phase 2: typed Scope/Status, encoding C, frozen-49, Ready prose, T-159.23 shipped, T-674/T-675 children via mapper. Depends on T-911.1 landed. No wave.lock, no metrics producer."
 parent = "T-911"
 shipped_at = "00e09ff15"
-estimated = ["scope"]
+created_at = "2026-08-13T17:28:32Z"
+completed_at = "2026-08-13T17:30:21Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 2 commit subject(s)"
 
 [scope]
 domain = "repo"

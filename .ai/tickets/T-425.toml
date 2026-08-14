@@ -7,7 +7,16 @@ status = "shipped"
 order = 3264
 executor = "claude-code"
 priority = 1
-estimated = ["scope"]
+shipped_at = "44cea428"
+created_at = "2026-07-27T05:38:02Z"
+completed_at = "2026-07-27T05:58:00Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = [
     "Residue of wave 5's T-215, which shipped real vehicle map placement (position, faction, cargo) with a proven save/reload round trip. All of the below is disclosed by the agent or the verifier, none of it is a regression.",
     "",

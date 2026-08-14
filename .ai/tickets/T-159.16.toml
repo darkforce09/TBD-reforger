@@ -10,6 +10,13 @@ executor = "claude-code"
 notes = "MissionDocCore same-wasm host; smoke_doc_editor Class R. Verify: .ai/artifacts/t159_16_verify_log.md"
 parent = "T-159"
 shipped_at = "f2cd6178"
+created_at = "2026-07-15T21:11:39Z"
+completed_at = "2026-07-15T21:51:40Z"
+estimated = [
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 5 commit subject(s)"
 
 [scope]
 domain = "repo"

@@ -8,7 +8,16 @@ order = 4130
 executor = "claude-code"
 notes = "editor-UI program wave 13 (wave_plan.tsv row 113) — SHIPPED wave 113 (editor factory), 5d7f334a; verifier wave113.md. Entity Type + a real Role Description field, both on T-649's per-field opt-in gate. Required a NEW core mutator update_slot_object (store.rs, OUTSIDE the planned owns — no description key existed and no existing mutator could write one without clobbering tag/assetId; the HARD GATE bars shipping half a ticket). Also closed forward-constraint F-7 as the disabled affordance: a refused locked-slot Transform edit can no longer be typed, and no longer dirties the document."
 depends_on = ["T-661"]
-estimated = ["scope"]
+shipped_at = "ca6acd30"
+created_at = "2026-08-07T02:54:07Z"
+completed_at = "2026-08-07T02:57:15Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ['PROMOTED AND SCOPED HARD, because as written "full attribute fields" would silently absorb 20 workbench ids against a 31-id OBJ family. SCOPE, stated so it cannot drift: `ATTR-FIELD-OBJ-TYPE` and `ATTR-FIELD-OBJ-ROLE-DESC` ONLY. `ATTR-MULTI-001` / `ATTR-MULTI-CHK-001` route to T-649. `OBJ-UNIT-NAME`, `OBJ-CALLSIGN`, `OBJ-RANK` and `OBJ-STANCE` are contract-blocked and route to the workbench program. Code: `apps/website/frontend/src/attributes.rs` is 367 lines; `identity_tab` :322 has `text_field("Role", ..., "Rifleman", ...)` :326 and `text_field("Tag", ..., "MED · ENG · SL...", ...)` :330, both writing through `attrs_update_slot`. `OBJ-ROLE-DESC` needs a SEPARATE description field — today `role` doubles as both — and `OBJ-TYPE` needs a type control that does not exist. THE REASON TYPE CANNOT BE CHANGED TODAY, and it is not the modal: `read_attrs` (editor_ops.rs:631) builds SlotAttrs from `core.materialize()` :637 and NEVER READS `assetId`, even though the core mutator exists at store.rs:1276. Writes go through `attrs_update_slot` :796. Collides with T-649 on both paths; one wave apart by design.']
 owns = [
     "apps/website/frontend/src/attributes.rs",

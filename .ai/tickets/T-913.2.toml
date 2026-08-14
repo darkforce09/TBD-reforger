@@ -20,8 +20,13 @@ acceptance = [
     "platform wave land stamps outcome+git_sha on the harness-created run file, then runs wave repack",
 ]
 shipped_at = "efcff4e5"
+created_at = "2026-08-14T04:52:06Z"
 completed_at = "2026-08-14T05:21:53Z"
-estimated = ["scope"]
+estimated = [
+    "scope",
+    "created_at",
+]
+estimate_note = "created_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = ["Per-run JSON at .ai/tickets/metrics/<id>/<ts>-<sha>.json (never a single jsonl), required tokens_consumed with total == input+output+cache_read+cache_write, optional git_sha, optional reasoning sibling outside total. cargo xtask platform slice-run <id> parses usage from agent/claude --output-format json pinned by recorded fixtures; missing usage exits nonzero and writes no file. platform wave land stamps outcome+git_sha then runs wave repack; ticket metrics --by agent sums real files."]
 owns = [
     ".ai/tickets/metrics",

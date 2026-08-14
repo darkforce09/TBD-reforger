@@ -7,7 +7,16 @@ status = "shipped"
 order = 4850
 executor = "claude-code"
 notes = "operator O-9; keep visual distinct from T-649-era selection highlight | SHIPPED W204: 'Placing into: X' header affordance with truth-telling resolvers (names the rows.first() fallback honestly) by the slice; the ROW visual landed in the completion (2318dcf8, eden_tree.rs was off-limits mid-wave): ROW_DROP_TARGET distinct from selection on >=3 measured axes + my_location chip; create-layer default verified already-correct at ops level; Alt-click subtree intact. Verifier re-proved incl. the fallback landing."
-estimated = ["scope"]
+shipped_at = "b008bfc8"
+created_at = "2026-08-10T04:20:02Z"
+completed_at = "2026-08-10T05:32:24Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = ["UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). O-9 — operator-reported, corroborated: which layer receives the next placement is set by clicking an outliner row (editor_ops.rs ~:2902 set_active_layer/active_layer; eden_dock_left.rs ~:108) and its only indication is a hover tooltip ('Click: drop target + select units') — no persistent visual state. The author places into a guess; comments compound it (operator: 'it doesn't place in the root, and the layer doesn't always show when you have it selected'). FIX: (a) persistent visual on the active drop-target row (distinct background + small chip/glyph, not colour-only); (b) a 'placing into: <layer>' affordance near the palette or cursor-adjacent during an armed placement; (c) newly created layer becomes the drop target on creation (matches author intent), stated in the row UI. ⚠️ TRAPS: the Alt-click select-subtree behaviour on the same rows must survive; do not restyle selection state — drop-target and selection are different states and must read differently (state-vocabulary doc: two states, two treatments); virtualized rows must keep the highlight when scrolled. ACCEPTANCE: scripted — click layer B: its row background differs from siblings (computed style delta) and an on-screen text names B as the target; place a unit: it lands under B in the outliner; create layer C: C is highlighted and named as target; Alt-click still selects the subtree."]
 owns = [
     "apps/website/frontend/src/editor_ops.rs",

@@ -7,7 +7,16 @@ status = "shipped"
 order = 3219
 executor = "claude-code"
 priority = 2
-estimated = ["scope"]
+shipped_at = "a39389a9"
+created_at = "2026-07-27T06:24:53Z"
+completed_at = "2026-07-27T06:38:39Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
 migration_legacy = [
     "T-394 made assert_golden structurally able to see a dropped field under #[serde(flatten)]. It cannot rescue a golden that has no rows to check, and several do not. This is T-359's draft-capture hazard, measured at struct granularity instead of field granularity.",
     "",

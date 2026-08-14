@@ -7,7 +7,16 @@ status = "shipped"
 order = 3199
 executor = "claude-code"
 priority = 2
-estimated = ["scope"]
+shipped_at = "ee1070f5"
+created_at = "2026-07-27T12:38:26Z"
+completed_at = "2026-07-27T12:52:59Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = [
     "The tail of the tooling cluster (T-378 has the two worst). All the same shape: a success path writing structurally empty or silently-lossy content over something committed.",
     "",

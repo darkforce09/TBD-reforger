@@ -7,7 +7,16 @@ status = "shipped"
 order = 3632
 executor = "claude-code"
 priority = 3
-estimated = ["scope"]
+shipped_at = "5a4aacff"
+created_at = "2026-08-01T01:33:23Z"
+completed_at = "2026-08-01T01:33:23Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 1 commit subject(s)"
 migration_legacy = [
     "FOUND by T-613 (wave 78). Cosmetic today, wrong in a way that will mislead.",
     "",

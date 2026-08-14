@@ -9,7 +9,14 @@ spec = "docs/specs/Mission_Creator_Architecture/t090_1_2_6_hillshade_blend_contr
 executor = "claude-code"
 parent = "T-090"
 shipped_at = "b958e3b4"
-estimated = ["scope"]
+created_at = "2026-07-01T15:39:36Z"
+completed_at = "2026-07-03T11:52:39Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 4 commit subject(s)"
 
 [scope]
 domain = "website"

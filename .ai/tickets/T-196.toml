@@ -7,7 +7,14 @@ status = "shipped"
 order = 2140
 executor = "claude-code"
 shipped_at = "7b98232b"
-estimated = ["scope"]
+created_at = "2026-07-26T00:00:00Z"
+completed_at = "2026-07-26T00:00:00Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "no subject commits; created_at/completed_at id-interpolated between T-195 and T-197 (midpoint, day precision)"
 owns = [".ai/tickets/registry.json"]
 
 [scope]

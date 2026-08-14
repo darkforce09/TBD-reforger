@@ -7,7 +7,16 @@ status = "shipped"
 order = 3582
 executor = "claude-code"
 priority = 2
-estimated = ["scope"]
+shipped_at = "6d49f66f"
+created_at = "2026-07-31T21:38:37Z"
+completed_at = "2026-07-31T22:47:06Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = [
     "FOUND by T-610 (wave 77) while fixing the citations the gate could not see. The ticket assumed the",
     'gate simply "did not cover bare file.c:NNN forms in prose." The real scope is larger.',

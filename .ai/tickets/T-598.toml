@@ -7,7 +7,16 @@ status = "shipped"
 order = 3471
 executor = "claude-code"
 priority = 2
-estimated = ["scope"]
+shipped_at = "2d812b01"
+created_at = "2026-07-31T16:06:01Z"
+completed_at = "2026-07-31T17:07:53Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = [
     "T-579 was filed when `send_rcon` always answered 503 and the SPA's success path was unreachable",
     "dead code. **T-595 made it reachable again**, and the same string is now wrong the other way.",

@@ -8,7 +8,14 @@ order = 3132
 executor = "claude-code"
 priority = 0
 shipped_at = "7da9f742"
-estimated = ["scope"]
+created_at = "2026-07-26T06:55:56Z"
+completed_at = "2026-07-26T14:36:38Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 5 commit subject(s)"
 migration_legacy = [
     "FOUND by T-218's sweep. Three defaulted structs in handlers/telemetry.rs reach destructive writes and do NOT self-heal:",
     "  :172-177 MatchInput.outcome / winning_faction / aar_replay_url — re-POSTing a match id with a partial body reverts a completed, won match to `pending` with no winner and drops the AAR link.",

@@ -7,7 +7,16 @@ status = "shipped"
 order = 3271
 executor = "claude-code"
 priority = 3
-estimated = ["scope"]
+shipped_at = "78a18c8b"
+created_at = "2026-07-27T04:31:19Z"
+completed_at = "2026-07-27T04:36:24Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = [
     "MINOR from wave 7 verifier on T-219. is_known_editor_payload_top_level does not include payloadExtras; an authored top-level payloadExtras object is parked and re-emitted onto the wire.",
     "",

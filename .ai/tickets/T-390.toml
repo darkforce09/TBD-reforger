@@ -8,7 +8,14 @@ order = 3206
 executor = "claude-code"
 priority = 0
 shipped_at = "c07ca278"
-estimated = ["scope"]
+created_at = "2026-07-26T12:46:02Z"
+completed_at = "2026-07-26T13:07:43Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = [
     "FIFTH INSTANCE OF THIS RUN'S SIGNATURE DEFECT, found by T-235, and it is in the gate I fixed four hours ago. **`gate_test_api` runs `cargo test -p website-api` to clear a slice, so the gate can pass on code it never compiled.**",
     "",

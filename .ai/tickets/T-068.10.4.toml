@@ -10,6 +10,13 @@ executor = "claude-code"
 notes = "Arsenal polish C: SlotLoadout v2 (wear open map keyed by engine area, weapons[] slot-indexed) + loadout-export v2 + AreaType-aware v1->v2 migration. Prereq for unparking T-068.11. SHIPPED @ 338593b8 (tag T-068.10.4): L1-L5 PASS, vitest 334/334; 14 Arsenal rows; v2 export keeps derived legacy gear (U6). Arsenal polish program A+B+C complete - T-068.11 unpark = operator decision."
 parent = "T-068"
 shipped_at = "338593b8"
+created_at = "2026-07-12T21:41:42Z"
+completed_at = "2026-07-12T22:12:47Z"
+estimated = [
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 
 [scope]
 domain = "repo"

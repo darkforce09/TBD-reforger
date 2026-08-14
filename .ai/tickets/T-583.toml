@@ -7,7 +7,16 @@ status = "shipped"
 order = 3432
 executor = "claude-code"
 priority = 2
-estimated = ["scope"]
+shipped_at = "bed4f269"
+created_at = "2026-07-31T10:06:34Z"
+completed_at = "2026-07-31T15:04:08Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = [
     "T-278 built `tbd-tools world reclassify` -- rebuilds the map catalogue's classification lane from",
     "COMMITTED artifacts with no Workbench and no staging directory, read-only drift check by default.",

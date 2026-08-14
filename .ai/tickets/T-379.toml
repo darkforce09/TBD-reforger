@@ -7,7 +7,16 @@ status = "shipped"
 order = 3195
 executor = "claude-code"
 priority = 1
-estimated = ["scope"]
+shipped_at = "42f0eed0"
+created_at = "2026-07-27T08:53:20Z"
+completed_at = "2026-07-27T08:55:41Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = [
     "handlers/telemetry.rs:461-470, bound at :475 — the `ON CONFLICT DO UPDATE` sets `role_played = EXCLUDED.role_played`, and the pre-transaction validation loop at :432-439 checks `arma_id` and `source_event_id` for blankness but **not `role_played`**.",
     "",

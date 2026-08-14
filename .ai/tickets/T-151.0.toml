@@ -9,6 +9,13 @@ spec = "docs/specs/Mission_Creator_Architecture/t151_0_wasm_merge_dual_mount.md"
 executor = "claude-code"
 parent = "T-151"
 shipped_at = "f019512d"
+created_at = "2026-07-07T22:06:29Z"
+completed_at = "2026-07-07T22:56:04Z"
+estimated = [
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 
 [scope]
 domain = "repo"

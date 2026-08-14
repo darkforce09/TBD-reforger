@@ -7,7 +7,16 @@ status = "shipped"
 order = 3318
 executor = "claude-code"
 priority = 2
-estimated = ["scope"]
+shipped_at = "1ba9fb2c"
+created_at = "2026-07-27T04:31:19Z"
+completed_at = "2026-07-27T12:03:53Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = [
     "Observed wave 29 cold re-gate FAIL once on fresh tbd_wave29b_cold: event_orbat_registration_and_race panicked in common/mod.rs:217 seed_user with duplicate key idx_users_arma_id (events-arma-000000000000334002). Immediate re-gate on fresh tbd_wave29c_cold PASS (33/40/13). Not caused by T-431/477 product SQL (attendance backfill). Likely parallel seed race or leftover arma_id uniqueness collision in events IT fixtures.",
     "",

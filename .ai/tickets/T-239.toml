@@ -6,7 +6,16 @@ class = "bug"
 status = "shipped"
 order = 2570
 executor = "claude-code"
-estimated = ["scope"]
+shipped_at = "b2373ecd"
+created_at = "2026-07-26T13:18:16Z"
+completed_at = "2026-07-26T21:42:56Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 6 commit subject(s)"
 migration_legacy = [
     "T-015 is used in commits but absent from the registry. The bluemonday sanitisation survived the Go purge as ammonia (services/text.rs:10-16, wired at cms.rs:109,194), and text.rs:6-9 records an open security item: the exact UGCPolicy-to-ammonia allowlist mapping plus a golden corpus and a no-XSS property test.",
     "",

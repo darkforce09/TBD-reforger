@@ -7,7 +7,16 @@ status = "shipped"
 order = 3272
 executor = "claude-code"
 priority = 3
-estimated = ["scope"]
+shipped_at = "b6dd9db5"
+created_at = "2026-07-26T21:46:55Z"
+completed_at = "2026-07-27T04:11:14Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = [
     "MINOR from wave 7 verifier. handlers/cms.rs announcement_body_persist_contract_is_identity_not_ammonia sets stored = authored.to_string() then asserts equality — never calls create/update. Real pin is IT cms_announcement_body + admin_field.",
     "",

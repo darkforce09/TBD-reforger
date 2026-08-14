@@ -7,7 +7,14 @@ status = "shipped"
 order = 2170
 executor = "claude-code"
 shipped_at = "b53866e0"
-estimated = ["scope"]
+created_at = "2026-07-26T06:06:51Z"
+completed_at = "2026-07-26T06:11:07Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 owns = [
     "apps/website/frontend/src/arsenal.rs",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c",

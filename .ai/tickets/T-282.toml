@@ -6,7 +6,16 @@ class = "feature"
 status = "shipped"
 order = 3000
 executor = "claude-code"
-estimated = ["scope"]
+shipped_at = "a5f487a4"
+created_at = "2026-07-31T01:15:32Z"
+completed_at = "2026-07-31T01:42:48Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["mission_versions already stores immutable full JSON snapshots per semver, so this is build a differ, not build versioning. Blockers: no parent_version_id, no list-versions endpoint (only POST and GET-by-id), the by-id GET is never called, and the History button is present but disabled. Old versions are retained and unreachable from any UI."]
 owns = ["apps/website/frontend/src/missions.rs"]
 

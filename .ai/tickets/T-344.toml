@@ -8,7 +8,14 @@ order = 3160
 executor = "claude-code"
 priority = 1
 shipped_at = "71359721"
-estimated = ["scope"]
+created_at = "2026-07-26T13:12:17Z"
+completed_at = "2026-07-26T13:17:11Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = [
     "SPLIT FROM T-214, which proved everything around it already works and refused to reach into a file it did not own.",
     "",

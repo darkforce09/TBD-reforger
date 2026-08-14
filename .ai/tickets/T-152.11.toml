@@ -9,7 +9,16 @@ spec = "docs/specs/Mission_Creator_Architecture/t152_11_operator_fidelity_audit.
 executor = "claude-code"
 notes = "Audit report @ a8a7a22c (tag T-152.11); D1–D13 ledger zero DONE; fix matrix → remediation ladder T-152.12–.22."
 parent = "T-152"
-estimated = ["scope"]
+shipped_at = "a8a7a22c"
+created_at = "2026-07-13T11:44:11Z"
+completed_at = "2026-07-13T11:44:11Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 1 commit subject(s)"
 
 [scope]
 domain = "repo"

@@ -7,7 +7,16 @@ status = "shipped"
 order = 3158
 executor = "claude-code"
 priority = 2
-estimated = ["scope"]
+shipped_at = "4d73f562"
+created_at = "2026-07-27T12:13:57Z"
+completed_at = "2026-07-27T12:37:20Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = [
     "RECOMMENDED by T-323 with a hard engineering reason rather than a taste argument, which is why it is filed rather than dismissed.",
     "",

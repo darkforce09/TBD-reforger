@@ -10,7 +10,14 @@ executor = "claude-code"
 notes = "Mode C slice C: expanded Attributes modal + ACE-style panes (detail left, rows center, container panel right). SHIPPED @ 421a69d4 (tag T-068.10.6). Mode C complete (A variant collapse + B faction library T-153 + C expanded modal); T-068.11 remains PARKED for operator decision."
 parent = "T-068"
 shipped_at = "421a69d4"
-estimated = ["scope"]
+created_at = "2026-07-13T05:40:25Z"
+completed_at = "2026-07-13T05:40:25Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 2 commit subject(s)"
 
 [scope]
 domain = "website"

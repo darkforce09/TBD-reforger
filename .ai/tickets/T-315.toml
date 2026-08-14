@@ -8,7 +8,14 @@ order = 3131
 executor = "claude-code"
 priority = 0
 shipped_at = "62a804e4"
-estimated = ["scope"]
+created_at = "2026-07-26T06:48:26Z"
+completed_at = "2026-07-26T06:52:50Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ["FOUND by T-218's #[serde(default)] sweep, same shape as T-185 and T-218 on a different table. handlers/missions.rs:683 — SetArmoryInput.items carries #[serde(default)], and the handler runs an UNCONDITIONAL `DELETE FROM mission_armories WHERE mission_id = $1` before inserting. A request body of `{}` (or a malformed one, if the extractor is also lenient) therefore deletes every armory row for the mission and inserts nothing — silent, total, unrecoverable data loss on a 200 OK. Highest severity of the 10 instances the sweep turned up. Fix: make `items` required (drop the default) so `{}` is a decode error, and reject with 400 rather than defaulting. Verify by seeding rows, POSTing `{}`, and asserting the rows survive."]
 owns = [
     "apps/website/api/src/handlers/missions.rs",

@@ -7,7 +7,16 @@ status = "shipped"
 order = 3306
 executor = "claude-code"
 priority = 3
-estimated = ["scope"]
+shipped_at = "e209d501"
+created_at = "2026-07-27T03:21:43Z"
+completed_at = "2026-07-27T03:41:45Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = [
     "Residual from wave 25 adversarial N2. wave.sh wires verify-t438 and verify-t456 (T-463), but Makefile/CI have no sibling targets (same shape as pre-T-452 for other verifies).",
     "",

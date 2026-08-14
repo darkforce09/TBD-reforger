@@ -7,7 +7,16 @@ status = "shipped"
 order = 3652
 executor = "claude-code"
 priority = 1
-estimated = ["scope"]
+shipped_at = "503a149d"
+created_at = "2026-07-31T23:34:49Z"
+completed_at = "2026-08-01T00:05:32Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = [
     "FOUND by wave 78's adversarial verifier. **Third round of the same defect** (T-602 -> T-613 -> here),",
     "and the fix this time is small and specific -- do not redesign the oracles.",

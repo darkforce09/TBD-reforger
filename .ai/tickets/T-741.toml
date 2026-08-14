@@ -7,7 +7,16 @@ status = "shipped"
 order = 4617
 executor = "claude-code"
 notes = "filed by wave-112 adversarial verifier (editor factory)"
-estimated = ["scope"]
+shipped_at = "5f11ac4c"
+created_at = "2026-08-08T07:37:03Z"
+completed_at = "2026-08-08T07:54:40Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ["NIT from the wave-112 verifier. editor_ops.rs:1826-1842 attrs_multi_ids filters the selection down to slots, because vehicles carry none of the SoA columns the multi-edit writes. But the Attributes modal header reports 'N entities selected' from the FULL selection and the per-field copy says 'every selected entity'. Under a Ctrl+A select-all — which T-649 shipped this wave, and which deliberately includes vehicles — those two strings overclaim: the user is told N entities will be changed when only the slot subset will be. Either count the filtered set in the header or say explicitly that vehicles are excluded. Low severity but it is the same honesty class as T-716 (a control that says it does more than it does). Diagnosis: editor_verify/wave112.md NIT-4."]
 owns = [
     "apps/website/frontend/src/editor_ops.rs",

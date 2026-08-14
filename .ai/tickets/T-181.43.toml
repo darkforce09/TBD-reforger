@@ -8,7 +8,16 @@ order = 1810
 executor = "claude-code"
 notes = '''wireSafeString pattern ^[^\x00-\x1F\x7F]$ (C0 controls + DEL), shared $def, $ref'd from 10 authored fields. WENT BEYOND THE BRIEF IN THE RIGHT DIRECTION: it constrained group.callsign and role.slot as well, because flatten.rs:518 copies those VERBATIM into slot.groupCallsign/slot.role and interpolates them into slot.id with no re-validation — so constraining only the slot fields would have forbidden the symptom while permitting the cause. Chose the control block over a bare tab/CR/LF blocklist for three reasons it verified rather than asserted: it costs authoring nothing (all four goldens scanned, zero control characters; Alpha-1/2, Saint-Pierre Depot, Cafe, blufor:Alpha:RFL:0 all pass), it is a CLOSED class that cannot drift, and it covers siblings nothing strips today — RosterField and Sanitise each replace exactly \t\n\r, so NUL (a terminator where string.Length() counts BYTES) and VT/FF were undefended. DELIBERATELY DID NOT BAN, each checked in source: '.' (TBD_BriefingData.FIELD_MARK is a bijective per-field PREFIX, so an authored dot cannot confuse a reader), '~' (the RETIRED lossy TBD_LobbyData sentinel — forbidding it would enshrine an abandoned convention), ':' (load-bearing inside slot.id), and the zero-width/bidi class (a display-SPOOFING hazard, not a wire-FRAMING one; folding two defects behind one pattern means a failure stops naming its cause). EXCLUDED briefing.situation/mission/execution with a good reason: they do not ride a delimited wire at all — TBD_BriefingService ships them as parallel array<string> RPC params precisely to preserve paragraph breaks — so a NEWLINE THERE IS LEGITIMATE AUTHORING and constraining it would have broken real missions. TWO must-fail fixtures, not one, because ten $ref sites behind one $def means a single fixture leaves nine free to lose the constraint unnoticed; proven not-false-green by stripping only the pattern line and watching both flip to 'ACCEPTED it — the check this fixture pins is gone'. Two throwaway probes settled silent-loosening risks rather than assuming: minLength:1 as a SIBLING of $ref still applies under 2020-12, and '$' is strict end-of-haystack here (not the PCRE trailing-newline variant). BEHAVIOUR CHANGE THE OPERATOR SHOULD KNOW: /compiled is validated at runtime, so a STORED mission carrying a control character in one of the ten fields now answers 500, and TBD_MissionLoader.OnBackendFetchError discards the body and fails over to its cached copy — the symptom is 'the server is still running the previous mission' with the cause only in the API log. Same shape as T-181.34's enum, and better than a corrupted roster, but real.'''
 parent = "T-181"
-estimated = ["scope"]
+shipped_at = "3d616784"
+created_at = "2026-07-25T16:37:39Z"
+completed_at = "2026-07-25T16:45:09Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 owns = ["packages/tbd-schema/**"]
 
 [scope]

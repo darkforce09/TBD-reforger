@@ -7,7 +7,16 @@ status = "shipped"
 order = 3303
 executor = "claude-code"
 priority = 1
-estimated = ["scope"]
+shipped_at = "2c830f50"
+created_at = "2026-07-27T02:15:23Z"
+completed_at = "2026-07-27T02:17:34Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = [
     "Residual from T-447 / wave 25 cold gate. Admin GET /cms/announcements is registered but null_tolerance every_get_route_is_swept_or_skipped_with_a_reason fails: path neither in route_sweep() nor ROUTE_SWEEP_SKIP.",
     "",

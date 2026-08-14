@@ -9,7 +9,14 @@ spec = "docs/platform/t123_documentation_standards_rollout.md"
 executor = "claude-code"
 parent = "T-123"
 shipped_at = "030cece"
-estimated = ["scope"]
+created_at = "2026-06-29T19:04:04Z"
+completed_at = "2026-06-29T19:04:04Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 1 commit subject(s)"
 
 [scope]
 domain = "website"

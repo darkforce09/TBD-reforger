@@ -10,6 +10,13 @@ executor = "claude-code"
 notes = "SHIPPED @ 85acbb13 (tag T-068.15.1). 1257 grids; 16223 cargo edges; qty conservation; ReadPhysAttrs two-pass (flashlight shadow fix). Verify: .ai/artifacts/t068_15_1_verify_log.md"
 parent = "T-068"
 shipped_at = "85acbb13"
+created_at = "2026-07-24T13:19:11Z"
+completed_at = "2026-07-24T13:19:11Z"
+estimated = [
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 1 commit subject(s)"
 
 [scope]
 domain = "repo"

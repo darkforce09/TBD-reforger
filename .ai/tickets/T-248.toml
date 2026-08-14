@@ -6,7 +6,16 @@ class = "feature"
 status = "shipped"
 order = 2660
 executor = "claude-code"
-estimated = ["scope"]
+shipped_at = "8e9dd04a"
+created_at = "2026-07-26T21:03:05Z"
+completed_at = "2026-07-26T21:15:18Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = ["The clear-cookie string is built after the missing_code and invalid_state early returns, so both leave the ten-minute CSRF cookie live. DISCORD_CLIENT_SECRET and DISCORD_REDIRECT_URL also have no startup guard, so a misconfigured secret is reported to the user as discord_unreachable — a misconfig disguised as an outage."]
 owns = [
     "apps/website/api/src/handlers/oauth.rs",

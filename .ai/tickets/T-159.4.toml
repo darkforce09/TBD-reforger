@@ -8,7 +8,16 @@ order = 1570
 executor = "claude-code"
 notes = "Route table + page V-suite (24 routes byte-identical)."
 parent = "T-159"
-estimated = ["scope"]
+shipped_at = "b9560f42"
+created_at = "2026-07-15T06:26:17Z"
+completed_at = "2026-07-15T07:01:34Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 
 [scope]
 domain = "website"

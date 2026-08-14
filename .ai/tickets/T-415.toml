@@ -8,6 +8,15 @@ order = 3240
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 priority = 1
+shipped_at = "a5c1040a"
+created_at = "2026-07-27T13:17:00Z"
+completed_at = "2026-07-27T13:29:49Z"
+estimated = [
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = [
     "THE DURABLE FIX for T-240, which shipped the client half only. Confirmed twice by independent agents on 2026-07-26, and re-confirmed against the source during wave 4.",
     "",

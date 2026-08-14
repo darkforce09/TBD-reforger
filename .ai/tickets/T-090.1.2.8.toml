@@ -9,6 +9,13 @@ spec = "docs/specs/Mission_Creator_Architecture/t090_1_2_8_unified_satellite_tex
 executor = "claude-code"
 parent = "T-090"
 shipped_at = "db9057ef"
+created_at = "2026-07-02T18:33:51Z"
+completed_at = "2026-07-02T18:46:10Z"
+estimated = [
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 4 commit subject(s)"
 
 [scope]
 domain = "repo"

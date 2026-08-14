@@ -348,6 +348,69 @@ fn body_findings(corpus: &tbd_tickets::Corpus) -> (Vec<String>, Vec<String>) {
     (errors, warnings)
 }
 
+/// T-917.4 — estimated[]-vs-field coherence (the S.6 gate builds on this rule). An
+/// `estimated[]` stamp entry must correspond to a PRESENT field — a marked estimate
+/// with no value is a hole wearing a provenance badge — with exactly one legal
+/// asymmetry: `shipped_at` may be absent+marked WHEN `estimate_note` names the gap
+/// (spec §Estimation ladder shipped_at row: a SHA is never invented — a
+/// present-but-fake SHA would point at a real commit that is NOT the ticket's work,
+/// worse than absence). `created_at`/`completed_at` listed with the field absent are
+/// red; `tokens`/`scope` coherence belongs to the S.5 estimates check and the
+/// surface rule respectively, not here. `shipped_at` reads through BOTH arms (work
+/// field / program status). Fail-closed on an unloadable corpus, like every corpus
+/// rule in this file.
+fn check_estimated_stamp_coherence(root: &Path) -> Vec<String> {
+    let corpus = match tbd_tickets::Corpus::load(root) {
+        Ok(c) => c,
+        Err(e) => return vec![e],
+    };
+    let mut errors = Vec::new();
+    for (id, ticket) in &corpus.tickets {
+        let (created, completed, shipped, estimated, note) = match ticket {
+            tbd_tickets::Ticket::Program(p) => {
+                let shipped = match &p.status {
+                    tbd_tickets::Status::Shipped { shipped_at, .. } => shipped_at.as_deref(),
+                    _ => None,
+                };
+                (
+                    p.created_at.as_deref(),
+                    p.completed_at.as_deref(),
+                    shipped,
+                    &p.estimated,
+                    p.estimate_note.as_deref(),
+                )
+            }
+            tbd_tickets::Ticket::Work(w) => (
+                w.created_at.as_deref(),
+                w.completed_at.as_deref(),
+                w.shipped_at.as_deref(),
+                &w.estimated,
+                w.estimate_note.as_deref(),
+            ),
+        };
+        for e in estimated {
+            match e.as_str() {
+                "created_at" if created.is_none() => errors.push(format!(
+                    "{id}: estimated[] lists created_at but the field is absent — dates must be present when marked (only shipped_at may be legally absent-marked)"
+                )),
+                "completed_at" if completed.is_none() => errors.push(format!(
+                    "{id}: estimated[] lists completed_at but the field is absent — dates must be present when marked (only shipped_at may be legally absent-marked)"
+                )),
+                "shipped_at"
+                    if shipped.is_none()
+                        && note.is_none_or(|n| n.trim().is_empty()) =>
+                {
+                    errors.push(format!(
+                        "{id}: estimated[] lists shipped_at with the field absent and no estimate_note naming the gap — absent-marked is legal only with the gap named"
+                    ));
+                }
+                _ => {}
+            }
+        }
+    }
+    errors
+}
+
 /// T-916.2 — parent↔child referential integrity over EVERY `.ai/tickets/T-*.toml` (the typed
 /// corpus; parents-only walks cannot see either half of the relation). Two rules, both naming
 /// the pair:
@@ -574,6 +637,9 @@ pub fn check(root: &Path, registry: &serde_json::Value, strict: bool) -> Vec<Str
     // lines ≤30; citations ≤8), anti-blend rules, and the post-cutover
     // quarantine-mint tripwire.
     errors.extend(check_body_rules(root));
+    // T-917.4: an estimated[] stamp entry must have a present field — except
+    // shipped_at, which may be absent+marked with the gap named in estimate_note.
+    errors.extend(check_estimated_stamp_coherence(root));
     // T-916.2: children[] must reference on-disk files and child files must reference on-disk
     // parents — the referential rule the save_tree delete-pass retirement makes load-bearing.
     errors.extend(check_children_integrity(root));
@@ -1142,6 +1208,84 @@ component = "mission_creator"
             let (errs, _) = body_findings(&tbd_tickets::Corpus::load(&tmp).unwrap());
             assert!(errs.is_empty(), "{green:?} must be green: {errs:?}");
         }
+        fs::remove_dir_all(&tmp).unwrap();
+    }
+
+    /// T-917.4: the estimated[]-vs-field coherence rule. Live tree green; a ticket
+    /// listing created_at/completed_at in estimated[] with the field ABSENT is red
+    /// naming ticket + field; shipped_at absent+marked is legal ONLY with an
+    /// estimate_note naming the gap; present fields restore green.
+    #[test]
+    fn estimated_marker_without_field_is_red() {
+        let root = worktree_root();
+        let errs = check_estimated_stamp_coherence(&root);
+        assert!(
+            errs.is_empty(),
+            "live tree must satisfy estimated[] coherence; got:\n{}",
+            errs.join("\n")
+        );
+
+        let (tmp, dir) = scratch_tickets_dir("t917-estimated-coherence");
+        let with = |extra: &str| {
+            format!(
+                "id = \"T-001\"\nkind = \"work\"\ntitle = \"x\"\nsummary = \"x\"\nclass = \"chore\"\nstatus = \"shipped\"\norder = 10\n{extra}\n[scope]\ndomain = \"repo\"\nlayer = \"docs\"\n"
+            )
+        };
+        // created_at marked but absent → red naming ticket + field.
+        fs::write(
+            dir.join("T-001.toml"),
+            with("estimated = [\"created_at\"]\n"),
+        )
+        .unwrap();
+        let errs = check_estimated_stamp_coherence(&tmp);
+        assert_eq!(errs.len(), 1, "{errs:?}");
+        assert!(
+            errs[0].contains("T-001")
+                && errs[0].contains("created_at")
+                && errs[0].contains("absent"),
+            "{}",
+            errs[0]
+        );
+        // completed_at marked but absent → red.
+        fs::write(
+            dir.join("T-001.toml"),
+            with("estimated = [\"completed_at\"]\n"),
+        )
+        .unwrap();
+        let errs = check_estimated_stamp_coherence(&tmp);
+        assert!(
+            errs.len() == 1 && errs[0].contains("completed_at"),
+            "{errs:?}"
+        );
+        // shipped_at absent+marked WITHOUT a note → red; WITH the gap named → green.
+        fs::write(
+            dir.join("T-001.toml"),
+            with("estimated = [\"shipped_at\"]\n"),
+        )
+        .unwrap();
+        let errs = check_estimated_stamp_coherence(&tmp);
+        assert!(
+            errs.len() == 1 && errs[0].contains("shipped_at") && errs[0].contains("estimate_note"),
+            "{errs:?}"
+        );
+        fs::write(
+            dir.join("T-001.toml"),
+            with("estimated = [\"shipped_at\"]\nestimate_note = \"no subject commits; no SHA mined\"\n"),
+        )
+        .unwrap();
+        assert!(
+            check_estimated_stamp_coherence(&tmp).is_empty(),
+            "absent-marked shipped_at with the gap named is the legal asymmetry"
+        );
+        // All three present + marked → green (the backfill's normal output shape).
+        fs::write(
+            dir.join("T-001.toml"),
+            with(
+                "shipped_at = \"abcd1234\"\ncreated_at = \"2026-07-01T10:00:00Z\"\ncompleted_at = \"2026-07-02T10:00:00Z\"\nestimated = [\"created_at\", \"completed_at\", \"shipped_at\"]\nestimate_note = \"mined git_subject\"\n",
+            ),
+        )
+        .unwrap();
+        assert!(check_estimated_stamp_coherence(&tmp).is_empty());
         fs::remove_dir_all(&tmp).unwrap();
     }
 

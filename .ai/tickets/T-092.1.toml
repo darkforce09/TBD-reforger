@@ -9,6 +9,13 @@ spec = "docs/specs/Mission_Creator_Architecture/t092_1_mod_spawn_policy.md"
 executor = "claude-code"
 parent = "T-092"
 shipped_at = "4eefc169"
+created_at = "2026-07-03T17:33:49Z"
+completed_at = "2026-07-03T17:33:49Z"
+estimated = [
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 1 commit subject(s)"
 
 [scope]
 domain = "repo"

@@ -8,7 +8,16 @@ order = 5345
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
 notes = "PREREQUISITE (Phase 0). The agent container is debian:12 / glibc 2.36 with NO C toolchain, so cargo cannot build in-container at all and scripts/lib/hostrun.sh bridges every cargo invocation to the host via distrobox-host-exec. build-essential was installed into the running container on 2026-08-12, but the image belongs to the Claude Desktop app and NOT to this repo, so the install does not survive a container rebuild. It must be baked into the image before Phase 7: hard-zero deletes hostrun.sh, and a fresh container would then have neither a toolchain nor a bridge. In-container builds must use CARGO_TARGET_DIR=<root>/target-container -- two glibcs building into one target dir thrash fingerprints against the shared warm target (T-253/T-322). SCOPE NOTE: 'has no Makefile target' is NOT a test for a dead gate. T-462 wired verify-t437, verify-t439 and verify-t444 into wave.sh gate_slice and cmd_gate instead; grep wave.sh before proposing any deletion."
-estimated = ["scope"]
+shipped_at = "d21197d2"
+created_at = "2026-08-11T23:22:27Z"
+completed_at = "2026-08-13T02:42:05Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 69 commit subject(s)"
 migration_legacy = ["The T-621/T-623 shell ratchet is an ALLOWLIST: it pre-blesses all 59 tracked shell files (15,845 lines) via scripts/shell-inventory.txt, so it passes over the debt it was built to stop. This program drains it. Port every shell script to Rust (xtask/tbd-tools), delete the 504-line Makefile so cargo xtask is the only entrypoint, split xtask into its own workspace behind a std-only launcher, then flip verify-no-shell to a hard zero with no allowlist and add anti-relocation gates so bash cannot reappear in Makefile recipes or CI run: blocks. All 12 scripts/python-inventory.txt entries are themselves shell scripts, so LANG-2 collapses to zero in the same motion."]
 
 [scope]

@@ -9,7 +9,16 @@ spec = "docs/specs/Mission_Creator_Architecture/t152_20_settings_completeness.md
 executor = "claude-code"
 notes = "Shipped @ 4ec87d1b (tag T-152.20) UI 12/12 + T-152.20.1 @ 1a750cdd wiring (roads/forest/contours/sea); M1 PASS 3f78968e. O10 closed. Verify t152_20_1_verify_log.md."
 parent = "T-152"
-estimated = ["scope"]
+shipped_at = "4ec87d1b"
+created_at = "2026-07-13T21:20:27Z"
+completed_at = "2026-07-13T21:20:27Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 1 commit subject(s)"
 
 [scope]
 domain = "website"

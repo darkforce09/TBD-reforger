@@ -7,7 +7,16 @@ status = "shipped"
 order = 3349
 executor = "claude-code"
 priority = 0
-estimated = ["scope"]
+shipped_at = "ebf1bae7"
+created_at = "2026-07-27T09:24:22Z"
+completed_at = "2026-07-27T09:29:06Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ['Wave 43 re-gate FAIL after T-508. T-377 dropped "" from valid_weather clear arm so PATCH {"weather":""} no longer rewrites dense_fog→clear. CreateMissionInput.weather is #[serde(default)] String — omitted weather becomes "" → create_mission 400 invalid weather. Cold evidence: admin_field.rs:413 unwrap None on POST /missions without weather. Cure: CREATE treats empty as Clear (canonical new-mission default); PATCH still rejects "". Do not restore ""|clear in valid_weather. Class-R + IT pin. Perturbation RED required.']
 owns = ["apps/website/api/src/handlers/missions.rs"]
 

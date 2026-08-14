@@ -7,7 +7,14 @@ status = "shipped"
 order = 2090
 executor = "claude-code"
 shipped_at = "7de3ed57"
-estimated = ["scope"]
+created_at = "2026-07-26T00:07:16Z"
+completed_at = "2026-07-26T00:47:20Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = ["mission_hydrate.rs:164-185 runs under INIT origin while the UndoManager tracks only LOCAL, so Ctrl+Z cannot recover it. hydrate clears all nine root maps, then after_local_edit overwrites the local IndexedDB blob about five seconds later. The conflict modal offers two buttons with no diff, no change count and no backup."]
 owns = ["apps/website/frontend/src/mission_hydrate.rs"]
 

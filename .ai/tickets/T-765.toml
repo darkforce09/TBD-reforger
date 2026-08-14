@@ -7,7 +7,16 @@ status = "shipped"
 order = 4641
 executor = "claude-code"
 notes = "filed by wave-117 adversarial verifier (editor factory)"
-estimated = ["scope"]
+shipped_at = "614ac605"
+created_at = "2026-08-08T04:30:17Z"
+completed_at = "2026-08-08T04:38:48Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["MINOR from the wave-117 verifier. asset_catalog.rs:629 lowercases glob PATTERN literals with `to_ascii_lowercase()`, while :639 lowercases the HAYSTACK with full Unicode `to_lowercase()`. So a pattern containing a non-ASCII uppercase character cannot match its own lowercased subject: `CAFÉ*` misses `café_x`. Cosmetic today because the shipped catalogue is ASCII-only, and the failure mode is a REFUSAL (a miss) rather than a false positive, which is the safe direction. The regex path is unaffected — it does its own folding consistently. Fix: use the same folding function on both sides. Worth doing when the modpack catalogue first carries a non-ASCII display name, which is a question of when rather than whether for a community running localised mods. Verified by the verifier against a 2,000,000-case randomised comparison of the glob matcher against a memoized reference implementation, which found ZERO other mismatches. Diagnosis: editor_verify/wave117.md MINOR-1."]
 owns = ["apps/website/frontend/src/asset_catalog.rs"]
 

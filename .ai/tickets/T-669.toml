@@ -8,7 +8,16 @@ order = 4120
 executor = "claude-code"
 notes = "editor-UI program wave 13 (wave_plan.tsv row 113) — SHIPPED wave 113 (editor factory), 35c2845f; verifier wave113.md. Ctrl+X cut (copy_selection() && delete_selection() — the short-circuit is what stops a failed copy becoming a silent Delete) and Ctrl+Shift+V. CAVEAT: paste-at-original actually lands +20m — see T-743; ACTION-PASTE-ORIG-001 is NOT closed as literally named. Touched eden_help.rs too (dispatcher-extended), so the summary's 'exactly one file' claim is stale."
 depends_on = ["T-661"]
-estimated = ["scope"]
+shipped_at = "7c452868"
+created_at = "2026-08-07T02:44:59Z"
+completed_at = "2026-08-07T02:57:15Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ['Closes `ACTION-CUT-001` and `ACTION-PASTE-ORIG-001`. Hours, not days: two match arms in the editor keydown, read in full at `apps/website/frontend/src/mission_editor.rs`:1019-1031 beside the existing `"KeyC" if modk && !alt && !shift` :1020 and `"KeyV" if modk && !alt && !shift` :1023. BOTH PRIMITIVES ALREADY EXIST — cut is `copy_selection` (editor_ops.rs:394) followed by `delete_selection` :327, and `paste_at_cursor(None, None)` :436 is LITERALLY paste-at-original because the anchor is optional. editor_ops.rs is deliberately NOT claimed: nothing there changes, which makes this one of only three tickets in the program that touch exactly one file.']
 owns = ["apps/website/frontend/src/mission_editor.rs"]
 

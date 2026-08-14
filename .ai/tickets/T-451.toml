@@ -7,7 +7,16 @@ status = "shipped"
 order = 3290
 executor = "claude-code"
 priority = 2
-estimated = ["scope"]
+shipped_at = "3b07de28"
+created_at = "2026-07-27T00:44:33Z"
+completed_at = "2026-07-27T00:46:28Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = [
     "Residual from T-237 / wave 16 adversarial. ticket ship/done now call require_check_ok before status write, but cmd_set_status (and mark_ready etc.) still mutate registry without loading .ai/tickets/schema.json — an operator can force a red registry to a status.",
     "",

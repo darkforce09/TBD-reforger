@@ -7,7 +7,16 @@ status = "shipped"
 order = 3250
 executor = "claude-code"
 priority = 0
-estimated = ["scope"]
+shipped_at = "77214f04"
+created_at = "2026-07-26T19:10:02Z"
+completed_at = "2026-07-26T19:40:22Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = [
     "BLOCKER by the standing rule: a gate that reports success on code it never examined. Found 2026-07-26 during wave 5 when T-244's slice turned `xtask schema map-object-enums` RED and NOTHING in the gate noticed.",
     "",

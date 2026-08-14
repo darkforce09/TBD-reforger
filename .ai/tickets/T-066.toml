@@ -7,7 +7,16 @@ status = "shipped"
 order = 660
 spec = "docs/specs/Mission_Creator_Architecture/t066_worker_compile.md"
 executor = "claude-code"
-estimated = ["scope"]
+shipped_at = "53bc2a8a"
+created_at = "2026-06-25T08:00:15Z"
+completed_at = "2026-06-25T08:00:15Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 1 commit subject(s)"
 
 [scope]
 domain = "website"

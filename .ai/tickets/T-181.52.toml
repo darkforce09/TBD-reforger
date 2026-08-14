@@ -8,7 +8,16 @@ order = 1810
 executor = "claude-code"
 notes = "Log-noise demotion + oracle lane gap. Demote the magazine first-attempt 'mount refused' line from WARNING to INFO (the deterministic-swap design intends it; it reads as a fault). Document cargo:backpack DEGRADED as a mission/kit authoring mismatch, not a mod bug. Separately: scripts/mod/slice-worktree.sh links only crf_framework and vanilla_reference, so slice agents have NO PlayableSelector oracle - it sits outside the repo at ~/Projects/Archive/Reforger_Lobby/PlayableSelector-main. T-181.50 copies its design, so the lane must be linked (design-mirror ONLY - no licence, never copy code)."
 parent = "T-181"
-estimated = ["scope"]
+shipped_at = "e374c27b"
+created_at = "2026-07-25T19:22:16Z"
+completed_at = "2026-07-25T19:35:32Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 owns = ["scripts/mod/** + Gamemode/TBD_LoadoutEquipComponent.c"]
 
 [scope]

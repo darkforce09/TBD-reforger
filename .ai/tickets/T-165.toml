@@ -20,3 +20,11 @@ children = [
     "T-165.9",
     "T-165.10",
 ]
+created_at = "2026-07-17T00:00:00Z"
+completed_at = "2026-07-17T00:00:00Z"
+estimated = [
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "no subject commits; created_at/completed_at id-interpolated between T-164 and T-166 (midpoint, day precision); shipped_at left absent — no subject commits, a SHA is never invented"

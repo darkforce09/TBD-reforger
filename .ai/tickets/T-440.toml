@@ -7,7 +7,16 @@ status = "shipped"
 order = 3279
 executor = "claude-code"
 priority = 2
-estimated = ["scope"]
+shipped_at = "8a9238d6"
+created_at = "2026-07-26T22:52:39Z"
+completed_at = "2026-07-27T04:19:21Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 6 commit subject(s)"
 migration_legacy = [
     "Residual from T-256 / wave 10 adversarial MAJOR. Cold wave gate validates faction-library.sample.json via schema but never runs `make seed` or applies apps/website/api/seeds/faction_library.sql. Deleting the Makefile seed line still greens the cold gate — false authority that T-256's seed wiring was examined.",
     "",

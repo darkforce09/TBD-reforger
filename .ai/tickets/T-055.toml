@@ -7,7 +7,16 @@ status = "shipped"
 order = 550
 spec = "docs/specs/Mission_Creator_Architecture/t055_asset_browser_search.md"
 executor = "claude-code"
-estimated = ["scope"]
+shipped_at = "a264d2b0"
+created_at = "2026-06-22T04:10:24Z"
+completed_at = "2026-06-22T04:12:12Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 
 [scope]
 domain = "website"

@@ -7,7 +7,16 @@ status = "shipped"
 order = 4820
 executor = "claude-code"
 notes = "unblocks in-browser closure of the census XFORM-DEL-001 vehicle-delete lead the review could only settle in source | SHIPPED W202: both catalog Failed arms share a named-cause+Retry view (no-modpack vs request-failed, in-dock 404 probe since the fetch discards the cause in sibling-owned code), grammar chips hidden while failed; Add Vehicle empty-catalog explainer inline (no z exposure); 4 vehicle seed rows applied idempotently (second apply INSERT 0 0). Verifier proved the full flip/restore cycle live incl. Retry-without-reload. T-084 grammar needle updated honestly with a compensating hides-while-failed pin."
-estimated = ["scope"]
+shipped_at = "c4b7e0e6"
+created_at = "2026-08-09T20:44:44Z"
+completed_at = "2026-08-11T02:43:47Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ["UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). F-05/F-21 — VERIFIED: with no current modpack the Factions/Vehicles tabs show one flat line 'Could not load the catalog.' — no cause, no retry, while the search-syntax chips keep rendering above the corpse (registry 404 'no current modpack configured' swallowed). AND the committed dev seed has ZERO vehicle rows (8 characters, 13 gear — GROUP BY confirmed), so Vehicles reads 'No placeable vehicles.' even after a correct seed; ORBAT>Add Vehicle is then a SILENT NO-OP (real click at true coords: Vehicles: 0 unchanged, no picker, no toast — VERIFIED). THE FIX PATTERN ALREADY EXISTS IN-FILE: the Favourites tab ships a Retry arm at eden_dock_right.rs ~:887-928; the main tree's Failed arm (~:1451) renders flat text. FIX: (a) main-tree Failed arm distinguishes 'no modpack configured' vs request-failed, names it, offers Retry (reuse the Favourites pattern), hides search-syntax chips while failed; (b) orbat_manager.rs Add Vehicle with an empty vehicle catalog opens a small explainer ('no placeable vehicles in the active modpack') instead of no-op; (c) apps/website/api/seeds/registry_dev.sql gains 3-5 vehicle rows (category NATO/US_Army/Vehicles, kind vehicle) so dev environments can author vehicles. ⚠️ TRAPS: seed must stay ON CONFLICT DO NOTHING idempotent; do not touch asset_catalog.rs (T-809/T-810 own it later — the error surface lives in the dock file); the search-prefix hint line doubles as filter help when healthy — keep it in the healthy state. ACCEPTANCE: scripted with modpack cleared: panel names the cause + Retry present; after seed re-applied Retry populates the tree without reload; Add Vehicle on empty catalog shows the explainer; after new seed, Add Vehicle inserts a vehicle row (Vehicles: 1) and the census XFORM-DEL-001 lead becomes browser-testable."]
 owns = [
     "apps/website/frontend/src/eden_dock_right.rs",

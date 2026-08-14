@@ -10,6 +10,13 @@ executor = "claude-code"
 notes = "WebGPU VERTEX|STORAGE + draw_indirect tree cull; Class R CPU AABB oracle (1k frusta). WebGL2 keeps chunk draw-set."
 parent = "T-151"
 shipped_at = "ec59d10e"
+created_at = "2026-07-09T18:05:29Z"
+completed_at = "2026-07-09T18:05:29Z"
+estimated = [
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 1 commit subject(s)"
 
 [scope]
 domain = "repo"

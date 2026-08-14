@@ -17,7 +17,14 @@ acceptance = [
     "cargo xtask ticket check --strict prints check OK",
 ]
 shipped_at = "bc670acc"
-estimated = ["scope"]
+created_at = "2026-08-14T03:23:30Z"
+completed_at = "2026-08-14T03:28:01Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ["Populate owns from both wave_plan.tsv files onto every matching ticket (any status), merge the 11 const DEPS edges into ticket depends_on, set pack_last = true on T-290, then delete const DEPS and RUN_LAST so the packer reads ticket depends_on/pack_last/owns. ticket check goes red on queued/ready/running/review Work with empty owns, globbing all T-*.toml including children."]
 owns = [
     ".ai/tickets",

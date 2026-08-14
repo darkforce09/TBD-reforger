@@ -6,7 +6,16 @@ class = "bug"
 status = "shipped"
 order = 3030
 executor = "claude-code"
-estimated = ["scope"]
+shipped_at = "d91d758e"
+created_at = "2026-07-31T02:23:52Z"
+completed_at = "2026-07-31T02:58:53Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = ["POST /fire-missions and GET /events/{id}/fire-missions are orphaned, so every computed solution is lost on reload. The mortar map preview is fixed CSS that never moves with the inputs, and weapon_system is hardcoded while the heading claims to show the returned system. POST /missions/{id}/inject writes a mission.json nothing reads."]
 owns = ["apps/website/frontend/src/mortar.rs"]
 

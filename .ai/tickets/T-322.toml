@@ -8,7 +8,14 @@ order = 3138
 executor = "claude-code"
 priority = 0
 shipped_at = "fe899dca"
-estimated = ["scope"]
+created_at = "2026-07-26T07:07:16Z"
+completed_at = "2026-07-26T07:10:33Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = [
     "PREMISE CORRECTED 2026-07-26 by the slice agent, which DISPROVED the diagnosis this ticket was filed on. Recorded in full because the wrong version was stated confidently to the operator and must not become received wisdom.",
     "",

@@ -7,7 +7,16 @@ status = "shipped"
 order = 3333
 executor = "claude-code"
 priority = 2
-estimated = ["scope"]
+shipped_at = "5c9bd2ca"
+created_at = "2026-07-27T13:51:44Z"
+completed_at = "2026-07-27T13:57:49Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ["Wave 38 residual from T-408. Audit CSV now escape_csv_formula. Live Discord sink is services/webhook.rs title: cap_runes(&a.title) via cms push_to_discord — user title into embed, not formula-escaped. Ticket cited stale cms.rs:64. Cure: sanitize embed fields for formula/control chars or document Discord as non-spreadsheet sink with Class-R."]
 owns = [
     "apps/website/api/src/services/webhook.rs",

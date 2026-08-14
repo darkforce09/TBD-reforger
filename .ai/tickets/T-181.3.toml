@@ -8,6 +8,14 @@ order = 1810
 executor = "claude-code"
 notes = "enf carve + index vanilla + make enf-carve. PARTIAL BY NATURE: only a subset of vanilla script ships uncompressed. Got 610 files / 41,958 LOC / 1,106 declarations (882 SCR_*) — AI/behaviour-tree, camera, actions, UI components, WB plugins. SCR_BaseGameMode / SCR_PossessSpawnData / SCR_PossessSpawnRequestComponent / SCR_RespawnSystemComponent / ChimeraMenuBase are ABSENT as plaintext (compressed) — recorded as known-missing in docs/mod/vanilla_carve_coverage.md, not faked. Output gitignored (BI copyright); only the derived index is committed. Follow-up: inflate compressed pak blocks via PakVfs and re-carve."
 parent = "T-181"
+created_at = "2026-07-25T00:00:00Z"
+completed_at = "2026-07-31T00:00:00Z"
+estimated = [
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "no subject commits; created_at/completed_at from parent T-181 (day precision); shipped_at left absent — no subject commits, a SHA is never invented"
 
 [scope]
 domain = "repo"

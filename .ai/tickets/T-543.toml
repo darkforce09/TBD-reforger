@@ -8,6 +8,15 @@ order = 3383
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 priority = 2
+shipped_at = "201a7c83"
+created_at = "2026-07-27T13:51:15Z"
+completed_at = "2026-07-27T13:57:49Z"
+estimated = [
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = [
     "FOUND by W54 adversarial verifier (CLEAN MINOR-NIT) after T-328.",
     "",

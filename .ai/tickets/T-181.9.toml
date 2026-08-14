@@ -8,6 +8,15 @@ order = 1810
 executor = "claude-code"
 notes = "Slotting authority completed. ClaimSlot already existed (PS-shaped first-come guard). Added: ReleaseSlot (lobby-only change-of-mind; refused once deployed), BuildSlotRoster (per-slot key/faction/group/role/state/holder as TSV — the data T-181.9.1's picker binds to, deliberately plain text so authority is testable from the server log before any widget exists; state = OPEN|HELD|DEAD), and a ONE-LIFE INTEGRITY FIX: ClaimSlot and ReleaseSlot now both refuse a dead player. Without it a dead player could release their slot and claim a fresh one, bypassing one life entirely. Landmine caught by the compile gate in 1.3s: `out` is a RESERVED KEYWORD in Enfusion (out-param modifier) and cannot be a variable name."
 parent = "T-181"
+shipped_at = "f52a9d5e"
+created_at = "2026-07-25T09:02:18Z"
+completed_at = "2026-07-25T09:37:37Z"
+estimated = [
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 
 [scope]
 domain = "repo"

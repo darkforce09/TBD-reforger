@@ -9,7 +9,16 @@ spec = "docs/platform/t165_node_eradication.md"
 executor = "claude-code"
 notes = "Golden S2-S14 + terrain/DEM + glyphs; schema-validate pure cargo."
 parent = "T-165"
-estimated = ["scope"]
+shipped_at = "4eb443c9"
+created_at = "2026-07-17T13:12:44Z"
+completed_at = "2026-07-17T13:51:40Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 6 commit subject(s)"
 
 [scope]
 domain = "repo"

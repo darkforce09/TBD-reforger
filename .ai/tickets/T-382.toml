@@ -7,7 +7,16 @@ status = "shipped"
 order = 3198
 executor = "claude-code"
 priority = 2
-estimated = ["scope"]
+shipped_at = "680cc14e"
+created_at = "2026-07-27T11:43:44Z"
+completed_at = "2026-07-27T11:51:24Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = [
     """mission-editor-payload.schema.json has NO top-level `required`, no `minProperties`, and `editor.slots` is a bare `{"type":"array"}` with no `minItems`. `create_version` requires only that payload be Some and semver non-empty (missions.rs:587), then `validate_payload` passes `{}` clean — the crate's own test pins this as valid at contract/validate.rs:151-156.""",
     "",

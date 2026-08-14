@@ -10,7 +10,14 @@ executor = "claude-code"
 notes = "Smart Forge + per-slot loadout in editor doc/Save/Export. Verify: .ai/artifacts/t068_10_verify_log.md. Mission-embed pulled forward from T-068.11."
 parent = "T-068"
 shipped_at = "3bc0bd24"
-estimated = ["scope"]
+created_at = "2026-07-10T21:24:43Z"
+completed_at = "2026-07-11T01:08:32Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 6 commit subject(s)"
 
 [scope]
 domain = "website"

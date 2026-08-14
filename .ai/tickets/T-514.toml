@@ -7,7 +7,16 @@ status = "shipped"
 order = 3354
 executor = "claude-code"
 priority = 0
-estimated = ["scope"]
+shipped_at = "c9bab506"
+created_at = "2026-07-27T10:00:54Z"
+completed_at = "2026-07-27T10:04:49Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ['Wave 44 verifier MAJOR. save_trims_name_before_serialize uses find("doc.name = doc.name.trim().to_string()") which matches a commented assign before serde_json::to_value. Mutation: replace live trim with // doc.name = doc.name.trim().to_string() + trim-empty check → PASS while payload stays untrimmed. Cure: strip comments from save body before find, or require an uncommented assign precedes to_value. Bait mutation must RED; live trim must green.']
 owns = ["apps/website/frontend/src/faction_manager.rs"]
 

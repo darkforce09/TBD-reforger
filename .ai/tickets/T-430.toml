@@ -7,7 +7,16 @@ status = "shipped"
 order = 3269
 executor = "claude-code"
 priority = 3
-estimated = ["scope"]
+shipped_at = "99fe9881"
+created_at = "2026-07-26T21:26:46Z"
+completed_at = "2026-07-27T04:36:24Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = [
     "Follow-on from T-248 (wave 6). validate() now requires DISCORD_CLIENT_SECRET + DISCORD_REDIRECT_URL in non-development, but DISCORD_CLIENT_ID may still be blank. Blank client_id already surfaces as oauth_unconfigured at authorize_url (not discord_unreachable), so this is residual completeness not a reopen of the disguise bug.",
     "",

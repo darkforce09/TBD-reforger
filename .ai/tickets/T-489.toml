@@ -7,7 +7,16 @@ status = "shipped"
 order = 3328
 executor = "claude-code"
 priority = 1
-estimated = ["scope"]
+shipped_at = "ac660067"
+created_at = "2026-07-27T05:31:25Z"
+completed_at = "2026-07-27T05:32:04Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = [
     'Wave 34 adversarial MAJOR. T-486 added verify-t468 to bash_pins inside scripts/mod/verify-t468-ci-schema-parity.sh, but ci.yml and Makefile ci-local invoke `make verify-t468`. Hollow `verify-t468:\n\t@true` (or `@true # bash …`) greens make / CI / ci-local because the tripwire never runs; only direct bash (wave.sh cold gate) FAILs.',
     "",

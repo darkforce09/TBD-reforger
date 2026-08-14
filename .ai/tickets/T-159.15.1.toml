@@ -9,6 +9,13 @@ executor = "claude-code"
 notes = "Damage-driven rAF + wheel + resize. Fix=disable_frame_timing (GpuTimer double-map on Dawn), not poll(). Verify: .ai/artifacts/t159_15_1_verify_log.md"
 parent = "T-159"
 shipped_at = "a425936d"
+created_at = "2026-07-15T18:47:59Z"
+completed_at = "2026-07-15T20:34:34Z"
+estimated = [
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 
 [scope]
 domain = "repo"

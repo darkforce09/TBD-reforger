@@ -7,7 +7,16 @@ status = "shipped"
 order = 3461
 executor = "claude-code"
 priority = 1
-estimated = ["scope"]
+shipped_at = "bed4f269"
+created_at = "2026-07-31T14:46:15Z"
+completed_at = "2026-07-31T15:04:08Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
 migration_legacy = [
     "**THESE MUST LAND TOGETHER.** T-583 shipped `make map-reclassify` and specified the gate step, but the",
     "step was DELIBERATELY NOT WIRED because the tree is in drift TODAY -- wiring it alone would turn every",

@@ -6,8 +6,16 @@ class = "bug"
 status = "shipped"
 order = 2470
 executor = "claude-code"
-shipped_at = "2026-07-26"
-estimated = ["scope"]
+shipped_at = "bf659fb4"
+created_at = "2026-07-26T13:16:35Z"
+completed_at = "2026-07-26T00:00:00Z"
+estimated = [
+    "scope",
+    "completed_at",
+    "created_at",
+    "shipped_at",
+]
+estimate_note = "completed_at from stray date-shaped shipped_at 2026-07-26; created_at/shipped_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = [
     "telemetry.rs:243-247 skips a player whose arma_id does not resolve, still inserts the row with a null discord_id and reports only the submitted count. leaderboard_totals filters on non-null discord_id so those rows are permanently invisible, and because the upsert key includes arma_id, linking later does not backfill.",
     "",

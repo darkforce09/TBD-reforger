@@ -9,6 +9,13 @@ spec = "docs/specs/Mission_Creator_Architecture/t091_0_dem_tile_export.md"
 executor = "claude-code"
 parent = "T-091"
 shipped_at = "6d96339"
+created_at = "2026-06-27T17:28:49Z"
+completed_at = "2026-06-29T14:36:15Z"
+estimated = [
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 
 [scope]
 domain = "repo"

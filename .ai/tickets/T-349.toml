@@ -8,7 +8,14 @@ order = 3165
 executor = "claude-code"
 priority = 1
 shipped_at = "2c1021a5"
-estimated = ["scope"]
+created_at = "2026-07-26T10:20:02Z"
+completed_at = "2026-07-26T10:33:37Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = [
     "Two gaps from T-343's sweep that are notable for being unguarded rather than mis-guarded.",
     "",

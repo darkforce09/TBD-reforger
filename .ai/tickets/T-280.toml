@@ -7,6 +7,15 @@ status = "shipped"
 order = 2980
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
+shipped_at = "e9728516"
+created_at = "2026-07-31T00:22:37Z"
+completed_at = "2026-07-31T00:33:52Z"
+estimated = [
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 owns = [
     "apps/website/api/src/app.rs",
     "apps/website/api/Cargo.toml",

@@ -7,7 +7,16 @@ status = "shipped"
 order = 3732
 executor = "claude-code"
 priority = 3
-estimated = ["scope"]
+shipped_at = "117784dc"
+created_at = "2026-08-01T03:32:33Z"
+completed_at = "2026-08-01T03:32:33Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 1 commit subject(s)"
 migration_legacy = [
     "FOUND by wave 81's adversarial verifier; fixed the same wave. **The signature defect in prose** --",
     "the one form of it this program never systematically hunted.",

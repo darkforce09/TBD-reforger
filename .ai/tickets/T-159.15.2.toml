@@ -10,7 +10,14 @@ executor = "claude-code"
 notes = "MMB/RMB pan + wheel rebase; smoke_pan_editor Class R. Verify: .ai/artifacts/t159_15_2_verify_log.md"
 parent = "T-159"
 shipped_at = "ebcabe1d"
-estimated = ["scope"]
+created_at = "2026-07-15T20:37:09Z"
+completed_at = "2026-07-15T21:11:39Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 5 commit subject(s)"
 
 [scope]
 domain = "website"

@@ -7,7 +7,16 @@ status = "shipped"
 order = 3319
 executor = "claude-code"
 priority = 2
-estimated = ["scope"]
+shipped_at = "4a79816f"
+created_at = "2026-07-27T04:43:56Z"
+completed_at = "2026-07-27T04:50:41Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = [
     'Wave 30 adversarial verifier (T-429): assert_oauth_state_cleared in apps/website/api/tests/oauth_redirect.rs uses contains("Path=/") / contains("Max-Age=0") soft checks, not equality to OAUTH_STATE_CLEAR (handlers/oauth.rs). A clear cookie with Path=/api or Max-Age=00 still passes.',
     "",

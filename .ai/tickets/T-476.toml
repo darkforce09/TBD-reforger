@@ -7,7 +7,16 @@ status = "shipped"
 order = 3315
 executor = "claude-code"
 priority = 2
-estimated = ["scope"]
+shipped_at = "c2e009a3"
+created_at = "2026-07-27T03:52:19Z"
+completed_at = "2026-07-27T05:03:53Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 6 commit subject(s)"
 migration_legacy = [
     "NIT from wave 28 adversarial. T-467 wired real bash recipes into Makefile + ci-local + ci.yml, but there is no T-471/T-472-style recipe-body tripwire — a future hollow `@true` / `echo PASS` / `#fake` recipe would green until noticed.",
     "",

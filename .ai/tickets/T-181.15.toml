@@ -8,6 +8,15 @@ order = 1810
 executor = "claude-code"
 notes = "JIP / reconnect hardened. Requirement 1 was ALREADY implemented — this made it survivable. THE REAL HAZARD WAS THE CALLQUEUE, which no prior audit had touched: five deferred callbacks carried a raw playerId across disconnect, and ScriptCallQueue.Remove cancels by FUNCTION so one player's timer cannot be cancelled alone. Worst case measured: RedeployAfterDeath would DEPLOY a fresh joiner into a dead player's slot. Closed with a lazily-opened connection epoch (lazy because vanilla only self-audits Listen && playerId>1, so a listen host's player 1 may never hit the join hook and stamping 0 would make its retry ladder permanently inert). Every int-keyed per-player map was audited and found SAFE — all erased on disconnect. The player:<id> residual was WORSE than recorded: it leaked the seat AND the life, so a recycled id arrived DEAD. Closed by splitting IsIdentityKey (backend or synthesized) from IsDurableKey (backend only) — having only one predicate is what caused it. JIP DECISION: deploy at any stage LOBBY..LIVE, because a player who crashed before deploying is INDISTINGUISHABLE at the join hook from a walk-up latecomer, so a 'too late' rule cannot be written that does not also strand the crash. One-life guard still protects the invariant. OPERATOR CAVEAT: in keyMode=NUMERIC a reconnector gets a SECOND seat, so CountClaimedForFaction over-counts — another reason a dedicated server with real identities is required for an event. COMPILE-VERIFIED ONLY: every behavioural claim needs a dedicated server + 2 clients; PIE cannot exercise any of it. Also unanswerable from this lane: whether SCR_ReconnectComponent is on GameMode_Plain.et (a prefab question) — the code is correct either way."
 parent = "T-181"
+shipped_at = "5fe349ec"
+created_at = "2026-07-25T11:14:56Z"
+completed_at = "2026-07-25T11:25:22Z"
+estimated = [
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 owns = ["TBD_SpawnManager.c"]
 
 [scope]

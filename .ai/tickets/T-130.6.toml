@@ -9,7 +9,14 @@ spec = "docs/platform/t130_fable_audit_remainder.md"
 executor = "claude-code"
 parent = "T-130"
 shipped_at = "c8b2fd6e"
-estimated = ["scope"]
+created_at = "2026-07-02T22:13:47Z"
+completed_at = "2026-07-02T22:13:47Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 1 commit subject(s)"
 
 [scope]
 domain = "website"

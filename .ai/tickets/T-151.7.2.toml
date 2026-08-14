@@ -10,6 +10,13 @@ executor = "claude-code"
 notes = "Residual tint + zoom SoT; wheel restore @ 69ca1c08. Spec shared with 7.1 corrective lane."
 parent = "T-151"
 shipped_at = "64c64d98"
+created_at = "2026-07-09T16:54:57Z"
+completed_at = "2026-07-09T16:57:47Z"
+estimated = [
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 2 commit subject(s)"
 
 [scope]
 domain = "repo"

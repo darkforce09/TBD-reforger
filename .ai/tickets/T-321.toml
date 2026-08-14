@@ -8,7 +8,14 @@ order = 3137
 executor = "claude-code"
 priority = 1
 shipped_at = "f33ef5c1"
-estimated = ["scope"]
+created_at = "2026-07-26T06:53:07Z"
+completed_at = "2026-07-26T06:57:39Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 6 commit subject(s)"
 migration_legacy = [
     "FOUND by T-308 while fixing Apply Template; reported, not touched (out of its owns). place_orbat.rs:52-55 mints a NEW squad on every single placement. That is why '>1 squad under a side' — which T-217's guard treats as authored structure worth refusing over — is actually the normal state after two clicks. T-308 worked around it by folding machine-minted squads (one slot, still on the default `Squad {n}` label, no callsign, no vehicles) into the apply target, which is correct as far as it goes but is a workaround.",
     "",

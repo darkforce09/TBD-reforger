@@ -10,7 +10,14 @@ executor = "claude-code"
 notes = "SHIPPED @ 4fb156b7 (tag T-068.15.2). Capacity badge + cargo editor + seed. Verify: .ai/artifacts/t068_15_2_verify_log.md"
 parent = "T-068"
 shipped_at = "4fb156b7"
-estimated = ["scope"]
+created_at = "2026-07-24T13:32:31Z"
+completed_at = "2026-07-24T13:32:31Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 1 commit subject(s)"
 
 [scope]
 domain = "website"

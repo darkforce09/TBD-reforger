@@ -9,7 +9,16 @@ spec = "docs/platform/t175_mc_interaction_lod_perf.md"
 executor = "claude-code"
 depends_on = ["T-174"]
 user_story = "As a mission maker I see a loading bar while the editor boots, pan/zoom without stutter, see trees unpack and forest settle promptly, read contours, place/drag with live previews, and get correct slot positions on first load."
-estimated = ["scope"]
+shipped_at = "b90deac8"
+created_at = "2026-07-18T21:25:25Z"
+completed_at = "2026-07-18T21:25:25Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 1 commit subject(s)"
 migration_legacy = ["SHIPPED @ tag T-175 / b90deac8. A1 sticky trees (empty clear all roles + lane_off); A2 concurrent forest fetch; A3 contours [188,150,100,235]; A4–A5 floor-aware glyph memo; B1 cold-slot rebind; B2 SlotPlacePreview; B3 damage.mark drag delta; B4 O(delta) tint; B5 BootPhase overlay; hunt H1–H6. Verify: .ai/artifacts/t175_verify_log.md. Hub: docs/platform/t175_mc_interaction_lod_perf.md."]
 
 [scope]

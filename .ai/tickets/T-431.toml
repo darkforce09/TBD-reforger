@@ -7,7 +7,16 @@ status = "shipped"
 order = 3270
 executor = "claude-code"
 priority = 2
-estimated = ["scope"]
+shipped_at = "027c669c"
+created_at = "2026-07-26T21:46:55Z"
+completed_at = "2026-07-27T04:28:59Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 7 commit subject(s)"
 migration_legacy = [
     "MAJOR residual from T-230 (wave 7). Match ingest now scopes attendance via matches.(event_id, mission_id), but apps/website/api/src/handlers/me.rs BACKFILL_ATTENDANCE (≈59–65) still UPDATEs all event_missions for any event_id found on the player's matches — no mission_id join.",
     "",

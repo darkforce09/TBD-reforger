@@ -10,6 +10,13 @@ executor = "claude-code"
 notes = "DollEngine: first 3D pass in the wgpu engine (perspective camera via glmat4 perspective_no, Depth32Float, instanced cube/cylinder soldier, Rust ray picking, damage-driven render, byte-exact doll self-check w/ depth kill-shot). SoldierModel3D replaces the SVG doll in ArsenalTab (SVG = engine-create fallback). Contract: core REGION_KEYS == frontend RAIL_REGIONS (vitest+cargo pinned). SHIPPED @ a65529b3 (tag T-154.0). GPU harness 9/9 incl. doll on SwiftShader."
 parent = "T-154"
 shipped_at = "a65529b3"
+created_at = "2026-07-13T07:11:19Z"
+completed_at = "2026-07-13T07:11:52Z"
+estimated = [
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 2 commit subject(s)"
 
 [scope]
 domain = "repo"

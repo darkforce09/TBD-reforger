@@ -7,7 +7,16 @@ status = "shipped"
 order = 3157
 executor = "claude-code"
 priority = 2
-estimated = ["scope"]
+shipped_at = "ee28bd88"
+created_at = "2026-07-27T11:43:44Z"
+completed_at = "2026-07-27T11:57:11Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = [
     "FOUND by T-329 while fixing the sibling bug. The irony is the point: deployments.rs:103 is what every other read site was told to copy, and two other statements in the same file are the defects it was supposed to model against.",
     "",

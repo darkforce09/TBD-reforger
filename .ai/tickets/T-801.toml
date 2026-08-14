@@ -7,7 +7,16 @@ status = "shipped"
 order = 4830
 executor = "claude-code"
 notes = "mechanism note from census GPU-preview design; mid-drag screenshot method in review O-7 | SHIPPED W208: pack_squad_link_drag_preview offsets affected endpoints with sprite dx/dy; push/clear_drag_preview bind SQUAD_LINKS; Class-R packer pins perturbation-proven. Live mid-drag 4px CDP + rf<=1ms left to eye-pass (slice disclosed). MissionConnections hairline still doc_tick-only (outside owns)."
-estimated = ["scope"]
+shipped_at = "a45b8567"
+created_at = "2026-08-11T01:58:26Z"
+completed_at = "2026-08-11T02:36:28Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ["UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). O-7 — operator-observed, mechanism CONFIRMED IN DESIGN: during a drag the engine moves sprites via the GPU preview (select_tool.rs ~:258-306 preview repacks slot+vehicle instances only) and the squad/tether lines (crates/map-engine-core/src/slot_line.rs, squad_links.rs) rebuild only on the one-txn commit — so lines necessarily point at the stale position until mouseup. The review could not reproduce it cleanly by instrument (drags kept marquee-ing) but the architecture guarantees the operator's observation. FIX: include tether/line endpoints in the preview pass — when a dragged id participates in a line, preview the affected endpoints with the same transform the sprite preview uses; commit path unchanged. ⚠️ TRAPS: preview must stay allocation-light (the per-frame budget argument that shaped T-057/preview design); only AFFECTED lines re-pack, not the whole set; multi-select drags move several endpoints of one line — both ends preview. ACCEPTANCE: scripted — mid-drag screenshot (button held): line endpoint within 4px of the dragged sprite centre (pixel probe), for single-drag and 2-selected-drag; after release, committed line matches; FPS/rf delta during a 9-slot drag <= 1ms median vs baseline."]
 owns = [
     "apps/website/frontend/src/select_tool.rs",

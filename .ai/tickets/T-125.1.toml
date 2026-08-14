@@ -9,6 +9,13 @@ spec = "docs/platform/t125_coding_standards_enforcement.md"
 executor = "claude-code"
 parent = "T-125"
 shipped_at = "9792182"
+created_at = "2026-06-29T23:04:50Z"
+completed_at = "2026-06-29T23:04:50Z"
+estimated = [
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 1 commit subject(s)"
 
 [scope]
 domain = "repo"

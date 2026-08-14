@@ -7,7 +7,14 @@ status = "shipped"
 order = 2500
 executor = "claude-code"
 shipped_at = "5954bd76"
-estimated = ["scope"]
+created_at = "2026-07-26T07:23:33Z"
+completed_at = "2026-07-27T13:57:00Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 5 commit subject(s)"
 migration_legacy = [
     "The content-golden-gated branches are not untested code, they are absent — each is a literal ().into_any(): announcements.rs:67, events.rs:63,72, audit.rs:68,72, deployments.rs:163,189, dashboard.rs:341. Three also have an unconditionally empty detail pane with no selection state.",
     "",

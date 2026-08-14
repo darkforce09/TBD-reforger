@@ -8,7 +8,14 @@ order = 3136
 executor = "claude-code"
 priority = 0
 shipped_at = "ccbcda8b"
-estimated = ["scope"]
+created_at = "2026-07-26T07:37:28Z"
+completed_at = "2026-07-26T07:41:56Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = [
     "PROVEN PRE-EXISTING by T-221 via A/B, not inferred. `gate smoke persist`, `gate doctor` and `render-check` against /missions/smoke/edit all fail with Page.loadEventFired / Runtime.evaluate timeouts. T-221 checked out HEAD~1's yrs_persist.rs, rebuilt, and the baseline dist wedges IDENTICALLY — so this is not that slice's doing. Also unchanged by serving map assets, by debug vs release dist, and by chromium-1223 vs 1228. The non-editor route / loads and evaluates fine, so CDP itself works; it is specific to the editor page. `gate doctor` reports FAIL on liveness with zero strays and 20 GB free, so its own diagnosis is not the answer either.",
     "",

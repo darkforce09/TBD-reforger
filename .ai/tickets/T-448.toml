@@ -7,7 +7,16 @@ status = "shipped"
 order = 3287
 executor = "claude-code"
 priority = 2
-estimated = ["scope"]
+shipped_at = "3a66678d"
+created_at = "2026-07-27T01:26:29Z"
+completed_at = "2026-07-27T01:45:08Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = [
     "Residual from T-268 / wave 14. Dossier Deployments cell stays em-dash because RosterRow/AdminUserRow omit total_deployments. Not a fake count — honest empty — but ticket summary asked for the hardcoded stat.",
     "",

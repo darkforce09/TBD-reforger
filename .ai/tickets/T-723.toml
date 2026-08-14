@@ -7,7 +7,16 @@ status = "shipped"
 order = 4316
 executor = "claude-code"
 notes = "filed by wave-106 adversarial verifier (editor factory); root-cause grouped"
-estimated = ["scope"]
+shipped_at = "d9ec83e9"
+created_at = "2026-08-08T03:18:15Z"
+completed_at = "2026-08-08T16:29:34Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ["Wave-106 verifier MAJORs 1-3 share one root in mission_editor.rs's armed place branch: it consumes EVERY pointerup regardless of button and cleans up no gesture state. Consequences, each proven: (1) click-then-click does not exist end-to-end — a dock leaf's arming click cancels itself on release (arm-then-cancel over the dock), and the picker row's release lands over the canvas placing at the PICKER ROW's screen position (AssetPickerState.wx/wy never read); (2) canvas pointerdown while armed still writes LG::Pending which the armed pointerup never takes — every Ctrl multi-place stamp strands one, and the next bare mouse move promotes it into a button-less phantom Move that commits on ANY next pointerup (RMB context menu teleports the entity just placed); the T-159.22 invariant comment ':1940 left/pan_px are both None here' is now FALSE and still standing; (3) MMB while armed places instead of panning and leaves pan_px + camera-gesture latched (phantom pan after disarm); RMB while armed places then opens the menu (Eden cancels); there is NO Esc disarm (cancel_pending unreachable from keyboard). Fix as one design: armed branch filters to button 0, takes/clears LG::Pending, RMB/Esc disarm, picker placement reads wx/wy or arms for a genuine second click. Regression tests must be event-SEQUENCE tests, not source pins — the pins could not see any of this. Diagnosis: editor_verify/wave106.md MAJOR-1/2/3. WIDENED wave 108: (4) T-650's composition rows advertise 'Click to arm, then click the map to place' — the only dock surface promising the flow this ticket's root breaks (arm-then-cancel in one click); fixing the root makes the tooltip true, else the tooltip must change (wave108.md MAJOR-1). (5) T-642's ruler avoids the branch commit-side only: armed place + ruler click strands a stale LG::Ruler that later commits a phantom vertex on a same-spot RMB release (wave108.md MINOR-1). (6th payload, wave109 MINOR-5: under LoS the stale gesture mints a phantom observer/target — wrong verdict panel; every trigger-draw click under a measure tool strands one.)"]
 owns = [
     "apps/website/frontend/src/select_tool.rs",

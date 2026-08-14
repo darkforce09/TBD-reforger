@@ -9,7 +9,16 @@ spec = "docs/platform/t165_node_eradication.md"
 executor = "claude-code"
 notes = "World-export pipeline + E6 content-proven re-encode migration."
 parent = "T-165"
-estimated = ["scope"]
+shipped_at = "50a452e0"
+created_at = "2026-07-17T16:39:18Z"
+completed_at = "2026-07-17T16:39:18Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 1 commit subject(s)"
 
 [scope]
 domain = "repo"

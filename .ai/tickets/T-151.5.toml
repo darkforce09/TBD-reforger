@@ -9,6 +9,13 @@ spec = "docs/specs/Mission_Creator_Architecture/t151_5_glyph_atlas.md"
 executor = "claude-code"
 parent = "T-151"
 shipped_at = "0b7621ed"
+created_at = "2026-07-09T13:54:50Z"
+completed_at = "2026-07-09T14:30:04Z"
+estimated = [
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 
 [scope]
 domain = "repo"

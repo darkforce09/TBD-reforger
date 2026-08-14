@@ -7,7 +7,14 @@ status = "shipped"
 order = 2430
 executor = "claude-code"
 shipped_at = "slice/T-225"
-estimated = ["scope"]
+created_at = "2026-07-26T06:09:21Z"
+completed_at = "2026-07-26T06:11:50Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ["EventStatus has six values but the only writer is the caller-less PATCH /events/{id}, with no transition validation. Nothing auto-transitions on start_time, on results ingest or on any timer — the API's only background tasks are token purge and the audit poller. Registration therefore stays open forever after an op ends."]
 owns = ["apps/website/api/src/handlers/events.rs"]
 

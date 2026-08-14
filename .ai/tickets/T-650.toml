@@ -8,7 +8,16 @@ order = 4010
 executor = "claude-code"
 notes = "editor-UI program wave 8 (wave_plan.tsv row 108) — SHIPPED wave 108 (editor factory), slice f7b81252; verifier wave108.md (click-then-click affordance rides the T-723-broken machine — MAJOR routed to T-723; doc-side routing recorded for operator)"
 depends_on = ["T-661"]
-estimated = ["scope"]
+shipped_at = "4cc732ab"
+created_at = "2026-08-02T06:01:22Z"
+completed_at = "2026-08-02T06:02:52Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["""MERGES T-078 (cancelled in favour of this row). Closes `COMP-SAVE-001`, `COMP-EDIT-001`, `COMP-PLACE-001`, `RIGHT-MODE-002` and the three metadata fields `ATTR-FIELD-COMP-TITLE` / `-AUTHOR` / `-CATEGORY`. Steam Workshop compositions (`COMP-WORKSHOP-001`, `COMP-SUBSCRIBE-001`) stay deferred — no equivalent exists. High corpus value: compositions are FNF v4's #1 strength, WOG ships 28 group presets, and Eden's F2 tab is Compositions, one of six top-level asset tabs. SCOPE AGAINST T-180 FIRST — CLAUDE.md records T-180 as already shipping "templates/vehicles", so part of this may exist. Code: `RIGHT-MODE-002` is a new palette mode — PaletteKind (eden_chrome.rs:1833) has only Character / Vehicle / Object with arms :1944-1950, tab strip :3041-3046, all now in post-split eden_dock_right.rs; save-selection is a read plus a write and place is a multi-slot paste, so `copy_selection` (editor_ops.rs:394) / `paste_at_cursor` :436 are the shapes to reuse. OPEN QUESTION, unresolved and load-bearing: WHERE COMPOSITIONS ARE STORED. Zero repo-wide hits for `save_composition` / `user_composition` / `custom_composition`; the only `composition` occurrences in the frontend are asset_catalog.rs:345-844, a path-string classifier that CONSUMES Bohemia's compositions. A title, a server-assigned author and a category are user-scoped rows, not mission-document state — if the operator accepts that framing this ticket drops `crates/map-engine-core/src/doc/store.rs` and gains NEW apps/website/api/src/handlers/compositions.rs + a migration + models/mod.rs + dto.rs, which is still `claude-code` (the Rust workspace, not packages/ or apps/mod/) and packs better. Re-open the owns row if that call is made."""]
 owns = [
     "apps/website/frontend/src/eden_dock_right.rs",

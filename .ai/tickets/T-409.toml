@@ -7,7 +7,16 @@ status = "shipped"
 order = 3230
 executor = "claude-code"
 priority = 1
-estimated = ["scope"]
+shipped_at = "f5cf4c90"
+created_at = "2026-07-26T21:30:13Z"
+completed_at = "2026-07-26T21:32:40Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = [
     "Found by wave 3's adversarial verifier against merged main. T-406 correctly closed the gate's ways of passing code it never examined, but three of the new HARD FAILS refuse work that is genuinely fine. Inverse of the signature defect: not a false green, a false red. A gate that refuses legitimate slices blocks every subsequent wave and teaches agents that gate failures are noise.",
     "",

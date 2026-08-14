@@ -8,6 +8,15 @@ order = 2690
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 depends_on = ["T-209"]
+shipped_at = "22bc2fe5"
+created_at = "2026-07-26T22:14:10Z"
+completed_at = "2026-07-26T22:33:08Z"
+estimated = [
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 owns = [
     "scripts/deploy/deploy-website.sh",
     "apps/website/Dockerfile",

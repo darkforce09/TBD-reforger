@@ -9,6 +9,13 @@ spec = "docs/specs/Mission_Creator_Architecture/t090_1_2_5_1_water_mask_refine.m
 executor = "claude-code"
 parent = "T-090"
 shipped_at = "82488c6f"
+created_at = "2026-07-03T11:56:26Z"
+completed_at = "2026-07-03T12:34:27Z"
+estimated = [
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 
 [scope]
 domain = "repo"

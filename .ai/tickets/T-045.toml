@@ -6,7 +6,16 @@ class = "docs"
 status = "shipped"
 order = 450
 executor = "cursor-docs"
-estimated = ["scope"]
+shipped_at = "514a0be3"
+created_at = "2026-06-21T03:51:53Z"
+completed_at = "2026-06-21T03:54:23Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 
 [scope]
 domain = "website"

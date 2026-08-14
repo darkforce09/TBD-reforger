@@ -8,6 +8,15 @@ order = 3662
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 priority = 3
+shipped_at = "3555e193"
+created_at = "2026-07-31T23:34:49Z"
+completed_at = "2026-07-31T23:34:49Z"
+estimated = [
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 1 commit subject(s)"
 migration_legacy = [
     "FOUND by wave 78's adversarial verifier -- the cross-slice class that wave 77 also shipped (T-604's",
     "detector quoted a Print T-605 reworded).",

@@ -8,7 +8,14 @@ order = 3184
 executor = "claude-code"
 priority = 2
 shipped_at = "d92ea44d"
-estimated = ["scope"]
+created_at = "2026-07-26T11:09:37Z"
+completed_at = "2026-07-26T11:34:09Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 5 commit subject(s)"
 migration_legacy = [
     "FOUND by the adversarial verifier while checking T-346's blast radius, and it reframes that ticket.",
     "`PUT /missions/:id/armory` has **ZERO frontend callers** — repo-wide the only callers are tests/missions.rs, tests/null_tolerance.rs and docs. Live `mission_armories` holds **zero rows**.",

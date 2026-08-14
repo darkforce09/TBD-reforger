@@ -8,7 +8,16 @@ order = 4100
 executor = "claude-code"
 notes = "editor-UI program wave 11 (wave_plan.tsv row 111) — SHIPPED wave 111 (editor factory), abfaebbf; verifier wave111.md"
 depends_on = ["T-661"]
-estimated = ["scope"]
+shipped_at = "3e067fe6"
+created_at = "2026-08-02T09:17:25Z"
+completed_at = "2026-08-02T09:29:47Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["The single highest-yield borrow in the 3den Enhanced catalogue, and what mission makers actually use all day. Placement Tools apply a pattern LIVE to the current selection: Circular / Line / Grid / Fill Area (scatter). Plus 6 align commands, 3 space-equally commands, 6 orient commands, and drag-to-garrison (drop a group on a building and it occupies firing positions). Not in the Eden gap table — it is 3den Enhanced's own addition. Code: every helper is a batched multi-slot transform and the existing batched mutators are in editor_ops.rs (`attrs_update_position` :667, `move_vehicles` :1877, `copy_selection` :394, `paste_at_cursor` :436); entry points go in the menu descriptor table `MENUS` (eden_chrome.rs:112-166, now eden_top_strip.rs); the pure pattern math goes in a NEW `apps/website/frontend/src/place_helpers.rs` (module name INFERRED, testable without a DOM; wave 0 pre-declares the stub). REQUIRED RULE, added from the corpus: bulk operations on a selection MUST CONFIRM and MUST BE UNDOABLE — undo grouping is an editor_ops concern. WOG's own tools invert this and neither of their destructive bulk ops is wrapped in undo. Drag-to-garrison needs building footprints from `crates/map-engine-core/src/world/obb.rs` (243 lines); INFERRED read-only and NOT claimed — if it turns out to need writing, that is a scope discovery worth its own row rather than a silent widening."]
 owns = [
     "apps/website/frontend/src/editor_ops.rs",

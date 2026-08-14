@@ -7,7 +7,16 @@ status = "shipped"
 order = 3346
 executor = "claude-code"
 priority = 1
-estimated = ["scope"]
+shipped_at = "a146a313"
+created_at = "2026-07-27T09:02:27Z"
+completed_at = "2026-07-27T09:53:48Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ['Wave 42 residual (CLEAN MINOR). require_role_played is called in ingest_match_results (telemetry.rs ~688 and ~722). Unit tests blank_role_played_is_rejected / non_blank_role_played_ok only exercise the helper. RED: delete both ingest call sites → those tests still PASS. No include_str call-site pin; no HTTP IT asserting "role_played must not be blank". Live ship is correct; cure: Class-R pin that both call sites invoke require_role_played and/or HTTP IT for blank role_played → 400.']
 owns = ["apps/website/api/src/handlers/telemetry.rs"]
 

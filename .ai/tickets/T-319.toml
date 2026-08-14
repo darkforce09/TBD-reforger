@@ -8,7 +8,14 @@ order = 3135
 executor = "claude-code"
 priority = 2
 shipped_at = "538b9ad4"
-estimated = ["scope"]
+created_at = "2026-07-26T06:51:12Z"
+completed_at = "2026-07-26T07:04:54Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = [
     "FOUND by T-218's sweep — the low-severity tail, grouped because they are one-line fixes in the same shape.",
     "  handlers/wiki.rs:66,70 — `icon` and `nav_order` are unguarded while their siblings ARE guarded at :84. A PATCH omitting nav_order writes 0 and silently reshuffles the whole SOP navigation.",

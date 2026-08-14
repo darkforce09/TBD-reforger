@@ -9,6 +9,15 @@ spec = "docs/specs/Mission_Creator_Architecture/t152_22_e2e_regate_operator.md"
 executor = "human"
 notes = "Shipped 2026-07-14 — operator GO (bulk O1–O12 PASS; screenshot pack + extended master re-suite waived with dated quotes). Verify t152_22_verify_log.md. Merge ticket/T-152 → main next."
 parent = "T-152"
+shipped_at = "34d29b5f"
+created_at = "2026-07-14T00:01:38Z"
+completed_at = "2026-07-14T00:01:38Z"
+estimated = [
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 1 commit subject(s)"
 
 [scope]
 domain = "repo"

@@ -9,7 +9,14 @@ spec = "docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.m
 executor = "claude-code"
 parent = "T-090"
 shipped_at = "04b60857"
-estimated = ["scope"]
+created_at = "2026-07-05T11:59:28Z"
+completed_at = "2026-07-05T11:59:28Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 1 commit subject(s)"
 
 [scope]
 domain = "website"

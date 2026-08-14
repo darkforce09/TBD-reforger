@@ -7,7 +7,16 @@ status = "shipped"
 order = 3332
 executor = "claude-code"
 priority = 2
-estimated = ["scope"]
+shipped_at = "3351120e"
+created_at = "2026-07-27T13:17:00Z"
+completed_at = "2026-07-27T13:23:21Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 owns = ["apps/website/api/src/handlers/missions.rs"]
 
 [scope]

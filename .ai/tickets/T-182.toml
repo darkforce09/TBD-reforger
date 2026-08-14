@@ -7,7 +7,14 @@ status = "shipped"
 order = 2000
 executor = "claude-code"
 shipped_at = "0bdfc096"
-estimated = ["scope"]
+created_at = "2026-07-25T23:58:55Z"
+completed_at = "2026-07-26T00:14:45Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ['Arsenal silently drops three of four weapon slots at compile. mod_slot_loadout (crates/map-engine-core/src/mission/flatten.rs:397-410) reads only slotIndex==0 && slotType=="primary". Launcher, handgun and throwable are authorable, persisted and discarded — ModSlotGear (flatten.rs:67-88) has no fields for them. The player spawns without them with no warning. SCOPE LOCKED 2026-07-26: fix ONLY the three missing weapon slots. DO NOT touch the armoredVest||vest collapse — mission.schema.json:91 states armoredVest is deliberately NOT a key because it shares the vest container (T-181.34). Reversing that is an operator decision and it has been declined.']
 owns = [
     "packages/tbd-schema/schema/mission.schema.json",

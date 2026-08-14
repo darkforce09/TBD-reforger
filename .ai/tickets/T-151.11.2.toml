@@ -9,6 +9,13 @@ executor = "claude-code"
 notes = "Camera bounds, prod hygiene (DEV HUD/spike), dead-code sweep + corrections"
 parent = "T-151"
 shipped_at = "b78205c0"
+created_at = "2026-07-10T01:28:40Z"
+completed_at = "2026-07-10T01:28:40Z"
+estimated = [
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 1 commit subject(s)"
 
 [scope]
 domain = "repo"

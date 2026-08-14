@@ -13,4 +13,7 @@ children = [
     "T-913.2",
 ]
 shipped_at = "efcff4e5"
+created_at = "2026-08-14T02:55:22Z"
 completed_at = "2026-08-14T05:21:53Z"
+estimated = ["created_at"]
+estimate_note = "created_at git_subject-mined from 1 commit subject(s)"

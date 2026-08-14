@@ -8,7 +8,14 @@ order = 3162
 executor = "claude-code"
 priority = 0
 shipped_at = "59c0beba"
-estimated = ["scope"]
+created_at = "2026-07-26T08:10:24Z"
+completed_at = "2026-07-26T11:34:09Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 6 commit subject(s)"
 migration_legacy = [
     "HIGHEST-SEVERITY find of T-343's sweep, and the one to do first.",
     "",

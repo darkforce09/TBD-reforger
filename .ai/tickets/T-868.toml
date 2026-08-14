@@ -7,7 +7,16 @@ status = "shipped"
 order = 5490
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
-estimated = ["scope"]
+shipped_at = "49c69ad2"
+created_at = "2026-08-12T05:40:35Z"
+completed_at = "2026-08-12T05:59:43Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ["T-853 shell->xtask slice. Port scripts/mod/debug-direct-join.sh (61 lines) to `cargo xtask debug direct-join` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). direct-join debug helper; xtask debug already exists. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling."]
 owns = [
     "scripts/mod/debug-direct-join.sh",

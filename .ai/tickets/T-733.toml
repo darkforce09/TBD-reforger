@@ -7,7 +7,15 @@ status = "shipped"
 order = 4326
 executor = "claude-code"
 notes = "filed from wave-111 residue (editor factory)"
-estimated = ["scope"]
+created_at = "2026-08-08T00:00:00Z"
+completed_at = "2026-08-08T00:00:00Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "no subject commits; created_at/completed_at id-interpolated between T-732 and T-735 (midpoint, day precision); shipped_at left absent — no subject commits, a SHA is never invented"
 migration_legacy = ["Two wiring residues from wave 111, one slice. (1) T-693's merge command is complete (merge_mission_now + picker + report toast) but has no UI entry: add the 'Merge Mission…' row to the MENUS table (eden_top_strip) and the Ctrl+M arm to the mission_editor keydown (census first — the T-648 idiom). (2) T-645's drag-to-garrison kernel shipped (#[allow(dead_code)] with citation) but live wiring needs a building-at-point -> (centre, half-extents, rotation) accessor that does not exist: world/store.rs keeps only last_chunk and residency.rs exposes buildings solely as pre-tessellated GPU vertex buffers — the scope discovery the ticket predicted. Add the accessor (world store) + the thin drop-target lookup + wire the kernel. Diagnosis: wave111.md residue notes + T-645's report."]
 
 [scope]

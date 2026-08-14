@@ -8,7 +8,16 @@ order = 1810
 executor = "claude-code"
 notes = """Lobby picker stands down on the presence of a BODY, not only on the player's own deploy click. m_bInWorld resolved in BuildForPlayer from GetPlayerControlledEntity AHEAD of every early return and emitted ABOVE the X record — the 'roster unavailable' reply is precisely the one that would otherwise strand the picker over a live character. One predicate (ShouldStandDown) used by the close, the DEPLOY button and the re-raise. DID NOT FLIP m_bAutoDeploy, and found why that matters: Prefabs/Systems/TBD_GameMode.et declares TBD_SpawnManager with NO attribute override, so the [Attribute("1")] code default IS what ships — flipping is not 'changing a default someone might override', it takes effect on the next build, which makes it higher-stakes than the ticket framing implied and should be gated on an operator confirming a live client can deploy from the picker. Fix 1 is additive, also covers the JIP DeployJoiner and AdminRespawn paths which share the shape, and needed ZERO edits to TBD_SpawnManager.c. Deliberately does NOT latch: unlike m_bDeployed it is reassigned from each roster, so a wrong reading self-corrects and the worst case is a flicker rather than a picker gone for good. Negative control run in-session: renaming the D parse arm produced 'wire self-check FAIL lost=inWorld' -> WORLD BOOT: FAIL."""
 parent = "T-181"
-estimated = ["scope"]
+shipped_at = "bbf285a9"
+created_at = "2026-07-25T17:02:23Z"
+completed_at = "2026-07-25T17:35:37Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 6 commit subject(s)"
 owns = ["Scripts/Game/TBD/UI/Lobby/**"]
 
 [scope]

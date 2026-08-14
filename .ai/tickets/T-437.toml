@@ -7,6 +7,15 @@ status = "shipped"
 order = 3276
 executor = "claude-code"
 priority = 2
+shipped_at = "d0290933"
+created_at = "2026-07-26T22:33:08Z"
+completed_at = "2026-07-27T03:18:59Z"
+estimated = [
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
 migration_legacy = [
     "Residual from T-254 / wave 9 adversarial MAJOR M1. After T-254, TBD_MissionDocumentStruct models entities[] and SpawnMissionEntities runs on parse, but operator-facing inert strings still blame a build that does not spawn/model entities.",
     "",

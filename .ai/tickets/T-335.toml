@@ -7,7 +7,16 @@ status = "shipped"
 order = 3151
 executor = "claude-code"
 priority = 1
-estimated = ["scope"]
+shipped_at = "8b2b6272"
+created_at = "2026-07-27T09:47:26Z"
+completed_at = "2026-07-27T10:06:52Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = [
     "SPLIT FROM T-326, whose fix is deliberately FORWARD-ONLY — it claims a player's historical match_player_stats rows at link time, but does nothing for accounts already linked when it ships. Those players' rows stay orphaned forever, so their deployment count and leaderboard totals remain permanently short. T-326 measured the shape exactly: 3 ops before linking read as total_deployments=1 and 2 kills on the leaderboard where the true figures were 4 and 22.",
     "",

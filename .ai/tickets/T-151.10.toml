@@ -10,6 +10,13 @@ executor = "claude-code"
 notes = "Fable 5 full-program audit W0–W9. Tracker: .ai/artifacts/t151_10_fable_audit_report.md. Verify: .ai/artifacts/t151_10_verify_log.md"
 parent = "T-151"
 shipped_at = "6adbd4bf"
+created_at = "2026-07-09T18:50:52Z"
+completed_at = "2026-07-10T02:03:55Z"
+estimated = [
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 
 [scope]
 domain = "repo"

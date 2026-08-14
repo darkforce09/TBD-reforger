@@ -7,7 +7,16 @@ status = "shipped"
 order = 3420
 executor = "claude-code"
 priority = 2
-estimated = ["scope"]
+shipped_at = "77be36c9"
+created_at = "2026-07-28T22:30:36Z"
+completed_at = "2026-07-28T22:46:08Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
 migration_legacy = [
     "FOUND by W66 adversarial verifier (DIRTY MAJOR) after T-564.",
     "",

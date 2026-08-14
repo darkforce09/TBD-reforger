@@ -7,6 +7,13 @@ status = "shipped"
 order = 2040
 executor = "claude-code"
 shipped_at = "9ceade54"
+created_at = "2026-07-26T00:05:44Z"
+completed_at = "2026-07-26T01:02:11Z"
+estimated = [
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 4 commit subject(s)"
 owns = ["scripts/mod/world-boot.sh"]
 
 [scope]

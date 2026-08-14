@@ -8,7 +8,16 @@ order = 3930
 executor = "claude-code"
 notes = "editor-UI program wave 5 (wave_plan.tsv row 105) — SHIPPED wave 105 (editor factory), 8b896162; verifier wave105.md"
 depends_on = ["T-661"]
-estimated = ["scope"]
+shipped_at = "d1ab1f1b"
+created_at = "2026-08-01T20:11:21Z"
+completed_at = "2026-08-02T03:02:50Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ["RESCOPED by editor_chrome_direction.md. One floating centred pill (~580 px) holds mode buttons (Select / Ruler / LoS) and numeric readouts (CUR, OBJ, SEL, SZ) — different jobs, different interaction models, no separation. Eden splits them: tools on the toolbar, readouts in a full-width status bar at the bottom of the viewport. The operator's direction is explicit — the bottom bar STAYS, content and feel unchanged, stretched to span the viewport instead of floating centred. That also creates the natural home for the scale bar and grid references (T-667) and a slot at the right end for a primary action (Eden puts PLAY SCENARIO there on its own black surface; what fills ours is OPEN and recorded as such in editor_chrome_direction.md §Open). Code: `BottomToolbelt` (post-split eden_toolbelt.rs, from eden_chrome.rs:3672-3776) — mode buttons :3705-3719 and the CUR/OBJ/SEL/SZ readouts :3721-3766 are one `<div class=TOOLBELT>`; TOOLBELT const :64. The mount + positioning wrapper is mission_editor.rs:2069-2090, and splitting one pill into a toolbar AND a status bar is two mount points, not one. OWNS WIDENED (owns_correction_chrome3.md): the band height TOOLBELT_BAND_PX lives in eden_layout.rs post-split and is read by three files — select_tool.rs uses it to convert pointer coordinates to world coordinates and mission_editor.rs uses it to size the wgpu canvas — so changing the band is an input-handling change."]
 owns = [
     "apps/website/frontend/src/eden_toolbelt.rs",

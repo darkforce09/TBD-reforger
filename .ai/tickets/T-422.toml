@@ -7,7 +7,16 @@ status = "shipped"
 order = 3261
 executor = "claude-code"
 priority = 1
-estimated = ["scope"]
+shipped_at = "2de6ca57"
+created_at = "2026-07-26T21:49:30Z"
+completed_at = "2026-07-26T21:54:40Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = [
     "Wave 5's T-420 added the first schema step the wave gate has ever had -- a genuinely good change, proven end-to-end by the verifier. It also shipped three defects, two of them the same family the step exists to prevent.",
     "",

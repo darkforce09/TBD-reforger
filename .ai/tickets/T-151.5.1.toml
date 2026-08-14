@@ -9,6 +9,13 @@ spec = "docs/specs/Mission_Creator_Architecture/t151_5_1_forest_fidelity.md"
 executor = "claude-code"
 parent = "T-151"
 shipped_at = "a98fb421"
+created_at = "2026-07-09T14:44:46Z"
+completed_at = "2026-07-09T15:23:17Z"
+estimated = [
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 4 commit subject(s)"
 
 [scope]
 domain = "repo"

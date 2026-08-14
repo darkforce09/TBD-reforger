@@ -9,6 +9,13 @@ executor = "claude-code"
 notes = "Draw order (grid + compute-culled trees) + marquee fill/border parity. Verify: .ai/artifacts/t151_11_verify_log.md"
 parent = "T-151"
 shipped_at = "b81317c5"
+created_at = "2026-07-10T01:19:16Z"
+completed_at = "2026-07-10T01:19:16Z"
+estimated = [
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 1 commit subject(s)"
 
 [scope]
 domain = "repo"

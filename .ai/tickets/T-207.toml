@@ -7,7 +7,14 @@ status = "shipped"
 order = 2250
 executor = "claude-code"
 shipped_at = "slice/T-207"
-estimated = ["scope"]
+created_at = "2026-07-26T05:10:35Z"
+completed_at = "2026-07-26T05:12:40Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 4 commit subject(s)"
 owns = [
     "apps/website/api/.env.example",
     "docs/website/DEV_RUNBOOK.md",

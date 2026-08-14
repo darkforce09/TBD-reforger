@@ -7,7 +7,16 @@ status = "shipped"
 order = 3400
 executor = "claude-code"
 priority = 0
-estimated = ["scope"]
+shipped_at = "f5f4ca38"
+created_at = "2026-07-27T19:58:07Z"
+completed_at = "2026-07-27T20:14:52Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
 migration_legacy = [
     "THE ALWAYS-BLOCKER CLASS. Found 2026-07-27 by the command center when the dev API would not boot. Two independent defects, one root cause, and the wave gate is STRUCTURALLY INCAPABLE of catching either.",
     "",

@@ -7,7 +7,14 @@ status = "shipped"
 order = 2306
 executor = "claude-code"
 shipped_at = "cb8a95f5"
-estimated = ["scope"]
+created_at = "2026-07-26T05:22:48Z"
+completed_at = "2026-07-26T10:16:54Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = [
     "REPRODUCED by T-194 against a populated fixture, not inferred. models/telemetry.rs:102 serializes numeric(5,1) cast to float8; frontend/src/dto.rs:101 deserializes i64. A probe using the DTO verbatim: 'TBD Primary — Everon server_fps: 58.7 -> DROPPED (invalid type: floating point `58.7`, expected i64)'. Both read sites swallow the error — server_intel.rs:150 uses .ok() and sse.rs:80 uses `if let Ok(...)` — so against a COMPLETE, HEALTHY frame the page renders 0/0 players and '—' for uptime, FPS, time and weather, and the SSE stream reports connected while updating nothing. The whole page looks like a dead server. Fix the DTO to f64 (do not round the wire value). NOTE: the R-api golden gate CANNOT catch this — it types /servers as DataEnvelope<Value>, so the round-trip passes while the real DTO fails. Consider typing that fixture properly at the same time.",
     "",

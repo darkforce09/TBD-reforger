@@ -8,6 +8,15 @@ order = 3278
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 priority = 2
+shipped_at = "2e8673d2"
+created_at = "2026-07-26T22:33:08Z"
+completed_at = "2026-07-27T02:06:25Z"
+estimated = [
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
 migration_legacy = [
     "Residual from T-254 / wave 9 N5. Editor synthesises prop:*/comp:* aliases for crate|other (~333 workbench kinds); mod Data/registry.json has 1 comp: (comp:checkpoint_small) and 0 prop: entries. SpawnMissionEntities warn+skips unknown aliases.",
     "",

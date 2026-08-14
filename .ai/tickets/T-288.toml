@@ -6,7 +6,16 @@ class = "feature"
 status = "shipped"
 order = 3060
 executor = "claude-code"
-estimated = ["scope"]
+shipped_at = "da0a7c45"
+created_at = "2026-07-31T02:21:59Z"
+completed_at = "2026-07-31T02:58:53Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 owns = ["scripts/mod/deploy-staging.sh"]
 
 [scope]

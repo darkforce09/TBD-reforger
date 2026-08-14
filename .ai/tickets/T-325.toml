@@ -8,7 +8,14 @@ order = 3141
 executor = "claude-code"
 priority = 2
 shipped_at = "2bd4d748"
-estimated = ["scope"]
+created_at = "2026-07-26T07:10:22Z"
+completed_at = "2026-07-26T07:14:47Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = [
     "PREMISE FALSE — the agent refused the stated fix and was right. Kept in full because the wrong version was mine.",
     "",

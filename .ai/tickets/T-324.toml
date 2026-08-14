@@ -8,7 +8,14 @@ order = 3140
 executor = "claude-code"
 priority = 1
 shipped_at = "a9f3c34a"
-estimated = ["scope"]
+created_at = "2026-07-26T07:22:27Z"
+completed_at = "2026-07-26T07:26:36Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = [
     "FOUND by T-318 while fixing the orphan bug, and it is the bigger half. MEASURED, not inferred: claim slot0, then claim slot1, both with entirely VALID requests — the user ends up holding 2 seats while their registration row names 1. Pre-fix, withdraw then left one stranded.",
     "",

@@ -6,7 +6,16 @@ class = "feature"
 status = "shipped"
 order = 2910
 executor = "claude-code"
-estimated = ["scope"]
+shipped_at = "9bc47d14"
+created_at = "2026-07-26T23:55:24Z"
+completed_at = "2026-07-26T23:59:18Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 owns = [".ai/tickets/schema.json"]
 
 [scope]

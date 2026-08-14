@@ -7,7 +7,16 @@ status = "shipped"
 order = 3210
 executor = "claude-code"
 priority = 1
-estimated = ["scope"]
+shipped_at = "bca6bcc1"
+created_at = "2026-07-26T13:41:13Z"
+completed_at = "2026-07-26T15:02:00Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
 migration_legacy = [
     "GATE DEFECT, verified structurally on main. `MissionCard` (handlers/missions.rs:132-134) carries `#[serde(flatten)] pub mission: Mission` alongside named sibling fields. When a named field duplicates a key the flattened struct also emits, DELETING THE NAMED FIELD LEAVES THE JSON BYTE-IDENTICAL — the flattened struct re-emits the same key. So `assert_golden` stays GREEN while the field is gone from the type.",
     "",

@@ -7,7 +7,16 @@ status = "shipped"
 order = 3377
 executor = "claude-code"
 priority = 2
-estimated = ["scope"]
+shipped_at = "c253687f"
+created_at = "2026-07-27T14:22:53Z"
+completed_at = "2026-07-27T14:34:27Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = [
     "FOUND as T-383 residual (W51 CLEAN). Owns fixed cmds/sync/schema_gates; still open:",
     "- enf/apidoc.rs header-only TSV overwrite exits 0",

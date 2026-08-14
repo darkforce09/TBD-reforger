@@ -7,7 +7,16 @@ status = "shipped"
 order = 3275
 executor = "claude-code"
 priority = 1
-estimated = ["scope"]
+shipped_at = "cbd3fcf2"
+created_at = "2026-07-26T22:30:22Z"
+completed_at = "2026-07-26T22:31:43Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = [
     "In-wave hotfix from wave 9 adversarial verify (M2/M3). deploy-website.sh refused only substring prairielearn (case-sensitive) and did not enforce the documented /home/sam/tbd/ prefix, so a filled deploy.env could dry-run/rsync --delete to arbitrary paths (e.g. /tmp/not-tbd-at-all). PrairieLearn mixed-case paths also slipped through.",
     "",

@@ -10,6 +10,13 @@ executor = "claude-code"
 notes = "Mode C slice A: variant_of collapse (38 variants / 33 keep, census-gated, 21 real primaries). SHIPPED @ c27c438a (tag T-068.10.5). Census artifact t068_10_5_weapon_families.md is the operator review table."
 parent = "T-068"
 shipped_at = "c27c438a"
+created_at = "2026-07-12T23:26:28Z"
+completed_at = "2026-07-12T23:26:42Z"
+estimated = [
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 2 commit subject(s)"
 
 [scope]
 domain = "repo"

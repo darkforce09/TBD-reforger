@@ -7,6 +7,13 @@ status = "shipped"
 order = 2160
 executor = "claude-code"
 shipped_at = "2070eecd"
+created_at = "2026-07-26T05:33:32Z"
+completed_at = "2026-07-26T05:34:48Z"
+estimated = [
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = ["The enum is closed to four worn garments — vest, pants, jacket, backpack — in both mission.schema.json:89 and loadout-export.schema.json:67, and GarmentForContainer resolves only to worn areas. No code path anywhere puts an item into a vehicle, and the 311 crate rows are unreachable from any UI."]
 owns = ["packages/tbd-schema/schema/mission.schema.json"]
 

@@ -9,7 +9,15 @@ spec = "docs/specs/Mission_Creator_Architecture/t180_orbat_eden_program.md"
 executor = "cursor-docs"
 notes = "Hub + per-slice specs + t180_class_r_pins.md (measured packages/RGBA/APIs) + stitch artifacts"
 parent = "T-180"
-estimated = ["scope"]
+created_at = "2026-07-19T00:00:00Z"
+completed_at = "2026-07-19T00:00:00Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "no subject commits; created_at/completed_at from parent T-180 (day precision); shipped_at left absent — no subject commits, a SHA is never invented"
 
 [scope]
 domain = "repo"

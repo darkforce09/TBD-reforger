@@ -10,6 +10,13 @@ executor = "claude-code"
 notes = "SHIPPED @ c66494c6 (tag T-068.11). Compiled slot loadout {gear,cargo[]} via Rust flatten; no schemaVersion bump. Verify: .ai/artifacts/t068_11_verify_log.md"
 parent = "T-068"
 shipped_at = "c66494c6"
+created_at = "2026-07-11T00:58:55Z"
+completed_at = "2026-07-24T13:39:01Z"
+estimated = [
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 6 commit subject(s)"
 
 [scope]
 domain = "repo"

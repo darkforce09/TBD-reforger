@@ -10,7 +10,14 @@ executor = "claude-code"
 notes = "Tag T-180.5. apply_eden_chip→active_side; objects_mode; E1–E5; catalog unfiltered E-L2b. Verify: .ai/artifacts/t180_5_verify_log.md. Manual M-E1/M-E2 operator-pending."
 parent = "T-180"
 shipped_at = "1324799c"
-estimated = ["scope"]
+created_at = "2026-07-19T20:18:40Z"
+completed_at = "2026-07-19T20:18:40Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 1 commit subject(s)"
 
 [scope]
 domain = "website"

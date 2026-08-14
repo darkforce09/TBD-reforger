@@ -7,7 +7,16 @@ status = "shipped"
 order = 3218
 executor = "claude-code"
 priority = 2
-estimated = ["scope"]
+shipped_at = "217c298e"
+created_at = "2026-07-27T07:46:08Z"
+completed_at = "2026-07-27T08:09:21Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = [
     "Three MINOR findings against the shipped T-393 contract split, from wave 1's adversarial verifier. None affects the shipping mod; all are cheap. Grouped because they are one file and one sitting.",
     "",

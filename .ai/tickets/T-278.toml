@@ -6,7 +6,16 @@ class = "feature"
 status = "shipped"
 order = 2960
 executor = "claude-code"
-estimated = ["scope"]
+shipped_at = "d57923b1"
+created_at = "2026-07-31T01:12:37Z"
+completed_at = "2026-07-31T10:22:31Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 6 commit subject(s)"
 migration_legacy = ["Data comes out of the game via Enfusion Workbench plugins, then a human copies two files by hand into packages/tbd-schema/registry/ and commits them. make registry-import ingests the committed artifacts. A PakVfs reader exists and is used for terrain, satellite and roads, but nothing in the repo parses .et prefab structure."]
 owns = ["tools/tbd-tools/src/world"]
 

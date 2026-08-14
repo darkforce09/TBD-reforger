@@ -7,7 +7,16 @@ status = "shipped"
 order = 3326
 executor = "claude-code"
 priority = 2
-estimated = ["scope"]
+shipped_at = "9cd07a73"
+created_at = "2026-07-27T05:18:36Z"
+completed_at = "2026-07-27T05:22:03Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = [
     "Wave 33 verifier NIT (T-428). Seed no longer INSERTs placeholder 1517290000000000000, but has no DELETE — dirty DBs retain Squad Leader/leader orphan after re-make seed. Live DB was observed still holding the row.",
     "",

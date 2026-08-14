@@ -7,7 +7,16 @@ status = "shipped"
 order = 3188
 executor = "claude-code"
 priority = 0
-estimated = ["scope"]
+shipped_at = "3a2ecf3d"
+created_at = "2026-07-27T08:13:18Z"
+completed_at = "2026-07-27T08:21:30Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = [
     "VERIFIED FROM THE COMMAND CENTER. One admin button press can lock every admin out of the platform, and that route is the only way back.",
     "",

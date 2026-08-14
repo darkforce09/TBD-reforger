@@ -6,6 +6,14 @@ class = "feature"
 status = "shipped"
 order = 710
 parent = "T-071"
+created_at = "2026-07-03T00:00:00Z"
+completed_at = "2026-07-03T00:00:00Z"
+estimated = [
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "no subject commits; created_at/completed_at from parent T-071 (day precision); shipped_at left absent — no subject commits, a SHA is never invented"
 
 [scope]
 domain = "repo"

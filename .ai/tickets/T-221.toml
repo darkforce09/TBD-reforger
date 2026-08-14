@@ -7,7 +7,14 @@ status = "shipped"
 order = 2390
 executor = "claude-code"
 shipped_at = "67982250"
-estimated = ["scope"]
+created_at = "2026-07-26T06:19:23Z"
+completed_at = "2026-07-26T06:29:14Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ["The key is the mission id alone (yrs_persist.rs:60-69). Sign-out clears auth but leaves the doc blob, adopted markers and session marker. On a shared machine user B opening the same mission restores user A's unsaved draft, and a Save posts it under B's account."]
 owns = ["apps/website/frontend/src/yrs_persist.rs"]
 

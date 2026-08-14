@@ -7,7 +7,16 @@ status = "shipped"
 order = 3692
 executor = "claude-code"
 priority = 1
-estimated = ["scope"]
+shipped_at = "86eed157"
+created_at = "2026-08-01T00:58:21Z"
+completed_at = "2026-08-01T01:03:51Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = [
     "FOUND by wave 79's adversarial verifier, inside T-601's own fix, and closed in-wave as T-622.",
     "",

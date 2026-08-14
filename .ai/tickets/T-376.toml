@@ -7,7 +7,16 @@ status = "shipped"
 order = 3192
 executor = "claude-code"
 priority = 1
-estimated = ["scope"]
+shipped_at = "67456a65"
+created_at = "2026-07-27T08:33:48Z"
+completed_at = "2026-07-27T08:40:56Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = [
     "services/registry_import.rs:201-219 — the `ON CONFLICT DO UPDATE` sets ten columns that bind from `#[serde(default)] Option<T>` fields (contract/generated/registry_items.rs:196-238, bound at :167-189). Absent in the envelope -> None -> NULL -> **written over a populated column.** The file's own comment at :166 states the mechanism: 'v2 envelopes bind NULL columns.'",
     "",

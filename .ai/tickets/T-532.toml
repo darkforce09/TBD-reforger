@@ -7,7 +7,16 @@ status = "shipped"
 order = 3372
 executor = "claude-code"
 priority = 2
-estimated = ["scope"]
+shipped_at = "7e96c301"
+created_at = "2026-07-27T12:05:41Z"
+completed_at = "2026-07-27T13:34:54Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = [
     "FOUND as T-382 residual (W48). T-382 closed the *new* hole: vacuous `payload:{}` is rejected at create_version write time. Already-broken rows (and any future non-vacuous but unwanted tip) still cannot be re-pointed via API — only `psql` UPDATE of `missions.current_version_id`.",
     "",

@@ -7,7 +7,16 @@ status = "shipped"
 order = 3320
 executor = "claude-code"
 priority = 2
-estimated = ["scope"]
+shipped_at = "fc13ab2c"
+created_at = "2026-07-27T04:43:56Z"
+completed_at = "2026-07-27T05:09:55Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
 migration_legacy = [
     'Wave 30 adversarial verifier (T-430): production validate guards discord_client_id.is_empty() only (config.rs). A whitespace-only id (" ") with APP_ENV=production validates Ok and is not treated as oauth_unconfigured. Same pattern as prior secret/redirect whitespace nits.',
     "",

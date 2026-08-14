@@ -8,7 +8,14 @@ order = 3134
 executor = "claude-code"
 priority = 1
 shipped_at = "538b9ad4"
-estimated = ["scope"]
+created_at = "2026-07-26T06:51:57Z"
+completed_at = "2026-07-26T06:55:30Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ["FOUND by T-218's sweep. handlers/events.rs:786 collapses the JsonRejection for RegisterBody, so a bad body still runs the registration upsert and sets an existing row's `slot_id = NULL` while `orbat_slots.assigned_to` still names the user. `withdraw` only releases the seat via `if let Some(sid)`, so with slot_id NULL it takes no action: the seat reads as occupied forever and the occupant cannot release it. Requires an admin DB edit to unstick. Fix the extractor (map_err → 400), and separately make withdraw fall back to clearing orbat_slots.assigned_to by user id so already-orphaned seats can be freed."]
 owns = [
     "apps/website/api/src/handlers/events.rs",

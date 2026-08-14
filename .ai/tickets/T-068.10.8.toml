@@ -10,7 +10,14 @@ executor = "claude-code"
 notes = "Mode D pass 2 after operator screenshot review: Arsenal opens with zero scrolling (modal pinned h-[85vh], flex chain, panes scroll internally); A3-style vertical slot rail (RAIL_REGIONS, 14 keys, completeness-gated) shares activeKey with the doll; doll is text-free (labels moved to rail/list/context/caption). 3D doll deferred to T-154 (Rust/wgpu, operator call - no three.js). SHIPPED @ 574fc63d (tag T-068.10.8). T-068.11 remains PARKED."
 parent = "T-068"
 shipped_at = "574fc63d"
-estimated = ["scope"]
+created_at = "2026-07-13T06:35:27Z"
+completed_at = "2026-07-13T06:36:04Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 2 commit subject(s)"
 
 [scope]
 domain = "website"

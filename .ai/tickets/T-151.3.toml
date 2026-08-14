@@ -9,6 +9,13 @@ spec = "docs/specs/Mission_Creator_Architecture/t151_3_world_residency.md"
 executor = "claude-code"
 parent = "T-151"
 shipped_at = "32bf5ac5"
+created_at = "2026-07-08T18:10:42Z"
+completed_at = "2026-07-09T03:41:42Z"
+estimated = [
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 
 [scope]
 domain = "repo"

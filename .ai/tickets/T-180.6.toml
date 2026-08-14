@@ -10,7 +10,14 @@ executor = "claude-code"
 notes = "Tag T-180.6. refile_slot→move_slot_to_squad; OrbatManager pointer-refile; SL badge; F1–F5. Verify: .ai/artifacts/t180_6_verify_log.md. Manual M-F1 operator-pending."
 parent = "T-180"
 shipped_at = "056c9a1a"
-estimated = ["scope"]
+created_at = "2026-07-19T20:25:45Z"
+completed_at = "2026-07-19T20:25:45Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 1 commit subject(s)"
 
 [scope]
 domain = "website"

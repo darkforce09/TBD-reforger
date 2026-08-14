@@ -7,7 +7,16 @@ status = "shipped"
 order = 3265
 executor = "claude-code"
 priority = 2
-estimated = ["scope"]
+shipped_at = "08bfd7d7"
+created_at = "2026-07-26T22:08:18Z"
+completed_at = "2026-07-26T22:13:11Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = [
     "Two residual items disclosed by T-421, which closed the mtime-freshness BLOCKER. Neither is a regression; both are the edges its fix does not reach.",
     "",

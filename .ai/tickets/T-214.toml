@@ -7,7 +7,14 @@ status = "shipped"
 order = 2320
 executor = "claude-code"
 shipped_at = "ba0aba5c"
-estimated = ["scope"]
+created_at = "2026-07-26T07:51:16Z"
+completed_at = "2026-07-26T07:56:03Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = [
     "No control exists and the export envelope hardcodes briefing to an empty string (compile.rs:166). The mod's briefing screen reads situation/mission/execution per faction.",
     "",

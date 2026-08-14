@@ -9,6 +9,13 @@ spec = "docs/platform/t130_fable_audit_remainder.md"
 executor = "cursor-docs"
 parent = "T-130"
 shipped_at = "5e0c7754"
+created_at = "2026-07-03T04:21:31Z"
+completed_at = "2026-07-03T04:21:31Z"
+estimated = [
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 1 commit subject(s)"
 
 [scope]
 domain = "repo"

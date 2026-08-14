@@ -8,6 +8,15 @@ order = 3301
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 priority = 1
+shipped_at = "2e8673d2"
+created_at = "2026-07-27T02:02:38Z"
+completed_at = "2026-07-27T02:06:25Z"
+estimated = [
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = [
     "Residual from wave 24 adversarial MAJOR. Live T-442/T-444/T-439 features hold, but gates do not examine them:",
     "(1) T-444: no Class-R pins Makefile seed ↔ seeds/wiki_pages.sql — deleting the seed line or emptying the SQL still greens cold gate (same class as deferred T-440).",

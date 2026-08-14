@@ -7,7 +7,16 @@ status = "shipped"
 order = 3241
 executor = "claude-code"
 priority = 1
-estimated = ["scope"]
+shipped_at = "0ee70fa8"
+created_at = "2026-07-27T07:55:44Z"
+completed_at = "2026-07-27T08:00:23Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 6 commit subject(s)"
 migration_legacy = [
     "Recommendation from T-240's agent, endorsed by the command center, deliberately NOT built in wave 4 because it crosses files T-240 did not own.",
     "",

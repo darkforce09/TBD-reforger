@@ -7,7 +7,14 @@ status = "shipped"
 order = 2200
 executor = "claude-code"
 shipped_at = "a2e6c690"
-estimated = ["scope"]
+created_at = "2026-07-26T08:02:39Z"
+completed_at = "2026-07-26T08:05:37Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = [
     "briefings is absent from ModMissionDocument (flatten.rs:204-218). The mod's briefing screen (TBD_BriefingData.c:423-432) and the entire five-file replicated marker pipeline (TBD_MarkerData.c:132-160) read only this block. Two shipped mod subsystems are dark because of one missing emitter.",
     "",

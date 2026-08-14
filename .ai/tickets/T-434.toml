@@ -7,7 +7,16 @@ status = "shipped"
 order = 3273
 executor = "claude-code"
 priority = 2
-estimated = ["scope"]
+shipped_at = "5b59ec6a"
+created_at = "2026-07-27T02:06:43Z"
+completed_at = "2026-07-27T02:35:46Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = [
     "Residual from T-420/T-422. Wave gate now runs the full schema-validate set (incl. per-context height-labels). .github/workflows/ci.yml schema job still only `xtask schema validate` + citations — same hole T-420 documented.",
     "",

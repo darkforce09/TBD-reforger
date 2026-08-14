@@ -7,6 +7,15 @@ status = "shipped"
 order = 1160
 executor = "human"
 depends_on = ["T-115"]
+shipped_at = "18852577"
+created_at = "2026-07-31T00:33:52Z"
+completed_at = "2026-07-31T00:33:52Z"
+estimated = [
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 1 commit subject(s)"
 migration_legacy = [
     "SPLIT 2026-07-26. Mod half SHIPPED: TBD_ResultsReporter.c (682 lines, T-181.13.1) POSTs to /api/v1/ingest/match-results. Website half OPEN and folded into T-232 — event_hub.rs renders no result/outcome/match data at all. This row now tracks only the website half.",
     "",

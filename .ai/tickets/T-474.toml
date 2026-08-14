@@ -7,6 +7,15 @@ status = "shipped"
 order = 3313
 executor = "claude-code"
 priority = 1
+shipped_at = "4b0f7930"
+created_at = "2026-07-27T03:09:40Z"
+completed_at = "2026-07-27T03:16:43Z"
+estimated = [
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = [
     "Residual from wave 27 adversarial BLOCKER. verify-t437 forbids exact historical lie strings and requires DiagnoseEmptyDestroyTargets / out-of-zone as substrings — comment-only pins and paraphrased lies (`entities[] are never placed…`) still PASS; collapsed DiagnoseEmpty returns leave comment needles green.",
     "",

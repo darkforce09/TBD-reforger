@@ -7,7 +7,16 @@ status = "shipped"
 order = 3150
 executor = "claude-code"
 priority = 1
-estimated = ["scope"]
+shipped_at = "bca6bcc1"
+created_at = "2026-07-26T12:36:45Z"
+completed_at = "2026-07-26T15:02:00Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
 migration_legacy = [
     "OBSERVED ONCE by T-324 and reported rather than buried: on a COLD database, the two-test parallel run of apps/website/api/tests/events.rs failed with `dev-login` returning no `Location` header. Never reproduced on a warm DB across four subsequent runs.",
     "",

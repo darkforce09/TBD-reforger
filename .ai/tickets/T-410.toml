@@ -7,7 +7,16 @@ status = "shipped"
 order = 3231
 executor = "claude-code"
 priority = 1
-estimated = ["scope"]
+shipped_at = "facd5cd7"
+created_at = "2026-07-27T07:29:23Z"
+completed_at = "2026-07-27T07:31:05Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
 migration_legacy = [
     "Found by T-399's agent while fixing the approvals ratchet, measured against the live tbd_gate_it -- not inferred. T-399 fixed ONE instance; these are the rest of the class. The one-line rule: ASC ordering over a never-pruned table is the poison. (Inversion worth recording: handlers/audit.rs:65 orders id DESC, so residue pushes OLD rows off the page and never new ones -- missions.rs:1067 is safe by construction because of it.)",
     "",

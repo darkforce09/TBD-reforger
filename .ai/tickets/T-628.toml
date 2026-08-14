@@ -7,7 +7,16 @@ status = "shipped"
 order = 3772
 executor = "claude-code"
 priority = 3
-estimated = ["scope"]
+shipped_at = "646a54de"
+created_at = "2026-08-01T06:45:22Z"
+completed_at = "2026-08-01T06:45:22Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 1 commit subject(s)"
 
 [scope]
 domain = "website"

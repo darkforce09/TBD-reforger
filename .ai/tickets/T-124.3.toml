@@ -9,6 +9,13 @@ spec = "docs/platform/t124_dependency_upgrade.md"
 executor = "claude-code"
 parent = "T-124"
 shipped_at = "cd11db0"
+created_at = "2026-06-29T00:00:00Z"
+completed_at = "2026-06-29T00:00:00Z"
+estimated = [
+    "created_at",
+    "completed_at",
+]
+estimate_note = "no subject commits; created_at/completed_at from parent T-124 (day precision)"
 
 [scope]
 domain = "repo"

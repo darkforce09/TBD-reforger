@@ -10,6 +10,13 @@ executor = "claude-code"
 notes = "Backend: faction-library.schema.json + goldens/codegen; migration 0006 user_factions; /api/v1/factions CRUD (owner-scoped, contract-validated); tests T1-T8."
 parent = "T-153"
 shipped_at = "e2aec2de"
+created_at = "2026-07-13T00:00:00Z"
+completed_at = "2026-07-13T00:00:00Z"
+estimated = [
+    "created_at",
+    "completed_at",
+]
+estimate_note = "no subject commits; created_at/completed_at from parent T-153 (day precision)"
 
 [scope]
 domain = "repo"

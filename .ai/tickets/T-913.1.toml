@@ -17,8 +17,13 @@ acceptance = [
     "cargo xtask ticket check --strict prints check OK",
 ]
 shipped_at = "b82949b7"
+created_at = "2026-08-14T04:28:09Z"
 completed_at = "2026-08-14T04:51:39Z"
-estimated = ["scope"]
+estimated = [
+    "scope",
+    "created_at",
+]
+estimate_note = "created_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = ["Optional created_at/completed_at (RFC 3339 UTC) on ticket files; malformed is a parse error, never now. One deliberate commit adds ALLOWED_NEW = {created_at, completed_at}, widens schema.json + TicketFile + WorkTicket/ProgramTicket, and lands the writers: ticket add stamps created_at, ship/done/cancel stamp completed_at. No backfill."]
 owns = [
     ".ai/tickets/schema.json",

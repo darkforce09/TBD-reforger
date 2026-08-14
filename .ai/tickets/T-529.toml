@@ -7,7 +7,16 @@ status = "shipped"
 order = 3369
 executor = "claude-code"
 priority = 2
-estimated = ["scope"]
+shipped_at = "79a8b06a"
+created_at = "2026-07-27T11:37:32Z"
+completed_at = "2026-07-27T12:46:29Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
 migration_legacy = ["Wave 47 verifier P2 residual from T-350. ingest_event_roster still uses u.arma_id <> '' without btrim; whitespace passes and can emit as seating key. Latent after 0016 scrub. Cure: btrim/nonempty predicate + trim seating key consistently with other arma_id sites. Owns: apps/website/api/src/handlers/events.rs (+ IT). Caution: T-343 one-sided-trim traps — read before changing."]
 owns = [
     "apps/website/api/src/handlers/events.rs",

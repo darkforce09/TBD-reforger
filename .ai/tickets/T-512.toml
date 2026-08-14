@@ -7,7 +7,16 @@ status = "shipped"
 order = 3352
 executor = "claude-code"
 priority = 1
-estimated = ["scope"]
+shipped_at = "f6d321e9"
+created_at = "2026-07-27T09:46:13Z"
+completed_at = "2026-07-27T10:15:26Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
 migration_legacy = ['Wave 43 residual (CLEAN NIT). T-377/T-509 covered by Class-R + admin_field omit-create. No committed HTTP IT that PATCH dense_fog then weather:"" stays dense_fog / 400, and CREATE omit weather returns clear. Cure: add missions IT cases. Ad-hoc HTTP was green at verify.']
 owns = ["apps/website/api/tests/missions.rs"]
 

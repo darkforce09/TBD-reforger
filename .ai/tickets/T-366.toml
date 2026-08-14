@@ -8,7 +8,14 @@ order = 3182
 executor = "claude-code"
 priority = 2
 shipped_at = "1128c1e3"
-estimated = ["scope"]
+created_at = "2026-07-26T10:59:21Z"
+completed_at = "2026-07-26T11:04:28Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+]
+estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
 migration_legacy = [
     "Both proven live by T-349, both in files it did not own.",
     "",

@@ -3,6 +3,7 @@
 #![allow(clippy::unnecessary_unwrap)]
 
 mod ai;
+mod backfill_stamps;
 mod check;
 mod ci_chrome;
 mod ci_editor_api;
@@ -895,6 +896,12 @@ enum TicketCmd {
     /// file), summary := title. Idempotent by emptiness; regenerates the sync surface.
     #[command(name = "quarantine-walls")]
     QuarantineWalls,
+    /// T-917.4: stamp backfill — mine created_at/completed_at/shipped_at for every
+    /// shipped ticket from exact-id boundary-matched commit subjects (UTC-normalized),
+    /// id-interpolation fallback where no subjects exist; every derived stamp marked
+    /// in estimated[]. One-shot, idempotent by emptiness.
+    #[command(name = "backfill-stamps")]
+    BackfillStamps,
 }
 
 fn main() -> ExitCode {
@@ -1330,6 +1337,11 @@ fn run() -> Result<u8> {
                 // regenerates the sync surface after the write.
                 TicketCmd::QuarantineWalls => {
                     quarantine_walls::cmd_quarantine_walls(&root)?;
+                }
+                // No registry pre-load either: the miner reads git metadata + the
+                // typed corpus directly, and stamps feed no generated view.
+                TicketCmd::BackfillStamps => {
+                    backfill_stamps::cmd_backfill_stamps(&root)?;
                 }
             }
             Ok(0)
