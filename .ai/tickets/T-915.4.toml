@@ -2,7 +2,7 @@ id = "T-915.4"
 kind = "work"
 title = "Mutation UI over subprocess xtask verbs"
 summary = "Transition affordances mirroring the CLI verbs: idea->queued via drag-after-anchor (reorder semantics), queued->ready via a Ready-prose form (spec-on-disk + user_story + acceptance) surfacing the deps-unshipped refusal, ship/cancel/defer and demotions with confirm, running hidden as a manual target, raw set-status behind an advanced affordance, add-ticket and add-child [--promote] forms. Single-flight subprocess queue, UI compare-and-swap before dispatch, verbatim stderr on any nonzero exit, no auto-repack ever (the app must not become a second wave writer)."
-status = "ready"
+status = "shipped"
 order = 5964
 spec = "docs/platform/t915_ticketboard_design.md"
 executor = "claude-code"
@@ -20,7 +20,9 @@ acceptance = [
     "CAS guard: a card whose file changed since render refuses dispatch with a reload prompt",
     "Mid-verb SIGKILL between save and repack: the app shows check-red with the wave-stale error text and the recovery command; it does not auto-repack",
 ]
+shipped_at = "99441394"
 created_at = "2026-08-14T08:39:30Z"
+completed_at = "2026-08-14T10:27:28Z"
 owns = ["apps/ticketboard"]
 
 [scope.repo]
