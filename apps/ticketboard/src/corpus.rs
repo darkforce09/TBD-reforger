@@ -17,6 +17,7 @@ use std::thread;
 use tbd_tickets::Ticket;
 
 use crate::discovery::TICKETS_SUBDIR;
+use crate::metrics::{self, MetricsState};
 use crate::wavelock::{self, LockState};
 
 /// One parsed ticket plus the file it came from (the refusal / reveal surface).
@@ -56,13 +57,17 @@ impl fmt::Display for LoadError {
 
 pub type LoadResult = Result<Corpus, LoadError>;
 
-/// Corpus + wave.lock, loaded together on the worker thread (T-915.2). The lock
-/// rides alongside because its refusals are Waves-view-local: a missing lock is a
-/// PLAN refusal (the DidNotRun text), not a corpus refusal — the board must still
-/// render.
+/// Corpus + wave.lock + run receipts, loaded together on the worker thread
+/// (T-915.2 / T-915.5). The lock rides alongside because its refusals are
+/// Waves-view-local: a missing lock is a PLAN refusal (the DidNotRun text), not
+/// a corpus refusal — the board must still render. The metrics state rides for
+/// the same reason (its empty/error states are Metrics-tab-local), and because
+/// `.ai/tickets/metrics/` sits inside the watched tree, so the same debounced
+/// watch fires refresh receipts with corpus + lock.
 pub struct LoadBundle {
     pub corpus: LoadResult,
     pub lock: LockState,
+    pub metrics: MetricsState,
 }
 
 /// Child = dotted id (`T-915.1`); parent = undotted (`T-915`).
@@ -147,6 +152,7 @@ pub fn spawn_load(
         let bundle = LoadBundle {
             corpus: load_corpus(&repo_root),
             lock: wavelock::load_lock(&repo_root),
+            metrics: metrics::load_metrics(&repo_root),
         };
         let _ = tx.send(bundle);
         on_done();

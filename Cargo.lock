@@ -6937,7 +6937,9 @@ dependencies = [
  "notify",
  "rfd",
  "serde",
+ "serde_json",
  "tbd-tickets",
+ "time",
  "toml 0.8.23",
 ]
 

@@ -36,7 +36,15 @@ rfd = "0.17.2"
 # tbd-tickets already use, so the verbatim lock render can never disagree with the
 # writer on TOML dialect. Both crates were already in the workspace graph.
 serde = { version = "1", features = ["derive"] }
+# T-915.5 metrics dashboard: run-receipt JSON parse. Already in the workspace lock
+# (1.0.150) — zero new supply chain; the same parser `ticket check` reads the
+# receipts with, so the mirror can never disagree on JSON dialect.
+serde_json = "1"
 tbd-tickets = { path = "../../crates/tbd-tickets" }
+# T-915.5 elapsed derivation (finished − started at query time): the same
+# RFC 3339 parser tbd-tickets and xtask/src/metrics.rs use (workspace-resolved
+# 0.3.53, zero new supply chain), so elapsed can never disagree with the checker.
+time = { version = "0.3", features = ["parsing"] }
 toml = "0.8"
 
 [features]

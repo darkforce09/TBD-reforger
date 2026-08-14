@@ -33,6 +33,7 @@ use crate::corpus::{self, Corpus, LoadBundle, LoadError};
 use crate::discovery;
 use crate::filters::{FilterIndex, Filters, KindFilter};
 use crate::gitstatus::{self, GitChip};
+use crate::metrics::{self, MetricsState, SortPair, TableKind};
 use crate::mutate::{self, Dialog, DragCard, MutCtx, Toast, VerbOutcome, VerbRunner};
 use crate::subproc::{self, LogRing, ProcEvent, ProcHandle};
 use crate::tree::{self, TreeModel};
@@ -84,12 +85,14 @@ pub(crate) enum Tab {
     Board,
     Waves,
     Tree,
+    Metrics,
 }
 
-const TABS: [(Tab, &str); 3] = [
+const TABS: [(Tab, &str); 4] = [
     (Tab::Board, "Board"),
     (Tab::Waves, "Waves"),
     (Tab::Tree, "Tree"),
+    (Tab::Metrics, "Metrics"),
 ];
 
 enum State {
@@ -111,6 +114,12 @@ pub(crate) struct BoardState {
     lock: LockState,
     /// Built only when the lock loaded (rendered verbatim, never recomputed).
     waves: Option<WavesModel>,
+    /// Run-receipt dashboard (T-915.5) — Metrics-tab-local; NoReceipts is the
+    /// explicit empty state, never zeros.
+    metrics: MetricsState,
+    /// Per-table sort selections for the metrics tables (survive reloads,
+    /// carried like the filters).
+    metrics_sort: SortPair,
     tree: TreeModel,
     filter_index: FilterIndex,
     filters: Filters,
@@ -137,12 +146,23 @@ pub(crate) struct BoardState {
 }
 
 impl BoardState {
-    fn new(corpus: Corpus, lock: LockState, filters: Filters) -> Self {
+    fn new(
+        corpus: Corpus,
+        lock: LockState,
+        mut metrics: MetricsState,
+        filters: Filters,
+        metrics_sort: SortPair,
+    ) -> Self {
         let board = BoardModel::build(&corpus);
         let waves = match &lock {
             LockState::Loaded(l) => Some(WavesModel::build(&corpus, &board.id_to_index, l)),
             _ => None,
         };
+        // Re-apply the carried sort to the fresh aggregation (the model loads
+        // tokens-desc by default).
+        if let MetricsState::Loaded(m) = &mut metrics {
+            m.apply_sort(metrics_sort);
+        }
         let tree = TreeModel::build(&corpus, &board.id_to_index);
         let filter_index = FilterIndex::build(&corpus);
         let expanded = board::STATUS_ORDER.map(|s| !board::collapsed_by_default(s));
@@ -157,6 +177,8 @@ impl BoardState {
             board,
             lock,
             waves,
+            metrics,
+            metrics_sort,
             tree,
             filter_index,
             filters,
@@ -233,6 +255,8 @@ pub(crate) enum Action {
     /// Copy a lane's `n<TAB>id` lines to the clipboard (acceptance 1).
     CopyTsv(String),
     FiltersChanged,
+    /// Metrics table header click: toggle/replace that table's sort (T-915.5).
+    SortMetrics(TableKind, metrics::SortKey),
     // ---- T-915.4 mutation surface ----
     /// Open a mutation dialog (built at click/menu-render time, guard included).
     OpenDialog(Box<Dialog>),
@@ -501,20 +525,23 @@ impl TicketboardApp {
             self.load_rx = None;
             self.state = match bundle.corpus {
                 Ok(corpus) => {
-                    // Filters AND the selection survive a reload (T-915.3 reloads
-                    // on every watched change) — the selection re-resolves by id,
-                    // because raw indices are stale against the new corpus.
-                    let (filters, selected_id, compare_id) = match &self.state {
+                    // Filters, the selection AND the metrics sort survive a
+                    // reload (T-915.3 reloads on every watched change) — the
+                    // selection re-resolves by id, because raw indices are
+                    // stale against the new corpus.
+                    let (filters, selected_id, compare_id, metrics_sort) = match &self.state {
                         State::Board(b) => (
                             b.filters.clone(),
                             b.selected
                                 .map(|i| b.corpus.tickets[i].ticket.id().to_owned()),
                             b.compare
                                 .map(|i| b.corpus.tickets[i].ticket.id().to_owned()),
+                            b.metrics_sort,
                         ),
-                        _ => (Filters::default(), None, None),
+                        _ => (Filters::default(), None, None, SortPair::default()),
                     };
-                    let mut board = BoardState::new(corpus, bundle.lock, filters);
+                    let mut board =
+                        BoardState::new(corpus, bundle.lock, bundle.metrics, filters, metrics_sort);
                     board.selected =
                         selected_id.and_then(|id| board.board.id_to_index.get(&id).copied());
                     board.compare =
@@ -845,6 +872,23 @@ impl TicketboardApp {
                         b.refilter();
                     }
                 }
+                Action::SortMetrics(table, key) => {
+                    // Re-sort ONCE on click — the paint path never sorts.
+                    if let State::Board(b) = &mut self.state
+                        && let MetricsState::Loaded(m) = &mut b.metrics
+                    {
+                        match table {
+                            TableKind::Ticket => {
+                                b.metrics_sort.ticket = b.metrics_sort.ticket.toggled(key);
+                                metrics::sort_rows(&mut m.per_ticket, b.metrics_sort.ticket);
+                            }
+                            TableKind::Agent => {
+                                b.metrics_sort.agent = b.metrics_sort.agent.toggled(key);
+                                metrics::sort_rows(&mut m.per_agent, b.metrics_sort.agent);
+                            }
+                        }
+                    }
+                }
                 Action::CloseDetail => {
                     if let State::Board(b) = &mut self.state {
                         b.selected = None;
@@ -1018,6 +1062,7 @@ impl eframe::App for TicketboardApp {
                     Tab::Board => board_ui(ui, b, mctx, &mut actions),
                     Tab::Waves => waves_ui(ui, b, &mut actions),
                     Tab::Tree => tree_ui(ui, b, &mut actions),
+                    Tab::Metrics => metrics_ui(ui, b, &mut actions),
                 }
             }
         });
@@ -1707,6 +1752,234 @@ fn tree_row_ui(ui: &mut Ui, b: &BoardState, row: tree::FlatRow, actions: &mut Ve
         }
         ui.label(RichText::new(&b.tree.titles[row.index]).weak().small());
     });
+}
+
+// ---- metrics dashboard (T-915.5) ----
+
+fn metrics_ui(ui: &mut Ui, b: &BoardState, actions: &mut Vec<Action>) {
+    match &b.metrics {
+        MetricsState::NoReceipts => metrics_empty_ui(ui),
+        MetricsState::Loaded(m) => metrics_body_ui(ui, b, m, actions),
+    }
+}
+
+/// The T-915.5 acceptance-1 surface: an ABSENT (or empty) receipts directory is
+/// this explicit state — never a table of zeros.
+fn metrics_empty_ui(ui: &mut Ui) {
+    ui.add_space(24.0);
+    ui.heading("No receipts yet");
+    ui.add_space(8.0);
+    ui.label(
+        RichText::new(metrics::NO_RECEIPTS_TEXT)
+            .monospace()
+            .size(14.0),
+    );
+    ui.add_space(8.0);
+    ui.label(
+        RichText::new(
+            "The dashboard renders real run files only — tokens are never invented, \
+             so an empty tree is this message, not zeros.",
+        )
+        .weak()
+        .small(),
+    );
+    ui.add_space(4.0);
+    ui.label(RichText::new(metrics::COVERAGE_NOTE).weak().small());
+}
+
+fn metrics_body_ui(
+    ui: &mut Ui,
+    b: &BoardState,
+    m: &metrics::MetricsModel,
+    actions: &mut Vec<Action>,
+) {
+    ScrollArea::vertical()
+        .id_salt("metrics")
+        .auto_shrink([false, false])
+        .show(ui, |ui| {
+            ui.add_space(4.0);
+            // Grand-total strip (precomputed at load; with zero valid runs it
+            // says "no valid receipts", never a zeros row).
+            ui.label(RichText::new(&m.grand.strip).monospace().strong());
+            ui.label(RichText::new(metrics::COVERAGE_NOTE).weak().small());
+            if !m.errors.is_empty() {
+                ui.label(
+                    RichText::new(format!(
+                        "{} malformed receipt file(s) — excluded from every sum; listed below",
+                        m.errors.len()
+                    ))
+                    .color(VERDICT_COLLIDE)
+                    .strong(),
+                );
+            }
+            ui.separator();
+            ui.label(RichText::new("Per agent").strong());
+            metrics_table_ui(ui, b, &m.per_agent, TableKind::Agent, actions);
+            ui.add_space(10.0);
+            ui.separator();
+            ui.label(RichText::new("Per ticket").strong());
+            metrics_table_ui(ui, b, &m.per_ticket, TableKind::Ticket, actions);
+            if !m.errors.is_empty() {
+                ui.add_space(10.0);
+                ui.separator();
+                ui.label(
+                    RichText::new(format!("Malformed receipts ({})", m.errors.len())).strong(),
+                );
+                ui.label(
+                    RichText::new(
+                        "named per file, reason verbatim — observations are listed broken, \
+                         never silently skipped and never coerced to numbers",
+                    )
+                    .weak()
+                    .small(),
+                );
+                for error in &m.errors {
+                    ui.label(
+                        RichText::new(&error.rel)
+                            .monospace()
+                            .small()
+                            .color(VERDICT_COLLIDE),
+                    );
+                    ui.label(RichText::new(&error.reason).monospace().small());
+                }
+            }
+            ui.add_space(12.0);
+        });
+}
+
+/// One aggregation table (per agent / per ticket): egui_extras striped, the
+/// runs / tokens / elapsed headers sort on click. Ticket ids link into the
+/// detail panel through the existing selection plumbing.
+fn metrics_table_ui(
+    ui: &mut Ui,
+    b: &BoardState,
+    rows: &[metrics::AggRow],
+    table: TableKind,
+    actions: &mut Vec<Action>,
+) {
+    if rows.is_empty() {
+        ui.label(RichText::new("—").weak());
+        return;
+    }
+    let (sort, key_header, salt) = match table {
+        TableKind::Ticket => (b.metrics_sort.ticket, "ticket", "metrics_per_ticket"),
+        TableKind::Agent => (b.metrics_sort.agent, "agent", "metrics_per_agent"),
+    };
+    ui.push_id(salt, |ui| {
+        TableBuilder::new(ui)
+            .striped(true)
+            .vscroll(false)
+            .column(TableColumn::auto().at_least(96.0)) // key
+            .column(TableColumn::auto().at_least(52.0)) // runs
+            .column(TableColumn::auto().at_least(150.0)) // tokens
+            .column(TableColumn::auto().at_least(96.0)) // elapsed
+            .column(TableColumn::auto().at_least(130.0)) // in flight / unfinished
+            .column(TableColumn::auto().at_least(170.0)) // first started
+            .column(TableColumn::remainder()) // last finished
+            .header(20.0, |mut header| {
+                header.col(|ui| {
+                    ui.label(RichText::new(key_header).weak().small());
+                });
+                header.col(|ui| {
+                    sort_header_ui(ui, "runs", metrics::SortKey::Runs, sort, table, actions);
+                });
+                header.col(|ui| {
+                    sort_header_ui(
+                        ui,
+                        "tokens_consumed.total",
+                        metrics::SortKey::Tokens,
+                        sort,
+                        table,
+                        actions,
+                    );
+                });
+                header.col(|ui| {
+                    sort_header_ui(
+                        ui,
+                        "elapsed",
+                        metrics::SortKey::Elapsed,
+                        sort,
+                        table,
+                        actions,
+                    );
+                });
+                header.col(|ui| {
+                    ui.label(RichText::new("in flight / unfinished").weak().small())
+                        .on_hover_text(
+                            "runs with no finished stamp — counted, never folded into elapsed",
+                        );
+                });
+                header.col(|ui| {
+                    ui.label(RichText::new("first started").weak().small());
+                });
+                header.col(|ui| {
+                    ui.label(RichText::new("last finished").weak().small());
+                });
+            })
+            .body(|mut body| {
+                for agg in rows {
+                    body.row(20.0, |mut row| {
+                        row.col(|ui| match table {
+                            TableKind::Ticket => {
+                                id_link_ui(ui, &agg.key, &b.board.id_to_index, actions);
+                            }
+                            TableKind::Agent => {
+                                ui.monospace(&agg.key);
+                            }
+                        });
+                        row.col(|ui| {
+                            ui.monospace(&agg.runs_str);
+                        });
+                        row.col(|ui| {
+                            ui.monospace(&agg.tokens_str);
+                        });
+                        row.col(|ui| {
+                            // "—" while nothing finished — an all-in-flight key
+                            // has UNKNOWN elapsed, and 0s would fabricate one.
+                            ui.monospace(&agg.elapsed_str);
+                        });
+                        row.col(|ui| {
+                            ui.monospace(&agg.unfinished_str);
+                        });
+                        row.col(|ui| {
+                            ui.monospace(&agg.min_started);
+                        });
+                        row.col(|ui| match &agg.max_finished {
+                            Some(fin) => {
+                                ui.monospace(fin);
+                            }
+                            None => {
+                                ui.label(RichText::new("—").weak());
+                            }
+                        });
+                    });
+                }
+            });
+    });
+}
+
+/// A sortable column header: click toggles direction on the active column and
+/// starts descending on a new one; the arrow marks the active sort.
+fn sort_header_ui(
+    ui: &mut Ui,
+    label: &str,
+    key: metrics::SortKey,
+    sort: metrics::Sort,
+    table: TableKind,
+    actions: &mut Vec<Action>,
+) {
+    let active = sort.key == key;
+    let text = if active {
+        format!("{label} {}", if sort.desc { "▼" } else { "▲" })
+    } else {
+        label.to_owned()
+    };
+    if ui
+        .selectable_label(active, RichText::new(text).small())
+        .clicked()
+    {
+        actions.push(Action::SortMetrics(table, key));
+    }
 }
 
 // ---- detail panel ----

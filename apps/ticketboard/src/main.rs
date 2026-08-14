@@ -9,7 +9,10 @@
 //! mutation UI: every write shells `cargo xtask ticket <verb>` as a subprocess
 //! (single-flight queue, CAS guard, verbatim refusals, no auto-repack ever) —
 //! the app itself writes no ticket bytes; its only direct file write is the
-//! picked-repo preference in eframe Storage in the user config dir. Design
+//! picked-repo preference in eframe Storage in the user config dir. T-915.5 adds
+//! the metrics dashboard over the `.ai/tickets/metrics/` run receipts: explicit
+//! no-receipts state, per-ticket / per-agent token + elapsed aggregations, and
+//! named error rows for malformed files — never zeros for missing data. Design
 //! authority: `docs/platform/t915_ticketboard_design.md`.
 
 mod app;
@@ -18,6 +21,7 @@ mod corpus;
 mod discovery;
 mod filters;
 mod gitstatus;
+mod metrics;
 mod mutate;
 mod subproc;
 #[cfg(test)]
