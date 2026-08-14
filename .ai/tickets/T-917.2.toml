@@ -3,7 +3,7 @@ kind = "work"
 title = "THE cutover: v2 types, migrator, 1182-file rewrite, consumers"
 summary = "One commit by compile-time physics: tbd-tickets v2 types + encoding (flat [scope] keys, new keys class/plan/estimated/estimate_note/context/requirement/current_state/approach/verify/citations/migration_legacy), schema.json + ALLOWED_NEW governance widen, Value->Value migrator with per-file re-parse + byte-stable re-render gate, all ticket files rewritten (scope remap incl. chrome map and owns-inferred surfaces, uninferable scope listed in estimated), consumer compile fixes (board scope_compact, phase2 infer/override/targets retire into the migrator, cmds/ops mint sites), regenerated sync surface, new ticket scope-histogram verb."
 class = "bug"
-status = "ready"
+status = "shipped"
 order = 5972
 spec = "docs/platform/t917_ticket_schema_v2.md"
 executor = "claude-code"
@@ -19,7 +19,9 @@ acceptance = [
     "ticket scope-histogram pastes per-level counts; former editor bucket shows distinct surfaces with counts plus U surface-empty (scope in estimated: E), all measured",
     "Before/after pasted for three named representatives: an editor+chrome ticket, a repo-docs landfill ticket, a frozen-unmappable ticket",
 ]
+shipped_at = "5e5d3bbd"
 created_at = "2026-08-14T21:54:38Z"
+completed_at = "2026-08-14T22:52:27Z"
 owns = [
     "crates/tbd-tickets",
     "xtask/src",
