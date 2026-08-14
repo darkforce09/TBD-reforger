@@ -22,14 +22,15 @@ use std::sync::mpsc::{self, Receiver};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use eframe::egui::{
-    self, Align, Align2, Button, Color32, ComboBox, DragAndDrop, FontId, Id, Layout, Panel, Rect,
-    RichText, ScrollArea, Sense, Spinner, StrokeKind, TextEdit, Ui, pos2, vec2,
+    self, Align, Align2, Button, Color32, ComboBox, DragAndDrop, FontId, Frame, Id, Layout, Panel,
+    Rect, RichText, ScrollArea, Sense, Spinner, Stroke, StrokeKind, TextEdit, Ui, pos2, vec2,
 };
 use egui_extras::{Column as TableColumn, TableBuilder};
 use tbd_tickets::StatusName;
 
 use crate::board::{self, BoardModel, Card, Class, ScopeLevel};
 use crate::corpus::{self, Corpus, LoadBundle, LoadError};
+use crate::detail;
 use crate::discovery;
 use crate::facets::{self, FacetOption, FacetOptions, VocabTree};
 use crate::filters::{FilterIndex, Filters, KindFilter};
@@ -103,6 +104,13 @@ fn scope_level_color(level: ScopeLevel) -> Color32 {
 /// tone — provenance flags read as attention, not error).
 const SCOPE_ESTIMATED_COLOR: Color32 = Color32::from_rgb(245, 175, 80);
 
+/// Quarantine fence for the `migration_legacy` block (T-918.3) — the amber
+/// attention family (same hue as the estimated-scope glyph) washed to a
+/// background tint + border, so parked v1 wall prose reads as fenced-off
+/// pending-triage material, never as authored body content.
+const QUARANTINE_TINT: Color32 = Color32::from_rgb(54, 44, 26);
+const QUARANTINE_BORDER: Color32 = Color32::from_rgb(150, 112, 52);
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub(crate) enum Tab {
     #[default]
@@ -164,6 +172,10 @@ pub(crate) struct BoardState {
     tree_expanded: Vec<bool>,
     /// Wave 0 id list visibility — ALWAYS collapsed on load (acceptance 2).
     wave0_expanded: bool,
+    /// Quarantined `migration_legacy` lines expanded (T-918.3) — collapsed by
+    /// default; reset on every selection change, carried across watch reloads
+    /// only while the same ticket stays selected.
+    legacy_expanded: bool,
     selected: Option<usize>,
     /// Second selection (shift-click) — the owns-collision explainer pair.
     compare: Option<usize>,
@@ -221,6 +233,7 @@ impl BoardState {
             tree_flat: Vec::new(),
             tree_expanded: vec![false; total],
             wave0_expanded: false,
+            legacy_expanded: false,
             selected: None,
             compare: None,
             expanded,
@@ -291,8 +304,11 @@ pub(crate) enum Action {
     SetTab(Tab),
     ToggleNode(usize),
     ToggleWave0,
-    /// Copy a lane's `n<TAB>id` lines to the clipboard (acceptance 1).
-    CopyTsv(String),
+    /// Copy text to the clipboard: a wave lane's `n<TAB>id` lines (T-915.2
+    /// acceptance 1) or the T-918.3 triage block.
+    CopyText(String),
+    /// Expand/collapse the quarantined `migration_legacy` lines (detail panel).
+    ToggleLegacyExpand,
     FiltersChanged,
     /// Metrics table header click: toggle/replace that table's sort (T-915.5).
     SortMetrics(TableKind, metrics::SortKey),
@@ -568,17 +584,19 @@ impl TicketboardApp {
                     // reload (T-915.3 reloads on every watched change) — the
                     // selection re-resolves by id, because raw indices are
                     // stale against the new corpus.
-                    let (filters, selected_id, compare_id, metrics_sort) = match &self.state {
-                        State::Board(b) => (
-                            b.filters.clone(),
-                            b.selected
-                                .map(|i| b.corpus.tickets[i].ticket.id().to_owned()),
-                            b.compare
-                                .map(|i| b.corpus.tickets[i].ticket.id().to_owned()),
-                            b.metrics_sort,
-                        ),
-                        _ => (Filters::default(), None, None, SortPair::default()),
-                    };
+                    let (filters, selected_id, compare_id, metrics_sort, legacy_expanded) =
+                        match &self.state {
+                            State::Board(b) => (
+                                b.filters.clone(),
+                                b.selected
+                                    .map(|i| b.corpus.tickets[i].ticket.id().to_owned()),
+                                b.compare
+                                    .map(|i| b.corpus.tickets[i].ticket.id().to_owned()),
+                                b.metrics_sort,
+                                b.legacy_expanded,
+                            ),
+                            _ => (Filters::default(), None, None, SortPair::default(), false),
+                        };
                     let mut board = BoardState::new(
                         corpus,
                         bundle.lock,
@@ -591,6 +609,9 @@ impl TicketboardApp {
                         selected_id.and_then(|id| board.board.id_to_index.get(&id).copied());
                     board.compare =
                         compare_id.and_then(|id| board.board.id_to_index.get(&id).copied());
+                    // Quarantine expansion survives a watch reload only while the
+                    // same ticket stays selected (T-918.3).
+                    board.legacy_expanded = legacy_expanded && board.selected.is_some();
                     State::Board(Box::new(board))
                 }
                 Err(e) => State::Refused(e),
@@ -862,9 +883,18 @@ impl TicketboardApp {
                 Action::PickFolder => self.start_pick(ctx),
                 Action::OpenPath(path) => open_path(&path),
                 Action::SetTab(tab) => self.tab = tab,
-                Action::CopyTsv(tsv) => ctx.copy_text(tsv),
+                Action::CopyText(text) => ctx.copy_text(text),
+                Action::ToggleLegacyExpand => {
+                    if let State::Board(b) = &mut self.state {
+                        b.legacy_expanded = !b.legacy_expanded;
+                    }
+                }
                 Action::Select(index) => {
                     if let State::Board(b) = &mut self.state {
+                        if b.selected != Some(index) {
+                            // A different ticket's quarantine starts collapsed.
+                            b.legacy_expanded = false;
+                        }
                         b.selected = Some(index);
                         if b.compare == Some(index) {
                             b.compare = None;
@@ -875,6 +905,9 @@ impl TicketboardApp {
                     if let State::Board(b) = &mut self.state
                         && let Some(&index) = b.board.id_to_index.get(&id)
                     {
+                        if b.selected != Some(index) {
+                            b.legacy_expanded = false;
+                        }
                         b.selected = Some(index);
                         if b.compare == Some(index) {
                             b.compare = None;
@@ -938,6 +971,7 @@ impl TicketboardApp {
                     if let State::Board(b) = &mut self.state {
                         b.selected = None;
                         b.compare = None;
+                        b.legacy_expanded = false;
                     }
                 }
                 Action::OpenDialog(dialog) => self.dialog = Some(*dialog),
@@ -1830,7 +1864,7 @@ fn lane_ui(ui: &mut Ui, b: &BoardState, lane: &Lane, actions: &mut Vec<Action>) 
             ui.label(RichText::new(&lane.label).strong());
             // The acceptance surface: paste against the lock's [[waves]] block.
             if ui.small_button("copy TSV").clicked() {
-                actions.push(Action::CopyTsv(lane.tsv.clone()));
+                actions.push(Action::CopyText(lane.tsv.clone()));
             }
         });
         ui.horizontal_wrapped(|ui| {
@@ -1851,7 +1885,7 @@ fn wave0_ui(ui: &mut Ui, b: &BoardState, w0: &Wave0, actions: &mut Vec<Action>) 
             actions.push(Action::ToggleWave0);
         }
         if ui.small_button("copy TSV").clicked() {
-            actions.push(Action::CopyTsv(w0.tsv.clone()));
+            actions.push(Action::CopyText(w0.tsv.clone()));
         }
     });
     if b.wave0_expanded {
@@ -2309,10 +2343,26 @@ fn detail_ui(
                     }
                 });
 
-            text_section(ui, "summary", Some(v.summary).filter(|s| !s.is_empty()));
-            text_section(ui, "user_story", v.user_story);
-            acceptance_section(ui, v.acceptance);
-            text_section(ui, "notes", v.notes);
+            // T-918.3 body region below the metadata table: the ten typed fields
+            // as separated labeled sections in the PINNED order, then the
+            // migration_legacy quarantine strictly after all of them —
+            // `detail::body_region_order` is the one order authority (test-pinned).
+            for section in detail::body_region_order() {
+                match section {
+                    detail::BodySection::Field(field) => {
+                        body_section_ui(ui, field, &detail::section_content(field, &v));
+                    }
+                    detail::BodySection::Quarantine => {
+                        quarantine_section_ui(
+                            ui,
+                            v.id,
+                            v.migration_legacy,
+                            b.legacy_expanded,
+                            actions,
+                        );
+                    }
+                }
+            }
             id_list_section(ui, "depends_on", v.depends_on, ids, actions);
             id_list_section(ui, "unblocks", v.unblocks, ids, actions);
             id_list_section(ui, "children", v.children, ids, actions);
@@ -2418,9 +2468,7 @@ fn cell_ui(ui: &mut Ui, cell: &Cell, ids: &HashMap<String, usize>, actions: &mut
             }
         }
         Cell::Scope(bc) => scope_breadcrumb_ui(ui, bc),
-        Cell::Missing => {
-            ui.label(RichText::new("—").weak());
-        }
+        Cell::Missing => missing_marker(ui),
     }
 }
 
@@ -2478,29 +2526,110 @@ fn section_header(ui: &mut Ui, title: &str) {
     ui.label(RichText::new(title).strong().small());
 }
 
+/// The explicit muted em-dash an absent field renders — the label always stays;
+/// absence is data, never a silently skipped section (T-918.3).
 fn missing_marker(ui: &mut Ui) {
-    ui.label(RichText::new("—").weak());
+    ui.label(RichText::new(detail::ABSENT_MARKER).weak());
 }
 
-fn text_section(ui: &mut Ui, title: &str, text: Option<&str>) {
-    section_header(ui, title);
-    match text {
-        Some(t) => {
-            ui.label(t);
+/// One of the ten pinned body sections (T-918.3): the label row — with the entry
+/// count on nonempty lists — carries the field's one-line anti-blend definition
+/// as its hover tooltip (the acceptance-vs-verify distinction lives exactly
+/// here); content renders as wrapped text (scalars), numbered monospace lines
+/// (lists), or the muted em-dash when absent.
+fn body_section_ui(ui: &mut Ui, field: detail::BodyField, content: &detail::SectionContent) {
+    let label = match content {
+        detail::SectionContent::Lines(lines) => format!("{} ({})", field.as_str(), lines.len()),
+        detail::SectionContent::Absent | detail::SectionContent::Text(_) => {
+            field.as_str().to_owned()
         }
-        None => missing_marker(ui),
+    };
+    ui.add_space(10.0);
+    ui.label(RichText::new(label).strong().small())
+        .on_hover_text(field.definition());
+    match content {
+        detail::SectionContent::Absent => missing_marker(ui),
+        detail::SectionContent::Text(text) => {
+            ui.label(text);
+        }
+        detail::SectionContent::Lines(lines) => {
+            for line in detail::numbered_lines(lines) {
+                ui.label(RichText::new(line).monospace().small());
+            }
+        }
     }
 }
 
-fn acceptance_section(ui: &mut Ui, items: &[String]) {
-    section_header(ui, &format!("acceptance ({})", items.len()));
-    if items.is_empty() {
-        missing_marker(ui);
+/// The `migration_legacy` quarantine (T-918.3) — rendered ONLY when parked prose
+/// exists (no quarantine is the healthy state, unlike the ten body fields whose
+/// absence is an explicit em-dash). Visually fenced with the amber tint + border
+/// so unprocessed v1 wall text never reads as authored body: verbatim lines,
+/// collapsed by default beyond [`detail::LEGACY_COLLAPSE_THRESHOLD`], and the
+/// "Copy for triage" affordance — the Program T drain feed (id + verbatim legacy
+/// + the empty ten-field skeleton) onto the clipboard.
+fn quarantine_section_ui(
+    ui: &mut Ui,
+    id: &str,
+    legacy: &[String],
+    expanded: bool,
+    actions: &mut Vec<Action>,
+) {
+    if legacy.is_empty() {
         return;
     }
-    for (i, item) in items.iter().enumerate() {
-        ui.label(format!("{}. {item}", i + 1));
-    }
+    ui.add_space(10.0);
+    Frame::new()
+        .fill(QUARANTINE_TINT)
+        .stroke(Stroke::new(1.0, QUARANTINE_BORDER))
+        .corner_radius(4.0)
+        .inner_margin(8.0)
+        .show(ui, |ui| {
+            ui.horizontal(|ui| {
+                ui.label(
+                    RichText::new(format!("migration_legacy ({})", legacy.len()))
+                        .strong()
+                        .small(),
+                );
+                ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+                    if ui
+                        .small_button("Copy for triage")
+                        .on_hover_text(
+                            "copy ticket id + verbatim legacy + the empty ten-field \
+                             skeleton — the Program T drain block",
+                        )
+                        .clicked()
+                    {
+                        actions.push(Action::CopyText(detail::triage_block(id, legacy)));
+                    }
+                });
+            });
+            ui.label(
+                RichText::new(detail::QUARANTINE_LABEL)
+                    .small()
+                    .color(SCOPE_ESTIMATED_COLOR),
+            )
+            .on_hover_text(
+                "verbatim v1 wall prose parked byte-reversibly at migration — \
+                 Program T decomposes it into the ten typed fields and deletes \
+                 this section in the same edit",
+            );
+            let (visible, hidden) = detail::legacy_visible(legacy.len(), expanded);
+            for line in &legacy[..visible] {
+                ui.label(RichText::new(line).monospace().small());
+            }
+            if hidden > 0 {
+                if ui
+                    .small_button(format!("expand — {hidden} more line(s)"))
+                    .clicked()
+                {
+                    actions.push(Action::ToggleLegacyExpand);
+                }
+            } else if legacy.len() > detail::LEGACY_COLLAPSE_THRESHOLD
+                && ui.small_button("collapse").clicked()
+            {
+                actions.push(Action::ToggleLegacyExpand);
+            }
+        });
 }
 
 fn id_list_section(

@@ -389,7 +389,18 @@ pub struct TicketView<'a> {
     pub children: &'a [String],
     pub active: Option<&'a str>,
     pub user_story: Option<&'a str>,
+    /// T-917.2 body decomposition lists (spec §Body) — the detail panel renders
+    /// these as the ten pinned sections (T-918.3, `detail::body_field_order`).
+    pub context: &'a [String],
+    pub requirement: &'a [String],
+    pub current_state: &'a [String],
+    pub approach: &'a [String],
+    pub verify: &'a [String],
     pub acceptance: &'a [String],
+    pub citations: &'a [String],
+    /// T-917.3 quarantined wall prose — NOT one of the ten body fields; the
+    /// detail panel renders it AFTER them as its own quarantine section.
+    pub migration_legacy: &'a [String],
     pub shipped_at: Option<&'a str>,
     pub priority: Option<i64>,
     pub created_at: Option<&'a str>,
@@ -427,7 +438,14 @@ pub fn view(t: &Ticket) -> TicketView<'_> {
             children: &p.children,
             active: p.active.as_deref(),
             user_story: p.user_story.as_deref(),
+            context: &p.context,
+            requirement: &p.requirement,
+            current_state: &p.current_state,
+            approach: &p.approach,
+            verify: &p.verify,
             acceptance: &p.acceptance,
+            citations: &p.citations,
+            migration_legacy: &p.migration_legacy,
             shipped_at,
             priority: p.priority,
             created_at: p.created_at.as_deref(),
@@ -453,7 +471,14 @@ pub fn view(t: &Ticket) -> TicketView<'_> {
             children: EMPTY_IDS,
             active: None,
             user_story: w.user_story.as_deref(),
+            context: &w.context,
+            requirement: &w.requirement,
+            current_state: &w.current_state,
+            approach: &w.approach,
+            verify: &w.verify,
             acceptance: &w.acceptance,
+            citations: &w.citations,
+            migration_legacy: &w.migration_legacy,
             shipped_at,
             priority: w.priority,
             created_at: w.created_at.as_deref(),
@@ -828,13 +853,25 @@ active = "T-9.1"
         let workt = work(
             "T-9.1",
             "status = \"shipped\"\nshipped_at = \"abc123\"",
-            "parent = \"T-9\"\nclass = \"chore\"\nestimated = [\"scope\"]\n",
+            "parent = \"T-9\"\nclass = \"chore\"\nestimated = [\"scope\"]\n\
+             context = [\"why now\"]\nrequirement = [\"the ask\"]\n\
+             current_state = [\"what exists\"]\napproach = [\"step 1\"]\n\
+             verify = [\"cargo test\"]\ncitations = [\"docs/x.md\"]\n\
+             migration_legacy = [\"wall line\"]\n",
         );
         let v = view(&workt);
         assert_eq!(v.kind, "work");
         assert_eq!(v.parent, Some("T-9"));
         assert_eq!(v.shipped_at, Some("abc123"));
         assert!(v.children.is_empty());
+        // T-918.3: the body lists + quarantine reach the view verbatim.
+        assert_eq!(v.context, &["why now".to_string()][..]);
+        assert_eq!(v.requirement, &["the ask".to_string()][..]);
+        assert_eq!(v.current_state, &["what exists".to_string()][..]);
+        assert_eq!(v.approach, &["step 1".to_string()][..]);
+        assert_eq!(v.verify, &["cargo test".to_string()][..]);
+        assert_eq!(v.citations, &["docs/x.md".to_string()][..]);
+        assert_eq!(v.migration_legacy, &["wall line".to_string()][..]);
         let bc = breadcrumb(v.scope.unwrap(), v.estimated);
         assert_eq!(bc.label(), "repo › docs");
         assert!(bc.estimated);

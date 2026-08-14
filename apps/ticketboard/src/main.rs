@@ -18,6 +18,7 @@
 mod app;
 mod board;
 mod corpus;
+mod detail;
 mod discovery;
 mod facets;
 mod filters;
