@@ -2,7 +2,7 @@ id = "T-915.2"
 kind = "work"
 title = "Wave lanes + program tree + filters"
 summary = "Wave lanes rendered verbatim from wave.lock (one lane per open n; wave 0 always a count chip; header shows wave_base / max_concurrent / pack_last; missing lock renders the DidNotRun refusal text, never empty lanes; Unplanned side bucket = dispatchable ids absent from the lock, set arithmetic only). Program tree parent->children, status-colored, expandable. Composable filters: executor, kind, program/parent, scope family, free text over precomputed lowercase haystacks."
-status = "queued"
+status = "ready"
 order = 5962
 spec = "docs/platform/t915_ticketboard_design.md"
 executor = "claude-code"
