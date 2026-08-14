@@ -18,11 +18,15 @@ by `preflight.sh:140`, `Caddyfile.website:27`, `editor-gates.yml:95` and
 LIKELY ANSWER: keep the 200/503 + `status` field public (that is all any prober needs) and move the
 detail behind the same `X-Service-Token` gate `/metrics` uses, or behind a `?verbose=1` that requires
 it. Confirm every listed prober still passes afterwards."""
+class = "bug"
 status = "shipped"
 order = 3424
 executor = "claude-code"
 priority = 3
+estimated = ["scope"]
 owns = ["apps/website/api/src/app.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

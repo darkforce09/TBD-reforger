@@ -2,11 +2,13 @@ id = "T-181.3.1"
 kind = "work"
 title = "T-181.3.1"
 summary = "T-181.3.1"
+class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
 notes = "Official BI Script API mirror + parser (enf apidoc, scripts/mod/fetch-vanilla-api.sh, make enf-apidoc). 7,990 classes indexed. CLOSES the T-181.3 gap: SCR_BaseGameMode/PossessSpawnData/PossessSpawnRequestComponent/RespawnSystemComponent/ChimeraMenuBase all resolve with full member lists incl. `static SCR_PossessSpawnData FromEntity(notnull IEntity)`. Signatures only, no bodies — CRF stays the behavioural oracle. Operator's suggestion that the data exists online was correct."
 parent = "T-181"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

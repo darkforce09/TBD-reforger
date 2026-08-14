@@ -2,6 +2,7 @@ id = "T-151.11.4"
 kind = "work"
 title = "T-151.11.4"
 summary = "T-151.11.4"
+class = "feature"
 status = "shipped"
 order = 1500
 executor = "claude-code"
@@ -9,5 +10,6 @@ notes = "GPU harness + CI + tree gate + compute cull readback + Range satellite 
 parent = "T-151"
 shipped_at = "2c3237fd"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

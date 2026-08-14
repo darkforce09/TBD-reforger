@@ -2,6 +2,7 @@ id = "T-917.5"
 kind = "work"
 title = "Token estimates: factor doc, generator, estimates tree + check"
 summary = "The total estimation ladder for tokens: diff_loc (LOC changed across the ticket's commits x documented factor) with cohort_median fallback (median of same class+scope cohort) so every shipped ticket ends with a number. Estimates live at .ai/tickets/estimates/<id>.json — never inside metrics/ — with estimates.schema.json and their own check fn: mutual exclusion with receipts, estimate implies tokens in estimated[], estimate on non-shipped red. Factor lands as a declared constant pending calibration in docs/platform/."
+class = "docs"
 status = "queued"
 order = 5975
 spec = "docs/platform/t917_ticket_schema_v2.md"
@@ -24,5 +25,6 @@ owns = [
     "docs/platform/token_estimate_factor.md",
 ]
 
-[scope.repo]
-layers = ["tickets"]
+[scope]
+domain = "repo"
+layer = "tickets"

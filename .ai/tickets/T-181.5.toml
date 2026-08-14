@@ -2,11 +2,13 @@ id = "T-181.5"
 kind = "work"
 title = "T-181.5"
 summary = "T-181.5"
+class = "feature"
 status = "deferred"
 order = 1810
 executor = "workbench"
 notes = "DEPRIORITISED: make mod-compile (native, 1.3s) removed most of the reason to open Workbench at all. Only world/prefab authoring and PIE visual checks still need it. Do this when a slice actually requires the editor."
 parent = "T-181"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

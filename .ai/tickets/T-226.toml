@@ -2,11 +2,15 @@ id = "T-226"
 kind = "work"
 title = "Events can never be edited or detached from the UI"
 summary = "PATCH /events/{id} has no caller so events can never be edited and status can never be set; DELETE /events/{id}/missions/{emid} has no caller so missions can never be detached; the /events list page renders nothing."
+class = "chore"
 status = "shipped"
 order = 2440
 executor = "claude-code"
 shipped_at = "191fd0df"
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/event_manager.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

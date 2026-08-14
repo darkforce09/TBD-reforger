@@ -32,14 +32,18 @@ register the server a heartbeat needs. Worth resolving in the same pass.
 
 WANTED: an `is_foreign_key_violation` sibling, mapped to 400/409 with a message naming the missing
 parent; then revisit T-262's four abstentions."""
+class = "bug"
 status = "shipped"
 order = 3420
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = [
     "apps/website/api/src/handlers/mod.rs",
     "apps/website/api/src/handlers/telemetry.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

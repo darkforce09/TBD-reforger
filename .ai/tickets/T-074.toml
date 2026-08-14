@@ -2,10 +2,14 @@ id = "T-074"
 kind = "work"
 title = "Faction submode / catalog filter"
 summary = "CANCELLED (2026-07-26 audit). Already ABSORBED by T-180.5 per its own summary, but left deferred so it still appears in status sweeps."
+class = "audit"
 status = "cancelled"
 order = 740
 executor = "cursor-docs"
 depends_on = ["T-180"]
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

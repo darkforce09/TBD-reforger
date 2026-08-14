@@ -2,6 +2,7 @@ id = "T-151.4.1"
 kind = "work"
 title = "T-151.4.1 — building wipe race + road joins (W4 corrective)"
 summary = "T-151.4.1 — building wipe race + road joins (W4 corrective)"
+class = "feature"
 status = "shipped"
 order = 1500
 spec = "docs/specs/Mission_Creator_Architecture/t151_4_1_building_road_hotfix.md"
@@ -9,5 +10,6 @@ executor = "claude-code"
 parent = "T-151"
 shipped_at = "552e68aa"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

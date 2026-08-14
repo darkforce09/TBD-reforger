@@ -2,9 +2,13 @@ id = "T-011"
 kind = "work"
 title = "Aegis design system foundation"
 summary = "macOS Aegis palette, glass primitives, shared UI components."
+class = "feature"
 status = "shipped"
 order = 110
 executor = "cursor-docs"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

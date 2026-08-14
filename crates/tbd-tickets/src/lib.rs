@@ -10,137 +10,130 @@ pub mod ops;
 mod proptest_roundtrip;
 pub mod store;
 mod timestamp;
+pub mod vocab;
 pub use encoding::{TicketFile, parse_ticket_toml, render_ticket_toml};
 pub use ops::OpOutcome;
 pub use store::Corpus;
 pub use timestamp::{now_utc_rfc3339, validate_rfc3339_utc};
+pub use vocab::ScopeVocab;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+/// Scope v2 domain — the ONE level that stays a closed Rust enum (T-917 spec §Scope v2:
+/// "changes ~never"). Everything below it (`layer`/`component`/`surface`) is validated
+/// data from `.ai/tickets/scope-vocab.toml`, resolved at [`Corpus::load`] and in
+/// `ticket check` — never compiled (compiled-enum friction is what produced the
+/// 199-ticket docs landfill). The crate-level `deny(clippy::wildcard_enum_match_arm)`
+/// keeps every `Domain` match exhaustive.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub enum EditorChrome {
-    Left,
-    Right,
-    Map,
-    Top,
-    Bottom,
-    Attr,
+pub enum Domain {
+    Website,
+    Mod,
+    Schema,
+    Engine,
+    Repo,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum Capability {
-    Selection,
-    Transform,
-    Place,
-    Persistence,
-    Undo,
-    Layers,
+impl Domain {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Domain::Website => "website",
+            Domain::Mod => "mod",
+            Domain::Schema => "schema",
+            Domain::Engine => "engine",
+            Domain::Repo => "repo",
+        }
+    }
 }
 
+/// Scope v2 (T-917.2): the flat 4-level breadcrumb — exactly one `domain`/`layer`,
+/// optional `component` (component-free layers exist per the vocabulary), and a
+/// `surface` array (a coherent slice may touch several surfaces; a ticket spanning
+/// components is mis-sliced). Serialized as the flat `[scope]` table:
+///
+/// ```toml
+/// [scope]
+/// domain = "website"
+/// layer = "frontend"
+/// component = "mission_creator"   # omitted when None
+/// surface = ["attr_panel"]        # omitted when empty
+/// ```
+///
+/// Shape rules live in `TicketFile::into_ticket` (surface requires component — the
+/// vocabulary tree has no layer-level surfaces to name); per-value LEGALITY against
+/// `.ai/tickets/scope-vocab.toml` is deliberately NOT here — see the documented
+/// weakening on [`parse_ticket_toml`].
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum WebsiteBackendLayer {
-    Api,
-    Db,
-    Auth,
-    Realtime,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum WebsiteTestLayer {
-    Unit,
-    Integration,
-    Gate,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum ModLayer {
-    Ui,
-    Gamemode,
-    Backend,
-    Feature,
-    Prefab,
-    Data,
-    Workbench,
-    Worlds,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum SchemaLayer {
-    Mission,
-    Registry,
-    Contract,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum EngineLayer {
-    Core,
-    Render,
-    World,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum RepoLayer {
-    Ci,
-    Docs,
-    Xtask,
-    Tickets,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub struct FrontendEditor {
-    #[serde(default)]
-    pub chrome: Vec<EditorChrome>,
+#[serde(deny_unknown_fields)]
+pub struct ScopeV2 {
+    pub domain: Domain,
+    pub layer: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub capability: Option<Capability>,
+    pub component: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub surface: Vec<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub struct FrontendPage {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub route: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub capability: Option<Capability>,
-}
+/// The closed `class` value set (T-917 Decisions log #4) — required on work tickets
+/// (check-enforced; value-validated at parse when present).
+pub const CLASS_VALUES: &[&str] = &["bug", "feature", "chore", "audit", "docs"];
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub struct FrontendShell {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub capability: Option<Capability>,
-}
+/// Legal `estimated[]` entries — the provenance machinery's field list (T-917 spec
+/// §Provenance; `scope` is the non-numeric reuse recorded by the v2 migrator).
+pub const ESTIMATED_VALUES: &[&str] = &[
+    "created_at",
+    "completed_at",
+    "shipped_at",
+    "tokens",
+    "scope",
+];
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum FrontendScope {
-    Editor(FrontendEditor),
-    Page(FrontendPage),
-    Shell(FrontendShell),
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum WebsiteScope {
-    Frontend(FrontendScope),
-    Backend { layers: Vec<WebsiteBackendLayer> },
-    Tests { layers: Vec<WebsiteTestLayer> },
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum Scope {
-    Website(WebsiteScope),
-    Mod { layers: Vec<ModLayer> },
-    Schema { layers: Vec<SchemaLayer> },
-    Engine { layers: Vec<EngineLayer> },
-    Repo { layers: Vec<RepoLayer> },
+/// Conservative-deterministic class triage from title/summary prose (same input →
+/// same class; metadata triage, not provenance — T-917.2 migrator header documents
+/// why this carries no `estimated[]` marker). Token-boundary matching on purpose:
+/// substring matching would classify "prefix"/"fixture" as bugs. Precedence:
+/// bug > audit > docs > chore > feature.
+pub fn classify_work(text: &str) -> &'static str {
+    let lower = text.to_lowercase();
+    let tokens: Vec<&str> = lower
+        .split(|c: char| !c.is_ascii_alphanumeric())
+        .filter(|t| !t.is_empty())
+        .collect();
+    let has = |names: &[&str]| tokens.iter().any(|t| names.contains(t));
+    if has(&[
+        "fix",
+        "fixes",
+        "fixed",
+        "bug",
+        "bugs",
+        "regression",
+        "regressions",
+    ]) {
+        "bug"
+    } else if has(&["audit", "audits"]) {
+        "audit"
+    } else if has(&["docs", "doc", "readme", "documentation"]) {
+        "docs"
+    } else if has(&[
+        "refactor",
+        "refactors",
+        "cleanup",
+        "delete",
+        "deletes",
+        "port",
+        "ports",
+        "rename",
+        "renames",
+        "migrate",
+        "migrates",
+        "migration",
+        "gate",
+        "gates",
+        "ci",
+    ]) {
+        "chore"
+    } else {
+        "feature"
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -305,16 +298,29 @@ pub struct ProgramTicket {
     pub id: String,
     pub title: String,
     pub summary: String,
+    /// T-917.2: legal on programs (the KEY, value-validated); REQUIRED on work only.
+    pub class: Option<String>,
     pub status: Status,
     pub executor: Option<String>,
     pub notes: Option<String>,
     pub spec: Option<String>,
+    /// T-917.2: per-ticket plan document path (distinct from the shared program
+    /// `spec`); becomes a ready-gate at S.6.
+    pub plan: Option<String>,
     pub depends_on: Vec<String>,
     pub unblocks: Vec<String>,
     pub children: Vec<String>,
     pub active: Option<String>,
     pub user_story: Option<String>,
+    /// T-917.2 body decomposition (spec §Body): typed line lists, caps check-enforced
+    /// later (S.3) — never parse-enforced, so old git revisions stay readable.
+    pub context: Vec<String>,
+    pub requirement: Vec<String>,
+    pub current_state: Vec<String>,
+    pub approach: Vec<String>,
+    pub verify: Vec<String>,
     pub acceptance: Vec<String>,
+    pub citations: Vec<String>,
     pub priority: Option<i64>,
     /// T-913.1 lifecycle stamps — RFC 3339 UTC strings validated on parse (see
     /// [`validate_rfc3339_utc`]); malformed values refuse the load, never become now.
@@ -323,6 +329,14 @@ pub struct ProgramTicket {
     /// same position all three ticket types use.
     pub created_at: Option<String>,
     pub completed_at: Option<String>,
+    /// T-917.2 provenance: which stamps/facts are estimates, values from
+    /// [`ESTIMATED_VALUES`]; `estimate_note` names the gap when method 2 could not
+    /// mine a value.
+    pub estimated: Vec<String>,
+    pub estimate_note: Option<String>,
+    /// T-917.3 wall quarantine target — byte-reversible parked prose. Minting this
+    /// field on a NEW ticket goes red at check level (shrink-only ratchet).
+    pub migration_legacy: Vec<String>,
     pub owns: Vec<String>,
     pub pack_last: Option<bool>,
 }
@@ -332,22 +346,41 @@ pub struct WorkTicket {
     pub id: String,
     pub title: String,
     pub summary: String,
+    /// T-917.2: bug | feature | chore | audit | docs — REQUIRED on work tickets
+    /// (check-enforced; the parse validates the value whenever present).
+    pub class: Option<String>,
     pub status: Status,
     pub executor: Option<String>,
     pub notes: Option<String>,
     pub spec: Option<String>,
+    /// T-917.2: per-ticket plan document path (S.6 ready-gate).
+    pub plan: Option<String>,
     pub depends_on: Vec<String>,
     pub unblocks: Vec<String>,
     pub parent: Option<String>,
-    pub scope: Scope,
+    pub scope: ScopeV2,
     pub user_story: Option<String>,
+    /// T-917.2 body decomposition (spec §Body) — see [`ProgramTicket`] notes.
+    pub context: Vec<String>,
+    pub requirement: Vec<String>,
+    pub current_state: Vec<String>,
+    pub approach: Vec<String>,
+    pub verify: Vec<String>,
     pub acceptance: Vec<String>,
+    pub citations: Vec<String>,
     pub shipped_at: Option<String>,
     pub priority: Option<i64>,
     /// T-913.1 lifecycle stamps — after `shipped_at` (which stays a bare commit SHA),
     /// immediately before `owns`; RFC 3339 UTC, validated on parse, never backfilled.
     pub created_at: Option<String>,
     pub completed_at: Option<String>,
+    /// T-917.2 provenance — see [`ProgramTicket::estimated`]. `"scope"` here is the
+    /// migrator's honest escape: this ticket's scope was owns-inferred, not carried
+    /// by v1 data.
+    pub estimated: Vec<String>,
+    pub estimate_note: Option<String>,
+    /// T-917.3 wall quarantine target — see [`ProgramTicket::migration_legacy`].
+    pub migration_legacy: Vec<String>,
     pub owns: Vec<String>,
     pub pack_last: Option<bool>,
 }
@@ -406,6 +439,44 @@ mod tests {
         )
         .unwrap_err();
         assert!(err.contains("user_story"));
+    }
+
+    /// T-917.2: the class triage is token-boundary conservative — "prefix"/"fixture"
+    /// must never classify as bug — and deterministic in its precedence order.
+    #[test]
+    fn classify_work_is_token_boundary_and_ordered() {
+        assert_eq!(classify_work("Fix editor crash"), "bug");
+        assert_eq!(classify_work("marker regression on save"), "bug");
+        assert_eq!(classify_work("prefix and fixture handling"), "feature");
+        assert_eq!(classify_work("Audit gate coverage"), "audit");
+        assert_eq!(classify_work("README doc-only pass"), "docs");
+        assert_eq!(classify_work("delete the Makefile"), "chore");
+        assert_eq!(classify_work("port wave.sh to xtask"), "chore");
+        assert_eq!(classify_work("Marker style widening"), "feature");
+        // Precedence: a fix that mentions docs is a bug, not docs.
+        assert_eq!(classify_work("fix README typo"), "bug");
+        for c in [
+            classify_work("a"),
+            classify_work("fix"),
+            classify_work("audit"),
+            classify_work("docs"),
+            classify_work("ci"),
+        ] {
+            assert!(CLASS_VALUES.contains(&c));
+        }
+    }
+
+    #[test]
+    fn domain_as_str_is_snake_case() {
+        for (d, s) in [
+            (Domain::Website, "website"),
+            (Domain::Mod, "mod"),
+            (Domain::Schema, "schema"),
+            (Domain::Engine, "engine"),
+            (Domain::Repo, "repo"),
+        ] {
+            assert_eq!(d.as_str(), s);
+        }
     }
 
     #[test]

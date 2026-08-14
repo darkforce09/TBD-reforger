@@ -7,6 +7,7 @@ FOUND by W55 adversarial verifier (CLEAN MINOR-NIT) after T-543.
 Runtime is correct (T-328/T-543). Residual: scripts/mod/mcp-daemon.sh comment still says mcpd-bin ignores CARGO_TARGET_DIR. Cure: update the comment to match live honor of CARGO_TARGET_DIR.
 
 Repro: rg 'ignores CARGO_TARGET_DIR' scripts/mod/"""
+class = "feature"
 status = "shipped"
 order = 3385
 executor = "claude-code"
@@ -14,5 +15,6 @@ notes = "needs-operator: frozen unmappable Scope. "
 priority = 2
 owns = ["scripts/mod/mcp-daemon.sh"]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

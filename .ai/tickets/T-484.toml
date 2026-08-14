@@ -7,11 +7,15 @@ Wave 32 verifier residual (T-481 shipped client_id trim). Production validate st
 Repro: env=production, secret=" " or redirect=" " → validate() Ok.
 
 Cure: trim().is_empty() (or reject trim-empty) for both; Class-R pins."""
+class = "feature"
 status = "shipped"
 order = 3323
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = ["apps/website/api/src/config.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

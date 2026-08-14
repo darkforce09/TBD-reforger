@@ -2,11 +2,15 @@ id = "T-159.2"
 kind = "work"
 title = "T-159.2"
 summary = "T-159.2"
+class = "feature"
 status = "shipped"
 order = 1570
 executor = "claude-code"
 notes = "Aegis shell — absorbed into page-migration arc on branch."
 parent = "T-159"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

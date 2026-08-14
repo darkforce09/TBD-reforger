@@ -9,10 +9,12 @@ Two independent dead-surface findings from wave 4, both larger than the tickets 
    DECIDE: delete the crate, or document why it is kept (a planned future JS consumer is a legitimate answer -- an undocumented one is not).
 
 2. compile_export's envelope `briefing` always resolves to \"\". T-214 wired it to read meta.briefing, but apply_row_meta never threads it: mission_hydrate.rs:403-424's RowMeta carries only title/terrain/time/weather, so the key is absent and the field is dead. Pre-existing and already documented as such at compile.rs:164-172. REPRO: export any mission whose row has a briefing; the downloaded envelope's briefing is empty.'''
+class = "docs"
 status = "shipped"
 order = 3243
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "crates/map-engine-wasm",
     "Cargo.toml",
@@ -26,5 +28,8 @@ owns = [
     "apps/website/frontend/src/url_guard.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["doc_store"]

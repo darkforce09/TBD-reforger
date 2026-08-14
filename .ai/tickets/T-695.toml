@@ -2,11 +2,16 @@ id = "T-695"
 kind = "work"
 title = "Favourites — a starred-asset list across the catalogue"
 summary = "NEW-F5 + 3den E3 + 3DEN-CTX-001. Eden F7. Pure SPA over the live catalogue with localStorage. Deliberately NOT folded into T-646: that ticket is search and submode filtering over the existing tree, this is a separate persistent collection with its own add/remove verbs."
+class = "feature"
 status = "shipped"
 order = 4490
 executor = "claude-code"
 notes = "— SHIPPED wave 114 (editor factory), 0fa3b530; verifier wave114.md. Starred-asset collection over the live catalogue, localStorage key tbd-mc-editor-favourites with a version stamp and one migration chokepoint; identity is resource_name so a modpack re-ingest cannot orphan the collection. Stale favourites are KEPT AND MARKED, never pruned (a toggled-off modpack is reversible); resolve_favourites is count-preserving by construction and pinned."
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/eden_dock_right.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["dock_right"]

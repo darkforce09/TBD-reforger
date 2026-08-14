@@ -2,10 +2,14 @@ id = "T-058"
 kind = "work"
 title = "Entity count readout"
 summary = "OBJ total and SEL selected counts in toolbelt."
+class = "feature"
 status = "shipped"
 order = 580
 spec = "docs/specs/Mission_Creator_Architecture/t058_entity_count_readout.md"
 executor = "claude-code"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

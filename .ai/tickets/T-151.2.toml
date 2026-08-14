@@ -2,6 +2,7 @@ id = "T-151.2"
 kind = "work"
 title = "T-151.2 — world parser in Rust (`world/` module; W2 Piece 1)"
 summary = "T-151.2 — world parser in Rust (`world/` module; W2 Piece 1)"
+class = "feature"
 status = "shipped"
 order = 1500
 spec = "docs/specs/Mission_Creator_Architecture/t151_2_world_parser.md"
@@ -9,5 +10,6 @@ executor = "claude-code"
 parent = "T-151"
 shipped_at = "a51e9dcb"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

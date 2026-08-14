@@ -2,6 +2,7 @@ id = "T-091.0"
 kind = "work"
 title = "T-091.0 — Everon DEM export + anchor verify"
 summary = "T-091.0 — Everon DEM export + anchor verify"
+class = "feature"
 status = "shipped"
 order = 910
 spec = "docs/specs/Mission_Creator_Architecture/t091_0_dem_tile_export.md"
@@ -9,5 +10,6 @@ executor = "claude-code"
 parent = "T-091"
 shipped_at = "6d96339"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

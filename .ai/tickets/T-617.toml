@@ -23,11 +23,13 @@ CONTEXT for why a description string is worth a ticket: T-612 proved `mcp-wb-log
 reachable exit 0 or exit 2** and was fully inverted -- it printed PASS on a stale June log and FAIL on
 a real healthy boot -- because it was built on these same two dead strings. The strings have a track
 record of turning into false verdicts wherever they are copied."""
+class = "bug"
 status = "shipped"
 order = 3642
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 priority = 3
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

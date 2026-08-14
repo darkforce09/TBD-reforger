@@ -7,12 +7,16 @@ FOUND by T-325's sweep, captured not inferred: `error occurred while decoding co
 Latent on the operator's data today — `missions` has no NULL updated_at there — but it is the same defect as T-329 (live) and T-307 (reachable from any fresh seed), and 'latent' here means 'nothing has written that value yet', not 'cannot happen'.
 
 Same fix shape as T-329: COALESCE at the query, not Option on the model. See T-325's reasoning recorded in models/telemetry.rs for why the model-level change is wrong."""
+class = "bug"
 status = "shipped"
 order = 3146
 executor = "claude-code"
 priority = 2
 shipped_at = "5538efce"
+estimated = ["scope"]
 owns = ["apps/website/api/src/handlers/approvals.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

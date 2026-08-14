@@ -2,6 +2,7 @@ id = "T-068.15.2"
 kind = "work"
 title = "T-068.15.2 — Arsenal capacity + cargo UI"
 summary = "T-068.15.2 — Arsenal capacity + cargo UI"
+class = "feature"
 status = "shipped"
 order = 680
 spec = "docs/specs/Mission_Creator_Architecture/t068_15_2_arsenal_cargo_ui.md"
@@ -9,6 +10,9 @@ executor = "claude-code"
 notes = "SHIPPED @ 4fb156b7 (tag T-068.15.2). Capacity badge + cargo editor + seed. Verify: .ai/artifacts/t068_15_2_verify_log.md"
 parent = "T-068"
 shipped_at = "4fb156b7"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

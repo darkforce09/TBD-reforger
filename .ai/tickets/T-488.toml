@@ -5,11 +5,15 @@ summary = """
 Wave 33 residual (T-428). api.rs arms role resync via ROLE_RESYNC_INTERVAL_SECS (default 24h) but apps/website/api/.env.example only documents SERVER_STATUS_PUBLISH_INTERVAL_SECS and LEADERBOARD_REFRESH_INTERVAL_SECS.
 
 Cure: add commented ROLE_RESYNC_INTERVAL_SECS=86400 next to sibling interval knobs."""
+class = "feature"
 status = "shipped"
 order = 3327
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = ["apps/website/api/.env.example"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

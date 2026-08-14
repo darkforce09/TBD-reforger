@@ -7,6 +7,7 @@ EXTENDED 2026-08-01 from the framework research (framework_synthesis.md Decision
 EXECUTOR CORRECTED 2026-08-02: was filed `workbench` on the mistaken reading that any .c file needs the Arma Workbench GUI. It does not — scripts/mod/compile.sh compiles tbd-framework against the native Linux dedicated server headlessly, verified: "OK: compiled clean, 5707 files, 11182 classes, 832 ms, no Workbench". Schema edits are plain JSON. This is factory work. Per the model-routing rule, the .c portion routes to Fable 5 even though the executor is claude-code.
 
 SCHEMA HALF SPLIT OUT to T-706 (one widening pass for the whole program). This ticket is the Enfusion reader plus any editor UI; it does not touch packages/tbd-schema."""
+class = "bug"
 status = "queued"
 order = 4430
 executor = "claude-code"
@@ -16,7 +17,10 @@ depends_on = [
     "T-241",
     "T-257",
 ]
+estimated = ["scope"]
 owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c"]
 
-[scope.mod]
-layers = ["feature"]
+[scope]
+domain = "mod"
+layer = "scripts"
+component = "objectives"

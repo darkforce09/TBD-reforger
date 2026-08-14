@@ -37,7 +37,7 @@
 
 use crate::store::Corpus;
 use crate::{
-    ProgramTicket, RepoLayer, Scope, Status, StatusName, Ticket, WorkTicket, parse_ticket_toml,
+    Domain, ProgramTicket, ScopeV2, Status, StatusName, Ticket, WorkTicket, parse_ticket_toml,
     render_ticket_toml,
 };
 use std::collections::{BTreeMap, BTreeSet};
@@ -279,13 +279,35 @@ fn validate_post_image(
     }
     // Work made live by THIS op must own a collision surface.
     for id in made_live {
-        if let Some(Ticket::Work(w)) = post.get(id)
-            && w.owns.is_empty()
-        {
-            return Err(format!(
-                "{id}: owns required for {} work ticket — this op would make it live with empty owns[] (the wave packer cannot see an owns-empty ticket)",
-                w.status.name().as_str()
-            ));
+        if let Some(Ticket::Work(w)) = post.get(id) {
+            if w.owns.is_empty() {
+                return Err(format!(
+                    "{id}: owns required for {} work ticket — this op would make it live with empty owns[] (the wave packer cannot see an owns-empty ticket)",
+                    w.status.name().as_str()
+                ));
+            }
+            // T-917.2 surface rule (spec Decisions log #3: surface REQUIRED on
+            // live/new work), same made-live-only scoping as owns. Binds only when
+            // the scope names a component: component-free vocabulary positions
+            // (repo/docs, engine layers, …) carry no surfaces to require, and
+            // `"scope" ∈ estimated[]` is the migrator's honest escape for
+            // owns-uninferable history. Deliberately STRICTER than the check-level
+            // rule (which also exempts components whose vocabulary surface list is
+            // empty — ops cannot read the vocab from a memory-only corpus): ops
+            // being stricter than check is the safe direction of the "no op may
+            // write a corpus its own preflight would refuse" invariant, and making
+            // a component-bearing ticket live without naming a surface is exactly
+            // the decision point where the operator should widen the vocabulary or
+            // record the marker deliberately.
+            if let Some(component) = &w.scope.component
+                && w.scope.surface.is_empty()
+                && !w.estimated.iter().any(|e| e == "scope")
+            {
+                return Err(format!(
+                    "{id}: surface required for {} work ticket — scope names component {component} but surface is empty; set [scope] surface (vocabulary: .ai/tickets/scope-vocab.toml) or record \"scope\" in estimated[]",
+                    w.status.name().as_str()
+                ));
+            }
         }
     }
     Ok(())
@@ -572,6 +594,11 @@ pub fn add(
 }
 
 /// The one shape both minters (`add`, `add_child`) produce — `cmd_add`'s row, typed.
+/// T-917.2: mints v2 — flat scope `repo`/`docs` (the vocab-legal mint default,
+/// component-free so the surface rule leaves ideas mintable), and a `class` from the
+/// conservative-deterministic [`crate::classify_work`] triage so the check-level
+/// class-required-on-work rule holds from birth (idea status is otherwise exempt from
+/// nothing — every work ticket carries a class).
 fn minted_work(
     id: &str,
     parent: Option<&str>,
@@ -587,22 +614,36 @@ fn minted_work(
         } else {
             summary.to_string()
         },
+        class: Some(crate::classify_work(&format!("{title} {summary}")).to_string()),
         status: Status::Idea,
         executor: None,
         notes: None,
         spec: None,
+        plan: None,
         depends_on: vec![],
         unblocks: vec![],
         parent: parent.map(str::to_string),
-        scope: Scope::Repo {
-            layers: vec![RepoLayer::Docs],
+        scope: ScopeV2 {
+            domain: Domain::Repo,
+            layer: "docs".into(),
+            component: None,
+            surface: vec![],
         },
         user_story: None,
+        context: vec![],
+        requirement: vec![],
+        current_state: vec![],
+        approach: vec![],
+        verify: vec![],
         acceptance: vec![],
+        citations: vec![],
         shipped_at: None,
         priority: None,
         created_at: Some(now_utc.to_string()),
         completed_at: None,
+        estimated: vec![],
+        estimate_note: None,
+        migration_legacy: vec![],
         owns: vec![],
         pack_last: None,
     })
@@ -660,19 +701,30 @@ pub fn add_child(
                 id: w.id.clone(),
                 title: w.title.clone(),
                 summary: w.summary.clone(),
+                class: w.class.clone(),
                 status: w.status.clone(),
                 executor: w.executor.clone(),
                 notes: w.notes.clone(),
                 spec: w.spec.clone(),
+                plan: w.plan.clone(),
                 depends_on: w.depends_on.clone(),
                 unblocks: w.unblocks.clone(),
                 children: vec![child_id.clone()],
                 active: None,
                 user_story: w.user_story.clone(),
+                context: w.context.clone(),
+                requirement: w.requirement.clone(),
+                current_state: w.current_state.clone(),
+                approach: w.approach.clone(),
+                verify: w.verify.clone(),
                 acceptance: w.acceptance.clone(),
+                citations: w.citations.clone(),
                 priority: w.priority,
                 created_at: w.created_at.clone(),
                 completed_at: w.completed_at.clone(),
+                estimated: w.estimated.clone(),
+                estimate_note: w.estimate_note.clone(),
+                migration_legacy: w.migration_legacy.clone(),
                 owns: w.owns.clone(),
                 pack_last: w.pack_last,
             };
@@ -896,22 +948,36 @@ mod tests {
             id: id.into(),
             title: format!("{id} title"),
             summary: format!("{id} summary"),
+            class: Some("chore".into()),
             status,
             executor: Some("claude-code".into()),
             notes: None,
             spec: None,
+            plan: None,
             depends_on: vec![],
             unblocks: vec![],
             parent: None,
-            scope: Scope::Repo {
-                layers: vec![RepoLayer::Docs],
+            scope: ScopeV2 {
+                domain: Domain::Repo,
+                layer: "docs".into(),
+                component: None,
+                surface: vec![],
             },
             user_story: None,
+            context: vec![],
+            requirement: vec![],
+            current_state: vec![],
+            approach: vec![],
+            verify: vec![],
             acceptance: vec![],
+            citations: vec![],
             shipped_at: None,
             priority: None,
             created_at: None,
             completed_at: None,
+            estimated: vec![],
+            estimate_note: None,
+            migration_legacy: vec![],
             owns: vec![format!("{id}.surface")],
             pack_last: None,
         }
@@ -922,19 +988,30 @@ mod tests {
             id: id.into(),
             title: format!("{id} title"),
             summary: format!("{id} summary"),
+            class: None,
             status,
             executor: Some("claude-code".into()),
             notes: None,
             spec: None,
+            plan: None,
             depends_on: vec![],
             unblocks: vec![],
             children: children.iter().map(|s| (*s).to_string()).collect(),
             active: active.map(str::to_string),
             user_story: None,
+            context: vec![],
+            requirement: vec![],
+            current_state: vec![],
+            approach: vec![],
+            verify: vec![],
             acceptance: vec![],
+            citations: vec![],
             priority: None,
             created_at: None,
             completed_at: None,
+            estimated: vec![],
+            estimate_note: None,
+            migration_legacy: vec![],
             owns: vec![],
             pack_last: None,
         })
@@ -1228,13 +1305,65 @@ mod tests {
                 assert_eq!(w.created_at.as_deref(), Some(CLOCK));
                 assert_eq!(
                     w.scope,
-                    Scope::Repo {
-                        layers: vec![RepoLayer::Docs]
-                    }
+                    ScopeV2 {
+                        domain: Domain::Repo,
+                        layer: "docs".into(),
+                        component: None,
+                        surface: vec![],
+                    },
+                    "T-917.2 mint default: flat repo/docs, component-free"
+                );
+                assert_eq!(
+                    w.class.as_deref(),
+                    Some("feature"),
+                    "minted class comes from the classify_work triage"
                 );
             }
             Ticket::Program(_) => panic!("minted ticket must be work"),
         }
+    }
+
+    /// T-917.2 — the surface rule mirrors the owns rule: an op that makes a
+    /// component-bearing, surface-less work ticket live refuses naming the fix;
+    /// a surface or the migrator's `"scope"` estimated-marker passes; component-free
+    /// scope is exempt (no vocabulary surfaces exist to require).
+    #[test]
+    fn made_live_component_without_surface_refuses() {
+        let mut bare = work("T-2", Status::Idea);
+        bare.scope = ScopeV2 {
+            domain: Domain::Website,
+            layer: "frontend".into(),
+            component: Some("mission_creator".into()),
+            surface: vec![],
+        };
+        let mut marked = work("T-4", Status::Idea);
+        marked.scope = bare.scope.clone();
+        marked.estimated = vec!["scope".into()];
+        let mut surfaced = work("T-5", Status::Idea);
+        surfaced.scope = ScopeV2 {
+            surface: vec!["attr_panel".into()],
+            ..bare.scope.clone()
+        };
+        let mut c = corpus(vec![
+            Ticket::Work(work("T-1", Status::Queued { order: 10 })),
+            Ticket::Work(bare),
+            Ticket::Work(work("T-3", Status::Idea)),
+            Ticket::Work(marked),
+            Ticket::Work(surfaced),
+        ]);
+        let before = c.clone();
+        let err = reorder(&mut c, "T-2", "T-1", CLOCK).expect_err("surface-less made live");
+        assert!(
+            err.contains("surface required") && err.contains("mission_creator"),
+            "{err}"
+        );
+        assert_eq!(before, c, "refusal must not mutate");
+        // Component-free scope (the mint default) stays mintable → live.
+        reorder(&mut c, "T-3", "T-1", CLOCK).expect("component-free exempt");
+        // The migrator's honest escape passes…
+        reorder(&mut c, "T-4", "T-3", CLOCK).expect("scope ∈ estimated passes");
+        // …and so does a real surface.
+        reorder(&mut c, "T-5", "T-4", CLOCK).expect("surfaced ticket passes");
     }
 
     /// T-916.1 acceptance 2 — add-child onto a work parent refuses without `promote`;

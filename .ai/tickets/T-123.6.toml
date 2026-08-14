@@ -2,6 +2,7 @@ id = "T-123.6"
 kind = "work"
 title = "T-123 — Documentation standards rollout (full program)"
 summary = "T-123 — Documentation standards rollout (full program)"
+class = "docs"
 status = "shipped"
 order = 1230
 spec = "docs/platform/t123_documentation_standards_rollout.md"
@@ -9,5 +10,6 @@ executor = "claude-code"
 parent = "T-123"
 shipped_at = "102a835"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

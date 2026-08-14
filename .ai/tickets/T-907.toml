@@ -2,10 +2,12 @@ id = "T-907"
 kind = "work"
 title = "Split T-151 map-engine SIZE-3 files (11) the T-899 allowlist is holding"
 summary = "T-899 allowlisted 11 map-engine files over 1000 lines. Split them; drop the SIZE-3 rows. crates/map-engine-core: dem/sample.rs, doc/apply_faction.rs, doc/store.rs, mission/compile.rs, mission/flatten.rs, mission/validate.rs, slots_gpu.rs, world/residency.rs. crates/map-engine-render: draw_order.rs, engine.rs, scene.rs. Not dispatched in T-853 waves 234-235. Not the registry-split program."
+class = "docs"
 status = "queued"
 order = 5870
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+estimated = ["scope"]
 owns = [
     "crates/map-engine-core/src/dem/sample.rs",
     "crates/map-engine-core/src/doc/apply_faction.rs",
@@ -20,5 +22,6 @@ owns = [
     "crates/map-engine-render/src/scene.rs",
 ]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

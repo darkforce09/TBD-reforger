@@ -2,12 +2,15 @@ id = "T-152.21"
 kind = "work"
 title = "T-152.21 — Landmark early visibility (`importanceZoom` wired)"
 summary = "T-152.21 — Landmark early visibility (`importanceZoom` wired)"
+class = "feature"
 status = "shipped"
 order = 1520
 spec = "docs/specs/Mission_Creator_Architecture/t152_21_landmark_early_visibility.md"
 executor = "claude-code"
 notes = "Shipped @ d5c746df (tag T-152.21). importanceZoom wired; 44 badges @ z=−2 (was 0); residency band fix; landmarkVisible deleted. Verify t152_21_verify_log.md; M1/M2 buffer-proven, GPU visual operator-pending."
 parent = "T-152"
+estimated = ["scope"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

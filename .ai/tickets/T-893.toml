@@ -2,15 +2,19 @@ id = "T-893"
 kind = "work"
 title = "T-853 wave 228: commit bash↔port RED-arm harness for deploy db ports"
 summary = "Wave 228 adversarial MAJOR-2: T-884/885/886 proved ≥2 broken arms in agent reports but landed no committed parity harness/fixtures under xtask. T-853 DoD asks bash-went-red asserted before trusting the port. Add Class-R tests (or committed /tmp recipe replay) for deploy db refuse/verify/backup keep that fail if the port drifts. Repro: cargo test -p xtask today has only thin deploy_db_* units; no bash-vs-port acceptance."
+class = "chore"
 status = "deferred"
 order = 5670
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+estimated = ["scope"]
 owns = [
     "xtask/src/deploy_db_common.rs",
     "xtask/src/deploy_db_backup.rs",
     "xtask/src/deploy_db_restore.rs",
 ]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "deploy"

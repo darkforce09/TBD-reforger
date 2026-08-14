@@ -7,11 +7,15 @@ FOUND by W56 adversarial verifier (CLEAN residual, outside T-494 owns) after T-4
 mission_overview / event_hub / schedule (events.rs) now trim-ratchet briefing emptiness. Library hero featured card in apps/website/frontend/src/missions.rs still uses .filter(|b| !b.is_empty()) without trim.
 
 Repro: rg 'filter\(\|b\| !b\.is_empty\(\)\)' apps/website/frontend/src/missions.rs'''
+class = "feature"
 status = "shipped"
 order = 3388
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/missions.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

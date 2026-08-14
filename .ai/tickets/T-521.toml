@@ -2,11 +2,15 @@ id = "T-521"
 kind = "work"
 title = "W46 hotfix: rustfmt missions.rs create_version after T-505"
 summary = "Wave 46 cold re-gate after T-520 still FAIL fmt (changed). apps/website/api/src/handlers/missions.rs else-branch UPDATE (no title mirror) fails rustfmt --check around create_version ~951. Cure: rustfmt that file only. Owns: apps/website/api/src/handlers/missions.rs."
+class = "chore"
 status = "shipped"
 order = 3361
 executor = "claude-code"
 priority = 0
+estimated = ["scope"]
 owns = ["apps/website/api/src/handlers/missions.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

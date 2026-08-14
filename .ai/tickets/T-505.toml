@@ -2,15 +2,20 @@ id = "T-505"
 kind = "work"
 title = "Hydrate/row-mirror still stomps authored title after T-375 compile emit"
 summary = "Wave 41 residual (CLEAN). T-375 emits non-blank trimmed meta.title on compile_payload. hydrate/apply_row_meta still does not load payload title into meta; create_version does not PATCH missions.title. Reload can overwrite authored title with stale row. Cure: adopt_payload/apply_row_meta prefer payload title (trim-aware) and/or mirror title to row on Save with non-blank guard."
+class = "feature"
 status = "shipped"
 order = 3345
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = [
     "crates/map-engine-core/src/doc/store.rs",
     "apps/website/frontend/src/mission_hydrate.rs",
     "apps/website/api/src/handlers/missions.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["doc_store"]

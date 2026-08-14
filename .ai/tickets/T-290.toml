@@ -2,11 +2,13 @@ id = "T-290"
 kind = "work"
 title = "Resolve nine dead-output fields flatten emits that the mod never reads"
 summary = "meta.author, meta.templateId, meta.playerRange, the whole environment block, factions[].tickets, orbat[].type, winConditions.mode, flow.briefingSeconds (advisory only), and the entire orbat block (parity-check only). Either add mod readers or annotate them non-consumed so the next audit does not re-derive this."
+class = "audit"
 status = "idea"
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 owns = ["crates/map-engine-core/src/mission/flatten.rs"]
 pack_last = true
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

@@ -2,12 +2,15 @@ id = "T-165.7"
 kind = "work"
 title = "T-165 — Node/JS eradication: every .mjs tool → Rust"
 summary = "T-165 — Node/JS eradication: every .mjs tool → Rust"
+class = "feature"
 status = "shipped"
 order = 1620
 spec = "docs/platform/t165_node_eradication.md"
 executor = "claude-code"
 notes = "MCP broker + stub -> Rust; selftest 19/19 frozen."
 parent = "T-165"
+estimated = ["scope"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

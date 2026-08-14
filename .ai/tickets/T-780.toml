@@ -2,10 +2,12 @@ id = "T-780"
 kind = "work"
 title = "Connections have no line on the map, so CONN-DEL-001 can only be reached from the panel"
 summary = "DISCLOSED SCOPE GAP carried from T-768 (wave 140) and confirmed still open after the remediation run. T-768 delivered the connect gesture's pointer half once T-723 fixed the armed-pointerup path, so a connection can now be STARTED and FINISHED on the map. What it did not deliver is a rendered LINE: connections draw nothing, so there is no artifact to click, and CONN-DEL-001 (delete a connection) is reachable only from the panel's Delete control. An author who drew a connection on the map has no way to remove it on the map. THIS IS THE SAME SHAPE T-760 AND T-748 ALREADY CLOSED for markers and comments respectively: both needed a render lane in crates/map-engine-render/src/draw_order.rs plus the rebind tail in apps/website/frontend/src/mission_history.rs, and both are now shipped and can be copied rather than re-derived. RECIPE: add the connection lane to draw_order.rs and engine.rs the way the marker lane was added by T-760; feed it from the document, NOT from a slice's own owns — T-069 and T-672 independently established that a lane fed from a slice's own state goes stale after undo/redo/restore, which is why the feed comes first; then wire pick/hit-testing so a line can be selected, and route Delete through the existing path rather than authoring a second one. ACCEPTANCE: draw a connection, undo, redo, restore from IDB, and confirm the line survives each; then select the line on the map and delete it through the same code path the panel's Delete uses."
+class = "bug"
 status = "shipped"
 order = 4656
 executor = "claude-code"
 notes = "scope gap disclosed by T-768 (wave 140); render lane recipe already shipped by T-760 and T-748"
+estimated = ["scope"]
 owns = [
     "crates/map-engine-render/src/draw_order.rs",
     "crates/map-engine-render/src/engine.rs",
@@ -13,5 +15,11 @@ owns = [
     "apps/website/frontend/src/context_menu.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = [
+    "map_canvas",
+    "layout_chrome",
+]

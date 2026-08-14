@@ -2,14 +2,19 @@ id = "T-693"
 kind = "work"
 title = "Merge another mission into this one"
 summary = "NEW-F4. Row MENU-SCEN-011, Eden Ctrl+M. High value for composing an ORBAT from a template mission, and the paste primitives already exist (paste_slots, store.rs:1442). Scoped to mission_commands.rs + store.rs rather than editor_ops.rs on the sweep own advice — that keeps it packable into any wave instead of only two."
+class = "feature"
 status = "shipped"
 order = 4470
 executor = "claude-code"
 notes = " — SHIPPED wave 111 (editor factory), 2a7e77d5 + collision fix; verifier wave111.md"
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/mission_commands.rs",
     "crates/map-engine-core/src/doc/store.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["ops_undo"]

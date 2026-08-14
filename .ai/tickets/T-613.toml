@@ -36,14 +36,18 @@ FIX SHAPE: anchor the subject match (`CLOSED` at end, or `CLOSED:` / `CLOSED —
 verifier an INDEPENDENT oracle -- e.g. cross-check the derived base against the merge structure or
 the tag history rather than re-asking `prev_wave_close()`. A checker that consults the thing it is
 checking is not a check.'''
+class = "bug"
 status = "shipped"
 order = 3602
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "scripts/platform/wave.sh",
     "scripts/mod/remote-log-grep.sh",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -2,12 +2,15 @@ id = "T-090.2"
 kind = "work"
 title = "T-090.2 — Map object taxonomy + schema"
 summary = "T-090.2 — Map object taxonomy + schema"
+class = "feature"
 status = "shipped"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_2_map_object_taxonomy.md"
 executor = "claude-code"
 parent = "T-090"
 shipped_at = "691d9b26"
+estimated = ["scope"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

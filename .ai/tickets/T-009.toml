@@ -2,9 +2,13 @@ id = "T-009"
 kind = "work"
 title = "Inline ORBAT on Event Hub"
 summary = "Faction/squad/slot selector inline on Event Hub."
+class = "feature"
 status = "shipped"
 order = 90
 executor = "cursor-docs"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

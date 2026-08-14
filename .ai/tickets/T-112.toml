@@ -2,11 +2,15 @@ id = "T-112"
 kind = "work"
 title = "GPU viewport cull (DataFilterExtension)"
 summary = "CANCELLED (2026-07-26 audit). DataFilterExtension is a Deck.gl API with ZERO code hits repo-wide; @deck.gl/extensions is in no lockfile; Deck was retired at T-151.9."
+class = "audit"
 status = "cancelled"
 order = 1500
 spec = "docs/specs/Mission_Creator_Architecture/t067_spatial_chunks.md"
 executor = "claude-code"
 depends_on = ["T-067"]
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

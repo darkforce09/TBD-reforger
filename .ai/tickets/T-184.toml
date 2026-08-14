@@ -2,9 +2,13 @@ id = "T-184"
 kind = "work"
 title = "Single-faction missions compile clean then hard-reject in game"
 summary = "CANCELLED — premise fixed by T-181.46 (c4fabcb2, 2026-07-25 19:09), 43 minutes after this ticket was filed. flatten.rs:617-635 now derives endOn from flattened slots and only emits faction_eliminated when >=2 factions actually hold slots, which is exactly the zero-slot-stub case described here."
+class = "bug"
 status = "cancelled"
 order = 2020
 executor = "claude-code"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

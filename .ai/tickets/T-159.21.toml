@@ -2,6 +2,7 @@ id = "T-159.21"
 kind = "work"
 title = "T-159.21 — Eden chrome scaffold + undo/redo"
 summary = "T-159.21 — Eden chrome scaffold + undo/redo"
+class = "feature"
 status = "shipped"
 order = 1570
 spec = "docs/platform/t159_21_eden_chrome_undo.md"
@@ -9,6 +10,9 @@ executor = "claude-code"
 notes = "Eden chrome + undo/redo; 9 smokes; probe inset under docks. Verify: .ai/artifacts/t159_21_verify_log.md"
 parent = "T-159"
 shipped_at = "f02fed5a"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

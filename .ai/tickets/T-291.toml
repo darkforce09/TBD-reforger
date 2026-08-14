@@ -2,10 +2,12 @@ id = "T-291"
 kind = "work"
 title = "Resolve five schema fields implemented on no surface"
 summary = "environment.windDirDeg, factions[].color, roles[].radio, layers[], and settings.{respawn,spectatorPolicy,nightVision} are declared in the contract with zero implementation in flatten or the mod. spectatorPolicy is dead despite Spectator/ being a shipped seven-file subsystem."
+class = "feature"
 status = "idea"
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 owns = ["crates/map-engine-core/src/mission/flatten.rs"]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

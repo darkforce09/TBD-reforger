@@ -14,11 +14,15 @@ MEASURED CURRENT STATE: `grep -c 'test result: ok\. 0 passed'` across a full run
 CURE: a wrapper asserting `passed >= 1` per line. T-216 judged it a third structural change to that file and deliberately left it -- correctly, it belongs here.
 
 CONTEXT: this is the third gate-integrity defect found in that one script this wave. The other two are FIXED and shipped in wave 5 -- `--features doc` not enabling `mission` (the script had not compiled since T-344, so sections C/D/G/I and the whole frontend block never ran), and three static bans in `if rg ...; then fail; fi` form that printed OK when `rg` was absent from the host. Both now green: `verify-t180: ALL PASS`, rc=0, end to end, verified independently.'''
+class = "bug"
 status = "shipped"
 order = 3263
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = ["scripts/verify-t180-coherency.sh"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

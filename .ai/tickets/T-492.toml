@@ -2,11 +2,14 @@ id = "T-492"
 kind = "work"
 title = "fmt_changed/clippy_changed ignore changed_rs rc (empty→SKIP)"
 summary = 'Wave 36 adversarial NIT. T-401 made git_porcelain_paths fail-loud, and wasm_changed/refuse_empty_range check rc. fmt_changed and clippy_changed still do files="$(changed_rs …)" and treat empty as SKIP (return 0) without checking $?. Gate path is still safe because refuse_empty_range runs first. Cure: propagate changed_rs failure in those helpers (or share a wrapper that dies on rc≠0).'
+class = "chore"
 status = "shipped"
 order = 3331
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = ["scripts/platform/wave.sh"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

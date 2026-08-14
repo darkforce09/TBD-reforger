@@ -2,12 +2,15 @@ id = "T-152.14"
 kind = "work"
 title = "T-152.14 — Tree glyph zoom-in guarantee (budget + handoff fix)"
 summary = "T-152.14 — Tree glyph zoom-in guarantee (budget + handoff fix)"
+class = "bug"
 status = "shipped"
 order = 1520
 spec = "docs/specs/Mission_Creator_Architecture/t152_14_tree_zoom_guarantee.md"
 executor = "claude-code"
 notes = "Shipped @ 9cc13714 (tag T-152.14) area-fraction budget + hysteresis + forest_fill_effective. Hotfix T-152.14.1 @ 75ccf5b1: ATLAS_GLYPH_COUNT 28→32 + CI guards A–D — icon lanes dark since T-152.10 (29th glyph vs hardcoded 28). Verify t152_14_verify_log.md; M1/M2 operator pending on .14 core."
 parent = "T-152"
+estimated = ["scope"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

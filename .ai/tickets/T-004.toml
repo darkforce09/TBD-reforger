@@ -2,9 +2,13 @@ id = "T-004"
 kind = "work"
 title = "Frontend wired to backend"
 summary = "Typed hooks, auth bootstrap, all pages on live data."
+class = "feature"
 status = "shipped"
 order = 40
 executor = "cursor-docs"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

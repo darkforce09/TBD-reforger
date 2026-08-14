@@ -2,11 +2,13 @@ id = "T-181.11.1"
 kind = "work"
 title = "T-181.11.1"
 summary = "T-181.11.1"
+class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
 notes = "AdminRespawn(playerId, byAdmin) — server-authority only, refuses non-dead and disconnected players, re-materializes a dressed body on the player's own slot, writes an audit line, and re-marks dead on FAILED rather than leaving limbo. Chat: `#tbd respawn <playerId>` and `#tbd dead`. Permission reuses vanilla SCR_PlayerListedAdminManagerComponent.IsPlayerOnAdminList (so T-181.11.1 permissions were already HAVE)."
 parent = "T-181"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

@@ -43,14 +43,18 @@ immediately rather than a permanent 500 a game server discovers. Keep `rules` op
 
 CONFIRMED SOUND, do not re-audit: quantisation is otherwise faithful (1000.256->1000.3,
 175.789->175.8, vertex count and order preserved, verified over the real HTTP path).'''
+class = "audit"
 status = "shipped"
 order = 3430
 executor = "claude-code"
 priority = 0
+estimated = ["scope"]
 owns = [
     "apps/website/api/src/contract/validate.rs",
     "packages/tbd-schema/schema/mission-editor-payload.schema.json",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

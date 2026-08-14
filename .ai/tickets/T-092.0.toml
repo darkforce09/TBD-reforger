@@ -2,11 +2,14 @@ id = "T-092.0"
 kind = "work"
 title = "T-092.0 — Spawn + compile contract (docs)"
 summary = "T-092.0 — Spawn + compile contract (docs)"
+class = "docs"
 status = "shipped"
 order = 920
 spec = "docs/specs/Mission_Creator_Architecture/t092_0_spawn_contract.md"
 executor = "cursor-docs"
 parent = "T-092"
+estimated = ["scope"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

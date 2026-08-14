@@ -2,9 +2,13 @@ id = "T-010"
 kind = "work"
 title = "Rich ORBAT slots + squad reservation"
 summary = "Per-slot loadout/tag schema and leader squad holds."
+class = "feature"
 status = "shipped"
 order = 100
 executor = "cursor-docs"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -2,6 +2,7 @@ id = "T-181.17"
 kind = "work"
 title = "T-181.17"
 summary = "T-181.17"
+class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
@@ -9,5 +10,6 @@ notes = "Safestart / warmup phase. Damage suppressed via EnableDamageHandling(fa
 parent = "T-181"
 owns = ["TBD_FrameworkManager.c"]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

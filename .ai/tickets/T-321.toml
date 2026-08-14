@@ -5,12 +5,16 @@ summary = """
 FOUND by T-308 while fixing Apply Template; reported, not touched (out of its owns). place_orbat.rs:52-55 mints a NEW squad on every single placement. That is why '>1 squad under a side' — which T-217's guard treats as authored structure worth refusing over — is actually the normal state after two clicks. T-308 worked around it by folding machine-minted squads (one slot, still on the default `Squad {n}` label, no callsign, no vehicles) into the apply target, which is correct as far as it goes but is a workaround.
 
 If a placement instead appended to the side's current squad, or to an explicit active squad, the fold in orbat_apply_faction would be near-dead code and the ORBAT tree would stop growing a squad per click. Decide the model — implicit 'current squad' vs an explicit active-squad selection in the ORBAT panel — then make placement honour it. Keep T-308's fold as the compatibility path for documents already carrying per-click squads."""
+class = "feature"
 status = "shipped"
 order = 3137
 executor = "claude-code"
 priority = 1
 shipped_at = "f33ef5c1"
+estimated = ["scope"]
 owns = ["crates/map-engine-core/src/doc/place_orbat.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

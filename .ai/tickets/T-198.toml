@@ -2,11 +2,13 @@ id = "T-198"
 kind = "work"
 title = "cargoContainer cannot express a vehicle or a crate"
 summary = "The enum is closed to four worn garments — vest, pants, jacket, backpack — in both mission.schema.json:89 and loadout-export.schema.json:67, and GarmentForContainer resolves only to worn areas. No code path anywhere puts an item into a vehicle, and the 311 crate rows are unreachable from any UI."
+class = "feature"
 status = "shipped"
 order = 2160
 executor = "claude-code"
 shipped_at = "2070eecd"
 owns = ["packages/tbd-schema/schema/mission.schema.json"]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

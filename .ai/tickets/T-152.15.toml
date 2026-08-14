@@ -2,12 +2,15 @@ id = "T-152.15"
 kind = "work"
 title = "T-152.15 — Fence / pier / bridge visibility + orientation remediation"
 summary = "T-152.15 — Fence / pier / bridge visibility + orientation remediation"
+class = "feature"
 status = "shipped"
 order = 1520
 spec = "docs/specs/Mission_Creator_Architecture/t152_15_fence_pier_bridge_visibility.md"
 executor = "claude-code"
 notes = "Shipped @ 9518680e (tag T-152.15). Fence z≥1.5 + STRIP_MIN_PX; yaw from obb_corners; 2,299/2,299 pier strips; Path A synthetic rails (288); strips_visible() TS gate. Verify t152_15_verify_log.md; M1–M3 operator PASS good enough 2026-07-13."
 parent = "T-152"
+estimated = ["scope"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

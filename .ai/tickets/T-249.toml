@@ -2,9 +2,11 @@ id = "T-249"
 kind = "work"
 title = "Add a slot.y fixture"
 summary = "No golden authors slots[].y, so the entire schema-1.2 path — Y_ABSENT sentinel (TBD_MissionSlotStruct.c:47,57), HasJsonY(), TBD_SpawnManager.c:957-973 — is untested end to end despite T-092.1 shipping it."
+class = "feature"
 status = "shipped"
 order = 2670
 executor = "claude-code"
+estimated = ["scope"]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",
@@ -12,5 +14,6 @@ owns = [
     "xtask/src/schema_gates.rs",
 ]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

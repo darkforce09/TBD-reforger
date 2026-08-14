@@ -2,11 +2,15 @@ id = "T-499"
 kind = "work"
 title = "admin_field roles/sync still demotes all users in shared IT DB"
 summary = "Wave 38 residual from T-400. identity_link/factions/telemetry isolated. admin_field.rs POST /admin/roles/sync still loops every users row and demotes anyone without user_discord_roles — fires inside the suite against shared rows. Cure: scope sync to fixture actors or skip in IT / use private actors for asserts."
+class = "feature"
 status = "shipped"
 order = 3334
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = ["apps/website/api/tests/admin_field.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

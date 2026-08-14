@@ -2,11 +2,13 @@ id = "T-668"
 kind = "work"
 title = "One state vocabulary across the whole editor chrome"
 summary = """NEW, from editor_chrome_direction.md, and the ticket that most directly answers the operator's "the current UI is very inconsistent and very disjointed". Geometry is the visible half of the problem; the reason Eden reads as ONE PRODUCT and ours reads as assembled is that Eden uses one state language everywhere and we use several. Adopt four rules across the whole chrome. (1) HOVER = solid amber fill. Orange is hover, NOT toggled-on — easy to copy backwards; batch 08 proved it via frame 164000 where the New button is amber purely because the cursor is over it. (2) TOGGLED ON = lighter plate + 1px dark top border, distinct from hover BY CONSTRUCTION so the two can never be confused. (3) DISABLED = dimmed glyph, AND IT STILL SHOWS ITS TOOLTIP (verified on Redo) — a disabled control that explains itself is strictly better than one that goes silent. (4) UNAVAILABLE = two strategies chosen by verb: clipboard verbs (Cut/Copy/Delete) keep their slot and grey out; scope/query verbs (Select..., Log...) are dropped from the menu entirely. Plus three conventions: RESERVE THE CHECKMARK GUTTER UNCONDITIONALLY (Eden only allocates it when a menu happens to have a checked item, so label indent jumps between menus — that is a bug to NOT copy); `...` means "opens a dialog", everywhere; parenthetical scope qualifiers `(Selected)` / `(View)` and axis glosses `(Width)` / `(Length)` / `(Height)`. KEEP THE AEGIS PALETTE — desaturated #adc6ff primary, the Aegis type scale, our glass surfaces. This is Eden's structure in Aegis colours, not a reskin, and the editor must not look like a different product from the Library and Events pages it sits inside. Do NOT copy Eden's translucent panels over a live scene. Cheap by construction: it changes classes, not structure. SCHEDULING CAVEAT, recorded because it is a real cost: the direction says this should land EARLY so later waves build against a finished vocabulary, but every earlier wave already has a claimant on one of these files and the program is fixed at 19 waves — wave 10 is the earliest slot with no collision. T-636 (status bar), T-638 (dock collapse) and T-667 (furniture) therefore land before it and will need a retrofit pass."""
+class = "bug"
 status = "shipped"
 order = 4080
 executor = "claude-code"
 notes = "editor-UI program wave 10 (wave_plan.tsv row 110) — SHIPPED wave 110 (editor factory), 158eb691; verifier wave110.md"
 depends_on = ["T-661"]
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/eden_layout.rs",
     "apps/website/frontend/src/eden_top_strip.rs",
@@ -20,5 +22,16 @@ owns = [
     "apps/website/frontend/src/ui.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = [
+    "layout_chrome",
+    "top_strip",
+    "toolbelt",
+    "dock_left",
+    "dock_right",
+    "outliner",
+    "env_settings",
+]

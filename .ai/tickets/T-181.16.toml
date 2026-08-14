@@ -2,6 +2,7 @@ id = "T-181.16"
 kind = "work"
 title = "T-181.16"
 summary = "T-181.16"
+class = "feature"
 status = "queued"
 order = 1810
 executor = "human"
@@ -12,5 +13,6 @@ owns = [
     "docs/mod/t181_event_mod_program.md",
 ]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

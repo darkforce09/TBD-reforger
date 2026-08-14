@@ -2,11 +2,16 @@ id = "T-811"
 kind = "work"
 title = "Layer rename never receives focus — the F-02 fix landed on the bookmark widget, not the layer tree"
 summary = """WAVE-200 VERIFIER RE-TICKET (source: .ai/artifacts/editor_verify/wave200.md F1, MAJOR; hostile review F-02). VERIFIED LIVE (real per-char CDP): the actual Layers rename — pencil aria-label="Rename layer" eden_tree.rs:462, input ~:836-867 — relies on bare autofocus=true on a reactively-inserted node, which browsers skip ('a node created by a later reactive update is skipped' — the mechanism note T-785 itself added at eden_dock_left.rs:330-338). Creation flow (New layer -> armed inline rename): input mounts prefilled 'New Layer 1', focused_on_mount:false, activeElement=BUTTON; real 'g' keydown flipped GRID off->move; typed 'Assault Sqd' never reached the input. Pencil flow: same — value unchanged after 11 typed chars. T-785's source-pins pin the BOOKMARK rename and pass green — a green pin on the wrong widget. FIX: check FIRST whether the rename draft round-trips through a signal the tree list renders from (the T-812 remount trap) — if so decouple the draft; then NodeRef + on_load focus+select (the eden_dock_left.rs:330-338 pattern). Cover BOTH flows. TRAPS: do not touch T-785's attributes.rs text_field work; layer-row drop-target/selection clicks must keep working while a rename is open. ACCEPTANCE (re-run the verifier probe): both flows — focused_on_mount === true; type an 11-char string with spaces -> value === typed, activeElement === the input, GRID chip byte-identical; Enter/blur commits the rename; Escape abandons."""
+class = "bug"
 status = "shipped"
 order = 4930
 executor = "claude-code"
 notes = "wave 209; verifier wave200.md F1; probe harness pattern: review section 2 F-01 + scratchpad cdp.py | SHIPPED W209: acceptance re-proved live by the Fable verifier (both rename flows focus on mount, whole-word typing, GRID immune, node survives). Its source pin shipped HOLLOW (raw include_str self-match — verifier F2, the T-759 class) — un-hollowed in-wave 27343f82, perturbation-proven RED on production node_ref deletion."
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/eden_tree.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["outliner"]

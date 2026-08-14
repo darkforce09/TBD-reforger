@@ -2,12 +2,16 @@ id = "T-090.5.5"
 kind = "work"
 title = "T-090.5 — Map object render layer (Eden-like static world)"
 summary = "T-090.5 — Map object render layer (Eden-like static world)"
+class = "feature"
 status = "shipped"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md"
 executor = "claude-code"
 parent = "T-090"
 shipped_at = "2b1a0dda"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

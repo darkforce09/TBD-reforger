@@ -22,14 +22,18 @@ backups live outside `app.rs`. This is that work, and T-280 already specified it
    same way -- not root cron.
 5. **A restore DRILL in CI or the wave gate**: dump -> restore into a scratch DB -> run `db_migrate`
    against it. Without this the backup is untested and you discover that during an incident."""
+class = "chore"
 status = "shipped"
 order = 3421
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = [
     "scripts/deploy/backup-db.sh",
     "Makefile",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

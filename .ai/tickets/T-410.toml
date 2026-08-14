@@ -21,15 +21,19 @@ apps/website/api/tests/missions.rs:1002 `mission_submit_is_the_only_door_into_th
     panicked at apps/website/api/tests/missions.rs:1002
     submitted mission missing from GET /approvals: {... "limit":20,"offset":0,"total":26}
 T-399's sweep caught missions.rs:151 and :249 but MISSED this one. Every wave gate on this machine is red against the shared DB until the residue clears or the test paginates; waves 3, 4 and 5 all passed only because the command center pointed TBD_GATE_DB at a fresh cold database each time. That workaround is exactly why T-411 (per-wave DB names) matters.'''
+class = "bug"
 status = "shipped"
 order = 3231
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = [
     "apps/website/api/tests/missions.rs",
     "apps/website/api/tests/dashboard_reads.rs",
     "apps/website/api/src/handlers/dashboard.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

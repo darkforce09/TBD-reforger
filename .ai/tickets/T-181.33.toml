@@ -2,12 +2,15 @@ id = "T-181.33"
 kind = "work"
 title = "T-181.33"
 summary = "T-181.33"
+class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
 notes = "Safestart now SAVES AND RESTORES each body's prior damage-handling value instead of forcing true. m_mHeld became map<IEntity, ref TBD_SafestartHold> carrying the arm generation PLUS the value safestart found, read once in ApplyTo before that body's first mutation and never re-read. THE GETTER EXISTS — IsDamageHandlingEnabled(), so the prompt's 'least-bad fallback' was unnecessary; corroborated in shipped vanilla by two sites that READ it without ever setting it (SCR_DamageDisabledTooltipDetail.c:20, SCR_HealthTooltipDetail.c:21), i.e. a general-purpose state query not a set-then-confirm idiom. KEY DESIGN CALL: EnableDamageHandling(false) stays unconditional and never consults the getter — the naive fix would trade 'forces damage on' for 'a getter that lies leaves EVERYONE invulnerable', which is strictly worse and is the exact disaster this file exists to prevent. Only the hand-back depends on the read. Leaving a body off because that is how we found it is counted and loud (leftDisabled= on the lift line, a WARNING, and StatusLine()), with a foundAlreadyOff= warning at ARM minutes earlier. Absent record means 'was enabled', assigned explicitly at both construction sites rather than resting on a field initializer, because whether Enforce applies one to a new-ed plain class is a runtime property no probe can observe and the failure direction is catastrophic. Idempotence is structural: success and left-disabled both drop from the map, a failure re-inserts THE SAME hold object, and Arm() deliberately does not clear m_mHeld because clearing would cement safestart's own handiwork as the body's 'prior' state. EVERY behavioural claim is compile-verified only — the agent CONFIRMED rather than assumed this by re-running the mission boot and grepping: the stage machine reaches LOADING->LOBBY and stops because zero players means it never advances to SAFE_START, so Arm/SweepApply/ApplyTo/Restore/RestoreOne never executed."
 parent = "T-181"
+estimated = ["scope"]
 owns = ["TBD_SafestartManager.c"]
 
-[scope.mod]
-layers = ["feature"]
+[scope]
+domain = "mod"
+layer = "scripts"

@@ -2,11 +2,15 @@ id = "T-117"
 kind = "work"
 title = "Mission upload + validation UI"
 summary = "Web UI for mission upload and schema validation (API exists)."
+class = "feature"
 status = "shipped"
 order = 1170
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/missions.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -21,6 +21,7 @@ NOTE THE TRADE BEFORE "FIXING" IT BY MOVING deaths BACK. deaths-in-the-required-
 THE ACTUAL FIX is at the schema: make the counter columns NULLable so absent = NULL = "not measured", and make leaderboard_totals NULL-aware. That is a migration plus a materialized-view change plus a backfill decision for existing rows. Sized accordingly; do not attempt it as a patch.
 
 SECOND HALF, MOD SIDE, executor: workbench — TBD_ResultsReporter.c BuildPlayerRow should emit a complete counters object once the engine exposes kills/team_kills/longest_kill/vehicles_destroyed per player. Check whether Enfusion exposes them at all before committing; if it does not, the NULL-semantics fix above is the whole answer. Its class header at :19-21 also now describes the backend falsely (claims the fields are #[serde(default)]) and needs correcting."""
+class = "bug"
 status = "shipped"
 order = 3213
 executor = "claude-code"
@@ -35,5 +36,6 @@ owns = [
     "apps/website/api/tests/null_tolerance.rs",
 ]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

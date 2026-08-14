@@ -2,12 +2,15 @@ id = "T-162.3"
 kind = "work"
 title = "T-162 — Eradicate all remaining Python (→ Rust)"
 summary = "T-162 — Eradicate all remaining Python (→ Rust)"
+class = "feature"
 status = "shipped"
 order = 1590
 spec = "docs/platform/t162_python_eradication.md"
 executor = "cursor-docs"
 notes = "Replace inline python3 in verify-monorepo/upload-repro/debug-direct-join."
 parent = "T-162"
+estimated = ["scope"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

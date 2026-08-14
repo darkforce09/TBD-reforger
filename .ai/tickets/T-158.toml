@@ -2,8 +2,12 @@ id = "T-158"
 kind = "work"
 title = "Editor shell UX consolidation"
 summary = "Consolidate Settings buttons, wire up top bar, remove redundant Assets tab."
+class = "feature"
 status = "idea"
 executor = "cursor-docs"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

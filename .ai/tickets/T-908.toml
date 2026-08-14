@@ -2,10 +2,12 @@ id = "T-908"
 kind = "work"
 title = "Split T-853 xtask/tools SIZE-3 files (8) the T-899 allowlist is holding"
 summary = "T-899 allowlisted 8 xtask/tools files over 1000 lines. Split them; drop the SIZE-3 rows. xtask/src: cmds.rs, main.rs, schema_gates.rs. tools/tbd-tools/src: map/sap.rs, smokes.rs, world/aux.rs, world/build.rs, world/gates.rs. Do not split in waves 234-235 — T-902/T-903/T-904 own overlapping xtask paths. Not the registry-split program."
+class = "chore"
 status = "queued"
 order = 5880
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+estimated = ["scope"]
 owns = [
     "xtask/src/cmds.rs",
     "xtask/src/main.rs",
@@ -17,5 +19,7 @@ owns = [
     "tools/tbd-tools/src/world/gates.rs",
 ]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "tickets"

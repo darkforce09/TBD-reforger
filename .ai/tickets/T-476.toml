@@ -7,14 +7,17 @@ NIT from wave 28 adversarial. T-467 wired real bash recipes into Makefile + ci-l
 Repro (hypothetical): replace verify-t438 recipe with `@true` → make verify-t438 PASS while script never runs.
 
 Cure: extend verify-t468-style (or sibling) tripwire to assert Makefile verify-t438/verify-t456 recipes invoke the real bash scripts (not echo/@true/#)."""
+class = "chore"
 status = "shipped"
 order = 3315
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "Makefile",
     "scripts/mod/verify-t468-ci-schema-parity.sh",
 ]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

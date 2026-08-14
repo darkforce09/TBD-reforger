@@ -2,9 +2,13 @@ id = "T-088"
 kind = "work"
 title = "Multi-server picker"
 summary = "Select among multiple game servers in intel views."
+class = "feature"
 status = "deferred"
 order = 880
 executor = "cursor-docs"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

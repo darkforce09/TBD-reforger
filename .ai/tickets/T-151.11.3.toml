@@ -2,6 +2,7 @@ id = "T-151.11.3"
 kind = "work"
 title = "T-151.11.3"
 summary = "T-151.11.3"
+class = "feature"
 status = "shipped"
 order = 1500
 executor = "claude-code"
@@ -9,5 +10,6 @@ notes = "D5 collapse (wasm policy exports), buildings full-lane toggle, forest L
 parent = "T-151"
 shipped_at = "c7bb5bd0"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

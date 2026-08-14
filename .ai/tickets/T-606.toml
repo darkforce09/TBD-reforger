@@ -26,6 +26,7 @@ ALSO, same family, documented in the runbook §6 rather than filed separately:
 - **`modded class SCR_PlayerController` runtime coexistence has never been observed at any N.** Six
   blocks now exist and no gate can see it -- `world-boot.sh` boots with zero players. If one screen
   works and another silently does nothing during the playtest, this is the first suspect."""
+class = "bug"
 status = "shipped"
 order = 3532
 executor = "claude-code"
@@ -37,5 +38,6 @@ owns = [
     "scripts/mod/run-playtest-server.sh",
 ]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

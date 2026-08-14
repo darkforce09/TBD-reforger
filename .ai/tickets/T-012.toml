@@ -2,9 +2,13 @@ id = "T-012"
 kind = "work"
 title = "macOS page split-pane redesigns"
 summary = "Split-pane master/detail across platform pages."
+class = "feature"
 status = "shipped"
 order = 120
 executor = "cursor-docs"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

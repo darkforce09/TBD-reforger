@@ -17,12 +17,16 @@ BUT IT IS NOT REACHABLE FROM THE PAGE: the only `matches` route in the whole rou
 BROWSER-VERIFIED that the placeholder was not merely in the DOM but occupied a real painted box: 'Theater Unknown' at 122x20 px, 14 px, rgb(221,226,247), visible=true. After: 1 span instead of 2, and the string absent from document.body. PNG capture was attempted and abandoned honestly — headless Chrome's --virtual-time-budget stalls indefinitely on this wasm SPA — so it substituted a computed-style plus geometry capture, which is grep-checkable in a way a screenshot is not.
 
 THE DURABLE INSIGHT, and it is the mirror of T-306's own rule: **a DTO that only its own golden reads proves the wire, not the page.** T-306 DID build the correct type — dto.rs:283 ServerRowDto has exactly the eight fields the backend serves and no `terrain`, pinned byte-exact. But it has exactly TWO references in the crate, its own definition and its own test, because server_intel.rs:73 fetches DataEnvelope<Value>. So the gate already encoded the truth that refutes the buggy code, and the page never met it. Three reasons it could not fire: direction (catch-all removal catches backend-has / DTO-lacks, this is page-asserts / backend-lacks — nothing to drop, bytes match, green), adoption, and `v_str`'s unwrap_or_default() collapsing absent/null/non-string/empty into one "" — the same conflation T-306 split apart one layer up for the status object, left in place for the row's scalars."""
+class = "bug"
 status = "shipped"
 order = 3175
 executor = "claude-code"
 priority = 1
 shipped_at = "3a653fd5"
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/server_intel.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

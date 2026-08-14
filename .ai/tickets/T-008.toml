@@ -2,9 +2,13 @@ id = "T-008"
 kind = "work"
 title = "Event to Campaign refactor"
 summary = "Multi-mission events, event_missions, automated ORBAT."
+class = "chore"
 status = "shipped"
 order = 80
 executor = "cursor-docs"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

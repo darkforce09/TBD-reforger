@@ -2,10 +2,14 @@ id = "T-050"
 kind = "work"
 title = "Cursor Z readout"
 summary = "Toolbelt shows X/Y/Z including cursor Z on flat map."
+class = "feature"
 status = "shipped"
 order = 500
 spec = "docs/specs/Mission_Creator_Architecture/t050_cursor_z_readout.md"
 executor = "claude-code"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

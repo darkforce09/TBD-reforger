@@ -2,14 +2,18 @@ id = "T-351"
 kind = "work"
 title = "Nothing pins the arma_id trim, and legacy whitespace rows are still in the tables"
 summary = "Padded arma_id trim pinned in identity_link IT (T-351). Live padded rows were 0; btrim of users.arma_id already shipped in migration 0016 (T-335) — no new mig in this slice. T-516/T-517 fixed parallel-suite races on this IT. Original ask covered."
+class = "bug"
 status = "shipped"
 order = 3167
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = [
     "apps/website/api/tests/identity_link.rs",
     "apps/website/api/migrations",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

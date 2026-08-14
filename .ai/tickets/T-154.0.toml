@@ -2,6 +2,7 @@ id = "T-154.0"
 kind = "work"
 title = "T-154.0 — Rust/wgpu 3D arsenal doll (DollEngine)"
 summary = "T-154.0 — Rust/wgpu 3D arsenal doll (DollEngine)"
+class = "feature"
 status = "shipped"
 order = 1515
 spec = "docs/specs/Mission_Creator_Architecture/t154_0_wgpu_doll_engine.md"
@@ -10,5 +11,6 @@ notes = "DollEngine: first 3D pass in the wgpu engine (perspective camera via gl
 parent = "T-154"
 shipped_at = "a65529b3"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

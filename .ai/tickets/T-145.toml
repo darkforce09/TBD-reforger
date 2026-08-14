@@ -2,10 +2,12 @@ id = "T-145"
 kind = "work"
 title = "Rust/Wasm Doc Core (Yjs replacement)"
 summary = "Rewrite the Go backend to Rust (Axum + sqlx) and move the mission document core into a Rust/wasm yrs doc. The F1->F4 flip made the yrs wasm doc authoritative and removed yjs + y-indexeddb from the app."
+class = "docs"
 status = "shipped"
 order = 1495
 notes = "needs-operator: frozen unmappable Scope. "
 shipped_at = "a228ed98"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

@@ -2,6 +2,7 @@ id = "T-090.1.2.1"
 kind = "work"
 title = "T-090.1.2.1 — Lossless satellite pyramid (picture-perfect zoom)"
 summary = "T-090.1.2.1 — Lossless satellite pyramid (picture-perfect zoom)"
+class = "feature"
 status = "shipped"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_1_2_1_lossless_satellite_pyramid.md"
@@ -9,5 +10,6 @@ executor = "claude-code"
 parent = "T-090"
 shipped_at = "19bc785"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

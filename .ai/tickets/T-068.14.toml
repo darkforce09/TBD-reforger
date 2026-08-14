@@ -2,6 +2,7 @@ id = "T-068.14"
 kind = "work"
 title = "T-068.14"
 summary = "T-068.14"
+class = "feature"
 status = "queued"
 order = 680
 executor = "human"
@@ -9,5 +10,6 @@ notes = "Phase-2 E2E gate — do not ticket-done T-068 until this passes. Satisf
 parent = "T-068"
 owns = ["docs/mod/capability_verdicts.tsv"]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

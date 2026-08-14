@@ -2,16 +2,20 @@ id = "T-170"
 kind = "work"
 title = "Prod default flip to Leptos SPA"
 summary = "Make the Leptos SPA the production default: set `SPA_DIST_DIR` to the trunk release dist in the prod env, move the Discord OAuth redirect origin, staging soak, then flip. OPERATOR-GATED (env + Discord app settings are operator-held); claude-code prepares configs/runbook + verifies the staging soak gates. Runbook anchor: docs/website/DEV_RUNBOOK.md §SPA serving; T-159 finish program left this as the sole operator-gated residual."
+class = "docs"
 status = "queued"
 order = 1670
 spec = ".ai/artifacts/missed_items_handoff.md"
 executor = "human"
 depends_on = ["T-159"]
 user_story = "As the operator I flip production to the Leptos SPA with a tested rollback path."
+estimated = ["scope"]
 owns = [
     "docs/website/DEV_RUNBOOK.md",
     "scripts/deploy",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

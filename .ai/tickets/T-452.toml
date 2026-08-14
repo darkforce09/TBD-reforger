@@ -7,14 +7,18 @@ Residual from T-296 / wave 17 adversarial. ResultsReporter banner/comments now t
 Repro: rg 'does not implement|T-181.35' apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_PlayerIdentity.c
 
 Cure: rewrite the stale header to match IdentityLink (same honesty bar as T-296)."""
+class = "feature"
 status = "shipped"
 order = 3291
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_PlayerIdentity.c",
     "scripts/mod/verify-t452-player-identity-link-comments.sh",
 ]
 
-[scope.mod]
-layers = ["feature"]
+[scope]
+domain = "mod"
+layer = "scripts"
+component = "backend"

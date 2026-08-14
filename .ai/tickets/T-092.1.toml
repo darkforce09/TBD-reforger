@@ -2,6 +2,7 @@ id = "T-092.1"
 kind = "work"
 title = "T-092.1 — Mod spawn height + yaw policy"
 summary = "T-092.1 — Mod spawn height + yaw policy"
+class = "feature"
 status = "shipped"
 order = 920
 spec = "docs/specs/Mission_Creator_Architecture/t092_1_mod_spawn_policy.md"
@@ -9,5 +10,6 @@ executor = "claude-code"
 parent = "T-092"
 shipped_at = "4eefc169"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

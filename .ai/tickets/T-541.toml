@@ -7,6 +7,7 @@ FOUND as T-415 residual (W53). ReportVerdict now consumes IsComplete and ERROR-r
 Also: stale 'IsComplete zero callers' prose in docs/TICKET_LEAD.md and apps/website/frontend/src/arsenal_rules.rs after T-415.
 
 Owns hint: apps/mod/tbd-framework/Scripts/Game/TBD/ spawn path + FE comment sync."""
+class = "docs"
 status = "shipped"
 order = 3381
 executor = "claude-code"
@@ -18,5 +19,6 @@ owns = [
     "apps/website/frontend/src/arsenal_rules.rs",
 ]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

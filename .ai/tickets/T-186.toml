@@ -2,11 +2,13 @@ id = "T-186"
 kind = "work"
 title = "Add make mod-world-boot-compiled — API output into the real Enfusion parser"
 summary = "No test anywhere feeds compiler output to the mod. world-boot.sh already supports --mission=<path>, meta.id derivation and console-log assertion; only the curl-the-compiled-doc step is new (~15 lines). This single test would have caught the single-faction hard-reject on day one."
+class = "docs"
 status = "shipped"
 order = 2040
 executor = "claude-code"
 shipped_at = "9ceade54"
 owns = ["scripts/mod/world-boot.sh"]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

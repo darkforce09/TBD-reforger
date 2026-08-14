@@ -9,11 +9,13 @@ SPLIT AND CLOSED 2026-07-26. The agent verified all three narrowed items against
   (b) chat visibility — split to T-327. Unfixable in script and already maximally mitigated.
   (c) backfill — split to T-326. Entirely website-side, genuinely open.
 What shipped here is the contract comment at TBD_IdentityLink.c:458-471, which after T-319 said the opposite of the truth and would have talked the next person into reintroducing the bug."""
+class = "bug"
 status = "shipped"
 order = 2490
 executor = "claude-code"
 shipped_at = "f44b602a"
 owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_IdentityLink.c"]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

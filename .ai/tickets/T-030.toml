@@ -2,9 +2,13 @@ id = "T-030"
 kind = "work"
 title = "Y.Doc state foundation"
 summary = "Normalized Y.Doc store mirrored to Zustand with persistence."
+class = "docs"
 status = "shipped"
 order = 300
 executor = "claude-code"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

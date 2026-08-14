@@ -7,10 +7,12 @@ FOUND by W55 adversarial verifier (CLEAN MINOR-NIT) after T-498.
 sanitize_discord_embed_field + include_str wire pins exist; no services_http / CMS IT asserts a leading '=title' becomes ZWSP-prefixed in the outbound embed JSON.
 
 Repro: rg sanitize_discord apps/website/api/tests — no hit."""
+class = "feature"
 status = "shipped"
 order = 3386
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "apps/website/api/tests",
     "apps/website/api/src/services/webhook.rs",
@@ -19,5 +21,7 @@ owns = [
     "apps/website/api/tests/webhook_it.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

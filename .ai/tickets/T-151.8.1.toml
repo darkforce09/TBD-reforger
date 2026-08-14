@@ -2,6 +2,7 @@ id = "T-151.8.1"
 kind = "work"
 title = "T-151.8 — culling + density ladder (W8)"
 summary = "T-151.8 — culling + density ladder (W8)"
+class = "feature"
 status = "shipped"
 order = 1500
 spec = "docs/specs/Mission_Creator_Architecture/t151_8_culling_density.md"
@@ -10,5 +11,6 @@ notes = "WebGPU VERTEX|STORAGE + draw_indirect tree cull; Class R CPU AABB oracl
 parent = "T-151"
 shipped_at = "ec59d10e"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

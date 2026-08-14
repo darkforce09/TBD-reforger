@@ -7,6 +7,7 @@ Residual from T-275 / wave 16. Schema now pins MAX_NETS/MAX_LABEL_CHARS/MAX_GRAC
 Repro: craft a schema-valid mission JSON >8MB; CreateVersion/schema-validate OK; mod loader rejects at TBD_MissionLoader.c (~836).
 
 Cure: add an explicit size ceiling to mission.schema.json (or document + API preflight) matching MISSION_FILE_MAX_BYTES; cite TBD_MissionLoader.c."""
+class = "feature"
 status = "shipped"
 order = 3289
 executor = "claude-code"
@@ -18,5 +19,6 @@ owns = [
     "xtask/src/schema_gates.rs",
 ]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

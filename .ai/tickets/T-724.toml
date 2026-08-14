@@ -2,10 +2,14 @@ id = "T-724"
 kind = "work"
 title = "ATTR-OPEN-001 residue: objects and zones still cannot open Attributes; dblclick on them opens the picker"
 summary = "T-647's one-call-site swap covers vehicles only (pick_slot_or_vehicle = slot SoA + vehiclesById). Objects (entitiesById) and zones still cannot open Attributes by double-click — worse, a dblclick on them now MISSES and opens the asset picker over the entity. Needs a pick that resolves objects/zones (select_tool has the geometry; zones are polygons — point-in-zone hit test) routed to the same open_attributes entry, and the picker's open guarded to genuine empty-ground misses. Registry honesty: T-647 marked shipped-with-partials for this id. Diagnosis: editor_verify/wave106.md MAJOR-4."
+class = "feature"
 status = "shipped"
 order = 4317
 executor = "claude-code"
 notes = "filed by wave-106 adversarial verifier (editor factory)"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

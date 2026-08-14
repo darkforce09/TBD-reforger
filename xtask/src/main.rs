@@ -62,6 +62,7 @@ mod label_gates;
 mod mcp;
 mod mcp_daemon;
 mod metrics;
+mod migrate_v2;
 mod mk_build;
 mod mk_ci;
 mod mk_db;
@@ -880,6 +881,14 @@ enum TicketCmd {
         #[arg(long)]
         by: Option<String>,
     },
+    /// T-917.2: THE schema-v2 cutover — one-shot v1→v2 rewrite of every ticket file
+    /// (flat scope, class triage, estimated markers), kept for corroboration.
+    #[command(name = "migrate-v2")]
+    MigrateV2,
+    /// T-917.2: per-domain/layer/component/surface counts + surface-empty honesty
+    /// counters + class distribution, from the typed corpus (read-only).
+    #[command(name = "scope-histogram")]
+    ScopeHistogram,
 }
 
 fn main() -> ExitCode {
@@ -1301,6 +1310,15 @@ fn run() -> Result<u8> {
                 }
                 TicketCmd::Metrics { by } => {
                     metrics::cmd_metrics(&root, by.as_deref())?;
+                }
+                // No load_registry on either arm: migrate-v2 must run BEFORE the tree
+                // parses as v2 (the registry loader would refuse the v1 files), and
+                // scope-histogram reads the typed corpus directly.
+                TicketCmd::MigrateV2 => {
+                    migrate_v2::cmd_migrate_v2(&root)?;
+                }
+                TicketCmd::ScopeHistogram => {
+                    migrate_v2::cmd_scope_histogram(&root)?;
                 }
             }
             Ok(0)

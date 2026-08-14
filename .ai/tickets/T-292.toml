@@ -2,9 +2,11 @@ id = "T-292"
 kind = "work"
 title = "net.range short is parsed then discarded"
 summary = "TBD_RadioService.c:214-220 maps only long to a nonzero value; short and any both collapse to 0 and are behaviourally identical. The schema advertises a three-value enum (mission.schema.json:308) the runtime does not honour."
+class = "feature"
 status = "shipped"
 order = 3100
 executor = "claude-code"
+estimated = ["scope"]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioService.c",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioPlan.c",
@@ -15,5 +17,7 @@ owns = [
     "crates/map-engine-core/src/mission/flatten.rs",
 ]
 
-[scope.mod]
-layers = ["feature"]
+[scope]
+domain = "mod"
+layer = "scripts"
+component = "radio"

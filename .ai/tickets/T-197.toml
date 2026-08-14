@@ -2,11 +2,15 @@ id = "T-197"
 kind = "work"
 title = "241 attachment edges and 26 attachment items are unreachable"
 summary = "Only three of nine compat edge types are read by the UI; arsenal.rs:198 hardcodes attachments to an empty array. ammo_in_mag has zero edges generated."
+class = "feature"
 status = "shipped"
 order = 2150
 executor = "claude-code"
 shipped_at = "slice/T-197"
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/arsenal.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -2,11 +2,15 @@ id = "T-520"
 kind = "work"
 title = "W46 hotfix: rustfmt events.rs after T-511"
 summary = "Wave 46 cold gate FAIL on fmt (changed). T-511 apps/website/api/tests/events.rs fails rustfmt --check (indent/wrapping around the new 23505 probe). Cure: rustfmt that file only; no logic change. Owns: apps/website/api/tests/events.rs."
+class = "chore"
 status = "shipped"
 order = 3360
 executor = "claude-code"
 priority = 0
+estimated = ["scope"]
 owns = ["apps/website/api/tests/events.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

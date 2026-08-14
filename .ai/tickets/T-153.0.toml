@@ -2,6 +2,7 @@ id = "T-153.0"
 kind = "work"
 title = "T-153 — Faction Library (reusable factions + palette swap)"
 summary = "T-153 — Faction Library (reusable factions + palette swap)"
+class = "feature"
 status = "shipped"
 order = 1510
 spec = "docs/specs/Mission_Creator_Architecture/t153_faction_library.md"
@@ -10,5 +11,6 @@ notes = "Backend: faction-library.schema.json + goldens/codegen; migration 0006 
 parent = "T-153"
 shipped_at = "e2aec2de"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

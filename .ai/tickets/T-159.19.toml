@@ -2,6 +2,7 @@ id = "T-159.19"
 kind = "work"
 title = "T-159.19 — Marquee select + entity drag-move"
 summary = "T-159.19 — Marquee select + entity drag-move"
+class = "feature"
 status = "shipped"
 order = 1570
 spec = "docs/platform/t159_19_marquee_drag.md"
@@ -9,6 +10,9 @@ executor = "claude-code"
 notes = "Marquee + move_entities + edit persist. Verify: .ai/artifacts/t159_19_verify_log.md. Soft-WebGPU marquee smoke uses ?force=webgl."
 parent = "T-159"
 shipped_at = "f444b878"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

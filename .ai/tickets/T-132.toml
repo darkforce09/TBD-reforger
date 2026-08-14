@@ -2,6 +2,7 @@ id = "T-132"
 kind = "work"
 title = "Multiplayer MC + visual git"
 summary = "Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap."
+class = "feature"
 status = "idea"
 spec = "docs/platform/tbd_north_star_backlog.md"
 executor = "claude-code"
@@ -9,6 +10,9 @@ depends_on = [
     "T-062",
     "T-066",
 ]
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

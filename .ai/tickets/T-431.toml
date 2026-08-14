@@ -7,11 +7,15 @@ MAJOR residual from T-230 (wave 7). Match ingest now scopes attendance via match
 Repro: multi-mission event; play one; identity-link path runs BACKFILL_ATTENDANCE; sibling event_mission registrations flip to attended.
 
 Cure: same JOIN shape as T-230 telemetry ingest."""
+class = "feature"
 status = "shipped"
 order = 3270
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = ["apps/website/api/src/handlers/me.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

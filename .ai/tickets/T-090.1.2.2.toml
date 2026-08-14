@@ -2,6 +2,7 @@ id = "T-090.1.2.2"
 kind = "work"
 title = "T-090.1.2.2 — SAP supertexture cell seam repair"
 summary = "T-090.1.2.2 — SAP supertexture cell seam repair"
+class = "feature"
 status = "shipped"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_1_2_2_sap_cell_seam_repair.md"
@@ -9,5 +10,6 @@ executor = "claude-code"
 parent = "T-090"
 shipped_at = "a3efdf6"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

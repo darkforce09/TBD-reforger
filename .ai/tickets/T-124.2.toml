@@ -2,12 +2,16 @@ id = "T-124.2"
 kind = "work"
 title = "T-124 — Dependency & toolchain upgrade (latest everything)"
 summary = "T-124 — Dependency & toolchain upgrade (latest everything)"
+class = "feature"
 status = "shipped"
 order = 1240
 spec = "docs/platform/t124_dependency_upgrade.md"
 executor = "claude-code"
 parent = "T-124"
 shipped_at = "d81ed9c"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -28,11 +28,15 @@ Four NITs from wave 71's adversarial verifier. None is a live defect; all are wo
    `mission_id` on match ingest still INSERT SILENTLY today, because those FKs do not exist yet -- so
    they are neither 500 nor 400, they are unchanged. The ticket BODY is accurate; the headline is not.
    Resolved by T-585 landing the migration."""
+class = "bug"
 status = "shipped"
 order = 3443
 executor = "claude-code"
 priority = 3
+estimated = ["scope"]
 owns = ["scripts/deploy/tbd-website-backup.service"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

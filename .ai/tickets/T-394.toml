@@ -9,11 +9,15 @@ PROVEN by T-389 as a negative control: with `#[serde(skip)]` on `rejection_reaso
 SCOPE THIS BEFORE FIXING: the exposure is every golden-backed struct using flatten, not just MissionCard. Enumerate `#[serde(flatten)]` across the API and check which are golden-asserted.
 
 Cheapest durable fix is not more assertions (T-389 hand-wrote per-field ones, which does not generalise): assert on the DESERIALIZED type, or deny_unknown_fields on a mirror struct, so the check is structural rather than textual. Note T-359's related hazard — a golden captured from a DRAFT mission has these fields absent, so it proves nothing about them either way; goldens must be captured from a row that actually populates the field under test."""
+class = "bug"
 status = "shipped"
 order = 3210
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/dto.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

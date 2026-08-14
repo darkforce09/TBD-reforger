@@ -2,11 +2,15 @@ id = "T-525"
 kind = "work"
 title = "content_golden.sql obsolete two-seat / index-deferred comments after T-511"
 summary = "Wave 46 verifier NIT. apps/website/api/seeds/content_golden.sql ~655–656 still says orbat assigned partial unique deferred / events.rs still seeds two-seat — obsolete after 0017 + T-511 seed retirement. Cure: update seed comments to match live index."
+class = "feature"
 status = "shipped"
 order = 3365
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = ["apps/website/api/seeds/content_golden.sql"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -7,15 +7,19 @@ Residual from T-251 / wave 9 N1. T-251 placed apps/website/docker-compose.stagin
 Repro: after T-251 land, follow game staging path that uses deploy-staging.sh compose step — file not found / wrong cwd.
 
 Cure: point deploy-staging.sh (and any twin bootstrap) at apps/website/docker-compose.staging.yml; align STAGING-SERVER.md."""
+class = "feature"
 status = "shipped"
 order = 3277
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "scripts/mod/deploy-staging.sh",
     "scripts/mod/verify-t438-deploy-staging-compose-path.sh",
     "docs/website/HOME_SERVER.md",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

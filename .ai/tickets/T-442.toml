@@ -7,14 +7,18 @@ Residual from T-260 / wave 11 adversarial MINOR W11-V1. API now returns events.s
 Repro: create event with modpack_id set; Hub UI still shows global current pack.
 
 Cure: wire event_hub.rs (+ dto) to prefer event.modpack_id when present, fall back to /modpacks/current only when null."""
+class = "chore"
 status = "shipped"
 order = 3281
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/event_hub.rs",
     "apps/website/frontend/src/dto.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

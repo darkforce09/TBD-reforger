@@ -2,10 +2,14 @@ id = "T-131"
 kind = "work"
 title = "Route planner tool"
 summary = "MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5."
+class = "feature"
 status = "idea"
 spec = "docs/platform/tbd_north_star_backlog.md"
 executor = "claude-code"
 depends_on = ["T-090"]
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

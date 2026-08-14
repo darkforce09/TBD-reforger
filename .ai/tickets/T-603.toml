@@ -20,10 +20,14 @@ CONTEXT THAT MAKES THIS WORTH DOING: T-597 established that **nothing** ran `car
 crates -- `ci.yml:46`'s job-level `working-directory: apps/website/api` means the bare `cargo test` at
 `:71` selects only `website-api`. T-597 added a test step to the wave gate; there is still **no lint
 step**. Clean the 9, then add `clippy xtask+tbd-tools` alongside it. One small cleanup away."""
+class = "chore"
 status = "shipped"
 order = 3502
 executor = "claude-code"
 priority = 3
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -20,11 +20,15 @@ WANTED: extend `cmd_reclaim`'s sweep to `$MAIN_ROOT/target-*` EXCLUDING the shar
 logic already computes that list). Keep it behind the same opt-in as `--gate-dirs`, or default it —
 these are per-slice scratch, not warm shared caches, so the "expensive to rebuild" argument that
 justified `--gate-dirs` being opt-in does not apply."""
+class = "chore"
 status = "shipped"
 order = 3450
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = ["scripts/platform/wave.sh"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

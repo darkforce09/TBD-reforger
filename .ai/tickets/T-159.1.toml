@@ -2,6 +2,7 @@ id = "T-159.1"
 kind = "work"
 title = "T-159.1 — Leptos app scaffold (workspace member)"
 summary = "T-159.1 — Leptos app scaffold (workspace member)"
+class = "feature"
 status = "shipped"
 order = 1570
 spec = "docs/platform/t159_1_leptos_scaffold.md"
@@ -9,5 +10,6 @@ executor = "claude-code"
 notes = "Scaffold + later page waves through 24 routes on worktree (aggregate)."
 parent = "T-159"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

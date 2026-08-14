@@ -2,6 +2,7 @@ id = "T-068.10.2"
 kind = "work"
 title = "T-068.10.2 — Registry exporter reclassify + kind taxonomy v3"
 summary = "T-068.10.2 — Registry exporter reclassify + kind taxonomy v3"
+class = "feature"
 status = "shipped"
 order = 680
 spec = "docs/specs/Mission_Creator_Architecture/t068_10_2_exporter_reclassify.md"
@@ -10,5 +11,6 @@ notes = "Arsenal polish A: kind taxonomy v3 + catalog-first auto-classify in T-1
 parent = "T-068"
 shipped_at = "be85a26e"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

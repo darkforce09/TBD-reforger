@@ -2,15 +2,19 @@ id = "T-494"
 kind = "work"
 title = "mission_overview trim source-ratchet still allows !b.is_empty() match arm"
 summary = "Wave 37 adversarial NIT on T-407. dossier_body_uses_trim_aware_briefing_helper only bans .filter(|b| !b.is_empty()); a match-arm !b.is_empty() stayed GREEN while the behavioral trim test went RED. Also residual from T-407 report: schedule events.rs briefing still uses (!briefing.is_empty()) without trim (out of T-407 owns). Cure: widen source ratchet to ban non-trim empty checks on briefing paths; align schedule card trim with event_hub/mission_overview."
+class = "feature"
 status = "shipped"
 order = 3333
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/mission_overview.rs",
     "apps/website/frontend/src/event_hub.rs",
     "apps/website/frontend/src/events.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

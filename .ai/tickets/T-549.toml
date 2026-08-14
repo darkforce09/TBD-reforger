@@ -9,10 +9,12 @@ T-500 added flatten_to_mod_document_with_catalog + scan_cargo_capacity; the no-a
 Cure: load_cargo_phys_catalog in the compile handler(s) and call flatten_to_mod_document_with_catalog with the live table.
 
 Repro: rg flatten_to_mod_document apps/website/api/src/handlers"""
+class = "feature"
 status = "shipped"
 order = 3389
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "apps/website/api/src/handlers/missions.rs",
     "apps/website/api/src/services/mission_compile.rs",
@@ -20,5 +22,7 @@ owns = [
     "apps/website/api/tests/missions.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

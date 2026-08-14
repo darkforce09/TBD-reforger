@@ -7,11 +7,14 @@ Residual from wave 27 adversarial BLOCKER. verify-t468 recipe pin uses `^\t.*(?:
 Repro: hollow echo of make lines / -fake targets / comment-only → tripwire PASS.
 
 Cure: require real recipe invocations (tab + optional @ + $(MAKE)|make + exact target, no echo, ignore # comments); RED→GREEN on verifier recipes.'''
+class = "feature"
 status = "shipped"
 order = 3311
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = ["scripts/mod/verify-t468-ci-schema-parity.sh"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

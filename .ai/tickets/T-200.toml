@@ -2,11 +2,15 @@ id = "T-200"
 kind = "work"
 title = "Only 8 of 354 registry characters have a kit alias"
 summary = "flatten.rs:489-491 silently substitutes the faction default for the other 346 and, unlike the file's own $comment, emits no warning."
+class = "feature"
 status = "shipped"
 order = 2180
 executor = "claude-code"
 shipped_at = "0d4a2ae7"
+estimated = ["scope"]
 owns = ["crates/map-engine-core/src/mission/flatten.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

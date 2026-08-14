@@ -21,10 +21,12 @@ weaker than they read.
    payloads (e.g. a yrs BigInt<->Number coercion across an editor change) would report unchanged rows
    as "edited". Unreachable today because both sides come from one pipeline, but the differ's whole
    value is not crying wolf."""
+class = "chore"
 status = "shipped"
 order = 3433
 executor = "claude-code"
 priority = 3
+estimated = ["scope"]
 owns = [
     "apps/website/api/src/handlers/oauth.rs",
     "scripts/deploy",
@@ -32,5 +34,7 @@ owns = [
     "docs/platform/CODING_STANDARDS.md",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

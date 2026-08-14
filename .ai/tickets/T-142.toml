@@ -2,9 +2,13 @@ id = "T-142"
 kind = "work"
 title = "MC shell layout polish"
 summary = "Toolbelt placement, Attributes modal grouping, stub tool visibility — layout UX without full T-082 field parity."
+class = "feature"
 status = "idea"
 spec = "docs/platform/tbd_north_star_backlog.md"
 executor = "claude-code"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -2,9 +2,13 @@ id = "T-013"
 kind = "work"
 title = "macOS dashboards and grids restyle"
 summary = "Glass bento dashboards and mission library grid."
+class = "feature"
 status = "shipped"
 order = 130
 executor = "cursor-docs"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

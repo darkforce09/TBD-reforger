@@ -1,5 +1,5 @@
-error[E0599]: no variant or associated item named `Frontend` found for enum `ModLayer` in the current scope
- --> tests/fail/mod_frontend.rs:6:23
+error[E0599]: no variant or associated item named `Frontend` found for enum `Domain` in the current scope
+ --> tests/fail/mod_frontend.rs:8:21
   |
-6 |     let _ = ModLayer::Frontend;
-  |                       ^^^^^^^^ variant or associated item not found in `ModLayer`
+8 |     let _ = Domain::Frontend;
+  |                     ^^^^^^^^ variant or associated item not found in `Domain`

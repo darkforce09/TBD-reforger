@@ -2,6 +2,7 @@ id = "T-251"
 kind = "work"
 title = "Production deployment story"
 summary = "No Dockerfile, no docker-compose.staging.yml (referenced by deploy.env.example and HOME_SERVER.md but absent), no deploy-website.sh, no deploy job in any of the four CI workflows, no TLS or reverse-proxy config in-repo, no pg_dump backup script, and no metrics, Sentry or OTel dependency."
+class = "chore"
 status = "shipped"
 order = 2690
 executor = "claude-code"
@@ -15,5 +16,6 @@ owns = [
     "scripts/deploy/Caddyfile.website",
 ]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

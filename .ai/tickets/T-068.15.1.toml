@@ -2,6 +2,7 @@ id = "T-068.15.1"
 kind = "work"
 title = "T-068.15.1 — Export cargo capacity + default contents"
 summary = "T-068.15.1 — Export cargo capacity + default contents"
+class = "feature"
 status = "shipped"
 order = 680
 spec = "docs/specs/Mission_Creator_Architecture/t068_15_1_cargo_capacity_export.md"
@@ -10,5 +11,6 @@ notes = "SHIPPED @ 85acbb13 (tag T-068.15.1). 1257 grids; 16223 cargo edges; qty
 parent = "T-068"
 shipped_at = "85acbb13"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

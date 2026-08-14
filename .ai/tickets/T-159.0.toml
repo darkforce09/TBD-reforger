@@ -2,6 +2,7 @@ id = "T-159.0"
 kind = "work"
 title = "T-159 — Leptos UI rewrite program"
 summary = "T-159 — Leptos UI rewrite program"
+class = "feature"
 status = "shipped"
 order = 1570
 spec = "docs/platform/t159_leptos_ui_program.md"
@@ -9,6 +10,8 @@ executor = "cursor-docs"
 notes = "Hub + standing worktree."
 parent = "T-159"
 shipped_at = "f95b01ad"
+estimated = ["scope"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

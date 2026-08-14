@@ -2,6 +2,7 @@ id = "T-172"
 kind = "work"
 title = "Leptos SPA + Mission Creator bug bash"
 summary = "SHIPPED @ tag T-172 / e08884f4. Operator matrix A1–A9/B1–B10 + hunt H1–H11 fixed; leptos-gates 18/18 + v-suite 25/25; ci-local 0. Operator 2026-07-18: ticket good enough — residual MC pan/zoom stutter, Mission Library scroll/sheet lag, missing Mission Settings render prefs, tree guide-line polish → T-173. Verify: .ai/artifacts/t172_verify_log.md. Hub: docs/platform/t172_leptos_bug_bash.md."
+class = "bug"
 status = "shipped"
 order = 1690
 spec = "docs/platform/t172_leptos_bug_bash.md"
@@ -9,6 +10,9 @@ executor = "claude-code"
 depends_on = ["T-171"]
 unblocks = ["T-173"]
 user_story = "As an operator I can use the local Leptos site and Mission Creator without dead clicks, invisible units, highlighter forests, or a missing 3D Arsenal."
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

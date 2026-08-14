@@ -7,11 +7,15 @@ Residual from wave 25 adversarial N4 / observed cold-gate flake. admin_field.rs:
 Repro: intermittent when APP_ENV/dev-login does not 302 (or header absent).
 
 Cure: assert status+LOCATION with actionable message; fail soft instead of IndexMap panic."""
+class = "chore"
 status = "shipped"
 order = 3308
 executor = "claude-code"
 priority = 3
+estimated = ["scope"]
 owns = ["apps/website/api/tests/admin_field.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -2,6 +2,7 @@ id = "T-150"
 kind = "work"
 title = "Universal Enfusion registry + compat export"
 summary = "SHIPPED @ 9107bf4e (tag T-150; schema e358777a). 1880 items / 4012 edges; mod-agnostic scanner. OPEN: ammo_in_mag. Verify: .ai/artifacts/t150_verify_log.md. Next: T-068.9 ingest."
+class = "feature"
 status = "shipped"
 order = 685
 spec = "docs/specs/Mission_Creator_Architecture/t150_universal_registry_export.md"
@@ -14,5 +15,6 @@ unblocks = [
 ]
 shipped_at = "9107bf4e"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

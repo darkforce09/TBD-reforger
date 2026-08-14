@@ -49,10 +49,12 @@ test's uniform: *a tool reports success over an input it never actually examined
 DO NOT respond to this ticket by blocklisting the specific shapes above. That is the fourth round of
 that game (T-517 -> T-567 -> T-570) and a fifth wrapper always exists. Fix the two patterns, then
 convert the ~20 siblings."""
+class = "bug"
 status = "shipped"
 order = 3482
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/arsenal.rs",
     "apps/website/frontend/src/client.rs",
@@ -64,5 +66,8 @@ owns = [
     "apps/website/frontend/src/sse.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["ops_undo"]

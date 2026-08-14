@@ -2,14 +2,22 @@ id = "T-783"
 kind = "work"
 title = "The seam lifecycle idiom exists twice — lift install_seam beside the trait it shares"
 summary = "Loose end disclosed by the T-778 slice (wave 142), filed rather than chased across a file it did not own. Wave 129 built the register-at-mount lifecycle idiom in validation_panel.rs: a `SeamRegistration` identity trait plus `install_seam` / `unregister_seam`, which register a thread_local hook and unregister it at `on_cleanup` behind an `Rc::ptr_eq` guard so only the LOSING registration is cleared. Wave 142 ported it to four more seams in ruler_tool.rs, los_tool.rs and world_assets/mod.rs. THE PROBLEM: `SeamRegistration` is `pub(crate)` and IS shared, but `install_seam` / `unregister_seam` are module-private to validation_panel.rs, so the T-778 slice had to COPY the six-line mechanism into ruler_tool.rs (chosen as host because it is the only one of its files that compiles natively and is visible to the other two). The crate now has ONE identity check and TWO copies of the mechanism that uses it. A duplicated vocabulary is a defect class this repo treats as its own, and this one guards a defect family that has already been found five times in one wave and INTRODUCED once by a fix agent. FIX: lift `install_seam` and `unregister_seam` to `pub(crate)` beside `SeamRegistration` (or into a small module both files can see), repoint validation_panel.rs and ruler_tool.rs at the single definition, and DELETE the copy. Marked in-source as a FOLLOW-UP at ruler_tool.rs. ACCEPTANCE: the crate contains exactly one `fn install_seam` and one `fn unregister_seam` — pin that count, unscoped, over live code — and all existing seam lifecycle tests in both files stay green, including the remount-guard case that must redden ALONE when the ptr_eq guard is removed. NOTE the second loose end from the same slice, NOT in scope here and reported separately: RENDER_CTX (world_assets/mod.rs) has no behavioural test at all because that module is wasm32-only and the crate has no wasm-bindgen-test target; it is covered by a source pin only, which wave 142's verifier showed greens on a decoy identifier."
+class = "bug"
 status = "shipped"
 order = 4659
 executor = "claude-code"
 notes = "loose end disclosed by the T-778 slice (wave 142); the idiom is shipped twice, the fix is a lift and a delete"
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/validation_panel.rs",
     "apps/website/frontend/src/ruler_tool.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = [
+    "validation",
+    "tools",
+]

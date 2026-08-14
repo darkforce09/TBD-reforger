@@ -2,12 +2,15 @@ id = "T-162.1"
 kind = "work"
 title = "T-162 — Eradicate all remaining Python (→ Rust)"
 summary = "T-162 — Eradicate all remaining Python (→ Rust)"
+class = "feature"
 status = "shipped"
 order = 1590
 spec = "docs/platform/t162_python_eradication.md"
 executor = "cursor-docs"
 notes = "MCP consume/socket-send/probe-sock → xtask; flip mcp-call/daemon/selftest."
 parent = "T-162"
+estimated = ["scope"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

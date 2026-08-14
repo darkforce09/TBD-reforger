@@ -2,8 +2,12 @@ id = "T-080"
 kind = "work"
 title = "Connection / sync UI"
 summary = "Entity connection lines and sync group authoring."
+class = "feature"
 status = "idea"
 executor = "claude-code"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

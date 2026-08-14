@@ -2,14 +2,22 @@ id = "T-215"
 kind = "work"
 title = "Vehicle placement on the map with position and cargo"
 summary = "Vehicle placement exists but is ORBAT-only with an auto-derived position (leader +/-30m, editor_ops.rs:1386-1388); the map palette is a stub (eden_chrome.rs:1520-1525). add_vehicle writes only {id,resourceName,position,squadId} (store.rs:527-548) and flatten never reads vehiclesById at all, so squad vehicles are silently discarded at compile."
+class = "feature"
 status = "shipped"
 order = 2330
 executor = "claude-code"
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/editor_ops.rs",
     "apps/website/frontend/src/eden_chrome.rs",
     "crates/map-engine-core/src/doc/store.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = [
+    "ops_undo",
+    "layout_chrome",
+]

@@ -8,15 +8,19 @@ FOUND as T-383 residual (W51 CLEAN). Owns fixed cmds/sync/schema_gates; still op
 - map/labels.rs:455, map/sap.rs:1007
 
 Same shape: success path writing structurally empty/lossy content over committed files. Cure: refuse_empty_write (or equivalent) at each site. Repro: see T-383 summary."""
+class = "bug"
 status = "shipped"
 order = 3377
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "tools/tbd-tools/src/enf",
     "tools/tbd-tools/src/world",
     "tools/tbd-tools/src/map",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

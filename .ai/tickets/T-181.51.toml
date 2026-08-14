@@ -2,6 +2,7 @@ id = "T-181.51"
 kind = "work"
 title = "T-181.51"
 summary = "T-181.51"
+class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
@@ -9,5 +10,6 @@ notes = "Two backend calls share ONE root cause, not two URL typos. ServiceAuth 
 parent = "T-181"
 owns = ["apps/website/api/** + Scripts/Game/TBD/Backend/**"]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

@@ -2,9 +2,12 @@ id = "T-294"
 kind = "work"
 title = "Only one of two registered terrains has object data"
 summary = "terrain-registry.json declares everon (active, all five phases shipped) and arland (queued, P1 only) but arland has only a 756-byte manifest and zero object data."
+class = "feature"
 status = "idea"
 executor = "claude-code"
+estimated = ["scope"]
 owns = ["packages/map-assets/arland"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

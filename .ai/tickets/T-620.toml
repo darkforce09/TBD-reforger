@@ -46,10 +46,12 @@ interpreter-invocation half of this gate has never once run.
 RELATED: T-621 (no rule at all for shell), T-611 (`verify-citations` scoped so it never read Rust),
 T-606/T-612 (health checks satisfied only by a stale build). Same class each time: **a tool reports
 success over an input it never actually examined.**"""
+class = "bug"
 status = "shipped"
 order = 3672
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = [
     "scripts/verify-no-python.sh",
     "scripts/platform/slice-collisions.py",
@@ -61,5 +63,7 @@ owns = [
     "docs/platform/wave_plan.tsv",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

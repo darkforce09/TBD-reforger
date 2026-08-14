@@ -2,6 +2,7 @@ id = "T-068.10.5"
 kind = "work"
 title = "T-068.10.5"
 summary = "T-068.10.5"
+class = "feature"
 status = "shipped"
 order = 680
 spec = "docs/specs/Mission_Creator_Architecture/t068_10_5_weapon_variants.md"
@@ -10,5 +11,6 @@ notes = "Mode C slice A: variant_of collapse (38 variants / 33 keep, census-gate
 parent = "T-068"
 shipped_at = "c27c438a"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

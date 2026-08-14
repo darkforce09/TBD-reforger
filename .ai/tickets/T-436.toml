@@ -7,14 +7,18 @@ In-wave hotfix from wave 9 adversarial verify (M2/M3). deploy-website.sh refused
 Repro before fix: DEPLOY_ENV with TBD_REMOTE_DIR=/tmp/not-tbd-at-all → --dry-run rc=0.
 
 Cure: fail-closed prefix check under /home/sam/tbd/ + case-insensitive prairielearn refuse."""
+class = "bug"
 status = "shipped"
 order = 3275
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = [
     "scripts/deploy/deploy-website.sh",
     "scripts/deploy/deploy.env.example",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

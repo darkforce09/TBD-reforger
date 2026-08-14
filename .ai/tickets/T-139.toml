@@ -2,6 +2,7 @@ id = "T-139"
 kind = "work"
 title = "Lobby loadout visual preview"
 summary = "In-game lobby: kit preview (icon grid → 2D mannequin → stretch 3D). After T-068.13 production slot picker."
+class = "feature"
 status = "idea"
 spec = "docs/platform/tbd_north_star_backlog.md"
 executor = "workbench"
@@ -10,5 +11,6 @@ depends_on = [
     "T-114",
 ]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

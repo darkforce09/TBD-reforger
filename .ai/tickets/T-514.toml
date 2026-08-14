@@ -2,11 +2,15 @@ id = "T-514"
 kind = "work"
 title = "W44 hotfix: T-507 Class-R must not match commented trim assign"
 summary = 'Wave 44 verifier MAJOR. save_trims_name_before_serialize uses find("doc.name = doc.name.trim().to_string()") which matches a commented assign before serde_json::to_value. Mutation: replace live trim with // doc.name = doc.name.trim().to_string() + trim-empty check → PASS while payload stays untrimmed. Cure: strip comments from save body before find, or require an uncommented assign precedes to_value. Bait mutation must RED; live trim must green.'
+class = "docs"
 status = "shipped"
 order = 3354
 executor = "claude-code"
 priority = 0
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/faction_manager.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

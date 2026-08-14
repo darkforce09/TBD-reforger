@@ -2,6 +2,7 @@ id = "T-918.1"
 kind = "work"
 title = "Breadcrumb scope + facet filters + class chips"
 summary = "Cards and detail render scope as the domain > layer > component > surface breadcrumb; filters become per-facet (one dropdown per level, values from the vocab file, composable with the existing filters); class renders as a colored chip (bug/feature/chore/audit/docs) on cards and as a filter facet."
+class = "bug"
 status = "queued"
 order = 5981
 spec = "docs/platform/t917_ticket_schema_v2.md"
@@ -19,5 +20,6 @@ acceptance = [
 created_at = "2026-08-14T21:54:38Z"
 owns = ["apps/ticketboard"]
 
-[scope.repo]
-layers = ["tickets"]
+[scope]
+domain = "repo"
+layer = "tickets"

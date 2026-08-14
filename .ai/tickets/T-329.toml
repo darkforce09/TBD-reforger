@@ -23,15 +23,19 @@ WHY null_tolerance.rs MISSED ALL THREE — three structural failures, not a forg
 Now it mints its own session so caller-scoped predicates resolve to its own rows; NULLs every nullable column from information_schema by explicit UPDATE and asserts the NULLs landed; sweeps every GET route with a guard that parses src/app.rs and fails when a route is added uncovered; and adds a STATIC ENUMERATOR cross-referencing every SELECT literal in src/ against information_schema, failing on a bare `*` or an un-COALESCEd nullable column. That half needs no predicate, so it reaches handlers no test exercises. Proven: reinstating the bare `*` turns both red, the static one naming the file and line. Catches all three known instances, each by both halves independently.
 
 Honest about residual gaps: select lists assembled past their literal prefix (QueryBuilder::push), untyped query/query_scalar, and non-GET handlers behaviourally (three OrbatSlot reads live in POST handlers, caught only by the static half)."""
+class = "bug"
 status = "shipped"
 order = 3145
 executor = "claude-code"
 priority = 0
 shipped_at = "367fcaf2"
+estimated = ["scope"]
 owns = [
     "apps/website/api/src/handlers/dashboard.rs",
     "apps/website/api/tests/null_tolerance.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

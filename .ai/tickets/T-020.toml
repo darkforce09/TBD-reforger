@@ -2,9 +2,13 @@ id = "T-020"
 kind = "work"
 title = "R4 token sweep (phase 1)"
 summary = "Replace off-palette colors with Aegis tokens."
+class = "feature"
 status = "shipped"
 order = 200
 executor = "cursor-docs"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

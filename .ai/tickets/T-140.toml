@@ -2,10 +2,12 @@ id = "T-140"
 kind = "work"
 title = "Mission client payload budget"
 summary = "Spike: compiled mission size vs slot count; max entities for console; server-only bulk vs client sync policy. Post T-092."
+class = "feature"
 status = "idea"
 spec = "docs/platform/tbd_north_star_backlog.md"
 executor = "claude-code"
 depends_on = ["T-092"]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

@@ -9,12 +9,16 @@ apps/website/frontend/src/personnel.rs:342-378 prompts "Ban reason (optional):" 
 The backend is right and should not be reverted: an unexplained ban is exactly what T-317 set out to stop. The UI is what is stale. Make the reason required client-side too: change the prompt copy off "(optional)", reject or re-prompt on empty rather than posting `{}`, and surface the server's actual error message instead of a flat "Ban failed" — the 400 body already carries a usable one.
 
 Found and reported by the T-317 agent, which correctly refused to edit a file it did not own."""
+class = "feature"
 status = "shipped"
 order = 3139
 executor = "claude-code"
 priority = 1
 shipped_at = "367fcaf2"
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/personnel.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

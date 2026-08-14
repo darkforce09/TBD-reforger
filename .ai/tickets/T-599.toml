@@ -33,11 +33,15 @@ naming WHICH files tripped it, so the next operator can verify rather than trust
 
 The command center overrode it by hand this once, after confirming zero LFS files in the range --
 recorded here so the override is auditable rather than folklore."""
+class = "bug"
 status = "shipped"
 order = 3472
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = ["scripts/platform/wave.sh"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -10,10 +10,12 @@ Residual from wave 29 adversarial MAJOR×2 (+ MINOR). verify-t440-faction-librar
 Repro: comment-only starter name or echo-path recipe → verify-t440 PASS.
 
 Cure: strip SQL comments before name pin; require live INSERT INTO user_factions (or measured table) with name column value; require recipe line that actually redirects/applies the file to psql (same shape as verify-t444 if tighter); pin wave.sh both gate paths invoke the script. RED→GREEN on verifier perturbations."""
+class = "chore"
 status = "shipped"
 order = 3317
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = [
     "scripts/mod/verify-t440-faction-library-seed.sh",
     "scripts/platform/wave.sh",
@@ -21,5 +23,6 @@ owns = [
     "apps/website/api/seeds/faction_library.sql",
 ]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

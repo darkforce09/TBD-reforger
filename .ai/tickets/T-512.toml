@@ -2,11 +2,15 @@ id = "T-512"
 kind = "work"
 title = "HTTP IT for blank weather PATCH reject + CREATE omit→Clear"
 summary = 'Wave 43 residual (CLEAN NIT). T-377/T-509 covered by Class-R + admin_field omit-create. No committed HTTP IT that PATCH dense_fog then weather:"" stays dense_fog / 400, and CREATE omit weather returns clear. Cure: add missions IT cases. Ad-hoc HTTP was green at verify.'
+class = "feature"
 status = "shipped"
 order = 3352
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = ["apps/website/api/tests/missions.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

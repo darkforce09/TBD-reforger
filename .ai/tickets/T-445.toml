@@ -7,11 +7,15 @@ Residual from T-266 / wave 13 adversarial MINOR. Class-R tests pin audit_logs_pa
 Repro: change Load more to replace the vec; cargo test -p website-frontend audit::tests still PASS.
 
 Cure: include_str! / source guard (T-264 style) that on_load_more uses merge_audit_page + audit_logs_path(Some(before))."""
+class = "bug"
 status = "shipped"
 order = 3284
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/audit.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

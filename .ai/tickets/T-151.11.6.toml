@@ -2,6 +2,7 @@ id = "T-151.11.6"
 kind = "work"
 title = "T-151.11.6"
 summary = "T-151.11.6"
+class = "feature"
 status = "shipped"
 order = 1500
 executor = "claude-code"
@@ -9,5 +10,6 @@ notes = "Wheel-zoom mid-pan rebase (operator hotfix). Tip acceptance 8237cda6. V
 parent = "T-151"
 shipped_at = "dd9a98d5"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

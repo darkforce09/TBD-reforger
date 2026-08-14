@@ -2,9 +2,13 @@ id = "T-046"
 kind = "work"
 title = "Doc link integrity pass"
 summary = "Stale numbered cross-refs and relative link depths fixed."
+class = "bug"
 status = "shipped"
 order = 460
 executor = "cursor-docs"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

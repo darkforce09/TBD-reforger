@@ -32,6 +32,7 @@ boots headless with zero players and has never been asked to accept a connection
 FIX: one script that starts a joinable, mod-loaded, admin-capable dedicated server, and a documented
 answer for how a second machine reaches it (LAN Direct Join vs backend room). Until this exists the
 playtest is not runnable and both remaining programs stay blocked.'''
+class = "bug"
 status = "shipped"
 order = 3512
 executor = "claude-code"
@@ -43,5 +44,6 @@ owns = [
     "docs/mod/STAGING-SERVER.md",
 ]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

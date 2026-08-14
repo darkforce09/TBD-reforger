@@ -2,11 +2,15 @@ id = "T-823"
 kind = "work"
 title = "OBJ readout counts slots only — placed vehicles are invisible to it"
 summary = "WAVE-203 VERIFIER FILING (wave203.md NIT; mission_history.rs:289/532). OBJ = slot_count (characters only): drag-placing an M1025 leaves OBJ unchanged while the vehicle genuinely places (outliner row, Placed strip, recently-placed all show it). Either rename the readout (SLOTS) or count entities (slots+vehicles) — pick one and pin it; the WEST/EAST/IND/TOTAL chips (operator-liked) already count slots explicitly and must not drift. ACCEPTANCE: place a vehicle -> the readout either includes it or is renamed so the exclusion is honest; chips unchanged."
+class = "chore"
 status = "queued"
 order = 5050
 executor = "claude-code"
 notes = "wave203 verifier; wording-vs-count decision, small"
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/mission_history.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

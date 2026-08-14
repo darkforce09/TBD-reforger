@@ -2,10 +2,14 @@ id = "T-264"
 kind = "work"
 title = "Bookmarked tab with no bookmark button"
 summary = "missions.rs:21 ships a bookmarked scope with backend support, but there is no bookmark control anywhere in the SPA and POST/DELETE /missions/{id}/bookmark are orphaned, so the tab can only ever be empty."
+class = "chore"
 status = "shipped"
 order = 2820
 executor = "claude-code"
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/missions.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

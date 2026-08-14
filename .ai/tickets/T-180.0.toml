@@ -2,12 +2,15 @@ id = "T-180.0"
 kind = "work"
 title = "T-180 — ORBAT + Eden placement program (Class-R)"
 summary = "T-180 — ORBAT + Eden placement program (Class-R)"
+class = "feature"
 status = "shipped"
 order = 1760
 spec = "docs/specs/Mission_Creator_Architecture/t180_orbat_eden_program.md"
 executor = "cursor-docs"
 notes = "Hub + per-slice specs + t180_class_r_pins.md (measured packages/RGBA/APIs) + stitch artifacts"
 parent = "T-180"
+estimated = ["scope"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

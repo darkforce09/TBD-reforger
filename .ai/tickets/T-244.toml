@@ -2,13 +2,16 @@ id = "T-244"
 kind = "work"
 title = "No vehicle lane in the map-object catalogue"
 summary = "The Workbench export plus Rust classifier pipeline is real and produces 1,623 prefabs and 1.2M instances for Everon, but the kind enum covers building, tree, vegetation, rock, prop, utility, water and road — there is no vehicle kind. This is adding a lane to an existing pipeline, not building one."
+class = "feature"
 status = "shipped"
 order = 2620
 executor = "claude-code"
+estimated = ["scope"]
 owns = [
     "packages/tbd-schema/schema/map-object-enums.schema.json",
     "packages/tbd-schema/rules/prefab-classify.json",
 ]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

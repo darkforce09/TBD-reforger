@@ -2,10 +2,14 @@ id = "T-840"
 kind = "work"
 title = "The draft chip says 'saved just now' on boot of a content-bearing mission — before any edit"
 summary = "WAVE-206 VERIFIER FILING (wave206.md NIT). On opening any content-bearing mission the hydrate persists server content to IndexedDB — a REAL flush completes (~1s, can_undo=false, edit_persist_count=0) and the T-804 chip honestly reports 'Draft saved just now' though the operator edited nothing. Truly-empty never-edited missions correctly show no chip. Legibility nuance: 'your work is safe' reads oddly when there is no work yet. FIX OPTIONS: gate the chip's FIRST appearance on the first operator-driven flush (edit_persist_count>0 or the dirty-dot arming source — one source, the wave-129 lesson), or reword the boot state ('draft synced'). Keep the ack discipline untouched. ACCEPTANCE: open a content-bearing mission, wait: no 'saved' chip until the first real edit flushes (or the boot wording differs measurably); never-edited-empty unchanged; post-edit behavior identical to today."
+class = "bug"
 status = "deferred"
 order = 5220
 executor = "claude-code"
 notes = "wave206 verifier NIT; one-source rule applies | ABSORBED into T-834 — same file, same class of copy/state polish. Do not dispatch separately; its acceptance clauses are carried there."
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

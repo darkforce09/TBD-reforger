@@ -2,11 +2,14 @@ id = "T-181.21"
 kind = "work"
 title = "T-181.21"
 summary = "T-181.21"
+class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
 notes = "ONE-LIFE integrity enforced @ dd79266d. Guard moved to DeployPlayerEx (the actual choke point) returning a new DENIED result, with AdminRespawn as the one documented opt-in bypass. The agent FALSIFIED the brief: death does NOT reach DoSpawn_S (that path is dead on a framework world since audit is swallowed) — it reaches SCR_RespawnComponent.NotifyReadyForSpawn_S, which invites a CLIENT spawn request and would have produced a fully VANILLA body. Closed by overriding CanRequestSpawn_S to refuse any request TBD_SpawnManager did not ticket (epoch-stamped, closed on spawn/kill/disconnect/5s timeout, fails closed). m_mDeadPlayers rekeyed to the durable PlayerBindKey — which required fixing a latent bug first: GetPlayerIdentityId returns a UUID and a NULL uuid formats to the same constant for everyone, so identity-keyed death tracking on the old string test would have made the first death kill the whole server. Also: departed dead players' seats retained (fixes round-never-ends when the last man rage-quits), AdminRespawn is now dead-until-proven-DEPLOYED, AssignSlotForPlayer got real exclusivity + a scanning round-robin. RetryDeploy race closed BY the choke-point guard rather than a duplicate check. UNVERIFIED, highest risk: the 5s possess-ticket window — if the request RPC lands outside it, deploys break outright. Needs a live run."
 parent = "T-181"
+estimated = ["scope"]
 
-[scope.mod]
-layers = ["feature"]
+[scope]
+domain = "mod"
+layer = "scripts"

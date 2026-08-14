@@ -38,15 +38,19 @@ never executed.** T-594 worked around it for its own case by moving the check to
 FIX, in order: (1) correct CI's `TEST_DATABASE_URL`; (2) fix the stale `401`; (3) add
 `cargo test -p xtask -p tbd-tools` to the wave gate so the two crates stop being invisible locally.
 Do NOT do (3) before (2) or the gate lands red."""
+class = "bug"
 status = "shipped"
 order = 3470
 executor = "claude-code"
 priority = 0
+estimated = ["scope"]
 owns = [
     ".github/workflows/ci.yml",
     "tools/tbd-tools/src/density.rs",
     "scripts/platform/wave.sh",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -2,11 +2,13 @@ id = "T-675.1"
 kind = "work"
 title = "T-675 engine flatten emit"
 summary = "T-675 engine flatten emit"
+class = "feature"
 status = "queued"
 order = 4320
 executor = "claude-code"
 parent = "T-675"
 owns = ["crates/map-engine-core/src/mission/flatten.rs"]
 
-[scope.engine]
-layers = ["core"]
+[scope]
+domain = "engine"
+layer = "core"

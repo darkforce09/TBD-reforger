@@ -2,6 +2,7 @@ id = "T-180.9"
 kind = "work"
 title = "T-180.9 — Arsenal wire + ORBAT compile truth"
 summary = "T-180.9 — Arsenal wire + ORBAT compile truth"
+class = "feature"
 status = "shipped"
 order = 1760
 spec = "docs/specs/Mission_Creator_Architecture/t180_9_arsenal_compile.md"
@@ -9,6 +10,9 @@ executor = "claude-code"
 notes = "Tag T-180.9. Sl.loadout + loadout_summary_from_value; open_arsenal→attrs_tab=3; I1–I9. Verify: .ai/artifacts/t180_9_verify_log.md. Manual M-I1..M-I3 operator-pending. Program complete."
 parent = "T-180"
 shipped_at = "cba837b3"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

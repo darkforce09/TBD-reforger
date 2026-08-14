@@ -2,14 +2,19 @@ id = "T-762"
 kind = "work"
 title = "fly_to rides the T-166 smoke hook in production and every failure mode is silent"
 summary = "MINOR from the wave-116 verifier. eden_dock_left.rs:821 `fly_to` moves the camera by invoking `window.__editorCamSet` — the closure `mission_editor::register_editor_cam` installs as a T-166 SMOKE HOOK. VERIFIED BEHAVIOURALLY SOUND: the hook is installed unconditionally at engine init (mission_editor.rs:2780/4572), its body is exactly `set_view` -> `on_camera_changed` -> `flush_viewport` (the shipped mover), and the 'not yet installed' window coincides with 'no engine', where `live_camera()` already no-ops the click. So there is still exactly ONE camera mover in the codebase and the dock contains zero camera math — which was the right instinct. THE RISK IS COUPLING, NOT CORRECTNESS: rename or remove that test hook and fly-to dies silently, with no error and no failing test — and the only pin tying this file to the hook name is one of the HOLLOW ones filed as T-759, so it would not catch it either. FIX: promote a real seam — `pub fn fly_to(x, y, zoom)` beside `camera_snapshot` in world_assets/mod.rs, ~8 lines using the same RENDER_CTX borrow as `apply_grid` — and repoint the dock at it. The slice could not do this: world_assets/mod.rs was in nobody's owns and mission_editor.rs was T-069's that wave. Do it before the T-672-era churn. RELATED: `world_assets::labels` is a private module and `LabelHost.towns` a private field, so the dock also re-fetches and re-parses `/map-assets/<terrain>/locations.json` that was already parsed at boot — add `pub fn named_locations()` in the same pass. Diagnosis: editor_verify/wave116.md finding 4."
+class = "bug"
 status = "shipped"
 order = 4638
 executor = "claude-code"
 notes = "filed by wave-116 adversarial verifier (editor factory)"
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/world_assets/mod.rs",
     "apps/website/frontend/src/eden_dock_left.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["dock_left"]

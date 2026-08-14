@@ -2,11 +2,16 @@ id = "T-796"
 kind = "work"
 title = "Comments look like comments and can be moved"
 summary = "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). O-6 — PIXEL-VERIFIED: a placed comment renders as an AMBER RING — the selection colour — so every comment permanently reads as selected (operator caught it; colour match confirmed against the selected-unit amber), there is no comment glyph at all (Eden's Comments layer uses a distinct symbol), and comments CANNOT BE DRAGGED: a 90px drag across a placed comment left its stored position unchanged (verified twice by crop comparison; move_comment exists at mission_editor.rs ~:1554 but is not wired to the drag path). FIX: (a) neutral speech-bubble/note glyph in a non-selection colour; selected state adds the standard selection treatment ON TOP so selected-vs-idle reads correctly; (b) wire comments into the drag-move path (pick -> preview -> move_comment one-txn commit) alongside slots/vehicles; (c) comment glyph participates in the marker-vs-unit shape language (distinct from both). ⚠️ TRAPS: T-784 (comment click-select) shipped this band's precedent — build on its pick lane, do not fork; comments are editor-only (never compiled) — no schema anywhere near this; delete/undo of comments has known per-txn acceptance in delete_selection comments loop — moving must be ONE step. ACCEPTANCE: scripted — placed comment pixel signature != selection amber and != marker glyph; click selects (T-784 regression green); drag moves stored x/y by the drag delta (dock/attrs readback), ONE undo restores; mid-drag the glyph follows the cursor (preview parity with slots)."
+class = "bug"
 status = "shipped"
 order = 4780
 executor = "claude-code"
 notes = "T-784/T-748/T-781 comment family cited; one-txn move matches the F-26 lesson | SHIPPED W206 (drag half): comments pick/preview/move through move_comment — precedence ring→unit→comment→marquee proven at the boundaries, one undo per note, three non-commit exits leave the lane byte-identical, T-784 click regression green. The GLYPH RESTYLE (a)/(c) is T-808's by band assignment (the registry cites the bubble as its shape-language deliverable) — the amber-ring look persists until W207 BY DESIGN."
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/mission_editor.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["map_canvas"]

@@ -7,11 +7,15 @@ In-wave hotfix from wave 12 adversarial MAJOR. T-263 added create_vehicle + POST
 Repro: delete .post(create_vehicle) from app.rs or stub create_vehicle to always 500; wave gate still PASS.
 
 Cure: extend apps/website/api/tests/content_read.rs (or sibling) with admin POST happy path + 400 on missing name/faction/armor_type + GET list contains the new row. Perturbation must RED if route/handler missing."""
+class = "chore"
 status = "shipped"
 order = 3282
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = ["apps/website/api/tests/content_read.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

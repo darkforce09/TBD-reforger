@@ -2,10 +2,14 @@ id = "T-059"
 kind = "work"
 title = "Bulk paste/delete at scale"
 summary = "O(n) pasteSlots batch writes and selection cap at 10k paste."
+class = "chore"
 status = "shipped"
 order = 590
 spec = "docs/specs/Mission_Creator_Architecture/t059_bulk_paste_operations.md"
 executor = "claude-code"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

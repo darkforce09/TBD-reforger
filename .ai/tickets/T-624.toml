@@ -39,10 +39,14 @@ STILL OPEN, reported not fixed (both outside the slice''s owns):
 - **A third copy of F1''s false claim** at `frontend/src/event_manager.rs:238-240`.
 - F4, cosmetic: `tests/t578_ratelimit.rs:389` is named `migration_0020_is_the_ddl_constant_verbatim`
   while correctly reading `0021_rate_limit_buckets.sql`; `app.rs:468-469` cites it by that name."""
+class = "bug"
 status = "shipped"
 order = 3732
 executor = "claude-code"
 priority = 3
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

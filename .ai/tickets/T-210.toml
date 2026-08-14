@@ -2,9 +2,12 @@ id = "T-210"
 kind = "work"
 title = "In-game admin mission switch calls a route that does not exist"
 summary = "CANCELLED — premise fixed by T-181.51. TBD_MissionListLoader.c:38 now calls /api/v1/ingest/missions; the /api/missions path this ticket describes no longer exists."
+class = "bug"
 status = "cancelled"
 order = 2280
 executor = "claude-code"
+estimated = ["scope"]
 
-[scope.mod]
-layers = ["feature"]
+[scope]
+domain = "mod"
+layer = "scripts"

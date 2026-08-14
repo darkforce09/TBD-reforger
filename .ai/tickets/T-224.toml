@@ -2,11 +2,16 @@ id = "T-224"
 kind = "work"
 title = "Mission settings block — duration, respawn, spectator policy, NVG, tickets, JIP"
 summary = "Six contract fields with no control anywhere. flow is four hardcoded constants and tickets is a hardcoded 0. Ship the UI, doc fields and flatten emission together; half of settings also needs mod readers."
+class = "docs"
 status = "shipped"
 order = 2420
 executor = "claude-code"
 shipped_at = "dde40f91"
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/eden_chrome.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["layout_chrome"]

@@ -27,15 +27,19 @@ It kept /compiled at 500 deliberately rather than overturning validated_compiled
 FOLDED IN FROM T-366 and found a THIRD case: "25:00" also 500'd. Its valid_time_of_day is deliberately NARROWER than the column — measured on Postgres 18, `time` also accepts 24:00, 0600, '4:05 PM', 'allballs', 06:00:60 (leap second, silently renormalised) — each storing fine and then parking the author's scrubber at 06:00 in silence, which is the T-192 bug. It also requires ASCII digits because Rust's u32::from_str accepts a leading '+', so "+6:00" would have parsed and still 500'd.
 
 It reverted a `cargo fmt --all` that reformatted 11 files it did not own, rather than committing them."""
+class = "bug"
 status = "shipped"
 order = 3183
 executor = "claude-code"
 priority = 1
 shipped_at = "3a653fd5"
+estimated = ["scope"]
 owns = [
     "apps/website/api/src/handlers/missions.rs",
     "crates/map-engine-core/src/mission/flatten.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

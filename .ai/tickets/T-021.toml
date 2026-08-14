@@ -2,9 +2,13 @@ id = "T-021"
 kind = "work"
 title = "R1/R2 full-bleed + SplitPane"
 summary = "Full-bleed routes and SplitPane migration."
+class = "chore"
 status = "shipped"
 order = 210
 executor = "cursor-docs"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

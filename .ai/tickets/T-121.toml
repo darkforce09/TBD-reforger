@@ -2,11 +2,13 @@ id = "T-121"
 kind = "work"
 title = "Terrain DEM export automation"
 summary = "Follow-ons: Arland re-export, optional game-mode heightmap fallback. MCP hardening shipped @ e7e7232 (mcp-call/daemon/consume/selftest). Core GetSurfaceY plugin shipped in T-091.0. Spec: t121_terrain_dem_export_automation.md."
+class = "feature"
 status = "deferred"
 order = 1210
 spec = "docs/specs/Mission_Creator_Architecture/t121_terrain_dem_export_automation.md"
 executor = "claude-code"
 depends_on = ["T-091.0"]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

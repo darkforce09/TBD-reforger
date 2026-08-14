@@ -15,10 +15,12 @@ Residue of wave 5's T-215, which shipped real vehicle map placement (position, f
 5. NOT VERIFIED LIVE, and it should be. Neither T-215 (its worktree could not be served -- :3000 runs from the main checkout) nor the wave verifier (browser tooling unavailable: `list_connected_browsers` returned empty on four attempts) placed a vehicle in a browser. What IS established: the served bundle is post-merge (dist rebuilt 21:17 vs merge 21:16:32) and contains `vehiclesById` x5, `factionId` x3, `cargo` x14. UNVERIFIED: that a vehicle can be placed, that it persists across reload, that cargo authoring works, and T-215's four claims in item 4. A browser pass is cheap and would close it.
 
 CONFIRMED SOUND, do not re-audit: T-215's design call that a map-placed vehicle carries NO squadId is correct and the verifier proved why. Attaching would have hit `place_orbat.rs:157-161`, where `is_open_for_placement` counts a squad holding ANY vehicle as authored -- so attaching closes the side's current squad and the next character placement mints a fresh one, silently splitting the fireteam being built around it. That is the T-321 one-squad-per-click defect."""
+class = "bug"
 status = "shipped"
 order = 3264
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/eden_chrome.rs",
     "apps/website/frontend/src/editor_ops.rs",
@@ -30,5 +32,13 @@ owns = [
     "crates/map-engine-core/src/doc/store.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = [
+    "layout_chrome",
+    "ops_undo",
+    "tools",
+    "map_canvas",
+]

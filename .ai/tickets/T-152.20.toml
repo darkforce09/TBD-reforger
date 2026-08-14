@@ -2,12 +2,16 @@ id = "T-152.20"
 kind = "work"
 title = "T-152.20 — Mission Settings world-layer toggle completeness"
 summary = "T-152.20 — Mission Settings world-layer toggle completeness"
+class = "feature"
 status = "shipped"
 order = 1520
 spec = "docs/specs/Mission_Creator_Architecture/t152_20_settings_completeness.md"
 executor = "claude-code"
 notes = "Shipped @ 4ec87d1b (tag T-152.20) UI 12/12 + T-152.20.1 @ 1a750cdd wiring (roads/forest/contours/sea); M1 PASS 3f78968e. O10 closed. Verify t152_20_1_verify_log.md."
 parent = "T-152"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

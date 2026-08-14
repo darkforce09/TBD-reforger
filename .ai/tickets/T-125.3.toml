@@ -2,12 +2,16 @@ id = "T-125.3"
 kind = "work"
 title = "T-125 — Coding standards + 11/10 enforcement"
 summary = "T-125 — Coding standards + 11/10 enforcement"
+class = "feature"
 status = "shipped"
 order = 1250
 spec = "docs/platform/t125_coding_standards_enforcement.md"
 executor = "claude-code"
 parent = "T-125"
 shipped_at = "e5fbf4b"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

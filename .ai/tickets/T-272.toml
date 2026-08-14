@@ -2,9 +2,11 @@ id = "T-272"
 kind = "work"
 title = "Server-status producer — close the SSE loop"
 summary = "The whole SSE chain is built (realtime.rs hub, the stream route, sse.rs client) but the only publisher is inside POST /ingest/server-status, and nothing calls it. The stream connects, flips connected=true and delivers zero frames forever."
+class = "feature"
 status = "shipped"
 order = 2900
 executor = "claude-code"
+estimated = ["scope"]
 owns = [
     "apps/website/api/src/realtime.rs",
     "apps/website/frontend/src/sse.rs",
@@ -13,5 +15,7 @@ owns = [
     "apps/website/api/.env.example",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

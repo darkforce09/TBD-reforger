@@ -2,10 +2,14 @@ id = "T-055"
 kind = "work"
 title = "Asset browser search"
 summary = "Case-insensitive label search in Factions asset tree."
+class = "feature"
 status = "shipped"
 order = 550
 spec = "docs/specs/Mission_Creator_Architecture/t055_asset_browser_search.md"
 executor = "claude-code"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

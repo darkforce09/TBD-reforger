@@ -10,10 +10,12 @@ Repro:
   bash scripts/mod/verify-t468-ci-schema-parity.sh  # FAIL pin
 
 Cure: ci.yml step + Makefile ci-local must invoke `bash scripts/mod/verify-t468-ci-schema-parity.sh` directly (not $(MAKE) verify-t468). Keep Makefile target for humans. Update comments on circularity. Also fix .env.example attribution: ROLE_RESYNC comment says T-488 but feature is T-428 (verifier MINOR).'''
+class = "bug"
 status = "shipped"
 order = 3328
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = [
     "Makefile",
     ".github/workflows/ci.yml",
@@ -21,5 +23,6 @@ owns = [
     "apps/website/api/.env.example",
 ]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

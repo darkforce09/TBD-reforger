@@ -172,6 +172,70 @@ fn check_open_work_owns(root: &Path) -> Vec<String> {
     errors
 }
 
+/// T-917.2 — class is REQUIRED on work tickets (spec Decisions log #4; the value set is
+/// parse-validated in tbd-tickets, so only ABSENCE can red here). Corpus-wide: the v2
+/// migrator triaged every historical work ticket and the minters classify at birth, so
+/// no status tier is exempt. Fail-closed on an unloadable corpus, same as the owns rule.
+fn check_work_class(root: &Path) -> Vec<String> {
+    let corpus = match tbd_tickets::Corpus::load(root) {
+        Ok(c) => c,
+        Err(e) => return vec![e],
+    };
+    let mut errors = Vec::new();
+    for ticket in corpus.tickets.values() {
+        if let tbd_tickets::Ticket::Work(w) = ticket
+            && w.class.is_none()
+        {
+            errors.push(format!(
+                "{}: class required for work ticket (one of {})",
+                w.id,
+                tbd_tickets::CLASS_VALUES.join("|")
+            ));
+        }
+    }
+    errors
+}
+
+/// T-917.2 — surface is REQUIRED on live work (spec Decisions log #3), the corpus-wide
+/// mirror of the ops made-live gate. Binds exactly where a surface is *possible*: the
+/// scope must name a component AND the vocabulary must OFFER surfaces for it — a rule
+/// cannot require what `.ai/tickets/scope-vocab.toml` does not contain (component-free
+/// layers and empty-surface components like `mod.scripts.backend` are exempt until the
+/// vocabulary is widened). The escape is the migrator's honest `"scope" ∈ estimated[]`
+/// marker: owns-uninferable history is recorded, not invented — a live ticket in a
+/// surface-bearing component with neither surface nor marker is red.
+fn check_live_work_surface(root: &Path) -> Vec<String> {
+    let corpus = match tbd_tickets::Corpus::load(root) {
+        Ok(c) => c,
+        Err(e) => return vec![e],
+    };
+    // Corpus::load above already refused on a missing/unreadable vocabulary.
+    let vocab = match tbd_tickets::ScopeVocab::load(root) {
+        Ok(v) => v,
+        Err(e) => return vec![e],
+    };
+    let mut errors = Vec::new();
+    for ticket in corpus.tickets.values() {
+        if let tbd_tickets::Ticket::Work(w) = ticket {
+            let status = w.status.name().as_str();
+            if matches!(status, "queued" | "ready" | "running" | "review")
+                && let Some(component) = &w.scope.component
+                && w.scope.surface.is_empty()
+                && !w.estimated.iter().any(|e| e == "scope")
+                && vocab
+                    .surfaces_of(w.scope.domain.as_str(), &w.scope.layer, component)
+                    .is_some_and(|s| !s.is_empty())
+            {
+                errors.push(format!(
+                    "{}: surface required for {status} work ticket — scope names component {component} but surface is empty; set [scope] surface or record \"scope\" in estimated[]",
+                    w.id
+                ));
+            }
+        }
+    }
+    errors
+}
+
 /// T-916.2 — parent↔child referential integrity over EVERY `.ai/tickets/T-*.toml` (the typed
 /// corpus; parents-only walks cannot see either half of the relation). Two rules, both naming
 /// the pair:
@@ -390,6 +454,10 @@ pub fn check(root: &Path, registry: &serde_json::Value, strict: bool) -> Vec<Str
     let mut errors = validate_registry_schema(root, registry);
     errors.extend(validate_registry(registry));
     errors.extend(check_open_work_owns(root));
+    // T-917.2: class required on every work ticket; surface required on live work with
+    // a component (the estimated-marker escape documented on the fns).
+    errors.extend(check_work_class(root));
+    errors.extend(check_live_work_surface(root));
     // T-916.2: children[] must reference on-disk files and child files must reference on-disk
     // parents — the referential rule the save_tree delete-pass retirement makes load-bearing.
     errors.extend(check_children_integrity(root));
@@ -401,15 +469,11 @@ pub fn check(root: &Path, registry: &serde_json::Value, strict: bool) -> Vec<Str
     // .ai/tickets/metrics.schema.json plus the token-sum / RFC 3339 UTC invariants —
     // a malformed receipt is red, named by file.
     errors.extend(crate::metrics::check_as_errors(root));
-    // T-917.1: the scope vocabulary (.ai/tickets/scope-vocab.toml) must be shape-valid
-    // wherever it exists — sorted, duplicate-free, closed domain set (vocab_check.rs).
-    // Its EXISTENCE is enforced at the --strict tier, the single gate authority (t917
-    // spec, Decisions log 8): the pre-v2 scratch registries (cmds.rs mutator fixtures)
-    // carry no vocab file and must stay green until the S.2 cutover makes scope legality
-    // — and with it the file — load-bearing for every corpus load.
-    if strict || crate::vocab_check::vocab_path(root).is_file() {
-        errors.extend(crate::vocab_check::check_as_errors(root));
-    }
+    // T-917.1/.2: the scope vocabulary (.ai/tickets/scope-vocab.toml) must EXIST and be
+    // shape-valid — BASE tier since the S.2 cutover (S.1 parked existence at --strict
+    // only while pre-v2 scratch registries still lacked the file): scope legality now
+    // rides every corpus load, so a missing vocabulary is red wherever check runs.
+    errors.extend(crate::vocab_check::check_as_errors(root));
     errors.extend(fossil_paths_check(root));
 
     for row in tickets(registry) {
@@ -624,6 +688,21 @@ mod tests {
         );
     }
 
+    /// Scratch tickets dir carrying the minimal vocabulary the fail-closed corpus load
+    /// requires since T-917.2 (Corpus::load resolves scope legality on every load).
+    fn scratch_tickets_dir(tag: &str) -> (PathBuf, PathBuf) {
+        let tmp = std::env::temp_dir().join(format!("{tag}-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&tmp);
+        let dir = tmp.join(".ai/tickets");
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(
+            dir.join("scope-vocab.toml"),
+            "[mod.scripts]\nbackend = []\n\n[repo.docs]\n\n[website.frontend]\nmission_creator = [\"map_canvas\"]\n",
+        )
+        .unwrap();
+        (tmp, dir)
+    }
+
     /// T-912.1: the owns rule sees CHILD ticket files. The live tree must be green, and an
     /// owns-empty queued work ticket dropped into a synthetic tickets dir must go red — including
     /// a dotted child id the parents-only registry view never loads.
@@ -637,18 +716,18 @@ mod tests {
             errs.join("\n")
         );
 
-        let tmp = std::env::temp_dir().join(format!("t912-owns-check-{}", std::process::id()));
-        let dir = tmp.join(".ai/tickets");
-        fs::create_dir_all(&dir).unwrap();
+        let (tmp, dir) = scratch_tickets_dir("t912-owns-check");
         let bad = r#"id = "T-001.1"
 kind = "work"
 title = "x"
 summary = "x"
+class = "chore"
 status = "queued"
 order = 10
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"
 "#;
         fs::write(dir.join("T-001.1.toml"), bad).unwrap();
         let errs = check_open_work_owns(&tmp);
@@ -667,6 +746,143 @@ layers = ["docs"]
         fs::remove_dir_all(&tmp).unwrap();
     }
 
+    /// T-917.2: class is required on every work ticket — the live tree is green (the
+    /// migrator triaged all of history), and a planted class-less work ticket reds
+    /// naming ticket + the legal set; restoring class restores green.
+    #[test]
+    fn work_without_class_is_red() {
+        let root = worktree_root();
+        let errs = check_work_class(&root);
+        assert!(
+            errs.is_empty(),
+            "live tree must carry class on every work ticket; got:\n{}",
+            errs.join("\n")
+        );
+
+        let (tmp, dir) = scratch_tickets_dir("t917-class-check");
+        let bare = r#"id = "T-001"
+kind = "work"
+title = "x"
+summary = "x"
+status = "idea"
+
+[scope]
+domain = "repo"
+layer = "docs"
+"#;
+        fs::write(dir.join("T-001.toml"), bare).unwrap();
+        let errs = check_work_class(&tmp);
+        assert_eq!(errs.len(), 1, "{errs:?}");
+        assert!(
+            errs[0].contains("T-001")
+                && errs[0].contains("class required")
+                && errs[0].contains("bug|feature|chore|audit|docs"),
+            "{}",
+            errs[0]
+        );
+        fs::write(
+            dir.join("T-001.toml"),
+            bare.replace("summary = \"x\"\n", "summary = \"x\"\nclass = \"chore\"\n"),
+        )
+        .unwrap();
+        assert!(check_work_class(&tmp).is_empty(), "class restores green");
+        fs::remove_dir_all(&tmp).unwrap();
+    }
+
+    /// T-917.2: live work with a component but no surface is red unless the migrator's
+    /// `"scope" ∈ estimated[]` escape is recorded; component-free scope is exempt.
+    #[test]
+    fn live_work_component_without_surface_is_red() {
+        let root = worktree_root();
+        let errs = check_live_work_surface(&root);
+        assert!(
+            errs.is_empty(),
+            "live tree must satisfy the surface rule; got:\n{}",
+            errs.join("\n")
+        );
+
+        let (tmp, dir) = scratch_tickets_dir("t917-surface-check");
+        let bare = r#"id = "T-001"
+kind = "work"
+title = "x"
+summary = "x"
+class = "feature"
+status = "queued"
+order = 10
+owns = ["a.rs"]
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+"#;
+        fs::write(dir.join("T-001.toml"), bare).unwrap();
+        let errs = check_live_work_surface(&tmp);
+        assert_eq!(errs.len(), 1, "{errs:?}");
+        assert!(
+            errs[0].contains("T-001")
+                && errs[0].contains("surface required")
+                && errs[0].contains("mission_creator"),
+            "{}",
+            errs[0]
+        );
+        // The migrator's honest escape…
+        fs::write(
+            dir.join("T-001.toml"),
+            bare.replace(
+                "owns = [\"a.rs\"]\n",
+                "owns = [\"a.rs\"]\nestimated = [\"scope\"]\n",
+            ),
+        )
+        .unwrap();
+        assert!(
+            check_live_work_surface(&tmp).is_empty(),
+            "scope ∈ estimated must pass"
+        );
+        // …a real surface…
+        fs::write(
+            dir.join("T-001.toml"),
+            bare.replace(
+                "component = \"mission_creator\"\n",
+                "component = \"mission_creator\"\nsurface = [\"map_canvas\"]\n",
+            ),
+        )
+        .unwrap();
+        assert!(
+            check_live_work_surface(&tmp).is_empty(),
+            "nonempty surface must pass"
+        );
+        // …component-free scope…
+        fs::write(
+            dir.join("T-001.toml"),
+            bare.replace(
+                "[scope]\ndomain = \"website\"\nlayer = \"frontend\"\ncomponent = \"mission_creator\"\n",
+                "[scope]\ndomain = \"repo\"\nlayer = \"docs\"\n",
+            ),
+        )
+        .unwrap();
+        assert!(
+            check_live_work_surface(&tmp).is_empty(),
+            "component-free scope is exempt"
+        );
+        // …and a component whose vocabulary surface list is EMPTY (mod.scripts.backend
+        // — the live T-674.2/T-675.2 shape) are all green: the rule cannot require a
+        // surface the vocabulary does not offer.
+        fs::write(
+            dir.join("T-001.toml"),
+            bare.replace(
+                "[scope]\ndomain = \"website\"\nlayer = \"frontend\"\ncomponent = \"mission_creator\"\n",
+                "[scope]\ndomain = \"mod\"\nlayer = \"scripts\"\ncomponent = \"backend\"\n",
+            ),
+        )
+        .unwrap();
+        assert!(
+            check_live_work_surface(&tmp).is_empty(),
+            "empty vocab surface list is exempt until widened"
+        );
+        fs::remove_dir_all(&tmp).unwrap();
+    }
+
     /// T-916.2: the referential-integrity rule. The live tree must be green (measured: zero
     /// violations, T-111→T-067.1 included — file and parent both exist); a children[] entry
     /// without a file and a child whose parent file is missing must each go red naming BOTH
@@ -681,9 +897,7 @@ layers = ["docs"]
             errs.join("\n")
         );
 
-        let tmp = std::env::temp_dir().join(format!("t916-refint-check-{}", std::process::id()));
-        let dir = tmp.join(".ai/tickets");
-        fs::create_dir_all(&dir).unwrap();
+        let (tmp, dir) = scratch_tickets_dir("t916-refint-check");
         let program = r#"id = "T-009"
 kind = "program"
 title = "x"
@@ -696,7 +910,7 @@ children = [
 "#;
         let child = |id: &str, parent: &str| {
             format!(
-                "id = \"{id}\"\nkind = \"work\"\ntitle = \"x\"\nsummary = \"x\"\nstatus = \"idea\"\nparent = \"{parent}\"\n\n[scope.repo]\nlayers = [\"docs\"]\n"
+                "id = \"{id}\"\nkind = \"work\"\ntitle = \"x\"\nsummary = \"x\"\nclass = \"chore\"\nstatus = \"idea\"\nparent = \"{parent}\"\n\n[scope]\ndomain = \"repo\"\nlayer = \"docs\"\n"
             )
         };
         fs::write(dir.join("T-009.toml"), program).unwrap();
@@ -741,20 +955,20 @@ children = [
     /// nothing coerces the value to now. Valid stamps restore green.
     #[test]
     fn malformed_timestamp_is_red() {
-        let tmp = std::env::temp_dir().join(format!("t913-timestamp-check-{}", std::process::id()));
-        let dir = tmp.join(".ai/tickets");
-        fs::create_dir_all(&dir).unwrap();
+        let (tmp, dir) = scratch_tickets_dir("t913-timestamp-check");
         let bad = r#"id = "T-001.1"
 kind = "work"
 title = "x"
 summary = "x"
+class = "chore"
 status = "queued"
 order = 10
 created_at = "2026-13-99T25:61:00Z"
 owns = ["docs/README.md"]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"
 "#;
         fs::write(dir.join("T-001.1.toml"), bad).unwrap();
         let errs = check_open_work_owns(&tmp);

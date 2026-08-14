@@ -2,11 +2,16 @@ id = "T-830"
 kind = "work"
 title = "Outliner rows are too cramped — density pass on the layer tree"
 summary = "OPERATOR EYE-PASS FINDING (wave-204 pass, 2026-08-10, screenshot evidence): the left outliner rows read 'very cramped' — 16px rows with per-row icon clusters (eye/camera/rename/delete/drop-chip) squeezed against truncated names. DIRECTION: a density pass on the layer tree — more row breathing room (height/padding), icon cluster shown on hover-or-active rather than always (Eden hides row tools until hover), name gets the width; keep the T-803 drop-target treatment + T-809 vehicle rows + windowing (threshold 50) intact. MAY BE ABSORBED by the T-825 design session — if that session lands first, fold this in; otherwise it is a standalone visual pass. ACCEPTANCE: row height/padding increased measurably; row tools hidden until hover (or active); no truncation of typical names at 240px dock width; windowing + all row affordances (rename, flags, drop-target, Alt-click) still work."
+class = "chore"
 status = "queued"
 order = 5120
 executor = "claude-code"
 notes = "operator eye-pass wave-204; candidate for the T-825 session or standalone"
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/eden_tree.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["outliner"]

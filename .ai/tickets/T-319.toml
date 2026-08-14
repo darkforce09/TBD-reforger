@@ -7,16 +7,20 @@ FOUND by T-218's sweep — the low-severity tail, grouped because they are one-l
   handlers/me.rs:149 — `arma_character` is unguarded while `code`/`arma_id` are guarded at :161; an omitted field blanks the stored character name.
   services/discord.rs:69 — DiscordUser.username defaulted; a malformed profile response blanks users.username / discord_handle. This is the door T-185 closed one field over. Self-heals on next login, so lowest priority of the three, but it is the same class.
 Apply the guarded-Option pattern already used at wiki.rs:84 and me.rs:161."""
+class = "bug"
 status = "shipped"
 order = 3135
 executor = "claude-code"
 priority = 2
 shipped_at = "538b9ad4"
+estimated = ["scope"]
 owns = [
     "apps/website/api/src/handlers/wiki.rs",
     "apps/website/api/src/handlers/me.rs",
     "apps/website/api/src/services/discord.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

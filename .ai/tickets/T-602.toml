@@ -36,10 +36,12 @@ signature defect -- *a tool reports success over an input it never examined.*
   it at **T-145, 2026-07-06**; T-381 (07-27) made it refuse, T-534 (07-28) derived per-binary names.
   The mechanism is right, the date is wrong.
 - `wave.sh:2126` says "81 tests"; measured **84** (T-361 added 3 serve tests)."""
+class = "bug"
 status = "shipped"
 order = 3492
 executor = "claude-code"
 priority = 3
+estimated = ["scope"]
 owns = [
     "scripts/platform/wave.sh",
     "tools/tbd-tools/src/enf",
@@ -47,5 +49,7 @@ owns = [
     "apps/website/frontend/src/arsenal.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -37,15 +37,19 @@ per-server addressing + secret migration T-269 asked for: there is no secret to 
    code -- consume the agent's `result`/`state`, which is why it returns both.
  - Install is opt-in behind `TBD_INSTALL_AGENT=1` because it mutates the live host. Someone has to
    run it before any of this works end to end."""
+class = "bug"
 status = "shipped"
 order = 3462
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = [
     "apps/website/api/src/services/game_agent.rs",
     "apps/website/api/src/handlers/admin.rs",
     "apps/website/api/src/config.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -2,11 +2,14 @@ id = "T-208"
 kind = "work"
 title = "Add a compiler-shaped golden mission"
 summary = "All four goldens author radioPlan, briefings, settings and multi-type zones — none resembles flatten output, so the mod's test corpus systematically over-represents what the website can emit. Add a golden containing exactly the nine blocks flatten produces."
+class = "feature"
 status = "shipped"
 order = 2260
 executor = "claude-code"
 shipped_at = "d297f3a3"
+estimated = ["scope"]
 owns = ["packages/tbd-schema/golden-missions"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

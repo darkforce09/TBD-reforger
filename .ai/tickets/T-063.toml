@@ -2,10 +2,14 @@ id = "T-063"
 kind = "work"
 title = "Spatial index for pick"
 summary = "rbush R-tree pickNearest/pickRect replaces Deck GPU pick."
+class = "feature"
 status = "shipped"
 order = 630
 spec = "docs/specs/Mission_Creator_Architecture/t063_spatial_index.md"
 executor = "claude-code"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

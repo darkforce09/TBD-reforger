@@ -2,11 +2,15 @@ id = "T-195"
 kind = "work"
 title = "Leaderboards actively throws away real data"
 summary = "leaderboards.rs:307-309 sets rows to an empty vec whenever the API returns anything, so a populated ladder renders 'No operators match your search'. Until then an eight-row fabricated table displays as the real ladder. All five tabs, the search box and View Dossier are dead, and GET /users/{id}/stats has no caller anywhere."
+class = "feature"
 status = "shipped"
 order = 2130
 executor = "claude-code"
 shipped_at = "c0c357e2"
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/leaderboards.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

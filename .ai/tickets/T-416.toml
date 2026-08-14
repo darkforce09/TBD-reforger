@@ -13,15 +13,19 @@ WHY IT IS BETTER: natively testable (the frontend seam is #![cfg(target_arch = \
 THE ONE REAL DESIGN QUESTION: it needs the registry for weights and capacities, which the API has and the pure core crate does not. Resolve that before building -- either thread a registry handle in, or split the rule so core holds the arithmetic and the API supplies the table.
 
 Once this lands, T-240's frontend block becomes a nicety on top rather than the only line of defence.'''
+class = "chore"
 status = "shipped"
 order = 3241
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = [
     "crates/map-engine-core/src/mission/wire_safety.rs",
     "apps/website/api/src/contract/validate.rs",
     "apps/website/api/src/handlers/missions.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

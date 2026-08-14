@@ -2,10 +2,12 @@ id = "T-493"
 kind = "work"
 title = "T-397 Class-R blind to sum(COALESCE(deaths,0)) on leaderboard_totals"
 summary = "Wave 37 adversarial NIT. insert_without_counters_stores_null_not_zero holds. leaderboard_mv_does_not_invent_deaths_from_null went RED when INSERT bound 0, but poisoning the MV to sum(COALESCE(deaths,0)) with a mixed NULL+measured fixture still left the Class-R GREEN (0+3=3). Cure: pin all-NULL row set → kd_ratio IS NULL and/or source-ratchet migration 0014 / live MV for FILTER (WHERE deaths IS NOT NULL) / no COALESCE(deaths,0) in the aggregate."
+class = "chore"
 status = "shipped"
 order = 3332
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "apps/website/api/tests/telemetry.rs",
     "apps/website/api/migrations/0014_nullable_match_player_stat_counters.sql",
@@ -13,5 +15,7 @@ owns = [
     "apps/website/api/src/handlers/telemetry.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

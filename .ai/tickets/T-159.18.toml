@@ -2,6 +2,7 @@ id = "T-159.18"
 kind = "work"
 title = "T-159.18 — Select / LMB tools (pick foundation)"
 summary = "T-159.18 — Select / LMB tools (pick foundation)"
+class = "feature"
 status = "shipped"
 order = 1570
 spec = "docs/platform/t159_18_select_tools.md"
@@ -9,6 +10,9 @@ executor = "claude-code"
 notes = "LMB click-select; frozen cam; PointIndex pick_rect+argmin. Verify: .ai/artifacts/t159_18_verify_log.md. S8 persist notify deferred to mutator (.19)."
 parent = "T-159"
 shipped_at = "eb30ebea"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

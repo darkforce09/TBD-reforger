@@ -7,10 +7,12 @@ Residual from T-268 / wave 14. Dossier Deployments cell stays em-dash because Ro
 Repro: Personnel dossier → Deployments always —.
 
 Cure: project count in admin list_users + dto AdminUserRow + personnel.rs bind."""
+class = "feature"
 status = "shipped"
 order = 3287
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "apps/website/api/src/handlers/admin.rs",
     "apps/website/frontend/src/dto.rs",
@@ -18,5 +20,7 @@ owns = [
     "apps/website/frontend/tests/fixtures/api/GET__admin__users.json",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

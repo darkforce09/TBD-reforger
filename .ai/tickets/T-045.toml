@@ -2,9 +2,13 @@ id = "T-045"
 kind = "work"
 title = "Roadmap-centric naming"
 summary = "Domain ROADMAP.md files replace numbered doc paths."
+class = "docs"
 status = "shipped"
 order = 450
 executor = "cursor-docs"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

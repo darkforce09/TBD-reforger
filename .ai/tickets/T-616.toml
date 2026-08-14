@@ -25,10 +25,14 @@ NOTE the new wave-78 base-derivation cross-checks read `wave_plan.tsv` as one of
 (`ticket ledger`). They key on the `wN` form and worked correctly this wave ("wave 77 has 5
 ticket(s)… all shipped — corroborated"), but anything that normalises these labels must keep that
 check working -- see T-613's implementation before touching the format."""
+class = "bug"
 status = "shipped"
 order = 3632
 executor = "claude-code"
 priority = 3
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

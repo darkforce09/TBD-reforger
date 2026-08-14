@@ -20,10 +20,12 @@ drift; (b) two lines of wiring, recorded in the module doc.
 **AN OPERATOR TRADE, NOT A SLICE AGENT'S CALL:** it adds ONE DATABASE WRITE PER REQUEST. T-280's own
 recommendation is to keep the in-memory `IpLimiter` as an L1 in front so only near-limit traffic
 reaches Postgres. Get sign-off on the cost before wiring."""
+class = "docs"
 status = "shipped"
 order = 3422
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "apps/website/api/src/middleware/ratelimit.rs",
     "apps/website/api/src/app.rs",
@@ -31,5 +33,7 @@ owns = [
     "apps/website/api/src/services",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

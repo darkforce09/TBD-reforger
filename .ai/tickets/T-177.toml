@@ -2,6 +2,7 @@ id = "T-177"
 kind = "work"
 title = "MC chrome UX + ORBAT dock cutover (T-071.0)"
 summary = "SHIPPED @ tag T-177 / e97a01c6. A1 YouTube elbow guides; A2 grab on PALETTE_LEAF; A3 strip z-30 / docks z-20; B1–B2 T-071.0 OrbatManagerDialog + left ORBAT removed. Gate doctor + full Chrome headless (leptos-gates 20/20). Verify: .ai/artifacts/t177_verify_log.md. Hub: docs/platform/t177_mc_chrome_orbat_cutover.md."
+class = "docs"
 status = "shipped"
 order = 1740
 spec = "docs/platform/t177_mc_chrome_orbat_cutover.md"
@@ -9,6 +10,9 @@ executor = "claude-code"
 depends_on = ["T-176"]
 unblocks = ["T-071"]
 user_story = "As a mission maker I use Editor Layers only on the left, open ORBAT Manager from the top strip, see YouTube-style tree lines, grab-cursor on assets, and menus that paint above the docks."
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

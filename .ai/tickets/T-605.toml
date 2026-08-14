@@ -26,6 +26,7 @@ REPRO: author a mission with one slot whose cargo targets an unworn container; c
 FIX (design call, not obvious): degrade that ONE player's loadout and let the session start, log it
 loudly, and surface it to the admin -- rather than refusing the world. Whatever is chosen, run it
 against a loadout-carrying mission in the gate, which no current gate step does."""
+class = "bug"
 status = "shipped"
 order = 3522
 executor = "claude-code"
@@ -36,5 +37,6 @@ owns = [
     "apps/mod/tbd-framework/scripts/Game/TBD/TBD_LoadoutEquipHelper.c",
 ]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

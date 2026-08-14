@@ -16,12 +16,16 @@ THE REAL CAUSE OF THE 08:28:10 DEATH IS UNDETERMINED. No OOM, segfault, or API e
 WHAT THIS TICKET ACTUALLY FIXES, and it is real and measured: which commands emit target/debug/api — `cargo check` does NOT; `cargo test -p website-api` DOES; `cargo build --bin api` DOES. The wave gate runs `cargo test -p website-api` after every land, all night, so the shared target/debug/api belongs to whichever tree built last and a dev server on it serves UNMERGED SLICE CODE. That is T-300, and isolating `make api` closes it. It also drops `make api` out of the shared build-lock queue behind seven agents.
 
 Cost measured: cold build 25s / 322 crates, warm rebuild 0.98s, 2.1 GB disk. .gitignore needed no entry — `target-*/` at :46 already covers it. wave.sh deliberately NOT changed: the gate does write that path but cannot kill anything, and isolating the single consumer beats policing an unbounded set of producers."""
+class = "bug"
 status = "shipped"
 order = 3138
 executor = "claude-code"
 priority = 0
 shipped_at = "fe899dca"
+estimated = ["scope"]
 owns = ["Makefile"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

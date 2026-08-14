@@ -2,10 +2,12 @@ id = "T-807"
 kind = "work"
 title = "Copy and consistency sweep: units, plurals, stale hints, log spam, hero gate, disabled-row tooltips"
 summary = "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). Bundled S3 copy debts, each observed and pinned: (1) F-13 numeric noise — marker Position field editable at '4921.268596532038'; round display to 3dp and suffix units; status-bar readouts gain ' m' suffixes + axis glyphs (Eden prints 'X 8762.61 m', frame 170422) — attributes.rs ~:943 region and the readout formatters in mission_editor.rs. (2) F-17 '1 slots · server cap 128 players' plural — orbat_manager.rs ~:297. (3) F-23-part stale hint 'Z is manual until terrain elevation (DEM) ships' — DEM shipped (status-bar Z is DEM-sampled); fix the copy, attributes.rs ~:943. (4) F-19 library hero presents a DRAFT as 'LIVE OPERATION — Command has flagged this operation as the priority deployment' — gate the hero on published status or label DRAFT, missions.rs ~:177/:379. (5) F-20 '[yrs-persist] T-374: refused to persist … do not replay' warned 8x on a brand-new empty mission — silence below first authored content or log once at debug, yrs_persist.rs ~:783-784. (6) F-37 disabled rows go silent — direction doc rule 'disabled still shows its tooltip' (Eden honours it, frame 164031 disabled Redo tooltips); TBD's disabled 'Play from Here' has NO title anywhere in its chain; give every MenuEntry::off row a why-tooltip; the History button (title='Version history (soon)') is the in-repo template — context_menu.rs. (7) O-10 'GRID off' chip names the SNAP grid while sitting beside the map-grid labels — relabel 'SNAP off/move/rot', mission_editor.rs ~:1212-1218. ⚠️ TRAPS: eden_top_strip.rs menu-label fixes (F-14 ticket-id label, F-15 Controls Hint dedup) are NOT here — they are T-797's, because those strings live inside the MENUS const it rewrites; red error-count contrast is T-798's. Do not touch shared formatting helpers other tickets own. ACCEPTANCE: greps — no 15-digit value renders in any attrs field (probe reads field values after open); '1 slots' impossible (uses pluralizer); 'DEM' hint string gone; hero card absent for status!=published (or shows DRAFT chip); fresh-mission console shows 0 yrs-persist refusals; every disabled context row exposes a non-empty title; bottom-right chip reads SNAP."
+class = "bug"
 status = "shipped"
 order = 4890
 executor = "claude-code"
 notes = "seven one-file fixes bundled; degree-15 owns is the packing liability — split valve documented in EDITOR_FACTORY_START band notes | SHIPPED W201: all seven verified live (attrs ' m' units + display rounding with no-op discipline intact, '1 slot' plural, DEM hint gone, hero gated on status=='live' (enum value — 'published' does not exist), yrs-persist quiet on empty missions with BLOCKED_EMPTY telemetry intact, disabled context rows carry why-tooltips, SNAP chip). F-13's status-bar half lives in eden_toolbelt.rs and landed under T-793 via orchestrator addendum. found_not_fixed: FEATURED_BRIEFING_FALLBACK prose still reads live-flavored for a non-live hero (T-548 golden pins it)."
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/orbat_manager.rs",
     "apps/website/frontend/src/attributes.rs",
@@ -16,5 +18,14 @@ owns = [
     "apps/website/frontend/src/context_menu.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = [
+    "attr_panel",
+    "top_strip",
+    "doc_store",
+    "map_canvas",
+    "layout_chrome",
+]

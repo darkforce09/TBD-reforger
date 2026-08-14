@@ -7,8 +7,9 @@
 //! rule validates ONLY the vocabulary file's own shape:
 //!
 //! * the file exists (missing = one error naming the path — required from this slice on;
-//!   existence is enforced at the `--strict` tier, see the wire-in note in
-//!   [`crate::check::check`]);
+//!   BASE tier since the T-917.2 cutover made scope legality ride every corpus load,
+//!   see the wire-in note in [`crate::check::check`] — T-917.1 had parked existence at
+//!   `--strict` while pre-v2 scratch registries still lacked the file);
 //! * it parses as TOML — duplicate layer/component keys are refused by the parser itself
 //!   (TOML forbids redefining a key), so "no duplicate component names within a layer"
 //!   arrives with the parse, named by file;

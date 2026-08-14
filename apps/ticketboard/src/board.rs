@@ -5,9 +5,8 @@
 //! never formats strings.
 
 use std::collections::HashMap;
-use std::fmt;
 
-use tbd_tickets::{FrontendScope, Scope, Status, StatusName, Ticket, WebsiteScope};
+use tbd_tickets::{ScopeV2, Status, StatusName, Ticket};
 
 use crate::corpus::Corpus;
 
@@ -197,58 +196,20 @@ pub fn truncate_chars(s: &str, max_chars: usize) -> String {
     out
 }
 
-/// Lowercased `Debug` of a layer/capability enum. Every variant in the
-/// `tbd-tickets` layer enums is a single word, so this equals the serde
-/// snake_case name — pinned by `layer_names_lowercase_debug_pin`.
-fn debug_lower<T: fmt::Debug>(value: &T) -> String {
-    format!("{value:?}").to_lowercase()
-}
-
-fn layers_list<T: fmt::Debug>(layers: &[T]) -> String {
-    layers.iter().map(debug_lower).collect::<Vec<_>>().join("+")
-}
-
-/// One-line scope rendering for the detail panel.
-pub fn scope_compact(scope: &Scope) -> String {
-    match scope {
-        Scope::Website(WebsiteScope::Frontend(FrontendScope::Editor(e))) => {
-            let mut s = String::from("website/frontend/editor");
-            if !e.chrome.is_empty() {
-                s.push_str(&format!(" chrome={}", layers_list(&e.chrome)));
-            }
-            if let Some(cap) = &e.capability {
-                s.push_str(&format!(" cap={}", debug_lower(cap)));
-            }
-            s
-        }
-        Scope::Website(WebsiteScope::Frontend(FrontendScope::Page(p))) => {
-            let mut s = String::from("website/frontend/page");
-            if let Some(route) = &p.route {
-                s.push_str(&format!(" route={route}"));
-            }
-            if let Some(cap) = &p.capability {
-                s.push_str(&format!(" cap={}", debug_lower(cap)));
-            }
-            s
-        }
-        Scope::Website(WebsiteScope::Frontend(FrontendScope::Shell(sh))) => {
-            let mut s = String::from("website/frontend/shell");
-            if let Some(cap) = &sh.capability {
-                s.push_str(&format!(" cap={}", debug_lower(cap)));
-            }
-            s
-        }
-        Scope::Website(WebsiteScope::Backend { layers }) => {
-            format!("website/backend: {}", layers_list(layers))
-        }
-        Scope::Website(WebsiteScope::Tests { layers }) => {
-            format!("website/tests: {}", layers_list(layers))
-        }
-        Scope::Mod { layers } => format!("mod: {}", layers_list(layers)),
-        Scope::Schema { layers } => format!("schema: {}", layers_list(layers)),
-        Scope::Engine { layers } => format!("engine: {}", layers_list(layers)),
-        Scope::Repo { layers } => format!("repo: {}", layers_list(layers)),
+/// One-line scope rendering for the detail panel — the v2 breadcrumb:
+/// `domain/layer[/component][: s1+s2]`. Kept deliberately raw (T-917.2 compile-fix
+/// tier); the faceted rendering lands with Ticketboard v2 B.1.
+pub fn scope_compact(scope: &ScopeV2) -> String {
+    let mut s = format!("{}/{}", scope.domain.as_str(), scope.layer);
+    if let Some(component) = &scope.component {
+        s.push('/');
+        s.push_str(component);
     }
+    if !scope.surface.is_empty() {
+        s.push_str(": ");
+        s.push_str(&scope.surface.join("+"));
+    }
+    s
 }
 
 /// Uniform read view over both ticket kinds — the detail panel's "EVERY field"
@@ -341,7 +302,6 @@ mod tests {
     use super::*;
     use crate::corpus::{Corpus, Counts, LoadedTicket, is_child_id};
     use std::path::PathBuf;
-    use tbd_tickets::{Capability, ModLayer, RepoLayer, WebsiteBackendLayer};
 
     fn parse(toml: &str) -> Ticket {
         tbd_tickets::parse_ticket_toml(toml).unwrap()
@@ -354,8 +314,9 @@ kind = "work"
 title = "title of {id}"
 {status_lines}
 {extra}
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"
 "#
         ))
     }
@@ -518,21 +479,12 @@ layers = ["docs"]
         assert!(cut.ends_with('…'));
     }
 
-    #[test]
-    fn layer_names_lowercase_debug_pin() {
-        // Single-word variants ⇒ lowercased Debug == serde snake_case name.
-        assert_eq!(debug_lower(&RepoLayer::Xtask), "xtask");
-        assert_eq!(debug_lower(&ModLayer::Gamemode), "gamemode");
-        assert_eq!(debug_lower(&Capability::Selection), "selection");
-        assert_eq!(debug_lower(&WebsiteBackendLayer::Realtime), "realtime");
-        assert_eq!(layers_list(&[RepoLayer::Ci, RepoLayer::Docs]), "ci+docs");
-    }
-
+    /// T-917.2: the breadcrumb renders all four v2 levels, omitting what is absent.
     #[test]
     fn scope_compact_variants() {
         let repo = work("T-1", "status = \"idea\"", "");
         match &repo {
-            Ticket::Work(w) => assert_eq!(scope_compact(&w.scope), "repo: docs"),
+            Ticket::Work(w) => assert_eq!(scope_compact(&w.scope), "repo/docs"),
             Ticket::Program(_) => unreachable!(),
         }
 
@@ -542,13 +494,15 @@ kind = "work"
 title = "b"
 status = "idea"
 
-[scope.website.backend]
-layers = ["api", "db"]
+[scope]
+domain = "website"
+layer = "backend"
+component = "http_api"
 "#,
         );
         match &backend {
             Ticket::Work(w) => {
-                assert_eq!(scope_compact(&w.scope), "website/backend: api+db");
+                assert_eq!(scope_compact(&w.scope), "website/backend/http_api");
             }
             Ticket::Program(_) => unreachable!(),
         }
@@ -559,16 +513,18 @@ kind = "work"
 title = "e"
 status = "idea"
 
-[scope.website.editor]
-chrome = ["left", "map"]
-capability = "selection"
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["dock_left", "map_canvas"]
 "#,
         );
         match &editor {
             Ticket::Work(w) => {
                 assert_eq!(
                     scope_compact(&w.scope),
-                    "website/frontend/editor chrome=left+map cap=selection"
+                    "website/frontend/mission_creator: dock_left+map_canvas"
                 );
             }
             Ticket::Program(_) => unreachable!(),
@@ -615,7 +571,7 @@ active = "T-9.1"
         assert_eq!(v.parent, Some("T-9"));
         assert_eq!(v.shipped_at, Some("abc123"));
         assert!(v.children.is_empty());
-        assert_eq!(v.scope.as_deref(), Some("repo: docs"));
+        assert_eq!(v.scope.as_deref(), Some("repo/docs"));
         assert_eq!(kind_str(&workt), "work");
     }
 }

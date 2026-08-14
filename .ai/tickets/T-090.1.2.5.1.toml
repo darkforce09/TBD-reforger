@@ -2,6 +2,7 @@ id = "T-090.1.2.5.1"
 kind = "work"
 title = "T-090.1.2.5.1 — Inland water mask refine (road exclusion + hill rivers)"
 summary = "T-090.1.2.5.1 — Inland water mask refine (road exclusion + hill rivers)"
+class = "feature"
 status = "shipped"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_1_2_5_1_water_mask_refine.md"
@@ -9,5 +10,6 @@ executor = "claude-code"
 parent = "T-090"
 shipped_at = "82488c6f"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

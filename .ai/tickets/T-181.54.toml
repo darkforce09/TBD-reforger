@@ -2,12 +2,16 @@ id = "T-181.54"
 kind = "work"
 title = "T-181.54"
 summary = "T-181.54"
+class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
 notes = "Correct a mission-loader warning that told the operator a falsehood, and add scripts/mod/test-mission.sh. OPERATOR-REPORTED LIVE: staging a golden produced 'RUNNING A CACHED MISSION - this is the last document the backend served successfully, NOT THE ONE CONFIGURED'. That last clause can NEVER be true: LoadFromProfileFile reads $profile:missions/<missionId>.json, so the file is KEYED BY the configured id and the mission identity always matches. What can differ is the VERSION. Worse, it labelled a deliberate stage as a fault. MEASURED discriminator against the live API: a golden's msn_* id returns 400 {invalid id} because the API validates the id SHAPE before lookup, while a valid-but-absent uuid returns 404 {mission not found} - so 400 means this id was never a backend mission and the disk file is intended, not stale. Loader now threads the http code into TryProfileFallbackAfterRestFailure and branches: 400 -> event-level 'staged on disk' note (plus the no-schema-validation caveat), anything else -> the stale-VERSION warning. NOT VERIFIABLE BY THE GATE: world-boot --mission= forces backendUrl='' so it never takes the REST error path; the branch is confirmed on the operator's next live reload."
 parent = "T-181"
+estimated = ["scope"]
 owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c + scripts/mod"]
 
-[scope.mod]
-layers = ["feature"]
+[scope]
+domain = "mod"
+layer = "scripts"
+component = "backend"

@@ -7,11 +7,15 @@ MINOR from wave 8 verifier on T-201. Everon z_bounds is pinned ([[0,0],[12800,0]
 Repro: cargo test -p map-engine-core --features mission — no arland z_bounds size assert.
 
 Cure: unit test with terrain=arland expecting 4096² ring."""
+class = "feature"
 status = "shipped"
 order = 3274
 executor = "claude-code"
 priority = 3
+estimated = ["scope"]
 owns = ["crates/map-engine-core/src/mission/flatten.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -2,11 +2,13 @@ id = "T-181.3"
 kind = "work"
 title = "T-181.3"
 summary = "T-181.3"
+class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
 notes = "enf carve + index vanilla + make enf-carve. PARTIAL BY NATURE: only a subset of vanilla script ships uncompressed. Got 610 files / 41,958 LOC / 1,106 declarations (882 SCR_*) — AI/behaviour-tree, camera, actions, UI components, WB plugins. SCR_BaseGameMode / SCR_PossessSpawnData / SCR_PossessSpawnRequestComponent / SCR_RespawnSystemComponent / ChimeraMenuBase are ABSENT as plaintext (compressed) — recorded as known-missing in docs/mod/vanilla_carve_coverage.md, not faked. Output gitignored (BI copyright); only the derived index is committed. Follow-up: inflate compressed pak blocks via PakVfs and re-carve."
 parent = "T-181"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

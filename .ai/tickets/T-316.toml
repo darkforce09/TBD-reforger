@@ -7,15 +7,19 @@ FOUND by T-218's sweep. Three defaulted structs in handlers/telemetry.rs reach d
   :186-196 PlayerStatInput counters — re-ingest zeroes kills/deaths/etc, and that propagates into `users` stats and the leaderboard materialized view.
   :41-57 ServerStatusInput — a partial heartbeat writes a permanent `player_count=0, server_fps=0` history sample and fires a false `server.low_fps` audit WARN.
 These are service-token endpoints, so a game-server bug or a retried request corrupts history silently. Fix: require the fields, or make the writes COALESCE-style partial updates. Decide per field which is right — a heartbeat legitimately omits fields; a match result does not."""
+class = "bug"
 status = "shipped"
 order = 3132
 executor = "claude-code"
 priority = 0
 shipped_at = "7da9f742"
+estimated = ["scope"]
 owns = [
     "apps/website/api/src/handlers/telemetry.rs",
     "apps/website/api/tests/telemetry.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

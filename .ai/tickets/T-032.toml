@@ -2,9 +2,13 @@ id = "T-032"
 kind = "work"
 title = "Eden Editor tree paradigm"
 summary = "Outliner, asset browser, Attributes modal tree UI."
+class = "feature"
 status = "shipped"
 order = 320
 executor = "claude-code"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -10,11 +10,15 @@ Repro:
   # with --features "doc,mission" → 1 passed
 
 Cure: change that verify-t180 pin to --features "doc mission" (same as place_/attach_vehicle pins), OR ungated cfg so mission alone compiles the test. Prefer script feature align — keep Class-R on writer round-trip."""
+class = "docs"
 status = "shipped"
 order = 3321
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = ["scripts/verify-t180-coherency.sh"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

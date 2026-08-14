@@ -9,12 +9,16 @@ telemetry.rs:376-381 resolves `discord_id` at INGEST time. So every match a play
 This is not a corruption bug, it is a missing step: nothing ever goes back and claims the historical rows once the link exists. Fix is one statement in the existing confirm transaction in `handlers/me.rs` — UPDATE match_player_stats SET discord_id = ... WHERE arma_id = ... AND discord_id IS NULL — followed by a recompute. Do it inside the transaction that consumes the link code, so a failure cannot half-link.
 
 Check whether attendance/leaderboard rows need the same treatment, and whether unlinking (if that exists) should reverse it."""
+class = "bug"
 status = "shipped"
 order = 3142
 executor = "claude-code"
 priority = 1
 shipped_at = "5538efce"
+estimated = ["scope"]
 owns = ["apps/website/api/src/handlers/me.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

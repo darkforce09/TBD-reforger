@@ -2,9 +2,13 @@ id = "T-034"
 kind = "work"
 title = "MC doc alignment"
 summary = "Eden UX spec and agent execution plan documentation."
+class = "docs"
 status = "shipped"
 order = 340
 executor = "claude-code"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

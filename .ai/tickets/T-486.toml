@@ -7,14 +7,18 @@ Wave 33 verifier NIT (T-485). verify-t468 pins t438/t456 recipe bodies but not i
 Repro: replace verify-t468 recipe with @true → make verify-t468 rc=0.
 
 Cure: extend verify-t468 (or sibling) to assert Makefile verify-t468 recipe invokes the real script.'''
+class = "chore"
 status = "shipped"
 order = 3325
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "Makefile",
     "scripts/mod/verify-t468-ci-schema-parity.sh",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

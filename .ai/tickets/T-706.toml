@@ -27,11 +27,13 @@ ACCEPTED RISK, stated because the repo has been bitten by it before: this briefl
   2. A test asserts each new field is currently unread, so the day a reader lands the test fails and      forces the comment to be removed. That is the fail-on-demand shape this program uses everywhere      else — a green you did not watch fail is unproven.
 
 Additive only: no existing field changes shape, so no migration and no compiled-document break. Run early, before the runtime halves. Each of the 16 keeps its own ticket for the Enfusion reader and any editor UI, and its owns drops packages/tbd-schema."""
+class = "chore"
 status = "shipped"
 order = 4600
 executor = "claude-code"
 notes = " — SHIPPED wave 120 (editor factory), 843f3438 + ledger 9228a458 + hardening 6382c69c + prose 955a281d; verifier wave120.md (contract hardened against the hostile reading before any reader dispatched); unread-fields gate live at 53 fields"
 owns = ["packages/tbd-schema/schema/mission.schema.json"]
 
-[scope.schema]
-layers = ["mission"]
+[scope]
+domain = "schema"
+layer = "mission"

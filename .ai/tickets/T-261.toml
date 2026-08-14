@@ -2,13 +2,17 @@ id = "T-261"
 kind = "work"
 title = "Leaderboard materialized view has no scheduled refresh"
 summary = "refresh_leaderboard has exactly one caller, inside results ingest. If ingest never fires the ladder is frozen at the WITH NO DATA state from migration 0002 forever. No cron, no interval, no admin refresh button."
+class = "chore"
 status = "shipped"
 order = 2790
 executor = "claude-code"
+estimated = ["scope"]
 owns = [
     "apps/website/api/src/db.rs",
     "apps/website/api/src/bin/api.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -23,10 +23,12 @@ CORRECTION TO THE RECORD, verified twice: T-365's stated mechanism is WRONG. dev
 `tests/admin_field.rs:289` (`admin_approvals_cms_field`) looks up a shared fixed user by discord_id and asserts a GLOBAL `role` value that it also mutates — not row-isolated even to the degree registry_compat.rs attempts. Two concurrent gates produced:
     panicked at apps/website/api/tests/admin_field.rs:289: left: String("leader")  right: "enlisted"
 Control: the same test alone on the same clean DB passed 3/3, so this is the collision and not T-399's residue. Now masked by T-396's gate flock, but the suite is still not safe to run concurrently by hand."""
+class = "bug"
 status = "shipped"
 order = 3216
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = [
     "apps/website/api/tests/identity_link.rs",
     "apps/website/api/tests/factions.rs",
@@ -34,5 +36,7 @@ owns = [
     "apps/website/api/tests/common/mod.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -2,8 +2,10 @@ id = "T-149"
 kind = "work"
 title = "Forest Mass Polygon Smoothing"
 summary = "Upgrade the V1 blocky Path B forest hulls. Increase the density grid resolution (e.g., down to 8m) and apply a curve-smoothing algorithm (like Chaikin's) to the marching squares output so the forest edges look like natural, curved cartography."
+class = "feature"
 status = "idea"
 notes = "needs-operator: frozen unmappable Scope. "
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

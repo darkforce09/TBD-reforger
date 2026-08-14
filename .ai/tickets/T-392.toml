@@ -9,11 +9,15 @@ The sibling consts on the same page are the same mechanism and should go with it
 Right shape: render nothing (or an explicit 'No briefing' affordance) when the field is empty, the way `mission_overview.rs:930` already does with `"No briefing provided."`. Do NOT back-fill — see T-373 for why an absent value must stay distinguishable from a default.
 
 Found by the T-239 provenance sweep; full map at docs/platform/frontend_data_provenance.md."""
+class = "bug"
 status = "shipped"
 order = 3208
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/event_hub.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

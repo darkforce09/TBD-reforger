@@ -2,6 +2,7 @@ id = "T-152.9"
 kind = "work"
 title = "T-152.9 — Road names (polyline-following labels)"
 summary = "T-152.9 — Road names (polyline-following labels)"
+class = "feature"
 status = "shipped"
 order = 1520
 spec = "docs/specs/Mission_Creator_Architecture/t152_9_road_names.md"
@@ -9,5 +10,6 @@ executor = "claude-code"
 notes = "Road names discovery spike."
 parent = "T-152"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

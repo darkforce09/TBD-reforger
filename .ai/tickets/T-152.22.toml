@@ -2,6 +2,7 @@ id = "T-152.22"
 kind = "work"
 title = "T-152.22 — E2E re-gate (de-vacuoused) + operator O1–O12 sign-off"
 summary = "T-152.22 — E2E re-gate (de-vacuoused) + operator O1–O12 sign-off"
+class = "chore"
 status = "shipped"
 order = 1520
 spec = "docs/specs/Mission_Creator_Architecture/t152_22_e2e_regate_operator.md"
@@ -9,5 +10,6 @@ executor = "human"
 notes = "Shipped 2026-07-14 — operator GO (bulk O1–O12 PASS; screenshot pack + extended master re-suite waived with dated quotes). Verify t152_22_verify_log.md. Merge ticket/T-152 → main next."
 parent = "T-152"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

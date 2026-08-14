@@ -2,6 +2,7 @@ id = "T-068.10.7"
 kind = "work"
 title = "T-068.10.7 — Arsenal paper-doll (ACE layout, 2D SVG soldier, clickable parts)"
 summary = "T-068.10.7 — Arsenal paper-doll (ACE layout, 2D SVG soldier, clickable parts)"
+class = "feature"
 status = "shipped"
 order = 680
 spec = "docs/specs/Mission_Creator_Architecture/t068_10_7_arsenal_paper_doll.md"
@@ -9,6 +10,9 @@ executor = "claude-code"
 notes = "Mode D: Arsenal paper-doll - ACE layout with clickable SVG soldier silhouette (list left, doll center, context right; optic/magazine sub-hotspots on the rifle; honest weight readout). Replaces the .10.6 dropdown-rows layout inside the Arsenal tab; ArsenalPicksPanel stays for the Faction Manager. SHIPPED @ de1ab7b5 (tag T-068.10.7). T-068.11 remains PARKED for operator decision."
 parent = "T-068"
 shipped_at = "de1ab7b5"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -7,14 +7,18 @@ Observed wave 29 cold re-gate FAIL once on fresh tbd_wave29b_cold: event_orbat_r
 Repro: intermittent under `bash scripts/platform/wave.sh gate <base>` with TBD_GATE_DB cold DB.
 
 Cure: make seed_user idempotent on arma_id or unique arma_id per test worker; assert no shared snowflake collision across parallel tests."""
+class = "chore"
 status = "shipped"
 order = 3318
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "apps/website/api/tests/common/mod.rs",
     "apps/website/api/tests/events.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

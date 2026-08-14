@@ -2,6 +2,7 @@ id = "T-151.0"
 kind = "work"
 title = "T-151.0 — wasm packaging merge + engine batch list + editor dual mount"
 summary = "T-151.0 — wasm packaging merge + engine batch list + editor dual mount"
+class = "feature"
 status = "shipped"
 order = 1500
 spec = "docs/specs/Mission_Creator_Architecture/t151_0_wasm_merge_dual_mount.md"
@@ -9,5 +10,6 @@ executor = "claude-code"
 parent = "T-151"
 shipped_at = "f019512d"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

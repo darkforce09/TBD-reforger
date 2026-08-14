@@ -9,6 +9,7 @@ Live lie at apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegi
 Repro: author a destroy objective whose alias fails for zone/timing/registry reasons; inertReason still says the build does not spawn entities[] — misdiagnoses live failures.
 
 Cure: rewrite diagnostics to distinguish missing spawn vs unresolved alias vs out-of-zone; update schema prose."""
+class = "feature"
 status = "shipped"
 order = 3276
 executor = "claude-code"
@@ -19,5 +20,6 @@ owns = [
     "packages/tbd-schema/schema/mission.schema.json",
 ]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

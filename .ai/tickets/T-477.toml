@@ -12,11 +12,15 @@ Live SQL today is correct; the gate is hollow. No behavioral IT for link-confirm
 Repro: rewrite BACKFILL_ATTENDANCE to event-wide via ANY/UNION while keeping join substring → unit test PASS.
 
 Cure: harden Class-R — strip SQL `--`/`/* */` comments before pins; require a single FROM event_missions … INNER JOIN matches with live ON containing both equalities (no UNION/ANY event-id-only arms); ban `em.event_id = ANY` / nested event_id-only IN/ANY. Prefer also a minimal behavioral IT if owns can widen to tests/; else structural-only with RED→GREEN on verifier shapes."""
+class = "chore"
 status = "shipped"
 order = 3316
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = ["apps/website/api/src/handlers/me.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -2,11 +2,13 @@ id = "T-181.4"
 kind = "work"
 title = "T-181.4"
 summary = "T-181.4"
+class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
 notes = "docs/mod/TBD_MOD_DESIGN.md (north star) + enf citations + make verify-oracle + make verify-no-crf-leak. 14 @idx citations resolve; injecting the hallucinated 'RequestSlotChange' makes it exit 1. Leak gate allows CRF_ in comments (attribution) and treats vanilla GUIDs as engine facts — both false-positive classes measured and handled."
 parent = "T-181"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

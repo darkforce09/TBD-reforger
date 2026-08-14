@@ -7,11 +7,15 @@ Residual from wave 25 adversarial N1. Content LocalResource uses .ok(); failed G
 Repro: force GET /cms/announcements 500/network fail → UI looks like zero announcements forever.
 
 Cure: surface error + retry; do not set list_seeded on Err."""
+class = "feature"
 status = "shipped"
 order = 3305
 executor = "claude-code"
 priority = 3
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/content.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

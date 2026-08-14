@@ -2,10 +2,14 @@ id = "T-266"
 kind = "work"
 title = "No pagination anywhere in the SPA"
 summary = "Every list endpoint returns data, total, limit and offset (audit uses next_cursor), but no page reads any of them — audit.rs fetches a cursor list and discards next_cursor. Every list is silently truncated at the default limit of 20."
+class = "audit"
 status = "shipped"
 order = 2840
 executor = "claude-code"
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/audit.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -2,11 +2,15 @@ id = "T-218"
 kind = "work"
 title = "Rejection reasons are silently discarded"
 summary = "The backend expects RejectInput{reason} (api/handlers/approvals.rs:126-130); the frontend posts an empty json object (approvals.rs:317). The reviewer types a reason and it evaporates."
+class = "feature"
 status = "shipped"
 order = 2360
 executor = "claude-code"
 shipped_at = "ca7c1319"
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/approvals.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

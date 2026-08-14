@@ -2,9 +2,13 @@ id = "T-094"
 kind = "work"
 title = "Typed-array IconLayer"
 summary = "Typed-array slot icon buffer for mega-mission render path."
+class = "feature"
 status = "deferred"
 order = 940
 executor = "claude-code"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

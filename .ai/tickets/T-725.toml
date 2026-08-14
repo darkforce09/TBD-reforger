@@ -2,10 +2,14 @@ id = "T-725"
 kind = "work"
 title = "Furniture polish: zoom channel lags 1s on still-pointer wheel; northings hide under the bar; Failed-state fallback"
 summary = "T-667 residue, one ticket. (1) Wheel-zoom with a still pointer updates the scale bar and grid-ref labels only on the ~1 Hz debug-HUD heartbeat — up to a second of labels visibly off their moving lines (the transient form of the label-drift defect). Wire a real zoom signal (the wheel handler exists; emit through the same channel CUR uses on pointer-move). (2) Northings enumerate to the viewport bottom so the last chip can hide under the status bar — clamp to map-pane bottom minus bar height. (3) On boot-Failed camera_snapshot is None: grid refs correctly render nothing but ScaleBar shows a cosmetic 500 m fallback — hide it too. Diagnosis: editor_verify/wave106.md MINOR-1 + NOTEs."
+class = "feature"
 status = "deferred"
 order = 4318
 executor = "claude-code"
 notes = "filed by wave-106 adversarial verifier (editor factory)"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

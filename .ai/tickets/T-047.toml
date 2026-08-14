@@ -2,9 +2,13 @@ id = "T-047"
 kind = "work"
 title = "Doc authority alignment"
 summary = "agent_execution and wiki manifest deduped."
+class = "docs"
 status = "shipped"
 order = 470
 executor = "cursor-docs"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

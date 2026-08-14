@@ -31,15 +31,19 @@ IMPLEMENTATION CARE WORTH KEEPING: drain uses read_until(b'\n') + lossy decode, 
 VERIFIED INDEPENDENTLY from the command center after merge: `gate doctor: OK — 0 warning(s)` with liveness green.
 
 It also determined this does NOT explain T-338's top-level-document wedge: that wedged four CONSECUTIVE times, while this gap is scheduling roulette that passed 4 of 6 pre-fix, and document topology has no path to stderr volume. Worth re-running T-338's repro now, since recent_output() would show what chrome said.'''
+class = "bug"
 status = "shipped"
 order = 3170
 executor = "claude-code"
 priority = 1
 shipped_at = "b19a4634"
+estimated = ["scope"]
 owns = [
     "docs/website/EDITOR_GATE_RUNBOOK.md",
     "tools/tbd-tools/src/cdp.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

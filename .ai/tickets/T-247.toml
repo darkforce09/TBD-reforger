@@ -2,10 +2,14 @@ id = "T-247"
 kind = "work"
 title = "POST /admin/roles/sync has no UI and no scheduler"
 summary = "resync_all_roles works and is routed but has no frontend caller — it is curl-only. There is no scheduled sync either; the architecture doc claims a nightly cron, which is aspirational. The seed also ships a placeholder snowflake for the leader role."
+class = "docs"
 status = "shipped"
 order = 2650
 executor = "claude-code"
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/personnel.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

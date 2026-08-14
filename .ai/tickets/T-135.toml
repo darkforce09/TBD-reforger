@@ -2,10 +2,12 @@ id = "T-135"
 kind = "work"
 title = "Mission modset manager"
 summary = "Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan."
+class = "feature"
 status = "idea"
 spec = "docs/platform/tbd_north_star_backlog.md"
 executor = "claude-code"
 depends_on = ["T-092"]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

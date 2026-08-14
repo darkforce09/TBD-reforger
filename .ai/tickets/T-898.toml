@@ -9,10 +9,13 @@ SIZE-1 (>600 warn) and SIZE-3 (>1000 fail) are therefore enforced by nothing. Ev
 This is the same defect class the whole T-853 program is about: a check that reports success over an input it never examined. It is also line 89's `.unwrap_or(0)` fail-open in miniature, one level up -- there the read failure is swallowed, here the file set is empty.
 
 CURE: extend the walk to the Rust tree (xtask/, tools/, crates/, apps/website/*/src) and add `.rs`. MEASURE FIRST -- this turns main RED immediately on at least three pre-existing files: xtask/src/schema_gates.rs 4044, xtask/src/cmds.rs 1330, tools/tbd-tools/src/smokes.rs 3852, plus main.rs which grew past 1000 during Phase 3. So the slice is: extend the walk, then EITHER split those files OR give each an allowlist entry carrying a real reason and an expiry. Do not extend the walk and then silence it -- that reproduces the defect with extra steps."""
+class = "chore"
 status = "shipped"
 order = 5780
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+estimated = ["scope"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

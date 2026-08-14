@@ -2,11 +2,14 @@ id = "T-090.0"
 kind = "work"
 title = "T-090.0 — Map program hub + manifest schema"
 summary = "T-090.0 — Map program hub + manifest schema"
+class = "feature"
 status = "shipped"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_0_map_program_hub.md"
 executor = "cursor-docs"
 parent = "T-090"
+estimated = ["scope"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

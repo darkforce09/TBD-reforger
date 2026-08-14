@@ -2,10 +2,14 @@ id = "T-268"
 kind = "work"
 title = "Personnel — Issue Warning is a mock over a working endpoint, and there is no unban"
 summary = "personnel.rs:379-382 toasts 'Warning issued (mock)' while POST /admin/users/{id}/warnings exists and works. DELETE ban (unban) has no control at all, so a ban is irreversible from the UI. Sort and Filter are stubs and the Deployments dossier stat is hardcoded."
+class = "chore"
 status = "shipped"
 order = 2860
 executor = "claude-code"
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/personnel.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

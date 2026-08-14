@@ -18,9 +18,11 @@ PERTURBATION RECEIPT (why this is a verified cancellation rather than a guess): 
 PROCESS LESSON, worth more than the ticket: `dispatchable()` filters `deferred` but nothing detects a ticket whose defect a DIFFERENT ticket already fixed. 114 tickets sit at `idea` and an unknown number are in this state. A cheap staleness pass (does the cited line still say what the summary claims?) before dispatch would have saved a slice slot. Every future brief should open with "verify the defect still exists on main before writing code; if it is already fixed, stop and report that."
 
 Residual, NOT a live defect but a live class of blind spot: server_intel.rs:11-23 defines a typed DTO with no live reader — the page fetches DataEnvelope<Value>, so ServerRowDto's only references are its own definition and its own golden. A DTO read only by its golden proves the wire, not the page, which is exactly how the terrain placeholder survived a month (every v_* helper ends in unwrap_or_default() and cannot tell "key absent" from "key empty"). T-359 deferred adopting the typed DTO deliberately: `status` needs to keep its tolerant two-branch parse or one bad status takes the whole page down."""
+class = "bug"
 status = "cancelled"
 order = 2540
 executor = "claude-code"
+estimated = ["scope"]
 owns = [
     "apps/website/api/src/models/telemetry.rs",
     "apps/website/frontend/src/dto.rs",
@@ -28,5 +30,7 @@ owns = [
     "apps/website/frontend/src/server_intel.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

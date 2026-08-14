@@ -7,15 +7,18 @@ Residual from T-462 / wave 24. wave.sh now runs verify-t439 and verify-t444 afte
 Repro: corrupt deploy-staging compose path or strip REST size check → wave.sh gate still PASS until those scripts are invoked manually.
 
 Cure: wire both into wave.sh gate_slice + cmd_gate next to the T-439/T-444 steps (same pattern)."""
+class = "chore"
 status = "shipped"
 order = 3302
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "scripts/platform/wave.sh",
     "scripts/mod/verify-t438-deploy-staging-compose-path.sh",
     "scripts/mod/verify-t456-mission-rest-size-gate.sh",
 ]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

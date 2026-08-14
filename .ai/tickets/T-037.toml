@@ -2,9 +2,13 @@ id = "T-037"
 kind = "work"
 title = "Outliner tree ops"
 summary = "Layer rename, reparent, move slot, delete folder subtree."
+class = "chore"
 status = "shipped"
 order = 370
 executor = "claude-code"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -2,6 +2,7 @@ id = "T-911.1"
 kind = "work"
 title = "T-911 — Ticket registry redesign: per-file split + typed schema"
 summary = "T-911 — Ticket registry redesign: per-file split + typed schema"
+class = "feature"
 status = "shipped"
 order = 5910
 spec = "docs/platform/t911_ticket_registry_redesign.md"
@@ -11,6 +12,8 @@ parent = "T-911"
 user_story = "T-911 — Ticket registry redesign: per-file split + typed schema"
 acceptance = ["See spec."]
 shipped_at = "170721182"
+estimated = ["scope"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

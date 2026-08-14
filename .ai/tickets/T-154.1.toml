@@ -2,6 +2,7 @@ id = "T-154.1"
 kind = "work"
 title = "T-154.1 — Doll polish (contrast, rotation direction, hover + callout)"
 summary = "T-154.1 — Doll polish (contrast, rotation direction, hover + callout)"
+class = "feature"
 status = "shipped"
 order = 1515
 spec = "docs/specs/Mission_Creator_Architecture/t154_1_doll_polish.md"
@@ -10,5 +11,6 @@ notes = "Operator-review polish: mid-light backdrop (dark-on-dark unreadable), d
 parent = "T-154"
 shipped_at = "3b3e4d16"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

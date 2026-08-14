@@ -12,11 +12,15 @@ Live pin: packages/tbd-schema/schema/mission.schema.json $defs.zoneRules.additio
 Repro:
   rg -n 'additionalProperties: true' apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c
   # expect hit at line 39; schema says false."""
+class = "feature"
 status = "shipped"
 order = 3393
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c"]
 
-[scope.mod]
-layers = ["feature"]
+[scope]
+domain = "mod"
+layer = "scripts"
+component = "zones"

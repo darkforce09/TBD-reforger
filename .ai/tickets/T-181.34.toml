@@ -2,12 +2,15 @@ id = "T-181.34"
 kind = "work"
 title = "T-181.34"
 summary = "T-181.34"
+class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
 notes = "Cargo container enum + the kit-alias GATE. $defs/cargoContainer = [vest,pants,jacket,backpack] added to BOTH mission.schema.json and loadout-export.schema.json (which carried the same cargo rows with the same bare string). The reasoning that makes an enum correct HERE and wrong for kit: this vocabulary is closed by the ENGINE's worn-garment areas, not by content, so it can never fight a registry. KIT DECISION — A GATE, NOT AN ENUM, and the agent was right to refuse the enum: kit aliases come from Data/registry.json which is generated and extensible (kit-aliases.json literally carries 'generatedFrom'), so a closed enum would need re-cutting on every content addition, would go stale silently, and would reject valid missions authored against a newer registry. Schema keeps checking SHAPE (^kit:[a-z0-9_]+$); EXISTENCE is a registry question, so it moved into a gate that reads the same file the game server reads — TBD_MissionValidator.CheckSlotKit's runtime check, relocated to where it costs 2 s instead of a rejected server. The gate walks slots[].kit AND orbat[].groups[].roles[].kit (the flatten turns the latter into the former, so checking only slots lets a dangling alias hide in a 1.0 document) and pins kit-aliases.json to the registry so the pair cannot drift — a one-sided addition there does not error, it makes the flatten silently compile an authored medic into a rifleman. New packages/tbd-schema/golden-missions-invalid/ holds fixtures the gate MUST reject, each declaring the JSON pointer it must be rejected AT so a fixture failing for an unrelated typo is a false green. PROVED BY MUTATION: deleting the enum makes the typo fixture accepted (gate reports the check is gone); removing kit:us_medic reproduces T-181.36 in seconds and names both the slot AND the orbat role the runtime validator never looks at; adding a bogus alias to the registry only trips the mirror check. preset: is REPORTED not failed, because nothing in the mod resolves a preset alias today and failing would enforce a rule the runtime does not have."
 parent = "T-181"
+estimated = ["scope"]
 owns = ["packages/tbd-schema/**"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

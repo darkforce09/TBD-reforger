@@ -2,11 +2,14 @@ id = "T-152.0"
 kind = "work"
 title = "T-152.0 — Program hub lock (docs)"
 summary = "T-152.0 — Program hub lock (docs)"
+class = "docs"
 status = "shipped"
 order = 1520
 spec = "docs/specs/Mission_Creator_Architecture/t152_0_program_hub_lock.md"
 executor = "cursor-docs"
 parent = "T-152"
+estimated = ["scope"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

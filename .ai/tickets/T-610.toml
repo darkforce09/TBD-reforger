@@ -27,14 +27,18 @@ Also in this bucket, from the same report:
 
 FIX SHAPE: either extend `verify-citations` to cover bare `file.c:NNN` forms in docs, or stop citing
 line numbers in prose and cite stable symbol names instead. The second is cheaper and does not rot."""
+class = "bug"
 status = "shipped"
 order = 3572
 executor = "claude-code"
 priority = 3
+estimated = ["scope"]
 owns = [
     "docs/platform/PLAYTEST_RUNBOOK.md",
     "apps/website/frontend/src/arsenal_rules.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

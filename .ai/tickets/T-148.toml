@@ -2,9 +2,11 @@ id = "T-148"
 kind = "work"
 title = "Shift+Drag Rotation Tool"
 summary = "CANCELLED — exact duplicate of T-073 (Shift + map rotation). Both were queued with identical scope."
+class = "feature"
 status = "cancelled"
 order = 1490
 notes = "needs-operator: frozen unmappable Scope. "
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

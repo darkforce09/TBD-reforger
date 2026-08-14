@@ -2,6 +2,7 @@ id = "T-068.8"
 kind = "work"
 title = "T-068.8"
 summary = "T-068.8"
+class = "feature"
 status = "shipped"
 order = 680
 executor = "claude-code"
@@ -9,5 +10,6 @@ notes = "Superseded/implemented by T-150 universal export (compat envelope + ite
 parent = "T-068"
 shipped_at = "9107bf4e"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

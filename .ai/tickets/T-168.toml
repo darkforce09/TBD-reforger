@@ -2,12 +2,16 @@ id = "T-168"
 kind = "work"
 title = "Leptos ORBAT tree in the left dock"
 summary = "SHIPPED @ tag T-168: left-dock ORBAT browse/select tree (`build_orbat`; NodeKind::Faction/Squad). Historical note: early place minted via ensure_default_squad — superseded by T-180 place→new-squad under active_side. Squad management / Stitch ORBAT Manager completed by T-180 (not a remaining T-071 task). smoke_outliner_palette o3/o4/o5; build_orbat unit-tested."
+class = "feature"
 status = "shipped"
 order = 1650
 spec = ".ai/artifacts/missed_items_handoff.md"
 executor = "claude-code"
 depends_on = ["T-159"]
 user_story = "As a mission maker I browse and select squads/slots from the left ORBAT tree like in the React editor."
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -2,10 +2,14 @@ id = "T-054"
 kind = "work"
 title = "Attributes modal entry points"
 summary = "Native dblclick on map and ORBAT opens Attributes."
+class = "feature"
 status = "shipped"
 order = 540
 spec = "docs/specs/Mission_Creator_Architecture/t054_attributes_entry_points.md"
 executor = "claude-code"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -14,14 +14,18 @@ apps/website/api/.env.example:71  DISCORD_REDIRECT_URL=http://localhost:8080/api
 The command center hand-edited the operator's local .env (gitignored) on 2026-07-27 to unblock testing, so THE BUG NO LONGER REPRODUCES ON THIS MACHINE. It reproduces for every new checkout. Do not conclude it is fixed because a live login works here.
 Second half still open: handlers/oauth.rs:113,116 use `let Ok(..) = .. else` and DROP the exchange_code / fetch_user error, so a real Discord failure is indistinguishable from a config one.
 WANTED: align the two hosts in the committed example, log the dropped errors, and add a startup check that REFUSES TO BOOT when FRONTEND_URL and DISCORD_REDIRECT_URL disagree on host — a config that guarantees a broken first login should not start silently."""
+class = "bug"
 status = "shipped"
 order = 2303
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = [
     "apps/website/api/.env.example",
     "apps/website/api/src/handlers/oauth.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -7,11 +7,15 @@ FOUND by W48 adversarial verifier (MINOR) after T-341 shipped.
 `apps/website/api/tests/null_tolerance.rs` still has `KNOWN_OPEN` entry `("src/handlers/deployments.rs", "*", "T-341 — open")` and `BASELINE_CAP=1`, while deployments.rs no longer has bare `event_registrations.*`. Comments still claim "BASELINE_CAP is now 0" / "T-341 takes this to 0".
 
 The stale path is `eprintln!` only today (not a hard fail); cold gate PASS saw it. Prune the entry, set `BASELINE_CAP=0`, fix the lying comments. Repro: `rg 'T-341 — open|BASELINE_CAP' apps/website/api/tests/null_tolerance.rs`."""
+class = "bug"
 status = "shipped"
 order = 3371
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = ["apps/website/api/tests/null_tolerance.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -9,11 +9,15 @@ Delete live UPDATE + leave needle in let _decoy = "…" or format!("…") → PA
 Claimed // + bind attacks still RED.
 
 Repro: remove COALESCE UPDATE; add string/format! decoy with the needle; Class-R green; concurrent cold race can return."""
+class = "chore"
 status = "shipped"
 order = 3415
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = ["apps/website/api/tests/common/mod.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

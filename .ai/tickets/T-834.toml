@@ -2,14 +2,22 @@ id = "T-834"
 kind = "work"
 title = "Wave-205 residue: two stale pre-renumber comments, dead widget_is_rotate, marker grammar"
 summary = "WAVE-205 VERIFIER FILING (wave205.md NITs, batched). (1)+(2) two doc comments still describe the pre-renumber digit map (wave205.md cites lines) — the stale-comment class that has cost this program real time; (3) EditorToolbarDispatch.widget_is_rotate is dead after the barrier reconciliation (widget_digit is the read) — remove the field + its registration; (4) 'Placing a Attack marker' article grammar in the picker hint. All mechanical; one small slice. ACCEPTANCE: comments match the 1/2/3 map; widget_is_rotate absent from the dispatch struct and all call sites; hint reads 'Placing an Attack marker' (or reworded). ⟡ ABSORBS T-835 (The No-Widget button wears the select-cursor glyph, not a 'none' symbol) — deliver its acceptance too. ⟡ ABSORBS T-840 (The draft chip says 'saved just now' on boot of a content-bearing mission — before any edit) — deliver its acceptance too."
+class = "docs"
 status = "queued"
 order = 5160
 executor = "claude-code"
 notes = "wave205 verifier NIT batch; pure cleanup"
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/eden_top_strip.rs",
     "apps/website/frontend/src/mission_editor.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = [
+    "top_strip",
+    "map_canvas",
+]

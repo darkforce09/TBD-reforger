@@ -16,10 +16,12 @@ THE PORTED PREDICATE IS READY TO REUSE: T-405 put is_http_url in apps/website/fr
 COVERAGE GAP, separate from the writers: deployments.rs:465's WIRING has no test. replay_href is exhaustively unit-tested but nothing proves the view! calls it; re-inlining href=replay would pass every test. The crate is CSR-only and cannot render to a string natively. NOT A LIVE DEFECT -- wave 3's verifier drove a real headless Chromium through /deployments against three stored payloads and confirmed the guard fires, the cell renders an em-dash with no anchor, and a legitimate https link still renders in the same table. So this is a regression-risk gap, not a bug.
 
 CONFIRMED NOT AN ISSUE, do not re-audit: modpacks.workshop_url reaches an <a href> at frontend/src/event_hub.rs:236 but has NO HTTP WRITER -- services/registry_import.rs:82's INSERT omits the column and there is no UPDATE modpacks in the API crate. Only operator psql seeds populate it. frontend/src/modpacks.rs:346 also renders it but that page is hardcoded MOCK_MODPACKS and never calls the API."""
+class = "bug"
 status = "shipped"
 order = 3234
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = [
     "apps/website/api/src/handlers/missions.rs",
     "apps/website/api/src/handlers/events.rs",
@@ -34,5 +36,7 @@ owns = [
     "apps/website/api/tests/missions_url_guard.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

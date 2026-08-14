@@ -7,10 +7,12 @@ Residual from T-286 / wave 18 adversarial NIT. Mission Library now uses reactive
 Repro: rg 'has_min_role\(' apps/website/frontend/src/{wiki,modpacks,event_hub}.rs — still browse-mode helper.
 
 Cure: switch action gates to `has_min_role_authed` + reactive Memo where affordances depend on role.'''
+class = "chore"
 status = "shipped"
 order = 3293
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/wiki.rs",
     "apps/website/frontend/src/modpacks.rs",
@@ -18,5 +20,7 @@ owns = [
     "apps/website/frontend/src/nav.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

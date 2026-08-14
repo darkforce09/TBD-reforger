@@ -2,15 +2,23 @@ id = "T-792"
 kind = "work"
 title = "Esc cancels an in-progress zone draw"
 summary = "UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). F-31 — VERIFIED TWICE (second time in isolation): arm Circle, click the centre, press Esc — the panel STILL prompts 'click the rim' and the next click completes the circle (zone count 2->3). Esc is honoured by every other transient surface tested (File menu, Export dropdown, Save dialog, ORBAT, context menu, Attributes — all six correct) and an armed MARKER disarms correctly on Esc; the one gap is the surface whose consequence is a permanent object. MECHANISM: the Esc arm at mission_editor.rs ~:3656 never calls the zone cancel (editor_ops.rs ~:4254 cancel path exists; armed state ~:5838; eden_zones.rs ~:37-42 panel state). FIX: Esc during an in-progress draw (circle centre placed, or polygon with >=1 vertex) cancels the pending geometry, clears the rim/vertex prompt, and disarms; a second Esc closes/leaves the tab per existing behaviour. ⚠️ TRAPS: polygon Close button flow must keep working; trigger draw shares the zone gesture ('draw exactly like a zone') — apply the same cancel to the trigger arm if it shares the state machine, and say so in the report if it does not. ACCEPTANCE: scripted — Circle armed, centre clicked, Esc, click elsewhere: zone count unchanged AND body text lacks 'click the rim'; same for polygon after 2 vertices; same for trigger circle; marker Esc-disarm regression stays green."
+class = "bug"
 status = "shipped"
 order = 4740
 executor = "claude-code"
 notes = "the review's Esc matrix (6 surfaces green) is the regression baseline | SHIPPED W203: Esc cancels circle/polygon/trigger draws — cancel_pending()'s deliberate zone-survival was the mechanism (Esc never reached the draw); cancel_zone_draw wired into the keydown arm under the modal-stack yield, doc_tick bump for the hint. Trigger draw CONFIRMED to share Pending::Zone (one cancel covers both). Verifier re-proved every arm live incl. ladder order (dialog first) and the marker/composition disarm regressions."
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/eden_zones.rs",
     "apps/website/frontend/src/editor_ops.rs",
     "apps/website/frontend/src/mission_editor.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = [
+    "ops_undo",
+    "map_canvas",
+]

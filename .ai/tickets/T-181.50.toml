@@ -2,12 +2,16 @@ id = "T-181.50"
 kind = "work"
 title = "T-181.50"
 summary = "T-181.50"
+class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
 notes = "Pre-slot body + kill the vanilla loading placeholder. Vanilla SCR_RespawnSystemComponent.OnInit:270 builds a loading splash DIRECTLY on the workspace (above menu-manager menus) and mutes SFX; it is destroyed ONLY from the vanilla spawn pipeline, which we bypass and actively block in CanRequestSpawn_S. Our modded class overrides OnPlayerRegistered_S/OnPlayerAuditSuccess_S/CanRequestSpawn_S but NOT OnInit, so nothing ever tears it down. Second and larger half: with auto-deploy off the player has NO controlled entity, therefore no camera, therefore nothing to render behind the picker - every session where the picker was visible had a body. Adopt PlayableSelector's ghost pattern (invisible AI-less character in a per-player cell far off map, SetInitialMainEntity, deleted on slot commit) plus a spectator camera."
 parent = "T-181"
+estimated = ["scope"]
 owns = ["apps/mod/tbd-framework/Prefabs/** + Gamemode/TBD_SCR_RespawnSystemComponent.c"]
 
-[scope.mod]
-layers = ["feature"]
+[scope]
+domain = "mod"
+layer = "assets"
+component = "prefabs"

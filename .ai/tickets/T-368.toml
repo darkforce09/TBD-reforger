@@ -31,12 +31,16 @@ Visibility mirrors handlers::missions::can_edit EXACTLY — author or admin, del
 Browser-verified round trip ending where it matters: Event Hub dossier cards read BLUFOR itemCount 3, OPFOR itemCount 1. DB shows sort_order 0-3 in draft order and quantity NULL for unlimited, not 0.
 
 DECLARED, not done: the V-suite `missionview` golden will now diff by exactly one header element (the fixture's author_id equals the seeded admin, so the button renders); it needs a re-freeze plus an acceptedDelta note, and the manifest was outside its file. The V-suite is in neither the slice nor the wave gate."""
+class = "bug"
 status = "shipped"
 order = 3184
 executor = "claude-code"
 priority = 2
 shipped_at = "d92ea44d"
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/mission_overview.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

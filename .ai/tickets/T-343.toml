@@ -20,12 +20,16 @@ THREE CORRECTIONS TO MY FRAMING, each established by running rather than by anal
 The real harm is narrower but permanent: the roster tally is count(*) with no predicate on reason and the SPA reds the cell at >0, while NO endpoint in the crate returns warnings.reason. A blank warning marks someone as disciplined, forever, unreadably.
 
 Also fixed in-file: send_rcon bound `map` untrimmed into audit_logs.message; and #[serde(default)] dropped from WarnInput.reason, UpdateUserInput.role, RconInput.action — proven wire-identical by running the same matrix against both binaries. RconInput.map/command keep theirs, genuinely optional."""
+class = "bug"
 status = "shipped"
 order = 3159
 executor = "claude-code"
 priority = 2
 shipped_at = "a0199601"
+estimated = ["scope"]
 owns = ["apps/website/api/src/handlers/admin.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

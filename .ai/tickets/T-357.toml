@@ -11,12 +11,16 @@ AND THE SHARPER HALF: live `orbat_slots` holds uppercase `BLUFOR` / `OPFOR`, whi
 Note `slug_key()` exists and IS applied on the compiled `briefings`/`orbat` path (T-202 confirmed all four goldens key identically through it). So the lowercase pattern is probably correct for the COMPILED document and simply does not describe orbat_slots. Say which layer each schema is describing — that distinction is the actual deliverable here, and getting it wrong would either reject valid missions or bless invalid ones.
 
 Do NOT tighten the editor payload schema without checking it against the committed golden missions and the live rows; a schema that rejects production data fails every request rather than catching a bug."""
+class = "bug"
 status = "shipped"
 order = 3173
 executor = "claude-code"
 priority = 2
 shipped_at = "b19a4634"
+estimated = ["scope"]
 owns = ["packages/tbd-schema/schema/mission-editor-payload.schema.json"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

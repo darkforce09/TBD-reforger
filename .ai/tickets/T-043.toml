@@ -2,9 +2,13 @@ id = "T-043"
 kind = "work"
 title = "Platform documentation reorg"
 summary = "Docs hub, domain ROADMAPs, FD vs T split."
+class = "docs"
 status = "shipped"
 order = 430
 executor = "cursor-docs"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

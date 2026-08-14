@@ -50,15 +50,19 @@ every run -- trust that line over the doc if they disagree.
 `verify-citations` now prints its scope generated from its own constants, so the printed claim can no
 longer outlive the config. Any doc sentence that restates the scope in prose should defer to that line
 instead of duplicating it -- duplicated scope claims are how this ticket happened."""
+class = "bug"
 status = "shipped"
 order = 3622
 executor = "cursor-docs"
 priority = 3
+estimated = ["scope"]
 owns = [
     "docs/platform/DOCUMENTATION_STANDARDS.md",
     "docs/specs/Mission_Creator_Architecture/t123_documentation_standards_rollout.md",
     "apps/mod/tbd-framework/Missions/TBD_Dev_POC.conf",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

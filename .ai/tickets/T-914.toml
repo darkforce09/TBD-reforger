@@ -2,6 +2,7 @@ id = "T-914"
 kind = "work"
 title = "Wave numbering continues from the close-marker ledger"
 summary = "wave repack derives wave_base from the newest non-disavowed close marker (including HEAD) and numbers open waves base+1 onward, so the next close ceremony prints the oracle-exact next number. wave check recomputes the base; a fresh marker without repack is check-red. No marker (stub and test trees) means base 0 and today's 1..N."
+class = "feature"
 status = "shipped"
 order = 5940
 spec = "docs/platform/t912_wave_lockfile.md"
@@ -17,6 +18,7 @@ acceptance = [
 shipped_at = "32733205"
 created_at = "2026-08-14T05:41:49Z"
 completed_at = "2026-08-14T06:11:01Z"
+estimated = ["scope"]
 owns = [
     "xtask/src/wave_lock.rs",
     "xtask/src/wave/base.rs",
@@ -24,5 +26,7 @@ owns = [
     "docs/platform/t912_wave_lockfile.md",
 ]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "wave"

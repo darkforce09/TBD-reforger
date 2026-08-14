@@ -31,11 +31,15 @@ THE SAME MECHANISM, MEASURED TWICE MORE THIS WAVE:
 This is the third and fourth measured instance of T-193/T-195 clobbering.
 
 FIX DIRECTION, consistent with what already exists: the repo ALREADY gives private target dirs to the expensive steps -- `target-gate-api` (8.3G), `target-gate-frontend` (1.8G), and T-420's new `target-gate-schema` (1.9G). `cargo check --workspace` and the three clippy steps are the ones still on the shared dir. Give them the same treatment, or force a full-workspace touch before the check steps. Weigh disk and cold-build cost against a gate whose verdict cannot be trusted. NOTE T-420's `gate_schema` stamp is NOT a complete model to copy -- see T-422.'''
+class = "bug"
 status = "shipped"
 order = 3260
 executor = "claude-code"
 priority = 0
+estimated = ["scope"]
 owns = ["scripts/platform/wave.sh"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -29,15 +29,19 @@ The command center applied two throwaway fixes by hand to restore the dev API, t
   - 0009 is back to its BROKEN (post-T-331) state on disk -- the defect is live and reproducible.
   - The dev database row was already fixed: `UPDATE orbat_slots SET assigned_to=NULL WHERE id='00000000-0000-4000-5000-000000000015'`. So defect 2 NO LONGER REPRODUCES on the dev DB. Recreate it in a scratch DB to verify your fix -- do not assume it is gone because the dev DB is clean.
   - The running API on :8080 booted from that hand-patched state. It will fail to boot again on restart until this ships.'''
+class = "bug"
 status = "shipped"
 order = 3400
 executor = "claude-code"
 priority = 0
+estimated = ["scope"]
 owns = [
     "apps/website/api/migrations/0009_role_played_not_null.sql",
     "apps/website/api/migrations/0017_orbat_slots_assigned_partial_unique.sql",
     "scripts/platform/wave.sh",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

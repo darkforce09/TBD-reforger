@@ -2,6 +2,7 @@ id = "T-159.15.0"
 kind = "work"
 title = "T-159.15.0"
 summary = "T-159.15.0"
+class = "feature"
 status = "shipped"
 order = 1570
 executor = "claude-code"
@@ -9,5 +10,6 @@ notes = "wgpu boundary collapse; RenderEngine in Leptos wasm."
 parent = "T-159"
 shipped_at = "3066f14c"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

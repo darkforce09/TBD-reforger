@@ -2,11 +2,14 @@ id = "T-090.0.2"
 kind = "work"
 title = "T-090 / T-091 — Map & terrain program (hub)"
 summary = "T-090 / T-091 — Map & terrain program (hub)"
+class = "feature"
 status = "shipped"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
 executor = "cursor-docs"
 parent = "T-090"
+estimated = ["scope"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

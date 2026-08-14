@@ -2,12 +2,16 @@ id = "T-166"
 kind = "work"
 title = "Leptos editor full map (satellite + world objects)"
 summary = "SHIPPED: Leptos W1–W5 map-asset host (TBDS sat + hillshade + DEM sea/contours + WorldStore/Residency buildings + TBDD forest + glyph atlas). Gate serve Range/206; smoke_fullmap Class-R matrix green. Verify: .ai/artifacts/t166_verify_log.md."
+class = "chore"
 status = "shipped"
 order = 1630
 spec = ".ai/artifacts/missed_items_handoff.md"
 executor = "claude-code"
 depends_on = ["T-159"]
 user_story = "As a mission maker I see the real Everon map (satellite + roads/buildings/trees) under my slots in the editor, not just hillshade relief."
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

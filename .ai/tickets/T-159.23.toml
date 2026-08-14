@@ -2,6 +2,7 @@ id = "T-159.23"
 kind = "work"
 title = "T-159.23 — Attributes modal"
 summary = "T-159.23 — Attributes modal"
+class = "feature"
 status = "shipped"
 order = 1570
 spec = "docs/platform/t159_23_attributes_modal.md"
@@ -10,5 +11,8 @@ notes = "Attributes Transform+Identity; Arsenal stub. Handoff: .ai/artifacts/t15
 parent = "T-159"
 shipped_at = "69dc5da5"
 
-[scope.website.editor]
-chrome = ["attr"]
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["attr_panel"]

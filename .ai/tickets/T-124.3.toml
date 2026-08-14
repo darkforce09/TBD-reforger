@@ -2,6 +2,7 @@ id = "T-124.3"
 kind = "work"
 title = "T-124 — Dependency & toolchain upgrade (latest everything)"
 summary = "T-124 — Dependency & toolchain upgrade (latest everything)"
+class = "feature"
 status = "shipped"
 order = 1240
 spec = "docs/platform/t124_dependency_upgrade.md"
@@ -9,5 +10,6 @@ executor = "claude-code"
 parent = "T-124"
 shipped_at = "cd11db0"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

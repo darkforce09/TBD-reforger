@@ -2,9 +2,13 @@ id = "T-087"
 kind = "work"
 title = "CMS rich text editor"
 summary = "Rich text editor for announcements and CMS content."
+class = "feature"
 status = "deferred"
 order = 870
 executor = "cursor-docs"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -7,14 +7,18 @@ Residual from T-447 / wave 25 cold gate. Admin GET /cms/announcements is registe
 Repro: after T-447 merge, `wave.sh gate` → test api FAIL — `GET routes … neither swept …: ["/cms/announcements"]`.
 
 Cure: add `/cms/announcements` to route_sweep() (admin list; drafts+published) with Seed auth as other admin GETs; prove RED→GREEN. Do not skip unless sweep is impossible."""
+class = "chore"
 status = "shipped"
 order = 3303
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = [
     "apps/website/api/tests/null_tolerance.rs",
     "apps/website/api/src/handlers/cms.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

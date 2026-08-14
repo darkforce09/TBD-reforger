@@ -2,6 +2,7 @@ id = "T-152.19"
 kind = "work"
 title = "T-152.19 — One-button Workbench label export (Path A E2E)"
 summary = "T-152.19 — One-button Workbench label export (Path A E2E)"
+class = "feature"
 status = "deferred"
 order = 1520
 spec = "docs/specs/Mission_Creator_Architecture/t152_19_workbench_one_button_export.md"
@@ -9,5 +10,6 @@ executor = "claude-code"
 notes = "DEFERRED 2026-07-13 — operator: Workbench label/road extract not needed now; revisit future. Path B sidecars retained. Verify t152_19_verify_log.md (skip record)."
 parent = "T-152"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

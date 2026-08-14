@@ -2,14 +2,18 @@ id = "T-504"
 kind = "work"
 title = "Silent no-garment cargo in Arsenal (T-417 structural)"
 summary = "Wave 40 residual from T-417. arsenal UI shows 'no garment worn' with total and no limit; arsenal_rules deliberate silence; mod TBD_LoadoutEquipHelper already degrades. Author never hears undeliverable cargo. Cure: authoring-time warning/refuse when cargo targets unworn container."
+class = "feature"
 status = "shipped"
 order = 3344
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/arsenal.rs",
     "apps/website/frontend/src/arsenal_rules.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -2,6 +2,7 @@ id = "T-068.10.6"
 kind = "work"
 title = "T-068.10.6 — Arsenal expanded modal (ACE panes)"
 summary = "T-068.10.6 — Arsenal expanded modal (ACE panes)"
+class = "feature"
 status = "shipped"
 order = 680
 spec = "docs/specs/Mission_Creator_Architecture/t068_10_6_arsenal_expanded_modal.md"
@@ -9,6 +10,9 @@ executor = "claude-code"
 notes = "Mode C slice C: expanded Attributes modal + ACE-style panes (detail left, rows center, container panel right). SHIPPED @ 421a69d4 (tag T-068.10.6). Mode C complete (A variant collapse + B faction library T-153 + C expanded modal); T-068.11 remains PARKED for operator decision."
 parent = "T-068"
 shipped_at = "421a69d4"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

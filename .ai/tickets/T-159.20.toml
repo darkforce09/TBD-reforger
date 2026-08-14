@@ -2,6 +2,7 @@ id = "T-159.20"
 kind = "work"
 title = "T-159.20 — Save Version + Export (compile from MissionDoc)"
 summary = "T-159.20 — Save Version + Export (compile from MissionDoc)"
+class = "feature"
 status = "shipped"
 order = 1570
 spec = "docs/platform/t159_20_save_export.md"
@@ -9,6 +10,9 @@ executor = "claude-code"
 notes = "Rust compile + Export + Save POST live 201/409/400. Verify: .ai/artifacts/t159_20_verify_log.md"
 parent = "T-159"
 shipped_at = "c0e11d54"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

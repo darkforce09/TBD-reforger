@@ -45,10 +45,14 @@ GREEN on unmodified main; a census over every SPA .rs file found **0** live cond
   `arsenal.rs:4321` so it cannot grow in silence.
 - The `the_*_rejects_every_dead_code_wrapper` batteries certify **twelve enumerated shapes and nothing
   more**; `the_unknown_condition_fails_closed` (`arsenal.rs:4253`) states the actual property."""
+class = "bug"
 status = "shipped"
 order = 3692
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

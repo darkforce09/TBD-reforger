@@ -9,11 +9,15 @@ content_golden.sql comments fixed. Migration 0015 comments still claim tests/eve
 Cure: update 0015 comment block to historical past-tense or point at 0017.
 
 Repro: rg 'two-seat|deferred' apps/website/api/migrations/0015*"""
+class = "bug"
 status = "shipped"
 order = 3392
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = ["apps/website/api/migrations"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

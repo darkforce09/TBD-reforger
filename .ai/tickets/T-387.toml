@@ -11,15 +11,19 @@ MEASURED residual (W64 attempt, STOP — owns collide with T-560):
 
 Fix lives in handlers/dev.rs — sequence AFTER T-560 (same owns). Do not re-litigate api_proxy.
 Owns for the real fix: apps/website/api/src/handlers/dev.rs (+ ITs that assume one discord_id)."""
+class = "bug"
 status = "shipped"
 order = 3203
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "apps/website/api/src/handlers/dev.rs",
     "apps/website/api/tests/misc_integration.rs",
     "apps/website/api/tests/missions.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

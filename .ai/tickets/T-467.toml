@@ -7,10 +7,12 @@ Residual from wave 25 adversarial N2. wave.sh wires verify-t438 and verify-t456 
 Repro: make ci-local / ci.yml pass while scripts/mod/verify-t438*.sh is deleted.
 
 Cure: add Makefile + CI steps mirroring wave.sh, or document intentional wave-only scope with a pin."""
+class = "chore"
 status = "shipped"
 order = 3306
 executor = "claude-code"
 priority = 3
+estimated = ["scope"]
 owns = [
     "Makefile",
     ".github/workflows/ci.yml",
@@ -18,5 +20,6 @@ owns = [
     "scripts/mod/verify-t456-mission-rest-size-gate.sh",
 ]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

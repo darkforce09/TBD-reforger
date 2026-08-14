@@ -2,6 +2,7 @@ id = "T-130.7"
 kind = "work"
 title = "T-130 — Fable audit remainder (OPEN + PARTIAL)"
 summary = "T-130 — Fable audit remainder (OPEN + PARTIAL)"
+class = "audit"
 status = "shipped"
 order = 1300
 spec = "docs/platform/t130_fable_audit_remainder.md"
@@ -9,5 +10,6 @@ executor = "cursor-docs"
 parent = "T-130"
 shipped_at = "5e0c7754"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

@@ -2,12 +2,15 @@ id = "T-181.32"
 kind = "work"
 title = "T-181.32"
 summary = "T-181.32"
+class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
 notes = "ONE LIFE gate for hosts with no durable identity. SETTLED THE QUESTION THE SLICE HINGED ON: a correctly-configured dedicated server is in MODE 1 (real backend identity), HIGH confidence — vanilla's own SCR_PlayerIdentityUtils.c:35-38 hits Debug.Error('Dedicated server is not correctly configured to connect to the BI backend') when uid is empty AND session is Dedicated, i.e. VANILLA ITSELF classifies mode 3 on a dedicated box as a misconfiguration and names the fix. So refusing is cheap and does not brick real events. Practical discriminator: SCR_BaseGameMode.c:880-890 shows vanilla self-invokes the audit on Dedicated only when -config is ABSENT, and -config is what registers the backend room. RESIDUAL UNKNOWN, stated by the agent rather than hidden: BackendApi.GetPlayerIdentityId's engine-side contract is in NO oracle (BackendApi absent from all 7991 vanilla_api_classes.tsv entries and from Scripts/GameLib/generated/online/), so this is strong inference from vanilla SCRIPT's error text, not a measurement. Built: StageRefusalFor(stage) refusing SAFE_START/LIVE while any connected player resolves NUMERIC — a LIVE SCAN, deliberately not a session latch, because vanilla fires its audit at registration BEFORE identity exists so a healthy server emits one transient player:<id> per join; latching would have refused LIVE on a correctly-configured server, the exact opposite of intent. LOBBY/BRIEFING stay open so the operator can read the refusal. Admin waiver '#tbd identity override I-ACCEPT-NO-ONE-LIFE' (exact phrase as a separate argument, audited both ways, session-scoped, re-announces on every stage it passes). Latch now per KeyModeLabel — it also found the VERDICT SENTENCE was shared, so 'Expected on a local/listen host' was telling operators their broken event server was fine. ALSO FIXED the JsonLoadContext MAJOR in this file: HasAuthoredLoadout tests content, so bridgehead went from '18 with a JSON loadout, 0 kit-only' + 36 spurious gear=0/0 lines to '0 with, 18 kit-only' + 0 lines. CORRECTED FOUR DOC ERRORS: mode 3 is NOT 'local PIE' (PIE is not Dedicated so vanilla synthesizes a name hash — PIE is mode 2, and the old comment would have led an operator to dismiss a real misconfiguration); the vanilla excerpt omitted both early returns (playerId<=0, !Replication.IsServer()) which are real mode-3 sources — the latter is why IdentityRefusalFor now has a client guard; identity is valid ONLY after OnPlayerAuditSuccess (undocumented timing precondition); citation drift :33 -> :31. NEEDS A ONE-LINER in TBD_FrameworkManager.SetStage — handed to the T-181.38 agent, which owns that file. NOT VERIFIABLE ON THIS LANE: the gate's FIRING path — world-boot has zero players so PlayerBindKey is never called and modes 1/2/3 are structurally untestable; only the not-firing path is proven. Agent also edited TBD_AdminService.c + TBD_AdminCommands.c to make the override reachable (both Gamemode/, disjoint from live agents) and flagged it."
 parent = "T-181"
+estimated = ["scope"]
 owns = ["TBD_SpawnManager.c"]
 
-[scope.mod]
-layers = ["feature"]
+[scope]
+domain = "mod"
+layer = "scripts"

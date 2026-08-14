@@ -25,10 +25,12 @@ Four findings from T-534, none of them regressions, all of them the same shape i
 4. Two concurrent `cargo test` runs against the same base still race, now on `<base>_<suite>_it`
    rather than on `<base>`. No worse than before, and the gate lock already serialises the gate --
    recorded so nobody rediscovers it as new."""
+class = "bug"
 status = "shipped"
 order = 3411
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "apps/website/api/tests/db_migrate.rs",
     "apps/website/api/tests/models_fromrow.rs",
@@ -37,5 +39,7 @@ owns = [
     "Makefile",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

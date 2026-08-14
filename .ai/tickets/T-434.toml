@@ -7,14 +7,18 @@ Residual from T-420/T-422. Wave gate now runs the full schema-validate set (incl
 Repro: compare ci.yml schema job vs Makefile schema-validate recipe / GATE_SCHEMA_VALIDATE_GATES in wave.sh.
 
 Cure: align CI with make schema-validate (or document intentional narrowing with a tripwire)."""
+class = "chore"
 status = "shipped"
 order = 3273
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     ".github/workflows/ci.yml",
     "Makefile",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

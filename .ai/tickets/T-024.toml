@@ -2,9 +2,13 @@ id = "T-024"
 kind = "work"
 title = "Event Manager calendar anti-pattern fix"
 summary = "Calendar + per-day op list replaces form-over-list."
+class = "bug"
 status = "shipped"
 order = 240
 executor = "cursor-docs"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

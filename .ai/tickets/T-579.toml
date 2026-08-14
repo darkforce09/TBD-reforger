@@ -18,10 +18,12 @@ Two frontend items from wave 69, neither a regression, both cosmetic-but-dishone
    Pre-existing. T-262's constraint 1 means the cascade is already correct for the day that handler
    becomes a hard delete -- but today the dialog is wrong. Either fix the copy or make the handler
    match it; decide which, do not leave both."""
+class = "bug"
 status = "shipped"
 order = 3423
 executor = "claude-code"
 priority = 3
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/server_control.rs",
     "apps/website/frontend/src/event_manager.rs",
@@ -30,5 +32,7 @@ owns = [
     "apps/website/api/src/handlers/events.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

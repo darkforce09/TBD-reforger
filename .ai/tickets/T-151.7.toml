@@ -2,6 +2,7 @@ id = "T-151.7"
 kind = "work"
 title = "T-151.7 — interaction rewire + parity suite (W7)"
 summary = "T-151.7 — interaction rewire + parity suite (W7)"
+class = "feature"
 status = "shipped"
 order = 1500
 spec = "docs/specs/Mission_Creator_Architecture/t151_7_interaction_rewire.md"
@@ -9,5 +10,6 @@ executor = "claude-code"
 parent = "T-151"
 shipped_at = "ab6bcb11"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

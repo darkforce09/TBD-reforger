@@ -25,15 +25,19 @@ A STRUCTURAL INSIGHT WORTH KEEPING: the decode lives in dto.rs, not sse.rs, beca
 THE GOLDEN GATE — the more valuable half, and enumerated rather than eyeballed. Every `api_get::<T>` cross-referenced against its r_api test: SIX goldens were `Value` while a DTO read them live. All six typed. Typing them found TWO MORE latent drifts nobody had hit — EventListItem::percent was f64 over an integer wire (the golden's `37` re-serialised as `37.0`), and OrbatSlot::assigned_to carried skip_serializing_if over a field the backend emits as explicit null.
 
 It also distinguished escape hatches from accurate statements: /announcements, /wiki, /vehicle-database, /modpacks and /admin/audit-logs stay `Value` because they have NO typed consumer, and three of them are not fetched by any page at all. Each test now says so. And the SSE payload had NO FIXTURE OF ANY KIND — the corpus is all GET bodies — so one captured live frame is now pinned as LIVE_SSE_FRAME."""
+class = "bug"
 status = "shipped"
 order = 2306
 executor = "claude-code"
 shipped_at = "cb8a95f5"
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/dto.rs",
     "apps/website/frontend/src/sse.rs",
     "apps/website/frontend/src/server_intel.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

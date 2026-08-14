@@ -11,11 +11,15 @@ DEAD END, ALREADY TRIED — DO NOT RETRY: I claimed a private `--dist` for the g
 So the cure has to isolate the whole trunk working set, not just the output dir. Candidates worth measuring before committing to one: give the gate its own private CARGO_TARGET_DIR *and* TRUNK_STAGING/tmp dir (verify which env var trunk actually honours for staging in the pinned version — do not assume); or run the gate's frontend build from a throwaway copy of the crate; or have the gate detect a live trunk serve and take a lock rather than colliding.
 
 ACCEPTANCE: with `make leptos` running the whole time, run the frontend gate 10x consecutively with zero staging failures, and confirm the operator's :3000 stays up and serving throughout. Anything less is not a cure — the current state already passes 'usually works'."""
+class = "bug"
 status = "shipped"
 order = 3212
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = ["scripts/platform/wave.sh"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

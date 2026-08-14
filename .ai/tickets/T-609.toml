@@ -26,6 +26,7 @@ guarantees the next real regression hides inside the new budget.
 
 RELATED: T-608 makes `PLAYTEST_RUNBOOK.md` §2.5A tell the operator this specific FAIL is known, so the
 playtest is not blocked on this ticket."""
+class = "bug"
 status = "shipped"
 order = 3562
 executor = "claude-code"
@@ -37,5 +38,6 @@ owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionValidator.c",
 ]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

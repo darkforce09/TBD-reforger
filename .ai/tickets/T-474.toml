@@ -7,6 +7,7 @@ Residual from wave 27 adversarial BLOCKER. verify-t437 forbids exact historical 
 Repro: paraphrase lie or comment-only DiagnoseEmptyDestroyTargets → verify PASS.
 
 Cure: structural pins (live fn body must contain distinct return arms / out-of-zone string in executable path not only comments); broaden forbidden lie paraphrases; RED→GREEN on verifier perturbations."""
+class = "feature"
 status = "shipped"
 order = 3313
 executor = "claude-code"
@@ -16,5 +17,6 @@ owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c",
 ]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

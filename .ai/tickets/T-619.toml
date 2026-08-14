@@ -28,11 +28,13 @@ FIX: broaden `mcp-wb-logs.sh:57` to match its sibling -- **or better, make the c
 extracting the six shared patterns into one sourced file (`scripts/mod/lib/` already exists;
 `gate-grep.sh` lives there from T-556). A comment asserting a shared definition, over two divergent
 copies, is the signature defect in miniature: it reports agreement it never checked.'''
+class = "bug"
 status = "shipped"
 order = 3662
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 priority = 3
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

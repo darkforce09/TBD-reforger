@@ -2,11 +2,15 @@ id = "T-513"
 kind = "work"
 title = "W44 hotfix: T-506 Class-R must not count comment bait for require_role_played"
 summary = "Wave 44 verifier MAJOR. ingest_match_results_invokes_require_role_played_at_both_sites whitespace-collapses include_str and counts require_role_played(&p.role_played) inside // comments. Mutation: delete UPSERT bind, leave // require_role_played(&p.role_played) → PASS with one live call; delete both live calls + two bait comments → PASS. Cure: strip line comments (and block comments if needed) from the extracted production body before counting, or otherwise refuse comment-only matches. Perturbation RED with bait must fail; bare live calls still green."
+class = "chore"
 status = "shipped"
 order = 3353
 executor = "claude-code"
 priority = 0
+estimated = ["scope"]
 owns = ["apps/website/api/src/handlers/telemetry.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

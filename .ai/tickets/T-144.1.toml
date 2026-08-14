@@ -2,12 +2,15 @@ id = "T-144.1"
 kind = "work"
 title = "T-144 — Arma 3 map architecture study (reference analysis)"
 summary = "T-144 — Arma 3 map architecture study (reference analysis)"
+class = "feature"
 status = "shipped"
 order = 1440
 spec = "docs/specs/Mission_Creator_Architecture/t144_arma3_map_architecture_study.md"
 executor = "claude-code"
 parent = "T-144"
 shipped_at = "b1949182"
+estimated = ["scope"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

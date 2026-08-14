@@ -2,10 +2,14 @@ id = "T-053"
 kind = "work"
 title = "Ctrl/Cmd additive select"
 summary = "Modifier-click toggles slot in/out of selection."
+class = "feature"
 status = "shipped"
 order = 530
 spec = "docs/specs/Mission_Creator_Architecture/t053_additive_select.md"
 executor = "claude-code"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

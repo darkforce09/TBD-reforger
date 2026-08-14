@@ -23,11 +23,15 @@ Seven findings against `scripts/platform/wave.sh` from wave 2's slice agent and 
 WHAT SURVIVED ATTACK, so nobody re-audits it: the verifier could not get PASS out of a fourth entry point — `gate T-999`, `gate HEAD`, `gate <HEAD-sha>`, `gate --slice T-392` on main, `gate --slice` with no id and `gate --wave` all refuse with rc 2, and `cmd_land` treats rc 2 as red so it fails safe. T-396's "complete write set" claim also held under independent sweep: gate builds wrote to `dist-gate-frontend/` and `target-gate-trunk/` and nowhere else, with shared `target/`, `~/.cache/trunk` and `~/.cargo/registry` all untouched and the dev server's dist unchanged. The post-build freshness guard cannot pass on a stale artifact — a second no-op build still rewrote both wasm outputs.
 
 UNVERIFIED, worth knowing: whether trunk writes outside the two private paths on a COLD `~/.cache/trunk`. It is currently populated (tailwindcss-4.3.2, wasm-bindgen-0.2.126, wasm-opt-version_123) and took no writes, but a tool-version bump in Trunk.toml would make it a shared download target. Test that before assuming isolation holds across a toolchain bump."""
+class = "audit"
 status = "shipped"
 order = 3222
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = ["scripts/platform/wave.sh"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

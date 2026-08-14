@@ -768,6 +768,9 @@ mod tests {
         let tickets = dir.join(".ai/tickets");
         fs::create_dir_all(&tickets).unwrap();
         fs::write(tickets.join("ROOT"), "# ticket-registry root marker\n").unwrap();
+        // T-917.2: `Corpus::load` resolves scope legality fail-closed — every scratch
+        // tree carries the minimal vocabulary its fixtures use.
+        fs::write(tickets.join("scope-vocab.toml"), "[repo.xtask]\n").unwrap();
         for (name, body) in files {
             fs::write(tickets.join(name), body).unwrap();
         }
@@ -786,7 +789,7 @@ mod tests {
             .collect::<Vec<_>>()
             .join(", ");
         format!(
-            "id = \"{id}\"\nkind = \"work\"\ntitle = \"t {id}\"\nsummary = \"s\"\nstatus = \"{status}\"\norder = {order}\ndepends_on = [{deps}]\nowns = [{owns}]\n\n[scope.repo]\nlayers = [\"xtask\"]\n"
+            "id = \"{id}\"\nkind = \"work\"\ntitle = \"t {id}\"\nsummary = \"s\"\nclass = \"chore\"\nstatus = \"{status}\"\norder = {order}\ndepends_on = [{deps}]\nowns = [{owns}]\n\n[scope]\ndomain = \"repo\"\nlayer = \"xtask\"\n"
         )
     }
 

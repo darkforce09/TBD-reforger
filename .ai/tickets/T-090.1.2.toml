@@ -2,6 +2,7 @@ id = "T-090.1.2"
 kind = "work"
 title = "T-090.1.2 — SAP supertexture satellite ortho (high detail)"
 summary = "T-090.1.2 — SAP supertexture satellite ortho (high detail)"
+class = "feature"
 status = "shipped"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_1_2_sap_supertexture_satellite.md"
@@ -9,5 +10,6 @@ executor = "claude-code"
 parent = "T-090"
 shipped_at = "c2730a3"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

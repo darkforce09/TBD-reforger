@@ -2,14 +2,19 @@ id = "T-702"
 kind = "work"
 title = "Whole-terrain zone — one zone sized to the map"
 summary = "3den E11 (3DEN-MISC-001). One command that creates a zone covering the terrain exactly. Trivial given terrain_bounds already exists, and it is the normal way to author a boundary or a mission-wide trigger area."
+class = "feature"
 status = "queued"
 order = 4560
 executor = "claude-code"
 notes = "T-853 2026-08-12: the prepped slice worktree for this ticket was DROPPED, not landed. It carried one unmerged commit from 2026-08-02 that had sat unlanded for 10 days and was blocking the wave queue at 150. The work was NOT reviewed and NOT merged; the ticket stays queued so it can be redone. The commit is recoverable: `git checkout -b redo/T-702 salvage/t853-dropped/T-702` (tagged before the branch was deleted). Note T-674 and T-675 pointed at the SAME commit 113108a1, so whichever is redone first should check whether it subsumes the other."
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/eden_zones.rs",
     "apps/website/frontend/src/editor_ops.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["ops_undo"]

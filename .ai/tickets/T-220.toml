@@ -2,9 +2,11 @@ id = "T-220"
 kind = "work"
 title = "Five more silent round-trip losses"
 summary = "schemaVersion is regenerated as literal 1 so a stored 2 downgrades; map.bounds is recomputed and other map.* keys dropped; array order is not preserved (preserve_order is on in xtask/tools but not in map-engine-core, frontend or api); position sub-keys die on first edit; copy/paste strips unknown slot fields. A hydrate-then-compile property test catches all of them."
+class = "feature"
 status = "shipped"
 order = 2380
 executor = "claude-code"
+estimated = ["scope"]
 owns = [
     "crates/map-engine-core/src/doc/store.rs",
     "crates/map-engine-core/src/mission/compile.rs",
@@ -14,5 +16,8 @@ owns = [
     "crates/map-engine-core/src/mission/flatten.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["ops_undo"]

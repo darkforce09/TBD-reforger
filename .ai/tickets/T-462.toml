@@ -10,6 +10,7 @@ Residual from wave 24 adversarial MAJOR. Live T-442/T-444/T-439 features hold, b
 Repro: remove wiki_pages.sql from Makefile seed → cold gate still PASS; corrupt a prop guid in mod registry → cargo green while verify-t439 would FAIL if run.
 
 Cure: Class-R/source guard that seed: recipe references seeds/wiki_pages.sql (optional seed↔content_golden wiki body hash); wire bash scripts/mod/verify-t439-….sh into wave.sh gate or an existing make verify target that cold gate runs; tighten event_hub Class-R to require the list+find id predicate."""
+class = "chore"
 status = "shipped"
 order = 3301
 executor = "claude-code"
@@ -23,5 +24,6 @@ owns = [
     "apps/website/frontend/src/event_hub.rs",
 ]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

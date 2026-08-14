@@ -2,9 +2,13 @@ id = "T-018"
 kind = "work"
 title = "R3 mono telemetry"
 summary = "JetBrains Mono for player counts and ORBAT slot counts."
+class = "feature"
 status = "shipped"
 order = 180
 executor = "cursor-docs"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

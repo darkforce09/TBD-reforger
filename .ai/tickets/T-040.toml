@@ -2,9 +2,13 @@ id = "T-040"
 kind = "work"
 title = "Create mission wizard wiring"
 summary = "Create wizard sends max_players and real weather enums."
+class = "feature"
 status = "shipped"
 order = 400
 executor = "claude-code"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

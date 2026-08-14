@@ -39,10 +39,14 @@ None of these failure modes survive contact with a typed language and a test har
 
 **Do not start by rewriting `wave.sh`.** Write the rule, add the ratchet, then port when a script next
 needs real work."""
+class = "bug"
 status = "shipped"
 order = 3682
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

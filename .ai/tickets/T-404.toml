@@ -13,6 +13,7 @@ NITs from wave 1, batched so they cost one sitting rather than three. Each is a 
 == TWO MORE, from wave 2 ==
 4. `apps/website/frontend/src/event_hub.rs:411` — the comment justifying the objectives-panel deletion says the `objectivesById` root "is still the closed hydrate→emit loop with no mutator". `crates/map-engine-core/src/doc/store.rs:1102,1122,1130` show `hydrate()` calling `objectives.clear(&mut txn)` then `load_rows(...)` — that IS a mutator; what is absent is an INCREMENTAL, user-facing one. The deletion decision survives on the stronger ground the same comment already gives (the DTO carries no objectives field on either side of the wire, verified at handlers/events.rs:952-972 and dto.rs:781-800), so this is a wording defect in a load-bearing comment, not a wrong call.
 5. `docs/platform/frontend_data_provenance.md:41,62` — its event_hub.rs citations drifted by ~5-50 lines, and `:62` names `event_hub.rs:211` as an `events.briefing` render site when `:211` is the `name_override` fallback and the Event Hub never read the event briefing at all. The `:41` row is invalidated wholesale by T-392's removals. Same drift on its `orbat_selection.rs:90` citation."""
+class = "bug"
 status = "deferred"
 order = 3220
 executor = "workbench"
@@ -23,5 +24,6 @@ owns = [
     "docs/platform/frontend_data_provenance.md",
 ]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

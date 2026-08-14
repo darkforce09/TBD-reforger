@@ -2,11 +2,15 @@ id = "T-228"
 kind = "work"
 title = "ORBAT unique index omits faction — cross-faction squad names 500 on attach"
 summary = "idx_orbat_slot is (event_mission_id, squad, slot_index) with no faction column, so two factions each with a squad named Alpha 1-1 produce a duplicate key and the attach returns 500. The same blindness affects get_orbat grouping, orbat_reservations uniqueness and can_manage_squad."
+class = "feature"
 status = "shipped"
 order = 2460
 executor = "claude-code"
 shipped_at = "a9f3c34a"
+estimated = ["scope"]
 owns = ["apps/website/api/migrations"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

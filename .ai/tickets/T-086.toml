@@ -2,9 +2,13 @@ id = "T-086"
 kind = "work"
 title = "Server Control + RCON API"
 summary = "Live server control panel wired to RCON backend."
+class = "feature"
 status = "deferred"
 order = 860
 executor = "cursor-docs"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

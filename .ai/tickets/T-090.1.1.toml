@@ -2,6 +2,7 @@ id = "T-090.1.1"
 kind = "work"
 title = "T-090.1.1 — Map cartographic view (pyramid + UI switch)"
 summary = "T-090.1.1 — Map cartographic view (pyramid + UI switch)"
+class = "feature"
 status = "shipped"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_1_1_map_cartographic_view.md"
@@ -9,5 +10,6 @@ executor = "claude-code"
 parent = "T-090"
 shipped_at = "6e06e679"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

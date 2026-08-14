@@ -44,10 +44,12 @@ Small items from wave 73, none live.
     a slice ever writes a private `dist-`, it leaks exactly as `target-<SLICE>` did. Also a residual
     window: sparing keys off worktree existence, so a slice whose worktree is removed while its agent
     is still PARKED has its dir eligible. An age guard would close it.'''
+class = "bug"
 status = "shipped"
 order = 3463
 executor = "claude-code"
 priority = 3
+estimated = ["scope"]
 owns = [
     "crates/map-engine-render/src/engine.rs",
     "crates/map-engine-render/src/world_assets/dem_vectors.rs",
@@ -57,5 +59,7 @@ owns = [
     "crates/map-engine-render/src/draw_order.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

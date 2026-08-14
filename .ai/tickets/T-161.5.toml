@@ -2,12 +2,15 @@ id = "T-161.5"
 kind = "work"
 title = "T-161 — Ticket CLI: Python → Rust xtask"
 summary = "T-161 — Ticket CLI: Python → Rust xtask"
+class = "feature"
 status = "shipped"
 order = 1580
 spec = "docs/platform/t161_ticket_xtask_program.md"
 executor = "cursor-docs"
 notes = "Doc closeout + program shipped."
 parent = "T-161"
+estimated = ["scope"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

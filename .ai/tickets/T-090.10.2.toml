@@ -2,15 +2,19 @@ id = "T-090.10.2"
 kind = "work"
 title = "T-090.10 — Map Engine v2 (A3-aligned render spine)"
 summary = "T-090.10 — Map Engine v2 (A3-aligned render spine)"
+class = "feature"
 status = "queued"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_10_map_engine_v2.md"
 executor = "claude-code"
 parent = "T-090"
+estimated = ["scope"]
 owns = [
     "crates/map-engine-render",
     "apps/website/frontend/src/world_assets",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

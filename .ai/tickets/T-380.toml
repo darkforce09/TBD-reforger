@@ -32,15 +32,20 @@ TWO FACTUAL ERRORS IN WHAT I RELAYED:
   Identity is WEAKER on one path: adopt_payload calls core.hydrate() IN PLACE, no swap, so core identity is unchanged across a hydrate. The agent was careful not to overstate this — it is not a loss hole, because whenever there is a good local record to lose, load_state returned it and the swap DOES occur — but it means identity is a PROXY for the thing while restore_settled IS the thing.
 
 IT ALSO RE-MEASURED NON-SUBSUMPTION ON MERGED MAIN rather than resting on the inference, rebuilding the probe on top of T-374 and confirming its presence by the runtime strings in the wasm. With blob_has_content fully live the race STILL clobbers: 7 slots persisted with the gate forced open, 2008 with it live. And it credited T-374's argument against a shrink rule as sharper than its own, which had only the legitimate-mass-deletion half and not the fixture-is-a-growth half."""
+class = "bug"
 status = "shipped"
 order = 3196
 executor = "claude-code"
 priority = 2
 shipped_at = "28e9fbb6"
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/mission_editor.rs",
     "apps/website/frontend/src/mission_history.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["map_canvas"]

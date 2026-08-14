@@ -2,6 +2,7 @@ id = "T-159.22"
 kind = "work"
 title = "T-159.22 — Editor Layers outliner + Asset palette DnD"
 summary = "T-159.22 — Editor Layers outliner + Asset palette DnD"
+class = "feature"
 status = "shipped"
 order = 1570
 spec = "docs/platform/t159_22_outliner_asset_palette.md"
@@ -9,6 +10,9 @@ executor = "claude-code"
 notes = "Outliner+palette live; wheel+CUR gates. Found undo-merge defect (pre-existing). Verify: .ai/artifacts/t159_22_verify_log.md"
 parent = "T-159"
 shipped_at = "0154b4e9"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

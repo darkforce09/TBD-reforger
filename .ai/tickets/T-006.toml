@@ -2,9 +2,13 @@ id = "T-006"
 kind = "work"
 title = "Platform documentation seed (pass 2)"
 summary = "Documentation and seed work between T-004 scaffold and T-008 campaign refactor."
+class = "docs"
 status = "shipped"
 order = 60
 executor = "cursor-docs"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

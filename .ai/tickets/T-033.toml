@@ -2,9 +2,13 @@ id = "T-033"
 kind = "work"
 title = "Wire Outliner and asset drag-to-map"
 summary = "Editor layers entity map and palette drop creates slots."
+class = "feature"
 status = "shipped"
 order = 330
 executor = "claude-code"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

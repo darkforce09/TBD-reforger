@@ -20,11 +20,15 @@ Prose hangs on the faction ROW rather than a sibling map because `briefings` is 
 MUTATION PROBE, so the newline claim is not vacuous: a newline->space sanitiser in values_of fails all three new tests AND the other 209 pass under it — so these are the ONLY guard on newline survival in the tree. Applied out of git, restored by cp, md5-verified.
 
 CORRECTION TO MY OWN BRIEF: the `doc` feature adds 54 lib tests, not ~155. A mission-only run reports 157, not ~142. Baseline 209 was exact; this took it to 212."""
+class = "bug"
 status = "shipped"
 order = 2320
 executor = "claude-code"
 shipped_at = "ba0aba5c"
+estimated = ["scope"]
 owns = ["crates/map-engine-core/src/mission/compile.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

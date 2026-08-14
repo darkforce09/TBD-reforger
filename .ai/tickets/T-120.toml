@@ -2,6 +2,7 @@ id = "T-120"
 kind = "work"
 title = "Staging soak + golden mission smoke"
 summary = "Pinned game/mod version soak; golden-mission smoke on staging server."
+class = "feature"
 status = "queued"
 order = 1200
 executor = "human"
@@ -15,5 +16,6 @@ owns = [
     "docs/mod/STAGING-SERVER.md",
 ]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

@@ -2,10 +2,14 @@ id = "T-269"
 kind = "work"
 title = "Real RCON transport — the current endpoint is a no-op that reports success"
 summary = "POST /admin/servers/{id}/rcon (admin.rs:331-379) validates the action enum, explicitly discards the command at admin.rs:361, writes an audit row and returns 202 accepted:true. Grep for std::process, Command::new, tokio::process or ssh over the api returns zero hits."
+class = "audit"
 status = "shipped"
 order = 2870
 executor = "claude-code"
+estimated = ["scope"]
 owns = ["apps/website/api/src/handlers/admin.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

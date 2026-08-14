@@ -9,14 +9,18 @@ Mitigation today: AdminGate is nested under AuthGate, which only renders childre
 Repro: read apps/website/frontend/src/ui.rs:244-264 and auth.rs has_min_role.
 
 Cure: switch AdminGate to has_min_role_authed (or equivalent None=>false) while keeping the reactive move || auth path."""
+class = "chore"
 status = "shipped"
 order = 3297
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/ui.rs",
     "apps/website/frontend/src/auth.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

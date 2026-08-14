@@ -57,10 +57,14 @@ vest, collapsed to 'vest'.
 SO T-240 IS NOW FULLY SCOPED WITHOUT AN AGENT: recursion needs nothing; the frontend block is the
 wrong layer (the mod silently drops the row and nobody reads IsComplete); the two findings above are
 the only actionable items and neither is what the ticket asked for. Re-scope or close on next read."""
+class = "bug"
 status = "shipped"
 order = 2580
 executor = "claude-code"
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/arsenal_rules.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

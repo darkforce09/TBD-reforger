@@ -2,15 +2,19 @@ id = "T-748"
 kind = "work"
 title = "PLACE-COMMENT-001 does not fully close: comments have no map glyph and cannot be composed"
 summary = "MAJOR from the wave-114 adversarial verifier. The spec row (eden/interactions.md:214) Procedure step 3 reads 'Draggable, copy/paste, layerable, COMPOSABLE' with Postcondition 'Comment icon at position'. T-651 shipped neither of the last two. (1) NO MAP GLYPH: a comment draws nothing on the map, because it is deliberately absent from the render SoA — the same property that keeps it off the compiled mission. Drawing one needs map-engine-render, which was outside the slice's owns. The slice disclosed this by implication (it explained there is 'no glyph to grab' when narrowing drag to the outliner) but never as a postcondition it failed to meet. (2) NOT COMPOSABLE — AND THIS WAS SILENT: compositions capture is selection-based (editor_ops.rs:728 iterates the selection) and comments sit in NO selection lane (outliner.rs:99-101), so a comment can never enter a composition. That clause appears in no disclosure, commit message or field note. Silent partial delivery is precisely what CLAUDE.md's HARD GATE bars, and it is recorded here rather than left implicit. NOT a code defect: nothing is broken, no data is at risk, and the two acceptance checkboxes plus the registry-summary scope are met under the disclosed narrowings (drag -> outliner + X/Z fields, copy -> duplicate verb). This is scope accounting. FIX SHAPE: a glyph needs a render-side entry for a non-SoA entity; composability needs comments to join a selection lane, which is a larger decision than it looks because the selection lane is what keeps them out of the slot-shaped clipboard and Del-key paths. Decide whether the spec row should be re-scoped instead. Diagnosis: editor_verify/wave114.md MAJOR-1."
+class = "bug"
 status = "shipped"
 order = 4624
 executor = "claude-code"
 notes = "filed by wave-114 adversarial verifier (editor factory)"
+estimated = ["scope"]
 owns = [
     "crates/map-engine-render/src/draw_order.rs",
     "crates/map-engine-render/src/engine.rs",
     "apps/website/frontend/src/mission_history.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

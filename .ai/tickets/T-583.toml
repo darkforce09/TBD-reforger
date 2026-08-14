@@ -26,11 +26,15 @@ outside T-278's files): `packages/tbd-schema/schema/map-object-type-inventory.sc
 INSTANCE_KINDS is an 8-element array feeding the I1 sum gate, which comes up short by exactly 176 --
 `byKind.vehicle.instances`. T-278 shipped an `instance_kinds_match_enums_schema` lockstep test that
 pins the fix against the enums schema."""
+class = "bug"
 status = "shipped"
 order = 3432
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = ["Makefile"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

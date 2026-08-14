@@ -2,6 +2,7 @@ id = "T-912.2"
 kind = "work"
 title = "Compile wave.lock, delete both TSVs, retarget readers"
 summary = "cargo xtask wave repack (new top-level group) compiles .ai/tickets/wave.lock as deterministic TOML; wave check recomputes and structural-equals, missing lock is a DidNotRun refuse wired into ticket check, platform wave gate and platform_preflight. The same commit as the first lock deletes docs/platform/wave_plan.tsv and docs/mod/wave_plan.tsv and retargets every reader. platform wave land runs wave repack as its final step so the lock update rides the land commit."
+class = "docs"
 status = "shipped"
 order = 5920
 spec = "docs/platform/t912_wave_lockfile.md"
@@ -19,6 +20,7 @@ acceptance = [
     "cargo xtask platform wave gate --slice T-912.2 prints GATE: PASS",
 ]
 shipped_at = "4a2f3426"
+estimated = ["scope"]
 owns = [
     ".ai/tickets",
     "docs/platform/wave_plan.tsv",
@@ -29,5 +31,7 @@ owns = [
     "xtask/src/platform_preflight.rs",
 ]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "check"

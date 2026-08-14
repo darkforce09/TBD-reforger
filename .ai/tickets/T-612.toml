@@ -41,6 +41,7 @@ add a `--selftest` asserting stale->fail, healthy->pass, invalid->fail; and veri
 Also from T-606, worth heeding: **do not pin a tagged-line COUNT.** Measured 147 and 155 on the two
 goldens, having drifted **+47 on an unchanged mission**; it is not monotonic in slot count. Use
 0-vs-nonzero."""
+class = "bug"
 status = "shipped"
 order = 3592
 executor = "claude-code"
@@ -57,5 +58,6 @@ owns = [
     "apps/mod/tbd-framework/README.md",
 ]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

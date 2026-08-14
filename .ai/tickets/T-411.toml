@@ -12,11 +12,15 @@ RECOMMENDATION from T-399's agent, whose reasoning the command center endorses: 
   KEEP the operator TEST_DATABASE_URL override exactly as it is; it is the escape hatch wave 1 shipped against.
 
 Related: T-410 is the catalogue of ratchets this mechanism will keep producing."""
+class = "bug"
 status = "shipped"
 order = 3232
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = ["scripts/platform/wave.sh"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

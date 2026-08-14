@@ -2,12 +2,15 @@ id = "T-181.40"
 kind = "work"
 title = "T-181.40"
 summary = "T-181.40"
+class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
 notes = "Radio plan from radioPlan.nets[] — and it OVERTURNED THE BRIEF'S PREMISE. The brief expected 'VOIP is probably not reachable from script'. It is: the whole chain is proto external and compile-proved with a failing negative control — SCR_GadgetManagerComponent.GetGadgetManager -> GetGadgetsByType(EGadgetType.RADIO|RADIO_BACKPACK) -> SCR_RadioComponent.GetRadioComponent() -> BaseRadioComponent.GetTransceiver(i) -> BaseTransceiver.SetFrequency(kHz). No CVON, no partner mod. THE BLOCKER IS A WORLD ASSET: the engine warns every boot 'World doesn't contain RadioManagerEntity to support any BaseRadioComponent', and worlds/TBD_Dev_POC.ent is a 62-byte bare SubScene placing nothing. Confirmed independently from script via ChimeraWorld.GetRadioManager(). Same class as the stale rdb gating the menu presets — one Workbench pass settles it and tuning then works with NO code change, because TBD_RadioTuner only counts a net as tuned after READING THE FREQUENCY BACK off the same transceiver. Until then it honestly says tuning is unavailable. Refused to spawn a RadioManagerEntity from script despite it compiling, because the world's BaseRadioComponents are created during Game::LoadEntities before any script runs, so adoption is unprovable headless — shipping it would have been a plausible-looking thing that might do nothing. Parse is RUNTIME-proven on three goldens (4/4/3 nets) plus a mangled copy giving 1 accepted / 3 rejected with distinct reasons."
 parent = "T-181"
+estimated = ["scope"]
 owns = ["Scripts/Game/TBD/Radio/**"]
 
-[scope.mod]
-layers = ["feature"]
+[scope]
+domain = "mod"
+layer = "scripts"

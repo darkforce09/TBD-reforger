@@ -14,10 +14,14 @@ One process fails, the other passes; run alone it always passes.
 Both are FALSE-RED rather than false-green, so they waste budget rather than hide bugs — which is why this is deferred rather than fixed. But false-red is the most expensive failure shape this program has: the honest response to a red gate is to go looking for a bug in your own diff, and an unattended fix agent will spend its entire retry budget doing exactly that.
 
 CHEAPEST DURABLE FIX: serialise the gate with an flock around gate_slice/cmd_gate, so two worktrees cannot gate concurrently. That closes both mechanisms at once and costs a few lines. It trades wall clock for trustworthiness, which is the correct trade here — a gate nobody can believe is worth less than a slow one. The alternatives (per-worktree CARGO_TARGET_DIR, per-slice gate DB) both fight PLATFORM_FACTORY correction 1's shared-target-dir economics and cost ~40 GB per tree.'''
+class = "bug"
 status = "shipped"
 order = 3214
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

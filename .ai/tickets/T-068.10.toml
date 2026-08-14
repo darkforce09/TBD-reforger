@@ -2,6 +2,7 @@ id = "T-068.10"
 kind = "work"
 title = "T-068.10 — Smart Loadout Forge UI"
 summary = "T-068.10 — Smart Loadout Forge UI"
+class = "feature"
 status = "shipped"
 order = 680
 spec = "docs/specs/Mission_Creator_Architecture/t068_10_smart_forge_ui.md"
@@ -9,6 +10,9 @@ executor = "claude-code"
 notes = "Smart Forge + per-slot loadout in editor doc/Save/Export. Verify: .ai/artifacts/t068_10_verify_log.md. Mission-embed pulled forward from T-068.11."
 parent = "T-068"
 shipped_at = "3bc0bd24"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

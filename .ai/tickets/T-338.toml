@@ -34,16 +34,21 @@ TWO CORRECTIONS. First, in T-338's favour: the first verifier called its '30 ass
 Second, against T-338: its claim that 'the RAM copies were DESTROYED, not hidden' is UNREPRODUCIBLE, and the RAM half of the purge is effectively dead code. The editor route is Chromeless (layout.rs:36), so it renders no user menu, and both routes into the editor are deliberate full page loads — so the instance that runs `clear_session` never populated LOCAL_BACKUPS, and `forget_owner` can only ever drop 0. Measured: on an authenticated `/`, `typeof window.__missionBackup === "undefined"`, and `any_href_into_editor: false` across all 18 same-origin hrefs. Not a leak — the SCOPING closes the same-page-load hole and the IDB purge removes the disk residue — but the claim as worded is fully explained by the IDB purge alone, and no probe artifact backing it exists.
 
 It also answered the runbook's open question: T-338's top-level-editor wedge does NOT reproduce on the drained build (T-354). `T1_top_level_editor_booted: true` at /missions/smoke/edit top-level."""
+class = "bug"
 status = "shipped"
 order = 3154
 executor = "claude-code"
 priority = 1
 shipped_at = "94c66915"
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/mission_hydrate.rs",
     "apps/website/frontend/src/yrs_persist.rs",
     "apps/website/frontend/src/auth.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["doc_store"]

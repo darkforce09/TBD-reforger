@@ -2,11 +2,13 @@ id = "T-147"
 kind = "work"
 title = "Simplified Squad Connections"
 summary = "CANCELLED (2026-07-26 audit). Already ABSORBED by T-180.4 per its own summary, but left deferred so it still appears in status sweeps."
+class = "audit"
 status = "cancelled"
 order = 1480
 executor = "cursor-docs"
 notes = "needs-operator: frozen unmappable Scope. "
 depends_on = ["T-180"]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

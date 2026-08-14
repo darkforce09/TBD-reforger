@@ -2,6 +2,7 @@ id = "T-151.9"
 kind = "work"
 title = "T-151.9 — Deck flip + retirement (W9)"
 summary = "T-151.9 — Deck flip + retirement (W9)"
+class = "feature"
 status = "shipped"
 order = 1500
 spec = "docs/specs/Mission_Creator_Architecture/t151_9_deck_retirement.md"
@@ -10,5 +11,6 @@ notes = "Always WgpuTacticalMap; Deck runtime deleted; deck.gl+luma → devDepen
 parent = "T-151"
 shipped_at = "c4831451"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

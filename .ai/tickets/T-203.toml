@@ -2,11 +2,15 @@ id = "T-203"
 kind = "work"
 title = "Emit radioPlan — unlocks the seven-file radio subsystem"
 summary = "TBD_RadioPlan.c:46-67, TBD_RadioService.c:119-135 and TBD_RadioTuner are complete and read all five net fields. flatten emits nothing and no UI authors nets. This is also the partner VOIP bridge contract (mission.schema.json:285)."
+class = "feature"
 status = "shipped"
 order = 2210
 executor = "claude-code"
 shipped_at = "d039a6fe"
+estimated = ["scope"]
 owns = ["crates/map-engine-core/src/mission/flatten.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

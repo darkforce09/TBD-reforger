@@ -2,10 +2,14 @@ id = "T-627"
 kind = "work"
 title = "a Mission Creator load screen that measures something, and a satellite fetch that overlaps"
 summary = 'Backfilled 2026-08-01. Shipped in commit `920533f63` but never written to the registry, so `next_id` and every "next free id" reading were four short. Code is authoritative; this row exists so the registry stops disagreeing with git.'
+class = "feature"
 status = "shipped"
 order = 3762
 executor = "claude-code"
 priority = 3
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

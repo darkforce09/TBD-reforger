@@ -2,6 +2,7 @@ id = "T-159.16"
 kind = "work"
 title = "T-159.16 — MissionDoc host in Leptos editor"
 summary = "T-159.16 — MissionDoc host in Leptos editor"
+class = "feature"
 status = "shipped"
 order = 1570
 spec = "docs/platform/t159_16_mission_doc_host.md"
@@ -10,5 +11,6 @@ notes = "MissionDocCore same-wasm host; smoke_doc_editor Class R. Verify: .ai/ar
 parent = "T-159"
 shipped_at = "f2cd6178"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

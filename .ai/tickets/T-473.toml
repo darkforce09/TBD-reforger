@@ -10,11 +10,15 @@ Residual from wave 27 adversarial BLOCKER/MAJOR. Class-R pins exact `list_seeded
 Repro: spaced set( true ) before match → Class-R green.
 
 Cure: normalize whitespace for seed pin; forbid any list_seeded.set outside Ok arm; ban if false / unreachable Retry; RED→GREEN on verifier perturbations."""
+class = "feature"
 status = "shipped"
 order = 3312
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/content.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -86,6 +86,7 @@ detectors were validated against it).
    `remote-log-grep.sh` had no reachable exit 0 and that its `Mission loaded` check was inverted --
    SATISFIED on a broken log, MISSING on a healthy one.
 5. Still worth deciding: whether an unlisted Workshop id colliding with the dev gproj GUID is wise."""
+class = "bug"
 status = "shipped"
 order = 3542
 executor = "claude-code"
@@ -96,5 +97,6 @@ owns = [
     "docs/mod/STAGING-SERVER.md",
 ]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

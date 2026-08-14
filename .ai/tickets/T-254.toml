@@ -2,6 +2,7 @@ id = "T-254"
 kind = "work"
 title = "Entity and object placement — the whole entities[] block"
 summary = "The Objects chip is a stub (eden_chrome.rs:1466-1470), place_at no-ops in objects mode (editor_ops.rs:1598-1602), the palette filters to kind==character (asset_catalog.rs:63), and the doc has no entities map. The mod has no reader either. Also blocks objective_destroy, which resolves rules.targetAlias against entities[]."
+class = "docs"
 status = "shipped"
 order = 2720
 executor = "claude-code"
@@ -15,5 +16,6 @@ owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
 ]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

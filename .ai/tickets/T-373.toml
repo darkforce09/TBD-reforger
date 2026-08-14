@@ -27,15 +27,20 @@ THE EMPTY SIDE is refused before any request, and scoped deliberately to a NO-CO
 20/20 assertions driving the REAL button in headless Chrome, every verdict read back out of the stored document over HTTP, and each assertValue read by hand rather than trusting an exit code (T-386). Two probe traps recorded: `document.querySelector('select')` and `button[aria-label="OPFOR"]` are both AMBIGUOUS in the editor — the Eden top strip carries its own selects and its own faction chips and wins document order, so both silently drove the wrong widget.
 
 Worth knowing: NO UI AUTHORS AN EMBLEM TODAY — it appears nowhere in the frontend except dto.rs:583 and the schema calls it 'UI later'. So it is populated only by seeds and direct writes, yet two live rows carry one, which is exactly why the loss was silent and would have stayed unnoticed."""
+class = "bug"
 status = "shipped"
 order = 3189
 executor = "claude-code"
 priority = 0
 shipped_at = "b2a29e43"
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/editor_ops.rs",
     "apps/website/frontend/src/orbat_manager.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["ops_undo"]

@@ -2,15 +2,20 @@ id = "T-739"
 kind = "work"
 title = "Drifted line cites, one of which states now-inverted behaviour"
 summary = "NIT cluster from the wave-112 verifier, but one entry is a live falsehood rather than a stale number. docs/specs/.../eden/gap_analysis.md:244 cites editor_ops.rs:583-585 for a suppress-on-multi guard that (a) has moved and (b) was INVERTED by T-649 in wave 112 — the doc asserts 'multi-selection suppresses the modal', which is now the opposite of what ships. editor_ops.rs:1236 (a T-648 comment) still claims suppress-on-multi for the same reason. Pure drift, no false claim: arsenal.rs:947 cites editor_ops.rs:1611 for a tail now at :1745; eden_top_strip.rs:713/1425/2064 cite refresh_docks at :1055 (actual :2076) and refresh_signals at :452 (actual :438). ALSO: the registry summary for T-649 itself cited editor_ops.rs:583-585/:605-607 for guards that were at :985/:1007 on 62195c15 — dispatch briefs are quoting drifted cites, so treat registry line numbers as hints, not as load-bearing. This is the 'false comment with its own refutation stacked beneath it' pattern the program has hit before (wave109 NOTE). Diagnosis: editor_verify/wave112.md NIT-1."
+class = "docs"
 status = "shipped"
 order = 4615
 executor = "claude-code"
 notes = "filed by wave-112 adversarial verifier (editor factory)"
+estimated = ["scope"]
 owns = [
     "docs/specs/Mission_Creator_Architecture/eden/gap_analysis.md",
     "apps/website/frontend/src/editor_ops.rs",
     "apps/website/frontend/src/arsenal.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["ops_undo"]

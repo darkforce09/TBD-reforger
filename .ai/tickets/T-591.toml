@@ -20,11 +20,15 @@ From T-117, which shipped the upload UI and was precise about where it had to st
    mission and add a version.
 5. **`GET /missions/:id/versions` is still 405** (no list route). T-282 flagged it; T-117 sharpens the
    case, because the upload panel now writes versions the dossier still cannot list."""
+class = "bug"
 status = "shipped"
 order = 3452
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/client.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

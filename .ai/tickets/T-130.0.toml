@@ -2,11 +2,14 @@ id = "T-130.0"
 kind = "work"
 title = "T-130 — Fable audit remainder (OPEN + PARTIAL)"
 summary = "T-130 — Fable audit remainder (OPEN + PARTIAL)"
+class = "audit"
 status = "shipped"
 order = 1300
 spec = "docs/platform/t130_fable_audit_remainder.md"
 executor = "cursor-docs"
 parent = "T-130"
+estimated = ["scope"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

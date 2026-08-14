@@ -2,6 +2,7 @@ id = "T-152.2"
 kind = "work"
 title = "T-152.2 — Reforger map icon art + atlas rebuild"
 summary = "T-152.2 — Reforger map icon art + atlas rebuild"
+class = "feature"
 status = "shipped"
 order = 1520
 spec = "docs/specs/Mission_Creator_Architecture/t152_2_reforger_icon_art.md"
@@ -9,5 +10,6 @@ executor = "claude-code"
 notes = "Workbench MCP icon discovery spike + LANDMARK_SET atlas rebuild."
 parent = "T-152"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

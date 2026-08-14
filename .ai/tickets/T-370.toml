@@ -34,15 +34,23 @@ CAVEAT recorded honestly by the slice: the compile-level proof (a real path expr
 which a comment cannot produce) does NOT prove the ORDERING claim (before-fetch / before-`is_uuid`);
 that rests on review of the 4-line prologue. Every file involved is wasm32-only, so no native test can
 call it."""
+class = "bug"
 status = "shipped"
 order = 3186
 executor = "claude-code"
 priority = 3
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/mission_hydrate.rs",
     "apps/website/frontend/src/mission_commands.rs",
     "apps/website/frontend/src/editor_session.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = [
+    "doc_store",
+    "ops_undo",
+]

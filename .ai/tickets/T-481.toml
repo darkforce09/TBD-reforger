@@ -7,11 +7,15 @@ Wave 30 adversarial verifier (T-430): production validate guards discord_client_
 Repro: set discord_client_id=" " + env=production → validate() Ok.
 
 Cure: trim (or reject if trim empty) before the Missing check; Class-R pin."""
+class = "feature"
 status = "shipped"
 order = 3320
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = ["apps/website/api/src/config.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

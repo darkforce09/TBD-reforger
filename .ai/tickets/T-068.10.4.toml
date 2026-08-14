@@ -2,6 +2,7 @@ id = "T-068.10.4"
 kind = "work"
 title = "T-068.10.4 — Loadout document v2 (Reforger-shaped)"
 summary = "T-068.10.4 — Loadout document v2 (Reforger-shaped)"
+class = "feature"
 status = "shipped"
 order = 680
 spec = "docs/specs/Mission_Creator_Architecture/t068_10_4_loadout_doc_v2.md"
@@ -10,5 +11,6 @@ notes = "Arsenal polish C: SlotLoadout v2 (wear open map keyed by engine area, w
 parent = "T-068"
 shipped_at = "338593b8"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

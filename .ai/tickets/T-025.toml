@@ -2,9 +2,13 @@ id = "T-025"
 kind = "work"
 title = "Global Aegis consistency (final batch)"
 summary = "Final token and layout consistency pass."
+class = "feature"
 status = "shipped"
 order = 250
 executor = "cursor-docs"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

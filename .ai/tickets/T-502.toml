@@ -2,11 +2,15 @@ id = "T-502"
 kind = "work"
 title = "POST /admin/roles/sync IT does not prove empty-snapshot admin survives"
 summary = "Wave 40 residual from T-372. Class-R pins resync_ids_from_snapshot empty→None. Existing roles/sync IT only asserts 200. Cure: cold IT — promote admin with zero user_discord_roles, POST sync, assert role still admin."
+class = "feature"
 status = "shipped"
 order = 3342
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = ["apps/website/api/tests/admin_field.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

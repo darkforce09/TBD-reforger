@@ -2,11 +2,13 @@ id = "T-181.6"
 kind = "work"
 title = "T-181.6"
 summary = "T-181.6"
+class = "feature"
 status = "deferred"
 order = 1810
 executor = "claude-code"
 notes = "claude-code slices only; verify must exit 0 incl. mod-compile; never auto-ship; Workbench lockfile."
 parent = "T-181"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

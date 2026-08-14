@@ -9,11 +9,15 @@ Residual from wave 28 adversarial MAJOR×2 on T-446.
 Repro: `# "FormData",` in Cargo.toml → hero_multipart_upload_is_wired_not_stubbed PASS; `let url = raw;` → content::tests PASS.
 
 Cure: strip // and # comments (and TOML string-safe comment lines) before Cargo FormData/File/FileList pins; require live prod call absolute_cms_upload_url(…) on the upload Ok path (not comment-only). RED→GREEN on both verifier perturbations.'''
+class = "feature"
 status = "shipped"
 order = 3314
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/content.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -10,10 +10,12 @@ Repro T-287: comment out server_intel on_cleanup registration but leave the stri
 Repro T-454: keep Memo+has_min_role_authed unused; drive is_admin via has_min_role → admin_affordance Class-R PASSes while Edit uses None=>true.
 
 Cure: strip // comments (or require a non-comment production line) for the on_cleanup pin; bind wiki/modpacks/event_hub pins to the is_admin/is_leader Memo assignment used at .get() call sites and ban free has_min_role( in those files' production sections."""
+class = "chore"
 status = "shipped"
 order = 3296
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/sse.rs",
     "apps/website/frontend/src/wiki.rs",
@@ -22,5 +24,7 @@ owns = [
     "apps/website/frontend/src/server_intel.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

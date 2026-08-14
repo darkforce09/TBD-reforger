@@ -2,14 +2,19 @@ id = "T-850"
 kind = "work"
 title = "T-801 eye-pass: squad tether did not follow drag on same-squad (auto-grouped) units"
 summary = 'WAVE-208 OPERATOR EYE-PASS (2026-08-11) against shipped T-801. Operator: tether line "does not seem like the line moves at all" while dragging a unit that is in the same squad (membership from asset-browser auto-group, not Connect ▸ Group to). T-801 shipped pack_squad_link_drag_preview + bind_squad_link_preview with Class-R packer pins; verifier could not re-prove the mid-drag 4px pixel probe (load overlay). FIX: reproduce on make leptos release with auto-grouped squad members; if preview path misses SQUAD_LINKS for that membership shape, fix; if membership was wrong (T-848), re-test after T-848. ACCEPTANCE: mid-drag screenshot — tether endpoint within 4px of dragged sprite centre for auto-grouped same-squad single-drag and 2-selected-drag.'
+class = "bug"
 status = "queued"
 order = 5320
 executor = "claude-code"
 notes = "operator W208 eye-pass; T-801 follow-on; may depend on clean membership (T-848)"
+estimated = ["scope"]
 owns = [
     "crates/map-engine-core/src/squad_links.rs",
     "apps/website/frontend/src/select_tool.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["tools"]

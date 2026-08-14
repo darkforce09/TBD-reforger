@@ -2,9 +2,11 @@ id = "T-287"
 kind = "work"
 title = "SSE reader leaks one connection per SPA navigation"
 summary = "Self-documented at sse.rs:8-12: the stream is never torn down on route change because Leptos on_cleanup is Send-bound and AbortController is not. Harmless today only because the stream never emits."
+class = "chore"
 status = "shipped"
 order = 3050
 executor = "claude-code"
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/sse.rs",
     "apps/website/frontend/src/server_intel.rs",
@@ -12,5 +14,7 @@ owns = [
     "apps/website/frontend/Cargo.toml",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

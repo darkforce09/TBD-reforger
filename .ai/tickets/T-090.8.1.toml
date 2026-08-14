@@ -2,6 +2,7 @@ id = "T-090.8.1"
 kind = "work"
 title = "T-090.8 — Forest & vegetation regions (first-class areas)"
 summary = "T-090.8 — Forest & vegetation regions (first-class areas)"
+class = "feature"
 status = "shipped"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_8_forest_vegetation_regions.md"
@@ -9,5 +10,6 @@ executor = "claude-code"
 parent = "T-090"
 shipped_at = "e28d073a"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

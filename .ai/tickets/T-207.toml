@@ -2,14 +2,18 @@ id = "T-207"
 kind = "work"
 title = "Point the OAuth flow at real Discord and prove it"
 summary = "The OAuth2 implementation is complete — state cookie, constant-time compare, token exchange, role sync, bounded 429 retry — but has never been run against live Discord in this tree. This is a credentials and verification task, not a build task."
+class = "feature"
 status = "shipped"
 order = 2250
 executor = "claude-code"
 shipped_at = "slice/T-207"
+estimated = ["scope"]
 owns = [
     "apps/website/api/.env.example",
     "docs/website/DEV_RUNBOOK.md",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -2,6 +2,7 @@ id = "T-146"
 kind = "work"
 title = "Asset Browser Data Wiring"
 summary = "Hook up T-150 registry items (vehicles/crates/…) to Asset Browser for map drag-place. Unblocked by T-150; after or parallel T-068.9 ingest preferred."
+class = "feature"
 status = "queued"
 order = 1470
 executor = "claude-code"
@@ -9,5 +10,6 @@ notes = "needs-operator: frozen unmappable Scope. "
 depends_on = ["T-150"]
 owns = ["apps/website/frontend/src/asset_catalog.rs"]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

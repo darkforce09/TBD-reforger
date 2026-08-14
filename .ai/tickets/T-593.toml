@@ -73,14 +73,18 @@ ALSO FOUND: the 201 response echoes the whole `json_payload` back (`models/missi
    written; `version_body` and `version_body_to_writer` are thin wrappers over it, pinned by a
    byte-equality test over 36 adversarial input pairs. `mission_commands.rs:301` (the editor's Save)
    still pays `version_body`'s clone — safe, drift-proof via the shared struct, and outside scope."""
+class = "bug"
 status = "shipped"
 order = 3460
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = [
     "crates/map-engine-core/src/mission/compile.rs",
     "apps/website/frontend/src/missions.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

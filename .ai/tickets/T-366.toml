@@ -17,12 +17,16 @@ IT ESTABLISHED THERE IS NO COUNTERPART TRIM TO DISAGREE WITH, rather than assumi
 IT REJECTED TRIMMING THE RETURN VALUE ON EVIDENCE, not style: admin.rs:342-344 hand-rolls the same `SELECT COALESCE(username, '')` for target_name WITHOUT the fallback and WITHOUT trimming. Trimming the return would have rendered one audit message's actor trimmed and its target padded — a fresh two-site disagreement, in a file this slice does not own. So `'  Sam  '` still displays as `[  Sam  ]` and is never turned into a discord_id; padding is cosmetic, namelessness is not.
 
 REACHABLE IN PRODUCTION, and it found the live mechanism: services/discord.rs:113 `display_name()` selects on `global_name.is_empty()` — an untrimmed FIELD-SELECTION test — so a Discord global_name of "   " wins that branch and is stored verbatim. Not hypothetical."""
+class = "bug"
 status = "shipped"
 order = 3182
 executor = "claude-code"
 priority = 2
 shipped_at = "1128c1e3"
+estimated = ["scope"]
 owns = ["apps/website/api/src/handlers/mod.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

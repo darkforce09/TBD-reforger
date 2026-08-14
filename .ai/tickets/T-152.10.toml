@@ -2,6 +2,7 @@ id = "T-152.10"
 kind = "work"
 title = "T-152.10 — E2E cartographic gate (operator + merge readiness)"
 summary = "T-152.10 — E2E cartographic gate (operator + merge readiness)"
+class = "chore"
 status = "shipped"
 order = 1520
 spec = "docs/specs/Mission_Creator_Architecture/t152_10_e2e_cartographic_gate.md"
@@ -9,5 +10,6 @@ executor = "human"
 notes = "Automated G1–G7/G9–G10 PASS @ T-152.10; operator O1–O12 PENDING; merge readiness doc shipped."
 parent = "T-152"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

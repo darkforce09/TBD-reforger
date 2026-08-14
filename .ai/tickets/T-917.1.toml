@@ -2,6 +2,7 @@ id = "T-917.1"
 kind = "work"
 title = "Scope vocabulary file + check rule"
 summary = "Author .ai/tickets/scope-vocab.toml (the 4-level domain/layer/component/surface tree from the spec draft, grounded in real modules) plus the check rule validating the file itself: sorted, duplicate-free, every level's parent exists. Additive slice — no ticket parses change; vocab-vs-ticket legality lands with the S.2 cutover."
+class = "feature"
 status = "shipped"
 order = 5971
 spec = "docs/platform/t917_ticket_schema_v2.md"
@@ -22,5 +23,6 @@ owns = [
     "xtask/src/vocab_check.rs",
 ]
 
-[scope.repo]
-layers = ["tickets"]
+[scope]
+domain = "repo"
+layer = "tickets"

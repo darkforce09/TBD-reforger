@@ -2,14 +2,18 @@ id = "T-866"
 kind = "work"
 title = "T-853 port: fetch-vanilla-api -> fetch vanilla-api"
 summary = "T-853 shell->xtask slice. Port scripts/mod/fetch-vanilla-api.sh (70 lines) to `cargo xtask fetch vanilla-api` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). vanilla API doc fetch; make target. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling."
+class = "docs"
 status = "shipped"
 order = 5470
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+estimated = ["scope"]
 owns = [
     "scripts/mod/fetch-vanilla-api.sh",
     "xtask/src/gate_fetch_vanilla_api.rs",
 ]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "gates"

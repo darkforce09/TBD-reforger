@@ -53,8 +53,9 @@ kind = "work"
 title = "title of {id}"
 {status_lines}
 {extra}
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"
 "#
     ))
 }

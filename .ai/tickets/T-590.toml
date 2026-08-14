@@ -25,14 +25,18 @@ mislead the next reader, and two of them are the sentences that let real defects
 6. **`crates/map-engine-core/src/lib.rs:5`** says "the JS boundary lives in the `map-engine-wasm`
    shim". That crate was deleted at T-418. This sentence made the T-582 brief ask for a wasm binding
    that could not exist — the agent had to discover the deletion itself."""
+class = "bug"
 status = "shipped"
 order = 3451
 executor = "claude-code"
 priority = 3
+estimated = ["scope"]
 owns = [
     "Makefile",
     "docs/platform/CODING_STANDARDS.md",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

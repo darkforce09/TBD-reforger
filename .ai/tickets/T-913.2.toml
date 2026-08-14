@@ -2,6 +2,7 @@ id = "T-913.2"
 kind = "work"
 title = "Per-run metrics files + slice-run producer"
 summary = "Per-run JSON at .ai/tickets/metrics/<id>/<ts>-<sha>.json (never a single jsonl), required tokens_consumed with total == input+output+cache_read+cache_write, optional git_sha, optional reasoning sibling outside total. cargo xtask platform slice-run <id> parses usage from agent/claude --output-format json pinned by recorded fixtures; missing usage exits nonzero and writes no file. platform wave land stamps outcome+git_sha then runs wave repack; ticket metrics --by agent sums real files."
+class = "feature"
 status = "shipped"
 order = 5930
 spec = "docs/platform/t913_ticket_run_metrics.md"
@@ -20,6 +21,7 @@ acceptance = [
 ]
 shipped_at = "efcff4e5"
 completed_at = "2026-08-14T05:21:53Z"
+estimated = ["scope"]
 owns = [
     ".ai/tickets/metrics",
     "xtask/src/wave",
@@ -27,5 +29,7 @@ owns = [
     "xtask/src/check.rs",
 ]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "check"

@@ -7,11 +7,15 @@ Wave 33 verifier NIT (T-428). Seed no longer INSERTs placeholder 151729000000000
 Repro: DB with placeholder row; make seed; SELECT still returns the row.
 
 Cure: add DELETE FROM discord_roles WHERE discord_role_id = '1517290000000000000' (or equivalent) to discord_roles.sql before INSERT."""
+class = "chore"
 status = "shipped"
 order = 3326
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = ["apps/website/api/seeds/discord_roles.sql"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

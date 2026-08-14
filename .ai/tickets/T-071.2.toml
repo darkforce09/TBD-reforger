@@ -2,9 +2,11 @@ id = "T-071.2"
 kind = "work"
 title = "T-071.2"
 summary = "T-071.2"
+class = "feature"
 status = "shipped"
 order = 710
 parent = "T-071"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

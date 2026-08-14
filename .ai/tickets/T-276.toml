@@ -2,6 +2,7 @@ id = "T-276"
 kind = "work"
 title = "Close the marker.icon vocabulary"
 summary = "mission.schema.json:446 is a bare string with no enum and no minLength. TBD_MarkerIcons.c:43-45,165 falls back to a dot and logs once. This is the exact degradation cargoContainer was closed to prevent."
+class = "feature"
 status = "shipped"
 order = 2940
 executor = "claude-code"
@@ -11,5 +12,6 @@ owns = [
     "packages/tbd-schema/golden-missions/empty-warning-fields.json",
 ]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

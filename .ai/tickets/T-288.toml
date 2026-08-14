@@ -2,10 +2,14 @@ id = "T-288"
 kind = "work"
 title = "Modpack to server-config renderer and push"
 summary = "The database modpack concept and the server's actual mod list are unconnected universes. deploy-staging.sh:258-260 hardcodes a single mod from an env var and never reads the modpacks table."
+class = "feature"
 status = "shipped"
 order = 3060
 executor = "claude-code"
+estimated = ["scope"]
 owns = ["scripts/mod/deploy-staging.sh"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

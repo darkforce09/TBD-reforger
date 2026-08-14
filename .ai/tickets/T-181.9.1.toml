@@ -2,6 +2,7 @@ id = "T-181.9.1"
 kind = "work"
 title = "T-181.9.1"
 summary = "T-181.9.1"
+class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
@@ -9,5 +10,6 @@ notes = "Lobby slot picker @ 56ad6d16. SUPERSEDES T-068.13. Server-fed roster pa
 parent = "T-181"
 owns = ["Scripts/Game/TBD/UI/Lobby/** (new)"]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

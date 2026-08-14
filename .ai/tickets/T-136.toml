@@ -2,6 +2,7 @@ id = "T-136"
 kind = "work"
 title = "3D AAR / OCAP-style replay"
 summary = "Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built."
+class = "feature"
 status = "idea"
 spec = "docs/platform/tbd_north_star_backlog.md"
 executor = "claude-code"
@@ -10,5 +11,6 @@ depends_on = [
     "T-119",
 ]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

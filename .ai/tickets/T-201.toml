@@ -2,15 +2,19 @@ id = "T-201"
 kind = "work"
 title = "Emit zones[] beyond the synthetic spawn circle"
 summary = "flatten hardcodes type=spawn and r=150.0 at the slot centroid (flatten.rs:300,584-600); ModZoneShape has no polygon variant (flatten.rs:142-145). The mod already enforces boundary and base_protection in both circle and polygon (TBD_ZoneRegistry.c). Consequence today: every website mission ships with zero play-area restriction."
+class = "feature"
 status = "shipped"
 order = 2190
 executor = "claude-code"
 depends_on = ["T-241"]
+estimated = ["scope"]
 owns = [
     "crates/map-engine-core/src/mission/flatten.rs",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c",
     "packages/tbd-schema/golden-missions/compiler-shaped-two-faction.json",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

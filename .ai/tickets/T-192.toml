@@ -2,14 +2,19 @@ id = "T-192"
 kind = "work"
 title = "Mission settings never reach the compiled document and are silently reverted"
 summary = "The dialog writes meta.environment.{time,weather} into the CRDT doc (eden_chrome.rs:1707-1765) but flatten reads the DB missions row instead (mission_compile.rs:24-29). No editor path PATCHes the row, and apply_row_meta overwrites the doc from the row on every hydrate. The author's edit is dropped on the wire and lost locally on reload. MERGED FROM T-089: this ticket owns BOTH halves — add the PATCH /missions/{id} path that writes time_of_day/weather back to the missions row, AND make the compile path read the authored value. Do not ship one without the other."
+class = "docs"
 status = "shipped"
 order = 2100
 executor = "claude-code"
 shipped_at = "bbb910be"
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/eden_chrome.rs",
     "apps/website/api/src/services/mission_compile.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["layout_chrome"]

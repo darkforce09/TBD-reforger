@@ -2,12 +2,15 @@ id = "T-180.10"
 kind = "work"
 title = "T-180.10 — Program coherency checker"
 summary = "T-180.10 — Program coherency checker"
+class = "feature"
 status = "shipped"
 order = 1760
 spec = "docs/specs/Mission_Creator_Architecture/t180_10_program_coherency.md"
 executor = "cursor-docs"
 notes = "Coherency report + make verify-t180 + doc/registry remediations. Zero P0 → no 10.1. Verify: .ai/artifacts/t180_10_verify_log.md"
 parent = "T-180"
+estimated = ["scope"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

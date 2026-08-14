@@ -2,10 +2,14 @@ id = "T-065"
 kind = "work"
 title = "Cluster LOD at extreme zoom"
 summary = "Supercluster index with pan-stable cache for 367k missions."
+class = "feature"
 status = "shipped"
 order = 650
 spec = "docs/specs/Mission_Creator_Architecture/t065_cluster_lod.md"
 executor = "claude-code"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

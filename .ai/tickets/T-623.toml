@@ -42,10 +42,14 @@ STILL OPEN, filed rather than fixed (verifier F2/F4, both LOW): the `.py` ban ex
 `scripts/target/` evades it -- **pre-existing**, byte-identical to the pre-T-620 exclusions. And the
 pattern misses a bareword `python run.py`. Also cosmetic: `CODING_STANDARDS.md:126`, `Makefile:472`
 and `ci.yml:209` still say "58 .sh"; the gate reports the true count at runtime.'''
+class = "bug"
 status = "shipped"
 order = 3702
 executor = "claude-code"
 priority = 3
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

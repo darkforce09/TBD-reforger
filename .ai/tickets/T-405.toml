@@ -27,10 +27,12 @@ RELATED, same family: `services/discord.rs:131-141` `format!`s Discord's raw `id
 CONFIRMED NOT AN ISSUE: `modpacks.workshop_url` reaches an `<a href>` at `frontend/src/event_hub.rs:236` but has NO HTTP WRITER — `services/registry_import.rs:82`'s INSERT omits the column and there is no `UPDATE modpacks` anywhere in the API crate. Only operator psql seeds populate it. Genuinely latent. (`frontend/src/modpacks.rs:346` also renders it in an `<a href>` but that page is hardcoded MOCK_MODPACKS and never calls the API.)
 
 `is_http_url`'s DISCLAIMED non-promises, all deliberate and pinned by tests — do not treat them as bugs: not an SSRF guard (127.0.0.1, 169.254.169.254 pass), no domain allowlist, nothing about path/query/fragment, not an output encoder. Also accepted-by-design and worth knowing: `http:/\evil.com` normalises to `http://evil.com` (WHATWG backslash), `https://expected.com@evil.com/x`, `https://evil。com/x` (U+3002 folds to `.`), `http://2130706433/x` (= 127.0.0.1).'''
+class = "bug"
 status = "shipped"
 order = 3221
 executor = "claude-code"
 priority = 0
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/deployments.rs",
     "apps/website/api/src/handlers/cms.rs",
@@ -38,5 +40,7 @@ owns = [
     "apps/website/api/src/services/discord.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

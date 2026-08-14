@@ -2,10 +2,14 @@ id = "T-852"
 kind = "work"
 title = "Attributes modal paint should use modal_stack::z_class instead of hard-coded z-50"
 summary = "WAVE-210 VERIFIER NIT (wave210.md F2). Esc is modal_stack-gated (T-726) but Attributes (including the new vehicle body) still paints literal z-50, not modal_stack::z_class (the O-3 class). Pre-existing; not a Heading/Cargo/Crew functional miss. FIX: consume z_class for the Attributes overlay. ACCEPTANCE: attributes.rs has no literal z-50 on the modal overlay; uses z_class; Esc stack still correct."
+class = "bug"
 status = "deferred"
 order = 5340
 executor = "claude-code"
 notes = "wave210 verifier F2 NIT; pre-existing; pairs with O-3 class family"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -51,10 +51,12 @@ SCOPE: verify-t456, verify-t437, verify-t296, verify-t452, plus a sweep of scrip
 and scripts/platform/*.sh for any other `rg` use or `if grep ...; then fail; fi` shape. Decide
 deliberately whether the two dead scripts get wired into the gate or deleted -- do not leave them
 dead AND broken."""
+class = "bug"
 status = "shipped"
 order = 3401
 executor = "claude-code"
 priority = 0
+estimated = ["scope"]
 owns = [
     "scripts/mod/verify-t456-mission-rest-size-gate.sh",
     "scripts/mod/verify-t437-destroy-inert-diagnostics.sh",
@@ -62,5 +64,7 @@ owns = [
     "scripts/mod/verify-t452-player-identity-link-comments.sh",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

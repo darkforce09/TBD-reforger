@@ -2,13 +2,17 @@ id = "T-293"
 kind = "work"
 title = "TBD_RadioPlan re-parses raw JSON instead of the parsed field"
 summary = "TBD_RadioPlan.c:4-6 claims the document struct has no radioPlan member. It does — TBD_MissionLoader.c:262. The class re-parses GetRawJson() through a separate projection (:233,258-264), so there are now two parse paths for one block."
+class = "feature"
 status = "shipped"
 order = 3110
 executor = "claude-code"
+estimated = ["scope"]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Radio/TBD_RadioPlan.c",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
 ]
 
-[scope.mod]
-layers = ["feature"]
+[scope]
+domain = "mod"
+layer = "scripts"
+component = "backend"

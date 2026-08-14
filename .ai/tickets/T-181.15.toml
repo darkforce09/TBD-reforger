@@ -2,6 +2,7 @@ id = "T-181.15"
 kind = "work"
 title = "T-181.15"
 summary = "T-181.15"
+class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
@@ -9,5 +10,6 @@ notes = "JIP / reconnect hardened. Requirement 1 was ALREADY implemented — thi
 parent = "T-181"
 owns = ["TBD_SpawnManager.c"]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

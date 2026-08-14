@@ -10,14 +10,17 @@ Repro:
   # observes 3 forever while wave-3 deferreds exist
 
 Cure: do not key default N solely on current_wave() while deferred residue can pin an old plan wave. Prefer (1) TBD_GATE_WAVE, (2) committed packing counter docs/platform/factory_pack_wave (integer; command center bumps on promote), (3) only then current_wave(). Seed factory_pack_wave to 35. Keep prune last-two + operator URL overrides."""
+class = "docs"
 status = "shipped"
 order = 3329
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = [
     "scripts/platform/wave.sh",
     "docs/platform/factory_pack_wave",
 ]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

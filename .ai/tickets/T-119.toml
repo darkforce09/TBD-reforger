@@ -2,9 +2,12 @@ id = "T-119"
 kind = "work"
 title = "Framework MVP remainder"
 summary = "SHIPPED (closed 2026-07-26 by audit). Delivered by T-181: loadouts (TBD_LoadoutEquipComponent.c, T-068.12), safe start (TBD_SafestartManager.c 1143 lines, T-181.17/.33), boundary (TBD_ZoneRegistry.c + TBD_PlayAreaComponent.c, T-181.18), admin commands (TBD_AdminCommands.c + AdminService + AdminScreen, T-181.11.2). All four M1 items present."
+class = "audit"
 status = "shipped"
 order = 1190
 executor = "workbench"
+estimated = ["scope"]
 
-[scope.mod]
-layers = ["feature"]
+[scope]
+domain = "mod"
+layer = "scripts"

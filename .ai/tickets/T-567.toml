@@ -7,11 +7,15 @@ FOUND by W66 adversarial verifier (DIRTY MAJOR) after T-564.
 Dead let decoy now RED. `if false { apply_row_meta(…, opt(&row.briefing)) }` + live None args → hydrate pin stays GREEN. Pin accepts any apply_row_meta arg-list, including unreachable calls.
 
 Repro: live briefing args → None; add if false { apply_row_meta(…, opt(&row.briefing)) }; cargo test green."""
+class = "feature"
 status = "shipped"
 order = 3420
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/mission_title_prefer.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

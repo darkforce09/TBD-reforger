@@ -2,13 +2,17 @@ id = "T-230"
 kind = "work"
 title = "Attendance marks every mission in the event and breaks the roster counters"
 summary = "telemetry.rs:279-288 sets attended for all event_missions of the event, not the one played, and only when match.event_id parses. Side effect: decorate_events and the dashboard count only registered and waitlisted, so a completed op's roster collapses to zero. Withdraw also stops promoting the waitlist once state is attended, and the withdrawn and no_show enum values are never written by anything."
+class = "feature"
 status = "shipped"
 order = 2480
 executor = "claude-code"
+estimated = ["scope"]
 owns = [
     "apps/website/api/src/handlers/telemetry.rs",
     "apps/website/api/tests/telemetry.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -47,14 +47,18 @@ pointer is wrong, and upsert_match is idempotent on source_match_id, so a correc
 row. Weighed against today's behaviour (200, row stored with a dangling event_id, attendance then
 silently never marked) that is the better failure -- but it changes what the game-server bridge sees
 and should be announced, not slipped in."""
+class = "chore"
 status = "shipped"
 order = 3440
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = [
     "apps/website/api/migrations",
     "apps/website/api/seeds/content_golden.sql",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

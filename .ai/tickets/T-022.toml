@@ -2,9 +2,13 @@ id = "T-022"
 kind = "work"
 title = "Global Aegis consistency (batch 2)"
 summary = "Mono telemetry and token fixes across pages."
+class = "bug"
 status = "shipped"
 order = 220
 executor = "cursor-docs"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

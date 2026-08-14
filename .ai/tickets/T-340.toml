@@ -25,12 +25,16 @@ SWEPT ALL 44 value-decoding sites in the file against information_schema (27 que
 ENUMERATOR CLEARED, NOT TOLERATED, and verified in BOTH directions: with the fix and the tolerance entries pruned the static test passes; with COALESCE reverted and the tolerance still pruned it hard fails naming both columns. File then restored and sha256-verified byte-exact.
 
 T-307 is closed by this — it was the same defect, and thumbnail_url was a second instance nobody had reported."""
+class = "bug"
 status = "shipped"
 order = 3156
 executor = "claude-code"
 priority = 1
 shipped_at = "d223ae3b"
+estimated = ["scope"]
 owns = ["apps/website/api/src/handlers/events.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

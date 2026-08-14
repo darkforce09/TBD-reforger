@@ -2,14 +2,19 @@ id = "T-779"
 kind = "work"
 title = "set_loadout discards the acknowledgement T-770 added, so the history tail fires over writes that never happened"
 summary = "RESIDUE of T-770 (wave 140), verified by the orchestrator 2026-08-08. T-770's whole point was that `commit_writes` counted closure CALLS rather than sink acknowledgements, so its WARNING arm was unreachable. The core half landed: `MissionDocCore::update_slot_loadout` (crates/map-engine-core/src/doc/store.rs:2784) now returns `bool` and returns `false` when the slot id is not in the document. THE FRONTEND HALF DID NOT. `editor_ops::set_loadout` (apps/website/frontend/src/editor_ops.rs:2005) calls `core.update_slot_loadout(id, loadout_json);` and then hardcodes `true` as the value of `did`, discarding the acknowledgement entirely. CONSEQUENCES, both live: (1) `crate::mission_history::after_local_edit()` fires whenever the OPS_CTX and doc merely EXIST, so a set_loadout against a stale or deleted slot id still marks the mission dirty and mints an undo step over a document that did not change; (2) any receipt built on this path still cannot distinguish a real write from a no-op, which is precisely the defect T-770 was filed to close. FIX: return the mutator's bool out of the closure instead of `true`, so `did` means what its name says, and gate `after_local_edit()` on it. Then check the callers — `arsenal.rs:1253` is the live one — and decide whether a refused write should surface to the operator rather than passing silently. ACCEPTANCE: a test that calls set_loadout with an id that is NOT in the document and asserts no history entry is minted and the mission is not dirtied; perturb by restoring the hardcoded `true` and watch it go red. Note arsenal.rs carries source pins naming `pub fn set_loadout` and its tail line (arsenal.rs:6180, :6205, :4897) — update them honestly, do not delete them."
+class = "bug"
 status = "shipped"
 order = 4655
 executor = "claude-code"
 notes = "residue of T-770 (wave 140); core half shipped, frontend half did not"
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/editor_ops.rs",
     "apps/website/frontend/src/arsenal.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["ops_undo"]

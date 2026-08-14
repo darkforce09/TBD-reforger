@@ -2,6 +2,7 @@ id = "T-159.15.2"
 kind = "work"
 title = "T-159.15.2 — Mission Creator camera pan + pointer foundation"
 summary = "T-159.15.2 — Mission Creator camera pan + pointer foundation"
+class = "feature"
 status = "shipped"
 order = 1570
 spec = "docs/platform/t159_15_2_camera_pan.md"
@@ -9,6 +10,9 @@ executor = "claude-code"
 notes = "MMB/RMB pan + wheel rebase; smoke_pan_editor Class R. Verify: .ai/artifacts/t159_15_2_verify_log.md"
 parent = "T-159"
 shipped_at = "ebcabe1d"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

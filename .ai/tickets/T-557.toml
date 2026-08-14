@@ -28,14 +28,18 @@ can never disagree. T-534 pinned the current literals with a Class-R test
 (`t534_dev_login_prime_literals_still_match_handler`) that greps dev.rs for both the literals AND the
 `ON CONFLICT (discord_id) DO UPDATE` shape -- IT WILL GO RED when you change this, deliberately.
 Update it in the same commit rather than deleting it."""
+class = "bug"
 status = "shipped"
 order = 3410
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = [
     "apps/website/api/src/handlers/dev.rs",
     "apps/website/api/tests/common/mod.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

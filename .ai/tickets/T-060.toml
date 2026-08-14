@@ -2,10 +2,14 @@ id = "T-060"
 kind = "work"
 title = "Fast load and save at scale"
 summary = "256MB body limit, bulk sync load overlay, save progress UX."
+class = "feature"
 status = "shipped"
 order = 600
 spec = "docs/specs/Mission_Creator_Architecture/t060_fast_initial_load.md"
 executor = "claude-code"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

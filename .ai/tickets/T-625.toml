@@ -23,10 +23,12 @@ bucket) -- it did not create the sharing.
 **FIX:** wire `X-Forwarded-For` behind `Config::trusted_proxies`, which exists and is **read by
 nothing**. That is what makes per-IP mean per-client. T-578''s module header defers it explicitly
 rather than doing it silently."""
+class = "bug"
 status = "shipped"
 order = 3742
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "apps/website/api/src/middleware/ratelimit.rs",
     "apps/website/api/src/config.rs",
@@ -36,5 +38,8 @@ owns = [
     "apps/website/frontend/src/mortar.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["tools"]

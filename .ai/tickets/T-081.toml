@@ -2,9 +2,13 @@ id = "T-081"
 kind = "work"
 title = "Transform widget + snap grid"
 summary = "On-map transform gizmo and snap grid."
+class = "feature"
 status = "idea"
 executor = "claude-code"
 notes = "SUPERSEDED BY T-795 (2026-08-09 UX batch): widget keys renumbered to Eden's 1/2/3, gizmo render + interactive rotate ring land there; close this when T-795 ships"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

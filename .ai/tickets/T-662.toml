@@ -2,12 +2,17 @@ id = "T-662"
 kind = "work"
 title = "Free right-click and Backspace — the two input traps that gate the program"
 summary = """Two fixes in one ticket because they are the same file and two agents cannot share it (`apps/website/frontend/src/mission_editor.rs`). (1) RMB IS EATEN BY PAN. `onpointerdown` :1402 reads `if ev.button() == 1 || ev.button() == 2` — one branch pans on both MMB and RMB. Narrow it to `== 1`. `oncontextmenu` :1844-1847 is a three-line closure whose entire body is `ev.prevent_default()`; the comment at :1392-1394 records that it was blanket-suppressed "so an RMB-drag isn't interrupted", which is exactly the reason that dies with the first change. This is what unblocks T-664 (context menu) and the six tickets behind it. (2) BACKSPACE IS ALIASED TO DELETE at :1027-1029 (`"Delete" | "Backspace" if !modk =>`); Eden binds Backspace to hide-the-whole-interface. Drop the alias and bind hide-chrome in the same keydown — the chrome mounts are all siblings in this file (:2060-2110), so a `chrome_hidden` signal gates them here. DELIBERATELY OUT OF SCOPE, recorded not dropped: `Ctrl+F` focuses asset search (owns_parity.md §5.4 item 4). It carries no interactions.md id and as its own row it would be the 18th mission_editor.rs claimant and cost a whole wave; if the operator wants it, this ticket is its cheapest home and it adds `apps/website/frontend/src/eden_dock_right.rs` to owns."""
+class = "bug"
 status = "shipped"
 order = 3810
 executor = "claude-code"
 notes = "editor-UI program wave 1 (wave_plan.tsv row 101) — SHIPPED wave 101 (editor factory), merge 421eae91; verifier wave101.md"
 depends_on = ["T-661"]
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/mission_editor.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["map_canvas"]

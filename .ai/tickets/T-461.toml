@@ -10,6 +10,7 @@ Repro T-438: keep good path in comment/dry-run; set live -f apps/website/api/doc
 Repro T-448: zero→em-dash conditional → dossier Class-R PASS; fake SELECT 0::bigint → check green.
 
 Cure: strip comments; require good compose path on both dry-run and live lines; reject apps/website/api/docker-compose.staging.yml; wire verify into slice/Makefile if natural. Forbid em-dash near Deployments / require exact single bind; pin/IT that roster total_deployments equals seeded users.total_deployments."""
+class = "chore"
 status = "shipped"
 order = 3300
 executor = "claude-code"
@@ -21,5 +22,6 @@ owns = [
     "apps/website/api/src/handlers/admin.rs",
 ]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

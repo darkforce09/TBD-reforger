@@ -2,11 +2,14 @@ id = "T-181.25"
 kind = "work"
 title = "T-181.25"
 summary = "T-181.25"
+class = "feature"
 status = "shipped"
 order = 1810
 executor = "human"
 notes = "OPERATOR RAN THE WORKBENCH PASS — AND IT FALSIFIED THE THEORY THE PASS EXISTED TO SATISFY. The rdb rewrote (8,791 bytes), chimeraMenus.conf registered, its .meta GUID matched the reference, and all five menu presets STILL failed. So the rdb was never the blocker for the screens. Real cause found from the operator's log: vanilla's ArmaReforger.gproj carries an explicit MenuConfigs list and our addon.gproj had EMPTY GameProjectConfig blocks, so the config was a registered resource MenuManager never read. Fixed in addon.gproj; menu preset errors 5 -> 0, verified headlessly. Two sub-facts measured while fixing: MenuManagerSettings is a DIRECT CHILD of GameProjectConfig (nesting it in DefaultSettings gives 'Unknown keyword/data'), and a mod's MenuConfigs REPLACES vanilla's list rather than extending it — listing only ours broke every vanilla menu, 5 errors -> 59, which is what proved the config was finally being read. STILL OPEN from the same sitting: (a) 10 action .conf files under Configs/System/Actions/ have no .meta sidecar so they are 'resource not registered: Setting null GUID' — that is the spectator/admin KEYBINDS, separate from the screens; (b) RadioManagerEntity is still absent from the world, so radio tuning stays unavailable; (c) the operator's LIVE mission is REJECTED by T-181.37's new check — declares faction_eliminated with only blufor holding slots, opfor declared with zero. The runtime-coexistence question for the now-SIX modded SCR_PlayerController blocks remains unsettled and moves to T-181.16, since it needs real clients rather than a Workbench pass. || CONFIRMED INDEPENDENTLY IN WORKBENCH: the operator's second Workbench log (19:02) contains ZERO 'Menu preset ... not found' lines, where the 18:49 log had five. So the addon.gproj MenuConfigs fix works on the GUI path too, not just the headless server. Still unobserved: whether the screens RENDER — preset resolution is necessary, not sufficient."
 parent = "T-181"
+estimated = ["scope"]
 
-[scope.mod]
-layers = ["feature"]
+[scope]
+domain = "mod"
+layer = "scripts"

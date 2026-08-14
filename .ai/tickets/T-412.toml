@@ -8,14 +8,18 @@ Two product-side scaling defects found by T-399's agent during the ratchet sweep
 2. handlers/servers.rs:99 (list_servers) -- no LIMIT, so misc_integration.rs:333's .find(id) is safe, but it calls server_intel() IN A LOOP, one round trip per row, over a monotonically growing table. MEASURED 63 rows. Runtime creep rather than a correctness fault, flagged because it degrades on the same curve as everything else in T-410.
 
 Note the asymmetry with T-410: those are tests that will fail. These are endpoints that will silently under-serve and never fail anything."""
+class = "bug"
 status = "shipped"
 order = 3233
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = [
     "apps/website/api/src/handlers/events.rs",
     "apps/website/api/src/handlers/servers.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

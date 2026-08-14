@@ -2,6 +2,7 @@ id = "T-151.7.1"
 kind = "work"
 title = "T-151.7.1 — interaction hotfix (selection tint / drag FPS / zoom-at-cursor)"
 summary = "T-151.7.1 — interaction hotfix (selection tint / drag FPS / zoom-at-cursor)"
+class = "feature"
 status = "shipped"
 order = 1500
 spec = "docs/specs/Mission_Creator_Architecture/t151_7_1_interaction_hotfix.md"
@@ -9,5 +10,6 @@ executor = "claude-code"
 parent = "T-151"
 shipped_at = "fa6ad959"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

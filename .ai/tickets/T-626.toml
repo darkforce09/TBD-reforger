@@ -22,10 +22,14 @@ forms -- **the equivalence claim is untested precisely where it is false.**
 
 Pathological edge, recorded: a >~309-digit grid string matches the regex but overflows
 `::double precision`, which would abort the migration. No realistic row has that shape."""
+class = "chore"
 status = "shipped"
 order = 3752
 executor = "claude-code"
 priority = 3
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

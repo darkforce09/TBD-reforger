@@ -2,10 +2,12 @@ id = "T-252"
 kind = "work"
 title = "Stale docs that would break a real deploy"
 summary = "CANCELLED — merged into T-187. Both edit scripts/mod/setup-server-profile.sh: :38 copies a golden that does not exist, :31 reads GAME_SERVER_TOKENS while the code reads SERVICE_TOKEN. One file, one agent."
+class = "docs"
 status = "cancelled"
 order = 2700
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

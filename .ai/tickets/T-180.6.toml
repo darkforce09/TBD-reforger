@@ -2,6 +2,7 @@ id = "T-180.6"
 kind = "work"
 title = "T-180.6 — Place / refile ↔ ORBAT live sync"
 summary = "T-180.6 — Place / refile ↔ ORBAT live sync"
+class = "feature"
 status = "shipped"
 order = 1760
 spec = "docs/specs/Mission_Creator_Architecture/t180_6_place_orbat_sync.md"
@@ -9,6 +10,9 @@ executor = "claude-code"
 notes = "Tag T-180.6. refile_slot→move_slot_to_squad; OrbatManager pointer-refile; SL badge; F1–F5. Verify: .ai/artifacts/t180_6_verify_log.md. Manual M-F1 operator-pending."
 parent = "T-180"
 shipped_at = "056c9a1a"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

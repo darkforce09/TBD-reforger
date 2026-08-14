@@ -7,11 +7,15 @@ FOUND by W51 adversarial verifier (CLEAN MINOR-NIT) after T-383.
 T-383 fixed `--in-place`. Non-`--in-place` stdout flatten still drops loadout/uid and force-stamps schemaVersion 1.1. Cure: same preserve/refuse rules on stdout path, or document stdout as lossy preview only with a loud warning + Class-R pin.
 
 Repro: run flatten-orbat-slots without --in-place on a golden with loadout/uid."""
+class = "bug"
 status = "shipped"
 order = 3378
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = ["xtask/src/schema_gates.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

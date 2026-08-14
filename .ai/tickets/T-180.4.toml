@@ -2,6 +2,7 @@ id = "T-180.4"
 kind = "work"
 title = "T-180.4 — Map squad leader lines (absorbs T-147)"
 summary = "T-180.4 — Map squad leader lines (absorbs T-147)"
+class = "feature"
 status = "shipped"
 order = 1760
 spec = "docs/specs/Mission_Creator_Architecture/t180_4_squad_leader_lines.md"
@@ -9,6 +10,9 @@ executor = "claude-code"
 notes = "Tag T-180.4. squad_links.rs D1–D6; LaneRole::SquadLinks=9; wire dirty upload. Verify: .ai/artifacts/t180_4_verify_log.md. Manual M-D1 operator-pending."
 parent = "T-180"
 shipped_at = "63e7ef00"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

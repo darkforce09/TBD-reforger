@@ -2,6 +2,7 @@ id = "T-151.5"
 kind = "work"
 title = "T-151.5 — glyph atlas + LOD gates: trees, props, badges (W5)"
 summary = "T-151.5 — glyph atlas + LOD gates: trees, props, badges (W5)"
+class = "chore"
 status = "shipped"
 order = 1500
 spec = "docs/specs/Mission_Creator_Architecture/t151_5_glyph_atlas.md"
@@ -9,5 +10,6 @@ executor = "claude-code"
 parent = "T-151"
 shipped_at = "0b7621ed"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

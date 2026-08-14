@@ -9,9 +9,13 @@ Recording a bug is most of its value; fixing it now is optional. The audits that
 This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
 
 CANCELLED — DELIVERED BY T-389, which shipped the RETURNED badge, the reason text on the author's own card and dossier, and a working resubmit that clears the stamp. Verified in a browser end to end. Nothing left in this ticket's ask."""
+class = "bug"
 status = "cancelled"
 order = 2313
 executor = "claude-code"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

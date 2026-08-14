@@ -15,14 +15,18 @@ Field-level gaps in the same family, all confirmed:
 THE FIX IS FIXTURE CAPTURE, NOT MORE TEST CODE: recapture the event golden from an event whose missions actually carry armory rows, and the mission goldens from rows that populate the fields under test. T-359's warning applies directly — a golden captured from a row that does not populate a field proves nothing about that field in either direction, so capturing must be deliberate about WHICH row, not just which endpoint.
 
 Note the honest limit of T-394's own fix while you are here: its module header slightly oversells, in that the structural check covers types the goldens instantiate and says nothing about types they do not. This ticket is that gap."""
+class = "bug"
 status = "shipped"
 order = 3219
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/dto.rs",
     "apps/website/frontend/tests/fixtures/api/GET__events__c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7.json",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

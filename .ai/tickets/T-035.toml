@@ -2,9 +2,13 @@ id = "T-035"
 kind = "work"
 title = "Eden docked shell"
 summary = "Chromeless route, docked sidebars, always-on asset palette."
+class = "feature"
 status = "shipped"
 order = 350
 executor = "claude-code"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

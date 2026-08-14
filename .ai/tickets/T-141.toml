@@ -2,10 +2,14 @@ id = "T-141"
 kind = "work"
 title = "Procedural slot naming"
 summary = "Adjective/nickname word packs for auto slot display names; manual override wins. After T-071 ORBAT numbering."
+class = "feature"
 status = "idea"
 spec = "docs/platform/tbd_north_star_backlog.md"
 executor = "claude-code"
 depends_on = ["T-071"]
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

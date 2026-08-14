@@ -2,11 +2,16 @@ id = "T-188"
 kind = "work"
 title = "ORBAT Manager slots spawn at world origin with no character"
 summary = "orbat_add_slot (editor_ops.rs:1189-1191) passes None, None, 0.0, 0.0, 0.0, 0.0 — every ORBAT-Manager slot lands at (0,0) with no character, while orbat_add_vehicle:1386 correctly uses squad_anchor_xy. No UI anywhere sets a character after placement."
+class = "feature"
 status = "shipped"
 order = 2060
 executor = "claude-code"
 shipped_at = "6c822f87"
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/editor_ops.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["ops_undo"]

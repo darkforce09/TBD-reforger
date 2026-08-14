@@ -2,11 +2,14 @@ id = "T-889"
 kind = "work"
 title = "T-853 port: unattended-run preflight assertions"
 summary = "T-853 shell->xtask slice. Port scripts/platform/preflight.sh to `cargo xtask platform preflight` and delete the script(s), their scripts/shell-inventory.txt line(s), any scripts/python-inventory.txt line(s), and repoint every caller. 197 lines, 1 python3 site. Mostly assertions before a factory run. `hostrun cargo` calls in it are now obsolete - build-essential is in the container. ACCEPTANCE IS BYTE-FOR-BYTE: capture bash stdout+stderr+rc first, then diff on a clean tree AND on >=2 deliberately broken trees; the harness must assert the BASH side went red before believing a diff. A green run alone is not evidence (T-556). Build on crates/tbd-gate. Spec: docs/platform/t853_shell_to_xtask_waves.md"
+class = "docs"
 status = "shipped"
 order = 5700
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+estimated = ["scope"]
 owns = ["scripts/platform/preflight.sh"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

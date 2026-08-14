@@ -2,14 +2,19 @@ id = "T-736"
 kind = "work"
 title = "Two wave-112 pins do not constrain what they claim (spelling blacklist; tail-in-loop blind)"
 summary = """Two MINORs from the wave-112 verifier, same class — a pin whose assertion is weaker than its message. (1) arsenal.rs:4732: the strengthened one-commit pin blacklists the literal spellings ["for ", "while ", "for_each", ".iter()"], so `.into_iter().map(|p| persist1(p)).count()`, a bare `loop {}`, or recursion all pass with one textual persist( — note `.into_iter()` does not contain `.iter()`. This pin already has history: its FIRST version went green under the N-step perturbation and had to be strengthened once. (2) mission_editor.rs:8007-8011: T-649's one-tail pin asserts matches("after_local_edit()").count() == 1, which counts 1 whether the tail is inside the loop or outside it. Live code is CORRECT in both cases (apply_import is three signal writes + one persist -> set_loadout -> one after_local_edit at editor_ops.rs:1745; the _multi fns put the tail outside the loop at editor_ops.rs:1210-1217), so nothing is broken — but neither pin would catch the regression it exists to catch. Diagnosis: editor_verify/wave112.md MINOR-1, MINOR-2."""
+class = "bug"
 status = "shipped"
 order = 4612
 executor = "claude-code"
 notes = "filed by wave-112 adversarial verifier (editor factory)"
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/arsenal.rs",
     "apps/website/frontend/src/mission_editor.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["map_canvas"]

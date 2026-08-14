@@ -2,6 +2,7 @@ id = "T-151.1"
 kind = "work"
 title = "T-151.1 — basemap lane: TBDS satellite, hillshade, grid, pyramid fallback"
 summary = "T-151.1 — basemap lane: TBDS satellite, hillshade, grid, pyramid fallback"
+class = "feature"
 status = "shipped"
 order = 1500
 spec = "docs/specs/Mission_Creator_Architecture/t151_1_basemap_lane.md"
@@ -9,5 +10,6 @@ executor = "claude-code"
 parent = "T-151"
 shipped_at = "3ab81587"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

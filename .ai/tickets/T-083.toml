@@ -2,9 +2,13 @@ id = "T-083"
 kind = "work"
 title = "Top menu bar"
 summary = "Eden-style top menu bar with file/edit/view stubs."
+class = "feature"
 status = "deferred"
 order = 830
 executor = "claude-code"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

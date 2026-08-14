@@ -2,6 +2,7 @@ id = "T-180.7"
 kind = "work"
 title = "T-180.7 — Stitch ORBAT Manager UI (visual + live graph)"
 summary = "T-180.7 — Stitch ORBAT Manager UI (visual + live graph)"
+class = "feature"
 status = "shipped"
 order = 1760
 spec = "docs/specs/Mission_Creator_Architecture/t180_7_orbat_manager_ui.md"
@@ -9,6 +10,9 @@ executor = "claude-code"
 notes = "Tag T-180.7. orbat_manager.rs Stitch shell; format_slot_line; live mutators; OPEN ARSENAL→open_attributes; template/vehicle shell. Verify: .ai/artifacts/t180_7_verify_log.md. Manual M-G1..M-G4 operator-pending."
 parent = "T-180"
 shipped_at = "e9c2406d"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

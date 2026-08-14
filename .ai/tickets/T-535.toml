@@ -7,11 +7,15 @@ FOUND by W50 adversarial verifier (MAJOR) after T-385.
 T-385 ships LEFT JOIN matches.terrain and Class-R/golden pins, but the only live IT path asserts terrain is null on create. A regression that always returns None (broken join / wrong column) stays green. Cure: seed a match with terrain + point server_statuses.current_match_id at it, then GET /servers and assert the row's terrain equals the seeded value (e.g. everon).
 
 Repro: delete LEFT JOIN from SERVER_STATUS_SELECT_* → golden/source pins may still pass if not re-run; HTTP create-null IT still passes. Need positive IT RED on join removal."""
+class = "bug"
 status = "shipped"
 order = 3375
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = ["apps/website/api/tests/misc_integration.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

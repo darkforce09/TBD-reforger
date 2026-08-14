@@ -2,9 +2,12 @@ id = "T-115"
 kind = "work"
 title = "Capture win condition"
 summary = "SHIPPED (closed 2026-07-26 by audit). Delivered by T-181.39: TBD_ObjectiveRegistry.c (956 lines) implements capture/destroy/hold-until with end triggers wired through TBD_ObjectivesComponent.c:761 -> EvaluateEndTriggers -> SetStage(END)."
+class = "audit"
 status = "shipped"
 order = 1150
 executor = "workbench"
+estimated = ["scope"]
 
-[scope.mod]
-layers = ["feature"]
+[scope]
+domain = "mod"
+layer = "scripts"

@@ -2,11 +2,14 @@ id = "T-090.10"
 kind = "work"
 title = "T-090.10 — Map Engine v2 (A3-aligned render spine)"
 summary = "T-090.10 — Map Engine v2 (A3-aligned render spine)"
+class = "feature"
 status = "shipped"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_10_map_engine_v2.md"
 executor = "cursor-docs"
 parent = "T-090"
+estimated = ["scope"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

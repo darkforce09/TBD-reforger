@@ -2,6 +2,7 @@ id = "T-134"
 kind = "work"
 title = "In-game marker system (mod)"
 summary = "SHIPPED (closed 2026-07-26 by audit). Delivered by T-181.19: five-file replicated marker pipeline (TBD_MarkerData/Icons/Client/Component/Controller.c), side-scoped, capped at 64."
+class = "audit"
 status = "shipped"
 order = 1500
 spec = "docs/platform/tbd_north_star_backlog.md"
@@ -12,5 +13,6 @@ depends_on = [
     "T-092",
 ]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

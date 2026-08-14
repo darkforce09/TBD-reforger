@@ -2,12 +2,16 @@ id = "T-090.1.2.6"
 kind = "work"
 title = "T-090.1.2.6 — Satellite + hillshade blend control"
 summary = "T-090.1.2.6 — Satellite + hillshade blend control"
+class = "feature"
 status = "shipped"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_1_2_6_hillshade_blend_control.md"
 executor = "claude-code"
 parent = "T-090"
 shipped_at = "b958e3b4"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

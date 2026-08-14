@@ -7,15 +7,19 @@ Residual from T-263 / wave 12 adversarial MINOR. make seed now applies vehicle_d
 Repro: make db-up + make seed on empty DB; curl GET /api/v1/wiki → data:[]; vehicles have rows.
 
 Cure: extract wiki INSERT seed (or include content_golden wiki section) into seeds/ + Makefile seed line, same shape as vehicle_database.sql."""
+class = "feature"
 status = "shipped"
 order = 3283
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "Makefile",
     "apps/website/api/seeds",
     "scripts/mod/verify-t444-wiki-seed.sh",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

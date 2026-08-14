@@ -2,6 +2,7 @@ id = "T-275"
 kind = "work"
 title = "Declare mod-enforced limits in the schema"
 summary = "The mod clamps values the schema is silent about: MAX_NETS=32 (TBD_RadioPlan.c:91), MAX_LABEL_CHARS=48 (:94), MAX_GRACE_SECONDS=3600 (TBD_ZoneRegistry.c:52), MAX_DURATION_SECONDS=21600 (TBD_ObjectiveRegistry.c:60), MISSION_FILE_MAX_BYTES=8MB. A document can validate and still be silently clamped."
+class = "feature"
 status = "shipped"
 order = 2930
 executor = "claude-code"
@@ -14,5 +15,6 @@ owns = [
     "packages/tbd-schema/schema/mission.schema.json",
 ]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

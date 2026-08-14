@@ -2,6 +2,7 @@ id = "T-259"
 kind = "work"
 title = "The mod has no reader for the settings block"
 summary = "mission.schema.json:451-462 defines respawn, spectatorPolicy and nightVision. TBD_MissionDocumentStruct has no settings member and flatten has no settings field. The block appears only in the schema, the four hand-written goldens and one doc."
+class = "docs"
 status = "shipped"
 order = 2770
 executor = "claude-code"
@@ -12,5 +13,6 @@ owns = [
     "crates/map-engine-core/src/mission/compile.rs",
 ]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

@@ -7,15 +7,18 @@ Residual from T-297 / wave 18 adversarial MINOR. Local `make rust-fmt` now runs 
 Repro: format-break tools/tbd-tools/src/lib.rs; local rust-fmt RED; push and watch CI rust-backend still GREEN if only api fmt runs.
 
 Cure: root/workspace fmt step in ci.yml (or drop working-directory for fmt); refresh wave.sh comment."""
+class = "chore"
 status = "shipped"
 order = 3292
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     ".github/workflows/ci.yml",
     "scripts/platform/wave.sh",
     "Makefile",
 ]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

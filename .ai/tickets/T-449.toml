@@ -9,15 +9,19 @@ Repro: break schema.json required fields; ./scripts/ticket check still OK; pytho
 Cure: load Draft 2020-12 schema in ticket check (or make verify-ticket-schema target + wave gate step).
 
 CANCELLED 2026-07-27: duplicate of T-237 (promoted wave 16)."""
+class = "chore"
 status = "cancelled"
 order = 3288
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "xtask/src/check.rs",
     ".ai/tickets/schema.json",
     "scripts/ticket",
 ]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "check"

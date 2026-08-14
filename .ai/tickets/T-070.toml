@@ -2,9 +2,13 @@ id = "T-070"
 kind = "work"
 title = "Vehicles placeable"
 summary = "Drag vehicles from palette onto map with crew hooks."
+class = "feature"
 status = "idea"
 executor = "claude-code"
 depends_on = ["T-068"]
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

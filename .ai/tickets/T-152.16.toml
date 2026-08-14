@@ -2,6 +2,7 @@ id = "T-152.16"
 kind = "work"
 title = "T-152.16 — Height markers visible + credible"
 summary = "T-152.16 — Height markers visible + credible"
+class = "feature"
 status = "shipped"
 order = 1520
 spec = "docs/specs/Mission_Creator_Architecture/t152_16_height_markers_visible.md"
@@ -9,5 +10,6 @@ executor = "claude-code"
 notes = "Shipped @ 2a1c96e5 (tag T-152.16). 26-row sidecar (23 named + 3 DEM), band [−2,+3], 80 m floor; G6 fresh contour waiver. Verify t152_16_verify_log.md; M1/M2 browser pending."
 parent = "T-152"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

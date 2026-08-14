@@ -2,15 +2,24 @@ id = "T-825"
 kind = "work"
 title = "PROGRAM: everything placed is an outliner citizen; all editing is Attributes; the right dock only places"
 summary = "OPERATOR DESIGN DIRECTION (recorded 2026-08-10, from the wave-202/203 eye-passes; to be SCOPED IN AN OPERATOR-DRIVEN DESIGN SESSION after the band + wave 210 — do NOT dispatch from this summary). The unifying rule behind T-818/T-819 and the zone observations: every authored object on the map (slot, vehicle, zone, trigger, marker, comment, composition instance) is an ASSET that (a) lives as a first-class row in the LEFT outliner's layer tree — filed into any layer/folder like slots are, draggable between layers, not in kind-specific footers or dock strips; (b) EDITS via its double-click Attributes modal with kind-specific content; (c) the RIGHT dock exists only to place new things (catalog, search, favourites, history). Known deltas today: vehicles sit in a hardcoded PLACED VEHICLES outliner footer (W203 fold — superseded by this rule); zones are managed and edited in the right dock's Zones tab; markers edit via dock lanes; the operator also reports the layer tree itself 'feels disjointed' — capture specifics in the design session. SESSION INPUTS the orchestrator prepares: a decision matrix of every authored-object kind x where it lists x how it edits x what the compile/selection/undo semantics are, with Eden's answer per row. Out of scope until scoped: nothing ships from this ticket without the session's decisions filed as per-kind tickets. ⟡ ADDED 2026-08-10 (wave-204 eye-pass): MARKERS are the third confirmed instance — placed markers list in the right dock's Markers tab with an inline editor (Type/Text/Position/Delete); under the rule they list in the left outliner and edit via marker Attributes (T-763 lineage)."
+class = "chore"
 status = "queued"
 order = 5070
 executor = "claude-code"
 notes = "the post-band hyper-focus program; T-818/T-819 (wave 210) are its first two instances and proceed as filed | operator restated the rule a THIRD time at the wave-205 eye-pass (markers un-clickable on map); T-838 extracts the marker half as actionable"
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/outliner.rs",
     "apps/website/frontend/src/eden_dock_right.rs",
     "apps/website/frontend/src/attributes.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = [
+    "outliner",
+    "dock_right",
+    "attr_panel",
+]

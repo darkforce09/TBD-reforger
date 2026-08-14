@@ -2,11 +2,13 @@ id = "T-160"
 kind = "work"
 title = "wgpu GpuTimer readback err-path (unmap / in_flight)"
 summary = "Found during T-159.15.1: GpuTimer map_async err-path unmaps only on res.is_ok() but clears in_flight unconditionally — latent double-map when HUD/timer returns. Editor currently uses disable_frame_timing(). Fix in map-engine-render when re-enabling frame timing."
+class = "bug"
 status = "shipped"
 order = 1575
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 depends_on = ["T-159"]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

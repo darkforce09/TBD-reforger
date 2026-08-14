@@ -2,6 +2,7 @@ id = "T-090.4"
 kind = "work"
 title = "T-090.4 — Z placement audit (buried / floating objects)"
 summary = "T-090.4 — Z placement audit (buried / floating objects)"
+class = "audit"
 status = "ready"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_4_z_placement_audit.md"
@@ -12,10 +13,12 @@ acceptance = [
     "Each catalog instance gets demZ vs z with per-kind warn/fail thresholds.",
     "Missing z is warn; no auto-fix (geometry-aware pass is T-090.6).",
 ]
+estimated = ["scope"]
 owns = [
     "tools/tbd-tools/src/world",
     "packages/map-assets/everon/objects",
 ]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

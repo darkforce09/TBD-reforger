@@ -2,6 +2,7 @@ id = "T-128"
 kind = "work"
 title = "Fable audit — doc link repair + staging honesty"
 summary = "Shipped (tag T-128): P0 handoff/ticket link depths, STAGING-SERVER + MILESTONES + build-plan T-092 gate honesty (deploy smoke skip-guarded), apps/mod + apps/website README monorepo rewrite, orphan frontend/docs deleted, floor picker T-126→T-129 renumber, extended docs/** link sweep. Log: .ai/artifacts/t128_doc_link_repair_log.md. Spec: docs/platform/t128_doc_link_repair.md."
+class = "audit"
 status = "shipped"
 order = 1280
 spec = "docs/platform/t128_doc_link_repair.md"
@@ -9,5 +10,6 @@ executor = "cursor-docs"
 depends_on = ["T-127"]
 shipped_at = "T-128"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

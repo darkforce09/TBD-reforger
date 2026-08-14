@@ -19,12 +19,16 @@ TWO STRUCTURAL CARES: started_at binds m.started_at and NEVER the create path's 
 All six T-316 decisions re-verified individually on a live server, plus T-347's blank-dedupe test. 119/119. attendance_rate 0.00 -> 50.00; leaderboard_totals checked and correctly unaffected (it aggregates match_player_stats, not attendance).
 
 NEW CONSEQUENCE ITS OWN FIX CREATED, flagged not hidden: the re-point is now reachable, and the attendance UPDATE only ever SETS attended, never retracts. Re-pointing a match from EV1 to EV2 marks EV2 attended and LEAVES EV1 attended, inflating attendance_rate to 100%. There is no record of which match marked a registration, so the write is not currently reversible — a contract decision, filed as T-384."""
+class = "bug"
 status = "shipped"
 order = 3185
 executor = "claude-code"
 priority = 2
 shipped_at = "80120c1d"
+estimated = ["scope"]
 owns = ["apps/website/api/src/handlers/telemetry.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -46,11 +46,13 @@ the first command; the script tolerates omission, the runbook never says to omit
 And S3's "restart with it": run the new command before Ctrl-C'ing the old and `:273`'s `rm -f
 "$PIDFILE"` orphans the running group (the old instance then reads no pidfile and exits "server
 exited" while alive); the new boot dies on the port. No lock, fixed run dir."""
+class = "bug"
 status = "shipped"
 order = 3552
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 priority = 1
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

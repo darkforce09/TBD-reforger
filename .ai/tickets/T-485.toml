@@ -7,15 +7,19 @@ Wave 32 verifier NIT (T-476). Tripwire lives in verify-t468-ci-schema-parity.sh 
 Repro: recipe `verify-t438:\n\t@true` → make verify-t438 rc=0; bash verify-t468 → FAIL.
 
 Cure: add Makefile verify-t468 (or fold pin into ci-local + ci.yml) so hollow recipes fail without waiting for wave.sh gate.'''
+class = "chore"
 status = "shipped"
 order = 3324
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "Makefile",
     "scripts/mod/verify-t468-ci-schema-parity.sh",
     ".github/workflows/ci.yml",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

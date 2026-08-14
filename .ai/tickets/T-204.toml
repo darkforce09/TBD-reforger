@@ -9,11 +9,15 @@ Non-vacuity PROVEN empirically: the agent restored the hardcode and watched its 
 Deliberately emits DEFAULTS rather than omitting: `flow` declares no required properties so omission is legal, but it is NOT behaviour-preserving — absent `jip` parses to "" and PolicyFromString returns ALWAYS (TBD_FrameworkManager.c:185-194), holding the JIP door open all round, and absent `timeLimitSeconds` leaves ArmRoundClock unarmed AND trips a new CheckTimeLimitReachable warning that moves the boot gate off baseline.
 Authored 0 passes through (the only way to say 'no limit'); negative/wrong-typed reads as unauthored, mirroring read_flow_seconds exactly so dialog and compiler cannot disagree. environment stays a bare Value, so T-367's scan_editor_payload_types accept set is unchanged — a typed Option<i64> would have replayed the T-202 regression on payloads carrying 5400.0.
 Units are seconds at every rung with no conversion anywhere. Not proven: that a round actually ends at 2700s or a joiner is refused — world-boot has no players and never leaves LOADING. Needs executor: human."""
+class = "bug"
 status = "shipped"
 order = 2220
 executor = "claude-code"
 shipped_at = "2026-07-26"
+estimated = ["scope"]
 owns = ["crates/map-engine-core/src/mission/flatten.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

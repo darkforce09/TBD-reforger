@@ -2,6 +2,7 @@ id = "T-151.3"
 kind = "work"
 title = "T-151.3 — chunk residency + world spatial index + first world instances (W3)"
 summary = "T-151.3 — chunk residency + world spatial index + first world instances (W3)"
+class = "feature"
 status = "shipped"
 order = 1500
 spec = "docs/specs/Mission_Creator_Architecture/t151_3_world_residency.md"
@@ -9,5 +10,6 @@ executor = "claude-code"
 parent = "T-151"
 shipped_at = "32bf5ac5"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

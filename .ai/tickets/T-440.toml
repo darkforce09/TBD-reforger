@@ -9,10 +9,12 @@ Repro: remove `seeds/faction_library.sql` from Makefile seed recipe; `bash scrip
 Manual prove seed works: apply SQL on throwaway DB → 2 starter rows.
 
 Cure: gate tripwire (Makefile verify target + wave.sh step, or IT that asserts seed recipe + applies SQL on cold DB)."""
+class = "chore"
 status = "shipped"
 order = 3279
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "Makefile",
     "scripts/platform/wave.sh",
@@ -20,5 +22,7 @@ owns = [
     "scripts/mod/verify-t440-faction-library-seed.sh",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

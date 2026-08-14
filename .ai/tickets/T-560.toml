@@ -11,14 +11,18 @@ INSERT arma_id = $3 + comment COALESCE (no real UPDATE) → PASS; barrier probe 
 Product NULL+COALESCE path holds (0 race hits). Pin does not.
 
 Repro: keep ON CONFLICT (discord_id), stamp arma_id via bind $N in INSERT VALUES, replace live COALESCE UPDATE with a comment containing COALESCE(arma_id; Class-R green; concurrent cold dev-login 23505 again."""
+class = "feature"
 status = "shipped"
 order = 3413
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "apps/website/api/tests/common/mod.rs",
     "apps/website/api/src/handlers/dev.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

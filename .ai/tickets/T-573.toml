@@ -22,10 +22,12 @@ vehicle id to a lane row. Three edits:
 2. `apps/website/frontend/src/mission_history.rs:329,382` -- feed vehicle ids alongside `xy`.
 3. `apps/website/frontend/src/mission_editor.rs:1126-1134` -- delete the `is_vehicle_id` filter and
    pass the whole `ids` list to `set_drag`."""
+class = "chore"
 status = "shipped"
 order = 3426
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/mission_editor.rs",
     "crates/map-engine-render",
@@ -35,5 +37,12 @@ owns = [
     "apps/website/frontend/src/select_tool.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = [
+    "map_canvas",
+    "ops_undo",
+    "tools",
+]

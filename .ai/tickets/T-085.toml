@@ -2,9 +2,13 @@ id = "T-085"
 kind = "work"
 title = "Wiki markdown renderer"
 summary = "Render doctrine wiki pages from markdown at /wiki."
+class = "feature"
 status = "deferred"
 order = 850
 executor = "cursor-docs"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

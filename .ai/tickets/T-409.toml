@@ -23,11 +23,15 @@ F3 MINOR -- wave.sh:800-806 vs wave.sh:181. TBD_GATE_ALLOW_UNSERIALISED=1 works 
 NIT -- refuse_empty_range (PRE-EXISTING, not T-406) rejects `gate --slice` when a slice has working-tree changes but no commits, which contradicts the stated purpose of changed_rs's working-tree union.
 
 CONFIRMED NOT BROKEN, do not re-audit: docs-only, scripts/-only, .sql-only and Cargo.toml-only slices all hit the `[ -z "$files" ]` early return BEFORE the new checks and pass for the right reason -- verified on real commits 2c946d59, 9b154096 and 95c0265b. Renames are safe (the `R old -> new` pseudo-path costs one phantom 'listed'; the new path exists so checked >= 1).'''
+class = "audit"
 status = "shipped"
 order = 3230
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = ["scripts/platform/wave.sh"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

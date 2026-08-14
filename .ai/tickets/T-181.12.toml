@@ -2,11 +2,13 @@ id = "T-181.12"
 kind = "work"
 title = "T-181.12"
 summary = "T-181.12"
+class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
 notes = "Spectator @ 3845765e. Camera REIMPLEMENTED not derived, justified: SCR_ManualCamera's behaviour lives in a prefab (same rdb blocker for nothing), it is the editor camera, and it cannot follow. Reuses vanilla's ManualCameraContext actions so FREE FLIGHT WORKS BEFORE ANY WORKBENCH PASS. Faction-restricted by default: under one life half the server ends up spectating while still in squad voice, so unrestricted is a live intel feed, not a viewer. Client-side poll for enter/exit because 'am I spectating' is a client question — also covers reconnect-on-spent-life, which no death hook sees. HOOK NEEDED: spectator host entity for streaming (see T-181.24)."
 parent = "T-181"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

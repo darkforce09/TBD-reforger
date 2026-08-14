@@ -2,11 +2,15 @@ id = "T-526"
 kind = "work"
 title = "W46 hotfix: rustfmt mission_title_prefer.rs after T-522"
 summary = "Wave 46 cold gate FAIL fmt after T-522/523 merge. apps/website/frontend/src/mission_title_prefer.rs fails rustfmt --check (split chain wrapping in adopt_payload_wires_prefer_helper). Cure: rustfmt that file only. Owns: apps/website/frontend/src/mission_title_prefer.rs."
+class = "chore"
 status = "shipped"
 order = 3366
 executor = "claude-code"
 priority = 0
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/mission_title_prefer.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

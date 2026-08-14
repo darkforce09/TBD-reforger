@@ -2,6 +2,7 @@ id = "T-090.7"
 kind = "work"
 title = "T-090 — Eden AI world object schema (exact field contract)"
 summary = "T-090 — Eden AI world object schema (exact field contract)"
+class = "feature"
 status = "ready"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_eden_ai_world_object_schema.md"
@@ -12,10 +13,13 @@ acceptance = [
     "ResolvedWorldObject is the exact AI tool shape.",
     "Do not invent parallel field names in frontend AI code.",
 ]
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/world_assets",
     "packages/tbd-schema/schema/map-object-resolved.schema.json",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

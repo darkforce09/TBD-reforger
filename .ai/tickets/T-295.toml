@@ -2,10 +2,15 @@ id = "T-295"
 kind = "work"
 title = "Realtime collaborative editing"
 summary = "yrs is wired to IndexedDB only; apply_update has two callers. No websocket anywhere — axum is built without the ws feature and there is no yrs-sync or awareness dependency. The server has no optimistic concurrency: POST /versions is a bare INSERT and the only 409 means you reused a semver, not someone edited since you loaded."
+class = "feature"
 status = "idea"
 executor = "claude-code"
 depends_on = ["T-222"]
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/yrs_persist.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["doc_store"]

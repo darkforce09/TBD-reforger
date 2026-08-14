@@ -25,10 +25,12 @@ ALSO FROM T-285, same surface:
    is dto.rs; `SavedFire` is currently pinned only by T-285's captured-live-response test.
  - `dto::FireSolution` has no `Debug` derive, so `SaveResponse` cannot have one. Cosmetic.
  - field_tools.rs:106-112 documents a now-unreachable guard and says it is safe to delete."""
+class = "chore"
 status = "shipped"
 order = 3442
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "apps/website/api/src/services/mortar.rs",
     "apps/website/api/src/handlers/field_tools.rs",
@@ -36,5 +38,8 @@ owns = [
     "apps/website/frontend/src/mortar.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["tools"]

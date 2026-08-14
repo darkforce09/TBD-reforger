@@ -2,6 +2,7 @@ id = "T-159.17"
 kind = "work"
 title = "T-159.17 — yrsPersist (IDB) + warm editor session"
 summary = "T-159.17 — yrsPersist (IDB) + warm editor session"
+class = "feature"
 status = "shipped"
 order = 1570
 spec = "docs/platform/t159_17_yrs_persist.md"
@@ -9,6 +10,9 @@ executor = "claude-code"
 notes = "IDB tbd-mission-yrs + warm session; semantic digest Class R. Verify: .ai/artifacts/t159_17_verify_log.md. Edit-driven persist deferred until mutator hook (.18+)."
 parent = "T-159"
 shipped_at = "60c6e7ea"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

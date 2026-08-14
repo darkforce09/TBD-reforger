@@ -27,12 +27,17 @@ Browser-verified: the only session key is u18:000000000000000001|tbd-editor-sess
 IT DECLINED TO REMOVE THE 8 WRITE SITES, with a sequencing argument worth keeping: `purge_legacy_markers` is reachable ONLY via `mark_adopted`, so deleting those calls in the same release would STRAND the existing residue in users' localStorage permanently. Doing it safely means first moving the purge to a boot hook. Filed as T-370.
 
 PROCESS FAILURE ON MY SIDE, recorded because it nearly cost the work: I landed this agent's first two commits, dropped its worktree, and THEN resumed it. It found its own worktree and branch gone mid-session, its commits surviving only as unreferenced objects, and had to recreate the branch and restore the worktree itself before it could finish. It reported that rather than losing the work, which is the only reason it was noticed. `slice-worktree.sh drop` now REFUSES when the branch holds commits not on main (--force overrides), proven by probe."""
+class = "bug"
 status = "shipped"
 order = 3168
 executor = "claude-code"
 priority = 3
 shipped_at = "2f30b475"
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/editor_session.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["doc_store"]

@@ -19,12 +19,16 @@ KNOWN WEAPONS BIT-IDENTICAL: a 17-case table across all four tubes dumped with r
 THE TEST WAS REWRITTEN IN PLACE, not deleted: unknown_weapon_falls_back -> unknown_weapon_is_refused_not_substituted, with a doc comment recording that it PREVIOUSLY ASSERTED THE SUBSTITUTION AS INTENDED BEHAVIOUR. Four more added, including one pinning the 1300/1228 pair AND that their difference is 72 mils.
 
 T-349's guard live-verified on a real binary including the composite case — unknown AND out of range returns 400, not 422. Its weapon comparison is now UNREACHABLE (sol.weapon_system is always the requested weapon); left in place per brief with a note marking it safe to collapse later."""
+class = "bug"
 status = "shipped"
 order = 3181
 executor = "claude-code"
 priority = 1
 shipped_at = "c789ac0c"
+estimated = ["scope"]
 owns = ["apps/website/api/src/services/mortar.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

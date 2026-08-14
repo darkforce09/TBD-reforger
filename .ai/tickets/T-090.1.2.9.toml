@@ -2,11 +2,13 @@ id = "T-090.1.2.9"
 kind = "work"
 title = "T-090.1.2.9 — Satellite road stroke overlay (readability)"
 summary = "T-090.1.2.9 — Satellite road stroke overlay (readability)"
+class = "feature"
 status = "cancelled"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_1_2_9_satellite_road_overlay.md"
 executor = "claude-code"
 parent = "T-090"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

@@ -2,10 +2,14 @@ id = "T-222"
 kind = "work"
 title = "CLIENT_ID is hardcoded to 1 for every peer"
 summary = "store.rs:26. Sound only because no peer updates ever arrive. Any sync transport must fix this first or merges will corrupt documents. Hard blocker on realtime collaboration."
+class = "bug"
 status = "shipped"
 order = 2400
 executor = "claude-code"
+estimated = ["scope"]
 owns = ["crates/map-engine-core/src/doc/store.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

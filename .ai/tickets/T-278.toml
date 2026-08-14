@@ -2,10 +2,13 @@ id = "T-278"
 kind = "work"
 title = "No paks-to-registry pipeline and no Makefile target to regenerate the catalogue"
 summary = "Data comes out of the game via Enfusion Workbench plugins, then a human copies two files by hand into packages/tbd-schema/registry/ and commits them. make registry-import ingests the committed artifacts. A PakVfs reader exists and is used for terrain, satellite and roads, but nothing in the repo parses .et prefab structure."
+class = "feature"
 status = "shipped"
 order = 2960
 executor = "claude-code"
+estimated = ["scope"]
 owns = ["tools/tbd-tools/src/world"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

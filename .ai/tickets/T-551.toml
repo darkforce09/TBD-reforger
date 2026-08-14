@@ -9,14 +9,18 @@ ingest_event_roster loads cargo phys catalog and omits over-capacity missions fr
 Cure: IT that seeds an over-capacity tip and asserts roster omit / error path.
 
 Repro: rg flatten_to_mod_document_with_catalog apps/website/api/tests/events.rs — no hit."""
+class = "feature"
 status = "shipped"
 order = 3391
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "apps/website/api/tests/events.rs",
     "apps/website/api/src/handlers/events.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

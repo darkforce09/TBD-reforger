@@ -2,6 +2,7 @@ id = "T-151.8"
 kind = "work"
 title = "T-151.8 — culling + density ladder (W8)"
 summary = "T-151.8 — culling + density ladder (W8)"
+class = "feature"
 status = "shipped"
 order = 1500
 spec = "docs/specs/Mission_Creator_Architecture/t151_8_culling_density.md"
@@ -10,5 +11,6 @@ notes = "CPU draw-set + density ladder + damage skip. Compute cull completed in 
 parent = "T-151"
 shipped_at = "f4ffbfff"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

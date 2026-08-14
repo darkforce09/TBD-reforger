@@ -7,14 +7,18 @@ FOUND by W53 adversarial verifier (CLEAN MINOR-NIT) after T-384.
 ingest_match_results retracts prior event_mission attendance on re-point with a NOT EXISTS other-match guard. Coverage is Class-R source pin only; pin comment falsely cites an IT in tests/telemetry.rs. Cure: HTTP/IT that re-POSTs a match EV1→EV2 and asserts EV1 returns to registered while EV2 is attended.
 
 Repro: rg retract_from apps/website/api — no IT exercises the path."""
+class = "feature"
 status = "shipped"
 order = 3380
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "apps/website/api/tests/telemetry.rs",
     "apps/website/api/src/handlers/telemetry.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

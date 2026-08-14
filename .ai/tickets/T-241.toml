@@ -2,6 +2,7 @@ id = "T-241"
 kind = "work"
 title = "Declare zones[].rules properties in the schema"
 summary = "mission.schema.json:369-373 declares rules as an open object with zero properties, while the mod reads 16 named keys: graceSeconds, warnEverySeconds, penalty (TBD_MissionLoader.c:102-104) and 14 objective keys (TBD_ObjectiveRules.c:85-100). A typo validates clean and degrades silently at runtime."
+class = "feature"
 status = "shipped"
 order = 2590
 executor = "claude-code"
@@ -12,5 +13,6 @@ owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRules.c",
 ]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

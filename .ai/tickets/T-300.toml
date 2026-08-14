@@ -2,8 +2,11 @@ id = "T-300"
 kind = "work"
 title = "Shared CARGO_TARGET_DIR lets a main-checkout build serve unmerged slice code"
 summary = "Found by T-192's agent during wave 1. scripts/platform/wave.sh points every worktree at the main checkout's target/ — necessary, because a per-worktree target is ~44GB and eight of them exhaust 129GB free by the third slice. The sharp edge: cargo considered a binary built inside a worktree fresh for a build launched from the main checkout, so `make api` came up on :8080 serving UNMERGED slice code. The agent caught it, ran `cargo clean -p website-api`, and verified :8080 served main again. Risk during an 8-wide wave: any gate or smoke that RUNS a binary (rather than check/test/clippy, which recompile per fingerprint) can execute another slice's unmerged work and report a result about code that is not on main. Options: give run-only binaries a separate target dir, use sccache instead of a shared dir, or make the preflight assert the running API's build hash matches main. Do not simply revert to per-worktree targets — that trades a subtle bug for a certain disk exhaustion."
+class = "bug"
 status = "idea"
 executor = "claude-code"
+estimated = ["scope"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

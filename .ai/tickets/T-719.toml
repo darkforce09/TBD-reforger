@@ -2,10 +2,14 @@ id = "T-719"
 kind = "work"
 title = "Debug HUD: invisible under DockRight; AltGr chords spuriously toggle it"
 summary = "T-635 moved the HUD to right-3 bottom-3 with no z-index — that slot sits entirely inside DockRight's bottom-0 right-0 top-12 z-20 w-80 column, and DOCK_R is a full-height painted panel (bg/55 backdrop-blur-xl, eden_layout.rs:41): chrome up, the dock paints over it; chrome hidden, the HUD's own gate unmounts it — no reachable state renders it. The 4 source-inspection tests are DOM-nesting pins and structurally cannot see stacking. Also: Windows AltGr reports ctrl+alt, so AltGr+D (EU layouts) spuriously toggles outside inputs (the in_editable_field guard fully precedes the arm, so no in-field risk). Fix: give it a visible slot (left of the dock column / map-pane-anchored / z-30) + an e.getModifierState('AltGraph') exclusion. NOTE: T-636 (wave 105) re-lays the bottom band — if its layout gives the HUD a legitimate visible slot this ticket collapses to the AltGr line. Diagnosis: editor_verify/wave104.md MAJOR-1, MINOR-2. AMENDED wave 105: T-636 rehomed the HUD into the status bar, but wave105.md MAJOR-1 shows the bar's right section is itself occluded under DockRight — the visibility half of this ticket is SUPERSEDED BY T-721 (dock/bar z-order). What remains here is only the AltGr line: exclude e.getModifierState('AltGraph') from the Ctrl+Alt+D toggle."
+class = "bug"
 status = "deferred"
 order = 4312
 executor = "claude-code"
 notes = "filed by wave-104 adversarial verifier (editor factory)"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

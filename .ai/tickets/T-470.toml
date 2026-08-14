@@ -10,11 +10,15 @@ Residual from wave 26 adversarial MAJOR. Live Content list keeps Result, seeds o
 Repro: move list_seeded.set(true) before Ok arm → Class-R still green.
 
 Cure: order-sensitive / structural pins (seed only inside Ok arm AST or window); pin Retry reachable (not filtered out); RED→GREEN on verifier perturbations."""
+class = "feature"
 status = "shipped"
 order = 3309
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/content.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

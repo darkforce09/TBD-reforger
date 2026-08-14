@@ -2,9 +2,13 @@ id = "T-019"
 kind = "work"
 title = "R5 shared Sheet primitive"
 summary = "Mission dossier moved to shared Sheet component."
+class = "feature"
 status = "shipped"
 order = 190
 executor = "cursor-docs"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

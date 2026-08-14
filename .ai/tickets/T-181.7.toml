@@ -2,11 +2,13 @@ id = "T-181.7"
 kind = "work"
 title = "T-181.7"
 summary = "T-181.7"
+class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
 notes = "UI framework @ fb36da81. TBD_MenuStack/TBD_MenuBase/TBD_ShellScreen/TBD_ListBox + TBD_UITheme (Aegis tokens) + 2 .layout + chimeraMenus.conf. Listbox POOLS and re-binds rows (vanilla SCR_ListBoxComponent creates/destroys per item — wrong for 128 slots). BLOCKER: chimeraMenus.conf is invisible to the engine until Workbench regenerates resourceDatabase.rdb — 'GUI (E): Menu preset TBD_UIShell not found!'. Proven by elimination across 4 path/meta variants; no script escape hatch (RegisterPreset/OpenMenuByLayout do not exist). Needs one slow-lane Workbench pass. COMPILE-VERIFIED ONLY — no visual claim."
 parent = "T-181"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

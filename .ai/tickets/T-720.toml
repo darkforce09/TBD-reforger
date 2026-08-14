@@ -2,10 +2,14 @@ id = "T-720"
 kind = "work"
 title = "Layer-drag latch survives out-of-dock release; next + click silently reparents"
 summary = "T-666's PENDING_LAYER_DRAG arms on every row pointerdown but only in-dock surfaces clear it: release outside the dock (ordinary overshoot) leaves it armed; Esc has no handler; Backspace chrome-hide unmounts the dock latch-intact. The + button's pointerup bubbles to the header root-dropzone, so the next 'New layer' click first SILENTLY REPARENTS the stale folder to root, then creates. ORBAT's same idiom is modal-contained (dialog-level pointerup cancel, orbat_manager.rs:341); the dock mirror has no outer catcher. Fix: window-level pointerup/pointercancel catcher clears the latch; Esc cancels; visual drag affordance while armed. Regression test: arm, release outside, click + — assert NO reparent occurred. Diagnosis: editor_verify/wave104.md MAJOR-2."
+class = "bug"
 status = "deferred"
 order = 4313
 executor = "claude-code"
 notes = "filed by wave-104 adversarial verifier (editor factory)"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

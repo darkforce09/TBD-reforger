@@ -11,11 +11,15 @@ DELETE = is_active = false, decided on measurement: migration 0001 has ZERO fore
 VALIDATION found something worse than the ticket guessed: required_modpack_id has no FK, so an unknown id stored SILENTLY and the card just lost its modpack panel with nothing complaining. Now a 400. It also caught that `ip` is Postgres `inet`, so a hostname is SQLSTATE 22P02 -> a logged 500, and host('10.0.0.5/24') = 10.0.0.5 — a mask would be accepted then silently altered. Both rejected, and the value re-rendered from IpAddr so the echo matches what is stored. And it fixed a misleading message in its own code: a bad required_modpack_id answered 'name, ip and port are required' — three fields that were all present.
 
 128 passed, 0 skipped, three consecutive runs. It also worked around the dev-login landmine by minting tokens via state.jwt.issue_access rather than logging in, because DEV_USER_ID shares one users row for every role and rewrites its role — which was making a pre-existing test fail intermittently in the same binary."""
+class = "bug"
 status = "shipped"
 order = 2530
 executor = "claude-code"
 shipped_at = "b2a29e43"
+estimated = ["scope"]
 owns = ["apps/website/api/src/handlers/servers.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

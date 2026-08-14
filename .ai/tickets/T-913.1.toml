@@ -2,6 +2,7 @@ id = "T-913.1"
 kind = "work"
 title = "created_at and completed_at on the ticket file"
 summary = "Optional created_at/completed_at (RFC 3339 UTC) on ticket files; malformed is a parse error, never now. One deliberate commit adds ALLOWED_NEW = {created_at, completed_at}, widens schema.json + TicketFile + WorkTicket/ProgramTicket, and lands the writers: ticket add stamps created_at, ship/done/cancel stamp completed_at. No backfill."
+class = "feature"
 status = "shipped"
 order = 5930
 spec = "docs/platform/t913_ticket_run_metrics.md"
@@ -17,6 +18,7 @@ acceptance = [
 ]
 shipped_at = "b82949b7"
 completed_at = "2026-08-14T04:51:39Z"
+estimated = ["scope"]
 owns = [
     ".ai/tickets/schema.json",
     "crates/tbd-tickets",
@@ -24,5 +26,7 @@ owns = [
     "xtask/src/check.rs",
 ]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "check"

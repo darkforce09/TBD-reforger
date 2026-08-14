@@ -2,10 +2,14 @@ id = "T-270"
 kind = "work"
 title = "Wire the Server Control page — ten dead controls"
 summary = "server_control.rs is 312 lines with zero on: handlers, and selected is bound to MOCK_SERVERS[0] as a compile-time constant. Restart, Stop, Launch, four Quick Actions, the RCON input and send are all inert, and there is no Start control at all. The console renders a fabricated log including a fake RCON listener line."
+class = "feature"
 status = "shipped"
 order = 2880
 executor = "claude-code"
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/server_control.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

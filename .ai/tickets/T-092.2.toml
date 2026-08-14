@@ -2,6 +2,7 @@ id = "T-092.2"
 kind = "work"
 title = "T-092.2 — Mod compile flatten + /compiled API"
 summary = "T-092.2 — Mod compile flatten + /compiled API"
+class = "feature"
 status = "shipped"
 order = 920
 spec = "docs/specs/Mission_Creator_Architecture/t092_2_mod_compile_route.md"
@@ -9,5 +10,6 @@ executor = "claude-code"
 parent = "T-092"
 shipped_at = "a73224f2"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

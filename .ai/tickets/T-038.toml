@@ -2,9 +2,13 @@ id = "T-038"
 kind = "work"
 title = "Compiler and persistence"
 summary = "Mission compile/export, hydrate, Save Version POST flow."
+class = "feature"
 status = "shipped"
 order = 380
 executor = "claude-code"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

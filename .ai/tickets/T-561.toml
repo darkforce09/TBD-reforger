@@ -10,11 +10,15 @@ strip_rust_line_comments only drops // lines. Both wires → None plus:
 // decoy still RED (T-559 held).
 
 Repro: replace both opt(&row.briefing) with None; leave /* opt(&row.briefing) */ in adopt_payload and apply_row; cargo test hydrate_wires_row_briefing green."""
+class = "feature"
 status = "shipped"
 order = 3414
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/mission_title_prefer.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

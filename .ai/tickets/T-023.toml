@@ -2,9 +2,13 @@ id = "T-023"
 kind = "work"
 title = "Global Aegis consistency (batch 3)"
 summary = "Token sweep and SplitPane on remaining pages."
+class = "feature"
 status = "shipped"
 order = 230
 executor = "cursor-docs"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

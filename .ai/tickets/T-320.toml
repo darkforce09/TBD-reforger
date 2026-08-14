@@ -23,16 +23,20 @@ VERIFIED INDEPENDENTLY from the command center: `gate doctor: OK`, with `livenes
 AND IT PAID THE DEBT: T-221's persistence probe ran for real — `gate render-check --seed-auth --assert-js`, 30 assertions, PASS=true. Legacy record withheld-and-warned, adopt claimed 1, scoped keys present, restore/undoRestore round-tripped, second account saw none of it. Dist provenance checked: wasm md5 identical to the operator's live dist, so no stale cross-worktree artifact.
 
 OPERATOR NOTE: `rm -rf ~/.cache/fontconfig` fixes this outside the gate, but any fontconfig run inside the Debian container re-poisons it. The gate no longer depends on it either way."""
+class = "bug"
 status = "shipped"
 order = 3136
 executor = "claude-code"
 priority = 0
 shipped_at = "ccbcda8b"
+estimated = ["scope"]
 owns = [
     "tools/tbd-tools/src/doctor.rs",
     "tools/tbd-tools/src/smokes.rs",
     "docs/website/EDITOR_GATE_RUNBOOK.md",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

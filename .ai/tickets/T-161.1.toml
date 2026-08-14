@@ -2,12 +2,15 @@ id = "T-161.1"
 kind = "work"
 title = "T-161.1 — xtask scaffold + sync/check parity"
 summary = "T-161.1 — xtask scaffold + sync/check parity"
+class = "feature"
 status = "shipped"
 order = 1580
 spec = "docs/platform/t161_1_xtask_scaffold_sync.md"
 executor = "claude-code"
 notes = "xtask sync/check. Cursor Grok override. Verify t161_1_verify_log.md (executed by Cursor Grok 4.5 override)"
 parent = "T-161"
+estimated = ["scope"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

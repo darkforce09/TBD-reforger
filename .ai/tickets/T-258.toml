@@ -2,13 +2,17 @@ id = "T-258"
 kind = "work"
 title = "POST /versions is unaudited and does not bump updated_at"
 summary = "No trail of who saved what. The mission library orders by updated_at and the approvals queue reports it as submitted_at, so both show stale ordering. editor_notes is write-only — typed, POSTed, never read back, not even on the DTO."
+class = "feature"
 status = "shipped"
 order = 2760
 executor = "claude-code"
+estimated = ["scope"]
 owns = [
     "apps/website/api/src/handlers/missions.rs",
     "apps/website/api/tests/missions.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

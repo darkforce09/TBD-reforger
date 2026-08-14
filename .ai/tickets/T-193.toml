@@ -2,11 +2,13 @@ id = "T-193"
 kind = "work"
 title = "viewDistance and thermals are authored into a schema-forbidden field"
 summary = "eden_chrome.rs:1726-1741,1769-1784 write meta.environment.{viewDistance,thermals}, but mission.schema.json:138 sets environment.additionalProperties:false with only dateTime, weatherPreset and windDirDeg. Two working UI controls produce data no downstream surface can carry."
+class = "feature"
 status = "shipped"
 order = 2110
 executor = "claude-code"
 shipped_at = "b30f5490"
 owns = ["apps/website/frontend/src/eden_chrome.rs"]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

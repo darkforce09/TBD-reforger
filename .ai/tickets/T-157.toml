@@ -2,8 +2,12 @@ id = "T-157"
 kind = "work"
 title = "Mission Create visual overhaul"
 summary = "Visual map picker with thumbnails, modset selection, remove time/weather/max players from menu."
+class = "feature"
 status = "idea"
 executor = "cursor-docs"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

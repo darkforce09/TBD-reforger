@@ -10,15 +10,19 @@ Residual from wave 25 adversarial. Live T-447 behavior holds (SQL drafts+publish
 Repro: published-only SQL + bait comment → Class-R PASS; Effect docs.set(mock) → Class-R PASS.
 
 Cure: (A) IT POST draft then GET /cms/announcements must include it + public feed must not; non-admin GET → 401. (B) Harden Class-R: pin AdminUser on list handler; pin Effect docs.set(mapped) / filter_map(doc_from_announcement) chain so ignoring hydrate fails. RED→GREEN on verifier perturbations."""
+class = "docs"
 status = "shipped"
 order = 3304
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = [
     "apps/website/api/src/handlers/cms.rs",
     "apps/website/api/tests/",
     "apps/website/frontend/src/content.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

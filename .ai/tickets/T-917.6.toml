@@ -2,6 +2,7 @@ id = "T-917.6"
 kind = "work"
 title = "Ship gate ON + stamp-sha verb + plan ready-gate"
 summary = "The hard gate lands in check + ops::ship: shipped requires created_at/completed_at (RFC 3339 UTC) + shipped_at (SHA-shaped 7-40 hex) each measured or in estimated[], and tokens = receipt XOR estimate file. ticket stamp-sha <id> <sha> writes shipped_at canonically AND auto-generates the diff_loc estimate when no receipt exists — ship -> commit -> stamp-sha -> green. Plan ready-gate: plan key required on ready-class, file must exist on disk; the live ready tickets get plans written this slice. Strict prints honesty counters with per-source breakdown."
+class = "chore"
 status = "queued"
 order = 5976
 spec = "docs/platform/t917_ticket_schema_v2.md"
@@ -27,5 +28,6 @@ owns = [
     "docs/plans",
 ]
 
-[scope.repo]
-layers = ["tickets"]
+[scope]
+domain = "repo"
+layer = "tickets"

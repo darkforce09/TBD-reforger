@@ -2,11 +2,15 @@ id = "T-501"
 kind = "work"
 title = "Community-terrain soft-fail has no match-ingest HTTP IT"
 summary = "Wave 39 residual from T-402. parse_terrain_opt + unit Class-R pin unknown terrain → None. No IT proves POST match ingest with terrain kolguyev/anizay returns 200 and stores NULL terrain. Cure: apps/website/api/tests/telemetry.rs case on cold DB."
+class = "feature"
 status = "shipped"
 order = 3341
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = ["apps/website/api/tests/telemetry.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -7,14 +7,17 @@ Residual from wave 25 adversarial N3. T-434 aligned CI to make ci-local-schema, 
 Repro: change ci.yml schema step back to cargo run … schema validate only → CI green locally for enums hole until map-object-enums RED is noticed elsewhere.
 
 Cure: Class-R or verify script that ci.yml schema job invokes make ci-local-schema / full gate set."""
+class = "chore"
 status = "shipped"
 order = 3307
 executor = "claude-code"
 priority = 3
+estimated = ["scope"]
 owns = [
     ".github/workflows/ci.yml",
     "scripts/platform/wave.sh",
 ]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

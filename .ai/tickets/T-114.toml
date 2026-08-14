@@ -2,6 +2,7 @@ id = "T-114"
 kind = "work"
 title = "Slot roster enforcement + production slot picker"
 summary = "SHIPPED (closed 2026-07-26 by audit). Delivered by T-181: slot picker T-181.9.1 (56ad6d16, supersedes T-068.13), roster enforcement TBD_RosterLoader.c via T-181.51, identity-linked claims TBD_IdentityLink.c via T-181.35. Residual is runtime proof only = T-181.16 (executor: human)."
+class = "audit"
 status = "shipped"
 order = 1140
 executor = "workbench"
@@ -9,6 +10,8 @@ depends_on = [
     "T-068.13",
     "T-118",
 ]
+estimated = ["scope"]
 
-[scope.mod]
-layers = ["feature"]
+[scope]
+domain = "mod"
+layer = "scripts"

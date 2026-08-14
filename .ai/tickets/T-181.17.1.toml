@@ -2,11 +2,13 @@ id = "T-181.17.1"
 kind = "work"
 title = "T-181.17.1"
 summary = "T-181.17.1"
+class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
 notes = "World-boot gate. Closes the hole T-181.17 surfaced: nothing proved the components on TBD_GameMode.et instantiate, and the compile gate is blind to prefab wiring. Two engine landmines found and recorded — -config and -addons are MUTUALLY EXCLUSIVE (hard fatal), and -addons+-scenarioId with no -config prints 'Game successfully created' then idles without ever hosting, which is why the earlier harness 'proved' nothing. Working recipe: -addonsDir + -config with the addon in game.mods[] keyed by the addon.gproj GUID. Added TBD_FrameworkManager.PrintComponentRollCall() + scripts/mod/world-boot.sh, wired into wave.sh gate. ALL FIVE COMPONENTS VERIFIED PRESENT. HARDENED AFTER THE WAVE-4 VERIFIER BROKE IT: the roll-call alone passed a prefab containing TBD_ThisComponentDoesNotExist (it only checks names it was told about), so the gate now also greps the engine's own name-independent 'WORLD (E): Unknown class'; error attribution was classifying by MESSAGE TEXT and let six genuine TBD failures through (one differing only in the case of Scripts/Game/), so triage is now fail-closed with an explicit vanilla allowlist; Print(localVar) emits the DECLARATION not the value, so the selftest fixtures had never matched reality; added OnDelete to cancel four callqueue entries that survived an in-process scenario restart; ports randomised off the dev config so the gate no longer collides with the operator's server or a parallel run (proven with two concurrent boots). Selftest now pins 10 cases. NOT runtime evidence: the boot has no backend, so the stage machine never leaves LOADING."
 parent = "T-181"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

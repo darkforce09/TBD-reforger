@@ -2,10 +2,14 @@ id = "T-718"
 kind = "work"
 title = "Crew residue: scrub seats on slot removal; seat-picker honesty; undo-step and Alt comment falsities"
 summary = "T-076 residue, one ticket. (1) MAJOR: remove_slot/remove_slots scrub no crew seats — a deleted soldier's seat assignment dangles, persists through small_maps_json -> compile into SAVES, while the panel <select> shows '— empty —' (UI vacant, doc seated). Scrub crew maps in the removal ops (same tolerant-Any idiom as the wave-103 blocker fix) + regression test through remove. (2) Seat picker offers all placed slots but never flags 'seated elsewhere' — the eviction is expressible but invisible; add the flag text. (3) editor_ops.rs:1755 comment 'Same undo step as the place' is false — capture_timeout=0 makes unmanned place 3 undo steps (Ctrl+Z re-mans the vehicle); either group the transaction or fix the comment to the truth. (4) editor_ops.rs:141 '(or holds Alt)' describes an affordance that does not exist on the place path — implement (T-647 wave 106 owns Alt-empty-vehicle placement; coordinate, don't duplicate) or delete the clause. Diagnosis: editor_verify/wave103.md MAJOR-2, MINOR-1, MINOR-2, NOTE-4."
+class = "bug"
 status = "deferred"
 order = 4311
 executor = "claude-code"
 notes = "filed by wave-103 adversarial verifier (editor factory)"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

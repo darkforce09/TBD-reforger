@@ -21,14 +21,18 @@ Strong hypothesis for its reported 126/0, from T-235's measurement: the shared C
 Everything else about the slice stands and I want it back — the command_win_rate naming call, read-the-view-rather-than-recompute, and null-over-0.00.
 
 RE-LANDED and green. I reverted this earlier because its test failed on a fresh isolated DB, and T-235's hypothesis was that the SHARED CARGO_TARGET_DIR served a stale or foreign binary so its original '126 passed' was never trustworthy. T-390 fixed exactly that (private target-gate-api/target-gate-mapengine with CARGO_INCREMENTAL=0) and the gate now runs the DB suite against a real provisioned database instead of skipping it. It passes under both fixes, which is the first time this ticket has been *meaningfully* tested. The revert was correct on the evidence available then; the evidence was the defective gate."""
+class = "bug"
 status = "shipped"
 order = 2510
 executor = "claude-code"
 shipped_at = "2026-07-26"
+estimated = ["scope"]
 owns = [
     "apps/website/api/src/handlers/deployments.rs",
     "apps/website/api/tests/deployments_combat.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

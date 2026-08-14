@@ -2,10 +2,12 @@ id = "T-122"
 kind = "work"
 title = "Codebase audit hotfix (single bundle)"
 summary = "Shipped @ f131770 (tag T-122) — 37/41 audit findings; T1/T3/T8/T15 deferred. Spec: docs/platform/CODEBASE_AUDIT_2026.md."
+class = "audit"
 status = "shipped"
 order = 1220
 spec = "docs/platform/audit/t122_codebase_audit_hotfix.md"
 executor = "claude-code"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

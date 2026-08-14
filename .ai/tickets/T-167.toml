@@ -2,6 +2,7 @@ id = "T-167"
 kind = "work"
 title = "Leptos smart Arsenal port (paper-doll + compat Forge)"
 summary = "Port the shipped React Smart Arsenal (T-068.10.2–.10.8) into the Leptos Arsenal tab: compat-filtered optic/magazine rows off `GET /registry/compat` (T-150 edges live in DB: 1,880 items / 4,012 edges), clickable paper-doll (Mode D, t068_10_7/t068_10_8), weight/validation, Faction Manager pane. The Leptos tab is the dumb-dropdown tier only (fold documented at `apps/website-leptos/src/arsenal.rs:7-11`); `SlotLoadoutV2` persistence is already the same, so rows/panels add without doc changes. Specs: t068_10_smart_forge_ui.md, t068_10_3_forge_picker_ux.md, t068_10_6_arsenal_expanded_modal.md, t068_10_7_arsenal_paper_doll.md, t068_10_8_arsenal_ux_pass2.md."
+class = "docs"
 status = "shipped"
 order = 1640
 spec = ".ai/artifacts/missed_items_handoff.md"
@@ -9,6 +10,9 @@ executor = "claude-code"
 depends_on = ["T-159"]
 unblocks = ["T-068.11"]
 user_story = "As a mission maker I build loadouts with compat-aware pickers and a paper-doll, matching the pre-rewrite Arsenal."
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

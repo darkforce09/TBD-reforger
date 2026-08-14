@@ -38,14 +38,18 @@ green that a human reasonably trusted.
 
 Owner note: `Makefile` + the xtask verifier. T-610 owned neither and correctly reported instead of
 building."""
+class = "bug"
 status = "shipped"
 order = 3582
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "Makefile",
     "xtask/src",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

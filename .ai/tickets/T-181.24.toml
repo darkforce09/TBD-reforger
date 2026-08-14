@@ -2,12 +2,15 @@ id = "T-181.24"
 kind = "work"
 title = "T-181.24"
 summary = "T-181.24"
+class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
 notes = """Spectator streaming host. Gives a spent life an inert GenericEntity via SCR_PlayerController.SetPossessedEntity — POSSESSION, NOT A SPAWN: never enters the vanilla spawn pipeline, no SCR_ESpawnResult, no finalize, and no spawn ticket is issued so the CanHandleRequest_S/HandleRequest_S gate still refuses a client-forged RPC naming one. ONE LIFE proof is structural, not a promise: 'ChimeraCharacter c = host;' FAILS to compile with "Types 'TBD_SpectatorHostEntity' and 'ChimeraCharacter' are unrelated", and IsAcceptableHost refuses any candidate carrying DamageManagerComponent/CharacterControllerComponent before possession. A spent life is the PRECONDITION for a host, never a consequence. Safestart collision resolved without touching TBD_SafestartManager.c: the host has no damage manager, so ApplyTo/RestoreOne are provable no-ops on it. COMPILE-VERIFIED ONLY: the central hypothesis that a typename-spawned server-only entity is sufficient to steer streaming is unproven — no scripted streaming/AOI API exists in either oracle. m_sHostPrefab switches to a replicated host with no code change if a live test says otherwise. Adds a 4th modded class SCR_PlayerController. Raises an operator decision recorded in TBD_MOD_DESIGN.md 6b (streaming range vs competitive integrity)."""
 parent = "T-181"
+estimated = ["scope"]
 owns = ["TBD_SpawnManager.c"]
 
-[scope.mod]
-layers = ["feature"]
+[scope]
+domain = "mod"
+layer = "scripts"

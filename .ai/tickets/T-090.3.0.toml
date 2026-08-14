@@ -2,6 +2,7 @@ id = "T-090.3.0"
 kind = "work"
 title = "T-090.3.0 — Workbench world-export feasibility spike"
 summary = "T-090.3.0 — Workbench world-export feasibility spike"
+class = "feature"
 status = "shipped"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_3_0_workbench_export_spike.md"
@@ -9,5 +10,6 @@ executor = "claude-code"
 parent = "T-090"
 shipped_at = "b342c35"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

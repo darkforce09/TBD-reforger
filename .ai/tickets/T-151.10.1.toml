@@ -2,6 +2,7 @@ id = "T-151.10.1"
 kind = "work"
 title = "T-151.10 — Fable 5 full-program audit (W10)"
 summary = "T-151.10 — Fable 5 full-program audit (W10)"
+class = "audit"
 status = "shipped"
 order = 1500
 spec = "docs/specs/Mission_Creator_Architecture/t151_10_fable_program_audit.md"
@@ -10,5 +11,6 @@ notes = "Round-2 code-level completeness audit (X/P findings). Same tracker."
 parent = "T-151"
 shipped_at = "40def01a"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

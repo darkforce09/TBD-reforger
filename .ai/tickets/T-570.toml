@@ -7,11 +7,15 @@ FOUND by W67 adversarial verifier (DIRTY MAJOR) after T-567.
 Exact `if false { … }` now RED. Still GREEN with live None + unreachable `if true == false` / `loop { break; apply… }` / `#[cfg(any())]` / `while false` / `if !true` wrapping apply_row_meta(…, opt(&row.briefing)).
 
 Repro: live briefing → None; wrap decoy call in `if true == false { … }`; pin green."""
+class = "feature"
 status = "shipped"
 order = 3423
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/mission_title_prefer.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

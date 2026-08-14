@@ -2,11 +2,14 @@ id = "T-890"
 kind = "work"
 title = "T-853 port: the MOD wave driver (NOT platform/wave.sh)"
 summary = "T-853 shell->xtask slice. Port scripts/mod/wave.sh to `cargo xtask mod wave` and delete the script(s), their scripts/shell-inventory.txt line(s), any scripts/python-inventory.txt line(s), and repoint every caller. 232 lines, 1 python3 site. Reads docs/mod/wave_plan.tsv, manages .ai/artifacts/worktrees. Lower risk than platform/wave.sh because the T-181 mod program is complete. DO NOT touch scripts/platform/wave.sh beyond repointing call sites. ACCEPTANCE IS BYTE-FOR-BYTE: capture bash stdout+stderr+rc first, then diff on a clean tree AND on >=2 deliberately broken trees; the harness must assert the BASH side went red before believing a diff. A green run alone is not evidence (T-556). Build on crates/tbd-gate. Spec: docs/platform/t853_shell_to_xtask_waves.md"
+class = "docs"
 status = "shipped"
 order = 5710
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+estimated = ["scope"]
 owns = ["scripts/mod/wave.sh"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

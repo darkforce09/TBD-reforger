@@ -1458,8 +1458,10 @@ mod tests {
     /// plus a minimal 4-ticket tree (program T-001 with a ready active child and an idea
     /// child; ready parent T-002), wave.lock freshly repacked and everything committed.
     /// Mutator tests run HERE only: the live registry gets zero writes from the suite.
+    /// T-917.2: the tree carries the minimal scope vocabulary (Corpus::load resolves
+    /// legality fail-closed) and every work ticket a class (check requires it).
     fn scratch_registry(tag: &str) -> PathBuf {
-        use tbd_tickets::{ProgramTicket, RepoLayer, Scope, Status, Ticket, WorkTicket};
+        use tbd_tickets::{Domain, ProgramTicket, ScopeV2, Status, Ticket, WorkTicket};
         let dir = std::env::temp_dir().join(format!("t916-cmds-{tag}-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(dir.join(".ai/tickets")).unwrap();
@@ -1476,6 +1478,7 @@ mod tests {
             dir.join(".ai/tickets/schema.json"),
         )
         .unwrap();
+        fs::write(dir.join(".ai/tickets/scope-vocab.toml"), "[repo.docs]\n").unwrap();
         fs::write(dir.join("docs/spec.md"), "# spec\n").unwrap();
         fs::write(dir.join("docs/child-spec.md"), "# child spec\n").unwrap();
         let ready = |order: i64, spec: &str| Status::Ready {
@@ -1493,26 +1496,40 @@ mod tests {
                     id: id.into(),
                     title: format!("{id} title"),
                     summary: format!("{id} summary"),
+                    class: Some("chore".into()),
                     status,
                     executor: Some("claude-code".into()),
                     notes: None,
                     spec: spec.map(str::to_string),
+                    plan: None,
                     depends_on: vec![],
                     unblocks: vec![],
                     parent: parent.map(str::to_string),
-                    scope: Scope::Repo {
-                        layers: vec![RepoLayer::Docs],
+                    scope: ScopeV2 {
+                        domain: Domain::Repo,
+                        layer: "docs".into(),
+                        component: None,
+                        surface: vec![],
                     },
                     user_story: ready_class.then(|| "story".to_string()),
+                    context: vec![],
+                    requirement: vec![],
+                    current_state: vec![],
+                    approach: vec![],
+                    verify: vec![],
                     acceptance: if ready_class {
                         vec!["gate".into()]
                     } else {
                         vec![]
                     },
+                    citations: vec![],
                     shipped_at: None,
                     priority: None,
                     created_at: None,
                     completed_at: None,
+                    estimated: vec![],
+                    estimate_note: None,
+                    migration_legacy: vec![],
                     owns: owns.iter().map(|s| (*s).to_string()).collect(),
                     pack_last: None,
                 })
@@ -1523,19 +1540,30 @@ mod tests {
                 id: "T-001".into(),
                 title: "T-001 title".into(),
                 summary: "T-001 summary".into(),
+                class: None,
                 status: ready(10, "docs/spec.md"),
                 executor: Some("claude-code".into()),
                 notes: None,
                 spec: Some("docs/spec.md".into()),
+                plan: None,
                 depends_on: vec![],
                 unblocks: vec![],
                 children: vec!["T-001.1".into(), "T-001.2".into()],
                 active: Some("T-001.1".into()),
                 user_story: Some("story".into()),
+                context: vec![],
+                requirement: vec![],
+                current_state: vec![],
+                approach: vec![],
+                verify: vec![],
                 acceptance: vec!["gate".into()],
+                citations: vec![],
                 priority: None,
                 created_at: None,
                 completed_at: None,
+                estimated: vec![],
+                estimate_note: None,
+                migration_legacy: vec![],
                 owns: vec![],
                 pack_last: None,
             }),

@@ -7,14 +7,18 @@ MINOR from wave 7 verifier on T-219. is_known_editor_payload_top_level does not 
 Repro: hydrate payload with payloadExtras:{nested:true}; compile re-emits that key. Empty map still omitted.
 
 Cure: treat payloadExtras as reserved internal, or pick a non-colliding storage name."""
+class = "chore"
 status = "shipped"
 order = 3271
 executor = "claude-code"
 priority = 3
+estimated = ["scope"]
 owns = [
     "crates/map-engine-core/src/doc/store.rs",
     "crates/map-engine-core/src/mission/compile.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

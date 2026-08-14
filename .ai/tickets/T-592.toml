@@ -22,11 +22,15 @@ Both from T-582, which shipped the zone draw tool and named exactly what it coul
    mounted via `.nest("/x", other_fn())` would false-red as an unwired tag, because the extractor
    only reads `fn api_routes`'s body. The script header documents this and the crate uses one flat
    `api_routes` today."""
+class = "chore"
 status = "shipped"
 order = 3453
 executor = "claude-code"
 priority = 3
+estimated = ["scope"]
 owns = ["crates/map-engine-render/src/draw_order.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

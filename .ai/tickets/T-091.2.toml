@@ -2,12 +2,16 @@ id = "T-091.2"
 kind = "work"
 title = "T-091.2 — Z-axis editor UX"
 summary = "T-091.2 — Z-axis editor UX"
+class = "feature"
 status = "shipped"
 order = 910
 spec = "docs/specs/Mission_Creator_Architecture/t091_2_z_axis_editor.md"
 executor = "claude-code"
 parent = "T-091"
 shipped_at = "dde589e"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

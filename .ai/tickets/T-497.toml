@@ -2,11 +2,15 @@ id = "T-497"
 kind = "work"
 title = "Mission mutators still AuthUser+can_edit after T-408 PATCH tier fix"
 summary = "Wave 38 residual from T-408. update_mission now MissionMakerUser. Still AuthUser+can_edit only: delete_mission, submit_mission, create_version, set_armory in handlers/missions.rs. Demotion still leaves those paths open. Cure: same MissionMakerUser tier (or deliberate ownership-outlives-role Class-R per path)."
+class = "bug"
 status = "shipped"
 order = 3332
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = ["apps/website/api/src/handlers/missions.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

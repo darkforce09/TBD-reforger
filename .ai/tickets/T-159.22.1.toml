@@ -2,6 +2,7 @@ id = "T-159.22.1"
 kind = "work"
 title = "T-159.22.1 — Undo granularity (shipped) — gate driver, not core"
 summary = "T-159.22.1 — Undo granularity (shipped) — gate driver, not core"
+class = "chore"
 status = "shipped"
 order = 1570
 spec = "docs/platform/t159_22_1_undo_granularity.md"
@@ -10,5 +11,6 @@ notes = "No core defect — CDP keyChord double-fire. Gate rebased + undo_depth.
 parent = "T-159"
 shipped_at = "ce73c5bc"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

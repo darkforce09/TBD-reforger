@@ -2,6 +2,7 @@ id = "T-090.1.1.1"
 kind = "work"
 title = "T-090.1.1.1 — Map cartographic land-cover compose"
 summary = "T-090.1.1.1 — Map cartographic land-cover compose"
+class = "feature"
 status = "shipped"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_1_1_1_map_landcover_compose.md"
@@ -9,5 +10,6 @@ executor = "claude-code"
 parent = "T-090"
 shipped_at = "018ea70d"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

@@ -66,14 +66,18 @@ baseline, and it converts a race into a STABLE LATENT ordering dependence, which
 A SECOND interference class surfaced only because isolation exposed it: POST /admin/roles/sync walks
 every users row, so two whole-table snapshot->sync->restore tests in the SAME binary race each other.
 Database isolation cannot reach that by construction; fixed with a suite lock in admin_field.rs.'''
+class = "bug"
 status = "shipped"
 order = 3374
 executor = "claude-code"
 priority = 0
+estimated = ["scope"]
 owns = [
     "apps/website/api/tests/common/mod.rs",
     "apps/website/api/tests",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

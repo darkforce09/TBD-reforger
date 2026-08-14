@@ -2,6 +2,7 @@ id = "T-181.20"
 kind = "work"
 title = "T-181.20"
 summary = "T-181.20"
+class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
@@ -9,5 +10,6 @@ notes = "Golden fixtures @ bae5d1d1. slot-loadout-coverage.json is the FIRST gol
 parent = "T-181"
 owns = ["packages/tbd-schema/golden-missions/**"]
 
-[scope.schema]
-layers = ["mission"]
+[scope]
+domain = "schema"
+layer = "mission"

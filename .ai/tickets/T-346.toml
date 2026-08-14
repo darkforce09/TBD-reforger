@@ -27,12 +27,16 @@ BOTH PRE-FIX PATHS MEASURED, with the Event Hub card replayed faithfully from ev
 TWO CORRECTIONS. The ticket's framing of events.rs:796 as an equality match is imprecise — it GROUPS by the row's own raw value into a HashMap with no normalisation; the real cross-source join is frontend/event_hub.rs:415, matching against a list built from a DIFFERENT TABLE (orbat_slots). And T-315's comment in this file had grouped `faction` with the presentation hints as 'an absent one degrades a row without making it a lie' — that was wrong and is corrected in place. category/icon/sort_order keep their defaults, verified matched by no equality join.
 
 mission_overview.rs:218 does not trim either but is SELF-CONSISTENT: its tab list derives from the armory rows themselves, so a padded value produces a padded tab its own filter matches. Cosmetic only."""
+class = "bug"
 status = "shipped"
 order = 3162
 executor = "claude-code"
 priority = 0
 shipped_at = "59c0beba"
+estimated = ["scope"]
 owns = ["apps/website/api/src/handlers/missions.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

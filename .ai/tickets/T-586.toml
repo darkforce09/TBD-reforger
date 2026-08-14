@@ -26,15 +26,19 @@ RELATED, same family, from T-285: `POST /missions/{id}/inject` is a DEAD ROUTE. 
 -- zero `mission.json` references under apps/mod/tbd-framework/, and the mod's real path is
 GET /api/v1/missions/:id/compiled. No frontend caller either. Decide: delete the route, or point the
 mod at it."""
+class = "audit"
 status = "shipped"
 order = 3441
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = [
     "scripts/verify-route-tags.sh",
     "apps/website/api/src/app.rs",
     "apps/website/api/src/handlers/servers.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

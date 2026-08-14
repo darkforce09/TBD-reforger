@@ -391,8 +391,27 @@ pub const ENCODING_C_KEYS: &[&str] = &[
 /// Inventing a ticket key means adding it here AND to `TicketFile` AND to
 /// `.ai/tickets/schema.json` in one commit that says so —
 /// `on_disk_keys_are_mapped_or_allowed_new` stays red until you do.
+///
+/// T-917.2 widen (schema v2, one governance commit with `TicketFile` + schema.json):
+/// `class`, `plan`, the five body lists, `citations`, the provenance pair
+/// `estimated`/`estimate_note`, and the wall-quarantine target `migration_legacy`.
+/// The flat `[scope]` shape rides the frozen `scope` key.
 #[allow(dead_code)] // governance consts; consumed by the key-governance tests below
-pub const ALLOWED_NEW: &[&str] = &["created_at", "completed_at"];
+pub const ALLOWED_NEW: &[&str] = &[
+    "created_at",
+    "completed_at",
+    "class",
+    "plan",
+    "context",
+    "requirement",
+    "current_state",
+    "approach",
+    "verify",
+    "citations",
+    "estimated",
+    "estimate_note",
+    "migration_legacy",
+];
 
 #[allow(dead_code)]
 pub fn union_ticket_keys(registry: &Value) -> std::collections::BTreeSet<String> {
@@ -635,9 +654,11 @@ id = "T-001"
 kind = "work"
 title = "t"
 summary = "s"
+class = "chore"
 status = "queued"
 order = 1
 spec = "docs/x.md"
+plan = "docs/plans/T-001_plan.md"
 executor = "claude-code"
 notes = "n"
 priority = 1
@@ -647,15 +668,25 @@ parent = "T-000"
 children = ["T-001.1"]
 active = "T-001.1"
 user_story = "u"
+context = ["why"]
+requirement = ["ask"]
+current_state = ["today"]
+approach = ["steps"]
+verify = ["cargo test"]
 acceptance = ["a"]
+citations = ["docs/x.md"]
 shipped_at = "abc123"
 created_at = "2026-08-14T10:00:00Z"
 completed_at = "2026-08-14T11:00:00Z"
+estimated = ["tokens"]
+estimate_note = "no receipts era"
+migration_legacy = ["old wall"]
 owns = ["docs/x.md"]
 pack_last = true
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"
 "#;
         let doc: toml::Value = maximal.parse().expect("maximal doc parses");
         let doc_keys: BTreeSet<String> = doc.as_table().unwrap().keys().cloned().collect();

@@ -17,11 +17,15 @@ TWO THINGS TO FIX, and the second matters more:
  2. NOTHING resets the gate database. ensure_gate_db (wave.sh:93-105) deliberately never drops tbd_gate_it for speed, so every suite's residue accumulates forever and this class of ratchet is guaranteed to recur in a different suite. Consider a periodic reset, or per-wave DB names, alongside T-398 whose mechanism 2 is the same shared database.
 
 Immediate operational workaround, no permission needed: create a fresh DB and set TBD_GATE_DB to it. That is what wave 1 shipped against."""
+class = "bug"
 status = "shipped"
 order = 3215
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = ["apps/website/api/tests/admin_field.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

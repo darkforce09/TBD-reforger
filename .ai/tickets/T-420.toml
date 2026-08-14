@@ -15,11 +15,15 @@ THE OBVIOUS FIX IS ITSELF VACUOUS -- this is the trap, do not fall into it. On T
 CONSTRAINT that makes this non-trivial: at least one schema sub-gate is red on main today for unrelated reasons. `xtask schema height-labels` fails with 'PNG decode: Invalid PNG signature' because the DEM asset is an LFS pointer and git-lfs is absent from the container PATH. Adding a step that is already red would red every future wave -- which is precisely T-409's failure mode (guards that refuse legitimate work). So the slice must determine which sub-gates are BOTH meaningful AND currently green, add those, and record why each excluded one is excluded.
 
 NOT THIS TICKET: T-409 covers wave.sh's false-red hard-fails from T-406. Same file, different defect. Sequence them; do not merge the two."""
+class = "bug"
 status = "shipped"
 order = 3250
 executor = "claude-code"
 priority = 0
+estimated = ["scope"]
 owns = ["scripts/platform/wave.sh"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

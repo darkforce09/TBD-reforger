@@ -2,6 +2,7 @@ id = "T-090.1.2.4"
 kind = "work"
 title = "T-090.1.2.4 — Engine render ortho (110% satellite source)"
 summary = "T-090.1.2.4 — Engine render ortho (110% satellite source)"
+class = "feature"
 status = "shipped"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_1_2_4_engine_render_ortho_spike.md"
@@ -9,5 +10,6 @@ executor = "claude-code"
 parent = "T-090"
 shipped_at = "0d6fe485"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

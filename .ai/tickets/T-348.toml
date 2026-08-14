@@ -36,15 +36,19 @@ THREE CORRECTIONS TO THE TICKET:
   missions.rs:587/:598 semver — confirmed and BROADER than whitespace: semver is never parsed at all (no semver crate, no validator), and uniqueness is a DB unique index rather than a SELECT. The column is text, so ' 0.1.0 ' and '0.1.0' are distinct btree keys — no 23505, falls through to 201, and then :611-615 runs unconditionally and makes the SHADOW version the mission's current_version_id.
 
 One claim of its report was already stale at merge: telemetry.rs:476 source_match_id. T-347 restructured that code after T-348's branch point, and the command center verified the cited lines no longer exist on main."""
+class = "bug"
 status = "shipped"
 order = 3164
 executor = "claude-code"
 priority = 1
 shipped_at = "2c1021a5"
+estimated = ["scope"]
 owns = [
     "apps/website/api/src/handlers/events.rs",
     "apps/website/api/src/handlers/cms.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -7,14 +7,18 @@ Residual from T-237 / wave 16 adversarial. ticket ship/done now call require_che
 Repro: break a required field in registry.json; ./scripts/ticket check RED; ./scripts/ticket set-status T-001 shipped still mutates.
 
 Cure: gate mutators through require_check_ok (or document intentional escape hatch + refuse in CI)."""
+class = "chore"
 status = "shipped"
 order = 3290
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "xtask/src/cmds.rs",
     "xtask/src/check.rs",
 ]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "check"

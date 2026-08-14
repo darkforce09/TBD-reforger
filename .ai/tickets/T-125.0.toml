@@ -2,12 +2,15 @@ id = "T-125.0"
 kind = "work"
 title = "T-125 — Coding standards + 11/10 enforcement"
 summary = "T-125 — Coding standards + 11/10 enforcement"
+class = "feature"
 status = "shipped"
 order = 1250
 spec = "docs/platform/t125_coding_standards_enforcement.md"
 executor = "claude-code"
 parent = "T-125"
 shipped_at = "a54f491"
+estimated = ["scope"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

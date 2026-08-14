@@ -2,6 +2,7 @@ id = "T-068.15"
 kind = "work"
 title = "T-068.15 — Arsenal cargo capacity + default contents program"
 summary = "T-068.15 — Arsenal cargo capacity + default contents program"
+class = "feature"
 status = "shipped"
 order = 680
 spec = "docs/specs/Mission_Creator_Architecture/t068_15_cargo_program.md"
@@ -10,5 +11,6 @@ notes = "Meta hub — cargo ladder complete through T-068.12. Specs under t068_1
 parent = "T-068"
 shipped_at = "0be53e16"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

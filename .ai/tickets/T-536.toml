@@ -7,11 +7,15 @@ FOUND by W50 adversarial verifier (MINOR-NIT) after T-492.
 fmt_changed/clippy_changed now propagate changed_rs rc. touch_changed still does `for f in $(changed_rs …)` and can return 0 with listed=0 when porcelain fails. Same mask class.
 
 Cure: `files=$(changed_rs) || return $?` (or equivalent) in touch_changed."""
+class = "feature"
 status = "shipped"
 order = 3376
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = ["scripts/platform/wave.sh"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

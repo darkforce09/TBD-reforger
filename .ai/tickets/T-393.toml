@@ -19,6 +19,7 @@ NEEDS A CONTRACT DECISION, NOT A PATCH — do not just re-add `#[serde(default)]
 T-229 flagged this and stated it had filed a task; it had NOT — no registry row existed. Verified and filed here. Landing T-229 (unlinked-player reporting) on top of an endpoint that 400s for every real request means that feature is also unreachable in production until this is fixed.
 
 Test gap that let this through: every telemetry test builds its own complete JSON body, so the suite has NO fixture asserting the actual shipping mod payload is accepted. A single golden-payload test copied verbatim from BuildPlayerRow's output would have caught it and would catch the next contract drift. Add it as part of the fix — that is the durable half."""
+class = "bug"
 status = "shipped"
 order = 3209
 executor = "claude-code"
@@ -28,5 +29,6 @@ owns = [
     "apps/website/api/tests/telemetry.rs",
 ]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

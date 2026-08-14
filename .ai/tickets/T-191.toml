@@ -2,11 +2,16 @@ id = "T-191"
 kind = "work"
 title = "Load server version destroys local work non-undoably, then overwrites the backup"
 summary = "mission_hydrate.rs:164-185 runs under INIT origin while the UndoManager tracks only LOCAL, so Ctrl+Z cannot recover it. hydrate clears all nine root maps, then after_local_edit overwrites the local IndexedDB blob about five seconds later. The conflict modal offers two buttons with no diff, no change count and no backup."
+class = "feature"
 status = "shipped"
 order = 2090
 executor = "claude-code"
 shipped_at = "7de3ed57"
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/mission_hydrate.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["doc_store"]

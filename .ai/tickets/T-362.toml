@@ -28,12 +28,16 @@ Reproduction was honest about two of its own vacuous attempts: /var/tmp is CONTA
 For T-339 it gave an honest NO: the change does not make the function multi-thread safe (set_var races every concurrent getenv regardless). What it does change is that the DECISION no longer depends on ambient env, so MOVING the call is now behaviour-preserving — before, a call from main vs from run() could see different XDG_CACHE_HOME and pick differently. It exposed `pub fn gate_font_cache_dir()` so the real fix can land: once cdp::launch does `.env("XDG_CACHE_HOME", ...)` on the Command, the unsafe set_var and the whole question disappear.
 
 It created ~50 orphan chrome processes and killed them surgically by unique probe path, reporting that its first kill severed the distrobox bridge instead of the host process — the inverse of the trap wave.sh documents. Never used pkill chrome."""
+class = "bug"
 status = "shipped"
 order = 3178
 executor = "claude-code"
 priority = 1
 shipped_at = "0a2ebf4b"
+estimated = ["scope"]
 owns = ["tools/tbd-tools/src/doctor.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -7,11 +7,15 @@ MINOR from wave 7 verifier. handlers/cms.rs announcement_body_persist_contract_i
 Repro: read the unit test; it cannot fail if handlers regress to sanitize_html.
 
 Cure: delete it or replace with a non-vacuous pin (handler/IT only)."""
+class = "chore"
 status = "shipped"
 order = 3272
 executor = "claude-code"
 priority = 3
+estimated = ["scope"]
 owns = ["apps/website/api/src/handlers/cms.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

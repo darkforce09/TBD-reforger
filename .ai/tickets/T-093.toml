@@ -2,9 +2,13 @@ id = "T-093"
 kind = "work"
 title = "Continuous autosave polish"
 summary = "Background autosave UX and conflict handling polish."
+class = "feature"
 status = "deferred"
 order = 930
 executor = "claude-code"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

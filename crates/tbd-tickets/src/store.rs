@@ -85,8 +85,16 @@ impl Corpus {
     /// file; there is no partial corpus. Also refuses an id/filename mismatch — a file
     /// whose inner id differs from its stem would either mask or duplicate another
     /// ticket in the map, and both are corruption, not data.
+    ///
+    /// T-917.2: the load ALSO resolves scope legality against
+    /// `.ai/tickets/scope-vocab.toml` (spec §Scope v2 — "legality is resolved at
+    /// `Corpus::load` and in `check`"): a missing vocabulary refuses the load naming
+    /// the path, and a work ticket whose domain/layer/component/surface is not in the
+    /// tree refuses naming ticket + offending pair. `parse_ticket_toml` alone stays
+    /// shape-strict (documented weakening on that fn).
     pub fn load(root: &Path) -> Result<Self, String> {
         let mut corpus = Corpus::new(root);
+        let vocab = crate::vocab::ScopeVocab::load(&corpus.root)?;
         let dir = corpus.tickets_dir();
         let rd = fs::read_dir(&dir).map_err(|e| format!("read {}: {e}", dir.display()))?;
         let mut paths: Vec<PathBuf> = Vec::new();
@@ -114,6 +122,9 @@ impl Corpus {
                     path.display(),
                     ticket.id()
                 ));
+            }
+            if let Ticket::Work(w) = &ticket {
+                vocab.check_scope(&w.id, &w.scope)?;
             }
             corpus.tickets.insert(stem, ticket);
         }
@@ -237,7 +248,7 @@ impl Corpus {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{RepoLayer, Scope, Status, WorkTicket};
+    use crate::{Domain, ScopeV2, Status, WorkTicket};
 
     /// Real repo root, the xtask-tests precedent: `CARGO_MANIFEST_DIR/../..`.
     fn repo_root() -> PathBuf {
@@ -249,11 +260,16 @@ mod tests {
             .to_path_buf()
     }
 
+    /// Minimal vocabulary every scratch TREE carries (T-917.2: `Corpus::load` is
+    /// fail-closed on the vocab file). Memory-only corpora (`Corpus::new`) never read it.
+    const MINI_VOCAB: &str = "[repo.docs]\n";
+
     fn scratch_dir(name: &str) -> PathBuf {
         let dir =
             std::env::temp_dir().join(format!("tbd-tickets-store-{name}-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(dir.join(".ai/tickets")).expect("mkdir scratch tickets dir");
+        fs::write(dir.join(crate::vocab::VOCAB_REL), MINI_VOCAB).expect("write scratch vocab");
         dir
     }
 
@@ -262,22 +278,36 @@ mod tests {
             id: id.into(),
             title: format!("{id} title"),
             summary: format!("{id} summary"),
+            class: Some("chore".into()),
             status,
             executor: None,
             notes: None,
             spec: None,
+            plan: None,
             depends_on: vec![],
             unblocks: vec![],
             parent: None,
-            scope: Scope::Repo {
-                layers: vec![RepoLayer::Docs],
+            scope: ScopeV2 {
+                domain: Domain::Repo,
+                layer: "docs".into(),
+                component: None,
+                surface: vec![],
             },
             user_story: None,
+            context: vec![],
+            requirement: vec![],
+            current_state: vec![],
+            approach: vec![],
+            verify: vec![],
             acceptance: vec![],
+            citations: vec![],
             shipped_at: None,
             priority: None,
             created_at: None,
             completed_at: None,
+            estimated: vec![],
+            estimate_note: None,
+            migration_legacy: vec![],
             owns: vec![],
             pack_last: None,
         })
@@ -443,6 +473,40 @@ mod tests {
         fs::write(root.join(".ai/tickets/T-777.toml"), text).unwrap();
         let err = Corpus::load(&root).expect_err("stem mismatch must refuse the load");
         assert!(err.contains("T-777") && err.contains("T-001"), "{err}");
+    }
+
+    /// T-917.2 — legality resolves at load: a work ticket whose scope pair is not in
+    /// the vocabulary refuses naming ticket + pair; a MISSING vocabulary refuses
+    /// naming the path (fail-closed — never a silent legality skip).
+    #[test]
+    fn load_refuses_vocab_illegal_scope_and_missing_vocab() {
+        let root = scratch_dir("vocab-legality");
+        let mut w = match work("T-001", Status::Idea) {
+            Ticket::Work(w) => w,
+            Ticket::Program(_) => unreachable!(),
+        };
+        w.scope.layer = "ghost_layer".into();
+        fs::write(
+            root.join(".ai/tickets/T-001.toml"),
+            render_ticket_toml(&Ticket::Work(w)).unwrap(),
+        )
+        .unwrap();
+        let err = Corpus::load(&root).expect_err("illegal pair must refuse");
+        assert!(
+            err.contains("T-001") && err.contains("repo.ghost_layer"),
+            "must name ticket + offending pair: {err}"
+        );
+
+        fs::write(
+            root.join(".ai/tickets/T-001.toml"),
+            render_ticket_toml(&work("T-001", Status::Idea)).unwrap(),
+        )
+        .unwrap();
+        Corpus::load(&root).expect("legal scope loads");
+
+        fs::remove_file(root.join(crate::vocab::VOCAB_REL)).unwrap();
+        let err = Corpus::load(&root).expect_err("missing vocab must refuse");
+        assert!(err.contains("scope-vocab.toml"), "{err}");
     }
 
     /// Surgical write: temp+rename lands the rendered bytes and leaves no temp file;

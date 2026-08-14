@@ -2,14 +2,18 @@ id = "T-265"
 kind = "work"
 title = "Leave-of-Absence feature has zero UI"
 summary = "Four endpoints and the leave_requests table are fully implemented and tested, with no page, no nav entry and no caller. An entire shipped backend feature nobody can reach."
+class = "feature"
 status = "shipped"
 order = 2830
 executor = "claude-code"
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/deployments.rs",
     "apps/website/frontend/src/nav.rs",
     "apps/website/frontend/src/dto.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -2,6 +2,7 @@ id = "T-151.11.1"
 kind = "work"
 title = "T-151.11.1"
 summary = "T-151.11.1"
+class = "feature"
 status = "shipped"
 order = 1500
 executor = "claude-code"
@@ -9,5 +10,6 @@ notes = "Draw order (grid + compute-culled trees) + marquee fill/border parity. 
 parent = "T-151"
 shipped_at = "b81317c5"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

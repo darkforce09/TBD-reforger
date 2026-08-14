@@ -2,9 +2,13 @@ id = "T-002"
 kind = "work"
 title = "Discord OAuth2"
 summary = "Discord OAuth2 callback end-to-end."
+class = "feature"
 status = "shipped"
 order = 20
 executor = "cursor-docs"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

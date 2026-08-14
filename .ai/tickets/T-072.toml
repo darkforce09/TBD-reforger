@@ -2,9 +2,13 @@ id = "T-072"
 kind = "work"
 title = "Ctrl multi-place"
 summary = "CANCELLED 2026-08-01 — SUPERSEDED BY T-647, which owns the same two files (mission_editor.rs + editor_ops.rs) and the same seam. `PLACE-004` Ctrl multi-place is one of six ids T-647 closes; its scope here was `place_at`'s `take()` at editor_ops.rs:2204 (re-arm instead of consuming while Ctrl is held), which is exactly T-647's work, and Ctrl is ALSO the map-grouping modifier, so the two had to be decided in one ticket or collide. Filing both would have guaranteed a two-file collision for one modifier."
+class = "feature"
 status = "cancelled"
 order = 720
 executor = "claude-code"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

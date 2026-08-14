@@ -22,15 +22,19 @@ SPLIT THE is_maker GATE, deliberately: can_edit = is_maker && (is_owner || is_ad
 Two new goldens captured off the real submit->reject path; the two pre-existing mission goldens left untouched because they back the missions.dom.json/missionview.dom.json oracle freeze. Frontend suite 168/168, R-api 31/31, SLICE GATE PASS.
 Its golden-flatten finding is now T-394; the mission_overview raw-status render is T-395 (it reported filing that and did not). Superseded T-313.
 NOT browser-verified, by its own account: the 409/403 strings surfacing through a toast (driven over HTTP but not through the UI), and the success-toast text (expired before first poll). Known rough edge left deliberately: after a successful submit the OPEN SHEET still offers 'Submit for review' until reopened — changed.run(()) refetches the grid but not the dossier's own resource. Mirrors pre-existing toggle_archive behaviour; a second click gets a real 409 message, not silence."""
+class = "audit"
 status = "shipped"
 order = 3205
 executor = "claude-code"
 priority = 1
 shipped_at = "2026-07-26"
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/missions.rs",
     "apps/website/frontend/src/dto.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

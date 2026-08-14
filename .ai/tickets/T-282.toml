@@ -2,10 +2,14 @@ id = "T-282"
 kind = "work"
 title = "Mission version history — differ and timeline"
 summary = "mission_versions already stores immutable full JSON snapshots per semver, so this is build a differ, not build versioning. Blockers: no parent_version_id, no list-versions endpoint (only POST and GET-by-id), the by-id GET is never called, and the History button is present but disabled. Old versions are retained and unreachable from any UI."
+class = "feature"
 status = "shipped"
 order = 3000
 executor = "claude-code"
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/missions.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

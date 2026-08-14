@@ -2,6 +2,7 @@ id = "T-159.15.1"
 kind = "work"
 title = "T-159.15.1"
 summary = "T-159.15.1"
+class = "feature"
 status = "shipped"
 order = 1570
 executor = "claude-code"
@@ -9,5 +10,6 @@ notes = "Damage-driven rAF + wheel + resize. Fix=disable_frame_timing (GpuTimer 
 parent = "T-159"
 shipped_at = "a425936d"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

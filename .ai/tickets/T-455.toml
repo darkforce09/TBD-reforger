@@ -7,14 +7,18 @@ Residual from T-451 / wave 20 adversarial. set-status/mark-ready/reorder/ship no
 Repro: break a required field; ticket check RED; ticket add still inserts a row.
 
 Cure: gate add/remove through require_check_ok (or document intentional escape hatch + --force)."""
+class = "chore"
 status = "shipped"
 order = 3294
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "xtask/src/cmds.rs",
     "xtask/src/check.rs",
 ]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "check"

@@ -7,11 +7,15 @@ In-wave hotfix from wave 11 gate RED after T-260. Event.server_id and Event.modp
 Repro: after T-260 merge, wave.sh gate → null_tolerance FAIL on server_id/modpack_id without COALESCE.
 
 Cure: add ("events", "server_id") and ("events", "modpack_id") to OPTION_FIELDS (same claim as match_id)."""
+class = "chore"
 status = "shipped"
 order = 3280
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = ["apps/website/api/tests/null_tolerance.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

@@ -2,6 +2,7 @@ id = "T-667"
 kind = "work"
 title = "Map furniture: scale bar and edge grid reference labels"
 summary = 'The second half of the split T-641, and an operator decision to EXCEED Eden rather than match it. Eden ships no scale bar, no north arrow, no legend and no grid coordinate labels — only a two-axis X/Y gizmo bottom-left. A 2D top-down planner needs distance cues that a 3D-first editor does not, and they pair naturally with the ruler (T-642). Add a scale bar and edge grid reference labels; skip the legend. These belong in the full-width status bar that T-636 creates — the draft says so directly ("it gives the scale bar and grid refs from T-641 somewhere to live"), which is why this ticket is scheduled one wave after T-636 and owns only eden_toolbelt.rs. HARD DEPENDENCY on T-636: if the status bar has not landed there is nowhere to put them, and the floating pill has no room. Placement inside the bar is INFERRED (graded low in owns_parity.md) — no ticket has named the component layout.'
+class = "feature"
 status = "shipped"
 order = 3960
 executor = "claude-code"
@@ -10,7 +11,11 @@ depends_on = [
     "T-661",
     "T-636",
 ]
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/eden_toolbelt.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["toolbelt"]

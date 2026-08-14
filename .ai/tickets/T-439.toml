@@ -7,6 +7,7 @@ Residual from T-254 / wave 9 N5. Editor synthesises prop:*/comp:* aliases for cr
 Repro: place a non-checkpoint Objects leaf → compile entities[] → world-boot → spawn warns and skips; only checkpoint_small resolves.
 
 Cure: export/register prop: and comp: rows for Objects-eligible kinds (or narrow palette to known aliases until registry catches up)."""
+class = "feature"
 status = "shipped"
 order = 3278
 executor = "claude-code"
@@ -18,5 +19,6 @@ owns = [
     "scripts/mod/verify-t439-objects-registry-aliases.sh",
 ]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

@@ -2,11 +2,15 @@ id = "T-517"
 kind = "work"
 title = "W45 hotfix: identity_link PAD_ACTOR collides with telemetry PLAYER_DISCORD"
 summary = "Wave 45 cold gate FAIL after T-516. telemetry_ingest_closes_the_loop asserts leaderboard kills==5 but got 15; identity_link padded_arma assert deployments==1 got 2. Root cause: T-351 PAD_ACTOR and telemetry PLAYER_DISCORD both use discord snowflake 000000000000400003 on the shared gate DB. Parallel suites: telemetry writes 5 kills; T-351 padded test writes 7+3=10 for the same discord_id → MV sum 15. Cure: move PAD_ACTOR (and PAD seed/arma string suffixes) to an unused T-400 id (e.g. 000000000000400013); Class-R assert PAD_ACTOR != telemetry PLAYER_DISCORD literal. Owns: apps/website/api/tests/identity_link.rs only. Do not change telemetry.rs."
+class = "chore"
 status = "shipped"
 order = 3357
 executor = "claude-code"
 priority = 0
+estimated = ["scope"]
 owns = ["apps/website/api/tests/identity_link.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

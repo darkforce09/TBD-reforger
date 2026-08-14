@@ -2,10 +2,14 @@ id = "T-267"
 kind = "work"
 title = "CMS announcements can be created but never edited, deleted or re-pushed"
 summary = "content.rs makes exactly one API call and discards the returned id, so re-clicking Publish duplicates. PATCH, DELETE, uploads and push-discord are all orphaned. The SOP category never hits the API at all — it toasts success with no network call. Five markdown tools toast mock."
+class = "chore"
 status = "shipped"
 order = 2850
 executor = "claude-code"
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/content.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

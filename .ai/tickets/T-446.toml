@@ -7,15 +7,19 @@ Residual from T-267 / wave 14. Hero upload button now errors honestly instead of
 Repro: CMS Content → hero upload → error toast; /cms/uploads never called.
 
 Cure: enable FormData/File features, wire multipart api helper, POST /cms/uploads and set thumbnail_url."""
+class = "feature"
 status = "shipped"
 order = 3285
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/Cargo.toml",
     "apps/website/frontend/src/client.rs",
     "apps/website/frontend/src/content.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

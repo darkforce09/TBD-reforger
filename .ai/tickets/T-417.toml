@@ -19,14 +19,19 @@ Two MINORs and a NIT from wave 4's adversarial verifier, plus two structural fin
 5. STRUCTURAL, from T-240's agent -- cargo authored into a container with NO GARMENT WORN is undeliverable and BOTH ENDS ARE QUIET. arsenal.rs:895-902 renders the group labelled 'no garment worn' with a total and no limit; over() is false so nothing tints. T-240's rule deliberately stays silent (never invent capacity) and says so at arsenal_rules.rs:800-808. The mod already detects exactly this -- TBD_LoadoutEquipHelper.c:1105-1106 Degrades with 'this slot's kit wears no %1 -- mission/kit authoring mismatch' -- so the engine knows and the author never hears it. REPRO: clear the vest row, add a magazine to the vest cargo container, export.
 
 CONFIRMED NON-ISSUE, do not investigate: the verifier noted the dev API 404s on /api/v1/health. That route never existed -- app.rs:297 registers /healthz, which returns 200 and is what preflight uses."""
+class = "docs"
 status = "shipped"
 order = 3242
 executor = "claude-code"
 priority = 1
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/mission_commands.rs",
     "apps/website/frontend/src/main.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["ops_undo"]

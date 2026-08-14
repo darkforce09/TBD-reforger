@@ -9,10 +9,12 @@ WHAT IS STILL OPEN AND WAS NOT INVALIDATED: see T-216's schema deltas ($defs/slo
 
 == ORIGINAL SUMMARY BELOW ==
 $defs/entity is {alias,x,z,headingDeg,faction} (mission.schema.json:376-387) with no inventory model. The editor's vehicle row is {id,resourceName,position,squadId} (store.rs:527-548), also with no cargo. Vehicle inventory has no representation on any of the three surfaces."""
+class = "feature"
 status = "idea"
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 owns = ["crates/map-engine-core/src/doc/store.rs"]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

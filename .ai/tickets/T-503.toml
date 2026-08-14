@@ -2,14 +2,18 @@ id = "T-503"
 kind = "work"
 title = "Arsenal has no Save button — cargo persists immediately (T-417 structural)"
 summary = "Wave 40 residual from T-417. arsenal.rs persist_cargo→set_loadout on every cargo mutation; export gate is the only client refusal. Cure: either add explicit Save UX or document intentional auto-persist with Class-R."
+class = "chore"
 status = "shipped"
 order = 3343
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/arsenal.rs",
     "apps/website/frontend/src/arsenal_rules.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

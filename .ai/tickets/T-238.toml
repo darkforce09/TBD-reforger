@@ -2,13 +2,16 @@ id = "T-238"
 kind = "work"
 title = "Add ticket check to CI"
 summary = "make ticket-check exists but grep of .github/workflows for ticket returns nothing, so nothing prevents the registry drifting again."
+class = "chore"
 status = "idea"
 executor = "claude-code"
 depends_on = [
     "T-273",
     "T-237",
 ]
+estimated = ["scope"]
 owns = [".github/workflows/ci.yml"]
 
-[scope.repo]
-layers = ["xtask"]
+[scope]
+domain = "repo"
+layer = "xtask"

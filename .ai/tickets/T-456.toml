@@ -7,11 +7,15 @@ Residual from T-450 / wave 20 adversarial. Compiled missions are pinned at 8MiB 
 Repro: read TBD_MissionLoader OnBackendFetchSuccess vs LoadFromProfileFile size gate.
 
 Cure: apply the same MISSION_FILE_MAX_BYTES check on the REST success path before ParseMissionJson."""
+class = "chore"
 status = "shipped"
 order = 3295
 executor = "claude-code"
 priority = 2
+estimated = ["scope"]
 owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c"]
 
-[scope.mod]
-layers = ["feature"]
+[scope]
+domain = "mod"
+layer = "scripts"
+component = "backend"

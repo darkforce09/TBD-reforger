@@ -2,10 +2,14 @@ id = "T-068.3"
 kind = "work"
 title = "T-068.3"
 summary = "T-068.3"
+class = "feature"
 status = "shipped"
 order = 680
 executor = "claude-code"
 parent = "T-068"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

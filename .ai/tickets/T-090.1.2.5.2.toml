@@ -2,6 +2,7 @@ id = "T-090.1.2.5.2"
 kind = "work"
 title = "T-090.1.2.5.2 — Exact road geometry water refine + one-button pipeline"
 summary = "T-090.1.2.5.2 — Exact road geometry water refine + one-button pipeline"
+class = "feature"
 status = "shipped"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_1_2_5_2_water_topo_refine.md"
@@ -9,5 +10,6 @@ executor = "claude-code"
 parent = "T-090"
 shipped_at = "1c07d97a"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

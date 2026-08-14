@@ -7,6 +7,7 @@ FOUND by W54 adversarial verifier (CLEAN MINOR-NIT) after T-328.
 mcp-daemon.sh correctly builds/execs from target-dev-mcpd and discards mcpd-bin.sh stdout. Residual footgun: scripts/mod/lib/mcpd-bin.sh still hardcodes echo $ROOT/target/debug/mcpd; mcp-call-selftest.sh still consumes that echo. Cure: honor CARGO_TARGET_DIR in mcpd-bin.sh echo path.
 
 Repro: rg 'target/debug/mcpd' scripts/mod/"""
+class = "feature"
 status = "shipped"
 order = 3383
 executor = "claude-code"
@@ -17,5 +18,6 @@ owns = [
     "scripts/mod/mcp-call-selftest.sh",
 ]
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

@@ -2,13 +2,17 @@ id = "T-248"
 kind = "work"
 title = "oauth_state cookie survives the two early-return error paths"
 summary = "The clear-cookie string is built after the missing_code and invalid_state early returns, so both leave the ten-minute CSRF cookie live. DISCORD_CLIENT_SECRET and DISCORD_REDIRECT_URL also have no startup guard, so a misconfigured secret is reported to the user as discord_unreachable — a misconfig disguised as an outage."
+class = "feature"
 status = "shipped"
 order = 2660
 executor = "claude-code"
+estimated = ["scope"]
 owns = [
     "apps/website/api/src/handlers/oauth.rs",
     "apps/website/api/src/config.rs",
 ]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

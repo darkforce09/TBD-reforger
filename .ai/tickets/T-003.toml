@@ -2,9 +2,13 @@ id = "T-003"
 kind = "work"
 title = "Dev login shortcut"
 summary = "Development dev-login endpoint for local testing."
+class = "feature"
 status = "shipped"
 order = 30
 executor = "cursor-docs"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

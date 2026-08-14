@@ -24,11 +24,15 @@ DISK WAS THE REAL CONSTRAINT AND THE FIRST ATTEMPT HIT IT. The gate failed with 
 Bought the isolation cheaply rather than at full price: CARGO_INCREMENTAL=0 on both, since incremental caches are a large fraction of a target dir and are useless for a one-shot gate run.
 
 AND CLOSED THE CAUSE, not just the instance:  removes orphan build caches while sparing any dir whose slice worktree still exists, and preflight now NAMES the reclaimable space rather than only reporting the shortfall — a disk warning that does not say where the space went sends someone hunting, and "No space left on device" mid-gate reads exactly like a build error."""
+class = "bug"
 status = "shipped"
 order = 3206
 executor = "claude-code"
 priority = 0
 shipped_at = "c07ca278"
+estimated = ["scope"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"

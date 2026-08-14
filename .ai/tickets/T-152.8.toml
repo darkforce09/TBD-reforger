@@ -2,6 +2,7 @@ id = "T-152.8"
 kind = "work"
 title = "T-152.8 — Town labels (locations + importance declutter)"
 summary = "T-152.8 — Town labels (locations + importance declutter)"
+class = "feature"
 status = "shipped"
 order = 1520
 spec = "docs/specs/Mission_Creator_Architecture/t152_8_town_labels.md"
@@ -9,5 +10,6 @@ executor = "claude-code"
 notes = "T-144 G8 importance-distance precompute."
 parent = "T-152"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"

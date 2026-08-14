@@ -29,12 +29,17 @@ COST MEASURED, and it shaped the design: decode is 19us at 8 slots, 35ms at 10k,
 ONE BEHAVIOUR CHANGE, flagged rather than discovered later: a DELIBERATE select-all+Delete now also fails the guard, because at the blob level an intentionally emptied document and a never-populated one are the same content-empty document. A full delete no longer propagates to the local autosave. That is the side the codebase already errs on (classify_local maps content-empty to Local::Empty), the delete is still an undo step, and the failure traded away is an authored mission overwritten with nothing. The distinction exists if ever wanted — a never-populated doc has no delete set — but that is a delete-set parse, not a length check.
 
 mission_hydrate.rs needs THREE instances, not the two filed: snapshot_local:746, has_snapshot:774, and restore_snapshot:859 — the third would RESTORE a content-empty backup over the live document."""
+class = "docs"
 status = "shipped"
 order = 3190
 executor = "claude-code"
 priority = 0
 shipped_at = "28e9fbb6"
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/yrs_persist.rs"]
 
-[scope.website.editor]
-chrome = []
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["doc_store"]

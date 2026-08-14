@@ -2,6 +2,7 @@ id = "T-090.3.3"
 kind = "work"
 title = "T-090.3 — Map asset export (Workbench → repo)"
 summary = "T-090.3 — Map asset export (Workbench → repo)"
+class = "feature"
 status = "shipped"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_3_map_asset_export.md"
@@ -9,5 +10,6 @@ executor = "claude-code"
 parent = "T-090"
 shipped_at = "887a6ed1"
 
-[scope.repo]
-layers = ["docs"]
+[scope]
+domain = "repo"
+layer = "docs"
