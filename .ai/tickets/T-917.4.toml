@@ -1,0 +1,26 @@
+id = "T-917.4"
+kind = "work"
+title = "Stamp backfill: git miner over shipped history"
+summary = "Mine immutable git metadata for every shipped ticket missing stamps: created_at/completed_at from first/last exact-id boundary-matched commit subjects (UTC-normalized), shipped_at from the last subject SHA; id_interpolation fallback between nearest id-adjacent dated tickets where no subjects exist. Every derived value listed in estimated[] with per-source accounting. The 4 date-shaped shipped_at strays resolved (date -> completed_at estimated; SHA re-mined or marked)."
+status = "queued"
+order = 5974
+spec = "docs/platform/t917_ticket_schema_v2.md"
+executor = "claude-code"
+notes = "Two-pass forced: estimated[] is illegal on disk until T-917.2 widens governance. Writes via store::Corpus write_back (round-trip-verified surgical writes). T-90 must never match T-902 — boundary matching pinned by test."
+depends_on = ["T-917.2"]
+parent = "T-917"
+user_story = "Every shipped ticket in history carries its three stamps — measured where git knows, method-marked estimates where it can only interpolate — and the per-source counts are printed, never hidden."
+acceptance = [
+    "Miner report: of S shipped: A git_subject, B id_interpolation, C already measured — with A+B+C=S, S measured at run time",
+    "Corpus loads green after the write (the load is the RFC 3339 UTC proof)",
+    "The 4 shipped_at strays printed before/after",
+    "git diff -- .ai/tickets/wave.lock prints empty",
+]
+created_at = "2026-08-14T21:54:38Z"
+owns = [
+    ".ai/tickets",
+    "xtask/src",
+]
+
+[scope.repo]
+layers = ["tickets"]

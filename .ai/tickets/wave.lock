@@ -34,19 +34,27 @@ tickets = ["T-831", "T-834", "T-841", "T-845", "T-848", "T-850", "T-906", "T-908
 
 [[waves]]
 n = 139
-tickets = ["T-837", "T-907"]
+tickets = ["T-837", "T-907", "T-917.1"]
 
 [[waves]]
 n = 140
-tickets = ["T-838", "T-849"]
+tickets = ["T-838", "T-849", "T-917.2"]
 
 [[waves]]
 n = 141
-tickets = ["T-839"]
+tickets = ["T-839", "T-917.3", "T-918.1"]
 
 [[waves]]
 n = 142
-tickets = ["T-905"]
+tickets = ["T-905", "T-917.4", "T-918.3"]
+
+[[waves]]
+n = 143
+tickets = ["T-917.5", "T-918.4"]
+
+[[waves]]
+n = 144
+tickets = ["T-917.6", "T-918.2", "T-919"]
 
 [owns]
 "T-068.14" = ["docs/mod/capability_verdicts.tsv"]
@@ -769,6 +777,17 @@ T-914 = ["xtask/src/wave_lock.rs", "xtask/src/wave/base.rs", "xtask/src/check.rs
 "T-915.5" = ["apps/ticketboard"]
 "T-916.1" = ["crates/tbd-tickets"]
 "T-916.2" = ["xtask/src", "crates/tbd-tickets"]
+"T-917.1" = [".ai/tickets/scope-vocab.toml", "xtask/src/vocab_check.rs"]
+"T-917.2" = ["crates/tbd-tickets", "xtask/src", "apps/ticketboard/src", ".ai/tickets", "docs/TICKET_REGISTRY.md"]
+"T-917.3" = [".ai/tickets", "xtask/src", "crates/tbd-tickets"]
+"T-917.4" = [".ai/tickets", "xtask/src"]
+"T-917.5" = [".ai/tickets/estimates", ".ai/tickets/estimates.schema.json", "xtask/src", "docs/platform/token_estimate_factor.md"]
+"T-917.6" = ["xtask/src", "crates/tbd-tickets", "docs/plans"]
+"T-918.1" = ["apps/ticketboard"]
+"T-918.2" = ["apps/ticketboard"]
+"T-918.3" = ["apps/ticketboard"]
+"T-918.4" = ["apps/ticketboard"]
+T-919 = [".ai/tickets"]
 
 [depends_on]
 T-068 = ["T-067"]
@@ -891,3 +910,13 @@ T-913 = ["T-912"]
 "T-915.4" = ["T-915.3", "T-916.2"]
 "T-915.5" = ["T-915.1"]
 "T-916.2" = ["T-916.1"]
+"T-917.2" = ["T-917.1"]
+"T-917.3" = ["T-917.2"]
+"T-917.4" = ["T-917.2"]
+"T-917.5" = ["T-917.4"]
+"T-917.6" = ["T-917.4", "T-917.5"]
+"T-918.1" = ["T-917.2"]
+"T-918.2" = ["T-917.5"]
+"T-918.3" = ["T-917.3"]
+"T-918.4" = ["T-917.2"]
+T-919 = ["T-917.3"]

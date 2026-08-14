@@ -1,0 +1,28 @@
+id = "T-917.5"
+kind = "work"
+title = "Token estimates: factor doc, generator, estimates tree + check"
+summary = "The total estimation ladder for tokens: diff_loc (LOC changed across the ticket's commits x documented factor) with cohort_median fallback (median of same class+scope cohort) so every shipped ticket ends with a number. Estimates live at .ai/tickets/estimates/<id>.json — never inside metrics/ — with estimates.schema.json and their own check fn: mutual exclusion with receipts, estimate implies tokens in estimated[], estimate on non-shipped red. Factor lands as a declared constant pending calibration in docs/platform/."
+status = "queued"
+order = 5975
+spec = "docs/platform/t917_ticket_schema_v2.md"
+executor = "claude-code"
+notes = "metrics::has_receipt returns true for ANY file under metrics/<id>/ — colocating estimates would let them impersonate receipts (T-913 violation) and crash the deny_unknown_fields walkers. Every estimate records source + inputs + factor; recalibration is regeneration from recorded inputs."
+depends_on = ["T-917.4"]
+parent = "T-917"
+user_story = "Every shipped ticket in history has a token figure with a named derivation method, structurally incapable of being summed with measured receipts."
+acceptance = [
+    "Factor constant pasted from the doc; a check asserts every estimate.json factor equals it",
+    "Generator prints E diff_loc, C cohort_median, E+C equals the shipped-ticket count measured at run time",
+    "Planted estimate file inside .ai/tickets/metrics/<id>/ reds; estimate + receipt for one id reds",
+    "summarize_by_agent on a mixed fixture equals the receipts-only hand computation pasted alongside",
+]
+created_at = "2026-08-14T21:54:38Z"
+owns = [
+    ".ai/tickets/estimates",
+    ".ai/tickets/estimates.schema.json",
+    "xtask/src",
+    "docs/platform/token_estimate_factor.md",
+]
+
+[scope.repo]
+layers = ["tickets"]

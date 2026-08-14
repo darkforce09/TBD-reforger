@@ -1,0 +1,28 @@
+id = "T-917.3"
+kind = "work"
+title = "Wall quarantine + word caps + shrink-only ratchet"
+summary = "Mechanical byte-reversible pass over every work ticket whose TOML-parsed summary exceeds 40 whitespace-split words: summary moved verbatim into migration_legacy[] split on newlines only (join reproduces original bytes, proved per file), summary := existing title. Word-cap check rules land: summary <=40, context/requirement/current_state/approach/verify <=30 per line, citations <=8; acceptance/notes/user_story uncapped. Shrink-only pinned ratchet on migration_legacy count; a new ticket minting the field is red."
+status = "queued"
+order = 5973
+spec = "docs/platform/t917_ticket_schema_v2.md"
+executor = "claude-code"
+notes = "No sentence-splitting into semantic fields — that is laundering unsorted prose as classified data; decomposition is Program T. Caps enforced in check, never parse (old revisions must stay readable). Docs/TICKET_*.md regenerate in-commit (sync copies summaries verbatim)."
+depends_on = ["T-917.2"]
+parent = "T-917"
+user_story = "No board card ever renders a 500-word summary again; the walls survive byte-exact in quarantine with a monotone death clause instead of being truncated or laundered."
+acceptance = [
+    "Migrator prints M summaries >40 TOML-parsed whitespace-split words moved to migration_legacy — instrument named in the output line",
+    "M/M reversible: newline-join byte-compare vs git show HEAD^ per moved file",
+    "Ratchet pin equals measured count; test red on drift in either direction",
+    "Planted 41-word summary in a scratch tree reds naming ticket, field, count and cap; live tree prints check OK",
+    "docs/TICKET_*.md regenerated in the same commit",
+]
+created_at = "2026-08-14T21:54:38Z"
+owns = [
+    ".ai/tickets",
+    "xtask/src",
+    "crates/tbd-tickets",
+]
+
+[scope.repo]
+layers = ["tickets"]
