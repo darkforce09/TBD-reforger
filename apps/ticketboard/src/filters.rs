@@ -9,7 +9,7 @@ use std::collections::BTreeSet;
 
 use tbd_tickets::{StatusName, Ticket};
 
-use crate::board;
+use crate::board::{self, Class};
 use crate::corpus::Corpus;
 
 /// Per-ticket filter facts, precomputed once per load.
@@ -21,6 +21,14 @@ pub struct RowFacts {
     pub executor: String,
     pub is_work: bool,
     pub status: StatusName,
+    /// Scope facet facts (T-918.1) — `None`/empty on programs (no `[scope]`), so
+    /// any scope facet selection excludes them.
+    pub domain: Option<String>,
+    pub layer: Option<String>,
+    pub component: Option<String>,
+    pub surfaces: Vec<String>,
+    /// Parsed class (absent on programs and pre-triage work tickets).
+    pub class: Option<Class>,
     /// Lowercase `id \n title \n summary`.
     pub haystack: String,
 }
@@ -41,12 +49,26 @@ impl FilterIndex {
                 let v = board::view(&loaded.ticket);
                 let executor = board::executor_label(v.executor);
                 executors.insert(executor.clone());
+                let (domain, layer, component, surfaces) = match v.scope {
+                    Some(s) => (
+                        Some(s.domain.as_str().to_owned()),
+                        Some(s.layer.clone()),
+                        s.component.clone(),
+                        s.surface.clone(),
+                    ),
+                    None => (None, None, None, Vec::new()),
+                };
                 RowFacts {
                     id_lower: v.id.to_lowercase(),
                     parent_lower: v.parent.map(str::to_lowercase),
                     executor,
                     is_work: matches!(loaded.ticket, Ticket::Work(_)),
                     status: v.status.name(),
+                    domain,
+                    layer,
+                    component,
+                    surfaces,
+                    class: v.class.and_then(Class::parse),
                     haystack: format!("{}\n{}\n{}", v.id, v.title, v.summary).to_lowercase(),
                 }
             })
@@ -55,6 +77,25 @@ impl FilterIndex {
             rows,
             executors: executors.into_iter().collect(),
         }
+    }
+}
+
+/// Scope facet selections (T-918.1) — one optional value per breadcrumb level.
+/// `None` constrains nothing; levels AND together (and with everything else).
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct ScopeFacets {
+    pub domain: Option<String>,
+    pub layer: Option<String>,
+    pub component: Option<String>,
+    pub surface: Option<String>,
+}
+
+impl ScopeFacets {
+    pub fn any(&self) -> bool {
+        self.domain.is_some()
+            || self.layer.is_some()
+            || self.component.is_some()
+            || self.surface.is_some()
     }
 }
 
@@ -90,6 +131,11 @@ pub struct Filters {
     /// Program/parent id: the id itself, its dotted descendants, or an explicit
     /// `parent` naming it.
     pub parent: String,
+    /// Per-level scope facets (T-918.1) — dropdown values come from
+    /// `crate::facets` (vocab ∪ corpus, narrowed top-down).
+    pub scope: ScopeFacets,
+    /// Class facet (T-918.1) — the closed 5-value set.
+    pub class: Option<Class>,
 }
 
 impl Filters {
@@ -99,6 +145,8 @@ impl Filters {
             || self.kind != KindFilter::Any
             || self.statuses.iter().any(|&on| on)
             || !self.parent.trim().is_empty()
+            || self.scope.any()
+            || self.class.is_some()
     }
 
     /// One-click clear — every constraint off.
@@ -131,6 +179,27 @@ impl Filters {
             }
             && (!any_status || self.statuses[board::column_of(f.status)])
             && (parent.is_empty() || parent_matches(f, parent))
+            && self
+                .scope
+                .domain
+                .as_ref()
+                .is_none_or(|d| f.domain.as_ref() == Some(d))
+            && self
+                .scope
+                .layer
+                .as_ref()
+                .is_none_or(|l| f.layer.as_ref() == Some(l))
+            && self
+                .scope
+                .component
+                .as_ref()
+                .is_none_or(|c| f.component.as_ref() == Some(c))
+            && self
+                .scope
+                .surface
+                .as_ref()
+                .is_none_or(|s| f.surfaces.contains(s))
+            && self.class.is_none_or(|k| f.class == Some(k))
     }
 }
 
@@ -269,5 +338,115 @@ mod tests {
             ..Filters::default()
         };
         assert_eq!(matched_ids(&idx, &filters), vec!["T-9", "T-9.2"]);
+    }
+
+    // ---- T-918.1: scope facets + class ----
+
+    use crate::testutil::work_scoped;
+
+    /// Two editor tickets (different surfaces), one backend, one repo chore, one
+    /// program — the facet-composition fixture.
+    fn scoped_index() -> FilterIndex {
+        FilterIndex::build(&corpus_of(vec![
+            work_scoped(
+                "T-1",
+                "domain = \"website\"\nlayer = \"frontend\"\ncomponent = \"mission_creator\"\nsurface = [\"map_canvas\", \"toolbelt\"]",
+                "class = \"bug\"\n",
+            ),
+            work_scoped(
+                "T-2",
+                "domain = \"website\"\nlayer = \"frontend\"\ncomponent = \"mission_creator\"\nsurface = [\"attr_panel\"]",
+                "class = \"feature\"\nexecutor = \"cursor-docs\"\n",
+            ),
+            work_scoped(
+                "T-3",
+                "domain = \"website\"\nlayer = \"backend\"\ncomponent = \"http_api\"",
+                "class = \"bug\"\n",
+            ),
+            work_scoped(
+                "T-4",
+                "domain = \"repo\"\nlayer = \"docs\"",
+                "class = \"chore\"\n",
+            ),
+            program("T-9", "status = \"idea\"", &["T-9.1"]),
+        ]))
+    }
+
+    #[test]
+    fn index_precomputes_scope_and_class_facts() {
+        let idx = scoped_index();
+        assert_eq!(idx.rows[0].domain.as_deref(), Some("website"));
+        assert_eq!(idx.rows[0].layer.as_deref(), Some("frontend"));
+        assert_eq!(idx.rows[0].component.as_deref(), Some("mission_creator"));
+        assert_eq!(idx.rows[0].surfaces, vec!["map_canvas", "toolbelt"]);
+        assert_eq!(idx.rows[0].class, Some(Class::Bug));
+        // Component-free scope: component None, surfaces empty.
+        assert_eq!(idx.rows[3].component, None);
+        assert!(idx.rows[3].surfaces.is_empty());
+        // Programs: no scope facts, no class.
+        assert_eq!(idx.rows[4].domain, None);
+        assert_eq!(idx.rows[4].class, None);
+    }
+
+    /// Facets AND with each other, with the existing filters, and exclude
+    /// programs (which have no scope to match).
+    #[test]
+    fn scope_facets_compose_with_existing_filters() {
+        let idx = scoped_index();
+        let mut filters = Filters::default();
+        filters.scope.domain = Some("website".to_owned());
+        assert_eq!(matched_ids(&idx, &filters), vec!["T-1", "T-2", "T-3"]);
+        filters.scope.layer = Some("frontend".to_owned());
+        assert_eq!(matched_ids(&idx, &filters), vec!["T-1", "T-2"]);
+        filters.scope.component = Some("mission_creator".to_owned());
+        assert_eq!(matched_ids(&idx, &filters), vec!["T-1", "T-2"]);
+        // Surface matches MEMBERSHIP in the surface array.
+        filters.scope.surface = Some("toolbelt".to_owned());
+        assert_eq!(matched_ids(&idx, &filters), vec!["T-1"]);
+        // Compose with an existing filter: executor now excludes T-1's default.
+        filters.executor = Some("cursor-docs".to_owned());
+        assert_eq!(matched_ids(&idx, &filters), Vec::<String>::new());
+        // Text + facet: haystack hit AND facet hit.
+        let mut filters = Filters {
+            text: "title".to_owned(),
+            ..Filters::default()
+        };
+        filters.scope.layer = Some("backend".to_owned());
+        assert_eq!(matched_ids(&idx, &filters), vec!["T-3"]);
+    }
+
+    #[test]
+    fn class_filter_composes_and_clear_restores_everything() {
+        let idx = scoped_index();
+        let mut filters = Filters {
+            class: Some(Class::Bug),
+            ..Filters::default()
+        };
+        assert!(filters.is_active());
+        assert_eq!(matched_ids(&idx, &filters), vec!["T-1", "T-3"]);
+        // Class AND scope facet.
+        filters.scope.layer = Some("frontend".to_owned());
+        assert_eq!(matched_ids(&idx, &filters), vec!["T-1"]);
+        // Class AND kind=program: nothing (programs carry no class here).
+        filters.kind = KindFilter::Program;
+        assert_eq!(matched_ids(&idx, &filters), Vec::<String>::new());
+        // One-click clear restores the full measured count.
+        filters.clear();
+        assert!(!filters.is_active());
+        let (verdicts, matched) = filters.apply(&idx);
+        assert_eq!(matched, idx.rows.len());
+        assert!(verdicts.iter().all(|&ok| ok));
+    }
+
+    /// A facet-only filter set reads as active (footer + clear button semantics).
+    #[test]
+    fn facet_only_filters_are_active() {
+        let mut filters = Filters::default();
+        assert!(!filters.is_active());
+        filters.scope.surface = Some("toolbelt".to_owned());
+        assert!(filters.is_active());
+        filters.clear();
+        filters.class = Some(Class::Docs);
+        assert!(filters.is_active());
     }
 }

@@ -17,6 +17,7 @@ use std::thread;
 use tbd_tickets::Ticket;
 
 use crate::discovery::TICKETS_SUBDIR;
+use crate::facets::VocabTree;
 use crate::metrics::{self, MetricsState};
 use crate::wavelock::{self, LockState};
 
@@ -68,6 +69,10 @@ pub struct LoadBundle {
     pub corpus: LoadResult,
     pub lock: LockState,
     pub metrics: MetricsState,
+    /// Scope-vocab tree for the facet dropdowns (T-918.1) — DISPLAY-ONLY input;
+    /// missing/broken file is `None` (facets fall back to corpus-present values),
+    /// never a load refusal.
+    pub vocab: Option<VocabTree>,
 }
 
 /// Child = dotted id (`T-915.1`); parent = undotted (`T-915`).
@@ -153,6 +158,7 @@ pub fn spawn_load(
             corpus: load_corpus(&repo_root),
             lock: wavelock::load_lock(&repo_root),
             metrics: metrics::load_metrics(&repo_root),
+            vocab: VocabTree::load(&repo_root),
         };
         let _ = tx.send(bundle);
         on_done();

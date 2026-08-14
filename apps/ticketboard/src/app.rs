@@ -28,9 +28,10 @@ use eframe::egui::{
 use egui_extras::{Column as TableColumn, TableBuilder};
 use tbd_tickets::StatusName;
 
-use crate::board::{self, BoardModel, Card};
+use crate::board::{self, BoardModel, Card, Class, ScopeLevel};
 use crate::corpus::{self, Corpus, LoadBundle, LoadError};
 use crate::discovery;
+use crate::facets::{self, FacetOption, FacetOptions, VocabTree};
 use crate::filters::{FilterIndex, Filters, KindFilter};
 use crate::gitstatus::{self, GitChip};
 use crate::metrics::{self, MetricsState, SortPair, TableKind};
@@ -46,7 +47,8 @@ use crate::waves::{Lane, Wave0, WaveChip, WavesModel};
 /// eframe Storage key for the picked repo root (user config dir — never the repo).
 const REPO_ROOT_KEY: &str = "repo_root";
 
-const CARD_H: f32 = 52.0;
+/// 52 through T-915; +12 for the T-918.1 scope-breadcrumb row.
+const CARD_H: f32 = 64.0;
 const CARD_GAP: f32 = 6.0;
 const COL_W: f32 = 236.0;
 const CHIP_COL_W: f32 = 92.0;
@@ -78,6 +80,28 @@ fn status_color(status: StatusName) -> Color32 {
         StatusName::Cancelled => Color32::from_rgb(215, 115, 105),
     }
 }
+
+/// Class chip accent — the palette lives in `board::Class::accent_rgb` (pure,
+/// test-pinned, total over the closed class set); this only lifts it to Color32.
+fn class_color(class: Class) -> Color32 {
+    let (r, g, b) = class.accent_rgb();
+    Color32::from_rgb(r, g, b)
+}
+
+/// Muted per-level breadcrumb accents (T-918.1) — desaturated hues so the scope
+/// path reads as ONE quiet chip trail, distinct from the loud status accents.
+fn scope_level_color(level: ScopeLevel) -> Color32 {
+    match level {
+        ScopeLevel::Domain => Color32::from_rgb(170, 190, 215),
+        ScopeLevel::Layer => Color32::from_rgb(160, 195, 175),
+        ScopeLevel::Component => Color32::from_rgb(205, 185, 150),
+        ScopeLevel::Surface => Color32::from_rgb(185, 165, 205),
+    }
+}
+
+/// Amber accent for the estimated-scope `~` glyph (the trust banner's "busy"
+/// tone — provenance flags read as attention, not error).
+const SCOPE_ESTIMATED_COLOR: Color32 = Color32::from_rgb(245, 175, 80);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub(crate) enum Tab {
@@ -123,6 +147,12 @@ pub(crate) struct BoardState {
     tree: TreeModel,
     filter_index: FilterIndex,
     filters: Filters,
+    /// Scope-vocab tree (T-918.1) — DISPLAY-ONLY facet-value source; `None`
+    /// (missing/broken file) falls back to corpus-present values.
+    vocab: Option<VocabTree>,
+    /// Narrowed facet dropdown options — recomputed in `refilter`, never per
+    /// frame.
+    facet_options: FacetOptions,
     /// Per-corpus-index filter verdicts (all true when no filter is active).
     matches: Vec<bool>,
     matched_count: usize,
@@ -150,6 +180,7 @@ impl BoardState {
         corpus: Corpus,
         lock: LockState,
         mut metrics: MetricsState,
+        vocab: Option<VocabTree>,
         filters: Filters,
         metrics_sort: SortPair,
     ) -> Self {
@@ -182,6 +213,8 @@ impl BoardState {
             tree,
             filter_index,
             filters,
+            vocab,
+            facet_options: FacetOptions::default(),
             matches: vec![true; total],
             matched_count: total,
             visible: Default::default(),
@@ -198,9 +231,15 @@ impl BoardState {
         state
     }
 
-    /// Recompute every filter-derived surface: verdicts, board rows, tree rows,
-    /// footer. Runs on filter change only — never per frame.
+    /// Recompute every filter-derived surface: facet options (narrowed, stale
+    /// lower selections cleared), verdicts, board rows, tree rows, footer. Runs
+    /// on filter change only — never per frame.
     fn refilter(&mut self) {
+        self.facet_options = facets::compute(
+            self.vocab.as_ref(),
+            &self.filter_index.rows,
+            &mut self.filters.scope,
+        );
         let (matches, matched_count) = self.filters.apply(&self.filter_index);
         self.matches = matches;
         self.matched_count = matched_count;
@@ -540,8 +579,14 @@ impl TicketboardApp {
                         ),
                         _ => (Filters::default(), None, None, SortPair::default()),
                     };
-                    let mut board =
-                        BoardState::new(corpus, bundle.lock, bundle.metrics, filters, metrics_sort);
+                    let mut board = BoardState::new(
+                        corpus,
+                        bundle.lock,
+                        bundle.metrics,
+                        bundle.vocab,
+                        filters,
+                        metrics_sort,
+                    );
                     board.selected =
                         selected_id.and_then(|id| board.board.id_to_index.get(&id).copied());
                     board.compare =
@@ -1006,7 +1051,12 @@ impl eframe::App for TicketboardApp {
         if board_active {
             Panel::top(Id::new("filterbar")).show(ui, |ui| {
                 if let State::Board(b) = &mut self.state
-                    && filter_bar_ui(ui, &mut b.filters, &b.filter_index.executors)
+                    && filter_bar_ui(
+                        ui,
+                        &mut b.filters,
+                        &b.filter_index.executors,
+                        &b.facet_options,
+                    )
                 {
                     actions.push(Action::FiltersChanged);
                 }
@@ -1217,9 +1267,39 @@ fn topbar_ui(
     });
 }
 
+/// One scope-facet dropdown (T-918.1). Options are the narrowed vocab ∪ corpus
+/// union from `facets::compute`; corpus values the vocabulary does not know are
+/// marked — display-only marking, `ticket check` stays the validation authority.
+fn facet_combo(
+    ui: &mut Ui,
+    salt: &str,
+    any_label: &str,
+    sel: &mut Option<String>,
+    options: &[FacetOption],
+) {
+    ComboBox::from_id_salt(salt)
+        .selected_text(sel.clone().unwrap_or_else(|| any_label.to_owned()))
+        .show_ui(ui, |ui| {
+            ui.selectable_value(sel, None, any_label);
+            for opt in options {
+                let text = if opt.vocab_unknown {
+                    RichText::new(format!("{} (not in vocab)", opt.value)).italics()
+                } else {
+                    RichText::new(&opt.value)
+                };
+                ui.selectable_value(sel, Some(opt.value.clone()), text);
+            }
+        });
+}
+
 /// Composable filter bar — mutates `filters` in place; returns true when anything
 /// changed this frame (the caller then refilters once, outside the paint).
-fn filter_bar_ui(ui: &mut Ui, filters: &mut Filters, executors: &[String]) -> bool {
+fn filter_bar_ui(
+    ui: &mut Ui,
+    filters: &mut Filters,
+    executors: &[String],
+    facet_options: &FacetOptions,
+) -> bool {
     let before = filters.clone();
     ui.horizontal_wrapped(|ui| {
         ui.add(
@@ -1240,6 +1320,49 @@ fn filter_bar_ui(ui: &mut Ui, filters: &mut Filters, executors: &[String]) -> bo
             .show_ui(ui, |ui| {
                 for kind in KindFilter::ALL {
                     ui.selectable_value(&mut filters.kind, kind, kind.label());
+                }
+            });
+        // T-918.1 scope facets — higher selections narrow the lower dropdowns
+        // (recomputed in refilter, where stale lower picks are also cleared).
+        facet_combo(
+            ui,
+            "domain_facet",
+            "any domain",
+            &mut filters.scope.domain,
+            &facet_options.domains,
+        );
+        facet_combo(
+            ui,
+            "layer_facet",
+            "any layer",
+            &mut filters.scope.layer,
+            &facet_options.layers,
+        );
+        facet_combo(
+            ui,
+            "component_facet",
+            "any component",
+            &mut filters.scope.component,
+            &facet_options.components,
+        );
+        facet_combo(
+            ui,
+            "surface_facet",
+            "any surface",
+            &mut filters.scope.surface,
+            &facet_options.surfaces,
+        );
+        // T-918.1 class facet — the closed 5-value set, chip-colored.
+        ComboBox::from_id_salt("class_facet")
+            .selected_text(filters.class.map_or("any class", Class::as_str))
+            .show_ui(ui, |ui| {
+                ui.selectable_value(&mut filters.class, None, "any class");
+                for class in Class::ALL {
+                    ui.selectable_value(
+                        &mut filters.class,
+                        Some(class),
+                        RichText::new(class.as_str()).color(class_color(class)),
+                    );
                 }
             });
         for (i, status) in board::STATUS_ORDER.iter().enumerate() {
@@ -1527,6 +1650,52 @@ fn card_ui(ui: &mut Ui, card: &Card, selected: bool, draggable: bool) -> egui::R
         FontId::proportional(12.0),
         visuals.text_color(),
     );
+    // scope breadcrumb (work tickets; T-918.1) — compact chip path, per-level
+    // muted accents, painter-clipped at the card edge. The card form omits the
+    // "(no surface)" marker (detail-panel only). An owns-inferred scope is
+    // PREFIXED with the ~ glyph (always visible even when the tail clips) and
+    // gets a hover tooltip on the glyph.
+    if let Some(bc) = &card.breadcrumb {
+        let font = FontId::proportional(9.0);
+        let y = rect.top() + 36.0;
+        let mut x = left;
+        if bc.estimated {
+            let r = painter.text(
+                pos2(x, y),
+                Align2::LEFT_TOP,
+                board::SCOPE_ESTIMATED_GLYPH,
+                font.clone(),
+                SCOPE_ESTIMATED_COLOR,
+            );
+            x = r.right() + 2.0;
+            ui.interact(
+                r.expand(2.0),
+                response.id.with("scope_estimated"),
+                Sense::hover(),
+            )
+            .on_hover_text(board::SCOPE_ESTIMATED_TIP);
+        }
+        for (i, seg) in bc.segs.iter().enumerate() {
+            if i > 0 {
+                let r = painter.text(
+                    pos2(x, y),
+                    Align2::LEFT_TOP,
+                    board::SCOPE_SEP,
+                    font.clone(),
+                    visuals.weak_text_color(),
+                );
+                x = r.right() + 3.0;
+            }
+            let r = painter.text(
+                pos2(x, y),
+                Align2::LEFT_TOP,
+                &seg.text,
+                font.clone(),
+                scope_level_color(seg.level),
+            );
+            x = r.right() + 3.0;
+        }
+    }
     // executor chip.
     let galley = painter.layout_no_wrap(
         card.executor.clone(),
@@ -1537,6 +1706,20 @@ fn card_ui(ui: &mut Ui, card: &Card, selected: bool, draggable: bool) -> egui::R
     let chip_rect = Rect::from_min_size(chip_pos, galley.size()).expand2(vec2(4.0, 1.5));
     painter.rect_filled(chip_rect, 6.0, visuals.extreme_bg_color);
     painter.galley(chip_pos, galley, visuals.weak_text_color());
+    // class chip (T-918.1) — accent-colored text on the same chip ground; a
+    // ticket without a class (programs, pre-triage work) renders none.
+    if let Some(class) = card.class {
+        let color = class_color(class);
+        let galley =
+            painter.layout_no_wrap(class.as_str().to_owned(), FontId::proportional(10.0), color);
+        let class_pos = pos2(
+            chip_rect.right() + 6.0,
+            rect.bottom() - 5.0 - galley.size().y,
+        );
+        let class_rect = Rect::from_min_size(class_pos, galley.size()).expand2(vec2(4.0, 1.5));
+        painter.rect_filled(class_rect, 6.0, visuals.extreme_bg_color);
+        painter.galley(class_pos, galley, color);
+    }
     response
 }
 
@@ -1989,7 +2172,13 @@ enum Cell {
     Text(String),
     Mono(String),
     IdRef(String),
-    PathRef { label: String, path: PathBuf },
+    PathRef {
+        label: String,
+        path: PathBuf,
+    },
+    /// Scope breadcrumb (T-918.1) — the detail tier renders the "(no surface)"
+    /// marker and the estimated-scope glyph.
+    Scope(board::Breadcrumb),
     Missing,
 }
 
@@ -2012,6 +2201,14 @@ fn detail_ui(
     ui.horizontal(|ui| {
         ui.label(RichText::new(v.id).monospace().size(16.0).strong());
         ui.label(RichText::new(v.kind).weak().small());
+        // T-918.1 class chip — colored accent, absent class renders nothing.
+        if let Some(class) = v.class.and_then(Class::parse) {
+            ui.label(
+                RichText::new(class.as_str())
+                    .small()
+                    .color(class_color(class)),
+            );
+        }
         ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
             if ui.small_button("✕").clicked() {
                 actions.push(Action::CloseDetail);
@@ -2082,7 +2279,12 @@ fn detail_ui(
                     v.pack_last
                         .map_or(Cell::Missing, |p| Cell::Text(p.to_string())),
                 ),
-                ("scope", v.scope.clone().map_or(Cell::Missing, Cell::Text)),
+                (
+                    "scope",
+                    v.scope.map_or(Cell::Missing, |s| {
+                        Cell::Scope(board::breadcrumb(s, v.estimated))
+                    }),
+                ),
                 (
                     "file",
                     Cell::PathRef {
@@ -2215,10 +2417,49 @@ fn cell_ui(ui: &mut Ui, cell: &Cell, ids: &HashMap<String, usize>, actions: &mut
                 actions.push(Action::OpenPath(path.clone()));
             }
         }
+        Cell::Scope(bc) => scope_breadcrumb_ui(ui, bc),
         Cell::Missing => {
             ui.label(RichText::new("—").weak());
         }
     }
+}
+
+/// Detail-tier breadcrumb (T-918.1): per-level muted accents, the explicit
+/// "(no surface)" marker when a component carries no surface (detail ONLY —
+/// cards omit it), and the ~ glyph with its owns-inferred tooltip. Single line
+/// (the table row is fixed-height); hovering the row shows the plain-text path.
+fn scope_breadcrumb_ui(ui: &mut Ui, bc: &board::Breadcrumb) {
+    ui.horizontal(|ui| {
+        ui.spacing_mut().item_spacing.x = 4.0;
+        if bc.estimated {
+            ui.label(
+                RichText::new(board::SCOPE_ESTIMATED_GLYPH)
+                    .small()
+                    .color(SCOPE_ESTIMATED_COLOR),
+            )
+            .on_hover_text(board::SCOPE_ESTIMATED_TIP);
+        }
+        for (i, seg) in bc.segs.iter().enumerate() {
+            if i > 0 {
+                ui.label(RichText::new(board::SCOPE_SEP).weak().small());
+            }
+            ui.label(
+                RichText::new(&seg.text)
+                    .small()
+                    .color(scope_level_color(seg.level)),
+            );
+        }
+        if bc.no_surface {
+            ui.label(
+                RichText::new(board::NO_SURFACE_MARKER)
+                    .weak()
+                    .small()
+                    .italics(),
+            );
+        }
+    })
+    .response
+    .on_hover_text(bc.label());
 }
 
 /// Clickable when the id exists in the corpus; plain monospace when dangling.

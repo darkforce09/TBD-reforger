@@ -58,6 +58,11 @@ pub struct Card {
     pub executor: String,
     /// `"#5961"` when the ticket carries an order, else empty.
     pub order_label: String,
+    /// Scope breadcrumb (work tickets; programs carry no scope). Cards render the
+    /// compact form — no [`NO_SURFACE_MARKER`] (detail-panel only).
+    pub breadcrumb: Option<Breadcrumb>,
+    /// Class chip accent (absent class — programs, pre-triage work — no chip).
+    pub class: Option<Class>,
 }
 
 pub struct Column {
@@ -117,6 +122,11 @@ impl BoardModel {
                     .order()
                     .map(|o| format!("#{o}"))
                     .unwrap_or_default(),
+                breadcrumb: match t {
+                    Ticket::Work(w) => Some(breadcrumb(&w.scope, &w.estimated)),
+                    Ticket::Program(_) => None,
+                },
+                class: class_of(t).and_then(Class::parse),
             };
             buckets[column_of(t.status().name())].push((sort_key(t), card));
         }
@@ -196,20 +206,170 @@ pub fn truncate_chars(s: &str, max_chars: usize) -> String {
     out
 }
 
-/// One-line scope rendering for the detail panel — the v2 breadcrumb:
-/// `domain/layer[/component][: s1+s2]`. Kept deliberately raw (T-917.2 compile-fix
-/// tier); the faceted rendering lands with Ticketboard v2 B.1.
-pub fn scope_compact(scope: &ScopeV2) -> String {
-    let mut s = format!("{}/{}", scope.domain.as_str(), scope.layer);
+// ---- scope breadcrumb (T-918.1 / B.1) ----
+
+/// Breadcrumb level — each level gets its own muted accent (app.rs maps to color).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ScopeLevel {
+    Domain,
+    Layer,
+    Component,
+    Surface,
+}
+
+/// One breadcrumb segment: level + display text (the surface list joins into a
+/// single `s1+s2` segment — one level, one segment).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BreadcrumbSeg {
+    pub level: ScopeLevel,
+    pub text: String,
+}
+
+/// Display model for the v2 scope path (supersedes the T-917.2 raw
+/// `scope_compact`): `domain › layer [› component] [› s1+s2]`.
+///
+/// - An absent component is SKIPPED visibly — the path is just `domain › layer`
+///   (component-free layers exist per the vocabulary; nothing is missing there).
+/// - `no_surface` marks a component WITH an empty surface list — a surface could
+///   exist and does not (surface is required on live tickets from S.2 on). The
+///   DETAIL panel renders the explicit [`NO_SURFACE_MARKER`]; cards stay compact
+///   and omit it. Component-free scope never sets it (no surface tier to miss).
+/// - `estimated` marks `"scope" ∈ estimated[]` — the migrator owns-inferred this
+///   scope; rendered as the [`SCOPE_ESTIMATED_GLYPH`] with its tooltip.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Breadcrumb {
+    pub segs: Vec<BreadcrumbSeg>,
+    pub no_surface: bool,
+    pub estimated: bool,
+}
+
+/// Separator glyph between breadcrumb segments.
+pub const SCOPE_SEP: &str = "›";
+/// Detail-panel marker for a component whose surface list is empty.
+pub const NO_SURFACE_MARKER: &str = "(no surface)";
+/// Glyph prefixed to owns-inferred (estimated) scope breadcrumbs.
+pub const SCOPE_ESTIMATED_GLYPH: &str = "~";
+/// Tooltip on the estimated-scope glyph.
+pub const SCOPE_ESTIMATED_TIP: &str = "scope owns-inferred at migration";
+
+/// The estimated[] marker predicate: was this ticket's scope owns-inferred by the
+/// v2 migrator (rather than carried by v1 data)?
+pub fn scope_estimated(estimated: &[String]) -> bool {
+    estimated.iter().any(|e| e == "scope")
+}
+
+pub fn breadcrumb(scope: &ScopeV2, estimated: &[String]) -> Breadcrumb {
+    let mut segs = vec![
+        BreadcrumbSeg {
+            level: ScopeLevel::Domain,
+            text: scope.domain.as_str().to_owned(),
+        },
+        BreadcrumbSeg {
+            level: ScopeLevel::Layer,
+            text: scope.layer.clone(),
+        },
+    ];
     if let Some(component) = &scope.component {
-        s.push('/');
-        s.push_str(component);
+        segs.push(BreadcrumbSeg {
+            level: ScopeLevel::Component,
+            text: component.clone(),
+        });
     }
     if !scope.surface.is_empty() {
-        s.push_str(": ");
-        s.push_str(&scope.surface.join("+"));
+        segs.push(BreadcrumbSeg {
+            level: ScopeLevel::Surface,
+            text: scope.surface.join("+"),
+        });
     }
-    s
+    Breadcrumb {
+        no_surface: scope.component.is_some() && scope.surface.is_empty(),
+        estimated: scope_estimated(estimated),
+        segs,
+    }
+}
+
+impl Breadcrumb {
+    /// Plain-text path — the four scope fields joined (`repo › docs`,
+    /// `website › frontend › mission_creator › a+b`). The chip path paints `segs`
+    /// individually; this is the canonical string form (tests + hover copy).
+    pub fn label(&self) -> String {
+        self.segs
+            .iter()
+            .map(|s| s.text.as_str())
+            .collect::<Vec<_>>()
+            .join(&format!(" {SCOPE_SEP} "))
+    }
+}
+
+// ---- work-ticket class (T-918.1 / B.1) ----
+
+/// The closed class set, mirrored from [`tbd_tickets::CLASS_VALUES`] (parity is
+/// test-pinned). An enum so the chip accent match below is TOTAL — a 6th class
+/// fails compile here before it can ever render unstyled.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Class {
+    Bug,
+    Feature,
+    Chore,
+    Audit,
+    Docs,
+}
+
+impl Class {
+    pub const ALL: [Class; 5] = [
+        Class::Bug,
+        Class::Feature,
+        Class::Chore,
+        Class::Audit,
+        Class::Docs,
+    ];
+
+    pub fn parse(s: &str) -> Option<Class> {
+        Some(match s {
+            "bug" => Class::Bug,
+            "feature" => Class::Feature,
+            "chore" => Class::Chore,
+            "audit" => Class::Audit,
+            "docs" => Class::Docs,
+            _ => return None,
+        })
+    }
+
+    #[deny(clippy::wildcard_enum_match_arm)]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Class::Bug => "bug",
+            Class::Feature => "feature",
+            Class::Chore => "chore",
+            Class::Audit => "audit",
+            Class::Docs => "docs",
+        }
+    }
+
+    /// Chip accent rgb — the app.rs status palette hues, reused so class chips
+    /// read in the board's existing color language: bug = cancelled red,
+    /// feature = queued blue, chore = idea gray, audit = review purple,
+    /// docs = shipped green. Total match (deny above the fn): adding a class
+    /// variant without an accent does not compile.
+    #[deny(clippy::wildcard_enum_match_arm)]
+    pub fn accent_rgb(self) -> (u8, u8, u8) {
+        match self {
+            Class::Bug => (215, 115, 105),
+            Class::Feature => (120, 165, 225),
+            Class::Chore => (150, 150, 150),
+            Class::Audit => (195, 150, 235),
+            Class::Docs => (105, 150, 115),
+        }
+    }
+}
+
+/// `class` is legal on both kinds (required on work by check; rare on programs).
+/// A ticket without one renders no chip — the board never invents a class.
+pub fn class_of(t: &Ticket) -> Option<&str> {
+    match t {
+        Ticket::Program(p) => p.class.as_deref(),
+        Ticket::Work(w) => w.class.as_deref(),
+    }
 }
 
 /// Uniform read view over both ticket kinds — the detail panel's "EVERY field"
@@ -236,8 +396,14 @@ pub struct TicketView<'a> {
     pub completed_at: Option<&'a str>,
     pub owns: &'a [String],
     pub pack_last: Option<bool>,
-    /// Compact scope line (work tickets only; programs forbid `[scope]`).
-    pub scope: Option<String>,
+    /// Raw scope (work tickets only; programs forbid `[scope]`) — render through
+    /// [`breadcrumb`].
+    pub scope: Option<&'a ScopeV2>,
+    /// Raw class value (chips parse it through [`Class::parse`]).
+    pub class: Option<&'a str>,
+    /// Provenance markers ([`tbd_tickets::ESTIMATED_VALUES`]) — B.1 consumes only
+    /// the `"scope"` entry (the breadcrumb glyph); B.2 renders the rest.
+    pub estimated: &'a [String],
 }
 
 const EMPTY_IDS: &[String] = &[];
@@ -269,6 +435,8 @@ pub fn view(t: &Ticket) -> TicketView<'_> {
             owns: &p.owns,
             pack_last: p.pack_last,
             scope: None,
+            class: p.class.as_deref(),
+            estimated: &p.estimated,
         },
         Ticket::Work(w) => TicketView {
             id: &w.id,
@@ -292,7 +460,9 @@ pub fn view(t: &Ticket) -> TicketView<'_> {
             completed_at: w.completed_at.as_deref(),
             owns: &w.owns,
             pack_last: w.pack_last,
-            scope: Some(scope_compact(&w.scope)),
+            scope: Some(&w.scope),
+            class: w.class.as_deref(),
+            estimated: &w.estimated,
         },
     }
 }
@@ -479,15 +649,35 @@ layer = "docs"
         assert!(cut.ends_with('…'));
     }
 
-    /// T-917.2: the breadcrumb renders all four v2 levels, omitting what is absent.
-    #[test]
-    fn scope_compact_variants() {
-        let repo = work("T-1", "status = \"idea\"", "");
-        match &repo {
-            Ticket::Work(w) => assert_eq!(scope_compact(&w.scope), "repo/docs"),
-            Ticket::Program(_) => unreachable!(),
-        }
+    fn work_scope(scope: &ScopeV2, estimated: &[String]) -> Breadcrumb {
+        breadcrumb(scope, estimated)
+    }
 
+    fn scope_of(t: &Ticket) -> &ScopeV2 {
+        match t {
+            Ticket::Work(w) => &w.scope,
+            Ticket::Program(_) => unreachable!("work builder"),
+        }
+    }
+
+    /// T-918.1: breadcrumb string assembly over all four v2 levels — empty
+    /// component is SKIPPED (`domain › layer`, no marker: component-free layers
+    /// are complete); empty surface UNDER a component sets `no_surface` (the
+    /// detail-panel `(no surface)` marker; cards omit it).
+    #[test]
+    fn breadcrumb_assembly_variants() {
+        // No component (⇒ no surface tier): two segments, no marker.
+        let repo = work("T-1", "status = \"idea\"", "");
+        let bc = work_scope(scope_of(&repo), &[]);
+        assert_eq!(bc.label(), "repo › docs");
+        assert_eq!(
+            bc.segs.iter().map(|s| s.level).collect::<Vec<_>>(),
+            vec![ScopeLevel::Domain, ScopeLevel::Layer]
+        );
+        assert!(!bc.no_surface);
+        assert!(!bc.estimated);
+
+        // Component with an EMPTY surface list: marker flag on.
         let backend = parse(
             r#"id = "T-2"
 kind = "work"
@@ -500,13 +690,11 @@ layer = "backend"
 component = "http_api"
 "#,
         );
-        match &backend {
-            Ticket::Work(w) => {
-                assert_eq!(scope_compact(&w.scope), "website/backend/http_api");
-            }
-            Ticket::Program(_) => unreachable!(),
-        }
+        let bc = work_scope(scope_of(&backend), &[]);
+        assert_eq!(bc.label(), "website › backend › http_api");
+        assert!(bc.no_surface, "component present + no surface ⇒ marker");
 
+        // Full four-level path: surfaces join into ONE segment.
         let editor = parse(
             r#"id = "T-3"
 kind = "work"
@@ -520,15 +708,89 @@ component = "mission_creator"
 surface = ["dock_left", "map_canvas"]
 "#,
         );
-        match &editor {
-            Ticket::Work(w) => {
-                assert_eq!(
-                    scope_compact(&w.scope),
-                    "website/frontend/mission_creator: dock_left+map_canvas"
-                );
-            }
-            Ticket::Program(_) => unreachable!(),
+        let bc = work_scope(scope_of(&editor), &[]);
+        assert_eq!(
+            bc.label(),
+            "website › frontend › mission_creator › dock_left+map_canvas"
+        );
+        assert_eq!(bc.segs.len(), 4);
+        assert_eq!(bc.segs[3].level, ScopeLevel::Surface);
+        assert!(!bc.no_surface);
+    }
+
+    /// The estimated-scope marker predicate: exactly the `"scope"` entry, nothing
+    /// else, flips the breadcrumb glyph.
+    #[test]
+    fn breadcrumb_estimated_scope_marker() {
+        assert!(scope_estimated(&["scope".to_owned()]));
+        assert!(scope_estimated(&["tokens".to_owned(), "scope".to_owned()]));
+        assert!(!scope_estimated(&["tokens".to_owned()]));
+        assert!(!scope_estimated(&[]));
+
+        let inferred = work(
+            "T-1",
+            "status = \"idea\"",
+            "estimated = [\"scope\"]\nestimate_note = \"owns-inferred\"\n",
+        );
+        assert!(work_scope(scope_of(&inferred), estimated_of(&inferred)).estimated);
+        let carried = work("T-2", "status = \"idea\"", "estimated = [\"tokens\"]\n");
+        assert!(!work_scope(scope_of(&carried), estimated_of(&carried)).estimated);
+    }
+
+    fn estimated_of(t: &Ticket) -> &[String] {
+        match t {
+            Ticket::Work(w) => &w.estimated,
+            Ticket::Program(p) => &p.estimated,
         }
+    }
+
+    /// T-918.1: class enum stays in lockstep with the registry's closed set, and
+    /// the chip accents are total + pairwise distinct (the deny-wildcard matches
+    /// in `as_str`/`accent_rgb` make a 6th enum variant a compile error).
+    #[test]
+    fn class_parity_and_total_distinct_accents() {
+        assert_eq!(
+            Class::ALL.map(Class::as_str).to_vec(),
+            tbd_tickets::CLASS_VALUES.to_vec(),
+            "Class::ALL must mirror tbd_tickets::CLASS_VALUES exactly"
+        );
+        for class in Class::ALL {
+            assert_eq!(Class::parse(class.as_str()), Some(class));
+        }
+        assert_eq!(Class::parse("epic"), None);
+        assert_eq!(Class::parse("Bug"), None, "raw lowercase values only");
+        let mut accents: Vec<_> = Class::ALL.iter().map(|c| c.accent_rgb()).collect();
+        accents.sort_unstable();
+        accents.dedup();
+        assert_eq!(accents.len(), Class::ALL.len(), "chip accents must differ");
+    }
+
+    /// Cards precompute breadcrumb + class chip; programs carry neither.
+    #[test]
+    fn cards_precompute_breadcrumb_and_class() {
+        let corpus = corpus_of(vec![
+            work("T-1", "status = \"idea\"", "class = \"bug\"\n"),
+            parse(
+                r#"id = "T-9"
+kind = "program"
+title = "prog"
+summary = "s"
+status = "idea"
+children = ["T-9.1"]
+"#,
+            ),
+        ]);
+        let board = BoardModel::build(&corpus);
+        let idea = &board.columns[column_of(StatusName::Idea)];
+        let work_card = idea.cards.iter().find(|c| c.id == "T-1").unwrap();
+        assert_eq!(work_card.class, Some(Class::Bug));
+        assert_eq!(
+            work_card.breadcrumb.as_ref().unwrap().label(),
+            "repo › docs"
+        );
+        let program_card = idea.cards.iter().find(|c| c.id == "T-9").unwrap();
+        assert_eq!(program_card.class, None, "no class ⇒ no chip");
+        assert!(program_card.breadcrumb.is_none(), "programs have no scope");
     }
 
     #[test]
@@ -560,18 +822,23 @@ active = "T-9.1"
         assert_eq!(v.active, Some("T-9.1"));
         assert_eq!(v.parent, None);
         assert!(v.scope.is_none());
+        assert_eq!(v.class, None);
+        assert!(v.estimated.is_empty());
 
         let workt = work(
             "T-9.1",
             "status = \"shipped\"\nshipped_at = \"abc123\"",
-            "parent = \"T-9\"\n",
+            "parent = \"T-9\"\nclass = \"chore\"\nestimated = [\"scope\"]\n",
         );
         let v = view(&workt);
         assert_eq!(v.kind, "work");
         assert_eq!(v.parent, Some("T-9"));
         assert_eq!(v.shipped_at, Some("abc123"));
         assert!(v.children.is_empty());
-        assert_eq!(v.scope.as_deref(), Some("repo/docs"));
+        let bc = breadcrumb(v.scope.unwrap(), v.estimated);
+        assert_eq!(bc.label(), "repo › docs");
+        assert!(bc.estimated);
+        assert_eq!(v.class, Some("chore"));
         assert_eq!(kind_str(&workt), "work");
     }
 }

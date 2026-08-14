@@ -19,6 +19,7 @@ mod app;
 mod board;
 mod corpus;
 mod discovery;
+mod facets;
 mod filters;
 mod gitstatus;
 mod metrics;

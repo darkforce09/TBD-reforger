@@ -60,6 +60,21 @@ layer = "docs"
     ))
 }
 
+/// Work ticket with an explicit `[scope]` block (T-918.1 facet tests). `scope_lines`
+/// supplies the block body (`domain = …` etc.); `extra` as in [`work`].
+pub fn work_scoped(id: &str, scope_lines: &str, extra: &str) -> Ticket {
+    parse_ticket(&format!(
+        r#"id = "{id}"
+kind = "work"
+title = "title of {id}"
+status = "idea"
+{extra}
+[scope]
+{scope_lines}
+"#
+    ))
+}
+
 /// Minimal program ticket. The encoding refuses program-without-children, so callers
 /// always name at least one child id (the child file need not exist — nothing checks
 /// parent↔child at parse time).
