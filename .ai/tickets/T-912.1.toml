@@ -1,0 +1,20 @@
+id = "T-912.1"
+kind = "work"
+title = "Owns required + dependency graph on tickets"
+summary = "Populate owns from both wave_plan.tsv files onto every matching ticket (any status), merge the 11 const DEPS edges into ticket depends_on, set pack_last = true on T-290, then delete const DEPS and RUN_LAST so the packer reads ticket depends_on/pack_last/owns. ticket check goes red on queued/ready/running/review Work with empty owns, globbing all T-*.toml including children."
+status = "ready"
+order = 5920
+spec = "docs/platform/t912_wave_lockfile.md"
+executor = "claude-code"
+notes = "TSVs stay as the wave-label file until T-912.2. Queued Work absent from both TSVs gets owns from its own named paths in the same commit — never left queued-empty. T-212 depends_on becomes T-685 plus T-241 plus T-257. No ALLOWED_NEW here: owns and pack_last already exist in schema.json and the typed structs; the deliberate commit is the nonempty-owns check."
+parent = "T-912"
+user_story = "Tickets own their collision surface and dependency edges so the wave packer reads the registry instead of hardcoded consts in slice_collisions.rs."
+acceptance = [
+    "Empty owns on a queued/ready Work makes ticket check red (proved, then restored)",
+    "rg 'const DEPS' xtask/src/slice_collisions.rs is empty and a unit test fails if the const returns",
+    "Each of the 11 DEPS edges is present on the dependent ticket's depends_on; T-290 has pack_last = true",
+    "cargo xtask ticket check --strict prints check OK",
+]
+
+[scope.repo]
+layers = ["xtask"]

@@ -1,0 +1,13 @@
+id = "T-913.1"
+kind = "work"
+title = "created_at and completed_at on the ticket file"
+summary = "Optional created_at/completed_at (RFC 3339 UTC) on ticket files; malformed is a parse error, never now. One deliberate commit adds ALLOWED_NEW = {created_at, completed_at}, widens schema.json + TicketFile + WorkTicket/ProgramTicket, and lands the writers: ticket add stamps created_at, ship/done/cancel stamp completed_at. No backfill."
+status = "queued"
+order = 5930
+spec = "docs/platform/t913_ticket_run_metrics.md"
+executor = "claude-code"
+notes = "New test: every on-disk TOML key is a mapped encoding-C key or in ALLOWED_NEW — planting created_at without the widen commit is check-red. Timestamp parser crate arrives in the same commit as the fields (no chrono/time in xtask or tbd-tickets today). shipped_at stays a SHA."
+parent = "T-913"
+
+[scope.repo]
+layers = ["xtask"]

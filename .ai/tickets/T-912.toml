@@ -1,0 +1,14 @@
+id = "T-912"
+kind = "program"
+title = "Wave Lockfile Architecture"
+summary = "Compile .ai/tickets/wave.lock (TOML) from ticket-owned owns/depends_on/pack_last and make it the single wave plan for platform and mod. wave repack is the only legal writer and platform wave land runs it as its final step; wave check recomputes and structural-equals with missing lock a refuse. Both wave_plan.tsv files and const DEPS/RUN_LAST die. First lock set-equals today's TSV packing; later repacks order open candidates by ticket order, tie-broken by id."
+status = "queued"
+order = 5920
+spec = "docs/platform/t912_wave_lockfile.md"
+executor = "claude-code"
+notes = "Serial slices: T-912.1 then T-912.2 own overlapping .ai/tickets/ + xtask paths; do not pack in one parallel wave. Lock wave 0 is frozen undispatchable membership; TBD_WAVE_GENERATION_FLOOR and TBD_WAVE_PLAN are deleted at T-912.2 and reading either is check-red. Filesystem glob order is forbidden as a candidate sort key."
+children = [
+    "T-912.1",
+    "T-912.2",
+]
+active = "T-912.1"
