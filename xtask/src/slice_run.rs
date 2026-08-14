@@ -22,7 +22,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use crate::metrics::{self, RunRecord};
-use crate::registry::{Registry, slice_executor, slice_spec, ticket_by_id};
+use crate::registry::{Registry, opt_str, slice_executor, slice_spec, ticket_by_id, tickets};
 
 /// Environment override for the agent command line (program + leading args).
 pub const AGENT_CMD_ENV: &str = "TBD_SLICE_RUN_AGENT_CMD";
@@ -132,21 +132,79 @@ fn read_fixture(path: &Path) -> Result<Value> {
     serde_json::from_str(&text).with_context(|| format!("parse fixture {}", path.display()))
 }
 
+/// What one requested id resolves to. `receipt_id` is ALWAYS the slice-level id — the
+/// same id `platform wave land` lands and stamps — so producer and stamper can never
+/// write under different directories for the same work.
+struct Resolved {
+    receipt_id: String,
+    spec: String,
+    executor: String,
+}
+
+/// Resolve a ticket OR slice id against the phase-2 tree, where child files are folded
+/// into the parent row's `slice_plan` and are not top-level registry rows themselves.
+/// A parent id resolves to its ACTIVE slice; a slice id resolves through whichever
+/// parent's plan carries it.
+fn resolve(registry: &Registry, id: &str) -> Result<Resolved> {
+    if let Some(t) = ticket_by_id(registry, id) {
+        let receipt_id = opt_str(t, "active_slice")
+            .filter(|s| !s.is_empty())
+            .unwrap_or(id)
+            .to_string();
+        return Ok(Resolved {
+            receipt_id,
+            spec: slice_spec(t),
+            executor: slice_executor(t),
+        });
+    }
+    for row in tickets(registry) {
+        let entry = row
+            .get("slice_plan")
+            .and_then(|p| p.as_object())
+            .and_then(|p| p.get(id));
+        if let Some(entry) = entry {
+            let spec = entry
+                .get("spec")
+                .and_then(|s| s.as_str())
+                .unwrap_or("")
+                .to_string();
+            let executor = entry
+                .get("executor")
+                .and_then(|e| e.as_str())
+                .map(str::to_string)
+                .unwrap_or_else(|| {
+                    opt_str(row, "executor")
+                        .unwrap_or("claude-code")
+                        .to_string()
+                });
+            return Ok(Resolved {
+                receipt_id: id.to_string(),
+                spec,
+                executor,
+            });
+        }
+    }
+    bail!("unknown ticket {id} (no registry row, no parent slice_plan entry)")
+}
+
 /// Run one slice through the agent CLI and write its run receipt.
 /// Returns `None` on `--dry-run`, else the receipt path.
 pub fn run_slice(
     root: &Path,
     registry: &Registry,
-    id: &str,
+    requested: &str,
     opts: &SliceRunOpts,
 ) -> Result<Option<PathBuf>> {
-    let t = ticket_by_id(registry, id).with_context(|| format!("unknown ticket {id}"))?;
-    let executor = slice_executor(t);
+    let Resolved {
+        receipt_id,
+        spec,
+        executor,
+    } = resolve(registry, requested)?;
+    let id = receipt_id.as_str();
     if executor != "claude-code" {
         // The executor gate: workbench/human/ci slices are not agent-runnable.
         bail!("[{id}] refusing slice-run: executor is {executor} (not claude-code)");
     }
-    let spec = slice_spec(t);
     if spec.is_empty() || !root.join(&spec).is_file() {
         bail!("[{id}] spec missing on disk: {spec}");
     }
@@ -327,6 +385,66 @@ mod tests {
         opts.started = Some("yesterday".to_string());
         let err = run_slice(&tmp, &reg, "T-990", &opts).unwrap_err();
         assert!(format!("{err:#}").contains("RFC 3339"), "{err:#}");
+        let _ = fs::remove_dir_all(&tmp);
+    }
+
+    /// Phase-2 tree shape: slice files are folded into the parent's `slice_plan`, not
+    /// top-level rows. A slice id must resolve through the plan; a parent id must
+    /// resolve to its ACTIVE slice — so the receipt directory is ALWAYS the slice id
+    /// that `platform wave land` later stamps.
+    #[test]
+    fn slice_ids_resolve_through_the_parent_slice_plan() {
+        let tmp = scratch("slice-plan");
+        fs::write(tmp.join("spec.md"), "# spec\n").unwrap();
+        let reg = json!({
+            "next_id": 1,
+            "tickets": [{
+                "id": "T-990",
+                "kind": "program",
+                "title": "t",
+                "summary": "t",
+                "status": "ready",
+                "order": 1,
+                "executor": "claude-code",
+                "active_slice": "T-990.2",
+                "slice_plan": {
+                    "T-990.2": {
+                        "spec": "spec.md",
+                        "executor": "claude-code",
+                        "status": "ready",
+                        "targets": ["root"]
+                    }
+                }
+            }]
+        });
+        // Direct slice id → plan entry.
+        let path = run_slice(
+            &tmp,
+            &reg,
+            "T-990.2",
+            &opts_with(Some("slice_run_claude_print.json"), None),
+        )
+        .unwrap()
+        .expect("not a dry run");
+        assert!(
+            path.to_string_lossy().contains("/T-990.2/"),
+            "receipt under the SLICE id: {}",
+            path.display()
+        );
+        // Parent id → active slice; SAME receipt directory.
+        let path2 = run_slice(
+            &tmp,
+            &reg,
+            "T-990",
+            &opts_with(Some("slice_run_claude_print.json"), None),
+        )
+        .unwrap()
+        .expect("not a dry run");
+        assert!(
+            path2.to_string_lossy().contains("/T-990.2/"),
+            "parent id resolves to the active slice: {}",
+            path2.display()
+        );
         let _ = fs::remove_dir_all(&tmp);
     }
 
