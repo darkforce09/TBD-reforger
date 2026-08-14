@@ -69,6 +69,15 @@ T-912.2 depends on T-912.1 landed.
 10. `cargo xtask ticket check --strict` prints `check OK`.
 11. `cargo xtask platform wave gate --slice T-912.2` prints `GATE: PASS`.
 
+## Numbering addendum — the close-marker ledger (T-914)
+
+Operator decision 2026-08-14: lock wave labels **continue the historical close-marker ledger** instead of restarting at 1, so the close ceremony's next `wave N CLOSED` subject is a number oracle 1 (`wave_close_is_newest_wave`) accepts.
+
+- **`wave_base`** — new root-level lock field, emitted always (even 0), between `max_concurrent` and `pack_last` (root-level values must precede the `[[waves]]` tables). It records the wave number of the **newest valid, non-disavowed `wave N CLOSED` marker reachable from HEAD at repack time, HEAD included** (`crate::wave::base::newest_close_base`, sharing the gate's single subject authority `wave_close_subject_ok` and the git-revert disavowal evidence). Open waves are labeled `wave_base + 1` onward. Serde-defaulted to 0, so pre-T-914 lock blobs read at historical revisions and raw-TOML test stubs keep parsing. Nothing hardcodes a number: a tree with no reachable marker (every scratch/stub/test root) derives base 0 and numbers 1..N, the pre-T-914 shape.
+- **The close → check-red → repack loop.** The close ceremony commits its `wave N CLOSED` marker; the committed lock's `wave_base` is now stale, and `wave check` / `ticket check` go red naming the fix (`wave.lock wave_base X is stale — the close-marker ledger derives Y: run `cargo xtask wave repack``); the repack renumbers open waves from the fresh marker and check goes green. Same loop on a disavowal of the newest marker (the base steps back and the disavowed number is re-usable, which is oracle 1's own sanctioned re-close path).
+- **No contiguity rule.** Check compares `wave_base` against a fresh derivation and keeps the existing strictly-increasing-n validation — it does **not** demand `n = wave_base + 1 + i`. Open-wave grouping and labels remain the packer's recorded choice, and stub locks with arbitrary `n` stay valid.
+- **Measured at ship (2026-08-14):** the derived base on main is **132** (`d0556206`, `wave 132 CLOSED`), not the 235 the ticket notes measured. `wave 233 CLOSED` (`d47d88ca`) and `wave 218 CLOSED` (`7c1efc05`) are **disavowed** by git-revert trailers (`00a1fdad`, `a8bb2730` — the floor-jump ledger cleanups), and the wave 231/232/234/235 closes deliberately used non-ledger `T-853 `-prefixed subjects per the policy recorded in those disavowals, so the anchored subject authority (T-613) rejects them. First open wave after repack is therefore **133**, and the next ceremony print `wave 133 CLOSED` sits inside oracle 1's acceptance window (strictly above every non-disavowed marker, at most one above the ledger's highest claim, 233 + 1).
+
 ## Illegal in this program
 
 T-913 metrics (`created_at`, `completed_at`, `tokens_consumed`, `slice-run`). Restoring `scratch/track-b-draft`. Pushing to origin.

@@ -57,6 +57,8 @@
 //! of being too strict is a wave-close commit that has to be reworded once; the cost of being too
 //! loose is a gate reporting PASS over a wave it never read.
 
+use std::path::Path;
+
 use super::{Ctx, git_stdout, git_stdout_lossy, ledger, short, subject};
 use crate::{werr, wprintln};
 
@@ -95,7 +97,15 @@ pub fn wave_close_subject_ok(s: &str) -> bool {
 
 /// The wave NUMBER a marker claims. `None` for anything that is not an anchored marker.
 pub fn wave_close_number(rev: &str) -> Option<i64> {
-    let s = git_stdout(&["log", "-1", "--format=%s", rev])?;
+    wave_close_number_in(Path::new("."), rev)
+}
+
+/// Root-parameterised core of [`wave_close_number`]. `Path::new(".")` reproduces the cwd-bound
+/// behaviour byte-for-byte, which is how the gate-facing wrapper above delegates here; the root
+/// exists for [`newest_close_base`], whose callers never chdir. Same subject authority
+/// ([`wave_close_subject_ok`]), same parse.
+fn wave_close_number_in(root: &Path, rev: &str) -> Option<i64> {
+    let s = git_in(root, &["log", "-1", "--format=%s", rev])?;
     if !wave_close_subject_ok(&s) {
         return None;
     }
@@ -122,22 +132,35 @@ pub fn wave_close_number(rev: &str) -> Option<i64> {
 /// `--fixed-strings` keeps this cheap: git prefilters to the handful of commits that quote the sha
 /// at all. Without it this forks `git log` once per commit in the range.
 pub fn wave_close_disavowed(rev: &str) -> Option<String> {
-    let full = git_stdout(&[
-        "rev-parse",
-        "--verify",
-        "--quiet",
-        &format!("{rev}^{{commit}}"),
-    ])
+    wave_close_disavowed_in(Path::new("."), rev)
+}
+
+/// Root-parameterised core of [`wave_close_disavowed`] — one body so derivation for the gate and
+/// derivation for the repack base cannot disagree about what a disavowal is. The evidence rule
+/// (git's own `This reverts commit <full sha>.` trailer) is unchanged.
+fn wave_close_disavowed_in(root: &Path, rev: &str) -> Option<String> {
+    let full = git_in(
+        root,
+        &[
+            "rev-parse",
+            "--verify",
+            "--quiet",
+            &format!("{rev}^{{commit}}"),
+        ],
+    )
     .filter(|s| !s.is_empty())?;
     let needle = format!("This reverts commit {full}.");
-    let list = git_stdout_lossy(&[
-        "rev-list",
-        "--fixed-strings",
-        &format!("--grep={needle}"),
-        &format!("{full}..HEAD"),
-    ]);
+    let list = git_in_lossy(
+        root,
+        &[
+            "rev-list",
+            "--fixed-strings",
+            &format!("--grep={needle}"),
+            &format!("{full}..HEAD"),
+        ],
+    );
     for c in list.lines().filter(|l| !l.is_empty()) {
-        let body = git_stdout(&["log", "-1", "--format=%B", c]).unwrap_or_default();
+        let body = git_in(root, &["log", "-1", "--format=%B", c]).unwrap_or_default();
         if body.contains(&needle) {
             return Some(c.to_string());
         }
@@ -202,6 +225,91 @@ pub fn prev_wave_close() -> Option<String> {
             continue;
         }
         return Some(sha.to_string());
+    }
+    None
+}
+
+/// [`super::git_stdout`] with an explicit working directory. Private to this file on purpose:
+/// the only legitimate consumers are the root-parameterised marker readers above and
+/// [`newest_close_base`] below — everything gate-facing stays on the cwd-bound helpers, because
+/// [`Ctx::enter`] already chdirs and the gate's refusal messages are asserted byte-for-byte.
+fn git_in(root: &Path, args: &[&str]) -> Option<String> {
+    let out = std::process::Command::new("git")
+        .args(args)
+        .current_dir(root)
+        .output()
+        .ok()?;
+    if !out.status.success() {
+        return None;
+    }
+    Some(
+        String::from_utf8_lossy(&out.stdout)
+            .trim_end_matches('\n')
+            .to_string(),
+    )
+}
+
+/// [`super::git_stdout_lossy`] with an explicit working directory — the `|| true` shape.
+fn git_in_lossy(root: &Path, args: &[&str]) -> String {
+    match std::process::Command::new("git")
+        .args(args)
+        .current_dir(root)
+        .output()
+    {
+        Ok(out) => String::from_utf8_lossy(&out.stdout)
+            .trim_end_matches('\n')
+            .to_string(),
+        Err(_) => String::new(),
+    }
+}
+
+/// T-914 — the NUMBERING BASE for `wave repack`: the newest valid, non-disavowed close-marker
+/// wave number reachable from HEAD, INCLUDING HEAD itself.
+///
+/// This is [`prev_wave_close`]'s loop with the HEAD exclusion removed, root-parameterised and
+/// silent. Three differences from that function, each load-bearing — and its SEMANTICS are
+/// untouched, because its gate callers need the exclusion this function must not have:
+///
+///   * HEAD COUNTS. `prev_wave_close` excludes HEAD because the gate runs BEFORE `wave --close`
+///     writes its marker, so the newest reachable marker is always the previous wave's. The
+///     repack base is the opposite phase: the operator commits `wave N CLOSED`, `ticket check`
+///     goes red on the now-stale `wave_base`, and the repack that fixes it runs with the fresh
+///     marker sitting AT HEAD — excluding it would renumber from the wave BEFORE the one that
+///     just closed, and the next close would repeat a number the ledger already holds.
+///   * TAKES A ROOT. `wave repack` / `wave check` / `ticket check` receive a repo root and never
+///     chdir (only the `platform wave` driver does), and the unit tests fabricate scratch git
+///     repos that are not the process cwd. Every git call here runs against `root`; the subject
+///     authority ([`wave_close_subject_ok`]) and the disavowal evidence
+///     ([`wave_close_disavowed_in`]) are the same single definitions the gate uses, so the
+///     repack base and the gate base cannot disagree about what a marker is.
+///   * SKIPS SILENTLY. A disavowed close is not a boundary — same F6 rule, same fall-through to
+///     the marker before it — but without the "gate:" stderr narration, which would be
+///     wrong-context noise in every `ticket check` and repack on a history that holds one.
+///
+/// `None` when no marker is reachable: scratch/stub/test roots, no-git dirs, or a real tree
+/// before its first close. The lock compiler maps that to base 0, so open waves number 1..N —
+/// byte-for-byte the pre-T-914 shape.
+pub fn newest_close_base(root: &Path) -> Option<i64> {
+    let list = git_in_lossy(
+        root,
+        &[
+            "rev-list",
+            "--extended-regexp",
+            &format!("--grep={WAVE_CLOSE_MARKER_RE}"),
+            "HEAD",
+        ],
+    );
+    for sha in list.lines().filter(|l| !l.is_empty()) {
+        // git's --grep matches the WHOLE message; the subject is the authority — same
+        // confirm-then-use shape as prev_wave_close, sharing wave_close_subject_ok through
+        // wave_close_number_in.
+        let Some(n) = wave_close_number_in(root, sha) else {
+            continue;
+        };
+        if wave_close_disavowed_in(root, sha).is_some() {
+            continue;
+        }
+        return Some(n);
     }
     None
 }
