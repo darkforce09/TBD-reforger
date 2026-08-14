@@ -24,7 +24,7 @@ and dispatch a slice agent instead.
 The only files you may edit yourself, ever:
 
 ```
-.ai/tickets/registry.json          docs/platform/wave_plan.tsv          docs/**  (documentation)
+.ai/tickets/  (ticket TOMLs; wave.lock ONLY via `cargo xtask wave repack`)   docs/**  (documentation)
 ```
 
 Everything else is written by a **slice agent** working in its own **git worktree**.
@@ -115,7 +115,7 @@ do not work around it.
 
 ```bash
 cargo xtask slice-collisions T-245 T-247 T-248     # must show no collision
-grep -E "	T-(245|247|248)	" docs/platform/wave_plan.tsv | cut -f2,4   # the owns paths
+cargo xtask slice-collisions --check T-245                 # owns live on the tickets (T-912.1)
 python3 -c "
 import json,re
 r=json.load(open('.ai/tickets/registry.json')); ts={t['id']:t for t in r['tickets']}
@@ -151,9 +151,9 @@ git worktree list          # all three must show the same commit as main
 ### If a ticket's `owns` row is missing a file it obviously must edit
 
 This has happened twice (T-241 omitted the schema file it existed to change; T-244 omitted the enum
-file). **Fix the `owns` row in `docs/platform/wave_plan.tsv`** — that is command-center bookkeeping
-and it is yours. Then **re-run the collision check** to confirm the widened row still does not
-collide with its siblings. Never widen a row to a bare directory.
+file). **Fix the ticket's `owns` field and run `cargo xtask wave repack`** — that is command-center
+bookkeeping and it is yours. Then **re-run the collision check** to confirm the widened owns still
+does not collide with its siblings. Never widen owns to a bare directory.
 
 ---
 
@@ -414,7 +414,7 @@ means nothing ships.*
 
 Edit `.ai/tickets/registry.json` directly (append an object with the same fields as its neighbours:
 `id, title, summary, program, surfaces, impact, status, order, stream, targets, executor, priority`),
-add a row to `docs/platform/wave_plan.tsv`, then:
+give it a nonempty `owns`, run `cargo xtask wave repack` (the compiler packs every open ticket), then:
 
 ```bash
 distrobox-host-exec sh -c "cd /home/Samuel/Projects/TBD-Reforger && ./scripts/ticket sync"

@@ -3,12 +3,16 @@
 //! Mod-program wave driver (T-181). **Not** `scripts/platform/wave.sh`.
 //!
 //! Subcommands (bash `${1:-status}`): `status` | `gate` | `land` | `prep [N]` | `push`.
-//! Unknown → print the historical header (sed -n '2,20p') on stdout, exit 2.
+//! Unknown → print the header on stdout, exit 2.
+//!
+//! T-912.2: the mod wave-plan TSV died with the platform one; this driver reads the shared
+//! `.ai/tickets/wave.lock`, filtered to its own program's ids (`T-181.*` — the driver has always
+//! introduced itself as "T-181 wave status", and `shipped_slices` reads the T-181 slice plan
+//! exclusively). A lock wave with no T-181 id is another program's business. A MISSING lock is a
+//! refusal (rc 2), not `ALL PLANNED WAVES SHIPPED` — that TSV-era shrug is the false-green class
+//! T-912.2 exists to kill.
 //!
 //! Preserved oddities (do not "fix"):
-//! - `set -uo pipefail` without `-e`: missing `wave_plan.tsv` greps an error then still
-//!   prints `ALL PLANNED WAVES SHIPPED` (rc 0).
-//! - `plan_rows` filters `^wave\s` (GNU `\s` = whitespace) and blank lines.
 //! - Registry shipped set was python3; now serde_json — same join-on-space shape.
 //! - `land` dirty refuse uses `git -C "$BASE/$s"` (raw slice id), while `tree_state`
 //!   uses `parent_slice` — sub-slice path mismatch preserved.
@@ -16,9 +20,8 @@
 //! - Status ACTION lines name `cargo run -q -p xtask -- mod wave …` (post-shell port).
 //! - Push bypasses pre-push with `--no-verify` only when no `packages/map-assets/` paths.
 
-use std::fs;
 use std::io::{self, Write};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
 
 use anyhow::Result;
@@ -28,18 +31,17 @@ use tbd_gate::proc::Run;
 
 use crate::root::find_repo_root;
 
-const PLAN: &str = "docs/mod/wave_plan.tsv";
 const BASE: &str = ".ai/artifacts/worktrees";
 
-/// Exact `sed -n '2,20p'` of the deleted bash (unknown-command arm).
+/// The historical bash header, retargeted at the lock when the TSV died (T-912.2).
 const UNKNOWN_HELP: &str = r###"# Wave lifecycle automation — the programmatic form of docs/mod/SLICE_WORKFLOW.md.
 #
 # WHY THIS EXISTS
 # ---------------
 # The wave cycle (dispatch 3 → merge → reap → verify → next 3) must not depend on any session
-# remembering where it was. This script reads docs/mod/wave_plan.tsv and the live git/worktree
-# state and derives the answer, so a fresh session — or one resuming after a context compaction —
-# runs `cargo run -q -p xtask -- mod wave status` and knows exactly what to do next.
+# remembering where it was. This driver reads .ai/tickets/wave.lock (T-181 rows) and the live
+# git/worktree state and derives the answer, so a fresh session — or one resuming after a context
+# compaction — runs `cargo run -q -p xtask -- mod wave status` and knows exactly what to do next.
 #
 #   cargo run -q -p xtask -- mod wave status     # where are we? what is blocking?
 #   cargo run -q -p xtask -- mod wave gate       # run every verification gate (the wave gate)
@@ -49,7 +51,6 @@ const UNKNOWN_HELP: &str = r###"# Wave lifecycle automation — the programmatic
 #
 # `land` is deliberately conservative: it REFUSES to merge a worktree with uncommitted changes,
 # and it runs the full gate AFTER merging so a bad slice is caught on main immediately.
-set -uo pipefail
 
 "###;
 
@@ -81,69 +82,70 @@ pub fn run_with_root(root: &Path, args: &[String]) -> u8 {
 
 // ── plan / registry ───────────────────────────────────────────────────────────
 
-fn plan_path(root: &Path) -> PathBuf {
-    root.join(PLAN)
+/// Is this id one of the mod program's? The driver is the T-181 driver — it says so on the tin —
+/// and `shipped_slices` reads the T-181 slice plan exclusively, so any other id in the shared
+/// lock is another program's row.
+fn mod_slice_id(id: &str) -> bool {
+    id.starts_with("T-181.")
 }
 
-/// Mirror `plan_rows`: grep -v '^#' | grep -v '^wave\s' | sed '/^\s*$/d'.
-fn plan_rows(root: &Path) -> Vec<String> {
-    let text = match fs::read_to_string(plan_path(root)) {
-        Ok(t) => t,
-        Err(_) => {
-            // bash: grep prints relative $PLAN path, continues (no `set -e`).
-            eprintln!("grep: {PLAN}: No such file or directory");
-            return Vec::new();
+/// The lock's `(wave, slice)` pairs for this program. A missing/unreadable lock is `None` —
+/// callers refuse loudly instead of shrugging into "ALL PLANNED WAVES SHIPPED".
+fn lock_mod_rows(root: &Path) -> Option<Vec<(u32, String)>> {
+    let lock = match crate::wave_lock::load(root) {
+        Ok(l) => l,
+        Err(e) => {
+            eprintln!("mod wave: {e:#}");
+            return None;
         }
     };
-    text.lines()
-        .filter(|l| !l.starts_with('#'))
-        .filter(|l| !wave_header_line(l))
-        .filter(|l| !l.chars().all(|c| c.is_whitespace()))
-        .map(|l| l.to_string())
-        .collect()
-}
-
-/// GNU grep `^wave\s` — `\s` is whitespace (even in BRE on GNU grep 3.x).
-fn wave_header_line(l: &str) -> bool {
-    let rest = match l.strip_prefix("wave") {
-        Some(r) => r,
-        None => return false,
-    };
-    rest.chars()
-        .next()
-        .map(|c| c.is_whitespace())
-        .unwrap_or(false)
+    Some(
+        lock.waves
+            .iter()
+            .flat_map(|w| {
+                w.tickets
+                    .iter()
+                    .filter(|t| mod_slice_id(t))
+                    .map(move |t| (w.n, t.clone()))
+            })
+            .collect(),
+    )
 }
 
 fn wave_slices(root: &Path, w: &str) -> Vec<String> {
-    plan_rows(root)
-        .into_iter()
-        .filter_map(|row| {
-            let mut cols = row.split('\t');
-            let wave = cols.next()?;
-            let slice = cols.next()?;
-            (wave == w).then(|| slice.to_string())
-        })
+    let Some(rows) = lock_mod_rows(root) else {
+        return Vec::new();
+    };
+    let Ok(n) = w.parse::<u32>() else {
+        return Vec::new();
+    };
+    rows.into_iter()
+        .filter(|(wn, _)| *wn == n)
+        .map(|(_, s)| s)
         .collect()
 }
 
 fn slice_title(root: &Path, s: &str) -> String {
-    for row in plan_rows(root) {
-        let mut cols = row.split('\t');
-        let _wave = cols.next();
-        let slice = cols.next();
-        let title = cols.next();
-        if slice == Some(s) {
-            return title.unwrap_or("").to_string();
-        }
+    let dir = crate::tickets_store::tickets_dir(root).join(format!("{s}.toml"));
+    let Ok(text) = std::fs::read_to_string(dir) else {
+        return String::new();
+    };
+    match tbd_tickets::parse_ticket_toml(&text) {
+        Ok(tbd_tickets::Ticket::Work(w)) => w.title,
+        Ok(tbd_tickets::Ticket::Program(p)) => p.title,
+        Err(_) => String::new(),
     }
-    String::new()
 }
 
+/// Open lock waves (n > 0) that hold at least one mod slice, ascending.
 fn unique_sorted_waves(root: &Path) -> Vec<String> {
-    let mut waves: Vec<i64> = plan_rows(root)
-        .iter()
-        .filter_map(|row| row.split('\t').next()?.parse().ok())
+    let Some(rows) = lock_mod_rows(root) else {
+        return Vec::new();
+    };
+    let mut waves: Vec<u32> = rows
+        .into_iter()
+        .filter(|(n, _)| *n > 0)
+        .map(|(n, _)| n)
         .collect();
     waves.sort_unstable();
     waves.dedup();
@@ -177,7 +179,10 @@ fn shipped_slices(root: &Path) -> Vec<String> {
         .collect()
 }
 
-fn current_wave(root: &Path) -> String {
+/// The first open lock wave whose mod slices are not all shipped. `None` = the lock itself is
+/// missing or unreadable (already reported by [`lock_mod_rows`]) — a refusal, not "done".
+fn current_wave(root: &Path) -> Option<String> {
+    lock_mod_rows(root)?;
     let shipped = shipped_slices(root);
     for w in unique_sorted_waves(root) {
         let mut done_all = true;
@@ -188,10 +193,10 @@ fn current_wave(root: &Path) -> String {
             }
         }
         if !done_all {
-            return w;
+            return Some(w);
         }
     }
-    "done".to_string()
+    Some("done".to_string())
 }
 
 /// `sed -E 's/^(T-[0-9]+\.[0-9]+).*/\1/'` — sub-slices share the parent's worktree.
@@ -264,10 +269,14 @@ fn has_work(root: &Path, slice: &str) -> bool {
 // ── commands ──────────────────────────────────────────────────────────────────
 
 fn cmd_status(root: &Path) -> u8 {
-    let w = current_wave(root);
+    let Some(w) = current_wave(root) else {
+        return 2;
+    };
     println!("═══ T-181 wave status ═══");
     if w == "done" {
-        println!("ALL PLANNED WAVES SHIPPED. Next: extend {PLAN} or close the program.");
+        println!(
+            "ALL PLANNED WAVES SHIPPED. Next: queue mod tickets and `cargo xtask wave repack`, or close the program."
+        );
         return 0;
     }
     println!("current wave: {w}");
@@ -301,7 +310,10 @@ fn cmd_status(root: &Path) -> u8 {
 
 fn cmd_prep(root: &Path, wave_arg: &str) -> u8 {
     let w = if wave_arg.is_empty() {
-        current_wave(root)
+        match current_wave(root) {
+            Some(w) => w,
+            None => return 2,
+        }
     } else {
         wave_arg.to_string()
     };
@@ -441,7 +453,9 @@ fn cmd_gate(root: &Path) -> u8 {
 }
 
 fn cmd_land(root: &Path) -> u8 {
-    let w = current_wave(root);
+    let Some(w) = current_wave(root) else {
+        return 2;
+    };
     if w == "done" {
         println!("nothing to land");
         return 0;

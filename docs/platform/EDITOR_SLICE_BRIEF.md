@@ -48,9 +48,9 @@ re-reads of a path the same agent had already read.
 |---|---|---|
 | worktree path + branch | derived from `T-xxx` | `.ai/artifacts/worktrees/T-xxx`, branch `slice/T-xxx` |
 | `TICKET` / `SPEC` | `.ai/tickets/registry.json` `summary`, **verbatim** | the registry summary *is* the handoff |
-| `OWNS (touch ONLY)` | `wave_plan.tsv` column 4 | load-bearing — the only thing preventing two agents colliding on one file |
+| `OWNS (touch ONLY)` | the ticket's `owns` field (snapshotted in `.ai/tickets/wave.lock`) | load-bearing — the only thing preventing two agents colliding on one file |
 | forward constraints | `editor_factory_run.md` §constraints | pre-written, keyed by ticket |
-| sibling `owns` | `wave_plan.tsv`, same wave | so the agent knows what it must not touch |
+| sibling `owns` | `.ai/tickets/wave.lock`, same wave | so the agent knows what it must not touch |
 
 ## FINAL REPORT — required schema
 

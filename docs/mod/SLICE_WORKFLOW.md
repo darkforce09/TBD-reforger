@@ -29,13 +29,14 @@ main ──┬── wave N ──┬── worktree slice/T-181.7   → agent A
    worktree** — `T-181.7.1`, `T-181.7.2` are the same slice's work, not new trees.
 2. **As many concurrent slices as are FILE-DISJOINT — computed, not guessed.**
    ```bash
-   # T-620 deleted scripts/mod/slice-collisions.py with the Python ban. The xtask port reads any
-   # plan via TBD_WAVE_PLAN. The mod-only glob + bare-filename `owns` resolution did NOT come
-   # across, so collisions are prefix containment now — coarser, and it errs toward REPORTING a
-   # collision. T-181 is 63/66 shipped and deferred on a human E2E, so the precise variant was
-   # retired with the program it served rather than ported.
-   TBD_WAVE_PLAN=docs/mod/wave_plan.tsv cargo xtask slice-collisions
-   TBD_WAVE_PLAN=docs/mod/wave_plan.tsv cargo xtask slice-collisions T-181.32 T-181.27
+   # T-620 deleted scripts/mod/slice-collisions.py with the Python ban; T-912.2 deleted the
+   # per-program plan TSVs and their env override. The xtask port reads the one compiled
+   # .ai/tickets/wave.lock (owns live on the tickets since T-912.1). The mod-only glob +
+   # bare-filename `owns` resolution did NOT come across, so collisions are prefix containment
+   # now — coarser, and it errs toward REPORTING a collision. T-181 is 63/66 shipped and
+   # deferred on a human E2E, so the precise variant was retired with the program it served.
+   cargo xtask slice-collisions
+   cargo xtask slice-collisions T-181.32 T-181.27
    ```
    This rule used to say "three, not more, disk is the constraint". **That was wrong on the
    measurement.** A worktree is ~81 MB fresh and ~500 MB warm; six cost 3.0 GB against 129 GB free,
@@ -101,8 +102,9 @@ cargo run -q -p xtask -- mod wave gate      # the full verification suite on its
 would be lost), runs the full gate AFTER merging so a bad slice is caught on `main` immediately, and
 only reaps the trees once the gate is green.
 
-Wave membership lives in [`wave_plan.tsv`](wave_plan.tsv) — waves 1–4 are already planned, batched
-by file-disjointness with an explicit `owns` column so write-conflicts are visible before dispatch.
+Wave membership lives in the compiled [`wave.lock`](../../.ai/tickets/wave.lock) (`cargo xtask
+wave repack`; the mod TSV it replaced was deleted at T-912.2) — waves are batched by
+file-disjointness from each ticket's `owns`, so write-conflicts are visible before dispatch.
 The post-merge adversarial reviewer is [`VERIFY_AGENT_PROMPT.md`](VERIFY_AGENT_PROMPT.md).
 
 **The loop, end to end:**

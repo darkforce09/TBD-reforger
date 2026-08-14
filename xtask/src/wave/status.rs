@@ -4,11 +4,26 @@
 //! ledger-reading code every other command reuses, at zero blast radius.
 
 use super::{COLLIDE, Ctx, host, ledger};
-use crate::{wprint, wprintln};
+use crate::{werr, wprint, wprintln};
+
+/// A missing/unreadable lock is a refusal every command surfaces — never an empty plan.
+/// (The TSV-era `plan_rows` swallowed exactly this into `ALL WAVES COMPLETE`.)
+macro_rules! lock_or_refuse {
+    ($expr:expr) => {
+        match $expr {
+            Ok(v) => v,
+            Err(e) => {
+                werr!("wave: {e:#}");
+                return 2;
+            }
+        }
+    };
+}
+pub(crate) use lock_or_refuse;
 
 /// `wave.sh status` — where are we, and what is blocking?
 pub fn cmd_status(ctx: &Ctx) -> u8 {
-    let w = ledger::current_wave(ctx);
+    let w = lock_or_refuse!(ledger::current_wave(ctx));
     wprintln!("═══ platform program ═══");
     wprintln!("plan:  {}", ctx.plan);
 
@@ -31,9 +46,8 @@ pub fn cmd_status(ctx: &Ctx) -> u8 {
         }
     }
 
-    // `plan_rows | awk -F'\t' '$1!="0"'` — awk compares against the STRING "0" here, so a row
-    // spelled `0.0` would be counted. Preserved rather than tidied into a numeric test.
-    let counted: Vec<String> = ledger::plan_rows(ctx)
+    // `plan_rows | awk -F'\t' '$1!="0"'` — waves 1+ only; wave 0 is the parked ledger.
+    let counted: Vec<String> = lock_or_refuse!(ledger::plan_rows(ctx))
         .into_iter()
         .filter(|r| r.split('\t').next().unwrap_or("") != "0")
         .collect();
@@ -55,7 +69,7 @@ pub fn cmd_status(ctx: &Ctx) -> u8 {
     wprintln!();
 
     let mut ready = 0usize;
-    for t in ledger::wave_tickets(ctx, &w) {
+    for t in lock_or_refuse!(ledger::wave_tickets(ctx, &w)) {
         if ctx.registry_view.is_shipped(&t) {
             wprintln!("  {:<9} SHIPPED", t);
             continue;
@@ -116,7 +130,7 @@ pub fn cmd_prep(ctx: &Ctx) -> u8 {
 /// may not open wave N+1 until wave N is shipped, gated and VERIFIED. Landing stays eager; starting
 /// is paced.
 pub fn cmd_wave(ctx: &Ctx) -> u8 {
-    let w = ledger::current_wave(ctx);
+    let w = lock_or_refuse!(ledger::current_wave(ctx));
     if w == "done" {
         wprintln!("all waves shipped");
         return 0;
@@ -124,7 +138,7 @@ pub fn cmd_wave(ctx: &Ctx) -> u8 {
     let mut total = 0usize;
     let mut shipped = 0usize;
     let mut open: Vec<String> = Vec::new();
-    for t in ledger::wave_tickets(ctx, &w) {
+    for t in lock_or_refuse!(ledger::wave_tickets(ctx, &w)) {
         total += 1;
         if ctx.registry_view.is_shipped(&t) {
             shipped += 1;

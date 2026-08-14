@@ -144,7 +144,9 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 
 > **ACTIVE PROGRAM (2026-07-26): the platform factory — T-182…T-297.**
 > Process: [`docs/platform/PLATFORM_FACTORY.md`](docs/platform/PLATFORM_FACTORY.md) ·
-> wave plan: [`docs/platform/wave_plan.tsv`](docs/platform/wave_plan.tsv).
+> wave lock: [`.ai/tickets/wave.lock`](.ai/tickets/wave.lock) — compiled from the tickets by
+> **`cargo xtask wave repack`** (the only legal writer; `cargo xtask wave check` verifies and is
+> wired into `ticket check`). The hand-kept wave-plan TSVs were deleted at T-912.2.
 > **T-181 is complete** (54 slices; the mod boots, all five screens open, objectives/radio/
 > play-area/briefings/markers all run). Both **T-068** and **T-181** are `deferred` because their
 > only remaining slice is `executor: human` — a live two-client E2E on a dedicated server. Do not

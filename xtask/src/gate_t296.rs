@@ -16,9 +16,10 @@
 //! being undone — three **bans** on the retired phrasings, three **truth pins** a rewrite must not
 //! drop quietly.
 //!
-//! OWNS WIDEN, carried from the script: `wave_plan.tsv` lists only `TBD_ResultsReporter.c` under
-//! T-296. The gate is the enforcement half of that one-file deliverable; there was no existing
-//! mod-comment verify path to fold it into when it was written.
+//! OWNS WIDEN, carried from the script: the T-296 wave-plan row (a TSV then; `owns` lives on the
+//! ticket since T-912.1) lists only `TBD_ResultsReporter.c`. The gate is the enforcement half of
+//! that one-file deliverable; there was no existing mod-comment verify path to fold it into when
+//! it was written.
 //!
 //! ── THE DEFECT THIS FAMILY EXISTS BECAUSE OF (T-556 / T-620) ─────────────────────────────────
 //!

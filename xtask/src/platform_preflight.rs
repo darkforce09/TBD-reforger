@@ -241,10 +241,18 @@ fn curl_http_code(url: &str) -> String {
     }
 }
 
-fn wave_plan_ticket_count(root: &Path) -> Option<usize> {
-    let text = fs::read_to_string(root.join("docs/platform/wave_plan.tsv")).ok()?;
-    // bash grep -vc '^#' (includes blanks).
-    Some(text.lines().filter(|l| !l.starts_with('#')).count())
+/// Open-ticket count straight from the committed lock (waves 1+); `None` when the lock is
+/// missing or unreadable — the caller BLOCKs on that via `wave check` anyway.
+fn wave_lock_open_count(root: &Path) -> Option<(usize, usize)> {
+    let lock = crate::wave_lock::load(root).ok()?;
+    let open: usize = lock
+        .waves
+        .iter()
+        .filter(|w| w.n > 0)
+        .map(|w| w.tickets.len())
+        .sum();
+    let waves = lock.waves.iter().filter(|w| w.n > 0).count();
+    Some((open, waves))
 }
 
 fn stray_worktree_targets(root: &Path) -> u64 {
@@ -513,16 +521,25 @@ pub fn run(warn_only: bool) -> Result<u8> {
         }
     }
 
-    // 9. Wave plan / slice-collisions
+    // 9. Wave lock (T-912.2 — this check pointed at the TSV until the lock replaced it).
+    // `wave check` recomputes from the tickets and structurally compares; a missing lock is a
+    // DidNotRun refusal inside it, so an absent plan can never read as green here.
     {
         let mut cmd = Command::new("cargo");
-        cmd.args(["run", "-q", "-p", "xtask", "--", "slice-collisions"])
+        cmd.args(["run", "-q", "-p", "xtask", "--", "wave", "check"])
             .current_dir(&root);
         if status_ok(&mut cmd) {
-            let n = wave_plan_ticket_count(&root).unwrap_or(0);
-            ok("wave plan", &format!("{n} tickets, dispatch set computes"));
+            let (n, w) = wave_lock_open_count(&root).unwrap_or((0, 0));
+            ok(
+                "wave lock",
+                &format!("{n} open tickets in {w} waves, matches the ticket files"),
+            );
         } else {
-            nope(&mut c, "wave plan", "cargo xtask slice-collisions failed");
+            nope(
+                &mut c,
+                "wave lock",
+                "cargo xtask wave check failed — stale or missing .ai/tickets/wave.lock",
+            );
         }
     }
 

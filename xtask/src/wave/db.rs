@@ -65,10 +65,25 @@ pub fn gate_wave_number(ctx: &Ctx) -> Option<String> {
             }
         }
         if w.is_none() {
-            let cw = ledger::current_wave(ctx);
+            // T-912.2: a missing/unreadable lock is a refusal here too — fall through to the
+            // "cannot derive numeric wave" error below rather than inventing a DB name.
+            let cw = match ledger::current_wave(ctx) {
+                Ok(cw) => cw,
+                Err(e) => {
+                    werr!("gate: {e:#}");
+                    return None;
+                }
+            };
             if cw == "done" {
                 // All plan tickets shipped — pin to the highest wave number still in the plan.
-                let mut nums: Vec<i64> = ledger::plan_rows(ctx)
+                let rows = match ledger::plan_rows(ctx) {
+                    Ok(r) => r,
+                    Err(e) => {
+                        werr!("gate: {e:#}");
+                        return None;
+                    }
+                };
+                let mut nums: Vec<i64> = rows
                     .iter()
                     .filter_map(|r| r.split('\t').next())
                     .filter(|c| !c.is_empty() && c.bytes().all(|b| b.is_ascii_digit()))

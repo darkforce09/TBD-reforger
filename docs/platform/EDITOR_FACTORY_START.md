@@ -143,7 +143,7 @@ no-ticket reason — `## 10. Ticket traceability` in the review artifact.
 
 Same machinery as waves 100-155: 3 agents, barrier, merge, gate, one Fable adversarial verifier
 (documents, never fixes), ledger + registry flip + close marker from git. Tickets per wave from
-`awk -F'\t' '$1==L' docs/platform/wave_plan.tsv` as always. Band-specific rules:
+`cargo xtask slice-collisions` over `.ai/tickets/wave.lock` (the TSV died at T-912.2). Band-specific rules:
 
 - **Wave 200 first, strictly** — T-785 (input remount) is the batch unblocker; T-788/T-810 build
   on its pattern, T-789 on T-786's stack, T-797 on T-787's consts, T-798 on T-797's toolbar,

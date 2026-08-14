@@ -50,8 +50,8 @@ Do **not** mass-edit 95 tickets to say `cursor-docs`. `workbench` and `human` st
   it is the soul of this program. A gate that cannot run is a P0 infra bug, never a silent skip.
 - The **command center never implements.** You dispatch, integrate, verify and sequence. If you catch
   yourself editing a `.rs` file in the main checkout, you have made a mistake — stop and dispatch a
-  slice agent instead. The one exception is repo bookkeeping: `.ai/tickets/registry.json`,
-  `docs/platform/wave_plan.tsv`, and docs.
+  slice agent instead. The one exception is repo bookkeeping: `.ai/tickets/` (ticket TOMLs plus
+  `wave.lock` via `cargo xtask wave repack` — never by hand) and docs.
 - **Agents never self-ship.** They implement, gate, and report. You own every status transition,
   every merge, and every push.
 

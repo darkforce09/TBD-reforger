@@ -88,6 +88,7 @@ mod tickets_store;
 mod verify_ci_shell;
 mod verify_ci_shell_rules;
 mod wave;
+mod wave_lock;
 
 use anyhow::{Result, bail};
 use clap::{Parser, Subcommand};
@@ -192,6 +193,16 @@ enum TopCmd {
         #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
         args: Vec<String>,
     },
+    /// The wave lockfile — `.ai/tickets/wave.lock`, compiled from the tickets (T-912.2).
+    ///
+    /// NOT the lifecycle drivers: `platform wave` runs the platform factory and `mod wave` the
+    /// mod program; this group owns the PLAN those drivers read. `repack` is the only legal
+    /// writer of the lock; `check` recomputes and refuses on any drift (a missing lock is a
+    /// DidNotRun refusal, never an empty plan).
+    Wave {
+        #[command(subcommand)]
+        cmd: WaveLockCmd,
+    },
     /// Platform factory helpers (T-853 shell→xtask ports)
     Platform {
         #[command(subcommand)]
@@ -220,6 +231,14 @@ enum TopCmd {
     /// T-896: the task surface — successor to `cargo xtask help`.
     #[command(name = "help")]
     Help,
+}
+
+#[derive(Subcommand, Debug)]
+enum WaveLockCmd {
+    /// Compile `.ai/tickets/wave.lock` from the ticket files — the ONLY legal writer.
+    Repack,
+    /// Recompute from the tickets and structurally compare against the committed lock.
+    Check,
 }
 
 #[derive(Subcommand, Debug)]
@@ -1030,6 +1049,13 @@ fn run() -> Result<u8> {
             Ok(code)
         }
         TopCmd::SliceCollisions { args } => slice_collisions::run(&args),
+        TopCmd::Wave { cmd } => {
+            let root = find_repo_root()?;
+            match cmd {
+                WaveLockCmd::Repack => wave_lock::cmd_repack(&root),
+                WaveLockCmd::Check => wave_lock::cmd_check(&root),
+            }
+        }
         TopCmd::Platform { cmd } => match cmd {
             PlatformCmd::Preflight { warn } => platform_preflight::run(warn),
             PlatformCmd::SliceWorktree { args } => slice_worktree::run(&args),

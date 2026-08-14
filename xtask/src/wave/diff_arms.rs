@@ -625,9 +625,11 @@ pub fn arm_push_guard(ctx: &Ctx) -> Vec<ArmResult> {
         repo.join(".ai/tickets/ROOT"),
         "# ticket-registry root marker\n",
     );
+    // T-912.2: the scratch repo carries a stub of the modern plan (the lock), not the dead TSV —
+    // this arm exercises the push guard, which never reads the plan at all.
     let _ = std::fs::write(
-        repo.join("docs/platform/wave_plan.tsv"),
-        "wave\tticket\ttitle\towns\n",
+        repo.join(".ai/tickets/wave.lock"),
+        "version = 1\nmax_concurrent = 8\npack_last = []\nwaves = []\n\n[owns]\n\n[depends_on]\n",
     );
     let _ = std::fs::write(
         repo.join(".gitattributes"),

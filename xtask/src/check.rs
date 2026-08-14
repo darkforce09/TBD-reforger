@@ -195,6 +195,116 @@ fn check_open_work_owns(root: &Path) -> Vec<String> {
     errors
 }
 
+/// T-912.2 fossil-path guard: the wave-plan TSVs and their env knobs are dead, and any LIVE
+/// mention of them is a regression vector — a reader quietly retargeted at a file that no longer
+/// exists is exactly the false-green class this program killed. Greps the tracked tree (working
+/// contents, so an uncommitted plant is caught) minus a tight historical allowlist.
+///
+/// Needles are assembled at runtime, same trick as the T-912.1 `const DEPS` tripwire, so this
+/// file's own source cannot satisfy the scan it performs.
+fn fossil_needles() -> [String; 3] {
+    [
+        format!("wave_plan{}", ".tsv"),
+        format!("TBD_WAVE{}", "_PLAN"),
+        format!("TBD_WAVE_GENERATION{}", "_FLOOR"),
+    ]
+}
+
+/// Paths where a fossil mention is genuinely historical. Every entry carries its reason; keep
+/// this list TIGHT — a live doc that names the TSV as current truth gets UPDATED, not listed.
+const FOSSIL_ALLOWLIST: &[(&str, &str)] = &[
+    (
+        ".ai/artifacts/",
+        "pipeline output — frozen run reports and verify logs",
+    ),
+    (
+        ".ai/tickets/",
+        "ticket notes/summaries narrate the TSV era; owns cells may name deleted paths",
+    ),
+    (
+        "docs/TICKET_",
+        "generated views (ticket sync) — they quote ticket prose verbatim",
+    ),
+    (
+        "docs/platform/SHIPPED_HISTORY.md",
+        "the shipped-history archive describes past states in past commits",
+    ),
+    (
+        "docs/platform/t911_ticket_registry_redesign.md",
+        "T-911 program spec — approved design text, written while the TSVs lived",
+    ),
+    (
+        "docs/platform/t912_wave_lockfile.md",
+        "this program's own spec names the files it deletes",
+    ),
+    (
+        "docs/platform/GROK_WAVE_130_HANDOFF.md",
+        "past kickoff doc for a finished wave — a snapshot, not a runbook",
+    ),
+    (
+        "docs/platform/WAVE209_GROK_KICKOFF.md",
+        "past kickoff doc for a finished wave — a snapshot, not a runbook",
+    ),
+    (
+        "xtask/src/wave/legacy_plan.rs",
+        "the ONE module allowed to name the dead files: git-show history reads for pre-cutover \
+         wave-close corroboration plus the one-shot migration",
+    ),
+    (
+        "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionValidator.c",
+        "T-181-era lane note in an Enfusion comment; mod scripts are workbench-gated (D5), not \
+         agent-editable from a platform slice",
+    ),
+    (
+        "apps/website/api/migrations/0011_events_server_modpack.sql",
+        "committed migrations are checksum-frozen (db_migrate persist audits them); editing one \
+         to reword a comment is the a843905f incident",
+    ),
+];
+
+fn fossil_paths_check(root: &Path) -> Vec<String> {
+    let needles = fossil_needles();
+    let mut cmd = std::process::Command::new("git");
+    cmd.arg("-C")
+        .arg(root)
+        .args(["grep", "-l", "-I", "--fixed-strings"]);
+    for n in &needles {
+        cmd.args(["-e", n]);
+    }
+    cmd.args(["--", "."]);
+    let out = match cmd.output() {
+        Ok(o) => o,
+        Err(e) => return vec![format!("fossil-path guard could not run git grep: {e}")],
+    };
+    // git grep: 0 = matches, 1 = no matches, anything else = failure. Fail closed — a guard
+    // that cannot scan must not report clean.
+    match out.status.code() {
+        Some(0) | Some(1) => {}
+        other => {
+            return vec![format!(
+                "fossil-path guard: git grep failed (rc {other:?}): {}",
+                String::from_utf8_lossy(&out.stderr).trim()
+            )];
+        }
+    }
+    let mut errors = Vec::new();
+    for path in String::from_utf8_lossy(&out.stdout).lines() {
+        let path = path.trim();
+        if path.is_empty() {
+            continue;
+        }
+        if FOSSIL_ALLOWLIST.iter().any(|(p, _)| path.starts_with(p)) {
+            continue;
+        }
+        errors.push(format!(
+            "dead wave-plan reference in {path} — the TSVs and their env knobs died at T-912.2; \
+             read .ai/tickets/wave.lock (historical mentions belong on the allowlist in \
+             xtask/src/check.rs, with a reason)"
+        ));
+    }
+    errors
+}
+
 fn scan_legacy_ids(root: &Path) -> HashMap<String, Vec<String>> {
     let mut hits: HashMap<String, Vec<String>> = HashMap::new();
     let scan_roots: Vec<PathBuf> = vec![
@@ -253,6 +363,11 @@ pub fn check(root: &Path, registry: &serde_json::Value, strict: bool) -> Vec<Str
     let mut errors = validate_registry_schema(root, registry);
     errors.extend(validate_registry(registry));
     errors.extend(check_open_work_owns(root));
+    // T-912.2: the committed wave.lock must match the tickets it was compiled from, and a
+    // MISSING lock is a DidNotRun refusal — wired into the base check so every registry mutator
+    // preflight and CI's `ticket check --strict` cover it.
+    errors.extend(crate::wave_lock::check_as_errors(root));
+    errors.extend(fossil_paths_check(root));
 
     for row in tickets(registry) {
         let tid = str_field(row, "id");

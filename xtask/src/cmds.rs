@@ -557,6 +557,16 @@ pub fn cmd_gap_round_trip(root: &Path) -> Result<()> {
     Ok(())
 }
 
+/// T-912.2 lifecycle hook: every registry STATUS writer refreshes the committed wave.lock with
+/// the one legal writer, so a bookkeeping ship/cancel never leaves `wave check` red on a
+/// correct registry. The refresh rides whatever commit carries the status change — statuses and
+/// the lock are working-tree writes the operator commits together.
+fn refresh_wave_lock(root: &Path) -> Result<()> {
+    crate::wave_lock::repack_quiet(root)
+        .map(|_| ())
+        .context("refresh wave.lock after status write (`cargo xtask wave repack`)")
+}
+
 pub fn cmd_ship(root: &Path, registry: &mut Value, id: &str) -> Result<()> {
     // T-237: refuse to mark shipped when the registry fails ticket check
     // (including Draft 2020-12 .ai/tickets/schema.json). Check runs first so a
@@ -572,6 +582,7 @@ pub fn cmd_ship(root: &Path, registry: &mut Value, id: &str) -> Result<()> {
     }
     save_registry(root, registry)?;
     cmd_sync(root, registry)?;
+    refresh_wave_lock(root)?;
     println!("{id} -> shipped");
     Ok(())
 }
@@ -870,6 +881,11 @@ pub fn cmd_set_status(root: &Path, registry: &mut Value, id: &str, status: &str)
     save_registry(root, registry)?;
     let queue = generate_queue_json(registry);
     write_json_ascii(&root.join(".ai/tickets/queue.json"), &queue)?;
+    // T-912.2: `set-status cancelled` (and `shipped`) must repack or `wave check` goes red on a
+    // correct registry. Run for EVERY status — a demotion out of the dispatchable set (queued →
+    // idea/deferred) strands the id in the lock's open waves just as surely as a cancel, and a
+    // dispatchability-neutral write recompiles to the identical bytes.
+    refresh_wave_lock(root)?;
     Ok(())
 }
 

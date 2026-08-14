@@ -38,8 +38,9 @@
 //!   See [`ledger::Registry`].
 //! - `plan_rows` filters `^#` and `^wave[[:space:]]` and blank lines — BRE, which means the same
 //!   thing under ugrep and GNU grep. The engine note lives on [`base::prev_wave_close`].
-//! - `current_wave` skips wave `0` outright and skips everything below
-//!   `WAVE_GENERATION_FLOOR` (76). Both are load-bearing; see [`ledger::current_wave`].
+//! - `current_wave` skips wave `0` outright. (The bash also skipped everything below a
+//!   generation floor of 76; T-912.2 deleted the floor — landed generations live in the lock's
+//!   wave 0 now, so waves 1+ are open work only. See [`ledger::current_wave`].)
 //! - `status`'s `[ "$ready" -gt 0 ] && echo …` leaves a non-zero rc when nothing is ready, but
 //!   the `echo` after it resets it, so `status` exits 0 either way.
 //! - Unknown command prints `sed -n '2,40p' "$0"` — the historical header — and exits 1.
@@ -70,6 +71,7 @@ pub mod gate;
 pub mod host;
 pub mod land;
 pub mod ledger;
+pub mod legacy_plan;
 pub mod lock;
 pub mod migrate;
 pub mod push;
@@ -220,8 +222,10 @@ macro_rules! werr {
 pub struct Ctx {
     /// `ROOT` — this checkout, which inside a worktree IS the worktree.
     pub root: PathBuf,
-    /// `PLAN` — `$TBD_WAVE_PLAN` or `docs/platform/wave_plan.tsv`. Kept as the literal string the
-    /// bash held, because `status` prints it and `wave_plan_tickets_at` feeds it to `git show`.
+    /// The wave plan — `.ai/tickets/wave.lock` since T-912.2 (the TSVs and their plan-path env
+    /// override are dead). Kept as a string because `status` prints it and
+    /// `wave_plan_tickets_at` feeds it to `git show`; there is deliberately no env override —
+    /// one committed lock, one writer.
     pub plan: String,
     /// `REGISTRY` — `.ai/tickets/registry.json`.
     pub registry: String,
@@ -258,9 +262,6 @@ pub struct Ctx {
     pub gate_lock_max: u64,
     /// `VERIFY_DEBT_NAG` — nag at 8, which is one wave's width.
     pub verify_debt_nag: i64,
-    /// `WAVE_GENERATION_FLOOR` — see [`ledger::current_wave`] for why this is data and not a
-    /// prefix on every plan row.
-    pub generation_floor: i64,
     /// The host bridge, detected once (`HOST_BRIDGE` in the bash).
     pub host: host::Host,
     /// `.ai/tickets/registry.json`, parsed once with `is_shipped`'s exact failure semantics.
@@ -285,8 +286,10 @@ impl Ctx {
         let root = crate::root::find_repo_root()?;
         std::env::set_current_dir(&root)?;
 
-        let plan =
-            std::env::var("TBD_WAVE_PLAN").unwrap_or_else(|_| "docs/platform/wave_plan.tsv".into());
+        // T-912.2: the compiled lock IS the plan. The old TSV path and its env override died
+        // with the TSVs; the generation floor died with them — landed generations live in the
+        // lock's wave 0, so waves 1+ are open work only.
+        let plan = crate::wave_lock::LOCK_REL.to_string();
 
         // `git rev-parse --path-format=absolute --git-common-dir`, falling back to `$ROOT/.git`
         // exactly as the bash `|| echo "$ROOT/.git"` did.
@@ -352,7 +355,6 @@ impl Ctx {
             gate_lock_poll: envn("TBD_GATE_LOCK_POLL", 30).max(1) as u64,
             gate_lock_max: envn("TBD_GATE_LOCK_MAX", 3600).max(0) as u64,
             verify_debt_nag: envn("TBD_VERIFY_DEBT_NAG", 8),
-            generation_floor: envn("TBD_WAVE_GENERATION_FLOOR", 76),
             registry_view: ledger::Registry::load_repo(Path::new(".")),
             host,
             cargo_target_dir,

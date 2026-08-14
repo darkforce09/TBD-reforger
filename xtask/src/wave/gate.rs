@@ -591,6 +591,15 @@ pub fn cmd_gate(ctx: &Ctx, base_arg: &str) -> u8 {
             &["cargo", "run", "-q", "-p", "xtask", "--", "ticket", "check"],
         )
     });
+    // T-912.2: the committed wave.lock must match the tickets. `ticket check` above already
+    // embeds this, but the explicit step survives refactors of either side — a plan the gate
+    // never validates is the TSV-era drift class all over again.
+    r.run("wave lock", || {
+        checkrun(
+            ctx,
+            &["cargo", "run", "-q", "-p", "xtask", "--", "wave", "check"],
+        )
+    });
     for (label, name) in VERIFY_STEPS {
         r.run(label, || {
             checkrun(

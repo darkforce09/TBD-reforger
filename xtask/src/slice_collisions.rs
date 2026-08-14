@@ -1,72 +1,40 @@
 //! T-620 — the maximum FILE-DISJOINT set of platform tickets that can run concurrently.
 //!
-//! A byte-for-byte port of `scripts/platform/slice-collisions.py`, which was one of the two `.py`
-//! files keeping `cargo xtask verify no-python` red from the day the factory opened. The operator's
-//! standing rule is that new tooling is Rust in `xtask`; this is the factory's own tooling, so it
-//! was the least defensible exception in the tree.
+//! Originally a byte-for-byte port of `scripts/platform/slice-collisions.py` over the wave-plan
+//! TSV; since T-912.2 the plan is the compiled `.ai/tickets/wave.lock` and the packing facts —
+//! `owns`, `depends_on`, `pack_last` (T-912.1) — live on the tickets, so this command reads the
+//! lock plus the ticket files and nothing else. The TSV, its plan-path env override, and the
+//! label-format checks that guarded a hand-kept column (T-616/T-623 F5) died with it: lock wave
+//! numbers are typed integers written by one writer, and a missing lock is a DidNotRun refusal
+//! from [`crate::wave_lock::load`], never an empty dispatch set.
 //!
-//! The parallelism limit on this program is not disk and not CPU — it is merge conflicts. Worktrees
-//! make concurrent edits *safe* (no clobbering) but do nothing to prevent two agents editing the
-//! same file and colliding at merge. That is a mechanical property of each ticket's `owns` field
-//! (T-912.1; until then the `owns` column of docs/platform/wave_plan.tsv), so it is computed here
-//! rather than eyeballed.
+//! The parallelism limit on this program is not disk and not CPU — it is merge conflicts.
+//! Worktrees make concurrent edits *safe* (no clobbering) but do nothing to prevent two agents
+//! editing the same file and colliding at merge. That is a mechanical property of each ticket's
+//! `owns` field, so it is computed here rather than eyeballed.
 //!
-//!   cargo xtask slice-collisions                 # max concurrent set from the next wave
+//!   cargo xtask slice-collisions                 # max concurrent set from the open waves
 //!   cargo xtask slice-collisions T-190 T-191     # what may JOIN those already in flight
-//!   cargo xtask slice-collisions --repack        # rebuild wave_plan.tsv from the registry
+//!   cargo xtask slice-collisions --repack        # alias for `cargo xtask wave repack`
 //!   cargo xtask slice-collisions --check T-190   # is T-190 safe against everything running?
 //!
-//! The plan path comes from TBD_WAVE_PLAN, so the same logic serves any program. Default is the
-//! platform plan.
-//!
-//! ── PORT FIDELITY ────────────────────────────────────────────────────────────────────────────
-//!
-//! Output is asserted byte-identical to the Python for the default, `--check` and `--repack` modes
-//! (T-620 verify log). Three places where a natural Rust idiom would have diverged silently:
-//!
-//!   * `title[:60]` in Python slices CHARACTERS, not bytes, and these titles are full of em-dashes
-//!     (3 bytes each). `.chars().take(60)` is required; `&s[..60]` would both truncate differently
-//!     and panic on a non-boundary index.
-//!   * `Counter.most_common(5)` orders by count descending, ties broken by FIRST-INSERTION order
-//!     (dicts have been insertion-ordered since 3.7). A plain sort by count is unstable across
-//!     implementations and would reorder equal-count rows.
-//!   * `csv.reader(delimiter='\t')` still honours `"` quoting. MEASURED 2026-08-01: the plan holds
-//!     exactly one `"` and it is mid-field, where csv and a naive split agree on every row — so
-//!     splitting on tabs is safe HERE. It is not safe in general; re-measure before trusting it on
-//!     a plan that has grown quoted fields.
-//!
-//! ── T-623: THE PORT WAS MORE LENIENT THAN THE PYTHON, IN THE ONE DIRECTION THAT MATTERS ──────
-//!
-//! Byte-identity was verified on the WELL-FORMED plan and held. The divergence was on the error
-//! paths, where the Python CRASHED and the port shrugged — see `check_wave_labels()` and the
-//! empty-input note in `run()`. `preflight.sh` check 9 reads nothing but the exit code, so every
-//! one of those shrugs was a red light quietly turning green. Restored, both of them.
-//!
-//! One divergence is DELIBERATELY LEFT: `--check <ticket not in the plan>` writes
-//! `xtask: T-623 is not an open ticket in docs/platform/wave_plan.tsv` where the Python wrote the
-//! same sentence without the `xtask: ` prefix (`bail!` unwinds to `main()`, which prefixes every
-//! error it prints). ACCEPTED, for three reasons: the exit code — the only thing any caller reads
-//! — is 1 in both; it is stderr prose for a human, parsed by nothing in the tree (`grep -rn` over
-//! scripts/ and .github/ finds no consumer); and removing it would mean either bypassing `anyhow`
-//! in one arm of this file, leaving its other three `bail!` sites inconsistent, or editing
-//! `xtask/src/main.rs`, which would strip the prefix off every other xtask subcommand. Naming the
-//! tool that failed is worth more than byte-parity with a file that no longer exists.
+//! `--repack` is an ALIAS, not a second writer: the lock has exactly one compiler
+//! ([`crate::wave_lock::cmd_repack`]), and this spelling survives only because a generation of
+//! runbooks and muscle memory says `slice-collisions --repack` when the plan is stale.
 
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result, bail};
-use serde_json::Value;
 use tbd_tickets::{Ticket, parse_ticket_toml};
+
+use crate::wave_lock;
 
 /// Integration attention, not disk, is the real ceiling: every agent returns a dense report the
 /// command center must actually read. Measured on T-181: three was far too low, twenty is too many
 /// to integrate in one sitting. Eight is the working compromise — raise it if you are keeping up.
 fn max_concurrent() -> usize {
-    std::env::var("TBD_MAX_CONCURRENT")
-        .ok()
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(8)
+    wave_lock::max_concurrent()
 }
 
 /// Per-ticket packing facts — `owns`, `depends_on`, `pack_last` — read from EVERY
@@ -75,11 +43,10 @@ fn max_concurrent() -> usize {
 /// Until T-912.1 the ordering constraints that file-disjointness cannot express (two tickets touch
 /// DIFFERENT files but one must land first) were a hardcoded 11-row dependency table plus a
 /// run-last list in this file, and `owns` lived only in the wave-plan TSV column. All three are
-/// ticket fields now; the TSV remains the wave-label / candidate-order source until T-912.2
-/// compiles the lockfile.
+/// ticket fields now, and T-912.2 compiled the wave labels into the lock.
 ///
-/// NOT `registry()` below: `load_phase2_tree` walks PARENT files only, so child ids like T-181.23
-/// — which is every row of the mod plan — are absent from its map. Glob the directory directly.
+/// NOT the parents-only registry loader: `load_phase2_tree` walks PARENT files only, so child ids
+/// like T-181.23 or T-090.4 would be absent from its map. Glob the directory directly.
 struct TicketFacts {
     owns: HashMap<String, Vec<String>>,
     depends_on: HashMap<String, Vec<String>>,
@@ -126,19 +93,9 @@ fn ticket_facts(root: &Path) -> Result<TicketFacts> {
     Ok(facts)
 }
 
-/// Tickets are the `owns` source since T-912.1; the TSV cell is a fallback for a row whose id has
-/// no ticket file (measured 2026-08-14: zero such rows in either plan).
-fn adopt_ticket_owns(rows: &mut [Row], facts: &TicketFacts) {
-    for r in rows {
-        if let Some(owns) = facts.owns.get(&r.id) {
-            r.owns = owns.clone();
-        }
-    }
-}
-
 #[derive(Clone, Debug)]
 struct Row {
-    wave: String,
+    wave: u32,
     id: String,
     title: String,
     owns: Vec<String>,
@@ -154,125 +111,44 @@ fn repo_root() -> Result<PathBuf> {
     ))
 }
 
-fn plan_path(root: &Path) -> PathBuf {
-    match std::env::var("TBD_WAVE_PLAN") {
-        Ok(p) if !p.is_empty() => PathBuf::from(p),
-        _ => root.join("docs/platform/wave_plan.tsv"),
-    }
-}
-
-fn plan_rows(plan: &Path) -> Result<Vec<Row>> {
-    if !plan.exists() {
-        bail!("no wave plan at {} (set TBD_WAVE_PLAN)", plan.display());
-    }
-    let text = std::fs::read_to_string(plan).with_context(|| plan.display().to_string())?;
+/// One row per lock entry, in lock order — wave 0 included, because `--check` and the collision
+/// counters reason over the whole plan while the dispatch set filters to the open waves.
+fn lock_rows(
+    lock: &wave_lock::WaveLock,
+    views: &HashMap<String, wave_lock::TicketView>,
+    facts: &TicketFacts,
+) -> Vec<Row> {
     let mut out = Vec::new();
-    for line in text.lines() {
-        // csv.reader yields [] for a truly empty line; `not r` skips it.
-        if line.is_empty() {
-            continue;
-        }
-        let f: Vec<&str> = line.split('\t').collect();
-        if f[0].starts_with('#') || f[0] == "wave" {
-            continue;
-        }
-        if f.len() < 4 {
-            continue;
-        }
-        out.push(Row {
-            wave: f[0].to_string(),
-            id: f[1].to_string(),
-            title: f[2].to_string(),
-            owns: f[3]
-                .split(';')
-                .map(str::trim)
-                .filter(|s| !s.is_empty())
-                .map(str::to_string)
-                .collect(),
-        });
-    }
-    Ok(out)
-}
-
-/// Registry tickets keyed by id, in file order (Python dict comprehension preserves it, and
-/// `unplanned` reports in that order before sorting).
-fn registry(root: &Path) -> Result<(Vec<String>, HashMap<String, Value>)> {
-    let v = crate::registry::load_registry(root)?;
-    let mut order = Vec::new();
-    let mut map = HashMap::new();
-    for t in v["tickets"].as_array().cloned().unwrap_or_default() {
-        if let Some(id) = t["id"].as_str() {
-            let id = id.to_string();
-            if !map.contains_key(&id) {
-                order.push(id.clone());
-            }
-            map.insert(id, t);
+    for w in &lock.waves {
+        for id in &w.tickets {
+            out.push(Row {
+                wave: w.n,
+                id: id.clone(),
+                title: views.get(id).map(|v| v.title.clone()).unwrap_or_default(),
+                owns: facts.owns.get(id).cloned().unwrap_or_default(),
+            });
         }
     }
-    Ok((order, map))
-}
-
-/// Can a slice AGENT take this ticket, or is a human the only one who can?
-///
-/// Two ways a ticket is undispatchable even though it is not shipped:
-///
-///   status `deferred`  — a slice agent already took it and refused with cause. T-205 and T-206
-///                        are the live case: the missing vehicle/item data only exists behind a
-///                        Workbench export pass. Re-dispatching burns a whole agent to re-derive
-///                        the same refusal.
-///   executor != claude-code — the D5 executor gate in CLAUDE.md. `workbench`, `human` and `ci`
-///                        rows are operator work by definition.
-///
-/// Without this, `pack()` filtered on shipped/cancelled ALONE and kept offering both tickets at the
-/// head of every dispatch set, where they would have consumed 2 of 8 slots per wave forever.
-fn dispatchable(id: &str, reg: &HashMap<String, Value>) -> bool {
-    let Some(t) = reg.get(id) else {
-        // Python: reg.get(tid, {}) -> status None, executor default 'claude-code' -> dispatchable.
-        return true;
-    };
-    if let Some(s) = t["status"].as_str()
-        && matches!(s, "shipped" | "cancelled" | "deferred" | "blocked")
-    {
-        return false;
-    }
-    t["executor"].as_str().unwrap_or("claude-code") == "claude-code"
-}
-
-fn landed_set(reg: &HashMap<String, Value>) -> HashSet<String> {
-    reg.iter()
-        .filter(|(_, t)| matches!(t["status"].as_str(), Some("shipped") | Some("cancelled")))
-        .map(|(id, _)| id.clone())
-        .collect()
+    out
 }
 
 /// Two tickets collide if any owned path overlaps — including prefix containment, so
 /// `apps/website/api/src/` collides with `apps/website/api/src/handlers/admin.rs`.
 fn collides(a: &[String], b: &[String]) -> bool {
-    for x in a {
-        for y in b {
-            if x == y
-                || x.starts_with(&format!("{}/", y.trim_end_matches('/')))
-                || y.starts_with(&format!("{}/", x.trim_end_matches('/')))
-            {
-                return true;
-            }
-        }
-    }
-    false
+    wave_lock::collides(a, b)
 }
 
-/// Greedy maximum disjoint set, honouring plan order (which is priority order) and ticket
+/// Greedy maximum disjoint set, honouring lock order (which is priority order) and ticket
 /// `depends_on` / `pack_last`.
 ///
-/// `landed` is everything already shipped and MUST NOT be empty by default: repack() seeded it
-/// explicitly but main() did not, so `wave.sh prep` — the only dispatch view — silently skipped
-/// every ticket carrying a dependency edge, forever. 11 tickets were unreachable, including T-209
-/// whose dependency T-186 had already shipped. Both callers pass it here, so the hole cannot
-/// reopen.
+/// `blocking` is the set of dependency targets that can still land — open dispatchable tickets
+/// not yet landed. A dep outside it is history (shipped/cancelled) or unschedulable
+/// (idea/deferred/executor-gated), and the compiler already warned about the latter at repack;
+/// treating those as blockers here would hide the very tickets the lock schedules.
 fn pack<'r>(
     cands: &[&'r Row],
     already: &[Vec<String>],
-    landed: &HashSet<String>,
+    blocking: &HashSet<String>,
     facts: &TicketFacts,
     max: usize,
 ) -> Vec<&'r Row> {
@@ -282,7 +158,7 @@ fn pack<'r>(
         if facts.pack_last.contains(&c.id) {
             continue;
         }
-        if facts.deps_of(&c.id).iter().any(|d| !landed.contains(d)) {
+        if facts.deps_of(&c.id).iter().any(|d| blocking.contains(d)) {
             continue;
         }
         if used.iter().any(|u| collides(&c.owns, u)) {
@@ -297,238 +173,49 @@ fn pack<'r>(
     chosen
 }
 
-/// Python `str[:n]` slices by CHARACTER. See the port-fidelity note at the top of this file.
+/// Python `str[:n]` sliced by CHARACTER — these titles are full of em-dashes (3 bytes each), so
+/// `&s[..60]` would both truncate differently and panic on a non-boundary index.
 fn chars(s: &str, n: usize) -> String {
     s.chars().take(n).collect()
 }
 
-/// Every wave label in the plan must be a bare integer. T-623 F5.
-///
-/// ── WHY THIS IS A HARD EXIT AND NOT A FILTER ─────────────────────────────────────────────────
-///
-/// The Python computed the next wave as
-///
-///     nxt = min((r['wave'] for r in rows), key=lambda w: int(w))
-///
-/// and on a `w80`-style label `int()` raised ValueError, which was never caught, so the process
-/// printed a traceback and exited 1. That was not a defect — it was the only thing that ever
-/// noticed. `preflight.sh` check 9 keys on nothing but this command's exit code, so `w76`..`w81`
-/// turned preflight red and stayed red until T-616 normalised the column.
-///
-/// The port replaced that with `.filter_map(|r| r.wave.parse().ok())`, which DROPS the row it
-/// cannot read and carries on to print a confident dispatch set. MEASURED 2026-08-01 against a
-/// plan with `w76` reintroduced: exit 0, no mention of the two unreadable rows, preflight green.
-/// A reintroduced label would now go unnoticed exactly the way T-616's did — and T-616 exists
-/// because one went unnoticed for five waves.
-///
-/// Checked over EVERY parsed row rather than only the dispatchable ones (which is all the Python
-/// reached). The wave column is the plan's generation structure; a label this tool cannot read
-/// leaves the whole file's ordering unverified, and scoping the check to the dispatchable subset
-/// would make its coverage depend on which tickets the registry happens to leave open today.
-/// The live plan is all-integer, so this can only ever fire on a plan that is genuinely broken.
-fn check_wave_labels(rows: &[Row], plan_label: &str) -> Result<()> {
-    let bad: Vec<&Row> = rows
-        .iter()
-        .filter(|r| r.wave.parse::<i64>().is_err())
-        .collect();
-    if bad.is_empty() {
-        return Ok(());
-    }
-    let mut msg = format!(
-        "{} row(s) in {plan_label} have a wave label that is not a bare integer:",
-        bad.len()
-    );
-    for r in bad.iter().take(20) {
-        msg.push_str(&format!(
-            "\n    wave {:<6} {:<8} {}",
-            r.wave,
-            r.id,
-            chars(&r.title, 60)
-        ));
-    }
-    if bad.len() > 20 {
-        msg.push_str(&format!("\n    ... and {} more", bad.len() - 20));
-    }
-    msg.push_str(
-        "\n  Column 1 is a BARE INTEGER (T-616). Fix the label — a row whose wave cannot be read \
-is a row this command would otherwise skip in silence.",
-    );
-    bail!(msg)
-}
-
 /* ─────────────────────────── unplanned-ticket warning ─────────────────────────── */
 
-/// Open tickets in the REGISTRY that have no row in the plan — and are therefore invisible to every
-/// dispatch set this command computes.
+/// Dispatchable work tickets with NO row in the lock's waves 1+ — invisible to every dispatch
+/// set this command computes.
 ///
-/// THIS IS THE HOLE THAT MATTERS MOST HERE. `repack()` rebuilds the plan from *existing plan rows*
-/// and preserves their `owns`, so a ticket filed straight into the registry never appears at all.
-/// It is not dropped with a warning; it is never a candidate. Measured 2026-07-26: 15 of 42 open
-/// platform tickets — 36% of the backlog, including a P0 that broke all production telemetry — were
-/// absent from every "Max disjoint dispatch set (8, cap 8)" this tool confidently printed.
+/// THIS IS THE HOLE THAT MATTERS MOST HERE. Measured 2026-07-26 on the TSV ancestor of this
+/// check: 15 of 42 open platform tickets — 36% of the backlog, including a P0 that broke all
+/// production telemetry — were absent from every "Max disjoint dispatch set" this tool
+/// confidently printed. The TSV-era check keyed on `program == "platform"` registry rows; the
+/// lock-era rule is simpler and total: EVERY dispatchable work ticket must appear in waves 1+.
 ///
-/// Same family as every other defect this run: a tool reporting success over an input it never
-/// examined. `pack()` cannot be wrong about the set it computes; it can only be wrong about what
-/// was allowed into the running.
-///
-/// Deliberately a LOUD WARNING and not a hard exit: the missing rows need `owns` derived from each
-/// ticket's own citations, which is real work and cannot be invented safely. Wedging the factory
-/// until someone does that would trade a throughput bug for a total stop. But it must never again
-/// be silent.
-fn warn_unplanned(order: &[String], reg: &HashMap<String, Value>, all_rows: &[Row]) {
-    let planned: HashSet<&str> = all_rows.iter().map(|r| r.id.as_str()).collect();
-    let mut miss: Vec<&Value> = Vec::new();
-    for id in order {
-        let t = &reg[id];
-        if t["program"].as_str() != Some("platform") {
-            continue;
-        }
-        if !matches!(
-            t["status"].as_str(),
-            Some("idea") | Some("in_progress") | Some("ready") | Some("queued")
-        ) {
-            continue;
-        }
-        if planned.contains(id.as_str()) {
-            continue;
-        }
-        miss.push(t);
-    }
+/// Deliberately a LOUD WARNING and not a hard exit — but unlike the TSV era, the fix is now one
+/// command, because `wave repack` packs every open ticket from its own `owns`.
+fn warn_unplanned(views: &HashMap<String, wave_lock::TicketView>, lock: &wave_lock::WaveLock) {
+    let planned: HashSet<String> = lock.open_ids().into_iter().collect();
+    let mut miss: Vec<&wave_lock::TicketView> = views
+        .values()
+        .filter(|v| v.dispatchable() && !planned.contains(&v.id))
+        .collect();
     if miss.is_empty() {
         return;
     }
-    // Python: sorted(key=lambda x: (x.get('priority', 9), x['id'])) — an ABSENT key sorts as 9.
-    miss.sort_by(|a, b| {
-        let pa = a.get("priority").and_then(Value::as_i64).unwrap_or(9);
-        let pb = b.get("priority").and_then(Value::as_i64).unwrap_or(9);
-        pa.cmp(&pb)
-            .then_with(|| a["id"].as_str().cmp(&b["id"].as_str()))
-    });
+    miss.sort_by(|a, b| a.id.cmp(&b.id));
     eprintln!(
-        "\n\x1b[33m! {} OPEN TICKET(S) ARE NOT IN THE PLAN and cannot be dispatched:\x1b[0m",
+        "\n\x1b[33m! {} DISPATCHABLE TICKET(S) ARE NOT IN THE LOCK'S OPEN WAVES and cannot be dispatched:\x1b[0m",
         miss.len()
     );
-    for t in &miss {
-        let p = t.get("priority").and_then(Value::as_i64);
-        let flag = if p == Some(0) {
-            "  \x1b[31m<-- P0\x1b[0m"
-        } else {
-            ""
-        };
-        let pd = p.map_or("-".to_string(), |v| v.to_string());
-        eprintln!(
-            "    {:<8} p{} {}{}",
-            t["id"].as_str().unwrap_or(""),
-            pd,
-            chars(t["title"].as_str().unwrap_or(""), 58),
-            flag
-        );
+    for v in &miss {
+        eprintln!("    {:<10} {}", v.id, chars(&v.title, 58));
     }
-    eprintln!(
-        "  Give each one an `owns` row in the plan (derive it from the ticket's own citations, \
-never a bare directory)."
-    );
-}
-
-/* ─────────────────────────── repack ─────────────────────────── */
-
-/// Rebuild the plan from the registry, re-packing every unshipped ticket by disjointness.
-/// Preserves each row's `owns` — only the wave numbers move.
-fn repack(
-    plan: &Path,
-    order: &[String],
-    reg: &HashMap<String, Value>,
-    facts: &TicketFacts,
-    all: &[Row],
-) -> Result<u8> {
-    let max = max_concurrent();
-    let rows: Vec<&Row> = all.iter().filter(|r| dispatchable(&r.id, reg)).collect();
-    let done: Vec<&Row> = all.iter().filter(|r| !dispatchable(&r.id, reg)).collect();
-
-    // Seed `landed` with everything already shipped. Without this, a dependency edge pointing at a
-    // shipped ticket can never be satisfied — the dependency is filtered out of `rows` as done, so
-    // it never enters `landed`, and every dependent deadlocks. Hit for real on 2026-07-26 once
-    // T-186 shipped: T-209 -> T-186 and T-251 -> T-209 both became unschedulable.
-    let mut landed = landed_set(reg);
-    let last: Vec<&Row> = rows
-        .iter()
-        .copied()
-        .filter(|r| facts.pack_last.contains(&r.id))
-        .collect();
-    let mut remaining: Vec<&Row> = rows
-        .iter()
-        .copied()
-        .filter(|r| !facts.pack_last.contains(&r.id))
-        .collect();
-
-    let mut waves: Vec<Vec<&Row>> = Vec::new();
-    while !remaining.is_empty() {
-        let mut w = pack(&remaining, &[], &landed, facts, max);
-        if w.is_empty() {
-            // Everything left is either colliding or dep-blocked. Take the first whose deps are
-            // satisfied; if none are, the ticket depends_on graph has a cycle (or an edge onto a
-            // ticket that can never land) and that is a bug worth shouting about.
-            let free: Vec<&Row> = remaining
-                .iter()
-                .copied()
-                .filter(|r| facts.deps_of(&r.id).iter().all(|d| landed.contains(d)))
-                .collect();
-            if free.is_empty() {
-                let ids: Vec<&str> = remaining.iter().take(8).map(|r| r.id.as_str()).collect();
-                bail!("depends_on deadlock: {ids:?} — check those tickets' depends_on edges");
-            }
-            w = vec![free[0]];
-        }
-        let picked: HashSet<&str> = w.iter().map(|r| r.id.as_str()).collect();
-        remaining.retain(|r| !picked.contains(r.id.as_str()));
-        for r in &w {
-            landed.insert(r.id.clone());
-        }
-        waves.push(w);
-    }
-    // RUN_LAST tickets get their own trailing wave.
-    for r in last {
-        waves.push(vec![r]);
-    }
-
-    let mut out: Vec<String> = vec![
-        "# Platform wave plan — WHICH tickets run together, and in what order.".into(),
-        "# Columns: wave <TAB> ticket <TAB> title <TAB> owns (semicolon-separated paths)".into(),
-        "# Waves are packed by FILE-DISJOINTNESS in priority order.".into(),
-        "# Regenerate: cargo xtask slice-collisions --repack".into(),
-        "#".into(),
-    ];
-    for r in &done {
-        out.push(format!("0\t{}\t{}\t{}", r.id, r.title, r.owns.join("; ")));
-    }
-    for (i, w) in waves.iter().enumerate() {
-        for r in w {
-            out.push(format!(
-                "{}\t{}\t{}\t{}",
-                i + 1,
-                r.id,
-                r.title,
-                r.owns.join("; ")
-            ));
-        }
-    }
-    std::fs::write(plan, format!("{}\n", out.join("\n")))
-        .with_context(|| plan.display().to_string())?;
-    let total: usize = waves.iter().map(Vec::len).sum();
-    println!(
-        "repacked {total} open tickets into {} waves ({} already shipped, parked at wave 0)",
-        waves.len(),
-        done.len()
-    );
-    warn_unplanned(order, reg, all);
-    Ok(0)
+    eprintln!("  Run `cargo xtask wave repack` — the compiler packs every open ticket.");
 }
 
 /* ─────────────────────────── entry point ─────────────────────────── */
 
 pub fn run(argv: &[String]) -> Result<u8> {
     let root = repo_root()?;
-    let plan = plan_path(&root);
     let max = max_concurrent();
 
     let args: Vec<&String> = argv.iter().filter(|a| !a.starts_with("--")).collect();
@@ -538,40 +225,22 @@ pub fn run(argv: &[String]) -> Result<u8> {
         .map(String::as_str)
         .collect();
 
-    let mut all = plan_rows(&plan)?;
-    let (order, reg) = registry(&root)?;
-    let facts = ticket_facts(&root)?;
-    adopt_ticket_owns(&mut all, &facts);
-
-    // --repack is exempt from the two checks below: it REGENERATES the wave column outright, and
-    // it is the only way back from a plan whose labels have rotted. Refusing to run the repair
-    // tool on the thing it repairs would leave no path forward.
+    // One writer. This alias exists for runbook muscle memory only (see the module header).
     if flags.contains("--repack") {
-        return repack(&plan, &order, &reg, &facts, &all);
+        return wave_lock::cmd_repack(&root);
     }
 
-    // ── T-623 F5: AN EMPTY PLAN IS AN ERROR; AN EMPTY DISPATCH SET IS NOT ────────────────────
-    //
-    // The Python crashed on both (`min()` of an empty sequence), and the port printed the same
-    // limp `next wave is .` for both. They are not the same event and this command must stop
-    // saying the same thing about them.
-    //
-    // NO ROWS PARSED AT ALL is an input failure, every time. A TBD_WAVE_PLAN pointing somewhere
-    // wrong, a truncated file, a column shift that drops every row through the `f.len() < 4`
-    // filter — in each case this tool has NOTHING to compute over, and printing
-    // "Max disjoint dispatch set (0, cap 8)" is the signature defect stated out loud: success
-    // reported over an input never examined. preflight check 9 would read that exit 0 as
-    // "dispatch set computes". Hard fail, named.
-    if all.is_empty() {
-        bail!(
-            "no ticket rows in {} — the plan is empty, truncated or mis-columned. No dispatch \
-set was computed and none will be printed.",
-            pathdiff(&plan, &root)
-        );
-    }
-    check_wave_labels(&all, &pathdiff(&plan, &root))?;
+    let lock = wave_lock::load(&root)?; // missing lock = DidNotRun refusal, never an empty set
+    let views: HashMap<String, wave_lock::TicketView> = wave_lock::load_views(&root)?
+        .into_iter()
+        .map(|v| (v.id.clone(), v))
+        .collect();
+    let facts = ticket_facts(&root)?;
+    let all = lock_rows(&lock, &views, &facts);
 
-    let rows: Vec<&Row> = all.iter().filter(|r| dispatchable(&r.id, &reg)).collect();
+    // Open rows = the lock's waves 1+. Drift between the lock and the tickets is `wave check`'s
+    // job (wired into `ticket check`); this command trusts the committed plan it was handed.
+    let rows: Vec<&Row> = all.iter().filter(|r| r.wave > 0).collect();
     let by_id: HashMap<&str, &Row> = rows.iter().map(|r| (r.id.as_str(), *r)).collect();
 
     if flags.contains("--check") {
@@ -579,7 +248,7 @@ set was computed and none will be printed.",
             bail!("--check needs a ticket id");
         };
         let Some(t) = by_id.get(want.as_str()) else {
-            bail!("{want} is not an open ticket in {}", pathdiff(&plan, &root));
+            bail!("{want} is not an open ticket in {}", wave_lock::LOCK_REL);
         };
         let bad: Vec<&str> = rows
             .iter()
@@ -602,7 +271,7 @@ set was computed and none will be printed.",
     for a in &args {
         match by_id.get(a.as_str()) {
             Some(r) => running.push(r),
-            None => eprintln!("warning: {a} is not an open ticket in the plan"),
+            None => eprintln!("warning: {a} is not an open ticket in the lock"),
         }
     }
     let running_ids: HashSet<&str> = running.iter().map(|r| r.id.as_str()).collect();
@@ -612,8 +281,9 @@ set was computed and none will be printed.",
         .filter(|r| !running_ids.contains(r.id.as_str()))
         .collect();
     let already: Vec<Vec<String>> = running.iter().map(|r| r.owns.clone()).collect();
-    let landed = landed_set(&reg);
-    let picked = pack(&cands, &already, &landed, &facts, max);
+    // Deps that can still block a candidate: open tickets not named as already running.
+    let blocking: HashSet<String> = cands.iter().map(|r| r.id.clone()).collect();
+    let picked = pack(&cands, &already, &blocking, &facts, max);
 
     if !running.is_empty() {
         println!("already in flight ({}):", running.len());
@@ -622,37 +292,16 @@ set was computed and none will be printed.",
         }
         println!("\nmay join them ({}, cap {max}):", picked.len());
     } else if rows.is_empty() {
-        // ROWS PARSED, NONE DISPATCHABLE — the other half of the T-623 F5 note above, and a
-        // judgement call rather than a restoration: the Python crashed here too, and this does
-        // not. Every planned ticket being shipped, cancelled, deferred or assigned to a human is
-        // the factory FINISHING, not the factory breaking, and turning preflight red on the day
-        // the backlog empties would be a bug of our own making. Exit 0 — but SAY SO, in a
-        // sentence, because the bare `next wave is .` this replaces was indistinguishable from
-        // the empty-plan failure above, which is precisely why both needed splitting apart.
+        // A lock with an empty open set is the factory FINISHING, not the factory breaking —
+        // the missing-lock refusal above is the failure case. Exit 0, but SAY SO.
         println!(
-            "no dispatchable tickets in {} — all {} planned ticket(s) are shipped, cancelled, \
-deferred, or assigned to a non-agent executor. Nothing to dispatch.",
-            pathdiff(&plan, &root),
-            all.len()
+            "no open tickets in {} — every planned ticket is parked at wave 0. Nothing to dispatch.",
+            wave_lock::LOCK_REL
         );
-        warn_unplanned(&order, &reg, &all);
+        warn_unplanned(&views, &lock);
         return Ok(0);
     } else {
-        // min by INTEGER value, printing the original label. T-616 normalised the column to bare
-        // integers, and check_wave_labels() above now refuses to run over a plan where that is
-        // not true — so unlike the code this replaced, a row is never dropped here in silence.
-        let Some(nxt) = rows
-            .iter()
-            .filter_map(|r| r.wave.parse::<i64>().ok().map(|n| (n, &r.wave)))
-            .min_by_key(|(n, _)| *n)
-            .map(|(_, w)| w.clone())
-        else {
-            // Unreachable: every label parsed, and `rows` is non-empty. Fail closed anyway — a
-            // silent default here is the shape of bug this whole ticket is about.
-            bail!(
-                "internal: no readable wave label after validation — check_wave_labels() is wrong"
-            );
-        };
+        let nxt = rows.iter().map(|r| r.wave).min().unwrap_or(1);
         println!(
             "next wave is {nxt}. Max disjoint dispatch set ({}, cap {max}):",
             picked.len()
@@ -693,16 +342,8 @@ deferred, or assigned to a non-agent executor. Nothing to dispatch.",
         }
     }
 
-    warn_unplanned(&order, &reg, &all);
+    warn_unplanned(&views, &lock);
     Ok(0)
-}
-
-/// `os.path.relpath(PLAN, ROOT)` for the one message that prints it.
-fn pathdiff(plan: &Path, root: &Path) -> String {
-    plan.strip_prefix(root)
-        .unwrap_or(plan)
-        .to_string_lossy()
-        .into_owned()
 }
 
 #[cfg(test)]

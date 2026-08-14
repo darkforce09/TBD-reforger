@@ -217,7 +217,7 @@ pub fn prev_wave_close() -> Option<String> {
 //   * there are no wave tags: `git tag -l` is 100% `T-*` ticket tags, zero wave-shaped refs.
 //   * `slice/*` branches are never deleted — 17 of them survive, spanning waves 75 to 78, so a
 //     branch ref cannot say which wave is current.
-//   * `docs/platform/wave_plan.tsv` names TICKETS, not commits.
+//   * the wave plan (then a TSV, now `.ai/tickets/wave.lock`) names TICKETS, not commits.
 // And structurally the two cases are twins: "the previous wave closed HERE" and "the previous wave
 // closed at HEAD~1" both look like `landings, boundary, landings` to the graph. So a checker that
 // can CONFIRM the boundary from other evidence cannot be written today, and asserting one would be
@@ -241,18 +241,20 @@ pub fn prev_wave_close() -> Option<String> {
 //
 //   2. TICKET LEDGER — wave_close_ledger_says. THIS CHECK WAS THE HOLE T-618 CLOSES, and the hole
 //      was in this comment as much as in the code: it claimed independent evidence while reading
-//      docs/platform/wave_plan.tsv and .ai/tickets/registry.json OUT OF HEAD'S CHECKOUT — where a
-//      marker commit that edits both files in the same commit has already written the answer it is
-//      about to be graded on. Wave 78's verifier did exactly that, and the gate returned rc 0 over
-//      a range of 1 commit whose honest span was 9.
+//      the wave plan and the ticket registry OUT OF HEAD'S CHECKOUT — where a marker commit that
+//      edits both files in the same commit has already written the answer it is about to be
+//      graded on. Wave 78's verifier did exactly that, and the gate returned rc 0 over a range of
+//      1 commit whose honest span was 9.
 //
-//      WHAT THESE TWO FILES ACTUALLY ARE, measured across the closes of waves 73-78:
-//        * registry.json is a RESULT, and `wave --close` IS WHAT WRITES IT. At the PARENT of every
+//      WHAT THESE TWO FILES ACTUALLY ARE, measured across the closes of waves 73-78 (the plan was
+//      a TSV then, the registry a JSON monolith; both readers now go through revision-addressed
+//      blobs so the shapes of the era are still readable):
+//        * the registry is a RESULT, and `wave --close` IS WHAT WRITES IT. At the PARENT of every
 //          real close the wave's own tickets are still `deferred`/`ready` — wave 77's five were all
 //          `deferred` one commit before 2b144b5d flipped them to `shipped`. So the registry cannot
 //          be read from before the boundary: that would contradict, and hard-refuse, every
 //          legitimate wave close in this repository's history.
-//        * wave_plan.tsv is a SCHEDULE, and usually predates the close — w77's rows were filed by
+//        * the wave plan is a SCHEDULE, and usually predates the close — w77's rows were filed by
 //          2a8b41e2, a separate ticket-filing commit. But not always: the real wave-78 close
 //          b2afc99a appended its own four w78 rows.
 //
@@ -282,55 +284,32 @@ pub fn prev_wave_close() -> Option<String> {
 // WHEN NOTHING CAN SPEAK, THE GATE REFUSES AND ASKS. There is no silent pass left on this path:
 // TBD_GATE_BASE_CONFIRM must name the exact sha, so confirming requires reading the sha.
 
-/// Tickets the plan assigns to a wave AS OF A REVISION, accepting both label spellings in the file
-/// (`77` and `w77`).
+/// Tickets the plan assigns to a wave AS OF A REVISION.
 ///
-/// THE `sub(/^w/,"",w)` BELOW IS NOT STYLE TOLERANCE AND MUST NOT BE "TIDIED UP" NOW THAT T-616 HAS
-/// NORMALISED THE COLUMN TO BARE INTEGERS. T-616 normalised the WORKING TREE; it cannot normalise
-/// HISTORY, and this function reads history exclusively — `git show "$1:$PLAN"` at the boundary's
-/// PARENT. Every revision at or before wave 79's close still spells those rows `w76`…`w79`, because
-/// that is what was committed. MEASURED 2026-08-01 against wave 79's close 6b2f4750: the parent
-/// 3c44b6ea holds 5 rows literally beginning `w79`, and stripping the prefix is the only reason
-/// oracle 2 can still say "corroborated" instead of falling silent. Delete it and every wave close
-/// in this repository's history becomes unverifiable in one commit.
+/// T-912.2: the plan at a revision is `.ai/tickets/wave.lock` — read as a blob and parsed as
+/// TOML. Every boundary BEFORE the cutover has no lock blob there, and refusing to read those
+/// revisions would demote every historical wave close from "corroborated" to "demand operator
+/// confirmation" — so an absent or unparseable lock blob falls back to the historical TSV
+/// readers in [`super::legacy_plan`], the one module allowed to name the dead files. History is
+/// immutable and TSV-shaped; a reader of history may name that shape.
 ///
 /// T-618: takes a rev because the checkout is not evidence. This has exactly one caller — oracle 2
 /// — and that caller must not be able to read a plan row the commit it is grading just wrote, so
 /// there is deliberately NO checkout-reading variant of this function to reach for by mistake.
 ///
-/// The two filters are `plan_rows`' filters, repeated rather than reused, because `plan_rows` reads
-/// a FILE and this reads a BLOB.
-///
-/// A `$PLAN` that TBD_WAVE_PLAN has pointed outside the repo is not a path `git show` can resolve;
-/// that yields no rows, which this check reports as silence and the caller escalates. Fail-closed.
+/// A path `git show` cannot resolve yields no rows, which this check reports as silence and the
+/// caller escalates. Fail-closed.
 pub fn wave_plan_tickets_at(ctx: &Ctx, rev: &str, n: i64) -> Vec<String> {
     let blob = git_stdout(&["show", &format!("{rev}:{}", ctx.plan)]).unwrap_or_default();
-    let want = n.to_string();
-    blob.lines()
-        .filter(|l| !l.starts_with('#'))
-        .filter(|l| {
-            !(l.starts_with("wave")
-                && l[4..]
-                    .chars()
-                    .next()
-                    .map(|c| c.is_whitespace())
-                    .unwrap_or(false))
-        })
-        .filter(|l| !l.trim().is_empty())
-        .filter_map(|l| {
-            let mut it = l.split('\t');
-            let w = it.next().unwrap_or("");
-            let t = it.next().unwrap_or("");
-            let w = w.strip_prefix('w').unwrap_or(w);
-            // awk's `w == n` after `sub()`. Both sides look numeric on every row that matters, so
-            // the numeric and string readings agree; see ledger::awk_eq for the general rule.
-            let eq = match (w.parse::<f64>(), want.parse::<f64>()) {
-                (Ok(a), Ok(b)) => a == b,
-                _ => w == want,
-            };
-            if eq { Some(t.to_string()) } else { None }
-        })
-        .collect()
+    if !blob.is_empty() {
+        if let Ok(lock) = crate::wave_lock::parse(&blob) {
+            if let Ok(w) = u32::try_from(n) {
+                return lock.tickets_in_wave(w);
+            }
+            return Vec::new();
+        }
+    }
+    super::legacy_plan::tickets_at(rev, n)
 }
 
 /// Of these tickets, which does the registry AS OF A REVISION not call shipped (or cancelled)?

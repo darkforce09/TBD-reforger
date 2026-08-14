@@ -6,6 +6,7 @@
 
 use std::path::Path;
 
+use super::status::lock_or_refuse;
 use super::{Ctx, gate, git_stdout, git_stdout_lossy, ledger, push, short};
 use crate::{werr, wprintln};
 
@@ -40,13 +41,13 @@ pub fn cmd_land(ctx: &Ctx, args: &[String]) -> u8 {
         }
     }
 
-    let w = ledger::current_wave(ctx);
+    let w = lock_or_refuse!(ledger::current_wave(ctx));
     if w == "done" {
         wprintln!("nothing to land");
         return 0;
     }
 
-    let wave_ids = ledger::wave_tickets(ctx, &w);
+    let wave_ids = lock_or_refuse!(ledger::wave_tickets(ctx, &w));
     let mut ready: Vec<String> = Vec::new();
     let mut blocked: Vec<String> = Vec::new();
     let mut skipped: Vec<String> = Vec::new();
@@ -170,6 +171,15 @@ pub fn cmd_land(ctx: &Ctx, args: &[String]) -> u8 {
         }
     }
 
+    // T-912.2 lifecycle (a): `wave repack` is land's final mutation, BEFORE the push, so a lock
+    // refresh rides the land rather than sitting dirty behind it. Usually a no-op byte-wise —
+    // slice branches do not edit ticket files, and every status writer already runs the same
+    // writer — but a merged slice that DID move a ticket must not leave `wave check` red on the
+    // main this command just published.
+    if repack_after_land(ctx) != 0 {
+        return 1;
+    }
+
     // Rule 5: work must not be trapped on one machine. This was missing entirely.
     if push::cmd_push(ctx) != 0 {
         wprintln!("PUSH FAILED — work is landed on local main but not on origin");
@@ -178,6 +188,39 @@ pub fn cmd_land(ctx: &Ctx, args: &[String]) -> u8 {
     if !blocked.is_empty() {
         wprintln!("still in flight: {}", blocked.join(" "));
     }
+    0
+}
+
+/// Run the lock writer and commit the refresh when it changed anything — the land commit
+/// carries the lock (lifecycle "a"). Refusing to continue on a writer error is deliberate:
+/// pushing a main whose lock cannot be recompiled would hand the next agent a red `ticket
+/// check` with this command's name on it.
+fn repack_after_land(ctx: &Ctx) -> u8 {
+    if let Err(e) = crate::wave_lock::repack_quiet(&ctx.root) {
+        wprintln!("wave repack FAILED after land: {e:#}");
+        wprintln!("  fix the ticket tree, run `cargo xtask wave repack`, commit, then push.");
+        return 1;
+    }
+    let dirty = git_stdout_lossy(&["status", "--porcelain", "--", crate::wave_lock::LOCK_REL]);
+    if dirty.trim().is_empty() {
+        return 0;
+    }
+    super::flush();
+    let ok = std::process::Command::new("git")
+        .args(["add", "--", crate::wave_lock::LOCK_REL])
+        .status()
+        .map(|s| s.success())
+        .unwrap_or(false)
+        && std::process::Command::new("git")
+            .args(["commit", "-m", "wave.lock: repack after land"])
+            .status()
+            .map(|s| s.success())
+            .unwrap_or(false);
+    if !ok {
+        wprintln!("could not commit the wave.lock refresh — commit it by hand before pushing");
+        return 1;
+    }
+    wprintln!("wave.lock refreshed and committed (rides this land)");
     0
 }
 
@@ -273,12 +316,12 @@ pub fn cmd_verified(ctx: &Ctx, sha: &str) -> u8 {
 /// landing. That third condition is the one that was being skipped, so it is checked here rather
 /// than trusted.
 pub fn cmd_wave_close(ctx: &Ctx) -> u8 {
-    let w = ledger::current_wave(ctx);
+    let w = lock_or_refuse!(ledger::current_wave(ctx));
     if w == "done" {
         wprintln!("all waves shipped — nothing to close");
         return 0;
     }
-    let open: Vec<String> = ledger::wave_tickets(ctx, &w)
+    let open: Vec<String> = lock_or_refuse!(ledger::wave_tickets(ctx, &w))
         .into_iter()
         .filter(|t| !ctx.registry_view.is_shipped(t))
         .collect();

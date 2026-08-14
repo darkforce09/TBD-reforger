@@ -144,7 +144,8 @@ cargo xtask slice-collisions                # the dispatch set, + any UNPLANNED 
 > found this and refused to run it; W80's verifier confirmed it (T-604 76→0, T-620 80→1, T-315 81→0).
 > `--repack` is for a plan that has genuinely rotted, on a copy, with the oracle checked afterwards.
 
-State lives in: [`wave_plan.tsv`](wave_plan.tsv) (what runs together) · `.ai/tickets/registry.json`
+State lives in: [`wave.lock`](../../.ai/tickets/wave.lock) (what runs together — compiled by
+`cargo xtask wave repack`, checked by `cargo xtask wave check`) · `.ai/tickets/registry.json`
 (every ticket's full history — **the summaries are the handoff**, read the ones you are dispatching)
 · this file (process) · [`frontend_data_provenance.md`](frontend_data_provenance.md) (which render
 sites are real vs mock — saves a 150k-token re-derivation).
@@ -437,9 +438,9 @@ to the slice's own diff against `main`.
    cargo xtask slice-collisions T-190 T-191  # what may join those in flight
    cargo xtask slice-collisions --check T-195
    ```
-   Worktrees make concurrent edits *safe* but do not prevent **merge conflicts**. The `owns`
-   column in [`wave_plan.tsv`](wave_plan.tsv) is the only thing standing between eight agents and
-   a merge pile-up. The cap is `TBD_MAX_CONCURRENT` (default 8) and the binding constraint is
+   Worktrees make concurrent edits *safe* but do not prevent **merge conflicts**. Each ticket's
+   `owns` field (snapshotted into [`wave.lock`](../../.ai/tickets/wave.lock)) is the only thing
+   standing between eight agents and a merge pile-up. The cap is `TBD_MAX_CONCURRENT` (default 8) and the binding constraint is
    **integration attention** — how many dense agent reports the command center can actually read
    and act on — not disk and not CPU.
 3. **Land each slice the moment it is green.** No barrier. See correction 2.

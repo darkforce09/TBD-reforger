@@ -8,8 +8,8 @@ before dispatching anything.
 You are the **command center**: you dispatch, integrate, gate, verify, and close. **You never
 implement** — if you find yourself editing a `.rs`/`.c`/`.css` file under `apps/`, `crates/`,
 `packages/` or `tools/` in the main checkout, stop and dispatch a slice agent instead. The files you
-may edit yourself: `.ai/tickets/registry.json`, `docs/platform/wave_plan.tsv`, `docs/**`, and the run
-log `.ai/artifacts/editor_factory_run.md`.
+may edit yourself: `.ai/tickets/` (ticket TOMLs; `wave.lock` only via `cargo xtask wave repack`),
+`docs/**`, and the run log `.ai/artifacts/editor_factory_run.md`.
 
 Process ancestor: [`FACTORY_FOR_CURSOR.md`](FACTORY_FOR_CURSOR.md) (the platform factory's runbook —
 worktrees, reject conditions, phase-0 cold start). Where it and this file disagree on procedure,
@@ -24,7 +24,7 @@ worktrees, reject conditions, phase-0 cold start). Where it and this file disagr
 | Last close | `bc627304` — **wave 130 CLOSED — editor wave 207** |
 | **Next close marker** | **131** — but DERIVE IT, never assume: `git log --grep='^wave [0-9]\+ CLOSED' --format='%s' -1`, then +1 |
 | Waves shipped by Claude Code | 200, 209, 201, 202, 203, 204, 205, 206, 207 (markers 122–130) |
-| **Waves queued for you** | **208, 210, 211, 212, 213, 214, 215, 216, 217** — 26 tickets, all rows in `wave_plan.tsv`, **all verified file-disjoint within each wave** |
+| **Waves queued for you** | **208, 210, 211, 212, 213, 214, 215, 216, 217** — 26 tickets, all in `.ai/tickets/wave.lock` (relabeled 1..N at the T-912.2 cutover), **all verified file-disjoint within each wave** |
 | Not dispatchable | **T-825** — the outliner-first design program; it is an operator design session, not a slice. Do not dispatch it. |
 | Parked, do not touch | six mod worktrees (T-702, T-212, T-654, T-673, T-674, T-675) — preflight WARNs about them and that warn is expected |
 
@@ -97,13 +97,15 @@ cargo xtask platform preflight        # 2 warns are normal: CARGO_TARGET_DIR uns
 **Per wave L:**
 
 ```bash
-awk -F'\t' '$1==L' docs/platform/wave_plan.tsv          # the tickets + their owns
+cargo xtask slice-collisions                            # the open waves: tickets + their owns
+                                                        # (plan = .ai/tickets/wave.lock since T-912.2)
 bash scripts/mod/slice-worktree.sh new T-xxx            # one per ticket
 # ... dispatch 3 slice agents (see §4) ... barrier: ALL report ...
 git merge --no-ff slice/T-xxx -m "T-xxx: <title>"       # each
 BASE=$(git rev-list --extended-regexp --grep='^wave [0-9]+ CLOSED' -1 HEAD)
-CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target TBD_WAVE_GENERATION_FLOOR=100 \
+CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target \
   TBD_GATE_WAVE=L TBD_GATE_BASE_CONFIRM=$BASE cargo xtask platform wave gate
+# (the generation-floor env died at T-912.2 — landed generations live in the lock's wave 0)
 ```
 
 The gate **will** demand `TBD_GATE_BASE_CONFIRM` — markers past 121 have no corroborating plan rows.

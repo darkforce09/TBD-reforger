@@ -3,80 +3,70 @@
 //! These are `wave.sh`'s smallest functions and its most load-bearing ones: `land` decides what to
 //! merge from [`tree_state`] and [`has_work`], and `status`, `wave`, `wave --close` and `land` all
 //! key off [`current_wave`].
+//!
+//! T-912.2: the plan is `.ai/tickets/wave.lock`, compiled from the tickets by `cargo xtask wave
+//! repack`. The TSV readers died with the TSVs, and so did their signature false-green: the old
+//! `plan_rows` swallowed a missing plan into an empty set (`unwrap_or_default`), which is how
+//! `status` once said `ALL WAVES COMPLETE` about a directory that is not the repo. A missing
+//! lock is now a `Result::Err` — a DidNotRun refusal every caller must surface, never an empty
+//! plan.
 
+use std::collections::HashMap;
 use std::path::Path;
+use std::sync::OnceLock;
 
+use anyhow::Result;
 use serde_json::Value;
 
 use super::{Ctx, git_stdout_lossy};
 use crate::werr;
 
-/// `plan_rows` — the wave plan minus comments, the header row, and blank lines.
+/// id → title, loaded from the ticket files once per process. Titles are display prose, so a
+/// tree whose tickets cannot be parsed degrades to empty titles rather than refusing — the lock
+/// readers below are the ones that refuse.
+fn title_map(ctx: &Ctx) -> &'static HashMap<String, String> {
+    static TITLES: OnceLock<HashMap<String, String>> = OnceLock::new();
+    TITLES.get_or_init(|| {
+        crate::wave_lock::load_views(&ctx.root)
+            .map(|views| views.into_iter().map(|v| (v.id, v.title)).collect())
+            .unwrap_or_default()
+    })
+}
+
+/// The committed lock, or the DidNotRun refusal for a tree that has none.
+pub fn load_lock(ctx: &Ctx) -> Result<crate::wave_lock::WaveLock> {
+    crate::wave_lock::load(&ctx.root)
+}
+
+/// `plan_rows` — one `wave<TAB>id<TAB>title` line per lock entry, waves in lock order.
 ///
-/// The two filters stay BRE `^#` / `^wave[[:space:]]`, which mean the same thing under ugrep and
-/// GNU grep — see the engine note inside [`super::base::prev_wave_close`]. A missing `$PLAN` greps
-/// an error into `/dev/null` and yields the empty set, which is why `status` on a stray checkout
-/// used to say `ALL WAVES COMPLETE` about a directory that is not the repo.
-pub fn plan_rows(ctx: &Ctx) -> Vec<String> {
-    let body = std::fs::read_to_string(&ctx.plan).unwrap_or_default();
-    body.lines()
-        .filter(|l| !l.starts_with('#'))
-        .filter(|l| {
-            !(l.starts_with("wave")
-                && l[4..]
-                    .chars()
-                    .next()
-                    .map(|c| c.is_whitespace())
-                    .unwrap_or(false))
-        })
-        // `sed '/^\s*$/d'` — GNU `\s` is [[:space:]].
-        .filter(|l| !l.trim().is_empty())
-        .map(str::to_string)
-        .collect()
-}
-
-/// Split a plan row on TAB, awk's `-F'\t'` — `$1`, `$2`, `$3`, `$4`.
-fn cols(row: &str) -> Vec<&str> {
-    row.split('\t').collect()
-}
-
-fn col(row: &str, n: usize) -> &str {
-    cols(row).get(n - 1).copied().unwrap_or("")
-}
-
-/// awk's `==` between a field and a `-v` variable: numeric when BOTH look numeric, string
-/// otherwise.
-///
-/// This is not pedantry. `wave_tickets` compares `$1 == w`, and the plan carried two spellings of
-/// column 1 until T-616 (`80` and `w80`). Under awk `"w80" == 80` is a STRING comparison and false;
-/// under a naive `==` on parsed integers it would either panic or silently match. The legacy
-/// spelling still lives in HISTORY, which [`super::base::wave_plan_tickets_at`] reads.
-fn awk_eq(field: &str, var: &str) -> bool {
-    match (field.trim().parse::<f64>(), var.trim().parse::<f64>()) {
-        (Ok(a), Ok(b)) => a == b,
-        _ => field == var,
-    }
-}
-
-/// `ticket_title` — column 3 of the first row whose column 2 is this ticket.
-pub fn ticket_title(ctx: &Ctx, id: &str) -> String {
-    for r in plan_rows(ctx) {
-        if col(&r, 2) == id {
-            return col(&r, 3).to_string();
+/// The row shape survives the TSV so downstream `split('\t')` consumers read unchanged; the
+/// source is the lock plus ticket titles.
+pub fn plan_rows(ctx: &Ctx) -> Result<Vec<String>> {
+    let lock = load_lock(ctx)?;
+    let titles = title_map(ctx);
+    let mut out = Vec::new();
+    for w in &lock.waves {
+        for t in &w.tickets {
+            let title = titles.get(t).map(String::as_str).unwrap_or("");
+            out.push(format!("{}\t{}\t{}", w.n, t, title));
         }
     }
-    String::new()
+    Ok(out)
 }
 
-/// `wave_tickets` — column 2 of every row in wave `w`.
-pub fn wave_tickets(ctx: &Ctx, w: &str) -> Vec<String> {
-    plan_rows(ctx)
-        .iter()
-        .filter(|r| awk_eq(col(r, 1), w))
-        .map(|r| col(r, 2).to_string())
-        // `for t in $(wave_tickets …)` word-splits, so an empty column 2 contributes nothing.
-        .filter(|s| !s.is_empty())
-        .collect()
+/// `ticket_title` — from the ticket file, empty when it has none.
+pub fn ticket_title(ctx: &Ctx, id: &str) -> String {
+    title_map(ctx).get(id).cloned().unwrap_or_default()
+}
+
+/// `wave_tickets` — the lock wave labelled `w`.
+pub fn wave_tickets(ctx: &Ctx, w: &str) -> Result<Vec<String>> {
+    let lock = load_lock(ctx)?;
+    Ok(match w.parse::<u32>() {
+        Ok(n) => lock.tickets_in_wave(n),
+        Err(_) => Vec::new(),
+    })
 }
 
 /// `.ai/tickets/registry.json`, parsed once, with `is_shipped`'s exact failure semantics.
@@ -182,86 +172,20 @@ impl Registry {
     }
 }
 
-/// The lowest wave AT OR ABOVE THE LIVE GENERATION FLOOR with at least one unshipped ticket.
+/// The first lock wave n>0 holding at least one unshipped ticket — `"done"` when none does.
 ///
-/// T-616. Column 1 of the plan used to carry two spellings — bare `0`-`11`/`43`-`68`/`99` and
-/// `w76`…`w81` — and that mix was not cosmetic, it was LOAD-BEARING. `sort -n` scores any
-/// non-numeric key as 0, so every `wNN` row sorted into the wave-0 block AHEAD of wave 1, and this
-/// loop therefore reached the live factory rows first. The answer it returned was right; the reason
-/// was an accident. MEASURED 2026-08-01 before the migration: `current_wave` -> `w80`, which is the
-/// operationally correct wave, arrived at by a sort that believed 80 < 1.
-///
-/// So normalising the column to bare integers — which is what T-616 asks for, and what
-/// `slice-collisions` needs since `int('w80')` raises — is only HALF a migration. With uniform
-/// numbers `sort -n` finally orders honestly, and this loop then walks the LEGACY BACKLOG first and
-/// returns wave 3 (T-578/579/580/587, all `deferred`). `wave`, `wave --close` and `land` all key
-/// off this function, so that would have pointed every one of them at a four-year-old deferred
-/// backlog row instead of the wave in flight. A uniform format that silently re-aims `land` is a
-/// worse bug than the mixed format it replaced.
-///
-/// The floor is what the `w` prefix actually MEANT, written down as data the sort can respect. The
-/// plan holds two generations: the legacy packing waves (0-11, 43-68, plus 99 as a parking lot,
-/// still carrying genuinely open `idea`/`deferred` backlog) and the live factory waves, which begin
-/// at 76. Only the live generation is dispatchable, so only it can be "current". MEASURED after the
-/// migration: waves with unshipped tickets are 0, 3, 5, 7, 8, 9, 10, 11, 80, 81, 99 — floor 76
-/// selects 80, identical to the pre-migration answer.
-///
-/// Raise this when a later generation starts; it is one integer in one place, which is strictly
-/// more maintainable than a prefix that had to be typed onto every row and understood by every
-/// parser.
-pub fn current_wave(ctx: &Ctx) -> String {
-    let mut rows = plan_rows(ctx);
-    // `sort -n -k1,1`: numeric on field 1 (whitespace-delimited, so the TSV's column 1), with
-    // GNU sort's last-resort whole-line comparison breaking ties. A non-numeric key scores 0.
-    rows.sort_by(|a, b| {
-        let ka = sort_key_numeric(a);
-        let kb = sort_key_numeric(b);
-        ka.partial_cmp(&kb)
-            .unwrap_or(std::cmp::Ordering::Equal)
-            .then_with(|| a.cmp(b))
-    });
-    for r in rows {
-        // `IFS=$'\t' read -r w t _`
-        let w = col(&r, 1);
-        let t = col(&r, 2);
-        if w == "0" {
-            continue;
-        }
-        // Bare-integer guard: a row whose label is not numeric cannot be compared, and silently
-        // skipping it is how the pre-T-616 mix hid. Say so and keep going.
-        if w.is_empty() || !w.bytes().all(|b| b.is_ascii_digit()) {
-            werr!(
-                "wave: non-numeric wave label '{w}' in {} — T-616 normalised these to integers",
-                ctx.plan
-            );
-            continue;
-        }
-        let n: i64 = w.parse().unwrap_or(0);
-        if n < ctx.generation_floor {
-            continue;
-        }
-        if !ctx.registry_view.is_shipped(t) {
-            return w.to_string();
+/// This is the whole successor to the T-616 dual-spelling saga and the generation-floor env it
+/// forced: the lock's wave 0 is where every landed generation lives, waves 1+ are open work
+/// only, and lock wave numbers are typed integers already in ascending order. There is nothing
+/// left to sort, prefix-strip, or floor. `wave`, `wave --close` and `land` all key off this.
+pub fn current_wave(ctx: &Ctx) -> Result<String> {
+    let lock = load_lock(ctx)?;
+    for w in lock.waves.iter().filter(|w| w.n > 0) {
+        if w.tickets.iter().any(|t| !ctx.registry_view.is_shipped(t)) {
+            return Ok(w.n.to_string());
         }
     }
-    "done".into()
-}
-
-/// GNU `sort -n` on the first whitespace-delimited field: leading blanks skipped, an optional
-/// sign, digits; anything else scores 0.
-fn sort_key_numeric(line: &str) -> f64 {
-    let first = line.split([' ', '\t']).next().unwrap_or("");
-    let mut s = first.trim_start();
-    let neg = s.starts_with('-');
-    if neg || s.starts_with('+') {
-        s = &s[1..];
-    }
-    let digits: String = s
-        .chars()
-        .take_while(|c| c.is_ascii_digit() || *c == '.')
-        .collect();
-    let v: f64 = digits.parse().unwrap_or(0.0);
-    if neg { -v } else { v }
+    Ok("done".into())
 }
 
 /// `committed` | `dirty` | `absent` | `unknown`.
@@ -406,37 +330,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn plan_rows_drops_comments_header_and_blanks() {
-        // The three filters, in the shapes the real plan has.
-        let body = "# comment\nwave\tticket\ttitle\n\n   \n80\tT-1\tTitle\n";
-        let rows: Vec<&str> = body
-            .lines()
-            .filter(|l| !l.starts_with('#'))
-            .filter(|l| {
-                !(l.starts_with("wave")
-                    && l[4..]
-                        .chars()
-                        .next()
-                        .map(|c| c.is_whitespace())
-                        .unwrap_or(false))
-            })
-            .filter(|l| !l.trim().is_empty())
-            .collect();
-        assert_eq!(rows, vec!["80\tT-1\tTitle"]);
-    }
-
-    #[test]
-    fn awk_eq_is_numeric_only_when_both_sides_look_numeric() {
-        assert!(awk_eq("150", "150"));
-        assert!(awk_eq("150.0", "150"), "awk compares strnums numerically");
-        assert!(
-            !awk_eq("w80", "80"),
-            "the legacy spelling must NOT match a bare integer"
-        );
-        assert!(awk_eq("w80", "w80"));
-    }
-
-    #[test]
     fn registry_poisons_on_a_ticket_without_an_id() {
         // python's KeyError inside the comprehension makes EVERY query answer "not shipped".
         let dir = std::env::temp_dir().join(format!("t853-reg-{}", std::process::id()));
@@ -471,11 +364,5 @@ mod tests {
         std::fs::write(&p, r#"{"tickets":[{"id":"T-9","status":"cancelled"}]}"#).unwrap();
         assert!(Registry::load(&p).is_shipped("T-9"));
         let _ = std::fs::remove_dir_all(&dir);
-    }
-
-    #[test]
-    fn sort_key_scores_non_numeric_as_zero_like_gnu_sort() {
-        assert_eq!(sort_key_numeric("80\tT-1"), 80.0);
-        assert_eq!(sort_key_numeric("w80\tT-1"), 0.0);
     }
 }
