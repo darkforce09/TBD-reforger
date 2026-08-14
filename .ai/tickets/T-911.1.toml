@@ -2,12 +2,13 @@ id = "T-911.1"
 kind = "work"
 title = "T-911 — Ticket registry redesign: per-file split + typed schema"
 summary = "T-911 — Ticket registry redesign: per-file split + typed schema"
-status = "ready"
+status = "shipped"
 order = 5910
 spec = "docs/platform/t911_ticket_registry_redesign.md"
 executor = "claude-code"
 notes = "Phase 1: isomorphic per-file TOML, FROZEN_27 keys, ROOT + 12 fixtures, dual-read, byte-identical JSON emit vs the cutover monolith, then delete the monolith in the same commit."
 parent = "T-911"
+shipped_at = "170721182"
 user_story = "T-911 — Ticket registry redesign: per-file split + typed schema"
 acceptance = ["See spec."]
 

@@ -2,7 +2,7 @@ id = "T-911"
 kind = "program"
 title = "Ticket registry redesign — per-file split + typed schema"
 summary = "Split the ticket monolith into one TOML file per parent and per existing slice_plan/slices key, then type Scope/Status (encoding C). Phase 1 is a byte-identical JSON emit vs the committed monolith (set-equality of ids, not a hardcoded parent count). Phase 2 types the schema. Wave lockfile and metrics producers are T-912+, not this program."
-status = "queued"
+status = "shipped"
 order = 5910
 spec = "docs/platform/t911_ticket_registry_redesign.md"
 executor = "claude-code"
@@ -11,4 +11,4 @@ children = [
     "T-911.1",
     "T-911.2",
 ]
-active = "T-911.1"
+shipped_at = "00e09ff15"

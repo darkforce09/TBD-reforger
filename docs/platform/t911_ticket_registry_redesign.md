@@ -10,8 +10,8 @@ Wave lockfile compile and metrics producers (`created_at` / `completed_at` / `to
 
 | Id | Status at mint | What |
 |----|----------------|------|
-| T-911.1 | ready | Phase 1: isomorphic TOML. Same 27 corpus keys. Loader + `.ai/tickets/ROOT` + the 12 fixtures that plant `.ai/tickets/registry.json`. Dual-read `wave_ledger_unshipped_at`. Byte-identical JSON emit vs the **cutover** monolith, then delete the monolith in the same commit. |
-| T-911.2 | queued | Phase 2: typed Scope/Status, encoding C, frozen-49, Ready prose, T-159.23 shipped, T-674/T-675 children via mapper. Depends on T-911.1 landed. |
+| T-911.1 | shipped @ 17072118 | Phase 1: isomorphic TOML. Same 27 corpus keys. Loader + `.ai/tickets/ROOT` + the 12 fixtures that plant `.ai/tickets/registry.json`. Dual-read `wave_ledger_unshipped_at`. Byte-identical JSON emit vs the **cutover** monolith, then delete the monolith in the same commit. |
+| T-911.2 | shipped @ 00e09ff1 | Phase 2: typed Scope/Status, encoding C, frozen-49, Ready prose, T-159.23 shipped, T-674/T-675 children via mapper. Depends on T-911.1 landed. |
 
 `parallel_ok` is **false**. Both slices own `.ai/tickets/` and the xtask loader. Serial waves only.
 
