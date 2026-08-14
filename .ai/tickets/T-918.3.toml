@@ -3,7 +3,7 @@ kind = "work"
 title = "Ten-field detail sections + quarantine triage affordance"
 summary = "Ten-field detail sections + quarantine triage affordance"
 class = "bug"
-status = "ready"
+status = "shipped"
 order = 5983
 spec = "docs/platform/t917_ticket_schema_v2.md"
 executor = "claude-code"
@@ -16,7 +16,9 @@ acceptance = [
     "migration_legacy section visually distinct with a copy affordance",
     "git status --porcelain unchanged after a full session",
 ]
+shipped_at = "dda9366d"
 created_at = "2026-08-14T21:54:38Z"
+completed_at = "2026-08-14T23:53:35Z"
 migration_legacy = ["Detail panel renders the ten body fields as clearly separated sections in a fixed order (summary, user_story, context, requirement, current_state, approach, verify, acceptance, citations, notes), absent fields shown as explicit em-dash, list fields as one-liners. migration_legacy renders as its own visually-quarantined section with a copy-for-triage affordance feeding the Program T drain."]
 owns = ["apps/ticketboard"]
 
