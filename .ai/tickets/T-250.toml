@@ -11,7 +11,13 @@ requirement = [
     "Wire CheckUnconsumedKeys warnings in TBD_MissionValidator for each listed top-level key.",
     "Pin marker comments and AddWarning calls in schema_gates.",
 ]
+current_state = ["TBD_MissionValidator silently discarded environment, settings, entities, layers, tickets, and roles[].radio."]
+approach = [
+    "Wired CheckUnconsumedKeys AddWarning for six retired top-level keys including entities in Run().",
+    "Pinned marker comments and warning strings in schema_gates unconsumed-key gate.",
+]
 verify = ["schema gate: six unconsumed-key warnings wired."]
+acceptance = ["Six unconsumed-key warnings wired including entities; schema gate pinned each AddWarning call."]
 citations = [
     "commit bb465523 unconsumed keys",
     "wave 8 close 9ba24b77",

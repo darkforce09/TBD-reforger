@@ -16,6 +16,15 @@ current_state = [
     "build_catalog_tree (asset_catalog.rs:60) takes no side and filters kind==character,",
     "so a BLUFOR chip plus a USSR character is accepted silently — even though the registry categories already encode the side.",
 ]
+approach = [
+    "build_catalog_tree now takes active Eden side; character_matches_eden_side filters cross-side rows.",
+    "mission_editor Effect rebuilds catalog Ready tree whenever active_side chip flips.",
+]
+verify = [
+    "cargo test -p website-frontend side_filter_excludes_cross_side_characters.",
+    "cargo test -p website-frontend eden_chip_side_rebuilds_filtered_catalog.",
+]
+acceptance = ["BLUFOR chip excluded USSR leaves; OPFOR chip rebuilt palette without NATO characters."]
 citations = [
     "T-153",
     "asset_catalog.rs:60",

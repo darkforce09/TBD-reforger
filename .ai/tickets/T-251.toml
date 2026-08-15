@@ -16,6 +16,16 @@ requirement = [
     "Ship release api image, Postgres staging compose, rsync deploy script refusing prairielearn.",
     "Add COOP/COEP Caddyfile; point deploy.env.example at files that now exist.",
 ]
+current_state = [
+    "deploy.env.example referenced Dockerfile and staging compose files absent from the repo.",
+    "No deploy script, TLS reverse-proxy config, or prairielearn refuse guard existed in-tree.",
+]
+approach = [
+    "Shipped apps/website Dockerfile, docker-compose.staging.yml, and COOP/COEP Caddyfile.",
+    "Added rsync deploy-website.sh refusing prairielearn; updated deploy.env.example paths.",
+]
+verify = ["bash scripts/deploy/deploy-website.sh --dry-run with filled deploy.env."]
+acceptance = ["Deploy stack files existed; deploy.env.example pointed at live Dockerfile and compose paths."]
 citations = [
     "commit 9adeb05c deploy stack",
     "wave 9 close 22bc2fe5",

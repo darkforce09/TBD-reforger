@@ -14,6 +14,16 @@ requirement = [
     "Add BLUFOR and OPFOR starter library JSON and SQL seed files.",
     "Wire the Makefile seed recipe so dev databases load predefined ORBAT entries.",
 ]
+current_state = [
+    "faction-library.sample.json was a one-faction schema fixture with duplicate role prefabs.",
+    "No seed or import path existed; Load Predefined ORBAT showed zero entries on fresh installs.",
+]
+approach = [
+    "Added faction_library.blufor.json, OPFOR golden sample, and faction_library.sql seed.",
+    "Wired Makefile seed recipe to apply starter BLUFOR and OPFOR libraries.",
+]
+verify = ["make seed applying faction_library.sql"]
+acceptance = ["Fresh install seeded BLUFOR and OPFOR starter libraries; Load Predefined ORBAT showed entries."]
 citations = [
     "commit 0112dd48 seed BLUFOR OPFOR",
     "T-153 faction library spec",

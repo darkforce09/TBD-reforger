@@ -11,7 +11,13 @@ requirement = [
     "Add slot-y-absent-and-present golden exercising one slot with y and one without.",
     "Pin golden shape and spawn wiring in schema_gates.",
 ]
+current_state = ["No golden authored slots[].y; Y_ABSENT and HasJsonY spawn path lacked CI coverage."]
+approach = [
+    "Added slot-y-absent-and-present.json golden with one y-present and one absent slot.",
+    "Pinned schema 1.2 optional y plus spawn wiring in schema_gates.",
+]
 verify = ["schema gate: slot-y golden PASS."]
+acceptance = ["Slot-y golden landed; schema gate exercised Y_ABSENT and HasJsonY spawn policy."]
 citations = [
     "commit bb668a43 slot-y golden",
     "wave 8 close 9ba24b77",

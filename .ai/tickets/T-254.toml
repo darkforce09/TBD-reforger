@@ -14,6 +14,19 @@ requirement = [
     "Enable Objects placement in editor chrome and editor_ops.",
     "Add entities map to doc store; emit via compile and flatten; spawn in TBD_MissionLoader.",
 ]
+current_state = [
+    "Objects chip was a stub; place_at no-oped in objects mode; palette filtered kind==character only.",
+    "Doc store lacked entities map; mod loader had no entities[] reader or spawner.",
+]
+approach = [
+    "Enabled Objects placement in eden_chrome and editor_ops with entitiesById doc map.",
+    "Emitted entities via compile and flatten; SpawnMissionEntities added in TBD_MissionLoader.",
+]
+verify = [
+    "cargo test -p map-engine-core --features doc,mission compile_copies_entities_by_id_to_entities_array.",
+    "cargo test -p map-engine-core --features doc,mission entities_reach_the_compiled_wire_as_schema_entity_rows.",
+]
+acceptance = ["Objects placement wired through store, compile, flatten, and mod SpawnMissionEntities."]
 citations = [
     "commit 4b8fb28b entities stack",
     "wave 9 close 22bc2fe5",

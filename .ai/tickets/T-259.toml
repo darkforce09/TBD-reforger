@@ -16,6 +16,19 @@ requirement = [
     "Pass authored settings through flatten and compile into the game-server document.",
     "Model settings in the mod loader, expose GetSettings, wire spectatorPolicy into TBD_SpectatorTargets.",
 ]
+current_state = [
+    "TBD_MissionDocumentStruct had no settings member; flatten omitted the block entirely.",
+    "T-224 refused UI for respawn, spectatorPolicy, and nightVision without a mod reader.",
+]
+approach = [
+    "derive_settings in flatten and compile payload extras emit mission.schema.json settings block.",
+    "TBD_MissionLoader parsed respawn, spectatorPolicy, nightVision; GetSettings wired spectator targets.",
+]
+verify = [
+    "cargo test -p map-engine-core --features doc,mission settings_reach_the_compiled_wire_when_authored.",
+    "cargo test -p map-engine-core --features doc,mission golden_settings_reach_the_compiled_document.",
+]
+acceptance = ["Settings block reached compiled wire; mod loader parsed respawn, spectatorPolicy, and nightVision."]
 citations = [
     "commit 3962ec37 settings block",
     "mission.schema.json settings defs",

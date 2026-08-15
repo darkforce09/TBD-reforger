@@ -15,7 +15,16 @@ requirement = [
     "Bump mission updated_at on every version POST.",
     "Write an audit log row recording the saving user and version id.",
 ]
+current_state = [
+    "POST /versions left mission updated_at unchanged and wrote no audit row.",
+    "Library ordering and approvals queue read updated_at, so saves looked stale.",
+]
+approach = [
+    "create_version handler updates missions.updated_at then write_audit sequentially.",
+    "Inserted audit_logs row recording saver user_id and saved version id.",
+]
 verify = ["missions IT: create_version_bumps_updated_at_and_writes_audit."]
+acceptance = ["Version POST bumped updated_at and wrote audit row; missions IT locked the contract."]
 citations = [
     "commit 6134e6a4 version save audit",
     "wave 11 close f2f3dfa7",

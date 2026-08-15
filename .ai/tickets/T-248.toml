@@ -7,15 +7,34 @@ status = "shipped"
 order = 2660
 executor = "claude-code"
 main_goal = "missing_code and invalid_state early returns leave the ten-minute CSRF cookie live; DISCORD_CLIENT_SECRET and DISCORD_REDIRECT_URL have no startup guard."
+context = [
+    "OAuth callback missing_code and invalid_state early returns left the ten-minute CSRF cookie live.",
+    "Production accepted blank DISCORD_CLIENT_SECRET or REDIRECT_URL; Discord exchange surfaced discord_unreachable.",
+]
+requirement = [
+    "Clear oauth_state on missing_code and invalid_state CSRF reject paths.",
+    "Fail closed at boot when production DISCORD_CLIENT_SECRET or DISCORD_REDIRECT_URL is blank.",
+]
 current_state = [
     "The clear-cookie string is built after the missing_code and invalid_state early returns, so both leave the ten-minute CSRF cookie live.",
     "DISCORD_CLIENT_SECRET and DISCORD_REDIRECT_URL also have no startup guard, so a misconfigured secret is reported to the user as discord_unreachable — a misconfig disguised as an outage.",
 ]
+approach = [
+    "Introduced callback_csrf_reject helper emitting OAUTH_STATE_CLEAR on early returns.",
+    "Split Config::validate; production requires Discord secret and redirect URL.",
+]
+verify = [
+    "cargo test -p website-api missing_code_clears_oauth_state_cookie.",
+    "cargo test -p website-api production_rejects_blank_discord_client_secret.",
+]
+acceptance = ["CSRF reject paths cleared oauth_state; production boot rejected blank Discord secret and redirect."]
 citations = [
     "missing_code early return",
     "invalid_state early return",
     "DISCORD_CLIENT_SECRET guard",
     "DISCORD_REDIRECT_URL guard",
+    "commit 8e9dd04a oauth CSRF clear",
+    "callback_csrf_reject OAUTH_STATE_CLEAR",
 ]
 shipped_at = "8e9dd04a"
 created_at = "2026-07-26T21:03:05Z"
