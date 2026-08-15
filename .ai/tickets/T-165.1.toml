@@ -1,7 +1,7 @@
 id = "T-165.1"
 kind = "work"
 title = "T-165 — Node/JS eradication: every .mjs tool → Rust"
-summary = "T-165 — Node/JS eradication: every .mjs tool → Rust"
+summary = "Port eight text/JSON schema gates from .mjs to cargo xtask schema."
 class = "feature"
 status = "shipped"
 order = 1620
@@ -9,6 +9,30 @@ spec = "docs/platform/t165_node_eradication.md"
 executor = "claude-code"
 notes = "Text/JSON gates -> xtask + citations CI steps."
 parent = "T-165"
+context = [
+    "T-165.0 scaffold shipped; packages/tbd-schema still ran Node text gates.",
+    "Eight verify scripts (~1,020 LOC) covered citations, specs, and manifest checks.",
+]
+requirement = [
+    "Port citations, t090-specs, n6, n10, map-object-enums, type-inventory, terrain-manifest, flatten-orbat-slots to xtask.",
+    "Rewire Makefile, ci.yml, and contracts.yml citation steps to cargo.",
+]
+current_state = [
+    "Schema gates invoked node on packages/tbd-schema/scripts/*.mjs.",
+    "verify-type-inventory.mjs kept until later slices per edge list.",
+]
+approach = [
+    "Implement gates in xtask/src/schema_gates.rs with jsonschema where ajv compiled.",
+    "Side-by-side parity vs Node; delete seven ported .mjs files.",
+]
+verify = [
+    "Eight gates: node and rust verdict plus exit code MATCH.",
+    "Negative probes: mutated n6 spec and bogus terrain rc match Node.",
+]
+citations = [
+    "Source: commit 9d97f05b — eight ports.",
+    "Source: t165_1_verify_log.md — parity table.",
+]
 shipped_at = "9d97f05b"
 created_at = "2026-07-17T12:51:45Z"
 completed_at = "2026-07-17T12:51:45Z"

@@ -1,7 +1,7 @@
 id = "T-165.8"
 kind = "work"
 title = "T-165 — Node/JS eradication: every .mjs tool → Rust"
-summary = "T-165 — Node/JS eradication: every .mjs tool → Rust"
+summary = "World-export pipeline to Rust; E6 content-proven flate2 gz re-encode migration executed."
 class = "feature"
 status = "shipped"
 order = 1620
@@ -9,6 +9,16 @@ spec = "docs/platform/t165_node_eradication.md"
 executor = "claude-code"
 notes = "World-export pipeline + E6 content-proven re-encode migration."
 parent = "T-165"
+context = ["T-165.7 MCP shipped; T-090 export and verify-phase lane still on sixteen Node .mjs scripts."]
+requirement = ["Port pak/topo/edds/classify/build/gates/aux to tbd_tools::world; re-encode committed gz with decompressed-content proof."]
+current_state = ["export-terrain.sh and verify-phase on Node; E6 gate compared raw gz container bytes."]
+approach = ["world bin modules; bcdec_rs BC7 decode; in-process E6 double-build; Makefile map lanes to cargo."]
+verify = ["945/945 scratch artifacts content-identical vs Node; E6 byte-green after migration; sixteen .mjs deleted."]
+citations = [
+    "Source: commit 50a452e0 — world pipeline E6.",
+    "Source: t165_8_verify_log.md builders.",
+    "Source: t165_node_eradication.md N5 migration.",
+]
 shipped_at = "50a452e0"
 created_at = "2026-07-17T16:39:18Z"
 completed_at = "2026-07-17T16:39:18Z"

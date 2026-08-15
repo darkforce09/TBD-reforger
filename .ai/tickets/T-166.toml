@@ -1,7 +1,7 @@
 id = "T-166"
 kind = "work"
 title = "Leptos editor full map (satellite + world objects)"
-summary = "SHIPPED: Leptos W1–W5 map-asset host (TBDS sat + hillshade + DEM sea/contours + WorldStore/Residency buildings + TBDD forest + glyph atlas). Gate serve Range/206; smoke_fullmap Class-R matrix green. Verify: .ai/artifacts/t166_verify_log.md."
+summary = "Leptos W1–W5 map host: satellite, DEM, buildings, forest, glyphs."
 class = "chore"
 status = "shipped"
 order = 1630
@@ -9,6 +9,20 @@ spec = ".ai/artifacts/missed_items_handoff.md"
 executor = "claude-code"
 depends_on = ["T-159"]
 main_goal = "As a mission maker I see the real Everon map (satellite + roads/buildings/trees) under my slots in the editor, not just hillshade relief."
+context = ["Post-T-159 Leptos editor showed hillshade relief only; world object lanes were missing."]
+requirement = [
+    "Wire world_assets host: TBDS satellite, hillshade, DEM sea and contours.",
+    "WorldStore and Residency buildings, TBDD forest mass, glyph atlas on Leptos.",
+    "Gate serve Range/206; smoke_fullmap Class-R matrix green.",
+]
+verify = [
+    "gate smoke fullmap: roads 888, landcover 36, sat bytes 152713114.",
+    "Class-R pins in .ai/artifacts/t166_verify_log.md.",
+]
+citations = [
+    "Source: commit ae388f1e.",
+    "Source: t166_verify_log.md.",
+]
 shipped_at = "ae388f1e"
 created_at = "2026-07-17T17:55:43Z"
 completed_at = "2026-07-17T21:53:44Z"

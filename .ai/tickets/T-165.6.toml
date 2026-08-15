@@ -1,7 +1,7 @@
 id = "T-165.6"
 kind = "work"
 title = "T-165 — Node/JS eradication: every .mjs tool → Rust"
-summary = "T-165 — Node/JS eradication: every .mjs tool → Rust"
+summary = "Editor smokes ported to Rust; Node CDP driver deleted; make leptos-gates runs cargo only."
 class = "feature"
 status = "shipped"
 order = 1620
@@ -9,6 +9,16 @@ spec = "docs/platform/t165_node_eradication.md"
 executor = "claude-code"
 notes = "Smokes suite registry -> Rust; Node driver deleted."
 parent = "T-165"
+context = ["T-165.5 shipped Rust CDP harness core; nineteen driver scripts still executed under Node."]
+requirement = ["Port sixteen editor smokes plus r-auth, render-check, mutations; delete driver/; flip leptos-gates recipe to cargo."]
+current_state = [".ai/artifacts/t159_gates/driver/ held twenty-four Node scripts including freeze.js and dom.js."]
+approach = ["tbd_tools::smokes per script; gate smoke, editor-suite, r-auth, render-check subcommands."]
+verify = ["Editor suite 16/16 green on both harnesses; V 25/25 post-flip; r-auth and render-check byte-identical."]
+citations = [
+    "Source: commit ac7bdaae — smokes to Rust.",
+    "Source: t165_6_verify_log.md acceptance.",
+    "Source: t165_node_eradication.md slice ladder.",
+]
 shipped_at = "ac7bdaae"
 created_at = "2026-07-17T16:01:12Z"
 completed_at = "2026-07-17T16:01:12Z"

@@ -1,7 +1,7 @@
 id = "T-167"
 kind = "work"
 title = "Leptos smart Arsenal port (paper-doll + compat Forge)"
-summary = "Leptos smart Arsenal port (paper-doll + compat Forge)"
+summary = "Leptos Smart Arsenal: compat pickers, SVG paper-doll, Faction Manager."
 class = "docs"
 status = "shipped"
 order = 1640
@@ -10,16 +10,20 @@ executor = "claude-code"
 depends_on = ["T-159"]
 unblocks = ["T-068.11"]
 main_goal = "As a mission maker I build loadouts with compat-aware pickers and a paper-doll, matching the pre-rewrite Arsenal."
+context = ["Leptos Arsenal tab was dumb-dropdown tier; React Smart Forge shipped at T-068.10.x."]
 requirement = [
-    "Port the shipped React Smart Arsenal (T-068.10.2–.10.8) into the Leptos Arsenal tab:",
-    "compat-filtered optic/magazine rows off `GET /registry/compat` (T-150 edges live in DB: 1,880 items / 4,012 edges),",
-    "clickable paper-doll (Mode D, t068_10_7/t068_10_8), weight/validation, Faction Manager pane.",
+    "Port shipped React Smart Arsenal into the Leptos Arsenal tab.",
+    "Compat-filtered optic and magazine rows off GET /registry/compat.",
+    "Clickable SVG paper-doll, weight and validation, Faction Manager pane.",
 ]
 current_state = [
     "The Leptos tab is the dumb-dropdown tier only (fold documented at `apps/website-leptos/src/arsenal.rs:7-11`);",
     "`SlotLoadoutV2` persistence is already the same, so rows/panels add without doc changes.",
 ]
-citations = ["Specs: t068_10_smart_forge_ui.md, t068_10_3_forge_picker_ux.md, t068_10_6_arsenal_expanded_modal.md, t068_10_7_arsenal_paper_doll.md, t068_10_8_arsenal_ux_pass2.md."]
+citations = [
+    "Source: commit 49911a83.",
+    "Source: t068_10_smart_forge_ui.md.",
+]
 shipped_at = "49911a83"
 created_at = "2026-07-17T22:31:38Z"
 completed_at = "2026-07-17T22:31:38Z"

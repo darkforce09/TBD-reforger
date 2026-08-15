@@ -1,7 +1,7 @@
 id = "T-171"
 kind = "work"
 title = "Monorepo / website hygiene (full pass)"
-summary = "Shipped @ 2421b335 (tag T-171). Nest apps/website/{api,frontend}; crates website-api/website-frontend; Go internal/ + nested Makefile purged; fixtures consolidated; map-assets LFS story + CI job renames (website-api/website-frontend). Cursor T-171.docs: WHERE_DOES_X_GO pin + CLAUDE/rules/docs/MC banners. Inventory: .ai/artifacts/t171_inventory.md. Hub: docs/platform/t171_monorepo_hygiene_program.md."
+summary = "Nest apps/website api and frontend; rename crates; purge dead Go and Vite."
 class = "docs"
 status = "shipped"
 order = 1680
@@ -9,6 +9,17 @@ spec = "docs/platform/t171_monorepo_hygiene_program.md"
 executor = "claude-code"
 depends_on = ["T-169"]
 main_goal = "As a developer I open a coherent apps/website/{api crate, frontend/} tree with no dead React/Go/Vite residue so new work does not land in the wrong place."
+context = ["Post T-159 and T-165 tree disjointed: dual migrations, nested Makefiles, crate names not matching paths."]
+requirement = [
+    "Move SPA and API under apps/website frontend and api; rename to website-frontend and website-api.",
+    "Consolidate fixtures; document map-assets LFS consumption; rename CI jobs.",
+    "Pin WHERE_DOES_X_GO conventions; T-171.docs prose pass from inventory.",
+]
+citations = [
+    "Source: commit 2421b335.",
+    "Source: docs/platform/SHIPPED_HISTORY.md §T-171.",
+    "Source: t171_monorepo_hygiene_program.md.",
+]
 shipped_at = "9041608d"
 created_at = "2026-07-18T01:03:44Z"
 completed_at = "2026-07-18T09:41:40Z"

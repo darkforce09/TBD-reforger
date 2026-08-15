@@ -1,7 +1,7 @@
 id = "T-165.10"
 kind = "work"
 title = "T-165 — Node/JS eradication: every .mjs tool → Rust"
-summary = "T-165 — Node/JS eradication: every .mjs tool → Rust"
+summary = "Closure: verify-no-node hard gate; zero tracked .mjs; program complete."
 class = "feature"
 status = "shipped"
 order = 1620
@@ -9,6 +9,30 @@ spec = "docs/platform/t165_node_eradication.md"
 executor = "claude-code"
 notes = "Bash logic + closure: 0 .mjs, no-node gate, zero setup-node CI."
 parent = "T-165"
+context = [
+    "T-165.0–.9 left two tracked .mjs; program needs standing no-node gate.",
+    "Only Node floor is third-party enfusion-mcp runtime per N1 closure goal.",
+]
+requirement = [
+    "Port verify-file-length and gen-text-font-table to xtask verify and gen subcommands.",
+    "Add xtask verify no-node; wire into ci-local beside verify-no-python.",
+]
+current_state = [
+    "Two .mjs remained: verify-file-length and gen-text-font-table.",
+    "manual-test.sh still used node -e JSON probe outside mcp floor.",
+]
+approach = [
+    "xtask/src/node_free.rs scans tracked mjs, Makefile scripts, and workflows.",
+    "Delete last .mjs; sync CLAUDE.md and DEV_RUNBOOK toolchain lines.",
+]
+verify = [
+    "cargo xtask verify no-node rc=0; zero tracked .mjs outside apps/mod.",
+    "verify file-length stdout byte-identical to retired Node gate.",
+]
+citations = [
+    "Source: commit 476f1ddf — program closure.",
+    "Source: t165_10_verify_log.md — no-node gate.",
+]
 shipped_at = "476f1ddf"
 created_at = "2026-07-17T17:31:52Z"
 completed_at = "2026-07-17T17:31:52Z"

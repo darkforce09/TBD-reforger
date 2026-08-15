@@ -1,7 +1,7 @@
 id = "T-178"
 kind = "work"
 title = "Forest load consistency + YouTube guides + Outliner label"
-summary = "SHIPPED @ tag T-178 / 58d839c7. A1 island TBDD density texture + fs_forest_density (Nearest, iso 2.0, fwidth rim; pins 1601/625/density); progressive mesh fill retired. A2 Outliner label removed. A3 continuous YouTube spines. A4 data-guide-toggle. Verify: .ai/artifacts/t178_verify_log.md. Hub: docs/platform/t178_forest_guides_chrome.md."
+summary = "Island density-shader forest canopy; continuous guides; Outliner label removed."
 class = "docs"
 status = "shipped"
 order = 1750
@@ -9,6 +9,21 @@ spec = "docs/platform/t178_forest_guides_chrome.md"
 executor = "claude-code"
 depends_on = ["T-177"]
 main_goal = "As a mission maker I see consistent forest canopy, a single Editor Layers title, and continuous clickable YouTube-style tree guides."
+context = [
+    "Post T-177: patchy 512 m forest tiles; Outliner label redundant.",
+    "Guide lines gapped; pointer-events-none blocked click-to-toggle.",
+]
+requirement = [
+    "A1: island TBDD density texture + fs_forest_density; retire progressive mesh fill.",
+    "A2: remove Outliner label; Editor Layers title only.",
+    "A3: continuous YouTube spine connectors.",
+    "A4: click guide line toggles branch expand/collapse.",
+]
+verify = ["Verify: .ai/artifacts/t178_verify_log.md."]
+citations = [
+    "Source: commit 58d839c7 — density-shader forest canopy.",
+    "Source: docs/platform/SHIPPED_HISTORY.md §T-178.",
+]
 shipped_at = "5859c02b"
 created_at = "2026-07-19T14:50:27Z"
 completed_at = "2026-07-19T15:05:55Z"

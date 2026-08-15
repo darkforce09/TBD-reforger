@@ -1,7 +1,7 @@
 id = "T-165.5"
 kind = "work"
 title = "T-165 — Node/JS eradication: every .mjs tool → Rust"
-summary = "T-165 — Node/JS eradication: every .mjs tool → Rust"
+summary = "CDP harness core in tbd-tools: cdp, serve, inject, vsuite, sroutes; gate v-suite and s-routes bins."
 class = "feature"
 status = "shipped"
 order = 1620
@@ -9,6 +9,16 @@ spec = "docs/platform/t165_node_eradication.md"
 executor = "claude-code"
 notes = "CDP harness core; v-suite 25/25 parity vs Node."
 parent = "T-165"
+context = ["T-165.4 closed schema golden gates; V-suite and static serve still ran on Node driver scripts."]
+requirement = ["Port CDP client, axum serve, freeze/dom inject consts, 25-route vsuite, s-routes; prove byte-identical parity vs Node."]
+current_state = ["driver/cdp.mjs, serve.mjs, gate_v_suite.mjs, and extract-leptos-routes.mjs on Node; smokes deletion deferred."]
+approach = ["tools/tbd-tools cdp+serve+inject+vsuite+sroutes; gate bin v-suite freeze|verify|accept and s-routes."]
+verify = ["gate v-suite verify 25/25 PASS with byte-identical stdout vs Node; s-routes and corruption probe parity."]
+citations = [
+    "Source: commit ebf50b6d — CDP harness core.",
+    "Source: t165_5_verify_log.md V parity.",
+    "Source: t165_node_eradication.md N2 inject.",
+]
 shipped_at = "ebf50b6d"
 created_at = "2026-07-17T15:44:15Z"
 completed_at = "2026-07-17T15:44:15Z"

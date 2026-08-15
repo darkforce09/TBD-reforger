@@ -1,7 +1,7 @@
 id = "T-165.2"
 kind = "work"
 title = "T-165 — Node/JS eradication: every .mjs tool → Rust"
-summary = "T-165 — Node/JS eradication: every .mjs tool → Rust"
+summary = "Port validate.mjs and validate-file.mjs to cargo xtask schema validate."
 class = "feature"
 status = "shipped"
 order = 1620
@@ -9,6 +9,30 @@ spec = "docs/platform/t165_node_eradication.md"
 executor = "claude-code"
 notes = "validate.mjs core -> Rust (21-schema bundle + FK walkers)."
 parent = "T-165"
+context = [
+    "T-165.1 moved text gates; core validate suite still Node in tbd-schema.",
+    "validate.mjs plus validate-file.mjs ran ~50 schema and FK checks in CI.",
+]
+requirement = [
+    "cargo xtask schema validate and validate-file with Registry-resolved cross-file refs.",
+    "Rewire ci.yml schema job, schema.yml, and deploy-staging V1 to cargo.",
+]
+current_state = [
+    "Makefile schema-validate still chained npm validate.mjs first.",
+    "ENF-4 pointer validators and golden mission walks lived only in Node.",
+]
+approach = [
+    "Port suite into xtask/src/schema_gates.rs; jsonschema Registry replaces ajv.addSchema.",
+    "Delete validate.mjs and validate-file.mjs after side-by-side parity run.",
+]
+verify = [
+    "130/130 PASS both runners; sorted PASS label-set diff empty.",
+    "Mutated golden mission: node rc=1 and rust rc=1; validate-file ok both.",
+]
+citations = [
+    "Source: commit b156021c — validate port.",
+    "Source: t165_2_verify_log.md — parity metrics.",
+]
 shipped_at = "b156021c"
 created_at = "2026-07-17T12:58:59Z"
 completed_at = "2026-07-17T12:58:59Z"

@@ -1,7 +1,7 @@
 id = "T-162.4"
 kind = "work"
 title = "T-162 — Eradicate all remaining Python (→ Rust)"
-summary = "T-162 — Eradicate all remaining Python (→ Rust)"
+summary = "Add verify-no-python.sh gate and ship Python eradication docs."
 class = "feature"
 status = "shipped"
 order = 1590
@@ -9,6 +9,15 @@ spec = "docs/platform/t162_python_eradication.md"
 executor = "cursor-docs"
 notes = "verify-no-python.sh + docs + ship."
 parent = "T-162"
+context = ["T-162 slices .0–.3 removed or ported all live Python under scripts/."]
+requirement = ["scripts/verify-no-python.sh; t162_python_eradication.md hub; Makefile ci-local wiring."]
+current_state = ["No fail-closed Python scan gate after one-shot deletion and shell flips."]
+approach = ["Add verify-no-python.sh; author hub doc; wire make verify-no-python."]
+verify = ["bash scripts/verify-no-python.sh PASS per t162_verify_log.md."]
+citations = [
+    "Source: commit cac7b8fe — T-162 eradication.",
+    "Source: t162_python_eradication.md — hard gate.",
+]
 created_at = "2026-07-16T00:00:00Z"
 completed_at = "2026-07-17T00:00:00Z"
 estimated = [

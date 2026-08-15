@@ -1,7 +1,7 @@
 id = "T-165.3"
 kind = "work"
 title = "T-165 — Node/JS eradication: every .mjs tool → Rust"
-summary = "T-165 — Node/JS eradication: every .mjs tool → Rust"
+summary = "Contract codegen to typify; hand-freeze loadout.rs; contracts.yml Node-free."
 class = "feature"
 status = "shipped"
 order = 1620
@@ -9,6 +9,30 @@ spec = "docs/platform/t165_node_eradication.md"
 executor = "claude-code"
 notes = "codegen -> typify; loadout.rs hand-frozen; drift job -> cargo."
 parent = "T-165"
+context = [
+    "quicktype codegen was lossy on loadout wear and equipment maps.",
+    "Four tractable contracts still generated via packages/tbd-schema codegen.mjs.",
+]
+requirement = [
+    "cargo xtask schema codegen hash-idempotent via typify into contract/generated.",
+    "Hand-freeze loadout.rs with fixture round-trip tests; adapt registry_import.rs.",
+]
+current_state = [
+    "codegen.mjs and quicktype devDep owned contract regeneration.",
+    "contracts.yml codegen-drift job still invoked Node tooling.",
+]
+approach = [
+    "xtask/src/codegen_schema.rs typify plus rustfmt; drop quicktype script.",
+    "Rewire Makefile schema-codegen and contracts.yml drift job to cargo only.",
+]
+verify = [
+    "Consecutive codegen runs: sha256 equal across runs.",
+    "cargo test -p reforger-backend --lib: 34 passed including loadout round-trips.",
+]
+citations = [
+    "Source: commit 74d50cbb — typify codegen.",
+    "Source: t165_3_verify_log.md — idempotence gate.",
+]
 shipped_at = "74d50cbb"
 created_at = "2026-07-17T13:06:32Z"
 completed_at = "2026-07-17T13:06:32Z"

@@ -1,7 +1,7 @@
 id = "T-177"
 kind = "work"
 title = "MC chrome UX + ORBAT dock cutover (T-071.0)"
-summary = "SHIPPED @ tag T-177 / e97a01c6. A1 YouTube elbow guides; A2 grab on PALETTE_LEAF; A3 strip z-30 / docks z-20; B1–B2 T-071.0 OrbatManagerDialog + left ORBAT removed. Gate doctor + full Chrome headless (leptos-gates 20/20). Verify: .ai/artifacts/t177_verify_log.md. Hub: docs/platform/t177_mc_chrome_orbat_cutover.md."
+summary = "YouTube tree guides, grab cursor, ORBAT Manager modal, editor gate doctor."
 class = "docs"
 status = "shipped"
 order = 1740
@@ -10,6 +10,22 @@ executor = "claude-code"
 depends_on = ["T-176"]
 unblocks = ["T-071"]
 main_goal = "As a mission maker I use Editor Layers only on the left, open ORBAT Manager from the top strip, see YouTube-style tree lines, grab-cursor on assets, and menus that paint above the docks."
+context = [
+    "Post T-176: YouTube-style tree lines, grab on assets, menus behind docks.",
+    "T-071.0: remove left ORBAT split; top-strip ORBAT Manager modal.",
+]
+requirement = [
+    "A1: YouTube elbow guides via guide_spans and FlatRow.ancestors.",
+    "A2: grab cursor on PALETTE_LEAF palette leaves.",
+    "A3: strip z-30 above docks z-20.",
+    "B1–B2: Editor Layers only dock; OrbatManagerDialog from strip.",
+    "Gate: full Chrome headless + gate doctor fail-fast preflight.",
+]
+verify = ["Verify: .ai/artifacts/t177_verify_log.md."]
+citations = [
+    "Source: commit e97a01c6 — MC chrome ORBAT cutover.",
+    "Source: docs/platform/SHIPPED_HISTORY.md §T-177.",
+]
 shipped_at = "e97a01c6"
 created_at = "2026-07-19T09:06:26Z"
 completed_at = "2026-07-19T09:06:26Z"

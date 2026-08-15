@@ -1,7 +1,7 @@
 id = "T-176"
 kind = "work"
 title = "Forest wash fidelity + place ghost + zoom+pan stutter"
-summary = "SHIPPED @ tag T-176 / a5940fad. A1 landcover after set_viewport; A2 8m TBDD canopy mass + drop forest-kind landcover wash (clearings=holes); B1 SlotPlacePreview↔slot atlas; B2 CAMERA_GESTURE defers DEM/forest recompute. Verify: .ai/artifacts/t176_verify_log.md. Hub: docs/platform/t176_forest_place_ghost_zoompan.md."
+summary = "8 m canopy mass replaces landcover wash; place ghost and zoom+pan gesture defer."
 class = "docs"
 status = "shipped"
 order = 1730
@@ -9,6 +9,21 @@ spec = "docs/platform/t176_forest_place_ghost_zoompan.md"
 executor = "claude-code"
 depends_on = ["T-175"]
 main_goal = "As a mission maker I see forest highlight tight to real trees without a zoom ritual, a live place ghost when dragging from the palette, and smooth zoom+pan."
+context = [
+    "Post T-175: forest highlight stale until zoom ritual; wash outside canopy.",
+    "Palette place ghost invisible; zoom+pan stutter during heavy recompute.",
+]
+requirement = [
+    "A1: push_landcover after set_viewport.",
+    "A2: 8 m TBDD canopy mass; drop forest-kind landcover wash.",
+    "B1: SlotPlacePreview bound to slot atlas.",
+    "B2: CAMERA_GESTURE defers DEM/forest recompute during pan.",
+]
+verify = ["Verify: .ai/artifacts/t176_verify_log.md."]
+citations = [
+    "Source: commit a5940fad — forest 8m canopy re-bake.",
+    "Source: docs/platform/SHIPPED_HISTORY.md §T-176.",
+]
 shipped_at = "a5940fad"
 created_at = "2026-07-18T23:08:09Z"
 completed_at = "2026-07-18T23:08:09Z"

@@ -1,7 +1,7 @@
 id = "T-162.3"
 kind = "work"
 title = "T-162 — Eradicate all remaining Python (→ Rust)"
-summary = "T-162 — Eradicate all remaining Python (→ Rust)"
+summary = "Replace inline python3 in verify-monorepo, upload-repro, and debug-direct-join."
 class = "feature"
 status = "shipped"
 order = 1590
@@ -9,6 +9,14 @@ spec = "docs/platform/t162_python_eradication.md"
 executor = "cursor-docs"
 notes = "Replace inline python3 in verify-monorepo/upload-repro/debug-direct-join."
 parent = "T-162"
+context = ["Shell wrappers still invoked python3 for repro, debug, and migration checks."]
+requirement = ["Flip debug-direct-join, mission-version-upload-repro, verify-monorepo-migration to xtask."]
+current_state = ["Inline python3 calls in mod and website helper scripts."]
+approach = ["Route through lib/xtask-run.sh; port logic to xtask debug and repro cmds."]
+citations = [
+    "Source: commit cac7b8fe — T-162 eradication.",
+    "Source: t162_verify_log.md — shell flips.",
+]
 created_at = "2026-07-16T00:00:00Z"
 completed_at = "2026-07-17T00:00:00Z"
 estimated = [

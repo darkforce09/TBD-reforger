@@ -1,7 +1,7 @@
 id = "T-165.7"
 kind = "work"
 title = "T-165 — Node/JS eradication: every .mjs tool → Rust"
-summary = "T-165 — Node/JS eradication: every .mjs tool → Rust"
+summary = "MCP broker and offline stub ported to Rust mcpd; selftest contract frozen at nineteen cases."
 class = "feature"
 status = "shipped"
 order = 1620
@@ -9,6 +9,16 @@ spec = "docs/platform/t165_node_eradication.md"
 executor = "claude-code"
 notes = "MCP broker + stub -> Rust; selftest 19/19 frozen."
 parent = "T-165"
+context = ["T-165.6 deleted the CDP driver; Workbench MCP still used Node mcp-daemon.mjs and stub-runner."]
+requirement = ["Ship mcpd broker with idle reap and stub modes; fix runner exec for native binaries; pass frozen selftest."]
+current_state = ["scripts/mod/lib/mcp-daemon.mjs broker and fixtures/stub-runner.mjs on Node; socket client already Rust."]
+approach = ["tbd-tools mcpd bin: tokio UnixListener, one enfusion-mcp child, mcpd-bin.sh launcher."]
+verify = ["mcp-call-selftest.sh 19/19 ALL PASS; tier1 .mjs branch and idle-reap probes green."]
+citations = [
+    "Source: commit b759d260 — mcpd broker stub.",
+    "Source: t165_7_verify_log.md selftest.",
+    "Source: t165_node_eradication.md N6 contract.",
+]
 shipped_at = "b759d260"
 created_at = "2026-07-17T16:08:09Z"
 completed_at = "2026-07-17T16:08:09Z"

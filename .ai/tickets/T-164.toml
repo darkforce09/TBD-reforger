@@ -1,20 +1,27 @@
 id = "T-164"
 kind = "work"
-title = "Post-merge green sweep: CI green + registry hygiene + doc truth"
-summary = "Post-merge green sweep: CI green + registry hygiene + doc truth"
+title = "Post-merge CI green and registry doc truth"
+summary = "Fix six CI red jobs; ticket check exit 0; operational doc truth sweep."
 class = "bug"
 status = "shipped"
 order = 1610
 spec = "docs/platform/t164_green_sweep.md"
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
+context = ["T-163 merge push surfaced six red CI jobs and registry field debt."]
+requirement = ["Green ci.yml; ticket check exit 0; doc truth for Rust backend and Leptos SPA."]
 current_state = [
     "SHIPPED: all 6 red CI jobs fixed (citation #/$defs/gear, backend cargo fmt, map-engine LFS DEM pull, editorconfig sap-seam+vendor exclude, Trunk tailwindcss 4.3.2 pin);",
     "ticket check exit 0 (T-147/148/149 fields, T-145/T-151 vocab recode);",
     "T-090.1.2.6 remote tag force-pushed to shipped commit; verify-t152-cartographic wasm step retired-skip;",
     "operational doc truth (CLAUDE.md Rust backend, Makefile tidy removal, DEV_RUNBOOK, CODING_STANDARDS retired gates, 23 page docs Live source → Leptos modules).",
 ]
-citations = ["Verify: .ai/artifacts/t164_verify_log.md."]
+approach = ["Fix five CI causes; recode registry rows; grep-closure doc sweep; tag reconcile."]
+verify = ["ticket check exit 0; ci.yml green per t164_verify_log.md."]
+citations = [
+    "Source: commit 801e7cf9 — green sweep.",
+    "Source: t164_green_sweep.md — CI causes.",
+]
 shipped_at = "e7af8ad9"
 created_at = "2026-07-17T11:26:55Z"
 completed_at = "2026-07-17T11:33:19Z"
