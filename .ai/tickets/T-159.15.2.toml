@@ -14,6 +14,8 @@ context = ["15.1 ships loop and wheel; editor still cannot pan the map."]
 requirement = ["Pointer listeners; pan gesture; smoke_pan_editor Class R; keep 15.1 smokes."]
 current_state = ["Damage-driven rAF and wheel only; no MMB/RMB pan or pointer seam."]
 approach = ["engine.pan dx/dy; capture; contextmenu preventDefault; no unproject_xy."]
+verify = ["smoke_pan_editor.mjs pass; smoke_editor wheel regression pass."]
+acceptance = ["MMB and RMB drag pan plus mid-pan wheel rebase shipped via engine.pan; smoke_pan_editor Class R passed."]
 citations = [
     "commit ebcabe1d",
     "t159_15_2_camera_pan.md",

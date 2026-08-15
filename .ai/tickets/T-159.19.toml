@@ -15,6 +15,7 @@ requirement = ["move_entities; pick_rect marquee; edit-driven persist notify."]
 current_state = ["No marquee, drag-move, or persist on edit."]
 approach = ["select_tool gesture machine; editor-marquee-drag-smoke."]
 verify = ["editor-marquee-drag-smoke; six prior smokes"]
+acceptance = ["Marquee empty-drag and entity drag-move committed move_entities with edit-driven IDB persist; six prior smokes stayed green."]
 citations = [
     "commit f444b878",
     "t159_19_marquee_drag.md",

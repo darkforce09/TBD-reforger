@@ -15,6 +15,7 @@ requirement = ["Layers tree; registry catalog; drag-place slot; wheel-over-dock 
 current_state = ["Empty dock shells; no outliner tree or palette catalog."]
 approach = ["outliner.rs; asset_catalog.rs; editor_ops.rs; outliner and CUR smoke gates."]
 verify = ["outliner and palette smokes PASS; wheel-over-dock and CUR gates PASS."]
+acceptance = ["Editor Layers outliner and Factions asset palette drag-to-place shipped; wheel-over-dock and CUR Class R gates passed."]
 citations = [
     "t159_22_outliner_asset_palette.md",
     "commit 0154b4e9",

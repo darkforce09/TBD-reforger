@@ -14,6 +14,7 @@ requirement = ["Tailwind v4 @theme; Sidebar TopNav; V-gate zero diffs."]
 current_state = ["No Trunk Aegis tokens or AppLayout shell."]
 approach = ["2a CSS; 2b Sidebar; 2c TopNav; gate_v_suite."]
 verify = ["gate_v_suite byte-equal; S-tokens PASS"]
+acceptance = ["Aegis Tailwind v4 @theme, Sidebar, TopNav, and AppLayout chrome matched React byte-for-byte via gate_v_suite."]
 citations = [
     "commit 5c721f6f",
     "t159_leptos_ui_program.md",

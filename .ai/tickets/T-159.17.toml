@@ -15,6 +15,7 @@ requirement = ["tbd-mission-yrs encode_state; debounced hide flush."]
 current_state = ["Reload loses local seed edits."]
 approach = ["yrs_persist.rs; editor_session.rs; smoke gate."]
 verify = ["smoke_persist_editor Class R reload"]
+acceptance = ["IndexedDB tbd-mission-yrs persist and warm sessionStorage marker restored mission slots on reload via semantic digest Class R."]
 citations = [
     "commit 60c6e7ea",
     "t159_17_yrs_persist.md",

@@ -14,6 +14,7 @@ requirement = ["R-auth gate; send_with_refresh; cold bootstrap; login callback; 
 current_state = ["Guest shell only; no gloo-net client or AuthStore wired."]
 approach = ["client.rs refresh mutex; AuthStore signals; authed TopNav at slice 3g."]
 verify = ["cargo test passed; V topnav-authed zero diffs; trunk release build."]
+acceptance = ["gloo-net client, single-flight refresh, AuthStore bootstrap, and authed TopNav shipped with R-auth gate PASS."]
 citations = [
     "t159_leptos_full_migration_inventory.md",
     "commit d066b93a",

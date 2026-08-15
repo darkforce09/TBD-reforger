@@ -15,6 +15,7 @@ requirement = ["MissionPayload parity; POST /versions; export Class R."]
 current_state = ["No Rust compile or Save UI."]
 approach = ["compile.rs; mission_commands; save-export smoke."]
 verify = ["editor-save-export-smoke; live Save 201/409/400"]
+acceptance = ["Rust compile emitted MissionPayload; Save POST returned 201, duplicate 409, invalid 400; Export download gate passed."]
 citations = [
     "commit c0e11d54",
     "t159_20_save_export.md",

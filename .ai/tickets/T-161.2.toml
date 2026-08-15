@@ -14,6 +14,8 @@ context = ["T-161.1 sync/check shipped; mutators deferred to T-161.3."]
 requirement = ["brief/show/next/plan-batch/list/milestone stdout+exit match Python."]
 current_state = ["Read commands only in Python ticket pipeline."]
 approach = ["xtask read cmds; t161_2_verify_log.md gate table."]
+verify = ["brief/show/next/plan-batch/list/milestone stdout match Python oracle."]
+acceptance = ["xtask brief, show, next, plan-batch, list, and milestone commands matched Python stdout and exit codes."]
 citations = [
     "t161_2_verify_log.md",
     "t161_ticket_xtask_program.md",

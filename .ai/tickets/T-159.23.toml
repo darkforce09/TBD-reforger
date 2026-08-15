@@ -15,6 +15,7 @@ requirement = ["Transform and Identity tabs; Arsenal stub; undoable commits; edi
 current_state = ["No modal; slot transform edits only via map drag."]
 approach = ["Dialog on dbl-click; MissionDocCore commits; attributes smoke per spec A6."]
 verify = ["Transform or Identity commit smoke; prior editor smokes green per spec A8."]
+acceptance = ["Attributes modal on double-click committed Transform and Identity fields undoably; eleven prior editor smokes stayed green."]
 citations = [
     "t159_23_attributes_modal.md",
     "commit 69dc5da5",

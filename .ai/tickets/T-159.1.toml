@@ -14,6 +14,8 @@ context = ["React SPA live; Leptos rewrite on standing worktree T-159."]
 requirement = ["apps/website-leptos crate; cargo check; scaffold UI; API health link."]
 current_state = ["No Leptos crate, workspace member, or documented Rust UI run path."]
 approach = ["CSR Leptos on :3000; minimal Aegis tokens; keep React build green."]
+verify = ["cargo check -p website-leptos; trunk build; render-check.mjs."]
+acceptance = ["Leptos CSR workspace member apps/website-leptos shipped with cargo check green and wasm hello mount."]
 citations = [
     "commit 50d93587",
     "t159_1_leptos_scaffold.md",

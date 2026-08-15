@@ -14,6 +14,8 @@ context = ["Python scripts/ticket pipeline due for Rust xtask port."]
 requirement = ["Hub doc; slice ladder T-161.0–.5; standing worktree branch."]
 current_state = ["Bash scripts/ticket + Python ticket_*.py; no xtask crate."]
 approach = ["t161_ticket_xtask_program.md; branch t-161-ticket-xtask."]
+verify = ["t161_ticket_xtask_program.md hub; branch t-161-ticket-xtask worktree."]
+acceptance = ["Ticket CLI program hub doc locked slice ladder T-161.0 through T-161.5 and standing worktree branch t-161-ticket-xtask."]
 citations = [
     "t161_ticket_xtask_program.md",
     "commit 065fa496",

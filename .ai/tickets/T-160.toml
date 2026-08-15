@@ -13,6 +13,8 @@ context = ["Found in T-159.15.1; map_async cleared in_flight unconditionally on 
 requirement = ["ReadbackLane owns in_flight; native tests cover wasm32 error arm."]
 current_state = ["Latent double-map; editor runs disable_frame_timing()."]
 approach = ["map_engine_render::readback::ReadbackLane; shipped bce80aa1."]
+verify = ["cargo test -p map-engine-render readback."]
+acceptance = ["GpuTimer readback error path moved to ReadbackLane; in_flight guard survives map_async failure before HUD re-enables timing."]
 citations = [
     "commit bce80aa1",
     "t159_15_2_camera_pan.md",

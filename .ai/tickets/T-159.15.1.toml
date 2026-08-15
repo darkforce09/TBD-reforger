@@ -13,6 +13,8 @@ context = ["15.0 boundary collapse; second submit double-maps GpuTimer readback 
 requirement = ["rAF loop; wheel; resize; disable_frame_timing; poll(); smoke_editor pass."]
 current_state = ["Continuous render panics already mapped on headless second submit."]
 approach = ["disable_frame_timing drops GpuTimer; poll() unblocks WebGL2 map_async."]
+verify = ["smoke_editor.mjs pass; selfcheck_editor.mjs ?force=webgl pass."]
+acceptance = ["Damage-driven rAF render loop shipped with wheel zoom and resize; GpuTimer disabled to stop Dawn double-map panic."]
 citations = [
     "commit a425936d",
     "t159_15_1_verify_log.md",

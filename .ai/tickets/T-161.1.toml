@@ -14,6 +14,8 @@ context = ["T-161 hub locked; Python stays default until T-161.4 flip."]
 requirement = ["Derived doc cmp -s G1; check exit and sorted ERROR set match."]
 current_state = ["No xtask member; Python cmd_sync is oracle."]
 approach = ["xtask ticket sync/check; t161_1_verify_log.md gates."]
+verify = ["cargo build -p xtask; G1 cmp -s derived outputs; cargo xtask ticket check."]
+acceptance = ["xtask ticket sync and check reproduced Python oracle on ten derived paths with matching check ERROR sets."]
 citations = [
     "t161_1_xtask_scaffold_sync.md",
     "t161_1_verify_log.md",

@@ -13,6 +13,8 @@ context = ["T-159.3 auth shipped; shell stubs need Router before page waves."]
 requirement = ["Single-source route contract; router-aware SidebarNav and TopNav; S-routes PASS."]
 current_state = ["Aegis shell stubs; no Router/Routes from route contract."]
 approach = [".4a route table; .4b Router/Routes; .4c nav; .4d breadcrumbs."]
+verify = ["S-routes gate PASS; trunk build of website-leptos."]
+acceptance = ["Full leptos_router route table wired with router-aware SidebarNav and TopNav, and S-routes gate PASS."]
 citations = [
     "commit f2dd37cf",
     "commit b9560f42",

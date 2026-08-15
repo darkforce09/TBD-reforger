@@ -15,6 +15,7 @@ requirement = ["Top strip undo/redo; bottom toolbelt; dock shells; keyboard shor
 current_state = ["Save/Export strip only; no undo UI; dock placeholders absent."]
 approach = ["eden_chrome.rs layout; mission_history.rs undo path; editor-undo-smoke gate."]
 verify = ["editor-undo-smoke PASS; all prior editor smokes PASS per verify log."]
+acceptance = ["Eden chrome scaffold shipped Top strip undo/redo, dock shells, and toolbelt; editor-undo-smoke and eight prior smokes passed."]
 citations = [
     "t159_21_eden_chrome_undo.md",
     "commit f02fed5a",

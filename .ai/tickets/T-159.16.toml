@@ -14,6 +14,8 @@ context = ["Engine and camera shipped; no yrs mission document in Leptos host."]
 requirement = ["MissionDocCore mount/dispose; seed; encode_state Class R; smoke_doc_editor."]
 current_state = ["RenderEngine owns camera only; slot pick blocked without doc host."]
 approach = ["Same-wasm MissionDocCore; StrictMode-safe dispose; __missionDoc smoke bridge."]
+verify = ["smoke_doc_editor.mjs pass; cargo test encode_decode_roundtrip_is_stable."]
+acceptance = ["MissionDocCore hosted in same wasm with seeded doc, encode round-trip Class R, and smoke_doc_editor gate passed."]
 citations = [
     "commit f2cd6178",
     "t159_16_mission_doc_host.md",

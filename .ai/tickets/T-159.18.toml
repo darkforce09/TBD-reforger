@@ -15,6 +15,7 @@ requirement = ["Click replace; Ctrl toggle; empty clear."]
 current_state = ["No selection signal or pick_rect."]
 approach = ["select_tool.rs; editor-select-smoke gate."]
 verify = ["editor-select-smoke; prior editor smokes green"]
+acceptance = ["LMB click-select on frozen viewport used PointIndex pick_rect argmin with Ctrl toggle and empty-click clear."]
 citations = [
     "commit eb30ebea",
     "t159_18_select_tools.md",

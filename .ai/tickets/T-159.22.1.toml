@@ -15,6 +15,7 @@ requirement = ["One LOCAL txn equals one undo step; rebase undo smoke; undo_dept
 current_state = ["smoke_undo_editor keyChord sent rawKeyDown and keyDown per chord."]
 approach = ["keyChord one rawKeyDown plus keyUp; undo_depth on bridge; boundary unit tests."]
 verify = ["undo smoke rebased PASS; map-engine-core behavior unchanged per verify log."]
+acceptance = ["Gate driver keyChord double-fire fixed; one LOCAL transaction still equals one undo step; map-engine-core unchanged."]
 citations = [
     "t159_22_1_undo_granularity.md",
     "commit ce73c5bc",
