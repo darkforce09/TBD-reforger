@@ -7,6 +7,46 @@ status = "shipped"
 order = 5760
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+T-853 Phase 3. Absorb these Makefile targets into xtask: ci-local ci-local-schema schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig map-water-everon map-cartographic-everon map-cartographic-verify lfs-dem lfs-sat help test build. The composites become Rust functions composed from the same leaf functions, which makes a hollow composite (the T-489 `@true` defect) structurally impossible. `make help` has no successor yet - `xtask help` must list the task groups or the Makefile deletion costs discoverability. Each slice ADDS xtask subcommands in its own new module and does NOT edit the Makefile - the deletion is one final slice, so the three build slices stay file-disjoint. ACCEPTANCE: for every target, `make <t>` and the new `cargo xtask ...` must produce byte-identical stdout+stderr+rc on a clean tree AND on a deliberately broken one; the harness must assert the make side went red before believing a diff (T-556). Spec: docs/platform/t853_shell_to_xtask_waves.md
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["T-853 Phase 3. Absorb these Makefile targets into xtask: ci-local ci-local-schema schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig map-water-everon map-cartographic-everon map-cartographic-verify lfs-dem lfs-sat help test build. The composites become Rust functions composed from the same leaf functions, which makes a hollow composite (the T-489 `@true` defect) structurally impossible. `make help` has no successor yet - `xtask help` must list the task groups or the Makefile deletion costs discoverability. Each slice ADDS xtask subcommands in its own new module and does NOT edit the Makefile - the deletion is one final slice, so the three build slices stay file-disjoint. ACCEPTANCE: for every target, `make <t>` and the new `cargo xtask ...` must produce byte-identical stdout+stderr+rc on a clean tree AND on a deliberately broken one; the harness must assert the make side went red before believing a diff (T-556). Spec: docs/platform/t853_shell_to_xtask_waves.md"]
+
+missing=0"""
+main_goal = "Absorb Makefile ci lane targets into xtask mk_ci module."
+context = [
+    "T-853 Phase 3 absorbs ci-local ci-local-schema schema-validate schema-codegen.",
+    "verify-citations verify-coding-standards verify-doc-layout verify-editorconfig targets.",
+    "map-water-everon map-cartographic-everon map-cartographic-verify lfs-dem lfs-sat help test build.",
+]
+requirement = [
+    "Composites become Rust functions from same leaf functions; T-489 @true defect impossible.",
+    "xtask help must list task groups; make help has no successor yet.",
+    "Each slice ADDS xtask subcommands new module does NOT edit Makefile deletion final slice.",
+]
+current_state = [
+    "Makefile composites risk hollow composite T-489 @true defect structurally.",
+    "Three build slices stay file-disjoint until Makefile deletion final slice.",
+]
+approach = [
+    "Compose ci-local and schema targets from shared leaf functions in mk_ci.rs.",
+    "Ship xtask help listing task groups before Makefile deletion costs discoverability.",
+]
+verify = [
+    "For every target make t and cargo xtask byte-identical stdout stderr rc clean tree.",
+    "On deliberately broken tree harness asserts make side went red before diff T-556.",
+]
+citations = [
+    "T-853 Phase 3 program",
+    "T-489 @true hollow composite defect",
+    "xtask help task group discoverability",
+    "T-556 anti-vacuity",
+    "t853_shell_to_xtask_waves.md",
+]
 shipped_at = "08dbe2a7"
 created_at = "2026-08-12T20:59:11Z"
 completed_at = "2026-08-12T22:52:30Z"
@@ -18,7 +58,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = ["T-853 Phase 3. Absorb these Makefile targets into xtask: ci-local ci-local-schema schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig map-water-everon map-cartographic-everon map-cartographic-verify lfs-dem lfs-sat help test build. The composites become Rust functions composed from the same leaf functions, which makes a hollow composite (the T-489 `@true` defect) structurally impossible. `make help` has no successor yet - `xtask help` must list the task groups or the Makefile deletion costs discoverability. Each slice ADDS xtask subcommands in its own new module and does NOT edit the Makefile - the deletion is one final slice, so the three build slices stay file-disjoint. ACCEPTANCE: for every target, `make <t>` and the new `cargo xtask ...` must produce byte-identical stdout+stderr+rc on a clean tree AND on a deliberately broken one; the harness must assert the make side went red before believing a diff (T-556). Spec: docs/platform/t853_shell_to_xtask_waves.md"]
 owns = ["xtask/src/mk_ci.rs"]
 
 [scope]

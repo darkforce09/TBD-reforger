@@ -7,6 +7,47 @@ status = "shipped"
 order = 5700
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+T-853 shell->xtask slice. Port scripts/platform/preflight.sh to `cargo xtask platform preflight` and delete the script(s), their scripts/shell-inventory.txt line(s), any scripts/python-inventory.txt line(s), and repoint every caller. 197 lines, 1 python3 site. Mostly assertions before a factory run. `hostrun cargo` calls in it are now obsolete - build-essential is in the container. ACCEPTANCE IS BYTE-FOR-BYTE: capture bash stdout+stderr+rc first, then diff on a clean tree AND on >=2 deliberately broken trees; the harness must assert the BASH side went red before believing a diff. A green run alone is not evidence (T-556). Build on crates/tbd-gate. Spec: docs/platform/t853_shell_to_xtask_waves.md
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["T-853 shell->xtask slice. Port scripts/platform/preflight.sh to `cargo xtask platform preflight` and delete the script(s), their scripts/shell-inventory.txt line(s), any scripts/python-inventory.txt line(s), and repoint every caller. 197 lines, 1 python3 site. Mostly assertions before a factory run. `hostrun cargo` calls in it are now obsolete - build-essential is in the container. ACCEPTANCE IS BYTE-FOR-BYTE: capture bash stdout+stderr+rc first, then diff on a clean tree AND on >=2 deliberately broken trees; the harness must assert the BASH side went red before believing a diff. A green run alone is not evidence (T-556). Build on crates/tbd-gate. Spec: docs/platform/t853_shell_to_xtask_waves.md"]
+
+missing=0"""
+main_goal = "Port preflight.sh to cargo xtask platform preflight."
+context = [
+    "T-853 shell->xtask slice; 197 lines one python3 site.",
+    "Mostly assertions before a factory run.",
+    "hostrun cargo calls obsolete; build-essential in container.",
+]
+requirement = [
+    "Delete script(s) shell-inventory.txt line(s) python-inventory.txt line(s).",
+    "Port to cargo xtask platform preflight; repoint every caller.",
+    "Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+]
+current_state = [
+    "scripts/platform/preflight.sh bash gate live today.",
+    "hostrun cargo calls remain in bash preflight today.",
+]
+approach = [
+    "Capture bash stdout stderr rc first as byte-for-byte baseline.",
+    "Diff port on clean tree and >=2 deliberately broken trees.",
+    "Harness must assert BASH side went red before believing diff.",
+]
+verify = [
+    "Capture bash stdout stderr rc baseline recorded first.",
+    "Diff on clean tree AND >=2 deliberately broken trees.",
+    "Harness asserts BASH side went red; green run alone not evidence T-556.",
+]
+citations = [
+    "T-853 shell->xtask program",
+    "T-556 anti-vacuity",
+    "t853_shell_to_xtask_waves.md",
+    "crates/tbd-gate",
+]
 shipped_at = "b535e109"
 created_at = "2026-08-12T10:06:12Z"
 completed_at = "2026-08-12T10:07:48Z"
@@ -18,7 +59,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["T-853 shell->xtask slice. Port scripts/platform/preflight.sh to `cargo xtask platform preflight` and delete the script(s), their scripts/shell-inventory.txt line(s), any scripts/python-inventory.txt line(s), and repoint every caller. 197 lines, 1 python3 site. Mostly assertions before a factory run. `hostrun cargo` calls in it are now obsolete - build-essential is in the container. ACCEPTANCE IS BYTE-FOR-BYTE: capture bash stdout+stderr+rc first, then diff on a clean tree AND on >=2 deliberately broken trees; the harness must assert the BASH side went red before believing a diff. A green run alone is not evidence (T-556). Build on crates/tbd-gate. Spec: docs/platform/t853_shell_to_xtask_waves.md"]
 owns = ["scripts/platform/preflight.sh"]
 
 [scope]

@@ -7,6 +7,50 @@ status = "shipped"
 order = 5840
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+The finale. Rewrite shell_free.rs from an allowlist ratchet into one TrackedLanguageBan table and DELETE scripts/shell-inventory.txt and scripts/python-inventory.txt entirely. Keep the good parts: the parsed-shebang detector (which correctly ignores Rust `#![allow(...)]`) and the fail-closed handling of an unreadable tracked path. Ban `*.sh|bash|zsh|ksh|fish|bat|ps1|py|mjs|cjs`, plus `Makefile`/`GNUmakefile`/`*.mk` so the deleted Makefile cannot return. ONE gate, so a future escape does not need a new gate written for it. Keep the apps/mod/** Enfusion exemption explicit and narrow. Also fold LANG-2 in: zero tracked .py AND zero python3 in command position. Prove it bites four ways: plant a .sh, plant an extensionless file with a bash shebang, plant a Makefile, and confirm a Rust file opening with `#![allow(...)]` does NOT trip it. Then rewrite CODING_STANDARDS §1.1 LANG-1/2/3 — they are ratchets today and become bans. ACCEPTANCE: prove the change BITES — perturb the new subject and watch it go red — not merely that it passes. A green run alone is not evidence (T-556). Finish with a full `cargo xtask platform wave gate` PASS: it is the only check that sees cross-crate breakage, and it has caught defects a green `cargo test -p xtask` could not. Spec: docs/platform/t853_shell_to_xtask_waves.md
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["The finale. Rewrite shell_free.rs from an allowlist ratchet into one TrackedLanguageBan table and DELETE scripts/shell-inventory.txt and scripts/python-inventory.txt entirely. Keep the good parts: the parsed-shebang detector (which correctly ignores Rust `#![allow(...)]`) and the fail-closed handling of an unreadable tracked path. Ban `*.sh|bash|zsh|ksh|fish|bat|ps1|py|mjs|cjs`, plus `Makefile`/`GNUmakefile`/`*.mk` so the deleted Makefile cannot return. ONE gate, so a future escape does not need a new gate written for it. Keep the apps/mod/** Enfusion exemption explicit and narrow. Also fold LANG-2 in: zero tracked .py AND zero python3 in command position. Prove it bites four ways: plant a .sh, plant an extensionless file with a bash shebang, plant a Makefile, and confirm a Rust file opening with `#![allow(...)]` does NOT trip it. Then rewrite CODING_STANDARDS §1.1 LANG-1/2/3 — they are ratchets today and become bans. ACCEPTANCE: prove the change BITES — perturb the new subject and watch it go red — not merely that it passes. A green run alone is not evidence (T-556). Finish with a full `cargo xtask platform wave gate` PASS: it is the only check that sees cross-crate breakage, and it has caught defects a green `cargo test -p xtask` could not. Spec: docs/platform/t853_shell_to_xtask_waves.md"]
+
+missing=0"""
+main_goal = "Flip shell_free to hard-zero TrackedLanguageBan; delete inventory files."
+context = [
+    "The finale of T-853 shell ratchet drain program.",
+    "shell-inventory.txt and python-inventory.txt are allowlist ratchets today.",
+    "apps/mod Enfusion exemption must stay explicit and narrow.",
+]
+requirement = [
+    "Rewrite shell_free.rs to one TrackedLanguageBan table.",
+    "DELETE scripts/shell-inventory.txt and scripts/python-inventory.txt entirely.",
+    "Ban *.sh bash zsh ksh fish bat ps1 py mjs cjs Makefile GNUmakefile *.mk.",
+    "Fold LANG-2: zero tracked .py AND zero python3 in command position.",
+    "Rewrite CODING_STANDARDS §1.1 LANG-1/2/3 ratchets become bans.",
+]
+current_state = [
+    "allowlist ratchet pre-blesses tracked shell and python inventory files.",
+    "parsed-shebang detector ignores Rust #![allow(...)] correctly today.",
+    "fail-closed handling of unreadable tracked path exists today.",
+]
+approach = [
+    "ONE gate so future escape needs no new gate written.",
+    "Prove bites four ways: plant .sh extensionless shebang Makefile.",
+    "Confirm Rust #![allow(...)] file does NOT trip detector.",
+]
+verify = [
+    "prove the change BITES — perturb new subject watch it go red.",
+    "A green run alone is not evidence T-556.",
+    "Finish with full cargo xtask platform wave gate PASS.",
+]
+citations = [
+    "t853_shell_to_xtask_waves.md",
+    "T-556 anti-vacuity",
+    "CODING_STANDARDS.md LANG-1/2/3",
+    "TrackedLanguageBan hard zero gate",
+]
 shipped_at = "63820ef6"
 created_at = "2026-08-12T23:25:32Z"
 completed_at = "2026-08-13T02:31:06Z"
@@ -18,7 +62,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 7 commit subject(s)"
-migration_legacy = ["The finale. Rewrite shell_free.rs from an allowlist ratchet into one TrackedLanguageBan table and DELETE scripts/shell-inventory.txt and scripts/python-inventory.txt entirely. Keep the good parts: the parsed-shebang detector (which correctly ignores Rust `#![allow(...)]`) and the fail-closed handling of an unreadable tracked path. Ban `*.sh|bash|zsh|ksh|fish|bat|ps1|py|mjs|cjs`, plus `Makefile`/`GNUmakefile`/`*.mk` so the deleted Makefile cannot return. ONE gate, so a future escape does not need a new gate written for it. Keep the apps/mod/** Enfusion exemption explicit and narrow. Also fold LANG-2 in: zero tracked .py AND zero python3 in command position. Prove it bites four ways: plant a .sh, plant an extensionless file with a bash shebang, plant a Makefile, and confirm a Rust file opening with `#![allow(...)]` does NOT trip it. Then rewrite CODING_STANDARDS §1.1 LANG-1/2/3 — they are ratchets today and become bans. ACCEPTANCE: prove the change BITES — perturb the new subject and watch it go red — not merely that it passes. A green run alone is not evidence (T-556). Finish with a full `cargo xtask platform wave gate` PASS: it is the only check that sees cross-crate breakage, and it has caught defects a green `cargo test -p xtask` could not. Spec: docs/platform/t853_shell_to_xtask_waves.md"]
 owns = [
     "xtask/src/shell_free.rs",
     "xtask/src/gate_no_python.rs",

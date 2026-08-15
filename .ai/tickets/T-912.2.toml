@@ -7,10 +7,43 @@ status = "shipped"
 order = 5920
 spec = "docs/platform/t912_wave_lockfile.md"
 executor = "claude-code"
-notes = "Depends on T-912.1 landed. First lock candidate order = TSV row order (platform then mod); every later repack sorts open candidates by ticket order, tie-broken by id — filesystem order forbidden. Wave 0 frozen: shipped/cancelled/deferred/blocked/non-claude-code membership never follows order. Migration proof pastes the per-wave open-id set-equality table plus owns snapshot. Historical allowlist grep keeps old artifacts green while any live wave_plan.tsv mention is red. Mine wave_lock.rs from 6ae8069c but re-derive against encoding C; the draft JSON lock and id-sort are mine-only shapes."
+notes = """
+Depends on T-912.1 landed. First lock candidate order = TSV row order (platform then mod); every later repack sorts open candidates by ticket order, tie-broken by id — filesystem order forbidden. Wave 0 frozen: shipped/cancelled/deferred/blocked/non-claude-code membership never follows order. Migration proof pastes the per-wave open-id set-equality table plus owns snapshot. Historical allowlist grep keeps old artifacts green while any live wave_plan.tsv mention is red. Mine wave_lock.rs from 6ae8069c but re-derive against encoding C; the draft JSON lock and id-sort are mine-only shapes.
+
+--- HEAD migration_legacy (verbatim) ---
+
+cargo xtask wave repack (new top-level group) compiles .ai/tickets/wave.lock as deterministic TOML; wave check recomputes and structural-equals, missing lock is a DidNotRun refuse wired into ticket check, platform wave gate and platform_preflight. The same commit as the first lock deletes docs/platform/wave_plan.tsv and docs/mod/wave_plan.tsv and retargets every reader. platform wave land runs wave repack as its final step so the lock update rides the land commit.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["cargo xtask wave repack (new top-level group) compiles .ai/tickets/wave.lock as deterministic TOML; wave check recomputes and structural-equals, missing lock is a DidNotRun refuse wired into ticket check, platform wave gate and platform_preflight. The same commit as the first lock deletes docs/platform/wave_plan.tsv and docs/mod/wave_plan.tsv and retargets every reader. platform wave land runs wave repack as its final step so the lock update rides the land commit."]
+
+missing=0"""
 depends_on = ["T-912.1"]
 parent = "T-912"
 main_goal = "The wave plan is a compiled artifact of the registry: one TOML lock with one writer, checked structurally, and both hand-kept TSVs deleted."
+context = [
+    "Depends on T-912.1 landed; first lock order equals TSV row order.",
+    "Every later repack sorts open candidates by ticket order tie-broken id.",
+    "Wave 0 frozen: shipped cancelled deferred blocked never follows order.",
+]
+requirement = [
+    "cargo xtask wave repack compiles wave.lock as deterministic TOML.",
+    "Same commit deletes both wave_plan.tsv files and retargets readers.",
+    "platform wave land runs wave repack as final step.",
+]
+current_state = [
+    "docs/platform/wave_plan.tsv and docs/mod/wave_plan.tsv still on disk.",
+    "Readers still consume hand-kept TSVs before lock cutover.",
+]
+approach = [
+    "wave check recomputes and structural-equals; missing lock DidNotRun refuse.",
+    "Wire refuse into ticket check platform wave gate platform_preflight.",
+]
+verify = [
+    "wave repack twice on frozen tree is byte-identical.",
+    "cargo xtask platform wave gate --slice T-912.2 prints GATE: PASS",
+]
 acceptance = [
     "wave repack twice on a frozen tree is byte-identical; a missing lock is a DidNotRun refuse, never an empty plan",
     "Overlapping owns never share a wave; perturbing owns or edges without repack turns wave check red",
@@ -18,6 +51,12 @@ acceptance = [
     "After the TSV delete, git grep wave_plan.tsv minus the historical allowlist is empty; planting the path in wave/mod.rs is check-red",
     "Ship via the land path needs no second manual repack; reordering an open ticket never rewrites wave 0",
     "cargo xtask platform wave gate --slice T-912.2 prints GATE: PASS",
+]
+citations = [
+    "t912_wave_lockfile.md",
+    "wave.lock",
+    "wave_plan.tsv",
+    "wave_lock.rs 6ae8069c",
 ]
 shipped_at = "4a2f3426"
 created_at = "2026-08-14T03:28:01Z"
@@ -29,7 +68,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = ["cargo xtask wave repack (new top-level group) compiles .ai/tickets/wave.lock as deterministic TOML; wave check recomputes and structural-equals, missing lock is a DidNotRun refuse wired into ticket check, platform wave gate and platform_preflight. The same commit as the first lock deletes docs/platform/wave_plan.tsv and docs/mod/wave_plan.tsv and retargets every reader. platform wave land runs wave repack as its final step so the lock update rides the land commit."]
 owns = [
     ".ai/tickets",
     "docs/platform/wave_plan.tsv",

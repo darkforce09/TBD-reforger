@@ -7,6 +7,45 @@ status = "shipped"
 order = 5740
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+T-853 Phase 3. Absorb these Makefile targets into xtask: db-up db-down db-logs seed db-backup db-backup-drill db-backup-verify db-restore registry-import rust-test-it. The podman/compose lifecycle, the seed appliers, and rust-test-it's `while read -r db` loop over psql output that reaps per-binary rust_it_<suite>_it databases (Makefile:209-212) - the one piece of genuinely non-trivial shell left in the file. Each slice ADDS xtask subcommands in its own new module and does NOT edit the Makefile - the deletion is one final slice, so the three build slices stay file-disjoint. ACCEPTANCE: for every target, `make <t>` and the new `cargo xtask ...` must produce byte-identical stdout+stderr+rc on a clean tree AND on a deliberately broken one; the harness must assert the make side went red before believing a diff (T-556). Spec: docs/platform/t853_shell_to_xtask_waves.md
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["T-853 Phase 3. Absorb these Makefile targets into xtask: db-up db-down db-logs seed db-backup db-backup-drill db-backup-verify db-restore registry-import rust-test-it. The podman/compose lifecycle, the seed appliers, and rust-test-it's `while read -r db` loop over psql output that reaps per-binary rust_it_<suite>_it databases (Makefile:209-212) - the one piece of genuinely non-trivial shell left in the file. Each slice ADDS xtask subcommands in its own new module and does NOT edit the Makefile - the deletion is one final slice, so the three build slices stay file-disjoint. ACCEPTANCE: for every target, `make <t>` and the new `cargo xtask ...` must produce byte-identical stdout+stderr+rc on a clean tree AND on a deliberately broken one; the harness must assert the make side went red before believing a diff (T-556). Spec: docs/platform/t853_shell_to_xtask_waves.md"]
+
+missing=0"""
+main_goal = "Absorb Makefile db lane targets into xtask mk_db module."
+context = [
+    "T-853 Phase 3 absorbs db-up db-down db-logs seed db-backup db-backup-drill.",
+    "db-backup-verify db-restore registry-import rust-test-it Makefile targets.",
+    "Podman compose lifecycle seed appliers rust-test-it while read -r db loop Makefile:209-212.",
+]
+requirement = [
+    "Each slice ADDS xtask subcommands in its own new module does NOT edit Makefile.",
+    "Deletion is one final slice; three build slices stay file-disjoint.",
+    "make t and cargo xtask byte-identical stdout stderr rc clean and broken trees.",
+]
+current_state = [
+    "rust-test-it while read -r db loop over psql output reaps rust_it suite it databases.",
+    "Makefile:209-212 one piece genuinely non-trivial shell left in file.",
+]
+approach = [
+    "Port podman compose lifecycle and seed appliers into mk_db.rs module.",
+    "Harness must assert make side went red before believing diff T-556.",
+]
+verify = [
+    "For every target make t and cargo xtask byte-identical stdout stderr rc clean tree.",
+    "On deliberately broken tree harness asserts make side went red before diff T-556.",
+]
+citations = [
+    "T-853 Phase 3 program",
+    "Makefile:209-212 rust-test-it loop",
+    "T-556 anti-vacuity",
+    "t853_shell_to_xtask_waves.md",
+]
 shipped_at = "4feb855f"
 created_at = "2026-08-12T20:48:13Z"
 completed_at = "2026-08-12T21:01:15Z"
@@ -18,7 +57,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["T-853 Phase 3. Absorb these Makefile targets into xtask: db-up db-down db-logs seed db-backup db-backup-drill db-backup-verify db-restore registry-import rust-test-it. The podman/compose lifecycle, the seed appliers, and rust-test-it's `while read -r db` loop over psql output that reaps per-binary rust_it_<suite>_it databases (Makefile:209-212) - the one piece of genuinely non-trivial shell left in the file. Each slice ADDS xtask subcommands in its own new module and does NOT edit the Makefile - the deletion is one final slice, so the three build slices stay file-disjoint. ACCEPTANCE: for every target, `make <t>` and the new `cargo xtask ...` must produce byte-identical stdout+stderr+rc on a clean tree AND on a deliberately broken one; the harness must assert the make side went red before believing a diff (T-556). Spec: docs/platform/t853_shell_to_xtask_waves.md"]
 owns = ["xtask/src/mk_db.rs"]
 
 [scope]

@@ -1,14 +1,44 @@
 id = "T-893"
 kind = "work"
-title = "T-853 wave 228: commit bash↔port RED-arm harness for deploy db ports"
+title = "T-853 wave 228: deploy db bash-port RED-arm harness"
 summary = "T-853 wave 228: commit bash↔port RED-arm harness for deploy db ports"
 class = "chore"
 status = "deferred"
 order = 5670
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
-estimated = ["scope"]
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 228 adversarial MAJOR-2: T-884/885/886 proved ≥2 broken arms in agent reports but landed no committed parity harness/fixtures under xtask. T-853 DoD asks bash-went-red asserted before trusting the port. Add Class-R tests (or committed /tmp recipe replay) for deploy db refuse/verify/backup keep that fail if the port drifts. Repro: cargo test -p xtask today has only thin deploy_db_* units; no bash-vs-port acceptance.
+
+--- HEAD migration_legacy line (verbatim) ---
+
 migration_legacy = ["Wave 228 adversarial MAJOR-2: T-884/885/886 proved ≥2 broken arms in agent reports but landed no committed parity harness/fixtures under xtask. T-853 DoD asks bash-went-red asserted before trusting the port. Add Class-R tests (or committed /tmp recipe replay) for deploy db refuse/verify/backup keep that fail if the port drifts. Repro: cargo test -p xtask today has only thin deploy_db_* units; no bash-vs-port acceptance."]
+
+missing=0"""
+main_goal = "Commit bash-vs-port RED-arm parity harness for deploy db refuse verify backup keep."
+context = [
+    "Wave 228 adversarial MAJOR-2 T-884/885/886 proved >=2 broken arms in agent reports.",
+    "Landed no committed parity harness fixtures under xtask.",
+    "T-853 DoD asks bash-went-red asserted before trusting the port.",
+]
+requirement = [
+    "Add Class-R tests or committed /tmp recipe replay for deploy db refuse verify backup keep.",
+    "Harness must fail if the port drifts from bash baseline.",
+]
+current_state = [
+    "cargo test -p xtask today has only thin deploy_db_* units.",
+    "No bash-vs-port acceptance harness committed under xtask.",
+]
+approach = ["Repro cargo test -p xtask deploy_db units no bash-vs-port acceptance."]
+verify = ["Repro cargo test -p xtask today only thin deploy_db_* units no bash-vs-port acceptance."]
+citations = [
+    "T-853 DoD bash-went-red",
+    "T-884 T-885 T-886 wave 228",
+    "deploy db refuse verify backup keep",
+]
+estimated = ["scope"]
 owns = [
     "xtask/src/deploy_db_common.rs",
     "xtask/src/deploy_db_backup.rs",

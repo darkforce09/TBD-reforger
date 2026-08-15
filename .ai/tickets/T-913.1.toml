@@ -7,14 +7,52 @@ status = "shipped"
 order = 5930
 spec = "docs/platform/t913_ticket_run_metrics.md"
 executor = "claude-code"
-notes = "New test: every on-disk TOML key is a mapped encoding-C key or in ALLOWED_NEW — planting created_at without the widen commit is check-red. Timestamp parser crate arrives in the same commit as the fields (no chrono/time in xtask or tbd-tickets today). shipped_at stays a SHA."
+notes = """
+New test: every on-disk TOML key is a mapped encoding-C key or in ALLOWED_NEW — planting created_at without the widen commit is check-red. Timestamp parser crate arrives in the same commit as the fields (no chrono/time in xtask or tbd-tickets today). shipped_at stays a SHA.
+
+--- HEAD migration_legacy (verbatim) ---
+
+Optional created_at/completed_at (RFC 3339 UTC) on ticket files; malformed is a parse error, never now. One deliberate commit adds ALLOWED_NEW = {created_at, completed_at}, widens schema.json + TicketFile + WorkTicket/ProgramTicket, and lands the writers: ticket add stamps created_at, ship/done/cancel stamp completed_at. No backfill.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["Optional created_at/completed_at (RFC 3339 UTC) on ticket files; malformed is a parse error, never now. One deliberate commit adds ALLOWED_NEW = {created_at, completed_at}, widens schema.json + TicketFile + WorkTicket/ProgramTicket, and lands the writers: ticket add stamps created_at, ship/done/cancel stamp completed_at. No backfill."]
+
+missing=0"""
 parent = "T-913"
 main_goal = "Ticket lifecycle carries real timestamps so run metrics can measure elapsed time without inventing clocks."
+context = [
+    "Timestamp parser crate arrives same commit as fields.",
+    "No chrono or time in xtask or tbd-tickets today.",
+    "shipped_at stays a SHA; no backfill for existing shipped tickets.",
+]
+requirement = [
+    "Optional created_at completed_at RFC 3339 UTC on ticket files.",
+    "One commit adds ALLOWED_NEW widens schema and lands writers.",
+    "ticket add stamps created_at; ship done cancel stamp completed_at.",
+]
+current_state = [
+    "Planting created_at without ALLOWED_NEW widen is check-red today.",
+    "Malformed timestamps must be parse errors never now.",
+]
+approach = [
+    "Widen schema.json TicketFile WorkTicket ProgramTicket in one commit.",
+    "New test: every TOML key mapped or in ALLOWED_NEW.",
+]
+verify = [
+    "cargo xtask ticket check --strict prints check OK.",
+    "Planting created_at without widen commit is check-red.",
+]
 acceptance = [
     "ticket add writes RFC 3339 created_at; ship/done/cancel write completed_at; malformed timestamps are parse errors, never now",
     "Planting created_at without the ALLOWED_NEW + schema widen is check-red; the widen commit makes it green",
     "No backfill: existing shipped tickets carry no timestamps; shipped_at stays a SHA",
     "cargo xtask ticket check --strict prints check OK",
+]
+citations = [
+    "t913_ticket_run_metrics.md",
+    "ALLOWED_NEW created_at completed_at",
+    "schema.json",
 ]
 shipped_at = "b82949b7"
 created_at = "2026-08-14T04:28:09Z"
@@ -25,7 +63,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = ["Optional created_at/completed_at (RFC 3339 UTC) on ticket files; malformed is a parse error, never now. One deliberate commit adds ALLOWED_NEW = {created_at, completed_at}, widens schema.json + TicketFile + WorkTicket/ProgramTicket, and lands the writers: ticket add stamps created_at, ship/done/cancel stamp completed_at. No backfill."]
 owns = [
     ".ai/tickets/schema.json",
     "crates/tbd-tickets",

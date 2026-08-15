@@ -1,15 +1,48 @@
 id = "T-910"
 kind = "work"
-title = "Language ban extension match is case-sensitive (.SH/.PY/.MK without shebang stay green)"
+title = "Uppercase extensions bypass case-sensitive language ban"
 summary = "Language ban extension match is case-sensitive (.SH/.PY/.MK without shebang stay green)"
 class = "bug"
 status = "deferred"
 order = 5900
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
-notes = "wave 235 verifier MINOR; uppercase extensions without shebang; copy-pasteable repro in summary"
+notes = """
+wave 235 verifier MINOR; uppercase extensions without shebang; copy-pasteable repro in summary
+
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 235 adversarial verifier MINOR on 94593f72 / 63820ef6. TRACKED_LANGUAGE_BANS compares `e == ext` case-sensitively. Planted scripts/_t904_nosh.SH (echo, no shebang), .PY, .MK all stayed GREEN (rc=0). The same .SH WITH #!/usr/bin/env bash is RED via parsed shebang. GNU make `makefile` basename was fixed in-wave (T-904 8ff5d1e1). REPRO: printf 'echo x
+' > scripts/_case.SH && git add scripts/_case.SH && cargo xtask verify no-shell  # expect FAIL on a ban; today OK. git rm the plant. Not dispatched. Do not start the registry-split program.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ['''Wave 235 adversarial verifier MINOR on 94593f72 / 63820ef6. TRACKED_LANGUAGE_BANS compares `e == ext` case-sensitively. Planted scripts/_t904_nosh.SH (echo, no shebang), .PY, .MK all stayed GREEN (rc=0). The same .SH WITH #!/usr/bin/env bash is RED via parsed shebang. GNU make `makefile` basename was fixed in-wave (T-904 8ff5d1e1). REPRO: printf 'echo x\\n' > scripts/_case.SH && git add scripts/_case.SH && cargo xtask verify no-shell  # expect FAIL on a ban; today OK. git rm the plant. Not dispatched. Do not start the registry-split program.''']
+
+missing=0"""
+main_goal = "TRACKED_LANGUAGE_BANS misses uppercase .SH .PY .MK without shebang."
+context = [
+    "Wave 235 adversarial verifier MINOR on 94593f72 / 63820ef6.",
+    "GNU make makefile basename fixed in-wave T-904 8ff5d1e1.",
+    "Not dispatched; do not start registry-split program.",
+]
+requirement = ["Extension ban should catch uppercase extensions without shebang."]
+current_state = [
+    "TRACKED_LANGUAGE_BANS compares e == ext case-sensitively today.",
+    "Planted .SH .PY .MK without shebang stayed GREEN rc=0.",
+    "Same .SH with shebang is RED via parsed shebang.",
+]
+approach = ["Case-fold extension comparison before TRACKED_LANGUAGE_BANS check."]
+verify = [
+    "REPRO: printf echo x to scripts/_case.SH git add verify no-shell.",
+    "Expect FAIL on ban; today OK; git rm plant.",
+]
+citations = [
+    "wave 235 verifier MINOR",
+    "TRACKED_LANGUAGE_BANS",
+    "T-904 8ff5d1e1 makefile fix",
+]
 estimated = ["scope"]
-migration_legacy = ['''Wave 235 adversarial verifier MINOR on 94593f72 / 63820ef6. TRACKED_LANGUAGE_BANS compares `e == ext` case-sensitively. Planted scripts/_t904_nosh.SH (echo, no shebang), .PY, .MK all stayed GREEN (rc=0). The same .SH WITH #!/usr/bin/env bash is RED via parsed shebang. GNU make `makefile` basename was fixed in-wave (T-904 8ff5d1e1). REPRO: printf 'echo x\n' > scripts/_case.SH && git add scripts/_case.SH && cargo xtask verify no-shell  # expect FAIL on a ban; today OK. git rm the plant. Not dispatched. Do not start the registry-split program.''']
 
 [scope]
 domain = "repo"

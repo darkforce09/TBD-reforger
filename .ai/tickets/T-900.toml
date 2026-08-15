@@ -1,12 +1,54 @@
 id = "T-900"
 kind = "work"
-title = "T-853 Phase 4: retire doc references to things that no longer exist"
+title = "T-853 Phase 4: retire stale doc references"
 summary = "T-853 Phase 4: retire doc references to things that no longer exist"
 class = "docs"
 status = "shipped"
 order = 5800
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+The Makefile sweep rewrote 137 live docs but did not catch references to tools deleted EARLIER. Example found 2026-08-13: apps/mod/README.md:64 says `make web  # Vite dev server on :5173` — the React app was deleted at T-159.29.3 and Vite with it. Sweep for references to: make targets, the React/Vite app, `scripts/*.sh` paths (only wave.sh and hostrun.sh remain), and `node`/`npm` outside the enfusion-mcp floor. Rewrite LIVE docs only. Do NOT touch the historical record: SHIPPED_HISTORY, generated TICKET_*.md, registry.json ticket prose, .ai/artifacts/** incl. every verify-log, wave_plan.tsv, applied migrations, and the byte-for-byte port narratives in xtask/src/mk_*.rs. Those describe what was true then. ACCEPTANCE: prove the change BITES — perturb the new subject and watch it go red — not merely that it passes. A green run alone is not evidence (T-556). Finish with a full `cargo xtask platform wave gate` PASS: it is the only check that sees cross-crate breakage, and it has caught defects a green `cargo test -p xtask` could not. Spec: docs/platform/t853_shell_to_xtask_waves.md
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["The Makefile sweep rewrote 137 live docs but did not catch references to tools deleted EARLIER. Example found 2026-08-13: apps/mod/README.md:64 says `make web  # Vite dev server on :5173` — the React app was deleted at T-159.29.3 and Vite with it. Sweep for references to: make targets, the React/Vite app, `scripts/*.sh` paths (only wave.sh and hostrun.sh remain), and `node`/`npm` outside the enfusion-mcp floor. Rewrite LIVE docs only. Do NOT touch the historical record: SHIPPED_HISTORY, generated TICKET_*.md, registry.json ticket prose, .ai/artifacts/** incl. every verify-log, wave_plan.tsv, applied migrations, and the byte-for-byte port narratives in xtask/src/mk_*.rs. Those describe what was true then. ACCEPTANCE: prove the change BITES — perturb the new subject and watch it go red — not merely that it passes. A green run alone is not evidence (T-556). Finish with a full `cargo xtask platform wave gate` PASS: it is the only check that sees cross-crate breakage, and it has caught defects a green `cargo test -p xtask` could not. Spec: docs/platform/t853_shell_to_xtask_waves.md"]
+
+missing=0"""
+main_goal = "Sweep live docs for references to deleted make targets React Vite and shell scripts."
+context = [
+    "Makefile sweep rewrote 137 live docs; missed tools deleted earlier.",
+    "Example apps/mod/README.md:64 make web Vite dev server on :5173.",
+    "React app deleted T-159.29.3; Vite with it.",
+]
+requirement = [
+    "Sweep make targets React/Vite app scripts/*.sh node/npm outside enfusion-mcp.",
+    "Only wave.sh and hostrun.sh remain among scripts/*.sh paths.",
+    "Rewrite LIVE docs only; do NOT touch historical record.",
+]
+current_state = [
+    "Live docs still reference make targets Vite React deleted scripts.",
+    "Historical record SHIPPED_HISTORY TICKET_*.md registry verify-logs untouched.",
+    "xtask/src/mk_*.rs port narratives describe what was true then.",
+]
+approach = [
+    "Perturb new subject and watch it go red T-556 anti-vacuity.",
+    "Finish with full cargo xtask platform wave gate PASS.",
+    "Green cargo test -p xtask alone could miss cross-crate breakage.",
+]
+verify = [
+    "ACCEPTANCE: prove change BITES; perturb subject watch it go red.",
+    "A green run alone is not evidence T-556 anti-vacuity.",
+    "cargo xtask platform wave gate PASS; sees cross-crate breakage.",
+]
+citations = [
+    "T-159.29.3 React deletion",
+    "T-556 anti-vacuity",
+    "apps/mod/README.md:64 make web",
+    "t853_shell_to_xtask_waves.md",
+]
 shipped_at = "776c9522"
 created_at = "2026-08-12T23:47:51Z"
 completed_at = "2026-08-13T00:30:42Z"
@@ -18,7 +60,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = ["The Makefile sweep rewrote 137 live docs but did not catch references to tools deleted EARLIER. Example found 2026-08-13: apps/mod/README.md:64 says `make web  # Vite dev server on :5173` — the React app was deleted at T-159.29.3 and Vite with it. Sweep for references to: make targets, the React/Vite app, `scripts/*.sh` paths (only wave.sh and hostrun.sh remain), and `node`/`npm` outside the enfusion-mcp floor. Rewrite LIVE docs only. Do NOT touch the historical record: SHIPPED_HISTORY, generated TICKET_*.md, registry.json ticket prose, .ai/artifacts/** incl. every verify-log, wave_plan.tsv, applied migrations, and the byte-for-byte port narratives in xtask/src/mk_*.rs. Those describe what was true then. ACCEPTANCE: prove the change BITES — perturb the new subject and watch it go red — not merely that it passes. A green run alone is not evidence (T-556). Finish with a full `cargo xtask platform wave gate` PASS: it is the only check that sees cross-crate breakage, and it has caught defects a green `cargo test -p xtask` could not. Spec: docs/platform/t853_shell_to_xtask_waves.md"]
 owns = [
     "docs",
     "apps/mod/README.md",

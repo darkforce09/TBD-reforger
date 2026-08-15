@@ -1,14 +1,44 @@
 id = "T-906"
 kind = "work"
-title = "Split T-145 API SIZE-3 files (7) the T-899 allowlist is holding"
+title = "Split 7 T-145 API SIZE-3 allowlist files"
 summary = "Split T-145 API SIZE-3 files (7) the T-899 allowlist is holding"
 class = "feature"
 status = "queued"
 order = 5860
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
-estimated = ["scope"]
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+T-899 allowlisted 7 live website-api files over 1000 lines. Split them; drop the SIZE-3 rows. Files: apps/website/api/src/app.rs, handlers/admin.rs, handlers/events.rs, handlers/missions.rs, handlers/oauth.rs, handlers/telemetry.rs, services/mission_compile.rs. Do NOT split apps/website/api/src/contract/generated/faction_library.rs — generated schema-codegen output, expires 2027-08-13, do-not-split. Not dispatched in waves 234-235. Not the registry-split program.
+
+--- HEAD migration_legacy line (verbatim) ---
+
 migration_legacy = ["T-899 allowlisted 7 live website-api files over 1000 lines. Split them; drop the SIZE-3 rows. Files: apps/website/api/src/app.rs, handlers/admin.rs, handlers/events.rs, handlers/missions.rs, handlers/oauth.rs, handlers/telemetry.rs, services/mission_compile.rs. Do NOT split apps/website/api/src/contract/generated/faction_library.rs — generated schema-codegen output, expires 2027-08-13, do-not-split. Not dispatched in waves 234-235. Not the registry-split program."]
+
+missing=0"""
+main_goal = "Split 7 T-899-allowlisted API SIZE-3 files; drop allowlist rows."
+context = [
+    "T-899 allowlisted 7 live website-api files over 1000 lines.",
+    "Not dispatched in waves 234-235.",
+    "Not the registry-split program.",
+]
+requirement = [
+    "Split the seven live files; drop SIZE-3 allowlist rows.",
+    "Do NOT split contract/generated/faction_library.rs schema-codegen output.",
+]
+current_state = [
+    "seven website-api src files over 1000 lines on T-899 allowlist.",
+    "faction_library.rs generated expires 2027-08-13 do-not-split.",
+]
+approach = ["Split each listed website-api file over 1000 lines."]
+verify = ["Split them; drop the SIZE-3 rows."]
+citations = [
+    "T-899 SIZE-3 allowlist",
+    "t853_shell_to_xtask_waves.md",
+    "apps/website/api/src",
+]
+estimated = ["scope"]
 owns = [
     "apps/website/api/src/app.rs",
     "apps/website/api/src/handlers/admin.rs",

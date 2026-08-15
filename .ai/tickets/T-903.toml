@@ -7,6 +7,42 @@ status = "shipped"
 order = 5830
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+hostrun.sh's last consumer is scripts/platform/wave.sh. Its Rust successor xtask/src/hostrun.rs already exists, is shared with playtest_server, and has a live test proving the bridge crosses the container wall (glibc 2.36 in-container vs 2.43 on the host). Delete the script and its inventory line ONLY after wave.sh is gone — order matters, and BLOCKED ON the wave.sh slice in this wave. This is the last tracked shell file in the repository. ACCEPTANCE: prove the change BITES — perturb the new subject and watch it go red — not merely that it passes. A green run alone is not evidence (T-556). Finish with a full `cargo xtask platform wave gate` PASS: it is the only check that sees cross-crate breakage, and it has caught defects a green `cargo test -p xtask` could not. Spec: docs/platform/t853_shell_to_xtask_waves.md
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["hostrun.sh's last consumer is scripts/platform/wave.sh. Its Rust successor xtask/src/hostrun.rs already exists, is shared with playtest_server, and has a live test proving the bridge crosses the container wall (glibc 2.36 in-container vs 2.43 on the host). Delete the script and its inventory line ONLY after wave.sh is gone — order matters, and BLOCKED ON the wave.sh slice in this wave. This is the last tracked shell file in the repository. ACCEPTANCE: prove the change BITES — perturb the new subject and watch it go red — not merely that it passes. A green run alone is not evidence (T-556). Finish with a full `cargo xtask platform wave gate` PASS: it is the only check that sees cross-crate breakage, and it has caught defects a green `cargo test -p xtask` could not. Spec: docs/platform/t853_shell_to_xtask_waves.md"]
+
+missing=0"""
+main_goal = "Delete hostrun.sh after wave.sh gone; last tracked shell file."
+context = [
+    "hostrun.sh last consumer is scripts/platform/wave.sh.",
+    "xtask/src/hostrun.rs exists shared with playtest_server.",
+    "live test proves bridge crosses container wall glibc 2.36 vs 2.43.",
+]
+requirement = [
+    "Delete script and inventory line ONLY after wave.sh is gone.",
+    "BLOCKED ON wave.sh slice in this wave; order matters.",
+]
+current_state = [
+    "last tracked shell file in the repository.",
+    "hostrun.rs already exists with live container-wall test.",
+]
+approach = ["wait for wave.sh slice before deleting hostrun.sh."]
+verify = [
+    "prove the change BITES — perturb new subject watch it go red.",
+    "A green run alone is not evidence T-556.",
+    "Finish with full cargo xtask platform wave gate PASS.",
+]
+citations = [
+    "t853_shell_to_xtask_waves.md",
+    "T-556 anti-vacuity",
+    "cargo xtask platform wave gate",
+    "glibc 2.36 container wall bridge",
+]
 shipped_at = "35c15a6b"
 created_at = "2026-08-13T01:45:56Z"
 completed_at = "2026-08-13T01:48:36Z"
@@ -18,7 +54,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = ["hostrun.sh's last consumer is scripts/platform/wave.sh. Its Rust successor xtask/src/hostrun.rs already exists, is shared with playtest_server, and has a live test proving the bridge crosses the container wall (glibc 2.36 in-container vs 2.43 on the host). Delete the script and its inventory line ONLY after wave.sh is gone — order matters, and BLOCKED ON the wave.sh slice in this wave. This is the last tracked shell file in the repository. ACCEPTANCE: prove the change BITES — perturb the new subject and watch it go red — not merely that it passes. A green run alone is not evidence (T-556). Finish with a full `cargo xtask platform wave gate` PASS: it is the only check that sees cross-crate breakage, and it has caught defects a green `cargo test -p xtask` could not. Spec: docs/platform/t853_shell_to_xtask_waves.md"]
 owns = [
     "scripts/lib/hostrun.sh",
     "scripts/shell-inventory.txt",

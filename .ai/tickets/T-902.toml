@@ -1,12 +1,53 @@
 id = "T-902"
 kind = "work"
-title = "T-853 Phase 6: retire wave.sh — the verdict diff, then the deletion"
+title = "T-853 Phase 6: wave.sh verdict diff then delete"
 summary = "T-853 Phase 6: retire wave.sh — the verdict diff, then the deletion"
 class = "docs"
 status = "shipped"
 order = 5820
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+wave.sh is ported and waves 231-232 already ran END TO END under the Rust driver (prep, three parallel slices, per-slice land with two hand-resolved conflicts, full gate, close, push). What has NOT been done is a side-by-side bash-vs-Rust verdict comparison on a real wave. Do that: run `cargo xtask platform wave diff all` (31 arms) plus `diff base` (proves base derivation identical over ALL ~2760 commits), and run one real wave's gate under BOTH drivers, diffing normalised output. Only then delete scripts/platform/wave.sh and its inventory lines (shell AND python — it is the last python3 entry). Repoint every caller; `git grep -n 'wave\\.sh'` must return only historical records afterwards. ACCEPTANCE: prove the change BITES — perturb the new subject and watch it go red — not merely that it passes. A green run alone is not evidence (T-556). Finish with a full `cargo xtask platform wave gate` PASS: it is the only check that sees cross-crate breakage, and it has caught defects a green `cargo test -p xtask` could not. Spec: docs/platform/t853_shell_to_xtask_waves.md
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ['''wave.sh is ported and waves 231-232 already ran END TO END under the Rust driver (prep, three parallel slices, per-slice land with two hand-resolved conflicts, full gate, close, push). What has NOT been done is a side-by-side bash-vs-Rust verdict comparison on a real wave. Do that: run `cargo xtask platform wave diff all` (31 arms) plus `diff base` (proves base derivation identical over ALL ~2760 commits), and run one real wave's gate under BOTH drivers, diffing normalised output. Only then delete scripts/platform/wave.sh and its inventory lines (shell AND python — it is the last python3 entry). Repoint every caller; `git grep -n 'wave\\.sh'` must return only historical records afterwards. ACCEPTANCE: prove the change BITES — perturb the new subject and watch it go red — not merely that it passes. A green run alone is not evidence (T-556). Finish with a full `cargo xtask platform wave gate` PASS: it is the only check that sees cross-crate breakage, and it has caught defects a green `cargo test -p xtask` could not. Spec: docs/platform/t853_shell_to_xtask_waves.md''']
+
+missing=0"""
+main_goal = "Retire wave.sh after bash-vs-Rust verdict diff; delete script and repoint callers."
+context = [
+    "waves 231-232 ran END TO END under Rust driver already.",
+    "Side-by-side bash-vs-Rust verdict comparison on real wave not done yet.",
+    "scripts/platform/wave.sh is last python3 entry in python-inventory.",
+]
+requirement = [
+    "Run cargo xtask platform wave diff all 31 arms plus diff base.",
+    "Run one real wave gate under BOTH drivers; diff normalised output.",
+    "Only then delete wave.sh and inventory lines shell AND python.",
+    "Repoint every caller; git grep wave.sh only historical records.",
+]
+current_state = [
+    "wave.sh ported; waves 231-232 ran under Rust driver end to end.",
+    "bash-vs-Rust verdict comparison on real wave not yet done.",
+]
+approach = [
+    "diff base proves base derivation identical over ALL ~2760 commits.",
+    "diff normalised gate output under bash and Rust drivers.",
+]
+verify = [
+    "prove the change BITES — perturb new subject watch it go red.",
+    "A green run alone is not evidence T-556.",
+    "Finish with full cargo xtask platform wave gate PASS.",
+]
+citations = [
+    "t853_shell_to_xtask_waves.md",
+    "T-556 anti-vacuity",
+    "cargo xtask platform wave gate",
+    "cargo xtask platform wave diff",
+]
 shipped_at = "8f30f727"
 created_at = "2026-08-13T01:27:14Z"
 completed_at = "2026-08-13T01:30:42Z"
@@ -18,7 +59,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ['''wave.sh is ported and waves 231-232 already ran END TO END under the Rust driver (prep, three parallel slices, per-slice land with two hand-resolved conflicts, full gate, close, push). What has NOT been done is a side-by-side bash-vs-Rust verdict comparison on a real wave. Do that: run `cargo xtask platform wave diff all` (31 arms) plus `diff base` (proves base derivation identical over ALL ~2760 commits), and run one real wave's gate under BOTH drivers, diffing normalised output. Only then delete scripts/platform/wave.sh and its inventory lines (shell AND python — it is the last python3 entry). Repoint every caller; `git grep -n 'wave\.sh'` must return only historical records afterwards. ACCEPTANCE: prove the change BITES — perturb the new subject and watch it go red — not merely that it passes. A green run alone is not evidence (T-556). Finish with a full `cargo xtask platform wave gate` PASS: it is the only check that sees cross-crate breakage, and it has caught defects a green `cargo test -p xtask` could not. Spec: docs/platform/t853_shell_to_xtask_waves.md''']
 owns = [
     "scripts/platform/wave.sh",
     "xtask/src/wave",

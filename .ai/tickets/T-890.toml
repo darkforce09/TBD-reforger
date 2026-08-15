@@ -7,6 +7,48 @@ status = "shipped"
 order = 5710
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+T-853 shell->xtask slice. Port scripts/mod/wave.sh to `cargo xtask mod wave` and delete the script(s), their scripts/shell-inventory.txt line(s), any scripts/python-inventory.txt line(s), and repoint every caller. 232 lines, 1 python3 site. Reads docs/mod/wave_plan.tsv, manages .ai/artifacts/worktrees. Lower risk than platform/wave.sh because the T-181 mod program is complete. DO NOT touch scripts/platform/wave.sh beyond repointing call sites. ACCEPTANCE IS BYTE-FOR-BYTE: capture bash stdout+stderr+rc first, then diff on a clean tree AND on >=2 deliberately broken trees; the harness must assert the BASH side went red before believing a diff. A green run alone is not evidence (T-556). Build on crates/tbd-gate. Spec: docs/platform/t853_shell_to_xtask_waves.md
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["T-853 shell->xtask slice. Port scripts/mod/wave.sh to `cargo xtask mod wave` and delete the script(s), their scripts/shell-inventory.txt line(s), any scripts/python-inventory.txt line(s), and repoint every caller. 232 lines, 1 python3 site. Reads docs/mod/wave_plan.tsv, manages .ai/artifacts/worktrees. Lower risk than platform/wave.sh because the T-181 mod program is complete. DO NOT touch scripts/platform/wave.sh beyond repointing call sites. ACCEPTANCE IS BYTE-FOR-BYTE: capture bash stdout+stderr+rc first, then diff on a clean tree AND on >=2 deliberately broken trees; the harness must assert the BASH side went red before believing a diff. A green run alone is not evidence (T-556). Build on crates/tbd-gate. Spec: docs/platform/t853_shell_to_xtask_waves.md"]
+
+missing=0"""
+main_goal = "Port mod wave.sh to cargo xtask mod wave; do not touch platform wave."
+context = [
+    "T-853 shell->xtask slice; 232 lines one python3 site MOD wave driver.",
+    "Reads docs/mod/wave_plan.tsv; manages .ai/artifacts/worktrees.",
+    "Lower risk than platform/wave.sh; T-181 mod program complete.",
+]
+requirement = [
+    "Delete script(s) shell-inventory.txt line(s) python-inventory.txt line(s).",
+    "Port to cargo xtask mod wave; repoint every caller.",
+    "DO NOT touch scripts/platform/wave.sh beyond repointing call sites.",
+]
+current_state = [
+    "scripts/mod/wave.sh bash wave driver live today.",
+    "platform/wave.sh separate; repoint call sites only.",
+]
+approach = [
+    "Capture bash stdout stderr rc first as byte-for-byte baseline.",
+    "Diff port on clean tree and >=2 deliberately broken trees.",
+    "Harness must assert BASH side went red before believing diff.",
+]
+verify = [
+    "Capture bash stdout stderr rc baseline recorded first.",
+    "Diff on clean tree AND >=2 deliberately broken trees.",
+    "Harness asserts BASH side went red; green run alone not evidence T-556.",
+]
+citations = [
+    "T-853 shell->xtask program",
+    "T-181 mod program complete",
+    "T-556 anti-vacuity",
+    "t853_shell_to_xtask_waves.md",
+    "crates/tbd-gate",
+]
 shipped_at = "29621118"
 created_at = "2026-08-12T10:40:09Z"
 completed_at = "2026-08-12T10:40:39Z"
@@ -18,7 +60,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["T-853 shell->xtask slice. Port scripts/mod/wave.sh to `cargo xtask mod wave` and delete the script(s), their scripts/shell-inventory.txt line(s), any scripts/python-inventory.txt line(s), and repoint every caller. 232 lines, 1 python3 site. Reads docs/mod/wave_plan.tsv, manages .ai/artifacts/worktrees. Lower risk than platform/wave.sh because the T-181 mod program is complete. DO NOT touch scripts/platform/wave.sh beyond repointing call sites. ACCEPTANCE IS BYTE-FOR-BYTE: capture bash stdout+stderr+rc first, then diff on a clean tree AND on >=2 deliberately broken trees; the harness must assert the BASH side went red before believing a diff. A green run alone is not evidence (T-556). Build on crates/tbd-gate. Spec: docs/platform/t853_shell_to_xtask_waves.md"]
 owns = ["scripts/mod/wave.sh"]
 
 [scope]
