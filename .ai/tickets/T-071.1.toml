@@ -1,11 +1,20 @@
 id = "T-071.1"
 kind = "work"
-title = "T-071.1"
+title = "Squad CRUD and inter-squad moves"
 summary = "T-071.1"
 class = "feature"
 status = "shipped"
 order = 710
 parent = "T-071"
+main_goal = "Squad CRUD and move slots between squads in ORBAT Manager."
+context = ["T-071.1 intent; superseded by T-180 program slices."]
+requirement = ["Create/rename/delete squads; drag slots across squads in modal."]
+current_state = ["T-071.0 shell only; no squad authoring yet."]
+approach = ["Do not implement separately; authority moves to T-180.1–.9."]
+citations = [
+    "Source: t071_orbat_manager_program.md.",
+    "Source: SHIPPED_HISTORY T-180.",
+]
 created_at = "2026-07-03T00:00:00Z"
 completed_at = "2026-07-03T00:00:00Z"
 estimated = [

@@ -9,6 +9,15 @@ spec = "docs/specs/Mission_Creator_Architecture/t068_9_registry_worker_ingest.md
 executor = "claude-code"
 notes = "1,880 items / 4,012 edges in DB; GET /registry/compat; worker canEquip/canAttach. make registry-import. Verify: .ai/artifacts/t068_9_verify_log.md"
 parent = "T-068"
+main_goal = "Ingest T-150 items and compat edges; API plus Comlink worker with canEquip/canAttach."
+context = ["T-150 committed 1,880 items and 4,012 edges; site still served thin seed."]
+requirement = ["Idempotent Postgres ingest; GET /registry/compat; worker IDB cache and adjacency queries."]
+current_state = ["Smart arsenal blocked without DB ingest and off-thread graph worker."]
+approach = ["import-registry CLI; registry.worker.ts Comlink client; verify log G1-G10."]
+citations = [
+    "Source: commit d41418e5.",
+    "Source: t068_9_registry_worker_ingest.md.",
+]
 shipped_at = "d41418e5"
 created_at = "2026-07-10T19:53:31Z"
 completed_at = "2026-07-11T00:22:40Z"

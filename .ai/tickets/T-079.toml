@@ -1,6 +1,6 @@
 id = "T-079"
 kind = "work"
-title = "Triggers — the editor half: palette mode, area geometry, owner link"
+title = "Triggers editor palette area owner link"
 summary = "Triggers — the editor half: palette mode, area geometry, owner link"
 class = "chore"
 status = "shipped"
@@ -8,27 +8,28 @@ order = 4040
 executor = "claude-code"
 notes = "editor-UI program wave 9 (wave_plan.tsv row 109) — SHIPPED wave 109 (editor factory), slice 4f37145c; verifier wave109.md"
 depends_on = ["T-661"]
+main_goal = "TRIGGERS editor half: palette mode area owner link."
 context = [
-    "PROMOTED AND SPLIT FOUR WAYS.",
-    "T-079 as filed absorbed 14 ids across three unrelated entity families — the largest single absorber in the interactions sweep — and could not be dispatched as one ticket.",
-    "The other three: waypoints and the trigger activation/effects runtime are workbench tickets",
-    "(waypoints are blocked on AI units existing at all — TBD_SpawnManager.c:963,1166 spawns every body with AI disabled, so a waypoint has no subject;",
-    "the activation model is a new Enfusion runtime);",
-    "the connection graph is its own factory ticket;",
-    "systems/modules is NOT FILED because the SYS family declares no ids in attributes.md:223-225 and cannot be sized.",
-    "NOTE for scoping: $defs/zoneRules' 16 keys have no ATTR-FIELD id and were never triaged against Eden,",
-    "but they are the closest thing TBD has to trigger semantics and belong in this ticket's reading.",
+    "T-079 split four ways; largest interactions absorber.",
+    "Waypoints and activation runtime are workbench tickets.",
 ]
-requirement = ["This row is the TRIGGERS slice and the EDITOR HALF ONLY: `RIGHT-MODE-003` and `CONN-TRG-OWNER-001`."]
+requirement = [
+    "RIGHT-MODE-003 and CONN-TRG-OWNER-001 editor half only.",
+    "Trigger geometry rides T-582 zone draw tool.",
+]
 current_state = [
-    "`zones_panel` (eden_chrome.rs:2228), `ZoneShape` :3660, `circle_from_clicks` :3626, `zone_rule_fields` :3443, now in eden_zones.rs;",
-    "the command surface is large and already in editor_ops.rs (`zone_draw_armed` :2325, `begin_zone_draw` :2350, `begin_zone_reshape` :2378, `cancel_zone_draw` :2400, `zone_draw_pop_vertex` :2412,",
-    "`advance_zone_draw` :2436, `close_zone_polygon` :2499, `zone_rows` :2579, `set_zone_rule` :2688, `delete_zone` :2717) and a trigger area is a second consumer of all of it.",
+    "zones_panel zone draw ops in editor_ops.rs.",
+    "Trigger entity map follows markersById precedent.",
 ]
 approach = [
-    "Code: another PaletteKind variant + tab strip entry in post-split eden_dock_right.rs (eden_chrome.rs:1833, :3041-3046).",
-    "Trigger GEOMETRY rides the SHIPPED T-582 zone draw tool rather than inventing a second one:",
-    "A trigger entity map in store.rs follows the markersById :355 / zones precedent.",
+    "PaletteKind variant plus tab in eden_dock_right.",
+    "Reuse zone draw; trigger map in store.rs.",
+]
+verify = ["wave 109 GATE PASS run 1."]
+citations = [
+    "Source: commit 93a8da83.",
+    "Source: wave109 verifier filing.",
+    "Source: editor wave 109 notes.",
 ]
 shipped_at = "93a8da83"
 created_at = "2026-08-02T07:02:27Z"

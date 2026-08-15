@@ -9,44 +9,16 @@ spec = "docs/specs/Mission_Creator_Architecture/t069_markers_on_map.md"
 executor = "claude-code"
 notes = "editor-UI program wave 16 (wave_plan.tsv row 116) — SHIPPED wave 116 (editor factory), 91c8e930; verifier wave116.md. The four schema-carried fields authored on briefings[].markers[] (see the PREMISE CORRECTED note in the summary — the ticket's markersById instruction was wrong and was refused). Also shipped the READ half T-345 never wrote, which is why its two mutators had zero callers. Icon vocabulary PARSED from the schema's own 64-alias enum, not hand-copied. map-engine-render is absent from the diff entirely, so the T-672 collision in wave 117 is dissolved. ⚠️ Markers DRAW NOTHING on the map — no render lane; see T-760."
 depends_on = ["T-661"]
-context = [
-    "PROMOTED, RESCOPED, AND MERGED WITH T-213 (cancelled in favour of this row — the two were the same job under two names).",
-    "Keeps this id because it owns the in-code stub message and the test that pins it.",
-    "This is the one absent-entity family that is factory-dispatchable today, because $defs/marker already declares the four fields and the icon enum is closed at 64 aliases,",
-    "so the marker CORE needs no schema edit at all.",
-    "|| PREMISE CORRECTED 2026-08-07 (wave 116, verified independently by the adversarial verifier):",
-    "the instruction above to give `markersById` 'generic add/move/remove' for free placement is WRONG and was NOT followed.",
-]
-requirement = [
-    "SCOPE: the four schema-carried fields only — `ATTR-FIELD-MRK-TYPE`, `-MRK-TEXT`, `-MRK-POSITION` against `$defs/marker` = {x, z, icon, label}, plus `RIGHT-MODE-006`.",
-    "Marker STYLE (size / rotation / shape / brush / colour / alpha) and Eden's whole second Area-marker model are a $defs/marker widening",
-    "and are a workbench ticket that must ship AFTER this one, or this converts from a factory ticket into a workbench one.",
-]
-current_state = [
-    'Code: the whole right-dock stub — tab button `{tab_btn(2, "Markers")}` at eden_chrome.rs:3046',
-    'and a body that is the `_ =>` fallthrough arm reading "Marker placement lands in T-069." at :3337;',
-    "PaletteKind :1833 has three variants and needs a fourth.",
-    "`grep -c marker editor_ops.rs` -> 0: not one marker command exists in the SPA's mutation surface.",
-    "In store.rs `markersById` is a declared root :355 with `marker_any(id, x, z, icon, label)` :3048 and `marker_row_id` :3033 already written,",
-    "but the ONLY two mutators — `set_faction_briefing_marker` :2030 and `remove_faction_briefing_marker` :2070 — are faction-briefing scoped with zero product callers,",
-    "so free placement needs generic add/move/remove.",
-    "RENDER PATH, graded medium and the thing to check FIRST: `crates/map-engine-render/src/draw_order.rs` declares every lane",
-    "(`LaneRole` :9; mission lanes MissionZones :55, SquadLinks :57, MissionVehicles, Slots) and there is NO marker lane,",
-    "and `upload_icon_lane` (engine.rs:3555) is a CLOSED three-arm match over world assets.",
-    "All 10 `marker` hits in that 6,302-line file were read and none is a mission marker.",
-    "mission.schema.json's top level declares 19 closed properties with additionalProperties:false and NO `markers` key;",
-    "the only marker declaration in the whole schema is $defs/briefing.markers[]; and flatten's EditorPayload declares no root markers key either.",
-    "Markers authored into the root map reach NOTHING — they would have been invisible to every mod subsystem.",
-    "Shipped on briefings[].markers[] instead, where derive_briefings compiles them and the mod's TBD_MarkerService draws them.",
-    "The markersById root map is still standing (has_content counts it for the warm-session conflict gate); removing it is a migration, not a marker ticket.",
-]
-approach = [
-    "TWO DEAD PREMISES TO FIX BEFORE STARTING: T-213's spec cited a `state/schema.ts` that no longer exists (the React tree was deleted at T-159.29.3),",
-    "and THIS TICKET'S OWN SPEC PREMISE at docs/specs/Mission_Creator_Architecture/t069_markers_on_map.md IS CONFIRMED DEAD — rewrite it first.",
-    "BUT if markers can ride the slot SoA that editor_ops.rs already uploads via `core.materialize()`, BOTH crate paths drop and this ticket stops touching map-engine-render at all.",
-    "Trace `slots_gpu` before assuming the lane.",
-]
+main_goal = "Author four $defs/marker fields on briefings[].markers[]; no GPU render lane."
+context = ["Merged T-213; root markersById dead; mod draws briefing markers only."]
+requirement = ["x/z/icon/label on briefings[].markers[]; 64-alias icon enum; RIGHT-MODE-006."]
+current_state = ["Markers tab stub; zero editor_ops; map-engine-render lacks marker lane."]
+approach = ["Briefing marker mutators; PaletteKind Marker; render deferred to T-760."]
 verify = ["Pinned by store.rs::a_marker_in_the_root_map_never_reaches_the_compiled_document."]
+citations = [
+    "Source: commit 70a255f0.",
+    "Source: t069_markers_on_map.md.",
+]
 shipped_at = "70a255f0"
 created_at = "2026-07-09T18:47:21Z"
 completed_at = "2026-08-07T05:32:35Z"

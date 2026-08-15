@@ -1,6 +1,6 @@
 id = "T-068.8"
 kind = "work"
-title = "T-068.8"
+title = "Workbench compat matrix export"
 summary = "T-068.8"
 class = "feature"
 status = "shipped"
@@ -8,6 +8,23 @@ order = 680
 executor = "claude-code"
 notes = "Superseded/implemented by T-150 universal export (compat envelope + items). Tag T-150."
 parent = "T-068"
+main_goal = "Workbench exports compat edges JSON for registry_compat ingest."
+context = ["Smart Forge needs attachment mag ammo compatibility from game assets."]
+requirement = [
+    "Export script emits compat graph per T-068.7 edge taxonomy.",
+    "Sample export committed; validate registry-compat schema after T-068.9.",
+    "At least fifty edges; node IDs are full ResourceName strings.",
+]
+current_state = ["Compat data lived only in game assets not exported JSON."]
+approach = [
+    "Workbench export tooling per T-068.1 MCP pattern.",
+    "Implemented by T-150 universal export; tag T-150 supersedes slice.",
+]
+citations = [
+    "t068_8_workbench_compat_export.md",
+    "commit 9107bf4e",
+    "notes superseded T-150",
+]
 shipped_at = "9107bf4e"
 created_at = "2026-06-26T00:00:00Z"
 completed_at = "2026-07-31T00:00:00Z"

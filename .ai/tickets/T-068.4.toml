@@ -1,12 +1,22 @@
 id = "T-068.4"
 kind = "work"
-title = "T-068.4"
+title = "Dumb Arsenal loadout picker JSON download"
 summary = "T-068.4"
 class = "feature"
 status = "shipped"
 order = 680
 executor = "claude-code"
 parent = "T-068"
+main_goal = "Four gear dropdowns + loadout JSON download."
+context = ["T-068.3 registry; Arsenal was stub."]
+requirement = ["Character slots only; schema-valid export."]
+current_state = ["Disabled Forge stub copy."]
+approach = ["ArsenalTab; loadoutExport.ts."]
+citations = [
+    "t068_4_dumb_loadout_ui.md",
+    "commit a85f16b4",
+    "SHIPPED_HISTORY T-068.4",
+]
 shipped_at = "e34c9689"
 created_at = "2026-06-26T18:48:44Z"
 completed_at = "2026-06-26T19:32:46Z"

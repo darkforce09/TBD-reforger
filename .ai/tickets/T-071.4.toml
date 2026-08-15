@@ -1,11 +1,20 @@
 id = "T-071.4"
 kind = "work"
-title = "T-071.4"
+title = "Standardizations per-slot Arsenal link"
 summary = "T-071.4"
 class = "feature"
 status = "shipped"
 order = 710
 parent = "T-071"
+main_goal = "Standardizations and per-slot Arsenal link per ladder."
+context = ["T-071.1+ ladder tail; grouped with logos in cutover."]
+requirement = ["Standardizations and per-slot Arsenal per ladder filing."]
+current_state = ["Superseded by T-180; standardizations deferred operator."]
+approach = ["Do not implement separately; T-180 owns ORBAT authoring."]
+citations = [
+    "Source: t071_orbat_manager_program.md.",
+    "Source: t177_orbat_cutover slice ladder.",
+]
 created_at = "2026-07-03T00:00:00Z"
 completed_at = "2026-07-03T00:00:00Z"
 estimated = [

@@ -8,22 +8,28 @@ order = 4130
 executor = "claude-code"
 notes = "editor-UI program wave 13 (wave_plan.tsv row 113) — SHIPPED wave 113 (editor factory), 5d7f334a; verifier wave113.md. Entity Type + a real Role Description field, both on T-649's per-field opt-in gate. Required a NEW core mutator update_slot_object (store.rs, OUTSIDE the planned owns — no description key existed and no existing mutator could write one without clobbering tag/assetId; the HARD GATE bars shipping half a ticket). Also closed forward-constraint F-7 as the disabled affordance: a refused locked-slot Transform edit can no longer be typed, and no longer dirties the document."
 depends_on = ["T-661"]
+main_goal = "ATTR-FIELD-OBJ-TYPE and ATTR-FIELD-OBJ-ROLE-DESC only."
 context = [
-    'PROMOTED AND SCOPED HARD, because as written "full attribute fields" would silently absorb 20 workbench ids against a 31-id OBJ family.',
-    "Collides with T-649 on both paths; one wave apart by design.",
+    "Promoted hard scope; full attributes would absorb twenty ids.",
+    "Collides T-649 one wave apart by design.",
 ]
 requirement = [
-    "SCOPE, stated so it cannot drift: `ATTR-FIELD-OBJ-TYPE` and `ATTR-FIELD-OBJ-ROLE-DESC` ONLY.",
-    "`ATTR-MULTI-001` / `ATTR-MULTI-CHK-001` route to T-649.",
-    "`OBJ-UNIT-NAME`, `OBJ-CALLSIGN`, `OBJ-RANK` and `OBJ-STANCE` are contract-blocked and route to the workbench program.",
-    "`OBJ-ROLE-DESC` needs a SEPARATE description field — today `role` doubles as both — and `OBJ-TYPE` needs a type control that does not exist.",
+    "Entity Type control and separate Role Description field.",
+    "MULTI and contract-blocked OBJ ids route elsewhere.",
 ]
 current_state = [
-    'Code: `apps/website/frontend/src/attributes.rs` is 367 lines; `identity_tab` :322 has `text_field("Role", ..., "Rifleman", ...)` :326',
-    'and `text_field("Tag", ..., "MED · ENG · SL...", ...)` :330, both writing through `attrs_update_slot`.',
-    "THE REASON TYPE CANNOT BE CHANGED TODAY, and it is not the modal: `read_attrs` (editor_ops.rs:631) builds SlotAttrs from `core.materialize()` :637 and NEVER READS `assetId`,",
-    "even though the core mutator exists at store.rs:1276.",
-    "Writes go through `attrs_update_slot` :796.",
+    "identity_tab Role writes role doubling as description.",
+    "read_attrs never reads assetId; type unchanged.",
+]
+approach = [
+    "Per-field T-649 opt-in gate on both fields.",
+    "New core mutator update_slot_object for description.",
+]
+verify = ["wave 113 GATE PASS 30/30."]
+citations = [
+    "Source: commit ca6acd30.",
+    "Source: wave113 verifier filing.",
+    "Source: editor wave 113 notes.",
 ]
 shipped_at = "ca6acd30"
 created_at = "2026-08-07T02:54:07Z"

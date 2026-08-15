@@ -1,11 +1,20 @@
 id = "T-071.3"
 kind = "work"
-title = "T-071.3"
+title = "ORBAT Manager faction logos slice"
 summary = "T-071.3"
 class = "feature"
 status = "shipped"
 order = 710
 parent = "T-071"
+main_goal = "Faction logos in ORBAT Manager per T-071 ladder."
+context = ["T-071.1+ ladder slice; parent ORBAT Manager program."]
+requirement = ["Faction logos in Manager per T-071.3 ladder filing."]
+current_state = ["Superseded by T-180; no subject commits on id."]
+approach = ["Do not implement; T-180 owns ORBAT authoring."]
+citations = [
+    "Source: t071_orbat_manager_program.md.",
+    "Source: t177_orbat_cutover slice ladder.",
+]
 created_at = "2026-07-03T00:00:00Z"
 completed_at = "2026-07-03T00:00:00Z"
 estimated = [

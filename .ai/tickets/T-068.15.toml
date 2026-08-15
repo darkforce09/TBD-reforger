@@ -9,6 +9,16 @@ spec = "docs/specs/Mission_Creator_Architecture/t068_15_cargo_program.md"
 executor = "cursor-docs"
 notes = "Meta hub — cargo ladder complete through T-068.12. Specs under t068_15_*.md."
 parent = "T-068"
+main_goal = "Cargo ladder hub: export UI compile equip."
+context = ["Virtual Arsenal program meta slice."]
+requirement = ["T-068.15.1/.2 then T-068.11/.12 complete ladder."]
+current_state = ["No capacity export or in-game cargo equip."]
+approach = ["t068_15_cargo_program.md hub; child slices deliver."]
+citations = [
+    "t068_15_cargo_program.md",
+    "commit 0be53e16",
+    "SHIPPED_HISTORY cargo ladder",
+]
 shipped_at = "0be53e16"
 created_at = "2026-06-26T00:00:00Z"
 completed_at = "2026-07-31T00:00:00Z"

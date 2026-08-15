@@ -8,6 +8,23 @@ order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_0_map_program_hub.md"
 executor = "cursor-docs"
 parent = "T-090"
+main_goal = "Publish map/terrain program hub, terrain-manifest schema, stub manifest, and verify specs."
+context = ["Editor used a procedural grid; no manifest or CI terrain gates."]
+requirement = [
+    "Program hub doc linking every slice spec.",
+    "terrain-manifest.schema.json plus stub everon/manifest.json.",
+    "LFS rules and verify-terrain scripts.",
+]
+current_state = ["No aligned tiles; terrains.ts lacked manifestUrl contract."]
+approach = ["Write hub and per-slice specs; add anchors schema and .gitattributes LFS."]
+verify = [
+    "cargo xtask ci schema-validate",
+    "cargo xtask ci verify-terrain",
+]
+citations = [
+    "t090_0_map_program_hub.md spec",
+    "commit e7e7232e T-090.0 subject",
+]
 shipped_at = "e7e7232e"
 created_at = "2026-06-30T15:33:29Z"
 completed_at = "2026-06-30T15:33:29Z"

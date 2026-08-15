@@ -1,12 +1,22 @@
 id = "T-068.2"
 kind = "work"
-title = "T-068.2"
+title = "Registry API dev seed import CLI"
 summary = "T-068.2"
 class = "feature"
 status = "shipped"
 order = 680
 executor = "claude-code"
 parent = "T-068"
+main_goal = "registry_items GET /registry weak ETag seed import."
+context = ["Palette mock until T-068.3."]
+requirement = ["304 ETag; migration seed; import CLI; integration tests."]
+current_state = ["No backend registry route."]
+approach = ["registry handler; migration; import-registry-items CLI."]
+citations = [
+    "t068_2_registry_api.md",
+    "commit 4c609fe0",
+    "SHIPPED_HISTORY T-068.2",
+]
 shipped_at = "0b0d86a8"
 created_at = "2026-06-26T17:50:46Z"
 completed_at = "2026-06-26T18:25:04Z"
