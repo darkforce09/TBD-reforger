@@ -13,10 +13,23 @@ context = ["W3 buildings only; Deck had stack."]
 requirement = ["PolygonFill polyline; Class R parity."]
 current_state = ["No sea roads forest on wgpu."]
 approach = ["Mirror demVector forestMass stores."]
+verify = [
+    "cargo fmt --check",
+    "cargo clippy --all-targets -- -D warnings",
+    "cargo test -p map-engine-core --all-features",
+    "cargo test -p map-engine-render",
+    "make wasm",
+    "cd apps/website/frontend && npm test",
+]
+acceptance = [
+    "Sea contours roads forest and landcover vector lanes drew on wgpu.",
+    "PolygonFill and polyline pipelines passed Class R parity suites.",
+]
 citations = [
     "t151_4_verify_log.md",
     "commit 723490a0",
     "t151_4_vector_layers.md",
+    "t151_4_verify_log W4",
 ]
 shipped_at = "723490a0"
 created_at = "2026-07-09T03:52:47Z"

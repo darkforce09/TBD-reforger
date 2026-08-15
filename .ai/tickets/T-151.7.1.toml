@@ -16,6 +16,18 @@ requirement = [
 ]
 current_state = ["Flaky tint; 1k-slot drag costs FPS; RMB pan wheel drifts anchor."]
 approach = ["Re-materialize selection lane; reuse drag buffer; container position:relative."]
+verify = [
+    "cargo fmt --check",
+    "cargo clippy --all-targets -- -D warnings",
+    "cargo test -p map-engine-core --all-features",
+    "cargo test -p map-engine-render",
+    "cd apps/website/frontend && npm test",
+]
+acceptance = [
+    "Selection tint synced on cluster short-lane flips.",
+    "Drag used delta-only buffer restoring FPS on thousand-slot moves.",
+    "Wheel zoom-at-cursor unified on one container CSS rect.",
+]
 citations = [
     "t151_7_1_verify_log.md",
     "commit fa6ad959",

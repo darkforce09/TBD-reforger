@@ -13,6 +13,18 @@ context = ["Empty upload cleared buildings mid-flight."]
 requirement = ["Skip empty upload; miter round caps."]
 current_state = ["Town footprints vanished at curves."]
 approach = ["expand_polyline_strip miters."]
+verify = [
+    "cargo fmt --check",
+    "cargo clippy --all-targets -- -D warnings",
+    "cargo test -p map-engine-core --all-features",
+    "cargo test -p map-engine-render",
+    "make wasm",
+    "cd apps/website/frontend && npm test",
+]
+acceptance = [
+    "Empty mid-flight upload stopped clearing the building GPU lane.",
+    "Polyline miter joins and round caps fixed road tears at curves.",
+]
 citations = [
     "t151_4_1_verify_log.md",
     "commit 552e68aa",

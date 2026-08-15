@@ -14,10 +14,19 @@ requirement = [
 ]
 current_state = ["Go API backend; Yjs doc in browser."]
 approach = ["Incremental F1–F4 phases; F4 @ a228ed98 removes Yjs."]
+verify = [
+    "make rust-ci",
+    "make schema-codegen && git diff --exit-code",
+]
+acceptance = [
+    "Go backend replaced by Axum and sqlx Rust API at cutover.",
+    "WasmMissionDoc became sole mission doc core; yjs removed at F4.",
+]
 citations = [
     "commit a228ed98 F4 flip",
     "SHIPPED_HISTORY T-145",
     "t145_rewrite_summary.md",
+    "t145_rewrite_summary gates",
 ]
 shipped_at = "a228ed98"
 created_at = "2026-07-06T09:17:10Z"

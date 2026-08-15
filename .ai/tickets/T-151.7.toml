@@ -16,10 +16,23 @@ requirement = [
 ]
 current_state = ["WgpuTacticalMap raw pan; Deck-only viewport calls; no select or drag."]
 approach = ["ULP-0 camera adapter; dual-mount props; vitest scripted parity sequences."]
+verify = [
+    "cargo fmt --check",
+    "cargo clippy --all-targets -- -D warnings",
+    "cargo test -p map-engine-core --all-features",
+    "cargo test -p map-engine-render",
+    "make wasm",
+    "cd apps/website/frontend && npm test",
+]
+acceptance = [
+    "ULP-0 OrthoCamera and useSelectTool wired wgpu editor interaction.",
+    "Vitest interaction parity suite green at 391 tests.",
+]
 citations = [
     "t151_7_verify_log.md",
     "commit ab6bcb11",
     "t151_7_interaction_rewire.md",
+    "t151_7_verify_log W7",
 ]
 shipped_at = "ab6bcb11"
 created_at = "2026-07-09T15:45:16Z"

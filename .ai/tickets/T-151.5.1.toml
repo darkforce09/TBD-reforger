@@ -13,6 +13,18 @@ context = ["Green envelope bloated past glyphs."]
 requirement = ["DENSITY_ISO=2 SoT; hide at zoom ge 0."]
 current_state = ["iso=1 mega-hulls; stuck landcover."]
 approach = ["lod_gates compose; forest.parity update."]
+verify = [
+    "cargo fmt --check",
+    "cargo clippy --all-targets -- -D warnings",
+    "cargo test -p map-engine-core --all-features",
+    "cargo test -p map-engine-render",
+    "make wasm",
+    "cd apps/website/frontend && npm test",
+]
+acceptance = [
+    "Rust DENSITY_ISO=2 tightened forest mass versus tree glyphs.",
+    "Forest fill outline and landcover hid at zoom ge zero.",
+]
 citations = [
     "t151_5_1_verify_log.md",
     "commit a98fb421",

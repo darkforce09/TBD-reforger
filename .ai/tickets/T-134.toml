@@ -17,6 +17,8 @@ context = ["North-star backlog; T-069 authors markers; T-092 exports payload."]
 requirement = ["Replicated five-file marker stack; side-scoped visibility; cap sixty-four markers."]
 current_state = ["Reforger base markers unreadable; no TBD runtime marker mod at filing."]
 approach = ["Audit-closed T-181.19 TBD_MarkerData Icons Client Component Controller."]
+verify = ["Audit-closed T-181.19; no subject commits on this id."]
+acceptance = ["T-181.19 shipped replicated five-file marker pipeline side-scoped at sixty-four markers."]
 citations = [
     "T-181.19 audit closure 2026-07-26",
     "tbd_north_star_backlog.md T-134",

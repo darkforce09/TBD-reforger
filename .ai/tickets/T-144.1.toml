@@ -16,10 +16,13 @@ requirement = [
 ]
 current_state = ["Heuristic satellite compose without proven A3 layering spine."]
 approach = ["Phase 0 entry discovery; validate uiMapExt spine; ship report @ b1949182."]
+verify = ["R1–R6 artifact checks per t144_verify_log.md."]
+acceptance = ["Shipped §0–§11 ground-truth report with gap table and phased T-090 recommendations."]
 citations = [
     "t144_arma3_map_architecture_report.md",
     "commit b1949182",
     "t144_arma3_map_architecture_study.md",
+    "t144_verify_log R1–R6",
 ]
 shipped_at = "b1949182"
 created_at = "2026-07-04T21:46:45Z"

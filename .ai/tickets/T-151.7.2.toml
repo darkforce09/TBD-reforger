@@ -17,6 +17,16 @@ requirement = [
 ]
 current_state = ["Tint wrong after cluster flips; wheel zoom broken post-7.1."]
 approach = ["Rust selection rematerialize; wheel handler restore at 69ca1c08."]
+verify = [
+    "cargo fmt --check",
+    "cargo clippy --all-targets -- -D warnings",
+    "cargo test -p map-engine-core --all-features",
+    "cd apps/website/frontend && npm test",
+]
+acceptance = [
+    "Selection lane rematerialized from SoA mask fixing residual tint misses.",
+    "Scroll-wheel zoom-at-cursor restored at 69ca1c08.",
+]
 citations = [
     "t151_7_2_verify_log.md",
     "commit 64c64d98",

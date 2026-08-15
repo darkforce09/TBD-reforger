@@ -13,10 +13,21 @@ context = ["Fable T-130 slice; T-127 left F4-03 PARTIAL on MC adopt conflict."]
 requirement = ["Adopted-semver localStorage cross-tab skip; non-UUID overlay; Aegis delete confirm."]
 current_state = ["Cross-tab re-prompted conflict; non-UUID banner only; window.confirm on admin delete."]
 approach = ["localStorage semver marker; z-40 overlay; shared Aegis Dialog pattern."]
+verify = [
+    "go build ./...",
+    "make test-it",
+    "cd apps/website/frontend && npm test",
+]
+acceptance = [
+    "Cross-tab editor boot skipped conflict when adopted semver matched server.",
+    "Non-UUID mission URLs showed full-bleed invalid-link overlay.",
+    "Admin delete used Aegis Dialog instead of window.confirm.",
+]
 citations = [
     "commit bb40a61a",
     "t130_fable_audit_remainder.md",
     "Vitest 43/43",
+    "t130_verify_log Batch 2",
 ]
 shipped_at = "bb40a61a"
 created_at = "2026-07-02T22:04:23Z"

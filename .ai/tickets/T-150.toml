@@ -21,10 +21,19 @@ requirement = [
 ]
 current_state = ["Hand-curated allowlist; no vehicle turret ammo edges."]
 approach = ["MCP preflight; scanner plugin; commit 1880 items / 4012 edges."]
+verify = [
+    "cd packages/tbd-schema && npm run validate",
+    "cd apps/website/frontend && npm test",
+]
+acceptance = [
+    "Universal scanner exported 1880 items and 4012 compat edges.",
+    "Hand-curated BuildCuratedRows allowlist retired from registry path.",
+]
 citations = [
     "t150_verify_log.md",
     "commit 9107bf4e",
     "t150_universal_registry_export.md",
+    "t150_verify_log validate",
 ]
 shipped_at = "9107bf4e"
 created_at = "2026-07-10T13:49:14Z"

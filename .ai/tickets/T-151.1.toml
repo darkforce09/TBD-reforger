@@ -16,10 +16,23 @@ requirement = [
 ]
 current_state = ["WgpuTacticalMap flat calibration; no satellite or hillshade."]
 approach = ["basemapResolve.ts extract; GPU upload in Rust; vitest parity matrix."]
+verify = [
+    "cargo fmt --check",
+    "cargo clippy --all-targets -- -D warnings",
+    "cargo test -p map-engine-core --all-features",
+    "cargo test -p map-engine-render",
+    "make wasm",
+    "cd apps/website/frontend && npm test",
+]
+acceptance = [
+    "TexturedQuad and Polyline basemap drew TBDS hillshade and grid on wgpu.",
+    "GPU byte-exact parity gates passed via headless CDP readback.",
+]
 citations = [
     "t151_1_verify_log.md",
     "commit 3ab81587",
     "t151_1_basemap_lane.md",
+    "t151_1_verify_log GPU-R",
 ]
 shipped_at = "3ab81587"
 created_at = "2026-07-08T15:18:24Z"

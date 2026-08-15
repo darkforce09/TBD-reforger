@@ -17,10 +17,23 @@ requirement = [
 ]
 current_state = ["Deck streams via chunkStore+worker; wgpu mount has no world instances."]
 approach = ["wgpuWorldLoader 12-way fetch; BuildingInstance pipeline; residency parity tests."]
+verify = [
+    "cargo fmt --check",
+    "cargo clippy --all-targets -- -D warnings",
+    "cargo test -p map-engine-core --all-features",
+    "cargo test -p map-engine-render",
+    "make wasm",
+    "cd apps/website/frontend && npm test",
+]
+acceptance = [
+    "WorldResidency LRU and chunk-keyed pick index wired on wgpu mount.",
+    "Building OBB fill and outline lanes drew with GPU-R byte-exact readback.",
+]
 citations = [
     "t151_3_verify_log.md",
     "commit 32bf5ac5",
     "t151_3_world_residency.md",
+    "t151_3_verify_log P1–P14",
 ]
 shipped_at = "32bf5ac5"
 created_at = "2026-07-08T18:10:42Z"
