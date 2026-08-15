@@ -16,6 +16,7 @@ context = [
     "FOUND by T-322 while isolating `make api`; flagged not fixed, different owner.",
     "`mcpd` (scripts/mod/mcp-daemon.sh) is the second long-lived process running out of the shared CARGO_TARGET_DIR, with a 4h max-life.",
 ]
+requirement = ["Inline CARGO_TARGET_DIR on mcpd build/exec, matching api/rust-api isolation from the shared target tree."]
 current_state = [
     "It carries the same correctness exposure `make api` just had:",
     "the wave gate's `cargo test -p website-api` rewrites binaries in that tree after every land,",
@@ -29,6 +30,8 @@ approach = [
     "Apply the same fix: an inline CARGO_TARGET_DIR on whatever builds it,",
     "matching the shape used for `api`/`rust-api` in the Makefile and for target-gate-frontend / dist-gate-frontend in wave.sh.",
 ]
+verify = ["mcpd builds and runs from target-dev-mcpd, not shared target/debug/mcpd."]
+acceptance = ["mcpd isolated to target-dev-mcpd; wave gate no longer rewrites the daemon's binary tree."]
 citations = [
     "T-322 make api isolation",
     "target-gate-frontend wave.sh",

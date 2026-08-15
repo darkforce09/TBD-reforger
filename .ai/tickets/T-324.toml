@@ -26,6 +26,8 @@ approach = [
     "- `event_registrations.slot_id` and `orbat_slots.assigned_to` are a denormalized duplicate of ONE fact with no constraint forcing agreement. A partial unique index on `orbat_slots(event_mission_id, assigned_to) WHERE assigned_to IS NOT NULL` would make",
     "double-claiming impossible at the DB level. That is a migration, so it wants coordinating with T-228, which owns apps/website/api/migrations.",
 ]
+verify = ["cargo test -p website-api --test events register_moves_the_caller_s_seat."]
+acceptance = ["Second seat claim released the first; one user cannot hold two ORBAT seats on valid requests."]
 citations = [
     "T-318 orphan withdraw fix",
     "T-228 migrations directory",

@@ -74,6 +74,7 @@ verify = [
     "Reproduce: drop/recreate test DB, run events.rs two tests in parallel.",
     "Gate hazard: `cargo test -p website-api` inside wave gate on shared `tbd_gate_it`.",
 ]
+acceptance = ["events.rs used private actor ids and shared dev_login_token; gate dev-login header panics stopped flaking."]
 citations = [
     "T-324 cold DB flake",
     "T-365 ban_reason_survives",

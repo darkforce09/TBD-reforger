@@ -33,6 +33,8 @@ approach = [
     "Make the Event Manager UI match the chosen PATCH clear contract.",
     "Add attach path to Event Manager Attached Missions roster, next to Detach.",
 ]
+verify = ["cargo test -p website-api --test events patch_clears_briefing_banner_and_mission_reattach_works."]
+acceptance = ['PATCH cleared briefing and banner via ""; admins re-attached missions after detaching the last one.']
 citations = [
     "T-226 Event Manager edit",
     "PatchEventInput Option<String>",

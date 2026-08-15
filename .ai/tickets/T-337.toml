@@ -26,6 +26,9 @@ current_state = [
     "using updated_at for cache invalidation or sync will not see an approval at all. It is also the reason a NULL can persist through a state transition that plainly modified",
     "the row.",
 ]
+approach = ["SET missions.updated_at = now() on approve and reject UPDATE statements in approvals.rs."]
+verify = ["cargo test -p website-api approve_and_reject_sql_bump_updated_at"]
+acceptance = ["Approve and reject bumped missions.updated_at; approvals queue order reflected the action."]
 citations = [
     "T-330 read fix",
     "handlers/approvals.rs:105",

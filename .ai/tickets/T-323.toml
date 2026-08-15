@@ -22,6 +22,12 @@ current_state = [
     'apps/website/frontend/src/personnel.rs:342-378 prompts "Ban reason (optional):" and DELIBERATELY sends `serde_json::json!({})` when the operator leaves it empty. That path now returns 400 and the UI shows a flat "Ban failed" with no',
     "explanation. A normal ban WITH a reason still works — `api_post_ok` uses gloo-net `.json()`, which sets the Content-Type header — so this is the empty-reason path only.",
 ]
+approach = ["Require ban reason client-side via classify_ban_reason; surface server 400 with api_error_message."]
+verify = [
+    "cargo test -p website-frontend ok_with_blank_is_refused_before_any_request.",
+    "cargo test -p website-frontend whitespace_only_is_refused_too.",
+]
+acceptance = ["Empty ban reason no longer posted {}; server error surfaced instead of flat Ban failed."]
 citations = [
     "T-317 ban reason required",
     "62a804e4",

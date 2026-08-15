@@ -26,6 +26,8 @@ approach = [
     "THE REAL PAYLOAD was the sweep: three genuine 500s elsewhere in the same class, all captured live — T-329 (dashboard, FIRING IN PRODUCTION for two real users), T-307 (events briefing,",
     "reachable from any fresh seed), T-330 (approvals updated_at, latent). And tests/null_tolerance.rs, which exists for exactly this class, misses all three.",
 ]
+verify = ["GET /me/deployments 200 on live NULL winning_faction rows; invariant recorded in telemetry.rs."]
+acceptance = ["COALESCE-at-query invariant documented in models/telemetry.rs; no Option wire change shipped."]
 citations = [
     "T-316 empty-string write",
     "T-228 schema backfill",

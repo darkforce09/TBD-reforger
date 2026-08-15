@@ -36,6 +36,8 @@ approach = [
     "One-line api_error_message fix on personnel.rs:333 role editor Err path.",
     "Wire Issue Warning to POST /admin/users/:id/warnings instead of mock toast.",
 ]
+verify = ["cargo test -p website-frontend ban_and_warn_use_dialog_not_window_prompt"]
+acceptance = ["Ban and warn use Dialog; gate-driveable; role PATCH errors and live warnings POST wired."]
 citations = [
     "T-323 window.prompt proof",
     "T-226 Event Manager dialog",

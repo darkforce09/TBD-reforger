@@ -35,6 +35,8 @@ approach = [
     "Cost measured: cold build 25s / 322 crates, warm rebuild 0.98s, 2.1 GB disk. .gitignore needed no entry — `target-*/` at :46 already covers it. wave.sh deliberately NOT changed: the",
     "gate does write that path but cannot kill anything, and isolating the single consumer beats policing an unbounded set of producers.",
 ]
+verify = ["make api using target-dev-api"]
+acceptance = ["`make api` used target-dev-api; dev :8080 no longer served unmerged slice gate binaries."]
 citations = [
     "T-300 shared CARGO_TARGET_DIR",
     "wave gate cargo test",

@@ -43,6 +43,7 @@ approach = [
     "Check for untrimmed users.arma_id whitespace before join; normalise in same migration if needed.",
 ]
 verify = ["Count affected rows on pg_dump copy before running backfill SQL."]
+acceptance = ["Migration 0016 backfilled pre-T-326 linked orphans; deployment and leaderboard totals recomputed."]
 citations = [
     "T-326 forward-only link",
     "T-228 pg_dump discipline",

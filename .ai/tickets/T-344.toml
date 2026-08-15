@@ -67,6 +67,7 @@ verify = [
     "238 tests (233 baseline); four mutation probes on newline sanitiser, unchanged-map guard, read-modify-write, Some(empty) writes.",
     "briefing_prose_round_trips_through_the_document_core and marker-preservation fixtures green.",
 ]
+acceptance = ["set_faction_briefing shipped; briefing prose authorable end-to-end with markers preserved."]
 citations = [
     "T-214 hydrate-as-writer proof",
     "T-202 markers schema",

@@ -21,6 +21,8 @@ context = [
 requirement = ["Only the topmost dialog should handle Escape — a shared stack/depth counter, or listen on the dialog element rather than window and let it stop propagation."]
 current_state = ["T-226 did not touch it (`ui.rs` was not in its owns) and worked around it by testing the confirm path via clicks."]
 approach = ["Fix: shared stack/depth counter, or listen on the dialog element rather than window and let it stop propagation."]
+verify = ["cargo test -p website-frontend only_the_topmost_open_overlay_answers_escape."]
+acceptance = ["Escape closed only the topmost stacked Dialog; edit form behind confirm kept unsaved edits."]
 citations = [
     "T-226 stacked confirm",
     "ui.rs Dialog Escape listener",

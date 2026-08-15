@@ -24,6 +24,9 @@ current_state = [
     "Deliberately deferred rather than done: it is a cross-cutting move that would have collided with the next agent in telemetry.rs. Low priority — `pub(super)` is not wrong, just less tidy.",
     "Do it when telemetry.rs is otherwise quiet,",
 ]
+approach = ["Move recompute_user_stats and refresh_leaderboard_best_effort to services/user_stats.rs; update telemetry.rs and me.rs callers."]
+verify = ["cargo test -p website-api t336_user_stats_service."]
+acceptance = ["recompute_user_stats lives in services/user_stats.rs; telemetry and me.rs share one deployment definition."]
 citations = [
     "T-326 identity-link unblock",
     "handlers/telemetry.rs:530",

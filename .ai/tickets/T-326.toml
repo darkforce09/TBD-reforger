@@ -27,6 +27,8 @@ approach = [
     "UPDATE match_player_stats SET discord_id = ... WHERE arma_id = ... AND discord_id IS NULL — followed by a recompute.",
     "Do it inside the transaction that consumes the link code, so a failure cannot half-link.",
 ]
+verify = ["Throwaway fixture plus GET /me 0 to 3 after confirm (dedbdc6d7)."]
+acceptance = ["Link confirm backfilled match_player_stats discord_id and trimmed arma_id inside the confirm transaction."]
 citations = [
     "T-231 (c) split",
     "telemetry.rs:376-381",

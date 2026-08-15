@@ -40,6 +40,8 @@ approach = [
     "Systematic is_empty() sweep; split follow-ons into T-346..T-351.",
     "Drop #[serde(default)] from WarnInput.reason, UpdateUserInput.role, RconInput.action where wire-identical.",
 ]
+verify = ['POST {"reason":"   "} to /admin/users/:id/warnings; assert 400 reason is required.']
+acceptance = ["Whitespace-only warn reason returned 400; message aligned; padded reasons stored trimmed."]
 citations = [
     "T-323 found warn_user",
     "T-317 ban_user pattern",

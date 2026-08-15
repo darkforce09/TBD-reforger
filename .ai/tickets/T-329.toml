@@ -54,6 +54,11 @@ approach = [
     "Proven: reinstating the bare `*` turns both red, the static one naming the file and line.",
     "Catches all three known instances, each by both halves independently.",
 ]
+verify = [
+    "make test-it; cargo test -p website-api every_nullable_column_null_and_every_get_route_still_serves",
+    "cargo test -p website-api no_query_as_reads_a_nullable_column_without_coalesce",
+]
+acceptance = ["Dashboard COALESCE fixed live 500; null_tolerance static enumerator now catches bare * reads."]
 citations = [
     "T-325 sweep",
     "handlers/dashboard.rs:101",

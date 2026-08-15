@@ -63,6 +63,7 @@ verify = [
     "WITH constraint: `psql < seeds/content_golden.sql` fails on NULL aar_replay_url.",
     "T-324 verified index paths in scratch DB: register move, bench, re-claim, assign, withdraw, 409s.",
 ]
+acceptance = ["content_golden NULL seeds fixed; migration 0015 backfilled NOT NULL match text and mission timestamps."]
 citations = [
     "T-228 role_played constraint",
     "T-324 second fixture bug",

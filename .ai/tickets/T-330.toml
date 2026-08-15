@@ -22,6 +22,9 @@ current_state = [
     "but it is the same defect as T-329 (live) and T-307 (reachable from any fresh seed),",
     "and 'latent' here means 'nothing has written that value yet', not 'cannot happen'.",
 ]
+approach = ["COALESCE m.updated_at through created_at chain at query; match ORDER BY; no Option on model."]
+verify = ["t330_repro GET /approvals 500 then 200 after f534d94d6."]
+acceptance = ["GET /approvals survived NULL missions.updated_at; queue order matched coalesced submitted_at."]
 citations = [
     "T-325 sweep",
     "handlers/approvals.rs:55",

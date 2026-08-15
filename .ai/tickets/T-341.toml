@@ -35,6 +35,8 @@ approach = [
     "Surface decode failures instead of `.ok().flatten()` on mission_title_terrain.",
     "Mint session owning seeded rows; prune :76 from null_tolerance list if present.",
 ]
+verify = ["cargo test -p website-api --test dashboard_reads dashboard_leaderboards_deployments_loa_audit."]
+acceptance = ["deployments.rs bare * closed; decode errors surfaced; dashboard_reads mints session owning seeded rows."]
 citations = [
     "T-329 sibling bug",
     "deployments.rs:103 model",

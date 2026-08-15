@@ -48,6 +48,8 @@ approach = [
     "T-338's workaround, using the app's own path, worth keeping until this is fixed: boot at `--path '/auth/callback#access_token=x&refresh_token=y&expires_at=2036-01-01T00:00:00Z' --seed-auth`, or history.pushState plus a synthetic PopStateEvent to it. set_tokens writes only the",
     "three token signals, so `user` is untouched.",
 ]
+verify = ["gate render-check --seed-auth with api_proxy; cdp::launch pins XDG_CACHE_HOME to gate font cache."]
+acceptance = ["vsuite chromium inherited gate font cache; render-check api_proxy let seed-auth fully hydrate Sign Out."]
 citations = [
     "T-320 gate harness",
     "vsuite.rs:366 chromium",
