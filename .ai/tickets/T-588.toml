@@ -1,12 +1,78 @@
 id = "T-588"
 kind = "work"
-title = "Wave 71 residue: systemd templates fail verify as committed, backup verifier has no DB-identity check, mortar re-hydration overwrites unsaved edits"
+title = "Wave 71 residue: systemd verify, dump identity, mortar re-hydrate"
 summary = "Wave 71 residue: systemd templates fail verify as committed, backup verifier has no DB-identity check, mortar re-hydration overwrites unsaved edits"
 class = "bug"
 status = "shipped"
 order = 3443
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Four NITs from wave 71's adversarial verifier. None is a live defect; all are worth closing.
+
+1. `scripts/deploy/tbd-website-backup.service:32` and `tbd-website-backup-drill.service:29` FAIL
+   `systemd-analyze verify --user` AS COMMITTED, because `WorkingDirectory=TBD_REPO_DIR_PLACEHOLDER`
+   is not an absolute path. Expected for a template -- the header documents the `sed` substitution and
+   the RENDERED units verify clean (all four, confirmed) -- but anyone verifying the committed file, or
+   naively `cp`-installing it, gets "Unit has a bad unit file setting".
+   Repro: `systemd-analyze verify --user scripts/deploy/tbd-website-backup.service` -> rc=1.
+   Fix: ship a `.in` extension, or an absolute default the sed overwrites.
+
+2. `scripts/deploy/lib/db-common.sh:241` -- the dump verifier has NO DATABASE-IDENTITY CHECK. It
+   accepts a structurally valid dump OF THE WRONG DATABASE, or one missing `_sqlx_migrations`. Not
+   exploitable in the backup path (it always dumps the whole correct DB) and the drill catches the
+   missing-migrations case, and `--min-rows 0` accepting a schema-only dump is an explicit opt-in --
+   so this is a contract limit, not a bug. Worth closing anyway: a restore is exactly when someone is
+   panicking and grabs the wrong file.
+
+3. `apps/website/frontend/src/mortar.rs:501` -- `hydrated_for` is a single-slot `StoredValue`, so
+   switching operation away and back RE-APPLIES that operation's saved solution over any unsaved
+   edits. No data loss (the saved rows are intact) but it silently discards in-progress work.
+
+4. T-576's TITLE overstates what shipped: "every foreign-key violation surfaces as a 500". The shipped
+   mapping live-fixes only the `server_id` heartbeat (500 -> 400). Bad `matches.event_id` /
+   `mission_id` on match ingest still INSERT SILENTLY today, because those FKs do not exist yet -- so
+   they are neither 500 nor 400, they are unchanged. The ticket BODY is accurate; the headline is not.
+   Resolved by T-585 landing the migration.
+
+missing=0"""
 priority = 3
+main_goal = "Close four wave 71 verifier NITs: systemd templates, dump identity, mortar re-hydrate, T-576 title."
+context = [
+    "Four NITs from wave 71 adversarial verifier; none live defects.",
+    "Rendered systemd units verify clean; committed templates fail with placeholder WorkingDirectory.",
+    "T-576 title overstatement resolved by T-585 migration landing.",
+]
+requirement = [
+    "Ship .in extension or absolute default WorkingDirectory templates verify as committed.",
+    "Add dump verifier database-identity check at db-common.sh:241.",
+    "Stop mortar hydrated_for re-applying saved solution over unsaved edits.",
+    "Correct T-576 title overstatement about every FK violation surfacing as 500.",
+]
+current_state = [
+    "systemd-analyze verify --user on committed backup.service returns rc=1.",
+    "Dump verifier accepts structurally valid dump of wrong database.",
+    "mortar.rs:501 single-slot hydrated_for discards in-progress edits on operation switch-back.",
+    "T-576 headline claims every FK 500; only server_id heartbeat mapping shipped pre-T-585.",
+]
+approach = [
+    "Ship .in extension or absolute default the sed overwrites for backup units.",
+    "Extend db-common.sh dump verifier with database-identity check.",
+    "Fix mortar hydrated_for to preserve unsaved in-progress work.",
+]
+verify = [
+    "systemd-analyze verify --user scripts/deploy/tbd-website-backup.service -> rc=1 today.",
+    "Rendered units verify clean; all four confirmed.",
+]
+citations = [
+    "wave 71 adversarial verifier",
+    "TBD_REPO_DIR_PLACEHOLDER WorkingDirectory",
+    "db-common.sh dump verifier",
+    "mortar.rs hydrated_for single-slot",
+    "T-576 title overstatement",
+    "T-585 migration resolved headline",
+]
 shipped_at = "47da0744"
 created_at = "2026-07-31T20:51:26Z"
 completed_at = "2026-07-31T20:51:26Z"
@@ -18,34 +84,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 1 commit subject(s)"
-migration_legacy = [
-    "Four NITs from wave 71's adversarial verifier. None is a live defect; all are worth closing.",
-    "",
-    "1. `scripts/deploy/tbd-website-backup.service:32` and `tbd-website-backup-drill.service:29` FAIL",
-    "   `systemd-analyze verify --user` AS COMMITTED, because `WorkingDirectory=TBD_REPO_DIR_PLACEHOLDER`",
-    "   is not an absolute path. Expected for a template -- the header documents the `sed` substitution and",
-    "   the RENDERED units verify clean (all four, confirmed) -- but anyone verifying the committed file, or",
-    '   naively `cp`-installing it, gets "Unit has a bad unit file setting".',
-    "   Repro: `systemd-analyze verify --user scripts/deploy/tbd-website-backup.service` -> rc=1.",
-    "   Fix: ship a `.in` extension, or an absolute default the sed overwrites.",
-    "",
-    "2. `scripts/deploy/lib/db-common.sh:241` -- the dump verifier has NO DATABASE-IDENTITY CHECK. It",
-    "   accepts a structurally valid dump OF THE WRONG DATABASE, or one missing `_sqlx_migrations`. Not",
-    "   exploitable in the backup path (it always dumps the whole correct DB) and the drill catches the",
-    "   missing-migrations case, and `--min-rows 0` accepting a schema-only dump is an explicit opt-in --",
-    "   so this is a contract limit, not a bug. Worth closing anyway: a restore is exactly when someone is",
-    "   panicking and grabs the wrong file.",
-    "",
-    "3. `apps/website/frontend/src/mortar.rs:501` -- `hydrated_for` is a single-slot `StoredValue`, so",
-    "   switching operation away and back RE-APPLIES that operation's saved solution over any unsaved",
-    "   edits. No data loss (the saved rows are intact) but it silently discards in-progress work.",
-    "",
-    """4. T-576's TITLE overstates what shipped: "every foreign-key violation surfaces as a 500". The shipped""",
-    "   mapping live-fixes only the `server_id` heartbeat (500 -> 400). Bad `matches.event_id` /",
-    "   `mission_id` on match ingest still INSERT SILENTLY today, because those FKs do not exist yet -- so",
-    "   they are neither 500 nor 400, they are unchanged. The ticket BODY is accurate; the headline is not.",
-    "   Resolved by T-585 landing the migration.",
-]
 owns = ["scripts/deploy/tbd-website-backup.service"]
 
 [scope]

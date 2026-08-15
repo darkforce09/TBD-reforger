@@ -1,12 +1,89 @@
 id = "T-596"
 kind = "work"
-title = "Wave 73 residue: a reclaim crash on newline names, two fail-open harness checks, and eight hand-copied role ids"
+title = "Wave 73 reclaim crash and role_id imports"
 summary = "Wave 73 residue: a reclaim crash on newline names, two fail-open harness checks, and eight hand-copied role ids"
 class = "bug"
 status = "shipped"
 order = 3463
 executor = "claude-code"
+notes = '''
+--- HEAD migration_legacy (verbatim) ---
+
+Small items from wave 73, none live.
+
+1. MINOR -- `scripts/platform/wave.sh:2312` (and `:2322`): a `target-*` directory whose name contains a
+   NEWLINE crashes `cmd_reclaim` under `set -u`. `du -sm` emits a second line, `sz` becomes `"0\nb"`,
+   and `$((unknown_mb + $sz))` treats the trailing token as an unbound variable.
+   REPRO: `mkdir "$MAIN_ROOT/target-zz"$'\n'"b"; wave.sh reclaim` -> `line 2312: b: unbound variable`.
+   Fail-closed and it aborts on the SPARED branch before any `rm`, so it cannot mis-delete -- but a
+   destructive sweep aborting mid-run should be hardened (quote/strip `sz`).
+2. NIT -- by design, flagged because it is the one place positive-ID surprises: `target-T-999-api-backup`
+   IS reaped, parsing as slice `T-999` + suffix `-api-backup`. A human naming a manual backup like a
+   slice dir loses it. The contract documents "ticket first, optional suffix"; consider refusing names
+   containing `backup`/`keep`, or just leave it and know.
+3. NIT -- `deploy-staging.sh` `--agent-selftest <path>`: socket cases false-FAIL with `AF_UNIX path too
+   long` when the path exceeds ~108 chars. Harness only; real deploy uses a short `$XDG_RUNTIME_DIR`.
+4. NIT -- same file: the `systemd-analyze verify` check SKIPS SILENTLY when the tool is absent, while
+   the socket checks fail closed. Inconsistent, and skip-on-absent is the shape this program keeps
+   paying for (T-556).
+5. NIT -- `crates/map-engine-render/src/draw_order.rs`: T-592's doc says "zero hits for the upload fns
+   across *.js/*.ts". There ARE hits -- in gitignored, wasm-bindgen-GENERATED `dist/*.js` glue where
+   `role` is a passthrough parameter, never a hardcoded id. **The conclusion holds** (role ids are not
+   a wire value); the wording is imprecise and should be corrected so a future reader does not
+   "discover" the dist hits and reopen a settled question.
+6. The 8 hand-copied `const ROLE_*` u32 literals (`world_assets/dem_vectors.rs:18,19`,
+   `world_host.rs:18,19,20,22`, `forest_mass.rs:23`, `mission_history.rs:42`) should import T-592's new
+   `role_id::*`. Mechanical, 4 files. Until then a renumber silently misroutes an upload rather than
+   failing the build -- which is precisely why T-592 created the module.
+7. `engine.rs:4657` `set_lane_opacity` is FAIL-OPEN: `if role == 0 { Satellite } else { Hillshade }` --
+   any non-zero id silently becomes Hillshade, unlike `tex_layer_begin`'s explicit `idx > 1` rejection
+   two functions away. Latent (only ever called with 0).
+8. PRE-EXISTING shell bug, `scripts/mod/deploy-staging.sh:679`:
+   `: "${TBD_SCENARIO:={69A85365FC09E2CA}Missions/...}"` -- the `}` inside the default TERMINATES the
+   expansion, so the fallback is the truncated `{69A85365FC09E2CA`. Masked only because
+   `deploy.env.example:35` sets it explicitly.
+9. DOC CONFLICT: `STAGING-SERVER.md:3` says "API + Postgres (Docker)", but `deploy-website.sh` only
+   runs `compose up -d postgres` and the compose `api` service is behind `--profile api`. **If the API
+   were ever moved into that container the T-289 socket becomes unreachable** -- T-595 depends on the
+   API staying host-side. Fix the doc so nobody containerises it by following it.
+10. `dist-<slice>` has no reclaim sweep. Nothing instructs agents to create one today
+    (`FACTORY_FOR_CURSOR.md:179` names only `target-<slice>-api`), so widening was speculative -- but if
+    a slice ever writes a private `dist-`, it leaks exactly as `target-<SLICE>` did. Also a residual
+    window: sparing keys off worktree existence, so a slice whose worktree is removed while its agent
+    is still PARKED has its dir eligible. An age guard would close it.
+
+missing=0'''
 priority = 3
+main_goal = "Harden wave reclaim newline crash; import T-592 role_id literals; close wave 73 harness NITs."
+context = [
+    "Small wave 73 items; none live except reclaim abort risk on newline target dir.",
+    "T-592 created role_id module; eight hand-copied ROLE u32 literals remain in render.",
+]
+requirement = [
+    "Quote or strip sz in wave.sh cmd_reclaim newline target-* crash repro.",
+    "Import T-592 role_id::* in four files with hand-copied ROLE literals.",
+    "Correct draw_order.rs imprecise zero-hits wording on dist glue role hits.",
+]
+current_state = [
+    "Newline in target-* name crashes cmd_reclaim: b unbound variable line 2312.",
+    "dem_vectors, world_host, forest_mass, mission_history use const ROLE u32 literals.",
+    "set_lane_opacity nonzero role silently becomes Hillshade at engine.rs:4657.",
+]
+approach = [
+    "Harden reclaim sz parsing on du -sm output lines.",
+    "Mechanical role_id imports across four map-engine-render files.",
+    "Fix draw_order doc wording; STAGING-SERVER API container doc conflict.",
+]
+verify = [
+    "mkdir target-zz newline b; wave.sh reclaim no unbound variable.",
+    "Renumber role_id silently misroutes upload without literal imports.",
+]
+citations = [
+    "wave 73 adversarial verifier",
+    "T-592 role_id module",
+    "T-592 draw_order doc wording",
+    "deploy-staging scenario brace bug",
+]
 shipped_at = "b083c1a7"
 created_at = "2026-07-31T14:50:34Z"
 completed_at = "2026-07-31T15:04:08Z"
@@ -18,50 +95,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = [
-    "Small items from wave 73, none live.",
-    "",
-    "1. MINOR -- `scripts/platform/wave.sh:2312` (and `:2322`): a `target-*` directory whose name contains a",
-    '   NEWLINE crashes `cmd_reclaim` under `set -u`. `du -sm` emits a second line, `sz` becomes `"0\nb"`,',
-    "   and `$((unknown_mb + $sz))` treats the trailing token as an unbound variable.",
-    '''   REPRO: `mkdir "$MAIN_ROOT/target-zz"$'\n'"b"; wave.sh reclaim` -> `line 2312: b: unbound variable`.''',
-    "   Fail-closed and it aborts on the SPARED branch before any `rm`, so it cannot mis-delete -- but a",
-    "   destructive sweep aborting mid-run should be hardened (quote/strip `sz`).",
-    "2. NIT -- by design, flagged because it is the one place positive-ID surprises: `target-T-999-api-backup`",
-    "   IS reaped, parsing as slice `T-999` + suffix `-api-backup`. A human naming a manual backup like a",
-    '   slice dir loses it. The contract documents "ticket first, optional suffix"; consider refusing names',
-    "   containing `backup`/`keep`, or just leave it and know.",
-    "3. NIT -- `deploy-staging.sh` `--agent-selftest <path>`: socket cases false-FAIL with `AF_UNIX path too",
-    "   long` when the path exceeds ~108 chars. Harness only; real deploy uses a short `$XDG_RUNTIME_DIR`.",
-    "4. NIT -- same file: the `systemd-analyze verify` check SKIPS SILENTLY when the tool is absent, while",
-    "   the socket checks fail closed. Inconsistent, and skip-on-absent is the shape this program keeps",
-    "   paying for (T-556).",
-    """5. NIT -- `crates/map-engine-render/src/draw_order.rs`: T-592's doc says "zero hits for the upload fns""",
-    '   across *.js/*.ts". There ARE hits -- in gitignored, wasm-bindgen-GENERATED `dist/*.js` glue where',
-    "   `role` is a passthrough parameter, never a hardcoded id. **The conclusion holds** (role ids are not",
-    "   a wire value); the wording is imprecise and should be corrected so a future reader does not",
-    '   "discover" the dist hits and reopen a settled question.',
-    "6. The 8 hand-copied `const ROLE_*` u32 literals (`world_assets/dem_vectors.rs:18,19`,",
-    "   `world_host.rs:18,19,20,22`, `forest_mass.rs:23`, `mission_history.rs:42`) should import T-592's new",
-    "   `role_id::*`. Mechanical, 4 files. Until then a renumber silently misroutes an upload rather than",
-    "   failing the build -- which is precisely why T-592 created the module.",
-    "7. `engine.rs:4657` `set_lane_opacity` is FAIL-OPEN: `if role == 0 { Satellite } else { Hillshade }` --",
-    "   any non-zero id silently becomes Hillshade, unlike `tex_layer_begin`'s explicit `idx > 1` rejection",
-    "   two functions away. Latent (only ever called with 0).",
-    "8. PRE-EXISTING shell bug, `scripts/mod/deploy-staging.sh:679`:",
-    '   `: "${TBD_SCENARIO:={69A85365FC09E2CA}Missions/...}"` -- the `}` inside the default TERMINATES the',
-    "   expansion, so the fallback is the truncated `{69A85365FC09E2CA`. Masked only because",
-    "   `deploy.env.example:35` sets it explicitly.",
-    '9. DOC CONFLICT: `STAGING-SERVER.md:3` says "API + Postgres (Docker)", but `deploy-website.sh` only',
-    "   runs `compose up -d postgres` and the compose `api` service is behind `--profile api`. **If the API",
-    "   were ever moved into that container the T-289 socket becomes unreachable** -- T-595 depends on the",
-    "   API staying host-side. Fix the doc so nobody containerises it by following it.",
-    "10. `dist-<slice>` has no reclaim sweep. Nothing instructs agents to create one today",
-    "    (`FACTORY_FOR_CURSOR.md:179` names only `target-<slice>-api`), so widening was speculative -- but if",
-    "    a slice ever writes a private `dist-`, it leaks exactly as `target-<SLICE>` did. Also a residual",
-    "    window: sparing keys off worktree existence, so a slice whose worktree is removed while its agent",
-    "    is still PARKED has its dir eligible. An age guard would close it.",
-]
 owns = [
     "crates/map-engine-render/src/engine.rs",
     "crates/map-engine-render/src/world_assets/dem_vectors.rs",

@@ -1,12 +1,63 @@
 id = "T-589"
 kind = "work"
-title = "reclaim does not reap target-<SLICE> orphans — and the factory now tells agents to create them"
+title = "reclaim omits target-<SLICE> scratch dirs factory creates"
 summary = "reclaim does not reap target-<SLICE> orphans — and the factory now tells agents to create them"
 class = "chore"
 status = "shipped"
 order = 3450
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Found 2026-07-31. `wave.sh reclaim` sweeps `/var/tmp/*` and (since T-426) reports `target-gate-*` /
+`dist-gate-*` behind `--gate-dirs`. It reaps **neither** `target-<SLICE>` nor `target-<slice>-api`.
+
+MEASURED: `target-T-454` — 2.7 GB, from a slice shipped weeks ago, no worktree, invisible to
+`reclaim` (which printed "reclaimed 0 MB" beside it). Removed by hand.
+
+**THIS IS NOW SELF-INFLICTED AND WILL RECUR.** After T-581 and T-582 were both served foreign
+binaries out of the shared `target/`, the factory brief template and PLATFORM_FACTORY's Known traps
+now INSTRUCT every slice agent to create a private `target-<slice>-api` when it builds a binary it
+then runs. Agents are told to delete it on cleanup and mostly do — T-585 reclaimed 8.0 GB itself —
+but a slice that is parked, rate-limited, or killed mid-run leaves one behind, and nothing reaps it.
+The volume already runs at 87%.
+
+WANTED: extend `cmd_reclaim`'s sweep to `$MAIN_ROOT/target-*` EXCLUDING the shared `target/` and the
+`target-gate-*` set, sparing any name matching a live worktree (the existing `live slices (spared)`
+logic already computes that list). Keep it behind the same opt-in as `--gate-dirs`, or default it —
+these are per-slice scratch, not warm shared caches, so the "expensive to rebuild" argument that
+justified `--gate-dirs` being opt-in does not apply.
+
+missing=0"""
 priority = 2
+main_goal = "Extend wave.sh reclaim to reap target-<SLICE> and target-<slice>-api orphans."
+context = [
+    "Found 2026-07-31; reclaim sweeps /var/tmp and reports gate dirs behind --gate-dirs.",
+    "Factory brief now instructs slice agents to create private target-<slice>-api binaries.",
+    "Volume already runs at 87%; parked or killed slices leave multi-GB orphans.",
+]
+requirement = [
+    "Extend cmd_reclaim sweep to MAIN_ROOT/target-* excluding shared target/ and target-gate-*.",
+    "Spare names matching live worktree via existing live slices spared logic.",
+    "Default sweep or same opt-in as --gate-dirs; per-slice scratch not warm cache.",
+]
+current_state = [
+    "reclaim reaps neither target-<SLICE> nor target-<slice>-api.",
+    "target-T-454 measured 2.7 GB; reclaim printed reclaimed 0 MB beside it.",
+    "T-585 reclaimed 8.0 GB itself; agents mostly delete on cleanup.",
+]
+approach = [
+    "Extend cmd_reclaim to MAIN_ROOT/target-* with live worktree spare list.",
+    "Exclude shared target/ and target-gate-* set from sweep.",
+]
+verify = ["target-T-454 invisible to reclaim; printed reclaimed 0 MB beside 2.7 GB orphan."]
+citations = [
+    "wave.sh cmd_reclaim sweep",
+    "target-T-454 2.7 GB orphan",
+    "T-581 T-582 foreign binaries",
+    "factory brief target-<slice>-api",
+    "PLATFORM_FACTORY Known traps",
+]
 shipped_at = "902dd34d"
 created_at = "2026-07-31T10:07:50Z"
 completed_at = "2026-07-31T10:22:31Z"
@@ -18,26 +69,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    "Found 2026-07-31. `wave.sh reclaim` sweeps `/var/tmp/*` and (since T-426) reports `target-gate-*` /",
-    "`dist-gate-*` behind `--gate-dirs`. It reaps **neither** `target-<SLICE>` nor `target-<slice>-api`.",
-    "",
-    "MEASURED: `target-T-454` — 2.7 GB, from a slice shipped weeks ago, no worktree, invisible to",
-    '`reclaim` (which printed "reclaimed 0 MB" beside it). Removed by hand.',
-    "",
-    "**THIS IS NOW SELF-INFLICTED AND WILL RECUR.** After T-581 and T-582 were both served foreign",
-    "binaries out of the shared `target/`, the factory brief template and PLATFORM_FACTORY's Known traps",
-    "now INSTRUCT every slice agent to create a private `target-<slice>-api` when it builds a binary it",
-    "then runs. Agents are told to delete it on cleanup and mostly do — T-585 reclaimed 8.0 GB itself —",
-    "but a slice that is parked, rate-limited, or killed mid-run leaves one behind, and nothing reaps it.",
-    "The volume already runs at 87%.",
-    "",
-    "WANTED: extend `cmd_reclaim`'s sweep to `$MAIN_ROOT/target-*` EXCLUDING the shared `target/` and the",
-    "`target-gate-*` set, sparing any name matching a live worktree (the existing `live slices (spared)`",
-    "logic already computes that list). Keep it behind the same opt-in as `--gate-dirs`, or default it —",
-    'these are per-slice scratch, not warm shared caches, so the "expensive to rebuild" argument that',
-    "justified `--gate-dirs` being opt-in does not apply.",
-]
 owns = ["scripts/platform/wave.sh"]
 
 [scope]

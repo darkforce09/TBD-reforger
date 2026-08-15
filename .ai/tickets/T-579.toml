@@ -1,12 +1,59 @@
 id = "T-579"
 kind = "work"
-title = "Post-wave-69 UI honesty: dead RCON success path, and a delete dialog that still lies"
+title = "Dead RCON path and dishonest delete dialog"
 summary = "Post-wave-69 UI honesty: dead RCON success path, and a delete dialog that still lies"
 class = "bug"
 status = "shipped"
 order = 3423
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Two frontend items from wave 69, neither a regression, both cosmetic-but-dishonest.
+
+1. MINOR -- dead code after T-269 flipped RCON to 503. `frontend/src/server_control.rs:116`
+   `rcon_accepted_message` ("RCON accepted ... transport pending T-269"), the `Ok(resp)` arm at
+   `:313`, and the `RconAccepted` DTO at `:21` are all UNREACHABLE now that the API never returns
+   2xx for RCON. T-269's agent flagged this itself. VERIFIED SAFE by the verifier: `busy.set(false)`
+   runs on both branches (`:324`) so there is no stuck spinner, and the 503 message surfaces
+   honestly via a toast. Delete the dead path, or leave it and say why in a comment.
+
+2. NIT -- `frontend/src/event_manager.rs:985` still promises that deleting an event removes "its
+   attached missions' ORBATs, and all registrations ... This cannot be undone." It does not:
+   `handlers/events.rs:1380` sets `deleted_at = now()` and nothing else. Driven by the verifier:
+   DELETE /events -> 204, `deleted_at` set, `event_missions` SURVIVE, CASCADE never fires.
+   Pre-existing. T-262's constraint 1 means the cascade is already correct for the day that handler
+   becomes a hard delete -- but today the dialog is wrong. Either fix the copy or make the handler
+   match it; decide which, do not leave both.
+
+missing=0"""
 priority = 3
+main_goal = "Remove dead RCON path; fix dishonest event delete dialog."
+context = [
+    "Wave 69 cosmetic frontend honesty items; not regressions.",
+    "T-269 flipped RCON to 503; Ok arm unreachable.",
+]
+requirement = [
+    "Delete unreachable RCON accepted path in server_control.rs.",
+    "Fix delete dialog copy or make handler match cascade promise.",
+]
+current_state = [
+    "rcon_accepted_message and Ok(resp) arm unreachable since T-269.",
+    "Delete dialog promises ORBAT cascade; handler only sets deleted_at.",
+]
+approach = [
+    "Delete dead RCON path or document why kept.",
+    "Align dialog copy with soft-delete or hard-delete handler.",
+]
+verify = [
+    "No unreachable RCON 2xx success path in server_control.",
+    "Delete dialog matches events.rs soft-delete behavior.",
+]
+citations = [
+    "Wave 69 UI honesty",
+    "T-269 RCON 503",
+    "events.rs soft delete",
+]
 shipped_at = "ddbc5921"
 created_at = "2026-08-01T02:48:56Z"
 completed_at = "2026-08-01T02:56:17Z"
@@ -18,24 +65,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = [
-    "Two frontend items from wave 69, neither a regression, both cosmetic-but-dishonest.",
-    "",
-    "1. MINOR -- dead code after T-269 flipped RCON to 503. `frontend/src/server_control.rs:116`",
-    '   `rcon_accepted_message` ("RCON accepted ... transport pending T-269"), the `Ok(resp)` arm at',
-    "   `:313`, and the `RconAccepted` DTO at `:21` are all UNREACHABLE now that the API never returns",
-    "   2xx for RCON. T-269's agent flagged this itself. VERIFIED SAFE by the verifier: `busy.set(false)`",
-    "   runs on both branches (`:324`) so there is no stuck spinner, and the 503 message surfaces",
-    "   honestly via a toast. Delete the dead path, or leave it and say why in a comment.",
-    "",
-    '2. NIT -- `frontend/src/event_manager.rs:985` still promises that deleting an event removes "its',
-    """   attached missions' ORBATs, and all registrations ... This cannot be undone." It does not:""",
-    "   `handlers/events.rs:1380` sets `deleted_at = now()` and nothing else. Driven by the verifier:",
-    "   DELETE /events -> 204, `deleted_at` set, `event_missions` SURVIVE, CASCADE never fires.",
-    "   Pre-existing. T-262's constraint 1 means the cascade is already correct for the day that handler",
-    "   becomes a hard delete -- but today the dialog is wrong. Either fix the copy or make the handler",
-    "   match it; decide which, do not leave both.",
-]
 owns = [
     "apps/website/frontend/src/server_control.rs",
     "apps/website/frontend/src/event_manager.rs",
