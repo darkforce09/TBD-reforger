@@ -627,11 +627,148 @@ pub fn cmd_ship(root: &Path, registry: &mut Value, id: &str) -> Result<()> {
     Ok(())
 }
 
+/// T-917.6 — `ticket stamp-sha <id> <sha>`: step 3 of the ship lifecycle (see
+/// `ops::ship`). Writes `shipped_at` through the typed op, then closes the token
+/// accounting: when the ticket has neither a run receipt under `metrics/<id>/` nor
+/// an `estimates/<id>.json`, the `diff_loc` estimate is generated on the spot from
+/// the ticket's subject commits INCLUDING the just-passed landing sha (cohort_median
+/// at zero included LOC) and `"tokens"` is appended to `estimated[]`.
+///
+/// Deliberately NO `require_check_ok` preflight and NO sync/repack: between `ship`
+/// and `stamp-sha` the tree is transiently gate-red BY DESIGN (the SHA cannot exist
+/// before the commit), and this is the verb that moves it back to green — a full-
+/// check preflight would deadlock the lifecycle it exists to close. Stamps, markers
+/// and estimate files feed no generated view and are not wave.lock inputs (the byte
+/// tripwire at the end proves the latter every run).
+pub fn cmd_stamp_sha(root: &Path, id: &str, sha: &str) -> Result<()> {
+    let subjects = crate::backfill_stamps::mine_subjects(root)?;
+    let sha_loc = crate::estimate_tokens::collect_numstat(root)?;
+    for line in stamp_sha_with_inputs(
+        root,
+        id,
+        sha,
+        &subjects,
+        &sha_loc,
+        &tbd_tickets::now_utc_rfc3339(),
+    )? {
+        println!("{line}");
+    }
+    Ok(())
+}
+
+/// The testable core of [`cmd_stamp_sha`] — mined inputs injected so scratch tests
+/// never need real git history. Returns the report lines the verb prints.
+pub fn stamp_sha_with_inputs(
+    root: &Path,
+    id: &str,
+    sha: &str,
+    subjects: &std::collections::BTreeMap<String, Vec<crate::backfill_stamps::SubjectCommit>>,
+    sha_loc: &std::collections::BTreeMap<String, u64>,
+    now_utc: &str,
+) -> Result<Vec<String>> {
+    let lock_path = root.join(".ai/tickets/wave.lock");
+    let lock_before = fs::read(&lock_path).ok();
+    let mut corpus = load_corpus(root)?;
+    if corpus.get(id).is_none() {
+        unknown_ticket(id);
+    }
+    let sha = sha.trim();
+    let mut lines: Vec<String> = Vec::new();
+
+    // 1. The shipped_at write (typed op: shape/status/overwrite refusals live there).
+    let outcome = ops::stamp_sha(&mut corpus, id, sha, now_utc).map_err(anyhow::Error::msg)?;
+    let stamped = !outcome.changed.is_empty();
+    if stamped {
+        lines.push(format!("{id}: shipped_at -> {sha:?}"));
+    } else {
+        lines.push(format!(
+            "{id}: shipped_at already {sha:?} — no-op (re-stamp of the same sha)"
+        ));
+    }
+
+    // 2. Token accounting. Exactly one of receipt XOR estimate must exist for the
+    // gate; generate the estimate only when NEITHER does.
+    let mut to_write: Vec<String> = outcome.changed.clone();
+    if crate::metrics::has_receipt(root, id) {
+        lines.push(format!(
+            "{id}: measured receipt(s) under {}/{id}/ — no estimate generated",
+            crate::metrics::METRICS_DIR_REL
+        ));
+    } else {
+        let existing = crate::estimate_tokens::load_existing(root)?;
+        if existing.contains_key(id) {
+            lines.push(format!(
+                "{id}: {}/{id}.json already exists — estimate untouched",
+                crate::estimate_tokens::ESTIMATES_DIR_REL
+            ));
+        } else {
+            let subject_shas: Vec<String> = subjects
+                .get(id)
+                .map(|v| v.iter().map(|c| c.sha.clone()).collect())
+                .unwrap_or_default();
+            let shas = crate::estimate_tokens::derivation_shas(&subject_shas, sha);
+            let rec = crate::estimate_tokens::plan_estimate_for_id(
+                &corpus, id, &shas, sha_loc, &existing, now_utc,
+            )?;
+            crate::estimate_tokens::write_estimate_file(root, &rec)?;
+            match rec.source.as_str() {
+                "diff_loc" => lines.push(format!(
+                    "{id}: diff_loc estimate written — {} LOC over {} commit(s) x factor {} = {} tokens",
+                    rec.loc_changed.unwrap_or(0),
+                    shas.len(),
+                    rec.factor,
+                    rec.tokens_estimated
+                )),
+                _ => lines.push(format!(
+                    "{id}: cohort_median estimate written — {} tokens over a cohort of {} (zero included LOC over {} commit(s))",
+                    rec.tokens_estimated,
+                    rec.cohort_size.unwrap_or(0),
+                    shas.len()
+                )),
+            }
+            let t = corpus
+                .tickets
+                .get_mut(id)
+                .expect("membership checked above");
+            let estimated = match t {
+                Ticket::Program(p) => &mut p.estimated,
+                Ticket::Work(w) => &mut w.estimated,
+            };
+            if !estimated.iter().any(|e| e == "tokens") {
+                estimated.push("tokens".to_string());
+                lines.push(format!("{id}: \"tokens\" appended to estimated[]"));
+            }
+            if !to_write.contains(&id.to_string()) {
+                to_write.push(id.to_string());
+            }
+        }
+    }
+
+    if to_write.is_empty() {
+        lines.push(format!("{id}: nothing to write"));
+    } else {
+        corpus.write_back(&to_write).map_err(anyhow::Error::msg)?;
+        lines.push(format!(
+            "{} ticket file(s) written via Corpus::write_back",
+            to_write.len()
+        ));
+    }
+    let lock_after = fs::read(&lock_path).ok();
+    if lock_before != lock_after {
+        bail!(
+            ".ai/tickets/wave.lock bytes changed — stamps and estimates are not lock inputs; \
+             stamp-sha perturbed something it must not"
+        );
+    }
+    Ok(lines)
+}
+
 pub fn cmd_mark_ready(
     root: &Path,
     registry: &mut Value,
     id: &str,
     spec_arg: Option<&str>,
+    plan_arg: Option<&str>,
 ) -> Result<()> {
     let mut corpus = load_corpus(root)?;
     if corpus.get(id).is_none() {
@@ -643,20 +780,26 @@ pub fn cmd_mark_ready(
     // Typed op (T-916.1): spec-arg set, spec-on-disk + deps gates, ready promotion with the
     // exact user_story (summary→title→id) and acceptance (["See spec."]) backfills. The
     // legacy refusals — "Ticket {id} needs a spec path", "Spec file not found: …",
-    // "Blocked by …" — come back verbatim and exit exactly as before.
-    let outcome = match ops::mark_ready(&mut corpus, id, spec_arg, &tbd_tickets::now_utc_rfc3339())
-    {
+    // "Blocked by …" — come back verbatim and exit exactly as before. T-917.6 adds the
+    // plan ready-gate: PLAN defaults to docs/plans/<id-lowercased-dots-to-underscores>_plan.md
+    // and must exist on disk ("Plan file not found: …").
+    let outcome = match ops::mark_ready(
+        &mut corpus,
+        id,
+        spec_arg,
+        plan_arg,
+        &tbd_tickets::now_utc_rfc3339(),
+    ) {
         Ok(o) => o,
         Err(msg) => refuse_verbatim(&msg),
     };
-    let spec = match corpus.get(id) {
-        Some(Ticket::Work(w)) => w.spec.clone(),
-        Some(Ticket::Program(p)) => p.spec.clone(),
-        None => None,
-    }
-    .unwrap_or_default()
-    .trim()
-    .to_string();
+    let (spec, plan) = match corpus.get(id) {
+        Some(Ticket::Work(w)) => (w.spec.clone(), w.plan.clone()),
+        Some(Ticket::Program(p)) => (p.spec.clone(), p.plan.clone()),
+        None => (None, None),
+    };
+    let spec = spec.unwrap_or_default().trim().to_string();
+    let plan = plan.unwrap_or_default().trim().to_string();
     corpus
         .write_back(&outcome.changed)
         .map_err(anyhow::Error::msg)?;
@@ -665,7 +808,7 @@ pub fn cmd_mark_ready(
     // (queued→ready is dispatchability-neutral).
     reload_registry(root, registry)?;
     cmd_sync(root, registry)?;
-    println!("{id} -> ready ({spec})");
+    println!("{id} -> ready ({spec}; plan {plan})");
     Ok(())
 }
 
@@ -1287,7 +1430,7 @@ mod tests {
     fn mark_ready_refuses_invalid_registry() {
         let root = worktree_root();
         let mut registry = red_registry(&root);
-        let err = cmd_mark_ready(&root, &mut registry, "T-001", None)
+        let err = cmd_mark_ready(&root, &mut registry, "T-001", None, None)
             .expect_err("mark-ready must refuse a schema-red registry");
         let msg = format!("{err:#}");
         assert!(
@@ -1479,8 +1622,25 @@ mod tests {
         )
         .unwrap();
         fs::write(dir.join(".ai/tickets/scope-vocab.toml"), "[repo.docs]\n").unwrap();
+        // T-917.5/.6: the estimates schema rides along so a stamp-sha-generated
+        // estimate validates under the REAL contract inside the scratch too.
+        fs::copy(
+            worktree_root().join(crate::estimate_tokens::ESTIMATES_SCHEMA_REL),
+            dir.join(crate::estimate_tokens::ESTIMATES_SCHEMA_REL),
+        )
+        .unwrap();
         fs::write(dir.join("docs/spec.md"), "# spec\n").unwrap();
         fs::write(dir.join("docs/child-spec.md"), "# child spec\n").unwrap();
+        // T-917.6 plan ready-gate: every ready-class WORK ticket carries a plan that
+        // exists on disk (the live-tree contract this fixture must now mirror).
+        fs::create_dir_all(dir.join("docs/plans")).unwrap();
+        for plan in ["t-001_1_plan.md", "t-002_plan.md"] {
+            fs::write(
+                dir.join("docs/plans").join(plan),
+                "# plan\n\n## Context\n\n## Approach\n\n## Risks\n\n## Verification\n",
+            )
+            .unwrap();
+        }
         let ready = |order: i64, spec: &str| Status::Ready {
             order,
             spec: spec.into(),
@@ -1501,7 +1661,7 @@ mod tests {
                     executor: Some("claude-code".into()),
                     notes: None,
                     spec: spec.map(str::to_string),
-                    plan: None,
+                    plan: ready_class.then(|| tbd_tickets::ops::default_plan_path(id)),
                     depends_on: vec![],
                     unblocks: vec![],
                     parent: parent.map(str::to_string),
@@ -1525,7 +1685,8 @@ mod tests {
                     citations: vec![],
                     shipped_at: None,
                     priority: None,
-                    created_at: None,
+                    // T-917.6: birth stamps present, or ops::ship refuses the flip.
+                    created_at: Some("2026-08-01T09:00:00Z".into()),
                     completed_at: None,
                     estimated: vec![],
                     estimate_note: None,
@@ -1713,6 +1874,26 @@ mod tests {
             queue_rows(&root)
         );
 
+        // T-917.6 lifecycle: between ship and stamp-sha the tree is transiently
+        // gate-red (shipped_at + tokens missing), so the NEXT check-gated verb must
+        // be preceded by the stamp — exactly the documented flow. Injected inputs:
+        // no subject commits, the landing sha carries 12 included LOC.
+        let sha_loc: std::collections::BTreeMap<String, u64> =
+            [("deadbeef1234".to_string(), 12)].into_iter().collect();
+        let lines = stamp_sha_with_inputs(
+            &root,
+            "T-001.1",
+            "deadbeef1234",
+            &std::collections::BTreeMap::new(),
+            &sha_loc,
+            "2026-08-15T10:00:00Z",
+        )
+        .expect("stamp closes the ship");
+        assert!(
+            lines.iter().any(|l| l.contains("shipped_at -> ")),
+            "{lines:?}"
+        );
+
         // Child set-status rides the same wiring: defer the idea sibling by dotted id.
         cmd_set_status(&root, &mut registry, "T-001.2", "deferred").expect("child set-status");
         match parse_scratch_ticket(&root, "T-001.2") {
@@ -1730,6 +1911,103 @@ mod tests {
             lock.tickets_in_wave(0).contains(&"T-001.2".to_string()),
             "set-status repacked the deferred child into wave 0"
         );
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    /// T-917.6 acceptance — the scratch end-to-end ship cycle: `ship` (stamps
+    /// completed_at; tree transiently gate-red) → "commit" (a fake landing sha) →
+    /// `stamp-sha` → ship gate GREEN with the auto-estimate written and its factor
+    /// matching the documented constant. Then the idempotence contract: re-stamp of
+    /// the same sha is a no-op, a different sha refuses, a non-shipped ticket and a
+    /// garbage sha refuse (op-level, corpus untouched — pinned in ops tests too).
+    #[test]
+    fn stamp_sha_end_to_end_scratch_cycle() {
+        use std::collections::BTreeMap;
+        let root = scratch_registry("stamp-sha-e2e");
+        let mut registry = load_registry(&root).expect("scratch registry loads");
+        let now = "2026-08-15T10:00:00Z";
+        let subjects: BTreeMap<String, Vec<crate::backfill_stamps::SubjectCommit>> =
+            BTreeMap::new();
+        let sha_loc: BTreeMap<String, u64> = [("beefbeef00".to_string(), 20)].into_iter().collect();
+
+        cmd_ship(&root, &mut registry, "T-002").expect("ship");
+        // Between ship and stamp the gate is red BY DESIGN, naming both holes.
+        let errs = crate::check::check(&root, &registry, false);
+        assert!(
+            errs.iter()
+                .any(|e| e.contains("T-002") && e.contains("without shipped_at")),
+            "{errs:?}"
+        );
+        assert!(
+            errs.iter()
+                .any(|e| e.contains("T-002") && e.contains("no token accounting")),
+            "{errs:?}"
+        );
+
+        let lines = stamp_sha_with_inputs(&root, "T-002", "beefbeef00", &subjects, &sha_loc, now)
+            .expect("stamp-sha closes the ship");
+        assert!(
+            lines
+                .iter()
+                .any(|l| l.contains("shipped_at -> \"beefbeef00\"")),
+            "{lines:?}"
+        );
+        assert!(
+            lines
+                .iter()
+                .any(|l| l.contains("diff_loc estimate written") && l.contains("20 LOC")),
+            "{lines:?}"
+        );
+        match parse_scratch_ticket(&root, "T-002") {
+            Ticket::Work(w) => {
+                assert_eq!(w.shipped_at.as_deref(), Some("beefbeef00"));
+                assert!(w.estimated.iter().any(|e| e == "tokens"));
+            }
+            Ticket::Program(_) => panic!("work"),
+        }
+        let est: crate::estimate_tokens::EstimateRecord = serde_json::from_str(
+            &fs::read_to_string(root.join(".ai/tickets/estimates/T-002.json")).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(est.source, "diff_loc");
+        assert_eq!(
+            est.factor,
+            crate::estimate_tokens::TOKENS_PER_LOC,
+            "factor matches the documented constant"
+        );
+        assert_eq!(
+            est.tokens_estimated,
+            20 * crate::estimate_tokens::TOKENS_PER_LOC
+        );
+        // Gate green: the full check has no T-002 finding left (the fixture itself
+        // stays green on every other rule).
+        let errs = crate::check::check(&root, &registry, false);
+        assert!(
+            errs.is_empty(),
+            "gate must be green after stamp-sha:\n{}",
+            errs.join("\n")
+        );
+
+        // Re-stamp same sha: no-op (bytes untouched), estimate untouched.
+        let before = fs::read_to_string(root.join(".ai/tickets/T-002.toml")).unwrap();
+        let lines = stamp_sha_with_inputs(&root, "T-002", "beefbeef00", &subjects, &sha_loc, now)
+            .expect("re-stamp same sha");
+        assert!(lines.iter().any(|l| l.contains("no-op")), "{lines:?}");
+        assert_eq!(
+            fs::read_to_string(root.join(".ai/tickets/T-002.toml")).unwrap(),
+            before,
+            "no-op must not rewrite the ticket"
+        );
+        // Different sha refuses; non-shipped refuses; garbage refuses.
+        let err = stamp_sha_with_inputs(&root, "T-002", "0000000a", &subjects, &sha_loc, now)
+            .expect_err("different sha");
+        assert!(format!("{err:#}").contains("never overwritten"), "{err:#}");
+        let err = stamp_sha_with_inputs(&root, "T-001.1", "beefbeef00", &subjects, &sha_loc, now)
+            .expect_err("ready ticket refuses");
+        assert!(format!("{err:#}").contains("not shipped"), "{err:#}");
+        let err = stamp_sha_with_inputs(&root, "T-002", "not-a-sha", &subjects, &sha_loc, now)
+            .expect_err("garbage sha");
+        assert!(format!("{err:#}").contains("lowercase hex"), "{err:#}");
         let _ = fs::remove_dir_all(&root);
     }
 }

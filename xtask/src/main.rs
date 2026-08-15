@@ -837,10 +837,25 @@ enum TicketCmd {
     Ship {
         id: String,
     },
+    /// T-917.6: step 3 of the ship lifecycle — after the landing commit exists, write
+    /// its SHA onto the shipped ticket (`shipped_at`, both storage arms) and close the
+    /// token accounting (generates the diff_loc estimate when neither a receipt nor an
+    /// estimate exists; cohort_median at zero included LOC). Re-stamping the same sha
+    /// is a no-op; a different sha refuses (shipped_at is never overwritten). Flow:
+    /// `ticket ship <id>` → commit → `ticket stamp-sha <id> $(git rev-parse --short HEAD)`.
+    #[command(name = "stamp-sha")]
+    StampSha {
+        id: String,
+        sha: String,
+    },
     #[command(name = "mark-ready")]
     MarkReady {
         id: String,
         spec: Option<String>,
+        /// T-917.6 plan ready-gate: path to this ticket's own plan document; defaults
+        /// to docs/plans/<id-lowercased-dots-to-underscores>_plan.md and must exist
+        /// on disk (copy docs/plans/TEMPLATE.md).
+        plan: Option<String>,
     },
     #[command(name = "advance-slice")]
     AdvanceSlice {
@@ -1288,9 +1303,15 @@ fn run() -> Result<u8> {
                     let mut reg = load_registry(&root)?;
                     cmd_ship(&root, &mut reg, &id)?;
                 }
-                TicketCmd::MarkReady { id, spec } => {
+                // No registry pre-load and no check preflight: stamp-sha is the verb
+                // that moves the transiently gate-red ship→commit window back to
+                // green — a full-check preflight would deadlock it (cmd doc).
+                TicketCmd::StampSha { id, sha } => {
+                    cmd_stamp_sha(&root, &id, &sha)?;
+                }
+                TicketCmd::MarkReady { id, spec, plan } => {
                     let mut reg = load_registry(&root)?;
-                    cmd_mark_ready(&root, &mut reg, &id, spec.as_deref())?;
+                    cmd_mark_ready(&root, &mut reg, &id, spec.as_deref(), plan.as_deref())?;
                 }
                 TicketCmd::AdvanceSlice { id } => {
                     let mut reg = load_registry(&root)?;

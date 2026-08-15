@@ -87,6 +87,16 @@ pub const ESTIMATED_VALUES: &[&str] = &[
     "scope",
 ];
 
+/// 7–40 lowercase hex — the repo's `shipped_at` / estimate SHA shape. THE single
+/// authority (T-917.6): the T-917.4 miner, the T-917.5 estimates check, the S.6 ship
+/// gate and [`ops::stamp_sha`] all judge SHA-shapedness through this one predicate
+/// (xtask re-exports it), so the shape rule cannot fork.
+pub fn is_sha_shaped(v: &str) -> bool {
+    (7..=40).contains(&v.len())
+        && v.chars()
+            .all(|c| c.is_ascii_digit() || ('a'..='f').contains(&c))
+}
+
 /// T-917.3 word caps (spec §Body, Decisions log #6) — CHECK-enforced (`ticket check`)
 /// plus an `ops::validate_post_image` refusal on tickets an op rewrites; NEVER
 /// parse-enforced, so old git revisions stay readable. The counting instrument is

@@ -6,6 +6,7 @@ class = "audit"
 status = "ready"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_4_z_placement_audit.md"
+plan = "docs/plans/t-090_4_plan.md"
 executor = "claude-code"
 parent = "T-090"
 user_story = "Phase A: offline tool compares each exported map object's pivot Z against the T-091 DEM at (x,y) — fast pass over 1M+ Eden objects. This slice is Phase A only — detect, no auto-fix."

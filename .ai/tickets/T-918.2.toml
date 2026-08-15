@@ -6,6 +6,7 @@ class = "feature"
 status = "ready"
 order = 5982
 spec = "docs/platform/t917_ticket_schema_v2.md"
+plan = "docs/plans/t-918_2_plan.md"
 executor = "claude-code"
 notes = "Structural separation already guarantees the no-sum rule at the data layer; this slice carries the negative assertion into the UI acceptance."
 depends_on = ["T-917.5"]

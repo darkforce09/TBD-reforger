@@ -411,6 +411,157 @@ fn check_estimated_stamp_coherence(root: &Path) -> Vec<String> {
     errors
 }
 
+/// T-917.6 — THE hard ship gate (spec §The gate; Decisions log #1: "hard requirement…
+/// use maths", operator-overruled soft states). For every SHIPPED ticket — work AND
+/// program (program `shipped_at` lives inside `Status::Shipped`; work carries the
+/// field — the `ops::current_shipped_at` asymmetry, read through both arms here):
+///
+/// - `created_at` present (RFC 3339 UTC validity is the parse's job — a malformed
+///   value already refuses the corpus load);
+/// - `completed_at` present;
+/// - `shipped_at` present AND SHA-shaped (7–40 lowercase hex, the
+///   `tbd_tickets::is_sha_shaped` authority) — OR absent with `"shipped_at"` in
+///   `estimated[]` and a nonempty `estimate_note` naming the gap (the one legal
+///   asymmetry: a SHA is never invented);
+/// - token accounting: at least one receipt file under `metrics/<id>/` XOR
+///   `estimates/<id>.json` — NEITHER is red here.
+///
+/// Composes onto the earlier rules WITHOUT double-reporting (each absent-field state
+/// is red under exactly one rule):
+///
+/// - absent-but-MARKED `created_at`/`completed_at` is the T-917.4 coherence rule's
+///   red ("a marked estimate with no value is a hole wearing a provenance badge") —
+///   this gate reds the absent-UNMARKED case;
+/// - absent+marked `shipped_at` with an empty note is coherence's red — this gate
+///   reds absent-unmarked and present-but-not-SHA-shaped (naming the value);
+/// - receipt AND estimate together is the T-917.5 mutual-exclusion red — this gate's
+///   arm covers only the NEITHER case.
+///
+/// Lifecycle note (`ops::ship` doc has the full contract): the working tree is
+/// transiently red here between `ticket ship` and `ticket stamp-sha` — the landing
+/// SHA cannot exist before the commit. That window is the design; stamp-sha closes
+/// it, and committed/pushed trees satisfy the gate. Fail-closed on an unloadable
+/// corpus, like every corpus rule in this file.
+fn check_ship_gate(root: &Path) -> Vec<String> {
+    let corpus = match tbd_tickets::Corpus::load(root) {
+        Ok(c) => c,
+        Err(e) => return vec![e],
+    };
+    let mut errors = Vec::new();
+    for (id, ticket) in &corpus.tickets {
+        if ticket.status().name() != tbd_tickets::StatusName::Shipped {
+            continue;
+        }
+        let (created, completed, shipped, estimated) = match ticket {
+            tbd_tickets::Ticket::Program(p) => {
+                let shipped = match &p.status {
+                    tbd_tickets::Status::Shipped { shipped_at, .. } => shipped_at.as_deref(),
+                    _ => None,
+                };
+                (
+                    p.created_at.as_deref(),
+                    p.completed_at.as_deref(),
+                    shipped,
+                    &p.estimated,
+                )
+            }
+            tbd_tickets::Ticket::Work(w) => (
+                w.created_at.as_deref(),
+                w.completed_at.as_deref(),
+                w.shipped_at.as_deref(),
+                &w.estimated,
+            ),
+        };
+        let marked = |f: &str| estimated.iter().any(|e| e == f);
+        for (field, value) in [("created_at", created), ("completed_at", completed)] {
+            if value.is_none() && !marked(field) {
+                errors.push(format!(
+                    "{id}: shipped without {field} — the ship gate requires all three stamps; \
+                     mine it (`ticket backfill-stamps`) or stamp it deliberately"
+                ));
+            }
+        }
+        match shipped {
+            Some(v) if tbd_tickets::is_sha_shaped(v) => {}
+            Some(v) => errors.push(format!(
+                "{id}: shipped_at {v:?} is not a commit SHA (7-40 lowercase hex) — a stamp \
+                 must name the landing commit; delete the bogus value and re-mine \
+                 (`ticket backfill-stamps`) or stamp the real SHA (`ticket stamp-sha`)"
+            )),
+            None if marked("shipped_at") => {
+                // Rule split: with a nonempty estimate_note this is the legal
+                // absent-marked asymmetry; with an empty note the T-917.4 coherence
+                // rule already reds it. Either way, not this gate's finding.
+            }
+            None => errors.push(format!(
+                "{id}: shipped without shipped_at and without the estimated[] marker — stamp \
+                 the landing commit (`ticket stamp-sha {id} <sha>`) or record the honest \
+                 absence (\"shipped_at\" in estimated[] + estimate_note naming the gap)"
+            )),
+        }
+        let has_receipt = crate::metrics::has_receipt(root, id);
+        let has_estimate = root
+            .join(crate::estimate_tokens::ESTIMATES_DIR_REL)
+            .join(format!("{id}.json"))
+            .is_file();
+        if !has_receipt && !has_estimate {
+            errors.push(format!(
+                "{id}: shipped with no token accounting — needs a run receipt under \
+                 {}/{id}/ or an estimate at {}/{id}.json (`ticket stamp-sha {id} <sha>` \
+                 generates one; both at once is the T-917.5 mutual-exclusion red)",
+                crate::metrics::METRICS_DIR_REL,
+                crate::estimate_tokens::ESTIMATES_DIR_REL
+            ));
+        }
+    }
+    errors
+}
+
+/// T-917.6 — the plan ready-gate (spec §Plan documents; Decisions log #9: "no plan =
+/// can't go ready"). Every READY-class (ready/running/review) WORK ticket must carry
+/// `plan` and the file must exist on disk. Work-only on purpose: a program's `spec`
+/// is the shared program authority and programs are never dispatched as slices —
+/// the plan is the per-ticket execution document. `ops::mark_ready` enforces the
+/// same gate at promotion time (with the id-derived default path); this corpus-wide
+/// rule additionally catches `set-status` promotions and hand-edits. Fail-closed on
+/// an unloadable corpus.
+fn check_plan_ready_gate(root: &Path) -> Vec<String> {
+    let corpus = match tbd_tickets::Corpus::load(root) {
+        Ok(c) => c,
+        Err(e) => return vec![e],
+    };
+    let mut errors = Vec::new();
+    for (id, ticket) in &corpus.tickets {
+        let tbd_tickets::Ticket::Work(w) = ticket else {
+            continue;
+        };
+        if !matches!(
+            w.status.name(),
+            tbd_tickets::StatusName::Ready
+                | tbd_tickets::StatusName::Running
+                | tbd_tickets::StatusName::Review
+        ) {
+            continue;
+        }
+        let status = w.status.name().as_str();
+        match w.plan.as_deref().map(str::trim) {
+            None | Some("") => errors.push(format!(
+                "{id}: {status} work ticket without a plan — ready-class requires plan \
+                 (docs/plans/TEMPLATE.md; `ticket mark-ready {id} <spec> [plan]` defaults it)"
+            )),
+            Some(p) => {
+                if !root.join(p).is_file() {
+                    errors.push(format!(
+                        "{id}: plan missing on disk: {p} — a ready-class work ticket's plan \
+                         document must exist"
+                    ));
+                }
+            }
+        }
+    }
+    errors
+}
+
 /// T-916.2 — parent↔child referential integrity over EVERY `.ai/tickets/T-*.toml` (the typed
 /// corpus; parents-only walks cannot see either half of the relation). Two rules, both naming
 /// the pair:
@@ -657,6 +808,12 @@ pub fn check(root: &Path, registry: &serde_json::Value, strict: bool) -> Vec<Str
     // "tokens" marker ⇔ file coherence). Structurally OUTSIDE metrics/ so an
     // estimate can never impersonate a receipt (T-913).
     errors.extend(crate::estimate_tokens::check_as_errors(root));
+    // T-917.6: THE hard ship gate — shipped requires created_at + completed_at +
+    // SHA-shaped shipped_at (or the marked-absent asymmetry) + token accounting
+    // (receipt XOR estimate; the NEITHER arm) — and the plan ready-gate: ready-class
+    // work carries a plan document that exists on disk.
+    errors.extend(check_ship_gate(root));
+    errors.extend(check_plan_ready_gate(root));
     // T-917.1/.2: the scope vocabulary (.ai/tickets/scope-vocab.toml) must EXIST and be
     // shape-valid — BASE tier since the S.2 cutover (S.1 parked existence at --strict
     // only while pre-v2 scratch registries still lacked the file): scope legality now
@@ -761,8 +918,77 @@ pub fn check(root: &Path, registry: &serde_json::Value, strict: bool) -> Vec<Str
     errors
 }
 
+/// T-917.6 — the strict honesty counters (spec §The gate: "drift is visible, never
+/// silent"). Pure visibility, never a rule: printed under `--strict` only, derived
+/// at run time from receipts, estimate files and `estimated[]` markers over the
+/// SHIPPED set. Instruments, named:
+///
+/// - tokens `K/E` = shipped tickets with ≥1 receipt file under `metrics/<id>/` vs
+///   with an `estimates/<id>.json`; `diff_loc`/`cohort_median` split the E files by
+///   their recorded `source` (a receipt+estimate double-carrier counts in both K and
+///   E — the mutual-exclusion rule reds it, the counter does not hide it);
+/// - stamps `M/E2` = shipped tickets whose `estimated[]` lists NONE of the three
+///   stamp fields vs at least one; the `git_subject`/`id_interpolation` split
+///   classifies each E2 ticket by its `estimate_note` — the T-917.4 miner always
+///   writes "git_subject-mined" into notes on method-1 tickets, so a note without
+///   that token is method 2 (interpolated dates and/or a no-subject absent SHA).
+///
+/// `None` when the corpus or the estimates tree cannot load — the check errors
+/// alongside already name why; counters never mask a red.
+fn strict_honesty_counters(root: &Path) -> Option<Vec<String>> {
+    let corpus = tbd_tickets::Corpus::load(root).ok()?;
+    let estimates = crate::estimate_tokens::load_existing(root).ok()?;
+    let (mut k, mut e, mut d, mut c) = (0usize, 0usize, 0usize, 0usize);
+    let (mut m, mut e2, mut a, mut b) = (0usize, 0usize, 0usize, 0usize);
+    for (id, ticket) in &corpus.tickets {
+        if ticket.status().name() != tbd_tickets::StatusName::Shipped {
+            continue;
+        }
+        if crate::metrics::has_receipt(root, id) {
+            k += 1;
+        }
+        if let Some(rec) = estimates.get(id) {
+            e += 1;
+            match rec.source.as_str() {
+                "diff_loc" => d += 1,
+                _ => c += 1,
+            }
+        }
+        let (estimated, note) = match ticket {
+            tbd_tickets::Ticket::Program(p) => (&p.estimated, p.estimate_note.as_deref()),
+            tbd_tickets::Ticket::Work(w) => (&w.estimated, w.estimate_note.as_deref()),
+        };
+        let stamp_marked = estimated
+            .iter()
+            .any(|f| matches!(f.as_str(), "created_at" | "completed_at" | "shipped_at"));
+        if stamp_marked {
+            e2 += 1;
+            if note.is_some_and(|n| n.contains("git_subject")) {
+                a += 1;
+            } else {
+                b += 1;
+            }
+        } else {
+            m += 1;
+        }
+    }
+    Some(vec![
+        format!("shipped tokens measured/estimated: {k}/{e} (diff_loc {d}, cohort_median {c})"),
+        format!(
+            "stamps: measured {m}-tickets, estimated {e2}-tickets (git_subject {a}, id_interpolation {b})"
+        ),
+    ])
+}
+
 pub fn cmd_check(root: &Path, registry: &serde_json::Value, strict: bool) -> Result<()> {
     let errors = check(root, registry, strict);
+    // T-917.6 honesty counters: strict-only visibility, printed red or green (a red
+    // tree's drift matters MORE) — but only when the trees they read actually load.
+    if strict && let Some(lines) = strict_honesty_counters(root) {
+        for line in lines {
+            println!("{line}");
+        }
+    }
     if !errors.is_empty() {
         for e in &errors {
             eprintln!("ERROR: {e}");
@@ -1292,6 +1518,255 @@ component = "mission_creator"
         )
         .unwrap();
         assert!(check_estimated_stamp_coherence(&tmp).is_empty());
+        fs::remove_dir_all(&tmp).unwrap();
+    }
+
+    /// T-917.6 — THE ship gate, arm by arm. Live tree green (the S.2–S.5 passes plus
+    /// this slice's data fixes made it satisfiable); each planted violation reds
+    /// naming ticket + field (and the offending value for the SHA-shape arm); the
+    /// absent-marked-with-note asymmetry and receipt-or-estimate accounting are green.
+    /// Deliberately calls the gate fn directly — the double-report splits against the
+    /// T-917.4/5 rules are documented on the fn and exercised by the full-check test
+    /// on the live tree.
+    #[test]
+    fn ship_gate_red_green_per_arm() {
+        let root = worktree_root();
+        let errs = check_ship_gate(&root);
+        assert!(
+            errs.is_empty(),
+            "live tree must satisfy the ship gate; got:\n{}",
+            errs.join("\n")
+        );
+
+        let (tmp, dir) = scratch_tickets_dir("t917-ship-gate");
+        let shipped = |extra: &str| {
+            format!(
+                "id = \"T-001\"\nkind = \"work\"\ntitle = \"x\"\nsummary = \"x\"\nclass = \"chore\"\nstatus = \"shipped\"\norder = 10\n{extra}\n[scope]\ndomain = \"repo\"\nlayer = \"docs\"\n"
+            )
+        };
+        let full = "shipped_at = \"abcdef12\"\ncreated_at = \"2026-07-01T10:00:00Z\"\ncompleted_at = \"2026-07-02T10:00:00Z\"\n";
+        let estimate_path = tmp.join(".ai/tickets/estimates/T-001.json");
+        fs::create_dir_all(estimate_path.parent().unwrap()).unwrap();
+        let with_estimate = || fs::write(&estimate_path, "{}").unwrap();
+
+        // Fully stamped + estimate file → green.
+        fs::write(dir.join("T-001.toml"), shipped(full)).unwrap();
+        with_estimate();
+        assert!(check_ship_gate(&tmp).is_empty(), "full stamps are green");
+
+        // Missing completed_at → red naming ticket + field.
+        fs::write(
+            dir.join("T-001.toml"),
+            shipped("shipped_at = \"abcdef12\"\ncreated_at = \"2026-07-01T10:00:00Z\"\n"),
+        )
+        .unwrap();
+        let errs = check_ship_gate(&tmp);
+        assert_eq!(errs.len(), 1, "{errs:?}");
+        assert!(
+            errs[0].contains("T-001") && errs[0].contains("without completed_at"),
+            "{}",
+            errs[0]
+        );
+
+        // Missing created_at → red naming ticket + field.
+        fs::write(
+            dir.join("T-001.toml"),
+            shipped("shipped_at = \"abcdef12\"\ncompleted_at = \"2026-07-02T10:00:00Z\"\n"),
+        )
+        .unwrap();
+        let errs = check_ship_gate(&tmp);
+        assert!(
+            errs.len() == 1 && errs[0].contains("without created_at"),
+            "{errs:?}"
+        );
+
+        // Non-SHA-shaped shipped_at → red naming the VALUE (the branch-stray class).
+        fs::write(
+            dir.join("T-001.toml"),
+            shipped("shipped_at = \"slice/T-197\"\ncreated_at = \"2026-07-01T10:00:00Z\"\ncompleted_at = \"2026-07-02T10:00:00Z\"\n"),
+        )
+        .unwrap();
+        let errs = check_ship_gate(&tmp);
+        assert!(
+            errs.len() == 1
+                && errs[0].contains("T-001")
+                && errs[0].contains("\"slice/T-197\"")
+                && errs[0].contains("not a commit SHA"),
+            "{errs:?}"
+        );
+
+        // Absent + UNMARKED shipped_at → red pointing at stamp-sha.
+        fs::write(
+            dir.join("T-001.toml"),
+            shipped(
+                "created_at = \"2026-07-01T10:00:00Z\"\ncompleted_at = \"2026-07-02T10:00:00Z\"\n",
+            ),
+        )
+        .unwrap();
+        let errs = check_ship_gate(&tmp);
+        assert!(
+            errs.len() == 1
+                && errs[0].contains("without shipped_at")
+                && errs[0].contains("stamp-sha"),
+            "{errs:?}"
+        );
+
+        // Absent + marked WITH a note naming the gap → the legal asymmetry, green.
+        fs::write(
+            dir.join("T-001.toml"),
+            shipped("created_at = \"2026-07-01T10:00:00Z\"\ncompleted_at = \"2026-07-02T10:00:00Z\"\nestimated = [\"shipped_at\"]\nestimate_note = \"no subject commits; no SHA mined\"\n"),
+        )
+        .unwrap();
+        assert!(
+            check_ship_gate(&tmp).is_empty(),
+            "absent-marked-with-note is the legal asymmetry"
+        );
+
+        // No token accounting (neither receipt dir nor estimate file) → red.
+        fs::remove_file(&estimate_path).unwrap();
+        fs::write(dir.join("T-001.toml"), shipped(full)).unwrap();
+        let errs = check_ship_gate(&tmp);
+        assert!(
+            errs.len() == 1 && errs[0].contains("no token accounting"),
+            "{errs:?}"
+        );
+        // A receipt dir with one file satisfies the arm too.
+        let rdir = tmp.join(".ai/tickets/metrics/T-001");
+        fs::create_dir_all(&rdir).unwrap();
+        fs::write(rdir.join("r.json"), "{}").unwrap();
+        assert!(
+            check_ship_gate(&tmp).is_empty(),
+            "receipt satisfies the accounting arm"
+        );
+        fs::remove_dir_all(&tmp).unwrap();
+    }
+
+    /// T-917.6 — the plan ready-gate: a ready/running/review WORK ticket without a
+    /// plan key reds naming the fix; a plan key whose file is missing reds naming the
+    /// path; plan + file is green; programs and non-ready work are exempt.
+    #[test]
+    fn plan_ready_gate_red_green() {
+        let root = worktree_root();
+        let errs = check_plan_ready_gate(&root);
+        assert!(
+            errs.is_empty(),
+            "live ready tickets must carry plans; got:\n{}",
+            errs.join("\n")
+        );
+
+        let (tmp, dir) = scratch_tickets_dir("t917-plan-gate");
+        let ready = |status: &str, plan_line: &str| {
+            format!(
+                "id = \"T-001\"\nkind = \"work\"\ntitle = \"x\"\nsummary = \"x\"\nclass = \"chore\"\nstatus = \"{status}\"\norder = 10\nspec = \"docs/spec.md\"\n{plan_line}user_story = \"story\"\nacceptance = [\"gate\"]\nowns = [\"a.rs\"]\n\n[scope]\ndomain = \"repo\"\nlayer = \"docs\"\n"
+            )
+        };
+        for status in ["ready", "running", "review"] {
+            fs::write(dir.join("T-001.toml"), ready(status, "")).unwrap();
+            let errs = check_plan_ready_gate(&tmp);
+            assert_eq!(errs.len(), 1, "{status}: {errs:?}");
+            assert!(
+                errs[0].contains("T-001")
+                    && errs[0].contains(status)
+                    && errs[0].contains("requires plan"),
+                "{}",
+                errs[0]
+            );
+        }
+        // Plan key present but the file is missing → red naming the path.
+        fs::write(
+            dir.join("T-001.toml"),
+            ready("ready", "plan = \"docs/plans/t-001_plan.md\"\n"),
+        )
+        .unwrap();
+        let errs = check_plan_ready_gate(&tmp);
+        assert!(
+            errs.len() == 1 && errs[0].contains("plan missing on disk: docs/plans/t-001_plan.md"),
+            "{errs:?}"
+        );
+        // File lands → green.
+        fs::create_dir_all(tmp.join("docs/plans")).unwrap();
+        fs::write(tmp.join("docs/plans/t-001_plan.md"), "# plan\n").unwrap();
+        assert!(check_plan_ready_gate(&tmp).is_empty(), "plan + file green");
+        // Queued work is exempt (the gate binds on ready-class only).
+        fs::write(
+            dir.join("T-001.toml"),
+            "id = \"T-001\"\nkind = \"work\"\ntitle = \"x\"\nsummary = \"x\"\nclass = \"chore\"\nstatus = \"queued\"\norder = 10\nowns = [\"a.rs\"]\n\n[scope]\ndomain = \"repo\"\nlayer = \"docs\"\n",
+        )
+        .unwrap();
+        assert!(
+            check_plan_ready_gate(&tmp).is_empty(),
+            "queued work is exempt"
+        );
+        fs::remove_dir_all(&tmp).unwrap();
+    }
+
+    /// T-917.6 — the strict honesty counters over a scratch fixture whose numbers are
+    /// hand-computable: 4 shipped — one receipted+measured, one diff_loc-estimated
+    /// (git_subject stamps), one cohort_median-estimated (id_interpolation stamps),
+    /// one measured-stamps with a receipt missing tokens accounting entirely (the
+    /// counters COUNT, they do not police — the gate rule reds it separately).
+    #[test]
+    fn honesty_counters_fixture_math() {
+        let (tmp, dir) = scratch_tickets_dir("t917-counters");
+        let shipped = |id: &str, extra: &str| {
+            format!(
+                "id = \"{id}\"\nkind = \"work\"\ntitle = \"x\"\nsummary = \"x\"\nclass = \"chore\"\nstatus = \"shipped\"\norder = 10\nshipped_at = \"abcdef12\"\ncreated_at = \"2026-07-01T10:00:00Z\"\ncompleted_at = \"2026-07-02T10:00:00Z\"\n{extra}\n[scope]\ndomain = \"repo\"\nlayer = \"docs\"\n"
+            )
+        };
+        // T-001: receipt, measured stamps.
+        fs::write(dir.join("T-001.toml"), shipped("T-001", "")).unwrap();
+        let rdir = tmp.join(".ai/tickets/metrics/T-001");
+        fs::create_dir_all(&rdir).unwrap();
+        fs::write(rdir.join("r.json"), "{}").unwrap();
+        // T-002: diff_loc estimate, git_subject-mined stamps.
+        fs::write(
+            dir.join("T-002.toml"),
+            shipped(
+                "T-002",
+                "estimated = [\"created_at\", \"completed_at\", \"tokens\"]\nestimate_note = \"created_at/completed_at git_subject-mined from 2 commit subject(s)\"\n",
+            ),
+        )
+        .unwrap();
+        // T-003: cohort_median estimate, interpolated stamps (no git_subject token).
+        fs::write(
+            dir.join("T-003.toml"),
+            shipped(
+                "T-003",
+                "estimated = [\"created_at\", \"completed_at\", \"tokens\"]\nestimate_note = \"no subject commits; created_at/completed_at id-interpolated between T-001 and T-005\"\n",
+            ),
+        )
+        .unwrap();
+        // T-004: measured stamps, NO accounting (counted 0/0 — the gate rule reds it).
+        fs::write(dir.join("T-004.toml"), shipped("T-004", "")).unwrap();
+        // A queued ticket must not count anywhere.
+        fs::write(
+            dir.join("T-005.toml"),
+            "id = \"T-005\"\nkind = \"work\"\ntitle = \"x\"\nsummary = \"x\"\nclass = \"chore\"\nstatus = \"queued\"\norder = 11\nowns = [\"a.rs\"]\nestimated = [\"created_at\"]\ncreated_at = \"2026-07-01T10:00:00Z\"\n\n[scope]\ndomain = \"repo\"\nlayer = \"docs\"\n",
+        )
+        .unwrap();
+        let est_dir = tmp.join(".ai/tickets/estimates");
+        fs::create_dir_all(&est_dir).unwrap();
+        fs::write(
+            est_dir.join("T-002.json"),
+            "{\n  \"derived_from_shas\": [\n    \"aaaa111122223333\"\n  ],\n  \"factor\": 150,\n  \"generated_at\": \"2026-08-15T00:00:00Z\",\n  \"id\": \"T-002\",\n  \"loc_changed\": 10,\n  \"source\": \"diff_loc\",\n  \"tokens_estimated\": 1500\n}\n",
+        )
+        .unwrap();
+        fs::write(
+            est_dir.join("T-003.json"),
+            "{\n  \"cohort\": {\n    \"class\": \"chore\"\n  },\n  \"cohort_size\": 3,\n  \"factor\": 150,\n  \"generated_at\": \"2026-08-15T00:00:00Z\",\n  \"id\": \"T-003\",\n  \"source\": \"cohort_median\",\n  \"tokens_estimated\": 3000\n}\n",
+        )
+        .unwrap();
+
+        let lines = strict_honesty_counters(&tmp).expect("counters over a loadable tree");
+        assert_eq!(
+            lines,
+            vec![
+                "shipped tokens measured/estimated: 1/2 (diff_loc 1, cohort_median 1)".to_string(),
+                "stamps: measured 2-tickets, estimated 2-tickets (git_subject 1, id_interpolation 1)"
+                    .to_string(),
+            ],
+            "counter math must equal the hand computation"
+        );
         fs::remove_dir_all(&tmp).unwrap();
     }
 

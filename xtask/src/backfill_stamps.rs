@@ -216,13 +216,11 @@ fn estimated_of(t: &Ticket) -> &[String] {
     }
 }
 
-/// 7–40 lowercase hex — the repo's stamp/estimate SHA shape (shared with the
-/// T-917.5 estimates check).
-pub(crate) fn is_sha_shaped(v: &str) -> bool {
-    (7..=40).contains(&v.len())
-        && v.chars()
-            .all(|c| c.is_ascii_digit() || ('a'..='f').contains(&c))
-}
+/// 7–40 lowercase hex — the repo's stamp/estimate SHA shape. Moved to `tbd-tickets`
+/// at T-917.6 (the `ops::stamp_sha` refusal and the ship gate judge the same shape);
+/// re-exported here so the miner, the T-917.5 estimates check and the gate keep one
+/// authority.
+pub(crate) use tbd_tickets::is_sha_shaped;
 
 fn is_date_shaped(v: &str) -> bool {
     let b = v.as_bytes();

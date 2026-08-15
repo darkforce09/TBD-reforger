@@ -6,6 +6,7 @@ class = "audit"
 status = "ready"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_6_geometry_placement_audit.md"
+plan = "docs/plans/t-090_6_plan.md"
 executor = "claude-code"
 parent = "T-090"
 user_story = "For every exported map object (Eden-scale 1M+), use center + rotation + simplified 3D bounds (not full meshes) to compute which parts are above terrain, buried, or inside another object — fully automated, no manual eyeballing."

@@ -88,6 +88,27 @@ fn set_completed_at(t: &mut Ticket, v: Option<String>) {
     }
 }
 
+fn created_at_of(t: &Ticket) -> Option<&str> {
+    match t {
+        Ticket::Program(p) => p.created_at.as_deref(),
+        Ticket::Work(w) => w.created_at.as_deref(),
+    }
+}
+
+fn plan_of(t: &Ticket) -> Option<&str> {
+    match t {
+        Ticket::Program(p) => p.plan.as_deref(),
+        Ticket::Work(w) => w.plan.as_deref(),
+    }
+}
+
+fn set_plan(t: &mut Ticket, v: Option<String>) {
+    match t {
+        Ticket::Program(p) => p.plan = v,
+        Ticket::Work(w) => w.plan = v,
+    }
+}
+
 fn spec_of(t: &Ticket) -> Option<&str> {
     match t {
         Ticket::Program(p) => p.spec.as_deref(),
@@ -461,10 +482,36 @@ pub fn set_status(
 /// fix for the "`ticket ship T-912.2` → Unknown ticket" hole), and — new invariant —
 /// clears any program whose `active` still names the shipped ticket; that parent
 /// counts as changed.
+///
+/// **T-917.6 — the ship-gate lifecycle** (spec §The gate, §stamp-sha closes the loop).
+/// A shipped ticket must end with `created_at` + `completed_at` + a SHA-shaped
+/// `shipped_at` + token accounting, but those arrive at DIFFERENT moments:
+///
+/// 1. `ship` stamps `completed_at` (this op) and REFUSES pre-write when `created_at`
+///    is absent — that stamp can never arrive later honestly (`created_at` is minted
+///    by `ticket add` at birth; an old un-stamped ticket needs a backfill first —
+///    `ticket backfill-stamps` for shipped history, a deliberate hand-stamp for a
+///    pre-T-913 ticket being shipped today);
+/// 2. the operator commits — only now does the landing SHA exist;
+/// 3. `ticket stamp-sha <id> <sha>` ([`stamp_sha`]) closes `shipped_at` and the token
+///    estimate.
+///
+/// So `ship` deliberately does NOT require `shipped_at` or tokens (they cannot exist
+/// yet); the `ticket check` ship gate is what holds committed trees to the full
+/// contract — the working tree is transiently gate-red between steps 1 and 3 by
+/// design, and step 3 closes it.
 pub fn ship(c: &mut Corpus, id: &str, now_utc: &str) -> Result<OpOutcome, String> {
     validate_clock(now_utc)?;
-    if !c.tickets.contains_key(id) {
+    let Some(t) = c.tickets.get(id) else {
         return Err(unknown(id));
+    };
+    if created_at_of(t).is_none() {
+        return Err(format!(
+            "refusing ship {id}: created_at is absent — the ship gate requires it and ship cannot \
+             invent a birth date; created_at is minted by `ticket add`, so an old un-stamped \
+             ticket needs a backfill first (`ticket backfill-stamps` mines shipped history; a \
+             live pre-stamp ticket gets a deliberate hand-stamp)"
+        ));
     }
     let mut post = c.tickets.clone();
     let mut changed = BTreeSet::from([id.to_string()]);
@@ -498,12 +545,98 @@ pub fn ship(c: &mut Corpus, id: &str, now_utc: &str) -> Result<OpOutcome, String
     commit(c, post, changed, BTreeSet::new(), BTreeSet::new())
 }
 
+/// T-917.6 — `ticket stamp-sha` step 3 of the ship lifecycle (see [`ship`]): write the
+/// landing commit SHA onto a SHIPPED ticket, canonically, through both storage arms
+/// (work tickets carry the `shipped_at` field mirrored into [`Status::Shipped`];
+/// programs carry it inside the status only — the [`current_shipped_at`] asymmetry).
+///
+/// Refusals, each pre-write with the corpus untouched:
+/// - `sha` not 7–40 lowercase hex ([`crate::is_sha_shaped`] — empty/garbage refuses);
+/// - ticket not SHIPPED (stamp-sha closes a ship, it never implies one);
+/// - `shipped_at` already carries a DIFFERENT value — `shipped_at` is never
+///   overwritten by any verb (the backfill's present-fields rule); if the stamp is
+///   truly wrong the operator deletes the value by hand, deliberately, first.
+///
+/// Idempotent-ish: re-stamping the SAME sha is a no-op — `Ok` with an empty
+/// `changed` set, so the caller can still (re)generate the token estimate for a
+/// ticket whose stamp landed but whose accounting did not (the T-917.5→T-917.6
+/// window). A successful write also REMOVES a stale `"shipped_at"` entry from
+/// `estimated[]`: the operator-supplied landing SHA is measured provenance, not an
+/// estimate (the marker + gap-note state was the miner's honest absence, now closed).
+pub fn stamp_sha(c: &mut Corpus, id: &str, sha: &str, now_utc: &str) -> Result<OpOutcome, String> {
+    validate_clock(now_utc)?;
+    let sha = sha.trim();
+    if !crate::is_sha_shaped(sha) {
+        return Err(format!(
+            "refusing stamp-sha {id}: {sha:?} is not a commit SHA (7-40 lowercase hex)"
+        ));
+    }
+    let Some(t) = c.tickets.get(id) else {
+        return Err(unknown(id));
+    };
+    let status = t.status().name();
+    if status != StatusName::Shipped {
+        return Err(format!(
+            "refusing stamp-sha {id}: status is {}, not shipped — stamp-sha closes a shipped \
+             ticket's landing commit; `ticket ship {id}` first",
+            status.as_str()
+        ));
+    }
+    match current_shipped_at(t) {
+        Some(existing) if existing == sha => Ok(OpOutcome::default()),
+        Some(existing) => Err(format!(
+            "refusing stamp-sha {id}: shipped_at is already {existing:?} — shipped_at is never \
+             overwritten; if the recorded stamp is truly wrong, delete the value by hand first \
+             and re-run"
+        )),
+        None => {
+            let mut post = c.tickets.clone();
+            let t = post.get_mut(id).expect("looked up above");
+            match t {
+                Ticket::Work(w) => {
+                    w.shipped_at = Some(sha.to_string());
+                    if let Status::Shipped { shipped_at, .. } = &mut w.status {
+                        *shipped_at = Some(sha.to_string());
+                    }
+                    w.estimated.retain(|e| e != "shipped_at");
+                }
+                Ticket::Program(p) => {
+                    if let Status::Shipped { shipped_at, .. } = &mut p.status {
+                        *shipped_at = Some(sha.to_string());
+                    }
+                    p.estimated.retain(|e| e != "shipped_at");
+                }
+            }
+            let changed = BTreeSet::from([id.to_string()]);
+            commit(c, post, changed, BTreeSet::new(), BTreeSet::new())
+        }
+    }
+}
+
+/// The T-917.6 per-ticket plan-path convention (spec §Plan documents): lowercase id,
+/// dots to underscores — `T-917.6` → `docs/plans/t-917_6_plan.md`. [`mark_ready`]
+/// defaults an unset `plan` to this path; the S.6 plan docs land at exactly these
+/// paths so the default resolves.
+pub fn default_plan_path(id: &str) -> String {
+    format!("docs/plans/{}_plan.md", id.to_lowercase().replace('.', "_"))
+}
+
 /// `cmd_mark_ready` semantics: set `spec` when the argument is nonempty; refuse when
 /// the resulting spec is empty ("Ticket {id} needs a spec path") or missing on disk
 /// under the corpus root ("Spec file not found: …"); refuse while any `depends_on`
 /// target present in the corpus is neither shipped nor cancelled ("Blocked by …");
 /// then status→ready with the exact backfills: empty `user_story` becomes
 /// summary→title→id, all-empty `acceptance` becomes `["See spec."]`.
+///
+/// **T-917.6 plan ready-gate** (spec §Plan documents, Decisions log #9): nothing goes
+/// ready without its own plan document. `plan_arg` (nonempty) sets the `plan` field;
+/// otherwise an already-set `plan` stands; otherwise the field defaults to
+/// [`default_plan_path`]. Whatever path results must EXIST on disk under the corpus
+/// root or the op refuses naming it ("Plan file not found: …") — the spec-on-disk
+/// gate pattern, extended. The resolved path is WRITTEN to the ticket so the
+/// check-level plan rule can see it. `plan` ≠ `spec`: spec stays the shared program
+/// authority; plan is this ticket's own four-section document
+/// (`docs/plans/TEMPLATE.md`).
 ///
 /// One divergence inside the backfill, sanctioned by the refuse-up-front rule: the
 /// Value path takes `summary` even when it is the empty string (the key exists), which
@@ -514,6 +647,7 @@ pub fn mark_ready(
     c: &mut Corpus,
     id: &str,
     spec_arg: Option<&str>,
+    plan_arg: Option<&str>,
     now_utc: &str,
 ) -> Result<OpOutcome, String> {
     validate_clock(now_utc)?;
@@ -529,6 +663,19 @@ pub fn mark_ready(
             Some(s.to_string()),
         );
     }
+    // Plan resolution: explicit arg > existing field > the id-derived default. The
+    // resolved value lands on the ticket either way.
+    let resolved_plan = match plan_arg {
+        Some(p) if !p.is_empty() => p.to_string(),
+        _ => plan_of(post.get(id).expect("checked above"))
+            .map(str::to_string)
+            .filter(|p| !p.trim().is_empty())
+            .unwrap_or_else(|| default_plan_path(id)),
+    };
+    set_plan(
+        post.get_mut(id).expect("checked above"),
+        Some(resolved_plan.clone()),
+    );
     let snapshot = post.get(id).expect("checked above").clone();
     let spec_trimmed = spec_of(&snapshot).unwrap_or("").trim().to_string();
     if spec_trimmed.is_empty() {
@@ -537,6 +684,15 @@ pub fn mark_ready(
     let spec_path = c.root().join(&spec_trimmed);
     if !spec_path.is_file() {
         return Err(format!("Spec file not found: {}", spec_path.display()));
+    }
+    let plan_path = c.root().join(&resolved_plan);
+    if !plan_path.is_file() {
+        return Err(format!(
+            "Plan file not found: {} — nothing goes ready without its own plan document \
+             (T-917.6 ready-gate); copy docs/plans/TEMPLATE.md to {resolved_plan} and fill \
+             the four sections",
+            plan_path.display()
+        ));
     }
     for dep in depends_on_of(&snapshot) {
         if let Some(dep_ticket) = post.get(dep) {
@@ -964,7 +1120,9 @@ mod tests {
     }
 
     /// Scratch work ticket. `owns` defaults NONEMPTY so status flips into the live set
-    /// do not trip the owns gate unless a test empties it on purpose.
+    /// do not trip the owns gate unless a test empties it on purpose, and `created_at`
+    /// defaults PRESENT so ships do not trip the T-917.6 birth-stamp refusal unless a
+    /// test removes it on purpose.
     fn work(id: &str, status: Status) -> WorkTicket {
         WorkTicket {
             id: id.into(),
@@ -995,7 +1153,7 @@ mod tests {
             citations: vec![],
             shipped_at: None,
             priority: None,
-            created_at: None,
+            created_at: Some("2026-08-01T09:00:00Z".into()),
             completed_at: None,
             estimated: vec![],
             estimate_note: None,
@@ -1213,6 +1371,123 @@ mod tests {
         }
     }
 
+    /// T-917.6 — ship REFUSES a created_at-less ticket pre-write (the birth stamp can
+    /// never arrive later honestly), naming the field and the fix; the corpus is
+    /// byte-untouched. Both kinds refuse.
+    #[test]
+    fn ship_refuses_created_at_less_pre_write() {
+        let mut unstamped = work("T-3", Status::Queued { order: 4 });
+        unstamped.created_at = None;
+        let mut unstamped_prog = match program("T-4", Status::Queued { order: 5 }, &["T-4.1"], None)
+        {
+            Ticket::Program(p) => p,
+            Ticket::Work(_) => unreachable!(),
+        };
+        unstamped_prog.created_at = None;
+        let mut c = corpus(vec![
+            Ticket::Work(unstamped),
+            Ticket::Program(unstamped_prog),
+            child_of("T-4", "T-4.1", Status::Idea),
+        ]);
+        let before = c.clone();
+        for id in ["T-3", "T-4"] {
+            let err = ship(&mut c, id, CLOCK).expect_err("created_at-less must refuse");
+            assert!(
+                err.contains(id) && err.contains("created_at") && err.contains("backfill"),
+                "must name ticket, field and fix: {err}"
+            );
+        }
+        assert_eq!(before, c, "refused ship must leave the corpus untouched");
+    }
+
+    /// T-917.6 — stamp_sha writes the landing SHA through both arms, is a no-op on
+    /// the same sha, refuses a different sha / a non-shipped ticket / a garbage sha,
+    /// and drops a stale "shipped_at" estimated[] marker when it closes the field.
+    #[test]
+    fn stamp_sha_writes_noops_and_refuses() {
+        let mut absent_marked = work(
+            "T-1",
+            Status::Shipped {
+                shipped_at: None,
+                order: Some(7),
+            },
+        );
+        absent_marked.estimated = vec!["shipped_at".into()];
+        absent_marked.estimate_note = Some("no subject commits; no SHA mined".into());
+        let mut c = corpus(vec![
+            Ticket::Work(absent_marked),
+            Ticket::Work(work("T-2", Status::Queued { order: 9 })),
+            program(
+                "T-5",
+                Status::Shipped {
+                    shipped_at: None,
+                    order: Some(11),
+                },
+                &["T-5.1"],
+                None,
+            ),
+            child_of("T-5", "T-5.1", Status::Idea),
+        ]);
+        let before = c.clone();
+        // Garbage shapes refuse (empty, too short, uppercase, branch-shaped).
+        for bad in ["", "abc123", "ABCDEF12", "slice/T-197", "2026-07-26"] {
+            let err = stamp_sha(&mut c, "T-1", bad, CLOCK).expect_err("garbage sha");
+            assert!(
+                err.contains("refusing stamp-sha T-1") && err.contains("lowercase hex"),
+                "{err}"
+            );
+        }
+        // Non-shipped refuses naming the status.
+        let err = stamp_sha(&mut c, "T-2", "abcdef12", CLOCK).expect_err("not shipped");
+        assert!(
+            err.contains("refusing stamp-sha T-2") && err.contains("queued"),
+            "{err}"
+        );
+        assert_eq!(before, c, "refusals must not mutate");
+        // Work write: both arms + marker dropped (measured provenance now).
+        let out = stamp_sha(&mut c, "T-1", "abcdef12", CLOCK).expect("stamp work");
+        assert_eq!(out.changed, vec!["T-1".to_string()]);
+        match c.get("T-1").unwrap() {
+            Ticket::Work(w) => {
+                assert_eq!(w.shipped_at.as_deref(), Some("abcdef12"));
+                assert_eq!(
+                    w.status,
+                    Status::Shipped {
+                        shipped_at: Some("abcdef12".into()),
+                        order: Some(7)
+                    }
+                );
+                assert!(
+                    !w.estimated.iter().any(|e| e == "shipped_at"),
+                    "stale absent-marker must drop: {:?}",
+                    w.estimated
+                );
+            }
+            Ticket::Program(_) => panic!("work"),
+        }
+        // Program write: the status arm (programs carry no standalone field).
+        stamp_sha(&mut c, "T-5", "beadfeed", CLOCK).expect("stamp program");
+        match c.get("T-5").unwrap() {
+            Ticket::Program(p) => assert_eq!(
+                p.status,
+                Status::Shipped {
+                    shipped_at: Some("beadfeed".into()),
+                    order: Some(11)
+                }
+            ),
+            Ticket::Work(_) => panic!("program"),
+        }
+        // Same sha again: no-op with an empty changed set.
+        let out = stamp_sha(&mut c, "T-1", "abcdef12", CLOCK).expect("re-stamp same sha");
+        assert!(out.changed.is_empty(), "no-op must report nothing changed");
+        // Different sha: refuse — shipped_at is never overwritten.
+        let err = stamp_sha(&mut c, "T-1", "00000001", CLOCK).expect_err("different sha");
+        assert!(
+            err.contains("never overwritten") && err.contains("abcdef12"),
+            "{err}"
+        );
+    }
+
     /// A parent whose `active` names a DIFFERENT child is untouched by a child ship.
     #[test]
     fn ship_leaves_unrelated_parent_active() {
@@ -1236,13 +1511,16 @@ mod tests {
 
     /// `mark_ready`: spec argument lands, deps gate fires exactly like cmd_mark_ready
     /// ("Blocked by …"), story backfills summary→title→id, acceptance backfills
-    /// `["See spec."]`. A queued ticket with empty owns stays legal — queued was
-    /// already live, so this op did not MAKE it live (no retro-policing).
+    /// `["See spec."]`, and (T-917.6) the `plan` field lands on the default path. A
+    /// queued ticket with empty owns stays legal — queued was already live, so this
+    /// op did not MAKE it live (no retro-policing).
     #[test]
     fn mark_ready_backfills_and_gates() {
         let root = scratch_root("mark-ready");
-        fs::create_dir_all(root.join("docs")).unwrap();
+        fs::create_dir_all(root.join("docs/plans")).unwrap();
         fs::write(root.join("docs/spec.md"), "# spec\n").unwrap();
+        fs::write(root.join("docs/plans/t-1_plan.md"), "# plan\n").unwrap();
+        fs::write(root.join("docs/plans/t-2_plan.md"), "# plan\n").unwrap();
         let mut c = Corpus::new(&root);
         let mut t1 = work("T-1", Status::Queued { order: 10 });
         t1.owns = vec![];
@@ -1252,10 +1530,10 @@ mod tests {
         t2.spec = Some("docs/spec.md".into());
         c.tickets.insert("T-2".into(), Ticket::Work(t2));
 
-        let err = mark_ready(&mut c, "T-2", None, CLOCK).expect_err("dep gate");
+        let err = mark_ready(&mut c, "T-2", None, None, CLOCK).expect_err("dep gate");
         assert_eq!(err, "Blocked by T-1 (status=queued)");
 
-        let out = mark_ready(&mut c, "T-1", Some("docs/spec.md"), CLOCK).expect("ready");
+        let out = mark_ready(&mut c, "T-1", Some("docs/spec.md"), None, CLOCK).expect("ready");
         assert_eq!(out.changed, vec!["T-1".to_string()]);
         match c.get("T-1").unwrap() {
             Ticket::Work(w) => {
@@ -1269,16 +1547,79 @@ mod tests {
                     }
                 );
                 assert_eq!(w.spec.as_deref(), Some("docs/spec.md"));
+                assert_eq!(
+                    w.plan.as_deref(),
+                    Some("docs/plans/t-1_plan.md"),
+                    "unset plan defaults to the id-derived path and is WRITTEN"
+                );
                 assert_eq!(w.user_story.as_deref(), Some("T-1 summary"));
                 assert_eq!(w.acceptance, vec!["See spec.".to_string()]);
             }
             Ticket::Program(_) => panic!("T-1 must stay work"),
         }
         // T-1 ready (not shipped/cancelled) still blocks T-2; a cancel unblocks.
-        let err = mark_ready(&mut c, "T-2", None, CLOCK).expect_err("still blocked");
+        let err = mark_ready(&mut c, "T-2", None, None, CLOCK).expect_err("still blocked");
         assert_eq!(err, "Blocked by T-1 (status=ready)");
         set_status(&mut c, "T-1", "cancelled", CLOCK).expect("cancel");
-        mark_ready(&mut c, "T-2", None, CLOCK).expect("deps satisfied; T-404 absent is skipped");
+        mark_ready(&mut c, "T-2", None, None, CLOCK)
+            .expect("deps satisfied; T-404 absent is skipped");
+    }
+
+    /// T-917.6 plan ready-gate: mark-ready without the plan file refuses naming the
+    /// path (corpus untouched); an explicit PLAN argument overrides the default and
+    /// must exist too; an existing `plan` field is honored over the default.
+    #[test]
+    fn mark_ready_plan_gate_refuses_and_resolves() {
+        let root = scratch_root("mark-ready-plan");
+        fs::create_dir_all(root.join("docs/plans")).unwrap();
+        fs::write(root.join("docs/spec.md"), "# spec\n").unwrap();
+        let mut c = Corpus::new(&root);
+        c.tickets.insert(
+            "T-9.1".into(),
+            Ticket::Work(work("T-9.1", Status::Queued { order: 10 })),
+        );
+        let before = c.clone();
+        // No plan file anywhere → refuse naming the DEFAULT path (dots → underscores).
+        let err =
+            mark_ready(&mut c, "T-9.1", Some("docs/spec.md"), None, CLOCK).expect_err("no plan");
+        assert!(
+            err.starts_with("Plan file not found: ") && err.contains("docs/plans/t-9_1_plan.md"),
+            "{err}"
+        );
+        assert_eq!(before, c, "refusal must not mutate");
+        // Explicit PLAN argument that is missing → refuse naming THAT path.
+        let err = mark_ready(
+            &mut c,
+            "T-9.1",
+            Some("docs/spec.md"),
+            Some("docs/plans/custom.md"),
+            CLOCK,
+        )
+        .expect_err("explicit plan missing");
+        assert!(err.contains("docs/plans/custom.md"), "{err}");
+        // Present explicit plan lands and is written to the field.
+        fs::write(root.join("docs/plans/custom.md"), "# plan\n").unwrap();
+        mark_ready(
+            &mut c,
+            "T-9.1",
+            Some("docs/spec.md"),
+            Some("docs/plans/custom.md"),
+            CLOCK,
+        )
+        .expect("explicit plan present");
+        match c.get("T-9.1").unwrap() {
+            Ticket::Work(w) => assert_eq!(w.plan.as_deref(), Some("docs/plans/custom.md")),
+            Ticket::Program(_) => panic!("work"),
+        }
+        // An already-set plan field is honored when no argument is passed.
+        set_status(&mut c, "T-9.1", "queued", CLOCK).expect("back to queued");
+        mark_ready(&mut c, "T-9.1", None, None, CLOCK).expect("field plan honored");
+        match c.get("T-9.1").unwrap() {
+            Ticket::Work(w) => assert_eq!(w.plan.as_deref(), Some("docs/plans/custom.md")),
+            Ticket::Program(_) => panic!("work"),
+        }
+        assert_eq!(default_plan_path("T-917.6"), "docs/plans/t-917_6_plan.md");
+        assert_eq!(default_plan_path("T-090.4"), "docs/plans/t-090_4_plan.md");
     }
 
     #[test]
@@ -1289,9 +1630,10 @@ mod tests {
             "T-1".into(),
             Ticket::Work(work("T-1", Status::Queued { order: 1 })),
         );
-        let err = mark_ready(&mut c, "T-1", None, CLOCK).expect_err("no spec");
+        let err = mark_ready(&mut c, "T-1", None, None, CLOCK).expect_err("no spec");
         assert_eq!(err, "Ticket T-1 needs a spec path");
-        let err = mark_ready(&mut c, "T-1", Some("docs/nope.md"), CLOCK).expect_err("file missing");
+        let err =
+            mark_ready(&mut c, "T-1", Some("docs/nope.md"), None, CLOCK).expect_err("file missing");
         assert!(err.starts_with("Spec file not found: "), "{err}");
         assert!(err.contains("docs/nope.md"), "{err}");
     }
@@ -1299,12 +1641,14 @@ mod tests {
     #[test]
     fn mark_ready_without_order_refuses() {
         let root = scratch_root("mark-ready-order");
-        fs::create_dir_all(root.join("docs")).unwrap();
+        fs::create_dir_all(root.join("docs/plans")).unwrap();
         fs::write(root.join("docs/spec.md"), "# spec\n").unwrap();
+        fs::write(root.join("docs/plans/t-1_plan.md"), "# plan\n").unwrap();
         let mut c = Corpus::new(&root);
         c.tickets
             .insert("T-1".into(), Ticket::Work(work("T-1", Status::Idea)));
-        let err = mark_ready(&mut c, "T-1", Some("docs/spec.md"), CLOCK).expect_err("no order");
+        let err =
+            mark_ready(&mut c, "T-1", Some("docs/spec.md"), None, CLOCK).expect_err("no order");
         assert!(err.contains("order"), "{err}");
     }
 
