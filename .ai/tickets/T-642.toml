@@ -6,8 +6,33 @@ class = "feature"
 status = "shipped"
 order = 4000
 executor = "claude-code"
-notes = "editor-UI program wave 8 (wave_plan.tsv row 108) — SHIPPED wave 108 (editor factory), slice f3a6aa5a; verifier wave108.md (Esc-stack MAJOR routed to T-726; stale-LG::Ruler strand routed to T-723)"
+notes = """
+editor-UI program wave 8 (wave_plan.tsv row 108) — SHIPPED wave 108 (editor factory), slice f3a6aa5a; verifier wave108.md (Esc-stack MAJOR routed to T-726; stale-LG::Ruler strand routed to T-723)
+
+--- HEAD migration_legacy (verbatim) ---
+
+Operator-requested, and one of the two dead buttons. Both stubs are adjacent lines in one component: eden_chrome.rs:3711-3713 (Ruler, `class=TOOL_DISABLED disabled=true`, MaterialIcon name="straighten") and :3715-3717 (LoS) — `grep -n TOOL_DISABLED` returns exactly three hits, the const :74 and those two buttons — so T-642 and T-643 collide by construction and sit one wave apart. NO PRIOR ART: 3den Enhanced has no ruler beyond a 2-point measure with a 20-second notification as the readout, so the design is ours. Do: click a chain of points; per-leg distance AND bearing plus a running total; persists on the map until dismissed. Decisions left open inside the ticket — leg labels on the line vs in the status bar; whether a leg reports slope/delta-elevation (the DEM makes it free); how to dismiss (Esc, a close affordance, or tool-switch); whether rulers survive save/reload. Code: wire the `straighten` button in post-split eden_toolbelt.rs (drop `disabled=true`, add active state via TOOL_ACTIVE :72) with readouts in the readout block :3721-3766; click-chain capture in mission_editor.rs (`onpointerdown` :1395, `onpointerup` :1644, Esc in the keydown :1005-1030 — there is no other gesture host); tool-mode arbitration in select_tool.rs (`LeftGesture` :62 and `PendingLeft` :49 are the state machine a third mode must enter, `frozen_camera` :86 is the unproject it needs); the polyline model in a NEW `apps/website/frontend/src/ruler_tool.rs` (module name INFERRED; wave 0 pre-declares the stub). THE RULE THIS TICKET EXISTS TO HONOUR: removing `disabled` without the tool working is worse than the current state — it turns an honest stub into a lie. The corpus agrees twice over: FNF's `Use Default Loadout` checkbox is read by nothing in the entire worktree, and OFCRA's duration override is displayed to clients while the server ignores it.
+
+missing=0"""
 depends_on = ["T-661"]
+main_goal = "Wire ruler button; persistent polyline with per-leg distance bearing totals."
+context = [
+    "Ruler LoS stubs adjacent eden_chrome.rs:3711-3717 TOOL_DISABLED; collides T-643.",
+    "No 3DEN prior art; click-chain persists on map until dismissed.",
+]
+requirement = [
+    "Drop disabled on straighten; TOOL_ACTIVE in eden_toolbelt readout block.",
+    "New ruler_tool.rs; mission_editor pointer Esc; select_tool mode arbitration.",
+]
+current_state = [
+    "grep TOOL_DISABLED three hits: const :74 and two stub buttons.",
+    "Removing disabled without working tool worse than honest stub.",
+]
+approach = ["Click-chain points; per-leg distance bearing plus running total until dismiss."]
+citations = [
+    "T-643 LoS stub collision",
+    "select_tool LeftGesture PendingLeft",
+]
 shipped_at = "b89ee2a7"
 created_at = "2026-08-02T05:54:28Z"
 completed_at = "2026-08-02T06:02:52Z"
@@ -19,7 +44,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["""Operator-requested, and one of the two dead buttons. Both stubs are adjacent lines in one component: eden_chrome.rs:3711-3713 (Ruler, `class=TOOL_DISABLED disabled=true`, MaterialIcon name="straighten") and :3715-3717 (LoS) — `grep -n TOOL_DISABLED` returns exactly three hits, the const :74 and those two buttons — so T-642 and T-643 collide by construction and sit one wave apart. NO PRIOR ART: 3den Enhanced has no ruler beyond a 2-point measure with a 20-second notification as the readout, so the design is ours. Do: click a chain of points; per-leg distance AND bearing plus a running total; persists on the map until dismissed. Decisions left open inside the ticket — leg labels on the line vs in the status bar; whether a leg reports slope/delta-elevation (the DEM makes it free); how to dismiss (Esc, a close affordance, or tool-switch); whether rulers survive save/reload. Code: wire the `straighten` button in post-split eden_toolbelt.rs (drop `disabled=true`, add active state via TOOL_ACTIVE :72) with readouts in the readout block :3721-3766; click-chain capture in mission_editor.rs (`onpointerdown` :1395, `onpointerup` :1644, Esc in the keydown :1005-1030 — there is no other gesture host); tool-mode arbitration in select_tool.rs (`LeftGesture` :62 and `PendingLeft` :49 are the state machine a third mode must enter, `frozen_camera` :86 is the unproject it needs); the polyline model in a NEW `apps/website/frontend/src/ruler_tool.rs` (module name INFERRED; wave 0 pre-declares the stub). THE RULE THIS TICKET EXISTS TO HONOUR: removing `disabled` without the tool working is worse than the current state — it turns an honest stub into a lie. The corpus agrees twice over: FNF's `Use Default Loadout` checkbox is read by nothing in the entire worktree, and OFCRA's duration override is displayed to clients while the server ignores it."""]
 owns = [
     "apps/website/frontend/src/eden_toolbelt.rs",
     "apps/website/frontend/src/mission_editor.rs",

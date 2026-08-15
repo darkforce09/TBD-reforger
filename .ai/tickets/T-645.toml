@@ -6,8 +6,46 @@ class = "feature"
 status = "shipped"
 order = 4100
 executor = "claude-code"
-notes = "editor-UI program wave 11 (wave_plan.tsv row 111) — SHIPPED wave 111 (editor factory), abfaebbf; verifier wave111.md"
+notes = """
+editor-UI program wave 11 (wave_plan.tsv row 111) — SHIPPED wave 111 (editor factory), abfaebbf; verifier wave111.md
+
+--- HEAD migration_legacy (verbatim) ---
+
+The single highest-yield borrow in the 3den Enhanced catalogue, and what mission makers actually use all day. Placement Tools apply a pattern LIVE to the current selection: Circular / Line / Grid / Fill Area (scatter). Plus 6 align commands, 3 space-equally commands, 6 orient commands, and drag-to-garrison (drop a group on a building and it occupies firing positions). Not in the Eden gap table — it is 3den Enhanced's own addition. Code: every helper is a batched multi-slot transform and the existing batched mutators are in editor_ops.rs (`attrs_update_position` :667, `move_vehicles` :1877, `copy_selection` :394, `paste_at_cursor` :436); entry points go in the menu descriptor table `MENUS` (eden_chrome.rs:112-166, now eden_top_strip.rs); the pure pattern math goes in a NEW `apps/website/frontend/src/place_helpers.rs` (module name INFERRED, testable without a DOM; wave 0 pre-declares the stub). REQUIRED RULE, added from the corpus: bulk operations on a selection MUST CONFIRM and MUST BE UNDOABLE — undo grouping is an editor_ops concern. WOG's own tools invert this and neither of their destructive bulk ops is wrapped in undo. Drag-to-garrison needs building footprints from `crates/map-engine-core/src/world/obb.rs` (243 lines); INFERRED read-only and NOT claimed — if it turns out to need writing, that is a scope discovery worth its own row rather than a silent widening.
+
+missing=0
+"""
 depends_on = ["T-661"]
+main_goal = "3den Enhanced placement helpers: patterns, align, space, orient, drag-to-garrison."
+context = [
+    "Highest-yield 3den Enhanced borrow; not in Eden gap table.",
+    "Patterns Circular Line Grid Fill Area live on current selection.",
+]
+requirement = [
+    "Six align, three space-equally, six orient commands on selection.",
+    "Drag-to-garrison: drop group on building for firing positions.",
+    "Bulk ops MUST CONFIRM and MUST BE UNDOABLE per corpus rule.",
+]
+current_state = [
+    "Batched mutators in editor_ops.rs attrs_update_position move_vehicles copy paste.",
+    "MENUS descriptor eden_chrome.rs:112-166 now eden_top_strip.rs entry points.",
+    "place_helpers.rs stub pre-declared; pattern math testable without DOM.",
+]
+approach = [
+    "Pure pattern math in new place_helpers.rs; wire MENUS in eden_top_strip.rs.",
+    "Garrison reads building footprints from world/obb.rs; read-only inferred not claimed.",
+    "Scope discovery row if obb.rs needs writing; no silent widening.",
+]
+verify = [
+    "Pattern apply Circular Line Grid Fill Area transforms live selection.",
+    "Bulk placement confirms and undo restores prior selection state.",
+]
+citations = [
+    "3den Enhanced placement catalogue borrow",
+    "editor_ops.rs batched mutators",
+    "world/obb.rs building footprints",
+    "WOG bulk ops lack undo",
+]
 shipped_at = "3e067fe6"
 created_at = "2026-08-02T09:17:25Z"
 completed_at = "2026-08-02T09:29:47Z"
@@ -19,7 +57,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["The single highest-yield borrow in the 3den Enhanced catalogue, and what mission makers actually use all day. Placement Tools apply a pattern LIVE to the current selection: Circular / Line / Grid / Fill Area (scatter). Plus 6 align commands, 3 space-equally commands, 6 orient commands, and drag-to-garrison (drop a group on a building and it occupies firing positions). Not in the Eden gap table — it is 3den Enhanced's own addition. Code: every helper is a batched multi-slot transform and the existing batched mutators are in editor_ops.rs (`attrs_update_position` :667, `move_vehicles` :1877, `copy_selection` :394, `paste_at_cursor` :436); entry points go in the menu descriptor table `MENUS` (eden_chrome.rs:112-166, now eden_top_strip.rs); the pure pattern math goes in a NEW `apps/website/frontend/src/place_helpers.rs` (module name INFERRED, testable without a DOM; wave 0 pre-declares the stub). REQUIRED RULE, added from the corpus: bulk operations on a selection MUST CONFIRM and MUST BE UNDOABLE — undo grouping is an editor_ops concern. WOG's own tools invert this and neither of their destructive bulk ops is wrapped in undo. Drag-to-garrison needs building footprints from `crates/map-engine-core/src/world/obb.rs` (243 lines); INFERRED read-only and NOT claimed — if it turns out to need writing, that is a scope discovery worth its own row rather than a silent widening."]
 owns = [
     "apps/website/frontend/src/editor_ops.rs",
     "apps/website/frontend/src/eden_top_strip.rs",

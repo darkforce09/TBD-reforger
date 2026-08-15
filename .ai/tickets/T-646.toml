@@ -6,8 +6,46 @@ class = "feature"
 status = "shipped"
 order = 3940
 executor = "claude-code"
-notes = "editor-UI program wave 5 (wave_plan.tsv row 105) — SHIPPED wave 105 (editor factory), 62b55d93 + fix c2a902dd; verifier wave105.md"
+notes = """
+editor-UI program wave 5 (wave_plan.tsv row 105) — SHIPPED wave 105 (editor factory), 62b55d93 + fix c2a902dd; verifier wave105.md
+
+--- HEAD migration_legacy (verbatim) ---
+
+Closes `RIGHT-SEARCH-002` (class-name prefix search), `RIGHT-SUBMODE-001` (Eden's chip row: BLUFOR / OPFOR / Independent / Civilian / Props, plus a sixth Custom slot that appears only under Groups) and `RIGHT-CREW-001` (place vehicle with or without crew). Eden's full search grammar also has `mod `, `*`/`?` wildcards and `/` regex — scope that inside the ticket; the pure-prefix parsing work is T-084 and the two must not both rewrite `filter_catalog`. Code: `filter_catalog(nodes, query)` at `apps/website/frontend/src/asset_catalog.rs`:396 is the live search; `build_catalog_tree` :146, `build_vehicle_catalog_tree` :224, `build_object_catalog_tree` :292; and `character_matches_eden_side` :97 is exactly the side/faction predicate RIGHT-SUBMODE-001 needs. The search row and chip row live in DockRight (post-split eden_dock_right.rs): EDEN_SIDE_CHIPS eden_chrome.rs:2871, EdenChip :2875, `apply_eden_chip` :2919, `eden_chip_selected` :2942. The crew toggle threads `begin_place_vehicle` (editor_ops.rs:1044) -> `place_at` :2191. FLAG, stated so it is not settled by accident: T-074 is CANCELLED in the registry and gap_analysis.md maps `RIGHT-SUBMODE-001` to it, so folding that id in here revives a deliberately cancelled ticket. Say so explicitly when the work starts, or drop the id.
+
+missing=0
+"""
 depends_on = ["T-661"]
+main_goal = "Asset browser class-prefix search, Eden side chips, and crew placement toggle."
+context = [
+    "Closes RIGHT-SEARCH-002 RIGHT-SUBMODE-001 RIGHT-CREW-001 gap ids.",
+    "Eden full grammar mod wildcards regex scoped here; prefix parsing is T-084.",
+    "T-074 CANCELLED; gap_analysis maps RIGHT-SUBMODE-001 to it.",
+]
+requirement = [
+    "Class-name prefix search via filter_catalog at asset_catalog.rs:396.",
+    "BLUFOR OPFOR Independent Civilian Props chips; Custom under Groups only.",
+    "Crew toggle threads begin_place_vehicle editor_ops.rs:1044 to place_at :2191.",
+]
+current_state = [
+    "character_matches_eden_side :97 is side predicate RIGHT-SUBMODE-001 needs.",
+    "Chip row EDEN_SIDE_CHIPS eden_chrome.rs:2871 now eden_dock_right.rs.",
+    "T-084 and this ticket must not both rewrite filter_catalog.",
+]
+approach = [
+    "Scope mod wildcard regex inside ticket; T-084 owns pure-prefix parsing.",
+    "Say explicitly when work starts: T-074 revival or drop that id.",
+]
+verify = [
+    "Class-prefix query filters catalog nodes via filter_catalog.",
+    "Side chips filter catalog; crew toggle places vehicle with or without crew.",
+]
+citations = [
+    "RIGHT-SEARCH-002 class prefix gap",
+    "T-074 cancelled submode id",
+    "T-084 pure prefix parsing",
+    "gap_analysis RIGHT-SUBMODE-001 map",
+]
 shipped_at = "c2a902dd"
 created_at = "2026-08-02T02:57:13Z"
 completed_at = "2026-08-02T03:36:04Z"
@@ -19,7 +57,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = ["Closes `RIGHT-SEARCH-002` (class-name prefix search), `RIGHT-SUBMODE-001` (Eden's chip row: BLUFOR / OPFOR / Independent / Civilian / Props, plus a sixth Custom slot that appears only under Groups) and `RIGHT-CREW-001` (place vehicle with or without crew). Eden's full search grammar also has `mod `, `*`/`?` wildcards and `/` regex — scope that inside the ticket; the pure-prefix parsing work is T-084 and the two must not both rewrite `filter_catalog`. Code: `filter_catalog(nodes, query)` at `apps/website/frontend/src/asset_catalog.rs`:396 is the live search; `build_catalog_tree` :146, `build_vehicle_catalog_tree` :224, `build_object_catalog_tree` :292; and `character_matches_eden_side` :97 is exactly the side/faction predicate RIGHT-SUBMODE-001 needs. The search row and chip row live in DockRight (post-split eden_dock_right.rs): EDEN_SIDE_CHIPS eden_chrome.rs:2871, EdenChip :2875, `apply_eden_chip` :2919, `eden_chip_selected` :2942. The crew toggle threads `begin_place_vehicle` (editor_ops.rs:1044) -> `place_at` :2191. FLAG, stated so it is not settled by accident: T-074 is CANCELLED in the registry and gap_analysis.md maps `RIGHT-SUBMODE-001` to it, so folding that id in here revives a deliberately cancelled ticket. Say so explicitly when the work starts, or drop the id."]
 owns = [
     "apps/website/frontend/src/asset_catalog.rs",
     "apps/website/frontend/src/eden_dock_right.rs",

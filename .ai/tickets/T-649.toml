@@ -6,8 +6,43 @@ class = "feature"
 status = "shipped"
 order = 4110
 executor = "claude-code"
-notes = "editor-UI program wave 12 (wave_plan.tsv row 112) — SHIPPED wave 112 (editor factory), e4fefb38; verifier wave112.md. Ctrl+A viewport-scoped through the marquee primitive; BOTH suppress-on-multi guards inverted (T-716 rows now honest); per-field opt-in checkboxes. Arsenal tab still writes one slot under a multi-selection — disclosed with a UI banner, fan-out deferred to T-737's family."
+notes = """
+editor-UI program wave 12 (wave_plan.tsv row 112) — SHIPPED wave 112 (editor factory), e4fefb38; verifier wave112.md. Ctrl+A viewport-scoped through the marquee primitive; BOTH suppress-on-multi guards inverted (T-716 rows now honest); per-field opt-in checkboxes. Arsenal tab still writes one slot under a multi-selection — disclosed with a UI banner, fan-out deferred to T-737's family.
+
+--- HEAD migration_legacy (verbatim) ---
+
+Closes `SEL-ALL-001` and `ATTR-MULTI-001` / `ATTR-MULTI-CHK-001`. Eden scopes Select All to what is ON SCREEN, not to the whole mission — copy that; it is a viewport-rect query and the marquee already has the exact primitive (`marquee_ids` select_tool.rs:276, `marquee_ids_with_vehicles` :308). `Ctrl+A` joins the existing keydown arms in mission_editor.rs:1019-1031 beside `KeyC` :1020 and `KeyV` :1023. Multi-edit: fields with differing values disable until a per-field checkbox opts them in; `apps/website/frontend/src/attributes.rs` has ZERO checkbox inputs today (tabs :16, field bodies :255-348). THE BLOCKING GUARD IS TWO IDENTICAL THREE-LINE BLOCKS in editor_ops.rs: `if ctx.selection.borrow().len() > 1 { return; }` at :583-585 in `open_attributes` and at :605-607 in `open_arsenal` — multi-select today SUPPRESSES THE MODAL ENTIRELY, and this ticket inverts that. Note T-082 collides with this row on attributes.rs and editor_ops.rs and is deliberately one wave later; if the operator prefers one ticket, fold T-082 in — the combined owns is unchanged from this row's and the program loses a wave slot for free.
+
+missing=0"""
 depends_on = ["T-661"]
+main_goal = "Viewport-scoped Ctrl+A Select All; multi-edit per-field opt-in checkboxes."
+context = [
+    "Closes SEL-ALL-001 and ATTR-MULTI-001 ATTR-MULTI-CHK-001.",
+    "Eden scopes Select All to ON SCREEN not whole mission.",
+    "T-082 collides on attributes.rs editor_ops.rs one wave later.",
+]
+requirement = [
+    "Ctrl+A viewport-rect query via marquee_ids select_tool.rs:276.",
+    "Per-field checkbox opts differing multi-select fields into edit.",
+    "Invert open_attributes and open_arsenal suppress-on-multi guards.",
+]
+current_state = [
+    "attributes.rs has zero checkbox inputs today tabs :16 bodies :255-348.",
+    "editor_ops.rs :583-585 and :605-607 block modal when selection len > 1.",
+    "Ctrl+A joins keydown arms mission_editor.rs:1019-1031 beside KeyC KeyV.",
+]
+approach = [
+    "marquee_ids_with_vehicles :308 primitive for viewport Select All.",
+    "Invert identical three-line guards in open_attributes and open_arsenal.",
+    "If operator prefers one ticket fold T-082 unchanged owns.",
+]
+verify = ["verifier wave112.md records shipped slice evidence."]
+citations = [
+    "SEL-ALL-001 viewport Select All",
+    "ATTR-MULTI-001 multi-edit checkboxes",
+    "T-082 collides one wave later",
+    "T-737 arsenal fan-out deferred",
+]
 shipped_at = "4973de19"
 created_at = "2026-08-07T02:07:20Z"
 completed_at = "2026-08-07T02:11:06Z"
@@ -19,7 +54,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = ["Closes `SEL-ALL-001` and `ATTR-MULTI-001` / `ATTR-MULTI-CHK-001`. Eden scopes Select All to what is ON SCREEN, not to the whole mission — copy that; it is a viewport-rect query and the marquee already has the exact primitive (`marquee_ids` select_tool.rs:276, `marquee_ids_with_vehicles` :308). `Ctrl+A` joins the existing keydown arms in mission_editor.rs:1019-1031 beside `KeyC` :1020 and `KeyV` :1023. Multi-edit: fields with differing values disable until a per-field checkbox opts them in; `apps/website/frontend/src/attributes.rs` has ZERO checkbox inputs today (tabs :16, field bodies :255-348). THE BLOCKING GUARD IS TWO IDENTICAL THREE-LINE BLOCKS in editor_ops.rs: `if ctx.selection.borrow().len() > 1 { return; }` at :583-585 in `open_attributes` and at :605-607 in `open_arsenal` — multi-select today SUPPRESSES THE MODAL ENTIRELY, and this ticket inverts that. Note T-082 collides with this row on attributes.rs and editor_ops.rs and is deliberately one wave later; if the operator prefers one ticket, fold T-082 in — the combined owns is unchanged from this row's and the program loses a wave slot for free."]
 owns = [
     "apps/website/frontend/src/mission_editor.rs",
     "apps/website/frontend/src/select_tool.rs",

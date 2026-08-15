@@ -6,10 +6,45 @@ class = "feature"
 status = "shipped"
 order = 4070
 executor = "claude-code"
-notes = "editor-UI program wave 10 (wave_plan.tsv row 110) — SHIPPED wave 110 (editor factory), 7e49f0fd + wiring 29685978 + flip fix (blocker); verifier wave110.md"
+notes = """
+editor-UI program wave 10 (wave_plan.tsv row 110) — SHIPPED wave 110 (editor factory), 7e49f0fd + wiring 29685978 + flip fix (blocker); verifier wave110.md
+
+--- HEAD migration_legacy (verbatim) ---
+
+Follow-up to T-643 and a hard dependency on it — T-643 proves the DEM sampling path this reuses. Pick an observer, shade everything it can and cannot see. It is the better planning tool by some way and the DEM supports it. THE HARD PART IS THE COLOUR LANGUAGE, not the compute: a visible/hidden wash must not fight the contours (T-640) or the landcover, both of which already use the same map surface. Prototype the palette BEFORE building the compute. Code: second mode on the same tool surface (`apps/website/frontend/src/los_tool.rs`); bulk sampling in `crates/map-engine-core/src/dem/sample.rs`; and a new raster lane in `crates/map-engine-render/src/engine.rs` — that last path is graded LOW: the engine is 6,302 lines and it was not confirmed that no existing lane can carry the wash. Check that first; if a lane can be reused, this ticket drops the engine path entirely.
+
+missing=0
+"""
 depends_on = [
     "T-661",
     "T-643",
+]
+main_goal = "Observer viewshed raster; visible/hidden wash without fighting contours or landcover."
+context = [
+    "Hard follow-up to T-643; reuses DEM sampling path T-643 proves.",
+    "Colour language harder than compute; wash shares map surface with T-640 contours.",
+]
+requirement = [
+    "Pick observer; shade everything visible and hidden from that point.",
+    "Second mode on los_tool.rs; bulk sampling in dem/sample.rs.",
+    "Prototype palette before compute; wash must not fight landcover.",
+]
+current_state = [
+    "New raster lane in engine.rs graded LOW; engine 6302 lines unconfirmed.",
+    "Check existing lanes first; reuse drops engine.rs path entirely.",
+]
+approach = [
+    "Prototype visible/hidden palette before building viewshed compute.",
+    "Check map-engine-render lanes for wash before adding engine.rs path.",
+]
+verify = [
+    "Viewshed shades visible and hidden terrain from chosen observer point.",
+    "Wash palette readable alongside T-640 contours and landcover layers.",
+]
+citations = [
+    "T-643 proves DEM sampling path",
+    "T-640 contours share map surface",
+    "engine.rs six thousand lines",
 ]
 shipped_at = "811cd457"
 created_at = "2026-08-02T07:53:58Z"
@@ -22,7 +57,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = ["Follow-up to T-643 and a hard dependency on it — T-643 proves the DEM sampling path this reuses. Pick an observer, shade everything it can and cannot see. It is the better planning tool by some way and the DEM supports it. THE HARD PART IS THE COLOUR LANGUAGE, not the compute: a visible/hidden wash must not fight the contours (T-640) or the landcover, both of which already use the same map surface. Prototype the palette BEFORE building the compute. Code: second mode on the same tool surface (`apps/website/frontend/src/los_tool.rs`); bulk sampling in `crates/map-engine-core/src/dem/sample.rs`; and a new raster lane in `crates/map-engine-render/src/engine.rs` — that last path is graded LOW: the engine is 6,302 lines and it was not confirmed that no existing lane can carry the wash. Check that first; if a lane can be reused, this ticket drops the engine path entirely."]
 owns = [
     "apps/website/frontend/src/los_tool.rs",
     "crates/map-engine-render/src/engine.rs",

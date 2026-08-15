@@ -1,13 +1,48 @@
 id = "T-634"
 kind = "work"
-title = "Top strip: split into two rows and give the actions a hierarchy"
+title = "Two-row top strip with action hierarchy"
 summary = "Top strip: split into two rows and give the actions a hierarchy"
 class = "feature"
 status = "shipped"
 order = 4170
 executor = "claude-code"
-notes = "editor-UI program wave 15 (wave_plan.tsv row 115) — SHIPPED wave 115 (editor factory), 34cbc653; verifier wave115.md. Two-row strip (menus / icon toolbar) inside the SAME 48px — the height contract was re-derived independently and the strip did not grow. One primary action (Save Version), both exports demoted behind one secondary trigger, tool glyphs brightened, gear moved beside the environment it opens. NO pre-existing pin was weakened: the verifier proved this from the hunk map (final hunk is a pure append, zero deleted lines), not from a green run. Also removed a false T-668 ellipsis from 'Export Compiled Mission…', which promised a dialog that never appears."
+notes = """
+editor-UI program wave 15 (wave_plan.tsv row 115) — SHIPPED wave 115 (editor factory), 34cbc653; verifier wave115.md. Two-row strip (menus / icon toolbar) inside the SAME 48px — the height contract was re-derived independently and the strip did not grow. One primary action (Save Version), both exports demoted behind one secondary trigger, tool glyphs brightened, gear moved beside the environment it opens. NO pre-existing pin was weakened: the verifier proved this from the hunk map (final hunk is a pure append, zero deleted lines), not from a green run. Also removed a false T-668 ellipsis from 'Export Compiled Mission…', which promised a dialog that never appears.
+
+--- HEAD migration_legacy (verbatim) ---
+
+RESCOPED by editor_chrome_direction.md from "no action hierarchy" to Eden's two-row structure. Eden fits 8 menus (y 0-22) AND 25 tool icons (y 22-40, its own row) into 40 px. We fit 5 menus, the title, a time scrubber, a weather select, undo/redo/history, three buttons and a gear into ONE 48 px strip — which is why it reads as crowded. Menus on row 1, an icon toolbar on row 2. The original hierarchy complaint stands and is part of the same work: `Save Version` :1179, `Export JSON` :1189 and `Export Compiled` :1203 sit at near-equal visual weight so the routine and the consequential read the same — one primary, demote the two exports (menu, split button, or secondary styling); the undo/redo/history glyphs :1160-1173 are too dim to find; the settings gear after :1206 is stranded alone at the far right. All inside `TopCommandStrip` (post-split eden_top_strip.rs, from eden_chrome.rs:831-1372), with the menu descriptor table `MENUS` :112-166 for any menu/split-button demotion. Build against the finished state vocabulary (T-668) — the menu rules in it (reserved checkmark gutter, `...` means dialog, drop-vs-grey by verb) are this ticket's rules too.
+
+missing=0"""
 depends_on = ["T-661"]
+main_goal = "Split TopCommandStrip two rows; demote exports; brighten undo glyphs."
+context = [
+    "Five menus scrubber weather undo exports gear crowd one 48px strip.",
+    "Eden fits menus and toolbar in 40px two-row layout per direction doc.",
+]
+requirement = [
+    "Row 1 menus; row 2 icon toolbar inside same 48px height contract.",
+    "One primary Save Version; demote two exports via menu or secondary styling.",
+    "Brighten undo redo history glyphs :1160-1173; reposition settings gear.",
+]
+current_state = [
+    "Save Export JSON Export Compiled near-equal weight :1179 :1189 :1203.",
+    "Settings gear stranded far right after :1206 alone.",
+    "MENUS descriptor table :112-166 for menu split-button demotion.",
+]
+approach = [
+    "Build against T-668 menu rules checkmark gutter ellipsis dialog verbs.",
+    "Edit TopCommandStrip in eden_top_strip.rs from eden_chrome split.",
+]
+verify = [
+    "Strip stays 48px two rows; one primary Save Version visible.",
+    "Exports demoted; undo redo history glyphs brighter than before.",
+]
+citations = [
+    "editor_chrome_direction two-row Eden",
+    "TopCommandStrip eden_top_strip.rs",
+    "T-668 menu vocabulary rules",
+]
 shipped_at = "cec45271"
 created_at = "2026-08-07T04:29:36Z"
 completed_at = "2026-08-07T04:35:28Z"
@@ -19,7 +54,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["""RESCOPED by editor_chrome_direction.md from "no action hierarchy" to Eden's two-row structure. Eden fits 8 menus (y 0-22) AND 25 tool icons (y 22-40, its own row) into 40 px. We fit 5 menus, the title, a time scrubber, a weather select, undo/redo/history, three buttons and a gear into ONE 48 px strip — which is why it reads as crowded. Menus on row 1, an icon toolbar on row 2. The original hierarchy complaint stands and is part of the same work: `Save Version` :1179, `Export JSON` :1189 and `Export Compiled` :1203 sit at near-equal visual weight so the routine and the consequential read the same — one primary, demote the two exports (menu, split button, or secondary styling); the undo/redo/history glyphs :1160-1173 are too dim to find; the settings gear after :1206 is stranded alone at the far right. All inside `TopCommandStrip` (post-split eden_top_strip.rs, from eden_chrome.rs:831-1372), with the menu descriptor table `MENUS` :112-166 for any menu/split-button demotion. Build against the finished state vocabulary (T-668) — the menu rules in it (reserved checkmark gutter, `...` means dialog, drop-vs-grey by verb) are this ticket's rules too."""]
 owns = ["apps/website/frontend/src/eden_top_strip.rs"]
 
 [scope]

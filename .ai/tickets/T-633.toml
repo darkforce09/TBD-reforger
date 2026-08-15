@@ -6,8 +6,43 @@ class = "feature"
 status = "shipped"
 order = 4150
 executor = "claude-code"
-notes = "editor-UI program wave 14 (wave_plan.tsv row 114) — SHIPPED wave 114 (editor factory), 17fe692e; verifier wave114.md. New Slider + Select primitives in ui.rs (available platform-wide), replacing the raw range/select in the top strip; on:change only, so the ~30Hz RowMirror debounce is intact. Tailwind pseudo-element output verified out-of-band by the slice AND re-verified independently against the built dist CSS. NOTE: ui.rs now imports two &'static str class recipes from eden_layout — an accepted layering inversion, no cycle, nothing runtime."
+notes = """
+editor-UI program wave 14 (wave_plan.tsv row 114) — SHIPPED wave 114 (editor factory), 17fe692e; verifier wave114.md. New Slider + Select primitives in ui.rs (available platform-wide), replacing the raw range/select in the top strip; on:change only, so the ~30Hz RowMirror debounce is intact. Tailwind pseudo-element output verified out-of-band by the slice AND re-verified independently against the built dist CSS. NOTE: ui.rs now imports two &'static str class recipes from eden_layout — an accepted layering inversion, no cycle, nothing runtime.
+
+--- HEAD migration_legacy (verbatim) ---
+
+The time scrubber is a raw `<input type="range">` at eden_chrome.rs:1084-1104 (`min=0 max=1439`, `class="w-28 accent-[--color-primary]"`) rendering in browser blue — off-palette against Aegis #adc6ff — and weather is a raw `<select>` at :1108-1120 with a native arrow. Two unstyled browser controls in an otherwise custom UI. Both live inside `TopCommandStrip` (post-split eden_top_strip.rs). "Replace with Aegis primitives" means CREATE them: `apps/website/frontend/src/ui.rs` has no slider and no select primitive — its components are MaterialIcon :27, PageHeader :38, AuthGate :52, Dialog :193, Sheet :273, AdminGate :356 — and ui.rs is where the suite's shared primitives live, so the new controls belong there and become available to the rest of the platform. DO NOT claim eden_chrome.rs:4143 (the hillshade range inside MissionSettingsDialog) — it is outside this ticket's TOP surface and is a same-file edit either way, so it costs nothing to leave for a follow-up. Build against the finished state vocabulary (T-668), which lands earlier.
+
+missing=0"""
 depends_on = ["T-661"]
+main_goal = "Create Slider and Select primitives in ui.rs for top-strip scrubber and weather."
+context = [
+    "Raw range scrubber and native select in TopCommandStrip off Aegis palette.",
+    "ui.rs has no slider or select; shared primitives belong there platform-wide.",
+]
+requirement = [
+    "CREATE Slider and Select in ui.rs; wire top strip time and weather.",
+    "on:change only; preserve ~30Hz RowMirror debounce.",
+    "Exclude MissionSettingsDialog hillshade range at eden_chrome.rs:4143.",
+]
+current_state = [
+    "Time scrubber raw input :1084-1104 min=0 max=1439 browser blue off-palette.",
+    "Weather raw select :1108-1120 native arrow in otherwise custom UI.",
+    "ui.rs has MaterialIcon PageHeader AuthGate Dialog Sheet AdminGate only.",
+]
+approach = [
+    "Build against T-668 finished vocabulary landing earlier.",
+    "Place primitives in ui.rs for platform-wide reuse from eden_top_strip.",
+]
+verify = [
+    "Top strip uses Aegis Slider and Select not raw browser controls.",
+    "RowMirror debounce intact with on:change-only wiring.",
+]
+citations = [
+    "eden_chrome raw range scrubber",
+    "ui.rs shared primitives slot",
+    "T-668 finished vocabulary",
+]
 shipped_at = "fbb930be"
 created_at = "2026-08-07T03:29:53Z"
 completed_at = "2026-08-07T03:52:23Z"
@@ -19,7 +54,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["""The time scrubber is a raw `<input type="range">` at eden_chrome.rs:1084-1104 (`min=0 max=1439`, `class="w-28 accent-[--color-primary]"`) rendering in browser blue — off-palette against Aegis #adc6ff — and weather is a raw `<select>` at :1108-1120 with a native arrow. Two unstyled browser controls in an otherwise custom UI. Both live inside `TopCommandStrip` (post-split eden_top_strip.rs). "Replace with Aegis primitives" means CREATE them: `apps/website/frontend/src/ui.rs` has no slider and no select primitive — its components are MaterialIcon :27, PageHeader :38, AuthGate :52, Dialog :193, Sheet :273, AdminGate :356 — and ui.rs is where the suite's shared primitives live, so the new controls belong there and become available to the rest of the platform. DO NOT claim eden_chrome.rs:4143 (the hillshade range inside MissionSettingsDialog) — it is outside this ticket's TOP surface and is a same-file edit either way, so it costs nothing to leave for a follow-up. Build against the finished state vocabulary (T-668), which lands earlier."""]
 owns = [
     "apps/website/frontend/src/eden_top_strip.rs",
     "apps/website/frontend/src/ui.rs",

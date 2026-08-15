@@ -1,13 +1,43 @@
 id = "T-656"
 kind = "work"
-title = "Validation rule engine — the four primitives + per-rule fail-on-demand tests"
+title = "Validation rule engine: four primitives, fail-on-demand tests"
 summary = "Validation rule engine — the four primitives + per-rule fail-on-demand tests"
 class = "docs"
 status = "shipped"
 order = 3920
 executor = "claude-code"
-notes = "editor-UI program wave 4 (wave_plan.tsv row 104) — SHIPPED wave 104 (editor factory), slice e4341d38; verifier wave104.md (3 MAJOR deferred: T-719/T-720/T-715-amended)"
+notes = """
+editor-UI program wave 4 (wave_plan.tsv row 104) — SHIPPED wave 104 (editor factory), slice e4341d38; verifier wave104.md (3 MAJOR deferred: T-719/T-720/T-715-amended)
+
+--- HEAD migration_legacy (verbatim) ---
+
+The engine the validation group is built on. FNF's MissionAnalyzer declares 27 checks; 21 are live-evaluable and they reduce to FOUR PRIMITIVES: V1 required-entity presence (conditional on mission shape, so the tool never needs FNF's "the following missing items can be ignored" disclaimer, AnalyzeSQM.ps1:1886-1889); V2 cardinality; V3 per-object invariant; V4 field-shape/derivation. Four primitives is an engine, not a feature. Build it in core, as a NEW `crates/map-engine-core/src/mission/validate.rs` beside the existing scanners — `crates/map-engine-core/src/mission/wire_safety.rs`:262 `scan_editor_payload` and :360 `scan_cargo_capacity` are the same shape (payload in, Vec<String> findings out) — plus one line `pub mod validate;` in `crates/map-engine-core/src/mission/mod.rs` (which declares 5 modules at :7-11). Building in core lets both the SPA and the API call it, so no relocation is required: handlers/missions.rs:608 and :1000 call `validate_payload` and :1471 calls `validate_mission_document` and those keep working. Not claiming the API file is what keeps this wave-packable. ACCEPTANCE, and it is the point of the ticket: every rule ships with a test that asserts the rule CAN FIRE. EVIDENCE CORRECTION, carried from frameworks/README.md: the original rationale said "both validators in the corpus are silently dead and neither community appears to know". Only the FNF leg survived verification (`$MarkObjs` typo at AnalyzeSQM.ps1:902 and the `$ReqCoreObjs.name` guard at :943 — 27 declared, 14 run). The WOG `/g`-flag claim FAILED verification and is withdrawn. This is a one-framework argument plus TBD-internal reasoning, not a convergence argument.
+
+missing=0
+"""
 depends_on = ["T-661"]
+main_goal = "Build validate.rs engine with four primitives and fail-on-demand rule tests."
+context = [
+    "FNF MissionAnalyzer twenty-seven checks reduce to four validation primitives.",
+    "Build beside wire_safety scanners; handlers missions validate_payload keep working.",
+]
+requirement = [
+    "V1 required-entity presence V2 cardinality V3 per-object V4 field-shape.",
+    "New crates/map-engine-core/src/mission/validate.rs plus mod.rs one line.",
+    "Every rule ships test asserting rule can fire on demand.",
+]
+current_state = [
+    "scan_editor_payload and scan_cargo_capacity same payload-in findings-out shape.",
+    "FNF leg survived verification; WOG g-flag claim withdrawn.",
+    "Verifier wave104 three MAJOR deferred T-719 T-720 T-715-amended.",
+]
+approach = ["Implement four primitives in core mission validate module."]
+verify = ["Each validation rule has failing test proving rule can fire."]
+citations = [
+    "wire_safety scan_editor_payload",
+    "FNF AnalyzeSQM twenty-seven checks",
+    "frameworks README evidence correction",
+]
 shipped_at = "d05fae61"
 created_at = "2026-08-02T02:07:34Z"
 completed_at = "2026-08-02T02:18:20Z"
@@ -19,7 +49,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["""The engine the validation group is built on. FNF's MissionAnalyzer declares 27 checks; 21 are live-evaluable and they reduce to FOUR PRIMITIVES: V1 required-entity presence (conditional on mission shape, so the tool never needs FNF's "the following missing items can be ignored" disclaimer, AnalyzeSQM.ps1:1886-1889); V2 cardinality; V3 per-object invariant; V4 field-shape/derivation. Four primitives is an engine, not a feature. Build it in core, as a NEW `crates/map-engine-core/src/mission/validate.rs` beside the existing scanners — `crates/map-engine-core/src/mission/wire_safety.rs`:262 `scan_editor_payload` and :360 `scan_cargo_capacity` are the same shape (payload in, Vec<String> findings out) — plus one line `pub mod validate;` in `crates/map-engine-core/src/mission/mod.rs` (which declares 5 modules at :7-11). Building in core lets both the SPA and the API call it, so no relocation is required: handlers/missions.rs:608 and :1000 call `validate_payload` and :1471 calls `validate_mission_document` and those keep working. Not claiming the API file is what keeps this wave-packable. ACCEPTANCE, and it is the point of the ticket: every rule ships with a test that asserts the rule CAN FIRE. EVIDENCE CORRECTION, carried from frameworks/README.md: the original rationale said "both validators in the corpus are silently dead and neither community appears to know". Only the FNF leg survived verification (`$MarkObjs` typo at AnalyzeSQM.ps1:902 and the `$ReqCoreObjs.name` guard at :943 — 27 declared, 14 run). The WOG `/g`-flag claim FAILED verification and is withdrawn. This is a one-framework argument plus TBD-internal reasoning, not a convergence argument."""]
 owns = [
     "crates/map-engine-core/src/mission/validate.rs",
     "crates/map-engine-core/src/mission/mod.rs",

@@ -6,10 +6,42 @@ class = "feature"
 status = "shipped"
 order = 3970
 executor = "claude-code"
-notes = "editor-UI program wave 7 (wave_plan.tsv row 107) — SHIPPED wave 107 (editor factory), slice a4e4dcc8; verifier wave107.md"
+notes = """
+editor-UI program wave 7 (wave_plan.tsv row 107) — SHIPPED wave 107 (editor factory), slice a4e4dcc8; verifier wave107.md
+
+--- HEAD migration_legacy (verbatim) ---
+
+Operator-requested. Eden's mechanism, measured across all 75 screenshots: a 24x24 CHEVRON in each panel's outer top corner inside the tab strip (left x 0..23 y 47..70, right x 1896..1919 y 47..70); expanded points outward (« left, » right) and collapsed is the SAME bbox with the glyph flipped; collapsed is neither a rail nor a vanish — the panel becomes exactly that 24x24 stub docked at the screen corner, overlaying the map; the viewport REFLOWS, map canvas 1440 -> 1920 px, +33%. Keys: `E` Entity List, `R` Asset Browser, `Backspace` whole interface (T-662 frees Backspace); menu path `View > Interface`. No toolbar button — edge chevron and keyboard only. Code: DockLeft and DockRight (post-split eden_dock_left.rs / eden_dock_right.rs, from eden_chrome.rs:2813 and :2961) plus the four layout constants that must become dynamic — STRIP_TOP_PX :38, DOCK_LEFT_PX :40, DOCK_RIGHT_PX :42, TOOLBELT_BAND_PX :45, all now in eden_layout.rs. THIS IS A CHOKEPOINT — three hot files at once — because those constants are read by three files: mission_editor.rs reflows the canvas at :1985 (`e.resize(rect.width(), rect.height(), dpr)`, so the device buffer really is reallocated — that answers the draft's "confirm it resizes rather than stretching") AND its on-canvas hit test :1668-1671 reads all four directly, so a collapsed dock changes what counts as on-canvas; select_tool.rs:461-466 consumes the same four for `farthest_empty_px` in the marquee self-check, which is the one nobody would guess. Keys go in the editor keydown :1005-1030. STILL OPEN: whether the camera holds its world position across the reflow.
+
+missing=0"""
 depends_on = [
     "T-661",
     "T-662",
+]
+main_goal = "24x24 chevron collapse per dock; viewport reflows map canvas 1440 to 1920px."
+context = [
+    "Eden chevron in tab-strip corner; collapsed is 24x24 stub overlaying map.",
+    "Keys E R Backspace; View > Interface; no toolbar button.",
+]
+requirement = [
+    "Dynamic STRIP_TOP DOCK_LEFT DOCK_RIGHT TOOLBELT_BAND in eden_layout.rs.",
+    "Wire DockLeft DockRight chevrons; editor keydown :1005-1030 bindings.",
+    "mission_editor resize :1985 and hit test :1668-1671 respect collapse.",
+    "select_tool.rs :461-466 farthest_empty_px must track collapsed widths.",
+]
+current_state = [
+    "Four layout constants static; three files read them as chokepoint.",
+    "Collapsed dock changes on-canvas hit test and marquee self-check bounds.",
+]
+approach = [
+    "Chevron flips glyph in same bbox; panel stubs at screen corner on collapse.",
+    "Reallocate device buffer on reflow not stretch; camera hold still open.",
+]
+verify = ["Collapse dock: canvas width gains 480px; chevron toggles expanded stub."]
+citations = [
+    "Eden 24x24 chevron collapse",
+    "T-662 frees Backspace key",
+    "View Interface menu path",
 ]
 shipped_at = "f1c31273"
 created_at = "2026-08-02T05:07:31Z"
@@ -22,7 +54,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["""Operator-requested. Eden's mechanism, measured across all 75 screenshots: a 24x24 CHEVRON in each panel's outer top corner inside the tab strip (left x 0..23 y 47..70, right x 1896..1919 y 47..70); expanded points outward (« left, » right) and collapsed is the SAME bbox with the glyph flipped; collapsed is neither a rail nor a vanish — the panel becomes exactly that 24x24 stub docked at the screen corner, overlaying the map; the viewport REFLOWS, map canvas 1440 -> 1920 px, +33%. Keys: `E` Entity List, `R` Asset Browser, `Backspace` whole interface (T-662 frees Backspace); menu path `View > Interface`. No toolbar button — edge chevron and keyboard only. Code: DockLeft and DockRight (post-split eden_dock_left.rs / eden_dock_right.rs, from eden_chrome.rs:2813 and :2961) plus the four layout constants that must become dynamic — STRIP_TOP_PX :38, DOCK_LEFT_PX :40, DOCK_RIGHT_PX :42, TOOLBELT_BAND_PX :45, all now in eden_layout.rs. THIS IS A CHOKEPOINT — three hot files at once — because those constants are read by three files: mission_editor.rs reflows the canvas at :1985 (`e.resize(rect.width(), rect.height(), dpr)`, so the device buffer really is reallocated — that answers the draft's "confirm it resizes rather than stretching") AND its on-canvas hit test :1668-1671 reads all four directly, so a collapsed dock changes what counts as on-canvas; select_tool.rs:461-466 consumes the same four for `farthest_empty_px` in the marquee self-check, which is the one nobody would guess. Keys go in the editor keydown :1005-1030. STILL OPEN: whether the camera holds its world position across the reflow."""]
 owns = [
     "apps/website/frontend/src/eden_dock_left.rs",
     "apps/website/frontend/src/eden_dock_right.rs",

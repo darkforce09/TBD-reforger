@@ -6,10 +6,41 @@ class = "docs"
 status = "shipped"
 order = 3990
 executor = "claude-code"
-notes = "editor-UI program wave 7 (wave_plan.tsv row 107) — SHIPPED wave 107 (editor factory), slice 0bbade7a; verifier wave107.md"
+notes = """
+editor-UI program wave 7 (wave_plan.tsv row 107) — SHIPPED wave 107 (editor factory), slice 0bbade7a; verifier wave107.md
+
+--- HEAD migration_legacy (verbatim) ---
+
+Rule content in the T-656 engine, so it modifies only `crates/map-engine-core/src/mission/validate.rs`; it READS `crates/map-engine-core/src/mission/orbat.rs` (359 lines) and doc/store.rs and modifies neither. Rules: every slot resolves a role and a squad; no default/empty identity fields; no leaderless squads; no duplicate callsigns within a side. This COLLAPSES the MissionAnalyzer's R3+R4+R5 — three overlapping rules with hardcoded name lists that exist ONLY because Eden packs role and callsign into one string — into one query over TBD's typed fields; R3 is the one rule FNF rated `error` rather than `warning`. It also revives D3-D8, six commented-out per-squad coverage rules, as ONE rule parameterised by squad template. Depends on T-656 for the primitives; collides with T-656 / T-658 / T-660 on validate.rs, which is why the four are in four different waves. Validation is ALWAYS ON — not behind a debug flag, not on save, not on export.
+
+missing=0
+"""
 depends_on = [
     "T-661",
     "T-656",
+]
+main_goal = "Add ORBAT and slot validation rules atop T-656 primitives."
+context = [
+    "Rule content in T-656 engine; modifies validate.rs only.",
+    "Reads orbat.rs and doc store.rs; modifies neither file.",
+]
+requirement = [
+    "Every slot resolves role and squad; no default empty identity fields.",
+    "No leaderless squads; no duplicate callsigns within a side.",
+    "Collapses MissionAnalyzer R3 R4 R5 into one typed-field query.",
+    "Revives D3-D8 commented rules as one squad-template-parameterized rule.",
+    "Validation always on; not behind debug save or export.",
+]
+current_state = [
+    "Depends T-656 primitives; collides T-656 T-658 T-660 on validate.rs.",
+    "Four tickets in four different waves due validate.rs collision.",
+]
+approach = ["Add ORBAT slot rules to validate.rs using typed fields not Eden strings."]
+verify = ["Slot rules fire on leaderless squads duplicate callsigns empty identity."]
+citations = [
+    "orbat.rs typed slot fields",
+    "FNF R3 R4 R5 collapse",
+    "T-656 validation primitives",
 ]
 shipped_at = "421b2333"
 created_at = "2026-08-02T04:54:19Z"
@@ -22,7 +53,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["Rule content in the T-656 engine, so it modifies only `crates/map-engine-core/src/mission/validate.rs`; it READS `crates/map-engine-core/src/mission/orbat.rs` (359 lines) and doc/store.rs and modifies neither. Rules: every slot resolves a role and a squad; no default/empty identity fields; no leaderless squads; no duplicate callsigns within a side. This COLLAPSES the MissionAnalyzer's R3+R4+R5 — three overlapping rules with hardcoded name lists that exist ONLY because Eden packs role and callsign into one string — into one query over TBD's typed fields; R3 is the one rule FNF rated `error` rather than `warning`. It also revives D3-D8, six commented-out per-squad coverage rules, as ONE rule parameterised by squad template. Depends on T-656 for the primitives; collides with T-656 / T-658 / T-660 on validate.rs, which is why the four are in four different waves. Validation is ALWAYS ON — not behind a debug flag, not on save, not on export."]
 owns = ["crates/map-engine-core/src/mission/validate.rs"]
 
 [scope]
