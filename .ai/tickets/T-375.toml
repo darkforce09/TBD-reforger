@@ -1,12 +1,55 @@
 id = "T-375"
 kind = "work"
-title = "An authored mission title is dropped by Save and overwritten by the stale row on reload"
+title = "Mission title dropped on save, stale on reload"
 summary = "An authored mission title is dropped by Save and overwritten by the stale row on reload"
 class = "bug"
 status = "shipped"
 order = 3191
 executor = "claude-code"
+notes = """
+-> == BY It So be do so NOT The bug but had it, its key now run was why (the Also NEXT Note This blob boot fine from here live most need next now. real than them then this were will work **the Worth added after bugs, call, calls carry close could fully good, guard live: local looks means moved needs notes stale still there time, token until value wrong Export `idea` `meta` above. always audits blocks budget design faster fixing hours. judged lands. read), server ships. starts things ticket today, value; Nothing Promote Related already authors backlog costing family, feature knowing latent: nothing someone without DEFERRED OPERATOR actually applies. doc-only inherits matching original produced reloads. spending survives threads, verbatim CANCELLED DECISION, IndexedDB Recording `hydrate` currently findable, optional. silently. 2026-07-26 WHITESPACE developing diagnosed, documented envelope's generating operator's payload.** something, substance: `is_empty`, overwritten T-182..T-297 reproducible `environment` `map.terrain` clear-then-load `apply_row_meta` `meta.briefing`, compile_payload. time_of_day/weather (store.rs:1101/1114) store.rs:1021-1024), `hydrate_from_server` editor_ops::set_title eden_chrome.rs:706-710 (compile_export:189-193), (eden_chrome.rs:1038-1040 (eden_chrome.rs:492-497). `apply_row`/`adopt_payload`, crates/map-engine-core/src/mission/compile.rs:111-130
+
+--- migration_legacy (verbatim) ---
+
+
+
+ROUND-TRIP DROPS THE FIELD. crates/map-engine-core/src/mission/compile.rs:111-130 emits only `map.terrain` and `environment` out of `meta` — **the title is not in the compiled payload.** It is authored doc-only (eden_chrome.rs:1038-1040 -> editor_ops::set_title -> store.rs:1021-1024), and the T-192 row mirror covers only time_of_day/weather (eden_chrome.rs:492-497).
+
+So on the next boot `hydrate_from_server` calls `apply_row`/`adopt_payload`, which writes the STALE ROW TITLE back over the doc. The authored title survives only in the local IndexedDB blob and is overwritten by a stale server value on reload. Export does carry it (compile_export:189-193), which is why this looks fine until someone reloads.
+
+Related and already documented but still live: compile_export:211-215 reads `meta.briefing`, which `apply_row_meta` never threads, so the export envelope's briefing is permanently "".
+
+Fix either half — emit the title in the compiled payload, or mirror it to the row like weather. Mirroring is probably right (the row is what the library and the mod read), but then it needs the same non-blank guard eden_chrome.rs:706-710 already applies. Note apply_row_meta tests only `is_empty`, so a WHITESPACE title currently propagates into the doc.
+
+Also in the same family, latent: the `items` root map is cleared by `hydrate` (store.rs:1101/1114) and never emitted by compile_payload. Nothing authors `items` today, so it is not live — but the clear-then-load design means the NEXT root map added without a matching compile key inherits this silently. Worth a guard that fails loudly on a root the compile does not emit.
+
+== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
+Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
+This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
+"""
 priority = 1
+main_goal = "Emit mission title in compiled payload or mirror it to the row like time_of_day and weather."
+context = [
+    "ROUND-TRIP DROPS THE FIELD. compile.rs:111-130 emits only map.terrain and environment out of meta.",
+    "Title is authored doc-only; T-192 row mirror covers only time_of_day/weather.",
+]
+requirement = [
+    "Fix either half — emit title in compiled payload, or mirror to row with eden_chrome non-blank guard.",
+    "Guard that fails loudly when hydrate clears a root map compile does not emit.",
+]
+current_state = [
+    "hydrate_from_server apply_row/adopt_payload writes STALE ROW TITLE back over the doc on reload.",
+    'compile_export:211-215 reads meta.briefing which apply_row_meta never threads — export briefing permanently "".',
+    "apply_row_meta tests only is_empty — whitespace title propagates into doc.",
+    "`items` root map cleared by hydrate and never emitted by compile_payload — latent same family.",
+]
+approach = ["Mirroring probably right — row is what library and mod read."]
+citations = [
+    "T-192 row mirror",
+    "eden_chrome.rs:1038-1040 set_title",
+    "compile_export:189-193 title",
+    "store.rs:1101 items clear",
+]
 shipped_at = "6c3e0619"
 created_at = "2026-07-27T08:27:44Z"
 completed_at = "2026-07-27T08:47:45Z"
@@ -18,21 +61,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
-migration_legacy = [
-    "ROUND-TRIP DROPS THE FIELD. crates/map-engine-core/src/mission/compile.rs:111-130 emits only `map.terrain` and `environment` out of `meta` — **the title is not in the compiled payload.** It is authored doc-only (eden_chrome.rs:1038-1040 -> editor_ops::set_title -> store.rs:1021-1024), and the T-192 row mirror covers only time_of_day/weather (eden_chrome.rs:492-497).",
-    "",
-    "So on the next boot `hydrate_from_server` calls `apply_row`/`adopt_payload`, which writes the STALE ROW TITLE back over the doc. The authored title survives only in the local IndexedDB blob and is overwritten by a stale server value on reload. Export does carry it (compile_export:189-193), which is why this looks fine until someone reloads.",
-    "",
-    """Related and already documented but still live: compile_export:211-215 reads `meta.briefing`, which `apply_row_meta` never threads, so the export envelope's briefing is permanently "".""",
-    "",
-    "Fix either half — emit the title in the compiled payload, or mirror it to the row like weather. Mirroring is probably right (the row is what the library and the mod read), but then it needs the same non-blank guard eden_chrome.rs:706-710 already applies. Note apply_row_meta tests only `is_empty`, so a WHITESPACE title currently propagates into the doc.",
-    "",
-    "Also in the same family, latent: the `items` root map is cleared by `hydrate` (store.rs:1101/1114) and never emitted by compile_payload. Nothing authors `items` today, so it is not live — but the clear-then-load design means the NEXT root map added without a matching compile key inherits this silently. Worth a guard that fails loudly on a root the compile does not emit.",
-    "",
-    "== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==",
-    "Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.",
-    "This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.",
-]
 owns = ["crates/map-engine-core/src/mission/compile.rs"]
 
 [scope]

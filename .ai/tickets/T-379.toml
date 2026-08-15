@@ -6,7 +6,30 @@ class = "bug"
 status = "shipped"
 order = 3195
 executor = "claude-code"
+notes = """
+== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
+Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
+This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now."""
 priority = 1
+main_goal = "Reject blank role_played on telemetry ingest so ON CONFLICT cannot overwrite a populated scoreline with empty string."
+context = ["handlers/telemetry.rs:461-470, bound at :475 — the `ON CONFLICT DO UPDATE` sets `role_played = EXCLUDED.role_played`, and the pre-transaction validation loop at :432-439 checks `arma_id` and `source_event_id` for blankness but **not `role_played`**."]
+requirement = [
+    "It is a required String, so ABSENCE is a 400 (T-316's fix). Present-and-blank passes, and `''` replaces a populated role.",
+    "Migration 0009 made the column `NOT NULL DEFAULT ''`, so `''` is a storable value — **NOT NULL does not close this.**",
+    "This is the same shape the file has already fixed twice: `outcome` rejects blank at :414-420 (T-316) and `source_match_id` rejects blank at :297-307 (T-347). role_played was simply missed by both.",
+]
+current_state = [
+    "Also in the same statement, and a genuine judgement call rather than an oversight: `discord_id = EXCLUDED.discord_id` binds a lookup result that is None when no user matches the arma_id,",
+    "so a re-ingest after an UNLINK nulls a previously-populated discord_id.",
+    "T-326 established that unlink SHOULD release the rows, so that is probably intended — but say so in a comment, because nothing currently does.",
+]
+citations = [
+    "telemetry.rs:461-470 ON CONFLICT",
+    "T-316 outcome blank fix",
+    "T-347 source_match_id fix",
+    "T-326 unlink release rows",
+    "migration 0009 NOT NULL",
+]
 shipped_at = "42f0eed0"
 created_at = "2026-07-27T08:53:20Z"
 completed_at = "2026-07-27T08:55:41Z"
@@ -18,19 +41,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    "handlers/telemetry.rs:461-470, bound at :475 — the `ON CONFLICT DO UPDATE` sets `role_played = EXCLUDED.role_played`, and the pre-transaction validation loop at :432-439 checks `arma_id` and `source_event_id` for blankness but **not `role_played`**.",
-    "",
-    "It is a required String, so ABSENCE is a 400 (T-316's fix). Present-and-blank passes, and `''` replaces a populated role. Migration 0009 made the column `NOT NULL DEFAULT ''`, so `''` is a storable value — **NOT NULL does not close this.**",
-    "",
-    "This is the same shape the file has already fixed twice: `outcome` rejects blank at :414-420 (T-316) and `source_match_id` rejects blank at :297-307 (T-347). role_played was simply missed by both.",
-    "",
-    "Also in the same statement, and a genuine judgement call rather than an oversight: `discord_id = EXCLUDED.discord_id` binds a lookup result that is None when no user matches the arma_id, so a re-ingest after an UNLINK nulls a previously-populated discord_id. T-326 established that unlink SHOULD release the rows, so that is probably intended — but say so in a comment, because nothing currently does.",
-    "",
-    "== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==",
-    "Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.",
-    "This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.",
-]
 owns = ["apps/website/api/src/handlers/telemetry.rs"]
 
 [scope]

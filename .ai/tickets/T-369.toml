@@ -6,7 +6,65 @@ class = "bug"
 status = "shipped"
 order = 3185
 executor = "claude-code"
+notes = """
+--- migration_legacy (verbatim) ---
+
+FOUND by the adversarial verifier, and it contradicts T-316's own stated rule.
+
+On the re-ingest branch, `upsert_match` (telemetry.rs:555-582) OMITS `event_id`, `mission_id`, `terrain` and `started_at` from the UPDATE and returns the STORED `ev`. So: a first POST carrying a `source_match_id` but no `event_id`, followed by a corrected re-POST carrying the right one, **silently skips attendance forever** — `if let Some(eid) = event_id` at :489 sees `None` because the stored row still has none.
+
+That is the opposite of what T-316 decided for the sibling fields: for `ended_at`, `winning_faction` and `aar_replay_url` a PRESENT field wins; for these four it is discarded. T-316's per-struct reasoning was careful and deliberate, so this is very likely an oversight in the re-ingest branch rather than a decision — but read that reasoning before changing it, and if the asymmetry IS intentional, document it, because nothing currently says so.
+
+Low practical reach today (the mod re-sends an identical payload), which is why it is P2 rather than P1. But attendance is the thing operators actually check after an op, and a correction that silently does nothing is worse than one that errors.
+
+SHIPPED. OVERSIGHT, NOT INTENT — settled by ARCHAEOLOGY rather than inference. The agent read the pre-Rust Go original (c05ddbc9e^:apps/website/internal/handlers/telemetry.go) and found the four-column list is a VERBATIM CARRY-OVER of T-001's `Updates(map[string]any{"ended_at","outcome","winning_faction","aar_replay_url"})`, commented 'mutable result fields'. T-316 changed what those four columns MEAN and never revisited which columns were IN the list. It also noted T-316 named and justified five of MatchInput's nine fields and never mentions these four — a ticket that careful did not silently decide them.
+
+Reproduced with real values: both POSTs returned 200 with the SAME match_id, so the dedupe key worked and only the correction was thrown away. event_id/mission_id/terrain stayed NULL, started_at kept POST 1's now(), state stayed `registered`, attendance_rate 0.0.
+
+TWO STRUCTURAL CARES: started_at binds m.started_at and NEVER the create path's unwrap_or_else(Utc::now) — it MOVED that default down into the INSERT so it cannot be in scope beside the UPDATE and look right there. And `RETURNING event_id` now gives the caller the MERGED value; returning the pre-update column was the other half of why the correction did nothing.
+
+All six T-316 decisions re-verified individually on a live server, plus T-347's blank-dedupe test. 119/119. attendance_rate 0.00 -> 50.00; leaderboard_totals checked and correctly unaffected (it aggregates match_player_stats, not attendance).
+
+NEW CONSEQUENCE ITS OWN FIX CREATED, flagged not hidden: the re-point is now reachable, and the attendance UPDATE only ever SETS attended, never retracts. Re-pointing a match from EV1 to EV2 marks EV2 attended and LEAVES EV1 attended, inflating attendance_rate to 100%. There is no record of which match marked a registration, so the write is not currently reversible — a contract decision, filed as T-384.
+
+'mutable (c05ddbc9e^:apps/website/internal/handlers/telemetry.go) (it (telemetry.rs:555-582) (the **silently 0.0. 1's 100%. ARCHAEOLOGY And But CARES: CARRY-OVER CONSEQUENCE CREATED, EV1 EV2 FIX INTENT IS ITS It LEAVES MOVED MatchInput's NEW NOT NULL, OVERSIGHT, OWN POST Re-pointing Reproduced SHIPPED. STRUCTURAL So: T-001's T-316's T-347's TWO That The There VERBATIM `None` `RETURNING `Updates(map[string]any{"ended_at","outcome","winning_faction","aar_replay_url"})`, `aar_replay_url` `ended_at`, `ev`. `event_id`, `if `mission_id`, `registered`, `source_match_id` `started_at` `terrain` `upsert_match` `winning_faction` a actually after agent aggregates also an and as asymmetry attendance). attended, away. be both branch, but careful carrying changing check checked column commented contract currently decide decided decision decision, dedupe deliberate, discarded. does errors. event_id/mission_id/terrain event_id` ever fields fields'. fields: first five flagged followed for forever** found four-column half hidden: in individually inference. inflating intentional, it it, justified kept key live marked marks match match_id, match_player_stats, mentions named nine no noted nothing now(), on one one, op, operators opposite original other path's payload), rather reachable, read real record registration, retracts. returning returns reversible says scope server, so. state test. than that them. there. thing this those thrown ticket unaffected unwrap_or_else(Utc::now) value; values: verifier, very was were worked worse write —
+"""
 priority = 2
+main_goal = "Fix upsert_match re-ingest UPDATE to merge event_id mission_id terrain started_at so corrected re-POST records attendance."
+context = [
+    "FOUND by adversarial verifier; contradicts T-316 own stated rule.",
+    "On re-ingest branch upsert_match telemetry.rs:555-582 OMITS event_id mission_id terrain started_at from UPDATE.",
+    "Returns STORED ev so corrected re-POST with event_id silently skips attendance forever.",
+]
+requirement = [
+    "For ended_at winning_faction aar_replay_url PRESENT field wins; these four discarded is likely oversight.",
+    "Read T-316 per-struct reasoning before changing; if intentional document the asymmetry.",
+    "Low practical reach today mod re-sends identical payload; P2 not P1.",
+]
+current_state = [
+    "if let Some(eid) = event_id at :489 sees None because stored row still has none.",
+    "SHIPPED oversight not intent settled by archaeology of pre-Rust Go telemetry.go.",
+    "Four-column list verbatim carry-over of T-001 Updates mutable result fields.",
+    "T-316 changed what four columns MEAN never revisited which columns IN the list.",
+    "Both POSTs returned 200 SAME match_id; event_id mission_id terrain stayed NULL.",
+    "started_at binds m.started_at NEVER create path unwrap_or_else Utc::now.",
+    "RETURNING event_id now gives caller MERGED value not pre-update column.",
+    "All six T-316 decisions re-verified plus T-347 blank-dedupe test 119/119.",
+    "attendance_rate 0.00 -> 50.00; leaderboard_totals correctly unaffected.",
+    "Re-point reachable; attendance UPDATE only SETS attended never retracts; filed T-384.",
+]
+approach = [
+    "Moved started_at default down into INSERT so UPDATE cannot look right beside it.",
+    "RETURNING event_id gives merged value fixing why correction did nothing.",
+]
+citations = [
+    "T-316 sibling field rule",
+    "T-001 Updates carry-over",
+    "T-347 blank-dedupe test",
+    "telemetry.rs:555-582 upsert",
+    "telemetry.rs:489 event_id gate",
+    "T-384 re-point inflation",
+]
 shipped_at = "80120c1d"
 created_at = "2026-07-26T10:40:43Z"
 completed_at = "2026-07-26T11:10:32Z"
@@ -17,25 +75,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = [
-    "FOUND by the adversarial verifier, and it contradicts T-316's own stated rule.",
-    "",
-    "On the re-ingest branch, `upsert_match` (telemetry.rs:555-582) OMITS `event_id`, `mission_id`, `terrain` and `started_at` from the UPDATE and returns the STORED `ev`. So: a first POST carrying a `source_match_id` but no `event_id`, followed by a corrected re-POST carrying the right one, **silently skips attendance forever** — `if let Some(eid) = event_id` at :489 sees `None` because the stored row still has none.",
-    "",
-    "That is the opposite of what T-316 decided for the sibling fields: for `ended_at`, `winning_faction` and `aar_replay_url` a PRESENT field wins; for these four it is discarded. T-316's per-struct reasoning was careful and deliberate, so this is very likely an oversight in the re-ingest branch rather than a decision — but read that reasoning before changing it, and if the asymmetry IS intentional, document it, because nothing currently says so.",
-    "",
-    "Low practical reach today (the mod re-sends an identical payload), which is why it is P2 rather than P1. But attendance is the thing operators actually check after an op, and a correction that silently does nothing is worse than one that errors.",
-    "",
-    """SHIPPED. OVERSIGHT, NOT INTENT — settled by ARCHAEOLOGY rather than inference. The agent read the pre-Rust Go original (c05ddbc9e^:apps/website/internal/handlers/telemetry.go) and found the four-column list is a VERBATIM CARRY-OVER of T-001's `Updates(map[string]any{"ended_at","outcome","winning_faction","aar_replay_url"})`, commented 'mutable result fields'. T-316 changed what those four columns MEAN and never revisited which columns were IN the list. It also noted T-316 named and justified five of MatchInput's nine fields and never mentions these four — a ticket that careful did not silently decide them.""",
-    "",
-    "Reproduced with real values: both POSTs returned 200 with the SAME match_id, so the dedupe key worked and only the correction was thrown away. event_id/mission_id/terrain stayed NULL, started_at kept POST 1's now(), state stayed `registered`, attendance_rate 0.0.",
-    "",
-    "TWO STRUCTURAL CARES: started_at binds m.started_at and NEVER the create path's unwrap_or_else(Utc::now) — it MOVED that default down into the INSERT so it cannot be in scope beside the UPDATE and look right there. And `RETURNING event_id` now gives the caller the MERGED value; returning the pre-update column was the other half of why the correction did nothing.",
-    "",
-    "All six T-316 decisions re-verified individually on a live server, plus T-347's blank-dedupe test. 119/119. attendance_rate 0.00 -> 50.00; leaderboard_totals checked and correctly unaffected (it aggregates match_player_stats, not attendance).",
-    "",
-    "NEW CONSEQUENCE ITS OWN FIX CREATED, flagged not hidden: the re-point is now reachable, and the attendance UPDATE only ever SETS attended, never retracts. Re-pointing a match from EV1 to EV2 marks EV2 attended and LEAVES EV1 attended, inflating attendance_rate to 100%. There is no record of which match marked a registration, so the write is not currently reversible — a contract decision, filed as T-384.",
-]
 owns = ["apps/website/api/src/handlers/telemetry.rs"]
 
 [scope]

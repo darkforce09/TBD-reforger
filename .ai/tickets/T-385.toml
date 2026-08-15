@@ -1,12 +1,68 @@
 id = "T-385"
 kind = "work"
-title = "Join matches.terrain into /servers so the theater readout can come back"
+title = "Join matches.terrain into /servers for theater"
 summary = "Join matches.terrain into /servers so the theater readout can come back"
 class = "bug"
 status = "shipped"
 order = 3201
 executor = "claude-code"
+notes = """
+== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
+Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
+This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
+"" 'Failed (:20). (MatchInput.terrain), (server_intel.rs:19-21) (terrain_type, + -> 1. 2. 2026-07-26 3. :22, :597. = == `DataEnvelope<Value>`. `idea` `LEFT `matches.terrain` `server_intel()` `server_statuses.current_match_id`. `ServerRowDto.status` `ServerRowDto` `TBD `v_str` a A above. absent absent, actually add Adopting after already Also always An apart arrives AT audits backlog be because blocks bound budget bug bugs, but BY call, CANCELLED catch-all close collapsing costing could crate data data.' day DECISION, defect DEFERRED developing diagnosed, do DOING ends envelope everon`. every exactly exists expose fails faster feature field findable, fixing frontend/src/dto.rs:283 fully gate generating good, had handlers/telemetry.rs:341 here hours. instructions invisible: is it it, judged keeping knowing left live load matches matches.id means most moved need needed no None NOT notes Nothing nothing now now. nullable), object ON OPERATOR operator's Option optional. original own page parse, populated: precisely prevent, produced Promote ran real Recording recur. renders reproducible right round-trips row's run scalars. server. server_statuses.current_match_id` ships. skip_serializing_if something, spending starts substance: T-182..T-297 T-359's T-359, than That that THE The them there things This ticket time, TIME, to token unparseable unwrap_or_default(), validated value; verbatim was were what which while whole why will wire, with work WORTH wrong
+
+--- migration_legacy (verbatim) ---
+
+HANDOFF from T-359, which removed the phantom readout and left a tripwire test that FAILS with instructions the day this lands. Do not restore the UI before the route.
+
+The data exists and is populated: `matches.terrain` (terrain_type, nullable), keyed by `server_statuses.current_match_id`. T-359 ran the join on the live dev DB and got `TBD Primary — Everon | everon`. No migration and no ingest change needed — terrain already arrives at handlers/telemetry.rs:341 (MatchInput.terrain), validated at :22, bound at :597.
+
+  1. handlers/servers.rs:29 `server_intel()` — add `LEFT JOIN matches ON matches.id = server_statuses.current_match_id` and expose it on ServerIntelDto (:20).
+  2. frontend/src/dto.rs:283 — the field must land in the SAME COMMIT as the recaptured golden, never ahead of the route. An Option + skip_serializing_if round-trips absent -> None -> absent, so the gate would stay GREEN over a fictional field. That is precisely the defect T-306 removed the catch-all to prevent, and it would recur.
+  3. Then delete T-359's tripwire and restore the readout.
+
+WORTH DOING AT THE SAME TIME, because it is why this bug was invisible: `ServerRowDto` has exactly two references in the crate — its own definition and its own golden test — while server_intel.rs:73 fetches `DataEnvelope<Value>`. A DTO only its own golden reads proves the wire, not the page. Adopting it is blocked on `ServerRowDto.status` keeping a TOLERANT parse, or one unparseable status fails the whole envelope and the page renders 'Failed to load data.' for every server. Also `v_str` (server_intel.rs:19-21) ends in unwrap_or_default(), collapsing absent/null/non-string/empty into one "" — the conflation T-306 split apart for the status object and left on the row's scalars.
+
+== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
+Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
+This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
+
+== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
+Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
+This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
+"""
 priority = 2
+main_goal = "Expose matches.terrain on /servers so Server Intel theater readout can return."
+context = [
+    "HANDOFF from T-359 — removed phantom readout, tripwire test FAILS when this lands.",
+    "Do not restore UI before the route.",
+]
+requirement = [
+    "Field must land in SAME COMMIT as recaptured golden, never ahead of route.",
+    "Then delete T-359 tripwire and restore readout.",
+    "Adopt ServerRowDto blocked on TOLERANT ServerRowDto.status parse.",
+]
+current_state = [
+    "matches.terrain exists, populated; keyed by server_statuses.current_match_id.",
+    "T-359 join on dev DB got TBD Primary — Everon | everon.",
+    "No migration or ingest change — terrain at telemetry.rs:341,:22,:597.",
+    "handlers/servers.rs:29 server_intel needs LEFT JOIN matches.",
+    "frontend/dto.rs:283 — Option+skip_serializing_if would stay GREEN over fictional field.",
+    "ServerRowDto has two references — definition and golden only.",
+    "server_intel.rs:73 fetches DataEnvelope<Value>; DTO only its golden reads proves wire not page.",
+    'v_str unwrap_or_default collapses absent/null/non-string/empty into one "".',
+]
+approach = [
+    "Expose terrain on ServerIntelDto (:20) via JOIN.",
+    "Fix v_str conflation T-306 split for status object.",
+]
+citations = [
+    "T-359 theater tripwire",
+    "T-306 status parse split",
+    "handlers/servers.rs:29",
+    "telemetry.rs:341 terrain",
+]
 shipped_at = "e9021d8c"
 created_at = "2026-07-27T12:13:57Z"
 completed_at = "2026-07-27T12:32:01Z"
@@ -18,21 +74,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
-migration_legacy = [
-    "HANDOFF from T-359, which removed the phantom readout and left a tripwire test that FAILS with instructions the day this lands. Do not restore the UI before the route.",
-    "",
-    "The data exists and is populated: `matches.terrain` (terrain_type, nullable), keyed by `server_statuses.current_match_id`. T-359 ran the join on the live dev DB and got `TBD Primary — Everon | everon`. No migration and no ingest change needed — terrain already arrives at handlers/telemetry.rs:341 (MatchInput.terrain), validated at :22, bound at :597.",
-    "",
-    "  1. handlers/servers.rs:29 `server_intel()` — add `LEFT JOIN matches ON matches.id = server_statuses.current_match_id` and expose it on ServerIntelDto (:20).",
-    "  2. frontend/src/dto.rs:283 — the field must land in the SAME COMMIT as the recaptured golden, never ahead of the route. An Option + skip_serializing_if round-trips absent -> None -> absent, so the gate would stay GREEN over a fictional field. That is precisely the defect T-306 removed the catch-all to prevent, and it would recur.",
-    "  3. Then delete T-359's tripwire and restore the readout.",
-    "",
-    """WORTH DOING AT THE SAME TIME, because it is why this bug was invisible: `ServerRowDto` has exactly two references in the crate — its own definition and its own golden test — while server_intel.rs:73 fetches `DataEnvelope<Value>`. A DTO only its own golden reads proves the wire, not the page. Adopting it is blocked on `ServerRowDto.status` keeping a TOLERANT parse, or one unparseable status fails the whole envelope and the page renders 'Failed to load data.' for every server. Also `v_str` (server_intel.rs:19-21) ends in unwrap_or_default(), collapsing absent/null/non-string/empty into one "" — the conflation T-306 split apart for the status object and left on the row's scalars.""",
-    "",
-    "== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==",
-    "Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.",
-    "This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.",
-]
 owns = [
     "apps/website/api/src/handlers/servers.rs",
     "apps/website/frontend/src/dto.rs",

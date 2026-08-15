@@ -1,12 +1,78 @@
 id = "T-367"
 kind = "work"
-title = "T-202 turned a silently-ignored field into a permanent 500 on compile"
+title = "T-202 briefing typo 500s compile not save-time 400"
 summary = "T-202 turned a silently-ignored field into a permanent 500 on compile"
 class = "bug"
 status = "shipped"
 order = 3183
 executor = "claude-code"
+notes = """
+--- migration_legacy (verbatim) ---
+
+REGRESSION INTRODUCED BY T-202, found by an independent audit of its emptiness claim.
+
+Pre-T-202, `FactionIn` had three fields and no `briefing`, and there is no `deny_unknown_fields` in flatten.rs — so any `briefing` value on a faction row was silently IGNORED. Post-T-202 it is typed, and a non-object is a hard `CompileError::Parse`, which missions.rs:1073 maps to **HTTP 500 "could not compile mission"**. Measured:
+    "briefing": "some string"  -> invalid type: string, expected struct BriefingIn -> 500
+    "briefing": 3 / true        -> 500
+    situation: 5 / markers: "OBJ" / marker.x: "5"  -> 500
+    array / situation:null / unknown subkey          -> OK, briefings={"blufor":{}}
+
+WHY THIS IS REACHABLE AND NOT THEORETICAL: `"briefing": "<string>"` is EXACTLY the briefing-vs-briefings confusion T-214's own doc comment (compile.rs:150-161) says is one keystroke away — `briefing` (string, the library blurb) versus `briefings` (per-faction object). And mission-editor-payload.schema.json's $defs/editorFaction has NO additionalProperties:false, so the payload schema ACCEPTS it at save time. A client that writes the library blurb onto a faction row gets a mission that saves fine and then 500s on `/compiled` FOREVER — unrecoverable without editing the stored JSON by hand.
+
+Latent today (0 live rows carry the key, verified across 128 payloads and 39 faction rows) but reachable by one hand-crafted POST — the same audit established that `POST /missions/:id/versions` binds the payload verbatim and `/compiled` reads it straight into flatten_to_mod_document.
+
+Fix direction: a mistyped `briefing` should be a 400 at SAVE time, not a 500 at compile time. Either tighten the payload schema (careful — T-357 measured that a naive tightening would have 400'd six real live missions) or make the compile path degrade rather than fail. Do not simply restore the silent-ignore behaviour; that hides the author's mistake, which is the bug T-348 argued against for cms status.
+
+SHIPPED. THE VALIDATION'S VERDICT *IS* THE COMPILER'S OWN DESERIALISER — `scan_editor_payload_types` runs `serde_json::from_slice::<EditorPayload>`, the same call `flatten_to_mod_document` makes on the same bytes. Two consequences did the deciding:
+  It CANNOT reject anything that compiles today, because the accept set IS the compile set. Not a new rule, just an earlier reading of the existing one — which is how it structurally dodges the trap T-357 measured (a naive schema tightening would have 400'd six real missions). Proven: all 128 live payloads replayed through the fixed boundary, 128 x 201, 0 rejected.
+  It CANNOT DRIFT. A hand-written probe or a per-field subschema would be a SECOND declaration of the shape, and the next slice to add a typed field to SlotIn/BriefingIn would reopen exactly the gap T-202 opened. A test pins the equivalence in both directions over all eleven measured shapes.
+
+It generalises beyond the ticket: `slots[].position.x: "5"` was the same 500 and is now caught — and there you CANNOT degrade, because you cannot invent where the author meant to put the seat.
+
+It kept /compiled at 500 deliberately rather than overturning validated_compiled_body's argued position under an unrelated ticket: after the precheck that branch is unreachable through the API, so reaching it means either the row was written around the API or the precheck disagrees with the parse — and the second is a defect in the fix, which a 4xx would let hide as 'your mission is misconfigured'. What changed is the detail now reaches the log and the body; the 500 used to discard the parse error entirely, which is what made a broken row unrecoverable in practice.
+
+FOLDED IN FROM T-366 and found a THIRD case: "25:00" also 500'd. Its valid_time_of_day is deliberately NARROWER than the column — measured on Postgres 18, `time` also accepts 24:00, 0600, '4:05 PM', 'allballs', 06:00:60 (leap second, silently renormalised) — each storing fine and then parking the author's scrubber at 06:00 in silence, which is the T-192 bug. It also requires ASCII digits because Rust's u32::from_str accepts a leading '+', so "+6:00" would have parsed and still 500'd.
+
+It reverted a `cargo fmt --all` that reformatted 11 files it did not own, rather than committing them.
+
+"+6:00" "25:00" "5"` "<string>"` "could $defs/editorFaction '+', '4:05 'allballs', 'your (0 (a (careful (compile.rs:150-161) (leap (per-faction (string, **HTTP *IS* --all` /missions/:id/versions` 0600, 06:00 06:00:60 11 128 18, 201, 24:00, 39 400'd 4xx 500'd. 500s A AND API API, ASCII And CANNOT COMPILER'S DESERIALISER DRIFT. EXACTLY FOLDED FOREVER FROM Fix IGNORED. IN It Its JSON Measured: NARROWER NOT Not OK, OWN PM', Postgres Pre-T-202, Proven: REACHABLE Rust's SECOND SHIPPED. SlotIn/BriefingIn T-192 T-214's THE THEORETICAL: THIRD THIS Two VALIDATION'S VERDICT WHY What `"briefing": `/compiled` `CompileError::Parse`, `FactionIn` `POST `briefing` `briefing`, `briefings` `cargo `deny_unknown_fields` `flatten_to_mod_document` `scan_editor_payload_types` `serde_json::from_slice::<EditorPayload>`, `slots[].position.x: `time` a accept accepts across add additionalProperties:false, against all also any around author's because beyond binds blurb blurb) body; boundary, branch briefings={"blufor":{}} broken bug bug. bytes. call carry case: caught changed client column comment committing consequences deciding: declaration defect degrade, did digits direction: disagrees discard dodges each earlier editing either entirely, error established exactly existing faction field files fine fix, fixed fmt for gap generalises gets hand-written hand. hard have hide how into invent it just kept key, leading let library made makes maps means meant misconfigured'. mission mission"**. mission-editor-payload.schema.json's missions) missions). mistake, new next object). onto opened. overturning own own, parking parse parsed payloads per-field position practice. precheck probe put reaching reading reads real reformatted rejected. renormalised) reopen replayed requires reverted row rows) rule, saves says scrubber seat. second second, set. shape, silence, silently simply six slice status. still stored storing straight string, structurally subschema test them. then there through ticket: tightening time, today, type: typed typed, u32::from_str under unreachable unrecoverable unrelated used valid_time_of_day validated_compiled_body's value verbatim verified versus was what where which with without would writes written x you —
+"""
 priority = 1
+main_goal = "Catch mistyped briefing at save time via scan_editor_payload_types instead of permanent 500 on /compiled."
+context = [
+    "REGRESSION INTRODUCED BY T-202, found by an independent audit of its emptiness claim.",
+    "Pre-T-202 FactionIn had three fields and no briefing; no deny_unknown_fields in flatten.rs.",
+    "Post-T-202 briefing typed; non-object is CompileError::Parse mapped to HTTP 500 at missions.rs:1073.",
+]
+requirement = [
+    "Mistyped briefing should be 400 at SAVE time not 500 at compile time.",
+    "Either tighten payload schema carefully or make compile path degrade rather than fail.",
+    "Do not restore silent-ignore behaviour; that hides the author mistake T-348 argued against.",
+]
+current_state = [
+    '"briefing": "some string" -> invalid type string expected struct BriefingIn -> 500.',
+    '"briefing": 3 / true and situation: 5 / markers: "OBJ" / marker.x: "5" -> 500.',
+    'array / situation:null / unknown subkey -> OK briefings={"blufor":{}}.',
+    "briefing-vs-briefings confusion one keystroke away per compile.rs:150-161.",
+    "editorFaction has NO additionalProperties:false so payload schema ACCEPTS at save time.",
+    "Latent today 0 live rows but reachable by one hand-crafted POST via versions endpoint.",
+]
+approach = [
+    "scan_editor_payload_types runs serde_json::from_slice::<EditorPayload> same as flatten_to_mod_document.",
+    "Accept set IS compile set; cannot reject anything that compiles today.",
+    "Test pins equivalence both directions over eleven measured shapes.",
+    "Kept /compiled at 500 deliberately after precheck; detail now reaches log and body.",
+]
+citations = [
+    "T-202 FactionIn regression",
+    "T-214 briefing-vs-briefings",
+    "T-357 naive schema trap",
+    "flatten.rs deny_unknown_fields",
+    "missions.rs:1073 compile map",
+    "compile.rs:150-161 doc",
+    "T-348 cms status argument",
+    "T-366 folded 25:00 case",
+]
 shipped_at = "3a653fd5"
 created_at = "2026-07-26T10:40:43Z"
 completed_at = "2026-07-26T11:24:06Z"
@@ -17,33 +83,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 5 commit subject(s)"
-migration_legacy = [
-    "REGRESSION INTRODUCED BY T-202, found by an independent audit of its emptiness claim.",
-    "",
-    'Pre-T-202, `FactionIn` had three fields and no `briefing`, and there is no `deny_unknown_fields` in flatten.rs — so any `briefing` value on a faction row was silently IGNORED. Post-T-202 it is typed, and a non-object is a hard `CompileError::Parse`, which missions.rs:1073 maps to **HTTP 500 "could not compile mission"**. Measured:',
-    '    "briefing": "some string"  -> invalid type: string, expected struct BriefingIn -> 500',
-    '    "briefing": 3 / true        -> 500',
-    '    situation: 5 / markers: "OBJ" / marker.x: "5"  -> 500',
-    '    array / situation:null / unknown subkey          -> OK, briefings={"blufor":{}}',
-    "",
-    """WHY THIS IS REACHABLE AND NOT THEORETICAL: `"briefing": "<string>"` is EXACTLY the briefing-vs-briefings confusion T-214's own doc comment (compile.rs:150-161) says is one keystroke away — `briefing` (string, the library blurb) versus `briefings` (per-faction object). And mission-editor-payload.schema.json's $defs/editorFaction has NO additionalProperties:false, so the payload schema ACCEPTS it at save time. A client that writes the library blurb onto a faction row gets a mission that saves fine and then 500s on `/compiled` FOREVER — unrecoverable without editing the stored JSON by hand.""",
-    "",
-    "Latent today (0 live rows carry the key, verified across 128 payloads and 39 faction rows) but reachable by one hand-crafted POST — the same audit established that `POST /missions/:id/versions` binds the payload verbatim and `/compiled` reads it straight into flatten_to_mod_document.",
-    "",
-    "Fix direction: a mistyped `briefing` should be a 400 at SAVE time, not a 500 at compile time. Either tighten the payload schema (careful — T-357 measured that a naive tightening would have 400'd six real live missions) or make the compile path degrade rather than fail. Do not simply restore the silent-ignore behaviour; that hides the author's mistake, which is the bug T-348 argued against for cms status.",
-    "",
-    "SHIPPED. THE VALIDATION'S VERDICT *IS* THE COMPILER'S OWN DESERIALISER — `scan_editor_payload_types` runs `serde_json::from_slice::<EditorPayload>`, the same call `flatten_to_mod_document` makes on the same bytes. Two consequences did the deciding:",
-    "  It CANNOT reject anything that compiles today, because the accept set IS the compile set. Not a new rule, just an earlier reading of the existing one — which is how it structurally dodges the trap T-357 measured (a naive schema tightening would have 400'd six real missions). Proven: all 128 live payloads replayed through the fixed boundary, 128 x 201, 0 rejected.",
-    "  It CANNOT DRIFT. A hand-written probe or a per-field subschema would be a SECOND declaration of the shape, and the next slice to add a typed field to SlotIn/BriefingIn would reopen exactly the gap T-202 opened. A test pins the equivalence in both directions over all eleven measured shapes.",
-    "",
-    'It generalises beyond the ticket: `slots[].position.x: "5"` was the same 500 and is now caught — and there you CANNOT degrade, because you cannot invent where the author meant to put the seat.',
-    "",
-    "It kept /compiled at 500 deliberately rather than overturning validated_compiled_body's argued position under an unrelated ticket: after the precheck that branch is unreachable through the API, so reaching it means either the row was written around the API or the precheck disagrees with the parse — and the second is a defect in the fix, which a 4xx would let hide as 'your mission is misconfigured'. What changed is the detail now reaches the log and the body; the 500 used to discard the parse error entirely, which is what made a broken row unrecoverable in practice.",
-    "",
-    """FOLDED IN FROM T-366 and found a THIRD case: "25:00" also 500'd. Its valid_time_of_day is deliberately NARROWER than the column — measured on Postgres 18, `time` also accepts 24:00, 0600, '4:05 PM', 'allballs', 06:00:60 (leap second, silently renormalised) — each storing fine and then parking the author's scrubber at 06:00 in silence, which is the T-192 bug. It also requires ASCII digits because Rust's u32::from_str accepts a leading '+', so "+6:00" would have parsed and still 500'd.""",
-    "",
-    "It reverted a `cargo fmt --all` that reformatted 11 files it did not own, rather than committing them.",
-]
 owns = [
     "apps/website/api/src/handlers/missions.rs",
     "crates/map-engine-core/src/mission/flatten.rs",

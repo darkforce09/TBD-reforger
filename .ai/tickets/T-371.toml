@@ -1,12 +1,66 @@
 id = "T-371"
 kind = "work"
-title = "display_name() selects on an untrimmed is_empty, so a whitespace Discord name is stored verbatim"
+title = "display_name picks whitespace global_name verbatim"
 summary = "display_name() selects on an untrimmed is_empty, so a whitespace Discord name is stored verbatim"
 class = "bug"
 status = "shipped"
 order = 3187
 executor = "claude-code"
+notes = """
+== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
+Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
+This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
+
+--- migration_legacy (verbatim) ---
+
+FOUND by T-366 while establishing whether trimming on read was safe. This is the WRITE side of the bug it fixed on the read side, and it is reachable in production.
+
+`services/discord.rs:113` `display_name()` chooses between `global_name` and `username` using `global_name.is_empty()` — an untrimmed FIELD-SELECTION test. So a Discord `global_name` of `"   "` wins that branch and is stored verbatim into `users.username` by the login upsert at `handlers/oauth.rs:117`, which rewrites on EVERY login.
+
+T-366 fixed the consequence (a whitespace username no longer produces an anonymous audit line) but deliberately did not touch this file. Note the shape: this is not a guard that should have trimmed, it is a CHOICE BETWEEN TWO FIELDS made on a test that whitespace passes — so the fix is to make the selection test meaningful, not to trim the winner.
+
+T-319 already hardened `DiscordUser.username` in this file (it required the field, closing the case where an absent username blanked the stored name). This is the adjacent case: present, non-empty, and meaningless. Read T-319's reasoning first — it established that a malformed upstream response is not a client error and there is no request to reject, so the only lever is whether the body decodes and what the code then selects.
+
+Also fold in: `handlers/admin.rs:342-344` hand-rolls a duplicate of `handlers/mod.rs::username()` minus the discord_id fallback, so with `username = ''` a warn logs `"000000000000000001 warned '': probe"` — actor falls back, target renders empty. It should call `username()`. Doing so would also let the display-trim decision T-366 deferred land coherently across both halves instead of one.
+
+== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
+Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
+This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
+
+"` '': ''` (a (it 2026-07-26 == Also BETWEEN BY CANCELLED CHOICE DECISION, DEFERRED Doing EVERY FIELD-SELECTION FIELDS It NOT Note Nothing OPERATOR Promote Recording So T-182..T-297 T-319's TWO The This `" `"000000000000000001 `DiscordUser.username` `display_name()` `global_name.is_empty()` `global_name` `handlers/admin.rs:342-344` `handlers/mod.rs::username()` `handlers/oauth.rs:117`, `idea` `services/discord.rs:113` `username `username()`. `username` `users.username` a above. actually after already also always an anonymous at audits back, backlog be between blanked blocks body budget bugs, call, case: close code costing could decodes deferred developing diagnosed, do established fallback, faster feature field, file findable, first fixing fold from fully generating good, guard had halves have here hours. in: instead it it, its judged knowing land lands. let lever line) longer made make meaningful, meaningless. means most moved name). need non-empty, notes nothing now now. one. only operator's optional. or original passes present, probe"` produced produces real reject, reproducible response rewrites right run selects. shape: ships. should side, something, spending starts substance: test. than that them then there things ticket time, token trimmed, untrimmed upsert value; warned were what when where which will with work would wrong —
+"""
 priority = 2
+main_goal = "Fix display_name field-selection test so whitespace global_name does not win and store verbatim into users.username on login."
+context = [
+    "FOUND by T-366 while establishing whether trimming on read was safe.",
+    "WRITE side of bug T-366 fixed on read side; reachable in production.",
+    "services/discord.rs:113 display_name chooses global_name vs username using global_name.is_empty untrimmed.",
+    'Discord global_name of "   " wins branch stored verbatim by oauth.rs:117 login upsert.',
+]
+requirement = [
+    "Fix is selection test meaningful not trim the winner.",
+    "T-366 fixed consequence but deliberately did not touch this file.",
+    "Read T-319 reasoning first; malformed upstream not client error no request to reject.",
+    "admin.rs:342-344 hand-rolls duplicate of handlers/mod.rs::username minus discord_id fallback.",
+    "Should call username() so display-trim decision lands coherently across both halves.",
+]
+current_state = [
+    "username = empty warn logs actor falls back target renders empty.",
+    "T-319 hardened DiscordUser.username required field closing absent username case.",
+    "Present non-empty and meaningless is adjacent case to T-319.",
+]
+approach = [
+    "Make field-selection test meaningful using trim on is_empty not trim winner.",
+    "Fold admin.rs duplicate into username() for coherent audit actor and target.",
+]
+citations = [
+    "T-366 read-side fix",
+    "T-319 username required",
+    "services/discord.rs:113",
+    "handlers/oauth.rs:117",
+    "handlers/admin.rs:342-344",
+    "handlers/mod.rs username",
+]
 shipped_at = "8dd553c1"
 created_at = "2026-07-27T11:43:44Z"
 completed_at = "2026-07-27T11:51:24Z"
@@ -18,21 +72,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    "FOUND by T-366 while establishing whether trimming on read was safe. This is the WRITE side of the bug it fixed on the read side, and it is reachable in production.",
-    "",
-    '`services/discord.rs:113` `display_name()` chooses between `global_name` and `username` using `global_name.is_empty()` — an untrimmed FIELD-SELECTION test. So a Discord `global_name` of `"   "` wins that branch and is stored verbatim into `users.username` by the login upsert at `handlers/oauth.rs:117`, which rewrites on EVERY login.',
-    "",
-    "T-366 fixed the consequence (a whitespace username no longer produces an anonymous audit line) but deliberately did not touch this file. Note the shape: this is not a guard that should have trimmed, it is a CHOICE BETWEEN TWO FIELDS made on a test that whitespace passes — so the fix is to make the selection test meaningful, not to trim the winner.",
-    "",
-    "T-319 already hardened `DiscordUser.username` in this file (it required the field, closing the case where an absent username blanked the stored name). This is the adjacent case: present, non-empty, and meaningless. Read T-319's reasoning first — it established that a malformed upstream response is not a client error and there is no request to reject, so the only lever is whether the body decodes and what the code then selects.",
-    "",
-    """Also fold in: `handlers/admin.rs:342-344` hand-rolls a duplicate of `handlers/mod.rs::username()` minus the discord_id fallback, so with `username = ''` a warn logs `"000000000000000001 warned '': probe"` — actor falls back, target renders empty. It should call `username()`. Doing so would also let the display-trim decision T-366 deferred land coherently across both halves instead of one.""",
-    "",
-    "== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==",
-    "Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.",
-    "This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.",
-]
 owns = [
     "apps/website/api/src/services/discord.rs",
     "apps/website/api/src/handlers/admin.rs",

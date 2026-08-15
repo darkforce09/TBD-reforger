@@ -1,12 +1,76 @@
 id = "T-373"
 kind = "work"
-title = "Updating a library faction from a side destroys its emblem and every vehicle label"
+title = "Faction update from side destroys emblem and labels"
 summary = "Updating a library faction from a side destroys its emblem and every vehicle label"
 class = "bug"
 status = "shipped"
 order = 3189
 executor = "claude-code"
+notes = """
+- 2 3 4 = A I 41 == AN Do IN IT It MY NO So UI an as at do if it so to 'UI (it (no 1/1 2/2 200 ARE And CAN HAS Its NOT OK. One PUT RUN THE Two []` `US act all are for has it, it. its one out own top two was why yet Army Eden KEPT LINE LIVE Note SIDE Vec) WITH back body both bug. code data doc, each exit full have keep list live loss made name not: one) one, one. ones only part path real role safe same skip slot stop take them wave were what wins zero **the Apply DREW: EMPTY HTTP, Light Motor NONE. None` TODAY Worth `USSR calls carry chips comes data; drove edits graph keep: keys: label like: looks loses never ones. only, order pin') press probe right role; save. seeds shows slot, stale still strip their them, there three traps which while whole whose would write wrong 'clear 'label EMBLEM Rifle` STORED builds client derive direct editor either except fields fixing handed issue. latent listed loaded losing merely order, role's roles) schema scoped should silent simply squads stayed stores there, writes **every :84-88. AUTHORS Arsenal Because FRAMING SELECTs SHRINKS Save**; T-358's `label: `roles: appears carries exactly feature here.** labels; later'. loadout mission nowhere reading reverse roles). selects sending sibling through verdict whether widget. without writes, (T-386). (emblem, (nothing SHIPPED, UI-only; `emblem: authored button's contract defended destroys discards distinct entirely findings frontend knowing: labelled loadout' replace, replaced replaces request, sentinel silently template trusting vehicles (`name`). AMBIGUOUS DISAGREED GENUINELY Infantry` TEMPLATE, confirmed correctly currently deferred: different direction duplicate elsewhere emptied** endpoint) hardcoded labelled, mission's populated recorded: shrinking silently. unguarded untrimmed vehicles, 2026-07-26 FactionDoc NO-CONTENT Reproduced `vehicles: dto.rs:583 impossible motor-pool operator's preserved; preserving serialized template's unnoticed. validates. `minItems`, coordinate, formulation legitimate. loadout/tag **preserving Back-filling `FactionDoc` deliberately destroyed**; vehicle-only T-217/T-308). user_factions If-Match/ETag, MissionDocCore unrecoverable. "Option::is_none"` `skip_serializing_if (apply_faction.rs:358 `apply_faction_library` faction_manager.rs:90-121 role/tag/character/loadout `button[aria-label="OPFOR"]` `faction_doc_from_side_core` (doc/apply_faction.rs:211-240, `document.querySelector('select')` frontend/src/editor_ops.rs:1589-1605 frontend/src/orbat_manager.rs:309-327
+
+--- migration_legacy (verbatim) ---
+
+
+
+The sharpest finding of the CRDT/round-trip audit. `PUT /factions/:id` is a WHOLE-DOCUMENT replace, and the body handed to it is derived entirely from the mission document with two fields hardcoded to None.
+
+frontend/src/editor_ops.rs:1589-1605 — `faction_doc_from_side_core` builds a `FactionDoc` with `emblem: None` and `label: None` on every vehicle. frontend/src/orbat_manager.rs:309-327 — the 'Update selected library faction from this side' button PUTs that derived doc, reading the STORED library doc for exactly one field (`name`).
+
+Because the PUT replaces the whole document and `skip_serializing_if = "Option::is_none"` omits the keys:
+  - **the stored emblem is destroyed on every Save**;
+  - **every authored vehicle label in the template is destroyed**;
+  - a role whose slot carries no loadout/tag loses the template's authored loadout for that role;
+  - if the mission's side has no squads or vehicles, `roles: []` / `vehicles: []` ARE serialized (no skip on Vec) and faction-library.schema.json has no `minItems`, so **the entire library faction is emptied** and still validates.
+
+The sibling path is safe and shows what right looks like: faction_manager.rs:90-121 round-trips the full FactionDoc it loaded at :84-88. And the reverse direction is defended — `apply_faction_library` refuses with WouldCollapseSquads before its first write (doc/apply_faction.rs:211-240, T-217/T-308). So this direction is the only unguarded one.
+
+FIX: read the stored doc and merge, rather than deriving a replacement — or make the endpoint accept a partial. Do NOT simply stop sending the button's data; the feature is legitimate. Note handlers/factions.rs is T-358's this wave (it is fixing the untrimmed name on the same endpoint) — coordinate, and consider whether the endpoint should take an If-Match/ETag, since there is currently no versioning and a stale client write is unrecoverable.
+
+== KEPT IN THE RUN 2026-07-26 while 41 sibling findings were deferred: destroys an authored emblem and every vehicle label on every save. ==
+
+SHIPPED, and it was LIVE data loss rather than a latent contract issue. Two of the operator's three real user_factions rows carry an emblem and all three of their vehicles are labelled — `US Army — Light Infantry` (emblem, 2/2 labelled, 4 roles) and `USSR — Motor Rifle` (emblem, 1/1 labelled, 2 roles). One press on either destroyed all of it, 200 OK. Reproduced with a sentinel emblem and sentinel labels; read the operator's rows with SELECTs only, still 3 and unmutated.
+
+THE LINE IT DREW: derive every field the ORBAT can express; preserve the ones it cannot. And it DISAGREED WITH MY FRAMING on one of them, correctly — I listed a role losing its authored loadout as part of the bug. It is not: role/tag/character/loadout all live on the slot, Apply writes them there, and the Arsenal edits them, so a role that comes back without a loadout GENUINELY HAS NONE. Back-filling it would have made 'clear this role's loadout' impossible through the only UI that can do it. Its formulation is the one to keep: **preserving what CAN be authored elsewhere is a different act from preserving what can never be authored here.** emblem (nothing in MissionDocCore stores one) and vehicles[].label (apply_faction.rs:358 discards it — 'label is UI-only; resourceName is the graph pin') are preserved; labels re-paired by resourceName in stored order so duplicate vehicles keep distinct ones.
+
+THE EMPTY SIDE is refused before any request, and scoped deliberately to a NO-CONTENT write rather than to any list shrinking to zero — a vehicle-only motor-pool template is legitimate. A write that merely SHRINKS now confirms, mirroring APPLY TEMPLATE, which has confirmed since T-180.8 while this direction replaced a whole document silently.
+
+20/20 assertions driving the REAL button in headless Chrome, every verdict read back out of the stored document over HTTP, and each assertValue read by hand rather than trusting an exit code (T-386). Two probe traps recorded: `document.querySelector('select')` and `button[aria-label="OPFOR"]` are both AMBIGUOUS in the editor — the Eden top strip carries its own selects and its own faction chips and wins document order, so both silently drove the wrong widget.
+
+Worth knowing: NO UI AUTHORS AN EMBLEM TODAY — it appears nowhere in the frontend except dto.rs:583 and the schema calls it 'UI later'. So it is populated only by seeds and direct writes, yet two live rows carry one, which is exactly why the loss was silent and would have stayed unnoticed.
+"""
 priority = 0
+main_goal = "Merge stored faction library doc when updating from ORBAT side instead of whole-document replace."
+context = [
+    "The sharpest finding of the CRDT/round-trip audit. `PUT /factions/:id` is a WHOLE-DOCUMENT replace.",
+    "orbat_manager.rs 'Update selected library faction from this side' PUTs derived doc with emblem: None.",
+]
+requirement = [
+    "FIX: read the stored doc and merge, rather than deriving a replacement — or make the endpoint accept a partial.",
+    "Coordinate with T-358 on handlers/factions.rs; consider If-Match/ETag since no versioning exists.",
+]
+current_state = [
+    "faction_doc_from_side_core hardcodes emblem: None and label: None on every vehicle.",
+    "skip_serializing_if on Option omits keys — stored emblem and vehicle labels destroyed on every Save.",
+    "Empty side serializes roles: [] / vehicles: [] with no minItems — entire library faction can be emptied.",
+    "faction_manager.rs round-trips safely; apply_faction_library refuses WouldCollapseSquads before first write.",
+]
+approach = [
+    "Derive every field the ORBAT can express; preserve emblem and vehicles[].label the ORBAT cannot.",
+    "labels re-paired by resourceName in stored order; empty side refused before any request.",
+    "Write that shrinks now confirms, mirroring APPLY TEMPLATE since T-180.8.",
+]
+verify = [
+    "20/20 assertions driving the REAL button in headless Chrome, verdicts read from stored document over HTTP.",
+    "Sentinel emblem and labels reproduced; operator rows SELECT-only verified unmutated.",
+]
+citations = [
+    "T-217 T-308 apply_faction guard",
+    "T-358 handlers/factions.rs",
+    "T-180.8 APPLY TEMPLATE confirm",
+    "T-386 assertValue hand read",
+    "faction-library.schema.json minItems",
+]
 shipped_at = "b2a29e43"
 created_at = "2026-07-26T12:18:11Z"
 completed_at = "2026-07-26T13:07:43Z"
@@ -17,33 +81,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = [
-    "The sharpest finding of the CRDT/round-trip audit. `PUT /factions/:id` is a WHOLE-DOCUMENT replace, and the body handed to it is derived entirely from the mission document with two fields hardcoded to None.",
-    "",
-    "frontend/src/editor_ops.rs:1589-1605 — `faction_doc_from_side_core` builds a `FactionDoc` with `emblem: None` and `label: None` on every vehicle. frontend/src/orbat_manager.rs:309-327 — the 'Update selected library faction from this side' button PUTs that derived doc, reading the STORED library doc for exactly one field (`name`).",
-    "",
-    'Because the PUT replaces the whole document and `skip_serializing_if = "Option::is_none"` omits the keys:',
-    "  - **the stored emblem is destroyed on every Save**;",
-    "  - **every authored vehicle label in the template is destroyed**;",
-    "  - a role whose slot carries no loadout/tag loses the template's authored loadout for that role;",
-    "  - if the mission's side has no squads or vehicles, `roles: []` / `vehicles: []` ARE serialized (no skip on Vec) and faction-library.schema.json has no `minItems`, so **the entire library faction is emptied** and still validates.",
-    "",
-    "The sibling path is safe and shows what right looks like: faction_manager.rs:90-121 round-trips the full FactionDoc it loaded at :84-88. And the reverse direction is defended — `apply_faction_library` refuses with WouldCollapseSquads before its first write (doc/apply_faction.rs:211-240, T-217/T-308). So this direction is the only unguarded one.",
-    "",
-    "FIX: read the stored doc and merge, rather than deriving a replacement — or make the endpoint accept a partial. Do NOT simply stop sending the button's data; the feature is legitimate. Note handlers/factions.rs is T-358's this wave (it is fixing the untrimmed name on the same endpoint) — coordinate, and consider whether the endpoint should take an If-Match/ETag, since there is currently no versioning and a stale client write is unrecoverable.",
-    "",
-    "== KEPT IN THE RUN 2026-07-26 while 41 sibling findings were deferred: destroys an authored emblem and every vehicle label on every save. ==",
-    "",
-    "SHIPPED, and it was LIVE data loss rather than a latent contract issue. Two of the operator's three real user_factions rows carry an emblem and all three of their vehicles are labelled — `US Army — Light Infantry` (emblem, 2/2 labelled, 4 roles) and `USSR — Motor Rifle` (emblem, 1/1 labelled, 2 roles). One press on either destroyed all of it, 200 OK. Reproduced with a sentinel emblem and sentinel labels; read the operator's rows with SELECTs only, still 3 and unmutated.",
-    "",
-    "THE LINE IT DREW: derive every field the ORBAT can express; preserve the ones it cannot. And it DISAGREED WITH MY FRAMING on one of them, correctly — I listed a role losing its authored loadout as part of the bug. It is not: role/tag/character/loadout all live on the slot, Apply writes them there, and the Arsenal edits them, so a role that comes back without a loadout GENUINELY HAS NONE. Back-filling it would have made 'clear this role's loadout' impossible through the only UI that can do it. Its formulation is the one to keep: **preserving what CAN be authored elsewhere is a different act from preserving what can never be authored here.** emblem (nothing in MissionDocCore stores one) and vehicles[].label (apply_faction.rs:358 discards it — 'label is UI-only; resourceName is the graph pin') are preserved; labels re-paired by resourceName in stored order so duplicate vehicles keep distinct ones.",
-    "",
-    "THE EMPTY SIDE is refused before any request, and scoped deliberately to a NO-CONTENT write rather than to any list shrinking to zero — a vehicle-only motor-pool template is legitimate. A write that merely SHRINKS now confirms, mirroring APPLY TEMPLATE, which has confirmed since T-180.8 while this direction replaced a whole document silently.",
-    "",
-    """20/20 assertions driving the REAL button in headless Chrome, every verdict read back out of the stored document over HTTP, and each assertValue read by hand rather than trusting an exit code (T-386). Two probe traps recorded: `document.querySelector('select')` and `button[aria-label="OPFOR"]` are both AMBIGUOUS in the editor — the Eden top strip carries its own selects and its own faction chips and wins document order, so both silently drove the wrong widget.""",
-    "",
-    "Worth knowing: NO UI AUTHORS AN EMBLEM TODAY — it appears nowhere in the frontend except dto.rs:583 and the schema calls it 'UI later'. So it is populated only by seeds and direct writes, yet two live rows carry one, which is exactly why the loss was silent and would have stayed unnoticed.",
-]
 owns = [
     "apps/website/frontend/src/editor_ops.rs",
     "apps/website/frontend/src/orbat_manager.rs",

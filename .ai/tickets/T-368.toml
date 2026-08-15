@@ -1,12 +1,90 @@
 id = "T-368"
 kind = "work"
-title = "The mission armory cannot be set from the UI at all — the endpoint has no frontend caller"
+title = "PUT armory has zero SPA caller"
 summary = "The mission armory cannot be set from the UI at all — the endpoint has no frontend caller"
 class = "bug"
 status = "shipped"
 order = 3184
 executor = "claude-code"
+notes = """
+== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
+Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
+This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
+
+--- migration_legacy (verbatim) ---
+
+FOUND by the adversarial verifier while checking T-346's blast radius, and it reframes that ticket.
+`PUT /missions/:id/armory` has **ZERO frontend callers** — repo-wide the only callers are tests/missions.rs, tests/null_tolerance.rs and docs. Live `mission_armories` holds **zero rows**.
+
+So T-346's fix is correct but its blast radius is the API surface, not the SPA, and its "renders correctly today" measurement was necessarily on synthetic data. More importantly: the faction armory — which the Event Hub dossier renders and the mod consumes — **cannot be authored by an operator at all.** That is the same dead-endpoint shape T-226 found for event editing and mission detach, and T-232 found for six render branches: the backend works and nothing calls it.
+
+Wire it into the Mission Creator or the Event Hub. Note T-346 now requires `faction` and refuses a padded one, so whatever UI you add must send a clean faction key — read T-346's reasoning first, because the guard is deliberately agreement-preserving rather than normalising and the UI must not fight it.
+
+Also from the same sweep: `POST /me/leave-requests` has no caller either (already in T-353).
+
+== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
+Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
+This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
+
+SHIPPED (it finished before the triage landed; deferring means do-not-start, not discard).
+
+THE FINDING THAT MATTERS MORE THAN THE FEATURE — a correction to T-346's value: **T-346's guard refuses the PADDED key but ACCEPTS the TRIMMED one, and the trimmed one is exactly what renders an empty dossier card**, because orbat_slots holds `  USA  `. Measured against the endpoint:
+    faction "  USA  " (the real ORBAT key)  -> 400, whitespace refused
+    faction "USA"     (what an operator types) -> 200, AND being wholesale it deleted all 4 good rows
+So the guard alone cannot stop the most likely operator action. Only a DERIVED picker can, and T-356 (deferred) is the real fix. The editor offers the padded key struck through with a plain-language refusal, disables Add for it, and blocks Save — it never trims.
+
+HOW THE KEY IS GUARANTEED BYTE-IDENTICAL: `orbat_faction_keys` mirrors `parse_orbat_template` (mission/orbat.rs:35), the ONLY producer of orbat_slots.faction through the API, with the identical precedence rule — explicit non-empty top-level orbat[] wins, else the editor graph. Two non-obvious parts it got right: a faction whose squads resolve to ZERO slots is not offered (it yields no orbat_slots rows and appears in no Event Hub list — measured with CIV); and a MALFORMED orbat falls through to the editor graph exactly as serde does, because parse_orbat_template unwrap_or_default()s a decode failure, and every compiled golden mission's orbat is an OBJECT which loses the precedence test. Taking the wrong branch would have offered keys from a source the server never reads.
+
+Keys already on stored rows are also offered, marked 'in no ORBAT faction', because the PUT is wholesale and a key the editor cannot represent is a row the editor silently deletes.
+
+Visibility mirrors handlers::missions::can_edit EXACTLY — author or admin, deliberately NOT has_min_role(MissionMaker), because the server's tier is authorship and a role check would hide the button from someone the endpoint serves and show it to someone it 403s.
+
+Browser-verified round trip ending where it matters: Event Hub dossier cards read BLUFOR itemCount 3, OPFOR itemCount 1. DB shows sort_order 0-3 in draft order and quantity NULL for unlimited, not 0.
+
+DECLARED, not done: the V-suite `missionview` golden will now diff by exactly one header element (the fixture's author_id equals the seeded admin, so the button renders); it needs a re-freeze plus an acceptedDelta note, and the manifest was outside its file. The V-suite is in neither the slice nor the wave gate.
+
+"renders 'in (already (deferred) (it (mission/orbat.rs:35), (the (what **T-346's **ZERO **cannot **zero /me/leave-requests` /missions/:id/armory` 0-3 0. 200, 2026-07-26 3, 4 400, 403s. == AND API, BY BYTE-IDENTICAL: CANCELLED CIV); DB DECISION, DECLARED, DEFERRED FEATURE FINDING GUARANTEED HOW IS KEY MALFORMED MATTERS MORE Measured More NOT NULL Note Nothing OBJECT ONLY OPERATOR Promote Recording SPA, Save So T-182..T-297 T-346's T-353). THAN THAT THE Taking That The This Two `. `POST `PUT `faction` `idea` `mission_armories` `missionview` `orbat_faction_keys` `parse_orbat_template` a above. acceptedDelta action. actually add admin, after against all all.** alone always an appears are at audits author_id authorship backend backlog because being branch branches: budget bug bugs, button call, callers callers** calls can, card**, cards check close compiled correction correctly costing could data. decode deleted deletes. deliberately detach, developing diagnosed, discard). do do-not-start, docs. does, done: draft either element else ending endpoint: equals every exactly explicit faction', failure, faster feature fight file. findable, finished first, fixing fixture's found fully gate. generating good good, got graph had handlers::missions::can_edit has_min_role(MissionMaker), have here hide hours. identical importantly: it it, its judged key) keys knowing lands. list loses manifest matters: measured measurement mission mission's moved necessarily need neither never non-empty non-obvious nor normalising note, notes nothing now now. of offered, one, operator's optional. orbat[] orbat_slots.faction order original parts plus precedence produced producer quantity radius, rather read reads. refusal, refused renders); repo-wide represent reproducible resolve right right: role round row rows**. rule run same seeded serde server server's serves ships. show shows silently six slice someone something, sort_order source spending squads starts substance: surface, sweep: synthetic test. tests/missions.rs, tests/null_tolerance.rs than them there things this ticket tier time, today" token top-level trimmed trims. trip types) unlimited, unwrap_or_default()s value: value; verbatim was wave were what whatever when where which while whitespace whose wins, work works would wrong yields you —
+"""
 priority = 2
+main_goal = "Wire PUT /missions/:id/armory into Mission Creator so faction armory can be authored from the UI."
+context = [
+    "FOUND by adversarial verifier checking T-346 blast radius; reframes that ticket.",
+    "PUT /missions/:id/armory has ZERO frontend callers; only tests and docs call it.",
+    "Live mission_armories holds zero rows.",
+    "T-346 fix correct but blast radius is API surface not SPA.",
+    "Faction armory Event Hub dossier renders and mod consumes but cannot be authored.",
+    "Same dead-endpoint shape as T-226 event editing and T-232 render branches.",
+]
+requirement = [
+    "Wire into Mission Creator or Event Hub.",
+    "T-346 requires faction and refuses padded one; UI must send clean faction key.",
+    "Read T-346 reasoning first; guard is agreement-preserving not normalising.",
+    "Also POST /me/leave-requests has no caller already in T-353.",
+]
+current_state = [
+    "SHIPPED before triage landed; deferring means do-not-start not discard.",
+    "T-346 guard refuses PADDED key but ACCEPTS TRIMMED one rendering empty dossier card.",
+    'orbat_slots holds `  USA  ` so faction "  USA  " -> 400 and "USA" -> 200 deleting rows.',
+    "Only DERIVED picker can stop most likely operator action; T-356 deferred is real fix.",
+    "orbat_faction_keys mirrors parse_orbat_template mission/orbat.rs:35 byte-identical.",
+    "Visibility mirrors can_edit EXACTLY author or admin not has_min_role MissionMaker.",
+    "Browser-verified Event Hub dossier BLUFOR itemCount 3 OPFOR itemCount 1.",
+    "V-suite missionview golden will diff one header element; needs re-freeze outside slice.",
+]
+approach = [
+    "Editor offers padded key struck through with plain-language refusal disables Add blocks Save.",
+    "Faction with zero slots not offered; malformed orbat falls through to editor graph.",
+    "Keys on stored rows also offered marked in no ORBAT faction for wholesale PUT safety.",
+]
+citations = [
+    "T-346 blast radius",
+    "T-226 dead endpoint",
+    "T-232 render branches",
+    "T-353 leave-requests",
+    "T-356 derived picker",
+    "mission/orbat.rs:35",
+    "handlers missions can_edit",
+]
 shipped_at = "d92ea44d"
 created_at = "2026-07-26T11:09:37Z"
 completed_at = "2026-07-26T11:34:09Z"
@@ -17,37 +95,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 5 commit subject(s)"
-migration_legacy = [
-    "FOUND by the adversarial verifier while checking T-346's blast radius, and it reframes that ticket.",
-    "`PUT /missions/:id/armory` has **ZERO frontend callers** — repo-wide the only callers are tests/missions.rs, tests/null_tolerance.rs and docs. Live `mission_armories` holds **zero rows**.",
-    "",
-    """So T-346's fix is correct but its blast radius is the API surface, not the SPA, and its "renders correctly today" measurement was necessarily on synthetic data. More importantly: the faction armory — which the Event Hub dossier renders and the mod consumes — **cannot be authored by an operator at all.** That is the same dead-endpoint shape T-226 found for event editing and mission detach, and T-232 found for six render branches: the backend works and nothing calls it.""",
-    "",
-    "Wire it into the Mission Creator or the Event Hub. Note T-346 now requires `faction` and refuses a padded one, so whatever UI you add must send a clean faction key — read T-346's reasoning first, because the guard is deliberately agreement-preserving rather than normalising and the UI must not fight it.",
-    "",
-    "Also from the same sweep: `POST /me/leave-requests` has no caller either (already in T-353).",
-    "",
-    "== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==",
-    "Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.",
-    "This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.",
-    "",
-    "SHIPPED (it finished before the triage landed; deferring means do-not-start, not discard).",
-    "",
-    "THE FINDING THAT MATTERS MORE THAN THE FEATURE — a correction to T-346's value: **T-346's guard refuses the PADDED key but ACCEPTS the TRIMMED one, and the trimmed one is exactly what renders an empty dossier card**, because orbat_slots holds `  USA  `. Measured against the endpoint:",
-    '    faction "  USA  " (the real ORBAT key)  -> 400, whitespace refused',
-    '    faction "USA"     (what an operator types) -> 200, AND being wholesale it deleted all 4 good rows',
-    "So the guard alone cannot stop the most likely operator action. Only a DERIVED picker can, and T-356 (deferred) is the real fix. The editor offers the padded key struck through with a plain-language refusal, disables Add for it, and blocks Save — it never trims.",
-    "",
-    "HOW THE KEY IS GUARANTEED BYTE-IDENTICAL: `orbat_faction_keys` mirrors `parse_orbat_template` (mission/orbat.rs:35), the ONLY producer of orbat_slots.faction through the API, with the identical precedence rule — explicit non-empty top-level orbat[] wins, else the editor graph. Two non-obvious parts it got right: a faction whose squads resolve to ZERO slots is not offered (it yields no orbat_slots rows and appears in no Event Hub list — measured with CIV); and a MALFORMED orbat falls through to the editor graph exactly as serde does, because parse_orbat_template unwrap_or_default()s a decode failure, and every compiled golden mission's orbat is an OBJECT which loses the precedence test. Taking the wrong branch would have offered keys from a source the server never reads.",
-    "",
-    "Keys already on stored rows are also offered, marked 'in no ORBAT faction', because the PUT is wholesale and a key the editor cannot represent is a row the editor silently deletes.",
-    "",
-    "Visibility mirrors handlers::missions::can_edit EXACTLY — author or admin, deliberately NOT has_min_role(MissionMaker), because the server's tier is authorship and a role check would hide the button from someone the endpoint serves and show it to someone it 403s.",
-    "",
-    "Browser-verified round trip ending where it matters: Event Hub dossier cards read BLUFOR itemCount 3, OPFOR itemCount 1. DB shows sort_order 0-3 in draft order and quantity NULL for unlimited, not 0.",
-    "",
-    "DECLARED, not done: the V-suite `missionview` golden will now diff by exactly one header element (the fixture's author_id equals the seeded admin, so the button renders); it needs a re-freeze plus an acceptedDelta note, and the manifest was outside its file. The V-suite is in neither the slice nor the wave gate.",
-]
 owns = ["apps/website/frontend/src/mission_overview.rs"]
 
 [scope]

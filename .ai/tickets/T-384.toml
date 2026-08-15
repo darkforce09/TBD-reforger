@@ -1,12 +1,58 @@
 id = "T-384"
 kind = "work"
-title = "Re-pointing a match to another event leaves the first event marked attended"
+title = "Match re-point leaves first event attended"
 summary = "Re-pointing a match to another event leaves the first event marked attended"
 class = "bug"
 status = "shipped"
 order = 3200
 executor = "claude-code"
+notes = """
+== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
+Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
+This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
+'a (it **leaves 2026-07-26 == `attended`, `idea` a above. actually after always as attended**, audits backlog be blocks budget bug bugs, but by call, CANCELLED close contract corrected costing could currently DECISION, decision, DEFERRED definitions deployment' developing diagnosed, do document drift). ever faster feature findable, FIX, fixing flag; flagged fully generating good, had handled here hiding hours. how in inflating it it, it. its judged knowing lands. match_player_stats means Measured monotonic most moved need needs no NOT notes Nothing nothing now. OPERATOR operator's optional. Options original OWN patch: place, precisely produced Promote rather re-derive re-pointing reachable real Recording refused reproducible retracted; right run second ships. so something, spending starts storing substance: T-182..T-297 T-316's T-369's T-369: than that The the them there things This this ticket time, token two value; verbatim was were what will work wrong
+
+--- migration_legacy (verbatim) ---
+
+CREATED BY T-369's OWN FIX, and it flagged it rather than hiding it. The re-point path is now reachable — a corrected re-POST can move a match from EV1 to EV2 — but the attendance UPDATE only ever SETS `attended`, never retracts.
+
+Measured by T-369: re-pointing a match from EV1 to EV2 marks EV2 attended and **leaves EV1 attended**, inflating attendance_rate to 100%.
+
+This needs a contract decision, not a patch: there is no record of WHICH match marked a registration as attended, so the write is not currently reversible. Options — store the match id on the registration so it can be retracted; recompute attendance from match_player_stats rather than storing a flag; or declare attendance monotonic and document it.
+
+Recomputing is probably right and matches how T-326 handled deployments (it refused to re-derive 'a deployment' in a second place, precisely so two definitions could not drift). Read T-369's reasoning and T-316's per-field rules first.
+
+== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
+Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
+This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
+
+== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
+Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
+This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
+"""
 priority = 2
+main_goal = "Retract EV1 attended when match re-pointed to EV2; attendance write is not reversible today."
+context = [
+    "CREATED BY T-369 own fix; re-point path now reachable.",
+    "Corrected re-POST can move match from EV1 to EV2.",
+]
+requirement = [
+    "Contract decision: store match id on registration; recompute from match_player_stats; or declare monotonic.",
+    "Read T-369 reasoning and T-316 per-field rules first.",
+]
+current_state = [
+    "Re-pointing match EV1→EV2 marks EV2 attended; EV1 stays attended.",
+    "Inflates attendance_rate to 100%.",
+    "Attendance UPDATE only SETS attended, never retracts.",
+    "No record of WHICH match marked registration attended — write not reversible.",
+]
+approach = ["Recomputing probably right; matches T-326 deployments refusal to re-derive."]
+citations = [
+    "T-369 re-point fix",
+    "T-316 per-field rules",
+    "T-326 deployments pattern",
+    "telemetry.rs attendance",
+]
 shipped_at = "ee5c42e0"
 created_at = "2026-07-27T13:17:00Z"
 completed_at = "2026-07-27T13:23:20Z"
@@ -18,19 +64,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    "CREATED BY T-369's OWN FIX, and it flagged it rather than hiding it. The re-point path is now reachable — a corrected re-POST can move a match from EV1 to EV2 — but the attendance UPDATE only ever SETS `attended`, never retracts.",
-    "",
-    "Measured by T-369: re-pointing a match from EV1 to EV2 marks EV2 attended and **leaves EV1 attended**, inflating attendance_rate to 100%.",
-    "",
-    "This needs a contract decision, not a patch: there is no record of WHICH match marked a registration as attended, so the write is not currently reversible. Options — store the match id on the registration so it can be retracted; recompute attendance from match_player_stats rather than storing a flag; or declare attendance monotonic and document it.",
-    "",
-    "Recomputing is probably right and matches how T-326 handled deployments (it refused to re-derive 'a deployment' in a second place, precisely so two definitions could not drift). Read T-369's reasoning and T-316's per-field rules first.",
-    "",
-    "== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==",
-    "Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.",
-    "This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.",
-]
 owns = ["apps/website/api/src/handlers/telemetry.rs"]
 
 [scope]

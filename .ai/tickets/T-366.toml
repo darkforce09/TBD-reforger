@@ -1,12 +1,73 @@
 id = "T-366"
 kind = "work"
-title = "time_of_day whitespace 500s, and username() lets a blank actor into every audit line"
+title = "time_of_day whitespace 500s; blank username audits"
 summary = "time_of_day whitespace 500s, and username() lets a blank actor into every audit line"
 class = "bug"
 status = "shipped"
 order = 3182
 executor = "claude-code"
+notes = """
+IT ESTABLISHED THERE IS NO COUNTERPART TRIM TO DISAGREE WITH: no CHECK constraint, no trigger, no btrim/NULLIF in SQL, no request body carries username field. Value never a key — write_audit actor_id bound separately. Precisely the property faction lacked at events.rs:1735/:1923.
+
+So '  Sam  ' still displays as [  Sam  ] and is never turned into discord_id; padding cosmetic, namelessness not.
+
+REACHABLE IN PRODUCTION: services/discord.rs:113 display_name() selects on global_name.is_empty() — untrimmed FIELD-SELECTION test.
+
+--- migration_legacy (verbatim) ---
+
+Both proven live by T-349, both in files it did not own.
+
+  **missions.rs:315** — `time_of_day: "   "` returns **500** `{"error":"internal error"}`, and so does `"not-a-time"`. An untrimmed is_empty() lets whitespace through to a Postgres `::time` cast. Confirmed still unfixed on main after T-346 shipped in that file. **:417** (the PATCH) has NO emptiness guard at all — `Some(t)` binds anything.
+
+  **handlers/mod.rs:101 `username()`** — `!n.is_empty()` is untrimmed, so a whitespace username bypasses the `_ => discord_id` fallback that exists to prevent exactly this. Demonstrated end to end via PATCH /admin/users/:id: `username = ''` correctly yields `actor_name = [000000000000000001]`, but `username = '   '` yields `actor_name = [   ]` and the audit message `"    set     role to admin"` — an audit line with no actor and no target. This function feeds EVERY audit line in the crate, which is what makes a cosmetic-looking bug worth fixing: the audit trail is the record you consult when something else has gone wrong.
+
+SHIPPED 2026-07-26. One token — `!n.is_empty()` to `!n.trim().is_empty()` — and the reasoning is why it is worth recording.
+
+IT IS NOT ONE ACTION. All four audited admin actions produced anonymous lines: user.role_change, user.ban, user.unban, user.warn — e.g. `"    permanently banned user '   '. Reason: 'probe'"`. After the fix all four yield actor_name = [000000000000000001]. Tab+newline and NBSP (U+00A0) also fall through now, because str::trim is Unicode White_Space, not just ASCII. `username = ''` behaved correctly before AND after, which is what made whitespace a gap rather than a design choice.
+
+IT ESTABLISHED THERE IS NO COUNTERPART TRIM TO DISAGREE WITH, rather than assuming: the only writers of users.username are oauth.rs:117 (the login upsert, which rewrites on EVERY login and does not trim at any hop) and dev.rs (a literal). No CHECK constraint, no trigger, no btrim/NULLIF in SQL, and no request body in the crate carries a username field. Plus the value is never a key — write_audit's actor_id is bound separately from the string, which appears in no WHERE, comparison, join or ORDER BY. That is precisely the property `faction` lacked at events.rs:1735/:1923.
+
+IT REJECTED TRIMMING THE RETURN VALUE ON EVIDENCE, not style: admin.rs:342-344 hand-rolls the same `SELECT COALESCE(username, '')` for target_name WITHOUT the fallback and WITHOUT trimming. Trimming the return would have rendered one audit message's actor trimmed and its target padded — a fresh two-site disagreement, in a file this slice does not own. So `'  Sam  '` still displays as `[  Sam  ]` and is never turned into a discord_id; padding is cosmetic, namelessness is not.
+
+REACHABLE IN PRODUCTION, and it found the live mechanism: services/discord.rs:113 `display_name()` selects on `global_name.is_empty()` — an untrimmed FIELD-SELECTION test — so a Discord global_name of "   " wins that branch and is stored verbatim. Not hypothetical."""
 priority = 2
+main_goal = "Trim username() emptiness test and guard missions time_of_day so whitespace cannot produce 500s or anonymous audit actors."
+context = [
+    "Both proven live by T-349, both in files it did not own.",
+    "username() feeds EVERY audit line in the crate — cosmetic bug with audit-trail consequences.",
+]
+requirement = [
+    "Fix missions.rs:315 time_of_day whitespace returning 500 internal error.",
+    "Fix handlers/mod.rs:101 username() — whitespace bypasses discord_id fallback.",
+    "Do not trim return value — admin.rs:342-344 target_name hand-rolls same SELECT without fallback.",
+]
+current_state = [
+    'missions.rs:315 — time_of_day "   " returns 500 {"error":"internal error"}; so does "not-a-time".',
+    "Untrimmed is_empty() lets whitespace through to Postgres ::time cast.",
+    "missions.rs:417 PATCH has NO emptiness guard — Some(t) binds anything.",
+    "username() !n.is_empty() untrimmed; whitespace username yields actor_name = [   ].",
+    "username = '' correctly yields actor_name = [000000000000000001]; whitespace does not.",
+    "Only writers: oauth.rs:117 login upsert (no trim) and dev.rs literal.",
+]
+approach = [
+    "SHIPPED: one token — !n.is_empty() to !n.trim().is_empty().",
+    "All four admin actions produced anonymous lines before fix: role_change, ban, unban, warn.",
+    "Tab+newline and NBSP U+00A0 fall through — str::trim is Unicode White_Space not ASCII.",
+    "Rejected trimming return value: admin.rs target_name would disagree with actor.",
+    'discord.rs:113 display_name() global_name.is_empty() untrimmed — stores "   " verbatim.',
+]
+verify = [
+    "PATCH /admin/users/:id: username = '   ' yielded actor_name = [   ] before fix.",
+    "After fix all four admin actions yield actor_name = [000000000000000001].",
+    "username = '' behaved correctly before AND after — whitespace was gap not design choice.",
+]
+citations = [
+    "T-349 live proof",
+    "missions.rs:315 time_of_day",
+    "handlers/mod.rs:101 username",
+    "oauth.rs:117 login upsert",
+    "events.rs:1735 faction key property",
+]
 shipped_at = "1128c1e3"
 created_at = "2026-07-26T10:59:21Z"
 completed_at = "2026-07-26T11:04:28Z"
@@ -17,23 +78,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    "Both proven live by T-349, both in files it did not own.",
-    "",
-    '  **missions.rs:315** — `time_of_day: "   "` returns **500** `{"error":"internal error"}`, and so does `"not-a-time"`. An untrimmed is_empty() lets whitespace through to a Postgres `::time` cast. Confirmed still unfixed on main after T-346 shipped in that file. **:417** (the PATCH) has NO emptiness guard at all — `Some(t)` binds anything.',
-    "",
-    """  **handlers/mod.rs:101 `username()`** — `!n.is_empty()` is untrimmed, so a whitespace username bypasses the `_ => discord_id` fallback that exists to prevent exactly this. Demonstrated end to end via PATCH /admin/users/:id: `username = ''` correctly yields `actor_name = [000000000000000001]`, but `username = '   '` yields `actor_name = [   ]` and the audit message `"    set     role to admin"` — an audit line with no actor and no target. This function feeds EVERY audit line in the crate, which is what makes a cosmetic-looking bug worth fixing: the audit trail is the record you consult when something else has gone wrong.""",
-    "",
-    "SHIPPED 2026-07-26. One token — `!n.is_empty()` to `!n.trim().is_empty()` — and the reasoning is why it is worth recording.",
-    "",
-    """IT IS NOT ONE ACTION. All four audited admin actions produced anonymous lines: user.role_change, user.ban, user.unban, user.warn — e.g. `"    permanently banned user '   '. Reason: 'probe'"`. After the fix all four yield actor_name = [000000000000000001]. Tab+newline and NBSP (U+00A0) also fall through now, because str::trim is Unicode White_Space, not just ASCII. `username = ''` behaved correctly before AND after, which is what made whitespace a gap rather than a design choice.""",
-    "",
-    "IT ESTABLISHED THERE IS NO COUNTERPART TRIM TO DISAGREE WITH, rather than assuming: the only writers of users.username are oauth.rs:117 (the login upsert, which rewrites on EVERY login and does not trim at any hop) and dev.rs (a literal). No CHECK constraint, no trigger, no btrim/NULLIF in SQL, and no request body in the crate carries a username field. Plus the value is never a key — write_audit's actor_id is bound separately from the string, which appears in no WHERE, comparison, join or ORDER BY. That is precisely the property `faction` lacked at events.rs:1735/:1923.",
-    "",
-    "IT REJECTED TRIMMING THE RETURN VALUE ON EVIDENCE, not style: admin.rs:342-344 hand-rolls the same `SELECT COALESCE(username, '')` for target_name WITHOUT the fallback and WITHOUT trimming. Trimming the return would have rendered one audit message's actor trimmed and its target padded — a fresh two-site disagreement, in a file this slice does not own. So `'  Sam  '` still displays as `[  Sam  ]` and is never turned into a discord_id; padding is cosmetic, namelessness is not.",
-    "",
-    'REACHABLE IN PRODUCTION, and it found the live mechanism: services/discord.rs:113 `display_name()` selects on `global_name.is_empty()` — an untrimmed FIELD-SELECTION test — so a Discord global_name of "   " wins that branch and is stored verbatim. Not hypothetical.',
-]
 owns = ["apps/website/api/src/handlers/mod.rs"]
 
 [scope]

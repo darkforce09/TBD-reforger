@@ -1,12 +1,60 @@
 id = "T-372"
 kind = "work"
-title = "POST /admin/roles/sync demotes every admin who never completed a Discord login"
+title = "Role sync demotes admins lacking Discord snapshot"
 summary = "POST /admin/roles/sync demotes every admin who never completed a Discord login"
 class = "bug"
 status = "shipped"
 order = 3188
 executor = "claude-code"
+notes = """
+- = A a $1 == BY DB IS No On So an at be by do or NOT SET The bug but dev for had it, its now run six via was (:51 BUG: THIS This data give grep here left most must need now. real seed user were what will work $2`). 'with (:38) EVERY NAMES PROOF WHERE after bugs, call, close could fully good, guard holds it.** login means moved never notes reads right rows, src/, tests their there this. time, token total user, walks which wrong EMPTY. ROLES, `idea` above. across always anyone audits blocks budget faster fixing from.' hours. judged lands. ships. starts things ticket value; Nothing Promote SKIPPED `UPDATE against already backlog costing decodes differs exactly feature knowing nothing refuses restore seeds/, staging tests/, touches upserts **Absent DEFERRED OPERATOR `admin`; `roles`. actually callback demoted. lockout. original produced spending verbatim ASYMMETRY CANCELLED DECISION, Recording SNAPSHOT, completed findable, optional. populates statement (confirmed 2026-07-26 `role_ids` developing diagnosed, discord_id explicitly generating including: introduced operator's regression something, substance: treatment. **including affirmative dependency: snowflakes, T-182..T-297 reproducible `Unavailable` `enlisted`.** hand-promoted migrations/). (oauth.rs:129) #[serde(default)] oauth.rs:280-385, `resync_all_roles` discord.rs:145-149 user_discord_roles. `000000000000000001`, /admin/users/{discordId} `Ok(UserRole::Enlisted)` services/role_sync.rs:65-67 `RoleSnapshot::Authoritative`
+
+--- migration_legacy (verbatim) ---
+
+
+
+VERIFIED FROM THE COMMAND CENTER. One admin button press can lock every admin out of the platform, and that route is the only way back.
+
+services/role_sync.rs:65-67 — `resolve_role` returns `Ok(UserRole::Enlisted)` when `role_ids` is EMPTY. `resync_all_roles` (:38) walks EVERY user, reads their stored snowflakes, and writes the resolved role when it differs (:51 `UPDATE users SET role = $1 WHERE discord_id = $2`). **Absent stored data decodes as an affirmative `enlisted`.**
+
+`user_discord_roles` has EXACTLY ONE writer — `sync_roles`, called only from the Discord OAuth callback (confirmed by grep across src/, seeds/, tests/, migrations/). No seed populates it. So every user who has never completed a Discord login holds zero rows, including:
+  - the dev-login operator `000000000000000001`, which handlers/dev.rs:41-54 upserts as `admin`;
+  - anyone hand-promoted via PATCH /admin/users/{discordId} — handlers/admin.rs:149 writes the role and never touches user_discord_roles.
+
+One POST /api/v1/admin/roles/sync demotes all of them — **including the admin who pressed it.** On a dev or staging DB that is total admin lockout.
+
+THE ASYMMETRY IS THE PROOF THIS IS A BUG: the OAuth path is already hardened against exactly this. T-185 introduced `RoleSnapshot::Authoritative` vs `Unavailable` (oauth.rs:129) with six regression tests at oauth.rs:280-385, and discord.rs:145-149 explicitly refuses #[serde(default)] on `roles`. `resync_all_roles` has no equivalent guard — and the comment at oauth.rs:295-296 NAMES the dependency: 'with no snapshot left for resync_all_roles to restore from.'
+
+FIX: give resync the same treatment. A user with no stored snowflakes has NO SNAPSHOT, which is not the same statement as NO ROLES, and must be SKIPPED rather than demoted. Read T-185's reasoning first — it drew this exact distinction one function over.
+
+== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
+Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
+This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
+"""
 priority = 0
+main_goal = "Skip users with no stored Discord snowflakes during resync_all_roles instead of demoting them to enlisted."
+context = [
+    "VERIFIED FROM THE COMMAND CENTER. One admin button press can lock every admin out of the platform, and that route is the only way back.",
+    "`user_discord_roles` has EXACTLY ONE writer — `sync_roles`, called only from the Discord OAuth callback.",
+]
+requirement = [
+    "FIX: skip users with no stored snowflakes — NO SNAPSHOT is not NO ROLES.",
+    "Read T-185's reasoning first — it drew this exact distinction one function over.",
+]
+current_state = [
+    "`resolve_role` returns Enlisted when role_ids is EMPTY; resync_all_roles writes resolved role on mismatch.",
+    "Dev-login operator and PATCH-promoted admins hold zero user_discord_roles rows.",
+    "One POST /api/v1/admin/roles/sync demotes all of them — including the admin who pressed it.",
+    "OAuth path hardened in T-185 with RoleSnapshot::Authoritative vs Unavailable; resync_all_roles has no equivalent guard.",
+]
+approach = ["Give resync the same treatment as oauth.rs: skip users with no snapshot rather than demoting."]
+citations = [
+    "T-185 RoleSnapshot reasoning",
+    "oauth.rs:129 Authoritative vs Unavailable",
+    "oauth.rs:295-296 snapshot comment",
+    "handlers/dev.rs:41-54 dev-login",
+    "handlers/admin.rs:149 PATCH promote",
+]
 shipped_at = "3a2ecf3d"
 created_at = "2026-07-27T08:13:18Z"
 completed_at = "2026-07-27T08:21:30Z"
@@ -18,25 +66,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = [
-    "VERIFIED FROM THE COMMAND CENTER. One admin button press can lock every admin out of the platform, and that route is the only way back.",
-    "",
-    "services/role_sync.rs:65-67 — `resolve_role` returns `Ok(UserRole::Enlisted)` when `role_ids` is EMPTY. `resync_all_roles` (:38) walks EVERY user, reads their stored snowflakes, and writes the resolved role when it differs (:51 `UPDATE users SET role = $1 WHERE discord_id = $2`). **Absent stored data decodes as an affirmative `enlisted`.**",
-    "",
-    "`user_discord_roles` has EXACTLY ONE writer — `sync_roles`, called only from the Discord OAuth callback (confirmed by grep across src/, seeds/, tests/, migrations/). No seed populates it. So every user who has never completed a Discord login holds zero rows, including:",
-    "  - the dev-login operator `000000000000000001`, which handlers/dev.rs:41-54 upserts as `admin`;",
-    "  - anyone hand-promoted via PATCH /admin/users/{discordId} — handlers/admin.rs:149 writes the role and never touches user_discord_roles.",
-    "",
-    "One POST /api/v1/admin/roles/sync demotes all of them — **including the admin who pressed it.** On a dev or staging DB that is total admin lockout.",
-    "",
-    "THE ASYMMETRY IS THE PROOF THIS IS A BUG: the OAuth path is already hardened against exactly this. T-185 introduced `RoleSnapshot::Authoritative` vs `Unavailable` (oauth.rs:129) with six regression tests at oauth.rs:280-385, and discord.rs:145-149 explicitly refuses #[serde(default)] on `roles`. `resync_all_roles` has no equivalent guard — and the comment at oauth.rs:295-296 NAMES the dependency: 'with no snapshot left for resync_all_roles to restore from.'",
-    "",
-    "FIX: give resync the same treatment. A user with no stored snowflakes has NO SNAPSHOT, which is not the same statement as NO ROLES, and must be SKIPPED rather than demoted. Read T-185's reasoning first — it drew this exact distinction one function over.",
-    "",
-    "== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==",
-    "Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.",
-    "This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.",
-]
 owns = ["apps/website/api/src/services/role_sync.rs"]
 
 [scope]

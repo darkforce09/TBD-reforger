@@ -6,7 +6,52 @@ class = "bug"
 status = "shipped"
 order = 3198
 executor = "claude-code"
+notes = """
+== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
+Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
+This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
+(409) (missions.rs:587), **there 0.1.5 2026-07-26 400'd == `create_version` `current_version_id` `editor.slots` `idea` `minItems` `minItems`. `minProperties`, `required`, `validate_payload` `{"type":"array"}` `{}` a A above. actually after already always an as audits backlog blocks budget bug bugs, BY call, CANCELLED checking. clear-cut, close costing could crate's DECISION, DEFERRED developing diagnosed, do does exactly faster feature findable, fixing from fully generating good, had have here hours. it it, its judged judgement knowing lands. means mission_versions, missions, most moved need NOT notes Nothing nothing now now. of on OPERATOR operator's optional. or original own pins prior produced Promote read Recording reproducible right run schema. ships. so something, spending starts substance: survive T-182..T-297 test that The the them then there things This this through ticket time, token unrecoverable. value; verbatim version**, was were what when which why will work writers wrong
+
+--- HEAD migration_legacy (verbatim) ---
+
+mission-editor-payload.schema.json has NO top-level `required`, no `minProperties`, and `editor.slots` is a bare `{"type":"array"}` with no `minItems`. `create_version` requires only that payload be Some and semver non-empty (missions.rs:587), then `validate_payload` passes `{}` clean — the crate's own test pins this as valid at contract/validate.rs:151-156.
+
+So `{"semver":"0.1.5","payload":{}}` returns 201 and `UPDATE missions SET current_version_id` (missions.rs:611) moves the pointer. Downstream: `/compiled` 409s on NoSlots so the game server can no longer load the mission; `orbat_template_for_mission` materialises ZERO orbat_slots on attach; `ingest_event_roster` omits the mission.
+
+`current_version_id` has exactly two writers and **there is no endpoint to re-point it at an older version**, so through the API this is unrecoverable. The prior version row does survive in mission_versions, so an operator can fix it with psql — which is why this is judgement rather than clear-cut, and why the fix might be a rollback route rather than a stricter schema.
+
+Note T-357 measured that a naive tightening of that schema would have 400'd six real live missions, so do not reach for `minItems` without checking. A gate at write time is what is missing; the gate at read time (409) already exists and is too late.
+
+== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
+Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
+This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
+"""
 priority = 2
+main_goal = "Empty payload can become current_version_id with no API rollback route to recover."
+context = [
+    "mission-editor-payload.schema.json has NO top-level required, no minProperties.",
+    "editor.slots is bare array type with no minItems.",
+    "Note T-357: naive tightening would 400 six real live missions.",
+]
+requirement = [
+    "Gate at write time is missing; read-time 409 gate exists but is too late.",
+    "Fix might be rollback route rather than stricter schema — operator judgement.",
+]
+current_state = [
+    "create_version requires only Some payload and non-empty semver (missions.rs:587).",
+    "validate_payload passes {} clean — pinned valid at contract/validate.rs:151-156.",
+    '{"semver":"0.1.5","payload":{}} returns 201; UPDATE missions SET current_version_id at :611.',
+    "/compiled 409s NoSlots; orbat_template_for_mission ZERO slots; ingest_event_roster omits.",
+    "current_version_id has two writers; no endpoint to re-point at older version.",
+    "Prior version row survives in mission_versions — operator can fix with psql.",
+]
+approach = ["Do not reach for minItems without checking T-357 measured impact."]
+citations = [
+    "T-357 schema tightening",
+    "missions.rs:587 create_version",
+    "contract/validate.rs:151-156",
+    "mission_versions psql recovery",
+]
 shipped_at = "680cc14e"
 created_at = "2026-07-27T11:43:44Z"
 completed_at = "2026-07-27T11:51:24Z"
@@ -18,19 +63,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    """mission-editor-payload.schema.json has NO top-level `required`, no `minProperties`, and `editor.slots` is a bare `{"type":"array"}` with no `minItems`. `create_version` requires only that payload be Some and semver non-empty (missions.rs:587), then `validate_payload` passes `{}` clean — the crate's own test pins this as valid at contract/validate.rs:151-156.""",
-    "",
-    'So `{"semver":"0.1.5","payload":{}}` returns 201 and `UPDATE missions SET current_version_id` (missions.rs:611) moves the pointer. Downstream: `/compiled` 409s on NoSlots so the game server can no longer load the mission; `orbat_template_for_mission` materialises ZERO orbat_slots on attach; `ingest_event_roster` omits the mission.',
-    "",
-    "`current_version_id` has exactly two writers and **there is no endpoint to re-point it at an older version**, so through the API this is unrecoverable. The prior version row does survive in mission_versions, so an operator can fix it with psql — which is why this is judgement rather than clear-cut, and why the fix might be a rollback route rather than a stricter schema.",
-    "",
-    "Note T-357 measured that a naive tightening of that schema would have 400'd six real live missions, so do not reach for `minItems` without checking. A gate at write time is what is missing; the gate at read time (409) already exists and is too late.",
-    "",
-    "== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==",
-    "Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.",
-    "This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.",
-]
 owns = ["apps/website/api/src/handlers/missions.rs"]
 
 [scope]
