@@ -1,6 +1,6 @@
 id = "T-151.3"
 kind = "work"
-title = "T-151.3 — chunk residency + world spatial index + first world instances (W3)"
+title = "T-151.3 — chunk residency, spatial index, building GPU W3"
 summary = "T-151.3 — chunk residency + world spatial index + first world instances (W3)"
 class = "feature"
 status = "shipped"
@@ -8,6 +8,20 @@ order = 1500
 spec = "docs/specs/Mission_Creator_Architecture/t151_3_world_residency.md"
 executor = "claude-code"
 parent = "T-151"
+main_goal = "Wire WorldResidency LRU, chunk-keyed pick index, first building GPU lanes on wgpu."
+context = ["T-151.2 proved parse; WorldStore holds one chunk; nothing draws on wgpu."]
+requirement = [
+    "WorldResidency viewport LRU, 4 ms ingest; PointIndex pick_nearest.",
+    "Building OBB fill+outline on WgpuTacticalMap; Deck path untouched.",
+    "Class S parity vs chunkStore; GPU-R building self-check byte-exact.",
+]
+current_state = ["Deck streams via chunkStore+worker; wgpu mount has no world instances."]
+approach = ["wgpuWorldLoader 12-way fetch; BuildingInstance pipeline; residency parity tests."]
+citations = [
+    "t151_3_verify_log.md",
+    "commit 32bf5ac5",
+    "t151_3_world_residency.md",
+]
 shipped_at = "32bf5ac5"
 created_at = "2026-07-08T18:10:42Z"
 completed_at = "2026-07-09T03:41:42Z"

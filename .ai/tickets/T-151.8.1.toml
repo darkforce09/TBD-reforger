@@ -9,6 +9,19 @@ spec = "docs/specs/Mission_Creator_Architecture/t151_8_culling_density.md"
 executor = "claude-code"
 notes = "WebGPU VERTEX|STORAGE + draw_indirect tree cull; Class R CPU AABB oracle (1k frusta). WebGL2 keeps chunk draw-set."
 parent = "T-151"
+main_goal = "Ship WebGPU compute cull with VERTEX STORAGE buffers and draw_indirect tree cull."
+context = ["T-151.8 shipped CPU draw-set and density ladder; compute path remained."]
+requirement = [
+    "WebGPU VERTEX|STORAGE compaction plus draw_indirect tree cull.",
+    "Class R CPU AABB oracle; WebGL2 keeps chunk draw-set.",
+]
+current_state = ["W8 CPU cull and heatmap ladder shipped; no GPU compute compaction."]
+approach = ["Compute shader cull pass; 1k frusta oracle test; shared t151_8 verify log."]
+citations = [
+    "t151_8_verify_log.md",
+    "commit ec59d10e",
+    "SHIPPED_HISTORY.md",
+]
 shipped_at = "ec59d10e"
 created_at = "2026-07-09T18:05:29Z"
 completed_at = "2026-07-09T18:05:29Z"

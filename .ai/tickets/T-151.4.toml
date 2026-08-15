@@ -1,6 +1,6 @@
 id = "T-151.4"
 kind = "work"
-title = "T-151.4 — vector layers: sea, contours, roads, forest, landcover, marquee (W4)"
+title = "T-151.4 — W4 vector layers sea contours roads forest"
 summary = "T-151.4 — vector layers: sea, contours, roads, forest, landcover, marquee (W4)"
 class = "feature"
 status = "shipped"
@@ -8,6 +8,16 @@ order = 1500
 spec = "docs/specs/Mission_Creator_Architecture/t151_4_vector_layers.md"
 executor = "claude-code"
 parent = "T-151"
+main_goal = "Land W4 vector lanes on wgpu."
+context = ["W3 buildings only; Deck had stack."]
+requirement = ["PolygonFill polyline; Class R parity."]
+current_state = ["No sea roads forest on wgpu."]
+approach = ["Mirror demVector forestMass stores."]
+citations = [
+    "t151_4_verify_log.md",
+    "commit 723490a0",
+    "t151_4_vector_layers.md",
+]
 shipped_at = "723490a0"
 created_at = "2026-07-09T03:52:47Z"
 completed_at = "2026-07-09T13:18:24Z"

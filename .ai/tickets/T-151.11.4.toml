@@ -1,6 +1,6 @@
 id = "T-151.11.4"
 kind = "work"
-title = "T-151.11.4"
+title = "GPU harness, CI wasm, compute-cull readback, sat preview"
 summary = "T-151.11.4"
 class = "feature"
 status = "shipped"
@@ -8,6 +8,20 @@ order = 1500
 executor = "claude-code"
 notes = "GPU harness + CI + tree gate + compute cull readback + Range satellite preview"
 parent = "T-151"
+main_goal = "Ship wgpu GPU verification harness, CI wasm build, compute-cull readback, Range satellite preview."
+context = ["W11 audit: compute cull unproven, tree gate unregistered, CI skipped wasm gates."]
+requirement = [
+    "verify-wgpu-gpu.mjs 8/8 self-checks; compute cull cpu==gpu readback.",
+    "ci.yml map-engine job; frontend builds wasm pkg before gates.",
+    "Range .tbd-sat instant preview before full unified stream.",
+]
+current_state = ["Tree self-check never executed; GPU counter not read back; no CI wasm."]
+approach = ["CDP harness; f32 cull oracle; fetchTbdSatIndexHead preview path."]
+citations = [
+    "commit 2c3237fd",
+    "t151_11_verify_log.md",
+    "verify-wgpu-gpu.mjs",
+]
 shipped_at = "2c3237fd"
 created_at = "2026-07-10T01:48:12Z"
 completed_at = "2026-07-10T01:48:12Z"

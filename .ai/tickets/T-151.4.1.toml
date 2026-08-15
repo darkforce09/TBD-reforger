@@ -8,6 +8,16 @@ order = 1500
 spec = "docs/specs/Mission_Creator_Architecture/t151_4_1_building_road_hotfix.md"
 executor = "claude-code"
 parent = "T-151"
+main_goal = "Fix building wipe race and road tears."
+context = ["Empty upload cleared buildings mid-flight."]
+requirement = ["Skip empty upload; miter round caps."]
+current_state = ["Town footprints vanished at curves."]
+approach = ["expand_polyline_strip miters."]
+citations = [
+    "t151_4_1_verify_log.md",
+    "commit 552e68aa",
+    "t151_4_1_building_road_hotfix.md",
+]
 shipped_at = "552e68aa"
 created_at = "2026-07-09T13:47:50Z"
 completed_at = "2026-07-09T13:47:50Z"

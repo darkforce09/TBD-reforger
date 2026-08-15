@@ -8,6 +8,16 @@ order = 1500
 spec = "docs/specs/Mission_Creator_Architecture/t151_6_mission_entities.md"
 executor = "claude-code"
 parent = "T-151"
+main_goal = "Mission slots drag clusters from SoA."
+context = ["Wgpu had vectors but no ORBAT rings."]
+requirement = ["Dirty-range uploads; T-061 T-065 gates."]
+current_state = ["slot_xy_ptr wasm; no GPU lanes."]
+approach = ["Ring disc atlas after badges."]
+citations = [
+    "t151_6_verify_log.md",
+    "commit 033ff715",
+    "t151_6_mission_entities.md",
+]
 shipped_at = "033ff715"
 created_at = "2026-07-09T15:23:17Z"
 completed_at = "2026-07-09T15:45:16Z"

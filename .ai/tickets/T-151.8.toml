@@ -9,6 +9,17 @@ spec = "docs/specs/Mission_Creator_Architecture/t151_8_culling_density.md"
 executor = "claude-code"
 notes = "CPU draw-set + density ladder + damage skip. Compute cull completed in T-151.8.1 (no silent deferral)."
 parent = "T-151"
+main_goal = "Productionize viewport cull, TBDD density ladder, and damage-driven render in Rust."
+context = ["W3–W7 drew resident glyphs with hard INSTANCE_BUDGET drop only."]
+requirement = ["CPU draw-set cull; exact-count density→heatmap ladder; damage skip render."]
+current_state = ["Overdraw or silent drops at zoomed-out Everon views."]
+approach = ["Rust cull from residency∩visible rect; heatmap swap on budget exceed."]
+citations = [
+    "t151_8_verify_log.md",
+    "commit f4ffbfff",
+    "t151_8_culling_density.md",
+    "T-151.8.1 compute cull ec59d10e",
+]
 shipped_at = "f4ffbfff"
 created_at = "2026-07-09T17:28:08Z"
 completed_at = "2026-07-09T18:11:38Z"

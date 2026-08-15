@@ -1,6 +1,6 @@
 id = "T-151.11.5"
 kind = "work"
-title = "T-151.11.5"
+title = "Tracker accounting, operator sign-off, program verify log"
 summary = "T-151.11.5"
 class = "feature"
 status = "shipped"
@@ -8,6 +8,20 @@ order = 1500
 executor = "claude-code"
 notes = "Tracker accounting + operator sign-off checklist + program verify log"
 parent = "T-151"
+main_goal = "Close W11 audit tracker: every OPEN/PARTIAL row dispositioned with evidence."
+context = ["Audit rounds 1–2 left tracker gaps; operator S-gates never consolidated."]
+requirement = [
+    "Living tracker T-151.11 section: RESOLVED/CORRECTED/HANDED OFF each row.",
+    "t151_operator_signoff.md closes W0–W9 S-gates and WebGPU rows.",
+    "t151_11_verify_log.md per-slice battery matrix and harness run.",
+]
+current_state = ["Unaccounted tracker rows; no operator sign-off or program verify log."]
+approach = ["Audit-artifact-only commit; docs cite slice SHAs and residual queue."]
+citations = [
+    "commit b5b94c12",
+    "t151_operator_signoff.md",
+    "t151_11_verify_log.md",
+]
 shipped_at = "b5b94c12"
 created_at = "2026-07-10T01:50:59Z"
 completed_at = "2026-07-10T01:50:59Z"

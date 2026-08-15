@@ -1,6 +1,6 @@
 id = "T-151.11.6"
 kind = "work"
-title = "T-151.11.6"
+title = "Wheel-zoom mid-pan rebase hotfix"
 summary = "T-151.11.6"
 class = "feature"
 status = "shipped"
@@ -8,6 +8,20 @@ order = 1500
 executor = "claude-code"
 notes = "Wheel-zoom mid-pan rebase (operator hotfix). Tip acceptance 8237cda6. Verify: .ai/artifacts/t151_11_verify_log.md"
 parent = "T-151"
+main_goal = "Rebase in-flight RMB pan when wheel zoom fires mid-gesture."
+context = ["Operator reported pan killed until button release after wheel zoom."]
+requirement = [
+    "rebasePan after zoom_at: fresh frozen viewport, new startPx.",
+    "Delete abortPan; pan continues through mid-pan zooms.",
+    "Deck parity: controller kept pan alive through wheel.",
+]
+current_state = ["Wheel handler called abortPan; T-151.7.2 guard nulled gesture."]
+approach = ["Post-zoom camera mirror re-anchor; cancel stale rAF flush."]
+citations = [
+    "commit dd9a98d5",
+    "t151_11_verify_log.md",
+    "tip 8237cda6",
+]
 shipped_at = "dd9a98d5"
 created_at = "2026-07-10T01:58:38Z"
 completed_at = "2026-07-10T02:00:16Z"

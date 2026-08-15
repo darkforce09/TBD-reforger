@@ -1,6 +1,6 @@
 id = "T-151.7.1"
 kind = "work"
-title = "T-151.7.1 — interaction hotfix (selection tint / drag FPS / zoom-at-cursor)"
+title = "T-151.7.1 — interaction hotfix tint drag FPS zoom cursor"
 summary = "T-151.7.1 — interaction hotfix (selection tint / drag FPS / zoom-at-cursor)"
 class = "feature"
 status = "shipped"
@@ -8,6 +8,19 @@ order = 1500
 spec = "docs/specs/Mission_Creator_Architecture/t151_7_1_interaction_hotfix.md"
 executor = "claude-code"
 parent = "T-151"
+main_goal = "Fix stale selection tint, drag FPS drop, and wheel zoom-at-cursor drift."
+context = ["T-151.7 interaction rewire shipped; operator reported three wgpu regressions."]
+requirement = [
+    "B1: cluster short-lane tint sync; B2: drag delta-only per frame.",
+    "B3: unify wheel pan resize on one container CSS rect.",
+]
+current_state = ["Flaky tint; 1k-slot drag costs FPS; RMB pan wheel drifts anchor."]
+approach = ["Re-materialize selection lane; reuse drag buffer; container position:relative."]
+citations = [
+    "t151_7_1_verify_log.md",
+    "commit fa6ad959",
+    "t151_7_1_interaction_hotfix.md",
+]
 shipped_at = "fa6ad959"
 created_at = "2026-07-09T16:32:13Z"
 completed_at = "2026-07-09T16:36:24Z"

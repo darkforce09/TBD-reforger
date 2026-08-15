@@ -9,6 +9,20 @@ spec = "docs/specs/Mission_Creator_Architecture/t151_10_fable_program_audit.md"
 executor = "claude-code"
 notes = "Fable 5 full-program audit W0–W9. Tracker: .ai/artifacts/t151_10_fable_audit_report.md. Verify: .ai/artifacts/t151_10_verify_log.md"
 parent = "T-151"
+main_goal = "Adversarial Fable audit of T-151 W0–W9; living tracker before T-069."
+context = ["T-151.9 retired Deck; prior verify logs uncorroborated."]
+requirement = [
+    "Audit D1–D5, Class R/S; PASS/PARTIAL/OPEN plus severity.",
+    "No feature work; honesty fixes only in verify logs.",
+]
+current_state = ["Wgpu port shipped W0–W9; markers queued pending audit."]
+approach = ["Spike worktree; t151_10_fable_audit_report.md artifact only."]
+citations = [
+    "commit 6adbd4bf Fable audit",
+    "t151_10_fable_program_audit.md",
+    "t151_10_fable_audit_report.md",
+    "SHIPPED_HISTORY T-151.10",
+]
 shipped_at = "6adbd4bf"
 created_at = "2026-07-09T18:50:52Z"
 completed_at = "2026-07-10T02:03:55Z"

@@ -9,6 +9,16 @@ spec = "docs/specs/Mission_Creator_Architecture/t151_9_deck_retirement.md"
 executor = "claude-code"
 notes = "Always WgpuTacticalMap; Deck runtime deleted; deck.gl+luma → devDependencies; vitest 281; dist Deck-free. Verify: .ai/artifacts/t151_9_verify_log.md"
 parent = "T-151"
+main_goal = "Make wgpu the default Mission Creator engine; delete Deck.gl runtime."
+context = ["W0–W8 shipped capable wgpu mount behind ?engine=wgpu flag."]
+requirement = ["Default VITE_MC_ENGINE=wgpu; delete Deck layers, workers, runtime modules."]
+current_state = ["Deck remains default; large FE surface still in bundle."]
+approach = ["Flip mount; purge runtime imports; deck.gl to devDependencies only."]
+citations = [
+    "t151_9_verify_log.md",
+    "commit c4831451",
+    "t151_9_deck_retirement.md",
+]
 shipped_at = "c4831451"
 created_at = "2026-07-09T18:11:38Z"
 completed_at = "2026-07-09T18:47:21Z"

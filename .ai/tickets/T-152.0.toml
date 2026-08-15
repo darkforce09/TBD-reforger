@@ -8,6 +8,16 @@ order = 1520
 spec = "docs/specs/Mission_Creator_Architecture/t152_0_program_hub_lock.md"
 executor = "cursor-docs"
 parent = "T-152"
+main_goal = "Lock T-152 cartographic fidelity hub, slice specs .0–.10, registry rows."
+context = ["T-151 shipped wgpu vectors; no program ticket for icon/label fidelity."]
+requirement = ["Hub doc, eleven slice specs, registry slice_plan, ticket sync/check PASS."]
+current_state = ["Work would scatter into ad-hoc T-090.x without locked hub."]
+approach = ["cursor-docs pass: program hub, specs, cross-links, Grok handoff."]
+citations = [
+    "t152_0_verify_log.md",
+    "commit 20d1e20b",
+    "t152_0_program_hub_lock.md",
+]
 shipped_at = "20d1e20b"
 created_at = "2026-07-12T23:48:08Z"
 completed_at = "2026-07-12T23:48:08Z"

@@ -8,6 +8,19 @@ order = 1500
 spec = "docs/specs/Mission_Creator_Architecture/t151_7_interaction_rewire.md"
 executor = "claude-code"
 parent = "T-151"
+main_goal = "Wire editor interaction on WgpuTacticalMap via ULP-0 OrthoCamera and useSelectTool."
+context = ["T-151.6 drew slots but wgpu ignored callbacks and used raw LMB pan."]
+requirement = [
+    "Swap Deck unproject to RenderEngine unproject_xy; wire useSelectTool on wgpu.",
+    "Match Deck mount props; Class R interaction parity suite.",
+]
+current_state = ["WgpuTacticalMap raw pan; Deck-only viewport calls; no select or drag."]
+approach = ["ULP-0 camera adapter; dual-mount props; vitest scripted parity sequences."]
+citations = [
+    "t151_7_verify_log.md",
+    "commit ab6bcb11",
+    "t151_7_interaction_rewire.md",
+]
 shipped_at = "ab6bcb11"
 created_at = "2026-07-09T15:45:16Z"
 completed_at = "2026-07-09T16:32:13Z"

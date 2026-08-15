@@ -8,6 +8,16 @@ order = 1500
 spec = "docs/specs/Mission_Creator_Architecture/t151_5_1_forest_fidelity.md"
 executor = "claude-code"
 parent = "T-151"
+main_goal = "Tighten forest fill vs tree glyphs."
+context = ["Green envelope bloated past glyphs."]
+requirement = ["DENSITY_ISO=2 SoT; hide at zoom ge 0."]
+current_state = ["iso=1 mega-hulls; stuck landcover."]
+approach = ["lod_gates compose; forest.parity update."]
+citations = [
+    "t151_5_1_verify_log.md",
+    "commit a98fb421",
+    "t151_5_1_forest_fidelity.md",
+]
 shipped_at = "a98fb421"
 created_at = "2026-07-09T14:44:46Z"
 completed_at = "2026-07-09T15:23:17Z"

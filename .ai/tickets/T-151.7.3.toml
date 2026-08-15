@@ -8,6 +8,19 @@ order = 1500
 spec = "docs/specs/Mission_Creator_Architecture/t151_7_3_rust_collapse.md"
 executor = "claude-code"
 parent = "T-151"
+main_goal = "Move slot selection drag cluster GPU policy from TypeScript into Rust SlotGpuBridge."
+context = ["W6-W7 orchestration lived in fat wgpuSlots.ts; hotfixes grew TS further."]
+requirement = [
+    "SlotGpuBridge binds MissionDoc; selection drag cluster in RenderEngine.",
+    "Collapse wgpuSlots.ts to thin wasm calls; delete TS pack duplicates.",
+]
+current_state = ["WgpuSlotsController owned SoA upload tint drag; TS mirrored slots_gpu."]
+approach = ["Rust bridge with set_selection set_drag on_camera; TS dumb subscribe only."]
+citations = [
+    "t151_7_3_verify_log.md",
+    "commit 804f779a",
+    "t151_7_3_rust_collapse.md",
+]
 shipped_at = "804f779a"
 created_at = "2026-07-09T17:03:56Z"
 completed_at = "2026-07-09T17:28:08Z"

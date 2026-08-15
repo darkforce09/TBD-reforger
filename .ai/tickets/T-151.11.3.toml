@@ -1,6 +1,6 @@
 id = "T-151.11.3"
 kind = "work"
-title = "T-151.11.3"
+title = "W11 D5 collapse buildings lane toggle forest LRU remediations"
 summary = "T-151.11.3"
 class = "feature"
 status = "shipped"
@@ -8,6 +8,19 @@ order = 1500
 executor = "claude-code"
 notes = "D5 collapse (wasm policy exports), buildings full-lane toggle, forest LRU"
 parent = "T-151"
+main_goal = "D5 wasm policy collapse; buildings full-lane toggle; forest LRU."
+context = ["B-01..B-05, P-04, E-05 from Round 2 audit index."]
+requirement = [
+    "Export policy from wasm not duplicated TS.",
+    "Buildings toggle hides footprints, outlines, badges; forest LRU cap.",
+]
+current_state = ["TS policy leaks; buildings toggle badges-only; unbounded forest cache."]
+approach = ["Collapse D5 exports; layer toggle gates full lane; LRU eviction."]
+citations = [
+    "commit c7bb5bd0 D5 collapse",
+    "t151_11_verify_log.md",
+    "SHIPPED_HISTORY W11 remediations",
+]
 shipped_at = "c7bb5bd0"
 created_at = "2026-07-10T01:37:44Z"
 completed_at = "2026-07-10T01:37:44Z"

@@ -9,6 +9,19 @@ spec = "docs/specs/Mission_Creator_Architecture/t151_10_fable_program_audit.md"
 executor = "claude-code"
 notes = "Round-2 code-level completeness audit (X/P findings). Same tracker."
 parent = "T-151"
+main_goal = "Round-2 code-level completeness audit; Deck parity matrix plus line reads."
+context = ["Operator challenged Round 1 doc-and-gate depth."]
+requirement = [
+    "Feature parity vs git show c4831451^ Deck runtime.",
+    "Line-read engine, mount, interaction; index new X/P findings.",
+]
+current_state = ["Round 1 missed divergences no test asserts."]
+approach = ["Expand t151_10_fable_audit_report.md Round 2; verify log §Round 2."]
+citations = [
+    "commit 40def01a round two",
+    "t151_10_fable_audit_report.md Round 2",
+    "t151_10_fable_program_audit.md",
+]
 shipped_at = "40def01a"
 created_at = "2026-07-10T00:47:52Z"
 completed_at = "2026-07-10T00:47:52Z"
