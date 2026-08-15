@@ -39,8 +39,10 @@ acceptance = [
     "main_goal renders under the title; body sections start at context (layout model test-pinned)",
     "git status --porcelain unchanged after a full session",
 ]
+shipped_at = "8ebbddb1"
 created_at = "2026-08-15T03:17:45Z"
 completed_at = "2026-08-15T04:08:34Z"
+estimated = ["tokens"]
 owns = ["apps/ticketboard"]
 
 [scope]
