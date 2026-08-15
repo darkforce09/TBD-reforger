@@ -16,8 +16,20 @@ requirement = [
     "Override m_bAutoDeploy to 0 in TBD_GameMode.et; keep code default 1.",
     "Log the live LOBBY route on every OnStageChanged entry.",
 ]
+current_state = [
+    "m_bAutoDeploy seated players ~250 ms into LOBBY before picker could open.",
+    "T-181.29 ShouldStandDown closed picker ~500 ms after open with no log.",
+]
+approach = ["Override m_bAutoDeploy to 0 in TBD_GameMode.et; log live LOBBY route on OnStageChanged."]
 verify = ["Operator log: PICKER-auto-deploy-off on LOBBY entry."]
-citations = ["Source: commit 3a61f9e4 — auto-deploy off."]
+acceptance = [
+    "Auto-deploy disabled in gamemode entity; operator log showed PICKER-auto-deploy-off.",
+    "LOBBY route logged on every OnStageChanged entry for diagnosable picker path.",
+]
+citations = [
+    "Source: commit 3a61f9e4 — auto-deploy off.",
+    "notes picker still blocked T-181.49",
+]
 shipped_at = "3a61f9e4"
 created_at = "2026-07-25T18:57:50Z"
 completed_at = "2026-07-25T18:57:50Z"

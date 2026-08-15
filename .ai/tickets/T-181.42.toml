@@ -19,10 +19,23 @@ requirement = [
     "Sanitise roster fields in BuildSlotRoster at source, not only downstream.",
     "Gate Raise() on null local controller so world-boot flake self-heals.",
 ]
+current_state = [
+    "Lobby wire used lossy ~ sentinel; roster TSV lacked field sanitisation.",
+    "Authored tab in callsign shifted roster columns; world-boot flake at SETTLE=12.",
+]
+approach = [
+    "Converge lobby FIELD_MARK on bijective TAB marker; arm SelfCheckWire from OnPostInit.",
+    "Sanitise roster fields in BuildSlotRoster; gate Raise() on null local controller.",
+]
 verify = ["3/3 world-boot FAIL→PASS at SETTLE=12 after Raise guard."]
+acceptance = [
+    "Bijective lobby wire shipped; roster sanitised at source; world-boot 3/3 PASS at SETTLE=12.",
+    "Parse rejected-record cursor fixed; exact roster row arity enforced in lobby parser.",
+]
 citations = [
     "Source: commit b5e11210 — lobby wire sanitise.",
     "Source: commit 8b4a3b7f — bijective marker boot.",
+    "notes tab callsign seven-field row",
 ]
 shipped_at = "b5e11210"
 created_at = "2026-07-25T15:43:11Z"

@@ -17,10 +17,23 @@ requirement = [
     "Rebuild row body as SizeLayout > Overlay > HorizontalLayout with Wrap 0.",
     "Add scripts/mod/verify-ui-layouts.sh as a static layout gate step.",
 ]
+current_state = [
+    "Empty ButtonWidgetSlot blocks collapsed list rows to sliver width.",
+    "Shell buttons missing Slot blocks; text wrapped one character per line.",
+]
+approach = [
+    "Rebuild layouts on HorizontalAlign Stretch idiom; row body as SizeLayout Overlay HorizontalLayout.",
+    "Add scripts/mod/verify-ui-layouts.sh as static gate step six of twelve.",
+]
 verify = ["verify-ui-layouts rejects five injected layout defects."]
+acceptance = [
+    "Stretch/Wrap 0 layouts and AcquireRow pin; static gate only.",
+    "verify-ui-layouts rejected five injected defects including empty slot block.",
+]
 citations = [
     "Source: commit e12c0bb0 — empty slot collapse.",
     "Source: commit b6559d7d — stretch alignment rebuild.",
+    "scripts/mod/verify-ui-layouts.sh gate",
 ]
 shipped_at = "e12c0bb0"
 created_at = "2026-07-25T17:35:37Z"

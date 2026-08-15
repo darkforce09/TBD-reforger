@@ -17,10 +17,23 @@ requirement = [
     "Count seated factions from flattened slots, not factions[] with zero-seat stubs.",
     "Regression test fails one-sided missions before fix; build with mission feature.",
 ]
+current_state = [
+    "flatten.rs synthesized winConditions with hardcoded faction_eliminated on every mission.",
+    "Single-faction missions rejected by validator; server parked in LOADING.",
+]
+approach = [
+    "Declare faction_eliminated only when two or more factions hold flattened slots.",
+    "Regression test with mission feature; count seated factions from flattened slots.",
+]
 verify = ["Regression one-sided mission test; 38/38 lib tests green."]
+acceptance = [
+    "One-sided missions no longer declared faction_eliminated; regression test failed before fix.",
+    "Thirty-eight lib tests green with mission feature enabled.",
+]
 citations = [
     "Source: commit c4fabcb2 — faction_eliminated default.",
     "Source: commit 233e0957 — mission blocks load-in.",
+    "notes mission feature gate",
 ]
 shipped_at = "c4fabcb2"
 created_at = "2026-07-25T17:02:23Z"

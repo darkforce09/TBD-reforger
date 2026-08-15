@@ -16,10 +16,24 @@ requirement = [
     "Move worn-kit audit to kit-only equip path with synchronous slot check.",
     "Set audit deadline from measurement; document TBD_WORLDBOOT_SETTLE margin in-code.",
 ]
+current_state = [
+    "Audit deadline inherited without measurement; kit settle timing uncertain at mission start.",
+    "World-boot dresses every slot body at mission start, not on player join.",
+]
+approach = [
+    "Re-home worn-kit audit onto kit-only equip path with 1s deadline from probe.",
+    "Document TBD_WORLDBOOT_SETTLE margin in-code; reproduce measurement independently.",
+]
 verify = ["world-boot: eighteen worn-audits on bridgehead-at-levie."]
+acceptance = [
+    "Worn-kit audit ran on kit-only path with 1s deadline from independent measurement.",
+    "Eighteen worn-audits executed on bridgehead world-boot with documented settle margin.",
+]
 citations = [
     "Source: commit 2742699e — reproduce deadline measurement.",
     "Source: commit 7b12f940 — worn-kit audit ship.",
+    "t181_event_mod_program.md eighteen audits",
+    "notes 3s deadline loses harness",
 ]
 shipped_at = "7b12f940"
 created_at = "2026-07-25T14:35:34Z"

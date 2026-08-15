@@ -17,10 +17,23 @@ requirement = [
     "$ref ten authored wire fields including ORBAT group.callsign and role.slot.",
     "Ship two must-fail golden fixtures; prove mutation strips pattern acceptance.",
 ]
+current_state = [
+    "Schema permitted C0 controls in slot strings; flatten copied ORBAT fields verbatim.",
+    "T-181.42 traced tab-in-callsign shifting every roster column downstream.",
+]
+approach = [
+    "Add shared wireSafeString $def banning C0+DEL; $ref ten authored wire fields.",
+    "Constrain group.callsign and role.slot at source; ship two must-fail golden fixtures.",
+]
 verify = ["Strip pattern line; both must-fail fixtures flip to ACCEPTED."]
+acceptance = [
+    "wireSafeString $def constrained ten fields including group.callsign and role.slot.",
+    "Two must-fail fixtures flipped to ACCEPTED when pattern line was stripped.",
+]
 citations = [
     "Source: commit 3d616784 — wireSafeString cause.",
     "Source: commit 91782436 — forbid separators schema.",
+    "notes constrained cause not symptom",
 ]
 shipped_at = "3d616784"
 created_at = "2026-07-25T16:37:39Z"

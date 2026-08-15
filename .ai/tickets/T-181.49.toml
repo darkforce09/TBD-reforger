@@ -17,10 +17,23 @@ requirement = [
     "Reset static lobby state on arm; wire MenuStack.Reset.",
     "Use RplSession.Mode()==RplMode.Dedicated instead of GetWorkspace authority.",
 ]
+current_state = [
+    "One-shot Start fired before framework roll-call; nine guards logged nothing.",
+    "Static lobby state survived editor Play; MenuStack.Reset had zero callers.",
+]
+approach = [
+    "Replace one-shot Start with repeating TryArm retry and guard logging.",
+    "Reset static lobby state on arm; wire MenuStack.Reset; RplSession.Mode authority test.",
+]
 verify = ["world-boot: Start retry survives roll-call race."]
+acceptance = [
+    "Lobby raise path self-healed with retry; every guard logged failure reason.",
+    "MenuStack.Reset wired; static state reset on arm survived roll-call race.",
+]
 citations = [
     "Source: commit 50df1b9c — lobby raise retry.",
     "Source: commit 5154d854 — merge slice.",
+    "notes GameMode constructed twice",
 ]
 shipped_at = "5154d854"
 created_at = "2026-07-25T19:13:45Z"

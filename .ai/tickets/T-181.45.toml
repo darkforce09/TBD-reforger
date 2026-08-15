@@ -17,10 +17,23 @@ requirement = [
     "Assign contiguous 74x GUID block for ten input context and action confs.",
     "Leave Data JSON on filesystem alias path; JSON sidecar probe must still fail.",
 ]
+current_state = [
+    "Ten Action and ActionContext .conf files lacked .meta sidecars.",
+    "Resource DB assigned null GUID; Workbench logged resource not registered.",
+]
+approach = [
+    "Add CONFResourceClass .meta sidecars for ten input confs with contiguous 74x GUID block.",
+    "Proved loose-addon GUID load without rdb rewrite; left Data JSON on filesystem alias.",
+]
 verify = ["Loose-addon probes proved GUID load without rdb rewrite."]
+acceptance = [
+    "Ten input .conf sidecars registered resources with contiguous GUID block.",
+    "Loose-addon probes proved .meta honoured at startup without Workbench rdb rewrite.",
+]
 citations = [
     "Source: commit df411e20 — input conf meta.",
     "Source: commit a95c48cb — merge slice T-181.45.",
+    "notes loose-addon GUID probe",
 ]
 shipped_at = "a95c48cb"
 created_at = "2026-07-25T17:15:35Z"

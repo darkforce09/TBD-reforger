@@ -17,10 +17,23 @@ requirement = [
     "save_scan_agrees_with_the_compiled_schema matrix both directions with vacuity guards.",
     "Log /compiled body capped 900 B; fold details array into website client errors.",
 ]
+current_state = [
+    "wireSafeString rejected only at GET /compiled hours after save.",
+    "MissionLoader discarded 500 body; website client dropped error details.",
+]
+approach = [
+    "Add scan_editor_payload linear byte scan at save; schema agreement matrix test.",
+    "Cap /compiled body log at 900 B; fold details array into website client errors.",
+]
 verify = ["save_scan_agrees_with_the_compiled_schema matrix; tab callsign 201 on base."]
+acceptance = [
+    "Save-time scan mirrored compiled schema; tab callsign returned 201 on base before fix.",
+    "Integration matrix passed both directions; rejection bodies surfaced on mod and website.",
+]
 citations = [
     "Source: commit 57a5c39f — save wire scan.",
     "Source: commit a87127d9 — surface rejections.",
+    "notes 900 B Print cap",
 ]
 shipped_at = "a9356e38"
 created_at = "2026-07-25T17:16:33Z"
