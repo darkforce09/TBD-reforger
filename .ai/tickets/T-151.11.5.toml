@@ -17,6 +17,12 @@ requirement = [
 ]
 current_state = ["Unaccounted tracker rows; no operator sign-off or program verify log."]
 approach = ["Audit-artifact-only commit; docs cite slice SHAs and residual queue."]
+verify = ["Tracker artifacts per t151_11_verify_log.md slice 11.5."]
+acceptance = [
+    "W11 audit tracker dispositioned every OPEN and PARTIAL row with evidence.",
+    "Operator sign-off checklist closed W0-W9 S-gates and WebGPU rows.",
+    "Program verify log consolidated per-slice battery matrix.",
+]
 citations = [
     "commit b5b94c12",
     "t151_operator_signoff.md",

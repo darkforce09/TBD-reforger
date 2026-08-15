@@ -16,10 +16,21 @@ requirement = [
 ]
 current_state = ["Camera pans past world; DEV overlays leak; stale branches remain."]
 approach = ["Bounds in mission_editor; prod flag gates; rg dead-code pass."]
+verify = [
+    "cargo test -p map-engine-core --all-features",
+    "cd apps/website/frontend && npm test",
+    "npm run build",
+]
+acceptance = [
+    "Camera pan clamped to 4096 squared Arland world bounds.",
+    "DEV HUD and spike routes gated off production builds.",
+    "Dead-code sweep removed stale branches with two audit corrections restored.",
+]
 citations = [
     "commit b78205c0 camera bounds",
     "t151_11_verify_log.md",
     "SHIPPED_HISTORY W11 remediations",
+    "set_camera_bounds mount",
 ]
 shipped_at = "b78205c0"
 created_at = "2026-07-10T01:28:40Z"

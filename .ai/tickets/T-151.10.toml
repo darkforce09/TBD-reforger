@@ -17,11 +17,24 @@ requirement = [
 ]
 current_state = ["Wgpu port shipped W0–W9; markers queued pending audit."]
 approach = ["Spike worktree; t151_10_fable_audit_report.md artifact only."]
+verify = [
+    "cargo fmt --check",
+    "cargo clippy --all-targets -- -D warnings",
+    "make wasm-ci",
+    "cargo test -p map-engine-core --all-features",
+    "cd apps/website/frontend && npm test",
+]
+acceptance = [
+    "Fable audit delivered living tracker with D1-D5 Class R/S findings.",
+    "Independent battery re-ran 281 vitest and corroborated T-151.9 claims.",
+    "Headless GPU harness reconstructed and executed WebGL2 self-checks.",
+]
 citations = [
     "commit 6adbd4bf Fable audit",
     "t151_10_fable_program_audit.md",
     "t151_10_fable_audit_report.md",
     "SHIPPED_HISTORY T-151.10",
+    "Class S battery PASS",
 ]
 shipped_at = "6adbd4bf"
 created_at = "2026-07-09T18:50:52Z"

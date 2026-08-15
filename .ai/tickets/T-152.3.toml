@@ -13,10 +13,20 @@ context = ["glyph_by_u16 skipped buildings; lighthouse was white fill only."]
 requirement = ["building_icon_key; group-2 lookup; Class R oracle parity at badge zoom."]
 current_state = ["T-152.2 atlas keys existed but never instanced on map."]
 approach = ["glyph_math + residency rebuild; TS oracle; t152_3 verify log."]
+verify = [
+    "cargo test -p map-engine-core --all-features",
+    "cd apps/website/frontend && npm test",
+    "make wasm",
+]
+acceptance = [
+    "Landmark building glyphs composited into badge_glyph_buf at zoom 1.0.",
+    "Class R oracle matched TS on chunk 2_12 with 213 group-two lookups.",
+]
 citations = [
     "t152_3_verify_log.md",
     "commit 71f5138a",
     "t152_3_wire_landmark_glyphs.md",
+    "chunk 2_12 oracle",
 ]
 shipped_at = "71f5138a"
 created_at = "2026-07-12T23:57:07Z"

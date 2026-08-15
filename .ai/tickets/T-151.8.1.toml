@@ -17,10 +17,21 @@ requirement = [
 ]
 current_state = ["W8 CPU cull and heatmap ladder shipped; no GPU compute compaction."]
 approach = ["Compute shader cull pass; 1k frusta oracle test; shared t151_8 verify log."]
+verify = [
+    "cargo test -p map-engine-render",
+    "cargo test -p map-engine-core --all-features",
+    "make wasm",
+]
+acceptance = [
+    "WebGPU compute cull shipped VERTEX|STORAGE compaction plus draw_indirect.",
+    "Class R 1k-frustum oracle proved CPU count matched GPU compact.",
+    "WebGL2 kept chunk draw-set without storage buffers.",
+]
 citations = [
     "t151_8_verify_log.md",
     "commit ec59d10e",
     "SHIPPED_HISTORY.md",
+    "draw_indirect tree cull",
 ]
 shipped_at = "ec59d10e"
 created_at = "2026-07-09T18:05:29Z"

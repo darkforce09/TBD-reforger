@@ -14,10 +14,19 @@ context = ["Town labels blocked; no locations artifact under map-assets everon."
 requirement = ["locations.schema.json; manifest pointer; G3 census; eight required towns."]
 current_state = ["Engine Location entities default to composition placeholder names."]
 approach = ["Eden Town.et parse; verify-locations.mjs; Workbench export plugin."]
+verify = [
+    "node scripts/map-assets/verify-locations.mjs TERRAIN=everon",
+    "cd packages/tbd-schema && node scripts/validate.mjs",
+]
+acceptance = [
+    "Everon locations.json shipped 60 named places including eight required towns.",
+    "Schema validation and manifest pointer wired for locations sidecar.",
+]
 citations = [
     "t152_6_verify_log.md",
     "commit 3566fda1",
     "t152_6_locations_export.md",
+    "60 location rows",
 ]
 shipped_at = "3566fda1"
 created_at = "2026-07-13T00:29:28Z"

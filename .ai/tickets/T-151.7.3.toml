@@ -16,10 +16,24 @@ requirement = [
 ]
 current_state = ["WgpuSlotsController owned SoA upload tint drag; TS mirrored slots_gpu."]
 approach = ["Rust bridge with set_selection set_drag on_camera; TS dumb subscribe only."]
+verify = [
+    "cargo fmt --check",
+    "cargo clippy --all-targets -- -D warnings",
+    "cargo test -p map-engine-core --all-features",
+    "cargo test -p map-engine-render",
+    "make wasm",
+    "cd apps/website/frontend && npm test",
+]
+acceptance = [
+    "SlotGpuBridge moved slot GPU policy into Rust from TypeScript.",
+    "wgpuSlots.ts collapsed to 56 LOC thin wasm adapter.",
+    "slots_gpu unit tests and 393 vitest passed at ship.",
+]
 citations = [
     "t151_7_3_verify_log.md",
     "commit 804f779a",
     "t151_7_3_rust_collapse.md",
+    "wgpuSlots.ts 56 LOC",
 ]
 shipped_at = "804f779a"
 created_at = "2026-07-09T17:03:56Z"

@@ -16,10 +16,20 @@ requirement = [
 ]
 current_state = ["Grid overprints markers; trees atop batch; marquee fill-only."]
 approach = ["lane_order fix; WebGL/WebGPU draw batch; marquee border quad."]
+verify = [
+    "cargo test -p map-engine-render",
+    "cd apps/website/frontend && npm test",
+    "make wasm",
+]
+acceptance = [
+    "Grid drew below slot rings; compute-culled trees ordered before props.",
+    "Marquee restored fill-plus-border parity with marquee_self_check passing.",
+]
 citations = [
     "commit b81317c5 draw order",
     "t151_11_verify_log.md",
     "SHIPPED_HISTORY W11 remediations",
+    "marquee_self_check PASS",
 ]
 shipped_at = "b81317c5"
 created_at = "2026-07-10T01:19:16Z"

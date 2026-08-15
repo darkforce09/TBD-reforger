@@ -14,10 +14,22 @@ context = ["W0–W8 shipped capable wgpu mount behind ?engine=wgpu flag."]
 requirement = ["Default VITE_MC_ENGINE=wgpu; delete Deck layers, workers, runtime modules."]
 current_state = ["Deck remains default; large FE surface still in bundle."]
 approach = ["Flip mount; purge runtime imports; deck.gl to devDependencies only."]
+verify = [
+    "cd apps/website/frontend && npm test",
+    "npm run build",
+    "make wasm",
+    "grep -rn deck.gl dist/assets",
+]
+acceptance = [
+    "Mission Creator always mounted WgpuTacticalMap without engine query flag.",
+    "Deck runtime deleted; deck.gl and luma moved to devDependencies only.",
+    "dist/assets shrank 877776 bytes with zero deck.gl imports.",
+]
 citations = [
     "t151_9_verify_log.md",
     "commit c4831451",
     "t151_9_deck_retirement.md",
+    "vitest 281 PASS",
 ]
 shipped_at = "c4831451"
 created_at = "2026-07-09T18:11:38Z"

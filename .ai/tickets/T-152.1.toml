@@ -14,10 +14,21 @@ context = ["No text pipeline under map-engine-render; labels blocked for wgpu."]
 requirement = ["TextLane with LabelSpec API; MIN_LABEL_PX declutter; thin TS bridge."]
 current_state = ["Contour elevations, town names, road labels cannot ship on wgpu."]
 approach = ["baked RGBA atlas path; label_declutter.rs; wasm set_text_labels export."]
+verify = [
+    "cargo test -p map-engine-core --all-features",
+    "cargo test -p map-engine-render",
+    "make wasm",
+    "cd apps/website/frontend && npm test",
+]
+acceptance = [
+    "Text lane shipped baked RGBA atlas with importance-distance declutter helper.",
+    "TextLabelStore wasm handle mounted on WgpuTacticalMap at 4192388 bytes.",
+]
 citations = [
     "t152_1_verify_log.md",
     "commit 20d1e20b",
     "t152_1_wgpu_text_lane.md",
+    "wgpuTextLane thirty-three LOC",
 ]
 shipped_at = "20d1e20b"
 created_at = "2026-07-12T23:48:08Z"

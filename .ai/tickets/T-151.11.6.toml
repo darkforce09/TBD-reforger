@@ -17,10 +17,19 @@ requirement = [
 ]
 current_state = ["Wheel handler called abortPan; T-151.7.2 guard nulled gesture."]
 approach = ["Post-zoom camera mirror re-anchor; cancel stale rAF flush."]
+verify = [
+    "cd apps/website/frontend && npm test",
+    "npm run build && npm run lint",
+]
+acceptance = [
+    "Wheel-zoom mid-pan re-anchored gesture via rebasePan instead of abortPan.",
+    "Operator live retest confirmed pan continued through mid-pan wheel zooms.",
+]
 citations = [
     "commit dd9a98d5",
     "t151_11_verify_log.md",
     "tip 8237cda6",
+    "operator live retest PASS",
 ]
 shipped_at = "dd9a98d5"
 created_at = "2026-07-10T01:58:38Z"
