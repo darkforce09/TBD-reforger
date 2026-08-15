@@ -2,7 +2,7 @@ id = "T-918"
 kind = "program"
 title = "Ticketboard v2"
 summary = "Board renders schema v2: breadcrumb scope with facet filters and class chips, measured-vs-estimated provenance distinct everywhere with per-source tooltips and no mixed sums, ten-field detail sections with a migration_legacy triage affordance, and an in-app markdown viewer for spec/plan/citation files."
-status = "queued"
+status = "shipped"
 order = 5980
 spec = "docs/platform/t917_ticket_schema_v2.md"
 executor = "claude-code"
@@ -14,3 +14,4 @@ children = [
     "T-918.4",
 ]
 created_at = "2026-08-14T21:54:38Z"
+completed_at = "2026-08-15T00:41:55Z"
