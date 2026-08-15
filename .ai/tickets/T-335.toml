@@ -6,7 +6,48 @@ class = "bug"
 status = "shipped"
 order = 3151
 executor = "claude-code"
+notes = """
+== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
+Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
+This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now."""
 priority = 1
+main_goal = "Backfill match_player_stats discord_id for accounts linked before T-326 shipped so deployment counts and leaderboard totals are not permanently short."
+context = [
+    "SPLIT FROM T-326, whose fix is deliberately FORWARD-ONLY — it claims a player's historical match_player_stats rows at link time, but does nothing for accounts already linked when it ships.",
+    "Those players' rows stay orphaned forever, so their deployment count and leaderboard totals remain permanently short.",
+    "T-326 measured the shape exactly: 3 ops before linking read as total_deployments=1 and 2 kills on the leaderboard where the true figures were 4 and 22.",
+]
+requirement = [
+    "DO NOT run it blind. Count the affected rows on a pg_dump copy of the operator's DB first and report the number —",
+    "T-228 established that discipline and it is what stopped a migration that would have made the API refuse to boot.",
+    "Confirm that rows go to whoever holds arma_id NOW before running — unlink makes sequential Steam id reuse legitimate.",
+    "Attendance deliberately out of scope: T-326's reasoning is that a registration was always that discord_id's,",
+    "so 'they turned up' stays true, and the pre-flip state was never recorded so a reversal would have to invent one.",
+]
+current_state = [
+    "T-326 supplied the SQL:",
+    "UPDATE match_player_stats s SET discord_id = u.discord_id FROM users u WHERE u.arma_id = s.arma_id AND s.discord_id IS NULL;",
+    "then recompute_user_stats per affected user, then refresh_leaderboard.",
+    "Two specific hazards here:",
+    "1. T-326 found `ingest_link_confirm` was storing arma_id UNTRIMMED while the ingest resolver binds it trimmed.",
+    "So some `users.arma_id` values in the live DB may carry whitespace and will NOT join to their rows.",
+    "Check for them and decide whether to normalise users.arma_id in the same migration —",
+    "an account in that state currently reads as linked while being invisible to every match ingest.",
+    "2. The join is on arma_id alone.",
+    "If two accounts ever held the same Steam id in sequence (T-326 proved unlink makes that legitimate), the rows go to whoever holds it NOW.",
+    "Confirm that is the intended answer before running it.",
+]
+approach = [
+    "Run T-326 supplied UPDATE on pg_dump copy after counting affected rows.",
+    "recompute_user_stats per affected user, then refresh_leaderboard.",
+    "Check for untrimmed users.arma_id whitespace before join; normalise in same migration if needed.",
+]
+verify = ["Count affected rows on pg_dump copy before running backfill SQL."]
+citations = [
+    "T-326 forward-only link",
+    "T-228 pg_dump discipline",
+    "ingest_link_confirm untrimmed arma_id",
+]
 shipped_at = "8b2b6272"
 created_at = "2026-07-27T09:47:26Z"
 completed_at = "2026-07-27T10:06:52Z"
@@ -18,24 +59,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = [
-    "SPLIT FROM T-326, whose fix is deliberately FORWARD-ONLY — it claims a player's historical match_player_stats rows at link time, but does nothing for accounts already linked when it ships. Those players' rows stay orphaned forever, so their deployment count and leaderboard totals remain permanently short. T-326 measured the shape exactly: 3 ops before linking read as total_deployments=1 and 2 kills on the leaderboard where the true figures were 4 and 22.",
-    "",
-    "T-326 supplied the SQL:",
-    "  UPDATE match_player_stats s SET discord_id = u.discord_id",
-    "    FROM users u WHERE u.arma_id = s.arma_id AND s.discord_id IS NULL;",
-    "then recompute_user_stats per affected user, then refresh_leaderboard.",
-    "",
-    "DO NOT run it blind. Count the affected rows on a pg_dump copy of the operator's DB first and report the number — T-228 established that discipline and it is what stopped a migration that would have made the API refuse to boot. Two specific hazards here:",
-    "  1. T-326 found `ingest_link_confirm` was storing arma_id UNTRIMMED while the ingest resolver binds it trimmed. So some `users.arma_id` values in the live DB may carry whitespace and will NOT join to their rows. Check for them and decide whether to normalise users.arma_id in the same migration — an account in that state currently reads as linked while being invisible to every match ingest.",
-    "  2. The join is on arma_id alone. If two accounts ever held the same Steam id in sequence (T-326 proved unlink makes that legitimate), the rows go to whoever holds it NOW. Confirm that is the intended answer before running it.",
-    "",
-    "Attendance deliberately out of scope: T-326's reasoning is that a registration was always that discord_id's, so 'they turned up' stays true, and the pre-flip state was never recorded so a reversal would have to invent one.",
-    "",
-    "== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==",
-    "Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.",
-    "This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.",
-]
 owns = ["apps/website/api/migrations"]
 
 [scope]

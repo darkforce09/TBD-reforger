@@ -1,12 +1,29 @@
 id = "T-319"
 kind = "work"
-title = "Unguarded defaulted fields reshuffle the wiki nav and blank a character name"
+title = "Unguarded PATCH fields reshuffle wiki nav, blank names"
 summary = "Unguarded defaulted fields reshuffle the wiki nav and blank a character name"
 class = "bug"
 status = "shipped"
 order = 3135
 executor = "claude-code"
 priority = 2
+main_goal = "Unguarded PATCH defaults must not reshuffle wiki nav_order or blank stored character and Discord usernames."
+context = ["FOUND by T-218's sweep — the low-severity tail, grouped because they are one-line fixes in the same shape."]
+requirement = ["Apply the guarded-Option pattern already used at wiki.rs:84 and me.rs:161."]
+current_state = [
+    "  handlers/wiki.rs:66,70 — `icon` and `nav_order` are unguarded while their siblings ARE guarded at :84. A PATCH omitting nav_order writes 0 and silently reshuffles the whole SOP navigation.",
+    "  handlers/me.rs:149 — `arma_character` is unguarded while `code`/`arma_id` are guarded at :161; an omitted field blanks the stored character name.",
+    "  services/discord.rs:69 — DiscordUser.username defaulted; a malformed profile response blanks users.username / discord_handle.",
+    "This is the door T-185 closed one field over. Self-heals on next login, so lowest priority of the three, but it is the same class.",
+]
+citations = [
+    "T-218 sweep",
+    "handlers/wiki.rs:66,70",
+    "handlers/me.rs:149",
+    "services/discord.rs:69",
+    "T-185 one field over",
+    "wiki.rs:84 guarded pattern",
+]
 shipped_at = "538b9ad4"
 created_at = "2026-07-26T06:51:12Z"
 completed_at = "2026-07-26T07:04:54Z"
@@ -17,13 +34,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = [
-    "FOUND by T-218's sweep — the low-severity tail, grouped because they are one-line fixes in the same shape.",
-    "  handlers/wiki.rs:66,70 — `icon` and `nav_order` are unguarded while their siblings ARE guarded at :84. A PATCH omitting nav_order writes 0 and silently reshuffles the whole SOP navigation.",
-    "  handlers/me.rs:149 — `arma_character` is unguarded while `code`/`arma_id` are guarded at :161; an omitted field blanks the stored character name.",
-    "  services/discord.rs:69 — DiscordUser.username defaulted; a malformed profile response blanks users.username / discord_handle. This is the door T-185 closed one field over. Self-heals on next login, so lowest priority of the three, but it is the same class.",
-    "Apply the guarded-Option pattern already used at wiki.rs:84 and me.rs:161.",
-]
 owns = [
     "apps/website/api/src/handlers/wiki.rs",
     "apps/website/api/src/handlers/me.rs",

@@ -1,12 +1,38 @@
 id = "T-326"
 kind = "work"
-title = "Matches played before an identity link never backfill, so deployments undercount"
+title = "Pre-link matches never backfill, deployments undercount"
 summary = "Matches played before an identity link never backfill, so deployments undercount"
 class = "bug"
 status = "shipped"
 order = 3142
 executor = "claude-code"
 priority = 1
+main_goal = "Backfill match_player_stats.discord_id in handlers/me.rs confirm transaction so pre-link matches reach total_deployments."
+context = [
+    "SPLIT FROM T-231 (c).",
+    "VERIFIED by the T-231 agent: there is NO `UPDATE match_player_stats` anywhere in apps/website/api/ — zero hits across the crate.",
+]
+requirement = [
+    "This is not a corruption bug, it is a missing step: nothing ever goes back and claims the historical rows once the link exists.",
+    "Check whether attendance/leaderboard rows need the same treatment, and whether unlinking (if that exists) should reverse it.",
+]
+current_state = [
+    "telemetry.rs:376-381 resolves `discord_id` at INGEST time.",
+    "So every match a player played before linking their identity keeps `discord_id = NULL` forever.",
+    "`recompute_user_stats` (telemetry.rs:530-534) counts only non-NULL rows, so those matches never reach `total_deployments` —",
+    "a player who links after three ops shows zero deployments and their service record is permanently short.",
+]
+approach = [
+    "Fix is one statement in the existing confirm transaction in `handlers/me.rs` —",
+    "UPDATE match_player_stats SET discord_id = ... WHERE arma_id = ... AND discord_id IS NULL — followed by a recompute.",
+    "Do it inside the transaction that consumes the link code, so a failure cannot half-link.",
+]
+citations = [
+    "T-231 (c) split",
+    "telemetry.rs:376-381",
+    "recompute_user_stats :530-534",
+    "handlers/me.rs confirm txn",
+]
 shipped_at = "5538efce"
 created_at = "2026-07-26T07:24:57Z"
 completed_at = "2026-07-27T09:50:57Z"
@@ -17,15 +43,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 7 commit subject(s)"
-migration_legacy = [
-    "SPLIT FROM T-231 (c). VERIFIED by the T-231 agent: there is NO `UPDATE match_player_stats` anywhere in apps/website/api/ — zero hits across the crate.",
-    "",
-    "telemetry.rs:376-381 resolves `discord_id` at INGEST time. So every match a player played before linking their identity keeps `discord_id = NULL` forever. `recompute_user_stats` (telemetry.rs:530-534) counts only non-NULL rows, so those matches never reach `total_deployments` — a player who links after three ops shows zero deployments and their service record is permanently short.",
-    "",
-    "This is not a corruption bug, it is a missing step: nothing ever goes back and claims the historical rows once the link exists. Fix is one statement in the existing confirm transaction in `handlers/me.rs` — UPDATE match_player_stats SET discord_id = ... WHERE arma_id = ... AND discord_id IS NULL — followed by a recompute. Do it inside the transaction that consumes the link code, so a failure cannot half-link.",
-    "",
-    "Check whether attendance/leaderboard rows need the same treatment, and whether unlinking (if that exists) should reverse it.",
-]
 owns = ["apps/website/api/src/handlers/me.rs"]
 
 [scope]

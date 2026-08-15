@@ -7,6 +7,20 @@ status = "shipped"
 order = 3133
 executor = "claude-code"
 priority = 1
+main_goal = "Malformed ban bodies must return 400 and re-ban must not erase an existing ban_reason."
+context = ["FOUND by T-218's sweep."]
+requirement = ["Two-part fix: `map_err` the extractor like the other ~25 handlers in the crate, AND drop the #[serde(default)] on BanInput.reason at :155 — a well-formed `{}` does the same damage."]
+current_state = [
+    "handlers/admin.rs:168 collapses the JsonRejection instead of returning 400, so a malformed or wrong-Content-Type body still executes",
+    "`UPDATE users SET is_banned=true, ban_reason=$1` with an empty reason — erasing a prior reason on re-ban and leaving an unexplained ban in the audit trail.",
+]
+approach = ["Same pattern T-218 closed in approvals.rs; this is the last extractor-collapse site."]
+citations = [
+    "T-218 sweep",
+    "handlers/admin.rs:168 extractor",
+    "handlers/admin.rs:155 BanInput.reason",
+    "approvals.rs T-218 pattern",
+]
 shipped_at = "62a804e4"
 created_at = "2026-07-26T06:47:22Z"
 completed_at = "2026-07-26T06:52:50Z"
@@ -17,7 +31,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = ["FOUND by T-218's sweep. handlers/admin.rs:168 collapses the JsonRejection instead of returning 400, so a malformed or wrong-Content-Type body still executes `UPDATE users SET is_banned=true, ban_reason=$1` with an empty reason — erasing a prior reason on re-ban and leaving an unexplained ban in the audit trail. Two-part fix: `map_err` the extractor like the other ~25 handlers in the crate, AND drop the #[serde(default)] on BanInput.reason at :155 — a well-formed `{}` does the same damage. Same pattern T-218 closed in approvals.rs; this is the last extractor-collapse site."]
 owns = [
     "apps/website/api/src/handlers/admin.rs",
     "apps/website/api/tests/admin_field.rs",

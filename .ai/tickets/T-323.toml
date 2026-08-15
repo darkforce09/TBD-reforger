@@ -1,12 +1,32 @@
 id = "T-323"
 kind = "work"
-title = "Admin ban button sends `{}` and now 400s — the ban UI is broken on main"
+title = "Ban UI sends empty `{}` after T-317"
 summary = "Admin ban button sends `{}` and now 400s — the ban UI is broken on main"
 class = "feature"
 status = "shipped"
 order = 3139
 executor = "claude-code"
 priority = 1
+main_goal = "Make ban reason required client-side and surface server 400 errors instead of posting `{}` after T-317."
+context = [
+    "CAUSED BY T-317, which landed at 62a804e4 and correctly made `reason` required on POST /admin/users/:id/ban. The frontend was not updated in the same wave because it is a different file",
+    "with a different owner.",
+    "Found and reported by the T-317 agent, which correctly refused to edit a file it did not own.",
+]
+requirement = [
+    "The backend is right and should not be reverted: an unexplained ban is exactly what T-317 set out to stop. The UI is what is stale. Make the reason required",
+    """client-side too: change the prompt copy off "(optional)", reject or re-prompt on empty rather than posting `{}`, and surface the server's actual error message instead of a flat "Ban failed"""",
+    "— the 400 body already carries a usable one.",
+]
+current_state = [
+    'apps/website/frontend/src/personnel.rs:342-378 prompts "Ban reason (optional):" and DELIBERATELY sends `serde_json::json!({})` when the operator leaves it empty. That path now returns 400 and the UI shows a flat "Ban failed" with no',
+    "explanation. A normal ban WITH a reason still works — `api_post_ok` uses gloo-net `.json()`, which sets the Content-Type header — so this is the empty-reason path only.",
+]
+citations = [
+    "T-317 ban reason required",
+    "62a804e4",
+    "POST /admin/users/:id/ban",
+]
 shipped_at = "367fcaf2"
 created_at = "2026-07-26T07:41:39Z"
 completed_at = "2026-07-26T07:51:49Z"
@@ -17,15 +37,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    "CAUSED BY T-317, which landed at 62a804e4 and correctly made `reason` required on POST /admin/users/:id/ban. The frontend was not updated in the same wave because it is a different file with a different owner.",
-    "",
-    'apps/website/frontend/src/personnel.rs:342-378 prompts "Ban reason (optional):" and DELIBERATELY sends `serde_json::json!({})` when the operator leaves it empty. That path now returns 400 and the UI shows a flat "Ban failed" with no explanation. A normal ban WITH a reason still works — `api_post_ok` uses gloo-net `.json()`, which sets the Content-Type header — so this is the empty-reason path only.',
-    "",
-    """The backend is right and should not be reverted: an unexplained ban is exactly what T-317 set out to stop. The UI is what is stale. Make the reason required client-side too: change the prompt copy off "(optional)", reject or re-prompt on empty rather than posting `{}`, and surface the server's actual error message instead of a flat "Ban failed" — the 400 body already carries a usable one.""",
-    "",
-    "Found and reported by the T-317 agent, which correctly refused to edit a file it did not own.",
-]
 owns = ["apps/website/frontend/src/personnel.rs"]
 
 [scope]

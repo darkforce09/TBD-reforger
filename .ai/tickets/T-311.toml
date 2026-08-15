@@ -6,7 +6,14 @@ class = "bug"
 status = "idea"
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
-migration_legacy = ["handlers/leaderboards.rs:44-50 — none of the five ORDER BY arms has a tie-breaker, so with LIMIT/OFFSET the row SET is unstable, not merely the order within it. T-194's content golden introduces 4-way ties in team_kills, missions_played and command_win_rate, so this is now reachable with the committed seed. Fix: append `, lt.discord_id ASC` to each arm."]
+main_goal = "None of five leaderboard ORDER BY arms has a tie-breaker so LIMIT/OFFSET paging is unstable."
+context = ["T-194's content golden introduces 4-way ties in team_kills, missions_played and command_win_rate, so this is now reachable with the committed seed."]
+requirement = ["Fix: append `, lt.discord_id ASC` to each arm."]
+current_state = ["handlers/leaderboards.rs:44-50 — none of the five ORDER BY arms has a tie-breaker, so with LIMIT/OFFSET the row SET is unstable, not merely the order within it."]
+citations = [
+    "handlers/leaderboards.rs:44-50",
+    "T-194 content golden ties",
+]
 
 [scope]
 domain = "repo"

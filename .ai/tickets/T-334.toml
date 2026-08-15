@@ -6,7 +6,84 @@ class = "bug"
 status = "shipped"
 order = 3150
 executor = "claude-code"
+notes = """
+== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
+Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
+This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now."""
 priority = 1
+main_goal = "Integration tests get per-suite actor isolation and a shared dev-login helper so cross-binary shared-fixture collisions cannot flake the wave gate."
+context = [
+    "OBSERVED ONCE by T-324 and reported rather than buried: on a COLD database, the two-test parallel run of apps/website/api/tests/events.rs failed with `dev-login` returning no `Location` header.",
+    "Never reproduced on a warm DB across four subsequent runs.",
+    "Filed because of where it will land, not because of its severity: `cargo test -p website-api` is INSIDE the wave gate, and this program runs unattended.",
+    "== PROMOTED BACK INTO THE RUN 2026-07-26: my own B-1 fix made this flake live IN THE WAVE GATE ==",
+    "== FULLY DIAGNOSED 2026-07-26 by a paid-for subagent; the slice agent was cut for budget ==",
+]
+requirement = [
+    "The fix is per-suite actor ids plus a shared helper — and admin_field.rs's roles/sync call has to go or be scoped.",
+    "Do this with T-381 (nothing validates the TEST_DATABASE_URL target name) — same shared-database hazard, different consequence.",
+    "Make the helper fail with a sentence too — an index panic on a missing header names neither the cause nor the suite that caused it.",
+]
+current_state = [
+    "A flake here reads as a code failure, and an unattended fix agent can spend its entire retry budget 'fixing' working code —",
+    "that exact failure shape has already cost this program hours (see the trunk/dist race, T-322's premise, and smokes.rs:2715 returning an env fault as gate-red).",
+    "Likely a first-request migration/warmup race rather than a logic bug.",
+    "SECOND INSTANCE, SAME ROOT CAUSE, different test — found by T-365: `ban_reason_survives_a_malformed_reban` (tests/admin_field.rs, T-317's)",
+    "failed once with a bare index panic on a MISSING `Location` header from the dev-login helper, then passed 3/3 on re-run and 19/19 serially.",
+    "T-365 diagnosed the cause as cross-binary contention on the single shared test DB:",
+    "every binary upserts the same admin discord_id, and auth.rs:147 403s a banned account — so one binary's ban probe makes another binary's dev-login return no Location.",
+    "That makes this NOT a warmup race as originally guessed, but a shared-fixture collision, and it widens the ticket:",
+    "the fix is either per-binary isolation or a distinct actor per suite, not a retry.",
+    "It also connects to T-381 (nothing validates the TEST_DATABASE_URL target name) — same shared-database hazard, different consequence. Consider doing all three together.",
+    "Note the failure mode: an index panic on a missing header, so the message names neither the cause nor the suite that caused it.",
+    "Whatever fix lands should make the helper fail with a sentence instead.",
+    'Before the fix, `run "test api"` had no TEST_DATABASE_URL so all 30 DB tests SKIPPED — they could not flake because they never ran.',
+    "Now they run, and the 22 test binaries share the gate's single `tbd_gate_it`, so the cross-binary contention this ticket describes is reachable on every wave gate.",
+    "OBSERVED IMMEDIATELY: the gate went FAIL then PASS on an identical tree, two runs apart, with T-227's merge in between.",
+    "That is the exact hazard this program has already paid for three times — an environment failure that reads as a code failure,",
+    "sending an unattended fix agent to spend its whole budget on working code (see the trunk/dist race, T-322's premise, and smokes.rs returning a backend fault as gate-red).",
+    "T-365's MECHANISM IS WRONG: dev_login has NO ban check — issue_session (auth.rs:35-47) does not read is_banned, so a banned shared row still gets a 302.",
+    "The ban bites at POST /auth/refresh instead (auth.rs:147 -> 403), which auth_refresh.rs:49 and null_tolerance.rs:328 both drive.",
+]
+approach = [
+    "Reproduce by dropping and recreating the test database, then running the two tests in parallel.",
+    "If it is warmup, the fix is probably to make the harness await readiness rather than to retry.",
+    "T-365's diagnosis is the one to fix against: it is not a warmup race but a SHARED-FIXTURE COLLISION —",
+    "every binary upserts the same admin discord_id, and auth.rs:147 403s a banned account,",
+    "so one suite's ban probe makes another suite's dev-login return no Location header and the helper panics on a bare index.",
+    "So the fix is per-binary isolation or a distinct actor per suite, NOT a retry.",
+    "THE REAL COLLISIONS, from an 18-file inventory (not 19):",
+    "admin_field.rs:332 calls POST /admin/roles/sync, which loops EVERY users row and demotes anyone with no user_discord_roles —",
+    "i.e. it fires T-372's admin lockout INSIDE the test suite, silently demoting the shared dev row for every other binary.",
+    "identity_link.rs is the heaviest writer: :26 nulls the shared row's arma_id (errors swallowed by `let _`), :106 unlinks it, :124-134 relinks it — directly breaking auth_refresh.rs:100 while in flight.",
+    "factions.rs:26-27 rewrites role to mission_maker then leaves it on enlisted; registry_compat.rs does the same.",
+    "misc_integration.rs:88 asserts role=='admin' by READING THE DB, so it fails when another suite leaves the row lower.",
+    "discord_id 000000000000000003 is DOUBLE-BOOKED — events.rs:20 THIRD and telemetry.rs:17 PLAYER_DISCORD.",
+    "Exactly ONE unscoped destructive statement: factions.rs:18 DELETE FROM user_factions, which wipes null_tolerance.rs:589's faction.",
+    "Everything else is scoped, and two files carry comments explaining why they refuse to blanket-delete.",
+    "17 unchecked header-index sites across 13 files. HeaderMap's Index panics with no status code and no body,",
+    "so a dev-login returning 404/500 surfaces as a bare key-not-found panic.",
+    "NO SHARED TEST-SUPPORT MODULE EXISTS — 18 files, zero subdirectories, zero `mod` declarations, no [dev-dependencies] or [[test]] in Cargo.toml.",
+    "The dev-login extractor is copy-pasted 9x plus 4 inline copies.",
+    "Conventional home is tests/common/mod.rs (cargo does not compile tests/<dir>/mod.rs as its own binary).",
+    "null_tolerance.rs is the model to copy: it deliberately avoids dev-login entirely, owns discord_id ...099, and serialises its DB tests with a lock.",
+    "misc_integration.rs is the other: T-235 mints via state.jwt.issue_access, which writes nothing.",
+    "no amount of actor isolation survives a handler that rewrites every row.",
+]
+verify = [
+    "Reproduce: drop/recreate test DB, run events.rs two tests in parallel.",
+    "Gate hazard: `cargo test -p website-api` inside wave gate on shared `tbd_gate_it`.",
+]
+citations = [
+    "T-324 cold DB flake",
+    "T-365 ban_reason_survives",
+    "T-381 TEST_DATABASE_URL",
+    "auth.rs:147 refresh 403",
+    "null_tolerance.rs dev-login model",
+    "smokes.rs:2715 gate-red",
+    "T-322 trunk/dist race",
+    "T-372 admin lockout",
+]
 shipped_at = "bca6bcc1"
 created_at = "2026-07-26T12:36:45Z"
 completed_at = "2026-07-26T15:02:00Z"
@@ -18,47 +95,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
-migration_legacy = [
-    "OBSERVED ONCE by T-324 and reported rather than buried: on a COLD database, the two-test parallel run of apps/website/api/tests/events.rs failed with `dev-login` returning no `Location` header. Never reproduced on a warm DB across four subsequent runs.",
-    "",
-    "Filed because of where it will land, not because of its severity: `cargo test -p website-api` is INSIDE the wave gate, and this program runs unattended. A flake here reads as a code failure, and an unattended fix agent can spend its entire retry budget 'fixing' working code — that exact failure shape has already cost this program hours (see the trunk/dist race, T-322's premise, and smokes.rs:2715 returning an env fault as gate-red).",
-    "",
-    "Likely a first-request migration/warmup race rather than a logic bug. Reproduce by dropping and recreating the test database, then running the two tests in parallel. If it is warmup, the fix is probably to make the harness await readiness rather than to retry.",
-    "",
-    "SECOND INSTANCE, SAME ROOT CAUSE, different test — found by T-365: `ban_reason_survives_a_malformed_reban` (tests/admin_field.rs, T-317's) failed once with a bare index panic on a MISSING `Location` header from the dev-login helper, then passed 3/3 on re-run and 19/19 serially. T-365 diagnosed the cause as cross-binary contention on the single shared test DB: every binary upserts the same admin discord_id, and auth.rs:147 403s a banned account — so one binary's ban probe makes another binary's dev-login return no Location.",
-    "",
-    "That makes this NOT a warmup race as originally guessed, but a shared-fixture collision, and it widens the ticket: the fix is either per-binary isolation or a distinct actor per suite, not a retry. It also connects to T-381 (nothing validates the TEST_DATABASE_URL target name) — same shared-database hazard, different consequence. Consider doing all three together.",
-    "",
-    "Note the failure mode: an index panic on a missing header, so the message names neither the cause nor the suite that caused it. Whatever fix lands should make the helper fail with a sentence instead.",
-    "",
-    "== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==",
-    "Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.",
-    "This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.",
-    "",
-    "== PROMOTED BACK INTO THE RUN 2026-07-26: my own B-1 fix made this flake live IN THE WAVE GATE ==",
-    """Before the fix, `run "test api"` had no TEST_DATABASE_URL so all 30 DB tests SKIPPED — they could not flake because they never ran. Now they run, and the 22 test binaries share the gate's single `tbd_gate_it`, so the cross-binary contention this ticket describes is reachable on every wave gate.""",
-    "",
-    "OBSERVED IMMEDIATELY: the gate went FAIL then PASS on an identical tree, two runs apart, with T-227's merge in between. That is the exact hazard this program has already paid for three times — an environment failure that reads as a code failure, sending an unattended fix agent to spend its whole budget on working code (see the trunk/dist race, T-322's premise, and smokes.rs returning a backend fault as gate-red).",
-    "",
-    "T-365's diagnosis is the one to fix against: it is not a warmup race but a SHARED-FIXTURE COLLISION — every binary upserts the same admin discord_id, and auth.rs:147 403s a banned account, so one suite's ban probe makes another suite's dev-login return no Location header and the helper panics on a bare index. So the fix is per-binary isolation or a distinct actor per suite, NOT a retry. Make the helper fail with a sentence too — an index panic on a missing header names neither the cause nor the suite that caused it.",
-    "",
-    "Do this with T-381 (nothing validates the TEST_DATABASE_URL target name) — same shared-database hazard, different consequence.",
-    "",
-    "== FULLY DIAGNOSED 2026-07-26 by a paid-for subagent; the slice agent was cut for budget ==",
-    "T-365's MECHANISM IS WRONG: dev_login has NO ban check — issue_session (auth.rs:35-47) does not read is_banned, so a banned shared row still gets a 302. The ban bites at POST /auth/refresh instead (auth.rs:147 -> 403), which auth_refresh.rs:49 and null_tolerance.rs:328 both drive.",
-    "",
-    "THE REAL COLLISIONS, from an 18-file inventory (not 19):",
-    "  admin_field.rs:332 calls POST /admin/roles/sync, which loops EVERY users row and demotes anyone with no user_discord_roles — i.e. it fires T-372's admin lockout INSIDE the test suite, silently demoting the shared dev row for every other binary.",
-    "  identity_link.rs is the heaviest writer: :26 nulls the shared row's arma_id (errors swallowed by `let _`), :106 unlinks it, :124-134 relinks it — directly breaking auth_refresh.rs:100 while in flight.",
-    "  factions.rs:26-27 rewrites role to mission_maker then leaves it on enlisted; registry_compat.rs does the same. misc_integration.rs:88 asserts role=='admin' by READING THE DB, so it fails when another suite leaves the row lower.",
-    "  discord_id 000000000000000003 is DOUBLE-BOOKED — events.rs:20 THIRD and telemetry.rs:17 PLAYER_DISCORD.",
-    "  Exactly ONE unscoped destructive statement: factions.rs:18 DELETE FROM user_factions, which wipes null_tolerance.rs:589's faction. Everything else is scoped, and two files carry comments explaining why they refuse to blanket-delete.",
-    "  17 unchecked header-index sites across 13 files. HeaderMap's Index panics with no status code and no body, so a dev-login returning 404/500 surfaces as a bare key-not-found panic.",
-    "",
-    "NO SHARED TEST-SUPPORT MODULE EXISTS — 18 files, zero subdirectories, zero `mod` declarations, no [dev-dependencies] or [[test]] in Cargo.toml. The dev-login extractor is copy-pasted 9x plus 4 inline copies. Conventional home is tests/common/mod.rs (cargo does not compile tests/<dir>/mod.rs as its own binary). null_tolerance.rs is the model to copy: it deliberately avoids dev-login entirely, owns discord_id ...099, and serialises its DB tests with a lock. misc_integration.rs is the other: T-235 mints via state.jwt.issue_access, which writes nothing.",
-    "",
-    "So the fix is per-suite actor ids plus a shared helper — and admin_field.rs's roles/sync call has to go or be scoped, because no amount of actor isolation survives a handler that rewrites every row.",
-]
 owns = ["apps/website/api/tests/events.rs"]
 
 [scope]

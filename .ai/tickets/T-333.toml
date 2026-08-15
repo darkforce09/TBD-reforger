@@ -1,12 +1,30 @@
 id = "T-333"
 kind = "work"
-title = "Dialog installs a window-level Escape listener per instance, so Esc closes stacked dialogs"
+title = "Per-instance Escape closes all stacked dialogs"
 summary = "Dialog installs a window-level Escape listener per instance, so Esc closes stacked dialogs"
 class = "bug"
 status = "shipped"
 order = 3149
 executor = "claude-code"
+notes = """
+== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
+Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
+This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now."""
 priority = 3
+main_goal = "Only the topmost Dialog handles Escape so stacked confirms do not close the edit form behind them and discard unsaved edits."
+context = [
+    "Pre-existing, found by T-226 while stacking a confirm on top of an edit dialog.",
+    "`ui.rs` `Dialog` installs a window-level Escape listener PER INSTANCE, so pressing Esc with both open closes BOTH — the confirm and the form behind it.",
+    "The operator loses unsaved edits to dismiss a confirmation.",
+    "Low priority but it affects every stacked dialog on the platform, and T-226 just added the first place users will meet it routinely.",
+]
+requirement = ["Only the topmost dialog should handle Escape — a shared stack/depth counter, or listen on the dialog element rather than window and let it stop propagation."]
+current_state = ["T-226 did not touch it (`ui.rs` was not in its owns) and worked around it by testing the confirm path via clicks."]
+approach = ["Fix: shared stack/depth counter, or listen on the dialog element rather than window and let it stop propagation."]
+citations = [
+    "T-226 stacked confirm",
+    "ui.rs Dialog Escape listener",
+]
 shipped_at = "a189ac39"
 created_at = "2026-08-01T02:48:56Z"
 completed_at = "2026-08-01T02:48:56Z"
@@ -18,17 +36,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 1 commit subject(s)"
-migration_legacy = [
-    "Pre-existing, found by T-226 while stacking a confirm on top of an edit dialog. `ui.rs` `Dialog` installs a window-level Escape listener PER INSTANCE, so pressing Esc with both open closes BOTH — the confirm and the form behind it. The operator loses unsaved edits to dismiss a confirmation.",
-    "",
-    "T-226 did not touch it (`ui.rs` was not in its owns) and worked around it by testing the confirm path via clicks. Fix: only the topmost dialog should handle Escape — a shared stack/depth counter, or listen on the dialog element rather than window and let it stop propagation.",
-    "",
-    "Low priority but it affects every stacked dialog on the platform, and T-226 just added the first place users will meet it routinely.",
-    "",
-    "== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==",
-    "Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.",
-    "This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.",
-]
 owns = ["apps/website/frontend/src/ui.rs"]
 
 [scope]

@@ -7,6 +7,28 @@ status = "shipped"
 order = 3146
 executor = "claude-code"
 priority = 2
+main_goal = "COALESCE m.updated_at in handlers/approvals.rs:55 like sibling read sites; do not make the model Option."
+context = [
+    "FOUND by T-325's sweep, captured not inferred:",
+    '  `error occurred while decoding column "updated_at": unexpected null` from handlers/approvals.rs:55,',
+    "which selects a bare `m.updated_at` where the sibling read sites COALESCE.",
+]
+requirement = [
+    "Same fix shape as T-329: COALESCE at the query, not Option on the model.",
+    "See T-325's reasoning recorded in models/telemetry.rs for why the model-level change is wrong.",
+]
+current_state = [
+    "Latent on the operator's data today — `missions` has no NULL updated_at there —",
+    "but it is the same defect as T-329 (live) and T-307 (reachable from any fresh seed),",
+    "and 'latent' here means 'nothing has written that value yet', not 'cannot happen'.",
+]
+citations = [
+    "T-325 sweep",
+    "handlers/approvals.rs:55",
+    "T-329 live defect",
+    "T-307 fresh seed",
+    "models/telemetry.rs",
+]
 shipped_at = "5538efce"
 created_at = "2026-07-26T07:33:46Z"
 completed_at = "2026-07-26T07:37:38Z"
@@ -17,13 +39,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    """FOUND by T-325's sweep, captured not inferred: `error occurred while decoding column "updated_at": unexpected null` from handlers/approvals.rs:55, which selects a bare `m.updated_at` where the sibling read sites COALESCE.""",
-    "",
-    "Latent on the operator's data today — `missions` has no NULL updated_at there — but it is the same defect as T-329 (live) and T-307 (reachable from any fresh seed), and 'latent' here means 'nothing has written that value yet', not 'cannot happen'.",
-    "",
-    "Same fix shape as T-329: COALESCE at the query, not Option on the model. See T-325's reasoning recorded in models/telemetry.rs for why the model-level change is wrong.",
-]
 owns = ["apps/website/api/src/handlers/approvals.rs"]
 
 [scope]
