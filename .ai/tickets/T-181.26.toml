@@ -17,10 +17,24 @@ requirement = [
     "Sanitise faction key; clear current on rejected G record.",
     "SelfCheckWire on first Serialise; measure split on live boot.",
 ]
+current_state = [
+    "Local-file mission load skips schema validation on hand-staged JSON.",
+    "Briefing wire bet on string.Split empty-token behaviour without proof.",
+]
+approach = [
+    "Adopt bijective FIELD_MARK on every briefing wire field.",
+    "Sanitise faction key; clear current on rejected G record; SelfCheckWire.",
+]
 verify = ["SelfCheckWire PASS on dedicated boot."]
+acceptance = [
+    "Bijective FIELD_MARK marked every briefing wire field; SelfCheckWire passed on boot.",
+    "Faction key sanitised; rejected G record cleared current group pointer.",
+]
 citations = [
     "Source: commit 14c8d7a0 — wire self-check.",
     "Source: commit c0ff56f0 — verification bar.",
+    "commit 14c8d7a0 SelfCheckWire proof",
+    "notes split behaviour measured live",
 ]
 shipped_at = "c0ff56f0"
 created_at = "2026-07-25T11:10:45Z"

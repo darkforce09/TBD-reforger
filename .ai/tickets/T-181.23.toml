@@ -16,10 +16,24 @@ requirement = [
     "Parse briefings, markers, zone label, and four ORBAT keys from schema.",
     "NotifyLocalStageUI from SetStage and OnStageReplicated; delete the poll.",
 ]
+current_state = [
+    "Mission modelled structure but not briefing prose or zone labels.",
+    "OnStageReplicated stub forced a five-hundred-millisecond poll in T-181.9.2.",
+]
+approach = [
+    "Parse briefings, markers, zone label, and four ORBAT keys from schema.",
+    "NotifyLocalStageUI from SetStage and OnStageReplicated; delete the poll.",
+]
 verify = ["Both golden missions still validate."]
+acceptance = [
+    "Parser landed briefings, markers, zone label, ORBAT callsign slot kit fields.",
+    "Stage hook wired authority and proxy paths; poll deleted.",
+]
 citations = [
     "Source: commit 94e72e3d — parser gaps.",
     "Source: commit 3ca6d0f1 — merge slice.",
+    "commit 94e72e3d parser gaps",
+    "notes ORDERS screen still dead",
 ]
 shipped_at = "3ca6d0f1"
 created_at = "2026-07-25T09:18:31Z"

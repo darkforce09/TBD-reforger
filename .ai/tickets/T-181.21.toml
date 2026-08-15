@@ -17,9 +17,26 @@ requirement = [
     "Override CanRequestSpawn_S to accept only TBD_SpawnManager-authorized spawn tickets.",
     "Re-key m_mDeadPlayers to PlayerBindKey; retain dead player seats on disconnect.",
 ]
+current_state = [
+    "One-life checked in ClaimSlot and ReleaseSlot, not DeployPlayerEx.",
+    "Vanilla NotifyReadyForSpawn_S invited client spawn requests join gate never touched.",
+    "m_mDeadPlayers keyed on identity string with NULL UUID collision risk.",
+]
+approach = [
+    "Refuse spent life in DeployPlayerEx with DENIED before retry or body remake.",
+    "Override CanRequestSpawn_S to accept only TBD_SpawnManager spawn tickets.",
+    "Re-key m_mDeadPlayers to PlayerBindKey; retain departed dead seats.",
+]
+verify = ["dd79266d Compile gate plus verify-no-crf-leak/verify-capability/verify-oracle/mod-compile-selftest; runtime unobserved."]
+acceptance = [
+    "DeployPlayerEx refused spent lives; CanRequestSpawn_S gated spawn tickets only.",
+    "Dead-player map rekeyed to PlayerBindKey; departed seats retained for round end.",
+]
 citations = [
     "Source: commit dd79266d — one-life integrity.",
     "Source: commit 58b344e9 — merge slice.",
+    "commit dd79266d deploy boundary",
+    "notes NULL uuid death tracking",
 ]
 shipped_at = "58b344e9"
 created_at = "2026-07-25T08:08:44Z"

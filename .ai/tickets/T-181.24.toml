@@ -16,10 +16,24 @@ requirement = [
     "Give spent lives an inert host via SetPossessedEntity, not spawn.",
     "Refuse character or damage components; release host on deploy and disconnect.",
 ]
+current_state = [
+    "Streaming follows the controlled entity, not the spectator camera.",
+    "T-181.12 left a landmine comment naming this host-entity fix.",
+]
+approach = [
+    "Give spent lives an inert host via SetPossessedEntity, not spawn.",
+    "Refuse character or damage components; release host on deploy disconnect.",
+]
 verify = ["world-boot log: streaming host ARMED."]
+acceptance = [
+    "Spectator streaming host armed via possession, not spawn pipeline.",
+    "Host refused character and damage components; released on deploy disconnect.",
+]
 citations = [
     "Source: commit 7e00808a — streaming host.",
     "Source: commit 7222b2c2 — merge slice.",
+    "commit 7e00808a streaming host",
+    "notes compile-verified AOI unproven",
 ]
 shipped_at = "7222b2c2"
 created_at = "2026-07-25T13:02:05Z"

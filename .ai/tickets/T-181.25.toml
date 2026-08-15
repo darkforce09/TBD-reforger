@@ -16,10 +16,24 @@ requirement = [
     "Wire MenuConfigs in addon.gproj; list vanilla and mod presets together.",
     "Place MenuManagerSettings as direct child of GameProjectConfig.",
 ]
+current_state = [
+    "Five mod screens blocked by Menu preset not found errors.",
+    "Prior theory blamed resourceDatabase.rdb; operator log falsified it.",
+]
+approach = [
+    "Wire MenuConfigs in addon.gproj; list vanilla and mod presets together.",
+    "Place MenuManagerSettings as direct child of GameProjectConfig.",
+]
 verify = ["Menu preset errors five to zero, headless and Workbench."]
+acceptance = [
+    "addon.gproj MenuConfigs fix cleared five menu preset errors headless and Workbench.",
+    "Operator proved rdb rewrite was never the screen blocker.",
+]
 citations = [
     "Source: commit a85df844 — MenuConfigs fix.",
     "Source: commit 1f7bfbf5 — Workbench confirmed.",
+    "commit a85df844 MenuConfigs fix",
+    "notes rdb theory falsified",
 ]
 shipped_at = "1f7bfbf5"
 created_at = "2026-07-25T17:00:12Z"

@@ -16,10 +16,24 @@ requirement = [
     "Delete manager GetInstance statics; fix epoch mint only with controller.",
     "Fix audit swallow and NoteDeniedAccess ring budget.",
 ]
+current_state = [
+    "Wave verifier filed GetInstance asymmetry and audit-ring swallow findings.",
+    "ConnectionEpochFor minted epochs without controllers, breaking one-life invariants.",
+]
+approach = [
+    "Delete manager GetInstance statics; fix epoch mint only with controller.",
+    "Fix audit swallow and NoteDeniedAccess ring budget.",
+]
 verify = ["World-boot roll-call asserts nine components."]
+acceptance = [
+    "Manager GetInstance statics deleted; EnsureConnectEpoch minted only with controller present.",
+    "Audit swallow fixed; NoteDeniedAccess ring budget bounded population evictions.",
+]
 citations = [
     "Source: commit a81a528c — epoch invariant.",
     "Source: commit 8ab797df — T-181.30 lands.",
+    "commit a81a528c epoch invariant",
+    "notes audit ring flush closed",
 ]
 shipped_at = "8ab797df"
 created_at = "2026-07-25T15:15:35Z"

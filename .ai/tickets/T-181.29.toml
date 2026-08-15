@@ -17,10 +17,25 @@ requirement = [
     "One ShouldStandDown predicate for close, DEPLOY, and re-raise.",
     "Additive fix; do not flip m_bAutoDeploy without operator confirmation.",
 ]
+current_state = [
+    "JIP DeployJoiner and AdminRespawn could strand picker over a live character.",
+    "m_bInWorld must resolve before roster-unavailable early return.",
+]
+approach = [
+    "Emit inWorld from GetPlayerControlledEntity in BuildForPlayer.",
+    "One ShouldStandDown predicate for close, DEPLOY, and re-raise.",
+    "Additive fix; do not flip m_bAutoDeploy without operator confirmation.",
+]
 verify = ["Negative control: world-boot fails on probe."]
+acceptance = [
+    "Picker stood down on controlled body, not only deploy click.",
+    "inWorld emitted above roster-unavailable reply; ShouldStandDown unified predicate.",
+]
 citations = [
     "Source: commit e2234355 — body stand-down.",
     "Source: commit bbf285a9 — slice land.",
+    "commit e2234355 body stand-down",
+    "notes negative control world-boot",
 ]
 shipped_at = "bbf285a9"
 created_at = "2026-07-25T17:02:23Z"
