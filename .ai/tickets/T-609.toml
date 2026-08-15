@@ -1,13 +1,71 @@
 id = "T-609"
 kind = "work"
-title = "world-boot ratchet has been red for every golden mission since before wave 76"
+title = "Fix stale world-boot warning ratchet on goldens"
 summary = "world-boot ratchet has been red for every golden mission since before wave 76"
 class = "bug"
 status = "shipped"
 order = 3562
 executor = "claude-code"
-notes = "needs-operator: frozen unmappable Scope. "
+notes = """
+needs-operator: frozen unmappable Scope.
+
+--- HEAD migration_legacy (verbatim) ---
+
+Surfaced by T-605 and independently confirmed by wave 76's verifier (F3 root cause). Both refused to
+widen the baseline, which was the right call -- this row exists so the decision is deliberate.
+
+`bash scripts/mod/world-boot.sh --mission=<any golden>` ends `WORLD BOOT: FAIL` on `main` today:
+    FAIL  validator warnings rose: 5 > baseline 0 for msn_8f3a2c   (bridgehead-at-levie)
+    FAIL  validator warnings rose: 4 > baseline 0 for msn_5c1de7   (slot-loadout-coverage)
+in both cases alongside `ok  mission validated: mission result=PASS errors=0` and `ok  no TBD script
+errors` -- the missions are fine; the WARNING RATCHET is stale.
+
+The warnings are one family, unconsumed authored keys: `environment`, `settings`, `layers`,
+`factions.tickets`, `orbat.roles.radio` -- "authored but the mission does not model it"
+(`TBD_MissionValidator.c:1168,1175,1185`). `.world-boot-warning-baseline` is 111 rows of
+`<mission-id> <budget>`, last touched at `d297f3a39`, a confirmed ancestor of wave 76's base; the
+validator sites likewise predate it. So this went red at some earlier commit and no gate noticed --
+`cmd_gate` has no world-boot step, so the wave gate has been green over it the whole time.
+
+DECIDE, do not just widen: either (a) the validator is right and those five keys genuinely are
+authored-but-unmodelled, in which case fix the missions or the modelling and the ratchet returns to 0;
+or (b) the warnings are noise, in which case fix the validator and explain why the family is benign.
+Widening the baseline to 5 makes the red go away while preserving whatever it was warning about, and
+guarantees the next real regression hides inside the new budget.
+
+RELATED: T-608 makes `PLAYTEST_RUNBOOK.md` §2.5A tell the operator this specific FAIL is known, so the
+playtest is not blocked on this ticket.
+
+missing=0"""
 priority = 2
+main_goal = "Fix world-boot warning ratchet; decide validator vs missions; never widen baseline to rubber-stamp."
+context = [
+    "Surfaced by T-605 and wave 76 verifier F3; both refused baseline widen.",
+    "world-boot.sh ends WORLD BOOT FAIL on golden missions on main today.",
+]
+requirement = [
+    "Decide: fix missions or modelling OR fix validator for benign unconsumed keys.",
+    "Do not widen .world-boot-warning-baseline; preserves hidden regressions.",
+]
+current_state = [
+    "FAIL validator warnings rose 5>0 msn_8f3a2c; 4>0 msn_5c1de7 with PASS errors=0.",
+    "Keys: environment, settings, layers, factions.tickets, orbat.roles.radio unconsumed.",
+    "Baseline 111 rows last d297f3a39; validator sites predate wave 76 base.",
+    "cmd_gate has no world-boot step; wave gate green over red ratchet.",
+]
+approach = [
+    "Fix authored-but-unmodelled keys in missions or validator per TBD_MissionValidator.c.",
+    "Reject baseline widen; ratchet must return to zero after real fix.",
+]
+verify = [
+    "world-boot.sh --mission=golden ends WORLD BOOT PASS without widening baseline budget.",
+    "Validator warnings do not exceed baseline zero for goldens after fix.",
+]
+citations = [
+    "T-605 wave 76 verifier F3",
+    "TBD_MissionValidator.c unconsumed keys",
+    ".world-boot-warning-baseline stale",
+]
 shipped_at = "cf7a58db"
 created_at = "2026-07-31T20:50:48Z"
 completed_at = "2026-07-31T20:53:05Z"
@@ -18,32 +76,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = [
-    "Surfaced by T-605 and independently confirmed by wave 76's verifier (F3 root cause). Both refused to",
-    "widen the baseline, which was the right call -- this row exists so the decision is deliberate.",
-    "",
-    "`bash scripts/mod/world-boot.sh --mission=<any golden>` ends `WORLD BOOT: FAIL` on `main` today:",
-    "    FAIL  validator warnings rose: 5 > baseline 0 for msn_8f3a2c   (bridgehead-at-levie)",
-    "    FAIL  validator warnings rose: 4 > baseline 0 for msn_5c1de7   (slot-loadout-coverage)",
-    "in both cases alongside `ok  mission validated: mission result=PASS errors=0` and `ok  no TBD script",
-    "errors` -- the missions are fine; the WARNING RATCHET is stale.",
-    "",
-    "The warnings are one family, unconsumed authored keys: `environment`, `settings`, `layers`,",
-    '`factions.tickets`, `orbat.roles.radio` -- "authored but the mission does not model it"',
-    "(`TBD_MissionValidator.c:1168,1175,1185`). `.world-boot-warning-baseline` is 111 rows of",
-    "`<mission-id> <budget>`, last touched at `d297f3a39`, a confirmed ancestor of wave 76's base; the",
-    "validator sites likewise predate it. So this went red at some earlier commit and no gate noticed --",
-    "`cmd_gate` has no world-boot step, so the wave gate has been green over it the whole time.",
-    "",
-    "DECIDE, do not just widen: either (a) the validator is right and those five keys genuinely are",
-    "authored-but-unmodelled, in which case fix the missions or the modelling and the ratchet returns to 0;",
-    "or (b) the warnings are noise, in which case fix the validator and explain why the family is benign.",
-    "Widening the baseline to 5 makes the red go away while preserving whatever it was warning about, and",
-    "guarantees the next real regression hides inside the new budget.",
-    "",
-    "RELATED: T-608 makes `PLAYTEST_RUNBOOK.md` §2.5A tell the operator this specific FAIL is known, so the",
-    "playtest is not blocked on this ticket.",
-]
 owns = [
     "scripts/mod/world-boot.sh",
     ".world-boot-warning-baseline",

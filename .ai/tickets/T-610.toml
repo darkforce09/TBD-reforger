@@ -1,12 +1,71 @@
 id = "T-610"
 kind = "work"
-title = "Stale file:line citations across the runbook and arsenal_rules, and verify-citations does not cover them"
+title = "Fix stale runbook and arsenal_rules line cites"
 summary = "Stale file:line citations across the runbook and arsenal_rules, and verify-citations does not cover them"
 class = "bug"
 status = "shipped"
 order = 3572
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by wave 76's verifier (F4). Individually trivial; the reason to record it is that
+`make verify-citations` passes (`Checked 41 @contract citation(s)`) while ~19 citations are wrong --
+the gate does not cover these forms, so the drift is real and silent.
+
+`docs/platform/PLAYTEST_RUNBOOK.md` sections S8-S13 + Appendix, ~17 cites all carrying pre-T-605 line
+numbers (the quoted log STRINGS are current; only the numbers moved):
+    TBD_LoadoutEquipHelper.c :1386->1572 (pass complete) · :1342->1392 (worn audit) · :610->770
+      (equip OK) · :1223/:1228 -> :1398/:1403 (NAKED / HALF-DRESSED)
+    TBD_SpawnManager.c :2094->2169 (auto-deploy) · :785/:780/:773 -> :794/:789/:782 (claim lines)
+      · :666->675 · :2381->2465 · :2549->2633 · :2710->2794 · :2878->2962 · :2280->2355
+      · :1161->1233 · :1496->1568
+`apps/website/frontend/src/arsenal_rules.rs`: `(:209-212)` for `IsComplete` (now 247-250) and
+`(:1121-1123)` for the unworn Degrade (now 1286-1288) -- **the first sits inside text T-605 newly
+wrote, so it was stale on arrival.**
+
+Also in this bucket, from the same report:
+- `run-playtest-server.sh:39` says **109** current-format `[TBD]` lines; `STAGING-SERVER.md` says
+  **108**; measured **108**.
+- The verifier could not reproduce the brief's "320 map-engine-core tests" figure -- the crate runs
+  **126** (all pass). Some doc or ticket is carrying a wrong number; find and fix it.
+- `make verify-no-crf-leak` exceeded a 480 s budget twice (it prints its FAIL early then keeps
+  going). Slow enough that agents time out before its PS-GUID scan; worth a look.
+
+FIX SHAPE: either extend `verify-citations` to cover bare `file.c:NNN` forms in docs, or stop citing
+line numbers in prose and cite stable symbol names instead. The second is cheaper and does not rot.
+
+missing=0"""
 priority = 3
+main_goal = "Fix stale file:line cites; extend verify-citations or cite symbols not lines."
+context = [
+    "Wave 76 verifier F4; verify-citations passes while ~19 cites wrong.",
+    "Gate checks 41 @contract only; bare file.c:NNN in docs invisible.",
+]
+requirement = [
+    "Fix PLAYTEST_RUNBOOK.md S8-S13 cites moved after T-605.",
+    "Fix arsenal_rules.rs IsComplete and unworn Degrade line numbers.",
+    "Find wrong 320 map-engine-core tests figure; fix run-playtest 109 vs 108 count.",
+]
+current_state = [
+    "TBD_LoadoutEquipHelper.c cites off by ~150 lines across runbook sections.",
+    "arsenal_rules.rs (:209-212) and (:1121-1123) stale inside T-605 new text.",
+    "STAGING-SERVER.md 108 vs run-playtest-server.sh:39 claiming 109.",
+    "verify-no-crf-leak exceeds 480s budget twice; agents timeout before PS-GUID scan.",
+]
+approach = [
+    "Extend verify-citations for bare file.c:NNN in docs OR cite stable symbol names.",
+    "Cheaper cure: symbol names in prose do not rot; gate may skip docs.",
+]
+verify = [
+    "make verify-citations passes after runbook and arsenal_rules cite fixes.",
+    "map-engine-core test count in docs matches measured 126 crate tests.",
+]
+citations = [
+    "wave 76 verifier F4 stale cites",
+    "verify-citations 41 @contract only",
+    "PLAYTEST_RUNBOOK S8-S13 drift",
+]
 shipped_at = "2ea572c8"
 created_at = "2026-07-31T20:33:35Z"
 completed_at = "2026-07-31T20:53:05Z"
@@ -18,33 +77,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = [
-    "FOUND by wave 76's verifier (F4). Individually trivial; the reason to record it is that",
-    "`make verify-citations` passes (`Checked 41 @contract citation(s)`) while ~19 citations are wrong --",
-    "the gate does not cover these forms, so the drift is real and silent.",
-    "",
-    "`docs/platform/PLAYTEST_RUNBOOK.md` sections S8-S13 + Appendix, ~17 cites all carrying pre-T-605 line",
-    "numbers (the quoted log STRINGS are current; only the numbers moved):",
-    "    TBD_LoadoutEquipHelper.c :1386->1572 (pass complete) · :1342->1392 (worn audit) · :610->770",
-    "      (equip OK) · :1223/:1228 -> :1398/:1403 (NAKED / HALF-DRESSED)",
-    "    TBD_SpawnManager.c :2094->2169 (auto-deploy) · :785/:780/:773 -> :794/:789/:782 (claim lines)",
-    "      · :666->675 · :2381->2465 · :2549->2633 · :2710->2794 · :2878->2962 · :2280->2355",
-    "      · :1161->1233 · :1496->1568",
-    "`apps/website/frontend/src/arsenal_rules.rs`: `(:209-212)` for `IsComplete` (now 247-250) and",
-    "`(:1121-1123)` for the unworn Degrade (now 1286-1288) -- **the first sits inside text T-605 newly",
-    "wrote, so it was stale on arrival.**",
-    "",
-    "Also in this bucket, from the same report:",
-    "- `run-playtest-server.sh:39` says **109** current-format `[TBD]` lines; `STAGING-SERVER.md` says",
-    "  **108**; measured **108**.",
-    """- The verifier could not reproduce the brief's "320 map-engine-core tests" figure -- the crate runs""",
-    "  **126** (all pass). Some doc or ticket is carrying a wrong number; find and fix it.",
-    "- `make verify-no-crf-leak` exceeded a 480 s budget twice (it prints its FAIL early then keeps",
-    "  going). Slow enough that agents time out before its PS-GUID scan; worth a look.",
-    "",
-    "FIX SHAPE: either extend `verify-citations` to cover bare `file.c:NNN` forms in docs, or stop citing",
-    "line numbers in prose and cite stable symbol names instead. The second is cheaper and does not rot.",
-]
 owns = [
     "docs/platform/PLAYTEST_RUNBOOK.md",
     "apps/website/frontend/src/arsenal_rules.rs",

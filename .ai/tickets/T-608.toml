@@ -1,13 +1,91 @@
 id = "T-608"
 kind = "work"
-title = "Playtest launcher can orphan its own server, and the runbook strands the operator at three steps"
+title = "Launcher orphans server; runbook traps"
 summary = "Playtest launcher can orphan its own server, and the runbook strands the operator at three steps"
 class = "bug"
 status = "shipped"
 order = 3552
 executor = "claude-code"
-notes = "needs-operator: frozen unmappable Scope. "
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by wave 76's adversarial verifier (Fable 5), whose verdict on the runbook was: **"NO, would not
+survive a real session."** BEING FIXED IN-WAVE -- this row records the diagnosis.
+
+=== F1 (MAJOR) the FAILED path exits leaving the server running ===
+`scripts/mod/run-playtest-server.sh:280-290` (`kill_run`), `:321-348`.
+MEASURED once: script printed `FAILED: the server never registered a backend room.`, exited 1, engine
+still alive on 2001. Killed by hand afterwards: `kill -TERM -- -3870163` -> `KILLED-STRAY`.
+Mechanism: the engine honours TERM at steady state but IGNORED it during world load, which is when
+`kill_run` fired; escalation then failed silently because each aliveness probe is a separate
+host-bridge process whose **failure is indistinguishable from process death** --
+`hostrun kill -0 ... || return 0` returns as if gone, skipping `kill -9` (itself `|| true`).
+Consequence chain: orphan holds 2001/17777 -> retry hits `Unable to start replication` -> retry's
+`rm -f "$PIDFILE"` (`:273`) destroys the only handle (kill-by-name deliberately unused, `:277-279`).
+**This is the signature defect surviving in the failure branch of the script written to kill it:** the
+happy path no longer reports a dead server as up; the sad path reports a live server as down.
+Same run, lesser: 30x `still booting (~95 s)` while the world was up and only registration pending;
+the `--- offending lines ---` dump blamed vanilla noise plus the BENIGN http=400 fallback line while
+the real cause (silent registration hang) appears in no `(E)` line; and the "~95 s measured, 300 s
+generous" comment is wrong -- registration took **13 s** passing, **never** failing, same machine.
+
+=== F2 (MAJOR) merge skew reintroduced T-607's own defect class ===
+`docs/mod/STAGING-SERVER.md:48,276-277`. T-604's anti-stale-build detector quotes the current build as
+printing `… 18 application(s) IsComplete=1 — spawn open`. **T-605 rewrote that Print**
+(`TBD_SpawnManager.c:1143`); merged main prints `… 18 application(s), 0 unplayable, 2 with a shortfall
+— spawn open`. T-604 merged first and did not own the file T-605 changed. So the detector now tells an
+operator on the CORRECT build that their expected string is missing. `PLAYTEST_RUNBOOK.md` carries the
+new string, so the two docs disagree.
+
+=== F3 (MODERATE, pre-existing root) §2.5A's own commands return FAIL ===
+`docs/platform/PLAYTEST_RUNBOOK.md:349-388`. Both solo pre-flight boots end `WORLD BOOT: FAIL` --
+`validator warnings rose: 5 > baseline 0 for msn_8f3a2c` (4 for slot-loadout-coverage), the
+unconsumed-key family (`environment`, `settings`, `layers`, `factions.tickets`, `orbat.roles.radio`).
+Validator and `.world-boot-warning-baseline` BOTH predate the wave base -- pre-existing. T-605 refused
+to widen the baseline; correct, that would rubber-stamp someone else's regression. But §2.1 P2 teaches
+"FAIL -> do not proceed", so the operator stops at his highest-value solo step. NOTE the baseline is
+111 lines of `<mission-id> <budget>`; the earlier `:127-131` citation was wrong.
+
+=== F5 (MINOR, session-costing) two flow traps ===
+`PLAYTEST_RUNBOOK.md:206` gives the first boot as `--admin=<your-identityId>` -- but the identityId is
+only discoverable at S3 (`:560-573`) from the log of a server you already joined. Chicken-and-egg on
+the first command; the script tolerates omission, the runbook never says to omit.
+And S3's "restart with it": run the new command before Ctrl-C'ing the old and `:273`'s `rm -f
+"$PIDFILE"` orphans the running group (the old instance then reads no pidfile and exits "server
+exited" while alive); the new boot dies on the port. No lock, fixed run dir.
+
+missing=0
+"""
 priority = 1
+main_goal = "Fix kill_run orphan path; reconcile runbook and detector strings."
+context = [
+    "Wave 76 verifier: runbook would not survive real session.",
+    "FAILED path exits 1 while engine holds ports 2001 17777.",
+    "T-605 spawn Print rewrite broke T-604 anti-stale detector.",
+]
+requirement = [
+    "kill_run must terminate engine during world load failure.",
+    "Sync STAGING-SERVER and PLAYTEST_RUNBOOK spawn-open strings.",
+    "Fix runbook admin identityId chicken-and-egg and S3 restart.",
+]
+current_state = [
+    "hostrun kill -0 probe false-positive skips kill -9 escalation.",
+    "§2.5A solo boots fail validator warnings over baseline zero.",
+    "S3 restart before Ctrl-C orphans pidfile and port.",
+]
+approach = [
+    "Escalate kill when TERM ignored during registration hang.",
+    "Update anti-stale detector for T-605 spawn summary string.",
+]
+verify = [
+    "Script failure leaves no stray ArmaReforgerServer on 2001.",
+    "STAGING-SERVER and PLAYTEST_RUNBOOK agree on spawn-open grep.",
+]
+citations = [
+    "wave 76 verifier F1 F2",
+    "kill_run hostrun probe gap",
+    "T-605 spawn Print rewrite",
+]
 shipped_at = "efc3851c"
 created_at = "2026-07-31T19:52:08Z"
 completed_at = "2026-07-31T19:59:59Z"
@@ -18,52 +96,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = [
-    """FOUND by wave 76's adversarial verifier (Fable 5), whose verdict on the runbook was: **"NO, would not""",
-    'survive a real session."** BEING FIXED IN-WAVE -- this row records the diagnosis.',
-    "",
-    "=== F1 (MAJOR) the FAILED path exits leaving the server running ===",
-    "`scripts/mod/run-playtest-server.sh:280-290` (`kill_run`), `:321-348`.",
-    "MEASURED once: script printed `FAILED: the server never registered a backend room.`, exited 1, engine",
-    "still alive on 2001. Killed by hand afterwards: `kill -TERM -- -3870163` -> `KILLED-STRAY`.",
-    "Mechanism: the engine honours TERM at steady state but IGNORED it during world load, which is when",
-    "`kill_run` fired; escalation then failed silently because each aliveness probe is a separate",
-    "host-bridge process whose **failure is indistinguishable from process death** --",
-    "`hostrun kill -0 ... || return 0` returns as if gone, skipping `kill -9` (itself `|| true`).",
-    "Consequence chain: orphan holds 2001/17777 -> retry hits `Unable to start replication` -> retry's",
-    '`rm -f "$PIDFILE"` (`:273`) destroys the only handle (kill-by-name deliberately unused, `:277-279`).',
-    "**This is the signature defect surviving in the failure branch of the script written to kill it:** the",
-    "happy path no longer reports a dead server as up; the sad path reports a live server as down.",
-    "Same run, lesser: 30x `still booting (~95 s)` while the world was up and only registration pending;",
-    "the `--- offending lines ---` dump blamed vanilla noise plus the BENIGN http=400 fallback line while",
-    'the real cause (silent registration hang) appears in no `(E)` line; and the "~95 s measured, 300 s',
-    'generous" comment is wrong -- registration took **13 s** passing, **never** failing, same machine.',
-    "",
-    "=== F2 (MAJOR) merge skew reintroduced T-607's own defect class ===",
-    "`docs/mod/STAGING-SERVER.md:48,276-277`. T-604's anti-stale-build detector quotes the current build as",
-    "printing `… 18 application(s) IsComplete=1 — spawn open`. **T-605 rewrote that Print**",
-    "(`TBD_SpawnManager.c:1143`); merged main prints `… 18 application(s), 0 unplayable, 2 with a shortfall",
-    "— spawn open`. T-604 merged first and did not own the file T-605 changed. So the detector now tells an",
-    "operator on the CORRECT build that their expected string is missing. `PLAYTEST_RUNBOOK.md` carries the",
-    "new string, so the two docs disagree.",
-    "",
-    "=== F3 (MODERATE, pre-existing root) §2.5A's own commands return FAIL ===",
-    "`docs/platform/PLAYTEST_RUNBOOK.md:349-388`. Both solo pre-flight boots end `WORLD BOOT: FAIL` --",
-    "`validator warnings rose: 5 > baseline 0 for msn_8f3a2c` (4 for slot-loadout-coverage), the",
-    "unconsumed-key family (`environment`, `settings`, `layers`, `factions.tickets`, `orbat.roles.radio`).",
-    "Validator and `.world-boot-warning-baseline` BOTH predate the wave base -- pre-existing. T-605 refused",
-    "to widen the baseline; correct, that would rubber-stamp someone else's regression. But §2.1 P2 teaches",
-    '"FAIL -> do not proceed", so the operator stops at his highest-value solo step. NOTE the baseline is',
-    "111 lines of `<mission-id> <budget>`; the earlier `:127-131` citation was wrong.",
-    "",
-    "=== F5 (MINOR, session-costing) two flow traps ===",
-    "`PLAYTEST_RUNBOOK.md:206` gives the first boot as `--admin=<your-identityId>` -- but the identityId is",
-    "only discoverable at S3 (`:560-573`) from the log of a server you already joined. Chicken-and-egg on",
-    "the first command; the script tolerates omission, the runbook never says to omit.",
-    """And S3's "restart with it": run the new command before Ctrl-C'ing the old and `:273`'s `rm -f""",
-    '"$PIDFILE"` orphans the running group (the old instance then reads no pidfile and exits "server',
-    'exited" while alive); the new boot dies on the port. No lock, fixed run dir.',
-]
 
 [scope]
 domain = "repo"

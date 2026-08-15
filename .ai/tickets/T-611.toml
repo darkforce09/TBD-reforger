@@ -1,12 +1,82 @@
 id = "T-611"
 kind = "work"
-title = "verify-citations checks only .c files in a Rust repo, and prints a reassuring total while doing it"
+title = "Fix verify-citations .c-only scan blind spots"
 summary = "verify-citations checks only .c files in a Rust repo, and prints a reassuring total while doing it"
 class = "bug"
 status = "shipped"
 order = 3582
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by T-610 (wave 77) while fixing the citations the gate could not see. The ticket assumed the
+gate simply "did not cover bare file.c:NNN forms in prose." The real scope is larger.
+
+=== WHAT IT ACTUALLY CHECKS ===
+`verify-citations` matches only `@contract <name>.schema.json`, in extensions `.go/.ts/.tsx/.c/.mjs/.js`,
+under scan roots `apps/` and `packages/`. Consequences, all measured:
+- **`docs/` is never read.** `PLAYTEST_RUNBOOK.md`'s ~19 stale citations were invisible by construction
+  -- the gate was never going to catch them, in any form.
+- **`rs` is not in `CODE_EXTS`, and `crates/` is not a scan root.** So **16 `@contract` tags in
+  `apps/**/*.rs` and 2 in `crates/` are unverified.**
+- **All 41 citations it does check live in `.c` files** -- in a repo that went **Go -> Rust at T-145**
+  and **React -> Leptos at T-159.29.3**. The verifier still reflects the pre-rewrite codebase.
+
+And it reports:
+    Checked 41 @contract citation(s)
+    All @contract citations resolve.
+**The number is true and the confidence it creates is false** -- the signature defect of this
+codebase, in the tool whose entire job is checking that claims match reality.
+
+=== WHY IT MATTERS BEYOND TIDINESS ===
+This is the third instance in three waves of a check that passes because it is looking at the wrong
+thing: T-607 (staging validated a stale Workshop build, and its pass criteria were that build's
+strings), T-606 (a health grep that matches only an ERROR string), and now this. Each one produced a
+green that a human reasonably trusted.
+
+=== FIX ===
+1. Add `rs` to `CODE_EXTS` and `crates/` to the scan roots; expect the 18 currently-unverified tags to
+   need resolution.
+2. Decide whether prose citations in `docs/` are in scope. T-610 chose the cheaper cure -- cite stable
+   **symbol names** rather than line numbers, which does not rot and needs no gate. If that convention
+   holds, the gate does not need to read `docs/` at all; write the convention down instead.
+3. Make the summary line state its own scope: "Checked 41 @contract citation(s) in .c/.ts under
+   apps/, packages/" is honest; "All @contract citations resolve" is not.
+
+Owner note: `Makefile` + the xtask verifier. T-610 owned neither and correctly reported instead of
+building.
+
+missing=0"""
 priority = 2
+main_goal = "Fix verify-citations to scan rs and crates; honest scope summary line."
+context = [
+    "Found by T-610 wave 77; gate assumed bare file.c:NNN gap only.",
+    "Third false-green instance: T-607 staging, T-606 health grep, now citations.",
+]
+requirement = [
+    "Add rs to CODE_EXTS and crates/ to scan roots; resolve 18 unverified tags.",
+    "Decide docs/ prose cites scope per T-610 symbol-name convention.",
+    "Summary line must state scope honestly; not All citations resolve globally.",
+]
+current_state = [
+    "verify-citations reads only apps/ packages/ .go/.ts/.tsx/.c/.mjs/.js.",
+    "docs/ never read; sixteen rs tags in apps and two in crates unverified.",
+    "All 41 checked citations live in .c files in post-T-145 Rust repo.",
+    "Prints Checked 41 @contract citations; confidence false while scope narrow.",
+]
+approach = [
+    "Extend CODE_EXTS and scan roots per measured unverified tag count.",
+    "Document symbol-name cite convention if docs/ stay out of gate scope.",
+]
+verify = [
+    "verify-citations reports scoped count including rs under apps and crates/.",
+    "Summary line names extensions and roots; not blanket all resolve claim.",
+]
+citations = [
+    "T-610 wave 77 citation gap",
+    "T-607 T-606 false-green family",
+    "CODE_EXTS omits rs crates",
+]
 shipped_at = "6d49f66f"
 created_at = "2026-07-31T21:38:37Z"
 completed_at = "2026-07-31T22:47:06Z"
@@ -18,44 +88,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    "FOUND by T-610 (wave 77) while fixing the citations the gate could not see. The ticket assumed the",
-    'gate simply "did not cover bare file.c:NNN forms in prose." The real scope is larger.',
-    "",
-    "=== WHAT IT ACTUALLY CHECKS ===",
-    "`verify-citations` matches only `@contract <name>.schema.json`, in extensions `.go/.ts/.tsx/.c/.mjs/.js`,",
-    "under scan roots `apps/` and `packages/`. Consequences, all measured:",
-    "- **`docs/` is never read.** `PLAYTEST_RUNBOOK.md`'s ~19 stale citations were invisible by construction",
-    "  -- the gate was never going to catch them, in any form.",
-    "- **`rs` is not in `CODE_EXTS`, and `crates/` is not a scan root.** So **16 `@contract` tags in",
-    "  `apps/**/*.rs` and 2 in `crates/` are unverified.**",
-    "- **All 41 citations it does check live in `.c` files** -- in a repo that went **Go -> Rust at T-145**",
-    "  and **React -> Leptos at T-159.29.3**. The verifier still reflects the pre-rewrite codebase.",
-    "",
-    "And it reports:",
-    "    Checked 41 @contract citation(s)",
-    "    All @contract citations resolve.",
-    "**The number is true and the confidence it creates is false** -- the signature defect of this",
-    "codebase, in the tool whose entire job is checking that claims match reality.",
-    "",
-    "=== WHY IT MATTERS BEYOND TIDINESS ===",
-    "This is the third instance in three waves of a check that passes because it is looking at the wrong",
-    "thing: T-607 (staging validated a stale Workshop build, and its pass criteria were that build's",
-    "strings), T-606 (a health grep that matches only an ERROR string), and now this. Each one produced a",
-    "green that a human reasonably trusted.",
-    "",
-    "=== FIX ===",
-    "1. Add `rs` to `CODE_EXTS` and `crates/` to the scan roots; expect the 18 currently-unverified tags to",
-    "   need resolution.",
-    "2. Decide whether prose citations in `docs/` are in scope. T-610 chose the cheaper cure -- cite stable",
-    "   **symbol names** rather than line numbers, which does not rot and needs no gate. If that convention",
-    "   holds, the gate does not need to read `docs/` at all; write the convention down instead.",
-    '3. Make the summary line state its own scope: "Checked 41 @contract citation(s) in .c/.ts under',
-    '   apps/, packages/" is honest; "All @contract citations resolve" is not.',
-    "",
-    "Owner note: `Makefile` + the xtask verifier. T-610 owned neither and correctly reported instead of",
-    "building.",
-]
 owns = [
     "Makefile",
     "xtask/src",

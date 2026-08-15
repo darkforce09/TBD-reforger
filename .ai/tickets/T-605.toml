@@ -1,13 +1,71 @@
 id = "T-605"
 kind = "work"
-title = "A single DEGRADED cargo row hard-gates the LOBBY for everyone, and that gate has never run against a loadout mission"
+title = "One degraded cargo bricks entire LOBBY"
 summary = "A single DEGRADED cargo row hard-gates the LOBBY for everyone, and that gate has never run against a loadout mission"
 class = "bug"
 status = "shipped"
 order = 3522
 executor = "claude-code"
-notes = "needs-operator: frozen unmappable Scope. "
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND while writing `docs/platform/PLAYTEST_RUNBOOK.md` (2026-07-31). Second playtest blocker.
+
+`IsComplete()` = `m_aFailures.IsEmpty() && m_aDegraded.IsEmpty()` (`TBD_LoadoutEquipHelper.c:209-212`).
+T-541 turned that into a **hard gate at the spawn boundary** (`TBD_SpawnManager.c:1076`, `:1600`): if
+it returns false, `m_bSlotBodiesMaterialized` stays false and **NOBODY leaves LOADING** -- not just
+the player whose loadout degraded. One bad cargo row bricks the session for every client.
+
+**That gate has never executed against a loadout-carrying mission.** `wave.sh:132` boots only
+`bridgehead-at-levie`, which has **0 gear and 0 cargo**, so every green boot to date has taken the
+trivially-complete path. The first real exercise will be the playtest itself, with a second person
+waiting.
+
+Compounding it, T-504 (shipped wave 75) establishes that the Arsenal **warns but does not refuse** on
+cargo targeting an unworn container -- deliberately and correctly, because
+`TBD_LoadoutEquipHelper.c:407-408` retains the kit garment so "picks no vest" != "no vest worn". So an
+author CAN save a loadout that the mod will later mark DEGRADED, and the authoring side is the wrong
+place to stop it. The spawn side treating degraded-for-one as fatal-for-all is the defect.
+
+REPRO: author a mission with one slot whose cargo targets an unworn container; compile it; boot with
+`world-boot.sh --compiled=<MID>`; observe LOADING never clears for any client.
+
+FIX (design call, not obvious): degrade that ONE player's loadout and let the session start, log it
+loudly, and surface it to the admin -- rather than refusing the world. Whatever is chosen, run it
+against a loadout-carrying mission in the gate, which no current gate step does.
+
+missing=0
+"""
 priority = 0
+main_goal = "Stop one DEGRADED cargo row from hard-gating whole LOBBY."
+context = [
+    "IsComplete empty failures and degraded at spawn boundary.",
+    "wave.sh boots bridgehead-at-levie with zero gear cargo.",
+    "T-504 warns but does not refuse unworn container cargo.",
+]
+requirement = [
+    "Degrade one player loadout; let session start for all.",
+    "Log loudly and surface degraded cargo to admin.",
+    "Gate step must boot loadout-carrying mission not trivial.",
+]
+current_state = [
+    "TBD_SpawnManager:1076 blocks all clients on degraded cargo.",
+    "First real exercise is playtest with second person waiting.",
+    "Author can save loadout Arsenal marks DEGRADED at spawn.",
+]
+approach = [
+    "Per-player degrade not fatal-for-all at spawn gate.",
+    "Add world-boot gate against loadout-carrying golden mission.",
+]
+verify = [
+    "LOADING clears for other clients when one slot degraded.",
+    "Gate boots slot-loadout-coverage not zero-gear mission.",
+]
+citations = [
+    "TBD_LoadoutEquipHelper IsComplete gate",
+    "T-504 unworn container warn",
+    "bridgehead-at-levie zero cargo",
+]
 shipped_at = "efc3851c"
 created_at = "2026-07-31T18:31:24Z"
 completed_at = "2026-07-31T19:59:59Z"
@@ -18,32 +76,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    "FOUND while writing `docs/platform/PLAYTEST_RUNBOOK.md` (2026-07-31). Second playtest blocker.",
-    "",
-    "`IsComplete()` = `m_aFailures.IsEmpty() && m_aDegraded.IsEmpty()` (`TBD_LoadoutEquipHelper.c:209-212`).",
-    "T-541 turned that into a **hard gate at the spawn boundary** (`TBD_SpawnManager.c:1076`, `:1600`): if",
-    "it returns false, `m_bSlotBodiesMaterialized` stays false and **NOBODY leaves LOADING** -- not just",
-    "the player whose loadout degraded. One bad cargo row bricks the session for every client.",
-    "",
-    "**That gate has never executed against a loadout-carrying mission.** `wave.sh:132` boots only",
-    "`bridgehead-at-levie`, which has **0 gear and 0 cargo**, so every green boot to date has taken the",
-    "trivially-complete path. The first real exercise will be the playtest itself, with a second person",
-    "waiting.",
-    "",
-    "Compounding it, T-504 (shipped wave 75) establishes that the Arsenal **warns but does not refuse** on",
-    "cargo targeting an unworn container -- deliberately and correctly, because",
-    '`TBD_LoadoutEquipHelper.c:407-408` retains the kit garment so "picks no vest" != "no vest worn". So an',
-    "author CAN save a loadout that the mod will later mark DEGRADED, and the authoring side is the wrong",
-    "place to stop it. The spawn side treating degraded-for-one as fatal-for-all is the defect.",
-    "",
-    "REPRO: author a mission with one slot whose cargo targets an unworn container; compile it; boot with",
-    "`world-boot.sh --compiled=<MID>`; observe LOADING never clears for any client.",
-    "",
-    "FIX (design call, not obvious): degrade that ONE player's loadout and let the session start, log it",
-    "loudly, and surface it to the admin -- rather than refusing the world. Whatever is chosen, run it",
-    "against a loadout-carrying mission in the gate, which no current gate step does.",
-]
 owns = [
     "apps/mod/tbd-framework/scripts/Game/TBD/TBD_SpawnManager.c",
     "apps/mod/tbd-framework/scripts/Game/TBD/TBD_LoadoutEquipHelper.c",

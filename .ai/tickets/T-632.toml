@@ -6,9 +6,30 @@ class = "bug"
 status = "cancelled"
 order = 4230
 executor = "claude-code"
-notes = "not factory-dispatchable; no owns, no wave row"
+notes = """
+not factory-dispatchable; no owns, no wave row
+
+--- HEAD migration_legacy (verbatim) ---
+
+CANCELLED 2026-08-01 — ABSORBED BY T-637. Filed from the screenshot pass as its own defect: `FACTIONS VEHICLES ZONES MARKERS MAN...` — the fifth tab runs off the viewport at x~1908 because five tabs do not fit `DOCK_RIGHT_PX = 320.0` (eden_chrome.rs:42); the strip is DockRight :2961 with the four `tab_btn` calls at :3041-3046 (order 0,1,3,2 — Zones deliberately before the Markers stub, comment :3043-3044) and the clipped Manage button at :3049-3056. editor_chrome_direction.md establishes that this is a SYMPTOM of the dock widths, not an independent defect: Eden is 240/240 in all 75 screenshots and fits six cells in 240 px using F-key labels only. The fix is the 240px equalisation, which is T-637. Row kept so the id is not reused and so status sweeps show why it went.
+
+missing=0"""
+main_goal = "Cancelled; absorbed by T-637 equal 240px dock widths."
+context = [
+    "Screenshot pass fifth tab MANAGE clipped at x~1908 viewport.",
+    "SYMPTOM of dock widths per editor_chrome_direction.md; not independent.",
+]
+requirement = ["No work; fix is T-637 240px equalisation for six F-key tabs."]
+current_state = [
+    "Five tabs overflow DOCK_RIGHT_PX 320 at eden_chrome.rs:42.",
+    "Eden 240px fits six cells F-key labels in 75 screenshots.",
+]
+approach = ["Row kept for id preservation; status sweep shows absorption rationale."]
+citations = [
+    "T-637 dock width equalisation",
+    "editor_chrome_direction dock symptom",
+]
 estimated = ["scope"]
-migration_legacy = ["CANCELLED 2026-08-01 — ABSORBED BY T-637. Filed from the screenshot pass as its own defect: `FACTIONS VEHICLES ZONES MARKERS MAN...` — the fifth tab runs off the viewport at x~1908 because five tabs do not fit `DOCK_RIGHT_PX = 320.0` (eden_chrome.rs:42); the strip is DockRight :2961 with the four `tab_btn` calls at :3041-3046 (order 0,1,3,2 — Zones deliberately before the Markers stub, comment :3043-3044) and the clipped Manage button at :3049-3056. editor_chrome_direction.md establishes that this is a SYMPTOM of the dock widths, not an independent defect: Eden is 240/240 in all 75 screenshots and fits six cells in 240 px using F-key labels only. The fix is the 240px equalisation, which is T-637. Row kept so the id is not reused and so status sweeps show why it went."]
 
 [scope]
 domain = "website"

@@ -1,13 +1,71 @@
 id = "T-619"
 kind = "work"
-title = "PAT_ASSIGNED diverged between two sibling scripts that both claim ONE shared definition"
+title = "Broaden PAT_ASSIGNED or source shared log patterns"
 summary = "PAT_ASSIGNED diverged between two sibling scripts that both claim ONE shared definition"
 class = "bug"
 status = "shipped"
 order = 3662
 executor = "claude-code"
-notes = "needs-operator: frozen unmappable Scope. "
+notes = '''
+needs-operator: frozen unmappable Scope.
+
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by wave 78's adversarial verifier -- the cross-slice class that wave 77 also shipped (T-604's
+detector quoted a Print T-605 reworded).
+
+`scripts/mod/mcp-wb-logs.sh:44` states: *"The check vocabulary — shared with remote-log-grep.sh.
+**ONE definition per pattern**."* Five of the six shared patterns match. `PAT_ASSIGNED` does not:
+
+    mcp-wb-logs.sh:57   '\[TBD\] SpawnManager: assigned slot'                          # flat only
+    remote-log-grep.sh:136 '\[TBD\]\[Spawn\].*assigned|\[TBD\] SpawnManager: assigned'  # both formats
+
+They are **not sourced from a common lib** -- the "one definition" is a claim, not a mechanism.
+T-614 broadened the sibling THIS WAVE, with the reasoning that `TBD_SpawnManager.c` is 70/74 tagged
+and `:675` is a flat straggler, so *"the reword is the direction the file is already travelling."*
+
+**When `:675` moves to `[TBD][Spawn]`, `mcp-wb-logs.sh` reports PARTIAL over a boot where a player
+really was seated** -- measured:
+
+    $ bash scripts/mod/mcp-wb-logs.sh --file tagged_seat.log   # player WAS seated (tagged format)
+      exit=2  (PARTIAL: slot bodies built; no player has deployed yet.)
+
+That is the latent false-amber T-614 inoculated its own file against, and a partial regression of the
+inversion T-612 had just fixed in this same file.
+
+FIX: broaden `mcp-wb-logs.sh:57` to match its sibling -- **or better, make the claim true** by
+extracting the six shared patterns into one sourced file (`scripts/mod/lib/` already exists;
+`gate-grep.sh` lives there from T-556). A comment asserting a shared definition, over two divergent
+copies, is the signature defect in miniature: it reports agreement it never checked.
+
+missing=0'''
 priority = 3
+main_goal = "Align mcp-wb-logs PAT_ASSIGNED with remote-log-grep sibling."
+context = [
+    "Wave 78 verifier; cross-slice class wave 77 also shipped.",
+    "mcp-wb-logs claims one definition; copies diverge.",
+]
+requirement = [
+    "Broaden mcp-wb-logs:57 to match remote-log-grep:136 tagged+flat.",
+    "Or extract six shared patterns into scripts/mod/lib/.",
+]
+current_state = [
+    "PAT_ASSIGNED flat-only in mcp-wb-logs; sibling matches both formats.",
+    "tagged_seat.log exits 2 PARTIAL though player seated.",
+]
+approach = [
+    "Reuse gate-grep.sh sourced lib pattern from T-556.",
+    "Make one-definition claim true, not comment-only.",
+]
+verify = [
+    "mcp-wb-logs --file tagged_seat.log no false PARTIAL on seated boot.",
+    "Both scripts share one sourced PAT_ASSIGNED definition.",
+]
+citations = [
+    "wave 78 verifier cross-slice",
+    "T-614 broadened sibling",
+    "T-612 inversion fix",
+]
 shipped_at = "3555e193"
 created_at = "2026-07-31T23:34:49Z"
 completed_at = "2026-07-31T23:34:49Z"
@@ -18,34 +76,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 1 commit subject(s)"
-migration_legacy = [
-    "FOUND by wave 78's adversarial verifier -- the cross-slice class that wave 77 also shipped (T-604's",
-    "detector quoted a Print T-605 reworded).",
-    "",
-    '`scripts/mod/mcp-wb-logs.sh:44` states: *"The check vocabulary — shared with remote-log-grep.sh.',
-    '**ONE definition per pattern**."* Five of the six shared patterns match. `PAT_ASSIGNED` does not:',
-    "",
-    '''    mcp-wb-logs.sh:57   '\[TBD\] SpawnManager: assigned slot'                          # flat only''',
-    '''    remote-log-grep.sh:136 '\[TBD\]\[Spawn\].*assigned|\[TBD\] SpawnManager: assigned'  # both formats''',
-    "",
-    'They are **not sourced from a common lib** -- the "one definition" is a claim, not a mechanism.',
-    "T-614 broadened the sibling THIS WAVE, with the reasoning that `TBD_SpawnManager.c` is 70/74 tagged",
-    'and `:675` is a flat straggler, so *"the reword is the direction the file is already travelling."*',
-    "",
-    "**When `:675` moves to `[TBD][Spawn]`, `mcp-wb-logs.sh` reports PARTIAL over a boot where a player",
-    "really was seated** -- measured:",
-    "",
-    "    $ bash scripts/mod/mcp-wb-logs.sh --file tagged_seat.log   # player WAS seated (tagged format)",
-    "      exit=2  (PARTIAL: slot bodies built; no player has deployed yet.)",
-    "",
-    "That is the latent false-amber T-614 inoculated its own file against, and a partial regression of the",
-    "inversion T-612 had just fixed in this same file.",
-    "",
-    "FIX: broaden `mcp-wb-logs.sh:57` to match its sibling -- **or better, make the claim true** by",
-    "extracting the six shared patterns into one sourced file (`scripts/mod/lib/` already exists;",
-    "`gate-grep.sh` lives there from T-556). A comment asserting a shared definition, over two divergent",
-    "copies, is the signature defect in miniature: it reports agreement it never checked.",
-]
 
 [scope]
 domain = "repo"
