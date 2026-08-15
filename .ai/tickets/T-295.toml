@@ -6,8 +6,13 @@ class = "feature"
 status = "idea"
 executor = "claude-code"
 depends_on = ["T-222"]
+main_goal = "No websocket or yrs-sync exists; server POST /versions is bare INSERT with semver-only 409, not edit-since-load concurrency."
+current_state = [
+    "yrs is wired to IndexedDB only; apply_update has two callers.",
+    "No websocket anywhere — axum is built without the ws feature and there is no yrs-sync or awareness dependency.",
+    "The server has no optimistic concurrency: POST /versions is a bare INSERT and the only 409 means you reused a semver, not someone edited since you loaded.",
+]
 estimated = ["scope"]
-migration_legacy = ["yrs is wired to IndexedDB only; apply_update has two callers. No websocket anywhere — axum is built without the ws feature and there is no yrs-sync or awareness dependency. The server has no optimistic concurrency: POST /versions is a bare INSERT and the only 409 means you reused a semver, not someone edited since you loaded."]
 owns = ["apps/website/frontend/src/yrs_persist.rs"]
 
 [scope]

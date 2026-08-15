@@ -1,11 +1,31 @@
 id = "T-309"
 kind = "work"
-title = "Preserve squads through Apply Template — needs a squad level in FactionDoc"
+title = "FactionDoc squad level for Apply Template"
 summary = "Preserve squads through Apply Template — needs a squad level in FactionDoc"
 class = "bug"
 status = "idea"
 executor = "claude-code"
-migration_legacy = ["The real fix T-217 could not make. FactionDoc is flat (roles[] + vehicles[]) with no squad level, and faction-library.schema.json is additionalProperties:false with required [side,name,roles,vehicles]; dto.rs:386 mirrors it flat. So save-as-template followed by Apply cannot round-trip N squads — T-217 made it refuse loudly instead of collapsing silently, which is correct but is not the feature. Needs: a squad level in faction-library.schema.json + FactionDoc, then BOTH sides of editor_ops — orbat_apply_faction and the flattening faction_doc_from_side_core. Until then, Apply is single-squad-only by contract."]
+notes = "The real fix T-217 could not make. FactionDoc is flat (roles[] + vehicles[]) with no squad level, and faction-library.schema.json is additionalProperties:false with required [side,name,roles,vehicles]; dto.rs:386 mirrors it flat. So save-as-template followed by Apply cannot round-trip N squads — T-217 made it refuse loudly instead of collapsing silently, which is correct but is not the feature. Needs: a squad level in faction-library.schema.json + FactionDoc, then BOTH sides of editor_ops — orbat_apply_faction and the flattening faction_doc_from_side_core. Until then, Apply is single-squad-only by contract."
+main_goal = "Add a squad level to faction-library.schema.json and FactionDoc so save-as-template followed by Apply round-trips N squads."
+context = ["The real fix T-217 could not make."]
+requirement = [
+    "Needs: a squad level in faction-library.schema.json + FactionDoc,",
+    "then BOTH sides of editor_ops — orbat_apply_faction and the flattening faction_doc_from_side_core.",
+]
+current_state = [
+    "FactionDoc is flat (roles[] + vehicles[]) with no squad level,",
+    "and faction-library.schema.json is additionalProperties:false with required [side,name,roles,vehicles]; dto.rs:386 mirrors it flat.",
+    "So save-as-template followed by Apply cannot round-trip N squads —",
+    "T-217 made it refuse loudly instead of collapsing silently, which is correct but is not the feature.",
+    "Until then, Apply is single-squad-only by contract.",
+]
+citations = [
+    "T-217 refuse loudly",
+    "faction-library.schema.json",
+    "dto.rs:386 FactionDoc",
+    "orbat_apply_faction",
+    "faction_doc_from_side_core",
+]
 
 [scope]
 domain = "repo"

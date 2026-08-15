@@ -1,12 +1,29 @@
 id = "T-302"
 kind = "work"
-title = "T-182's weapon equip is compiled and reasoned but never observed in game"
+title = "T-182 weapon equip unverified in game"
 summary = "T-182's weapon equip is compiled and reasoned but never observed in game"
 class = "chore"
 status = "idea"
 executor = "claude-code"
+main_goal = "Slot-indexed weapon equip compiles but no weapon has been seen landing in slot 1 on a live body."
+context = ["T-182 implemented slot-indexed weapon equip using CanInsertItemInStorage/TryInsertItemInStorage with a CanReplaceItem/TryReplaceItem fallback, deliberately NOT WeaponSlotComponent.SetWeapon (no vanilla script calls it, so its inventory/replication bookkeeping is unproven)."]
+requirement = ["Boot a mission with a four-weapon loadout and confirm all four are carried and none replaces another."]
+current_state = [
+    "NONE of it has been observed on a live body — no weapon has been seen landing in slot 1.",
+    "All of that compiles and passes the mod gate.",
+]
+approach = [
+    "The reasoning is sound and cites vanilla precedent: SCR_InventoryStorageManagerComponent.EquipWeapon resolves its target from what the character is HOLDING rather than from the loadout, which is exactly the rifle-vs-launcher contention that",
+    "made a blind equip dangerous. It also re-scoped incumbent capture and the worn-verify from 'the weapon in hand' to 'this slot', so four weapon rows cannot all claim the same",
+    "incumbent and race to delete it.",
+]
+verify = ["Boot a mission with a four-weapon loadout and confirm all four are carried and none replaces another."]
+citations = [
+    "T-182",
+    "SCR_InventoryStorageManagerComponent.EquipWeapon",
+    "WeaponSlotComponent.SetWeapon",
+]
 estimated = ["scope"]
-migration_legacy = ["T-182 implemented slot-indexed weapon equip using CanInsertItemInStorage/TryInsertItemInStorage with a CanReplaceItem/TryReplaceItem fallback, deliberately NOT WeaponSlotComponent.SetWeapon (no vanilla script calls it, so its inventory/replication bookkeeping is unproven). The reasoning is sound and cites vanilla precedent: SCR_InventoryStorageManagerComponent.EquipWeapon resolves its target from what the character is HOLDING rather than from the loadout, which is exactly the rifle-vs-launcher contention that made a blind equip dangerous. It also re-scoped incumbent capture and the worn-verify from 'the weapon in hand' to 'this slot', so four weapon rows cannot all claim the same incumbent and race to delete it. All of that compiles and passes the mod gate. NONE of it has been observed on a live body — no weapon has been seen landing in slot 1. Boot a mission with a four-weapon loadout and confirm all four are carried and none replaces another."]
 
 [scope]
 domain = "mod"

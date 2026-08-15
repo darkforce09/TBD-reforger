@@ -6,28 +6,13 @@ class = "audit"
 status = "shipped"
 order = 3070
 executor = "claude-code"
-shipped_at = "c7a3ff78"
-created_at = "2026-07-31T10:09:54Z"
-completed_at = "2026-07-31T15:04:08Z"
-estimated = [
-    "scope",
-    "created_at",
-    "completed_at",
-    "shipped_at",
-    "tokens",
-]
-estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 6 commit subject(s)"
-migration_legacy = [
-    "The only start/stop in the repo is out-of-band bash (deploy-staging.sh:287-289 systemctl restart). The API has no shell-out, no SSH and no container control. Needs an authenticated agent or a token-guarded local socket the API can drive.",
-    "",
+main_goal = "Ship an authenticated deploy agent the API can drive for start/stop/status; T-269 blocked on this transport."
+context = [
+    "The only start/stop in the repo is out-of-band bash (deploy-staging.sh:287-289 systemctl restart).",
     "== WHAT T-269 NEEDS FROM THIS TICKET (added 2026-07-31 after T-269 stopped at this boundary) ==",
-    "T-269 could not build a real RCON transport and proved why rather than guessing: no RCON port is",
-    "bound anywhere (`ss -lntu` shows only :8080/:3000/:5434), `deploy-staging.sh` renders server.config.json",
-    "with NO `rcon` block and `battlEye: false`, the `servers` table is six columns with no rcon port and",
-    "no credential, `config.rs` declares 16 env vars and none are RCON, and traffic runs ONE WAY ONLY --",
-    "the mod POSTs to /api/v1/ingest/* and the API's only outbound client is Discord. It closed the lie",
-    "(503 RCON_NO_TRANSPORT naming this ticket) and left the transport to you.",
-    "",
+]
+requirement = [
+    "Needs an authenticated agent or a token-guarded local socket the API can drive.",
     "THIS TICKET MUST PROVIDE:",
     " - A channel openable from INSIDE the API process -- an authenticated agent on the game host or a",
     "   token-guarded local socket. NOT an SSH shell reachable from a session cookie: T-269 rejected that",
@@ -43,6 +28,31 @@ migration_legacy = [
     "   command sink. Related: `kick` has no target at all -- `RconInput` has no player field and",
     '   `server_control.rs:43` posts bare {"action":"kick"}, so even with a transport it cannot name who.',
 ]
+current_state = [
+    "The API has no shell-out, no SSH and no container control.",
+    "T-269 could not build a real RCON transport and proved why rather than guessing: no RCON port is",
+    "bound anywhere (`ss -lntu` shows only :8080/:3000/:5434), `deploy-staging.sh` renders server.config.json",
+    "with NO `rcon` block and `battlEye: false`, the `servers` table is six columns with no rcon port and",
+    "no credential, `config.rs` declares 16 env vars and none are RCON, and traffic runs ONE WAY ONLY --",
+    "the mod POSTs to /api/v1/ingest/* and the API's only outbound client is Discord. It closed the lie",
+    "(503 RCON_NO_TRANSPORT naming this ticket) and left the transport to you.",
+]
+citations = [
+    "T-269 RCON_NO_TRANSPORT",
+    "503 accepted/rejected/unreachable",
+    "kick bare action",
+]
+shipped_at = "c7a3ff78"
+created_at = "2026-07-31T10:09:54Z"
+completed_at = "2026-07-31T15:04:08Z"
+estimated = [
+    "scope",
+    "created_at",
+    "completed_at",
+    "shipped_at",
+    "tokens",
+]
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 6 commit subject(s)"
 owns = ["scripts/mod/deploy-staging.sh"]
 
 [scope]

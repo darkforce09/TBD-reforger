@@ -6,6 +6,20 @@ class = "chore"
 status = "shipped"
 order = 2297
 executor = "claude-code"
+main_goal = "No gate runs cargo fmt --all over tools/tbd-tools and xtask; 12 files / 32 hunks drifted unformatted on main."
+context = ["tools/tbd-tools and xtask are workspace members (Cargo.toml:8-16) but no gate covers their formatting:"]
+requirement = ["Format them and add an --all check to the workspace gate so it cannot drift again."]
+current_state = [
+    "Makefile:80 wasm-ci scopes to map-engine crates, Makefile:105 rust-fmt cds into apps/website/api, Makefile:284 ci-local-leptos scopes to website-frontend, and ci.yml:55 runs cargo fmt --check under working-directory apps/website/api.",
+    "Nobody runs cargo fmt --all.",
+    "Result: 12 files / 32 hunks are unformatted on main.",
+]
+approach = ["Format the 12 drifted files and add cargo fmt --all --check to the workspace gate."]
+citations = [
+    "Cargo.toml:8-16",
+    "Makefile:80",
+    "ci.yml:55",
+]
 shipped_at = "fa47205c"
 created_at = "2026-07-27T00:18:14Z"
 completed_at = "2026-07-27T00:28:43Z"
@@ -17,7 +31,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = ["tools/tbd-tools and xtask are workspace members (Cargo.toml:8-16) but no gate covers their formatting: Makefile:80 wasm-ci scopes to map-engine crates, Makefile:105 rust-fmt cds into apps/website/api, Makefile:284 ci-local-leptos scopes to website-frontend, and ci.yml:55 runs cargo fmt --check under working-directory apps/website/api. Nobody runs cargo fmt --all. Result: 12 files / 32 hunks are unformatted on main. Format them and add an --all check to the workspace gate so it cannot drift again."]
 owns = [
     "tools/tbd-tools/src",
     "xtask/src",

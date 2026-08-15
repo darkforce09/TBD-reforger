@@ -6,6 +6,107 @@ class = "bug"
 status = "shipped"
 order = 2306
 executor = "claude-code"
+notes = """
+REPRODUCED by T-194 against a populated fixture, not inferred. models/telemetry.rs:102 serializes numeric(5,1) cast to float8; frontend/src/dto.rs:101 deserializes i64. A probe using the DTO verbatim: 'TBD Primary — Everon server_fps: 58.7 -> DROPPED (invalid type: floating point `58.7`, expected i64)'. Both read sites swallow the error — server_intel.rs:150 uses .ok() and sse.rs:80 uses `if let Ok(...)` — so against a COMPLETE, HEALTHY frame the page renders 0/0 players and '—' for uptime, FPS, time and weather, and the SSE stream reports connected while updating nothing. The whole page looks like a dead server. Fix the DTO to f64 (do not round the wire value). NOTE: the R-api golden gate CANNOT catch this — it types /servers as DataEnvelope<Value>, so the round-trip passes while the real DTO fails. Consider typing that fixture properly at the same time.
+
+INDEPENDENTLY CONFIRMED STILL LIVE by T-232 (2026-07-26), which found it from the frontend side and added a dimension the original filing missed:
+
+`sse.rs:80` does `if let Ok(json) = serde_json::from_str::<ServerStatusDto>(...)`, so EVERY LIVE TELEMETRY SSE FRAME SILENTLY FAILS TO DESERIALIZE AND IS DROPPED. Not just the Server Intel page render — the whole realtime stream is inert while reporting connected. T-232 also traced the same root cause to a confident `FPS: 0` on the dashboard card for a healthy server, which it fixed locally; the DTO itself (dto.rs:101 `pub server_fps: i64` against models/telemetry.rs:131 f64 over numeric(5,1)) was outside its ownership and is still wrong.
+
+Two independent agents have now reached this from opposite directions. Fix the DTO to f64 and do NOT round the wire value.
+
+'SHIPPED 2026-07-26. Wire bytes captured off a live stack: `"server_fps":58.7`. Before, that exact frame through the real DTO gave `invalid type: floating point 58.7, expected i64 at line 1 column 121`. After, both the frame and the committed GET__servers.json pass.
+
+BROWSER-VERIFIED before/after on the same build, same stack, same frame — the page really did render a healthy server as dead: players 0 -> 47, max /0 -> /64, uptime — -> 05:30:42, FPS — -> 58.7 (Optimal), simulated time — -> 06:42, conditions — -> overcast, status dot offline-yellow -> success. The row itself loaded in both cases (IP and modpack name present in the DOM), so this was the DTO and not a fetch failure.
+
+ZERO other ServerStatusDto fields mismatched — all ten swept against models/telemetry.rs AND the server_statuses columns. It also REMOVED the `#[serde(flatten)] extra` catch-all: nothing in the SPA ever read it, and leaving it would have let the newly-typed golden pass the day the backend grew a field. That does not loosen the live read (serde ignores unknown fields anyway) — it makes the GATE strict.
+
+THE SWALLOWED ERRORS, decided per site rather than blanket-logged:
+  sse.rs:80 — decode_frame is now pure, returning Rejected{error,payload} instead of None; the loop warns and sets the error signal. `connected` STAYS true because it IS connected — claiming otherwise would be a second lie. The last good status is kept, not cleared. The warn is DEDUPED (first occurrence of each distinct error, then powers of ten) because a schema mismatch fails EVERY frame and a per-frame warn buries its own message in seconds.
+  server_intel.rs:150 — deliberately NOT blanket-logged. `.ok()` was conflating `"status": null` (a server with no telemetry row — the golden's third row is exactly this, so warning would cry wolf on every render) with a PRESENT but unparseable object (a real contract breach). Split: absent silent, present-but-unparseable audited.
+
+A STRUCTURAL INSIGHT WORTH KEEPING: the decode lives in dto.rs, not sse.rs, because `mod sse` is #[cfg(target_arch = "wasm32")] in main.rs — so ANY test module inside it is never compiled by `cargo test`. A frame-decode policy nobody can test is how this defect stayed invisible for a month. Seven new tests now run natively.
+
+THE GOLDEN GATE — the more valuable half, and enumerated rather than eyeballed. Every `api_get::<T>` cross-referenced against its r_api test: SIX goldens were `Value` while a DTO read them live. All six typed. Typing them found TWO MORE latent drifts nobody had hit — EventListItem::percent was f64 over an integer wire (the golden's `37` re-serialised as `37.0`), and OrbatSlot::assigned_to carried skip_serializing_if over a field the backend emits as explicit null.
+
+It also distinguished escape hatches from accurate statements: /announcements, /wiki, /vehicle-database, /modpacks and /admin/audit-logs stay `Value` because they have NO typed consumer, and three of them are not fetched by any page at all. Each test now says so. And the SSE payload had NO FIXTURE OF ANY KIND — the corpus is all GET bodies — so one captured live frame is now pinned as LIVE_SSE_FRAME."""
+main_goal = "Fix ServerStatusDto.server_fps i64 vs numeric(5,1) f64 wire so Server Intel and SSE decode live telemetry frames."
+context = [
+    "REPRODUCED by T-194 against a populated fixture, not inferred.",
+    "INDEPENDENTLY CONFIRMED STILL LIVE by T-232 (2026-07-26), which found it from the frontend side and added a dimension the original filing missed.",
+    "Two independent agents have now reached this from opposite directions.",
+]
+requirement = [
+    "Fix the DTO to f64 (do not round the wire value).",
+    "Consider typing that fixture properly at the same time.",
+]
+current_state = [
+    "models/telemetry.rs:102 serializes numeric(5,1) cast to float8;",
+    "frontend/src/dto.rs:101 deserializes i64.",
+    "A probe using the DTO verbatim: 'TBD Primary — Everon server_fps: 58.7 -> DROPPED (invalid type: floating point `58.7`, expected i64)'.",
+    "Both read sites swallow the error — server_intel.rs:150 uses .ok() and sse.rs:80 uses `if let Ok(...)` —",
+    "so against a COMPLETE, HEALTHY frame the page renders 0/0 players and '—' for uptime, FPS, time and weather,",
+    "and the SSE stream reports connected while updating nothing. The whole page looks like a dead server.",
+    "`sse.rs:80` does `if let Ok(json) = serde_json::from_str::<ServerStatusDto>(...)`,",
+    "so EVERY LIVE TELEMETRY SSE FRAME SILENTLY FAILS TO DESERIALIZE AND IS DROPPED.",
+    "Not just the Server Intel page render — the whole realtime stream is inert while reporting connected.",
+    "T-232 also traced the same root cause to a confident `FPS: 0` on the dashboard card for a healthy server,",
+    "which it fixed locally; the DTO itself (dto.rs:101 `pub server_fps: i64` against models/telemetry.rs:131 f64 over numeric(5,1)) was outside its ownership and is still wrong.",
+    "NOTE: the R-api golden gate CANNOT catch this — it types /servers as DataEnvelope<Value>,",
+    "so the round-trip passes while the real DTO fails.",
+]
+approach = [
+    "Fix the DTO to f64 and do NOT round the wire value.",
+    "It also REMOVED the `#[serde(flatten)] extra` catch-all: nothing in the SPA ever read it,",
+    "and leaving it would have let the newly-typed golden pass the day the backend grew a field.",
+    "That does not loosen the live read (serde ignores unknown fields anyway) — it makes the GATE strict.",
+    "THE SWALLOWED ERRORS, decided per site rather than blanket-logged:",
+    "sse.rs:80 — decode_frame is now pure, returning Rejected{error,payload} instead of None;",
+    "the loop warns and sets the error signal. `connected` STAYS true because it IS connected —",
+    "claiming otherwise would be a second lie. The last good status is kept, not cleared.",
+    "The warn is DEDUPED (first occurrence of each distinct error, then powers of ten)",
+    "because a schema mismatch fails EVERY frame and a per-frame warn buries its own message in seconds.",
+    "server_intel.rs:150 — deliberately NOT blanket-logged.",
+    """.ok() was conflating `"status": null` (a server with no telemetry row — the golden's third row is exactly this,""",
+    "so warning would cry wolf on every render) with a PRESENT but unparseable object (a real contract breach).",
+    "Split: absent silent, present-but-unparseable audited.",
+    "A STRUCTURAL INSIGHT WORTH KEEPING: the decode lives in dto.rs, not sse.rs,",
+    'because `mod sse` is #[cfg(target_arch = "wasm32")] in main.rs —',
+    "so ANY test module inside it is never compiled by `cargo test`.",
+    "A frame-decode policy nobody can test is how this defect stayed invisible for a month. Seven new tests now run natively.",
+    "THE GOLDEN GATE — the more valuable half, and enumerated rather than eyeballed.",
+    "Every `api_get::<T>` cross-referenced against its r_api test: SIX goldens were `Value` while a DTO read them live. All six typed.",
+    "Typing them found TWO MORE latent drifts nobody had hit —",
+    "EventListItem::percent was f64 over an integer wire (the golden's `37` re-serialised as `37.0`),",
+    "and OrbatSlot::assigned_to carried skip_serializing_if over a field the backend emits as explicit null.",
+    "It also distinguished escape hatches from accurate statements:",
+    "/announcements, /wiki, /vehicle-database, /modpacks and /admin/audit-logs stay `Value` because they have NO typed consumer,",
+    "and three of them are not fetched by any page at all. Each test now says so.",
+    "And the SSE payload had NO FIXTURE OF ANY KIND — the corpus is all GET bodies —",
+    "so one captured live frame is now pinned as LIVE_SSE_FRAME.",
+]
+verify = [
+    'SHIPPED 2026-07-26. Wire bytes captured off a live stack: `"server_fps":58.7`.',
+    "Before, that exact frame through the real DTO gave `invalid type: floating point 58.7, expected i64 at line 1 column 121`.",
+    "After, both the frame and the committed GET__servers.json pass.",
+    "BROWSER-VERIFIED before/after on the same build, same stack, same frame —",
+    "the page really did render a healthy server as dead:",
+    "players 0 -> 47, max /0 -> /64, uptime — -> 05:30:42, FPS — -> 58.7 (Optimal),",
+    "simulated time — -> 06:42, conditions — -> overcast, status dot offline-yellow -> success.",
+    "The row itself loaded in both cases (IP and modpack name present in the DOM),",
+    "so this was the DTO and not a fetch failure.",
+    "ZERO other ServerStatusDto fields mismatched — all ten swept against models/telemetry.rs AND the server_statuses columns.",
+]
+citations = [
+    "T-194 fixture",
+    "T-232 frontend",
+    "models/telemetry.rs:102",
+    "dto.rs:101",
+    "GET__servers.json",
+    "LIVE_SSE_FRAME",
+    "EventListItem::percent",
+    "OrbatSlot::assigned_to",
+]
 shipped_at = "cb8a95f5"
 created_at = "2026-07-26T05:22:48Z"
 completed_at = "2026-07-26T10:16:54Z"
@@ -16,31 +117,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = [
-    "REPRODUCED by T-194 against a populated fixture, not inferred. models/telemetry.rs:102 serializes numeric(5,1) cast to float8; frontend/src/dto.rs:101 deserializes i64. A probe using the DTO verbatim: 'TBD Primary — Everon server_fps: 58.7 -> DROPPED (invalid type: floating point `58.7`, expected i64)'. Both read sites swallow the error — server_intel.rs:150 uses .ok() and sse.rs:80 uses `if let Ok(...)` — so against a COMPLETE, HEALTHY frame the page renders 0/0 players and '—' for uptime, FPS, time and weather, and the SSE stream reports connected while updating nothing. The whole page looks like a dead server. Fix the DTO to f64 (do not round the wire value). NOTE: the R-api golden gate CANNOT catch this — it types /servers as DataEnvelope<Value>, so the round-trip passes while the real DTO fails. Consider typing that fixture properly at the same time.",
-    "",
-    "INDEPENDENTLY CONFIRMED STILL LIVE by T-232 (2026-07-26), which found it from the frontend side and added a dimension the original filing missed:",
-    "",
-    "`sse.rs:80` does `if let Ok(json) = serde_json::from_str::<ServerStatusDto>(...)`, so EVERY LIVE TELEMETRY SSE FRAME SILENTLY FAILS TO DESERIALIZE AND IS DROPPED. Not just the Server Intel page render — the whole realtime stream is inert while reporting connected. T-232 also traced the same root cause to a confident `FPS: 0` on the dashboard card for a healthy server, which it fixed locally; the DTO itself (dto.rs:101 `pub server_fps: i64` against models/telemetry.rs:131 f64 over numeric(5,1)) was outside its ownership and is still wrong.",
-    "",
-    "Two independent agents have now reached this from opposite directions. Fix the DTO to f64 and do NOT round the wire value.",
-    "",
-    'SHIPPED 2026-07-26. Wire bytes captured off a live stack: `"server_fps":58.7`. Before, that exact frame through the real DTO gave `invalid type: floating point 58.7, expected i64 at line 1 column 121`. After, both the frame and the committed GET__servers.json pass.',
-    "",
-    "BROWSER-VERIFIED before/after on the same build, same stack, same frame — the page really did render a healthy server as dead: players 0 -> 47, max /0 -> /64, uptime — -> 05:30:42, FPS — -> 58.7 (Optimal), simulated time — -> 06:42, conditions — -> overcast, status dot offline-yellow -> success. The row itself loaded in both cases (IP and modpack name present in the DOM), so this was the DTO and not a fetch failure.",
-    "",
-    "ZERO other ServerStatusDto fields mismatched — all ten swept against models/telemetry.rs AND the server_statuses columns. It also REMOVED the `#[serde(flatten)] extra` catch-all: nothing in the SPA ever read it, and leaving it would have let the newly-typed golden pass the day the backend grew a field. That does not loosen the live read (serde ignores unknown fields anyway) — it makes the GATE strict.",
-    "",
-    "THE SWALLOWED ERRORS, decided per site rather than blanket-logged:",
-    "  sse.rs:80 — decode_frame is now pure, returning Rejected{error,payload} instead of None; the loop warns and sets the error signal. `connected` STAYS true because it IS connected — claiming otherwise would be a second lie. The last good status is kept, not cleared. The warn is DEDUPED (first occurrence of each distinct error, then powers of ten) because a schema mismatch fails EVERY frame and a per-frame warn buries its own message in seconds.",
-    """  server_intel.rs:150 — deliberately NOT blanket-logged. `.ok()` was conflating `"status": null` (a server with no telemetry row — the golden's third row is exactly this, so warning would cry wolf on every render) with a PRESENT but unparseable object (a real contract breach). Split: absent silent, present-but-unparseable audited.""",
-    "",
-    'A STRUCTURAL INSIGHT WORTH KEEPING: the decode lives in dto.rs, not sse.rs, because `mod sse` is #[cfg(target_arch = "wasm32")] in main.rs — so ANY test module inside it is never compiled by `cargo test`. A frame-decode policy nobody can test is how this defect stayed invisible for a month. Seven new tests now run natively.',
-    "",
-    "THE GOLDEN GATE — the more valuable half, and enumerated rather than eyeballed. Every `api_get::<T>` cross-referenced against its r_api test: SIX goldens were `Value` while a DTO read them live. All six typed. Typing them found TWO MORE latent drifts nobody had hit — EventListItem::percent was f64 over an integer wire (the golden's `37` re-serialised as `37.0`), and OrbatSlot::assigned_to carried skip_serializing_if over a field the backend emits as explicit null.",
-    "",
-    "It also distinguished escape hatches from accurate statements: /announcements, /wiki, /vehicle-database, /modpacks and /admin/audit-logs stay `Value` because they have NO typed consumer, and three of them are not fetched by any page at all. Each test now says so. And the SSE payload had NO FIXTURE OF ANY KIND — the corpus is all GET bodies — so one captured live frame is now pinned as LIVE_SSE_FRAME.",
-]
 owns = [
     "apps/website/frontend/src/dto.rs",
     "apps/website/frontend/src/sse.rs",

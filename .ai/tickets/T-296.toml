@@ -6,6 +6,20 @@ class = "feature"
 status = "shipped"
 order = 2296
 executor = "claude-code"
+main_goal = "ResultsReporter banner and log lines still claim identity linking is unimplemented though T-181.35 shipped TBD_IdentityLink.c and the #tbd link command exists."
+context = ["T-181.35 landed TBD_IdentityLink.c (780 lines) at 17:46 on 2026-07-25 and the command exists."]
+requirement = ["Correct all three sites to describe what the results POST actually does today."]
+current_state = [
+    "TBD_ResultsReporter.c:23, :28-29 and :422-423 still state that identity linking is unimplemented and that 'there is no #tbd link command'.",
+    "The :422-423 line prints once per round into the operator log, so it actively misleads whoever reads the round output.",
+]
+approach = ["Correct all three TBD_ResultsReporter.c sites to describe what the results POST actually does today."]
+verify = ["scripts/mod/verify-t296-results-reporter-identity-comments.sh"]
+citations = [
+    "T-181.35",
+    "TBD_ResultsReporter.c:23",
+    "TBD_ResultsReporter.c:422-423",
+]
 shipped_at = "486d35be"
 created_at = "2026-07-27T00:14:48Z"
 completed_at = "2026-07-27T00:15:05Z"
@@ -17,7 +31,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["TBD_ResultsReporter.c:23, :28-29 and :422-423 still state that identity linking is unimplemented and that 'there is no #tbd link command'. T-181.35 landed TBD_IdentityLink.c (780 lines) at 17:46 on 2026-07-25 and the command exists. The :422-423 line prints once per round into the operator log, so it actively misleads whoever reads the round output. Correct all three sites to describe what the results POST actually does today."]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_ResultsReporter.c",
     "scripts/mod/verify-t296-results-reporter-identity-comments.sh",

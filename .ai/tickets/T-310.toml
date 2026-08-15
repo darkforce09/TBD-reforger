@@ -5,7 +5,29 @@ summary = "Arsenal attachments never reach the compiled document"
 class = "chore"
 status = "idea"
 executor = "claude-code"
-migration_legacy = ["T-197 wired attachment edges into the Arsenal UI and they persist in SlotLoadoutV2, but flatten.rs mod_slot_loadout reads only weapon/optic/magazine, and mission.schema.json gear is additionalProperties:false over 13 STRING fields with no place for a list. So an author picks a suppressor, sees it in the picker, sees it counted in the weight readout — and the player spawns without it. This is the exact defect class T-193 deleted two controls for in the same wave. T-197's commit body acknowledged it but filed no ticket, which CLAUDE.md's HARD GATE says is not permission. Needs a schema shape for weapon attachments plus flatten emission plus a mod reader — TBD_LoadoutEquipHelper.c:21-25 already mounts optic/magazine into SCR_WeaponAttachmentsStorageComponent, which is the same storage attachments would use."]
+main_goal = "Emit weapon attachments through flatten.rs and mission.schema.json gear so compiled documents match Arsenal UI picks."
+context = [
+    "T-197 wired attachment edges into the Arsenal UI and they persist in SlotLoadoutV2,",
+    "but flatten.rs mod_slot_loadout reads only reads only weapon/optic/magazine,",
+]
+requirement = [
+    "Needs a schema shape for weapon attachments plus flatten emission plus a mod reader —",
+    "TBD_LoadoutEquipHelper.c:21-25 already mounts optic/magazine into SCR_WeaponAttachmentsStorageComponent,",
+    "which is the same storage attachments would use.",
+]
+current_state = [
+    "mission.schema.json gear is additionalProperties:false over 13 STRING fields with no place for a list.",
+    "So an author picks a suppressor, sees it in the picker, sees it counted in the weight readout — and the player spawns without it.",
+    "This is the exact defect class T-193 deleted two controls for in the same wave.",
+    "T-197's commit body acknowledged it but filed no ticket, which CLAUDE.md's HARD GATE says is not permission.",
+]
+citations = [
+    "T-197 Arsenal UI",
+    "T-193 same wave",
+    "flatten.rs mod_slot_loadout",
+    "mission.schema.json gear",
+    "TBD_LoadoutEquipHelper.c:21-25",
+]
 
 [scope]
 domain = "repo"

@@ -1,12 +1,33 @@
 id = "T-304"
 kind = "work"
-title = "TBD_RegistryScan ReadPhysAttrsPass: weapon weight never read, and 32 rows carry WRONG weights"
+title = "RegistryScan weapon weight never read, 32 wrong"
 summary = "TBD_RegistryScan ReadPhysAttrsPass: weapon weight never read, and 32 rows carry WRONG weights"
 class = "bug"
 status = "idea"
 executor = "claude-code"
+notes = "executor: workbench."
+main_goal = "Weapon weight is never read (0/107 weapons have weight_kg) and 32 rows carry Item_Base.et's generic 0.01kg — worse than absent."
+context = ["Found by T-206 while proving the pak data is readable offline."]
+requirement = ["Do not patch the 32 values by hand while the scanner bug stands; the next export silently reverts them."]
+current_state = [
+    "Two defects in ReadPhysAttrsPass.",
+    "(1) Weapon weight is never read at all: on weapons ItemPhysAttributes hangs off SCR_WeaponAttachmentsStorageComponent, whose name ends in StorageComponent, so the pass sets isStorage=true/isInvItem=false and reads only m_fMaxWeight/MaxCumulativeVolume, never touching",
+    "Attributes.ItemPhysAttributes.",
+    "Rifle_AK74_base.et plainly serializes Weight 3.07 / ItemVolume 1500.",
+    "That is the entire reason weight_kg is present on 0 of 107 weapons.",
+    "(2) `foreach (string cls, array<BaseContainer> bucket : comps)` iterates a map keyed by component CLASS.",
+    "The doc comment claims 'leaf override wins — buckets are most-derived-first', which holds WITHIN a bucket but not ACROSS classes, so the winner is hash order, not derivation depth.",
+    "32 rows consequently carry Item_Base.et's generic Weight 0.01 instead of the real value: Part_M252_Barrel 14.2kg -> 0.01, Part_NSV_Tripod 16kg -> 0.01, Part_2B14_BasePlate 17kg -> 0.01, Radio_R107M 18.5kg -> 0.01, Part_M3_Tripod",
+    "19.96kg -> 0.01.",
+    "Those are WORSE THAN ABSENT — they will silently poison any cargo-budget work.",
+]
+citations = [
+    "T-206",
+    "ReadPhysAttrsPass",
+    "Rifle_AK74_base.et",
+    "Item_Base.et generic 0.01",
+]
 estimated = ["scope"]
-migration_legacy = ["Found by T-206 while proving the pak data is readable offline. Two defects in ReadPhysAttrsPass. (1) Weapon weight is never read at all: on weapons ItemPhysAttributes hangs off SCR_WeaponAttachmentsStorageComponent, whose name ends in StorageComponent, so the pass sets isStorage=true/isInvItem=false and reads only m_fMaxWeight/MaxCumulativeVolume, never touching Attributes.ItemPhysAttributes. Rifle_AK74_base.et plainly serializes Weight 3.07 / ItemVolume 1500. That is the entire reason weight_kg is present on 0 of 107 weapons. (2) `foreach (string cls, array<BaseContainer> bucket : comps)` iterates a map keyed by component CLASS. The doc comment claims 'leaf override wins — buckets are most-derived-first', which holds WITHIN a bucket but not ACROSS classes, so the winner is hash order, not derivation depth. 32 rows consequently carry Item_Base.et's generic Weight 0.01 instead of the real value: Part_M252_Barrel 14.2kg -> 0.01, Part_NSV_Tripod 16kg -> 0.01, Part_2B14_BasePlate 17kg -> 0.01, Radio_R107M 18.5kg -> 0.01, Part_M3_Tripod 19.96kg -> 0.01. Those are WORSE THAN ABSENT — they will silently poison any cargo-budget work. Do not patch the 32 values by hand while the scanner bug stands; the next export silently reverts them. executor: workbench."]
 
 [scope]
 domain = "mod"

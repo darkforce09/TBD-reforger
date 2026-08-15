@@ -5,8 +5,24 @@ summary = "tbd-tools density::corner_partition_identity fails on main"
 class = "bug"
 status = "idea"
 executor = "claude-code"
+main_goal = "corner_partition_identity fails on clean main (401 RHS); CI never tests tbd-tools density because gates scope to enf:: only."
+context = [
+    "This is the density-grid code behind the map-object catalogue (625 TBDD grids, 8m cells), so a broken partition invariant is not cosmetic.",
+    "pairs with T-297 (cargo fmt --all is ungated over the same crate).",
+]
+requirement = ["Fix the test or the code, and add tbd-tools to a gate so it cannot rot again —"]
+current_state = [
+    "`cargo test -p tbd-tools --lib density::` fails on clean main: corner_partition_identity asserts a partition invariant and gets 401 on the right-hand side.",
+    "It is pre-existing and invisible because CI never tests this crate — ci.yml:68 runs website-api and :115 runs website-frontend,",
+    "and the mod wave gate only runs `-p tbd-tools --lib enf::`, which excludes density.",
+]
+verify = ["cargo test -p tbd-tools --lib density::"]
+citations = [
+    "T-297",
+    "ci.yml:68",
+    "ci.yml:115",
+]
 estimated = ["scope"]
-migration_legacy = ["`cargo test -p tbd-tools --lib density::` fails on clean main: corner_partition_identity asserts a partition invariant and gets 401 on the right-hand side. It is pre-existing and invisible because CI never tests this crate — ci.yml:68 runs website-api and :115 runs website-frontend, and the mod wave gate only runs `-p tbd-tools --lib enf::`, which excludes density. This is the density-grid code behind the map-object catalogue (625 TBDD grids, 8m cells), so a broken partition invariant is not cosmetic. Fix the test or the code, and add tbd-tools to a gate so it cannot rot again — pairs with T-297 (cargo fmt --all is ungated over the same crate)."]
 
 [scope]
 domain = "repo"
