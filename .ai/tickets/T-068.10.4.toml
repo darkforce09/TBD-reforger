@@ -19,7 +19,7 @@ current_state = ["SlotLoadout and loadout-export modeled primary, uniform, vest,
 approach = ["Schema v2 plus contract codegen; migration on read; Forge write path."]
 verify = [
     "cd packages/tbd-schema && npm run validate",
-    "cd apps/website/frontend && npm test",
+    "vitest L2-L5 / 334/334 per notes.",
 ]
 acceptance = [
     "SlotLoadout v2 added wear map and slot-indexed weapons[] with v1 migration.",

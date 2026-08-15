@@ -12,7 +12,7 @@ requirement = ["Create/rename/delete squads; drag slots across squads in modal."
 current_state = ["T-071.0 shell only; no squad authoring yet."]
 approach = ["Do not implement separately; authority moves to T-180.1–.9."]
 verify = ["Superseded by T-180; no subject commits on this id."]
-acceptance = ["Squad CRUD and inter-squad moves delivered via T-180 ORBAT Manager slices."]
+acceptance = ["Slice never shipped on this id; superseded by T-180."]
 citations = [
     "Source: t071_orbat_manager_program.md.",
     "Source: SHIPPED_HISTORY T-180.",

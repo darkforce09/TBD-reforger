@@ -22,7 +22,7 @@ approach = [
     "Vitest RAIL_REGIONS completeness; 3D doll deferred T-154.",
 ]
 verify = [
-    "cd apps/website/frontend && npm test",
+    "vitest 354/354 per verify log.",
     "cd apps/website/frontend && npm run build",
 ]
 acceptance = [

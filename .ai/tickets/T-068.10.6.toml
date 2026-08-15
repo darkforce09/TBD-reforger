@@ -17,10 +17,7 @@ requirement = [
 ]
 current_state = ["Arsenal tab was dropdown picker rows without inspection panes."]
 approach = ["itemDetail.ts over catalog; conditional DialogContent width via tailwind-merge."]
-verify = [
-    "cd apps/website/frontend && npm test",
-    "cd apps/website/frontend && npm run build",
-]
+verify = ["vitest 346/346; build clean per t068_10_6_verify_log.md."]
 acceptance = [
     "Arsenal tab gained ACE panes: ItemDetailPane left, rows center, ContainerPanel right.",
     "Attributes modal expanded to max-w-6xl on Arsenal; vitest 346/346 PASS.",

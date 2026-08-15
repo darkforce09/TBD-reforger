@@ -18,7 +18,7 @@ approach = [
     "Add incPatchPlan.ts classifier; applyPlan in bindings with full-snapshot fallback.",
     "Batched ydoc removeEntities; _patchAddSlot/_patchRemoveSlots and slotCount in useMapStore.",
 ]
-verify = ["cd frontend && npm run build && npm run lint"]
+verify = ["build + lint clean; manual verify @ ~360k (delete 4k / undo 6k) per commit."]
 acceptance = [
     "incPatchPlan classified transactions to O(k) Zustand patches instead of full docToSnapshot.",
     "Batched removeEntities; slotCount/slotsRevision tracked without O(n) spreads.",

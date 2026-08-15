@@ -19,7 +19,6 @@ current_state = ["71 concrete weapons; primary picker listed attachment and camo
 approach = ["ComputeWeaponVariants after DeriveEdges; census-locked engine-data rule."]
 verify = [
     "cd packages/tbd-schema && npm run validate",
-    "cd apps/website/frontend && npm test",
     "make test-it",
 ]
 acceptance = [

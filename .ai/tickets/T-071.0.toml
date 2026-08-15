@@ -12,8 +12,8 @@ requirement = ["YouTube elbow guides; grab cursor on palette; menus above docks 
 current_state = ["Left ORBAT tree duplicated Editor Layers browse path."]
 approach = ["T-177: remove left ORBAT; wire OrbatManagerDialog from top strip."]
 verify = [
-    "cargo xtask mk leptos-gates",
-    "cargo xtask gate doctor",
+    "make leptos-gates",
+    "make gate-doctor",
 ]
 acceptance = [
     "Left dock dropped ORBAT tree; Editor Layers only remained.",

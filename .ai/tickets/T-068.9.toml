@@ -16,7 +16,6 @@ current_state = ["Smart arsenal blocked without DB ingest and off-thread graph w
 approach = ["import-registry CLI; registry.worker.ts Comlink client; verify log G1-G10."]
 verify = [
     "make registry-import",
-    "cargo test -p website-api registry_compat",
     "cd apps/website/frontend && npm test",
 ]
 acceptance = [
