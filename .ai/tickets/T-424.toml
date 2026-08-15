@@ -1,12 +1,52 @@
 id = "T-424"
 kind = "work"
-title = "cargo test --lib <selector> exits 0 when the selector matches zero tests, so 25 pinned checks can silently empty"
+title = "Fix verify-t180 zero-pass selector silence"
 summary = "cargo test --lib <selector> exits 0 when the selector matches zero tests, so 25 pinned checks can silently empty"
 class = "bug"
 status = "shipped"
 order = 3263
 executor = "claude-code"
+notes = '''
+--- HEAD migration_legacy (verbatim) ---
+
+Found by T-216 during wave 5 while restoring `scripts/verify-t180-coherency.sh`, and independently replicated by the wave's adversarial verifier.
+
+  cargo test -p map-engine-core --lib --features doc,mission -- zzz_no_such_test_exists_anywhere
+  # test result: ok. 0 passed; 254 filtered out          rc=0
+
+`verify-t180-coherency.sh` pins 25 such selector invocations. A typo'd or RENAMED test name prints `verify-t180 OK` having run nothing, with no guard anywhere. Same family as everything else this weekend: a check reporting success over an input it never examined.
+
+MEASURED CURRENT STATE: `grep -c 'test result: ok\. 0 passed'` across a full run -> 0, so all 25 selectors match at least one test TODAY. Nothing holds that. A rename of any pinned test silently empties its check and the script still prints ALL PASS.
+
+CURE: a wrapper asserting `passed >= 1` per line. T-216 judged it a third structural change to that file and deliberately left it -- correctly, it belongs here.
+
+CONTEXT: this is the third gate-integrity defect found in that one script this wave. The other two are FIXED and shipped in wave 5 -- `--features doc` not enabling `mission` (the script had not compiled since T-344, so sections C/D/G/I and the whole frontend block never ran), and three static bans in `if rg ...; then fail; fi` form that printed OK when `rg` was absent from the host. Both now green: `verify-t180: ALL PASS`, rc=0, end to end, verified independently.'''
 priority = 1
+main_goal = "Wrapper asserting passed >= 1 per cargo test --lib selector in verify-t180."
+context = [
+    "Found by T-216 restoring verify-t180-coherency.sh during wave 5.",
+    "Independently replicated by wave adversarial verifier.",
+    "Third gate-integrity defect in that script this wave.",
+]
+requirement = [
+    "Each pinned selector must assert at least one test passed, not just rc=0.",
+    "T-216 left wrapper as third structural change — belongs here.",
+]
+current_state = [
+    "cargo test --lib zzz_no_such_test: ok 0 passed 254 filtered rc=0.",
+    "verify-t180 pins 25 selector invocations; typo prints verify-t180 OK.",
+    "grep test result ok 0 passed across full run -> 0 today; nothing holds.",
+]
+approach = [
+    "Same family: check reporting success over input never examined.",
+    "Other two script defects FIXED in wave 5: --features doc, static rg bans.",
+]
+verify = ["verify-t180: ALL PASS rc=0 end to end after wave 5 fixes."]
+citations = [
+    "T-216 verify-t180 restore",
+    "wave 5 adversarial verifier",
+    "verify-t180-coherency.sh selectors",
+]
 shipped_at = "0ff46f45"
 created_at = "2026-07-27T04:44:55Z"
 completed_at = "2026-07-27T04:50:41Z"
@@ -18,20 +58,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    "Found by T-216 during wave 5 while restoring `scripts/verify-t180-coherency.sh`, and independently replicated by the wave's adversarial verifier.",
-    "",
-    "  cargo test -p map-engine-core --lib --features doc,mission -- zzz_no_such_test_exists_anywhere",
-    "  # test result: ok. 0 passed; 254 filtered out          rc=0",
-    "",
-    "`verify-t180-coherency.sh` pins 25 such selector invocations. A typo'd or RENAMED test name prints `verify-t180 OK` having run nothing, with no guard anywhere. Same family as everything else this weekend: a check reporting success over an input it never examined.",
-    "",
-    '''MEASURED CURRENT STATE: `grep -c 'test result: ok\. 0 passed'` across a full run -> 0, so all 25 selectors match at least one test TODAY. Nothing holds that. A rename of any pinned test silently empties its check and the script still prints ALL PASS.''',
-    "",
-    "CURE: a wrapper asserting `passed >= 1` per line. T-216 judged it a third structural change to that file and deliberately left it -- correctly, it belongs here.",
-    "",
-    "CONTEXT: this is the third gate-integrity defect found in that one script this wave. The other two are FIXED and shipped in wave 5 -- `--features doc` not enabling `mission` (the script had not compiled since T-344, so sections C/D/G/I and the whole frontend block never ran), and three static bans in `if rg ...; then fail; fi` form that printed OK when `rg` was absent from the host. Both now green: `verify-t180: ALL PASS`, rc=0, end to end, verified independently.",
-]
 owns = ["scripts/verify-t180-coherency.sh"]
 
 [scope]

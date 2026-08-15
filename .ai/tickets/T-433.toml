@@ -6,7 +6,35 @@ class = "chore"
 status = "shipped"
 order = 3272
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+MINOR from wave 7 verifier. handlers/cms.rs announcement_body_persist_contract_is_identity_not_ammonia sets stored = authored.to_string() then asserts equality — never calls create/update. Real pin is IT cms_announcement_body + admin_field.
+
+Repro: read the unit test; it cannot fail if handlers regress to sanitize_html.
+
+Cure: delete it or replace with a non-vacuous pin (handler/IT only)."""
 priority = 3
+main_goal = "Replace tautological cms announcement_body_persist_contract unit test with handler or IT pin."
+context = [
+    "MINOR from wave 7 verifier.",
+    "Unit test sets stored = authored.to_string() then asserts equality.",
+    "Never calls create/update — cannot catch handler regressions.",
+]
+requirement = [
+    "Delete tautological unit test or replace with non-vacuous pin.",
+    "Real pin is IT cms_announcement_body plus admin_field.",
+]
+current_state = [
+    "handlers/cms.rs announcement_body_persist_contract_is_identity_not_ammonia is vacuous.",
+    "Repro: read unit test; cannot fail if handlers regress to sanitize_html.",
+]
+approach = ["Cure: handler-level or IT-only pin, not identity assertion."]
+citations = [
+    "handlers/cms.rs contract test",
+    "cms_announcement_body IT",
+    "admin_field IT pin",
+]
 shipped_at = "b6dd9db5"
 created_at = "2026-07-26T21:46:55Z"
 completed_at = "2026-07-27T04:11:14Z"
@@ -18,13 +46,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = [
-    "MINOR from wave 7 verifier. handlers/cms.rs announcement_body_persist_contract_is_identity_not_ammonia sets stored = authored.to_string() then asserts equality — never calls create/update. Real pin is IT cms_announcement_body + admin_field.",
-    "",
-    "Repro: read the unit test; it cannot fail if handlers regress to sanitize_html.",
-    "",
-    "Cure: delete it or replace with a non-vacuous pin (handler/IT only).",
-]
 owns = ["apps/website/api/src/handlers/cms.rs"]
 
 [scope]

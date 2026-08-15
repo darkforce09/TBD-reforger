@@ -6,7 +6,34 @@ class = "feature"
 status = "shipped"
 order = 3270
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+MAJOR residual from T-230 (wave 7). Match ingest now scopes attendance via matches.(event_id, mission_id), but apps/website/api/src/handlers/me.rs BACKFILL_ATTENDANCE (≈59–65) still UPDATEs all event_missions for any event_id found on the player's matches — no mission_id join.
+
+Repro: multi-mission event; play one; identity-link path runs BACKFILL_ATTENDANCE; sibling event_mission registrations flip to attended.
+
+Cure: same JOIN shape as T-230 telemetry ingest."""
 priority = 2
+main_goal = "Scope BACKFILL_ATTENDANCE to played mission_id like T-230 ingest."
+context = [
+    "MAJOR residual from T-230 (wave 7).",
+    "Match ingest scopes attendance via matches.(event_id, mission_id).",
+]
+requirement = [
+    "BACKFILL_ATTENDANCE UPDATEs all event_missions for event_id — no mission_id join.",
+    "Cure: same JOIN shape as T-230 telemetry ingest.",
+]
+current_state = [
+    "Multi-mission event: play one; sibling event_mission registrations flip to attended.",
+    "Identity-link path runs BACKFILL_ATTENDANCE at me.rs ≈59–65.",
+]
+approach = ["Join event_missions on mission_id matching player's match row."]
+citations = [
+    "T-230 telemetry ingest JOIN",
+    "me.rs BACKFILL_ATTENDANCE block",
+    "matches event_id mission_id scope",
+]
 shipped_at = "027c669c"
 created_at = "2026-07-26T21:46:55Z"
 completed_at = "2026-07-27T04:28:59Z"
@@ -18,13 +45,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 7 commit subject(s)"
-migration_legacy = [
-    "MAJOR residual from T-230 (wave 7). Match ingest now scopes attendance via matches.(event_id, mission_id), but apps/website/api/src/handlers/me.rs BACKFILL_ATTENDANCE (≈59–65) still UPDATEs all event_missions for any event_id found on the player's matches — no mission_id join.",
-    "",
-    "Repro: multi-mission event; play one; identity-link path runs BACKFILL_ATTENDANCE; sibling event_mission registrations flip to attended.",
-    "",
-    "Cure: same JOIN shape as T-230 telemetry ingest.",
-]
 owns = ["apps/website/api/src/handlers/me.rs"]
 
 [scope]

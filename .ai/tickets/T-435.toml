@@ -6,7 +6,31 @@ class = "feature"
 status = "shipped"
 order = 3274
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+MINOR from wave 8 verifier on T-201. Everon z_bounds is pinned ([[0,0],[12800,0],…]); arland uses terrain_bounds("arland")→4096² but no flatten-level test asserts that polygon.
+
+Repro: cargo test -p map-engine-core --features mission — no arland z_bounds size assert.
+
+Cure: unit test with terrain=arland expecting 4096² ring."""
 priority = 3
+main_goal = "Pin arland z_bounds 4096² polygon in flatten zone unit tests."
+context = [
+    "MINOR from wave 8 verifier on T-201.",
+    "Everon z_bounds pinned; arland uses terrain_bounds arland to 4096².",
+]
+requirement = ["Unit test with terrain=arland expecting 4096² ring."]
+current_state = [
+    "No flatten-level test asserts arland z_bounds polygon.",
+    "Repro: cargo test -p map-engine-core --features mission — no arland z_bounds assert.",
+]
+approach = ["Cure: flatten.rs unit test pinning arland z_bounds size."]
+citations = [
+    "T-201 wave 8 verifier",
+    "terrain_bounds arland 4096",
+    "flatten.rs z_bounds",
+]
 shipped_at = "af93594f"
 created_at = "2026-07-26T22:05:16Z"
 completed_at = "2026-07-27T04:02:05Z"
@@ -18,13 +42,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 7 commit subject(s)"
-migration_legacy = [
-    'MINOR from wave 8 verifier on T-201. Everon z_bounds is pinned ([[0,0],[12800,0],…]); arland uses terrain_bounds("arland")→4096² but no flatten-level test asserts that polygon.',
-    "",
-    "Repro: cargo test -p map-engine-core --features mission — no arland z_bounds size assert.",
-    "",
-    "Cure: unit test with terrain=arland expecting 4096² ring.",
-]
 owns = ["crates/map-engine-core/src/mission/flatten.rs"]
 
 [scope]

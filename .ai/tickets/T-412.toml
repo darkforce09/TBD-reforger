@@ -1,12 +1,47 @@
 id = "T-412"
 kind = "work"
-title = "GET /api/v1/members cannot return member 21, and list_servers is N+1 over a growing table"
+title = "Members directory caps at twenty; servers N+1"
 summary = "GET /api/v1/members cannot return member 21, and list_servers is N+1 over a growing table"
 class = "bug"
 status = "shipped"
 order = 3233
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Two product-side scaling defects found by T-399's agent during the ratchet sweep. Neither is a test problem; both are live API behaviour.
+
+1. handlers/events.rs:2161 (GET /api/v1/members) -- hard ORDER BY username ASC LIMIT 20 with NO OFFSET PARAMETER AT ALL. The member directory is STRUCTURALLY INCAPABLE of returning member 21. events.rs:275 only asserts is_array(), so nothing is red today and nothing will be: any future 'my user is in the directory' assertion is born broken. This is a product bug wearing a test-ratchet costume.
+2. handlers/servers.rs:99 (list_servers) -- no LIMIT, so misc_integration.rs:333's .find(id) is safe, but it calls server_intel() IN A LOOP, one round trip per row, over a monotonically growing table. MEASURED 63 rows. Runtime creep rather than a correctness fault, flagged because it degrades on the same curve as everything else in T-410.
+
+Note the asymmetry with T-410: those are tests that will fail. These are endpoints that will silently under-serve and never fail anything."""
 priority = 1
+main_goal = "Fix members list LIMIT 20 with no offset; eliminate list_servers N+1 server_intel loop."
+context = [
+    "Two product-side scaling defects from T-399 ratchet sweep.",
+    "Neither is a test problem; both are live API behaviour.",
+    "Asymmetry with T-410: tests fail; these endpoints silently under-serve.",
+]
+requirement = [
+    "GET /api/v1/members must support beyond member 21.",
+    "list_servers must not call server_intel per row in a loop.",
+]
+current_state = [
+    "handlers/events.rs:2161 — ORDER BY username ASC LIMIT 20, no OFFSET.",
+    "events.rs:275 only asserts is_array(); future directory asserts born broken.",
+    "handlers/servers.rs:99 list_servers — no LIMIT; server_intel() per row.",
+    "MEASURED 63 rows; runtime creep on same curve as T-410.",
+]
+approach = [
+    "Product bug wearing a test-ratchet costume on members endpoint.",
+    "misc_integration.rs:333 .find(id) safe today; degradation is monotonic.",
+]
+citations = [
+    "T-399 ratchet sweep",
+    "handlers/events.rs members",
+    "handlers/servers.rs list_servers",
+    "T-410 asymmetry note",
+]
 shipped_at = "755dedf2"
 created_at = "2026-07-27T07:00:12Z"
 completed_at = "2026-07-27T07:18:45Z"
@@ -18,14 +53,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 6 commit subject(s)"
-migration_legacy = [
-    "Two product-side scaling defects found by T-399's agent during the ratchet sweep. Neither is a test problem; both are live API behaviour.",
-    "",
-    "1. handlers/events.rs:2161 (GET /api/v1/members) -- hard ORDER BY username ASC LIMIT 20 with NO OFFSET PARAMETER AT ALL. The member directory is STRUCTURALLY INCAPABLE of returning member 21. events.rs:275 only asserts is_array(), so nothing is red today and nothing will be: any future 'my user is in the directory' assertion is born broken. This is a product bug wearing a test-ratchet costume.",
-    "2. handlers/servers.rs:99 (list_servers) -- no LIMIT, so misc_integration.rs:333's .find(id) is safe, but it calls server_intel() IN A LOOP, one round trip per row, over a monotonically growing table. MEASURED 63 rows. Runtime creep rather than a correctness fault, flagged because it degrades on the same curve as everything else in T-410.",
-    "",
-    "Note the asymmetry with T-410: those are tests that will fail. These are endpoints that will silently under-serve and never fail anything.",
-]
 owns = [
     "apps/website/api/src/handlers/events.rs",
     "apps/website/api/src/handlers/servers.rs",

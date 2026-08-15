@@ -6,7 +6,32 @@ class = "chore"
 status = "shipped"
 order = 3271
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+MINOR from wave 7 verifier on T-219. is_known_editor_payload_top_level does not include payloadExtras; an authored top-level payloadExtras object is parked and re-emitted onto the wire.
+
+Repro: hydrate payload with payloadExtras:{nested:true}; compile re-emits that key. Empty map still omitted.
+
+Cure: treat payloadExtras as reserved internal, or pick a non-colliding storage name."""
 priority = 3
+main_goal = "Reserve or rename payloadExtras so authored wire keys cannot collide."
+context = [
+    "MINOR from wave 7 verifier on T-219.",
+    "is_known_editor_payload_top_level does not include payloadExtras.",
+]
+requirement = ["Treat payloadExtras as reserved internal, or pick non-colliding storage name."]
+current_state = [
+    "Authored top-level payloadExtras parked and re-emitted onto the wire.",
+    "Repro: hydrate payloadExtras:{nested:true}; compile re-emits that key.",
+    "Empty map still omitted.",
+]
+approach = ["Cure: reserved internal name or non-colliding storage rename."]
+citations = [
+    "T-219 wave 7 verifier",
+    "is_known_editor_payload_top_level",
+    "store.rs compile.rs",
+]
 shipped_at = "78a18c8b"
 created_at = "2026-07-27T04:31:19Z"
 completed_at = "2026-07-27T04:36:24Z"
@@ -18,13 +43,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    "MINOR from wave 7 verifier on T-219. is_known_editor_payload_top_level does not include payloadExtras; an authored top-level payloadExtras object is parked and re-emitted onto the wire.",
-    "",
-    "Repro: hydrate payload with payloadExtras:{nested:true}; compile re-emits that key. Empty map still omitted.",
-    "",
-    "Cure: treat payloadExtras as reserved internal, or pick a non-colliding storage name.",
-]
 owns = [
     "crates/map-engine-core/src/doc/store.rs",
     "crates/map-engine-core/src/mission/compile.rs",

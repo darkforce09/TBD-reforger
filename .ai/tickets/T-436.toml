@@ -6,7 +6,36 @@ class = "bug"
 status = "shipped"
 order = 3275
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+In-wave hotfix from wave 9 adversarial verify (M2/M3). deploy-website.sh refused only substring prairielearn (case-sensitive) and did not enforce the documented /home/sam/tbd/ prefix, so a filled deploy.env could dry-run/rsync --delete to arbitrary paths (e.g. /tmp/not-tbd-at-all). PrairieLearn mixed-case paths also slipped through.
+
+Repro before fix: DEPLOY_ENV with TBD_REMOTE_DIR=/tmp/not-tbd-at-all → --dry-run rc=0.
+
+Cure: fail-closed prefix check under /home/sam/tbd/ + case-insensitive prairielearn refuse."""
 priority = 1
+main_goal = "Fail-closed /home/sam/tbd/ prefix plus case-insensitive prairielearn refuse in deploy-website.sh."
+context = [
+    "In-wave hotfix from wave 9 adversarial verify M2/M3.",
+    "deploy-website.sh refused only case-sensitive prairielearn substring.",
+    "Did not enforce documented /home/sam/tbd/ prefix on remote dir.",
+]
+requirement = [
+    "Fail-closed prefix check under /home/sam/tbd/.",
+    "Case-insensitive prairielearn path refuse.",
+]
+current_state = [
+    "Filled deploy.env could dry-run/rsync --delete to arbitrary paths.",
+    "PrairieLearn mixed-case paths slipped through.",
+    "Repro: TBD_REMOTE_DIR=/tmp/not-tbd-at-all — dry-run rc=0 before fix.",
+]
+approach = ["Cure: prefix gate plus case-insensitive prairielearn refuse in deploy-website.sh."]
+citations = [
+    "wave 9 adversarial verify",
+    "deploy-website.sh prefix gate",
+    "deploy.env.example",
+]
 shipped_at = "cbd3fcf2"
 created_at = "2026-07-26T22:30:22Z"
 completed_at = "2026-07-26T22:31:43Z"
@@ -18,13 +47,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    "In-wave hotfix from wave 9 adversarial verify (M2/M3). deploy-website.sh refused only substring prairielearn (case-sensitive) and did not enforce the documented /home/sam/tbd/ prefix, so a filled deploy.env could dry-run/rsync --delete to arbitrary paths (e.g. /tmp/not-tbd-at-all). PrairieLearn mixed-case paths also slipped through.",
-    "",
-    "Repro before fix: DEPLOY_ENV with TBD_REMOTE_DIR=/tmp/not-tbd-at-all → --dry-run rc=0.",
-    "",
-    "Cure: fail-closed prefix check under /home/sam/tbd/ + case-insensitive prairielearn refuse.",
-]
 owns = [
     "scripts/deploy/deploy-website.sh",
     "scripts/deploy/deploy.env.example",

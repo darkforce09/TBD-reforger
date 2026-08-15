@@ -1,12 +1,52 @@
 id = "T-426"
 kind = "work"
-title = "Gate isolation residue: non-.rs compiled inputs escape touch_workspace, and target-gate-* dirs are unreclaimable"
+title = "touch_workspace misses include_str gate dirs"
 summary = "Gate isolation residue: non-.rs compiled inputs escape touch_workspace, and target-gate-* dirs are unreclaimable"
 class = "bug"
 status = "shipped"
 order = 3265
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Two residual items disclosed by T-421, which closed the mtime-freshness BLOCKER. Neither is a regression; both are the edges its fix does not reach.
+
+1. NON-.rs COMPILED INPUTS ARE NOT INVALIDATED. `touch_workspace` touches workspace `.rs` files (measured: 289 across 7 members, 0 of 696 dependency units). It does not touch the non-Rust files that are nonetheless compiled INTO the binaries via `include_str!` — notably `packages/tbd-schema/*.json`. An mtime-preserved edit to one of those could still hand a check step a verdict about content it never read, by exactly the mechanism T-421 closed for `.rs`.
+   Same shape as the parent, narrower blast radius. Cure is to extend the invalidation set to every path reachable by `include_str!`/`include_bytes!`, or to stop relying on mtime for those inputs.
+   NOTE the interaction that makes this less urgent than it looks: since wave 5 the schema files are ALSO validated directly by `gate_schema`, so a corrupted schema is caught by its own step even if a stale check step misses it.
+
+2. `cmd_reclaim` CANNOT RECLAIM ANY GATE TARGET DIR. It sweeps only `/var/tmp/*target*`, `/var/tmp/v2-*`, `/var/tmp/t[0-9]*-probe` and `/var/tmp/t[0-9]*-dist`. The private gate dirs all live at the repo root and are invisible to it:
+     target-gate-api       8.3 GB
+     target-gate-frontend  1.8 GB
+     target-gate-schema    1.8 GB   (new, T-420)
+     target-gate-check     3.0 GB   (new, T-421, after --all-targets clippy)
+   Disk is at 91% (93 GB free) and the private-dir pattern is now the established answer to artifact isolation, so this set will keep growing. `reclaim` reporting '0 MB reclaimed' while 15 GB of gate caches sit at the repo root is itself a mild instance of the house defect -- a tool reporting completeness over a set it never looked at.
+   Deliberate design tension to resolve rather than paper over: these dirs are EXPENSIVE TO REBUILD and being warm is the entire reason they are affordable (T-421 measured cold 23.4s vs warm 9.3s for the slice gate). So the answer is probably an explicit `reclaim --gate-dirs` opt-in, or an age-based sweep, NOT adding them to the default sweep."""
 priority = 2
+main_goal = "Extend invalidation to include_str paths; add explicit gate-dirs reclaim opt-in."
+context = [
+    "Two residuals disclosed by T-421, which closed mtime-freshness BLOCKER.",
+    "Neither regression; edges T-421 fix does not reach.",
+]
+requirement = [
+    "Invalidate every include_str!/include_bytes! path or stop mtime reliance.",
+    "reclaim must offer opt-in or age sweep — not default warm-dir destroy.",
+]
+current_state = [
+    "touch_workspace touches 289 .rs; not packages/tbd-schema/*.json compiled in.",
+    "cmd_reclaim sweeps /var/tmp only; target-gate-* at repo root invisible.",
+    "target-gate-api 8.3G, frontend 1.8G, schema 1.8G, check 3.0G — 15GB total.",
+    "reclaim reports 0 MB while 15 GB gate caches sit at repo root.",
+]
+approach = [
+    "Schema files ALSO validated by gate_schema since wave 5 — less urgent.",
+    "Gate dirs expensive to rebuild: T-421 cold 23.4s vs warm 9.3s slice gate.",
+]
+citations = [
+    "T-421 touch_workspace mtime",
+    "T-420 target-gate-schema",
+    "include_str tbd-schema json",
+]
 shipped_at = "08bfd7d7"
 created_at = "2026-07-26T22:08:18Z"
 completed_at = "2026-07-26T22:13:11Z"
@@ -18,21 +58,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    "Two residual items disclosed by T-421, which closed the mtime-freshness BLOCKER. Neither is a regression; both are the edges its fix does not reach.",
-    "",
-    "1. NON-.rs COMPILED INPUTS ARE NOT INVALIDATED. `touch_workspace` touches workspace `.rs` files (measured: 289 across 7 members, 0 of 696 dependency units). It does not touch the non-Rust files that are nonetheless compiled INTO the binaries via `include_str!` — notably `packages/tbd-schema/*.json`. An mtime-preserved edit to one of those could still hand a check step a verdict about content it never read, by exactly the mechanism T-421 closed for `.rs`.",
-    "   Same shape as the parent, narrower blast radius. Cure is to extend the invalidation set to every path reachable by `include_str!`/`include_bytes!`, or to stop relying on mtime for those inputs.",
-    "   NOTE the interaction that makes this less urgent than it looks: since wave 5 the schema files are ALSO validated directly by `gate_schema`, so a corrupted schema is caught by its own step even if a stale check step misses it.",
-    "",
-    "2. `cmd_reclaim` CANNOT RECLAIM ANY GATE TARGET DIR. It sweeps only `/var/tmp/*target*`, `/var/tmp/v2-*`, `/var/tmp/t[0-9]*-probe` and `/var/tmp/t[0-9]*-dist`. The private gate dirs all live at the repo root and are invisible to it:",
-    "     target-gate-api       8.3 GB",
-    "     target-gate-frontend  1.8 GB",
-    "     target-gate-schema    1.8 GB   (new, T-420)",
-    "     target-gate-check     3.0 GB   (new, T-421, after --all-targets clippy)",
-    "   Disk is at 91% (93 GB free) and the private-dir pattern is now the established answer to artifact isolation, so this set will keep growing. `reclaim` reporting '0 MB reclaimed' while 15 GB of gate caches sit at the repo root is itself a mild instance of the house defect -- a tool reporting completeness over a set it never looked at.",
-    "   Deliberate design tension to resolve rather than paper over: these dirs are EXPENSIVE TO REBUILD and being warm is the entire reason they are affordable (T-421 measured cold 23.4s vs warm 9.3s for the slice gate). So the answer is probably an explicit `reclaim --gate-dirs` opt-in, or an age-based sweep, NOT adding them to the default sweep.",
-]
 owns = ["scripts/platform/wave.sh"]
 
 [scope]

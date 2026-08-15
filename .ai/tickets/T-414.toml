@@ -1,12 +1,44 @@
 id = "T-414"
 kind = "work"
-title = "The approvals page ordering has no unique tiebreaker, and the paged walk permits 1000 round trips"
+title = "Stable approvals paging and tighter walk bound"
 summary = "The approvals page ordering has no unique tiebreaker, and the paged walk permits 1000 round trips"
 class = "bug"
 status = "shipped"
 order = 3235
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Two NITs from wave 3's adversarial verifier. Filed rather than dropped because the first is latent for every future paged assertion.
+
+1. handlers/approvals.rs:~105 -- ORDER BY COALESCE(updated_at, created_at, ...) ASC has NO unique tiebreaker, so LIMIT/OFFSET paging over tied keys is not a stable total order: a row can appear on two pages or none across successive requests. Does NOT affect T-399's fixed test (its target row holds the strictly-largest key, so it is last in every valid ordering) but it is latent for any future paged assertion. Tied rows already exist -- null_tolerance.rs:77 leaves rows that all collapse to the same sentinel. Fix is a trailing ', id ASC'.
+2. apps/website/api/tests/admin_field.rs find_in_approvals -- the offset < 100_000 guard permits 1000 HTTP round trips before failing. Correct but slow to fail; a tighter bound would diagnose faster."""
 priority = 2
+main_goal = "Add unique tiebreaker to approvals ORDER BY; tighten find_in_approvals paged walk bound."
+context = [
+    "Two NITs from wave 3 adversarial verifier.",
+    "First is latent for every future paged assertion.",
+]
+requirement = [
+    "Approvals ORDER BY needs unique tiebreaker for stable LIMIT/OFFSET paging.",
+    "find_in_approvals offset guard should fail faster than 1000 round trips.",
+]
+current_state = [
+    "handlers/approvals.rs:~105 — COALESCE(updated_at, created_at) ASC, no tiebreaker.",
+    "Tied rows exist via null_tolerance.rs:77 sentinel collapse.",
+    "T-399 fixed test unaffected — target row holds strictly-largest key.",
+    "admin_field.rs find_in_approvals — offset < 100_000 permits 1000 HTTP trips.",
+]
+approach = [
+    "Fix is trailing ', id ASC' on approvals ORDER BY.",
+    "Tighter bound on paged walk — correct but slow to fail today.",
+]
+citations = [
+    "T-399 approvals test",
+    "handlers/approvals.rs paging",
+    "null_tolerance.rs tied rows",
+    "admin_field.rs find_in_approvals",
+]
 shipped_at = "f5b58057"
 created_at = "2026-07-27T06:24:53Z"
 completed_at = "2026-07-27T06:38:39Z"
@@ -18,12 +50,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = [
-    "Two NITs from wave 3's adversarial verifier. Filed rather than dropped because the first is latent for every future paged assertion.",
-    "",
-    "1. handlers/approvals.rs:~105 -- ORDER BY COALESCE(updated_at, created_at, ...) ASC has NO unique tiebreaker, so LIMIT/OFFSET paging over tied keys is not a stable total order: a row can appear on two pages or none across successive requests. Does NOT affect T-399's fixed test (its target row holds the strictly-largest key, so it is last in every valid ordering) but it is latent for any future paged assertion. Tied rows already exist -- null_tolerance.rs:77 leaves rows that all collapse to the same sentinel. Fix is a trailing ', id ASC'.",
-    "2. apps/website/api/tests/admin_field.rs find_in_approvals -- the offset < 100_000 guard permits 1000 HTTP round trips before failing. Correct but slow to fail; a tighter bound would diagnose faster.",
-]
 owns = [
     "apps/website/api/src/handlers/approvals.rs",
     "apps/website/api/tests/admin_field.rs",

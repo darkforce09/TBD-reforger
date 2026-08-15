@@ -1,13 +1,61 @@
 id = "T-419"
 kind = "work"
-title = "Six mod comments now assert the schema is open, and four tickets will read them as the contract"
+title = "Mod comments claim open schema; fix headers"
 summary = "Six mod comments now assert the schema is open, and four tickets will read them as the contract"
 class = "bug"
 status = "shipped"
 order = 3244
 executor = "claude-code"
-notes = "needs-operator: frozen unmappable Scope. "
+notes = """
+needs-operator: frozen unmappable Scope.
+
+--- HEAD migration_legacy (verbatim) ---
+
+Filed by wave 4's T-241 agent, which correctly reported rather than fixed (the mod .c files were in its owns but changing mod prose was out of its scope).
+
+T-241 closed zones[].rules to a 16-key vocabulary with additionalProperties:false. Six comments in the mod now assert the opposite -- that the vocabulary is open and additive:
+  apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c:71, :72, :87
+  apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRules.c:5, :6, :47
+Example, verbatim: 'The objective rule vocabulary. Additive and legal under `additionalProperties: true`'.
+
+WHY THIS MATTERS MORE THAN A NORMAL STALE COMMENT: T-241 is a DEPENDENCY ROOT. slice-collisions.py encodes T-201, T-211, T-212 and T-275 -> T-241 precisely so the zones vocabulary is declared ONCE instead of four tickets each inventing one. All four will read these headers as the contract for what they are building on, and the headers now describe a schema that no longer exists. This is the stale-doc trap that costs a whole slice.
+
+Comment-only edit, zero behavioural risk.
+
+ALSO IN THE SAME FILES: TBD_MissionLoader.c:88 documents graceSeconds as 'number >= 0' but the code at :389 also rejects > MAX_GRACE_SECONDS. The header omits the ceiling. T-275-adjacent.
+
+RECORDED DECISION so it is not re-litigated: T-241 deliberately did NOT encode conditional `required` for holdSeconds and targetAlias, though both are effectively mandatory (without them the objective goes inert with an operator-facing reason). Reason: it is a different defect from T-241's, and conditional requires are the shape most likely to collide with T-201/T-211/T-212. Both keys carry the requirement in prose instead. The command center endorsed this. Enforce it when a consumer actually needs it, not before.
+"""
 priority = 2
+main_goal = "Update mod zone-rule comments to match T-241 closed 16-key vocabulary schema."
+context = [
+    "Filed by wave 4 T-241 agent — reported rather than fixed mod prose.",
+    "T-241 closed zones[].rules to 16-key vocabulary with additionalProperties:false.",
+    "Six mod comments assert opposite — vocabulary open and additive.",
+]
+requirement = [
+    "Comment-only edit, zero behavioural risk.",
+    "T-201, T-211, T-212, T-275 depend on T-241 — headers are the contract.",
+    "Stale-doc trap costs a whole slice when four tickets read wrong headers.",
+]
+current_state = [
+    "TBD_MissionLoader.c:71,:72,:87 and TBD_ObjectiveRules.c:5,:6,:47 assert open vocabulary.",
+    "Example: Additive and legal under additionalProperties: true.",
+    "TBD_MissionLoader.c:88 graceSeconds documented number >= 0; code :389 rejects > MAX_GRACE_SECONDS.",
+    "T-241 did NOT encode conditional required for holdSeconds and targetAlias.",
+    "Both keys carry requirement in prose — command center endorsed.",
+]
+approach = [
+    "Fix graceSeconds ceiling in header — T-275-adjacent.",
+    "Enforce conditional required when consumer actually needs it, not before.",
+    "Conditional requires likely to collide with T-201/T-211/T-212.",
+]
+citations = [
+    "T-241 zones vocabulary",
+    "T-201 T-211 T-212",
+    "T-275 graceSeconds ceiling",
+    "slice-collisions dependency root",
+]
 shipped_at = "65b4a56c"
 created_at = "2026-07-27T15:13:37Z"
 completed_at = "2026-07-27T15:18:43Z"
@@ -18,22 +66,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = [
-    "Filed by wave 4's T-241 agent, which correctly reported rather than fixed (the mod .c files were in its owns but changing mod prose was out of its scope).",
-    "",
-    "T-241 closed zones[].rules to a 16-key vocabulary with additionalProperties:false. Six comments in the mod now assert the opposite -- that the vocabulary is open and additive:",
-    "  apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c:71, :72, :87",
-    "  apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRules.c:5, :6, :47",
-    "Example, verbatim: 'The objective rule vocabulary. Additive and legal under `additionalProperties: true`'.",
-    "",
-    "WHY THIS MATTERS MORE THAN A NORMAL STALE COMMENT: T-241 is a DEPENDENCY ROOT. slice-collisions.py encodes T-201, T-211, T-212 and T-275 -> T-241 precisely so the zones vocabulary is declared ONCE instead of four tickets each inventing one. All four will read these headers as the contract for what they are building on, and the headers now describe a schema that no longer exists. This is the stale-doc trap that costs a whole slice.",
-    "",
-    "Comment-only edit, zero behavioural risk.",
-    "",
-    "ALSO IN THE SAME FILES: TBD_MissionLoader.c:88 documents graceSeconds as 'number >= 0' but the code at :389 also rejects > MAX_GRACE_SECONDS. The header omits the ceiling. T-275-adjacent.",
-    "",
-    "RECORDED DECISION so it is not re-litigated: T-241 deliberately did NOT encode conditional `required` for holdSeconds and targetAlias, though both are effectively mandatory (without them the objective goes inert with an operator-facing reason). Reason: it is a different defect from T-241's, and conditional requires are the shape most likely to collide with T-201/T-211/T-212. Both keys carry the requirement in prose instead. The command center endorsed this. Enforce it when a consumer actually needs it, not before.",
-]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRules.c",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",

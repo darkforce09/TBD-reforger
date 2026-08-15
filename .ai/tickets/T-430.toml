@@ -6,7 +6,32 @@ class = "bug"
 status = "shipped"
 order = 3269
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Follow-on from T-248 (wave 6). validate() now requires DISCORD_CLIENT_SECRET + DISCORD_REDIRECT_URL in non-development, but DISCORD_CLIENT_ID may still be blank. Blank client_id already surfaces as oauth_unconfigured at authorize_url (not discord_unreachable), so this is residual completeness not a reopen of the disguise bug.
+
+Repro: production Config with secret+redirect set and client_id empty — load succeeds; login returns oauth_unconfigured."""
 priority = 3
+main_goal = "Require DISCORD_CLIENT_ID in production Config::validate."
+context = [
+    "Follow-on from T-248 (wave 6).",
+    "validate() requires DISCORD_CLIENT_SECRET + DISCORD_REDIRECT_URL in non-development.",
+]
+requirement = [
+    "DISCORD_CLIENT_ID may still be blank in production Config.",
+    "Residual completeness — not reopening the disguise bug.",
+]
+current_state = [
+    "production Config with secret+redirect set and client_id empty loads successfully.",
+    "Login returns oauth_unconfigured, not discord_unreachable.",
+]
+approach = ["Add DISCORD_CLIENT_ID to production validate() required fields."]
+citations = [
+    "T-248 validate discord fields",
+    "authorize_url oauth_unconfigured path",
+    "config.rs production validate",
+]
 shipped_at = "99fe9881"
 created_at = "2026-07-26T21:26:46Z"
 completed_at = "2026-07-27T04:36:24Z"
@@ -18,11 +43,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = [
-    "Follow-on from T-248 (wave 6). validate() now requires DISCORD_CLIENT_SECRET + DISCORD_REDIRECT_URL in non-development, but DISCORD_CLIENT_ID may still be blank. Blank client_id already surfaces as oauth_unconfigured at authorize_url (not discord_unreachable), so this is residual completeness not a reopen of the disguise bug.",
-    "",
-    "Repro: production Config with secret+redirect set and client_id empty — load succeeds; login returns oauth_unconfigured.",
-]
 owns = ["apps/website/api/src/config.rs"]
 
 [scope]

@@ -6,7 +6,32 @@ class = "feature"
 status = "shipped"
 order = 3268
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Follow-on from T-248 (wave 6). Product path now clears oauth_state via callback_csrf_reject wired into discord_callback. apps/website/api/tests/oauth_redirect.rs asserts Location/missing_code/invalid_state but NOT Set-Cookie Max-Age=0 — so a future handler bypass of the helper could stay green at IT level.
+
+Repro: read oauth_redirect.rs CSRF cases; no Set-Cookie assertion. Unit tests in handlers/oauth.rs cover the helper; IT does not."""
 priority = 3
+main_goal = "Assert oauth_state Set-Cookie clear on CSRF rejects in oauth_redirect IT."
+context = [
+    "Follow-on from T-248 (wave 6).",
+    "Product path clears oauth_state via callback_csrf_reject in discord_callback.",
+]
+requirement = [
+    "oauth_redirect.rs asserts Location/missing_code/invalid_state but NOT Set-Cookie Max-Age=0.",
+    "Handler bypass of helper could stay green at IT level.",
+]
+current_state = [
+    "oauth_redirect.rs CSRF cases lack Set-Cookie assertion.",
+    "handlers/oauth.rs unit tests cover helper; IT does not.",
+]
+approach = ["Add IT Set-Cookie Max-Age=0 assertion on CSRF reject paths."]
+citations = [
+    "T-248 callback_csrf_reject helper",
+    "oauth_redirect.rs CSRF cases",
+    "handlers/oauth.rs unit coverage",
+]
 shipped_at = "334cd444"
 created_at = "2026-07-27T04:31:19Z"
 completed_at = "2026-07-27T04:43:56Z"
@@ -18,11 +43,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = [
-    "Follow-on from T-248 (wave 6). Product path now clears oauth_state via callback_csrf_reject wired into discord_callback. apps/website/api/tests/oauth_redirect.rs asserts Location/missing_code/invalid_state but NOT Set-Cookie Max-Age=0 — so a future handler bypass of the helper could stay green at IT level.",
-    "",
-    "Repro: read oauth_redirect.rs CSRF cases; no Set-Cookie assertion. Unit tests in handlers/oauth.rs cover the helper; IT does not.",
-]
 owns = ["apps/website/api/tests/oauth_redirect.rs"]
 
 [scope]
