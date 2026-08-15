@@ -6,10 +6,38 @@ class = "feature"
 status = "shipped"
 order = 4020
 executor = "claude-code"
-notes = "editor-UI program wave 8 (wave_plan.tsv row 108) — SHIPPED wave 108 (editor factory), slice bc7121c2; verifier wave108.md"
+notes = """
+editor-UI program wave 8 (wave_plan.tsv row 108) — SHIPPED wave 108 (editor factory), slice bc7121c2; verifier wave108.md
+
+--- HEAD migration_legacy (verbatim) ---
+
+Rule content in the T-656 engine — modifies only `crates/map-engine-core/src/mission/validate.rs`. Revives the MissionAnalyzer's dead rule D13: every placed asset must resolve in the live registry, which catches modset drift the MOMENT an asset is placed rather than at compile. The upstream analysis marked this `on-save` "only as the conservative default for a cold registry" — THAT CAVEAT DOES NOT APPLY HERE: `apps/website/frontend/src/mission_editor.rs`:36-93 holds `mod registry_session`, a `thread_local!` SPA-session cache of the catalogue, so the check is live and free. Depends on T-656.
+
+missing=0
+"""
 depends_on = [
     "T-661",
     "T-656",
+]
+main_goal = "Revive D13: every placed asset resolves in live catalogue registry."
+context = [
+    "Rule content in T-656 engine; modifies validate.rs only.",
+    "registry_session thread_local SPA cache makes check live not on-save.",
+]
+requirement = [
+    "Every placed asset must resolve in live registry at placement time.",
+    "Catches modset drift at place not compile; revives MissionAnalyzer D13.",
+]
+current_state = [
+    "Depends T-656; collides T-656 T-657 T-660 on validate.rs four waves.",
+    "Cold-registry on-save caveat does not apply with registry_session cache.",
+]
+approach = ["Add asset resolution rule to validate.rs using live registry session."]
+verify = ["Rule fires when placed asset missing from live catalogue."]
+citations = [
+    "MissionAnalyzer D13 dead rule",
+    "mission_editor registry_session cache",
+    "T-656 validation primitives",
 ]
 shipped_at = "5282529a"
 created_at = "2026-08-02T05:44:46Z"
@@ -22,7 +50,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["""Rule content in the T-656 engine — modifies only `crates/map-engine-core/src/mission/validate.rs`. Revives the MissionAnalyzer's dead rule D13: every placed asset must resolve in the live registry, which catches modset drift the MOMENT an asset is placed rather than at compile. The upstream analysis marked this `on-save` "only as the conservative default for a cold registry" — THAT CAVEAT DOES NOT APPLY HERE: `apps/website/frontend/src/mission_editor.rs`:36-93 holds `mod registry_session`, a `thread_local!` SPA-session cache of the catalogue, so the check is live and free. Depends on T-656."""]
 owns = ["crates/map-engine-core/src/mission/validate.rs"]
 
 [scope]

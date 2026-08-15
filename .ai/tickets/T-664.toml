@@ -6,10 +6,46 @@ class = "feature"
 status = "shipped"
 order = 3840
 executor = "claude-code"
-notes = "editor-UI program wave 2 (wave_plan.tsv row 102) — SHIPPED wave 102 (editor factory), slice 705920f5; verifier wave102.md (4 MAJOR deferred: T-713..T-716)"
+notes = """
+editor-UI program wave 2 (wave_plan.tsv row 102) — SHIPPED wave 102 (editor factory), slice 705920f5; verifier wave102.md (4 MAJOR deferred: T-713..T-716)
+
+--- HEAD migration_legacy (verbatim) ---
+
+The unblocking slice. Once T-662 has narrowed the pan branch to MMB and removed the blanket `prevent_default`, `oncontextmenu` at `apps/website/frontend/src/mission_editor.rs`:1844-1847 opens a menu at the event pixel instead of swallowing the event. A new module `apps/website/frontend/src/context_menu.rs` carries the item model, hit-target resolution and keyboard dismissal — INFERRED module name, following the flat one-concern-per-file convention (select_tool.rs, world_layer_prefs.rs, mission_size.rs); wave 0 pre-declares the `mod` stub so this ticket does not touch main.rs. Verbatim Eden item lists for both the empty-ground and on-entity takes are transcribed at `.ai/artifacts/eden_screenshots/batch01_context_menu.md:119-292`. Directly closes `PLACE-COMMENT-001`'s entry point and UNBLOCKS `CREW-SEAT-001`, `CONN-START-001`, `CTX-FORMATION-001`, `ATTR-MULTI-001`, `COMP-SAVE-001` and `KEY-WP-001` — six tickets, which is why it runs at wave 2 and every dependent runs at wave 6 or later. Deliberately claims NO `eden_*` module: a context menu is a floating overlay mounted beside the other overlays at mission_editor.rs:2060-2110, not dock chrome, and claiming a dock would collide it with the docks for nothing.
+
+missing=0"""
 depends_on = [
     "T-661",
     "T-662",
+]
+main_goal = "Wire oncontextmenu; new context_menu module at event pixel."
+context = [
+    "Unblocking slice after T-662 MMB pan and prevent_default removal.",
+    "Eden item lists at batch01_context_menu.md:119-292.",
+    "Unblocks six tickets; wave 2 blocks wave 6 dependents.",
+]
+requirement = [
+    "oncontextmenu mission_editor.rs:1844-1847 opens menu not swallow.",
+    "New context_menu.rs: item model hit-target keyboard dismissal.",
+    "Floating overlay at :2060-2110 not dock chrome.",
+]
+current_state = [
+    "Blanket prevent_default swallows context menu today.",
+    "mod stub pre-declared wave 0; no main.rs change.",
+    "PLACE-COMMENT-001 entry point closed; six tickets blocked.",
+]
+approach = [
+    "Flat one-concern-per-file like select_tool world_layer_prefs.",
+    "No eden_* owns; overlay beside other overlays.",
+]
+verify = [
+    "Context menu opens at pixel on ground and entity.",
+    "PLACE-COMMENT-001 CREW-SEAT CONN-START unblocked.",
+]
+citations = [
+    "batch01_context_menu Eden lists",
+    "T-662 MMB prevent_default prerequisite",
+    "six dependent wave six tickets",
 ]
 shipped_at = "27042bab"
 created_at = "2026-08-02T00:36:22Z"
@@ -22,7 +58,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["The unblocking slice. Once T-662 has narrowed the pan branch to MMB and removed the blanket `prevent_default`, `oncontextmenu` at `apps/website/frontend/src/mission_editor.rs`:1844-1847 opens a menu at the event pixel instead of swallowing the event. A new module `apps/website/frontend/src/context_menu.rs` carries the item model, hit-target resolution and keyboard dismissal — INFERRED module name, following the flat one-concern-per-file convention (select_tool.rs, world_layer_prefs.rs, mission_size.rs); wave 0 pre-declares the `mod` stub so this ticket does not touch main.rs. Verbatim Eden item lists for both the empty-ground and on-entity takes are transcribed at `.ai/artifacts/eden_screenshots/batch01_context_menu.md:119-292`. Directly closes `PLACE-COMMENT-001`'s entry point and UNBLOCKS `CREW-SEAT-001`, `CONN-START-001`, `CTX-FORMATION-001`, `ATTR-MULTI-001`, `COMP-SAVE-001` and `KEY-WP-001` — six tickets, which is why it runs at wave 2 and every dependent runs at wave 6 or later. Deliberately claims NO `eden_*` module: a context menu is a floating overlay mounted beside the other overlays at mission_editor.rs:2060-2110, not dock chrome, and claiming a dock would collide it with the docks for nothing."]
 owns = [
     "apps/website/frontend/src/mission_editor.rs",
     "apps/website/frontend/src/context_menu.rs",

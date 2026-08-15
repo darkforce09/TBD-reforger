@@ -6,8 +6,38 @@ class = "feature"
 status = "shipped"
 order = 3980
 executor = "claude-code"
-notes = "editor-UI program wave 7 (wave_plan.tsv row 107) — SHIPPED wave 107 (editor factory), slice 12fa342b; verifier wave107.md"
+notes = """
+editor-UI program wave 7 (wave_plan.tsv row 107) — SHIPPED wave 107 (editor factory), slice 12fa342b; verifier wave107.md
+
+--- HEAD migration_legacy (verbatim) ---
+
+Per-side live counts in the editor header (`WEST 78 · EAST 74 · IND 8 · TOTAL 160`) plus a summary line composed from the document. This REPLACES two of the MissionAnalyzer's rules by making the malformed state unreachable rather than caught — the "should be unrepresentable" pile — and WOG got a 94%-consistent community naming convention out of the counter alone. Code: the header is `TopCommandStrip` (post-split eden_top_strip.rs, from eden_chrome.rs:831); the existing OBJ/SEL/SZ counters in BottomToolbelt :3745-3766 are the pattern to copy. Per-side counts derive from the ORBAT snapshot — `orbat_manager_snapshot` (editor_ops.rs:1190) and `vehicle_rows` :1751. Cheap and visible, which is why it is early in the validation group's internal order (panel -> engine -> census -> rule content).
+
+missing=0
+"""
 depends_on = ["T-661"]
+main_goal = "Per-side slot census badge plus generated mission summary line in header."
+context = [
+    "TopCommandStrip in eden_top_strip.rs hosts header census display.",
+    "Makes malformed ORBAT counts unrepresentable not caught by rules.",
+]
+requirement = [
+    "Per-side live counts WEST EAST IND TOTAL in editor header.",
+    "Generated summary line composed from mission document.",
+    "Pattern from BottomToolbelt OBJ SEL SZ counters.",
+    "Per-side counts from orbat_manager_snapshot and vehicle_rows.",
+]
+current_state = [
+    "Replaces two MissionAnalyzer rules via unrepresentable state.",
+    "Early validation group order panel engine census rule content.",
+]
+approach = ["Add census counters to TopCommandStrip using ORBAT snapshot data."]
+verify = ["Header shows per-side counts and mission summary line."]
+citations = [
+    "TopCommandStrip eden_top_strip",
+    "BottomToolbelt OBJ counters pattern",
+    "orbat_manager_snapshot vehicle_rows",
+]
 shipped_at = "79036871"
 created_at = "2026-08-02T04:56:37Z"
 completed_at = "2026-08-02T05:08:22Z"
@@ -19,7 +49,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["""Per-side live counts in the editor header (`WEST 78 · EAST 74 · IND 8 · TOTAL 160`) plus a summary line composed from the document. This REPLACES two of the MissionAnalyzer's rules by making the malformed state unreachable rather than caught — the "should be unrepresentable" pile — and WOG got a 94%-consistent community naming convention out of the counter alone. Code: the header is `TopCommandStrip` (post-split eden_top_strip.rs, from eden_chrome.rs:831); the existing OBJ/SEL/SZ counters in BottomToolbelt :3745-3766 are the pattern to copy. Per-side counts derive from the ORBAT snapshot — `orbat_manager_snapshot` (editor_ops.rs:1190) and `vehicle_rows` :1751. Cheap and visible, which is why it is early in the validation group's internal order (panel -> engine -> census -> rule content)."""]
 owns = [
     "apps/website/frontend/src/eden_top_strip.rs",
     "apps/website/frontend/src/editor_ops.rs",

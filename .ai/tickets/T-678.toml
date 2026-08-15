@@ -6,18 +6,52 @@ class = "chore"
 status = "queued"
 order = 4350
 executor = "claude-code"
-notes = "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row"
+notes = """
+workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row
+
+--- HEAD migration_legacy (verbatim) ---
+
+OPERATOR DECISION 2026-08-02: AI units ARE coming — this ticket has a subject now. Previously gated behind the same question as T-677.
+
+Four attribute ids: `ATTR-FIELD-GRP-COMBAT-MODE`, `-GRP-BEHAVIOUR`, `-GRP-FORMATION`, `-GRP-SPEED-MODE`. Same AI gate as waypoints, and the sweep says they should ship together or not at all. Evidence that nothing exists to hang these on: word-boundary `combatMode` and `speedMode` return ZERO in both the frontend and the mod tree; `formation` returns one frontend hit and it is prose in a comment at editor_ops.rs:1324. `$defs/group` is closed, so each field is a widening plus an Enfusion reader. EXECUTOR IS `workbench` DELIBERATELY: this modifies `packages/tbd-schema/schema/mission.schema.json` and/or `apps/mod/tbd-framework/`, which the CLAUDE.md executor gate puts out of reach of any coding agent. The factory filters on executor, so this tagging is the safety mechanism — do not flip it to claude-code.
+
+EXECUTOR CORRECTED 2026-08-02: was filed `workbench` on the mistaken reading that any .c file needs the Arma Workbench GUI. It does not — scripts/mod/compile.sh compiles tbd-framework against the native Linux dedicated server headlessly, verified: "OK: compiled clean, 5707 files, 11182 classes, 832 ms, no Workbench". Schema edits are plain JSON. This is factory work. Per the model-routing rule, the .c portion routes to Fable 5 even though the executor is claude-code.
+
+SCHEMA HALF SPLIT OUT to T-706 (one widening pass for the whole program). This ticket is the Enfusion reader plus any editor UI; it does not touch packages/tbd-schema.
+
+missing=0
+"""
 depends_on = ["T-677"]
-estimated = ["scope"]
-migration_legacy = [
-    "OPERATOR DECISION 2026-08-02: AI units ARE coming — this ticket has a subject now. Previously gated behind the same question as T-677.",
-    "",
-    "Four attribute ids: `ATTR-FIELD-GRP-COMBAT-MODE`, `-GRP-BEHAVIOUR`, `-GRP-FORMATION`, `-GRP-SPEED-MODE`. Same AI gate as waypoints, and the sweep says they should ship together or not at all. Evidence that nothing exists to hang these on: word-boundary `combatMode` and `speedMode` return ZERO in both the frontend and the mod tree; `formation` returns one frontend hit and it is prose in a comment at editor_ops.rs:1324. `$defs/group` is closed, so each field is a widening plus an Enfusion reader. EXECUTOR IS `workbench` DELIBERATELY: this modifies `packages/tbd-schema/schema/mission.schema.json` and/or `apps/mod/tbd-framework/`, which the CLAUDE.md executor gate puts out of reach of any coding agent. The factory filters on executor, so this tagging is the safety mechanism — do not flip it to claude-code.",
-    "",
-    'EXECUTOR CORRECTED 2026-08-02: was filed `workbench` on the mistaken reading that any .c file needs the Arma Workbench GUI. It does not — scripts/mod/compile.sh compiles tbd-framework against the native Linux dedicated server headlessly, verified: "OK: compiled clean, 5707 files, 11182 classes, 832 ms, no Workbench". Schema edits are plain JSON. This is factory work. Per the model-routing rule, the .c portion routes to Fable 5 even though the executor is claude-code.',
-    "",
-    "SCHEMA HALF SPLIT OUT to T-706 (one widening pass for the whole program). This ticket is the Enfusion reader plus any editor UI; it does not touch packages/tbd-schema.",
+main_goal = "Ship group combat behaviour formation speed attrs on AI units."
+context = [
+    "Four GRP attrs: combat mode behaviour formation speed mode.",
+    "Same AI gate as T-677; sweep says ship together or not at all.",
+    "Schema split T-706; $defs/group closed so widening plus reader.",
 ]
+requirement = [
+    "Enfusion reader for four group AI state attribute ids.",
+    "Hang attrs on groups with AI-enabled subjects at runtime.",
+    "Do not touch packages/tbd-schema; T-706 owns widening.",
+]
+current_state = [
+    "combatMode and speedMode zero hits in frontend and mod trees.",
+    "formation one frontend hit is prose comment editor_ops.rs:1324.",
+    "Operator decision 2026-08-02: AI units ARE coming now.",
+]
+approach = [
+    "Ship with T-677 waypoints; shared AI spawn gate.",
+    "Implement TBD_GroupState.c reader after subjects exist.",
+]
+verify = [
+    "Group state attrs read from mission payload at runtime.",
+    "No packages/tbd-schema edits in this slice.",
+]
+citations = [
+    "T-677 waypoint shared gate",
+    "zero combatMode speedMode hits",
+    "T-706 schema widening split",
+]
+estimated = ["scope"]
 owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/AI/TBD_GroupState.c"]
 
 [scope]

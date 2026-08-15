@@ -6,10 +6,37 @@ class = "docs"
 status = "shipped"
 order = 4190
 executor = "claude-code"
-notes = "editor-UI program wave 17 (wave_plan.tsv row 117) — SHIPPED wave 117 (editor factory), 84a33a84; verifier wave117.md. SEE and CHECK shipped in full, one edge verb short, exactly as instructed: content-ordered stable listing + panel, and five rules (CONN-SELF/DANGLING/DUPLICATE/CYCLE/KIND) that fire, stay SILENT on a clean graph, and REPORT hydrated junk rather than dropping it. Connections are editor-only and never compile (T-651's absence pattern; evidence-led — the schema is additionalProperties:false over 19 keys with no relation collection). Delete cascades before remove_slots so no dangling edge can survive. The LMB-target half of CONN-START-001 is DEFERRED pending T-723 — see T-768. draw_order.rs untouched, so T-760's slot stays clean."
+notes = """
+editor-UI program wave 17 (wave_plan.tsv row 117) — SHIPPED wave 117 (editor factory), 84a33a84; verifier wave117.md. SEE and CHECK shipped in full, one edge verb short, exactly as instructed: content-ordered stable listing + panel, and five rules (CONN-SELF/DANGLING/DUPLICATE/CYCLE/KIND) that fire, stay SILENT on a clean graph, and REPORT hydrated junk rather than dropping it. Connections are editor-only and never compile (T-651's absence pattern; evidence-led — the schema is additionalProperties:false over 19 keys with no relation collection). Delete cascades before remove_slots so no dangling edge can survive. The LMB-target half of CONN-START-001 is DEFERRED pending T-723 — see T-768. draw_order.rs untouched, so T-760's slot stays clean.
+
+--- HEAD migration_legacy (verbatim) ---
+
+The connection-graph quarter of the split T-079. Ids: `CONN-START-001`, `CONN-SYNC-001`, `CONN-DEL-001`, `ACTION-FORM-001`, `CTX-FORMATION-001`. HARD DEPENDENCY on T-664 — two of those are context-menu items by definition. Code: drag-from-entity-to-entity is a third gesture mode in `onpointerdown` (mission_editor.rs:1395) / `onpointerup` :1644; link create / sync / delete mutators in editor_ops.rs; a link map in store.rs; menu items in context_menu.rs. THE RENDER LANE MAY ALREADY EXIST: `LaneRole::SquadLinks` (crates/map-engine-render/src/draw_order.rs:57) is "T-180.4 — squad leader->member hairline links (under slot rings)" and its doc comment :49 groups it with Contours / ForestOutline as a flat LineList lane — exactly the primitive a connection graph needs. Either reuse it and drop draw_order.rs from owns, or add a MissionConnections peer. WARNING carried from the framework corpus: `CONN-SYNC-001` is a bare `missing` row in gap_analysis.md with no note, and FNF v4's ENTIRE defect cluster lives on exactly this mechanism — the inspector and the validation rules must precede the edges. Do not ship edges you cannot see or check.
+
+missing=0"""
 depends_on = [
     "T-661",
     "T-664",
+]
+main_goal = "Ship connection graph draw sync delete and formation context actions."
+context = [
+    "Connection-graph quarter of split T-079; depends on T-664 context menu.",
+    "CONN-SYNC-001 bare missing row; FNF v4 defects on this mechanism.",
+]
+requirement = [
+    "Drag entity-to-entity gesture mode in onpointerdown/up.",
+    "Link create sync delete mutators in editor_ops; link map in store.",
+    "Context menu formation item; reuse or add MissionConnections render lane.",
+]
+current_state = [
+    "LaneRole::SquadLinks at draw_order.rs:57 may already suit hairline links.",
+    "Inspector and validation rules must precede edges you cannot see.",
+]
+approach = ["Reuse SquadLinks lane or add MissionConnections peer; menu in context_menu."]
+citations = [
+    "CONN-START-001 CONN-SYNC-001 CONN-DEL-001",
+    "LaneRole SquadLinks draw_order.rs:57",
+    "T-664 context menu dependency",
 ]
 shipped_at = "81258bb5"
 created_at = "2026-08-07T06:24:54Z"
@@ -22,7 +49,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["""The connection-graph quarter of the split T-079. Ids: `CONN-START-001`, `CONN-SYNC-001`, `CONN-DEL-001`, `ACTION-FORM-001`, `CTX-FORMATION-001`. HARD DEPENDENCY on T-664 — two of those are context-menu items by definition. Code: drag-from-entity-to-entity is a third gesture mode in `onpointerdown` (mission_editor.rs:1395) / `onpointerup` :1644; link create / sync / delete mutators in editor_ops.rs; a link map in store.rs; menu items in context_menu.rs. THE RENDER LANE MAY ALREADY EXIST: `LaneRole::SquadLinks` (crates/map-engine-render/src/draw_order.rs:57) is "T-180.4 — squad leader->member hairline links (under slot rings)" and its doc comment :49 groups it with Contours / ForestOutline as a flat LineList lane — exactly the primitive a connection graph needs. Either reuse it and drop draw_order.rs from owns, or add a MissionConnections peer. WARNING carried from the framework corpus: `CONN-SYNC-001` is a bare `missing` row in gap_analysis.md with no note, and FNF v4's ENTIRE defect cluster lives on exactly this mechanism — the inspector and the validation rules must precede the edges. Do not ship edges you cannot see or check."""]
 owns = [
     "apps/website/frontend/src/mission_editor.rs",
     "apps/website/frontend/src/editor_ops.rs",

@@ -6,10 +6,40 @@ class = "feature"
 status = "shipped"
 order = 3960
 executor = "claude-code"
-notes = "editor-UI program wave 6 (wave_plan.tsv row 106) — SHIPPED wave 106 (886615fa); verifier wave106.md"
+notes = """
+editor-UI program wave 6 (wave_plan.tsv row 106) — SHIPPED wave 106 (886615fa); verifier wave106.md
+
+--- HEAD migration_legacy (verbatim) ---
+
+The second half of the split T-641, and an operator decision to EXCEED Eden rather than match it. Eden ships no scale bar, no north arrow, no legend and no grid coordinate labels — only a two-axis X/Y gizmo bottom-left. A 2D top-down planner needs distance cues that a 3D-first editor does not, and they pair naturally with the ruler (T-642). Add a scale bar and edge grid reference labels; skip the legend. These belong in the full-width status bar that T-636 creates — the draft says so directly ("it gives the scale bar and grid refs from T-641 somewhere to live"), which is why this ticket is scheduled one wave after T-636 and owns only eden_toolbelt.rs. HARD DEPENDENCY on T-636: if the status bar has not landed there is nowhere to put them, and the floating pill has no room. Placement inside the bar is INFERRED (graded low in owns_parity.md) — no ticket has named the component layout.
+
+missing=0"""
 depends_on = [
     "T-661",
     "T-636",
+]
+main_goal = "Scale bar and edge grid reference labels in status bar."
+context = [
+    "Second half split T-641; exceeds Eden not matches.",
+    "Eden only two-axis X Y gizmo bottom-left; no scale bar.",
+    "Pairs with T-642 ruler; skip legend.",
+]
+requirement = [
+    "Scale bar and edge grid refs in eden_toolbelt status bar.",
+    "HARD DEPENDENCY on T-636 status bar landing.",
+    "Placement inside bar INFERRED owns_parity graded low.",
+]
+current_state = [
+    "T-636 draft gives scale bar grid refs somewhere to live.",
+    "Floating pill has no room before status bar split.",
+    "Scheduled one wave after T-636.",
+]
+approach = ["Mount in full-width status bar not floating centred pill."]
+verify = ["Scale bar visible in status bar after T-636 lands."]
+citations = [
+    "T-636 status bar prerequisite",
+    "T-641 second half split",
+    "Eden no scale bar gizmo only",
 ]
 shipped_at = "2063d0b0"
 created_at = "2026-08-02T04:09:19Z"
@@ -22,7 +52,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ['The second half of the split T-641, and an operator decision to EXCEED Eden rather than match it. Eden ships no scale bar, no north arrow, no legend and no grid coordinate labels — only a two-axis X/Y gizmo bottom-left. A 2D top-down planner needs distance cues that a 3D-first editor does not, and they pair naturally with the ruler (T-642). Add a scale bar and edge grid reference labels; skip the legend. These belong in the full-width status bar that T-636 creates — the draft says so directly ("it gives the scale bar and grid refs from T-641 somewhere to live"), which is why this ticket is scheduled one wave after T-636 and owns only eden_toolbelt.rs. HARD DEPENDENCY on T-636: if the status bar has not landed there is nowhere to put them, and the floating pill has no room. Placement inside the bar is INFERRED (graded low in owns_parity.md) — no ticket has named the component layout.']
 owns = ["apps/website/frontend/src/eden_toolbelt.rs"]
 
 [scope]

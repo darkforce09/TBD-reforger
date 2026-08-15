@@ -6,8 +6,44 @@ class = "docs"
 status = "shipped"
 order = 3850
 executor = "claude-code"
-notes = "editor-UI program wave 2 (wave_plan.tsv row 102) — SHIPPED wave 102 (editor factory), slice 6f479a41; verifier wave102.md (4 MAJOR deferred: T-713..T-716)"
+notes = """
+editor-UI program wave 2 (wave_plan.tsv row 102) — SHIPPED wave 102 (editor factory), slice 6f479a41; verifier wave102.md (4 MAJOR deferred: T-713..T-716)
+
+--- HEAD migration_legacy (verbatim) ---
+
+Closes `ATTR-FIELD-LYR-ENABLE-VIS` and `-LYR-ENABLE-XFORM`. There is no layer visibility toggle in the editor today; the 12 world-layer checkboxes in world_layer_prefs.rs are a different object entirely. `add_editor_layer` at `crates/map-engine-core/src/doc/store.rs`:1872 writes exactly id / name / parentId / entityIds — two booleans plus their setters go beside `rename_editor_layer` :1886. Visibility is enforced in `apps/website/frontend/src/editor_ops.rs`, NOT in the renderer: every slot upload goes through `core.materialize()` (:368, :637, :941), so a hidden layer's slots are filtered before the SoA reaches the engine — cheaper than a render-side visibility mask and it keeps this ticket out of the 6,302-line engine.rs. Transform lock refuses in `move_entities` / `attrs_update_position` :667. The flags reach the row renderer through `LayerRow` :45 / `OutlinerNode` :75 / `build_outliner` :105 in outliner.rs (note `layer_rows` at editor_ops.rs:824 reads no flag today, and its own comment :819-823 explains there is no public editor_layers accessor). The eye/lock glyphs are per-row controls in eden_tree.rs — `single_row` (which already takes a per-call `orbat_refile: bool`) and `virtual_tree`. eden_dock_left.rs is deliberately NOT claimed: the flags ride inside `nodes`, which DockLeft already passes, so no parameter changes there.
+
+missing=0"""
 depends_on = ["T-661"]
+main_goal = "Per-layer visibility and transform lock flags with eye lock glyphs."
+context = [
+    "Closes ATTR-FIELD-LYR-ENABLE-VIS and LYR-ENABLE-XFORM.",
+    "world_layer_prefs twelve checkboxes are different object.",
+    "Visibility filtered in editor_ops materialize not renderer.",
+]
+requirement = [
+    "Two booleans plus setters beside rename_editor_layer store.rs :1886.",
+    "Filter hidden slots before SoA in editor_ops materialize paths.",
+    "Transform lock refuses move_entities attrs_update_position :667.",
+]
+current_state = [
+    "add_editor_layer :1872 writes id name parentId entityIds only.",
+    "layer_rows :824 reads no flag; no public editor_layers accessor.",
+    "eden_dock_left NOT claimed; flags ride inside nodes.",
+]
+approach = [
+    "LayerRow OutlinerNode build_outliner wire flags outliner.rs.",
+    "eye lock glyphs in eden_tree single_row virtual_tree.",
+]
+verify = [
+    "Hidden layer slots absent from engine upload.",
+    "Transform lock blocks move on locked layer.",
+]
+citations = [
+    "ATTR-FIELD-LYR-ENABLE-VIS XFORM",
+    "materialize editor_ops not engine.rs",
+    "world_layer_prefs different object",
+]
 shipped_at = "1053acd9"
 created_at = "2026-08-02T00:37:37Z"
 completed_at = "2026-08-02T00:38:25Z"
@@ -19,7 +55,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["Closes `ATTR-FIELD-LYR-ENABLE-VIS` and `-LYR-ENABLE-XFORM`. There is no layer visibility toggle in the editor today; the 12 world-layer checkboxes in world_layer_prefs.rs are a different object entirely. `add_editor_layer` at `crates/map-engine-core/src/doc/store.rs`:1872 writes exactly id / name / parentId / entityIds — two booleans plus their setters go beside `rename_editor_layer` :1886. Visibility is enforced in `apps/website/frontend/src/editor_ops.rs`, NOT in the renderer: every slot upload goes through `core.materialize()` (:368, :637, :941), so a hidden layer's slots are filtered before the SoA reaches the engine — cheaper than a render-side visibility mask and it keeps this ticket out of the 6,302-line engine.rs. Transform lock refuses in `move_entities` / `attrs_update_position` :667. The flags reach the row renderer through `LayerRow` :45 / `OutlinerNode` :75 / `build_outliner` :105 in outliner.rs (note `layer_rows` at editor_ops.rs:824 reads no flag today, and its own comment :819-823 explains there is no public editor_layers accessor). The eye/lock glyphs are per-row controls in eden_tree.rs — `single_row` (which already takes a per-call `orbat_refile: bool`) and `virtual_tree`. eden_dock_left.rs is deliberately NOT claimed: the flags ride inside `nodes`, which DockLeft already passes, so no parameter changes there."]
 owns = [
     "crates/map-engine-core/src/doc/store.rs",
     "apps/website/frontend/src/editor_ops.rs",
