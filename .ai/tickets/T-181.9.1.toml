@@ -16,9 +16,24 @@ requirement = [
     "Ship lobby UI with optimistic claim held until authority rules on that seat.",
     "Hide back beneath LOBBY; refuse deploy optimism; do not filter enemy side.",
 ]
+current_state = [
+    "T-068.13 POC cancelled; ClaimSlot backend existed without production LOBBY UI.",
+    "Roster authority needed plain TSV before any widget could bind safely.",
+]
+approach = [
+    "Parse BuildSlotRoster only; optimistic pending claim until authority rules.",
+    "Hide back beneath LOBBY; no deploy optimism; do not filter enemy side.",
+]
+verify = ["scripts/mod/compile.sh exit 0; commit 56ad6d16."]
+acceptance = [
+    "Lobby picker shipped at 56ad6d16; superseded T-068.13.",
+    "Compile-only land; optimistic-claim UX unobserved at ship.",
+]
 citations = [
     "Source: commit 56ad6d16 — lobby slot picker.",
     "Source: t181_event_mod_program.md — supersedes T-068.13.",
+    "commit 56ad6d16 lobby picker",
+    "notes superseded T-068.13 scope moved",
 ]
 shipped_at = "56ad6d16"
 created_at = "2026-07-25T09:30:57Z"

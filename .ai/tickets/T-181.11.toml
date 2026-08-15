@@ -13,7 +13,24 @@ requirement = [
     "OnPlayerKilled terminal; slot stays claimed through death and reconnect.",
     "CountAliveForFaction counts claimed slots; m_bAutoDeploy kept for PIE.",
 ]
-citations = ["Source: commit d8fc6abc — factory bootstrap."]
+current_state = [
+    "Death recycled slots; no terminal one-life map or faction alive count.",
+    "Event loop lacked IsPlayerDead and CountAliveForFaction primitives.",
+]
+approach = [
+    "Default m_bOneLife on; terminal OnPlayerKilled keeps slot claimed.",
+    "Add IsPlayerDead and CountAliveForFaction; retain m_bAutoDeploy for PIE.",
+]
+verify = ["scripts/mod/compile.sh on d8fc6abc (one-life)."]
+acceptance = [
+    "One-life terminal death shipped; slot stayed claimed through death and reconnect.",
+    "CountAliveForFaction counted claimed undeployed slots so rounds could not silently end.",
+]
+citations = [
+    "Source: commit d8fc6abc — factory bootstrap.",
+    "commit d8fc6abc one life bootstrap",
+    "notes m_bAutoDeploy retained for PIE",
+]
 shipped_at = "cc7ab8fd"
 created_at = "2026-07-25T09:37:59Z"
 completed_at = "2026-07-25T09:37:59Z"

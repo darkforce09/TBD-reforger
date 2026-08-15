@@ -15,7 +15,24 @@ requirement = [
     "Re-materialize on the player's own slot; audit line; re-mark dead on failure.",
     "Chat #tbd respawn <playerId> and #tbd dead; vanilla admin list permission.",
 ]
-citations = ["Source: commit d8fc6abc — Enfusion factory."]
+current_state = [
+    "One-life made death terminal with no admin escape hatch.",
+    "Glitch deaths needed server rematerialize without recycling the slot.",
+]
+approach = [
+    "AdminRespawn server-only on player's own slot with audit line.",
+    "Chat #tbd respawn and #tbd dead; vanilla admin list permission reused.",
+]
+verify = ["scripts/mod/compile.sh exit 0 on d8fc6abc bootstrap."]
+acceptance = [
+    "AdminRespawn refused non-dead and disconnected players server-side.",
+    "Rematerialized dressed body on own slot; re-marked dead on failure, not limbo.",
+]
+citations = [
+    "Source: commit d8fc6abc — Enfusion factory.",
+    "commit d8fc6abc AdminRespawn bootstrap",
+    "notes vanilla admin list permission",
+]
 created_at = "2026-07-25T00:00:00Z"
 completed_at = "2026-07-31T00:00:00Z"
 estimated = [

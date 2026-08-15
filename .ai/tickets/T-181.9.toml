@@ -16,9 +16,24 @@ requirement = [
     "Add ReleaseSlot lobby-only and BuildSlotRoster TSV roster for the picker.",
     "Refuse ClaimSlot and ReleaseSlot when the player has spent their life.",
 ]
+current_state = [
+    "ClaimSlot existed with first-come guard only.",
+    "No ReleaseSlot, BuildSlotRoster, or dead-player refusal on claim or release.",
+]
+approach = [
+    "Add ReleaseSlot lobby-only and BuildSlotRoster TSV for picker binding.",
+    "Refuse ClaimSlot and ReleaseSlot when player spent their one life.",
+]
+verify = ["scripts/mod/compile.sh on d8fc6abc (ReleaseSlot/BuildSlotRoster)."]
+acceptance = [
+    "ReleaseSlot, BuildSlotRoster TSV shipped; dead players blocked from claim and release.",
+    "One-life integrity fix closed release-then-reclaim bypass.",
+]
 citations = [
     "Source: commit d8fc6abc — slot claim roster.",
     "Source: commit f52a9d5e — merge slice.",
+    "commit d8fc6abc slot authority",
+    "notes out keyword compile landmine",
 ]
 shipped_at = "f52a9d5e"
 created_at = "2026-07-25T09:02:18Z"

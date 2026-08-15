@@ -16,10 +16,24 @@ requirement = [
     "Add TBD UI scripts, two layouts, chimeraMenus.conf with Aegis theme tokens.",
     "ListBox pools and rebinds rows instead of create/destroy per item.",
 ]
+current_state = [
+    "No shared TBD UI layer; vanilla listbox destroyed a row per item.",
+    "128-slot lobby needed pooled ListBox rebind, not create/destroy.",
+]
+approach = [
+    "Ship MenuStack, MenuBase, ShellScreen, pooled ListBox, UITheme.",
+    "Two layouts plus chimeraMenus.conf on Aegis tokens.",
+]
 verify = ["compile.sh exit 0; verify-no-crf-leak PASS."]
+acceptance = [
+    "MenuStack, ShellScreen, pooled ListBox, UITheme, layouts, and chimeraMenus preset compiled cleanly.",
+    "Compile-only per notes; chimeraMenus awaits Workbench rdb regeneration.",
+]
 citations = [
     "Source: commit fb36da81 — UI framework.",
     "Source: commit 441912ba — merge slice.",
+    "notes compile-only chimeraMenus rdb blocker",
+    "t181 program wave 1 UI",
 ]
 shipped_at = "441912ba"
 created_at = "2026-07-25T07:22:50Z"

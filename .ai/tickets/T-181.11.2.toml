@@ -13,7 +13,24 @@ requirement = [
     "Server-fed owner RPC snapshot; non-admins get refusal string only.",
     "Respawn and deploy stay separate; force-stage needs confirm; audit capped.",
 ]
-citations = ["Source: commit c4708f72 — admin menu."]
+current_state = [
+    "Chat admin commands shared TBD_AdminService; no screen UI existed.",
+    "Non-admin snapshot leakage risk if roster rendered client-side.",
+]
+approach = [
+    "TBD_AdminScreen on AdminService owner snapshot with READ gate.",
+    "Separate respawn and deploy buttons; confirmed force-stage; audit ring capped.",
+]
+verify = ["scripts/mod/compile.sh exit 0; commit c4708f72."]
+acceptance = [
+    "Admin menu shipped at c4708f72 on single AdminService choke point.",
+    "Refusal-only snapshot by construction; live non-admin attempt not run.",
+]
+citations = [
+    "Source: commit c4708f72 — admin menu.",
+    "commit c4708f72 admin menu",
+    "notes permission proven by construction",
+]
 shipped_at = "c4708f72"
 created_at = "2026-07-25T09:36:01Z"
 completed_at = "2026-07-25T09:36:01Z"

@@ -13,7 +13,24 @@ context = [
     "Slotting dependency; no title in wave_plan; scope recovered from parent.",
 ]
 requirement = ["No implementation; triage confirms briefing, safestart, and slotting shipped elsewhere."]
-citations = ["Source: commit 55e334b7 — closed superseded."]
+current_state = [
+    "Parent T-181.8 flagged BRIEFING and SAFE_START enum-only; slotting blocked on content.",
+    "No title in wave_plan; scope recovered from parent gap note.",
+]
+approach = [
+    "Triage-only close; no implementation in this row.",
+    "Verify briefing via T-181.23/.27/.28/.38 and safestart via T-181.17/.33.",
+]
+verify = ["Triage commit 55e334b7; supersession verified in FrameworkManager."]
+acceptance = [
+    "Closed superseded without code; briefing and safestart content verified in later slices.",
+    "Slotting dependency satisfied when T-181.9.x shipped.",
+]
+citations = [
+    "Source: commit 55e334b7 — closed superseded.",
+    "commit 55e334b7 triage superseded",
+    "notes OnEnterBriefing SafestartManager gate",
+]
 shipped_at = "55e334b7"
 created_at = "2026-07-25T16:29:46Z"
 completed_at = "2026-07-25T16:29:46Z"
