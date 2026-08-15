@@ -20,6 +20,18 @@ current_state = [
     "The Leptos tab is the dumb-dropdown tier only (fold documented at `apps/website-leptos/src/arsenal.rs:7-11`);",
     "`SlotLoadoutV2` persistence is already the same, so rows/panels add without doc changes.",
 ]
+approach = [
+    "Port Smart Forge: arsenal_rules compat graph, SVG paper-doll, Faction Manager /factions CRUD.",
+    "Thread CompatFeed through modal; picks_to_loadout round-trip unchanged.",
+]
+verify = [
+    "make leptos-gates; arsenal smoke 17/17.",
+    "cargo test -p website-leptos arsenal_rules.",
+]
+acceptance = [
+    "Fourteen compat-aware loadout rows with optic/mag edges shipped.",
+    "Clickable SVG paper-doll plus Faction Manager dialog on Factions dock Manage.",
+]
 citations = [
     "Source: commit 49911a83.",
     "Source: t068_10_smart_forge_ui.md.",

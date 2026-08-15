@@ -29,6 +29,10 @@ verify = [
     "cargo xtask verify no-node rc=0; zero tracked .mjs outside apps/mod.",
     "verify file-length stdout byte-identical to retired Node gate.",
 ]
+acceptance = [
+    "Zero tracked .mjs outside apps/mod floor; verify no-node rc=0 wired into ci-local.",
+    "Last two Node gates ported to xtask verify file-length and gen font-table.",
+]
 citations = [
     "Source: commit 476f1ddf — program closure.",
     "Source: t165_10_verify_log.md — no-node gate.",

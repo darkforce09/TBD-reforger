@@ -21,10 +21,18 @@ current_state = [
     "a fixed-height scroll container drawing only the visible slice (+overscan) between spacer divs above it, so a mission-scale tree never builds N DOM rows.",
     "Applies to BOTH Editor Layers and ORBAT;",
 ]
+approach = [
+    "outliner.rs flatten pre-order plus VIRTUAL_SLOT_THRESHOLD 50.",
+    "eden_chrome virtual_tree spacer window; __outlinerStats for both docks.",
+]
 verify = [
     "`window.__outlinerStats.{editorLayers,orbat} = {total,rendered,threshold}` for the gate.",
     "New smoke_virtual_outliner (6/6): eager==total below, rendered<total above, threshold 50, both trees windowed, windowed row still selects.",
     "`__missionDoc.seed_slots(n)` smoke hook added to push past the threshold.",
+]
+acceptance = [
+    "VirtualOutliner windowed both Editor Layers and ORBAT docks.",
+    "smoke_virtual_outliner 6/6 pass; rendered rows below total above threshold 50.",
 ]
 citations = ["Source: commit 47ec9fb9."]
 shipped_at = "47ec9fb9"

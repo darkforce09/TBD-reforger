@@ -25,7 +25,15 @@ current_state = [
     "P1–P10 + H1/H2/H5/H6: release-default make leptos; pan/zoom streaming settle + compose memo (−71% zoom block); thrash-free residency; library scroll + sheet de-blur;",
     "Mission Settings basemap/hillshade/grid + 12 world toggles; continuous tree guides; fence/pier/rail strips; upright building badges; density/clusters/labels/airfield bridged.",
 ]
+approach = [
+    "Release-default trunk serve; pan streaming settle plus compose memo.",
+    "Mission Settings 12 toggles; labels, clusters, fence strips, upright badges.",
+]
 verify = ["Operator G-A: HUD rf + window.__editorBench(500) on RTX."]
+acceptance = [
+    "P1–P10 plus H1/H2/H5/H6 shipped; zoom block −71%; thrash dup fetches zero.",
+    "perf-strict and fullmap green; HUD rf plus __editorBench(500) on RTX.",
+]
 citations = [
     "Source: commit dddf3158 — Leptos MC performance pass.",
     "Source: docs/platform/SHIPPED_HISTORY.md §T-173.",

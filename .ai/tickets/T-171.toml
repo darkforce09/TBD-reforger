@@ -15,6 +15,20 @@ requirement = [
     "Consolidate fixtures; document map-assets LFS consumption; rename CI jobs.",
     "Pin WHERE_DOES_X_GO conventions; T-171.docs prose pass from inventory.",
 ]
+current_state = ["Post T-159/T-165 tree disjointed: dual migrations, nested Makefiles, crate names not matching paths."]
+approach = [
+    "Nest apps/website/{api,frontend}; rename website-api and website-frontend.",
+    "Consolidate fixtures; pin WHERE_DOES_X_GO; purge dead Go and Vite residue.",
+]
+verify = [
+    "./scripts/ticket check",
+    "make leptos-gates; make ci-local; make verify-no-node",
+    "ci.yml website-api and website-frontend job ids green.",
+]
+acceptance = [
+    "apps/website/{api,frontend} nest landed; pkgs website-api and website-frontend.",
+    "WHERE_DOES_X_GO conventions pinned; dead Go and Vite residue purged.",
+]
 citations = [
     "Source: commit 2421b335.",
     "Source: docs/platform/SHIPPED_HISTORY.md §T-171.",

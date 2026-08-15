@@ -19,7 +19,19 @@ requirement = [
     "A3: continuous YouTube spine connectors.",
     "A4: click guide line toggles branch expand/collapse.",
 ]
+current_state = [
+    "Post T-177: patchy 512 m forest tiles; Outliner label redundant.",
+    "Guide spine gapped; pointer-events-none blocked click-to-toggle.",
+]
+approach = [
+    "Island 1601 TBDD density texture plus fs_forest_density Nearest shader.",
+    "Continuous YouTube spines; retire progressive mesh fill; remove Outliner label.",
+]
 verify = ["Verify: .ai/artifacts/t178_verify_log.md."]
+acceptance = [
+    "forest_mode density; pins 1601 by 625; fullmap A_density checks pass.",
+    "Outliner label removed; continuous clickable guide stems shipped.",
+]
 citations = [
     "Source: commit 58d839c7 — density-shader forest canopy.",
     "Source: docs/platform/SHIPPED_HISTORY.md §T-178.",

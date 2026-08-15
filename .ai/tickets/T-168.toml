@@ -13,8 +13,20 @@ context = [
     "Historical note: early place minted via ensure_default_squad — superseded by T-180 place→new-squad under active_side.",
     "Squad management / Stitch ORBAT Manager completed by T-180 (not a remaining T-071 task).",
 ]
+requirement = [
+    "Left-dock ORBAT browse/select tree: faction → squad → slot via build_orbat.",
+    "Place-mint ensure_default_squad; selection routes to Attributes dock.",
+]
 current_state = ["SHIPPED @ tag T-168: left-dock ORBAT browse/select tree (`build_orbat`; NodeKind::Faction/Squad)."]
+approach = [
+    "outliner.rs NodeKind Faction/Squad; build_orbat doc-order tree.",
+    "editor_ops ensure_default_squad; smoke outliner_palette o3/o4/o5.",
+]
 verify = ["smoke_outliner_palette o3/o4/o5; build_orbat unit-tested."]
+acceptance = [
+    "ORBAT tree live in left dock; build_orbat unit-tested.",
+    "smoke outliner_palette o3/o4/o5 pass; place mints default squad.",
+]
 shipped_at = "7c0078dd"
 created_at = "2026-07-17T22:44:13Z"
 completed_at = "2026-07-19T21:04:23Z"

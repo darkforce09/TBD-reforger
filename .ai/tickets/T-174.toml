@@ -15,7 +15,16 @@ requirement = [
     "S2: remove density-heatmap glow end-to-end; keep heatmap_trees LOD.",
     "S3: clip guide stems to rows; no full-dock bright rails.",
 ]
+current_state = ["Post T-173: blurry localhost sat preview-default; green density heatmap glow; full-height dock guide rails."]
+approach = [
+    "Drop sat_dev_preview_default; localhost preview-to-full progressive.",
+    "Excise density heatmap render path; clip guide stems to row hosts.",
+]
 verify = ["Verify: .ai/artifacts/t174_verify_log.md."]
+acceptance = [
+    "Localhost sat sharp after preview flash; heatmap glow removed end-to-end.",
+    "Guide stems clipped to rows; leptos-gates fullmap green.",
+]
 citations = [
     "Source: commit bbb99526 — sat fidelity, heatmap removal.",
     "Source: docs/platform/SHIPPED_HISTORY.md §T-174.",

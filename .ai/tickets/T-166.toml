@@ -15,9 +15,18 @@ requirement = [
     "WorldStore and Residency buildings, TBDD forest mass, glyph atlas on Leptos.",
     "Gate serve Range/206; smoke_fullmap Class-R matrix green.",
 ]
+current_state = ["Leptos mission editor booted hillshade-only; no satellite, buildings, forest mass, or glyph atlas."]
+approach = [
+    "Wire world_assets TBDS satellite, DEM vectors, residency, forest_mass, glyph atlas.",
+    "Gate serve Range to 206; smoke_fullmap Class-R matrix with camera-settle drain.",
+]
 verify = [
     "gate smoke fullmap: roads 888, landcover 36, sat bytes 152713114.",
     "Class-R pins in .ai/artifacts/t166_verify_log.md.",
+]
+acceptance = [
+    "Fullmap host live at default zoom −2; Class-R roads 888, landcover 36, sat 152713114.",
+    "W1–W5 matrix all PASS; smoke_fullmap 14/14 in EDITOR_SUITE.",
 ]
 citations = [
     "Source: commit ae388f1e.",

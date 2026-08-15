@@ -11,9 +11,25 @@ depends_on = ["T-171"]
 unblocks = ["T-173"]
 main_goal = "As an operator I can use the local Leptos site and Mission Creator without dead clicks, invisible units, highlighter forests, or a missing 3D Arsenal."
 context = ["Operator 2026-07-18: ticket good enough — residual MC pan/zoom stutter, Mission Library scroll/sheet lag, missing Mission Settings render prefs, tree guide-line polish → T-173."]
+requirement = [
+    "Fix operator matrix A1–A9/B1–B10 plus hunt H1–H11 dead clicks and invisible units.",
+    "Restore 3D DollEngine Arsenal, translucent forest, chrome parity versus React.",
+]
 current_state = [
     "SHIPPED @ tag T-172 / e08884f4.",
     "Operator matrix A1–A9/B1–B10 + hunt H1–H11 fixed; leptos-gates 18/18 + v-suite 25/25; ci-local 0.",
+]
+approach = [
+    "Reactive nav, selection, drawer, dossier animations; slot atlas upload.",
+    "B10 screen-04 Smart Forge plus DollEngine; leptos-gates render-check probes.",
+]
+verify = [
+    "make leptos-gates 18/18",
+    "make ci-local",
+]
+acceptance = [
+    "Operator matrix A1-A9 and B1-B10 plus hunt H1-H11 fixed.",
+    "leptos-gates 18/18 and v-suite 25/25; ci-local completed.",
 ]
 citations = [
     "Verify: .ai/artifacts/t172_verify_log.md.",

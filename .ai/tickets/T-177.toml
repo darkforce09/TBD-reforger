@@ -21,7 +21,19 @@ requirement = [
     "B1–B2: Editor Layers only dock; OrbatManagerDialog from strip.",
     "Gate: full Chrome headless + gate doctor fail-fast preflight.",
 ]
+current_state = [
+    "Post T-176: guide lines gapped; grab cursor missing on palette leaves.",
+    "Top menus painted behind docks; left ORBAT split still present.",
+]
+approach = [
+    "guide_spans YouTube elbows; PALETTE_LEAF grab cursor; strip z-30 above docks.",
+    "OrbatManagerDialog from top strip; gate doctor fail-fast preflight.",
+]
 verify = ["Verify: .ai/artifacts/t177_verify_log.md."]
+acceptance = [
+    "Editor Layers only left dock; ORBAT Manager modal from top strip.",
+    "gate doctor plus leptos-gates 20/20; full Chrome headless over shell.",
+]
 citations = [
     "Source: commit e97a01c6 — MC chrome ORBAT cutover.",
     "Source: docs/platform/SHIPPED_HISTORY.md §T-177.",

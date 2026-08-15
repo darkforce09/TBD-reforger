@@ -19,7 +19,19 @@ requirement = [
     "B1: SlotPlacePreview bound to slot atlas.",
     "B2: CAMERA_GESTURE defers DEM/forest recompute during pan.",
 ]
+current_state = [
+    "Post T-175: forest highlight stale until zoom ritual; 32 m landcover wash oversized.",
+    "Palette place ghost invisible; zoom+pan stutter during DEM/forest recompute.",
+]
+approach = [
+    "world redensify 8 m TBDD bins; drop forest-kind landcover wash.",
+    "SlotPlacePreview atlas bind; CAMERA_GESTURE defers recompute during pan.",
+]
 verify = ["Verify: .ai/artifacts/t176_verify_log.md."]
+acceptance = [
+    "8 m canopy mass replaced landcover wash; 625 bins rebaked.",
+    "Place ghost bound to slot atlas; pan gesture defers forest recompute.",
+]
 citations = [
     "Source: commit a5940fad — forest 8m canopy re-bake.",
     "Source: docs/platform/SHIPPED_HISTORY.md §T-176.",

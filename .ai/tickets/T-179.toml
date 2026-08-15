@@ -10,6 +10,14 @@ executor = "claude-code"
 depends_on = ["T-178"]
 main_goal = "As a mission maker I see a smooth forest canopy without 8 m stairs or 512 m holes, plus real marching-squares outline polylines at outline LOD."
 context = ["SHIPPED @ tag T-179 / 8f45ee83."]
+requirement = [
+    "Smooth forest canopy without 8 m stairs or 512 m holes.",
+    "Real marching-squares outline hairlines at outline LOD with bins_ok arm gate.",
+]
+current_state = [
+    "Post T-178: blocky Nearest density fill; holed canopy at chunk seams.",
+    "forest_outline_segments fake; bins_ok below 625 arms GPU inconsistently.",
+]
 approach = [
     "A bins_ok===625 + retry;",
     "B Linear soft fs_forest_density (RGBA8 count-in-R, corner UV, fwidth AA iso);",
@@ -17,6 +25,10 @@ approach = [
     "D fullmap A_bins + outline floor ≥50000.",
 ]
 verify = ["Verify: .ai/artifacts/t179_verify_log.md."]
+acceptance = [
+    "Linear soft fs_forest_density shipped; forest_bins_ok 625 with retries.",
+    "MS hairlines role 6 measured 99374 at z=−1; smoke floor ≥50000.",
+]
 citations = ["Hub: docs/platform/t179_forest_canopy_fix.md."]
 shipped_at = "eab1717c"
 created_at = "2026-07-19T15:30:06Z"
