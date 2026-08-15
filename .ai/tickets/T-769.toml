@@ -1,12 +1,55 @@
 id = "T-769"
 kind = "work"
-title = "The dock tree still scrolls in a fixed 420px box, and the comment excusing it is false"
+title = "Dock tree fixed 420px box and false comment"
 summary = "The dock tree still scrolls in a fixed 420px box, and the comment excusing it is false"
 class = "bug"
 status = "shipped"
 order = 4645
 executor = "claude-code"
-notes = "filed by wave-118 adversarial verifier (editor factory)"
+notes = """
+filed by wave-118 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+MAJOR from the wave-118 adversarial verifier, and it REFUTES the shipping slice's own recorded reasoning. T-637 left `CONTAINER_H` (eden_tree.rs:323-330) at a fixed 420px inside the now flex-1 ~958px dock region, and justified it in a shipped comment: that an h-full scroller at the new 16px pitch would render ~69 of ~88 rows on 1080p, so `smoke_virtual_outliner` (which asserts rendered < total) would STOP TESTING WINDOWING WITHOUT FAILING. BOTH HALVES ARE FALSE. (1) The smoke does not only assert `rendered < total` — smokes.rs:2651 ALSO pins `e_rend1 <= 60`, and that cap PREDATES this wave (T-339, present at base). (2) Deriving from eden_tree.rs:999-1001, `rendered = ceil(H/16) + 12`. At the slice's own cited 1080p (958px region) that is 72: `72 < 88` so the windowing assertion STILL PASSES — windowing would not have gone untested — and `72 > 60` so the v3 cap FAILS LOUDLY. At the gate's real 1440x900 viewport it is 61, failing by one. An h-full scroller would have gone RED, not silent. THE ACTUAL DEFECT LEFT UNFIXED: trees over ~50 rows still render inside a 420px inner scroller nested in a ~958px region, so up to ~538px of exactly the void this ticket exists to absorb comes back on large missions. The <=50-row eager path IS genuinely fixed and the 17->26 visible-row densification is real, so this is a partial, not a no-op. FIX: give the tree region a measured height (h-full inside the flex column) AND update `smoke_virtual_outliner`'s rendered cap so it pins windowing independently of viewport size — the two must move together, which is why it is one ticket. AND CORRECT THE COMMENT: a false rationale enshrined in shipped code is worse than no comment, because the next reader will trust it. Diagnosis: editor_verify/wave118.md MAJOR-1.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["MAJOR from the wave-118 adversarial verifier, and it REFUTES the shipping slice's own recorded reasoning. T-637 left `CONTAINER_H` (eden_tree.rs:323-330) at a fixed 420px inside the now flex-1 ~958px dock region, and justified it in a shipped comment: that an h-full scroller at the new 16px pitch would render ~69 of ~88 rows on 1080p, so `smoke_virtual_outliner` (which asserts rendered < total) would STOP TESTING WINDOWING WITHOUT FAILING. BOTH HALVES ARE FALSE. (1) The smoke does not only assert `rendered < total` — smokes.rs:2651 ALSO pins `e_rend1 <= 60`, and that cap PREDATES this wave (T-339, present at base). (2) Deriving from eden_tree.rs:999-1001, `rendered = ceil(H/16) + 12`. At the slice's own cited 1080p (958px region) that is 72: `72 < 88` so the windowing assertion STILL PASSES — windowing would not have gone untested — and `72 > 60` so the v3 cap FAILS LOUDLY. At the gate's real 1440x900 viewport it is 61, failing by one. An h-full scroller would have gone RED, not silent. THE ACTUAL DEFECT LEFT UNFIXED: trees over ~50 rows still render inside a 420px inner scroller nested in a ~958px region, so up to ~538px of exactly the void this ticket exists to absorb comes back on large missions. The <=50-row eager path IS genuinely fixed and the 17->26 visible-row densification is real, so this is a partial, not a no-op. FIX: give the tree region a measured height (h-full inside the flex column) AND update `smoke_virtual_outliner`'s rendered cap so it pins windowing independently of viewport size — the two must move together, which is why it is one ticket. AND CORRECT THE COMMENT: a false rationale enshrined in shipped code is worse than no comment, because the next reader will trust it. Diagnosis: editor_verify/wave118.md MAJOR-1."]
+
+missing=0
+"""
+main_goal = "Give dock tree h-full scroller and update smoke_virtual_outliner rendered cap."
+context = [
+    "MAJOR wave-118 refutes T-637 shipping slice recorded reasoning both halves false.",
+    "CONTAINER_H fixed 420px inside flex-1 ~958px dock; comment claims smoke would stop testing.",
+    "smoke_virtual_outliner also pins e_rend1 <= 60 cap predates T-339 at base.",
+]
+requirement = [
+    "Tree region measured height h-full inside flex column not fixed 420px inner scroller.",
+    "Update smoke_virtual_outliner rendered cap to pin windowing independent of viewport.",
+    "Correct false comment; false rationale worse than no comment for next reader.",
+]
+current_state = [
+    "At 1080p 958px region rendered ceil H/16 plus 12 equals 72; 72 less than 88 passes.",
+    "72 greater than 60 fails v3 cap loudly; h-full would go red not silent.",
+    "Trees over ~50 rows nest 420px scroller leaving ~538px void on large missions.",
+]
+approach = [
+    "h-full scroller and smoke cap must move together one ticket.",
+    "Derive rendered from eden_tree 999-1001 formula; gate real 1440x900 viewport is 61.",
+    "<=50-row eager path genuinely fixed; 17 to 26 visible-row densification is real partial.",
+]
+verify = [
+    "h-full tree scroller at 1080p and 1440x900; smoke_virtual_outliner cap pins windowing.",
+    "False CONTAINER_H comment removed or corrected in eden_tree.rs.",
+]
+citations = [
+    "editor_verify/wave118 MAJOR-1",
+    "smoke_virtual_outliner cap",
+    "eden_tree CONTAINER_H 420",
+    "T-637 false rationale",
+]
 shipped_at = "5ed4e4f1"
 created_at = "2026-08-08T03:19:30Z"
 completed_at = "2026-08-08T03:21:05Z"
@@ -18,7 +61,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["MAJOR from the wave-118 adversarial verifier, and it REFUTES the shipping slice's own recorded reasoning. T-637 left `CONTAINER_H` (eden_tree.rs:323-330) at a fixed 420px inside the now flex-1 ~958px dock region, and justified it in a shipped comment: that an h-full scroller at the new 16px pitch would render ~69 of ~88 rows on 1080p, so `smoke_virtual_outliner` (which asserts rendered < total) would STOP TESTING WINDOWING WITHOUT FAILING. BOTH HALVES ARE FALSE. (1) The smoke does not only assert `rendered < total` — smokes.rs:2651 ALSO pins `e_rend1 <= 60`, and that cap PREDATES this wave (T-339, present at base). (2) Deriving from eden_tree.rs:999-1001, `rendered = ceil(H/16) + 12`. At the slice's own cited 1080p (958px region) that is 72: `72 < 88` so the windowing assertion STILL PASSES — windowing would not have gone untested — and `72 > 60` so the v3 cap FAILS LOUDLY. At the gate's real 1440x900 viewport it is 61, failing by one. An h-full scroller would have gone RED, not silent. THE ACTUAL DEFECT LEFT UNFIXED: trees over ~50 rows still render inside a 420px inner scroller nested in a ~958px region, so up to ~538px of exactly the void this ticket exists to absorb comes back on large missions. The <=50-row eager path IS genuinely fixed and the 17->26 visible-row densification is real, so this is a partial, not a no-op. FIX: give the tree region a measured height (h-full inside the flex column) AND update `smoke_virtual_outliner`'s rendered cap so it pins windowing independently of viewport size — the two must move together, which is why it is one ticket. AND CORRECT THE COMMENT: a false rationale enshrined in shipped code is worse than no comment, because the next reader will trust it. Diagnosis: editor_verify/wave118.md MAJOR-1."]
 owns = [
     "apps/website/frontend/src/eden_tree.rs",
     "tools/tbd-tools/src/smokes.rs",

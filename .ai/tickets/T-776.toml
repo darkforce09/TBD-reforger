@@ -1,12 +1,55 @@
 id = "T-776"
 kind = "work"
-title = "Wave-119 residue: four census guards weaker than they read, and one mislabelled hit row"
+title = "Four weak census guards and one mislabelled hit row"
 summary = "Wave-119 residue: four census guards weaker than they read, and one mislabelled hit row"
 class = "chore"
 status = "shipped"
 order = 4652
 executor = "claude-code"
-notes = "filed by wave-119 adversarial verifier (editor factory)"
+notes = '''
+filed by wave-119 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+Four NITs from the wave-119 verifier, grouped because each is a few lines and three are the same class — a guard that reads stronger than it asserts. Every underlying behaviour was independently verified correct; these are gaps in the guarantees. (1) eden_help.rs:953-961: `every_shared_channel_claimant_reads_live_state` is a per-listener SUBSTRING check, so an unrelated `get_untracked()` anywhere in the closure satisfies it. All ten current claimants genuinely gate their Escape path (the verifier read each), so this is latent — but the exemption it guards is the one that keeps a nine-claimant Escape channel legal, which is the last place a weak guard should sit. (2) eden_help.rs:1084-1094: `there_is_exactly_one_extractor` scans only the six declared surface files plus eden_help, so a fifth copy elsewhere in the crate would pass. A repo-wide grep confirms none exists today (sole definition at eden_help.rs:829), and this is the pin enforcing T-738's banked instruction, so it should scan the crate. (3) eden_help.rs:684-686: a keydown closure that reads NEITHER `ev.key()` NOR `ev.code()`, or whose event parameter is not named `ev`, is silently DROPPED from discovery rather than flagged. Partially mitigated by the declared per-file counts and the empty-bindings check, but 'silently dropped' is the shape the whole census exists to eliminate. (4) eden_dock_left.rs:1527-1537 and :547-550 (T-697): a plain hit that matched on FACTION reports `field` as the entity's first text attribute, so the row title claims `matched name "..."` when the faction is what matched. Cosmetic and never wrong about WHICH entity matched, only about why. Diagnosis: editor_verify/wave119.md NIT-1..4.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["""Four NITs from the wave-119 verifier, grouped because each is a few lines and three are the same class — a guard that reads stronger than it asserts. Every underlying behaviour was independently verified correct; these are gaps in the guarantees. (1) eden_help.rs:953-961: `every_shared_channel_claimant_reads_live_state` is a per-listener SUBSTRING check, so an unrelated `get_untracked()` anywhere in the closure satisfies it. All ten current claimants genuinely gate their Escape path (the verifier read each), so this is latent — but the exemption it guards is the one that keeps a nine-claimant Escape channel legal, which is the last place a weak guard should sit. (2) eden_help.rs:1084-1094: `there_is_exactly_one_extractor` scans only the six declared surface files plus eden_help, so a fifth copy elsewhere in the crate would pass. A repo-wide grep confirms none exists today (sole definition at eden_help.rs:829), and this is the pin enforcing T-738's banked instruction, so it should scan the crate. (3) eden_help.rs:684-686: a keydown closure that reads NEITHER `ev.key()` NOR `ev.code()`, or whose event parameter is not named `ev`, is silently DROPPED from discovery rather than flagged. Partially mitigated by the declared per-file counts and the empty-bindings check, but 'silently dropped' is the shape the whole census exists to eliminate. (4) eden_dock_left.rs:1527-1537 and :547-550 (T-697): a plain hit that matched on FACTION reports `field` as the entity's first text attribute, so the row title claims `matched name "..."` when the faction is what matched. Cosmetic and never wrong about WHICH entity matched, only about why. Diagnosis: editor_verify/wave119.md NIT-1..4."""]
+
+missing=0
+'''
+main_goal = "Strengthen four census guards and fix FACTION hit row field label."
+context = [
+    "Four wave-119 NITs grouped; each few lines three same guard class.",
+    "Every underlying behaviour verified correct; gaps in guarantee strength.",
+    "Weak substring claimant check latent; extractor scan limited; drop silent.",
+]
+requirement = [
+    "every_shared_channel_claimant reads live state not substring get_untracked.",
+    "there_is_exactly_one_extractor scans whole crate not six surface files only.",
+    "Flag keydown closures missing ev.key ev.code not silently drop from census.",
+    "FACTION plain hit row reports matched field not first text attribute.",
+]
+current_state = [
+    "Claimant pin substring satisfied by unrelated get_untracked anywhere in closure.",
+    "Extractor pin scans six files; fifth copy elsewhere would pass today.",
+    "Hit row title claims matched name when faction matched cosmetic only.",
+]
+approach = [
+    "Tighten claimant check to gate Escape path specifically.",
+    "Widen extractor scan crate-wide; flag unnamed ev param closures.",
+]
+verify = [
+    "Weak guard tests fail on latent bypass not only current ten claimants.",
+    "FACTION hit row labels faction match not entity first text attribute.",
+]
+citations = [
+    "editor_verify wave119 NIT-1",
+    "editor_verify wave119 NIT-2",
+    "editor_verify wave119 NIT-3",
+    "editor_verify wave119 NIT-4",
+]
 shipped_at = "6ec74d23"
 created_at = "2026-08-08T05:43:33Z"
 completed_at = "2026-08-08T05:45:15Z"
@@ -18,7 +61,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["""Four NITs from the wave-119 verifier, grouped because each is a few lines and three are the same class — a guard that reads stronger than it asserts. Every underlying behaviour was independently verified correct; these are gaps in the guarantees. (1) eden_help.rs:953-961: `every_shared_channel_claimant_reads_live_state` is a per-listener SUBSTRING check, so an unrelated `get_untracked()` anywhere in the closure satisfies it. All ten current claimants genuinely gate their Escape path (the verifier read each), so this is latent — but the exemption it guards is the one that keeps a nine-claimant Escape channel legal, which is the last place a weak guard should sit. (2) eden_help.rs:1084-1094: `there_is_exactly_one_extractor` scans only the six declared surface files plus eden_help, so a fifth copy elsewhere in the crate would pass. A repo-wide grep confirms none exists today (sole definition at eden_help.rs:829), and this is the pin enforcing T-738's banked instruction, so it should scan the crate. (3) eden_help.rs:684-686: a keydown closure that reads NEITHER `ev.key()` NOR `ev.code()`, or whose event parameter is not named `ev`, is silently DROPPED from discovery rather than flagged. Partially mitigated by the declared per-file counts and the empty-bindings check, but 'silently dropped' is the shape the whole census exists to eliminate. (4) eden_dock_left.rs:1527-1537 and :547-550 (T-697): a plain hit that matched on FACTION reports `field` as the entity's first text attribute, so the row title claims `matched name "..."` when the faction is what matched. Cosmetic and never wrong about WHICH entity matched, only about why. Diagnosis: editor_verify/wave119.md NIT-1..4."""]
 owns = [
     "apps/website/frontend/src/eden_help.rs",
     "apps/website/frontend/src/eden_dock_left.rs",

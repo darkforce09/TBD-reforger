@@ -1,12 +1,46 @@
 id = "T-772"
 kind = "work"
-title = "The ControlsHint close button's hit box shrank with the shared BTN_ICON change"
+title = "ControlsHint close hit box shrank from shared BTN_ICON"
 summary = "The ControlsHint close button's hit box shrank with the shared BTN_ICON change"
 class = "bug"
 status = "shipped"
 order = 4648
 executor = "claude-code"
-notes = "filed by wave-118 adversarial verifier (editor factory)"
+notes = """
+filed by wave-118 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+NIT from the wave-118 verifier. T-637 rebuilt `eden_layout::BTN_ICON` from `p-1.5` + `text-on-surface-variant` to `p-0.5` + `text-on-surface`, which was the correct fix for the dock density work and correctly moved the 'a live glyph rests bright' enforcement to the shared recipe so every caller benefits. Side effect: `eden_help.rs:244`, the ControlsHint overlay's close button, was sized by that recipe and its hit box went from roughly 36px to roughly 20px. Behaviour is intact (it still composes HOVER_FILL and is never disabled) and the button also has an Escape path, so nothing is unreachable — but 20px is below the comfortable pointer target for a dismiss control that is not in a dense row. The five BTN_ICON callers were verified to be the same set as at base, so nothing else regressed. Fix: give the overlay's close button its own padding at the call site rather than widening the shared recipe back out, since the dense-row sizing is what the dock work needs. Diagnosis: editor_verify/wave118.md NIT-1.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["NIT from the wave-118 verifier. T-637 rebuilt `eden_layout::BTN_ICON` from `p-1.5` + `text-on-surface-variant` to `p-0.5` + `text-on-surface`, which was the correct fix for the dock density work and correctly moved the 'a live glyph rests bright' enforcement to the shared recipe so every caller benefits. Side effect: `eden_help.rs:244`, the ControlsHint overlay's close button, was sized by that recipe and its hit box went from roughly 36px to roughly 20px. Behaviour is intact (it still composes HOVER_FILL and is never disabled) and the button also has an Escape path, so nothing is unreachable — but 20px is below the comfortable pointer target for a dismiss control that is not in a dense row. The five BTN_ICON callers were verified to be the same set as at base, so nothing else regressed. Fix: give the overlay's close button its own padding at the call site rather than widening the shared recipe back out, since the dense-row sizing is what the dock work needs. Diagnosis: editor_verify/wave118.md NIT-1."]
+
+missing=0
+"""
+main_goal = "Restore comfortable dismiss hit target for ControlsHint close without widening shared BTN_ICON."
+context = [
+    "Wave-118 NIT: T-637 rebuilt eden_layout BTN_ICON p-0.5 for dock density.",
+    "ControlsHint close at eden_help 244 sized by recipe; hit box ~36px to ~20px.",
+    "Behaviour intact with HOVER_FILL Escape path; five callers verified same set.",
+]
+requirement = [
+    "Overlay close gets call-site padding without widening shared BTN_ICON recipe.",
+    "Dense-row dock sizing preserved on shared recipe for other callers.",
+]
+current_state = [
+    "Close hit box ~20px below comfortable pointer target for dismiss control.",
+    "Shared BTN_ICON correct for dock density; side effect on ControlsHint only.",
+]
+approach = ["Add call-site padding on ControlsHint close at eden_help 244 only."]
+verify = ["ControlsHint close hit target comfortable; shared BTN_ICON unchanged for dock callers."]
+citations = [
+    "editor_verify/wave118 NIT-1",
+    "T-637 BTN_ICON rebuild",
+    "eden_help.rs 244 close",
+    "dock density p-0.5 recipe",
+]
 shipped_at = "2af211f6"
 created_at = "2026-08-08T07:35:24Z"
 completed_at = "2026-08-08T07:40:38Z"
@@ -18,7 +52,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["NIT from the wave-118 verifier. T-637 rebuilt `eden_layout::BTN_ICON` from `p-1.5` + `text-on-surface-variant` to `p-0.5` + `text-on-surface`, which was the correct fix for the dock density work and correctly moved the 'a live glyph rests bright' enforcement to the shared recipe so every caller benefits. Side effect: `eden_help.rs:244`, the ControlsHint overlay's close button, was sized by that recipe and its hit box went from roughly 36px to roughly 20px. Behaviour is intact (it still composes HOVER_FILL and is never disabled) and the button also has an Escape path, so nothing is unreachable — but 20px is below the comfortable pointer target for a dismiss control that is not in a dense row. The five BTN_ICON callers were verified to be the same set as at base, so nothing else regressed. Fix: give the overlay's close button its own padding at the call site rather than widening the shared recipe back out, since the dense-row sizing is what the dock work needs. Diagnosis: editor_verify/wave118.md NIT-1."]
 owns = ["apps/website/frontend/src/eden_help.rs"]
 
 [scope]

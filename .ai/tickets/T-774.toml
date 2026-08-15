@@ -1,12 +1,54 @@
 id = "T-774"
 kind = "work"
-title = "The keybinding census misses 2 of 13 editor-surface listeners — the defect it fixed, one level up"
+title = "Census misses two of thirteen editor-surface listeners"
 summary = "The keybinding census misses 2 of 13 editor-surface listeners — the defect it fixed, one level up"
 class = "bug"
 status = "shipped"
 order = 4650
 executor = "claude-code"
-notes = "filed by wave-119 adversarial verifier (editor factory)"
+notes = """
+filed by wave-119 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+MAJOR from the wave-119 adversarial verifier, and it is the same shape as the defect T-703 was written to cure. T-703 replaced a census that read 2 of 11 window-level keydown listeners with one that reads 11 — and the true editor surface is THIRTEEN. Missing: `apps/website/frontend/src/faction_manager.rs:70` and `apps/website/frontend/src/orbat_manager.rs:249`, each installing a window-level keydown. Both are live whenever the Mission Creator is up: mission_editor.rs:4399 mounts FactionManagerDialog and :4402 mounts OrbatManagerDialog (the latter through a bare re-export at eden_chrome.rs:39, which is why a symbol search for the component did not find the file). Neither is in `editor_surface()` (eden_help.rs:556) and neither is covered by the scope note, which excuses only ui's Dialog/Sheet and layout's nav. Consequence: the header's derived 'eleven listeners in six modules' is derived from an incomplete input, so the numbers are true of what the census SCANS and false of what the editor RUNS. NOT EXPLOITABLE TODAY — the verifier read both missed bodies and each binds Escape ONLY, gated on `open.get_untracked()`, and Escape is the declared shared channel; a by-hand collision sweep across all 13 confirms none exists. THE FORWARD RISK IS THE POINT: both files sit outside the growth tripwire (`every_editor_surface_listener_is_censused`), outside `every_shared_channel_claimant_reads_live_state`, and outside the T-692 coverage pins — so a key added to either dialog would ship undocumented and collision-unchecked with every pin green, which is exactly the 2-of-11 defect reproduced at 11-of-13. FIX: one line per file in `editor_surface()` with the per-file listener count set to 1 each (total 13); both then fall under the claimant pin for free, and the derived header numbers correct themselves. Also worth doing in the same pass, from the same report: eden_help.rs:376's 'Escape is claimed by nine listeners' is UNPINNED PROSE (the derived-numbers pin covers only the //! header), so it rots silently the moment this is fixed. ALSO RECORDED: the T-703 slice report claimed '39 bindings'; the verifier's independent parser counts 32 and the figure 39 appears nowhere in code, commit or artifacts — treat the slice's count as unsubstantiated. Diagnosis: editor_verify/wave119.md MAJOR-1 + MINOR-1.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["MAJOR from the wave-119 adversarial verifier, and it is the same shape as the defect T-703 was written to cure. T-703 replaced a census that read 2 of 11 window-level keydown listeners with one that reads 11 — and the true editor surface is THIRTEEN. Missing: `apps/website/frontend/src/faction_manager.rs:70` and `apps/website/frontend/src/orbat_manager.rs:249`, each installing a window-level keydown. Both are live whenever the Mission Creator is up: mission_editor.rs:4399 mounts FactionManagerDialog and :4402 mounts OrbatManagerDialog (the latter through a bare re-export at eden_chrome.rs:39, which is why a symbol search for the component did not find the file). Neither is in `editor_surface()` (eden_help.rs:556) and neither is covered by the scope note, which excuses only ui's Dialog/Sheet and layout's nav. Consequence: the header's derived 'eleven listeners in six modules' is derived from an incomplete input, so the numbers are true of what the census SCANS and false of what the editor RUNS. NOT EXPLOITABLE TODAY — the verifier read both missed bodies and each binds Escape ONLY, gated on `open.get_untracked()`, and Escape is the declared shared channel; a by-hand collision sweep across all 13 confirms none exists. THE FORWARD RISK IS THE POINT: both files sit outside the growth tripwire (`every_editor_surface_listener_is_censused`), outside `every_shared_channel_claimant_reads_live_state`, and outside the T-692 coverage pins — so a key added to either dialog would ship undocumented and collision-unchecked with every pin green, which is exactly the 2-of-11 defect reproduced at 11-of-13. FIX: one line per file in `editor_surface()` with the per-file listener count set to 1 each (total 13); both then fall under the claimant pin for free, and the derived header numbers correct themselves. Also worth doing in the same pass, from the same report: eden_help.rs:376's 'Escape is claimed by nine listeners' is UNPINNED PROSE (the derived-numbers pin covers only the //! header), so it rots silently the moment this is fixed. ALSO RECORDED: the T-703 slice report claimed '39 bindings'; the verifier's independent parser counts 32 and the figure 39 appears nowhere in code, commit or artifacts — treat the slice's count as unsubstantiated. Diagnosis: editor_verify/wave119.md MAJOR-1 + MINOR-1."]
+
+missing=0
+"""
+main_goal = "Add faction_manager and orbat_manager to editor_surface census total thirteen."
+context = [
+    "Wave-119 MAJOR same shape as T-703 defect cured at eleven not thirteen.",
+    "Missing faction_manager 70 and orbat_manager 249 window keydown listeners.",
+    "Both live when Mission Creator up; not in editor_surface scope note.",
+]
+requirement = [
+    "Add one line per file in editor_surface with listener count one each.",
+    "Pin unpinned eden_help 376 Escape nine listeners prose when fixed.",
+]
+current_state = [
+    "Header eleven listeners six modules derived from incomplete census input.",
+    "Neither file under growth tripwire claimant pins T-692 coverage.",
+    "Not exploitable today both Escape only gated open; collision sweep clean.",
+]
+approach = [
+    "editor_surface includes faction_manager and orbat_manager one listener each.",
+    "Derived header numbers correct; claimant pin covers both for free.",
+]
+verify = [
+    "Census scans thirteen listeners; header derived numbers match live editor.",
+    "every_editor_surface_listener_is_censused includes both dialog files.",
+]
+citations = [
+    "editor_verify wave119 MAJOR-1",
+    "editor_verify wave119 MINOR-1",
+    "faction_manager.rs 70 listener",
+    "orbat_manager.rs 249 listener",
+    "T-703 eleven listener fix",
+]
 shipped_at = "0d98a6e2"
 created_at = "2026-08-07T23:14:39Z"
 completed_at = "2026-08-07T23:17:21Z"
@@ -18,7 +60,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["MAJOR from the wave-119 adversarial verifier, and it is the same shape as the defect T-703 was written to cure. T-703 replaced a census that read 2 of 11 window-level keydown listeners with one that reads 11 — and the true editor surface is THIRTEEN. Missing: `apps/website/frontend/src/faction_manager.rs:70` and `apps/website/frontend/src/orbat_manager.rs:249`, each installing a window-level keydown. Both are live whenever the Mission Creator is up: mission_editor.rs:4399 mounts FactionManagerDialog and :4402 mounts OrbatManagerDialog (the latter through a bare re-export at eden_chrome.rs:39, which is why a symbol search for the component did not find the file). Neither is in `editor_surface()` (eden_help.rs:556) and neither is covered by the scope note, which excuses only ui's Dialog/Sheet and layout's nav. Consequence: the header's derived 'eleven listeners in six modules' is derived from an incomplete input, so the numbers are true of what the census SCANS and false of what the editor RUNS. NOT EXPLOITABLE TODAY — the verifier read both missed bodies and each binds Escape ONLY, gated on `open.get_untracked()`, and Escape is the declared shared channel; a by-hand collision sweep across all 13 confirms none exists. THE FORWARD RISK IS THE POINT: both files sit outside the growth tripwire (`every_editor_surface_listener_is_censused`), outside `every_shared_channel_claimant_reads_live_state`, and outside the T-692 coverage pins — so a key added to either dialog would ship undocumented and collision-unchecked with every pin green, which is exactly the 2-of-11 defect reproduced at 11-of-13. FIX: one line per file in `editor_surface()` with the per-file listener count set to 1 each (total 13); both then fall under the claimant pin for free, and the derived header numbers correct themselves. Also worth doing in the same pass, from the same report: eden_help.rs:376's 'Escape is claimed by nine listeners' is UNPINNED PROSE (the derived-numbers pin covers only the //! header), so it rots silently the moment this is fixed. ALSO RECORDED: the T-703 slice report claimed '39 bindings'; the verifier's independent parser counts 32 and the figure 39 appears nowhere in code, commit or artifacts — treat the slice's count as unsubstantiated. Diagnosis: editor_verify/wave119.md MAJOR-1 + MINOR-1."]
 owns = ["apps/website/frontend/src/eden_help.rs"]
 
 [scope]

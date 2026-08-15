@@ -1,12 +1,53 @@
 id = "T-766"
 kind = "work"
-title = "Clearing a briefing leaves the export envelope carrying the deleted text for the rest of the session"
+title = "Cleared briefing still exports stale meta text"
 summary = "Clearing a briefing leaves the export envelope carrying the deleted text for the rest of the session"
 class = "bug"
 status = "shipped"
 order = 4642
 executor = "claude-code"
-notes = "filed by wave-117 adversarial verifier (editor factory)"
+notes = '''
+filed by wave-117 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+MINOR from the wave-117 verifier, disclosed by the T-671 slice rather than found against it. eden_settings.rs:399-409 `mirror_briefing_into_document` writes a saved briefing through to `meta.briefing` so that an in-session edit reaches `compile_export` — which fixed a real bug. But it SKIPS BLANK, because the mutator it uses (`apply_row_meta`) treats a blank value as 'not supplied', deliberately, so that hydrate cannot wipe a good briefing. Consequence: CLEARING a briefing PATCHes the `missions` row to `""` (so the library card, dossier and approval queue all update correctly) while `meta.briefing` keeps the old text — and `compile_export` reads `meta.briefing`. Export Compiled Mission before reloading and the envelope still carries the briefing the author just deleted. Authored content diverging from what ships is exactly the class this programme cares about, though the window is narrow (same session, pre-reload) and the guard it derives from is defensible on its own terms. FIX: a clearing mutator in crates/map-engine-core/src/doc/store.rs that can distinguish 'set to empty' from 'not supplied' — outside T-671's owns, which is why it was documented in the function's doc comment rather than half-fixed. Diagnosis: editor_verify/wave117.md MINOR-2.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["""MINOR from the wave-117 verifier, disclosed by the T-671 slice rather than found against it. eden_settings.rs:399-409 `mirror_briefing_into_document` writes a saved briefing through to `meta.briefing` so that an in-session edit reaches `compile_export` — which fixed a real bug. But it SKIPS BLANK, because the mutator it uses (`apply_row_meta`) treats a blank value as 'not supplied', deliberately, so that hydrate cannot wipe a good briefing. Consequence: CLEARING a briefing PATCHes the `missions` row to `""` (so the library card, dossier and approval queue all update correctly) while `meta.briefing` keeps the old text — and `compile_export` reads `meta.briefing`. Export Compiled Mission before reloading and the envelope still carries the briefing the author just deleted. Authored content diverging from what ships is exactly the class this programme cares about, though the window is narrow (same session, pre-reload) and the guard it derives from is defensible on its own terms. FIX: a clearing mutator in crates/map-engine-core/src/doc/store.rs that can distinguish 'set to empty' from 'not supplied' — outside T-671's owns, which is why it was documented in the function's doc comment rather than half-fixed. Diagnosis: editor_verify/wave117.md MINOR-2."""]
+
+missing=0
+'''
+main_goal = "Clear meta.briefing when author clears briefing for compile_export."
+context = [
+    "Wave-117 MINOR disclosed by T-671 slice not found against it.",
+    "mirror_briefing_into_document skips blank via apply_row_meta not-supplied guard.",
+    "Clearing PATCHes missions row empty but meta.briefing keeps old text.",
+]
+requirement = [
+    "Clearing mutator in store.rs distinguishing set-to-empty from not-supplied.",
+    "compile_export reads meta.briefing; must reflect cleared briefing same session.",
+]
+current_state = [
+    "eden_settings 399-409 mirror_briefing_into_document skips blank apply_row_meta.",
+    "Library card dossier approval queue update; export envelope still carries deleted text.",
+    "Narrow window same session pre-reload; guard defensible on hydrate-wipe terms.",
+]
+approach = [
+    "Add store.rs mutator can set meta.briefing to empty distinct from not supplied.",
+    "Wire eden_settings clear path through new mutator not apply_row_meta blank skip.",
+]
+verify = [
+    "Clear briefing export compiled mission envelope has no deleted briefing text.",
+    "Hydrate still cannot wipe good briefing via not-supplied guard intact.",
+]
+citations = [
+    "editor_verify/wave117 MINOR-2",
+    "T-671 slice disclosure",
+    "mirror_briefing_into_document",
+    "apply_row_meta blank skip",
+]
 shipped_at = "f0f63b45"
 created_at = "2026-08-08T05:02:43Z"
 completed_at = "2026-08-08T05:10:14Z"
@@ -18,7 +59,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = ["""MINOR from the wave-117 verifier, disclosed by the T-671 slice rather than found against it. eden_settings.rs:399-409 `mirror_briefing_into_document` writes a saved briefing through to `meta.briefing` so that an in-session edit reaches `compile_export` — which fixed a real bug. But it SKIPS BLANK, because the mutator it uses (`apply_row_meta`) treats a blank value as 'not supplied', deliberately, so that hydrate cannot wipe a good briefing. Consequence: CLEARING a briefing PATCHes the `missions` row to `""` (so the library card, dossier and approval queue all update correctly) while `meta.briefing` keeps the old text — and `compile_export` reads `meta.briefing`. Export Compiled Mission before reloading and the envelope still carries the briefing the author just deleted. Authored content diverging from what ships is exactly the class this programme cares about, though the window is narrow (same session, pre-reload) and the guard it derives from is defensible on its own terms. FIX: a clearing mutator in crates/map-engine-core/src/doc/store.rs that can distinguish 'set to empty' from 'not supplied' — outside T-671's owns, which is why it was documented in the function's doc comment rather than half-fixed. Diagnosis: editor_verify/wave117.md MINOR-2."""]
 owns = [
     "crates/map-engine-core/src/doc/store.rs",
     "apps/website/frontend/src/eden_settings.rs",

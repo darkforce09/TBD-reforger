@@ -1,12 +1,55 @@
 id = "T-770"
 kind = "work"
-title = "commit_writes counts closure calls, not sink acknowledgements, so its warning arm is unreachable"
+title = "commit_writes warning arm unreachable in production"
 summary = "commit_writes counts closure calls, not sink acknowledgements, so its warning arm is unreachable"
 class = "bug"
 status = "shipped"
 order = 4646
 executor = "claude-code"
-notes = "filed by wave-118 adversarial verifier (editor factory)"
+notes = """
+filed by wave-118 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+MINOR from the wave-118 verifier. T-699's `commit_writes` (arsenal.rs:1100-1110) is built around the right idea — the receipt is composed from what the commit sink returned rather than from the plan length, precisely so the author is never told more landed than did, and it carries a WARNING arm for when planned and committed disagree. But it counts CLOSURE INVOCATIONS, and the production sink `update_slot_loadout` (store.rs:2733) returns `()` and silently no-ops on an unknown id. So in production `commits` always equals plan length and the WARNING arm is UNREACHABLE. Not currently exploitable: plan and commit run in one synchronous task (the `window.confirm` included), so nothing can invalidate an id between them, and the NATIVE pin has real teeth — the verifier re-ran the slice's own skip-perturbation and it went red with '3 writes planned, sink took 2'. The gap is that the sink offers no acknowledgement to count. FIX: when T-732 lands the atomic batch API, have the write path RETURN an acknowledgement (a bool, or the count it actually applied) so the receipt is measuring the document rather than the loop. Diagnosis: editor_verify/wave118.md MINOR-1.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["MINOR from the wave-118 verifier. T-699's `commit_writes` (arsenal.rs:1100-1110) is built around the right idea — the receipt is composed from what the commit sink returned rather than from the plan length, precisely so the author is never told more landed than did, and it carries a WARNING arm for when planned and committed disagree. But it counts CLOSURE INVOCATIONS, and the production sink `update_slot_loadout` (store.rs:2733) returns `()` and silently no-ops on an unknown id. So in production `commits` always equals plan length and the WARNING arm is UNREACHABLE. Not currently exploitable: plan and commit run in one synchronous task (the `window.confirm` included), so nothing can invalidate an id between them, and the NATIVE pin has real teeth — the verifier re-ran the slice's own skip-perturbation and it went red with '3 writes planned, sink took 2'. The gap is that the sink offers no acknowledgement to count. FIX: when T-732 lands the atomic batch API, have the write path RETURN an acknowledgement (a bool, or the count it actually applied) so the receipt is measuring the document rather than the loop. Diagnosis: editor_verify/wave118.md MINOR-1."]
+
+missing=0
+"""
+main_goal = "commit_writes receipt must count sink acknowledgements not closure invocations."
+context = [
+    "MINOR wave-118 verifier T-699 commit_writes built around right idea.",
+    "Receipt composed from commit sink returned not plan length; WARNING arm for mismatch.",
+    "Production sink update_slot_loadout returns unit silently no-ops on unknown id.",
+]
+requirement = [
+    "When T-732 lands atomic batch API write path returns acknowledgement bool or count.",
+    "Receipt measures document applied writes not closure loop invocations.",
+    "WARNING arm must be reachable when planned and committed genuinely disagree.",
+]
+current_state = [
+    "Production commits always equals plan length; WARNING arm UNREACHABLE today.",
+    "Not exploitable: plan and commit one synchronous task window.confirm included.",
+    "NATIVE pin has teeth: skip-perturbation went red 3 writes planned sink took 2.",
+]
+approach = [
+    "T-732 atomic batch API prerequisite for real sink acknowledgement counting.",
+    "Have write path return bool or count actually applied not unit no-op.",
+    "Gap is sink offers no acknowledgement to count not receipt mechanism wrong.",
+]
+verify = [
+    "commit_writes WARNING fires when sink applies fewer writes than planned.",
+    "Skip-perturbation pin stays red if receipt counts closures not sink acks.",
+]
+citations = [
+    "editor_verify/wave118 MINOR-1",
+    "T-699 commit_writes",
+    "T-732 atomic batch",
+    "update_slot_loadout no-op",
+]
 shipped_at = "f0ad063b"
 created_at = "2026-08-08T15:44:41Z"
 completed_at = "2026-08-08T15:49:41Z"
@@ -18,7 +61,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["MINOR from the wave-118 verifier. T-699's `commit_writes` (arsenal.rs:1100-1110) is built around the right idea — the receipt is composed from what the commit sink returned rather than from the plan length, precisely so the author is never told more landed than did, and it carries a WARNING arm for when planned and committed disagree. But it counts CLOSURE INVOCATIONS, and the production sink `update_slot_loadout` (store.rs:2733) returns `()` and silently no-ops on an unknown id. So in production `commits` always equals plan length and the WARNING arm is UNREACHABLE. Not currently exploitable: plan and commit run in one synchronous task (the `window.confirm` included), so nothing can invalidate an id between them, and the NATIVE pin has real teeth — the verifier re-ran the slice's own skip-perturbation and it went red with '3 writes planned, sink took 2'. The gap is that the sink offers no acknowledgement to count. FIX: when T-732 lands the atomic batch API, have the write path RETURN an acknowledgement (a bool, or the count it actually applied) so the receipt is measuring the document rather than the loop. Diagnosis: editor_verify/wave118.md MINOR-1."]
 owns = [
     "apps/website/frontend/src/arsenal.rs",
     "crates/map-engine-core/src/doc/store.rs",

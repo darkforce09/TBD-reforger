@@ -1,12 +1,55 @@
 id = "T-782"
 kind = "work"
-title = "Resolve the player-count question: the editor shows placed slots; the library shows per-side and total"
+title = "Editor shows placed slot count; library per-side deferred"
 summary = "Resolve the player-count question: the editor shows placed slots; the library shows per-side and total"
 class = "docs"
 status = "shipped"
 order = 4658
 executor = "claude-code"
-notes = "closes the T-694 player-cap question; editor half actionable now, library presentation deferred to the operator"
+notes = """
+closes the T-694 player-cap question; editor half actionable now, library presentation deferred to the operator
+
+--- HEAD migration_legacy (verbatim) ---
+
+OPERATOR DECISION 2026-08-08, closing the T-694 player-cap question that has been open since wave 113. THE RULING: in the EDITOR the figure an author sees is HOW MANY SLOTS ARE PLACED DOWN — the derived count, not an author-typed cap. In the MISSION LIBRARY a mission should show how many slots there are PER SIDE and the TOTAL. CURRENT STATE, verified by the orchestrator: two numbers exist and nothing reconciles them. `max_players` (dto.rs ~:851) is AUTHOR-DECLARED — typed once into the create dialog — and is copied into the compiled mission by `compiled_meta`, so it is not dead. `MissionDocCore::slot_count` is the number of seats the document actually contains. The editor currently shows BOTH side by side and deliberately does not resolve the disagreement; the rationale lives at `eden_settings::PLAYER_COUNT_DISAGREE_NOTE`. This ruling resolves it: slot_count is the truth for the editor's player figure. This is consistent with the operator's wave-113 decision (derived slot count, no min_players). EDITOR HALF (do now): make the derived slot count the figure the author sees, and retire the disagree-note in favour of the decided answer rather than leaving a note explaining an unresolved argument. Do NOT delete `max_players` — it reaches the compiled mission. ONE SUB-QUESTION LEFT FOR THE OPERATOR, do not invent it: should `max_players` remain author-typed at all, or be DERIVED from slot_count so the compiled mission cannot disagree with the document? The ruling settles what is displayed; it does not settle what is compiled. LIBRARY HALF (design deferred by the operator): show slots per side plus the total on the mission library view. The operator explicitly said the exact presentation is to be worked out later — bring a proposal, do not guess at layout. Note the per-side breakdown does not exist as a derived value yet; check whether flatten or the doc can produce it without a new wire field before assuming a schema change.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["OPERATOR DECISION 2026-08-08, closing the T-694 player-cap question that has been open since wave 113. THE RULING: in the EDITOR the figure an author sees is HOW MANY SLOTS ARE PLACED DOWN — the derived count, not an author-typed cap. In the MISSION LIBRARY a mission should show how many slots there are PER SIDE and the TOTAL. CURRENT STATE, verified by the orchestrator: two numbers exist and nothing reconciles them. `max_players` (dto.rs ~:851) is AUTHOR-DECLARED — typed once into the create dialog — and is copied into the compiled mission by `compiled_meta`, so it is not dead. `MissionDocCore::slot_count` is the number of seats the document actually contains. The editor currently shows BOTH side by side and deliberately does not resolve the disagreement; the rationale lives at `eden_settings::PLAYER_COUNT_DISAGREE_NOTE`. This ruling resolves it: slot_count is the truth for the editor's player figure. This is consistent with the operator's wave-113 decision (derived slot count, no min_players). EDITOR HALF (do now): make the derived slot count the figure the author sees, and retire the disagree-note in favour of the decided answer rather than leaving a note explaining an unresolved argument. Do NOT delete `max_players` — it reaches the compiled mission. ONE SUB-QUESTION LEFT FOR THE OPERATOR, do not invent it: should `max_players` remain author-typed at all, or be DERIVED from slot_count so the compiled mission cannot disagree with the document? The ruling settles what is displayed; it does not settle what is compiled. LIBRARY HALF (design deferred by the operator): show slots per side plus the total on the mission library view. The operator explicitly said the exact presentation is to be worked out later — bring a proposal, do not guess at layout. Note the per-side breakdown does not exist as a derived value yet; check whether flatten or the doc can produce it without a new wire field before assuming a schema change."]
+
+missing=0
+"""
+main_goal = "Show derived slot_count in editor; retire disagree note; library per-side layout deferred."
+context = [
+    "Operator 2026-08-08 closes T-694 player-cap question.",
+    "max_players author-declared; slot_count is actual seats in document.",
+    "Editor shows both with eden_settings PLAYER_COUNT_DISAGREE_NOTE unresolved.",
+]
+requirement = [
+    "Editor displays derived slot_count as player figure.",
+    "Retire disagree note in favor of decided answer.",
+    "Do not delete max_players; it reaches compiled mission.",
+    "Library per-side plus total deferred; bring proposal not layout guess.",
+]
+current_state = [
+    "Two numbers exist; nothing reconciles max_players vs slot_count.",
+    "max_players copied to compiled mission via compiled_meta not dead.",
+    "Per-side breakdown not yet a derived value; check flatten or doc.",
+]
+approach = [
+    "Make slot_count the editor player figure now.",
+    "Leave max_players typed vs derived sub-question for operator.",
+]
+verify = [
+    "Editor player figure matches derived slot_count not author cap.",
+    "PLAYER_COUNT_DISAGREE_NOTE retired after editor half ships.",
+]
+citations = [
+    "T-694 player-cap question",
+    "eden_settings PLAYER_COUNT_DISAGREE_NOTE",
+    "dto.rs max_players compiled_meta",
+    "operator wave-113 derived slot count",
+]
 shipped_at = "53380c03"
 created_at = "2026-08-08T18:24:00Z"
 completed_at = "2026-08-08T18:30:03Z"
@@ -18,7 +61,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = ["OPERATOR DECISION 2026-08-08, closing the T-694 player-cap question that has been open since wave 113. THE RULING: in the EDITOR the figure an author sees is HOW MANY SLOTS ARE PLACED DOWN — the derived count, not an author-typed cap. In the MISSION LIBRARY a mission should show how many slots there are PER SIDE and the TOTAL. CURRENT STATE, verified by the orchestrator: two numbers exist and nothing reconciles them. `max_players` (dto.rs ~:851) is AUTHOR-DECLARED — typed once into the create dialog — and is copied into the compiled mission by `compiled_meta`, so it is not dead. `MissionDocCore::slot_count` is the number of seats the document actually contains. The editor currently shows BOTH side by side and deliberately does not resolve the disagreement; the rationale lives at `eden_settings::PLAYER_COUNT_DISAGREE_NOTE`. This ruling resolves it: slot_count is the truth for the editor's player figure. This is consistent with the operator's wave-113 decision (derived slot count, no min_players). EDITOR HALF (do now): make the derived slot count the figure the author sees, and retire the disagree-note in favour of the decided answer rather than leaving a note explaining an unresolved argument. Do NOT delete `max_players` — it reaches the compiled mission. ONE SUB-QUESTION LEFT FOR THE OPERATOR, do not invent it: should `max_players` remain author-typed at all, or be DERIVED from slot_count so the compiled mission cannot disagree with the document? The ruling settles what is displayed; it does not settle what is compiled. LIBRARY HALF (design deferred by the operator): show slots per side plus the total on the mission library view. The operator explicitly said the exact presentation is to be worked out later — bring a proposal, do not guess at layout. Note the per-side breakdown does not exist as a derived value yet; check whether flatten or the doc can produce it without a new wire field before assuming a schema change."]
 owns = ["apps/website/frontend/src/eden_settings.rs"]
 
 [scope]

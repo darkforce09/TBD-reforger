@@ -1,12 +1,55 @@
 id = "T-777"
 kind = "work"
-title = "Paste and place-composition land every slot at z = 0.0 — NEEDS OPERATOR DECISION alongside T-743"
+title = "Paste and composition must keep authored z not zero"
 summary = "Paste and place-composition land every slot at z = 0.0 — NEEDS OPERATOR DECISION alongside T-743"
 class = "bug"
 status = "shipped"
 order = 4653
 executor = "claude-code"
-notes = "OPERATOR DECISION 2026-08-08 — same ruling as T-743: the JS byte-parity was a migration safety net, not a contract. A pasted or composed entity must KEEP ITS AUTHORED Z rather than landing at 0.0. Fix editor_ops.rs paste_at_cursor's `zs.push(0.0)` and place_composition (store.rs) to carry the source z, exactly as wave 127 did for the four move/edit paths. Wave 127's rules still bind: fix at the frontend caller where possible, reuse keep_z_rows()/slot_z(), read z off slots_json (exact f64) and NOT the SoA (f32, omits hidden-layer slots per T-665). Sequence with T-743 — they are one behaviour change on two axes and should land together."
+notes = """
+OPERATOR DECISION 2026-08-08 — same ruling as T-743: the JS byte-parity was a migration safety net, not a contract. A pasted or composed entity must KEEP ITS AUTHORED Z rather than landing at 0.0. Fix editor_ops.rs paste_at_cursor's `zs.push(0.0)` and place_composition (store.rs) to carry the source z, exactly as wave 127 did for the four move/edit paths. Wave 127's rules still bind: fix at the frontend caller where possible, reuse keep_z_rows()/slot_z(), read z off slots_json (exact f64) and NOT the SoA (f32, omits hidden-layer slots per T-665). Sequence with T-743 — they are one behaviour change on two axes and should land together.
+
+--- HEAD migration_legacy (verbatim) ---
+
+MINOR from the wave-127 focused re-verifier. THIS IS THE ONE WAVE-127 FINDING THAT WAS NOT FIXED, AND IT IS DELIBERATE: it sits on T-743's reserved decision surface. Wave 127 closed a four-instance family where an x/y write with z=None made `update_slot_position` store `pz = 0.0` (store.rs:2779-2783) with nothing re-sampling terrain afterwards — fixed at `attrs_update_position`/`_multi` (F-2), `commit_positions` (F-5, reached by Align/Distribute/place-pattern) and the marquee drag (F-6). The re-verifier then proved that family CLOSED (zero `move_entities` frontend callers; exactly one `move_entities_and_vehicles`; five `update_slot_position` sites, three z-resolved and two rotation-only which cannot trip the mutator's `x.is_some() || y.is_some()` arm). WHAT REMAINS IS A DIFFERENT CLASS — a CREATE path, not a missed caller: `editor_ops.rs:642` (`paste_at_cursor`) pushes `zs.push(0.0)` for every pasted slot and explicitly drops `position.z` from the copied extras, and `place_composition` (store.rs:2394/2409) does the same, symmetric for vehicles. Ctrl+V a rooftop entity and the copy lands on the deck. NO AUTHORED WORK IS DESTROYED — there is no cut, the source is untouched, so this is a wrong-landing-position defect rather than the silent corruption the rest of the wave fixed. WHY IT WAS NOT FIXED AUTONOMOUSLY: the `zs.push(0.0)` carries the in-code rationale 'DEM not ready — byte-parity with the flat-map case', which is the SAME byte-parity-with-the-JS-oracle argument that makes T-743 (`PASTE_NUDGE` = 20 m, store.rs:4998-4999) an operator decision rather than a slice-sized fix. Both are 'where does a pasted entity land', both are pinned to the JS oracle, and changing z unilaterally could pre-empt whichever of T-743's three paths the operator picks. DECIDE THE TWO TOGETHER. The z axis is arguably independent of the x/y nudge — preserving the source z is compatible with all three T-743 paths — but that is the operator's call to make, not the factory's. Diagnosis: editor_verify/wave127.md, focused re-verification section.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["MINOR from the wave-127 focused re-verifier. THIS IS THE ONE WAVE-127 FINDING THAT WAS NOT FIXED, AND IT IS DELIBERATE: it sits on T-743's reserved decision surface. Wave 127 closed a four-instance family where an x/y write with z=None made `update_slot_position` store `pz = 0.0` (store.rs:2779-2783) with nothing re-sampling terrain afterwards — fixed at `attrs_update_position`/`_multi` (F-2), `commit_positions` (F-5, reached by Align/Distribute/place-pattern) and the marquee drag (F-6). The re-verifier then proved that family CLOSED (zero `move_entities` frontend callers; exactly one `move_entities_and_vehicles`; five `update_slot_position` sites, three z-resolved and two rotation-only which cannot trip the mutator's `x.is_some() || y.is_some()` arm). WHAT REMAINS IS A DIFFERENT CLASS — a CREATE path, not a missed caller: `editor_ops.rs:642` (`paste_at_cursor`) pushes `zs.push(0.0)` for every pasted slot and explicitly drops `position.z` from the copied extras, and `place_composition` (store.rs:2394/2409) does the same, symmetric for vehicles. Ctrl+V a rooftop entity and the copy lands on the deck. NO AUTHORED WORK IS DESTROYED — there is no cut, the source is untouched, so this is a wrong-landing-position defect rather than the silent corruption the rest of the wave fixed. WHY IT WAS NOT FIXED AUTONOMOUSLY: the `zs.push(0.0)` carries the in-code rationale 'DEM not ready — byte-parity with the flat-map case', which is the SAME byte-parity-with-the-JS-oracle argument that makes T-743 (`PASTE_NUDGE` = 20 m, store.rs:4998-4999) an operator decision rather than a slice-sized fix. Both are 'where does a pasted entity land', both are pinned to the JS oracle, and changing z unilaterally could pre-empt whichever of T-743's three paths the operator picks. DECIDE THE TWO TOGETHER. The z axis is arguably independent of the x/y nudge — preserving the source z is compatible with all three T-743 paths — but that is the operator's call to make, not the factory's. Diagnosis: editor_verify/wave127.md, focused re-verification section. "]
+
+missing=0
+"""
+main_goal = "Carry source z in paste and place_composition; sequence with T-743."
+context = [
+    "Wave-127 re-verifier: one finding deliberately deferred to T-743 surface.",
+    "Move edit paths fixed; paste_at_cursor and place_composition still push z=0.0.",
+    "Byte-parity rationale same as T-743 PASTE_NUDGE operator decision surface.",
+]
+requirement = [
+    "Fix editor_ops paste_at_cursor to carry source z not zs.push(0.0).",
+    "Fix place_composition store.rs to carry source z for slots and vehicles.",
+    "Sequence with T-743; operator decides together not unilateral factory change.",
+]
+current_state = [
+    "paste_at_cursor editor_ops 642 pushes 0.0 drops copied position.z extras.",
+    "place_composition store 2394 2409 symmetric vehicles same z=0.0 landing.",
+    "Ctrl+V rooftop entity lands on deck; source untouched wrong position defect.",
+]
+approach = [
+    "Reuse wave-127 keep_z_rows slot_z; read exact f64 slots_json not f32 SoA T-665.",
+    "Fix at frontend caller where possible per wave-127 rules binding.",
+    "Preserving source z compatible with all three T-743 paths per diagnosis.",
+]
+verify = [
+    "Pasted entity retains authored z not deck at 0.0 rooftop case.",
+    "Composed placement retains source z not hardcoded zero landing.",
+]
+citations = [
+    "editor_verify wave127",
+    "T-743 PASTE_NUDGE",
+    "wave-127 F-2 F-5 F-6",
+    "store.rs update_slot_position",
+]
 shipped_at = "53380c03"
 created_at = "2026-08-08T18:26:17Z"
 completed_at = "2026-08-08T18:30:03Z"
@@ -18,7 +61,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = ["MINOR from the wave-127 focused re-verifier. THIS IS THE ONE WAVE-127 FINDING THAT WAS NOT FIXED, AND IT IS DELIBERATE: it sits on T-743's reserved decision surface. Wave 127 closed a four-instance family where an x/y write with z=None made `update_slot_position` store `pz = 0.0` (store.rs:2779-2783) with nothing re-sampling terrain afterwards — fixed at `attrs_update_position`/`_multi` (F-2), `commit_positions` (F-5, reached by Align/Distribute/place-pattern) and the marquee drag (F-6). The re-verifier then proved that family CLOSED (zero `move_entities` frontend callers; exactly one `move_entities_and_vehicles`; five `update_slot_position` sites, three z-resolved and two rotation-only which cannot trip the mutator's `x.is_some() || y.is_some()` arm). WHAT REMAINS IS A DIFFERENT CLASS — a CREATE path, not a missed caller: `editor_ops.rs:642` (`paste_at_cursor`) pushes `zs.push(0.0)` for every pasted slot and explicitly drops `position.z` from the copied extras, and `place_composition` (store.rs:2394/2409) does the same, symmetric for vehicles. Ctrl+V a rooftop entity and the copy lands on the deck. NO AUTHORED WORK IS DESTROYED — there is no cut, the source is untouched, so this is a wrong-landing-position defect rather than the silent corruption the rest of the wave fixed. WHY IT WAS NOT FIXED AUTONOMOUSLY: the `zs.push(0.0)` carries the in-code rationale 'DEM not ready — byte-parity with the flat-map case', which is the SAME byte-parity-with-the-JS-oracle argument that makes T-743 (`PASTE_NUDGE` = 20 m, store.rs:4998-4999) an operator decision rather than a slice-sized fix. Both are 'where does a pasted entity land', both are pinned to the JS oracle, and changing z unilaterally could pre-empt whichever of T-743's three paths the operator picks. DECIDE THE TWO TOGETHER. The z axis is arguably independent of the x/y nudge — preserving the source z is compatible with all three T-743 paths — but that is the operator's call to make, not the factory's. Diagnosis: editor_verify/wave127.md, focused re-verification section."]
 owns = ["apps/website/frontend/src/editor_ops.rs"]
 
 [scope]
