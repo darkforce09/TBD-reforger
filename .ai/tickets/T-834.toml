@@ -6,9 +6,48 @@ class = "docs"
 status = "queued"
 order = 5160
 executor = "claude-code"
-notes = "wave205 verifier NIT batch; pure cleanup"
-estimated = ["scope"]
+notes = """
+wave205 verifier NIT batch; pure cleanup
+
+--- HEAD migration_legacy (verbatim) ---
+
+WAVE-205 VERIFIER FILING (wave205.md NITs, batched). (1)+(2) two doc comments still describe the pre-renumber digit map (wave205.md cites lines) — the stale-comment class that has cost this program real time; (3) EditorToolbarDispatch.widget_is_rotate is dead after the barrier reconciliation (widget_digit is the read) — remove the field + its registration; (4) 'Placing a Attack marker' article grammar in the picker hint. All mechanical; one small slice. ACCEPTANCE: comments match the 1/2/3 map; widget_is_rotate absent from the dispatch struct and all call sites; hint reads 'Placing an Attack marker' (or reworded). ⟡ ABSORBS T-835 (The No-Widget button wears the select-cursor glyph, not a 'none' symbol) — deliver its acceptance too. ⟡ ABSORBS T-840 (The draft chip says 'saved just now' on boot of a content-bearing mission — before any edit) — deliver its acceptance too.
+
+--- HEAD migration_legacy line (verbatim) ---
+
 migration_legacy = ["WAVE-205 VERIFIER FILING (wave205.md NITs, batched). (1)+(2) two doc comments still describe the pre-renumber digit map (wave205.md cites lines) — the stale-comment class that has cost this program real time; (3) EditorToolbarDispatch.widget_is_rotate is dead after the barrier reconciliation (widget_digit is the read) — remove the field + its registration; (4) 'Placing a Attack marker' article grammar in the picker hint. All mechanical; one small slice. ACCEPTANCE: comments match the 1/2/3 map; widget_is_rotate absent from the dispatch struct and all call sites; hint reads 'Placing an Attack marker' (or reworded). ⟡ ABSORBS T-835 (The No-Widget button wears the select-cursor glyph, not a 'none' symbol) — deliver its acceptance too. ⟡ ABSORBS T-840 (The draft chip says 'saved just now' on boot of a content-bearing mission — before any edit) — deliver its acceptance too."]
+
+missing=0
+"""
+main_goal = "Clean wave-205 residue: stale comments, dead field, grammar fixes."
+context = [
+    "Wave205 NITs: two stale pre-renumber digit map comments.",
+    "widget_is_rotate dead after barrier reconciliation.",
+    "Absorbs T-835 no-widget glyph and T-840 draft chip.",
+]
+requirement = [
+    "Comments match one two three digit map.",
+    "Remove widget_is_rotate from dispatch struct and call sites.",
+    "Attack marker hint grammar plus T-835 T-840 acceptance.",
+]
+current_state = [
+    "wave205.md cites stale comment lines.",
+    "widget_digit is the live read not widget_is_rotate.",
+    "Placing a Attack marker article grammar in picker hint.",
+]
+approach = ["Mechanical one small slice eden_top_strip mission_editor."]
+verify = [
+    "Comments match one two three map.",
+    "widget_is_rotate absent dispatch and all call sites.",
+    "Hint reads Placing an Attack marker or reworded.",
+]
+citations = [
+    "wave205.md NIT batch",
+    "barrier reconciliation widget_digit",
+    "T-835 absorbed acceptance",
+    "T-840 draft chip absorbed",
+]
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/eden_top_strip.rs",
     "apps/website/frontend/src/mission_editor.rs",

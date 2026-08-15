@@ -1,12 +1,51 @@
 id = "T-836"
 kind = "work"
-title = "Seeded vehicles cannot compile — no veh: alias in kit-aliases.json (T-425 refuse fires)"
+title = "Seed vehicles lack veh aliases — T-425 refuse"
 summary = "Seeded vehicles cannot compile — no veh: alias in kit-aliases.json (T-425 refuse fires)"
 class = "bug"
 status = "shipped"
 order = 5180
 executor = "claude-code"
-notes = "operator eye-pass wave-205; blocks vehicle authoring exports — pack into wave 210 | SHIPPED W210: four seed veh: aliases in kit-aliases.json; flatten Class-R RED without alias."
+notes = """
+operator eye-pass wave-205; blocks vehicle authoring exports — pack into wave 210 | SHIPPED W210: four seed veh: aliases in kit-aliases.json; flatten Class-R RED without alias.
+
+--- HEAD migration_legacy (verbatim) ---
+
+OPERATOR EYE-PASS BUG (wave-205, 2026-08-10, screenshot): compiled export REFUSES any mission containing a T-800-seeded vehicle — 'parse mission version payload: vehicle n3: resourceName {86B7B7522A75FF8B}Prefabs/Vehicles/Wheeled/M998/M1025_M2.et has no veh: alias in kit-aliases.json (T-425 — refuse silent drop/substitute)'. The refuse is CORRECT (T-425's contract); the DATA is incomplete: the wave-202 seed (registry_dev.sql, 4 vehicles M1025/M998/M923A1/M113) never got veh: aliases. FIX: add the four veh: aliases to packages/tbd-schema/registry/kit-aliases.json (consumers: flatten.rs, mission_compile.rs, editor_ops.rs — verify the alias FORMAT against an existing veh: row); add/extend a test that every seeded kind=vehicle resource_name resolves through kit-aliases (the T-425 lineage test style — make it fire first against a missing alias). ACCEPTANCE: a mission with each seeded vehicle placed exports compiled clean (ajv + no parse toast); the new test goes RED if a seed row lacks an alias.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["OPERATOR EYE-PASS BUG (wave-205, 2026-08-10, screenshot): compiled export REFUSES any mission containing a T-800-seeded vehicle — 'parse mission version payload: vehicle n3: resourceName {86B7B7522A75FF8B}Prefabs/Vehicles/Wheeled/M998/M1025_M2.et has no veh: alias in kit-aliases.json (T-425 — refuse silent drop/substitute)'. The refuse is CORRECT (T-425's contract); the DATA is incomplete: the wave-202 seed (registry_dev.sql, 4 vehicles M1025/M998/M923A1/M113) never got veh: aliases. FIX: add the four veh: aliases to packages/tbd-schema/registry/kit-aliases.json (consumers: flatten.rs, mission_compile.rs, editor_ops.rs — verify the alias FORMAT against an existing veh: row); add/extend a test that every seeded kind=vehicle resource_name resolves through kit-aliases (the T-425 lineage test style — make it fire first against a missing alias). ACCEPTANCE: a mission with each seeded vehicle placed exports compiled clean (ajv + no parse toast); the new test goes RED if a seed row lacks an alias."]
+
+missing=0
+"""
+main_goal = "Add four veh aliases so seeded vehicles compile without T-425 refuse."
+context = [
+    "Wave-205 screenshot: export refuses T-800-seeded vehicles.",
+    "T-425 refuse correct; wave-202 seed missing veh aliases.",
+    "Four vehicles M1025 M998 M923A1 M113 in registry_dev.sql.",
+]
+requirement = [
+    "Add four veh aliases to kit-aliases.json.",
+    "Verify alias format against existing veh row.",
+    "Test every seeded kind vehicle resource_name resolves.",
+]
+current_state = [
+    "Consumers flatten.rs mission_compile.rs editor_ops.rs.",
+    "T-425 lineage test style RED on missing alias.",
+]
+approach = ["packages tbd-schema registry kit-aliases.json four aliases."]
+verify = [
+    "Each seeded vehicle placed exports compiled clean ajv.",
+    "No parse toast on export with seeded vehicles.",
+    "New test RED if seed row lacks alias.",
+]
+citations = [
+    "wave-205 operator screenshot",
+    "T-425 refuse contract",
+    "registry_dev four seed vehicles",
+    "flatten mission_compile consumers",
+]
 shipped_at = "dbacc087"
 created_at = "2026-08-11T02:43:47Z"
 completed_at = "2026-08-11T02:51:40Z"
@@ -18,7 +57,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["OPERATOR EYE-PASS BUG (wave-205, 2026-08-10, screenshot): compiled export REFUSES any mission containing a T-800-seeded vehicle — 'parse mission version payload: vehicle n3: resourceName {86B7B7522A75FF8B}Prefabs/Vehicles/Wheeled/M998/M1025_M2.et has no veh: alias in kit-aliases.json (T-425 — refuse silent drop/substitute)'. The refuse is CORRECT (T-425's contract); the DATA is incomplete: the wave-202 seed (registry_dev.sql, 4 vehicles M1025/M998/M923A1/M113) never got veh: aliases. FIX: add the four veh: aliases to packages/tbd-schema/registry/kit-aliases.json (consumers: flatten.rs, mission_compile.rs, editor_ops.rs — verify the alias FORMAT against an existing veh: row); add/extend a test that every seeded kind=vehicle resource_name resolves through kit-aliases (the T-425 lineage test style — make it fire first against a missing alias). ACCEPTANCE: a mission with each seeded vehicle placed exports compiled clean (ajv + no parse toast); the new test goes RED if a seed row lacks an alias."]
 owns = [
     "packages/tbd-schema/registry/kit-aliases.json",
     "crates/map-engine-core/src/mission/flatten.rs",

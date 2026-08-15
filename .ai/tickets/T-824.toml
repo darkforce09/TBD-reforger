@@ -1,14 +1,49 @@
 id = "T-824"
 kind = "work"
-title = "Placed zones are not visible on the map — investigate and fix the render (repro-first)"
+title = "Placed zones must render visibly at rest on map"
 summary = "Placed zones are not visible on the map — investigate and fix the render (repro-first)"
 class = "bug"
 status = "queued"
 order = 5060
 executor = "claude-code"
-notes = "operator eye-pass wave-203; repro-first — do not assume the mechanism"
-estimated = ["scope"]
+notes = """
+operator eye-pass wave-203; repro-first — do not assume the mechanism
+
+--- HEAD migration_legacy (verbatim) ---
+
+OPERATOR EYE-PASS FINDING (wave-203 pass, 2026-08-10): a placed zone is not visible on the map. The hostile review verified zone DRAWING works (draw -> zone count moves) but its render visibility was not probed at rest. INVESTIGATE FIRST: is the zone shape render gated (selection-only fill? layer visibility? chrome state?) or genuinely missing a lane? Measure on a real browser at rest and while selected, at 2-3 zoom levels, before writing code. If a render lane is missing, the T-760/T-790 marker-lane recipe is the template (draw_order + rebind tail — the wave-130/141 lane lessons apply: feed from after_doc_change + rebind, pin the chain). ACCEPTANCE: a placed circle and polygon zone are visibly rendered at rest (not only while selected) at the swept zooms; toggling any relevant visibility control round-trips; the zone count chip and the render never disagree.
+
+--- HEAD migration_legacy line (verbatim) ---
+
 migration_legacy = ["OPERATOR EYE-PASS FINDING (wave-203 pass, 2026-08-10): a placed zone is not visible on the map. The hostile review verified zone DRAWING works (draw -> zone count moves) but its render visibility was not probed at rest. INVESTIGATE FIRST: is the zone shape render gated (selection-only fill? layer visibility? chrome state?) or genuinely missing a lane? Measure on a real browser at rest and while selected, at 2-3 zoom levels, before writing code. If a render lane is missing, the T-760/T-790 marker-lane recipe is the template (draw_order + rebind tail — the wave-130/141 lane lessons apply: feed from after_doc_change + rebind, pin the chain). ACCEPTANCE: a placed circle and polygon zone are visibly rendered at rest (not only while selected) at the swept zooms; toggling any relevant visibility control round-trips; the zone count chip and the render never disagree."]
+
+missing=0"""
+main_goal = "Investigate and fix placed zone render visibility at rest."
+context = [
+    "Wave-203 eye-pass: placed zone not visible on map at rest.",
+    "Zone drawing works draw moves zone count; render visibility unprobed.",
+    "Measure browser at rest and selected at two to three zooms first.",
+]
+requirement = [
+    "Circle and polygon zones visibly rendered at rest not selection-only.",
+    "T-760 T-790 marker-lane recipe if lane missing: draw_order rebind tail.",
+]
+current_state = [
+    "Render may be gated selection-only layer visibility or missing lane.",
+    "Wave-130 141 lane lessons: feed after_doc_change plus rebind pin chain.",
+]
+approach = ["Investigate gating before code; T-760 template draw_order rebind tail."]
+verify = [
+    "Placed circle and polygon visible at rest at swept zooms.",
+    "Visibility toggles round-trip; zone count chip matches render.",
+]
+citations = [
+    "wave-203 operator eye-pass",
+    "T-760 marker-lane recipe",
+    "T-790 draw_order rebind",
+    "wave-130 141 lane lessons",
+]
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/eden_zones.rs",
     "crates/map-engine-render/src/scene.rs",

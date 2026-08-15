@@ -1,14 +1,50 @@
 id = "T-822"
 kind = "work"
-title = "Outliner dblclick bubbles into the map container — asset picker opens under Attributes"
+title = "Outliner dblclick must not open asset picker under Attributes"
 summary = "Outliner dblclick bubbles into the map container — asset picker opens under Attributes"
 class = "bug"
 status = "queued"
 order = 5040
 executor = "claude-code"
-notes = "wave203 verifier; pre-existing, widened by the placed-vehicle rows"
-estimated = ["scope"]
+notes = """
+wave203 verifier; pre-existing, widened by the placed-vehicle rows
+
+--- HEAD migration_legacy (verbatim) ---
+
+WAVE-203 VERIFIER FILING (wave203.md MINOR/NIT, PRE-EXISTING, now wider). The left dock is a DOM descendant of the map's dblclick container and dblclick BUBBLES (the chrome stops pointerdown, not dblclick) — mission_editor.rs ~:5790. A dblclick on an outliner row whose world coords miss an entity opens the empty-ground asset PICKER (T-647 PLACE-003) UNDER the Attributes dialog the row also opens; proven live: container-dblclick@83,135 -> attrH2=1 AND placeAsset=1; Esc peels one-per-press. Pre-existing; now ALSO reachable via the wave-203 placed-vehicle outliner rows (eden_tree.rs footer). FIX: the container dblclick handler ignores events whose target sits inside the docks (composedPath/closest check), mirroring the pointerdown chrome guard. ACCEPTANCE: outliner-row dblclick opens ONLY Attributes (no picker under it); map-ground dblclick still opens the picker.
+
+--- HEAD migration_legacy line (verbatim) ---
+
 migration_legacy = ["WAVE-203 VERIFIER FILING (wave203.md MINOR/NIT, PRE-EXISTING, now wider). The left dock is a DOM descendant of the map's dblclick container and dblclick BUBBLES (the chrome stops pointerdown, not dblclick) — mission_editor.rs ~:5790. A dblclick on an outliner row whose world coords miss an entity opens the empty-ground asset PICKER (T-647 PLACE-003) UNDER the Attributes dialog the row also opens; proven live: container-dblclick@83,135 -> attrH2=1 AND placeAsset=1; Esc peels one-per-press. Pre-existing; now ALSO reachable via the wave-203 placed-vehicle outliner rows (eden_tree.rs footer). FIX: the container dblclick handler ignores events whose target sits inside the docks (composedPath/closest check), mirroring the pointerdown chrome guard. ACCEPTANCE: outliner-row dblclick opens ONLY Attributes (no picker under it); map-ground dblclick still opens the picker."]
+
+missing=0"""
+main_goal = "Ignore dock-originated dblclick in map container handler."
+context = [
+    "Left dock is DOM descendant of map dblclick container; dblclick bubbles.",
+    "Chrome stops pointerdown not dblclick; handler at mission_editor ~5790.",
+    "Pre-existing widened by wave-203 placed-vehicle outliner footer rows.",
+]
+requirement = [
+    "Container dblclick ignores targets inside docks via composedPath closest.",
+    "Mirror pointerdown chrome guard for dock subtree dblclick events.",
+]
+current_state = [
+    "Outliner row dblclick opens Attributes AND empty-ground asset picker under.",
+    "Proven live container-dblclick 83,135 attrH2=1 AND placeAsset=1.",
+    "Esc peels one overlay per press; T-647 PLACE-003 picker involved.",
+]
+approach = ["composedPath or closest check on dblclick target against dock subtrees."]
+verify = [
+    "Outliner-row dblclick opens ONLY Attributes no picker under it.",
+    "Map-ground dblclick still opens the asset picker.",
+]
+citations = [
+    "wave203.md MINOR NIT",
+    "T-647 PLACE-003 picker",
+    "eden_tree.rs footer rows",
+    "pointerdown chrome guard pattern",
+]
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/mission_editor.rs"]
 
 [scope]

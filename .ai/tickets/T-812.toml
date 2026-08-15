@@ -1,12 +1,55 @@
 id = "T-812"
 kind = "work"
-title = "Bookmark rename truncates the typed name to its last character; the bookmark ADD input never focuses"
+title = "Bookmark rename per-char remount truncates draft; ADD name-this-view input unfocused"
 summary = "Bookmark rename truncates the typed name to its last character; the bookmark ADD input never focuses"
 class = "bug"
 status = "shipped"
 order = 4940
 executor = "claude-code"
-notes = "wave 209; verifier wave200.md F2+F7 | SHIPPED W209: 'Ridge OP Two' commits whole (wave-200 F2 dead); ADD input focuses on mount; pins use the live_source scrub and were verified non-hollow."
+notes = """
+wave 209; verifier wave200.md F2+F7 | SHIPPED W209: 'Ridge OP Two' commits whole (wave-200 F2 dead); ADD input focuses on mount; pins use the live_source scrub and were verified non-hollow.
+
+--- HEAD migration_legacy (verbatim) ---
+
+WAVE-200 VERIFIER RE-TICKET (wave200.md F2 MAJOR + F7 MINOR). F2 VERIFIED LIVE: the rename input is controlled through the `renaming` signal read by the whole bookmark-list closure — every keystroke re-renders the list and rebuilds the input node, and T-785's new on_load then re-focuses AND select()s the full text on every remount, so each keystroke replaces the entire draft: typed 'Ridge OP Two' per-char -> input value 'o', committed row label 'o' (two independent reads). A name-destroying regression ON the field the wave fixed. F7 VERIFIED LIVE: the bookmark ADD ('name this view') input eden_dock_left.rs:275-304 has bare autofocus on a reactive insert — focused_on_mount:false, real 'g' flipped GRID with the naming box open. FIX: the mid-edit draft must live where the list render does not track it (local draft signal or uncontrolled input; commit on blur/Enter; Escape abandons); select-all ONLY when a rename session opens, never on remount (which must stop once decoupled); ADD input gets NodeRef + on_load focus+select and the same remount check. TRAPS: this file carries T-785's shipped pins ~:1932-1961 which currently claim layer-rename coverage — repoint/rename them honestly for the new mechanism (T-811 adds the real layer pin); bookmark jump/delete rows must keep working mid-rename. ACCEPTANCE (verifier probe): rename -> type 'Ridge OP Two' -> committed row named 'Ridge OP Two', focus kept throughout; ADD input focused_on_mount === true, 'g' lands in the field, GRID unchanged; Escape abandons without committing.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["WAVE-200 VERIFIER RE-TICKET (wave200.md F2 MAJOR + F7 MINOR). F2 VERIFIED LIVE: the rename input is controlled through the `renaming` signal read by the whole bookmark-list closure — every keystroke re-renders the list and rebuilds the input node, and T-785's new on_load then re-focuses AND select()s the full text on every remount, so each keystroke replaces the entire draft: typed 'Ridge OP Two' per-char -> input value 'o', committed row label 'o' (two independent reads). A name-destroying regression ON the field the wave fixed. F7 VERIFIED LIVE: the bookmark ADD ('name this view') input eden_dock_left.rs:275-304 has bare autofocus on a reactive insert — focused_on_mount:false, real 'g' flipped GRID with the naming box open. FIX: the mid-edit draft must live where the list render does not track it (local draft signal or uncontrolled input; commit on blur/Enter; Escape abandons); select-all ONLY when a rename session opens, never on remount (which must stop once decoupled); ADD input gets NodeRef + on_load focus+select and the same remount check. TRAPS: this file carries T-785's shipped pins ~:1932-1961 which currently claim layer-rename coverage — repoint/rename them honestly for the new mechanism (T-811 adds the real layer pin); bookmark jump/delete rows must keep working mid-rename. ACCEPTANCE (verifier probe): rename -> type 'Ridge OP Two' -> committed row named 'Ridge OP Two', focus kept throughout; ADD input focused_on_mount === true, 'g' lands in the field, GRID unchanged; Escape abandons without committing."]
+
+missing=0"""
+main_goal = "Decouple bookmark rename draft from list remount; focus ADD name-this-view input on mount."
+context = [
+    "F2 renaming signal drives whole bookmark-list closure remounting input each keystroke.",
+    "T-785 on_load re-focus select-all on remount replaces draft per char Ridge OP Two to o.",
+    "F7 ADD name-this-view input eden_dock_left 275-304 bare autofocus focused_on_mount false.",
+]
+requirement = [
+    "Mid-edit draft lives outside list render local signal or uncontrolled commit blur Enter.",
+    "Select-all only when rename session opens never on remount once decoupled.",
+    "ADD input NodeRef on_load focus select same remount check as rename fix.",
+]
+current_state = [
+    "Typed Ridge OP Two per-char commits row label o two independent reads.",
+    "Real g keydown flipped GRID with naming box open ADD unfocused.",
+    "T-785 shipped pins 1932-1961 claim layer-rename coverage wrongly.",
+]
+approach = [
+    "Repoint T-785 pins honestly for new mechanism T-811 owns real layer pin.",
+    "Bookmark jump delete rows keep working mid-rename.",
+    "Escape abandons without committing rename draft.",
+]
+verify = [
+    "Rename type Ridge OP Two committed row Ridge OP Two focus kept throughout.",
+    "ADD input focused_on_mount true g lands in field GRID unchanged.",
+    "Escape abandons without committing bookmark rename draft.",
+]
+citations = [
+    "wave200 F2 F7 verifier",
+    "T-785 on_load remount trap",
+    "eden_dock_left 275-304 ADD",
+    "T-811 layer rename pin",
+]
 shipped_at = "73a8999a"
 created_at = "2026-08-09T15:35:13Z"
 completed_at = "2026-08-09T16:09:34Z"
@@ -18,7 +61,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["WAVE-200 VERIFIER RE-TICKET (wave200.md F2 MAJOR + F7 MINOR). F2 VERIFIED LIVE: the rename input is controlled through the `renaming` signal read by the whole bookmark-list closure — every keystroke re-renders the list and rebuilds the input node, and T-785's new on_load then re-focuses AND select()s the full text on every remount, so each keystroke replaces the entire draft: typed 'Ridge OP Two' per-char -> input value 'o', committed row label 'o' (two independent reads). A name-destroying regression ON the field the wave fixed. F7 VERIFIED LIVE: the bookmark ADD ('name this view') input eden_dock_left.rs:275-304 has bare autofocus on a reactive insert — focused_on_mount:false, real 'g' flipped GRID with the naming box open. FIX: the mid-edit draft must live where the list render does not track it (local draft signal or uncontrolled input; commit on blur/Enter; Escape abandons); select-all ONLY when a rename session opens, never on remount (which must stop once decoupled); ADD input gets NodeRef + on_load focus+select and the same remount check. TRAPS: this file carries T-785's shipped pins ~:1932-1961 which currently claim layer-rename coverage — repoint/rename them honestly for the new mechanism (T-811 adds the real layer pin); bookmark jump/delete rows must keep working mid-rename. ACCEPTANCE (verifier probe): rename -> type 'Ridge OP Two' -> committed row named 'Ridge OP Two', focus kept throughout; ADD input focused_on_mount === true, 'g' lands in the field, GRID unchanged; Escape abandons without committing."]
 owns = ["apps/website/frontend/src/eden_dock_left.rs"]
 
 [scope]

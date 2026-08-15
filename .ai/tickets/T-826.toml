@@ -1,14 +1,54 @@
 id = "T-826"
 kind = "work"
-title = "Markers stop declaring sides — placing a marker must not mint a faction"
+title = "Markers store side without minting phantom factions"
 summary = "Markers stop declaring sides — placing a marker must not mint a faction"
 class = "bug"
 status = "queued"
 order = 5080
 executor = "claude-code"
-notes = "wave204 verifier MAJOR; decision reserved for the operator; T-798 shipped-halves verified correct | operator decided (a) 2026-08-10 during the wave-204 eye-pass; now actionable — implement the ensure_side_faction split (marker path stores side WITHOUT minting), check flatten.rs/compile reads of an unminted marker side before landing"
-estimated = ["scope"]
+notes = """
+wave204 verifier MAJOR; decision reserved for the operator; T-798 shipped-halves verified correct | operator decided (a) 2026-08-10 during the wave-204 eye-pass; now actionable — implement the ensure_side_faction split (marker path stores side WITHOUT minting), check flatten.rs/compile reads of an unminted marker side before landing
+
+--- HEAD migration_legacy (verbatim) ---
+
+WAVE-204 VERIFIER FILING (wave204.md MAJOR — 're-scope, not revert'). MEASURED truth table on a truly-fresh mission: t0 chip = '0 - No issues'; place ONE marker -> '1 error' (V1-PLAYER-SPAWN). MECHANISM: ensure_side_faction (editor_ops.rs:4654) mints faction-{SIDE} on the FIRST marker place, flipping validate.rs's deliberate declares_players gate — so the review's F-11 'error about something they didn't touch' survives T-798 (whose shipped halves all measure correct: hydrated missions show truth at t0, copy verbatim, Backspace pixel-pure, contrast fixed at plate-calc). DECISION RECORDED (operator, 2026-08-10): OPTION (a) — 'markers aren't factions.' A briefing mark must not declare a side; V1 fires only when a slot/faction is actually authored. Original decision framing: (a) markers stop minting factions — a briefing mark is not a side declaration; V1 fires only when a SLOT/faction is authored (needs an ensure_side_faction split: marker path stores side WITHOUT minting, or mints lazily at first slot); or (b) the behavior is CORRECT (marking a side commits you to spawns) and the T-798 acceptance line is re-scoped to document it. Option (a) matches the review's intent; check the compile/schema side effects of an unminted marker side before choosing (flatten.rs reads?). ACCEPTANCE (if a): fresh mission, place marker -> chip stays 0; author first slot of that side -> V1 fires; compiled export unchanged for the marker-only mission vs today minus the phantom faction.
+
+--- HEAD migration_legacy line (verbatim) ---
+
 migration_legacy = ["WAVE-204 VERIFIER FILING (wave204.md MAJOR — 're-scope, not revert'). MEASURED truth table on a truly-fresh mission: t0 chip = '0 - No issues'; place ONE marker -> '1 error' (V1-PLAYER-SPAWN). MECHANISM: ensure_side_faction (editor_ops.rs:4654) mints faction-{SIDE} on the FIRST marker place, flipping validate.rs's deliberate declares_players gate — so the review's F-11 'error about something they didn't touch' survives T-798 (whose shipped halves all measure correct: hydrated missions show truth at t0, copy verbatim, Backspace pixel-pure, contrast fixed at plate-calc). DECISION RECORDED (operator, 2026-08-10): OPTION (a) — 'markers aren't factions.' A briefing mark must not declare a side; V1 fires only when a slot/faction is actually authored. Original decision framing: (a) markers stop minting factions — a briefing mark is not a side declaration; V1 fires only when a SLOT/faction is authored (needs an ensure_side_faction split: marker path stores side WITHOUT minting, or mints lazily at first slot); or (b) the behavior is CORRECT (marking a side commits you to spawns) and the T-798 acceptance line is re-scoped to document it. Option (a) matches the review's intent; check the compile/schema side effects of an unminted marker side before choosing (flatten.rs reads?). ACCEPTANCE (if a): fresh mission, place marker -> chip stays 0; author first slot of that side -> V1 fires; compiled export unchanged for the marker-only mission vs today minus the phantom faction."]
+
+missing=0"""
+main_goal = "Split ensure_side_faction so markers store side without minting."
+context = [
+    "Wave-204 MAJOR: fresh mission t0 chip 0; one marker place triggers V1 error.",
+    "ensure_side_faction mints faction on first marker place flipping declares_players.",
+    "Operator decided option a markers aren't factions 2026-08-10.",
+]
+requirement = [
+    "Marker path stores side WITHOUT minting faction; lazy mint at first slot.",
+    "V1 fires only when slot or faction actually authored not briefing mark.",
+    "Check flatten.rs compile reads of unminted marker side before landing.",
+]
+current_state = [
+    "validate.rs declares_players gate flips on phantom faction from marker.",
+    "T-798 shipped halves correct; F-11 error survives marker mint mechanism.",
+]
+approach = [
+    "Split ensure_side_faction marker vs slot paths per operator option a.",
+    "Compiled export unchanged for marker-only mission minus phantom faction.",
+]
+verify = [
+    "Fresh mission place marker chip stays 0 no phantom V1.",
+    "Author first slot of that side V1 fires as expected.",
+    "Compiled export unchanged for marker-only mission minus phantom faction.",
+]
+citations = [
+    "wave204.md MAJOR re-scope",
+    "ensure_side_faction 4654 split",
+    "operator option a 2026-08-10",
+    "T-798 F-11 mechanism",
+]
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/editor_ops.rs"]
 
 [scope]

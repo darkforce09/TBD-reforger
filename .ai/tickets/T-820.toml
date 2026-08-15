@@ -1,14 +1,55 @@
 id = "T-820"
 kind = "work"
-title = "Catalog failure view shows the generic cause with chips visible where no-modpack should fire"
+title = "Catalog failure generic cause; chips visible wrongly"
 summary = "Catalog failure view shows the generic cause with chips visible where no-modpack should fire"
 class = "bug"
 status = "queued"
 order = 5020
 executor = "claude-code"
-notes = "wave203 verifier; uncertainty stated — repro-first ticket"
-estimated = ["scope"]
+notes = """
+wave203 verifier; uncertainty stated — repro-first ticket
+
+--- HEAD migration_legacy (verbatim) ---
+
+WAVE-203 VERIFIER FILING (wave203.md MINOR; eden_dock_right.rs:1724-1742, cause branch :746). With is_current=false the probe endpoint returns 404 'no current modpack configured' (curl-confirmed) so the no_modpack branch SHOULD fire — but two fresh-token headless pages rendered the GENERIC 'The request to the registry failed.' and kept the side chips visible. The grammar hint DID hide and Retry/repopulate work. Wave-202's verifier proved the specific cause live pre-restructure, so this is either a T-809-restructure regression of the cause probe or an AuthStore-timing/headless artifact ('let Some(auth) = auth else return' in the re-probe Effect). FIRST STEP: reproduce on a real browser; if headless-only, close with the evidence; if real, fix the probe's auth/timing so the 404 cause survives to the view and chips hide. ACCEPTANCE: is_current=false on a real browser -> 'No modpack is configured' named, chips hidden; restore -> Retry repopulates.
+
+--- HEAD migration_legacy line (verbatim) ---
+
 migration_legacy = ["WAVE-203 VERIFIER FILING (wave203.md MINOR; eden_dock_right.rs:1724-1742, cause branch :746). With is_current=false the probe endpoint returns 404 'no current modpack configured' (curl-confirmed) so the no_modpack branch SHOULD fire — but two fresh-token headless pages rendered the GENERIC 'The request to the registry failed.' and kept the side chips visible. The grammar hint DID hide and Retry/repopulate work. Wave-202's verifier proved the specific cause live pre-restructure, so this is either a T-809-restructure regression of the cause probe or an AuthStore-timing/headless artifact ('let Some(auth) = auth else return' in the re-probe Effect). FIRST STEP: reproduce on a real browser; if headless-only, close with the evidence; if real, fix the probe's auth/timing so the 404 cause survives to the view and chips hide. ACCEPTANCE: is_current=false on a real browser -> 'No modpack is configured' named, chips hidden; restore -> Retry repopulates."]
+
+missing=0
+"""
+main_goal = "Fix no_modpack cause probe so catalog failure names cause and hides chips."
+context = [
+    "WAVE-203 verifier MINOR eden_dock_right 1724-1742 cause branch 746.",
+    "is_current false probe returns 404 no current modpack configured curl-confirmed.",
+    "Two headless pages rendered generic request failed with chips still visible.",
+]
+requirement = [
+    "Reproduce on real browser first; close headless-only with evidence if artifact.",
+    "If real: fix probe auth timing so 404 cause survives to view.",
+    "Named No modpack is configured message; chips hidden on failure.",
+]
+current_state = [
+    "Grammar hint hid; Retry repopulate work; wave-202 proved cause live pre-restructure.",
+    "Possible T-809 restructure regression or AuthStore timing headless artifact.",
+    "let Some auth else return in re-probe Effect may drop cause.",
+]
+approach = [
+    "First step reproduce real browser; distinguish headless-only from regression.",
+    "Fix probe auth timing so is_current false 404 reaches failure view.",
+]
+verify = [
+    "is_current false real browser: No modpack is configured named chips hidden.",
+    "Restore modpack: Retry repopulates catalog tree.",
+]
+citations = [
+    "wave203.md MINOR",
+    "eden_dock_right cause branch 746",
+    "T-809 restructure regression",
+    "AuthStore re-probe Effect",
+]
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/eden_dock_right.rs"]
 
 [scope]

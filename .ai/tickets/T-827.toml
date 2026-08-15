@@ -1,14 +1,55 @@
 id = "T-827"
 kind = "work"
-title = "Validation chip red measures 4.0-4.3:1 over the live glass — passes only by plate-calc"
+title = "Validation chip red under 4.5:1 live-effective"
 summary = "Validation chip red measures 4.0-4.3:1 over the live glass — passes only by plate-calc"
 class = "bug"
 status = "queued"
 order = 5090
 executor = "claude-code"
-notes = "wave204 verifier; measurement methodology matters — live-effective, not plate-calc"
-estimated = ["scope"]
+notes = """
+wave204 verifier; measurement methodology matters — live-effective, not plate-calc
+
+--- HEAD migration_legacy (verbatim) ---
+
+WAVE-204 VERIFIER FILING (wave204.md MINOR). The chip's #f87171 count passes 5.31:1 against its PLATE color (the review's calc method) but live-effective over the strip's backdrop-blur glass samples at 4.01-4.34:1 across 4 map backgrounds — under the 4.5:1 line the F-36 fix targeted. FIX: give the count an opaque-enough plate (raise plate alpha or add a solid pill behind the count) so the LIVE sample clears 4.5 on the darkest and lightest map backgrounds; keep text-error-alert. ACCEPTANCE: computed live-effective contrast (verifier's 4-sample method, screenshot-sampled) >=4.5:1 on all samples; plate-calc stays >=4.5.
+
+--- HEAD migration_legacy line (verbatim) ---
+
 migration_legacy = ["WAVE-204 VERIFIER FILING (wave204.md MINOR). The chip's #f87171 count passes 5.31:1 against its PLATE color (the review's calc method) but live-effective over the strip's backdrop-blur glass samples at 4.01-4.34:1 across 4 map backgrounds — under the 4.5:1 line the F-36 fix targeted. FIX: give the count an opaque-enough plate (raise plate alpha or add a solid pill behind the count) so the LIVE sample clears 4.5 on the darkest and lightest map backgrounds; keep text-error-alert. ACCEPTANCE: computed live-effective contrast (verifier's 4-sample method, screenshot-sampled) >=4.5:1 on all samples; plate-calc stays >=4.5."]
+
+missing=0
+"""
+main_goal = "Opaque plate behind validation count clears 4.5:1 live-effective contrast."
+context = [
+    "wave204 MINOR: chip #f87171 passes plate-calc 5.31:1 not live-effective.",
+    "Live-effective 4.01-4.34:1 across four map backgrounds under F-36 4.5:1 target.",
+    "Measurement methodology matters: live-effective over backdrop-blur glass not plate-calc.",
+]
+requirement = [
+    "Raise plate alpha or add solid pill behind count for live glass.",
+    "LIVE sample clears 4.5 on darkest and lightest map backgrounds.",
+    "Keep text-error-alert colour on the count.",
+]
+current_state = [
+    "Chip passes 5.31:1 against PLATE color via review calc method.",
+    "Live-effective samples 4.01-4.34:1 under 4.5:1 line F-36 targeted.",
+    "eden_top_strip.rs owns validation chip rendering.",
+]
+approach = [
+    "Opaque-enough plate behind count for backdrop-blur strip glass.",
+    "Verifier 4-sample screenshot-sampled live-effective method confirms fix.",
+]
+verify = [
+    "Live-effective contrast >=4.5:1 on all four screenshot samples.",
+    "Plate-calc contrast stays >=4.5:1 after plate change.",
+]
+citations = [
+    "wave204.md MINOR filing",
+    "F-36 4.5:1 contrast target",
+    "live-effective 4-sample method",
+    "eden_top_strip validation chip",
+]
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/eden_top_strip.rs"]
 
 [scope]

@@ -1,14 +1,55 @@
 id = "T-816"
 kind = "work"
-title = "Esc with an armed composition and the Controls Hint open clears both in one press"
+title = "Armed composition hint open; one Esc clears both layers wrongly"
 summary = "Esc with an armed composition and the Controls Hint open clears both in one press"
 class = "bug"
 status = "queued"
 order = 4980
 executor = "claude-code"
-notes = "wave201 verifier NIT-1; owns spans eden_top_strip.rs/ui.rs/mission_editor.rs — pack owns-aware"
-estimated = ["scope"]
+notes = """
+wave201 verifier NIT-1; owns spans eden_top_strip.rs/ui.rs/mission_editor.rs — pack owns-aware
+
+--- HEAD migration_legacy (verbatim) ---
+
+WAVE-201 VERIFIER FILING (wave201.md NIT-1, pre-existing, made visible by T-791's arm hint). VERIFIED LIVE: with a composition armed AND the Controls Hint overlay open, ONE Escape keydown clears the arm and closes the hint together. MECHANISM: the Controls Hint is not a modal_stack participant, so the editor's any_open()-gated arm-cancel (mission_editor.rs has_pending -> cancel_pending) fires in the same keydown as the strip's hint close — the T-814 consume-aware guard covers modal_stack dialogs only. FIX DIRECTION: bring the hint (and any other non-stack overlay Esc consumers) into the stack's per-event Esc accounting, or mark the event consumed when the hint closes, so the arm survives to a second press. TRAPS: T-797/T-798 (waves 202/204) rework the top strip and bottom bar — coordinate owns; the T-814 one-layer ladder for stack dialogs must stay intact. ACCEPTANCE: armed composition + hint open: Esc1 closes ONLY the hint (arm + panel armed-hint stay), Esc2 clears the arm; every press one layer.
+
+--- HEAD migration_legacy line (verbatim) ---
+
 migration_legacy = ["WAVE-201 VERIFIER FILING (wave201.md NIT-1, pre-existing, made visible by T-791's arm hint). VERIFIED LIVE: with a composition armed AND the Controls Hint overlay open, ONE Escape keydown clears the arm and closes the hint together. MECHANISM: the Controls Hint is not a modal_stack participant, so the editor's any_open()-gated arm-cancel (mission_editor.rs has_pending -> cancel_pending) fires in the same keydown as the strip's hint close — the T-814 consume-aware guard covers modal_stack dialogs only. FIX DIRECTION: bring the hint (and any other non-stack overlay Esc consumers) into the stack's per-event Esc accounting, or mark the event consumed when the hint closes, so the arm survives to a second press. TRAPS: T-797/T-798 (waves 202/204) rework the top strip and bottom bar — coordinate owns; the T-814 one-layer ladder for stack dialogs must stay intact. ACCEPTANCE: armed composition + hint open: Esc1 closes ONLY the hint (arm + panel armed-hint stay), Esc2 clears the arm; every press one layer."]
+
+missing=0"""
+main_goal = "One Esc per layer when composition armed and Controls Hint open."
+context = [
+    "NIT-1 composition armed plus Controls Hint one Escape clears arm and hint together.",
+    "Controls Hint not modal_stack participant T-814 guard covers stack dialogs only.",
+    "mission_editor.rs has_pending cancel_pending fires same keydown as strip hint close.",
+]
+requirement = [
+    "Bring hint non-stack overlay Esc consumers into stack per-event Esc accounting.",
+    "Or mark event consumed when hint closes so arm survives to second press.",
+    "T-814 one-layer ladder for stack dialogs must stay intact.",
+]
+current_state = [
+    "Editor any_open-gated arm-cancel fires alongside strip hint close one keydown.",
+    "T-791 arm hint made pre-existing NIT-1 visible.",
+    "T-797 T-798 rework top strip bottom bar coordinate owns.",
+]
+approach = [
+    "Integrate hint into consume-aware Esc accounting alongside modal_stack dialogs.",
+    "Coordinate with T-797 T-798 strip bar rework without weakening ladder.",
+]
+verify = [
+    "Armed composition hint open Esc1 closes ONLY hint arm panel armed-hint stay.",
+    "Esc2 clears the arm.",
+    "Every press one layer.",
+]
+citations = [
+    "wave201 NIT-1 verifier",
+    "T-791 arm hint",
+    "T-814 consume-aware guard",
+    "mission_editor has_pending cancel",
+]
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/ui.rs",
     "apps/website/frontend/src/eden_top_strip.rs",

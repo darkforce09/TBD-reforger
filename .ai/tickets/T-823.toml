@@ -1,14 +1,48 @@
 id = "T-823"
 kind = "work"
-title = "OBJ readout counts slots only — placed vehicles are invisible to it"
+title = "OBJ readout must count vehicles or rename honestly"
 summary = "OBJ readout counts slots only — placed vehicles are invisible to it"
 class = "chore"
 status = "queued"
 order = 5050
 executor = "claude-code"
-notes = "wave203 verifier; wording-vs-count decision, small"
-estimated = ["scope"]
+notes = """
+wave203 verifier; wording-vs-count decision, small
+
+--- HEAD migration_legacy (verbatim) ---
+
+WAVE-203 VERIFIER FILING (wave203.md NIT; mission_history.rs:289/532). OBJ = slot_count (characters only): drag-placing an M1025 leaves OBJ unchanged while the vehicle genuinely places (outliner row, Placed strip, recently-placed all show it). Either rename the readout (SLOTS) or count entities (slots+vehicles) — pick one and pin it; the WEST/EAST/IND/TOTAL chips (operator-liked) already count slots explicitly and must not drift. ACCEPTANCE: place a vehicle -> the readout either includes it or is renamed so the exclusion is honest; chips unchanged.
+
+--- HEAD migration_legacy line (verbatim) ---
+
 migration_legacy = ["WAVE-203 VERIFIER FILING (wave203.md NIT; mission_history.rs:289/532). OBJ = slot_count (characters only): drag-placing an M1025 leaves OBJ unchanged while the vehicle genuinely places (outliner row, Placed strip, recently-placed all show it). Either rename the readout (SLOTS) or count entities (slots+vehicles) — pick one and pin it; the WEST/EAST/IND/TOTAL chips (operator-liked) already count slots explicitly and must not drift. ACCEPTANCE: place a vehicle -> the readout either includes it or is renamed so the exclusion is honest; chips unchanged."]
+
+missing=0"""
+main_goal = "Make OBJ readout honest about vehicles or rename to SLOTS."
+context = [
+    "OBJ equals slot_count characters only at mission_history 289 532.",
+    "Drag-placing M1025 leaves OBJ unchanged while vehicle genuinely places.",
+    "WEST EAST IND TOTAL chips count slots explicitly operator-liked must not drift.",
+]
+requirement = [
+    "Rename readout to SLOTS OR count slots plus vehicles; pick one and pin.",
+    "Vehicle placement visible in outliner Placed strip recently-placed.",
+]
+current_state = [
+    "OBJ unchanged after vehicle place; other surfaces show the vehicle.",
+    "Chips already count slots explicitly; must not change chip semantics.",
+]
+approach = ["Decide rename vs entity count; document honest exclusion if renamed."]
+verify = [
+    "Place vehicle: readout includes it OR renamed so exclusion is honest.",
+    "WEST EAST IND TOTAL chips unchanged after fix.",
+]
+citations = [
+    "wave203.md NIT",
+    "mission_history 289 532",
+    "operator-liked chip semantics",
+]
+estimated = ["scope"]
 owns = ["apps/website/frontend/src/mission_history.rs"]
 
 [scope]
