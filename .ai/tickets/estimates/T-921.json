@@ -1,0 +1,32 @@
+{
+  "derived_from_shas": [
+    "7d6d52d10bef8ff61f10a74fd101a9848b201167",
+    "cb37d3baf70fb12ab5c0fcf03170ce7ea43478e1",
+    "80e63f4b8bd5759da9dacda6e0ef6f51cc8aadf9",
+    "78cd491267d93e95b7b251499d8e3ae790e9fa67",
+    "db0befc63c20a70985437252e3c5424dd5c50261",
+    "31c7d199c50cd76c1a6565c183cac58d401fd8c2",
+    "e49e2a49f1a23a9340409c5ab18bc43740fffb0d",
+    "75d74bc232fb5e2420f5a1c2de8de254d66bb50e",
+    "656a66becd7d69f345f45fab28c3543ddf7eeb77",
+    "6492f76355d278312b5461bb764b05cc7d2b1c37",
+    "010127dd3e439d0c2070e01cc10f3e54d860e3a4",
+    "9a40018900acb0c5a64e554854f5b2297f37dddf",
+    "aa379e8a360562c13bbce419eaf69aa19e129535",
+    "a4931bcfef12b855fbe541280cf660b4591797a8",
+    "606b9e6abfa8ae51f687810088b359c73b187cb7",
+    "be7008d19748fe7f9169e4ecd448bdd72564c36a",
+    "6c5ab5c78297ce7d127a84c79b36c155fef06fbd",
+    "d428c906f3d084be4b73bc3e2ebfabea282b33e5",
+    "ff799fecb07cbee68a287611cc2194f87063dc4a",
+    "a378af30dd0dbccf979906e494ab4c6df4a78e99",
+    "9db72b750531ce4fe82bf9196f4a77730a19c43a",
+    "deed5904bf4cbeefaa7a99ad9b30ef756db96fd4"
+  ],
+  "factor": 150,
+  "generated_at": "2026-08-15T17:55:22Z",
+  "id": "T-921",
+  "loc_changed": 163,
+  "source": "diff_loc",
+  "tokens_estimated": 24450
+}
