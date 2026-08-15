@@ -6,7 +6,51 @@ class = "bug"
 status = "shipped"
 order = 4830
 executor = "claude-code"
-notes = "mechanism note from census GPU-preview design; mid-drag screenshot method in review O-7 | SHIPPED W208: pack_squad_link_drag_preview offsets affected endpoints with sprite dx/dy; push/clear_drag_preview bind SQUAD_LINKS; Class-R packer pins perturbation-proven. Live mid-drag 4px CDP + rf<=1ms left to eye-pass (slice disclosed). MissionConnections hairline still doc_tick-only (outside owns)."
+notes = """
+mechanism note from census GPU-preview design; mid-drag screenshot method in review O-7 | SHIPPED W208: pack_squad_link_drag_preview offsets affected endpoints with sprite dx/dy; push/clear_drag_preview bind SQUAD_LINKS; Class-R packer pins perturbation-proven. Live mid-drag 4px CDP + rf<=1ms left to eye-pass (slice disclosed). MissionConnections hairline still doc_tick-only (outside owns).
+--- HEAD migration_legacy (verbatim) ---
+
+UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). O-7 — operator-observed, mechanism CONFIRMED IN DESIGN: during a drag the engine moves sprites via the GPU preview (select_tool.rs ~:258-306 preview repacks slot+vehicle instances only) and the squad/tether lines (crates/map-engine-core/src/slot_line.rs, squad_links.rs) rebuild only on the one-txn commit — so lines necessarily point at the stale position until mouseup. The review could not reproduce it cleanly by instrument (drags kept marquee-ing) but the architecture guarantees the operator's observation. FIX: include tether/line endpoints in the preview pass — when a dragged id participates in a line, preview the affected endpoints with the same transform the sprite preview uses; commit path unchanged. ⚠️ TRAPS: preview must stay allocation-light (the per-frame budget argument that shaped T-057/preview design); only AFFECTED lines re-pack, not the whole set; multi-select drags move several endpoints of one line — both ends preview. ACCEPTANCE: scripted — mid-drag screenshot (button held): line endpoint within 4px of the dragged sprite centre (pixel probe), for single-drag and 2-selected-drag; after release, committed line matches; FPS/rf delta during a 9-slot drag <= 1ms median vs baseline.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). O-7 — operator-observed, mechanism CONFIRMED IN DESIGN: during a drag the engine moves sprites via the GPU preview (select_tool.rs ~:258-306 preview repacks slot+vehicle instances only) and the squad/tether lines (crates/map-engine-core/src/slot_line.rs, squad_links.rs) rebuild only on the one-txn commit — so lines necessarily point at the stale position until mouseup. The review could not reproduce it cleanly by instrument (drags kept marquee-ing) but the architecture guarantees the operator's observation. FIX: include tether/line endpoints in the preview pass — when a dragged id participates in a line, preview the affected endpoints with the same transform the sprite preview uses; commit path unchanged. ⚠️ TRAPS: preview must stay allocation-light (the per-frame budget argument that shaped T-057/preview design); only AFFECTED lines re-pack, not the whole set; multi-select drags move several endpoints of one line — both ends preview. ACCEPTANCE: scripted — mid-drag screenshot (button held): line endpoint within 4px of the dragged sprite centre (pixel probe), for single-drag and 2-selected-drag; after release, committed line matches; FPS/rf delta during a 9-slot drag <= 1ms median vs baseline."]
+
+missing=0
+"""
+main_goal = "Preview tether/line endpoints during drag matching sprite GPU preview transform."
+context = [
+    "GPU preview repacks slot and vehicle sprites during drag only.",
+    "Squad tether lines rebuild only on commit so endpoints lag.",
+    "Architecture guarantees stale line positions until mouseup.",
+]
+requirement = [
+    "Include affected tether line endpoints in preview pass.",
+    "Apply same transform as sprite preview for dragged ids.",
+    "Only affected lines re-pack; commit path unchanged.",
+]
+current_state = [
+    "select_tool.rs preview repacks instances not line endpoints.",
+    "slot_line.rs and squad_links.rs update on one-txn commit only.",
+    "Multi-select drags may move both ends of one line.",
+]
+approach = [
+    "pack_squad_link_drag_preview offsets endpoints with sprite dx dy.",
+    "push clear_drag_preview bind SQUAD_LINKS during drag.",
+    "Stay allocation-light per T-057 preview budget constraints.",
+]
+verify = [
+    "Mid-drag: line endpoint within 4px of dragged sprite centre single and 2-selected.",
+    "After release committed line matches preview position.",
+    "FPS rf delta during 9-slot drag <= 1ms median vs baseline.",
+]
+citations = [
+    "editor_hostile_ux_review O-7 mechanism",
+    "select_tool GPU preview repack",
+    "slot_line squad_links commit only",
+    "T-057 preview per-frame budget",
+    "multi-select both endpoints preview",
+]
 shipped_at = "a45b8567"
 created_at = "2026-08-11T01:58:26Z"
 completed_at = "2026-08-11T02:36:28Z"
@@ -18,7 +62,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = ["UX-REVIEW BATCH (source: .ai/artifacts/editor_hostile_ux_review.md, commit 5d30c651; operator pass 2026-08-09). O-7 — operator-observed, mechanism CONFIRMED IN DESIGN: during a drag the engine moves sprites via the GPU preview (select_tool.rs ~:258-306 preview repacks slot+vehicle instances only) and the squad/tether lines (crates/map-engine-core/src/slot_line.rs, squad_links.rs) rebuild only on the one-txn commit — so lines necessarily point at the stale position until mouseup. The review could not reproduce it cleanly by instrument (drags kept marquee-ing) but the architecture guarantees the operator's observation. FIX: include tether/line endpoints in the preview pass — when a dragged id participates in a line, preview the affected endpoints with the same transform the sprite preview uses; commit path unchanged. ⚠️ TRAPS: preview must stay allocation-light (the per-frame budget argument that shaped T-057/preview design); only AFFECTED lines re-pack, not the whole set; multi-select drags move several endpoints of one line — both ends preview. ACCEPTANCE: scripted — mid-drag screenshot (button held): line endpoint within 4px of the dragged sprite centre (pixel probe), for single-drag and 2-selected-drag; after release, committed line matches; FPS/rf delta during a 9-slot drag <= 1ms median vs baseline."]
 owns = [
     "apps/website/frontend/src/select_tool.rs",
     "crates/map-engine-core/src/slot_line.rs",
