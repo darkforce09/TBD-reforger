@@ -12,6 +12,15 @@ depends_on = [
     "T-069",
     "T-092",
 ]
+main_goal = "Runtime Enfusion marker pipeline distinct from T-069 editor markers."
+context = ["North-star backlog; T-069 authors markers; T-092 exports payload."]
+requirement = ["Replicated five-file marker stack; side-scoped visibility; cap sixty-four markers."]
+current_state = ["Reforger base markers unreadable; no TBD runtime marker mod at filing."]
+approach = ["Audit-closed T-181.19 TBD_MarkerData Icons Client Component Controller."]
+citations = [
+    "T-181.19 audit closure 2026-07-26",
+    "tbd_north_star_backlog.md T-134",
+]
 created_at = "2026-07-03T00:00:00Z"
 completed_at = "2026-07-03T00:00:00Z"
 estimated = [

@@ -8,6 +8,15 @@ order = 1250
 spec = "docs/platform/t125_coding_standards_enforcement.md"
 executor = "claude-code"
 parent = "T-125"
+main_goal = "Primary ci.yml every push/PR; make ci-local mirror."
+context = ["CODING_STANDARDS CI-2, TEST-1/2/3, FMT-1."]
+requirement = ["Postgres 18; backend gofmt; frontend vitest; schema validate."]
+current_state = ["No unified ci.yml on main pushes."]
+approach = [".github/workflows/ci.yml plus Makefile targets."]
+citations = [
+    "commit 9792182 ci.yml",
+    "t125_coding_standards_enforcement.md",
+]
 shipped_at = "9792182"
 created_at = "2026-06-29T23:04:50Z"
 completed_at = "2026-06-29T23:04:50Z"

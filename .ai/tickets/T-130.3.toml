@@ -8,6 +8,16 @@ order = 1300
 spec = "docs/platform/t130_fable_audit_remainder.md"
 executor = "claude-code"
 parent = "T-130"
+main_goal = "CI runs services, middleware, realtime tests."
+context = ["F2B-06: ci-local skipped those packages."]
+requirement = ["ci.yml and ci-local-backend include them."]
+current_state = ["CI green without those tests."]
+approach = ["Wire steps into CI mirror."]
+citations = [
+    "commit 755a889b",
+    "t130_fable_audit_remainder.md",
+    "t130_verify_log.md Batch 1",
+]
 shipped_at = "755a889b"
 created_at = "2026-07-02T18:26:51Z"
 completed_at = "2026-07-02T18:26:51Z"

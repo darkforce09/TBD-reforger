@@ -8,6 +8,16 @@ order = 1300
 spec = "docs/platform/t130_fable_audit_remainder.md"
 executor = "claude-code"
 parent = "T-130"
+main_goal = "Close F4-03 cross-tab conflict, F4-07 non-UUID trap, F2F-07 admin Dialog."
+context = ["Fable T-130 slice; T-127 left F4-03 PARTIAL on MC adopt conflict."]
+requirement = ["Adopted-semver localStorage cross-tab skip; non-UUID overlay; Aegis delete confirm."]
+current_state = ["Cross-tab re-prompted conflict; non-UUID banner only; window.confirm on admin delete."]
+approach = ["localStorage semver marker; z-40 overlay; shared Aegis Dialog pattern."]
+citations = [
+    "commit bb40a61a",
+    "t130_fable_audit_remainder.md",
+    "Vitest 43/43",
+]
 shipped_at = "bb40a61a"
 created_at = "2026-07-02T22:04:23Z"
 completed_at = "2026-07-02T22:04:23Z"

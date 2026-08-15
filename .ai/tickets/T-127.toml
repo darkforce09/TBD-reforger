@@ -9,6 +9,25 @@ spec = "docs/platform/t127_mc_ux_audit_fixes.md"
 executor = "claude-code"
 depends_on = ["T-126"]
 unblocks = ["T-128"]
+main_goal = "Fix Mission Creator trust and feedback gaps U1–U5."
+context = ["Fable 5 audit flagged MC conflict, export, basemap, delete UX."]
+requirement = [
+    "Server conflict resolves with IDB persist and warm marker.",
+    "exportJson toasts on failure; coerce map basemap to satellite.",
+    "Folder delete confirm; surface ORBAT 409 messages.",
+]
+current_state = ["Server conflict re-prompts; export fire-and-forget; map basemap silent grid."]
+approach = ["useMissionEditor resolveConflict; basemapView coerce; EditorLayersSection Dialog."]
+verify = [
+    "cd apps/website/frontend && npm run build",
+    "cd apps/website/frontend && npm run lint",
+    "cd apps/website/frontend && npm run test",
+]
+citations = [
+    "commit 0515aabb T-127",
+    "t127_mc_ux_audit_fixes.md",
+    "t127_verify_log.md",
+]
 shipped_at = "0515aabb"
 created_at = "2026-07-01T22:50:17Z"
 completed_at = "2026-07-02T17:41:11Z"

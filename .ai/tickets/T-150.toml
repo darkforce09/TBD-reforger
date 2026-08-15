@@ -13,6 +13,19 @@ unblocks = [
     "T-146",
     "T-070",
 ]
+main_goal = "Mod-agnostic Workbench scanner emits items catalog plus compat edge graph."
+context = ["T-068.1 curated ~21 rows cannot scale Workshop modsets."]
+requirement = [
+    "Expand registry-items kinds; add registry-compat schema.",
+    "Delete BuildCuratedRows; classify by path and components.",
+]
+current_state = ["Hand-curated allowlist; no vehicle turret ammo edges."]
+approach = ["MCP preflight; scanner plugin; commit 1880 items / 4012 edges."]
+citations = [
+    "t150_verify_log.md",
+    "commit 9107bf4e",
+    "t150_universal_registry_export.md",
+]
 shipped_at = "9107bf4e"
 created_at = "2026-07-10T13:49:14Z"
 completed_at = "2026-07-10T19:53:31Z"

@@ -8,6 +8,19 @@ order = 1440
 spec = "docs/specs/Mission_Creator_Architecture/t144_arma3_map_architecture_study.md"
 executor = "claude-code"
 parent = "T-144"
+main_goal = "Ground-truth A3 Arcade editor 2D map architecture before T-090 resume."
+context = ["T-090 basemap diverged from Eden; operator has read-only A3 source tree."]
+requirement = [
+    "§0–§11 report with gap table and phased T-090 recommendations.",
+    "Read-only A3 tree; artifacts only in .ai/artifacts/.",
+]
+current_state = ["Heuristic satellite compose without proven A3 layering spine."]
+approach = ["Phase 0 entry discovery; validate uiMapExt spine; ship report @ b1949182."]
+citations = [
+    "t144_arma3_map_architecture_report.md",
+    "commit b1949182",
+    "t144_arma3_map_architecture_study.md",
+]
 shipped_at = "b1949182"
 created_at = "2026-07-04T21:46:45Z"
 completed_at = "2026-07-04T21:49:46Z"

@@ -8,6 +8,15 @@ order = 1300
 spec = "docs/platform/t130_fable_audit_remainder.md"
 executor = "cursor-docs"
 parent = "T-130"
+main_goal = "Doc-sync Fable tracker RESOLVED plus schema and UX spec nits."
+context = ["T-130 program final slice; merge tag T-130 at 90c9f261."]
+requirement = ["F1-09/11 manifest fixes; F5-08/09; F2C-04 brief policy; F4-08 shortcuts table."]
+current_state = ["OPEN/PARTIAL rows remained after T-130.6 code slices."]
+approach = ["Flip tracker rows; north-star backlog T-131..T-142 registry ideas."]
+citations = [
+    "commit 5e0c7754",
+    "tag T-130 merge 90c9f261",
+]
 shipped_at = "5e0c7754"
 created_at = "2026-07-03T04:21:31Z"
 completed_at = "2026-07-03T04:21:31Z"

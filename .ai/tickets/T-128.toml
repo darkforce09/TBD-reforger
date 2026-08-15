@@ -8,6 +8,24 @@ order = 1280
 spec = "docs/platform/t128_doc_link_repair.md"
 executor = "cursor-docs"
 depends_on = ["T-127"]
+main_goal = "Repair agent-breaking doc rot and mark phantom staging gates honestly."
+context = ["Fable counted broken markdown links after monorepo move."]
+requirement = [
+    "P0 handoff ../docs/ depth fixes; staging docs BLOCKED on T-092.",
+    "README monorepo rewrites; orphan frontend/docs deleted.",
+    "Floor picker T-126 renumber to T-129.",
+]
+current_state = ["155+ broken relative links; staging asserts live T-092 routes."]
+approach = ["Batch P0–P4 link sweep; STAGING-SERVER honesty; ticket sync."]
+verify = [
+    "./scripts/ticket sync",
+    "./scripts/ticket check",
+]
+citations = [
+    "commit 5791a56b merge T-128",
+    "t128_doc_link_repair.md",
+    "t128_doc_link_repair_log.md",
+]
 shipped_at = "5791a56b"
 created_at = "2026-07-02T17:25:07Z"
 completed_at = "2026-07-02T17:41:11Z"

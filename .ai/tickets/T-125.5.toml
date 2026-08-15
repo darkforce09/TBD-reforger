@@ -8,6 +8,21 @@ order = 1250
 spec = "docs/platform/t125_coding_standards_enforcement.md"
 executor = "claude-code"
 parent = "T-125"
+main_goal = "Ship root .editorconfig and Prettier FMT-2/FMT-3 CI gates."
+context = ["T-125.5 closes remaining CODING_STANDARDS §7 formatting gates."]
+requirement = ["Root .editorconfig; editorconfig-checker in ci-local; Prettier format:check."]
+current_state = ["No root .editorconfig or Prettier scripts in frontend."]
+approach = ["Add .editorconfig; wire editorconfig-checker; Prettier devDeps and npm format:check."]
+verify = [
+    "editorconfig-checker",
+    "cd apps/website/frontend && npm run format:check",
+    "cargo xtask ci ci-local",
+]
+citations = [
+    "commit e21dac3 T-125.5",
+    "t125_coding_standards_enforcement.md §T-125.5",
+    "SHIPPED_HISTORY T-125 entry",
+]
 shipped_at = "e21dac3"
 created_at = "2026-06-30T02:00:44Z"
 completed_at = "2026-06-30T02:17:59Z"

@@ -8,6 +8,15 @@ order = 1250
 spec = "docs/platform/t125_coding_standards_enforcement.md"
 executor = "claude-code"
 parent = "T-125"
+main_goal = "@route tags, verify-* scripts, ENF-4 DTO gate."
+context = ["GO-7 route-match, LOG-3, ERR-4, GO-9 imports."]
+requirement = ["82 handlers tagged; verify-coding-standards in CI."]
+current_state = ["Silent db.First; no verify-* scripts."]
+approach = ["verify-route-tags; DTO fixtures; ci-local wiring."]
+citations = [
+    "commit cb508cf route verify scripts",
+    "SHIPPED_HISTORY T-125",
+]
 shipped_at = "cb508cf"
 created_at = "2026-06-30T00:56:46Z"
 completed_at = "2026-06-30T01:57:54Z"

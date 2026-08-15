@@ -8,6 +8,15 @@ order = 1250
 spec = "docs/platform/t125_coding_standards_enforcement.md"
 executor = "claude-code"
 parent = "T-125"
+main_goal = "golangci full gate; fix all Go lint repo-wide."
+context = ["T-125.2.1: verify-ci1.sh, ci.yml comment order."]
+requirement = ["Full golangci set; drop only-new-issues."]
+current_state = ["golangci only-new-issues masked drift."]
+approach = [".golangci.yml; nolint splits defer T-125.4."]
+citations = [
+    "commit 80c7f07 CI-1 verify-ci1",
+    "commit 8516c69a golangci full",
+]
 shipped_at = "80c7f07"
 created_at = "2026-06-29T23:53:41Z"
 completed_at = "2026-06-29T23:53:41Z"

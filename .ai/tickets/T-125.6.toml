@@ -8,6 +8,19 @@ order = 1250
 spec = "docs/platform/t125_coding_standards_enforcement.md"
 executor = "cursor-docs"
 parent = "T-125"
+main_goal = "Sync registry and hub docs after T-125 program ships."
+context = ["T-125.6 cursor-docs slice after T-125.5 code lands."]
+requirement = ["Mark T-125 shipped; ticket sync; CLAUDE §Done; FMT gates live in docs."]
+current_state = ["CODING_STANDARDS matrix still shows FMT-2/FMT-3 pending."]
+approach = ["./scripts/ticket sync; update CLAUDE.md, CODING_STANDARDS §10, DEV_RUNBOOK."]
+verify = [
+    "./scripts/ticket sync",
+    "./scripts/ticket check",
+]
+citations = [
+    "commit 23135cf doc sync",
+    "t125 spec T-125.6 section",
+]
 shipped_at = "23135cf"
 created_at = "2026-06-30T02:23:09Z"
 completed_at = "2026-06-30T02:23:38Z"

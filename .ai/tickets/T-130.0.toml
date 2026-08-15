@@ -8,6 +8,16 @@ order = 1300
 spec = "docs/platform/t130_fable_audit_remainder.md"
 executor = "cursor-docs"
 parent = "T-130"
+main_goal = "Register Fable audit remainder program; hub and handoffs."
+context = ["~21 OPEN + F4-03 PARTIAL; no owner."]
+requirement = ["Registry; hub; handoffs; worktree README."]
+current_state = ["OPEN/PARTIAL unowned on audit tracker."]
+approach = ["cursor-docs setup; ticket/T-130 worktree."]
+citations = [
+    "commit 5791a56b",
+    "t130_fable_audit_remainder.md",
+    "SHIPPED_HISTORY T-130",
+]
 shipped_at = "5791a56b"
 created_at = "2026-07-02T17:37:44Z"
 completed_at = "2026-07-02T17:41:11Z"

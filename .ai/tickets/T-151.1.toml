@@ -8,6 +8,19 @@ order = 1500
 spec = "docs/specs/Mission_Creator_Architecture/t151_1_basemap_lane.md"
 executor = "claude-code"
 parent = "T-151"
+main_goal = "Port Deck basemap stack onto wgpu RenderEngine in WgpuTacticalMap."
+context = ["T-151.0 mount drew calibration only; Deck had full basemap lane."]
+requirement = [
+    "TexturedQuad and Polyline pipelines; unified TBDS with pyramid fallback.",
+    "Hillshade DEM plus procedural 1 km grid; Deck parity gates.",
+]
+current_state = ["WgpuTacticalMap flat calibration; no satellite or hillshade."]
+approach = ["basemapResolve.ts extract; GPU upload in Rust; vitest parity matrix."]
+citations = [
+    "t151_1_verify_log.md",
+    "commit 3ab81587",
+    "t151_1_basemap_lane.md",
+]
 shipped_at = "3ab81587"
 created_at = "2026-07-08T15:18:24Z"
 completed_at = "2026-07-08T17:06:54Z"

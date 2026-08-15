@@ -8,6 +8,16 @@ order = 1300
 spec = "docs/platform/t130_fable_audit_remainder.md"
 executor = "claude-code"
 parent = "T-130"
+main_goal = "Mod export robustness: cap reads, gate RPC, check writes."
+context = ["F1-16..20 OPEN on exporters."]
+requirement = ["8MB cap; list 100; Write checks; JSON escape."]
+current_state = ["Unchecked writes; open mission list RPC."]
+approach = ["TBD_ExportJson.Write; TBD_ExportPaths.c."]
+citations = [
+    "commit b62a66b7",
+    "t130_fable_audit_remainder.md",
+    "t130_verify_log.md Batch 2",
+]
 shipped_at = "b62a66b7"
 created_at = "2026-07-02T21:59:43Z"
 completed_at = "2026-07-02T22:14:56Z"

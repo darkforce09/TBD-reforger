@@ -8,6 +8,16 @@ order = 1300
 spec = "docs/platform/t130_fable_audit_remainder.md"
 executor = "claude-code"
 parent = "T-130"
+main_goal = "Discord 429 retry, embed caps, OAuth client_id guard."
+context = ["F3-01/02/03 on Discord HTTP/OAuth."]
+requirement = ["Retry-After; truncate embeds; oauth_unconfigured redirect."]
+current_state = ["No backoff; uncapped embeds; blank client_id."]
+approach = ["httpretry.go caps; auth client_id guard."]
+citations = [
+    "commit 9db1b9e1",
+    "t130_fable_audit_remainder.md",
+    "t130_verify_log.md Batch 1",
+]
 shipped_at = "9db1b9e1"
 created_at = "2026-07-02T18:24:56Z"
 completed_at = "2026-07-02T18:24:56Z"
