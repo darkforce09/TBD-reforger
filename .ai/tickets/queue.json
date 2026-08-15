@@ -18,6 +18,13 @@
       "status": "ready",
       "spec": "docs/platform/t917_ticket_schema_v2.md",
       "branch": "ticket/T-919"
+    },
+    {
+      "id": "T-921",
+      "title": "History reconstruction: body fields + titles for shipped tickets",
+      "status": "ready",
+      "spec": "docs/platform/t920_body_obligations.md",
+      "branch": "ticket/T-921"
     }
   ]
 }

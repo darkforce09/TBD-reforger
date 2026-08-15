@@ -10,6 +10,7 @@
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
 - **T-919** (5990) — Wall triage: drain migration_legacy into typed fields [ready] — Wall triage: drain migration_legacy into typed fields
+- **T-921** (6010) — History reconstruction: body fields + titles for shipped tickets [ready] — Batched reviewed reconstruction over shipped tickets without quarantined walls: fill the body fields and repair deficient titles from each ticket's spec, commits and diffs, citing sources. Each batch shrinks both debt pins in the same commit.
 
 ## Next queued (top 10)
 
