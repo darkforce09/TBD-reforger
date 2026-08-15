@@ -65,6 +65,7 @@ verify = [
     "gate smoke persist PASS; warm reader continuity survived scoping.",
     "Phase 2 probe: second hydrate cleared residue planted after first purge.",
 ]
+acceptance = ["Deleted dead adopted marker and purged residue; scoped sessionStorage prevented cross-account warm-session reads."]
 citations = [
     "T-338 RAM cache scope",
     "T-223 stopped reading adopted",

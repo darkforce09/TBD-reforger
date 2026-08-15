@@ -72,6 +72,8 @@ approach = [
     "Slug refuse not normalise; weapon_system required + sol.weapon_system != requested is precisely charges_for None.",
     "fp_x/fp_y/tgt_x/tgt_y presence-only — 0.0 is real coordinate; fp_grid/target_grid trimmed not refused.",
 ]
+verify = ["wiki slug require-and-refuse at PUT; field_tools event_id parse no longer swallowed to NULL."]
+acceptance = ["Wiki slug and field_tools keys refused blanks; unknown mortar weapon returned 400 instead of silent fallback."]
 citations = [
     "T-343 sweep gaps",
     "wiki.rs:98 slug",

@@ -30,6 +30,11 @@ approach = [
     "Note `slug_key()` exists and IS applied on the compiled `briefings`/`orbat` path (T-202 confirmed all four goldens key identically through it).",
     "So the lowercase pattern is probably correct for the COMPILED document and simply does not describe orbat_slots.",
 ]
+verify = [
+    "make schema-validate; make schema-codegen",
+    "Required key plus minLength 1 added; lowercase pattern not applied.",
+]
+acceptance = ["Required key plus minLength 1 added on editor payload; compiled lowercase pattern unchanged."]
 citations = [
     "T-346 T-356 family",
     "T-202 slug_key goldens",

@@ -65,6 +65,8 @@ approach = [
     "and is bypassed in favour of the runtime jsonschema validator — which is exactly why factions.rs has zero #[serde(default)] for a grep to find.",
     "Consider whether adopting the generated types is the real fix for the whole class rather than patching this one handler.",
 ]
+verify = ["cargo test -p website-api --test factions faction_library_crud_gates."]
+acceptance = ["Rejected blank and padded faction library names at projection; unique owner_id+name index could not be bypassed."]
 citations = [
     "T-346..T-351 sweeps",
     "T-343 warn_user pattern",

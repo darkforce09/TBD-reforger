@@ -18,6 +18,16 @@ requirement = [
     "Prove T-326 orphan claim and post-link ingest resolve.",
     "Skip new btrim migration; live DBs showed zero padded rows.",
 ]
+current_state = [
+    "identity_link IT posted only clean arma_id; padded trim on link-confirm was never pinned.",
+    "migration 0016 btrim on users.arma_id via T-335; live DB census showed zero padded rows.",
+]
+approach = [
+    "POST whitespace-padded arma_id on link-confirm; assert users.arma_id stored trimmed.",
+    "Prove post-link ingest resolve; skip new btrim migration because 0016 already normalizes.",
+]
+verify = ["cargo test -p website-api --test identity_link padded_arma_id_is_stored_trimmed_and_resolvable."]
+acceptance = ["Padded arma_id stored trimmed after link-confirm; post-link ingest resolved; no new btrim migration."]
 citations = [
     "commit 48875af0 padded trim IT",
     "T-343 sweep split T-346..T-351",

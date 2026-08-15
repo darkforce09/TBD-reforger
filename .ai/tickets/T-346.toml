@@ -62,6 +62,8 @@ current_state = [
     'Padded faction 200 stores padded bytes; Event Hub card shows ZERO items; missing faction stores "" via default.',
 ]
 approach = ["Required + refuse value != trim() with 400; store caller bytes exactly — agreement-preserving under orbat untrimmed writes."]
+verify = ["cargo test -p website-api --test missions armory_faction_is_the_event_hub_join_key."]
+acceptance = ["Required faction and refused padding; armory stored caller bytes and Event Hub card showed items."]
 citations = [
     "T-343 sweep family",
     "T-315 items pattern",

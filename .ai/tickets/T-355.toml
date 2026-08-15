@@ -41,6 +41,8 @@ current_state = [
     'current_match_id shares helper: absent keeps / "" clears / uuid sets.',
 ]
 approach = ["Decision per call site — helper cannot simply start rejecting."]
+verify = ["cargo test -p website-api malformed_event_or_mission_id_is_bad_request"]
+acceptance = ["Malformed non-empty event_id or mission_id returned 400; attendance update no longer skipped on 200."]
 citations = [
     "T-347 whitespace trim fix",
     "T-316 current_match_id contract",

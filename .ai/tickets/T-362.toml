@@ -73,6 +73,7 @@ verify = [
     "Post-fix: both green; deliberately poisoned TBD_GATE_FONT_CACHE honoured AND hard-fails ~6s.",
     "/var/tmp container-private vacuous attempt; reproduction redone under /home.",
 ]
+acceptance = ["Gate owned distro-keyed font cache regardless of XDG_CACHE_HOME; poisoned cache hard-failed in ~6s."]
 citations = [
     "T-354 container finding",
     "T-320 ensure_gate_font_cache",

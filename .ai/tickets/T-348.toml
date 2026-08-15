@@ -82,6 +82,11 @@ approach = [
     "Per-field refuse blank not trim — padding allowed where no equality join (name_override vs T-346 faction).",
     "cms CREATE+PATCH share one status validator; archived honoured at create.",
 ]
+verify = [
+    "cargo test -p website-api --test events blank_name_override_does_not_overwrite_a_real_operation_name.",
+    "cargo test -p website-api --test events blank_announcement_fields_are_refused_and_an_unknown_status_is_not_a_silent_draft.",
+]
+acceptance = ["Refused blank PATCH writes; padded name_override kept verbatim; cms handlers shared one status validator."]
 citations = [
     "T-343 sweep",
     "T-346 join-key split",

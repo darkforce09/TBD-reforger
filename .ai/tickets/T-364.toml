@@ -35,6 +35,11 @@ current_state = [
     "Create derives snippet via snippet_from; PATCH only writes when explicitly supplied.",
 ]
 approach = ["Deriving on write probably right — list view should not pay for it on read."]
+verify = [
+    "cargo test -p website-api coalesce_str_two_state_no_whitespace_third",
+    "cargo test -p website-api body_only_patch_rederives_snippet_on_write",
+]
+acceptance = ["Whitespace-only telemetry clears collapsed to empty string; body-only CMS PATCH recomputed snippet."]
 citations = [
     "T-348 narrow mechanism findings",
     "T-316 COALESCE heartbeat contract",

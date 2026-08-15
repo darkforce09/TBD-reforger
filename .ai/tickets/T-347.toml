@@ -73,6 +73,8 @@ current_state = [
     '`Some("")` guard/bind disagree → 23505 PERMANENT 500 for that sender.',
 ]
 approach = ["source_match_key resolves ONCE pre-transaction; upsert_match never reads m.source_match_id; blank is 400."]
+verify = ["cargo test -p website-api --test telemetry a_blank_source_match_id_cannot_become_a_dedupe_key."]
+acceptance = ["Resolved source_match_key once pre-upsert; blank ids returned 400 and distinct matches stopped collapsing."]
 citations = [
     "T-343 sweep",
     "T-316 optional absent",

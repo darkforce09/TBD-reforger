@@ -41,6 +41,12 @@ current_state = [
     "server_intel.rs:30 format_uptime private; dashboard.rs carries duplicate.",
     "POST /me/leave-requests exists at app.rs:100 with NO SPA caller.",
 ]
+approach = [
+    "Made event_hub_view pub(crate); added /announcements/:id with URL-driven selection.",
+    "Moved format_uptime and log_stamp to datefmt.rs; LOA POST already shipped via T-265.",
+]
+verify = ["routes.csv /announcements/:id @ 4b5e7a69; wave-55 CLEAN."]
+acceptance = ["Inline ORBAT hub exported; announcements deep-linked; shared uptime formatter; leave POST already wired."]
 citations = [
     "T-232 render branches",
     "T-226 PATCH/DELETE pattern",

@@ -50,6 +50,11 @@ approach = [
     'Trimming leaves "1", "1.2" and "banana" all acceptable — must validate as semver.',
     "T-357 measured naive tightening would have 400'd six real live missions.",
 ]
+verify = [
+    "cargo test -p website-api create_version_guards_semver",
+    "cargo test -p website-api mission_title_rejects_blank_and_whitespace_only",
+]
+acceptance = ["PATCH and CREATE mission title rejected empty or whitespace; version save validated SemVer before INSERT."]
 citations = [
     "T-348 end-to-end confirmation",
     "T-228 validation discipline",

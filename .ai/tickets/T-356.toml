@@ -48,6 +48,8 @@ current_state = [
     "TAB-only editor key validates and lands verbatim; slug_key neutralises on compiled path.",
 ]
 approach = ["Read T-346 reference implementation and test pins over-rejection direction."]
+verify = ["cargo test -p map-engine-core --features mission orbat_squad_faction_is_required_on_wire."]
+acceptance = ["ORBAT faction required and refused empty or padded values; orbat_slots stored caller bytes verbatim."]
 citations = [
     "T-346 set_armory reference",
     "T-357 TAB-only asymmetry",

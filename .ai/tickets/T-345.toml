@@ -66,6 +66,7 @@ verify = [
     "233 tests; authored_marker_reaches_the_mod_document_without_its_doc_id green.",
     "Round-trip via mutator with non-integral coordinates; marker_any documents yrs 300.0 token.",
 ]
+acceptance = ["Shipped briefing marker mutators with doc-internal id; flatten emitted four wire keys without id."]
 citations = [
     "T-202 briefings emitter",
     "T-214 hydrate round-trip",

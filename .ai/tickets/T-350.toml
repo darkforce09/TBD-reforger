@@ -47,6 +47,11 @@ current_state = [
     "events.rs:2039 guards u.arma_id <> '' not btrim; emits verbatim seating key at :2050.",
 ]
 approach = ["Trim-check linked gates; align events.rs roster guard with five other arma_id trim sites."]
+verify = [
+    "cargo test -p website-api --test t350_whitespace_linked refresh_whitespace_arma_id_mints_arma_linked_false.",
+    "cargo test -p website-api --test t350_whitespace_linked submit_leave_rejects_blank_and_whitespace_reason.",
+]
+acceptance = ["Whitespace arma_id read unlinked at auth and oauth refresh; leave reason blank or whitespace returned 400."]
 citations = [
     "T-343 sweep",
     "T-326 ingest_link_confirm",

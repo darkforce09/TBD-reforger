@@ -29,6 +29,12 @@ current_state = [
     "and it is the last place the same numeric mismatch can silently recur.",
     "T-232 already fixed a confident `FPS: 0` on that card; typing the field is what stops the next one.",
 ]
+approach = [
+    "Typed DashboardResponse.server_status as ServerStatusDto.",
+    "Left /members /registry/compat /fire-missions/solve fixtures outside owns.",
+]
+verify = ["cargo test -p website-frontend dashboard"]
+acceptance = ["Dashboard server_status typed as ServerStatusDto; dashboard golden pinned server_status wire shape."]
 citations = [
     "T-306 three read sites",
     "T-232 vf64 dashboard FPS",

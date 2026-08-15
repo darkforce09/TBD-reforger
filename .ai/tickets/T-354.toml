@@ -66,6 +66,7 @@ verify = [
     "gate doctor: OK — 0 warning(s) with liveness green.",
     "Measured via CHROME_HEADLESS_SHELL wrapper with logging flags appended.",
 ]
+acceptance = ["Drained chrome stdout/stderr pipes; gate A/B went 18/18 pass and doctor liveness stayed green."]
 citations = [
     "T-232 harness hang",
     "T-320 font-abort misdiagnosis",

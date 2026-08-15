@@ -52,6 +52,7 @@ verify = [
     "PNG capture was attempted and abandoned honestly — headless Chrome's --virtual-time-budget stalls indefinitely on this wasm SPA —",
     "so it substituted a computed-style plus geometry capture, which is grep-checkable in a way a screenshot is not.",
 ]
+acceptance = ["Removed permanent Theater Unknown placeholder; browser showed one span and string absent from document.body."]
 citations = [
     "T-306 DTO gate rule",
     "ServerRowDto eight fields",
