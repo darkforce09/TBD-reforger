@@ -543,6 +543,32 @@ mod tests {
         );
     }
 
+    /// T-922 body-debt ratchet: shipped work tickets missing any ready-tier body
+    /// field must equal [`crate::BODY_DEBT_PIN`] exactly. Every T-922 reconstruction
+    /// batch SHRINKS the pin in the same commit; growth means an `ops::ship` gate
+    /// bypass. When the pin hits zero, the ready-tier rule widens to shipped and
+    /// this test + pin are deleted in that commit.
+    #[test]
+    fn body_debt_ratchet_pin() {
+        let root = repo_root();
+        let corpus = Corpus::load(&root).expect("fail-closed load of the live tree");
+        let debt = corpus
+            .tickets
+            .values()
+            .filter(|t| match t {
+                Ticket::Program(_) => false,
+                Ticket::Work(w) => crate::body_is_debt(w),
+            })
+            .count();
+        assert_eq!(
+            debt,
+            crate::BODY_DEBT_PIN,
+            "body-debt count drifted from BODY_DEBT_PIN — a reconstruction batch must \
+             SHRINK the pin in the same commit; growth means a ship gate bypass \
+             (instrument: shipped work tickets with any empty ready-tier body field)"
+        );
+    }
+
     /// `derive_next_parent_id` mirrors `tickets_store::derive_next_id`: max PARENT
     /// numeric + 1; children never affect it.
     #[test]

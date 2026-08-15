@@ -11,6 +11,13 @@
       "status": "ready",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_6_geometry_placement_audit.md",
       "branch": "ticket/T-090"
+    },
+    {
+      "id": "T-922",
+      "title": "Full-body reconstruction over shipped history",
+      "status": "ready",
+      "spec": "docs/platform/t920_body_obligations.md",
+      "branch": "ticket/T-922"
     }
   ]
 }

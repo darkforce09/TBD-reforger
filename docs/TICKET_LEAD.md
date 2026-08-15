@@ -9,6 +9,7 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+- **T-922** (6020) — Full-body reconstruction over shipped history [ready] — Drain BODY_DEBT_PIN 962 to zero: reviewed batches fill every missing ready-tier body field on shipped work tickets from real sources, then the ready-tier rule widens to shipped corpus-wide and the pin is deleted.
 
 ## Next queued (top 10)
 
@@ -42,4 +43,5 @@ flowchart LR
   T150[T-150] --> T146[T-146]
   T159[T-159] --> T170[T-170]
   T069[T-069] --> T673[T-673]
+  T921[T-921] --> T922[T-922]
 ```

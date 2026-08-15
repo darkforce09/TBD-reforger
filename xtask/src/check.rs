@@ -636,9 +636,10 @@ fn check_ready_tier_body(root: &Path) -> Vec<String> {
 /// The two T-920.1 debt counts over a loaded corpus, by THE shared instruments
 /// (`tbd_tickets::title_is_debt` / `main_goal_is_debt`) — split pure so the
 /// fixture tests and the counter printer consume the same arithmetic.
-fn debt_counts(corpus: &tbd_tickets::Corpus) -> (usize, usize) {
+fn debt_counts(corpus: &tbd_tickets::Corpus) -> (usize, usize, usize) {
     let mut title = 0usize;
     let mut main_goal = 0usize;
+    let mut body = 0usize;
     for (id, t) in &corpus.tickets {
         match t {
             tbd_tickets::Ticket::Program(p) => {
@@ -653,10 +654,13 @@ fn debt_counts(corpus: &tbd_tickets::Corpus) -> (usize, usize) {
                 if tbd_tickets::main_goal_is_debt(w) {
                     main_goal += 1;
                 }
+                if tbd_tickets::body_is_debt(w) {
+                    body += 1;
+                }
             }
         }
     }
-    (title, main_goal)
+    (title, main_goal, body)
 }
 
 /// Pure growth verdict for one debt pin: red only when `measured > pin` — a new
@@ -692,7 +696,7 @@ fn check_debt_pins(root: &Path) -> Vec<String> {
         Ok(c) => c,
         Err(e) => return vec![e],
     };
-    let (title, main_goal) = debt_counts(&corpus);
+    let (title, main_goal, body) = debt_counts(&corpus);
     let mut errors = pin_growth_finding(
         "TITLE_DEBT_PIN",
         title,
@@ -705,6 +709,12 @@ fn check_debt_pins(root: &Path) -> Vec<String> {
         tbd_tickets::MAIN_GOAL_DEBT_PIN,
         "queued/ready/running/review work tickets with empty main_goal",
     ));
+    errors.extend(pin_growth_finding(
+        "BODY_DEBT_PIN",
+        body,
+        tbd_tickets::BODY_DEBT_PIN,
+        "shipped work tickets with any empty ready-tier body field",
+    ));
     errors
 }
 
@@ -714,7 +724,7 @@ fn check_debt_pins(root: &Path) -> Vec<String> {
 /// name why; counters never mask a red).
 fn debt_counter_lines(root: &Path) -> Option<Vec<String>> {
     let corpus = tbd_tickets::Corpus::load(root).ok()?;
-    let (title, main_goal) = debt_counts(&corpus);
+    let (title, main_goal, body) = debt_counts(&corpus);
     let cmp = |pin: usize, m: usize| if pin == m { "==" } else { "!=" };
     Some(vec![
         format!(
@@ -726,6 +736,11 @@ fn debt_counter_lines(root: &Path) -> Option<Vec<String>> {
             "MAIN_GOAL_DEBT_PIN {} {} measured {main_goal} (instrument: queued/ready/running/review work tickets with empty main_goal)",
             tbd_tickets::MAIN_GOAL_DEBT_PIN,
             cmp(tbd_tickets::MAIN_GOAL_DEBT_PIN, main_goal)
+        ),
+        format!(
+            "BODY_DEBT_PIN {} {} measured {body} (instrument: shipped work tickets with any empty ready-tier body field)",
+            tbd_tickets::BODY_DEBT_PIN,
+            cmp(tbd_tickets::BODY_DEBT_PIN, body)
         ),
     ])
 }
