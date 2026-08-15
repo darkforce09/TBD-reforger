@@ -17,9 +17,14 @@ requirement = [
     "Keep EnableDamageHandling(false) unconditional; only hand-back consults the getter.",
     "Warn loudly when a body was already off at arm or lift.",
 ]
+current_state = ["Safestart Restore forced EnableDamageHandling(true), ignoring each body's prior disabled state."]
+approach = ["Store prior IsDamageHandlingEnabled in m_mHeld; read once before ApplyTo; loud leftDisabled warnings on lift."]
+verify = ["scripts/mod/compile.sh exit 0; merge d6258fb1."]
+acceptance = ["Compile-verified prior-value restore into m_mHeld; runtime Arm/Restore unobserved (LOBBY stop)."]
 citations = [
     "Source: commit 12b7aaf5 — prior damage restore.",
     "Source: t181_event_mod_program.md — safestart projectile test.",
+    "12b7aaf5 prior damage restore",
 ]
 shipped_at = "d6258fb1"
 created_at = "2026-07-25T14:40:00Z"

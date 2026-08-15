@@ -17,10 +17,14 @@ requirement = [
     "Use measured Character_US_Medic.et GUID from Workbench census, not invented.",
     "Waive last-stand-at-montfort uk_* aliases as KNOWN_UNRESOLVABLE_KITS.",
 ]
+current_state = ["Kit-alias gate flagged dangling kit:us_medic in slot-loadout-coverage golden."]
+approach = ["Register kit:us_medic with measured Character_US_Medic.et GUID; waive uk_* as KNOWN_UNRESOLVABLE_KITS."]
 verify = ["slot-loadout-coverage gate PASS errors=0 warnings=2."]
+acceptance = ["slot-loadout-coverage gate passed errors=0; bridgehead stayed pass at eighteen kit-only slots."]
 citations = [
     "Source: commit 35c391d4 — us_medic registry add.",
     "Source: commit c612e416 — slot-loadout golden.",
+    "35c391d4 us_medic registry",
 ]
 shipped_at = "35c391d4"
 created_at = "2026-07-25T14:38:01Z"

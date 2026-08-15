@@ -17,10 +17,14 @@ requirement = [
     "Branch on GetHttpCode(), never response text; refuse empty or synthetic identity.",
     "Prove link-confirm against live backend writes arma_id and match discord_id.",
 ]
+current_state = ["#tbd link unimplemented; RestCallback body echoed request payload on dead-port transport failure."]
+approach = ["Ship TBD_IdentityLink with serial queue; branch on GetHttpCode(); refuse empty or synthetic identity."]
 verify = ["Live backend: link-confirm wrote arma_id and match discord_id."]
+acceptance = ["Live backend link-confirm wrote users.arma_id; match_player_stats gained discord_id on results POST."]
 citations = [
     "Source: commit 7fed417f — in-game linking.",
     "Source: t181_event_mod_program.md — branch on HTTP code.",
+    "be31ac7b live backend proof",
 ]
 shipped_at = "be31ac7b"
 created_at = "2026-07-25T13:28:34Z"

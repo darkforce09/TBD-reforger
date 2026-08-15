@@ -16,9 +16,18 @@ requirement = [
     "StageRefusalFor live-scan refuses SAFE_START/LIVE for numeric identity.",
     "Admin waiver phrase; fix JsonLoadContext loadout presence test.",
 ]
+current_state = ["Dedicated hosts with numeric player identity could reach SAFE_START/LIVE without durable backend uid."]
+approach = ["StageRefusalFor live-scan blocks SAFE_START/LIVE; audited admin override phrase; fix JsonLoadContext loadout test."]
+verify = ["scripts/mod/compile.sh exit 0; commit d663ce54."]
+acceptance = [
+    "Compile-verified StageRefusalFor; firing path unobserved with zero players.",
+    "Measured bridgehead stayed 18 kit-only.",
+]
 citations = [
     "Source: commit d663ce54 — refuse SAFE_START/LIVE.",
     "Source: t181_event_mod_program.md — ONE LIFE.",
+    "PLAYTEST_RUNBOOK identity override",
+    "d663ce54 ONE LIFE refusal",
 ]
 shipped_at = "f0d71262"
 created_at = "2026-07-25T14:32:53Z"

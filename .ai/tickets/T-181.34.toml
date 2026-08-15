@@ -17,10 +17,14 @@ requirement = [
     "Gate kit existence against registry for slots[].kit and orbat role kits.",
     "Pin kit-aliases.json to registry; ship negative golden fixtures with JSON pointers.",
 ]
+current_state = ["Cargo container typos validated clean then silently misplaced gear; kit aliases never cross-checked registry."]
+approach = ["Close cargoContainer enum in both schemas; gate kit existence for slots[].kit and orbat role kits."]
 verify = ["Mutation proofs: enum deletion and dangling kit fail gate."]
+acceptance = ["cargoContainer enum closed both schemas; kit-alias gate rejected dangling kits with pointer-pinned fixtures."]
 citations = [
     "Source: commit 35c391d4 — cargo enum plus gate.",
     "Source: golden-missions-invalid README — negative fixtures.",
+    "35c391d4 cargo enum gate",
 ]
 shipped_at = "74608a11"
 created_at = "2026-07-25T14:38:01Z"

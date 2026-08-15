@@ -16,10 +16,15 @@ requirement = [
     "Validate serialized bytes once in get_compiled_mission before serve.",
     "Fix flatten display substitutes for role, callsign, and title limits.",
 ]
+current_state = ["/compiled served flattened bytes without schema validation; mod and schema disagreed on role, callsign, title."]
+approach = ["Validate serialized bytes once in get_compiled_mission; flatten substitutes role, callsign, squad-id callsign, title cap."]
 verify = ["HTTP IT: blank uid returns 500 on /compiled."]
+acceptance = ["Schema gate rejected blank uid with 500; flatten fixed three display mismatches without inventing durable ids."]
 citations = [
     "Source: commit 177c199a — validate compiled.",
     "Source: commit 11e6d70e — merge slice.",
+    "flatten.rs display substitutes",
+    "177c199a validate compiled bytes",
 ]
 shipped_at = "11e6d70e"
 created_at = "2026-07-25T14:38:34Z"

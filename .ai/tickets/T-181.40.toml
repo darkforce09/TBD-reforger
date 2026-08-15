@@ -16,9 +16,14 @@ requirement = [
     "Parse radioPlan at runtime; reject nets for undeclared factions.",
     "Wire assignment, display, and tuner; count tuned only after frequency readback.",
 ]
+current_state = ["radioPlan unparsed; TBD_Dev_POC.ent lacked RadioManagerEntity so tuning chain could not run."]
+approach = ["Parse radioPlan.nets at runtime; wire assignment, display, tuner with readback-verified frequencies."]
+verify = ["Three goldens parsed 4/4/3 nets; mangled copy one accepted three rejected."]
+acceptance = ["Radio plan parsed on three goldens; gadget-to-transceiver chain compile-proved; undeclared faction nets rejected."]
 citations = [
     "Source: commit 96cff752 — radio plan nets.",
     "Source: commit 9f186e8b — merge slice T-181.40.",
+    "96cff752 radio plan nets",
 ]
 shipped_at = "9f186e8b"
 created_at = "2026-07-25T14:53:09Z"

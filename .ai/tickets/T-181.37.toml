@@ -17,10 +17,14 @@ requirement = [
     "Read TRIGGER and TYPE from ObjectiveRegistry; use MissionFlow.ResolveSeconds.",
     "Prove with six fixtures including control D at warnings=0.",
 ]
+current_state = ["Runtime end-trigger warnings never fired under zero-player world-boot; validator credited invisible warnings."]
+approach = ["Add per-trigger reachability WARNINGs reading ObjectiveRegistry triggers and MissionFlow.ResolveSeconds."]
 verify = ["Six reachability fixtures; baseline msn_0e77ab 2→3 warnings."]
+acceptance = ["Six reachability fixtures proved control D at zero; msn_0e77ab warning baseline rose two to three."]
 citations = [
     "Source: commit a27bf36d — end-trigger reachability.",
     "Source: commit dfefee11 — not-an-objective branch.",
+    "a27bf36d reachability warnings",
 ]
 shipped_at = "d333dfbd"
 created_at = "2026-07-25T16:23:32Z"

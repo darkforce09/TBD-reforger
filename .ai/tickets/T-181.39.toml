@@ -17,9 +17,14 @@ requirement = [
     "Capture holds when uncontested-but-empty; enemy hold is neutralise-then-capture.",
     "Default captureSeconds 120; absent holdSeconds goes inert with diagnostic.",
 ]
+current_state = ["ZoneRules struct blind to captureSeconds, holdSeconds, contestable, targetAlias, points."]
+approach = ["Second JsonLoadContext pass; ship objective model, registry, runner on T-181.18 zones only."]
+verify = ["scripts/mod/compile.sh exit 0; commit cf61977f."]
+acceptance = ["Compile-verified three objective types plus second-pass JsonLoadContext reader; runtime unobserved."]
 citations = [
     "Source: commit cf61977f — objective model reader.",
     "Source: commit 8ddcdb6a — runner component prefab.",
+    "cf61977f objective model reader",
 ]
 shipped_at = "4ecad410"
 created_at = "2026-07-25T14:49:46Z"

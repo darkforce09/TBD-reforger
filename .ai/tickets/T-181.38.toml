@@ -18,9 +18,14 @@ requirement = [
     "Honour safestart via existing AdminSetSeconds; prove distinct clocks on three goldens.",
     "Arm round clock with negative controls; wire JIP policy and T-181.32 SetStage hook.",
 ]
+current_state = ["Flow block unparsed; safestart hardcoded 300s; OnEnterLive skipped faction_eliminated watch."]
+approach = ["Parse flow with ABSENT sentinel; honour safestart, round clock, JIP; wire T-181.32 SetStage refusal."]
+verify = ["Three goldens showed distinct safestart clocks 5:00, 3:00, 2:00."]
+acceptance = ["Flow block honoured with negative round-clock controls; JIP policy wired; SetStage refusal integrated."]
 citations = [
     "Source: commit a89e02a3 — parse flow block.",
     "Source: commit 719e2907 — merge slice T-181.38.",
+    "a89e02a3 parse flow block",
 ]
 shipped_at = "719e2907"
 created_at = "2026-07-25T14:47:58Z"
