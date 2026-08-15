@@ -1,12 +1,46 @@
 id = "T-727"
 kind = "work"
-title = "Grid-ref labels strand off their lines — For keyed on text retains stale positions"
+title = "Grid-ref For keyed on text strands labels"
 summary = "Grid-ref labels strand off their lines — For keyed on text retains stale positions"
 class = "bug"
 status = "shipped"
 order = 4320
 executor = "claude-code"
-notes = "filed by wave-107 adversarial verifier (editor factory); re-scoped MAJOR from T-638 disclosed residue"
+notes = """
+filed by wave-107 adversarial verifier (editor factory); re-scoped MAJOR from T-638 disclosed residue
+
+--- HEAD migration_legacy (verbatim) ---
+
+MAJOR, two-part, root pre-existing in T-667 but made keyboard-triggerable by T-638. The grid-ref overlay's <For> is keyed on label TEXT (eden_toolbelt.rs:589/609); tachys' keyed diff calls view_fn only for ADDED keys, so a retained label keeps its creation-time pos_px forever. Every pan strands retained labels; T-638's centre-hold slides the map 116px (left toggle) / 148px (right) on a bare E/R keypress, leaving every retained grid reference ~46% of a grid cell off its line, persistently — wrong references, not decoration. The wave-106 pin only proved the PURE math (which is correct); the DOM retention is the defect. Fix: (1) key the <For> on (text, grid-line world coordinate) or render pos from a signal inside the row; (2) convert eden_toolbelt's frozen inset-const reads to the T-638 accessors so labels track collapse geometry; (3) sweep the false comment T-638 left ('resize does NOT reallocate' — RenderEngine::resize unconditionally surface.configure's, engine.rs:1601; mark_dirty was available). Regression: an event-sequence test that pans/toggles and asserts label pos_px changed. Diagnosis: editor_verify/wave107.md MAJOR-1 + MINOR-3.
+
+missing=0"""
+main_goal = "Fix grid-ref labels stranding off lines on pan and toggle."
+context = [
+    "MAJOR two-part root pre-existing in T-667 keyboard-triggerable by T-638.",
+    "wave-106 pin proved PURE math correct; DOM retention is the defect.",
+    "T-638 centre-hold slides map 116px left / 148px right on bare E/R keypress.",
+]
+requirement = [
+    "Key For on text plus grid-line world coordinate or signal pos in row.",
+    "Convert eden_toolbelt frozen inset-const reads to T-638 accessors.",
+    "Sweep false T-638 resize comment; surface.configure always runs.",
+]
+current_state = [
+    "Grid-ref For keyed on label TEXT; tachys view_fn only for ADDED keys.",
+    "Retained label keeps creation-time pos_px forever on every pan.",
+    "Retained grid references ~46% of grid cell off line persistently.",
+]
+approach = [
+    "Key For on text and grid-line coordinate or row signal position.",
+    "Use T-638 accessors so labels track collapse geometry.",
+    "Remove false resize does NOT reallocate comment from T-638.",
+]
+verify = ["Event-sequence test pans toggles asserts label pos_px changed."]
+citations = [
+    "T-667 grid-ref overlay root",
+    "T-638 centre-hold collapse geometry",
+    "wave107.md MAJOR-1 MINOR-3",
+]
 created_at = "2026-08-08T00:00:00Z"
 completed_at = "2026-08-08T00:00:00Z"
 estimated = [
@@ -17,7 +51,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "no subject commits; created_at/completed_at id-interpolated between T-726 and T-732 (midpoint, day precision); shipped_at left absent — no subject commits, a SHA is never invented"
-migration_legacy = ["MAJOR, two-part, root pre-existing in T-667 but made keyboard-triggerable by T-638. The grid-ref overlay's <For> is keyed on label TEXT (eden_toolbelt.rs:589/609); tachys' keyed diff calls view_fn only for ADDED keys, so a retained label keeps its creation-time pos_px forever. Every pan strands retained labels; T-638's centre-hold slides the map 116px (left toggle) / 148px (right) on a bare E/R keypress, leaving every retained grid reference ~46% of a grid cell off its line, persistently — wrong references, not decoration. The wave-106 pin only proved the PURE math (which is correct); the DOM retention is the defect. Fix: (1) key the <For> on (text, grid-line world coordinate) or render pos from a signal inside the row; (2) convert eden_toolbelt's frozen inset-const reads to the T-638 accessors so labels track collapse geometry; (3) sweep the false comment T-638 left ('resize does NOT reallocate' — RenderEngine::resize unconditionally surface.configure's, engine.rs:1601; mark_dirty was available). Regression: an event-sequence test that pans/toggles and asserts label pos_px changed. Diagnosis: editor_verify/wave107.md MAJOR-1 + MINOR-3."]
 
 [scope]
 domain = "website"

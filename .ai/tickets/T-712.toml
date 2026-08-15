@@ -1,14 +1,46 @@
 id = "T-712"
 kind = "work"
-title = "Contour band: honest constant annotations + sample the default view in acceptance"
+title = "Contour band: honest annotations and default view acceptance"
 summary = "Contour band: honest constant annotations + sample the default view in acceptance"
 class = "bug"
 status = "deferred"
 order = 4305
 executor = "claude-code"
-notes = "filed by wave-101 adversarial verifier (editor factory)"
+notes = """
+filed by wave-101 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+Three claim-accuracy defects on lod_gates.rs shipped by T-639, behaviorally nil but false-as-annotated: (1) :111 comment claims tan(11 deg) but the literal 0.1943803091472314 fabricates digits after the 10th place (true 0.19438030913771848); (2) the provenance story is circular — the test's synthetic sinusoid AMP=1.184 is tuned to yield ~11 deg, yet declares itself 'a real terrain statistic, not a fudge factor' and the production comment says 'DEM slope statistics'; the value is actually fitted to the 3.41/6.20 corpus anchors. Fix: correct digits, rewrite both comments to name the fit honestly, optionally measure the real Everon DEM median slope and cite it. (3) The acceptance test samples only rung centres; the DEFAULT boot view (zoom -2.0 = 4.0 m/px) sits near the 10->20 switch at 12.9 px, below the 14 px floor — add the default view as a sampled point and decide (retune or accept-with-comment). Diagnosis: editor_verify/wave101.md F-2, F-3, N-1.
+
+missing=0
+"""
+main_goal = "Fix lod_gates annotation honesty and sample default boot view in acceptance."
+context = [
+    "T-639 shipped lod_gates.rs with three claim-accuracy defects; behaviorally nil.",
+    "Provenance story circular: synthetic sinusoid AMP=1.184 tuned to yield ~11 deg.",
+]
+requirement = [
+    "Correct tan(11 deg) literal digits; rewrite comments to name fit honestly.",
+    "Optionally measure real Everon DEM median slope and cite it.",
+    "Add default boot view as acceptance sample; retune or accept-with-comment.",
+]
+current_state = [
+    ":111 comment claims tan(11 deg); literal 0.1943803091472314 fabricates digits.",
+    "Test declares 'a real terrain statistic'; value fitted to 3.41/6.20 anchors.",
+    "Acceptance samples only rung centres; zoom -2.0 = 4.0 m/px sits below 14 px floor.",
+]
+approach = [
+    "Fix digits; rewrite test and production comments for honest fit provenance.",
+    "Sample default view near 10->20 switch at 12.9 px in acceptance test.",
+]
+verify = ["Comments name fit honestly; default boot view included in acceptance samples."]
+citations = [
+    "lod_gates.rs T-639",
+    "wave101.md F-2 F-3 N-1",
+    "Everon DEM median slope",
+]
 estimated = ["scope"]
-migration_legacy = ["Three claim-accuracy defects on lod_gates.rs shipped by T-639, behaviorally nil but false-as-annotated: (1) :111 comment claims tan(11 deg) but the literal 0.1943803091472314 fabricates digits after the 10th place (true 0.19438030913771848); (2) the provenance story is circular — the test's synthetic sinusoid AMP=1.184 is tuned to yield ~11 deg, yet declares itself 'a real terrain statistic, not a fudge factor' and the production comment says 'DEM slope statistics'; the value is actually fitted to the 3.41/6.20 corpus anchors. Fix: correct digits, rewrite both comments to name the fit honestly, optionally measure the real Everon DEM median slope and cite it. (3) The acceptance test samples only rung centres; the DEFAULT boot view (zoom -2.0 = 4.0 m/px) sits near the 10->20 switch at 12.9 px, below the 14 px floor — add the default view as a sampled point and decide (retune or accept-with-comment). Diagnosis: editor_verify/wave101.md F-2, F-3, N-1."]
 
 [scope]
 domain = "website"

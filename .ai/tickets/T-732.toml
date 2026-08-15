@@ -1,12 +1,54 @@
 id = "T-732"
 kind = "work"
-title = "Atomic batch mutations: one undo step for multi-entity ops (third instance of the family)"
+title = "Atomic batch mutations: one undo per multi-entity op"
 summary = "Atomic batch mutations: one undo step for multi-entity ops (third instance of the family)"
 class = "bug"
 status = "shipped"
 order = 4325
 executor = "claude-code"
-notes = "filed by wave-110 adversarial verifier (editor factory); consolidates a recurring family"
+notes = """
+filed by wave-110 adversarial verifier (editor factory); consolidates a recurring family
+
+--- HEAD migration_legacy (verbatim) ---
+
+Judged warranted by the wave-110 verifier: the N-undo-steps wart now has three instances — unmanned place is 3 steps (wave-103 MINOR, T-718 item 3), multi-select rotate is N steps (T-648, documented — no atomic multi-rotate API exists), and the T-491-cured mixed move proves the correct shape (move_entities_and_vehicles, one txn). Queued T-645 (placement helpers) MANDATES one-step-undoable bulk ops and is the forcing function. Fix: a store.rs atomic batch API (one begin() over a closure of mutations, or per-op atomic variants: rotate_entities, place_with_crew_stamp) + migrate the three call sites; pin undo depth 1 per op. Diagnosis: editor_verify/wave110.md NOTE-B + lineage. (4th instance, wave111 MINOR-3: T-645's >10 confirm text says nothing about the honest N-step undo while the merge toast advertises one-step Ctrl+Z — align the confirm copy when the atomic API lands.)
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["Judged warranted by the wave-110 verifier: the N-undo-steps wart now has three instances — unmanned place is 3 steps (wave-103 MINOR, T-718 item 3), multi-select rotate is N steps (T-648, documented — no atomic multi-rotate API exists), and the T-491-cured mixed move proves the correct shape (move_entities_and_vehicles, one txn). Queued T-645 (placement helpers) MANDATES one-step-undoable bulk ops and is the forcing function. Fix: a store.rs atomic batch API (one begin() over a closure of mutations, or per-op atomic variants: rotate_entities, place_with_crew_stamp) + migrate the three call sites; pin undo depth 1 per op. Diagnosis: editor_verify/wave110.md NOTE-B + lineage. (4th instance, wave111 MINOR-3: T-645's >10 confirm text says nothing about the honest N-step undo while the merge toast advertises one-step Ctrl+Z — align the confirm copy when the atomic API lands.)"]
+
+missing=0
+"""
+main_goal = "Atomic batch API: one undo step per multi-entity mutation family."
+context = [
+    "Wave-110 verifier judged warranted; N-undo-steps wart has three live instances.",
+    "Unmanned place costs three steps; multi-select rotate costs N; T-491 mixed move is correct shape.",
+    "Queued T-645 placement helpers mandate one-step-undoable bulk ops as forcing function.",
+]
+requirement = [
+    "Provide atomic batch API: one begin() closure or per-op atomic variants.",
+    "Migrate three call sites; pin undo depth one per operation.",
+    "Align T-645 confirm copy when atomic API lands; merge toast advertises one-step Ctrl+Z.",
+]
+current_state = [
+    "Unmanned place is three undo steps per wave-103 MINOR T-718 item three.",
+    "Multi-select rotate is N steps; T-648 documents no atomic multi-rotate API.",
+    "T-491-cured mixed move uses move_entities_and_vehicles one txn shape.",
+]
+approach = [
+    "Add rotate_entities and place_with_crew_stamp atomic variants or closure batch.",
+    "Migrate three call sites to atomic batch; pin undo depth one per op.",
+]
+verify = [
+    "Undo depth one per bulk op after migration.",
+    "T-645 confirm text matches honest undo when atomic API ships.",
+]
+citations = [
+    "editor_verify/wave110.md NOTE-B",
+    "wave111 MINOR-3 T-645 confirm",
+    "T-648 multi-rotate N steps",
+    "T-491 move_entities_and_vehicles",
+]
 shipped_at = "d9ec83e9"
 created_at = "2026-08-08T14:43:00Z"
 completed_at = "2026-08-08T16:29:34Z"
@@ -18,7 +60,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 6 commit subject(s)"
-migration_legacy = ["Judged warranted by the wave-110 verifier: the N-undo-steps wart now has three instances — unmanned place is 3 steps (wave-103 MINOR, T-718 item 3), multi-select rotate is N steps (T-648, documented — no atomic multi-rotate API exists), and the T-491-cured mixed move proves the correct shape (move_entities_and_vehicles, one txn). Queued T-645 (placement helpers) MANDATES one-step-undoable bulk ops and is the forcing function. Fix: a store.rs atomic batch API (one begin() over a closure of mutations, or per-op atomic variants: rotate_entities, place_with_crew_stamp) + migrate the three call sites; pin undo depth 1 per op. Diagnosis: editor_verify/wave110.md NOTE-B + lineage. (4th instance, wave111 MINOR-3: T-645's >10 confirm text says nothing about the honest N-step undo while the merge toast advertises one-step Ctrl+Z — align the confirm copy when the atomic API lands.)"]
 owns = ["crates/map-engine-core/src/doc/store.rs"]
 
 [scope]

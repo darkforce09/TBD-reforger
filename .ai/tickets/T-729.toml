@@ -1,14 +1,46 @@
 id = "T-729"
 kind = "work"
-title = "Owner-line overlay runs a full materialize per frame; zones panel mislabels trigger drafts"
+title = "Owner-line materialize per frame; zones mislabels triggers"
 summary = "Owner-line overlay runs a full materialize per frame; zones panel mislabels trigger drafts"
 class = "bug"
 status = "deferred"
 order = 4322
 executor = "claude-code"
-notes = "filed by wave-109 adversarial verifier (editor factory)"
+notes = """
+filed by wave-109 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+T-079 residue. (1) MAJOR: TriggerOwnerLine's rAF body is not a tick-bump — while a trigger with an ownerId (even dangling) is selected, every frame runs owner_line_world -> trigger_rows() (full JSON round-trip) plus placed_entity_pos -> an UNCACHED full materialize() — O(n-slot) SoA rebuild at 60fps: ~37-370 ms/frame at the program's live-validated 360k scale (editor collapse), 6-60% of budget at 10k. Lifecycle is clean (all four stop paths verified); the fix is confined to the component: memoize world endpoints on doc_tick+selected, leaving two project calls per frame. (2) MINOR: the Zones panel's draft banner lacks the collection filter the Triggers panel has — a trigger draft in flight renders in the Zones tab with zone radius copy (mislabel only; commits route correctly). Diagnosis: editor_verify/wave109.md MAJOR-1, MINOR-3. WIDENED wave 110 (MAJOR-1): T-648's TransformWidgetOverlay re-instantiates the same root one wave later — read_widget_pivot() runs an uncached full materialize() + small-maps JSON round-trip on EVERY POINTERMOVE while anything is selected (~37-370 ms at 360k scale; wider reach than the owner line). Same fix family: memo the centroid on doc_tick+selection. Fix BOTH surfaces in one design.
+
+missing=0"""
+main_goal = "Memoize owner-line and transform pivot; fix zones draft banner."
+context = [
+    "T-079 residue; T-648 TransformWidgetOverlay same root one wave later.",
+    "WIDENED wave 110 MAJOR-1 wider reach than owner line.",
+]
+requirement = [
+    "Memoize world endpoints on doc_tick plus selected; two project calls.",
+    "Fix zones draft banner collection filter like Triggers panel.",
+    "Memo TransformWidgetOverlay centroid on doc_tick plus selection.",
+]
+current_state = [
+    "TriggerOwnerLine rAF runs full materialize O(n-slot) at 60fps ~37-370ms.",
+    "read_widget_pivot uncached full materialize every POINTERMOVE while selected.",
+    "Zones draft banner lacks collection filter; mislabels trigger as zone.",
+]
+approach = [
+    "Memoize owner_line_world endpoints on doc_tick plus selected key.",
+    "Memo read_widget_pivot centroid same doc_tick selection family.",
+    "Add collection filter to Zones panel draft banner.",
+]
+verify = ["No full materialize per frame with trigger selected at 360k scale."]
+citations = [
+    "T-079 TriggerOwnerLine residue",
+    "T-648 TransformWidgetOverlay pivot",
+    "wave109.md MAJOR-1 MINOR-3",
+]
 estimated = ["scope"]
-migration_legacy = ["T-079 residue. (1) MAJOR: TriggerOwnerLine's rAF body is not a tick-bump — while a trigger with an ownerId (even dangling) is selected, every frame runs owner_line_world -> trigger_rows() (full JSON round-trip) plus placed_entity_pos -> an UNCACHED full materialize() — O(n-slot) SoA rebuild at 60fps: ~37-370 ms/frame at the program's live-validated 360k scale (editor collapse), 6-60% of budget at 10k. Lifecycle is clean (all four stop paths verified); the fix is confined to the component: memoize world endpoints on doc_tick+selected, leaving two project calls per frame. (2) MINOR: the Zones panel's draft banner lacks the collection filter the Triggers panel has — a trigger draft in flight renders in the Zones tab with zone radius copy (mislabel only; commits route correctly). Diagnosis: editor_verify/wave109.md MAJOR-1, MINOR-3. WIDENED wave 110 (MAJOR-1): T-648's TransformWidgetOverlay re-instantiates the same root one wave later — read_widget_pivot() runs an uncached full materialize() + small-maps JSON round-trip on EVERY POINTERMOVE while anything is selected (~37-370 ms at 360k scale; wider reach than the owner line). Same fix family: memo the centroid on doc_tick+selection. Fix BOTH surfaces in one design."]
 
 [scope]
 domain = "website"

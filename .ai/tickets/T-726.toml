@@ -6,7 +6,39 @@ class = "bug"
 status = "shipped"
 order = 4319
 executor = "claude-code"
-notes = "filed by wave-106 adversarial verifier (editor factory)"
+notes = """
+filed by wave-106 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+T-691's EditorPreferencesDialog stacks over MissionSettingsDialog and copies the bare window-Esc idiom both dialogs use — one Esc closes BOTH. ui.rs modal_stack::is_topmost_open exists for exactly this and is unused by either dialog. Route both dialogs' Esc through it (topmost closes first, second Esc closes the parent); pin with a stacked-Esc test. Diagnosis: editor_verify/wave106.md MINOR-2. WIDENED wave 108 (MAJOR-2): the ruler's Esc arm is another unguarded window-keydown that never consults the T-333 one-Esc-one-dialog stack — deterministic repro: place a ruler, RMB (context menu opens), Esc to close the menu → the menu closes AND the placed measurement clears; the two-step Esc escalation is defeated by the first overlay. The fix is one design across ALL window-Esc listeners (both dialogs, context menu, asset picker, ruler): consult modal_stack::is_topmost_open / register as stack entries, topmost consumes. (3rd victim, wave109 MINOR-1: Esc-to-close-the-context-menu also deletes a placed LoS shot — the shared ruler/LoS Esc seam is correctly single-listener, so the one T-726 fix covers all.) (4th victim, wave110 MINOR-2: closing the context menu with Esc also deletes a placed viewshed wash.)
+
+missing=0
+"""
+main_goal = "Route every window-Esc listener through modal_stack topmost-first."
+context = [
+    "T-691 EditorPreferencesDialog stacks over MissionSettingsDialog.",
+    "modal_stack is_topmost_open exists unused by both dialogs.",
+    "WIDENED wave 108 MAJOR-2 ruler Esc unguarded window-keydown.",
+]
+requirement = [
+    "Route both dialogs Esc through modal_stack topmost closes first.",
+    "One design across ALL window-Esc listeners including context menu picker ruler.",
+    "Consult is_topmost_open or register as stack entries; topmost consumes.",
+]
+current_state = [
+    "Bare window-Esc idiom: one Esc closes BOTH stacked dialogs.",
+    "Ruler Esc never consults T-333 one-Esc-one-dialog stack.",
+    "Esc close context menu also deletes placed ruler LoS viewshed measurement.",
+]
+approach = ["Route Esc through modal_stack; pin stacked-Esc test both dialogs."]
+verify = ["Stacked Esc test: first Esc closes topmost only; measurement survives menu close."]
+citations = [
+    "editor_verify/wave106.md MINOR-2",
+    "wave108.md MAJOR-2 ruler Esc",
+    "wave109 MINOR-1 LoS Esc victim",
+    "T-691 EditorPreferencesDialog stack",
+]
 shipped_at = "d9ec83e9"
 created_at = "2026-08-08T14:45:42Z"
 completed_at = "2026-08-08T16:29:34Z"
@@ -18,7 +50,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = ["T-691's EditorPreferencesDialog stacks over MissionSettingsDialog and copies the bare window-Esc idiom both dialogs use — one Esc closes BOTH. ui.rs modal_stack::is_topmost_open exists for exactly this and is unused by either dialog. Route both dialogs' Esc through it (topmost closes first, second Esc closes the parent); pin with a stacked-Esc test. Diagnosis: editor_verify/wave106.md MINOR-2. WIDENED wave 108 (MAJOR-2): the ruler's Esc arm is another unguarded window-keydown that never consults the T-333 one-Esc-one-dialog stack — deterministic repro: place a ruler, RMB (context menu opens), Esc to close the menu → the menu closes AND the placed measurement clears; the two-step Esc escalation is defeated by the first overlay. The fix is one design across ALL window-Esc listeners (both dialogs, context menu, asset picker, ruler): consult modal_stack::is_topmost_open / register as stack entries, topmost consumes. (3rd victim, wave109 MINOR-1: Esc-to-close-the-context-menu also deletes a placed LoS shot — the shared ruler/LoS Esc seam is correctly single-listener, so the one T-726 fix covers all.) (4th victim, wave110 MINOR-2: closing the context menu with Esc also deletes a placed viewshed wash.)"]
 owns = ["apps/website/frontend/src/mission_editor.rs"]
 
 [scope]

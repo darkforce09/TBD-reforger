@@ -1,14 +1,59 @@
 id = "T-734"
 kind = "work"
-title = "Validation panel at scale: per-edit full compile, wasm panic honesty, seam pin"
+title = "Validation panel: full-compile cost, wasm panic, seam pin"
 summary = "Validation panel at scale: per-edit full compile, wasm panic honesty, seam pin"
 class = "bug"
 status = "deferred"
 order = 4327
 executor = "claude-code"
-notes = "filed by wave-111 adversarial verifier (editor factory)"
-estimated = ["scope"]
+notes = """
+filed by wave-111 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+T-655 residue, one design. (1) MAJOR: the always-on panel re-compiles the WHOLE doc per debounced edit burst (compile_payload measured 290ms/30k, 1213ms/120k native-release, linear -> ~3.6s at the 360k north star, wasm 1.5-3x worse) — the exact O(n)-per-edit class T-062/T-066 engineered away. Fine at ORBAT scale (≤10ms at 1k). Fix family: incremental payload assembly, a worker offload (T-066 precedent), or evaluate over the doc directly without full compile. The expanded list is also unvirtualized (3000 DOM buttons at 120k). (2) MINOR: the catch_unwind 'can never crash the editor' guarantee is native-only — wasm32 panics abort regardless (no panic-profile override); on native the swallow renders 'No issues' — a FALSE CLEAN. Make the fallback state visibly distinct ('validation unavailable') and document the wasm reality. (3) MINOR: the no-severity-on-clean pin binds the engine, not the panel seam — injecting a fabricated finding into evaluate_source left all tests green; pin the seam. Diagnosis: editor_verify/wave111.md MAJOR-2, MINOR-1, MINOR-2.
+
+--- HEAD migration_legacy line (verbatim) ---
+
 migration_legacy = ["T-655 residue, one design. (1) MAJOR: the always-on panel re-compiles the WHOLE doc per debounced edit burst (compile_payload measured 290ms/30k, 1213ms/120k native-release, linear -> ~3.6s at the 360k north star, wasm 1.5-3x worse) — the exact O(n)-per-edit class T-062/T-066 engineered away. Fine at ORBAT scale (≤10ms at 1k). Fix family: incremental payload assembly, a worker offload (T-066 precedent), or evaluate over the doc directly without full compile. The expanded list is also unvirtualized (3000 DOM buttons at 120k). (2) MINOR: the catch_unwind 'can never crash the editor' guarantee is native-only — wasm32 panics abort regardless (no panic-profile override); on native the swallow renders 'No issues' — a FALSE CLEAN. Make the fallback state visibly distinct ('validation unavailable') and document the wasm reality. (3) MINOR: the no-severity-on-clean pin binds the engine, not the panel seam — injecting a fabricated finding into evaluate_source left all tests green; pin the seam. Diagnosis: editor_verify/wave111.md MAJOR-2, MINOR-1, MINOR-2."]
+
+missing=0
+"""
+main_goal = "Fix validation panel O(n) compile, wasm panic honesty, and seam pin."
+context = [
+    "T-655 residue one design; always-on panel re-compiles whole doc per debounced edit burst.",
+    "compile_payload 290ms/30k 1213ms/120k native; linear to ~3.6s at 360k north star.",
+    "Wasm 1.5-3x worse; O(n)-per-edit class T-062 T-066 engineered away elsewhere.",
+]
+requirement = [
+    "Fix MAJOR: incremental payload assembly worker offload or direct doc evaluate.",
+    "Virtualize expanded list; 3000 DOM buttons at 120k today unvirtualized.",
+    "MINOR: fallback shows validation unavailable not false clean No issues.",
+    "MINOR: pin panel seam not engine; fabricated finding must fail tests.",
+]
+current_state = [
+    "Fine at ORBAT scale ten ms at 1k; unacceptable at mission scale.",
+    "catch_unwind guarantee native-only; wasm32 panics abort without profile override.",
+    "No-severity-on-clean pin binds engine; evaluate_source injection left tests green.",
+]
+approach = [
+    "Incremental assembly or T-066 worker offload precedent; or evaluate without full compile.",
+    "Distinct validation unavailable fallback state; document wasm panic reality.",
+    "Move clean-severity pin to panel seam not engine evaluate_source.",
+]
+verify = [
+    "Edit burst does not linear full-doc compile at 120k scale.",
+    "Native swallow shows validation unavailable not No issues false clean.",
+    "Fabricated seam finding fails panel pin tests.",
+]
+citations = [
+    "editor_verify/wave111 MAJOR-2",
+    "editor_verify/wave111 MINOR-1",
+    "editor_verify/wave111 MINOR-2",
+    "T-062 T-066 O(n) class",
+    "T-066 worker offload",
+]
+estimated = ["scope"]
 
 [scope]
 domain = "website"

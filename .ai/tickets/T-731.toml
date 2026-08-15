@@ -1,14 +1,42 @@
 id = "T-731"
 kind = "work"
-title = "ROW_ACTIVE border-t skews the virtual tree window by 1px per selected row"
+title = "ROW_ACTIVE border-t skews virtual tree by 1px"
 summary = "ROW_ACTIVE border-t skews the virtual tree window by 1px per selected row"
 class = "bug"
 status = "deferred"
 order = 4324
 executor = "claude-code"
-notes = "filed by wave-110 adversarial verifier (editor factory)"
+notes = """
+filed by wave-110 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+T-668's distinct-by-construction border (correct vocabulary) adds 1px of flow height to each selected row while eden_tree's virtual window hardcodes ROW_H=24 — a 1px shift under every selection, k-px window skew on multi-select, propagating to every tree consumer. Fix: border inside the box (box-border + height-inclusive border, or an inset shadow/pseudo-element that costs no flow height); pin with a row-height test at ROW_H under selection. Diagnosis: editor_verify/wave110.md MINOR-4.
+
+missing=0"""
+main_goal = "Fix ROW_ACTIVE border adding 1px virtual window skew."
+context = [
+    "T-668 distinct-by-construction border correct vocabulary.",
+    "eden_tree virtual window hardcodes ROW_H=24.",
+]
+requirement = [
+    "Border inside box no flow height; box-border or inset shadow.",
+    "Pin row-height test at ROW_H under selection.",
+]
+current_state = [
+    "Selected row adds 1px flow height; 1px shift under every selection.",
+    "k-px window skew on multi-select propagates to every tree consumer.",
+]
+approach = [
+    "Use box-border height-inclusive border or inset pseudo-element.",
+    "Add row-height test at ROW_H with selection active.",
+]
+verify = ["Row height test asserts ROW_H under selection no skew."]
+citations = [
+    "T-668 ROW_ACTIVE border vocabulary",
+    "wave110.md MINOR-4 diagnosis",
+]
 estimated = ["scope"]
-migration_legacy = ["T-668's distinct-by-construction border (correct vocabulary) adds 1px of flow height to each selected row while eden_tree's virtual window hardcodes ROW_H=24 — a 1px shift under every selection, k-px window skew on multi-select, propagating to every tree consumer. Fix: border inside the box (box-border + height-inclusive border, or an inset shadow/pseudo-element that costs no flow height); pin with a row-height test at ROW_H under selection. Diagnosis: editor_verify/wave110.md MINOR-4."]
 
 [scope]
 domain = "website"

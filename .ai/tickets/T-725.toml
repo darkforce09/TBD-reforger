@@ -1,14 +1,42 @@
 id = "T-725"
 kind = "work"
-title = "Furniture polish: zoom channel lags 1s on still-pointer wheel; northings hide under the bar; Failed-state fallback"
+title = "Zoom labels lag; northings under bar; hide Failed scale fallback"
 summary = "Furniture polish: zoom channel lags 1s on still-pointer wheel; northings hide under the bar; Failed-state fallback"
 class = "feature"
 status = "deferred"
 order = 4318
 executor = "claude-code"
-notes = "filed by wave-106 adversarial verifier (editor factory)"
+notes = """
+filed by wave-106 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+T-667 residue, one ticket. (1) Wheel-zoom with a still pointer updates the scale bar and grid-ref labels only on the ~1 Hz debug-HUD heartbeat — up to a second of labels visibly off their moving lines (the transient form of the label-drift defect). Wire a real zoom signal (the wheel handler exists; emit through the same channel CUR uses on pointer-move). (2) Northings enumerate to the viewport bottom so the last chip can hide under the status bar — clamp to map-pane bottom minus bar height. (3) On boot-Failed camera_snapshot is None: grid refs correctly render nothing but ScaleBar shows a cosmetic 500 m fallback — hide it too. Diagnosis: editor_verify/wave106.md MINOR-1 + NOTEs.
+
+missing=0
+"""
+main_goal = "Fix zoom label lag, northings under bar, hide Failed scale fallback."
+context = [
+    "T-667 residue bundled as one furniture polish ticket.",
+    "Wave-106 MINOR-1 plus NOTEs diagnosis source.",
+]
+requirement = [
+    "Wire real zoom signal same channel CUR uses on pointer-move.",
+    "Clamp northings to map-pane bottom minus status bar height.",
+    "Hide ScaleBar cosmetic 500 m fallback when camera_snapshot None Failed boot.",
+]
+current_state = [
+    "Still-pointer wheel updates scale bar labels on ~1 Hz debug-HUD only.",
+    "Northings enumerate past viewport; last chip hides under status bar.",
+    "Grid refs render nothing Failed boot but ScaleBar shows 500 m fallback.",
+]
+approach = ["Emit zoom from existing wheel handler through CUR pointer-move channel."]
+verify = ["Labels track wheel zoom immediately; northings clamped; Failed hides scale."]
+citations = [
+    "editor_verify/wave106.md MINOR-1",
+    "T-667 residue polish bundle",
+]
 estimated = ["scope"]
-migration_legacy = ["T-667 residue, one ticket. (1) Wheel-zoom with a still pointer updates the scale bar and grid-ref labels only on the ~1 Hz debug-HUD heartbeat — up to a second of labels visibly off their moving lines (the transient form of the label-drift defect). Wire a real zoom signal (the wheel handler exists; emit through the same channel CUR uses on pointer-move). (2) Northings enumerate to the viewport bottom so the last chip can hide under the status bar — clamp to map-pane bottom minus bar height. (3) On boot-Failed camera_snapshot is None: grid refs correctly render nothing but ScaleBar shows a cosmetic 500 m fallback — hide it too. Diagnosis: editor_verify/wave106.md MINOR-1 + NOTEs."]
 
 [scope]
 domain = "website"

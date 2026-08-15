@@ -1,12 +1,53 @@
 id = "T-736"
 kind = "work"
-title = "Two wave-112 pins do not constrain what they claim (spelling blacklist; tail-in-loop blind)"
+title = "Wave-112 pins weaker than claim: spelling, tail"
 summary = "Two wave-112 pins do not constrain what they claim (spelling blacklist; tail-in-loop blind)"
 class = "bug"
 status = "shipped"
 order = 4612
 executor = "claude-code"
-notes = "filed by wave-112 adversarial verifier (editor factory)"
+notes = '''
+filed by wave-112 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+Two MINORs from the wave-112 verifier, same class — a pin whose assertion is weaker than its message. (1) arsenal.rs:4732: the strengthened one-commit pin blacklists the literal spellings ["for ", "while ", "for_each", ".iter()"], so `.into_iter().map(|p| persist1(p)).count()`, a bare `loop {}`, or recursion all pass with one textual persist( — note `.into_iter()` does not contain `.iter()`. This pin already has history: its FIRST version went green under the N-step perturbation and had to be strengthened once. (2) mission_editor.rs:8007-8011: T-649's one-tail pin asserts matches("after_local_edit()").count() == 1, which counts 1 whether the tail is inside the loop or outside it. Live code is CORRECT in both cases (apply_import is three signal writes + one persist -> set_loadout -> one after_local_edit at editor_ops.rs:1745; the _multi fns put the tail outside the loop at editor_ops.rs:1210-1217), so nothing is broken — but neither pin would catch the regression it exists to catch. Diagnosis: editor_verify/wave112.md MINOR-1, MINOR-2.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["""Two MINORs from the wave-112 verifier, same class — a pin whose assertion is weaker than its message. (1) arsenal.rs:4732: the strengthened one-commit pin blacklists the literal spellings ["for ", "while ", "for_each", ".iter()"], so `.into_iter().map(|p| persist1(p)).count()`, a bare `loop {}`, or recursion all pass with one textual persist( — note `.into_iter()` does not contain `.iter()`. This pin already has history: its FIRST version went green under the N-step perturbation and had to be strengthened once. (2) mission_editor.rs:8007-8011: T-649's one-tail pin asserts matches("after_local_edit()").count() == 1, which counts 1 whether the tail is inside the loop or outside it. Live code is CORRECT in both cases (apply_import is three signal writes + one persist -> set_loadout -> one after_local_edit at editor_ops.rs:1745; the _multi fns put the tail outside the loop at editor_ops.rs:1210-1217), so nothing is broken — but neither pin would catch the regression it exists to catch. Diagnosis: editor_verify/wave112.md MINOR-1, MINOR-2."""]
+
+missing=0
+'''
+main_goal = "Strengthen wave-112 pins so regressions they claim to catch actually fail."
+context = [
+    "Two wave-112 MINORs: pin assertion weaker than its message same defect class.",
+    "Live code correct today; neither pin would catch intended regression.",
+    "One-commit pin already strengthened once after N-step perturbation went green.",
+]
+requirement = [
+    "arsenal pin must catch into_iter map persist loop recursion not only blacklist spellings.",
+    "mission_editor one-tail pin must distinguish tail inside loop versus outside loop.",
+]
+current_state = [
+    "Blacklist for for while for_each .iter() misses into_iter map persist1 count loop recursion.",
+    "after_local_edit count==1 passes whether tail inside or outside loop.",
+    "apply_import three signal writes one persist set_loadout one after_local_edit editor_ops 1745.",
+]
+approach = [
+    "Tighten one-commit pin beyond literal spelling blacklist at arsenal 4732.",
+    "Assert tail placement not merely after_local_edit count at mission_editor 8007-8011.",
+]
+verify = [
+    "Perturbed N-step persist patterns fail strengthened arsenal pin.",
+    "Tail-inside-loop regression fails mission_editor pin not only outside-loop case.",
+]
+citations = [
+    "editor_verify/wave112 MINOR-1",
+    "editor_verify/wave112 MINOR-2",
+    "T-649 one-tail pin",
+    "editor_ops.rs 1745",
+]
 shipped_at = "13d4882b"
 created_at = "2026-08-08T05:38:18Z"
 completed_at = "2026-08-08T05:45:15Z"
@@ -18,7 +59,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["""Two MINORs from the wave-112 verifier, same class — a pin whose assertion is weaker than its message. (1) arsenal.rs:4732: the strengthened one-commit pin blacklists the literal spellings ["for ", "while ", "for_each", ".iter()"], so `.into_iter().map(|p| persist1(p)).count()`, a bare `loop {}`, or recursion all pass with one textual persist( — note `.into_iter()` does not contain `.iter()`. This pin already has history: its FIRST version went green under the N-step perturbation and had to be strengthened once. (2) mission_editor.rs:8007-8011: T-649's one-tail pin asserts matches("after_local_edit()").count() == 1, which counts 1 whether the tail is inside the loop or outside it. Live code is CORRECT in both cases (apply_import is three signal writes + one persist -> set_loadout -> one after_local_edit at editor_ops.rs:1745; the _multi fns put the tail outside the loop at editor_ops.rs:1210-1217), so nothing is broken — but neither pin would catch the regression it exists to catch. Diagnosis: editor_verify/wave112.md MINOR-1, MINOR-2."""]
 owns = [
     "apps/website/frontend/src/arsenal.rs",
     "apps/website/frontend/src/mission_editor.rs",

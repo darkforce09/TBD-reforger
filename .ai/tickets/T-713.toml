@@ -1,14 +1,44 @@
 id = "T-713"
 kind = "work"
-title = "Summit-ring rule inverts on depressions — every crater ring renders dark"
+title = "Summit rings invert on depressions; crater basins render dark"
 summary = "Summit-ring rule inverts on depressions — every crater ring renders dark"
 class = "bug"
 status = "deferred"
 order = 4306
 executor = "claude-code"
-notes = "filed by wave-102 adversarial verifier (editor factory)"
+notes = """
+filed by wave-102 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+T-640's summit_ring_indices (crates/map-engine-core/src/geometry/contours.rs) selects a closed ring iff no higher closed ring nests inside it. For a depression the containment inverts (higher rings sit OUTSIDE lower ones), so every closed contour of a crater/basin qualifies: verifier harness against the real code got 5-of-5 rings selected [50,60,70,80,90] for a crater in a 100 m plateau — the whole basin renders in the dark summit tint. The 4 shipped tests cover only bumps and ramps. Fix: a summit ring must also verify its interior is HIGHER than the ring level (sample the DEM inside, or require the enclosing-ring level to be lower); add a crater fixture + a rim-with-twin-peaks fixture. Diagnosis: editor_verify/wave102.md F-1.
+
+missing=0
+"""
+main_goal = "Fix summit-ring inversion on depressions; add crater and twin-peaks fixtures."
+context = [
+    "T-640 summit_ring_indices selects closed ring iff no higher ring nests inside.",
+    "Depression containment inverts; higher rings sit OUTSIDE lower ones.",
+]
+requirement = [
+    "Summit ring must verify interior HIGHER than ring level via DEM sample.",
+    "Add crater fixture and rim-with-twin-peaks fixture.",
+]
+current_state = [
+    "Crater in 100 m plateau: 5-of-5 rings selected [50,60,70,80,90].",
+    "Whole basin renders dark summit tint; 4 tests cover only bumps and ramps.",
+]
+approach = [
+    "Sample DEM inside ring or require enclosing-ring level lower than summit.",
+    "Add crater and rim-with-twin-peaks test fixtures.",
+]
+verify = ["Depression crater rings excluded; bump and ramp tests still pass."]
+citations = [
+    "summit_ring_indices T-640",
+    "contours.rs summit ring rule",
+    "wave102.md F-1 diagnosis",
+]
 estimated = ["scope"]
-migration_legacy = ["T-640's summit_ring_indices (crates/map-engine-core/src/geometry/contours.rs) selects a closed ring iff no higher closed ring nests inside it. For a depression the containment inverts (higher rings sit OUTSIDE lower ones), so every closed contour of a crater/basin qualifies: verifier harness against the real code got 5-of-5 rings selected [50,60,70,80,90] for a crater in a 100 m plateau — the whole basin renders in the dark summit tint. The 4 shipped tests cover only bumps and ramps. Fix: a summit ring must also verify its interior is HIGHER than the ring level (sample the DEM inside, or require the enclosing-ring level to be lower); add a crater fixture + a rim-with-twin-peaks fixture. Diagnosis: editor_verify/wave102.md F-1."]
 
 [scope]
 domain = "website"

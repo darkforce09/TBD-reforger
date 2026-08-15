@@ -1,14 +1,50 @@
 id = "T-716"
 kind = "work"
-title = "Context menu honesty: Go Here goes elsewhere; enabled rows dead on multi-select; keydown hijacks fields"
+title = "Context menu honesty: Go Here, multi-select, keydown field hijack"
 summary = "Context menu honesty: Go Here goes elsewhere; enabled rows dead on multi-select; keydown hijacks fields"
 class = "docs"
 status = "deferred"
 order = 4309
 executor = "claude-code"
-notes = "filed by wave-102 adversarial verifier (editor factory)"
+notes = """
+filed by wave-102 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+Three defects in T-664's shipped menu, one honesty rule: an enabled row must do what it says on the target it names. (1) Empty-ground 'Go Here' dispatches center_on_selection() — with a selection elsewhere the camera jumps AWAY from the clicked point; with none, enabled no-op. The variant doc claims a set_view-to-clicked-point wiring that does not exist. Wire the event pixel through resolve_target into a real set-view. (2) 'Attributes...' and 'Edit Loadout...' are enabled for multi-selection targets but open_attributes/open_arsenal silently no-op at len()>1 — disable-with-reason or make them act (ATTR-MULTI-001 is the extender; coordinate with T-649 wave 112). (3) The menu's window keydown lacks the in_editable_field guard T-662 established — with a dock field focused, Arrows/Enter hijack into menu nav and Enter fires a row. Related, filed for T-082's brief (wave 113): refused locked-slot Transform edits display as accepted in the Attributes modal (one-shot snapshot, no re-read, no disabled affordance) — wave102.md F-7. Diagnosis: editor_verify/wave102.md F-4, F-5, F-6.
+
+missing=0
+"""
+main_goal = "Fix context menu honesty: Go Here, multi-select rows, keydown guard."
+context = [
+    "T-664 shipped menu has three defects under one honesty rule.",
+    "Enabled row must do what it says on the target it names.",
+]
+requirement = [
+    "Wire empty-ground Go Here through resolve_target into real set-view.",
+    "Disable or act on Attributes and Edit Loadout for multi-selection targets.",
+    "Add in_editable_field guard to menu window keydown like T-662.",
+]
+current_state = [
+    "Go Here dispatches center_on_selection(); camera jumps AWAY from click.",
+    "open_attributes and open_arsenal no-op at len()>1 while rows enabled.",
+    "Arrows/Enter hijack dock fields; Enter fires menu row.",
+]
+approach = [
+    "Wire event pixel through resolve_target into set-view at clicked point.",
+    "Disable-with-reason multi-select rows; coordinate ATTR-MULTI-001 with T-649.",
+    "Add in_editable_field guard to menu keydown handler.",
+]
+verify = [
+    "Go Here centers clicked point; multi-select rows disabled or act.",
+    "Dock field focus blocks menu keydown hijack.",
+]
+citations = [
+    "T-664 context menu",
+    "T-662 editable field guard",
+    "wave102.md F-4 F-5 F-6",
+]
 estimated = ["scope"]
-migration_legacy = ["Three defects in T-664's shipped menu, one honesty rule: an enabled row must do what it says on the target it names. (1) Empty-ground 'Go Here' dispatches center_on_selection() — with a selection elsewhere the camera jumps AWAY from the clicked point; with none, enabled no-op. The variant doc claims a set_view-to-clicked-point wiring that does not exist. Wire the event pixel through resolve_target into a real set-view. (2) 'Attributes...' and 'Edit Loadout...' are enabled for multi-selection targets but open_attributes/open_arsenal silently no-op at len()>1 — disable-with-reason or make them act (ATTR-MULTI-001 is the extender; coordinate with T-649 wave 112). (3) The menu's window keydown lacks the in_editable_field guard T-662 established — with a dock field focused, Arrows/Enter hijack into menu nav and Enter fires a row. Related, filed for T-082's brief (wave 113): refused locked-slot Transform edits display as accepted in the Attributes modal (one-shot snapshot, no re-read, no disabled affordance) — wave102.md F-7. Diagnosis: editor_verify/wave102.md F-4, F-5, F-6."]
 
 [scope]
 domain = "website"

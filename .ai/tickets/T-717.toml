@@ -6,9 +6,44 @@ class = "bug"
 status = "deferred"
 order = 4310
 executor = "claude-code"
-notes = "filed by wave-103 adversarial verifier (editor factory)"
+notes = """
+filed by wave-103 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+T-631's Continue button writes boot.set(Ready) directly (mission_editor.rs:2375) — the one write that bypasses the sticky advance() fold, and Ready is not sticky. Engine failure is fast; if the operator clicks Continue while the server hydrate is still in flight, the doc task's later advance(LoadingMap) (:1241) brings the spinner back permanently: world_ready (:1384) sits in the Ok-arm and can never fire, and the bar state has no buttons. Editor stays clickable underneath (bar is pointer-events-none) but is occluded forever — the misleading-event class T-631 exists to ban, re-opened via its own escape hatch. Fix: make Continue arm a sticky ContinuedWithoutMap state (or advance() treats a Ready that follows Failed as sticky) so later LoadingMap/Ready writes fold to no-ops; test the race explicitly (Failed -> Continue -> LoadingMap arrives -> overlay stays down). Diagnosis: editor_verify/wave103.md MAJOR-1.
+
+missing=0
+"""
+main_goal = "Stop Continue-without-map resurrecting boot overlay after hydrate race."
+context = [
+    "T-631 Continue bypasses sticky advance() fold; Ready is not sticky.",
+    "Misleading-event class T-631 re-opened via Continue escape hatch.",
+]
+requirement = [
+    "Make Continue arm sticky ContinuedWithoutMap or advance Ready-after-Failed sticky.",
+    "Later LoadingMap/Ready writes fold to no-ops after Continue.",
+    "Test race: Failed then Continue then LoadingMap; overlay stays down.",
+]
+current_state = [
+    "Continue writes boot.set(Ready) at mission_editor.rs:2375 directly.",
+    "Hydrate in-flight plus Continue brings spinner permanently; world_ready never fires.",
+    "Bar has no buttons; editor clickable underneath but occluded forever.",
+]
+approach = [
+    "Sticky ContinuedWithoutMap state or advance() Ready-after-Failed sticky fold.",
+    "Explicit regression test for Failed Continue LoadingMap race.",
+]
+verify = [
+    "Failed then Continue then LoadingMap arrives; overlay stays down.",
+    "No permanent spinner; world_ready path reachable after Continue.",
+]
+citations = [
+    "T-631 misleading-event class",
+    "wave103.md MAJOR-1 diagnosis",
+    "mission_editor.rs boot overlay",
+]
 estimated = ["scope"]
-migration_legacy = ["T-631's Continue button writes boot.set(Ready) directly (mission_editor.rs:2375) — the one write that bypasses the sticky advance() fold, and Ready is not sticky. Engine failure is fast; if the operator clicks Continue while the server hydrate is still in flight, the doc task's later advance(LoadingMap) (:1241) brings the spinner back permanently: world_ready (:1384) sits in the Ok-arm and can never fire, and the bar state has no buttons. Editor stays clickable underneath (bar is pointer-events-none) but is occluded forever — the misleading-event class T-631 exists to ban, re-opened via its own escape hatch. Fix: make Continue arm a sticky ContinuedWithoutMap state (or advance() treats a Ready that follows Failed as sticky) so later LoadingMap/Ready writes fold to no-ops; test the race explicitly (Failed -> Continue -> LoadingMap arrives -> overlay stays down). Diagnosis: editor_verify/wave103.md MAJOR-1."]
 
 [scope]
 domain = "website"

@@ -1,14 +1,52 @@
 id = "T-718"
 kind = "work"
-title = "Crew residue: scrub seats on slot removal; seat-picker honesty; undo-step and Alt comment falsities"
+title = "Slot removal crew residue; picker flags; undo Alt lies"
 summary = "Crew residue: scrub seats on slot removal; seat-picker honesty; undo-step and Alt comment falsities"
 class = "bug"
 status = "deferred"
 order = 4311
 executor = "claude-code"
-notes = "filed by wave-103 adversarial verifier (editor factory)"
+notes = """
+filed by wave-103 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+T-076 residue, one ticket. (1) MAJOR: remove_slot/remove_slots scrub no crew seats — a deleted soldier's seat assignment dangles, persists through small_maps_json -> compile into SAVES, while the panel <select> shows '— empty —' (UI vacant, doc seated). Scrub crew maps in the removal ops (same tolerant-Any idiom as the wave-103 blocker fix) + regression test through remove. (2) Seat picker offers all placed slots but never flags 'seated elsewhere' — the eviction is expressible but invisible; add the flag text. (3) editor_ops.rs:1755 comment 'Same undo step as the place' is false — capture_timeout=0 makes unmanned place 3 undo steps (Ctrl+Z re-mans the vehicle); either group the transaction or fix the comment to the truth. (4) editor_ops.rs:141 '(or holds Alt)' describes an affordance that does not exist on the place path — implement (T-647 wave 106 owns Alt-empty-vehicle placement; coordinate, don't duplicate) or delete the clause. Diagnosis: editor_verify/wave103.md MAJOR-2, MINOR-1, MINOR-2, NOTE-4.
+
+missing=0
+"""
+main_goal = "Scrub crew seats on slot removal; fix picker, undo, Alt lies."
+context = [
+    "T-076 residue consolidated into one ticket wave-103 findings.",
+    "remove_slot/remove_slots do not scrub crew seat assignments.",
+]
+requirement = [
+    "Scrub crew maps in removal ops; regression test through remove.",
+    "Seat picker flags seated elsewhere eviction visibility.",
+    "Fix editor_ops.rs:1755 false same-undo-step comment or group transaction.",
+    "Fix editor_ops.rs:141 Alt clause; coordinate T-647 not duplicate.",
+]
+current_state = [
+    "Deleted soldier seat dangles; persists small_maps_json compile SAVES.",
+    "Panel select shows empty while doc still seated.",
+    "Unmanned place is three undo steps; Alt affordance missing on place path.",
+]
+approach = [
+    "Scrub crew maps tolerant-Any idiom wave-103 blocker style.",
+    "Add seated-elsewhere flag text to seat picker.",
+    "Group unmanned place undo or correct comment; implement or delete Alt clause.",
+]
+verify = [
+    "remove_slot clears dangling crew seat; compile SAVES no ghost seated.",
+    "Picker shows seated-elsewhere flag when applicable.",
+    "Undo steps match comment or comment matches truth.",
+]
+citations = [
+    "T-076 crew residue ticket",
+    "wave103.md MAJOR-2 diagnosis",
+    "T-647 Alt-empty-vehicle placement",
+]
 estimated = ["scope"]
-migration_legacy = ["T-076 residue, one ticket. (1) MAJOR: remove_slot/remove_slots scrub no crew seats — a deleted soldier's seat assignment dangles, persists through small_maps_json -> compile into SAVES, while the panel <select> shows '— empty —' (UI vacant, doc seated). Scrub crew maps in the removal ops (same tolerant-Any idiom as the wave-103 blocker fix) + regression test through remove. (2) Seat picker offers all placed slots but never flags 'seated elsewhere' — the eviction is expressible but invisible; add the flag text. (3) editor_ops.rs:1755 comment 'Same undo step as the place' is false — capture_timeout=0 makes unmanned place 3 undo steps (Ctrl+Z re-mans the vehicle); either group the transaction or fix the comment to the truth. (4) editor_ops.rs:141 '(or holds Alt)' describes an affordance that does not exist on the place path — implement (T-647 wave 106 owns Alt-empty-vehicle placement; coordinate, don't duplicate) or delete the clause. Diagnosis: editor_verify/wave103.md MAJOR-2, MINOR-1, MINOR-2, NOTE-4."]
 
 [scope]
 domain = "website"

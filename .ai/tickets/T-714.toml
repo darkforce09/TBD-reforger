@@ -1,14 +1,44 @@
 id = "T-714"
 kind = "work"
-title = "Contour re-march hitch: 0.66-1.3 s native per rung crossing (est 1-4 s wasm)"
+title = "Contour re-march hitch: 0.66-1.3 s per rung crossing"
 summary = "Contour re-march hitch: 0.66-1.3 s native per rung crossing (est 1-4 s wasm)"
 class = "bug"
 status = "deferred"
 order = 4307
 executor = "claude-code"
-notes = "filed by wave-102 adversarial verifier (editor factory)"
+notes = """
+filed by wave-102 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+T-640's contour_rings re-marches the full 1601-square grid per level plus an O(n^2) segment chainer: measured 660 ms @ 10 m interval / 1.33 s @ 5 m native vs 15-25 ms for the old single-sweep path (43-54x). last_interval correctly gates it to log2-rung crossings (T-639 quantizes, so not per zoom tick), but every ~x2 zoom crosses a rung — a recurring main-thread hitch during interaction. Fix directions: chain from the existing single sweep (segments already computed), hash-grid the chainer to O(n), or move the march off the interaction path; contour_segments is now production-dead — either delete it or make it the shared fast path again. Diagnosis: editor_verify/wave102.md F-2 (+ NOTE on dead contour_segments).
+
+missing=0
+"""
+main_goal = "Eliminate contour re-march hitch on each log2 rung crossing."
+context = [
+    "T-640 contour_rings re-marches full 1601-square grid per level.",
+    "O(n^2) segment chainer; measured 660 ms @ 10 m, 1.33 s @ 5 m native.",
+]
+requirement = [
+    "Eliminate recurring main-thread hitch on every ~x2 zoom rung crossing.",
+    "Delete production-dead contour_segments or make it shared fast path again.",
+]
+current_state = [
+    "43-54x slower than old single-sweep path at 15-25 ms.",
+    "last_interval gates to log2-rung crossings; T-639 quantizes zoom.",
+]
+approach = [
+    "Chain from existing single sweep; hash-grid chainer to O(n).",
+    "Or move march off interaction path; revive contour_segments fast path.",
+]
+verify = ["Rung crossing under interaction budget; no 660 ms native hitch."]
+citations = [
+    "T-640 contour_rings march",
+    "wave102.md F-2 diagnosis",
+    "contour_segments dead path",
+]
 estimated = ["scope"]
-migration_legacy = ["T-640's contour_rings re-marches the full 1601-square grid per level plus an O(n^2) segment chainer: measured 660 ms @ 10 m interval / 1.33 s @ 5 m native vs 15-25 ms for the old single-sweep path (43-54x). last_interval correctly gates it to log2-rung crossings (T-639 quantizes, so not per zoom tick), but every ~x2 zoom crosses a rung — a recurring main-thread hitch during interaction. Fix directions: chain from the existing single sweep (segments already computed), hash-grid the chainer to O(n), or move the march off the interaction path; contour_segments is now production-dead — either delete it or make it the shared fast path again. Diagnosis: editor_verify/wave102.md F-2 (+ NOTE on dead contour_segments)."]
 
 [scope]
 domain = "website"
