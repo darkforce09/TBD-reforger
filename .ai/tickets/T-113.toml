@@ -7,6 +7,19 @@ status = "shipped"
 order = 1130
 executor = "cursor-docs"
 notes = "needs-operator: frozen unmappable Scope. "
+main_goal = "Merge website and mod repos into TBD-Reforger with unified ticketing."
+context = ["TBD_Website and Arma reforger lived as separate repos before M0."]
+requirement = [
+    "M0–M3 read-tree merge; path rewrites; executor gate in CLAUDE and AI_PLAYBOOK.",
+    "G4 ticket rewrite plus verify-monorepo-migration.sh V1–V27 green.",
+]
+current_state = ["Split repos with legacy path references in specs and scripts."]
+approach = ["Read-tree merge M1 lift; M1c path fixes; M2 ticket registry rewrite."]
+verify = ["./scripts/verify-monorepo-migration.sh exit 0"]
+citations = [
+    "commit 904ba78f",
+    "MONOREPO_MIGRATION.md",
+]
 shipped_at = "904ba78f"
 created_at = "2026-06-26T12:01:55Z"
 completed_at = "2026-06-26T12:01:55Z"

@@ -6,19 +6,15 @@ class = "feature"
 status = "shipped"
 order = 1180
 executor = "claude-code"
-context = [
-    "SPLIT 2026-07-26.",
-    "This row is a pointer, not work.",
-    "== CLOSED 2026-07-31 — ALREADY DONE, this row was a stale pointer ==",
-    "Its own summary says 'This row is a pointer, not work' and names the residual as T-226, T-284 and T-231.",
-    "Verified before closing.",
-]
-requirement = ["No work remains under this id; do not dispatch it."]
-current_state = [
-    "DONE: identity-link UI (settings.rs:6-9,74-94, T-159.25) and the ORBAT selector (event_hub.rs:520-572, T-159.25a).",
-    "OPEN residual is tracked by T-226 (PATCH /events/{id} has no caller), T-284 (clear_slot unreachable, admin cannot free a claimed slot)",
-    "and T-231 (identity last mile).",
-    "ALL THREE ARE SHIPPED (events edit/detach; clear_slot reachable; identity last mile).",
+main_goal = "Event lobby shows ORBAT slotting and Discord identity linking UI."
+context = ["Pointer row; core UI shipped T-159.25 and T-159.25a."]
+requirement = ["ORBAT selector in event hub; identity link flow in settings."]
+current_state = ["SHIPPED @ 18852577; residuals T-226, T-284, T-231 all shipped."]
+approach = ["Close stale pointer after verifying named follow-on tickets shipped."]
+citations = [
+    "Commit 18852577 wave 69.",
+    "T-159.25 identity link UI.",
+    "T-159.25a ORBAT selector.",
 ]
 shipped_at = "18852577"
 created_at = "2026-07-31T00:33:52Z"

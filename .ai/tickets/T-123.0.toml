@@ -8,6 +8,16 @@ order = 1230
 spec = "docs/platform/t123_documentation_standards_rollout.md"
 executor = "cursor-docs"
 parent = "T-123"
+main_goal = "Wire doc hub and handoff for seven-slice documentation standards program."
+context = ["DOCUMENTATION_STANDARDS.md normative; T-123 implements §9 codegen and CI."]
+requirement = ["AGENT_COMMIT_CHECKLIST and CLAUDE.md pointers; t123 handoff with slice order."]
+current_state = ["Standards doc written but implementation deferred as follow-up."]
+approach = ["Register program ticket; sync registry; ship handoff artifact."]
+citations = [
+    "commit f0af31a T-123 register",
+    "t123_documentation_standards_rollout.md",
+    "SHIPPED_HISTORY T-123 parent",
+]
 shipped_at = "f0af31a"
 created_at = "2026-06-29T00:00:00Z"
 completed_at = "2026-06-29T00:00:00Z"

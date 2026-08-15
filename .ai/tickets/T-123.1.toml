@@ -8,6 +8,19 @@ order = 1230
 spec = "docs/platform/t123_documentation_standards_rollout.md"
 executor = "claude-code"
 parent = "T-123"
+main_goal = "Roll out Go @route/@contract tags and rename export schemaVersion."
+context = ["T-123.0 wired hub; cross-boundary Go surfaces lacked tag coverage."]
+requirement = [
+    "@route on ListRegistry, CreateVersion, ExportMission, InjectMission.",
+    "@contract on RegistryItem and loadout-export; rename schemaVersion to exportFormatVersion.",
+]
+current_state = ["Go handlers and models missing DOCUMENTATION_STANDARDS cross-boundary tags."]
+approach = ["Tag registry/version/export paths; Godoc on touched packages; rename export envelope field."]
+citations = [
+    "commit 04a73a1 Go tags",
+    "t123 spec T-123.1 slice",
+    "DOCUMENTATION_STANDARDS §3 §4",
+]
 shipped_at = "04a73a1"
 created_at = "2026-06-29T18:57:51Z"
 completed_at = "2026-06-29T18:57:51Z"

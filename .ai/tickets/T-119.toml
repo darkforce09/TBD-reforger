@@ -6,6 +6,16 @@ class = "audit"
 status = "shipped"
 order = 1190
 executor = "workbench"
+main_goal = "Mod framework ships loadouts, safe start, play boundary, and admin commands."
+context = ["M1 audit row closed 2026-07-26 before T-181 platform factory."]
+requirement = ["Loadout equip, safestart manager, zone boundary, admin command surface."]
+current_state = ["SHIPPED by audit; all four M1 items delivered via T-181 slices."]
+approach = ["Verify T-181 delivered each named component; close audit row."]
+citations = [
+    "Summary: T-181 delivery audit.",
+    "TBD_LoadoutEquipComponent.c T-068.12.",
+    "TBD_SafestartManager.c T-181.17.",
+]
 created_at = "2026-07-15T00:00:00Z"
 completed_at = "2026-07-15T00:00:00Z"
 estimated = [

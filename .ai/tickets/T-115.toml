@@ -6,6 +6,15 @@ class = "audit"
 status = "shipped"
 order = 1150
 executor = "workbench"
+main_goal = "Capture, destroy, and hold-until objectives drive mission end triggers."
+context = ["Mission runtime lacked evaluated objectives wiring to round end."]
+requirement = ["TBD_ObjectiveRegistry capture/destroy/hold-until; EvaluateEndTriggers sets END stage."]
+current_state = ["No capture win condition in mod at ticket filing."]
+approach = ["Delivered T-181.39 TBD_ObjectiveRegistry with TBD_ObjectivesComponent end triggers."]
+citations = [
+    "T-181.39 audit closure",
+    "TBD_ObjectiveRegistry.c",
+]
 created_at = "2026-07-13T00:00:00Z"
 completed_at = "2026-07-13T00:00:00Z"
 estimated = [

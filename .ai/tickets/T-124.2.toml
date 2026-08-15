@@ -8,6 +8,19 @@ order = 1240
 spec = "docs/platform/t124_dependency_upgrade.md"
 executor = "claude-code"
 parent = "T-124"
+main_goal = "Bump Go modules gin 1.12, gorm 1.31.2, pgx 5.10."
+context = ["T-124.2 slice under Go 1.26.4."]
+requirement = ["go get -u ./...; gin, gorm, postgres driver, pgx direct bumps."]
+current_state = ["Go deps on gin 1.10, gorm 1.25, pgx 5.5."]
+approach = ["go mod tidy; go directive 1.25 until infra follow-up."]
+verify = [
+    "go build ./...",
+    "cargo xtask db test-it",
+]
+citations = [
+    "commit d81ed9c Go modules",
+    "t124_dependency_upgrade.md shipped commits",
+]
 shipped_at = "d81ed9c"
 created_at = "2026-06-29T00:00:00Z"
 completed_at = "2026-06-29T00:00:00Z"

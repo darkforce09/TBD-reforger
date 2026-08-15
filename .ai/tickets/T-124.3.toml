@@ -8,6 +8,20 @@ order = 1240
 spec = "docs/platform/t124_dependency_upgrade.md"
 executor = "claude-code"
 parent = "T-124"
+main_goal = "Move runtime to Node 26 LTS; drop unused container-queries."
+context = ["T-124.3 ext after PG18 infra; spec originally targeted Node 24."]
+requirement = [".nvmrc and CI node-version 26; @types/node ^26; remove dead tailwind plugin."]
+current_state = ["Node 24 runtime; unused @tailwindcss/container-queries in package.json."]
+approach = ["Update schema.yml contracts.yml deploy.env.example; npm install on Node 26."]
+verify = [
+    "npm run build",
+    "npm run lint",
+    "npm run test",
+]
+citations = [
+    "commit cd11db0 Node 26",
+    "t124_dependency_upgrade.md final toolchain",
+]
 shipped_at = "cd11db0"
 created_at = "2026-06-29T00:00:00Z"
 completed_at = "2026-06-29T00:00:00Z"

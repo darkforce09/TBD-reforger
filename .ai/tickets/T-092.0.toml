@@ -8,6 +8,16 @@ order = 920
 spec = "docs/specs/Mission_Creator_Architecture/t092_0_spawn_contract.md"
 executor = "cursor-docs"
 parent = "T-092"
+main_goal = "Freeze spawn compile contract; hub and slice specs on disk."
+context = ["Editor emits editor.slots only; mod wrong API path."]
+requirement = ["t092_spawn_transform_program; t092_1 + t092_2 specs."]
+current_state = ["No artifact diagram; UUID slot ids; gaps undocumented."]
+approach = ["Contract tables; S1–S4 verification gates; registry slices."]
+citations = [
+    "commit c09beb38",
+    "t092_spawn_transform_program.md",
+    "t092_0_spawn_contract.md",
+]
 created_at = "2026-07-03T00:00:00Z"
 completed_at = "2026-07-03T00:00:00Z"
 estimated = [

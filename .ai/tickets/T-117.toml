@@ -7,6 +7,16 @@ status = "shipped"
 order = 1170
 executor = "claude-code"
 priority = 2
+main_goal = "Mission makers upload mission documents and see schema validation errors in the UI."
+context = ["POST /missions/:id/versions is the only mission-write route with a 256MB body cap."]
+requirement = ["Upload panel on mission dossier; surface validation details[] from 400 responses."]
+current_state = ["SHIPPED @ 12f41266; missions.rs +969 lines; 10 new tests."]
+approach = ["Wire file picker to versions POST; render schema findings from error payload."]
+citations = [
+    "Commit 12f41266 T-117 merge.",
+    "Commit 001cb8d3 upload impl.",
+    "Source: commit 8bd282fc.",
+]
 shipped_at = "12f41266"
 created_at = "2026-07-31T00:33:52Z"
 completed_at = "2026-07-31T05:24:32Z"

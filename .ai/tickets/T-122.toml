@@ -7,6 +7,16 @@ status = "shipped"
 order = 1220
 spec = "docs/platform/audit/t122_codebase_audit_hotfix.md"
 executor = "claude-code"
+main_goal = "Ship codebase audit hotfixes in one bundle."
+context = ["Authority: CODEBASE_AUDIT_2026.md; single-branch fix-all policy."]
+requirement = ["Fix C/R/T/M/D audit bands; document deferred items with rationale."]
+current_state = ["SHIPPED @ f131770; 37/41 findings fixed; four deferred per audit doc."]
+approach = ["One Claude pass on ticket/T-122 branch; test-it and frontend build/lint."]
+citations = [
+    "Spec: t122_codebase_audit_hotfix.md.",
+    "Commit f131770d hotfix bundle.",
+    "SHIPPED_HISTORY T-122 entry.",
+]
 shipped_at = "69e14d69"
 created_at = "2026-06-29T18:15:49Z"
 completed_at = "2026-06-29T18:21:05Z"

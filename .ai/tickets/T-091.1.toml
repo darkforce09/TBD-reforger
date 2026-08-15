@@ -8,6 +8,16 @@ order = 910
 spec = "docs/specs/Mission_Creator_Architecture/t091_1_dem_loader.md"
 executor = "claude-code"
 parent = "T-091"
+main_goal = "Load DEM PNG; expose sampleElevation bilinear API."
+context = ["T-091.0 DEM shipped; terrains.ts lacked fetch/decode."]
+requirement = ["DemController; terrainManifest; Float32 meters cache."]
+current_state = ["No dem/ module; editor cannot sample height."]
+approach = ["tactical-map/dem/*; degraded flat mode on failure."]
+citations = [
+    "commit 2c56c2e",
+    "SHIPPED_HISTORY T-091.1",
+    "t091_1_dem_loader.md",
+]
 shipped_at = "2c56c2e"
 created_at = "2026-06-29T14:40:33Z"
 completed_at = "2026-06-29T15:24:40Z"

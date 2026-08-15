@@ -8,6 +8,19 @@ order = 1230
 spec = "docs/platform/t123_documentation_standards_rollout.md"
 executor = "claude-code"
 parent = "T-123"
+main_goal = "Validate mission editor payloads against schema before CreateVersion persist."
+context = ["T-123.5 slice per DOCUMENTATION_STANDARDS §9.2."]
+requirement = ["Reject malformed payload 400; type-strict shallow validation on large saves."]
+current_state = ["CreateVersion persisted editor payloads without schema validation."]
+approach = ["ValidateMissionEditorPayload via embedded mission-editor-payload.schema.json."]
+verify = [
+    "cargo xtask db test-it",
+    "go build ./...",
+]
+citations = [
+    "commit b5211f2 schema validation",
+    "t123_documentation_standards_rollout.md §9.2",
+]
 shipped_at = "b5211f2"
 created_at = "2026-06-29T19:17:15Z"
 completed_at = "2026-06-29T19:17:15Z"

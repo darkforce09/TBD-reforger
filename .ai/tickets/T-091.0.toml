@@ -8,6 +8,16 @@ order = 910
 spec = "docs/specs/Mission_Creator_Architecture/t091_0_dem_tile_export.md"
 executor = "claude-code"
 parent = "T-091"
+main_goal = "Commit Everon 6400² DEM PNG; verify-terrain-strict PASS."
+context = ["Manual WE Export Height Map dead on packed Eden."]
+requirement = ["GetSurfaceY resample plugin; raw-u16-to-dem-png.mjs; 11 anchors."]
+current_state = ["No committed DEM; no anchor verify gate."]
+approach = ["TBD_TerrainExportPlugin.c; mod-getsurfacey-resample manifest."]
+citations = [
+    "commit 6d96339",
+    "SHIPPED_HISTORY T-091.0",
+    "t091_0_dem_tile_export.md",
+]
 shipped_at = "6d96339"
 created_at = "2026-06-27T17:28:49Z"
 completed_at = "2026-06-29T14:36:15Z"

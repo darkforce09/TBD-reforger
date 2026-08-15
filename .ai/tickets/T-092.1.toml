@@ -8,6 +8,23 @@ order = 920
 spec = "docs/specs/Mission_Creator_Architecture/t092_1_mod_spawn_policy.md"
 executor = "claude-code"
 parent = "T-092"
+main_goal = "Optional slot y plus mod spawn height and headingDeg yaw policy."
+context = ["TBD_SpawnManager used GetSurfaceY only; ignored JSON y and headingDeg."]
+requirement = [
+    "Schema optional y on slot; bump schemaVersion 1.2 when present.",
+    "Spawn policy: jsonY else GetSurfaceY plus measured capsule offset; [TBD][Spawn] logs.",
+]
+current_state = ["No optional y in schema or TBD_MissionSlotStruct; no yaw on deploy."]
+approach = ["Bump mission.schema.json; wire TBD_MissionSlotStruct and TBD_SpawnManager policy; wb_play measure offset."]
+verify = [
+    "cargo xtask mod dev-bootstrap",
+    "cargo xtask mod spawn-verify",
+]
+citations = [
+    "t092_1_mod_spawn_policy.md",
+    "commit 4eefc169",
+    "t092_1_verify_log.md",
+]
 shipped_at = "4eefc169"
 created_at = "2026-07-03T17:33:49Z"
 completed_at = "2026-07-03T17:33:49Z"

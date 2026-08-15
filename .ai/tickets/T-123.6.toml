@@ -8,6 +8,19 @@ order = 1230
 spec = "docs/platform/t123_documentation_standards_rollout.md"
 executor = "claude-code"
 parent = "T-123"
+main_goal = "CI gates: citation verifier, TSDoc eslint, golangci revive, codegen drift."
+context = ["T-123.6 slice implements DOCUMENTATION_STANDARDS §10."]
+requirement = ["@contract resolves; jsdoc on FE contract layer; revive exported; contracts.yml."]
+current_state = ["No automated citation verifier or doc lint gates in CI."]
+approach = ["verify-contract-citations.mjs; eslint-plugin-jsdoc; .golangci.yml; contracts.yml."]
+verify = [
+    "make verify-citations",
+    "make schema-codegen",
+]
+citations = [
+    "commit 102a835 CI gates",
+    "t123_documentation_standards_rollout.md §10",
+]
 shipped_at = "102a835"
 created_at = "2026-06-29T19:24:55Z"
 completed_at = "2026-06-29T19:24:55Z"

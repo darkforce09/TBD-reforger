@@ -8,6 +8,23 @@ order = 920
 spec = "docs/specs/Mission_Creator_Architecture/t092_2_mod_compile_route.md"
 executor = "claude-code"
 parent = "T-092"
+main_goal = "Flatten editor snapshot to mod document 1.1/1.2; ship GET /compiled API."
+context = ["compile.ts emitted editor.slots only; mod loader fetched wrong API path."]
+requirement = [
+    "flattenEditorToModDocument with deterministic slot ids and kit aliases.",
+    "GET /api/v1/missions/:id/compiled with RequireServiceToken; fix TBD_MissionLoader path.",
+]
+current_state = ["Go export wrapper only; UUID slot ids; ResourceName not kit aliases."]
+approach = ["TS flattenEditorToModDocument; Go FlattenToModDocument; kit-aliases.json; mod loader /api/v1 fix."]
+verify = [
+    "packages/tbd-schema npm run validate",
+    "cargo xtask db test-it",
+]
+citations = [
+    "t092_2_mod_compile_route.md",
+    "commit a73224f2",
+    "SHIPPED_HISTORY T-092",
+]
 shipped_at = "a73224f2"
 created_at = "2026-07-03T18:01:32Z"
 completed_at = "2026-07-03T18:01:32Z"

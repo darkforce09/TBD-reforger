@@ -7,19 +7,15 @@ status = "shipped"
 order = 1160
 executor = "human"
 depends_on = ["T-115"]
-context = [
-    "SPLIT 2026-07-26.",
-    "This row now tracks only the website half.",
-    "== CLOSED 2026-07-31 — ALREADY DONE, this row was a stale pointer ==",
-    "This row tracked only the WEBSITE half, which its own summary says was folded into T-232",
-    "Verified before closing.",
-]
-requirement = ["No work remains under this id; do not dispatch it."]
-current_state = [
-    "Mod half SHIPPED: TBD_ResultsReporter.c (682 lines, T-181.13.1) POSTs to /api/v1/ingest/match-results.",
-    "Website half OPEN and folded into T-232 — event_hub.rs renders no result/outcome/match data at all.",
-    "The mod half shipped at T-181.13.1.",
-    "— and T-232 is SHIPPED ('Five pages render literally nothing when real data arrives').",
+main_goal = "Match results POST from the mod to the website ingest API."
+context = ["SPLIT 2026-07-26: row tracked the website half; mod shipped T-181.13.1."]
+requirement = ["Mod POST /api/v1/ingest/match-results; website rendering via T-232."]
+current_state = ["SHIPPED @ 18852577; stale pointer closed wave 69; website half T-232."]
+approach = ["Close row when mod ingest and T-232 populated branches both shipped."]
+citations = [
+    "Commit 18852577 wave 69.",
+    "T-181.13.1 ResultsReporter.c.",
+    "T-232 five-page fix.",
 ]
 shipped_at = "18852577"
 created_at = "2026-07-31T00:33:52Z"

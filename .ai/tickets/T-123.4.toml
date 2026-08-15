@@ -8,6 +8,16 @@ order = 1230
 spec = "docs/platform/t123_documentation_standards_rollout.md"
 executor = "claude-code"
 parent = "T-123"
+main_goal = "Generate Go and TS contract projections from shared JSON schemas."
+context = ["Cross-boundary types hand-copied; §9.1 codegen not yet implemented."]
+requirement = ["mission-editor-payload.schema.json; codegen.mjs; internal/contract and types/contract outputs."]
+current_state = ["No generated contract dirs; editor payload schema missing."]
+approach = ["quicktype Go plus json-schema-to-typescript; make schema-codegen; DO NOT EDIT markers."]
+citations = [
+    "commit dd4e4d0 schema codegen",
+    "t123 spec T-123.4 slice",
+    "DOCUMENTATION_STANDARDS §9.1",
+]
 shipped_at = "dd4e4d0"
 created_at = "2026-06-29T19:13:08Z"
 completed_at = "2026-06-29T19:13:08Z"

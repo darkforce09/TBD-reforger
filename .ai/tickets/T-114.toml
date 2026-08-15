@@ -10,6 +10,18 @@ depends_on = [
     "T-068.13",
     "T-118",
 ]
+main_goal = "Production LOBBY slot picker with event roster enforcement and identity claims."
+context = ["T-068.13 POC picker; production needs roster-synced claims after T-118."]
+requirement = [
+    "Roster-synced LOBBY picker supersedes T-068.13 POC.",
+    "TBD_RosterLoader enforcement plus TBD_IdentityLink identity-linked claims.",
+]
+current_state = ["POC slot picker only; no production roster enforcement."]
+approach = ["Audit-closed via T-181.9.1 picker, T-181.51 roster, T-181.35 identity link."]
+citations = [
+    "T-181 audit closure 2026-07-26",
+    "t068_13_mod_slotting_screen_poc.md",
+]
 created_at = "2026-07-13T00:00:00Z"
 completed_at = "2026-07-13T00:00:00Z"
 estimated = [

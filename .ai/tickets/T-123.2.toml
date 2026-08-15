@@ -8,6 +8,16 @@ order = 1230
 spec = "docs/platform/t123_documentation_standards_rollout.md"
 executor = "claude-code"
 parent = "T-123"
+main_goal = "Ship tsdoc.json and TSDoc @model/@contract/@route on FE contract layer."
+context = ["T-123.1 renamed export envelope; FE mirrors needed matching TSDoc tags."]
+requirement = ["tsdoc.json with custom tags; TSDoc on types/models, api, hooks."]
+current_state = ["FE contract layer lacked tsdoc.json and block-tag TSDoc coverage."]
+approach = ["Declare custom tags; document cross-boundary exports; rename exportFormatVersion in lockstep."]
+citations = [
+    "commit 030cece TS TSDoc",
+    "t123 spec T-123.2 slice",
+    "DOCUMENTATION_STANDARDS §5",
+]
 shipped_at = "030cece"
 created_at = "2026-06-29T19:04:04Z"
 completed_at = "2026-06-29T19:04:04Z"

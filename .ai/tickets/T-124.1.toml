@@ -8,6 +8,20 @@ order = 1240
 spec = "docs/platform/t124_dependency_upgrade.md"
 executor = "claude-code"
 parent = "T-124"
+main_goal = "Bump frontend npm to vitest 4, deck.gl 9.3.5, vite 8."
+context = ["T-124.1 slice per t124_dependency_upgrade.md."]
+requirement = ["Lockstep deck.gl/luma; vitest 3→4 major; eslint-plugin-jsdoc 62→63."]
+current_state = ["Stale npm caret ranges across mission creator frontend."]
+approach = ["npm update in-caret bumps; @types/node ^24 for Node 24 runtime."]
+verify = [
+    "npm run build",
+    "npm run lint",
+    "npm run test",
+]
+citations = [
+    "commit 1d85f46 frontend npm",
+    "t124_dependency_upgrade.md slice plan",
+]
 shipped_at = "1d85f46"
 created_at = "2026-06-29T00:00:00Z"
 completed_at = "2026-06-29T00:00:00Z"
