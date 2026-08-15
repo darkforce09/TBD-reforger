@@ -23,10 +23,15 @@ verify = [
     "cargo xtask mcp smoke",
     "t090_1_2_4_engine_render_spike.json",
 ]
+acceptance = [
+    "Workbench MCP probe recorded honest P0 FAIL; no engine ortho API exists.",
+    "SAP plus apron-bridge locked as production source; pivoted to T-090.1.2.8.",
+]
 citations = [
     "t090_1_2_4_engine_render_ortho_spike.md",
     "commit 0d6fe485",
     "SHIPPED_HISTORY T-090.1.2.4",
+    "t090_1_2_4_verify_log.md",
 ]
 shipped_at = "0d6fe485"
 created_at = "2026-06-30T22:21:09Z"

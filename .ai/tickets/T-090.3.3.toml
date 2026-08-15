@@ -17,10 +17,15 @@ verify = [
     "make map-verify-phase TERRAIN=everon PHASE=P1_buildings",
     "make map-export-validate",
 ]
+acceptance = [
+    "Data-driven classify rebuild plus full .topo highway mapping.",
+    "888 road segments shipped; measured OBB prefabs committed.",
+]
 citations = [
     "commit 887a6ed1 taxonomy roads",
     "t090_3_map_asset_export.md spec",
     "SHIPPED_HISTORY T-090.3.3",
+    "t090_5_2_verify_log T-090.3.3",
 ]
 shipped_at = "887a6ed1"
 created_at = "2026-07-05T12:35:54Z"

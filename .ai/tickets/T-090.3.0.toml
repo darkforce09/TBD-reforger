@@ -17,6 +17,10 @@ requirement = [
 current_state = ["P1–P10 export and dual basemap blocked on engine capability."]
 approach = ["TBD_TerrainWorldExportPlugin subregion probes; spike verifier harness."]
 verify = ["cargo xtask ci schema-validate"]
+acceptance = [
+    "Workbench enumerated Everon entities; K1/K1b/K7 probes green.",
+    "Spike JSON and ops log documented export feasibility.",
+]
 citations = [
     "commit b342c35 spike COMPLETE subject",
     "t090_3_0_workbench_export_spike.md spec",

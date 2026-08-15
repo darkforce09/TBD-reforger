@@ -20,10 +20,15 @@ verify = [
     "cargo run -q -p tbd-tools --bin map -- verify-sap-ortho --terrain everon",
     "EXPECT_LOSSLESS=1 node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon",
 ]
+acceptance = [
+    "Ocean mask A and inland mask E composited onto SAP ortho.",
+    "Lossless z0–6 pyramid rebuilt; verify-sap-ortho orientation guard passed.",
+]
 citations = [
     "commit 6396960f satellite water composite",
     "SHIPPED_HISTORY T-090.1.2.5 entry",
     "t090_1_2_5_satellite_water_composite.md spec",
+    "t090_1_2_5_verify_log.md",
 ]
 shipped_at = "6396960f"
 created_at = "2026-06-30T22:23:12Z"

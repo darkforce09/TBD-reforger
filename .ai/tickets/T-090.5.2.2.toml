@@ -13,10 +13,20 @@ context = ["T-090.5.2 shipped solid-dark fills only."]
 requirement = ["Taxonomy tints; pier/dock; exclude buoys."]
 current_state = ["Water piers filtered; uniform dark."]
 approach = ["buildingPrefabLookup; class-keyed PolygonLayer fills."]
+verify = [
+    "npm run test -- --run",
+    "npm run build",
+    "npm run lint",
+]
+acceptance = [
+    "Pier and dock prefabs included with per-class footprint tints.",
+    "6,430 footprint instances rendered; vitest 107/107 PASS.",
+]
 citations = [
     "commit 346a31c9",
     "SHIPPED_HISTORY T-090.5.2.2",
     "t090_5_map_object_render_layer.md",
+    "t090_5_2_verify_log T-090.5.2.2",
 ]
 shipped_at = "346a31c9"
 created_at = "2026-07-05T12:36:07Z"

@@ -17,10 +17,15 @@ verify = [
     "make map-verify-phase TERRAIN=everon PHASE=P2_trees",
     "make map-export-validate",
 ]
+acceptance = [
+    "P2 added 501,861 trees plus 625 TBDD density bins.",
+    "forest-regions.json.gz shipped 36 Path B regions; P2_trees gates PASS.",
+]
 citations = [
     "commit a055df95 density trees forest",
     "t090_3_map_asset_export.md spec",
     "SHIPPED_HISTORY T-090.3.2",
+    "t090_3_2_verify_log.md",
 ]
 shipped_at = "a055df95"
 created_at = "2026-07-04T23:57:28Z"

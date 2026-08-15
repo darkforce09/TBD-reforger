@@ -17,10 +17,15 @@ requirement = [
 current_state = ["Grey-river bodies overlapped .topo corridors; wet gullies rejected too aggressively."]
 approach = ["Component roadFrac guard; TOPO_TERRAINS config; mask→composite→bundle→pyramid."]
 verify = ["cargo xtask ci map-water-everon"]
+acceptance = [
+    "decode-topo.mjs shipped with roadFrac≤0.45 guard on wet-channel classes.",
+    "make map-water-everon one-button pipeline ran end-to-end with all gates PASS.",
+]
 citations = [
     "commit 1c07d97a road guard pipeline",
     "SHIPPED_HISTORY T-090.1.2.5.2 entry",
     "t090_1_2_5_2_water_topo_refine.md spec",
+    "t090_1_2_5_2_verify_log.md",
 ]
 shipped_at = "1c07d97a"
 created_at = "2026-07-03T13:16:52Z"

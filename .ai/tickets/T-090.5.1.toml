@@ -14,9 +14,14 @@ requirement = ["Feature flag worldmap.enabled; 3-way mapStyle; zero Deck world l
 current_state = ["Basemap tiles only; no vector layer assembly or LOD gate module."]
 approach = ["Pure worldmap modules + vitest; Comlink worker stub; TacticalMap insertion point."]
 verify = ["npm run test -- styleModes lodGates chunkMath worldLayerPrefs basemapView"]
+acceptance = [
+    "worldmap spine modules shipped: styleModes, lodGates, chunkMath, prefs.",
+    "Comlink worker skeleton wired behind VITE_WORLDMAP_ENABLED flag.",
+]
 citations = [
     "commit 589ded9e render spine scaffold",
     "t090_5_map_object_render_layer.md spec",
+    "t090_5_1_verify_log.md",
 ]
 shipped_at = "589ded9e"
 created_at = "2026-07-05T10:43:54Z"

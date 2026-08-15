@@ -17,6 +17,10 @@ requirement = [
 current_state = ["Map tile pyramid and ImageMagick compose were the bridge."]
 approach = ["Ship architecture spec; queue T-090.10.1 plan and T-090.3 export."]
 verify = ["cargo xtask schema t090-specs"]
+acceptance = [
+    "Map Engine v2 pivot spec shipped; legacy raster compose slices cancelled.",
+    "tbd-sat plus Deck.gl layer stack documented as frozen program hub.",
+]
 citations = [
     "commit 5e7bfed5 Map Engine v2 pivot",
     "t090_10_map_engine_v2.md spec",

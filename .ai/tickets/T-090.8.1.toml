@@ -13,10 +13,19 @@ context = ["T-090.8 region taxonomy; tree glyphs LOD-gated above default zoom."]
 requirement = ["world-landcover; world-forest; world-forest-outline; worker stream."]
 current_state = ["Million-tree points; no vegetation mass at opening zoom."]
 approach = ["forestMassStore; TBDD marching squares; 36 Path B hulls."]
+verify = [
+    "npm run test -- --run forestMass landCoverRegions lodGates",
+    "make schema-validate",
+]
+acceptance = [
+    "world-landcover hulls plus world-forest marching-squares mass shipped.",
+    "36 Path B regions and 268 forest chunks rendered; vitest 192/192 PASS.",
+]
 citations = [
     "commit e28d073a",
     "SHIPPED_HISTORY T-090.8.1",
     "t090_8_forest_vegetation_regions.md",
+    "t090_8_1_verify_log.md",
 ]
 shipped_at = "e28d073a"
 created_at = "2026-07-05T15:59:41Z"

@@ -13,10 +13,20 @@ context = ["Trees indexed; zero glyphs drawn."]
 requirement = ["IconLayer glyphs; manifest dedupe; debug pref."]
 current_state = ["Manifest race; worker terminated mid-load."]
 approach = ["loadManifest dedupe; retry when manifest null."]
+verify = [
+    "npm run test -- --run",
+    "make schema-validate",
+    "make map-glyphs-verify",
+]
+acceptance = [
+    "world-trees and world-props IconLayer glyphs stream from worker index.",
+    "loadManifest dedupe fixed glyph race; vitest 240/240 PASS.",
+]
 citations = [
     "commit 2b1a0dda",
     "SHIPPED_HISTORY T-090.5.5",
     "t090_5_map_object_render_layer.md",
+    "t090_5_5_verify_log.md",
 ]
 shipped_at = "2b1a0dda"
 created_at = "2026-07-05T18:28:11Z"

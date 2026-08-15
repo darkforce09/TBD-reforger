@@ -13,10 +13,19 @@ context = ["T-090.5.2 parsed chunks main-thread."]
 requirement = ["chunkStore LRU; 4ms/frame budget; pick wiring."]
 current_state = ["Main-thread gzip parse blocked pan/zoom."]
 approach = ["worldObjectsCore; transferables; rbush W3."]
+verify = [
+    "npm run test -- --run",
+    "make schema-validate",
+]
+acceptance = [
+    "Comlink worker owns chunk fetch, gunzip, parse, and rbush index.",
+    "chunkStore LRU applied under 4 ms/frame budget; vitest 150/150 PASS.",
+]
 citations = [
     "commit 155651b9",
     "SHIPPED_HISTORY T-090.5.3",
     "t090_5_map_object_render_layer.md",
+    "t090_5_3_verify_log.md",
 ]
 shipped_at = "155651b9"
 created_at = "2026-07-05T13:26:33Z"

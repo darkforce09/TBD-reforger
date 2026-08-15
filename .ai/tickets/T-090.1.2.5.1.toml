@@ -25,6 +25,10 @@ verify = [
     "EXPECT_LOSSLESS=1 node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon",
     "cargo xtask ci verify-terrain",
 ]
+acceptance = [
+    "Operator road FP sites rejected; 85 new hill stream segments accepted.",
+    "114 inland bodies shipped; ocean mask A unchanged; pyramid rebuilt.",
+]
 citations = [
     "t090_1_2_5_1_water_mask_refine.md",
     "commit 82488c6f",

@@ -14,6 +14,10 @@ requirement = ["Measured-width centerlines; world-roads-casing under world-roads
 current_state = ["PathLayer connected raw topo quad pairs; buildings used faint spec colors."]
 approach = ["Pure roadLayer parser; second casing PathLayer; PolygonLayer fill override."]
 verify = ["vitest roadLayer centerline tests"]
+acceptance = [
+    "Measured-width road centerlines replaced centipede quad-soup paths.",
+    "world-roads-casing and solid dark building fills shipped.",
+]
 citations = [
     "commit 04b60857 centerline casing buildings",
     "t090_5_map_object_render_layer.md spec",

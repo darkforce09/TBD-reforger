@@ -17,10 +17,15 @@ requirement = [
 current_state = ["useTerrainBasemapLayer mounted 64 BitmapLayers; per-tile fetch on LOD change."]
 approach = ["build-unified-satellite.mjs; verify-unified-satellite.mjs; GPU mip sampler."]
 verify = ["node scripts/map-assets/verify-unified-satellite.mjs TERRAIN=everon"]
+acceptance = [
+    "everon-sat.tbd-sat unified bundle committed with 14-level GPU mip chain.",
+    "Operator U1–U4 PASS; zero tile HTTP on pan/zoom.",
+]
 citations = [
     "commit db9057ef unified tbd-sat v1",
     "SHIPPED_HISTORY T-090.1.2.8 entry",
     "t090_1_2_8_unified_satellite_texture.md spec",
+    "t090_1_2_8_verify_log.md",
 ]
 shipped_at = "db9057ef"
 created_at = "2026-07-02T18:33:51Z"

@@ -13,10 +13,20 @@ context = ["T-090.5.1 gated worldmap."]
 requirement = ["PathLayer roads; OBB buildings; badge IconLayer."]
 current_state = ["No world-object render layers."]
 approach = ["worldData chunk loader; glyph atlas 19→28."]
+verify = [
+    "npm run test -- --run",
+    "make map-glyphs-verify",
+    "make schema-validate",
+]
+acceptance = [
+    "world-roads, world-buildings, world-building-badges Deck layers live.",
+    "766 roads and 5,606 OBB footprints rendered; vitest 102/102 PASS.",
+]
 citations = [
     "commit e410545e",
     "SHIPPED_HISTORY T-090.5.2",
     "t090_5_map_object_render_layer.md",
+    "t090_5_2_verify_log.md",
 ]
 shipped_at = "e410545e"
 created_at = "2026-07-05T11:07:09Z"
