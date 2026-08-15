@@ -1,12 +1,42 @@
 id = "T-749"
 kind = "work"
-title = "T-633's settle-only rationale is false in prose and one test comment overclaims"
+title = "T-633 scrubber prose misstates drag feedback"
 summary = "T-633's settle-only rationale is false in prose and one test comment overclaims"
 class = "bug"
 status = "shipped"
 order = 4625
 executor = "claude-code"
-notes = "filed by wave-114 adversarial verifier (editor factory)"
+notes = """
+filed by wave-114 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+MINOR from the wave-114 verifier. Two prose defects around correct code. (1) eden_top_strip.rs:1166 justifies the on:change (settle-only) commit by citing live HH:MM feedback during the drag. That feedback DOES NOT EXIST: the readout reads the `env` memo, which is recomputed only on doc_tick, and doc_tick mutates on settle — so the label is frozen mid-drag. This is unchanged from before T-633 (no regression) but the stated reason for the design is not a fact. (2) eden_top_strip.rs:2374 claims its pin proves no `on:input` grew around the scrubber; the test asserts no such absence, and there are pre-existing unrelated `on:input` handlers at :1355 and :1367 that would not trip it. The SHIPPED BEHAVIOUR IS CORRECT — the Slider really is on:change-only and the RowMirror debounce really is intact, both independently re-verified — so this is a comment-accuracy fix, not a behaviour fix. It matters because this program's recurring defect is a claim that outlives the thing it described. Diagnosis: editor_verify/wave114.md MINOR-1.
+
+missing=0
+"""
+main_goal = "Fix T-633 scrubber comment accuracy without changing shipped behaviour."
+context = [
+    "Wave-114 verifier MINOR: two prose defects around correct code.",
+    "Slider on:change-only and RowMirror debounce independently re-verified intact.",
+    "Comment-accuracy fix not behaviour fix; no regression from T-633.",
+]
+requirement = [
+    "eden_top_strip.rs:1166 remove false live HH:MM drag feedback rationale.",
+    "eden_top_strip.rs:2374 stop claiming pin proves no on:input grew.",
+]
+current_state = [
+    "Readout reads env memo recomputed on doc_tick settle only.",
+    "Pin at :2374 would not trip unrelated on:input at :1355 :1367.",
+]
+approach = ["Align comments with settled-only scrubber and actual pin scope."]
+verify = ["verifier wave114.md MINOR-1 comment accuracy only."]
+citations = [
+    "eden_top_strip.rs:1166 rationale",
+    "eden_top_strip.rs:2374 pin claim",
+    "wave114.md MINOR-1",
+    "T-633 settle-only scrubber",
+]
 shipped_at = "f5b64162"
 created_at = "2026-08-08T07:37:41Z"
 completed_at = "2026-08-08T07:54:41Z"
@@ -18,7 +48,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = ["MINOR from the wave-114 verifier. Two prose defects around correct code. (1) eden_top_strip.rs:1166 justifies the on:change (settle-only) commit by citing live HH:MM feedback during the drag. That feedback DOES NOT EXIST: the readout reads the `env` memo, which is recomputed only on doc_tick, and doc_tick mutates on settle — so the label is frozen mid-drag. This is unchanged from before T-633 (no regression) but the stated reason for the design is not a fact. (2) eden_top_strip.rs:2374 claims its pin proves no `on:input` grew around the scrubber; the test asserts no such absence, and there are pre-existing unrelated `on:input` handlers at :1355 and :1367 that would not trip it. The SHIPPED BEHAVIOUR IS CORRECT — the Slider really is on:change-only and the RowMirror debounce really is intact, both independently re-verified — so this is a comment-accuracy fix, not a behaviour fix. It matters because this program's recurring defect is a claim that outlives the thing it described. Diagnosis: editor_verify/wave114.md MINOR-1."]
 owns = ["apps/website/frontend/src/eden_top_strip.rs"]
 
 [scope]

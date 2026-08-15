@@ -6,7 +6,46 @@ class = "feature"
 status = "shipped"
 order = 4634
 executor = "claude-code"
-notes = "filed by wave-115 adversarial verifier (editor factory)"
+notes = """
+filed by wave-115 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+MINOR from the wave-115 verifier. eden_settings.rs:1623-1640: rows whose owner is the mission document itself name no entity and are explicitly not click targets (data-selectable=false), but they still render as focusable <button> elements. A keyboard user tabs onto them and activating does nothing. Correct shapes: render non-interactive rows as a non-focusable element, or keep the button and mark it aria-disabled with the reason. Related and worth doing in the same pass — T-754 covers the larger problem that the rows which DO name an entity are also inert, but for a different reason (the router cannot resolve zones). Together the two mean every row in the view is currently a dead click; fixing the styling and focusability without fixing T-754's router would make the view honest but still unhelpful, so sequence T-754 first. Diagnosis: editor_verify/wave115.md MINOR-6.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["MINOR from the wave-115 verifier. eden_settings.rs:1623-1640: rows whose owner is the mission document itself name no entity and are explicitly not click targets (data-selectable=false), but they still render as focusable <button> elements. A keyboard user tabs onto them and activating does nothing. Correct shapes: render non-interactive rows as a non-focusable element, or keep the button and mark it aria-disabled with the reason. Related and worth doing in the same pass — T-754 covers the larger problem that the rows which DO name an entity are also inert, but for a different reason (the router cannot resolve zones). Together the two mean every row in the view is currently a dead click; fixing the styling and focusability without fixing T-754's router would make the view honest but still unhelpful, so sequence T-754 first. Diagnosis: editor_verify/wave115.md MINOR-6."]
+
+missing=0
+"""
+main_goal = "Fix mission-owned aggregated-settings rows: non-focusable or aria-disabled."
+context = [
+    "Wave-115 MINOR: mission-owned rows not click targets yet focusable buttons.",
+    "T-754 covers entity-owned dead clicks via zone router gap; sequence first.",
+    "Fixing focus alone honest but unhelpful until router widened.",
+]
+requirement = [
+    "Mission-owned rows non-focusable element or aria-disabled with reason.",
+    "Do not strip entity-owned affordance before T-754 router fix.",
+]
+current_state = [
+    "eden_settings 1623-1640: data-selectable false but focusable button elements.",
+    "Keyboard tab activates nothing; every row currently dead click combined with T-754.",
+]
+approach = [
+    "After T-754: non-interactive rows use div or aria-disabled button.",
+    "Sequence after T-754 zone router widening for entity-owned rows.",
+]
+verify = [
+    "Mission-owned rows not in tab order or aria-disabled with stated reason.",
+    "Entity-owned rows follow T-754 router outcome not false pointer styling.",
+]
+citations = [
+    "editor_verify/wave115 MINOR-6",
+    "T-754 aggregated settings router",
+    "wave-115 verifier",
+]
 shipped_at = "895d6c08"
 created_at = "2026-08-08T04:28:39Z"
 completed_at = "2026-08-08T04:38:48Z"
@@ -18,7 +57,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["MINOR from the wave-115 verifier. eden_settings.rs:1623-1640: rows whose owner is the mission document itself name no entity and are explicitly not click targets (data-selectable=false), but they still render as focusable <button> elements. A keyboard user tabs onto them and activating does nothing. Correct shapes: render non-interactive rows as a non-focusable element, or keep the button and mark it aria-disabled with the reason. Related and worth doing in the same pass — T-754 covers the larger problem that the rows which DO name an entity are also inert, but for a different reason (the router cannot resolve zones). Together the two mean every row in the view is currently a dead click; fixing the styling and focusability without fixing T-754's router would make the view honest but still unhelpful, so sequence T-754 first. Diagnosis: editor_verify/wave115.md MINOR-6."]
 owns = ["apps/website/frontend/src/eden_settings.rs"]
 
 [scope]

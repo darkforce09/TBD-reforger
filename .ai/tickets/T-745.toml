@@ -6,7 +6,56 @@ class = "docs"
 status = "shipped"
 order = 4621
 executor = "claude-code"
-notes = "filed by wave-113 adversarial verifier (editor factory)"
+notes = """
+filed by wave-113 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+NIT from the wave-113 verifier. editor_ops.rs:1855-1880: `did` is set true whenever the ops context and document exist, so an all-None call, or a call against a nonexistent id, still bumps doc_ver, dirties the mission and arms a persist. T-082 added the widened no-op guard to the _multi variant but not to the single-target one. UNREACHABLE from the modal today — every current caller passes exactly one Some — so this is latent, not live. One-line guard: mirror the _multi variant's 'only fire the tail when something actually changed' check. Worth doing because a false 'saved' is the defect class this program cares most about, and the multi path proves the shape. Diagnosis: editor_verify/wave113.md F-3."]
+owns = ["apps/website/frontend/src/editor_ops.rs"]
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["ops_undo
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["NIT from the wave-113 verifier. editor_ops.rs:1855-1880: `did` is set true whenever the ops context and document exist, so an all-None call, or a call against a nonexistent id, still bumps doc_ver, dirties the mission and arms a persist. T-082 added the widened no-op guard to the _multi variant but not to the single-target one. UNREACHABLE from the modal today — every current caller passes exactly one Some — so this is latent, not live. One-line guard: mirror the _multi variant's 'only fire the tail when something actually changed' check. Worth doing because a false 'saved' is the defect class this program cares most about, and the multi path proves the shape. Diagnosis: editor_verify/wave113.md F-3."]
+owns = ["apps/website/frontend/src/editor_ops.rs"]
+
+[scope]
+domain = "website"
+layer = "frontend"
+component = "mission_creator"
+surface = ["ops_undo"]
+
+missing=0"""
+main_goal = "Mirror multi-target no-op guard on single-target attrs_update_slot tail."
+context = [
+    "Wave-113 verifier NIT editor_verify wave113 F-3.",
+    "editor_ops 1855-1880 did true whenever context and document exist.",
+]
+requirement = [
+    "Single-target attrs_update_slot fires history tail only when something changed.",
+    "All-None call or nonexistent id must not bump doc_ver dirty mission persist.",
+]
+current_state = [
+    "did set whenever ops context and document exist regardless of actual change.",
+    "T-082 added widened no-op guard to _multi variant not single-target.",
+    "Unreachable from modal today every caller passes exactly one Some latent.",
+]
+approach = ["One-line guard mirroring _multi only fire tail when something actually changed."]
+verify = [
+    "All-None single-target call does not bump doc_ver or arm persist.",
+    "Nonexistent id call does not fire history tail or false saved state.",
+]
+citations = [
+    "editor_verify wave113 F-3",
+    "editor_ops.rs 1855",
+    "T-082 _multi guard",
+]
 shipped_at = "e0a7b442"
 created_at = "2026-08-08T06:56:51Z"
 completed_at = "2026-08-08T07:20:41Z"
@@ -18,7 +67,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = ["NIT from the wave-113 verifier. editor_ops.rs:1855-1880: `did` is set true whenever the ops context and document exist, so an all-None call, or a call against a nonexistent id, still bumps doc_ver, dirties the mission and arms a persist. T-082 added the widened no-op guard to the _multi variant but not to the single-target one. UNREACHABLE from the modal today — every current caller passes exactly one Some — so this is latent, not live. One-line guard: mirror the _multi variant's 'only fire the tail when something actually changed' check. Worth doing because a false 'saved' is the defect class this program cares most about, and the multi path proves the shape. Diagnosis: editor_verify/wave113.md F-3."]
 owns = ["apps/website/frontend/src/editor_ops.rs"]
 
 [scope]

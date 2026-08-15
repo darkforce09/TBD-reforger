@@ -1,12 +1,51 @@
 id = "T-761"
 kind = "work"
-title = "Compile findings survive a mission switch — mission B's panel shows mission A's build report"
+title = "Compile findings persist across mission switch — clear on hydrate"
 summary = "Compile findings survive a mission switch — mission B's panel shows mission A's build report"
 class = "bug"
 status = "shipped"
 order = 4637
 executor = "claude-code"
-notes = "filed by wave-116 adversarial verifier (editor factory)"
+notes = """
+filed by wave-116 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+MINOR from the wave-116 verifier, and a real user-visible bug rather than a latent one. validation_panel.rs:524: the `COMPILE_FINDINGS` thread_local is written only by `publish_compile_findings`, whose sole production caller is `export_compiled_now`. NOTHING resets it on editor mount or hydrate. `/missions/:id/edit` is a client-side leptos_router route (app_routes.rs:90), so navigating between missions does NOT reload the wasm instance. REPRO: open mission A, Export Compiled, navigate to mission B — B's validation panel shows A's build report, and its findings carry subject_ids that resolve to nothing in B, so clicking them selects nothing. This is a lifecycle bug, not a green-ness bug: the verifier separately confirmed that a clean compile correctly CLEARS the list (whole-list replace, pinned), so the mechanism is right and only the mount/hydrate reset is missing. FIX: one clear on editor hydrate, plus a pin that fails if a second mission's panel can inherit a previous mission's compile findings. Diagnosis: editor_verify/wave116.md finding 3.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["MINOR from the wave-116 verifier, and a real user-visible bug rather than a latent one. validation_panel.rs:524: the `COMPILE_FINDINGS` thread_local is written only by `publish_compile_findings`, whose sole production caller is `export_compiled_now`. NOTHING resets it on editor mount or hydrate. `/missions/:id/edit` is a client-side leptos_router route (app_routes.rs:90), so navigating between missions does NOT reload the wasm instance. REPRO: open mission A, Export Compiled, navigate to mission B — B's validation panel shows A's build report, and its findings carry subject_ids that resolve to nothing in B, so clicking them selects nothing. This is a lifecycle bug, not a green-ness bug: the verifier separately confirmed that a clean compile correctly CLEARS the list (whole-list replace, pinned), so the mechanism is right and only the mount/hydrate reset is missing. FIX: one clear on editor hydrate, plus a pin that fails if a second mission's panel can inherit a previous mission's compile findings. Diagnosis: editor_verify/wave116.md finding 3."]
+
+missing=0
+"""
+main_goal = "Clear COMPILE_FINDINGS thread_local on editor hydrate mount."
+context = [
+    "Wave-116 MINOR real user-visible bug not latent green-ness defect.",
+    "/missions/:id/edit client-side route; wasm instance survives mission navigation.",
+    "Clean compile correctly clears list; mechanism right only mount hydrate reset missing.",
+]
+requirement = [
+    "Clear COMPILE_FINDINGS thread_local on editor mount or hydrate.",
+    "Pin fails if second mission panel inherits prior mission compile findings.",
+]
+current_state = [
+    "validation_panel 524 COMPILE_FINDINGS written only by publish_compile_findings export_compiled_now.",
+    "Repro: export A navigate B shows A build report; subject_ids resolve nothing in B.",
+]
+approach = [
+    "One clear on editor hydrate in mission_editor mount path.",
+    "Add pin blocking cross-mission compile findings inheritance.",
+]
+verify = [
+    "Navigate mission A to B after export; B panel empty not A report.",
+    "Pin RED if second mission inherits previous COMPILE_FINDINGS without export.",
+]
+citations = [
+    "editor_verify/wave116 finding 3",
+    "validation_panel COMPILE_FINDINGS",
+    "export_compiled_now caller",
+]
 shipped_at = "d83b97c3"
 created_at = "2026-08-08T06:59:36Z"
 completed_at = "2026-08-08T07:20:41Z"
@@ -18,7 +57,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = ["MINOR from the wave-116 verifier, and a real user-visible bug rather than a latent one. validation_panel.rs:524: the `COMPILE_FINDINGS` thread_local is written only by `publish_compile_findings`, whose sole production caller is `export_compiled_now`. NOTHING resets it on editor mount or hydrate. `/missions/:id/edit` is a client-side leptos_router route (app_routes.rs:90), so navigating between missions does NOT reload the wasm instance. REPRO: open mission A, Export Compiled, navigate to mission B — B's validation panel shows A's build report, and its findings carry subject_ids that resolve to nothing in B, so clicking them selects nothing. This is a lifecycle bug, not a green-ness bug: the verifier separately confirmed that a clean compile correctly CLEARS the list (whole-list replace, pinned), so the mechanism is right and only the mount/hydrate reset is missing. FIX: one clear on editor hydrate, plus a pin that fails if a second mission's panel can inherit a previous mission's compile findings. Diagnosis: editor_verify/wave116.md finding 3."]
 owns = [
     "apps/website/frontend/src/validation_panel.rs",
     "apps/website/frontend/src/mission_editor.rs",

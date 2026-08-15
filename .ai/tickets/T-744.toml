@@ -1,12 +1,51 @@
 id = "T-744"
 kind = "work"
-title = "Hiding a slot silently closes its open Attributes modal, indistinguishable from undo-away"
+title = "Hidden slot closes Attributes modal like undo-away"
 summary = "Hiding a slot silently closes its open Attributes modal, indistinguishable from undo-away"
 class = "bug"
 status = "shipped"
 order = 4620
 executor = "claude-code"
-notes = "filed by wave-113 adversarial verifier (editor factory)"
+notes = """
+filed by wave-113 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+MINOR from the wave-113 verifier; found and reported by the T-082 slice agent, which did not cause it. MissionDocCore::materialize() (store.rs:596-599) drops T-665 layer-hidden and T-701 editorHidden rows. read_attrs locates the slot through materialize(), so for a hidden slot it returns None, and the modal's None arm calls close_attributes() on itself — the SAME path written for 'the slot was undone away'. REPRO: open Attributes on a slot, then hide it (H, or hide its layer in the Outliner). The modal vanishes on a still-existing entity and the user cannot tell which of the two things happened. Discards modal state (active tab, per-field opt-in latches, focused draft); no data loss, since text commits land per keystroke. FIX SHAPE: have read_attrs consult the RAW rows for existence — T-082 already parses them for assetId/description, so the accessor exists; the SoA-sourced fields would still come from materialize(). The row lookup is load-bearing for every SoA field, which is why T-082 correctly did not re-point it inside a scoped ticket. Diagnosis: editor_verify/wave113.md F-2.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["MINOR from the wave-113 verifier; found and reported by the T-082 slice agent, which did not cause it. MissionDocCore::materialize() (store.rs:596-599) drops T-665 layer-hidden and T-701 editorHidden rows. read_attrs locates the slot through materialize(), so for a hidden slot it returns None, and the modal's None arm calls close_attributes() on itself — the SAME path written for 'the slot was undone away'. REPRO: open Attributes on a slot, then hide it (H, or hide its layer in the Outliner). The modal vanishes on a still-existing entity and the user cannot tell which of the two things happened. Discards modal state (active tab, per-field opt-in latches, focused draft); no data loss, since text commits land per keystroke. FIX SHAPE: have read_attrs consult the RAW rows for existence — T-082 already parses them for assetId/description, so the accessor exists; the SoA-sourced fields would still come from materialize(). The row lookup is load-bearing for every SoA field, which is why T-082 correctly did not re-point it inside a scoped ticket. Diagnosis: editor_verify/wave113.md F-2."]
+
+missing=0"""
+main_goal = "Keep Attributes modal open when slot hidden via layer or H key."
+context = [
+    "Wave-113 verifier MINOR; reported by T-082 slice agent not caused by it.",
+    "materialize drops T-665 layer-hidden and T-701 editorHidden rows store.rs 596.",
+]
+requirement = [
+    "Attributes modal must not close when slot still exists but hidden.",
+    "User must distinguish hide from undo-away; preserve modal tab and draft.",
+]
+current_state = [
+    "read_attrs locates slot through materialize; hidden slot returns None.",
+    "Modal None arm calls close_attributes same path as slot undone away.",
+    "Repro: open Attributes hide slot H or Outliner layer; modal vanishes.",
+]
+approach = [
+    "read_attrs consult RAW rows for existence; SoA fields still from materialize.",
+    "T-082 already parses raw rows for assetId description accessor exists.",
+]
+verify = [
+    "Open Attributes hide slot modal stays open for still-existing entity.",
+    "Undo-away path still closes modal; hide and undo remain distinguishable.",
+]
+citations = [
+    "editor_verify wave113 F-2",
+    "store.rs materialize 596",
+    "T-665 layer-hidden",
+    "T-701 editorHidden",
+]
 shipped_at = "e72047db"
 created_at = "2026-08-08T06:15:10Z"
 completed_at = "2026-08-08T06:24:12Z"
@@ -18,7 +57,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["MINOR from the wave-113 verifier; found and reported by the T-082 slice agent, which did not cause it. MissionDocCore::materialize() (store.rs:596-599) drops T-665 layer-hidden and T-701 editorHidden rows. read_attrs locates the slot through materialize(), so for a hidden slot it returns None, and the modal's None arm calls close_attributes() on itself — the SAME path written for 'the slot was undone away'. REPRO: open Attributes on a slot, then hide it (H, or hide its layer in the Outliner). The modal vanishes on a still-existing entity and the user cannot tell which of the two things happened. Discards modal state (active tab, per-field opt-in latches, focused draft); no data loss, since text commits land per keystroke. FIX SHAPE: have read_attrs consult the RAW rows for existence — T-082 already parses them for assetId/description, so the accessor exists; the SoA-sourced fields would still come from materialize(). The row lookup is load-bearing for every SoA field, which is why T-082 correctly did not re-point it inside a scoped ticket. Diagnosis: editor_verify/wave113.md F-2."]
 owns = [
     "apps/website/frontend/src/editor_ops.rs",
     "apps/website/frontend/src/attributes.rs",

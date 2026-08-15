@@ -6,7 +6,46 @@ class = "bug"
 status = "shipped"
 order = 4633
 executor = "claude-code"
-notes = "filed by wave-115 adversarial verifier (editor factory)"
+notes = """
+filed by wave-115 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+MINOR from the wave-115 verifier. mission.schema.json (91,438 bytes) is `include_str!`d from TWO places: eden_zones.rs:628 (private const MISSION_SCHEMA, pre-existing) and eden_settings.rs:1063 (T-688, this wave). Both name the SAME path, so drift is impossible and there is genuinely one source of truth — the slice's reasoning for the second embed was correct, and it could not reuse the first because that const is private to a file outside its owns. But an empirical byte count of the DEV wasm artifact finds the full 91KB present exactly twice. Release behaviour after wasm-opt is unverified and may well dedupe. Fix: promote one const to pub(crate) in a shared module and have both read it, which costs nothing and removes the question. ALSO: eden_zones.rs:626 carries a stale comment describing the embed as '~40 KB' against an actual 91 KB — a number that has drifted by more than 2x and should be derived or dropped rather than restated. Diagnosis: editor_verify/wave115.md MINOR-5.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["MINOR from the wave-115 verifier. mission.schema.json (91,438 bytes) is `include_str!`d from TWO places: eden_zones.rs:628 (private const MISSION_SCHEMA, pre-existing) and eden_settings.rs:1063 (T-688, this wave). Both name the SAME path, so drift is impossible and there is genuinely one source of truth — the slice's reasoning for the second embed was correct, and it could not reuse the first because that const is private to a file outside its owns. But an empirical byte count of the DEV wasm artifact finds the full 91KB present exactly twice. Release behaviour after wasm-opt is unverified and may well dedupe. Fix: promote one const to pub(crate) in a shared module and have both read it, which costs nothing and removes the question. ALSO: eden_zones.rs:626 carries a stale comment describing the embed as '~40 KB' against an actual 91 KB — a number that has drifted by more than 2x and should be derived or dropped rather than restated. Diagnosis: editor_verify/wave115.md MINOR-5."]
+
+missing=0
+"""
+main_goal = "Deduplicate mission.schema.json wasm embed; fix stale size comment."
+context = [
+    "Wave-115 MINOR: mission.schema.json embedded twice in wasm though one path.",
+    "Second embed justified; first const private outside slice owns.",
+    "DEV wasm counts full 91KB twice; release wasm-opt dedupe unverified.",
+]
+requirement = [
+    "Promote one shared pub(crate) const; both consumers read it.",
+    "Fix or remove stale ~40 KB comment at eden_zones 626.",
+]
+current_state = [
+    "include_str at eden_zones 628 MISSION_SCHEMA and eden_settings 1063 T-688.",
+    "Same path so no drift; empirical DEV artifact duplicates 91438 bytes.",
+]
+approach = [
+    "Shared module pub(crate) MISSION_SCHEMA const both files import.",
+    "Derive or drop eden_zones stale embed size comment.",
+]
+verify = [
+    "DEV wasm byte count shows single schema embed not duplicate 91KB.",
+    "eden_zones comment matches actual size or removed.",
+]
+citations = [
+    "editor_verify/wave115 MINOR-5",
+    "T-688 eden_settings embed",
+    "wave-115 verifier",
+]
 shipped_at = "42300a78"
 created_at = "2026-08-08T06:13:51Z"
 completed_at = "2026-08-08T06:24:12Z"
@@ -18,7 +57,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = ["MINOR from the wave-115 verifier. mission.schema.json (91,438 bytes) is `include_str!`d from TWO places: eden_zones.rs:628 (private const MISSION_SCHEMA, pre-existing) and eden_settings.rs:1063 (T-688, this wave). Both name the SAME path, so drift is impossible and there is genuinely one source of truth — the slice's reasoning for the second embed was correct, and it could not reuse the first because that const is private to a file outside its owns. But an empirical byte count of the DEV wasm artifact finds the full 91KB present exactly twice. Release behaviour after wasm-opt is unverified and may well dedupe. Fix: promote one const to pub(crate) in a shared module and have both read it, which costs nothing and removes the question. ALSO: eden_zones.rs:626 carries a stale comment describing the embed as '~40 KB' against an actual 91 KB — a number that has drifted by more than 2x and should be derived or dropped rather than restated. Diagnosis: editor_verify/wave115.md MINOR-5."]
 owns = [
     "apps/website/frontend/src/eden_zones.rs",
     "apps/website/frontend/src/eden_settings.rs",

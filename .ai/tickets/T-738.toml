@@ -1,12 +1,49 @@
 id = "T-738"
 kind = "work"
-title = "Help census is blind to ev.key() listeners — Escape is bound in at least three places it cannot see"
+title = "Help census misses ev.key Escape listeners"
 summary = "Help census is blind to ev.key() listeners — Escape is bound in at least three places it cannot see"
 class = "feature"
 status = "shipped"
 order = 4614
 executor = "claude-code"
-notes = "filed by wave-112 adversarial verifier (editor factory)"
+notes = '''
+filed by wave-112 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+MINOR from the wave-112 verifier. eden_help.rs:303-342 bound_codes()/all_bound() scrapes only the two `match ev.code().as_str()` blocks (mission_editor + mission_history). The editor already binds Escape in at least three listeners OUTSIDE them, all via ev.key(): mission_editor.rs:1200-1201 (asset picker), attributes.rs:167-171 (modal), and eden_top_strip.rs:680-696 (menus / Save / the Controls Hint itself — T-692's OWN close path). All are invisible to the coverage pin, so a future listener added anywhere but those two match blocks ships undocumented with both direction-pins green. Live consequence today: the Escape help row documents only measurement dismissal and omits the hint, the menus, the Save dialog, the modal and the picker — while the hint's own close button advertises Esc. The arm-extraction logic itself was attacked and held (or-patterns, guards, multi-line arms, body literals all handled; the >=14 / no-'(' honesty floor is real), so the defect is the SCOPE of the scrape, not its parsing. Note for T-703 (keybinding collision test, wave 119): consume this extractor rather than writing a third copy, and widen it to ev.key() listeners as part of that work. Diagnosis: editor_verify/wave112.md MINOR-4.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["""MINOR from the wave-112 verifier. eden_help.rs:303-342 bound_codes()/all_bound() scrapes only the two `match ev.code().as_str()` blocks (mission_editor + mission_history). The editor already binds Escape in at least three listeners OUTSIDE them, all via ev.key(): mission_editor.rs:1200-1201 (asset picker), attributes.rs:167-171 (modal), and eden_top_strip.rs:680-696 (menus / Save / the Controls Hint itself — T-692's OWN close path). All are invisible to the coverage pin, so a future listener added anywhere but those two match blocks ships undocumented with both direction-pins green. Live consequence today: the Escape help row documents only measurement dismissal and omits the hint, the menus, the Save dialog, the modal and the picker — while the hint's own close button advertises Esc. The arm-extraction logic itself was attacked and held (or-patterns, guards, multi-line arms, body literals all handled; the >=14 / no-'(' honesty floor is real), so the defect is the SCOPE of the scrape, not its parsing. Note for T-703 (keybinding collision test, wave 119): consume this extractor rather than writing a third copy, and widen it to ev.key() listeners as part of that work. Diagnosis: editor_verify/wave112.md MINOR-4."""]
+
+missing=0
+'''
+main_goal = "Widen help census to ev.key listeners including Escape bindings."
+context = [
+    "bound_codes scrapes only two ev.code match blocks in mission_editor and history.",
+    "Escape bound via ev.key in picker modal menus Save hint; invisible to pin.",
+    "Arm extraction logic sound; defect is scrape scope not parsing.",
+]
+requirement = [
+    "Widen bound_codes all_bound to include ev.key listeners outside code match blocks.",
+    "Escape help row documents hint menus Save dialog modal and picker dismiss.",
+]
+current_state = [
+    "Three ev.key Escape listeners invisible; direction-pins green while undocumented.",
+    "Hint close button advertises Esc but help omits those bindings today.",
+]
+approach = ["Extend extractor to ev.key listeners; T-703 should consume not duplicate."]
+verify = [
+    "Escape help row lists measurement hint menus Save modal picker dismiss paths.",
+    "Future ev.key listener outside code blocks fails undocumented coverage pin.",
+]
+citations = [
+    "editor_verify/wave112 MINOR-4",
+    "T-703 keybinding collision test",
+    "T-692 Controls Hint close",
+    "eden_help bound_codes scrape",
+]
 shipped_at = "fe51e454"
 created_at = "2026-08-08T16:07:25Z"
 completed_at = "2026-08-08T16:12:50Z"
@@ -18,7 +55,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["MINOR from the wave-112 verifier. eden_help.rs:303-342 bound_codes()/all_bound() scrapes only the two `match ev.code().as_str()` blocks (mission_editor + mission_history). The editor already binds Escape in at least three listeners OUTSIDE them, all via ev.key(): mission_editor.rs:1200-1201 (asset picker), attributes.rs:167-171 (modal), and eden_top_strip.rs:680-696 (menus / Save / the Controls Hint itself — T-692's OWN close path). All are invisible to the coverage pin, so a future listener added anywhere but those two match blocks ships undocumented with both direction-pins green. Live consequence today: the Escape help row documents only measurement dismissal and omits the hint, the menus, the Save dialog, the modal and the picker — while the hint's own close button advertises Esc. The arm-extraction logic itself was attacked and held (or-patterns, guards, multi-line arms, body literals all handled; the >=14 / no-'(' honesty floor is real), so the defect is the SCOPE of the scrape, not its parsing. Note for T-703 (keybinding collision test, wave 119): consume this extractor rather than writing a third copy, and widen it to ev.key() listeners as part of that work. Diagnosis: editor_verify/wave112.md MINOR-4."]
 owns = ["apps/website/frontend/src/eden_help.rs"]
 
 [scope]

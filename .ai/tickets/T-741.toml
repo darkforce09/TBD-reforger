@@ -6,7 +6,41 @@ class = "feature"
 status = "shipped"
 order = 4617
 executor = "claude-code"
-notes = "filed by wave-112 adversarial verifier (editor factory)"
+notes = '''
+filed by wave-112 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+NIT from the wave-112 verifier. editor_ops.rs:1826-1842 attrs_multi_ids filters the selection down to slots, because vehicles carry none of the SoA columns the multi-edit writes. But the Attributes modal header reports 'N entities selected' from the FULL selection and the per-field copy says 'every selected entity'. Under a Ctrl+A select-all — which T-649 shipped this wave, and which deliberately includes vehicles — those two strings overclaim: the user is told N entities will be changed when only the slot subset will be. Either count the filtered set in the header or say explicitly that vehicles are excluded. Low severity but it is the same honesty class as T-716 (a control that says it does more than it does). Diagnosis: editor_verify/wave112.md NIT-4.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["""NIT from the wave-112 verifier. editor_ops.rs:1826-1842 attrs_multi_ids filters the selection down to slots, because vehicles carry none of the SoA columns the multi-edit writes. But the Attributes modal header reports 'N entities selected' from the FULL selection and the per-field copy says 'every selected entity'. Under a Ctrl+A select-all — which T-649 shipped this wave, and which deliberately includes vehicles — those two strings overclaim: the user is told N entities will be changed when only the slot subset will be. Either count the filtered set in the header or say explicitly that vehicles are excluded. Low severity but it is the same honesty class as T-716 (a control that says it does more than it does). Diagnosis: editor_verify/wave112.md NIT-4."""]
+
+missing=0
+'''
+main_goal = "Honest multi-edit copy when mixed slot and vehicle selection."
+context = [
+    "attrs_multi_ids filters to slots; vehicles lack SoA columns multi-edit writes.",
+    "Header and per-field copy report full selection count after T-649 Ctrl+A.",
+    "Same honesty class as T-716 control overclaiming scope.",
+]
+requirement = [
+    "Header counts filtered slot set or states vehicles excluded explicitly.",
+    "Per-field copy must not say every selected entity when only slots change.",
+]
+current_state = [
+    "Modal reports N entities selected from full selection including vehicles.",
+    "Ctrl+A select-all includes vehicles; only slot subset actually edited.",
+]
+approach = ["Count attrs_multi_ids filtered set in header or add vehicles-excluded note."]
+verify = ["Mixed slot+vehicle selection shows honest entity count or exclusion copy."]
+citations = [
+    "editor_verify/wave112 NIT-4",
+    "T-649 Ctrl+A select-all",
+    "T-716 honesty overclaim class",
+    "attrs_multi_ids slot filter",
+]
 shipped_at = "5f11ac4c"
 created_at = "2026-08-08T07:37:03Z"
 completed_at = "2026-08-08T07:54:40Z"
@@ -18,7 +52,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = ["NIT from the wave-112 verifier. editor_ops.rs:1826-1842 attrs_multi_ids filters the selection down to slots, because vehicles carry none of the SoA columns the multi-edit writes. But the Attributes modal header reports 'N entities selected' from the FULL selection and the per-field copy says 'every selected entity'. Under a Ctrl+A select-all — which T-649 shipped this wave, and which deliberately includes vehicles — those two strings overclaim: the user is told N entities will be changed when only the slot subset will be. Either count the filtered set in the header or say explicitly that vehicles are excluded. Low severity but it is the same honesty class as T-716 (a control that says it does more than it does). Diagnosis: editor_verify/wave112.md NIT-4."]
 owns = [
     "apps/website/frontend/src/editor_ops.rs",
     "apps/website/frontend/src/attributes.rs",

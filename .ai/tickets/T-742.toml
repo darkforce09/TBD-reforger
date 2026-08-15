@@ -1,12 +1,52 @@
 id = "T-742"
 kind = "work"
-title = "Concurrent slice worktrees share CARGO_TARGET_DIR and can execute each other's test binary"
+title = "Shared CARGO_TARGET_DIR lets slices run sibling tests"
 summary = "Concurrent slice worktrees share CARGO_TARGET_DIR and can execute each other's test binary"
 class = "bug"
 status = "shipped"
 order = 4618
 executor = "claude-code"
-notes = "filed by the T-649 slice agent, wave 112 (editor factory) — factory infrastructure, needs operator decision"
+notes = """
+filed by the T-649 slice agent, wave 112 (editor factory) — factory infrastructure, needs operator decision
+
+--- HEAD migration_legacy (verbatim) ---
+
+FACTORY INFRASTRUCTURE, found by the T-649 slice agent mid-wave-112 (not by the verifier). Running `cargo test -p website-frontend` from the T-649 worktree reported a FAILURE in arsenal::tests::t686::the_import_applies_in_one_commit at arsenal.rs:4733 — a test that does not exist in T-649's tree, whose arsenal.rs is 4409 lines. On re-run the reported line moved 4733 -> 4738, tracking T-686's live edits in the sibling worktree. Cause: every slice worktree exports the shared CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target and therefore resolves the same website_frontend-<hash> test binary, so one slice can execute another slice's compiled tests. IMPACT: this is the program's signature defect class aimed at the factory itself — a slice agent can read a red, or a GREEN, that belongs to code it never wrote. A verifier or orchestrator trusting a bare `cargo test` line quoted in a slice report can be misled. The per-slice gate (wave.sh gate --slice) builds into a private dir and is NOT affected, and the shared dir is load-bearing for disk (preflight notes 8 worktrees at ~4GB shared vs ~44GB each unshared), so the fix is not simply 'stop sharing'. Options: a per-worktree target dir for the test profile only, a cargo --target-dir override on ad-hoc test invocations, or making the slice brief forbid ad-hoc `cargo test` in favour of the private-dir gate. NEEDS OPERATOR DECISION.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["FACTORY INFRASTRUCTURE, found by the T-649 slice agent mid-wave-112 (not by the verifier). Running `cargo test -p website-frontend` from the T-649 worktree reported a FAILURE in arsenal::tests::t686::the_import_applies_in_one_commit at arsenal.rs:4733 — a test that does not exist in T-649's tree, whose arsenal.rs is 4409 lines. On re-run the reported line moved 4733 -> 4738, tracking T-686's live edits in the sibling worktree. Cause: every slice worktree exports the shared CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target and therefore resolves the same website_frontend-<hash> test binary, so one slice can execute another slice's compiled tests. IMPACT: this is the program's signature defect class aimed at the factory itself — a slice agent can read a red, or a GREEN, that belongs to code it never wrote. A verifier or orchestrator trusting a bare `cargo test` line quoted in a slice report can be misled. The per-slice gate (wave.sh gate --slice) builds into a private dir and is NOT affected, and the shared dir is load-bearing for disk (preflight notes 8 worktrees at ~4GB shared vs ~44GB each unshared), so the fix is not simply 'stop sharing'. Options: a per-worktree target dir for the test profile only, a cargo --target-dir override on ad-hoc test invocations, or making the slice brief forbid ad-hoc `cargo test` in favour of the private-dir gate. NEEDS OPERATOR DECISION."]
+
+missing=0"""
+main_goal = "Isolate slice test binaries so ad-hoc cargo test cannot run sibling code."
+context = [
+    "Every slice worktree exports shared CARGO_TARGET_DIR at tbd-target cache.",
+    "T-649 cargo test reported failure in test absent from its tree tracking T-686.",
+    "Per-slice gate builds private dir unaffected; shared dir load-bearing for disk.",
+]
+requirement = [
+    "Ad-hoc cargo test must not resolve sibling slice website_frontend test binary.",
+    "Preserve shared target disk savings; fix test profile or gate path only.",
+]
+current_state = [
+    "All worktrees share one CARGO_TARGET_DIR; same test binary hash across slices.",
+    "Verifier trusting bare cargo test line can read wrong slice result.",
+    "wave.sh gate --slice uses private dir and is not affected.",
+]
+approach = [
+    "Per-worktree test target dir, cargo --target-dir override, or brief forbids ad-hoc.",
+    "Operator decision among options; not simply stop sharing.",
+]
+verify = [
+    "Ad-hoc cargo test from one worktree does not run sibling compiled tests.",
+    "Per-slice gate --slice still builds into private dir unchanged.",
+]
+citations = [
+    "T-649 slice wave-112",
+    "editor factory infrastructure",
+    "wave.sh gate --slice",
+    "preflight 8 worktrees 4GB",
+]
 shipped_at = "caa9531b"
 created_at = "2026-08-08T14:01:54Z"
 completed_at = "2026-08-08T14:23:21Z"
@@ -18,7 +58,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = ["FACTORY INFRASTRUCTURE, found by the T-649 slice agent mid-wave-112 (not by the verifier). Running `cargo test -p website-frontend` from the T-649 worktree reported a FAILURE in arsenal::tests::t686::the_import_applies_in_one_commit at arsenal.rs:4733 — a test that does not exist in T-649's tree, whose arsenal.rs is 4409 lines. On re-run the reported line moved 4733 -> 4738, tracking T-686's live edits in the sibling worktree. Cause: every slice worktree exports the shared CARGO_TARGET_DIR=/home/Samuel/.cache/tbd-target and therefore resolves the same website_frontend-<hash> test binary, so one slice can execute another slice's compiled tests. IMPACT: this is the program's signature defect class aimed at the factory itself — a slice agent can read a red, or a GREEN, that belongs to code it never wrote. A verifier or orchestrator trusting a bare `cargo test` line quoted in a slice report can be misled. The per-slice gate (wave.sh gate --slice) builds into a private dir and is NOT affected, and the shared dir is load-bearing for disk (preflight notes 8 worktrees at ~4GB shared vs ~44GB each unshared), so the fix is not simply 'stop sharing'. Options: a per-worktree target dir for the test profile only, a cargo --target-dir override on ad-hoc test invocations, or making the slice brief forbid ad-hoc `cargo test` in favour of the private-dir gate. NEEDS OPERATOR DECISION."]
 owns = [
     "scripts/platform/wave.sh",
     "docs/platform/EDITOR_SLICE_BRIEF.md",

@@ -6,7 +6,43 @@ class = "bug"
 status = "shipped"
 order = 4627
 executor = "claude-code"
-notes = "filed by wave-114 adversarial verifier (editor factory)"
+notes = """
+filed by wave-114 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+Four NITs from the wave-114 verifier, grouped because each is a few lines. (1) ui.rs Select: a disabled select dims but its sibling chevron does not (no `peer-disabled` variant), so a disabled control is half-lit. No caller passes `disabled` yet, so it is latent. (2) eden_dock_right.rs:745-751: T-695 deliberately kept `arm_favourite_place` textually distinct from `palette_rows` so T-215's source-inspection needle (`editor_ops::begin_place_vehicle(payload.clone())`) keeps constraining the palette path specifically — a genuinely good call — but that distinctness is enforced only by the favourites arm MOVING its payload rather than cloning. Nothing PINS it clone-free, so a future tidy-up could silently let the favourites path satisfy the palette's pin. Pin the distinctness. (3) store.rs:11639-11641: the comment undo test asserts the ROW is restored after a delete, but not that the LAYER FILING is restored. Same transaction and same undo scope make it near-certain, and the verifier confirmed the behaviour, but the assertion does not cover it. (4) compile.rs:37-38: the header says to keep the twin editor-payload key lists 'in lockstep', which is now actively misleading — `zones`, `compositions`, `triggers` and now `comments` diverge DELIBERATELY and permanently. The reason is documented on the store.rs side only; the compile.rs header should say the lists are intentionally different and point at that note, or someone will 'fix' the divergence and either drop every comment on save or compile annotations into missions. Diagnosis: editor_verify/wave114.md NIT-1..4.
+
+missing=0
+"""
+main_goal = "Close four wave-114 NIT honesty and pin-strength gaps."
+context = [
+    "Wave-114 verifier grouped four NITs each a few lines.",
+    "Latent Select chevron dim; favourites clone-free distinctness unpinned.",
+    "Comment undo test omits layer filing; compile.rs lockstep header misleading.",
+]
+requirement = [
+    "ui.rs Select chevron peer-disabled when select disabled.",
+    "Pin arm_favourite_place clone-free distinct from palette_rows path.",
+    "store.rs undo test assert layer filing restored after delete.",
+    "compile.rs header document intentional key-list divergence from store.rs.",
+]
+current_state = [
+    "Disabled select dims; sibling chevron half-lit no peer-disabled.",
+    "T-695 distinctness by moving payload not pinned against tidy-up.",
+    "compile.rs lockstep prose risks dropping comments or compiling annotations.",
+]
+approach = [
+    "Each NIT few lines; T-215 needle stays palette-specific.",
+    "Point compile.rs header at store.rs divergence documentation.",
+]
+verify = ["verifier wave114.md NIT-1 through NIT-4 addressed."]
+citations = [
+    "ui.rs Select chevron",
+    "eden_dock_right.rs:745 clone",
+    "store.rs:11639 undo test",
+    "compile.rs:37 lockstep",
+]
 shipped_at = "c2dca4f4"
 created_at = "2026-08-08T06:14:39Z"
 completed_at = "2026-08-08T06:24:12Z"
@@ -18,7 +54,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = ["Four NITs from the wave-114 verifier, grouped because each is a few lines. (1) ui.rs Select: a disabled select dims but its sibling chevron does not (no `peer-disabled` variant), so a disabled control is half-lit. No caller passes `disabled` yet, so it is latent. (2) eden_dock_right.rs:745-751: T-695 deliberately kept `arm_favourite_place` textually distinct from `palette_rows` so T-215's source-inspection needle (`editor_ops::begin_place_vehicle(payload.clone())`) keeps constraining the palette path specifically — a genuinely good call — but that distinctness is enforced only by the favourites arm MOVING its payload rather than cloning. Nothing PINS it clone-free, so a future tidy-up could silently let the favourites path satisfy the palette's pin. Pin the distinctness. (3) store.rs:11639-11641: the comment undo test asserts the ROW is restored after a delete, but not that the LAYER FILING is restored. Same transaction and same undo scope make it near-certain, and the verifier confirmed the behaviour, but the assertion does not cover it. (4) compile.rs:37-38: the header says to keep the twin editor-payload key lists 'in lockstep', which is now actively misleading — `zones`, `compositions`, `triggers` and now `comments` diverge DELIBERATELY and permanently. The reason is documented on the store.rs side only; the compile.rs header should say the lists are intentionally different and point at that note, or someone will 'fix' the divergence and either drop every comment on save or compile annotations into missions. Diagnosis: editor_verify/wave114.md NIT-1..4."]
 owns = [
     "apps/website/frontend/src/ui.rs",
     "apps/website/frontend/src/eden_dock_right.rs",
