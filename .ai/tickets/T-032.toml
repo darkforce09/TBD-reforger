@@ -17,6 +17,8 @@ approach = [
     "Add layout/tree/TreeView.tsx and refactor OutlinerPanel and AssetBrowser to tree views.",
     "Introduce AttributesModal plus placedEntitiesMock and assetCatalogMock placeholders.",
 ]
+verify = ["6f6fba5c added recursive TreeView, AttributesModal, and mock catalog/entity placeholders."]
+acceptance = ["Recursive TreeView shipped on Outliner and Asset Browser; AttributesModal opened on double-click with mock placedEntities and assetCatalog data."]
 citations = [
     "Source: commit 6f6fba5c.",
     "Source: docs/platform/SHIPPED_HISTORY.md §T-032.",

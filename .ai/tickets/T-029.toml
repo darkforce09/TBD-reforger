@@ -17,6 +17,8 @@ approach = [
     "Add features/tactical-map/ with TacticalMap, projection, terrains, useBaseMapLayer, and useOrthographicView.",
     "Wire MissionCreatorPage and the code-split fullBleed /missions/:id/edit route around the new viewport.",
 ]
+verify = ["7ab839bc added TacticalMap OrthographicView, vector grid base map, and lazy fullBleed /missions/:id/edit route."]
+acceptance = ["TacticalMap rendered DeckGL OrthographicView with clamped pan/zoom, per-terrain bounds, vector grid, and FpsCounter on /missions/:id/edit."]
 citations = [
     "Source: commit 7ab839bc.",
     "Source: docs/platform/SHIPPED_HISTORY.md §T-029.",

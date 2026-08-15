@@ -11,6 +11,8 @@ context = ["Phase 7b; click-to-teleport remained."]
 requirement = ["Drag icons; marquee select; group move/delete."]
 current_state = ["Single selection; click map teleported."]
 approach = ["useSelectTool; moveEntities transact."]
+verify = ["8046218e added useSelectTool drag-move and marquee pickRect multi-select on TacticalMap."]
+acceptance = ["Map drag moved icons via moveEntities transact; marquee multi-select picked slots; group move and delete replaced click-to-teleport."]
 citations = [
     "Source: commit 8046218e.",
     "Source: SHIPPED_HISTORY.md T-036.",

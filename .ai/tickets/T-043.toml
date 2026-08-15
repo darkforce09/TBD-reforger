@@ -18,6 +18,8 @@ approach = [
     "Move platform docs; reorg MC corpus eden/.",
     "Refresh frontend surface specs.",
 ]
+verify = ["9a669da3 moved platform docs to docs/platform/ and reorged MC corpus into eden/ reference/."]
+acceptance = ["docs/website/README.md hub indexed FE/BE/archive; platform docs moved to docs/platform/; MC corpus reorganized into eden/ and reference/; FD vs T split retired in TAGS.md."]
 citations = [
     "Source: commit 9a669da3.",
     "Source: SHIPPED_HISTORY T-043.",

@@ -27,6 +27,7 @@ approach = [
     "Keep TopCommandStrip toolbar buttons unchanged.",
 ]
 verify = ["frontend build + lint clean"]
+acceptance = ["Cmd/Ctrl+Z undo and Cmd/Ctrl+Shift+Z or Ctrl+Y redo drove UndoController on host; instanceKey bump fixed StrictMode dev undo stack."]
 citations = [
     "git d2423f34 commit",
     "SHIPPED_HISTORY T-052",

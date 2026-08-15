@@ -25,6 +25,8 @@ approach = [
     "Document T-033–T-040 shell phases complete.",
     "Remove duplicate wiki_manifest.yaml page entry.",
 ]
+verify = ["fc959c00 updated agent_execution ROADMAP-first and deduped wiki_manifest.yaml entry."]
+acceptance = ["agent_execution.md pointed agents at ROADMAP.md and marked shell phases PRE-3.5–9 complete; wiki_manifest.yaml deduped Eden_Editor:_Scenario_Attributes to 28 pages."]
 citations = [
     "git fc959c00 commit",
     "SHIPPED_HISTORY T-047",

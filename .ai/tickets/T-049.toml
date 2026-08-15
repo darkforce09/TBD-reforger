@@ -28,6 +28,7 @@ approach = [
     "TacticalMap key={terrainId} remount for camera/grid resize.",
 ]
 verify = ["frontend build + lint clean"]
+acceptance = ["meta.terrain resized TacticalMap viewport via key remount; title, terrain, and environment hydrated from GET row; Transform tab X/Y/Z/rotation editable with bounds clamp."]
 citations = [
     "git 08fa4624 commit",
     "SHIPPED_HISTORY T-049",

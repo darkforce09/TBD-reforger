@@ -12,6 +12,7 @@ requirement = ["json_payload superset; manual Save Version POST."]
 current_state = ["Export disabled; IndexedDB autosave only."]
 approach = ["compile.ts superset; useMissionEditor hydrate."]
 verify = ["POST 201; dup semver 409; ORBAT round-trips."]
+acceptance = ["compile.ts exported json_payload superset with editor block; hydrateMissionDoc restored rows; manual Save Version POST and Export re-enabled on MissionCreatorPage."]
 citations = [
     "Source: commit c4167e3e.",
     "Source: SHIPPED_HISTORY.md T-038.",

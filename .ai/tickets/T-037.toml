@@ -11,6 +11,8 @@ context = ["Phase 7a; T-033 deferred tree ops."]
 requirement = ["Rename, reparent, refile, delete folder subtree."]
 current_state = ["Reparent DnD and inline rename deferred."]
 approach = ["ydoc layer ops; TreeView DnD wired."]
+verify = ["e1355d00 wired TreeView DnD rename reparent and destructive removeEditorLayer subtree delete."]
+acceptance = ["Outliner rename, reparent, moveSlotToLayer, and destructive folder subtree delete shipped via ydoc ops and TreeView DnD plus inline rename."]
 citations = [
     "Source: commit e1355d00.",
     "Source: SHIPPED_HISTORY.md T-037.",

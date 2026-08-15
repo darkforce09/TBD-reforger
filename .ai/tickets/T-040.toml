@@ -15,6 +15,8 @@ requirement = [
 ]
 current_state = ["Create wizard omitted max_players and used wrong weather enums."]
 approach = ["Patch missions.tsx create wizard POST payload and navigation."]
+verify = ["79f8daf3 fixed create wizard max_players weather enums and post-create edit navigation."]
+acceptance = ["/missions/create wizard sent max_players, used real weather enums, and navigated to /missions/:id/edit after POST."]
 citations = [
     "Source: commit 79f8daf3.",
     "Source: SHIPPED_HISTORY T-040.",

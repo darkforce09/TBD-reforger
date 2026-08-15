@@ -11,6 +11,8 @@ context = ["Phase 3.5 after T-033 Y.Doc wiring."]
 requirement = ["Chromeless route; docked L/R; always-on palette."]
 current_state = ["Platform nav and floating panels remained."]
 approach = ["AppLayout chromeless; overlayDocked shell."]
+verify = ["b28a70f6 chromeless AppLayout route with docked sidebars and always-on AssetPalette shipped."]
+acceptance = ["Chromeless /missions/:id/edit hid platform nav; docked left ORBAT plus Editor Layers and right AssetPalette flushed map edges behind overlayDocked shell."]
 citations = [
     "Source: commit b28a70f6.",
     "Source: SHIPPED_HISTORY.md T-035.",

@@ -14,6 +14,8 @@ requirement = [
 ]
 current_state = ["Docs still pointed at retired numbered MC paths and wrong depths."]
 approach = ["Link-integrity pass across MC and platform docs after reorg."]
+verify = ["3420eea0 link-integrity pass removed stale numbered MC refs and fixed relative depths."]
+acceptance = ["Stale numbered Mission Creator cross-refs were removed and broken relative doc link depths were fixed site-wide."]
 citations = [
     "Source: commit 3420eea0.",
     "Source: SHIPPED_HISTORY T-046.",

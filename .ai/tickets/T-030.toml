@@ -17,6 +17,8 @@ approach = [
     "Add tactical-map/state/ with ydoc, bindings, schema, selectors, undo, and useMapStore.",
     "Extend TacticalMap with IconLayer and useMissionDoc for mission persistence.",
 ]
+verify = ["dd9c871e wired Y.Doc observeDeep bindings, IconLayer entities, and useMissionDoc IndexedDB persistence."]
+acceptance = ["Y.Doc normalized store mirrored into Zustand via bindings; IconLayer rendered slots; useMissionDoc persisted meta and slot chunks."]
 citations = [
     "Source: commit dd9c871e.",
     "Source: docs/platform/SHIPPED_HISTORY.md §T-030.",

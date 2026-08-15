@@ -27,6 +27,7 @@ approach = [
     "MissionCreatorPage cursor state and BottomToolbelt display Z.",
 ]
 verify = ["frontend build + lint clean"]
+acceptance = ["Bottom toolbelt CUR mode showed cursor X/Y/Z with Z=0 on-map; off-map all three axes displayed dashes; SEL mode unchanged."]
 citations = [
     "git 6c2059f2 commit",
     "SHIPPED_HISTORY T-050",

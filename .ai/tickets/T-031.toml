@@ -17,6 +17,8 @@ approach = [
     "Add mission-creator/layout/ panels: TopCommandStrip, BottomToolbelt, LeftOutliner, RightInspector, MissionSettingsDialog.",
     "Keep TacticalMap full-bleed z-0; overlay uses pointer-events-none with pointer-events-auto frosted children.",
 ]
+verify = ["73161c5c shipped frosted overlay shell panels over full-bleed z-0 TacticalMap viewport."]
+acceptance = ["Full-bleed map sat under frosted TopCommandStrip, BottomToolbelt, Outliner, Inspector, AssetBrowser, and MissionSettingsDialog panels."]
 citations = [
     "Source: commit 73161c5c.",
     "Source: docs/platform/SHIPPED_HISTORY.md §T-031.",

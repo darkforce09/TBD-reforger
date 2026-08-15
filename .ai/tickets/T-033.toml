@@ -17,6 +17,8 @@ approach = [
     "Thread editorLayers through the state stack; buildTree from Y.Doc; delete placedEntitiesMock.",
     "Wire asset drag-and-drop on TacticalMap with cursor unproject and addSlot under activeLayerId.",
 ]
+verify = ["831d16f5 threaded editorLayers through Y.Doc; asset drag-drop called addSlot on TacticalMap."]
+acceptance = ["editorLayers entity map threaded through schema, ydoc, bindings, and useMapStore; live Outliner tree and asset drops created slots under activeLayerId."]
 citations = [
     "Source: commit 831d16f5.",
     "Source: docs/platform/SHIPPED_HISTORY.md §T-033.",

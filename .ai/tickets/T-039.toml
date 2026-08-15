@@ -14,6 +14,8 @@ requirement = [
 ]
 current_state = ["Save Version hid backend errors; invalid mission id had no banner."]
 approach = ["Patch useMissionEditor hook and MissionCreatorPage for error surfacing."]
+verify = ["2818e0f8 patched useMissionEditor and MissionCreatorPage Save Version error surfacing."]
+acceptance = ["Save Version surfaced backend response.data.error; MissionCreatorPage showed invalid-mission-id banner when mission id was bad."]
 citations = [
     "Source: commit 2818e0f8.",
     "Source: SHIPPED_HISTORY T-039.",

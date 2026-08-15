@@ -18,6 +18,8 @@ approach = [
     "Add domain ROADMAP.md files.",
     "Rename MC corpus; leave stubs at old paths.",
 ]
+verify = ["cc70ba8e added domain ROADMAP.md files and renamed MC docs with numbered-path stubs."]
+acceptance = ["Each domain gained ROADMAP.md; MC docs renamed to descriptive names; stubs remained at retired numbered paths."]
 citations = [
     "Source: commit cc70ba8e.",
     "Source: SHIPPED_HISTORY T-045.",

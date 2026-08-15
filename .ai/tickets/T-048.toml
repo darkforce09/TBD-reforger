@@ -27,6 +27,7 @@ approach = [
     "POST /missions unchanged; navigate to /missions/:id/edit.",
 ]
 verify = ["frontend build + lint clean"]
+acceptance = ["CreateMissionDialog on Mission Library replaced /missions/create wizard; New Mission header, empty-state CTA, and Cmd/Ctrl+N opened create; dossier Sheet closed first."]
 citations = [
     "git ff0700be commit",
     "SHIPPED_HISTORY T-048",
