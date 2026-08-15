@@ -15,7 +15,10 @@ current_state = [
     "Result: 12 files / 32 hunks are unformatted on main.",
 ]
 approach = ["Format the 12 drifted files and add cargo fmt --all --check to the workspace gate."]
+verify = ["make rust-fmt; cargo fmt --all --check."]
+acceptance = ["Twelve drifted files formatted; workspace rust-fmt gated cargo fmt --all --check."]
 citations = [
+    "commit bb68ee63 fmt all gate",
     "Cargo.toml:8-16",
     "Makefile:80",
     "ci.yml:55",

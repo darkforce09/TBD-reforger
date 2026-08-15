@@ -24,7 +24,11 @@ current_state = [
     "BUT `seeds/mock_data.sql:25` omits `thumbnail_url` from its INSERT column list,",
     "so ANY freshly-seeded database reproduces it. That is why it looked unreachable and is not.",
 ]
+approach = ["Closed as duplicate of T-340; COALESCE dossier shipped there."]
+verify = ["Closed by T-340; enumerator prune in 01d5225f3."]
+acceptance = ["Closed as duplicate of T-340; Event Hub NULL survival shipped on T-340."]
 citations = [
+    "commit a01996010 closed as T-340",
     "T-194 seed golden",
     "T-325 nullable sweep",
     "handlers/events.rs:832",

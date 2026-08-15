@@ -8,11 +8,16 @@ order = 2312
 executor = "claude-code"
 main_goal = "mod-compile-selftest prints SELFTEST OK and exits 0 when the compile gate never ran at all."
 context = ["Found by T-209, and it is the sharpest instance of the pattern:"]
+requirement = ["mod-compile-selftest requires compile.sh exit 1; env-miss (exit 3) is FAIL not OK."]
 current_state = [
     "the one check whose entire purpose is proving the compile gate can FAIL will print SELFTEST OK and exit 0 when it never ran at all. Reproduced. T-209's new workflow",
     "deliberately avoids the target and calls the script directly, but the Makefile target is still there for anyone who trusts it.",
 ]
+approach = ["Makefile classifies exit codes; SELFTEST OK prints only after confirmed gate failure path."]
+verify = ["make mod-compile-selftest"]
+acceptance = ["mod-compile-selftest reported OK only when compile gate actually executed and failed."]
 citations = [
+    "commit 223e5604 selftest exit1",
     "T-209",
     "Makefile mod-compile-selftest target",
 ]

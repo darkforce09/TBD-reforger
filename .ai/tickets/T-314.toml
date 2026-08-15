@@ -13,6 +13,7 @@ This is findable, fully diagnosed, and reproducible from the notes above. Promot
 """
 main_goal = "doc.kit_substitutions exists on compiled document but no caller surfaces it — last mile is tracing::warn! in get_compiled_mission."
 context = ["T-200 attached a KitSubstitutionReport to the compiled document so the compiler stops silently swapping an authored character for the faction default (342 of 354 registry characters have no kit alias)."]
+requirement = ["Read kit_substitutions from flatten_mod_document_json_with_substitutions so silent kit swaps surface."]
 current_state = [
     "It rides the returned value with #[serde(skip)], so every existing caller already holds it and the /compiled wire contract is unchanged — pinned by a test asserting the top-level key",
     "set is exactly the schema's ten properties. But no caller surfaces it yet.",
@@ -20,7 +21,10 @@ current_state = [
     "details() returns the same shape as wire_safety::scan_editor_payload so a caller can render both identically.",
 ]
 approach = ["tracing::warn! in get_compiled_mission reading doc.kit_substitutions.details()."]
+verify = ["cargo test -p map-engine-core --features doc,mission substitutions_never_reach_the_compiled_wire."]
+acceptance = ["Kit substitution report surfaced at compile; flatten paths unified so swaps were no longer silent."]
 citations = [
+    "commit bce80aa1f flatten substitutions",
     "T-200 KitSubstitutionReport",
     "handlers/missions.rs get_compiled_mission",
     "wire_safety::scan_editor_payload",

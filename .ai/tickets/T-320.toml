@@ -22,6 +22,7 @@ context = [
     "assert the scoped key appears, assert a second account sees none of it) and could not run a line of it.",
     "That probe needs no new files — `gate render-check --assert-js` takes it — so fixing the harness immediately buys back a real verification that is currently owed.",
 ]
+requirement = ["Gate must own an isolated fontconfig cache so Chromium survives editor per-character font fallback."]
 current_state = [
     "SOLVED 2026-07-26. ROOT CAUSE WAS NOT A WEDGE — the browser process was DYING.",
     'Chromium takes SIGABRT ~300ms after navigating /missions/smoke/edit, at third_party/skia/src/ports/SkFontMgr_FontConfigInterface.cpp:163 "Not implemented" — the unconditional SK_ABORT in onMatchFamilyStyleCharacter (per-character font fallback).',
@@ -51,7 +52,9 @@ verify = [
     "Legacy record withheld-and-warned, adopt claimed 1, scoped keys present, restore/undoRestore round-tripped, second account saw none of it.",
     "Dist provenance checked: wasm md5 identical to the operator's live dist, so no stale cross-worktree artifact.",
 ]
+acceptance = ["Editor gate booted /missions/:id/edit; doctor OK and T-221 persistence probe passed thirty assertions."]
 citations = [
+    "commit d5f6267dd gate font cache",
     "T-221 A/B proof",
     "EDITOR_GATE_RUNBOOK.md",
     "doctor.rs:166-172 liveness",

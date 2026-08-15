@@ -38,7 +38,14 @@ current_state = [
     "not conclude it is fixed because a live login works here.",
     "Second half still open: handlers/oauth.rs:113,116 use `let Ok(..) = .. else` and DROP the exchange_code / fetch_user error, so a real Discord failure is indistinguishable from a config one.",
 ]
+approach = ["Aligned .env.example hosts; DEVELOPMENT login-flow errors with #error=oauth_host_mismatch."]
+verify = [
+    "cargo test -p website-api committed_env_example_uses_one_cookie_host",
+    "cargo test -p website-api development_refuses_to_start_the_flow_on_mismatched_hosts",
+]
+acceptance = ["Aligned .env.example; DEVELOPMENT login refused on host mismatch; callback errors logged."]
 citations = [
+    "commit 963bb5d1b oauth hosts",
     "T-207 OAuth runbook",
     "handlers/oauth.rs:113,116",
     ".env.example host mismatch",

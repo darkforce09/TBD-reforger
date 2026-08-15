@@ -24,7 +24,10 @@ approach = [
     "workshop_id→modId, name→name; version omitted when empty.",
     "TBD_MODPACK_JSON file or legacy single-mod env through same renderer.",
 ]
+verify = ["bash scripts/mod/deploy-staging.sh --render-only /tmp/server.config.json."]
+acceptance = ["game.mods[] rendered from modpack DTO; render separated from push with local validation."]
 citations = [
+    "commit da0a7c45 render push",
     "commit 9141c634 modpack DTO render",
     "get_current_modpack modpacks handler",
     "0012_modpack_mods_workshop columns",

@@ -15,7 +15,9 @@ current_state = [
 ]
 approach = ["Correct all three TBD_ResultsReporter.c sites to describe what the results POST actually does today."]
 verify = ["scripts/mod/verify-t296-results-reporter-identity-comments.sh"]
+acceptance = ["ResultsReporter comments matched shipped TBD_IdentityLink; rg guard blocked stale lies returning."]
 citations = [
+    "commit 454bbb1f3 ResultsReporter truth",
     "T-181.35",
     "TBD_ResultsReporter.c:23",
     "TBD_ResultsReporter.c:422-423",

@@ -16,7 +16,13 @@ current_state = [
     "The data loss is stopped either way; the guidance is not shown.",
 ]
 approach = ["Thread the error through to the toast."]
+verify = [
+    "cargo test -p map-engine-core apply_faction",
+    "wasm32 frontend check and clippy clean.",
+]
+acceptance = ["Apply Template refusal text reached the toast; machine-minted squads folded instead of refusing."]
 citations = [
+    "commit 82f9bbb9d Apply toast",
     "T-217 apply_faction",
     "editor_ops.rs:1424",
     "orbat_manager.rs:276",

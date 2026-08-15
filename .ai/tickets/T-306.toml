@@ -97,7 +97,9 @@ verify = [
     "so this was the DTO and not a fetch failure.",
     "ZERO other ServerStatusDto fields mismatched — all ten swept against models/telemetry.rs AND the server_statuses columns.",
 ]
+acceptance = ["server_fps typed f64; SSE and Server Intel decoded 58.7 frames; six Value goldens tightened."]
 citations = [
+    "commit b19a46349 server_fps f64",
     "T-194 fixture",
     "T-232 frontend",
     "models/telemetry.rs:102",

@@ -16,7 +16,15 @@ current_state = [
     "  services/discord.rs:69 — DiscordUser.username defaulted; a malformed profile response blanks users.username / discord_handle.",
     "This is the door T-185 closed one field over. Self-heals on next login, so lowest priority of the three, but it is the same class.",
 ]
+approach = ["Required wiki icon/nav_order and me arma_character; Discord username stays required without serde default."]
+verify = [
+    "cargo test -p website-api a_200_profile_without_a_username_fails_to_decode",
+    "cargo test -p website-api a_200_profile_with_a_null_username_fails_to_decode",
+    "cargo test -p website-api a_200_profile_with_an_empty_username_decodes",
+]
+acceptance = ["PATCH omitted fields stopped reshuffling wiki nav or blanking stored character and Discord usernames."]
 citations = [
+    "commit d894ff8b0 guarded PATCH",
     "T-218 sweep",
     "handlers/wiki.rs:66,70",
     "handlers/me.rs:149",

@@ -15,8 +15,11 @@ current_state = [
     "the extractor is also lenient) therefore deletes every armory row for the mission and inserts nothing — silent, total, unrecoverable data loss on a 200 OK.",
     "Highest severity of the 10 instances the sweep turned up.",
 ]
+approach = ["Dropped #[serde(default)] on SetArmoryInput.items; DELETE-before-insert returns 400 when items missing."]
 verify = ["Verify by seeding rows, POSTing `{}`, and asserting the rows survive."]
+acceptance = ["Empty PUT /missions/:id/armory body returned 400; seeded armory rows survived."]
 citations = [
+    "commit faef04088 armory guard",
     "T-218 serde default sweep",
     "T-185 same pattern",
     "handlers/missions.rs:683",

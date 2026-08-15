@@ -25,7 +25,10 @@ approach = [
     "If a placement instead appended to the side's current squad, or to an explicit active squad, the fold in orbat_apply_faction would be near-dead code and the ORBAT tree would stop",
     "growing a squad per click.",
 ]
+verify = ["cargo test -p map-engine-core --features doc two_places_one_squad_same_side."]
+acceptance = ["Map placements joined the side bottom squad instead of minting a fresh squad per click."]
 citations = [
+    "commit f8783e8c8 bottom squad",
     "T-308 Apply Template fix",
     "T-217 squad guard",
     "orbat_apply_faction fold",

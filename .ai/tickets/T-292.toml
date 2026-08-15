@@ -17,7 +17,12 @@ requirement = [
     "Pin rejection with negative golden net-range-any.json.",
     "Update flatten emit and mod radio service, plan, tuner readers.",
 ]
+current_state = ["net.range short and any both mapped to zero; schema advertised three values runtime ignored."]
+approach = ["Narrow schema to short|long; map both Enfusion radio classes; reject any via negative golden."]
+verify = ["cargo xtask schema validate."]
+acceptance = ["net.range honoured as short|long only; negative golden rejected any on wire."]
 citations = [
+    "commit 04478647 short long",
     "commit 04478647 honour short|long",
     "Enfusion two radio gadget classes",
     "net-range-any negative golden",

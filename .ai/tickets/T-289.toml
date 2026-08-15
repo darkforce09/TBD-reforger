@@ -37,7 +37,11 @@ current_state = [
     "the mod POSTs to /api/v1/ingest/* and the API's only outbound client is Discord. It closed the lie",
     "(503 RCON_NO_TRANSPORT naming this ticket) and left the transport to you.",
 ]
+approach = ["Unix-socket agent in deploy-staging.sh; --render-agent and --agent-selftest drive start/stop/status without SSH."]
+verify = ["bash scripts/mod/deploy-staging.sh --agent-selftest /tmp/agent-selftest."]
+acceptance = ["Host deploy agent shipped; socket selftest proved start/stop/status round-trips."]
 citations = [
+    "commit 41ad60e9 agent selftest",
     "T-269 RCON_NO_TRANSPORT",
     "503 accepted/rejected/unreachable",
     "kick bare action",

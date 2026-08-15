@@ -16,7 +16,12 @@ requirement = [
     "Delete raw-JSON projection path from TBD_RadioPlan.",
     "Keep nets and freqMHz content tests; presence is content not null.",
 ]
+current_state = ["TBD_RadioPlan re-parsed GetRawJson while loader already carried radioPlan; two paths drifted."]
+approach = ["Collapse EnsureParsed onto TBD_MissionDocumentStruct.radioPlan; delete raw-JSON projection pass."]
+verify = ["bash scripts/mod/compile.sh; headless mod compile gate exits 0."]
+acceptance = ["RadioPlan read parsed mission doc field; raw-JSON second pass removed."]
 citations = [
+    "commit 30bae878 parsed radioPlan",
     "commit 30bae878 parsed doc radioPlan",
     "T-181.40 loader radioPlan field",
     "JsonLoadContext presence not content",

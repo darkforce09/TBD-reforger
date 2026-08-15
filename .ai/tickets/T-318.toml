@@ -15,7 +15,11 @@ current_state = [
     "`withdraw` only releases the seat via `if let Some(sid)`, so with slot_id NULL it takes no action: the seat reads as occupied forever and the occupant cannot release it.",
     "Requires an admin DB edit to unstick.",
 ]
+approach = ["map_err registration extractor to 400; withdraw clears orbat_slots.assigned_to by occupant when slot_id NULL."]
+verify = ["cargo test -p website-api --test events register_rejects_bad_bodies_and_withdraw_frees_orphaned_seats."]
+acceptance = ["Bad registration returned 400; withdraw freed seats orphaned by null slot_id."]
 citations = [
+    "commit 25be6f786 registration orphan",
     "T-218 sweep",
     "handlers/events.rs:786 RegisterBody",
     "orbat_slots.assigned_to orphan",

@@ -15,7 +15,10 @@ current_state = [
     "`UPDATE users SET is_banned=true, ban_reason=$1` with an empty reason — erasing a prior reason on re-ban and leaving an unexplained ban in the audit trail.",
 ]
 approach = ["Same pattern T-218 closed in approvals.rs; this is the last extractor-collapse site."]
+verify = ["cargo test -p website-api --test admin_field ban_reason_survives_a_malformed_reban."]
+acceptance = ["Malformed ban bodies returned 400; re-ban no longer erased an existing ban_reason."]
 citations = [
+    "commit e19e9d3ff ban reason",
     "T-218 sweep",
     "handlers/admin.rs:168 extractor",
     "handlers/admin.rs:155 BanInput.reason",

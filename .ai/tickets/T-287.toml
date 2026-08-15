@@ -14,8 +14,12 @@ requirement = [
     "Park AbortController in thread_local; abort on ServerIntel cleanup.",
     "Pin abort path with Class-R source guard.",
 ]
+current_state = ["SSE stream was never torn down on SPA route change; each navigation leaked one live fetch."]
+approach = ["Park AbortController in thread_local; zero-capture abort_server_status_stream on ServerIntel on_cleanup."]
 verify = ["Class-R pins abort route-leave path."]
+acceptance = ["SSE fetch aborted on route-leave; Class-R guard pinned the teardown path."]
 citations = [
+    "class_r_sse_abort guard",
     "commit f5a29d26 SSE abort",
     "b041a765 wave 21 close",
 ]
