@@ -6,8 +6,13 @@ class = "docs"
 status = "cancelled"
 order = 890
 executor = "cursor-docs"
+context = [
+    "CANCELLED — merged into T-192.",
+    "T-192 states 'no editor path PATCHes the row'; this ticket IS that PATCH.",
+    "Run separately and either orphans the other: T-192 alone could make flatten read the doc and strand this forever;",
+    "this alone adds a PATCH that T-192 then bypasses.",
+]
 estimated = ["scope"]
-migration_legacy = ["CANCELLED — merged into T-192. T-192 states 'no editor path PATCHes the row'; this ticket IS that PATCH. Run separately and either orphans the other: T-192 alone could make flatten read the doc and strand this forever; this alone adds a PATCH that T-192 then bypasses."]
 
 [scope]
 domain = "website"

@@ -6,6 +6,20 @@ class = "feature"
 status = "shipped"
 order = 1180
 executor = "claude-code"
+context = [
+    "SPLIT 2026-07-26.",
+    "This row is a pointer, not work.",
+    "== CLOSED 2026-07-31 — ALREADY DONE, this row was a stale pointer ==",
+    "Its own summary says 'This row is a pointer, not work' and names the residual as T-226, T-284 and T-231.",
+    "Verified before closing.",
+]
+requirement = ["No work remains under this id; do not dispatch it."]
+current_state = [
+    "DONE: identity-link UI (settings.rs:6-9,74-94, T-159.25) and the ORBAT selector (event_hub.rs:520-572, T-159.25a).",
+    "OPEN residual is tracked by T-226 (PATCH /events/{id} has no caller), T-284 (clear_slot unreachable, admin cannot free a claimed slot)",
+    "and T-231 (identity last mile).",
+    "ALL THREE ARE SHIPPED (events edit/detach; clear_slot reachable; identity last mile).",
+]
 shipped_at = "18852577"
 created_at = "2026-07-31T00:33:52Z"
 completed_at = "2026-07-31T00:33:52Z"
@@ -17,12 +31,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 1 commit subject(s)"
-migration_legacy = [
-    "SPLIT 2026-07-26. DONE: identity-link UI (settings.rs:6-9,74-94, T-159.25) and the ORBAT selector (event_hub.rs:520-572, T-159.25a). OPEN residual is tracked by T-226 (PATCH /events/{id} has no caller), T-284 (clear_slot unreachable, admin cannot free a claimed slot) and T-231 (identity last mile). This row is a pointer, not work.",
-    "",
-    "== CLOSED 2026-07-31 — ALREADY DONE, this row was a stale pointer ==",
-    "Its own summary says 'This row is a pointer, not work' and names the residual as T-226, T-284 and T-231. ALL THREE ARE SHIPPED (events edit/detach; clear_slot reachable; identity last mile). Verified before closing. No work remains under this id; do not dispatch it.",
-]
 
 [scope]
 domain = "website"

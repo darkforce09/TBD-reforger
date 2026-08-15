@@ -8,6 +8,24 @@ order = 3880
 executor = "claude-code"
 notes = "editor-UI program wave 3 (wave_plan.tsv row 103) — SHIPPED wave 103 (editor factory), slice 434d05a4; verifier wave103.md (1 BLOCKER fixed in-wave, 2 MAJOR deferred: T-717/T-718)"
 depends_on = ["T-661"]
+context = [
+    "PROMOTED AND SPLIT.",
+    "T-076 absorbs six interaction ids — `RIGHT-CREW-001`, `CREW-PANEL-001`, `CREW-BOARD-001`, `CREW-UNBOARD-001`, `CREW-SEAT-001`, `ACTION-SEAT-001` —",
+    "but the sweep also requires it to carry the T-216 vehicle-roster compile drop, and THAT half is cross-boundary:",
+]
+requirement = ["The compile half is therefore split out as a workbench ticket and THIS ticket is the crew authoring UI only."]
+current_state = [
+    'flatten.rs:2631 states the delta as "document root + a new $def", key `vehicles`, and :2634-2640 proves the declared `entities[]` cannot carry it',
+    "($defs/alias is ^(kit|comp|veh|preset|layer|prop|item):[a-z0-9_]+$ and the mod alias registry holds exactly one veh: row).",
+    "Surfaces: `placed_vehicles_panel` (post-split eden_vehicles_panel.rs, from eden_chrome.rs:1985 wasm / :2213 native) already renders VehicleRow + VehicleCargoRow per placed vehicle — a seat list joins it.",
+    "editor_ops.rs has NINE vehicle functions and no crew concept (`begin_place_vehicle` :1044, `orbat_add_vehicle` :1616, `vehicle_rows` :1751, `set_vehicle_cargo` :1811, `vehicle_points` :1833,",
+    "`set_vehicle_heading` :1841, `move_vehicles` :1877, `is_vehicle_id` :1902, `remove_vehicle` :1908); board / unboard / seat-assign are new.",
+    "Core side is the same (store.rs `add_vehicle` :747 ... `set_vehicle_position` :1118; note `attach_vehicle` :835 is vehicle->squad, not crew->vehicle) so a crew map is new doc state.",
+]
+approach = [
+    "`RIGHT-CREW-001`'s with/without-crew placement toggle sits beside the Vehicles search input in the right dock.",
+    "CREW-SEAT-001 wants the context menu (T-664).",
+]
 shipped_at = "5f92cc4a"
 created_at = "2026-08-02T01:17:12Z"
 completed_at = "2026-08-02T01:46:47Z"
@@ -19,7 +37,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = ["""PROMOTED AND SPLIT. T-076 absorbs six interaction ids — `RIGHT-CREW-001`, `CREW-PANEL-001`, `CREW-BOARD-001`, `CREW-UNBOARD-001`, `CREW-SEAT-001`, `ACTION-SEAT-001` — but the sweep also requires it to carry the T-216 vehicle-roster compile drop, and THAT half is cross-boundary: flatten.rs:2631 states the delta as "document root + a new $def", key `vehicles`, and :2634-2640 proves the declared `entities[]` cannot carry it ($defs/alias is ^(kit|comp|veh|preset|layer|prop|item):[a-z0-9_]+$ and the mod alias registry holds exactly one veh: row). The compile half is therefore split out as a workbench ticket and THIS ticket is the crew authoring UI only. Surfaces: `placed_vehicles_panel` (post-split eden_vehicles_panel.rs, from eden_chrome.rs:1985 wasm / :2213 native) already renders VehicleRow + VehicleCargoRow per placed vehicle — a seat list joins it. editor_ops.rs has NINE vehicle functions and no crew concept (`begin_place_vehicle` :1044, `orbat_add_vehicle` :1616, `vehicle_rows` :1751, `set_vehicle_cargo` :1811, `vehicle_points` :1833, `set_vehicle_heading` :1841, `move_vehicles` :1877, `is_vehicle_id` :1902, `remove_vehicle` :1908); board / unboard / seat-assign are new. Core side is the same (store.rs `add_vehicle` :747 ... `set_vehicle_position` :1118; note `attach_vehicle` :835 is vehicle->squad, not crew->vehicle) so a crew map is new doc state. `RIGHT-CREW-001`'s with/without-crew placement toggle sits beside the Vehicles search input in the right dock. CREW-SEAT-001 wants the context menu (T-664)."""]
 owns = [
     "apps/website/frontend/src/eden_vehicles_panel.rs",
     "apps/website/frontend/src/editor_ops.rs",

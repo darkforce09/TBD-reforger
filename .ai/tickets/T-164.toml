@@ -8,6 +8,13 @@ order = 1610
 spec = "docs/platform/t164_green_sweep.md"
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
+current_state = [
+    "SHIPPED: all 6 red CI jobs fixed (citation #/$defs/gear, backend cargo fmt, map-engine LFS DEM pull, editorconfig sap-seam+vendor exclude, Trunk tailwindcss 4.3.2 pin);",
+    "ticket check exit 0 (T-147/148/149 fields, T-145/T-151 vocab recode);",
+    "T-090.1.2.6 remote tag force-pushed to shipped commit; verify-t152-cartographic wasm step retired-skip;",
+    "operational doc truth (CLAUDE.md Rust backend, Makefile tidy removal, DEV_RUNBOOK, CODING_STANDARDS retired gates, 23 page docs Live source → Leptos modules).",
+]
+citations = ["Verify: .ai/artifacts/t164_verify_log.md."]
 shipped_at = "e7af8ad9"
 created_at = "2026-07-17T11:26:55Z"
 completed_at = "2026-07-17T11:33:19Z"
@@ -18,7 +25,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["SHIPPED: all 6 red CI jobs fixed (citation #/$defs/gear, backend cargo fmt, map-engine LFS DEM pull, editorconfig sap-seam+vendor exclude, Trunk tailwindcss 4.3.2 pin); ticket check exit 0 (T-147/148/149 fields, T-145/T-151 vocab recode); T-090.1.2.6 remote tag force-pushed to shipped commit; verify-t152-cartographic wasm step retired-skip; operational doc truth (CLAUDE.md Rust backend, Makefile tidy removal, DEV_RUNBOOK, CODING_STANDARDS retired gates, 23 page docs Live source → Leptos modules). Verify: .ai/artifacts/t164_verify_log.md."]
 
 [scope]
 domain = "repo"

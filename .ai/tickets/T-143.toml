@@ -7,7 +7,16 @@ status = "idea"
 spec = "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md"
 executor = "claude-code"
 depends_on = ["T-090"]
-migration_legacy = ["Far-future polish on the T-090.1.2.5.x water composite (operator: good-enough 2026-07-03, ship @ 1c07d97a). (a) Exact water geometry: Eden.ent water entities via Workbench export or pak-codec crack (zlib/zstd/brotli/LZ4 all fail today), .Rivers/*_flow.edds placements, PWLN/Eden.smap leads — full trail in .ai/artifacts/t090_1_2_5_2_source_spike.json; replaces the appearance classifier with pixel-perfect ocean/lake/river masks. (b) Editor placement guard: block/warn placing units in ocean or large water bodies in the Mission Creator (ship the water mask to the frontend alongside the DEM). Minor mask misses acceptable — missions get playtested."]
+context = [
+    "Far-future polish on the T-090.1.2.5.x water composite (operator: good-enough 2026-07-03, ship @ 1c07d97a).",
+    "Minor mask misses acceptable — missions get playtested.",
+]
+requirement = [
+    "(a) Exact water geometry: Eden.ent water entities via Workbench export or pak-codec crack (zlib/zstd/brotli/LZ4 all fail today), .Rivers/*_flow.edds placements, PWLN/Eden.smap leads",
+    "replaces the appearance classifier with pixel-perfect ocean/lake/river masks.",
+    "(b) Editor placement guard: block/warn placing units in ocean or large water bodies in the Mission Creator (ship the water mask to the frontend alongside the DEM).",
+]
+citations = ["— full trail in .ai/artifacts/t090_1_2_5_2_source_spike.json;"]
 
 [scope]
 domain = "repo"
