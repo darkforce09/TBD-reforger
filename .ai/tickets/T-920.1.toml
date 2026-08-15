@@ -3,7 +3,7 @@ kind = "work"
 title = "main_goal rename, tiered body gates, title gate + debt pins"
 summary = "Rename user_story to main_goal (serde alias, 46-file migration). Tiered body gates: queued adds main_goal, ready-class adds the six body fields, refused at mark-ready and ship. Title gate on changed tickets plus two shrink-only debt pins."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 6001
 spec = "docs/platform/t920_body_obligations.md"
 plan = "docs/plans/t-920_1_plan.md"
@@ -43,6 +43,7 @@ acceptance = [
     "cargo xtask ticket check --strict prints check OK on the live tree; workspace build green",
 ]
 created_at = "2026-08-15T03:17:45Z"
+completed_at = "2026-08-15T03:49:13Z"
 owns = [
     "crates/tbd-tickets",
     "xtask/src",
