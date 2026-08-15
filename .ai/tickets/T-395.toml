@@ -6,7 +6,31 @@ class = "bug"
 status = "shipped"
 order = 3211
 executor = "claude-code"
+notes = """
+
+--- migration_legacy (verbatim) ---
+
+MINOR/cosmetic — filed deferred per Rule 12, not worth this week's budget.
+
+`frontend/src/mission_overview.rs` renders the `STATUS` stat-grid cell as the raw DB enum (`rejected`, lowercase) a few hundred pixels below the correct 'RETURNED BY REVIEW' callout that T-389 added. Same defect class T-389 fixed, different file, so it was out of that slice's owns. Two labels for one state, disagreeing on the same screen. Needs the same label mapper the badge uses. Found by T-389, which reported filing it but did not."""
 priority = 3
+main_goal = "Map STATUS stat-grid cell through same label mapper the T-389 badge uses."
+context = [
+    "MINOR/cosmetic — filed deferred per Rule 12, not worth this week's budget.",
+    "T-389 added correct RETURNED BY REVIEW callout above the stat grid.",
+]
+requirement = [
+    "mission_overview.rs renders STATUS stat-grid cell as raw DB enum rejected lowercase.",
+    "Same defect class T-389 fixed — different file, out of that slice's owns.",
+    "Two labels for one state disagreeing on same screen.",
+    "Found by T-389, which reported filing it but did not.",
+]
+current_state = ["Stat grid shows rejected lowercase below correct callout."]
+citations = [
+    "T-389 badge mapper",
+    "mission_overview.rs STATUS",
+    "Rule 12 deferred",
+]
 shipped_at = "a189ac39"
 created_at = "2026-07-26T13:41:13Z"
 completed_at = "2026-08-01T02:48:56Z"
@@ -18,11 +42,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = [
-    "MINOR/cosmetic — filed deferred per Rule 12, not worth this week's budget.",
-    "",
-    "`frontend/src/mission_overview.rs` renders the `STATUS` stat-grid cell as the raw DB enum (`rejected`, lowercase) a few hundred pixels below the correct 'RETURNED BY REVIEW' callout that T-389 added. Same defect class T-389 fixed, different file, so it was out of that slice's owns. Two labels for one state, disagreeing on the same screen. Needs the same label mapper the badge uses. Found by T-389, which reported filing it but did not.",
-]
 
 [scope]
 domain = "website"

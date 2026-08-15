@@ -1,12 +1,74 @@
 id = "T-397"
 kind = "work"
-title = "Absent telemetry counters materialise as 0 on first INSERT, and leaderboard_totals aggregates the zero"
+title = "Absent counters materialise as zero on INSERT"
 summary = "Absent telemetry counters materialise as 0 on first INSERT, and leaderboard_totals aggregates the zero"
 class = "bug"
 status = "shipped"
 order = 3213
 executor = "claude-code"
+notes = """
+--- migration_legacy (verbatim) ---
+
+MAJOR, found by wave 1's adversarial verifier against merged main, MEASURED not reasoned. Deferred by operator triage 2026-07-26: it neither destroys operator-authored work nor blocks a backlog feature, and the state it leaves is strictly better than the pre-T-393 state (which was: all ingest 400s, nothing stored at all). Do not read "T-393 shipped" as "telemetry is now correct".
+
+T-393 split PlayerStatInput into a required identity core plus an OPTIONAL counters object, so that omitting counters stops being a write. The UPDATE half of that claim HOLDS — handlers/telemetry.rs:734-749's counters-absent statement names only discord_id and role_played, no column is re-bound to its own value, no read-modify-write race. Verified by reading the SQL.
+
+THE INSERT HALF DOES NOT. migrations/0001_initial_schema.sql:251-265 declares the counter columns NOT NULL DEFAULT 0 / DEFAULT false, so a FIRST insert with counters absent materialises zeros, and a stored 0 is indistinguishable from a genuinely scored 0. Because T-393 moved `deaths` into the counters block, the shipping mod's top-level "deaths" is now silently dropped — T-393's own test asserts rows[0].deaths == 0 for a player it reported with deaths:1.
+
+MEASURED on a cold DB (BEGIN..ROLLBACK), one linked player, two matches:
+  row A (mod path, counters absent): kills=0  deaths=0
+  row B (full-fidelity report):      kills=17 deaths=3
+  REFRESH MATERIALIZED VIEW leaderboard_totals -> kills=17 deaths=3 kd_ratio=5.67
+True deaths is 4; the honest kd is 4.25. The zero is not inert, it is summed.
+
+This is T-316's failure shape — silence becoming a value — relocated from the UPDATE path to the INSERT path. The mod's own class header (TBD_ResultsReporter.c:19-21) states the intended semantics verbatim: "an absent field says 'not measured' where a 0 would claim 'measured, and it was none'." The backend now does the opposite.
+
+NOTE THE TRADE BEFORE "FIXING" IT BY MOVING deaths BACK. deaths-in-the-required-core is correct on a first insert but corrupt on a mixed re-ingest of the same row (a full report writes 17/3, a later mod-only report overwrites deaths->1 and leaves kills=17, giving kd 17). deaths-in-counters is correct on re-ingest and lossy on first insert. T-393 chose the anti-corruption side, which is defensible and consistent with T-316. The placement is NOT the real defect — even with deaths in the core, kills/team_kills/longest_kill_m/vehicles_destroyed would still materialise as 0 on a first insert.
+
+THE ACTUAL FIX is at the schema: make the counter columns NULLable so absent = NULL = "not measured", and make leaderboard_totals NULL-aware. That is a migration plus a materialized-view change plus a backfill decision for existing rows. Sized accordingly; do not attempt it as a patch.
+
+SECOND HALF, MOD SIDE, executor: workbench — TBD_ResultsReporter.c BuildPlayerRow should emit a complete counters object once the engine exposes kills/team_kills/longest_kill/vehicles_destroyed per player. Check whether Enfusion exposes them at all before committing; if it does not, the NULL-semantics fix above is the whole answer. Its class header at :19-21 also now describes the backend falsely (claims the fields are #[serde(default)]) and needs correcting."""
 priority = 1
+main_goal = "Absent telemetry counters must mean not measured, not zero, on first INSERT and in leaderboard_totals."
+context = [
+    "MAJOR — wave 1 adversarial verifier on merged main, MEASURED not reasoned.",
+    "Deferred 2026-07-26: neither destroys operator work nor blocks backlog; better than pre-T-393 all-ingest-400s.",
+    'Do not read "T-393 shipped" as "telemetry is now correct".',
+    "T-316 failure shape — silence becoming a value — relocated UPDATE to INSERT path.",
+]
+requirement = [
+    "Make counter columns NULLable: absent = NULL = not measured.",
+    "Make leaderboard_totals NULL-aware; migration plus MV change plus backfill decision.",
+    "Do not patch — sized accordingly.",
+    "Mod: BuildPlayerRow emits complete counters once engine exposes per-player stats.",
+    "Check Enfusion exposes kills/team_kills/longest_kill/vehicles_destroyed before committing.",
+    "Correct TBD_ResultsReporter.c:19-21 header falsely claiming #[serde(default)].",
+]
+current_state = [
+    "T-393 split identity core plus OPTIONAL counters; UPDATE half HOLDS at telemetry.rs:734-749.",
+    "INSERT half does NOT: 0001_initial_schema.sql:251-265 NOT NULL DEFAULT 0 materialises zeros.",
+    "Stored 0 indistinguishable from genuinely scored 0.",
+    "T-393 moved deaths into counters; mod top-level deaths silently dropped.",
+    "T-393 test asserts rows[0].deaths == 0 for player reported deaths:1.",
+    "MEASURED cold DB: mod path kills=0 deaths=0; full report kills=17 deaths=3.",
+    "REFRESH leaderboard_totals -> kills=17 deaths=3 kd_ratio=5.67; true deaths 4, honest kd 4.25.",
+    "Zero is summed, not inert.",
+    "TBD_ResultsReporter.c:19-21: absent = not measured; backend does opposite.",
+    "deaths-in-core correct first insert, corrupt mixed re-ingest; deaths-in-counters opposite.",
+    "Placement NOT the defect — kills/team_kills/longest_kill_m/vehicles_destroyed still zero on first insert.",
+]
+approach = [
+    "Schema NULL semantics is the actual fix, not moving deaths back to required core.",
+    "T-393 chose anti-corruption side — defensible and consistent with T-316.",
+    "If Enfusion lacks per-player stats, NULL-semantics fix is the whole answer.",
+]
+citations = [
+    "T-393 PlayerStatInput split",
+    "T-316 silent zeroing",
+    "telemetry.rs:734-749",
+    "0001_initial_schema.sql:251",
+    "TBD_ResultsReporter.c:19-21",
+]
 shipped_at = "cc421045"
 created_at = "2026-07-27T07:01:16Z"
 completed_at = "2026-07-27T07:10:39Z"
@@ -17,27 +79,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
-migration_legacy = [
-    """MAJOR, found by wave 1's adversarial verifier against merged main, MEASURED not reasoned. Deferred by operator triage 2026-07-26: it neither destroys operator-authored work nor blocks a backlog feature, and the state it leaves is strictly better than the pre-T-393 state (which was: all ingest 400s, nothing stored at all). Do not read "T-393 shipped" as "telemetry is now correct".""",
-    "",
-    "T-393 split PlayerStatInput into a required identity core plus an OPTIONAL counters object, so that omitting counters stops being a write. The UPDATE half of that claim HOLDS — handlers/telemetry.rs:734-749's counters-absent statement names only discord_id and role_played, no column is re-bound to its own value, no read-modify-write race. Verified by reading the SQL.",
-    "",
-    """THE INSERT HALF DOES NOT. migrations/0001_initial_schema.sql:251-265 declares the counter columns NOT NULL DEFAULT 0 / DEFAULT false, so a FIRST insert with counters absent materialises zeros, and a stored 0 is indistinguishable from a genuinely scored 0. Because T-393 moved `deaths` into the counters block, the shipping mod's top-level "deaths" is now silently dropped — T-393's own test asserts rows[0].deaths == 0 for a player it reported with deaths:1.""",
-    "",
-    "MEASURED on a cold DB (BEGIN..ROLLBACK), one linked player, two matches:",
-    "  row A (mod path, counters absent): kills=0  deaths=0",
-    "  row B (full-fidelity report):      kills=17 deaths=3",
-    "  REFRESH MATERIALIZED VIEW leaderboard_totals -> kills=17 deaths=3 kd_ratio=5.67",
-    "True deaths is 4; the honest kd is 4.25. The zero is not inert, it is summed.",
-    "",
-    """This is T-316's failure shape — silence becoming a value — relocated from the UPDATE path to the INSERT path. The mod's own class header (TBD_ResultsReporter.c:19-21) states the intended semantics verbatim: "an absent field says 'not measured' where a 0 would claim 'measured, and it was none'." The backend now does the opposite.""",
-    "",
-    'NOTE THE TRADE BEFORE "FIXING" IT BY MOVING deaths BACK. deaths-in-the-required-core is correct on a first insert but corrupt on a mixed re-ingest of the same row (a full report writes 17/3, a later mod-only report overwrites deaths->1 and leaves kills=17, giving kd 17). deaths-in-counters is correct on re-ingest and lossy on first insert. T-393 chose the anti-corruption side, which is defensible and consistent with T-316. The placement is NOT the real defect — even with deaths in the core, kills/team_kills/longest_kill_m/vehicles_destroyed would still materialise as 0 on a first insert.',
-    "",
-    'THE ACTUAL FIX is at the schema: make the counter columns NULLable so absent = NULL = "not measured", and make leaderboard_totals NULL-aware. That is a migration plus a materialized-view change plus a backfill decision for existing rows. Sized accordingly; do not attempt it as a patch.',
-    "",
-    "SECOND HALF, MOD SIDE, executor: workbench — TBD_ResultsReporter.c BuildPlayerRow should emit a complete counters object once the engine exposes kills/team_kills/longest_kill/vehicles_destroyed per player. Check whether Enfusion exposes them at all before committing; if it does not, the NULL-semantics fix above is the whole answer. Its class header at :19-21 also now describes the backend falsely (claims the fields are #[serde(default)]) and needs correcting.",
-]
 owns = [
     "apps/website/api/src/handlers/telemetry.rs",
     "apps/website/api/migrations",

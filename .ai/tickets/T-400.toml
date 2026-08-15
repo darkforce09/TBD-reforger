@@ -1,12 +1,71 @@
 id = "T-400"
 kind = "work"
-title = "Integration-test shared-fixture isolation — the 17 suites T-334 did not cover"
+title = "Integration-test shared-fixture isolation gaps"
 summary = "Integration-test shared-fixture isolation — the 17 suites T-334 did not cover"
 class = "bug"
 status = "shipped"
 order = 3216
 executor = "claude-code"
+notes = """
+--- migration_legacy (verbatim) ---
+
+The residual of T-334, filed by the command center at dispatch time (NOT by the slice agent — three agents claimed to have filed follow-ups on 2026-07-26 and none had, so this one is filed by the party that owns the registry). T-334 was deliberately narrowed to its owns row: it created tests/common/mod.rs with a diagnostic dev-login helper and gave tests/events.rs private actor ids. Everything below is what it did not touch. Nothing here was judged wrong — only not now.
+
+The 22 test binaries share one gate database and mutate each other's rows. From an 18-file inventory:
+
+ - admin_field.rs:332 calls POST /admin/roles/sync, which loops EVERY users row and demotes anyone with no user_discord_roles — it fires T-372's admin lockout INSIDE the suite, silently demoting the shared dev row for every other binary. No amount of per-suite actor isolation survives a handler that rewrites every row, so this one has to go or be scoped first.
+ - identity_link.rs is the heaviest writer: :26 nulls the shared row's arma_id with the error swallowed by `let _`, :106 unlinks it, :124-134 relinks it. dev.rs:47-49's ON CONFLICT does NOT restore arma_id and me.rs:77 computes arma_linked from the DATABASE row rather than the JWT claim, so auth_refresh.rs:100 (assert_eq!(me_body["arma_linked"], true)) fails whenever identity_link's setup interleaves ahead of it. Two binaries, one row, cargo test runs them concurrently. This pair is the live mechanism, confirmed by T-334's agent.
+ - tests/telemetry.rs:17 PLAYER_DISCORD is still 000000000000000003, which is also seeds/content_golden.sql:166 ('Vance'). T-334 vacated the events.rs half of that double-booking; the telemetry half is untouched, and its seed carries ON CONFLICT ... DO UPDATE SET arma_id = EXCLUDED.arma_id, so it rewrites whatever another binary seeded.
+ - factions.rs:18 DELETE FROM user_factions is the ONLY unscoped destructive statement in the corpus; it wipes null_tolerance.rs:589's faction. factions.rs:26-27 and registry_compat.rs both rewrite the shared role and leave it on enlisted, while misc_integration.rs:88 asserts role=='admin' by READING the DB and therefore fails when another suite leaves it lower.
+ - idx_users_arma_id (migrations/0001_initial_schema.sql:887) is a NON-PARTIAL unique index, so arma_id = '' is a single global slot across the whole database, not a null-ish default. A second suite writing '' for a different discord_id hits a unique violation that ON CONFLICT (discord_id) cannot absorb. admin_field.rs:251-252 already documents this and uses NULL; nothing enforces it.
+ - 17 unchecked header-index sites across 13 files still panic bare. tests/common/mod.rs now exists and its dev_login_token() reports status, body and asking suite — migrating the remaining suites onto it is most of the value here and is mechanical.
+
+Patterns worth copying: null_tolerance.rs avoids dev-login entirely, owns ...099 and serialises its DB tests with a lock; misc_integration.rs mints via state.jwt.issue_access, which writes nothing.
+
+DO THIS WITH T-381 (nothing validates the TEST_DATABASE_URL target name) and T-399 (nothing ever resets the gate DB) — same shared-database hazard, three different consequences.
+
+CORRECTION TO THE RECORD, verified twice: T-365's stated mechanism is WRONG. dev_login has no ban check — handlers/dev.rs:24-64 never reads is_banned and calls issue_session unconditionally; handlers/auth.rs:35-47 issue_session loads no user row. The ban bites at POST /auth/refresh (handlers/auth.rs:144-150 -> 403). Confirmed statically and empirically on an isolated DB. Do not re-derive this a fourth time.
+
+== ADDITIONAL INSTANCE, measured at gate level 2026-07-26 (wave 2) ==
+`tests/admin_field.rs:289` (`admin_approvals_cms_field`) looks up a shared fixed user by discord_id and asserts a GLOBAL `role` value that it also mutates — not row-isolated even to the degree registry_compat.rs attempts. Two concurrent gates produced:
+    panicked at apps/website/api/tests/admin_field.rs:289: left: String("leader")  right: "enlisted"
+Control: the same test alone on the same clean DB passed 3/3, so this is the collision and not T-399's residue. Now masked by T-396's gate flock, but the suite is still not safe to run concurrently by hand."""
 priority = 1
+main_goal = "Isolate the seventeen integration suites T-334 left sharing one gate database and mutating each other's rows."
+context = [
+    "Residual of T-334 — command center filed at dispatch; three agents claimed follow-ups, none had.",
+    "T-334 narrowed to owns row: tests/common/mod.rs plus events.rs private actor ids.",
+    "Nothing judged wrong — only not now.",
+    "22 test binaries share one gate database.",
+]
+requirement = [
+    "Fix admin_field.rs:332 POST /admin/roles/sync global demotion — scope or remove first.",
+    "Isolate identity_link.rs versus auth_refresh.rs shared row collision.",
+    "Vacate telemetry.rs:17 PLAYER_DISCORD double-booking with seeds/content_golden.sql:166.",
+    "Scope factions.rs:18 unscoped DELETE FROM user_factions.",
+    "Migrate 17 bare header-index panic sites onto tests/common/mod.rs dev_login_token().",
+    "Coordinate with T-381 TEST_DATABASE_URL validation and T-399 gate DB reset.",
+]
+current_state = [
+    "identity_link.rs nulls/unlinks/relinks shared arma_id; auth_refresh.rs:100 fails on interleave.",
+    "dev.rs:47-49 ON CONFLICT does NOT restore arma_id; me.rs:77 reads DB not JWT.",
+    "factions.rs wipes null_tolerance.rs:589 faction; misc_integration.rs:88 reads role from DB.",
+    "idx_users_arma_id non-partial unique — arma_id='' is single global slot.",
+    "T-365 correction: dev_login has NO ban check; ban at POST /auth/refresh -> 403.",
+    "admin_field.rs:289 asserts GLOBAL role — concurrent gates: leader vs enlisted panic.",
+    "Masked by T-396 gate flock; still unsafe concurrent by hand.",
+]
+approach = [
+    "Copy null_tolerance.rs pattern: own actor, serialise DB tests with lock.",
+    "Copy misc_integration.rs: mint via state.jwt.issue_access, writes nothing.",
+]
+citations = [
+    "T-334 narrowed scope",
+    "T-372 admin lockout",
+    "identity_link.rs:26",
+    "auth_refresh.rs:100",
+    "T-396 gate flock",
+]
 shipped_at = "fb96ecbc"
 created_at = "2026-07-27T07:19:08Z"
 completed_at = "2026-07-27T07:39:07Z"
@@ -18,29 +77,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 6 commit subject(s)"
-migration_legacy = [
-    "The residual of T-334, filed by the command center at dispatch time (NOT by the slice agent — three agents claimed to have filed follow-ups on 2026-07-26 and none had, so this one is filed by the party that owns the registry). T-334 was deliberately narrowed to its owns row: it created tests/common/mod.rs with a diagnostic dev-login helper and gave tests/events.rs private actor ids. Everything below is what it did not touch. Nothing here was judged wrong — only not now.",
-    "",
-    "The 22 test binaries share one gate database and mutate each other's rows. From an 18-file inventory:",
-    "",
-    " - admin_field.rs:332 calls POST /admin/roles/sync, which loops EVERY users row and demotes anyone with no user_discord_roles — it fires T-372's admin lockout INSIDE the suite, silently demoting the shared dev row for every other binary. No amount of per-suite actor isolation survives a handler that rewrites every row, so this one has to go or be scoped first.",
-    """ - identity_link.rs is the heaviest writer: :26 nulls the shared row's arma_id with the error swallowed by `let _`, :106 unlinks it, :124-134 relinks it. dev.rs:47-49's ON CONFLICT does NOT restore arma_id and me.rs:77 computes arma_linked from the DATABASE row rather than the JWT claim, so auth_refresh.rs:100 (assert_eq!(me_body["arma_linked"], true)) fails whenever identity_link's setup interleaves ahead of it. Two binaries, one row, cargo test runs them concurrently. This pair is the live mechanism, confirmed by T-334's agent.""",
-    " - tests/telemetry.rs:17 PLAYER_DISCORD is still 000000000000000003, which is also seeds/content_golden.sql:166 ('Vance'). T-334 vacated the events.rs half of that double-booking; the telemetry half is untouched, and its seed carries ON CONFLICT ... DO UPDATE SET arma_id = EXCLUDED.arma_id, so it rewrites whatever another binary seeded.",
-    " - factions.rs:18 DELETE FROM user_factions is the ONLY unscoped destructive statement in the corpus; it wipes null_tolerance.rs:589's faction. factions.rs:26-27 and registry_compat.rs both rewrite the shared role and leave it on enlisted, while misc_integration.rs:88 asserts role=='admin' by READING the DB and therefore fails when another suite leaves it lower.",
-    " - idx_users_arma_id (migrations/0001_initial_schema.sql:887) is a NON-PARTIAL unique index, so arma_id = '' is a single global slot across the whole database, not a null-ish default. A second suite writing '' for a different discord_id hits a unique violation that ON CONFLICT (discord_id) cannot absorb. admin_field.rs:251-252 already documents this and uses NULL; nothing enforces it.",
-    " - 17 unchecked header-index sites across 13 files still panic bare. tests/common/mod.rs now exists and its dev_login_token() reports status, body and asking suite — migrating the remaining suites onto it is most of the value here and is mechanical.",
-    "",
-    "Patterns worth copying: null_tolerance.rs avoids dev-login entirely, owns ...099 and serialises its DB tests with a lock; misc_integration.rs mints via state.jwt.issue_access, which writes nothing.",
-    "",
-    "DO THIS WITH T-381 (nothing validates the TEST_DATABASE_URL target name) and T-399 (nothing ever resets the gate DB) — same shared-database hazard, three different consequences.",
-    "",
-    "CORRECTION TO THE RECORD, verified twice: T-365's stated mechanism is WRONG. dev_login has no ban check — handlers/dev.rs:24-64 never reads is_banned and calls issue_session unconditionally; handlers/auth.rs:35-47 issue_session loads no user row. The ban bites at POST /auth/refresh (handlers/auth.rs:144-150 -> 403). Confirmed statically and empirically on an isolated DB. Do not re-derive this a fourth time.",
-    "",
-    "== ADDITIONAL INSTANCE, measured at gate level 2026-07-26 (wave 2) ==",
-    "`tests/admin_field.rs:289` (`admin_approvals_cms_field`) looks up a shared fixed user by discord_id and asserts a GLOBAL `role` value that it also mutates — not row-isolated even to the degree registry_compat.rs attempts. Two concurrent gates produced:",
-    '    panicked at apps/website/api/tests/admin_field.rs:289: left: String("leader")  right: "enlisted"',
-    "Control: the same test alone on the same clean DB passed 3/3, so this is the collision and not T-399's residue. Now masked by T-396's gate flock, but the suite is still not safe to run concurrently by hand.",
-]
 owns = [
     "apps/website/api/tests/identity_link.rs",
     "apps/website/api/tests/factions.rs",

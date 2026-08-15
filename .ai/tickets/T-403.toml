@@ -1,12 +1,54 @@
 id = "T-403"
 kind = "work"
-title = "Golden corpus has vacuous fixtures — ArmoryFaction/ArmoryItem have literally zero coverage"
+title = "ArmoryFaction golden fixtures have zero typed coverage"
 summary = "Golden corpus has vacuous fixtures — ArmoryFaction/ArmoryItem have literally zero coverage"
 class = "bug"
 status = "shipped"
 order = 3219
 executor = "claude-code"
+notes = """
+PROVEN TOTAL: skip every ArmoryFaction field and cargo test -p website-frontend stays 169 passed. ArmoryItem same. Field-level MissionDetail/MissionCard gaps documented in-code by T-389.
+
+--- migration_legacy (verbatim) ---
+
+T-394 made assert_golden structurally able to see a dropped field under #[serde(flatten)]. It cannot rescue a golden that has no rows to check, and several do not. This is T-359's draft-capture hazard, measured at struct granularity instead of field granularity.
+
+PROVEN TOTAL, not estimated. The verifier put #[serde(skip)] on EVERY field of ArmoryFaction (both `faction` and `items`), reducing the type to a total no-op, and cargo test -p website-frontend stayed 169 passed / 0 failed. armory_by_faction is [] in GET__events__c71a4d1a....json, the only golden that reaches it, so there is nothing to poison and nothing to compare. ArmoryItem is in the same position. Blast radius: total — the entire type is unverified.
+
+Checked for the same shape across the rest of the corpus: `mods` is [] in four goldens and MissionDetail::armory in two, but both are Vec<Value> — no typed item type to lose, so those are merely uninformative rather than dangerous. ArmoryFaction/ArmoryItem are the only typed item types with zero rows.
+
+Field-level gaps in the same family, all confirmed:
+ - MissionDetail: custom_terrain_name and thumbnail_url absent from BOTH goldens (draft and rejected). The draft golden GET__missions__512d8658....json is additionally absent for rejection_reason/reviewed_by/reviewed_at/briefing — already documented in-code by T-389.
+ - MissionCard: custom_terrain_name 1/4 and thumbnail_url 2/4 in GET__missions.json, but 0/7 for both in GET__missions__scope-mine-rejected.json; rejection_reason is 0/4 in GET__missions.json and only 1/7 in the rejected golden.
+
+THE FIX IS FIXTURE CAPTURE, NOT MORE TEST CODE: recapture the event golden from an event whose missions actually carry armory rows, and the mission goldens from rows that populate the fields under test. T-359's warning applies directly — a golden captured from a row that does not populate a field proves nothing about that field in either direction, so capturing must be deliberate about WHICH row, not just which endpoint.
+
+Note the honest limit of T-394's own fix while you are here: its module header slightly oversells, in that the structural check covers types the goldens instantiate and says nothing about types they do not. This ticket is that gap."""
 priority = 2
+main_goal = "Recapture event and mission goldens so ArmoryFaction rows and sparse fields are actually verified."
+context = [
+    "T-394 structural flatten check cannot rescue goldens with zero armory rows.",
+    "T-359 draft-capture hazard measured at struct granularity, not field granularity.",
+]
+requirement = [
+    "Recapture event golden from an event whose missions carry armory rows.",
+    "Recapture mission goldens from rows that populate custom_terrain_name and thumbnail_url.",
+    "Fixture capture is the fix — not more assert_golden test code.",
+]
+current_state = [
+    "ArmoryFaction #[serde(skip)] on every field; 169 tests still pass — total no-op.",
+    "armory_by_faction is [] in the only golden reaching ArmoryFaction.",
+    "MissionDetail: custom_terrain_name and thumbnail_url absent from both goldens.",
+    "MissionCard: custom_terrain_name 1/4; thumbnail_url 2/4 in GET__missions.json.",
+    "mods [] in four goldens is uninformative Vec<Value>, not dangerous like typed items.",
+]
+approach = ["T-394 module header oversells — structural check covers only instantiated types."]
+citations = [
+    "T-394 assert_golden flatten",
+    "T-359 draft-capture hazard",
+    "GET__events armory golden",
+    "dto.rs ArmoryFaction",
+]
 shipped_at = "a39389a9"
 created_at = "2026-07-27T06:24:53Z"
 completed_at = "2026-07-27T06:38:39Z"
@@ -18,21 +60,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
-migration_legacy = [
-    "T-394 made assert_golden structurally able to see a dropped field under #[serde(flatten)]. It cannot rescue a golden that has no rows to check, and several do not. This is T-359's draft-capture hazard, measured at struct granularity instead of field granularity.",
-    "",
-    "PROVEN TOTAL, not estimated. The verifier put #[serde(skip)] on EVERY field of ArmoryFaction (both `faction` and `items`), reducing the type to a total no-op, and cargo test -p website-frontend stayed 169 passed / 0 failed. armory_by_faction is [] in GET__events__c71a4d1a....json, the only golden that reaches it, so there is nothing to poison and nothing to compare. ArmoryItem is in the same position. Blast radius: total — the entire type is unverified.",
-    "",
-    "Checked for the same shape across the rest of the corpus: `mods` is [] in four goldens and MissionDetail::armory in two, but both are Vec<Value> — no typed item type to lose, so those are merely uninformative rather than dangerous. ArmoryFaction/ArmoryItem are the only typed item types with zero rows.",
-    "",
-    "Field-level gaps in the same family, all confirmed:",
-    " - MissionDetail: custom_terrain_name and thumbnail_url absent from BOTH goldens (draft and rejected). The draft golden GET__missions__512d8658....json is additionally absent for rejection_reason/reviewed_by/reviewed_at/briefing — already documented in-code by T-389.",
-    " - MissionCard: custom_terrain_name 1/4 and thumbnail_url 2/4 in GET__missions.json, but 0/7 for both in GET__missions__scope-mine-rejected.json; rejection_reason is 0/4 in GET__missions.json and only 1/7 in the rejected golden.",
-    "",
-    "THE FIX IS FIXTURE CAPTURE, NOT MORE TEST CODE: recapture the event golden from an event whose missions actually carry armory rows, and the mission goldens from rows that populate the fields under test. T-359's warning applies directly — a golden captured from a row that does not populate a field proves nothing about that field in either direction, so capturing must be deliberate about WHICH row, not just which endpoint.",
-    "",
-    "Note the honest limit of T-394's own fix while you are here: its module header slightly oversells, in that the structural check covers types the goldens instantiate and says nothing about types they do not. This ticket is that gap.",
-]
 owns = [
     "apps/website/frontend/src/dto.rs",
     "apps/website/frontend/tests/fixtures/api/GET__events__c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7.json",

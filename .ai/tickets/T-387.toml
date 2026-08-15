@@ -1,12 +1,49 @@
 id = "T-387"
 kind = "work"
-title = "render-check / gate residual after T-339: dev-login single Discord id (not api_proxy)"
+title = "dev-login shared Discord id after T-339"
 summary = "render-check / gate residual after T-339: dev-login single Discord id (not api_proxy)"
 class = "bug"
 status = "shipped"
 order = 3203
 executor = "claude-code"
+notes = """
+NARROWED W61 T-339 shipped api_proxy half-hydrate CLOSED smokes.rs defaults :8080 gate --api-proxy MEASURED residual W64 STOP owns collide T-560 handlers/dev.rs IT corpus landmine sequence AFTER T-560 same owns re-litigate api_proxy real fix ITs one discord_id
+
+--- HEAD migration_legacy (verbatim) ---
+
+NARROWED after W61 (T-339 shipped). api_proxy half-hydrate CLOSED (smokes.rs defaults api_proxy to :8080; gate --api-proxy).
+
+MEASURED residual (W64 attempt, STOP — owns collide with T-560):
+- apps/website/api/src/handlers/dev.rs:14 DEV_USER_ID fixed for all roles
+- ON CONFLICT updates role on same discord_id; issue_session does not revoke prior family
+- IT corpus documents landmine: misc_integration.rs:288-293, missions.rs:1105-1111
+
+Fix lives in handlers/dev.rs — sequence AFTER T-560 (same owns). Do not re-litigate api_proxy.
+Owns for the real fix: apps/website/api/src/handlers/dev.rs (+ ITs that assume one discord_id).
+"""
 priority = 2
+main_goal = "Give dev-login distinct discord_id per role; stop shared DEV_USER_ID after T-339."
+context = [
+    "NARROWED after W61 (T-339 shipped). api_proxy half-hydrate CLOSED.",
+    "smokes.rs defaults api_proxy to :8080; gate --api-proxy.",
+    "MEASURED residual (W64 attempt, STOP — owns collide with T-560).",
+]
+requirement = [
+    "Fix lives in handlers/dev.rs — sequence AFTER T-560 (same owns).",
+    "Do not re-litigate api_proxy.",
+    "Owns for the real fix: handlers/dev.rs (+ ITs that assume one discord_id).",
+]
+current_state = [
+    "apps/website/api/src/handlers/dev.rs:14 DEV_USER_ID fixed for all roles",
+    "ON CONFLICT updates role on same discord_id; issue_session does not revoke prior family",
+    "IT corpus documents landmine: misc_integration.rs:288-293, missions.rs:1105-1111",
+]
+citations = [
+    "T-339 api_proxy closed",
+    "T-560 same owns",
+    "dev.rs:14 DEV_USER_ID",
+    "misc_integration.rs:288",
+]
 shipped_at = "db87725c"
 created_at = "2026-07-27T15:13:10Z"
 completed_at = "2026-07-28T22:07:51Z"
@@ -18,17 +55,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 6 commit subject(s)"
-migration_legacy = [
-    "NARROWED after W61 (T-339 shipped). api_proxy half-hydrate CLOSED (smokes.rs defaults api_proxy to :8080; gate --api-proxy).",
-    "",
-    "MEASURED residual (W64 attempt, STOP — owns collide with T-560):",
-    "- apps/website/api/src/handlers/dev.rs:14 DEV_USER_ID fixed for all roles",
-    "- ON CONFLICT updates role on same discord_id; issue_session does not revoke prior family",
-    "- IT corpus documents landmine: misc_integration.rs:288-293, missions.rs:1105-1111",
-    "",
-    "Fix lives in handlers/dev.rs — sequence AFTER T-560 (same owns). Do not re-litigate api_proxy.",
-    "Owns for the real fix: apps/website/api/src/handlers/dev.rs (+ ITs that assume one discord_id).",
-]
 owns = [
     "apps/website/api/src/handlers/dev.rs",
     "apps/website/api/tests/misc_integration.rs",

@@ -1,12 +1,53 @@
 id = "T-402"
 kind = "work"
-title = "T-393 follow-ups: legacy-counter tripwire gaps and the unpinned terrain value space"
+title = "T-393 tripwire gaps and unpinned terrain values"
 summary = "T-393 follow-ups: legacy-counter tripwire gaps and the unpinned terrain value space"
 class = "feature"
 status = "shipped"
 order = 3218
 executor = "claude-code"
+notes = """
+Three MINOR T-393 follow-ups from wave 1 adversarial verifier. Verified NOT defects: golden bytes match BuildPayload; tripwire cannot reject mod sends; started_at/ended_at guarded by s_bSawLive (TBD_ResultsReporter.c:215).
+
+--- migration_legacy (verbatim) ---
+
+Three MINOR findings against the shipped T-393 contract split, from wave 1's adversarial verifier. None affects the shipping mod; all are cheap. Grouped because they are one file and one sitting.
+
+1. command_win is missing from the legacy tripwire and the comment is false. handlers/telemetry.rs:483-508 lists kills/team_kills/longest_kill_m/vehicles_destroyed/is_command. SEVEN fields moved into the counters object; deaths is excluded deliberately and correctly (including it would 400 every production report, since the mod emits deaths at top level), but command_win is excluded SILENTLY while the comment asserts "Nothing else that moved is tolerated." Harmless in practice — a genuine pre-split sender carries the other five and trips anyway — but the comment states something untrue about the code beneath it.
+
+2. A JSON null escapes the tripwire. Option<IgnoredAny> under serde_json's deserialize_option maps null -> None, so legacy_counter_key() returns None and {"kills": null, ...} passes as a modern body. No known sender does this. Reasoned from serde semantics, not compiled — confirm before fixing.
+
+3. The golden pins one instantiation of the mod's format string, not the mod's value space. The T-393 golden hard-codes terrain "everon". GetTerrain() returns mission.meta.terrain verbatim and packages/tbd-schema/schema/mission.schema.json:124 constrains it only to ^[a-z][a-z0-9_]*$, while valid_terrain (telemetry.rs:31-38) accepts exactly everon|arland|custom and upsert_match (telemetry.rs:854) 400s anything else — REJECTING THE WHOLE REPORT, not degrading the field. So a community terrain still produces the T-393 headline failure and the new golden cannot see it. Pre-existing and outside T-393's stated scope, but it means "all production ingest 400s" is not fully retired for non-allowlisted terrains. Either widen the allowlist, or degrade to NULL like the other unparseable fields do (parse_uuid_opt, telemetry.rs:49-54, is the model), or pin the value space in the golden.
+
+Verified as NOT defects while checking these: the golden's bytes match BuildPayload/BuildPlayerRow exactly, key order included; the tripwire cannot reject anything the mod sends; started_at/ended_at cannot arrive blank because s_bSawLive guards the report (TBD_ResultsReporter.c:215)."""
 priority = 2
+main_goal = "Close T-393 legacy-counter tripwire gaps and pin or widen the terrain value space."
+context = [
+    "Three MINOR wave-1 verifier findings against shipped T-393; one file, one sitting.",
+    "None affects the shipping mod; all are cheap hygiene fixes.",
+]
+requirement = [
+    "Add command_win to legacy tripwire or correct the false tolerance comment.",
+    "Close null-counter escape where Option<IgnoredAny> maps null to None.",
+    "Widen terrain allowlist, degrade unlisted to NULL, or pin value space in golden.",
+]
+current_state = [
+    "telemetry.rs:483-508 lists six moved counters; command_win excluded silently.",
+    "Comment claims nothing else moved is tolerated — false for command_win.",
+    'legacy_counter_key returns None for {"kills": null, ...}; tripwire passes.',
+    "Golden pins terrain everon; valid_terrain allows everon|arland|custom only.",
+    "Non-allowlisted terrain 400s the whole report, not just the field.",
+]
+approach = [
+    "deaths exclusion is deliberate — including it would 400 every production report.",
+    "Golden bytes match BuildPayload/BuildPlayerRow; tripwire cannot reject mod sends.",
+]
+citations = [
+    "T-393 contract split",
+    "telemetry.rs:483 tripwire",
+    "telemetry.rs:31 valid_terrain",
+    "mission.schema.json terrain",
+]
 shipped_at = "217c298e"
 created_at = "2026-07-27T07:46:08Z"
 completed_at = "2026-07-27T08:09:21Z"
@@ -18,17 +59,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    "Three MINOR findings against the shipped T-393 contract split, from wave 1's adversarial verifier. None affects the shipping mod; all are cheap. Grouped because they are one file and one sitting.",
-    "",
-    '1. command_win is missing from the legacy tripwire and the comment is false. handlers/telemetry.rs:483-508 lists kills/team_kills/longest_kill_m/vehicles_destroyed/is_command. SEVEN fields moved into the counters object; deaths is excluded deliberately and correctly (including it would 400 every production report, since the mod emits deaths at top level), but command_win is excluded SILENTLY while the comment asserts "Nothing else that moved is tolerated." Harmless in practice — a genuine pre-split sender carries the other five and trips anyway — but the comment states something untrue about the code beneath it.',
-    "",
-    """2. A JSON null escapes the tripwire. Option<IgnoredAny> under serde_json's deserialize_option maps null -> None, so legacy_counter_key() returns None and {"kills": null, ...} passes as a modern body. No known sender does this. Reasoned from serde semantics, not compiled — confirm before fixing.""",
-    "",
-    """3. The golden pins one instantiation of the mod's format string, not the mod's value space. The T-393 golden hard-codes terrain "everon". GetTerrain() returns mission.meta.terrain verbatim and packages/tbd-schema/schema/mission.schema.json:124 constrains it only to ^[a-z][a-z0-9_]*$, while valid_terrain (telemetry.rs:31-38) accepts exactly everon|arland|custom and upsert_match (telemetry.rs:854) 400s anything else — REJECTING THE WHOLE REPORT, not degrading the field. So a community terrain still produces the T-393 headline failure and the new golden cannot see it. Pre-existing and outside T-393's stated scope, but it means "all production ingest 400s" is not fully retired for non-allowlisted terrains. Either widen the allowlist, or degrade to NULL like the other unparseable fields do (parse_uuid_opt, telemetry.rs:49-54, is the model), or pin the value space in the golden.""",
-    "",
-    "Verified as NOT defects while checking these: the golden's bytes match BuildPayload/BuildPlayerRow exactly, key order included; the tripwire cannot reject anything the mod sends; started_at/ended_at cannot arrive blank because s_bSawLive guards the report (TBD_ResultsReporter.c:215).",
-]
 owns = ["apps/website/api/src/handlers/telemetry.rs"]
 
 [scope]

@@ -1,12 +1,51 @@
 id = "T-396"
 kind = "work"
-title = "Cure the trunk serve / gate race instead of killing the operator's dev server"
+title = "Fix trunk gate race without killing dev server"
 summary = "Cure the trunk serve / gate race instead of killing the operator's dev server"
 class = "bug"
 status = "shipped"
 order = 3212
 executor = "claude-code"
+notes = """
+
+--- migration_legacy (verbatim) ---
+
+The gate's `trunk build --release` and the operator's `make leptos` (`trunk serve --release`) race over the same staging paths. OBSERVED 2026-07-26: the wave gate failed with "error writing JS loader file to stage dir / No such file or directory" while PID 158382 held it, and the identical build passed seconds later. Worst possible failure shape — an ENVIRONMENT race that reads exactly like a code defect, so an unattended fix agent burns its whole retry budget on working code.
+
+CURRENT MITIGATION IS A BAND-AID: preflight warns, and the command center kills the operator's trunk serve before every unattended run. That takes his dev SPA down on :3000 each time, which is user-hostile and will eventually be forgotten and re-broken.
+
+DEAD END, ALREADY TRIED — DO NOT RETRY: I claimed a private `--dist` for the gate would fix it and then disproved my own claim. `wave.sh` does pass `--dist $MAIN_ROOT/dist-gate-frontend` and it is STILL not sufficient, because trunk also stages through fixed paths derived from `CARGO_TARGET_DIR`, and the gate actively PROVOKES the race by `touch_changed` bumping 18 frontend files. A private dist alone leaves the staging collision intact.
+
+So the cure has to isolate the whole trunk working set, not just the output dir. Candidates worth measuring before committing to one: give the gate its own private CARGO_TARGET_DIR *and* TRUNK_STAGING/tmp dir (verify which env var trunk actually honours for staging in the pinned version — do not assume); or run the gate's frontend build from a throwaway copy of the crate; or have the gate detect a live trunk serve and take a lock rather than colliding.
+
+ACCEPTANCE: with `make leptos` running the whole time, run the frontend gate 10x consecutively with zero staging failures, and confirm the operator's :3000 stays up and serving throughout. Anything less is not a cure — the current state already passes 'usually works'."""
 priority = 1
+main_goal = "Isolate trunk gate working set so leptos-gates and trunk serve never collide on staging paths."
+context = [
+    "trunk build --release races trunk serve --release over same staging paths.",
+    "OBSERVED 2026-07-26: wave gate failed staging write; identical build passed seconds later.",
+]
+requirement = [
+    "Worst shape: ENVIRONMENT race reads like code defect — burns retry budget.",
+    "CURRENT MITIGATION: preflight warns; command center kills trunk serve before gate.",
+    "That takes dev SPA on :3000 down each unattended run — user-hostile.",
+    "DEAD END: private --dist insufficient — trunk also stages via CARGO_TARGET_DIR paths.",
+    "wave.sh passes --dist but gate touch_changed bumps 18 frontend files provoking race.",
+    "Cure must isolate whole trunk working set, not just output dir.",
+    "Candidates: private CARGO_TARGET_DIR + TRUNK_STAGING; throwaway crate copy; detect live serve lock.",
+    "Verify which env var trunk honours for staging in pinned version.",
+]
+current_state = ["Private dist alone leaves staging collision intact — already tried and disproved."]
+verify = [
+    "With make leptos running: 10x frontend gate, zero staging failures.",
+    ":3000 stays up and serving throughout — anything less is not a cure.",
+]
+citations = [
+    "wave.sh --dist gate",
+    "touch_changed 18 files",
+    "make leptos trunk serve",
+    "CARGO_TARGET_DIR staging",
+]
 shipped_at = "95c0265b"
 created_at = "2026-07-26T13:54:01Z"
 completed_at = "2026-07-26T16:19:47Z"
@@ -18,17 +57,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
-migration_legacy = [
-    """The gate's `trunk build --release` and the operator's `make leptos` (`trunk serve --release`) race over the same staging paths. OBSERVED 2026-07-26: the wave gate failed with "error writing JS loader file to stage dir / No such file or directory" while PID 158382 held it, and the identical build passed seconds later. Worst possible failure shape — an ENVIRONMENT race that reads exactly like a code defect, so an unattended fix agent burns its whole retry budget on working code.""",
-    "",
-    "CURRENT MITIGATION IS A BAND-AID: preflight warns, and the command center kills the operator's trunk serve before every unattended run. That takes his dev SPA down on :3000 each time, which is user-hostile and will eventually be forgotten and re-broken.",
-    "",
-    "DEAD END, ALREADY TRIED — DO NOT RETRY: I claimed a private `--dist` for the gate would fix it and then disproved my own claim. `wave.sh` does pass `--dist $MAIN_ROOT/dist-gate-frontend` and it is STILL not sufficient, because trunk also stages through fixed paths derived from `CARGO_TARGET_DIR`, and the gate actively PROVOKES the race by `touch_changed` bumping 18 frontend files. A private dist alone leaves the staging collision intact.",
-    "",
-    "So the cure has to isolate the whole trunk working set, not just the output dir. Candidates worth measuring before committing to one: give the gate its own private CARGO_TARGET_DIR *and* TRUNK_STAGING/tmp dir (verify which env var trunk actually honours for staging in the pinned version — do not assume); or run the gate's frontend build from a throwaway copy of the crate; or have the gate detect a live trunk serve and take a lock rather than colliding.",
-    "",
-    "ACCEPTANCE: with `make leptos` running the whole time, run the frontend gate 10x consecutively with zero staging failures, and confirm the operator's :3000 stays up and serving throughout. Anything less is not a cure — the current state already passes 'usually works'.",
-]
 owns = ["scripts/platform/wave.sh"]
 
 [scope]
