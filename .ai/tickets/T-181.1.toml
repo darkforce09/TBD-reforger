@@ -14,6 +14,10 @@ requirement = [
     "scripts/mod/compile.sh exits 0 clean, 1 with file:line on broken .c.",
     "--selftest proves the gate still catches a broken file.",
 ]
+current_state = ["Workbench compile took 90–120s and needed a human click per notes."]
+approach = ["scripts/mod/compile.sh via native ArmaReforgerServer; --selftest catches broken .c."]
+verify = ["bash scripts/mod/compile.sh; make mod-compile-selftest."]
+acceptance = ["Headless mod compile gate shipped ~1.3s; clean exit 0, broken .c exits 1 with file:line."]
 citations = [
     "Source: commit d8fc6abc — Enfusion factory.",
     "Source: t181_event_mod_program.md — T-181.1 row.",

@@ -14,6 +14,10 @@ requirement = [
     "Ship enf bin indexing CRF into crf_*.tsv under enf-index artifacts.",
     "Real symbol resolves; invented symbol does not.",
 ]
+current_state = ["Agents invented CRF APIs; no greppable symbol index existed."]
+approach = ["enf bin indexes CRF into committed crf_*.tsv under enf-index artifacts."]
+verify = ["make enf-index."]
+acceptance = ["CRF index shipped 266 files, 3359 symbols; real symbols resolve, invented ones do not."]
 citations = [
     "Source: commit d8fc6abc — Enfusion factory.",
     "Source: t181_event_mod_program.md — T-181.2 row.",

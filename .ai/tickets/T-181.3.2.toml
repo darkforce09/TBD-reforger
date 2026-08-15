@@ -16,7 +16,14 @@ requirement = [
     "Extract by real path from pak FILE table via enf extract.",
     "Fix PakVfs inflate fallback; record 4,012 unknown-codec barrier.",
 ]
-citations = ["Source: vanilla_carve_coverage.md — compression barrier."]
+current_state = ["Byte-carve reached 610 scripts; MCP game_read failed on compressed pak blocks."]
+approach = ["enf extract by real pak path; PakVfs zlib-to-deflate fallback; index combined tree."]
+verify = ["cargo run -q -p tbd-tools --bin enf -- extract."]
+acceptance = ["Pak extract pulled 2483 uncompressed scripts; 4012 unknown-codec entries recorded as barrier."]
+citations = [
+    "Source: vanilla_carve_coverage.md — compression barrier.",
+    "Source: d8fc6abc — enf extract.",
+]
 created_at = "2026-07-25T00:00:00Z"
 completed_at = "2026-07-31T00:00:00Z"
 estimated = [

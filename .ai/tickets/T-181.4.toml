@@ -16,7 +16,10 @@ requirement = [
     "Write docs/mod/TBD_MOD_DESIGN.md as the program north star.",
     "Ship verify-oracle @idx gate and verify-no-crf-leak; hallucinated symbol exits 1.",
 ]
+current_state = ["Mod program lacked north-star doc; agents hallucinated symbols without failing gates."]
+approach = ["TBD_MOD_DESIGN.md plus enf citations and verify-no-crf-leak oracle gates."]
 verify = ["Hallucinated RequestSlotChange makes @idx gate exit 1."]
+acceptance = ["North-star design shipped; fourteen @idx citations resolved; hallucinated RequestSlotChange made gate exit 1."]
 citations = [
     "Source: commit d8fc6abc — Enfusion factory.",
     "Source: t181_event_mod_program.md — T-181.4 row.",

@@ -14,6 +14,10 @@ requirement = [
     "Add scripts/lib/hostrun.sh sourcing host commands from the container.",
     "cargo xtask ticket check stays green inside the container.",
 ]
+current_state = ["Agent shell debian:12; host cc and Fedora glibc binaries unavailable inside."]
+approach = ["scripts/lib/hostrun.sh routes linker, Steam, and game binaries to host."]
+verify = ["./scripts/ticket check from the container."]
+acceptance = ["hostrun.sh routed host commands; ticket check stayed green inside the container."]
 citations = [
     "Source: commit d8fc6abc — Enfusion factory.",
     "Source: t181_event_mod_program.md — T-181.0 row.",

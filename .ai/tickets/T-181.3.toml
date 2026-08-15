@@ -16,7 +16,12 @@ requirement = [
     "Ship enf carve, vanilla index, and make enf-carve over game install.",
     "Record compressed gameplay classes as known-missing, not faked.",
 ]
+current_state = ["No greppable vanilla reference; spawn classes trapped in compressed pak blocks."]
+approach = ["enf carve byte-scans paks; make enf-carve; record gaps in vanilla_carve_coverage.md."]
+verify = ["make enf-carve; enf index vanilla."]
+acceptance = ["Vanilla carve indexed 610 plaintext files; compressed spawn classes recorded known-missing, not faked."]
 citations = [
+    "Source: vanilla_carve_coverage.md — lane 1.",
     "Source: commit d8fc6abc — Enfusion factory.",
     "Source: vanilla_carve_coverage.md — legacy carve.",
 ]

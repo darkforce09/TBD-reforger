@@ -14,7 +14,10 @@ requirement = [
     "Commit capability_verdicts.tsv covering every indexed CRF capability.",
     "verify-capability fails on any UNTRIAGED row; fifty-seven verdicts, zero gaps.",
 ]
+current_state = ["Indexed CRF capabilities lacked TBD verdicts; UNTRIAGED rows slipped through."]
+approach = ["capability_verdicts.tsv plus enf capability gate; forgot row fails build."]
 verify = ["verify-capability: fifty-seven capabilities, zero untriaged."]
+acceptance = ["Fifty-seven capabilities triaged; verify-capability exited 0 with zero UNTRIAGED rows."]
 citations = [
     "Source: commit d8fc6abc — Enfusion factory.",
     "Source: t181_event_mod_program.md — T-181.2.1 row.",

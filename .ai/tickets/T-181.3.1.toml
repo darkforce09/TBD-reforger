@@ -16,6 +16,10 @@ requirement = [
     "Mirror enf apidoc via fetch-vanilla-api.sh; index all class signatures.",
     "Resolve SCR_BaseGameMode, PossessSpawnData, RespawnSystemComponent, ChimeraMenuBase.",
 ]
+current_state = ["T-181.3 carve missed SCR_BaseGameMode and spawn classes as plaintext."]
+approach = ["fetch-vanilla-api.sh mirrored BI Doxygen; enf apidoc indexed 7990 class signatures."]
+verify = ["make enf-apidoc."]
+acceptance = ["Official API mirror indexed 7990 classes; SCR_BaseGameMode and RespawnSystemComponent signatures resolved."]
 citations = [
     "Source: vanilla_carve_coverage.md — API mirror.",
     "Source: commit d8fc6abc — factory bootstrap.",

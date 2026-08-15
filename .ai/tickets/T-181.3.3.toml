@@ -16,6 +16,10 @@ requirement = [
     "Ship fetch-vanilla-source.sh and enf source demangling into vanilla_reference.",
     "Index 6,495 source pages; prove SCR_BaseGameMode and RespawnSystem resolve.",
 ]
+current_state = ["Pak codec blocked 4012 scripts; spawn-layer classes lacked method bodies."]
+approach = ["fetch-vanilla-source.sh cached AR Explorer pages; enf source rebuilt real .c files."]
+verify = ["bash scripts/mod/fetch-vanilla-source.sh; enf source."]
+acceptance = ["AR Explorer source lane indexed 2116 files with bodies; SCR_BaseGameMode.c resolved with method bodies."]
 citations = [
     "Source: commit 89948873 — fetch-vanilla-source.",
     "Source: vanilla_carve_coverage.md — lane 4 answer.",

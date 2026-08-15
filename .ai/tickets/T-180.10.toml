@@ -20,6 +20,10 @@ requirement = [
 current_state = ["ROADMAP and agent_execution still queued absorbed ORBAT work."]
 approach = ["t180_10_coherency_report; cargo xtask verify t180; doc remediations."]
 verify = ["Verify: .ai/artifacts/t180_10_verify_log.md."]
+acceptance = [
+    "L1–L10 coherency report shipped with GPU bind closed.",
+    "verify-t180 gate green; hub and registry remediations landed; zero P0 filed.",
+]
 citations = [
     "Source: commit e267109e — coherency checker.",
     "Source: SHIPPED_HISTORY.md §T-180.",
