@@ -3,7 +3,7 @@ kind = "work"
 title = "History reconstruction: body fields + titles for shipped tickets"
 summary = "Batched reviewed reconstruction over shipped tickets without quarantined walls: fill the body fields and repair deficient titles from each ticket's spec, commits and diffs, citing sources. Each batch shrinks both debt pins in the same commit."
 class = "chore"
-status = "ready"
+status = "shipped"
 order = 6010
 spec = "docs/platform/t920_body_obligations.md"
 plan = "docs/plans/t-921_plan.md"
@@ -38,6 +38,7 @@ acceptance = [
     "cargo xtask ticket check --strict prints check OK after every batch; wave.lock byte-identical",
 ]
 created_at = "2026-08-15T03:17:45Z"
+completed_at = "2026-08-15T17:55:18Z"
 owns = [".ai/tickets"]
 
 [scope]
