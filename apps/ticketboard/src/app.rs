@@ -25,6 +25,7 @@ use eframe::egui::{
     self, Align, Align2, Button, Color32, ComboBox, DragAndDrop, FontId, Frame, Id, Layout, Panel,
     Rect, RichText, ScrollArea, Sense, Spinner, Stroke, StrokeKind, TextEdit, Ui, pos2, vec2,
 };
+use egui_commonmark::{CommonMarkCache, CommonMarkViewer};
 use egui_extras::{Column as TableColumn, TableBuilder};
 use tbd_tickets::StatusName;
 
@@ -42,6 +43,7 @@ use crate::subproc::{self, LogRing, ProcEvent, ProcHandle};
 use crate::tree::{self, TreeModel};
 use crate::trust::{self, CheckModel, Coalescer, Tone};
 use crate::verbs;
+use crate::viewer::{self, ViewerState};
 use crate::watch::{self, Debouncer};
 use crate::wavelock::{self, LockState};
 use crate::waves::{Lane, Wave0, WaveChip, WavesModel};
@@ -55,6 +57,10 @@ const CARD_GAP: f32 = 6.0;
 const COL_W: f32 = 236.0;
 const CHIP_COL_W: f32 = 92.0;
 const DETAIL_W: f32 = 420.0;
+/// Markdown viewer pane default width (T-918.4) — wider than the detail panel:
+/// prose wants line length; both panels stay user-resizable with separate
+/// egui size memory (distinct panel Ids).
+const VIEWER_W: f32 = 560.0;
 const TREE_ROW_H: f32 = 18.0;
 const TREE_INDENT: f32 = 16.0;
 const WAVE0_ROW_H: f32 = 18.0;
@@ -331,6 +337,12 @@ pub(crate) enum Action {
     ClearCompare,
     ToggleColumn(usize),
     OpenPath(PathBuf),
+    /// T-918.4: open a repo-relative `.md` document in the in-app viewer pane
+    /// (spec/plan/citation click; non-`.md` paths stay on [`Action::OpenPath`]).
+    OpenDoc(String),
+    /// T-918.4 Back: close the viewer — the detail panel returns with the board
+    /// selection untouched.
+    CloseViewer,
     CloseDetail,
     SetTab(Tab),
     ToggleNode(usize),
@@ -398,6 +410,15 @@ pub struct TicketboardApp {
     toasts: Vec<Toast>,
     /// Advanced raw set-status dropdown selection (detail panel).
     advanced_status: Option<StatusName>,
+    // ---- T-918.4: in-app markdown viewer ----
+    /// Viewer pane state machine — lives on the app (not BoardState) so a
+    /// watch-triggered corpus reload never closes an open document.
+    viewer: ViewerState,
+    /// In-flight worker read; replaced wholesale on every open (the old
+    /// channel's late result is additionally dropped by `ViewerState::land`).
+    viewer_rx: Option<Receiver<viewer::LoadedDoc>>,
+    /// egui_commonmark render cache (render-side only — no document state).
+    md_cache: CommonMarkCache,
 }
 
 impl TicketboardApp {
@@ -431,6 +452,9 @@ impl TicketboardApp {
             dialog: None,
             toasts: Vec::new(),
             advanced_status: None,
+            viewer: ViewerState::Closed,
+            viewer_rx: None,
+            md_cache: CommonMarkCache::default(),
         };
         match discovery::resolve_repo_root(arg, cwd.as_deref()) {
             Some(root) if discovery::has_tickets_dir(&root) => {
@@ -606,6 +630,28 @@ impl TicketboardApp {
         self.pick_rx = Some(rx);
     }
 
+    /// T-918.4: open a repo-relative markdown document in the viewer pane —
+    /// state → Loading, the read spawned on a worker thread (replacing any
+    /// in-flight read; its late result is dropped by `ViewerState::land`).
+    /// The escape fence and every failure mode live in `viewer::load_doc`.
+    fn open_doc(&mut self, rel: String, ctx: &egui::Context) {
+        let Some(root) = self.repo_root.clone() else {
+            // Unreachable from the detail panel (it only renders over an
+            // adopted root), but the machine stays total: an explicit note.
+            self.viewer = ViewerState::Fallback {
+                path: rel,
+                text: String::new(),
+                note: "no repo root resolved".to_owned(),
+            };
+            return;
+        };
+        self.viewer.open(&rel);
+        let repaint_ctx = ctx.clone();
+        self.viewer_rx = Some(viewer::spawn_read(root, rel, move || {
+            repaint_ctx.request_repaint()
+        }));
+    }
+
     /// Drain worker results (non-blocking) and advance the state machine.
     fn poll(&mut self, ctx: &egui::Context) {
         if let Some(rx) = &self.load_rx
@@ -672,6 +718,13 @@ impl TicketboardApp {
                     };
                 }
             }
+        }
+        // T-918.4: land the viewer's worker read (stale paths dropped inside).
+        if let Some(rx) = &self.viewer_rx
+            && let Ok(doc) = rx.try_recv()
+        {
+            self.viewer_rx = None;
+            self.viewer.land(doc);
         }
         self.poll_check(ctx);
         self.poll_git(ctx);
@@ -918,6 +971,13 @@ impl TicketboardApp {
                 Action::ToggleGitList => self.git_expanded = !self.git_expanded,
                 Action::PickFolder => self.start_pick(ctx),
                 Action::OpenPath(path) => open_path(&path),
+                Action::OpenDoc(rel) => self.open_doc(rel, ctx),
+                Action::CloseViewer => {
+                    // Back touches ONLY the viewer — the board selection stays,
+                    // so the same ticket's detail panel returns underneath.
+                    self.viewer.close();
+                    self.viewer_rx = None;
+                }
                 Action::SetTab(tab) => self.tab = tab,
                 Action::CopyText(text) => ctx.copy_text(text),
                 Action::ToggleLegacyExpand => {
@@ -1164,23 +1224,43 @@ impl eframe::App for TicketboardApp {
                     mutate::drawer_ui(ui, &self.verb, &mut actions);
                 });
             }
-            if let Some(selected) = b.selected {
-                Panel::right(Id::new("detail"))
-                    .resizable(true)
-                    .default_size(DETAIL_W)
-                    .show(ui, |ui| {
-                        detail_ui(
-                            ui,
-                            MutCtx {
-                                repo_root: self.repo_root.as_deref(),
-                                busy: verb_busy,
-                            },
-                            b,
-                            selected,
-                            &mut self.advanced_status,
-                            &mut actions,
-                        );
-                    });
+            // T-918.4: the viewer replaces the detail region while open; Back
+            // closes it and the SAME selection's detail panel returns —
+            // `right_pane` is the one gate (test-pinned).
+            match right_pane(self.viewer.is_open(), b.selected) {
+                RightPane::Viewer => {
+                    Panel::right(Id::new("viewer"))
+                        .resizable(true)
+                        .default_size(VIEWER_W)
+                        .show(ui, |ui| {
+                            viewer_pane_ui(
+                                ui,
+                                &self.viewer,
+                                &mut self.md_cache,
+                                self.repo_root.as_deref(),
+                                &mut actions,
+                            );
+                        });
+                }
+                RightPane::Detail(selected) => {
+                    Panel::right(Id::new("detail"))
+                        .resizable(true)
+                        .default_size(DETAIL_W)
+                        .show(ui, |ui| {
+                            detail_ui(
+                                ui,
+                                MutCtx {
+                                    repo_root: self.repo_root.as_deref(),
+                                    busy: verb_busy,
+                                },
+                                b,
+                                selected,
+                                &mut self.advanced_status,
+                                &mut actions,
+                            );
+                        });
+                }
+                RightPane::None => {}
             }
         }
         egui::CentralPanel::default().show(ui, |ui| match &self.state {
@@ -2489,6 +2569,115 @@ fn est_sort_header_ui(
     }
 }
 
+// ---- T-918.4: in-app markdown viewer pane ----
+
+/// Which right-hand pane renders this frame.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RightPane {
+    Viewer,
+    Detail(usize),
+    None,
+}
+
+/// The T-918.4 Back contract as ONE pure gate, consumed by the paint path and
+/// pinned by the tests: the viewer replaces the detail region while open
+/// (selection or not — it must survive a selection loss under reload); closed,
+/// the selected ticket's detail panel renders; neither → no right pane.
+fn right_pane(viewer_open: bool, selected: Option<usize>) -> RightPane {
+    if viewer_open {
+        RightPane::Viewer
+    } else {
+        match selected {
+            Some(index) => RightPane::Detail(index),
+            None => RightPane::None,
+        }
+    }
+}
+
+/// The viewer pane (T-918.4): header = Back (returns to the detail panel,
+/// selection intact) + the repo-relative path + external-open as the SECONDARY
+/// affordance (the old xdg-open behavior, demoted but never removed). Body:
+/// egui_commonmark for `Rendered`; the naming note + raw monospace text for
+/// `Fallback`; a spinner while the worker reads. Read-only — this pane owns no
+/// mutation affordance at all.
+fn viewer_pane_ui(
+    ui: &mut Ui,
+    state: &ViewerState,
+    cache: &mut CommonMarkCache,
+    repo_root: Option<&Path>,
+    actions: &mut Vec<Action>,
+) {
+    ui.add_space(4.0);
+    ui.horizontal(|ui| {
+        if ui
+            .button("← Back")
+            .on_hover_text("back to the detail panel (selection unchanged)")
+            .clicked()
+        {
+            actions.push(Action::CloseViewer);
+        }
+        if let Some(path) = state.path() {
+            ui.label(RichText::new(path).monospace().small());
+        }
+        ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+            if let Some(path) = state.path()
+                && ui
+                    .small_button("open externally")
+                    .on_hover_text("OS handler (xdg-open) — the whole file, outside the board")
+                    .clicked()
+            {
+                let abs = match repo_root {
+                    Some(root) => root.join(path),
+                    None => PathBuf::from(path),
+                };
+                actions.push(Action::OpenPath(abs));
+            }
+        });
+    });
+    ui.separator();
+    match state {
+        ViewerState::Closed => {}
+        ViewerState::Loading { path } => {
+            ui.horizontal(|ui| {
+                ui.add(Spinner::new().size(14.0));
+                ui.label(RichText::new(format!("reading {path}…")).weak());
+            });
+        }
+        ViewerState::Rendered { text, .. } => {
+            ScrollArea::vertical()
+                .id_salt("viewer_md")
+                .auto_shrink([false, false])
+                .show(ui, |ui| {
+                    CommonMarkViewer::new().show(ui, cache, text);
+                    ui.add_space(12.0);
+                });
+        }
+        ViewerState::Fallback { text, note, .. } => {
+            ui.label(
+                RichText::new(note)
+                    .color(ui.visuals().warn_fg_color)
+                    .small(),
+            );
+            ui.separator();
+            if text.is_empty() {
+                ui.label(RichText::new("nothing was read").weak().small());
+                return;
+            }
+            // Raw monospace lines, virtualized (the fallback text is capped at
+            // SIZE_CAP_BYTES, so the per-frame line count/skip walk is bounded).
+            let total = text.lines().count();
+            ScrollArea::vertical()
+                .id_salt("viewer_raw")
+                .auto_shrink([false, false])
+                .show_rows(ui, OUTPUT_ROW_H, total, |ui, row_range| {
+                    for line in text.lines().skip(row_range.start).take(row_range.len()) {
+                        ui.label(RichText::new(line).monospace().small());
+                    }
+                });
+        }
+    }
+}
+
 // ---- detail panel ----
 
 /// One detail-row value; ids and paths are live links. (The pre-T-918.2 `Mono`
@@ -2609,6 +2798,16 @@ fn detail_ui(
                         path: resolve(s),
                     }),
                 ),
+                // T-918.4: the per-ticket plan document — the in-app viewer's
+                // primary click (S.6 makes it a ready-gate, so live ready
+                // tickets always carry one).
+                (
+                    "plan",
+                    v.plan.map_or(Cell::Missing, |p| Cell::PathRef {
+                        label: p.to_owned(),
+                        path: resolve(p),
+                    }),
+                ),
                 ("parent", opt_id(v.parent)),
                 ("active", opt_id(v.active)),
                 ("shipped_at", stamp("shipped_at", v.shipped_at)),
@@ -2668,7 +2867,7 @@ fn detail_ui(
             for section in detail::body_region_order() {
                 match section {
                     detail::BodySection::Field(field) => {
-                        body_section_ui(ui, field, &detail::section_content(field, &v));
+                        body_section_ui(ui, field, &detail::section_content(field, &v), actions);
                     }
                     detail::BodySection::Quarantine => {
                         quarantine_section_ui(
@@ -2778,8 +2977,24 @@ fn cell_ui(ui: &mut Ui, cell: &Cell, ids: &HashMap<String, usize>, actions: &mut
         }
         Cell::IdRef(id) => id_link_ui(ui, id, ids, actions),
         Cell::PathRef { label, path } => {
-            if ui.link(RichText::new(label).monospace()).clicked() {
-                actions.push(Action::OpenPath(path.clone()));
+            // T-918.4: `.md` paths (spec/plan) open the in-app viewer; anything
+            // else (the .toml file row) keeps the external OS-handler hop.
+            let in_app = viewer::wants_viewer(label);
+            let hover = if in_app {
+                "open in the board viewer"
+            } else {
+                "open with the OS handler (xdg-open)"
+            };
+            if ui
+                .link(RichText::new(label).monospace())
+                .on_hover_text(hover)
+                .clicked()
+            {
+                if in_app {
+                    actions.push(Action::OpenDoc(label.clone()));
+                } else {
+                    actions.push(Action::OpenPath(path.clone()));
+                }
             }
         }
         Cell::Scope(bc) => scope_breadcrumb_ui(ui, bc),
@@ -2928,8 +3143,15 @@ fn missing_marker(ui: &mut Ui) {
 /// count on nonempty lists — carries the field's one-line anti-blend definition
 /// as its hover tooltip (the acceptance-vs-verify distinction lives exactly
 /// here); content renders as wrapped text (scalars), numbered monospace lines
-/// (lists), or the muted em-dash when absent.
-fn body_section_ui(ui: &mut Ui, field: detail::BodyField, content: &detail::SectionContent) {
+/// (lists), or the muted em-dash when absent. T-918.4: in the citations section
+/// a `.md` entry renders its numbered line as a link into the in-app viewer;
+/// non-`.md` citations keep the plain monospace line they always were.
+fn body_section_ui(
+    ui: &mut Ui,
+    field: detail::BodyField,
+    content: &detail::SectionContent,
+    actions: &mut Vec<Action>,
+) {
     let label = match content {
         detail::SectionContent::Lines(lines) => format!("{} ({})", field.as_str(), lines.len()),
         detail::SectionContent::Absent | detail::SectionContent::Text(_) => {
@@ -2939,14 +3161,25 @@ fn body_section_ui(ui: &mut Ui, field: detail::BodyField, content: &detail::Sect
     ui.add_space(10.0);
     ui.label(RichText::new(label).strong().small())
         .on_hover_text(field.definition());
+    let md_links = field == detail::BodyField::Citations;
     match content {
         detail::SectionContent::Absent => missing_marker(ui),
         detail::SectionContent::Text(text) => {
             ui.label(text);
         }
         detail::SectionContent::Lines(lines) => {
-            for line in detail::numbered_lines(lines) {
-                ui.label(RichText::new(line).monospace().small());
+            for (numbered, entry) in detail::numbered_lines(lines).into_iter().zip(lines) {
+                if md_links && viewer::wants_viewer(entry) {
+                    if ui
+                        .link(RichText::new(numbered).monospace().small())
+                        .on_hover_text("open in the board viewer")
+                        .clicked()
+                    {
+                        actions.push(Action::OpenDoc(entry.clone()));
+                    }
+                } else {
+                    ui.label(RichText::new(numbered).monospace().small());
+                }
             }
         }
     }
@@ -3079,5 +3312,68 @@ fn open_path(path: &Path) {
     let spawned = std::process::Command::new("xdg-open").arg(path).spawn();
     if let Err(e) = spawned {
         eprintln!("ticketboard: opening {} failed: {e}", path.display());
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::testutil::{corpus_of, work};
+
+    fn board_state(selected: Option<usize>) -> BoardState {
+        let corpus = corpus_of(vec![
+            work("T-1", "status = \"idea\"", ""),
+            work("T-2", "status = \"idea\"", ""),
+        ]);
+        let mut b = BoardState::new(
+            corpus,
+            LockState::Missing {
+                message: "no lock".to_owned(),
+            },
+            MetricsState::NoReceipts,
+            estimates::RawEstimates::default(),
+            None,
+            Carried::default(),
+        );
+        b.selected = selected;
+        b
+    }
+
+    /// T-918.4 Back contract, pinned on the SAME gate the paint path consumes:
+    /// opening the viewer swaps the right pane; Back (close) touches only the
+    /// viewer machine, so the SAME selection's detail panel returns.
+    #[test]
+    fn back_returns_to_detail_with_selection_intact() {
+        let b = board_state(Some(1));
+        let mut viewer = ViewerState::Closed;
+        assert_eq!(
+            right_pane(viewer.is_open(), b.selected),
+            RightPane::Detail(1)
+        );
+
+        // A plan click: the viewer replaces the detail region.
+        viewer.open("docs/plans/t-918_4_plan.md");
+        assert_eq!(right_pane(viewer.is_open(), b.selected), RightPane::Viewer);
+
+        // Back — the CloseViewer action calls exactly this and nothing else on
+        // the board: selection intact, detail panel back for the same index.
+        viewer.close();
+        assert_eq!(b.selected, Some(1), "close touches no board state");
+        assert_eq!(
+            right_pane(viewer.is_open(), b.selected),
+            RightPane::Detail(1)
+        );
+    }
+
+    /// The gate is total: the viewer wins whenever open (even with the
+    /// selection gone — a reload may drop it under an open document), and no
+    /// pane renders with neither.
+    #[test]
+    fn right_pane_gate_is_total() {
+        let b = board_state(None);
+        assert_eq!(right_pane(false, b.selected), RightPane::None);
+        assert_eq!(right_pane(true, b.selected), RightPane::Viewer);
+        assert_eq!(right_pane(true, Some(0)), RightPane::Viewer);
+        assert_eq!(right_pane(false, Some(0)), RightPane::Detail(0));
     }
 }

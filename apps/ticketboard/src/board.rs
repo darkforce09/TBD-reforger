@@ -383,6 +383,9 @@ pub struct TicketView<'a> {
     pub executor: Option<&'a str>,
     pub notes: Option<&'a str>,
     pub spec: Option<&'a str>,
+    /// T-917.2 per-ticket plan document path (T-918.4 renders it clickable —
+    /// the in-app viewer's primary use case).
+    pub plan: Option<&'a str>,
     pub depends_on: &'a [String],
     pub unblocks: &'a [String],
     pub parent: Option<&'a str>,
@@ -436,6 +439,7 @@ pub fn view(t: &Ticket) -> TicketView<'_> {
             executor: p.executor.as_deref(),
             notes: p.notes.as_deref(),
             spec: p.spec.as_deref(),
+            plan: p.plan.as_deref(),
             depends_on: &p.depends_on,
             unblocks: &p.unblocks,
             parent: None,
@@ -470,6 +474,7 @@ pub fn view(t: &Ticket) -> TicketView<'_> {
             executor: w.executor.as_deref(),
             notes: w.notes.as_deref(),
             spec: w.spec.as_deref(),
+            plan: w.plan.as_deref(),
             depends_on: &w.depends_on,
             unblocks: &w.unblocks,
             parent: w.parent.as_deref(),
@@ -854,12 +859,14 @@ active = "T-9.1"
         assert_eq!(v.parent, None);
         assert!(v.scope.is_none());
         assert_eq!(v.class, None);
+        assert_eq!(v.plan, None);
         assert!(v.estimated.is_empty());
 
         let workt = work(
             "T-9.1",
             "status = \"shipped\"\nshipped_at = \"abc123\"",
             "parent = \"T-9\"\nclass = \"chore\"\nestimated = [\"scope\"]\n\
+             plan = \"docs/plans/t-9_1_plan.md\"\n\
              context = [\"why now\"]\nrequirement = [\"the ask\"]\n\
              current_state = [\"what exists\"]\napproach = [\"step 1\"]\n\
              verify = [\"cargo test\"]\ncitations = [\"docs/x.md\"]\n\
@@ -868,6 +875,8 @@ active = "T-9.1"
         let v = view(&workt);
         assert_eq!(v.kind, "work");
         assert_eq!(v.parent, Some("T-9"));
+        // T-918.4: the plan path reaches the view (the viewer's primary click).
+        assert_eq!(v.plan, Some("docs/plans/t-9_1_plan.md"));
         assert_eq!(v.shipped_at, Some("abc123"));
         assert!(v.children.is_empty());
         // T-918.3: the body lists + quarantine reach the view verbatim.

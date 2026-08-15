@@ -17,9 +17,13 @@
 //! carry the `~` glyph + verbatim estimate_note tooltip, the detail panel gains
 //! a "tokens (estimated)" row off `.ai/tickets/estimates/<id>.json`, and the
 //! Metrics tab gains the structurally separate "Estimated (historical)" panel
-//! (per-class / per-domain; estimates have no agent). Design authority:
-//! `docs/platform/t915_ticketboard_design.md` +
-//! `docs/platform/t917_ticket_schema_v2.md` §Provenance.
+//! (per-class / per-domain; estimates have no agent). T-918.4 adds the in-app
+//! markdown viewer: spec/plan/`.md`-citation clicks render the document in a
+//! right-pane egui_commonmark view — read-only, repo-root-fenced, worker-thread
+//! reads, raw-text fallback with a naming note — with external-open kept as the
+//! secondary action and Back returning to the detail panel, selection intact.
+//! Design authority: `docs/platform/t915_ticketboard_design.md` +
+//! `docs/platform/t917_ticket_schema_v2.md` §Provenance + B.4.
 
 mod app;
 mod board;
@@ -38,6 +42,7 @@ mod testutil;
 mod tree;
 mod trust;
 mod verbs;
+mod viewer;
 mod watch;
 mod wavelock;
 mod waves;

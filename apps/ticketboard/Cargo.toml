@@ -22,6 +22,16 @@ publish = false
 # wgpu is eframe 0.36's default backend (design §Framework). "persistence" enables
 # eframe Storage (ron + serde + directories) — the picked-repo-path memory.
 eframe = { version = "0.36.1", features = ["persistence"] }
+# T-918.4 in-app markdown viewer — a NAMED new dependency family (supply-chain
+# event, reported like eframe at T-915.1). Version 0.25 is the egui 0.36 match, so
+# it resolves onto the one egui already in the lock — never a second egui.
+# default-features = false drops `load-images` (egui_extras image/file loaders —
+# the mime_guess2/image tree this manifest already refuses below); the viewer is
+# read-only text, so markdown images render as their alt text and nothing fetches.
+# `pulldown_cmark` selects the one supported parser backend.
+egui_commonmark = { version = "0.25.0", default-features = false, features = [
+    "pulldown_cmark",
+] }
 # Detail-panel field table. default-features = false drops mime_guess2 (image-loader
 # support the app does not use).
 egui_extras = { version = "0.36.1", default-features = false }
