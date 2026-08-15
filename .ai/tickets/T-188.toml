@@ -15,8 +15,21 @@ requirement = [
     "Offset new slot along +x from max lane geometry, not slot_ids.len().",
     "Resolve assetId via asset_id_for_role within squad then faction tiers only.",
 ]
+current_state = [
+    "orbat_add_slot passed None and zero coordinates; slots stacked at world origin.",
+    "orbat_add_vehicle already used squad_anchor_xy; Add Role had no character picker.",
+]
+approach = [
+    "Copy squad_anchor_xy from orbat_add_vehicle with APPLY_ANCHOR fallback.",
+    "Offset along +x from lane geometry; resolve assetId via asset_id_for_role tiers.",
+]
 verify = ["Slice gate PASS; three-path native probe."]
+acceptance = [
+    "ORBAT slots anchored at squad with formation offset.",
+    "assetId tier-resolved; cross-faction character leak fixed.",
+]
 citations = [
+    "6c822f87 anchor ORBAT slots",
     "Source: commit 6c822f87 — anchor slots.",
     "Source: commit 15701a6e — tier-three fix.",
 ]

@@ -16,7 +16,17 @@ current_state = [
     "scripts/mod/setup-server-profile.sh:38 copies golden-missions/msn_8f3a2c.json, which is nowhere in the repo.",
     "With set -euo pipefail the script aborts.",
 ]
+approach = [
+    "Point mission copy at bridgehead-at-levie.json; keep meta.id filename.",
+    "Read SERVICE_TOKEN not GAME_SERVER_TOKENS; harden sed and pipefail token substitution.",
+]
+verify = ["scripts/mod/setup-server-profile.sh under set -euo pipefail."]
+acceptance = [
+    "Profile seeded existing golden by meta.id filename.",
+    "SERVICE_TOKEN substituted; missing golden exited with actionable message.",
+]
 citations = [
+    "02d95c7f bridgehead golden seed",
     "apps/website/api/src/config.rs:89",
     "deploy.env.example docker-compose.staging.yml",
     "T-252 GAME_SERVER_TOKENS merge",

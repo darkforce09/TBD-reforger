@@ -16,8 +16,21 @@ requirement = [
     "Demote intended swap lines to Print; keep genuine failure paths at WARNING.",
     "Add PlayableSelector oracle lane; extend verify-no-crf-leak; exclude oracles from deploy.",
 ]
+current_state = [
+    "Magazine mount-refused line logged WARNING though swap is intentional design.",
+    "slice-worktree linked only two oracles; PlayableSelector design lane missing.",
+]
+approach = [
+    "Demote intended swap log lines to Print; document cargo:backpack DEGRADED mismatch.",
+    "Link PlayableSelector design oracle; extend verify-no-crf-leak; exclude from deploy.",
+]
 verify = ["compile.sh clean; verify-no-crf-leak PASS with PS negative control."]
+acceptance = [
+    "Swap noise demoted; PlayableSelector oracle lane wired.",
+    "verify-no-crf-leak PASS; deploy excludes measured.",
+]
 citations = [
+    "0b305898 PlayableSelector oracle lane",
     "Source: commit 0b305898 — oracle lane wired.",
     "Source: commit 7075c7fe — deploy excludes measured.",
 ]

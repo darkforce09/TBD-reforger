@@ -20,7 +20,23 @@ current_state = [
     "kit.rs:52-57 falls back, kit.rs:107-110 has a test asserting it,",
     "and flatten.rs:471 consumes it —",
 ]
-citations = ["T-181.36"]
+approach = [
+    "Add indfor and civ factionDefaults rows in kit-aliases.json.",
+    "Mirror twelve kits in registry.json per T-181.36 gate.",
+]
+verify = [
+    "cargo test -p map-engine-core --features mission",
+    "cargo test -p website-api --lib",
+    "xtask schema validate; make schema-validate failed on LFS DEM pointer.",
+]
+acceptance = [
+    "INDFOR and civ resolved own default kits, not blufor fallback.",
+    "Negative tests failed with kit:us_rifleman when indfor row removed.",
+]
+citations = [
+    "f2dc5b1a indfor civ defaults",
+    "T-181.36",
+]
 shipped_at = "f2dc5b1a"
 created_at = "2026-07-26T05:19:13Z"
 completed_at = "2026-07-26T05:21:00Z"

@@ -20,7 +20,23 @@ current_state = [
     "mission.schema.json:91 states armoredVest is deliberately NOT a key",
     "because it shares the vest container (T-181.34).",
 ]
-citations = ["T-181.34"]
+approach = [
+    "Widen mission.schema.json gear; add ModSlotGear fields.",
+    "Slot-index equip in LoadoutEquipHelper; flatten all four weapon slots.",
+]
+verify = [
+    "cargo test -p map-engine-core",
+    "cargo test -p website-api --lib",
+    "mod compile clean; validate_mission_document on four-slot fixture.",
+]
+acceptance = [
+    "All four weapon slots compiled; validate_mission_document on four-slot fixture.",
+    "Launcher-only loadout survived; armoredVest collapse left untouched.",
+]
+citations = [
+    "0bdfc096 four weapon slots",
+    "T-181.34",
+]
 shipped_at = "0bdfc096"
 created_at = "2026-07-25T23:58:55Z"
 completed_at = "2026-07-26T00:14:45Z"

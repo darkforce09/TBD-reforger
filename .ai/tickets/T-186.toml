@@ -14,7 +14,21 @@ requirement = [
     "Add --compiled path: curl compiled doc, boot through world-boot.sh, assert console log.",
     "Catch single-faction hard-reject and other compile-to-boot contract failures early.",
 ]
+current_state = [
+    "world-boot.sh booted hand-written goldens only.",
+    "Compiler output never reached Enfusion parser before events shipped.",
+]
+approach = [
+    "Add --compiled curl path: dev-login, POST, GET /compiled, boot via world-boot.sh.",
+    "Separate api_env_fail exit 3 from api_doc_fail exit 1; move cleanup trap above seeding.",
+]
+verify = ["scripts/mod/world-boot.sh --compiled; make mod-world-boot-compiled."]
+acceptance = [
+    "API-compiled thin mission booted through Enfusion parser.",
+    "Orphan mission trap moved above seeding; env versus contract failures classified.",
+]
 citations = [
+    "9ceade54 boot compiled docs",
     "Source: commit 9ceade54 — boot compiled docs.",
     "Source: commit 051e28ca — mod-world-boot-compiled.",
 ]

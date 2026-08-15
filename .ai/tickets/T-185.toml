@@ -8,13 +8,27 @@ order = 2030
 executor = "claude-code"
 main_goal = "A timeout during login destroys the snapshot so resync_all_roles cannot restore it."
 context = ["A timeout during login destroys the snapshot so resync_all_roles cannot restore it."]
+requirement = [
+    "Separate RoleSnapshot Authoritative from Unavailable on Discord fetch.",
+    "Skip sync_roles on transport error; detect blank DISCORD_GUILD_ID pre-request.",
+]
 current_state = [
     "oauth.rs:83-90 collapses an error and an empty result into one empty vec;",
     "sync_roles then deletes all user_discord_roles rows, resolves Enlisted and persists it.",
     "A blank DISCORD_GUILD_ID silently makes everyone enlisted with no log line,",
     "and manual role edits are clobbered at next login.",
 ]
+approach = [
+    "Introduce RoleSnapshot; call sync_roles only with authoritative role ids.",
+    "Log auth.role_sync_skipped audit row on degraded login paths.",
+]
+verify = ["cargo test -p website-api --lib oauth"]
+acceptance = [
+    "classify_member_lookup and guild_configured pinned; sync_roles skipped on transport error.",
+    "Blank guild id detected pre-request.",
+]
 citations = [
+    "5ee9bab0 RoleSnapshot unavailable path",
     "sync_roles Enlisted persistence path",
     "resync_all_roles snapshot restore",
     "DISCORD_GUILD_ID blank silent",

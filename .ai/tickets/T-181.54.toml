@@ -16,7 +16,19 @@ requirement = [
     "Thread http code into TryProfileFallbackAfterRestFailure; 400=staged note, else stale VERSION.",
     "Add test-mission.sh for backend versus golden mission switching.",
 ]
+current_state = [
+    "Cached-mission warning claimed wrong mission loaded; disk file keyed by configured id.",
+    "Golden msn_* ids return 400 invalid-id; absent uuid returns 404 not found.",
+]
+approach = [
+    "Thread http code into TryProfileFallbackAfterRestFailure.",
+    "Branch 400=staged note, else stale VERSION warning; add test-mission.sh.",
+]
 verify = ["400/404/200 discriminator measured against live API."]
+acceptance = [
+    "Loader branched on HTTP status; in-game note not gate-verified.",
+    "test-mission.sh added for backend versus golden switching.",
+]
 citations = ["Source: commit 9c5a5b2c — loader warning fix."]
 shipped_at = "9c5a5b2c"
 created_at = "2026-07-25T21:24:36Z"

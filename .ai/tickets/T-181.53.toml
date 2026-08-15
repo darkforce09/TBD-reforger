@@ -16,8 +16,21 @@ requirement = [
     "Delete TBD_PreSlotBody.c and unwind SpawnManager ghost hooks.",
     "Keep TBD_PreSlotCamera and vanilla loading-placeholder teardown untouched.",
 ]
+current_state = [
+    "CELL_ALTITUDE_M ghost raised modal out-of-bounds on spawn.",
+    "Operator session ran end-to-end bodyless with camera; ghost benefit unproven.",
+]
+approach = [
+    "Delete TBD_PreSlotBody.c and unwind SpawnManager ghost hooks.",
+    "Keep TBD_PreSlotCamera and vanilla loading-placeholder teardown untouched.",
+]
 verify = ["world-boot PASS; ghost symbols absent from mod tree."]
+acceptance = [
+    "Pre-slot ghost deleted; camera and placeholder teardown kept.",
+    "world-boot PASS; ghost symbols absent from mod tree.",
+]
 citations = [
+    "6739dbe1 ghost deleted",
     "Source: commit 6739dbe1 — ghost deleted.",
     "Source: commit 40de0fc0 — rdb refresh.",
 ]
