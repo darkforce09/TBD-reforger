@@ -1,13 +1,26 @@
 id = "T-181.50"
 kind = "work"
-title = "T-181.50"
-summary = "T-181.50"
+title = "Kill vanilla splash; pre-slot ghost and camera"
+summary = "Vanilla loading splash outranked the picker and never tore down; add pre-slot ghost body and spectator camera for unseated players."
 class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
 notes = "Pre-slot body + kill the vanilla loading placeholder. Vanilla SCR_RespawnSystemComponent.OnInit:270 builds a loading splash DIRECTLY on the workspace (above menu-manager menus) and mutes SFX; it is destroyed ONLY from the vanilla spawn pipeline, which we bypass and actively block in CanRequestSpawn_S. Our modded class overrides OnPlayerRegistered_S/OnPlayerAuditSuccess_S/CanRequestSpawn_S but NOT OnInit, so nothing ever tears it down. Second and larger half: with auto-deploy off the player has NO controlled entity, therefore no camera, therefore nothing to render behind the picker - every session where the picker was visible had a body. Adopt PlayableSelector's ghost pattern (invisible AI-less character in a per-player cell far off map, SetInitialMainEntity, deleted on slot commit) plus a spectator camera."
 parent = "T-181"
+context = [
+    "Vanilla loading splash sat on the workspace above menu-manager menus and muted SFX.",
+    "With auto-deploy off, unseated players had no body and therefore no camera.",
+]
+requirement = [
+    "Blank m_sLoadingLayout on inherited respawn component; OnInit destroys placeholder.",
+    "Add TBD_PreSlotComponent ghost body and spectator camera until slot commit.",
+]
+verify = ["Boot log prints loading-placeholder teardown once."]
+citations = [
+    "Source: commit 07a12d54 — splash and pre-slot.",
+    "Source: commit 731abc18 — merge slice.",
+]
 shipped_at = "731abc18"
 created_at = "2026-07-25T19:31:02Z"
 completed_at = "2026-07-25T19:32:32Z"

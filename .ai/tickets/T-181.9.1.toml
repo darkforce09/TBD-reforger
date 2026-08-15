@@ -1,13 +1,25 @@
 id = "T-181.9.1"
 kind = "work"
-title = "T-181.9.1"
-summary = "T-181.9.1"
+title = "Lobby slot picker supersedes T-068.13"
+summary = "Server-fed lobby picker with optimistic seat claim pending authority ruling."
 class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
 notes = "Lobby slot picker @ 56ad6d16. SUPERSEDES T-068.13. Server-fed roster parsed from BuildSlotRoster() and nothing else, so it cannot disagree with the authority. Optimistic claim held as a pending intent keyed on the slot until the authority rules on THAT seat — without it a refresh in flight makes the seat flicker away and back, which reads exactly like losing it. Refusal names the actual winner off the authority's own roster. Deploy is deliberately NOT optimistic. Back button hidden (the stack is empty beneath LOBBY, so 'back' is a trap). Deliberately does NOT filter the other side — you cannot pick a side you cannot see; side discipline starts at the briefing. m_bAutoDeploy REPORTED not flipped: the wave is currently the only working way into the world."
 parent = "T-181"
+context = [
+    "T-068.13 production lobby POC superseded by the T-181 gamemode stage machine.",
+    "Picker must bind to BuildSlotRoster alone so UI cannot disagree with authority.",
+]
+requirement = [
+    "Ship lobby UI with optimistic claim held until authority rules on that seat.",
+    "Hide back beneath LOBBY; refuse deploy optimism; do not filter enemy side.",
+]
+citations = [
+    "Source: commit 56ad6d16 — lobby slot picker.",
+    "Source: t181_event_mod_program.md — supersedes T-068.13.",
+]
 shipped_at = "56ad6d16"
 created_at = "2026-07-25T09:30:57Z"
 completed_at = "2026-07-25T09:30:57Z"

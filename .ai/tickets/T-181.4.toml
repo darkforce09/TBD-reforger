@@ -1,13 +1,26 @@
 id = "T-181.4"
 kind = "work"
-title = "T-181.4"
-summary = "T-181.4"
+title = "North-star design doc and oracle gates"
+summary = "Ship TBD_MOD_DESIGN.md plus @idx citation and CRF-leak verification gates."
 class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
 notes = "docs/mod/TBD_MOD_DESIGN.md (north star) + enf citations + make verify-oracle + make verify-no-crf-leak. 14 @idx citations resolve; injecting the hallucinated 'RequestSlotChange' makes it exit 1. Leak gate allows CRF_ in comments (attribution) and treats vanilla GUIDs as engine facts — both false-positive classes measured and handled."
 parent = "T-181"
+context = [
+    "Mod program needs a north-star design authority before spine slices land.",
+    "Agents hallucinate symbols; gates must fail on invented API names.",
+]
+requirement = [
+    "Write docs/mod/TBD_MOD_DESIGN.md as the program north star.",
+    "Ship verify-oracle @idx gate and verify-no-crf-leak; hallucinated symbol exits 1.",
+]
+verify = ["Hallucinated RequestSlotChange makes @idx gate exit 1."]
+citations = [
+    "Source: commit d8fc6abc — Enfusion factory.",
+    "Source: t181_event_mod_program.md — T-181.4 row.",
+]
 created_at = "2026-07-25T00:00:00Z"
 completed_at = "2026-07-31T00:00:00Z"
 estimated = [

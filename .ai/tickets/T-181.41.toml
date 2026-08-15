@@ -1,13 +1,26 @@
 id = "T-181.41"
 kind = "work"
-title = "T-181.41"
-summary = "T-181.41"
+title = "Worn-kit audit with measured deadline"
+summary = "Re-home worn-kit audit onto kit-only path; set 1s deadline from measurement."
 class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
 notes = "Worn-kit audit re-homed onto the kit-only path, and the deadline VERIFIED rather than inherited. The resumed agent did not take its predecessor's 'from measurement, not feel' claim on trust — it reproduced the measurement with a temporary probe plus a failing control in the same run, then reverted both and confirmed byte-identical files by md5. The claim HOLDS (kit clothing is synchronous: 17 slots settled on attempt 1 at 250 ms; the control, pointing kit:us_sl at a base character prefab, produced exactly one NAKED ERROR and failed the gate) — but the UPPER BOUND WAS UNDERSTATED. Measured on two independent boots: bodies materialise +2.947/+2.983 s after the line the harness polls for, and 'Game destroyed' lands +2.985/+2.968 s after that. The predecessor wrote that a 3 s deadline 'raced' the kill; it does not race, it LOSES BY 32 ms. The shipped 1 s deadline leaves 1.97 s of margin, and that margin IS TBD_WORLDBOOT_SETTLE — now said out loud in-code. Two structural checks back the design: grep for Callqueue().Remove across the mod (20 hits, none in either touched file) proves the T-181.15 by-function cancel hazard cannot reach the audit ticks; and SpawnEntityPrefab appears exactly once in TBD_SpawnManager, inside SpawnSlotBody, which has two call sites — so coverage is total with no second body path. CORRECTED A PREMISE IN ITS OWN BRIEF: 'world-boot has zero players so the audit never executes there' is FALSE for --mission= mode, because the slot lineup materialises at MISSION START not on join. Recorded one lifetime caveat rather than fixing it on speculation: CallLater holds no reference, so Cancel -> m_bDone -> PruneDoneLoadoutApps can drop the last strong ref with a tick queued. That shape predates this slice, is shared with VerifyTick, and this slice moves exposure DOWN (250 ms vs up to 3 s); reaching it needs a live client, so it is labelled unproven and the note warns that lengthening AUDIT_TICK_MS widens it."
 parent = "T-181"
+context = [
+    "world-boot dresses every slot body at mission start, not on join.",
+    "Predecessor understated upper bound; 3s deadline loses to harness by 32ms.",
+]
+requirement = [
+    "Move worn-kit audit to kit-only equip path with synchronous slot check.",
+    "Set audit deadline from measurement; document TBD_WORLDBOOT_SETTLE margin in-code.",
+]
+verify = ["world-boot: eighteen worn-audits on bridgehead-at-levie."]
+citations = [
+    "Source: commit 2742699e — reproduce deadline measurement.",
+    "Source: commit 7b12f940 — worn-kit audit ship.",
+]
 shipped_at = "7b12f940"
 created_at = "2026-07-25T14:35:34Z"
 completed_at = "2026-07-25T16:26:51Z"

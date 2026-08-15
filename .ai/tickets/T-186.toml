@@ -1,11 +1,23 @@
 id = "T-186"
 kind = "work"
-title = "Add make mod-world-boot-compiled — API output into the real Enfusion parser"
+title = "World-boot gate for API-compiled missions"
 summary = "No test anywhere feeds compiler output to the mod. world-boot.sh already supports --mission=<path>, meta.id derivation and console-log assertion; only the curl-the-compiled-doc step is new (~15 lines). This single test would have caught the single-faction hard-reject on day one."
 class = "docs"
 status = "shipped"
 order = 2040
 executor = "claude-code"
+context = [
+    "world-boot.sh boots hand-written golden missions but never API-compiled documents.",
+    "Compiler output must reach the real Enfusion parser before events ship.",
+]
+requirement = [
+    "Add --compiled path: curl compiled doc, boot through world-boot.sh, assert console log.",
+    "Catch single-faction hard-reject and other compile-to-boot contract failures early.",
+]
+citations = [
+    "Source: commit 9ceade54 — boot compiled docs.",
+    "Source: commit 051e28ca — mod-world-boot-compiled.",
+]
 shipped_at = "9ceade54"
 created_at = "2026-07-26T00:05:44Z"
 completed_at = "2026-07-26T01:02:11Z"

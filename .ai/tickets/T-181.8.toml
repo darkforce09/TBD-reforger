@@ -1,13 +1,22 @@
 id = "T-181.8"
 kind = "work"
-title = "T-181.8"
-summary = "T-181.8"
+title = "Replicated gamemode stage state machine"
+summary = "FrameworkManager stage enum, replicated SetStage, and IsFrameworkWorld mostly pre-built; BRIEFING and SAFE_START lacked content."
 class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
 notes = 'MOSTLY ALREADY BUILT — the factory caught this before a rewrite. TBD_FrameworkManager already has enum TBD_EGameStage{LOADING,LOBBY,BRIEFING,SAFE_START,LIVE,END,DEBRIEF}, a replicated [RplProp(onRplName:"OnStageReplicated")] m_Stage, SetStage()+Replication.BumpMe(), and IsFrameworkWorld(). Remaining gap is stage CONTENT: BRIEFING and SAFE_START are enum-only (no logic).'
 parent = "T-181"
+context = [
+    "Reforger ships no lobby, briefing, or slotting; the mod must stage the event spine.",
+    "Factory review found TBD_EGameStage, replicated m_Stage, and SetStage already present.",
+]
+requirement = [
+    "Retain replicated gamemode stage transitions across LOADING through DEBRIEF.",
+    "Track BRIEFING and SAFE_START as enum-only until later slices ship stage content.",
+]
+citations = ["Source: t181_event_mod_program.md — state machine."]
 created_at = "2026-07-25T00:00:00Z"
 completed_at = "2026-07-31T00:00:00Z"
 estimated = [

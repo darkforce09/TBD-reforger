@@ -1,13 +1,26 @@
 id = "T-181.51"
 kind = "work"
-title = "T-181.51"
-summary = "T-181.51"
+title = "Add ingest missions and roster service routes"
+summary = "Mission and roster loaders sent Bearer to missing routes; add ServiceAuth GET /ingest/missions and /ingest/events/{id}/roster."
 class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
 notes = "Two backend calls share ONE root cause, not two URL typos. ServiceAuth (middleware/auth.rs:108) reads only x-service-token; TBD_MissionListLoader:99 and TBD_RosterLoader:127 both send 'Authorization, Bearer' while the three loaders that work all send X-Service-Token. Fixing only the URLs turns 404 into 401. list_missions is owner-scoped (push_filters ... me) so ServiceAuth cannot be bolted onto it, and NO roster route has ever existed (full-crate grep). Add GET /api/v1/ingest/missions and GET /api/v1/ingest/events/{id}/roster, both ServiceAuth, mirroring the /ingest/link-confirm pattern; repoint both mod loaders and fix their stale @route comments."
 parent = "T-181"
+context = [
+    "TBD_MissionListLoader and TBD_RosterLoader sent Authorization Bearer to routes that never existed.",
+    "ServiceAuth reads only X-Service-Token; URL-only fixes would swap 404 for 401.",
+]
+requirement = [
+    "Add GET /api/v1/ingest/missions and GET /api/v1/ingest/events/{id}/roster under ServiceAuth.",
+    "Repoint mod loaders to X-Service-Token; pair roster uids via compile derivations.",
+]
+verify = ["Live: 200 on both ingest routes; 401 without token."]
+citations = [
+    "Source: commit b9fcd7cd — ingest routes live.",
+    "Source: commit 27042da3 — merge slice.",
+]
 shipped_at = "27042da3"
 created_at = "2026-07-25T19:22:19Z"
 completed_at = "2026-07-25T19:32:32Z"

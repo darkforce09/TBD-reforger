@@ -1,13 +1,25 @@
 id = "T-181.9"
 kind = "work"
-title = "T-181.9"
-summary = "T-181.9"
+title = "Server slotting claim release roster authority"
+summary = "ReleaseSlot, BuildSlotRoster, and one-life integrity on ClaimSlot and ReleaseSlot."
 class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
 notes = "Slotting authority completed. ClaimSlot already existed (PS-shaped first-come guard). Added: ReleaseSlot (lobby-only change-of-mind; refused once deployed), BuildSlotRoster (per-slot key/faction/group/role/state/holder as TSV — the data T-181.9.1's picker binds to, deliberately plain text so authority is testable from the server log before any widget exists; state = OPEN|HELD|DEAD), and a ONE-LIFE INTEGRITY FIX: ClaimSlot and ReleaseSlot now both refuse a dead player. Without it a dead player could release their slot and claim a fresh one, bypassing one life entirely. Landmine caught by the compile gate in 1.3s: `out` is a RESERVED KEYWORD in Enfusion (out-param modifier) and cannot be a variable name."
 parent = "T-181"
+context = [
+    "ClaimSlot existed; lobby picker needs ReleaseSlot and a server-fed roster.",
+    "Dead players could release and re-claim, bypassing one-life entirely.",
+]
+requirement = [
+    "Add ReleaseSlot lobby-only and BuildSlotRoster TSV roster for the picker.",
+    "Refuse ClaimSlot and ReleaseSlot when the player has spent their life.",
+]
+citations = [
+    "Source: commit d8fc6abc — slot claim roster.",
+    "Source: commit f52a9d5e — merge slice.",
+]
 shipped_at = "f52a9d5e"
 created_at = "2026-07-25T09:02:18Z"
 completed_at = "2026-07-25T09:37:37Z"

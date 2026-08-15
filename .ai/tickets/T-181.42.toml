@@ -1,13 +1,29 @@
 id = "T-181.42"
 kind = "work"
-title = "T-181.42"
-summary = "T-181.42"
+title = "Lobby wire marker roster sanitise boot flake"
+summary = "Converge lobby wire on bijective marker; sanitise roster at source; fix cursor bug and world-boot flake."
 class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
 notes = "Lobby wire: bijective marker + BOOT-armed self-check + two real bug fixes + the gate flake. SAID PLAINLY THAT THE RENAME ALONE WOULD HAVE BEEN COSMETIC: no committed golden contains a '~', and it independently re-measured split-empties=kept, so the lobby's empty-field handling was already correct and the '~' loss is a latent authoring hazard only. What earns the slice is the other four. FOUND A BUG REACHABLE FROM AUTHORED JSON THE SCHEMA PERMITS: TBD_SpawnManager.BuildSlotRoster formatted slot.Key()/faction/groupCallsign/role into a TSV with NO sanitisation, and mission.schema.json has minLength:1 but NO pattern on any of them — a callsign authored 'AL<TAB>PHA' produced a seven-field row that sailed past the consumer's '<6' guard and shifted every column, so role rendered as 'PHA', the real role was read as the STATE (seat matches neither OPEN nor DEAD, therefore unselectable) and holderId came from 'OPEN'.ToInt() = 0. It hardened the lobby parser to exact arity and reported upstream rather than editing another lane; the command center then fixed it at the source in BuildSlotRoster. Also fixed the same rejected-record cursor bug T-181.26 found in the briefing, gated by a control. FIXED THE world-boot FLAKE, and put the guard in Raise() NOT Start() with a reason: Start() is a one-shot at +2000 ms so gating it on a controller that may not be up yet would mean the picker silently never appears, whereas Tick polls every 500 ms so gating the raise is self-healing. 3/3 FAIL at SETTLE=12 before, 3/3 PASS after. THREE CONTROLS ALL FAILED AS REQUIRED, including one that isolates the cursor fix alone (phase 1 clean, orphanShape lost). OPS CAVEAT WORTH KEEPING: its first control run reported the UNPATCHED verdict — the patch was not live at boot despite a clean compile — so it re-ran verifying the patch present immediately before AND after the boot. A stale-patch run looks exactly like a vacuous check."
 parent = "T-181"
+context = [
+    "Lobby wire used lossy ~ sentinel; admin and briefing already use bijective TAB markers.",
+    "Authored tab in callsign produced seven-field roster rows shifting every column.",
+    "world-boot --mission= with zero players failed 3/3 on preset open at SETTLE=12.",
+]
+requirement = [
+    "Converge lobby FIELD_MARK on bijective marker; arm SelfCheckWire from OnPostInit.",
+    "Fix Parse rejected-record cursor; require exact roster row arity in lobby parser.",
+    "Sanitise roster fields in BuildSlotRoster at source, not only downstream.",
+    "Gate Raise() on null local controller so world-boot flake self-heals.",
+]
+verify = ["3/3 world-boot FAIL→PASS at SETTLE=12 after Raise guard."]
+citations = [
+    "Source: commit b5e11210 — lobby wire sanitise.",
+    "Source: commit 8b4a3b7f — bijective marker boot.",
+]
 shipped_at = "b5e11210"
 created_at = "2026-07-25T15:43:11Z"
 completed_at = "2026-07-25T15:57:32Z"
