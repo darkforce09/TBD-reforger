@@ -2,7 +2,7 @@ id = "T-920"
 kind = "program"
 title = "Body obligations, main_goal rename, title gate, side viewer"
 summary = "user_story becomes main_goal (rendered at top, obligatory from queued); body fields become obligatory tiered by status and enforced at transitions; title gate (not the id, at most 10 words) with a shrink-only debt pin over the 439 historical offenders; markdown viewer opens beside the detail panel instead of replacing it."
-status = "queued"
+status = "shipped"
 order = 6000
 spec = "docs/platform/t920_body_obligations.md"
 executor = "claude-code"
@@ -13,3 +13,4 @@ children = [
 ]
 main_goal = "Every ticket states its main goal up front, carries a real name, and cannot advance without its body filled — and plans read beside the ticket, not over it."
 created_at = "2026-08-15T03:17:45Z"
+completed_at = "2026-08-15T04:08:51Z"
