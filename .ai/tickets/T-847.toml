@@ -6,9 +6,47 @@ class = "bug"
 status = "deferred"
 order = 5290
 executor = "claude-code"
-notes = "wave208 verifier F2 NIT; functional T-801 ship is intact"
-estimated = ["scope"]
+notes = """
+wave208 verifier F2 NIT; functional T-801 ship is intact
+
+--- HEAD migration_legacy (verbatim) ---
+
+WAVE-208 VERIFIER NIT (wave208.md F2). T-801 wires `bind_squad_link_preview` into `push_drag_preview`/`clear_drag_preview` (select_tool.rs), and packer Class-R pins cover `pack_squad_link_drag_preview`. The host Class-R battery at mission_editor.rs (T-573/T-808 push_drag_preview pins) still only requires `set_drag` + `bind_vehicle_preview_lane` — dropping only the squad-link bind stays green on that pin. FIX: extend the pin to require `bind_squad_link_preview` / `pack_squad_link_drag_preview` (scrub test module; perturbation-prove). ACCEPTANCE: pin goes red when the select_tool bind call is removed; restored green.
+
+--- HEAD migration_legacy line (verbatim) ---
+
 migration_legacy = ["WAVE-208 VERIFIER NIT (wave208.md F2). T-801 wires `bind_squad_link_preview` into `push_drag_preview`/`clear_drag_preview` (select_tool.rs), and packer Class-R pins cover `pack_squad_link_drag_preview`. The host Class-R battery at mission_editor.rs (T-573/T-808 push_drag_preview pins) still only requires `set_drag` + `bind_vehicle_preview_lane` — dropping only the squad-link bind stays green on that pin. FIX: extend the pin to require `bind_squad_link_preview` / `pack_squad_link_drag_preview` (scrub test module; perturbation-prove). ACCEPTANCE: pin goes red when the select_tool bind call is removed; restored green."]
+
+missing=0"""
+main_goal = "Extend push_drag_preview Class-R pin to require bind_squad_link_preview."
+context = [
+    "wave208 F2 NIT host pin omits squad-link bind T-801 ship intact.",
+    "T-801 wires bind_squad_link_preview into push_drag_preview clear_drag_preview select_tool.rs.",
+    "mission_editor.rs T-573 T-808 pins only require set_drag bind_vehicle_preview_lane.",
+]
+requirement = [
+    "Extend pin to require bind_squad_link_preview pack_squad_link_drag_preview.",
+    "Scrub test module perturbation-prove missing bind is detected.",
+]
+current_state = [
+    "Packer Class-R pins cover pack_squad_link_drag_preview.",
+    "Dropping only squad-link bind stays green on host pin.",
+]
+approach = [
+    "Scrub push_drag_preview test module for host pin coverage.",
+    "Perturbation-prove pin red without select_tool bind call.",
+]
+verify = [
+    "Pin goes red when select_tool bind call removed.",
+    "Pin restored green when bind call present.",
+]
+citations = [
+    "wave208 F2 verifier",
+    "T-801 squad link preview",
+    "T-573 T-808 push_drag_preview",
+    "select_tool.rs bind path",
+]
+estimated = ["scope"]
 
 [scope]
 domain = "website"

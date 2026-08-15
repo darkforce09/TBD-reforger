@@ -6,9 +6,52 @@ class = "bug"
 status = "queued"
 order = 5190
 executor = "claude-code"
-notes = "operator eye-pass wave-205; census XFORM-DEL-001; coordinates with T-819 — wave 210/211 packing"
-estimated = ["scope"]
+notes = """
+operator eye-pass wave-205; census XFORM-DEL-001; coordinates with T-819 — wave 210/211 packing
+
+--- HEAD migration_legacy (verbatim) ---
+
+OPERATOR EYE-PASS BUG (wave-205, 2026-08-10): a placed vehicle cannot be deleted from the editor — slots delete fine (Del key, context menu); vehicles have no working delete path. This is the census XFORM-DEL-001 lead T-800's seed made browser-testable — and it fails. AUDIT FIRST: does delete_selection/Del cover vehicle ids in ctx.selection (the wave-145 prune lesson says vehicle ids LIVE there)? does the context menu offer Delete on a vehicle? the outliner PLACED VEHICLES row (W203) has no delete affordance? Find which paths exist-but-skip vs are absent. FIX: Del key + context menu + outliner row delete all remove a selected vehicle in ONE undo step (T-779 ack discipline: confirm the write); crew assignments release cleanly (crewed slots reappear — coordinates with T-819's derived hide). ACCEPTANCE: place vehicle, select (map or outliner), Del -> gone from map/outliner/compiled export, one undo restores it WITH its crew assignments. ⟡ ABSORBS T-844 (Delete does nothing to a selected vehicle — delete_selection partitions comments and slots only) — deliver its acceptance too.
+
+--- HEAD migration_legacy line (verbatim) ---
+
 migration_legacy = ["OPERATOR EYE-PASS BUG (wave-205, 2026-08-10): a placed vehicle cannot be deleted from the editor — slots delete fine (Del key, context menu); vehicles have no working delete path. This is the census XFORM-DEL-001 lead T-800's seed made browser-testable — and it fails. AUDIT FIRST: does delete_selection/Del cover vehicle ids in ctx.selection (the wave-145 prune lesson says vehicle ids LIVE there)? does the context menu offer Delete on a vehicle? the outliner PLACED VEHICLES row (W203) has no delete affordance? Find which paths exist-but-skip vs are absent. FIX: Del key + context menu + outliner row delete all remove a selected vehicle in ONE undo step (T-779 ack discipline: confirm the write); crew assignments release cleanly (crewed slots reappear — coordinates with T-819's derived hide). ACCEPTANCE: place vehicle, select (map or outliner), Del -> gone from map/outliner/compiled export, one undo restores it WITH its crew assignments. ⟡ ABSORBS T-844 (Delete does nothing to a selected vehicle — delete_selection partitions comments and slots only) — deliver its acceptance too."]
+
+missing=0
+"""
+main_goal = "Wire vehicle delete via Del, context menu, and outliner row."
+context = [
+    "Wave-205 eye-pass: placed vehicle cannot be deleted; slots delete fine via Del and menu.",
+    "Census XFORM-DEL-001 lead; T-800 seed made browser-testable and it fails.",
+    "Wave-145 prune lesson: vehicle ids live in ctx.selection.",
+]
+requirement = [
+    "AUDIT FIRST: delete_selection Del, context menu Delete, outliner PLACED VEHICLES row.",
+    "Del key context menu outliner row delete remove selected vehicle in ONE undo step.",
+    "Crew assignments release cleanly; crewed slots reappear; coordinates T-819 derived hide.",
+]
+current_state = [
+    "Find which delete paths exist-but-skip versus are absent for vehicles.",
+    "Outliner PLACED VEHICLES row W203 has no delete affordance.",
+    "T-844 absorbed: delete_selection partitions comments and slots only.",
+]
+approach = [
+    "T-779 ack discipline: confirm the write on vehicle delete.",
+    "Map outliner and compiled export must agree after delete.",
+]
+verify = [
+    "Place vehicle select map or outliner Del gone from map outliner compiled export.",
+    "One undo restores vehicle WITH its crew assignments.",
+    "T-844 delete_selection vehicle partition acceptance delivered.",
+]
+citations = [
+    "wave-205 eye-pass XFORM-DEL-001",
+    "T-800 seeded vehicle browser test",
+    "wave-145 vehicle id selection",
+    "T-819 crew derived hide",
+    "T-844 absorbed acceptance",
+]
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/editor_ops.rs",
     "apps/website/frontend/src/mission_editor.rs",

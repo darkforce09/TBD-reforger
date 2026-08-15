@@ -1,14 +1,54 @@
 id = "T-850"
 kind = "work"
-title = "T-801 eye-pass: squad tether did not follow drag on same-squad (auto-grouped) units"
+title = "Squad tether must follow drag on auto-grouped units"
 summary = "T-801 eye-pass: squad tether did not follow drag on same-squad (auto-grouped) units"
 class = "bug"
 status = "queued"
 order = 5320
 executor = "claude-code"
-notes = "operator W208 eye-pass; T-801 follow-on; may depend on clean membership (T-848)"
-estimated = ["scope"]
+notes = """
+operator W208 eye-pass; T-801 follow-on; may depend on clean membership (T-848)
+
+--- HEAD migration_legacy (verbatim) ---
+
+WAVE-208 OPERATOR EYE-PASS (2026-08-11) against shipped T-801. Operator: tether line "does not seem like the line moves at all" while dragging a unit that is in the same squad (membership from asset-browser auto-group, not Connect ▸ Group to). T-801 shipped pack_squad_link_drag_preview + bind_squad_link_preview with Class-R packer pins; verifier could not re-prove the mid-drag 4px pixel probe (load overlay). FIX: reproduce on make leptos release with auto-grouped squad members; if preview path misses SQUAD_LINKS for that membership shape, fix; if membership was wrong (T-848), re-test after T-848. ACCEPTANCE: mid-drag screenshot — tether endpoint within 4px of dragged sprite centre for auto-grouped same-squad single-drag and 2-selected-drag.
+
+--- HEAD migration_legacy line (verbatim) ---
+
 migration_legacy = ['WAVE-208 OPERATOR EYE-PASS (2026-08-11) against shipped T-801. Operator: tether line "does not seem like the line moves at all" while dragging a unit that is in the same squad (membership from asset-browser auto-group, not Connect ▸ Group to). T-801 shipped pack_squad_link_drag_preview + bind_squad_link_preview with Class-R packer pins; verifier could not re-prove the mid-drag 4px pixel probe (load overlay). FIX: reproduce on make leptos release with auto-grouped squad members; if preview path misses SQUAD_LINKS for that membership shape, fix; if membership was wrong (T-848), re-test after T-848. ACCEPTANCE: mid-drag screenshot — tether endpoint within 4px of dragged sprite centre for auto-grouped same-squad single-drag and 2-selected-drag.']
+
+missing=0"""
+main_goal = "Mid-drag squad tether follows auto-grouped same-squad units."
+context = [
+    "Operator tether line does not move while dragging same-squad auto-grouped unit.",
+    "Membership from asset-browser auto-group not Connect Group to.",
+    "T-801 shipped pack_squad_link_drag_preview bind_squad_link_preview Class-R packer pins.",
+]
+requirement = [
+    "Reproduce on make leptos release with auto-grouped squad members.",
+    "Fix preview path if SQUAD_LINKS misses that membership shape.",
+    "If membership wrong T-848 re-test after T-848 ships.",
+]
+current_state = [
+    "Verifier could not re-prove mid-drag 4px pixel probe load overlay.",
+    "May depend on clean membership T-848.",
+]
+approach = [
+    "Reproduce tether freeze on auto-grouped same-squad drag release build.",
+    "Fix bind_squad_link_preview path for auto-group membership shape.",
+]
+verify = [
+    "Mid-drag screenshot tether endpoint within 4px of dragged sprite centre.",
+    "Auto-grouped same-squad single-drag case passes.",
+    "Auto-grouped same-squad 2-selected-drag case passes.",
+]
+citations = [
+    "wave208 operator eye-pass",
+    "T-801 squad link preview",
+    "T-848 clean membership",
+    "pack_squad_link_drag_preview pins",
+]
+estimated = ["scope"]
 owns = [
     "crates/map-engine-core/src/squad_links.rs",
     "apps/website/frontend/src/select_tool.rs",

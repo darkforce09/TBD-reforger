@@ -1,14 +1,47 @@
 id = "T-844"
 kind = "work"
-title = "Delete does nothing to a selected vehicle — delete_selection partitions comments and slots only"
+title = "Vehicle delete no-op; fold into T-837"
 summary = "Delete does nothing to a selected vehicle — delete_selection partitions comments and slots only"
 class = "audit"
 status = "deferred"
 order = 5260
 executor = "claude-code"
-notes = "wave207 verifier; explicit duplicate of T-837 — fold, do not double-build | ABSORBED into T-837 — same defect (delete_selection partitions comments/slots only); T-837 carries the wider UI audit. Do not dispatch separately; its acceptance clauses are carried there."
-estimated = ["scope"]
+notes = """
+wave207 verifier; explicit duplicate of T-837 — fold, do not double-build | ABSORBED into T-837 — same defect (delete_selection partitions comments/slots only); T-837 carries the wider UI audit. Do not dispatch separately; its acceptance clauses are carried there.
+
+--- HEAD migration_legacy (verbatim) ---
+
+WAVE-207 VERIFIER OBSERVATION (pre-existing, unfiled at the time; independently corroborates the operator's wave-205 eye-pass report). `delete_selection` partitions comments and slots only, so pressing Delete with a vehicle selected silently no-ops. DUPLICATE-CHECK BEFORE STARTING: T-837 (filed from the operator's eye-pass) covers the same defect from the UI side with a wider audit (Del key + context menu + outliner row + crew release + one-undo). This ticket exists to carry the verifier's precise mechanism (the partition in delete_selection) into that work — FOLD INTO T-837 rather than building twice; close this as absorbed when T-837 is scoped. ACCEPTANCE: see T-837.
+
+--- HEAD migration_legacy line (verbatim) ---
+
 migration_legacy = ["WAVE-207 VERIFIER OBSERVATION (pre-existing, unfiled at the time; independently corroborates the operator's wave-205 eye-pass report). `delete_selection` partitions comments and slots only, so pressing Delete with a vehicle selected silently no-ops. DUPLICATE-CHECK BEFORE STARTING: T-837 (filed from the operator's eye-pass) covers the same defect from the UI side with a wider audit (Del key + context menu + outliner row + crew release + one-undo). This ticket exists to carry the verifier's precise mechanism (the partition in delete_selection) into that work — FOLD INTO T-837 rather than building twice; close this as absorbed when T-837 is scoped. ACCEPTANCE: see T-837."]
+
+missing=0
+"""
+main_goal = "Fold delete_selection vehicle gap into T-837; do not dispatch separately."
+context = [
+    "delete_selection partitions comments and slots only vehicle selected silently no-ops.",
+    "T-837 covers same defect UI side wider audit Del context menu outliner.",
+    "Verifier wave-205 eye-pass corroborates operator report.",
+]
+requirement = [
+    "Fold into T-837 rather than building twice close absorbed when T-837 scoped.",
+    "Carry verifier precise mechanism partition in delete_selection.",
+]
+current_state = [
+    "Duplicate-check T-837 filed operator eye-pass wider audit crew release one-undo.",
+    "Do not dispatch separately acceptance clauses carried T-837.",
+]
+approach = ["Close as absorbed when T-837 ships vehicle delete paths."]
+verify = ["See T-837 acceptance Del context menu outliner one undo crew restore."]
+citations = [
+    "wave207 verifier observation",
+    "T-837 wider UI audit",
+    "delete_selection partition mechanism",
+    "operator wave-205 eye-pass",
+]
+estimated = ["scope"]
 
 [scope]
 domain = "website"

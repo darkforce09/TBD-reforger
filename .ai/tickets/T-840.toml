@@ -1,14 +1,55 @@
 id = "T-840"
 kind = "work"
-title = "The draft chip says 'saved just now' on boot of a content-bearing mission — before any edit"
+title = "Draft chip saved just now on boot before edit"
 summary = "The draft chip says 'saved just now' on boot of a content-bearing mission — before any edit"
 class = "bug"
 status = "deferred"
 order = 5220
 executor = "claude-code"
-notes = "wave206 verifier NIT; one-source rule applies | ABSORBED into T-834 — same file, same class of copy/state polish. Do not dispatch separately; its acceptance clauses are carried there."
-estimated = ["scope"]
+notes = """
+wave206 verifier NIT; one-source rule applies | ABSORBED into T-834 — same file, same class of copy/state polish. Do not dispatch separately; its acceptance clauses are carried there.
+
+--- HEAD migration_legacy (verbatim) ---
+
+WAVE-206 VERIFIER FILING (wave206.md NIT). On opening any content-bearing mission the hydrate persists server content to IndexedDB — a REAL flush completes (~1s, can_undo=false, edit_persist_count=0) and the T-804 chip honestly reports 'Draft saved just now' though the operator edited nothing. Truly-empty never-edited missions correctly show no chip. Legibility nuance: 'your work is safe' reads oddly when there is no work yet. FIX OPTIONS: gate the chip's FIRST appearance on the first operator-driven flush (edit_persist_count>0 or the dirty-dot arming source — one source, the wave-129 lesson), or reword the boot state ('draft synced'). Keep the ack discipline untouched. ACCEPTANCE: open a content-bearing mission, wait: no 'saved' chip until the first real edit flushes (or the boot wording differs measurably); never-edited-empty unchanged; post-edit behavior identical to today.
+
+--- HEAD migration_legacy line (verbatim) ---
+
 migration_legacy = ["WAVE-206 VERIFIER FILING (wave206.md NIT). On opening any content-bearing mission the hydrate persists server content to IndexedDB — a REAL flush completes (~1s, can_undo=false, edit_persist_count=0) and the T-804 chip honestly reports 'Draft saved just now' though the operator edited nothing. Truly-empty never-edited missions correctly show no chip. Legibility nuance: 'your work is safe' reads oddly when there is no work yet. FIX OPTIONS: gate the chip's FIRST appearance on the first operator-driven flush (edit_persist_count>0 or the dirty-dot arming source — one source, the wave-129 lesson), or reword the boot state ('draft synced'). Keep the ack discipline untouched. ACCEPTANCE: open a content-bearing mission, wait: no 'saved' chip until the first real edit flushes (or the boot wording differs measurably); never-edited-empty unchanged; post-edit behavior identical to today."]
+
+missing=0
+"""
+context = [
+    "Wave206 NIT: hydrate persists server content to IndexedDB on content-bearing mission open.",
+    "REAL flush ~1s can_undo false edit_persist_count 0; T-804 chip reports Draft saved just now.",
+    "Truly-empty never-edited missions correctly show no chip; absorbed into T-834.",
+]
+requirement = [
+    "Gate chip FIRST appearance on first operator-driven flush edit_persist_count greater zero.",
+    "Or reword boot state draft synced; one source wave-129 dirty-dot arming lesson.",
+    "Keep ack discipline untouched; do not dispatch separately absorbed T-834.",
+]
+current_state = [
+    "Chip honestly reports saved though operator edited nothing after hydrate flush.",
+    "Legibility nuance your work is safe reads oddly when no work yet.",
+    "T-834 same file same class copy state polish carries acceptance.",
+]
+approach = [
+    "FIX OPTIONS: gate first appearance OR reword boot wording measurably different.",
+    "One-source rule applies for dirty-dot arming source.",
+]
+verify = [
+    "Open content-bearing mission wait no saved chip until first real edit flushes.",
+    "Or boot wording differs measurably from saved just now.",
+    "Never-edited-empty unchanged; post-edit behavior identical to today.",
+]
+citations = [
+    "wave206.md NIT filing",
+    "T-804 draft chip lineage",
+    "wave-129 one-source lesson",
+    "T-834 absorbed acceptance",
+]
+estimated = ["scope"]
 
 [scope]
 domain = "website"

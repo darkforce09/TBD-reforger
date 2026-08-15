@@ -6,9 +6,44 @@ class = "bug"
 status = "deferred"
 order = 5340
 executor = "claude-code"
-notes = "wave210 verifier F2 NIT; pre-existing; pairs with O-3 class family"
-estimated = ["scope"]
+notes = """
+wave210 verifier F2 NIT; pre-existing; pairs with O-3 class family
+
+--- HEAD migration_legacy (verbatim) ---
+
+WAVE-210 VERIFIER NIT (wave210.md F2). Esc is modal_stack-gated (T-726) but Attributes (including the new vehicle body) still paints literal z-50, not modal_stack::z_class (the O-3 class). Pre-existing; not a Heading/Cargo/Crew functional miss. FIX: consume z_class for the Attributes overlay. ACCEPTANCE: attributes.rs has no literal z-50 on the modal overlay; uses z_class; Esc stack still correct.
+
+--- HEAD migration_legacy line (verbatim) ---
+
 migration_legacy = ["WAVE-210 VERIFIER NIT (wave210.md F2). Esc is modal_stack-gated (T-726) but Attributes (including the new vehicle body) still paints literal z-50, not modal_stack::z_class (the O-3 class). Pre-existing; not a Heading/Cargo/Crew functional miss. FIX: consume z_class for the Attributes overlay. ACCEPTANCE: attributes.rs has no literal z-50 on the modal overlay; uses z_class; Esc stack still correct."]
+
+missing=0"""
+main_goal = "Consume modal_stack::z_class for Attributes overlay instead of literal z-50."
+context = [
+    "wave210.md F2 NIT Esc modal_stack-gated via T-726.",
+    "Attributes including new vehicle body paints literal z-50 not z_class O-3.",
+    "Pre-existing; not a Heading Cargo Crew functional miss.",
+]
+requirement = [
+    "Consume modal_stack::z_class for the Attributes overlay paint.",
+    "attributes.rs modal overlay has no literal z-50.",
+]
+current_state = [
+    "Esc stack correct through modal_stack T-726.",
+    "Attributes modal overlay still hard-coded z-50.",
+]
+approach = ["Replace literal z-50 with modal_stack::z_class on overlay."]
+verify = [
+    "attributes.rs has no literal z-50 on modal overlay.",
+    "Attributes overlay uses z_class.",
+    "Esc stack still correct after z_class change.",
+]
+citations = [
+    "wave210.md F2 verifier NIT",
+    "T-726 modal_stack Esc gate",
+    "O-3 z_class family",
+]
+estimated = ["scope"]
 
 [scope]
 domain = "website"

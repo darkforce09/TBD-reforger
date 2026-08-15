@@ -6,9 +6,50 @@ class = "bug"
 status = "queued"
 order = 5270
 executor = "claude-code"
-notes = "operator eye-pass wave-207; T-808 lane family; pairs naturally with the wave-210 vehicle set"
-estimated = ["scope"]
+notes = """
+operator eye-pass wave-207; T-808 lane family; pairs naturally with the wave-210 vehicle set
+
+--- HEAD migration_legacy (verbatim) ---
+
+OPERATOR EYE-PASS FINDING (wave-207, 2026-08-11): a placed vehicle does not change appearance when selected — no ring, no tint shift — so there is no way to see which vehicle you have selected. Slots get the selection treatment (T-808 ships a ringed twin cell per role); comments got theirs in the same wave (Completion A verified selected-vs-unselected diff); VEHICLES WERE NEVER GIVEN ONE. Not previously ticketed and not in any wave's acceptance — a genuine gap, operator-found. FIX: the vehicle lane gets the same selection treatment shape as slots — a ringed twin cell per silhouette kind (the T-808 pattern: extra atlas cells, NOT an extra instance per selected row, which would force a full re-pack on every click and destroy the O(delta) patch), plus the selection tint. The `set_selection` patch path must reach the vehicle lane (it patches Slots today; wave-207 taught the same lesson for comments — `refresh_comment_lane` on all five exit paths). ACCEPTANCE: select a vehicle -> its crop differs measurably from unselected (ring + tint, the comment/slot method); deselect -> returns to the neutral silhouette; selecting one of three vehicles changes exactly one; heading and kind survive selection; no re-pack on selection change (measure).
+
+--- HEAD migration_legacy line (verbatim) ---
+
 migration_legacy = ["OPERATOR EYE-PASS FINDING (wave-207, 2026-08-11): a placed vehicle does not change appearance when selected — no ring, no tint shift — so there is no way to see which vehicle you have selected. Slots get the selection treatment (T-808 ships a ringed twin cell per role); comments got theirs in the same wave (Completion A verified selected-vs-unselected diff); VEHICLES WERE NEVER GIVEN ONE. Not previously ticketed and not in any wave's acceptance — a genuine gap, operator-found. FIX: the vehicle lane gets the same selection treatment shape as slots — a ringed twin cell per silhouette kind (the T-808 pattern: extra atlas cells, NOT an extra instance per selected row, which would force a full re-pack on every click and destroy the O(delta) patch), plus the selection tint. The `set_selection` patch path must reach the vehicle lane (it patches Slots today; wave-207 taught the same lesson for comments — `refresh_comment_lane` on all five exit paths). ACCEPTANCE: select a vehicle -> its crop differs measurably from unselected (ring + tint, the comment/slot method); deselect -> returns to the neutral silhouette; selecting one of three vehicles changes exactly one; heading and kind survive selection; no re-pack on selection change (measure)."]
+
+missing=0
+"""
+main_goal = "Give selected vehicles ring tint selection treatment like slots comments."
+context = [
+    "Operator eye-pass wave-207 placed vehicle no appearance change on select.",
+    "Slots get selection treatment T-808 ringed twin per role comments same wave.",
+    "Vehicles never given selection treatment genuine gap operator-found.",
+]
+requirement = [
+    "Vehicle lane same selection shape T-808 ringed twin per silhouette kind.",
+    "Extra atlas cells not extra instance per selected row O delta patch.",
+    "set_selection patch path must reach vehicle lane like comments refresh five exits.",
+]
+current_state = [
+    "No ring no tint shift no way see which vehicle selected.",
+    "T-808 pattern extra atlas cells selection tint not re-pack every click.",
+]
+approach = [
+    "Ringed twin cell per silhouette kind plus selection tint T-808 pattern.",
+    "Patch vehicle lane on set_selection without full re-pack on selection change.",
+]
+verify = [
+    "Select vehicle crop differs measurably ring tint comment slot method.",
+    "Deselect returns neutral silhouette; three vehicles exactly one changes.",
+    "Heading kind survive selection; no re-pack on selection change measure.",
+]
+citations = [
+    "operator eye-pass wave-207",
+    "T-808 ringed twin pattern",
+    "T-808 lane family",
+    "wave-210 vehicle set",
+]
+estimated = ["scope"]
 owns = [
     "crates/map-engine-core/src/slots_gpu.rs",
     "crates/map-engine-render/src/engine.rs",

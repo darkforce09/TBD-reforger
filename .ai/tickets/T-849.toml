@@ -1,14 +1,53 @@
 id = "T-849"
 kind = "work"
-title = "Ungroup / leave-squad — no editor verb to take a slot out of a squad without deleting it"
+title = "Add ungroup leave-squad verb without deleting slot"
 summary = "Ungroup / leave-squad — no editor verb to take a slot out of a squad without deleting it"
 class = "bug"
 status = "queued"
 order = 5310
 executor = "claude-code"
-notes = "operator W208 eye-pass; pairs with T-848"
-estimated = ["scope"]
+notes = """
+operator W208 eye-pass; pairs with T-848
+
+--- HEAD migration_legacy (verbatim) ---
+
+WAVE-208 OPERATOR EYE-PASS (2026-08-11). Asset-browser placement auto-joins an open squad (place_character_under_side); operator then had "no way to ungroup them", which makes re-organising through the editor "very tricky". Locate: no ungroup / leave-squad / remove-from-squad command exists — only ORBAT Remove Slot (deletes), Remove Squad, or refile onto another squad. FIX: an explicit Ungroup / Leave squad verb (context menu and/or ORBAT) that clears membership into a solo/new squad or unassigned state without deleting the slot, per Eden-like expectation. ACCEPTANCE: after auto-place into a squad, Ungroup leaves the slot on the map with no SQUAD_LINKS tether to the old leader; slot survives; can Group to / refile again.
+
+--- HEAD migration_legacy line (verbatim) ---
+
 migration_legacy = ['WAVE-208 OPERATOR EYE-PASS (2026-08-11). Asset-browser placement auto-joins an open squad (place_character_under_side); operator then had "no way to ungroup them", which makes re-organising through the editor "very tricky". Locate: no ungroup / leave-squad / remove-from-squad command exists — only ORBAT Remove Slot (deletes), Remove Squad, or refile onto another squad. FIX: an explicit Ungroup / Leave squad verb (context menu and/or ORBAT) that clears membership into a solo/new squad or unassigned state without deleting the slot, per Eden-like expectation. ACCEPTANCE: after auto-place into a squad, Ungroup leaves the slot on the map with no SQUAD_LINKS tether to the old leader; slot survives; can Group to / refile again.']
+
+missing=0"""
+main_goal = "Explicit Ungroup leaves squad without deleting the slot."
+context = [
+    "Asset-browser placement auto-joins open squad via place_character_under_side.",
+    "Operator no way to ungroup makes re-organising through editor very tricky.",
+    "Only Remove Slot deletes Remove Squad or refile onto another squad exist.",
+]
+requirement = [
+    "Ungroup Leave squad verb context menu and or ORBAT clears membership.",
+    "Clears into solo new squad or unassigned state without deleting slot.",
+]
+current_state = [
+    "No ungroup leave-squad remove-from-squad command exists today.",
+    "Pairs with T-848 exclusive ORBAT membership semantics.",
+]
+approach = [
+    "Add explicit Ungroup Leave squad per Eden-like expectation.",
+    "Clear membership without ORBAT Remove Slot delete path.",
+]
+verify = [
+    "After auto-place into squad Ungroup leaves slot on map.",
+    "No SQUAD_LINKS tether to old leader after Ungroup.",
+    "Slot survives can Group to or refile again.",
+]
+citations = [
+    "wave208 operator eye-pass",
+    "place_character_under_side auto-join",
+    "T-848 exclusive membership",
+    "SQUAD_LINKS tether hairlines",
+]
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/context_menu.rs",
     "apps/website/frontend/src/orbat_manager.rs",

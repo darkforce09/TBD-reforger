@@ -1,14 +1,57 @@
 id = "T-838"
 kind = "work"
-title = "Markers select on the map and list in the outliner; double-click opens marker Attributes"
+title = "Map markers selectable; outliner lists; dblclick opens Attributes"
 summary = "Markers select on the map and list in the outliner; double-click opens marker Attributes"
 class = "docs"
 status = "queued"
 order = 5200
 executor = "claude-code"
-notes = "the T-825 marker extraction; operator stated the rule three times — priority; owns collide with T-819 (mission_editor/editor_ops) — pack 210/211 accordingly"
-estimated = ["scope"]
+notes = """
+the T-825 marker extraction; operator stated the rule three times — priority; owns collide with T-819 (mission_editor/editor_ops) — pack 210/211 accordingly
+
+--- HEAD migration_legacy (verbatim) ---
+
+OPERATOR RULE, THIRD STATEMENT (wave-205 eye-pass, 2026-08-10): 'you can't select markers by clicking the map — the right panel is only for seeing what's available.' The actionable marker half of T-825: (a) map-click selects a marker (the wave-145 COMMENT click lane is the template — comment glyphs land in ctx.selection via the pick path; markers now RENDER (T-790) so they are pickable targets); (b) placed markers list in the LEFT outliner (eden_tree — the T-809 placed-vehicles footer is the interim pattern, T-825 makes them tree citizens later); (c) dblclick (map or outliner row) opens marker Attributes (T-763 lineage — exists); (d) the right-dock placed-markers list + inline editor SHRINK to nothing once (a)-(c) work — per the rule, the dock only places. TRAPS: selection prune by doc-presence (invisible is not gone); the F-07/T-790 guard note already bars new dock editing lanes; T-831 (per-side) is separate — do not build side-switching here. ACCEPTANCE: click a map marker glyph -> selected (outliner row highlights); dblclick -> marker Attributes opens with icon/caption/position; Del deletes it (one undo); the dock's marker tab retains ONLY the picker.
+
+--- HEAD migration_legacy line (verbatim) ---
+
 migration_legacy = ["OPERATOR RULE, THIRD STATEMENT (wave-205 eye-pass, 2026-08-10): 'you can't select markers by clicking the map — the right panel is only for seeing what's available.' The actionable marker half of T-825: (a) map-click selects a marker (the wave-145 COMMENT click lane is the template — comment glyphs land in ctx.selection via the pick path; markers now RENDER (T-790) so they are pickable targets); (b) placed markers list in the LEFT outliner (eden_tree — the T-809 placed-vehicles footer is the interim pattern, T-825 makes them tree citizens later); (c) dblclick (map or outliner row) opens marker Attributes (T-763 lineage — exists); (d) the right-dock placed-markers list + inline editor SHRINK to nothing once (a)-(c) work — per the rule, the dock only places. TRAPS: selection prune by doc-presence (invisible is not gone); the F-07/T-790 guard note already bars new dock editing lanes; T-831 (per-side) is separate — do not build side-switching here. ACCEPTANCE: click a map marker glyph -> selected (outliner row highlights); dblclick -> marker Attributes opens with icon/caption/position; Del deletes it (one undo); the dock's marker tab retains ONLY the picker."]
+
+missing=0
+"""
+main_goal = "Map-click selects markers; outliner lists; dblclick opens Attributes."
+context = [
+    "Operator rule third statement wave-205: cannot select markers by map click.",
+    "Right panel only for seeing what is available; dock only places.",
+    "Actionable marker half of T-825; markers now render T-790 pickable targets.",
+]
+requirement = [
+    "Map-click selects marker via wave-145 COMMENT pick path into ctx.selection.",
+    "Placed markers list in LEFT outliner eden_tree T-809 placed-vehicles interim pattern.",
+    "Dblclick map or outliner row opens marker Attributes T-763 lineage.",
+]
+current_state = [
+    "Right-dock placed-markers list inline editor shrink once map select outliner list work.",
+    "Selection prune by doc-presence invisible is not gone trap.",
+    "F-07 T-790 guard bars new dock editing lanes; T-831 per-side separate.",
+]
+approach = [
+    "Comment glyph pick lane is template for marker map-click selection.",
+    "Dock marker tab retains ONLY picker after map outliner dblclick lanes work.",
+]
+verify = [
+    "Click map marker glyph selected outliner row highlights.",
+    "Dblclick marker Attributes opens with icon caption position.",
+    "Del deletes marker one undo; dock marker tab retains ONLY picker.",
+]
+citations = [
+    "wave-205 operator rule third",
+    "T-825 marker extraction half",
+    "T-790 marker render pickable",
+    "T-763 Attributes lineage",
+    "T-831 per-side separate",
+]
+estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/mission_editor.rs",
     "apps/website/frontend/src/editor_ops.rs",

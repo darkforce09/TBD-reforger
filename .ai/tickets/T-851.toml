@@ -6,9 +6,47 @@ class = "bug"
 status = "deferred"
 order = 5330
 executor = "claude-code"
-notes = "wave210 verifier F1 NIT; functional T-818 ship intact"
-estimated = ["scope"]
+notes = """
+wave210 verifier F1 NIT; functional T-818 ship intact
+
+--- HEAD migration_legacy (verbatim) ---
+
+WAVE-210 VERIFIER NIT (wave210.md F1). T-818 deleted the DockRight Placed strip call site, but eden_vehicles_panel.rs still carries placed_vehicles_panel + seat/cargo constants under #![allow(dead_code)] with stale prose claiming cargo lives under the Vehicles tab. FIX: delete or collapse the orphan into a shared seat-model helper used only by Attributes; scrub dead_code allows and update module docs. ACCEPTANCE: rg placed_vehicles_panel finds zero live mounts; no allow(dead_code) for the strip; Vehicles-tab prose matches catalog-only.
+
+--- HEAD migration_legacy line (verbatim) ---
+
 migration_legacy = ["WAVE-210 VERIFIER NIT (wave210.md F1). T-818 deleted the DockRight Placed strip call site, but eden_vehicles_panel.rs still carries placed_vehicles_panel + seat/cargo constants under #![allow(dead_code)] with stale prose claiming cargo lives under the Vehicles tab. FIX: delete or collapse the orphan into a shared seat-model helper used only by Attributes; scrub dead_code allows and update module docs. ACCEPTANCE: rg placed_vehicles_panel finds zero live mounts; no allow(dead_code) for the strip; Vehicles-tab prose matches catalog-only."]
+
+missing=0"""
+main_goal = "Delete orphaned placed_vehicles_panel after T-818 Placed strip removal."
+context = [
+    "wave210 F1 NIT T-818 deleted DockRight Placed strip call site.",
+    "eden_vehicles_panel.rs still carries placed_vehicles_panel under allow dead_code.",
+    "Stale prose claims cargo lives under Vehicles tab.",
+]
+requirement = [
+    "Delete or collapse orphan into shared seat-model helper for Attributes only.",
+    "Scrub dead_code allows and update module docs.",
+]
+current_state = [
+    "placed_vehicles_panel seat cargo constants linger with dead_code allow.",
+    "Functional T-818 ship intact verifier filing only.",
+]
+approach = [
+    "Remove placed_vehicles_panel orphan or collapse into Attributes helper.",
+    "Update Vehicles-tab prose to catalog-only truth.",
+]
+verify = [
+    "rg placed_vehicles_panel finds zero live mounts.",
+    "No allow dead_code for the strip.",
+    "Vehicles-tab prose matches catalog-only.",
+]
+citations = [
+    "wave210 F1 verifier",
+    "T-818 Placed strip removal",
+    "eden_vehicles_panel.rs orphan",
+]
+estimated = ["scope"]
 
 [scope]
 domain = "website"
