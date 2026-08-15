@@ -6,6 +6,21 @@ class = "feature"
 status = "shipped"
 order = 330
 executor = "claude-code"
+main_goal = "Editor layers entity map and palette drop creates slots."
+context = ["Mission Creator PRE-3.5 wiring pass connecting T-032 visual trees to Y.Doc state."]
+requirement = [
+    "editorLayers entity map threaded through schema, ydoc, bindings, and useMapStore with activeLayerId as drop target.",
+    "Live Outliner tree from Y.Doc; draggable asset leaves drop on TacticalMap to addSlot under the active layer.",
+]
+current_state = ["T-032 trees used mock data; asset drops did not mutate Y.Doc or create slots."]
+approach = [
+    "Thread editorLayers through the state stack; buildTree from Y.Doc; delete placedEntitiesMock.",
+    "Wire asset drag-and-drop on TacticalMap with cursor unproject and addSlot under activeLayerId.",
+]
+citations = [
+    "Source: commit 831d16f5.",
+    "Source: docs/platform/SHIPPED_HISTORY.md §T-033.",
+]
 shipped_at = "831d16f5"
 created_at = "2026-06-20T23:03:02Z"
 completed_at = "2026-06-20T23:03:02Z"

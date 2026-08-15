@@ -7,6 +7,31 @@ status = "shipped"
 order = 480
 spec = "docs/specs/Mission_Creator_Architecture/t048_library_create_dialog.md"
 executor = "claude-code"
+main_goal = "Mission Library hosts create via transient CreateMissionDialog; kill /missions/create wizard."
+context = [
+    "macOS UX refactor: Event Manager create = Dialog over list (T-024).",
+    "Standalone /missions/create full-page wizard breaks library context.",
+]
+requirement = [
+    "New Mission header + empty-state CTA + Cmd/Ctrl+N for mission_maker+.",
+    "Close dossier Sheet before opening create; form resets on close.",
+    "Remove /missions/create route, sidebar item, wizard export.",
+]
+current_state = [
+    "Sidebar Mission Creator → /missions/create wizard → POST → edit.",
+    "Mission Library dossier only; no create entry point.",
+]
+approach = [
+    "Add CreateMissionDialog.tsx on Mission Library surface.",
+    "Keep Mission Creator naming on dossier CTA and edit breadcrumb.",
+    "POST /missions unchanged; navigate to /missions/:id/edit.",
+]
+verify = ["frontend build + lint clean"]
+citations = [
+    "git ff0700be commit",
+    "SHIPPED_HISTORY T-048",
+    "t048_library_create_dialog.md spec",
+]
 shipped_at = "ff0700be"
 created_at = "2026-06-21T21:57:48Z"
 completed_at = "2026-06-21T21:57:48Z"

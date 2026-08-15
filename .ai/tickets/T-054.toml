@@ -7,6 +7,29 @@ status = "shipped"
 order = 540
 spec = "docs/specs/Mission_Creator_Architecture/t054_attributes_entry_points.md"
 executor = "claude-code"
+main_goal = "Native dblclick on map and ORBAT opens Attributes modal."
+context = [
+    "Eden gaps SEL-ORBAT-DBL-001 and SEL-MAP-004 harden; P1-09.",
+    "Map used hand-rolled 350ms click timer; ORBAT never wired onActivate.",
+]
+requirement = [
+    "Map native onDoubleClick picks slot-icons via deckRef.pickObject.",
+    "OrbatSection threads onActivateSlot through LeftSidebar to TreeView.",
+]
+current_state = [
+    "TreeView already fires onActivate on row native onDoubleClick.",
+    "MissionCreatorPage suppresses activate when selection.ids length exceeds one.",
+]
+approach = [
+    "Drop lastClick timer from TacticalMap onClick; three files only.",
+    "Keep T-053 multi-select guard on onEntityActivate unchanged.",
+]
+verify = ["frontend build and lint clean per SHIPPED_HISTORY."]
+citations = [
+    "t054_attributes_entry_points.md",
+    "3e302a45 ship commit",
+    "SHIPPED_HISTORY.md §T-054",
+]
 shipped_at = "3e302a45"
 created_at = "2026-06-22T03:46:09Z"
 completed_at = "2026-06-22T03:46:09Z"

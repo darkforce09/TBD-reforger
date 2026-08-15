@@ -6,6 +6,22 @@ class = "docs"
 status = "shipped"
 order = 450
 executor = "cursor-docs"
+main_goal = "Give each domain ROADMAP.md and rename MC docs descriptively."
+context = ["Numbered doc paths blocked roadmap-centric navigation."]
+requirement = [
+    "ROADMAP.md per domain FE BE Mission Creator.",
+    "Rename MC docs to descriptive names.",
+    "Stub old numbered paths.",
+]
+current_state = ["MC docs used numbered filenames like 05_agent_execution_plan.md."]
+approach = [
+    "Add domain ROADMAP.md files.",
+    "Rename MC corpus; leave stubs at old paths.",
+]
+citations = [
+    "Source: commit cc70ba8e.",
+    "Source: SHIPPED_HISTORY T-045.",
+]
 shipped_at = "514a0be3"
 created_at = "2026-06-21T03:51:53Z"
 completed_at = "2026-06-21T03:54:23Z"

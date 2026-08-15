@@ -7,6 +7,29 @@ status = "shipped"
 order = 560
 spec = "docs/specs/Mission_Creator_Architecture/t056_copy_paste.md"
 executor = "claude-code"
+main_goal = "Ctrl/Cmd+C copies slot selection; Ctrl/Cmd+V pastes at cursor preserving layout."
+context = [
+    "ACTION-COPY-001 and ACTION-PASTE-001 Eden P1-02 gaps.",
+    "Configured slots could not duplicate without fresh palette drag.",
+]
+requirement = [
+    "In-editor ClipboardSlot ref; pasteSlots one transact undo step.",
+    "Centroid at cursor; off-map null cursor uses plus 20m nudge.",
+]
+current_state = [
+    "MissionCreatorPage keydown owns undo Space Delete with input guard.",
+    "Cut and paste-at-original stay out of scope.",
+]
+approach = [
+    "pasteSlots in ydoc.ts re-attaches source squad and active layer.",
+    "cursorRef mirrors live cursor so keydown listener stays unbound.",
+]
+verify = ["frontend build and lint clean per SHIPPED_HISTORY."]
+citations = [
+    "t056_copy_paste.md spec",
+    "b5c5ead6 ship commit",
+    "SHIPPED_HISTORY.md §T-056",
+]
 shipped_at = "61a5fe5c"
 created_at = "2026-06-22T15:41:53Z"
 completed_at = "2026-06-22T15:50:46Z"

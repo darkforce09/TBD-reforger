@@ -6,6 +6,16 @@ class = "feature"
 status = "shipped"
 order = 380
 executor = "claude-code"
+main_goal = "Compile, export, hydrate, Save Version POST."
+context = ["Phase 9; export disabled until now."]
+requirement = ["json_payload superset; manual Save Version POST."]
+current_state = ["Export disabled; IndexedDB autosave only."]
+approach = ["compile.ts superset; useMissionEditor hydrate."]
+verify = ["POST 201; dup semver 409; ORBAT round-trips."]
+citations = [
+    "Source: commit c4167e3e.",
+    "Source: SHIPPED_HISTORY.md T-038.",
+]
 shipped_at = "c4167e3e"
 created_at = "2026-06-21T00:56:44Z"
 completed_at = "2026-06-21T00:56:44Z"

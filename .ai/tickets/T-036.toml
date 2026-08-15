@@ -6,6 +6,15 @@ class = "chore"
 status = "shipped"
 order = 360
 executor = "claude-code"
+main_goal = "Drag-move slots and marquee multi-select on map."
+context = ["Phase 7b; click-to-teleport remained."]
+requirement = ["Drag icons; marquee select; group move/delete."]
+current_state = ["Single selection; click map teleported."]
+approach = ["useSelectTool; moveEntities transact."]
+citations = [
+    "Source: commit 8046218e.",
+    "Source: SHIPPED_HISTORY.md T-036.",
+]
 shipped_at = "8046218e"
 created_at = "2026-06-21T00:00:32Z"
 completed_at = "2026-06-21T00:00:32Z"

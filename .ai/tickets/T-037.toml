@@ -6,6 +6,15 @@ class = "chore"
 status = "shipped"
 order = 370
 executor = "claude-code"
+main_goal = "Outliner rename, reparent, delete folder subtree."
+context = ["Phase 7a; T-033 deferred tree ops."]
+requirement = ["Rename, reparent, refile, delete folder subtree."]
+current_state = ["Reparent DnD and inline rename deferred."]
+approach = ["ydoc layer ops; TreeView DnD wired."]
+citations = [
+    "Source: commit e1355d00.",
+    "Source: SHIPPED_HISTORY.md T-037.",
+]
 shipped_at = "e1355d00"
 created_at = "2026-06-21T00:26:27Z"
 completed_at = "2026-06-21T00:26:27Z"

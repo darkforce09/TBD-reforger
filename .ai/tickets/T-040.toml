@@ -6,6 +6,19 @@ class = "feature"
 status = "shipped"
 order = 400
 executor = "claude-code"
+main_goal = "Fix /missions/create wizard max_players, weather enums, edit navigation."
+context = ["T-029..T-040 Mission Creator Eden editor wiring fixes slice."]
+requirement = [
+    "Send max_players on create.",
+    "Use real weather enums.",
+    "Navigate to /missions/:id/edit after create.",
+]
+current_state = ["Create wizard omitted max_players and used wrong weather enums."]
+approach = ["Patch missions.tsx create wizard POST payload and navigation."]
+citations = [
+    "Source: commit 79f8daf3.",
+    "Source: SHIPPED_HISTORY T-040.",
+]
 shipped_at = "745b7797"
 created_at = "2026-06-21T01:10:29Z"
 completed_at = "2026-06-21T01:14:42Z"

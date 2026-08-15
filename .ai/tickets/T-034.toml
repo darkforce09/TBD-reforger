@@ -6,6 +6,15 @@ class = "docs"
 status = "shipped"
 order = 340
 executor = "claude-code"
+main_goal = "Align docs on Eden docked-shell UX."
+context = ["PRE-3.5 doc gap before Eden shell."]
+requirement = ["Create Eden UX spec; patch engineering docs."]
+current_state = ["Eden docked-shell UX not yet specified."]
+approach = ["Created 04_eden_editor_ux_spec.md; patched ultra plan."]
+citations = [
+    "Source: commit 93944efe.",
+    "Source: SHIPPED_HISTORY.md T-034.",
+]
 shipped_at = "745b7797"
 created_at = "2026-06-20T23:09:53Z"
 completed_at = "2026-06-21T01:14:42Z"

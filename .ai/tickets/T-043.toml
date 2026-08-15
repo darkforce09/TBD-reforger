@@ -6,6 +6,22 @@ class = "docs"
 status = "shipped"
 order = 430
 executor = "cursor-docs"
+main_goal = "Reorganize platform docs hub, indexes, and Mission Creator eden layout."
+context = ["Platform documentation scattered across numbered paths and duplicate indexes."]
+requirement = [
+    "docs/website/README.md hub with master indexes.",
+    "Move platform docs to docs/platform/; MC eden/ reference/.",
+    "Retire FD vs T split; T-0xx-only contract in TAGS.md.",
+]
+current_state = ["Docs lived at root numbered paths; FD/T split still documented."]
+approach = [
+    "Move platform docs; reorg MC corpus eden/.",
+    "Refresh frontend surface specs.",
+]
+citations = [
+    "Source: commit 9a669da3.",
+    "Source: SHIPPED_HISTORY T-043.",
+]
 shipped_at = "9a669da3"
 created_at = "2026-06-21T03:44:59Z"
 completed_at = "2026-06-21T03:44:59Z"

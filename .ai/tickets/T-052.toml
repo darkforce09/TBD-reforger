@@ -7,6 +7,31 @@ status = "shipped"
 order = 520
 spec = "docs/specs/Mission_Creator_Architecture/t052_undo_shortcuts.md"
 executor = "claude-code"
+main_goal = "Ctrl/Cmd+Z/Y undo-redo via existing UndoController; fix StrictMode lifecycle."
+context = [
+    "Toolbar Undo/Redo already work via Y.UndoManager.",
+    "Closes TOP-UNDO-001 / KEY-UNDO-001 gap_analysis gaps.",
+]
+requirement = [
+    "Cmd/Ctrl+Z undo; Cmd/Ctrl+Shift+Z or Ctrl+Y redo.",
+    "Skip when focus in INPUT/SELECT/TEXTAREA/contentEditable.",
+    "preventDefault on match; drive stack only when canUndo/canRedo.",
+]
+current_state = [
+    "No keyboard shortcuts on MissionCreatorPage host.",
+    "React 19 StrictMode left undo dead in dev; canUndo always false.",
+]
+approach = [
+    "MissionCreatorPage keydown reuses editor.undo UndoController.",
+    "instanceKey bump on teardown for fresh md+UndoController after StrictMode double-invoke.",
+    "Keep TopCommandStrip toolbar buttons unchanged.",
+]
+verify = ["frontend build + lint clean"]
+citations = [
+    "git d2423f34 commit",
+    "SHIPPED_HISTORY T-052",
+    "t052_undo_shortcuts.md spec",
+]
 shipped_at = "d2423f34"
 created_at = "2026-06-21T23:10:04Z"
 completed_at = "2026-06-21T23:10:04Z"

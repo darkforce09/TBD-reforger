@@ -7,6 +7,29 @@ status = "shipped"
 order = 530
 spec = "docs/specs/Mission_Creator_Architecture/t053_additive_select.md"
 executor = "claude-code"
+main_goal = "Ctrl/Cmd+LMB toggles slots in/out of the current selection."
+context = [
+    "Eden gap SEL-MOD-001; P1-01 per commit 7a7bf05f.",
+    "Marquee multi-select exists; single click always replaced selection.",
+]
+requirement = [
+    "Ctrl or Cmd click toggles slot in/out of selection.ids.",
+    "Modifier empty-click preserves selection; one-file TacticalMap.tsx change.",
+]
+current_state = [
+    "Sub-threshold clicks fall through useSelectTool to Deck onClick.",
+    "Single click replaced selection; trimming multi needed redrawn marquee.",
+]
+approach = [
+    "Read ctrlKey/metaKey from Deck onClick MjolnirGestureEvent srcEvent.",
+    "Toggle useMapStore selection; last id removed yields none.",
+]
+verify = ["frontend build and lint clean per SHIPPED_HISTORY."]
+citations = [
+    "t053_additive_select.md spec",
+    "7a7bf05f ship commit",
+    "SHIPPED_HISTORY.md §T-053",
+]
 shipped_at = "7a7bf05f"
 created_at = "2026-06-22T03:34:32Z"
 completed_at = "2026-06-22T03:34:32Z"

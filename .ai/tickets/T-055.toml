@@ -7,6 +7,29 @@ status = "shipped"
 order = 550
 spec = "docs/specs/Mission_Creator_Architecture/t055_asset_browser_search.md"
 executor = "claude-code"
+main_goal = "Case-insensitive label search filters Factions Asset Browser tree."
+context = [
+    "RIGHT-SEARCH-001 Eden P1-04; Factions tab only live catalog.",
+    "Finding units required hand-expanding Faction Category Class tree.",
+]
+requirement = [
+    "Recursive filterCatalog on ASSET_CATALOG by label substring.",
+    "TreeView keyed on query for auto-expand; Esc and X clear.",
+]
+current_state = [
+    "TreeView seeds expanded set once at mount via collectExpanded.",
+    "Stub tabs and class-prefix search RIGHT-SEARCH-002 out of scope.",
+]
+approach = [
+    "One-file AssetBrowser.tsx; retained folders force defaultExpanded true.",
+    "Empty query shows no assets match message; drag-to-place unchanged.",
+]
+verify = ["frontend build and lint clean per SHIPPED_HISTORY."]
+citations = [
+    "t055_asset_browser_search.md",
+    "a2dd1b96 ship commit",
+    "SHIPPED_HISTORY.md §T-055",
+]
 shipped_at = "a264d2b0"
 created_at = "2026-06-22T04:10:24Z"
 completed_at = "2026-06-22T04:12:12Z"

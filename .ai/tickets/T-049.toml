@@ -7,6 +7,32 @@ status = "shipped"
 order = 490
 spec = "docs/specs/Mission_Creator_Architecture/t049_terrain_title_position.md"
 executor = "claude-code"
+main_goal = "Wire terrain viewport, hydrate row title/meta on load, editable X/Y/Z/rotation transform."
+context = [
+    "Code-only flat-grid slice; no T-090 tiles, T-091 DEM, T-068 registry.",
+    "Closes MAP-TERRAIN-001, TOP-TITLE-001, ATTR-FIELD-OBJ-POSITION gaps.",
+]
+requirement = [
+    "meta.terrain → TacticalMap viewport (Everon 12800 vs Arland 4096).",
+    "Hydrate meta.title/terrain/environment from GET row; fix empty json_payload early-return.",
+    "Editable Transform tab X/Y/Z/rotation; selection-aware toolbelt SEL/CUR coords.",
+]
+current_state = [
+    "Fresh missions stuck Untitled Mission/Everon when json_payload is {}.",
+    "Transform tab read-only with stale coming-later copy.",
+    "Toolbelt not selection-aware for coords.",
+]
+approach = [
+    "applyMissionRowMeta INIT_ORIGIN in ydoc.ts; rewrite useMissionEditor.onSynced.",
+    "updateSlotPosition with terrain bounds clamp; mono NumberField blur/Enter commit.",
+    "TacticalMap key={terrainId} remount for camera/grid resize.",
+]
+verify = ["frontend build + lint clean"]
+citations = [
+    "git 08fa4624 commit",
+    "SHIPPED_HISTORY T-049",
+    "t049_terrain_title_position.md spec",
+]
 shipped_at = "08fa4624"
 created_at = "2026-06-21T22:35:41Z"
 completed_at = "2026-06-21T22:35:41Z"

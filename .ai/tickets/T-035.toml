@@ -6,6 +6,15 @@ class = "feature"
 status = "shipped"
 order = 350
 executor = "claude-code"
+main_goal = "Fullscreen Eden editor with docked panels."
+context = ["Phase 3.5 after T-033 Y.Doc wiring."]
+requirement = ["Chromeless route; docked L/R; always-on palette."]
+current_state = ["Platform nav and floating panels remained."]
+approach = ["AppLayout chromeless; overlayDocked shell."]
+citations = [
+    "Source: commit b28a70f6.",
+    "Source: SHIPPED_HISTORY.md T-035.",
+]
 shipped_at = "b28a70f6"
 created_at = "2026-06-20T23:30:49Z"
 completed_at = "2026-06-20T23:30:49Z"

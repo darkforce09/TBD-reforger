@@ -6,6 +6,30 @@ class = "docs"
 status = "shipped"
 order = 470
 executor = "cursor-docs"
+main_goal = "ROADMAP.md is open-work authority; shell phases T-033–T-040 marked complete; wiki manifest deduped."
+context = [
+    "Follows T-046 link-integrity pass on stale numbered cross-refs.",
+    "agent_execution.md Decisions log and agent rules are the authority surface.",
+]
+requirement = [
+    "Point agents at ROADMAP.md for open work.",
+    "State shell phases PRE-3.5–9 complete replacing 00–09 shorthand.",
+    "Dedupe wiki_manifest.yaml duplicate Eden_Editor:_Scenario_Attributes entry.",
+]
+current_state = [
+    "Old strict-phase-order and 00–09 numbered shorthand still referenced.",
+    "Eden_Editor:_Scenario_Attributes listed twice in wiki_manifest.yaml.",
+]
+approach = [
+    "Update agent_execution.md Decisions log and agent rules to ROADMAP-first.",
+    "Document T-033–T-040 shell phases complete.",
+    "Remove duplicate wiki_manifest.yaml page entry.",
+]
+citations = [
+    "git fc959c00 commit",
+    "SHIPPED_HISTORY T-047",
+    "agent_execution.md Decisions log",
+]
 shipped_at = "fc959c00"
 created_at = "2026-06-21T21:19:29Z"
 completed_at = "2026-06-21T21:19:29Z"

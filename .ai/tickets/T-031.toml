@@ -6,6 +6,21 @@ class = "feature"
 status = "shipped"
 order = 310
 executor = "claude-code"
+main_goal = "Full-bleed map under frosted command strip and toolbelt."
+context = ["Mission Creator Phase 3 Aegis-glass shell over the Deck.gl viewport."]
+requirement = [
+    "Full-bleed map at z-0 under a frosted overlay of command strip, toolbelt, outliner, inspector, and asset browser panels.",
+    "MissionSettingsDialog from the gear control; SlotInspector and shared overlay.ts Aegis token recipe.",
+]
+current_state = ["T-029 viewport and T-030 state existed without Eden-style editor chrome or frosted overlays."]
+approach = [
+    "Add mission-creator/layout/ panels: TopCommandStrip, BottomToolbelt, LeftOutliner, RightInspector, MissionSettingsDialog.",
+    "Keep TacticalMap full-bleed z-0; overlay uses pointer-events-none with pointer-events-auto frosted children.",
+]
+citations = [
+    "Source: commit 73161c5c.",
+    "Source: docs/platform/SHIPPED_HISTORY.md §T-031.",
+]
 shipped_at = "73161c5c"
 created_at = "2026-06-20T07:11:35Z"
 completed_at = "2026-06-20T07:11:35Z"

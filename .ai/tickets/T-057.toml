@@ -7,6 +7,32 @@ status = "shipped"
 order = 570
 spec = "docs/specs/Mission_Creator_Architecture/t057_map_performance_hotfix.md"
 executor = "claude-code"
+main_goal = "Restore engineering-plan pan zoom at 200 plus slots."
+context = [
+    "Regression dropped pan zoom to about 9 fps at 100-200 slots.",
+    "Deck.gl GPU fine; React DOM layer was bottleneck.",
+]
+requirement = [
+    "Cursor to rAF-throttled useMapStore.cursor off page render path.",
+    "Drop Deck onHover; unproject mouse; rAF-coalesce pan; React.memo panels.",
+]
+current_state = [
+    "Pointer move re-rendered whole MissionCreatorPage including outliner trees.",
+    "Hover pick ran GPU pass every move only for toolbelt coordinates.",
+]
+approach = [
+    "BottomToolbelt alone subscribes to cursor slice from map store.",
+    "Constant crosshair getCursor; picking kept for click marquee drag only.",
+]
+verify = [
+    "frontend build and lint clean per SHIPPED_HISTORY.",
+    "Manual FpsCounter check at 200 plus slots per spec.",
+]
+citations = [
+    "t057_map_performance_hotfix.md",
+    "7adc3459 ship commit",
+    "SHIPPED_HISTORY.md §T-057",
+]
 shipped_at = "7adc3459"
 created_at = "2026-06-22T15:50:46Z"
 completed_at = "2026-06-22T16:30:36Z"
