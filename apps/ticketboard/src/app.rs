@@ -32,6 +32,7 @@ use crate::board::{self, BoardModel, Card, Class, ScopeLevel};
 use crate::corpus::{self, Corpus, LoadBundle, LoadError};
 use crate::detail;
 use crate::discovery;
+use crate::estimates::{self, EstSortPair, EstTableKind, EstimatesState, StampCell, TokensCell};
 use crate::facets::{self, FacetOption, FacetOptions, VocabTree};
 use crate::filters::{FilterIndex, Filters, KindFilter};
 use crate::gitstatus::{self, GitChip};
@@ -101,7 +102,9 @@ fn scope_level_color(level: ScopeLevel) -> Color32 {
 }
 
 /// Amber accent for the estimated-scope `~` glyph (the trust banner's "busy"
-/// tone — provenance flags read as attention, not error).
+/// tone — provenance flags read as attention, not error). T-918.2 reuses it for
+/// EVERY estimated surface: stamp glyphs, the tokens (estimated) row, and the
+/// Estimated (historical) panel header — one provenance color language.
 const SCOPE_ESTIMATED_COLOR: Color32 = Color32::from_rgb(245, 175, 80);
 
 /// Quarantine fence for the `migration_legacy` block (T-918.3) — the amber
@@ -152,6 +155,13 @@ pub(crate) struct BoardState {
     /// Per-table sort selections for the metrics tables (survive reloads,
     /// carried like the filters).
     metrics_sort: SortPair,
+    /// Estimated (historical) panel model (T-918.2) — the estimate files joined
+    /// against the corpus for class/domain buckets. STRUCTURALLY separate from
+    /// `metrics`: no figure ever crosses between the two.
+    estimates: EstimatesState,
+    /// Sort selections for the two estimated tables (carried like
+    /// `metrics_sort`).
+    est_sort: EstSortPair,
     tree: TreeModel,
     filter_index: FilterIndex,
     filters: Filters,
@@ -187,24 +197,43 @@ pub(crate) struct BoardState {
     footer: String,
 }
 
+/// Filter + sort selections that survive a corpus reload (the T-915.3 watch
+/// reloads on every registry change; raw indices go stale, preferences do not).
+#[derive(Default)]
+struct Carried {
+    filters: Filters,
+    metrics_sort: SortPair,
+    est_sort: EstSortPair,
+}
+
 impl BoardState {
     fn new(
         corpus: Corpus,
         lock: LockState,
         mut metrics: MetricsState,
+        raw_estimates: estimates::RawEstimates,
         vocab: Option<VocabTree>,
-        filters: Filters,
-        metrics_sort: SortPair,
+        carried: Carried,
     ) -> Self {
+        let Carried {
+            filters,
+            metrics_sort,
+            est_sort,
+        } = carried;
         let board = BoardModel::build(&corpus);
         let waves = match &lock {
             LockState::Loaded(l) => Some(WavesModel::build(&corpus, &board.id_to_index, l)),
             _ => None,
         };
-        // Re-apply the carried sort to the fresh aggregation (the model loads
-        // tokens-desc by default).
+        // Re-apply the carried sorts to the fresh aggregations (both models
+        // load tokens-desc by default). Measured and estimated stay separate
+        // models with separate sorts — never one table.
         if let MetricsState::Loaded(m) = &mut metrics {
             m.apply_sort(metrics_sort);
+        }
+        let mut est_state = estimates::build_state(raw_estimates, &corpus);
+        if let EstimatesState::Loaded(e) = &mut est_state {
+            e.apply_sort(est_sort);
         }
         let tree = TreeModel::build(&corpus, &board.id_to_index);
         let filter_index = FilterIndex::build(&corpus);
@@ -222,6 +251,8 @@ impl BoardState {
             waves,
             metrics,
             metrics_sort,
+            estimates: est_state,
+            est_sort,
             tree,
             filter_index,
             filters,
@@ -312,6 +343,9 @@ pub(crate) enum Action {
     FiltersChanged,
     /// Metrics table header click: toggle/replace that table's sort (T-915.5).
     SortMetrics(TableKind, metrics::SortKey),
+    /// Estimated-table header click (T-918.2) — a SEPARATE action over the
+    /// separate estimated model; measured and estimated sorts never share state.
+    SortEstimates(EstTableKind, estimates::EstSortKey),
     // ---- T-915.4 mutation surface ----
     /// Open a mutation dialog (built at click/menu-render time, guard included).
     OpenDialog(Box<Dialog>),
@@ -580,30 +614,32 @@ impl TicketboardApp {
             self.load_rx = None;
             self.state = match bundle.corpus {
                 Ok(corpus) => {
-                    // Filters, the selection AND the metrics sort survive a
+                    // Filters, the selection AND the table sorts survive a
                     // reload (T-915.3 reloads on every watched change) — the
                     // selection re-resolves by id, because raw indices are
                     // stale against the new corpus.
-                    let (filters, selected_id, compare_id, metrics_sort, legacy_expanded) =
-                        match &self.state {
-                            State::Board(b) => (
-                                b.filters.clone(),
-                                b.selected
-                                    .map(|i| b.corpus.tickets[i].ticket.id().to_owned()),
-                                b.compare
-                                    .map(|i| b.corpus.tickets[i].ticket.id().to_owned()),
-                                b.metrics_sort,
-                                b.legacy_expanded,
-                            ),
-                            _ => (Filters::default(), None, None, SortPair::default(), false),
-                        };
+                    let (carried, selected_id, compare_id, legacy_expanded) = match &self.state {
+                        State::Board(b) => (
+                            Carried {
+                                filters: b.filters.clone(),
+                                metrics_sort: b.metrics_sort,
+                                est_sort: b.est_sort,
+                            },
+                            b.selected
+                                .map(|i| b.corpus.tickets[i].ticket.id().to_owned()),
+                            b.compare
+                                .map(|i| b.corpus.tickets[i].ticket.id().to_owned()),
+                            b.legacy_expanded,
+                        ),
+                        _ => (Carried::default(), None, None, false),
+                    };
                     let mut board = BoardState::new(
                         corpus,
                         bundle.lock,
                         bundle.metrics,
+                        bundle.estimates,
                         bundle.vocab,
-                        filters,
-                        metrics_sort,
+                        carried,
                     );
                     board.selected =
                         selected_id.and_then(|id| board.board.id_to_index.get(&id).copied());
@@ -963,6 +999,22 @@ impl TicketboardApp {
                             TableKind::Agent => {
                                 b.metrics_sort.agent = b.metrics_sort.agent.toggled(key);
                                 metrics::sort_rows(&mut m.per_agent, b.metrics_sort.agent);
+                            }
+                        }
+                    }
+                }
+                Action::SortEstimates(table, key) => {
+                    if let State::Board(b) = &mut self.state
+                        && let EstimatesState::Loaded(e) = &mut b.estimates
+                    {
+                        match table {
+                            EstTableKind::Class => {
+                                b.est_sort.class = b.est_sort.class.toggled(key);
+                                estimates::sort_rows(&mut e.per_class, b.est_sort.class);
+                            }
+                            EstTableKind::Domain => {
+                                b.est_sort.domain = b.est_sort.domain.toggled(key);
+                                estimates::sort_rows(&mut e.per_domain, b.est_sort.domain);
                             }
                         }
                     }
@@ -1971,13 +2023,46 @@ fn tree_row_ui(ui: &mut Ui, b: &BoardState, row: tree::FlatRow, actions: &mut Ve
     });
 }
 
-// ---- metrics dashboard (T-915.5) ----
+// ---- metrics dashboard (T-915.5 measured + T-918.2 estimated) ----
 
+/// The Metrics tab: the MEASURED receipts dashboard (T-915.5, behavior
+/// unchanged) and, structurally separate below a hard divider, the ESTIMATED
+/// (historical) panel (T-918.2). Two grand strips, two table sets, two sort
+/// states, two distinct header tints — and NO combined total anywhere (THE LAW;
+/// the negative assertion lives in `estimates.rs` tests).
 fn metrics_ui(ui: &mut Ui, b: &BoardState, actions: &mut Vec<Action>) {
-    match &b.metrics {
-        MetricsState::NoReceipts => metrics_empty_ui(ui),
-        MetricsState::Loaded(m) => metrics_body_ui(ui, b, m, actions),
-    }
+    ScrollArea::vertical()
+        .id_salt("metrics")
+        .auto_shrink([false, false])
+        .show(ui, |ui| {
+            ui.add_space(4.0);
+            panel_badge_ui(ui, " MEASURED — run receipts ", VERDICT_OK);
+            match &b.metrics {
+                MetricsState::NoReceipts => metrics_empty_ui(ui),
+                MetricsState::Loaded(m) => metrics_body_ui(ui, b, m, actions),
+            }
+            // The hard boundary between measured and estimated — a double rule,
+            // never a shared table edge.
+            ui.add_space(16.0);
+            ui.separator();
+            ui.add_space(1.0);
+            ui.separator();
+            ui.add_space(6.0);
+            estimated_panel_ui(ui, b, actions);
+            ui.add_space(12.0);
+        });
+}
+
+/// A tinted panel badge — the measured (green) vs estimated (amber) header
+/// distinction the T-918.2 acceptance asks for.
+fn panel_badge_ui(ui: &mut Ui, label: &str, color: Color32) {
+    ui.label(
+        RichText::new(label)
+            .strong()
+            .monospace()
+            .background_color(color.gamma_multiply(0.18))
+            .color(color),
+    );
 }
 
 /// The T-915.5 acceptance-1 surface: an ABSENT (or empty) receipts directory is
@@ -2004,64 +2089,59 @@ fn metrics_empty_ui(ui: &mut Ui) {
     ui.label(RichText::new(metrics::COVERAGE_NOTE).weak().small());
 }
 
+/// The measured receipts body (T-915.5) — content unchanged by T-918.2; only
+/// the scroll container moved up to `metrics_ui` so the estimated panel shares
+/// one scroll surface (never one table).
 fn metrics_body_ui(
     ui: &mut Ui,
     b: &BoardState,
     m: &metrics::MetricsModel,
     actions: &mut Vec<Action>,
 ) {
-    ScrollArea::vertical()
-        .id_salt("metrics")
-        .auto_shrink([false, false])
-        .show(ui, |ui| {
-            ui.add_space(4.0);
-            // Grand-total strip (precomputed at load; with zero valid runs it
-            // says "no valid receipts", never a zeros row).
-            ui.label(RichText::new(&m.grand.strip).monospace().strong());
-            ui.label(RichText::new(metrics::COVERAGE_NOTE).weak().small());
-            if !m.errors.is_empty() {
-                ui.label(
-                    RichText::new(format!(
-                        "{} malformed receipt file(s) — excluded from every sum; listed below",
-                        m.errors.len()
-                    ))
-                    .color(VERDICT_COLLIDE)
-                    .strong(),
-                );
-            }
-            ui.separator();
-            ui.label(RichText::new("Per agent").strong());
-            metrics_table_ui(ui, b, &m.per_agent, TableKind::Agent, actions);
-            ui.add_space(10.0);
-            ui.separator();
-            ui.label(RichText::new("Per ticket").strong());
-            metrics_table_ui(ui, b, &m.per_ticket, TableKind::Ticket, actions);
-            if !m.errors.is_empty() {
-                ui.add_space(10.0);
-                ui.separator();
-                ui.label(
-                    RichText::new(format!("Malformed receipts ({})", m.errors.len())).strong(),
-                );
-                ui.label(
-                    RichText::new(
-                        "named per file, reason verbatim — observations are listed broken, \
-                         never silently skipped and never coerced to numbers",
-                    )
-                    .weak()
-                    .small(),
-                );
-                for error in &m.errors {
-                    ui.label(
-                        RichText::new(&error.rel)
-                            .monospace()
-                            .small()
-                            .color(VERDICT_COLLIDE),
-                    );
-                    ui.label(RichText::new(&error.reason).monospace().small());
-                }
-            }
-            ui.add_space(12.0);
-        });
+    ui.add_space(4.0);
+    // Grand-total strip (precomputed at load; with zero valid runs it
+    // says "no valid receipts", never a zeros row).
+    ui.label(RichText::new(&m.grand.strip).monospace().strong());
+    ui.label(RichText::new(metrics::COVERAGE_NOTE).weak().small());
+    if !m.errors.is_empty() {
+        ui.label(
+            RichText::new(format!(
+                "{} malformed receipt file(s) — excluded from every sum; listed below",
+                m.errors.len()
+            ))
+            .color(VERDICT_COLLIDE)
+            .strong(),
+        );
+    }
+    ui.separator();
+    ui.label(RichText::new("Per agent").strong());
+    metrics_table_ui(ui, b, &m.per_agent, TableKind::Agent, actions);
+    ui.add_space(10.0);
+    ui.separator();
+    ui.label(RichText::new("Per ticket").strong());
+    metrics_table_ui(ui, b, &m.per_ticket, TableKind::Ticket, actions);
+    if !m.errors.is_empty() {
+        ui.add_space(10.0);
+        ui.separator();
+        ui.label(RichText::new(format!("Malformed receipts ({})", m.errors.len())).strong());
+        ui.label(
+            RichText::new(
+                "named per file, reason verbatim — observations are listed broken, \
+                 never silently skipped and never coerced to numbers",
+            )
+            .weak()
+            .small(),
+        );
+        for error in &m.errors {
+            ui.label(
+                RichText::new(&error.rel)
+                    .monospace()
+                    .small()
+                    .color(VERDICT_COLLIDE),
+            );
+            ui.label(RichText::new(&error.reason).monospace().small());
+        }
+    }
 }
 
 /// One aggregation table (per agent / per ticket): egui_extras striped, the
@@ -2199,12 +2279,223 @@ fn sort_header_ui(
     }
 }
 
+// ---- estimated (historical) panel (T-918.2) ----
+
+/// The ESTIMATED half of the Metrics tab: its own amber-tinted header, its own
+/// grand strip, per-CLASS and per-DOMAIN tables (estimates have no agent), its
+/// own malformed-file list — and no figure shared with the measured panel
+/// above. The explicit no-estimates state renders instead of zeros.
+fn estimated_panel_ui(ui: &mut Ui, b: &BoardState, actions: &mut Vec<Action>) {
+    panel_badge_ui(ui, " ESTIMATED (historical) ", SCOPE_ESTIMATED_COLOR);
+    ui.label(
+        RichText::new(estimates::NEVER_COMBINED_NOTE)
+            .small()
+            .color(SCOPE_ESTIMATED_COLOR),
+    );
+    match &b.estimates {
+        EstimatesState::NoEstimates => {
+            ui.add_space(8.0);
+            ui.label(
+                RichText::new(estimates::NO_ESTIMATES_TEXT)
+                    .monospace()
+                    .size(14.0),
+            );
+            ui.label(
+                RichText::new(
+                    "the panel renders real estimate files only — an empty tree is this \
+                     message, not zeros",
+                )
+                .weak()
+                .small(),
+            );
+        }
+        EstimatesState::Loaded(e) => {
+            ui.add_space(4.0);
+            // The ESTIMATED grand strip — separate from the measured strip; the
+            // two are never one figure.
+            ui.label(RichText::new(&e.grand.strip).monospace().strong());
+            if !e.errors.is_empty() {
+                ui.label(
+                    RichText::new(format!(
+                        "{} malformed estimate file(s) — excluded from every sum; listed below",
+                        e.errors.len()
+                    ))
+                    .color(VERDICT_COLLIDE)
+                    .strong(),
+                );
+            }
+            ui.separator();
+            ui.label(RichText::new("Per class").strong());
+            est_table_ui(ui, b, &e.per_class, EstTableKind::Class, actions);
+            ui.add_space(10.0);
+            ui.separator();
+            ui.label(RichText::new("Per domain").strong());
+            est_table_ui(ui, b, &e.per_domain, EstTableKind::Domain, actions);
+            if !e.errors.is_empty() {
+                ui.add_space(10.0);
+                ui.separator();
+                ui.label(
+                    RichText::new(format!("Malformed estimates ({})", e.errors.len())).strong(),
+                );
+                ui.label(
+                    RichText::new(
+                        "named per file, reason verbatim — never silently skipped, never \
+                         coerced to numbers",
+                    )
+                    .weak()
+                    .small(),
+                );
+                for error in &e.errors {
+                    ui.label(
+                        RichText::new(&error.rel)
+                            .monospace()
+                            .small()
+                            .color(VERDICT_COLLIDE),
+                    );
+                    ui.label(RichText::new(&error.reason).monospace().small());
+                }
+            }
+        }
+    }
+}
+
+/// One ESTIMATED aggregation table (per class / per domain): tickets,
+/// Σ tokens_estimated and the source split, headers sortable. Key cells are
+/// plain text — classes and domains are buckets, not tickets, so nothing links
+/// into the detail panel from here.
+fn est_table_ui(
+    ui: &mut Ui,
+    b: &BoardState,
+    rows: &[estimates::EstRow],
+    table: EstTableKind,
+    actions: &mut Vec<Action>,
+) {
+    if rows.is_empty() {
+        ui.label(RichText::new("—").weak());
+        return;
+    }
+    let (sort, key_header, salt) = match table {
+        EstTableKind::Class => (b.est_sort.class, "class", "est_per_class"),
+        EstTableKind::Domain => (b.est_sort.domain, "domain", "est_per_domain"),
+    };
+    ui.push_id(salt, |ui| {
+        TableBuilder::new(ui)
+            .striped(true)
+            .vscroll(false)
+            .column(TableColumn::auto().at_least(120.0)) // key
+            .column(TableColumn::auto().at_least(64.0)) // tickets
+            .column(TableColumn::auto().at_least(160.0)) // tokens_estimated
+            .column(TableColumn::auto().at_least(80.0)) // diff_loc
+            .column(TableColumn::remainder()) // cohort_median
+            .header(20.0, |mut header| {
+                header.col(|ui| {
+                    ui.label(RichText::new(key_header).weak().small());
+                });
+                header.col(|ui| {
+                    est_sort_header_ui(
+                        ui,
+                        "tickets",
+                        estimates::EstSortKey::Tickets,
+                        sort,
+                        table,
+                        actions,
+                    );
+                });
+                header.col(|ui| {
+                    est_sort_header_ui(
+                        ui,
+                        "tokens_estimated (Σ)",
+                        estimates::EstSortKey::Tokens,
+                        sort,
+                        table,
+                        actions,
+                    );
+                });
+                header.col(|ui| {
+                    est_sort_header_ui(
+                        ui,
+                        "diff_loc",
+                        estimates::EstSortKey::DiffLoc,
+                        sort,
+                        table,
+                        actions,
+                    );
+                });
+                header.col(|ui| {
+                    est_sort_header_ui(
+                        ui,
+                        "cohort_median",
+                        estimates::EstSortKey::CohortMedian,
+                        sort,
+                        table,
+                        actions,
+                    );
+                });
+            })
+            .body(|mut body| {
+                for agg in rows {
+                    body.row(20.0, |mut row| {
+                        row.col(|ui| {
+                            ui.monospace(&agg.key);
+                        });
+                        row.col(|ui| {
+                            ui.monospace(&agg.tickets_str);
+                        });
+                        row.col(|ui| {
+                            // Amber-glyphed — an estimated figure never dresses
+                            // as a measured one, even in its own table.
+                            ui.horizontal(|ui| {
+                                ui.spacing_mut().item_spacing.x = 4.0;
+                                ui.label(
+                                    RichText::new(estimates::ESTIMATE_GLYPH)
+                                        .color(SCOPE_ESTIMATED_COLOR),
+                                );
+                                ui.monospace(&agg.tokens_str);
+                            });
+                        });
+                        row.col(|ui| {
+                            ui.monospace(&agg.diff_loc_str);
+                        });
+                        row.col(|ui| {
+                            ui.monospace(&agg.cohort_str);
+                        });
+                    });
+                }
+            });
+    });
+}
+
+/// Sortable header for the estimated tables — same click rule as the measured
+/// tables (`sort_header_ui`), separate action + separate sort state.
+fn est_sort_header_ui(
+    ui: &mut Ui,
+    label: &str,
+    key: estimates::EstSortKey,
+    sort: estimates::EstSort,
+    table: EstTableKind,
+    actions: &mut Vec<Action>,
+) {
+    let active = sort.key == key;
+    let text = if active {
+        format!("{label} {}", if sort.desc { "▼" } else { "▲" })
+    } else {
+        label.to_owned()
+    };
+    if ui
+        .selectable_label(active, RichText::new(text).small())
+        .clicked()
+    {
+        actions.push(Action::SortEstimates(table, key));
+    }
+}
+
 // ---- detail panel ----
 
-/// One detail-row value; ids and paths are live links.
+/// One detail-row value; ids and paths are live links. (The pre-T-918.2 `Mono`
+/// variant is gone: its only users were the three lifecycle stamps, which now
+/// render provenance-aware through [`Cell::Stamp`].)
 enum Cell {
     Text(String),
-    Mono(String),
     IdRef(String),
     PathRef {
         label: String,
@@ -2213,6 +2504,12 @@ enum Cell {
     /// Scope breadcrumb (T-918.1) — the detail tier renders the "(no surface)"
     /// marker and the estimated-scope glyph.
     Scope(board::Breadcrumb),
+    /// Lifecycle stamp (T-918.2) — measured vs estimated as distinct render
+    /// states; the estimated states carry the `~` glyph + verbatim-note tooltip.
+    Stamp(StampCell),
+    /// The "tokens (estimated)" row (T-918.2) — value/source/factor/inputs off
+    /// the estimate file, or the explicit marked-but-no-file hole.
+    TokensEstimate(TokensCell),
     Missing,
 }
 
@@ -2278,11 +2575,20 @@ fn detail_ui(
                 Some(root) => root.join(p),
                 None => PathBuf::from(p),
             };
-            let opt_mono =
-                |value: Option<&str>| value.map_or(Cell::Missing, |s| Cell::Mono(s.to_owned()));
             let opt_id =
                 |value: Option<&str>| value.map_or(Cell::Missing, |s| Cell::IdRef(s.to_owned()));
-            let rows: Vec<(&str, Cell)> = vec![
+            // T-918.2 provenance: each stamp renders measured or estimated as a
+            // distinct state, decided per name against estimated[]; the tooltip
+            // is the ticket's estimate_note VERBATIM.
+            let stamp = |name: &str, value: Option<&str>| {
+                Cell::Stamp(estimates::stamp_cell(
+                    name,
+                    value,
+                    v.estimated,
+                    v.estimate_note,
+                ))
+            };
+            let mut rows: Vec<(&str, Cell)> = vec![
                 ("status", Cell::Text(board::status_label(v.status))),
                 (
                     "executor",
@@ -2305,9 +2611,21 @@ fn detail_ui(
                 ),
                 ("parent", opt_id(v.parent)),
                 ("active", opt_id(v.active)),
-                ("shipped_at", opt_mono(v.shipped_at)),
-                ("created_at", opt_mono(v.created_at)),
-                ("completed_at", opt_mono(v.completed_at)),
+                ("shipped_at", stamp("shipped_at", v.shipped_at)),
+                ("created_at", stamp("created_at", v.created_at)),
+                ("completed_at", stamp("completed_at", v.completed_at)),
+            ];
+            // The tokens row exists ONLY when "tokens" ∈ estimated[] — measured
+            // tokens live on the Metrics tab over receipts; this panel never
+            // renders a figure that could be mistaken for one.
+            let est_model = match &b.estimates {
+                EstimatesState::Loaded(m) => Some(m),
+                EstimatesState::NoEstimates => None,
+            };
+            if let Some(cell) = estimates::tokens_cell(v.id, v.estimated, est_model) {
+                rows.push(("tokens (estimated)", Cell::TokensEstimate(cell)));
+            }
+            rows.extend([
                 (
                     "pack_last",
                     v.pack_last
@@ -2326,7 +2644,7 @@ fn detail_ui(
                         path: loaded.path.clone(),
                     },
                 ),
-            ];
+            ]);
             TableBuilder::new(ui)
                 .striped(true)
                 .vscroll(false)
@@ -2458,9 +2776,6 @@ fn cell_ui(ui: &mut Ui, cell: &Cell, ids: &HashMap<String, usize>, actions: &mut
         Cell::Text(s) => {
             ui.label(s);
         }
-        Cell::Mono(s) => {
-            ui.monospace(s);
-        }
         Cell::IdRef(id) => id_link_ui(ui, id, ids, actions),
         Cell::PathRef { label, path } => {
             if ui.link(RichText::new(label).monospace()).clicked() {
@@ -2468,7 +2783,84 @@ fn cell_ui(ui: &mut Ui, cell: &Cell, ids: &HashMap<String, usize>, actions: &mut
             }
         }
         Cell::Scope(bc) => scope_breadcrumb_ui(ui, bc),
+        Cell::Stamp(stamp) => stamp_cell_ui(ui, stamp),
+        Cell::TokensEstimate(cell) => tokens_cell_ui(ui, cell),
         Cell::Missing => missing_marker(ui),
+    }
+}
+
+/// The amber provenance glyph (`~`) with its tooltip — shared by the stamp and
+/// tokens rows so every estimated value reads in one visual language.
+fn estimate_glyph_ui(ui: &mut Ui, tip: &str) {
+    ui.label(
+        RichText::new(estimates::ESTIMATE_GLYPH)
+            .strong()
+            .color(SCOPE_ESTIMATED_COLOR),
+    )
+    .on_hover_text(tip);
+}
+
+/// One lifecycle-stamp cell (T-918.2): measured renders as a bare mono value —
+/// NO glyph, NO tooltip; estimated renders the glyph + the estimate_note
+/// verbatim on hover; absent-but-marked renders the explicit
+/// "— (estimated absent)" marker (a SHA is never invented).
+fn stamp_cell_ui(ui: &mut Ui, cell: &StampCell) {
+    match cell {
+        StampCell::Measured(value) => {
+            ui.monospace(value);
+        }
+        StampCell::Estimated { value, tip } => {
+            ui.horizontal(|ui| {
+                ui.spacing_mut().item_spacing.x = 4.0;
+                estimate_glyph_ui(ui, tip);
+                ui.monospace(value).on_hover_text(tip);
+            });
+        }
+        StampCell::AbsentEstimated { tip } => {
+            ui.horizontal(|ui| {
+                ui.spacing_mut().item_spacing.x = 4.0;
+                estimate_glyph_ui(ui, tip);
+                ui.label(
+                    RichText::new(estimates::ABSENT_ESTIMATED_MARKER)
+                        .weak()
+                        .italics(),
+                )
+                .on_hover_text(tip);
+            });
+        }
+        StampCell::Absent => missing_marker(ui),
+    }
+}
+
+/// The "tokens (estimated)" row (T-918.2): value · source ×factor · inputs, all
+/// from the estimate file, tooltip naming source/factor/inputs/generated_at —
+/// or the explicit marked-but-no-file hole. Never a measured figure.
+fn tokens_cell_ui(ui: &mut Ui, cell: &TokensCell) {
+    match cell {
+        TokensCell::Estimated(detail) => {
+            ui.horizontal(|ui| {
+                ui.spacing_mut().item_spacing.x = 4.0;
+                estimate_glyph_ui(ui, &detail.tip);
+                ui.monospace(&detail.value_str).on_hover_text(&detail.tip);
+                ui.label(
+                    RichText::new(format!(
+                        "· {} ×{} · {}",
+                        detail.source, detail.factor, detail.inputs_str
+                    ))
+                    .weak()
+                    .small(),
+                )
+                .on_hover_text(&detail.tip);
+            });
+        }
+        TokensCell::MissingFile { tip } => {
+            ui.horizontal(|ui| {
+                ui.spacing_mut().item_spacing.x = 4.0;
+                estimate_glyph_ui(ui, tip);
+                ui.label(RichText::new("— (no estimate file)").weak().italics())
+                    .on_hover_text(tip);
+            });
+        }
     }
 }
 

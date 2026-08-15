@@ -12,14 +12,21 @@
 //! picked-repo preference in eframe Storage in the user config dir. T-915.5 adds
 //! the metrics dashboard over the `.ai/tickets/metrics/` run receipts: explicit
 //! no-receipts state, per-ticket / per-agent token + elapsed aggregations, and
-//! named error rows for malformed files — never zeros for missing data. Design
-//! authority: `docs/platform/t915_ticketboard_design.md`.
+//! named error rows for malformed files — never zeros for missing data. T-918.2
+//! adds provenance rendering — measured vs estimated, NEVER summed: stamp rows
+//! carry the `~` glyph + verbatim estimate_note tooltip, the detail panel gains
+//! a "tokens (estimated)" row off `.ai/tickets/estimates/<id>.json`, and the
+//! Metrics tab gains the structurally separate "Estimated (historical)" panel
+//! (per-class / per-domain; estimates have no agent). Design authority:
+//! `docs/platform/t915_ticketboard_design.md` +
+//! `docs/platform/t917_ticket_schema_v2.md` §Provenance.
 
 mod app;
 mod board;
 mod corpus;
 mod detail;
 mod discovery;
+mod estimates;
 mod facets;
 mod filters;
 mod gitstatus;

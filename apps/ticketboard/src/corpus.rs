@@ -17,6 +17,7 @@ use std::thread;
 use tbd_tickets::Ticket;
 
 use crate::discovery::TICKETS_SUBDIR;
+use crate::estimates::{self, RawEstimates};
 use crate::facets::VocabTree;
 use crate::metrics::{self, MetricsState};
 use crate::wavelock::{self, LockState};
@@ -73,6 +74,12 @@ pub struct LoadBundle {
     /// missing/broken file is `None` (facets fall back to corpus-present values),
     /// never a load refusal.
     pub vocab: Option<VocabTree>,
+    /// Token-estimate files (T-918.2) — raw per-file parse results off
+    /// `.ai/tickets/estimates/` (inside the watched tree, hence the shared
+    /// load). The per-class/per-domain aggregation joins the corpus later, in
+    /// `BoardState::new` (`estimates::build_state`). Estimated figures NEVER
+    /// enter the metrics receipts model — structurally separate trees.
+    pub estimates: RawEstimates,
 }
 
 /// Child = dotted id (`T-915.1`); parent = undotted (`T-915`).
@@ -159,6 +166,7 @@ pub fn spawn_load(
             lock: wavelock::load_lock(&repo_root),
             metrics: metrics::load_metrics(&repo_root),
             vocab: VocabTree::load(&repo_root),
+            estimates: estimates::load_raw(&repo_root),
         };
         let _ = tx.send(bundle);
         on_done();

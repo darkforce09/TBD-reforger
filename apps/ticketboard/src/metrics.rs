@@ -83,8 +83,9 @@ pub struct RunReceipt {
 
 // ---- validation (the check_as_errors mirror) ----
 
-/// Schema `^T-[0-9]+([.][0-9]+)*$`, restated without a regex engine.
-fn valid_ticket_id(id: &str) -> bool {
+/// Schema `^T-[0-9]+([.][0-9]+)*$`, restated without a regex engine. Shared
+/// with the estimate-file mirror (`estimates.rs` — same id pattern there).
+pub(crate) fn valid_ticket_id(id: &str) -> bool {
     let Some(rest) = id.strip_prefix("T-") else {
         return false;
     };
@@ -94,8 +95,9 @@ fn valid_ticket_id(id: &str) -> bool {
             .all(|seg| !seg.is_empty() && seg.bytes().all(|b| b.is_ascii_digit()))
 }
 
-/// Schema `^[0-9a-f]{7,40}$` — lowercase hex only.
-fn valid_git_sha(sha: &str) -> bool {
+/// Schema `^[0-9a-f]{7,40}$` — lowercase hex only. Shared with the
+/// estimate-file mirror (`derived_from_shas` entries carry the same pattern).
+pub(crate) fn valid_git_sha(sha: &str) -> bool {
     (7..=40).contains(&sha.len()) && sha.bytes().all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'f'))
 }
 

@@ -415,6 +415,10 @@ pub struct TicketView<'a> {
     /// Provenance markers ([`tbd_tickets::ESTIMATED_VALUES`]) — B.1 consumes only
     /// the `"scope"` entry (the breadcrumb glyph); B.2 renders the rest.
     pub estimated: &'a [String],
+    /// The method note behind `estimated[]` (T-918.2) — rendered VERBATIM as the
+    /// stamp-glyph tooltip; the git_subject / id_interpolation phrasing lives in
+    /// this text and is never re-derived.
+    pub estimate_note: Option<&'a str>,
 }
 
 const EMPTY_IDS: &[String] = &[];
@@ -455,6 +459,7 @@ pub fn view(t: &Ticket) -> TicketView<'_> {
             scope: None,
             class: p.class.as_deref(),
             estimated: &p.estimated,
+            estimate_note: p.estimate_note.as_deref(),
         },
         Ticket::Work(w) => TicketView {
             id: &w.id,
@@ -488,6 +493,7 @@ pub fn view(t: &Ticket) -> TicketView<'_> {
             scope: Some(&w.scope),
             class: w.class.as_deref(),
             estimated: &w.estimated,
+            estimate_note: w.estimate_note.as_deref(),
         },
     }
 }
