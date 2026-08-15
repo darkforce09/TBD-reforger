@@ -14,7 +14,16 @@ requirement = [
     "Rewrite schema.json from the surveyed live registry shape.",
     "jsonschema must validate every ticket in the registry.",
 ]
+current_state = [
+    "schema.json carried stale enums and omitted slice_plan.status notes and shipped_at.",
+    "additionalProperties:false rejected nearly every live registry row before rewrite.",
+]
+approach = [
+    "Rewrote .ai/tickets/schema.json from surveyed live registry shape.",
+    "Validated every ticket row with jsonschema after the rewrite.",
+]
 verify = ["jsonschema validates all 423 tickets."]
+acceptance = ["Ticket schema accepted slice_plan.status notes shipped_at; all registry rows validated."]
 citations = [
     "commit d3ec3f9e schema rewrite",
     "wave 15 merge 9bc47d14",

@@ -7,12 +7,30 @@ status = "shipped"
 order = 2960
 executor = "claude-code"
 main_goal = "Build paks-to-registry pipeline; add Makefile target to regenerate catalogue; parse .et prefab structure."
+context = [
+    "Data came from Workbench plugins then manual copy into packages/tbd-schema/registry/.",
+    "make registry-import ingested committed artifacts only; PakVfs read terrain not .et prefabs.",
+]
+requirement = [
+    "Rebuild classification from committed prefabs.json.gz plus rules; do not parse .et from paks.",
+    "Ship world reclassify subcommand with drift check and WRITE regenerate mode.",
+]
 current_state = [
     "Data comes out of the game via Enfusion Workbench plugins, then a human copies two files by hand into packages/tbd-schema/registry/ and commits them.",
     "make registry-import ingests the committed artifacts.",
     "A PakVfs reader exists and is used for terrain, satellite and roads, but nothing in the repo parses .et prefab structure.",
 ]
-citations = ["make registry-import ingests committed artifacts."]
+approach = [
+    "Added world/reclassify.rs parsing prefab rows and rebuilding committed catalogue.",
+    "Wired world binary reclassify subcommand with CHECK and WRITE drift modes.",
+]
+verify = ["cargo test -p tbd-tools reclassify::tests"]
+acceptance = ["world reclassify subcommand shipped; catalogue drift check and WRITE regenerate wired; vehicle-kind panic fixed."]
+citations = [
+    "make registry-import ingests committed artifacts.",
+    "commit c1f7f7951 world reclassify",
+    "commit d0decb0c2 T-278 ship",
+]
 shipped_at = "d57923b1"
 created_at = "2026-07-31T01:12:37Z"
 completed_at = "2026-07-31T10:22:31Z"

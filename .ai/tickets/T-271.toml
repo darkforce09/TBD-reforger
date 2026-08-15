@@ -7,10 +7,31 @@ status = "shipped"
 order = 2890
 executor = "claude-code"
 main_goal = "Add modpack CRUD and workshop_id, mod_guid, version columns; replace mock frontend Save toasting success."
+context = [
+    "/modpacks was GET-only with no handler DML; modpack_mods lacked workshop_id mod_guid and version.",
+    "Frontend modpacks page mocked Save into an in-memory map while toasting success.",
+]
+requirement = [
+    "Add modpack CRUD handlers and migration 0012 workshop_id mod_guid version columns.",
+    "Replace mock frontend Save with live API create update delete round-trip.",
+]
 current_state = [
     "/modpacks is get-only and the handler contains no DML; the only INSERT is the offline registry importer.",
     "modpack_mods has name, is_key_dependency and sort_order but no workshop_id, mod_guid or version, so it structurally cannot express a Reforger game.mods[] entry.",
     "The frontend page is fully mock and its Save writes to an in-memory map while toasting success.",
+]
+approach = [
+    "Extended handlers/modpacks.rs with CRUD DML; migration 0012 added workshop columns.",
+    "Rewired frontend modpacks.rs to live API; added modpacks_crud integration tests.",
+]
+verify = [
+    "cargo test -p website-api modpack_crud_round_trip",
+    "Requires TEST_DATABASE_URL or skips.",
+]
+acceptance = ["Modpack CRUD round-trip passed; workshop_id mod_guid version columns live; mock Save toast removed."]
+citations = [
+    "commit 13d8e6ae3 modpack CRUD",
+    "wave 14 merge 5c5a11b9",
 ]
 shipped_at = "5c5a11b9"
 created_at = "2026-07-26T23:46:44Z"

@@ -7,10 +7,29 @@ status = "shipped"
 order = 2880
 executor = "claude-code"
 main_goal = "Wire server_control.rs handlers; unbind MOCK_SERVERS[0]; activate Restart, Stop, Launch, Quick Actions, RCON, Start; replace fabricated console log."
+context = [
+    "server_control.rs had zero on: handlers; selected bound MOCK_SERVERS[0] at compile time.",
+    "Restart Stop Launch Quick Actions RCON and Start were inert; console showed a fabricated RCON listener line.",
+]
+requirement = [
+    "Wire handlers to live GET /servers and admin server RCON endpoints.",
+    "Unbind MOCK_SERVERS; wire Restart and mapped RCON; Stop Launch unmapped QA stay disabled; no Start.",
+    "Replace fabricated console log with honest RCON outcome messaging.",
+]
 current_state = [
     "server_control.rs is 312 lines with zero on: handlers, and selected is bound to MOCK_SERVERS[0] as a compile-time constant.",
     "Restart, Stop, Launch, four Quick Actions, the RCON input and send are all inert, and there is no Start control at all.",
     "The console renders a fabricated log including a fake RCON listener line.",
+]
+approach = [
+    "Rewired server_control.rs to GET /servers and POST admin server RCON paths.",
+    "Added server_control::t270 Class-R pins for paths bodies and honest RCON messaging.",
+]
+verify = ["cargo test -p website-frontend server_control::t270"]
+acceptance = ["Restart and mapped RCON posted; Stop Launch unmapped QA honestly disabled; fabricated log removed."]
+citations = [
+    "commit 16db006c8 server control",
+    "wave 15 close 4e340548",
 ]
 shipped_at = "4e340548"
 created_at = "2026-07-26T23:53:02Z"

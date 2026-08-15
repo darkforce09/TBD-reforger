@@ -14,6 +14,16 @@ requirement = [
     "Close the authored vocabulary to the sixty-four Register alias keys.",
     "Fix empty-warning-fields golden; keep runtime FALLBACK for non-schema paths.",
 ]
+current_state = [
+    "marker.icon accepted any string including empty; unknown values degraded to DOT at runtime.",
+    "empty-warning-fields golden shipped marker with empty icon and label fields.",
+]
+approach = [
+    "Closed marker.icon to sixty-four EnsureAliases keys in mission.schema.json.",
+    "Fixed empty-warning-fields golden; kept runtime FALLBACK for non-schema paths.",
+]
+verify = ["marker.icon closed to sixty-four aliases; empty-warning-fields golden fixed."]
+acceptance = ["marker.icon closed to sixty-four aliases; empty-warning-fields golden fixed; runtime FALLBACK kept."]
 citations = [
     "commit 1d7d1005 marker enum",
     "cargoContainer degradation class",

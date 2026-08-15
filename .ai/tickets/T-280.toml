@@ -17,7 +17,16 @@ requirement = [
     "Deepen /healthz with migration-state and bounded pool timeout.",
     "Implement PgRateLimiter proven in tests; defer router wiring.",
 ]
+current_state = [
+    "API lacked /metrics scrape path and deep /healthz migration checks.",
+    "In-memory limiter only; no /metrics; /healthz was SELECT 1; no backup scripts; PgRateLimiter not in tree.",
+]
+approach = [
+    "Wired GET /metrics with ServiceAuth instrumentation and deepened /healthz pool checks.",
+    "Added t280_observability integration tests proving PgRateLimiter refuse and refill behavior.",
+]
 verify = ["cargo test t280_observability: PASS."]
+acceptance = ["/metrics and /healthz shipped; PgRateLimiter proven in tests; backups and router limiter wiring deferred."]
 citations = [
     "commit 1b2e45bb metrics healthz limiter",
     "e9728516 wave merge close",

@@ -15,6 +15,16 @@ requirement = [
     "Document asserts and historical verify-log evidence in the mod docs hub.",
     "Fail fast when Workbench Net API is down; do not invent a new WB run.",
 ]
+current_state = [
+    "Spawn determinism gate script existed with verify log but no Makefile target or docs hub.",
+    "Fifty-seven commits on main carried the program without a ticket id.",
+]
+approach = [
+    "Wired make mod-spawn-determinism and preflight to tbd-spawn-determinism.sh.",
+    "Documented asserts and historical verify-log pointer in docs/mod/SPAWN_DETERMINISM.md.",
+]
+verify = ["make mod-spawn-determinism-preflight"]
+acceptance = ["Spawn-determinism gate and docs hub wired; historical verify-log recorded without fresh Workbench run."]
 citations = [
     "commit c5937608 docs hub",
     "program ship 7a5ab1e3",

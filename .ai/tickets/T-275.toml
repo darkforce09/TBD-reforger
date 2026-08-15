@@ -16,7 +16,16 @@ requirement = [
     "Encode mod maxima as schema maxItems, maxLength and maximum constraints.",
     "Point mod clamp comments at the schema pins so the two cannot disagree.",
 ]
+current_state = [
+    "T-241 pinned minima only; mod silently clamped MAX_NETS 32 label 48 grace 3600 duration 21600.",
+    "Documents validating against schema could still be clamped at mod load.",
+]
+approach = [
+    "Added schema maxItems maxLength and maximum pins to mission.schema.json.",
+    "Pointed mod clamp comments at schema pins in RadioPlan ZoneRegistry ObjectiveRegistry.",
+]
 verify = ["Slice gate PASS."]
+acceptance = ["Schema maxima matched mod clamps; validating documents no longer silently clamped at load."]
 citations = [
     "commit 0d5d6f81 schema pins",
     "T-241 minima only",

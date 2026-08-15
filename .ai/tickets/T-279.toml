@@ -7,11 +7,32 @@ status = "shipped"
 order = 2970
 executor = "claude-code"
 main_goal = "Add Discord bot skeleton with interactions endpoint, signature verification, inbound Discord surface."
+context = [
+    "No bot skeleton; serenity twilight poise discord.js gateway returned zero hits.",
+    "DISCORD_BOT_TOKEN loaded in config but never read by any consumer.",
+]
+requirement = [
+    "Give DISCORD_BOT_TOKEN a validated home before any bot consumer ships.",
+    "require_discord_bot_token must distinguish unset from malformed whitespace tokens.",
+]
 current_state = [
     "There is no bot skeleton at all.",
     "Grep for serenity, twilight, poise, discord.js, gateway, application command or ed25519 across every file type returns zero hits.",
     "DISCORD_BOT_TOKEN is loaded at config.rs:46,87 and never read by any consumer.",
     "No interactions endpoint, no signature verification, no inbound Discord surface.",
+]
+approach = [
+    "Added Config::require_discord_bot_token and discord_bot_configured in config.rs.",
+    "Rejected whitespace-bearing tokens at boot; pinned unit tests for unset and malformed cases.",
+]
+verify = [
+    "cargo test -p website-api unset_bot_token_loads_but_is_not_readable",
+    "cargo test -p website-api configured_bot_token_is_readable",
+]
+acceptance = ["DISCORD_BOT_TOKEN unset legal; require_discord_bot_token returned Missing; whitespace tokens rejected at boot."]
+citations = [
+    "commit dc384c3d5 bot token home",
+    "commit 72db8e92 T-279 ship",
 ]
 shipped_at = "72db8e92"
 created_at = "2026-07-31T01:08:15Z"

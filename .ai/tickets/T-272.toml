@@ -16,9 +16,20 @@ requirement = [
     "hub.publish the same ServerStatus JSON ingest already fans out.",
     "Add SERVER_STATUS_PUBLISH_INTERVAL_SECS env defaulting to ten seconds.",
 ]
+current_state = [
+    "SSE hub and /status/stream client connected but ingest POST was the sole publisher.",
+    "Connected clients received zero frames until a republisher polled server_statuses.",
+]
+approach = [
+    "Added publish_all_server_statuses boot tick and interval scheduler in realtime.rs.",
+    "Pinned SERVER_STATUS_PUBLISH_INTERVAL_SECS default ten seconds in .env.example.",
+]
+verify = ["realtime::tests scheduler_publishes_on_boot_and_interval passes."]
+acceptance = ["SSE /status/stream received frames from polled server_statuses without ingest-only bridge."]
 citations = [
     "commit 5e55081f SSE republisher",
     "wave 15 close 4e340548",
+    "realtime boot interval publisher",
 ]
 shipped_at = "31361970"
 created_at = "2026-07-26T23:53:02Z"
