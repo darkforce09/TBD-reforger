@@ -8,7 +8,7 @@ order = 1670
 spec = ".ai/artifacts/missed_items_handoff.md"
 executor = "human"
 depends_on = ["T-159"]
-user_story = "As the operator I flip production to the Leptos SPA with a tested rollback path."
+main_goal = "As the operator I flip production to the Leptos SPA with a tested rollback path."
 context = [
     "OPERATOR-GATED (env + Discord app settings are operator-held);",
     "T-159 finish program left this as the sole operator-gated residual.",

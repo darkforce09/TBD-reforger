@@ -10,9 +10,33 @@ plan = "docs/plans/t-920_1_plan.md"
 executor = "claude-code"
 notes = "Quarantine exemption: nonempty migration_legacy exempts the body-tier rules. Shipped history untouched by check until the T-921/T-919 drains finish. ops refusals are pre-write with the corpus untouched, the T-916.1 pattern."
 parent = "T-920"
-user_story = "A ticket cannot go ready or ship without its body filled, cannot carry an id as its name, and states one main goal that renders first."
+main_goal = "A ticket cannot go ready or ship without its body filled, cannot carry an id as its name, and states one main goal that renders first."
+context = [
+    "user_story sits on 50/1199 tickets and its content is goal-shaped, not persona prose; operator decisions 2026-08-15 (t920 spec Decisions log).",
+    "99 tickets carry their id as their title and 341 titles exceed 10 words; body fields are renderable but nothing forces them filled.",
+]
+requirement = [
+    "Rename user_story to main_goal everywhere with a serde alias; migrate every on-disk carrier through write_back.",
+    "Tiered body gates: queued adds main_goal, ready-class adds the six body fields, refused at mark-ready and ship.",
+    "Title gate on changed tickets; two shrink-only debt pins measured at land, printed with their instruments.",
+]
+current_state = [
+    "TicketFile, the typed model, Status::live_ready, ops, check and the board all speak user_story; no tier gate exists beyond the ready-class parse.",
+    "Measured 2026-08-15: 440 title-debt tickets (99 id-as-title, 341 over-cap) and 53 live work tickets without main_goal.",
+]
+approach = [
+    "Serde-alias rename through TicketFile, the typed model, ops, check, sync views and the on-disk carriers via a one-shot write_back verb.",
+    "Tier rules in check: idea and ready tiers corpus-wide on work tickets; queued main_goal metered by MAIN_GOAL_DEBT_PIN.",
+    "Pre-write refusals in ops::mark_ready and ops::ship naming each empty field; title and main_goal gates in the ops post-image.",
+    "Two shrink-only ratchet pins in tbd-tickets, the T-917.3 pattern; the live ready set filled honestly in the same land.",
+]
+verify = [
+    "cargo test -p tbd-tickets and cargo test -p xtask green; corpus roundtrip prints N/N byte-identical.",
+    "grep -c '^user_story = ' over .ai/tickets/T-*.toml prints 0 and '^main_goal = ' prints the carrier count.",
+    "cargo xtask ticket check --strict prints check OK; git diff --stat -- .ai/tickets/wave.lock prints empty.",
+]
 acceptance = [
-    "46/46 user_story files migrated: grep -c '^user_story' over .ai/tickets/T-*.toml prints 0 and grep -c '^main_goal' prints 46 immediately post-migration",
+    "All user_story carriers migrated: grep '^user_story = ' over .ai/tickets/T-*.toml prints 0 lines and grep '^main_goal = ' prints the measured carrier count (50 at land: the spec's 46 plus the four T-920-family mints)",
     "Corpus roundtrip prints N/N files byte-identical; git diff --stat -- .ai/tickets/wave.lock prints empty",
     "mark-ready and ship refusals name each empty ready-tier field on scratch fixtures, pre-write, corpus untouched",
     "Title post-image refusal on id-title and 11-word scratch fixtures; pins equal measured counts printed with the instrument named",

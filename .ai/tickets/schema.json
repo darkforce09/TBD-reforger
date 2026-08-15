@@ -125,6 +125,7 @@
         "active": { "type": ["string", "null"] },
         "active_slice": { "type": ["string", "null"] },
         "user_story": { "type": "string" },
+        "main_goal": { "type": "string" },
         "context": { "$ref": "#/$defs/stringList" },
         "requirement": { "$ref": "#/$defs/stringList" },
         "current_state": { "$ref": "#/$defs/stringList" },

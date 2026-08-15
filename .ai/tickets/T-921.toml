@@ -9,7 +9,28 @@ spec = "docs/platform/t920_body_obligations.md"
 executor = "claude-code"
 notes = "Sibling stream to T-919 (whose wall batches also fill tiers + titles on the tickets they drain). Runs after T-920.1 lands the pins. When both streams hit zero the ready-tier rule turns corpus-wide on shipped."
 depends_on = ["T-920.1"]
-user_story = "Shipped history reads like the present: every ticket names itself properly and carries its reconstructed body, cited to the sources it was rebuilt from."
+main_goal = "Shipped history reads like the present: every ticket names itself properly and carries its reconstructed body, cited to the sources it was rebuilt from."
+context = [
+    "Roughly 330 shipped tickets have thin or empty bodies and no quarantined wall to drain",
+    "TITLE_DEBT_PIN 440 and MAIN_GOAL_DEBT_PIN 53 measure the naming and goal debt",
+]
+requirement = [
+    "Fill body fields and repair titles from each ticket's spec, commits and diffs",
+    "citations list the sources used; thin evidence yields thin honest fields",
+    "Both debt pins shrink by the measured amount in the same commit per batch",
+]
+current_state = [
+    "T-919 batch 1 drained 25 walls; this stream covers the wall-less remainder",
+    "Reconstruction sources exist: spec docs, subject commits, diffs, SHIPPED_HISTORY.md",
+]
+approach = [
+    "Batches of about 20 per reviewed commit, id order, typed-path or canonical hand edits",
+    "Derive prose from sources only; never invent claims; anti-blend definitions sort the lines",
+]
+verify = [
+    "Per batch: pin ratchet tests green, check --strict OK, wave.lock byte-identical",
+    "Corpus roundtrip prints N/N byte-identical after every batch",
+]
 acceptance = [
     "Per batch: both debt pins shrink by the measured batch amount in the same commit",
     "Reconstructed fields cite their sources in citations; no invented claims",

@@ -9,7 +9,24 @@ spec = "docs/specs/Mission_Creator_Architecture/t090_9_world_object_interaction.
 plan = "docs/plans/t-090_9_plan.md"
 executor = "claude-code"
 parent = "T-090"
-user_story = "Static world objects become read-only context you can interrogate — hover for a tooltip, click for a read-only inspect panel with Ask AI about this object, filter/search by taxonomy, a legend, and a Z-trust badge — without ever moving them."
+main_goal = "Static world objects become read-only context you can interrogate — hover for a tooltip, click for a read-only inspect panel with Ask AI about this object, filter/search by taxonomy, a legend, and a Z-trust badge — without ever moving them."
+context = [
+    "Static world objects render as pixels today; mission makers cannot interrogate them.",
+    "Edits to terrain props stay Workbench-only (N7 locked) and Deck GPU picking stays disabled.",
+]
+requirement = [
+    "Hover tooltip, click-to-inspect panel with Ask AI about this object, taxonomy filter and search, a legend and a Z-trust badge — read-only.",
+    "Move, delete and edit of world objects remain Workbench-only; no mutation affordance anywhere.",
+]
+current_state = ["Depends on the T-090.5 render and the T-090.7 resolver being live; the worker's spatial index is the picking authority."]
+approach = [
+    "CPU-side picking over the worker's spatial index; tooltip and read-only inspect panel fed by the T-090.7 resolver.",
+    "Filter and legend driven by the taxonomy; the Z-trust badge reads the T-090.4/.6 audit flags; no per-frame full-catalog scans.",
+]
+verify = [
+    "Hover shows the tooltip; click opens read-only inspect with resolved fields; filter, search and legend act on taxonomy classes.",
+    "No mutation affordance exists on world objects; editor FPS stays within the HUD budget.",
+]
 acceptance = [
     "Hover tooltip, click inspect, filter, legend, Z-trust badge.",
     "Move/delete/edit terrain props remain Workbench-only.",

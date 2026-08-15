@@ -280,7 +280,7 @@ mod tests {
                 "order": 1,
                 "spec": "spec.md",
                 "executor": "claude-code",
-                "user_story": "as a tester I produce a run receipt",
+                "main_goal": "as a tester I produce a run receipt",
                 "acceptance": ["writes a receipt"],
                 "scope": { "repo": { "layers": ["xtask"] } }
             }]

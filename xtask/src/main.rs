@@ -64,6 +64,7 @@ mod label_gates;
 mod mcp;
 mod mcp_daemon;
 mod metrics;
+mod migrate_main_goal;
 mod migrate_v2;
 mod mk_build;
 mod mk_ci;
@@ -925,6 +926,12 @@ enum TicketCmd {
     /// + the "tokens" estimated[] marker. One-shot, idempotent by emptiness.
     #[command(name = "estimate-tokens")]
     EstimateTokens,
+    /// T-920.1: one-shot user_story → main_goal on-disk migration (load parses the
+    /// alias, write_back emits main_goal in the same canonical slot) plus the
+    /// same-land live-ready body fills, derived from each ticket's plan document.
+    /// Idempotent: fills only all-empty targets, migrates only raw carriers.
+    #[command(name = "migrate-main-goal")]
+    MigrateMainGoal,
 }
 
 fn main() -> ExitCode {
@@ -1376,6 +1383,11 @@ fn run() -> Result<u8> {
                 // estimates and markers feed no generated view.
                 TicketCmd::EstimateTokens => {
                     estimate_tokens::cmd_estimate_tokens(&root)?;
+                }
+                // T-920.1: typed corpus only; main_goal and the body lists feed no
+                // generated view and no wave.lock input — no sync, no repack.
+                TicketCmd::MigrateMainGoal => {
+                    migrate_main_goal::cmd_migrate_main_goal(&root)?;
                 }
             }
             Ok(0)

@@ -10,7 +10,25 @@ plan = "docs/plans/t-919_plan.md"
 executor = "claude-code"
 notes = "Bookkeeping stream, not factory slices: batches interleave after T-917.3 as operator review allows. Walls carry recognizable FIX:/ACCEPTANCE:/Repro: idioms. Per batch: pin shrinks by exactly the batch size, remaining files still pass the reversibility join-proof, check --strict green."
 depends_on = ["T-917.3"]
-user_story = "The quarantined 500-word walls become clearly categorised one-liners, batch by reviewed batch, until the pin hits zero and no ticket carries unprocessed prose."
+main_goal = "The quarantined 500-word walls become clearly categorised one-liners, batch by reviewed batch, until the pin hits zero and no ticket carries unprocessed prose."
+context = [
+    "T-917.3 quarantined 694 over-cap summaries verbatim into migration_legacy behind a shrink-only pin; the prose is preserved but uncategorised.",
+    "The ten typed body fields sit empty on those tickets; pass 2 is semantic work, deliberately kept out of the mechanical migration.",
+]
+requirement = [
+    "Decompose every quarantined wall into the typed body fields in operator-reviewed batches until the pin hits zero.",
+    "Delete migration_legacy in the same edit; shrink the ratchet pin by exactly the batch size in the same commit.",
+    "Per T-920: each batch also fills the full tier set and repairs titles on the tickets it drains, shrinking those pins too.",
+]
+current_state = ["669 carriers remain after batch 1 drained 25; walls carry recognisable FIX:/ACCEPTANCE:/Repro: idioms."]
+approach = [
+    "AI batches of 20-30 tickets per reviewed commit; content is reorganised, never invented — lines fitting no field land in notes.",
+    "The anti-blend definitions are the sorting authority; every non-whitespace token of the wall survives into some field or notes.",
+]
+verify = [
+    "Per batch: cargo test -p tbd-tickets green — the ratchet pins enforce both directions; remaining files pass the reversibility join-proof.",
+    "cargo xtask ticket check --strict prints check OK; wave.lock byte-identical per batch.",
+]
 acceptance = [
     "Per batch: ratchet pin shrinks by exactly the batch size in the same commit",
     "Remaining quarantined files still pass the byte-reversibility join-proof",

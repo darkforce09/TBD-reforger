@@ -10,7 +10,7 @@ executor = "claude-code"
 notes = "Aggregation client-side over real files only; printing tokens=0 for a missing usage object is forbidden (T-913 rule carried into the UI)."
 depends_on = ["T-915.1"]
 parent = "T-915"
-user_story = "The operator sees what the factory actually costs — tokens and elapsed per ticket and per agent — from the same receipts the land gate enforces."
+main_goal = "The operator sees what the factory actually costs — tokens and elapsed per ticket and per agent — from the same receipts the land gate enforces."
 acceptance = [
     "With no .ai/tickets/metrics/ directory the dashboard shows the explicit no-receipts-yet state — no zeros",
     "With fixture receipts, per-ticket and per-agent token totals and elapsed sums match a hand computation pasted alongside",

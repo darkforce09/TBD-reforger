@@ -90,7 +90,7 @@ proptest! {
             unblocks: vec![],
             parent: None,
             scope,
-            user_story: None,
+            main_goal: None,
             context,
             requirement,
             current_state,

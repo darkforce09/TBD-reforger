@@ -391,7 +391,7 @@ pub struct TicketView<'a> {
     pub parent: Option<&'a str>,
     pub children: &'a [String],
     pub active: Option<&'a str>,
-    pub user_story: Option<&'a str>,
+    pub main_goal: Option<&'a str>,
     /// T-917.2 body decomposition lists (spec §Body) — the detail panel renders
     /// these as the ten pinned sections (T-918.3, `detail::body_field_order`).
     pub context: &'a [String],
@@ -445,7 +445,7 @@ pub fn view(t: &Ticket) -> TicketView<'_> {
             parent: None,
             children: &p.children,
             active: p.active.as_deref(),
-            user_story: p.user_story.as_deref(),
+            main_goal: p.main_goal.as_deref(),
             context: &p.context,
             requirement: &p.requirement,
             current_state: &p.current_state,
@@ -480,7 +480,7 @@ pub fn view(t: &Ticket) -> TicketView<'_> {
             parent: w.parent.as_deref(),
             children: EMPTY_IDS,
             active: None,
-            user_story: w.user_story.as_deref(),
+            main_goal: w.main_goal.as_deref(),
             context: &w.context,
             requirement: &w.requirement,
             current_state: &w.current_state,

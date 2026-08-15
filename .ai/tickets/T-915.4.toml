@@ -13,7 +13,7 @@ depends_on = [
     "T-916.2",
 ]
 parent = "T-915"
-user_story = "The operator steers the registry from the board — promote, ship, cancel, defer, mint — with every write going through the one audited CLI path and every refusal shown verbatim."
+main_goal = "The operator steers the registry from the board — promote, ship, cancel, defer, mint — with every write going through the one audited CLI path and every refusal shown verbatim."
 acceptance = [
     "Every offered transition maps to one xtask verb; refusals stream verbatim; any nonzero exit reloads and shows stderr",
     "Ready promotion goes through the Ready-prose form and surfaces the deps-unshipped refusal",

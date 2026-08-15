@@ -10,7 +10,7 @@ executor = "claude-code"
 notes = "metrics::has_receipt returns true for ANY file under metrics/<id>/ — colocating estimates would let them impersonate receipts (T-913 violation) and crash the deny_unknown_fields walkers. Every estimate records source + inputs + factor; recalibration is regeneration from recorded inputs."
 depends_on = ["T-917.4"]
 parent = "T-917"
-user_story = "Every shipped ticket in history has a token figure with a named derivation method, structurally incapable of being summed with measured receipts."
+main_goal = "Every shipped ticket in history has a token figure with a named derivation method, structurally incapable of being summed with measured receipts."
 acceptance = [
     "Factor constant pasted from the doc; a check asserts every estimate.json factor equals it",
     "Generator prints E diff_loc, C cohort_median, E+C equals the shipped-ticket count measured at run time",

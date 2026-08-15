@@ -9,7 +9,7 @@ spec = "docs/platform/t172_leptos_bug_bash.md"
 executor = "claude-code"
 depends_on = ["T-171"]
 unblocks = ["T-173"]
-user_story = "As an operator I can use the local Leptos site and Mission Creator without dead clicks, invisible units, highlighter forests, or a missing 3D Arsenal."
+main_goal = "As an operator I can use the local Leptos site and Mission Creator without dead clicks, invisible units, highlighter forests, or a missing 3D Arsenal."
 context = ["Operator 2026-07-18: ticket good enough — residual MC pan/zoom stutter, Mission Library scroll/sheet lag, missing Mission Settings render prefs, tree guide-line polish → T-173."]
 current_state = [
     "SHIPPED @ tag T-172 / e08884f4.",

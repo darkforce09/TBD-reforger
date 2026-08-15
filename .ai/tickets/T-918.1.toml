@@ -10,7 +10,7 @@ executor = "claude-code"
 notes = "Reads the vocab file for facet values — display only, never validates (check is the authority). Depends on the T-917.2 cutover types."
 depends_on = ["T-917.2"]
 parent = "T-918"
-user_story = "The operator reads website > frontend > mission_creator > attr_panel at a glance and slices the board by any level of it."
+main_goal = "The operator reads website > frontend > mission_creator > attr_panel at a glance and slices the board by any level of it."
 acceptance = [
     "Breadcrumb on card and detail equals the four scope fields joined; empty surface renders visibly as such",
     "Facet filters compose with text/executor/kind filters; clearing restores the full measured count",

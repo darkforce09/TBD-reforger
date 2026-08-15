@@ -8,7 +8,8 @@
 //! - `class` after `summary`;
 //! - `plan` after `spec`;
 //! - `context`, `requirement`, `current_state`, `approach`, `verify` after
-//!   `user_story`, before `acceptance`;
+//!   `main_goal` (the T-920.1 rename of `user_story` — same slot), before
+//!   `acceptance`;
 //! - `citations` after `acceptance`;
 //! - `estimated` + `estimate_note` after `completed_at`;
 //! - `migration_legacy` immediately before `owns`;
@@ -56,8 +57,14 @@ pub struct TicketFile {
         alias = "active_slice"
     )]
     pub active: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub user_story: Option<String>,
+    /// T-920.1 rename (t920 spec Decisions log #1): the on-disk key is `main_goal`;
+    /// `user_story` is a parse-time serde alias so every pre-rename git revision
+    /// stays readable — render always emits `main_goal`, in the SAME canonical slot
+    /// the old key held. `user_story` itself stays listed in the frozen
+    /// `ENCODING_C_KEYS` as history (on-disk keys must be a SUBSET of the union — a
+    /// vanished key is legal).
+    #[serde(default, skip_serializing_if = "Option::is_none", alias = "user_story")]
+    pub main_goal: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub context: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -115,7 +122,7 @@ fn status_from_file(f: &TicketFile) -> Result<Status, String> {
                 name,
                 order,
                 f.spec.clone().unwrap_or_default(),
-                f.user_story.clone().unwrap_or_default(),
+                f.main_goal.clone().unwrap_or_default(),
                 f.acceptance.clone(),
             )
         }
@@ -203,7 +210,7 @@ impl TicketFile {
                     unblocks: self.unblocks,
                     children: self.children,
                     active: self.active,
-                    user_story: self.user_story,
+                    main_goal: self.main_goal,
                     context: self.context,
                     requirement: self.requirement,
                     current_state: self.current_state,
@@ -240,7 +247,7 @@ impl TicketFile {
                     unblocks: self.unblocks,
                     parent: self.parent,
                     scope,
-                    user_story: self.user_story,
+                    main_goal: self.main_goal,
                     context: self.context,
                     requirement: self.requirement,
                     current_state: self.current_state,
@@ -283,7 +290,7 @@ impl TicketFile {
                 parent: None,
                 children: p.children.clone(),
                 active: p.active.clone(),
-                user_story: p.user_story.clone(),
+                main_goal: p.main_goal.clone(),
                 context: p.context.clone(),
                 requirement: p.requirement.clone(),
                 current_state: p.current_state.clone(),
@@ -328,7 +335,7 @@ impl TicketFile {
                 parent: w.parent.clone(),
                 children: vec![],
                 active: None,
-                user_story: w.user_story.clone(),
+                main_goal: w.main_goal.clone(),
                 context: w.context.clone(),
                 requirement: w.requirement.clone(),
                 current_state: w.current_state.clone(),
@@ -393,7 +400,7 @@ mod tests {
                 component: None,
                 surface: vec![],
             },
-            user_story: None,
+            main_goal: None,
             context: vec![],
             requirement: vec![],
             current_state: vec![],
@@ -541,7 +548,7 @@ surface = ["map_canvas"]
     }
 
     /// T-917.2: every new key lands in its canonical slot — class after summary, plan
-    /// after spec, the body lists between user_story and acceptance (in order),
+    /// after spec, the body lists between main_goal and acceptance (in order),
     /// citations after acceptance, estimated/estimate_note after completed_at,
     /// migration_legacy immediately before owns, [scope] trailing. Extends the
     /// T-913.1 `timestamps_roundtrip_in_canonical_slot` pattern.
@@ -569,7 +576,7 @@ surface = ["map_canvas"]
                 component: Some("mission_creator".into()),
                 surface: vec!["attr_panel".into()],
             },
-            user_story: Some("story".into()),
+            main_goal: Some("story".into()),
             context: vec!["why".into()],
             requirement: vec!["ask".into()],
             current_state: vec!["today".into()],
@@ -599,7 +606,7 @@ surface = ["map_canvas"]
             "spec = ",
             "plan = ",
             "executor = ",
-            "user_story = ",
+            "main_goal = ",
             "context = ",
             "requirement = ",
             "current_state = ",
@@ -653,7 +660,7 @@ surface = ["map_canvas"]
                 component: None,
                 surface: vec![],
             },
-            user_story: None,
+            main_goal: None,
             context: vec![],
             requirement: vec![],
             current_state: vec![],
@@ -752,6 +759,71 @@ layer = "docs"
             assert!(err.contains("T-901"), "must name the ticket: {err}");
             assert!(err.contains("created_at"), "must name the field: {err}");
         }
+    }
+
+    /// T-920.1 — the rename roundtrip: a pre-rename blob carrying `user_story`
+    /// parses via the serde alias into `main_goal`, and the render emits ONLY
+    /// `main_goal`, in the same canonical slot (after `active`-tier keys, before
+    /// `context`). A load + write_back of a carrier IS the migration.
+    #[test]
+    fn user_story_alias_parses_and_emits_main_goal() {
+        let legacy = r#"
+id = "T-919"
+kind = "work"
+title = "Wall triage drain"
+summary = "s"
+class = "chore"
+status = "queued"
+order = 5990
+spec = "docs/spec.md"
+user_story = "the goal, pre-rename spelling"
+context = ["why"]
+acceptance = ["gate"]
+
+[scope]
+domain = "repo"
+layer = "docs"
+"#;
+        let t = parse_ticket_toml(legacy).expect("user_story alias parses");
+        match &t {
+            Ticket::Work(w) => assert_eq!(
+                w.main_goal.as_deref(),
+                Some("the goal, pre-rename spelling")
+            ),
+            Ticket::Program(_) => panic!("work"),
+        }
+        let rendered = render_ticket_toml(&t).expect("render");
+        assert!(
+            rendered.contains("main_goal = \"the goal, pre-rename spelling\""),
+            "{rendered}"
+        );
+        for line in rendered.lines() {
+            assert!(
+                !line.starts_with("user_story = "),
+                "render must never emit the dead spelling:\n{rendered}"
+            );
+        }
+        // Same canonical slot: spec < main_goal < context < acceptance.
+        let pos = |needle: &str| {
+            rendered
+                .find(needle)
+                .unwrap_or_else(|| panic!("{needle} in:\n{rendered}"))
+        };
+        assert!(
+            pos("spec = ") < pos("main_goal = ")
+                && pos("main_goal = ") < pos("context = ")
+                && pos("context = ") < pos("acceptance = "),
+            "canonical slot violated:\n{rendered}"
+        );
+        assert_eq!(t, parse_ticket_toml(&rendered).unwrap());
+        // Carrying BOTH spellings is a serde duplicate-field refusal, not a silent
+        // pick — the alias-class discipline the 4a2f3426 pin established.
+        let both = legacy.replace(
+            "user_story = \"the goal, pre-rename spelling\"",
+            "user_story = \"old\"\nmain_goal = \"new\"",
+        );
+        let err = parse_ticket_toml(&both).expect_err("both spellings must refuse");
+        assert!(err.contains("duplicate"), "{err}");
     }
 
     #[test]

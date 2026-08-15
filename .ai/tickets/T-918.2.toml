@@ -11,7 +11,7 @@ executor = "claude-code"
 notes = "Structural separation already guarantees the no-sum rule at the data layer; this slice carries the negative assertion into the UI acceptance."
 depends_on = ["T-917.5"]
 parent = "T-918"
-user_story = "The operator always knows which numbers are real and which are maths — at a glance, per value, with the method one hover away."
+main_goal = "The operator always knows which numbers are real and which are maths — at a glance, per value, with the method one hover away."
 acceptance = [
     "A ticket with estimated stamps shows the glyph + source tooltip; a measured ticket shows neither",
     "Dashboard has separate measured and estimated columns; no cell sums across them (negative assertion in tests + screenshot)",

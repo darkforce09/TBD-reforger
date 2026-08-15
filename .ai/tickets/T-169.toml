@@ -8,7 +8,7 @@ order = 1660
 spec = ".ai/artifacts/missed_items_handoff.md"
 executor = "claude-code"
 depends_on = ["T-159"]
-user_story = "As a mission maker with a 100k+ slot mission the outliner stays instant instead of freezing the tab."
+main_goal = "As a mission maker with a 100k+ slot mission the outliner stays instant instead of freezing the tab."
 current_state = [
     "SHIPPED @ tag T-169 (T-064 parity): outliner.rs gains `flatten` (pre-order rows) + `VIRTUAL_SLOT_THRESHOLD=50`;",
     "eden_chrome renders each dock tree via `virtual_tree` — eager below the threshold,",

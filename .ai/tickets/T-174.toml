@@ -8,7 +8,7 @@ order = 1710
 spec = "docs/platform/t174_mc_sat_heatmap_guides.md"
 executor = "claude-code"
 depends_on = ["T-173"]
-user_story = "As a mission maker I see a sharp satellite map without a green tree heatmap wash, and the outliner/palette do not show full-height guide rails."
+main_goal = "As a mission maker I see a sharp satellite map without a green tree heatmap wash, and the outliner/palette do not show full-height guide rails."
 current_state = [
     "SHIPPED @ tag T-174 / bbb99526.",
     "S1: localhost sat preview→full progressive (dropped sat_dev_preview_default); ?sat=preview = gate/fast Range-only; ?sat=full no-op.",

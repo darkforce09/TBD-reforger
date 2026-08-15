@@ -293,7 +293,7 @@ mod tests {
                 component: None,
                 surface: vec![],
             },
-            user_story: None,
+            main_goal: None,
             context: vec![],
             requirement: vec![],
             current_state: vec![],
@@ -478,6 +478,68 @@ mod tests {
             carriers, MIGRATION_LEGACY_PIN,
             "migration_legacy carrier count drifted from the pin — a drain commit must \
              SHRINK the pin in the same commit; growth means an illegal hand-mint"
+        );
+    }
+
+    /// T-920.1 third shrink-only ratchet (the [`migration_legacy_ratchet_pin`]
+    /// pattern, red BOTH ways): work+program tickets whose title is debt by THE
+    /// instrument ([`crate::title_is_debt`] — `title == id` OR TOML-parsed title
+    /// `split_whitespace().count() > 10`) must equal [`crate::TITLE_DEBT_PIN`]
+    /// exactly.
+    ///
+    /// - **Growth is impossible by rule**: the ops post-image gate refuses writing a
+    ///   debt title on any CHANGED ticket, so a count above the pin means a hand-edit
+    ///   minted one — fix the title, never the pin.
+    /// - **Every T-919/T-921 batch that repairs titles SHRINKS the pin in the same
+    ///   commit** by the measured batch amount (t920 spec §T-921).
+    #[test]
+    fn title_debt_ratchet_pin() {
+        let root = repo_root();
+        let corpus = Corpus::load(&root).expect("fail-closed load of the live tree");
+        let mut debt = 0usize;
+        for (id, t) in &corpus.tickets {
+            let title = match t {
+                Ticket::Program(p) => &p.title,
+                Ticket::Work(w) => &w.title,
+            };
+            if crate::title_is_debt(id, title) {
+                debt += 1;
+            }
+        }
+        assert_eq!(
+            debt,
+            crate::TITLE_DEBT_PIN,
+            "title-debt count drifted from TITLE_DEBT_PIN — a repair commit must SHRINK \
+             the pin in the same commit; growth means a gate bypass (instrument: \
+             title == id or TOML-parsed title split_whitespace().count() > 10)"
+        );
+    }
+
+    /// T-920.1 fourth shrink-only ratchet, same pattern: queued/ready/running/review
+    /// WORK tickets with empty `main_goal` ([`crate::main_goal_is_debt`]) must equal
+    /// [`crate::MAIN_GOAL_DEBT_PIN`] exactly. Quarantined carriers COUNT (the wall
+    /// holds the content unprocessed; the T-919 drain fills main_goal and shrinks
+    /// this pin in the same commit); new offenders are impossible — the ops
+    /// post-image gate refuses a changed non-quarantined live work ticket without
+    /// main_goal, and a quarantine mint past the cutover is red in check.
+    #[test]
+    fn main_goal_debt_ratchet_pin() {
+        let root = repo_root();
+        let corpus = Corpus::load(&root).expect("fail-closed load of the live tree");
+        let debt = corpus
+            .tickets
+            .values()
+            .filter(|t| match t {
+                Ticket::Program(_) => false,
+                Ticket::Work(w) => crate::main_goal_is_debt(w),
+            })
+            .count();
+        assert_eq!(
+            debt,
+            crate::MAIN_GOAL_DEBT_PIN,
+            "main_goal-debt count drifted from MAIN_GOAL_DEBT_PIN — a fill commit must \
+             SHRINK the pin in the same commit; growth means a gate bypass (instrument: \
+             queued/ready/running/review work tickets with empty main_goal)"
         );
     }
 

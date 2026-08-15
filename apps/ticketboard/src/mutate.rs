@@ -735,14 +735,14 @@ fn ready_body_ui(
         }
     }
 
-    // Current user_story / acceptance — READ-ONLY on purpose: the CLI verb
+    // Current main_goal / acceptance — READ-ONLY on purpose: the CLI verb
     // takes only id + spec; story/acceptance backfill is the verb's own
     // behavior. The UI must not pretend it can set them.
     if let Some(&index) = b.board.id_to_index.get(id) {
         let v = board::view(&b.corpus.tickets[index].ticket);
         ui.add_space(6.0);
-        ui.label(RichText::new("user_story (current)").strong().small());
-        match v.user_story {
+        ui.label(RichText::new("main_goal (current)").strong().small());
+        match v.main_goal {
             Some(s) => {
                 ui.label(s);
             }
@@ -764,7 +764,7 @@ fn ready_body_ui(
         ui.label(
             RichText::new(
                 "read-only — the verb takes only id + spec and backfills \
-                 user_story/acceptance ONLY when they are empty.",
+                 main_goal/acceptance ONLY when they are empty.",
             )
             .weak()
             .small(),

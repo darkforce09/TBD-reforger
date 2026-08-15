@@ -9,7 +9,7 @@ spec = "docs/platform/t917_ticket_schema_v2.md"
 executor = "claude-code"
 notes = "Vocabulary is data, not compiled enums (except domain) — compiled friction produced the 199-ticket docs landfill. Removing-a-value-in-use redness cannot be enforced yet (tickets still v1); that rule rides S.2."
 parent = "T-917"
-user_story = "The scope vocabulary exists as reviewable committed data with its own shape gate, ready for the cutover to validate tickets against."
+main_goal = "The scope vocabulary exists as reviewable committed data with its own shape gate, ready for the cutover to validate tickets against."
 acceptance = [
     "cargo xtask ticket check --strict prints check OK with the vocab file present",
     "Planted duplicate surface under one parent in a scratch tree prints a red naming file, parent path and value; restore prints check OK",

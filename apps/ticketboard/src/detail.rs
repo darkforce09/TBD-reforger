@@ -15,7 +15,7 @@ use crate::board::TicketView;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BodyField {
     Summary,
-    UserStory,
+    MainGoal,
     Context,
     Requirement,
     CurrentState,
@@ -31,7 +31,7 @@ impl BodyField {
     pub fn as_str(self) -> &'static str {
         match self {
             BodyField::Summary => "summary",
-            BodyField::UserStory => "user_story",
+            BodyField::MainGoal => "main_goal",
             BodyField::Context => "context",
             BodyField::Requirement => "requirement",
             BodyField::CurrentState => "current_state",
@@ -49,7 +49,7 @@ impl BodyField {
     pub fn definition(self) -> &'static str {
         match self {
             BodyField::Summary => "What this ticket is, one breath",
-            BodyField::UserStory => "Who benefits and why",
+            BodyField::MainGoal => "The one main goal — read first",
             BodyField::Context => "Why now; background facts",
             BodyField::Requirement => "The operator's ask, line by line",
             BodyField::CurrentState => "What exists today; bug repro lives here",
@@ -62,10 +62,10 @@ impl BodyField {
     }
 
     /// Line-list fields (numbered rendering; `[]` in the triage skeleton). The
-    /// three scalars — summary, user_story, notes — render as wrapped text.
+    /// three scalars — summary, main_goal, notes — render as wrapped text.
     pub fn is_list(self) -> bool {
         match self {
-            BodyField::Summary | BodyField::UserStory | BodyField::Notes => false,
+            BodyField::Summary | BodyField::MainGoal | BodyField::Notes => false,
             BodyField::Context
             | BodyField::Requirement
             | BodyField::CurrentState
@@ -83,7 +83,7 @@ impl BodyField {
 pub fn body_field_order() -> [BodyField; 10] {
     [
         BodyField::Summary,
-        BodyField::UserStory,
+        BodyField::MainGoal,
         BodyField::Context,
         BodyField::Requirement,
         BodyField::CurrentState,
@@ -123,7 +123,7 @@ pub const ABSENT_MARKER: &str = "—";
 pub enum SectionContent {
     /// Absent or empty — label + the muted [`ABSENT_MARKER`].
     Absent,
-    /// Scalar field (summary / user_story / notes) — wrapped text.
+    /// Scalar field (summary / main_goal / notes) — wrapped text.
     Text(String),
     /// List field — one numbered monospace line per entry ([`numbered_lines`]).
     Lines(Vec<String>),
@@ -149,7 +149,7 @@ pub fn section_content(field: BodyField, v: &TicketView<'_>) -> SectionContent {
     }
     match field {
         BodyField::Summary => scalar(Some(v.summary)),
-        BodyField::UserStory => scalar(v.user_story),
+        BodyField::MainGoal => scalar(v.main_goal),
         BodyField::Context => list(v.context),
         BodyField::Requirement => list(v.requirement),
         BodyField::CurrentState => list(v.current_state),
@@ -243,7 +243,7 @@ mod tests {
             labels,
             vec![
                 "summary",
-                "user_story",
+                "main_goal",
                 "context",
                 "requirement",
                 "current_state",
@@ -304,7 +304,7 @@ mod tests {
     #[test]
     fn absent_and_present_content_model() {
         assert_eq!(ABSENT_MARKER, "—");
-        // A bare work ticket: no summary/user_story/notes, every list empty.
+        // A bare work ticket: no summary/main_goal/notes, every list empty.
         let bare = work("T-1", "status = \"idea\"", "");
         let v = view(&bare);
         for field in body_field_order() {
@@ -325,7 +325,7 @@ mod tests {
         let full = work(
             "T-3",
             "status = \"idea\"",
-            "summary = \"one breath\"\nuser_story = \"who and why\"\nnotes = \"leftover\"\n\
+            "summary = \"one breath\"\nmain_goal = \"who and why\"\nnotes = \"leftover\"\n\
              context = [\"why now\"]\nrequirement = [\"ask 1\", \"ask 2\"]\n\
              current_state = [\"repro\"]\napproach = [\"step\"]\nverify = [\"cargo test\"]\n\
              acceptance = [\"outcome\"]\ncitations = [\"docs/spec.md\"]\n",
@@ -336,7 +336,7 @@ mod tests {
             SectionContent::Text("one breath".into())
         );
         assert_eq!(
-            section_content(BodyField::UserStory, &v),
+            section_content(BodyField::MainGoal, &v),
             SectionContent::Text("who and why".into())
         );
         assert_eq!(
@@ -404,7 +404,7 @@ mod tests {
         assert_eq!(
             skeleton,
             "summary = \"\"\n\
-             user_story = \"\"\n\
+             main_goal = \"\"\n\
              context = []\n\
              requirement = []\n\
              current_state = []\n\

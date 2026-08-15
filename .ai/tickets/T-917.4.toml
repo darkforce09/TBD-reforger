@@ -10,7 +10,7 @@ executor = "claude-code"
 notes = "Two-pass forced: estimated[] is illegal on disk until T-917.2 widens governance. Writes via store::Corpus write_back (round-trip-verified surgical writes). T-90 must never match T-902 — boundary matching pinned by test."
 depends_on = ["T-917.2"]
 parent = "T-917"
-user_story = "Every shipped ticket in history carries its three stamps — measured where git knows, method-marked estimates where it can only interpolate — and the per-source counts are printed, never hidden."
+main_goal = "Every shipped ticket in history carries its three stamps — measured where git knows, method-marked estimates where it can only interpolate — and the per-source counts are printed, never hidden."
 acceptance = [
     "Miner report: of S shipped: A git_subject, B id_interpolation, C already measured — with A+B+C=S, S measured at run time",
     "Corpus loads green after the write (the load is the RFC 3339 UTC proof)",

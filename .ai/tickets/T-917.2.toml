@@ -10,7 +10,7 @@ executor = "claude-code"
 notes = "Migrator parses v1 as toml::Value — typed v2 refuses v1 by definition. wave.lock must be byte-identical (scope/summary are not lock inputs). parse_ticket_toml becomes shape-strict only; legality moves to Corpus::load + check (documented weakening). Surface REQUIRED on live/new work from here."
 depends_on = ["T-917.1"]
 parent = "T-917"
-user_story = "The registry speaks v2: every ticket carries the flat 4-level scope and the ten-field body skeleton, every consumer compiles and renders it, and nothing about wave packing moved."
+main_goal = "The registry speaks v2: every ticket carries the flat 4-level scope and the ten-field body skeleton, every consumer compiles and renders it, and nothing about wave packing moved."
 acceptance = [
     "Migrator prints migrated N/N files where N = ls .ai/tickets/T-*.toml | wc -l at run time; unmapped-scope list printed and empty",
     "Corpus roundtrip prints N/N files byte-identical on the migrated tree",

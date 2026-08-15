@@ -111,11 +111,81 @@ pub fn is_sha_shaped(v: &str) -> bool {
 /// the verb as a future note, never moved).
 pub const SUMMARY_WORD_CAP: usize = 40;
 /// Per-line cap on `context[]`/`requirement[]`/`current_state[]`/`approach[]`/
-/// `verify[]` (spec §Body). `acceptance`/`notes`/`user_story` are uncapped —
+/// `verify[]` (spec §Body). `acceptance`/`notes`/`main_goal` are uncapped —
 /// grandfathering by *field choice*, never by ticket class.
 pub const BODY_LINE_WORD_CAP: usize = 30;
 /// Per-entry cap on `citations[]` (reference-only strings).
 pub const CITATION_WORD_CAP: usize = 8;
+
+/// T-920.1 title gate (t920 spec Decisions log #4): a REAL title is nonempty, is not
+/// the ticket id, and stays within this many words. Enforced on CHANGED tickets by the
+/// ops post-image gate; history debt is metered by [`TITLE_DEBT_PIN`] and drained by
+/// the T-919/T-921 streams — never check-redded wholesale.
+pub const TITLE_WORD_CAP: usize = 10;
+
+/// The one title-debt instrument (t920 spec §Schema changes): `title == id` OR the
+/// TOML-parsed title exceeds [`TITLE_WORD_CAP`] by `split_whitespace().count()` —
+/// the same counting instrument as every other word cap in this crate. Both ticket
+/// kinds count. Shared by the check-side counter, the ops post-image gate and the
+/// store ratchet test, so the instrument cannot fork.
+pub fn title_is_debt(id: &str, title: &str) -> bool {
+    title == id || title.split_whitespace().count() > TITLE_WORD_CAP
+}
+
+/// T-920.1 shrink-only debt pin: work+program tickets where [`title_is_debt`]
+/// (measured on the live tree at land time — 99 id-as-title + 341 over-cap, zero
+/// overlap possible: an id is one token). Drift is red BOTH ways in `ticket check`
+/// and in the store ratchet test: growth means a title gate bypass (ops refuse debt
+/// titles on changed tickets), shrinkage means a repair landed and the pin must
+/// shrink in the same commit (the T-919/T-921 batch contract).
+pub const TITLE_DEBT_PIN: usize = 440;
+
+/// T-920.1 shrink-only debt pin: queued/ready/running/review WORK tickets with empty
+/// `main_goal` (instrument: [`main_goal_is_debt`]) — measured on the live tree at
+/// land time. The queued-tier main_goal obligation (t920 spec Decisions log #1) binds
+/// as this metered ratchet instead of an instant corpus-wide red because the debt is
+/// history-wide; NEW offenders are impossible: the ops post-image gate refuses a
+/// changed non-quarantined queued+ work ticket without main_goal. Quarantined
+/// carriers (nonempty `migration_legacy`) ARE counted — the wall holds the content
+/// unprocessed, and the T-919 drain fills main_goal when it decomposes the wall,
+/// shrinking this pin in the same commit.
+pub const MAIN_GOAL_DEBT_PIN: usize = 53;
+
+/// The one main_goal-debt instrument (t920 spec §Schema changes): a live
+/// (queued/ready/running/review) work ticket whose `main_goal` is empty/absent.
+/// Shared by the check-side counter and the store ratchet test.
+pub fn main_goal_is_debt(w: &WorkTicket) -> bool {
+    w.status.name().is_live() && w.main_goal.as_deref().unwrap_or("").trim().is_empty()
+}
+
+/// T-920.1 ready-tier body obligation (t920 spec Decisions log #2): the six fields a
+/// ready/running/review (and future-shipped) WORK ticket must carry nonempty, in the
+/// spec table's order. Returns the empty ones by name — `ops::mark_ready` and
+/// `ops::ship` refuse naming each, and the corpus-wide check rule reds the same list.
+/// `main_goal` and `spec` are NOT here: ready-class already parse-enforces them
+/// ([`Status::live_ready`]), so listing them would double-report (`ship` checks
+/// main_goal separately — a queued→shipped jump never passes the ready-class parse).
+/// `acceptance` IS here although ready-class parse-enforces it too: `ship` from
+/// queued is the reachable case; on ready-class tickets the entry is belt-and-braces
+/// that cannot fire (an empty-acceptance ready ticket refuses the corpus load).
+/// Callers apply the quarantine exemption (nonempty `migration_legacy`) themselves —
+/// content exists, unprocessed (the T-919 drain fills the fields with the wall).
+pub fn empty_ready_tier_fields(w: &WorkTicket) -> Vec<&'static str> {
+    let mut missing = Vec::new();
+    for (name, lines) in [
+        ("context", &w.context),
+        ("requirement", &w.requirement),
+        ("current_state", &w.current_state),
+        ("approach", &w.approach),
+        ("verify", &w.verify),
+        ("acceptance", &w.acceptance),
+    ] {
+        if lines.iter().all(|s| s.trim().is_empty()) {
+            missing.push(name);
+        }
+    }
+    missing
+}
 
 /// Conservative-deterministic class triage from title/summary prose (same input →
 /// same class; metadata triage, not provenance — T-917.2 migrator header documents
@@ -224,19 +294,19 @@ pub enum Status {
     Ready {
         order: i64,
         spec: String,
-        user_story: String,
+        main_goal: String,
         acceptance: Vec<String>,
     },
     Running {
         order: i64,
         spec: String,
-        user_story: String,
+        main_goal: String,
         acceptance: Vec<String>,
     },
     Review {
         order: i64,
         spec: String,
-        user_story: String,
+        main_goal: String,
         acceptance: Vec<String>,
     },
     Shipped {
@@ -278,19 +348,20 @@ impl Status {
         }
     }
 
-    /// Ready/running/review require spec + user_story + nonempty acceptance.
+    /// Ready/running/review require spec + main_goal + nonempty acceptance.
+    /// (T-920.1: `main_goal` is the renamed `user_story` — same slot, same rule.)
     pub fn live_ready(
         name: StatusName,
         order: i64,
         spec: String,
-        user_story: String,
+        main_goal: String,
         acceptance: Vec<String>,
     ) -> Result<Self, String> {
         if spec.trim().is_empty() {
             return Err("spec required".into());
         }
-        if user_story.trim().is_empty() {
-            return Err("user_story required".into());
+        if main_goal.trim().is_empty() {
+            return Err("main_goal required".into());
         }
         if acceptance.iter().all(|s| s.trim().is_empty()) {
             return Err("acceptance required".into());
@@ -299,19 +370,19 @@ impl Status {
             StatusName::Ready => Status::Ready {
                 order,
                 spec,
-                user_story,
+                main_goal,
                 acceptance,
             },
             StatusName::Running => Status::Running {
                 order,
                 spec,
-                user_story,
+                main_goal,
                 acceptance,
             },
             StatusName::Review => Status::Review {
                 order,
                 spec,
-                user_story,
+                main_goal,
                 acceptance,
             },
             StatusName::Idea
@@ -341,7 +412,10 @@ pub struct ProgramTicket {
     pub unblocks: Vec<String>,
     pub children: Vec<String>,
     pub active: Option<String>,
-    pub user_story: Option<String>,
+    /// T-920.1: renamed from `user_story` (t920 spec Decisions log #1 — the content
+    /// was goal-shaped, not persona prose). Same canonical slot; old revisions parse
+    /// via the serde alias on `TicketFile`.
+    pub main_goal: Option<String>,
     /// T-917.2 body decomposition (spec §Body): typed line lists, caps check-enforced
     /// later (S.3) — never parse-enforced, so old git revisions stay readable.
     pub context: Vec<String>,
@@ -389,7 +463,8 @@ pub struct WorkTicket {
     pub unblocks: Vec<String>,
     pub parent: Option<String>,
     pub scope: ScopeV2,
-    pub user_story: Option<String>,
+    /// T-920.1: renamed from `user_story` — see [`ProgramTicket::main_goal`].
+    pub main_goal: Option<String>,
     /// T-917.2 body decomposition (spec §Body) — see [`ProgramTicket`] notes.
     pub context: Vec<String>,
     pub requirement: Vec<String>,
@@ -459,7 +534,7 @@ mod tests {
     }
 
     #[test]
-    fn ready_constructor_rejects_empty_story() {
+    fn ready_constructor_rejects_empty_goal() {
         let err = Status::live_ready(
             StatusName::Ready,
             1,
@@ -468,7 +543,32 @@ mod tests {
             vec!["a".into()],
         )
         .unwrap_err();
-        assert!(err.contains("user_story"));
+        assert!(err.contains("main_goal"));
+    }
+
+    /// T-920.1 — the shared title-debt instrument: id-as-title and >10-word titles
+    /// are debt; a real title within the cap is not; the id can never trip the
+    /// word-count arm (one token), so the two debt classes cannot overlap.
+    #[test]
+    fn title_debt_instrument() {
+        assert!(title_is_debt("T-915.4", "T-915.4"), "id-as-title is debt");
+        assert!(
+            title_is_debt(
+                "T-1",
+                "one two three four five six seven eight nine ten eleven"
+            ),
+            "11 words is debt"
+        );
+        assert!(
+            !title_is_debt("T-1", "one two three four five six seven eight nine ten"),
+            "exactly 10 words is legal"
+        );
+        assert!(!title_is_debt("T-1", "Fix the marker save regression"));
+        // Emptiness is deliberately NOT this instrument's business: the corpus-wide
+        // idea-tier check rule reds an empty title (measured zero offenders), and the
+        // ops post-image gate refuses writing one — the pin meters only the two
+        // measured history-debt classes.
+        assert!(!title_is_debt("T-1", ""));
     }
 
     /// T-917.2: the class triage is token-boundary conservative — "prefix"/"fixture"

@@ -9,7 +9,7 @@ spec = "docs/platform/t915_ticketboard_design.md"
 executor = "claude-code"
 notes = "egui/eframe is a first-time workspace dependency family — named supply-chain/build-time event. All IO on worker threads (channel + request_repaint). No writes anywhere under the repo; prefs only via eframe Storage in the user config dir."
 parent = "T-915"
-user_story = "The operator opens one window and finally sees the whole registry: every ticket as a card in status columns with full detail on click, instead of 1173 unreadable TOMLs."
+main_goal = "The operator opens one window and finally sees the whole registry: every ticket as a card in status columns with full detail on click, instead of 1173 unreadable TOMLs."
 acceptance = [
     "cargo build -p ticketboard green on the pinned 1.95.0 toolchain; workspace members diff is one line plus the new crate",
     "Footer total equals ls .ai/tickets/T-*.toml | wc -l output at run time; parent and child counts shown separately and summing to the total",

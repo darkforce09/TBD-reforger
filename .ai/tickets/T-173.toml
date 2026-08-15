@@ -8,7 +8,7 @@ order = 1700
 spec = "docs/platform/t173_leptos_perf_pass.md"
 executor = "claude-code"
 depends_on = ["T-172"]
-user_story = "As a mission maker I pan/zoom and scroll smoother than the old React editor, with full Mission Settings render toggles and correct fence/building glyphs."
+main_goal = "As a mission maker I pan/zoom and scroll smoother than the old React editor, with full Mission Settings render toggles and correct fence/building glyphs."
 current_state = [
     "SHIPPED @ tag T-173 / dddf3158.",
     "P1–P10 + H1/H2/H5/H6: release-default make leptos; pan/zoom streaming settle + compose memo (−71% zoom block); thrash-free residency; library scroll + sheet de-blur;",

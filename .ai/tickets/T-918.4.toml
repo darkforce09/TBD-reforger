@@ -11,7 +11,7 @@ executor = "claude-code"
 notes = "egui_commonmark is a new dependency family — named supply-chain event, version + tree delta reported like eframe was at T-915.1. Read-only: the viewer never edits files."
 depends_on = ["T-917.2"]
 parent = "T-918"
-user_story = "The operator reads a ticket's plan without leaving the board — click, read, back."
+main_goal = "The operator reads a ticket's plan without leaving the board — click, read, back."
 acceptance = [
     "Clicking spec/plan renders the markdown in-pane; headings, lists, code blocks legible",
     "A deliberately broken file renders raw text with a note, never a crash",

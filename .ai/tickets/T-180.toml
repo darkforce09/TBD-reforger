@@ -28,7 +28,7 @@ children = [
     "T-180.9",
     "T-180.10",
 ]
-user_story = "As a mission maker I place units by side, see squad-leader lines on the map, and author the full ORBAT in a Stitch manager that saves/loads templates and compiles cleanly."
+main_goal = "As a mission maker I place units by side, see squad-leader lines on the map, and author the full ORBAT in a Stitch manager that saves/loads templates and compiles cleanly."
 acceptance = [
     "Each T-180.N Class-R gate table PASS before next slice",
     "Place mints new squad under active side with leaderSlotId",

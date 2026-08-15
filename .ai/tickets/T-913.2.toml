@@ -10,7 +10,7 @@ executor = "claude-code"
 notes = "Depends on T-913.1 landed. Malformed started, missing id or missing tokens_consumed in a run file is ticket check red. Printing tokens=0 for a missing object is forbidden. Two runs in one second yield two files (sha or increment suffix). LIMITS: command-center in-chat subagent dispatch is not captured."
 depends_on = ["T-913.1"]
 parent = "T-913"
-user_story = "Every factory slice run leaves a token receipt on disk so spend per ticket and per agent is measurable from real files, never invented."
+main_goal = "Every factory slice run leaves a token receipt on disk so spend per ticket and per agent is measurable from real files, never invented."
 acceptance = [
     "Recorded fixture with usage yields a correct run file: input matches and total == input+output+cache_read+cache_write",
     "Fixture without usage exits nonzero and writes NO file — tokens 0 is forbidden",

@@ -9,7 +9,7 @@ spec = "docs/platform/t913_ticket_run_metrics.md"
 executor = "claude-code"
 notes = "New test: every on-disk TOML key is a mapped encoding-C key or in ALLOWED_NEW — planting created_at without the widen commit is check-red. Timestamp parser crate arrives in the same commit as the fields (no chrono/time in xtask or tbd-tickets today). shipped_at stays a SHA."
 parent = "T-913"
-user_story = "Ticket lifecycle carries real timestamps so run metrics can measure elapsed time without inventing clocks."
+main_goal = "Ticket lifecycle carries real timestamps so run metrics can measure elapsed time without inventing clocks."
 acceptance = [
     "ticket add writes RFC 3339 created_at; ship/done/cancel write completed_at; malformed timestamps are parse errors, never now",
     "Planting created_at without the ALLOWED_NEW + schema widen is check-red; the widen commit makes it green",

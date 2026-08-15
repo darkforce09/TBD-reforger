@@ -8,7 +8,7 @@
 //! - **Refuse up-front instead of wedging mid-save.** The Value path pokes a status
 //!   onto the ticket and only discovers at `save_tree` time that the image is
 //!   unparseable ("idea must not carry order", "ready-class requires order", empty
-//!   `user_story`, …) — after earlier files in the iteration were already rewritten.
+//!   `main_goal`, …) — after earlier files in the iteration were already rewritten.
 //!   Here every transition that would need data the ticket lacks refuses BEFORE any
 //!   mutation, naming what is missing.
 //! - **Reorder collisions refuse instead of writing red state.** `cmd_reorder` happily
@@ -123,17 +123,17 @@ fn set_spec(t: &mut Ticket, v: Option<String>) {
     }
 }
 
-fn user_story_of(t: &Ticket) -> Option<&str> {
+fn main_goal_of(t: &Ticket) -> Option<&str> {
     match t {
-        Ticket::Program(p) => p.user_story.as_deref(),
-        Ticket::Work(w) => w.user_story.as_deref(),
+        Ticket::Program(p) => p.main_goal.as_deref(),
+        Ticket::Work(w) => w.main_goal.as_deref(),
     }
 }
 
-fn set_user_story(t: &mut Ticket, v: Option<String>) {
+fn set_main_goal(t: &mut Ticket, v: Option<String>) {
     match t {
-        Ticket::Program(p) => p.user_story = v,
-        Ticket::Work(w) => w.user_story = v,
+        Ticket::Program(p) => p.main_goal = v,
+        Ticket::Work(w) => w.main_goal = v,
     }
 }
 
@@ -271,6 +271,52 @@ fn validate_post_image(
             }
         }
     }
+    // T-920.1 title gate (t920 spec Decisions log #4): no op may write a ticket —
+    // either kind — whose title is empty, its own id, or over TITLE_WORD_CAP words.
+    // Scoped to `changed`, the same don't-retro-police carve-out: the 440 history
+    // titles are metered debt (TITLE_DEBT_PIN) drained by the T-919/T-921 streams;
+    // an op that rewrites a debt ticket must repair the title in the same breath.
+    // The two nonempty arms are exactly [`crate::title_is_debt`] — one instrument.
+    for id in changed {
+        if let Some(t) = post.get(id) {
+            let title = title_of(t);
+            if title.trim().is_empty() {
+                return Err(format!(
+                    "post-image {id}: title is empty — every ticket carries a real title (t920 spec Decisions log #4)"
+                ));
+            }
+            if title == id {
+                return Err(format!(
+                    "post-image {id}: title equals the ticket id — write a real title; id-as-title is the measured debt class the T-919/T-921 streams drain, and ops never add to it (t920 spec Decisions log #4)"
+                ));
+            }
+            let words = title.split_whitespace().count();
+            if words > crate::TITLE_WORD_CAP {
+                return Err(format!(
+                    "post-image {id}: title is {words} words (cap {}) — a title is a scannable one-liner; move the prose into the body fields (t920 spec Decisions log #4)",
+                    crate::TITLE_WORD_CAP
+                ));
+            }
+        }
+    }
+    // T-920.1 queued-tier main_goal (t920 spec Decisions log #1): a changed LIVE
+    // (queued/ready/running/review) work ticket must carry main_goal. Quarantine-
+    // exempt (nonempty migration_legacy — content exists, unprocessed; the T-919
+    // drain fills main_goal when it decomposes the wall). Scoped to `changed`: the
+    // history debt is metered by MAIN_GOAL_DEBT_PIN, never retro-policed — this arm
+    // is what makes NEW offenders impossible while the pin drains.
+    for id in changed {
+        if let Some(Ticket::Work(w)) = post.get(id)
+            && w.status.name().is_live()
+            && w.migration_legacy.is_empty()
+            && w.main_goal.as_deref().unwrap_or("").trim().is_empty()
+        {
+            return Err(format!(
+                "post-image {id}: {} work ticket without main_goal — queued and above state one main goal, rendered first (t920 spec Decisions log #1); write main_goal",
+                w.status.name().as_str()
+            ));
+        }
+    }
     // Structural children rules.
     for (pid, t) in post {
         if let Ticket::Program(p) = t {
@@ -404,15 +450,15 @@ fn status_for_transition(t: &Ticket, name: StatusName) -> Result<Status, String>
             if spec_of(t).unwrap_or("").trim().is_empty() {
                 missing.push("spec");
             }
-            if user_story_of(t).unwrap_or("").trim().is_empty() {
-                missing.push("user_story");
+            if main_goal_of(t).unwrap_or("").trim().is_empty() {
+                missing.push("main_goal");
             }
             if acceptance_of(t).iter().all(|s| s.trim().is_empty()) {
                 missing.push("acceptance");
             }
             if !missing.is_empty() {
                 return Err(format!(
-                    "refusing set-status {id}: status {} needs order/spec/user_story/acceptance and the ticket lacks {} — the legacy CLI wedges mid-save on this; set the fields (or use mark-ready) first",
+                    "refusing set-status {id}: status {} needs order/spec/main_goal/acceptance and the ticket lacks {} — the legacy CLI wedges mid-save on this; set the fields (or use mark-ready) first",
                     name.as_str(),
                     missing.join(", ")
                 ));
@@ -421,7 +467,7 @@ fn status_for_transition(t: &Ticket, name: StatusName) -> Result<Status, String>
                 name,
                 cur.order().expect("checked above"),
                 spec_of(t).expect("checked above").to_string(),
-                user_story_of(t).expect("checked above").to_string(),
+                main_goal_of(t).expect("checked above").to_string(),
                 acceptance_of(t).to_vec(),
             )
             .map_err(|e| format!("refusing set-status {id}: {e}"))
@@ -512,6 +558,29 @@ pub fn ship(c: &mut Corpus, id: &str, now_utc: &str) -> Result<OpOutcome, String
              ticket needs a backfill first (`ticket backfill-stamps` mines shipped history; a \
              live pre-stamp ticket gets a deliberate hand-stamp)"
         ));
+    }
+    // T-920.1 (t920 spec Decisions log #2, shipped row): a FUTURE ship carries the
+    // full ready-tier body — main_goal plus the six fields — refused pre-write
+    // naming each empty one. Work-only (the tier table is work-shaped; a program
+    // aggregates its children's bodies) and quarantine-exempt like every body-tier
+    // rule. `main_goal` is checked HERE and not in `empty_ready_tier_fields` because
+    // ship can jump from queued/idea, where the ready-class parse guarantee does not
+    // exist yet. Shipped HISTORY stays untouched: check never reds old ships until
+    // the T-921 drain finishes — this arm binds only the ship verb from now on.
+    if let Ticket::Work(w) = t
+        && w.migration_legacy.is_empty()
+    {
+        let mut missing: Vec<&str> = Vec::new();
+        if w.main_goal.as_deref().unwrap_or("").trim().is_empty() {
+            missing.push("main_goal");
+        }
+        missing.extend(crate::empty_ready_tier_fields(w));
+        if !missing.is_empty() {
+            return Err(format!(
+                "refusing ship {id}: ready-tier body fields empty: {} — a ship needs the full body (t920 spec Decisions log #2); fill them first (thin evidence yields thin honest lines, never padding)",
+                missing.join(", ")
+            ));
+        }
     }
     let mut post = c.tickets.clone();
     let mut changed = BTreeSet::from([id.to_string()]);
@@ -625,8 +694,14 @@ pub fn default_plan_path(id: &str) -> String {
 /// the resulting spec is empty ("Ticket {id} needs a spec path") or missing on disk
 /// under the corpus root ("Spec file not found: …"); refuse while any `depends_on`
 /// target present in the corpus is neither shipped nor cancelled ("Blocked by …");
-/// then status→ready with the exact backfills: empty `user_story` becomes
+/// then status→ready with the exact backfills: empty `main_goal` becomes
 /// summary→title→id, all-empty `acceptance` becomes `["See spec."]`.
+///
+/// **T-920.1 ready-tier gate** (t920 spec Decisions log #2): a WORK ticket whose
+/// `migration_legacy` is empty refuses promotion while any of the six ready-tier
+/// body fields ([`crate::empty_ready_tier_fields`]) is empty — naming each. The
+/// backfills therefore only ever fire on quarantined tickets (and on `main_goal`,
+/// which the queued tier owns and the backfill fills summary→title→id as before).
 ///
 /// **T-917.6 plan ready-gate** (spec §Plan documents, Decisions log #9): nothing goes
 /// ready without its own plan document. `plan_arg` (nonempty) sets the `plan` field;
@@ -640,7 +715,7 @@ pub fn default_plan_path(id: &str) -> String {
 ///
 /// One divergence inside the backfill, sanctioned by the refuse-up-front rule: the
 /// Value path takes `summary` even when it is the empty string (the key exists), which
-/// then wedges mid-save on the empty `user_story`; the typed backfill takes the first
+/// then wedges mid-save on the empty `main_goal`; the typed backfill takes the first
 /// NONEMPTY of summary→title, else the id. And ready requires an order the ticket must
 /// already carry — an order-less ticket refuses up front where the CLI wedged.
 pub fn mark_ready(
@@ -708,8 +783,25 @@ pub fn mark_ready(
             "refusing mark-ready {id}: ready requires order and the ticket has none — the legacy CLI wedges mid-save here; reorder it into the queue first"
         )
     })?;
+    // T-920.1 ready-tier gate (t920 spec Decisions log #2): promotion refuses with
+    // any of the six body fields empty, naming each — pre-write, corpus untouched
+    // (the T-916.1 refusal pattern). Work-only, quarantine-exempt: a nonempty
+    // migration_legacy means the content exists unprocessed (the T-919 drain fills
+    // the fields when it decomposes the wall) — the legacy story/acceptance
+    // backfills below still serve exactly that path.
+    if let Ticket::Work(w) = &snapshot
+        && w.migration_legacy.is_empty()
+    {
+        let missing = crate::empty_ready_tier_fields(w);
+        if !missing.is_empty() {
+            return Err(format!(
+                "refusing mark-ready {id}: ready-tier body fields empty: {} — ready requires context/requirement/current_state/approach/verify/acceptance nonempty (t920 spec Decisions log #2); fill them from the spec and plan, honestly",
+                missing.join(", ")
+            ));
+        }
+    }
     let story = {
-        let existing = user_story_of(&snapshot).unwrap_or("");
+        let existing = main_goal_of(&snapshot).unwrap_or("");
         if !existing.trim().is_empty() {
             existing.to_string()
         } else if !summary_of(&snapshot).trim().is_empty() {
@@ -738,7 +830,7 @@ pub fn mark_ready(
     )
     .map_err(|e| format!("refusing mark-ready {id}: {e}"))?;
     let t = post.get_mut(id).expect("checked above");
-    set_user_story(t, Some(story));
+    set_main_goal(t, Some(story));
     set_acceptance(t, acceptance);
     set_ticket_status(t, new_status);
     let mut made_live = BTreeSet::new();
@@ -807,7 +899,7 @@ fn minted_work(
             component: None,
             surface: vec![],
         },
-        user_story: None,
+        main_goal: None,
         context: vec![],
         requirement: vec![],
         current_state: vec![],
@@ -889,7 +981,7 @@ pub fn add_child(
                 unblocks: w.unblocks.clone(),
                 children: vec![child_id.clone()],
                 active: None,
-                user_story: w.user_story.clone(),
+                main_goal: w.main_goal.clone(),
                 context: w.context.clone(),
                 requirement: w.requirement.clone(),
                 current_state: w.current_state.clone(),
@@ -1013,35 +1105,35 @@ pub fn reorder(c: &mut Corpus, id: &str, after: &str, now_utc: &str) -> Result<O
         Status::Queued { .. } => Status::Queued { order: new_order },
         Status::Ready {
             spec,
-            user_story,
+            main_goal,
             acceptance,
             ..
         } => Status::Ready {
             order: new_order,
             spec,
-            user_story,
+            main_goal,
             acceptance,
         },
         Status::Running {
             spec,
-            user_story,
+            main_goal,
             acceptance,
             ..
         } => Status::Running {
             order: new_order,
             spec,
-            user_story,
+            main_goal,
             acceptance,
         },
         Status::Review {
             spec,
-            user_story,
+            main_goal,
             acceptance,
             ..
         } => Status::Review {
             order: new_order,
             spec,
-            user_story,
+            main_goal,
             acceptance,
         },
         Status::Shipped { shipped_at, .. } => Status::Shipped {
@@ -1122,7 +1214,9 @@ mod tests {
     /// Scratch work ticket. `owns` defaults NONEMPTY so status flips into the live set
     /// do not trip the owns gate unless a test empties it on purpose, and `created_at`
     /// defaults PRESENT so ships do not trip the T-917.6 birth-stamp refusal unless a
-    /// test removes it on purpose.
+    /// test removes it on purpose. T-920.1 extends the same convention to the body
+    /// tiers: `main_goal` and the six ready-tier fields default NONEMPTY so live
+    /// flips and ships pass the tier gates unless a test empties them on purpose.
     fn work(id: &str, status: Status) -> WorkTicket {
         WorkTicket {
             id: id.into(),
@@ -1143,13 +1237,13 @@ mod tests {
                 component: None,
                 surface: vec![],
             },
-            user_story: None,
-            context: vec![],
-            requirement: vec![],
-            current_state: vec![],
-            approach: vec![],
-            verify: vec![],
-            acceptance: vec![],
+            main_goal: Some(format!("{id} goal")),
+            context: vec![format!("{id} context")],
+            requirement: vec![format!("{id} requirement")],
+            current_state: vec![format!("{id} current state")],
+            approach: vec![format!("{id} approach")],
+            verify: vec![format!("{id} verify")],
+            acceptance: vec![format!("{id} acceptance")],
             citations: vec![],
             shipped_at: None,
             priority: None,
@@ -1178,7 +1272,7 @@ mod tests {
             unblocks: vec![],
             children: children.iter().map(|s| (*s).to_string()).collect(),
             active: active.map(str::to_string),
-            user_story: None,
+            main_goal: None,
             context: vec![],
             requirement: vec![],
             current_state: vec![],
@@ -1514,6 +1608,11 @@ mod tests {
     /// `["See spec."]`, and (T-917.6) the `plan` field lands on the default path. A
     /// queued ticket with empty owns stays legal — queued was already live, so this
     /// op did not MAKE it live (no retro-policing).
+    ///
+    /// T-920.1: the story/acceptance backfills only fire on QUARANTINED tickets now —
+    /// a non-quarantined ticket with empty body fields refuses at the ready-tier gate
+    /// (`mark_ready_refuses_empty_ready_tier_fields`) — so T-1 here carries the
+    /// nonempty `migration_legacy` that exempts it.
     #[test]
     fn mark_ready_backfills_and_gates() {
         let root = scratch_root("mark-ready");
@@ -1524,6 +1623,14 @@ mod tests {
         let mut c = Corpus::new(&root);
         let mut t1 = work("T-1", Status::Queued { order: 10 });
         t1.owns = vec![];
+        t1.main_goal = None;
+        t1.acceptance = vec![];
+        t1.context = vec![];
+        t1.requirement = vec![];
+        t1.current_state = vec![];
+        t1.approach = vec![];
+        t1.verify = vec![];
+        t1.migration_legacy = vec!["parked wall".into()];
         c.tickets.insert("T-1".into(), Ticket::Work(t1));
         let mut t2 = work("T-2", Status::Queued { order: 11 });
         t2.depends_on = vec!["T-1".into(), "T-404".into()];
@@ -1542,7 +1649,7 @@ mod tests {
                     Status::Ready {
                         order: 10,
                         spec: "docs/spec.md".into(),
-                        user_story: "T-1 summary".into(),
+                        main_goal: "T-1 summary".into(),
                         acceptance: vec!["See spec.".into()],
                     }
                 );
@@ -1552,7 +1659,7 @@ mod tests {
                     Some("docs/plans/t-1_plan.md"),
                     "unset plan defaults to the id-derived path and is WRITTEN"
                 );
-                assert_eq!(w.user_story.as_deref(), Some("T-1 summary"));
+                assert_eq!(w.main_goal.as_deref(), Some("T-1 summary"));
                 assert_eq!(w.acceptance, vec!["See spec.".to_string()]);
             }
             Ticket::Program(_) => panic!("T-1 must stay work"),
@@ -1563,6 +1670,193 @@ mod tests {
         set_status(&mut c, "T-1", "cancelled", CLOCK).expect("cancel");
         mark_ready(&mut c, "T-2", None, None, CLOCK)
             .expect("deps satisfied; T-404 absent is skipped");
+    }
+
+    /// T-920.1 acceptance — the mark-ready ready-tier refusal: promotion of a
+    /// non-quarantined work ticket refuses pre-write NAMING EACH empty ready-tier
+    /// field; the corpus is untouched; filling the fields (or quarantining) restores
+    /// the promotion.
+    #[test]
+    fn mark_ready_refuses_empty_ready_tier_fields() {
+        let root = scratch_root("mark-ready-tier");
+        fs::create_dir_all(root.join("docs/plans")).unwrap();
+        fs::write(root.join("docs/spec.md"), "# spec\n").unwrap();
+        fs::write(root.join("docs/plans/t-3_plan.md"), "# plan\n").unwrap();
+        let mut c = Corpus::new(&root);
+        let mut t3 = work("T-3", Status::Queued { order: 10 });
+        t3.context = vec![];
+        t3.requirement = vec![];
+        t3.current_state = vec![];
+        t3.approach = vec![];
+        t3.verify = vec!["   ".into()]; // whitespace-only counts as empty
+        t3.acceptance = vec![];
+        c.tickets.insert("T-3".into(), Ticket::Work(t3));
+        let before = c.clone();
+        let err = mark_ready(&mut c, "T-3", Some("docs/spec.md"), None, CLOCK)
+            .expect_err("empty tier fields must refuse");
+        assert!(
+            err.contains(
+                "empty: context, requirement, current_state, approach, verify, acceptance"
+            ),
+            "must name each empty field in tier order: {err}"
+        );
+        assert!(err.contains("refusing mark-ready T-3"), "{err}");
+        assert_eq!(before, c, "refusal must not mutate");
+        // Partial fill: the refusal names exactly the still-empty fields.
+        if let Some(Ticket::Work(w)) = c.tickets.get_mut("T-3") {
+            w.context = vec!["why".into()];
+            w.requirement = vec!["ask".into()];
+            w.acceptance = vec!["outcome".into()];
+        }
+        let err = mark_ready(&mut c, "T-3", Some("docs/spec.md"), None, CLOCK)
+            .expect_err("still three empty");
+        assert!(
+            err.contains("empty: current_state, approach, verify —"),
+            "must name exactly the empty ones: {err}"
+        );
+        // Full fill promotes.
+        if let Some(Ticket::Work(w)) = c.tickets.get_mut("T-3") {
+            w.current_state = vec!["today".into()];
+            w.approach = vec!["steps".into()];
+            w.verify = vec!["cargo test".into()];
+        }
+        mark_ready(&mut c, "T-3", Some("docs/spec.md"), None, CLOCK)
+            .expect("filled tier fields promote");
+    }
+
+    /// T-920.1 acceptance — the ship ready-tier refusal (future ships): a ship from
+    /// queued with empty body fields refuses pre-write naming each — main_goal
+    /// included (the queued→shipped jump never passes the ready-class parse) — and
+    /// the quarantine exemption lets a wall-carrying ticket ship (T-919 fills its
+    /// fields when the drain reaches it).
+    #[test]
+    fn ship_refuses_empty_ready_tier_fields() {
+        let mut bare = work("T-1", Status::Queued { order: 5 });
+        bare.main_goal = None;
+        bare.context = vec![];
+        bare.requirement = vec![];
+        bare.current_state = vec![];
+        bare.approach = vec![];
+        bare.verify = vec![];
+        bare.acceptance = vec![];
+        let mut quarantined = work("T-2", Status::Queued { order: 6 });
+        quarantined.main_goal = None;
+        quarantined.context = vec![];
+        quarantined.requirement = vec![];
+        quarantined.current_state = vec![];
+        quarantined.approach = vec![];
+        quarantined.verify = vec![];
+        quarantined.acceptance = vec![];
+        quarantined.migration_legacy = vec!["the original wall".into()];
+        let mut c = corpus(vec![Ticket::Work(bare), Ticket::Work(quarantined)]);
+        let before = c.clone();
+        let err = ship(&mut c, "T-1", CLOCK).expect_err("empty body must refuse the ship");
+        assert!(
+            err.contains(
+                "empty: main_goal, context, requirement, current_state, approach, verify, acceptance"
+            ),
+            "must name each empty field, main_goal first: {err}"
+        );
+        assert!(err.contains("refusing ship T-1"), "{err}");
+        assert_eq!(before, c, "refusal must not mutate");
+        // Quarantined ships (exempt) …
+        ship(&mut c, "T-2", CLOCK).expect("quarantined ticket ships");
+        // … and a filled ticket ships.
+        let filled = work("T-3", Status::Queued { order: 7 });
+        let mut c = corpus(vec![Ticket::Work(filled)]);
+        ship(&mut c, "T-3", CLOCK).expect("filled body ships");
+    }
+
+    /// T-920.1 acceptance — the post-image title gate: an op that would write a
+    /// changed ticket whose title is empty, equals its id, or exceeds 10 words
+    /// refuses pre-write (corpus untouched); both kinds. An 11-word title names the
+    /// count; exactly 10 words passes; UNCHANGED debt-titled tickets never
+    /// retro-police an op that does not touch them.
+    #[test]
+    fn post_image_title_gate_refuses_changed_debt_titles() {
+        // id-as-title on a changed work ticket.
+        let mut id_titled = work("T-1", Status::Queued { order: 5 });
+        id_titled.title = "T-1".into();
+        let mut c = corpus(vec![Ticket::Work(id_titled)]);
+        let before = c.clone();
+        let err = set_status(&mut c, "T-1", "deferred", CLOCK).expect_err("id-title refuses");
+        assert!(
+            err.contains("post-image T-1") && err.contains("equals the ticket id"),
+            "{err}"
+        );
+        assert_eq!(before, c, "refusal must not mutate");
+
+        // 11-word title names the count; 10 words passes.
+        let mut wordy = work("T-2", Status::Queued { order: 6 });
+        wordy.title = "one two three four five six seven eight nine ten eleven".into();
+        let mut c = corpus(vec![Ticket::Work(wordy)]);
+        let err = set_status(&mut c, "T-2", "deferred", CLOCK).expect_err("11 words refuses");
+        assert!(
+            err.contains("title is 11 words (cap 10)"),
+            "must name count and cap: {err}"
+        );
+        if let Some(Ticket::Work(w)) = c.tickets.get_mut("T-2") {
+            w.title = "one two three four five six seven eight nine ten".into();
+        }
+        set_status(&mut c, "T-2", "deferred", CLOCK).expect("10 words is legal");
+
+        // Empty title refuses; a program is gated too.
+        let mut empty_prog = match program("T-4", Status::Idea, &["T-4.1"], None) {
+            Ticket::Program(p) => p,
+            Ticket::Work(_) => unreachable!(),
+        };
+        empty_prog.title = "  ".into();
+        let mut c = corpus(vec![
+            Ticket::Program(empty_prog),
+            child_of("T-4", "T-4.1", Status::Idea),
+        ]);
+        let err = advance_slice(&mut c, "T-4", CLOCK).expect_err("empty program title");
+        assert!(
+            err.contains("post-image T-4") && err.contains("title is empty"),
+            "{err}"
+        );
+
+        // Don't retro-police: an op away from a debt-titled ticket still commits.
+        let mut debt = work("T-5", Status::Queued { order: 8 });
+        debt.title = "T-5".into();
+        let mut c = corpus(vec![
+            Ticket::Work(debt),
+            Ticket::Work(work("T-6", Status::Queued { order: 9 })),
+        ]);
+        set_status(&mut c, "T-6", "deferred", CLOCK)
+            .expect("unchanged debt title must not block other ops");
+    }
+
+    /// T-920.1 acceptance — the post-image queued-tier main_goal gate: an op leaving
+    /// a changed non-quarantined work ticket live without main_goal refuses; the
+    /// quarantine exemption passes; leaving the live set with main_goal empty is
+    /// legal (the rule binds on the POST status).
+    #[test]
+    fn post_image_main_goal_gate_on_changed_live_work() {
+        let mut bare = work("T-2", Status::Idea);
+        bare.main_goal = None;
+        let mut quarantined = work("T-3", Status::Idea);
+        quarantined.main_goal = None;
+        quarantined.migration_legacy = vec!["wall".into()];
+        let mut leaving = work("T-4", Status::Queued { order: 20 });
+        leaving.main_goal = None;
+        let mut c = corpus(vec![
+            Ticket::Work(work("T-1", Status::Queued { order: 10 })),
+            Ticket::Work(bare),
+            Ticket::Work(quarantined),
+            Ticket::Work(leaving),
+        ]);
+        let before = c.clone();
+        let err = reorder(&mut c, "T-2", "T-1", CLOCK).expect_err("made live without main_goal");
+        assert!(
+            err.contains("post-image T-2") && err.contains("without main_goal"),
+            "{err}"
+        );
+        assert_eq!(before, c, "refusal must not mutate");
+        // Quarantined: exempt (content exists, unprocessed).
+        reorder(&mut c, "T-3", "T-1", CLOCK).expect("quarantined exemption");
+        // Leaving the live set: the changed ticket is deferred in the post image.
+        set_status(&mut c, "T-4", "deferred", CLOCK).expect("leaving live needs no main_goal");
     }
 
     /// T-917.6 plan ready-gate: mark-ready without the plan file refuses naming the
@@ -2089,6 +2383,17 @@ active_slice = "T-1.1"
             add_child(c, "T-2", "Slice one", "", true, CLOCK).expect("promote");
             reorder(c, "T-003", "T-1", CLOCK).expect_err("minted idea has empty owns");
             set_status(c, "T-1", "cancelled", CLOCK).expect("cancel");
+            // T-920.1: a minted child ships only with its body filled (the ship
+            // ready-tier gate) — fill it deterministically, then ship.
+            if let Some(Ticket::Work(w)) = c.tickets.get_mut("T-2.1") {
+                w.main_goal = Some("slice goal".into());
+                w.context = vec!["ctx".into()];
+                w.requirement = vec!["ask".into()];
+                w.current_state = vec!["today".into()];
+                w.approach = vec!["steps".into()];
+                w.verify = vec!["cargo test".into()];
+                w.acceptance = vec!["done".into()];
+            }
             ship(c, "T-2.1", CLOCK).expect("ship child");
             let mut all = String::new();
             for ticket in c.tickets.values() {

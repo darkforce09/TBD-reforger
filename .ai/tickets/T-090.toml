@@ -50,7 +50,7 @@ children = [
     "T-090.10.2",
 ]
 active = "T-090.6"
-user_story = "T-090 / T-091 — Map & terrain program (hub). Mission Creator shows Everon cartography in the editor. Active: T-090.6 (geometry placement audit). Single lane."
+main_goal = "T-090 / T-091 — Map & terrain program (hub). Mission Creator shows Everon cartography in the editor. Active: T-090.6 (geometry placement audit). Single lane."
 acceptance = [
     "Automated sign-off @ T-091.0: cargo xtask ci verify-terrain-strict exit 0.",
     "Code slices add S/M gates in their own specs.",

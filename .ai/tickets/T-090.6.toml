@@ -9,7 +9,21 @@ spec = "docs/specs/Mission_Creator_Architecture/t090_6_geometry_placement_audit.
 plan = "docs/plans/t-090_6_plan.md"
 executor = "claude-code"
 parent = "T-090"
-user_story = "For every exported map object (Eden-scale 1M+), use center + rotation + simplified 3D bounds (not full meshes) to compute which parts are above terrain, buried, or inside another object — fully automated, no manual eyeballing."
+main_goal = "For every exported map object (Eden-scale 1M+), use center + rotation + simplified 3D bounds (not full meshes) to compute which parts are above terrain, buried, or inside another object — fully automated, no manual eyeballing."
+context = ["The T-090.4 point audit (pivot Z vs DEM) misses tilted, large and spanning props by design; Phase B classifies with simplified 3D bounds."]
+requirement = [
+    "For every exported map object use center, rotation and simplified 3D bounds — never full meshes — to classify above, buried or inside.",
+    "Overlap detection against neighboring objects; fully automated at the 1M-object scale, no manual eyeballing.",
+]
+current_state = ["spatial.halfExtentsM and rotationDeg ship in the catalog as the normative geometry; the T-090.3.0 spike proved the localUp to world Z remap."]
+approach = [
+    "Extend the audit tool in tools/tbd-tools/src/world: build an OBB per instance, sample the DEM at corners and edges, classify per kind.",
+    "Neighbor-overlap detection via a spatial grid; concave props carry a confidence note rather than pretending mesh precision.",
+]
+verify = [
+    "Full-catalog run completes without manual eyeballing; OBB classes reproduce the T-090.4 findings on the point-audit subset.",
+    "Known tilted props get flagged; spot-check against Workbench ground truth where available.",
+]
 acceptance = [
     "OBB from spatial.halfExtentsM + rotationDeg; classify above/buried/inside.",
     "Fully automated; no manual eyeballing of 1M objects.",

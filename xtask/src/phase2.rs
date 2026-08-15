@@ -272,26 +272,26 @@ mod tests {
             let (spec, story, acc) = match t.status() {
                 Status::Ready {
                     spec,
-                    user_story,
+                    main_goal,
                     acceptance,
                     ..
                 }
                 | Status::Running {
                     spec,
-                    user_story,
+                    main_goal,
                     acceptance,
                     ..
                 }
                 | Status::Review {
                     spec,
-                    user_story,
+                    main_goal,
                     acceptance,
                     ..
-                } => (spec, user_story, acceptance),
+                } => (spec, main_goal, acceptance),
                 other => panic!("{id} status {:?} is not ready-class", other.name()),
             };
             assert!(!spec.trim().is_empty(), "{id} spec");
-            assert!(!story.trim().is_empty(), "{id} user_story");
+            assert!(!story.trim().is_empty(), "{id} main_goal");
             assert!(acc.iter().any(|s| !s.trim().is_empty()), "{id} acceptance");
         }
     }

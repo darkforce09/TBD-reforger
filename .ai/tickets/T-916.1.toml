@@ -9,7 +9,7 @@ spec = "docs/platform/t915_ticketboard_design.md"
 executor = "claude-code"
 notes = "Mechanism only — no policy: require_check_ok, sync, wave machinery all stay in xtask. Store becomes the shared substrate for the three duplicate walks (wave_lock::load_views, check_open_work_owns, slice_collisions::ticket_facts) — rewiring them is T-916.2. Injected clock precedent: metrics::stamp_land_at. No new external dependencies (std fs only)."
 parent = "T-916"
-user_story = "Registry mutations are typed corpus transforms in tbd-tickets — the serde_json::Value round-trip that produced the 4a2f3426 duplicate-children class and the ship-child hole is no longer the mutation substrate."
+main_goal = "Registry mutations are typed corpus transforms in tbd-tickets — the serde_json::Value round-trip that produced the 4a2f3426 duplicate-children class and the ship-child hole is no longer the mutation substrate."
 acceptance = [
     "Corpus roundtrip paste: N/N files byte-identical, N measured on disk at run time",
     "Per-op refusal unit tests: reorder order-collision, ready without order, add-child onto work without --promote, duplicate child",

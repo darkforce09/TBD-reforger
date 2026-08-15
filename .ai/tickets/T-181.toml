@@ -75,7 +75,7 @@ children = [
     "T-181.53",
     "T-181.54",
 ]
-user_story = "As an event host I load a TBD mission from JSON, players slot in a TBD-styled lobby, read the briefing, deploy into their JSON-defined body and loadout, live one life, and the round resolves on a JSON-defined win condition."
+main_goal = "As an event host I load a TBD mission from JSON, players slot in a TBD-styled lobby, read the briefing, deploy into their JSON-defined body and loadout, live one life, and the round resolves on a JSON-defined win condition."
 acceptance = [
     "make mod-compile exits 0 on clean source and non-zero with file:line on a broken .c, with no Workbench",
     "make verify-capability reports zero UNTRIAGED CRF capabilities",

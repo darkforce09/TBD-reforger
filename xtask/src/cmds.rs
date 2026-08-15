@@ -778,7 +778,7 @@ pub fn cmd_mark_ready(
     require_check_ok(root, registry, &format!("mark-ready {id}"))?;
 
     // Typed op (T-916.1): spec-arg set, spec-on-disk + deps gates, ready promotion with the
-    // exact user_story (summary→title→id) and acceptance (["See spec."]) backfills. The
+    // exact main_goal (summary→title→id) and acceptance (["See spec."]) backfills. The
     // legacy refusals — "Ticket {id} needs a spec path", "Spec file not found: …",
     // "Blocked by …" — come back verbatim and exit exactly as before. T-917.6 adds the
     // plan ready-gate: PLAN defaults to docs/plans/<id-lowercased-dots-to-underscores>_plan.md
@@ -1644,7 +1644,7 @@ mod tests {
         let ready = |order: i64, spec: &str| Status::Ready {
             order,
             spec: spec.into(),
-            user_story: "story".into(),
+            main_goal: "story".into(),
             acceptance: vec!["gate".into()],
         };
         let work =
@@ -1671,12 +1671,35 @@ mod tests {
                         component: None,
                         surface: vec![],
                     },
-                    user_story: ready_class.then(|| "story".to_string()),
-                    context: vec![],
-                    requirement: vec![],
-                    current_state: vec![],
-                    approach: vec![],
-                    verify: vec![],
+                    main_goal: ready_class.then(|| "story".to_string()),
+                    // T-920.1 ready-tier rule: ready-class work carries the six
+                    // body fields nonempty (check_ready_tier_body) — the fixture
+                    // mirrors the live-tree contract like it does for plans.
+                    context: if ready_class {
+                        vec!["why".into()]
+                    } else {
+                        vec![]
+                    },
+                    requirement: if ready_class {
+                        vec!["ask".into()]
+                    } else {
+                        vec![]
+                    },
+                    current_state: if ready_class {
+                        vec!["today".into()]
+                    } else {
+                        vec![]
+                    },
+                    approach: if ready_class {
+                        vec!["steps".into()]
+                    } else {
+                        vec![]
+                    },
+                    verify: if ready_class {
+                        vec!["cargo test".into()]
+                    } else {
+                        vec![]
+                    },
                     acceptance: if ready_class {
                         vec!["gate".into()]
                     } else {
@@ -1711,7 +1734,7 @@ mod tests {
                 unblocks: vec![],
                 children: vec!["T-001.1".into(), "T-001.2".into()],
                 active: Some("T-001.1".into()),
-                user_story: Some("story".into()),
+                main_goal: Some("story".into()),
                 context: vec![],
                 requirement: vec![],
                 current_state: vec![],

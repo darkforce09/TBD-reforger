@@ -9,7 +9,7 @@ spec = ".ai/artifacts/missed_items_handoff.md"
 executor = "claude-code"
 depends_on = ["T-159"]
 unblocks = ["T-068.11"]
-user_story = "As a mission maker I build loadouts with compat-aware pickers and a paper-doll, matching the pre-rewrite Arsenal."
+main_goal = "As a mission maker I build loadouts with compat-aware pickers and a paper-doll, matching the pre-rewrite Arsenal."
 requirement = [
     "Port the shipped React Smart Arsenal (T-068.10.2–.10.8) into the Leptos Arsenal tab:",
     "compat-filtered optic/magazine rows off `GET /registry/compat` (T-150 edges live in DB: 1,880 items / 4,012 edges),",

@@ -8,7 +8,7 @@ order = 5940
 spec = "docs/platform/t912_wave_lockfile.md"
 executor = "claude-code"
 notes = "Operator decision 2026-08-14: continue the ledger. Shipped derivation measured wave_base = 132 (d0556206): the anchored authority rejects prefixed subjects like d21197d2 'T-853 wave 235 CLOSED', and the real 233/218 markers are disavowed floor-jump artifacts (00a1fdad9, a8bb2730). Next close prints WAVE 133 CLOSED — the only number oracle 1 accepts. No hardcoded wave numbers outside fabricated test histories; wave_close_subject_ok stays the authority."
-user_story = "Lock wave labels continue the historical close-marker ledger so the close ceremony and its exactly-one-step oracle keep working after the TSV cutover."
+main_goal = "Lock wave labels continue the historical close-marker ledger so the close ceremony and its exactly-one-step oracle keep working after the TSV cutover."
 acceptance = [
     "wave repack on main writes the ledger-derived wave_base (measured 132; non-markers and disavowed markers skipped) and numbers the first open wave base+1",
     "A new close marker without repack turns ticket check red; repack renumbers from the new base and goes green",

@@ -9,7 +9,27 @@ spec = "docs/specs/Mission_Creator_Architecture/t090_4_z_placement_audit.md"
 plan = "docs/plans/t-090_4_plan.md"
 executor = "claude-code"
 parent = "T-090"
-user_story = "Phase A: offline tool compares each exported map object's pivot Z against the T-091 DEM at (x,y) — fast pass over 1M+ Eden objects. This slice is Phase A only — detect, no auto-fix."
+main_goal = "Phase A: offline tool compares each exported map object's pivot Z against the T-091 DEM at (x,y) — fast pass over 1M+ Eden objects. This slice is Phase A only — detect, no auto-fix."
+context = [
+    "Enfusion map objects export with pivots at ground, roof or model center, so the basemap can render props at wrong heights across 1M+ Eden objects.",
+    "Phase A is the cheap full-catalog screen: one DEM sample per object, detect only, no auto-fix (geometry-aware Phase B is T-090.6).",
+]
+requirement = [
+    "Compare each exported object's pivot Z against the T-091 DEM at (x, y) with per-kind warn/fail thresholds.",
+    "Missing z is a warn, never a fabricated value; no auto-fix writes anywhere.",
+]
+current_state = [
+    "Blocked on the T-090.3 export and the T-091 DEM being present; the object catalog lives under packages/map-assets/everon/objects.",
+    "16-bit DEM quantization on slopes yields false positives; tilted and large props yield false negatives by design — deferred to T-090.6.",
+]
+approach = [
+    "Offline tool in tools/tbd-tools/src/world: sample the DEM at each instance (x, y) and classify demZ versus pivot z per kind.",
+    "Emit a machine- and human-readable report keyed by object id and kind so T-090.6 can consume the deltas.",
+]
+verify = [
+    "Run the audit over the full exported catalog; every instance reports demZ vs z with its classification.",
+    "Missing z counts surface as warns; spot-check known bridges and trees against the report; no auto-fix writes anywhere.",
+]
 acceptance = [
     "Each catalog instance gets demZ vs z with per-kind warn/fail thresholds.",
     "Missing z is warn; no auto-fix (geometry-aware pass is T-090.6).",

@@ -181,7 +181,7 @@ mod tests {
         )));
         assert!(dispatchable(&work(
             "T-2",
-            "status = \"ready\"\norder = 5\nspec = \"docs/x.md\"\nuser_story = \"u\"\nacceptance = [\"a\"]",
+            "status = \"ready\"\norder = 5\nspec = \"docs/x.md\"\nmain_goal = \"u\"\nacceptance = [\"a\"]",
             "executor = \"claude-code\"\n",
         )));
         // Dead statuses are not dispatchable.
@@ -235,7 +235,7 @@ mod tests {
             work("T-2", "status = \"queued\"\norder = 10", ""),
             work(
                 "T-9",
-                "status = \"running\"\norder = 20\nspec = \"docs/x.md\"\nuser_story = \"u\"\nacceptance = [\"a\"]",
+                "status = \"running\"\norder = 20\nspec = \"docs/x.md\"\nmain_goal = \"u\"\nacceptance = [\"a\"]",
                 "",
             ),
         ]);

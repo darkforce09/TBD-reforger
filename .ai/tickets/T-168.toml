@@ -8,7 +8,7 @@ order = 1650
 spec = ".ai/artifacts/missed_items_handoff.md"
 executor = "claude-code"
 depends_on = ["T-159"]
-user_story = "As a mission maker I browse and select squads/slots from the left ORBAT tree like in the React editor."
+main_goal = "As a mission maker I browse and select squads/slots from the left ORBAT tree like in the React editor."
 context = [
     "Historical note: early place minted via ensure_default_squad — superseded by T-180 place→new-squad under active_side.",
     "Squad management / Stitch ORBAT Manager completed by T-180 (not a remaining T-071 task).",

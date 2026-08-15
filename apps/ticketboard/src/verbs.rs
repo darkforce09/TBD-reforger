@@ -102,7 +102,7 @@ pub fn set_status(id: &str, status: StatusName) -> VerbRequest {
     request(vec!["set-status".into(), id.into(), status.as_str().into()])
 }
 
-/// `ticket mark-ready <id> [spec]` — the verb takes ONLY id + spec; user_story /
+/// `ticket mark-ready <id> [spec]` — the verb takes ONLY id + spec; main_goal /
 /// acceptance backfill is the verb's own behavior, never a UI field.
 pub fn mark_ready(id: &str, spec: Option<&str>) -> VerbRequest {
     let mut tail = vec!["mark-ready".to_owned(), id.to_owned()];

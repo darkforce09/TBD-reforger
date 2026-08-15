@@ -100,8 +100,8 @@ fn validate_row(row: &serde_json::Value) -> Vec<String> {
         if opt_str(row, "spec").unwrap_or("").trim().is_empty() {
             errors.push(format!("{tid}: ready-class requires spec"));
         }
-        if opt_str(row, "user_story").unwrap_or("").trim().is_empty() {
-            errors.push(format!("{tid}: ready-class requires user_story"));
+        if opt_str(row, "main_goal").unwrap_or("").trim().is_empty() {
+            errors.push(format!("{tid}: ready-class requires main_goal"));
         }
         let acc_ok = row
             .get("acceptance")
@@ -562,6 +562,174 @@ fn check_plan_ready_gate(root: &Path) -> Vec<String> {
     errors
 }
 
+/// T-920.1 — the idea-tier title rule (t920 spec Decisions log #2, idea row):
+/// EVERY work ticket carries a nonempty title, corpus-wide (measured zero offenders
+/// at land time, so the rule starts live-green). Only EMPTINESS is corpus-wide:
+/// the two real-title arms (`!= id`, `<= 10 words`) are history debt behind
+/// [`tbd_tickets::TITLE_DEBT_PIN`] — see [`check_debt_pins`] — and are enforced on
+/// CHANGED tickets by the ops post-image gate, so check never reds 440 historical
+/// titles wholesale. Fail-closed on an unloadable corpus.
+fn check_work_title_nonempty(root: &Path) -> Vec<String> {
+    let corpus = match tbd_tickets::Corpus::load(root) {
+        Ok(c) => c,
+        Err(e) => return vec![e],
+    };
+    let mut errors = Vec::new();
+    for ticket in corpus.tickets.values() {
+        if let tbd_tickets::Ticket::Work(w) = ticket
+            && w.title.trim().is_empty()
+        {
+            errors.push(format!(
+                "{}: title required on every work ticket (idea tier, t920 spec Decisions log #2)",
+                w.id
+            ));
+        }
+    }
+    errors
+}
+
+/// T-920.1 — the ready-tier body rule (t920 spec Decisions log #2): every
+/// ready/running/review WORK ticket carries the six body fields nonempty
+/// ([`tbd_tickets::empty_ready_tier_fields`] — context, requirement, current_state,
+/// approach, verify, acceptance), corpus-wide NOW (the live ready set was filled in
+/// the same T-920.1 land, honestly, from each ticket's spec + plan). Quarantine
+/// exemption: nonempty `migration_legacy` exempts (content exists, unprocessed —
+/// the T-919 drain fills the fields). Work-only: the tier table is work-shaped; a
+/// program aggregates its children. Composes without double-reporting:
+/// `main_goal`/`spec` empties are the ready-class PARSE refusal (`Status::live_ready`
+/// — the load itself fails), and `validate_row` covers the registry Value view;
+/// the `acceptance` entry here is reachable only through that same parse guarantee,
+/// so it can never fire twice. Shipped history is untouched until the T-921 drain
+/// finishes (spec §Non-goals). Fail-closed on an unloadable corpus.
+fn check_ready_tier_body(root: &Path) -> Vec<String> {
+    let corpus = match tbd_tickets::Corpus::load(root) {
+        Ok(c) => c,
+        Err(e) => return vec![e],
+    };
+    let mut errors = Vec::new();
+    for ticket in corpus.tickets.values() {
+        let tbd_tickets::Ticket::Work(w) = ticket else {
+            continue;
+        };
+        if !matches!(
+            w.status.name(),
+            tbd_tickets::StatusName::Ready
+                | tbd_tickets::StatusName::Running
+                | tbd_tickets::StatusName::Review
+        ) || !w.migration_legacy.is_empty()
+        {
+            continue;
+        }
+        let missing = tbd_tickets::empty_ready_tier_fields(w);
+        if !missing.is_empty() {
+            errors.push(format!(
+                "{}: {} work ticket with empty ready-tier body fields: {} — ready requires them nonempty (t920 spec Decisions log #2); fill from the spec/plan or demote",
+                w.id,
+                w.status.name().as_str(),
+                missing.join(", ")
+            ));
+        }
+    }
+    errors
+}
+
+/// The two T-920.1 debt counts over a loaded corpus, by THE shared instruments
+/// (`tbd_tickets::title_is_debt` / `main_goal_is_debt`) — split pure so the
+/// fixture tests and the counter printer consume the same arithmetic.
+fn debt_counts(corpus: &tbd_tickets::Corpus) -> (usize, usize) {
+    let mut title = 0usize;
+    let mut main_goal = 0usize;
+    for (id, t) in &corpus.tickets {
+        match t {
+            tbd_tickets::Ticket::Program(p) => {
+                if tbd_tickets::title_is_debt(id, &p.title) {
+                    title += 1;
+                }
+            }
+            tbd_tickets::Ticket::Work(w) => {
+                if tbd_tickets::title_is_debt(id, &w.title) {
+                    title += 1;
+                }
+                if tbd_tickets::main_goal_is_debt(w) {
+                    main_goal += 1;
+                }
+            }
+        }
+    }
+    (title, main_goal)
+}
+
+/// Pure growth verdict for one debt pin: red only when `measured > pin` — a new
+/// offender slipped past the ops gate. The SHRINK direction is deliberately not a
+/// check red: `check` runs on arbitrary roots (every mutator preflight, scratch
+/// registries in tests), where the live-tree pin equality cannot hold — a fresh
+/// 4-ticket scratch measures 0 debt against a 440 pin and must stay green. The
+/// both-ways drift-red lives where the tree is ALWAYS the live one: the tbd-tickets
+/// store ratchet tests (`title_debt_ratchet_pin` / `main_goal_debt_ratchet_pin`,
+/// exact `assert_eq!`), which red a repaid-but-unshrunk pin in CI — the exact
+/// MIGRATION_LEGACY_PIN division of labor (test owns the equality, check owns the
+/// new-offender tripwire).
+fn pin_growth_finding(label: &str, measured: usize, pin: usize, instrument: &str) -> Vec<String> {
+    if measured > pin {
+        vec![format!(
+            "{label}: measured {measured} > pin {pin} — a new offender slipped past the ops gate (instrument: {instrument}); fix the ticket, never the pin"
+        )]
+    } else {
+        vec![]
+    }
+}
+
+/// T-920.1 — the queued-tier main_goal rule (b) and the title-debt meter (t920 spec
+/// §Schema changes): both bind as measured, shrink-only pins instead of instant
+/// corpus-wide reds — the debt is history-wide (440 titles, 53 main_goals at land),
+/// and the T-919/T-921 streams drain it batch by batch, shrinking the pins in the
+/// same commits. Growth reds every check run (so a slipped offender wedges the next
+/// verb immediately); the pin==measured equality is pinned by the store ratchet
+/// tests — see [`pin_growth_finding`] for why the split. Fail-closed on an
+/// unloadable corpus.
+fn check_debt_pins(root: &Path) -> Vec<String> {
+    let corpus = match tbd_tickets::Corpus::load(root) {
+        Ok(c) => c,
+        Err(e) => return vec![e],
+    };
+    let (title, main_goal) = debt_counts(&corpus);
+    let mut errors = pin_growth_finding(
+        "TITLE_DEBT_PIN",
+        title,
+        tbd_tickets::TITLE_DEBT_PIN,
+        "title == id or TOML-parsed title split_whitespace().count() > 10, work+program",
+    );
+    errors.extend(pin_growth_finding(
+        "MAIN_GOAL_DEBT_PIN",
+        main_goal,
+        tbd_tickets::MAIN_GOAL_DEBT_PIN,
+        "queued/ready/running/review work tickets with empty main_goal",
+    ));
+    errors
+}
+
+/// The check-side debt counters (t920 acceptance: "numbers printed by a check-side
+/// counter with the instrument in the line") — printed by [`cmd_check`] on every
+/// run, red or green. `None` when the corpus cannot load (the check errors already
+/// name why; counters never mask a red).
+fn debt_counter_lines(root: &Path) -> Option<Vec<String>> {
+    let corpus = tbd_tickets::Corpus::load(root).ok()?;
+    let (title, main_goal) = debt_counts(&corpus);
+    let cmp = |pin: usize, m: usize| if pin == m { "==" } else { "!=" };
+    Some(vec![
+        format!(
+            "TITLE_DEBT_PIN {} {} measured {title} (instrument: title == id or TOML-parsed title split_whitespace().count() > 10, work+program)",
+            tbd_tickets::TITLE_DEBT_PIN,
+            cmp(tbd_tickets::TITLE_DEBT_PIN, title)
+        ),
+        format!(
+            "MAIN_GOAL_DEBT_PIN {} {} measured {main_goal} (instrument: queued/ready/running/review work tickets with empty main_goal)",
+            tbd_tickets::MAIN_GOAL_DEBT_PIN,
+            cmp(tbd_tickets::MAIN_GOAL_DEBT_PIN, main_goal)
+        ),
+    ])
+}
+
 /// T-916.2 — parent↔child referential integrity over EVERY `.ai/tickets/T-*.toml` (the typed
 /// corpus; parents-only walks cannot see either half of the relation). Two rules, both naming
 /// the pair:
@@ -814,6 +982,15 @@ pub fn check(root: &Path, registry: &serde_json::Value, strict: bool) -> Vec<Str
     // work carries a plan document that exists on disk.
     errors.extend(check_ship_gate(root));
     errors.extend(check_plan_ready_gate(root));
+    // T-920.1 tiered body obligations (t920 spec Decisions log #2), composed without
+    // double-reporting: (a) idea tier — title nonempty on every work ticket,
+    // corpus-wide; (b) queued tier — main_goal metered by MAIN_GOAL_DEBT_PIN (plus
+    // the title-debt meter), drift-red both ways, new offenders refused in ops;
+    // (c) ready tier — the six body fields nonempty on ready-class work,
+    // corpus-wide, quarantine-exempt.
+    errors.extend(check_work_title_nonempty(root));
+    errors.extend(check_ready_tier_body(root));
+    errors.extend(check_debt_pins(root));
     // T-917.1/.2: the scope vocabulary (.ai/tickets/scope-vocab.toml) must EXIST and be
     // shape-valid — BASE tier since the S.2 cutover (S.1 parked existence at --strict
     // only while pre-v2 scratch registries still lacked the file): scope legality now
@@ -985,6 +1162,13 @@ pub fn cmd_check(root: &Path, registry: &serde_json::Value, strict: bool) -> Res
     // T-917.6 honesty counters: strict-only visibility, printed red or green (a red
     // tree's drift matters MORE) — but only when the trees they read actually load.
     if strict && let Some(lines) = strict_honesty_counters(root) {
+        for line in lines {
+            println!("{line}");
+        }
+    }
+    // T-920.1 debt counters: every run, red or green — the acceptance-named
+    // check-side counter with the instrument in the line.
+    if let Some(lines) = debt_counter_lines(root) {
         for line in lines {
             println!("{line}");
         }
@@ -1657,7 +1841,7 @@ component = "mission_creator"
         let (tmp, dir) = scratch_tickets_dir("t917-plan-gate");
         let ready = |status: &str, plan_line: &str| {
             format!(
-                "id = \"T-001\"\nkind = \"work\"\ntitle = \"x\"\nsummary = \"x\"\nclass = \"chore\"\nstatus = \"{status}\"\norder = 10\nspec = \"docs/spec.md\"\n{plan_line}user_story = \"story\"\nacceptance = [\"gate\"]\nowns = [\"a.rs\"]\n\n[scope]\ndomain = \"repo\"\nlayer = \"docs\"\n"
+                "id = \"T-001\"\nkind = \"work\"\ntitle = \"x\"\nsummary = \"x\"\nclass = \"chore\"\nstatus = \"{status}\"\norder = 10\nspec = \"docs/spec.md\"\n{plan_line}main_goal = \"story\"\ncontext = [\"why\"]\nrequirement = [\"ask\"]\ncurrent_state = [\"today\"]\napproach = [\"steps\"]\nverify = [\"cargo test\"]\nacceptance = [\"gate\"]\nowns = [\"a.rs\"]\n\n[scope]\ndomain = \"repo\"\nlayer = \"docs\"\n"
             )
         };
         for status in ["ready", "running", "review"] {
@@ -1698,6 +1882,144 @@ component = "mission_creator"
             "queued work is exempt"
         );
         fs::remove_dir_all(&tmp).unwrap();
+    }
+
+    /// T-920.1 — the idea-tier title rule: live tree green (measured zero empty
+    /// titles); a planted empty-title work ticket reds naming it; a real title
+    /// restores green. Programs are not this rule's business (work-shaped tier
+    /// table), and title != id / word-cap arms deliberately do NOT red here — they
+    /// are pin-metered debt.
+    #[test]
+    fn work_title_nonempty_red_green() {
+        let root = worktree_root();
+        let errs = check_work_title_nonempty(&root);
+        assert!(
+            errs.is_empty(),
+            "live tree must carry a title on every work ticket; got:\n{}",
+            errs.join("\n")
+        );
+
+        let (tmp, dir) = scratch_tickets_dir("t920-title-check");
+        let with_title = |title: &str| {
+            format!(
+                "id = \"T-001\"\nkind = \"work\"\ntitle = \"{title}\"\nsummary = \"x\"\nclass = \"chore\"\nstatus = \"idea\"\n\n[scope]\ndomain = \"repo\"\nlayer = \"docs\"\n"
+            )
+        };
+        fs::write(dir.join("T-001.toml"), with_title("   ")).unwrap();
+        let errs = check_work_title_nonempty(&tmp);
+        assert_eq!(errs.len(), 1, "{errs:?}");
+        assert!(
+            errs[0].contains("T-001") && errs[0].contains("title required"),
+            "{}",
+            errs[0]
+        );
+        // An id-as-title is NOT this rule's red (pin-metered debt, ops-gated).
+        fs::write(dir.join("T-001.toml"), with_title("T-001")).unwrap();
+        assert!(
+            check_work_title_nonempty(&tmp).is_empty(),
+            "id-as-title is debt, not an emptiness red"
+        );
+        fs::remove_dir_all(&tmp).unwrap();
+    }
+
+    /// T-920.1 — the ready-tier body rule: live tree green (the T-920.1 land filled
+    /// the live ready set); a planted ready work ticket with the six fields empty
+    /// reds NAMING EACH missing field; the quarantine exemption and the queued tier
+    /// stay green.
+    #[test]
+    fn ready_tier_body_red_green_and_quarantine_exempt() {
+        let root = worktree_root();
+        let errs = check_ready_tier_body(&root);
+        assert!(
+            errs.is_empty(),
+            "live ready-class work must carry the six body fields; got:\n{}",
+            errs.join("\n")
+        );
+
+        let (tmp, dir) = scratch_tickets_dir("t920-ready-tier");
+        let ready = |status: &str, extra: &str| {
+            format!(
+                "id = \"T-001\"\nkind = \"work\"\ntitle = \"x\"\nsummary = \"x\"\nclass = \"chore\"\nstatus = \"{status}\"\norder = 10\nspec = \"docs/spec.md\"\nmain_goal = \"goal\"\n{extra}acceptance = [\"gate\"]\nowns = [\"a.rs\"]\n\n[scope]\ndomain = \"repo\"\nlayer = \"docs\"\n"
+            )
+        };
+        for status in ["ready", "running", "review"] {
+            fs::write(dir.join("T-001.toml"), ready(status, "")).unwrap();
+            let errs = check_ready_tier_body(&tmp);
+            assert_eq!(errs.len(), 1, "{status}: {errs:?}");
+            assert!(
+                errs[0].contains("T-001")
+                    && errs[0].contains(status)
+                    && errs[0].contains("context, requirement, current_state, approach, verify"),
+                "must name each empty field: {}",
+                errs[0]
+            );
+        }
+        // Partial fill: exactly the still-empty fields are named.
+        fs::write(
+            dir.join("T-001.toml"),
+            ready("ready", "context = [\"why\"]\nrequirement = [\"ask\"]\n"),
+        )
+        .unwrap();
+        let errs = check_ready_tier_body(&tmp);
+        assert!(
+            errs.len() == 1 && errs[0].contains("fields: current_state, approach, verify —"),
+            "{errs:?}"
+        );
+        // Full fill: green.
+        fs::write(
+            dir.join("T-001.toml"),
+            ready(
+                "ready",
+                "context = [\"why\"]\nrequirement = [\"ask\"]\ncurrent_state = [\"today\"]\napproach = [\"steps\"]\nverify = [\"cargo test\"]\n",
+            ),
+        )
+        .unwrap();
+        assert!(check_ready_tier_body(&tmp).is_empty(), "filled is green");
+        // Quarantine exemption: the same empty-bodied ready ticket with a nonempty
+        // migration_legacy is green (content exists, unprocessed).
+        fs::write(
+            dir.join("T-001.toml"),
+            ready("ready", "migration_legacy = [\"parked wall\"]\n"),
+        )
+        .unwrap();
+        assert!(
+            check_ready_tier_body(&tmp).is_empty(),
+            "quarantined ready ticket is exempt"
+        );
+        // Queued work is the pin-metered tier, not this rule's.
+        fs::write(
+            dir.join("T-001.toml"),
+            "id = \"T-001\"\nkind = \"work\"\ntitle = \"x\"\nsummary = \"x\"\nclass = \"chore\"\nstatus = \"queued\"\norder = 10\nowns = [\"a.rs\"]\n\n[scope]\ndomain = \"repo\"\nlayer = \"docs\"\n",
+        )
+        .unwrap();
+        assert!(
+            check_ready_tier_body(&tmp).is_empty(),
+            "queued is exempt from the ready tier"
+        );
+        fs::remove_dir_all(&tmp).unwrap();
+    }
+
+    /// T-920.1 — the pin growth verdict: equality is silent; growth blames the
+    /// offender (never the pin); below-pin stays green HERE because check runs on
+    /// arbitrary roots (a 4-ticket scratch measures 0 against the live pin) — the
+    /// shrink direction is the store ratchet tests' exact-equality red, on the live
+    /// tree, in CI (`title_debt_ratchet_pin` / `main_goal_debt_ratchet_pin`).
+    #[test]
+    fn debt_pin_growth_verdict() {
+        assert!(pin_growth_finding("TITLE_DEBT_PIN", 440, 440, "i").is_empty());
+        let grown = pin_growth_finding("TITLE_DEBT_PIN", 441, 440, "the instrument text");
+        assert_eq!(grown.len(), 1);
+        assert!(
+            grown[0].contains("441 > pin 440")
+                && grown[0].contains("fix the ticket, never the pin")
+                && grown[0].contains("the instrument text"),
+            "{}",
+            grown[0]
+        );
+        assert!(
+            pin_growth_finding("MAIN_GOAL_DEBT_PIN", 0, 53, "i").is_empty(),
+            "below-pin is the scratch-tree case — green in check, red in the ratchet test"
+        );
     }
 
     /// T-917.6 — the strict honesty counters over a scratch fixture whose numbers are

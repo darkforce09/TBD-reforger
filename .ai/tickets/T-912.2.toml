@@ -10,7 +10,7 @@ executor = "claude-code"
 notes = "Depends on T-912.1 landed. First lock candidate order = TSV row order (platform then mod); every later repack sorts open candidates by ticket order, tie-broken by id — filesystem order forbidden. Wave 0 frozen: shipped/cancelled/deferred/blocked/non-claude-code membership never follows order. Migration proof pastes the per-wave open-id set-equality table plus owns snapshot. Historical allowlist grep keeps old artifacts green while any live wave_plan.tsv mention is red. Mine wave_lock.rs from 6ae8069c but re-derive against encoding C; the draft JSON lock and id-sort are mine-only shapes."
 depends_on = ["T-912.1"]
 parent = "T-912"
-user_story = "The wave plan is a compiled artifact of the registry: one TOML lock with one writer, checked structurally, and both hand-kept TSVs deleted."
+main_goal = "The wave plan is a compiled artifact of the registry: one TOML lock with one writer, checked structurally, and both hand-kept TSVs deleted."
 acceptance = [
     "wave repack twice on a frozen tree is byte-identical; a missing lock is a DidNotRun refuse, never an empty plan",
     "Overlapping owns never share a wave; perturbing owns or edges without repack turns wave check red",

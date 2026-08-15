@@ -10,7 +10,7 @@ executor = "claude-code"
 notes = "Preserved asymmetries (do NOT rationalize here): set-status writes queue.json + repack only, mark-ready syncs without repack, ship full-syncs. phase2::save_tree / value_to_ticket demote to migration/test-only with the T-912.2 regression pin retargeted. cmd_get mirrored output stays untouched (external parsers). shipped_at SHA stays hand-edited; stamp-sha is future work."
 depends_on = ["T-916.1"]
 parent = "T-916"
-user_story = "The CLI verbs keep byte-identical behavior on the shared surface while child ids finally resolve — ticket ship T-912.2-style invocations work instead of Unknown ticket — and the generated docs always reflect the post-mutation state."
+main_goal = "The CLI verbs keep byte-identical behavior on the shared surface while child ids finally resolve — ticket ship T-912.2-style invocations work instead of Unknown ticket — and the generated docs always reflect the post-mutation state."
 acceptance = [
     "Parity paste per verb: 0 differing files over .ai/tickets plus docs/TICKET_*.md, MILESTONES.md, CLAUDE.md, ROADMAP, gap file, queue.json, wave.lock (timestamps normalized)",
     "Red-tree runs: both binaries refuse exit 1 with git status --porcelain empty",

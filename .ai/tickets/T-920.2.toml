@@ -10,7 +10,29 @@ executor = "claude-code"
 notes = "Depends on the T-920.1 type rename (main_goal field). Layout model pinned by test like the T-918.3 section order."
 depends_on = ["T-920.1"]
 parent = "T-920"
-user_story = "The operator reads a ticket's main goal first and its plan beside it, never one over the other."
+main_goal = "The operator reads a ticket's main goal first and its plan beside it, never one over the other."
+context = [
+    "main_goal landed at T-920.1 but still renders in the old user_story slot inside the body list",
+    "The T-918.4 viewer replaces the detail region, hiding the ticket while its plan is open",
+]
+requirement = [
+    "main_goal renders under the title in the detail header, first thing read",
+    "Viewer opens as a third column beside the detail panel; both stay visible",
+    "Back collapses the viewer column; its width persists via eframe Storage",
+]
+current_state = [
+    "detail.rs pins the section order with MainGoal in the legacy slot",
+    "viewer.rs state machine works; app.rs right_pane gate swaps detail for viewer",
+]
+approach = [
+    "Move MainGoal out of the body list into the detail header render",
+    "Split the right pane into detail + optional viewer columns with a persisted width",
+    "Card hover tooltip shows main_goal when present",
+]
+verify = [
+    "cargo test -p ticketboard green with the layout model pin updated",
+    "cargo build -p ticketboard --release green; editorconfig clean",
+]
 acceptance = [
     "Viewer opens beside the detail panel with both visible; Back collapses the column; width persists",
     "main_goal renders under the title; body sections start at context (layout model test-pinned)",

@@ -10,7 +10,7 @@ executor = "claude-code"
 notes = "Never recompute lanes — the lock is the truth and drift is the trust banner's job. Owns-collision explainer in the detail panel: prefix-containment path pairs for any two selected tickets."
 depends_on = ["T-915.1"]
 parent = "T-915"
-user_story = "The operator sees the wave plan the factory will actually run — the committed lock, lane by lane — plus the program structure and filtered slices of the corpus."
+main_goal = "The operator sees the wave plan the factory will actually run — the committed lock, lane by lane — plus the program structure and filtered slices of the corpus."
 acceptance = [
     "Per-lane id list equals the lock's tickets array for that n (copy-lane-as-TSV pasted against the wave.lock block)",
     "Wave 0 renders as a count chip, never expanded cards by default",

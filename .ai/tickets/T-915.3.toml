@@ -10,7 +10,7 @@ executor = "claude-code"
 notes = "The app never re-implements check; it invokes it. Subprocesses run with explicit current_dir at the discovered repo root and robust cargo resolution (GUI PATH is bare)."
 depends_on = ["T-915.1"]
 parent = "T-915"
-user_story = "The operator trusts what the board shows: check-red, a stale lock, or uncommitted registry files are visible immediately, with the real check output — not a re-implementation."
+main_goal = "The operator trusts what the board shows: check-red, a stale lock, or uncommitted registry files are visible immediately, with the real check output — not a re-implementation."
 acceptance = [
     "Launch runs cargo xtask ticket check --strict streamed; banner shows green/red plus exit code, labeled strict",
     "building xtask and checking are visibly distinct states",

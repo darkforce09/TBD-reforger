@@ -9,7 +9,21 @@ spec = "docs/specs/Mission_Creator_Architecture/t090_eden_ai_world_object_schema
 plan = "docs/plans/t-090_7_plan.md"
 executor = "claude-code"
 parent = "T-090"
-user_story = "Mission Creator will expose AI inside the Eden-style editor. The AI must read the world base layer (1M+ map objects) with the same certainty a human gets from selecting an entity in Workbench."
+main_goal = "Mission Creator will expose AI inside the Eden-style editor. The AI must read the world base layer (1M+ map objects) with the same certainty a human gets from selecting an entity in Workbench."
+context = ["Mission Creator will expose AI inside the Eden-style editor; the AI must read the 1M+ object world base layer with Workbench-selection certainty."]
+requirement = [
+    "ResolvedWorldObject is the exact AI tool shape, exactly as packages/tbd-schema/schema/map-object-resolved.schema.json defines it.",
+    "No parallel field names invented in frontend AI code; the schema is the single contract.",
+]
+current_state = ["The schema slice pinned the ResolvedWorldObject shape; the frontend resolver in world_assets does not yet produce it for the AI surface."]
+approach = [
+    "Wire the resolver in apps/website/frontend/src/world_assets: prefab plus instance join into the required typed fields, exposed as the AI tool shape.",
+    "Audit-trust fields depend on T-090.4/.6 outputs; absent audits render as explicitly unknown, never as trusted placement.",
+]
+verify = [
+    "ResolvedWorldObject instances validate against the committed schema; frontend AI reads compile against the pinned shape only.",
+    "A sample object round-trips prefab plus instance to resolved with every required field populated.",
+]
 acceptance = [
     "ResolvedWorldObject is the exact AI tool shape.",
     "Do not invent parallel field names in frontend AI code.",

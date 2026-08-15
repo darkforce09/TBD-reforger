@@ -10,7 +10,7 @@ executor = "claude-code"
 notes = "No sentence-splitting into semantic fields — that is laundering unsorted prose as classified data; decomposition is Program T. Caps enforced in check, never parse (old revisions must stay readable). Docs/TICKET_*.md regenerate in-commit (sync copies summaries verbatim)."
 depends_on = ["T-917.2"]
 parent = "T-917"
-user_story = "No board card ever renders a 500-word summary again; the walls survive byte-exact in quarantine with a monotone death clause instead of being truncated or laundered."
+main_goal = "No board card ever renders a 500-word summary again; the walls survive byte-exact in quarantine with a monotone death clause instead of being truncated or laundered."
 acceptance = [
     "Migrator prints M summaries >40 TOML-parsed whitespace-split words moved to migration_legacy — instrument named in the output line",
     "M/M reversible: newline-join byte-compare vs git show HEAD^ per moved file",
