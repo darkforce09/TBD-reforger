@@ -41,8 +41,10 @@ citations = [
     "T-917.3 shrink-only ratchet pin",
     "T-920 tier-set batch fills",
 ]
+shipped_at = "9db72b75"
 created_at = "2026-08-14T21:54:38Z"
 completed_at = "2026-08-15T17:55:09Z"
+estimated = ["tokens"]
 owns = [".ai/tickets"]
 
 [scope]
