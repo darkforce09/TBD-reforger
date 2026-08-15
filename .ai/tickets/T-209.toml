@@ -28,6 +28,7 @@ verify = [
     "compile.sh PASS; world-boot.sh PASS; --selftest 10/10.",
     "Workflow blocks extracted and executed under bash -e on provisioned and unprovisioned hosts.",
 ]
+acceptance = ["mod-gates-hosted ran world-boot --selftest; compile.sh and world-boot.sh split env-vs-code exits 0/1/2/3."]
 citations = [
     "commit 7a6df0b1 mod gates CI",
     "T-186 env-vs-code split",

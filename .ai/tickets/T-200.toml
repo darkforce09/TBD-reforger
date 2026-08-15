@@ -20,6 +20,7 @@ verify = [
     "cargo test -p map-engine-core --features doc,mission 193 pass.",
     "cargo test -p website-api green; clippy -D warnings clean.",
 ]
+acceptance = ["Recorded kit substitutions on doc.kit_substitutions with serde skip; compiled wire bytes stayed identical; six flatten tests passed."]
 citations = [
     "commit 0d4a2ae7",
     "kit-aliases.json $comment",

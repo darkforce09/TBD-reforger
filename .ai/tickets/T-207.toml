@@ -16,6 +16,8 @@ requirement = [
 ]
 current_state = ["Operator knowledge existed only in source; FRONTEND_URL 127.0.0.1 vs localhost broke cookie."]
 approach = ["Expand DEV_RUNBOOK and .env.example; docs only, no behaviour change."]
+verify = ["Docs and config only; live Discord OAuth was not run in this tree."]
+acceptance = ["DEV_RUNBOOK documents live Discord OAuth round-trip; true credential state and FRONTEND_URL cookie-host trap recorded."]
 citations = [
     "commit c6252957",
     "commit 2d5900b7",

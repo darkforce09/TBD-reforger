@@ -20,6 +20,7 @@ verify = [
     "cargo test -p map-engine-core --features doc,mission 195/195.",
     "world-boot compiler-shaped-two-faction PASS errors=0 warnings=0 Radio=ok.",
 ]
+acceptance = ["compiler-shaped-two-faction.json matches fresh emitter output; drift guard test blocked stale committed golden bytes."]
 citations = [
     "commit c6f19ce1",
     "commit d297f3a3",

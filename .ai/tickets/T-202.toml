@@ -15,6 +15,10 @@ context = [
     "the key is omitted, compiled bytes are byte-identical, and T-208's drift guard stayed green with NO golden regenerated.",
     "That is the well-behaved outcome, not a gap in the slice.",
 ]
+requirement = [
+    "Derive briefings[] from editor.factions[].briefing keyed by slug_key(faction); include markers on faction object.",
+    "Additive only; omit briefings when derive returns empty so compiled bytes stay identical.",
+]
 current_state = [
     "The mod's briefing screen (TBD_BriefingData.c:423-432) and the entire five-file replicated marker pipeline (TBD_MarkerData.c:132-160) read only this block.",
     "Two shipped mod subsystems are dark because of one missing emitter.",
@@ -42,6 +46,7 @@ verify = [
     "and two factions both holding slots never reaches the padding branch, which isolates this block's contribution to exactly zero.",
     "A test also proves the emitter reproduces bridgehead-at-levie's committed briefings block, so the shape inherits that golden's schema validation and parser proof.",
 ]
+acceptance = ["briefings[] emitted from faction rows when authored; unauthored payloads omitted briefings byte-identically; world-boot Markers=ok on two-faction doc."]
 citations = [
     "flatten.rs:204-218",
     "TBD_BriefingData.c:423-432",

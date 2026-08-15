@@ -20,6 +20,7 @@ verify = [
     "cargo test -p map-engine-core --features mission 147 pass.",
     "world-boot --compiled plan authored=2 accepted=2 rejected=0.",
 ]
+acceptance = ["radioPlan derived from ORBAT nets; command nets allocated before squad nets; world-boot authored=2 accepted=2 rejected=0."]
 citations = [
     "TBD_RadioPlan.c:91",
     "TBD_RadioService.c:214-220",

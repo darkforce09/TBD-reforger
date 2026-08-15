@@ -17,6 +17,11 @@ requirement = [
 ]
 current_state = ["Every website mission shipped with zero play-area restriction beyond spawn circles."]
 approach = ["333 insertions in flatten.rs; regenerated compiler-shaped golden with z_bounds."]
+verify = [
+    "Golden compiler-shaped-two-faction regenerated with z_bounds.",
+    "cargo test -p map-engine-core --features doc,mission,world regen_compiler_shaped_fixture -- --ignored --exact.",
+]
+acceptance = ["Emitted authored boundary and base_protection zones; preserved synthetic spawn circles; terrain-boundary fallback when unauthored."]
 citations = [
     "TBD_ZoneRegistry.c",
     "commit 39e9b53e",

@@ -43,6 +43,7 @@ verify = [
     "Non-vacuity PROVEN empirically: the agent restored the hardcode and watched its new tests fail (left: 600, right: 480), then restored from the commit —",
     "the check I have had to demand five times this run, done unprompted.",
 ]
+acceptance = ["ModFlow reads environment flow keys; all four values logged SRC_AUTHORED; restoring hardcode failed derive_flow tests."]
 citations = [
     "flatten.rs:682-688",
     "T-181.38",

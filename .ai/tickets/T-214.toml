@@ -42,6 +42,7 @@ verify = [
     "AND the other 209 pass under it — so these are the ONLY guard on newline survival in the tree.",
     "Applied out of git, restored by cp, md5-verified.",
 ]
+acceptance = ["compile.rs envelope reads meta.briefing string; per-faction briefing object round-trips via hydrate without store.rs change."]
 citations = [
     "compile.rs:166",
     "mission.schema.json:466",
