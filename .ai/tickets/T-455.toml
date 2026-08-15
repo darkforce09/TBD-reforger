@@ -6,7 +6,33 @@ class = "chore"
 status = "shipped"
 order = 3294
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from T-451 / wave 20 adversarial. set-status/mark-ready/reorder/ship now call require_check_ok before write, but cmd_add (and cmd_remove) still mutate the registry without loading .ai/tickets/schema.json.
+
+Repro: break a required field; ticket check RED; ticket add still inserts a row.
+
+Cure: gate add/remove through require_check_ok (or document intentional escape hatch + --force).
+
+missing=0"""
 priority = 2
+main_goal = "Gate ticket add/remove through require_check_ok before registry mutation."
+context = [
+    "Residual from T-451 / wave 20 adversarial.",
+    "set-status/mark-ready/reorder/ship now call require_check_ok before write.",
+]
+requirement = [
+    "cmd_add and cmd_remove still mutate registry without loading schema.json.",
+    "Cure: gate add/remove through require_check_ok or document escape hatch.",
+]
+current_state = ["Repro: break required field; ticket check RED; ticket add still inserts row."]
+approach = ["Gate add/remove through require_check_ok before write."]
+citations = [
+    "T-451 wave 20 adversarial",
+    "require_check_ok gate pattern",
+    "cmd_add cmd_remove registry",
+]
 shipped_at = "b041a765"
 created_at = "2026-07-27T00:50:04Z"
 completed_at = "2026-07-27T01:10:01Z"
@@ -18,13 +44,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = [
-    "Residual from T-451 / wave 20 adversarial. set-status/mark-ready/reorder/ship now call require_check_ok before write, but cmd_add (and cmd_remove) still mutate the registry without loading .ai/tickets/schema.json.",
-    "",
-    "Repro: break a required field; ticket check RED; ticket add still inserts a row.",
-    "",
-    "Cure: gate add/remove through require_check_ok (or document intentional escape hatch + --force).",
-]
 owns = [
     "xtask/src/cmds.rs",
     "xtask/src/check.rs",

@@ -6,7 +6,37 @@ class = "chore"
 status = "shipped"
 order = 3295
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from T-450 / wave 20 adversarial. Compiled missions are pinned at 8MiB via x-tbd-missionFileMaxBytes + validate_mission_document + profile LoadFromProfileFile, but OnBackendFetchSuccess → ParseMissionJson does not re-check body size. A compromised/stale API path could still hand the mod an oversized JSON.
+
+Repro: read TBD_MissionLoader OnBackendFetchSuccess vs LoadFromProfileFile size gate.
+
+Cure: apply the same MISSION_FILE_MAX_BYTES check on the REST success path before ParseMissionJson.
+
+missing=0"""
 priority = 2
+main_goal = "Apply MISSION_FILE_MAX_BYTES check on REST success path before ParseMissionJson."
+context = [
+    "Residual from T-450 / wave 20 adversarial.",
+    "Compiled missions pinned at 8MiB via x-tbd-missionFileMaxBytes.",
+]
+requirement = [
+    "OnBackendFetchSuccess → ParseMissionJson does not re-check body size.",
+    "Compromised/stale API path could hand mod oversized JSON.",
+    "Cure: same MISSION_FILE_MAX_BYTES check before ParseMissionJson.",
+]
+current_state = [
+    "validate_mission_document + profile LoadFromProfileFile gate size.",
+    "Repro: OnBackendFetchSuccess vs LoadFromProfileFile size gate.",
+]
+approach = ["Apply MISSION_FILE_MAX_BYTES on REST success path before ParseMissionJson."]
+citations = [
+    "T-450 wave 20 adversarial",
+    "MISSION_FILE_MAX_BYTES 8MiB pin",
+    "TBD_MissionLoader OnBackendFetchSuccess",
+]
 shipped_at = "3269faf5"
 created_at = "2026-07-27T01:10:49Z"
 completed_at = "2026-07-27T02:12:48Z"
@@ -18,13 +48,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 7 commit subject(s)"
-migration_legacy = [
-    "Residual from T-450 / wave 20 adversarial. Compiled missions are pinned at 8MiB via x-tbd-missionFileMaxBytes + validate_mission_document + profile LoadFromProfileFile, but OnBackendFetchSuccess → ParseMissionJson does not re-check body size. A compromised/stale API path could still hand the mod an oversized JSON.",
-    "",
-    "Repro: read TBD_MissionLoader OnBackendFetchSuccess vs LoadFromProfileFile size gate.",
-    "",
-    "Cure: apply the same MISSION_FILE_MAX_BYTES check on the REST success path before ParseMissionJson.",
-]
 owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c"]
 
 [scope]

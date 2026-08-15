@@ -6,17 +6,39 @@ class = "chore"
 status = "cancelled"
 order = 3288
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from T-273 / wave 15 adversarial NIT (also T-237 territory). Regenerated schema validates 423 tickets via python jsonschema, but xtask/src/check.rs never loads .ai/tickets/schema.json — wave gate ticket registry PASS does not examine the schema file.
+
+Repro: break schema.json required fields; ./scripts/ticket check still OK; python jsonschema fails.
+
+Cure: load Draft 2020-12 schema in ticket check (or make verify-ticket-schema target + wave gate step).
+
+CANCELLED 2026-07-27: duplicate of T-237 (promoted wave 16).
+"""
 priority = 2
-estimated = ["scope"]
-migration_legacy = [
-    "Residual from T-273 / wave 15 adversarial NIT (also T-237 territory). Regenerated schema validates 423 tickets via python jsonschema, but xtask/src/check.rs never loads .ai/tickets/schema.json — wave gate ticket registry PASS does not examine the schema file.",
-    "",
-    "Repro: break schema.json required fields; ./scripts/ticket check still OK; python jsonschema fails.",
-    "",
-    "Cure: load Draft 2020-12 schema in ticket check (or make verify-ticket-schema target + wave gate step).",
-    "",
-    "CANCELLED 2026-07-27: duplicate of T-237 (promoted wave 16).",
+main_goal = "Wire ticket check to load .ai/tickets/schema.json Draft 2020-12 schema."
+context = [
+    "Residual from T-273 / wave 15 adversarial NIT; also T-237 territory.",
+    "Schema validates 423 tickets via python jsonschema.",
 ]
+requirement = [
+    "xtask/src/check.rs never loads .ai/tickets/schema.json.",
+    "Wave gate ticket registry PASS does not examine schema file.",
+    "Cure: load Draft 2020-12 schema in ticket check or verify-ticket-schema target.",
+]
+current_state = [
+    "Break schema.json required fields; ticket check still OK; jsonschema fails.",
+    "CANCELLED 2026-07-27: duplicate of T-237 promoted wave 16.",
+]
+approach = ["Load schema in ticket check or add verify-ticket-schema wave gate step."]
+citations = [
+    "T-273 wave 15 NIT",
+    "T-237 duplicate territory",
+    "check.rs schema.json gate",
+]
+estimated = ["scope"]
 owns = [
     "xtask/src/check.rs",
     ".ai/tickets/schema.json",

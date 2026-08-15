@@ -6,7 +6,38 @@ class = "feature"
 status = "shipped"
 order = 3276
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from T-254 / wave 9 adversarial MAJOR M1. After T-254, TBD_MissionDocumentStruct models entities[] and SpawnMissionEntities runs on parse, but operator-facing inert strings still blame a build that does not spawn/model entities.
+
+Live lie at apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c:647 (also banners/comments at :609-620, TBD_ObjectivesComponent.c:694-697, TBD_ObjectiveRules.c:115-117, packages/tbd-schema/schema/mission.schema.json:465).
+
+Repro: author a destroy objective whose alias fails for zone/timing/registry reasons; inertReason still says the build does not spawn entities[] — misdiagnoses live failures.
+
+Cure: rewrite diagnostics to distinguish missing spawn vs unresolved alias vs out-of-zone; update schema prose."""
 priority = 2
+main_goal = "Rewrite destroy-target inert diagnostics to distinguish spawn vs alias vs zone; update schema prose."
+context = [
+    "Residual from T-254 / wave 9 adversarial MAJOR M1.",
+    "After T-254, entities[] modeled and SpawnMissionEntities runs on parse.",
+    "Operator-facing inert strings still blame build that does not spawn entities.",
+]
+requirement = [
+    "Rewrite diagnostics distinguishing missing spawn vs unresolved alias vs out-of-zone.",
+    "Update schema prose at mission.schema.json.",
+]
+current_state = [
+    "Live lie at TBD_ObjectiveRegistry.c:647 and related banners/comments.",
+    "inertReason misdiagnoses live failures when alias fails for zone/timing/registry.",
+]
+approach = ["Cure: rewrite diagnostics; distinguish spawn vs alias vs zone failure modes."]
+verify = ["Repro: destroy objective with failing alias; inertReason still claims no entities[] spawn."]
+citations = [
+    "T-254 wave 9 M1",
+    "TBD_ObjectiveRegistry.c:647",
+    "mission.schema.json:465",
+]
 shipped_at = "d0290933"
 created_at = "2026-07-26T22:33:08Z"
 completed_at = "2026-07-27T03:18:59Z"
@@ -17,15 +48,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
-migration_legacy = [
-    "Residual from T-254 / wave 9 adversarial MAJOR M1. After T-254, TBD_MissionDocumentStruct models entities[] and SpawnMissionEntities runs on parse, but operator-facing inert strings still blame a build that does not spawn/model entities.",
-    "",
-    "Live lie at apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c:647 (also banners/comments at :609-620, TBD_ObjectivesComponent.c:694-697, TBD_ObjectiveRules.c:115-117, packages/tbd-schema/schema/mission.schema.json:465).",
-    "",
-    "Repro: author a destroy objective whose alias fails for zone/timing/registry reasons; inertReason still says the build does not spawn entities[] — misdiagnoses live failures.",
-    "",
-    "Cure: rewrite diagnostics to distinguish missing spawn vs unresolved alias vs out-of-zone; update schema prose.",
-]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectivesComponent.c",

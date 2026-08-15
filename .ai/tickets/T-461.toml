@@ -6,7 +6,41 @@ class = "chore"
 status = "shipped"
 order = 3300
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from wave 23 adversarial. Live T-438/T-448 behavior holds, but Class-R pins accept stubs:
+(1) verify-t438-deploy-staging-compose-path.sh accepts apps/website/docker-compose.staging.yml anywhere (including comments) and only bans one exact cd .../api string — live can use apps/website/api/docker-compose.staging.yml while dry-run stays good and still PASS. Script also unwired from Makefile/CI/cold gate.
+(2) personnel dossier Class-R allows if total_deployments==0 { "—" } else { to_string() } because the bind needle remains; API SELECT can be 0::bigint AS total_deployments with no IT asserting real users.total_deployments.
+
+Repro T-438: keep good path in comment/dry-run; set live -f apps/website/api/docker-compose.staging.yml → verify PASS.
+Repro T-448: zero→em-dash conditional → dossier Class-R PASS; fake SELECT 0::bigint → check green.
+
+Cure: strip comments; require good compose path on both dry-run and live lines; reject apps/website/api/docker-compose.staging.yml; wire verify into slice/Makefile if natural. Forbid em-dash near Deployments / require exact single bind; pin/IT that roster total_deployments equals seeded users.total_deployments."""
 priority = 1
+main_goal = "Harden Class-R pins for T-438/T-448 against comment stubs and fake SELECT binds."
+context = [
+    "Residual from wave 23 adversarial.",
+    "Live T-438/T-448 behavior holds; pins accept stubs.",
+]
+requirement = [
+    "Compose verify must require good path on dry-run and live; reject api subpath.",
+    "Dossier pin must forbid em-dash conditional and fake zero SELECT.",
+    "Wire verify into slice/Makefile if natural.",
+]
+current_state = [
+    "T-438 repro: good path in comment; live uses api/docker-compose → PASS.",
+    "T-448 repro: em-dash conditional or 0::bigint SELECT → Class-R green.",
+]
+approach = [
+    "Strip comments; reject apps/website/api/docker-compose.staging.yml.",
+    "Pin/IT roster total_deployments equals seeded users.total_deployments.",
+]
+citations = [
+    "wave 23 adversarial",
+    "T-438 compose verify script",
+    "T-448 personnel dossier pin",
+]
 shipped_at = "3a66678d"
 created_at = "2026-07-27T01:42:34Z"
 completed_at = "2026-07-27T01:45:08Z"
@@ -17,16 +51,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    "Residual from wave 23 adversarial. Live T-438/T-448 behavior holds, but Class-R pins accept stubs:",
-    "(1) verify-t438-deploy-staging-compose-path.sh accepts apps/website/docker-compose.staging.yml anywhere (including comments) and only bans one exact cd .../api string — live can use apps/website/api/docker-compose.staging.yml while dry-run stays good and still PASS. Script also unwired from Makefile/CI/cold gate.",
-    '(2) personnel dossier Class-R allows if total_deployments==0 { "—" } else { to_string() } because the bind needle remains; API SELECT can be 0::bigint AS total_deployments with no IT asserting real users.total_deployments.',
-    "",
-    "Repro T-438: keep good path in comment/dry-run; set live -f apps/website/api/docker-compose.staging.yml → verify PASS.",
-    "Repro T-448: zero→em-dash conditional → dossier Class-R PASS; fake SELECT 0::bigint → check green.",
-    "",
-    "Cure: strip comments; require good compose path on both dry-run and live lines; reject apps/website/api/docker-compose.staging.yml; wire verify into slice/Makefile if natural. Forbid em-dash near Deployments / require exact single bind; pin/IT that roster total_deployments equals seeded users.total_deployments.",
-]
 owns = [
     "scripts/mod/verify-t438-deploy-staging-compose-path.sh",
     "scripts/mod/deploy-staging.sh",

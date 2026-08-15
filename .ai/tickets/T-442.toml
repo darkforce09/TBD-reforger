@@ -6,7 +6,35 @@ class = "chore"
 status = "shipped"
 order = 3281
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from T-260 / wave 11 adversarial MINOR W11-V1. API now returns events.server_id and events.modpack_id (migration 0011 + handlers), but apps/website/frontend/src/event_hub.rs still GETs /modpacks/current for the Hub chip; EventHub DTO lacks those fields.
+
+Repro: create event with modpack_id set; Hub UI still shows global current pack.
+
+Cure: wire event_hub.rs (+ dto) to prefer event.modpack_id when present, fall back to /modpacks/current only when null."""
 priority = 2
+main_goal = "Wire event hub to prefer event.modpack_id over global /modpacks/current."
+context = [
+    "Residual from T-260 / wave 11 adversarial MINOR W11-V1.",
+    "API returns events.server_id and events.modpack_id via migration 0011 + handlers.",
+    "event_hub.rs still GETs /modpacks/current; EventHub DTO lacks those fields.",
+]
+requirement = [
+    "Wire event_hub.rs and dto to prefer event.modpack_id when present.",
+    "Fall back to /modpacks/current only when null.",
+]
+current_state = [
+    "Hub UI shows global current pack when event has modpack_id set.",
+    "Repro: create event with modpack_id set; Hub chip ignores it.",
+]
+approach = ["Cure: wire event_hub.rs (+ dto) for modpack_id preference with fallback."]
+citations = [
+    "T-260 wave 11 adversarial",
+    "migration 0011 handlers",
+    "events.modpack_id API",
+]
 shipped_at = "2e8673d2"
 created_at = "2026-07-26T23:07:33Z"
 completed_at = "2026-07-27T02:06:25Z"
@@ -18,13 +46,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
-migration_legacy = [
-    "Residual from T-260 / wave 11 adversarial MINOR W11-V1. API now returns events.server_id and events.modpack_id (migration 0011 + handlers), but apps/website/frontend/src/event_hub.rs still GETs /modpacks/current for the Hub chip; EventHub DTO lacks those fields.",
-    "",
-    "Repro: create event with modpack_id set; Hub UI still shows global current pack.",
-    "",
-    "Cure: wire event_hub.rs (+ dto) to prefer event.modpack_id when present, fall back to /modpacks/current only when null.",
-]
 owns = [
     "apps/website/frontend/src/event_hub.rs",
     "apps/website/frontend/src/dto.rs",

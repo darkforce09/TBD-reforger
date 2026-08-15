@@ -6,7 +6,32 @@ class = "feature"
 status = "shipped"
 order = 3285
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from T-267 / wave 14. Hero upload button now errors honestly instead of fake success; multipart POST /cms/uploads needs web-sys FormData/File features in apps/website/frontend/Cargo.toml (+ likely client helper). Outside T-267 owns.
+
+Repro: CMS Content → hero upload → error toast; /cms/uploads never called.
+
+Cure: enable FormData/File features, wire multipart api helper, POST /cms/uploads and set thumbnail_url."""
 priority = 2
+main_goal = "Enable web-sys FormData/File and wire CMS hero upload to /cms/uploads."
+context = [
+    "Residual from T-267 / wave 14.",
+    "Hero upload errors honestly; needs FormData/File in Cargo.toml.",
+    "Outside T-267 owns.",
+]
+requirement = [
+    "Enable FormData/File web-sys features.",
+    "Wire multipart api helper; POST /cms/uploads and set thumbnail_url.",
+]
+current_state = ["Repro: CMS hero upload shows error toast; /cms/uploads never called."]
+approach = ["Enable FormData/File, multipart helper, POST /cms/uploads thumbnail_url."]
+citations = [
+    "T-267 wave 14 residual",
+    "POST /cms/uploads multipart",
+    "web-sys FormData File features",
+]
 shipped_at = "95898c06"
 created_at = "2026-07-26T23:52:34Z"
 completed_at = "2026-07-27T03:59:47Z"
@@ -18,13 +43,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 7 commit subject(s)"
-migration_legacy = [
-    "Residual from T-267 / wave 14. Hero upload button now errors honestly instead of fake success; multipart POST /cms/uploads needs web-sys FormData/File features in apps/website/frontend/Cargo.toml (+ likely client helper). Outside T-267 owns.",
-    "",
-    "Repro: CMS Content → hero upload → error toast; /cms/uploads never called.",
-    "",
-    "Cure: enable FormData/File features, wire multipart api helper, POST /cms/uploads and set thumbnail_url.",
-]
 owns = [
     "apps/website/frontend/Cargo.toml",
     "apps/website/frontend/src/client.rs",

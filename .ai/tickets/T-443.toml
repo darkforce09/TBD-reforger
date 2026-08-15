@@ -6,7 +6,35 @@ class = "chore"
 status = "shipped"
 order = 3282
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+In-wave hotfix from wave 12 adversarial MAJOR. T-263 added create_vehicle + POST /api/v1/vehicle-database in handlers/wiki.rs and app.rs, but no IT/unit calls the write path. Cold gate cargo test -p website-api can PASS without ever inserting via this handler (content_read.rs only GETs vehicles + PUTs wiki).
+
+Repro: delete .post(create_vehicle) from app.rs or stub create_vehicle to always 500; wave gate still PASS.
+
+Cure: extend apps/website/api/tests/content_read.rs (or sibling) with admin POST happy path + 400 on missing name/faction/armor_type + GET list contains the new row. Perturbation must RED if route/handler missing."""
 priority = 1
+main_goal = "Add IT coverage for POST /vehicle-database admin write path."
+context = [
+    "In-wave hotfix from wave 12 adversarial MAJOR.",
+    "T-263 added create_vehicle + POST /api/v1/vehicle-database.",
+    "No IT/unit calls write path; cold gate can PASS without insert.",
+]
+requirement = [
+    "Admin POST happy path plus 400 on missing name/faction/armor_type.",
+    "GET list contains new row; perturbation RED if route missing.",
+]
+current_state = [
+    "content_read.rs only GETs vehicles + PUTs wiki.",
+    "Repro: delete .post(create_vehicle) or stub 500; gate still PASS.",
+]
+approach = ["Extend content_read.rs with POST happy path, 400 cases, list assert."]
+citations = [
+    "T-263 wave 12 adversarial",
+    "handlers/wiki.rs create_vehicle",
+    "POST /api/v1/vehicle-database",
+]
 shipped_at = "c217014d"
 created_at = "2026-07-26T23:23:14Z"
 completed_at = "2026-07-26T23:23:38Z"
@@ -18,13 +46,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = [
-    "In-wave hotfix from wave 12 adversarial MAJOR. T-263 added create_vehicle + POST /api/v1/vehicle-database in handlers/wiki.rs and app.rs, but no IT/unit calls the write path. Cold gate cargo test -p website-api can PASS without ever inserting via this handler (content_read.rs only GETs vehicles + PUTs wiki).",
-    "",
-    "Repro: delete .post(create_vehicle) from app.rs or stub create_vehicle to always 500; wave gate still PASS.",
-    "",
-    "Cure: extend apps/website/api/tests/content_read.rs (or sibling) with admin POST happy path + 400 on missing name/faction/armor_type + GET list contains the new row. Perturbation must RED if route/handler missing.",
-]
 owns = ["apps/website/api/tests/content_read.rs"]
 
 [scope]

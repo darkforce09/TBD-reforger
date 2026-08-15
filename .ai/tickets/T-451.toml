@@ -6,7 +6,33 @@ class = "chore"
 status = "shipped"
 order = 3290
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from T-237 / wave 16 adversarial. ticket ship/done now call require_check_ok before status write, but cmd_set_status (and mark_ready etc.) still mutate registry without loading .ai/tickets/schema.json — an operator can force a red registry to a status.
+
+Repro: break a required field in registry.json; ./scripts/ticket check RED; ./scripts/ticket set-status T-001 shipped still mutates.
+
+Cure: gate mutators through require_check_ok (or document intentional escape hatch + refuse in CI).
+"""
 priority = 2
+main_goal = "Gate set-status mutators through require_check_ok before registry writes."
+context = [
+    "Residual from T-237 / wave 16 adversarial.",
+    "ship/done call require_check_ok; cmd_set_status still mutates without schema.",
+]
+requirement = [
+    "cmd_set_status and mark_ready mutate registry without schema.json load.",
+    "Operator can force red registry to a status.",
+    "Cure: gate mutators through require_check_ok or refuse in CI.",
+]
+current_state = ["Break required field; ticket check RED; set-status T-001 shipped still mutates."]
+approach = ["Gate mutators through require_check_ok or document escape hatch refused in CI."]
+citations = [
+    "T-237 wave 16 adversarial",
+    "require_check_ok ship done gate",
+    "cmd_set_status registry mutate",
+]
 shipped_at = "3b07de28"
 created_at = "2026-07-27T00:44:33Z"
 completed_at = "2026-07-27T00:46:28Z"
@@ -18,13 +44,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = [
-    "Residual from T-237 / wave 16 adversarial. ticket ship/done now call require_check_ok before status write, but cmd_set_status (and mark_ready etc.) still mutate registry without loading .ai/tickets/schema.json — an operator can force a red registry to a status.",
-    "",
-    "Repro: break a required field in registry.json; ./scripts/ticket check RED; ./scripts/ticket set-status T-001 shipped still mutates.",
-    "",
-    "Cure: gate mutators through require_check_ok (or document intentional escape hatch + refuse in CI).",
-]
 owns = [
     "xtask/src/cmds.rs",
     "xtask/src/check.rs",

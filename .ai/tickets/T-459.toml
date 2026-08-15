@@ -6,7 +6,34 @@ class = "feature"
 status = "shipped"
 order = 3298
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from T-455 / wave 21 adversarial NIT. cmd_add/cmd_remove (and set-status/mark-ready/reorder/ship) now call require_check_ok before write, but cmd_advance_slice still save_registry + sync with no preflight while check is red.
+
+Repro: red in-memory registry → cmd_advance_slice still writes active_slice.
+
+Cure: call require_check_ok(root, registry, &format!("advance-slice {id}")) before mutate, with a Class-R/unit test mirroring add_refuses_invalid."""
 priority = 2
+main_goal = "Preflight require_check_ok in cmd_advance_slice before registry mutate when check is red."
+context = [
+    "Residual from T-455 / wave 21 adversarial NIT.",
+    "Other cmds now call require_check_ok before write.",
+]
+requirement = [
+    "cmd_advance_slice must call require_check_ok before save_registry + sync.",
+    "Add Class-R or unit test mirroring add_refuses_invalid.",
+]
+current_state = [
+    "cmd_advance_slice writes active_slice with no preflight while check is red.",
+    "Repro: red in-memory registry → advance-slice still mutates.",
+]
+approach = ['Call require_check_ok(root, registry, format!("advance-slice {id}")) before mutate.']
+citations = [
+    "T-455 wave 21 NIT",
+    "cmd_advance_slice preflight gap",
+    "add_refuses_invalid mirror test",
+]
 shipped_at = "d87698b5"
 created_at = "2026-07-27T01:10:49Z"
 completed_at = "2026-07-27T01:26:03Z"
@@ -18,13 +45,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = [
-    "Residual from T-455 / wave 21 adversarial NIT. cmd_add/cmd_remove (and set-status/mark-ready/reorder/ship) now call require_check_ok before write, but cmd_advance_slice still save_registry + sync with no preflight while check is red.",
-    "",
-    "Repro: red in-memory registry → cmd_advance_slice still writes active_slice.",
-    "",
-    'Cure: call require_check_ok(root, registry, &format!("advance-slice {id}")) before mutate, with a Class-R/unit test mirroring add_refuses_invalid.',
-]
 owns = [
     "xtask/src/cmds.rs",
     "xtask/src/check.rs",

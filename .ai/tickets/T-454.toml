@@ -6,7 +6,38 @@ class = "chore"
 status = "shipped"
 order = 3293
 executor = "claude-code"
+notes = '''
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from T-286 / wave 18 adversarial NIT. Mission Library now uses reactive `has_min_role_authed` (None=>false). wiki.rs / modpacks.rs / event_hub.rs still one-shot `store.has_min_role` (browse-mode None=>true). Behind AuthGate today so Mission-Library freeze is not reproduced, but the pattern debt remains.
+
+Repro: rg 'has_min_role\(' apps/website/frontend/src/{wiki,modpacks,event_hub}.rs — still browse-mode helper.
+
+Cure: switch action gates to `has_min_role_authed` + reactive Memo where affordances depend on role.
+
+missing=0
+'''
 priority = 2
+main_goal = "Switch wiki/modpacks/event_hub action gates to has_min_role_authed reactive Memo."
+context = [
+    "Residual from T-286 / wave 18 adversarial NIT.",
+    "Mission Library now uses reactive has_min_role_authed (None=>false).",
+]
+requirement = [
+    "wiki.rs / modpacks.rs / event_hub.rs still one-shot store.has_min_role.",
+    "Browse-mode None=>true; behind AuthGate today.",
+    "Cure: switch action gates to has_min_role_authed + reactive Memo.",
+]
+current_state = [
+    "Mission-Library freeze not reproduced; pattern debt remains.",
+    "Repro: rg has_min_role( in wiki/modpacks/event_hub.rs — browse-mode helper.",
+]
+approach = ["Switch action gates to has_min_role_authed plus reactive Memo."]
+citations = [
+    "T-286 wave 18 adversarial",
+    "has_min_role_authed Mission Library",
+    "wiki modpacks event_hub.rs",
+]
 shipped_at = "b041a765"
 created_at = "2026-07-27T00:58:50Z"
 completed_at = "2026-07-27T01:10:01Z"
@@ -18,13 +49,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    "Residual from T-286 / wave 18 adversarial NIT. Mission Library now uses reactive `has_min_role_authed` (None=>false). wiki.rs / modpacks.rs / event_hub.rs still one-shot `store.has_min_role` (browse-mode None=>true). Behind AuthGate today so Mission-Library freeze is not reproduced, but the pattern debt remains.",
-    "",
-    '''Repro: rg 'has_min_role\(' apps/website/frontend/src/{wiki,modpacks,event_hub}.rs — still browse-mode helper.''',
-    "",
-    "Cure: switch action gates to `has_min_role_authed` + reactive Memo where affordances depend on role.",
-]
 owns = [
     "apps/website/frontend/src/wiki.rs",
     "apps/website/frontend/src/modpacks.rs",

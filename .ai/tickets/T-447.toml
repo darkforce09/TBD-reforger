@@ -6,7 +6,33 @@ class = "docs"
 status = "shipped"
 order = 3286
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from T-267 / wave 14 adversarial NIT. Write paths (POST/PATCH/DELETE/push-discord) are live, but the CMS Content master list still uses mock_docs() and GET /cms/announcements is 405 — session cannot see server-persisted announcements after reload.
+
+Repro: Publish announcement; reload /content → mock seed only.
+
+Cure: add list route if missing + FE LocalResource GET /cms/announcements.
+"""
 priority = 2
+main_goal = "List CMS announcements via GET route and FE LocalResource instead of mock_docs seed."
+context = [
+    "Residual from T-267 / wave 14 adversarial NIT.",
+    "Write paths POST/PATCH/DELETE/push-discord are live.",
+]
+requirement = [
+    "CMS Content master list still uses mock_docs().",
+    "GET /cms/announcements is 405 — no persisted announcements after reload.",
+    "Cure: add list route if missing plus FE LocalResource GET /cms/announcements.",
+]
+current_state = ["Repro: Publish announcement; reload /content — mock seed only."]
+approach = ["Add list route if missing; wire FE LocalResource GET /cms/announcements."]
+citations = [
+    "T-267 wave 14 adversarial NIT",
+    "mock_docs CMS Content list",
+    "GET /cms/announcements 405",
+]
 shipped_at = "a37e9073"
 created_at = "2026-07-27T02:06:43Z"
 completed_at = "2026-07-27T02:33:27Z"
@@ -18,13 +44,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
-migration_legacy = [
-    "Residual from T-267 / wave 14 adversarial NIT. Write paths (POST/PATCH/DELETE/push-discord) are live, but the CMS Content master list still uses mock_docs() and GET /cms/announcements is 405 — session cannot see server-persisted announcements after reload.",
-    "",
-    "Repro: Publish announcement; reload /content → mock seed only.",
-    "",
-    "Cure: add list route if missing + FE LocalResource GET /cms/announcements.",
-]
 owns = [
     "apps/website/frontend/src/content.rs",
     "apps/website/api/src/handlers/cms.rs",

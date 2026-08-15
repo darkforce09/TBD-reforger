@@ -6,7 +6,39 @@ class = "chore"
 status = "shipped"
 order = 3279
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from T-256 / wave 10 adversarial MAJOR. Cold wave gate validates faction-library.sample.json via schema but never runs `make seed` or applies apps/website/api/seeds/faction_library.sql. Deleting the Makefile seed line still greens the cold gate — false authority that T-256's seed wiring was examined.
+
+Repro: remove `seeds/faction_library.sql` from Makefile seed recipe; `bash scripts/platform/wave.sh gate <base>` still PASS; `make schema-validate` still PASS sample.
+
+Manual prove seed works: apply SQL on throwaway DB → 2 starter rows.
+
+Cure: gate tripwire (Makefile verify target + wave.sh step, or IT that asserts seed recipe + applies SQL on cold DB)."""
 priority = 2
+main_goal = "Cold gate must tripwire make seed and faction_library.sql application."
+context = [
+    "Residual from T-256 / wave 10 adversarial MAJOR.",
+    "Cold gate validates sample JSON via schema only.",
+    "Never runs make seed or applies faction_library.sql.",
+]
+requirement = [
+    "Gate tripwire: Makefile verify target plus wave.sh step.",
+    "Or IT asserting seed recipe and SQL apply on cold DB.",
+]
+current_state = [
+    "Deleting Makefile seed line still greens cold gate.",
+    "False authority that T-256 seed wiring was examined.",
+    "Manual prove: apply SQL on throwaway DB yields 2 starter rows.",
+]
+approach = ["Cure: gate tripwire for seed recipe and faction_library.sql."]
+verify = ["Repro: remove seeds/faction_library.sql from Makefile; wave gate still PASS."]
+citations = [
+    "T-256 wave 10 MAJOR",
+    "faction_library.sql seed",
+    "wave.sh cold gate",
+]
 shipped_at = "8a9238d6"
 created_at = "2026-07-26T22:52:39Z"
 completed_at = "2026-07-27T04:19:21Z"
@@ -18,15 +50,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 6 commit subject(s)"
-migration_legacy = [
-    "Residual from T-256 / wave 10 adversarial MAJOR. Cold wave gate validates faction-library.sample.json via schema but never runs `make seed` or applies apps/website/api/seeds/faction_library.sql. Deleting the Makefile seed line still greens the cold gate — false authority that T-256's seed wiring was examined.",
-    "",
-    "Repro: remove `seeds/faction_library.sql` from Makefile seed recipe; `bash scripts/platform/wave.sh gate <base>` still PASS; `make schema-validate` still PASS sample.",
-    "",
-    "Manual prove seed works: apply SQL on throwaway DB → 2 starter rows.",
-    "",
-    "Cure: gate tripwire (Makefile verify target + wave.sh step, or IT that asserts seed recipe + applies SQL on cold DB).",
-]
 owns = [
     "Makefile",
     "scripts/platform/wave.sh",

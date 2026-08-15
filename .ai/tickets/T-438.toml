@@ -6,7 +6,36 @@ class = "feature"
 status = "shipped"
 order = 3277
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from T-251 / wave 9 N1. T-251 placed apps/website/docker-compose.staging.yml, but scripts/mod/deploy-staging.sh:184 still cds to apps/website/api and runs docker compose -f docker-compose.staging.yml there.
+
+Repro: after T-251 land, follow game staging path that uses deploy-staging.sh compose step — file not found / wrong cwd.
+
+Cure: point deploy-staging.sh (and any twin bootstrap) at apps/website/docker-compose.staging.yml; align STAGING-SERVER.md."""
 priority = 2
+main_goal = "Point deploy-staging.sh at apps/website/docker-compose.staging.yml; align staging docs."
+context = [
+    "Residual from T-251 / wave 9 N1.",
+    "T-251 placed docker-compose.staging.yml at apps/website/.",
+    "deploy-staging.sh:184 still cds to apps/website/api.",
+]
+requirement = [
+    "Point deploy-staging.sh at apps/website/docker-compose.staging.yml.",
+    "Align any twin bootstrap and STAGING-SERVER.md.",
+]
+current_state = [
+    "deploy-staging.sh runs docker compose from wrong cwd.",
+    "Repro: game staging path — file not found / wrong cwd.",
+]
+approach = ["Cure: fix compose path; align HOME_SERVER.md staging docs."]
+verify = ["Repro: after T-251, deploy-staging.sh compose step fails file not found."]
+citations = [
+    "T-251 wave 9 N1",
+    "deploy-staging.sh:184",
+    "docker-compose.staging.yml path",
+]
 shipped_at = "3269faf5"
 created_at = "2026-07-27T01:26:29Z"
 completed_at = "2026-07-27T02:12:48Z"
@@ -18,13 +47,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 7 commit subject(s)"
-migration_legacy = [
-    "Residual from T-251 / wave 9 N1. T-251 placed apps/website/docker-compose.staging.yml, but scripts/mod/deploy-staging.sh:184 still cds to apps/website/api and runs docker compose -f docker-compose.staging.yml there.",
-    "",
-    "Repro: after T-251 land, follow game staging path that uses deploy-staging.sh compose step — file not found / wrong cwd.",
-    "",
-    "Cure: point deploy-staging.sh (and any twin bootstrap) at apps/website/docker-compose.staging.yml; align STAGING-SERVER.md.",
-]
 owns = [
     "scripts/mod/deploy-staging.sh",
     "scripts/mod/verify-t438-deploy-staging-compose-path.sh",

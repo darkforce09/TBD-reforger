@@ -6,7 +6,32 @@ class = "feature"
 status = "shipped"
 order = 3287
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from T-268 / wave 14. Dossier Deployments cell stays em-dash because RosterRow/AdminUserRow omit total_deployments. Not a fake count — honest empty — but ticket summary asked for the hardcoded stat.
+
+Repro: Personnel dossier → Deployments always —.
+
+Cure: project count in admin list_users + dto AdminUserRow + personnel.rs bind.
+"""
 priority = 2
+main_goal = "Expose total_deployments on AdminUserRow and bind Personnel dossier Deployments stat."
+context = [
+    "Residual from T-268 / wave 14.",
+    "Dossier Deployments cell stays em-dash; RosterRow/AdminUserRow omit total_deployments.",
+]
+requirement = [
+    "Not fake count — honest empty — but summary asked for hardcoded stat.",
+    "Cure: project count in admin list_users plus dto AdminUserRow plus personnel.rs bind.",
+]
+current_state = ["Repro: Personnel dossier Deployments always em-dash."]
+approach = ["Project deployment count in list_users; extend AdminUserRow dto; bind personnel.rs."]
+citations = [
+    "T-268 wave 14 residual",
+    "RosterRow AdminUserRow totals",
+    "personnel.rs Deployments cell",
+]
 shipped_at = "3a66678d"
 created_at = "2026-07-27T01:26:29Z"
 completed_at = "2026-07-27T01:45:08Z"
@@ -18,13 +43,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = [
-    "Residual from T-268 / wave 14. Dossier Deployments cell stays em-dash because RosterRow/AdminUserRow omit total_deployments. Not a fake count — honest empty — but ticket summary asked for the hardcoded stat.",
-    "",
-    "Repro: Personnel dossier → Deployments always —.",
-    "",
-    "Cure: project count in admin list_users + dto AdminUserRow + personnel.rs bind.",
-]
 owns = [
     "apps/website/api/src/handlers/admin.rs",
     "apps/website/frontend/src/dto.rs",

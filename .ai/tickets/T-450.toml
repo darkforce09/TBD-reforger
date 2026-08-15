@@ -6,7 +6,33 @@ class = "feature"
 status = "shipped"
 order = 3289
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from T-275 / wave 16. Schema now pins MAX_NETS/MAX_LABEL_CHARS/MAX_GRACE_SECONDS/MAX_DURATION_SECONDS, but TBD_MissionLoader.c still enforces MISSION_FILE_MAX_BYTES = 8*1024*1024 outside owns — a document can validate then fail at mod load on size.
+
+Repro: craft a schema-valid mission JSON >8MB; CreateVersion/schema-validate OK; mod loader rejects at TBD_MissionLoader.c (~836).
+
+Cure: add an explicit size ceiling to mission.schema.json (or document + API preflight) matching MISSION_FILE_MAX_BYTES; cite TBD_MissionLoader.c.
+"""
 priority = 2
+main_goal = "Pin MISSION_FILE_MAX_BYTES ceiling in mission.schema.json matching mod loader."
+context = [
+    "Residual from T-275 / wave 16.",
+    "Schema pins MAX_NETS, MAX_LABEL_CHARS, MAX_GRACE_SECONDS, MAX_DURATION_SECONDS.",
+]
+requirement = [
+    "TBD_MissionLoader.c enforces MISSION_FILE_MAX_BYTES 8MB outside schema owns.",
+    "Document can schema-validate then fail at mod load on size.",
+    "Cure: explicit size ceiling in mission.schema.json matching loader; cite loader.",
+]
+current_state = ["Schema-valid mission JSON over 8MB: CreateVersion OK; loader rejects ~836."]
+approach = ["Add size ceiling to mission.schema.json or document plus API preflight."]
+citations = [
+    "T-275 wave 16 residual",
+    "TBD_MissionLoader.c MISSION_FILE_MAX_BYTES",
+    "mission.schema.json size ceiling",
+]
 shipped_at = "0ed61fdd"
 created_at = "2026-07-27T00:11:44Z"
 completed_at = "2026-07-27T00:50:04Z"
@@ -17,13 +43,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
-migration_legacy = [
-    "Residual from T-275 / wave 16. Schema now pins MAX_NETS/MAX_LABEL_CHARS/MAX_GRACE_SECONDS/MAX_DURATION_SECONDS, but TBD_MissionLoader.c still enforces MISSION_FILE_MAX_BYTES = 8*1024*1024 outside owns — a document can validate then fail at mod load on size.",
-    "",
-    "Repro: craft a schema-valid mission JSON >8MB; CreateVersion/schema-validate OK; mod loader rejects at TBD_MissionLoader.c (~836).",
-    "",
-    "Cure: add an explicit size ceiling to mission.schema.json (or document + API preflight) matching MISSION_FILE_MAX_BYTES; cite TBD_MissionLoader.c.",
-]
 owns = [
     "packages/tbd-schema/schema/mission.schema.json",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
