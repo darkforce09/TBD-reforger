@@ -6,7 +6,40 @@ class = "chore"
 status = "shipped"
 order = 3303
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from T-447 / wave 25 cold gate. Admin GET /cms/announcements is registered but null_tolerance every_get_route_is_swept_or_skipped_with_a_reason fails: path neither in route_sweep() nor ROUTE_SWEEP_SKIP.
+
+Repro: after T-447 merge, `wave.sh gate` → test api FAIL — `GET routes … neither swept …: ["/cms/announcements"]`.
+
+Cure: add `/cms/announcements` to route_sweep() (admin list; drafts+published) with Seed auth as other admin GETs; prove RED→GREEN. Do not skip unless sweep is impossible.
+
+missing=0
+"""
 priority = 1
+main_goal = "Add GET /cms/announcements to null_tolerance route_sweep."
+context = [
+    "Residual from T-447 / wave 25 cold gate.",
+    "Admin GET /cms/announcements registered but null_tolerance fails.",
+]
+requirement = [
+    "Path neither in route_sweep() nor ROUTE_SWEEP_SKIP.",
+    "Add /cms/announcements to route_sweep() admin list.",
+    "Seed auth as other admin GETs; prove RED→GREEN.",
+]
+current_state = [
+    "wave.sh gate → test api FAIL on GET /cms/announcements.",
+    "every_get_route_is_swept_or_skipped_with_a_reason fails.",
+]
+approach = [
+    "route_sweep admin list drafts+published with Seed auth.",
+    "Do not skip unless sweep is impossible.",
+]
+citations = [
+    "T-447 wave 25 cold gate",
+    "null_tolerance route_sweep",
+]
 shipped_at = "2c830f50"
 created_at = "2026-07-27T02:15:23Z"
 completed_at = "2026-07-27T02:17:34Z"
@@ -18,13 +51,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    "Residual from T-447 / wave 25 cold gate. Admin GET /cms/announcements is registered but null_tolerance every_get_route_is_swept_or_skipped_with_a_reason fails: path neither in route_sweep() nor ROUTE_SWEEP_SKIP.",
-    "",
-    'Repro: after T-447 merge, `wave.sh gate` → test api FAIL — `GET routes … neither swept …: ["/cms/announcements"]`.',
-    "",
-    "Cure: add `/cms/announcements` to route_sweep() (admin list; drafts+published) with Seed auth as other admin GETs; prove RED→GREEN. Do not skip unless sweep is impossible.",
-]
 owns = [
     "apps/website/api/tests/null_tolerance.rs",
     "apps/website/api/src/handlers/cms.rs",

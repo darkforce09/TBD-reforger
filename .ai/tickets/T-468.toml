@@ -6,7 +6,38 @@ class = "chore"
 status = "shipped"
 order = 3307
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from wave 25 adversarial N3. T-434 aligned CI to make ci-local-schema, but nothing fails if someone reverts the job to xtask validate+citations only.
+
+Repro: change ci.yml schema step back to cargo run … schema validate only → CI green locally for enums hole until map-object-enums RED is noticed elsewhere.
+
+Cure: Class-R or verify script that ci.yml schema job invokes make ci-local-schema / full gate set.
+
+missing=0
+"""
 priority = 3
+main_goal = "Tripwire that ci.yml schema job invokes make ci-local-schema / full gate."
+context = [
+    "Residual from wave 25 adversarial N3.",
+    "T-434 aligned CI to make ci-local-schema.",
+]
+requirement = [
+    "Nothing fails if job reverts to xtask validate+citations only.",
+    "Cure: Class-R or verify script for make ci-local-schema gate set.",
+]
+current_state = [
+    "Repro: revert ci.yml schema step to cargo run schema validate only.",
+    "CI green for enums hole until map-object-enums RED elsewhere.",
+]
+approach = ["Cure: Class-R or verify script pinning ci.yml schema job."]
+verify = ["Repro: ci.yml schema step back to schema validate only — CI green."]
+citations = [
+    "wave 25 adversarial N3",
+    "T-434 ci-local-schema alignment",
+    "map-object-enums gate hole",
+]
 shipped_at = "d4aa3d27"
 created_at = "2026-07-27T02:37:07Z"
 completed_at = "2026-07-27T02:42:09Z"
@@ -18,13 +49,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    "Residual from wave 25 adversarial N3. T-434 aligned CI to make ci-local-schema, but nothing fails if someone reverts the job to xtask validate+citations only.",
-    "",
-    "Repro: change ci.yml schema step back to cargo run … schema validate only → CI green locally for enums hole until map-object-enums RED is noticed elsewhere.",
-    "",
-    "Cure: Class-R or verify script that ci.yml schema job invokes make ci-local-schema / full gate set.",
-]
 owns = [
     ".github/workflows/ci.yml",
     "scripts/platform/wave.sh",

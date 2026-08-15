@@ -6,7 +6,37 @@ class = "feature"
 status = "shipped"
 order = 3313
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from wave 27 adversarial BLOCKER. verify-t437 forbids exact historical lie strings and requires DiagnoseEmptyDestroyTargets / out-of-zone as substrings — comment-only pins and paraphrased lies (`entities[] are never placed…`) still PASS; collapsed DiagnoseEmpty returns leave comment needles green.
+
+Repro: paraphrase lie or comment-only DiagnoseEmptyDestroyTargets → verify PASS.
+
+Cure: structural pins (live fn body must contain distinct return arms / out-of-zone string in executable path not only comments); broaden forbidden lie paraphrases; RED→GREEN on verifier perturbations.
+
+missing=0"""
 priority = 1
+main_goal = "Harden verify-t437 against comment-only and paraphrased destroy inert lies."
+context = [
+    "Residual from wave 27 adversarial BLOCKER.",
+    "verify-t437 forbids exact lie strings; requires DiagnoseEmptyDestroyTargets substrings.",
+]
+requirement = [
+    "Structural pins: live fn body with distinct return arms.",
+    "Broaden forbidden lie paraphrases; executable out-of-zone string required.",
+]
+current_state = [
+    "Repro: paraphrase lie or comment-only DiagnoseEmpty → verify PASS.",
+    "Collapsed DiagnoseEmpty returns leave comment needles green.",
+]
+approach = ["Cure: structural body pins; broaden paraphrase ban; RED→GREEN perturbations."]
+verify = ["Repro: paraphrased entities[] never placed lie → verify PASS."]
+citations = [
+    "wave 27 adversarial BLOCKER",
+    "verify-t437 destroy diagnostics",
+    "TBD_ObjectiveRegistry.c inert",
+]
 shipped_at = "4b0f7930"
 created_at = "2026-07-27T03:09:40Z"
 completed_at = "2026-07-27T03:16:43Z"
@@ -17,13 +47,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    "Residual from wave 27 adversarial BLOCKER. verify-t437 forbids exact historical lie strings and requires DiagnoseEmptyDestroyTargets / out-of-zone as substrings — comment-only pins and paraphrased lies (`entities[] are never placed…`) still PASS; collapsed DiagnoseEmpty returns leave comment needles green.",
-    "",
-    "Repro: paraphrase lie or comment-only DiagnoseEmptyDestroyTargets → verify PASS.",
-    "",
-    "Cure: structural pins (live fn body must contain distinct return arms / out-of-zone string in executable path not only comments); broaden forbidden lie paraphrases; RED→GREEN on verifier perturbations.",
-]
 owns = [
     "scripts/mod/verify-t437-destroy-inert-diagnostics.sh",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRegistry.c",

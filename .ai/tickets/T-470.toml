@@ -6,7 +6,41 @@ class = "feature"
 status = "shipped"
 order = 3309
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from wave 26 adversarial MAJOR. Live Content list keeps Result, seeds only on Ok, surfaces error+Retry. Class-R content_list_error_does_not_seed_as_empty_success is needle-soft:
+(1) list_seeded.set(true) before match / outside Ok → PASS
+(2) also seed in Err → PASS (Retry then permanent empty)
+(3) error UI unreachable (.filter(|_| false)) with needles still in source → PASS
+
+Repro: move list_seeded.set(true) before Ok arm → Class-R still green.
+
+Cure: order-sensitive / structural pins (seed only inside Ok arm AST or window); pin Retry reachable (not filtered out); RED→GREEN on verifier perturbations.
+
+missing=0
+"""
 priority = 2
+main_goal = "Harden T-466 Class-R pins: seed only in Ok, Retry reachable."
+context = [
+    "Residual from wave 26 adversarial MAJOR.",
+    "Content list keeps Result, seeds only on Ok, surfaces error+Retry.",
+]
+requirement = [
+    "Class-R content_list_error_does_not_seed_as_empty_success is needle-soft.",
+    "Cure: order-sensitive pins; pin Retry reachable; RED→GREEN on perturbations.",
+]
+current_state = [
+    "list_seeded.set(true) before Ok arm → Class-R green.",
+    "(1) set before match passes; (2) seed in Err passes; (3) filtered error UI passes.",
+]
+approach = ["Seed only inside Ok arm AST or window; pin Retry not filtered out."]
+verify = ["Repro: move list_seeded.set(true) before Ok arm — still green."]
+citations = [
+    "wave 26 adversarial MAJOR",
+    "T-466 Class-R content list",
+    "content_list_error needle-soft pin",
+]
 shipped_at = "9fd41083"
 created_at = "2026-07-27T02:51:06Z"
 completed_at = "2026-07-27T02:59:24Z"
@@ -18,16 +52,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = [
-    "Residual from wave 26 adversarial MAJOR. Live Content list keeps Result, seeds only on Ok, surfaces error+Retry. Class-R content_list_error_does_not_seed_as_empty_success is needle-soft:",
-    "(1) list_seeded.set(true) before match / outside Ok → PASS",
-    "(2) also seed in Err → PASS (Retry then permanent empty)",
-    "(3) error UI unreachable (.filter(|_| false)) with needles still in source → PASS",
-    "",
-    "Repro: move list_seeded.set(true) before Ok arm → Class-R still green.",
-    "",
-    "Cure: order-sensitive / structural pins (seed only inside Ok arm AST or window); pin Retry reachable (not filtered out); RED→GREEN on verifier perturbations.",
-]
 owns = ["apps/website/frontend/src/content.rs"]
 
 [scope]

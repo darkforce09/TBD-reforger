@@ -6,7 +6,37 @@ class = "feature"
 status = "shipped"
 order = 3319
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 30 adversarial verifier (T-429): assert_oauth_state_cleared in apps/website/api/tests/oauth_redirect.rs uses contains("Path=/") / contains("Max-Age=0") soft checks, not equality to OAUTH_STATE_CLEAR (handlers/oauth.rs). A clear cookie with Path=/api or Max-Age=00 still passes.
+
+Repro: python3 -c 'c="oauth_state=; Path=/api; Max-Age=0; HttpOnly"; print(c.startswith("oauth_state=") and "Max-Age=0" in c and "Path=/" in c and "HttpOnly" in c)' → True while Path diverges from OAUTH_STATE_CLEAR.
+
+Cure: assert Set-Cookie equals OAUTH_STATE_CLEAR (or parse and require Path=/ exact).
+
+missing=0
+"""
 priority = 2
+main_goal = "Assert oauth_state clear Set-Cookie equals OAUTH_STATE_CLEAR, not soft contains checks."
+context = [
+    "Wave 30 adversarial verifier (T-429).",
+    "assert_oauth_state_cleared uses contains Path=/ and Max-Age=0 soft checks.",
+]
+requirement = [
+    "Assert Set-Cookie equals OAUTH_STATE_CLEAR (or parse and require Path=/ exact).",
+    "Reject clear cookie with Path=/api or Max-Age=00 that still passes contains.",
+]
+current_state = [
+    "oauth_redirect.rs contains checks pass while Path diverges from OAUTH_STATE_CLEAR.",
+    "Repro: Path=/api cookie passes contains Path=/ and Max-Age=0 soft checks.",
+]
+approach = ["Cure: assert Set-Cookie equals OAUTH_STATE_CLEAR or parse Path=/ exact."]
+citations = [
+    "T-429 wave 30 verifier",
+    "oauth_redirect.rs assert_oauth_state_cleared",
+    "handlers/oauth.rs OAUTH_STATE_CLEAR",
+]
 shipped_at = "4a79816f"
 created_at = "2026-07-27T04:43:56Z"
 completed_at = "2026-07-27T04:50:41Z"
@@ -18,13 +48,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = [
-    'Wave 30 adversarial verifier (T-429): assert_oauth_state_cleared in apps/website/api/tests/oauth_redirect.rs uses contains("Path=/") / contains("Max-Age=0") soft checks, not equality to OAUTH_STATE_CLEAR (handlers/oauth.rs). A clear cookie with Path=/api or Max-Age=00 still passes.',
-    "",
-    """Repro: python3 -c 'c="oauth_state=; Path=/api; Max-Age=0; HttpOnly"; print(c.startswith("oauth_state=") and "Max-Age=0" in c and "Path=/" in c and "HttpOnly" in c)' → True while Path diverges from OAUTH_STATE_CLEAR.""",
-    "",
-    "Cure: assert Set-Cookie equals OAUTH_STATE_CLEAR (or parse and require Path=/ exact).",
-]
 owns = [
     "apps/website/api/tests/oauth_redirect.rs",
     "apps/website/api/src/handlers/oauth.rs",

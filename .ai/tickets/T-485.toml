@@ -1,12 +1,39 @@
 id = "T-485"
 kind = "work"
-title = "Wire verify-t468 into Makefile / ci-local / CI so hollow t438/t456 recipes fail outside cold gate"
+title = "Add verify-t468 to Makefile ci-local and CI"
 summary = "Wire verify-t468 into Makefile / ci-local / CI so hollow t438/t456 recipes fail outside cold gate"
 class = "chore"
 status = "shipped"
 order = 3324
 executor = "claude-code"
+notes = '''
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 32 verifier NIT (T-476). Tripwire lives in verify-t468-ci-schema-parity.sh and runs in wave.sh cold gate, but hollow `@true` verify-t438 still greens `make verify-t438` and GitHub mod-gates-hosted (ci.yml runs make verify-t438 only). Not in Makefile target, ci-local, or CI as a step that catches hollow recipes outside cold gate.
+
+Repro: recipe `verify-t438:\n\t@true` → make verify-t438 rc=0; bash verify-t468 → FAIL.
+
+Cure: add Makefile verify-t468 (or fold pin into ci-local + ci.yml) so hollow recipes fail without waiting for wave.sh gate.
+
+missing=0'''
 priority = 2
+main_goal = "Wire verify-t468 into Makefile, ci-local, and CI."
+context = [
+    "Wave 32 verifier NIT from T-476.",
+    "Tripwire in verify-t468-ci-schema-parity.sh; runs in wave.sh cold gate.",
+]
+requirement = [
+    "Hollow @true verify-t438 greens make verify-t438 and mod-gates-hosted.",
+    "Not in Makefile target, ci-local, or CI outside cold gate.",
+]
+current_state = ["Repro: verify-t438:@true → make verify-t438 rc=0; bash verify-t468 → FAIL."]
+approach = ["Add Makefile verify-t468 (or fold pin into ci-local + ci.yml)."]
+verify = ["Repro: hollow verify-t438 recipe → make rc=0; bash verify-t468 → FAIL."]
+citations = [
+    "Wave 32 verifier NIT T-476",
+    "hollow @true verify-t438",
+    "verify-t468-ci-schema-parity.sh tripwire",
+]
 shipped_at = "8c54dcd1"
 created_at = "2026-07-27T05:09:55Z"
 completed_at = "2026-07-27T05:13:42Z"
@@ -18,13 +45,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = [
-    "Wave 32 verifier NIT (T-476). Tripwire lives in verify-t468-ci-schema-parity.sh and runs in wave.sh cold gate, but hollow `@true` verify-t438 still greens `make verify-t438` and GitHub mod-gates-hosted (ci.yml runs make verify-t438 only). Not in Makefile target, ci-local, or CI as a step that catches hollow recipes outside cold gate.",
-    "",
-    'Repro: recipe `verify-t438:\n\t@true` → make verify-t438 rc=0; bash verify-t468 → FAIL.',
-    "",
-    "Cure: add Makefile verify-t468 (or fold pin into ci-local + ci.yml) so hollow recipes fail without waiting for wave.sh gate.",
-]
 owns = [
     "Makefile",
     "scripts/mod/verify-t468-ci-schema-parity.sh",

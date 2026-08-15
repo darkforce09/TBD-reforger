@@ -6,7 +6,34 @@ class = "feature"
 status = "shipped"
 order = 3322
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 31 residual from T-480. IT assert_oauth_state_cleared is byte-equality to OAUTH_STATE_CLEAR, but unit helper clears_oauth_state in apps/website/api/src/handlers/oauth.rs (~449) still soft-contains oauth_state=/Max-Age=0/HttpOnly with no Path=/ pin. Path=/api clear cookie still greens the unit helper.
+
+Repro: soft check accepts 'oauth_state=; Path=/api; Max-Age=0; HttpOnly'.
+
+Cure: assert equality to OAUTH_STATE_CLEAR (or require Path=/ exact) in the unit helper.
+
+missing=0"""
 priority = 2
+main_goal = "Harden clears_oauth_state unit helper to exact OAUTH_STATE_CLEAR equality."
+context = [
+    "Wave 31 residual from T-480.",
+    "IT assert_oauth_state_cleared is byte-equality to OAUTH_STATE_CLEAR.",
+]
+requirement = [
+    "Unit helper clears_oauth_state (~449) soft-contains oauth_state=/Max-Age=0/HttpOnly.",
+    "No Path=/ pin; Path=/api clear cookie still greens helper.",
+]
+current_state = ["Repro: soft check accepts oauth_state=; Path=/api; Max-Age=0; HttpOnly."]
+approach = ["Assert equality to OAUTH_STATE_CLEAR (or require Path=/ exact)."]
+verify = ["Repro: soft check accepts Path=/api clear cookie."]
+citations = [
+    "Wave 31 residual T-480",
+    "OAUTH_STATE_CLEAR byte equality",
+    "soft Path=/api clear cookie",
+]
 shipped_at = "9ddac8ac"
 created_at = "2026-07-27T04:59:13Z"
 completed_at = "2026-07-27T05:03:53Z"
@@ -18,13 +45,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = [
-    "Wave 31 residual from T-480. IT assert_oauth_state_cleared is byte-equality to OAUTH_STATE_CLEAR, but unit helper clears_oauth_state in apps/website/api/src/handlers/oauth.rs (~449) still soft-contains oauth_state=/Max-Age=0/HttpOnly with no Path=/ pin. Path=/api clear cookie still greens the unit helper.",
-    "",
-    "Repro: soft check accepts 'oauth_state=; Path=/api; Max-Age=0; HttpOnly'.",
-    "",
-    "Cure: assert equality to OAUTH_STATE_CLEAR (or require Path=/ exact) in the unit helper.",
-]
 owns = ["apps/website/api/src/handlers/oauth.rs"]
 
 [scope]

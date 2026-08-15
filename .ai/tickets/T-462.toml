@@ -6,8 +6,48 @@ class = "chore"
 status = "shipped"
 order = 3301
 executor = "claude-code"
-notes = "needs-operator: frozen unmappable Scope. "
+notes = """
+needs-operator: frozen unmappable Scope.
+
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from wave 24 adversarial MAJOR. Live T-442/T-444/T-439 features hold, but gates do not examine them:
+(1) T-444: no Class-R pins Makefile seed ↔ seeds/wiki_pages.sql — deleting the seed line or emptying the SQL still greens cold gate (same class as deferred T-440).
+(2) T-439: verify-t439-objects-registry-aliases.sh RED on guid mismatch but is not wired into wave cold gate / Makefile / CI, so cargo Class-R alone stays green.
+(3) T-442 MINOR: hub_chip Class-R does not pin mp.modpack.id == id find predicate.
+
+Repro: remove wiki_pages.sql from Makefile seed → cold gate still PASS; corrupt a prop guid in mod registry → cargo green while verify-t439 would FAIL if run.
+
+Cure: Class-R/source guard that seed: recipe references seeds/wiki_pages.sql (optional seed↔content_golden wiki body hash); wire bash scripts/mod/verify-t439-….sh into wave.sh gate or an existing make verify target that cold gate runs; tighten event_hub Class-R to require the list+find id predicate.
+
+missing=0
+"""
 priority = 1
+main_goal = "Wire wave cold gates for wiki seed, Objects aliases, and hub_chip Class-R."
+context = [
+    "Residual from wave 24 adversarial MAJOR.",
+    "Live T-442/T-444/T-439 features hold; gates do not examine them.",
+]
+requirement = [
+    "Pin Makefile seed to seeds/wiki_pages.sql via Class-R guard.",
+    "Wire verify-t439-objects-registry-aliases.sh into wave cold gate.",
+    "Tighten event_hub Class-R list+find id predicate.",
+]
+current_state = [
+    "Remove wiki_pages.sql seed → cold gate still PASS.",
+    "Corrupt prop guid → cargo green; verify-t439 FAIL if run.",
+]
+approach = [
+    "Class-R guard seed recipe references wiki_pages.sql.",
+    "Wire verify-t439 into wave.sh gate or make verify target.",
+    "Tighten hub_chip Class-R id find predicate.",
+]
+citations = [
+    "wave 24 adversarial MAJOR",
+    "T-444 wiki seed",
+    "T-439 Objects aliases",
+    "T-442 hub_chip Class-R",
+]
 shipped_at = "2e8673d2"
 created_at = "2026-07-27T02:02:38Z"
 completed_at = "2026-07-27T02:06:25Z"
@@ -18,16 +58,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = [
-    "Residual from wave 24 adversarial MAJOR. Live T-442/T-444/T-439 features hold, but gates do not examine them:",
-    "(1) T-444: no Class-R pins Makefile seed ↔ seeds/wiki_pages.sql — deleting the seed line or emptying the SQL still greens cold gate (same class as deferred T-440).",
-    "(2) T-439: verify-t439-objects-registry-aliases.sh RED on guid mismatch but is not wired into wave cold gate / Makefile / CI, so cargo Class-R alone stays green.",
-    "(3) T-442 MINOR: hub_chip Class-R does not pin mp.modpack.id == id find predicate.",
-    "",
-    "Repro: remove wiki_pages.sql from Makefile seed → cold gate still PASS; corrupt a prop guid in mod registry → cargo green while verify-t439 would FAIL if run.",
-    "",
-    "Cure: Class-R/source guard that seed: recipe references seeds/wiki_pages.sql (optional seed↔content_golden wiki body hash); wire bash scripts/mod/verify-t439-….sh into wave.sh gate or an existing make verify target that cold gate runs; tighten event_hub Class-R to require the list+find id predicate.",
-]
 owns = [
     "Makefile",
     "scripts/platform/wave.sh",

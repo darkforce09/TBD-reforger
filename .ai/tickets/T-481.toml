@@ -6,7 +6,38 @@ class = "feature"
 status = "shipped"
 order = 3320
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 30 adversarial verifier (T-430): production validate guards discord_client_id.is_empty() only (config.rs). A whitespace-only id (" ") with APP_ENV=production validates Ok and is not treated as oauth_unconfigured. Same pattern as prior secret/redirect whitespace nits.
+
+Repro: set discord_client_id=" " + env=production → validate() Ok.
+
+Cure: trim (or reject if trim empty) before the Missing check; Class-R pin.
+
+missing=0
+"""
 priority = 2
+main_goal = "Reject whitespace-only DISCORD_CLIENT_ID in Config::validate before Missing check."
+context = [
+    "Wave 30 adversarial verifier (T-430).",
+    "Production validate guards discord_client_id.is_empty() only.",
+    "Same pattern as prior secret/redirect whitespace nits.",
+]
+requirement = [
+    "Whitespace-only discord_client_id with APP_ENV=production must not validate Ok.",
+    "Trim or reject if trim empty before the Missing check; Class-R pin.",
+]
+current_state = [
+    "Whitespace-only id validates Ok and is not treated as oauth_unconfigured.",
+    'Repro: discord_client_id=" " + env=production → validate() Ok.',
+]
+approach = ["Cure: trim or reject if trim empty before Missing check; Class-R pin."]
+citations = [
+    "T-430 wave 30 verifier",
+    "config.rs Config::validate",
+    "discord_client_id is_empty guard",
+]
 shipped_at = "fc13ab2c"
 created_at = "2026-07-27T04:43:56Z"
 completed_at = "2026-07-27T05:09:55Z"
@@ -18,13 +49,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
-migration_legacy = [
-    'Wave 30 adversarial verifier (T-430): production validate guards discord_client_id.is_empty() only (config.rs). A whitespace-only id (" ") with APP_ENV=production validates Ok and is not treated as oauth_unconfigured. Same pattern as prior secret/redirect whitespace nits.',
-    "",
-    'Repro: set discord_client_id=" " + env=production → validate() Ok.',
-    "",
-    "Cure: trim (or reject if trim empty) before the Missing check; Class-R pin.",
-]
 owns = ["apps/website/api/src/config.rs"]
 
 [scope]

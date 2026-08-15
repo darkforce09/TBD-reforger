@@ -6,7 +6,38 @@ class = "chore"
 status = "shipped"
 order = 3308
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from wave 25 adversarial N4 / observed cold-gate flake. admin_field.rs:37 indexes LOCATION without Option — one gate run panicked 'no entry found for key location'; re-run PASS.
+
+Repro: intermittent when APP_ENV/dev-login does not 302 (or header absent).
+
+Cure: assert status+LOCATION with actionable message; fail soft instead of IndexMap panic.
+
+missing=0
+"""
 priority = 3
+main_goal = "Assert status+LOCATION in admin_field; fail soft not IndexMap panic."
+context = [
+    "Residual from wave 25 adversarial N4 / cold-gate flake.",
+    "admin_field.rs:37 indexes LOCATION without Option.",
+]
+requirement = [
+    "Assert status+LOCATION with actionable message.",
+    "Fail soft instead of IndexMap panic.",
+]
+current_state = [
+    "One gate run panicked no entry found for key location; re-run PASS.",
+    "Intermittent when dev-login does not 302 or header absent.",
+]
+approach = ["Cure: assert status+LOCATION with actionable message."]
+verify = ["Repro: APP_ENV/dev-login without 302 or absent LOCATION header."]
+citations = [
+    "wave 25 adversarial N4",
+    "admin_field.rs:37 LOCATION",
+    "cold-gate dev-login flake",
+]
 shipped_at = "1c726aa8"
 created_at = "2026-07-27T02:37:07Z"
 completed_at = "2026-07-27T02:42:09Z"
@@ -18,13 +49,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    "Residual from wave 25 adversarial N4 / observed cold-gate flake. admin_field.rs:37 indexes LOCATION without Option — one gate run panicked 'no entry found for key location'; re-run PASS.",
-    "",
-    "Repro: intermittent when APP_ENV/dev-login does not 302 (or header absent).",
-    "",
-    "Cure: assert status+LOCATION with actionable message; fail soft instead of IndexMap panic.",
-]
 owns = ["apps/website/api/tests/admin_field.rs"]
 
 [scope]

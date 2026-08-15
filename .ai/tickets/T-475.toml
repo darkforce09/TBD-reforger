@@ -6,7 +6,39 @@ class = "feature"
 status = "shipped"
 order = 3314
 executor = "claude-code"
+notes = '''
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from wave 28 adversarial MAJOR×2 on T-446.
+(1) content.rs Class-R uses raw CARGO.contains("\"FormData\"") — commenting the feature line (`# "FormData",`) still PASS because the string remains in the file. Same comment-needle class as T-460/T-461.
+(2) Live handle_hero calls absolute_cms_upload_url(&raw) so Publish gets http(s) for T-405 validated_thumbnail, but Class-R never mentions absolute_cms_upload_url — replacing with `let url = raw;` still greens all content::tests (11/11).
+
+Repro: `# "FormData",` in Cargo.toml → hero_multipart_upload_is_wired_not_stubbed PASS; `let url = raw;` → content::tests PASS.
+
+Cure: strip // and # comments (and TOML string-safe comment lines) before Cargo FormData/File/FileList pins; require live prod call absolute_cms_upload_url(…) on the upload Ok path (not comment-only). RED→GREEN on both verifier perturbations.
+
+missing=0'''
 priority = 1
+main_goal = "Harden Class-R FormData and absolute_cms_upload_url pins in content.rs."
+context = [
+    "Residual from wave 28 adversarial MAJOR×2 on T-446.",
+    "Cargo FormData pin uses raw contains; comment-out still PASS.",
+]
+requirement = [
+    "Strip // and # comments before Cargo FormData/File/FileList pins.",
+    "Require live absolute_cms_upload_url on upload Ok path.",
+]
+current_state = [
+    "Repro: # FormData in Cargo.toml → hero_multipart PASS.",
+    "let url = raw instead of absolute_cms_upload_url → content::tests PASS.",
+]
+approach = ["Cure: comment-strip before pins; pin live absolute_cms_upload_url call."]
+verify = ["Repro: commented FormData line or unpinned url → Class-R green."]
+citations = [
+    "wave 28 adversarial MAJOR T-446",
+    "content.rs FormData Class-R",
+    "absolute_cms_upload_url pin",
+]
 shipped_at = "95898c06"
 created_at = "2026-07-27T03:52:19Z"
 completed_at = "2026-07-27T03:59:47Z"
@@ -18,15 +50,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    "Residual from wave 28 adversarial MAJOR×2 on T-446.",
-    '(1) content.rs Class-R uses raw CARGO.contains("\"FormData\"") — commenting the feature line (`# "FormData",`) still PASS because the string remains in the file. Same comment-needle class as T-460/T-461.',
-    "(2) Live handle_hero calls absolute_cms_upload_url(&raw) so Publish gets http(s) for T-405 validated_thumbnail, but Class-R never mentions absolute_cms_upload_url — replacing with `let url = raw;` still greens all content::tests (11/11).",
-    "",
-    'Repro: `# "FormData",` in Cargo.toml → hero_multipart_upload_is_wired_not_stubbed PASS; `let url = raw;` → content::tests PASS.',
-    "",
-    "Cure: strip // and # comments (and TOML string-safe comment lines) before Cargo FormData/File/FileList pins; require live prod call absolute_cms_upload_url(…) on the upload Ok path (not comment-only). RED→GREEN on both verifier perturbations.",
-]
 owns = ["apps/website/frontend/src/content.rs"]
 
 [scope]

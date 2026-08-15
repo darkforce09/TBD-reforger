@@ -6,7 +6,39 @@ class = "feature"
 status = "shipped"
 order = 3305
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from wave 25 adversarial N1. Content LocalResource uses .ok(); failed GET → empty 'No announcements yet', list_seeded=true, no retry.
+
+Repro: force GET /cms/announcements 500/network fail → UI looks like zero announcements forever.
+
+Cure: surface error + retry; do not set list_seeded on Err.
+
+missing=0
+"""
 priority = 3
+main_goal = "Surface CMS Content list errors with retry; avoid empty false-green."
+context = [
+    "Residual from wave 25 adversarial N1.",
+    "Content LocalResource uses .ok(); failed GET → empty state.",
+]
+requirement = [
+    "Surface error + retry on GET failure.",
+    "Do not set list_seeded on Err.",
+]
+current_state = [
+    "GET /cms/announcements 500/network fail → zero announcements UI.",
+    "No announcements yet with list_seeded=true; no retry.",
+]
+approach = [
+    "Replace .ok() fail-closed with error surface and retry.",
+    "Withhold list_seeded on Err.",
+]
+citations = [
+    "wave 25 adversarial N1",
+    "Content LocalResource list",
+]
 shipped_at = "cc79f890"
 created_at = "2026-07-27T02:35:46Z"
 completed_at = "2026-07-27T02:51:06Z"
@@ -18,13 +50,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
-migration_legacy = [
-    "Residual from wave 25 adversarial N1. Content LocalResource uses .ok(); failed GET → empty 'No announcements yet', list_seeded=true, no retry.",
-    "",
-    "Repro: force GET /cms/announcements 500/network fail → UI looks like zero announcements forever.",
-    "",
-    "Cure: surface error + retry; do not set list_seeded on Err.",
-]
 owns = ["apps/website/frontend/src/content.rs"]
 
 [scope]

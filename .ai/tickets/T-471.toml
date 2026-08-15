@@ -6,7 +6,38 @@ class = "chore"
 status = "shipped"
 order = 3310
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from wave 26 adversarial MAJOR. verify-t468-ci-schema-parity.sh requires ci.yml run: make ci-local-schema and that Makefile has a ci-local-schema: target name — not that the recipe still invokes schema-validate + verify-citations.
+
+Repro: replace ci-local-schema recipe with `echo hollow-only` → tripwire PASS; CI green while map-object-enums unrun.
+
+Cure: pin Makefile recipe body contains schema-validate (and citations) or expand GATE set check; RED→GREEN on hollow recipe.
+
+missing=0
+"""
 priority = 2
+main_goal = "Pin verify-t468 Makefile recipe invokes schema-validate and citations."
+context = [
+    "Residual from wave 26 adversarial MAJOR.",
+    "verify-t468 checks ci.yml and target name only.",
+]
+requirement = [
+    "Recipe must invoke schema-validate and verify-citations, not target name alone.",
+    "Cure: pin recipe body or expand GATE set check.",
+]
+current_state = [
+    "Repro: ci-local-schema recipe echo hollow-only → tripwire PASS.",
+    "CI green while map-object-enums unrun.",
+]
+approach = ["Pin Makefile recipe contains schema-validate and citations."]
+verify = ["Repro: hollow ci-local-schema recipe — tripwire PASS."]
+citations = [
+    "wave 26 adversarial MAJOR",
+    "verify-t468-ci-schema-parity.sh",
+    "T-468 ci-local-schema tripwire",
+]
 shipped_at = "782f2c2d"
 created_at = "2026-07-27T02:51:38Z"
 completed_at = "2026-07-27T02:59:24Z"
@@ -18,13 +49,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    "Residual from wave 26 adversarial MAJOR. verify-t468-ci-schema-parity.sh requires ci.yml run: make ci-local-schema and that Makefile has a ci-local-schema: target name — not that the recipe still invokes schema-validate + verify-citations.",
-    "",
-    "Repro: replace ci-local-schema recipe with `echo hollow-only` → tripwire PASS; CI green while map-object-enums unrun.",
-    "",
-    "Cure: pin Makefile recipe body contains schema-validate (and citations) or expand GATE set check; RED→GREEN on hollow recipe.",
-]
 owns = [
     "scripts/mod/verify-t468-ci-schema-parity.sh",
     "Makefile",

@@ -6,7 +6,34 @@ class = "chore"
 status = "shipped"
 order = 3325
 executor = "claude-code"
+notes = '''
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 33 verifier NIT (T-485). verify-t468 pins t438/t456 recipe bodies but not its own. Hollow `verify-t468:\n\t@true` greens make verify-t468 / ci-local / ci.yml step; wave.sh cold gate still runs the bash script directly so cold gate stays honest.
+
+Repro: replace verify-t468 recipe with @true → make verify-t468 rc=0.
+
+Cure: extend verify-t468 (or sibling) to assert Makefile verify-t468 recipe invokes the real script.
+
+missing=0'''
 priority = 2
+main_goal = "Tripwire hollow Makefile verify-t468 recipe body self-pin."
+context = [
+    "Wave 33 verifier NIT from T-485.",
+    "verify-t468 pins t438/t456 recipe bodies but not its own.",
+]
+requirement = [
+    "Hollow verify-t468:@true greens make verify-t468 / ci-local / ci.yml.",
+    "wave.sh cold gate runs bash script directly so stays honest.",
+]
+current_state = ["Repro: replace verify-t468 recipe with @true → make verify-t468 rc=0."]
+approach = ["Extend verify-t468 to assert Makefile verify-t468 invokes real script."]
+verify = ["Repro: hollow verify-t468 recipe → make verify-t468 rc=0."]
+citations = [
+    "Wave 33 verifier NIT T-485",
+    "hollow verify-t468 @true recipe",
+    "wave.sh cold gate honest",
+]
 shipped_at = "b850ebc0"
 created_at = "2026-07-27T05:18:24Z"
 completed_at = "2026-07-27T05:33:52Z"
@@ -18,13 +45,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
-migration_legacy = [
-    'Wave 33 verifier NIT (T-485). verify-t468 pins t438/t456 recipe bodies but not its own. Hollow `verify-t468:\n\t@true` greens make verify-t468 / ci-local / ci.yml step; wave.sh cold gate still runs the bash script directly so cold gate stays honest.',
-    "",
-    "Repro: replace verify-t468 recipe with @true → make verify-t468 rc=0.",
-    "",
-    "Cure: extend verify-t468 (or sibling) to assert Makefile verify-t468 recipe invokes the real script.",
-]
 owns = [
     "Makefile",
     "scripts/mod/verify-t468-ci-schema-parity.sh",

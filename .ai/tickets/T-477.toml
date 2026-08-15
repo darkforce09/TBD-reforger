@@ -6,7 +6,49 @@ class = "chore"
 status = "shipped"
 order = 3316
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from wave 29 adversarial BLOCKER. Class-R in me.rs requires join pin `m.event_id = em.event_id AND m.mission_id = em.mission_id` and bans `WHERE em.event_id IN (` — but still PASS when:
+(1) join pin present + UNION ALL event_id-only second arm
+(2) dead `(FALSE AND <join_pin> OR TRUE)` with event-only JOIN
+(3) `em.event_id = ANY (...)` + join pin only in SQL `--` comment inside the const
+
+Live SQL today is correct; the gate is hollow. No behavioral IT for link-confirm BACKFILL_ATTENDANCE (telemetry IT is T-230 ingest only).
+
+Repro: rewrite BACKFILL_ATTENDANCE to event-wide via ANY/UNION while keeping join substring → unit test PASS.
+
+Cure: harden Class-R — strip SQL `--`/`/* */` comments before pins; require a single FROM event_missions … INNER JOIN matches with live ON containing both equalities (no UNION/ANY event-id-only arms); ban `em.event_id = ANY` / nested event_id-only IN/ANY. Prefer also a minimal behavioral IT if owns can widen to tests/; else structural-only with RED→GREEN on verifier shapes.
+
+missing=0
+"""
 priority = 1
+main_goal = "Harden Class-R BACKFILL_ATTENDANCE pins against UNION/ANY/comment stub bypasses."
+context = [
+    "Residual from wave 29 adversarial BLOCKER.",
+    "Class-R in me.rs requires join pin but still PASS on bypass shapes.",
+    "Live SQL today is correct; the gate is hollow.",
+]
+requirement = [
+    "Strip SQL comments before pins; require single FROM event_missions INNER JOIN with both equalities.",
+    "Ban UNION/ANY event-id-only arms; ban em.event_id = ANY / nested event_id-only IN/ANY.",
+    "Prefer minimal behavioral IT if owns widen; else structural RED→GREEN on verifier shapes.",
+]
+current_state = [
+    "(1) join pin + UNION ALL event_id-only second arm still PASS.",
+    "(2) dead (FALSE AND join_pin OR TRUE) with event-only JOIN still PASS.",
+    "(3) em.event_id = ANY with join pin only in SQL comment still PASS.",
+    "Repro: rewrite BACKFILL_ATTENDANCE event-wide via ANY/UNION → unit test PASS.",
+]
+approach = [
+    "Harden Class-R: strip SQL -- and /* */ comments before pins.",
+    "Require single FROM event_missions INNER JOIN ON with both equalities live.",
+]
+citations = [
+    "wave 29 adversarial BLOCKER",
+    "T-431 BACKFILL_ATTENDANCE Class-R",
+    "me.rs event_missions join pin",
+]
 shipped_at = "0f2f0618"
 created_at = "2026-07-27T04:19:21Z"
 completed_at = "2026-07-27T04:27:29Z"
@@ -18,18 +60,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    "Residual from wave 29 adversarial BLOCKER. Class-R in me.rs requires join pin `m.event_id = em.event_id AND m.mission_id = em.mission_id` and bans `WHERE em.event_id IN (` — but still PASS when:",
-    "(1) join pin present + UNION ALL event_id-only second arm",
-    "(2) dead `(FALSE AND <join_pin> OR TRUE)` with event-only JOIN",
-    "(3) `em.event_id = ANY (...)` + join pin only in SQL `--` comment inside the const",
-    "",
-    "Live SQL today is correct; the gate is hollow. No behavioral IT for link-confirm BACKFILL_ATTENDANCE (telemetry IT is T-230 ingest only).",
-    "",
-    "Repro: rewrite BACKFILL_ATTENDANCE to event-wide via ANY/UNION while keeping join substring → unit test PASS.",
-    "",
-    "Cure: harden Class-R — strip SQL `--`/`/* */` comments before pins; require a single FROM event_missions … INNER JOIN matches with live ON containing both equalities (no UNION/ANY event-id-only arms); ban `em.event_id = ANY` / nested event_id-only IN/ANY. Prefer also a minimal behavioral IT if owns can widen to tests/; else structural-only with RED→GREEN on verifier shapes.",
-]
 owns = ["apps/website/api/src/handlers/me.rs"]
 
 [scope]
