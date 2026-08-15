@@ -38,11 +38,11 @@ tickets = ["T-837", "T-907", "T-919"]
 
 [[waves]]
 n = 140
-tickets = ["T-838", "T-849"]
+tickets = ["T-838", "T-849", "T-920.1"]
 
 [[waves]]
 n = 141
-tickets = ["T-839"]
+tickets = ["T-839", "T-920.2", "T-921"]
 
 [[waves]]
 n = 142
@@ -780,6 +780,9 @@ T-914 = ["xtask/src/wave_lock.rs", "xtask/src/wave/base.rs", "xtask/src/check.rs
 "T-918.3" = ["apps/ticketboard"]
 "T-918.4" = ["apps/ticketboard"]
 T-919 = [".ai/tickets"]
+"T-920.1" = ["crates/tbd-tickets", "xtask/src", ".ai/tickets"]
+"T-920.2" = ["apps/ticketboard"]
+T-921 = [".ai/tickets"]
 
 [depends_on]
 T-068 = ["T-067"]
@@ -912,3 +915,5 @@ T-913 = ["T-912"]
 "T-918.3" = ["T-917.3"]
 "T-918.4" = ["T-917.2"]
 T-919 = ["T-917.3"]
+"T-920.2" = ["T-920.1"]
+T-921 = ["T-920.1"]

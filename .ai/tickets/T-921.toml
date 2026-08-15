@@ -1,0 +1,23 @@
+id = "T-921"
+kind = "work"
+title = "History reconstruction: body fields + titles for shipped tickets"
+summary = "Batched reviewed reconstruction over shipped tickets without quarantined walls: fill the body fields and repair deficient titles from each ticket's spec, commits and diffs, citing sources. Each batch shrinks both debt pins in the same commit."
+class = "chore"
+status = "queued"
+order = 6010
+spec = "docs/platform/t920_body_obligations.md"
+executor = "claude-code"
+notes = "Sibling stream to T-919 (whose wall batches also fill tiers + titles on the tickets they drain). Runs after T-920.1 lands the pins. When both streams hit zero the ready-tier rule turns corpus-wide on shipped."
+depends_on = ["T-920.1"]
+user_story = "Shipped history reads like the present: every ticket names itself properly and carries its reconstructed body, cited to the sources it was rebuilt from."
+acceptance = [
+    "Per batch: both debt pins shrink by the measured batch amount in the same commit",
+    "Reconstructed fields cite their sources in citations; no invented claims",
+    "cargo xtask ticket check --strict prints check OK after every batch; wave.lock byte-identical",
+]
+created_at = "2026-08-15T03:17:45Z"
+owns = [".ai/tickets"]
+
+[scope]
+domain = "repo"
+layer = "tickets"
