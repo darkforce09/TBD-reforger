@@ -1,7 +1,7 @@
 id = "T-180.10"
 kind = "work"
 title = "T-180.10 — Program coherency checker"
-summary = "T-180.10 — Program coherency checker"
+summary = "Coherency audit, verify-t180 gate, doc and registry remediations."
 class = "feature"
 status = "shipped"
 order = 1760
@@ -9,6 +9,21 @@ spec = "docs/specs/Mission_Creator_Architecture/t180_10_program_coherency.md"
 executor = "cursor-docs"
 notes = "Coherency report + make verify-t180 + doc/registry remediations. Zero P0 → no 10.1. Verify: .ai/artifacts/t180_10_verify_log.md"
 parent = "T-180"
+context = [
+    "T-180.1–.9 shipped but hub and pins still described pre-ship gaps.",
+    "T-071, T-074, T-147 risked duplicate implementation.",
+]
+requirement = [
+    "Living coherency report L1–L10 plus A–I matrix.",
+    "scripts/verify-t180-coherency.sh; hub and registry post-ship SoT.",
+]
+current_state = ["ROADMAP and agent_execution still queued absorbed ORBAT work."]
+approach = ["t180_10_coherency_report; cargo xtask verify t180; doc remediations."]
+verify = ["Verify: .ai/artifacts/t180_10_verify_log.md."]
+citations = [
+    "Source: commit e267109e — coherency checker.",
+    "Source: SHIPPED_HISTORY.md §T-180.",
+]
 shipped_at = "7c0078dd"
 created_at = "2026-07-19T21:02:37Z"
 completed_at = "2026-07-19T21:04:23Z"

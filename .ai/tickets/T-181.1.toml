@@ -1,13 +1,23 @@
 id = "T-181.1"
 kind = "work"
-title = "T-181.1"
-summary = "T-181.1"
+title = "Headless Enfusion compile gate without Workbench"
+summary = "Native ArmaReforgerServer compiles tbd-framework scripts in about 1.3 seconds."
 class = "feature"
 status = "shipped"
 order = 1810
+spec = "docs/mod/t181_event_mod_program.md"
 executor = "claude-code"
 notes = "scripts/mod/compile.sh + make mod-compile/-selftest. Native ArmaReforgerServer; no Workbench/Proton/GPU. Measured 780ms compile, 1.3s gate (was 90-120s + a human click)."
 parent = "T-181"
+context = ["Workbench restart took 90–120s and needed a human click."]
+requirement = [
+    "scripts/mod/compile.sh exits 0 clean, 1 with file:line on broken .c.",
+    "--selftest proves the gate still catches a broken file.",
+]
+citations = [
+    "Source: commit d8fc6abc — Enfusion factory.",
+    "Source: t181_event_mod_program.md — T-181.1 row.",
+]
 created_at = "2026-07-25T00:00:00Z"
 completed_at = "2026-07-31T00:00:00Z"
 estimated = [

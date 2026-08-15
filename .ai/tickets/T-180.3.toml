@@ -1,7 +1,7 @@
 id = "T-180.3"
 kind = "work"
 title = "T-180.3 — Map side tint"
-summary = "T-180.3 — Map side tint"
+summary = "Per-side RGBA tints on unselected map slot rings."
 class = "feature"
 status = "shipped"
 order = 1760
@@ -9,6 +9,21 @@ spec = "docs/specs/Mission_Creator_Architecture/t180_3_map_side_tint.md"
 executor = "claude-code"
 notes = "Tag T-180.3. SIDE_* RGBA + pack_rings side_tints; SlotSoa.side_keys; engine bind; C1–C4. Verify: .ai/artifacts/t180_3_verify_log.md. Manual M-C1 operator-pending."
 parent = "T-180"
+context = [
+    "All unselected rings used SLOT_PRIMARY_RGBA regardless of faction side.",
+    "Depends T-180.1 FactionRow.key for side resolution.",
+]
+requirement = [
+    "SIDE_* RGBA constants; pack_rings applies faction key tint.",
+    "Selected rings stay yellow; C1–C4 Class-R gates.",
+]
+current_state = ["OPFOR and INDFOR slots looked identical to BLUFOR on map."]
+approach = ["slots_gpu side_rgba; SlotSoa.side_keys; engine bind side_tints."]
+verify = ["Verify: .ai/artifacts/t180_3_verify_log.md."]
+citations = [
+    "Source: commit 19acc593 — side tint.",
+    "Source: t180_3_map_side_tint.md — C gates.",
+]
 shipped_at = "19acc593"
 created_at = "2026-07-19T20:05:53Z"
 completed_at = "2026-07-19T20:05:53Z"

@@ -1,7 +1,7 @@
 id = "T-180.1"
 kind = "work"
 title = "T-180.1 — Foundation schema + place→new squad"
-summary = "T-180.1 — Foundation schema + place→new squad"
+summary = "Place mints new squad per side with leaderSlotId and callsign/rank."
 class = "feature"
 status = "shipped"
 order = 1760
@@ -9,6 +9,21 @@ spec = "docs/specs/Mission_Creator_Architecture/t180_1_foundation_schema.md"
 executor = "claude-code"
 notes = "Tag T-180.1. Core place_orbat + set_leader + callsign/rank; FE active_side; A1–A5 + A3 rg; ci-local-leptos. Verify: .ai/artifacts/t180_1_verify_log.md. Note: cargo test needs --features doc."
 parent = "T-180"
+context = [
+    "place_at used ensure_default_squad dumping into squad-1.",
+    "No leaderSlotId, slot callsign/rank, or FE active_side.",
+]
+requirement = [
+    "Core place_orbat helper mints faction-{SIDE} squad per place.",
+    "Wire active_side; remove ensure_default_squad from place_at; A1–A5 gates.",
+]
+current_state = ["FactionRow dropped faction key; sole place slot never became leader."]
+approach = ["map-engine-core place_orbat.rs; store leaderSlotId; editor_ops active_side."]
+verify = ["Verify: .ai/artifacts/t180_1_verify_log.md."]
+citations = [
+    "Source: commit aeb51209 — place new squad.",
+    "Source: t180_1_foundation_schema.md — A gates.",
+]
 shipped_at = "aeb51209"
 created_at = "2026-07-19T19:52:03Z"
 completed_at = "2026-07-19T19:52:03Z"

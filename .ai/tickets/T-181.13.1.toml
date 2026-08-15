@@ -1,13 +1,19 @@
 id = "T-181.13.1"
 kind = "work"
-title = "T-181.13.1"
-summary = "T-181.13.1"
+title = "Results POST plus mission validator"
+summary = "TBD_ResultsReporter POST; validator loadout content checks; warning ratchet."
 class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
 notes = "Results POST + the validator MAJOR. Validator warnings across the four goldens 28 -> 3 (bridgehead 18->0, empty-warning-fields 7->2, slot-loadout-coverage 2->0, montfort 1->1 unrelated); baseline tightened. CORRECTED A LANDMINE THE COMMAND CENTER WROTE: an instrumented boot dumping per-slot null/count state showed `ref array<>` is NOT over-allocated when the key is absent — cargo came back non-null on exactly the slots authoring a cargo key and null on those that did not, BOTH POLARITIES IN ONE RUN — while `ref <class>` is allocated regardless. The doc had said the distinction did not matter and not to spend a run on it; it matters, and the agent got it free from a run it had to do anyway. That fact is load-bearing: gear presence is genuinely unobservable (absent gear and gear:{} both parse to ten empty strings) but cargo presence is PROOF the block was authored, which is what finally makes the 'neither gear nor cargo' branch reachable. Results: no new endpoint, no Rust change; omits unmeasured stats rather than sending zeros, because absent says 'not measured' where 0 claims 'measured, and none'. outcome=success only when faction_eliminated was declared AND the arithmetic resolved. LIVE END-TO-END POST PROVED against a capture endpoint mirroring telemetry.rs: two real requests from 'Arma Reforger/1.7.0.54 (Headless; LINUX)', all 9 and 15 contract checks passed, hostile role label escaped correctly. Measured: the engine sends the body Transfer-Encoding: CHUNKED, so a receiver reading Content-Length sees an empty body. Shared accessor for T-181.35 is TBD_PlayerIdentity.GetArmaId — it deliberately returns EMPTY rather than a player:<id> lease, and such players are dropped, because users.arma_id is UNIQUE and empty ids would collapse rows and bind one account to everybody. ATTENDANCE INERT until T-181.35; LogIdentityCensus prints the no-op every round."
 parent = "T-181"
+context = ["Round end reports measured stats; boot gate exercises real missions."]
+requirement = [
+    "Omit unmeasured stats; outcome success only on resolved faction_eliminated.",
+    "Validator tests loadout content; cargo key proves authored block.",
+]
+citations = ["Source: commit 817c16ca — results POST."]
 shipped_at = "15f9bb71"
 created_at = "2026-07-25T14:50:23Z"
 completed_at = "2026-07-25T14:53:01Z"

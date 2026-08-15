@@ -1,7 +1,7 @@
 id = "T-180.7"
 kind = "work"
 title = "T-180.7 — Stitch ORBAT Manager UI (visual + live graph)"
-summary = "T-180.7 — Stitch ORBAT Manager UI (visual + live graph)"
+summary = "Stitch near-fullscreen ORBAT Manager on live mission graph."
 class = "feature"
 status = "shipped"
 order = 1760
@@ -9,6 +9,21 @@ spec = "docs/specs/Mission_Creator_Architecture/t180_7_orbat_manager_ui.md"
 executor = "claude-code"
 notes = "Tag T-180.7. orbat_manager.rs Stitch shell; format_slot_line; live mutators; OPEN ARSENAL→open_attributes; template/vehicle shell. Verify: .ai/artifacts/t180_7_verify_log.md. Manual M-G1..M-G4 operator-pending."
 parent = "T-180"
+context = [
+    "OrbatManagerDialog was max-w-xl browse shell, not Stitch layout authority.",
+    "T-180.6 sync required a manager UI on live mutators, not mock rows.",
+]
+requirement = [
+    "G1–G8: side tabs, stats, search, slot lines, inspector, Add Squad/Role.",
+    "format_slot_line in core; OPEN ARSENAL opens attributes; template shell for .8.",
+]
+current_state = ["SHIPPED: orbat_manager.rs module; editor_ops orbat_* mutators; smoke o3 pins."]
+approach = ["New orbat_manager.rs; thin re-export from eden_chrome; operator L8 omitted."]
+verify = ["Verify: .ai/artifacts/t180_7_verify_log.md."]
+citations = [
+    "Source: commit e9c2406d — Stitch ORBAT Manager.",
+    "Source: t180_7 spec — G1–G8 gates.",
+]
 shipped_at = "e9c2406d"
 created_at = "2026-07-19T20:35:29Z"
 completed_at = "2026-07-19T20:35:29Z"

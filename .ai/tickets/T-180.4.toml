@@ -1,7 +1,7 @@
 id = "T-180.4"
 kind = "work"
 title = "T-180.4 — Map squad leader lines (absorbs T-147)"
-summary = "T-180.4 — Map squad leader lines (absorbs T-147)"
+summary = "Map hairline leader→member squad links, side-colored, pure core geometry."
 class = "feature"
 status = "shipped"
 order = 1760
@@ -9,6 +9,21 @@ spec = "docs/specs/Mission_Creator_Architecture/t180_4_squad_leader_lines.md"
 executor = "claude-code"
 notes = "Tag T-180.4. squad_links.rs D1–D6; LaneRole::SquadLinks=9; wire dirty upload. Verify: .ai/artifacts/t180_4_verify_log.md. Manual M-D1 operator-pending."
 parent = "T-180"
+context = [
+    "T-180 ORBAT program slice after graph mutators and map side tint.",
+    "Map lacked squad hierarchy lines; T-147 scope absorbed here.",
+]
+requirement = [
+    "D1–D6 Class-R squad_links tests; LaneRole::SquadLinks engine upload on dirty doc.",
+    "Leader→member segments only; rebuild on place, move, set_leader, refile, delete.",
+]
+current_state = ["SHIPPED: squad_links.rs build_squad_link_segments; mission_history uploads lane 9."]
+approach = ["Pure geometry in map-engine-core; Leptos feeds squads+xy on doc dirty."]
+verify = ["Verify: .ai/artifacts/t180_4_verify_log.md."]
+citations = [
+    "Source: commit 63e7ef00 — leader lines.",
+    "Source: t180_4 spec — D1–D6 gates.",
+]
 shipped_at = "63e7ef00"
 created_at = "2026-07-19T20:11:42Z"
 completed_at = "2026-07-19T20:11:42Z"

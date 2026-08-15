@@ -1,13 +1,23 @@
 id = "T-181.0"
 kind = "work"
-title = "T-181.0"
-summary = "T-181.0"
+title = "Host-aware execution shim for agent containers"
+summary = "Route linker, host glibc, Steam, and game binaries through hostrun.sh from the debian container."
 class = "feature"
 status = "shipped"
 order = 1810
+spec = "docs/mod/t181_event_mod_program.md"
 executor = "claude-code"
 notes = "scripts/lib/hostrun.sh — agent shell is a debian:12 container; builds/game binaries route to the host. CORRECTED an earlier misdiagnosis that xtask was glibc-broken; it never was."
 parent = "T-181"
+context = ["Agent shell runs debian:12 without cc; host binaries need Fedora glibc."]
+requirement = [
+    "Add scripts/lib/hostrun.sh sourcing host commands from the container.",
+    "cargo xtask ticket check stays green inside the container.",
+]
+citations = [
+    "Source: commit d8fc6abc — Enfusion factory.",
+    "Source: t181_event_mod_program.md — T-181.0 row.",
+]
 created_at = "2026-07-25T00:00:00Z"
 completed_at = "2026-07-31T00:00:00Z"
 estimated = [

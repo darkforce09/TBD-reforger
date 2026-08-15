@@ -1,7 +1,7 @@
 id = "T-180.2"
 kind = "work"
 title = "T-180.2 — Graph mutators + empty-squad GC"
-summary = "T-180.2 — Graph mutators + empty-squad GC"
+summary = "Shared graph mutators, empty-squad GC, and add_vehicle for ORBAT UI."
 class = "feature"
 status = "shipped"
 order = 1760
@@ -9,6 +9,21 @@ spec = "docs/specs/Mission_Creator_Architecture/t180_2_graph_mutators.md"
 executor = "claude-code"
 notes = "Tag T-180.2. set_leader hardened; move_slot_to_squad+GC; rename/reorder/remove_squad; add_vehicle/attach/detach; vehicleIds; B1–B8. Verify: .ai/artifacts/t180_2_verify_log.md."
 parent = "T-180"
+context = [
+    "ORBAT Manager and refile need one mutator layer in map-engine-core.",
+    "store.rs lacked set_leader, move_slot_to_squad, vehicleIds attach.",
+]
+requirement = [
+    "set_leader, move_slot_to_squad, rename/reorder/remove_squad mutators.",
+    "Empty-squad GC; add_vehicle plus attach_vehicle; B1–B8 Class-R gates.",
+]
+current_state = ["Parallel membership rules would fork if T-180.4 lines invented own logic."]
+approach = ["Extend store.rs mutators; cargo test --features doc for B suite."]
+verify = ["Verify: .ai/artifacts/t180_2_verify_log.md."]
+citations = [
+    "Source: commit 83557768 — graph mutators.",
+    "Source: t180_2_graph_mutators.md — B gates.",
+]
 shipped_at = "83557768"
 created_at = "2026-07-19T19:54:01Z"
 completed_at = "2026-07-19T19:59:20Z"

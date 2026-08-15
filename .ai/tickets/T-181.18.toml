@@ -1,13 +1,26 @@
 id = "T-181.18"
 kind = "work"
-title = "T-181.18"
-summary = "T-181.18"
+title = "AO play-area poly-zones and out-of-bounds"
+summary = "Parse polygon play-area zones; server tick warns, grace, then optional kill penalty."
 class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
 notes = "AO / play-area poly-zones + out-of-bounds. Polygon parsing added (ref array<ref array<float>>) — polygon zones previously parsed to nothing. TBD_ZoneGeometry (circle + crossing-number polygon), TBD_Zone, TBD_ZoneRegistry, TBD_PlayAreaComponent (1 Hz server tick, warn -> grace -> penalty). Terminal penalty implemented in full but OFF by default (rules.penalty defaults to 'warn'); a kill routes through SCR_CharacterDamageManagerComponent.Kill so it lands in the existing OnPlayerKilled -> MarkLifeSpent path — no second death path, TBD_SpawnManager untouched. OPERATOR-VISIBLE: golden-missions/bridgehead-at-levie.json zone z4 already authors penalty=kill graceSeconds=30, so the REFERENCE MISSION will permanently remove a player 30 s after they leave the AO. Geometry proven with 25 runtime cases via a shadow addon incl. concave notch, both winding orders, rays through vertices — with a deliberately-wrong expectation confirming the harness can print FAIL. FOUND A MAJOR LANDMINE: JsonLoadContext allocates nested ref struct fields even when the JSON key is ABSENT, so a null check is not a presence test. Also fixed a latent dead guard in GetSpawnZoneForFaction that would have returned map-corner (0,0) for a polygon spawn zone. NOT runtime-verified: no player ever joins under world-boot, so no enforcement path has run against a real player."
 parent = "T-181"
+context = [
+    "Wave 5 queued AO poly-zones; circle zones existed but polygons parsed to nothing.",
+    "Play-area enforcement needs server-side warn, grace, and optional penalty.",
+]
+requirement = [
+    "Parse polygon zones; ship geometry, registry, and PlayAreaComponent tick.",
+    "Route kill penalty through existing OnPlayerKilled; default penalty to warn.",
+]
+verify = ["Zone geometry harness: twenty-five runtime cases."]
+citations = [
+    "Source: commit e1ef28d0 — play-area zones.",
+    "Source: t181_event_mod_program.md — AO poly-zones.",
+]
 shipped_at = "2b3b7c4f"
 created_at = "2026-07-25T13:09:34Z"
 completed_at = "2026-07-25T13:17:36Z"

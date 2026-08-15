@@ -1,7 +1,7 @@
 id = "T-180.5"
 kind = "work"
 title = "T-180.5 — Right dock Eden side chips (absorbs T-074)"
-summary = "T-180.5 — Right dock Eden side chips (absorbs T-074)"
+summary = "Eden DockRight side chips set active_side; Objects stub mode."
 class = "feature"
 status = "shipped"
 order = 1760
@@ -9,6 +9,21 @@ spec = "docs/specs/Mission_Creator_Architecture/t180_5_right_dock_side_chips.md"
 executor = "claude-code"
 notes = "Tag T-180.5. apply_eden_chip→active_side; objects_mode; E1–E5; catalog unfiltered E-L2b. Verify: .ai/artifacts/t180_5_verify_log.md. Manual M-E1/M-E2 operator-pending."
 parent = "T-180"
+context = [
+    "T-180.1 exposed active_side but DockRight had no BLUFOR/OPFOR/INDFOR chips.",
+    "Post T-180.4 map lines needed side-selected place from the right dock.",
+]
+requirement = [
+    "E1–E5: chip row above search; Objects coming-soon no-op; no F-keys or CIV.",
+    "E4 hard gate: OPFOR chip drives place_character_under_side faction key.",
+]
+current_state = ["SHIPPED: apply_eden_chip in eden_chrome; catalog stays unfiltered per E-L2b."]
+approach = ["Four chips in DockRight; objects_mode blocks place_at without panic."]
+verify = ["Verify: .ai/artifacts/t180_5_verify_log.md."]
+citations = [
+    "Source: commit 1324799c — Eden side chips.",
+    "Source: t180_5 spec — E1–E5 gates.",
+]
 shipped_at = "1324799c"
 created_at = "2026-07-19T20:18:40Z"
 completed_at = "2026-07-19T20:18:40Z"

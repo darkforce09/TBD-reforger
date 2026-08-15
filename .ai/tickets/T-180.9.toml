@@ -1,7 +1,7 @@
 id = "T-180.9"
 kind = "work"
 title = "T-180.9 — Arsenal wire + ORBAT compile truth"
-summary = "T-180.9 — Arsenal wire + ORBAT compile truth"
+summary = "Wire derive_orbat loadout summaries and ORBAT Manager Open Arsenal to the live Arsenal tab."
 class = "feature"
 status = "shipped"
 order = 1760
@@ -9,6 +9,24 @@ spec = "docs/specs/Mission_Creator_Architecture/t180_9_arsenal_compile.md"
 executor = "claude-code"
 notes = "Tag T-180.9. Sl.loadout + loadout_summary_from_value; open_arsenal→attrs_tab=3; I1–I9. Verify: .ai/artifacts/t180_9_verify_log.md. Manual M-I1..M-I3 operator-pending. Program complete."
 parent = "T-180"
+context = [
+    "derive_orbat hardcoded empty loadout; Sl lacked loadout field.",
+    "Event attach and export orbat[] needed human summary strings.",
+]
+requirement = [
+    "Extend Sl deserialization and loadout_summary_from_value for derive.",
+    "open_arsenal selects Attributes tab 3 for the selected slot.",
+    "ORBAT Manager OPEN ARSENAL routes through open_arsenal.",
+]
+verify = [
+    "map-engine-core derive loadout tests I1–I6 pass.",
+    "Verify log at .ai/artifacts/t180_9_verify_log.md.",
+]
+citations = [
+    "Source: commit cba837b3 — Open Arsenal.",
+    "Source: SHIPPED_HISTORY.md §T-180.",
+    "Source: t180_9_arsenal_compile.md — I-L locks.",
+]
 shipped_at = "cba837b3"
 created_at = "2026-07-19T20:52:54Z"
 completed_at = "2026-07-19T20:53:42Z"

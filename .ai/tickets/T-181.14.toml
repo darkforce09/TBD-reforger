@@ -1,13 +1,26 @@
 id = "T-181.14"
 kind = "work"
-title = "T-181.14"
-summary = "T-181.14"
+title = "Mission validation gate plus thin logging"
+summary = "TBD_MissionValidator rejects bad mission JSON at LOADING; TBD_Log and #tbd validate replay findings."
 class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
 notes = "Mission validation @ 915b78a8. TBD_MissionValidator (27 checks, all run in one pass, ERROR vs WARNING) + TBD_Log. Rejected mission holds the server in LOADING via the existing IsValid gate — no FrameworkManager edit. '#tbd validate' replays findings in game; every #tbd reply leads with a failure banner. Decision table verified offline against both golden missions + 14 mutations (proves the table, NOT the Enfusion runtime). Needs a hook: TBD_Log.Stage(prev,next) has no caller."
 parent = "T-181"
+context = [
+    "Wave 4 needed fail-fast mission JSON checks before the event stage machine runs.",
+    "Compile gate passes scripts but cannot reject authored mission documents.",
+]
+requirement = [
+    "Ship TBD_MissionValidator with ERROR versus WARNING tiers in one pass.",
+    "Hold LOADING on IsValid when validation fails; add TBD_Log and #tbd validate.",
+]
+verify = ["Offline table: two goldens plus fourteen mutations."]
+citations = [
+    "Source: commit 915b78a8 — validation.",
+    "Source: t181_event_mod_program.md — validator.",
+]
 shipped_at = "ab278509"
 created_at = "2026-07-25T07:04:58Z"
 completed_at = "2026-07-25T07:24:32Z"

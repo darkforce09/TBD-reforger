@@ -1,7 +1,7 @@
 id = "T-180.8"
 kind = "work"
 title = "T-180.8 — Faction Library templates + squad vehicles"
-summary = "T-180.8 — Faction Library templates + squad vehicles"
+summary = "Faction library Apply/Save/Save-as plus squad Add Vehicle on map."
 class = "feature"
 status = "shipped"
 order = 1760
@@ -9,6 +9,21 @@ spec = "docs/specs/Mission_Creator_Architecture/t180_8_templates_vehicles.md"
 executor = "claude-code"
 notes = "Tag T-180.8. apply_faction_library REPLACE; MissionVehicles lane; Apply/Save/Save as; Add Vehicle. Placement (6400,6400). Verify: .ai/artifacts/t180_8_verify_log.md. Manual M-H1..M-H4 operator-pending."
 parent = "T-180"
+context = [
+    "Stitch toolbar needed template replace; mission vehiclesById was weak before .8.",
+    "T-180.7 left template dropdown as shell pending library materialize.",
+]
+requirement = [
+    "H1–H9: apply_faction_library REPLACE in core; MissionVehicles GPU lane.",
+    "Apply confirm dialog; Save/Save as; Add Vehicle picker; no CIV in dropdown.",
+]
+current_state = ["SHIPPED: apply_faction.rs; pack_vehicle_instances; default place at 6400,6400."]
+approach = ["Core materialize then refresh orbat_nodes and squad links; yellow vehicle disc."]
+verify = ["Verify: .ai/artifacts/t180_8_verify_log.md."]
+citations = [
+    "Source: commit cce240a5 — templates and vehicles.",
+    "Source: t180_8 spec — H1–H9 gates.",
+]
 shipped_at = "cce240a5"
 created_at = "2026-07-19T20:45:41Z"
 completed_at = "2026-07-19T20:45:41Z"

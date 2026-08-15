@@ -1,7 +1,7 @@
 id = "T-180.6"
 kind = "work"
 title = "T-180.6 — Place / refile ↔ ORBAT live sync"
-summary = "T-180.6 — Place / refile ↔ ORBAT live sync"
+summary = "Place and refile keep ORBAT rows and squad link segments in sync."
 class = "feature"
 status = "shipped"
 order = 1760
@@ -9,6 +9,21 @@ spec = "docs/specs/Mission_Creator_Architecture/t180_6_place_orbat_sync.md"
 executor = "claude-code"
 notes = "Tag T-180.6. refile_slot→move_slot_to_squad; OrbatManager pointer-refile; SL badge; F1–F5. Verify: .ai/artifacts/t180_6_verify_log.md. Manual M-F1 operator-pending."
 parent = "T-180"
+context = [
+    "Place minted squads; refile risked FE-only slotIds membership rewrites.",
+    "T-180.4 squad lines needed the same dirty path after refile and place.",
+]
+requirement = [
+    "F1–F5: shared move_slot_to_squad; GC empty squads; SL badge from leaderSlotId.",
+    "No hand-rolled slotIds splice in editor_ops; squad links dirty after refile.",
+]
+current_state = ["SHIPPED: refile_slot via core; OrbatManager DnD; outliner is_leader badge."]
+approach = ["editor_ops refile_slot calls core then after_local_edit for trees and links."]
+verify = ["Verify: .ai/artifacts/t180_6_verify_log.md."]
+citations = [
+    "Source: commit 056c9a1a — place refile sync.",
+    "Source: t180_6 spec — F1–F5 gates.",
+]
 shipped_at = "056c9a1a"
 created_at = "2026-07-19T20:25:45Z"
 completed_at = "2026-07-19T20:25:45Z"
