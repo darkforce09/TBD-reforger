@@ -15,7 +15,7 @@ current_state = ["No generated contract dirs; editor payload schema missing."]
 approach = ["quicktype Go plus json-schema-to-typescript; make schema-codegen; DO NOT EDIT markers."]
 verify = [
     "cargo xtask ci schema-codegen",
-    "cargo xtask ci schema-validate",
+    "npm run validate",
 ]
 acceptance = [
     "Go and TypeScript contract projections generated from shared JSON schemas.",

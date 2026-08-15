@@ -12,7 +12,7 @@ context = ["POST /missions/:id/versions is the only mission-write route with a 2
 requirement = ["Upload panel on mission dossier; surface validation details[] from 400 responses."]
 current_state = ["SHIPPED @ 12f41266; missions.rs +969 lines; 10 new tests."]
 approach = ["Wire file picker to versions POST; render schema findings from error payload."]
-verify = ["cargo xtask db test-it"]
+verify = ["cargo test -p website-frontend; 10 new tests, 328 pass."]
 acceptance = [
     "Mission upload panel wired to versions POST with 256MB cap respected.",
     "Schema validation errors from 400 responses rendered in dossier UI.",

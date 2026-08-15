@@ -12,7 +12,7 @@ context = ["SPLIT 2026-07-26: row tracked the website half; mod shipped T-181.13
 requirement = ["Mod POST /api/v1/ingest/match-results; website rendering via T-232."]
 current_state = ["SHIPPED @ 18852577; stale pointer closed wave 69; website half T-232."]
 approach = ["Close row when mod ingest and T-232 populated branches both shipped."]
-verify = ["Wave 69 gate PASS 23/23; stale pointer closed @ 18852577."]
+verify = ["Stale pointer closed @ 188525773."]
 acceptance = [
     "Mod ResultsReporter POSTed match results to website ingest API.",
     "Website rendering half tracked separately; row closed when mod half shipped.",

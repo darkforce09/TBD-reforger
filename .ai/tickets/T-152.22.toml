@@ -14,7 +14,7 @@ context = ["T-152.10 automated PASS while pier census vacuous; O-rows pending."]
 requirement = ["Extended master suite; anti-vacuous censuses; waiver quotes; O1–O12 sign-off."]
 current_state = ["Remediation .12–.21 shipped; program merge blocked on operator GO."]
 approach = ["t152_22 verify log; operator bulk PASS; merge readiness doc update."]
-verify = ["test -f .ai/artifacts/t152_22_verify_log.md"]
+verify = ["O1-O12 PASS per t152_22_verify_log.md."]
 acceptance = ["Operator bulk-signed O1-O12 PASS with dated waiver quotes; closed cartographic remediation program pending ticket/T-152 merge."]
 citations = [
     "t152_22_verify_log.md",

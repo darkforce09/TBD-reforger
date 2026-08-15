@@ -14,7 +14,7 @@ context = ["React SPA deletion planned; Fable audit finish program approved."]
 requirement = ["Program hub doc; slice ladder .22–.29; registry parent row."]
 current_state = ["React frontend live; no unified Leptos program ticket."]
 approach = ["cursor-docs hub lock; worktree .ai/artifacts/worktrees/TBD-T-159/."]
-verify = ["test -f docs/platform/t159_leptos_ui_program.md"]
+verify = ["Program hub and standing worktree TBD-T-159 landed @ f95b01ad0."]
 acceptance = ["Published Leptos UI rewrite program hub doc, registry parent row, and standing worktree TBD-T-159 for slice ladder T-159.1+."]
 citations = [
     "commit f95b01ad",

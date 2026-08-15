@@ -14,7 +14,7 @@ requirement = ["t092_spawn_transform_program; t092_1 + t092_2 specs."]
 current_state = ["No artifact diagram; UUID slot ids; gaps undocumented."]
 approach = ["Contract tables; S1–S4 verification gates; registry slices."]
 verify = [
-    "cargo xtask ticket check --strict",
+    "./scripts/ticket check --strict",
     "test -f docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md",
 ]
 acceptance = [
