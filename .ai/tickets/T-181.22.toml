@@ -1,13 +1,26 @@
 id = "T-181.22"
 kind = "work"
-title = "T-181.22"
-summary = "T-181.22"
+title = "Harden one-life against possess spawn route"
+summary = "Gate possess handler; entity-keyed spawn tickets; fix synthetic identity and admin bypass."
 class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
 notes = "ONE-LIFE hardened @ 1e301f89. Closed the possess route by modding SCR_PossessSpawnHandlerComponent's CanHandleRequest_S AND HandleRequest_S — calls vanilla routes through unconditionally, so the fix holds whether m_bIgnoreConditions is 0 or 1 (the packed value could not be read offline; it is now self-reported at runtime). Ticket made load-bearing: entity-keyed and consumed once, so a forged RplId matches nothing. Identity policy now matches its comment. adminOverride moved off the public signature so the compiler enforces the single bypass. NOT CLOSED, stated: one life is not durably enforceable on a listen/hosted server — engine limit."
 parent = "T-181"
+context = [
+    "T-181.21 guard was dead on the possess spawn route.",
+    "Listen hosts synthesize identity from display name, not durable UUID.",
+]
+requirement = [
+    "Mod CanHandleRequest_S and HandleRequest_S; bind spawn tickets to one entity.",
+    "Detect synthetic identity; re-key departed seats; move adminOverride internal.",
+]
+verify = ["compile.sh clean; gate suite green."]
+citations = [
+    "Source: commit 1e301f89 — possess hardening.",
+    "Source: commit 5f8bb6ad — merge slice.",
+]
 shipped_at = "5f8bb6ad"
 created_at = "2026-07-25T08:55:10Z"
 completed_at = "2026-07-25T09:01:56Z"

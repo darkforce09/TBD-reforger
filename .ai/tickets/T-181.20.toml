@@ -1,13 +1,26 @@
 id = "T-181.20"
 kind = "work"
-title = "T-181.20"
-summary = "T-181.20"
+title = "Golden fixtures for loadout and empty fields"
+summary = "Two golden missions auto-discovered by schema gates: slot loadout coverage plus empty warning-fields."
 class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
 notes = "Golden fixtures @ bae5d1d1. slot-loadout-coverage.json is the FIRST golden to carry a slot loadout block (all 10 gear refs, cargo at the schema minimum, the primary/optic/magazine triple T-181.10 fixed, plus a no-loadout control); resource names are real vanilla GUIDs from the registry export, not invented. empty-warning-fields.json carries every empty the SCHEMA actually permits. Goldens are globbed (xtask/src/schema_gates.rs:1316) so both are auto-discovered — 4/4 PASS. Twelve negative-control mutants each failed with the exact expected message, proving the loadout fixture reaches the loadout $defs rather than passing vacuously. DISPROVED THE BRIEF'S PREMISE by measurement — see T-181.26 and T-181.31."
 parent = "T-181"
+context = [
+    "Wave 4 golden fixtures; no golden exercised the slot loadout JSON path.",
+    "Schema permits empty strings in fields the validator only warns on at runtime.",
+]
+requirement = [
+    "Add slot-loadout-coverage.json with gear, cargo, weapon triple, and no-loadout slots.",
+    "Add empty-warning-fields.json for every schema-permitted empty and loadout warnings.",
+]
+verify = ["Schema gate: four goldens pass; twelve mutants fail."]
+citations = [
+    "Source: commit bae5d1d1 — golden fixtures.",
+    "Source: t181_event_mod_program.md — wave 4 goldens.",
+]
 shipped_at = "6685ec40"
 created_at = "2026-07-25T11:08:36Z"
 completed_at = "2026-07-25T11:25:22Z"

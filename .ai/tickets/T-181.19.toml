@@ -1,13 +1,26 @@
 id = "T-181.19"
 kind = "work"
-title = "T-181.19"
-summary = "T-181.19"
+title = "Per-faction map markers from mission JSON"
+summary = "Render briefing.markers on the in-game map via vanilla PLACED_CUSTOM markers, side-scoped over the wire."
 class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
 notes = "Map markers from mission JSON. Consumer only — T-181.23 already parsed them and nothing read them. Rides Reforger's own SCR_MapMarkerManagerComponent.InsertStaticMarker with PLACED_CUSTOM, matching vanilla SCR_BaseTutorialStage.CreateMarkerCustom and CRF's own usage, so NO new .conf/.layout and the rdb blocker does not apply. PER-FACTION ENFORCEMENT IS STRUCTURAL: the request RPC takes NO ARGUMENTS, so a client cannot phrase the question; the side is read server-side from the assigned slot; reply is RplRcver.Owner; client insert is isLocal so received markers cannot re-enter replication. No slot = served=false, zero rows (fail closed). Discovered the icon enum vocabulary BY COMPILATION (23 members) rather than guessing, and resolves against the engine's own 91 placed icons first so all 91 are authorable with no maintenance. Corrected the command center's brief: 'all four fields required so a marker is complete' is true of PRESENCE, false of CONTENT — icon/label have no minLength and empty-warning-fields.json ships a marker with both empty. NOT runtime-observed: nothing visual, no client ever joined. Adds a 5th modded class SCR_PlayerController (overrides no vanilla method, adds no menu preset enum). || POST-MERGE (wave-5 verifier, MINOR, not yet fixed): a slot CHANGE leaves the previous side's markers on the client's map. TBD_SpawnManager.ReleaseSlot refuses only a spent life or an already-deployed player, so a live un-deployed player can release a BLUFOR slot and claim an OPFOR one; the client is already s_bServed and TBD_MarkerClient.Tick has cancelled itself, so nothing re-requests and the served->unserved clear path in Accept() is unreachable. Recovery is the next map open, but OnMapOpen returns before Request() inside MAP_REQUEST_MIN_GAP_MS (3 s) and stale markers are drawn on open and only replaced a round trip later. THE SERVER SIDE IS SOUND — the verifier could not phrase a cross-side request; this is purely a stale client cache."
 parent = "T-181"
+context = [
+    "Wave 5 map markers; T-181.23 parsed briefing.markers but nothing consumed them.",
+    "Markers ride vanilla SCR_MapMarkerManagerComponent without new .conf or .layout.",
+]
+requirement = [
+    "Ship five-file marker pipeline; insert PLACED_CUSTOM markers per assigned faction.",
+    "Request RPC takes no args; side from slot; fail closed with zero rows.",
+    "Resolve free-form icon against engine names plus compile-verified alias table.",
+]
+citations = [
+    "Source: commit f3d19a60 — map markers.",
+    "Source: commit 4e369ab0 — merge slice.",
+]
 shipped_at = "4e369ab0"
 created_at = "2026-07-25T13:03:01Z"
 completed_at = "2026-07-25T13:12:14Z"

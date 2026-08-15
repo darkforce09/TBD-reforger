@@ -1,13 +1,25 @@
 id = "T-181.3.1"
 kind = "work"
-title = "T-181.3.1"
-summary = "T-181.3.1"
+title = "Official BI Script API mirror"
+summary = "Fetch and index Bohemia Doxygen Script API; 7,990 classes with signatures."
 class = "feature"
 status = "shipped"
 order = 1810
 executor = "claude-code"
 notes = "Official BI Script API mirror + parser (enf apidoc, scripts/mod/fetch-vanilla-api.sh, make enf-apidoc). 7,990 classes indexed. CLOSES the T-181.3 gap: SCR_BaseGameMode/PossessSpawnData/PossessSpawnRequestComponent/RespawnSystemComponent/ChimeraMenuBase all resolve with full member lists incl. `static SCR_PossessSpawnData FromEntity(notnull IEntity)`. Signatures only, no bodies — CRF stays the behavioural oracle. Operator's suggestion that the data exists online was correct."
 parent = "T-181"
+context = [
+    "T-181.3 carve missed compressed spawn-pipeline classes as plaintext.",
+    "Operator hypothesis: official API docs might already exist online.",
+]
+requirement = [
+    "Mirror enf apidoc via fetch-vanilla-api.sh; index all class signatures.",
+    "Resolve SCR_BaseGameMode, PossessSpawnData, RespawnSystemComponent, ChimeraMenuBase.",
+]
+citations = [
+    "Source: vanilla_carve_coverage.md — API mirror.",
+    "Source: commit d8fc6abc — factory bootstrap.",
+]
 created_at = "2026-07-25T00:00:00Z"
 completed_at = "2026-07-31T00:00:00Z"
 estimated = [
