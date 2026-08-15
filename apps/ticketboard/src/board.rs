@@ -63,6 +63,10 @@ pub struct Card {
     pub breadcrumb: Option<Breadcrumb>,
     /// Class chip accent (absent class — programs, pre-triage work — no chip).
     pub class: Option<Class>,
+    /// Hover tooltip (T-920.2): the ticket's main_goal via [`card_tooltip`] —
+    /// the goal surfaces on hover without opening the detail panel. Absent or
+    /// blank ⇒ `None` (no empty tooltip bubble).
+    pub tooltip: Option<String>,
 }
 
 pub struct Column {
@@ -127,6 +131,7 @@ impl BoardModel {
                     Ticket::Program(_) => None,
                 },
                 class: class_of(t).and_then(Class::parse),
+                tooltip: card_tooltip(t),
             };
             buckets[column_of(t.status().name())].push((sort_key(t), card));
         }
@@ -174,6 +179,24 @@ pub fn kind_str(t: &Ticket) -> &'static str {
         Ticket::Program(_) => "program",
         Ticket::Work(_) => "work",
     }
+}
+
+/// `main_goal` lives on both kinds (obligatory from `queued` upward — T-920
+/// tier rules); legacy and idea tickets may lack it.
+pub fn main_goal_of(t: &Ticket) -> Option<&str> {
+    match t {
+        Ticket::Program(p) => p.main_goal.as_deref(),
+        Ticket::Work(w) => w.main_goal.as_deref(),
+    }
+}
+
+/// Card hover tooltip (T-920.2): the ticket's main_goal — present and
+/// nonblank only, so a goal-less ticket attaches NO tooltip, never an empty
+/// bubble. Precomputed per card at load; the paint path only attaches it.
+pub fn card_tooltip(t: &Ticket) -> Option<String> {
+    main_goal_of(t)
+        .filter(|goal| !goal.trim().is_empty())
+        .map(str::to_owned)
 }
 
 /// `shipped_at` lives on the work ticket directly, but inside `Status::Shipped`
@@ -827,6 +850,45 @@ children = ["T-9.1"]
         let program_card = idea.cards.iter().find(|c| c.id == "T-9").unwrap();
         assert_eq!(program_card.class, None, "no class ⇒ no chip");
         assert!(program_card.breadcrumb.is_none(), "programs have no scope");
+    }
+
+    /// T-920.2: cards precompute the main_goal hover tooltip — present and
+    /// nonblank only; a goal-less or blank-goal ticket carries `None` (no
+    /// empty bubble), and both ticket kinds surface their goal.
+    #[test]
+    fn cards_precompute_main_goal_tooltip() {
+        let corpus = corpus_of(vec![
+            work(
+                "T-1",
+                "status = \"idea\"",
+                "main_goal = \"the operator reads the goal on hover\"\n",
+            ),
+            work("T-2", "status = \"idea\"", ""),
+            work("T-3", "status = \"idea\"", "main_goal = \"   \"\n"),
+            parse(
+                r#"id = "T-9"
+kind = "program"
+title = "prog"
+summary = "s"
+status = "idea"
+children = ["T-9.1"]
+main_goal = "program goals surface too"
+"#,
+            ),
+        ]);
+        let board = BoardModel::build(&corpus);
+        let idea = &board.columns[column_of(StatusName::Idea)];
+        let by_id = |id: &str| idea.cards.iter().find(|c| c.id == id).unwrap();
+        assert_eq!(
+            by_id("T-1").tooltip.as_deref(),
+            Some("the operator reads the goal on hover")
+        );
+        assert_eq!(by_id("T-2").tooltip, None, "absent goal ⇒ no tooltip");
+        assert_eq!(by_id("T-3").tooltip, None, "blank goal ⇒ no tooltip");
+        assert_eq!(
+            by_id("T-9").tooltip.as_deref(),
+            Some("program goals surface too")
+        );
     }
 
     #[test]

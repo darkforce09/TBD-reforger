@@ -1,13 +1,20 @@
-//! Detail-panel body model (T-918.3 / B.3) — pure, unit-tested, no egui types.
+//! Detail-panel body model (T-918.3 / B.3; header split T-920.2) — pure,
+//! unit-tested, no egui types.
 //!
-//! The ten v2 body fields (T-917 spec §Body) render as clearly separated labeled
-//! sections in ONE pinned order — [`body_field_order`] is the authority, test-pinned.
-//! Each label carries its one-line anti-blend definition ([`BodyField::definition`])
-//! as a hover tooltip, so the acceptance-vs-verify distinction is visible exactly
-//! where authors blend them. `migration_legacy` is NOT one of the ten: it is the
-//! T-917.3 byte-reversible wall quarantine, rendered AFTER them as its own visually
-//! quarantined section ([`BodySection::Quarantine`]) with the copy-for-triage
-//! affordance ([`triage_block`]) feeding the Program T drain.
+//! The ten v2 body fields (T-917 spec §Body) keep ONE pinned field authority —
+//! [`body_field_order`], test-pinned; the triage skeleton derives from it — but
+//! they RENDER split in two since T-920.2 (T-920 decision log #1): the header
+//! fields ([`header_field_order`] — main_goal first, then summary) render
+//! label-free in the detail HEADER directly under the title, the first thing
+//! read, with absent fields OMITTED outright; the body section list
+//! ([`body_region_order`]) renders the rest as clearly separated labeled
+//! sections starting at context. Each body label carries its one-line
+//! anti-blend definition ([`BodyField::definition`]) as a hover tooltip, so the
+//! acceptance-vs-verify distinction is visible exactly where authors blend
+//! them. `migration_legacy` is NOT one of the ten: it is the T-917.3
+//! byte-reversible wall quarantine, rendered AFTER the body sections as its own
+//! visually quarantined section ([`BodySection::Quarantine`]) with the
+//! copy-for-triage affordance ([`triage_block`]) feeding the Program T drain.
 
 use crate::board::TicketView;
 
@@ -77,9 +84,11 @@ impl BodyField {
     }
 }
 
-/// The PINNED render order of the ten body fields — the T-918.3 acceptance pin
-/// (test-asserted; the detail panel iterates exactly this through
-/// [`body_region_order`]).
+/// The PINNED order of the ten body fields — the T-918.3 acceptance pin
+/// (test-asserted). Since T-920.2 this is the FIELD authority (the triage
+/// skeleton, the header/body partition), not the render list itself: the
+/// detail panel renders [`header_field_order`] in the header and
+/// [`body_region_order`] — this order minus the header fields — below.
 pub fn body_field_order() -> [BodyField; 10] {
     [
         BodyField::Summary,
@@ -95,20 +104,50 @@ pub fn body_field_order() -> [BodyField; 10] {
     ]
 }
 
+/// The fields the detail HEADER renders (T-920.2), in order, directly under
+/// the title: `main_goal` first (T-920 decision log #1 — "directly under the
+/// title, the first thing read"), then `summary`. Lifted OUT of the body
+/// section list, which therefore starts at context. Header rendering is
+/// label-free and OMITS absent fields entirely — the em-dash absence marker
+/// ([`ABSENT_MARKER`]) is a body-list rule; the header carries content or
+/// nothing.
+pub fn header_field_order() -> [BodyField; 2] {
+    [BodyField::MainGoal, BodyField::Summary]
+}
+
+/// The header content model ([`header_field_order`] projected through
+/// [`section_content`]): what the header renders, in order — PRESENT fields
+/// only, each with its text. Scalar by construction: only
+/// [`SectionContent::Text`] passes, so a list field could never appear here.
+pub fn header_lines(v: &TicketView<'_>) -> Vec<(BodyField, String)> {
+    header_field_order()
+        .into_iter()
+        .filter_map(|field| match section_content(field, v) {
+            SectionContent::Text(text) => Some((field, text)),
+            SectionContent::Absent | SectionContent::Lines(_) => None,
+        })
+        .collect()
+}
+
 /// One row of the detail body region: a typed field section, or the quarantine.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BodySection {
     Field(BodyField),
-    /// `migration_legacy` — not a body field; always after all ten.
+    /// `migration_legacy` — not a body field; always after every body section.
     Quarantine,
 }
 
-/// Everything the body region renders, in order: the ten pinned fields, then the
-/// quarantine. The UI iterates exactly this list, so the "migration_legacy renders
-/// after the ten" acceptance is pinned by the same fn the paint path consumes.
+/// Everything the body REGION renders, in order (T-920.2): the pinned fields
+/// MINUS the header fields — so the list starts at context — then the
+/// quarantine. Derived from [`body_field_order`] and [`header_field_order`],
+/// so the three pins can never drift apart. The UI iterates exactly this
+/// list, so "body sections start at context" and "migration_legacy renders
+/// after them" are pinned by the same fn the paint path consumes.
 pub fn body_region_order() -> Vec<BodySection> {
+    let header = header_field_order();
     body_field_order()
         .into_iter()
+        .filter(|field| !header.contains(field))
         .map(BodySection::Field)
         .chain(std::iter::once(BodySection::Quarantine))
         .collect()
@@ -233,9 +272,10 @@ mod tests {
     use crate::board::view;
     use crate::testutil::work;
 
-    /// T-918.3 acceptance: the ten-field order is PINNED — exactly these labels,
-    /// exactly this order; `migration_legacy` is NOT one of the ten and the body
-    /// region renders it strictly after all of them.
+    /// T-918.3 acceptance, DELIBERATELY updated at T-920.2: the ten-FIELD
+    /// order stays pinned (the triage skeleton depends on it), but the RENDER
+    /// region drops the header fields — body sections start at context — and
+    /// `migration_legacy` still renders strictly after every body section.
     #[test]
     fn section_order_is_pinned_and_quarantine_is_last() {
         let labels: Vec<&str> = body_field_order().iter().map(|f| f.as_str()).collect();
@@ -258,15 +298,32 @@ mod tests {
             !labels.contains(&"migration_legacy"),
             "migration_legacy must not be a body field"
         );
+        // The RENDER order (T-920.2): header fields gone, context first,
+        // quarantine last — exactly once.
+        let expected = [
+            BodyField::Context,
+            BodyField::Requirement,
+            BodyField::CurrentState,
+            BodyField::Approach,
+            BodyField::Verify,
+            BodyField::Acceptance,
+            BodyField::Citations,
+            BodyField::Notes,
+        ];
         let region = body_region_order();
-        assert_eq!(region.len(), 11);
-        for (i, field) in body_field_order().into_iter().enumerate() {
+        assert_eq!(region.len(), expected.len() + 1);
+        assert_eq!(
+            region[0],
+            BodySection::Field(BodyField::Context),
+            "body sections start at context (T-920.2 acceptance)"
+        );
+        for (i, field) in expected.into_iter().enumerate() {
             assert_eq!(region[i], BodySection::Field(field));
         }
         assert_eq!(
-            region[10],
+            region[expected.len()],
             BodySection::Quarantine,
-            "quarantine renders after all ten body fields"
+            "quarantine renders after every body section"
         );
         assert_eq!(
             region
@@ -274,6 +331,73 @@ mod tests {
                 .filter(|s| **s == BodySection::Quarantine)
                 .count(),
             1
+        );
+        for header_field in header_field_order() {
+            assert!(
+                !region.contains(&BodySection::Field(header_field)),
+                "{} renders in the header, never in the body list",
+                header_field.as_str()
+            );
+        }
+    }
+
+    /// T-920.2 header model pin: main_goal then summary render in the header
+    /// (and nowhere else — header ∪ body-render fields partition the ten
+    /// exactly); present scalars come through in order, absent AND
+    /// whitespace-blank fields are OMITTED outright (the em-dash marker stays
+    /// a body-list rule).
+    #[test]
+    fn header_model_is_pinned() {
+        assert_eq!(
+            header_field_order(),
+            [BodyField::MainGoal, BodyField::Summary],
+            "main_goal directly under the title, the first thing read"
+        );
+        // Partition: header + body-rendered fields cover the ten with no
+        // overlap (10 slots, all 10 distinct fields present ⇒ each once).
+        let rendered = body_region_order().into_iter().filter_map(|s| match s {
+            BodySection::Field(field) => Some(field),
+            BodySection::Quarantine => None,
+        });
+        let union: Vec<BodyField> = header_field_order().into_iter().chain(rendered).collect();
+        assert_eq!(union.len(), 10, "header and body partition the ten fields");
+        for field in body_field_order() {
+            assert!(
+                union.contains(&field),
+                "{} lost in the split",
+                field.as_str()
+            );
+        }
+
+        // Content model: present scalars in header order.
+        let full = work(
+            "T-1",
+            "status = \"idea\"",
+            "summary = \"one breath\"\nmain_goal = \"the goal, read first\"\n",
+        );
+        assert_eq!(
+            header_lines(&view(&full)),
+            vec![
+                (BodyField::MainGoal, "the goal, read first".to_owned()),
+                (BodyField::Summary, "one breath".to_owned()),
+            ]
+        );
+        // Absent = omitted — the header never renders an em-dash.
+        let bare = work("T-2", "status = \"idea\"", "");
+        assert!(
+            header_lines(&view(&bare)).is_empty(),
+            "absent header fields are omitted, never marked"
+        );
+        // Whitespace-blank is absent too; the other field still renders.
+        let blank_goal = work(
+            "T-3",
+            "status = \"idea\"",
+            "summary = \"s\"\nmain_goal = \"   \"\n",
+        );
+        assert_eq!(
+            header_lines(&view(&blank_goal)),
+            vec![(BodyField::Summary, "s".to_owned())],
+            "blank main_goal is omitted; summary still renders"
         );
     }
 

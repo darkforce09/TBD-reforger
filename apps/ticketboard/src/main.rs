@@ -8,8 +8,9 @@
 //! watch with debounced auto-reload, and the git-dirty chip. T-915.4 adds the
 //! mutation UI: every write shells `cargo xtask ticket <verb>` as a subprocess
 //! (single-flight queue, CAS guard, verbatim refusals, no auto-repack ever) —
-//! the app itself writes no ticket bytes; its only direct file write is the
-//! picked-repo preference in eframe Storage in the user config dir. T-915.5 adds
+//! the app itself writes no ticket bytes; its only direct file writes are the
+//! preferences (picked repo root, T-920.2 viewer-column width) in eframe
+//! Storage in the user config dir. T-915.5 adds
 //! the metrics dashboard over the `.ai/tickets/metrics/` run receipts: explicit
 //! no-receipts state, per-ticket / per-agent token + elapsed aggregations, and
 //! named error rows for malformed files — never zeros for missing data. T-918.2
@@ -21,9 +22,15 @@
 //! markdown viewer: spec/plan/`.md`-citation clicks render the document in a
 //! right-pane egui_commonmark view — read-only, repo-root-fenced, worker-thread
 //! reads, raw-text fallback with a naming note — with external-open kept as the
-//! secondary action and Back returning to the detail panel, selection intact.
+//! secondary action. T-920.2 reshapes both right-pane surfaces: main_goal (then
+//! summary) renders label-free in the detail header directly under the title
+//! and the body sections start at context; the viewer becomes a third COLUMN
+//! beside the detail panel (both visible; Back collapses just the column; its
+//! width drag-resizable and persisted in eframe Storage; narrow windows degrade
+//! to the viewer alone); cards gain a main_goal hover tooltip.
 //! Design authority: `docs/platform/t915_ticketboard_design.md` +
-//! `docs/platform/t917_ticket_schema_v2.md` §Provenance + B.4.
+//! `docs/platform/t917_ticket_schema_v2.md` §Provenance + B.4 +
+//! `docs/platform/t920_body_obligations.md` §Board changes.
 
 mod app;
 mod board;

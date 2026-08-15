@@ -50,6 +50,9 @@ use crate::waves::{Lane, Wave0, WaveChip, WavesModel};
 
 /// eframe Storage key for the picked repo root (user config dir — never the repo).
 const REPO_ROOT_KEY: &str = "repo_root";
+/// eframe Storage key for the viewer-column width (T-920.2) — same user-config
+/// store as the repo root; the app still writes nothing under the repo.
+const VIEWER_W_KEY: &str = "viewer_w";
 
 /// 52 through T-915; +12 for the T-918.1 scope-breadcrumb row.
 const CARD_H: f32 = 64.0;
@@ -57,10 +60,24 @@ const CARD_GAP: f32 = 6.0;
 const COL_W: f32 = 236.0;
 const CHIP_COL_W: f32 = 92.0;
 const DETAIL_W: f32 = 420.0;
-/// Markdown viewer pane default width (T-918.4) — wider than the detail panel:
-/// prose wants line length; both panels stay user-resizable with separate
-/// egui size memory (distinct panel Ids).
+/// Markdown viewer column default width (T-918.4) — wider than the detail
+/// panel: prose wants line length. T-920.2: the column stands BESIDE the
+/// detail panel, drag-resizable within [`VIEWER_W_MIN`]..=[`VIEWER_W_MAX`],
+/// and its width persists explicitly in eframe Storage ([`VIEWER_W_KEY`]) so
+/// it survives restarts like the picked repo root does.
 const VIEWER_W: f32 = 560.0;
+/// Viewer-column drag + persistence bounds: a corrupt or hand-edited
+/// preference clamps here on load ([`parse_viewer_width`]) — never an
+/// invisible or board-swallowing column.
+const VIEWER_W_MIN: f32 = 280.0;
+const VIEWER_W_MAX: f32 = 1600.0;
+/// T-920.2 narrow-window degrade: below this WINDOW width the detail + viewer
+/// columns cannot coexist without clipping (detail default 420 + a readable
+/// viewer ≥ 400 + a usable board strip ≥ 280), so the viewer takes the right
+/// pane ALONE (the pre-T-920.2 replace behavior) — never two clipped columns.
+/// The detail column returns on Back or a wider window (pinned in
+/// `right_pane` tests).
+const TWO_COLUMN_MIN_WINDOW_W: f32 = 1100.0;
 const TREE_ROW_H: f32 = 18.0;
 const TREE_INDENT: f32 = 16.0;
 const WAVE0_ROW_H: f32 = 18.0;
@@ -119,6 +136,11 @@ const SCOPE_ESTIMATED_COLOR: Color32 = Color32::from_rgb(245, 175, 80);
 /// pending-triage material, never as authored body content.
 const QUARANTINE_TINT: Color32 = Color32::from_rgb(54, 44, 26);
 const QUARANTINE_BORDER: Color32 = Color32::from_rgb(150, 112, 52);
+
+/// Header main_goal tint (T-920.2) — a soft teal used nowhere else in the
+/// palette, so the goal line under the title reads as its own surface: not a
+/// status accent, not the amber provenance family, not body text.
+const MAIN_GOAL_TINT: Color32 = Color32::from_rgb(150, 205, 190);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub(crate) enum Tab {
@@ -340,8 +362,8 @@ pub(crate) enum Action {
     /// T-918.4: open a repo-relative `.md` document in the in-app viewer pane
     /// (spec/plan/citation click; non-`.md` paths stay on [`Action::OpenPath`]).
     OpenDoc(String),
-    /// T-918.4 Back: close the viewer — the detail panel returns with the board
-    /// selection untouched.
+    /// T-918.4 Back, T-920.2 semantics: collapse the viewer COLUMN only — the
+    /// detail column keeps rendering the untouched board selection beside it.
     CloseViewer,
     CloseDetail,
     SetTab(Tab),
@@ -419,6 +441,10 @@ pub struct TicketboardApp {
     viewer_rx: Option<Receiver<viewer::LoadedDoc>>,
     /// egui_commonmark render cache (render-side only — no document state).
     md_cache: CommonMarkCache,
+    /// Viewer column width (T-920.2) — loaded from eframe Storage at startup
+    /// ([`parse_viewer_width`]: revalidated + clamped), tracked across drags
+    /// while the column is on screen, persisted in `save`.
+    viewer_w: f32,
 }
 
 impl TicketboardApp {
@@ -455,6 +481,7 @@ impl TicketboardApp {
             viewer: ViewerState::Closed,
             viewer_rx: None,
             md_cache: CommonMarkCache::default(),
+            viewer_w: parse_viewer_width(cc.storage.and_then(|s| s.get_string(VIEWER_W_KEY))),
         };
         match discovery::resolve_repo_root(arg, cwd.as_deref()) {
             Some(root) if discovery::has_tickets_dir(&root) => {
@@ -974,7 +1001,8 @@ impl TicketboardApp {
                 Action::OpenDoc(rel) => self.open_doc(rel, ctx),
                 Action::CloseViewer => {
                     // Back touches ONLY the viewer — the board selection stays,
-                    // so the same ticket's detail panel returns underneath.
+                    // so the viewer COLUMN collapses and the detail column
+                    // keeps rendering the same ticket (T-920.2).
                     self.viewer.close();
                     self.viewer_rx = None;
                 }
@@ -1224,43 +1252,59 @@ impl eframe::App for TicketboardApp {
                     mutate::drawer_ui(ui, &self.verb, &mut actions);
                 });
             }
-            // T-918.4: the viewer replaces the detail region while open; Back
-            // closes it and the SAME selection's detail panel returns —
-            // `right_pane` is the one gate (test-pinned).
-            match right_pane(self.viewer.is_open(), b.selected) {
-                RightPane::Viewer => {
-                    Panel::right(Id::new("viewer"))
-                        .resizable(true)
-                        .default_size(VIEWER_W)
-                        .show(ui, |ui| {
-                            viewer_pane_ui(
-                                ui,
-                                &self.viewer,
-                                &mut self.md_cache,
-                                self.repo_root.as_deref(),
-                                &mut actions,
-                            );
-                        });
-                }
-                RightPane::Detail(selected) => {
-                    Panel::right(Id::new("detail"))
-                        .resizable(true)
-                        .default_size(DETAIL_W)
-                        .show(ui, |ui| {
-                            detail_ui(
-                                ui,
-                                MutCtx {
-                                    repo_root: self.repo_root.as_deref(),
-                                    busy: verb_busy,
-                                },
-                                b,
-                                selected,
-                                &mut self.advanced_status,
-                                &mut actions,
-                            );
-                        });
-                }
-                RightPane::None => {}
+            // T-918.4 viewer, T-920.2 layout: the right pane is the detail
+            // column plus an optional viewer column to its RIGHT — both
+            // visible while a document is open (T-920 decision log #5); Back
+            // collapses only the viewer column. `right_pane` is still the one
+            // gate (test-pinned): no selection ⇒ viewer alone, and a window
+            // too narrow for two honest columns degrades to the viewer alone.
+            // The viewer panel is added FIRST so it carves the rightmost
+            // strip; the detail panel then lands to its left.
+            let pane = right_pane(
+                self.viewer.is_open(),
+                b.selected,
+                ctx.content_rect().width(),
+            );
+            if matches!(pane, RightPane::Viewer | RightPane::Both(_)) {
+                let shown = Panel::right(Id::new("viewer"))
+                    .resizable(true)
+                    .default_size(self.viewer_w)
+                    .size_range(VIEWER_W_MIN..=VIEWER_W_MAX)
+                    .show(ui, |ui| {
+                        viewer_pane_ui(
+                            ui,
+                            &self.viewer,
+                            &mut self.md_cache,
+                            self.repo_root.as_deref(),
+                            &mut actions,
+                        );
+                    });
+                // The dragged width lands here every frame and persists via
+                // `save` (eframe Storage) — clamped, so the stored preference
+                // always round-trips through `parse_viewer_width` unchanged.
+                self.viewer_w = shown
+                    .response
+                    .rect
+                    .width()
+                    .clamp(VIEWER_W_MIN, VIEWER_W_MAX);
+            }
+            if let RightPane::Detail(selected) | RightPane::Both(selected) = pane {
+                Panel::right(Id::new("detail"))
+                    .resizable(true)
+                    .default_size(DETAIL_W)
+                    .show(ui, |ui| {
+                        detail_ui(
+                            ui,
+                            MutCtx {
+                                repo_root: self.repo_root.as_deref(),
+                                busy: verb_busy,
+                            },
+                            b,
+                            selected,
+                            &mut self.advanced_status,
+                            &mut actions,
+                        );
+                    });
             }
         }
         egui::CentralPanel::default().show(ui, |ui| match &self.state {
@@ -1303,14 +1347,17 @@ impl eframe::App for TicketboardApp {
         self.apply(actions, &ctx);
     }
 
-    /// Persist the active repo root (revalidated on next launch). This is the
-    /// app's ONLY direct file write, and it goes to the user config dir — never
-    /// the repo (T-915.4 mutations shell the xtask verbs; the app writes no
-    /// ticket bytes itself).
+    /// Persist the user preferences: the active repo root (revalidated on the
+    /// next launch) and the viewer-column width (T-920.2 — revalidated +
+    /// clamped through `parse_viewer_width`). This is the app's ONLY direct
+    /// write surface, and it goes to eframe Storage in the user config dir —
+    /// never the repo (T-915.4 mutations shell the xtask verbs; the app
+    /// writes no ticket bytes itself).
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         if let Some(root) = &self.repo_root {
             storage.set_string(REPO_ROOT_KEY, root.display().to_string());
         }
+        storage.set_string(VIEWER_W_KEY, self.viewer_w.to_string());
     }
 }
 
@@ -1886,7 +1933,13 @@ fn card_ui(ui: &mut Ui, card: &Card, selected: bool, draggable: bool) -> egui::R
         painter.rect_filled(class_rect, 6.0, visuals.extreme_bg_color);
         painter.galley(class_pos, galley, color);
     }
-    response
+    // T-920.2: hovering a card surfaces its main_goal (precomputed at load —
+    // `board::card_tooltip`); an absent goal attaches nothing, never an empty
+    // tooltip bubble.
+    match &card.tooltip {
+        Some(goal) => response.on_hover_text(goal.as_str()),
+        None => response,
+    }
 }
 
 // ---- waves ----
@@ -2571,35 +2624,53 @@ fn est_sort_header_ui(
 
 // ---- T-918.4: in-app markdown viewer pane ----
 
-/// Which right-hand pane renders this frame.
+/// Which right-hand pane(s) render this frame.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum RightPane {
+    /// Viewer column alone — no selection (a reload may drop it under an open
+    /// document), or the narrow-window degrade.
     Viewer,
     Detail(usize),
+    /// T-920.2: both columns — the detail panel with the viewer to its right.
+    Both(usize),
     None,
 }
 
-/// The T-918.4 Back contract as ONE pure gate, consumed by the paint path and
-/// pinned by the tests: the viewer replaces the detail region while open
-/// (selection or not — it must survive a selection loss under reload); closed,
-/// the selected ticket's detail panel renders; neither → no right pane.
-fn right_pane(viewer_open: bool, selected: Option<usize>) -> RightPane {
-    if viewer_open {
-        RightPane::Viewer
-    } else {
-        match selected {
-            Some(index) => RightPane::Detail(index),
-            None => RightPane::None,
-        }
+/// The T-920.2 layout contract as ONE pure gate, consumed by the paint path
+/// and pinned by the tests: an open document renders BESIDE the selected
+/// ticket's detail column (both visible — T-920 decision log #5); with no
+/// selection the viewer stands alone (it must survive a selection loss under
+/// reload); below [`TWO_COLUMN_MIN_WINDOW_W`] the viewer takes the region
+/// alone instead of clipping two columns. Back closes only the viewer
+/// machine, so the same selection's detail column remains.
+fn right_pane(viewer_open: bool, selected: Option<usize>, window_w: f32) -> RightPane {
+    match (viewer_open, selected) {
+        (false, None) => RightPane::None,
+        (false, Some(index)) => RightPane::Detail(index),
+        (true, None) => RightPane::Viewer,
+        (true, Some(_)) if window_w < TWO_COLUMN_MIN_WINDOW_W => RightPane::Viewer,
+        (true, Some(index)) => RightPane::Both(index),
     }
 }
 
-/// The viewer pane (T-918.4): header = Back (returns to the detail panel,
-/// selection intact) + the repo-relative path + external-open as the SECONDARY
-/// affordance (the old xdg-open behavior, demoted but never removed). Body:
-/// egui_commonmark for `Rendered`; the naming note + raw monospace text for
-/// `Fallback`; a spinner while the worker reads. Read-only — this pane owns no
-/// mutation affordance at all.
+/// The persisted viewer width, revalidated on load: parseable + finite +
+/// clamped to the drag bounds; anything else falls back to the default —
+/// symmetric with the repo-root preference, which is also revalidated rather
+/// than trusted.
+fn parse_viewer_width(saved: Option<String>) -> f32 {
+    saved
+        .and_then(|s| s.trim().parse::<f32>().ok())
+        .filter(|w| w.is_finite())
+        .map_or(VIEWER_W, |w| w.clamp(VIEWER_W_MIN, VIEWER_W_MAX))
+}
+
+/// The viewer pane (T-918.4; a COLUMN beside the detail panel since T-920.2):
+/// header = Back (collapses the viewer column only — the detail column keeps
+/// the untouched selection) + the repo-relative path + external-open as the
+/// SECONDARY affordance (the old xdg-open behavior, demoted but never
+/// removed). Body: egui_commonmark for `Rendered`; the naming note + raw
+/// monospace text for `Fallback`; a spinner while the worker reads. Read-only
+/// — this pane owns no mutation affordance at all.
 fn viewer_pane_ui(
     ui: &mut Ui,
     state: &ViewerState,
@@ -2611,7 +2682,7 @@ fn viewer_pane_ui(
     ui.horizontal(|ui| {
         if ui
             .button("← Back")
-            .on_hover_text("back to the detail panel (selection unchanged)")
+            .on_hover_text("collapse the viewer column (selection unchanged)")
             .clicked()
         {
             actions.push(Action::CloseViewer);
@@ -2736,6 +2807,21 @@ fn detail_ui(
         });
     });
     ui.label(RichText::new(v.title).size(14.0).strong());
+    // T-920.2 header fields — label-free, directly under the title: main_goal
+    // first (prominent — slightly larger, wrapped, its own tint; "the first
+    // thing read", T-920 decision log #1), then summary. Absent fields are
+    // OMITTED here (never an em-dash — that marker is the body-list absence
+    // rule), and the body section list below starts at context.
+    // `detail::header_lines` is the model authority (test-pinned).
+    for (field, text) in detail::header_lines(&v) {
+        ui.add_space(2.0);
+        let rich = if field == detail::BodyField::MainGoal {
+            RichText::new(text).size(13.5).color(MAIN_GOAL_TINT)
+        } else {
+            RichText::new(text)
+        };
+        ui.label(rich).on_hover_text(field.definition());
+    }
     ui.add_space(4.0);
     ui.separator();
     // T-915.4 action strip: offered transitions + Add child + Advanced.
@@ -2860,10 +2946,12 @@ fn detail_ui(
                     }
                 });
 
-            // T-918.3 body region below the metadata table: the ten typed fields
-            // as separated labeled sections in the PINNED order, then the
-            // migration_legacy quarantine strictly after all of them —
-            // `detail::body_region_order` is the one order authority (test-pinned).
+            // T-918.3 body region below the metadata table, T-920.2 shape:
+            // the typed fields MINUS the header pair — separated labeled
+            // sections in the PINNED order starting at context — then the
+            // migration_legacy quarantine strictly after all of them.
+            // `detail::body_region_order` is the one order authority
+            // (test-pinned).
             for section in detail::body_region_order() {
                 match section {
                     detail::BodySection::Field(field) => {
@@ -3339,41 +3427,88 @@ mod tests {
         b
     }
 
-    /// T-918.4 Back contract, pinned on the SAME gate the paint path consumes:
-    /// opening the viewer swaps the right pane; Back (close) touches only the
-    /// viewer machine, so the SAME selection's detail panel returns.
+    /// Comfortably two-column vs clearly narrow window widths for the gate.
+    const WIDE: f32 = 1500.0;
+    const NARROW: f32 = 900.0;
+
+    /// T-918.4 Back contract under the T-920.2 beside-layout, pinned on the
+    /// SAME gate the paint path consumes: opening a document adds the viewer
+    /// COLUMN beside the detail column (both visible); Back (close) touches
+    /// only the viewer machine, so ONLY the column collapses and the same
+    /// selection's detail panel stays.
     #[test]
-    fn back_returns_to_detail_with_selection_intact() {
+    fn back_collapses_the_viewer_column_only() {
         let b = board_state(Some(1));
         let mut viewer = ViewerState::Closed;
         assert_eq!(
-            right_pane(viewer.is_open(), b.selected),
+            right_pane(viewer.is_open(), b.selected, WIDE),
             RightPane::Detail(1)
         );
 
-        // A plan click: the viewer replaces the detail region.
-        viewer.open("docs/plans/t-918_4_plan.md");
-        assert_eq!(right_pane(viewer.is_open(), b.selected), RightPane::Viewer);
+        // A plan click: the viewer column opens BESIDE the detail column —
+        // the ticket stays visible while its plan is read (decision log #5).
+        viewer.open("docs/plans/t-920_2_plan.md");
+        assert_eq!(
+            right_pane(viewer.is_open(), b.selected, WIDE),
+            RightPane::Both(1),
+            "detail and viewer are both visible while a document is open"
+        );
 
-        // Back — the CloseViewer action calls exactly this and nothing else on
-        // the board: selection intact, detail panel back for the same index.
+        // Back — the CloseViewer action calls exactly this and nothing else
+        // on the board: selection intact, viewer column gone, detail stays.
         viewer.close();
         assert_eq!(b.selected, Some(1), "close touches no board state");
         assert_eq!(
-            right_pane(viewer.is_open(), b.selected),
+            right_pane(viewer.is_open(), b.selected, WIDE),
             RightPane::Detail(1)
         );
     }
 
-    /// The gate is total: the viewer wins whenever open (even with the
-    /// selection gone — a reload may drop it under an open document), and no
-    /// pane renders with neither.
+    /// The gate is total, and the narrow-window degrade never clips two
+    /// columns: with the selection gone (a reload may drop it under an open
+    /// document) the viewer stands alone at any width; below
+    /// [`TWO_COLUMN_MIN_WINDOW_W`] the viewer takes the region alone; neither
+    /// open ⇒ no right pane.
     #[test]
-    fn right_pane_gate_is_total() {
-        let b = board_state(None);
-        assert_eq!(right_pane(false, b.selected), RightPane::None);
-        assert_eq!(right_pane(true, b.selected), RightPane::Viewer);
-        assert_eq!(right_pane(true, Some(0)), RightPane::Viewer);
-        assert_eq!(right_pane(false, Some(0)), RightPane::Detail(0));
+    fn right_pane_gate_is_total_and_degrades_honestly() {
+        for width in [WIDE, NARROW] {
+            assert_eq!(right_pane(false, None, width), RightPane::None);
+            assert_eq!(right_pane(true, None, width), RightPane::Viewer);
+            assert_eq!(right_pane(false, Some(0), width), RightPane::Detail(0));
+        }
+        // The degrade boundary: side-by-side AT the minimum, viewer-alone
+        // below it (replace, the pre-T-920.2 behavior — never two clipped
+        // columns).
+        assert_eq!(right_pane(true, Some(0), WIDE), RightPane::Both(0));
+        assert_eq!(
+            right_pane(true, Some(0), TWO_COLUMN_MIN_WINDOW_W),
+            RightPane::Both(0)
+        );
+        assert_eq!(
+            right_pane(true, Some(0), TWO_COLUMN_MIN_WINDOW_W - 1.0),
+            RightPane::Viewer,
+            "narrow windows degrade to the viewer alone"
+        );
+        // The smallest legal window (720 min inner size) always degrades.
+        assert_eq!(right_pane(true, Some(0), 720.0), RightPane::Viewer);
+    }
+
+    /// The persisted viewer width is revalidated on load (T-920.2): parseable
+    /// finite values clamp to the drag bounds, everything else falls back to
+    /// the default — a corrupt preference can never yield an invisible or
+    /// board-swallowing column — and the `save` form round-trips.
+    #[test]
+    fn viewer_width_persistence_model() {
+        assert_eq!(parse_viewer_width(None), VIEWER_W);
+        assert_eq!(parse_viewer_width(Some("700".into())), 700.0);
+        assert_eq!(parse_viewer_width(Some(" 640.5 ".into())), 640.5);
+        for junk in ["", "wide", "NaN", "inf", "-inf"] {
+            assert_eq!(parse_viewer_width(Some(junk.into())), VIEWER_W, "{junk}");
+        }
+        assert_eq!(parse_viewer_width(Some("10".into())), VIEWER_W_MIN);
+        assert_eq!(parse_viewer_width(Some("-500".into())), VIEWER_W_MIN);
+        assert_eq!(parse_viewer_width(Some("99999".into())), VIEWER_W_MAX);
+        // The exact string `save` writes comes back as the same width.
+        assert_eq!(parse_viewer_width(Some(612.5_f32.to_string())), 612.5);
     }
 }
