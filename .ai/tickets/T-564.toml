@@ -1,12 +1,42 @@
 id = "T-564"
 kind = "work"
-title = "T-561 Class-R still hollow — dead let _ = opt(&row.briefing) decoy"
+title = "T-561 Class-R hollow — dead let briefing decoy"
 summary = "T-561 Class-R still hollow — dead let _ = opt(&row.briefing) decoy"
 class = "feature"
 status = "shipped"
 order = 3417
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by W65 adversarial verifier (DIRTY MAJOR) after T-561.
+
+Strip of // /* */ and strings works for those decoys. Replace both live apply_row_meta args with None and add dead `let _ = opt(&row.briefing);` in adopt_payload/apply_row → hydrate_wires_row_briefing_into_apply_row_meta stays GREEN. Pin greps substring, does not require it as an apply_row_meta argument.
+
+Repro: None both briefing args + dead let binding of opt(&row.briefing); cargo test green.
+
+missing=0"""
 priority = 2
+main_goal = "Pin must require opt(&row.briefing) as live apply_row_meta argument."
+context = [
+    "W65 verifier DIRTY MAJOR after T-561.",
+    "Comment/string strip works; dead let binding decoy still greens pin.",
+]
+requirement = [
+    "Class-R must require opt(&row.briefing) as apply_row_meta argument.",
+    "Dead let _ = opt(&row.briefing) with None args must RED.",
+]
+current_state = [
+    "Both briefing args None plus dead let keeps hydrate_wires_row_briefing GREEN.",
+    "Pin greps substring only; does not require live argument.",
+]
+approach = ["Tighten pin to require opt(&row.briefing) in live apply_row_meta calls."]
+verify = ["None both briefing args plus dead let; cargo test must RED."]
+citations = [
+    "W65 verifier after T-561",
+    "hydrate_wires_row_briefing apply_row_meta pin",
+    "dead let opt briefing decoy",
+]
 shipped_at = "7f9d8de8"
 created_at = "2026-07-28T22:16:50Z"
 completed_at = "2026-07-28T22:30:36Z"
@@ -18,13 +48,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
-migration_legacy = [
-    "FOUND by W65 adversarial verifier (DIRTY MAJOR) after T-561.",
-    "",
-    "Strip of // /* */ and strings works for those decoys. Replace both live apply_row_meta args with None and add dead `let _ = opt(&row.briefing);` in adopt_payload/apply_row → hydrate_wires_row_briefing_into_apply_row_meta stays GREEN. Pin greps substring, does not require it as an apply_row_meta argument.",
-    "",
-    "Repro: None both briefing args + dead let binding of opt(&row.briefing); cargo test green.",
-]
 owns = ["apps/website/frontend/src/mission_title_prefer.rs"]
 
 [scope]

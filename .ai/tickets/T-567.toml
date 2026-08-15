@@ -1,12 +1,42 @@
 id = "T-567"
 kind = "work"
-title = "T-564 Class-R still hollow — unreachable if false { apply_row_meta(…opt) }"
+title = "T-564 Class-R hollow — unreachable if false apply_row_meta"
 summary = "T-564 Class-R still hollow — unreachable if false { apply_row_meta(…opt) }"
 class = "feature"
 status = "shipped"
 order = 3420
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by W66 adversarial verifier (DIRTY MAJOR) after T-564.
+
+Dead let decoy now RED. `if false { apply_row_meta(…, opt(&row.briefing)) }` + live None args → hydrate pin stays GREEN. Pin accepts any apply_row_meta arg-list, including unreachable calls.
+
+Repro: live briefing args → None; add if false { apply_row_meta(…, opt(&row.briefing)) }; cargo test green.
+
+missing=0"""
 priority = 2
+main_goal = "Pin must reject unreachable apply_row_meta briefing arguments."
+context = [
+    "W66 verifier DIRTY MAJOR after T-564.",
+    "Dead let decoy now RED; if false wrapper still greens pin.",
+]
+requirement = [
+    "Unreachable if false apply_row_meta with opt briefing must RED.",
+    "Pin must require reachable live briefing arguments only.",
+]
+current_state = [
+    "if false apply_row_meta with opt plus live None args stays GREEN.",
+    "Pin accepts any apply_row_meta arg-list including unreachable.",
+]
+approach = ["Exclude unreachable/cfg-gated apply_row_meta from pin matching."]
+verify = ["Live briefing None plus if false apply_row_meta decoy; cargo test RED."]
+citations = [
+    "W66 verifier after T-564",
+    "hydrate_wires_row_briefing apply_row_meta",
+    "if false unreachable decoy",
+]
 shipped_at = "77be36c9"
 created_at = "2026-07-28T22:30:36Z"
 completed_at = "2026-07-28T22:46:08Z"
@@ -18,13 +48,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
-migration_legacy = [
-    "FOUND by W66 adversarial verifier (DIRTY MAJOR) after T-564.",
-    "",
-    "Dead let decoy now RED. `if false { apply_row_meta(…, opt(&row.briefing)) }` + live None args → hydrate pin stays GREEN. Pin accepts any apply_row_meta arg-list, including unreachable calls.",
-    "",
-    "Repro: live briefing args → None; add if false { apply_row_meta(…, opt(&row.briefing)) }; cargo test green.",
-]
 owns = ["apps/website/frontend/src/mission_title_prefer.rs"]
 
 [scope]

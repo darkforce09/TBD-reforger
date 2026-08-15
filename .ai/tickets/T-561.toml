@@ -6,7 +6,30 @@ class = "feature"
 status = "shipped"
 order = 3414
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by W64 adversarial verifier (DIRTY MAJOR) after T-559.
+
+strip_rust_line_comments only drops // lines. Both wires → None plus:
+- /* opt(&row.briefing) */ → PASS
+- let _ = "opt(&row.briefing)"; → PASS
+// decoy still RED (T-559 held).
+
+Repro: replace both opt(&row.briefing) with None; leave /* opt(&row.briefing) */ in adopt_payload and apply_row; cargo test hydrate_wires_row_briefing green.
+
+missing=0"""
 priority = 2
+main_goal = "Harden briefing Class-R against block-comment and string decoy opt(&row.briefing)."
+context = ["W64 adversarial verifier DIRTY MAJOR after T-559."]
+requirement = ["strip_rust_line_comments must not let /* */ or string literal decoys pass."]
+current_state = ["Both wires None plus /* opt(&row.briefing) */ or let _ string decoy still passes; // decoy red."]
+approach = ["Strip or reject block comments and string literals containing the briefing needle."]
+verify = ["hydrate_wires_row_briefing red with None wires and block-comment or string decoy."]
+citations = [
+    "W64 verifier T-559",
+    "strip_rust_line_comments",
+]
 shipped_at = "766b6b0c"
 created_at = "2026-07-28T21:59:37Z"
 completed_at = "2026-07-28T22:16:50Z"
@@ -18,16 +41,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
-migration_legacy = [
-    "FOUND by W64 adversarial verifier (DIRTY MAJOR) after T-559.",
-    "",
-    "strip_rust_line_comments only drops // lines. Both wires → None plus:",
-    "- /* opt(&row.briefing) */ → PASS",
-    '- let _ = "opt(&row.briefing)"; → PASS',
-    "// decoy still RED (T-559 held).",
-    "",
-    "Repro: replace both opt(&row.briefing) with None; leave /* opt(&row.briefing) */ in adopt_payload and apply_row; cargo test hydrate_wires_row_briefing green.",
-]
 owns = ["apps/website/frontend/src/mission_title_prefer.rs"]
 
 [scope]

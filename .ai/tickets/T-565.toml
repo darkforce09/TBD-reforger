@@ -1,12 +1,42 @@
 id = "T-565"
 kind = "work"
-title = "T-562 Class-R still hollow — COALESCE needle in unrelated sqlx::query string"
+title = "T-562 Class-R hollow — COALESCE needle in unrelated query"
 summary = "T-562 Class-R still hollow — COALESCE needle in unrelated sqlx::query string"
 class = "chore"
 status = "shipped"
 order = 3418
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by W65 adversarial verifier (DIRTY MAJOR) after T-562.
+
+Drop the COALESCE UPDATE; replace with executed `sqlx::query("SELECT 1 -- SET arma_id = COALESCE(arma_id, $2) decoy")` → t534_dev_login_prime_literals_still_match_handler stays GREEN. Any sqlx::query("…") payload containing the needle is enough; need not be the first-create UPDATE.
+
+Repro: delete COALESCE UPDATE; add SELECT query string with needle in SQL comment; Class-R green.
+
+missing=0"""
 priority = 2
+main_goal = "Class-R must pin live COALESCE UPDATE not unrelated sqlx query."
+context = [
+    "W65 verifier DIRTY MAJOR after T-562.",
+    "SELECT query with COALESCE in comment keeps dev_login Class-R GREEN.",
+]
+requirement = [
+    "Pin must require live COALESCE UPDATE on first-create path.",
+    "Unrelated sqlx::query string with needle must RED.",
+]
+current_state = [
+    "Dropped COALESCE UPDATE; SELECT decoy with needle in comment greens Class-R.",
+    "Any sqlx::query payload containing needle suffices for pin.",
+]
+approach = ["Restrict pin to executed UPDATE not arbitrary sqlx::query strings."]
+verify = ["Delete COALESCE UPDATE; add SELECT decoy; Class-R must RED."]
+citations = [
+    "W65 verifier after T-562",
+    "t534_dev_login_prime_literals handler",
+    "sqlx query COALESCE decoy",
+]
 shipped_at = "24e80a2d"
 created_at = "2026-07-28T22:17:00Z"
 completed_at = "2026-07-28T22:22:20Z"
@@ -18,13 +48,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = [
-    "FOUND by W65 adversarial verifier (DIRTY MAJOR) after T-562.",
-    "",
-    'Drop the COALESCE UPDATE; replace with executed `sqlx::query("SELECT 1 -- SET arma_id = COALESCE(arma_id, $2) decoy")` → t534_dev_login_prime_literals_still_match_handler stays GREEN. Any sqlx::query("…") payload containing the needle is enough; need not be the first-create UPDATE.',
-    "",
-    "Repro: delete COALESCE UPDATE; add SELECT query string with needle in SQL comment; Class-R green.",
-]
 owns = ["apps/website/api/tests/common/mod.rs"]
 
 [scope]

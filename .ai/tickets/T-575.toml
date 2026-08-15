@@ -6,7 +6,42 @@ class = "docs"
 status = "shipped"
 order = 3428
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by W68 adversarial verifier (CLEAN NIT) after T-558.
+
+Gate script still exports `MIGRATE_TEST_DATABASE_URL` (wave.sh ~341). `db_migrate` / `models_fromrow` now use per-binary provision and no longer read it. Harmless leftover — not a silent gate skip.
+
+Repro: rg MIGRATE_TEST_DATABASE_URL in wave.sh vs api tests; export is live, consumers gone.
+
+Cure: drop the dead export (and any docs that still describe the shared migrate URL).
+
+missing=0"""
 priority = 3
+main_goal = "Drop dead MIGRATE_TEST_DATABASE_URL export from wave.sh and stale docs."
+context = [
+    "W68 adversarial verifier CLEAN NIT after T-558.",
+    "Harmless leftover; not a silent gate skip.",
+]
+requirement = [
+    "Drop MIGRATE_TEST_DATABASE_URL export from wave.sh.",
+    "Remove docs still describing the shared migrate URL.",
+]
+current_state = [
+    "wave.sh ~341 still exports MIGRATE_TEST_DATABASE_URL.",
+    "db_migrate / models_fromrow use per-binary provision; consumers gone.",
+]
+approach = ["Delete export from wave.sh; update any stale docs referencing shared migrate URL."]
+verify = [
+    "rg MIGRATE_TEST_DATABASE_URL wave.sh → no export.",
+    "rg in api tests → consumers still absent.",
+]
+citations = [
+    "W68 verifier CLEAN NIT T-558",
+    "MIGRATE_TEST_DATABASE_URL dead export",
+    "per-binary provision db_migrate",
+]
 shipped_at = "d9c666e1"
 created_at = "2026-07-28T23:03:36Z"
 completed_at = "2026-07-31T20:40:08Z"
@@ -18,15 +53,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = [
-    "FOUND by W68 adversarial verifier (CLEAN NIT) after T-558.",
-    "",
-    "Gate script still exports `MIGRATE_TEST_DATABASE_URL` (wave.sh ~341). `db_migrate` / `models_fromrow` now use per-binary provision and no longer read it. Harmless leftover — not a silent gate skip.",
-    "",
-    "Repro: rg MIGRATE_TEST_DATABASE_URL in wave.sh vs api tests; export is live, consumers gone.",
-    "",
-    "Cure: drop the dead export (and any docs that still describe the shared migrate URL).",
-]
 owns = ["scripts/platform/wave.sh"]
 
 [scope]

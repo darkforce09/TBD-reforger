@@ -1,12 +1,43 @@
 id = "T-571"
 kind = "work"
-title = "T-568 Class-R still hollow — nested fn dev_login / PG dollar-quote COALESCE"
+title = "T-568 Class-R hollow — nested dev_login dollar-quote decoy"
 summary = "T-568 Class-R still hollow — nested fn dev_login / PG dollar-quote COALESCE"
 class = "feature"
 status = "shipped"
 order = 3424
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Plain string/r# let decoys RED. Still GREEN: (1) nested `mod { async fn dev_login() { COALESCE } }` first-match + live SET $2; (2) SELECT $decoy$UPDATE…COALESCE…$decoy$ (blanker only handles '/").
+
+Repro: nest decoy fn named dev_login with COALESCE; live path SET $2; Class-R green.
+
+missing=0"""
 priority = 2
+main_goal = "Close Class-R hollow bypass via nested fn and dollar-quote decoys."
+context = [
+    "FOUND by W67 adversarial verifier (DIRTY MAJOR) after T-568.",
+    "Plain string/r# let decoys RED.",
+]
+requirement = [
+    "Class-R must RED nested mod async fn dev_login with COALESCE first-match.",
+    "Class-R must RED SELECT dollar-quote UPDATE COALESCE surviving blanker.",
+]
+current_state = [
+    "Nested mod dev_login COALESCE first-match; live path SET $2 stays GREEN.",
+    "SELECT $decoy$UPDATE COALESCE $decoy$ bypasses blanker; handles slash-quote only.",
+]
+approach = [
+    "Extend Class-R to catch nested fn dev_login COALESCE decoy.",
+    "Extend blanker to strip PG dollar-quote COALESCE needles.",
+]
+verify = ["Repro: nest decoy fn dev_login with COALESCE; live SET $2; Class-R green."]
+citations = [
+    "W67 adversarial verifier DIRTY MAJOR",
+    "T-568 nested dev_login COALESCE decoy",
+    "PG dollar-quote UPDATE COALESCE bypass",
+]
 shipped_at = "734b175c"
 created_at = "2026-07-31T23:41:18Z"
 completed_at = "2026-07-31T23:41:18Z"
@@ -18,13 +49,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 1 commit subject(s)"
-migration_legacy = [
-    "FOUND by W67 adversarial verifier (DIRTY MAJOR) after T-568.",
-    "",
-    """Plain string/r# let decoys RED. Still GREEN: (1) nested `mod { async fn dev_login() { COALESCE } }` first-match + live SET $2; (2) SELECT $decoy$UPDATE…COALESCE…$decoy$ (blanker only handles '/").""",
-    "",
-    "Repro: nest decoy fn named dev_login with COALESCE; live path SET $2; Class-R green.",
-]
 owns = ["apps/website/api/tests/common/mod.rs"]
 
 [scope]

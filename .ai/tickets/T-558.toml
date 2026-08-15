@@ -1,12 +1,67 @@
 id = "T-558"
 kind = "work"
-title = "Test-harness residue after T-534: a DB consumer the Class-R cannot see, unpruned rust_it DBs, and one shared migrate DB"
+title = "T-534 test DB residue: hidden consumer, unpruned rust_it, shared migrate"
 summary = "Test-harness residue after T-534: a DB consumer the Class-R cannot see, unpruned rust_it DBs, and one shared migrate DB"
 class = "bug"
 status = "shipped"
 order = 3411
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Four findings from T-534, none of them regressions, all of them the same shape it just fixed.
+
+1. `apps/website/api/src/services/registry_import.rs:455` -- a THIRTIETH database consumer that the
+   T-542 Class-R guard cannot see. An in-crate `#[tokio::test]` reads TEST_DATABASE_URL raw and
+   migrates the operator's BASE database. It is the only DB test in the lib target, self-cleaning and
+   idempotent, so it is deterministic today -- and it now has the base database entirely to itself
+   because T-534 moved everything else onto per-binary DBs. The real gap:
+   `t542_no_raw_test_database_url_reads_outside_common` scans only `tests/*.rs`. Extend it to `src/`
+   and this class stops being invisible.
+
+2. `make test-it` now leaves 25 `rust_it_<suite>_it` databases behind. They are recreated per run so
+   they do not grow, but nothing prunes them -- the Makefile drops only `rust_it`. `Makefile` was
+   outside T-534's scope. (The GATE path is handled: T-534 extended `prune_old_gate_wave_dbs` in
+   wave.sh to reap derived names on the same keep-N-and-N-1 policy.)
+
+3. `tests/db_migrate.rs` and `tests/models_fromrow.rs` still SHARE one `MIGRATE_TEST_DATABASE_URL`.
+   Two binaries, one database -- the exact shape T-534 removed everywhere else. Deterministic today
+   only because cargo runs targets sequentially and both use `>=`/count assertions the sibling's rows
+   do not move. It survives on ordering, which is what this program keeps paying for.
+
+4. Two concurrent `cargo test` runs against the same base still race, now on `<base>_<suite>_it`
+   rather than on `<base>`. No worse than before, and the gate lock already serialises the gate --
+   recorded so nobody rediscovers it as new.
+
+missing=0"""
 priority = 2
+main_goal = "Close four T-534 test-harness gaps: invisible DB consumer, unpruned rust_it DBs, shared migrate URL, concurrent race."
+context = ["Four findings from T-534; same shape it fixed, not regressions."]
+requirement = [
+    "Extend t542_no_raw_test_database_url_reads_outside_common to scan src/, not only tests/*.rs.",
+    "Prune rust_it_<suite>_it databases left by make test-it; Makefile drops only rust_it.",
+    "Give db_migrate.rs and models_fromrow.rs separate MIGRATE_TEST_DATABASE_URL databases.",
+]
+current_state = [
+    "registry_import.rs:455 tokio test reads TEST_DATABASE_URL raw; Class-R scans tests/*.rs only.",
+    "make test-it recreates 25 rust_it_<suite>_it DBs per run; nothing prunes them.",
+    "Two migrate binaries share one database; deterministic only via sequential cargo and loose assertions.",
+    "Concurrent cargo test on same base races on <base>_<suite>_it; gate lock serialises gate only.",
+]
+approach = [
+    "Extend Class-R guard to src/ so registry_import consumer is visible.",
+    "Add Makefile prune for derived rust_it names (gate path already handled by wave.sh).",
+    "Split migrate test URLs like T-534 did elsewhere.",
+]
+verify = [
+    "t542_no_raw_test_database_url_reads_outside_common catches src/ TEST_DATABASE_URL reads.",
+    "make test-it no longer leaves unpruned rust_it_<suite>_it databases.",
+]
+citations = [
+    "T-534 test isolation",
+    "T-542 Class-R guard",
+    "registry_import.rs:455",
+]
 shipped_at = "96c765da"
 created_at = "2026-07-28T21:41:23Z"
 completed_at = "2026-07-28T22:56:05Z"
@@ -18,31 +73,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
-migration_legacy = [
-    "Four findings from T-534, none of them regressions, all of them the same shape it just fixed.",
-    "",
-    "1. `apps/website/api/src/services/registry_import.rs:455` -- a THIRTIETH database consumer that the",
-    "   T-542 Class-R guard cannot see. An in-crate `#[tokio::test]` reads TEST_DATABASE_URL raw and",
-    "   migrates the operator's BASE database. It is the only DB test in the lib target, self-cleaning and",
-    "   idempotent, so it is deterministic today -- and it now has the base database entirely to itself",
-    "   because T-534 moved everything else onto per-binary DBs. The real gap:",
-    "   `t542_no_raw_test_database_url_reads_outside_common` scans only `tests/*.rs`. Extend it to `src/`",
-    "   and this class stops being invisible.",
-    "",
-    "2. `make test-it` now leaves 25 `rust_it_<suite>_it` databases behind. They are recreated per run so",
-    "   they do not grow, but nothing prunes them -- the Makefile drops only `rust_it`. `Makefile` was",
-    "   outside T-534's scope. (The GATE path is handled: T-534 extended `prune_old_gate_wave_dbs` in",
-    "   wave.sh to reap derived names on the same keep-N-and-N-1 policy.)",
-    "",
-    "3. `tests/db_migrate.rs` and `tests/models_fromrow.rs` still SHARE one `MIGRATE_TEST_DATABASE_URL`.",
-    "   Two binaries, one database -- the exact shape T-534 removed everywhere else. Deterministic today",
-    "   only because cargo runs targets sequentially and both use `>=`/count assertions the sibling's rows",
-    "   do not move. It survives on ordering, which is what this program keeps paying for.",
-    "",
-    "4. Two concurrent `cargo test` runs against the same base still race, now on `<base>_<suite>_it`",
-    "   rather than on `<base>`. No worse than before, and the gate lock already serialises the gate --",
-    "   recorded so nobody rediscovers it as new.",
-]
 owns = [
     "apps/website/api/tests/db_migrate.rs",
     "apps/website/api/tests/models_fromrow.rs",

@@ -1,12 +1,45 @@
 id = "T-570"
 kind = "work"
-title = "T-567 Class-R still hollow — unreachable if true==false / loop-break / cfg(any())"
+title = "T-567 Class-R hollow — unreachable cfg and loop decoys"
 summary = "T-567 Class-R still hollow — unreachable if true==false / loop-break / cfg(any())"
 class = "feature"
 status = "shipped"
 order = 3423
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by W67 adversarial verifier (DIRTY MAJOR) after T-567.
+
+Exact `if false { … }` now RED. Still GREEN with live None + unreachable `if true == false` / `loop { break; apply… }` / `#[cfg(any())]` / `while false` / `if !true` wrapping apply_row_meta(…, opt(&row.briefing)).
+
+Repro: live briefing → None; wrap decoy call in `if true == false { … }`; pin green.
+
+missing=0"""
 priority = 2
+main_goal = "Close Class-R hollow bypass via unreachable control-flow decoys."
+context = [
+    "FOUND by W67 adversarial verifier (DIRTY MAJOR) after T-567.",
+    "Exact `if false { … }` now RED.",
+]
+requirement = [
+    "Class-R must RED unreachable apply_row_meta with opt(&row.briefing) decoys.",
+    "Covers if true==false, loop break, cfg(any()), while false, if !true.",
+]
+current_state = [
+    "Live briefing args → None; unreachable wrappers keep hydrate pin GREEN.",
+    "if true==false / loop break / cfg(any()) / while false / if !true all bypass.",
+]
+approach = [
+    "Extend Class-R to reject unreachable control-flow wrapped apply_row_meta calls.",
+    "Treat cfg(any()) and loop-break decoys same as if false.",
+]
+verify = ["Repro: live briefing → None; wrap decoy in if true==false; pin green."]
+citations = [
+    "W67 adversarial verifier DIRTY MAJOR",
+    "T-567 unreachable apply_row_meta decoy",
+    "if true==false loop-break cfg bypass",
+]
 shipped_at = "abd07e10"
 created_at = "2026-07-28T22:46:08Z"
 completed_at = "2026-07-31T17:07:53Z"
@@ -18,13 +51,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    "FOUND by W67 adversarial verifier (DIRTY MAJOR) after T-567.",
-    "",
-    "Exact `if false { … }` now RED. Still GREEN with live None + unreachable `if true == false` / `loop { break; apply… }` / `#[cfg(any())]` / `while false` / `if !true` wrapping apply_row_meta(…, opt(&row.briefing)).",
-    "",
-    "Repro: live briefing → None; wrap decoy call in `if true == false { … }`; pin green.",
-]
 owns = ["apps/website/frontend/src/mission_title_prefer.rs"]
 
 [scope]

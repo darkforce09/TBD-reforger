@@ -1,12 +1,45 @@
 id = "T-568"
 kind = "work"
-title = "T-565 Class-R still hollow — dead helper UPDATE / SQL string-literal decoy"
+title = "T-565 Class-R hollow — dead helper and SQL literal decoys"
 summary = "T-565 Class-R still hollow — dead helper UPDATE / SQL string-literal decoy"
 class = "feature"
 status = "shipped"
 order = 3421
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by W66 adversarial verifier (DIRTY MAJOR) after T-565.
+
+SELECT -- comment decoy now RED. Still GREEN: (1) dead helper retaining COALESCE UPDATE while live path SET arma_id = $2; (2) SELECT … WHERE 'UPDATE users SET arma_id = COALESCE…' (needle inside SQL string literal survives comment strip).
+
+Repro: move COALESCE UPDATE into unused fn; live UPDATE uses $2; Class-R green.
+
+missing=0"""
 priority = 2
+main_goal = "Close Class-R hollow bypass via dead helper and SQL string literal."
+context = [
+    "FOUND by W66 adversarial verifier (DIRTY MAJOR) after T-565.",
+    "SELECT -- comment decoy now RED.",
+]
+requirement = [
+    "Class-R must RED dead helper COALESCE UPDATE while live SET arma_id = $2.",
+    "Class-R must RED needle inside SQL string literal surviving comment strip.",
+]
+current_state = [
+    "Dead helper retains COALESCE UPDATE; live path uses SET arma_id = $2.",
+    "SELECT WHERE with UPDATE users SET arma_id = COALESCE in string literal stays GREEN.",
+]
+approach = [
+    "Extend Class-R to catch dead helper COALESCE UPDATE decoy.",
+    "Extend Class-R to catch needle inside SQL string literals.",
+]
+verify = ["Repro: COALESCE in unused fn; live UPDATE $2; Class-R green."]
+citations = [
+    "W66 adversarial verifier DIRTY MAJOR",
+    "T-565 Class-R hollow bypass",
+    "SQL string literal COALESCE needle",
+]
 shipped_at = "242eed61"
 created_at = "2026-07-28T22:31:04Z"
 completed_at = "2026-07-28T22:38:56Z"
@@ -18,13 +51,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    "FOUND by W66 adversarial verifier (DIRTY MAJOR) after T-565.",
-    "",
-    "SELECT -- comment decoy now RED. Still GREEN: (1) dead helper retaining COALESCE UPDATE while live path SET arma_id = $2; (2) SELECT … WHERE 'UPDATE users SET arma_id = COALESCE…' (needle inside SQL string literal survives comment strip).",
-    "",
-    "Repro: move COALESCE UPDATE into unused fn; live UPDATE uses $2; Class-R green.",
-]
 owns = ["apps/website/api/tests/common/mod.rs"]
 
 [scope]

@@ -1,12 +1,39 @@
 id = "T-560"
 kind = "work"
-title = "T-557 Class-R hollow — comment COALESCE / bind-form INSERT still races"
+title = "T-557 Class-R hollow — COALESCE comment decoy still races"
 summary = "T-557 Class-R hollow — comment COALESCE / bind-form INSERT still races"
 class = "feature"
 status = "shipped"
 order = 3413
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by W63 adversarial verifier (DIRTY MAJOR) after T-557.
+
+t534_dev_login_prime_literals_still_match_handler greps COALESCE(arma_id and bans only the literal '', 'dev-arma-…' stamp.
+Comment `// COALESCE(arma_id` + remove real UPDATE → PASS.
+INSERT arma_id = $3 + comment COALESCE (no real UPDATE) → PASS; barrier probe 3× idx_users_arma_id hits.
+
+Product NULL+COALESCE path holds (0 race hits). Pin does not.
+
+Repro: keep ON CONFLICT (discord_id), stamp arma_id via bind $N in INSERT VALUES, replace live COALESCE UPDATE with a comment containing COALESCE(arma_id; Class-R green; concurrent cold dev-login 23505 again.
+
+missing=0"""
 priority = 2
+main_goal = "Harden dev-login Class-R so comment or bind-form COALESCE decoys cannot pass."
+context = ["W63 adversarial verifier DIRTY MAJOR after T-557."]
+requirement = ["t534_dev_login_prime_literals must fail when live COALESCE UPDATE is comment-only or bind-only."]
+current_state = [
+    "Greps COALESCE(arma_id and bans literal ''; comment or bind INSERT with decoy still passes.",
+    "Product NULL+COALESCE path holds; concurrent cold dev-login 23505 returns with decoy.",
+]
+approach = ["Pin must require executable COALESCE UPDATE, not comment or bind-form substitutes."]
+verify = ["Class-R red when COALESCE UPDATE removed and comment or bind decoy left; barrier probe clean."]
+citations = [
+    "W63 verifier T-557",
+    "t534_dev_login_prime_literals",
+]
 shipped_at = "b21ad671"
 created_at = "2026-07-28T21:41:01Z"
 completed_at = "2026-07-28T22:05:01Z"
@@ -18,17 +45,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 7 commit subject(s)"
-migration_legacy = [
-    "FOUND by W63 adversarial verifier (DIRTY MAJOR) after T-557.",
-    "",
-    "t534_dev_login_prime_literals_still_match_handler greps COALESCE(arma_id and bans only the literal '', 'dev-arma-…' stamp.",
-    "Comment `// COALESCE(arma_id` + remove real UPDATE → PASS.",
-    "INSERT arma_id = $3 + comment COALESCE (no real UPDATE) → PASS; barrier probe 3× idx_users_arma_id hits.",
-    "",
-    "Product NULL+COALESCE path holds (0 race hits). Pin does not.",
-    "",
-    "Repro: keep ON CONFLICT (discord_id), stamp arma_id via bind $N in INSERT VALUES, replace live COALESCE UPDATE with a comment containing COALESCE(arma_id; Class-R green; concurrent cold dev-login 23505 again.",
-]
 owns = [
     "apps/website/api/tests/common/mod.rs",
     "apps/website/api/src/handlers/dev.rs",

@@ -1,12 +1,42 @@
 id = "T-566"
 kind = "work"
-title = "T-387 Class-R hollow — comment-arm / ignore-helper still greens (live IT covers)"
+title = "T-387 Class-R hollow — commented match arms still green"
 summary = "T-387 Class-R hollow — comment-arm / ignore-helper still greens (live IT covers)"
 class = "feature"
 status = "shipped"
 order = 3419
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by W65 adversarial verifier (DIRTY MAJOR) after T-387.
+
+t387_dev_login_roles_use_distinct_discord_ids stays GREEN if live match arms are moved into // comments and match collapses to DEV_USER_ID, or if discord_id = DEV_USER_ID while helpers remain as dead code. Live IT t387_dev_login_roles_do_not_rewrite_each_other goes RED on both (product covered when ITs run; Class-R is not).
+
+Repro: collapse discord_id_for_role to always DEV_USER_ID but leave old arms in comments; Class-R green; live IT red.
+
+missing=0"""
 priority = 2
+main_goal = "Class-R must pin distinct discord_id per dev-login role."
+context = [
+    "W65 verifier DIRTY MAJOR after T-387.",
+    "Commented match arms or dead helpers keep Class-R GREEN.",
+]
+requirement = [
+    "Class-R must RED when discord_id_for_role collapses to DEV_USER_ID.",
+    "Live IT t387_dev_login_roles_do_not_rewrite_each_other covers product.",
+]
+current_state = [
+    "Match arms in comments with collapsed DEV_USER_ID keeps Class-R green.",
+    "Live IT goes RED on both bypass shapes.",
+]
+approach = ["Pin must exercise live discord_id_for_role arms not comment decoys."]
+verify = ["Collapse to always DEV_USER_ID with commented arms; Class-R must RED."]
+citations = [
+    "W65 verifier after T-387",
+    "t387_dev_login_roles distinct discord",
+    "comment-arm dead helper bypass",
+]
 shipped_at = "a8788985"
 created_at = "2026-07-28T22:16:50Z"
 completed_at = "2026-07-28T22:22:25Z"
@@ -18,13 +48,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
-migration_legacy = [
-    "FOUND by W65 adversarial verifier (DIRTY MAJOR) after T-387.",
-    "",
-    "t387_dev_login_roles_use_distinct_discord_ids stays GREEN if live match arms are moved into // comments and match collapses to DEV_USER_ID, or if discord_id = DEV_USER_ID while helpers remain as dead code. Live IT t387_dev_login_roles_do_not_rewrite_each_other goes RED on both (product covered when ITs run; Class-R is not).",
-    "",
-    "Repro: collapse discord_id_for_role to always DEV_USER_ID but leave old arms in comments; Class-R green; live IT red.",
-]
 owns = ["apps/website/api/tests/misc_integration.rs"]
 
 [scope]
