@@ -18,6 +18,11 @@ requirement = [
 ]
 current_state = ["POC slot picker only; no production roster enforcement."]
 approach = ["Audit-closed via T-181.9.1 picker, T-181.51 roster, T-181.35 identity link."]
+verify = ["T-181 delivery audit 2026-07-26; no standalone ship commit."]
+acceptance = [
+    "Production lobby slot picker shipped T-181.9.1; supersedes T-068.13 POC.",
+    "TBD_RosterLoader enforcement and TBD_IdentityLink claims delivered via T-181.",
+]
 citations = [
     "T-181 audit closure 2026-07-26",
     "t068_13_mod_slotting_screen_poc.md",

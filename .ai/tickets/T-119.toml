@@ -11,6 +11,11 @@ context = ["M1 audit row closed 2026-07-26 before T-181 platform factory."]
 requirement = ["Loadout equip, safestart manager, zone boundary, admin command surface."]
 current_state = ["SHIPPED by audit; all four M1 items delivered via T-181 slices."]
 approach = ["Verify T-181 delivered each named component; close audit row."]
+verify = ["T-181 M1 audit 2026-07-26; four components verified in tree."]
+acceptance = [
+    "Loadout equip, safestart manager, play boundary, and admin commands delivered.",
+    "All four M1 framework items present via named T-181 and T-068 slices.",
+]
 citations = [
     "Summary: T-181 delivery audit.",
     "TBD_LoadoutEquipComponent.c T-068.12.",

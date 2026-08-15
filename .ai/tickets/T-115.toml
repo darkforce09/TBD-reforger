@@ -11,6 +11,11 @@ context = ["Mission runtime lacked evaluated objectives wiring to round end."]
 requirement = ["TBD_ObjectiveRegistry capture/destroy/hold-until; EvaluateEndTriggers sets END stage."]
 current_state = ["No capture win condition in mod at ticket filing."]
 approach = ["Delivered T-181.39 TBD_ObjectiveRegistry with TBD_ObjectivesComponent end triggers."]
+verify = ["T-181.39 audit closure 2026-07-26; objectives compile in Workbench."]
+acceptance = [
+    "TBD_ObjectiveRegistry implemented capture, destroy, and hold-until evaluation.",
+    "EvaluateEndTriggers wired mission END stage on objective completion.",
+]
 citations = [
     "T-181.39 audit closure",
     "TBD_ObjectiveRegistry.c",

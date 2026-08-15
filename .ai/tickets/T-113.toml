@@ -16,6 +16,10 @@ requirement = [
 current_state = ["Split repos with legacy path references in specs and scripts."]
 approach = ["Read-tree merge M1 lift; M1c path fixes; M2 ticket registry rewrite."]
 verify = ["./scripts/verify-monorepo-migration.sh exit 0"]
+acceptance = [
+    "Website and mod repos merged M0–M3; unified ticket registry shipped.",
+    "Path rewrites and executor gate landed; migration verify script exited zero.",
+]
 citations = [
     "commit 904ba78f",
     "MONOREPO_MIGRATION.md",

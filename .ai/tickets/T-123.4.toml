@@ -13,6 +13,14 @@ context = ["Cross-boundary types hand-copied; §9.1 codegen not yet implemented.
 requirement = ["mission-editor-payload.schema.json; codegen.mjs; internal/contract and types/contract outputs."]
 current_state = ["No generated contract dirs; editor payload schema missing."]
 approach = ["quicktype Go plus json-schema-to-typescript; make schema-codegen; DO NOT EDIT markers."]
+verify = [
+    "cargo xtask ci schema-codegen",
+    "cargo xtask ci schema-validate",
+]
+acceptance = [
+    "Go and TypeScript contract projections generated from shared JSON schemas.",
+    "mission-editor-payload.schema.json added; DO NOT EDIT markers on outputs.",
+]
 citations = [
     "commit dd4e4d0 schema codegen",
     "t123 spec T-123.4 slice",

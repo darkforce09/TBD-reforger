@@ -13,6 +13,11 @@ context = ["Manual WE Export Height Map dead on packed Eden."]
 requirement = ["GetSurfaceY resample plugin; raw-u16-to-dem-png.mjs; 11 anchors."]
 current_state = ["No committed DEM; no anchor verify gate."]
 approach = ["TBD_TerrainExportPlugin.c; mod-getsurfacey-resample manifest."]
+verify = ["cargo xtask ci verify-terrain-strict"]
+acceptance = [
+    "Everon 6400² DEM PNG committed; eleven anchors passed maxDeltaM 0.204 m.",
+    "TBD_TerrainExportPlugin resample path shipped; tile pyramid deferred per spec.",
+]
 citations = [
     "commit 6d96339",
     "SHIPPED_HISTORY T-091.0",

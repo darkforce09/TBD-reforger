@@ -11,6 +11,11 @@ context = ["Pointer row; core UI shipped T-159.25 and T-159.25a."]
 requirement = ["ORBAT selector in event hub; identity link flow in settings."]
 current_state = ["SHIPPED @ 18852577; residuals T-226, T-284, T-231 all shipped."]
 approach = ["Close stale pointer after verifying named follow-on tickets shipped."]
+verify = ["Wave 69 closure @ 18852577; follow-ons T-226 T-284 T-231 verified shipped."]
+acceptance = [
+    "Event ORBAT selector shipped via T-159.25a in event hub.",
+    "Discord identity linking UI shipped via T-159.25; stale pointer closed.",
+]
 citations = [
     "Commit 18852577 wave 69.",
     "T-159.25 identity link UI.",

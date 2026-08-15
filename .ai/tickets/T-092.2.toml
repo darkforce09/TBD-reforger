@@ -20,6 +20,10 @@ verify = [
     "packages/tbd-schema npm run validate",
     "cargo xtask db test-it",
 ]
+acceptance = [
+    "flattenEditorToModDocument served GET /compiled with service token and 409 guard.",
+    "Live REST and wb_play E2E PASS; golden missions validated schema 1.2.",
+]
 citations = [
     "t092_2_mod_compile_route.md",
     "commit a73224f2",

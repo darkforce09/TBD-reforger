@@ -13,6 +13,11 @@ context = ["Go and TS tags shipped; mod scripts lacked §6/§7 comment coverage.
 requirement = ["@contract on Backend DTOs; @authority/@rpc/@replicated on Gamemode RPCs."]
 current_state = ["TBD framework scripts had no cross-boundary documentation tags."]
 approach = ["Comment-only Enfusion edits; enfusion-mcp preflight; registry export plugin @contract."]
+verify = ["cargo xtask ci verify-citations"]
+acceptance = [
+    "Enfusion Backend DTOs received @contract; Gamemode RPCs received authority tags.",
+    "Registry export plugin documented; Workbench compile clean on touched scripts.",
+]
 citations = [
     "commit 169e47d Enfusion docs",
     "t123 spec T-123.3 slice",

@@ -13,6 +13,14 @@ context = ["T-091.0 DEM shipped; terrains.ts lacked fetch/decode."]
 requirement = ["DemController; terrainManifest; Float32 meters cache."]
 current_state = ["No dem/ module; editor cannot sample height."]
 approach = ["tactical-map/dem/*; degraded flat mode on failure."]
+verify = [
+    "cargo xtask ci verify-terrain-strict",
+    "Vitest sampleElevation suite passed at ship @ 2c56c2e.",
+]
+acceptance = [
+    "tactical-map/dem loader exposed sampleElevation with bilinear height sampling.",
+    "Everon DEM loaded in editor; anchor and clamp tests green.",
+]
 citations = [
     "commit 2c56c2e",
     "SHIPPED_HISTORY T-091.1",

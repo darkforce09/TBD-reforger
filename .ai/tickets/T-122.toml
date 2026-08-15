@@ -12,6 +12,14 @@ context = ["Authority: CODEBASE_AUDIT_2026.md; single-branch fix-all policy."]
 requirement = ["Fix C/R/T/M/D audit bands; document deferred items with rationale."]
 current_state = ["SHIPPED @ f131770; 37/41 findings fixed; four deferred per audit doc."]
 approach = ["One Claude pass on ticket/T-122 branch; test-it and frontend build/lint."]
+verify = [
+    "cargo xtask db test-it",
+    "cargo xtask mk ci-local-leptos",
+]
+acceptance = [
+    "Thirty-seven of forty-one audit findings fixed in one hotfix bundle.",
+    "Four items deferred with rationale; test-it and frontend gates clean at ship.",
+]
 citations = [
     "Spec: t122_codebase_audit_hotfix.md.",
     "Commit f131770d hotfix bundle.",

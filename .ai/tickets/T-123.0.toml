@@ -13,6 +13,11 @@ context = ["DOCUMENTATION_STANDARDS.md normative; T-123 implements §9 codegen a
 requirement = ["AGENT_COMMIT_CHECKLIST and CLAUDE.md pointers; t123 handoff with slice order."]
 current_state = ["Standards doc written but implementation deferred as follow-up."]
 approach = ["Register program ticket; sync registry; ship handoff artifact."]
+verify = ["cargo xtask ticket sync && cargo xtask ticket check --strict"]
+acceptance = [
+    "Seven-slice documentation standards program registered with handoff artifact.",
+    "CLAUDE.md and AGENT_COMMIT_CHECKLIST pointed at DOCUMENTATION_STANDARDS hub.",
+]
 citations = [
     "commit f0af31a T-123 register",
     "t123_documentation_standards_rollout.md",

@@ -16,6 +16,11 @@ requirement = [
 ]
 current_state = ["Go handlers and models missing DOCUMENTATION_STANDARDS cross-boundary tags."]
 approach = ["Tag registry/version/export paths; Godoc on touched packages; rename export envelope field."]
+verify = ["cargo xtask db test-it"]
+acceptance = [
+    "Go handlers tagged @route; models tagged @contract on cross-boundary symbols.",
+    "Export envelope renamed exportFormatVersion; loadout-export contracts documented.",
+]
 citations = [
     "commit 04a73a1 Go tags",
     "t123 spec T-123.1 slice",

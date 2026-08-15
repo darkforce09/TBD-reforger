@@ -17,6 +17,10 @@ requirement = [
 current_state = ["Dual pyramid raster pipeline extended past usefulness."]
 approach = ["Write implementation plan; update t090-specs consistency gate wiring."]
 verify = ["cargo xtask schema t090-specs"]
+acceptance = [
+    "v2 implementation plan artifact shipped; phased slices locked for T-090.3+.",
+    "t090-specs consistency gate wired at ship @ a222a146.",
+]
 citations = [
     "commit a222a146 v2 implementation plan",
     "t090_10_map_engine_v2.md spec",

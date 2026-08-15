@@ -13,6 +13,14 @@ context = ["Editor emits editor.slots only; mod wrong API path."]
 requirement = ["t092_spawn_transform_program; t092_1 + t092_2 specs."]
 current_state = ["No artifact diagram; UUID slot ids; gaps undocumented."]
 approach = ["Contract tables; S1–S4 verification gates; registry slices."]
+verify = [
+    "cargo xtask ticket check --strict",
+    "test -f docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md",
+]
+acceptance = [
+    "Spawn transform hub and T-092.1/.2 slice specs linked on disk.",
+    "Registry listed T-092 slices; spawn contract gaps documented for implementers.",
+]
 citations = [
     "commit c09beb38",
     "t092_spawn_transform_program.md",

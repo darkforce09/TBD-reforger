@@ -20,6 +20,10 @@ verify = [
     "cargo xtask mod dev-bootstrap",
     "cargo xtask mod spawn-verify",
 ]
+acceptance = [
+    "Optional slot y and schemaVersion 1.2 shipped; spawn policy logged jsonY path.",
+    "wb_play M1–M4 PASS; CAPSULE_GROUND_OFFSET_M stayed 0.0 after measurement.",
+]
 citations = [
     "t092_1_mod_spawn_policy.md",
     "commit 4eefc169",

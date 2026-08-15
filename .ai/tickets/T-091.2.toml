@@ -13,6 +13,14 @@ context = ["T-091.1 loader shipped; slots hard-coded z:0."]
 requirement = ["ydoc z writes; CUR/SEL 3dp; MissionSettings toggles."]
 current_state = ["addSlot z:0; emitCursor z:0; no useDemLayer."]
 approach = ["useDemLayer; paste/move re-sample; terrainZ in ydoc."]
+verify = [
+    "Vitest 21/21 at ship; verify log @ dde589e.",
+    "cargo xtask ci verify-terrain-strict",
+]
+acceptance = [
+    "terrainZ wrote ydoc slots; CUR/SEL showed X/Y/Z at three decimals.",
+    "Hillshade and grid toggles shipped; useDemLayer resampled paste and move.",
+]
 citations = [
     "commit dde589e",
     "SHIPPED_HISTORY T-091.2",

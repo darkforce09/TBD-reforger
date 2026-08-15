@@ -13,6 +13,11 @@ context = ["T-123.1 renamed export envelope; FE mirrors needed matching TSDoc ta
 requirement = ["tsdoc.json with custom tags; TSDoc on types/models, api, hooks."]
 current_state = ["FE contract layer lacked tsdoc.json and block-tag TSDoc coverage."]
 approach = ["Declare custom tags; document cross-boundary exports; rename exportFormatVersion in lockstep."]
+verify = ["Frontend build and eslint TSDoc gate passed at ship @ 030cece."]
+acceptance = [
+    "tsdoc.json declared custom tags; TSDoc on FE contract layer exports.",
+    "exportFormatVersion rename mirrored in TypeScript cross-boundary types.",
+]
 citations = [
     "commit 030cece TS TSDoc",
     "t123 spec T-123.2 slice",
