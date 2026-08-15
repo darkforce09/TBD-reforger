@@ -7,20 +7,41 @@ status = "shipped"
 order = 5983
 spec = "docs/platform/t917_ticket_schema_v2.md"
 executor = "claude-code"
-notes = "Depends on T-917.3 for migration_legacy existing on real tickets. Section order pinned by test."
+notes = """
+Depends on T-917.3 for migration_legacy existing on real tickets. Section order pinned by test.
+
+--- HEAD migration_legacy (verbatim) ---
+
+Detail panel renders the ten body fields as clearly separated sections in a fixed order (summary, user_story, context, requirement, current_state, approach, verify, acceptance, citations, notes), absent fields shown as explicit em-dash, list fields as one-liners. migration_legacy renders as its own visually-quarantined section with a copy-for-triage affordance feeding the Program T drain.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["Detail panel renders the ten body fields as clearly separated sections in a fixed order (summary, user_story, context, requirement, current_state, approach, verify, acceptance, citations, notes), absent fields shown as explicit em-dash, list fields as one-liners. migration_legacy renders as its own visually-quarantined section with a copy-for-triage affordance feeding the Program T drain."]
+
+missing=0"""
 depends_on = ["T-917.3"]
 parent = "T-918"
 main_goal = "Opening a ticket reads like a form, not a wall — every subject in its own labeled place, the unprocessed legacy prose clearly fenced."
+context = ["Detail panel renders ten body fields; Program T drain consumes copied walls."]
+requirement = [
+    "Ten body fields render as separated sections in fixed pinned order.",
+    "Absent fields show explicit em-dash; list fields render as one-liners.",
+    "migration_legacy section visually quarantined with copy-for-triage affordance.",
+]
+approach = ["Pinned order: summary user_story context requirement current_state approach verify acceptance citations notes."]
 acceptance = [
     "All ten fields render as separated sections in the pinned order; absent renders em-dash",
     "migration_legacy section visually distinct with a copy affordance",
     "git status --porcelain unchanged after a full session",
 ]
+citations = [
+    "T-917.3 migration_legacy quarantine",
+    "t917_ticket_schema_v2.md ten-field body",
+]
 shipped_at = "dda9366d"
 created_at = "2026-08-14T21:54:38Z"
 completed_at = "2026-08-14T23:53:35Z"
 estimated = ["tokens"]
-migration_legacy = ["Detail panel renders the ten body fields as clearly separated sections in a fixed order (summary, user_story, context, requirement, current_state, approach, verify, acceptance, citations, notes), absent fields shown as explicit em-dash, list fields as one-liners. migration_legacy renders as its own visually-quarantined section with a copy-for-triage affordance feeding the Program T drain."]
 owns = ["apps/ticketboard"]
 
 [scope]

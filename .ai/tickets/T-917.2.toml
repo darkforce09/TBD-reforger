@@ -7,10 +7,45 @@ status = "shipped"
 order = 5972
 spec = "docs/platform/t917_ticket_schema_v2.md"
 executor = "claude-code"
-notes = "Migrator parses v1 as toml::Value — typed v2 refuses v1 by definition. wave.lock must be byte-identical (scope/summary are not lock inputs). parse_ticket_toml becomes shape-strict only; legality moves to Corpus::load + check (documented weakening). Surface REQUIRED on live/new work from here."
+notes = """
+Migrator parses v1 as toml::Value — typed v2 refuses v1 by definition. wave.lock must be byte-identical (scope/summary are not lock inputs). parse_ticket_toml becomes shape-strict only; legality moves to Corpus::load + check (documented weakening). Surface REQUIRED on live/new work from here.
+
+--- HEAD migration_legacy (verbatim) ---
+
+One commit by compile-time physics: tbd-tickets v2 types + encoding (flat [scope] keys, new keys class/plan/estimated/estimate_note/context/requirement/current_state/approach/verify/citations/migration_legacy), schema.json + ALLOWED_NEW governance widen, Value->Value migrator with per-file re-parse + byte-stable re-render gate, all ticket files rewritten (scope remap incl. chrome map and owns-inferred surfaces, uninferable scope listed in estimated), consumer compile fixes (board scope_compact, phase2 infer/override/targets retire into the migrator, cmds/ops mint sites), regenerated sync surface, new ticket scope-histogram verb.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["One commit by compile-time physics: tbd-tickets v2 types + encoding (flat [scope] keys, new keys class/plan/estimated/estimate_note/context/requirement/current_state/approach/verify/citations/migration_legacy), schema.json + ALLOWED_NEW governance widen, Value->Value migrator with per-file re-parse + byte-stable re-render gate, all ticket files rewritten (scope remap incl. chrome map and owns-inferred surfaces, uninferable scope listed in estimated), consumer compile fixes (board scope_compact, phase2 infer/override/targets retire into the migrator, cmds/ops mint sites), regenerated sync surface, new ticket scope-histogram verb."]
+
+missing=0"""
 depends_on = ["T-917.1"]
 parent = "T-917"
 main_goal = "The registry speaks v2: every ticket carries the flat 4-level scope and the ten-field body skeleton, every consumer compiles and renders it, and nothing about wave packing moved."
+context = [
+    "One commit by compile-time physics: tbd-tickets v2 types plus flat [scope] encoding.",
+    "New keys class plan estimated estimate_note context requirement current_state approach verify citations migration_legacy.",
+    "Migrator parses v1 as toml::Value; typed v2 refuses v1 by definition.",
+]
+requirement = [
+    "schema.json plus ALLOWED_NEW governance widen; Value->Value migrator per-file re-parse byte-stable re-render gate.",
+    "All ticket files rewritten: scope remap incl chrome map owns-inferred surfaces uninferable in estimated.",
+    "Consumer compile fixes board scope_compact phase2 infer override targets retire cmds ops mint sites.",
+]
+current_state = [
+    "parse_ticket_toml becomes shape-strict only; legality moves to Corpus::load plus check.",
+    "wave.lock must be byte-identical; scope summary are not lock inputs.",
+    "Surface REQUIRED on live new work from here onward.",
+]
+approach = [
+    "Regenerated sync surface; new ticket scope-histogram verb lands in same commit.",
+    "phase2 infer override targets retire into the migrator not separate inference paths.",
+]
+verify = [
+    "Migrator prints migrated N/N files; unmapped-scope list printed and empty.",
+    "Corpus roundtrip N/N byte-identical; git diff wave.lock empty; check --strict OK.",
+    "ticket scope-histogram pastes per-level counts plus U surface-empty measured.",
+]
 acceptance = [
     "Migrator prints migrated N/N files where N = ls .ai/tickets/T-*.toml | wc -l at run time; unmapped-scope list printed and empty",
     "Corpus roundtrip prints N/N files byte-identical on the migrated tree",
@@ -19,11 +54,16 @@ acceptance = [
     "ticket scope-histogram pastes per-level counts; former editor bucket shows distinct surfaces with counts plus U surface-empty (scope in estimated: E), all measured",
     "Before/after pasted for three named representatives: an editor+chrome ticket, a repo-docs landfill ticket, a frozen-unmappable ticket",
 ]
+citations = [
+    "tbd-tickets v2 types encoding",
+    "schema.json ALLOWED_NEW governance",
+    "chrome map owns-inferred surfaces",
+    "ticket scope-histogram verb",
+]
 shipped_at = "5e5d3bbd"
 created_at = "2026-08-14T21:54:38Z"
 completed_at = "2026-08-14T22:52:27Z"
 estimated = ["tokens"]
-migration_legacy = ["One commit by compile-time physics: tbd-tickets v2 types + encoding (flat [scope] keys, new keys class/plan/estimated/estimate_note/context/requirement/current_state/approach/verify/citations/migration_legacy), schema.json + ALLOWED_NEW governance widen, Value->Value migrator with per-file re-parse + byte-stable re-render gate, all ticket files rewritten (scope remap incl. chrome map and owns-inferred surfaces, uninferable scope listed in estimated), consumer compile fixes (board scope_compact, phase2 infer/override/targets retire into the migrator, cmds/ops mint sites), regenerated sync surface, new ticket scope-histogram verb."]
 owns = [
     "crates/tbd-tickets",
     "xtask/src",

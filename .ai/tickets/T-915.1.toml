@@ -7,9 +7,36 @@ status = "shipped"
 order = 5961
 spec = "docs/platform/t915_ticketboard_design.md"
 executor = "claude-code"
-notes = "egui/eframe is a first-time workspace dependency family — named supply-chain/build-time event. All IO on worker threads (channel + request_repaint). No writes anywhere under the repo; prefs only via eframe Storage in the user config dir."
+notes = """
+egui/eframe is a first-time workspace dependency family — named supply-chain/build-time event. All IO on worker threads (channel + request_repaint). No writes anywhere under the repo; prefs only via eframe Storage in the user config dir.
+
+--- HEAD migration_legacy (verbatim) ---
+
+New workspace member apps/ticketboard (egui/eframe, wgpu default + glow fallback). Typed corpus load of ALL T-*.toml (parents and children) via tbd-tickets — deliberately not load_phase2_tree. Fail-closed load: any parse failure is a full-window refusal naming the file with the verbatim error and reveal-in-file-manager; the watcher keeps running so an on-disk fix auto-recovers. Status board (8 raw-status columns, shipped/cancelled collapsed to count chips) + detail panel. Repo discovery: positional arg, else upward walk for .ai/tickets/, else refusal + native folder picker, persisted to eframe Storage.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["New workspace member apps/ticketboard (egui/eframe, wgpu default + glow fallback). Typed corpus load of ALL T-*.toml (parents and children) via tbd-tickets — deliberately not load_phase2_tree. Fail-closed load: any parse failure is a full-window refusal naming the file with the verbatim error and reveal-in-file-manager; the watcher keeps running so an on-disk fix auto-recovers. Status board (8 raw-status columns, shipped/cancelled collapsed to count chips) + detail panel. Repo discovery: positional arg, else upward walk for .ai/tickets/, else refusal + native folder picker, persisted to eframe Storage."]
+
+missing=0"""
 parent = "T-915"
 main_goal = "The operator opens one window and finally sees the whole registry: every ticket as a card in status columns with full detail on click, instead of 1173 unreadable TOMLs."
+context = [
+    "egui/eframe first-time workspace dependency; all IO on worker threads.",
+    "No writes under repo; prefs only via eframe Storage in user config dir.",
+]
+requirement = [
+    "New workspace member apps/ticketboard; wgpu default plus glow fallback.",
+    "Typed corpus load ALL T-*.toml parents and children via tbd-tickets not load_phase2_tree.",
+    "Fail-closed load: parse failure full-window refusal with verbatim error and reveal-in-file-manager.",
+    "Status board eight raw-status columns plus detail panel; repo discovery with positional arg or upward walk.",
+]
+current_state = [
+    "Watcher keeps running so on-disk fix auto-recovers without restart.",
+    "shipped/cancelled collapsed to count chips on board.",
+]
+approach = ["channel plus request_repaint for IO; native folder picker persisted to eframe Storage."]
+verify = ["Footer total equals ls .ai/tickets/T-*.toml wc -l at runtime."]
 acceptance = [
     "cargo build -p ticketboard green on the pinned 1.95.0 toolchain; workspace members diff is one line plus the new crate",
     "Footer total equals ls .ai/tickets/T-*.toml | wc -l output at run time; parent and child counts shown separately and summing to the total",
@@ -17,11 +44,15 @@ acceptance = [
     "Release build scrolls the full board at 60fps: no frame over 17ms on the ~1200-ticket corpus (operator-verified on live display)",
     "git status --porcelain identical before and after a session exercising every view",
 ]
+citations = [
+    "t915_ticketboard_design.md",
+    "tbd-tickets corpus load",
+    "egui/eframe ticketboard",
+]
 shipped_at = "100bacd9"
 created_at = "2026-08-14T08:39:30Z"
 completed_at = "2026-08-14T09:11:46Z"
 estimated = ["tokens"]
-migration_legacy = ["New workspace member apps/ticketboard (egui/eframe, wgpu default + glow fallback). Typed corpus load of ALL T-*.toml (parents and children) via tbd-tickets — deliberately not load_phase2_tree. Fail-closed load: any parse failure is a full-window refusal naming the file with the verbatim error and reveal-in-file-manager; the watcher keeps running so an on-disk fix auto-recovers. Status board (8 raw-status columns, shipped/cancelled collapsed to count chips) + detail panel. Repo discovery: positional arg, else upward walk for .ai/tickets/, else refusal + native folder picker, persisted to eframe Storage."]
 owns = [
     "apps/ticketboard",
     "Cargo.toml",

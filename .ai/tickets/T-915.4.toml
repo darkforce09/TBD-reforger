@@ -7,13 +7,48 @@ status = "shipped"
 order = 5964
 spec = "docs/platform/t915_ticketboard_design.md"
 executor = "claude-code"
-notes = "Depends on T-916.2 for the child-resolving verbs and add-child/remove flags. Any nonzero exit = reload + show stderr verbatim (several refusal paths are process::exit(1) before anyhow). Mid-verb crash recovery is operator-run wave repack, shown as text."
+notes = """
+Depends on T-916.2 for the child-resolving verbs and add-child/remove flags. Any nonzero exit = reload + show stderr verbatim (several refusal paths are process::exit(1) before anyhow). Mid-verb crash recovery is operator-run wave repack, shown as text.
+
+--- HEAD migration_legacy (verbatim) ---
+
+Transition affordances mirroring the CLI verbs: idea->queued via drag-after-anchor (reorder semantics), queued->ready via a Ready-prose form (spec-on-disk + user_story + acceptance) surfacing the deps-unshipped refusal, ship/cancel/defer and demotions with confirm, running hidden as a manual target, raw set-status behind an advanced affordance, add-ticket and add-child [--promote] forms. Single-flight subprocess queue, UI compare-and-swap before dispatch, verbatim stderr on any nonzero exit, no auto-repack ever (the app must not become a second wave writer).
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["Transition affordances mirroring the CLI verbs: idea->queued via drag-after-anchor (reorder semantics), queued->ready via a Ready-prose form (spec-on-disk + user_story + acceptance) surfacing the deps-unshipped refusal, ship/cancel/defer and demotions with confirm, running hidden as a manual target, raw set-status behind an advanced affordance, add-ticket and add-child [--promote] forms. Single-flight subprocess queue, UI compare-and-swap before dispatch, verbatim stderr on any nonzero exit, no auto-repack ever (the app must not become a second wave writer)."]
+
+missing=0"""
 depends_on = [
     "T-915.3",
     "T-916.2",
 ]
 parent = "T-915"
 main_goal = "The operator steers the registry from the board — promote, ship, cancel, defer, mint — with every write going through the one audited CLI path and every refusal shown verbatim."
+context = [
+    "Depends on T-916.2 child-resolving verbs and add-child/remove flags.",
+    "Mid-verb crash recovery is operator-run wave repack shown as text.",
+    "App must not become a second wave writer; no auto-repack ever.",
+]
+requirement = [
+    "Transition affordances mirroring CLI verbs through subprocess xtask.",
+    "idea->queued drag-after-anchor reorder; queued->ready Ready-prose form.",
+    "ship/cancel/defer demotions with confirm; add-ticket and add-child [--promote].",
+    "running hidden manual target; raw set-status behind advanced affordance.",
+]
+current_state = ["Several refusal paths are process::exit(1) before anyhow."]
+approach = [
+    "Single-flight subprocess queue; UI compare-and-swap before dispatch.",
+    "Verbatim stderr on any nonzero exit; reload plus show stderr.",
+    "Ready-prose form surfaces spec-on-disk user_story acceptance deps-unshipped refusal.",
+]
+verify = [
+    "Every transition maps to one xtask verb; refusals stream verbatim; nonzero reloads stderr.",
+    "Ready promotion through Ready-prose form surfaces deps-unshipped refusal.",
+    "running not offered manual target; raw set-status behind advanced.",
+    "CAS guard: changed file since render refuses dispatch with reload prompt.",
+    "Mid-verb SIGKILL: check-red wave-stale error text recovery command; no auto-repack.",
+]
 acceptance = [
     "Every offered transition maps to one xtask verb; refusals stream verbatim; any nonzero exit reloads and shows stderr",
     "Ready promotion goes through the Ready-prose form and surfaces the deps-unshipped refusal",
@@ -21,11 +56,16 @@ acceptance = [
     "CAS guard: a card whose file changed since render refuses dispatch with a reload prompt",
     "Mid-verb SIGKILL between save and repack: the app shows check-red with the wave-stale error text and the recovery command; it does not auto-repack",
 ]
+citations = [
+    "t915_ticketboard_design.md",
+    "T-916.2 child verbs",
+    "wave repack recovery",
+    "Ready-prose deps-unshipped",
+]
 shipped_at = "99441394"
 created_at = "2026-08-14T08:39:30Z"
 completed_at = "2026-08-14T10:27:28Z"
 estimated = ["tokens"]
-migration_legacy = ["Transition affordances mirroring the CLI verbs: idea->queued via drag-after-anchor (reorder semantics), queued->ready via a Ready-prose form (spec-on-disk + user_story + acceptance) surfacing the deps-unshipped refusal, ship/cancel/defer and demotions with confirm, running hidden as a manual target, raw set-status behind an advanced affordance, add-ticket and add-child [--promote] forms. Single-flight subprocess queue, UI compare-and-swap before dispatch, verbatim stderr on any nonzero exit, no auto-repack ever (the app must not become a second wave writer)."]
 owns = ["apps/ticketboard"]
 
 [scope]

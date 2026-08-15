@@ -8,21 +8,54 @@ order = 5982
 spec = "docs/platform/t917_ticket_schema_v2.md"
 plan = "docs/plans/t-918_2_plan.md"
 executor = "claude-code"
-notes = "Structural separation already guarantees the no-sum rule at the data layer; this slice carries the negative assertion into the UI acceptance."
+notes = """
+Structural separation already guarantees the no-sum rule at the data layer; this slice carries the negative assertion into the UI acceptance.
+
+--- HEAD migration_legacy (verbatim) ---
+
+Detail panel and metrics dashboard render measured and estimated values as visually distinct states: stamps carrying an estimated[] entry get the estimate glyph + per-source tooltip (git_subject / id_interpolation), token figures from estimates/<id>.json render in their own estimated column with source + factor tooltip, and no UI element anywhere renders receipt+estimate arithmetic.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["Detail panel and metrics dashboard render measured and estimated values as visually distinct states: stamps carrying an estimated[] entry get the estimate glyph + per-source tooltip (git_subject / id_interpolation), token figures from estimates/<id>.json render in their own estimated column with source + factor tooltip, and no UI element anywhere renders receipt+estimate arithmetic."]
+
+missing=0"""
 depends_on = ["T-917.5"]
 parent = "T-918"
 main_goal = "The operator always knows which numbers are real and which are maths — at a glance, per value, with the method one hover away."
+context = [
+    "Detail panel and metrics dashboard render measured vs estimated distinctly.",
+    "Structural separation guarantees no-sum rule at data layer already.",
+]
+requirement = [
+    "Stamps with estimated[] get estimate glyph + per-source tooltip.",
+    "Token figures from estimates/<id>.json in own estimated column.",
+    "No UI element renders receipt+estimate arithmetic anywhere.",
+]
+current_state = ["This slice carries negative assertion into UI acceptance."]
+approach = [
+    "git_subject / id_interpolation tooltips on estimated stamps.",
+    "Source + factor tooltip on estimate token column.",
+]
+verify = [
+    "Measured ticket shows neither glyph nor estimate tooltip.",
+    "Dashboard separate measured/estimated columns; no cell sums them.",
+]
 acceptance = [
     "A ticket with estimated stamps shows the glyph + source tooltip; a measured ticket shows neither",
     "Dashboard has separate measured and estimated columns; no cell sums across them (negative assertion in tests + screenshot)",
     "Estimate tooltip names source, inputs and factor",
     "git status --porcelain unchanged after a full session",
 ]
+citations = [
+    "t917_ticket_schema_v2.md",
+    "estimates/<id>.json",
+    "T-917.5 estimate provenance",
+]
 shipped_at = "59bd27b6"
 created_at = "2026-08-14T21:54:38Z"
 completed_at = "2026-08-15T00:21:26Z"
 estimated = ["tokens"]
-migration_legacy = ["Detail panel and metrics dashboard render measured and estimated values as visually distinct states: stamps carrying an estimated[] entry get the estimate glyph + per-source tooltip (git_subject / id_interpolation), token figures from estimates/<id>.json render in their own estimated column with source + factor tooltip, and no UI element anywhere renders receipt+estimate arithmetic."]
 owns = ["apps/ticketboard"]
 
 [scope]

@@ -7,21 +7,58 @@ status = "shipped"
 order = 5963
 spec = "docs/platform/t915_ticketboard_design.md"
 executor = "claude-code"
-notes = "The app never re-implements check; it invokes it. Subprocesses run with explicit current_dir at the discovered repo root and robust cargo resolution (GUI PATH is bare)."
+notes = """
+The app never re-implements check; it invokes it. Subprocesses run with explicit current_dir at the discovered repo root and robust cargo resolution (GUI PATH is bare).
+
+--- HEAD migration_legacy (verbatim) ---
+
+Trust banner running cargo xtask ticket check --strict as a streamed subprocess on launch and on watched change: green/red plus exit code, labeled strict (mutator preflight is non-strict — never conflate). Distinct building-xtask vs checking states with streamed cargo output. notify watch on .ai/tickets/ and the sync targets (docs/TICKET_*.md, CLAUDE.md, ROADMAP), debounce >=500ms, coalesced re-runs, self-suppression while a verb subprocess is in flight plus one debounce window. Git-dirty chip summarizing git status --porcelain -- .ai/tickets docs CLAUDE.md.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["Trust banner running cargo xtask ticket check --strict as a streamed subprocess on launch and on watched change: green/red plus exit code, labeled strict (mutator preflight is non-strict — never conflate). Distinct building-xtask vs checking states with streamed cargo output. notify watch on .ai/tickets/ and the sync targets (docs/TICKET_*.md, CLAUDE.md, ROADMAP), debounce >=500ms, coalesced re-runs, self-suppression while a verb subprocess is in flight plus one debounce window. Git-dirty chip summarizing git status --porcelain -- .ai/tickets docs CLAUDE.md."]
+
+missing=0"""
 depends_on = ["T-915.1"]
 parent = "T-915"
 main_goal = "The operator trusts what the board shows: check-red, a stale lock, or uncommitted registry files are visible immediately, with the real check output — not a re-implementation."
+context = [
+    "Mutator preflight is non-strict; never conflate with strict banner check.",
+    "App invokes check subprocess at discovered repo root; GUI PATH is bare.",
+]
+requirement = [
+    "Trust banner runs cargo xtask ticket check --strict as streamed subprocess.",
+    "Green/red plus exit code labeled strict on launch and on watched change.",
+    "Distinct building-xtask vs checking states with streamed cargo output.",
+    "Git-dirty chip summarizing git status --porcelain over registry paths.",
+]
+current_state = ["Watch targets include .ai/tickets docs/TICKET_*.md CLAUDE.md ROADMAP sync surface."]
+approach = [
+    "notify watch on .ai/tickets and sync targets; debounce >=500ms coalesced re-runs.",
+    "Self-suppression while verb subprocess in flight plus one debounce window.",
+]
+verify = [
+    "Launch streams check --strict; banner green/red exit code labeled strict.",
+    "Building xtask and checking are visibly distinct states.",
+    "External TOML edit reflects within debounce; own writes do not storm check.",
+    "Git-dirty chip shows uncommitted-registry-file count.",
+]
 acceptance = [
     "Launch runs cargo xtask ticket check --strict streamed; banner shows green/red plus exit code, labeled strict",
     "building xtask and checking are visibly distinct states",
     "External edit of a ticket TOML reflects in the UI within one debounce window; events coalesce to one re-run per burst; the app's own verb writes do not re-trigger a check storm",
     "Git-dirty chip shows the uncommitted-registry-file count",
 ]
+citations = [
+    "t915_ticketboard_design.md",
+    "cargo xtask ticket check --strict",
+    "notify debounce 500ms",
+    "git status --porcelain",
+]
 shipped_at = "1e503f53"
 created_at = "2026-08-14T08:39:30Z"
 completed_at = "2026-08-14T09:59:55Z"
 estimated = ["tokens"]
-migration_legacy = ["Trust banner running cargo xtask ticket check --strict as a streamed subprocess on launch and on watched change: green/red plus exit code, labeled strict (mutator preflight is non-strict — never conflate). Distinct building-xtask vs checking states with streamed cargo output. notify watch on .ai/tickets/ and the sync targets (docs/TICKET_*.md, CLAUDE.md, ROADMAP), debounce >=500ms, coalesced re-runs, self-suppression while a verb subprocess is in flight plus one debounce window. Git-dirty chip summarizing git status --porcelain -- .ai/tickets docs CLAUDE.md."]
 owns = ["apps/ticketboard"]
 
 [scope]

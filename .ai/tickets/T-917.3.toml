@@ -7,10 +7,44 @@ status = "shipped"
 order = 5973
 spec = "docs/platform/t917_ticket_schema_v2.md"
 executor = "claude-code"
-notes = "No sentence-splitting into semantic fields — that is laundering unsorted prose as classified data; decomposition is Program T. Caps enforced in check, never parse (old revisions must stay readable). Docs/TICKET_*.md regenerate in-commit (sync copies summaries verbatim)."
+notes = """
+No sentence-splitting into semantic fields — that is laundering unsorted prose as classified data; decomposition is Program T. Caps enforced in check, never parse (old revisions must stay readable). Docs/TICKET_*.md regenerate in-commit (sync copies summaries verbatim).
+
+--- HEAD migration_legacy (verbatim) ---
+
+Mechanical byte-reversible pass over every work ticket whose TOML-parsed summary exceeds 40 whitespace-split words: summary moved verbatim into migration_legacy[] split on newlines only (join reproduces original bytes, proved per file), summary := existing title. Word-cap check rules land: summary <=40, context/requirement/current_state/approach/verify <=30 per line, citations <=8; acceptance/notes/user_story uncapped. Shrink-only pinned ratchet on migration_legacy count; a new ticket minting the field is red.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["Mechanical byte-reversible pass over every work ticket whose TOML-parsed summary exceeds 40 whitespace-split words: summary moved verbatim into migration_legacy[] split on newlines only (join reproduces original bytes, proved per file), summary := existing title. Word-cap check rules land: summary <=40, context/requirement/current_state/approach/verify <=30 per line, citations <=8; acceptance/notes/user_story uncapped. Shrink-only pinned ratchet on migration_legacy count; a new ticket minting the field is red."]
+
+missing=0"""
 depends_on = ["T-917.2"]
 parent = "T-917"
 main_goal = "No board card ever renders a 500-word summary again; the walls survive byte-exact in quarantine with a monotone death clause instead of being truncated or laundered."
+context = [
+    "Mechanical byte-reversible pass over every work ticket summary exceeds 40 whitespace-split words.",
+    "No sentence-splitting into semantic fields — decomposition is Program T not this slice.",
+    "Caps enforced in check never parse; old revisions must stay readable.",
+]
+requirement = [
+    "Summary moved verbatim into migration_legacy[] split on newlines only join reproduces original bytes.",
+    "summary := existing title after move; proved per file byte-reversibility.",
+    "Word-cap check rules: summary <=40 context requirement current_state approach verify <=30 citations <=8.",
+]
+current_state = [
+    "acceptance notes user_story uncapped; grandfathering by field choice not ticket class.",
+    "Docs/TICKET_*.md regenerate in-commit sync copies summaries verbatim.",
+]
+approach = [
+    "Shrink-only pinned ratchet on migration_legacy count monotone death clause.",
+    "A new ticket minting the field is red; pin equals measured count.",
+]
+verify = [
+    "Migrator prints M summaries moved to migration_legacy instrument named in output line.",
+    "M/M reversible newline-join byte-compare vs git show HEAD^ per moved file.",
+    "Planted 41-word summary reds naming ticket field count and cap; live tree OK.",
+]
 acceptance = [
     "Migrator prints M summaries >40 TOML-parsed whitespace-split words moved to migration_legacy — instrument named in the output line",
     "M/M reversible: newline-join byte-compare vs git show HEAD^ per moved file",
@@ -18,11 +52,16 @@ acceptance = [
     "Planted 41-word summary in a scratch tree reds naming ticket, field, count and cap; live tree prints check OK",
     "docs/TICKET_*.md regenerated in the same commit",
 ]
+citations = [
+    "40-word summary cap",
+    "30-word body field cap",
+    "8-word citations cap",
+    "shrink-only ratchet pin",
+]
 shipped_at = "b071c49e"
 created_at = "2026-08-14T21:54:38Z"
 completed_at = "2026-08-14T23:08:26Z"
 estimated = ["tokens"]
-migration_legacy = ["Mechanical byte-reversible pass over every work ticket whose TOML-parsed summary exceeds 40 whitespace-split words: summary moved verbatim into migration_legacy[] split on newlines only (join reproduces original bytes, proved per file), summary := existing title. Word-cap check rules land: summary <=40, context/requirement/current_state/approach/verify <=30 per line, citations <=8; acceptance/notes/user_story uncapped. Shrink-only pinned ratchet on migration_legacy count; a new ticket minting the field is red."]
 owns = [
     ".ai/tickets",
     "xtask/src",

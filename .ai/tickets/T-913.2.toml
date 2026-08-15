@@ -7,10 +7,35 @@ status = "shipped"
 order = 5930
 spec = "docs/platform/t913_ticket_run_metrics.md"
 executor = "claude-code"
-notes = "Depends on T-913.1 landed. Malformed started, missing id or missing tokens_consumed in a run file is ticket check red. Printing tokens=0 for a missing object is forbidden. Two runs in one second yield two files (sha or increment suffix). LIMITS: command-center in-chat subagent dispatch is not captured."
+notes = """
+Depends on T-913.1 landed. Malformed started, missing id or missing tokens_consumed in a run file is ticket check red. Printing tokens=0 for a missing object is forbidden. Two runs in one second yield two files (sha or increment suffix). LIMITS: command-center in-chat subagent dispatch is not captured.
+
+--- HEAD migration_legacy (verbatim) ---
+
+Per-run JSON at .ai/tickets/metrics/<id>/<ts>-<sha>.json (never a single jsonl), required tokens_consumed with total == input+output+cache_read+cache_write, optional git_sha, optional reasoning sibling outside total. cargo xtask platform slice-run <id> parses usage from agent/claude --output-format json pinned by recorded fixtures; missing usage exits nonzero and writes no file. platform wave land stamps outcome+git_sha then runs wave repack; ticket metrics --by agent sums real files.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["Per-run JSON at .ai/tickets/metrics/<id>/<ts>-<sha>.json (never a single jsonl), required tokens_consumed with total == input+output+cache_read+cache_write, optional git_sha, optional reasoning sibling outside total. cargo xtask platform slice-run <id> parses usage from agent/claude --output-format json pinned by recorded fixtures; missing usage exits nonzero and writes no file. platform wave land stamps outcome+git_sha then runs wave repack; ticket metrics --by agent sums real files."]
+
+missing=0"""
 depends_on = ["T-913.1"]
 parent = "T-913"
 main_goal = "Every factory slice run leaves a token receipt on disk so spend per ticket and per agent is measurable from real files, never invented."
+context = [
+    "Depends on T-913.1 landed; per-run JSON path never a single jsonl.",
+    "optional git_sha; optional reasoning sibling outside total.",
+]
+requirement = [
+    "Per-run JSON at .ai/tickets/metrics/<id>/<ts>-<sha>.json.",
+    "required tokens_consumed total == input+output+cache_read+cache_write.",
+    "cargo xtask platform slice-run parses agent/claude --output-format json fixtures.",
+    "missing usage exits nonzero and writes no file.",
+    "platform wave land stamps outcome+git_sha then runs wave repack.",
+]
+current_state = ["ticket metrics --by agent must sum real files not invented totals."]
+approach = ["slice-run producer pinned by recorded fixtures for usage parsing."]
+verify = ["ticket metrics --by agent sums elapsed and tokens_consumed.total over real files."]
 acceptance = [
     "Recorded fixture with usage yields a correct run file: input matches and total == input+output+cache_read+cache_write",
     "Fixture without usage exits nonzero and writes NO file — tokens 0 is forbidden",
@@ -18,6 +43,11 @@ acceptance = [
     "Malformed started, missing id or missing tokens_consumed in a run file is ticket check red",
     "ticket metrics --by agent sums elapsed and tokens_consumed.total over real files (100+50, 20 fixture proof)",
     "platform wave land stamps outcome+git_sha on the harness-created run file, then runs wave repack",
+]
+citations = [
+    "t913_ticket_run_metrics.md",
+    "platform slice-run",
+    "tokens_consumed total",
 ]
 shipped_at = "efcff4e5"
 created_at = "2026-08-14T04:52:06Z"
@@ -28,7 +58,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = ["Per-run JSON at .ai/tickets/metrics/<id>/<ts>-<sha>.json (never a single jsonl), required tokens_consumed with total == input+output+cache_read+cache_write, optional git_sha, optional reasoning sibling outside total. cargo xtask platform slice-run <id> parses usage from agent/claude --output-format json pinned by recorded fixtures; missing usage exits nonzero and writes no file. platform wave land stamps outcome+git_sha then runs wave repack; ticket metrics --by agent sums real files."]
 owns = [
     ".ai/tickets/metrics",
     "xtask/src/wave",

@@ -8,13 +8,43 @@ order = 5976
 spec = "docs/platform/t917_ticket_schema_v2.md"
 plan = "docs/plans/t-917_6_plan.md"
 executor = "claude-code"
-notes = "Gate must land last (S.2-S.5 make the tree gate-satisfiable first) and WITH stamp-sha or every future ship wedges between the ship edit and the SHA stamp. Program shipped_at lives inside Status::Shipped while work carries the field — gate reads through both."
+notes = """
+Gate must land last (S.2-S.5 make the tree gate-satisfiable first) and WITH stamp-sha or every future ship wedges between the ship edit and the SHA stamp. Program shipped_at lives inside Status::Shipped while work carries the field — gate reads through both.
+
+--- HEAD migration_legacy (verbatim) ---
+
+The hard gate lands in check + ops::ship: shipped requires created_at/completed_at (RFC 3339 UTC) + shipped_at (SHA-shaped 7-40 hex) each measured or in estimated[], and tokens = receipt XOR estimate file. ticket stamp-sha <id> <sha> writes shipped_at canonically AND auto-generates the diff_loc estimate when no receipt exists — ship -> commit -> stamp-sha -> green. Plan ready-gate: plan key required on ready-class, file must exist on disk; the live ready tickets get plans written this slice. Strict prints honesty counters with per-source breakdown.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["The hard gate lands in check + ops::ship: shipped requires created_at/completed_at (RFC 3339 UTC) + shipped_at (SHA-shaped 7-40 hex) each measured or in estimated[], and tokens = receipt XOR estimate file. ticket stamp-sha <id> <sha> writes shipped_at canonically AND auto-generates the diff_loc estimate when no receipt exists — ship -> commit -> stamp-sha -> green. Plan ready-gate: plan key required on ready-class, file must exist on disk; the live ready tickets get plans written this slice. Strict prints honesty counters with per-source breakdown."]
+
+missing=0"""
 depends_on = [
     "T-917.4",
     "T-917.5",
 ]
 parent = "T-917"
 main_goal = "A shipped ticket without stamps and tokens cannot exist green anymore, the ship workflow closes itself with one verb after commit, and nothing goes ready without its own plan document."
+context = [
+    "Hard gate lands in check + ops::ship for shipped tickets.",
+    "Gate must land last S.2-S.5; WITH stamp-sha or every future ship wedges.",
+]
+requirement = [
+    "shipped requires created_at/completed_at RFC 3339 UTC + shipped_at SHA 7-40 hex.",
+    "Each stamp measured or in estimated[]; tokens = receipt XOR estimate file.",
+    "Plan ready-gate: plan key on ready-class; file must exist on disk.",
+]
+current_state = ["Program shipped_at lives inside Status::Shipped; work carries the field."]
+approach = [
+    "ticket stamp-sha <id> <sha> writes shipped_at AND auto-generates diff_loc estimate.",
+    "ship -> commit -> stamp-sha -> green when no receipt exists.",
+    "Live ready tickets get plans written this slice.",
+]
+verify = [
+    "Planted shipped ticket missing completed_at reds naming ticket and field.",
+    "Scratch end-to-end ship commit stamp-sha check green with auto-estimate.",
+]
 acceptance = [
     "Planted shipped ticket missing completed_at reds naming ticket and field",
     "Scratch end-to-end: ship -> commit -> stamp-sha -> check green, auto-estimate written with matching factor",
@@ -22,11 +52,16 @@ acceptance = [
     "mark-ready without a plan file refuses naming the path; live ready tickets carry plans",
     "check --strict prints shipped tokens measured/estimated: K/E plus per-source breakdown",
 ]
+citations = [
+    "t917_ticket_schema_v2.md",
+    "ops::ship",
+    "ticket stamp-sha",
+    "RFC 3339 UTC",
+]
 shipped_at = "5e0b48fb"
 created_at = "2026-08-14T21:54:38Z"
 completed_at = "2026-08-15T00:20:44Z"
 estimated = ["tokens"]
-migration_legacy = ["The hard gate lands in check + ops::ship: shipped requires created_at/completed_at (RFC 3339 UTC) + shipped_at (SHA-shaped 7-40 hex) each measured or in estimated[], and tokens = receipt XOR estimate file. ticket stamp-sha <id> <sha> writes shipped_at canonically AND auto-generates the diff_loc estimate when no receipt exists — ship -> commit -> stamp-sha -> green. Plan ready-gate: plan key required on ready-class, file must exist on disk; the live ready tickets get plans written this slice. Strict prints honesty counters with per-source breakdown."]
 owns = [
     "xtask/src",
     "crates/tbd-tickets",

@@ -7,21 +7,55 @@ status = "shipped"
 order = 5975
 spec = "docs/platform/t917_ticket_schema_v2.md"
 executor = "claude-code"
-notes = "metrics::has_receipt returns true for ANY file under metrics/<id>/ — colocating estimates would let them impersonate receipts (T-913 violation) and crash the deny_unknown_fields walkers. Every estimate records source + inputs + factor; recalibration is regeneration from recorded inputs."
+notes = """
+metrics::has_receipt returns true for ANY file under metrics/<id>/ — colocating estimates would let them impersonate receipts (T-913 violation) and crash the deny_unknown_fields walkers. Every estimate records source + inputs + factor; recalibration is regeneration from recorded inputs.
+
+--- HEAD migration_legacy (verbatim) ---
+
+The total estimation ladder for tokens: diff_loc (LOC changed across the ticket's commits x documented factor) with cohort_median fallback (median of same class+scope cohort) so every shipped ticket ends with a number. Estimates live at .ai/tickets/estimates/<id>.json — never inside metrics/ — with estimates.schema.json and their own check fn: mutual exclusion with receipts, estimate implies tokens in estimated[], estimate on non-shipped red. Factor lands as a declared constant pending calibration in docs/platform/.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["The total estimation ladder for tokens: diff_loc (LOC changed across the ticket's commits x documented factor) with cohort_median fallback (median of same class+scope cohort) so every shipped ticket ends with a number. Estimates live at .ai/tickets/estimates/<id>.json — never inside metrics/ — with estimates.schema.json and their own check fn: mutual exclusion with receipts, estimate implies tokens in estimated[], estimate on non-shipped red. Factor lands as a declared constant pending calibration in docs/platform/."]
+
+missing=0"""
 depends_on = ["T-917.4"]
 parent = "T-917"
 main_goal = "Every shipped ticket in history has a token figure with a named derivation method, structurally incapable of being summed with measured receipts."
+context = [
+    "Total estimation ladder for tokens: diff_loc LOC x factor, cohort_median fallback.",
+    "Every shipped ticket ends with a number; estimates never colocate under metrics/.",
+]
+requirement = [
+    "Estimates live at .ai/tickets/estimates/<id>.json with estimates.schema.json.",
+    "Own check fn: mutual exclusion with receipts; estimate implies tokens in estimated[].",
+    "Estimate on non-shipped ticket is red.",
+]
+current_state = ["Factor lands as declared constant pending calibration in docs/platform/."]
+approach = [
+    "diff_loc: LOC changed across ticket commits x documented factor.",
+    "cohort_median fallback: median of same class+scope cohort.",
+]
+verify = [
+    "Factor constant pasted from doc; check asserts every estimate.json factor equals it.",
+    "Generator prints E diff_loc, C cohort_median, E+C equals shipped count at run time.",
+]
 acceptance = [
     "Factor constant pasted from the doc; a check asserts every estimate.json factor equals it",
     "Generator prints E diff_loc, C cohort_median, E+C equals the shipped-ticket count measured at run time",
     "Planted estimate file inside .ai/tickets/metrics/<id>/ reds; estimate + receipt for one id reds",
     "summarize_by_agent on a mixed fixture equals the receipts-only hand computation pasted alongside",
 ]
+citations = [
+    "t917_ticket_schema_v2.md",
+    "token_estimate_factor.md",
+    "estimates.schema.json",
+    "T-913 metrics impersonation",
+]
 shipped_at = "83b445d2"
 created_at = "2026-08-14T21:54:38Z"
 completed_at = "2026-08-14T23:53:32Z"
 estimated = ["tokens"]
-migration_legacy = ["The total estimation ladder for tokens: diff_loc (LOC changed across the ticket's commits x documented factor) with cohort_median fallback (median of same class+scope cohort) so every shipped ticket ends with a number. Estimates live at .ai/tickets/estimates/<id>.json — never inside metrics/ — with estimates.schema.json and their own check fn: mutual exclusion with receipts, estimate implies tokens in estimated[], estimate on non-shipped red. Factor lands as a declared constant pending calibration in docs/platform/."]
 owns = [
     ".ai/tickets/estimates",
     ".ai/tickets/estimates.schema.json",

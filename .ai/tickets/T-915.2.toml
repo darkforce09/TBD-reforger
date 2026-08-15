@@ -7,21 +7,49 @@ status = "shipped"
 order = 5962
 spec = "docs/platform/t915_ticketboard_design.md"
 executor = "claude-code"
-notes = "Never recompute lanes — the lock is the truth and drift is the trust banner's job. Owns-collision explainer in the detail panel: prefix-containment path pairs for any two selected tickets."
+notes = """
+Never recompute lanes — the lock is the truth and drift is the trust banner's job. Owns-collision explainer in the detail panel: prefix-containment path pairs for any two selected tickets.
+
+--- HEAD migration_legacy (verbatim) ---
+
+Wave lanes rendered verbatim from wave.lock (one lane per open n; wave 0 always a count chip; header shows wave_base / max_concurrent / pack_last; missing lock renders the DidNotRun refusal text, never empty lanes; Unplanned side bucket = dispatchable ids absent from the lock, set arithmetic only). Program tree parent->children, status-colored, expandable. Composable filters: executor, kind, program/parent, scope family, free text over precomputed lowercase haystacks.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["Wave lanes rendered verbatim from wave.lock (one lane per open n; wave 0 always a count chip; header shows wave_base / max_concurrent / pack_last; missing lock renders the DidNotRun refusal text, never empty lanes; Unplanned side bucket = dispatchable ids absent from the lock, set arithmetic only). Program tree parent->children, status-colored, expandable. Composable filters: executor, kind, program/parent, scope family, free text over precomputed lowercase haystacks."]
+
+missing=0"""
 depends_on = ["T-915.1"]
 parent = "T-915"
 main_goal = "The operator sees the wave plan the factory will actually run — the committed lock, lane by lane — plus the program structure and filtered slices of the corpus."
+context = [
+    "Never recompute lanes — lock is truth; drift is trust banner job.",
+    "Owns-collision explainer in detail panel for prefix-containment path pairs.",
+]
+requirement = [
+    "Wave lanes rendered verbatim from wave.lock: one lane per open n.",
+    "wave 0 always count chip; header shows wave_base max_concurrent pack_last.",
+    "missing lock renders DidNotRun refusal never empty lanes.",
+    "Program tree parent children status-colored expandable; composable filters over haystacks.",
+]
+current_state = ["Unplanned side bucket: dispatchable ids absent from lock, set arithmetic only."]
+approach = ["Filters: executor, kind, program/parent, scope family, free text lowercase haystacks."]
+verify = ["Per-lane id list equals lock tickets array for that n."]
 acceptance = [
     "Per-lane id list equals the lock's tickets array for that n (copy-lane-as-TSV pasted against the wave.lock block)",
     "Wave 0 renders as a count chip, never expanded cards by default",
     "Deleted or renamed wave.lock shows the DidNotRun refusal text, not empty lanes",
     "Filters compose; clearing restores the full measured count",
 ]
+citations = [
+    "t915_ticketboard_design.md",
+    "wave.lock lanes",
+    "program tree filters",
+]
 shipped_at = "26d91641"
 created_at = "2026-08-14T08:39:30Z"
 completed_at = "2026-08-14T09:38:10Z"
 estimated = ["tokens"]
-migration_legacy = ["Wave lanes rendered verbatim from wave.lock (one lane per open n; wave 0 always a count chip; header shows wave_base / max_concurrent / pack_last; missing lock renders the DidNotRun refusal text, never empty lanes; Unplanned side bucket = dispatchable ids absent from the lock, set arithmetic only). Program tree parent->children, status-colored, expandable. Composable filters: executor, kind, program/parent, scope family, free text over precomputed lowercase haystacks."]
 owns = ["apps/ticketboard"]
 
 [scope]

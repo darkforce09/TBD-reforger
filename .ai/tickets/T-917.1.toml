@@ -7,19 +7,55 @@ status = "shipped"
 order = 5971
 spec = "docs/platform/t917_ticket_schema_v2.md"
 executor = "claude-code"
-notes = "Vocabulary is data, not compiled enums (except domain) — compiled friction produced the 199-ticket docs landfill. Removing-a-value-in-use redness cannot be enforced yet (tickets still v1); that rule rides S.2."
+notes = """
+Vocabulary is data, not compiled enums (except domain) — compiled friction produced the 199-ticket docs landfill. Removing-a-value-in-use redness cannot be enforced yet (tickets still v1); that rule rides S.2.
+
+--- HEAD migration_legacy (verbatim) ---
+
+Author .ai/tickets/scope-vocab.toml (the 4-level domain/layer/component/surface tree from the spec draft, grounded in real modules) plus the check rule validating the file itself: sorted, duplicate-free, every level's parent exists. Additive slice — no ticket parses change; vocab-vs-ticket legality lands with the S.2 cutover.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["Author .ai/tickets/scope-vocab.toml (the 4-level domain/layer/component/surface tree from the spec draft, grounded in real modules) plus the check rule validating the file itself: sorted, duplicate-free, every level's parent exists. Additive slice — no ticket parses change; vocab-vs-ticket legality lands with the S.2 cutover."]
+
+missing=0"""
 parent = "T-917"
 main_goal = "The scope vocabulary exists as reviewable committed data with its own shape gate, ready for the cutover to validate tickets against."
+context = [
+    "Author .ai/tickets/scope-vocab.toml 4-level domain/layer/component/surface tree from spec draft.",
+    "Grounded in real modules; vocabulary is data not compiled enums except domain.",
+]
+requirement = [
+    "Check rule validating the file itself: sorted, duplicate-free, every level parent exists.",
+    "Vocab-vs-ticket legality lands with the S.2 cutover not this additive slice.",
+]
+current_state = [
+    "Additive slice — no ticket parses change at this stage.",
+    "Removing-a-value-in-use redness cannot be enforced yet tickets still v1.",
+]
+approach = [
+    "Author scope-vocab.toml plus check rule as additive slice before S.2 cutover.",
+    "Shape gate ready for cutover to validate tickets against vocabulary.",
+]
+verify = [
+    "cargo xtask ticket check --strict prints check OK with vocab file present.",
+    "Planted duplicate surface reds naming file parent path value; restore prints OK.",
+    "Test prints counted shape D domains L layers C components F surfaces from file.",
+]
 acceptance = [
     "cargo xtask ticket check --strict prints check OK with the vocab file present",
     "Planted duplicate surface under one parent in a scratch tree prints a red naming file, parent path and value; restore prints check OK",
     "A test prints the counted shape: D domains, L layers, C components, F surfaces — numbers read from the file at run time",
 ]
+citations = [
+    "scope-vocab.toml 4-level tree",
+    "t917_ticket_schema_v2.md spec",
+    "S.2 cutover vocab legality",
+]
 shipped_at = "64c054a6"
 created_at = "2026-08-14T21:54:38Z"
 completed_at = "2026-08-14T22:11:28Z"
 estimated = ["tokens"]
-migration_legacy = ["Author .ai/tickets/scope-vocab.toml (the 4-level domain/layer/component/surface tree from the spec draft, grounded in real modules) plus the check rule validating the file itself: sorted, duplicate-free, every level's parent exists. Additive slice — no ticket parses change; vocab-vs-ticket legality lands with the S.2 cutover."]
 owns = [
     ".ai/tickets/scope-vocab.toml",
     "xtask/src/vocab_check.rs",

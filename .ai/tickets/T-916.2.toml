@@ -1,21 +1,60 @@
 id = "T-916.2"
 kind = "work"
-title = "Rewire cmds.rs onto typed ops + parity harness + child verbs"
+title = "Rewire mutators typed ops parity child verbs"
 summary = "Rewire cmds.rs onto typed ops + parity harness + child verbs"
 class = "feature"
 status = "shipped"
 order = 5952
 spec = "docs/platform/t915_ticketboard_design.md"
 executor = "claude-code"
-notes = "Preserved asymmetries (do NOT rationalize here): set-status writes queue.json + repack only, mark-ready syncs without repack, ship full-syncs. phase2::save_tree / value_to_ticket demote to migration/test-only with the T-912.2 regression pin retargeted. cmd_get mirrored output stays untouched (external parsers). shipped_at SHA stays hand-edited; stamp-sha is future work."
+notes = """
+Preserved asymmetries (do NOT rationalize here): set-status writes queue.json + repack only, mark-ready syncs without repack, ship full-syncs. phase2::save_tree / value_to_ticket demote to migration/test-only with the T-912.2 regression pin retargeted. cmd_get mirrored output stays untouched (external parsers). shipped_at SHA stays hand-edited; stamp-sha is future work.
+
+--- HEAD migration_legacy (verbatim) ---
+
+Rewire the xtask registry mutators (ship, set-status, mark-ready, add, remove, reorder, advance-slice) onto the T-916.1 typed ops with the reload-before-sync sequence (typed write -> reload load_phase2_tree -> cmd_sync -> repack_quiet). New verbs: add-child [--promote], remove --force, child-resolving ship/set-status. Referential-integrity check rule (children[] naming a missing file, child file with absent parent). Parity harness: old-vs-new byte diff per verb over the full write surface with timestamp normalization; red trees refuse exit 1 with zero writes.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["Rewire the xtask registry mutators (ship, set-status, mark-ready, add, remove, reorder, advance-slice) onto the T-916.1 typed ops with the reload-before-sync sequence (typed write -> reload load_phase2_tree -> cmd_sync -> repack_quiet). New verbs: add-child [--promote], remove --force, child-resolving ship/set-status. Referential-integrity check rule (children[] naming a missing file, child file with absent parent). Parity harness: old-vs-new byte diff per verb over the full write surface with timestamp normalization; red trees refuse exit 1 with zero writes."]
+
+missing=0"""
 depends_on = ["T-916.1"]
 parent = "T-916"
 main_goal = "The CLI verbs keep byte-identical behavior on the shared surface while child ids finally resolve — ticket ship T-912.2-style invocations work instead of Unknown ticket — and the generated docs always reflect the post-mutation state."
+context = [
+    "Preserved asymmetries: set-status queue.json repack only; mark-ready syncs no repack; ship full-syncs.",
+    "phase2 save_tree value_to_ticket demote migration test-only; T-912.2 pin retargeted.",
+    "cmd_get mirrored output untouched; shipped_at SHA hand-edited stamp-sha future.",
+]
+requirement = [
+    "Rewire xtask registry mutators onto T-916.1 typed ops reload-before-sync sequence.",
+    "New verbs add-child --promote remove --force child-resolving ship set-status.",
+    "Referential-integrity check: children[] missing file child absent parent.",
+    "Parity harness old-vs-new byte diff per verb full write surface.",
+]
+current_state = ["Unknown ticket on child ship T-912.2-style invocations before child resolution."]
+approach = [
+    "Sequence: typed write reload load_phase2_tree cmd_sync repack_quiet.",
+    "Parity timestamp normalization; red trees refuse exit 1 zero writes.",
+]
+verify = [
+    "Parity paste per verb 0 differing files timestamps normalized.",
+    "Red-tree runs both binaries refuse exit 1 git porcelain empty.",
+    "Child ship end-to-end child file flips repack queue docs reflect reload.",
+    "cargo xtask ticket check --strict prints check OK.",
+]
 acceptance = [
     "Parity paste per verb: 0 differing files over .ai/tickets plus docs/TICKET_*.md, MILESTONES.md, CLAUDE.md, ROADMAP, gap file, queue.json, wave.lock (timestamps normalized)",
     "Red-tree runs: both binaries refuse exit 1 with git status --porcelain empty",
     "Child ship end-to-end: child file flips, repack runs, queue/docs reflect it after reload",
     "cargo xtask ticket check --strict prints check OK",
+]
+citations = [
+    "t915_ticketboard_design.md",
+    "T-916.1 typed ops",
+    "load_phase2_tree cmd_sync",
+    "parity harness byte diff",
 ]
 shipped_at = "dfaf4d4b"
 created_at = "2026-08-14T08:39:30Z"
@@ -24,7 +63,6 @@ estimated = [
     "scope",
     "tokens",
 ]
-migration_legacy = ["Rewire the xtask registry mutators (ship, set-status, mark-ready, add, remove, reorder, advance-slice) onto the T-916.1 typed ops with the reload-before-sync sequence (typed write -> reload load_phase2_tree -> cmd_sync -> repack_quiet). New verbs: add-child [--promote], remove --force, child-resolving ship/set-status. Referential-integrity check rule (children[] naming a missing file, child file with absent parent). Parity harness: old-vs-new byte diff per verb over the full write surface with timestamp normalization; red trees refuse exit 1 with zero writes."]
 owns = [
     "xtask/src",
     "crates/tbd-tickets",
