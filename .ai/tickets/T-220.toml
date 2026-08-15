@@ -7,6 +7,15 @@ status = "shipped"
 order = 2380
 executor = "claude-code"
 main_goal = "schemaVersion is regenerated as literal 1 so a stored 2 downgrades; map.bounds is recomputed and other map.* keys dropped;"
+context = [
+    "schemaVersion regenerated as literal 1 downgrading stored 2.",
+    "map.bounds recomputed; other map keys dropped on compile.",
+    "Array order lost without preserve_order; position sub-keys died on edit; paste stripped unknown slot fields.",
+]
+requirement = [
+    "Preserve schemaVersion, map metadata, slot array order, position sub-keys, and paste extras.",
+    "Hydrate-then-compile property test must fail if any loss class returns.",
+]
 current_state = [
     "schemaVersion is regenerated as literal 1 so a stored 2 downgrades;",
     "map.bounds is recomputed and other map.* keys dropped;",
@@ -14,7 +23,14 @@ current_state = [
     "position sub-keys die on first edit;",
     "copy/paste strips unknown slot fields.",
 ]
+approach = [
+    "enable preserve_order on map-engine-core Cargo.toml dependency.",
+    "entityOrder records authored id sequence; merge-on-edit for position maps.",
+    "paste_at carries unknown slot fields through extras_json merge.",
+]
 verify = ["A hydrate-then-compile property test catches all of them."]
+acceptance = ["t220 tests pinned all five hydrate-compile loss classes; schemaVersion and map keys preserved bit-exact."]
+citations = ["commit b270c072 preserve_order round trip"]
 shipped_at = "b270c072"
 created_at = "2026-07-26T22:41:46Z"
 completed_at = "2026-07-26T22:42:12Z"

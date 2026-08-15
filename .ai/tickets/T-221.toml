@@ -7,11 +7,31 @@ status = "shipped"
 order = 2390
 executor = "claude-code"
 main_goal = "On a shared machine user B opening the same mission restores user A's unsaved draft, and a Save posts it under B's account."
+context = [
+    "IndexedDB doc-state keyed by mission id alone on shared machines.",
+    "Sign-out cleared auth but left Yjs blobs and adopted markers behind.",
+    "Save could post another user's unsaved draft under the signed-in account.",
+]
+requirement = [
+    "Scope every local mission record key by signed-in discord_id.",
+    "Drop debounced writes whose owner no longer matches at flush time.",
+    "Evict other accounts records at editor boot without sign-out hook.",
+]
 current_state = [
     "The key is the mission id alone (yrs_persist.rs:60-69).",
     "Sign-out clears auth but leaves the doc blob, adopted markers and session marker.",
 ]
-citations = ["yrs_persist.rs:60-69"]
+approach = [
+    "Physical key u{len}:{owner}|{logical}; callers still pass bare mission id.",
+    "PendingSave records owner at arm; run_save drops owner mismatch.",
+    "orphan_keys and adopt_orphans surface legacy ownerless blobs safely.",
+]
+verify = ["IndexedDB scoping verified per ship commit; purge_owner wiring reported out-of-lane."]
+acceptance = ["Local mission records keyed per discord_id; foreign drafts neither returned nor leaked on shared-machine open."]
+citations = [
+    "yrs_persist.rs:60-69",
+    "commit b550fadc discord_id key scope",
+]
 shipped_at = "67982250"
 created_at = "2026-07-26T06:19:23Z"
 completed_at = "2026-07-26T06:29:14Z"

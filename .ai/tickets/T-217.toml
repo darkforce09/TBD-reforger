@@ -7,6 +7,16 @@ status = "shipped"
 order = 2350
 executor = "claude-code"
 main_goal = "FactionDoc has no squad level — flat roles[] plus vehicles[]."
+context = [
+    "FactionDoc is flat roles[] plus vehicles[] with no squad level.",
+    "Apply reused first squad and remove_squad deleted the rest with Ok.",
+    "APPLY_ANCHOR_X/Y were Everon constants misplacing Arland templates off-map.",
+]
+requirement = [
+    "Refuse multi-squad Apply without collapsing squad boundaries or slot data.",
+    "Anchor template placement to the document terrain bounds center.",
+    "Filter faction.squadIds to squads that exist before apply.",
+]
 current_state = [
     "FactionDoc has no squad level — flat roles[] plus vehicles[].",
     "Apply reuses the side's first squad and deletes every other squad on that side (apply_faction.rs:102-107);",
@@ -14,7 +24,17 @@ current_state = [
     "Save-as then Apply collapses N squads into 1.",
     "APPLY_ANCHOR_X/Y is an Everon constant, so applying on Arland places everything off-map.",
 ]
-citations = ["apply_faction.rs:102-107"]
+approach = [
+    "WouldCollapseSquads error before ensure_side_faction first write.",
+    "apply_anchor_xy resolves center from meta.terrain via local bounds table.",
+    "SLOT_SPACING_X 15m lane matches T-188 next_slot_xy spacing.",
+]
+verify = ["cargo test -p map-engine-core --features doc,mission"]
+acceptance = ["Multi-squad Apply refused WouldCollapseSquads; single-squad path unchanged; Arland anchored 2048 not Everon 6400."]
+citations = [
+    "apply_faction.rs:102-107",
+    "commit 8e07338f squad refusal anchor",
+]
 shipped_at = "8e07338f"
 created_at = "2026-07-26T05:34:42Z"
 completed_at = "2026-07-26T05:37:07Z"

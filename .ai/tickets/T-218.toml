@@ -30,6 +30,7 @@ verify = [
     "Dev API: reject with reason stores and returns text; empty body stores blank.",
     "cargo check, clippy wasm32, 115 frontend tests, debug trunk build.",
 ]
+acceptance = ["Trimmed rejection reason persisted via POST; mock Approved/Rejected tabs deleted; Request Changes disabled until reason nonempty."]
 citations = [
     "commit a024b702 rejection reason POST",
     "T-313 author display filed",

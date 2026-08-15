@@ -7,12 +7,32 @@ status = "shipped"
 order = 2410
 executor = "claude-code"
 main_goal = "two people who both adopted the same semver and both edited will both silently take the trust-local branch with no warning."
+context = [
+    "Conflict test compared adopted localStorage semver against server version.",
+    "Cleared storage spuriously prompted on identical documents.",
+    "Two editors on same adopted semver silently trusted local without warning.",
+]
+requirement = [
+    "Decide conflicts from document content not adopted semver marker.",
+    "Wire has_content for empty-local adopt path.",
+    "Compare live doc against adopt hydrate output excluding map and environment row-meta.",
+]
 current_state = [
     "mission_hydrate.rs:88-99 compares only an adopted localStorage semver against the server's.",
     "has_content() exists with zero callers.",
     "Clearing site data produces a spurious conflict on an unmodified doc,",
 ]
-citations = ["mission_hydrate.rs:88-99"]
+approach = [
+    "classify_local three-tier cheapest-first content comparison.",
+    "Throwaway core runs adopt hydrate for apples-to-apples compile_payload path.",
+    "Marker still written on Save; no reader uses it for conflict decision.",
+]
+verify = ["Scratchpad probe: 24/24 classify_local checks on MissionDocCore."]
+acceptance = ["Conflicts decided by classify_local content diff; unsaved edits against current version prompted; identical docs adopted without spurious prompt."]
+citations = [
+    "mission_hydrate.rs:88-99",
+    "commit c24e9e35 classify_local probe",
+]
 shipped_at = "c24e9e35"
 created_at = "2026-07-26T06:05:20Z"
 completed_at = "2026-07-26T06:07:40Z"

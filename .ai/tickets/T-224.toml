@@ -32,6 +32,7 @@ verify = [
     "cargo test -p website-frontend 129 passed, eden_chrome 25 incl. 7 new.",
     "clippy wasm32 adds no warning; rustfmt clean.",
 ]
+acceptance = ["Mission Settings shipped flow controls for four reader-backed keys; refused respawn, spectator, NVG, and tickets with SETTINGS_UNREAD_NOTE."]
 citations = [
     "dde40f91 ship commit",
     "TBD_FrameworkManager flow readers",

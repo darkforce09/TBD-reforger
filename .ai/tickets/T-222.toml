@@ -25,6 +25,7 @@ approach = [
     "Collision guard quiet on restore into fresh doc and peer echo during re-exchange.",
 ]
 verify = ["wave 72 GATE PASS 23/23 verifier CLEAN."]
+acceptance = ["MissionDocCore::new minted unique yrs ClientID per peer; apply_update refused own-id clock collisions past last issued."]
 citations = [
     "commit 3fff288c yrs client id",
     "wave 72 close commit",

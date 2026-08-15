@@ -26,11 +26,13 @@ approach = [
     "set_vehicle_faction and set_vehicle_cargo mutators beside add_vehicle.",
 ]
 verify = ["Three store tests; load-bearing save-reload asserts bit-exact faction and cargo."]
+acceptance = ["Vehicles tab placed map vehicles with factionId and cargo; save-reload round trip returned bit-exact components."]
 citations = [
     "commit e28002e0 vehicle map placement",
     "T-321 one-squad-per-click defect",
     "wave 5 factory notes",
     "T-216 vehicle contract floor",
+    "commit c52c6f643 save-reload test",
 ]
 shipped_at = "77214f04"
 created_at = "2026-07-26T18:47:19Z"
