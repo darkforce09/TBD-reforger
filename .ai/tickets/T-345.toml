@@ -1,12 +1,78 @@
 id = "T-345"
 kind = "work"
-title = "The doc cannot hold a marker at all — load_row requires a string id"
+title = "Faction briefing markers need doc mutator not load_row"
 summary = "The doc cannot hold a marker at all — load_row requires a string id"
 class = "docs"
 status = "shipped"
 order = 3161
 executor = "claude-code"
 priority = 1
+main_goal = "Ship faction briefing marker mutators so briefing.markers[] is authorable without relaxing load_row or changing the emitter."
+context = [
+    "FOUND by T-202 while emitting the briefings block, and it is a harder blocker than the prose mutator (T-344).",
+    "The emitter is live and proven — a two-faction document carrying 4 markers booted the real Enfusion parser at errors=0 warnings=0, Markers=ok.",
+    "But NOTHING CAN AUTHOR A MARKER, for two independent reasons:",
+    "  1. The doc's `markers` root is a CLOSED hydrate->emit loop with no mutator.",
+    "  2. `load_row` HARD-REQUIRES a string `id` on every row, so the root could not hold a `{x, z, icon, label}` object even if a mutator existed.",
+    "The schema's $defs/marker requires exactly those four and carries additionalProperties:false, so an `id` cannot simply be added to the wire shape.",
+    """Also note the editor's Markers tab is currently the literal stub "Marker placement lands in T-069." so the UI half is T-069/T-213 territory. This ticket is only about making the""",
+    "document capable of holding one.",
+    "Coordinate with T-344 (prose mutator, same file) — store.rs is the second most contended file in the backlog and these two are the same surface.",
+    "== KEPT IN THE RUN 2026-07-26 while 41 sibling findings were deferred: UNBLOCKS markers — the doc cannot hold one at all. ==",
+]
+requirement = [
+    "So this needs a decision, not just code: either give markers a doc-internal id that the emitter strips (consistent with how slots/squads/factions carry ids the mod never sees),",
+    "or relax load_row for id-less rows.",
+    "The first is almost certainly right — every other entity in the doc is id-keyed and undo/CRDT identity depends on it —",
+    "but it means the doc shape and the wire shape deliberately differ, which should be written down where the next person looks.",
+]
+current_state = [
+    "SHIPPED. **THE TICKET'S FRAMING WAS A FALSE CHOICE**, and that is the load-bearing finding.",
+    "'Give markers a doc id OR relax load_row' — but `load_row` was NEVER in the way of the per-faction array.",
+    "It governs ROOT-MAP rows only. `briefing` hangs on the faction row as an opaque Any::Map and load_row re-inserts nested objects VERBATIM without descending —",
+    "the exact mechanism T-214 used to round-trip prose with zero store.rs change. Markers nested under `briefing` inherit it for free. Nothing was relaxed and nothing needed to be.",
+    "SHAPE: `factionsById[<id>].briefing.markers[] = {id, x, z, icon, label}`, with `set_faction_briefing_marker` (upsert-in-place by id) and `remove_faction_briefing_marker`.",
+    "IT DECLINED TO OVERCLAIM THE ID. The id buys ADDRESSING — an array index is not a stable handle, since deleting mk-1 renumbers mk-2 and a queued drag lands on",
+    "the survivor.",
+    "It does NOT buy CRDT merge granularity: yrs's finest-grained key here is `briefing` itself, so two concurrent marker edits on one faction are last-write-wins over the whole briefing regardless of",
+    "ids inside it.",
+    "Both recorded on the mutator, because 'the doc mirrors the wire' stops being true at exactly this key.",
+    'load_row on an id-less row is a SILENT FULL-ROW DROP (`let Some(Any::String(id)) = fields.get("id") else { return; }`),',
+    "and the requirement exists because the very next line inserts under that id — a structural precondition of the container, not a policy choice, which is why relaxing it was",
+    "the wrong lever.",
+    "EMITTER UNCHANGED, and pinned by a running test rather than asserted: MarkerIn is #[serde(default)] with no deny_unknown_fields so the extra `id` is ignored,",
+    "and derive_briefings re-emits through ModMarker which has only the four fields.",
+    "`authored_marker_reaches_the_mod_document_without_its_doc_id` runs the real flatten_to_mod_document and asserts exactly 4 keys and no id —",
+    "so additionalProperties:false is satisfied with zero change to T-202's file, and the test fails loudly if a future slice adds deny_unknown_fields.",
+    "ROOT MAP vs PER-FACTION ARRAY — the array is authoritative, and it is CHECKABLE rather than a judgement call:",
+    "flatten_to_mod_document deserialises EditorPayload with NO root markers key at all, and mission.schema.json has no top-level markers property.",
+    "The root map goes only to the editor payload, which nothing compiles. Left standing (has_content counts it for the warm-session gate, and removing a root map is a migration)",
+    "with a §authority heading so nobody authors into the dead lane. Already tracked under T-069, so no duplicate filed.",
+    "233 tests. The round-trip uses the MUTATOR as the writer — stronger than T-214's hydrate-as-writer —",
+    "and coordinates are deliberately NON-INTEGRAL, because yrs writes Any::Number(300.0) as the JSON token `300`,",
+    "so an integral fixture can pass while a real 3-decimal map click silently loses its fraction. Documented on marker_any rather than papered over.",
+    "FOR T-344, which shares this file: read-modify-write-WHOLE is mandatory, not stylistic — the value is an opaque Any::Map,",
+    "so a naive insert of a fresh briefing silently deletes the other half.",
+    "`a_marker_edit_preserves_authored_prose_on_the_same_briefing` pins it from this side, both directions.",
+    "And inherit the trap: `remove` NO-OPS when nothing matches, including on an unauthored faction, because writing `briefing: {markers: []}` there would flip FactionIn::briefing from None to Some",
+    "and make derive_briefings emit an entry for a side that authored nothing — a compiled-output change from a delete that deleted nothing. T-344 has the same hazard in reverse.",
+]
+approach = [
+    "Ship set_faction_briefing_marker and remove_faction_briefing_marker under briefing.markers[] with doc-internal id.",
+    "Upsert-in-place by id; remove no-ops when nothing matches on unauthored faction.",
+    "Emitter unchanged — MarkerIn ignores extra id; flatten_to_mod_document asserts four wire keys.",
+]
+verify = [
+    "233 tests; authored_marker_reaches_the_mod_document_without_its_doc_id green.",
+    "Round-trip via mutator with non-integral coordinates; marker_any documents yrs 300.0 token.",
+]
+citations = [
+    "T-202 briefings emitter",
+    "T-214 hydrate round-trip",
+    "T-344 prose mutator",
+    "T-069 root markers lane",
+    "authored_marker_reaches test",
+]
 shipped_at = "79829ddf"
 created_at = "2026-07-26T12:16:19Z"
 completed_at = "2026-07-26T12:20:14Z"
@@ -17,37 +83,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    "FOUND by T-202 while emitting the briefings block, and it is a harder blocker than the prose mutator (T-344).",
-    "",
-    "The emitter is live and proven — a two-faction document carrying 4 markers booted the real Enfusion parser at errors=0 warnings=0, Markers=ok. But NOTHING CAN AUTHOR A MARKER, for two independent reasons:",
-    "  1. The doc's `markers` root is a CLOSED hydrate->emit loop with no mutator.",
-    "  2. `load_row` HARD-REQUIRES a string `id` on every row, so the root could not hold a `{x, z, icon, label}` object even if a mutator existed. The schema's $defs/marker requires exactly those four and carries additionalProperties:false, so an `id` cannot simply be added to the wire shape.",
-    "",
-    "So this needs a decision, not just code: either give markers a doc-internal id that the emitter strips (consistent with how slots/squads/factions carry ids the mod never sees), or relax load_row for id-less rows. The first is almost certainly right — every other entity in the doc is id-keyed and undo/CRDT identity depends on it — but it means the doc shape and the wire shape deliberately differ, which should be written down where the next person looks.",
-    "",
-    """Also note the editor's Markers tab is currently the literal stub "Marker placement lands in T-069." so the UI half is T-069/T-213 territory. This ticket is only about making the document capable of holding one.""",
-    "",
-    "Coordinate with T-344 (prose mutator, same file) — store.rs is the second most contended file in the backlog and these two are the same surface.",
-    "",
-    "== KEPT IN THE RUN 2026-07-26 while 41 sibling findings were deferred: UNBLOCKS markers — the doc cannot hold one at all. ==",
-    "",
-    "SHIPPED. **THE TICKET'S FRAMING WAS A FALSE CHOICE**, and that is the load-bearing finding. 'Give markers a doc id OR relax load_row' — but `load_row` was NEVER in the way of the per-faction array. It governs ROOT-MAP rows only. `briefing` hangs on the faction row as an opaque Any::Map and load_row re-inserts nested objects VERBATIM without descending — the exact mechanism T-214 used to round-trip prose with zero store.rs change. Markers nested under `briefing` inherit it for free. Nothing was relaxed and nothing needed to be.",
-    "",
-    "SHAPE: `factionsById[<id>].briefing.markers[] = {id, x, z, icon, label}`, with `set_faction_briefing_marker` (upsert-in-place by id) and `remove_faction_briefing_marker`.",
-    "",
-    "IT DECLINED TO OVERCLAIM THE ID. The id buys ADDRESSING — an array index is not a stable handle, since deleting mk-1 renumbers mk-2 and a queued drag lands on the survivor. It does NOT buy CRDT merge granularity: yrs's finest-grained key here is `briefing` itself, so two concurrent marker edits on one faction are last-write-wins over the whole briefing regardless of ids inside it. Both recorded on the mutator, because 'the doc mirrors the wire' stops being true at exactly this key.",
-    "",
-    'load_row on an id-less row is a SILENT FULL-ROW DROP (`let Some(Any::String(id)) = fields.get("id") else { return; }`), and the requirement exists because the very next line inserts under that id — a structural precondition of the container, not a policy choice, which is why relaxing it was the wrong lever.',
-    "",
-    "EMITTER UNCHANGED, and pinned by a running test rather than asserted: MarkerIn is #[serde(default)] with no deny_unknown_fields so the extra `id` is ignored, and derive_briefings re-emits through ModMarker which has only the four fields. `authored_marker_reaches_the_mod_document_without_its_doc_id` runs the real flatten_to_mod_document and asserts exactly 4 keys and no id — so additionalProperties:false is satisfied with zero change to T-202's file, and the test fails loudly if a future slice adds deny_unknown_fields.",
-    "",
-    "ROOT MAP vs PER-FACTION ARRAY — the array is authoritative, and it is CHECKABLE rather than a judgement call: flatten_to_mod_document deserialises EditorPayload with NO root markers key at all, and mission.schema.json has no top-level markers property. The root map goes only to the editor payload, which nothing compiles. Left standing (has_content counts it for the warm-session gate, and removing a root map is a migration) with a §authority heading so nobody authors into the dead lane. Already tracked under T-069, so no duplicate filed.",
-    "",
-    "233 tests. The round-trip uses the MUTATOR as the writer — stronger than T-214's hydrate-as-writer — and coordinates are deliberately NON-INTEGRAL, because yrs writes Any::Number(300.0) as the JSON token `300`, so an integral fixture can pass while a real 3-decimal map click silently loses its fraction. Documented on marker_any rather than papered over.",
-    "",
-    "FOR T-344, which shares this file: read-modify-write-WHOLE is mandatory, not stylistic — the value is an opaque Any::Map, so a naive insert of a fresh briefing silently deletes the other half. `a_marker_edit_preserves_authored_prose_on_the_same_briefing` pins it from this side, both directions. And inherit the trap: `remove` NO-OPS when nothing matches, including on an unauthored faction, because writing `briefing: {markers: []}` there would flip FactionIn::briefing from None to Some and make derive_briefings emit an entry for a side that authored nothing — a compiled-output change from a delete that deleted nothing. T-344 has the same hazard in reverse.",
-]
 owns = ["crates/map-engine-core/src/doc/store.rs"]
 
 [scope]

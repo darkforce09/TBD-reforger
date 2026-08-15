@@ -1,12 +1,84 @@
 id = "T-349"
 kind = "work"
-title = "wiki slug has no guard at all, and field_tools.rs was missed by the whole sweep"
+title = "Unguarded wiki slug and missed field_tools sweep"
 summary = "wiki slug has no guard at all, and field_tools.rs was missed by the whole sweep"
 class = "bug"
 status = "shipped"
 order = 3165
 executor = "claude-code"
+notes = """
+Also fold in: missions.rs:315/417 — `time_of_day` where `'   '::time` is a **500**; and handlers/mod.rs:101 `username()`, which feeds every audit line in the crate.
+
+══ DO NOT NAIVELY TRIM — two sites where a one-sided trim CREATES the catastrophe ══
+T-343 found these and they bind on any ticket in this family:
+  events.rs:1735 — orbat_reservations.squad must stay BYTE-IDENTICAL to orbat_slots.squad, which is written untrimmed by crates/map-engine-core/src/mission/orbat.rs:163.
+  events.rs:1923 — must mirror `or_fallback` at crates/map-engine-core/src/mission/flatten.rs:626. Disagreement means the seat VANISHES, the assignment round-robins, and the request still returns 200.
+Trimming on write and trimming on read must agree. T-326's bug was not an untrimmed value per se — it was a DISAGREEMENT between two sites. Check both halves before changing either.
+
+TWO FURTHER SITES IN THIS FILE that the ticket does not enumerate — found by a follow-up audit:
+  field_tools.rs:101-105 — `input.event_id.as_deref().filter(|v| !v.is_empty()).and_then(|v| Uuid::parse_str(v).ok())`. Untrimmed is_empty, then `.ok()` SWALLOWS the parse failure. A padded or malformed event_id yields None, the row inserts with event_id NULL, and the response is 201 CREATED — so the fire mission is PERMANENTLY INVISIBLE to GET /events/:id/fire-missions (:143, WHERE event_id = $1). A row that can never be matched by the other side of its own lookup, on a success response.
+  field_tools.rs:29-30 with services/mortar.rs:46-52 — defaulted `weapon_system` reaches charges_for(weapon), which on None SILENTLY SUBSTITUTES DEFAULT_MORTAR. An absent, misspelled or padded weapon returns a firing solution for a DIFFERENT WEAPON with no warning. For a mortar calculator that is a wrong elevation handed to someone who asked about another tube — treat this as the most serious item in the ticket. mortar.rs is NOT in this ticket's owns; report what it needs.
+
+SHIPPED 2026-07-26. THE MOST DAMNING NUMBERS OF THE RUN: a 120mm crew that mistyped its own tube ("M120 120mmm") got the 81mm firing solution — charge 3, 1228 mils instead of 1300, TOF 40.0s instead of 44.9 — **72 mils low and 4.9 seconds off, labelled `M252 81mm`, returned as 200 OK**. 2B14 82mm at 2000m is 988 vs 1061, a 73-mil error the same way. Pre-fix it would also answer with no target at all: fp only, no tgt, returned distance 2236m / azimuth 206.6 deg / elevation 915 mils onto grid (0,0).
+
+MERGE BLOCKER FOUND AND FIXED AT MERGE: frontend/src/mortar.rs:83 sends "m252_81mm", which has NEVER been a key in charges_for (it wants "M252 81mm"). So EVERY request from the live Mortar Calculator has taken the silent-fallback path since the feature shipped, and it looked correct the whole time only because DEFAULT_MORTAR happens to be the same weapon that page hardcodes in its own header and fallback label. The fallback masked a shipped client bug for the feature's entire life — the strongest possible evidence for this ticket's thesis. Both sides verified from the command center before the one-line fix was applied.
+
+SLUG: require-and-refuse, not normalise, and the reason is not house style. Nothing joins wiki_pages.slug, so normalising WAS available — what settles it is that trimming the write key would make `PUT /wiki/medical-sop%20` OVERWRITE `medical-sop`, retargeting a full-row replace onto a page the URL does not name. A typo promoted to a silent destructive overwrite. Refusing touches no read, so it is structurally incapable of the T-343 write/read disagreement, and any padded row already in a deployed DB stays readable rather than going dark on deploy. Demonstrated pre-fix: two rows for one trimmed slug, the padded twin a nav row no reader could open.
+
+IT REFUSED TO DUPLICATE THE WEAPON TABLE, which would have planted the exact drift T-347 closed. Instead the guard reads mortar.rs's own answer — solve_fire_mission returns the weapon it used, so `sol.weapon_system != requested` is PRECISELY `charges_for(requested) == None`, with zero duplication and no edit when the table grows.
+
+THE FIVE #[serde(default)] AT :29-38 — none genuinely optional, for TWO different reasons: weapon_system is a lookup key needing presence AND content validation (the default made the wrong-weapon path reachable with NO WHITESPACE ANYWHERE, which is why trimming alone would not have closed it); fp_x/fp_y/tgt_x/tgt_y need PRESENCE ONLY, because 0.0 is a real coordinate (grid origin) so there is no empty sentinel to guard on — T-319's nav_order=0 argument, in the sibling file. fp_grid/target_grid are TRIMMED and stored rather than refused, because nothing matches them: T-346's item_name-vs-faction split inside one struct.
+
+Two gaps from T-343's sweep that are notable for being unguarded rather than mis-guarded.
+
+1. **handlers/wiki.rs:98,119 — `slug` has NO guard whatsoever.** It is the unique key AND the ON CONFLICT target. A blank or whitespace slug is therefore a live upsert key.
+
+2. **handlers/field_tools.rs was missed entirely by the T-315..T-319 sweep.** It carries unguarded values at :87 and :116 PLUS five #[serde(default)] on required fields at :29-38, and none of the 'deliberately required' annotations every sibling handler now has. That is the whole file never having been looked at, which is worth more attention than any single line in it.
+
+Also fold in: missions.rs:315/417 — `time_of_day` where `'   '::time` is a **500**; and handlers/mod.rs:101 `username()`, which feeds every audit line in the crate.
+
+══ DO NOT NAIVELY TRIM — two sites where a one-sided trim CREATES the catastrophe ══
+T-343 found these and they bind on any ticket in this family:
+  events.rs:1735 — orbat_reservations.squad must stay BYTE-IDENTICAL to orbat_slots.squad, which is written untrimmed by crates/map-engine-core/src/mission/orbat.rs:163.
+  events.rs:1923 — must mirror `or_fallback` at crates/map-engine-core/src/mission/flatten.rs:626. Disagreement means the seat VANISHES, the assignment round-robins, and the request still returns 200.
+Trimming on write and trimming on read must agree. T-326's bug was not an untrimmed value per se — it was a DISAGREEMENT between two sites. Check both halves before changing either.
+
+TWO FURTHER SITES IN THIS FILE that the ticket does not enumerate — found by a follow-up audit:
+  field_tools.rs:101-105 — `input.event_id.as_deref().filter(|v| !v.is_empty()).and_then(|v| Uuid::parse_str(v).ok())`. Untrimmed is_empty, then `.ok()` SWALLOWS the parse failure. A padded or malformed event_id yields None, the row inserts with event_id NULL, and the response is 201 CREATED — so the fire mission is PERMANENTLY INVISIBLE to GET /events/:id/fire-missions (:143, WHERE event_id = $1). A row that can never be matched by the other side of its own lookup, on a success response.
+  field_tools.rs:29-30 with services/mortar.rs:46-52 — defaulted `weapon_system` reaches charges_for(weapon), which on None SILENTLY SUBSTITUTES DEFAULT_MORTAR. An absent, misspelled or padded weapon returns a firing solution for a DIFFERENT WEAPON with no warning. For a mortar calculator that is a wrong elevation handed to someone who asked about another tube — treat this as the most serious item in the ticket. mortar.rs is NOT in this ticket's owns; report what it needs.
+
+SHIPPED 2026-07-26. THE MOST DAMNING NUMBERS OF THE RUN: a 120mm crew that mistyped its own tube ("M120 120mmm") got the 81mm firing solution — charge 3, 1228 mils instead of 1300, TOF 40.0s instead of 44.9 — **72 mils low and 4.9 seconds off, labelled `M252 81mm`, returned as 200 OK**. 2B14 82mm at 2000m is 988 vs 1061, a 73-mil error the same way. Pre-fix it would also answer with no target at all: fp only, no tgt, returned distance 2236m / azimuth 206.6 deg / elevation 915 mils onto grid (0,0).
+
+MERGE BLOCKER FOUND AND FIXED AT MERGE: frontend/src/mortar.rs:83 sends "m252_81mm", which has NEVER been a key in charges_for (it wants "M252 81mm"). So EVERY request from the live Mortar Calculator has taken the silent-fallback path since the feature shipped, and it looked correct the whole time only because DEFAULT_MORTAR happens to be the same weapon that page hardcodes in its own header and fallback label. The fallback masked a shipped client bug for the feature's entire life — the strongest possible evidence for this ticket's thesis. Both sides verified from the command center before the one-line fix was applied.
+
+SLUG: require-and-refuse, not normalise, and the reason is not house style. Nothing joins wiki_pages.slug, so normalising WAS available — what settles it is that trimming the write key would make `PUT /wiki/medical-sop%20` OVERWRITE `medical-sop`, retargeting a full-row replace onto a page the URL does not name. A typo promoted to a silent destructive overwrite. Refusing touches no read, so it is structurally incapable of the T-343 write/read disagreement, and any padded row already in a deployed DB stays readable rather than going dark on deploy. Demonstrated pre-fix: two rows for one trimmed slug, the padded twin a nav row no reader could open.
+
+IT REFUSED TO DUPLICATE THE WEAPON TABLE, which would have planted the exact drift T-347 closed. Instead the guard reads mortar.rs's own answer — solve_fire_mission returns the weapon it used, so `sol.weapon_system != requested` is PRECISELY `charges_for(requested) == None`, with zero duplication and no edit when the table grows.
+
+THE FIVE #[serde(default)] AT :29-38 — none genuinely optional, for TWO different reasons: weapon_system is a lookup key needing presence AND content validation (the default made the wrong-weapon path reachable with NO WHITESPACE ANYWHERE, which is why trimming alone would not have closed it); fp_x/fp_y/tgt_x/tgt_y need PRESENCE ONLY, because 0.0 is a real coordinate (grid origin) so there is no empty sentinel to guard on — T-319's nav_order=0 argument, in the sibling file. fp_grid/target_grid are TRIMMED and stored rather than refused, because nothing matches them: T-346's item_name-vs-faction split inside one struct."""
 priority = 1
+main_goal = "wiki slug and field_tools inputs must refuse blank keys; mortar weapon_system must not silently fallback."
+context = ["Two T-343 gaps: unguarded rather than mis-guarded; field_tools.rs missed entire T-315..T-319 sweep."]
+requirement = [
+    "Slug require-and-refuse — trimming write key would make PUT overwrite unrelated page.",
+    "Weapon guard reads solve_fire_mission return; no duplicated mortar.rs table.",
+]
+current_state = [
+    "wiki.rs:98/:119 slug NO guard; unique key and ON CONFLICT target — blank slug is live upsert key.",
+    "field_tools.rs:87/:116 unguarded; five #[serde(default)] on required fields; :101-105 event_id parse swallowed → invisible row.",
+    "Defaulted weapon_system → charges_for None → DEFAULT_MORTAR wrong elevation; frontend sent m252_81mm never a key.",
+]
+approach = [
+    "Slug refuse not normalise; weapon_system required + sol.weapon_system != requested is precisely charges_for None.",
+    "fp_x/fp_y/tgt_x/tgt_y presence-only — 0.0 is real coordinate; fp_grid/target_grid trimmed not refused.",
+]
+citations = [
+    "T-343 sweep gaps",
+    "wiki.rs:98 slug",
+    "field_tools.rs defaults",
+    "mortar.rs charges_for",
+    "frontend mortar.rs m252_81mm",
+]
 shipped_at = "2c1021a5"
 created_at = "2026-07-26T10:20:02Z"
 completed_at = "2026-07-26T10:33:37Z"
@@ -17,35 +89,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = [
-    "Two gaps from T-343's sweep that are notable for being unguarded rather than mis-guarded.",
-    "",
-    "1. **handlers/wiki.rs:98,119 — `slug` has NO guard whatsoever.** It is the unique key AND the ON CONFLICT target. A blank or whitespace slug is therefore a live upsert key.",
-    "",
-    "2. **handlers/field_tools.rs was missed entirely by the T-315..T-319 sweep.** It carries unguarded values at :87 and :116 PLUS five #[serde(default)] on required fields at :29-38, and none of the 'deliberately required' annotations every sibling handler now has. That is the whole file never having been looked at, which is worth more attention than any single line in it.",
-    "",
-    "Also fold in: missions.rs:315/417 — `time_of_day` where `'   '::time` is a **500**; and handlers/mod.rs:101 `username()`, which feeds every audit line in the crate.",
-    "",
-    "══ DO NOT NAIVELY TRIM — two sites where a one-sided trim CREATES the catastrophe ══",
-    "T-343 found these and they bind on any ticket in this family:",
-    "  events.rs:1735 — orbat_reservations.squad must stay BYTE-IDENTICAL to orbat_slots.squad, which is written untrimmed by crates/map-engine-core/src/mission/orbat.rs:163.",
-    "  events.rs:1923 — must mirror `or_fallback` at crates/map-engine-core/src/mission/flatten.rs:626. Disagreement means the seat VANISHES, the assignment round-robins, and the request still returns 200.",
-    "Trimming on write and trimming on read must agree. T-326's bug was not an untrimmed value per se — it was a DISAGREEMENT between two sites. Check both halves before changing either.",
-    "",
-    "TWO FURTHER SITES IN THIS FILE that the ticket does not enumerate — found by a follow-up audit:",
-    "  field_tools.rs:101-105 — `input.event_id.as_deref().filter(|v| !v.is_empty()).and_then(|v| Uuid::parse_str(v).ok())`. Untrimmed is_empty, then `.ok()` SWALLOWS the parse failure. A padded or malformed event_id yields None, the row inserts with event_id NULL, and the response is 201 CREATED — so the fire mission is PERMANENTLY INVISIBLE to GET /events/:id/fire-missions (:143, WHERE event_id = $1). A row that can never be matched by the other side of its own lookup, on a success response.",
-    "  field_tools.rs:29-30 with services/mortar.rs:46-52 — defaulted `weapon_system` reaches charges_for(weapon), which on None SILENTLY SUBSTITUTES DEFAULT_MORTAR. An absent, misspelled or padded weapon returns a firing solution for a DIFFERENT WEAPON with no warning. For a mortar calculator that is a wrong elevation handed to someone who asked about another tube — treat this as the most serious item in the ticket. mortar.rs is NOT in this ticket's owns; report what it needs.",
-    "",
-    'SHIPPED 2026-07-26. THE MOST DAMNING NUMBERS OF THE RUN: a 120mm crew that mistyped its own tube ("M120 120mmm") got the 81mm firing solution — charge 3, 1228 mils instead of 1300, TOF 40.0s instead of 44.9 — **72 mils low and 4.9 seconds off, labelled `M252 81mm`, returned as 200 OK**. 2B14 82mm at 2000m is 988 vs 1061, a 73-mil error the same way. Pre-fix it would also answer with no target at all: fp only, no tgt, returned distance 2236m / azimuth 206.6 deg / elevation 915 mils onto grid (0,0).',
-    "",
-    """MERGE BLOCKER FOUND AND FIXED AT MERGE: frontend/src/mortar.rs:83 sends "m252_81mm", which has NEVER been a key in charges_for (it wants "M252 81mm"). So EVERY request from the live Mortar Calculator has taken the silent-fallback path since the feature shipped, and it looked correct the whole time only because DEFAULT_MORTAR happens to be the same weapon that page hardcodes in its own header and fallback label. The fallback masked a shipped client bug for the feature's entire life — the strongest possible evidence for this ticket's thesis. Both sides verified from the command center before the one-line fix was applied.""",
-    "",
-    "SLUG: require-and-refuse, not normalise, and the reason is not house style. Nothing joins wiki_pages.slug, so normalising WAS available — what settles it is that trimming the write key would make `PUT /wiki/medical-sop%20` OVERWRITE `medical-sop`, retargeting a full-row replace onto a page the URL does not name. A typo promoted to a silent destructive overwrite. Refusing touches no read, so it is structurally incapable of the T-343 write/read disagreement, and any padded row already in a deployed DB stays readable rather than going dark on deploy. Demonstrated pre-fix: two rows for one trimmed slug, the padded twin a nav row no reader could open.",
-    "",
-    "IT REFUSED TO DUPLICATE THE WEAPON TABLE, which would have planted the exact drift T-347 closed. Instead the guard reads mortar.rs's own answer — solve_fire_mission returns the weapon it used, so `sol.weapon_system != requested` is PRECISELY `charges_for(requested) == None`, with zero duplication and no edit when the table grows.",
-    "",
-    "THE FIVE #[serde(default)] AT :29-38 — none genuinely optional, for TWO different reasons: weapon_system is a lookup key needing presence AND content validation (the default made the wrong-weapon path reachable with NO WHITESPACE ANYWHERE, which is why trimming alone would not have closed it); fp_x/fp_y/tgt_x/tgt_y need PRESENCE ONLY, because 0.0 is a real coordinate (grid origin) so there is no empty sentinel to guard on — T-319's nav_order=0 argument, in the sibling file. fp_grid/target_grid are TRIMMED and stored rather than refused, because nothing matches them: T-346's item_name-vs-faction split inside one struct.",
-]
 owns = [
     "apps/website/api/src/handlers/wiki.rs",
     "apps/website/api/src/handlers/field_tools.rs",

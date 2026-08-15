@@ -7,6 +7,51 @@ status = "shipped"
 order = 3156
 executor = "claude-code"
 priority = 1
+main_goal = "COALESCE nullable briefing and thumbnail_url in handlers/events.rs:832 so GET /events/:id survives fresh-seed NULL missions."
+context = ["T-307 IS STILL OPEN and now has a second instance. Confirmed by T-329 against main at ccbcda8b: T-324 shipped without fixing it."]
+requirement = [
+    "Fix at the query with COALESCE, NOT by making the model fields Option — read the reasoning T-325 recorded in models/telemetry.rs first; the wire contract is golden-tested and `None` vs",
+    '`""` would be two encodings of one state. T-330 also established that a nullable column with no DEFAULT can be NULL even when nothing writes it today, and that chaining',
+    "through a sibling column (created_at) is more honest than a bare sentinel — consider whether thumbnail_url has an honest fallback.",
+    "T-329's new static enumerator in tests/null_tolerance.rs already NAMES this file. Verify your fix clears its entry rather than just silencing it, and prune the tolerance entry in the same commit.",
+]
+current_state = [
+    "handlers/events.rs:832 does `SELECT title, terrain, game_mode, briefing, thumbnail_url FROM missions` into a tuple of non-optional Strings. T-325 reported `briefing`; **`thumbnail_url` in the same query is a second, previously unreported instance.**",
+    "GET /api/v1/events/{id} 500s on EITHER.",
+    "It is reachable from any fresh seed: seeds/mock_data.sql:25 omits thumbnail_url from its INSERT column list. So a developer seeding a clean database takes down the Event Hub and has no",
+    "reason to suspect the query.",
+    "The error text names an INDEX, not a column — `decoding column 3` / `column 4` — because it is a positional tuple decode. That is part of why it",
+    "survived two passes over the file.",
+]
+approach = [
+    "PER-COLUMN DECISION, not a blanket wrap: only 2 of the 5 selected columns are nullable. `title` is NOT NULL, and `terrain`/`game_mode` are NOT NULL **and** USER-DEFINED enums where COALESCE(x,'') would",
+    "not even typecheck. A blanket wrap would have asserted a nullability the schema does not have and failed to compile.",
+    """WHY '' AND NOT T-330's SIBLING CHAIN, which is the durable reasoning: EventMissionDossier carries skip_serializing_if = "String::is_empty" on both fields, so '' OMITS THE KEY — the exactly-true statement. T-330""",
+    "needed a real sibling because DateTime<Utc> has NO absent encoding; String already has one. And both candidate siblings would have been actively harmful: events.briefing is already served at the top",
+    "level of the same response, so chaining would report the container's briefing as the mission's; events.banner_image_url is worse still — it would render a real image that is not the",
+    "mission's, identically across every mission on the event, and omitting the key is precisely what lets the client run its own placeholder path. A confidently wrong image is less recoverable",
+    "than a missing one.",
+    "SWEPT ALL 44 value-decoding sites in the file against information_schema (27 query_as + 16 query_scalar + 1 QueryBuilder; the other 19 sqlx::query( decode nothing). This query was the only defect.",
+    "Three near-misses recorded as correct: EVENT_END_HORIZON_SQL already wraps a NULL-able max(); the roster read decodes nullable users.arma_id into a plain String but its WHERE carries `AND u.arma_id IS NOT NULL",
+    "AND u.arma_id <> ''` — a real guard, not luck; and three orbat_reservations reads are sound because that table has no nullable column at all.",
+]
+verify = [
+    "SHIPPED 2026-07-26, and it proved the bug WORSE than filed. Fresh-seed reachability demonstrated end to end THROUGH THE API ONLY, with no hand-written NULL: apply the committed seeds/mock_data.sql verbatim ->",
+    "all four missions have thumbnail_url IS NULL (line 25 omits it from the INSERT column list) -> POST /events -> POST /events/{id}/missions -> GET /api/v1/events/{id} -> 500. So seeding a",
+    "clean database takes the Event Hub down, and nothing in that sequence looks like misuse.",
+    "ENUMERATOR CLEARED, NOT TOLERATED, and verified in BOTH directions: with the fix and the tolerance entries pruned the static test passes; with COALESCE reverted and the tolerance still pruned it",
+    "hard fails naming both columns. File then restored and sha256-verified byte-exact.",
+]
+acceptance = ["T-307 is closed by this — it was the same defect, and thumbnail_url was a second instance nobody had reported."]
+citations = [
+    "T-307 open duplicate",
+    "T-329 ccbcda8b confirm",
+    "handlers/events.rs:832",
+    "seeds/mock_data.sql:25",
+    "models/telemetry.rs T-325",
+    "tests/null_tolerance.rs",
+    "T-330 sibling chain reasoning",
+]
 shipped_at = "d223ae3b"
 created_at = "2026-07-26T08:03:43Z"
 completed_at = "2026-07-26T08:08:36Z"
@@ -17,31 +62,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = [
-    "T-307 IS STILL OPEN and now has a second instance. Confirmed by T-329 against main at ccbcda8b: T-324 shipped without fixing it.",
-    "",
-    "handlers/events.rs:832 does `SELECT title, terrain, game_mode, briefing, thumbnail_url FROM missions` into a tuple of non-optional Strings. T-325 reported `briefing`; **`thumbnail_url` in the same query is a second, previously unreported instance.** GET /api/v1/events/{id} 500s on EITHER.",
-    "",
-    "It is reachable from any fresh seed: seeds/mock_data.sql:25 omits thumbnail_url from its INSERT column list. So a developer seeding a clean database takes down the Event Hub and has no reason to suspect the query.",
-    "",
-    'Fix at the query with COALESCE, NOT by making the model fields Option — read the reasoning T-325 recorded in models/telemetry.rs first; the wire contract is golden-tested and `None` vs `""` would be two encodings of one state. T-330 also established that a nullable column with no DEFAULT can be NULL even when nothing writes it today, and that chaining through a sibling column (created_at) is more honest than a bare sentinel — consider whether thumbnail_url has an honest fallback.',
-    "",
-    "T-329's new static enumerator in tests/null_tolerance.rs already NAMES this file. Verify your fix clears its entry rather than just silencing it, and prune the tolerance entry in the same commit.",
-    "",
-    "SHIPPED 2026-07-26, and it proved the bug WORSE than filed. Fresh-seed reachability demonstrated end to end THROUGH THE API ONLY, with no hand-written NULL: apply the committed seeds/mock_data.sql verbatim -> all four missions have thumbnail_url IS NULL (line 25 omits it from the INSERT column list) -> POST /events -> POST /events/{id}/missions -> GET /api/v1/events/{id} -> 500. So seeding a clean database takes the Event Hub down, and nothing in that sequence looks like misuse.",
-    "",
-    "The error text names an INDEX, not a column — `decoding column 3` / `column 4` — because it is a positional tuple decode. That is part of why it survived two passes over the file.",
-    "",
-    "PER-COLUMN DECISION, not a blanket wrap: only 2 of the 5 selected columns are nullable. `title` is NOT NULL, and `terrain`/`game_mode` are NOT NULL **and** USER-DEFINED enums where COALESCE(x,'') would not even typecheck. A blanket wrap would have asserted a nullability the schema does not have and failed to compile.",
-    "",
-    """WHY '' AND NOT T-330's SIBLING CHAIN, which is the durable reasoning: EventMissionDossier carries skip_serializing_if = "String::is_empty" on both fields, so '' OMITS THE KEY — the exactly-true statement. T-330 needed a real sibling because DateTime<Utc> has NO absent encoding; String already has one. And both candidate siblings would have been actively harmful: events.briefing is already served at the top level of the same response, so chaining would report the container's briefing as the mission's; events.banner_image_url is worse still — it would render a real image that is not the mission's, identically across every mission on the event, and omitting the key is precisely what lets the client run its own placeholder path. A confidently wrong image is less recoverable than a missing one.""",
-    "",
-    "SWEPT ALL 44 value-decoding sites in the file against information_schema (27 query_as + 16 query_scalar + 1 QueryBuilder; the other 19 sqlx::query( decode nothing). This query was the only defect. Three near-misses recorded as correct: EVENT_END_HORIZON_SQL already wraps a NULL-able max(); the roster read decodes nullable users.arma_id into a plain String but its WHERE carries `AND u.arma_id IS NOT NULL AND u.arma_id <> ''` — a real guard, not luck; and three orbat_reservations reads are sound because that table has no nullable column at all.",
-    "",
-    "ENUMERATOR CLEARED, NOT TOLERATED, and verified in BOTH directions: with the fix and the tolerance entries pruned the static test passes; with COALESCE reverted and the tolerance still pruned it hard fails naming both columns. File then restored and sha256-verified byte-exact.",
-    "",
-    "T-307 is closed by this — it was the same defect, and thumbnail_url was a second instance nobody had reported.",
-]
 owns = ["apps/website/api/src/handlers/events.rs"]
 
 [scope]

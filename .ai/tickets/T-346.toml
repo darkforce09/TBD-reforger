@@ -6,7 +6,68 @@ class = "bug"
 status = "shipped"
 order = 3162
 executor = "claude-code"
+notes = """
+══ DO NOT NAIVELY TRIM — two sites where a one-sided trim CREATES the catastrophe ══
+T-343 found these and they bind on any ticket in this family:
+  events.rs:1735 — orbat_reservations.squad must stay BYTE-IDENTICAL to orbat_slots.squad, which is written untrimmed by crates/map-engine-core/src/mission/orbat.rs:163.
+  events.rs:1923 — must mirror `or_fallback` at crates/map-engine-core/src/mission/flatten.rs:626. Disagreement means the seat VANISHES, the assignment round-robins, and the request still returns 200.
+Trimming on write and trimming on read must agree. T-326's bug was not an untrimmed value per se — it was a DISAGREEMENT between two sites. Check both halves before changing either.
+
+SHIPPED 2026-07-26, and the agent REPRODUCED THE TRAP rather than trusting the warning — which changed the fix.
+
+MEASURED: orbat_slots.faction is written with NO normalisation. events.rs:391 binds OrbatSquadTemplate.faction, itself #[serde(default)] and untrimmed at crates/map-engine-core/src/mission/orbat.rs:23-25. So ORBAT "  USA  " plus armory "  USA  " renders CORRECTLY today — one item, one card. A unilateral trim on the armory side turns that into zero items. Trimming would have MOVED the bug.
+
+SO IT REQUIRED AND REFUSED INSTEAD OF TRIMMING: `faction` is required (kills the #[serde(default)] half), a value not equal to its trimmed form is refused with 400 (kills the padding half), and the stored bytes stay exactly what the caller sent. That is agreement-preserving under EITHER hypothesis about the other side — trimming is only correct if the other side also trims, and it does not. It also checked the over-rejection direction: the guard is `!= trim()`, not 'contains a space', so "US Army" stores byte-identical, pinned by a test.
+
+BOTH PRE-FIX PATHS MEASURED, with the Event Hub card replayed faithfully from event_hub.rs:294-302 and :412-418: padded faction -> 200, stored padded, card shows ZERO items; `{"items":[{"item_name":"M4A1"}]}` with NO WHITESPACE ANYWHERE -> 200, stored "", card shows ZERO items. The second is the #[serde(default)], confirmed rather than taken on trust.
+
+TWO CORRECTIONS. The ticket's framing of events.rs:796 as an equality match is imprecise — it GROUPS by the row's own raw value into a HashMap with no normalisation; the real cross-source join is frontend/event_hub.rs:415, matching against a list built from a DIFFERENT TABLE (orbat_slots). And T-315's comment in this file had grouped `faction` with the presentation hints as 'an absent one degrades a row without making it a lie' — that was wrong and is corrected in place. category/icon/sort_order keep their defaults, verified matched by no equality join.
+
+mission_overview.rs:218 does not trim either but is SELF-CONSISTENT: its tab list derives from the armory rows themselves, so a padded value produces a padded tab its own filter matches. Cosmetic only.
+
+HIGHEST-SEVERITY find of T-343's sweep, and the one to do first.
+
+handlers/missions.rs:766 — `set_armory` binds `faction` UNTRIMMED and carries #[serde(default)], two lines above the correctly-trimmed `item_name`. `faction` is the JOIN KEY, matched by exact equality at events.rs:796, frontend/event_hub.rs:415 and frontend/mission_overview.rs:218.
+
+Consequence: the armory reads as saved and renders EMPTY in the Event Hub dossier. The author sees success and the players see nothing.
+
+WHY IT IS NOT JUST A TRIM: it is reachable with NO WHITESPACE AT ALL, via the #[serde(default)] — so a trim-only fix would look like it worked while leaving the defect open. Both halves are required, exactly as T-315 found for `items`/`item_name` in this same handler.
+
+══ DO NOT NAIVELY TRIM — two sites where a one-sided trim CREATES the catastrophe ══
+T-343 found these and they bind on any ticket in this family:
+  events.rs:1735 — orbat_reservations.squad must stay BYTE-IDENTICAL to orbat_slots.squad, which is written untrimmed by crates/map-engine-core/src/mission/orbat.rs:163.
+  events.rs:1923 — must mirror `or_fallback` at crates/map-engine-core/src/mission/flatten.rs:626. Disagreement means the seat VANISHES, the assignment round-robins, and the request still returns 200.
+Trimming on write and trimming on read must agree. T-326's bug was not an untrimmed value per se — it was a DISAGREEMENT between two sites. Check both halves before changing either.
+
+SHIPPED 2026-07-26, and the agent REPRODUCED THE TRAP rather than trusting the warning — which changed the fix.
+
+MEASURED: orbat_slots.faction is written with NO normalisation. events.rs:391 binds OrbatSquadTemplate.faction, itself #[serde(default)] and untrimmed at crates/map-engine-core/src/mission/orbat.rs:23-25. So ORBAT "  USA  " plus armory "  USA  " renders CORRECTLY today — one item, one card. A unilateral trim on the armory side turns that into zero items. Trimming would have MOVED the bug.
+
+SO IT REQUIRED AND REFUSED INSTEAD OF TRIMMING: `faction` is required (kills the #[serde(default)] half), a value not equal to its trimmed form is refused with 400 (kills the padding half), and the stored bytes stay exactly what the caller sent. That is agreement-preserving under EITHER hypothesis about the other side — trimming is only correct if the other side also trims, and it does not. It also checked the over-rejection direction: the guard is `!= trim()`, not 'contains a space', so "US Army" stores byte-identical, pinned by a test.
+
+BOTH PRE-FIX PATHS MEASURED, with the Event Hub card replayed faithfully from event_hub.rs:294-302 and :412-418: padded faction -> 200, stored padded, card shows ZERO items; `{"items":[{"item_name":"M4A1"}]}` with NO WHITESPACE ANYWHERE -> 200, stored "", card shows ZERO items. The second is the #[serde(default)], confirmed rather than taken on trust.
+
+TWO CORRECTIONS. The ticket's framing of events.rs:796 as an equality match is imprecise — it GROUPS by the row's own raw value into a HashMap with no normalisation; the real cross-source join is frontend/event_hub.rs:415, matching against a list built from a DIFFERENT TABLE (orbat_slots). And T-315's comment in this file had grouped `faction` with the presentation hints as 'an absent one degrades a row without making it a lie' — that was wrong and is corrected in place. category/icon/sort_order keep their defaults, verified matched by no equality join.
+
+mission_overview.rs:218 does not trim either but is SELF-CONSISTENT: its tab list derives from the armory rows themselves, so a padded value produces a padded tab its own filter matches. Cosmetic only."""
 priority = 0
+main_goal = "set_armory must require faction and refuse padded values so armory items join orbat_slots correctly in Event Hub."
+context = [
+    "HIGHEST-SEVERITY find of T-343's sweep, and the one to do first.",
+    "T-315 fixed items/item_name same pattern in this missions.rs handler.",
+]
+requirement = ["Close both #[serde(default)] and untrimmed bind — trim-only fix leaves defect open without whitespace."]
+current_state = [
+    "missions.rs:766 binds faction untrimmed with #[serde(default)]; JOIN KEY at event_hub.rs:415 vs orbat_slots.",
+    'Padded faction 200 stores padded bytes; Event Hub card shows ZERO items; missing faction stores "" via default.',
+]
+approach = ["Required + refuse value != trim() with 400; store caller bytes exactly — agreement-preserving under orbat untrimmed writes."]
+citations = [
+    "T-343 sweep family",
+    "T-315 items pattern",
+    "missions.rs:766 set_armory",
+    "event_hub.rs:415 join",
+]
 shipped_at = "59c0beba"
 created_at = "2026-07-26T08:10:24Z"
 completed_at = "2026-07-26T11:34:09Z"
@@ -17,33 +78,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 6 commit subject(s)"
-migration_legacy = [
-    "HIGHEST-SEVERITY find of T-343's sweep, and the one to do first.",
-    "",
-    "handlers/missions.rs:766 — `set_armory` binds `faction` UNTRIMMED and carries #[serde(default)], two lines above the correctly-trimmed `item_name`. `faction` is the JOIN KEY, matched by exact equality at events.rs:796, frontend/event_hub.rs:415 and frontend/mission_overview.rs:218.",
-    "",
-    "Consequence: the armory reads as saved and renders EMPTY in the Event Hub dossier. The author sees success and the players see nothing.",
-    "",
-    "WHY IT IS NOT JUST A TRIM: it is reachable with NO WHITESPACE AT ALL, via the #[serde(default)] — so a trim-only fix would look like it worked while leaving the defect open. Both halves are required, exactly as T-315 found for `items`/`item_name` in this same handler.",
-    "",
-    "══ DO NOT NAIVELY TRIM — two sites where a one-sided trim CREATES the catastrophe ══",
-    "T-343 found these and they bind on any ticket in this family:",
-    "  events.rs:1735 — orbat_reservations.squad must stay BYTE-IDENTICAL to orbat_slots.squad, which is written untrimmed by crates/map-engine-core/src/mission/orbat.rs:163.",
-    "  events.rs:1923 — must mirror `or_fallback` at crates/map-engine-core/src/mission/flatten.rs:626. Disagreement means the seat VANISHES, the assignment round-robins, and the request still returns 200.",
-    "Trimming on write and trimming on read must agree. T-326's bug was not an untrimmed value per se — it was a DISAGREEMENT between two sites. Check both halves before changing either.",
-    "",
-    "SHIPPED 2026-07-26, and the agent REPRODUCED THE TRAP rather than trusting the warning — which changed the fix.",
-    "",
-    'MEASURED: orbat_slots.faction is written with NO normalisation. events.rs:391 binds OrbatSquadTemplate.faction, itself #[serde(default)] and untrimmed at crates/map-engine-core/src/mission/orbat.rs:23-25. So ORBAT "  USA  " plus armory "  USA  " renders CORRECTLY today — one item, one card. A unilateral trim on the armory side turns that into zero items. Trimming would have MOVED the bug.',
-    "",
-    """SO IT REQUIRED AND REFUSED INSTEAD OF TRIMMING: `faction` is required (kills the #[serde(default)] half), a value not equal to its trimmed form is refused with 400 (kills the padding half), and the stored bytes stay exactly what the caller sent. That is agreement-preserving under EITHER hypothesis about the other side — trimming is only correct if the other side also trims, and it does not. It also checked the over-rejection direction: the guard is `!= trim()`, not 'contains a space', so "US Army" stores byte-identical, pinned by a test.""",
-    "",
-    'BOTH PRE-FIX PATHS MEASURED, with the Event Hub card replayed faithfully from event_hub.rs:294-302 and :412-418: padded faction -> 200, stored padded, card shows ZERO items; `{"items":[{"item_name":"M4A1"}]}` with NO WHITESPACE ANYWHERE -> 200, stored "", card shows ZERO items. The second is the #[serde(default)], confirmed rather than taken on trust.',
-    "",
-    "TWO CORRECTIONS. The ticket's framing of events.rs:796 as an equality match is imprecise — it GROUPS by the row's own raw value into a HashMap with no normalisation; the real cross-source join is frontend/event_hub.rs:415, matching against a list built from a DIFFERENT TABLE (orbat_slots). And T-315's comment in this file had grouped `faction` with the presentation hints as 'an absent one degrades a row without making it a lie' — that was wrong and is corrected in place. category/icon/sort_order keep their defaults, verified matched by no equality join.",
-    "",
-    "mission_overview.rs:218 does not trim either but is SELF-CONSISTENT: its tab list derives from the armory rows themselves, so a padded value produces a padded tab its own filter matches. Cosmetic only.",
-]
 owns = ["apps/website/api/src/handlers/missions.rs"]
 
 [scope]

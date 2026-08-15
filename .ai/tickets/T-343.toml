@@ -1,12 +1,52 @@
 id = "T-343"
 kind = "work"
-title = "warn_user accepts a whitespace-only reason — T-317's fix, one handler over"
+title = "warn_user accepts whitespace-only reason like T-317 missed"
 summary = "warn_user accepts a whitespace-only reason — T-317's fix, one handler over"
 class = "bug"
 status = "shipped"
 order = 3159
 executor = "claude-code"
 priority = 2
+main_goal = "Close warn_user whitespace-only reason acceptance, align error text with ban_user, and sweep unguarded is_empty() guards across the crate."
+context = [
+    "FOUND by T-323. `handlers/admin.rs:284-286` — `warn_user` checks `input.reason.is_empty()` WITHOUT trimming,",
+    "so a whitespace-only warning reason is accepted and stored.",
+    "That is precisely the defect T-317 closed for `ban_user` in the same file this morning, one handler down.",
+    "T-317 swept for extractor collapses and fixed those; this is the adjacent shape — a present-but-meaningless value rather than an absent one —",
+    "and it was missed because the sweep keyed on `#[serde(default)]` and `.ok().unwrap_or_default()`, not on unguarded emptiness checks.",
+]
+requirement = [
+    """Also inconsistent: warn_user's message is `"reason required"` while ban_user's is `"reason is required"`. Pick one; a client matching on error text will be surprised.""",
+    "While in there, sweep for the third shape: every `is_empty()` guard in the crate that should be `trim().is_empty()`.",
+    "T-319 fixed one in me.rs; T-326 fixed another in ingest_link_confirm, where an untrimmed arma_id made an account read as linked while being invisible to every future match ingest.",
+    "This class has produced four tickets and the sweep has never been done systematically.",
+]
+current_state = [
+    "SHIPPED with the systematic sweep asked for: 100 is_empty() sites (89 non-test) and 24 trim() sites enumerated and categorised. Split into T-346..T-351.",
+    "THREE CORRECTIONS TO MY FRAMING, each established by running rather than by analogy:",
+    "  1. NO CLOBBER. This is an INSERT, not T-317's UPDATE. The sentinel survived every bad request intact. Severity is a meaningless row stored, not data destroyed.",
+    "  2. The audit trail was NOT independently wrong here. T-317's 'every bad request wrote Reason: ' does not reproduce — issue_warning already used map_err,",
+    "so rejected requests return before write_audit. Only the whitespace case wrote a bad row.",
+    "  3. A SECOND defect the untrimmed guard was hiding: even a VALID padded reason was stored with its padding,",
+    "so warnings.reason and users.ban_reason normalised the same operator text differently.",
+    "The real harm is narrower but permanent: the roster tally is count(*) with no predicate on reason and the SPA reds the cell at >0,",
+    "while NO endpoint in the crate returns warnings.reason. A blank warning marks someone as disciplined, forever, unreadably.",
+    "Also fixed in-file: send_rcon bound `map` untrimmed into audit_logs.message;",
+    "and #[serde(default)] dropped from WarnInput.reason, UpdateUserInput.role, RconInput.action — proven wire-identical by running the same matrix against both binaries.",
+    "RconInput.map/command keep theirs, genuinely optional.",
+]
+approach = [
+    "Guard warn_user with trim().is_empty(); align reason-required message with ban_user.",
+    "Systematic is_empty() sweep; split follow-ons into T-346..T-351.",
+    "Drop #[serde(default)] from WarnInput.reason, UpdateUserInput.role, RconInput.action where wire-identical.",
+]
+citations = [
+    "T-323 found warn_user",
+    "T-317 ban_user pattern",
+    "T-319 me.rs is_empty",
+    "T-326 ingest_link_confirm",
+    "warn_user trim guard",
+]
 shipped_at = "a0199601"
 created_at = "2026-07-26T08:06:23Z"
 completed_at = "2026-07-26T08:10:24Z"
@@ -17,26 +57,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    "FOUND by T-323. `handlers/admin.rs:284-286` — `warn_user` checks `input.reason.is_empty()` WITHOUT trimming, so a whitespace-only warning reason is accepted and stored. That is precisely the defect T-317 closed for `ban_user` in the same file this morning, one handler down.",
-    "",
-    "T-317 swept for extractor collapses and fixed those; this is the adjacent shape — a present-but-meaningless value rather than an absent one — and it was missed because the sweep keyed on `#[serde(default)]` and `.ok().unwrap_or_default()`, not on unguarded emptiness checks.",
-    "",
-    """Also inconsistent: warn_user's message is `"reason required"` while ban_user's is `"reason is required"`. Pick one; a client matching on error text will be surprised.""",
-    "",
-    "While in there, sweep for the third shape: every `is_empty()` guard in the crate that should be `trim().is_empty()`. T-319 fixed one in me.rs; T-326 fixed another in ingest_link_confirm, where an untrimmed arma_id made an account read as linked while being invisible to every future match ingest. This class has produced four tickets and the sweep has never been done systematically.",
-    "",
-    "SHIPPED with the systematic sweep asked for: 100 is_empty() sites (89 non-test) and 24 trim() sites enumerated and categorised. Split into T-346..T-351.",
-    "",
-    "THREE CORRECTIONS TO MY FRAMING, each established by running rather than by analogy:",
-    "  1. NO CLOBBER. This is an INSERT, not T-317's UPDATE. The sentinel survived every bad request intact. Severity is a meaningless row stored, not data destroyed.",
-    "  2. The audit trail was NOT independently wrong here. T-317's 'every bad request wrote Reason: ' does not reproduce — issue_warning already used map_err, so rejected requests return before write_audit. Only the whitespace case wrote a bad row.",
-    "  3. A SECOND defect the untrimmed guard was hiding: even a VALID padded reason was stored with its padding, so warnings.reason and users.ban_reason normalised the same operator text differently.",
-    "",
-    "The real harm is narrower but permanent: the roster tally is count(*) with no predicate on reason and the SPA reds the cell at >0, while NO endpoint in the crate returns warnings.reason. A blank warning marks someone as disciplined, forever, unreadably.",
-    "",
-    "Also fixed in-file: send_rcon bound `map` untrimmed into audit_logs.message; and #[serde(default)] dropped from WarnInput.reason, UpdateUserInput.role, RconInput.action — proven wire-identical by running the same matrix against both binaries. RconInput.map/command keep theirs, genuinely optional.",
-]
 owns = ["apps/website/api/src/handlers/admin.rs"]
 
 [scope]

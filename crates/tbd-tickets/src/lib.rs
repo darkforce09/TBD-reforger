@@ -138,7 +138,7 @@ pub fn title_is_debt(id: &str, title: &str) -> bool {
 /// and in the store ratchet test: growth means a title gate bypass (ops refuse debt
 /// titles on changed tickets), shrinkage means a repair landed and the pin must
 /// shrink in the same commit (the T-919/T-921 batch contract).
-pub const TITLE_DEBT_PIN: usize = 410;
+pub const TITLE_DEBT_PIN: usize = 392;
 
 /// T-920.1 shrink-only debt pin: queued/ready/running/review WORK tickets with empty
 /// `main_goal` (instrument: [`main_goal_is_debt`]) — measured on the live tree at

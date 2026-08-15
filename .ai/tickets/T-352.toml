@@ -6,7 +6,72 @@ class = "bug"
 status = "shipped"
 order = 3168
 executor = "claude-code"
+notes = """
+Process failure: agent commits landed, worktree dropped, branch recreated mid-session. slice-worktree.sh drop now REFUSES when branch holds commits not on main (--force overrides).
+
+--- migration_legacy (verbatim) ---
+
+FOUND by T-338 while scoping the RAM cache; the last piece of per-account editor state still keyed globally. The `tbd-editor-adopted:<id>` localStorage marker in editor_session.rs is not account-scoped.
+
+NOT a data-loss path any more — T-223 stopped reading it — which is why T-338 left it rather than widening a security fix. But it is the same shape as the bug T-221 and T-338 spent two slices closing: per-account state under a global key. It should either be scoped with the same `u{len}:{owner}|{logical}` scheme, or deleted if nothing reads it at all.
+
+Check the second option first. If T-223 removed the only reader, this is dead state being written for no one, and deleting it is better than scoping it.
+
+SHIPPED 2026-07-26 as a DELETE, and it went past the ticket. Reader count: ZERO — read_adopted was the only occurrence of its own name anywhere in the repo. Eight writers.
+
+THE PART THE TICKET MISSED: stopping the writes alone would NOT have closed the hole. Every browser that ever opened the editor keeps `tbd-editor-adopted:<missionId>` in localStorage, readable by whichever account signs in next — THAT residue is the leak. And worse, `mark_adopted(id, None)` used to CLEAR the key, so no-oping the function alone would have made existing residue PERMANENT. It added a purge instead, so the paths that used to create residue now erase it and no boot hook is needed.
+
+It then REMOVED a once-per-page-load latch it had first written, because localStorage is shared across tabs: during a deploy rollover an old tab keeps writing fresh residue that a latched purge would never revisit. Phase 2 of its probe planted residue AFTER the first purge and confirmed a second hydrate cleared it — the exact case the latch would have missed.
+
+It kept the mark_adopted signature deliberately (callers are in two files it did not own) and flagged the sequencing: do NOT delete the shim in the same release, or the purge never runs and the residue is stranded.
+
+BROWSER-VERIFIED WITH A NON-VACUITY PROOF: on main the planted SENTINEL is OVERWRITTEN to 0.1.0, which proves the writer was live on that exact hydrate path; on the fixed build localStorage ends empty. It also caught a build that silently produced an 8-BYTE wasm (ready:false, zero fetch hits) and now size-checks the artifact before probing.
+
+It overrode T-221's warn-don't-delete guidance deliberately and argued why: with no reader, no behaviour can observe the absence, and the value was a server semver the server still holds — not authored content. That reasoning is in the code.
+
+PART 2, landed separately: `tbd-editor-session` (sessionStorage) has exactly ONE reader — `read_warm` via yrs_persist.rs:752's `__missionPersist.warm()` bridge — so unlike the adopted marker it could NOT be deleted. It is scoped instead: `u{len}:{owner}|tbd-editor-session`, owner from owner_token(), length prefix kept. Every caller lives in editor_session.rs so the scoping is transparent and yrs_persist.rs was untouched. mark_ready and clear also drop the pre-T-352 unscoped record. No sign-out purge needed: scoping alone means B cannot NAME A's key, which sidesteps the T-338 anon-after-clear_session trap entirely.
+
+Browser-verified: the only session key is u18:000000000000000001|tbd-editor-session, the raw key is absent, A reads its own record, flipping the auth blob to B makes warm() null, and flipping back to A makes it readable again — invisible, not destroyed. `gate smoke persist` PASS, so the pre-existing two-boot warm reader still works and cross-boot continuity survived scoping.
+
+IT DECLINED TO REMOVE THE 8 WRITE SITES, with a sequencing argument worth keeping: `purge_legacy_markers` is reachable ONLY via `mark_adopted`, so deleting those calls in the same release would STRAND the existing residue in users' localStorage permanently. Doing it safely means first moving the purge to a boot hook. Filed as T-370.
+
+PROCESS FAILURE ON MY SIDE, recorded because it nearly cost the work: I landed this agent's first two commits, dropped its worktree, and THEN resumed it. It found its own worktree and branch gone mid-session, its commits surviving only as unreferenced objects, and had to recreate the branch and restore the worktree itself before it could finish. It reported that rather than losing the work, which is the only reason it was noticed. `slice-worktree.sh drop` now REFUSES when the branch holds commits not on main (--force overrides), proven by probe."""
 priority = 3
+main_goal = "Delete dead adopted marker and scope sessionStorage so per-account editor state cannot leak across sign-ins."
+context = [
+    "FOUND by T-338 while scoping RAM cache; last per-account editor state still keyed globally.",
+    "tbd-editor-adopted:<id> in editor_session.rs is not account-scoped.",
+    "T-223 stopped reading it — not a data-loss path; same shape as T-221/T-338 bugs.",
+]
+requirement = [
+    "Check delete-first: if T-223 removed the only reader, delete rather than scope.",
+    "If writes remain, purge legacy residue — stopping writes alone leaves cross-account readable keys.",
+    "Part 2: scope tbd-editor-session with u{len}:{owner}|tbd-editor-session; cannot delete (one reader).",
+]
+current_state = [
+    "SHIPPED 2026-07-26 DELETE: read_adopted was sole reader — ZERO readers, eight writers.",
+    "Residue from tbd-editor-adopted:<missionId> readable by next account until purged.",
+    "mark_adopted(id, None) used to CLEAR key; no-op would make residue permanent.",
+    "Session key scoped: u18:000000000000000001|tbd-editor-session; A/B auth flip verified.",
+]
+approach = [
+    "Deleted adopted marker; purge_legacy_markers via mark_adopted erases residue on hydrate.",
+    "Removed once-per-page latch — localStorage shared across tabs, latch missed deploy rollover.",
+    "Scoped sessionStorage; mark_ready/clear drop pre-T-352 unscoped record.",
+    "Kept mark_adopted signature; purge boot hook deferred — T-370.",
+]
+verify = [
+    "Browser: sentinel overwritten to 0.1.0 on main; fixed build localStorage empty.",
+    "gate smoke persist PASS; warm reader continuity survived scoping.",
+    "Phase 2 probe: second hydrate cleared residue planted after first purge.",
+]
+citations = [
+    "T-338 RAM cache scope",
+    "T-223 stopped reading adopted",
+    "T-221 per-account pattern",
+    "T-370 boot-hook sequencing",
+    "yrs_persist.rs:752 warm bridge",
+]
 shipped_at = "2f30b475"
 created_at = "2026-07-26T10:15:05Z"
 completed_at = "2026-07-26T10:49:56Z"
@@ -17,33 +82,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 6 commit subject(s)"
-migration_legacy = [
-    "FOUND by T-338 while scoping the RAM cache; the last piece of per-account editor state still keyed globally. The `tbd-editor-adopted:<id>` localStorage marker in editor_session.rs is not account-scoped.",
-    "",
-    "NOT a data-loss path any more — T-223 stopped reading it — which is why T-338 left it rather than widening a security fix. But it is the same shape as the bug T-221 and T-338 spent two slices closing: per-account state under a global key. It should either be scoped with the same `u{len}:{owner}|{logical}` scheme, or deleted if nothing reads it at all.",
-    "",
-    "Check the second option first. If T-223 removed the only reader, this is dead state being written for no one, and deleting it is better than scoping it.",
-    "",
-    "SHIPPED 2026-07-26 as a DELETE, and it went past the ticket. Reader count: ZERO — read_adopted was the only occurrence of its own name anywhere in the repo. Eight writers.",
-    "",
-    "THE PART THE TICKET MISSED: stopping the writes alone would NOT have closed the hole. Every browser that ever opened the editor keeps `tbd-editor-adopted:<missionId>` in localStorage, readable by whichever account signs in next — THAT residue is the leak. And worse, `mark_adopted(id, None)` used to CLEAR the key, so no-oping the function alone would have made existing residue PERMANENT. It added a purge instead, so the paths that used to create residue now erase it and no boot hook is needed.",
-    "",
-    "It then REMOVED a once-per-page-load latch it had first written, because localStorage is shared across tabs: during a deploy rollover an old tab keeps writing fresh residue that a latched purge would never revisit. Phase 2 of its probe planted residue AFTER the first purge and confirmed a second hydrate cleared it — the exact case the latch would have missed.",
-    "",
-    "It kept the mark_adopted signature deliberately (callers are in two files it did not own) and flagged the sequencing: do NOT delete the shim in the same release, or the purge never runs and the residue is stranded.",
-    "",
-    "BROWSER-VERIFIED WITH A NON-VACUITY PROOF: on main the planted SENTINEL is OVERWRITTEN to 0.1.0, which proves the writer was live on that exact hydrate path; on the fixed build localStorage ends empty. It also caught a build that silently produced an 8-BYTE wasm (ready:false, zero fetch hits) and now size-checks the artifact before probing.",
-    "",
-    "It overrode T-221's warn-don't-delete guidance deliberately and argued why: with no reader, no behaviour can observe the absence, and the value was a server semver the server still holds — not authored content. That reasoning is in the code.",
-    "",
-    "PART 2, landed separately: `tbd-editor-session` (sessionStorage) has exactly ONE reader — `read_warm` via yrs_persist.rs:752's `__missionPersist.warm()` bridge — so unlike the adopted marker it could NOT be deleted. It is scoped instead: `u{len}:{owner}|tbd-editor-session`, owner from owner_token(), length prefix kept. Every caller lives in editor_session.rs so the scoping is transparent and yrs_persist.rs was untouched. mark_ready and clear also drop the pre-T-352 unscoped record. No sign-out purge needed: scoping alone means B cannot NAME A's key, which sidesteps the T-338 anon-after-clear_session trap entirely.",
-    "",
-    "Browser-verified: the only session key is u18:000000000000000001|tbd-editor-session, the raw key is absent, A reads its own record, flipping the auth blob to B makes warm() null, and flipping back to A makes it readable again — invisible, not destroyed. `gate smoke persist` PASS, so the pre-existing two-boot warm reader still works and cross-boot continuity survived scoping.",
-    "",
-    "IT DECLINED TO REMOVE THE 8 WRITE SITES, with a sequencing argument worth keeping: `purge_legacy_markers` is reachable ONLY via `mark_adopted`, so deleting those calls in the same release would STRAND the existing residue in users' localStorage permanently. Doing it safely means first moving the purge to a boot hook. Filed as T-370.",
-    "",
-    "PROCESS FAILURE ON MY SIDE, recorded because it nearly cost the work: I landed this agent's first two commits, dropped its worktree, and THEN resumed it. It found its own worktree and branch gone mid-session, its commits surviving only as unreferenced objects, and had to recreate the branch and restore the worktree itself before it could finish. It reported that rather than losing the work, which is the only reason it was noticed. `slice-worktree.sh drop` now REFUSES when the branch holds commits not on main (--force overrides), proven by probe.",
-]
 owns = ["apps/website/frontend/src/editor_session.rs"]
 
 [scope]

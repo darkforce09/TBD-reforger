@@ -1,12 +1,72 @@
 id = "T-338"
 kind = "work"
-title = "Sign-out does not purge local documents, so account A's mission is restorable by B"
+title = "Sign-out must scope and purge local mission docs"
 summary = "Sign-out does not purge local documents, so account A's mission is restorable by B"
 class = "bug"
 status = "shipped"
 order = 3154
 executor = "claude-code"
 priority = 1
+main_goal = "Sign-out must scope LOCAL_BACKUPS and purge owner IDB records so account B cannot restore account A's mission."
+context = [
+    "FOUND by T-320 and REPRODUCED, not inferred. This is the T-221 bug surviving in the in-memory half — T-221 scoped the IndexedDB records; it did not scope the RAM cache",
+    "in front of them.",
+    "Two linked defects:",
+]
+requirement = ["Fix shape: clear (or owner-key) LOCAL_BACKUPS on sign-out, AND wire purge_owner into clear_session, capturing the owner first. Both halves are needed — either alone leaves a path."]
+current_state = [
+    "1. `mission_hydrate.rs:571` `recall()` is NOT account-scoped. `has_snapshot` (~:590) checks the in-memory LOCAL_BACKUPS map BEFORE the scoped IDB read, and LOCAL_BACKUPS is never cleared on sign-out. Measured: `same_realm_has_after_switch=true` — within one",
+    "page load, changing account does NOT hide A's snapshot, so a client-side sign-out then sign-in leaves A's document restorable by B.",
+    "2. `yrs_persist.rs:44` DOCUMENTS a sign-out purge that does not exist. `purge_owner` (yrs_persist.rs:319) has exactly one caller repo-wide — `evict_foreign_records` at :361. `auth::clear_session` (auth.rs:235) does not call it. T-221 wrote purge_owner",
+    "as `pub` and ready and said the call site needed the discord_id captured BEFORE clear_session; nobody wired it.",
+]
+approach = [
+    "SHIPPED 2026-07-26, fully browser-verified — the most rigorously proven slice of the run.",
+    "IT SCOPED RATHER THAN CLEARED, deliberately, and the reasoning is the durable part: a session that EXPIRES re-namespaces the IDB records (load_state resolves the owner token per call) while running",
+    "no handler at all, so a clear-only fix still hands A's document to whoever holds the page next. Scoped, both tiers of has_snapshot always agree — and a has() that",
+    "says yes about bytes restore() may not read is worse than either answer alone.",
+    "THE OWNER CAPTURE READS OFF THE SIGNAL, NOT localStorage, and this is subtle enough to be worth recording: layout.rs re-persists the cleared blob immediately after clear_session, so a token resolved",
+    "afterwards is `anon` — the purge would then delete a signed-out visitor's drafts while leaving A's exactly where they were. It is the first statement in clear_session, before the five",
+    "set(None) calls, and a blank/absent discord_id purges nothing.",
+]
+verify = [
+    "The browser gate is HEALTHY as of T-320, so this is now directly testable: `gate render-check --seed-auth --assert-js` took T-221's 30-assertion probe. Extend it rather than reasoning about it. One",
+    "thing T-320 could NOT exercise and you should: the boot-time `evict_foreign_records` backstop — its second-account realm was a same-origin iframe that boots as A, so it needs a real reload",
+    "with a different seed.",
+    "BROWSER-MEASURED, three `gate render-check --assert-js` probes, each re-run returning a bare boolean so the gate's own exit code asserts it — all exit 0:",
+    "same_realm_has_after_switch: FALSE (was true) · restore and undoRestore both refuse · L1b_doc_untouched: true (digest + slot_count identical after both refusals) · L1c_has_back_as_owner: true — hidden from B, NOT destroyed for",
+    "A.",
+    "THE DISCRIMINATING RUN: with EVERY IDB record deleted so only RAM can answer — ram_only_has_as_owner true, ram_only_has_as_other FALSE, ram_only_restore_back_as_owner true. So the false is a statement about LOCAL_BACKUPS, not about",
+    "the IDB read T-221 already scoped. That is the difference between testing the fix and testing around it.",
+    "evict_foreign_records EXERCISED — the leg T-320 explicitly could not reach. A genuinely fresh document and fresh wasm instance booting as B with A's three records on disk: L3_evicted_A true, L3_A_keys_left",
+    "[], L3_has_as_B false. It defeated the harness's seed re-injection by dropping --seed-auth and owning tbd-auth itself.",
+    "Sign-out purge on a real click: 3 A-owned keys -> purged_idb true, keys_after_signout [] and the RAM copies DESTROYED not hidden.",
+    "Legacy adoption intact and still refusing to destroy: survived both the boot eviction and the sign-out purge, not returned, orphans() lists both, adopt_orphans() {adopted:1, skipped:1} with adopted bytes byte-equal, the",
+    "skipped one still on disk and still reported.",
+]
+acceptance = [
+    "Only the internal ordering rationale was reasoned rather than measured. Every externally observable claim was browser-measured.",
+    "BEHAVIOURALLY VERIFIED 2026-07-26 by an independent probe — **the leak is genuinely closed**, with positive controls, a negative control, and an IDB-empty discriminator. All four of has/hasUndo/restore/undoRestore refuse as account",
+    "B, the doc is untouched after the refusals, and it is readable again as A (hidden, not destroyed). A real Sign Out click drained A's three IDB records while an",
+    "otherwise-identical control arm that did not click left all three present after 20s of polling.",
+    "TWO CORRECTIONS. First, in T-338's favour: the first verifier called its '30 assertions' LOOSE, saying the probe merely collected observations. That is wrong — /var/tmp/t338-probeA.js:133-157 computes `O.pass` as a 32-term",
+    "conjunction in-page, and it carries matched controls that could not have produced that output on a broken build. The adversarial-adversarial pass corrected the adversarial pass.",
+    "Second, against T-338: its claim that 'the RAM copies were DESTROYED, not hidden' is UNREPRODUCIBLE, and the RAM half of the purge is effectively dead code. The editor route is",
+    "Chromeless (layout.rs:36), so it renders no user menu, and both routes into the editor are deliberate full page loads — so the instance that runs `clear_session` never populated LOCAL_BACKUPS, and",
+    '`forget_owner` can only ever drop 0. Measured: on an authenticated `/`, `typeof window.__missionBackup === "undefined"`, and `any_href_into_editor: false` across all 18 same-origin hrefs. Not a leak — the SCOPING closes',
+    "the same-page-load hole and the IDB purge removes the disk residue — but the claim as worded is fully explained by the IDB purge alone, and no probe artifact backing",
+    "it exists.",
+    "It also answered the runbook's open question: T-338's top-level-editor wedge does NOT reproduce on the drained build (T-354). `T1_top_level_editor_booted: true` at /missions/smoke/edit top-level.",
+]
+citations = [
+    "T-320 browser gate",
+    "T-221 IndexedDB scope",
+    "mission_hydrate.rs:571 recall",
+    "yrs_persist.rs:319 purge_owner",
+    "auth.rs:235 clear_session",
+    "T-354 top-level editor",
+    "/var/tmp/t338-probeA.js",
+]
 shipped_at = "94c66915"
 created_at = "2026-07-26T08:34:14Z"
 completed_at = "2026-07-26T08:38:25Z"
@@ -17,40 +77,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    "FOUND by T-320 and REPRODUCED, not inferred. This is the T-221 bug surviving in the in-memory half — T-221 scoped the IndexedDB records; it did not scope the RAM cache in front of them.",
-    "",
-    "Two linked defects:",
-    "  1. `mission_hydrate.rs:571` `recall()` is NOT account-scoped. `has_snapshot` (~:590) checks the in-memory LOCAL_BACKUPS map BEFORE the scoped IDB read, and LOCAL_BACKUPS is never cleared on sign-out. Measured: `same_realm_has_after_switch=true` — within one page load, changing account does NOT hide A's snapshot, so a client-side sign-out then sign-in leaves A's document restorable by B.",
-    "  2. `yrs_persist.rs:44` DOCUMENTS a sign-out purge that does not exist. `purge_owner` (yrs_persist.rs:319) has exactly one caller repo-wide — `evict_foreign_records` at :361. `auth::clear_session` (auth.rs:235) does not call it. T-221 wrote purge_owner as `pub` and ready and said the call site needed the discord_id captured BEFORE clear_session; nobody wired it.",
-    "",
-    "Fix shape: clear (or owner-key) LOCAL_BACKUPS on sign-out, AND wire purge_owner into clear_session, capturing the owner first. Both halves are needed — either alone leaves a path.",
-    "",
-    "The browser gate is HEALTHY as of T-320, so this is now directly testable: `gate render-check --seed-auth --assert-js` took T-221's 30-assertion probe. Extend it rather than reasoning about it. One thing T-320 could NOT exercise and you should: the boot-time `evict_foreign_records` backstop — its second-account realm was a same-origin iframe that boots as A, so it needs a real reload with a different seed.",
-    "",
-    "SHIPPED 2026-07-26, fully browser-verified — the most rigorously proven slice of the run.",
-    "",
-    "IT SCOPED RATHER THAN CLEARED, deliberately, and the reasoning is the durable part: a session that EXPIRES re-namespaces the IDB records (load_state resolves the owner token per call) while running no handler at all, so a clear-only fix still hands A's document to whoever holds the page next. Scoped, both tiers of has_snapshot always agree — and a has() that says yes about bytes restore() may not read is worse than either answer alone.",
-    "",
-    "THE OWNER CAPTURE READS OFF THE SIGNAL, NOT localStorage, and this is subtle enough to be worth recording: layout.rs re-persists the cleared blob immediately after clear_session, so a token resolved afterwards is `anon` — the purge would then delete a signed-out visitor's drafts while leaving A's exactly where they were. It is the first statement in clear_session, before the five set(None) calls, and a blank/absent discord_id purges nothing.",
-    "",
-    "BROWSER-MEASURED, three `gate render-check --assert-js` probes, each re-run returning a bare boolean so the gate's own exit code asserts it — all exit 0:",
-    "  same_realm_has_after_switch: FALSE (was true) · restore and undoRestore both refuse · L1b_doc_untouched: true (digest + slot_count identical after both refusals) · L1c_has_back_as_owner: true — hidden from B, NOT destroyed for A.",
-    "  THE DISCRIMINATING RUN: with EVERY IDB record deleted so only RAM can answer — ram_only_has_as_owner true, ram_only_has_as_other FALSE, ram_only_restore_back_as_owner true. So the false is a statement about LOCAL_BACKUPS, not about the IDB read T-221 already scoped. That is the difference between testing the fix and testing around it.",
-    "  evict_foreign_records EXERCISED — the leg T-320 explicitly could not reach. A genuinely fresh document and fresh wasm instance booting as B with A's three records on disk: L3_evicted_A true, L3_A_keys_left [], L3_has_as_B false. It defeated the harness's seed re-injection by dropping --seed-auth and owning tbd-auth itself.",
-    "  Sign-out purge on a real click: 3 A-owned keys -> purged_idb true, keys_after_signout [] and the RAM copies DESTROYED not hidden.",
-    "  Legacy adoption intact and still refusing to destroy: survived both the boot eviction and the sign-out purge, not returned, orphans() lists both, adopt_orphans() {adopted:1, skipped:1} with adopted bytes byte-equal, the skipped one still on disk and still reported.",
-    "",
-    "Only the internal ordering rationale was reasoned rather than measured. Every externally observable claim was browser-measured.",
-    "",
-    "BEHAVIOURALLY VERIFIED 2026-07-26 by an independent probe — **the leak is genuinely closed**, with positive controls, a negative control, and an IDB-empty discriminator. All four of has/hasUndo/restore/undoRestore refuse as account B, the doc is untouched after the refusals, and it is readable again as A (hidden, not destroyed). A real Sign Out click drained A's three IDB records while an otherwise-identical control arm that did not click left all three present after 20s of polling.",
-    "",
-    "TWO CORRECTIONS. First, in T-338's favour: the first verifier called its '30 assertions' LOOSE, saying the probe merely collected observations. That is wrong — /var/tmp/t338-probeA.js:133-157 computes `O.pass` as a 32-term conjunction in-page, and it carries matched controls that could not have produced that output on a broken build. The adversarial-adversarial pass corrected the adversarial pass.",
-    "",
-    """Second, against T-338: its claim that 'the RAM copies were DESTROYED, not hidden' is UNREPRODUCIBLE, and the RAM half of the purge is effectively dead code. The editor route is Chromeless (layout.rs:36), so it renders no user menu, and both routes into the editor are deliberate full page loads — so the instance that runs `clear_session` never populated LOCAL_BACKUPS, and `forget_owner` can only ever drop 0. Measured: on an authenticated `/`, `typeof window.__missionBackup === "undefined"`, and `any_href_into_editor: false` across all 18 same-origin hrefs. Not a leak — the SCOPING closes the same-page-load hole and the IDB purge removes the disk residue — but the claim as worded is fully explained by the IDB purge alone, and no probe artifact backing it exists.""",
-    "",
-    "It also answered the runbook's open question: T-338's top-level-editor wedge does NOT reproduce on the drained build (T-354). `T1_top_level_editor_booted: true` at /missions/smoke/edit top-level.",
-]
 owns = [
     "apps/website/frontend/src/mission_hydrate.rs",
     "apps/website/frontend/src/yrs_persist.rs",

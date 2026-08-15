@@ -1,12 +1,60 @@
 id = "T-356"
 kind = "work"
-title = "The other side of the armory join has the identical defect, still open"
+title = "ORBAT faction join side untrimmed like T-346"
 summary = "The other side of the armory join has the identical defect, still open"
 class = "bug"
 status = "shipped"
 order = 3172
 executor = "claude-code"
+notes = '''
+== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
+Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
+This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
+
+--- migration_legacy (verbatim) ---
+
+FOUND by T-346 while proving why it must NOT trim. This is the mirror image of T-346, on the other side of the same join, and it produces the same user-visible empty dossier card from the opposite direction.
+
+`crates/map-engine-core/src/mission/orbat.rs:23-25` — OrbatSquadTemplate.faction is #[serde(default)] and untrimmed. `apps/website/api/src/handlers/events.rs:391` binds it straight into orbat_slots.faction with no normalisation. So attaching a mission with no `faction` key stores `""`, and a padded one stores the padding.
+
+WHY THIS MATTERS MORE THAN IT LOOKS: T-346 deliberately chose require-and-refuse over trimming precisely BECAUSE this side does not normalise — ORBAT "  USA  " plus armory "  USA  " renders correctly today, and a one-sided trim would have broken it. Fixing this side makes the whole join consistent and only then is normalising either side safe. Until then both sides must keep storing bytes verbatim.
+
+So: apply the SAME shape T-346 used — require the field, refuse a value that differs from its trimmed form, store verbatim. Do NOT trim one side. If you decide to normalise both sides together, that is a defensible larger change, but it needs a migration for the live rows (orbat_slots holds 18 rows today) and it must land as one commit.
+
+Read T-346's work on main first; it is the reference implementation and its test pins the over-rejection direction too.
+
+NEW ASYMMETRY SINCE T-346, flagged by T-357 rather than buried: T-346 now REJECTS a whitespace-only ARMORY faction (`it.faction.trim().is_empty()` -> 400) while the ORBAT side still ACCEPTS one. So a whitespace-only ORBAT faction is now PERMANENTLY UNMATCHABLE — no armory row can legally be created that would join to it. That is an additional argument for require-and-refuse on this side, which would reject "\t" symmetrically.
+
+Also from T-357, which ran the real pipeline: a TAB-only editor key DOES validate and DOES land verbatim in orbat_slots.faction — but `slug_key` neutralises it to the `faction` fallback on the COMPILED path, so there is no wire hazard downstream. The damage is confined to the DB column and the join, which is exactly this ticket.
+
+== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
+Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
+This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.'''
 priority = 1
+main_goal = "Require-and-refuse OrbatSquadTemplate.faction like T-346 set_armory so orbat_slots join key stores verbatim without padding or default-empty."
+context = [
+    "FOUND by T-346 while proving why it must NOT trim; mirror on other join side.",
+    "Produces same user-visible empty dossier card from opposite direction.",
+]
+requirement = [
+    "Same shape as T-346: require field, refuse value differing from trimmed form, store verbatim.",
+    'Do NOT trim one side — ORBAT "  USA  " plus armory "  USA  " renders correctly today.',
+    "Normalise both sides together needs migration for 18 live orbat_slots rows.",
+]
+current_state = [
+    "orbat.rs:23-25 — OrbatSquadTemplate.faction #[serde(default)] and untrimmed.",
+    "events.rs:391 binds straight into orbat_slots.faction with no normalisation.",
+    "T-346 rejects whitespace-only armory faction; ORBAT still accepts — permanently unmatchable.",
+    "TAB-only editor key validates and lands verbatim; slug_key neutralises on compiled path.",
+]
+approach = ["Read T-346 reference implementation and test pins over-rejection direction."]
+citations = [
+    "T-346 set_armory reference",
+    "T-357 TAB-only asymmetry",
+    "orbat.rs:23-25 serde default",
+    "events.rs:391 bind site",
+    "flatten.rs:626 or_fallback",
+]
 shipped_at = "b24bacd4"
 created_at = "2026-07-27T09:11:07Z"
 completed_at = "2026-07-27T09:12:25Z"
@@ -18,25 +66,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = [
-    "FOUND by T-346 while proving why it must NOT trim. This is the mirror image of T-346, on the other side of the same join, and it produces the same user-visible empty dossier card from the opposite direction.",
-    "",
-    '`crates/map-engine-core/src/mission/orbat.rs:23-25` — OrbatSquadTemplate.faction is #[serde(default)] and untrimmed. `apps/website/api/src/handlers/events.rs:391` binds it straight into orbat_slots.faction with no normalisation. So attaching a mission with no `faction` key stores `""`, and a padded one stores the padding.',
-    "",
-    'WHY THIS MATTERS MORE THAN IT LOOKS: T-346 deliberately chose require-and-refuse over trimming precisely BECAUSE this side does not normalise — ORBAT "  USA  " plus armory "  USA  " renders correctly today, and a one-sided trim would have broken it. Fixing this side makes the whole join consistent and only then is normalising either side safe. Until then both sides must keep storing bytes verbatim.',
-    "",
-    "So: apply the SAME shape T-346 used — require the field, refuse a value that differs from its trimmed form, store verbatim. Do NOT trim one side. If you decide to normalise both sides together, that is a defensible larger change, but it needs a migration for the live rows (orbat_slots holds 18 rows today) and it must land as one commit.",
-    "",
-    "Read T-346's work on main first; it is the reference implementation and its test pins the over-rejection direction too.",
-    "",
-    'NEW ASYMMETRY SINCE T-346, flagged by T-357 rather than buried: T-346 now REJECTS a whitespace-only ARMORY faction (`it.faction.trim().is_empty()` -> 400) while the ORBAT side still ACCEPTS one. So a whitespace-only ORBAT faction is now PERMANENTLY UNMATCHABLE — no armory row can legally be created that would join to it. That is an additional argument for require-and-refuse on this side, which would reject "\t" symmetrically.',
-    "",
-    "Also from T-357, which ran the real pipeline: a TAB-only editor key DOES validate and DOES land verbatim in orbat_slots.faction — but `slug_key` neutralises it to the `faction` fallback on the COMPILED path, so there is no wire hazard downstream. The damage is confined to the DB column and the join, which is exactly this ticket.",
-    "",
-    "== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==",
-    "Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.",
-    "This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.",
-]
 owns = [
     "crates/map-engine-core/src/mission/orbat.rs",
     "apps/website/api/src/handlers/events.rs",

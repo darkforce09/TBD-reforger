@@ -1,12 +1,41 @@
 id = "T-357"
 kind = "work"
-title = "The editor payload schema constrains nothing, and the compiled schema would reject live data"
+title = "Editor payload schema constrains factions weakly vs compiled"
 summary = "The editor payload schema constrains nothing, and the compiled schema would reject live data"
 class = "bug"
 status = "shipped"
 order = 3173
 executor = "claude-code"
 priority = 2
+main_goal = "Document which layer each schema describes: editor payload allows unconstrained faction keys while compiled mission.schema.json rejects live BLUFOR/OPFOR uppercase rows."
+context = ["FOUND by T-346, and it explains WHY the whole T-346/T-356 defect family is reachable at all."]
+requirement = [
+    "Work out which is right: lowercase wire vocabulary with slugging, or a wrong pattern.",
+    "Say which layer each schema is describing — that distinction is the actual deliverable here, and getting it wrong would either reject valid missions or bless invalid ones.",
+    "Do NOT tighten the editor payload schema without checking it against the committed golden missions and the live rows;",
+    "a schema that rejects production data fails every request rather than catching a bug.",
+]
+current_state = [
+    '`packages/tbd-schema/schema/mission-editor-payload.schema.json` constrains `editor.factions` to a bare `{"type":"array"}` with NO item constraints.',
+    "Meanwhile `mission.schema.json` `$defs/factionKey` is `^[a-z][a-z0-9_]*$`.",
+    "The editor payload is what feeds `parse_orbat_template`, so the strict pattern NEVER APPLIES on the path that actually writes orbat_slots.faction.",
+    "That asymmetry is the reason a padded or empty faction key can exist in the first place.",
+    "AND THE SHARPER HALF: live `orbat_slots` holds uppercase `BLUFOR` / `OPFOR`,",
+    "which the compiled schema's own `^[a-z]...` pattern WOULD REJECT.",
+    "So the two schemas do not merely differ in strictness — the strict one contradicts the data in production.",
+    "Before tightening anything, work out which is right:",
+    "is the wire vocabulary lowercase (in which case something is meant to be slugging these and is not), or is the pattern wrong?",
+]
+approach = [
+    "Note `slug_key()` exists and IS applied on the compiled `briefings`/`orbat` path (T-202 confirmed all four goldens key identically through it).",
+    "So the lowercase pattern is probably correct for the COMPILED document and simply does not describe orbat_slots.",
+]
+citations = [
+    "T-346 T-356 family",
+    "T-202 slug_key goldens",
+    "mission.schema.json factionKey",
+    "parse_orbat_template path",
+]
 shipped_at = "b19a4634"
 created_at = "2026-07-26T09:32:21Z"
 completed_at = "2026-07-26T10:16:54Z"
@@ -17,17 +46,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    "FOUND by T-346, and it explains WHY the whole T-346/T-356 defect family is reachable at all.",
-    "",
-    '`packages/tbd-schema/schema/mission-editor-payload.schema.json` constrains `editor.factions` to a bare `{"type":"array"}` with NO item constraints. Meanwhile `mission.schema.json` `$defs/factionKey` is `^[a-z][a-z0-9_]*$`. The editor payload is what feeds `parse_orbat_template`, so the strict pattern NEVER APPLIES on the path that actually writes orbat_slots.faction. That asymmetry is the reason a padded or empty faction key can exist in the first place.',
-    "",
-    "AND THE SHARPER HALF: live `orbat_slots` holds uppercase `BLUFOR` / `OPFOR`, which the compiled schema's own `^[a-z]...` pattern WOULD REJECT. So the two schemas do not merely differ in strictness — the strict one contradicts the data in production. Before tightening anything, work out which is right: is the wire vocabulary lowercase (in which case something is meant to be slugging these and is not), or is the pattern wrong?",
-    "",
-    "Note `slug_key()` exists and IS applied on the compiled `briefings`/`orbat` path (T-202 confirmed all four goldens key identically through it). So the lowercase pattern is probably correct for the COMPILED document and simply does not describe orbat_slots. Say which layer each schema is describing — that distinction is the actual deliverable here, and getting it wrong would either reject valid missions or bless invalid ones.",
-    "",
-    "Do NOT tighten the editor payload schema without checking it against the committed golden missions and the live rows; a schema that rejects production data fails every request rather than catching a bug.",
-]
 owns = ["packages/tbd-schema/schema/mission-editor-payload.schema.json"]
 
 [scope]

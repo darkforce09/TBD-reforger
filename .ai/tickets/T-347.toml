@@ -1,12 +1,84 @@
 id = "T-347"
 kind = "work"
-title = "A whitespace source_match_id becomes a live dedupe key and destroys match history"
+title = "Padded source_match_id corrupts unique match index"
 summary = "A whitespace source_match_id becomes a live dedupe key and destroys match history"
 class = "bug"
 status = "shipped"
 order = 3163
 executor = "claude-code"
+notes = """
+══ DO NOT NAIVELY TRIM — two sites where a one-sided trim CREATES the catastrophe ══
+T-343 found these and they bind on any ticket in this family:
+  events.rs:1735 — orbat_reservations.squad must stay BYTE-IDENTICAL to orbat_slots.squad, which is written untrimmed by crates/map-engine-core/src/mission/orbat.rs:163.
+  events.rs:1923 — must mirror `or_fallback` at crates/map-engine-core/src/mission/flatten.rs:626. Disagreement means the seat VANISHES, the assignment round-robins, and the request still returns 200.
+Trimming on write and trimming on read must agree. T-326's bug was not an untrimmed value per se — it was a DISAGREEMENT between two sites. Check both halves before changing either.
+
+SHIPPED 2026-07-26 with the collapse demonstrated on real rows, not described.
+
+Three genuinely different matches posted with source_match_id "   ": 1 row instead of 3, carrying outcome from #3, winning_faction from #2 sitting under #3's AAR link, started_at from #1 only (bound on create, so #2's and #3's start times were simply dropped), player A's line reading 0/1 with 17/3 and 2/9 GONE rather than summed, a roster of A+B+C that never existed, users.total_deployments 1 instead of 3 — and HTTP 200 all three times.
+Some(""): POST #1 200 inserting '', then POSTs #2-#4 all 500. Permanent, SQLSTATE 23505 on idx_matches_source_match_id.
+The leaderboard MV carried it — refresh_leaderboard is awaited in-request, so immediately after ingest #3 player A read kills=0 missions_played=1 against a true 19/3, and B and C each read a match they had been reattributed into.
+
+A THIRD FACE THE TICKET DID NOT NAME: "m-x" and "  m-x  " were TWO SEPARATE match rows pre-fix. That is why trimming only the guard would have been its own bug — it would have merged rows that were already distinct in the table.
+
+THE FIX IS STRUCTURAL, not a patch: source_match_key resolves the key ONCE before the transaction, and upsert_match no longer reads m.source_match_id at all. The halves cannot drift because there is only one of them. Blank is a 400, not normalised to None — on an endpoint with no human in the loop, absorbing a broken id field is the same objection T-316 raised against GREATEST.
+
+T-316 HELD, all re-verified by running: absent still creates (a UNIQUE btree treats NULLs as distinct, so 'it creates, it doesn't corrupt' is intact), full retry idempotent, downward correction 17->4 lands, outcome:"pending" accepted, partial heartbeat merges. T-316's own two tests pass unchanged.
+
+TRIM SAFETY CHECKED AGAINST THE T-343 HAZARD: matches.source_match_id has exactly one writer and one lookup-by-value, both now this function's return value, and a repo-wide sweep confirms nothing compares against it — deployments.rs:134 and models::Match only carry it outward, and the mod's TBD_ResultsReporter.c:533 only sends it. Unlike orbat_reservations.squad there is no second site to disagree with. Live blast radius measured read-only on the operator's DB: 3 matches, 0 blank, 0 padded — no migration exposure.
+
+FOUND AND FIXED IN PASSING: parse_uuid_opt did NOT trim while server_id's path did, so a padded event_id failed the parse, fell out as None, and the attendance UPDATE was silently skipped on a 200.
+
+FOUND by T-343's sweep. The worst mechanism in the whole family.
+
+handlers/telemetry.rs:476 guards with `!s.is_empty()`; :515 binds the RAW Option into a UNIQUE index. So:
+  `"   "` passes the guard and becomes a LIVE DEDUPE KEY. Every later distinct match collapses onto match #1 — rosters overwritten, scorelines destroyed rather than summed, total_deployments stuck at 1 — and the endpoint returns 200 every single time.
+  `Some("")` makes the two halves disagree, raising 23505, which is a PERMANENT 500 for that sender.
+
+This is a service-token endpoint, so a game-server bug or a retry does it silently with no human in the loop. It is the same class T-316 fixed for the counters, on the identity column instead.
+
+Note T-316 deliberately left `source_match_id` optional ("it creates, it doesn't corrupt") — that judgement was right about the ABSENT case and this is the PRESENT-BUT-BLANK case, which does corrupt. Fix the guard and the bind together so they cannot disagree.
+
+══ DO NOT NAIVELY TRIM — two sites where a one-sided trim CREATES the catastrophe ══
+T-343 found these and they bind on any ticket in this family:
+  events.rs:1735 — orbat_reservations.squad must stay BYTE-IDENTICAL to orbat_slots.squad, which is written untrimmed by crates/map-engine-core/src/mission/orbat.rs:163.
+  events.rs:1923 — must mirror `or_fallback` at crates/map-engine-core/src/mission/flatten.rs:626. Disagreement means the seat VANISHES, the assignment round-robins, and the request still returns 200.
+Trimming on write and trimming on read must agree. T-326's bug was not an untrimmed value per se — it was a DISAGREEMENT between two sites. Check both halves before changing either.
+
+SHIPPED 2026-07-26 with the collapse demonstrated on real rows, not described.
+
+Three genuinely different matches posted with source_match_id "   ": 1 row instead of 3, carrying outcome from #3, winning_faction from #2 sitting under #3's AAR link, started_at from #1 only (bound on create, so #2's and #3's start times were simply dropped), player A's line reading 0/1 with 17/3 and 2/9 GONE rather than summed, a roster of A+B+C that never existed, users.total_deployments 1 instead of 3 — and HTTP 200 all three times.
+Some(""): POST #1 200 inserting '', then POSTs #2-#4 all 500. Permanent, SQLSTATE 23505 on idx_matches_source_match_id.
+The leaderboard MV carried it — refresh_leaderboard is awaited in-request, so immediately after ingest #3 player A read kills=0 missions_played=1 against a true 19/3, and B and C each read a match they had been reattributed into.
+
+A THIRD FACE THE TICKET DID NOT NAME: "m-x" and "  m-x  " were TWO SEPARATE match rows pre-fix. That is why trimming only the guard would have been its own bug — it would have merged rows that were already distinct in the table.
+
+THE FIX IS STRUCTURAL, not a patch: source_match_key resolves the key ONCE before the transaction, and upsert_match no longer reads m.source_match_id at all. The halves cannot drift because there is only one of them. Blank is a 400, not normalised to None — on an endpoint with no human in the loop, absorbing a broken id field is the same objection T-316 raised against GREATEST.
+
+T-316 HELD, all re-verified by running: absent still creates (a UNIQUE btree treats NULLs as distinct, so 'it creates, it doesn't corrupt' is intact), full retry idempotent, downward correction 17->4 lands, outcome:"pending" accepted, partial heartbeat merges. T-316's own two tests pass unchanged.
+
+TRIM SAFETY CHECKED AGAINST THE T-343 HAZARD: matches.source_match_id has exactly one writer and one lookup-by-value, both now this function's return value, and a repo-wide sweep confirms nothing compares against it — deployments.rs:134 and models::Match only carry it outward, and the mod's TBD_ResultsReporter.c:533 only sends it. Unlike orbat_reservations.squad there is no second site to disagree with. Live blast radius measured read-only on the operator's DB: 3 matches, 0 blank, 0 padded — no migration exposure.
+
+FOUND AND FIXED IN PASSING: parse_uuid_opt did NOT trim while server_id's path did, so a padded event_id failed the parse, fell out as None, and the attendance UPDATE was silently skipped on a 200."""
 priority = 0
+main_goal = "source_match_id must resolve once before upsert so blank or padded ids cannot collapse distinct matches or 500 permanently."
+context = [
+    "FOUND by T-343 sweep; worst mechanism in the whitespace family.",
+    "Service-token endpoint — game-server bug or retry corrupts silently, no human in loop.",
+]
+requirement = ["Fix guard and UNIQUE bind together; T-316 left optional absent case — this is present-but-blank."]
+current_state = [
+    "telemetry.rs:476 guard `!s.is_empty()`; :515 binds RAW Option into UNIQUE index.",
+    '`"   "` passes guard, becomes LIVE dedupe KEY — later matches collapse, rosters overwritten, HTTP 200.',
+    '`Some("")` guard/bind disagree → 23505 PERMANENT 500 for that sender.',
+]
+approach = ["source_match_key resolves ONCE pre-transaction; upsert_match never reads m.source_match_id; blank is 400."]
+citations = [
+    "T-343 sweep",
+    "T-316 optional absent",
+    "telemetry.rs:476 guard",
+    "idx_matches_source_match_id",
+]
 shipped_at = "57f9c7ca"
 created_at = "2026-07-26T08:53:50Z"
 completed_at = "2026-07-26T09:17:03Z"
@@ -17,39 +89,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = [
-    "FOUND by T-343's sweep. The worst mechanism in the whole family.",
-    "",
-    "handlers/telemetry.rs:476 guards with `!s.is_empty()`; :515 binds the RAW Option into a UNIQUE index. So:",
-    '  `"   "` passes the guard and becomes a LIVE DEDUPE KEY. Every later distinct match collapses onto match #1 — rosters overwritten, scorelines destroyed rather than summed, total_deployments stuck at 1 — and the endpoint returns 200 every single time.',
-    '  `Some("")` makes the two halves disagree, raising 23505, which is a PERMANENT 500 for that sender.',
-    "",
-    "This is a service-token endpoint, so a game-server bug or a retry does it silently with no human in the loop. It is the same class T-316 fixed for the counters, on the identity column instead.",
-    "",
-    """Note T-316 deliberately left `source_match_id` optional ("it creates, it doesn't corrupt") — that judgement was right about the ABSENT case and this is the PRESENT-BUT-BLANK case, which does corrupt. Fix the guard and the bind together so they cannot disagree.""",
-    "",
-    "══ DO NOT NAIVELY TRIM — two sites where a one-sided trim CREATES the catastrophe ══",
-    "T-343 found these and they bind on any ticket in this family:",
-    "  events.rs:1735 — orbat_reservations.squad must stay BYTE-IDENTICAL to orbat_slots.squad, which is written untrimmed by crates/map-engine-core/src/mission/orbat.rs:163.",
-    "  events.rs:1923 — must mirror `or_fallback` at crates/map-engine-core/src/mission/flatten.rs:626. Disagreement means the seat VANISHES, the assignment round-robins, and the request still returns 200.",
-    "Trimming on write and trimming on read must agree. T-326's bug was not an untrimmed value per se — it was a DISAGREEMENT between two sites. Check both halves before changing either.",
-    "",
-    "SHIPPED 2026-07-26 with the collapse demonstrated on real rows, not described.",
-    "",
-    """Three genuinely different matches posted with source_match_id "   ": 1 row instead of 3, carrying outcome from #3, winning_faction from #2 sitting under #3's AAR link, started_at from #1 only (bound on create, so #2's and #3's start times were simply dropped), player A's line reading 0/1 with 17/3 and 2/9 GONE rather than summed, a roster of A+B+C that never existed, users.total_deployments 1 instead of 3 — and HTTP 200 all three times.""",
-    """Some(""): POST #1 200 inserting '', then POSTs #2-#4 all 500. Permanent, SQLSTATE 23505 on idx_matches_source_match_id.""",
-    "The leaderboard MV carried it — refresh_leaderboard is awaited in-request, so immediately after ingest #3 player A read kills=0 missions_played=1 against a true 19/3, and B and C each read a match they had been reattributed into.",
-    "",
-    'A THIRD FACE THE TICKET DID NOT NAME: "m-x" and "  m-x  " were TWO SEPARATE match rows pre-fix. That is why trimming only the guard would have been its own bug — it would have merged rows that were already distinct in the table.',
-    "",
-    "THE FIX IS STRUCTURAL, not a patch: source_match_key resolves the key ONCE before the transaction, and upsert_match no longer reads m.source_match_id at all. The halves cannot drift because there is only one of them. Blank is a 400, not normalised to None — on an endpoint with no human in the loop, absorbing a broken id field is the same objection T-316 raised against GREATEST.",
-    "",
-    """T-316 HELD, all re-verified by running: absent still creates (a UNIQUE btree treats NULLs as distinct, so 'it creates, it doesn't corrupt' is intact), full retry idempotent, downward correction 17->4 lands, outcome:"pending" accepted, partial heartbeat merges. T-316's own two tests pass unchanged.""",
-    "",
-    "TRIM SAFETY CHECKED AGAINST THE T-343 HAZARD: matches.source_match_id has exactly one writer and one lookup-by-value, both now this function's return value, and a repo-wide sweep confirms nothing compares against it — deployments.rs:134 and models::Match only carry it outward, and the mod's TBD_ResultsReporter.c:533 only sends it. Unlike orbat_reservations.squad there is no second site to disagree with. Live blast radius measured read-only on the operator's DB: 3 matches, 0 blank, 0 padded — no migration exposure.",
-    "",
-    "FOUND AND FIXED IN PASSING: parse_uuid_opt did NOT trim while server_id's path did, so a padded event_id failed the parse, fell out as None, and the attendance UPDATE was silently skipped on a 200.",
-]
 owns = ["apps/website/api/src/handlers/telemetry.rs"]
 
 [scope]
