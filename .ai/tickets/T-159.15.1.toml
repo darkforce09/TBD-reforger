@@ -1,6 +1,6 @@
 id = "T-159.15.1"
 kind = "work"
-title = "T-159.15.1"
+title = "T-159.15.1 — continuous render loop GPU readback gate"
 summary = "T-159.15.1"
 class = "feature"
 status = "shipped"
@@ -8,6 +8,15 @@ order = 1570
 executor = "claude-code"
 notes = "Damage-driven rAF + wheel + resize. Fix=disable_frame_timing (GpuTimer double-map on Dawn), not poll(). Verify: .ai/artifacts/t159_15_1_verify_log.md"
 parent = "T-159"
+main_goal = "Ship damage-driven rAF loop, wheel zoom, resize without GpuTimer panic."
+context = ["15.0 boundary collapse; second submit double-maps GpuTimer readback buffer."]
+requirement = ["rAF loop; wheel; resize; disable_frame_timing; poll(); smoke_editor pass."]
+current_state = ["Continuous render panics already mapped on headless second submit."]
+approach = ["disable_frame_timing drops GpuTimer; poll() unblocks WebGL2 map_async."]
+citations = [
+    "commit a425936d",
+    "t159_15_1_verify_log.md",
+]
 shipped_at = "a425936d"
 created_at = "2026-07-15T18:47:59Z"
 completed_at = "2026-07-15T20:34:34Z"

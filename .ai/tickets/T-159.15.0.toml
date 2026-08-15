@@ -1,13 +1,23 @@
 id = "T-159.15.0"
 kind = "work"
-title = "T-159.15.0"
-summary = "T-159.15.0"
+title = "T-159.15.0 — RenderEngine boundary collapse in Leptos wasm"
+summary = "T-159.15.0 — RenderEngine boundary collapse in Leptos wasm"
 class = "feature"
 status = "shipped"
 order = 1570
+spec = "docs/platform/t159_15_render_loop_handoff.md"
 executor = "claude-code"
 notes = "wgpu boundary collapse; RenderEngine in Leptos wasm."
 parent = "T-159"
+main_goal = "Collapse wgpu RenderEngine into Leptos Mission Creator wasm boundary."
+context = ["Mission Creator route live; engine still behind JS shim split."]
+requirement = ["Own RenderEngine in mission_editor.rs; single render() submit; trunk release build."]
+current_state = ["React WgpuTacticalMap owned engine via JS bridge; Leptos route without in-wasm engine."]
+approach = ["Direct map-engine-render in Leptos; drop shim; foundation for 15.1 rAF loop."]
+citations = [
+    "commit 3066f14c",
+    "t159_15_render_loop_handoff.md",
+]
 shipped_at = "3066f14c"
 created_at = "2026-07-15T16:07:52Z"
 completed_at = "2026-07-15T16:07:52Z"

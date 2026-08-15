@@ -9,6 +9,17 @@ spec = "docs/platform/t159_23_attributes_modal.md"
 executor = "claude-code"
 notes = "Attributes Transform+Identity; Arsenal stub. Handoff: .ai/artifacts/t159_23_claude_code_handoff.md"
 parent = "T-159"
+main_goal = "Attributes modal for Transform and Identity on selected slots."
+context = ["Slots selectable and outliner-listed; no Attributes surface on double-click."]
+requirement = ["Transform and Identity tabs; Arsenal stub; undoable commits; editor smokes green."]
+current_state = ["No modal; slot transform edits only via map drag."]
+approach = ["Dialog on dbl-click; MissionDocCore commits; attributes smoke per spec A6."]
+verify = ["Transform or Identity commit smoke; prior editor smokes green per spec A8."]
+citations = [
+    "t159_23_attributes_modal.md",
+    "commit 69dc5da5",
+    "t159_23_claude_code_handoff.md",
+]
 shipped_at = "69dc5da5"
 created_at = "2026-07-16T21:55:44Z"
 completed_at = "2026-07-16T21:55:44Z"

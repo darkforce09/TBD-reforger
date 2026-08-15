@@ -9,6 +9,17 @@ spec = "docs/platform/t159_22_1_undo_granularity.md"
 executor = "claude-code"
 notes = "No core defect — CDP keyChord double-fire. Gate rebased + undo_depth. Verify: .ai/artifacts/t159_22_1_verify_log.md"
 parent = "T-159"
+main_goal = "Prove undo granularity holds; fix CDP keyChord double-fire."
+context = ["T-159.22 reported two moves collapsing on one Ctrl+Z."]
+requirement = ["One LOCAL txn equals one undo step; rebase undo smoke; undo_depth bridge readout."]
+current_state = ["smoke_undo_editor keyChord sent rawKeyDown and keyDown per chord."]
+approach = ["keyChord one rawKeyDown plus keyUp; undo_depth on bridge; boundary unit tests."]
+verify = ["undo smoke rebased PASS; map-engine-core behavior unchanged per verify log."]
+citations = [
+    "t159_22_1_undo_granularity.md",
+    "commit ce73c5bc",
+    "t159_22_1_verify_log.md",
+]
 shipped_at = "ce73c5bc"
 created_at = "2026-07-16T21:20:33Z"
 completed_at = "2026-07-16T21:55:44Z"

@@ -9,6 +9,17 @@ spec = "docs/platform/t159_22_outliner_asset_palette.md"
 executor = "claude-code"
 notes = "Outliner+palette live; wheel+CUR gates. Found undo-merge defect (pre-existing). Verify: .ai/artifacts/t159_22_verify_log.md"
 parent = "T-159"
+main_goal = "Live Editor Layers outliner plus Factions asset palette drag-to-place."
+context = ["T-159.21 dock placeholders; wheel over dock still zooms map."]
+requirement = ["Layers tree; registry catalog; drag-place slot; wheel-over-dock fix; CUR Class R gate."]
+current_state = ["Empty dock shells; no outliner tree or palette catalog."]
+approach = ["outliner.rs; asset_catalog.rs; editor_ops.rs; outliner and CUR smoke gates."]
+verify = ["outliner and palette smokes PASS; wheel-over-dock and CUR gates PASS."]
+citations = [
+    "t159_22_outliner_asset_palette.md",
+    "commit 0154b4e9",
+    "t159_22_verify_log.md",
+]
 shipped_at = "0154b4e9"
 created_at = "2026-07-16T20:01:40Z"
 completed_at = "2026-07-16T21:20:33Z"

@@ -9,6 +9,17 @@ spec = "docs/platform/t159_21_eden_chrome_undo.md"
 executor = "claude-code"
 notes = "Eden chrome + undo/redo; 9 smokes; probe inset under docks. Verify: .ai/artifacts/t159_21_verify_log.md"
 parent = "T-159"
+main_goal = "Eden chrome scaffold with working undo/redo on MissionDocCore."
+context = ["Editor chromeless after T-159.20; React Eden has strips, toolbelt, docks."]
+requirement = ["Top strip undo/redo; bottom toolbelt; dock shells; keyboard shortcuts; editor smokes green."]
+current_state = ["Save/Export strip only; no undo UI; dock placeholders absent."]
+approach = ["eden_chrome.rs layout; mission_history.rs undo path; editor-undo-smoke gate."]
+verify = ["editor-undo-smoke PASS; all prior editor smokes PASS per verify log."]
+citations = [
+    "t159_21_eden_chrome_undo.md",
+    "commit f02fed5a",
+    "t159_21_verify_log.md",
+]
 shipped_at = "f02fed5a"
 created_at = "2026-07-16T05:45:54Z"
 completed_at = "2026-07-16T20:01:40Z"

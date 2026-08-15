@@ -9,6 +9,15 @@ spec = "docs/platform/t159_16_mission_doc_host.md"
 executor = "claude-code"
 notes = "MissionDocCore same-wasm host; smoke_doc_editor Class R. Verify: .ai/artifacts/t159_16_verify_log.md"
 parent = "T-159"
+main_goal = "Wire MissionDoc lifecycle in Leptos editor with Class R encode round-trip."
+context = ["Engine and camera shipped; no yrs mission document in Leptos host."]
+requirement = ["MissionDocCore mount/dispose; seed; encode_state Class R; smoke_doc_editor."]
+current_state = ["RenderEngine owns camera only; slot pick blocked without doc host."]
+approach = ["Same-wasm MissionDocCore; StrictMode-safe dispose; __missionDoc smoke bridge."]
+citations = [
+    "commit f2cd6178",
+    "t159_16_mission_doc_host.md",
+]
 shipped_at = "f2cd6178"
 created_at = "2026-07-15T21:11:39Z"
 completed_at = "2026-07-15T21:51:40Z"

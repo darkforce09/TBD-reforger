@@ -9,6 +9,15 @@ spec = "docs/platform/t161_ticket_xtask_program.md"
 executor = "claude-code"
 notes = "Read cmds. Verify t161_2_verify_log.md (executed by Cursor Grok 4.5 override)"
 parent = "T-161"
+main_goal = "Port read-only ticket CLI commands with Python oracle parity."
+context = ["T-161.1 sync/check shipped; mutators deferred to T-161.3."]
+requirement = ["brief/show/next/plan-batch/list/milestone stdout+exit match Python."]
+current_state = ["Read commands only in Python ticket pipeline."]
+approach = ["xtask read cmds; t161_2_verify_log.md gate table."]
+citations = [
+    "t161_2_verify_log.md",
+    "t161_ticket_xtask_program.md",
+]
 created_at = "2026-07-15T00:00:00Z"
 completed_at = "2026-07-17T00:00:00Z"
 estimated = [

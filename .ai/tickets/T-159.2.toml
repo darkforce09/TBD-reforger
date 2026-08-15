@@ -1,6 +1,6 @@
 id = "T-159.2"
 kind = "work"
-title = "T-159.2"
+title = "T-159.2 — Aegis shell V-parity chrome"
 summary = "T-159.2"
 class = "feature"
 status = "shipped"
@@ -8,6 +8,16 @@ order = 1570
 executor = "claude-code"
 notes = "Aegis shell — absorbed into page-migration arc on branch."
 parent = "T-159"
+main_goal = "Aegis CSS pipeline and V-shell chrome byte-equal."
+context = ["Leptos scaffold done; suite chrome still React."]
+requirement = ["Tailwind v4 @theme; Sidebar TopNav; V-gate zero diffs."]
+current_state = ["No Trunk Aegis tokens or AppLayout shell."]
+approach = ["2a CSS; 2b Sidebar; 2c TopNav; gate_v_suite."]
+verify = ["gate_v_suite byte-equal; S-tokens PASS"]
+citations = [
+    "commit 5c721f6f",
+    "t159_leptos_ui_program.md",
+]
 shipped_at = "5c721f6f"
 created_at = "2026-07-14T22:08:16Z"
 completed_at = "2026-07-14T23:13:27Z"

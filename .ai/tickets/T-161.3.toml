@@ -9,6 +9,17 @@ spec = "docs/platform/t161_ticket_xtask_program.md"
 executor = "claude-code"
 notes = "Mutators. Verify t161_3_verify_log.md (executed by Cursor Grok 4.5 override)"
 parent = "T-161"
+main_goal = "Port ticket mutator commands with Python oracle parity."
+context = ["T-161.1–.2 shipped sync/check and read cmds; mutators still Python."]
+requirement = ["add and advance-slice byte-identical registry and stdout vs Python."]
+current_state = ["Mutator paths still on scripts/lib/ticket_registry.py."]
+approach = ["Rust add/advance-slice in xtask; cmp matrix per t161_3_verify_log."]
+verify = ["add T161ParityTest; advance-slice T-161; registry cmp vs Python."]
+citations = [
+    "t161_3_verify_log.md",
+    "t161_ticket_xtask_program.md",
+    "commit 065fa496",
+]
 created_at = "2026-07-15T00:00:00Z"
 completed_at = "2026-07-17T00:00:00Z"
 estimated = [

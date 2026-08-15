@@ -8,6 +8,15 @@ order = 1575
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 depends_on = ["T-159"]
+main_goal = "Fix GpuTimer readback error path before HUD re-enables frame timing."
+context = ["Found in T-159.15.1; map_async cleared in_flight unconditionally on error."]
+requirement = ["ReadbackLane owns in_flight; native tests cover wasm32 error arm."]
+current_state = ["Latent double-map; editor runs disable_frame_timing()."]
+approach = ["map_engine_render::readback::ReadbackLane; shipped bce80aa1."]
+citations = [
+    "commit bce80aa1",
+    "t159_15_2_camera_pan.md",
+]
 shipped_at = "bce80aa1"
 created_at = "2026-08-01T02:44:10Z"
 completed_at = "2026-08-01T02:44:10Z"

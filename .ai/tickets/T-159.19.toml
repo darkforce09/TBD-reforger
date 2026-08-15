@@ -9,6 +9,17 @@ spec = "docs/platform/t159_19_marquee_drag.md"
 executor = "claude-code"
 notes = "Marquee + move_entities + edit persist. Verify: .ai/artifacts/t159_19_verify_log.md. Soft-WebGPU marquee smoke uses ?force=webgl."
 parent = "T-159"
+main_goal = "Marquee pick_rect plus entity drag-move mutator."
+context = ["Click-select only; over-threshold gestures missing."]
+requirement = ["move_entities; pick_rect marquee; edit-driven persist notify."]
+current_state = ["No marquee, drag-move, or persist on edit."]
+approach = ["select_tool gesture machine; editor-marquee-drag-smoke."]
+verify = ["editor-marquee-drag-smoke; six prior smokes"]
+citations = [
+    "commit f444b878",
+    "t159_19_marquee_drag.md",
+    "t159_19_verify_log.md",
+]
 shipped_at = "f444b878"
 created_at = "2026-07-15T23:18:25Z"
 completed_at = "2026-07-16T00:05:38Z"

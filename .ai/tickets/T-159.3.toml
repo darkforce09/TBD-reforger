@@ -1,6 +1,6 @@
 id = "T-159.3"
 kind = "work"
-title = "T-159.3"
+title = "T-159.3 — Auth client, refresh, bootstrap, login"
 summary = "T-159.3"
 class = "feature"
 status = "shipped"
@@ -8,6 +8,16 @@ order = 1570
 executor = "claude-code"
 notes = "Auth + refresh — shipped on branch."
 parent = "T-159"
+main_goal = "HTTP client, single-flight refresh, auth store, bootstrap, and login."
+context = ["Leptos shell byte-equal but no live session or token refresh path."]
+requirement = ["R-auth gate; send_with_refresh; cold bootstrap; login callback; authed TopNav."]
+current_state = ["Guest shell only; no gloo-net client or AuthStore wired."]
+approach = ["client.rs refresh mutex; AuthStore signals; authed TopNav at slice 3g."]
+verify = ["cargo test passed; V topnav-authed zero diffs; trunk release build."]
+citations = [
+    "t159_leptos_full_migration_inventory.md",
+    "commit d066b93a",
+]
 shipped_at = "d066b93a"
 created_at = "2026-07-15T06:05:03Z"
 completed_at = "2026-07-15T10:44:49Z"

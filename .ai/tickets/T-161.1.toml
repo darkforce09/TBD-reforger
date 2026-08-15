@@ -9,6 +9,15 @@ spec = "docs/platform/t161_1_xtask_scaffold_sync.md"
 executor = "claude-code"
 notes = "xtask sync/check. Cursor Grok override. Verify t161_1_verify_log.md (executed by Cursor Grok 4.5 override)"
 parent = "T-161"
+main_goal = "Scaffold xtask crate; port ticket sync and check with Python parity."
+context = ["T-161 hub locked; Python stays default until T-161.4 flip."]
+requirement = ["Derived doc cmp -s G1; check exit and sorted ERROR set match."]
+current_state = ["No xtask member; Python cmd_sync is oracle."]
+approach = ["xtask ticket sync/check; t161_1_verify_log.md gates."]
+citations = [
+    "t161_1_xtask_scaffold_sync.md",
+    "t161_1_verify_log.md",
+]
 created_at = "2026-07-15T00:00:00Z"
 completed_at = "2026-07-17T00:00:00Z"
 estimated = [

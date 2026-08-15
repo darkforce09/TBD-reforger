@@ -9,6 +9,15 @@ spec = "docs/platform/t159_1_leptos_scaffold.md"
 executor = "claude-code"
 notes = "Scaffold + later page waves through 24 routes on worktree (aggregate)."
 parent = "T-159"
+main_goal = "Add Leptos CSR workspace member with minimal scaffold page."
+context = ["React SPA live; Leptos rewrite on standing worktree T-159."]
+requirement = ["apps/website-leptos crate; cargo check; scaffold UI; API health link."]
+current_state = ["No Leptos crate, workspace member, or documented Rust UI run path."]
+approach = ["CSR Leptos on :3000; minimal Aegis tokens; keep React build green."]
+citations = [
+    "commit 50d93587",
+    "t159_1_leptos_scaffold.md",
+]
 shipped_at = "50d93587"
 created_at = "2026-07-14T22:01:22Z"
 completed_at = "2026-07-14T22:01:22Z"

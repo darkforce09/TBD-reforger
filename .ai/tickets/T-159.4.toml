@@ -1,6 +1,6 @@
 id = "T-159.4"
 kind = "work"
-title = "T-159.4"
+title = "T-159.4 — leptos_router route table + nav"
 summary = "T-159.4"
 class = "feature"
 status = "shipped"
@@ -8,6 +8,16 @@ order = 1570
 executor = "claude-code"
 notes = "Route table + page V-suite (24 routes byte-identical)."
 parent = "T-159"
+main_goal = "Wire full leptos_router route table, ProtectedRoute, and S-routes gate."
+context = ["T-159.3 auth shipped; shell stubs need Router before page waves."]
+requirement = ["Single-source route contract; router-aware SidebarNav and TopNav; S-routes PASS."]
+current_state = ["Aegis shell stubs; no Router/Routes from route contract."]
+approach = [".4a route table; .4b Router/Routes; .4c nav; .4d breadcrumbs."]
+citations = [
+    "commit f2dd37cf",
+    "commit b9560f42",
+    "t159_leptos_full_migration_inventory.md",
+]
 shipped_at = "b9560f42"
 created_at = "2026-07-15T06:26:17Z"
 completed_at = "2026-07-15T07:01:34Z"

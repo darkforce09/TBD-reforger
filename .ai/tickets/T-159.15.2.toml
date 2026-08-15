@@ -9,6 +9,15 @@ spec = "docs/platform/t159_15_2_camera_pan.md"
 executor = "claude-code"
 notes = "MMB/RMB pan + wheel rebase; smoke_pan_editor Class R. Verify: .ai/artifacts/t159_15_2_verify_log.md"
 parent = "T-159"
+main_goal = "MMB/RMB drag pan plus mid-pan wheel rebase via engine.pan."
+context = ["15.1 ships loop and wheel; editor still cannot pan the map."]
+requirement = ["Pointer listeners; pan gesture; smoke_pan_editor Class R; keep 15.1 smokes."]
+current_state = ["Damage-driven rAF and wheel only; no MMB/RMB pan or pointer seam."]
+approach = ["engine.pan dx/dy; capture; contextmenu preventDefault; no unproject_xy."]
+citations = [
+    "commit ebcabe1d",
+    "t159_15_2_camera_pan.md",
+]
 shipped_at = "ebcabe1d"
 created_at = "2026-07-15T20:37:09Z"
 completed_at = "2026-07-15T21:11:39Z"

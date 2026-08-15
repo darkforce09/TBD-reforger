@@ -9,6 +9,19 @@ spec = "docs/platform/t161_ticket_xtask_program.md"
 executor = "cursor-docs"
 notes = "Doc closeout + program shipped."
 parent = "T-161"
+main_goal = "Close T-161 program hub, README, and registry after CLI flip."
+context = ["T-161.4 flipped scripts/ticket; verify logs t161_1 through t161_4 done."]
+requirement = ["Hub spec and tickets README reflect shipped slice plan."]
+current_state = ["Program slices shipped; hub still lists in-flight wording."]
+approach = ["Update t161_ticket_xtask_program.md and tickets README."]
+verify = [
+    "./scripts/ticket sync",
+    "./scripts/ticket check",
+]
+citations = [
+    "t161_ticket_xtask_program.md",
+    "commit 065fa496",
+]
 created_at = "2026-07-15T00:00:00Z"
 completed_at = "2026-07-17T00:00:00Z"
 estimated = [

@@ -9,6 +9,21 @@ spec = "docs/platform/t161_ticket_xtask_program.md"
 executor = "claude-code"
 notes = "Flip + delete Python. Verify t161_4_verify_log.md (executed by Cursor Grok 4.5 override)"
 parent = "T-161"
+main_goal = "Flip scripts/ticket to xtask wrapper; delete Python ticket libs."
+context = ["T-161.3 mutators parity; pre-flip still invoked Python modules."]
+requirement = ["Thin cargo wrapper; delete ticket_registry, queue, extract_claude_prompt."]
+current_state = ["scripts/lib/ticket_*.py still on disk before flip."]
+approach = ["exec cargo run -p xtask ticket; update verify-monorepo-migration V23."]
+verify = [
+    "./scripts/ticket sync",
+    "./scripts/ticket check",
+    "./scripts/ticket brief T-161",
+]
+citations = [
+    "t161_4_verify_log.md",
+    "t161_ticket_xtask_program.md",
+    "commit 065fa496",
+]
 created_at = "2026-07-15T00:00:00Z"
 completed_at = "2026-07-17T00:00:00Z"
 estimated = [

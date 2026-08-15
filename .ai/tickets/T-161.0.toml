@@ -9,6 +9,16 @@ spec = "docs/platform/t161_ticket_xtask_program.md"
 executor = "cursor-docs"
 notes = "Hub + worktree."
 parent = "T-161"
+main_goal = "Ticket CLI program hub, registry row, and TBD-T-161 worktree."
+context = ["Python scripts/ticket pipeline due for Rust xtask port."]
+requirement = ["Hub doc; slice ladder T-161.0–.5; standing worktree branch."]
+current_state = ["Bash scripts/ticket + Python ticket_*.py; no xtask crate."]
+approach = ["t161_ticket_xtask_program.md; branch t-161-ticket-xtask."]
+citations = [
+    "t161_ticket_xtask_program.md",
+    "commit 065fa496",
+    "commit 3cec57ee",
+]
 created_at = "2026-07-15T00:00:00Z"
 completed_at = "2026-07-17T00:00:00Z"
 estimated = [

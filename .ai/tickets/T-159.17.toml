@@ -9,6 +9,17 @@ spec = "docs/platform/t159_17_yrs_persist.md"
 executor = "claude-code"
 notes = "IDB tbd-mission-yrs + warm session; semantic digest Class R. Verify: .ai/artifacts/t159_17_verify_log.md. Edit-driven persist deferred until mutator hook (.18+)."
 parent = "T-159"
+main_goal = "v3 IDB persist and warm sessionStorage marker."
+context = ["MissionDoc ephemeral after T-159.16 host."]
+requirement = ["tbd-mission-yrs encode_state; debounced hide flush."]
+current_state = ["Reload loses local seed edits."]
+approach = ["yrs_persist.rs; editor_session.rs; smoke gate."]
+verify = ["smoke_persist_editor Class R reload"]
+citations = [
+    "commit 60c6e7ea",
+    "t159_17_yrs_persist.md",
+    "t159_17_verify_log.md",
+]
 shipped_at = "60c6e7ea"
 created_at = "2026-07-15T21:51:40Z"
 completed_at = "2026-07-15T22:46:57Z"
