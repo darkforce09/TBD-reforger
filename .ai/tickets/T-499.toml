@@ -6,7 +6,33 @@ class = "feature"
 status = "shipped"
 order = 3334
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 38 residual from T-400. identity_link/factions/telemetry isolated. admin_field.rs POST /admin/roles/sync still loops every users row and demotes anyone without user_discord_roles — fires inside the suite against shared rows. Cure: scope sync to fixture actors or skip in IT / use private actors for asserts.
+
+missing=0"""
 priority = 2
+main_goal = "Scope admin_field roles/sync to fixture actors in shared IT DB."
+context = [
+    "Wave 38 residual from T-400.",
+    "identity_link/factions/telemetry isolated.",
+]
+requirement = [
+    "POST /admin/roles/sync loops every users row; demotes without user_discord_roles.",
+    "Fires inside suite against shared rows.",
+]
+current_state = ["roles/sync demotes all users lacking discord_roles in shared IT DB."]
+approach = [
+    "Scope sync to fixture actors.",
+    "Or skip in IT / use private actors for asserts.",
+]
+verify = ["POST /admin/roles/sync demotes shared users in IT suite."]
+citations = [
+    "Wave 38 residual T-400",
+    "admin_field roles/sync demotes all",
+    "shared IT DB isolation",
+]
 shipped_at = "1b241350"
 created_at = "2026-07-27T14:22:53Z"
 completed_at = "2026-07-27T14:41:30Z"
@@ -18,7 +44,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = ["Wave 38 residual from T-400. identity_link/factions/telemetry isolated. admin_field.rs POST /admin/roles/sync still loops every users row and demotes anyone without user_discord_roles — fires inside the suite against shared rows. Cure: scope sync to fixture actors or skip in IT / use private actors for asserts."]
 owns = ["apps/website/api/tests/admin_field.rs"]
 
 [scope]

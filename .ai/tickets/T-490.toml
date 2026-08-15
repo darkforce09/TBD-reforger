@@ -1,12 +1,49 @@
 id = "T-490"
 kind = "work"
-title = "T-411 gate DB wave stuck on plan wave 3 while deferred tickets remain"
+title = "Default gate DB stuck on deferred plan wave 3"
 summary = "T-411 gate DB wave stuck on plan wave 3 while deferred tickets remain"
 class = "docs"
 status = "shipped"
 order = 3329
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 35 adversarial MAJOR. gate_wave_number() falls back to current_wave() = lowest plan wave with any ticket status not in {shipped,cancelled}. Wave 3 still has deferred T-397/400/403/410/412–414 (+ was T-411), so default IT DB is permanently tbd_gate_w3 for every gate until those clear. Factory packing waves (30–35) do not advance N. Residue isolation fails on the default path; only TBD_GATE_WAVE / TBD_GATE_DB escape (cold gates used tbd_wave35_cold). Prune keep N/N-1 is correct when N advances.
+
+Repro:
+  unset TBD_GATE_DB TBD_GATE_WAVE TEST_DATABASE_URL
+  bash -c 'source scripts/platform/wave.sh; gate_wave_number'  # or invoke ensure_gate_db path
+  # observes 3 forever while wave-3 deferreds exist
+
+Cure: do not key default N solely on current_wave() while deferred residue can pin an old plan wave. Prefer (1) TBD_GATE_WAVE, (2) committed packing counter docs/platform/factory_pack_wave (integer; command center bumps on promote), (3) only then current_wave(). Seed factory_pack_wave to 35. Keep prune last-two + operator URL overrides.
+
+missing=0"""
 priority = 1
+main_goal = "Stop gate_wave_number default pinning on old deferred plan wave."
+context = [
+    "Wave 35 adversarial MAJOR on gate_wave_number fallback.",
+    "gate_wave_number falls back to current_wave = lowest plan wave with non-shipped tickets.",
+]
+requirement = [
+    "Wave 3 deferred T-397/400/403/410/412–414 pin default IT DB tbd_gate_w3 forever.",
+    "Factory packing waves 30–35 do not advance N; residue isolation fails on default path.",
+]
+current_state = [
+    "unset TBD_GATE_DB/WAVE; gate_wave_number observes 3 while wave-3 deferreds exist.",
+    "Only TBD_GATE_WAVE / TBD_GATE_DB escape; cold gates used tbd_wave35_cold.",
+]
+approach = [
+    "Prefer TBD_GATE_WAVE, then factory_pack_wave counter, then current_wave.",
+    "Seed factory_pack_wave to 35; keep prune last-two and URL overrides.",
+]
+verify = ["Repro: gate_wave_number returns 3 forever with wave-3 deferred residue."]
+citations = [
+    "Wave 35 adversarial MAJOR",
+    "gate_wave_number current_wave fallback",
+    "factory_pack_wave packing counter",
+    "wave.sh prune last-two N",
+]
 shipped_at = "3d480d62"
 created_at = "2026-07-27T06:21:07Z"
 completed_at = "2026-07-27T06:22:21Z"
@@ -18,16 +55,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = [
-    "Wave 35 adversarial MAJOR. gate_wave_number() falls back to current_wave() = lowest plan wave with any ticket status not in {shipped,cancelled}. Wave 3 still has deferred T-397/400/403/410/412–414 (+ was T-411), so default IT DB is permanently tbd_gate_w3 for every gate until those clear. Factory packing waves (30–35) do not advance N. Residue isolation fails on the default path; only TBD_GATE_WAVE / TBD_GATE_DB escape (cold gates used tbd_wave35_cold). Prune keep N/N-1 is correct when N advances.",
-    "",
-    "Repro:",
-    "  unset TBD_GATE_DB TBD_GATE_WAVE TEST_DATABASE_URL",
-    "  bash -c 'source scripts/platform/wave.sh; gate_wave_number'  # or invoke ensure_gate_db path",
-    "  # observes 3 forever while wave-3 deferreds exist",
-    "",
-    "Cure: do not key default N solely on current_wave() while deferred residue can pin an old plan wave. Prefer (1) TBD_GATE_WAVE, (2) committed packing counter docs/platform/factory_pack_wave (integer; command center bumps on promote), (3) only then current_wave(). Seed factory_pack_wave to 35. Keep prune last-two + operator URL overrides.",
-]
 owns = [
     "scripts/platform/wave.sh",
     "docs/platform/factory_pack_wave",

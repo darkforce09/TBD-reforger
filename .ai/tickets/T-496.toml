@@ -6,7 +6,36 @@ class = "chore"
 status = "shipped"
 order = 3331
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 38 adversarial NIT. find_in_approvals page-1-only RED on tbd_gate_it (26 pending). Disabling prefer-mine RED on dashboard. But find_id_in_missions_list→page-1 limit=20 stayed GREEN on mission_lifecycle_and_compiled because only 2 NULL updated_at rows — DESC puts fresh missions on page 1. Cure: Class-R that forces >20 NULL-updated_at residue (or source ratchet that the helper always paginates) so library/bookmark pins fail without relying on shared-DB residue.
+
+missing=0"""
 priority = 2
+main_goal = "Harden library/bookmark page-1 Class-R against weak NULL updated_at residue."
+context = [
+    "Wave 38 adversarial NIT.",
+    "find_in_approvals page-1-only RED on tbd_gate_it.",
+]
+requirement = [
+    "find_id_in_missions_list page-1 limit=20 GREEN with only 2 NULL updated_at rows.",
+    "Cure: Class-R forcing >20 NULL-updated_at or ratchet helper paginates.",
+]
+current_state = [
+    "mission_lifecycle_and_compiled: only 2 NULL updated_at; fresh on page 1.",
+    "Library/bookmark pins pass without shared-DB residue.",
+]
+approach = [
+    "Class-R forcing >20 NULL-updated_at residue.",
+    "Or source ratchet helper always paginates.",
+]
+verify = ["find_id page-1 limit=20 GREEN with 2 NULL updated_at rows."]
+citations = [
+    "Wave 38 adversarial NIT",
+    "T-410 library page-1 weak",
+    "NULL updated_at residue",
+]
 shipped_at = "d10afcb1"
 created_at = "2026-07-27T07:39:07Z"
 completed_at = "2026-07-27T12:59:36Z"
@@ -18,7 +47,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = ["Wave 38 adversarial NIT. find_in_approvals page-1-only RED on tbd_gate_it (26 pending). Disabling prefer-mine RED on dashboard. But find_id_in_missions_list→page-1 limit=20 stayed GREEN on mission_lifecycle_and_compiled because only 2 NULL updated_at rows — DESC puts fresh missions on page 1. Cure: Class-R that forces >20 NULL-updated_at residue (or source ratchet that the helper always paginates) so library/bookmark pins fail without relying on shared-DB residue."]
 owns = ["apps/website/api/tests/missions.rs"]
 
 [scope]

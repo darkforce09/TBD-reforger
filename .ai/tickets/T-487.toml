@@ -6,7 +6,37 @@ class = "chore"
 status = "shipped"
 order = 3326
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 33 verifier NIT (T-428). Seed no longer INSERTs placeholder 1517290000000000000, but has no DELETE — dirty DBs retain Squad Leader/leader orphan after re-make seed. Live DB was observed still holding the row.
+
+Repro: DB with placeholder row; make seed; SELECT still returns the row.
+
+Cure: add DELETE FROM discord_roles WHERE discord_role_id = '1517290000000000000' (or equivalent) to discord_roles.sql before INSERT.
+
+missing=0"""
 priority = 2
+main_goal = "Delete orphan Squad Leader placeholder discord_role_id from discord_roles seed."
+context = [
+    "Wave 33 verifier NIT from T-428.",
+    "Seed no longer INSERTs placeholder 1517290000000000000; no DELETE for dirty DBs.",
+]
+requirement = [
+    "Dirty DBs retain Squad Leader orphan after re-make seed.",
+    "Add DELETE for discord_role_id 1517290000000000000 before INSERT.",
+]
+current_state = [
+    "Repro: DB with placeholder row; make seed; SELECT still returns row.",
+    "Live DB observed still holding the orphan row.",
+]
+approach = ["Add DELETE FROM discord_roles WHERE discord_role_id = placeholder before INSERT."]
+verify = ["Repro: placeholder row survives make seed without DELETE."]
+citations = [
+    "Wave 33 verifier NIT T-428",
+    "discord_roles.sql placeholder orphan",
+    "1517290000000000000 Squad Leader",
+]
 shipped_at = "9cd07a73"
 created_at = "2026-07-27T05:18:36Z"
 completed_at = "2026-07-27T05:22:03Z"
@@ -18,13 +48,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    "Wave 33 verifier NIT (T-428). Seed no longer INSERTs placeholder 1517290000000000000, but has no DELETE — dirty DBs retain Squad Leader/leader orphan after re-make seed. Live DB was observed still holding the row.",
-    "",
-    "Repro: DB with placeholder row; make seed; SELECT still returns the row.",
-    "",
-    "Cure: add DELETE FROM discord_roles WHERE discord_role_id = '1517290000000000000' (or equivalent) to discord_roles.sql before INSERT.",
-]
 owns = ["apps/website/api/seeds/discord_roles.sql"]
 
 [scope]

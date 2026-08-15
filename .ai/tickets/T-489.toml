@@ -6,7 +6,45 @@ class = "bug"
 status = "shipped"
 order = 3328
 executor = "claude-code"
+notes = '''
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 34 adversarial MAJOR. T-486 added verify-t468 to bash_pins inside scripts/mod/verify-t468-ci-schema-parity.sh, but ci.yml and Makefile ci-local invoke `make verify-t468`. Hollow `verify-t468:\n\t@true` (or `@true # bash …`) greens make / CI / ci-local because the tripwire never runs; only direct bash (wave.sh cold gate) FAILs.
+
+Repro:
+  # mutate Makefile verify-t468 recipe to @true
+  make verify-t468   # rc=0 (false green)
+  bash scripts/mod/verify-t468-ci-schema-parity.sh  # FAIL pin
+
+Cure: ci.yml step + Makefile ci-local must invoke `bash scripts/mod/verify-t468-ci-schema-parity.sh` directly (not $(MAKE) verify-t468). Keep Makefile target for humans. Update comments on circularity. Also fix .env.example attribution: ROLE_RESYNC comment says T-488 but feature is T-428 (verifier MINOR).
+
+missing=0'''
 priority = 1
+main_goal = "Invoke verify-t468 bash directly in ci.yml and Makefile ci-local."
+context = [
+    "Wave 34 adversarial MAJOR after T-486 verify-t468 self-pin.",
+    "ci.yml and Makefile ci-local invoke make verify-t468, not bash.",
+]
+requirement = [
+    "Hollow verify-t468:@true greens make, CI, and ci-local false green.",
+    "ci.yml and ci-local must invoke bash verify-t468 script directly.",
+    "Fix .env.example ROLE_RESYNC comment T-488→T-428 attribution.",
+]
+current_state = [
+    "Repro: mutate verify-t468 recipe to @true → make verify-t468 rc=0.",
+    "Direct bash scripts/mod/verify-t468-ci-schema-parity.sh still FAIL pin.",
+]
+approach = [
+    "Wire ci.yml step and ci-local to bash verify-t468 script directly.",
+    "Keep Makefile verify-t468 target for humans; update circularity comments.",
+]
+verify = ["Repro: hollow verify-t468 recipe → make rc=0; bash script FAIL."]
+citations = [
+    "Wave 34 adversarial MAJOR",
+    "T-486 verify-t468 circular self-pin",
+    "ci.yml Makefile ci-local bypass",
+    "ROLE_RESYNC T-488 attribution MINOR",
+]
 shipped_at = "ac660067"
 created_at = "2026-07-27T05:31:25Z"
 completed_at = "2026-07-27T05:32:04Z"
@@ -18,16 +56,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = [
-    'Wave 34 adversarial MAJOR. T-486 added verify-t468 to bash_pins inside scripts/mod/verify-t468-ci-schema-parity.sh, but ci.yml and Makefile ci-local invoke `make verify-t468`. Hollow `verify-t468:\n\t@true` (or `@true # bash …`) greens make / CI / ci-local because the tripwire never runs; only direct bash (wave.sh cold gate) FAILs.',
-    "",
-    "Repro:",
-    "  # mutate Makefile verify-t468 recipe to @true",
-    "  make verify-t468   # rc=0 (false green)",
-    "  bash scripts/mod/verify-t468-ci-schema-parity.sh  # FAIL pin",
-    "",
-    "Cure: ci.yml step + Makefile ci-local must invoke `bash scripts/mod/verify-t468-ci-schema-parity.sh` directly (not $(MAKE) verify-t468). Keep Makefile target for humans. Update comments on circularity. Also fix .env.example attribution: ROLE_RESYNC comment says T-488 but feature is T-428 (verifier MINOR).",
-]
 owns = [
     "Makefile",
     ".github/workflows/ci.yml",

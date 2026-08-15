@@ -1,12 +1,38 @@
 id = "T-509"
 kind = "work"
-title = "W43 hotfix: CREATE omitted weather must still default Clear after T-377"
+title = "CREATE omit weather defaults Clear after T-377"
 summary = "W43 hotfix: CREATE omitted weather must still default Clear after T-377"
 class = "chore"
 status = "shipped"
 order = 3349
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 43 re-gate FAIL after T-508. T-377 dropped "" from valid_weather clear arm so PATCH {"weather":""} no longer rewrites dense_fog→clear. CreateMissionInput.weather is #[serde(default)] String — omitted weather becomes "" → create_mission 400 invalid weather. Cold evidence: admin_field.rs:413 unwrap None on POST /missions without weather. Cure: CREATE treats empty as Clear (canonical new-mission default); PATCH still rejects "". Do not restore ""|clear in valid_weather. Class-R + IT pin. Perturbation RED required.
+
+missing=0"""
 priority = 0
+main_goal = "CREATE treats omitted weather as Clear; PATCH still rejects empty string."
+context = [
+    "Wave 43 re-gate FAIL after T-508.",
+    "T-377 dropped empty string from valid_weather clear arm.",
+]
+requirement = [
+    "PATCH empty weather no longer rewrites dense_fog to clear.",
+    "Omitted weather becomes empty string; create_mission returns 400.",
+    "CREATE treats empty as Clear; PATCH still rejects empty string.",
+    "Do not restore empty string or clear in valid_weather.",
+]
+current_state = ["admin_field.rs:413 unwrap None on POST /missions without weather."]
+approach = ["CREATE treats empty weather as Clear canonical new-mission default."]
+verify = ["Class-R + IT pin. Perturbation RED required."]
+citations = [
+    "Wave 43 re-gate FAIL T-508",
+    "T-377 valid_weather clear arm",
+    "admin_field.rs POST without weather",
+    "Class-R IT perturbation RED",
+]
 shipped_at = "ebf1bae7"
 created_at = "2026-07-27T09:24:22Z"
 completed_at = "2026-07-27T09:29:06Z"
@@ -18,7 +44,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = ['Wave 43 re-gate FAIL after T-508. T-377 dropped "" from valid_weather clear arm so PATCH {"weather":""} no longer rewrites dense_fog→clear. CreateMissionInput.weather is #[serde(default)] String — omitted weather becomes "" → create_mission 400 invalid weather. Cold evidence: admin_field.rs:413 unwrap None on POST /missions without weather. Cure: CREATE treats empty as Clear (canonical new-mission default); PATCH still rejects "". Do not restore ""|clear in valid_weather. Class-R + IT pin. Perturbation RED required.']
 owns = ["apps/website/api/src/handlers/missions.rs"]
 
 [scope]

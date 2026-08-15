@@ -6,7 +6,36 @@ class = "chore"
 status = "shipped"
 order = 3357
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 45 cold gate FAIL after T-516. telemetry_ingest_closes_the_loop asserts leaderboard kills==5 but got 15; identity_link padded_arma assert deployments==1 got 2. Root cause: T-351 PAD_ACTOR and telemetry PLAYER_DISCORD both use discord snowflake 000000000000400003 on the shared gate DB. Parallel suites: telemetry writes 5 kills; T-351 padded test writes 7+3=10 for the same discord_id → MV sum 15. Cure: move PAD_ACTOR (and PAD seed/arma string suffixes) to an unused T-400 id (e.g. 000000000000400013); Class-R assert PAD_ACTOR != telemetry PLAYER_DISCORD literal. Owns: apps/website/api/tests/identity_link.rs only. Do not change telemetry.rs.
+
+missing=0"""
 priority = 0
+main_goal = "Move PAD_ACTOR off telemetry PLAYER_DISCORD shared snowflake."
+context = [
+    "Wave 45 cold gate FAIL after T-516.",
+    "T-351 PAD_ACTOR and telemetry PLAYER_DISCORD share 400003.",
+]
+requirement = [
+    "Move PAD_ACTOR to unused T-400 id (e.g. 400013).",
+    "Class-R assert PAD_ACTOR != telemetry PLAYER_DISCORD literal.",
+    "Do not change telemetry.rs.",
+]
+current_state = [
+    "telemetry kills==5 assert got 15; deployments==1 got 2.",
+    "Parallel suites write kills for same discord_id → MV sum 15.",
+]
+approach = [
+    "Move PAD_ACTOR and PAD seed/arma suffixes to 400013.",
+    "Class-R pin PAD_ACTOR != PLAYER_DISCORD snowflake.",
+]
+citations = [
+    "Wave 45 cold gate FAIL",
+    "T-351 PAD_ACTOR collision",
+    "telemetry PLAYER_DISCORD 400003",
+]
 shipped_at = "68c90a3d"
 created_at = "2026-07-27T10:27:24Z"
 completed_at = "2026-07-27T10:31:22Z"
@@ -18,7 +47,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = ["Wave 45 cold gate FAIL after T-516. telemetry_ingest_closes_the_loop asserts leaderboard kills==5 but got 15; identity_link padded_arma assert deployments==1 got 2. Root cause: T-351 PAD_ACTOR and telemetry PLAYER_DISCORD both use discord snowflake 000000000000400003 on the shared gate DB. Parallel suites: telemetry writes 5 kills; T-351 padded test writes 7+3=10 for the same discord_id → MV sum 15. Cure: move PAD_ACTOR (and PAD seed/arma string suffixes) to an unused T-400 id (e.g. 000000000000400013); Class-R assert PAD_ACTOR != telemetry PLAYER_DISCORD literal. Owns: apps/website/api/tests/identity_link.rs only. Do not change telemetry.rs."]
 owns = ["apps/website/api/tests/identity_link.rs"]
 
 [scope]

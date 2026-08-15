@@ -6,7 +6,32 @@ class = "feature"
 status = "shipped"
 order = 3345
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 41 residual (CLEAN). T-375 emits non-blank trimmed meta.title on compile_payload. hydrate/apply_row_meta still does not load payload title into meta; create_version does not PATCH missions.title. Reload can overwrite authored title with stale row. Cure: adopt_payload/apply_row_meta prefer payload title (trim-aware) and/or mirror title to row on Save with non-blank guard.
+
+missing=0"""
 priority = 1
+main_goal = "Hydrate and row-mirror must preserve authored payload title."
+context = [
+    "Wave 41 residual (CLEAN).",
+    "T-375 emits non-blank trimmed meta.title on compile_payload.",
+]
+requirement = [
+    "hydrate/apply_row_meta still does not load payload title into meta.",
+    "create_version does not PATCH missions.title.",
+]
+current_state = ["Reload can overwrite authored title with stale row."]
+approach = [
+    "adopt_payload/apply_row_meta prefer payload title (trim-aware).",
+    "Mirror title to row on Save with non-blank guard.",
+]
+citations = [
+    "Wave 41 residual CLEAN",
+    "T-375 compile_payload meta.title",
+    "hydrate apply_row_meta title stomp",
+]
 shipped_at = "c363a93b"
 created_at = "2026-07-27T08:47:45Z"
 completed_at = "2026-07-27T11:12:18Z"
@@ -18,7 +43,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 7 commit subject(s)"
-migration_legacy = ["Wave 41 residual (CLEAN). T-375 emits non-blank trimmed meta.title on compile_payload. hydrate/apply_row_meta still does not load payload title into meta; create_version does not PATCH missions.title. Reload can overwrite authored title with stale row. Cure: adopt_payload/apply_row_meta prefer payload title (trim-aware) and/or mirror title to row on Save with non-blank guard."]
 owns = [
     "crates/map-engine-core/src/doc/store.rs",
     "apps/website/frontend/src/mission_hydrate.rs",

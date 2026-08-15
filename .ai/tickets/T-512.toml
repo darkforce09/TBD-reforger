@@ -6,7 +6,30 @@ class = "feature"
 status = "shipped"
 order = 3352
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 43 residual (CLEAN NIT). T-377/T-509 covered by Class-R + admin_field omit-create. No committed HTTP IT that PATCH dense_fog then weather:"" stays dense_fog / 400, and CREATE omit weather returns clear. Cure: add missions IT cases. Ad-hoc HTTP was green at verify.
+
+missing=0"""
 priority = 1
+main_goal = "Add HTTP IT for blank weather PATCH and CREATE omit→Clear."
+context = [
+    "Wave 43 residual CLEAN NIT after T-377/T-509.",
+    "Class-R and admin_field omit-create already cover behavior.",
+]
+requirement = [
+    "No committed HTTP IT for PATCH weather empty string behavior.",
+    "No HTTP IT for CREATE omit weather returns clear.",
+]
+current_state = ["Ad-hoc HTTP was green at verify."]
+approach = ["Add missions IT cases for PATCH reject and CREATE omit."]
+verify = ["PATCH dense_fog then empty weather stays dense_fog or 400."]
+citations = [
+    "Wave 43 residual CLEAN NIT",
+    "T-377 T-509 Class-R coverage",
+    "admin_field omit-create path",
+]
 shipped_at = "f6d321e9"
 created_at = "2026-07-27T09:46:13Z"
 completed_at = "2026-07-27T10:15:26Z"
@@ -18,7 +41,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = ['Wave 43 residual (CLEAN NIT). T-377/T-509 covered by Class-R + admin_field omit-create. No committed HTTP IT that PATCH dense_fog then weather:"" stays dense_fog / 400, and CREATE omit weather returns clear. Cure: add missions IT cases. Ad-hoc HTTP was green at verify.']
 owns = ["apps/website/api/tests/missions.rs"]
 
 [scope]

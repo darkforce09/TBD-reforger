@@ -6,7 +6,33 @@ class = "chore"
 status = "shipped"
 order = 3348
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 43 cold gate FAIL. T-331 migration 0015 SET NOT NULL on matches.aar_replay_url (canonical empty is ''). tests/aar_replay_url_backfill.rs still plants NULL and expects migration 0010 to SET NULL for scrubbed rows — INSERT fails 23502. Cure: align 0010 scrub target to '' (same canonical empty as T-331/telemetry COALESCE), rewrite the IT plant/assert for NOT NULL (prove NULL insert rejected; scrubbed rows become '' not NULL; kept '' still kept). Do not weaken 0015. Perturbation RED required.
+
+missing=0"""
 priority = 0
+main_goal = "Align aar_replay_url backfill IT with T-331 NOT NULL constraint."
+context = [
+    "Wave 43 cold gate FAIL.",
+    "T-331 migration 0015 SET NOT NULL on matches.aar_replay_url.",
+]
+requirement = [
+    "tests/aar_replay_url_backfill.rs plants NULL; expects 0010 SET NULL scrubbed rows.",
+    "INSERT fails 23502 against NOT NULL.",
+]
+current_state = ["Canonical empty is ''; IT still expects NULL scrubbed rows."]
+approach = [
+    "Align 0010 scrub target to '' (same as T-331/telemetry COALESCE).",
+    "Rewrite IT: NULL insert rejected; scrubbed rows ''; keep ''.",
+]
+verify = ["Perturbation RED required; do not weaken 0015."]
+citations = [
+    "Wave 43 cold gate FAIL",
+    "T-331 migration 0015 NOT NULL",
+    "aar_replay_url_backfill IT",
+]
 shipped_at = "93dd0c49"
 created_at = "2026-07-27T09:14:38Z"
 completed_at = "2026-07-27T09:46:13Z"
@@ -18,7 +44,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
-migration_legacy = ["Wave 43 cold gate FAIL. T-331 migration 0015 SET NOT NULL on matches.aar_replay_url (canonical empty is ''). tests/aar_replay_url_backfill.rs still plants NULL and expects migration 0010 to SET NULL for scrubbed rows — INSERT fails 23502. Cure: align 0010 scrub target to '' (same canonical empty as T-331/telemetry COALESCE), rewrite the IT plant/assert for NOT NULL (prove NULL insert rejected; scrubbed rows become '' not NULL; kept '' still kept). Do not weaken 0015. Perturbation RED required."]
 owns = [
     "apps/website/api/tests/aar_replay_url_backfill.rs",
     "apps/website/api/migrations/0010_backfill_aar_replay_url_scheme.sql",

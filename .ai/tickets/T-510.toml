@@ -1,12 +1,38 @@
 id = "T-510"
 kind = "work"
-title = "W43 hotfix: null_tolerance approvals NULL timestamp plant vs T-331 NOT NULL"
+title = "null_tolerance test rewrite for T-331 NOT NULL"
 summary = "W43 hotfix: null_tolerance approvals NULL timestamp plant vs T-331 NOT NULL"
 class = "chore"
 status = "shipped"
 order = 3350
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 43 re-gate FAIL after T-509. T-331 0015 SET NOT NULL on missions.created_at/updated_at. tests/null_tolerance.rs approvals_queue_reports_an_honest_submitted_at_over_null_timestamps still INSERTs NULL timestamps to discriminate COALESCE(updated_at, created_at, sentinel) — seed fails 23502 on created_at. Cure: rewrite the test for the post-0015 world — pin that NULL created_at/updated_at inserts are rejected (23502); retire or replace the both-NULL / updated_at-NULL discriminator rows (those states can no longer exist in production). Keep COALESCE Class-R on the query source if still useful with non-null data. Do not weaken 0015.
+
+missing=0"""
 priority = 0
+main_goal = "Rewrite null_tolerance approvals test for post-0015 NOT NULL world."
+context = [
+    "Wave 43 re-gate FAIL after T-509.",
+    "T-331 migration 0015 SET NOT NULL on missions timestamps.",
+]
+requirement = [
+    "Test still INSERTs NULL timestamps; seed fails 23502 on created_at.",
+    "Pin NULL created_at/updated_at inserts rejected with 23502.",
+    "Retire both-NULL and updated_at-NULL discriminator rows.",
+    "Do not weaken migration 0015.",
+]
+current_state = ["approvals_queue test INSERTs NULL to discriminate COALESCE sentinel."]
+approach = ["Rewrite test for post-0015 world; keep COALESCE Class-R if useful."]
+verify = ["NULL timestamp INSERT must fail 23502 post-0015."]
+citations = [
+    "Wave 43 re-gate FAIL T-509",
+    "T-331 migration 0015 NOT NULL",
+    "null_tolerance approvals_queue test",
+    "COALESCE Class-R query source",
+]
 shipped_at = "b911cb54"
 created_at = "2026-07-27T09:31:12Z"
 completed_at = "2026-07-27T09:39:33Z"
@@ -18,7 +44,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = ["Wave 43 re-gate FAIL after T-509. T-331 0015 SET NOT NULL on missions.created_at/updated_at. tests/null_tolerance.rs approvals_queue_reports_an_honest_submitted_at_over_null_timestamps still INSERTs NULL timestamps to discriminate COALESCE(updated_at, created_at, sentinel) — seed fails 23502 on created_at. Cure: rewrite the test for the post-0015 world — pin that NULL created_at/updated_at inserts are rejected (23502); retire or replace the both-NULL / updated_at-NULL discriminator rows (those states can no longer exist in production). Keep COALESCE Class-R on the query source if still useful with non-null data. Do not weaken 0015."]
 owns = ["apps/website/api/tests/null_tolerance.rs"]
 
 [scope]

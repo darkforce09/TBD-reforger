@@ -6,7 +6,34 @@ class = "chore"
 status = "shipped"
 order = 3331
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 36 adversarial NIT. T-401 made git_porcelain_paths fail-loud, and wasm_changed/refuse_empty_range check rc. fmt_changed and clippy_changed still do files="$(changed_rs …)" and treat empty as SKIP (return 0) without checking $?. Gate path is still safe because refuse_empty_range runs first. Cure: propagate changed_rs failure in those helpers (or share a wrapper that dies on rc≠0).
+
+missing=0"""
 priority = 2
+main_goal = "Propagate changed_rs failure in fmt_changed and clippy_changed helpers."
+context = [
+    "Wave 36 adversarial NIT after T-401 git_porcelain_paths fail-loud.",
+    "wasm_changed/refuse_empty_range check rc; fmt/clippy helpers do not.",
+]
+requirement = [
+    "fmt_changed and clippy_changed treat empty changed_rs output as SKIP return 0.",
+    "Gate path still safe because refuse_empty_range runs first.",
+]
+current_state = ["files=$(changed_rs …) without checking $? still returns SKIP on empty."]
+approach = [
+    "Propagate changed_rs failure in fmt_changed and clippy_changed.",
+    "Or share wrapper that dies on rc≠0 like refuse_empty_range.",
+]
+verify = ["Repro: changed_rs failure still yields SKIP in fmt/clippy helpers."]
+citations = [
+    "Wave 36 adversarial NIT",
+    "T-401 git_porcelain_paths rc",
+    "fmt_changed clippy_changed SKIP",
+    "refuse_empty_range gate path safe",
+]
 shipped_at = "50604e62"
 created_at = "2026-07-27T06:49:10Z"
 completed_at = "2026-07-27T12:24:46Z"
@@ -18,7 +45,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = ['Wave 36 adversarial NIT. T-401 made git_porcelain_paths fail-loud, and wasm_changed/refuse_empty_range check rc. fmt_changed and clippy_changed still do files="$(changed_rs …)" and treat empty as SKIP (return 0) without checking $?. Gate path is still safe because refuse_empty_range runs first. Cure: propagate changed_rs failure in those helpers (or share a wrapper that dies on rc≠0).']
 owns = ["scripts/platform/wave.sh"]
 
 [scope]

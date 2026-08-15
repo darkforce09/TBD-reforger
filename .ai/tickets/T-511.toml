@@ -6,7 +6,31 @@ class = "chore"
 status = "shipped"
 order = 3351
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 43 residual (CLEAN). T-331 cleared content_golden double-seat and left the partial unique on orbat_slots(event_mission_id, assigned_to) WHERE assigned_to IS NOT NULL unlanded because tests/events.rs:540 still seeds legacy two-seat for T-318 recovery and a partial unique cannot be DEFERRABLE. Cure: deliberately update/retire that assertion (or drop index around the seed), then CREATE UNIQUE INDEX in a migration. Repro: create index on clean DB, UPDATE second seat assigned_to → 23505.
+
+missing=0"""
 priority = 1
+main_goal = "Land orbat_slots partial unique index; retire events.rs two-seat seed."
+context = [
+    "Wave 43 residual CLEAN after T-331 content_golden fix.",
+    "Partial unique on orbat_slots assigned_to remains unlanded.",
+]
+requirement = [
+    "tests/events.rs:540 seeds legacy two-seat for T-318 recovery.",
+    "Partial unique cannot be DEFERRABLE around seed.",
+]
+current_state = ["Create index on clean DB; UPDATE second seat → 23505."]
+approach = ["Update or retire two-seat assertion; CREATE UNIQUE INDEX in migration."]
+verify = ["Repro: second seat assigned_to UPDATE must fail 23505."]
+citations = [
+    "Wave 43 residual CLEAN",
+    "T-331 content_golden double-seat",
+    "events.rs two-seat T-318",
+    "orbat_slots partial unique index",
+]
 shipped_at = "d1495cb4"
 created_at = "2026-07-27T09:46:13Z"
 completed_at = "2026-07-27T10:50:25Z"
@@ -18,7 +42,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 6 commit subject(s)"
-migration_legacy = ["Wave 43 residual (CLEAN). T-331 cleared content_golden double-seat and left the partial unique on orbat_slots(event_mission_id, assigned_to) WHERE assigned_to IS NOT NULL unlanded because tests/events.rs:540 still seeds legacy two-seat for T-318 recovery and a partial unique cannot be DEFERRABLE. Cure: deliberately update/retire that assertion (or drop index around the seed), then CREATE UNIQUE INDEX in a migration. Repro: create index on clean DB, UPDATE second seat assigned_to → 23505."]
 owns = [
     "apps/website/api/migrations",
     "apps/website/api/tests/events.rs",

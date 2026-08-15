@@ -6,7 +6,36 @@ class = "chore"
 status = "shipped"
 order = 3356
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 45 cold gate FAIL. arma_link_flow seed_user(400001, identity-link-seed-400001) hit duplicate key idx_users_arma_id while padded_arma_id_is_stored_trimmed_and_resolvable runs in parallel (both call setup() which seeds ACTOR with the same placeholder arma_id without releasing it first). Cure: serialize the async identity_link tests (Mutex like null_tolerance) AND release identity-link-seed-40000{1,2,3} in setup before seed_user. Perturbation/repro: parallel runs under shared TBD_GATE_DB. Owns: identity_link.rs only.
+
+missing=0"""
 priority = 0
+main_goal = "Serialize identity_link tests; release seed arma_id before seed_user."
+context = [
+    "Wave 45 cold gate FAIL on identity_link IT race.",
+    "Parallel tests share ACTOR placeholder arma_id via setup().",
+]
+requirement = [
+    "Serialize async identity_link tests (Mutex like null_tolerance).",
+    "Release identity-link-seed-40000{1,2,3} in setup before seed_user.",
+]
+current_state = [
+    "arma_link_flow seed_user(400001) hits duplicate idx_users_arma_id.",
+    "padded_arma_id test runs parallel; both seed same arma_id.",
+]
+approach = [
+    "Mutex serialize async identity_link tests.",
+    "Release identity-link seeds in setup before seed_user.",
+]
+verify = ["Perturbation: parallel runs under shared TBD_GATE_DB reproduce FAIL."]
+citations = [
+    "Wave 45 cold gate FAIL",
+    "idx_users_arma_id duplicate key",
+    "T-351 identity_link setup",
+]
 shipped_at = "9e1a2f93"
 created_at = "2026-07-27T10:19:16Z"
 completed_at = "2026-07-27T10:38:39Z"
@@ -18,7 +47,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
-migration_legacy = ["Wave 45 cold gate FAIL. arma_link_flow seed_user(400001, identity-link-seed-400001) hit duplicate key idx_users_arma_id while padded_arma_id_is_stored_trimmed_and_resolvable runs in parallel (both call setup() which seeds ACTOR with the same placeholder arma_id without releasing it first). Cure: serialize the async identity_link tests (Mutex like null_tolerance) AND release identity-link-seed-40000{1,2,3} in setup before seed_user. Perturbation/repro: parallel runs under shared TBD_GATE_DB. Owns: identity_link.rs only."]
 owns = ["apps/website/api/tests/identity_link.rs"]
 
 [scope]

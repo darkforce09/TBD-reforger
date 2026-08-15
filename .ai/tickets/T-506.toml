@@ -6,7 +6,36 @@ class = "chore"
 status = "shipped"
 order = 3346
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 42 residual (CLEAN MINOR). require_role_played is called in ingest_match_results (telemetry.rs ~688 and ~722). Unit tests blank_role_played_is_rejected / non_blank_role_played_ok only exercise the helper. RED: delete both ingest call sites → those tests still PASS. No include_str call-site pin; no HTTP IT asserting "role_played must not be blank". Live ship is correct; cure: Class-R pin that both call sites invoke require_role_played and/or HTTP IT for blank role_played → 400.
+
+missing=0"""
 priority = 1
+main_goal = "Pin require_role_played at ingest call sites via Class-R or HTTP IT."
+context = [
+    "Wave 42 residual (CLEAN MINOR).",
+    "require_role_played called in ingest_match_results (telemetry.rs ~688 and ~722).",
+]
+requirement = [
+    "Unit tests blank_role_played / non_blank_role_played_ok only exercise the helper.",
+    "No include_str call-site pin; no HTTP IT for blank role_played → 400.",
+]
+current_state = [
+    "RED: delete both ingest call sites → unit tests still PASS.",
+    "Live ship is correct.",
+]
+approach = [
+    "Class-R pin that both call sites invoke require_role_played.",
+    "HTTP IT for blank role_played → 400.",
+]
+verify = ["Delete ingest call sites → helper tests still PASS."]
+citations = [
+    "Wave 42 residual CLEAN MINOR",
+    "T-379 require_role_played helper",
+    "telemetry ingest_match_results call sites",
+]
 shipped_at = "a146a313"
 created_at = "2026-07-27T09:02:27Z"
 completed_at = "2026-07-27T09:53:48Z"
@@ -18,7 +47,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = ['Wave 42 residual (CLEAN MINOR). require_role_played is called in ingest_match_results (telemetry.rs ~688 and ~722). Unit tests blank_role_played_is_rejected / non_blank_role_played_ok only exercise the helper. RED: delete both ingest call sites → those tests still PASS. No include_str call-site pin; no HTTP IT asserting "role_played must not be blank". Live ship is correct; cure: Class-R pin that both call sites invoke require_role_played and/or HTTP IT for blank role_played → 400.']
 owns = ["apps/website/api/src/handlers/telemetry.rs"]
 
 [scope]

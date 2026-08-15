@@ -6,7 +6,39 @@ class = "feature"
 status = "shipped"
 order = 3330
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 35 adversarial MAJOR (deferred). mission_editor Move commit calls move_entities(slots) then move_vehicles(vehs) — each its own yrs txn — so one mixed gesture needs two Ctrl+Z. New pick_slot_or_vehicle / marquee_* helpers have no unit tests (only flatten/kit Class-R). Vehicle drag also skips GPU set_drag preview (slots only).
+
+Repro: select one slot + one vehicle, drag, undo once — only one kind moves back.
+
+Cure: single atomic move for mixed selection (one txn) + Class-R tests on pick/marquee helpers; optional vehicle drag preview.
+
+missing=0"""
 priority = 2
+main_goal = "Single atomic move for mixed slot+vehicle selection; test pick/marquee helpers."
+context = [
+    "Wave 35 adversarial MAJOR deferred from T-425 mixed drag.",
+    "move_entities(slots) then move_vehicles(vehs) each own yrs txn.",
+]
+requirement = [
+    "One mixed gesture needs two Ctrl+Z instead of single atomic undo.",
+    "pick_slot_or_vehicle / marquee_* helpers lack unit tests.",
+    "Vehicle drag skips GPU set_drag preview (slots only).",
+]
+current_state = ["Repro: select slot + vehicle, drag, undo once — only one kind moves back."]
+approach = [
+    "Single atomic move for mixed selection in one txn.",
+    "Add Class-R tests on pick/marquee helpers; optional vehicle drag preview.",
+]
+verify = ["Repro: mixed drag undo once restores only slots or only vehicles."]
+citations = [
+    "Wave 35 adversarial MAJOR deferred",
+    "mission_editor Move commit txn",
+    "select_tool pick marquee helpers",
+    "map-engine-core doc store",
+]
 shipped_at = "ccbf9112"
 created_at = "2026-07-27T06:24:19Z"
 completed_at = "2026-07-28T22:56:05Z"
@@ -18,13 +50,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = [
-    "Wave 35 adversarial MAJOR (deferred). mission_editor Move commit calls move_entities(slots) then move_vehicles(vehs) — each its own yrs txn — so one mixed gesture needs two Ctrl+Z. New pick_slot_or_vehicle / marquee_* helpers have no unit tests (only flatten/kit Class-R). Vehicle drag also skips GPU set_drag preview (slots only).",
-    "",
-    "Repro: select one slot + one vehicle, drag, undo once — only one kind moves back.",
-    "",
-    "Cure: single atomic move for mixed selection (one txn) + Class-R tests on pick/marquee helpers; optional vehicle drag preview.",
-]
 owns = [
     "apps/website/frontend/src/mission_editor.rs",
     "apps/website/frontend/src/select_tool.rs",

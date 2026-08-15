@@ -6,7 +6,36 @@ class = "feature"
 status = "shipped"
 order = 3358
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 45 verifier MINOR. identity_link.rs Class-R assert_ne!(PAD_ACTOR, "000000000000400003") REDs if PAD returns to 400003, but stays green if telemetry PLAYER_DISCORD moves onto live PAD (…400013) — pin is a hardcoded denylist, not bound to telemetry.rs. Original shared-discord_id failure class can return one-sided. Cure: include_str!/parse PLAYER_DISCORD from telemetry.rs in the Class-R test, or assert_ne against a shared test const both suites import. Repro: set PLAYER_DISCORD to 000000000000400013 in tests/telemetry.rs; cargo test -p website-api --test identity_link t400_actor_is_not_shared_dev_login_user -- --exact → ok (false green); restore after.
+
+missing=0"""
 priority = 2
+main_goal = "Bind Class-R PAD_ACTOR pin to live telemetry PLAYER_DISCORD."
+context = [
+    "Wave 45 verifier MINOR on identity_link Class-R.",
+    "assert_ne denylist not bound to telemetry.rs PLAYER_DISCORD.",
+]
+requirement = [
+    "include_str!/parse PLAYER_DISCORD from telemetry.rs in Class-R.",
+    "Or assert_ne against shared test const both suites import.",
+]
+current_state = [
+    "PAD returns to 400003 → RED; telemetry moves to 400013 → false green.",
+    "Shared-discord_id failure class can return one-sided.",
+]
+approach = [
+    "Parse PLAYER_DISCORD from telemetry.rs in Class-R test.",
+    "Shared test const imported by identity_link and telemetry.",
+]
+verify = ["Set PLAYER_DISCORD to 400013 → t400_actor test ok false green."]
+citations = [
+    "Wave 45 verifier MINOR",
+    "T-517 Class-R denylist",
+    "telemetry.rs PLAYER_DISCORD pin",
+]
 shipped_at = "9e1a2f93"
 created_at = "2026-07-27T10:38:39Z"
 completed_at = "2026-07-27T10:38:39Z"
@@ -18,7 +47,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 1 commit subject(s)"
-migration_legacy = ['Wave 45 verifier MINOR. identity_link.rs Class-R assert_ne!(PAD_ACTOR, "000000000000400003") REDs if PAD returns to 400003, but stays green if telemetry PLAYER_DISCORD moves onto live PAD (…400013) — pin is a hardcoded denylist, not bound to telemetry.rs. Original shared-discord_id failure class can return one-sided. Cure: include_str!/parse PLAYER_DISCORD from telemetry.rs in the Class-R test, or assert_ne against a shared test const both suites import. Repro: set PLAYER_DISCORD to 000000000000400013 in tests/telemetry.rs; cargo test -p website-api --test identity_link t400_actor_is_not_shared_dev_login_user -- --exact → ok (false green); restore after.']
 owns = [
     "apps/website/api/tests/identity_link.rs",
     "apps/website/api/tests/telemetry.rs",

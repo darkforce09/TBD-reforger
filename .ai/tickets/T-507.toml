@@ -6,7 +6,29 @@ class = "docs"
 status = "shipped"
 order = 3347
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 42 residual (CLEAN MINOR / admitted by T-358). faction_manager.rs rejects empty via doc.name.trim().is_empty() then posts serde_json::to_value(&doc) untrimmed. API validated_side_name rejects pad → 400; no UNIQUE twin stored. UX only: client lets pad through, API stops it. Cure: trim (or reject pad) before serialize on create/update.
+
+missing=0"""
 priority = 1
+main_goal = "Trim faction name before serialize on create/update."
+context = [
+    "Wave 42 residual (CLEAN MINOR / admitted by T-358).",
+    "faction_manager rejects empty via trim().is_empty() then posts untrimmed doc.",
+]
+requirement = [
+    "API validated_side_name rejects pad → 400; no UNIQUE twin stored.",
+    "Client lets pad through; API stops it (UX only).",
+]
+current_state = ["serde_json::to_value(&doc) posts untrimmed name after empty check."]
+approach = ["Trim (or reject pad) before serialize on create/update."]
+citations = [
+    "Wave 42 residual T-358",
+    "faction_manager trim empty check",
+    "validated_side_name rejects pad",
+]
 shipped_at = "f5210117"
 created_at = "2026-07-27T09:02:27Z"
 completed_at = "2026-07-27T09:53:48Z"
@@ -18,7 +40,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = ["Wave 42 residual (CLEAN MINOR / admitted by T-358). faction_manager.rs rejects empty via doc.name.trim().is_empty() then posts serde_json::to_value(&doc) untrimmed. API validated_side_name rejects pad → 400; no UNIQUE twin stored. UX only: client lets pad through, API stops it. Cure: trim (or reject pad) before serialize on create/update."]
 owns = ["apps/website/frontend/src/faction_manager.rs"]
 
 [scope]

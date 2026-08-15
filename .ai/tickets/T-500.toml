@@ -6,7 +6,32 @@ class = "chore"
 status = "shipped"
 order = 3340
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 39 adversarial residual (CLEAN). T-416 wires Save Version via load_cargo_phys_catalog + validate_mission_editor_payload_with_catalog. Production mission_compile.rs does not call scan_cargo_capacity — pre-existing over-capacity versions can still compile until re-saved. Cure: pass CargoPhysCatalog into the compile gate (same table as Save) or document compile-as-trust-saved with a Class-R that compile path mentions the Save refuse.
+
+missing=0"""
 priority = 2
+main_goal = "Pass CargoPhysCatalog into mission_compile compile gate."
+context = [
+    "Wave 39 adversarial residual (CLEAN).",
+    "T-416 wires Save via load_cargo_phys_catalog + validate_mission_editor_payload_with_catalog.",
+]
+requirement = [
+    "Production mission_compile.rs does not call scan_cargo_capacity.",
+    "Pre-existing over-capacity versions can still compile until re-saved.",
+]
+current_state = ["Compile path lacks cargo capacity scan that Save refuse uses."]
+approach = [
+    "Pass CargoPhysCatalog into compile gate (same table as Save).",
+    "Or document compile-as-trust-saved with Class-R mentioning Save refuse.",
+]
+citations = [
+    "Wave 39 adversarial residual CLEAN",
+    "T-416 load_cargo_phys_catalog Save",
+    "mission_compile scan_cargo_capacity absent",
+]
 shipped_at = "fe4afced"
 created_at = "2026-07-27T08:09:21Z"
 completed_at = "2026-07-27T14:34:27Z"
@@ -18,7 +43,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = ["Wave 39 adversarial residual (CLEAN). T-416 wires Save Version via load_cargo_phys_catalog + validate_mission_editor_payload_with_catalog. Production mission_compile.rs does not call scan_cargo_capacity — pre-existing over-capacity versions can still compile until re-saved. Cure: pass CargoPhysCatalog into the compile gate (same table as Save) or document compile-as-trust-saved with a Class-R that compile path mentions the Save refuse."]
 owns = ["apps/website/api/src/services/mission_compile.rs"]
 
 [scope]

@@ -6,7 +6,36 @@ class = "audit"
 status = "shipped"
 order = 3333
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 38 residual from T-408. Audit CSV now escape_csv_formula. Live Discord sink is services/webhook.rs title: cap_runes(&a.title) via cms push_to_discord — user title into embed, not formula-escaped. Ticket cited stale cms.rs:64. Cure: sanitize embed fields for formula/control chars or document Discord as non-spreadsheet sink with Class-R.
+
+missing=0"""
 priority = 2
+main_goal = "Sanitize Discord embed title fields for formula/control chars or document non-spreadsheet sink."
+context = [
+    "Wave 38 residual from T-408.",
+    "Audit CSV now escape_csv_formula.",
+]
+requirement = [
+    "Live Discord sink cap_runes(&a.title) via push_to_discord — not formula-escaped.",
+    "Cure: sanitize embed fields or document Discord as non-spreadsheet sink.",
+]
+current_state = [
+    "webhook.rs title into embed without formula escape.",
+    "Stale cms.rs:64 citation in ticket.",
+]
+approach = [
+    "Sanitize embed fields for formula/control chars.",
+    "Or document Discord as non-spreadsheet sink with Class-R.",
+]
+verify = ["User title into Discord embed without formula escape."]
+citations = [
+    "Wave 38 residual T-408",
+    "Discord embed not formula-safe",
+    "webhook.rs cap_runes title",
+]
 shipped_at = "5c9bd2ca"
 created_at = "2026-07-27T13:51:44Z"
 completed_at = "2026-07-27T13:57:49Z"
@@ -18,7 +47,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = ["Wave 38 residual from T-408. Audit CSV now escape_csv_formula. Live Discord sink is services/webhook.rs title: cap_runes(&a.title) via cms push_to_discord — user title into embed, not formula-escaped. Ticket cited stale cms.rs:64. Cure: sanitize embed fields for formula/control chars or document Discord as non-spreadsheet sink with Class-R."]
 owns = [
     "apps/website/api/src/services/webhook.rs",
     "apps/website/api/src/handlers/cms.rs",
