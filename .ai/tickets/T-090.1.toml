@@ -20,9 +20,15 @@ verify = [
     "cargo xtask ci schema-validate",
     "cargo xtask ci verify-terrain",
 ]
+acceptance = [
+    "Everon satellite WebP pyramid exported via MapDataExporter rasterization with TMS Y fix.",
+    "Cartesian TileLayer wired to manifest tiles.satellite; grid overlay stayed atop geography.",
+    "404 degraded to grid-only toast when tiles missing.",
+]
 citations = [
     "commit 564419e satellite basemap ship",
     "t090_1_aligned_basemap.md spec",
+    "SHIPPED_HISTORY T-090.1",
 ]
 shipped_at = "564419e"
 created_at = "2026-06-29T17:16:32Z"

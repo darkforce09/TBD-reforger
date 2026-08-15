@@ -21,9 +21,15 @@ verify = [
     "cargo xtask ci schema-validate",
     "cargo xtask ci verify-terrain",
 ]
+acceptance = [
+    "Map program hub linked slice specs with terrain-manifest schema and stub everon manifest.",
+    "Verify scripts wired for manifest and alignment; LFS rules committed for map-assets.",
+    "terrains.ts contract published; S1–S9 acceptance gates passed at ship.",
+]
 citations = [
     "t090_0_map_program_hub.md spec",
     "commit e7e7232e T-090.0 subject",
+    "t090_0_map_program_hub S1-S9",
 ]
 shipped_at = "e7e7232e"
 created_at = "2026-06-30T15:33:29Z"

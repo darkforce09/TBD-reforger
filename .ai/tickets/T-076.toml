@@ -26,10 +26,16 @@ approach = [
     "CREW-SEAT-001 via T-664 context menu.",
 ]
 verify = ["wave 103 GATE PASS runs 1+2."]
+acceptance = [
+    "CREW panel shipped board, unboard, and seat-assign UI beside Vehicles dock.",
+    "with/without-crew placement toggle wired; hydrate-proof crew mutators fixed wave-103 blocker.",
+    "Vehicle crew compile half left to workbench ticket T-675.",
+]
 citations = [
     "Source: commit 5f92cc4a.",
     "Source: wave103 verifier filing.",
     "Source: editor wave 103 notes.",
+    "wave103 BLOCKER-1 resolved",
 ]
 shipped_at = "5f92cc4a"
 created_at = "2026-08-02T01:17:12Z"

@@ -24,10 +24,16 @@ verify = [
     "EXPECT_LOSSLESS=1 node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon",
     "cargo xtask ci verify-terrain",
 ]
+acceptance = [
+    "Rebuilt satellite pyramid lossless WebP z0–6 from 12800² SAP ortho.",
+    "manifest tiles.maxZoom raised to 6; 4096 z6 tiles completed.",
+    "Picture-perfect max zoom restored; operator acceptance logged verify log.",
+]
 citations = [
     "t090_1_2_1_lossless_satellite_pyramid.md",
     "commit 19bc785c",
     "t090_1_2_1_verify_log.md",
+    "t090_1_2_1_verify_log lossless",
 ]
 shipped_at = "19bc785"
 created_at = "2026-06-30T20:48:46Z"

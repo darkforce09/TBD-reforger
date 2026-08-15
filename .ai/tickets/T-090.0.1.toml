@@ -16,6 +16,11 @@ requirement = [
 ]
 current_state = ["Single thin hub buried export steps without per-slice gates."]
 approach = ["Extend t090_091_map_terrain_program.md with slice table and links."]
+verify = ["Docs-only hub expansion; no subject commits or verify gate recorded."]
+acceptance = [
+    "Per-slice specs for T-090.1, T-091, and T-092 families linked from program hub.",
+    "Taxonomy and AI cost documentation landed in t090_091_map_terrain_program.md.",
+]
 citations = ["t090_091_map_terrain_program.md slice table"]
 created_at = "2026-06-27T00:00:00Z"
 completed_at = "2026-07-04T00:00:00Z"

@@ -26,10 +26,16 @@ approach = [
     "Reuse zone draw; trigger map in store.rs.",
 ]
 verify = ["wave 109 GATE PASS run 1."]
+acceptance = [
+    "TRIGGERS palette tab and DrawTarget::Trigger zone draw shipped editor half.",
+    "Trigger map authored in store.rs; owner link rode T-582 zone draw tool.",
+    "Triggers survived compile-hydrate round trip; activation runtime deferred T-676.",
+]
 citations = [
     "Source: commit 93a8da83.",
     "Source: wave109 verifier filing.",
     "Source: editor wave 109 notes.",
+    "wave109 trigger wire round-trip",
 ]
 shipped_at = "93a8da83"
 created_at = "2026-08-02T07:02:27Z"

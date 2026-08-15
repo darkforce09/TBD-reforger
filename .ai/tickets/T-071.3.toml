@@ -11,9 +11,12 @@ context = ["T-071.1+ ladder slice; parent ORBAT Manager program."]
 requirement = ["Faction logos in Manager per T-071.3 ladder filing."]
 current_state = ["Superseded by T-180; no subject commits on id."]
 approach = ["Do not implement; T-180 owns ORBAT authoring."]
+verify = ["Superseded by T-180; no subject commits on this id."]
+acceptance = ["Faction-logo ladder slice superseded; T-180 shipped ORBAT manager without logo lane."]
 citations = [
     "Source: t071_orbat_manager_program.md.",
     "Source: t177_orbat_cutover slice ladder.",
+    "T-180 superseded T-071.1+",
 ]
 created_at = "2026-07-03T00:00:00Z"
 completed_at = "2026-07-03T00:00:00Z"

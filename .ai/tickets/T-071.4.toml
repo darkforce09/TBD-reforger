@@ -11,9 +11,12 @@ context = ["T-071.1+ ladder tail; grouped with logos in cutover."]
 requirement = ["Standardizations and per-slot Arsenal per ladder filing."]
 current_state = ["Superseded by T-180; standardizations deferred operator."]
 approach = ["Do not implement separately; T-180 owns ORBAT authoring."]
+verify = ["Superseded by T-180; no subject commits on this id."]
+acceptance = ["Standardizations and per-slot Arsenal link superseded; T-180 owned ORBAT without that tail."]
 citations = [
     "Source: t071_orbat_manager_program.md.",
     "Source: t177_orbat_cutover slice ladder.",
+    "T-180 superseded T-071.4",
 ]
 created_at = "2026-07-03T00:00:00Z"
 completed_at = "2026-07-03T00:00:00Z"

@@ -26,10 +26,16 @@ approach = [
     "New core mutator update_slot_object for description.",
 ]
 verify = ["wave 113 GATE PASS 30/30."]
+acceptance = [
+    "Attributes modal shipped Entity Type and Role Description on T-649 opt-in gate.",
+    "update_slot_object mutator wrote description without clobbering role or tag.",
+    "Locked-slot Transform refused typing and no longer dirtied the document.",
+]
 citations = [
     "Source: commit ca6acd30.",
     "Source: wave113 verifier filing.",
     "Source: editor wave 113 notes.",
+    "wave113 update_slot_object semantics",
 ]
 shipped_at = "ca6acd30"
 created_at = "2026-08-07T02:54:07Z"

@@ -25,10 +25,16 @@ verify = [
     "EXPECT_LOSSLESS=1 node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon",
     "cargo xtask ci verify-terrain",
 ]
+acceptance = [
+    "analyze-sap-seams gate ran before apron-bridge feather on interior cell edges.",
+    "256 m SAP cell seams eliminated in ortho; lossless z0–6 pyramid rebuilt.",
+    "verify-sap-seams and verify-sap-ortho passed without orientation regression.",
+]
 citations = [
     "t090_1_2_2_sap_cell_seam_repair.md",
     "commit a3efdf68",
     "t090_1_2_2_verify_log.md",
+    "t090_1_2_2_verify_log seams",
 ]
 shipped_at = "a3efdf6"
 created_at = "2026-06-30T22:15:03Z"

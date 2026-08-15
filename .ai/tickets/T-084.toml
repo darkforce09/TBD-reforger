@@ -26,10 +26,16 @@ approach = [
     "class: OR-matches resource_name prefix or classname-tail prefix.",
 ]
 verify = ["cargo test -p website-frontend filter_catalog"]
+acceptance = [
+    "filter_catalog gained class:/mod: prefix grammar with literal, glob, and regex.",
+    "class: OR-matched resource_name or classname-tail prefix; T-646 GUID rows survived.",
+    "RIGHT-SEARCH-005 shipped despite interactions_sweep deferral note.",
+]
 citations = [
     "commit 5d655b7f filter_catalog grammar",
     "asset_catalog.rs filter_catalog tests",
     "editor_factory_run wave117 PASS",
+    "wave117 class: tail decision",
 ]
 shipped_at = "5d655b7f"
 created_at = "2026-08-07T06:13:44Z"

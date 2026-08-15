@@ -11,10 +11,20 @@ context = ["T-071 slice 0; chrome UX before T-180 authoring."]
 requirement = ["YouTube elbow guides; grab cursor on palette; menus above docks z-30."]
 current_state = ["Left ORBAT tree duplicated Editor Layers browse path."]
 approach = ["T-177: remove left ORBAT; wire OrbatManagerDialog from top strip."]
+verify = [
+    "cargo xtask mk leptos-gates",
+    "cargo xtask gate doctor",
+]
+acceptance = [
+    "Left dock dropped ORBAT tree; Editor Layers only remained.",
+    "Top-strip ORBAT Manager opened OrbatManagerDialog browse shell.",
+    "YouTube elbow guides and grab cursor shipped on palette leaves.",
+]
 citations = [
     "Source: commit e97a01c6.",
     "Source: SHIPPED_HISTORY T-071.0.",
     "Source: t177_mc_chrome_orbat_cutover.md.",
+    "t177_verify_log.md leptos-gates",
 ]
 shipped_at = "e97a01c6"
 created_at = "2026-07-19T09:06:26Z"

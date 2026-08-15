@@ -24,10 +24,16 @@ verify = [
     "cargo xtask ci schema-validate",
     "cargo xtask ci verify-terrain",
 ]
+acceptance = [
+    "Map cartographic z0–6 WebP pyramid built; Map radio enabled and T-127 coercion removed.",
+    "basemapView persisted map; per-view basemap layer ids survived satellite switches.",
+    "M1/M2/M3/M4/M7/M8 PASS; operator M6/M9 browser checks logged.",
+]
 citations = [
     "t090_1_1_map_cartographic_view.md",
     "commit 6e06e679",
     "t090_1_1_verify_log.md",
+    "t090_1_1_verify_log M1-M9",
 ]
 shipped_at = "6e06e679"
 created_at = "2026-06-30T22:10:12Z"

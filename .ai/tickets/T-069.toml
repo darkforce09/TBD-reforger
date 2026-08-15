@@ -15,9 +15,15 @@ requirement = ["x/z/icon/label on briefings[].markers[]; 64-alias icon enum; RIG
 current_state = ["Markers tab stub; zero editor_ops; map-engine-render lacks marker lane."]
 approach = ["Briefing marker mutators; PaletteKind Marker; render deferred to T-760."]
 verify = ["Pinned by store.rs::a_marker_in_the_root_map_never_reaches_the_compiled_document."]
+acceptance = [
+    "Four briefing marker fields x/z/icon/label authored with 64-alias icon enum.",
+    "Marker writes compiled via derive_briefings; root markersById stayed compile-invisible.",
+    "Markers tab replaced stub; RIGHT-MODE-006 dock half shipped without GPU render lane.",
+]
 citations = [
     "Source: commit 70a255f0.",
     "Source: t069_markers_on_map.md.",
+    "wave116 verifier T-069",
 ]
 shipped_at = "70a255f0"
 created_at = "2026-07-09T18:47:21Z"

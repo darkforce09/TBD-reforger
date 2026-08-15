@@ -20,6 +20,11 @@ verify = [
     "cargo run -q -p tbd-tools --bin map -- verify-sap-ortho --terrain everon",
     "EXPECT_LOSSLESS=1 node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon",
 ]
+acceptance = [
+    "Eden SAP supertextures decoded and stitched into 12800² north-up ortho.",
+    "Lossy z0–5 WebP satellite pyramid replaced committed LFS tiles.",
+    "verify-sap-ortho and verify-tile-pyramid gates passed before ship.",
+]
 citations = [
     "commit c2730a3 SAP ortho stitch",
     "t090_1_2_sap_supertexture_satellite.md spec",

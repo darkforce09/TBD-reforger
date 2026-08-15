@@ -17,6 +17,10 @@ requirement = [
 current_state = ["No map-object schemas or exact-integer census contract."]
 approach = ["Add schemas/goldens; wire eleven verify gates and registry slice advance."]
 verify = ["cargo xtask ci schema-validate"]
+acceptance = [
+    "map-object-*.schema.json and golden/map-objects fixtures committed.",
+    "verify-map-* and verify-t090-spec-consistency gates wired through cargo xtask ci schema-validate.",
+]
 citations = [
     "commit 41fb7d0c map-object schemas",
     "t090_091 hub T-090.0.2 row",

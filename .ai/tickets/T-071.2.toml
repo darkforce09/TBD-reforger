@@ -11,9 +11,12 @@ context = ["T-071.2 intent; superseded by T-180 derive_orbat path."]
 requirement = ["Player-facing slot labels and squad order in compiled mission export."]
 current_state = ["Export lacked ordered slot numbering from ORBAT edits."]
 approach = ["Do not implement separately; shipped via T-180 loadout summary."]
+verify = ["Superseded by T-180; no subject commits on this id."]
+acceptance = ["Slot numbering and squad export order reached compiled mission via T-180 derive_orbat."]
 citations = [
     "Source: t177_mc_chrome_orbat_cutover.md.",
     "Source: SHIPPED_HISTORY T-180.",
+    "t180 derive_orbat loadout path",
 ]
 created_at = "2026-07-03T00:00:00Z"
 completed_at = "2026-07-03T00:00:00Z"
