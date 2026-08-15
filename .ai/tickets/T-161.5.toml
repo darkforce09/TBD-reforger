@@ -18,6 +18,7 @@ verify = [
     "./scripts/ticket sync",
     "./scripts/ticket check",
 ]
+acceptance = ["Ticket CLI program hub and tickets README reflected the shipped Rust xtask flip."]
 citations = [
     "t161_ticket_xtask_program.md",
     "commit 065fa496",

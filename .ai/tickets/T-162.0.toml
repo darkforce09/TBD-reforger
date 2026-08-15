@@ -14,6 +14,8 @@ context = ["T-161 left seed_registry and mod MCP Python out of scope."]
 requirement = ["Hub t162_python_eradication.md; registry rows for T-162 slices."]
 current_state = ["scripts/ still held .py one-shots and MCP helpers."]
 approach = ["Author hub with port and delete tables; queue registry children."]
+verify = ["./scripts/ticket sync; docs/platform/t162_python_eradication.md hub present."]
+acceptance = ["Python eradication hub authored; T-162 child slices queued in registry with port and delete inventory."]
 citations = [
     "t162_python_eradication.md",
     "commit cac7b8fe",

@@ -18,6 +18,7 @@ current_state = [
 ]
 approach = ["Fix five CI causes; recode registry rows; grep-closure doc sweep; tag reconcile."]
 verify = ["ticket check exit 0; ci.yml green per t164_verify_log.md."]
+acceptance = ["All six CI-red jobs fixed; ticket check exit 0 first time; twenty-three page docs repointed to Leptos modules."]
 citations = [
     "Source: commit 801e7cf9 — green sweep.",
     "Source: t164_green_sweep.md — CI causes.",

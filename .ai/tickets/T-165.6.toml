@@ -14,6 +14,7 @@ requirement = ["Port sixteen editor smokes plus r-auth, render-check, mutations;
 current_state = [".ai/artifacts/t159_gates/driver/ held twenty-four Node scripts including freeze.js and dom.js."]
 approach = ["tbd_tools::smokes per script; gate smoke, editor-suite, r-auth, render-check subcommands."]
 verify = ["Editor suite 16/16 green on both harnesses; V 25/25 post-flip; r-auth and render-check byte-identical."]
+acceptance = ["Sixteen editor smokes ported to Rust; Node CDP driver deleted; cargo xtask mk leptos-gates runs cargo only."]
 citations = [
     "Source: commit ac7bdaae — smokes to Rust.",
     "Source: t165_6_verify_log.md acceptance.",

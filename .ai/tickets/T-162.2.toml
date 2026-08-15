@@ -13,6 +13,8 @@ context = ["T-161 left seed_registry and rewrite one-shots out of scope."]
 requirement = ["Remove seed_registry, backfill-registry-monorepo, rewrite-doc-links, rewrite-ticket-paths."]
 current_state = ["Four one-shot .py helpers still under scripts/ after T-161."]
 approach = ["Delete one-shots; live ports already landed in xtask on T-162.1."]
+verify = ["git ls-files 'scripts/lib/*.py' 'scripts/*registry*.py' 'scripts/rewrite*.py' empty."]
+acceptance = ["Four one-shot migration .py scripts deleted from scripts/ per t162 eradication inventory."]
 citations = [
     "Source: commit cac7b8fe — T-162 eradication.",
     "Source: t162_python_eradication.md — deleted inventory.",

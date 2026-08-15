@@ -13,6 +13,8 @@ context = ["Shell wrappers still invoked python3 for repro, debug, and migration
 requirement = ["Flip debug-direct-join, mission-version-upload-repro, verify-monorepo-migration to xtask."]
 current_state = ["Inline python3 calls in mod and website helper scripts."]
 approach = ["Route through lib/xtask-run.sh; port logic to xtask debug and repro cmds."]
+verify = ["debug-direct-join, upload-repro, and verify-monorepo wrappers lost inlined python3."]
+acceptance = ["debug-direct-join, upload-repro, and verify-monorepo inlined python3 removed; shell wrappers flipped to xtask."]
 citations = [
     "Source: commit cac7b8fe — T-162 eradication.",
     "Source: t162_verify_log.md — shell flips.",

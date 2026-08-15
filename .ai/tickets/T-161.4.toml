@@ -19,6 +19,7 @@ verify = [
     "./scripts/ticket check",
     "./scripts/ticket brief T-161",
 ]
+acceptance = ["scripts/ticket became a cargo xtask wrapper; Python ticket modules deleted; sync and brief gates passed."]
 citations = [
     "t161_4_verify_log.md",
     "t161_ticket_xtask_program.md",

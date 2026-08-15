@@ -14,6 +14,7 @@ requirement = ["Port CDP client, axum serve, freeze/dom inject consts, 25-route 
 current_state = ["driver/cdp.mjs, serve.mjs, gate_v_suite.mjs, and extract-leptos-routes.mjs on Node; smokes deletion deferred."]
 approach = ["tools/tbd-tools cdp+serve+inject+vsuite+sroutes; gate bin v-suite freeze|verify|accept and s-routes."]
 verify = ["gate v-suite verify 25/25 PASS with byte-identical stdout vs Node; s-routes and corruption probe parity."]
+acceptance = ["CDP harness core shipped in tbd-tools; gate v-suite verify 25/25 byte-identical versus Node runner."]
 citations = [
     "Source: commit ebf50b6d — CDP harness core.",
     "Source: t165_5_verify_log.md V parity.",

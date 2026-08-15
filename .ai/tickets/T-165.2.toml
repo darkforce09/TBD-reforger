@@ -29,6 +29,7 @@ verify = [
     "130/130 PASS both runners; sorted PASS label-set diff empty.",
     "Mutated golden mission: node rc=1 and rust rc=1; validate-file ok both.",
 ]
+acceptance = ["validate suite ported to cargo xtask schema validate; 130/130 PASS both runners; validate.mjs and validate-file.mjs deleted."]
 citations = [
     "Source: commit b156021c — validate port.",
     "Source: t165_2_verify_log.md — parity metrics.",

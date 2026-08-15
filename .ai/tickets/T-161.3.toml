@@ -15,6 +15,7 @@ requirement = ["add and advance-slice byte-identical registry and stdout vs Pyth
 current_state = ["Mutator paths still on scripts/lib/ticket_registry.py."]
 approach = ["Rust add/advance-slice in xtask; cmp matrix per t161_3_verify_log."]
 verify = ["add T161ParityTest; advance-slice T-161; registry cmp vs Python."]
+acceptance = ["add and advance-slice produced byte-identical registry.json and stdout versus the Python oracle."]
 citations = [
     "t161_3_verify_log.md",
     "t161_ticket_xtask_program.md",

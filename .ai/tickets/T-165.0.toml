@@ -25,6 +25,8 @@ approach = [
     "Workspace Cargo.toml member; pin tokio-tungstenite to lock-resolved versions.",
     "git rm dead-set files; document evidence in t165_node_eradication.md slice ladder.",
 ]
+verify = ["cargo check --workspace; clippy -p tbd-tools -D warnings; dead-set .mjs deleted."]
+acceptance = ["tools/tbd-tools workspace scaffold landed; five superseded .mjs scripts deleted (~650 LOC)."]
 citations = [
     "Source: commit c39f8bac — scaffold.",
     "Source: t165_node_eradication.md — T-165.0.",

@@ -29,6 +29,7 @@ verify = [
     "Consecutive codegen runs: sha256 equal across runs.",
     "cargo test -p reforger-backend --lib: 34 passed including loadout round-trips.",
 ]
+acceptance = ["typify codegen became hash-idempotent; loadout.rs hand-frozen with fixture round-trips; contracts.yml drift job Node-free."]
 citations = [
     "Source: commit 74d50cbb — typify codegen.",
     "Source: t165_3_verify_log.md — idempotence gate.",

@@ -17,11 +17,14 @@ requirement = [
     "tbd_tools::map plus map bin replace scripts/map-assets builders and verifiers.",
     "Delete tbd-schema package.json and node_modules; Makefile image lane uses cargo.",
 ]
+current_state = ["Twenty-three tracked map-assets .mjs scripts and tbd-schema package.json still borrowed pngjs and ajv."]
+approach = ["tbd_tools::map plus map bin; image-webp lossless and webp-crate lossy per N3; resvg replaces magick SVG passes."]
 verify = [
     "map verify-unified, verify-pyramid, verify-sap-seams stdout byte-identical vs mjs.",
     "map verify-t152 rc=0 end-to-end; glyph atlas mapping byte-identical to committed.",
     "tbd-schema npm deleted; verify log .ai/artifacts/t165_9_verify_log.md.",
 ]
+acceptance = ["Image pipeline ported to pure Rust map bin; tbd-schema npm deleted; verifiers byte-identical; verify-t152 rc=0 end-to-end."]
 citations = [
     "Source: commit ec1f5389.",
     "Source: t165_node_eradication.md.",

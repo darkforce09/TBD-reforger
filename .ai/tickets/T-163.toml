@@ -17,6 +17,7 @@ current_state = [
 ]
 approach = ["Two --no-ff merges; restore compose_roads; de-React xtask; registry truth commit."]
 verify = ["Gate battery PASS per t163_merge_verify_log.md."]
+acceptance = ["t-159 and t-161 merged to main; compose_roads caller restored; xtask de-React purge and registry truth landed."]
 citations = [
     "Source: commit 0be52f9d — merge integration.",
     "Source: t163_merge_integration.md — merge plan.",

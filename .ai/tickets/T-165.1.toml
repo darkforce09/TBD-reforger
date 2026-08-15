@@ -29,6 +29,7 @@ verify = [
     "Eight gates: node and rust verdict plus exit code MATCH.",
     "Negative probes: mutated n6 spec and bogus terrain rc match Node.",
 ]
+acceptance = ["Eight text and JSON schema gates ported to cargo xtask schema with side-by-side parity MATCH; seven .mjs deleted."]
 citations = [
     "Source: commit 9d97f05b — eight ports.",
     "Source: t165_1_verify_log.md — parity table.",

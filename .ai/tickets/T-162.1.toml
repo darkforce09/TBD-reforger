@@ -15,6 +15,7 @@ requirement = ["xtask mcp consume, socket-send, probe-sock; flip mcp-call script
 current_state = ["scripts/mod/lib/mcp-consume.py and mcp-socket-send.py on disk."]
 approach = ["Rust MCP cmds in xtask; update mcp-call, daemon, selftest wrappers."]
 verify = ["bash scripts/mod/mcp-call-selftest.sh 19/19"]
+acceptance = ["MCP helpers ported to xtask; mcp-call scripts flipped; selftest 19/19 matched pre-delete baseline."]
 citations = [
     "t162_verify_log.md",
     "t162_python_eradication.md",

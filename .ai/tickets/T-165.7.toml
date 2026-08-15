@@ -14,6 +14,7 @@ requirement = ["Ship mcpd broker with idle reap and stub modes; fix runner exec 
 current_state = ["scripts/mod/lib/mcp-daemon.mjs broker and fixtures/stub-runner.mjs on Node; socket client already Rust."]
 approach = ["tbd-tools mcpd bin: tokio UnixListener, one enfusion-mcp child, mcpd-bin.sh launcher."]
 verify = ["mcp-call-selftest.sh 19/19 ALL PASS; tier1 .mjs branch and idle-reap probes green."]
+acceptance = ["mcpd broker and offline stub shipped; mcp-call-selftest 19/19 frozen contract; runner exec fixed for native binaries."]
 citations = [
     "Source: commit b759d260 — mcpd broker stub.",
     "Source: t165_7_verify_log.md selftest.",

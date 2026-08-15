@@ -14,6 +14,7 @@ requirement = ["Port S2–S14 golden gate, glyphs, height-labels, locations, tow
 current_state = ["Node verify-map-object-golden and label scripts; Makefile still routed terrain checks through npm."]
 approach = [".4a tbd-tools geometry/density/forest libs; .4b–.4c xtask schema gates on map-engine-core::world."]
 verify = ["map-object-golden 12/12 parity; terrain-alignment stdout byte-identical; Makefile npm lines zero."]
+acceptance = ["Golden S2–S14 gate and label or terrain verifiers ported; terrain-alignment stdout byte-identical; Makefile npm surface zero."]
 citations = [
     "Source: commit 4eb443c9 — label terrain gates.",
     "Source: t165_node_eradication.md slice ladder.",

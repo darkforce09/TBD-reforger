@@ -14,6 +14,7 @@ requirement = ["scripts/verify-no-python.sh; t162_python_eradication.md hub; Mak
 current_state = ["No fail-closed Python scan gate after one-shot deletion and shell flips."]
 approach = ["Add verify-no-python.sh; author hub doc; wire make verify-no-python."]
 verify = ["bash scripts/verify-no-python.sh PASS per t162_verify_log.md."]
+acceptance = ["verify-no-python.sh gate shipped; t162 hub doc authored; wired into ci-local Makefile target."]
 citations = [
     "Source: commit cac7b8fe — T-162 eradication.",
     "Source: t162_python_eradication.md — hard gate.",

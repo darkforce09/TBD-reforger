@@ -14,6 +14,7 @@ requirement = ["Port pak/topo/edds/classify/build/gates/aux to tbd_tools::world;
 current_state = ["export-terrain.sh and verify-phase on Node; E6 gate compared raw gz container bytes."]
 approach = ["world bin modules; bcdec_rs BC7 decode; in-process E6 double-build; Makefile map lanes to cargo."]
 verify = ["945/945 scratch artifacts content-identical vs Node; E6 byte-green after migration; sixteen .mjs deleted."]
+acceptance = ["World-export pipeline ported to tbd-tools world; 945/945 artifacts content-identical; E6 flate2 gz re-encode migration executed."]
 citations = [
     "Source: commit 50a452e0 — world pipeline E6.",
     "Source: t165_8_verify_log.md builders.",
