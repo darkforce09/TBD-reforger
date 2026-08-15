@@ -21,6 +21,15 @@ approach = [
     "Extend TBD_RegistryScanItem DeriveEdges; export plugin emit.",
     "Schema bump registry-items registry-compat; re-export registry-import.",
 ]
+verify = [
+    "make schema-codegen",
+    "make schema-validate",
+    "make test-it",
+]
+acceptance = [
+    "Export added cargo_grid_w/h and 16223 character_default_cargo edges with qty conservation.",
+    "Jacket_US_BDU fixed to 4x4 grid after ReadPhysAttrs two-pass; 1257 grids landed.",
+]
 citations = [
     "t068_15_1_cargo_capacity_export.md",
     "commit 85acbb13",

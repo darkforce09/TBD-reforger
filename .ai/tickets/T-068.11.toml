@@ -21,6 +21,15 @@ approach = [
     "Schema bump packages/tbd-schema; TS flattenEditorToModDocument.",
     "Rust flatten parity; golden tests with loadout slot.",
 ]
+verify = [
+    "make schema-validate",
+    "cargo test -p map-engine-core --all-features",
+    "make test-it",
+]
+acceptance = [
+    "GET /missions/:id/compiled carried optional slot loadout gear and cargo[] blocks.",
+    "Rust flatten derived jacket, vest, helmet, and primary from SlotLoadoutV2.",
+]
 citations = [
     "t068_11_compiler_loadout_export.md",
     "commit c66494c6",

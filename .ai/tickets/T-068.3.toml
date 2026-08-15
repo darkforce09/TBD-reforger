@@ -12,6 +12,11 @@ context = ["T-068.2 API shipped."]
 requirement = ["buildCatalogTree; useRegistry; delete mock."]
 current_state = ["assetCatalogMock fake ids."]
 approach = ["Wire AssetBrowser; DnD resource_name."]
+verify = ["cd apps/website/frontend && npm run build && npm run lint"]
+acceptance = [
+    "Factions palette consumed live GET /registry via useRegistry and buildCatalogTree.",
+    "assetCatalogMock.ts deleted; DnD assetId carried full resource_name strings.",
+]
 citations = [
     "t068_3_palette_wire.md",
     "commit da78452a",

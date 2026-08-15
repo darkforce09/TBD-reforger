@@ -20,6 +20,14 @@ requirement = [
 ]
 current_state = ["Options rendered in raw sort_order; abstract Base templates listed as picks."]
 approach = ["arsenalRules row v2 within v1 limits; SelectField optgroups; ArsenalTab search."]
+verify = [
+    "cd apps/website/frontend && npm test",
+    "cd apps/website/frontend && npm run build",
+]
+acceptance = [
+    "Forge pickers grouped, sorted, and searchable on v3 kinds; abstracts hidden.",
+    "F1–F5 PASS; vitest 325/325; row counts matched envelope non-abstract kinds.",
+]
 citations = [
     "t068_10_3_forge_picker_ux.md",
     "commit e6f8a9bb",

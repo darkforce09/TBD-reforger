@@ -21,6 +21,16 @@ approach = [
     "useArsenalValidation hook; upgrade T-068.4 Arsenal dropdowns.",
     "Mission-embed pulled forward from T-068.11 scope.",
 ]
+verify = [
+    "make registry-import",
+    "cd apps/website/frontend && npm test && npm run build",
+    "cargo test -p map-engine-core --all-features",
+]
+acceptance = [
+    "Arsenal filtered picks via initRegistryCompat canAttach and canEquip families.",
+    "Per-slot loadout persisted in editor Save, Export, IDB, and undo.",
+    "Invalid combos blocked export; degrade kept dumb dropdowns on init failure.",
+]
 citations = [
     "t068_10_smart_forge_ui.md",
     "commit 3bc0bd24",

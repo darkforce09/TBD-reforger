@@ -19,6 +19,11 @@ approach = [
     "Manual golden path web file mod NPC test spawn.",
     "Recorded PASS 2026-06-27 after T-068.5.1 visual fix.",
 ]
+verify = ["Human ran E1–E12 checklist with objective PASS/FAIL per row."]
+acceptance = [
+    "E1–E12 all PASS on 2026-06-27; E11 proved visual kit on test NPC.",
+    "Phase 1 sign-off recorded; Phase 2 approved YES.",
+]
 citations = [
     "t068_6_phase1_e2e_gate.md",
     "commit afc01edc",

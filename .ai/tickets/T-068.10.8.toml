@@ -21,7 +21,16 @@ approach = [
     "AttributesModal flex chain; SlotRail 44px column.",
     "Vitest RAIL_REGIONS completeness; 3D doll deferred T-154.",
 ]
+verify = [
+    "cd apps/website/frontend && npm test",
+    "cd apps/website/frontend && npm run build",
+]
+acceptance = [
+    "Arsenal modal pinned h-[85vh] with internal pane scroll only at ~1080p.",
+    "A3 RAIL_REGIONS rail synced activeKey with text-free SoldierSilhouette doll.",
+]
 citations = [
+    "t068_10_8_verify_log.md",
     "t068_10_8_arsenal_ux_pass2.md",
     "commit 574fc63d",
 ]

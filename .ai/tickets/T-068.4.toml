@@ -12,6 +12,14 @@ context = ["T-068.3 registry; Arsenal was stub."]
 requirement = ["Character slots only; schema-valid export."]
 current_state = ["Disabled Forge stub copy."]
 approach = ["ArsenalTab; loadoutExport.ts."]
+verify = [
+    "cd apps/website/frontend && npm run build && npm run lint",
+    "cd packages/tbd-schema && npm run validate",
+]
+acceptance = [
+    "Arsenal tab replaced the stub with four gear dropdowns on character slots.",
+    "Download emitted schema-valid loadout-export.json from registry picks.",
+]
 citations = [
     "t068_4_dumb_loadout_ui.md",
     "commit a85f16b4",

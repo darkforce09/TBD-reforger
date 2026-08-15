@@ -21,6 +21,14 @@ approach = [
     "TBD_LoadoutEquipHelper from TBD_LoadoutEquipComponent.",
     "Hook TBD_SpawnManager post-spawn; MCP wb_play golden fixture.",
 ]
+verify = [
+    "Workbench play via scripts/mod/mcp-call.sh wb_play.",
+    "Loadout player log lines grepped from scripts/mod/mcp-wb-logs.sh.",
+]
+acceptance = [
+    "Deploying player received compiled gear with worn-verify on spawn.",
+    "Cargo rows inserted via TryInsertItemInStorage; morphine x2 landed in pants storage.",
+]
 citations = [
     "t068_12_mod_player_loadout_equip.md",
     "commit 0be53e16",

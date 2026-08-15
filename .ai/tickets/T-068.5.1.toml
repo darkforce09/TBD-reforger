@@ -19,6 +19,14 @@ approach = [
     "Patch TBD_LoadoutEquipComponent.c wear APIs only.",
     "CallLater one tick for async verify; keep Character_US_Base GUID.",
 ]
+verify = [
+    "bash scripts/mod/mcp-call.sh wb_play '{}'",
+    "bash scripts/mod/mcp-wb-logs.sh | grep -E 'equip OK|FAILED not worn'",
+]
+acceptance = [
+    "Clothing used EquipCloth; primary used EquipWeapon with deferred worn-verify.",
+    "Test NPC showed visible kit; logs reported FAILED not worn on wear misses.",
+]
 citations = [
     "t068_5_1_visual_equip_fix.md",
     "commit b233b11b",

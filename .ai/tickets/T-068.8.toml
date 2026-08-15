@@ -20,6 +20,11 @@ approach = [
     "Workbench export tooling per T-068.1 MCP pattern.",
     "Implemented by T-150 universal export; tag T-150 supersedes slice.",
 ]
+verify = [
+    "cd packages/tbd-schema && npm run validate",
+    "jq -e '.edges | length >= 50' packages/tbd-schema/registry/registry-compat.workbench.json",
+]
+acceptance = ["Workbench compat export landed; superseded by T-150 universal export at tag T-150."]
 citations = [
     "t068_8_workbench_compat_export.md",
     "commit 9107bf4e",

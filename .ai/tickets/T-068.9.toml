@@ -14,6 +14,15 @@ context = ["T-150 committed 1,880 items and 4,012 edges; site still served thin 
 requirement = ["Idempotent Postgres ingest; GET /registry/compat; worker IDB cache and adjacency queries."]
 current_state = ["Smart arsenal blocked without DB ingest and off-thread graph worker."]
 approach = ["import-registry CLI; registry.worker.ts Comlink client; verify log G1-G10."]
+verify = [
+    "make registry-import",
+    "cargo test -p website-api registry_compat",
+    "cd apps/website/frontend && npm test",
+]
+acceptance = [
+    "Postgres held 1880 items and 4012 compat edges after idempotent import.",
+    "GET /registry/compat served the graph; worker answered canEquip and canAttach.",
+]
 citations = [
     "Source: commit d41418e5.",
     "Source: t068_9_registry_worker_ingest.md.",

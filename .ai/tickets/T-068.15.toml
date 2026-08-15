@@ -14,6 +14,11 @@ context = ["Virtual Arsenal program meta slice."]
 requirement = ["T-068.15.1/.2 then T-068.11/.12 complete ladder."]
 current_state = ["No capacity export or in-game cargo equip."]
 approach = ["t068_15_cargo_program.md hub; child slices deliver."]
+verify = ["Child verify logs T-068.15.1, T-068.15.2, T-068.11, T-068.12 all PASS."]
+acceptance = [
+    "Cargo ladder shipped: export capacity, Arsenal UI, compiled loadout, player equip.",
+    "Headline: 1257 grids, 16223 cargo edges, slot.loadout on /compiled, live WB equip.",
+]
 citations = [
     "t068_15_cargo_program.md",
     "commit 0be53e16",

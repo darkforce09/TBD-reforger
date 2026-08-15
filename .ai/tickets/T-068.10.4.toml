@@ -17,6 +17,14 @@ requirement = [
 ]
 current_state = ["SlotLoadout and loadout-export modeled primary, uniform, vest, helmet, optic, magazine."]
 approach = ["Schema v2 plus contract codegen; migration on read; Forge write path."]
+verify = [
+    "cd packages/tbd-schema && npm run validate",
+    "cd apps/website/frontend && npm test",
+]
+acceptance = [
+    "SlotLoadout v2 added wear map and slot-indexed weapons[] with v1 migration.",
+    "Forge wrote 14 picker rows; loadout-export v2 kept derived legacy gear block.",
+]
 citations = [
     "t068_10_4_loadout_doc_v2.md",
     "commit 338593b8",

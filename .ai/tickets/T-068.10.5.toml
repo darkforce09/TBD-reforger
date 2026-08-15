@@ -17,6 +17,15 @@ requirement = [
 ]
 current_state = ["71 concrete weapons; primary picker listed attachment and camo factory configs."]
 approach = ["ComputeWeaponVariants after DeriveEdges; census-locked engine-data rule."]
+verify = [
+    "cd packages/tbd-schema && npm run validate",
+    "cd apps/website/frontend && npm test",
+    "make test-it",
+]
+acceptance = [
+    "variant_of collapsed 38 factory weapon configs; primary picker dropped to 21 weapons.",
+    "Census verdicts matched envelope; re-import idempotent with 38 DB variant rows.",
+]
 citations = [
     "t068_10_5_weapon_families.md",
     "commit c27c438a",

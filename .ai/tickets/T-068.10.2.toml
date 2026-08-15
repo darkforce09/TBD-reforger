@@ -15,6 +15,10 @@ requirement = ["Schema v3; rewrite classifier; G1 histogram."]
 current_state = ["348 abstract templates shipped as rows."]
 approach = ["TBD_RegistryScan.c; re-export and registry-import."]
 verify = ["G1 histogram match census; npm validate exit 0."]
+acceptance = [
+    "Kind taxonomy v3 re-exported 1857 items and 4685 edges; G1–G7 gates PASS.",
+    "Abstract templates flagged; gear_primary pollution cleared to zero rows.",
+]
 citations = [
     "t068_10_2_exporter_reclassify.md",
     "commit be85a26e",

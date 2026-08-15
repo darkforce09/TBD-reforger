@@ -19,6 +19,8 @@ approach = [
     "Cursor expands t068_7_compat_matrix_spec.md taxonomy and DDL.",
     "Link from program hub Phase 2; human Phase 2 approved gate.",
 ]
+verify = ["grep -E 'edge_type|registry_compat|canEquip' docs/specs/Mission_Creator_Architecture/t068_7_compat_matrix_spec.md"]
+acceptance = ["Spec finalized edge taxonomy, registry_compat DDL sketch, and worker canEquip/canAttach contract."]
 citations = ["t068_7_compat_matrix_spec.md"]
 created_at = "2026-06-26T00:00:00Z"
 completed_at = "2026-07-31T00:00:00Z"

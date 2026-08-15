@@ -19,6 +19,14 @@ approach = [
     "Wire TBD_LoadoutEquipComponent on TBD_GameMode.et.",
     "TryInsertItem scaffold; visual wear fixed in T-068.5.1.",
 ]
+verify = [
+    "bash scripts/mod/mcp-call.sh wb_play '{}'",
+    'bash scripts/mod/mcp-wb-logs.sh | grep -E \[TBD\].*Loadout | tail -20',
+]
+acceptance = [
+    "TBD_LoadoutEquipComponent read $profile:TBD_LoadoutTest.json on wb_play.",
+    "Test NPC at 6400 logged per-slot equip from exported ResourceNames.",
+]
 citations = [
     "t068_5_mod_equip_loadout.md",
     "commit 21ec91e6",

@@ -17,6 +17,14 @@ requirement = [
 ]
 current_state = [".10.6 center column used dropdown picker rows, not paper-doll."]
 approach = ["arsenalDollModel.ts; SoldierSilhouette.tsx; ArsenalTab 270|1fr|240 grid."]
+verify = [
+    "cd apps/website/frontend && npm test",
+    "cd apps/website/frontend && npm run build",
+]
+acceptance = [
+    "Arsenal tab adopted ACE layout with clickable SVG soldier and 12 DOLL_REGIONS.",
+    "Optic and magazine sub-hotspots worked; honest loadoutWeight readout shipped.",
+]
 citations = [
     "t068_10_7_arsenal_paper_doll.md",
     "commit de1ab7b5",
