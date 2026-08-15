@@ -15,6 +15,7 @@ approach = [
     "Redirects to the SPA callback with the token fragment, mirroring the Discord callback so the frontend handles both paths identically.",
 ]
 verify = ["Integration tests cover the redirect, the token fragment and role defaulting."]
+acceptance = ["Local login without Discord worked via the development-only endpoint."]
 citations = [
     "Source: commit 1e41ae34.",
     "Source: docs/platform/SHIPPED_HISTORY.md §T-003.",

@@ -17,6 +17,8 @@ approach = [
     "Go backend under cmd/ and internal/ — GORM plus Postgres with a migration pipeline, handlers for every resource.",
     "Vite/React/TS frontend with routing, auth store, axios client and react-query hooks scaffolded — 189 files, 25609 insertions in one commit.",
 ]
+verify = ["History records the scaffold landing as one commit; no command proof was kept."]
+acceptance = ["A Go REST API and React shell existed in the tree after the initial platform commit."]
 citations = [
     "Source: commit 70c39013.",
     "Source: docs/platform/SHIPPED_HISTORY.md §T-001.",

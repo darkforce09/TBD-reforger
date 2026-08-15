@@ -19,6 +19,7 @@ approach = [
     "Frontend OrbatSelector renders numbered loadout rows, the reserve/release controls, and an inline member-assignment typeahead backed by a new /members directory search.",
 ]
 verify = ["make test-it including the reservation case with distinct users; frontend build+lint; live dev-login smoke."]
+acceptance = ["ORBAT slots carried role, loadout and tag, and a leader reserved a whole squad in one click."]
 citations = [
     "Source: commit 12a0463f.",
     "Source: docs/platform/SHIPPED_HISTORY.md §T-010.",

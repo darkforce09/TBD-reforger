@@ -12,6 +12,7 @@ requirement = ["Server Control moves to the shared SplitPane; off-palette colors
 current_state = ["The command center ran its own layout with a blue active state, an off-token LAUNCH CTA and default-face telemetry heroes."]
 approach = ["Server selector master to command/telemetry/RCON detail over a topo-map/glass encasing; active state and LAUNCH CTA move to primary/action tokens; RCON command-echo to primary; personnel and FPS heroes to mono."]
 verify = ["npm run build and npm run lint clean after every commit of the series."]
+acceptance = ["Server Control rode the shared SplitPane on Aegis tokens with mono telemetry heroes."]
 citations = [
     "Source: commit af2edbcd.",
     "Source: docs/platform/SHIPPED_HISTORY.md §T-018..T-025.",

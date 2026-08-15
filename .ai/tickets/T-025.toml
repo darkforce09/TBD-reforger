@@ -16,6 +16,7 @@ approach = [
     "Personnel keeps its wide table-plus-dossier layout: SplitPane's narrow master does not fit a 5-column data table.",
 ]
 verify = ["npm run build and npm run lint clean after every commit of the series."]
+acceptance = ["Comms Broadcaster sat on SplitPane and the remaining admin vivid colors moved onto tokens."]
 citations = [
     "Source: commit 5c25cf58.",
     "Source: docs/platform/SHIPPED_HISTORY.md §T-018..T-025.",

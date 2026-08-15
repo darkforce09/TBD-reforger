@@ -19,6 +19,7 @@ approach = [
     "Frontend: EventHubPage plus split-pane OrbatSelectionPage; Event Manager rebuilt as create-container + attach-mission; schedule and dashboard route to the hub; date formatters made invalid-date-safe.",
 ]
 verify = ["make test-it, frontend build+lint, and a live dev-login API smoke: create event, attach mission, auto-ORBAT, claim slot, withdraw."]
+acceptance = ["An Event was a container of sequential missions whose ORBAT slots derived from each mission payload."]
 citations = [
     "Source: commit 2eef30bb.",
     "Source: docs/platform/SHIPPED_HISTORY.md §T-008.",

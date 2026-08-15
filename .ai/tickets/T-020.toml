@@ -15,6 +15,7 @@ approach = [
     "Glow shadow tints retinted to the primary halo; white/black opacity utilities (the shared glass vocabulary) and bright text-white headings left intact.",
 ]
 verify = ["npm run build and npm run lint clean after every commit of the series."]
+acceptance = ["Doctrine pages sat on Aegis tokens with no off-palette vivid blue, slate, red or amber."]
 citations = [
     "Source: commit d955efc5.",
     "Source: docs/platform/SHIPPED_HISTORY.md §T-018..T-025.",

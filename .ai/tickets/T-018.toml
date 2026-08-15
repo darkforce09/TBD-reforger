@@ -15,6 +15,7 @@ approach = [
     "Same-tag full-bleed pass: admin (Server Control, Personnel, Comms Broadcaster, Audit), Modpacks and Mortar split-panes; Content Manager renamed Comms Broadcaster; DEV_RUNBOOK.md, cmd/seed mock-data seeder and Mission Creator spec added.",
 ]
 verify = ["npm run build and npm run lint clean after every commit of the series."]
+acceptance = ["Player-count heroes on Dashboard and Server Intel rendered in JetBrains Mono beside uptime and FPS."]
 citations = [
     "Source: commits 29b4776c + 94e291be.",
     "Source: docs/platform/SHIPPED_HISTORY.md §T-018..T-025.",

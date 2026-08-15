@@ -15,6 +15,7 @@ approach = [
     "The embedded OrbatSelector keeps its self-contained grid: SplitPane is full-height page chrome that would not fit inside a dossier card, and the selector is already on Aegis tokens.",
 ]
 verify = ["npm run build and npm run lint clean after every commit of the series."]
+acceptance = ["The Event Hub ran full-bleed with mono ORBAT slot counts and squad fill ratios."]
 citations = [
     "Source: commit f7b18b28.",
     "Source: docs/platform/SHIPPED_HISTORY.md §T-018..T-025.",

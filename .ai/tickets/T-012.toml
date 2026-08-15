@@ -16,6 +16,7 @@ approach = [
     "New Vehicle Database page (/vehicles, split-pane dossier) with route and nav entry.",
 ]
 verify = ["tsc -b, npm run build, npm run lint all clean; live dev-login API contract smoke."]
+acceptance = ["Platform pages rendered as macOS split-pane master/detail on the Aegis primitives."]
 citations = [
     "Source: commit b6f0a1c7.",
     "Source: docs/platform/SHIPPED_HISTORY.md §T-012.",

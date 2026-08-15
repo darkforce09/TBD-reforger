@@ -15,6 +15,7 @@ approach = [
     "The Mortar Calculator becomes an edge-to-edge flex column whose map fills remaining height; its route gains the fullBleed handle.",
 ]
 verify = ["npm run build and npm run lint clean after every commit of the series."]
+acceptance = ["Modpacks, Wiki and Vehicles rode the shared SplitPane; Mortar ran full-bleed."]
 citations = [
     "Source: commit f4557cd8.",
     "Source: docs/platform/SHIPPED_HISTORY.md §T-018..T-025.",

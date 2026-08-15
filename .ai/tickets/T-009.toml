@@ -11,6 +11,8 @@ context = ["The T-008 hub showed dossiers but registration still required an Ope
 requirement = ["Render the faction/squad/slot selector and the Register button inline in each mission dossier."]
 current_state = ["Registering meant leaving the hub for the standalone /events/:id/missions/:emid/orbat page, the only place the split-pane selector lived."]
 approach = ["Each mission dossier renders the selector and Register for Deployment inline; the split-pane becomes a reusable OrbatSelector in pages/events.tsx; the standalone route reuses it for deep-links."]
+verify = ["History records the inline ORBAT hub landing; no command proof was kept."]
+acceptance = ["Members registered from the mission dossier without a separate Open ORBAT navigation step."]
 citations = [
     "Source: commit cc2eed36.",
     "Source: docs/platform/SHIPPED_HISTORY.md §T-009.",

@@ -16,6 +16,7 @@ approach = [
     "Contract fixes: pending_code is boolean, armory quantity null renders Unlimited, leaderboards return empty [], next_cursor typed number, inline SVG avatar fallback, lint cleanups.",
 ]
 verify = ["Verified against a live backend: full API contract smoke plus headless browser E2E across all routes."]
+acceptance = ["Every page ran on live backend data with hardened auth, verified against a running stack."]
 citations = [
     "Source: commit fad698bc.",
     "Source: docs/platform/SHIPPED_HISTORY.md §T-004.",

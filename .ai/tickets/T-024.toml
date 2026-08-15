@@ -15,6 +15,7 @@ approach = [
     "Calendar selection, today and CTA colors move to action/primary tokens; the attach dropdown moves to a surface token.",
 ]
 verify = ["npm run build and npm run lint clean after every commit of the series."]
+acceptance = ["Event Manager showed a calendar plus per-day op list; creation opened a frosted Dialog."]
 citations = [
     "Source: commit 0b11ff9e.",
     "Source: docs/platform/SHIPPED_HISTORY.md §T-018..T-025.",

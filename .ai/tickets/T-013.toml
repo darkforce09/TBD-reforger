@@ -16,6 +16,7 @@ approach = [
     "Shared MissionDossierBody is reused by the /missions/:id deep-link page; Modpacks and Mortar move to glass panels, Required becomes a Badge.",
 ]
 verify = ["tsc -b, npm run build, npm run lint clean; live dev-login API contract smoke."]
+acceptance = ["Dashboards and grids used the Aegis language; only the 2D Mission Creator remained unbuilt."]
 citations = [
     "Source: commit ce1d3ef6.",
     "Source: docs/platform/SHIPPED_HISTORY.md §T-013.",

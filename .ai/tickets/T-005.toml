@@ -14,6 +14,8 @@ approach = [
     "New CLAUDE.md: build status T-001..T-004, how to run the stack, dev-login, repo layout, and contract plus git conventions — the entry point for a fresh session.",
     "A project-specific frontend guide replaces the Vite README; the design specs gain status banners pointing at CLAUDE.md.",
 ]
+verify = ["History records the CLAUDE.md seed in commit 2f18188b; no command proof was kept."]
+acceptance = ["CLAUDE.md existed as the session entry point with build status, run instructions and conventions."]
 citations = [
     "Source: commit 2f18188b.",
     "Source: docs/platform/SHIPPED_HISTORY.md §T-005..T-007.",

@@ -16,6 +16,7 @@ approach = [
     "Shell: AppLayout honors a fullBleed route handle so split-pane pages run full-height; TopNav becomes a frosted glass bar; Sidebar uses the Aegis left-bar active state.",
 ]
 verify = ["tsc -b, npm run build, npm run lint all clean; the dev server boots."]
+acceptance = ["The Aegis palette, type scale, glass utilities and shared primitives existed for the page redesigns."]
 citations = [
     "Source: commit 384a552b.",
     "Source: docs/platform/SHIPPED_HISTORY.md §T-011.",

@@ -12,6 +12,7 @@ requirement = ["Correct the documentation inaccuracies."]
 current_state = ["BACKEND_ARCHITECTURE.md cited 18 Stitch mockups at a stale root path; CLAUDE.md did not state that post-T-004 commits were documentation only."]
 approach = ["Fix the Stitch reference to 21 mockups at frontend/src/stitch-exports/; clarify in CLAUDE.md that post-T-004 commits are documentation only, so the feature status reads correctly."]
 verify = ["Every corrected claim was verified against the codebase."]
+acceptance = ["Documentation claims matched the codebase after the Stitch path and CLAUDE.md corrections."]
 citations = [
     "Source: commit eaba8936.",
     "Source: docs/platform/SHIPPED_HISTORY.md §T-005..T-007.",

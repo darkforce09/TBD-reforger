@@ -14,6 +14,8 @@ approach = [
     "AuthCallbackPage parses the token pair from the URL fragment, stores the access token, fetches the profile via GET /me, persists the session and redirects to the dashboard.",
     "Backend error codes on the redirect render a friendly message; TRACKING.md updated — T-002 resolved, T-006 confirmed done, T-004/T-005 reassigned to frontend.",
 ]
+verify = ["History records the OAuth callback wiring in commit 00852232; no command proof was kept."]
+acceptance = ["A Discord login persisted a session and landed the member on the dashboard."]
 citations = [
     "Source: commit 00852232.",
     "Source: docs/platform/SHIPPED_HISTORY.md §T-002.",
