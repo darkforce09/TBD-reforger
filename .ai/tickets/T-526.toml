@@ -7,6 +7,16 @@ status = "shipped"
 order = 3366
 executor = "claude-code"
 priority = 0
+context = [
+    "Wave 46 cold gate FAIL fmt after T-522/523 merge.",
+    "mission_title_prefer.rs adopt_payload_wires_prefer_helper chain wrapping broke fmt.",
+]
+requirement = ["Run rustfmt on mission_title_prefer.rs only; no logic change."]
+citations = [
+    "commit d6ea5d6e rustfmt title prefer",
+    "T-522 prefer-payload Class-R",
+    "wave 46 cold gate fmt",
+]
 shipped_at = "ae60ebc5"
 created_at = "2026-07-27T11:09:08Z"
 completed_at = "2026-07-27T11:10:18Z"

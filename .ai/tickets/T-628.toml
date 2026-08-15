@@ -1,12 +1,28 @@
 id = "T-628"
 kind = "work"
-title = "one loading bar, 0 to 100, across the whole Mission Creator boot"
-summary = 'Backfilled 2026-08-01. Shipped in commit `646a54de8` but never written to the registry, so `next_id` and every "next free id" reading were four short. Code is authoritative; this row exists so the registry stops disagreeing with git.'
+title = "One byte-metered boot bar from zero to one hundred"
+summary = "One monotonic 0–100 boot bar weighted by byte budgets across four segments; no per-stage reset or sweep."
 class = "feature"
 status = "shipped"
 order = 3772
 executor = "claude-code"
 priority = 3
+context = [
+    "T-627 left hydrate, terrain, and world objects on indeterminate sweep.",
+    "Operator: sweep carries no information at one or ninety-nine percent.",
+    "Mission document can reach 142 MB at 367k slots per T-060.",
+]
+requirement = [
+    "Four BootSeg segments: mission GET, DEM stream, satellite tiles, world files.",
+    "Weight segments by declared byte budgets; high-water mark prevents rewind.",
+    "Terrain via fetch_bytes_streamed against content-length; world declares 634 files upfront.",
+]
+verify = ["the_bar_can_never_exceed_one_hundred BootProgress unit tests."]
+citations = [
+    "commit 646a54de unified boot bar",
+    "T-627 indeterminate satellite step",
+    "T-060 142 MB mission payload",
+]
 shipped_at = "646a54de"
 created_at = "2026-08-01T06:45:22Z"
 completed_at = "2026-08-01T06:45:22Z"

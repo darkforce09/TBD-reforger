@@ -1,17 +1,26 @@
 id = "T-546"
 kind = "work"
-title = "T-498 Class-R only — no HTTP IT for Discord formula-title sanitize"
-summary = """
-FOUND by W55 adversarial verifier (CLEAN MINOR-NIT) after T-498.
-
-sanitize_discord_embed_field + include_str wire pins exist; no services_http / CMS IT asserts a leading '=title' becomes ZWSP-prefixed in the outbound embed JSON.
-
-Repro: rg sanitize_discord apps/website/api/tests — no hit."""
+title = "No HTTP IT for Discord formula-title sanitise"
+summary = "HTTP IT for Discord embed formula-title sanitisation after T-498"
 class = "feature"
 status = "shipped"
 order = 3386
 executor = "claude-code"
 priority = 2
+context = [
+    "W55 adversarial verifier CLEAN MINOR-NIT after T-498.",
+    "sanitize_discord_embed_field Class-R pins existed; no HTTP IT.",
+]
+requirement = [
+    "Assert leading =title becomes ZWSP-prefixed in outbound embed JSON.",
+    "Cover CMS push_to_discord path; stored row keeps authored bytes.",
+]
+verify = ["webhook_it 10; CMS path embed title assertions."]
+citations = [
+    "W55 verifier after T-498",
+    "734b175c webhook_it HTTP IT",
+    "T-498 sanitize_discord embed",
+]
 shipped_at = "0ac02f87"
 created_at = "2026-07-31T23:41:18Z"
 completed_at = "2026-08-01T00:05:32Z"

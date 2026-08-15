@@ -1,12 +1,26 @@
 id = "T-502"
 kind = "work"
 title = "POST /admin/roles/sync IT does not prove empty-snapshot admin survives"
-summary = "Wave 40 residual from T-372. Class-R pins resync_ids_from_snapshot empty→None. Existing roles/sync IT only asserts 200. Cure: cold IT — promote admin with zero user_discord_roles, POST sync, assert role still admin."
+summary = "Cold IT promotes admin with zero user_discord_roles, POSTs roles/sync, asserts role stays admin under T-499 snapshot isolation."
 class = "feature"
 status = "shipped"
 order = 3342
 executor = "claude-code"
 priority = 2
+context = [
+    "Wave 40 residual from T-372 empty-snapshot admin lockout.",
+    "Class-R pins resync_ids_from_snapshot empty to None; IT only asserted HTTP two hundred.",
+]
+requirement = [
+    "Promote suite-private admin holding zero user_discord_roles rows.",
+    "POST roles/sync; assert web role remains admin after sync.",
+]
+verify = ["Zero discord_roles admin survives roles/sync; T-499 snapshot wrap."]
+citations = [
+    "Wave 40 residual T-372",
+    "918d6597 empty-snapshot IT",
+    "T-499 snapshot restore isolation",
+]
 shipped_at = "325e48c3"
 created_at = "2026-07-27T08:26:55Z"
 completed_at = "2026-07-27T14:58:52Z"

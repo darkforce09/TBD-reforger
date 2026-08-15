@@ -1,12 +1,26 @@
 id = "T-503"
 kind = "work"
-title = "Arsenal has no Save button — cargo persists immediately (T-417 structural)"
-summary = "Wave 40 residual from T-417. arsenal.rs persist_cargo→set_loadout on every cargo mutation; export gate is the only client refusal. Cure: either add explicit Save UX or document intentional auto-persist with Class-R."
+title = "Arsenal auto-persist documented; no Save button"
+summary = "Documented intentional auto-persist in module header and data-arsenal-persist panel line; Class-R pins the contract."
 class = "chore"
 status = "shipped"
 order = 3343
 executor = "claude-code"
 priority = 2
+context = [
+    "Wave 40 residual from T-417 structural Arsenal finding.",
+    "Every cargo mutation calls set_loadout immediately; no Save button in the SPA.",
+]
+requirement = [
+    "State auto-persist contract in module doc and Arsenal panel UI.",
+    "Pin via tests::t503 so a future staging Save introduction goes red.",
+]
+verify = ["data-arsenal-persist mirrors dirty flag; perturbations RED then GREEN."]
+citations = [
+    "Wave 40 residual T-417",
+    "6ab8c74a auto-persist contract",
+    "editor_ops after_local_edit pattern",
+]
 shipped_at = "f0aa7459"
 created_at = "2026-07-27T08:27:16Z"
 completed_at = "2026-07-31T17:07:53Z"

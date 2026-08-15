@@ -1,12 +1,26 @@
 id = "T-495"
 kind = "work"
-title = "GET /members IT still only asserts data is_array (no offset exercise)"
-summary = 'Wave 37 residual from T-412. Handler Class-R pins limit/offset + envelope. apps/website/api/tests/events.rs:~275 still only assert!(mem["data"].is_array()). Cure: seed >20 members on a cold IT DB and assert offset=20 returns member 21 / envelope total.'
+title = "GET /members IT proves offset pagination"
+summary = "HTTP IT seeds 25 suite-private members and asserts offset=20 returns member index 20 with envelope total, limit, and offset."
 class = "feature"
 status = "shipped"
 order = 3334
 executor = "claude-code"
 priority = 2
+context = [
+    "Wave 37 residual from T-412 members handler fix.",
+    "Handler shipped LIMIT/OFFSET plus envelope; live IT only checked is_array.",
+]
+requirement = [
+    "Seed more than twenty members on a cold IT database.",
+    "Assert offset=20 returns member index twenty and envelope fields.",
+]
+verify = ["Offset=20 returns t495_user_20; envelope total twenty-five."]
+citations = [
+    "Wave 37 residual T-412",
+    "d8c6591b offset pagination IT",
+    "members_list_honours_offset_pagination",
+]
 shipped_at = "e123e323"
 created_at = "2026-07-27T14:13:14Z"
 completed_at = "2026-07-27T14:16:16Z"

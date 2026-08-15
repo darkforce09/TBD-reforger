@@ -11,9 +11,32 @@ notes = "Aggregation client-side over real files only; printing tokens=0 for a m
 depends_on = ["T-915.1"]
 parent = "T-915"
 main_goal = "The operator sees what the factory actually costs — tokens and elapsed per ticket and per agent — from the same receipts the land gate enforces."
+context = [
+    "Aggregates .ai/tickets/metrics/<id>/<ts>-<sha>.json run receipts client-side.",
+    "Directory absent until first slice-run; T-913 honesty forbids zero padding.",
+]
+requirement = [
+    "Explicit no-receipts-yet state when metrics dir missing.",
+    "Per-ticket and per-agent token totals and elapsed sums from real files.",
+    "Malformed receipts named verbatim; reasoning excluded from totals.",
+]
+current_state = ["Shipped at 338d9221; commit records 118 tests."]
+approach = [
+    "metrics.rs mirrors xtask receipt rules; serde_json plus time workspace deps.",
+    "Reload on debounced watch; ids click through to detail panel.",
+]
+verify = [
+    "No metrics dir shows no-receipts-yet never zeros.",
+    "Fixture receipts match hand-computed token and elapsed sums.",
+]
 acceptance = [
     "With no .ai/tickets/metrics/ directory the dashboard shows the explicit no-receipts-yet state — no zeros",
     "With fixture receipts, per-ticket and per-agent token totals and elapsed sums match a hand computation pasted alongside",
+]
+citations = [
+    "t915_ticketboard_design.md",
+    "T-913 no zero padding",
+    "commit 338d9221 metrics module",
 ]
 shipped_at = "338d9221"
 created_at = "2026-08-14T08:39:30Z"

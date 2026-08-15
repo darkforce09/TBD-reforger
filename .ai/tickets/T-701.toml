@@ -7,6 +7,26 @@ status = "shipped"
 order = 4550
 executor = "claude-code"
 notes = " — SHIPPED wave 120 (editor factory), a16e9188; verifier wave120.md"
+context = [
+    "3den E9 editor-only visibility; distinct from T-665 per-layer hide.",
+    "editorHidden never compiles; Eden Enable Visibility is editor-only.",
+]
+requirement = [
+    "Per-entity editorHidden boolean on slot rows; omit when false.",
+    "materialize() drops editorHidden slots before SoA reaches engine.",
+    "Wire schemas omit editorHidden; hide and batch are one txn one undo.",
+]
+current_state = ["Shipped wave 120 at 27b8cbc7; eight store.rs tests added."]
+approach = ["store.rs flags plus editor_ops materialize filter; not renderer-side."]
+verify = [
+    "materialize() sole enforcement site; editor_hidden tests red without filter.",
+    "editorHidden absent from mission and editor-payload schemas.",
+]
+citations = [
+    "eden attributes Enable Visibility",
+    "wave120.md T-701 verified",
+    "T-665 per-layer visibility",
+]
 shipped_at = "27b8cbc7"
 created_at = "2026-08-02T10:39:36Z"
 completed_at = "2026-08-02T10:42:47Z"

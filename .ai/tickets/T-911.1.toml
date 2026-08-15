@@ -1,7 +1,7 @@
 id = "T-911.1"
 kind = "work"
 title = "T-911 — Ticket registry redesign: per-file split + typed schema"
-summary = "T-911 — Ticket registry redesign: per-file split + typed schema"
+summary = "Phase 1 isomorphic per-file TOML with byte-identical JSON emit versus the cutover monolith."
 class = "feature"
 status = "shipped"
 order = 5910
@@ -10,7 +10,27 @@ executor = "claude-code"
 notes = "Phase 1: isomorphic per-file TOML, FROZEN_27 keys, ROOT + 12 fixtures, dual-read, byte-identical JSON emit vs the cutover monolith, then delete the monolith in the same commit."
 parent = "T-911"
 main_goal = "T-911 — Ticket registry redesign: per-file split + typed schema"
+context = [
+    "Split registry.json into one T-*.toml per parent and slice child.",
+    "FROZEN_27 corpus keys; typed Scope/Status deferred to T-911.2.",
+]
+requirement = [
+    "Loader plus ROOT marker replaces JSON; dual-read wave_ledger_unshipped_at.",
+    "Set-equality of ids; JSON emit matches cutover monolith; delete monolith same commit.",
+    "Retarget twelve fixtures planting registry.json in same commit.",
+]
+current_state = ["Shipped at 17072118; phase 2 typed encoding not in scope."]
+approach = ["Isomorphic TOML keys; measure N from cutover blob not hardcoded count."]
+verify = [
+    "ticket check --strict OK; platform wave gate slice T-911.1 PASS.",
+    "Glob budget ticket list under 500 ms.",
+]
 acceptance = ["See spec."]
+citations = [
+    "t911_ticket_registry_redesign.md",
+    "commit 17072118 phase one",
+    "FROZEN_27 corpus keys",
+]
 shipped_at = "170721182"
 created_at = "2026-08-13T17:07:35Z"
 completed_at = "2026-08-13T17:10:44Z"

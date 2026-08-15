@@ -1,12 +1,27 @@
 id = "T-627"
 kind = "work"
-title = "a Mission Creator load screen that measures something, and a satellite fetch that overlaps"
-summary = 'Backfilled 2026-08-01. Shipped in commit `920533f63` but never written to the registry, so `next_id` and every "next free id" reading were four short. Code is authoritative; this row exists so the registry stops disagreeing with git.'
+title = "Determinate load screen and overlapping satellite Range fetch"
+summary = "Replaced indeterminate boot sweep with measured two-stage overlay; satellite loads by Range index, four concurrent tile spans."
 class = "feature"
 status = "shipped"
 order = 3762
 executor = "claude-code"
 priority = 3
+context = [
+    "Boot overlay bar was fixed-width CSS sweep identical at every percentage.",
+    "Whole-bundle satellite GET downloaded 152 MB then discarded mips above GPU limit.",
+    "tbd-sat index lists per-tile lengths; Range fetch overlaps four requests.",
+]
+requirement = [
+    "Stage hydrate indeterminate; map stage captions name terrain, satellite bytes, world objects.",
+    "Fetch only needed mips via index Range requests; concurrency capped at four.",
+    "Replace parse_tbd_sat whole-body parse with parse_tbd_sat_index_strict index-only validation.",
+]
+citations = [
+    "commit 920533f6 load screen satellite",
+    "T-159.29.3 React boot bar removed",
+    "tbd-sat index per-tile lengths",
+]
 shipped_at = "7f88d4d9"
 created_at = "2026-08-01T06:04:18Z"
 completed_at = "2026-08-01T18:01:22Z"

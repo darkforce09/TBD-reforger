@@ -1,12 +1,28 @@
 id = "T-630"
 kind = "work"
 title = "the limiter was refusing 145,858 map assets and zero attacks"
-summary = 'Backfilled 2026-08-01. Shipped in commit `2e7526c26` but never written to the registry, so `next_id` and every "next free id" reading were four short. Code is authoritative; this row exists so the registry stops disagreeing with git.'
+summary = "Exempt /map-assets ServeDir from rate limiter by mounting after layer; 145858 of 145861 429s were map assets."
 class = "feature"
 status = "shipped"
 order = 3792
 executor = "claude-code"
 priority = 3
+context = [
+    "T-578 global 20/s burst-40 limiter applied to every route including ServeDir.",
+    "Cold boot peaks 2115 map-asset requests per second; forty-token bucket inadequate.",
+    "Measured: zero auth or ingest 429s; map-assets dominated refusals.",
+]
+requirement = [
+    "Mount map-assets ServeDir after rate_limit layer so limiter never sees it.",
+    "Keep STRICT_PREFIXES byte-identical; uploads and auth still limited.",
+    "Leave T-629 client retry ladder as outage safety net.",
+]
+verify = ["t630_map_assets_exempt: burst served; auth uploads still refused."]
+citations = [
+    "commit 2e7526c2 map assets exempt",
+    "T-629 client backoff ladder",
+    "T-578 global rate limiter",
+]
 shipped_at = "aabbf7da"
 created_at = "2026-08-01T08:14:19Z"
 completed_at = "2026-08-01T18:01:43Z"

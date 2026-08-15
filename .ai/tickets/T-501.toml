@@ -1,14 +1,29 @@
 id = "T-501"
 kind = "work"
 title = "Community-terrain soft-fail has no match-ingest HTTP IT"
-summary = "Wave 39 residual from T-402. parse_terrain_opt + unit Class-R pin unknown terrain → None. No IT proves POST match ingest with terrain kolguyev/anizay returns 200 and stores NULL terrain. Cure: apps/website/api/tests/telemetry.rs case on cold DB."
+summary = "HTTP IT proves kolguyev and anizay terrain ingests return 200 with matches.terrain NULL while outcome and counters still land."
 class = "feature"
 status = "shipped"
 order = 3341
 executor = "claude-code"
 priority = 2
-created_at = "2026-07-27T00:00:00Z"
-completed_at = "2026-07-27T00:00:00Z"
+context = [
+    "Wave 39 residual from T-402 parse_terrain_opt soft-fail.",
+    "Unit Class-R pinned unknown terrain to None; no route-level integration test.",
+]
+requirement = [
+    "POST match ingest with community terrain names returns two hundred.",
+    "Assert terrain NULL and outcome, winner, ended_at, counters still stored.",
+]
+verify = ["kolguyev ingest 200; terrain NULL; known-pin control lands."]
+citations = [
+    "Wave 39 residual T-402",
+    "42dda76c Class-R-only IT batch",
+    "parse_terrain_opt soft-fail unit",
+]
+shipped_at = "42dda76c"
+created_at = "2026-08-01T01:37:19Z"
+completed_at = "2026-08-01T01:37:19Z"
 estimated = [
     "scope",
     "created_at",
@@ -16,7 +31,7 @@ estimated = [
     "shipped_at",
     "tokens",
 ]
-estimate_note = "no subject commits; created_at/completed_at id-interpolated between T-500 and T-502 (midpoint, day precision); shipped_at left absent — no subject commits, a SHA is never invented"
+estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 1 commit subject(s)"
 owns = ["apps/website/api/tests/telemetry.rs"]
 
 [scope]

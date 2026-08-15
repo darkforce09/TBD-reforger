@@ -1,12 +1,26 @@
 id = "T-504"
 kind = "work"
 title = "Silent no-garment cargo in Arsenal (T-417 structural)"
-summary = "Wave 40 residual from T-417. arsenal UI shows 'no garment worn' with total and no limit; arsenal_rules deliberate silence; mod TBD_LoadoutEquipHelper already degrades. Author never hears undeliverable cargo. Cure: authoring-time warning/refuse when cargo targets unworn container."
+summary = "Wave 40 residual from T-417. Arsenal showed no garment worn with total and no limit; arsenal_rules stayed silent; mod TBD_LoadoutEquipHelper already degrades. Author never heard undeliverable cargo. Cure: authoring-time warning when cargo targets unworn container."
 class = "feature"
 status = "shipped"
 order = 3344
 executor = "claude-code"
 priority = 2
+context = [
+    "Wave 40 T-417 structural: cargo in unworn container undeliverable, both ends quiet.",
+    "arsenal_rules deliberately silent on no-garment capacity; mod already degrades at spawn.",
+]
+requirement = [
+    "Surface authoring-time warning when cargo targets a container the loadout does not wear.",
+    "Name nowhere known to go before export, not only in-game degrade.",
+]
+verify = ["cargo_unworn_container_errors warns nowhere known to go."]
+citations = [
+    "commit 6ab8c74a cargo warning",
+    "T-417 no-garment structural",
+    "TBD_LoadoutEquipHelper spawn degrade",
+]
 shipped_at = "6ab8c74a"
 created_at = "2026-07-31T16:29:14Z"
 completed_at = "2026-07-31T16:29:14Z"

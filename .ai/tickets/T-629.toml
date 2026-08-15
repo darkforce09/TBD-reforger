@@ -1,12 +1,28 @@
 id = "T-629"
 kind = "work"
-title = "the satellite basemap was the placeholder, and the rate limiter is why"
-summary = 'Backfilled 2026-08-01. Shipped in commit `af3f8c39c` but never written to the registry, so `next_id` and every "next free id" reading were four short. Code is authoritative; this row exists so the registry stops disagreeing with git.'
+title = "Full basemap failed on API rate limiter 429 throttling"
+summary = "Satellite showed 800×800 preview because rate limiter 429'd Range spans; retry backoff and loud failure path."
 class = "feature"
 status = "shipped"
 order = 3782
 executor = "claude-code"
 priority = 3
+context = [
+    "Full basemap load failed silently; preview mip stayed on screen.",
+    "T-627 per-tile Range requests hit 20/s burst-40 limiter after DEM and world draws.",
+    "Measured: 48×429 and 1×206 on 49-span everon plan at concurrency four.",
+]
+requirement = [
+    "Remove unwrap_or 8192 texture limit fallback; require measured engine limit.",
+    "Distinguish 429 in RangeOutcome; bounded backoff on fetch_range_resilient.",
+    "Failed full load reports preview placeholder is what landed.",
+]
+verify = ["Measured: 49 spans complete level 0 after 15×429 retries."]
+citations = [
+    "commit af3f8c39 satellite rate limiter",
+    "T-625 T-626 per-client limiter",
+    "T-627 forty-nine Range requests",
+]
 shipped_at = "af3f8c39"
 created_at = "2026-08-01T07:44:04Z"
 completed_at = "2026-08-01T07:44:04Z"

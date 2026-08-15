@@ -1,18 +1,24 @@
 id = "T-545"
 kind = "work"
 title = "mcp-daemon.sh comment still claims mcpd-bin ignores CARGO_TARGET_DIR"
-summary = """
-FOUND by W55 adversarial verifier (CLEAN MINOR-NIT) after T-543.
-
-Runtime is correct (T-328/T-543). Residual: scripts/mod/mcp-daemon.sh comment still says mcpd-bin ignores CARGO_TARGET_DIR. Cure: update the comment to match live honor of CARGO_TARGET_DIR.
-
-Repro: rg 'ignores CARGO_TARGET_DIR' scripts/mod/"""
+summary = "Update mcp-daemon.sh stale mcpd-bin CARGO_TARGET_DIR comment after T-543"
 class = "feature"
 status = "shipped"
 order = 3385
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 priority = 2
+context = [
+    "W55 adversarial verifier CLEAN MINOR-NIT after T-543.",
+    "Runtime correct since T-328/T-543; comment still claimed ignore.",
+]
+requirement = ["Update mcp-daemon.sh comment to match T-543 CARGO_TARGET_DIR honor."]
+verify = ["rg ignores CARGO_TARGET_DIR scripts/mod/"]
+citations = [
+    "W55 verifier after T-543",
+    "T-543 mcpd-bin honor",
+    "bcc7b51c wave 56 CLOSED",
+]
 shipped_at = "bcc7b51c"
 created_at = "2026-07-27T14:02:59Z"
 completed_at = "2026-07-27T14:13:01Z"

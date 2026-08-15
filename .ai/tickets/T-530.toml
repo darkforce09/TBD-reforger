@@ -1,12 +1,26 @@
 id = "T-530"
 kind = "work"
 title = "T-332 Class-R partly pins doc comment strings"
-summary = "Wave 47 verifier P3/NIT. T-332 BE/FE Class-R partly asserts doc comment phrases (T-332 clear contract). Behavior covered by IT + stronger FE pins. Cure: pin live code paths only (body.insert / is_unique_violation / SQL), not comment prose."
+summary = "Harden T-332 Class-R off doc-comment prose pins"
 class = "docs"
 status = "shipped"
 order = 3370
 executor = "claude-code"
 priority = 2
+context = [
+    "Wave 47 deferred; shipped wave 62 verifier DIRTY minors.",
+    "T-332 Class-R partly asserted doc comment phrases only.",
+]
+requirement = [
+    "Pin live body.insert, is_unique_violation, and qb.push clear writers.",
+    "FE tests strip comments before asserting live identifiers.",
+]
+verify = ["Comment-only T-332 prose edits cannot stay green."]
+citations = [
+    "Wave 62 GATE PASS",
+    "T-332 clear contract pins",
+    "019e5ddd comment-strip Class-R",
+]
 shipped_at = "4af8cc11"
 created_at = "2026-07-27T15:13:37Z"
 completed_at = "2026-07-27T15:26:30Z"

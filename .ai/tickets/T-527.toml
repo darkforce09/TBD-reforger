@@ -1,12 +1,22 @@
 id = "T-527"
 kind = "work"
 title = "W47 hotfix: rustfmt event_manager.rs imports after T-332"
-summary = "Wave 47 cold gate FAIL fmt (changed). apps/website/frontend/src/event_manager.rs import order (badge_class/cn vs AdminGate) fails rustfmt --check after T-332 Attach Mission UI. Cure: rustfmt that file only. Owns: apps/website/frontend/src/event_manager.rs."
+summary = "rustfmt event_manager.rs import order after T-332 Attach Mission UI"
 class = "chore"
 status = "shipped"
 order = 3367
 executor = "claude-code"
 priority = 0
+context = [
+    "Wave 47 cold gate FAIL: cargo fmt --check on event_manager.rs.",
+    "T-332 Attach Mission UI left AdminGate before badge_class/cn.",
+]
+requirement = ["Reorder crate::ui imports so rustfmt --check passes."]
+citations = [
+    "Wave 47 cold gate fmt",
+    "T-332 Attach Mission UI",
+    "d74d7c67 rustfmt import reorder",
+]
 shipped_at = "6dac103b"
 created_at = "2026-07-27T11:25:55Z"
 completed_at = "2026-07-27T11:43:26Z"
