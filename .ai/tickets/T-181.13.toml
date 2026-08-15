@@ -13,7 +13,24 @@ requirement = [
     "HasEndTrigger gates tick; ignore unfielded factions; need two contestants.",
     "time_limit and other endOn modes parse but stay unevaluated.",
 ]
-citations = ["Source: commit d8fc6abc — win tick."]
+current_state = [
+    "Round end was admin-only stop; mission winConditions unused.",
+    "No faction_eliminated tick; unfielded factions indistinguishable from dead.",
+]
+approach = [
+    "TickWinConditions every 2s on LIVE when HasEndTrigger true.",
+    "Ignore unfielded factions; require two contesting factions before ending.",
+]
+verify = ["Win tick landed @ d8fc6abc (TickWinConditions)."]
+acceptance = [
+    "faction_eliminated tick armed from mission JSON on LIVE every 2s.",
+    "Unfielded factions ignored; solo test could not end the round.",
+]
+citations = [
+    "Source: commit d8fc6abc — win tick.",
+    "commit d8fc6abc win tick",
+    "notes HasEndTrigger gates tick",
+]
 shipped_at = "e35bc686"
 created_at = "2026-07-25T14:59:39Z"
 completed_at = "2026-07-25T14:59:39Z"

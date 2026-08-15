@@ -16,10 +16,24 @@ requirement = [
     "Add slot-loadout-coverage.json with gear, cargo, weapon triple, and no-loadout slots.",
     "Add empty-warning-fields.json for every schema-permitted empty and loadout warnings.",
 ]
+current_state = [
+    "No golden exercised slot loadout JSON path in schema CI.",
+    "Schema-permitted empty strings had no committed warning fixture.",
+]
+approach = [
+    "slot-loadout-coverage.json with gear, cargo, weapon triple, no-loadout.",
+    "empty-warning-fields.json for every schema-permitted empty warning field.",
+]
 verify = ["Schema gate: four goldens pass; twelve mutants fail."]
+acceptance = [
+    "slot-loadout-coverage golden exercised gear, cargo, and weapon triple path.",
+    "empty-warning-fields golden committed schema empties; twelve mutants failed.",
+]
 citations = [
     "Source: commit bae5d1d1 — golden fixtures.",
     "Source: t181_event_mod_program.md — wave 4 goldens.",
+    "commit bae5d1d1 golden fixtures",
+    "notes schema_gates glob discovery",
 ]
 shipped_at = "6685ec40"
 created_at = "2026-07-25T11:08:36Z"

@@ -13,7 +13,24 @@ requirement = [
     "Omit unmeasured stats; outcome success only on resolved faction_eliminated.",
     "Validator tests loadout content; cargo key proves authored block.",
 ]
-citations = ["Source: commit 817c16ca — results POST."]
+current_state = [
+    "No end-of-round POST; validator counted null keys not loadout content.",
+    "Gear presence unobservable; cargo key distinction undocumented.",
+]
+approach = [
+    "TBD_ResultsReporter POST omitting unmeasured stats to ingest endpoint.",
+    "Validator tests loadout content; cargo key proves authored block.",
+]
+verify = ["scripts/mod/world-boot.sh warning ratchet; capture POST proved."]
+acceptance = [
+    "Results POST omitted unmeasured stats; capture endpoint proved contract checks.",
+    "Validator loadout content checks tightened warnings from twenty-eight to three.",
+]
+citations = [
+    "Source: commit 817c16ca — results POST.",
+    "commit 817c16ca results POST",
+    "commit 15f9bb71 warning ratchet",
+]
 shipped_at = "15f9bb71"
 created_at = "2026-07-25T14:50:23Z"
 completed_at = "2026-07-25T14:53:01Z"

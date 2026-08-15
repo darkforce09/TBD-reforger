@@ -13,7 +13,24 @@ requirement = [
     "Client poll drives enter and exit; faction-scoped unit list on shell.",
     "Reuses ManualCameraContext actions; unrestricted mode off by default.",
 ]
-citations = ["Source: commit 3845765e — spectator modes."]
+current_state = [
+    "One-life death was terminal; dead players had no spectator path.",
+    "SCR_ManualCamera prefab blocked; no faction-scoped unit roster.",
+]
+approach = [
+    "Prefab-free scripted camera reusing ManualCameraContext actions.",
+    "Client poll drives enter and exit; faction-scoped unit list on shell.",
+]
+verify = ["Compile gate unrecorded on this slice; spectator files landed @ 3845765e."]
+acceptance = [
+    "Spectator free, follow, and first-person modes shipped on spent life.",
+    "Faction-scoped unit list polled client-side; unrestricted mode stayed off.",
+]
+citations = [
+    "Source: commit 3845765e — spectator modes.",
+    "commit 3845765e spectator camera",
+    "notes ManualCameraContext reuse",
+]
 shipped_at = "cd76b79f"
 created_at = "2026-07-25T08:59:38Z"
 completed_at = "2026-07-25T09:01:56Z"

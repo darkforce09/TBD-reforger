@@ -16,10 +16,24 @@ requirement = [
     "Parse polygon zones; ship geometry, registry, and PlayAreaComponent tick.",
     "Route kill penalty through existing OnPlayerKilled; default penalty to warn.",
 ]
+current_state = [
+    "Polygon play-area zones parsed to nothing; only circles worked.",
+    "No server warn-grace-penalty tick for out-of-bounds players.",
+]
+approach = [
+    "Parse polygon zones; ship geometry, registry, PlayAreaComponent 1 Hz tick.",
+    "Route kill penalty through OnPlayerKilled; default penalty warn.",
+]
 verify = ["Zone geometry harness: twenty-five runtime cases."]
+acceptance = [
+    "Polygon play-area zones parsed; warn-grace-penalty tick shipped server-side.",
+    "Kill penalty routed through existing OnPlayerKilled; default penalty stayed warn.",
+]
 citations = [
     "Source: commit e1ef28d0 — play-area zones.",
     "Source: t181_event_mod_program.md — AO poly-zones.",
+    "commit e1ef28d0 play-area zones",
+    "notes JsonLoadContext landmine",
 ]
 shipped_at = "2b3b7c4f"
 created_at = "2026-07-25T13:09:34Z"

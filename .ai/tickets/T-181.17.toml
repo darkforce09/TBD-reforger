@@ -16,9 +16,24 @@ requirement = [
     "Ship TBD_SafestartManager with damage suppression and verified restoration.",
     "Expose #tbd safestart status, go, and configurable seconds for admins.",
 ]
+current_state = [
+    "SAFE_START was enum-only; damage stayed on between deploy and go.",
+    "Compile gate could not prove SafestartManager wired on TBD_GameMode.et.",
+]
+approach = [
+    "TBD_SafestartManager EnableDamageHandling false with verified restoration.",
+    "Projectile and grenade sinks; #tbd safestart status, go, seconds.",
+]
+verify = ["scripts/mod/compile.sh exit 0; commit 2b8e3de1."]
+acceptance = [
+    "Safestart suppressed damage via EnableDamageHandling with verified restoration.",
+    "#tbd safestart exposed status, go, and configurable warmup seconds.",
+]
 citations = [
     "Source: commit 2b8e3de1 — safestart warmup.",
     "Source: t181_event_mod_program.md — compile blind.",
+    "commit 2b8e3de1 safestart warmup",
+    "notes compile blind wiring",
 ]
 shipped_at = "77cc7ae3"
 created_at = "2026-07-25T11:23:56Z"

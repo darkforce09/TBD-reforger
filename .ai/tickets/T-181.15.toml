@@ -16,9 +16,24 @@ requirement = [
     "Stamp connection epoch lazily; cancel deferred callbacks on disconnect.",
     "Split IsIdentityKey from IsDurableKey; deploy JIP at LOBBY through LIVE.",
 ]
+current_state = [
+    "Five CallQueue callbacks carried raw playerId across disconnect.",
+    "player:id lease leaked seat and life on recycled id reconnect.",
+]
+approach = [
+    "Lazy connection epoch cancels deferred callbacks on disconnect.",
+    "Split IsIdentityKey from IsDurableKey; JIP deploy LOBBY through LIVE.",
+]
+verify = ["scripts/mod/compile.sh exit 0; merge 5fe349ec."]
+acceptance = [
+    "Connection epoch cancelled five deferred CallQueue callbacks on disconnect.",
+    "IsIdentityKey split from IsDurableKey; JIP deploy allowed LOBBY through LIVE.",
+]
 citations = [
     "Source: commit d2353a3d — JIP hardening.",
     "Source: t181_event_mod_program.md — wave 4.",
+    "commit d2353a3d JIP hardening",
+    "notes CallQueue epoch hazard",
 ]
 shipped_at = "5fe349ec"
 created_at = "2026-07-25T11:14:56Z"

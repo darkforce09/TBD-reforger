@@ -16,10 +16,24 @@ requirement = [
     "Add world-boot.sh with PrintComponentRollCall wired into wave gate.",
     "Fail-closed triage on Unknown class; randomise ports; pin selftest cases.",
 ]
+current_state = [
+    "Compile gate blind to prefab wiring on TBD_GameMode.et.",
+    "-config and -addons mutually exclusive; idle boot looked successful.",
+]
+approach = [
+    "world-boot.sh with PrintComponentRollCall wired into wave gate.",
+    "Fail-closed Unknown class triage; randomised ports; ten selftest cases.",
+]
 verify = ["world-boot selftest pins ten cases."]
+acceptance = [
+    "world-boot.sh proved all five TBD_GameMode.et components instantiate.",
+    "Fail-closed triage caught Unknown class; selftest pinned ten cases.",
+]
 citations = [
     "Source: commit cb659887 — world-boot gate.",
     "Source: commit a10cb751 — gate hardening.",
+    "commit cb659887 world-boot gate",
+    "commit a10cb751 gate hardening",
 ]
 shipped_at = "a10cb751"
 created_at = "2026-07-25T11:50:04Z"
