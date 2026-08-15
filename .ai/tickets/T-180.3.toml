@@ -20,6 +20,11 @@ requirement = [
 current_state = ["OPFOR and INDFOR slots looked identical to BLUFOR on map."]
 approach = ["slots_gpu side_rgba; SlotSoa.side_keys; engine bind side_tints."]
 verify = ["Verify: .ai/artifacts/t180_3_verify_log.md."]
+acceptance = [
+    "SIDE_* RGBA tints applied to unselected map slot rings per faction key.",
+    "Selected rings stayed yellow; SlotSoa.side_keys bound via engine.",
+    "C1–C4 Class-R gates passed.",
+]
 citations = [
     "Source: commit 19acc593 — side tint.",
     "Source: t180_3_map_side_tint.md — C gates.",

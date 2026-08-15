@@ -20,6 +20,11 @@ requirement = [
 current_state = ["FactionRow dropped faction key; sole place slot never became leader."]
 approach = ["map-engine-core place_orbat.rs; store leaderSlotId; editor_ops active_side."]
 verify = ["Verify: .ai/artifacts/t180_1_verify_log.md."]
+acceptance = [
+    "place_character_under_side minted faction-{SIDE} squad per place with leaderSlotId.",
+    "Removed ensure_default_squad from place_at; active_side wired in OpsCtx.",
+    "Slot callsign/rank roundtripped; FactionRow.key plumbed to outliner.",
+]
 citations = [
     "Source: commit aeb51209 — place new squad.",
     "Source: t180_1_foundation_schema.md — A gates.",

@@ -20,6 +20,11 @@ requirement = [
 current_state = ["Parallel membership rules would fork if T-180.4 lines invented own logic."]
 approach = ["Extend store.rs mutators; cargo test --features doc for B suite."]
 verify = ["Verify: .ai/artifacts/t180_2_verify_log.md."]
+acceptance = [
+    "set_leader, move_slot_to_squad, rename/reorder/remove_squad mutators shipped in store.rs.",
+    "Empty squads garbage-collected; add_vehicle attach/detach with vehicleIds.",
+    "B1–B8 Class-R gates passed with --features doc.",
+]
 citations = [
     "Source: commit 83557768 — graph mutators.",
     "Source: t180_2_graph_mutators.md — B gates.",

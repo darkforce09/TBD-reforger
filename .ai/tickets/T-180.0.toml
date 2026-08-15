@@ -19,6 +19,12 @@ requirement = [
 ]
 current_state = ["Pre-ship: place dumped into default squad; hub gaps open in registry."]
 approach = ["Commit hub, pins, handoff, stitch pack, slice specs; queue T-180.1."]
+verify = ["Hub, pins, stitch pack, and T-180.1-.9 specs landed @ 788eb908."]
+acceptance = [
+    "Published t180_orbat_eden_program hub and t180_class_r_pins measured Class-R table.",
+    "Copied stitch_orbat_modal pack and authored T-180.1-.9 slice spec stubs.",
+    "Registry ladder marked T-180.1 shipped and queued T-180.2.",
+]
 citations = [
     "Source: commit 788eb908 — program hub.",
     "Source: t180_orbat_eden_program.md — north star.",

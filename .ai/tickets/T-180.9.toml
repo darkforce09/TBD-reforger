@@ -18,9 +18,16 @@ requirement = [
     "open_arsenal selects Attributes tab 3 for the selected slot.",
     "ORBAT Manager OPEN ARSENAL routes through open_arsenal.",
 ]
+current_state = ["derive_orbat hardcoded empty loadout; Sl lacked loadout field."]
+approach = ["orbat.rs loadout_summary_from_value; editor_ops open_arsenal; orbat_manager route."]
 verify = [
     "map-engine-core derive loadout tests I1–I6 pass.",
     "Verify log at .ai/artifacts/t180_9_verify_log.md.",
+]
+acceptance = [
+    "Sl.loadout deserialized; loadout_summary_from_value filled derive_orbat export summaries.",
+    "open_arsenal selected Attributes tab 3; ORBAT Manager OPEN ARSENAL routed through it.",
+    "I1–I9 Class-R gates passed; no Standardization UI shipped.",
 ]
 citations = [
     "Source: commit cba837b3 — Open Arsenal.",

@@ -20,6 +20,11 @@ requirement = [
 current_state = ["SHIPPED: apply_eden_chip in eden_chrome; catalog stays unfiltered per E-L2b."]
 approach = ["Four chips in DockRight; objects_mode blocks place_at without panic."]
 verify = ["Verify: .ai/artifacts/t180_5_verify_log.md."]
+acceptance = [
+    "DockRight Eden chips set active_side; Objects stub no-op without panic.",
+    "OPFOR chip drove place_character_under_side faction key per E4.",
+    "E1–E5 gates passed; catalog stayed unfiltered per E-L2b.",
+]
 citations = [
     "Source: commit 1324799c — Eden side chips.",
     "Source: t180_5 spec — E1–E5 gates.",

@@ -20,6 +20,11 @@ requirement = [
 current_state = ["SHIPPED: apply_faction.rs; pack_vehicle_instances; default place at 6400,6400."]
 approach = ["Core materialize then refresh orbat_nodes and squad links; yellow vehicle disc."]
 verify = ["Verify: .ai/artifacts/t180_8_verify_log.md."]
+acceptance = [
+    "apply_faction_library REPLACE materialized squads, slots, vehicles from T-153.",
+    "MissionVehicles GPU lane and yellow vehicle discs at Everon 6400,6400.",
+    "Apply confirm plus Save/Save-as and Add Vehicle picker shipped; H1–H9 passed.",
+]
 citations = [
     "Source: commit cce240a5 — templates and vehicles.",
     "Source: t180_8 spec — H1–H9 gates.",

@@ -20,6 +20,11 @@ requirement = [
 current_state = ["SHIPPED: squad_links.rs build_squad_link_segments; mission_history uploads lane 9."]
 approach = ["Pure geometry in map-engine-core; Leptos feeds squads+xy on doc dirty."]
 verify = ["Verify: .ai/artifacts/t180_4_verify_log.md."]
+acceptance = [
+    "Leader→member hairline segments built in squad_links.rs; zero peer links.",
+    "LaneRole::SquadLinks engine lane 9 uploaded on doc dirty.",
+    "D1–D6 Class-R gates and draw-order pin passed.",
+]
 citations = [
     "Source: commit 63e7ef00 — leader lines.",
     "Source: t180_4 spec — D1–D6 gates.",

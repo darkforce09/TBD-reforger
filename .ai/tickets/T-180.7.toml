@@ -20,6 +20,11 @@ requirement = [
 current_state = ["SHIPPED: orbat_manager.rs module; editor_ops orbat_* mutators; smoke o3 pins."]
 approach = ["New orbat_manager.rs; thin re-export from eden_chrome; operator L8 omitted."]
 verify = ["Verify: .ai/artifacts/t180_7_verify_log.md."]
+acceptance = [
+    "Stitch near-fullscreen orbat_manager.rs shipped on live mission graph.",
+    "format_slot_line in core; Add Squad/Role and OPEN ARSENAL wired.",
+    "G1–G8 Class-R gates passed; smoke o3 pins updated.",
+]
 citations = [
     "Source: commit e9c2406d — Stitch ORBAT Manager.",
     "Source: t180_7 spec — G1–G8 gates.",

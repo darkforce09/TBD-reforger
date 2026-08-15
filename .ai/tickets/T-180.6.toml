@@ -20,6 +20,11 @@ requirement = [
 current_state = ["SHIPPED: refile_slot via core; OrbatManager DnD; outliner is_leader badge."]
 approach = ["editor_ops refile_slot calls core then after_local_edit for trees and links."]
 verify = ["Verify: .ai/artifacts/t180_6_verify_log.md."]
+acceptance = [
+    "refile_slot called core move_slot_to_squad only; empty squads GC'd.",
+    "ORBAT tree and SL badge tracked leaderSlotId after place and refile.",
+    "F1–F5 gates passed; squad links rebuilt on dirty doc.",
+]
 citations = [
     "Source: commit 056c9a1a — place refile sync.",
     "Source: t180_6 spec — F1–F5 gates.",
