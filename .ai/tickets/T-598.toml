@@ -6,6 +6,35 @@ class = "audit"
 status = "shipped"
 order = 3471
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+T-579 was filed when `send_rcon` always answered 503 and the SPA's success path was unreachable
+dead code. **T-595 made it reachable again**, and the same string is now wrong the other way.
+
+`apps/website/frontend/src/server_control.rs:116` `rcon_accepted_message` reads
+    "RCON accepted action={} (audit queued; transport pending T-269)"
+The transport is no longer pending -- T-289 shipped the host agent and T-595 shipped the client. A
+202 now means the command was **delivered to a host agent that confirmed the unit's state**, which is
+a materially different claim from "queued, transport pending".
+
+**IT IS PINNED, SO THE STRING AND THE PIN MOVE TOGETHER**: a Class-R at `server_control.rs:788`
+asserts `SRC.contains("transport pending T-269")`. Change one without the other and the slice goes
+red for the wrong reason.
+
+The 202 body now carries `accepted`, `action`, plus new `delivered` / `state` / `detail`. The existing
+`RconAccepted` DTO deserializes unchanged, but **the UI should surface `state`** -- that field is the
+whole point of T-289's design (the host is documented as exiting 0 over a dead server, so the agent
+re-reads `LoadState`/`ActiveState` and returns what it saw).
+
+Also still open from T-579, unchanged: `event_manager.rs:985` still promises that deleting an event
+removes its missions' ORBATs and registrations, while `handlers/events.rs:1380` soft-deletes only.
+
+**SEQUENCING:** two operator steps must happen before any of this is exercisable end to end -- set
+`Environment=GAME_AGENT_SOCKET=%t/tbd-reforger-agent.sock` in the API's systemd unit, and run
+`TBD_INSTALL_AGENT=1` once. Both mutate the live host; no agent has run them.
+
+missing=0"""
 priority = 2
 main_goal = "Update RCON toast and pin for delivered state, not queued transport."
 context = [

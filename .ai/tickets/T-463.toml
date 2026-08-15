@@ -6,6 +6,17 @@ class = "chore"
 status = "shipped"
 order = 3302
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from T-462 / wave 24. wave.sh now runs verify-t439 and verify-t444 after schema, but scripts/mod/verify-t438-deploy-staging-compose-path.sh and verify-t456-mission-rest-size-gate.sh remain agent-local only — cold gate never executes them.
+
+Repro: corrupt deploy-staging compose path or strip REST size check → wave.sh gate still PASS until those scripts are invoked manually.
+
+Cure: wire both into wave.sh gate_slice + cmd_gate next to the T-439/T-444 steps (same pattern).
+
+missing=0
+"""
 priority = 2
 main_goal = "Wire verify-t438 and verify-t456 into wave.sh cold gate."
 context = [

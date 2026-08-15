@@ -7,7 +7,18 @@ status = "shipped"
 order = 5951
 spec = "docs/platform/t915_ticketboard_design.md"
 executor = "claude-code"
-notes = "Mechanism only — no policy: require_check_ok, sync, wave machinery all stay in xtask. Store becomes the shared substrate for the three duplicate walks (wave_lock::load_views, check_open_work_owns, slice_collisions::ticket_facts) — rewiring them is T-916.2. Injected clock precedent: metrics::stamp_land_at. No new external dependencies (std fs only)."
+notes = """
+Mechanism only — no policy: require_check_ok, sync, wave machinery all stay in xtask. Store becomes the shared substrate for the three duplicate walks (wave_lock::load_views, check_open_work_owns, slice_collisions::ticket_facts) — rewiring them is T-916.2. Injected clock precedent: metrics::stamp_land_at. No new external dependencies (std fs only).
+
+--- HEAD migration_legacy (verbatim) ---
+
+Full-corpus typed store in crates/tbd-tickets (every T-*.toml, parents and children, into a typed map) plus pure mutation ops with an injected clock: set_status, ship, mark_ready, add, add_child, remove, reorder, advance_slice. Post-image validation before any byte lands (no op may write a corpus its own preflight would refuse), surgical render -> re-parse -> temp+rename per-file writes, new invariants: dup-children refusal, dotted child ids, add_child refuses work parents without --promote, remove refuses program cascade without --force, ship clears stale parent.active.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["Full-corpus typed store in crates/tbd-tickets (every T-*.toml, parents and children, into a typed map) plus pure mutation ops with an injected clock: set_status, ship, mark_ready, add, add_child, remove, reorder, advance_slice. Post-image validation before any byte lands (no op may write a corpus its own preflight would refuse), surgical render -> re-parse -> temp+rename per-file writes, new invariants: dup-children refusal, dotted child ids, add_child refuses work parents without --promote, remove refuses program cascade without --force, ship clears stale parent.active."]
+
+missing=0"""
 parent = "T-916"
 main_goal = "Registry mutations are typed corpus transforms in tbd-tickets — the serde_json::Value round-trip that produced the 4a2f3426 duplicate-children class and the ship-child hole is no longer the mutation substrate."
 context = [

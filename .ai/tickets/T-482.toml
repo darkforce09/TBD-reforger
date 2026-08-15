@@ -6,6 +6,19 @@ class = "docs"
 status = "shipped"
 order = 3321
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 31 adversarial BLOCKER. T-423 moved the_vehicle_row_still_has_the_shape_this_module_reads onto MissionDocCore behind #[cfg(feature = "doc")] in flatten.rs, but scripts/verify-t180-coherency.sh:213-214 still pins it with --features mission only. cargo_test_pin (T-424) correctly FAILs: 0 tests passed. make verify-t180 is red on tip. Cold wave gate still PASS because it runs cargo test with doc,mission.
+
+Repro:
+  cargo test -p map-engine-core --features mission --lib the_vehicle_row_still_has_the_shape_this_module_reads -- --quiet
+  # running 0 tests; ok. 0 passed
+  # with --features "doc,mission" → 1 passed
+
+Cure: change that verify-t180 pin to --features "doc mission" (same as place_/attach_vehicle pins), OR ungated cfg so mission alone compiles the test. Prefer script feature align — keep Class-R on writer round-trip.
+
+missing=0"""
 priority = 1
 main_goal = "Align verify-t180 pin to doc+mission features for vehicle-floor test."
 context = [

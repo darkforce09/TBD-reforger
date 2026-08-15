@@ -6,6 +6,17 @@ class = "chore"
 status = "shipped"
 order = 3310
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from wave 26 adversarial MAJOR. verify-t468-ci-schema-parity.sh requires ci.yml run: make ci-local-schema and that Makefile has a ci-local-schema: target name — not that the recipe still invokes schema-validate + verify-citations.
+
+Repro: replace ci-local-schema recipe with `echo hollow-only` → tripwire PASS; CI green while map-object-enums unrun.
+
+Cure: pin Makefile recipe body contains schema-validate (and citations) or expand GATE set check; RED→GREEN on hollow recipe.
+
+missing=0
+"""
 priority = 2
 main_goal = "Pin verify-t468 Makefile recipe invokes schema-validate and citations."
 context = [

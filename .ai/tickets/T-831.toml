@@ -6,7 +6,19 @@ class = "audit"
 status = "queued"
 order = 5130
 executor = "claude-code"
-notes = "operator requirement wave-204; audit-first; game half = parked T-673"
+notes = """
+operator requirement wave-204; audit-first; game half = parked T-673
+
+--- HEAD migration_legacy (verbatim) ---
+
+OPERATOR REQUIREMENT (wave-204 eye-pass, 2026-08-10): 'I should be able to have markers for each side — markers only BLUFOR can see and markers only OPFOR can see, like Arma 3.' REPRO/AUDIT FIRST — the data model is ALREADY side-scoped: markers live on per-side briefings[] (T-069) and the dock copy says 'markers for the ACTIVE side's briefing'. Establish: (1) how the editor switches the active side today (is there a switcher? what does it author into?); (2) whether OPFOR/INDFOR marker authoring is reachable at all; (3) what the compiled mission carries per side. THEN: make per-side authoring explicit (side selector on the Markers surface; map shows the selected side's set, or all sets with side badges — pick with the operator if ambiguous); the GAME-side enforcement (each side sees only its briefing's markers) is the mod half — T-673, PARKED in the mod band (wave 150); cite it, do not build game enforcement here. ACCEPTANCE: author a BLUFOR and an OPFOR marker; each lands on its own side's briefing in the compiled export; the editor can display/author both sides' sets distinctly; T-673 named as the runtime half.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["OPERATOR REQUIREMENT (wave-204 eye-pass, 2026-08-10): 'I should be able to have markers for each side — markers only BLUFOR can see and markers only OPFOR can see, like Arma 3.' REPRO/AUDIT FIRST — the data model is ALREADY side-scoped: markers live on per-side briefings[] (T-069) and the dock copy says 'markers for the ACTIVE side's briefing'. Establish: (1) how the editor switches the active side today (is there a switcher? what does it author into?); (2) whether OPFOR/INDFOR marker authoring is reachable at all; (3) what the compiled mission carries per side. THEN: make per-side authoring explicit (side selector on the Markers surface; map shows the selected side's set, or all sets with side badges — pick with the operator if ambiguous); the GAME-side enforcement (each side sees only its briefing's markers) is the mod half — T-673, PARKED in the mod band (wave 150); cite it, do not build game enforcement here. ACCEPTANCE: author a BLUFOR and an OPFOR marker; each lands on its own side's briefing in the compiled export; the editor can display/author both sides' sets distinctly; T-673 named as the runtime half."]
+
+missing=0
+"""
 main_goal = "Audit side-scoped markers; explicit per-side authoring UI."
 context = [
     "Operator Arma 3 requirement: per-side markers only visible to that side.",

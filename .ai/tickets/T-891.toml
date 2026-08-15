@@ -7,6 +7,16 @@ status = "shipped"
 order = 5720
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+T-853 shell->xtask slice. Port scripts/mod/compile.sh to `cargo xtask mod compile` and delete the script(s), their scripts/shell-inventory.txt line(s), any scripts/python-inventory.txt line(s), and repoint every caller. 375 lines. Wraps ArmaReforgerServer. EXIT CONTRACT IS 0/1/2 and mod-gates.yml + ci.yml branch on it with `|| rc=$?; case $rc` - preserve exactly. `--selftest` passes ONLY on exit 1; a selftest that exits 0 means the gate is hollow. ACCEPTANCE IS BYTE-FOR-BYTE: capture bash stdout+stderr+rc first, then diff on a clean tree AND on >=2 deliberately broken trees; the harness must assert the BASH side went red before believing a diff. A green run alone is not evidence (T-556). Build on crates/tbd-gate. Spec: docs/platform/t853_shell_to_xtask_waves.md
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["T-853 shell->xtask slice. Port scripts/mod/compile.sh to `cargo xtask mod compile` and delete the script(s), their scripts/shell-inventory.txt line(s), any scripts/python-inventory.txt line(s), and repoint every caller. 375 lines. Wraps ArmaReforgerServer. EXIT CONTRACT IS 0/1/2 and mod-gates.yml + ci.yml branch on it with `|| rc=$?; case $rc` - preserve exactly. `--selftest` passes ONLY on exit 1; a selftest that exits 0 means the gate is hollow. ACCEPTANCE IS BYTE-FOR-BYTE: capture bash stdout+stderr+rc first, then diff on a clean tree AND on >=2 deliberately broken trees; the harness must assert the BASH side went red before believing a diff. A green run alone is not evidence (T-556). Build on crates/tbd-gate. Spec: docs/platform/t853_shell_to_xtask_waves.md"]
+
+missing=0"""
 main_goal = "Port compile.sh to cargo xtask mod compile; preserve 0/1/2 exit."
 context = [
     "T-853 shell->xtask slice; 375 lines Enfusion compile gate.",

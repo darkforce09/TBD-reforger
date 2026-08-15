@@ -6,7 +6,15 @@ class = "chore"
 status = "shipped"
 order = 4090
 executor = "claude-code"
-notes = "editor-UI program wave 11 (wave_plan.tsv row 111) — SHIPPED wave 111 (editor factory), a6e1b2a2; verifier wave111.md"
+notes = """
+editor-UI program wave 11 (wave_plan.tsv row 111) — SHIPPED wave 111 (editor factory), a6e1b2a2; verifier wave111.md
+
+--- HEAD migration_legacy (verbatim) ---
+
+The surface for the validation group, and product order says it should ship FIRST within that group. The rollup ranks #2 of 10 in the tooling analysis and the reason is decisive: FNF commented THEIRS out inside an HTML comment, so a maker gets no summary of failures and every other check became invisible. Requirements: a persistent issue list with a rollup; CLICK-TO-SELECT findings, not a clipboard dump; a severity ladder with a legend; and NO SEVERITY THAT FIRES ON CORRECT INPUT. Validation is ALWAYS ON — not behind a debug flag, not on save, not on export (T-635 gates telemetry; correctness diagnostics are never gated). Code: no validation surface exists in the SPA, so a NEW `apps/website/frontend/src/validation_panel.rs` (module name INFERRED; wave 0 pre-declares the stub) plus the mount and the always-on re-evaluation tick in mission_editor.rs, where `MissionEditorPage` :642 owns every overlay mount (:2060-2110). DELIBERATE SCOPING DECISION: if the panel DOCKS rather than floats it also touches the dock chrome, and that single path would collide it with most of the program. Float it, or accept the serialisation and re-open the owns row. NOTE, unresolved and worth the operator's attention: the file graph would permit this ticket as early as wave 3, and both independent packings put it late. That is a product call, not a scheduling one, and it costs zero waves either way.
+
+missing=0
+"""
 depends_on = ["T-661"]
 main_goal = "Ship floating validation panel with persistent issue list and rollup."
 context = [

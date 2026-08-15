@@ -6,6 +6,12 @@ class = "chore"
 status = "shipped"
 order = 3346
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 42 residual (CLEAN MINOR). require_role_played is called in ingest_match_results (telemetry.rs ~688 and ~722). Unit tests blank_role_played_is_rejected / non_blank_role_played_ok only exercise the helper. RED: delete both ingest call sites → those tests still PASS. No include_str call-site pin; no HTTP IT asserting "role_played must not be blank". Live ship is correct; cure: Class-R pin that both call sites invoke require_role_played and/or HTTP IT for blank role_played → 400.
+
+missing=0"""
 priority = 1
 main_goal = "Pin require_role_played at ingest call sites via Class-R or HTTP IT."
 context = [

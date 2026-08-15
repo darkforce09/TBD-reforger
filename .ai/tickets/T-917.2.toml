@@ -7,7 +7,18 @@ status = "shipped"
 order = 5972
 spec = "docs/platform/t917_ticket_schema_v2.md"
 executor = "claude-code"
-notes = "Migrator parses v1 as toml::Value — typed v2 refuses v1 by definition. wave.lock must be byte-identical (scope/summary are not lock inputs). parse_ticket_toml becomes shape-strict only; legality moves to Corpus::load + check (documented weakening). Surface REQUIRED on live/new work from here."
+notes = """
+Migrator parses v1 as toml::Value — typed v2 refuses v1 by definition. wave.lock must be byte-identical (scope/summary are not lock inputs). parse_ticket_toml becomes shape-strict only; legality moves to Corpus::load + check (documented weakening). Surface REQUIRED on live/new work from here.
+
+--- HEAD migration_legacy (verbatim) ---
+
+One commit by compile-time physics: tbd-tickets v2 types + encoding (flat [scope] keys, new keys class/plan/estimated/estimate_note/context/requirement/current_state/approach/verify/citations/migration_legacy), schema.json + ALLOWED_NEW governance widen, Value->Value migrator with per-file re-parse + byte-stable re-render gate, all ticket files rewritten (scope remap incl. chrome map and owns-inferred surfaces, uninferable scope listed in estimated), consumer compile fixes (board scope_compact, phase2 infer/override/targets retire into the migrator, cmds/ops mint sites), regenerated sync surface, new ticket scope-histogram verb.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["One commit by compile-time physics: tbd-tickets v2 types + encoding (flat [scope] keys, new keys class/plan/estimated/estimate_note/context/requirement/current_state/approach/verify/citations/migration_legacy), schema.json + ALLOWED_NEW governance widen, Value->Value migrator with per-file re-parse + byte-stable re-render gate, all ticket files rewritten (scope remap incl. chrome map and owns-inferred surfaces, uninferable scope listed in estimated), consumer compile fixes (board scope_compact, phase2 infer/override/targets retire into the migrator, cmds/ops mint sites), regenerated sync surface, new ticket scope-histogram verb."]
+
+missing=0"""
 depends_on = ["T-917.1"]
 parent = "T-917"
 main_goal = "The registry speaks v2: every ticket carries the flat 4-level scope and the ten-field body skeleton, every consumer compiles and renders it, and nothing about wave packing moved."

@@ -6,6 +6,17 @@ class = "chore"
 status = "shipped"
 order = 3308
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from wave 25 adversarial N4 / observed cold-gate flake. admin_field.rs:37 indexes LOCATION without Option — one gate run panicked 'no entry found for key location'; re-run PASS.
+
+Repro: intermittent when APP_ENV/dev-login does not 302 (or header absent).
+
+Cure: assert status+LOCATION with actionable message; fail soft instead of IndexMap panic.
+
+missing=0
+"""
 priority = 3
 main_goal = "Assert status+LOCATION in admin_field; fail soft not IndexMap panic."
 context = [

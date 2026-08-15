@@ -7,6 +7,16 @@ status = "shipped"
 order = 5830
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+hostrun.sh's last consumer is scripts/platform/wave.sh. Its Rust successor xtask/src/hostrun.rs already exists, is shared with playtest_server, and has a live test proving the bridge crosses the container wall (glibc 2.36 in-container vs 2.43 on the host). Delete the script and its inventory line ONLY after wave.sh is gone — order matters, and BLOCKED ON the wave.sh slice in this wave. This is the last tracked shell file in the repository. ACCEPTANCE: prove the change BITES — perturb the new subject and watch it go red — not merely that it passes. A green run alone is not evidence (T-556). Finish with a full `cargo xtask platform wave gate` PASS: it is the only check that sees cross-crate breakage, and it has caught defects a green `cargo test -p xtask` could not. Spec: docs/platform/t853_shell_to_xtask_waves.md
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["hostrun.sh's last consumer is scripts/platform/wave.sh. Its Rust successor xtask/src/hostrun.rs already exists, is shared with playtest_server, and has a live test proving the bridge crosses the container wall (glibc 2.36 in-container vs 2.43 on the host). Delete the script and its inventory line ONLY after wave.sh is gone — order matters, and BLOCKED ON the wave.sh slice in this wave. This is the last tracked shell file in the repository. ACCEPTANCE: prove the change BITES — perturb the new subject and watch it go red — not merely that it passes. A green run alone is not evidence (T-556). Finish with a full `cargo xtask platform wave gate` PASS: it is the only check that sees cross-crate breakage, and it has caught defects a green `cargo test -p xtask` could not. Spec: docs/platform/t853_shell_to_xtask_waves.md"]
+
+missing=0"""
 main_goal = "Delete hostrun.sh after wave.sh gone; last tracked shell file."
 context = [
     "hostrun.sh last consumer is scripts/platform/wave.sh.",

@@ -6,7 +6,19 @@ class = "chore"
 status = "queued"
 order = 5120
 executor = "claude-code"
-notes = "operator eye-pass wave-204; candidate for the T-825 session or standalone"
+notes = """
+operator eye-pass wave-204; candidate for the T-825 session or standalone
+
+--- HEAD migration_legacy (verbatim) ---
+
+OPERATOR EYE-PASS FINDING (wave-204 pass, 2026-08-10, screenshot evidence): the left outliner rows read 'very cramped' — 16px rows with per-row icon clusters (eye/camera/rename/delete/drop-chip) squeezed against truncated names. DIRECTION: a density pass on the layer tree — more row breathing room (height/padding), icon cluster shown on hover-or-active rather than always (Eden hides row tools until hover), name gets the width; keep the T-803 drop-target treatment + T-809 vehicle rows + windowing (threshold 50) intact. MAY BE ABSORBED by the T-825 design session — if that session lands first, fold this in; otherwise it is a standalone visual pass. ACCEPTANCE: row height/padding increased measurably; row tools hidden until hover (or active); no truncation of typical names at 240px dock width; windowing + all row affordances (rename, flags, drop-target, Alt-click) still work.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["OPERATOR EYE-PASS FINDING (wave-204 pass, 2026-08-10, screenshot evidence): the left outliner rows read 'very cramped' — 16px rows with per-row icon clusters (eye/camera/rename/delete/drop-chip) squeezed against truncated names. DIRECTION: a density pass on the layer tree — more row breathing room (height/padding), icon cluster shown on hover-or-active rather than always (Eden hides row tools until hover), name gets the width; keep the T-803 drop-target treatment + T-809 vehicle rows + windowing (threshold 50) intact. MAY BE ABSORBED by the T-825 design session — if that session lands first, fold this in; otherwise it is a standalone visual pass. ACCEPTANCE: row height/padding increased measurably; row tools hidden until hover (or active); no truncation of typical names at 240px dock width; windowing + all row affordances (rename, flags, drop-target, Alt-click) still work."]
+
+missing=0
+"""
 main_goal = "More row breathing room; row tools on hover not always."
 context = [
     "wave-204 eye-pass: 16px rows, icon clusters squeezed against truncated names.",

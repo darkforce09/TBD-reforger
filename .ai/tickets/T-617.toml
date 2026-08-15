@@ -6,7 +6,34 @@ class = "bug"
 status = "shipped"
 order = 3642
 executor = "claude-code"
-notes = "needs-operator: frozen unmappable Scope."
+notes = """
+needs-operator: frozen unmappable Scope.
+
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by T-612 (wave 78) after it corrected the four scripts and six docs its own ticket named.
+One more site, missed by the original sweep because it is a mission config rather than a doc or script.
+
+`apps/mod/tbd-framework/Missions/TBD_Dev_POC.conf:5` -- `m_sDescription` still instructs players to
+watch for **`built slot spawn`** (deleted from the codebase) and **`spawn requested`** (appears in
+**zero** `Print` statements anywhere). This is player-facing text inside the dev mission, so it is
+read by exactly the person least equipped to know it is wrong.
+
+Current vocabulary, measured live on a 421-line healthy boot (`slot-loadout-coverage`,
+`TBD_WORLDBOOT_SETTLE=25`): **145** `[TBD][` lines, **7** `[TBD][Slots] Slot-`, **93**
+`[TBD][Loadout][Slot]`, and `[TBD][Mission] loaded id=`. Zero matches for either dead string.
+
+FIX SHAPE, established and proved by T-606 and T-612: pin the last **structural** token (tag, `key=`,
+enum), never the first English word; verify against a real log rather than by reading; and do not pin
+a tagged-line count (measured 147 and 155 on two goldens, drifting +47 on an unchanged mission).
+`scripts/mod/remote-log-grep.sh` is the reference implementation and carries the rule at its line 34.
+
+CONTEXT for why a description string is worth a ticket: T-612 proved `mcp-wb-logs.sh` had **no
+reachable exit 0 or exit 2** and was fully inverted -- it printed PASS on a stale June log and FAIL on
+a real healthy boot -- because it was built on these same two dead strings. The strings have a track
+record of turning into false verdicts wherever they are copied.
+
+missing=0"""
 priority = 3
 main_goal = "Update m_sDescription to current tagged log vocabulary per T-612 rule."
 context = [

@@ -6,7 +6,26 @@ class = "bug"
 status = "shipped"
 order = 3244
 executor = "claude-code"
-notes = "needs-operator: frozen unmappable Scope."
+notes = """
+needs-operator: frozen unmappable Scope.
+
+--- HEAD migration_legacy (verbatim) ---
+
+Filed by wave 4's T-241 agent, which correctly reported rather than fixed (the mod .c files were in its owns but changing mod prose was out of its scope).
+
+T-241 closed zones[].rules to a 16-key vocabulary with additionalProperties:false. Six comments in the mod now assert the opposite -- that the vocabulary is open and additive:
+  apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c:71, :72, :87
+  apps/mod/tbd-framework/Scripts/Game/TBD/Objectives/TBD_ObjectiveRules.c:5, :6, :47
+Example, verbatim: 'The objective rule vocabulary. Additive and legal under `additionalProperties: true`'.
+
+WHY THIS MATTERS MORE THAN A NORMAL STALE COMMENT: T-241 is a DEPENDENCY ROOT. slice-collisions.py encodes T-201, T-211, T-212 and T-275 -> T-241 precisely so the zones vocabulary is declared ONCE instead of four tickets each inventing one. All four will read these headers as the contract for what they are building on, and the headers now describe a schema that no longer exists. This is the stale-doc trap that costs a whole slice.
+
+Comment-only edit, zero behavioural risk.
+
+ALSO IN THE SAME FILES: TBD_MissionLoader.c:88 documents graceSeconds as 'number >= 0' but the code at :389 also rejects > MAX_GRACE_SECONDS. The header omits the ceiling. T-275-adjacent.
+
+RECORDED DECISION so it is not re-litigated: T-241 deliberately did NOT encode conditional `required` for holdSeconds and targetAlias, though both are effectively mandatory (without them the objective goes inert with an operator-facing reason). Reason: it is a different defect from T-241's, and conditional requires are the shape most likely to collide with T-201/T-211/T-212. Both keys carry the requirement in prose instead. The command center endorsed this. Enforce it when a consumer actually needs it, not before.
+"""
 priority = 2
 main_goal = "Update mod zone-rule comments to match T-241 closed 16-key vocabulary schema."
 context = [

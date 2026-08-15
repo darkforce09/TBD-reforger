@@ -6,6 +6,45 @@ class = "bug"
 status = "shipped"
 order = 3602
 executor = "claude-code"
+notes = '''
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by wave 77's adversarial verifier. **The signature defect of this codebase, sitting inside the
+fix for it.** Latent today; blocker-shaped if it ever fires.
+
+T-602 (wave 77) fixed the gate silently narrowing its scope: it now DERIVES the base from the
+`wave N CLOSED` marker and VERIFIES that base is an ancestor-or-equal of the previous close. Both
+halves work -- measured, `HEAD~1` and mid-wave bases are refused with exact missed-commit counts.
+
+**But derive and verify call the same function.** The subject confirm (`wave.sh:1754`,
+`case … wave\ [0-9]*\ CLOSED*`) and the prefilter ERE (`:1777`) both accept ANYTHING after
+`CLOSED`, and `gate_base_covers_wave` (`:1806`) verifies against `prev_wave_close()` -- the same
+oracle that just produced the answer. So a plausible-looking subject becomes the base AND
+self-verifies. Proven in a shared clone (fabricated commits; the real repo untouched):
+
+    $ git commit-tree … -m 'wave 76 CLOSED? reopened — reverting T-608 pending re-gate'
+    DERIVED: a0377522 wave 76 CLOSED? reopened — reverting T-608 pending re-gate
+    cover rc=0
+
+The gate range would be ONE commit; the entire real wave sits outside every change-scoped step
+(`touch_changed`, `wasm32`, `fmt (changed)`, the trunk conditional) -- which is precisely the
+wave-75 incident T-602 was written to prevent, re-achievable through the front door.
+
+**Why it is latent, not live:** all 32 historical `wave N` subjects were checked and none matches;
+`wave --close` writes the format itself. The comment at `:1770` defends only against the marker text
+appearing in a commit BODY (which this wave's own commits do), not against a subject that merely
+continues past `CLOSED`.
+
+RELATED, same family (verifier F6): **a REVERTED wave-close still derives as the base.** Clone-proven
+-- with `Revert "wave 76 CLOSED…"` on top, derivation still returned `efc3851c`, so a disavowed wave's
+span is never re-gated. Requires an operator revert; fails narrow-and-silent.
+
+FIX SHAPE: anchor the subject match (`CLOSED` at end, or `CLOSED:` / `CLOSED —` only), and give the
+verifier an INDEPENDENT oracle -- e.g. cross-check the derived base against the merge structure or
+the tag history rather than re-asking `prev_wave_close()`. A checker that consults the thing it is
+checking is not a check.
+
+missing=0'''
 priority = 2
 main_goal = "Fix wave.sh derive and verify sharing same oracle; anchor CLOSED subject match."
 context = [

@@ -6,6 +6,16 @@ class = "feature"
 status = "shipped"
 order = 3425
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by W67 adversarial verifier (DIRTY MAJOR) after T-569.
+
+r#/br#/concat decoys RED. Still GREEN: `#[cfg(any())] match { live arms }` + `#[cfg(not(any()))] match { _ }` or cfg on each role arm with live `_`.
+
+Repro: cfg-out live arms; leave `_ => DEV_USER_ID` live; Class-R green.
+
+missing=0"""
 priority = 2
 main_goal = "Close Class-R hollow bypass via #[cfg(any())] match arms."
 context = [

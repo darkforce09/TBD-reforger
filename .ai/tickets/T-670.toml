@@ -6,7 +6,14 @@ class = "feature"
 status = "shipped"
 order = 4160
 executor = "claude-code"
-notes = "editor-UI program wave 15 (wave_plan.tsv row 115) — SHIPPED wave 115 (editor factory), f2acb1aa; verifier wave115.md. Metres-per-pixel readout in the status bar, sampled from the rAF loop but written ONLY when the formatted string changes (an unguarded per-frame write would re-render the chrome at 60fps; the perturbation was deleting that guard). Reconciled with T-667 by making the shared signal the single source — ScaleBar now resolves from it, so one number drives both the graphic bar and the numeric cell, and the bar no longer waits for the ~1Hz HUD heartbeat. The printed value IS the contour ladder's input (both literally 2^(-zoom)), not a lookalike."
+notes = """
+editor-UI program wave 15 (wave_plan.tsv row 115) — SHIPPED wave 115 (editor factory), f2acb1aa; verifier wave115.md. Metres-per-pixel readout in the status bar, sampled from the rAF loop but written ONLY when the formatted string changes (an unguarded per-frame write would re-render the chrome at 60fps; the perturbation was deleting that guard). Reconciled with T-667 by making the shared signal the single source — ScaleBar now resolves from it, so one number drives both the graphic bar and the numeric cell, and the bar no longer waits for the ~1Hz HUD heartbeat. The printed value IS the contour ladder's input (both literally 2^(-zoom)), not a lookalike.
+
+--- HEAD migration_legacy (verbatim) ---
+
+Closes `STATUS-ZOOM-001`. Eden prints metres-per-pixel in its status bar; we print nothing, which is also why the contour-ladder work (T-639) has no on-screen check. The sweep calls this "one <span>" — IT IS NOT, and the difference is a whole file. The toolbelt half is genuinely one cell: `BottomToolbelt` (post-split eden_toolbelt.rs, from eden_chrome.rs:3672) has two mono groups, CUR/SEL + X/Y/Z at :3720-3740 and OBJ/SEL/SZ at :3741-3766, and a scale span is a fourth cell in the second group. But THE COMPONENT HAS NO ZOOM INPUT: the full signature at :3672-3682 takes `cursor`, `sel_count`, `obj_count`, `selected_ids` and an optional `sz_bytes` — no camera. `RenderEngine::zoom()` exists (crates/map-engine-render/src/engine.rs:1720) but is only reachable from the rAF sampler in mission_editor.rs (mount at :2070), so this ticket adds a signal there and a prop here.
+
+missing=0"""
 depends_on = ["T-661"]
 main_goal = "Add metres-per-pixel scale readout to BottomToolbelt status cell."
 context = [

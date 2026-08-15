@@ -6,7 +6,19 @@ class = "bug"
 status = "shipped"
 order = 4645
 executor = "claude-code"
-notes = "filed by wave-118 adversarial verifier (editor factory)"
+notes = """
+filed by wave-118 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+MAJOR from the wave-118 adversarial verifier, and it REFUTES the shipping slice's own recorded reasoning. T-637 left `CONTAINER_H` (eden_tree.rs:323-330) at a fixed 420px inside the now flex-1 ~958px dock region, and justified it in a shipped comment: that an h-full scroller at the new 16px pitch would render ~69 of ~88 rows on 1080p, so `smoke_virtual_outliner` (which asserts rendered < total) would STOP TESTING WINDOWING WITHOUT FAILING. BOTH HALVES ARE FALSE. (1) The smoke does not only assert `rendered < total` — smokes.rs:2651 ALSO pins `e_rend1 <= 60`, and that cap PREDATES this wave (T-339, present at base). (2) Deriving from eden_tree.rs:999-1001, `rendered = ceil(H/16) + 12`. At the slice's own cited 1080p (958px region) that is 72: `72 < 88` so the windowing assertion STILL PASSES — windowing would not have gone untested — and `72 > 60` so the v3 cap FAILS LOUDLY. At the gate's real 1440x900 viewport it is 61, failing by one. An h-full scroller would have gone RED, not silent. THE ACTUAL DEFECT LEFT UNFIXED: trees over ~50 rows still render inside a 420px inner scroller nested in a ~958px region, so up to ~538px of exactly the void this ticket exists to absorb comes back on large missions. The <=50-row eager path IS genuinely fixed and the 17->26 visible-row densification is real, so this is a partial, not a no-op. FIX: give the tree region a measured height (h-full inside the flex column) AND update `smoke_virtual_outliner`'s rendered cap so it pins windowing independently of viewport size — the two must move together, which is why it is one ticket. AND CORRECT THE COMMENT: a false rationale enshrined in shipped code is worse than no comment, because the next reader will trust it. Diagnosis: editor_verify/wave118.md MAJOR-1.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["MAJOR from the wave-118 adversarial verifier, and it REFUTES the shipping slice's own recorded reasoning. T-637 left `CONTAINER_H` (eden_tree.rs:323-330) at a fixed 420px inside the now flex-1 ~958px dock region, and justified it in a shipped comment: that an h-full scroller at the new 16px pitch would render ~69 of ~88 rows on 1080p, so `smoke_virtual_outliner` (which asserts rendered < total) would STOP TESTING WINDOWING WITHOUT FAILING. BOTH HALVES ARE FALSE. (1) The smoke does not only assert `rendered < total` — smokes.rs:2651 ALSO pins `e_rend1 <= 60`, and that cap PREDATES this wave (T-339, present at base). (2) Deriving from eden_tree.rs:999-1001, `rendered = ceil(H/16) + 12`. At the slice's own cited 1080p (958px region) that is 72: `72 < 88` so the windowing assertion STILL PASSES — windowing would not have gone untested — and `72 > 60` so the v3 cap FAILS LOUDLY. At the gate's real 1440x900 viewport it is 61, failing by one. An h-full scroller would have gone RED, not silent. THE ACTUAL DEFECT LEFT UNFIXED: trees over ~50 rows still render inside a 420px inner scroller nested in a ~958px region, so up to ~538px of exactly the void this ticket exists to absorb comes back on large missions. The <=50-row eager path IS genuinely fixed and the 17->26 visible-row densification is real, so this is a partial, not a no-op. FIX: give the tree region a measured height (h-full inside the flex column) AND update `smoke_virtual_outliner`'s rendered cap so it pins windowing independently of viewport size — the two must move together, which is why it is one ticket. AND CORRECT THE COMMENT: a false rationale enshrined in shipped code is worse than no comment, because the next reader will trust it. Diagnosis: editor_verify/wave118.md MAJOR-1."]
+
+missing=0
+"""
 main_goal = "Give dock tree h-full scroller and update smoke_virtual_outliner rendered cap."
 context = [
     "MAJOR wave-118 refutes T-637 shipping slice recorded reasoning both halves false.",

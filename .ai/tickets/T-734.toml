@@ -6,7 +6,19 @@ class = "bug"
 status = "deferred"
 order = 4327
 executor = "claude-code"
-notes = "filed by wave-111 adversarial verifier (editor factory)"
+notes = """
+filed by wave-111 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+T-655 residue, one design. (1) MAJOR: the always-on panel re-compiles the WHOLE doc per debounced edit burst (compile_payload measured 290ms/30k, 1213ms/120k native-release, linear -> ~3.6s at the 360k north star, wasm 1.5-3x worse) — the exact O(n)-per-edit class T-062/T-066 engineered away. Fine at ORBAT scale (≤10ms at 1k). Fix family: incremental payload assembly, a worker offload (T-066 precedent), or evaluate over the doc directly without full compile. The expanded list is also unvirtualized (3000 DOM buttons at 120k). (2) MINOR: the catch_unwind 'can never crash the editor' guarantee is native-only — wasm32 panics abort regardless (no panic-profile override); on native the swallow renders 'No issues' — a FALSE CLEAN. Make the fallback state visibly distinct ('validation unavailable') and document the wasm reality. (3) MINOR: the no-severity-on-clean pin binds the engine, not the panel seam — injecting a fabricated finding into evaluate_source left all tests green; pin the seam. Diagnosis: editor_verify/wave111.md MAJOR-2, MINOR-1, MINOR-2.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["T-655 residue, one design. (1) MAJOR: the always-on panel re-compiles the WHOLE doc per debounced edit burst (compile_payload measured 290ms/30k, 1213ms/120k native-release, linear -> ~3.6s at the 360k north star, wasm 1.5-3x worse) — the exact O(n)-per-edit class T-062/T-066 engineered away. Fine at ORBAT scale (≤10ms at 1k). Fix family: incremental payload assembly, a worker offload (T-066 precedent), or evaluate over the doc directly without full compile. The expanded list is also unvirtualized (3000 DOM buttons at 120k). (2) MINOR: the catch_unwind 'can never crash the editor' guarantee is native-only — wasm32 panics abort regardless (no panic-profile override); on native the swallow renders 'No issues' — a FALSE CLEAN. Make the fallback state visibly distinct ('validation unavailable') and document the wasm reality. (3) MINOR: the no-severity-on-clean pin binds the engine, not the panel seam — injecting a fabricated finding into evaluate_source left all tests green; pin the seam. Diagnosis: editor_verify/wave111.md MAJOR-2, MINOR-1, MINOR-2."]
+
+missing=0
+"""
 main_goal = "Fix validation panel O(n) compile, wasm panic honesty, and seam pin."
 context = [
     "T-655 residue one design; always-on panel re-compiles whole doc per debounced edit burst.",

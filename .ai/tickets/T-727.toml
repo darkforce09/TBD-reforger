@@ -6,7 +6,14 @@ class = "bug"
 status = "shipped"
 order = 4320
 executor = "claude-code"
-notes = "filed by wave-107 adversarial verifier (editor factory); re-scoped MAJOR from T-638 disclosed residue"
+notes = """
+filed by wave-107 adversarial verifier (editor factory); re-scoped MAJOR from T-638 disclosed residue
+
+--- HEAD migration_legacy (verbatim) ---
+
+MAJOR, two-part, root pre-existing in T-667 but made keyboard-triggerable by T-638. The grid-ref overlay's <For> is keyed on label TEXT (eden_toolbelt.rs:589/609); tachys' keyed diff calls view_fn only for ADDED keys, so a retained label keeps its creation-time pos_px forever. Every pan strands retained labels; T-638's centre-hold slides the map 116px (left toggle) / 148px (right) on a bare E/R keypress, leaving every retained grid reference ~46% of a grid cell off its line, persistently — wrong references, not decoration. The wave-106 pin only proved the PURE math (which is correct); the DOM retention is the defect. Fix: (1) key the <For> on (text, grid-line world coordinate) or render pos from a signal inside the row; (2) convert eden_toolbelt's frozen inset-const reads to the T-638 accessors so labels track collapse geometry; (3) sweep the false comment T-638 left ('resize does NOT reallocate' — RenderEngine::resize unconditionally surface.configure's, engine.rs:1601; mark_dirty was available). Regression: an event-sequence test that pans/toggles and asserts label pos_px changed. Diagnosis: editor_verify/wave107.md MAJOR-1 + MINOR-3.
+
+missing=0"""
 main_goal = "Fix grid-ref labels stranding off lines on pan and toggle."
 context = [
     "MAJOR two-part root pre-existing in T-667 keyboard-triggerable by T-638.",

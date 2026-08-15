@@ -6,6 +6,37 @@ class = "bug"
 status = "shipped"
 order = 3443
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Four NITs from wave 71's adversarial verifier. None is a live defect; all are worth closing.
+
+1. `scripts/deploy/tbd-website-backup.service:32` and `tbd-website-backup-drill.service:29` FAIL
+   `systemd-analyze verify --user` AS COMMITTED, because `WorkingDirectory=TBD_REPO_DIR_PLACEHOLDER`
+   is not an absolute path. Expected for a template -- the header documents the `sed` substitution and
+   the RENDERED units verify clean (all four, confirmed) -- but anyone verifying the committed file, or
+   naively `cp`-installing it, gets "Unit has a bad unit file setting".
+   Repro: `systemd-analyze verify --user scripts/deploy/tbd-website-backup.service` -> rc=1.
+   Fix: ship a `.in` extension, or an absolute default the sed overwrites.
+
+2. `scripts/deploy/lib/db-common.sh:241` -- the dump verifier has NO DATABASE-IDENTITY CHECK. It
+   accepts a structurally valid dump OF THE WRONG DATABASE, or one missing `_sqlx_migrations`. Not
+   exploitable in the backup path (it always dumps the whole correct DB) and the drill catches the
+   missing-migrations case, and `--min-rows 0` accepting a schema-only dump is an explicit opt-in --
+   so this is a contract limit, not a bug. Worth closing anyway: a restore is exactly when someone is
+   panicking and grabs the wrong file.
+
+3. `apps/website/frontend/src/mortar.rs:501` -- `hydrated_for` is a single-slot `StoredValue`, so
+   switching operation away and back RE-APPLIES that operation's saved solution over any unsaved
+   edits. No data loss (the saved rows are intact) but it silently discards in-progress work.
+
+4. T-576's TITLE overstates what shipped: "every foreign-key violation surfaces as a 500". The shipped
+   mapping live-fixes only the `server_id` heartbeat (500 -> 400). Bad `matches.event_id` /
+   `mission_id` on match ingest still INSERT SILENTLY today, because those FKs do not exist yet -- so
+   they are neither 500 nor 400, they are unchanged. The ticket BODY is accurate; the headline is not.
+   Resolved by T-585 landing the migration.
+
+missing=0"""
 priority = 3
 main_goal = "Close four wave 71 verifier NITs: systemd templates, dump identity, mortar re-hydrate, T-576 title."
 context = [

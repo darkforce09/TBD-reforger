@@ -6,7 +6,19 @@ class = "chore"
 status = "deferred"
 order = 5110
 executor = "claude-code"
-notes = "wave204 verifier; repro recipe in the report; do not let it rot into a known-flake | ABSORBED into T-843 — same file family (tools/tbd-tools smokes) and the same root question — which harness actually runs the editor suite. Do not dispatch separately; its acceptance clauses are carried there."
+notes = """
+wave204 verifier; repro recipe in the report; do not let it rot into a known-flake | ABSORBED into T-843 — same file family (tools/tbd-tools smokes) and the same root question — which harness actually runs the editor suite. Do not dispatch separately; its acceptance clauses are carried there.
+
+--- HEAD migration_legacy (verbatim) ---
+
+WAVE-204 VERIFIER FILING (wave204.md MINOR, PRE-EXISTING — bisected innocent: fails identically on merged AND pre-wave dists under the verifier's dist/flags, while the wave gate's own configuration passed 30/30 twice on the same tree). A smoke whose verdict flips with the harness configuration is the T-742/T-747 family: someone will eventually chase a phantom red or trust a phantom green. INVESTIGATE: diff the verifier invocation vs the gate's (dist build profile, chrome flags, viewport) to find the sensitive variable; make v5_orbatWindowed deterministic across both (or gate the check on the variable it actually depends on, stated). ACCEPTANCE: the smoke passes (or refuses loudly with a named reason) under BOTH the gate config and the verifier recipe in wave204.md.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["WAVE-204 VERIFIER FILING (wave204.md MINOR, PRE-EXISTING — bisected innocent: fails identically on merged AND pre-wave dists under the verifier's dist/flags, while the wave gate's own configuration passed 30/30 twice on the same tree). A smoke whose verdict flips with the harness configuration is the T-742/T-747 family: someone will eventually chase a phantom red or trust a phantom green. INVESTIGATE: diff the verifier invocation vs the gate's (dist build profile, chrome flags, viewport) to find the sensitive variable; make v5_orbatWindowed deterministic across both (or gate the check on the variable it actually depends on, stated). ACCEPTANCE: the smoke passes (or refuses loudly with a named reason) under BOTH the gate config and the verifier recipe in wave204.md."]
+
+missing=0
+"""
 main_goal = "Make v5_orbatWindowed deterministic across gate and verifier configs."
 context = [
     "wave204 PRE-EXISTING: fails under verifier dist/flags; gate passed 30/30 twice.",

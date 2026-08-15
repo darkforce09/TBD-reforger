@@ -6,6 +6,16 @@ class = "feature"
 status = "shipped"
 order = 3416
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by W64 adversarial verifier (DIRTY MINOR|NIT) after T-541.
+
+Automatic LOBBY entry is gated by loadout settle/IsComplete refuse. SetStage(LOBBY) via admin is not. Deploy still DENIED on m_bLoadoutDeliveryRefused; possession cannot proceed — stage chrome can open.
+
+Repro: refuse loadout delivery at spawn boundary; admin #stage LOBBY; UI stage advances; DeployPlayerInternal still DENIED.
+
+missing=0"""
 priority = 2
 main_goal = "Gate admin SetStage(LOBBY) on loadout settle refuse like TickRosterSettle."
 context = [

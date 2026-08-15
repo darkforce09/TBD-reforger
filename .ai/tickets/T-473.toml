@@ -6,6 +6,19 @@ class = "feature"
 status = "shipped"
 order = 3312
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from wave 27 adversarial BLOCKER/MAJOR. Class-R pins exact `list_seeded.set(true)` only:
+(1) early `list_seeded.set( true )` + keep Ok set → PASS
+(2) Err `set( true )` / `set((true))` / `set(seed)` → PASS
+(3) wrap Retry UI in `if false { … }` (no filter) → PASS
+
+Repro: spaced set( true ) before match → Class-R green.
+
+Cure: normalize whitespace for seed pin; forbid any list_seeded.set outside Ok arm; ban if false / unreachable Retry; RED→GREEN on verifier perturbations.
+
+missing=0"""
 priority = 1
 main_goal = "Harden Class-R list_seeded pin against spaced Err seed and if-false Retry."
 context = [

@@ -8,7 +8,18 @@ order = 5990
 spec = "docs/platform/t917_ticket_schema_v2.md"
 plan = "docs/plans/t-919_plan.md"
 executor = "claude-code"
-notes = "Bookkeeping stream, not factory slices: batches interleave after T-917.3 as operator review allows. Walls carry recognizable FIX:/ACCEPTANCE:/Repro: idioms. Per batch: pin shrinks by exactly the batch size, remaining files still pass the reversibility join-proof, check --strict green."
+notes = """
+Bookkeeping stream, not factory slices: batches interleave after T-917.3 as operator review allows. Walls carry recognizable FIX:/ACCEPTANCE:/Repro: idioms. Per batch: pin shrinks by exactly the batch size, remaining files still pass the reversibility join-proof, check --strict green.
+
+--- HEAD migration_legacy (verbatim) ---
+
+Pass 2 of the wall decomposition: AI batches of 20-30 tickets per operator-reviewed commit, each wall decomposed from migration_legacy[] into the typed body fields (context/requirement/current_state/approach/verify/citations) and migration_legacy deleted in the same edit, shrinking the T-917.3 ratchet pin every commit. Semantic work — deliberately outside the mechanical migration.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["Pass 2 of the wall decomposition: AI batches of 20-30 tickets per operator-reviewed commit, each wall decomposed from migration_legacy[] into the typed body fields (context/requirement/current_state/approach/verify/citations) and migration_legacy deleted in the same edit, shrinking the T-917.3 ratchet pin every commit. Semantic work — deliberately outside the mechanical migration."]
+
+missing=0"""
 depends_on = ["T-917.3"]
 main_goal = "The quarantined 500-word walls become clearly categorised one-liners, batch by reviewed batch, until the pin hits zero and no ticket carries unprocessed prose."
 context = [

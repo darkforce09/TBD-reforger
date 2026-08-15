@@ -6,6 +6,21 @@ class = "feature"
 status = "shipped"
 order = 3394
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by W62 adversarial verifier (DIRTY MINOR) after T-418.
+
+mission_hydrate.rs threads MissionDetail.briefing into apply_row_meta via opt(&row.briefing). Core Class-R t418_apply_row_meta_threads_briefing_into_meta covers apply_row_meta/compile_export, not the FE call site.
+
+Mutation probe: replace both opt(&row.briefing) with None → cargo test -p website-frontend briefing|hydrate still PASS.
+
+Repro:
+  # Temporarily return None for briefing in mission_hydrate RowMeta construction;
+  # website-frontend tests that mention briefing/hydrate still green;
+  # only map-engine-core Class-R fails if apply_row_meta itself is gutted.
+
+missing=0"""
 priority = 2
 main_goal = "Add Class-R pin for FE hydrate briefing wire."
 context = [

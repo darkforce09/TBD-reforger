@@ -7,7 +7,18 @@ status = "shipped"
 order = 5963
 spec = "docs/platform/t915_ticketboard_design.md"
 executor = "claude-code"
-notes = "The app never re-implements check; it invokes it. Subprocesses run with explicit current_dir at the discovered repo root and robust cargo resolution (GUI PATH is bare)."
+notes = """
+The app never re-implements check; it invokes it. Subprocesses run with explicit current_dir at the discovered repo root and robust cargo resolution (GUI PATH is bare).
+
+--- HEAD migration_legacy (verbatim) ---
+
+Trust banner running cargo xtask ticket check --strict as a streamed subprocess on launch and on watched change: green/red plus exit code, labeled strict (mutator preflight is non-strict — never conflate). Distinct building-xtask vs checking states with streamed cargo output. notify watch on .ai/tickets/ and the sync targets (docs/TICKET_*.md, CLAUDE.md, ROADMAP), debounce >=500ms, coalesced re-runs, self-suppression while a verb subprocess is in flight plus one debounce window. Git-dirty chip summarizing git status --porcelain -- .ai/tickets docs CLAUDE.md.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["Trust banner running cargo xtask ticket check --strict as a streamed subprocess on launch and on watched change: green/red plus exit code, labeled strict (mutator preflight is non-strict — never conflate). Distinct building-xtask vs checking states with streamed cargo output. notify watch on .ai/tickets/ and the sync targets (docs/TICKET_*.md, CLAUDE.md, ROADMAP), debounce >=500ms, coalesced re-runs, self-suppression while a verb subprocess is in flight plus one debounce window. Git-dirty chip summarizing git status --porcelain -- .ai/tickets docs CLAUDE.md."]
+
+missing=0"""
 depends_on = ["T-915.1"]
 parent = "T-915"
 main_goal = "The operator trusts what the board shows: check-red, a stale lock, or uncommitted registry files are visible immediately, with the real check output — not a re-implementation."

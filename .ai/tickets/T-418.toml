@@ -6,6 +6,16 @@ class = "docs"
 status = "shipped"
 order = 3243
 executor = "claude-code"
+notes = '''
+--- HEAD migration_legacy (verbatim) ---
+
+Two independent dead-surface findings from wave 4, both larger than the tickets that surfaced them.
+
+1. THE WHOLE map-engine-wasm CRATE IS DEAD, not just the binding T-243 deleted. `cargo tree -p map-engine-wasm --invert --depth 1` returns only itself -- zero reverse dependencies, and it appears in no [dependencies] table anywhere. Its Cargo.toml describes it as 'a shim exposing map-engine-core to the TypeScript UI shell', and that shell was DELETED at T-159.29.3: there are ZERO .ts/.tsx files outside node_modules and no map_engine_wasm* artifact is ever produced -- it is never wasm-packed. The Leptos SPA links map-engine-core DIRECTLY and says why (frontend/Cargo.toml:89 'instead of reaching it through the map-engine-wasm shim'; mission_doc.rs:5 'no map-engine-wasm JS shim, spec D2') -- that collapse was the point of T-159.15.
+   Its entire remaining surface (DemGrid, SeaBandResult, HillshadeResult, TbddResult, DecodedDem, SlotIndex, WorldStore, RenderEngine, ...) exports to a JS boundary that no longer exists, and it costs a fmt+clippy pass on every `make lint`. T-243 deleted only what its ticket named.
+   DECIDE: delete the crate, or document why it is kept (a planned future JS consumer is a legitimate answer -- an undocumented one is not).
+
+2. compile_export's envelope `briefing` always resolves to \"\". T-214 wired it to read meta.briefing, but apply_row_meta never threads it: mission_hydrate.rs:403-424's RowMeta carries only title/terrain/time/weather, so the key is absent and the field is dead. Pre-existing and already documented as such at compile.rs:164-172. REPRO: export any mission whose row has a briefing; the downloaded envelope's briefing is empty.'''
 priority = 2
 main_goal = "Delete or document dead map-engine-wasm crate; thread briefing through compile_export envelope."
 context = [

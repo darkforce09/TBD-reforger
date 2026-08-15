@@ -6,6 +6,12 @@ class = "chore"
 status = "shipped"
 order = 3356
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 45 cold gate FAIL. arma_link_flow seed_user(400001, identity-link-seed-400001) hit duplicate key idx_users_arma_id while padded_arma_id_is_stored_trimmed_and_resolvable runs in parallel (both call setup() which seeds ACTOR with the same placeholder arma_id without releasing it first). Cure: serialize the async identity_link tests (Mutex like null_tolerance) AND release identity-link-seed-40000{1,2,3} in setup before seed_user. Perturbation/repro: parallel runs under shared TBD_GATE_DB. Owns: identity_link.rs only.
+
+missing=0"""
 priority = 0
 main_goal = "Serialize identity_link tests; release seed arma_id before seed_user."
 context = [

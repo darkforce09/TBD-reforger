@@ -6,7 +6,14 @@ class = "feature"
 status = "shipped"
 order = 4510
 executor = "claude-code"
-notes = "— SHIPPED wave 119 (editor factory), cf11d3c9; verifier wave119.md. Document search over all eight placeable collections plus a selection filter, REUSING T-084's grammar (the matcher is private, so it hands filter_catalog a faithful two-node projection per candidate) and routing T-696's matches_query through the same call, so the editor now has ONE query language across the layers tree, bookmarks, locations and search. Applies the T-754 lesson from the other side: DocKind::is_selectable encodes the router's real limit once, selectable hits are buttons and everything else is inert with aria-disabled and a stated reason. Dock width arithmetic done against T-637's consts rather than eyeballed — no third tab, because one does not fit. Also caught T-742 live with a sharper repro than the original."
+notes = """
+— SHIPPED wave 119 (editor factory), cf11d3c9; verifier wave119.md. Document search over all eight placeable collections plus a selection filter, REUSING T-084's grammar (the matcher is private, so it hands filter_catalog a faithful two-node projection per candidate) and routing T-696's matches_query through the same call, so the editor now has ONE query language across the layers tree, bookmarks, locations and search. Applies the T-754 lesson from the other side: DocKind::is_selectable encodes the router's real limit once, selectable hits are buttons and everything else is inert with aria-disabled and a stated reason. Dock width arithmetic done against T-637's consts rather than eyeballed — no third tab, because one does not fit. Also caught T-742 live with a sharper repro than the original.
+
+--- HEAD migration_legacy (verbatim) ---
+
+3den E4 + 3DEN-TOOL-011. Search the text attributes of every entity in the mission, and filter a selection down by type or faction. TBD has search over the asset catalogue (T-055) but nothing over placed entities. At 19,627 slots median 137 per mission in the WOG corpus, find-by-name is not optional.
+
+missing=0"""
 main_goal = "Document search over placed entities plus selection filter by type or faction."
 context = [
     "3den E4 3DEN-TOOL-011 gap row.",

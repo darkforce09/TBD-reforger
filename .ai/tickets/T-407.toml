@@ -6,6 +6,20 @@ class = "bug"
 status = "shipped"
 order = 3223
 executor = "claude-code"
+notes = '''
+--- HEAD migration_legacy (verbatim) ---
+
+Same defect family as T-392 (shipped): mock values sitting on a real user's screen next to real data, indistinguishable from it. T-392 cleared the Event Hub; this is the page it did not own.
+
+`apps/website/frontend/src/deployments.rs:198,199,210,211` (consts at `:83-88`) render `MOCK_KD "2.45"`, `MOCK_WIN_RATE "68%"`, `FAV_WEAPON_NAME "M4A1 Block II"` and `FAV_ASSET_NAME "M1A2 Abrams"` as `TelemetryStat`/`FavLoadout` tiles — immediately beside the genuinely real `d.total_operations` at `:207`. Repro: open `/me/deployments` as any user; every operator has identical K/D, win rate and favourite weapon.
+
+Worse than the Event Hub case was, because these are personal statistics: a user has no way to tell that their 2.45 K/D is the same 2.45 everyone else sees. Note T-393/T-397 are the reason real numbers are not available yet — production telemetry ingest was 400ing entirely until this run, so there is no data to show. Which means the honest fix is an empty state ("No telemetry recorded"), not a wiring job, until T-397's counter semantics land.
+
+TWO SMALLER ONES ON THE SAME THEME, both found by T-392's agent:
+
+`apps/website/frontend/src/event_hub.rs` (whole file) — the event's OWN briefing has no consumer on its own page. `EventHub.briefing` is authorable through a real textarea (`event_manager.rs:1177`, PATCHed at `:539-541`) and renders on the schedule LIST card (`events.rs:334`, honestly, via unwrap_or_default), but `/events/:id` — the hub that card links to — never reads it. Repro: create an operation, type an operation-level briefing, save, open the hub; only the per-mission briefing appears. Needs a design call about where operation-level prose belongs on the hero, which is why T-392 did not add it.
+
+`apps/website/frontend/src/mission_overview.rs:894` — uses `.filter(|b| !b.is_empty())` where `approvals.rs:389` uses `.trim().is_empty()`. Repro: `dossier_body` with `briefing: Some("\n\n  ")` renders a "Tactical Briefing" heading over blank space in a whitespace-pre-wrap `<p>`. T-392 made event_hub.rs the third behaviour in this family; two of three now trim. Pick one and make it the rule.'''
 priority = 1
 main_goal = "Remove fabricated personal stats from /me/deployments; empty state until T-397 telemetry lands."
 context = [

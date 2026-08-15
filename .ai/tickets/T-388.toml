@@ -6,7 +6,24 @@ class = "bug"
 status = "shipped"
 order = 3204
 executor = "claude-code"
-notes = "MINOR behavioural probe T-352 purge_legacy_markers mark_adopted mission_hydrate apply_row Local::Diverged conflict resolution server fetch unauthenticated offline boot Self-healing hydrate Save EVENTUAL first open zero readers read_adopted adopted_key stale bytes global key live leak boot hook T-370 sequencing write sites browsers operator decision NOT CANCELLED optional audits backlog T-182..T-297 token budget ships findable diagnosed reproducible Promote idea blocks costing time feature backlog lands judged wrong only not now"
+notes = """
+MINOR behavioural probe T-352 purge_legacy_markers mark_adopted mission_hydrate apply_row Local::Diverged conflict resolution server fetch unauthenticated offline boot Self-healing hydrate Save EVENTUAL first open zero readers read_adopted adopted_key stale bytes global key live leak boot hook T-370 sequencing write sites browsers operator decision NOT CANCELLED optional audits backlog T-182..T-297 token budget ships findable diagnosed reproducible Promote idea blocks costing time feature backlog lands judged wrong only not now
+
+--- HEAD migration_legacy (verbatim) ---
+
+MINOR, from the behavioural probe of T-352. Its residue purge (`editor_session.rs:149 purge_legacy_markers`) is reachable ONLY via `mark_adopted`, and three paths reach the editor without calling it:
+  mission_hydrate.rs:181-190 — the `is_empty && loaded_from_idb` branch calls `apply_row` and no `mark_adopted`;
+  `Local::Diverged` (:236) defers to conflict resolution;
+  the whole hydrate needs a successful server fetch, so an unauthenticated or offline editor boot never reaches it.
+
+Self-healing on any later hydrate decision or Save, so residue clearance is EVENTUAL rather than guaranteed at first open. Low severity because the marker has zero readers (T-352 verified: `read_adopted` and `adopted_key` return nothing repo-wide), so residue cannot influence a decision — it is stale bytes under a global key, not a live leak.
+
+T-352 deliberately declined to move the purge to a boot hook because doing so is entangled with T-370's sequencing (delete the 8 write sites only AFTER the purge has reached users' browsers). Do these two together, in that order.
+
+== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
+Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
+This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
+"""
 priority = 3
 main_goal = "Guarantee adoption-residue purge on first editor open, not only via mark_adopted."
 context = [

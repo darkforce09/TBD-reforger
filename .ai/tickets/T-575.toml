@@ -6,6 +6,18 @@ class = "docs"
 status = "shipped"
 order = 3428
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by W68 adversarial verifier (CLEAN NIT) after T-558.
+
+Gate script still exports `MIGRATE_TEST_DATABASE_URL` (wave.sh ~341). `db_migrate` / `models_fromrow` now use per-binary provision and no longer read it. Harmless leftover — not a silent gate skip.
+
+Repro: rg MIGRATE_TEST_DATABASE_URL in wave.sh vs api tests; export is live, consumers gone.
+
+Cure: drop the dead export (and any docs that still describe the shared migrate URL).
+
+missing=0"""
 priority = 3
 main_goal = "Drop dead MIGRATE_TEST_DATABASE_URL export from wave.sh and stale docs."
 context = [

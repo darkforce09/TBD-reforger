@@ -6,6 +6,12 @@ class = "chore"
 status = "shipped"
 order = 3331
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 36 adversarial NIT. T-401 made git_porcelain_paths fail-loud, and wasm_changed/refuse_empty_range check rc. fmt_changed and clippy_changed still do files="$(changed_rs …)" and treat empty as SKIP (return 0) without checking $?. Gate path is still safe because refuse_empty_range runs first. Cure: propagate changed_rs failure in those helpers (or share a wrapper that dies on rc≠0).
+
+missing=0"""
 priority = 2
 main_goal = "Propagate changed_rs failure in fmt_changed and clippy_changed helpers."
 context = [

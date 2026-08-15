@@ -6,7 +6,19 @@ class = "chore"
 status = "queued"
 order = 4360
 executor = "claude-code"
-notes = "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row"
+notes = """
+workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row
+
+--- HEAD migration_legacy (verbatim) ---
+
+Three attribute ids: `ATTR-FIELD-OBJ-PLACEMENT-RADIUS`, `-OBJ-SHAPE`, `-GRP-PLACEMENT-RADIUS`. `$defs/slot` and `$defs/group` are both closed, so this is one key on each plus a spawn-side reader that scatters within the radius. THE CHEAPEST COHERENT SCHEMA-WIDENING SLICE in the workbench program, and a 2D top-down editor is the best possible surface for it — the scatter circle is drawable — so it is the one most worth doing early if the operator wants an easy first workbench win. EXECUTOR IS `workbench` DELIBERATELY: this modifies `packages/tbd-schema/schema/mission.schema.json` and/or `apps/mod/tbd-framework/`, which the CLAUDE.md executor gate puts out of reach of any coding agent. The factory filters on executor, so this tagging is the safety mechanism — do not flip it to claude-code.
+
+EXECUTOR CORRECTED 2026-08-02: was filed `workbench` on the mistaken reading that any .c file needs the Arma Workbench GUI. It does not — scripts/mod/compile.sh compiles tbd-framework against the native Linux dedicated server headlessly, verified: "OK: compiled clean, 5707 files, 11182 classes, 832 ms, no Workbench". Schema edits are plain JSON. This is factory work. Per the model-routing rule, the .c portion routes to Fable 5 even though the executor is claude-code.
+
+SCHEMA HALF SPLIT OUT to T-706 (one widening pass for the whole program). This ticket is the Enfusion reader plus any editor UI; it does not touch packages/tbd-schema.
+
+missing=0
+"""
 main_goal = "Ship placement scatter reader for radius and area shape attrs."
 context = [
     "Three ids: OBJ placement radius shape GRP placement radius.",

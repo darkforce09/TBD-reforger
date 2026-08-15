@@ -6,6 +6,16 @@ class = "feature"
 status = "shipped"
 order = 3323
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 32 verifier residual (T-481 shipped client_id trim). Production validate still uses bare is_empty() for discord_client_secret and discord_redirect_url (config.rs ~120-125). Whitespace-only secret/redirect validates Ok — same disguise class as pre-T-481 client id.
+
+Repro: env=production, secret=" " or redirect=" " → validate() Ok.
+
+Cure: trim().is_empty() (or reject trim-empty) for both; Class-R pins.
+
+missing=0"""
 priority = 2
 main_goal = "Reject whitespace-only discord_client_secret and discord_redirect_url in validate."
 context = [

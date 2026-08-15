@@ -6,7 +6,14 @@ class = "bug"
 status = "deferred"
 order = 4322
 executor = "claude-code"
-notes = "filed by wave-109 adversarial verifier (editor factory)"
+notes = """
+filed by wave-109 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+T-079 residue. (1) MAJOR: TriggerOwnerLine's rAF body is not a tick-bump — while a trigger with an ownerId (even dangling) is selected, every frame runs owner_line_world -> trigger_rows() (full JSON round-trip) plus placed_entity_pos -> an UNCACHED full materialize() — O(n-slot) SoA rebuild at 60fps: ~37-370 ms/frame at the program's live-validated 360k scale (editor collapse), 6-60% of budget at 10k. Lifecycle is clean (all four stop paths verified); the fix is confined to the component: memoize world endpoints on doc_tick+selected, leaving two project calls per frame. (2) MINOR: the Zones panel's draft banner lacks the collection filter the Triggers panel has — a trigger draft in flight renders in the Zones tab with zone radius copy (mislabel only; commits route correctly). Diagnosis: editor_verify/wave109.md MAJOR-1, MINOR-3. WIDENED wave 110 (MAJOR-1): T-648's TransformWidgetOverlay re-instantiates the same root one wave later — read_widget_pivot() runs an uncached full materialize() + small-maps JSON round-trip on EVERY POINTERMOVE while anything is selected (~37-370 ms at 360k scale; wider reach than the owner line). Same fix family: memo the centroid on doc_tick+selection. Fix BOTH surfaces in one design.
+
+missing=0"""
 main_goal = "Memoize owner-line and transform pivot; fix zones draft banner."
 context = [
     "T-079 residue; T-648 TransformWidgetOverlay same root one wave later.",

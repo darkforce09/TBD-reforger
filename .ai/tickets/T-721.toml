@@ -6,7 +6,15 @@ class = "bug"
 status = "deferred"
 order = 4314
 executor = "claude-code"
-notes = "filed by wave-105 adversarial verifier (editor factory)"
+notes = """
+filed by wave-105 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+T-636's full-width status bar (inset-x-0 bottom-0, no z-index) runs UNDER both dock wrappers, which reach bottom-0 at z-20 with full-height glass panels: the bar's left 256px (most of CUR/X/Y/Z) is behind DockLeft's blur, and its right 320px (HUD slot + OPEN) is painted over and CLICK-DEAD under DockRight — at every viewport width (the old centred pill cleared the docks above ~1100px). Same z-order mechanism T-636's own comments cite for the old HUD corner. The in-code claim 'inside the status bar it can never be occluded' is false; source-inspection tests structurally cannot see stacking. Eden-parity fix: docks end at the bar's TOP (dock wrappers bottom-9 not bottom-0, or the bar gets z-30 — prefer the dock height change, it is the Eden geometry). Touches eden_layout/dock wrappers + pointer math consistency (TOOLBELT_BAND_PX readers). Also sweep the stale prose cluster wave105.md MINOR-1 lists (4-to-6 comment vs assert 5; t635 docstring bottom-5; STATUSBAR height claim; two-homes/three-bullets). Diagnosis: editor_verify/wave105.md MAJOR-1 + MINOR-1. NOTE: T-667 (wave 106) was briefed to mount furniture in the CLEAR centre span and anchor grid refs to the MAP PANE edges, so no rework lands on this ticket's back.
+
+missing=0
+"""
 main_goal = "Fix status bar z-order under docks; Eden-parity geometry."
 context = [
     "T-636 full-width status bar inset-x-0 bottom-0 no z-index.",

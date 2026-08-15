@@ -6,6 +6,16 @@ class = "feature"
 status = "shipped"
 order = 3311
 executor = "claude-code"
+notes = '''
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from wave 27 adversarial BLOCKER. verify-t468 recipe pin uses `^\t.*(?:\$\(MAKE\)|make)\s+schema-validate\b` — matches `@echo "$(MAKE) schema-validate"`, `schema-validate-fake`, `@true # $(MAKE) schema-validate`.
+
+Repro: hollow echo of make lines / -fake targets / comment-only → tripwire PASS.
+
+Cure: require real recipe invocations (tab + optional @ + $(MAKE)|make + exact target, no echo, ignore # comments); RED→GREEN on verifier recipes.
+
+missing=0'''
 priority = 1
 main_goal = "Harden verify-t468 Makefile recipe pin against echo/@true/#fake hollow bodies."
 context = [

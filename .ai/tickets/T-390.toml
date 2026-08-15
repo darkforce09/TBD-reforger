@@ -6,7 +6,34 @@ class = "bug"
 status = "shipped"
 order = 3206
 executor = "claude-code"
-notes = """"No (/var (T-193 (`target-gate-frontend`, **252 **It **`gate_test_api` --workspace` 100% 952 992bb2696cb1aebe A ALSO AND ANOTHER ATTEMPT Bought CARGO_TARGET_DIR, CAUSE, CONSTRAINT Every FAILED FIRST FIXING GB**. GB, HIT I IN IT. MB PASS, Root SAME T-193/T-195. T-233's T-235: The This WORKTREE'S WORTH Weigh `--bin `cargo `gate_test_api` `target-gate-trunk`). after against agent already another any api` are artifact been belonging binary, both, build, built. cause changed changing cheaply class compiled.** contained contents; cost: could. database device" dir). do documents does during each edit. enforces entire error. exactly exists, failed, fails failures five fix: for forgot, free from full grep had has hash header hit hunting, inferring: instance. instance: isolation it it, machine main. many mid-gate mirroring new not notice. or own; preflight price: probably produce proved ran reads remove reported retry rlib, run). run, run. say sends several shortfall should, since slice**: slice, someone source specifically stable strings succeeded take target-gate-mapengine that that. their this tight treatment. trunk twice two unchanged; underneath use verifies version warning wave.sh's way ways website-api` website-frontend` went were what where which while why with worktree's"""
+notes = """
+"No (/var (T-193 (`target-gate-frontend`, **252 **It **`gate_test_api` --workspace` 100% 952 992bb2696cb1aebe A ALSO AND ANOTHER ATTEMPT Bought CARGO_TARGET_DIR, CAUSE, CONSTRAINT Every FAILED FIRST FIXING GB**. GB, HIT I IN IT. MB PASS, Root SAME T-193/T-195. T-233's T-235: The This WORKTREE'S WORTH Weigh `--bin `cargo `gate_test_api` `target-gate-trunk`). after against agent already another any api` are artifact been belonging binary, both, build, built. cause changed changing cheaply class compiled.** contained contents; cost: could. database device" dir). do documents does during each edit. enforces entire error. exactly exists, failed, fails failures five fix: for forgot, free from full grep had has hash header hit hunting, inferring: instance. instance: isolation it it, machine main. many mid-gate mirroring new not notice. or own; preflight price: probably produce proved ran reads remove reported retry rlib, run). run, run. say sends several shortfall should, since slice**: slice, someone source specifically stable strings succeeded take target-gate-mapengine that that. their this tight treatment. trunk twice two unchanged; underneath use verifies version warning wave.sh's way ways website-api` website-frontend` went were what where which while why with worktree's
+
+--- HEAD migration_legacy (verbatim) ---
+
+FIFTH INSTANCE OF THIS RUN'S SIGNATURE DEFECT, found by T-235, and it is in the gate I fixed four hours ago. **`gate_test_api` runs `cargo test -p website-api` to clear a slice, so the gate can pass on code it never compiled.**
+
+T-235 measured it three ways rather than inferring:
+  its test binary ran ANOTHER WORKTREE'S 4-test build, twice — stable hash 992bb2696cb1aebe with changing contents;
+  target/debug/api changed size underneath it with its own source unchanged;
+  a compile FAILED against a stale rlib, then succeeded on retry with no edit.
+
+This is the same shape as the two failures wave.sh's own header documents (T-193 and T-195 each proved `cargo test -p website-frontend` ran another worktree's binary, which is why the frontend test step already has a private target dir). The API test step never got the same treatment.
+
+**It probably explains T-233's reverted slice**: that agent reported 126 passed / 0 failed, and its test fails on a clean database on main. A stale or foreign binary that never contained the test would produce exactly that.
+
+FIX: give `gate_test_api` its own CARGO_TARGET_DIR, the way the frontend test step and the trunk step already do (`target-gate-frontend`, `target-gate-trunk`). Consider whether every gate step should, since `cargo check --workspace` and the clippy steps share the same dir and the same hazard. Weigh the cost: T-322 measured a cold `--bin api` build at 25s / 322 crates and 2.1 GB, and disk has been tight (/var hit 100% during this run).
+
+ALSO WORTH FIXING IN THE SAME PASS, from T-235: slice agents are told to use private target dirs but nothing enforces it, and several were caught by the wasm version of this trap and had to grep the built artifact for their own new strings to notice. A gate step that verifies the binary it is about to run is the one it just built would close the class rather than one instance.
+
+SHIPPED. Both test steps now take a private CARGO_TARGET_DIR — target-gate-api and target-gate-mapengine — mirroring what the frontend test step has had since T-193/T-195. cargo check and the clippy steps need none: they emit no binary to run, and the hazard is specifically RUNNING a binary another worktree built.
+
+DISK WAS THE REAL CONSTRAINT AND THE FIRST ATTEMPT HIT IT. The gate failed with "No space left on device" on both new dirs — the machine was at **252 MB free of 952 GB**. Root cause was not the fix: /var/tmp held ~116 GB of target dirs belonging to slices that had already SHIPPED. Every agent is told to remove its own; many forgot, and five were killed by a session limit before they could. Reclaimed 116 GB, after which the entire gate run cost 4 GB.
+
+Bought the isolation cheaply rather than at full price: CARGO_INCREMENTAL=0 on both, since incremental caches are a large fraction of a target dir and are useless for a one-shot gate run.
+
+AND CLOSED THE CAUSE, not just the instance:  removes orphan build caches while sparing any dir whose slice worktree still exists, and preflight now NAMES the reclaimable space rather than only reporting the shortfall — a disk warning that does not say where the space went sends someone hunting, and "No space left on device" mid-gate reads exactly like a build error.
+"""
 priority = 0
 main_goal = "Give gate_test_api private CARGO_TARGET_DIR so gate cannot pass on foreign binary."
 context = [

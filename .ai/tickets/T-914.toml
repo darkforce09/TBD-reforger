@@ -7,7 +7,18 @@ status = "shipped"
 order = 5940
 spec = "docs/platform/t912_wave_lockfile.md"
 executor = "claude-code"
-notes = "Operator decision 2026-08-14: continue the ledger. Shipped derivation measured wave_base = 132 (d0556206): the anchored authority rejects prefixed subjects like d21197d2 'T-853 wave 235 CLOSED', and the real 233/218 markers are disavowed floor-jump artifacts (00a1fdad9, a8bb2730). Next close prints WAVE 133 CLOSED — the only number oracle 1 accepts. No hardcoded wave numbers outside fabricated test histories; wave_close_subject_ok stays the authority."
+notes = """
+Operator decision 2026-08-14: continue the ledger. Shipped derivation measured wave_base = 132 (d0556206): the anchored authority rejects prefixed subjects like d21197d2 'T-853 wave 235 CLOSED', and the real 233/218 markers are disavowed floor-jump artifacts (00a1fdad9, a8bb2730). Next close prints WAVE 133 CLOSED — the only number oracle 1 accepts. No hardcoded wave numbers outside fabricated test histories; wave_close_subject_ok stays the authority.
+
+--- HEAD migration_legacy (verbatim) ---
+
+wave repack derives wave_base from the newest non-disavowed close marker (including HEAD) and numbers open waves base+1 onward, so the next close ceremony prints the oracle-exact next number. wave check recomputes the base; a fresh marker without repack is check-red. No marker (stub and test trees) means base 0 and today's 1..N.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["wave repack derives wave_base from the newest non-disavowed close marker (including HEAD) and numbers open waves base+1 onward, so the next close ceremony prints the oracle-exact next number. wave check recomputes the base; a fresh marker without repack is check-red. No marker (stub and test trees) means base 0 and today's 1..N."]
+
+missing=0"""
 main_goal = "Lock wave labels continue the historical close-marker ledger so the close ceremony and its exactly-one-step oracle keep working after the TSV cutover."
 context = [
     "Operator decision 2026-08-14: continue ledger; anchored authority rejects prefixed subjects.",

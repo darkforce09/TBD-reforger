@@ -6,7 +6,19 @@ class = "bug"
 status = "deferred"
 order = 5280
 executor = "claude-code"
-notes = "wave208 verifier F1 MINOR; toast-on-redirect already works"
+notes = """
+wave208 verifier F1 MINOR; toast-on-redirect already works
+
+--- HEAD migration_legacy (verbatim) ---
+
+WAVE-208 VERIFIER MINOR (wave208.md F1). Denial redirect appends `?role_notice=mission_maker` and comments claim it remains for deep links, but no SPA consumer reads the query — only the navigate-time toast fires. Cold open of `/missions/:id?role_notice=mission_maker` shows no toast (param inert). Primary UX (redirect + toast on denial) works. FIX: either consume the query on the mission overview (re-show notice on refresh/deep-link) or drop the dead-param writers/comments/asserts. ACCEPTANCE: either a cold open of the overview URL with role_notice shows the notice once, OR `rg role_notice` under apps/website/frontend/src finds zero hits.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["WAVE-208 VERIFIER MINOR (wave208.md F1). Denial redirect appends `?role_notice=mission_maker` and comments claim it remains for deep links, but no SPA consumer reads the query — only the navigate-time toast fires. Cold open of `/missions/:id?role_notice=mission_maker` shows no toast (param inert). Primary UX (redirect + toast on denial) works. FIX: either consume the query on the mission overview (re-show notice on refresh/deep-link) or drop the dead-param writers/comments/asserts. ACCEPTANCE: either a cold open of the overview URL with role_notice shows the notice once, OR `rg role_notice` under apps/website/frontend/src finds zero hits."]
+
+missing=0
+"""
 main_goal = "Consume or remove dead role_notice query on mission overview cold open."
 context = [
     "Wave-208 verifier MINOR denial redirect appends role_notice mission_maker.",

@@ -6,6 +6,18 @@ class = "feature"
 status = "shipped"
 order = 3391
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by W60 adversarial verifier (CLEAN MINOR) after T-550.
+
+ingest_event_roster loads cargo phys catalog and omits over-capacity missions from roster seating. Coverage is Class-R source pin only; no tests/events.rs IT.
+
+Cure: IT that seeds an over-capacity tip and asserts roster omit / error path.
+
+Repro: rg flatten_to_mod_document_with_catalog apps/website/api/tests/events.rs — no hit.
+
+missing=0"""
 priority = 2
 main_goal = "Add HTTP IT for events roster over-capacity omit."
 context = ["W60 verifier after T-550."]

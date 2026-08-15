@@ -7,6 +7,16 @@ status = "queued"
 order = 5850
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+T-899 walked the Rust tree and allowlisted 37 apps/website/frontend/src/*.rs files over 1000 lines with reason+expires. Do not raise the threshold. Split them so the SIZE-3 rows can drop. Files: arsenal.rs, arsenal_rules.rs, asset_catalog.rs, attributes.rs, client.rs, content.rs, context_menu.rs, deployments.rs, dto.rs, eden_dock_left.rs, eden_dock_right.rs, eden_help.rs, eden_layout.rs, eden_settings.rs, eden_toolbelt.rs, eden_top_strip.rs, eden_tree.rs, eden_zones.rs, editor_ops.rs, event_hub.rs, event_manager.rs, los_tool.rs, mission_commands.rs, mission_editor.rs, mission_hydrate.rs, mission_overview.rs, missions.rs, mortar.rs, orbat_manager.rs, outliner.rs, personnel.rs, place_helpers.rs, ruler_tool.rs, server_control.rs, ui.rs, validation_panel.rs, yrs_persist.rs. Not dispatched in T-853 waves 234-235 (would collide with live editor work). Not the registry-split program.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["T-899 walked the Rust tree and allowlisted 37 apps/website/frontend/src/*.rs files over 1000 lines with reason+expires. Do not raise the threshold. Split them so the SIZE-3 rows can drop. Files: arsenal.rs, arsenal_rules.rs, asset_catalog.rs, attributes.rs, client.rs, content.rs, context_menu.rs, deployments.rs, dto.rs, eden_dock_left.rs, eden_dock_right.rs, eden_help.rs, eden_layout.rs, eden_settings.rs, eden_toolbelt.rs, eden_top_strip.rs, eden_tree.rs, eden_zones.rs, editor_ops.rs, event_hub.rs, event_manager.rs, los_tool.rs, mission_commands.rs, mission_editor.rs, mission_hydrate.rs, mission_overview.rs, missions.rs, mortar.rs, orbat_manager.rs, outliner.rs, personnel.rs, place_helpers.rs, ruler_tool.rs, server_control.rs, ui.rs, validation_panel.rs, yrs_persist.rs. Not dispatched in T-853 waves 234-235 (would collide with live editor work). Not the registry-split program."]
+
+missing=0"""
 main_goal = "Split 37 T-899-allowlisted frontend SIZE-3 files; drop allowlist rows."
 context = [
     "T-899 allowlisted 37 apps/website/frontend/src/*.rs over 1000 lines.",

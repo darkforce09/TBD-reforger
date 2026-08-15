@@ -6,6 +6,12 @@ class = "docs"
 status = "shipped"
 order = 3267
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Follow-on from T-247 (wave 6). UI caller for POST /admin/roles/sync shipped in personnel.rs. Still missing: (1) nightly/cron scheduler claimed in docs/website/backend/architecture.md but no API job wires resync_all_roles; (2) apps/website/api/seeds/discord_roles.sql:23 ships placeholder snowflake 1517290000000000000 for Squad Leader/leader.
+
+Repro: grep apps/website/api and scripts for a timer/cron calling resync_all_roles — none. Seed row: ('1517290000000000000', 'Squad Leader', 'leader', 30)."""
 priority = 2
 main_goal = "Schedule Discord role resync and replace placeholder leader snowflake in seed."
 context = [

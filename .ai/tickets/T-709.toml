@@ -6,7 +6,15 @@ class = "bug"
 status = "deferred"
 order = 4302
 executor = "claude-code"
-notes = "filed by wave-100 adversarial verifier (editor factory)"
+notes = """
+filed by wave-100 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+zoomsweep.mjs attached a Runtime console listener and printed up to two console errors per zoom step — which is exactly where the documented __editorCamSet headless-vulkan panic surfaces next to its black frames. The ported capture::zoomsweep (tools/tbd-tools/src/capture.rs) attaches no tap, so the panic is now invisible in sweep output and a black capture has no adjacent cause line. Fix: reuse the console-tap idiom smokes.rs already has, cap 2 lines/step. Diagnosis: editor_verify/wave100.md F-4.
+
+missing=0
+"""
 main_goal = "Restore per-zoom console error tap in capture zoomsweep."
 context = [
     "zoomsweep.mjs printed up to two console errors per zoom step.",

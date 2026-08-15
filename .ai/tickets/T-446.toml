@@ -6,6 +6,14 @@ class = "feature"
 status = "shipped"
 order = 3285
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from T-267 / wave 14. Hero upload button now errors honestly instead of fake success; multipart POST /cms/uploads needs web-sys FormData/File features in apps/website/frontend/Cargo.toml (+ likely client helper). Outside T-267 owns.
+
+Repro: CMS Content → hero upload → error toast; /cms/uploads never called.
+
+Cure: enable FormData/File features, wire multipart api helper, POST /cms/uploads and set thumbnail_url."""
 priority = 2
 main_goal = "Enable web-sys FormData/File and wire CMS hero upload to /cms/uploads."
 context = [

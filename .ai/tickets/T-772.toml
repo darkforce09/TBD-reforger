@@ -6,7 +6,19 @@ class = "bug"
 status = "shipped"
 order = 4648
 executor = "claude-code"
-notes = "filed by wave-118 adversarial verifier (editor factory)"
+notes = """
+filed by wave-118 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+NIT from the wave-118 verifier. T-637 rebuilt `eden_layout::BTN_ICON` from `p-1.5` + `text-on-surface-variant` to `p-0.5` + `text-on-surface`, which was the correct fix for the dock density work and correctly moved the 'a live glyph rests bright' enforcement to the shared recipe so every caller benefits. Side effect: `eden_help.rs:244`, the ControlsHint overlay's close button, was sized by that recipe and its hit box went from roughly 36px to roughly 20px. Behaviour is intact (it still composes HOVER_FILL and is never disabled) and the button also has an Escape path, so nothing is unreachable — but 20px is below the comfortable pointer target for a dismiss control that is not in a dense row. The five BTN_ICON callers were verified to be the same set as at base, so nothing else regressed. Fix: give the overlay's close button its own padding at the call site rather than widening the shared recipe back out, since the dense-row sizing is what the dock work needs. Diagnosis: editor_verify/wave118.md NIT-1.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["NIT from the wave-118 verifier. T-637 rebuilt `eden_layout::BTN_ICON` from `p-1.5` + `text-on-surface-variant` to `p-0.5` + `text-on-surface`, which was the correct fix for the dock density work and correctly moved the 'a live glyph rests bright' enforcement to the shared recipe so every caller benefits. Side effect: `eden_help.rs:244`, the ControlsHint overlay's close button, was sized by that recipe and its hit box went from roughly 36px to roughly 20px. Behaviour is intact (it still composes HOVER_FILL and is never disabled) and the button also has an Escape path, so nothing is unreachable — but 20px is below the comfortable pointer target for a dismiss control that is not in a dense row. The five BTN_ICON callers were verified to be the same set as at base, so nothing else regressed. Fix: give the overlay's close button its own padding at the call site rather than widening the shared recipe back out, since the dense-row sizing is what the dock work needs. Diagnosis: editor_verify/wave118.md NIT-1."]
+
+missing=0
+"""
 main_goal = "Restore comfortable dismiss hit target for ControlsHint close without widening shared BTN_ICON."
 context = [
     "Wave-118 NIT: T-637 rebuilt eden_layout BTN_ICON p-0.5 for dock density.",

@@ -7,7 +7,18 @@ status = "shipped"
 order = 5962
 spec = "docs/platform/t915_ticketboard_design.md"
 executor = "claude-code"
-notes = "Never recompute lanes — the lock is the truth and drift is the trust banner's job. Owns-collision explainer in the detail panel: prefix-containment path pairs for any two selected tickets."
+notes = """
+Never recompute lanes — the lock is the truth and drift is the trust banner's job. Owns-collision explainer in the detail panel: prefix-containment path pairs for any two selected tickets.
+
+--- HEAD migration_legacy (verbatim) ---
+
+Wave lanes rendered verbatim from wave.lock (one lane per open n; wave 0 always a count chip; header shows wave_base / max_concurrent / pack_last; missing lock renders the DidNotRun refusal text, never empty lanes; Unplanned side bucket = dispatchable ids absent from the lock, set arithmetic only). Program tree parent->children, status-colored, expandable. Composable filters: executor, kind, program/parent, scope family, free text over precomputed lowercase haystacks.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["Wave lanes rendered verbatim from wave.lock (one lane per open n; wave 0 always a count chip; header shows wave_base / max_concurrent / pack_last; missing lock renders the DidNotRun refusal text, never empty lanes; Unplanned side bucket = dispatchable ids absent from the lock, set arithmetic only). Program tree parent->children, status-colored, expandable. Composable filters: executor, kind, program/parent, scope family, free text over precomputed lowercase haystacks."]
+
+missing=0"""
 depends_on = ["T-915.1"]
 parent = "T-915"
 main_goal = "The operator sees the wave plan the factory will actually run — the committed lock, lane by lane — plus the program structure and filtered slices of the corpus."

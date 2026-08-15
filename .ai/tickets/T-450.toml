@@ -6,6 +6,15 @@ class = "feature"
 status = "shipped"
 order = 3289
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from T-275 / wave 16. Schema now pins MAX_NETS/MAX_LABEL_CHARS/MAX_GRACE_SECONDS/MAX_DURATION_SECONDS, but TBD_MissionLoader.c still enforces MISSION_FILE_MAX_BYTES = 8*1024*1024 outside owns — a document can validate then fail at mod load on size.
+
+Repro: craft a schema-valid mission JSON >8MB; CreateVersion/schema-validate OK; mod loader rejects at TBD_MissionLoader.c (~836).
+
+Cure: add an explicit size ceiling to mission.schema.json (or document + API preflight) matching MISSION_FILE_MAX_BYTES; cite TBD_MissionLoader.c.
+"""
 priority = 2
 main_goal = "Pin MISSION_FILE_MAX_BYTES ceiling in mission.schema.json matching mod loader."
 context = [

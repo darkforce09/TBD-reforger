@@ -6,6 +6,34 @@ class = "chore"
 status = "shipped"
 order = 3442
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Surfaced by T-285, which wired the orphaned /fire-missions endpoints and had to work around the
+schema to do it.
+
+THE TABLE STORES NO COORDINATES. T-285 encodes the four inputs losslessly into the `fp_grid` /
+`target_grid` text columns (`fmt_grid`/`parse_grid` in mortar.rs) -- that encoding IS the persistence,
+which is why it carries the round-trip test. It works, and it is a workaround.
+
+NO `time_of_flight_s` / `charge` / `azimuth_mils` COLUMNS. So a freshly-saved solution shows full TOF
+(the POST response carries the live solution) while a RESTORED one shows an honest `—` rather than a
+fabricated 0.0 s. That asymmetry is visible to the operator and is the schema's fault, not the UI's.
+
+WANTED: a migration adding real numeric coordinate columns and the three solution fields, then retire
+the grid-string encoding. Note the grid strings are the CURRENT persistence format, so the migration
+must backfill from them rather than dropping them.
+
+ALSO FROM T-285, same surface:
+ - **No endpoint lists valid weapon systems.** `WEAPONS` in mortar.rs duplicates `charges_for` in
+   api/src/services/mortar.rs. Drift is asymmetric -- a missing tube is unofferable, an extra one
+   400s -- but `GET /fire-missions/weapons` would close it.
+ - `SavedFire` / `EventOption` live in mortar.rs, not dto.rs. Their proper home with an R-api golden
+   is dto.rs; `SavedFire` is currently pinned only by T-285's captured-live-response test.
+ - `dto::FireSolution` has no `Debug` derive, so `SaveResponse` cannot have one. Cosmetic.
+ - field_tools.rs:106-112 documents a now-unreachable guard and says it is safe to delete.
+
+missing=0"""
 priority = 2
 main_goal = "Add fire_missions coordinate and solution columns; retire grid encoding."
 context = [

@@ -6,7 +6,19 @@ class = "bug"
 status = "shipped"
 order = 4325
 executor = "claude-code"
-notes = "filed by wave-110 adversarial verifier (editor factory); consolidates a recurring family"
+notes = """
+filed by wave-110 adversarial verifier (editor factory); consolidates a recurring family
+
+--- HEAD migration_legacy (verbatim) ---
+
+Judged warranted by the wave-110 verifier: the N-undo-steps wart now has three instances — unmanned place is 3 steps (wave-103 MINOR, T-718 item 3), multi-select rotate is N steps (T-648, documented — no atomic multi-rotate API exists), and the T-491-cured mixed move proves the correct shape (move_entities_and_vehicles, one txn). Queued T-645 (placement helpers) MANDATES one-step-undoable bulk ops and is the forcing function. Fix: a store.rs atomic batch API (one begin() over a closure of mutations, or per-op atomic variants: rotate_entities, place_with_crew_stamp) + migrate the three call sites; pin undo depth 1 per op. Diagnosis: editor_verify/wave110.md NOTE-B + lineage. (4th instance, wave111 MINOR-3: T-645's >10 confirm text says nothing about the honest N-step undo while the merge toast advertises one-step Ctrl+Z — align the confirm copy when the atomic API lands.)
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["Judged warranted by the wave-110 verifier: the N-undo-steps wart now has three instances — unmanned place is 3 steps (wave-103 MINOR, T-718 item 3), multi-select rotate is N steps (T-648, documented — no atomic multi-rotate API exists), and the T-491-cured mixed move proves the correct shape (move_entities_and_vehicles, one txn). Queued T-645 (placement helpers) MANDATES one-step-undoable bulk ops and is the forcing function. Fix: a store.rs atomic batch API (one begin() over a closure of mutations, or per-op atomic variants: rotate_entities, place_with_crew_stamp) + migrate the three call sites; pin undo depth 1 per op. Diagnosis: editor_verify/wave110.md NOTE-B + lineage. (4th instance, wave111 MINOR-3: T-645's >10 confirm text says nothing about the honest N-step undo while the merge toast advertises one-step Ctrl+Z — align the confirm copy when the atomic API lands.)"]
+
+missing=0
+"""
 main_goal = "Atomic batch API: one undo step per multi-entity mutation family."
 context = [
     "Wave-110 verifier judged warranted; N-undo-steps wart has three live instances.",

@@ -6,6 +6,16 @@ class = "bug"
 status = "shipped"
 order = 3387
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by W55 adversarial verifier (CLEAN MINOR-NIT) after T-353.
+
+Gap 3 correctly shared format_uptime/log_stamp for dashboard/server_intel/audit. datefmt docs overclaim server-control uses the same HH:MM:SS helper; that page still has a different private helper. Cure: fix the doc comment or unify the helper.
+
+Repro: rg format_uptime apps/website/frontend/src/
+
+missing=0"""
 priority = 2
 main_goal = "Fix datefmt format_uptime doc overclaim on server-control."
 context = ["W55 verifier CLEAN MINOR-NIT after T-353."]

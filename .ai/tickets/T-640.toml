@@ -6,7 +6,14 @@ class = "bug"
 status = "shipped"
 order = 3860
 executor = "claude-code"
-notes = "editor-UI program wave 2 (wave_plan.tsv row 102) — SHIPPED wave 102 (editor factory), slice 8722916e; verifier wave102.md (4 MAJOR deferred: T-713..T-716)"
+notes = """
+editor-UI program wave 2 (wave_plan.tsv row 102) — SHIPPED wave 102 (editor factory), slice 8722916e; verifier wave102.md (4 MAJOR deferred: T-713..T-716)
+
+--- HEAD migration_legacy (verbatim) ---
+
+Eden's contours are a FIXED-ALPHA TINT, which is why they never fight the basemap: every contour pixel holds r - b = +28 while absolute luminance ranges #95..#dd — a brown ~#b59981 blended ~50% over the hillshade. Never harsh on a bright slope, never invisible in shade. 1 px weight everywhere, NO index contours. The single emphasis is the innermost closed contour of each peak, drawn darker (r - b ~= 51, ~#ae917b) — a per-peak "highest closed ring" rule, not every-Nth. Ours is saturated and full-alpha: `const CONTOUR_RGBA: [u8; 4] = [188, 150, 100, 235];` at `apps/website/frontend/src/world_assets/dem_vectors.rs`:26, whose comment :22-25 records the T-175 A3 retune, so that is the settled home for contour colour. The summit rule needs ring identity/closure out of `contour_segments` at `crates/map-engine-core/src/geometry/contours.rs`:164, which today returns a flat Vec<f32> of segments; and `compose_contour_hairlines(&segs, CONTOUR_RGBA)` (`crates/map-engine-core/src/geometry/vector_compose.rs`, called at dem_vectors.rs:120) takes ONE RGBA for the whole set, so a two-tone contour changes that signature. Reference capture: `.ai/artifacts/tbd_map_contours_2x.png`. Collides with T-639 on dem_vectors.rs — they are one wave apart by design.
+
+missing=0"""
 depends_on = ["T-661"]
 main_goal = "Fixed-alpha contour tint plus darker innermost closed summit ring per peak."
 context = [

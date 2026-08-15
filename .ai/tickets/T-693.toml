@@ -6,7 +6,15 @@ class = "feature"
 status = "shipped"
 order = 4470
 executor = "claude-code"
-notes = " — SHIPPED wave 111 (editor factory), 2a7e77d5 + collision fix; verifier wave111.md"
+notes = """
+ — SHIPPED wave 111 (editor factory), 2a7e77d5 + collision fix; verifier wave111.md
+
+--- HEAD migration_legacy (verbatim) ---
+
+NEW-F4. Row MENU-SCEN-011, Eden Ctrl+M. High value for composing an ORBAT from a template mission, and the paste primitives already exist (paste_slots, store.rs:1442). Scoped to mission_commands.rs + store.rs rather than editor_ops.rs on the sweep own advice — that keeps it packable into any wave instead of only two.
+
+missing=0
+"""
 main_goal = "Merge another mission document into the open one via Ctrl+M."
 context = [
     "NEW-F4 row MENU-SCEN-011; Eden Ctrl+M merge scenario command.",

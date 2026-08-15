@@ -6,7 +6,19 @@ class = "feature"
 status = "queued"
 order = 4400
 executor = "claude-code"
-notes = "workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row. Filed 2026-08-01 by the framework_synthesis coverage audit (parity/coverage_audit.md)"
+notes = """
+workbench program (program 2) - NOT factory-dispatchable; no owns, no wave row. Filed 2026-08-01 by the framework_synthesis coverage audit (parity/coverage_audit.md)
+
+--- HEAD migration_legacy (verbatim) ---
+
+The U1 item from framework_synthesis.md C.2, ranked 10 of 16 ("High value, Medium effort, mod-gated"). Source is the best-evidenced objective design in the whole corpus: WOG's `WMT_Task_Point`, 166 instances across 73 missions, every instance carrying all 15 parameters (wog.md:382-402). The five TBD lacks, with WOG's observed value distributions, which are what prove real use rather than a default nobody chose: `_CaptureCount` 4x128 / 1x16 / 2x6 / 3x5 (attackers needed); `_DefCount` 3x129 / 1x17 / 2x8 / 0x5 (defenders needed to hold); `_AdvantagePercent` 2x72 / 0x67 / 4x14 / 3x13; `_Owner` (starting owner) 1x70 / 0x65 / 2x30 / 4x1; and the pair that matters most, `_MinHeight` = -5 INVARIANT ACROSS ALL 166 and `_MaxHeight` 30x137 / 15x16 / 20x13. Optionally `_Lock` (1x136) and `_AutoLose` (-1x156). TBD's `contestable: bool` is the degenerate 1-vs-1 case of CaptureCount/DefCount, and TBD's zones are 2D: `$defs/shape` is `oneOf` circle-or-polygon and neither carries a height (mission.schema.json), so a zone today is a disc, not a volume. wog.md:405-410 reads the -5/+30 pair as deliberately INCLUDING BASEMENTS AND EXCLUDING AIRCRAFT, and TBD has had a DEM and a Z axis since T-091.2 (`terrainZ`), so the volume is close to free on the editor side. CARRY THE CAVEAT INTACT AND DO NOT LAUNDER IT: wog.md:379-381 and :403-406 mark the SEMANTICS `INFERRED:` — "a zone is captured when CaptureCount attackers are inside the marker's area between MinHeight and MaxHeight for Timer seconds while fewer than DefCount defenders contest it" — because `wmt_main`, the addon that implements every `WMT_*` module, IS ENTIRELY ABSENT FROM THE CORPUS (wog.md:88-95, not in `extracted/`, not in `pbo/`). The parameter NAMES and the observed VALUES are hard evidence; the reading of what they do is inference. So: take the parameter set with confidence, decide the semantics as a TBD design question, and do not copy the inferred sentence into an acceptance criterion. Note what TBD has and WOG lacks and must not lose: `neutralizeSeconds`, `onEmpty` + `decayRate`, `pauseOnEnemy` vs `resetOnEnemy`, `requireHolderPresent`. EXECUTOR IS `workbench` DELIBERATELY: `$defs/zoneRules` is `additionalProperties: false` and its own description states why — Enfusion's `JsonLoadContext` maps JSON keys onto named class fields, so a key the class does not declare is INVISIBLE rather than rejected, which makes the schema the only place a misspelled rule key can be caught. Every new key therefore needs a field in `TBD_MissionLoader` / `TBD_ObjectiveRules.c` and a resolve branch in `TBD_ObjectiveRegistry.c` alongside the schema property. The editor half (three numeric fields and a side picker in the zone inspector) is small and follows the shape, not the other way round.
+
+EXECUTOR CORRECTED 2026-08-02: was filed `workbench` on the mistaken reading that any .c file needs the Arma Workbench GUI. It does not — scripts/mod/compile.sh compiles tbd-framework against the native Linux dedicated server headlessly, verified: "OK: compiled clean, 5707 files, 11182 classes, 832 ms, no Workbench". Schema edits are plain JSON. This is factory work. Per the model-routing rule, the .c portion routes to Fable 5 even though the executor is claude-code.
+
+SCHEMA HALF SPLIT OUT to T-706 (one widening pass for the whole program). This ticket is the Enfusion reader plus any editor UI; it does not touch packages/tbd-schema.
+
+missing=0
+"""
 main_goal = "Ship Enfusion zone volume reader: min/max height, capture/defender counts, owner."
 context = [
     "U1 framework_synthesis C.2 ranked ten of sixteen; WOG WMT_Task_Point evidence.",

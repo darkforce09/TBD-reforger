@@ -6,6 +6,16 @@ class = "chore"
 status = "shipped"
 order = 3315
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+NIT from wave 28 adversarial. T-467 wired real bash recipes into Makefile + ci-local + ci.yml, but there is no T-471/T-472-style recipe-body tripwire — a future hollow `@true` / `echo PASS` / `#fake` recipe would green until noticed.
+
+Repro (hypothetical): replace verify-t438 recipe with `@true` → make verify-t438 PASS while script never runs.
+
+Cure: extend verify-t468-style (or sibling) tripwire to assert Makefile verify-t438/verify-t456 recipes invoke the real bash scripts (not echo/@true/#).
+
+missing=0"""
 priority = 2
 main_goal = "Extend verify-t468-style tripwire to verify-t438 and verify-t456 recipes."
 context = [

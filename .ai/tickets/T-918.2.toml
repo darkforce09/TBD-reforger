@@ -8,7 +8,18 @@ order = 5982
 spec = "docs/platform/t917_ticket_schema_v2.md"
 plan = "docs/plans/t-918_2_plan.md"
 executor = "claude-code"
-notes = "Structural separation already guarantees the no-sum rule at the data layer; this slice carries the negative assertion into the UI acceptance."
+notes = """
+Structural separation already guarantees the no-sum rule at the data layer; this slice carries the negative assertion into the UI acceptance.
+
+--- HEAD migration_legacy (verbatim) ---
+
+Detail panel and metrics dashboard render measured and estimated values as visually distinct states: stamps carrying an estimated[] entry get the estimate glyph + per-source tooltip (git_subject / id_interpolation), token figures from estimates/<id>.json render in their own estimated column with source + factor tooltip, and no UI element anywhere renders receipt+estimate arithmetic.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["Detail panel and metrics dashboard render measured and estimated values as visually distinct states: stamps carrying an estimated[] entry get the estimate glyph + per-source tooltip (git_subject / id_interpolation), token figures from estimates/<id>.json render in their own estimated column with source + factor tooltip, and no UI element anywhere renders receipt+estimate arithmetic."]
+
+missing=0"""
 depends_on = ["T-917.5"]
 parent = "T-918"
 main_goal = "The operator always knows which numbers are real and which are maths — at a glance, per value, with the method one hover away."

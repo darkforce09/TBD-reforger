@@ -6,6 +6,14 @@ class = "chore"
 status = "shipped"
 order = 3272
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+MINOR from wave 7 verifier. handlers/cms.rs announcement_body_persist_contract_is_identity_not_ammonia sets stored = authored.to_string() then asserts equality — never calls create/update. Real pin is IT cms_announcement_body + admin_field.
+
+Repro: read the unit test; it cannot fail if handlers regress to sanitize_html.
+
+Cure: delete it or replace with a non-vacuous pin (handler/IT only)."""
 priority = 3
 main_goal = "Replace tautological cms announcement_body_persist_contract unit test with handler or IT pin."
 context = [

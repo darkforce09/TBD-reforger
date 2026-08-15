@@ -6,7 +6,15 @@ class = "docs"
 status = "deferred"
 order = 4309
 executor = "claude-code"
-notes = "filed by wave-102 adversarial verifier (editor factory)"
+notes = """
+filed by wave-102 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+Three defects in T-664's shipped menu, one honesty rule: an enabled row must do what it says on the target it names. (1) Empty-ground 'Go Here' dispatches center_on_selection() — with a selection elsewhere the camera jumps AWAY from the clicked point; with none, enabled no-op. The variant doc claims a set_view-to-clicked-point wiring that does not exist. Wire the event pixel through resolve_target into a real set-view. (2) 'Attributes...' and 'Edit Loadout...' are enabled for multi-selection targets but open_attributes/open_arsenal silently no-op at len()>1 — disable-with-reason or make them act (ATTR-MULTI-001 is the extender; coordinate with T-649 wave 112). (3) The menu's window keydown lacks the in_editable_field guard T-662 established — with a dock field focused, Arrows/Enter hijack into menu nav and Enter fires a row. Related, filed for T-082's brief (wave 113): refused locked-slot Transform edits display as accepted in the Attributes modal (one-shot snapshot, no re-read, no disabled affordance) — wave102.md F-7. Diagnosis: editor_verify/wave102.md F-4, F-5, F-6.
+
+missing=0
+"""
 main_goal = "Fix context menu honesty: Go Here, multi-select rows, keydown guard."
 context = [
     "T-664 shipped menu has three defects under one honesty rule.",

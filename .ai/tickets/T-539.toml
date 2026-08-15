@@ -6,6 +6,16 @@ class = "bug"
 status = "shipped"
 order = 3379
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by W52 adversarial verifier (MAJOR) after T-538.
+
+Stdout schema/preserve Class-R calls `apply_flatten_orbat_slots` directly, not `flatten_orbat_slots(..., false)`. A post-apply stdout-only `mission["schemaVersion"] = "1.1"` stamp (exact pre-T-538 bug shape) keeps all `flatten_stdout_*` tests GREEN. Production path is shared/correct today; pin does not cover the CLI entrypoint claim.
+
+Cure: Class-R must exercise stdout entrypoint (or source-pin that stdout path cannot reassign schemaVersion after apply). Repro: add stamp after apply in flatten_orbat_slots false branch → current tests stay green.
+
+missing=0"""
 priority = 1
 main_goal = "Class-R must exercise stdout flatten_orbat_slots entrypoint, not apply_* only."
 context = [

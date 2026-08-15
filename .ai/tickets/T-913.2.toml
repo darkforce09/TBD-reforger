@@ -7,7 +7,18 @@ status = "shipped"
 order = 5930
 spec = "docs/platform/t913_ticket_run_metrics.md"
 executor = "claude-code"
-notes = "Depends on T-913.1 landed. Malformed started, missing id or missing tokens_consumed in a run file is ticket check red. Printing tokens=0 for a missing object is forbidden. Two runs in one second yield two files (sha or increment suffix). LIMITS: command-center in-chat subagent dispatch is not captured."
+notes = """
+Depends on T-913.1 landed. Malformed started, missing id or missing tokens_consumed in a run file is ticket check red. Printing tokens=0 for a missing object is forbidden. Two runs in one second yield two files (sha or increment suffix). LIMITS: command-center in-chat subagent dispatch is not captured.
+
+--- HEAD migration_legacy (verbatim) ---
+
+Per-run JSON at .ai/tickets/metrics/<id>/<ts>-<sha>.json (never a single jsonl), required tokens_consumed with total == input+output+cache_read+cache_write, optional git_sha, optional reasoning sibling outside total. cargo xtask platform slice-run <id> parses usage from agent/claude --output-format json pinned by recorded fixtures; missing usage exits nonzero and writes no file. platform wave land stamps outcome+git_sha then runs wave repack; ticket metrics --by agent sums real files.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["Per-run JSON at .ai/tickets/metrics/<id>/<ts>-<sha>.json (never a single jsonl), required tokens_consumed with total == input+output+cache_read+cache_write, optional git_sha, optional reasoning sibling outside total. cargo xtask platform slice-run <id> parses usage from agent/claude --output-format json pinned by recorded fixtures; missing usage exits nonzero and writes no file. platform wave land stamps outcome+git_sha then runs wave repack; ticket metrics --by agent sums real files."]
+
+missing=0"""
 depends_on = ["T-913.1"]
 parent = "T-913"
 main_goal = "Every factory slice run leaves a token receipt on disk so spend per ticket and per agent is measurable from real files, never invented."

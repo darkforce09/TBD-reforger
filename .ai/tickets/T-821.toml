@@ -6,7 +6,19 @@ class = "bug"
 status = "queued"
 order = 5030
 executor = "claude-code"
-notes = "wave203 verifier; refutes a T-789 summary claim — measured"
+notes = """
+wave203 verifier; refutes a T-789 summary claim — measured
+
+--- HEAD migration_legacy (verbatim) ---
+
+WAVE-203 VERIFIER FILING (wave203.md MINOR, PRE-EXISTING — init line untouched by any band wave). save_semver is set ONLY at mission_editor.rs:2763 (static '0.1.0') or by dialog on:input; save_now (mission_commands.rs:820) never bumps it. Live: saved 0.1.0, reopened twice -> prefill still 0.1.0; same-semver re-save 409'd (versions immutable). T-789's summary asserted '0.1.0 -> 0.2.0 auto-bump correct today' — refuted by measurement. FIX: prefill from the mission's persisted latest version + patch-bump (or bump save_semver on the save success arm); keep manual override via the input. ACCEPTANCE: save 0.1.0, reopen -> prefill 0.1.1 (or chosen scheme); no 409 on accept-the-default; manual semver still wins.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["WAVE-203 VERIFIER FILING (wave203.md MINOR, PRE-EXISTING — init line untouched by any band wave). save_semver is set ONLY at mission_editor.rs:2763 (static '0.1.0') or by dialog on:input; save_now (mission_commands.rs:820) never bumps it. Live: saved 0.1.0, reopened twice -> prefill still 0.1.0; same-semver re-save 409'd (versions immutable). T-789's summary asserted '0.1.0 -> 0.2.0 auto-bump correct today' — refuted by measurement. FIX: prefill from the mission's persisted latest version + patch-bump (or bump save_semver on the save success arm); keep manual override via the input. ACCEPTANCE: save 0.1.0, reopen -> prefill 0.1.1 (or chosen scheme); no 409 on accept-the-default; manual semver still wins."]
+
+missing=0
+"""
 main_goal = "Prefill save version from persisted latest plus patch-bump not static 0.1.0."
 context = [
     "WAVE-203 verifier MINOR PRE-EXISTING; init line untouched by band waves.",

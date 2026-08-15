@@ -6,6 +6,27 @@ class = "docs"
 status = "shipped"
 order = 3242
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Two MINORs and a NIT from wave 4's adversarial verifier, plus two structural findings from T-240's agent. All in the frontend authoring surface.
+
+1. MINOR -- apps/website/frontend/src/mission_commands.rs:174-178. The shipped 'Export Compiled' file is NOT byte-identical to GET /compiled, and the comment claiming the difference is whitespace is FALSE. The code re-parses to serde_json::Value to pretty-print; Value::Object is a BTreeMap and `preserve_order` is enabled NOWHERE in the workspace (grep -rn preserve_order Cargo.lock apps/*/*/Cargo.toml crates/*/Cargo.toml -> empty), so the round trip RE-SORTS EVERY OBJECT'S KEYS ALPHABETICALLY.
+   MEASURED on mission 6d291619-8182-4164-866d-4e165a5516af: /compiled = 2006 bytes, key order schemaVersion,meta,environment,factions,orbat,slots,radioPlan,zones,flow,winConditions. Export download = 3006 bytes, key order environment,factions,flow,meta,orbat,radioPlan,schemaVersion,slots,winConditions,zones. Deep-equal after recursive key sort: TRUE -- so the mod still loads it and nothing is lost.
+   WHY IT MATTERS ANYWAY: mission_commands.rs:353-359 invites the reader to check the bridge output 'against a live GET /missions/:id/compiled'. A harness that does exactly that byte-compares and fails. The false comment plus the invitation together set a trap for whoever next verifies the twin.
+   NOT AFFECTED: the unit test client_twin_is_byte_identical_to_the_compiled_route compares two COMPACT to_vec outputs and is genuinely non-vacuous. The overclaim is the report headline applied to the shipped artifact, and the in-code comment.
+
+2. MINOR -- mission_commands.rs:92-97 (message) and :25-31 (the ROW_META doc). 'Export Compiled' misdiagnoses an expired or absent session as 'This mission has no saved server row yet -- save a version first, then export.' set_row_meta only runs on a successful GET /missions/:id; on a 401 the row never arrives. The mission DOES have a server row, and the suggested remedy would also 401. Reachable with JWT_ACCESS_TTL_MIN=15 and a long-idle tab whose refresh token has died. The ROW_META doc enumerates 'a local-only / non-UUID id, a 404, an offline boot' -- but not 401.
+   REPRO: fresh browser profile that never visited /auth/callback, open /missions/<id>/edit, call window.__editorCommands.compiled_document_json().
+
+3. NIT -- T-243's report says '1 mission with placed slots, 11 others refused'. Measured: 13 live missions (deleted_at IS NULL AND current_version_id IS NOT NULL) -- 1 x 200, 12 x 409 'no placed slots'. A further 40 rows with versions are soft-deleted and 404. Same conclusion, wrong count.
+
+4. STRUCTURAL, from T-240's agent -- THE ARSENAL HAS NO SAVE BUTTON. Every cargo mutation persists immediately: arsenal.rs:1029/1036/1042/1063 each call persist_cargo -> editor_ops::set_loadout. So 'block save' has no button to disable and the export gate is the only authoring-time refusal the client has. T-240's ticket assumed a save step that does not exist. REPRO: open Arsenal on any slot, click + on a cargo row, reload -- the qty is persisted with no save action.
+
+5. STRUCTURAL, from T-240's agent -- cargo authored into a container with NO GARMENT WORN is undeliverable and BOTH ENDS ARE QUIET. arsenal.rs:895-902 renders the group labelled 'no garment worn' with a total and no limit; over() is false so nothing tints. T-240's rule deliberately stays silent (never invent capacity) and says so at arsenal_rules.rs:800-808. The mod already detects exactly this -- TBD_LoadoutEquipHelper.c:1105-1106 Degrades with 'this slot's kit wears no %1 -- mission/kit authoring mismatch' -- so the engine knows and the author never hears it. REPRO: clear the vest row, add a magazine to the vest cargo container, export.
+
+CONFIRMED NON-ISSUE, do not investigate: the verifier noted the dev API 404s on /api/v1/health. That route never existed -- app.rs:297 registers /healthz, which returns 200 and is what preflight uses.
+"""
 priority = 1
 main_goal = "Fix Export Compiled key resort, false whitespace comment, and 401 misdiagnosis in mission_commands."
 context = [

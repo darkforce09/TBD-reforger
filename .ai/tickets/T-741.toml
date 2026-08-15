@@ -6,7 +6,19 @@ class = "feature"
 status = "shipped"
 order = 4617
 executor = "claude-code"
-notes = "filed by wave-112 adversarial verifier (editor factory)"
+notes = '''
+filed by wave-112 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+NIT from the wave-112 verifier. editor_ops.rs:1826-1842 attrs_multi_ids filters the selection down to slots, because vehicles carry none of the SoA columns the multi-edit writes. But the Attributes modal header reports 'N entities selected' from the FULL selection and the per-field copy says 'every selected entity'. Under a Ctrl+A select-all — which T-649 shipped this wave, and which deliberately includes vehicles — those two strings overclaim: the user is told N entities will be changed when only the slot subset will be. Either count the filtered set in the header or say explicitly that vehicles are excluded. Low severity but it is the same honesty class as T-716 (a control that says it does more than it does). Diagnosis: editor_verify/wave112.md NIT-4.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["""NIT from the wave-112 verifier. editor_ops.rs:1826-1842 attrs_multi_ids filters the selection down to slots, because vehicles carry none of the SoA columns the multi-edit writes. But the Attributes modal header reports 'N entities selected' from the FULL selection and the per-field copy says 'every selected entity'. Under a Ctrl+A select-all — which T-649 shipped this wave, and which deliberately includes vehicles — those two strings overclaim: the user is told N entities will be changed when only the slot subset will be. Either count the filtered set in the header or say explicitly that vehicles are excluded. Low severity but it is the same honesty class as T-716 (a control that says it does more than it does). Diagnosis: editor_verify/wave112.md NIT-4."""]
+
+missing=0
+'''
 main_goal = "Honest multi-edit copy when mixed slot and vehicle selection."
 context = [
     "attrs_multi_ids filters to slots; vehicles lack SoA columns multi-edit writes.",

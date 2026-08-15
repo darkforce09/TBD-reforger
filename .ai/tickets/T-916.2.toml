@@ -7,7 +7,18 @@ status = "shipped"
 order = 5952
 spec = "docs/platform/t915_ticketboard_design.md"
 executor = "claude-code"
-notes = "Preserved asymmetries (do NOT rationalize here): set-status writes queue.json + repack only, mark-ready syncs without repack, ship full-syncs. phase2::save_tree / value_to_ticket demote to migration/test-only with the T-912.2 regression pin retargeted. cmd_get mirrored output stays untouched (external parsers). shipped_at SHA stays hand-edited; stamp-sha is future work."
+notes = """
+Preserved asymmetries (do NOT rationalize here): set-status writes queue.json + repack only, mark-ready syncs without repack, ship full-syncs. phase2::save_tree / value_to_ticket demote to migration/test-only with the T-912.2 regression pin retargeted. cmd_get mirrored output stays untouched (external parsers). shipped_at SHA stays hand-edited; stamp-sha is future work.
+
+--- HEAD migration_legacy (verbatim) ---
+
+Rewire the xtask registry mutators (ship, set-status, mark-ready, add, remove, reorder, advance-slice) onto the T-916.1 typed ops with the reload-before-sync sequence (typed write -> reload load_phase2_tree -> cmd_sync -> repack_quiet). New verbs: add-child [--promote], remove --force, child-resolving ship/set-status. Referential-integrity check rule (children[] naming a missing file, child file with absent parent). Parity harness: old-vs-new byte diff per verb over the full write surface with timestamp normalization; red trees refuse exit 1 with zero writes.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["Rewire the xtask registry mutators (ship, set-status, mark-ready, add, remove, reorder, advance-slice) onto the T-916.1 typed ops with the reload-before-sync sequence (typed write -> reload load_phase2_tree -> cmd_sync -> repack_quiet). New verbs: add-child [--promote], remove --force, child-resolving ship/set-status. Referential-integrity check rule (children[] naming a missing file, child file with absent parent). Parity harness: old-vs-new byte diff per verb over the full write surface with timestamp normalization; red trees refuse exit 1 with zero writes."]
+
+missing=0"""
 depends_on = ["T-916.1"]
 parent = "T-916"
 main_goal = "The CLI verbs keep byte-identical behavior on the shared surface while child ids finally resolve — ticket ship T-912.2-style invocations work instead of Unknown ticket — and the generated docs always reflect the post-mutation state."

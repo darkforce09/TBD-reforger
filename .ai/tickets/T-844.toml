@@ -6,7 +6,19 @@ class = "audit"
 status = "deferred"
 order = 5260
 executor = "claude-code"
-notes = "wave207 verifier; explicit duplicate of T-837 — fold, do not double-build | ABSORBED into T-837 — same defect (delete_selection partitions comments/slots only); T-837 carries the wider UI audit. Do not dispatch separately; its acceptance clauses are carried there."
+notes = """
+wave207 verifier; explicit duplicate of T-837 — fold, do not double-build | ABSORBED into T-837 — same defect (delete_selection partitions comments/slots only); T-837 carries the wider UI audit. Do not dispatch separately; its acceptance clauses are carried there.
+
+--- HEAD migration_legacy (verbatim) ---
+
+WAVE-207 VERIFIER OBSERVATION (pre-existing, unfiled at the time; independently corroborates the operator's wave-205 eye-pass report). `delete_selection` partitions comments and slots only, so pressing Delete with a vehicle selected silently no-ops. DUPLICATE-CHECK BEFORE STARTING: T-837 (filed from the operator's eye-pass) covers the same defect from the UI side with a wider audit (Del key + context menu + outliner row + crew release + one-undo). This ticket exists to carry the verifier's precise mechanism (the partition in delete_selection) into that work — FOLD INTO T-837 rather than building twice; close this as absorbed when T-837 is scoped. ACCEPTANCE: see T-837.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["WAVE-207 VERIFIER OBSERVATION (pre-existing, unfiled at the time; independently corroborates the operator's wave-205 eye-pass report). `delete_selection` partitions comments and slots only, so pressing Delete with a vehicle selected silently no-ops. DUPLICATE-CHECK BEFORE STARTING: T-837 (filed from the operator's eye-pass) covers the same defect from the UI side with a wider audit (Del key + context menu + outliner row + crew release + one-undo). This ticket exists to carry the verifier's precise mechanism (the partition in delete_selection) into that work — FOLD INTO T-837 rather than building twice; close this as absorbed when T-837 is scoped. ACCEPTANCE: see T-837."]
+
+missing=0
+"""
 main_goal = "Fold delete_selection vehicle gap into T-837; do not dispatch separately."
 context = [
     "delete_selection partitions comments and slots only vehicle selected silently no-ops.",

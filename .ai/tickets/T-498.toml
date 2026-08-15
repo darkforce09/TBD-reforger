@@ -6,6 +6,12 @@ class = "audit"
 status = "shipped"
 order = 3333
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 38 residual from T-408. Audit CSV now escape_csv_formula. Live Discord sink is services/webhook.rs title: cap_runes(&a.title) via cms push_to_discord — user title into embed, not formula-escaped. Ticket cited stale cms.rs:64. Cure: sanitize embed fields for formula/control chars or document Discord as non-spreadsheet sink with Class-R.
+
+missing=0"""
 priority = 2
 main_goal = "Sanitize Discord embed title fields for formula/control chars or document non-spreadsheet sink."
 context = [

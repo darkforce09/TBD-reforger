@@ -6,6 +6,16 @@ class = "feature"
 status = "shipped"
 order = 3322
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 31 residual from T-480. IT assert_oauth_state_cleared is byte-equality to OAUTH_STATE_CLEAR, but unit helper clears_oauth_state in apps/website/api/src/handlers/oauth.rs (~449) still soft-contains oauth_state=/Max-Age=0/HttpOnly with no Path=/ pin. Path=/api clear cookie still greens the unit helper.
+
+Repro: soft check accepts 'oauth_state=; Path=/api; Max-Age=0; HttpOnly'.
+
+Cure: assert equality to OAUTH_STATE_CLEAR (or require Path=/ exact) in the unit helper.
+
+missing=0"""
 priority = 2
 main_goal = "Harden clears_oauth_state unit helper to exact OAUTH_STATE_CLEAR equality."
 context = [

@@ -6,6 +6,17 @@ class = "chore"
 status = "shipped"
 order = 3293
 executor = "claude-code"
+notes = '''
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from T-286 / wave 18 adversarial NIT. Mission Library now uses reactive `has_min_role_authed` (None=>false). wiki.rs / modpacks.rs / event_hub.rs still one-shot `store.has_min_role` (browse-mode None=>true). Behind AuthGate today so Mission-Library freeze is not reproduced, but the pattern debt remains.
+
+Repro: rg 'has_min_role\(' apps/website/frontend/src/{wiki,modpacks,event_hub}.rs — still browse-mode helper.
+
+Cure: switch action gates to `has_min_role_authed` + reactive Memo where affordances depend on role.
+
+missing=0
+'''
 priority = 2
 main_goal = "Switch wiki/modpacks/event_hub action gates to has_min_role_authed reactive Memo."
 context = [

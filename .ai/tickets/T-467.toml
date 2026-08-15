@@ -6,6 +6,17 @@ class = "chore"
 status = "shipped"
 order = 3306
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from wave 25 adversarial N2. wave.sh wires verify-t438 and verify-t456 (T-463), but Makefile/CI have no sibling targets (same shape as pre-T-452 for other verifies).
+
+Repro: make ci-local / ci.yml pass while scripts/mod/verify-t438*.sh is deleted.
+
+Cure: add Makefile + CI steps mirroring wave.sh, or document intentional wave-only scope with a pin.
+
+missing=0
+"""
 priority = 3
 main_goal = "Add Makefile + CI steps for verify-t438/t456 mirroring wave.sh."
 context = [

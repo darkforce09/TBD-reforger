@@ -6,6 +6,14 @@ class = "chore"
 status = "shipped"
 order = 3281
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from T-260 / wave 11 adversarial MINOR W11-V1. API now returns events.server_id and events.modpack_id (migration 0011 + handlers), but apps/website/frontend/src/event_hub.rs still GETs /modpacks/current for the Hub chip; EventHub DTO lacks those fields.
+
+Repro: create event with modpack_id set; Hub UI still shows global current pack.
+
+Cure: wire event_hub.rs (+ dto) to prefer event.modpack_id when present, fall back to /modpacks/current only when null."""
 priority = 2
 main_goal = "Wire event hub to prefer event.modpack_id over global /modpacks/current."
 context = [

@@ -6,6 +6,20 @@ class = "feature"
 status = "shipped"
 order = 3413
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by W63 adversarial verifier (DIRTY MAJOR) after T-557.
+
+t534_dev_login_prime_literals_still_match_handler greps COALESCE(arma_id and bans only the literal '', 'dev-arma-…' stamp.
+Comment `// COALESCE(arma_id` + remove real UPDATE → PASS.
+INSERT arma_id = $3 + comment COALESCE (no real UPDATE) → PASS; barrier probe 3× idx_users_arma_id hits.
+
+Product NULL+COALESCE path holds (0 race hits). Pin does not.
+
+Repro: keep ON CONFLICT (discord_id), stamp arma_id via bind $N in INSERT VALUES, replace live COALESCE UPDATE with a comment containing COALESCE(arma_id; Class-R green; concurrent cold dev-login 23505 again.
+
+missing=0"""
 priority = 2
 main_goal = "Harden dev-login Class-R so comment or bind-form COALESCE decoys cannot pass."
 context = ["W63 adversarial verifier DIRTY MAJOR after T-557."]

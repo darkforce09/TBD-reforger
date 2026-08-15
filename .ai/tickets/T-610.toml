@@ -6,6 +6,36 @@ class = "bug"
 status = "shipped"
 order = 3572
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by wave 76's verifier (F4). Individually trivial; the reason to record it is that
+`make verify-citations` passes (`Checked 41 @contract citation(s)`) while ~19 citations are wrong --
+the gate does not cover these forms, so the drift is real and silent.
+
+`docs/platform/PLAYTEST_RUNBOOK.md` sections S8-S13 + Appendix, ~17 cites all carrying pre-T-605 line
+numbers (the quoted log STRINGS are current; only the numbers moved):
+    TBD_LoadoutEquipHelper.c :1386->1572 (pass complete) · :1342->1392 (worn audit) · :610->770
+      (equip OK) · :1223/:1228 -> :1398/:1403 (NAKED / HALF-DRESSED)
+    TBD_SpawnManager.c :2094->2169 (auto-deploy) · :785/:780/:773 -> :794/:789/:782 (claim lines)
+      · :666->675 · :2381->2465 · :2549->2633 · :2710->2794 · :2878->2962 · :2280->2355
+      · :1161->1233 · :1496->1568
+`apps/website/frontend/src/arsenal_rules.rs`: `(:209-212)` for `IsComplete` (now 247-250) and
+`(:1121-1123)` for the unworn Degrade (now 1286-1288) -- **the first sits inside text T-605 newly
+wrote, so it was stale on arrival.**
+
+Also in this bucket, from the same report:
+- `run-playtest-server.sh:39` says **109** current-format `[TBD]` lines; `STAGING-SERVER.md` says
+  **108**; measured **108**.
+- The verifier could not reproduce the brief's "320 map-engine-core tests" figure -- the crate runs
+  **126** (all pass). Some doc or ticket is carrying a wrong number; find and fix it.
+- `make verify-no-crf-leak` exceeded a 480 s budget twice (it prints its FAIL early then keeps
+  going). Slow enough that agents time out before its PS-GUID scan; worth a look.
+
+FIX SHAPE: either extend `verify-citations` to cover bare `file.c:NNN` forms in docs, or stop citing
+line numbers in prose and cite stable symbol names instead. The second is cheaper and does not rot.
+
+missing=0"""
 priority = 3
 main_goal = "Fix stale file:line cites; extend verify-citations or cite symbols not lines."
 context = [

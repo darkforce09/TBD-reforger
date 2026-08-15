@@ -6,6 +6,14 @@ class = "feature"
 status = "shipped"
 order = 3277
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from T-251 / wave 9 N1. T-251 placed apps/website/docker-compose.staging.yml, but scripts/mod/deploy-staging.sh:184 still cds to apps/website/api and runs docker compose -f docker-compose.staging.yml there.
+
+Repro: after T-251 land, follow game staging path that uses deploy-staging.sh compose step — file not found / wrong cwd.
+
+Cure: point deploy-staging.sh (and any twin bootstrap) at apps/website/docker-compose.staging.yml; align STAGING-SERVER.md."""
 priority = 2
 main_goal = "Point deploy-staging.sh at apps/website/docker-compose.staging.yml; align staging docs."
 context = [

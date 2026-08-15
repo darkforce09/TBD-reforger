@@ -6,6 +6,16 @@ class = "bug"
 status = "shipped"
 order = 3378
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by W51 adversarial verifier (CLEAN MINOR-NIT) after T-383.
+
+T-383 fixed `--in-place`. Non-`--in-place` stdout flatten still drops loadout/uid and force-stamps schemaVersion 1.1. Cure: same preserve/refuse rules on stdout path, or document stdout as lossy preview only with a loud warning + Class-R pin.
+
+Repro: run flatten-orbat-slots without --in-place on a golden with loadout/uid.
+
+missing=0"""
 priority = 2
 main_goal = "Stdout flatten-orbat-slots must preserve loadout/uid and schemaVersion."
 context = [

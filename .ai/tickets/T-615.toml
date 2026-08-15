@@ -6,6 +6,59 @@ class = "bug"
 status = "shipped"
 order = 3622
 executor = "cursor-docs"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by T-611 (wave 78) while deciding whether `verify-citations` should read `docs/`. Doc-owned,
+so T-611 reported rather than fixed.
+
+=== THE IRONY, AND THE POINT ===
+`docs/platform/DOCUMENTATION_STANDARDS.md` defines the "turn a comment into a checked link"
+convention. **Seven of the eight dead relative links in the repo are inside that document**, and every
+one is a prose citation *with a line number* pointing at a file deleted during the big cutovers:
+
+- `:139, :152, :197, :198` -> `apps/website/internal/{models/registry.go, handlers/registry.go,
+  models/mission.go, handlers/handlers.go}` -- Go, **deleted at T-145**
+- `:162, :222, :223` -> `apps/website/frontend/src/types/{models/registry.ts, models/user.ts,
+  api/index.ts}` -- React, **deleted at T-159.29.3**
+- `docs/specs/Mission_Creator_Architecture/t123_documentation_standards_rollout.md:119` ->
+  `apps/website/internal/contract/validate.go`
+
+Plus non-link prose pointing at files that no longer exist: `t123:72` cites
+`apps/website/frontend/tsdoc.json`; `t123:136` cites
+`packages/tbd-schema/scripts/verify-contract-citations.mjs` **as the live citation gate** -- it has
+been xtask since T-165.1.
+
+This is the best available argument for the convention T-610 adopted (cite stable **symbol names**,
+never line numbers) and it is failing inside the document that should be making it.
+
+=== ALSO: ADD §10.1, TEXT ALREADY DRAFTED ===
+T-611 measured the `docs/`-scanning question rather than assuming: temporarily adding `docs/` + `md`
+to the gate gave **73 citations, 5 dangling, ALL 5 FALSE** -- in prose the tag is inline as
+`` `@contract registry-items.schema.json#/$defs/item`. `` and the pointer capture swallows the closing
+backtick and trailing punctuation. Zero true findings, five ways to go red on correct citations. A
+markdown-aware matcher still could not tell §3.1's grammar template from a live citation, because that
+document is mostly examples of it. **Decision: the gate stays out of `docs/`; prose is held by
+convention.** That rationale is now recorded on `SCAN_ROOTS` in `xtask/src/schema_gates.rs` so nobody
+re-litigates it from intuition.
+
+T-611 drafted the exact replacement for the §10 table row at `:420` and a new §10.1 section to insert
+after the keystone paragraph at `:426`. **The full text is in T-611's slice report** -- use it verbatim
+rather than re-deriving; it carries the measured numbers.
+
+Summary of §10.1: prose cites stable symbol names, never line numbers (`TBD_SpawnManager.ClaimSlot`
+survives an edit above it; `TBD_SpawnManager.c:2094` does not -- T-610 found ~19 rotted in one
+runbook); a repo-relative path with no line number when a symbol will not do; `@contract` in prose is
+**illustrative, not a checked link**; anything that genuinely must be machine-checked belongs in code
+or in its own index gate (cf. `make verify-oracle` for `@idx`). And: the gate prints its own scope on
+every run -- trust that line over the doc if they disagree.
+
+=== WHILE YOU ARE THERE ===
+`verify-citations` now prints its scope generated from its own constants, so the printed claim can no
+longer outlive the config. Any doc sentence that restates the scope in prose should defer to that line
+instead of duplicating it -- duplicated scope claims are how this ticket happened.
+
+missing=0"""
 priority = 3
 main_goal = "Repair seven dead links; insert §10.1; defer scope prose to gate output line."
 context = [

@@ -6,7 +6,19 @@ class = "bug"
 status = "deferred"
 order = 5170
 executor = "claude-code"
-notes = "operator eye-pass wave-205; pairs naturally with T-839 | ABSORBED into T-834 — both are small eden_top_strip cleanups and would collide on the file. Do not dispatch separately; its acceptance clauses are carried there."
+notes = """
+operator eye-pass wave-205; pairs naturally with T-839 | ABSORBED into T-834 — both are small eden_top_strip cleanups and would collide on the file. Do not dispatch separately; its acceptance clauses are carried there.
+
+--- HEAD migration_legacy (verbatim) ---
+
+OPERATOR EYE-PASS FINDING (wave-205, 2026-08-10): the No-Widget toolbar button's current glyph 'doesn't really make sense' — it should read as the SELECT tool, matching the select-arrow vocabulary of the floating pill's Select (which itself is dying per decision 1/T-839 — the arrow ICON is what carries over). FIX: swap the No-Widget button (and Edit-menu row) glyph to the select-cursor/arrow icon; tooltip stays 'No Widget (1)' or becomes 'Select (1)' — match Eden's naming (Eden calls digit 1 'No Widget'; the operator wants the SELECT visual). Keep plates/census intact. ACCEPTANCE: the digit-1 button shows the arrow glyph; tooltip names the mode + (1); no other button changed.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["OPERATOR EYE-PASS FINDING (wave-205, 2026-08-10): the No-Widget toolbar button's current glyph 'doesn't really make sense' — it should read as the SELECT tool, matching the select-arrow vocabulary of the floating pill's Select (which itself is dying per decision 1/T-839 — the arrow ICON is what carries over). FIX: swap the No-Widget button (and Edit-menu row) glyph to the select-cursor/arrow icon; tooltip stays 'No Widget (1)' or becomes 'Select (1)' — match Eden's naming (Eden calls digit 1 'No Widget'; the operator wants the SELECT visual). Keep plates/census intact. ACCEPTANCE: the digit-1 button shows the arrow glyph; tooltip names the mode + (1); no other button changed."]
+
+missing=0
+"""
 main_goal = "Swap No-Widget toolbar glyph to select-cursor arrow vocabulary."
 context = [
     "Operator wave-205: No-Widget glyph does not read select.",

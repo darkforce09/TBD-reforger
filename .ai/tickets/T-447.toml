@@ -6,6 +6,15 @@ class = "docs"
 status = "shipped"
 order = 3286
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Residual from T-267 / wave 14 adversarial NIT. Write paths (POST/PATCH/DELETE/push-discord) are live, but the CMS Content master list still uses mock_docs() and GET /cms/announcements is 405 — session cannot see server-persisted announcements after reload.
+
+Repro: Publish announcement; reload /content → mock seed only.
+
+Cure: add list route if missing + FE LocalResource GET /cms/announcements.
+"""
 priority = 2
 main_goal = "List CMS announcements via GET route and FE LocalResource instead of mock_docs seed."
 context = [

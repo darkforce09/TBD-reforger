@@ -6,7 +6,15 @@ class = "bug"
 status = "shipped"
 order = 4626
 executor = "claude-code"
-notes = "filed by wave-114 adversarial verifier (editor factory)"
+notes = """
+filed by wave-114 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+MINOR from the wave-114 verifier. mission_editor.rs:1791-1794: a failed registry fetch sets only `catalog` / `vehicle_catalog` and leaves `registry_items` at None. eden_dock_right.rs:873-881: the favourites panel treats None as 'still loading' and renders 'Resolving N favourite(s) against the catalogue...' with no failure arm, so the tab spins forever with no retry and no explanation. The behaviour is HONEST as far as it goes — T-695 deliberately made the loading state distinct so a slow load cannot mark a whole collection stale, which is the right call — but there is no terminal error state. The underlying omission (a registry fetch failure that sets no error signal) PREDATES T-695; what is new is a surface that renders that omission as an indefinite spinner. Fix: give the fetch a failure signal and add a failure arm to the panel with a retry. Diagnosis: editor_verify/wave114.md MINOR-2.
+
+missing=0
+"""
 main_goal = "Add registry fetch failure signal and favourites panel retry arm."
 context = [
     "Wave-114 verifier MINOR: favourites tab indefinite Resolving spinner.",

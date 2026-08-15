@@ -6,6 +6,23 @@ class = "bug"
 status = "shipped"
 order = 3234
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+The deliberate residue of T-405, which was scoped in wave 3 to the P0 half (the live javascript: sink at deployments.rs plus the 0010 backfill) and the two highest-exposure writers. These are the rest, all <img src> -- weaker than an <a href> because browsers do not execute javascript: in img src, but the guard is absent identically.
+
+REMAINING WRITERS (T-405 shipped cms.rs and oauth.rs; these are untouched):
+  events.banner_image_url   -- handlers/events.rs:624 create, :1215 update -- admin tier -- render at frontend/src/events.rs:346
+  missions.thumbnail_url    -- handlers/missions.rs:396 create, :509 update -- create is mission_maker+, PATCH is AuthUser+ownership -- renders at frontend/src/missions.rs:402,:546,:912
+REMAINING RENDER SITES (all users.avatar_url, whose writer T-405 DID guard at oauth.rs:125):
+  frontend/src/leaderboards.rs:200, layout.rs:230, settings.rs:192, event_hub.rs:1418
+  frontend/src/announcements.rs:295 (announcements.thumbnail_url; writer guarded by T-405)
+
+THE PORTED PREDICATE IS READY TO REUSE: T-405 put is_http_url in apps/website/frontend/src/url_guard.rs for the wasm side and kept api/src/services/text.rs authoritative, pinned together by apps/website/shared/is_http_url_cases.rs (86 cases) which both crates include!. Add cases THERE, not to either implementation -- widening one alone turns the other's suite red on the same commit, which is the anti-drift mechanism working. CAUTION: a slice that touches ONLY that shared file currently hard-fails clippy_changed -- see T-409 F1.
+
+COVERAGE GAP, separate from the writers: deployments.rs:465's WIRING has no test. replay_href is exhaustively unit-tested but nothing proves the view! calls it; re-inlining href=replay would pass every test. The crate is CSR-only and cannot render to a string natively. NOT A LIVE DEFECT -- wave 3's verifier drove a real headless Chromium through /deployments against three stored payloads and confirmed the guard fires, the cell renders an em-dash with no anchor, and a legitimate https link still renders in the same table. So this is a regression-risk gap, not a bug.
+
+CONFIRMED NOT AN ISSUE, do not re-audit: modpacks.workshop_url reaches an <a href> at frontend/src/event_hub.rs:236 but has NO HTTP WRITER -- services/registry_import.rs:82's INSERT omits the column and there is no UPDATE modpacks in the API crate. Only operator psql seeds populate it. frontend/src/modpacks.rs:346 also renders it but that page is hardcoded MOCK_MODPACKS and never calls the API."""
 priority = 1
 main_goal = "Adopt URL guard at remaining writers, render sites, and deployments sink wiring coverage."
 context = [
