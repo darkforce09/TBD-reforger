@@ -14,7 +14,16 @@ requirement = [
     "Wire optimistic POST/DELETE /missions/{id}/bookmark on cards and dossier.",
     "Refetch list so Bookmarked tab populates; Class-R guards if removed.",
 ]
+current_state = [
+    "Bookmarked scope existed but cards and dossier had no star control.",
+    "POST/DELETE /missions/{id}/bookmark endpoints were orphaned.",
+]
+approach = [
+    "Wired optimistic POST/DELETE bookmark toggle on cards and dossier.",
+    "Bookmarked tab refetches list so scope populates after toggle.",
+]
 verify = ["SLICE GATE PASS: cargo check, wasm32, fmt, clippy, schema."]
+acceptance = ["Mission cards and dossier toggled bookmarks; Bookmarked tab populated."]
 citations = [
     "commit 9ed914b6 bookmark toggle",
     "wave 13 close 12d8193f",

@@ -7,12 +7,22 @@ status = "shipped"
 order = 2800
 executor = "claude-code"
 main_goal = "Schema has zero foreign keys; deletes orphan dependent rows while confirm dialog claims a cascade."
+context = [
+    "Seven migrations had zero FOREIGN KEY constraints; deletes orphaned dependent rows.",
+    "DELETE /events/{id} soft-deleted while confirm dialog claimed cascade.",
+]
 requirement = ["Zero foreign keys in the entire schema."]
 current_state = [
     "Grep for FOREIGN KEY or REFERENCES across all seven migrations returns zero.",
     "Deleting a mission, event or user orphans every dependent row, and DELETE /events/{id} sets deleted_at only while the confirm dialog claims a cascade.",
     "assigned_to, discord_id and reserved_by are unconstrained free text.",
 ]
+approach = [
+    "0018_foreign_keys.sql added twenty-five tiered constraints with quarantine sweeps.",
+    "Re-aimed lifecycle and events tests to expect SQLSTATE 23503 refusals.",
+]
+verify = ["cargo test -p website-api export_dangling_version_is_refused_by_the_foreign_key"]
+acceptance = ["Schema gained twenty-five foreign keys; dangling pointers refused with 23503."]
 shipped_at = "5f048112"
 created_at = "2026-07-30T21:06:48Z"
 completed_at = "2026-07-31T01:00:29Z"

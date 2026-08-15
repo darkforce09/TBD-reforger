@@ -7,6 +7,10 @@ status = "shipped"
 order = 2850
 executor = "claude-code"
 main_goal = "CMS announcements duplicate on re-clicking Publish; PATCH, DELETE, uploads and push-discord are all orphaned."
+context = [
+    "content.rs made one API call and discarded returned id on Publish.",
+    "PATCH, DELETE, uploads, and push-discord were orphaned; SOP never hit API.",
+]
 requirement = ["CMS announcements can be created but never edited, deleted or re-pushed."]
 current_state = [
     "content.rs makes exactly one API call and discards the returned id, so re-clicking Publish duplicates.",
@@ -14,6 +18,12 @@ current_state = [
     "The SOP category never hits the API at all — it toasts success with no network call.",
     "Five markdown tools toast mock.",
 ]
+approach = [
+    "Publish retains server id; re-Publish PATCHes instead of duplicating.",
+    "Wired PATCH/DELETE, push-discord, and SOP mapping; hero upload stayed honest error toast.",
+]
+verify = ["cargo test -p website-frontend publish_edit_delete_push_are_wired_no_fake_toasts"]
+acceptance = ["CMS announcements edited, deleted, and re-pushed; SOP category reached API."]
 shipped_at = "f8d2ffdc"
 created_at = "2026-07-26T23:39:39Z"
 completed_at = "2026-07-26T23:52:34Z"

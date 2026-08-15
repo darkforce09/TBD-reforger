@@ -14,6 +14,16 @@ requirement = [
     "Add LeaveRequest DTOs and mount member file/list on /deployments.",
     "Wire admin approve/deny so the LOA API is reachable from SPA.",
 ]
+current_state = [
+    "Four LOA endpoints and leave_requests table shipped with integration tests.",
+    "No SPA page, nav entry, or caller reached the LOA API.",
+]
+approach = [
+    "Added LeaveRequest DTOs; mounted member file and list on /deployments.",
+    "Wired admin approve/deny controls to live LOA endpoints.",
+]
+verify = ["cargo test -p website-frontend create_leave_body_is_bare_ymd_json"]
+acceptance = ["Leave-of-Absence UI reachable on My Deployments; admin approve/deny wired."]
 citations = [
     "commit b0f8bd69 LOA UI",
     "wave 13 merge 2d13fbd3",

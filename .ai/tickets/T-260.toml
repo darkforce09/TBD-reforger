@@ -15,7 +15,16 @@ requirement = [
     "Expose fields on create, patch, and get with advisory existence checks.",
     "Update dashboard and deployments FromRow SELECTs so Event decode does not 500.",
 ]
+current_state = [
+    "events table and Event model lacked server_id and modpack_id columns.",
+    "Event Hub modpack chip fetched global /modpacks/current for every event.",
+]
+approach = [
+    "Migration 0011 added nullable server_id and modpack_id columns.",
+    "events handler exposes fields on create, patch, get; dashboard and deployments SELECTs updated.",
+]
 verify = ["events IT: event_server_and_modpack_binding."]
+acceptance = ["Events bound nullable server_id and modpack_id; dashboard and deployments decoded without 500."]
 citations = [
     "commit eb9bdda0 server modpack bind",
     "migration 0011 events columns",

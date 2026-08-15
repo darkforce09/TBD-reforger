@@ -16,7 +16,16 @@ requirement = [
     "Run an immediate refresh plus interval loop via LEADERBOARD_REFRESH_INTERVAL_SECS.",
     "Keep in-request refresh callers for telemetry and me endpoints.",
 ]
+current_state = [
+    "refresh_leaderboard had exactly one caller inside results ingest.",
+    "Without ingest traffic leaderboard_totals stayed empty or frozen at migration WITH NO DATA.",
+]
+approach = [
+    "db.rs scheduler runs immediate refresh plus interval loop on API boot.",
+    "LEADERBOARD_REFRESH_INTERVAL_SECS env pins default fifteen-minute cadence.",
+]
 verify = ["db unit: scheduler_invokes_refresh_on_boot_and_interval."]
+acceptance = ["Leaderboard MV refreshed on boot and interval; ingest callers retained."]
 citations = [
     "commit c1f587be boot scheduler",
     "wave 12 close 22226505",

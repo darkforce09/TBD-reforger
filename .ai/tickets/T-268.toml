@@ -14,6 +14,19 @@ requirement = [
     "POST /admin/users/{id}/warnings with required reason like ban classify.",
     "Banned dossiers get Unban to DELETE ban; header Sort/Filter cycle modes.",
 ]
+current_state = [
+    "personnel.rs toasted mock Warning issued over working POST warnings endpoint.",
+    "DELETE ban had no UI; Sort, Filter, and Deployments dossier were stubs.",
+]
+approach = [
+    "POST /admin/users/{id}/warnings with required reason dialog like ban.",
+    "Banned dossiers get Unban DELETE; Sort/Filter cycle live roster modes.",
+]
+verify = [
+    "cargo test -p website-frontend issue_warning_is_not_a_mock_toast",
+    "cargo test -p website-frontend unban_control_deletes_ban_when_banned",
+]
+acceptance = ["Personnel warnings posted live; unban, sort, and filter controls wired."]
 citations = [
     "commit ab5cb2ab warning unban",
     "wave 14 merge 4fd3818e",

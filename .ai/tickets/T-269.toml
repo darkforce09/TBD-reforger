@@ -15,7 +15,16 @@ requirement = [
     "Audit attempted-and-NOT-delivered at warn; answer 503 never 202.",
     "Class-R pin forbids discard and accepted:true return.",
 ]
+current_state = [
+    "POST /admin/servers/{id}/rcon discarded command and returned 202 accepted.",
+    "Audit logged issued RCON with no delivery path in API.",
+]
+approach = [
+    "parse_rcon_command models every field; undelivered commands audit warn.",
+    "Returns 503 Service Unavailable never 202 when transport absent.",
+]
 verify = ["admin_field.rs asserts 503 and audit row holds command."]
+acceptance = ["RCON endpoint returned 503 for undeliverable commands; audit row held command."]
 citations = [
     "commit 973c9a6f RCON honesty",
     "T-289 host agent blocker",

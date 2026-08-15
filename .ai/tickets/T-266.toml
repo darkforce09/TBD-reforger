@@ -14,7 +14,16 @@ requirement = [
     "Forward ?before=<cursor> and append into client-side filter set.",
     "Pin Load-more path helpers with Class-R tests.",
 ]
+current_state = [
+    "audit.rs fetched cursor list and discarded next_cursor at default page.",
+    "Trail silently stopped around twenty rows with no Load more.",
+]
+approach = [
+    "Load more refetches ?before=cursor and merge_audit_page appends rows.",
+    "Class-R pins parse_next_cursor and ignoring_next_cursor_is_detectably_wrong.",
+]
 verify = ["Class-R pins go red if next_cursor ignored."]
+acceptance = ["Audit trail paginated via Load more; next_cursor forwarded and appended."]
 citations = [
     "commit cb7dc35d Load more",
     "wave 13 merge 19de55ba",
