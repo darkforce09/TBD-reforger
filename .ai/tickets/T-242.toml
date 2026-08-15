@@ -6,14 +6,32 @@ class = "feature"
 status = "idea"
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
-migration_legacy = [
+main_goal = "Add vehicle and entity inventory to the entity schema; re-scope what remains against CURRENT schema before dispatching it."
+context = [
     "== STALE IN PART, corrected 2026-07-26 by the command center after T-215 (wave 5) contradicted it and was right ==",
-    "THIS TICKET'S PREMISE IS OUT OF DATE. It claims `$defs/entity` is {alias,x,z,headingDeg,faction} with NO INVENTORY MODEL. On main today it is {alias, x, z, headingDeg, faction, INVENTORY}, and `$defs/entityInventory` exists ([{item,qty}], no container key -- 'the container IS the entity'). T-198 landed it in commit 2070eecdd, 'vehicle and crate inventory gets a home on $defs/entity'.",
-    "CONSEQUENCE: T-215 needed no schema change for vehicle cargo and did it, emitting $defs/entityInventory verbatim. Re-scope what remains of this ticket against the CURRENT schema before dispatching it. The command center briefed T-215 off this stale summary and was corrected by the agent -- do not repeat that.",
-    "WHAT IS STILL OPEN AND WAS NOT INVALIDATED: see T-216's schema deltas ($defs/slot needs tag/callsign/rank/stance, $defs/group needs leaderSlotId, the document root needs a vehicles $def) -- those are DIFFERENT objects and remain closed.",
-    "",
+    "THIS TICKET'S PREMISE IS OUT OF DATE.",
+    "T-198 landed it in commit 2070eecdd, 'vehicle and crate inventory gets a home on $defs/entity'.",
+    "CONSEQUENCE: T-215 needed no schema change for vehicle cargo and did it, emitting $defs/entityInventory verbatim.",
+    "The command center briefed T-215 off this stale summary and was corrected by the agent -- do not repeat that.",
     "== ORIGINAL SUMMARY BELOW ==",
-    "$defs/entity is {alias,x,z,headingDeg,faction} (mission.schema.json:376-387) with no inventory model. The editor's vehicle row is {id,resourceName,position,squadId} (store.rs:527-548), also with no cargo. Vehicle inventory has no representation on any of the three surfaces.",
+]
+requirement = [
+    "Re-scope what remains of this ticket against the CURRENT schema before dispatching it.",
+    "WHAT IS STILL OPEN AND WAS NOT INVALIDATED: see T-216's schema deltas ($defs/slot needs tag/callsign/rank/stance,",
+    "$defs/group needs leaderSlotId, the document root needs a vehicles $def) -- those are DIFFERENT objects and remain closed.",
+]
+current_state = [
+    "It claims `$defs/entity` is {alias,x,z,headingDeg,faction} with NO INVENTORY MODEL.",
+    "On main today it is {alias, x, z, headingDeg, faction, INVENTORY}, and `$defs/entityInventory` exists ([{item,qty}], no container key -- 'the container IS the entity').",
+    "$defs/entity is {alias,x,z,headingDeg,faction} (mission.schema.json:376-387) with no inventory model.",
+    "The editor's vehicle row is {id,resourceName,position,squadId} (store.rs:527-548), also with no cargo.",
+    "Vehicle inventory has no representation on any of the three surfaces.",
+]
+citations = [
+    "T-198 commit 2070eecdd",
+    "T-215 wave 5",
+    "T-216 schema deltas",
+    "mission.schema.json:376-387",
 ]
 owns = ["crates/map-engine-core/src/doc/store.rs"]
 

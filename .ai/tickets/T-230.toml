@@ -1,11 +1,28 @@
 id = "T-230"
 kind = "work"
-title = "Attendance marks every mission in the event and breaks the roster counters"
+title = "Attendance marks all event missions, breaks roster counters"
 summary = "Attendance marks every mission in the event and breaks the roster counters"
 class = "feature"
 status = "shipped"
 order = 2480
 executor = "claude-code"
+main_goal = "Fix telemetry.rs:279-288 attendance for all event_missions not the one played; restore decorate_events and dashboard roster counters; fix withdraw waitlist and no_show."
+context = [
+    "Side effect: decorate_events and the dashboard count only registered and waitlisted,",
+    "so a completed op's roster collapses to zero.",
+]
+requirement = ["Attendance marks every mission in the event and breaks the roster counters."]
+current_state = [
+    "telemetry.rs:279-288 sets attended for all event_missions of the event, not the one played,",
+    "and only when match.event_id parses.",
+    "Withdraw also stops promoting the waitlist once state is attended,",
+    "and the withdrawn and no_show enum values are never written by anything.",
+]
+citations = [
+    "decorate_events counter",
+    "match.event_id parses",
+    "no_show enum",
+]
 shipped_at = "4f4b961a"
 created_at = "2026-07-26T21:34:35Z"
 completed_at = "2026-07-26T21:39:20Z"
@@ -17,7 +34,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["telemetry.rs:279-288 sets attended for all event_missions of the event, not the one played, and only when match.event_id parses. Side effect: decorate_events and the dashboard count only registered and waitlisted, so a completed op's roster collapses to zero. Withdraw also stops promoting the waitlist once state is attended, and the withdrawn and no_show enum values are never written by anything."]
 owns = [
     "apps/website/api/src/handlers/telemetry.rs",
     "apps/website/api/tests/telemetry.rs",

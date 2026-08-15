@@ -6,6 +6,43 @@ class = "bug"
 status = "shipped"
 order = 2500
 executor = "claude-code"
+notes = "Honest split: the audit inspector's metadata <pre> is reasoned only — the seeded audit_logs rows carry no metadata key at all (the committed fixture does, the DB does not), so only the Option gate rendering nothing could be asserted. Markdown bodies in announcements render inline **bold** and backticks literally."
+main_goal = "Replace ().into_any() populated branches on five frontend pages so real API data renders."
+context = [
+    "The content-golden-gated branches are not untested code, they are absent — each is a literal ().into_any(): announcements.rs:67, events.rs:63,72, audit.rs:68,72, deployments.rs:163,189, dashboard.rs:341. Three also have an unconditionally empty detail pane with",
+    "no selection state.",
+    "OWNS COLUMN WAS WRONG, corrected 2026-07-26 before dispatch. The plan pointed at four BACKEND handlers (apps/website/api/src/handlers/{announcements,events,audit,deployments}.rs) while the bug is in six FRONTEND page modules — an agent dispatched on",
+    "it would have edited entirely the wrong files and found nothing. Caught by T-226, which confirmed the real site while working next door.",
+    "SHIPPED 2026-07-26 — and it is FIVE pages, not six. Title corrected.",
+]
+current_state = [
+    "The defect, verified: `apps/website/frontend/src/events.rs:72` is a literal `().into_any()` for the NON-EMPTY branch, with an unconditional SplitPaneEmpty detail at :74-80. Fixtures have been populated since T-194 (GET__events.json = 4 events) and",
+    "the live API returns 4 — so this is not 'correct but empty', the populated render branch was never written. Same shape confirmed at announcements.rs:68, dashboard.rs:342, audit.rs:72, deployments.rs:164 and :190,",
+    "modpacks.rs:257 — six modules, matching this ticket's title exactly.",
+    "modpacks.rs:257 IS A FALSE POSITIVE, retired with evidence rather than argument. That ().into_any() is the absent `trailing` badge for a non-current pack — the intentional stand-in for React's undefined, with",
+    "a comment saying so. The page is MOCK_MODPACKS-driven, has no emptiness gate, and already rendered fully. The original audit grepped for `().into_any()` and caught a legitimate empty slot. The agent",
+    "left the file untouched and added browser assertions M1-M3 proving it renders.",
+    "Every other claimed line number was EXACT despite 82 intervening commits. The competing audit's `announcements.rs:67` and `events.rs:63` were the comments above the real sites. Two unconditional empty detail panes were",
+    "found that the ticket did NOT name: announcements.rs:77-83 and audit.rs:80-86.",
+    """""THREE MORE LIVE DEFECTS found by reading dashboard.rs's gated block rather than just filling it: the hero printed a raw ISO string `T-MINUS 2026-08-01T19:00:00Z` instead of the countdown_label already sitting""",
+    'next to it; UPTIME returned "—" on BOTH match arms; and server_fps is numeric(5,1) so as_i64() returned None and the card rendered a confident `FPS: 0` for a healthy server.""',
+]
+approach = [
+    "IDIOM DECISIONS, all taken from event_manager.rs (T-226) and split_pane.rs, no new vocabulary: only events.rs has a selection-keyed detail fetch so only it CAN go stale, and it got T-226's three-state",
+    "enum literally — carrying the event id, rendering loading whenever the held id differs from the selection. The other four need no second fetch, so StoredValue over the one payload",
+    "designs the hazard out rather than guarding it. Auto-select on events.rs via a derived Memo, not an Effect, to avoid write-during-render; deliberately NOT on announcements/audit, where explicit selection matches the",
+    "spec and keeps SplitPaneEmpty an honest zero-selection render.",
+]
+verify = [
+    "VERIFIED 69/69 IN A BROWSER: 45/45 populated assertions with 0 console errors, then the same stack rebuilt against an empty-payload stub for 24/24 on the empty branches — so 'empty",
+    "goldens unchanged' is measured, not asserted. Stale-wasm check done: all 11 new strings grepped present in the built artifact.",
+]
+citations = [
+    "T-194 fixtures",
+    "T-226 idioms",
+    "React undefined",
+    "split_pane.rs",
+]
 shipped_at = "5954bd76"
 created_at = "2026-07-26T07:23:33Z"
 completed_at = "2026-07-27T13:57:00Z"
@@ -16,27 +53,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 5 commit subject(s)"
-migration_legacy = [
-    "The content-golden-gated branches are not untested code, they are absent — each is a literal ().into_any(): announcements.rs:67, events.rs:63,72, audit.rs:68,72, deployments.rs:163,189, dashboard.rs:341. Three also have an unconditionally empty detail pane with no selection state.",
-    "",
-    "OWNS COLUMN WAS WRONG, corrected 2026-07-26 before dispatch. The plan pointed at four BACKEND handlers (apps/website/api/src/handlers/{announcements,events,audit,deployments}.rs) while the bug is in six FRONTEND page modules — an agent dispatched on it would have edited entirely the wrong files and found nothing. Caught by T-226, which confirmed the real site while working next door.",
-    "",
-    "The defect, verified: `apps/website/frontend/src/events.rs:72` is a literal `().into_any()` for the NON-EMPTY branch, with an unconditional SplitPaneEmpty detail at :74-80. Fixtures have been populated since T-194 (GET__events.json = 4 events) and the live API returns 4 — so this is not 'correct but empty', the populated render branch was never written. Same shape confirmed at announcements.rs:68, dashboard.rs:342, audit.rs:72, deployments.rs:164 and :190, modpacks.rs:257 — six modules, matching this ticket's title exactly.",
-    "",
-    "SHIPPED 2026-07-26 — and it is FIVE pages, not six. Title corrected.",
-    "",
-    "modpacks.rs:257 IS A FALSE POSITIVE, retired with evidence rather than argument. That ().into_any() is the absent `trailing` badge for a non-current pack — the intentional stand-in for React's undefined, with a comment saying so. The page is MOCK_MODPACKS-driven, has no emptiness gate, and already rendered fully. The original audit grepped for `().into_any()` and caught a legitimate empty slot. The agent left the file untouched and added browser assertions M1-M3 proving it renders.",
-    "",
-    "Every other claimed line number was EXACT despite 82 intervening commits. The competing audit's `announcements.rs:67` and `events.rs:63` were the comments above the real sites. Two unconditional empty detail panes were found that the ticket did NOT name: announcements.rs:77-83 and audit.rs:80-86.",
-    "",
-    """THREE MORE LIVE DEFECTS found by reading dashboard.rs's gated block rather than just filling it: the hero printed a raw ISO string `T-MINUS 2026-08-01T19:00:00Z` instead of the countdown_label already sitting next to it; UPTIME returned "—" on BOTH match arms; and server_fps is numeric(5,1) so as_i64() returned None and the card rendered a confident `FPS: 0` for a healthy server.""",
-    "",
-    "IDIOM DECISIONS, all taken from event_manager.rs (T-226) and split_pane.rs, no new vocabulary: only events.rs has a selection-keyed detail fetch so only it CAN go stale, and it got T-226's three-state enum literally — carrying the event id, rendering loading whenever the held id differs from the selection. The other four need no second fetch, so StoredValue over the one payload designs the hazard out rather than guarding it. Auto-select on events.rs via a derived Memo, not an Effect, to avoid write-during-render; deliberately NOT on announcements/audit, where explicit selection matches the spec and keeps SplitPaneEmpty an honest zero-selection render.",
-    "",
-    "VERIFIED 69/69 IN A BROWSER: 45/45 populated assertions with 0 console errors, then the same stack rebuilt against an empty-payload stub for 24/24 on the empty branches — so 'empty goldens unchanged' is measured, not asserted. Stale-wasm check done: all 11 new strings grepped present in the built artifact.",
-    "",
-    "Honest split: the audit inspector's metadata <pre> is reasoned only — the seeded audit_logs rows carry no metadata key at all (the committed fixture does, the DB does not), so only the Option gate rendering nothing could be asserted. Markdown bodies in announcements render inline **bold** and backticks literally.",
-]
 owns = [
     "apps/website/frontend/src/announcements.rs",
     "apps/website/frontend/src/dashboard.rs",

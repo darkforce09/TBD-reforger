@@ -6,6 +6,37 @@ class = "bug"
 status = "shipped"
 order = 2530
 executor = "claude-code"
+main_goal = "As an admin I can CRUD server registry rows and use an admin server form."
+context = ["SHIPPED."]
+requirement = ["Server registry CRUD plus an admin server form."]
+current_state = [
+    "No code path anywhere creates a servers row — INSERT INTO servers exists only in three test files.",
+    "There is no POST/PUT/DELETE route and no seed, so GET /servers returns an empty list on any production database forever.",
+]
+approach = [
+    "The `app.rs` handoff is EXECUTABLE CODE rather than prose: the two route lines live in misc_integration.rs::servers_crud_registration, which probes first and does not merge once real registration lands,",
+    "so the handoff cannot drift from what was verified.",
+    "Plus a T-359-shaped tripwire that fails once with instructions naming the two deletions.",
+    "DELETE = is_active = false, decided on measurement: migration 0001 has ZERO foreign keys (confirmed against pg_constraint),",
+    "so a hard delete strands server_statuses and server_status_histories silently — and ingest_server_status UPSERTs a status row with no existence check on servers,",
+    "so a deleted-but-still-running server would resurrect an orphan forever.",
+    "VALIDATION found something worse than the ticket guessed: required_modpack_id has no FK, so an unknown id stored SILENTLY",
+    "and the card just lost its modpack panel with nothing complaining. Now a 400.",
+    "It also caught that `ip` is Postgres `inet`, so a hostname is SQLSTATE 22P02 -> a logged 500,",
+    "and host('10.0.0.5/24') = 10.0.0.5 — a mask would be accepted then silently altered.",
+    "Both rejected, and the value re-rendered from IpAddr so the echo matches what is stored.",
+    "And it fixed a misleading message in its own code: a bad required_modpack_id answered 'name, ip and port are required' — three fields that were all present.",
+]
+verify = [
+    "128 passed, 0 skipped, three consecutive runs.",
+    "It also worked around the dev-login landmine by minting tokens via state.jwt.issue_access rather than logging in,",
+    "because DEV_USER_ID shares one users row for every role and rewrites its role — which was making a pre-existing test fail intermittently in the same binary.",
+]
+citations = [
+    "misc_integration.rs::servers_crud_registration",
+    "T-359-shaped tripwire",
+    "migration 0001 ZERO foreign keys",
+]
 shipped_at = "b2a29e43"
 created_at = "2026-07-26T12:18:02Z"
 completed_at = "2026-07-26T13:07:43Z"
@@ -16,17 +47,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 7 commit subject(s)"
-migration_legacy = [
-    "No code path anywhere creates a servers row — INSERT INTO servers exists only in three test files. There is no POST/PUT/DELETE route and no seed, so GET /servers returns an empty list on any production database forever.",
-    "",
-    "SHIPPED. The `app.rs` handoff is EXECUTABLE CODE rather than prose: the two route lines live in misc_integration.rs::servers_crud_registration, which probes first and does not merge once real registration lands, so the handoff cannot drift from what was verified. Plus a T-359-shaped tripwire that fails once with instructions naming the two deletions.",
-    "",
-    "DELETE = is_active = false, decided on measurement: migration 0001 has ZERO foreign keys (confirmed against pg_constraint), so a hard delete strands server_statuses and server_status_histories silently — and ingest_server_status UPSERTs a status row with no existence check on servers, so a deleted-but-still-running server would resurrect an orphan forever.",
-    "",
-    "VALIDATION found something worse than the ticket guessed: required_modpack_id has no FK, so an unknown id stored SILENTLY and the card just lost its modpack panel with nothing complaining. Now a 400. It also caught that `ip` is Postgres `inet`, so a hostname is SQLSTATE 22P02 -> a logged 500, and host('10.0.0.5/24') = 10.0.0.5 — a mask would be accepted then silently altered. Both rejected, and the value re-rendered from IpAddr so the echo matches what is stored. And it fixed a misleading message in its own code: a bad required_modpack_id answered 'name, ip and port are required' — three fields that were all present.",
-    "",
-    "128 passed, 0 skipped, three consecutive runs. It also worked around the dev-login landmine by minting tokens via state.jwt.issue_access rather than logging in, because DEV_USER_ID shares one users row for every role and rewrites its role — which was making a pre-existing test fail intermittently in the same binary.",
-]
 owns = ["apps/website/api/src/handlers/servers.rs"]
 
 [scope]

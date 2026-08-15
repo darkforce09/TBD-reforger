@@ -6,6 +6,35 @@ class = "bug"
 status = "shipped"
 order = 2490
 executor = "claude-code"
+main_goal = "Ship contract comment at TBD_IdentityLink.c:458-471; verify three narrowed items; split chat to T-327 and backfill to T-326."
+context = [
+    "Identity linking last mile.",
+    "CORRECTED 2026-07-26: T-181.35 landed AND was driven end-to-end against the live backend (be31ac7b) —",
+    "code minted, POSTed from the mod, users.arma_id written, code consumed, audit row created,",
+    "replay 404'd, match_player_stats.discord_id populated, total_deployments 0->1.",
+    "SPLIT AND CLOSED 2026-07-26. The agent verified all three narrowed items against live code rather than trusting the ticket:",
+]
+current_state = [
+    "Three genuinely open items remain: (a) the attendance UPDATE needs a non-empty event_id resolving to a registration;",
+    "(b) the link code is typed in PUBLIC chat and cannot be suppressed — needs an in-game UI field;",
+    "(c) match_player_stats rows with a NULL discord_id are never backfilled after a later link.",
+    "(a) attendance event_id — ALREADY DONE end to end. TBD_ResultsReporter.c:534 sends top-level event_id;",
+    "telemetry.rs:362-363 now REJECTS a blank source_event_id with 400, so the empty-key dedupe collapse the ticket feared is impossible;",
+    "telemetry.rs:414-421 runs the attendance UPDATE.",
+    "(b) chat visibility — split to T-327. Unfixable in script and already maximally mitigated.",
+    "(c) backfill — split to T-326. Entirely website-side, genuinely open.",
+]
+approach = [
+    "What shipped here is the contract comment at TBD_IdentityLink.c:458-471, which after T-319 said the opposite of the truth",
+    "and would have talked the next person into reintroducing the bug.",
+]
+citations = [
+    "T-181.35 be31ac7b",
+    "TBD_ResultsReporter.c:534",
+    "T-327 chat split",
+    "T-326 backfill",
+    "T-319 contract drift",
+]
 shipped_at = "f44b602a"
 created_at = "2026-07-26T07:04:54Z"
 completed_at = "2026-07-26T07:08:15Z"
@@ -15,15 +44,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    "Identity linking last mile. CORRECTED 2026-07-26: T-181.35 landed AND was driven end-to-end against the live backend (be31ac7b) — code minted, POSTed from the mod, users.arma_id written, code consumed, audit row created, replay 404'd, match_player_stats.discord_id populated, total_deployments 0->1. Three genuinely open items remain: (a) the attendance UPDATE needs a non-empty event_id resolving to a registration; (b) the link code is typed in PUBLIC chat and cannot be suppressed — needs an in-game UI field; (c) match_player_stats rows with a NULL discord_id are never backfilled after a later link.",
-    "",
-    "SPLIT AND CLOSED 2026-07-26. The agent verified all three narrowed items against live code rather than trusting the ticket:",
-    "  (a) attendance event_id — ALREADY DONE end to end. TBD_ResultsReporter.c:534 sends top-level event_id; telemetry.rs:362-363 now REJECTS a blank source_event_id with 400, so the empty-key dedupe collapse the ticket feared is impossible; telemetry.rs:414-421 runs the attendance UPDATE.",
-    "  (b) chat visibility — split to T-327. Unfixable in script and already maximally mitigated.",
-    "  (c) backfill — split to T-326. Entirely website-side, genuinely open.",
-    "What shipped here is the contract comment at TBD_IdentityLink.c:458-471, which after T-319 said the opposite of the truth and would have talked the next person into reintroducing the bug.",
-]
 owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_IdentityLink.c"]
 
 [scope]

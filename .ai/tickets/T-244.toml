@@ -6,6 +6,10 @@ class = "feature"
 status = "shipped"
 order = 2620
 executor = "claude-code"
+main_goal = "No vehicle kind in the classifier pipeline — adding a lane to an existing pipeline, not building one."
+context = ["The Workbench export plus Rust classifier pipeline is real and produces 1,623 prefabs and 1.2M instances for Everon,"]
+current_state = ["but the kind enum covers building, tree, vegetation, rock, prop, utility, water and road — there is no vehicle kind."]
+approach = ["This is adding a lane to an existing pipeline, not building one."]
 shipped_at = "bed4f269"
 created_at = "2026-07-26T18:49:08Z"
 completed_at = "2026-07-31T15:04:08Z"
@@ -17,7 +21,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 7 commit subject(s)"
-migration_legacy = ["The Workbench export plus Rust classifier pipeline is real and produces 1,623 prefabs and 1.2M instances for Everon, but the kind enum covers building, tree, vegetation, rock, prop, utility, water and road — there is no vehicle kind. This is adding a lane to an existing pipeline, not building one."]
 owns = [
     "packages/tbd-schema/schema/map-object-enums.schema.json",
     "packages/tbd-schema/rules/prefab-classify.json",

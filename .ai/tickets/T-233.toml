@@ -1,11 +1,49 @@
 id = "T-233"
 kind = "work"
-title = "Deployments page shows fabricated K/D and win rate as real telemetry"
+title = "Deployments fabricated K/D, win rate telemetry"
 summary = "Deployments page shows fabricated K/D and win rate as real telemetry"
 class = "bug"
 status = "shipped"
 order = 2510
 executor = "claude-code"
+main_goal = "Replace MOCK_KD and MOCK_WIN_RATE with real leaderboard_totals; remove fake favourite weapon/asset; null-over-0.00."
+context = [
+    "deployments.rs:18-23 defines MOCK_KD 2.45, MOCK_WIN_RATE 68% and fake favourite weapon/asset, rendered at :132-133 as live stats. Only total_operations is real.",
+    "SHIPPED, and the NEAR-MISS WAS THE TRAP. The four fabricated readouts split three ways:",
+    "Found in passing: the seed credits the dev admin with total_deployments = 17 while seeding only 2 matches, so the golden reads total_operations 17 beside a K/D spanning 2 matches",
+    "— a self-contradicting page.",
+    "== REVERTED 2026-07-26 AND HANDED BACK: the test fails on a clean database ==",
+    "Strong hypothesis for its reported 126/0, from T-235's measurement: the shared CARGO_TARGET_DIR CLOBBERS ARTIFACTS ACROSS WORKTREES, so that run may have used a stale or foreign binary that never contained",
+    "this test. Filed as T-390. The agent was told to use a private target dir and verify the binary is its own.",
+]
+current_state = [
+    "K/D — REAL. It read leaderboard_totals.kd_ratio rather than recomputing, because that view is the crate's only definition of K/D and is what /leaderboards and /users/:id/stats serve. A second query here",
+    "is exactly how the Deployments page and the Leaderboard come to disagree about one player. Verified the view refreshes on all three write paths.",
+    "WIN RATE — `command_win_rate` LOOKS like the field you want and is not: its denominator is `count(*) FILTER (WHERE is_command)`, and command_win is a documented tri-state where NULL means 'not",
+    "a command slot'. A GENERAL win rate is not derivable at all — match_player_stats has no faction column, so matches.winning_faction has nothing per-player to compare against. It served the figure",
+    "under its real name, because calling it win_rate would **rebuild the same lie out of real numbers**.",
+    "FAVOURITE WEAPON / ASSET — nothing records them. The only weapon-ish columns platform-wide are a mortar input, what a mission OFFERS, authored intent, and vehicles KILLED. Removed with an assert-absent",
+    "tripwire, per T-359's precedent.",
+    "THE ZERO CASE: null, never 0.00 — because **0.00 is a measurement claim, which is 2.45 in a quieter voice.** A player with no matches has no MV row, so",
+    "fetch_optional IS the zero case; a player who has never commanded gets null keyed off command_games IS NULL, since the view flattens that to 0. A measured 0.0 is still",
+    "sent, so the two stay distinguishable. This deliberately diverges from leaderboards.rs:127-141, which unwrap_or's an all-zero row and cannot tell them apart.",
+    """""deployments_combat.rs:160 — `kills` must always be present — fails on a FRESH ISOLATED database (t233_iso, that binary alone), so it is not T-334's shared-fixture contention. The test and the implementation""",
+    'disagree, even though handlers/deployments.rs:264-267 builds "kills" in a json! unconditionally.""',
+]
+approach = ["Everything else about the slice stands and I want it back — the command_win_rate naming call, read-the-view-rather-than-recompute, and null-over-0.00."]
+verify = [
+    "Numbers checked against arithmetic done separately, then re-captured from a real API boot. Golden diffed: exactly six keys added, none removed, NONE CHANGED.",
+    "RE-LANDED and green. I reverted this earlier because its test failed on a fresh isolated DB, and T-235's hypothesis was that the SHARED CARGO_TARGET_DIR served a stale or foreign binary",
+    "so its original '126 passed' was never trustworthy. T-390 fixed exactly that (private target-gate-api/target-gate-mapengine with CARGO_INCREMENTAL=0) and the gate now runs the DB suite against a real provisioned database instead",
+    "of skipping it. It passes under both fixes, which is the first time this ticket has been *meaningfully* tested. The revert was correct on the evidence available then; the evidence",
+    "was the defective gate.",
+]
+citations = [
+    "T-359 precedent",
+    "T-390 target dirs",
+    "T-235 measurement",
+    "leaderboard_totals view",
+]
 shipped_at = "bf659fb4"
 created_at = "2026-07-26T12:13:58Z"
 completed_at = "2026-07-26T00:00:00Z"
@@ -17,27 +55,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "completed_at from stray date-shaped shipped_at 2026-07-26; created_at/shipped_at git_subject-mined from 11 commit subject(s)"
-migration_legacy = [
-    "deployments.rs:18-23 defines MOCK_KD 2.45, MOCK_WIN_RATE 68% and fake favourite weapon/asset, rendered at :132-133 as live stats. Only total_operations is real.",
-    "",
-    "SHIPPED, and the NEAR-MISS WAS THE TRAP. The four fabricated readouts split three ways:",
-    "  K/D — REAL. It read leaderboard_totals.kd_ratio rather than recomputing, because that view is the crate's only definition of K/D and is what /leaderboards and /users/:id/stats serve. A second query here is exactly how the Deployments page and the Leaderboard come to disagree about one player. Verified the view refreshes on all three write paths.",
-    "  WIN RATE — `command_win_rate` LOOKS like the field you want and is not: its denominator is `count(*) FILTER (WHERE is_command)`, and command_win is a documented tri-state where NULL means 'not a command slot'. A GENERAL win rate is not derivable at all — match_player_stats has no faction column, so matches.winning_faction has nothing per-player to compare against. It served the figure under its real name, because calling it win_rate would **rebuild the same lie out of real numbers**.",
-    "  FAVOURITE WEAPON / ASSET — nothing records them. The only weapon-ish columns platform-wide are a mortar input, what a mission OFFERS, authored intent, and vehicles KILLED. Removed with an assert-absent tripwire, per T-359's precedent.",
-    "",
-    "THE ZERO CASE: null, never 0.00 — because **0.00 is a measurement claim, which is 2.45 in a quieter voice.** A player with no matches has no MV row, so fetch_optional IS the zero case; a player who has never commanded gets null keyed off command_games IS NULL, since the view flattens that to 0. A measured 0.0 is still sent, so the two stay distinguishable. This deliberately diverges from leaderboards.rs:127-141, which unwrap_or's an all-zero row and cannot tell them apart.",
-    "",
-    "Numbers checked against arithmetic done separately, then re-captured from a real API boot. Golden diffed: exactly six keys added, none removed, NONE CHANGED.",
-    "",
-    "Found in passing: the seed credits the dev admin with total_deployments = 17 while seeding only 2 matches, so the golden reads total_operations 17 beside a K/D spanning 2 matches — a self-contradicting page.",
-    "",
-    "== REVERTED 2026-07-26 AND HANDED BACK: the test fails on a clean database ==",
-    """deployments_combat.rs:160 — `kills` must always be present — fails on a FRESH ISOLATED database (t233_iso, that binary alone), so it is not T-334's shared-fixture contention. The test and the implementation disagree, even though handlers/deployments.rs:264-267 builds "kills" in a json! unconditionally.""",
-    "Strong hypothesis for its reported 126/0, from T-235's measurement: the shared CARGO_TARGET_DIR CLOBBERS ARTIFACTS ACROSS WORKTREES, so that run may have used a stale or foreign binary that never contained this test. Filed as T-390. The agent was told to use a private target dir and verify the binary is its own.",
-    "Everything else about the slice stands and I want it back — the command_win_rate naming call, read-the-view-rather-than-recompute, and null-over-0.00.",
-    "",
-    "RE-LANDED and green. I reverted this earlier because its test failed on a fresh isolated DB, and T-235's hypothesis was that the SHARED CARGO_TARGET_DIR served a stale or foreign binary so its original '126 passed' was never trustworthy. T-390 fixed exactly that (private target-gate-api/target-gate-mapengine with CARGO_INCREMENTAL=0) and the gate now runs the DB suite against a real provisioned database instead of skipping it. It passes under both fixes, which is the first time this ticket has been *meaningfully* tested. The revert was correct on the evidence available then; the evidence was the defective gate.",
-]
 owns = [
     "apps/website/api/src/handlers/deployments.rs",
     "apps/website/api/tests/deployments_combat.rs",

@@ -6,6 +6,14 @@ class = "feature"
 status = "shipped"
 order = 2810
 executor = "claude-code"
+main_goal = "Wiki and Vehicle Database are fully hardcoded while GET/PUT /wiki and GET /vehicle-database already work."
+requirement = ["Wiki and Vehicle Database are fully hardcoded."]
+current_state = [
+    "wiki.rs makes zero API calls; content is a const and EDIT mode writes to a session signal with no Save button and no PUT.",
+    "vehicles.rs likewise makes zero API calls.",
+    "Meanwhile GET/PUT /wiki, GET /wiki/{slug} and GET /vehicle-database all exist and work.",
+    "vehicle_databases also has no INSERT path and no seed.",
+]
 shipped_at = "3724d69c"
 created_at = "2026-07-26T23:14:33Z"
 completed_at = "2026-07-26T23:15:28Z"
@@ -17,7 +25,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["wiki.rs makes zero API calls; content is a const and EDIT mode writes to a session signal with no Save button and no PUT. vehicles.rs likewise makes zero API calls. Meanwhile GET/PUT /wiki, GET /wiki/{slug} and GET /vehicle-database all exist and work. vehicle_databases also has no INSERT path and no seed."]
 owns = [
     "apps/website/frontend/src/wiki.rs",
     "apps/website/frontend/src/vehicles.rs",

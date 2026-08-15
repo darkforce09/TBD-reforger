@@ -7,6 +7,13 @@ status = "shipped"
 order = 2710
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
+main_goal = "Disk is at 87% with 65GB of build artifacts and no CARGO_TARGET_DIR, so worktree slices each start a cold build."
+requirement = ["Reclaim 65GB and stop double-compiling."]
+current_state = [
+    "target/ is 52GB, target-ci/ another 12GB, and .git/lfs holds 1.6GB of objects from tile pyramids untracked back on 2026-07-03.",
+    "Disk is at 87%.",
+    "Also no CARGO_TARGET_DIR is set, so the moment Rust work is sliced across worktrees each one starts a cold build.",
+]
 shipped_at = "9781f63e"
 created_at = "2026-07-26T22:16:04Z"
 completed_at = "2026-07-26T22:25:01Z"
@@ -17,7 +24,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["target/ is 52GB, target-ci/ another 12GB, and .git/lfs holds 1.6GB of objects from tile pyramids untracked back on 2026-07-03. Disk is at 87%. Also no CARGO_TARGET_DIR is set, so the moment Rust work is sliced across worktrees each one starts a cold build."]
 owns = [
     "Makefile",
     ".gitignore",

@@ -6,6 +6,16 @@ class = "feature"
 status = "shipped"
 order = 2640
 executor = "claude-code"
+main_goal = "push-discord force-pushes any announcement without verifying status is published; unreachable from SPA today."
+current_state = [
+    "cms.rs:268-289 force-pushes any announcement — unlike the create and patch paths it does not verify status is published,",
+    "so a draft or archived post can be broadcast to the guild.",
+    "It is unreachable from the SPA today, which is the only thing hiding it.",
+]
+citations = [
+    "create and patch paths",
+    "SPA unreachable today",
+]
 shipped_at = "5fcea457"
 created_at = "2026-07-26T22:33:46Z"
 completed_at = "2026-07-26T22:52:39Z"
@@ -17,7 +27,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = ["cms.rs:268-289 force-pushes any announcement — unlike the create and patch paths it does not verify status is published, so a draft or archived post can be broadcast to the guild. It is unreachable from the SPA today, which is the only thing hiding it."]
 owns = [
     "apps/website/api/src/handlers/cms.rs",
     "apps/website/api/tests/cms_announcement_body.rs",
