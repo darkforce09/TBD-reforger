@@ -3,7 +3,7 @@ kind = "work"
 title = "Board: main_goal on top, viewer beside detail"
 summary = "main_goal renders under the title in the detail header; body sections start at context. The markdown viewer becomes a third column beside the detail panel, Back collapses it, width persisted. Card tooltip shows main_goal."
 class = "feature"
-status = "ready"
+status = "shipped"
 order = 6002
 spec = "docs/platform/t920_body_obligations.md"
 plan = "docs/plans/t-920_2_plan.md"
@@ -40,6 +40,7 @@ acceptance = [
     "git status --porcelain unchanged after a full session",
 ]
 created_at = "2026-08-15T03:17:45Z"
+completed_at = "2026-08-15T04:08:34Z"
 owns = ["apps/ticketboard"]
 
 [scope]
