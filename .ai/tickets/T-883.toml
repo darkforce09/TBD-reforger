@@ -7,6 +7,47 @@ status = "shipped"
 order = 5640
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+T-853 shell->xtask slice. Port scripts/ticket to `cargo xtask ticket (launcher)` and delete the script(s), their scripts/shell-inventory.txt line(s), any scripts/python-inventory.txt line(s), and repoint every caller. Thin wrapper, already delegates. Delete it and repoint make tickets/ticket-list/ticket-sync/ticket-check/ticket-check-strict plus ci.yml's registry step and .ai/tickets/README.md + CLAUDE.md. It is the documented agent entrypoint, so update the docs in the same commit. ACCEPTANCE IS BYTE-FOR-BYTE: capture bash stdout+stderr+rc first, then diff on a clean tree AND on >=2 deliberately broken trees; the harness must assert the BASH side went red before believing a diff. A green run alone is not evidence (T-556). Build on crates/tbd-gate. Spec: docs/platform/t853_shell_to_xtask_waves.md
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["T-853 shell->xtask slice. Port scripts/ticket to `cargo xtask ticket (launcher)` and delete the script(s), their scripts/shell-inventory.txt line(s), any scripts/python-inventory.txt line(s), and repoint every caller. Thin wrapper, already delegates. Delete it and repoint make tickets/ticket-list/ticket-sync/ticket-check/ticket-check-strict plus ci.yml's registry step and .ai/tickets/README.md + CLAUDE.md. It is the documented agent entrypoint, so update the docs in the same commit. ACCEPTANCE IS BYTE-FOR-BYTE: capture bash stdout+stderr+rc first, then diff on a clean tree AND on >=2 deliberately broken trees; the harness must assert the BASH side went red before believing a diff. A green run alone is not evidence (T-556). Build on crates/tbd-gate. Spec: docs/platform/t853_shell_to_xtask_waves.md"]
+
+missing=0"""
+main_goal = "Port scripts/ticket shim to cargo xtask ticket launcher."
+context = [
+    "T-853 shell->xtask slice; thin wrapper already delegates to cargo xtask.",
+    "Documented agent entrypoint; update .ai/tickets/README.md and CLAUDE.md same commit.",
+    "Repoint make tickets ticket-list ticket-sync ticket-check ticket-check-strict ci.yml registry.",
+]
+requirement = [
+    "Delete script(s) shell-inventory.txt line(s) python-inventory.txt line(s).",
+    "Port to cargo xtask ticket launcher; repoint every caller.",
+    "Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+]
+current_state = [
+    "scripts/ticket bash shim delegates to cargo xtask today.",
+    "Makefile recipes and ci.yml registry step still invoke bash shim.",
+]
+approach = [
+    "Capture bash stdout stderr rc first as byte-for-byte baseline.",
+    "Diff port on clean tree and >=2 deliberately broken trees.",
+    "Harness must assert BASH side went red before believing diff.",
+]
+verify = [
+    "Capture bash stdout stderr rc baseline recorded first.",
+    "Diff on clean tree AND >=2 deliberately broken trees.",
+    "Harness asserts BASH side went red; green run alone not evidence T-556.",
+]
+citations = [
+    "T-853 shell->xtask program",
+    "T-556 anti-vacuity",
+    "t853_shell_to_xtask_waves.md",
+    "crates/tbd-gate",
+]
 shipped_at = "f47430ce"
 created_at = "2026-08-12T08:49:11Z"
 completed_at = "2026-08-12T09:02:45Z"
@@ -18,7 +59,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["T-853 shell->xtask slice. Port scripts/ticket to `cargo xtask ticket (launcher)` and delete the script(s), their scripts/shell-inventory.txt line(s), any scripts/python-inventory.txt line(s), and repoint every caller. Thin wrapper, already delegates. Delete it and repoint make tickets/ticket-list/ticket-sync/ticket-check/ticket-check-strict plus ci.yml's registry step and .ai/tickets/README.md + CLAUDE.md. It is the documented agent entrypoint, so update the docs in the same commit. ACCEPTANCE IS BYTE-FOR-BYTE: capture bash stdout+stderr+rc first, then diff on a clean tree AND on >=2 deliberately broken trees; the harness must assert the BASH side went red before believing a diff. A green run alone is not evidence (T-556). Build on crates/tbd-gate. Spec: docs/platform/t853_shell_to_xtask_waves.md"]
 owns = ["scripts/ticket"]
 
 [scope]

@@ -7,6 +7,47 @@ status = "shipped"
 order = 5490
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+T-853 shell->xtask slice. Port scripts/mod/debug-direct-join.sh (61 lines) to `cargo xtask debug direct-join` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). direct-join debug helper; xtask debug already exists. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["T-853 shell->xtask slice. Port scripts/mod/debug-direct-join.sh (61 lines) to `cargo xtask debug direct-join` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). direct-join debug helper; xtask debug already exists. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling."]
+
+missing=0"""
+main_goal = "Port debug-direct-join.sh to cargo xtask debug direct-join."
+context = [
+    "T-853 shell->xtask slice; 61-line bash script.",
+    "Direct-join debug helper; xtask debug already exists.",
+    "Callers include Makefile platform wave.sh mod wave.sh workflows.",
+]
+requirement = [
+    "Delete script shell-inventory.txt line python-inventory.txt line.",
+    "Repoint every caller Makefile wave.sh workflows.",
+    "Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+]
+current_state = [
+    "scripts/mod/debug-direct-join.sh bash gate live.",
+    "Makefile wave.sh workflows still invoke bash script.",
+]
+approach = [
+    "Capture bash stdout stderr rc first as byte-for-byte baseline.",
+    "Diff port on clean tree and two deliberately broken trees.",
+    "T-556 anti-vacuity: passing run alone is not evidence.",
+]
+verify = [
+    "Capture bash stdout stderr rc baseline recorded first.",
+    "Port diff matches clean tree byte-for-byte.",
+    "Port diff matches at least two deliberately broken trees.",
+]
+citations = [
+    "T-853 shell->xtask program",
+    "T-556 anti-vacuity",
+    "t853_shell_to_xtask_waves.md",
+    "crates/tbd-gate",
+]
 shipped_at = "49c69ad2"
 created_at = "2026-08-12T05:40:35Z"
 completed_at = "2026-08-12T05:59:43Z"
@@ -18,7 +59,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = ["T-853 shell->xtask slice. Port scripts/mod/debug-direct-join.sh (61 lines) to `cargo xtask debug direct-join` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). direct-join debug helper; xtask debug already exists. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling."]
 owns = [
     "scripts/mod/debug-direct-join.sh",
     "xtask/src/gate_debug_direct_join.rs",

@@ -7,6 +7,48 @@ status = "shipped"
 order = 5670
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+T-853 shell->xtask slice. Port scripts/deploy/restore-db.sh to `cargo xtask deploy db restore` and delete the script(s), their scripts/shell-inventory.txt line(s), any scripts/python-inventory.txt line(s), and repoint every caller. 207 lines. DESTRUCTIVE. T-381 allow-list REFUSES tbd_reforger and verifies the dump first - both are load-bearing and must survive the port byte-for-byte. Prove the refusal still fires. ACCEPTANCE IS BYTE-FOR-BYTE: capture bash stdout+stderr+rc first, then diff on a clean tree AND on >=2 deliberately broken trees; the harness must assert the BASH side went red before believing a diff. A green run alone is not evidence (T-556). Build on crates/tbd-gate. Spec: docs/platform/t853_shell_to_xtask_waves.md
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["T-853 shell->xtask slice. Port scripts/deploy/restore-db.sh to `cargo xtask deploy db restore` and delete the script(s), their scripts/shell-inventory.txt line(s), any scripts/python-inventory.txt line(s), and repoint every caller. 207 lines. DESTRUCTIVE. T-381 allow-list REFUSES tbd_reforger and verifies the dump first - both are load-bearing and must survive the port byte-for-byte. Prove the refusal still fires. ACCEPTANCE IS BYTE-FOR-BYTE: capture bash stdout+stderr+rc first, then diff on a clean tree AND on >=2 deliberately broken trees; the harness must assert the BASH side went red before believing a diff. A green run alone is not evidence (T-556). Build on crates/tbd-gate. Spec: docs/platform/t853_shell_to_xtask_waves.md"]
+
+missing=0"""
+main_goal = "Port restore-db.sh to cargo xtask deploy db restore."
+context = [
+    "T-853 shell->xtask slice; 207 lines DESTRUCTIVE guarded pg_restore.",
+    "T-381 allow-list REFUSES tbd_reforger and verifies dump first.",
+    "Both load-bearing; must survive port byte-for-byte.",
+]
+requirement = [
+    "Delete script(s) shell-inventory.txt line(s) python-inventory.txt line(s).",
+    "Port to cargo xtask deploy db restore; repoint every caller.",
+    "Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+]
+current_state = [
+    "scripts/deploy/restore-db.sh bash gate live today.",
+    "T-381 refusal and dump verification load-bearing on bash path.",
+]
+approach = [
+    "Capture bash stdout stderr rc first as byte-for-byte baseline.",
+    "Diff port on clean tree and >=2 deliberately broken trees.",
+    "Prove T-381 refusal still fires after port.",
+]
+verify = [
+    "Capture bash stdout stderr rc baseline recorded first.",
+    "Diff on clean tree AND >=2 deliberately broken trees.",
+    "Prove refusal still fires; green run alone not evidence T-556.",
+]
+citations = [
+    "T-853 shell->xtask program",
+    "T-381 allow-list refusal",
+    "T-556 anti-vacuity",
+    "t853_shell_to_xtask_waves.md",
+    "crates/tbd-gate",
+]
 shipped_at = "d083d3d9"
 created_at = "2026-08-12T09:40:13Z"
 completed_at = "2026-08-12T09:43:13Z"
@@ -18,7 +60,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["T-853 shell->xtask slice. Port scripts/deploy/restore-db.sh to `cargo xtask deploy db restore` and delete the script(s), their scripts/shell-inventory.txt line(s), any scripts/python-inventory.txt line(s), and repoint every caller. 207 lines. DESTRUCTIVE. T-381 allow-list REFUSES tbd_reforger and verifies the dump first - both are load-bearing and must survive the port byte-for-byte. Prove the refusal still fires. ACCEPTANCE IS BYTE-FOR-BYTE: capture bash stdout+stderr+rc first, then diff on a clean tree AND on >=2 deliberately broken trees; the harness must assert the BASH side went red before believing a diff. A green run alone is not evidence (T-556). Build on crates/tbd-gate. Spec: docs/platform/t853_shell_to_xtask_waves.md"]
 owns = ["scripts/deploy/restore-db.sh"]
 
 [scope]

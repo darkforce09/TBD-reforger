@@ -1,12 +1,52 @@
 id = "T-881"
 kind = "work"
-title = "T-853 port: t456 + t468 as ONE slice - they are mutually pinned"
+title = "T-853 port: t456 and t468 atomic slice"
 summary = "T-853 port: t456 + t468 as ONE slice - they are mutually pinned"
 class = "docs"
 status = "shipped"
 order = 5620
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+T-853 shell->xtask slice. Port scripts/mod/verify-t456-mission-rest-size-gate.sh;scripts/mod/verify-t468-ci-schema-parity.sh to `cargo xtask verify t456 / verify t468` and delete the script(s), their scripts/shell-inventory.txt line(s), any scripts/python-inventory.txt line(s), and repoint every caller. t468's bash_pins pins t456's Makefile recipe as ^\\t@?bash <path> AND its own. Porting either alone fails the other on a CORRECT tree, so they are one atomic slice: port both, drop both tuples, repoint both recipes and both wave.sh sites, and re-pin t468 at the cargo spelling. 654 lines, 5 python3 sites. ACCEPTANCE IS BYTE-FOR-BYTE: capture bash stdout+stderr+rc first, then diff on a clean tree AND on >=2 deliberately broken trees; the harness must assert the BASH side went red before believing a diff. A green run alone is not evidence (T-556). Build on crates/tbd-gate. Spec: docs/platform/t853_shell_to_xtask_waves.md
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ['''T-853 shell->xtask slice. Port scripts/mod/verify-t456-mission-rest-size-gate.sh;scripts/mod/verify-t468-ci-schema-parity.sh to `cargo xtask verify t456 / verify t468` and delete the script(s), their scripts/shell-inventory.txt line(s), any scripts/python-inventory.txt line(s), and repoint every caller. t468's bash_pins pins t456's Makefile recipe as ^\\t@?bash <path> AND its own. Porting either alone fails the other on a CORRECT tree, so they are one atomic slice: port both, drop both tuples, repoint both recipes and both wave.sh sites, and re-pin t468 at the cargo spelling. 654 lines, 5 python3 sites. ACCEPTANCE IS BYTE-FOR-BYTE: capture bash stdout+stderr+rc first, then diff on a clean tree AND on >=2 deliberately broken trees; the harness must assert the BASH side went red before believing a diff. A green run alone is not evidence (T-556). Build on crates/tbd-gate. Spec: docs/platform/t853_shell_to_xtask_waves.md''']
+
+missing=0"""
+main_goal = "Port verify-t456 and verify-t468 together; atomic slice; delete scripts and repoint callers."
+context = [
+    "T-853 shell->xtask slice; t456 and t468 are mutually pinned.",
+    "verify-t456 and verify-t468 total 654 lines with five python3 sites.",
+    "t468 bash_pins pins t456 Makefile recipe and its own; port both atomically.",
+]
+requirement = [
+    "Port both to cargo xtask verify t456 and verify t468; delete both scripts.",
+    "Drop both tuples; repoint both recipes and both wave.sh sites.",
+    "Re-pin t468 at cargo spelling; build on crates/tbd-gate.",
+]
+current_state = [
+    "Porting either script alone fails the other on a correct tree today.",
+    "Makefile wave.sh and workflows invoke both bash scripts directly today.",
+]
+approach = [
+    "Capture bash stdout stderr rc first; harness must assert bash side went red.",
+    "Diff on clean tree and two deliberately broken trees; T-556 anti-vacuity.",
+]
+verify = [
+    "ACCEPTANCE BYTE-FOR-BYTE: capture bash stdout stderr rc first.",
+    "Harness asserts BASH side went red before believing a diff.",
+    "A green run alone is not evidence T-556 anti-vacuity.",
+]
+citations = [
+    "T-853 shell->xtask waves",
+    "t853_shell_to_xtask_waves.md",
+    "T-556 anti-vacuity",
+    "crates/tbd-gate",
+]
 shipped_at = "95e4c1e6"
 created_at = "2026-08-12T08:35:53Z"
 completed_at = "2026-08-12T09:04:44Z"
@@ -18,7 +58,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = ['''T-853 shell->xtask slice. Port scripts/mod/verify-t456-mission-rest-size-gate.sh;scripts/mod/verify-t468-ci-schema-parity.sh to `cargo xtask verify t456 / verify t468` and delete the script(s), their scripts/shell-inventory.txt line(s), any scripts/python-inventory.txt line(s), and repoint every caller. t468's bash_pins pins t456's Makefile recipe as ^\t@?bash <path> AND its own. Porting either alone fails the other on a CORRECT tree, so they are one atomic slice: port both, drop both tuples, repoint both recipes and both wave.sh sites, and re-pin t468 at the cargo spelling. 654 lines, 5 python3 sites. ACCEPTANCE IS BYTE-FOR-BYTE: capture bash stdout+stderr+rc first, then diff on a clean tree AND on >=2 deliberately broken trees; the harness must assert the BASH side went red before believing a diff. A green run alone is not evidence (T-556). Build on crates/tbd-gate. Spec: docs/platform/t853_shell_to_xtask_waves.md''']
 owns = [
     "scripts/mod/verify-t456-mission-rest-size-gate.sh",
     "scripts/mod/verify-t468-ci-schema-parity.sh",

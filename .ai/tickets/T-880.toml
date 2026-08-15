@@ -7,7 +7,47 @@ status = "shipped"
 order = 5610
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
-notes = "T-853: LANDED. All four shims (paths.sh, mcpd-bin.sh, xtask-run.sh, gate-grep.sh) were deleted once their last consumers were ported — mcp-daemon.sh freed two, deploy-staging.sh freed the other two. scripts/mod/lib/ no longer exists."
+notes = """
+T-853: LANDED. All four shims (paths.sh, mcpd-bin.sh, xtask-run.sh, gate-grep.sh) were deleted once their last consumers were ported — mcp-daemon.sh freed two, deploy-staging.sh freed the other two. scripts/mod/lib/ no longer exists.
+--- HEAD migration_legacy (verbatim) ---
+
+T-853 shell->xtask slice. Port scripts/mod/lib/gate-grep.sh (221 lines) to `cargo xtask (pure delete)` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). LAST: delete only once no .sh sources it; crates/tbd-gate replaced it. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["T-853 shell->xtask slice. Port scripts/mod/lib/gate-grep.sh (221 lines) to `cargo xtask (pure delete)` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). LAST: delete only once no .sh sources it; crates/tbd-gate replaced it. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling."]
+
+missing=0"""
+main_goal = "Delete gate-grep.sh once unreferenced; drop inventory and repoint callers."
+context = [
+    "T-853 shell->xtask slice; crates/tbd-gate replaced gate-grep.sh.",
+    "scripts/mod/lib/gate-grep.sh is 221 lines; delete only when unreferenced.",
+    "Callers: Makefile scripts/platform/wave.sh scripts/mod/wave.sh .github/workflows.",
+]
+requirement = [
+    "Pure delete only once no shell script sources it; drop inventory lines.",
+    "Repoint every caller Makefile platform wave mod wave GitHub workflows.",
+    "Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+]
+current_state = [
+    "gate-grep.sh remains in scripts/mod/lib with inventory entry today.",
+    "Makefile wave.sh and workflows may still reference gate-grep today.",
+]
+approach = [
+    "Capture bash stdout stderr rc first; diff port on clean and broken trees.",
+    "T-556 anti-vacuity: a passing run alone is not evidence.",
+]
+verify = [
+    "ACCEPTANCE BYTE-FOR-BYTE: capture bash stdout stderr rc first.",
+    "Diff port against bash on clean tree and two deliberately broken trees.",
+    "A passing run alone is NOT evidence T-556 anti-vacuity.",
+]
+citations = [
+    "T-853 shell->xtask waves",
+    "t853_shell_to_xtask_waves.md",
+    "T-556 anti-vacuity",
+    "crates/tbd-gate",
+]
 shipped_at = "896982af"
 created_at = "2026-08-12T02:25:36Z"
 completed_at = "2026-08-12T23:24:25Z"
@@ -19,7 +59,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["T-853 shell->xtask slice. Port scripts/mod/lib/gate-grep.sh (221 lines) to `cargo xtask (pure delete)` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). LAST: delete only once no .sh sources it; crates/tbd-gate replaced it. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling."]
 owns = ["scripts/mod/lib/gate-grep.sh"]
 
 [scope]

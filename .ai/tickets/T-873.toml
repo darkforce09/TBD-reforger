@@ -7,6 +7,47 @@ status = "shipped"
 order = 5540
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+T-853 shell->xtask slice. Port scripts/mod/tbd-spawn-verify.sh (32 lines) to `cargo xtask mod spawn-verify` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). spawn verification helper. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling.
+
+--- HEAD migration_legacy line (verbatim) ---
+
+migration_legacy = ["T-853 shell->xtask slice. Port scripts/mod/tbd-spawn-verify.sh (32 lines) to `cargo xtask mod spawn-verify` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). spawn verification helper. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling."]
+
+missing=0
+"""
+main_goal = "Port tbd-spawn-verify.sh to cargo xtask mod spawn-verify; delete script and repoint callers."
+context = [
+    "T-853 shell->xtask slice ports shell scripts to cargo xtask subcommands.",
+    "scripts/mod/tbd-spawn-verify.sh is 32 lines; spawn verification helper.",
+    "Callers: Makefile scripts/platform/wave.sh scripts/mod/wave.sh .github/workflows.",
+]
+requirement = [
+    "Port to cargo xtask subcommand; delete script and inventory lines.",
+    "Repoint every caller Makefile platform wave mod wave GitHub workflows.",
+    "Build on crates/tbd-gate; do not hand-roll verdicts or process handling.",
+]
+current_state = [
+    "Bash script with shell and python inventory entries today.",
+    "Makefile wave.sh and workflows invoke the shell script directly today.",
+]
+approach = [
+    "Capture bash stdout stderr rc first; diff port on clean and broken trees.",
+    "T-556 anti-vacuity: a passing run alone is not evidence.",
+]
+verify = [
+    "ACCEPTANCE BYTE-FOR-BYTE: capture bash stdout stderr rc first.",
+    "Diff port against bash on clean tree and two deliberately broken trees.",
+    "A passing run alone is NOT evidence T-556 anti-vacuity.",
+]
+citations = [
+    "T-853 shell->xtask waves",
+    "t853_shell_to_xtask_waves.md",
+    "T-556 anti-vacuity",
+    "crates/tbd-gate",
+]
 shipped_at = "82485a4c"
 created_at = "2026-08-12T06:56:25Z"
 completed_at = "2026-08-12T06:57:36Z"
@@ -18,7 +59,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["T-853 shell->xtask slice. Port scripts/mod/tbd-spawn-verify.sh (32 lines) to `cargo xtask mod spawn-verify` and delete the script, its scripts/shell-inventory.txt line, any scripts/python-inventory.txt line, and repoint every caller (Makefile, scripts/platform/wave.sh, scripts/mod/wave.sh, .github/workflows). spawn verification helper. ACCEPTANCE IS BYTE-FOR-BYTE: capture the bash stdout+stderr+rc first, then diff the port against it on a clean tree AND on at least two deliberately broken trees. A passing run alone is NOT evidence (T-556 anti-vacuity). Build on crates/tbd-gate; do not hand-roll verdicts or process handling."]
 owns = [
     "scripts/mod/tbd-spawn-verify.sh",
     "xtask/src/gate_tbd_spawn_verify.rs",
