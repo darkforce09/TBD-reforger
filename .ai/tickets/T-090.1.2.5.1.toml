@@ -1,6 +1,6 @@
 id = "T-090.1.2.5.1"
 kind = "work"
-title = "T-090.1.2.5.1 — Inland water mask refine (road exclusion + hill rivers)"
+title = "T-090.1.2.5.1 — Inland water mask refine road exclusion hill rivers"
 summary = "T-090.1.2.5.1 — Inland water mask refine (road exclusion + hill rivers)"
 class = "feature"
 status = "shipped"
@@ -8,6 +8,28 @@ order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_1_2_5_1_water_mask_refine.md"
 executor = "claude-code"
 parent = "T-090"
+main_goal = "Refine inland water mask: reject road FP, accept hill river FN."
+context = ["T-090.1.2.5 inland mask E misclassified grey roads as water."]
+requirement = [
+    "Road FP at operator coords rejected; ≥2 new hill stream segments.",
+    "Ocean mask A unchanged; rebuild ortho bundle and pyramid.",
+]
+current_state = ["Wide pavement and sloped grey roads survived compact filters."]
+approach = [
+    "FLAT_FRAC_MAX 0.12; linear grey-river and wet-channel classes.",
+    "DEM 48 m valley carve for mountain stream beds.",
+]
+verify = [
+    "node scripts/map-assets/verify-sap-ortho.mjs TERRAIN=everon",
+    "node scripts/map-assets/verify-unified-satellite.mjs TERRAIN=everon",
+    "EXPECT_LOSSLESS=1 node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon",
+    "cargo xtask ci verify-terrain",
+]
+citations = [
+    "t090_1_2_5_1_water_mask_refine.md",
+    "commit 82488c6f",
+    "t090_1_2_5_1_verify_log.md",
+]
 shipped_at = "82488c6f"
 created_at = "2026-07-03T11:56:26Z"
 completed_at = "2026-07-03T12:34:27Z"

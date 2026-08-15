@@ -1,6 +1,6 @@
 id = "T-090.1.2.8"
 kind = "work"
-title = "T-090.1.2.8 — Unified satellite texture (binary + GPU mips, no tile flicker)"
+title = "T-090.1.2.8 — Unified tbd-sat bundle no tile flicker"
 summary = "T-090.1.2.8 — Unified satellite texture (binary + GPU mips, no tile flicker)"
 class = "feature"
 status = "shipped"
@@ -8,6 +8,20 @@ order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_1_2_8_unified_satellite_texture.md"
 executor = "claude-code"
 parent = "T-090"
+main_goal = "Single tbd-sat v1 bundle with GPU mip chain; no tile HTTP flicker."
+context = ["T-090.1.2.4 engine-render FAIL; 5461 WebP tiles pop on pan/zoom."]
+requirement = [
+    "everon-sat.tbd-sat binary; satelliteUnified.ts single trilinear BitmapLayer.",
+    "Manifest delivery unified with pyramid fallback flag.",
+]
+current_state = ["useTerrainBasemapLayer mounted 64 BitmapLayers; per-tile fetch on LOD change."]
+approach = ["build-unified-satellite.mjs; verify-unified-satellite.mjs; GPU mip sampler."]
+verify = ["node scripts/map-assets/verify-unified-satellite.mjs TERRAIN=everon"]
+citations = [
+    "commit db9057ef unified tbd-sat v1",
+    "SHIPPED_HISTORY T-090.1.2.8 entry",
+    "t090_1_2_8_unified_satellite_texture.md spec",
+]
 shipped_at = "db9057ef"
 created_at = "2026-07-02T18:33:51Z"
 completed_at = "2026-07-02T18:46:10Z"

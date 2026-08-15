@@ -8,6 +8,16 @@ order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md"
 executor = "claude-code"
 parent = "T-090"
+main_goal = "Worker-side sea-band and DEM contour geometry."
+context = ["T-090.5.3 worker; no elevation overlays."]
+requirement = ["world-sea; world-contours; §N3 interval ladder."]
+current_state = ["No sea band or contour layers."]
+approach = ["demGrid, seaBand, contours; demVectorStore."]
+citations = [
+    "commit bd481cf1",
+    "SHIPPED_HISTORY T-090.5.4",
+    "t090_5_map_object_render_layer.md",
+]
 shipped_at = "bd481cf1"
 created_at = "2026-07-05T17:15:44Z"
 completed_at = "2026-07-05T18:28:11Z"

@@ -8,6 +8,16 @@ order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md"
 executor = "claude-code"
 parent = "T-090"
+main_goal = "worldmap spine: styleModes, lodGates, chunkMath, prefs, worker skeleton."
+context = ["T-090.10.1 plan §4.1–4.3; export P1 pending parallel export lane."]
+requirement = ["Feature flag worldmap.enabled; 3-way mapStyle; zero Deck world layers."]
+current_state = ["Basemap tiles only; no vector layer assembly or LOD gate module."]
+approach = ["Pure worldmap modules + vitest; Comlink worker stub; TacticalMap insertion point."]
+verify = ["npm run test -- styleModes lodGates chunkMath worldLayerPrefs basemapView"]
+citations = [
+    "commit 589ded9e render spine scaffold",
+    "t090_5_map_object_render_layer.md spec",
+]
 shipped_at = "589ded9e"
 created_at = "2026-07-05T10:43:54Z"
 completed_at = "2026-07-05T11:07:09Z"

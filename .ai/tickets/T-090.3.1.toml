@@ -8,6 +8,20 @@ order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_3_map_asset_export.md"
 executor = "claude-code"
 parent = "T-090"
+main_goal = "Ship P1 buildings catalog and roads.json.gz from Workbench full-world export."
+context = ["T-090.3.0 proved entity enumeration; v2 needs phased P1 artifacts."]
+requirement = ["Workbench full export; map-export P1_buildings; verify-phase P1 gates."]
+current_state = ["No committed world-object chunks or roads for Map Engine v2."]
+approach = ["TBD_TerrainWorldFullExportPlugin; build-world-objects P1 + build-roads-from-topo."]
+verify = [
+    "make map-verify-phase TERRAIN=everon PHASE=P1_buildings",
+    "make map-export-validate",
+]
+citations = [
+    "commit e47f25fc P1 buildings roads",
+    "t090_3_map_asset_export.md spec",
+    "SHIPPED_HISTORY T-090.3.1",
+]
 shipped_at = "e47f25fc"
 created_at = "2026-07-04T22:41:04Z"
 completed_at = "2026-07-04T23:57:28Z"

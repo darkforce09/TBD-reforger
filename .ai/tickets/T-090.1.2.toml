@@ -8,6 +8,22 @@ order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_1_2_sap_supertexture_satellite.md"
 executor = "claude-code"
 parent = "T-090"
+main_goal = "Decode Eden SAP supertextures, stitch world ortho, rebuild z0–5 WebP pyramid."
+context = ["T-090.1 interim ExportRasterization shaded-relief lacked meter-scale zoom detail."]
+requirement = [
+    "Decode Eden_*_supertexture.edds; stitch [0,0,12800,12800] north-up ortho.",
+    "Rebuild lossless satellite pyramid; replace committed LFS tiles.",
+]
+current_state = ["Mission Creator zoom magnified smooth gradients, not photographic SAP ground texture."]
+approach = ["P0 decode spike, cell catalog, stitch script, build-tile-pyramid, verify-sap-ortho."]
+verify = [
+    "cargo run -q -p tbd-tools --bin map -- verify-sap-ortho --terrain everon",
+    "EXPECT_LOSSLESS=1 node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon",
+]
+citations = [
+    "commit c2730a3 SAP ortho stitch",
+    "t090_1_2_sap_supertexture_satellite.md spec",
+]
 shipped_at = "c2730a3"
 created_at = "2026-06-30T17:54:23Z"
 completed_at = "2026-06-30T22:26:01Z"

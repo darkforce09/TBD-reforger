@@ -8,6 +8,19 @@ order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_3_0_workbench_export_spike.md"
 executor = "claude-code"
 parent = "T-090"
+main_goal = "Prove Workbench can enumerate Everon entities and capture basemap probes."
+context = ["T-091.0 showed obvious export paths die; object program needs proof."]
+requirement = [
+    "Subregion raw-entities.jsonl plus ops log map_export_everon.json.",
+    "K1/K1b/K7 green minimum; K3/K4 may stay red at spike end.",
+]
+current_state = ["P1–P10 export and dual basemap blocked on engine capability."]
+approach = ["TBD_TerrainWorldExportPlugin subregion probes; spike verifier harness."]
+verify = ["cargo xtask ci schema-validate"]
+citations = [
+    "commit b342c35 spike COMPLETE subject",
+    "t090_3_0_workbench_export_spike.md spec",
+]
 shipped_at = "b342c35"
 created_at = "2026-06-30T13:12:43Z"
 completed_at = "2026-06-30T14:20:20Z"

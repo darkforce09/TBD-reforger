@@ -8,6 +8,20 @@ order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_1_2_5_2_water_topo_refine.md"
 executor = "claude-code"
 parent = "T-090"
+main_goal = "Road-corridor water refine via decoded Eden.topo plus one-button rebuild."
+context = ["T-090.1.2.5.1 left road FP at operator viewport; no hydro in .topo (G1-B)."]
+requirement = [
+    "decode-topo.mjs roadFrac≤0.45 guard; relaxed wet-channel classes.",
+    "cargo xtask ci map-water-everon one-button pipeline.",
+]
+current_state = ["Grey-river bodies overlapped .topo corridors; wet gullies rejected too aggressively."]
+approach = ["Component roadFrac guard; TOPO_TERRAINS config; mask→composite→bundle→pyramid."]
+verify = ["cargo xtask ci map-water-everon"]
+citations = [
+    "commit 1c07d97a road guard pipeline",
+    "SHIPPED_HISTORY T-090.1.2.5.2 entry",
+    "t090_1_2_5_2_water_topo_refine.md spec",
+]
 shipped_at = "1c07d97a"
 created_at = "2026-07-03T13:16:52Z"
 completed_at = "2026-07-03T13:38:51Z"

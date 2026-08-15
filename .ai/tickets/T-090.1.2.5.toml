@@ -8,6 +8,23 @@ order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_1_2_5_satellite_water_composite.md"
 executor = "claude-code"
 parent = "T-090"
+main_goal = "Composite readable ocean and inland water onto SAP ortho before pyramid rebuild."
+context = ["SAP seabed reads grey; lakes and rivers invisible vs interim rasterization water tint."]
+requirement = [
+    "Ocean mask DEM≤0; inland mask SAP grey appearance ∩ DEM filters.",
+    "Rebuild unified bundle plus lossless z0–6 pyramid.",
+]
+current_state = ["T-090.1.2+ ortho authentic but hydrology unreadable for mission makers."]
+approach = ["composite-water-ortho.mjs; verify-sap-ortho; build-tile-pyramid --lossless."]
+verify = [
+    "cargo run -q -p tbd-tools --bin map -- verify-sap-ortho --terrain everon",
+    "EXPECT_LOSSLESS=1 node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon",
+]
+citations = [
+    "commit 6396960f satellite water composite",
+    "SHIPPED_HISTORY T-090.1.2.5 entry",
+    "t090_1_2_5_satellite_water_composite.md spec",
+]
 shipped_at = "6396960f"
 created_at = "2026-06-30T22:23:12Z"
 completed_at = "2026-07-03T11:50:47Z"

@@ -8,6 +8,19 @@ order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_10_map_engine_v2.md"
 executor = "claude-code"
 parent = "T-090"
+main_goal = "Publish detailed Map Engine v2 implementation plan from A3 study."
+context = ["T-144.1 proved raster-compose bridge must pivot to vector spine."]
+requirement = [
+    "Normative layer stack and phased export rescope doc.",
+    "Artifact t090_10_map_engine_v2_implementation_plan.md plus verify log.",
+]
+current_state = ["Dual pyramid raster pipeline extended past usefulness."]
+approach = ["Write implementation plan; update t090-specs consistency gate wiring."]
+verify = ["cargo xtask schema t090-specs"]
+citations = [
+    "commit a222a146 v2 implementation plan",
+    "t090_10_map_engine_v2.md spec",
+]
 shipped_at = "a222a146"
 created_at = "2026-07-04T22:29:40Z"
 completed_at = "2026-07-04T22:36:03Z"

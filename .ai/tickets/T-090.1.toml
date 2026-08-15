@@ -8,6 +8,22 @@ order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_1_aligned_basemap.md"
 executor = "claude-code"
 parent = "T-090"
+main_goal = "Ship Everon satellite WebP pyramid and Cartesian basemap under tactical grid."
+context = ["Procedural grid only; T-090.3.0 spike proved enumeration and export path."]
+requirement = [
+    "Export rasterization tiles.satellite pyramid with TMS Y fix.",
+    "Grid overlay on top; 404 degrades to grid-only toast.",
+]
+current_state = ["useBaseMapLayer drew procedural grid without geography."]
+approach = ["MapDataExporter rasterization export; wire Cartesian TileLayer to manifest URL."]
+verify = [
+    "cargo xtask ci schema-validate",
+    "cargo xtask ci verify-terrain",
+]
+citations = [
+    "commit 564419e satellite basemap ship",
+    "t090_1_aligned_basemap.md spec",
+]
 shipped_at = "564419e"
 created_at = "2026-06-29T17:16:32Z"
 completed_at = "2026-06-30T17:14:59Z"

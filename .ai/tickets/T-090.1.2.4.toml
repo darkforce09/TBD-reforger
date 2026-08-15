@@ -8,6 +8,26 @@ order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_1_2_4_engine_render_ortho_spike.md"
 executor = "claude-code"
 parent = "T-090"
+main_goal = "Spike engine-rendered continuous ortho ≥12800² replacing 2500-cell SAP stitch."
+context = ["T-090.1.2.2 apron-bridge left soft 256 m band on all interior seams."]
+requirement = [
+    "P0 Workbench API probe for top-down terrain color ortho.",
+    "Document PASS/FAIL in spike JSON; no fake PASS.",
+]
+current_state = ["SAP stitch remains production source; 110% bar not met."]
+approach = [
+    "Exhaustive Workbench MCP api_search for ortho projection APIs.",
+    "TBD_EngineOrthoExportPlugin optional viewport capture.",
+]
+verify = [
+    "cargo xtask mcp smoke",
+    "t090_1_2_4_engine_render_spike.json",
+]
+citations = [
+    "t090_1_2_4_engine_render_ortho_spike.md",
+    "commit 0d6fe485",
+    "SHIPPED_HISTORY T-090.1.2.4",
+]
 shipped_at = "0d6fe485"
 created_at = "2026-06-30T22:21:09Z"
 completed_at = "2026-07-01T22:17:28Z"

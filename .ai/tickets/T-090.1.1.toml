@@ -8,6 +8,27 @@ order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_1_1_map_cartographic_view.md"
 executor = "claude-code"
 parent = "T-090"
+main_goal = "Ship Map basemap WebP pyramid, enable Map radio, remove map→satellite coercion."
+context = ["Manifest tiles.map stub only; T-127 coerced map to satellite."]
+requirement = [
+    "G1-A MapDataExporter ortho composed with water mask and topo roads.",
+    "z0–6 WebP pyramid at tiles/map; basemapView persists map.",
+]
+current_state = ["Map radio disabled; no cartographic pyramid on disk."]
+approach = [
+    "Upscale TGA, build-map-cartographic with despike roads; cargo xtask map-cartographic-everon.",
+    "Remove T-127 coercion; per-view basemap layer ids.",
+]
+verify = [
+    "cargo xtask ci map-cartographic-verify",
+    "cargo xtask ci schema-validate",
+    "cargo xtask ci verify-terrain",
+]
+citations = [
+    "t090_1_1_map_cartographic_view.md",
+    "commit 6e06e679",
+    "t090_1_1_verify_log.md",
+]
 shipped_at = "6e06e679"
 created_at = "2026-06-30T22:10:12Z"
 completed_at = "2026-07-03T17:51:01Z"

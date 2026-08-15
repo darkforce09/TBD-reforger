@@ -8,6 +8,16 @@ order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md"
 executor = "claude-code"
 parent = "T-090"
+main_goal = "Offload chunk fetch/parse to Comlink worker."
+context = ["T-090.5.2 parsed chunks main-thread."]
+requirement = ["chunkStore LRU; 4ms/frame budget; pick wiring."]
+current_state = ["Main-thread gzip parse blocked pan/zoom."]
+approach = ["worldObjectsCore; transferables; rbush W3."]
+citations = [
+    "commit 155651b9",
+    "SHIPPED_HISTORY T-090.5.3",
+    "t090_5_map_object_render_layer.md",
+]
 shipped_at = "155651b9"
 created_at = "2026-07-05T13:26:33Z"
 completed_at = "2026-07-05T15:59:41Z"

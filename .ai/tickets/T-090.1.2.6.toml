@@ -8,6 +8,20 @@ order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_1_2_6_hillshade_blend_control.md"
 executor = "claude-code"
 parent = "T-090"
+main_goal = "Mission Settings hillshade strength slider over Satellite basemap."
+context = ["T-091.2 locked 40% opacity; operator could not tune relief on photo ortho."]
+requirement = [
+    "hillshadeOpacity 0–100% at 0.1% steps; persist meta.environment.",
+    "Live preview without pyramid or DEM rebuild.",
+]
+current_state = ["useDemLayer.ts hard-coded OPACITY=0.4; muddy flat relief at default."]
+approach = ["Schema field; MissionSettingsDialog slider; prop into useDemLayer opacity."]
+verify = ["cargo xtask mk ci-local-leptos"]
+citations = [
+    "commit b958e3b4 hillshade blend slider",
+    "SHIPPED_HISTORY T-090.1.2.6 entry",
+    "t090_1_2_6_hillshade_blend_control.md spec",
+]
 shipped_at = "b958e3b4"
 created_at = "2026-07-01T15:39:36Z"
 completed_at = "2026-07-03T11:52:39Z"

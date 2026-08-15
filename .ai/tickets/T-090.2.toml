@@ -8,6 +8,23 @@ order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_2_map_object_taxonomy.md"
 executor = "claude-code"
 parent = "T-090"
+main_goal = "Close map-object taxonomy with S1–S10 goldens and semantic verify gates."
+context = ["T-090.0.2 shipped schemas; export and render needed closed enums."]
+requirement = [
+    "Expand golden prefabs for full S9 enum coverage plus classify rules.",
+    "verify-map-object-golden.mjs S2–S9 wired into schema-validate.",
+]
+current_state = ["Partial goldens; census pending_export until T-090.3."]
+approach = ["Append classify rules; ship Everon manifest objects stub."]
+verify = [
+    "cargo xtask ci schema-validate",
+    "npm run verify-map-object-golden",
+]
+citations = [
+    "commit 691d9b26 taxonomy ship",
+    "SHIPPED_HISTORY T-090.2 entry",
+    "t090_2_map_object_taxonomy.md spec",
+]
 shipped_at = "691d9b26"
 created_at = "2026-07-03T12:03:09Z"
 completed_at = "2026-07-03T12:46:30Z"

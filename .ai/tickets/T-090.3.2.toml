@@ -8,6 +8,20 @@ order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_3_map_asset_export.md"
 executor = "claude-code"
 parent = "T-090"
+main_goal = "Add PH-P2 trees, TBDD density grids, and forest-regions from staged raw."
+context = ["T-090.3.1 shipped P1; P2 reuses 1.41M-row staging without Workbench re-export."]
+requirement = ["map-export P2_trees; 625 density bins; forest-regions.json.gz Path B regions."]
+current_state = ["Buildings and roads only; no tree instances or density binary."]
+approach = ["Append Latin species classify rules; build-world-objects P2 + density writer."]
+verify = [
+    "make map-verify-phase TERRAIN=everon PHASE=P2_trees",
+    "make map-export-validate",
+]
+citations = [
+    "commit a055df95 density trees forest",
+    "t090_3_map_asset_export.md spec",
+    "SHIPPED_HISTORY T-090.3.2",
+]
 shipped_at = "a055df95"
 created_at = "2026-07-04T23:57:28Z"
 completed_at = "2026-07-05T10:43:54Z"

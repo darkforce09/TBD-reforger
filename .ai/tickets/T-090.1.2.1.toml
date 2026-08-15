@@ -8,6 +8,27 @@ order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_1_2_1_lossless_satellite_pyramid.md"
 executor = "claude-code"
 parent = "T-090"
+main_goal = "Rebuild Everon Satellite pyramid lossless WebP z0–6; manifest maxZoom 6."
+context = ["T-090.1.2 shipped lossy q80 z0–5 pyramid; max zoom blurry."]
+requirement = [
+    "cwebp --lossless on all tiles from 12800² SAP ortho.",
+    "Complete 4096 z6 tiles; manifest tiles.maxZoom 6.",
+]
+current_state = ["Deck MAX_ZOOM 6 stretched z5 ~1.56 m/px tiles."]
+approach = [
+    "build-tile-pyramid.sh --lossless --maxzoom 6.",
+    "Fix per-tile decode loop for full z6 in minutes.",
+]
+verify = [
+    "node scripts/map-assets/verify-sap-ortho.mjs TERRAIN=everon",
+    "EXPECT_LOSSLESS=1 node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon",
+    "cargo xtask ci verify-terrain",
+]
+citations = [
+    "t090_1_2_1_lossless_satellite_pyramid.md",
+    "commit 19bc785c",
+    "t090_1_2_1_verify_log.md",
+]
 shipped_at = "19bc785"
 created_at = "2026-06-30T20:48:46Z"
 completed_at = "2026-06-30T22:10:12Z"

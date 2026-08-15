@@ -8,6 +8,19 @@ order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_10_map_engine_v2.md"
 executor = "cursor-docs"
 parent = "T-090"
+main_goal = "Pivot map program from dual raster pyramids to A3-aligned vector spine."
+context = ["T-144.1 A3 study: readability is vector layers over one sat field."]
+requirement = [
+    "Cancel legacy raster compose slices; rescope export to T-090.3.",
+    "Spec hub documents frozen tbd-sat plus Deck.gl layer stack.",
+]
+current_state = ["Map tile pyramid and ImageMagick compose were the bridge."]
+approach = ["Ship architecture spec; queue T-090.10.1 plan and T-090.3 export."]
+verify = ["cargo xtask schema t090-specs"]
+citations = [
+    "commit 5e7bfed5 Map Engine v2 pivot",
+    "t090_10_map_engine_v2.md spec",
+]
 shipped_at = "5e7bfed5"
 created_at = "2026-07-04T22:10:40Z"
 completed_at = "2026-07-04T22:10:40Z"

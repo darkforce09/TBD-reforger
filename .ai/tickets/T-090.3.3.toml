@@ -8,6 +8,20 @@ order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_3_map_asset_export.md"
 executor = "claude-code"
 parent = "T-090"
+main_goal = "Data-driven structure taxonomy, measured OBBs, full .topo highway network."
+context = ["T-090.5.2.1 review exposed missing highway and garbled building heaps."]
+requirement = ["Rebuild prefab-classify; map topo types 1+2 to asphalt; 888 road segments."]
+current_state = ["Provisional road classes; rule-template OBBs mislabeled structures."]
+approach = ["Offline classify rebuild from staged raw; decode-topo full type mapping."]
+verify = [
+    "make map-verify-phase TERRAIN=everon PHASE=P1_buildings",
+    "make map-export-validate",
+]
+citations = [
+    "commit 887a6ed1 taxonomy roads",
+    "t090_3_map_asset_export.md spec",
+    "SHIPPED_HISTORY T-090.3.3",
+]
 shipped_at = "887a6ed1"
 created_at = "2026-07-05T12:35:54Z"
 completed_at = "2026-07-05T13:26:33Z"
