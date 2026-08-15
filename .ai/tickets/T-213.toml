@@ -7,8 +7,22 @@ status = "cancelled"
 order = 2310
 executor = "claude-code"
 depends_on = ["T-257"]
+main_goal = "CANCELLED 2026-08-01 — MERGED INTO T-069."
+context = [
+    "CANCELLED 2026-08-01 — MERGED INTO T-069, which keeps the id because it owns the in-code stub message",
+    '(eden_chrome.rs:3337, "Marker placement lands in T-069.") and the test that pins it at :4499-4502.',
+    "Both sweeps concluded these are the same job under two names.",
+]
+current_state = [
+    "This row's own summary also cited a dead line number and a `state/schema.ts` that no longer exists —",
+    "The React tree was deleted at T-159.29.3 — which is a second reason not to dispatch it as written.",
+]
+citations = [
+    "T-069",
+    "T-159.29.3",
+    "eden_chrome.rs:3337",
+]
 estimated = ["scope"]
-migration_legacy = ["""CANCELLED 2026-08-01 — MERGED INTO T-069, which keeps the id because it owns the in-code stub message (eden_chrome.rs:3337, "Marker placement lands in T-069.") and the test that pins it at :4499-4502. Both sweeps concluded these are the same job under two names. This row's own summary also cited a dead line number and a `state/schema.ts` that no longer exists — the React tree was deleted at T-159.29.3 — which is a second reason not to dispatch it as written."""]
 owns = [
     "apps/website/frontend/src/eden_chrome.rs",
     "crates/map-engine-core/src/doc/store.rs",

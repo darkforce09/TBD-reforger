@@ -138,7 +138,7 @@ pub fn title_is_debt(id: &str, title: &str) -> bool {
 /// and in the store ratchet test: growth means a title gate bypass (ops refuse debt
 /// titles on changed tickets), shrinkage means a repair landed and the pin must
 /// shrink in the same commit (the T-919/T-921 batch contract).
-pub const TITLE_DEBT_PIN: usize = 440;
+pub const TITLE_DEBT_PIN: usize = 433;
 
 /// T-920.1 shrink-only debt pin: queued/ready/running/review WORK tickets with empty
 /// `main_goal` (instrument: [`main_goal_is_debt`]) — measured on the live tree at
@@ -149,7 +149,7 @@ pub const TITLE_DEBT_PIN: usize = 440;
 /// carriers (nonempty `migration_legacy`) ARE counted — the wall holds the content
 /// unprocessed, and the T-919 drain fills main_goal when it decomposes the wall,
 /// shrinking this pin in the same commit.
-pub const MAIN_GOAL_DEBT_PIN: usize = 53;
+pub const MAIN_GOAL_DEBT_PIN: usize = 52;
 
 /// The one main_goal-debt instrument (t920 spec §Schema changes): a live
 /// (queued/ready/running/review) work ticket whose `main_goal` is empty/absent.

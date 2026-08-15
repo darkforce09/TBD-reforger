@@ -5,10 +5,34 @@ summary = "Two browser tabs on one mission silently clobber each other"
 class = "bug"
 status = "idea"
 executor = "claude-code"
-notes = "UX review F-32 evidence + verified conflict-prompt copy in .ai/artifacts/editor_hostile_ux_review.md section F-32"
+notes = "UX review F-32 evidence + verified conflict-prompt copy in .ai/artifacts/editor_hostile_ux_review.md section F-32 Owns widens to mission_hydrate.rs + the conflict modal arm in mission_editor.rs (wave-7 neighbours re-checked, no collision)."
 depends_on = ["T-222"]
+main_goal = "yrs_persist.rs:60-69 is a bare whole-blob put that never reads and merges."
+context = ["RESCOPED 2026-08-09 from the UX review (F-32, verified repro):"]
+requirement = [
+    "FIX SCOPE WIDENED:",
+    "detect the second tab at open (BroadcastChannel or storage lock) and say so in-tab;",
+    "conflict modal gains object counts + timestamps on both options and marks the destructive one.",
+]
+current_state = [
+    "yrs_persist.rs:60-69 is a bare whole-blob put that never reads and merges.",
+    "There is no BroadcastChannel, storage listener, navigator.locks or SharedWorker anywhere in the repo.",
+    "Whichever tab's five-second debounce fires last wins.",
+    "The CRDT can merge and is never asked to.",
+    "two tabs on one mission diverge silently (tab B deleted all -> OBJ0 while tab A held OBJ9;",
+    "both write the same per-account IndexedDB key; no warning in either tab).",
+    "The reload conflict prompt DID fire —",
+    "'Saved version v0.2.0 on the server differs from your local copy. Which version should win? [Keep local copy][Load server version]' —",
+    "but it (a) never says 'Load server version' destroys local work,",
+    "(b) offers no counts/timestamps to compare,",
+    "(c) misattributes a two-tab divergence to server drift.",
+]
+citations = [
+    "UX review F-32 verified repro",
+    "mission_hydrate.rs conflict modal arm",
+    "mission_editor.rs conflict modal arm",
+]
 estimated = ["scope"]
-migration_legacy = ["yrs_persist.rs:60-69 is a bare whole-blob put that never reads and merges. There is no BroadcastChannel, storage listener, navigator.locks or SharedWorker anywhere in the repo. Whichever tab's five-second debounce fires last wins. The CRDT can merge and is never asked to. RESCOPED 2026-08-09 from the UX review (F-32, verified repro): two tabs on one mission diverge silently (tab B deleted all -> OBJ0 while tab A held OBJ9; both write the same per-account IndexedDB key; no warning in either tab). The reload conflict prompt DID fire — 'Saved version v0.2.0 on the server differs from your local copy. Which version should win? [Keep local copy][Load server version]' — but it (a) never says 'Load server version' destroys local work, (b) offers no counts/timestamps to compare, (c) misattributes a two-tab divergence to server drift. FIX SCOPE WIDENED: detect the second tab at open (BroadcastChannel or storage lock) and say so in-tab; conflict modal gains object counts + timestamps on both options and marks the destructive one. Owns widens to mission_hydrate.rs + the conflict modal arm in mission_editor.rs (wave-7 neighbours re-checked, no collision)."]
 owns = ["apps/website/frontend/src/yrs_persist.rs"]
 
 [scope]

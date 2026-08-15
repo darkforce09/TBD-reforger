@@ -1,11 +1,24 @@
 id = "T-219"
 kind = "work"
-title = "The editor silently deletes any top-level key it does not understand"
+title = "Editor silently drops unknown top-level keys"
 summary = "The editor silently deletes any top-level key it does not understand"
 class = "chore"
 status = "shipped"
 order = 2370
 executor = "claude-code"
+main_goal = "mission-editor-payload.schema.json has no additionalProperties:false and no required, so the API stores arbitrary keys."
+current_state = [
+    "mission-editor-payload.schema.json has no additionalProperties:false and no required, so the API stores arbitrary keys.",
+    "But hydrate reads exactly seven paths (store.rs:1097-1158)",
+    "and compile_payload rebuilds from a json! literal (compile.rs:85-99).",
+    "A server-first field or migration will appear to work, persist, and be quietly erased on next Save.",
+    "MissionDocCore::hydrate has zero unit tests.",
+]
+citations = [
+    "mission-editor-payload.schema.json",
+    "store.rs:1097-1158",
+    "compile.rs:85-99",
+]
 shipped_at = "ac68a090"
 created_at = "2026-07-26T21:34:42Z"
 completed_at = "2026-07-26T21:46:55Z"
@@ -17,7 +30,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
-migration_legacy = ["mission-editor-payload.schema.json has no additionalProperties:false and no required, so the API stores arbitrary keys. But hydrate reads exactly seven paths (store.rs:1097-1158) and compile_payload rebuilds from a json! literal (compile.rs:85-99). A server-first field or migration will appear to work, persist, and be quietly erased on next Save. MissionDocCore::hydrate has zero unit tests."]
 owns = [
     "crates/map-engine-core/src/doc/store.rs",
     "crates/map-engine-core/src/mission/compile.rs",

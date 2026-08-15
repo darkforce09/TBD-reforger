@@ -6,6 +6,15 @@ class = "chore"
 status = "shipped"
 order = 2350
 executor = "claude-code"
+main_goal = "FactionDoc has no squad level — flat roles[] plus vehicles[]."
+current_state = [
+    "FactionDoc has no squad level — flat roles[] plus vehicles[].",
+    "Apply reuses the side's first squad and deletes every other squad on that side (apply_faction.rs:102-107);",
+    "the inverse flattens all squads into one list, dropping boundaries, leader, callsign, rank and positions.",
+    "Save-as then Apply collapses N squads into 1.",
+    "APPLY_ANCHOR_X/Y is an Everon constant, so applying on Arland places everything off-map.",
+]
+citations = ["apply_faction.rs:102-107"]
 shipped_at = "8e07338f"
 created_at = "2026-07-26T05:34:42Z"
 completed_at = "2026-07-26T05:37:07Z"
@@ -16,7 +25,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = ["FactionDoc has no squad level — flat roles[] plus vehicles[]. Apply reuses the side's first squad and deletes every other squad on that side (apply_faction.rs:102-107); the inverse flattens all squads into one list, dropping boundaries, leader, callsign, rank and positions. Save-as then Apply collapses N squads into 1. APPLY_ANCHOR_X/Y is an Everon constant, so applying on Arland places everything off-map."]
 owns = ["crates/map-engine-core/src/doc/apply_faction.rs"]
 
 [scope]
