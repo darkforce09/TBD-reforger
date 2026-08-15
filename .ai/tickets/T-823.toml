@@ -6,18 +6,7 @@ class = "chore"
 status = "queued"
 order = 5050
 executor = "claude-code"
-notes = """
-wave203 verifier; wording-vs-count decision, small
-
---- HEAD migration_legacy (verbatim) ---
-
-WAVE-203 VERIFIER FILING (wave203.md NIT; mission_history.rs:289/532). OBJ = slot_count (characters only): drag-placing an M1025 leaves OBJ unchanged while the vehicle genuinely places (outliner row, Placed strip, recently-placed all show it). Either rename the readout (SLOTS) or count entities (slots+vehicles) — pick one and pin it; the WEST/EAST/IND/TOTAL chips (operator-liked) already count slots explicitly and must not drift. ACCEPTANCE: place a vehicle -> the readout either includes it or is renamed so the exclusion is honest; chips unchanged.
-
---- HEAD migration_legacy line (verbatim) ---
-
-migration_legacy = ["WAVE-203 VERIFIER FILING (wave203.md NIT; mission_history.rs:289/532). OBJ = slot_count (characters only): drag-placing an M1025 leaves OBJ unchanged while the vehicle genuinely places (outliner row, Placed strip, recently-placed all show it). Either rename the readout (SLOTS) or count entities (slots+vehicles) — pick one and pin it; the WEST/EAST/IND/TOTAL chips (operator-liked) already count slots explicitly and must not drift. ACCEPTANCE: place a vehicle -> the readout either includes it or is renamed so the exclusion is honest; chips unchanged."]
-
-missing=0"""
+notes = "wave203 verifier; wording-vs-count decision, small"
 main_goal = "Make OBJ readout honest about vehicles or rename to SLOTS."
 context = [
     "OBJ equals slot_count characters only at mission_history 289 532.",

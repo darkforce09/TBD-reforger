@@ -7,16 +7,6 @@ status = "shipped"
 order = 5750
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-T-853 Phase 3. Absorb these Makefile targets into xtask: rust-api rust-build rust-test rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci leptos leptos-debug leptos-build leptos-gates ci-local-leptos verify-cargo-target print-cargo-target-dir reclaim-target-ci. verify-cargo-target (21 recipe lines) greps the Makefile for its OWN pin - that self-reference must move with it or the check evaporates. CARGO_TARGET_DIR is derived from `git rev-parse --path-format=absolute --git-common-dir` (Makefile:16) so every linked worktree shares the PRIMARY warm target; a .cargo/config.toml [env] relative=true would resolve per-worktree and silently reverse T-253/T-322. Each slice ADDS xtask subcommands in its own new module and does NOT edit the Makefile - the deletion is one final slice, so the three build slices stay file-disjoint. ACCEPTANCE: for every target, `make <t>` and the new `cargo xtask ...` must produce byte-identical stdout+stderr+rc on a clean tree AND on a deliberately broken one; the harness must assert the make side went red before believing a diff (T-556). Spec: docs/platform/t853_shell_to_xtask_waves.md
-
---- HEAD migration_legacy line (verbatim) ---
-
-migration_legacy = ["T-853 Phase 3. Absorb these Makefile targets into xtask: rust-api rust-build rust-test rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci leptos leptos-debug leptos-build leptos-gates ci-local-leptos verify-cargo-target print-cargo-target-dir reclaim-target-ci. verify-cargo-target (21 recipe lines) greps the Makefile for its OWN pin - that self-reference must move with it or the check evaporates. CARGO_TARGET_DIR is derived from `git rev-parse --path-format=absolute --git-common-dir` (Makefile:16) so every linked worktree shares the PRIMARY warm target; a .cargo/config.toml [env] relative=true would resolve per-worktree and silently reverse T-253/T-322. Each slice ADDS xtask subcommands in its own new module and does NOT edit the Makefile - the deletion is one final slice, so the three build slices stay file-disjoint. ACCEPTANCE: for every target, `make <t>` and the new `cargo xtask ...` must produce byte-identical stdout+stderr+rc on a clean tree AND on a deliberately broken one; the harness must assert the make side went red before believing a diff (T-556). Spec: docs/platform/t853_shell_to_xtask_waves.md"]
-
-missing=0"""
 main_goal = "Absorb Makefile build lane targets into xtask mk_build module."
 context = [
     "T-853 Phase 3 absorbs rust-api rust-build rust-test rust-fmt rust-clippy rust-ci.",

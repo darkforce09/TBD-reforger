@@ -6,15 +6,7 @@ class = "feature"
 status = "shipped"
 order = 3800
 executor = "claude-code"
-notes = """
-editor-UI program wave 0 (wave_plan.tsv row 100) — SHIPPED wave 100 (editor factory), merge 64802289, verifier 0 BLOCKER/0 MAJOR (wave100.md)
-
---- HEAD migration_legacy (verbatim) ---
-
-Wave 0 of the editor-UI program, and it runs ALONE. `apps/website/frontend/src/eden_chrome.rs` is 5,119 lines (938 of them `mod tests` from :4182) and 14 of the program's code-bearing tickets claim it, which forces 14 serial waves on that one file. Split it by symbol into ten modules (owns_and_waves.md §7.3): eden_layout.rs (STRIP_TOP_PX :38, DOCK_LEFT_PX :40, DOCK_RIGHT_PX :42, TOOLBELT_BAND_PX :45, shared style consts :53-79) · eden_top_strip.rs (MENUS :112, MirroredField :496, MIRROR_TIME :501, MIRROR_WEATHER :506, RowMirror :697-829, TopCommandStrip :831-1372) · eden_env.rs (CARRIED_ENV_KEYS :231, author_env :271, flow helpers :377-482) · eden_tree.rs (guide_spans :1383, ROW_H :1525, single_row :1532, virtual_tree :1711) · eden_dock_left.rs (DockLeft :2813-2870) · eden_dock_right.rs (PaletteKind :1833, palette_rows :1863, EDEN_SIDE_CHIPS :2871, DockRight :2961-3379) · eden_vehicles_panel.rs (placed_vehicles_panel :1985 wasm / :2213 native) · eden_zones.rs (zones_panel :2228/:2790, ZoneShape :3660, circle_from_clicks :3626) · eden_toolbelt.rs (TOOLBELT :64, TOOL_ACTIVE :72, TOOL_DISABLED :74, fmt_coord :80, BottomToolbelt :3672-3786) · eden_settings.rs (MissionSettingsDialog :3788-3926, render_flow_section :3927, render_prefs_section :4057). Pure move, no behaviour change. LOAD-BEARING EXTRA: also pre-declare empty `mod` stubs in main.rs for the five modules later tickets create — context_menu.rs, ruler_tool.rs, los_tool.rs, place_helpers.rs, validation_panel.rs. main.rs is 148 lines with 57 `mod` declarations and Rust has no implicit module discovery, so without the stubs five tickets each add a line to that one file and wave 11 (T-655 + T-645) splits in two, taking the program from 19 waves to 20. Note the split does NOT decouple layout from input: DOCK_LEFT_PX / DOCK_RIGHT_PX / TOOLBELT_BAND_PX / STRIP_TOP_PX are each read by three files (select_tool.rs unprojects the pointer with them, mission_editor.rs sizes the wgpu canvas with them), so eden_layout.rs owns the constants but not their readers.
-
-missing=0
-"""
+notes = "editor-UI program wave 0 (wave_plan.tsv row 100) — SHIPPED wave 100 (editor factory), merge 64802289, verifier 0 BLOCKER/0 MAJOR (wave100.md)"
 main_goal = "Split eden_chrome.rs into ten modules; pre-declare five future module stubs."
 context = [
     "Wave zero editor program; runs alone before other editor tickets.",

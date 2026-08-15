@@ -6,48 +6,6 @@ class = "bug"
 status = "shipped"
 order = 3682
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-OPERATOR-RAISED 2026-08-01, alongside T-620. Python has a rule (T-162, and see T-620 for why it never
-bound). **Shell has none at all** -- no `verify-no-shell`, no "new tooling goes in xtask" convention,
-nothing in `CODING_STANDARDS.md` or `CLAUDE.md`.
-
-MEASURED: **58 `.sh` files, 15,415 lines** (excluding `.git` and worktrees). `scripts/platform/wave.sh`
-alone is ~2,800 lines and grew by hundreds more across waves 75-79. Nothing was violating a rule --
-**the rule was never written**, so every slice that needed a script reached for bash by default.
-
-The operator's stated intent, from the Rust rewrite era: *everything in Rust; scripts in `xtask`.*
-`CLAUDE.md` already records the direction of travel -- *"All tooling is Rust (T-165 Node eradication);
-Node exists solely as the `enfusion-mcp` runtime"* -- but says nothing about bash.
-
-=== WHY THIS IS NOT COSMETIC ===
-Waves 75-79 spent a large fraction of their budget on defects that are **specific to shell**:
-- `grep` is ugrep 7.5.0 in an agent shell and GNU 3.8 under `bash script.sh`; they disagree on bare
-  `{}` in an ERE, and every API route path contains `{id}`.
-- `rg` does not exist, and `|| true` turns its absence into a silent pass (T-620, and the same shape
-  in T-606's `remote-log-grep.sh`).
-- `${TBD_SCENARIO:={GUID}...}` truncates at the GUID's brace, and the validator printed
-  "config VALID" over the wreckage (T-607).
-- `mcp-wb-logs.sh` had no reachable `exit 0` **or** `exit 2` and was fully inverted -- PASS on a stale
-  build, FAIL on a healthy one (T-612).
-None of these failure modes survive contact with a typed language and a test harness.
-
-=== FIX SHAPE -- proposal, operator to confirm ===
-1. Write the rule down (`CODING_STANDARDS.md`): **new tooling goes in `xtask`**; bash is permitted only
-   for thin process glue that must run before/without cargo (container entry, `distrobox-host-exec`
-   wrappers, git hooks).
-2. **Grandfather with an explicit list**, so the list can only shrink. A `verify-no-new-shell` gate
-   compares against the committed inventory and fails on an unlisted new `.sh`. This is the cheap,
-   honest version -- it does not force a 15k-line rewrite, it just stops the bleeding.
-3. Port opportunistically, highest-risk first. `wave.sh`'s gate/push logic is the obvious candidate:
-   it has now had **three consecutive rounds** of self-approval defects (T-602 -> T-613 -> T-618),
-   every one of them a bash-string-matching problem.
-
-**Do not start by rewriting `wave.sh`.** Write the rule, add the ratchet, then port when a script next
-needs real work.
-
-missing=0"""
 priority = 2
 main_goal = "Document bash policy; add verify-no-new-shell grandfather inventory."
 context = [

@@ -6,16 +6,6 @@ class = "feature"
 status = "shipped"
 order = 3421
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-FOUND by W66 adversarial verifier (DIRTY MAJOR) after T-565.
-
-SELECT -- comment decoy now RED. Still GREEN: (1) dead helper retaining COALESCE UPDATE while live path SET arma_id = $2; (2) SELECT … WHERE 'UPDATE users SET arma_id = COALESCE…' (needle inside SQL string literal survives comment strip).
-
-Repro: move COALESCE UPDATE into unused fn; live UPDATE uses $2; Class-R green.
-
-missing=0"""
 priority = 2
 main_goal = "Close Class-R hollow bypass via dead helper and SQL string literal."
 context = [

@@ -6,35 +6,6 @@ class = "bug"
 status = "shipped"
 order = 3432
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-T-278 built `tbd-tools world reclassify` -- rebuilds the map catalogue's classification lane from
-COMMITTED artifacts with no Workbench and no staging directory, read-only drift check by default.
-It did not add the Makefile target, correctly: `Makefile` was outside its owns.
-
-The ticket title it closed names "no Makefile target to regenerate the catalogue" as half the defect,
-and `grep reclassify Makefile` is still empty -- so the remediation is undiscoverable by this repo's
-own make-centric conventions.
-
-EXACT TARGET REQUESTED BY T-278 (add `map-reclassify` to the .PHONY at Makefile:360):
-
-map-reclassify: ## T-278 -- rebuild the catalogue's classification lane from COMMITTED artifacts (no Workbench/staging). Read-only drift check by default; exits 1 when a prefab-classify.json edit has gone latent. WRITE=1 applies it.
-\t@test -n "$(TERRAIN)" || (echo "map-reclassify: TERRAIN=<id> required"; exit 1)
-\tcargo run -q -p tbd-tools --bin world -- reclassify --terrain "$(TERRAIN)" $(if $(WRITE),--write,)
-
-STRONGLY WORTH DOING AT THE SAME TIME: wire the no-WRITE form into the wave gate. Run on the day
-T-244 landed, it would have gone RED -- instead the vehicle lane sat latent for weeks and the only
-path to activating it would have PANICKED (build.rs `.expect("kind bucket")`, 8-kind array).
-
-RELATED, still blocking the regenerated artifact from landing (both verified by the verifier, both
-outside T-278's files): `packages/tbd-schema/schema/map-object-type-inventory.schema.json` byKind is
-`additionalProperties:false` with 8 required keys and rejects `vehicle`; `xtask/src/schema_gates.rs:428`
-INSTANCE_KINDS is an 8-element array feeding the I1 sum gate, which comes up short by exactly 176 --
-`byKind.vehicle.instances`. T-278 shipped an `instance_kinds_match_enums_schema` lockstep test that
-pins the fix against the enums schema.
-
-missing=0"""
 priority = 2
 main_goal = "Expose map-reclassify Makefile target for tbd-tools world reclassify."
 context = [

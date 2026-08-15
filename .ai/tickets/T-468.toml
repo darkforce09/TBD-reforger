@@ -6,17 +6,6 @@ class = "chore"
 status = "shipped"
 order = 3307
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-Residual from wave 25 adversarial N3. T-434 aligned CI to make ci-local-schema, but nothing fails if someone reverts the job to xtask validate+citations only.
-
-Repro: change ci.yml schema step back to cargo run … schema validate only → CI green locally for enums hole until map-object-enums RED is noticed elsewhere.
-
-Cure: Class-R or verify script that ci.yml schema job invokes make ci-local-schema / full gate set.
-
-missing=0
-"""
 priority = 3
 main_goal = "Tripwire that ci.yml schema job invokes make ci-local-schema / full gate."
 context = [

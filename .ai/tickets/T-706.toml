@@ -6,38 +6,7 @@ class = "chore"
 status = "shipped"
 order = 4600
 executor = "claude-code"
-notes = """
- — SHIPPED wave 120 (editor factory), 843f3438 + ledger 9228a458 + hardening 6382c69c + prose 955a281d; verifier wave120.md (contract hardened against the hostile reading before any reader dispatched); unread-fields gate live at 53 fields
-
---- HEAD migration_legacy (verbatim) ---
-
-All 16 mod-side tickets add a $def or a property to packages/tbd-schema/schema/mission.schema.json. Left per-ticket, that one file forces 16 sequential waves and roughly doubles the program (22 -> 38). This lands every schema change in one pass so the 16 Enfusion-runtime halves pack freely afterwards.
-
-Tickets whose schema half this absorbs:
-  - T-212: Objectives as typed, placed, per-side entities with one uniform attrib
-  - T-654: Conditional inclusion: variant-gated document subtrees
-  - T-673: Marker style and Area markers — the $defs/marker widening
-  - T-674: T-216 follow-on: slot identity reaches the wire
-  - T-675: Vehicle roster reaches the game — the compile half of T-076
-  - T-676: Trigger activation and effects — the Enfusion runtime
-  - T-677: Waypoints — group movement orders
-  - T-678: Group AI state: combat mode, behaviour, formation, speed
-  - T-679: Placement scatter: radius and area shape
-  - T-680: Vehicle states: lock, fuel, ammo
-  - T-681: Entity states: health, allow-damage, show-model, size, stamina
-  - T-682: Environment readers: fog, wind, view distance
-  - T-684: Mission parameters as first-class document objects
-  - T-685: Zones become volumes: min/max height, attacker and defender counts, st
-  - T-689: Play-area enforcement gains a vehicle-class axis: the aircraft exempti
-  - T-705: Player gadget flags — map, compass, watch, GPS, radio
-
-ACCEPTED RISK, stated because the repo has been bitten by it before: this briefly makes the schema a CONTRACT AHEAD OF ITS CONSUMER. mission.schema.json:72 already carries that exact warning about entities[] — "NOTHING READS THIS ON ANY BUILD SHIPPED TODAY ... Do not cite it as a feature." Two mitigations are REQUIRED, not optional:
-  1. Every new field ships with a comment naming the ticket that will read it.
-  2. A test asserts each new field is currently unread, so the day a reader lands the test fails and      forces the comment to be removed. That is the fail-on-demand shape this program uses everywhere      else — a green you did not watch fail is unproven.
-
-Additive only: no existing field changes shape, so no migration and no compiled-document break. Run early, before the runtime halves. Each of the 16 keeps its own ticket for the Enfusion reader and any editor UI, and its owns drops packages/tbd-schema.
-
-missing=0"""
+notes = " — SHIPPED wave 120 (editor factory), 843f3438 + ledger 9228a458 + hardening 6382c69c + prose 955a281d; verifier wave120.md (contract hardened against the hostile reading before any reader dispatched); unread-fields gate live at 53 fields"
 main_goal = "Widen mission.schema.json once for sixteen mod runtime halves."
 context = [
     "Sixteen mod tickets each add $def or property to mission.schema.json.",

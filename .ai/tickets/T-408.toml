@@ -6,14 +6,6 @@ class = "bug"
 status = "shipped"
 order = 3224
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-Both found while auditing URL sinks; neither is a URL problem, so neither belongs in T-405. Reported by T-391's slice agent, not fixed.
-
-1. CSV FORMULA INJECTION — `apps/website/api/src/handlers/audit.rs:111` and `:113`. User-controlled text is written unescaped into the audit-log CSV export, so a value beginning `=`, `+`, `-` or `@` is a live formula when the file is opened in Excel or Google Sheets. This path bypasses Leptos escaping entirely — as does the Discord webhook consumer at `cms.rs:64`. T-391's `is_http_url` explicitly disclaims covering this: passing a URL guard is not permission to interpolate a value into a CSV. Standard fix is prefixing a single quote or a tab to any cell whose first character is one of those four, applied at the writer.
-
-2. AUTHZ TIER ASYMMETRY — `apps/website/api/src/handlers/missions.rs:447`. `create_mission` requires `MissionMakerUser`; `update_mission` takes a plain `AuthUser` and gates only on `can_edit` ownership. Not exploitable on its own — you must own a mission, which required mission_maker to create — but the asymmetry means a ROLE DEMOTION does not revoke edit rights. Repro: create a mission as mission_maker, demote the account to enlisted, PATCH the mission; the ownership check still passes and the demoted user can keep editing, including `thumbnail_url`. Decide deliberately whether ownership should outlive the role that granted it; right now that decision has been made by omission."""
 priority = 1
 main_goal = "Close CSV formula injection in audit export and reconcile mission update authz tier asymmetry."
 context = [

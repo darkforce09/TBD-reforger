@@ -7,16 +7,6 @@ status = "queued"
 order = 5860
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-T-899 allowlisted 7 live website-api files over 1000 lines. Split them; drop the SIZE-3 rows. Files: apps/website/api/src/app.rs, handlers/admin.rs, handlers/events.rs, handlers/missions.rs, handlers/oauth.rs, handlers/telemetry.rs, services/mission_compile.rs. Do NOT split apps/website/api/src/contract/generated/faction_library.rs — generated schema-codegen output, expires 2027-08-13, do-not-split. Not dispatched in waves 234-235. Not the registry-split program.
-
---- HEAD migration_legacy line (verbatim) ---
-
-migration_legacy = ["T-899 allowlisted 7 live website-api files over 1000 lines. Split them; drop the SIZE-3 rows. Files: apps/website/api/src/app.rs, handlers/admin.rs, handlers/events.rs, handlers/missions.rs, handlers/oauth.rs, handlers/telemetry.rs, services/mission_compile.rs. Do NOT split apps/website/api/src/contract/generated/faction_library.rs — generated schema-codegen output, expires 2027-08-13, do-not-split. Not dispatched in waves 234-235. Not the registry-split program."]
-
-missing=0"""
 main_goal = "Split 7 T-899-allowlisted API SIZE-3 files; drop allowlist rows."
 context = [
     "T-899 allowlisted 7 live website-api files over 1000 lines.",

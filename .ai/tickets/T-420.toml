@@ -6,23 +6,6 @@ class = "bug"
 status = "shipped"
 order = 3250
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-BLOCKER by the standing rule: a gate that reports success on code it never examined. Found 2026-07-26 during wave 5 when T-244's slice turned `xtask schema map-object-enums` RED and NOTHING in the gate noticed.
-
-MEASURED: `grep -c 'xtask schema' scripts/platform/wave.sh` -> 0. cmd_gate's eleven steps are cargo check, wasm32 (frontend), fmt (changed), clippy api/map-engine/frontend, test api/map-engine/frontend, trunk build, ticket registry. Not one validates a schema.
-
-CONSEQUENCE, already realised twice:
-  - Wave 4's gate printed GATE: PASS 11/11 on a wave whose HEADLINE DELIVERABLE was T-241's mission.schema.json change. The only evidence that schema is valid is that T-241's agent ran `xtask schema validate` itself and said so. That is testimony, not gate evidence -- and PLATFORM_FACTORY.md's own rule is that agent reports are evidence, not testimony.
-  - T-244 (wave 5) added a `vehicle` kind and would have merged with `make schema-validate` RED. Its slice gate passed because its diff is 0 .rs files, so fmt and clippy are change-scoped and examined nothing. It caught this only because the agent ran the schema gates by hand.
-
-THE OBVIOUS FIX IS ITSELF VACUOUS -- this is the trap, do not fall into it. On T-244's branch `xtask schema validate` PASSED while `xtask schema map-object-enums` FAILED. So adding only `xtask schema validate` would install something that LOOKS like a schema gate and would NOT have caught the very defect that motivated it. The step must cover the sub-gates that actually fail.
-
-CONSTRAINT that makes this non-trivial: at least one schema sub-gate is red on main today for unrelated reasons. `xtask schema height-labels` fails with 'PNG decode: Invalid PNG signature' because the DEM asset is an LFS pointer and git-lfs is absent from the container PATH. Adding a step that is already red would red every future wave -- which is precisely T-409's failure mode (guards that refuse legitimate work). So the slice must determine which sub-gates are BOTH meaningful AND currently green, add those, and record why each excluded one is excluded.
-
-NOT THIS TICKET: T-409 covers wave.sh's false-red hard-fails from T-406. Same file, different defect. Sequence them; do not merge the two.
-"""
 priority = 0
 main_goal = "Add meaningful green schema sub-gates to wave.sh; record exclusions for red ones."
 context = [

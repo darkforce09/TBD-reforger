@@ -6,30 +6,6 @@ class = "chore"
 status = "shipped"
 order = 3433
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-Both NITs from wave 70's adversarial verifier. Neither is a live defect; both are tests that are
-weaker than they read.
-
-1. `apps/website/api/src/handlers/oauth.rs:934-954` (T-303) -- the no-secret-leak sentinel test has a
-   weak positive control. The three sentinel strings are never INPUTS to the rendered error, so the
-   assertions cannot fail regardless of how reqwest renders. The "positive control"
-   (`contains("127.0.0.1:1")`) controls only for an empty haystack, not for detector sensitivity.
-   THE GUARANTEE ITSELF IS FINE and is structural, not textual: `log_discord_call_failure` receives
-   only a stage label and the error; `q.code` / `access_token` / the secret are not in scope at any
-   log site; `cookie_state` logs length only. The verifier grepped a live probe's logs for the dummy
-   client id and secret -- clean. So: strengthen the test to feed a known secret through the real
-   rendering path, or delete it and rely on the structural argument. Do not leave a test that reads
-   stronger than it is.
-
-2. `apps/website/frontend/src/missions.rs` (T-282) -- `classify_row` compares with
-   `serde_json::Value` equality, where `100` != `100.0`. A representation flip between two stored
-   payloads (e.g. a yrs BigInt<->Number coercion across an editor change) would report unchanged rows
-   as "edited". Unreachable today because both sides come from one pipeline, but the differ's whole
-   value is not crying wolf.
-
-missing=0"""
 priority = 3
 main_goal = "Strengthen oauth sentinel test and missions classify_row numeric equality."
 context = [

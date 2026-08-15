@@ -6,28 +6,6 @@ class = "bug"
 status = "shipped"
 order = 3231
 executor = "claude-code"
-notes = '''
---- HEAD migration_legacy (verbatim) ---
-
-Found by T-399's agent while fixing the approvals ratchet, measured against the live tbd_gate_it -- not inferred. T-399 fixed ONE instance; these are the rest of the class. The one-line rule: ASC ordering over a never-pruned table is the poison. (Inversion worth recording: handlers/audit.rs:65 orders id DESC, so residue pushes OLD rows off the page and never new ones -- missions.rs:1067 is safe by construction because of it.)
-
-1. apps/website/api/tests/missions.rs:151 -- GET /api/v1/missions .any(id). handlers/missions.rs:266 is ORDER BY updated_at DESC LIMIT 20, and updated_at is NULLABLE WITH NO DEFAULT, so Postgres sorts NULLS FIRST on DESC. Ratchets at 20 missions with NULL updated_at. MEASURED 2 today ('Null Op'), and they ARE rows 1-2 of page 1 right now. Held at 2 only because null_tolerance.rs's boot() wipes its own rows. 845 live missions and growing.
-2. apps/website/api/tests/missions.rs:249 -- ?scope=bookmarked, same handler, same ordering. Ratchets at 20 bookmarks for user 000000000000000001. Accumulates only when the test fails before its DELETE .../bookmark -- SELF-REINFORCING, identical shape to T-399.
-3. apps/website/api/tests/dashboard_reads.rs:83-85 -- ALREADY FIRED AND PAPERED OVER. The comment reads 'next_event key is always present (null-safe); its value depends on shared-DB state'. Someone hit handlers/dashboard.rs:54's global ORDER BY start_time ASC LIMIT 1 and WEAKENED THE ASSERTION to key-presence rather than scoping it. Threshold is 1: any residue event with an earlier start_time wins. 558 events live. The dashboard's 'next operation' is effectively untested -- this is a genuine coverage hole, not just test hygiene, and is the highest-value item here.
-4. handlers/events.rs:837/850 -- GET /api/v1/events default scope is ORDER BY e.start_time ASC LIMIT 20 OFFSET 0, exactly the approvals shape, over a table at 558 rows most sharing hardcoded fixture start_times. Already past 20. No test asserts against this list today, so it is a LOADED GUN, not a fired one: the first 'my event is in GET /api/v1/events' assertion anyone writes is red on arrival.
-5. apps/website/api/tests/admin_field.rs:335 -- GET /admin/users?q=Target%20Z then .find(discord_id); handlers/admin.rs:87 ORDER BY username ASC LIMIT 20. Measured 1 match, unreachable because the fixture upserts a fixed id. Same construction, benign -- listed for completeness, no action.
-6. apps/website/api/tests/registry_compat.rs:312/353/383/582 -- exact len() == 10604/529/1857. DIFFERENT MECHANISM (fixed-UUID DELETE-and-reimport race, already documented at scripts/platform/wave.sh:522-525), listed so the two are not conflated.
-
-THE PATTERN TO PROPAGATE: misc_integration.rs:258-274's boot_servers(tag) deletes only 'T235 {tag}%' and comments why a blanket DELETE FROM servers would break telemetry.rs and admin_field.rs. factions.rs:18 is residue-proof but does an UNSCOPED DELETE FROM user_factions, which would wipe a concurrent sibling's rows -- misc_integration's tag-scoped version is the better model.
-
-REPRO (the live one): psql -d tbd_gate_it -c \"SELECT count(*) FROM missions WHERE updated_at IS NULL AND deleted_at IS NULL\" -- at 20 this reds missions.rs:151 permanently.
-
-== ADDED 2026-07-26 (wave 5): a THIRD instance, and it is the one that actually reds the wave gate ==
-apps/website/api/tests/missions.rs:1002 `mission_submit_is_the_only_door_into_the_approvals_queue` reads page 1 of a limit:20 GET /approvals. MEASURED on tbd_gate_it during wave 5: total 26 -- the test's own mission is on page 2.
-  test api  FAIL
-    panicked at apps/website/api/tests/missions.rs:1002
-    submitted mission missing from GET /approvals: {... "limit":20,"offset":0,"total":26}
-T-399's sweep caught missions.rs:151 and :249 but MISSED this one. Every wave gate on this machine is red against the shared DB until the residue clears or the test paginates; waves 3, 4 and 5 all passed only because the command center pointed TBD_GATE_DB at a fresh cold database each time. That workaround is exactly why T-411 (per-wave DB names) matters.'''
 priority = 1
 main_goal = "Eliminate ORDER BY ASC integration ratchets and restore dashboard next_event test coverage."
 context = [

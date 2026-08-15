@@ -6,17 +6,6 @@ class = "feature"
 status = "shipped"
 order = 3412
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-FOUND by W63 adversarial verifier (DIRTY MAJOR) after T-554.
-
-hydrate_wires_row_briefing_into_apply_row_meta only asserts body.contains("opt(&row.briefing)").
-W62 None mutation FAILS (good). Both wires → None + `// decoy opt(&row.briefing)` inside each fn → PASS.
-
-Repro: in mission_hydrate.rs replace both opt(&row.briefing) with None but leave a comment containing the substring in adopt_payload and apply_row; cargo test -p website-frontend hydrate_wires_row_briefing still green.
-
-missing=0"""
 priority = 2
 main_goal = "Harden briefing wire Class-R so comment decoy opt(&row.briefing) cannot pass."
 context = ["W63 adversarial verifier DIRTY MAJOR after T-554."]

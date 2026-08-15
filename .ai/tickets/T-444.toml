@@ -6,14 +6,6 @@ class = "feature"
 status = "shipped"
 order = 3283
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-Residual from T-263 / wave 12 adversarial MINOR. make seed now applies vehicle_database.sql, but wiki manuals remain only in content_golden.sql (not in the seed recipe). Fresh seed DB → GET /wiki empty → SPA "No manuals yet." (explicit empty, not silent mock).
-
-Repro: make db-up + make seed on empty DB; curl GET /api/v1/wiki → data:[]; vehicles have rows.
-
-Cure: extract wiki INSERT seed (or include content_golden wiki section) into seeds/ + Makefile seed line, same shape as vehicle_database.sql."""
 priority = 2
 main_goal = "Apply wiki page seeds via make seed like vehicle_database.sql."
 context = [

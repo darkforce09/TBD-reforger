@@ -6,19 +6,7 @@ class = "feature"
 status = "shipped"
 order = 4326
 executor = "claude-code"
-notes = """
-filed from wave-111 residue (editor factory)
-
---- HEAD migration_legacy (verbatim) ---
-
-Two wiring residues from wave 111, one slice. (1) T-693's merge command is complete (merge_mission_now + picker + report toast) but has no UI entry: add the 'Merge Mission…' row to the MENUS table (eden_top_strip) and the Ctrl+M arm to the mission_editor keydown (census first — the T-648 idiom). (2) T-645's drag-to-garrison kernel shipped (#[allow(dead_code)] with citation) but live wiring needs a building-at-point -> (centre, half-extents, rotation) accessor that does not exist: world/store.rs keeps only last_chunk and residency.rs exposes buildings solely as pre-tessellated GPU vertex buffers — the scope discovery the ticket predicted. Add the accessor (world store) + the thin drop-target lookup + wire the kernel. Diagnosis: wave111.md residue notes + T-645's report.
-
---- HEAD migration_legacy line (verbatim) ---
-
-migration_legacy = ["Two wiring residues from wave 111, one slice. (1) T-693's merge command is complete (merge_mission_now + picker + report toast) but has no UI entry: add the 'Merge Mission…' row to the MENUS table (eden_top_strip) and the Ctrl+M arm to the mission_editor keydown (census first — the T-648 idiom). (2) T-645's drag-to-garrison kernel shipped (#[allow(dead_code)] with citation) but live wiring needs a building-at-point -> (centre, half-extents, rotation) accessor that does not exist: world/store.rs keeps only last_chunk and residency.rs exposes buildings solely as pre-tessellated GPU vertex buffers — the scope discovery the ticket predicted. Add the accessor (world store) + the thin drop-target lookup + wire the kernel. Diagnosis: wave111.md residue notes + T-645's report."]
-
-missing=0
-"""
+notes = "filed from wave-111 residue (editor factory)"
 main_goal = "Wire Merge Mission menu and Ctrl+M; add building-at-point garrison accessor."
 context = [
     "Two wave-111 wiring residues in one slice; T-693 merge command complete without UI entry.",

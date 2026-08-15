@@ -8,18 +8,7 @@ order = 5984
 spec = "docs/platform/t917_ticket_schema_v2.md"
 plan = "docs/plans/t-918_4_plan.md"
 executor = "claude-code"
-notes = """
-egui_commonmark is a new dependency family — named supply-chain event, version + tree delta reported like eframe was at T-915.1. Read-only: the viewer never edits files.
-
---- HEAD migration_legacy (verbatim) ---
-
-Clicking spec, plan or a citation path renders the markdown file inside a board pane via egui_commonmark — no external hop. Raw-text fallback on parse trouble; external-open still offered as a secondary action. Renders the T-917.6 plan documents as the primary use case.
-
---- HEAD migration_legacy line (verbatim) ---
-
-migration_legacy = ["Clicking spec, plan or a citation path renders the markdown file inside a board pane via egui_commonmark — no external hop. Raw-text fallback on parse trouble; external-open still offered as a secondary action. Renders the T-917.6 plan documents as the primary use case."]
-
-missing=0"""
+notes = "egui_commonmark is a new dependency family — named supply-chain event, version + tree delta reported like eframe was at T-915.1. Read-only: the viewer never edits files."
 depends_on = ["T-917.2"]
 parent = "T-918"
 main_goal = "The operator reads a ticket's plan without leaving the board — click, read, back."

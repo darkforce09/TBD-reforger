@@ -6,19 +6,7 @@ class = "bug"
 status = "queued"
 order = 5250
 executor = "claude-code"
-notes = """
-wave207 verifier F1 + orchestrator ledger correction; the T-742/T-759 family — a guard that examines nothing
-
---- HEAD migration_legacy (verbatim) ---
-
-WAVE-207 VERIFIER MAJOR (wave207.md F1) + ORCHESTRATOR CORRECTION. TWO FACTS, both verified: (1) `make leptos-gates` -> `gate editor-suite` CANNOT RUN GREEN on main — smoke #4 `cur` fails on a stale '6400.000' expectation vs the readout's ' m' suffix (T-793, landed 2026-08-09) and #19 `undo` on stale dock text (T-637/T-696, 2026-08-07); the suite dies before reaching later smokes. (2) `scripts/platform/wave.sh` contains ZERO occurrences of 'smoke' — THE WAVE GATE RUNS NO EDITOR SMOKES AT ALL. Consequence: the `save-dialog-rect` smoke (wave 203) and `entrance-motion-rect` smoke (wave 207) — both well-built, both perturbation-proven — are DEAD GUARDS: nothing automated executes them, and the one manual path that would is broken. The features behind the two red smokes are HEALTHY (cursor math exact to the metre, docks fine) — this is expectation rot, not tree damage. FIX: (a) update the two stale expectations to the shipped behaviour (' m' suffix, current dock text) so the suite runs to completion; (b) DECIDE and record where the rect smokes get executed — either add an editor-suite step to the wave gate (cost: chromium in every gate run — measure it) or make `make leptos-gates` a required pre-close step in the factory recipe; a guard nobody runs is the program's signature defect wearing a green hat. ACCEPTANCE: `gate editor-suite` exits 0 on main; both rect smokes actually execute (prove by perturbing one and watching the chosen path go red); the factory recipe names the path that runs them. ⟡ ABSORBS T-829 (Gate smoke virtual-outliner v5_orbatWindowed fails deterministically under the verifier harness — config-sensitive smoke) — deliver its acceptance too.
-
---- HEAD migration_legacy line (verbatim) ---
-
-migration_legacy = ["WAVE-207 VERIFIER MAJOR (wave207.md F1) + ORCHESTRATOR CORRECTION. TWO FACTS, both verified: (1) `make leptos-gates` -> `gate editor-suite` CANNOT RUN GREEN on main — smoke #4 `cur` fails on a stale '6400.000' expectation vs the readout's ' m' suffix (T-793, landed 2026-08-09) and #19 `undo` on stale dock text (T-637/T-696, 2026-08-07); the suite dies before reaching later smokes. (2) `scripts/platform/wave.sh` contains ZERO occurrences of 'smoke' — THE WAVE GATE RUNS NO EDITOR SMOKES AT ALL. Consequence: the `save-dialog-rect` smoke (wave 203) and `entrance-motion-rect` smoke (wave 207) — both well-built, both perturbation-proven — are DEAD GUARDS: nothing automated executes them, and the one manual path that would is broken. The features behind the two red smokes are HEALTHY (cursor math exact to the metre, docks fine) — this is expectation rot, not tree damage. FIX: (a) update the two stale expectations to the shipped behaviour (' m' suffix, current dock text) so the suite runs to completion; (b) DECIDE and record where the rect smokes get executed — either add an editor-suite step to the wave gate (cost: chromium in every gate run — measure it) or make `make leptos-gates` a required pre-close step in the factory recipe; a guard nobody runs is the program's signature defect wearing a green hat. ACCEPTANCE: `gate editor-suite` exits 0 on main; both rect smokes actually execute (prove by perturbing one and watching the chosen path go red); the factory recipe names the path that runs them. ⟡ ABSORBS T-829 (Gate smoke virtual-outliner v5_orbatWindowed fails deterministically under the verifier harness — config-sensitive smoke) — deliver its acceptance too."]
-
-missing=0
-"""
+notes = "wave207 verifier F1 + orchestrator ledger correction; the T-742/T-759 family — a guard that examines nothing"
 main_goal = "Fix stale editor smoke expectations and wire rect smokes into automated gate path."
 context = [
     "gate editor-suite cannot run green on main smoke 4 cur stale 6400.000 vs m suffix T-793.",

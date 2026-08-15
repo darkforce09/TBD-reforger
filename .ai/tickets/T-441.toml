@@ -6,14 +6,6 @@ class = "chore"
 status = "shipped"
 order = 3280
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-In-wave hotfix from wave 11 gate RED after T-260. Event.server_id and Event.modpack_id are Option<Uuid>, but apps/website/api/tests/null_tolerance.rs OPTION_FIELDS only listed events.match_id. Cold gate fails no_query_as_reads_a_nullable_column_without_coalesce on dashboard.rs + deployments.rs SELECTs.
-
-Repro: after T-260 merge, wave.sh gate → null_tolerance FAIL on server_id/modpack_id without COALESCE.
-
-Cure: add ("events", "server_id") and ("events", "modpack_id") to OPTION_FIELDS (same claim as match_id)."""
 priority = 1
 main_goal = "Add events server_id and modpack_id to null_tolerance OPTION_FIELDS."
 context = [

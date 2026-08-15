@@ -6,16 +6,6 @@ class = "feature"
 status = "shipped"
 order = 3420
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-FOUND by W66 adversarial verifier (DIRTY MAJOR) after T-564.
-
-Dead let decoy now RED. `if false { apply_row_meta(…, opt(&row.briefing)) }` + live None args → hydrate pin stays GREEN. Pin accepts any apply_row_meta arg-list, including unreachable calls.
-
-Repro: live briefing args → None; add if false { apply_row_meta(…, opt(&row.briefing)) }; cargo test green.
-
-missing=0"""
 priority = 2
 main_goal = "Pin must reject unreachable apply_row_meta briefing arguments."
 context = [

@@ -6,46 +6,6 @@ class = "bug"
 status = "shipped"
 order = 3462
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-T-289 shipped a token-guarded UNIX-socket agent in `scripts/mod/deploy-staging.sh` (660 insertions,
-0 deletions) serving four process verbs. **The API cannot reach it yet.** This is the other half, and
-T-289 wrote the spec in-file under §WHAT THE API SLICE MUST BUILD.
-
-=== WHY THE SECURITY MODEL IS WHAT IT IS — do not redesign it ===
-T-289 REFUTED the premise in `admin.rs:517` ("the game server is a **separate host**"). Independently
-re-verified by wave 73's verifier: `deploy.env.example:17` and both deploy scripts use one
-`TBD_SSH_HOST=sam@192.168.0.140`; `STAGING-SERVER.md:3` is one box; `HOME_SERVER.md:282` puts the API
-in `~/.config/systemd/user/`; `TBD_BACKEND_URL=http://127.0.0.1:8080` is LOOPBACK; compose `api` is
-behind an opt-in `--profile api`.
-So the API and game server are SIBLING `systemctl --user` UNITS UNDER ONE UID, and **the OS is the
-credential** -- `SocketMode=0600` in `$XDG_RUNTIME_DIR` admits exactly one uid. That collapses the
-per-server addressing + secret migration T-269 asked for: there is no secret to store.
-**Update `admin.rs:517`'s comment in this slice** -- it states the refuted premise.
-
-=== WHAT TO BUILD ===
-1. `GAME_AGENT_SOCKET` in `config.rs` (T-279's file precedent: add the var WITH its consumer).
-2. `services/game_agent.rs` over `tokio::net::UnixStream` -- no new dependency.
-   **THE TIMEOUT MUST EXCEED THE AGENT'S 8s DWELL**, or an honest slow answer reads as unreachable.
-3. `send_rcon` (`handlers/admin.rs`) maps Accepted -> 202 / Rejected -> 409 / Unreachable -> 503,
-   replacing T-269's unconditional 503 `RCON_NO_TRANSPORT`.
-   **Write the audit row AFTER the answer, recording the OUTCOME** -- today it records the attempt.
-4. The SPA's dead success path is then reachable again: `frontend/src/server_control.rs:116`
-   `rcon_accepted_message`, the `Ok(resp)` arm at `:313`, and the `RconAccepted` DTO (see T-579).
-
-=== SCOPE GAPS T-289 DECIDED, carry them forward ===
- - `change_map` / `custom` need a SEPARATE ticket: the agent's safety rests on accepting no free text
-   and filtering to a fixed 4-verb set. Do not widen it to get them.
- - `kick` is UNBUILDABLE until `RconInput` gains a player field -- `admin.rs:422-428` has none and
-   `server_control.rs:44` posts a bare `{"action":"kick"}`. Even with a channel it cannot name who.
- - The agent NEVER trusts the systemctl exit status (`STAGING-SERVER.md:246-250` documents this host
-   exiting 0 over a dead server). The API must not re-introduce that trust by reading only a status
-   code -- consume the agent's `result`/`state`, which is why it returns both.
- - Install is opt-in behind `TBD_INSTALL_AGENT=1` because it mutates the live host. Someone has to
-   run it before any of this works end to end.
-
-missing=0"""
 priority = 1
 main_goal = "Wire API UnixStream client to T-289 agent; map send_rcon to 202/409/503 with post-outcome audit."
 context = [

@@ -6,14 +6,6 @@ class = "feature"
 status = "shipped"
 order = 3424
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-Plain string/r# let decoys RED. Still GREEN: (1) nested `mod { async fn dev_login() { COALESCE } }` first-match + live SET $2; (2) SELECT $decoy$UPDATE…COALESCE…$decoy$ (blanker only handles '/").
-
-Repro: nest decoy fn named dev_login with COALESCE; live path SET $2; Class-R green.
-
-missing=0"""
 priority = 2
 main_goal = "Close Class-R hollow bypass via nested fn and dollar-quote decoys."
 context = [

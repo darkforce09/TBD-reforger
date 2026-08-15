@@ -6,18 +6,6 @@ class = "feature"
 status = "shipped"
 order = 3389
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-FOUND by W58 adversarial verifier (CLEAN MINOR) after T-500.
-
-T-500 added flatten_to_mod_document_with_catalog + scan_cargo_capacity; the no-arg entry still uses an empty catalog (documented trust-Save). Live get_compiled_mission / events roster still call the no-arg path, so pre-T-416 over-capacity versions can still compile until re-saved.
-
-Cure: load_cargo_phys_catalog in the compile handler(s) and call flatten_to_mod_document_with_catalog with the live table.
-
-Repro: rg flatten_to_mod_document apps/website/api/src/handlers
-
-missing=0"""
 priority = 2
 main_goal = "Live /compiled must load cargo phys catalog not empty."
 context = ["W58 verifier CLEAN MINOR after T-500."]

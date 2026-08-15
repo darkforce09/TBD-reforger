@@ -12,17 +12,7 @@ BLOCKERS — three things READ the Makefile and evaporate silently if it is dele
   1. xtask/src/node_free.rs:290 scans it with `let Ok(text) = read_to_string else { return }` — FAIL-OPEN, so deleting the file narrows the no-node gate to nothing without any error.
   2. scripts/platform/wave.sh:1598-1628 (and its port) parses the `schema-validate` recipe to cross-check GATE_SCHEMA_VALIDATE_GATES. Needs `xtask schema list-gates` first — T-896 owns shipping it.
   3. xtask/src/gate_t444.rs pins the `seed:` recipe body by reading the Makefile (found by T-894). Repoint at mk_db::SEEDS or that Class-R gate evaporates.
-Also: 12 CI `run: make …` steps and ~363 live doc files reference make targets. The historical record (SHIPPED_HISTORY, TICKET_REGISTRY, verify-logs, registry.json ticket prose) must NOT be rewritten — it describes what was true then.
-
---- HEAD migration_legacy (verbatim) ---
-
-T-853 Phase 3. Absorb these Makefile targets into xtask: (delete the Makefile; repoint 12 CI run: steps and the live docs). LAST. Deleting the Makefile silently NARROWS two gates unless they move in the same commit: node_free.rs:290 scans it with `let Ok(text) = read_to_string else { return }` (fail-open), and wave.sh:1598-1628 parses its schema-validate recipe to cross-check GATE_SCHEMA_VALIDATE_GATES. Ship `xtask schema list-gates` first. Each slice ADDS xtask subcommands in its own new module and does NOT edit the Makefile - the deletion is one final slice, so the three build slices stay file-disjoint. ACCEPTANCE: for every target, `make <t>` and the new `cargo xtask ...` must produce byte-identical stdout+stderr+rc on a clean tree AND on a deliberately broken one; the harness must assert the make side went red before believing a diff (T-556). Spec: docs/platform/t853_shell_to_xtask_waves.md
-
---- HEAD migration_legacy line (verbatim) ---
-
-migration_legacy = ["T-853 Phase 3. Absorb these Makefile targets into xtask: (delete the Makefile; repoint 12 CI run: steps and the live docs). LAST. Deleting the Makefile silently NARROWS two gates unless they move in the same commit: node_free.rs:290 scans it with `let Ok(text) = read_to_string else { return }` (fail-open), and wave.sh:1598-1628 parses its schema-validate recipe to cross-check GATE_SCHEMA_VALIDATE_GATES. Ship `xtask schema list-gates` first. Each slice ADDS xtask subcommands in its own new module and does NOT edit the Makefile - the deletion is one final slice, so the three build slices stay file-disjoint. ACCEPTANCE: for every target, `make <t>` and the new `cargo xtask ...` must produce byte-identical stdout+stderr+rc on a clean tree AND on a deliberately broken one; the harness must assert the make side went red before believing a diff (T-556). Spec: docs/platform/t853_shell_to_xtask_waves.md"]
-
-missing=0"""
+Also: 12 CI `run: make …` steps and ~363 live doc files reference make targets. The historical record (SHIPPED_HISTORY, TICKET_REGISTRY, verify-logs, registry.json ticket prose) must NOT be rewritten — it describes what was true then."""
 main_goal = "Delete the Makefile last after absorbing targets into xtask; repoint CI and live docs."
 context = [
     "T-853 Phase 3 final slice: delete Makefile after all targets absorbed.",

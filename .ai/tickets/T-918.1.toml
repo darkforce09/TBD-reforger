@@ -7,18 +7,7 @@ status = "shipped"
 order = 5981
 spec = "docs/platform/t917_ticket_schema_v2.md"
 executor = "claude-code"
-notes = """
-Reads the vocab file for facet values — display only, never validates (check is the authority). Depends on the T-917.2 cutover types.
-
---- HEAD migration_legacy (verbatim) ---
-
-Cards and detail render scope as the domain > layer > component > surface breadcrumb; filters become per-facet (one dropdown per level, values from the vocab file, composable with the existing filters); class renders as a colored chip (bug/feature/chore/audit/docs) on cards and as a filter facet.
-
---- HEAD migration_legacy line (verbatim) ---
-
-migration_legacy = ["Cards and detail render scope as the domain > layer > component > surface breadcrumb; filters become per-facet (one dropdown per level, values from the vocab file, composable with the existing filters); class renders as a colored chip (bug/feature/chore/audit/docs) on cards and as a filter facet."]
-
-missing=0"""
+notes = "Reads the vocab file for facet values — display only, never validates (check is the authority). Depends on the T-917.2 cutover types."
 depends_on = ["T-917.2"]
 parent = "T-918"
 main_goal = "The operator reads website > frontend > mission_creator > attr_panel at a glance and slices the board by any level of it."

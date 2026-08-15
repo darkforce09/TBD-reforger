@@ -6,12 +6,6 @@ class = "bug"
 status = "shipped"
 order = 3364
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-Wave 46 verifier NIT. After T-505, store.rs loads payload title and lists title as known, but crates/map-engine-core/src/mission/compile.rs still omits title from KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS and retains stale T-375 comment that hydrate does not load title. Cure: add title to known keys + fix comment.
-
-missing=0"""
 priority = 2
 main_goal = "Add title to KNOWN keys; fix stale hydrate comment."
 context = [

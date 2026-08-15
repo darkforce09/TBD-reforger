@@ -6,14 +6,7 @@ class = "docs"
 status = "shipped"
 order = 3820
 executor = "claude-code"
-notes = """
-editor-UI program wave 1 (wave_plan.tsv row 101) — SHIPPED wave 101 (editor factory), merge d749dfed; verifier wave101.md
-
---- HEAD migration_legacy (verbatim) ---
-
-The smallest ticket in either program and a genuine dead-code removal. `apps/website/frontend/src/dto.rs` declares `MissionEnv.view_distance` :991 and `.thermals` :992 with their `Default` arms at :1007-1008, and `apps/website/frontend/src/editor_ops.rs` still parses both in `read_env` — :205-208 (`viewDistance`, default 1600) and :209-212 (`thermals`). Neither has had a writer since T-193 (`b30f5490`), which REMOVED the controls rather than wiring them. All 14 word-boundary hits were read: four are the declarations/defaults above, two are the parse, and the remaining eight in eden_chrome.rs (:206, :218, :220, :289, :4599, :4612, :4624, :4825) are doc comments or the `keys_nothing_reads_are_not_authored` test at :4624, which asserts the keys are NOT authored and therefore stays green when the DTO fields go. Corrects gap_analysis.md:107 (`ENV-SETTINGS-002`), which is stale. Do NOT confuse this with restoring the controls: that is the workbench environment-readers ticket, where `author_env` enforces mod-reader-first by test.
-
-missing=0"""
+notes = "editor-UI program wave 1 (wave_plan.tsv row 101) — SHIPPED wave 101 (editor factory), merge d749dfed; verifier wave101.md"
 depends_on = ["T-661"]
 main_goal = "Remove dead view_distance and thermals DTO parse fields."
 context = [

@@ -7,18 +7,7 @@ status = "shipped"
 order = 5961
 spec = "docs/platform/t915_ticketboard_design.md"
 executor = "claude-code"
-notes = """
-egui/eframe is a first-time workspace dependency family — named supply-chain/build-time event. All IO on worker threads (channel + request_repaint). No writes anywhere under the repo; prefs only via eframe Storage in the user config dir.
-
---- HEAD migration_legacy (verbatim) ---
-
-New workspace member apps/ticketboard (egui/eframe, wgpu default + glow fallback). Typed corpus load of ALL T-*.toml (parents and children) via tbd-tickets — deliberately not load_phase2_tree. Fail-closed load: any parse failure is a full-window refusal naming the file with the verbatim error and reveal-in-file-manager; the watcher keeps running so an on-disk fix auto-recovers. Status board (8 raw-status columns, shipped/cancelled collapsed to count chips) + detail panel. Repo discovery: positional arg, else upward walk for .ai/tickets/, else refusal + native folder picker, persisted to eframe Storage.
-
---- HEAD migration_legacy line (verbatim) ---
-
-migration_legacy = ["New workspace member apps/ticketboard (egui/eframe, wgpu default + glow fallback). Typed corpus load of ALL T-*.toml (parents and children) via tbd-tickets — deliberately not load_phase2_tree. Fail-closed load: any parse failure is a full-window refusal naming the file with the verbatim error and reveal-in-file-manager; the watcher keeps running so an on-disk fix auto-recovers. Status board (8 raw-status columns, shipped/cancelled collapsed to count chips) + detail panel. Repo discovery: positional arg, else upward walk for .ai/tickets/, else refusal + native folder picker, persisted to eframe Storage."]
-
-missing=0"""
+notes = "egui/eframe is a first-time workspace dependency family — named supply-chain/build-time event. All IO on worker threads (channel + request_repaint). No writes anywhere under the repo; prefs only via eframe Storage in the user config dir."
 parent = "T-915"
 main_goal = "The operator opens one window and finally sees the whole registry: every ticket as a card in status columns with full detail on click, instead of 1173 unreadable TOMLs."
 context = [

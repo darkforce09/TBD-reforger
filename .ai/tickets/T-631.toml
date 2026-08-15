@@ -6,14 +6,7 @@ class = "bug"
 status = "shipped"
 order = 3870
 executor = "claude-code"
-notes = """
-editor-UI program wave 3 (wave_plan.tsv row 103) — SHIPPED wave 103 (editor factory), slice 4a605031; verifier wave103.md (1 BLOCKER fixed in-wave, 2 MAJOR deferred: T-717/T-718)
-
---- HEAD migration_legacy (verbatim) ---
-
-When the render engine dies the overlay sits at `Loading terrain... 50% · 71.9 MB / 71.9 MB` indefinitely — no error, no reason, no retry, no exit. Reproduced by forcing a WebGPU failure (swiftshader), but ANY GPU-init failure on a user's machine lands in the same state. The observed chain: `panicked at wgpu-29.0.4/src/backend/webgpu.rs:2331: createBuffer failed, size (32) too large` -> `Uncaught RuntimeError: unreachable` (wasm abort) -> `panicked at mission_editor.rs:2214:33: RefCell already borrowed` -> `panicked at js-sys futures/task/singlethread.rs:142`. Two defects. (1) NO FAILURE PATH: the T-628 bar is honestly metered (four BootSegs, byte budgets read off the wire before transfer, no fake pacing) but every path assumes success — `enum BootPhase` at `apps/website/frontend/src/mission_editor.rs`:190 has Hydrating / LoadingMap / Ready and no Failed. (2) DOUBLE PANIC: :2214 is `if let Some(e) = engine.borrow_mut().as_mut()` inside the rAF loop opened at :2209 — a RefCell re-borrowed while the first panic unwinds, burying the original cause. Do: add `BootPhase::Failed { seg, reason }`; catch the engine-init error instead of unwrapping into an abort; render an error state naming the failing segment and the real reason, with Retry and "continue without map"; fix the re-entrant borrow so the first panic is the one reported. `mod boot_progress` is INLINE at :224-640, so BootSeg/BootEvent changes stay in this file. ACCEPTANCE: a test that injects an engine-init failure and asserts the overlay reaches the error state carrying the original reason — make it wrong on demand. A green that was never watched fail does not count.
-
-missing=0"""
+notes = "editor-UI program wave 3 (wave_plan.tsv row 103) — SHIPPED wave 103 (editor factory), slice 4a605031; verifier wave103.md (1 BLOCKER fixed in-wave, 2 MAJOR deferred: T-717/T-718)"
 depends_on = ["T-661"]
 main_goal = "Add BootPhase::Failed; catch engine-init errors; show retry overlay."
 context = [

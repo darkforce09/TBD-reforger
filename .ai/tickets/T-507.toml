@@ -6,12 +6,6 @@ class = "docs"
 status = "shipped"
 order = 3347
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-Wave 42 residual (CLEAN MINOR / admitted by T-358). faction_manager.rs rejects empty via doc.name.trim().is_empty() then posts serde_json::to_value(&doc) untrimmed. API validated_side_name rejects pad → 400; no UNIQUE twin stored. UX only: client lets pad through, API stops it. Cure: trim (or reject pad) before serialize on create/update.
-
-missing=0"""
 priority = 1
 main_goal = "Trim faction name before serialize on create/update."
 context = [

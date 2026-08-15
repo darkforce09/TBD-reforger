@@ -6,18 +6,6 @@ class = "bug"
 status = "shipped"
 order = 3392
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-FOUND by W60 adversarial verifier (CLEAN MINOR outside T-525 owns) after T-525.
-
-content_golden.sql comments fixed. Migration 0015 comments still claim tests/events.rs seeds legacy two-seat / index deferred — obsolete after 0017 + T-511.
-
-Cure: update 0015 comment block to historical past-tense or point at 0017.
-
-Repro: rg 'two-seat|deferred' apps/website/api/migrations/0015*
-
-missing=0"""
 priority = 2
 main_goal = "Fix 0015 migration comment obsolete two-seat lore."
 context = ["W60 verifier after T-525."]

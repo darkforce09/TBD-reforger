@@ -6,47 +6,6 @@ class = "bug"
 status = "shipped"
 order = 3582
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-FOUND by T-610 (wave 77) while fixing the citations the gate could not see. The ticket assumed the
-gate simply "did not cover bare file.c:NNN forms in prose." The real scope is larger.
-
-=== WHAT IT ACTUALLY CHECKS ===
-`verify-citations` matches only `@contract <name>.schema.json`, in extensions `.go/.ts/.tsx/.c/.mjs/.js`,
-under scan roots `apps/` and `packages/`. Consequences, all measured:
-- **`docs/` is never read.** `PLAYTEST_RUNBOOK.md`'s ~19 stale citations were invisible by construction
-  -- the gate was never going to catch them, in any form.
-- **`rs` is not in `CODE_EXTS`, and `crates/` is not a scan root.** So **16 `@contract` tags in
-  `apps/**/*.rs` and 2 in `crates/` are unverified.**
-- **All 41 citations it does check live in `.c` files** -- in a repo that went **Go -> Rust at T-145**
-  and **React -> Leptos at T-159.29.3**. The verifier still reflects the pre-rewrite codebase.
-
-And it reports:
-    Checked 41 @contract citation(s)
-    All @contract citations resolve.
-**The number is true and the confidence it creates is false** -- the signature defect of this
-codebase, in the tool whose entire job is checking that claims match reality.
-
-=== WHY IT MATTERS BEYOND TIDINESS ===
-This is the third instance in three waves of a check that passes because it is looking at the wrong
-thing: T-607 (staging validated a stale Workshop build, and its pass criteria were that build's
-strings), T-606 (a health grep that matches only an ERROR string), and now this. Each one produced a
-green that a human reasonably trusted.
-
-=== FIX ===
-1. Add `rs` to `CODE_EXTS` and `crates/` to the scan roots; expect the 18 currently-unverified tags to
-   need resolution.
-2. Decide whether prose citations in `docs/` are in scope. T-610 chose the cheaper cure -- cite stable
-   **symbol names** rather than line numbers, which does not rot and needs no gate. If that convention
-   holds, the gate does not need to read `docs/` at all; write the convention down instead.
-3. Make the summary line state its own scope: "Checked 41 @contract citation(s) in .c/.ts under
-   apps/, packages/" is honest; "All @contract citations resolve" is not.
-
-Owner note: `Makefile` + the xtask verifier. T-610 owned neither and correctly reported instead of
-building.
-
-missing=0"""
 priority = 2
 main_goal = "Fix verify-citations to scan rs and crates; honest scope summary line."
 context = [

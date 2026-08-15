@@ -6,19 +6,7 @@ class = "bug"
 status = "shipped"
 order = 4616
 executor = "claude-code"
-notes = '''
-filed by wave-112 adversarial verifier (editor factory)
-
---- HEAD migration_legacy (verbatim) ---
-
-NIT from the wave-112 verifier. eden_help.rs:5 says the editor binds 'sixteen' codes; the verifier re-derived by hand and the real count on merged main is SEVENTEEN (15 editor codes + KeyZ/KeyY). The table itself documents all 17 and both direction-pins are genuinely satisfied — only the prose is wrong, and it went wrong in the wave-112 merge fix, which added the KeyA row without updating the sentence. The ticket summary's original 'TBD binds 10 keyboard shortcuts' is stale twice over. Also eden_help.rs:166: the redo row reads 'Ctrl + Y' but the guard is ctrl||meta (mission_history.rs:490), so Cmd+Y redoes too and the row under-documents it. Diagnosis: editor_verify/wave112.md NIT-2, NIT-3.
-
---- HEAD migration_legacy line (verbatim) ---
-
-migration_legacy = ["""NIT from the wave-112 verifier. eden_help.rs:5 says the editor binds 'sixteen' codes; the verifier re-derived by hand and the real count on merged main is SEVENTEEN (15 editor codes + KeyZ/KeyY). The table itself documents all 17 and both direction-pins are genuinely satisfied — only the prose is wrong, and it went wrong in the wave-112 merge fix, which added the KeyA row without updating the sentence. The ticket summary's original 'TBD binds 10 keyboard shortcuts' is stale twice over. Also eden_help.rs:166: the redo row reads 'Ctrl + Y' but the guard is ctrl||meta (mission_history.rs:490), so Cmd+Y redoes too and the row under-documents it. Diagnosis: editor_verify/wave112.md NIT-2, NIT-3."""]
-
-missing=0
-'''
+notes = "filed by wave-112 adversarial verifier (editor factory)"
 main_goal = "Fix help prose binding count and redo chord ctrl-or-meta label."
 context = [
     "eden_help 5 says sixteen codes; merged main has seventeen bindings.",

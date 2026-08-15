@@ -6,21 +6,6 @@ class = "feature"
 status = "shipped"
 order = 3393
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-FOUND by W62 adversarial verifier (DIRTY MINOR) after T-419.
-
-T-419 closed open-schema lore in TBD_ObjectiveRules.c + TBD_MissionLoader.c, but TBD_ZoneRegistry.c:39 still says:
-  //! `rules.penalty` vocabulary. Additive under the schema's `additionalProperties: true`.
-
-Live pin: packages/tbd-schema/schema/mission.schema.json $defs.zoneRules.additionalProperties = false.
-
-Repro:
-  rg -n 'additionalProperties: true' apps/mod/tbd-framework/Scripts/Game/TBD/Zones/TBD_ZoneRegistry.c
-  # expect hit at line 39; schema says false.
-
-missing=0"""
 priority = 2
 main_goal = "Fix TBD_ZoneRegistry stale additionalProperties true comment."
 context = [

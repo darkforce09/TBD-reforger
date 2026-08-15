@@ -6,29 +6,6 @@ class = "docs"
 status = "shipped"
 order = 3422
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-T-280 built `app::durable_ratelimit::PgRateLimiter` (a one-statement refill-and-spend token bucket;
-`ON CONFLICT DO UPDATE` takes the row lock so it is atomic across processes) and PROVED it with a
-perturbation that isolates durability from throttling: an in-process bucket still refuses at the
-limit, and fails only on 'still refused after a restart'.
-
-**It is deliberately NOT WIRED.** Verified by wave 69's verifier: `PgRateLimiter` is unreferenced
-from `state.rs`, `bin/api.rs` and `middleware/`; the live limiter is still the in-memory `governor`
-`IpLimiter`; `rate_limit_buckets` is absent from the schema and created by no migration. It stopped
-because the table belongs in `migrations/`, which was T-262's file that wave, and it refused to
-self-provision DDL from the request path.
-
-TO WIRE IT: (a) a migration creating the table -- the DDL is already a `const RATE_LIMIT_BUCKETS_DDL`
-in `app.rs` specifically so the bytes the tests prove and the bytes the migration lands cannot
-drift; (b) two lines of wiring, recorded in the module doc.
-
-**AN OPERATOR TRADE, NOT A SLICE AGENT'S CALL:** it adds ONE DATABASE WRITE PER REQUEST. T-280's own
-recommendation is to keep the in-memory `IpLimiter` as an L1 in front so only near-limit traffic
-reaches Postgres. Get sign-off on the cost before wiring.
-
-missing=0"""
 priority = 2
 main_goal = "Wire T-280 PgRateLimiter with migration and L1 IpLimiter."
 context = [

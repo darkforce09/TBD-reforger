@@ -6,13 +6,6 @@ class = "bug"
 status = "shipped"
 order = 3235
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-Two NITs from wave 3's adversarial verifier. Filed rather than dropped because the first is latent for every future paged assertion.
-
-1. handlers/approvals.rs:~105 -- ORDER BY COALESCE(updated_at, created_at, ...) ASC has NO unique tiebreaker, so LIMIT/OFFSET paging over tied keys is not a stable total order: a row can appear on two pages or none across successive requests. Does NOT affect T-399's fixed test (its target row holds the strictly-largest key, so it is last in every valid ordering) but it is latent for any future paged assertion. Tied rows already exist -- null_tolerance.rs:77 leaves rows that all collapse to the same sentinel. Fix is a trailing ', id ASC'.
-2. apps/website/api/tests/admin_field.rs find_in_approvals -- the offset < 100_000 guard permits 1000 HTTP round trips before failing. Correct but slow to fail; a tighter bound would diagnose faster."""
 priority = 2
 main_goal = "Add unique tiebreaker to approvals ORDER BY; tighten find_in_approvals paged walk bound."
 context = [

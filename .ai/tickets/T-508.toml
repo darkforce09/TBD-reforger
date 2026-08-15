@@ -6,12 +6,6 @@ class = "chore"
 status = "shipped"
 order = 3348
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-Wave 43 cold gate FAIL. T-331 migration 0015 SET NOT NULL on matches.aar_replay_url (canonical empty is ''). tests/aar_replay_url_backfill.rs still plants NULL and expects migration 0010 to SET NULL for scrubbed rows — INSERT fails 23502. Cure: align 0010 scrub target to '' (same canonical empty as T-331/telemetry COALESCE), rewrite the IT plant/assert for NOT NULL (prove NULL insert rejected; scrubbed rows become '' not NULL; kept '' still kept). Do not weaken 0015. Perturbation RED required.
-
-missing=0"""
 priority = 0
 main_goal = "Align aar_replay_url backfill IT with T-331 NOT NULL constraint."
 context = [

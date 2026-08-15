@@ -6,16 +6,6 @@ class = "feature"
 status = "shipped"
 order = 3417
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-FOUND by W65 adversarial verifier (DIRTY MAJOR) after T-561.
-
-Strip of // /* */ and strings works for those decoys. Replace both live apply_row_meta args with None and add dead `let _ = opt(&row.briefing);` in adopt_payload/apply_row → hydrate_wires_row_briefing_into_apply_row_meta stays GREEN. Pin greps substring, does not require it as an apply_row_meta argument.
-
-Repro: None both briefing args + dead let binding of opt(&row.briefing); cargo test green.
-
-missing=0"""
 priority = 2
 main_goal = "Pin must require opt(&row.briefing) as live apply_row_meta argument."
 context = [

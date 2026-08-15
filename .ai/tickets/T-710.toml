@@ -6,15 +6,7 @@ class = "bug"
 status = "deferred"
 order = 4303
 executor = "claude-code"
-notes = """
-filed by wave-100 adversarial verifier (editor factory)
-
---- HEAD migration_legacy (verbatim) ---
-
-657 ported lines in tools/tbd-tools/src/capture.rs carry zero new tests; the parity claims rest on source review alone. Unpinned pure fns: ztag (replacen first-occurrence semantics mirroring JS .replace), canvas_path suffixing, crop geometry/scale math, zoom step parsing. The crate's 51 existing tests exercise none of them. Fix: table-driven #[test]s for those four; no CDP or GPU needed. Diagnosis: editor_verify/wave100.md F-5.
-
-missing=0
-"""
+notes = "filed by wave-100 adversarial verifier (editor factory)"
 main_goal = "Add table-driven tests for four unpinned capture pure functions."
 context = [
     "657 ported lines in capture.rs carry zero new tests.",

@@ -6,16 +6,6 @@ class = "feature"
 status = "shipped"
 order = 3384
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-FOUND by W54 adversarial verifier (CLEAN MINOR-NIT) after T-532.
-
-POST /missions/:id/versions/:vid/set-current is covered by in-handler Class-R source pins only. Cure: HTTP IT in tests/missions.rs that creates two versions, calls set-current to the older, asserts current_version_id + /compiled behavior.
-
-Repro: rg set_current_version apps/website/api/tests — no hit.
-
-missing=0"""
 priority = 2
 main_goal = "HTTP IT for set-current version re-point in missions.rs."
 context = [

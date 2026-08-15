@@ -7,18 +7,7 @@ status = "shipped"
 order = 5920
 spec = "docs/platform/t912_wave_lockfile.md"
 executor = "claude-code"
-notes = """
-Depends on T-912.1 landed. First lock candidate order = TSV row order (platform then mod); every later repack sorts open candidates by ticket order, tie-broken by id — filesystem order forbidden. Wave 0 frozen: shipped/cancelled/deferred/blocked/non-claude-code membership never follows order. Migration proof pastes the per-wave open-id set-equality table plus owns snapshot. Historical allowlist grep keeps old artifacts green while any live wave_plan.tsv mention is red. Mine wave_lock.rs from 6ae8069c but re-derive against encoding C; the draft JSON lock and id-sort are mine-only shapes.
-
---- HEAD migration_legacy (verbatim) ---
-
-cargo xtask wave repack (new top-level group) compiles .ai/tickets/wave.lock as deterministic TOML; wave check recomputes and structural-equals, missing lock is a DidNotRun refuse wired into ticket check, platform wave gate and platform_preflight. The same commit as the first lock deletes docs/platform/wave_plan.tsv and docs/mod/wave_plan.tsv and retargets every reader. platform wave land runs wave repack as its final step so the lock update rides the land commit.
-
---- HEAD migration_legacy line (verbatim) ---
-
-migration_legacy = ["cargo xtask wave repack (new top-level group) compiles .ai/tickets/wave.lock as deterministic TOML; wave check recomputes and structural-equals, missing lock is a DidNotRun refuse wired into ticket check, platform wave gate and platform_preflight. The same commit as the first lock deletes docs/platform/wave_plan.tsv and docs/mod/wave_plan.tsv and retargets every reader. platform wave land runs wave repack as its final step so the lock update rides the land commit."]
-
-missing=0"""
+notes = "Depends on T-912.1 landed. First lock candidate order = TSV row order (platform then mod); every later repack sorts open candidates by ticket order, tie-broken by id — filesystem order forbidden. Wave 0 frozen: shipped/cancelled/deferred/blocked/non-claude-code membership never follows order. Migration proof pastes the per-wave open-id set-equality table plus owns snapshot. Historical allowlist grep keeps old artifacts green while any live wave_plan.tsv mention is red. Mine wave_lock.rs from 6ae8069c but re-derive against encoding C; the draft JSON lock and id-sort are mine-only shapes."
 depends_on = ["T-912.1"]
 parent = "T-912"
 main_goal = "The wave plan is a compiled artifact of the registry: one TOML lock with one writer, checked structurally, and both hand-kept TSVs deleted."

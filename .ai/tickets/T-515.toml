@@ -6,12 +6,6 @@ class = "chore"
 status = "shipped"
 order = 3355
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-Wave 44 residual (CLEAN after T-513/514; MINOR from verifier). db_migrate in wave.sh only checks schema/object counts. A SQL-only claim migration like T-335 0016 can drop the claim UPDATE yet keep REFRESH and still gate-green when claimable orphans are 0. Mitigated by synthetic non-vacuity in the slice report, not by the gate. Cure: gate asserts migration body contains the claim UPDATE (Class-R on 0016) and/or runs a planted-orphan migrate probe.
-
-missing=0"""
 priority = 1
 main_goal = "Harden db_migrate gate against hollow SQL-only claim migrations."
 context = [

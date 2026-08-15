@@ -6,19 +6,7 @@ class = "chore"
 status = "shipped"
 order = 4628
 executor = "claude-code"
-notes = """
-reported by three slice agents across waves 112-114; scope confirmed by the orchestrator
-
---- HEAD migration_legacy (verbatim) ---
-
-Reported independently by three slice agents across waves 112-114 and confirmed by the orchestrator. `cargo clippy -p website-frontend --target wasm32-unknown-unknown --all-targets -- -D warnings` is RED on untouched main. T-633 named five concrete ones on main-inherited code: unused imports at eden_layout.rs:448 and eden_tree.rs:952, unused variables at mission_editor.rs:4792 and eden_dock_right.rs:1112, plus an int_plus_one; T-695 additionally named the pre-existing unused `title_id`/`cat_id` in T-650's compositions_panel (eden_dock_right.rs:1649). ORCHESTRATOR VERIFICATION: Makefile:497 (`ci-local-leptos`, which mirrors ci.yml's website-frontend job) runs `cargo clippy -p website-frontend --target wasm32-unknown-unknown` with NO --all-targets and NO -D warnings, and the wave gate's own frontend clippy step likewise omits --all-targets. So this debt is real but invisible to BOTH the gate and CI, and nothing is currently breaking. CAUTION ON THE COUNTS: the larger figures in the slice reports (T-082 ~95, T-651 104, T-669 ~20) are inflated by T-742 — concurrent worktrees sharing CARGO_TARGET_DIR — and mostly name files those agents never touched. Treat T-633's five plus T-695's one as the credible residue and re-measure on a quiet tree before acting. DECIDE, do not silence: either clean them and add --all-targets to ci-local-leptos so the debt cannot regrow, or record deliberately that test-target lints are out of scope for this crate. Note map-engine-core ALREADY uses --all-targets --all-features (Makefile:181), so the frontend is the outlier.
-
---- HEAD migration_legacy line (verbatim) ---
-
-migration_legacy = ["Reported independently by three slice agents across waves 112-114 and confirmed by the orchestrator. `cargo clippy -p website-frontend --target wasm32-unknown-unknown --all-targets -- -D warnings` is RED on untouched main. T-633 named five concrete ones on main-inherited code: unused imports at eden_layout.rs:448 and eden_tree.rs:952, unused variables at mission_editor.rs:4792 and eden_dock_right.rs:1112, plus an int_plus_one; T-695 additionally named the pre-existing unused `title_id`/`cat_id` in T-650's compositions_panel (eden_dock_right.rs:1649). ORCHESTRATOR VERIFICATION: Makefile:497 (`ci-local-leptos`, which mirrors ci.yml's website-frontend job) runs `cargo clippy -p website-frontend --target wasm32-unknown-unknown` with NO --all-targets and NO -D warnings, and the wave gate's own frontend clippy step likewise omits --all-targets. So this debt is real but invisible to BOTH the gate and CI, and nothing is currently breaking. CAUTION ON THE COUNTS: the larger figures in the slice reports (T-082 ~95, T-651 104, T-669 ~20) are inflated by T-742 — concurrent worktrees sharing CARGO_TARGET_DIR — and mostly name files those agents never touched. Treat T-633's five plus T-695's one as the credible residue and re-measure on a quiet tree before acting. DECIDE, do not silence: either clean them and add --all-targets to ci-local-leptos so the debt cannot regrow, or record deliberately that test-target lints are out of scope for this crate. Note map-engine-core ALREADY uses --all-targets --all-features (Makefile:181), so the frontend is the outlier."]
-
-missing=0
-"""
+notes = "reported by three slice agents across waves 112-114; scope confirmed by the orchestrator"
 main_goal = "Clean wasm clippy --all-targets debt; gate ci-local-leptos against regrowth."
 context = [
     "Three slice agents reported debt waves 112-114; orchestrator confirmed scope.",

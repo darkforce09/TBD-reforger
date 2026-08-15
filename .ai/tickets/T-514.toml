@@ -6,12 +6,6 @@ class = "docs"
 status = "shipped"
 order = 3354
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-Wave 44 verifier MAJOR. save_trims_name_before_serialize uses find("doc.name = doc.name.trim().to_string()") which matches a commented assign before serde_json::to_value. Mutation: replace live trim with // doc.name = doc.name.trim().to_string() + trim-empty check → PASS while payload stays untrimmed. Cure: strip comments from save body before find, or require an uncommented assign precedes to_value. Bait mutation must RED; live trim must green.
-
-missing=0"""
 priority = 0
 main_goal = "Fix Class-R save_trims_name to ignore commented trim assign."
 context = [

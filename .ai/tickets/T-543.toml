@@ -6,16 +6,6 @@ class = "feature"
 status = "shipped"
 order = 3383
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-FOUND by W54 adversarial verifier (CLEAN MINOR-NIT) after T-328.
-
-mcp-daemon.sh correctly builds/execs from target-dev-mcpd and discards mcpd-bin.sh stdout. Residual footgun: scripts/mod/lib/mcpd-bin.sh still hardcodes echo $ROOT/target/debug/mcpd; mcp-call-selftest.sh still consumes that echo. Cure: honor CARGO_TARGET_DIR in mcpd-bin.sh echo path.
-
-Repro: rg 'target/debug/mcpd' scripts/mod/
-
-missing=0"""
 priority = 2
 main_goal = "Honor CARGO_TARGET_DIR in mcpd-bin.sh echo path."
 context = [

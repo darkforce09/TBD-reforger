@@ -6,18 +6,6 @@ class = "feature"
 status = "shipped"
 order = 3427
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-FOUND by W68 adversarial verifier (CLEAN NIT) after T-491.
-
-`select_tool_and_mission_editor_delegate_to_atomic_mix_apis` (store.rs ~2912–2940) only string-presence / Move-arm absence checks via include_str. A comment-only `move_entities_and_vehicles` mention would keep the pin green; it also does not pin that mission_editor calls pick_slot_or_vehicle / marquee_* helpers.
-
-Behavioral one-undo Class-R is real and PASS. Soft host-delegation pin is the residue.
-
-Repro: replace live call with comment containing the symbol (or keep call but drop pick/marquee delegation asserts); soft pin stays green.
-
-missing=0"""
 priority = 2
 main_goal = "Harden Class-R pin to require live delegation, not comment-only symbol presence."
 context = [

@@ -6,19 +6,7 @@ class = "bug"
 status = "queued"
 order = 5090
 executor = "claude-code"
-notes = """
-wave204 verifier; measurement methodology matters — live-effective, not plate-calc
-
---- HEAD migration_legacy (verbatim) ---
-
-WAVE-204 VERIFIER FILING (wave204.md MINOR). The chip's #f87171 count passes 5.31:1 against its PLATE color (the review's calc method) but live-effective over the strip's backdrop-blur glass samples at 4.01-4.34:1 across 4 map backgrounds — under the 4.5:1 line the F-36 fix targeted. FIX: give the count an opaque-enough plate (raise plate alpha or add a solid pill behind the count) so the LIVE sample clears 4.5 on the darkest and lightest map backgrounds; keep text-error-alert. ACCEPTANCE: computed live-effective contrast (verifier's 4-sample method, screenshot-sampled) >=4.5:1 on all samples; plate-calc stays >=4.5.
-
---- HEAD migration_legacy line (verbatim) ---
-
-migration_legacy = ["WAVE-204 VERIFIER FILING (wave204.md MINOR). The chip's #f87171 count passes 5.31:1 against its PLATE color (the review's calc method) but live-effective over the strip's backdrop-blur glass samples at 4.01-4.34:1 across 4 map backgrounds — under the 4.5:1 line the F-36 fix targeted. FIX: give the count an opaque-enough plate (raise plate alpha or add a solid pill behind the count) so the LIVE sample clears 4.5 on the darkest and lightest map backgrounds; keep text-error-alert. ACCEPTANCE: computed live-effective contrast (verifier's 4-sample method, screenshot-sampled) >=4.5:1 on all samples; plate-calc stays >=4.5."]
-
-missing=0
-"""
+notes = "wave204 verifier; measurement methodology matters — live-effective, not plate-calc"
 main_goal = "Opaque plate behind validation count clears 4.5:1 live-effective contrast."
 context = [
     "wave204 MINOR: chip #f87171 passes plate-calc 5.31:1 not live-effective.",

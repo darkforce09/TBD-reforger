@@ -7,16 +7,6 @@ status = "shipped"
 order = 5790
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-T-898 is the finding; this is the fix. Extend the walk from `apps/website` + .go/.ts/.tsx (zero files) to the Rust tree: xtask/, tools/, crates/, apps/website/*/src, keeping `.rs`. Fix the `.unwrap_or(0)` fail-open at node_free.rs:89 while you are in there. MEASURE FIRST: this turns main RED on at least schema_gates.rs 4044, cmds.rs 1330, smokes.rs 3852 and main.rs (>1000 after Phase 3). The slice is EITHER split those OR give each an allowlist entry with a real reason and an expiry. Do NOT extend the walk and then silence it — that reproduces the defect with extra steps. Prove it bites: plant a 1200-line file and watch it fail. ACCEPTANCE: prove the change BITES — perturb the new subject and watch it go red — not merely that it passes. A green run alone is not evidence (T-556). Finish with a full `cargo xtask platform wave gate` PASS: it is the only check that sees cross-crate breakage, and it has caught defects a green `cargo test -p xtask` could not. Spec: docs/platform/t853_shell_to_xtask_waves.md
-
---- HEAD migration_legacy line (verbatim) ---
-
-migration_legacy = ["T-898 is the finding; this is the fix. Extend the walk from `apps/website` + .go/.ts/.tsx (zero files) to the Rust tree: xtask/, tools/, crates/, apps/website/*/src, keeping `.rs`. Fix the `.unwrap_or(0)` fail-open at node_free.rs:89 while you are in there. MEASURE FIRST: this turns main RED on at least schema_gates.rs 4044, cmds.rs 1330, smokes.rs 3852 and main.rs (>1000 after Phase 3). The slice is EITHER split those OR give each an allowlist entry with a real reason and an expiry. Do NOT extend the walk and then silence it — that reproduces the defect with extra steps. Prove it bites: plant a 1200-line file and watch it fail. ACCEPTANCE: prove the change BITES — perturb the new subject and watch it go red — not merely that it passes. A green run alone is not evidence (T-556). Finish with a full `cargo xtask platform wave gate` PASS: it is the only check that sees cross-crate breakage, and it has caught defects a green `cargo test -p xtask` could not. Spec: docs/platform/t853_shell_to_xtask_waves.md"]
-
-missing=0"""
 main_goal = "Extend verify file-length to scan the Rust tree; fix node_free.rs:89 fail-open."
 context = [
     "T-898 is the finding; this is the fix.",

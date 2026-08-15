@@ -6,14 +6,7 @@ class = "bug"
 status = "deferred"
 order = 4321
 executor = "claude-code"
-notes = """
-filed by wave-108 adversarial verifier (editor factory)
-
---- HEAD migration_legacy (verbatim) ---
-
-T-650's 'Save composition…' affordance gates on selection_len() but subscribes to doc_tick, and selection changes never bump doc_tick: the canonical flow (place, marquee-select, open Compositions tab) shows the empty state against a live selection until an unrelated doc edit; inversely a stale Save press no-ops silently. Fix: subscribe to the selection channel (the SEL readout has one — reuse it) or bump a selection_tick from the selection mutators; test the canonical flow as an event sequence. Diagnosis: editor_verify/wave108.md MINOR-2.
-
-missing=0"""
+notes = "filed by wave-108 adversarial verifier (editor factory)"
 main_goal = "Fix Save composition affordance ignoring selection channel bumps."
 context = [
     "T-650 Save composition affordance gates on selection_len().",

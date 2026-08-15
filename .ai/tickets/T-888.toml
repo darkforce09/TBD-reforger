@@ -7,16 +7,6 @@ status = "shipped"
 order = 5690
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-T-853 shell->xtask slice. Port scripts/mod/mcp-daemon.sh to `cargo xtask mcp daemon` and delete the script(s), their scripts/shell-inventory.txt line(s), any scripts/python-inventory.txt line(s), and repoint every caller. 90 lines. tools/tbd-tools already ships an `mcpd` binary - prefer wiring to it over reimplementing. Sources lib/mcpd-bin.sh and lib/xtask-run.sh, so this is half of T-879's unblock. ACCEPTANCE IS BYTE-FOR-BYTE: capture bash stdout+stderr+rc first, then diff on a clean tree AND on >=2 deliberately broken trees; the harness must assert the BASH side went red before believing a diff. A green run alone is not evidence (T-556). Build on crates/tbd-gate. Spec: docs/platform/t853_shell_to_xtask_waves.md
-
---- HEAD migration_legacy line (verbatim) ---
-
-migration_legacy = ["T-853 shell->xtask slice. Port scripts/mod/mcp-daemon.sh to `cargo xtask mcp daemon` and delete the script(s), their scripts/shell-inventory.txt line(s), any scripts/python-inventory.txt line(s), and repoint every caller. 90 lines. tools/tbd-tools already ships an `mcpd` binary - prefer wiring to it over reimplementing. Sources lib/mcpd-bin.sh and lib/xtask-run.sh, so this is half of T-879's unblock. ACCEPTANCE IS BYTE-FOR-BYTE: capture bash stdout+stderr+rc first, then diff on a clean tree AND on >=2 deliberately broken trees; the harness must assert the BASH side went red before believing a diff. A green run alone is not evidence (T-556). Build on crates/tbd-gate. Spec: docs/platform/t853_shell_to_xtask_waves.md"]
-
-missing=0"""
 main_goal = "Port mcp-daemon.sh to cargo xtask mcp daemon; wire existing mcpd."
 context = [
     "T-853 shell->xtask slice; 90 lines setsid AF_UNIX socket lifecycle.",

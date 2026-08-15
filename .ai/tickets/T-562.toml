@@ -6,18 +6,6 @@ class = "chore"
 status = "shipped"
 order = 3415
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-FOUND by W64 adversarial verifier (DIRTY MAJOR) after T-560.
-
-Comment strip works; contains("SET arma_id = COALESCE(arma_id") keeps string literals.
-Delete live UPDATE + leave needle in let _decoy = "…" or format!("…") → PASS while INSERT stays NULL.
-Claimed // + bind attacks still RED.
-
-Repro: remove COALESCE UPDATE; add string/format! decoy with the needle; Class-R green; concurrent cold race can return.
-
-missing=0"""
 priority = 2
 main_goal = "Harden dev-login Class-R against string and format! COALESCE decoys."
 context = ["W64 adversarial verifier DIRTY MAJOR after T-560."]

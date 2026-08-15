@@ -6,16 +6,6 @@ class = "chore"
 status = "shipped"
 order = 3326
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-Wave 33 verifier NIT (T-428). Seed no longer INSERTs placeholder 1517290000000000000, but has no DELETE — dirty DBs retain Squad Leader/leader orphan after re-make seed. Live DB was observed still holding the row.
-
-Repro: DB with placeholder row; make seed; SELECT still returns the row.
-
-Cure: add DELETE FROM discord_roles WHERE discord_role_id = '1517290000000000000' (or equivalent) to discord_roles.sql before INSERT.
-
-missing=0"""
 priority = 2
 main_goal = "Delete orphan Squad Leader placeholder discord_role_id from discord_roles seed."
 context = [

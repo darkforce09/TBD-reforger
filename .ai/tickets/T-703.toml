@@ -6,14 +6,7 @@ class = "chore"
 status = "shipped"
 order = 4570
 executor = "claude-code"
-notes = """
-— SHIPPED wave 119 (editor factory), 8434f4ef; verifier wave119.md. Four extractor copies collapsed to ONE (T-738's banked instruction, now pinned) and widened from two ev.code() blocks to the ev.key() listeners as well. FOUND REAL UNDOCUMENTED BINDINGS: context_menu.rs binds ArrowUp/ArrowDown/Enter, which shipped undocumented for the whole programme with every T-692 pin green. A collision is (code, modifier predicate) with guards parsed FAIL-CLOSED and overlap decided by enumerating the 8-event space; two rules, because cross-listener (both fire) and within-listener (order resolves, so the bug is total shadowing) fail differently. Also fixed T-740's CIRCULAR pin, which counted the documentation to check the documentation. ⚠️ Its own census is incomplete — see T-774.
-
---- HEAD migration_legacy (verbatim) ---
-
-3den E10. A test that fails when two editor actions claim the same key. Cheap insurance, and this program already found real collisions the hard way: Backspace deletes the selection while Eden uses it to hide the interface (T-662), and Space is flyTo here but widget-cycle in Eden (T-648). Pairs with T-692 — invisible bindings collide silently.
-
-missing=0"""
+notes = "— SHIPPED wave 119 (editor factory), 8434f4ef; verifier wave119.md. Four extractor copies collapsed to ONE (T-738's banked instruction, now pinned) and widened from two ev.code() blocks to the ev.key() listeners as well. FOUND REAL UNDOCUMENTED BINDINGS: context_menu.rs binds ArrowUp/ArrowDown/Enter, which shipped undocumented for the whole programme with every T-692 pin green. A collision is (code, modifier predicate) with guards parsed FAIL-CLOSED and overlap decided by enumerating the 8-event space; two rules, because cross-listener (both fire) and within-listener (order resolves, so the bug is total shadowing) fail differently. Also fixed T-740's CIRCULAR pin, which counted the documentation to check the documentation. ⚠️ Its own census is incomplete — see T-774."
 main_goal = "Fail when two editor actions claim the same keybinding."
 context = [
     "3den E10 cheap insurance; program found real collisions hard way.",

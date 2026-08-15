@@ -7,18 +7,7 @@ status = "shipped"
 order = 5964
 spec = "docs/platform/t915_ticketboard_design.md"
 executor = "claude-code"
-notes = """
-Depends on T-916.2 for the child-resolving verbs and add-child/remove flags. Any nonzero exit = reload + show stderr verbatim (several refusal paths are process::exit(1) before anyhow). Mid-verb crash recovery is operator-run wave repack, shown as text.
-
---- HEAD migration_legacy (verbatim) ---
-
-Transition affordances mirroring the CLI verbs: idea->queued via drag-after-anchor (reorder semantics), queued->ready via a Ready-prose form (spec-on-disk + user_story + acceptance) surfacing the deps-unshipped refusal, ship/cancel/defer and demotions with confirm, running hidden as a manual target, raw set-status behind an advanced affordance, add-ticket and add-child [--promote] forms. Single-flight subprocess queue, UI compare-and-swap before dispatch, verbatim stderr on any nonzero exit, no auto-repack ever (the app must not become a second wave writer).
-
---- HEAD migration_legacy line (verbatim) ---
-
-migration_legacy = ["Transition affordances mirroring the CLI verbs: idea->queued via drag-after-anchor (reorder semantics), queued->ready via a Ready-prose form (spec-on-disk + user_story + acceptance) surfacing the deps-unshipped refusal, ship/cancel/defer and demotions with confirm, running hidden as a manual target, raw set-status behind an advanced affordance, add-ticket and add-child [--promote] forms. Single-flight subprocess queue, UI compare-and-swap before dispatch, verbatim stderr on any nonzero exit, no auto-repack ever (the app must not become a second wave writer)."]
-
-missing=0"""
+notes = "Depends on T-916.2 for the child-resolving verbs and add-child/remove flags. Any nonzero exit = reload + show stderr verbatim (several refusal paths are process::exit(1) before anyhow). Mid-verb crash recovery is operator-run wave repack, shown as text."
 depends_on = [
     "T-915.3",
     "T-916.2",

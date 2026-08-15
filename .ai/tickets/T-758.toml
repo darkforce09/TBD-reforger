@@ -6,19 +6,7 @@ class = "feature"
 status = "shipped"
 order = 4634
 executor = "claude-code"
-notes = """
-filed by wave-115 adversarial verifier (editor factory)
-
---- HEAD migration_legacy (verbatim) ---
-
-MINOR from the wave-115 verifier. eden_settings.rs:1623-1640: rows whose owner is the mission document itself name no entity and are explicitly not click targets (data-selectable=false), but they still render as focusable <button> elements. A keyboard user tabs onto them and activating does nothing. Correct shapes: render non-interactive rows as a non-focusable element, or keep the button and mark it aria-disabled with the reason. Related and worth doing in the same pass — T-754 covers the larger problem that the rows which DO name an entity are also inert, but for a different reason (the router cannot resolve zones). Together the two mean every row in the view is currently a dead click; fixing the styling and focusability without fixing T-754's router would make the view honest but still unhelpful, so sequence T-754 first. Diagnosis: editor_verify/wave115.md MINOR-6.
-
---- HEAD migration_legacy line (verbatim) ---
-
-migration_legacy = ["MINOR from the wave-115 verifier. eden_settings.rs:1623-1640: rows whose owner is the mission document itself name no entity and are explicitly not click targets (data-selectable=false), but they still render as focusable <button> elements. A keyboard user tabs onto them and activating does nothing. Correct shapes: render non-interactive rows as a non-focusable element, or keep the button and mark it aria-disabled with the reason. Related and worth doing in the same pass — T-754 covers the larger problem that the rows which DO name an entity are also inert, but for a different reason (the router cannot resolve zones). Together the two mean every row in the view is currently a dead click; fixing the styling and focusability without fixing T-754's router would make the view honest but still unhelpful, so sequence T-754 first. Diagnosis: editor_verify/wave115.md MINOR-6."]
-
-missing=0
-"""
+notes = "filed by wave-115 adversarial verifier (editor factory)"
 main_goal = "Fix mission-owned aggregated-settings rows: non-focusable or aria-disabled."
 context = [
     "Wave-115 MINOR: mission-owned rows not click targets yet focusable buttons.",

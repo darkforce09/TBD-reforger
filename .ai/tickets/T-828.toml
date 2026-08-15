@@ -6,19 +6,7 @@ class = "bug"
 status = "queued"
 order = 5100
 executor = "claude-code"
-notes = """
-wave204 verifier; the icon half is the in-file template
-
---- HEAD migration_legacy (verbatim) ---
-
-WAVE-204 VERIFIER FILING (wave204.md MINOR). The T-790 icon half is properly screen-space, but caption text positions freeze at bind-time zoom: measured 43px/52px marker-to-caption gaps at 1.30/1.06 m/px (over the ~40px acceptance) until a doc change forces a rebind. FIX: the caption half of the MarkerComposite recomputes screen offsets per frame from the live camera like the icon half (or anchors captions in the same screen-space pass) — no rebind dependency; reuse the transform the icons use, no second source. ACCEPTANCE: zoom continuously across 5.6->1.06 m/px with no doc changes: every caption stays within 40px of its marker at every sampled frame.
-
---- HEAD migration_legacy line (verbatim) ---
-
-migration_legacy = ["WAVE-204 VERIFIER FILING (wave204.md MINOR). The T-790 icon half is properly screen-space, but caption text positions freeze at bind-time zoom: measured 43px/52px marker-to-caption gaps at 1.30/1.06 m/px (over the ~40px acceptance) until a doc change forces a rebind. FIX: the caption half of the MarkerComposite recomputes screen offsets per frame from the live camera like the icon half (or anchors captions in the same screen-space pass) — no rebind dependency; reuse the transform the icons use, no second source. ACCEPTANCE: zoom continuously across 5.6->1.06 m/px with no doc changes: every caption stays within 40px of its marker at every sampled frame."]
-
-missing=0
-"""
+notes = "wave204 verifier; the icon half is the in-file template"
 main_goal = "Caption screen offsets recompute per frame like icons."
 context = [
     "wave204 MINOR: T-790 icon half is properly screen-space.",

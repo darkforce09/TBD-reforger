@@ -6,32 +6,6 @@ class = "bug"
 status = "shipped"
 order = 3742
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-FOUND by wave 81''s verifier (F5). **Pre-existing and self-documented**, but worth knowing before a
-big event night.
-
-`Caddyfile.website:18-19` proxies from loopback, so axum''s `ConnectInfo` peer is Caddy for every
-public client and they all key to a single `strict|127.0.0.1` bucket at **1 rps / burst 10**
-(`middleware/ratelimit.rs:53-63` says so itself). `frontend/src/auth.rs:5` confirms the SPA refreshes
-on bootstrap.
-
-**Op-night scenario:** more than ~10 members open the site within ~10 seconds; boot 11 onward gets a
-429 on `/auth/refresh` and renders logged-out until retried.
-
-**What holds:** the 429 is refused by middleware *before* the handler, so the single-use refresh token
-is **not spent** and a retry succeeds; and the client has no auto-retry loop, so there is no stampede.
-
-**Not new.** The in-memory L1 tier has had identical numbers on the identical shared key for waves.
-T-578 added durability, which makes it marginally stricter (a restart mid-spike no longer refills the
-bucket) -- it did not create the sharing.
-
-**FIX:** wire `X-Forwarded-For` behind `Config::trusted_proxies`, which exists and is **read by
-nothing**. That is what makes per-IP mean per-client. T-578''s module header defers it explicitly
-rather than doing it silently.
-
-missing=0"""
 priority = 2
 main_goal = "Wire X-Forwarded-For for per-client rate limits behind Caddy."
 context = [

@@ -6,19 +6,7 @@ class = "bug"
 status = "queued"
 order = 4990
 executor = "claude-code"
-notes = """
-wave201 verifier NIT-2; single-file eden_toolbelt.rs
-
---- HEAD migration_legacy (verbatim) ---
-
-WAVE-201 VERIFIER FILING (wave201.md NIT-2, outside T-793's acceptance — rest-state zoom and every-frame pan both PASS). VERIFIED LIVE: labels recompute on cursor movement + a ~1Hz zoom heartbeat, so a wheel zoom with no pointer motion waits up to ~1.4s before snapping to <0.05px correct. Self-correcting, no wrong-label window under motion. FIX DIRECTION: subscribe the label computation to the camera/m_per_px signal edge instead of the heartbeat (the signal already ticks — eden_toolbelt.rs label memo), keeping the T-793 position-quantised <For> key. ACCEPTANCE: scripted wheel zoom with pointer stationary: labels correct (<=2px vs CUR-unproject oracle) within one frame of the zoom settling, no >100ms stale window; pan behaviour unchanged.
-
---- HEAD migration_legacy line (verbatim) ---
-
-migration_legacy = ["WAVE-201 VERIFIER FILING (wave201.md NIT-2, outside T-793's acceptance — rest-state zoom and every-frame pan both PASS). VERIFIED LIVE: labels recompute on cursor movement + a ~1Hz zoom heartbeat, so a wheel zoom with no pointer motion waits up to ~1.4s before snapping to <0.05px correct. Self-correcting, no wrong-label window under motion. FIX DIRECTION: subscribe the label computation to the camera/m_per_px signal edge instead of the heartbeat (the signal already ticks — eden_toolbelt.rs label memo), keeping the T-793 position-quantised <For> key. ACCEPTANCE: scripted wheel zoom with pointer stationary: labels correct (<=2px vs CUR-unproject oracle) within one frame of the zoom settling, no >100ms stale window; pan behaviour unchanged."]
-
-missing=0
-"""
+notes = "wave201 verifier NIT-2; single-file eden_toolbelt.rs"
 main_goal = "Subscribe grid labels to camera m_per_px edge not heartbeat."
 context = [
     "WAVE-201 verifier NIT-2 outside T-793 acceptance; rest-state zoom pan PASS.",

@@ -7,18 +7,7 @@ status = "shipped"
 order = 5973
 spec = "docs/platform/t917_ticket_schema_v2.md"
 executor = "claude-code"
-notes = """
-No sentence-splitting into semantic fields — that is laundering unsorted prose as classified data; decomposition is Program T. Caps enforced in check, never parse (old revisions must stay readable). Docs/TICKET_*.md regenerate in-commit (sync copies summaries verbatim).
-
---- HEAD migration_legacy (verbatim) ---
-
-Mechanical byte-reversible pass over every work ticket whose TOML-parsed summary exceeds 40 whitespace-split words: summary moved verbatim into migration_legacy[] split on newlines only (join reproduces original bytes, proved per file), summary := existing title. Word-cap check rules land: summary <=40, context/requirement/current_state/approach/verify <=30 per line, citations <=8; acceptance/notes/user_story uncapped. Shrink-only pinned ratchet on migration_legacy count; a new ticket minting the field is red.
-
---- HEAD migration_legacy line (verbatim) ---
-
-migration_legacy = ["Mechanical byte-reversible pass over every work ticket whose TOML-parsed summary exceeds 40 whitespace-split words: summary moved verbatim into migration_legacy[] split on newlines only (join reproduces original bytes, proved per file), summary := existing title. Word-cap check rules land: summary <=40, context/requirement/current_state/approach/verify <=30 per line, citations <=8; acceptance/notes/user_story uncapped. Shrink-only pinned ratchet on migration_legacy count; a new ticket minting the field is red."]
-
-missing=0"""
+notes = "No sentence-splitting into semantic fields — that is laundering unsorted prose as classified data; decomposition is Program T. Caps enforced in check, never parse (old revisions must stay readable). Docs/TICKET_*.md regenerate in-commit (sync copies summaries verbatim)."
 depends_on = ["T-917.2"]
 parent = "T-917"
 main_goal = "No board card ever renders a 500-word summary again; the walls survive byte-exact in quarantine with a monotone death clause instead of being truncated or laundered."

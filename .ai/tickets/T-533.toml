@@ -6,16 +6,6 @@ class = "feature"
 status = "shipped"
 order = 3373
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-FOUND by W49 adversarial verifier (CLEAN MINOR-NIT) after T-355.
-
-upsert_match uses parse_uuid_opt_strict and unit/source pins prove junk → BadRequest, but no integration test POSTs a malformed event_id/mission_id through the live route and asserts HTTP 400. RED if the handler call sites are deleted while unit helper tests remain: today the source pin covers that; an HTTP IT would close the residual.
-
-Repro: rg parse_uuid_opt_strict apps/website/api/src/handlers/telemetry.rs; note absence of IT asserting status 400 on junk ids.
-
-missing=0"""
 priority = 2
 main_goal = "Add HTTP IT for junk event_id/mission_id 400 responses."
 context = [

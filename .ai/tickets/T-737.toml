@@ -6,19 +6,7 @@ class = "chore"
 status = "shipped"
 order = 4613
 executor = "claude-code"
-notes = '''
-filed by wave-112 adversarial verifier (editor factory)
-
---- HEAD migration_legacy (verbatim) ---
-
-MINOR from the wave-112 verifier. arsenal.rs:1031 renders import refusals through |e| e.message only, discarding RowError.key. Two stranded rows therefore both print 'Not compatible with the selected Primary weapon', indistinguishably — the author is told what is required but not which of their rows is at fault. Schema faults are unaffected (their messages carry the JSON path). Related and confirmed reachable: the deliberate export/import asymmetry T-686 flagged for review — export refuses on capacity only (arsenal.rs:743-750) while re-import additionally refuses compat when the compatibility feed is Ready, so a loadout with a stranded optic CAN be exported and CANNOT be re-imported. That asymmetry is defensible (the import gate's job is not to let an outside document put the editor into a state the author did not author) but it is exactly the case where naming the offending row matters most. Diagnosis: editor_verify/wave112.md MINOR-3.
-
---- HEAD migration_legacy line (verbatim) ---
-
-migration_legacy = ["""MINOR from the wave-112 verifier. arsenal.rs:1031 renders import refusals through |e| e.message only, discarding RowError.key. Two stranded rows therefore both print 'Not compatible with the selected Primary weapon', indistinguishably — the author is told what is required but not which of their rows is at fault. Schema faults are unaffected (their messages carry the JSON path). Related and confirmed reachable: the deliberate export/import asymmetry T-686 flagged for review — export refuses on capacity only (arsenal.rs:743-750) while re-import additionally refuses compat when the compatibility feed is Ready, so a loadout with a stranded optic CAN be exported and CANNOT be re-imported. That asymmetry is defensible (the import gate's job is not to let an outside document put the editor into a state the author did not author) but it is exactly the case where naming the offending row matters most. Diagnosis: editor_verify/wave112.md MINOR-3."""]
-
-missing=0
-'''
+notes = "filed by wave-112 adversarial verifier (editor factory)"
 main_goal = "Surface RowError key in import refusal messages so authors know which row failed."
 context = [
     "Wave-112 MINOR: arsenal 1031 renders import refusals via message only.",

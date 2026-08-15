@@ -7,18 +7,7 @@ status = "shipped"
 order = 5971
 spec = "docs/platform/t917_ticket_schema_v2.md"
 executor = "claude-code"
-notes = """
-Vocabulary is data, not compiled enums (except domain) — compiled friction produced the 199-ticket docs landfill. Removing-a-value-in-use redness cannot be enforced yet (tickets still v1); that rule rides S.2.
-
---- HEAD migration_legacy (verbatim) ---
-
-Author .ai/tickets/scope-vocab.toml (the 4-level domain/layer/component/surface tree from the spec draft, grounded in real modules) plus the check rule validating the file itself: sorted, duplicate-free, every level's parent exists. Additive slice — no ticket parses change; vocab-vs-ticket legality lands with the S.2 cutover.
-
---- HEAD migration_legacy line (verbatim) ---
-
-migration_legacy = ["Author .ai/tickets/scope-vocab.toml (the 4-level domain/layer/component/surface tree from the spec draft, grounded in real modules) plus the check rule validating the file itself: sorted, duplicate-free, every level's parent exists. Additive slice — no ticket parses change; vocab-vs-ticket legality lands with the S.2 cutover."]
-
-missing=0"""
+notes = "Vocabulary is data, not compiled enums (except domain) — compiled friction produced the 199-ticket docs landfill. Removing-a-value-in-use redness cannot be enforced yet (tickets still v1); that rule rides S.2."
 parent = "T-917"
 main_goal = "The scope vocabulary exists as reviewable committed data with its own shape gate, ready for the cutover to validate tickets against."
 context = [

@@ -6,19 +6,7 @@ class = "bug"
 status = "queued"
 order = 5240
 executor = "claude-code"
-notes = """
-wave-207 completion C; same family as T-832; one-line fix + sweep test; small
-
---- HEAD migration_legacy (verbatim) ---
-
-WAVE-207 COMPLETION FINDING (third instance of the T-832 family, found while fixing the second). crates/map-engine-core/src/world/glyph_math.rs:105 still does the clamp-instead-of-wrap that made half the compass draw due south, and world/residency.rs:1364 feeds it deck_angle_for_rotation_deg(rotation) = -rotation — so ANY world object (tree/prop/text) authored with a rotation in 181..359 renders at due south. Same one-line shape as the fix already landed in slots_gpu.rs (wave 207, commit 0bc55dc5): fold the angle into (-180,180] before encoding; a clamp is correct for a magnitude and wrong for an angle. The slots_gpu test `yaw_encoders_agree` now DOCUMENTS this divergence rather than hiding it — update it when this lands so the two encoders agree again. ACCEPTANCE: a world object at rotation 270 renders visibly different from one at 180 (measured tip/extent bearing); the full 0..360 sweep is monotonic with no plateau (the plateau IS the defect); yaw_encoders_agree re-pins full-domain byte parity between the two encoders.
-
---- HEAD migration_legacy line (verbatim) ---
-
-migration_legacy = ["WAVE-207 COMPLETION FINDING (third instance of the T-832 family, found while fixing the second). crates/map-engine-core/src/world/glyph_math.rs:105 still does the clamp-instead-of-wrap that made half the compass draw due south, and world/residency.rs:1364 feeds it deck_angle_for_rotation_deg(rotation) = -rotation — so ANY world object (tree/prop/text) authored with a rotation in 181..359 renders at due south. Same one-line shape as the fix already landed in slots_gpu.rs (wave 207, commit 0bc55dc5): fold the angle into (-180,180] before encoding; a clamp is correct for a magnitude and wrong for an angle. The slots_gpu test `yaw_encoders_agree` now DOCUMENTS this divergence rather than hiding it — update it when this lands so the two encoders agree again. ACCEPTANCE: a world object at rotation 270 renders visibly different from one at 180 (measured tip/extent bearing); the full 0..360 sweep is monotonic with no plateau (the plateau IS the defect); yaw_encoders_agree re-pins full-domain byte parity between the two encoders."]
-
-missing=0
-"""
+notes = "wave-207 completion C; same family as T-832; one-line fix + sweep test; small"
 main_goal = "Fix world glyph_math clamp-not-wrap so rotations 181–359 render correctly."
 context = [
     "Wave-207 completion finding third T-832 family instance.",

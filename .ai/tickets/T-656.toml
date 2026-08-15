@@ -6,15 +6,7 @@ class = "docs"
 status = "shipped"
 order = 3920
 executor = "claude-code"
-notes = """
-editor-UI program wave 4 (wave_plan.tsv row 104) — SHIPPED wave 104 (editor factory), slice e4341d38; verifier wave104.md (3 MAJOR deferred: T-719/T-720/T-715-amended)
-
---- HEAD migration_legacy (verbatim) ---
-
-The engine the validation group is built on. FNF's MissionAnalyzer declares 27 checks; 21 are live-evaluable and they reduce to FOUR PRIMITIVES: V1 required-entity presence (conditional on mission shape, so the tool never needs FNF's "the following missing items can be ignored" disclaimer, AnalyzeSQM.ps1:1886-1889); V2 cardinality; V3 per-object invariant; V4 field-shape/derivation. Four primitives is an engine, not a feature. Build it in core, as a NEW `crates/map-engine-core/src/mission/validate.rs` beside the existing scanners — `crates/map-engine-core/src/mission/wire_safety.rs`:262 `scan_editor_payload` and :360 `scan_cargo_capacity` are the same shape (payload in, Vec<String> findings out) — plus one line `pub mod validate;` in `crates/map-engine-core/src/mission/mod.rs` (which declares 5 modules at :7-11). Building in core lets both the SPA and the API call it, so no relocation is required: handlers/missions.rs:608 and :1000 call `validate_payload` and :1471 calls `validate_mission_document` and those keep working. Not claiming the API file is what keeps this wave-packable. ACCEPTANCE, and it is the point of the ticket: every rule ships with a test that asserts the rule CAN FIRE. EVIDENCE CORRECTION, carried from frameworks/README.md: the original rationale said "both validators in the corpus are silently dead and neither community appears to know". Only the FNF leg survived verification (`$MarkObjs` typo at AnalyzeSQM.ps1:902 and the `$ReqCoreObjs.name` guard at :943 — 27 declared, 14 run). The WOG `/g`-flag claim FAILED verification and is withdrawn. This is a one-framework argument plus TBD-internal reasoning, not a convergence argument.
-
-missing=0
-"""
+notes = "editor-UI program wave 4 (wave_plan.tsv row 104) — SHIPPED wave 104 (editor factory), slice e4341d38; verifier wave104.md (3 MAJOR deferred: T-719/T-720/T-715-amended)"
 depends_on = ["T-661"]
 main_goal = "Build validate.rs engine with four primitives and fail-on-demand rule tests."
 context = [

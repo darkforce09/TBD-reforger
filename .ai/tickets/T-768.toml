@@ -6,19 +6,7 @@ class = "chore"
 status = "shipped"
 order = 4644
 executor = "claude-code"
-notes = """
-filed by wave-117 adversarial verifier (editor factory)
-
---- HEAD migration_legacy (verbatim) ---
-
-DISCLOSED PARTIAL from wave 117's T-672, filed loudly so it is tracked rather than implied — the same treatment T-748 (comments) and T-760 (markers) got for their gaps. T-672 shipped connection CREATE as two context-menu acts: right-click the source, choose `Connect > <kind>` to arm, then right-click the target and choose Complete or Cancel. The ticket's code hint proposed a third pointer gesture mode — drag from entity to entity — and that half is NOT shipped. THE REASON IS T-723 AND IT IS SOUND: the armed-pointerup path in mission_editor.rs has no `ev.button()` filter, returns without taking `left`, can strand `LG::Pending`, has no Esc disarm, and carries an in-code invariant comment that was refuted four waves ago and is still there. A third arming source built on it inherits every one of those defects. Note Eden's own flow also STARTS at RMB > Connect, so what is actually missing is only the final LMB pick on the target; the slice's own assessment is that wiring it after T-723 lands changes the CALLER of `complete_connect` and nothing else. ALSO PART OF THIS ROW: CONN-DEL-001 has no line to select. Eden deletes a connection by clicking its line and pressing Del; there is no render lane for connections (T-672 re-derived T-069's marker conclusion on `LaneRole::SquadLinks` — it is live-fed by a full-lane replace from `mission_history.rs`, outside owns, so sharing it clobbers squad hairlines and a peer lane has the same feed problem). The addressable panel row with a per-row Delete is the substitute, and the slice stated that rather than claiming parity. SEQUENCE: T-723 first, then this; and if a connections render lane is wanted, schedule it with T-760's marker lane since both need the same `mission_history.rs` rebind tail and the same `draw_order.rs` edit.
-
---- HEAD migration_legacy line (verbatim) ---
-
-migration_legacy = ["DISCLOSED PARTIAL from wave 117's T-672, filed loudly so it is tracked rather than implied — the same treatment T-748 (comments) and T-760 (markers) got for their gaps. T-672 shipped connection CREATE as two context-menu acts: right-click the source, choose `Connect > <kind>` to arm, then right-click the target and choose Complete or Cancel. The ticket's code hint proposed a third pointer gesture mode — drag from entity to entity — and that half is NOT shipped. THE REASON IS T-723 AND IT IS SOUND: the armed-pointerup path in mission_editor.rs has no `ev.button()` filter, returns without taking `left`, can strand `LG::Pending`, has no Esc disarm, and carries an in-code invariant comment that was refuted four waves ago and is still there. A third arming source built on it inherits every one of those defects. Note Eden's own flow also STARTS at RMB > Connect, so what is actually missing is only the final LMB pick on the target; the slice's own assessment is that wiring it after T-723 lands changes the CALLER of `complete_connect` and nothing else. ALSO PART OF THIS ROW: CONN-DEL-001 has no line to select. Eden deletes a connection by clicking its line and pressing Del; there is no render lane for connections (T-672 re-derived T-069's marker conclusion on `LaneRole::SquadLinks` — it is live-fed by a full-lane replace from `mission_history.rs`, outside owns, so sharing it clobbers squad hairlines and a peer lane has the same feed problem). The addressable panel row with a per-row Delete is the substitute, and the slice stated that rather than claiming parity. SEQUENCE: T-723 first, then this; and if a connections render lane is wanted, schedule it with T-760's marker lane since both need the same `mission_history.rs` rebind tail and the same `draw_order.rs` edit."]
-
-missing=0
-"""
+notes = "filed by wave-117 adversarial verifier (editor factory)"
 main_goal = "Wire pointer complete-connect after T-723 fixes armed-pointerup path defects."
 context = [
     "DISCLOSED PARTIAL from T-672 same treatment as T-748 T-760 gaps tracked loudly.",

@@ -6,16 +6,6 @@ class = "feature"
 status = "shipped"
 order = 3422
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-FOUND by W66 adversarial verifier (DIRTY MAJOR) after T-566.
-
-// and /* */ arm comments now RED; ignore-helper DEV_USER_ID bind RED. Still GREEN: live match collapses to `_` while arms exist only inside r#" "enlisted" => … "# decoys (comment strip keeps string contents).
-
-Repro: park arms in raw-string decoy; match `_ => DEV_USER_ID`; Class-R green.
-
-missing=0"""
 priority = 2
 main_goal = "Close Class-R hollow bypass via raw-string match arm decoys."
 context = [

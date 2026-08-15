@@ -6,14 +6,6 @@ class = "bug"
 status = "shipped"
 order = 3284
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-Residual from T-266 / wave 13 adversarial MINOR. Class-R tests pin audit_logs_path / parse_next_cursor / merge_audit_page helpers, but nothing asserts on_load_more calls merge_audit_page. A replace bug (lines.set(page.data) instead of append) would keep those tests green while truncating the trail again.
-
-Repro: change Load more to replace the vec; cargo test -p website-frontend audit::tests still PASS.
-
-Cure: include_str! / source guard (T-264 style) that on_load_more uses merge_audit_page + audit_logs_path(Some(before))."""
 priority = 2
 main_goal = "Pin on_load_more UI wiring to merge_audit_page via source guard."
 context = [

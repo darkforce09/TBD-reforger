@@ -6,14 +6,6 @@ class = "feature"
 status = "shipped"
 order = 3274
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-MINOR from wave 8 verifier on T-201. Everon z_bounds is pinned ([[0,0],[12800,0],…]); arland uses terrain_bounds("arland")→4096² but no flatten-level test asserts that polygon.
-
-Repro: cargo test -p map-engine-core --features mission — no arland z_bounds size assert.
-
-Cure: unit test with terrain=arland expecting 4096² ring."""
 priority = 3
 main_goal = "Pin arland z_bounds 4096² polygon in flatten zone unit tests."
 context = [

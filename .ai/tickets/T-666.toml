@@ -6,14 +6,7 @@ class = "docs"
 status = "shipped"
 order = 3910
 executor = "claude-code"
-notes = """
-editor-UI program wave 4 (wave_plan.tsv row 104) — SHIPPED wave 104 (editor factory), slice d817baef; verifier wave104.md (3 MAJOR deferred: T-719/T-720/T-715-amended)
-
---- HEAD migration_legacy (verbatim) ---
-
-Five ids — `LAYER-CREATE-001`, `LAYER-DEL-001`, `SEL-LAYER-CHILDREN-001`, `SEL-LAYER-DESC-001`, `SEL-GROUP-ICON-001` — and the best value-per-line in the sweep, because the doc mutators already exist, are tested, and ARE NOT CALLED. Verified: `rename_editor_layer` (store.rs:1886), `reparent_editor_layer` :1895 (cycle-guarded), `remove_editor_layer` :1527 (subtree + reseed) and `move_slot_to_layer` :1915 have ZERO callers of any kind; `add_editor_layer` :1872 has exactly one, seeding the default layer at editor_ops.rs:1136. DockLeft (eden_chrome.rs:2813-2870, read in full) renders `virtual_tree` plus five `disabled=true` decoration buttons — there is no create, rename, delete or reparent control in the editor at all. This also CORRECTS attributes_sweep.md:212, which grades `ATTR-FIELD-LYR-NAME` as `match`: T-037 shipped the CORE, not the UI. Work: command wrappers in editor_ops.rs (today the file has one layer command, `set_active_layer` :1025, plus internal `layer_rows` :824 / `ensure_layer` :1125 / `refresh_docks` :961 — every wrapper needs a `refresh_docks()`); the "+" create button and a root dropzone in the DockLeft header (post-split eden_dock_left.rs, from eden_chrome.rs:2838-2841); inline rename, hover row actions and "folder click selects children + descendants" in eden_tree.rs (`single_row`, `virtual_tree`). store.rs is deliberately NOT claimed — this is pure UI wiring onto shipped core, which keeps it off T-651's and T-665's critical path.
-
-missing=0"""
+notes = "editor-UI program wave 4 (wave_plan.tsv row 104) — SHIPPED wave 104 (editor factory), slice d817baef; verifier wave104.md (3 MAJOR deferred: T-719/T-720/T-715-amended)"
 depends_on = ["T-661"]
 main_goal = "Wire layer create rename delete reparent refile UI onto core."
 context = [

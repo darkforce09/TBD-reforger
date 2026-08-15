@@ -6,14 +6,7 @@ class = "feature"
 status = "shipped"
 order = 4060
 executor = "claude-code"
-notes = """
-editor-UI program wave 10 (wave_plan.tsv row 110) — SHIPPED wave 110 (editor factory), f711efc8; verifier wave110.md
-
---- HEAD migration_legacy (verbatim) ---
-
-SUPERSEDES T-073 and T-075 (both cancelled in favour of this row) and absorbs the snapping slice. Ids: `XFORM-SHIFT-001` (Shift+drag rotates to face cursor), `TOOLBAR-GRID-MOVE-001` (translation / rotation / area-scaling snap grids with increase and decrease), `WIDGET-CYCLE-001` + `WIDGET-TRANS-001` (transformation widget), `KEY-GRID-001`. Two collisions to DECIDE INSIDE THE TICKET: in Eden `Space` cycles widget variants, in TBD `Space` is flyTo (`center_on_selection`, editor_ops.rs:354) — Eden's `1`-`5` direct keys are free, so using them dissolves the clash; and pick a TBD key for the grid toggle, do NOT copy Eden's `odiaeresis` or `;` keysym artefacts. Code: Shift+drag is a modifier branch in `onpointermove` (mission_editor.rs:1437-1643) and the Space decision is in the keydown :1005-1030; select_tool.rs holds `drag_delta` :201, `push_drag_preview` :232, `clear_drag_preview` :257; rotation and snapped positions commit through `attrs_update_position` (editor_ops.rs:667) and rotation already round-trips numerically (attributes.rs:292, editor_ops.rs:1841), so this is a gesture on an existing field. WARNING, verified twice: `GRID_CELL_M` at select_tool.rs:33 IS NOT A SNAP STEP. It is `MissionDocCore::GRID_CELL_M`, a spatial-index cell size used only at :338 and :372 to build a PointIndex. NOTHING SNAP-RELATED EXISTS: `grep -riw snap` over the frontend returns 37 hits and every single one is `let snap = read_snapshot();`. The quantiser is new and goes beside `drag_delta`.
-
-missing=0"""
+notes = "editor-UI program wave 10 (wave_plan.tsv row 110) — SHIPPED wave 110 (editor factory), f711efc8; verifier wave110.md"
 depends_on = ["T-661"]
 main_goal = "Ship Shift+drag rotate, snap grids, transform widget; resolve Space/flyTo clash."
 context = [

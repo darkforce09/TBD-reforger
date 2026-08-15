@@ -6,16 +6,6 @@ class = "chore"
 status = "shipped"
 order = 3294
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-Residual from T-451 / wave 20 adversarial. set-status/mark-ready/reorder/ship now call require_check_ok before write, but cmd_add (and cmd_remove) still mutate the registry without loading .ai/tickets/schema.json.
-
-Repro: break a required field; ticket check RED; ticket add still inserts a row.
-
-Cure: gate add/remove through require_check_ok (or document intentional escape hatch + --force).
-
-missing=0"""
 priority = 2
 main_goal = "Gate ticket add/remove through require_check_ok before registry mutation."
 context = [

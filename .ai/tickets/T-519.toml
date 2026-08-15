@@ -6,12 +6,6 @@ class = "feature"
 status = "shipped"
 order = 3359
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-Wave 45 residual (T-360 NIT). DashboardResponse.server_status is typed Option<ServerStatusDto> end-to-end; dto::r_api::dashboard green. Remaining typed DTOs Member, RegistryCompatResponse, FireSolution still lack fixtures under apps/website/frontend/tests/fixtures/api/ (ls | rg -i 'member|compat|fire|solve' → empty). Owns when filed: apps/website/frontend/tests/fixtures/api/ + matching dto.rs R-api modules. Outside T-360 owns at ship time.
-
-missing=0"""
 priority = 2
 main_goal = "Add R-api fixture goldens for Member, RegistryCompat, FireSolution."
 context = [

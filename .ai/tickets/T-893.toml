@@ -7,16 +7,6 @@ status = "deferred"
 order = 5670
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-Wave 228 adversarial MAJOR-2: T-884/885/886 proved ≥2 broken arms in agent reports but landed no committed parity harness/fixtures under xtask. T-853 DoD asks bash-went-red asserted before trusting the port. Add Class-R tests (or committed /tmp recipe replay) for deploy db refuse/verify/backup keep that fail if the port drifts. Repro: cargo test -p xtask today has only thin deploy_db_* units; no bash-vs-port acceptance.
-
---- HEAD migration_legacy line (verbatim) ---
-
-migration_legacy = ["Wave 228 adversarial MAJOR-2: T-884/885/886 proved ≥2 broken arms in agent reports but landed no committed parity harness/fixtures under xtask. T-853 DoD asks bash-went-red asserted before trusting the port. Add Class-R tests (or committed /tmp recipe replay) for deploy db refuse/verify/backup keep that fail if the port drifts. Repro: cargo test -p xtask today has only thin deploy_db_* units; no bash-vs-port acceptance."]
-
-missing=0"""
 main_goal = "Commit bash-vs-port RED-arm parity harness for deploy db refuse verify backup keep."
 context = [
     "Wave 228 adversarial MAJOR-2 T-884/885/886 proved >=2 broken arms in agent reports.",

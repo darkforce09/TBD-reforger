@@ -6,17 +6,6 @@ class = "feature"
 status = "shipped"
 order = 3305
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-Residual from wave 25 adversarial N1. Content LocalResource uses .ok(); failed GET → empty 'No announcements yet', list_seeded=true, no retry.
-
-Repro: force GET /cms/announcements 500/network fail → UI looks like zero announcements forever.
-
-Cure: surface error + retry; do not set list_seeded on Err.
-
-missing=0
-"""
 priority = 3
 main_goal = "Surface CMS Content list errors with retry; avoid empty false-green."
 context = [

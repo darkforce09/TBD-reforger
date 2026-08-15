@@ -10,32 +10,7 @@ notes = """
 == DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
 Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
 This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
-'the 'The **the 2026-07-26 30-assertion = == `--assert-js` `--assert-json-path `idea` `pass: `pass` `true`; ability, above above. actually after already always an assert_value.as_ref().map(|v| assertion.** assertions assertOk audits authoritative axis. backlog be blocks budget bug bugs, but BY call, can CANCELLED claim close comment contract costing could DECISION, decorative DEFECT, DEFERRED deliberate developing diagnosed, diagnostics. doc/mission/world does echoed FAIL, failed faithfully, false`; faster feature feature. findable, FIX: fixed fixing form from fully gate's generating good, had here hours. is it it'. it, its judged knowing lands. let lines means moment most moved need NOT not Note notes Nothing nothing now now. OF only OPERATOR operator's optional. Options, order original pass, PASS; pass`. passed preference probe, produced program Promote ran rather raw read read. real Recording recurs reported reproducible return right RUN'S Same says shape, ships. siblings SIGNATURE so So Some(true) someone something, spending stand stand. starts string' substance: success surface. T-182..T-297 T-320's T-338's, T-352's, T-359's, T-368's than that The the their them there things third This THIS THROWN ticket time, to token tonight: tools/tbd-tools/src/smokes.rs:3112-3115: treat truthiness. two v.as_bool() value value; VALUES verbatim W1_reached_editor was were what What when Whichever, will work wrong { });
-
---- HEAD migration_legacy (verbatim) ---
-
-THIRD INSTANCE OF THIS RUN'S SIGNATURE DEFECT, and it is in the harness every frontend slice used.
-
-tools/tbd-tools/src/smokes.rs:3112-3115:
-    let assert_ok = assert_value.as_ref().map(|v| {
-        v.as_bool() == Some(true)
-            || !(v.is_null() || *v == json!(false) || *v == json!(0) || *v == json!(""))
-    });
-
-So `assert_ok` is TRUE for any non-null, non-false, non-zero, non-empty value — **including every JSON object and every non-empty string.** Verified from the command center by reading the code, and DEMONSTRATED by a probe agent: a probe returning `{"pass":false,"failed":["W1_reached_editor","THROWN"]}` printed `"assertOk": true` and **exited 0**.
-
-Every `--assert-js` probe in this program returns an object of observations. So **the gate's exit code has never enforced a single browser assertion.** T-320's 30-assertion persistence probe, T-338's, T-352's, T-359's, T-368's — the assertions were real and their VALUES were read and reported faithfully, so the findings stand. What does not stand is any claim of the form 'the gate passed it'. The gate was decorative on that axis.
-
-Compare the two siblings already fixed tonight: the wave gate ran the DB suite with TEST_DATABASE_URL unset so 30 tests skipped and it printed PASS; and clippy ran without --features so it compiled none of doc/mission/world and reported success on code it never read. Same shape, third surface.
-
-FIX: require an explicit contract rather than truthiness. Options, in order of preference — treat an object with a boolean `pass` field as authoritative and fail on `pass: false`; require the probe to return a literal `true`; or add `--assert-json-path pass`. Whichever, a probe that returns an object with no recognised verdict field must FAIL, not pass, or this recurs the moment someone returns diagnostics.
-
-Note the comment two lines above says 'The raw value is echoed in the verdict so a diagnostic probe can return a JSON string' — so returning a string was a deliberate feature. Keep that ability, but stop treating it as a pass.
-
-== DEFERRED 2026-07-26 BY OPERATOR DECISION, NOT CANCELLED ==
-Recording a bug is most of its value; fixing it now is optional. The audits that produced this ticket were generating work faster than the run could close it, and the original T-182..T-297 feature backlog had not moved in hours. The operator's call, verbatim in substance: there will always be bugs, that is what developing is — knowing them is good, but spending the token budget on things that do not need fixing right now means nothing ships.
-This is findable, fully diagnosed, and reproducible from the notes above. Promote it to `idea` when it actually blocks something, when it starts costing real time, or after the feature backlog lands. Nothing here was judged wrong — only not now.
-"""
+'the 'The **the 2026-07-26 30-assertion = == `--assert-js` `--assert-json-path `idea` `pass: `pass` `true`; ability, above above. actually after already always an assert_value.as_ref().map(|v| assertion.** assertions assertOk audits authoritative axis. backlog be blocks budget bug bugs, but BY call, can CANCELLED claim close comment contract costing could DECISION, decorative DEFECT, DEFERRED deliberate developing diagnosed, diagnostics. doc/mission/world does echoed FAIL, failed faithfully, false`; faster feature feature. findable, FIX: fixed fixing form from fully gate's generating good, had here hours. is it it'. it, its judged knowing lands. let lines means moment most moved need NOT not Note notes Nothing nothing now now. OF only OPERATOR operator's optional. Options, order original pass, PASS; pass`. passed preference probe, produced program Promote ran rather raw read read. real Recording recurs reported reproducible return right RUN'S Same says shape, ships. siblings SIGNATURE so So Some(true) someone something, spending stand stand. starts string' substance: success surface. T-182..T-297 T-320's T-338's, T-352's, T-359's, T-368's than that The the their them there things third This THIS THROWN ticket time, to token tonight: tools/tbd-tools/src/smokes.rs:3112-3115: treat truthiness. two v.as_bool() value value; VALUES verbatim W1_reached_editor was were what What when Whichever, will work wrong { });"""
 priority = 0
 main_goal = "Require explicit pass verdict in render-check — stop truthiness on diagnostic objects."
 context = ["THIRD INSTANCE of this run signature defect — harness every frontend slice used."]

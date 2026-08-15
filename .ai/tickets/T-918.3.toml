@@ -7,18 +7,7 @@ status = "shipped"
 order = 5983
 spec = "docs/platform/t917_ticket_schema_v2.md"
 executor = "claude-code"
-notes = """
-Depends on T-917.3 for migration_legacy existing on real tickets. Section order pinned by test.
-
---- HEAD migration_legacy (verbatim) ---
-
-Detail panel renders the ten body fields as clearly separated sections in a fixed order (summary, user_story, context, requirement, current_state, approach, verify, acceptance, citations, notes), absent fields shown as explicit em-dash, list fields as one-liners. migration_legacy renders as its own visually-quarantined section with a copy-for-triage affordance feeding the Program T drain.
-
---- HEAD migration_legacy line (verbatim) ---
-
-migration_legacy = ["Detail panel renders the ten body fields as clearly separated sections in a fixed order (summary, user_story, context, requirement, current_state, approach, verify, acceptance, citations, notes), absent fields shown as explicit em-dash, list fields as one-liners. migration_legacy renders as its own visually-quarantined section with a copy-for-triage affordance feeding the Program T drain."]
-
-missing=0"""
+notes = "Depends on T-917.3 for migration_legacy existing on real tickets. Section order pinned by test."
 depends_on = ["T-917.3"]
 parent = "T-918"
 main_goal = "Opening a ticket reads like a form, not a wall — every subject in its own labeled place, the unprocessed legacy prose clearly fenced."

@@ -6,31 +6,6 @@ class = "chore"
 status = "shipped"
 order = 3426
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-FOUND by W68 adversarial verifier (CLEAN NIT) after T-491, and admitted by the slice agent.
-
-`move_entities_and_vehicles` commits mixed drag in one LOCAL yrs txn, but live drag preview still filters vehicles out of `engine.set_drag` (`mission_editor.rs` ~1125–1134). `set_drag` is slot-SoA only in map-engine-render (outside T-491 owns).
-
-Repro: select one slot + one vehicle; drag — vehicle glyph stays put until release; slot previews. Commit still moves both; undo is one step.
-
-Cure: extend drag preview / set_drag for vehicles (map-engine-render + host), or document as wontfix.
-
-=== WAVE 81: NOT REACHED, AND THE EXACT PATCH IS KNOWN ===
-T-314's slice found the cure needs two files it did not own, and shipped nothing rather than half.
-**Root cause: the engine has no vehicle ids.** `vehicles_bind(xy)` (`crates/map-engine-render/src/engine.rs:4282`)
-takes a bare flat `xy` from `MissionDocCore::vehicle_xy_flat`, so `set_drag` cannot resolve a dragged
-vehicle id to a lane row. Three edits:
-1. `crates/map-engine-core/src/slots_gpu.rs` -- `pack_vehicle_drag_preview(drag_ids, ids, xy, dx, dy)`:
-   re-pack the whole `MissionVehicles` lane with matched rows offset, unknown ids (the slot half of a
-   mixed selection) skipped. The lane is a dense pack already re-uploaded wholesale, so no SoA
-   row-patching is needed.
-2. `apps/website/frontend/src/mission_history.rs:329,382` -- feed vehicle ids alongside `xy`.
-3. `apps/website/frontend/src/mission_editor.rs:1126-1134` -- delete the `is_vehicle_id` filter and
-   pass the whole `ids` list to `set_drag`.
-
-missing=0"""
 priority = 2
 main_goal = "Extend drag preview/set_drag for mixed slot+vehicle drag, or document wontfix."
 context = [

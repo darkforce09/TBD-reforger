@@ -6,19 +6,7 @@ class = "bug"
 status = "shipped"
 order = 4633
 executor = "claude-code"
-notes = """
-filed by wave-115 adversarial verifier (editor factory)
-
---- HEAD migration_legacy (verbatim) ---
-
-MINOR from the wave-115 verifier. mission.schema.json (91,438 bytes) is `include_str!`d from TWO places: eden_zones.rs:628 (private const MISSION_SCHEMA, pre-existing) and eden_settings.rs:1063 (T-688, this wave). Both name the SAME path, so drift is impossible and there is genuinely one source of truth — the slice's reasoning for the second embed was correct, and it could not reuse the first because that const is private to a file outside its owns. But an empirical byte count of the DEV wasm artifact finds the full 91KB present exactly twice. Release behaviour after wasm-opt is unverified and may well dedupe. Fix: promote one const to pub(crate) in a shared module and have both read it, which costs nothing and removes the question. ALSO: eden_zones.rs:626 carries a stale comment describing the embed as '~40 KB' against an actual 91 KB — a number that has drifted by more than 2x and should be derived or dropped rather than restated. Diagnosis: editor_verify/wave115.md MINOR-5.
-
---- HEAD migration_legacy line (verbatim) ---
-
-migration_legacy = ["MINOR from the wave-115 verifier. mission.schema.json (91,438 bytes) is `include_str!`d from TWO places: eden_zones.rs:628 (private const MISSION_SCHEMA, pre-existing) and eden_settings.rs:1063 (T-688, this wave). Both name the SAME path, so drift is impossible and there is genuinely one source of truth — the slice's reasoning for the second embed was correct, and it could not reuse the first because that const is private to a file outside its owns. But an empirical byte count of the DEV wasm artifact finds the full 91KB present exactly twice. Release behaviour after wasm-opt is unverified and may well dedupe. Fix: promote one const to pub(crate) in a shared module and have both read it, which costs nothing and removes the question. ALSO: eden_zones.rs:626 carries a stale comment describing the embed as '~40 KB' against an actual 91 KB — a number that has drifted by more than 2x and should be derived or dropped rather than restated. Diagnosis: editor_verify/wave115.md MINOR-5."]
-
-missing=0
-"""
+notes = "filed by wave-115 adversarial verifier (editor factory)"
 main_goal = "Deduplicate mission.schema.json wasm embed; fix stale size comment."
 context = [
     "Wave-115 MINOR: mission.schema.json embedded twice in wasm though one path.",

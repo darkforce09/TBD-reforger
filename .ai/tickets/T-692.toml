@@ -6,15 +6,7 @@ class = "feature"
 status = "shipped"
 order = 4460
 executor = "claude-code"
-notes = """
-— SHIPPED wave 112 (editor factory), d4b6dd4d + merge fix 4973de19; verifier wave112.md. Help menu + Controls Hint overlay, chrome-gated by mount site; coverage pinned by a test that fails when a keydown arm has no help row — it fired on merge for T-649's KeyA exactly as predicted.
-
---- HEAD migration_legacy (verbatim) ---
-
-NEW-F3. Rows MENU-BAR-008, MENU-VIEW-017, MENU-HELP-001. TBD binds 10 keyboard shortcuts and documents none of them in the UI. Eden has both a Help menu and a toggleable Controls Hint. Pairs with T-668 (state vocabulary) and with 3den E10 — a keybinding collision test is worth little if the bindings are invisible.
-
-missing=0
-"""
+notes = "— SHIPPED wave 112 (editor factory), d4b6dd4d + merge fix 4973de19; verifier wave112.md. Help menu + Controls Hint overlay, chrome-gated by mount site; coverage pinned by a test that fails when a keydown arm has no help row — it fired on merge for T-649's KeyA exactly as predicted."
 main_goal = "Ship Help menu and toggleable Controls Hint documenting keyboard shortcuts."
 context = [
     "NEW-F3 rows MENU-BAR-008 MENU-VIEW-017 MENU-HELP-001.",

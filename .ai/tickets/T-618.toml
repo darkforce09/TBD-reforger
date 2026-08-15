@@ -6,57 +6,6 @@ class = "bug"
 status = "shipped"
 order = 3652
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-FOUND by wave 78's adversarial verifier. **Third round of the same defect** (T-602 -> T-613 -> here),
-and the fix this time is small and specific -- do not redesign the oracles.
-
-=== THE ATTACK, measured in a scratch clone ===
-ONE commit defeats all three cross-checks for a **silent PASS**. Subject `wave 78 CLOSED …`; **in the
-same commit** append wave-78 rows to `docs/platform/wave_plan.tsv` and mark them `shipped` in
-`.ai/tickets/registry.json`; place it after the last slice merge.
-
-    Variant A (marker AFTER wave + plan/registry edited in the same commit):
-      ticket ledger: wave 78 has 2 ticket(s) ... all shipped — corroborated.
-      RC=0        <-- SILENT PASS; range gated = 1 commit, honest range = 11
-    Variant B (marker, NO ledger edits):  refusing to run unconfirmed.  RC=2
-    Variant C (marker mid-wave + plan edit): base cuts through a slice.  RC=2  (oracle 3 catches it)
-
-- **Oracle 1** (`wave_close_is_newest_wave:1938`) never refuses a HIGHER wave number -- 78 beats all
-  of 45-77, so it passes silently.
-- **Oracle 2** (`wave_close_ledger_says:1970`) is the hole. It reads `wave_plan.tsv` and
-  `registry.json` **from HEAD's checkout**, and the forging commit's edits are IN HEAD's tree. The
-  independence claim written at `wave.sh:1901` -- that each check draws on "evidence the commit under
-  test did not itself produce" -- **is false for oracle 2**, because a slice may edit both files.
-- **Oracle 3** (`slice_span_check:2002`) is genuinely marker-free and does catch the mid-wave variant,
-  but its own comment admits it "cannot catch a base placed AFTER the whole wave".
-- The backstop `demand_base_confirmation:2034` fires in variant B but is **bypassed** in A, precisely
-  because editing the two files flips oracle 2 to rc0.
-
-Net effect: the gate runs `base..HEAD` = 1 commit and reports PASS/SKIP over an entire unread wave --
-the wave-75 defect, reintroduced through the derivation oracle.
-
-=== THE FIX (small, specific) ===
-**Read the ledger from OUTSIDE the range being validated.** Oracle 2 must not consult HEAD's tree; it
-should read `wave_plan.tsv` / `registry.json` at the **candidate base's parent**, or at the previous
-close, via `git show <rev>:<path>` -- a revision the forging commit cannot have written. That single
-change restores the independence the comment already claims and kills variant A.
-
-Then **correct the comment at `:1901`** to describe what is actually true. A false independence claim
-in a security-shaped check is worse than no claim, because the next reader stops looking.
-
-Consider also giving oracle 1 an upper bound (a boundary claiming a wave number far beyond the
-highest ticket in the plan is suspicious), but the oracle-2 fix is the load-bearing one.
-
-=== FAIR WEIGHTING, so the next agent does not over-build ===
-This needs a **deliberately forged commit**, not a natural mistake -- but that is exactly T-613's
-stated threat model ("the gate base can no longer approve itself"), it requires no operator
-interaction, and the design only half-discloses the gap: it admits "no fully independent oracle
-exists" while making a specific false independence claim about oracle 2. Fix the read, fix the
-comment, stop.
-
-missing=0"""
 priority = 1
 main_goal = "Read wave_plan and registry at base parent via git show; fix :1901 comment."
 context = [

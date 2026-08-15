@@ -6,12 +6,6 @@ class = "feature"
 status = "shipped"
 order = 3334
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-Wave 38 residual from T-400. identity_link/factions/telemetry isolated. admin_field.rs POST /admin/roles/sync still loops every users row and demotes anyone without user_discord_roles — fires inside the suite against shared rows. Cure: scope sync to fixture actors or skip in IT / use private actors for asserts.
-
-missing=0"""
 priority = 2
 main_goal = "Scope admin_field roles/sync to fixture actors in shared IT DB."
 context = [

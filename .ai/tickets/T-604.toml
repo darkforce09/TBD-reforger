@@ -6,42 +6,6 @@ class = "bug"
 status = "shipped"
 order = 3512
 executor = "claude-code"
-notes = '''
---- HEAD migration_legacy (verbatim) ---
-
-FOUND while writing `docs/platform/PLAYTEST_RUNBOOK.md` (2026-07-31). **This blocks T-181.16 and
-T-068.14, which are the only two things standing between this program and finished.**
-
-=== THE CATCH-22 ===
-`scripts/mod/deploy-staging.sh` has two modes and NEITHER produces a server two clients can join:
-- **`-addonsDir` mode (`:1155`)** registers no backend room -> Direct Join answers "No server found".
-- **`-config` mode (`:1153`)** omits `-addonsDir` entirely, so the local mod GUID in `game.mods[]`
-  cannot resolve -> the mod does not load.
-The mod is **not published to the Workshop** (`TBD_WORKSHOP_MOD_ID` is commented out at
-`deploy.env.example:43`), so the normal third path does not exist either.
-
-`scripts/mod/run-dev-server.sh` looks like the answer and is not: 27 lines, `grep -c
-ArmaReforgerServer` -> 1, and that single hit is a path variable. **It never launches anything.**
-
-=== KNOCK-ON: no admin means T-181.16 cannot pass ===
-`#tbd` admin commands require `game.admins[]`, which only exists in `-config` mode
-(`TBD_AdminService.c:60-70` defers to vanilla's listed-admin manager). No admin -> no `#tbd respawn`
--> the ONE-LIFE admin-respawn acceptance item is unreachable. So the two modes each break a different
-half of the acceptance criteria.
-
-=== THE MEASURED-WORKING SHAPE (from `world-boot.sh:773-778`, engine 1.7.0.54) ===
-    ./ArmaReforgerServer -addonsDir "$HOME/tbd-playtest/addons" \
-      -config "$HOME/tbd-playtest/server.json" -profile "$HOME/tbd-playtest/profile" \
-      -maxFPS 60 -logStats 30000 -nothrow
-Both flags together. Whether that actually registers a joinable room is UNVERIFIED -- `world-boot.sh`
-boots headless with zero players and has never been asked to accept a connection.
-
-FIX: one script that starts a joinable, mod-loaded, admin-capable dedicated server, and a documented
-answer for how a second machine reaches it (LAN Direct Join vs backend room). Until this exists the
-playtest is not runnable and both remaining programs stay blocked.
-
-missing=0
-'''
 priority = 0
 main_goal = "Ship joinable mod-loaded admin-capable dedicated playtest server script."
 context = [

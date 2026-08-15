@@ -6,31 +6,6 @@ class = "chore"
 status = "shipped"
 order = 3752
 executor = "claude-code"
-notes = """
---- HEAD migration_legacy (verbatim) ---
-
-FOUND by wave 81''s verifier (F3). Divergence is entirely in the **safe** direction; filed for accuracy.
-
-`migrations/0020_fire_missions_solution.sql:86-88` claims its accept regex matches `parse_grid`
-character for character. `frontend/src/mortar.rs:297-302` parses via `str::parse::<f64>`, which accepts
-`+`-signed, bare-dot and exponent forms the regex rejects. Measured:
-
-    ''+1000, 2000'' -> f      ''.5, 2'' -> f      ''5., 2'' -> f      ''1e3, 500'' -> f
-    ''1000, 2000''  -> t
-
-**Under-permissive only** -- the dangerous direction (inventing coordinates for rows the calculator
-has always shown as unrestorable) is closed: everything the regex accepts, Rust parses to the same
-finite f64. Practical impact ~nil, because `restore()` (`mortar.rs:347-355`) still falls back to
-`parse_grid` for un-backfilled rows and `fmt_grid` output always matches the regex, so every
-SPA-written row backfills.
-
-The backfill test''s six cases (`t587_fire_mission_solution.rs:311-334`) omit exactly the divergent
-forms -- **the equivalence claim is untested precisely where it is false.**
-
-Pathological edge, recorded: a >~309-digit grid string matches the regex but overflows
-`::double precision`, which would abort the migration. No realistic row has that shape.
-
-missing=0"""
 priority = 3
 main_goal = "Record T-587 backfill regex divergence from parse_grid; accuracy only."
 context = [
