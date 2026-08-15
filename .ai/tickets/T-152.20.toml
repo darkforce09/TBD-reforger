@@ -17,10 +17,16 @@ requirement = [
 ]
 current_state = ["roads forest contours sea props unreachable except via localStorage; O10 untestable."]
 approach = ["MissionSettingsDialog.tsx dumb UI only; Vitest completeness; t152_20_verify_log."]
+verify = [
+    "cd apps/website/frontend && npm test",
+    "cd apps/website/frontend && npm run build",
+]
+acceptance = ["Exposed all twelve WorldClassToggles in Mission Settings with compile-time keyof guard; vitest completeness and seven persistence cases passed; zero crates diffs."]
 citations = [
     "t152_20_settings_completeness.md",
     "commit 4ec87d1b",
     "t152_20_verify_log.md",
+    "Source: verify log G1.",
 ]
 shipped_at = "4ec87d1b"
 created_at = "2026-07-13T21:20:27Z"

@@ -14,10 +14,16 @@ context = ["SVG soldier prior; operator stop-deferring 3D pass."]
 requirement = ["Perspective Depth32Float; REGION_KEYS==RAIL_REGIONS; byte-exact self-check."]
 current_state = ["ArsenalTab SVG silhouette; no engine 3D lane."]
 approach = ["map-engine-core doll/; DollEngine surface; SoldierModel3D wasm mount."]
+verify = [
+    "make wasm-ci",
+    "node scripts/website/verify-wgpu-gpu.mjs",
+]
+acceptance = ["Shipped DollEngine with Depth32Float perspective, ray picking, and SoldierModel3D mount; REGION_KEYS order matched frontend RAIL_REGIONS; doll self-check passed."]
 citations = [
     "t154_0_verify_log.md",
     "commit a65529b3",
     "t154_0_wgpu_doll_engine.md",
+    "Source: t154_0 verify log.",
 ]
 shipped_at = "a65529b3"
 created_at = "2026-07-13T07:11:19Z"

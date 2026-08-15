@@ -17,10 +17,16 @@ requirement = [
 ]
 current_state = ["Four sawmill/farm rows kind town; labels vanish past z=+2 hard cut."]
 approach = ["importance_declutter.rs filter plus fade; locations-export.mjs regen; t152_17_verify_log."]
+verify = [
+    "node scripts/map-assets/verify-town-labels.mjs",
+    "cargo test -p map-engine-core",
+]
+acceptance = ["Drew settlements only on town lane; fixed stale empty-upload bug; replaced hard z>2 cut with alpha fade [2,3]; REQUIRED_EVERON_TOWNS 8 to 7."]
 citations = [
     "t152_17_town_label_correctness.md",
     "commit 45e4d247",
     "t152_17_verify_log.md",
+    "Source: verify log G1-G5.",
 ]
 shipped_at = "45e4d247"
 created_at = "2026-07-13T20:53:31Z"

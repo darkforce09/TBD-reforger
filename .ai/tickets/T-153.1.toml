@@ -14,10 +14,13 @@ context = ["Backend T-153.0 shipped; MC palette still enumerated registry charac
 requirement = ["ArsenalPicksPanel; ensureFaction drops; role loadout on slot; vanilla purge test."]
 current_state = ["AssetBrowser used buildCatalogTree registry dump before ship."]
 approach = ["Library-only palette; side accents; vehicle list T-070 badge only."]
+verify = ["cd apps/website/frontend && npm test"]
+acceptance = ["Shipped FactionManagerDialog and buildFactionTree palette; deleted vanilla character dump; role drops carried loadout and factionRef via ensureFaction path."]
 citations = [
     "t153_verify_log.md",
     "commit c4ccb9c3",
     "t153_faction_library.md",
+    "Source: t153 verify log.",
 ]
 shipped_at = "c4ccb9c3"
 created_at = "2026-07-13T00:00:00Z"

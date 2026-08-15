@@ -14,10 +14,16 @@ context = ["locations.json from T-152.6; text lane from T-152.1."]
 requirement = ["importance_declutter.rs; WorldTownLabels; townLabels toggle; verify-town-labels G2–G5."]
 current_state = ["Settlement names missing at default MC island zoom."]
 approach = ["Parse LocationLabel; IMPORTANCE_SCALE 0.08; draw above height labels."]
+verify = [
+    "cargo test -p map-engine-core importance_declutter --all-features",
+    "node scripts/map-assets/verify-town-labels.mjs --terrain everon --zoom -2",
+]
+acceptance = ["Drew 60 Everon town names from locations.json with A3 declutter at z=-2; all eight required towns covered; townLabels toggle zeroed drawn."]
 citations = [
     "t152_8_verify_log.md",
     "commit d4f27022",
     "t152_8_town_labels.md",
+    "Source: verify log G2-G5.",
 ]
 shipped_at = "d4f27022"
 created_at = "2026-07-13T02:43:45Z"

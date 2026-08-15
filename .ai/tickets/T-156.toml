@@ -23,9 +23,12 @@ approach = [
     'surface one clear "session expired - log in again" banner/toast with a dev-login shortcut in dev,',
     "and make useRegistry/useFactionLibrary consumers render an error state, never the empty-state copy, on failure.",
 ]
+verify = ["cargo test -p website-frontend client"]
+acceptance = ["Distinguished ApiFailure from empty data via Fetched type; registry and factions consumers surfaced session-expired banner instead of empty-state copy on 401."]
 citations = [
     "commit 69ec59b7",
     "DEV_RUNBOOK.md session UX",
+    "Source: commit 69ec59b7.",
 ]
 shipped_at = "69ec59b7"
 created_at = "2026-07-13T10:39:18Z"

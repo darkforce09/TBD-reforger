@@ -14,10 +14,16 @@ context = ["T-074 intent; no reusable cross-mission faction storage."]
 requirement = ["faction-library.schema.json; migration 0006; /api/v1/factions; tests T1–T8."]
 current_state = ["Factions lived only per-mission; no contract-validated library backend."]
 approach = ["Golden codegen; mission_maker+ routes; doc jsonb owner-scoped writes."]
+verify = [
+    "cargo xtask db test-it",
+    "cargo xtask ci schema-codegen",
+]
+acceptance = ["Shipped faction-library schema, migration 0006, and owner-scoped /api/v1/factions CRUD; integration tests T1-T8 passed on fresh database."]
 citations = [
     "t153_verify_log.md",
     "commit e2aec2de",
     "t153_faction_library.md",
+    "Source: t153 verify log.",
 ]
 shipped_at = "e2aec2de"
 created_at = "2026-07-13T00:00:00Z"

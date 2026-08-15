@@ -14,10 +14,16 @@ context = ["T-152 ships across 10+ slices; partial symbology could merge hidden.
 requirement = ["Aggregator script; master verify log; merge readiness doc; zero open FAIL."]
 current_state = ["Per-slice logs only; O1–O12 operator rows pending at ship."]
 approach = ["verify-t152-cartographic.mjs; t152_10_verify_log; t152_merge_readiness.md."]
+verify = [
+    "node scripts/map-assets/verify-t152-cartographic.mjs",
+    "cargo xtask ci schema-validate",
+]
+acceptance = ["Automated cartographic aggregator passed G1-G7; merge readiness doc shipped; operator O1-O12 remained pending at ship."]
 citations = [
     "t152_10_verify_log.md",
     "commit ed44c1ae",
     "t152_10_e2e_cartographic_gate.md",
+    "Source: verify log G1-G7.",
 ]
 shipped_at = "ed44c1ae"
 created_at = "2026-07-13T02:58:54Z"

@@ -17,10 +17,13 @@ requirement = [
 ]
 current_state = ["Default editor z=-2 shows white OBB rectangles; BUILDING_BADGE_MIN_ZOOM is 1.0."]
 approach = ["residency.rs override plus glyph_math floor; Class R lighthouse fixture; t152_21_verify_log."]
+verify = ["cargo test -p map-engine-core --all-features"]
+acceptance = ["Wired importanceZoom override so 44 landmark badges drew at z=-2; residency band kept early glyphs while ordinary building fills gated below -2.5."]
 citations = [
     "t152_21_landmark_early_visibility.md",
     "commit d5c746df",
     "t152_21_verify_log.md",
+    "Source: verify log G1-G4.",
 ]
 shipped_at = "d5c746df"
 created_at = "2026-07-13T22:43:08Z"

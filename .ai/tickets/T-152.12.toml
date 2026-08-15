@@ -14,10 +14,16 @@ context = ["Text lane dead at every tag: WGSL struct 32 B vs 16 B bind size."]
 requirement = ["GPU readback gate on asymmetric glyph; WebGPU and WebGL2 backends."]
 current_state = ["Hotfix only in worktree; .7–.10 never exercised GPU text path."]
 approach = ["shader.wgsl vs_text V-flip; engine.rs 3×f32 pads; t152_12_verify_log.md."]
+verify = [
+    "cargo test -p map-engine-render",
+    "node scripts/website/verify-wgpu-gpu.mjs",
+]
+acceptance = ["Landed 16 B TextUniforms pad fix and vs_text V-flip; text_self_check GPU readback and operator WebGPU screenshots confirmed upright labels."]
 citations = [
     "commit dca239cb",
     "t152_12_verify_log.md",
     "t152_12_text_lane_orientation.md",
+    "Source: verify log G1-G4.",
 ]
 shipped_at = "981dab35"
 created_at = "2026-07-13T12:17:00Z"

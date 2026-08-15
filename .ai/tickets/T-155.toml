@@ -17,9 +17,12 @@ current_state = [
     "Repro: open the editor in two tabs, wait out the access TTL, act in the stale tab.",
 ]
 approach = ["Fix: cross-tab mutex around refresh (Web Locks API, BroadcastChannel fallback) + adopt the rotated pair from the winning tab (storage event), so N tabs spend one rotation."]
+verify = ["cargo test -p website-frontend client"]
+acceptance = ["Serialized refresh under Web Locks REFRESH_LOCK_NAME across tabs; losing tab adopted rotated token pair via BroadcastChannel instead of double-spending stale refresh."]
 citations = [
     "commit 69ec59b7",
     "DEV_RUNBOOK.md auth section",
+    "Source: commit 69ec59b7.",
 ]
 shipped_at = "a6be2a5d"
 created_at = "2026-07-13T10:39:18Z"

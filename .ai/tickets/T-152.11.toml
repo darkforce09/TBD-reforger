@@ -14,10 +14,13 @@ context = ["T-152.10 automated PASS masked operator symptoms: dead text, blank p
 requirement = ["Reproduce ledger with file:line evidence; map follow-up slices; no application code."]
 current_state = ["Per-slice verify logs; O1–O12 operator pending; TextUniforms hotfix uncommitted."]
 approach = ["t152_11_fidelity_audit_report.md; scaffold T-152.12–.22 specs @ e9319ceb."]
+verify = ["test -f .ai/artifacts/t152_11_fidelity_audit_report.md"]
+acceptance = ["Published D1-D13 fidelity audit with file-line evidence and fix matrix; scaffolded remediation specs T-152.12-.22; wrote no application code."]
 citations = [
     "t152_11_fidelity_audit_report.md",
     "commit a8a7a22c",
     "t152_11_operator_fidelity_audit.md",
+    "Source: audit report D1-D13.",
 ]
 shipped_at = "a8a7a22c"
 created_at = "2026-07-13T11:44:11Z"

@@ -14,10 +14,16 @@ context = ["Post-.12 lane upright but 5×7 strokes unreadable at editor zooms."]
 requirement = ["Full ASCII lowercase; no-blob gate on committed label data; wasm +256 KiB cap."]
 current_state = ["128×48 procedural atlas; punctuation renders O-shaped blob."]
 approach = ["Spleen 16×32 in 32px cells; accent fold; t152_13_verify_log.md."]
+verify = [
+    "cargo test -p map-engine-render",
+    "node scripts/website/verify-wgpu-gpu.mjs",
+]
+acceptance = ["Replaced 8x8 procedural font with Spleen 16x32 baked atlas; full ASCII lowercase; zero tofu on committed label corpora; wasm grew 3637 B."]
 citations = [
     "commit 2240148d",
     "t152_13_verify_log.md",
     "t152_13_text_atlas_fidelity.md",
+    "Source: verify log G1-G4.",
 ]
 shipped_at = "2240148d"
 created_at = "2026-07-13T12:56:40Z"
