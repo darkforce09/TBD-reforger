@@ -6,6 +6,20 @@ class = "feature"
 status = "shipped"
 order = 130
 executor = "cursor-docs"
+main_goal = "Every blueprint page is on the Aegis design language; only the 2D Mission Creator remains unbuilt."
+context = ["Phase 3 of the macOS redesign; presentation-only, no API or query changes."]
+requirement = ["Restyle the dashboards and grids onto the Aegis language: glass bento, glass cards, podium, featured mission grid."]
+current_state = ["Dashboard, Server Intel and Settings, Leaderboards, Mission Library, Modpacks and Mortar still ran pre-Aegis styling; mission cards navigated to a full page instead of a dossier slide-over."]
+approach = [
+    "Dashboard becomes a glass bento (hero countdown, status cards, recent-intel feed) with Badge chips; Server Intel and Settings move to glass cards with mono stat figures.",
+    "Leaderboards get glass podium cards; Mission Library becomes a featured card grid with terrain thumbnails opening the dossier in a Sheet slide-over.",
+    "Shared MissionDossierBody is reused by the /missions/:id deep-link page; Modpacks and Mortar move to glass panels, Required becomes a Badge.",
+]
+verify = ["tsc -b, npm run build, npm run lint clean; live dev-login API contract smoke."]
+citations = [
+    "Source: commit ce1d3ef6.",
+    "Source: docs/platform/SHIPPED_HISTORY.md §T-013.",
+]
 shipped_at = "ce1d3ef6"
 created_at = "2026-06-19T08:10:38Z"
 completed_at = "2026-06-19T08:10:38Z"

@@ -6,6 +6,20 @@ class = "feature"
 status = "shipped"
 order = 110
 executor = "cursor-docs"
+main_goal = "The macOS Aegis design layer exists: palette, type scale, glass utilities and reusable primitives for the page redesigns."
+context = ["Phase 1 of the macOS UI redesign; pages already referenced many Aegis tokens that were undefined."]
+requirement = ["A reusable design-system layer for the page redesigns to build on; no behaviour or API changes."]
+current_state = ["index.css lacked the Aegis palette and semantic type scale; no shared SplitPane, Dialog or Sheet primitives existed."]
+approach = [
+    "index.css adopts the full Aegis palette (desaturated #adc6ff primary, off-white on-surface, tertiary/tactical-yellow/error-alert, surface-glass), the text-headline-lg..text-code-md type scale, and the .glass/.bg-topo-map/.bg-grid-overlay utilities plus tactical scrollbar.",
+    "New components/ui primitives on @base-ui/react with no new deps: SplitPane, Dialog, Sheet, Switch, Badge, GlassPanel/HudBar, ListDetailItem; OpsCard gains a glass variant.",
+    "Shell: AppLayout honors a fullBleed route handle so split-pane pages run full-height; TopNav becomes a frosted glass bar; Sidebar uses the Aegis left-bar active state.",
+]
+verify = ["tsc -b, npm run build, npm run lint all clean; the dev server boots."]
+citations = [
+    "Source: commit 384a552b.",
+    "Source: docs/platform/SHIPPED_HISTORY.md §T-011.",
+]
 shipped_at = "384a552b"
 created_at = "2026-06-19T07:49:44Z"
 completed_at = "2026-06-19T07:49:44Z"

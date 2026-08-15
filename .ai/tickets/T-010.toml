@@ -6,6 +6,23 @@ class = "feature"
 status = "shipped"
 order = 100
 executor = "cursor-docs"
+main_goal = "ORBAT slots carry role, loadout and tag, and a leader reserves a whole squad in one click."
+context = ["Squad slots were uniform role-and-count rows: no per-slot loadouts and no way for a leader to hold a squad."]
+requirement = [
+    "Per-slot ORBAT data: each squad lists ordered slots with role, loadout and an optional specialization tag, rendered as a numbered list.",
+    "A leader role that reserves an entire squad in one click; a held squad blocks other claims until released; the reserver or an admin fills it by assigning members.",
+]
+current_state = ["ORBAT parsing used the T-008 faction/callsign/squad/role/count template; roles were enlisted < mission_maker < admin with no leader tier."]
+approach = [
+    "New orbat[].slots[] schema parsed in events.go; OrbatSlot gains loadout and tag; slots render as a numbered loadout list.",
+    "A leader role (enlisted<leader<mission_maker<admin) lands in authz.go, the enum migration and the dev-login/role-sync seeds; OrbatReservation model plus reserve/release endpoints; slot/assign routes move leader-tier.",
+    "Frontend OrbatSelector renders numbered loadout rows, the reserve/release controls, and an inline member-assignment typeahead backed by a new /members directory search.",
+]
+verify = ["make test-it including the reservation case with distinct users; frontend build+lint; live dev-login smoke."]
+citations = [
+    "Source: commit 12a0463f.",
+    "Source: docs/platform/SHIPPED_HISTORY.md §T-010.",
+]
 shipped_at = "8f554f3e"
 created_at = "2026-06-19T02:59:38Z"
 completed_at = "2026-06-19T03:00:10Z"

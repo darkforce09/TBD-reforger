@@ -6,6 +6,20 @@ class = "feature"
 status = "shipped"
 order = 40
 executor = "cursor-docs"
+main_goal = "Every page runs on live backend data with hardened auth, verified end-to-end against a running stack."
+context = ["The T-001 shell was scaffolded, not connected; T-004 was reassigned to frontend because the backend endpoints already existed."]
+requirement = ["Connect the React SPA to the Go API end-to-end: typed hooks, auth bootstrap, route gates, per-page data wiring."]
+current_state = ["Pages rendered the visual shell only; the react-query hooks existed as scaffold without live wiring."]
+approach = [
+    "Typed query/mutation hooks, auth bootstrap with AuthGate/AdminGate route gates, and per-page wiring onto live data.",
+    "Verification fixes: the auth bootstrap dropped the rotated single-use refresh token (silent logout on next load); bootstrap and 401-interceptor refresh unified behind one single-flight helper.",
+    "Contract fixes: pending_code is boolean, armory quantity null renders Unlimited, leaderboards return empty [], next_cursor typed number, inline SVG avatar fallback, lint cleanups.",
+]
+verify = ["Verified against a live backend: full API contract smoke plus headless browser E2E across all routes."]
+citations = [
+    "Source: commit fad698bc.",
+    "Source: docs/platform/SHIPPED_HISTORY.md §T-004.",
+]
 shipped_at = "fad698bc"
 created_at = "2026-06-18T19:15:11Z"
 completed_at = "2026-06-18T19:15:11Z"

@@ -6,6 +6,19 @@ class = "bug"
 status = "shipped"
 order = 240
 executor = "cursor-docs"
+main_goal = "The calendar with a per-day op list is the Event Manager's primary view; creation happens in a frosted Dialog."
+context = ["R4/R6 of the T-018..T-025 Aegis consistency audit; R6 is the form-over-list anti-pattern."]
+requirement = ["Replace the always-on form beside the calendar with a Dialog flow; move calendar colors onto tokens."]
+current_state = ["An always-on Schedule Operation form sat beside the calendar (form-over-list); selection, today and CTA colors were off-token."]
+approach = [
+    "The calendar plus a per-day Scheduled Operations list become the primary view; creating an op opens the shared frosted Dialog over them, preserving context.",
+    "Calendar selection, today and CTA colors move to action/primary tokens; the attach dropdown moves to a surface token.",
+]
+verify = ["npm run build and npm run lint clean after every commit of the series."]
+citations = [
+    "Source: commit 0b11ff9e.",
+    "Source: docs/platform/SHIPPED_HISTORY.md §T-018..T-025.",
+]
 shipped_at = "0b11ff9e"
 created_at = "2026-06-20T01:35:17Z"
 completed_at = "2026-06-20T01:35:17Z"

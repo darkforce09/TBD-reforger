@@ -6,6 +6,19 @@ class = "feature"
 status = "shipped"
 order = 180
 executor = "cursor-docs"
+main_goal = "Telemetry numerics render in JetBrains Mono: player-count heroes match the adjacent uptime/FPS figures."
+context = ["A platform-wide audit collapsed the remaining Aegis inconsistencies into four systemic defects fixed across the T-018..T-025 series; R3 is the mono-for-telemetry rule."]
+requirement = ["Player-count heroes on Dashboard and Server Intel render in JetBrains Mono, matching the adjacent uptime/FPS telemetry."]
+current_state = ["The hero player counts rendered in the default face beside mono uptime/FPS telemetry figures."]
+approach = [
+    "Mono hero numerics land on Dashboard and Server Intel per the Aegis mono-for-telemetry rule.",
+    "Same-tag full-bleed pass: admin (Server Control, Personnel, Comms Broadcaster, Audit), Modpacks and Mortar split-panes; Content Manager renamed Comms Broadcaster; DEV_RUNBOOK.md, cmd/seed mock-data seeder and Mission Creator spec added.",
+]
+verify = ["npm run build and npm run lint clean after every commit of the series."]
+citations = [
+    "Source: commits 29b4776c + 94e291be.",
+    "Source: docs/platform/SHIPPED_HISTORY.md §T-018..T-025.",
+]
 shipped_at = "3c7d4186"
 created_at = "2026-06-20T01:06:10Z"
 completed_at = "2026-06-20T01:40:31Z"

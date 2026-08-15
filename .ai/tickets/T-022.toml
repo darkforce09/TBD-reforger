@@ -6,6 +6,19 @@ class = "bug"
 status = "shipped"
 order = 220
 executor = "cursor-docs"
+main_goal = "The Event Hub runs full-bleed with mono ORBAT slot counts."
+context = ["R1/R3 batch of the T-018..T-025 Aegis consistency audit."]
+requirement = ["Event Hub converts to full-bleed; mission slot fill counts and squad fill ratios render in mono."]
+current_state = ["EventHubPage sat in a centered max-w-5xl box; fill counts rendered in the default face."]
+approach = [
+    "Edge-to-edge, full-height glass surface that scrolls internally with content in a centered reading column; the route gains the fullBleed handle; counts and ratios move to mono.",
+    "The embedded OrbatSelector keeps its self-contained grid: SplitPane is full-height page chrome that would not fit inside a dossier card, and the selector is already on Aegis tokens.",
+]
+verify = ["npm run build and npm run lint clean after every commit of the series."]
+citations = [
+    "Source: commit f7b18b28.",
+    "Source: docs/platform/SHIPPED_HISTORY.md §T-018..T-025.",
+]
 shipped_at = "f7b18b28"
 created_at = "2026-06-20T01:28:54Z"
 completed_at = "2026-06-20T01:28:54Z"

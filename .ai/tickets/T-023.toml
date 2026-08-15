@@ -6,6 +6,16 @@ class = "feature"
 status = "shipped"
 order = 230
 executor = "cursor-docs"
+main_goal = "Server Control rides the shared SplitPane on Aegis tokens with mono telemetry heroes."
+context = ["R2/R3/R4 batch of the T-018..T-025 Aegis consistency audit."]
+requirement = ["Server Control moves to the shared SplitPane; off-palette colors move to tokens; telemetry heroes render mono."]
+current_state = ["The command center ran its own layout with a blue active state, an off-token LAUNCH CTA and default-face telemetry heroes."]
+approach = ["Server selector master to command/telemetry/RCON detail over a topo-map/glass encasing; active state and LAUNCH CTA move to primary/action tokens; RCON command-echo to primary; personnel and FPS heroes to mono."]
+verify = ["npm run build and npm run lint clean after every commit of the series."]
+citations = [
+    "Source: commit af2edbcd.",
+    "Source: docs/platform/SHIPPED_HISTORY.md §T-018..T-025.",
+]
 shipped_at = "af2edbcd"
 created_at = "2026-06-20T01:31:58Z"
 completed_at = "2026-06-20T01:31:58Z"

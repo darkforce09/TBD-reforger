@@ -6,6 +6,16 @@ class = "feature"
 status = "shipped"
 order = 190
 executor = "cursor-docs"
+main_goal = "The mission dossier rides the shared Sheet primitive instead of a hand-rolled slide-over."
+context = ["R5 of the T-018..T-025 Aegis consistency audit: shared primitives replace hand-rolled re-implementations."]
+requirement = ["Move the slide-over mission dossier onto the design-system Sheet and its colors onto Aegis tokens."]
+current_state = ["The slide-over dossier re-implemented Base UI Portal/Backdrop/Popup by hand with off-palette colors (bg-slate-900, bg-blue-600, text-blue-300); SheetContent had no other consumers."]
+approach = ["Add a bleed edge-to-edge mode and SheetTitle/SheetDescription exports to the shared SheetContent so the wide cinematic dossier rides the primitive; its action footer recolors to action/primary/surface tokens."]
+verify = ["npm run build and npm run lint clean after every commit of the series."]
+citations = [
+    "Source: commit 5527e0dc.",
+    "Source: docs/platform/SHIPPED_HISTORY.md §T-018..T-025.",
+]
 shipped_at = "5527e0dc"
 created_at = "2026-06-20T01:17:53Z"
 completed_at = "2026-06-20T01:17:53Z"

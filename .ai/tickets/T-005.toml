@@ -6,6 +6,18 @@ class = "docs"
 status = "shipped"
 order = 50
 executor = "cursor-docs"
+main_goal = "A fresh session has one entry point: CLAUDE.md carries build status, run instructions and conventions."
+context = ["T-001..T-004 landed without a handoff document, and the design specs read as current state rather than plan."]
+requirement = ["Write the CLAUDE.md handoff and refresh the project docs."]
+current_state = ["No CLAUDE.md existed; the frontend README was Vite boilerplate; the specs carried no status banners."]
+approach = [
+    "New CLAUDE.md: build status T-001..T-004, how to run the stack, dev-login, repo layout, and contract plus git conventions — the entry point for a fresh session.",
+    "A project-specific frontend guide replaces the Vite README; the design specs gain status banners pointing at CLAUDE.md.",
+]
+citations = [
+    "Source: commit 2f18188b.",
+    "Source: docs/platform/SHIPPED_HISTORY.md §T-005..T-007.",
+]
 shipped_at = "2f18188b"
 created_at = "2026-06-18T19:31:13Z"
 completed_at = "2026-06-18T19:31:13Z"

@@ -6,6 +6,19 @@ class = "feature"
 status = "shipped"
 order = 200
 executor = "cursor-docs"
+main_goal = "The Doctrine pages sit on Aegis tokens with no off-palette vivid colors."
+context = ["R4 of the T-018..T-025 Aegis consistency audit: off-palette vivid blue/slate/red/amber survived across pages."]
+requirement = ["Replace off-palette vivid colors with Aegis tokens on Modpacks, Wiki, Vehicles and the Mortar Calculator."]
+current_state = ["Blue active/selection states, blue CTAs, slate body text and red/amber/blue markdown callouts were hard-coded off-palette."]
+approach = [
+    "Blue active/selection states move to primary, blue CTAs to action, slate body text to on-surface-variant, and the red/amber/blue markdown callout admonitions to error/tactical-yellow/primary.",
+    "Glow shadow tints retinted to the primary halo; white/black opacity utilities (the shared glass vocabulary) and bright text-white headings left intact.",
+]
+verify = ["npm run build and npm run lint clean after every commit of the series."]
+citations = [
+    "Source: commit d955efc5.",
+    "Source: docs/platform/SHIPPED_HISTORY.md §T-018..T-025.",
+]
 shipped_at = "d955efc5"
 created_at = "2026-06-20T01:22:05Z"
 completed_at = "2026-06-20T01:22:05Z"

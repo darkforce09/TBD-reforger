@@ -6,6 +6,23 @@ class = "chore"
 status = "shipped"
 order = 80
 executor = "cursor-docs"
+main_goal = "An Event is a container of sequential missions whose ORBAT slots derive automatically from each mission's payload."
+context = ["An Event wrapped exactly one mission and could not express multi-mission campaign nights."]
+requirement = [
+    "Turn an Event into a container of sequential missions.",
+    "Derive ORBAT slots automatically from each mission's json_payload.orbat; add a macOS-style split-pane ORBAT selection UI.",
+]
+current_state = ["orbat_slots and event_registrations keyed on event_id; events carried a single mission_id; squads were created manually."]
+approach = [
+    "New event_missions table; orbat_slots and event_registrations rekey on event_mission_id; events.mission_id dropped, briefing and banner_image_url added; idempotent clean-cutover migration 02_campaign_refactor.sql runs pre-AutoMigrate.",
+    "POST /events/:id/missions parses json_payload.orbat and materializes slots (reusing parseOrbatTemplate/materializeSlots); slot/registration actions move to top-level /event-missions/:emid/...; GET /events/:id returns the hub with nested dossiers; registration is per-mission.",
+    "Frontend: EventHubPage plus split-pane OrbatSelectionPage; Event Manager rebuilt as create-container + attach-mission; schedule and dashboard route to the hub; date formatters made invalid-date-safe.",
+]
+verify = ["make test-it, frontend build+lint, and a live dev-login API smoke: create event, attach mission, auto-ORBAT, claim slot, withdraw."]
+citations = [
+    "Source: commit 2eef30bb.",
+    "Source: docs/platform/SHIPPED_HISTORY.md §T-008.",
+]
 shipped_at = "a1c979ff"
 created_at = "2026-06-18T23:27:00Z"
 completed_at = "2026-06-18T23:27:50Z"

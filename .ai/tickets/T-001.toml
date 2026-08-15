@@ -6,6 +6,21 @@ class = "feature"
 status = "shipped"
 order = 10
 executor = "claude-code"
+main_goal = "The platform exists end to end: a complete Go REST API and a React shell ready for feature wiring."
+context = ["First website commit: the repo held only the Enfusion mod work; the platform needed its backend and frontend scaffold before any feature ticket."]
+requirement = [
+    "Complete REST API across all milestones: Discord OAuth plus JWT, missions, events/ORBAT, telemetry/leaderboards, admin, field tools.",
+    "A React visual shell built from the Stitch design exports.",
+]
+current_state = ["No website code existed; earlier commits are the Enfusion mod (spawn, loader, schema) only."]
+approach = [
+    "Go backend under cmd/ and internal/ — GORM plus Postgres with a migration pipeline, handlers for every resource.",
+    "Vite/React/TS frontend with routing, auth store, axios client and react-query hooks scaffolded — 189 files, 25609 insertions in one commit.",
+]
+citations = [
+    "Source: commit 70c39013.",
+    "Source: docs/platform/SHIPPED_HISTORY.md §T-001.",
+]
 created_at = "2026-06-18T00:00:00Z"
 completed_at = "2026-06-18T00:00:00Z"
 estimated = [

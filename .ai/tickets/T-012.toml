@@ -6,6 +6,20 @@ class = "feature"
 status = "shipped"
 order = 120
 executor = "cursor-docs"
+main_goal = "The platform pages read as macOS split-pane master/detail surfaces built on the Aegis primitives."
+context = ["Phase 2 of the macOS redesign, building on the T-011 primitives; presentation-only, no API or query changes."]
+requirement = ["Adopt SplitPane, Dialog, Sheet, Switch, Badge and HudBar plus the fullBleed handle across the platform pages."]
+current_state = ["Pages still ran their pre-Aegis layouts; Event and Content Manager used always-on forms beside their lists (form-over-list); no Vehicle Database page existed."]
+approach = [
+    "Announcements becomes an Apple-Mail split-view; Event Schedule a split-pane with op cards and an embedded EventHubView (ORBAT selector logic unchanged); My Deployments a service-record split dossier.",
+    "Admin: Personnel table plus slide-over dossier; Approvals queue plus review HUD; Audit terminal feed; Event/Content Manager forms move into frosted Dialogs; Switch replaces checkboxes.",
+    "New Vehicle Database page (/vehicles, split-pane dossier) with route and nav entry.",
+]
+verify = ["tsc -b, npm run build, npm run lint all clean; live dev-login API contract smoke."]
+citations = [
+    "Source: commit b6f0a1c7.",
+    "Source: docs/platform/SHIPPED_HISTORY.md §T-012.",
+]
 shipped_at = "f8ae724a"
 created_at = "2026-06-19T07:59:49Z"
 completed_at = "2026-06-19T08:04:32Z"

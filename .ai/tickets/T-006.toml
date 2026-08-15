@@ -6,6 +6,16 @@ class = "docs"
 status = "shipped"
 order = 60
 executor = "cursor-docs"
+main_goal = "Documentation claims match the codebase after verifying each one against it."
+context = ["Follow-up to the T-005 doc seed; doc claims needed verification against the code."]
+requirement = ["Correct the documentation inaccuracies."]
+current_state = ["BACKEND_ARCHITECTURE.md cited 18 Stitch mockups at a stale root path; CLAUDE.md did not state that post-T-004 commits were documentation only."]
+approach = ["Fix the Stitch reference to 21 mockups at frontend/src/stitch-exports/; clarify in CLAUDE.md that post-T-004 commits are documentation only, so the feature status reads correctly."]
+verify = ["Every corrected claim was verified against the codebase."]
+citations = [
+    "Source: commit eaba8936.",
+    "Source: docs/platform/SHIPPED_HISTORY.md §T-005..T-007.",
+]
 shipped_at = "eaba8936"
 created_at = "2026-06-18T19:36:00Z"
 completed_at = "2026-06-18T19:36:00Z"

@@ -6,6 +6,15 @@ class = "feature"
 status = "shipped"
 order = 90
 executor = "cursor-docs"
+main_goal = "Members register from the mission dossier itself — no separate Open ORBAT navigation step."
+context = ["The T-008 hub showed dossiers but registration still required an Open ORBAT navigation step per mission."]
+requirement = ["Render the faction/squad/slot selector and the Register button inline in each mission dossier."]
+current_state = ["Registering meant leaving the hub for the standalone /events/:id/missions/:emid/orbat page, the only place the split-pane selector lived."]
+approach = ["Each mission dossier renders the selector and Register for Deployment inline; the split-pane becomes a reusable OrbatSelector in pages/events.tsx; the standalone route reuses it for deep-links."]
+citations = [
+    "Source: commit cc2eed36.",
+    "Source: docs/platform/SHIPPED_HISTORY.md §T-009.",
+]
 shipped_at = "6228b9fc"
 created_at = "2026-06-18T23:35:25Z"
 completed_at = "2026-06-18T23:36:11Z"
