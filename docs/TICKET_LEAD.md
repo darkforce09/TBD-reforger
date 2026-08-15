@@ -9,6 +9,7 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+- **T-919** (5990) — Wall triage: drain migration_legacy into typed fields [ready] — Wall triage: drain migration_legacy into typed fields
 
 ## Next queued (top 10)
 

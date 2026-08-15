@@ -11,6 +11,13 @@
       "status": "ready",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_6_geometry_placement_audit.md",
       "branch": "ticket/T-090"
+    },
+    {
+      "id": "T-919",
+      "title": "Wall triage: drain migration_legacy into typed fields",
+      "status": "ready",
+      "spec": "docs/platform/t917_ticket_schema_v2.md",
+      "branch": "ticket/T-919"
     }
   ]
 }
