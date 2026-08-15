@@ -9,7 +9,6 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
-- **T-919** (5990) — Wall triage: drain migration_legacy into typed fields [ready] — Wall triage: drain migration_legacy into typed fields
 - **T-921** (6010) — History reconstruction: body fields + titles for shipped tickets [ready] — Batched reviewed reconstruction over shipped tickets without quarantined walls: fill the body fields and repair deficient titles from each ticket's spec, commits and diffs, citing sources. Each batch shrinks both debt pins in the same commit.
 
 ## Next queued (top 10)
@@ -23,11 +22,11 @@
 EXECUTOR CORRECTED 2026-08-02: was filed `workbench` on the mistaken reading that any .c file needs the Arma Workbench GUI. It does not — scripts/mod/compile.sh compiles tbd-framework against the native Linux dedicated server headlessly, verified: "OK: compiled clean, 5707 files, 11182 classes, 832 ms, no Workbench". Schema edits are plain JSON. This is factory work. Per the model-routing rule, the .c portion routes to Fable 5 even though the executor is claude-code.
 
 SCHEMA HALF SPLIT OUT to T-706 (one widening pass for the whole program). This ticket is the Enfusion reader plus any editor UI; it does not touch packages/tbd-schema.
-- **T-675** (4320) — Vehicle roster reaches the game — the compile half of T-076 [queued] — The cross-boundary half that was split out of T-076 so the crew UI could be dispatched. No attribute ids of its own; it closes the sixth entry in the T-216 drop ledger. BLOCKING EVIDENCE: `crates/map-engine-core/src/mission/flatten.rs`:2631 states the delta as "document root + a new $def", key `vehicles`, and :2634-2640 PROVES the already-declared `entities[]` cannot carry it — `$defs/alias` is `^(kit|comp|veh|preset|layer|prop|item):[a-z0-9_]+$` and `apps/mod/tbd-framework/Data/registry.json` holds exactly ONE `veh:` row, so alias substitution would reproduce the T-200 silent-substitution defect with a 10-tonne vehicle. Without this, T-076's crew UI authors state the game never sees. EXECUTOR IS `workbench` DELIBERATELY: this modifies `packages/tbd-schema/schema/mission.schema.json` and/or `apps/mod/tbd-framework/`, which the CLAUDE.md executor gate puts out of reach of any coding agent. The factory filters on executor, so this tagging is the safety mechanism — do not flip it to claude-code.
+- **T-675** (4320) — Vehicle roster reaches game — T-076 compile half [queued] — Cross-boundary compile half split from T-076 so crew UI could ship separately.
+Closes the sixth T-216 drop-ledger row: top-level vehicles[] with seats and crew refs.
+T-706 already widened the schema; this program emits and reads the roster.
+Unmerged salvage 113108a1 overlaps T-674 — check subsumption before redo.
 
-EXECUTOR CORRECTED 2026-08-02: was filed `workbench` on the mistaken reading that any .c file needs the Arma Workbench GUI. It does not — scripts/mod/compile.sh compiles tbd-framework against the native Linux dedicated server headlessly, verified: "OK: compiled clean, 5707 files, 11182 classes, 832 ms, no Workbench". Schema edits are plain JSON. This is factory work. Per the model-routing rule, the .c portion routes to Fable 5 even though the executor is claude-code.
-
-SCHEMA HALF SPLIT OUT to T-706 (one widening pass for the whole program). This ticket is the Enfusion reader plus any editor UI; it does not touch packages/tbd-schema.
 - **T-676** (4330) — Trigger activation and effects — the Enfusion runtime [queued] — Trigger activation and effects — the Enfusion runtime
 - **T-677** (4340) — Waypoints — group movement orders [queued] — Waypoints — group movement orders
 - **T-678** (4350) — Group AI state: combat mode, behaviour, formation, speed [queued] — Group AI state: combat mode, behaviour, formation, speed

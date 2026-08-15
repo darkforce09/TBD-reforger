@@ -3,7 +3,7 @@ kind = "work"
 title = "Wall triage: drain migration_legacy into typed fields"
 summary = "Wall triage: drain migration_legacy into typed fields"
 class = "chore"
-status = "ready"
+status = "shipped"
 order = 5990
 spec = "docs/platform/t917_ticket_schema_v2.md"
 plan = "docs/plans/t-919_plan.md"
@@ -42,6 +42,7 @@ citations = [
     "T-920 tier-set batch fills",
 ]
 created_at = "2026-08-14T21:54:38Z"
+completed_at = "2026-08-15T17:55:09Z"
 owns = [".ai/tickets"]
 
 [scope]

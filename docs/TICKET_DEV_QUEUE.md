@@ -14,14 +14,6 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Targets:** 
 - **Summary:** Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
 
-## T-919 — Wall triage: drain migration_legacy into typed fields
-
-- **Slice spec:** `docs/platform/t917_ticket_schema_v2.md`
-- **Program hub:** `docs/platform/t917_ticket_schema_v2.md`
-- **Branch:** `ticket/T-919`
-- **Targets:** 
-- **Summary:** Wall triage: drain migration_legacy into typed fields
-
 ## T-921 — History reconstruction: body fields + titles for shipped tickets
 
 - **Slice spec:** `docs/platform/t920_body_obligations.md`

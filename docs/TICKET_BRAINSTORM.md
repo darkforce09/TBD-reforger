@@ -23,44 +23,44 @@
 - **T-096** (deferred) — Live game-server telemetry bridge [] — Bridge live game-server events into telemetry ingest.
 - **T-110** (deferred) — Terrain base + sparse deltas [] — Binary terrain base layer plus sparse delta props for 1M+ map objects.
 - **T-121** (deferred) — Terrain DEM export automation [] — Follow-ons: Arland re-export, optional game-mode heightmap fallback. MCP hardening shipped @ e7e7232 (mcp-call/daemon/consume/selftest). Core GetSurfaceY plugin shipped in T-091.0. Spec: t121_terrain_dem_export_automation.md.
-- **T-205** (deferred) — Vehicle data has no seats, crew roles, cargo capacity or turret bindings [] — Vehicle data has no seats, crew roles, cargo capacity or turret bindings
+- **T-205** (deferred) — Vehicle seats, crew roles, turret bindings [] — Vehicle data has no seats, crew roles, cargo capacity or turret bindings
 - **T-206** (deferred) — Item data is 78% empty [] — Item data is 78% empty
-- **T-327** (deferred) — `#tbd link` code is visible in chat before TBD can suppress it [] — `#tbd link` code is visible in chat before TBD can suppress it
+- **T-327** (deferred) — Chat shows `#tbd link` before TBD can suppress [] — `#tbd link` code is visible in chat before TBD can suppress it
 - **T-404** (deferred) — Doc/comment hygiene: three in-code statements that are now false [] — Doc/comment hygiene: three in-code statements that are now false
 - **T-652** (deferred) — Rocks are not rendered [] — Rocks are not rendered
 - **T-707** (deferred) — wave.sh test-split comment transposes its own measurement [] — wave.sh test-split comment transposes its own measurement
 - **T-708** (deferred) — capture shot: hang-fallback latency regressed 25s to 130s [] — capture shot: hang-fallback latency regressed 25s to 130s
 - **T-709** (deferred) — capture zoomsweep lost the per-zoom console error tap [] — capture zoomsweep lost the per-zoom console error tap
 - **T-710** (deferred) — capture port: pin the parity-bearing pure functions with tests [] — capture port: pin the parity-bearing pure functions with tests
-- **T-711** (deferred) — Doc sync: t090_render_lod_contract §N3 superseded by T-639; t152_7 stale contour reference [] — Doc sync: t090_render_lod_contract §N3 superseded by T-639; t152_7 stale contour reference
-- **T-712** (deferred) — Contour band: honest constant annotations + sample the default view in acceptance [] — Contour band: honest constant annotations + sample the default view in acceptance
-- **T-713** (deferred) — Summit-ring rule inverts on depressions — every crater ring renders dark [] — Summit-ring rule inverts on depressions — every crater ring renders dark
-- **T-714** (deferred) — Contour re-march hitch: 0.66-1.3 s native per rung crossing (est 1-4 s wasm) [] — Contour re-march hitch: 0.66-1.3 s native per rung crossing (est 1-4 s wasm)
+- **T-711** (deferred) — Doc sync: t090 §N3 and t152_7 contour references [] — Doc sync: t090_render_lod_contract §N3 superseded by T-639; t152_7 stale contour reference
+- **T-712** (deferred) — Contour band: honest annotations and default view acceptance [] — Contour band: honest constant annotations + sample the default view in acceptance
+- **T-713** (deferred) — Summit rings invert on depressions; crater basins render dark [] — Summit-ring rule inverts on depressions — every crater ring renders dark
+- **T-714** (deferred) — Contour re-march hitch: 0.66-1.3 s per rung crossing [] — Contour re-march hitch: 0.66-1.3 s native per rung crossing (est 1-4 s wasm)
 - **T-715** (deferred) — Hidden-layer slots vanish from Outliner/ORBAT docks instead of dimming [] — Hidden-layer slots vanish from Outliner/ORBAT docks instead of dimming
-- **T-716** (deferred) — Context menu honesty: Go Here goes elsewhere; enabled rows dead on multi-select; keydown hijacks fields [] — Context menu honesty: Go Here goes elsewhere; enabled rows dead on multi-select; keydown hijacks fields
+- **T-716** (deferred) — Context menu honesty: Go Here, multi-select, keydown field hijack [] — Context menu honesty: Go Here goes elsewhere; enabled rows dead on multi-select; keydown hijacks fields
 - **T-717** (deferred) — Continue-without-map before hydrate resurrects the boot overlay forever [] — Continue-without-map before hydrate resurrects the boot overlay forever
-- **T-718** (deferred) — Crew residue: scrub seats on slot removal; seat-picker honesty; undo-step and Alt comment falsities [] — Crew residue: scrub seats on slot removal; seat-picker honesty; undo-step and Alt comment falsities
+- **T-718** (deferred) — Slot removal crew residue; picker flags; undo Alt lies [] — Crew residue: scrub seats on slot removal; seat-picker honesty; undo-step and Alt comment falsities
 - **T-719** (deferred) — Debug HUD: invisible under DockRight; AltGr chords spuriously toggle it [] — Debug HUD: invisible under DockRight; AltGr chords spuriously toggle it
 - **T-720** (deferred) — Layer-drag latch survives out-of-dock release; next + click silently reparents [] — Layer-drag latch survives out-of-dock release; next + click silently reparents
-- **T-721** (deferred) — Status bar runs under both docks — readouts blurred, OPEN click-dead [] — Status bar runs under both docks — readouts blurred, OPEN click-dead
-- **T-722** (deferred) — Route sweep passes on a typo-d URI — completeness gate never validates URIs [] — Route sweep passes on a typo-d URI — completeness gate never validates URIs
-- **T-725** (deferred) — Furniture polish: zoom channel lags 1s on still-pointer wheel; northings hide under the bar; Failed-state fallback [] — Furniture polish: zoom channel lags 1s on still-pointer wheel; northings hide under the bar; Failed-state fallback
+- **T-721** (deferred) — Status bar under docks: blur, dead OPEN, Eden fix [] — Status bar runs under both docks — readouts blurred, OPEN click-dead
+- **T-722** (deferred) — Route sweep passes typo URIs; gate never validates concrete URIs [] — Route sweep passes on a typo-d URI — completeness gate never validates URIs
+- **T-725** (deferred) — Zoom labels lag; northings under bar; hide Failed scale fallback [] — Furniture polish: zoom channel lags 1s on still-pointer wheel; northings hide under the bar; Failed-state fallback
 - **T-728** (deferred) — Save-composition affordance reads a channel selection never bumps [] — Save-composition affordance reads a channel selection never bumps
-- **T-729** (deferred) — Owner-line overlay runs a full materialize per frame; zones panel mislabels trigger drafts [] — Owner-line overlay runs a full materialize per frame; zones panel mislabels trigger drafts
-- **T-730** (deferred) — LoS sub-mode residue: asymmetric clear, SnapReadout in the cursed corner, write-only ViewshedState [] — LoS sub-mode residue: asymmetric clear, SnapReadout in the cursed corner, write-only ViewshedState
-- **T-731** (deferred) — ROW_ACTIVE border-t skews the virtual tree window by 1px per selected row [] — ROW_ACTIVE border-t skews the virtual tree window by 1px per selected row
-- **T-734** (deferred) — Validation panel at scale: per-edit full compile, wasm panic honesty, seam pin [] — Validation panel at scale: per-edit full compile, wasm panic honesty, seam pin
-- **T-829** (deferred) — Gate smoke virtual-outliner v5_orbatWindowed fails deterministically under the verifier harness — config-sensitive smoke [] — Gate smoke virtual-outliner v5_orbatWindowed fails deterministically under the verifier harness — config-sensitive smoke
-- **T-835** (deferred) — The No-Widget button wears the select-cursor glyph, not a 'none' symbol [] — The No-Widget button wears the select-cursor glyph, not a 'none' symbol
-- **T-840** (deferred) — The draft chip says 'saved just now' on boot of a content-bearing mission — before any edit [] — The draft chip says 'saved just now' on boot of a content-bearing mission — before any edit
-- **T-844** (deferred) — Delete does nothing to a selected vehicle — delete_selection partitions comments and slots only [] — Delete does nothing to a selected vehicle — delete_selection partitions comments and slots only
+- **T-729** (deferred) — Owner-line materialize per frame; zones mislabels triggers [] — Owner-line overlay runs a full materialize per frame; zones panel mislabels trigger drafts
+- **T-730** (deferred) — LoS asymmetric clear, SnapReadout overlap, dead ViewshedState [] — LoS sub-mode residue: asymmetric clear, SnapReadout in the cursed corner, write-only ViewshedState
+- **T-731** (deferred) — ROW_ACTIVE border-t skews virtual tree by 1px [] — ROW_ACTIVE border-t skews the virtual tree window by 1px per selected row
+- **T-734** (deferred) — Validation panel: full-compile cost, wasm panic, seam pin [] — Validation panel at scale: per-edit full compile, wasm panic honesty, seam pin
+- **T-829** (deferred) — v5_orbatWindowed smoke fails under verifier harness [] — Gate smoke virtual-outliner v5_orbatWindowed fails deterministically under the verifier harness — config-sensitive smoke
+- **T-835** (deferred) — No-Widget button should show select-cursor glyph [] — The No-Widget button wears the select-cursor glyph, not a 'none' symbol
+- **T-840** (deferred) — Draft chip saved just now on boot before edit [] — The draft chip says 'saved just now' on boot of a content-bearing mission — before any edit
+- **T-844** (deferred) — Vehicle delete no-op; fold into T-837 [] — Delete does nothing to a selected vehicle — delete_selection partitions comments and slots only
 - **T-846** (deferred) — role_notice query is written on editor denial but never read [] — role_notice query is written on editor denial but never read
 - **T-847** (deferred) — push_drag_preview Class-R pins omit bind_squad_link_preview [] — push_drag_preview Class-R pins omit bind_squad_link_preview
 - **T-851** (deferred) — Delete orphaned placed_vehicles_panel after T-818 removed the Placed strip [] — Delete orphaned placed_vehicles_panel after T-818 removed the Placed strip
 - **T-852** (deferred) — Attributes modal paint should use modal_stack::z_class instead of hard-coded z-50 [] — Attributes modal paint should use modal_stack::z_class instead of hard-coded z-50
-- **T-893** (deferred) — T-853 wave 228: commit bash↔port RED-arm harness for deploy db ports [] — T-853 wave 228: commit bash↔port RED-arm harness for deploy db ports
+- **T-893** (deferred) — T-853 wave 228: deploy db bash-port RED-arm harness [] — T-853 wave 228: commit bash↔port RED-arm harness for deploy db ports
 - **T-909** (deferred) — T-468 still regex-walks ci.yml run: — not T-901 serde_norway [] — T-468 still regex-walks ci.yml run: — not T-901 serde_norway
-- **T-910** (deferred) — Language ban extension match is case-sensitive (.SH/.PY/.MK without shebang stay green) [] — Language ban extension match is case-sensitive (.SH/.PY/.MK without shebang stay green)
+- **T-910** (deferred) — Uppercase extensions bypass case-sensitive language ban [] — Language ban extension match is case-sensitive (.SH/.PY/.MK without shebang stay green)
 - **T-070** (idea) — Vehicles placeable [] — Drag vehicles from palette onto map with crew hooks.
 - **T-080** (idea) — Connection / sync UI [] — Entity connection lines and sync group authoring.
 - **T-081** (idea) — Transform widget + snap grid [] — On-map transform gizmo and snap grid.
@@ -85,18 +85,21 @@
 - **T-242** (idea) — Add vehicle and entity inventory to the entity schema [] — Add vehicle and entity inventory to the entity schema
 - **T-257** (idea) — Markers and objectives will be non-undoable the day they land [] — hydrate clears loadouts, items, objectives and markers (store.rs:1102-1120) but those four roots are not in the UndoManager expand_scope (store.rs:101-106). Harmless today because nothing mutates them — a silent trap for the marker and objective work.
 - **T-277** (idea) — 27.4% of the shipped map catalogue is unclassified [] — 27.4% of the shipped map catalogue is unclassified
-- **T-290** (idea) — Resolve nine dead-output fields flatten emits that the mod never reads [] — meta.author, meta.templateId, meta.playerRange, the whole environment block, factions[].tickets, orbat[].type, winConditions.mode, flow.briefingSeconds (advisory only), and the entire orbat block (parity-check only). Either add mod readers or annotate them non-consumed so the next audit does not re-derive this.
+- **T-290** (idea) — Nine dead flatten fields mod never reads [] — meta.author, meta.templateId, meta.playerRange, the whole environment block, factions[].tickets, orbat[].type.
+winConditions.mode, flow.briefingSeconds (advisory only), and the entire orbat block (parity-check only).
+Either add mod readers or annotate them non-consumed so the next audit does not re-derive this.
+
 - **T-291** (idea) — Resolve five schema fields implemented on no surface [] — environment.windDirDeg, factions[].color, roles[].radio, layers[], and settings.{respawn,spectatorPolicy,nightVision} are declared in the contract with zero implementation in flatten or the mod. spectatorPolicy is dead despite Spectator/ being a shipped seven-file subsystem.
 - **T-294** (idea) — Only one of two registered terrains has object data [] — terrain-registry.json declares everon (active, all five phases shipped) and arland (queued, P1 only) but arland has only a 756-byte manifest and zero object data.
 - **T-295** (idea) — Realtime collaborative editing [] — Realtime collaborative editing
 - **T-298** (idea) — tbd-tools density::corner_partition_identity fails on main [] — tbd-tools density::corner_partition_identity fails on main
 - **T-299** (idea) — Every single-faction compile ships a phantom, unplayable opfor [] — Every single-faction compile ships a phantom, unplayable opfor
 - **T-300** (idea) — Shared CARGO_TARGET_DIR lets a main-checkout build serve unmerged slice code [] — Shared CARGO_TARGET_DIR lets a main-checkout build serve unmerged slice code
-- **T-301** (idea) — Briefing kit list shows 7 of 13 gear fields — an RPG is invisible on the planning screen [] — Briefing kit list shows 7 of 13 gear fields — an RPG is invisible on the planning screen
-- **T-302** (idea) — T-182's weapon equip is compiled and reasoned but never observed in game [] — T-182's weapon equip is compiled and reasoned but never observed in game
-- **T-304** (idea) — TBD_RegistryScan ReadPhysAttrsPass: weapon weight never read, and 32 rows carry WRONG weights [] — TBD_RegistryScan ReadPhysAttrsPass: weapon weight never read, and 32 rows carry WRONG weights
-- **T-305** (idea) — pak.rs reads at the wrong offset — entry offsets are absolute, not relative to data_start [] — pak.rs reads at the wrong offset — entry offsets are absolute, not relative to data_start
-- **T-309** (idea) — Preserve squads through Apply Template — needs a squad level in FactionDoc [] — Preserve squads through Apply Template — needs a squad level in FactionDoc
+- **T-301** (idea) — Briefing kit lists 7 of 13 gear fields [] — Briefing kit list shows 7 of 13 gear fields — an RPG is invisible on the planning screen
+- **T-302** (idea) — T-182 weapon equip unverified in game [] — T-182's weapon equip is compiled and reasoned but never observed in game
+- **T-304** (idea) — RegistryScan weapon weight never read, 32 wrong [] — TBD_RegistryScan ReadPhysAttrsPass: weapon weight never read, and 32 rows carry WRONG weights
+- **T-305** (idea) — pak.rs seeks wrong offset — absolute not relative [] — pak.rs reads at the wrong offset — entry offsets are absolute, not relative to data_start
+- **T-309** (idea) — FactionDoc squad level for Apply Template [] — Preserve squads through Apply Template — needs a squad level in FactionDoc
 - **T-310** (idea) — Arsenal attachments never reach the compiled document [] — Arsenal attachments never reach the compiled document
 - **T-311** (idea) — Leaderboard ORDER BY has no tie-breaker, so paging is unstable [] — Leaderboard ORDER BY has no tie-breaker, so paging is unstable
 - **T-653** (idea) — Preserve the three headless editor-screenshot findings [] — Preserve the three headless editor-screenshot findings
