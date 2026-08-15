@@ -6,7 +6,29 @@ class = "feature"
 status = "shipped"
 order = 4490
 executor = "claude-code"
-notes = "— SHIPPED wave 114 (editor factory), 0fa3b530; verifier wave114.md. Starred-asset collection over the live catalogue, localStorage key tbd-mc-editor-favourites with a version stamp and one migration chokepoint; identity is resource_name so a modpack re-ingest cannot orphan the collection. Stale favourites are KEPT AND MARKED, never pruned (a toggled-off modpack is reversible); resolve_favourites is count-preserving by construction and pinned."
+notes = """
+— SHIPPED wave 114 (editor factory), 0fa3b530; verifier wave114.md. Starred-asset collection over the live catalogue, localStorage key tbd-mc-editor-favourites with a version stamp and one migration chokepoint; identity is resource_name so a modpack re-ingest cannot orphan the collection. Stale favourites are KEPT AND MARKED, never pruned (a toggled-off modpack is reversible); resolve_favourites is count-preserving by construction and pinned.
+
+--- HEAD migration_legacy (verbatim) ---
+
+NEW-F5 + 3den E3 + 3DEN-CTX-001. Eden F7. Pure SPA over the live catalogue with localStorage. Deliberately NOT folded into T-646: that ticket is search and submode filtering over the existing tree, this is a separate persistent collection with its own add/remove verbs.
+
+missing=0"""
+main_goal = "Starred-asset favourites list over live catalogue with localStorage persistence."
+context = [
+    "NEW-F5 3den E3 3DEN-CTX-001 Eden F7 row.",
+    "Pure SPA over live catalogue with localStorage.",
+]
+requirement = [
+    "Persistent starred collection with own add/remove verbs.",
+    "NOT folded into T-646 search and submode tree filtering.",
+]
+current_state = ["T-646 covers search and submode filtering over existing tree."]
+citations = [
+    "NEW-F5 3den E3 3DEN-CTX-001",
+    "Eden F7 favourites",
+    "T-646 search separate",
+]
 shipped_at = "d037a47b"
 created_at = "2026-08-07T03:34:40Z"
 completed_at = "2026-08-07T03:52:23Z"
@@ -18,7 +40,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["NEW-F5 + 3den E3 + 3DEN-CTX-001. Eden F7. Pure SPA over the live catalogue with localStorage. Deliberately NOT folded into T-646: that ticket is search and submode filtering over the existing tree, this is a separate persistent collection with its own add/remove verbs."]
 owns = ["apps/website/frontend/src/eden_dock_right.rs"]
 
 [scope]

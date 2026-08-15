@@ -1,14 +1,41 @@
 id = "T-711"
 kind = "work"
-title = "Doc sync: t090_render_lod_contract §N3 superseded by T-639; t152_7 stale contour reference"
+title = "Doc sync: t090 §N3 and t152_7 contour references"
 summary = "Doc sync: t090_render_lod_contract §N3 superseded by T-639; t152_7 stale contour reference"
 class = "bug"
 status = "deferred"
 order = 4304
 executor = "cursor-docs"
-notes = "filed by wave-101 adversarial verifier (editor factory); MAJOR doc/claim divergence, no behavioral defect"
+notes = """
+filed by wave-101 adversarial verifier (editor factory); MAJOR doc/claim divergence, no behavioral defect
+
+--- HEAD migration_legacy (verbatim) ---
+
+T-639 (wave 101) replaced the fixed contour zoom ladder with a screen-space band (contour_interval_for_zoom now takes m_per_px, nearest-log2 snap onto {5,10,20,40,80}). t090_render_lod_contract.md:56-71 still pins 100/50/20/10 m by zoom and is marked canonical — every value is now wrong (shipped: 80 m @ z=-6, 40 @ -4, 5 m @ 0..+3). t152_7_height_markers.md:28 still says to label every contour_interval_for_zoom level under a deckZoom gate — passing deck_zoom compiles and silently clamps to 5 m (the name kept its export, the parameter changed meaning). Rewrite §N3 to the band model (TARGET_SPACING_PX=16.31, slope constant, rung-boundary range [11.5,23] px) and fix the t152_7 call convention. Diagnosis: editor_verify/wave101.md F-1, N-2.
+
+missing=0
+"""
+main_goal = "Rewrite stale contour docs to T-639 screen-space band model."
+context = [
+    "T-639 replaced fixed contour zoom ladder with screen-space band model.",
+    "contour_interval_for_zoom now takes m_per_px; log2 snap onto five rungs.",
+]
+requirement = [
+    "Rewrite t090_render_lod_contract §N3 to band model constants and ranges.",
+    "Fix t152_7 call convention; deck_zoom parameter meaning changed.",
+]
+current_state = [
+    "t090 §N3 pins 100 50 20 10 m by zoom; every value wrong now.",
+    "t152_7 labels every level under deckZoom gate; silently clamps 5 m.",
+]
+approach = ["Update §N3 TARGET_SPACING_PX slope rung-boundary; fix t152_7 convention."]
+verify = ["Docs match shipped band model: 80 m z-6, 40 z-4, 5 m z0..3."]
+citations = [
+    "T-639 contour band model",
+    "t090_render_lod_contract §N3",
+    "wave101.md F-1 diagnosis",
+]
 estimated = ["scope"]
-migration_legacy = ["T-639 (wave 101) replaced the fixed contour zoom ladder with a screen-space band (contour_interval_for_zoom now takes m_per_px, nearest-log2 snap onto {5,10,20,40,80}). t090_render_lod_contract.md:56-71 still pins 100/50/20/10 m by zoom and is marked canonical — every value is now wrong (shipped: 80 m @ z=-6, 40 @ -4, 5 m @ 0..+3). t152_7_height_markers.md:28 still says to label every contour_interval_for_zoom level under a deckZoom gate — passing deck_zoom compiles and silently clamps to 5 m (the name kept its export, the parameter changed meaning). Rewrite §N3 to the band model (TARGET_SPACING_PX=16.31, slope constant, rung-boundary range [11.5,23] px) and fix the t152_7 call convention. Diagnosis: editor_verify/wave101.md F-1, N-2."]
 
 [scope]
 domain = "website"

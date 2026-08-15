@@ -424,7 +424,7 @@ mod tests {
     /// - **Every Program T drain batch SHRINKS this pin in the same commit** (spec
     ///   §Programs, Program T: decompose the wall into the typed fields, delete
     ///   `migration_legacy`, shrink the pin by exactly the batch size).
-    const MIGRATION_LEGACY_PIN: usize = 244; // after T-919 batch 18
+    const MIGRATION_LEGACY_PIN: usize = 219; // after T-919 batch 19
 
     /// T-917.3 permanent reversibility + ratchet proof over the live tree. The verb's
     /// own in-run assertion proved join("\n") == the pre-move summary bytes while it

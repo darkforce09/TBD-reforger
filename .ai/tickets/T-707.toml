@@ -6,9 +6,36 @@ class = "bug"
 status = "deferred"
 order = 4300
 executor = "claude-code"
-notes = "filed by wave-100 adversarial verifier (editor factory)"
+notes = """
+filed by wave-100 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+scripts/platform/wave.sh `test xtask+tbd-tools` header records '51 xtask + 33 tbd-tools' (2026-07-31). Wave-100 verifier proved the transposition: tbd-tools runs 51 (48 #[test] + 3 #[tokio::test]), xtask 33-at-measurement (40 today after T-611 +4 / T-623 +3), and the comment's own citation — 'T-361's three serve tests' — lives in tbd-tools' serve.rs. One-line comment fix; no behaviour. Diagnosis: .ai/artifacts/editor_verify/wave100.md F-2.
+
+missing=0
+"""
+main_goal = "Fix transposed xtask versus tbd-tools counts in wave.sh header."
+context = [
+    "wave.sh test xtask+tbd-tools header records 51 xtask plus 33 tbd-tools inverted.",
+    "Wave-100 verifier: tbd-tools runs 51 tests; xtask 33 at measurement.",
+]
+requirement = [
+    "Correct header comment to 51 tbd-tools and 33 xtask; one line.",
+    "No behavior change; comment fix only per wave100 F-2.",
+]
+current_state = [
+    "Comment cites T-361 serve tests living in tbd-tools serve.rs.",
+    "xtask count 40 today after T-611 and T-623 additions.",
+]
+approach = ["Swap transposed counts in wave.sh test-split header comment."]
+verify = ["Header comment matches measured tbd-tools 51 and xtask test totals."]
+citations = [
+    "wave.sh test header comment",
+    "wave100.md F-2 diagnosis",
+    "tbd-tools serve.rs T-361",
+]
 estimated = ["scope"]
-migration_legacy = ["scripts/platform/wave.sh `test xtask+tbd-tools` header records '51 xtask + 33 tbd-tools' (2026-07-31). Wave-100 verifier proved the transposition: tbd-tools runs 51 (48 #[test] + 3 #[tokio::test]), xtask 33-at-measurement (40 today after T-611 +4 / T-623 +3), and the comment's own citation — 'T-361's three serve tests' — lives in tbd-tools' serve.rs. One-line comment fix; no behaviour. Diagnosis: .ai/artifacts/editor_verify/wave100.md F-2."]
 
 [scope]
 domain = "website"

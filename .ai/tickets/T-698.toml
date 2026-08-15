@@ -6,7 +6,29 @@ class = "feature"
 status = "shipped"
 order = 4520
 executor = "claude-code"
-notes = "— SHIPPED wave 118 (editor factory), e1111c26; verifier wave118.md. Three exporters over navigator.clipboard, reusing T-667's grid_ref_3digit rather than inventing a second convention — pinned BEHAVIOURALLY against the map furniture's own edge labels through a real OrthoCamera. The clipboard write is AWAITED with success toasted only on the resolve arm, and an insecure context refuses with a message. Multi-selection exports one line per entity, never a centroid (a centroid is a grid reference no entity is at). Also found the same fire-and-forget defect live elsewhere — see T-773."
+notes = """
+— SHIPPED wave 118 (editor factory), e1111c26; verifier wave118.md. Three exporters over navigator.clipboard, reusing T-667's grid_ref_3digit rather than inventing a second convention — pinned BEHAVIOURALLY against the map furniture's own edge labels through a real OrthoCamera. The clipboard write is AWAITED with success toasted only on the resolve arm, and an insecure context refuses with a message. Multi-selection exports one line per entity, never a centroid (a centroid is a grid reference no entity is at). Also found the same fire-and-forget defect live elsewhere — see T-773.
+
+--- HEAD migration_legacy (verbatim) ---
+
+3den E5. Both WOG (wog3_3den Log entries) and 3den Enhanced ship clipboard exporters, and the milsim-relevant one is grid position — a mission maker reads a grid ref out of the editor and types it into a briefing or a radio message. Cheap: the data is in the document, the target is navigator.clipboard.
+
+missing=0"""
+main_goal = "Clipboard exporters for grid position, classnames, and selection summary."
+context = [
+    "3den E5; WOG wog3_3den and 3den Enhanced ship exporters.",
+    "Milsim export is grid position for briefing or radio.",
+]
+requirement = [
+    "Export grid position, classnames, selection summary to clipboard.",
+    "Data in document; target navigator.clipboard.",
+]
+current_state = ["Cheap win: data already in document."]
+citations = [
+    "3den E5 clipboard exporters",
+    "wog3_3den Log entries",
+    "navigator.clipboard target",
+]
 shipped_at = "1e8bf5e6"
 created_at = "2026-08-07T07:07:11Z"
 completed_at = "2026-08-07T07:35:55Z"
@@ -18,7 +40,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["3den E5. Both WOG (wog3_3den Log entries) and 3den Enhanced ship clipboard exporters, and the milsim-relevant one is grid position — a mission maker reads a grid ref out of the editor and types it into a briefing or a radio message. Cheap: the data is in the document, the target is navigator.clipboard."]
 owns = ["apps/website/frontend/src/mission_commands.rs"]
 
 [scope]

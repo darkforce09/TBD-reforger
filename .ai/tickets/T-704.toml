@@ -5,8 +5,30 @@ summary = "Command palette over every editor command"
 class = "feature"
 status = "idea"
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+3den E2 (3DEN-TOOL-013/014). Fuzzy search over every menu command, ALT+SPACE. The largest of the 3den slices and the highest ceiling — it directly answers T-668 complaint that the chrome is hard to navigate, and 3den own version learns from usage frequency. Filed as `idea` because it is a product call, not a scoping question: it changes how the editor is driven.
+
+missing=0"""
+main_goal = "Fuzzy command palette over every editor menu command ALT+SPACE."
+context = [
+    "3den E2 3DEN-TOOL-013/014 largest 3den slice highest ceiling.",
+    "Answers T-668 chrome hard to navigate complaint.",
+    "Filed idea product call changes how editor is driven.",
+]
+requirement = [
+    "Fuzzy search over every menu command ALT+SPACE.",
+    "Usage-frequency learning per 3den own version.",
+]
+current_state = ["No command palette exists in editor chrome today."]
+approach = ["Product decision before scoping; not factory-dispatchable yet."]
+verify = ["Deferred until promoted from idea status."]
+citations = [
+    "3DEN-TOOL-013/014 command palette",
+    "T-668 chrome navigation",
+]
 estimated = ["scope"]
-migration_legacy = ["3den E2 (3DEN-TOOL-013/014). Fuzzy search over every menu command, ALT+SPACE. The largest of the 3den slices and the highest ceiling — it directly answers T-668 complaint that the chrome is hard to navigate, and 3den own version learns from usage frequency. Filed as `idea` because it is a product call, not a scoping question: it changes how the editor is driven."]
 
 [scope]
 domain = "website"

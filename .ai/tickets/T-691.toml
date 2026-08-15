@@ -6,7 +6,36 @@ class = "feature"
 status = "shipped"
 order = 4450
 executor = "claude-code"
-notes = " — SHIPPED wave 106 (a68d02a0); verifier wave106.md"
+notes = """
+ — SHIPPED wave 106 (a68d02a0); verifier wave106.md
+
+--- HEAD migration_legacy (verbatim) ---
+
+NEW-F2 + 3den E6. Eight screenshot rows (MENU-BAR-006, MENU-SET-001, DLG-SHELL-003, DLG-PREF-001/003/004/005/009). Eden separates Settings>Preferences (editor-local, per-user) from Attributes (mission document). TBD mixes both in one dialog: basemap and the 12 world-layer toggles are already localStorage, while time/weather/flow are document keys behind author_env. Give the editor-local half its own surface. 3den E6 is the same need from the other direction (a preferences store) and folds in here rather than being built standalone.
+
+missing=0
+"""
+main_goal = "Separate editor-local preferences from mission document settings dialog."
+context = [
+    "NEW-F2 plus 3den E6; eight screenshot rows MENU-BAR-006 through DLG-PREF-009.",
+    "Eden separates Settings Preferences editor-local from Attributes mission document.",
+]
+requirement = [
+    "Give editor-local half its own surface separate from mission document settings.",
+    "Basemap and twelve world-layer toggles stay localStorage; time weather flow document.",
+    "Fold 3den E6 preferences store here rather than standalone build.",
+]
+current_state = [
+    "TBD mixes editor-local and mission settings in one dialog today.",
+    "Basemap and world-layer toggles already localStorage; author_env holds document keys.",
+]
+approach = ["Split editor preferences surface from mission attributes in settings UI."]
+verify = ["Editor preferences dialog separate from mission settings attributes."]
+citations = [
+    "3den E6 preferences store",
+    "MENU-BAR-006 screenshot row",
+    "DLG-PREF-001 preferences dialog",
+]
 shipped_at = "5007f6a3"
 created_at = "2026-08-02T04:00:31Z"
 completed_at = "2026-08-02T04:11:05Z"
@@ -18,7 +47,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["NEW-F2 + 3den E6. Eight screenshot rows (MENU-BAR-006, MENU-SET-001, DLG-SHELL-003, DLG-PREF-001/003/004/005/009). Eden separates Settings>Preferences (editor-local, per-user) from Attributes (mission document). TBD mixes both in one dialog: basemap and the 12 world-layer toggles are already localStorage, while time/weather/flow are document keys behind author_env. Give the editor-local half its own surface. 3den E6 is the same need from the other direction (a preferences store) and folds in here rather than being built standalone."]
 owns = [
     "apps/website/frontend/src/eden_settings.rs",
     "apps/website/frontend/src/world_layer_prefs.rs",

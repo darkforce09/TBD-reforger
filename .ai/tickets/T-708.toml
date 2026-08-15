@@ -6,9 +6,36 @@ class = "bug"
 status = "deferred"
 order = 4301
 executor = "claude-code"
-notes = "filed by wave-100 adversarial verifier (editor factory)"
+notes = """
+filed by wave-100 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+tools/tbd-tools/src/capture.rs shoot() takes Page.captureScreenshot through page.send's 130s default timeout; the deleted cdp2.mjs gave that call its own 25s deadline so the fromSurface:true wedge (the case the fallback chain exists for) fell through in 25s. Parity of order/params/labels is proven; only the deadline regressed — worst-case wedge now 5.2x slower before the fromSurface:false and jpeg fallbacks fire. Fix: send_with_timeout(25s) on the first attempt (cdp.rs already exposes the machinery). Diagnosis: editor_verify/wave100.md F-3.
+
+missing=0
+"""
+main_goal = "Restore 25s captureScreenshot timeout on capture shoot first attempt."
+context = [
+    "capture.rs shoot uses page.send 130s default timeout on captureScreenshot.",
+    "Deleted cdp2.mjs gave fromSurface true wedge its own 25s deadline.",
+]
+requirement = [
+    "send_with_timeout 25s on first captureScreenshot attempt via cdp.rs.",
+    "Preserve proven order params labels; only deadline regresses.",
+]
+current_state = [
+    "Worst-case wedge 5.2x slower before fromSurface false jpeg fallbacks fire.",
+    "Parity of order params labels proven; deadline regressed only.",
+]
+approach = ["Apply send_with_timeout 25s on first shoot captureScreenshot call."]
+verify = ["First captureScreenshot attempt fails through at 25s not 130s."]
+citations = [
+    "capture.rs shoot timeout",
+    "cdp.rs send_with_timeout machinery",
+    "wave100.md F-3 diagnosis",
+]
 estimated = ["scope"]
-migration_legacy = ["tools/tbd-tools/src/capture.rs shoot() takes Page.captureScreenshot through page.send's 130s default timeout; the deleted cdp2.mjs gave that call its own 25s deadline so the fromSurface:true wedge (the case the fallback chain exists for) fell through in 25s. Parity of order/params/labels is proven; only the deadline regressed — worst-case wedge now 5.2x slower before the fromSurface:false and jpeg fallbacks fire. Fix: send_with_timeout(25s) on the first attempt (cdp.rs already exposes the machinery). Diagnosis: editor_verify/wave100.md F-3."]
 
 [scope]
 domain = "website"

@@ -1,12 +1,41 @@
 id = "T-692"
 kind = "work"
-title = "Editor help surface — Help menu and a Controls Hint overlay"
+title = "Help menu and Controls Hint overlay"
 summary = "Editor help surface — Help menu and a Controls Hint overlay"
 class = "feature"
 status = "shipped"
 order = 4460
 executor = "claude-code"
-notes = "— SHIPPED wave 112 (editor factory), d4b6dd4d + merge fix 4973de19; verifier wave112.md. Help menu + Controls Hint overlay, chrome-gated by mount site; coverage pinned by a test that fails when a keydown arm has no help row — it fired on merge for T-649's KeyA exactly as predicted."
+notes = """
+— SHIPPED wave 112 (editor factory), d4b6dd4d + merge fix 4973de19; verifier wave112.md. Help menu + Controls Hint overlay, chrome-gated by mount site; coverage pinned by a test that fails when a keydown arm has no help row — it fired on merge for T-649's KeyA exactly as predicted.
+
+--- HEAD migration_legacy (verbatim) ---
+
+NEW-F3. Rows MENU-BAR-008, MENU-VIEW-017, MENU-HELP-001. TBD binds 10 keyboard shortcuts and documents none of them in the UI. Eden has both a Help menu and a toggleable Controls Hint. Pairs with T-668 (state vocabulary) and with 3den E10 — a keybinding collision test is worth little if the bindings are invisible.
+
+missing=0
+"""
+main_goal = "Ship Help menu and toggleable Controls Hint documenting keyboard shortcuts."
+context = [
+    "NEW-F3 rows MENU-BAR-008 MENU-VIEW-017 MENU-HELP-001.",
+    "TBD binds ten keyboard shortcuts and documents none in UI.",
+    "Eden has Help menu and toggleable Controls Hint overlay.",
+]
+requirement = [
+    "Help menu and toggleable Controls Hint overlay in editor chrome.",
+    "Document bound keyboard shortcuts visible to makers in UI.",
+]
+current_state = [
+    "Ten keyboard shortcuts bound with no in-UI documentation.",
+    "Pairs T-668 state vocabulary and 3den E10 keybinding collision test.",
+]
+approach = ["Add Help menu and Controls Hint overlay chrome-gated by mount site."]
+verify = ["Help row exists for each keydown arm; test fails on undocumented binding."]
+citations = [
+    "3den E10 keybinding collision",
+    "T-668 state vocabulary",
+    "MENU-HELP-001 screenshot row",
+]
 shipped_at = "4973de19"
 created_at = "2026-08-07T02:00:19Z"
 completed_at = "2026-08-07T02:11:06Z"
@@ -18,7 +47,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = ["NEW-F3. Rows MENU-BAR-008, MENU-VIEW-017, MENU-HELP-001. TBD binds 10 keyboard shortcuts and documents none of them in the UI. Eden has both a Help menu and a toggleable Controls Hint. Pairs with T-668 (state vocabulary) and with 3den E10 — a keybinding collision test is worth little if the bindings are invisible."]
 owns = [
     "apps/website/frontend/src/eden_help.rs",
     "apps/website/frontend/src/eden_top_strip.rs",

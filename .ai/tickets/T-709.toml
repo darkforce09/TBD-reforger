@@ -6,9 +6,36 @@ class = "bug"
 status = "deferred"
 order = 4302
 executor = "claude-code"
-notes = "filed by wave-100 adversarial verifier (editor factory)"
+notes = """
+filed by wave-100 adversarial verifier (editor factory)
+
+--- HEAD migration_legacy (verbatim) ---
+
+zoomsweep.mjs attached a Runtime console listener and printed up to two console errors per zoom step — which is exactly where the documented __editorCamSet headless-vulkan panic surfaces next to its black frames. The ported capture::zoomsweep (tools/tbd-tools/src/capture.rs) attaches no tap, so the panic is now invisible in sweep output and a black capture has no adjacent cause line. Fix: reuse the console-tap idiom smokes.rs already has, cap 2 lines/step. Diagnosis: editor_verify/wave100.md F-4.
+
+missing=0
+"""
+main_goal = "Restore per-zoom console error tap in capture zoomsweep."
+context = [
+    "zoomsweep.mjs printed up to two console errors per zoom step.",
+    "Headless __editorCamSet vulkan panic surfaces next to black frames there.",
+]
+requirement = [
+    "Attach Runtime console listener in capture zoomsweep; cap two lines per step.",
+    "Reuse console-tap idiom from smokes.rs for parity.",
+]
+current_state = [
+    "Ported capture zoomsweep attaches no tap; panic invisible in sweep output.",
+    "Black capture lacks adjacent cause line in zoomsweep output.",
+]
+approach = ["Port smokes.rs console-tap pattern into capture zoomsweep per step."]
+verify = ["Zoomsweep prints up to two console errors adjacent to each zoom step."]
+citations = [
+    "zoomsweep.mjs console listener",
+    "smokes.rs console-tap idiom",
+    "wave100.md F-4 diagnosis",
+]
 estimated = ["scope"]
-migration_legacy = ["zoomsweep.mjs attached a Runtime console listener and printed up to two console errors per zoom step — which is exactly where the documented __editorCamSet headless-vulkan panic surfaces next to its black frames. The ported capture::zoomsweep (tools/tbd-tools/src/capture.rs) attaches no tap, so the panic is now invisible in sweep output and a black capture has no adjacent cause line. Fix: reuse the console-tap idiom smokes.rs already has, cap 2 lines/step. Diagnosis: editor_verify/wave100.md F-4."]
 
 [scope]
 domain = "website"
