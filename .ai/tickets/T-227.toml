@@ -8,6 +8,14 @@ order = 2450
 executor = "claude-code"
 notes = "Also flagged: a duplicate attach returns 500 rather than 409, because idx_event_mission's violation is unmapped."
 main_goal = "Capacity is then count(orbat_slots)=0, so the capacity guard never fires."
+context = [
+    "orbat_template_for_mission returned empty vec on missing version, swallowed DB error, or unparseable orbat.",
+    "add_event_mission still committed 201; events.max_slots was never consulted for capacity.",
+]
+requirement = [
+    "Refuse zero-slot attach; return 500 on materialize_slots DB failure instead of silent 201.",
+    "Wire max_slots as event-level capacity bound counted across missions.",
+]
 current_state = [
     "orbat_template_for_mission returns an empty vec on a missing version, a swallowed DB error or an unparseable orbat",
     "— and add_event_mission still commits and returns 201 with the admin UI toasting success.",
@@ -41,6 +49,7 @@ verify = [
     "it attached an ORBAT-less mission and discarded the status.",
     "Now attaches an explicit one-slot ORBAT and asserts 201; the test's subject is unchanged.",
 ]
+acceptance = ["Zero-slot attach returned error; DB failures blocked commit; max_slots enforced with event row locked."]
 citations = [
     "event_hub.rs:914",
     "lifecycle_extra.rs:142",

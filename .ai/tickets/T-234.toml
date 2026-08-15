@@ -14,6 +14,10 @@ context = [
     "THE TICKET'S SECOND HALF WAS STALE: the mock approved/rejected lists were CLIENT-side and T-218 already deleted them, along with the counters and both fake buttons. `mock_approved`/`mock_rejected` survive only in comments,",
     "deferred to T-283. The API never served mock mission data, so the 'more serious half' I flagged as possibly API-side never existed.",
 ]
+requirement = [
+    "Harden POST /missions/{id}/submit: SQL status guard, clear reviewer stamp on resubmit, audit mission.submit.",
+    "Refuse PATCH pending_approval; prove SPA had zero /submit callers.",
+]
 current_state = [
     "SHIPPED. THE QUEUE REALLY CANNOT FILL, proven BOTH directions: submitting over real HTTP filled GET /approvals (total 0->1->3), approve -> live, reject -> rejected + reason, resubmit -> back in",
     "queue; and the only other candidate writer is refused — PATCH with status pending_approval returns 400, because apply_status_patch whitelists archived/draft only. The frontend has ZERO references to /submit (the 10",
@@ -35,6 +39,7 @@ verify = [
     "**125 passed, 0 failed, 0 SKIPPED** across 22 binaries with both TEST_DATABASE_URL and MIGRATE_TEST_DATABASE_URL set — the first agent to report against the gate's new honesty. Its new test was",
     "falsified: reverting only the handler makes it fail on the reviewer-stamp assertion.",
 ]
+acceptance = ["Submit filled approvals queue over HTTP; illegal status paths returned 409; mission.submit audited each submission."]
 citations = [
     "T-218 mock delete",
     "T-283 deferred",

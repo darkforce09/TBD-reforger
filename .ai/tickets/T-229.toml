@@ -14,6 +14,10 @@ context = [
     "and that arma_id key is precisely what lets it find the row.",
     "Confirmed live: after link-confirm the same row reads kills=17 kd_ratio=5.67 missions_played=1.",
 ]
+requirement = [
+    "Keep ingested rows with null discord_id when arma_id is unresolvable; report linked/unlinked counts.",
+    "Write audit row per ingest with unlinked arma_ids; pin visibility from ingest side.",
+]
 current_state = [
     "telemetry.rs:243-247 skips a player whose arma_id does not resolve, still inserts the row with a null discord_id and reports only the submitted count.",
     "and because the upsert key includes arma_id, linking later does not backfill.",
@@ -36,6 +40,7 @@ verify = [
     "Scoped to the actual invariant (source_match_id IS NULL OR btrim = ''); 8/8 stable after.",
     "Full website-api suite 134 passed, 0 failed, 0 DB tests SKIPPED.",
 ]
+acceptance = ["Unlinked arma_id rows kept; response reported linked/unlinked; T-326 backfill remained recoverable."]
 citations = [
     "telemetry.rs:243-247",
     "0001_initial_schema.sql:289",

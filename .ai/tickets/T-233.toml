@@ -16,6 +16,10 @@ context = [
     "Strong hypothesis for its reported 126/0, from T-235's measurement: the shared CARGO_TARGET_DIR CLOBBERS ARTIFACTS ACROSS WORKTREES, so that run may have used a stale or foreign binary that never contained",
     "this test. Filed as T-390. The agent was told to use a private target dir and verify the binary is its own.",
 ]
+requirement = [
+    "Derive K/D from leaderboard_totals.kd_ratio; serve command_win_rate under its real name.",
+    "Remove fabricated favourite weapon/asset; serialize null instead of 0.00 for unmeasured stats.",
+]
 current_state = [
     "K/D — REAL. It read leaderboard_totals.kd_ratio rather than recomputing, because that view is the crate's only definition of K/D and is what /leaderboards and /users/:id/stats serve. A second query here",
     "is exactly how the Deployments page and the Leaderboard come to disagree about one player. Verified the view refreshes on all three write paths.",
@@ -38,6 +42,7 @@ verify = [
     "of skipping it. It passes under both fixes, which is the first time this ticket has been *meaningfully* tested. The revert was correct on the evidence available then; the evidence",
     "was the defective gate.",
 ]
+acceptance = ["MOCK_KD and MOCK_WIN_RATE removed; K/D matched leaderboard view; unmeasured stats returned null."]
 citations = [
     "T-359 precedent",
     "T-390 target dirs",

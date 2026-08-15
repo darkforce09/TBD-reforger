@@ -18,6 +18,12 @@ current_state = [
     "Withdraw also stops promoting the waitlist once state is attended,",
     "and the withdrawn and no_show enum values are never written by anything.",
 ]
+approach = [
+    "Attendance UPDATE joins match (event_id, mission_id) instead of all event_missions for the event.",
+    "Restore decorate_events and dashboard counters; roster and waitlist side-effects stay in-event.",
+]
+verify = ["attendance_marks_only_the_played_event_mission IT."]
+acceptance = ["Attendance marked only the played mission; roster counters survived completion."]
 citations = [
     "decorate_events counter",
     "match.event_id parses",

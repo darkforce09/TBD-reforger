@@ -14,6 +14,10 @@ context = [
     "replay 404'd, match_player_stats.discord_id populated, total_deployments 0->1.",
     "SPLIT AND CLOSED 2026-07-26. The agent verified all three narrowed items against live code rather than trusting the ticket:",
 ]
+requirement = [
+    "Correct BuildPayload contract comment at TBD_IdentityLink.c to match required-field reality.",
+    "Split chat visibility to T-327 and stats backfill to T-326; verify attendance event_id done.",
+]
 current_state = [
     "Three genuinely open items remain: (a) the attendance UPDATE needs a non-empty event_id resolving to a registration;",
     "(b) the link code is typed in PUBLIC chat and cannot be suppressed — needs an in-game UI field;",
@@ -28,6 +32,8 @@ approach = [
     "What shipped here is the contract comment at TBD_IdentityLink.c:458-471, which after T-319 said the opposite of the truth",
     "and would have talked the next person into reintroducing the bug.",
 ]
+verify = ["Live code verified all three narrowed items; mod does not retry on 400."]
+acceptance = ["Contract comment corrected; attendance event_id verified end-to-end; chat and backfill split filed."]
 citations = [
     "T-181.35 be31ac7b",
     "TBD_ResultsReporter.c:534",

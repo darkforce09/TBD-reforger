@@ -33,6 +33,10 @@ verify = [
     "31-assertion headless-Chrome click-through of release dist.",
     "Prefill, legal transitions, save toast refetch, confirm-before-delete, zero console errors.",
 ]
+acceptance = [
+    "Event Manager PATCHed operation fields and detached attached missions behind Aegis confirm.",
+    "Release-dist headless click-through ran 31 assertions with zero console errors.",
+]
 citations = [
     "671bfb94 ship commit",
     "PATCH /events/:id handler",

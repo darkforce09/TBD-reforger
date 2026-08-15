@@ -30,6 +30,10 @@ verify = [
     "With 0008 applied the same request returned 201 and all four slots landed.",
     "Widening applied twice to operator pg_dump copy without dedupe.",
 ]
+acceptance = [
+    "Unique index idx_orbat_slot included faction; BLUFOR and OPFOR Alpha 1-1 attach returned 201.",
+    "match_player_stats.role_played was constrained NOT NULL in migration 0009.",
+]
 citations = [
     "9edfdced merge commit",
     "idx_orbat_slot unique constraint",

@@ -15,6 +15,10 @@ context = [
     "it would have edited entirely the wrong files and found nothing. Caught by T-226, which confirmed the real site while working next door.",
     "SHIPPED 2026-07-26 — and it is FIVE pages, not six. Title corrected.",
 ]
+requirement = [
+    "Replace ().into_any() populated render branches on five SPA pages with real list and detail UI.",
+    "Retire modpacks.rs false positive with browser assertions proving the page already rendered.",
+]
 current_state = [
     "The defect, verified: `apps/website/frontend/src/events.rs:72` is a literal `().into_any()` for the NON-EMPTY branch, with an unconditional SplitPaneEmpty detail at :74-80. Fixtures have been populated since T-194 (GET__events.json = 4 events) and",
     "the live API returns 4 — so this is not 'correct but empty', the populated render branch was never written. Same shape confirmed at announcements.rs:68, dashboard.rs:342, audit.rs:72, deployments.rs:164 and :190,",
@@ -37,6 +41,7 @@ verify = [
     "VERIFIED 69/69 IN A BROWSER: 45/45 populated assertions with 0 console errors, then the same stack rebuilt against an empty-payload stub for 24/24 on the empty branches — so 'empty",
     "goldens unchanged' is measured, not asserted. Stale-wasm check done: all 11 new strings grepped present in the built artifact.",
 ]
+acceptance = ["Five pages rendered populated API data; 69/69 browser assertions passed with zero console errors."]
 citations = [
     "T-194 fixtures",
     "T-226 idioms",

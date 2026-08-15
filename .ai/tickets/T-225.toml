@@ -7,10 +7,28 @@ status = "shipped"
 order = 2430
 executor = "claude-code"
 main_goal = "Registration therefore stays open forever after an op ends."
+context = [
+    "EventStatus had six values; only writer was PATCH /events/{id} with no transition validation.",
+    "Nothing auto-transitioned on start_time, results ingest, or any timer.",
+]
+requirement = [
+    "Derive effective status in Postgres from stored status, start_time, mission times, and now().",
+    "Enforce legal transitions on PATCH; sweeper reconciles stored column with advisory lock.",
+]
 current_state = [
     "EventStatus has six values but the only writer is the caller-less PATCH /events/{id}, with no transition validation.",
     "Nothing auto-transitions on start_time, on results ingest or on any timer — the API's only background tasks are token purge and the audit poller.",
 ]
+approach = [
+    "EFFECTIVE_STATUS_SQL drives every read and can_register_status guard.",
+    "Background sweeper converges stored column; pg_try_advisory_xact_lock excludes duplicate instances.",
+    "End horizon is max(event, missions) + 6h; completion not bound to results ingest.",
+]
+verify = [
+    "Full backend integration suite green on dev DB.",
+    "Two API instances: ten events, zero duplicate transitions or audit rows.",
+]
+acceptance = ["Registration closed on clock via EFFECTIVE_STATUS_SQL; illegal transitions refused; sweeper reconciled column without deciding truth."]
 citations = ["PATCH /events/{id}"]
 shipped_at = "cdd0d101"
 created_at = "2026-07-26T06:09:21Z"
