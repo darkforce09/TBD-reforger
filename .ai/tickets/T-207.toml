@@ -1,11 +1,27 @@
 id = "T-207"
 kind = "work"
 title = "Point the OAuth flow at real Discord and prove it"
-summary = "The OAuth2 implementation is complete — state cookie, constant-time compare, token exchange, role sync, bounded 429 retry — but has never been run against live Discord in this tree. This is a credentials and verification task, not a build task."
+summary = "The OAuth2 implementation is complete — state cookie, constant-time compare, token exchange, role sync, bounded 429 retry — but has never been run against live Discord in this tree."
 class = "feature"
 status = "shipped"
 order = 2250
 executor = "claude-code"
+context = [
+    "SHIPPED 2026-07-26. OAuth2 code complete; never run against live Discord in tree.",
+    "CLAUDE.md blank-creds claim stale; client id, secret, guild id populated.",
+]
+requirement = [
+    "Document live Discord OAuth round-trip in DEV_RUNBOOK.",
+    "Record true credential state and host-only oauth_state cookie trap.",
+]
+current_state = ["Operator knowledge existed only in source; FRONTEND_URL 127.0.0.1 vs localhost broke cookie."]
+approach = ["Expand DEV_RUNBOOK and .env.example; docs only, no behaviour change."]
+citations = [
+    "commit c6252957",
+    "commit 2d5900b7",
+    "commit fdba2044",
+    "T-303 cookie-host trap",
+]
 shipped_at = "fdba2044"
 created_at = "2026-07-26T05:10:35Z"
 completed_at = "2026-07-26T05:12:40Z"

@@ -1,11 +1,37 @@
 id = "T-215"
 kind = "work"
 title = "Vehicle placement on the map with position and cargo"
-summary = "Vehicle placement exists but is ORBAT-only with an auto-derived position (leader +/-30m, editor_ops.rs:1386-1388); the map palette is a stub (eden_chrome.rs:1520-1525). add_vehicle writes only {id,resourceName,position,squadId} (store.rs:527-548) and flatten never reads vehiclesById at all, so squad vehicles are silently discarded at compile."
+summary = "Map palette Vehicles tab places vehicles at authored map points with faction and cargo; save-reload round trip proven."
 class = "feature"
 status = "shipped"
 order = 2330
 executor = "claude-code"
+context = [
+    "Vehicle placement was ORBAT-only with leader-offset position.",
+    "Map palette Vehicles tab was a T-070 placeholder stub.",
+    "flatten never read vehiclesById; squad vehicles died at compile.",
+]
+requirement = [
+    "Place vehicles from Vehicles tab at real map coordinates.",
+    "Author factionId and cargo[] on map-placed rows without squadId.",
+    "Prove save, compile, hydrate round trip bit-exact.",
+]
+current_state = [
+    "add_vehicle wrote only id, resourceName, position, squadId.",
+    "Attaching squadId would close current squad per place_orbat is_open_for_placement.",
+]
+approach = [
+    "asset_catalog builds vehicle tree over kind vehicle rows.",
+    "editor_ops armed place branch writes vehiclesById at world point.",
+    "set_vehicle_faction and set_vehicle_cargo mutators beside add_vehicle.",
+]
+verify = ["Three store tests; load-bearing save-reload asserts bit-exact faction and cargo."]
+citations = [
+    "commit e28002e0 vehicle map placement",
+    "T-321 one-squad-per-click defect",
+    "wave 5 factory notes",
+    "T-216 vehicle contract floor",
+]
 shipped_at = "77214f04"
 created_at = "2026-07-26T18:47:19Z"
 completed_at = "2026-07-26T19:40:22Z"

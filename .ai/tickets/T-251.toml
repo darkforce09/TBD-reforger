@@ -1,13 +1,25 @@
 id = "T-251"
 kind = "work"
 title = "Production deployment story"
-summary = "No Dockerfile, no docker-compose.staging.yml (referenced by deploy.env.example and HOME_SERVER.md but absent), no deploy-website.sh, no deploy job in any of the four CI workflows, no TLS or reverse-proxy config in-repo, no pg_dump backup script, and no metrics, Sentry or OTel dependency."
+summary = "Dockerfile, staging compose, deploy-website.sh, Caddyfile; deploy.env.example updated."
 class = "chore"
 status = "shipped"
 order = 2690
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 depends_on = ["T-209"]
+context = [
+    "deploy.env.example and HOME_SERVER.md referenced Dockerfile and staging compose that did not exist.",
+    "No deploy-website.sh, CI deploy job, TLS reverse-proxy config, or backup script in-repo.",
+]
+requirement = [
+    "Ship release api image, Postgres staging compose, rsync deploy script refusing prairielearn.",
+    "Add COOP/COEP Caddyfile; point deploy.env.example at files that now exist.",
+]
+citations = [
+    "commit 9adeb05c deploy stack",
+    "wave 9 close 22bc2fe5",
+]
 shipped_at = "22bc2fe5"
 created_at = "2026-07-26T22:14:10Z"
 completed_at = "2026-07-26T22:33:08Z"

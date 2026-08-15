@@ -1,11 +1,23 @@
 id = "T-254"
 kind = "work"
 title = "Entity and object placement — the whole entities[] block"
-summary = "The Objects chip is a stub (eden_chrome.rs:1466-1470), place_at no-ops in objects mode (editor_ops.rs:1598-1602), the palette filters to kind==character (asset_catalog.rs:63), and the doc has no entities map. The mod has no reader either. Also blocks objective_destroy, which resolves rules.targetAlias against entities[]."
+summary = "Wire entities[] end-to-end: Objects chip through store, compile, flatten, mod spawn."
 class = "docs"
 status = "shipped"
 order = 2720
 executor = "claude-code"
+context = [
+    "Objects chip was a stub; place_at no-oped in objects mode; palette filtered to kind==character.",
+    "Doc had no entities map; mod had no reader — blocked objective_destroy targetAlias resolution.",
+]
+requirement = [
+    "Enable Objects placement in editor chrome and editor_ops.",
+    "Add entities map to doc store; emit via compile and flatten; spawn in TBD_MissionLoader.",
+]
+citations = [
+    "commit 4b8fb28b entities stack",
+    "wave 9 close 22bc2fe5",
+]
 shipped_at = "21d34abd"
 created_at = "2026-07-26T22:22:13Z"
 completed_at = "2026-07-27T02:58:42Z"

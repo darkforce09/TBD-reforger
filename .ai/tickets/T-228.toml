@@ -1,11 +1,42 @@
 id = "T-228"
 kind = "work"
-title = "ORBAT unique index omits faction — cross-faction squad names 500 on attach"
-summary = "idx_orbat_slot is (event_mission_id, squad, slot_index) with no faction column, so two factions each with a squad named Alpha 1-1 produce a duplicate key and the attach returns 500. The same blindness affects get_orbat grouping, orbat_reservations uniqueness and can_manage_squad."
+title = "Add faction to ORBAT slot unique key"
+summary = "idx_orbat_slot was (event_mission_id, squad, slot_index) with no faction column. Cross-faction squads named Alpha 1-1 collided and attach returned 500."
 class = "feature"
 status = "shipped"
 order = 2460
 executor = "claude-code"
+context = [
+    "orbat_slots.faction existed since initial schema.",
+    "materialize_slots always bound faction on insert.",
+    "The unique index ignored faction on the key.",
+]
+requirement = [
+    "Widen idx_orbat_slot to include faction.",
+    "Constrain match_player_stats.role_played NOT NULL.",
+]
+current_state = [
+    "BLUFOR and OPFOR both named Alpha 1-1 produced duplicate key on attach.",
+    "INSERT had no ON CONFLICT; violation surfaced as HTTP 500.",
+    "get_orbat grouping and orbat_reservations shared the blindness.",
+]
+approach = [
+    "Migration 0008_orbat_slot_faction.sql drops and recreates the unique index.",
+    "Migration 0009_role_played_not_null.sql constrains role_played.",
+    "Deliberately excluded T-318 one-seat-per-user partial index.",
+]
+verify = [
+    "Reproduced: BLUFOR + OPFOR Alpha 1-1 attach returned HTTP 500 before 0008.",
+    "With 0008 applied the same request returned 201 and all four slots landed.",
+    "Widening applied twice to operator pg_dump copy without dedupe.",
+]
+citations = [
+    "9edfdced merge commit",
+    "idx_orbat_slot unique constraint",
+    "orbat_slots.faction column",
+    "materialize_slots insert path",
+    "T-318 partial index deferral",
+]
 shipped_at = "a9f3c34a"
 created_at = "2026-07-26T07:10:07Z"
 completed_at = "2026-07-26T07:26:36Z"

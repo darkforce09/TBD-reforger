@@ -1,11 +1,45 @@
 id = "T-224"
 kind = "work"
-title = "Mission settings block — duration, respawn, spectator policy, NVG, tickets, JIP"
-summary = "Six contract fields with no control anywhere. flow is four hardcoded constants and tickets is a hardcoded 0. Ship the UI, doc fields and flatten emission together; half of settings also needs mod readers."
+title = "Mission flow controls in Mission Settings"
+summary = "Six settings had no UI; flow was four hardcoded constants and tickets was 0. Ship controls for the four keys with live mod readers; refuse respawn, spectator, NVG, and tickets."
 class = "docs"
 status = "shipped"
 order = 2420
 executor = "claude-code"
+context = [
+    "Six settings fields existed in contract with no control anywhere.",
+    "flatten.rs hardcoded briefing, safe start, time limit, and JIP.",
+    "Only four keys have live mod readers today; two are unread.",
+]
+requirement = [
+    "Author timeLimitSeconds, safeStartSeconds, jip, and briefingSeconds in Mission Settings.",
+    "Persist under meta.environment using AUTHORED_FLOW_KEYS mapping.",
+    "Refuse controls for respawn, spectatorPolicy, nightVision, and factions[].tickets.",
+]
+current_state = [
+    "flow was four hardcoded constants in the compiler.",
+    "tickets was a hardcoded 0 with no reader.",
+    "Four unread settings would validate and compile but change nothing at runtime.",
+]
+approach = [
+    "Mission flow block in the Mission Settings dialog over the whole flow object.",
+    "Seconds boxes with parse_flow_seconds; defaults mirror flatten.rs constants.",
+    "editor_ops gains read_env_value for raw meta.environment read-back.",
+    "SETTINGS_UNREAD_NOTE documents the four refused fields.",
+]
+verify = [
+    "cargo check -p website-frontend --target wasm32-unknown-unknown clean.",
+    "cargo test -p website-frontend 129 passed, eden_chrome 25 incl. 7 new.",
+    "clippy wasm32 adds no warning; rustfmt clean.",
+]
+citations = [
+    "dde40f91 ship commit",
+    "TBD_FrameworkManager flow readers",
+    "flatten.rs hardcoded constants",
+    "T-193 unread settings precedent",
+    "T-259 mod settings reader",
+    "T-204 compiler emission follow-on",
+]
 shipped_at = "dde40f91"
 created_at = "2026-07-26T06:06:02Z"
 completed_at = "2026-07-26T06:08:58Z"

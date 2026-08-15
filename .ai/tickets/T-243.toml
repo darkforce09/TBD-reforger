@@ -1,11 +1,42 @@
 id = "T-243"
 kind = "work"
 title = "Wire or delete the unused wasm flatten binding"
-summary = "flatten_mod_document is exported at crates/map-engine-wasm/src/lib.rs:766-771 as the client twin of /compiled but has zero call sites. Export downloads the editor-superset envelope instead. There is no way for an author to preview the document the game server will actually receive."
+summary = "flatten_mod_document was exported with zero call sites. Export downloaded the editor-superset envelope; authors could not preview the compiled document."
 class = "chore"
 status = "shipped"
 order = 2610
 executor = "claude-code"
+context = [
+    "flatten_mod_document was a wasm-bindgen export with zero call sites.",
+    "The TypeScript UI shell was deleted at T-159.29.3.",
+    "Leptos links map-engine-core directly; re-wiring the shim was out of scope.",
+]
+requirement = [
+    "Delete the dead wasm flatten binding.",
+    "Make the client twin byte-identical to the /compiled route.",
+]
+current_state = [
+    "Export downloaded the editor-superset envelope, not the game-server document.",
+    "flatten_mod_document_json applied no authored-environment precedence rule.",
+    "Preview would show created-with values while the server served authored ones.",
+]
+approach = [
+    "Deleted flatten_mod_document with evidence at the site.",
+    "Moved precedence to map_engine_core::mission::flatten::apply_authored_environment.",
+    "mission_compile.rs is now purely the row to MissionMeta adapter.",
+]
+verify = [
+    "client_twin_is_byte_identical_to_the_compiled_route pins both paths.",
+    "Fixture authored environment disagrees with the row.",
+    "weather_preset_list_matches_the_row_enum guards WeatherType coupling.",
+]
+citations = [
+    "86e8588f ship commit",
+    "apply_authored_environment shared crate",
+    "T-159.29.3 shell deletion",
+    "T-192 payload-first precedence",
+    "mission_compile client twin test",
+]
 shipped_at = "33a7aa85"
 created_at = "2026-07-26T17:42:48Z"
 completed_at = "2026-07-26T18:27:15Z"

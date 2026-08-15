@@ -1,11 +1,32 @@
 id = "T-203"
 kind = "work"
 title = "Emit radioPlan — unlocks the seven-file radio subsystem"
-summary = "TBD_RadioPlan.c:46-67, TBD_RadioService.c:119-135 and TBD_RadioTuner are complete and read all five net fields. flatten emits nothing and no UI authors nets. This is also the partner VOIP bridge contract (mission.schema.json:285)."
+summary = "Derive and emit radioPlan nets from ORBAT so the mod radio subsystem receives frequencies."
 class = "feature"
 status = "shipped"
 order = 2210
 executor = "claude-code"
+context = [
+    "SHIPPED 2026-07-26. Seven mod radio files complete since T-181.40; flatten emitted no radioPlan.",
+    "No radio UI exists; plan derived from one command net per faction plus one per squad.",
+]
+requirement = [
+    "Emit radioPlan with side-scoped nets; frequencies allocated from 30 MHz in 0.5 MHz steps.",
+    "Respect MAX_NETS=32 and MAX_LABEL_CHARS=48 mod limits; command nets before squad nets.",
+]
+current_state = ["Every compiled mission arrived with nets=0; whole radio subsystem dark."]
+approach = ["derive_radio_plan() in flatten.rs; freqMHz explicit serde rename for camelCase."]
+verify = [
+    "cargo test -p map-engine-core --features mission 147 pass.",
+    "world-boot --compiled plan authored=2 accepted=2 rejected=0.",
+]
+citations = [
+    "TBD_RadioPlan.c:91",
+    "TBD_RadioService.c:214-220",
+    "commit d039a6fe",
+    "mission.schema.json:285",
+    "T-181.40",
+]
 shipped_at = "d039a6fe"
 created_at = "2026-07-26T05:40:37Z"
 completed_at = "2026-07-26T05:42:42Z"

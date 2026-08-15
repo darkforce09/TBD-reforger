@@ -1,11 +1,25 @@
 id = "T-197"
 kind = "work"
 title = "241 attachment edges and 26 attachment items are unreachable"
-summary = "Only three of nine compat edge types are read by the UI; arsenal.rs:198 hardcodes attachments to an empty array. ammo_in_mag has zero edges generated."
+summary = "Wire attachment_on_weapon compat edges through Arsenal per-weapon attachment sets in picks."
 class = "feature"
 status = "shipped"
 order = 2150
 executor = "claude-code"
+context = [
+    "Persisted loadouts hardcoded attachments empty; 241 attachment_on_weapon edges had no UI reader.",
+    "Attachment is multi-slot per weapon, not one LoadoutRow value.",
+]
+requirement = [
+    "Pack per-weapon attachment sets in picks key attachments@row with U+001F join.",
+    "Walk WEAPON_SLOTS for read and write; reuse row_options filtering rules.",
+    "Fold attachment weight for picked weapons; flag stranded attachments in UI.",
+]
+verify = ["34 of 241 export edges reachable; eight attachments on seven rifles."]
+citations = [
+    "Source: commit c042c885 — wire attachments.",
+    "registry-compat export edge census",
+]
 shipped_at = "3a4e86be"
 created_at = "2026-07-26T05:17:27Z"
 completed_at = "2026-07-26T05:19:54Z"

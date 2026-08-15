@@ -1,11 +1,26 @@
 id = "T-199"
 kind = "work"
-title = "The Arsenal download button emits a file that violates its own schema"
-summary = "arsenal.rs:557-579 writes {version,wear,weapons,cargo,summary} — missing required loadoutVersion, modpackId and gear, and adding two keys against additionalProperties:false. It fails both oneOf branches and TBD_LoadoutEquipComponent.c:112-114 would reject it. Nothing in the repo generates a conforming loadout export."
+title = "Arsenal export must match loadout-export schema"
+summary = "Arsenal download emits loadout-export.schema.json v2; mod reader accepts both branches."
 class = "feature"
 status = "shipped"
 order = 2170
 executor = "claude-code"
+context = [
+    "Download handed persisted SlotLoadoutV2 dict missing loadoutVersion, modpackId, and gear.",
+    "TBD_LoadoutEquipComponent rejected corrected file; only read loadoutVersion 1.",
+]
+requirement = [
+    "Implement picks_to_export emitting v2 branch with gear derivation matching mod_slot_loadout.",
+    "Extend mod reader for v1 and v2; match weapons on slotIndex plus slotType pair.",
+    "Strip U+001F from untrusted attachment strings in loadout_to_picks separator gate.",
+]
+verify = ["127 website-frontend tests; export bytes validate against schema."]
+citations = [
+    "Source: commit b53866e0 — conforming export.",
+    "loadout-export.schema.json v2 branch",
+    "React loadoutExport T-068.10.4 contract",
+]
 shipped_at = "b53866e0"
 created_at = "2026-07-26T06:06:51Z"
 completed_at = "2026-07-26T06:11:07Z"

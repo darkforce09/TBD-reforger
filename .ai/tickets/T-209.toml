@@ -1,12 +1,38 @@
 id = "T-209"
 kind = "work"
 title = "Run the mod compile and world-boot gates in CI"
-summary = "compile.sh and world-boot.sh are the best regression instruments in the repo and grep of .github/workflows for mod-compile or mod-world-boot returns nothing. 29k lines of mod code have zero automated verification on push."
+summary = "Wire compile.sh and world-boot.sh into CI so mod pushes get automated regression coverage."
 class = "bug"
 status = "shipped"
 order = 2270
 executor = "claude-code"
 depends_on = ["T-186"]
+context = [
+    "Thirty-three thousand Enfusion lines had zero push verification.",
+    "Workflow grep found no mod-compile or mod-world-boot jobs.",
+]
+requirement = [
+    "Run hosted selftest triage on every push; nightly full gates on self-hosted runner.",
+    "Split env-vs-code exit codes 0/1/2/3 in both gate scripts.",
+]
+current_state = [
+    "compile.sh load-count guard exited 1 for stale rdb — env failure masquerading as code defect.",
+    "world-boot.sh bare require_host discarded exit 127 silently.",
+]
+approach = [
+    "ci.yml mod-gates-hosted: world-boot --selftest plus bash -n.",
+    "mod-gates.yml nightly on self-hosted arma-reforger-server; queued until runner exists.",
+    "Scripts called directly, not via make, to preserve exit codes under bash -e.",
+]
+verify = [
+    "compile.sh PASS; world-boot.sh PASS; --selftest 10/10.",
+    "Workflow blocks extracted and executed under bash -e on provisioned and unprovisioned hosts.",
+]
+citations = [
+    "commit 7a6df0b1 mod gates CI",
+    "T-186 env-vs-code split",
+    "T-312 mod-compile-selftest filed",
+]
 shipped_at = "7a6df0b1"
 created_at = "2026-07-26T05:38:28Z"
 completed_at = "2026-07-26T05:40:23Z"

@@ -1,11 +1,45 @@
 id = "T-226"
 kind = "work"
 title = "Events can never be edited or detached from the UI"
-summary = "PATCH /events/{id} has no caller so events can never be edited and status can never be set; DELETE /events/{id}/missions/{emid} has no caller so missions can never be detached; the /events list page renders nothing."
+summary = "PATCH /events/{id} and DELETE /events/{id}/missions/{emid} had no SPA caller. Operations were frozen after create and attached missions could not be removed."
 class = "chore"
 status = "shipped"
 order = 2440
 executor = "claude-code"
+context = [
+    "PATCH /events/:id and DELETE /events/:id/missions/:emid both worked.",
+    "Neither endpoint had a caller anywhere in the SPA.",
+    "Create shipped without the edit or detach half.",
+]
+requirement = [
+    "Give the Event Manager an edit path for operation fields and lifecycle status.",
+    "Give a detach path for attached missions with confirmation.",
+    "Surface lifecycle status in the day list.",
+]
+current_state = [
+    "Published operation time, name, briefing, banner, capacity, and status were frozen.",
+    "An attached mission could never be removed from the UI.",
+    "The /events list page still renders nothing on populated data.",
+]
+approach = [
+    "Edit Operation dialog PATCHes only fields that differ from the opened row.",
+    "Instant comparison, not string compare, for start_time.",
+    "Status picker mirrors can_transition from the handler.",
+    "Detach in Attached Missions roster behind Aegis confirm.",
+    "Three-state roster enum avoids cross-operation event_mission_id bleed.",
+]
+verify = [
+    "Full PATCH/DELETE contract against private API on :18226.",
+    "31-assertion headless-Chrome click-through of release dist.",
+    "Prefill, legal transitions, save toast refetch, confirm-before-delete, zero console errors.",
+]
+citations = [
+    "671bfb94 ship commit",
+    "PATCH /events/:id handler",
+    "can_transition source of truth",
+    "T-225 lifecycle status writer",
+    "events.rs populated branch stub",
+]
 shipped_at = "191fd0df"
 created_at = "2026-07-26T07:19:00Z"
 completed_at = "2026-07-26T07:23:33Z"

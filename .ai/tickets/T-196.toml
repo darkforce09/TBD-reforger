@@ -1,11 +1,24 @@
 id = "T-196"
 kind = "work"
 title = "T-181 slices[] lists 39 of 54 slices"
-summary = "SHIPPED by the Phase 0 registry pass (7b98232b) before the fleet started. T-181.slices[] backfilled 39 -> 66 (all slice_plan entries), and active_slice corrected from T-181.15 — which was already shipped — to null. Verified: slice_plan 66, slices[] 66, active_slice null."
+summary = "Backfill T-181 slices[] to 66 entries and clear stale active_slice before factory dispatch."
 class = "feature"
 status = "shipped"
 order = 2140
 executor = "claude-code"
+context = [
+    "Platform factory Phase 0: registry and CLAUDE §Status were stale enough to misroute agents.",
+    "T-181 slices[] listed 39 entries; active_slice pointed at shipped T-181.15.",
+]
+requirement = [
+    "Backfill T-181 slices[] from slice_plan to 66 entries.",
+    "Set active_slice null; defer T-068 and T-181 with human-only open slices.",
+    "Backfill status on ten T-068 phase-1 shipped slices missing status field.",
+]
+citations = [
+    "Source: commit 7b98232b — registry true.",
+    "PLATFORM_FACTORY Phase 0 dispatch gate",
+]
 shipped_at = "7b98232b"
 created_at = "2026-07-26T00:00:00Z"
 completed_at = "2026-07-26T00:00:00Z"

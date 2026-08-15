@@ -1,11 +1,38 @@
 id = "T-216"
 kind = "work"
 title = "flatten drops leaderSlotId, tag, callsign, rank, stance and all vehicles"
-summary = "Three T-180 headline features die at the compile boundary that verify-t180 never crosses. The ORBAT block reaches the mod as a count-parity skeleton only."
+summary = "Document six author-facing values silently dropped at compile; ship ledger and tripwire, not emission."
 class = "feature"
 status = "shipped"
 order = 2340
 executor = "claude-code"
+context = [
+    "verify-t180 named 22 selectors; none crossed into flatten.rs.",
+    "Six T-180 values reached editor and ORBAT but died before the game server.",
+    "mission.schema.json closes slot, group, and root additionalProperties.",
+]
+requirement = [
+    "Enumerate each dropped value from saved payload to serialized wire.",
+    "Pin compiled slot and document key sets against contract changes.",
+    "Repair verify-t180 fail-closed bans and doc,mission feature compile.",
+]
+current_state = [
+    "Emitting any of the six today would 500 every mission on /compiled.",
+    "verify-t180 rg bans printed OK when rg absent or files missing.",
+    "--features doc alone could not compile store tests calling compile_payload.",
+]
+approach = [
+    "the_compile_boundary_ledger_is_checked_against_the_contract per value.",
+    "Blocked rows assert against schema; go red when T-242 widens contract.",
+    "grep -E replaces rg; --features doc mission on cargo test line.",
+]
+verify = ["verify-t180 ALL PASS exit 0; 25 cargo invocations on host."]
+citations = [
+    "commit 00035c60 compile boundary ledger",
+    "commit 27b2a881 verify-t180 fail closed",
+    "wave 5 factory notes",
+    "T-242 schema widening owner",
+]
 shipped_at = "77214f04"
 created_at = "2026-07-26T18:49:18Z"
 completed_at = "2026-07-26T19:40:22Z"

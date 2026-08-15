@@ -1,11 +1,24 @@
 id = "T-245"
 kind = "work"
-title = "Registry fetch is unpaginated — about 7MB on every editor open"
-summary = "mission_editor.rs:196,215 fetch /registry and /registry/compat whole: 1,857 items and 20,908 edges. cargo_defaults_by_character then walks all 20,908 to build a seed map."
+title = "Session-cache registry compat on remount"
+summary = "Session-cache registry+compat on editor remount; first SPA open still pays once."
 class = "feature"
 status = "shipped"
 order = 2630
 executor = "claude-code"
+context = [
+    "Editor cold-open fetched unpaginated /registry and /registry/compat (~7MB, ~1.8k items, ~20k edges).",
+    "cargo_defaults_by_character walked all compat edges on every MissionEditorPage mount.",
+]
+requirement = [
+    "Cache registry+compat for the SPA session so remounts skip both full GETs.",
+    "True API pagination remains outside this file's owns (see T-427).",
+]
+verify = ["t245_registry_session warm mount skips dual GET."]
+citations = [
+    "commit 06a5c370 session-cache",
+    "wave 6 close 0fdf3d63",
+]
 shipped_at = "0fdf3d63"
 created_at = "2026-07-26T21:03:36Z"
 completed_at = "2026-07-26T21:26:46Z"

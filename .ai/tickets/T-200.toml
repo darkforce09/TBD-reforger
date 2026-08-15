@@ -1,11 +1,30 @@
 id = "T-200"
 kind = "work"
 title = "Only 8 of 354 registry characters have a kit alias"
-summary = "flatten.rs:489-491 silently substitutes the faction default for the other 346 and, unlike the file's own $comment, emits no warning."
+summary = "Stop silent kit substitution; report unaliased character swaps on doc.kit_substitutions without changing compiled wire bytes."
 class = "feature"
 status = "shipped"
 order = 2180
 executor = "claude-code"
+context = [
+    "SHIPPED 2026-07-26. 342 of 354 registry characters had no kit-aliases row.",
+    "kit-aliases.json $comment promised a warning; flatten used map_or_else with no report.",
+]
+requirement = [
+    "Record substitutions on doc.kit_substitutions; #[serde(skip)] so /compiled bytes stay identical.",
+    "Do not fail compile — faction default is the only legal kit value for unaliased slots.",
+]
+current_state = ["flatten silently substituted faction default kit for unaliased characters."]
+approach = ["Add substitution report riding flatten_to_mod_document return value; six new tests."]
+verify = [
+    "cargo test -p map-engine-core --features doc,mission 193 pass.",
+    "cargo test -p website-api green; clippy -D warnings clean.",
+]
+citations = [
+    "commit 0d4a2ae7",
+    "kit-aliases.json $comment",
+    "mission.schema.json additionalProperties",
+]
 shipped_at = "0d4a2ae7"
 created_at = "2026-07-26T06:01:02Z"
 completed_at = "2026-07-26T06:02:53Z"

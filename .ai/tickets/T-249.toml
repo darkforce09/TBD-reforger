@@ -1,11 +1,21 @@
 id = "T-249"
 kind = "work"
 title = "Add a slot.y fixture"
-summary = "No golden authors slots[].y, so the entire schema-1.2 path — Y_ABSENT sentinel (TBD_MissionSlotStruct.c:47,57), HasJsonY(), TBD_SpawnManager.c:957-973 — is untested end to end despite T-092.1 shipping it."
+summary = "Golden pins slots[].y absent vs present; schema gate enforces the path."
 class = "feature"
 status = "shipped"
 order = 2670
 executor = "claude-code"
+context = ["No golden authored slots[].y, so Y_ABSENT / HasJsonY spawn path was untested despite T-092.1."]
+requirement = [
+    "Add slot-y-absent-and-present golden exercising one slot with y and one without.",
+    "Pin golden shape and spawn wiring in schema_gates.",
+]
+verify = ["schema gate: slot-y golden PASS."]
+citations = [
+    "commit bb668a43 slot-y golden",
+    "wave 8 close 9ba24b77",
+]
 shipped_at = "9ba24b77"
 created_at = "2026-07-26T21:56:02Z"
 completed_at = "2026-07-26T22:05:16Z"

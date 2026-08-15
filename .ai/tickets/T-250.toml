@@ -1,11 +1,21 @@
 id = "T-250"
 kind = "work"
 title = "Warn on unconsumed mission-document keys"
-summary = "TBD_MissionValidator has no unconsumed-key warning, so nothing tells an author that environment, settings, entities, layers, tickets or roles[].radio were silently discarded on load."
+summary = "Validator warns on unconsumed keys; schema gate pins wired markers."
 class = "feature"
 status = "shipped"
 order = 2680
 executor = "claude-code"
+context = ["TBD_MissionValidator had no unconsumed-key warning — environment, settings, entities, layers, tickets, roles[].radio silently discarded."]
+requirement = [
+    "Wire CheckUnconsumedKeys warnings in TBD_MissionValidator for each listed top-level key.",
+    "Pin marker comments and AddWarning calls in schema_gates.",
+]
+verify = ["schema gate: six unconsumed-key warnings wired."]
+citations = [
+    "commit bb465523 unconsumed keys",
+    "wave 8 close 9ba24b77",
+]
 shipped_at = "bb465523"
 created_at = "2026-07-26T21:56:48Z"
 completed_at = "2026-07-26T22:00:41Z"

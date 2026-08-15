@@ -1,11 +1,32 @@
 id = "T-208"
 kind = "work"
 title = "Add a compiler-shaped golden mission"
-summary = "All four goldens author radioPlan, briefings, settings and multi-type zones — none resembles flatten output, so the mod's test corpus systematically over-represents what the website can emit. Add a golden containing exactly the nine blocks flatten produces."
+summary = "Add compiler-shaped golden plus emitter drift guard so mod gates match website compile output."
 class = "feature"
 status = "shipped"
 order = 2260
 executor = "claude-code"
+context = [
+    "SHIPPED 2026-07-26. All four hand goldens richer than flatten output; mod validated against unreachable documents.",
+    "T-203 radioPlan drift showed stale golden passed schema and world-boot gates.",
+]
+requirement = [
+    "Add compiler-shaped-two-faction.json as verbatim flatten_to_mod_document output.",
+    "Guard test diffs committed bytes against fresh emitter output.",
+]
+current_state = ["Mod test corpus over-represented what the website could emit."]
+approach = ["Inline editor graph in flatten.rs; compiler_shaped_golden_is_a_fresh_emitter_output test."]
+verify = [
+    "cargo test -p map-engine-core --features doc,mission 195/195.",
+    "world-boot compiler-shaped-two-faction PASS errors=0 warnings=0 Radio=ok.",
+]
+citations = [
+    "commit c6f19ce1",
+    "commit d297f3a3",
+    "T-186 API round-trip",
+    "T-299 single-faction stub",
+    "T-203 radioPlan drift",
+]
 shipped_at = "d297f3a3"
 created_at = "2026-07-26T05:37:20Z"
 completed_at = "2026-07-26T06:26:16Z"
