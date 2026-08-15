@@ -17,6 +17,7 @@ verify = [
     "go build ./...",
     "cargo xtask db test-it",
 ]
+acceptance = ["Go modules bumped gin 1.12, gorm 1.31.2, and pgx 5.10."]
 citations = [
     "commit d81ed9c Go modules",
     "t124_dependency_upgrade.md shipped commits",

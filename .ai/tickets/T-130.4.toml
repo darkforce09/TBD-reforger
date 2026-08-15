@@ -13,6 +13,8 @@ context = ["F1-16..20 OPEN on exporters."]
 requirement = ["8MB cap; list 100; Write checks; JSON escape."]
 current_state = ["Unchecked writes; open mission list RPC."]
 approach = ["TBD_ExportJson.Write; TBD_ExportPaths.c."]
+verify = ["go build ./..."]
+acceptance = ["Mod export guards shipped: 8MB read cap, admin-gated list RPC, checked Write, JSON escape."]
 citations = [
     "commit b62a66b7",
     "t130_fable_audit_remainder.md",

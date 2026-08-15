@@ -13,6 +13,8 @@ context = ["CODING_STANDARDS CI-2, TEST-1/2/3, FMT-1."]
 requirement = ["Postgres 18; backend gofmt; frontend vitest; schema validate."]
 current_state = ["No unified ci.yml on main pushes."]
 approach = [".github/workflows/ci.yml plus Makefile targets."]
+verify = ["cargo xtask ci ci-local"]
+acceptance = ["ci.yml landed with backend, frontend, and schema jobs mirroring ci-local."]
 citations = [
     "commit 9792182 ci.yml",
     "t125_coding_standards_enforcement.md",

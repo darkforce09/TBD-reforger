@@ -21,6 +21,7 @@ verify = [
     "./scripts/ticket sync",
     "./scripts/ticket check",
 ]
+acceptance = ["Repaired P0 agent handoff links, staging gate honesty, monorepo README rewrites, and orphan frontend docs deleted."]
 citations = [
     "commit 5791a56b merge T-128",
     "t128_doc_link_repair.md",

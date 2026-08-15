@@ -18,6 +18,7 @@ verify = [
     "npm run lint",
     "npm run test",
 ]
+acceptance = ["Runtime moved to Node 26 LTS; CI and types updated; dropped unused container-queries."]
 citations = [
     "commit cd11db0 Node 26",
     "t124_dependency_upgrade.md final toolchain",

@@ -22,6 +22,7 @@ verify = [
     "cd apps/website/frontend && npm run build",
     "cd apps/website/frontend && npm run lint",
 ]
+acceptance = ["Closed Fable S1–S6: export canViewMission gate, atomic refresh rotation, ORBAT 409, banned 403, setTokens bootstrap."]
 citations = [
     "commit 4a47688e T-126",
     "t126_audit_security_followup.md",

@@ -17,6 +17,7 @@ verify = [
     "./scripts/ticket sync",
     "./scripts/ticket check",
 ]
+acceptance = ["Registry marked T-125 shipped; CODING_STANDARDS matrix and CLAUDE §Done synced."]
 citations = [
     "commit 23135cf doc sync",
     "t125 spec T-125.6 section",

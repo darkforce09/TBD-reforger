@@ -13,6 +13,8 @@ context = ["F2B-06: ci-local skipped those packages."]
 requirement = ["ci.yml and ci-local-backend include them."]
 current_state = ["CI green without those tests."]
 approach = ["Wire steps into CI mirror."]
+verify = ["cargo xtask ci ci-local"]
+acceptance = ["CI and ci-local-backend now run services, middleware, and realtime package tests."]
 citations = [
     "commit 755a889b",
     "t130_fable_audit_remainder.md",

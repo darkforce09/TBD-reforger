@@ -13,6 +13,8 @@ context = ["Doc-only; scripts land in T-125.1-.5."]
 requirement = ["Each rule: gate, tool, verify command."]
 current_state = ["No coding standards doc or CI matrix."]
 approach = ["CODING_STANDARDS.md §0.2–§11."]
+verify = ["Doc-only slice; CODING_STANDARDS.md §0.2–§11 authored."]
+acceptance = ["CODING_STANDARDS.md shipped with gate taxonomy and 38 enforceable rules documented."]
 citations = [
     "commit a54f491 gate taxonomy",
     "t125_coding_standards_enforcement.md",

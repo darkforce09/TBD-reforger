@@ -13,6 +13,12 @@ context = ["GO-7 route-match, LOG-3, ERR-4, GO-9 imports."]
 requirement = ["82 handlers tagged; verify-coding-standards in CI."]
 current_state = ["Silent db.First; no verify-* scripts."]
 approach = ["verify-route-tags; DTO fixtures; ci-local wiring."]
+verify = [
+    "cargo xtask ci verify-citations",
+    "cargo xtask ci verify-coding-standards",
+    "cargo xtask ci ci-local",
+]
+acceptance = ["82 handlers @route-tagged; verify-* scripts and ENF-4 DTO fixture gate wired into CI."]
 citations = [
     "commit cb508cf route verify scripts",
     "SHIPPED_HISTORY T-125",

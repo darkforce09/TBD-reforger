@@ -13,6 +13,11 @@ context = ["F3-01/02/03 on Discord HTTP/OAuth."]
 requirement = ["Retry-After; truncate embeds; oauth_unconfigured redirect."]
 current_state = ["No backoff; uncapped embeds; blank client_id."]
 approach = ["httpretry.go caps; auth client_id guard."]
+verify = [
+    "go test ./internal/services/... -count=1",
+    "cargo xtask db test-it",
+]
+acceptance = ["Discord 429 Retry-After backoff, embed caps, and OAuth blank client_id guard shipped."]
 citations = [
     "commit 9db1b9e1",
     "t130_fable_audit_remainder.md",

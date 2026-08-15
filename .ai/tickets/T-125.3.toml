@@ -13,6 +13,11 @@ context = ["FE half of CODING_STANDARDS enforcement."]
 requirement = ["strict:true; no-explicit-any; @model/@contract on exports."]
 current_state = ["TS/eslint rules unenforced in CI."]
 approach = ["tsconfig + eslint; verify-contract-citations.mjs fixes."]
+verify = [
+    "cd apps/website/frontend && npm run build",
+    "cd apps/website/frontend && npm run lint",
+]
+acceptance = ["TypeScript strict:true enabled; eslint @contract/@model enforcement shipped with zero tsc errors."]
 citations = [
     "commit e5fbf4b TS strict eslint",
     "t125_coding_standards_enforcement.md",

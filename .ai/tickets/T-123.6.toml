@@ -17,6 +17,7 @@ verify = [
     "make verify-citations",
     "make schema-codegen",
 ]
+acceptance = ["CI wired citation verifier, TSDoc eslint, golangci revive, and contracts.yml workflow gates."]
 citations = [
     "commit 102a835 CI gates",
     "t123_documentation_standards_rollout.md §10",

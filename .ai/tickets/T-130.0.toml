@@ -13,6 +13,11 @@ context = ["~21 OPEN + F4-03 PARTIAL; no owner."]
 requirement = ["Registry; hub; handoffs; worktree README."]
 current_state = ["OPEN/PARTIAL unowned on audit tracker."]
 approach = ["cursor-docs setup; ticket/T-130 worktree."]
+verify = [
+    "./scripts/ticket sync",
+    "./scripts/ticket check",
+]
+acceptance = ["Registered T-130 program with hub spec, handoffs, and worktree README."]
 citations = [
     "commit 5791a56b",
     "t130_fable_audit_remainder.md",

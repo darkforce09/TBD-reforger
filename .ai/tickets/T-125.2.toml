@@ -13,6 +13,11 @@ context = ["T-125.2.1: verify-ci1.sh, ci.yml comment order."]
 requirement = ["Full golangci set; drop only-new-issues."]
 current_state = ["golangci only-new-issues masked drift."]
 approach = [".golangci.yml; nolint splits defer T-125.4."]
+verify = [
+    "golangci-lint run ./...",
+    "cargo xtask db test-it",
+]
+acceptance = ["golangci full gate enabled; all Go lint issues fixed repo-wide (0 issues)."]
 citations = [
     "commit 80c7f07 CI-1 verify-ci1",
     "commit 8516c69a golangci full",

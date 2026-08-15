@@ -23,6 +23,7 @@ verify = [
     "cd apps/website/frontend && npm run lint",
     "cd apps/website/frontend && npm run test",
 ]
+acceptance = ["Shipped U1–U5 MC UX: conflict IDB persist, export toasts, basemap coerce, folder delete confirm, ORBAT 409 messages."]
 citations = [
     "commit 0515aabb T-127",
     "t127_mc_ux_audit_fixes.md",

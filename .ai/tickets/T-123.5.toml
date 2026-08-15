@@ -17,6 +17,7 @@ verify = [
     "cargo xtask db test-it",
     "go build ./...",
 ]
+acceptance = ["CreateVersion rejected malformed editor payloads against mission-editor-payload.schema.json before persist (400 with structured details)."]
 citations = [
     "commit b5211f2 schema validation",
     "t123_documentation_standards_rollout.md §9.2",

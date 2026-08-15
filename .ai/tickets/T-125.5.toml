@@ -18,6 +18,7 @@ verify = [
     "cd apps/website/frontend && npm run format:check",
     "cargo xtask ci ci-local",
 ]
+acceptance = ["Root .editorconfig and Prettier format:check wired into ci-local (FMT-2/FMT-3 live)."]
 citations = [
     "commit e21dac3 T-125.5",
     "t125_coding_standards_enforcement.md §T-125.5",
