@@ -2,7 +2,7 @@ id = "T-917"
 kind = "program"
 title = "Registry schema v2"
 summary = "Ticket schema v2 core: hard ship gate (three stamps + tokens, estimates as the always-marked escape hatch), flat 4-level scope (domain/layer/component/surface) with a check-validated data-file vocabulary, class field, ten-field body decomposition with byte-reversible wall quarantine, git-mined stamp/token backfill over all shipped history, estimates tree outside metrics/, stamp-sha verb, and the per-ticket plan-document ready-gate."
-status = "queued"
+status = "shipped"
 order = 5970
 spec = "docs/platform/t917_ticket_schema_v2.md"
 executor = "claude-code"
@@ -16,3 +16,4 @@ children = [
     "T-917.6",
 ]
 created_at = "2026-08-14T21:54:38Z"
+completed_at = "2026-08-15T00:21:45Z"
