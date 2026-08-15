@@ -7,14 +7,20 @@ status = "shipped"
 order = 2650
 executor = "claude-code"
 main_goal = "resync_all_roles is curl-only with no scheduled sync; seed ships placeholder leader-role snowflake."
+context = ["resync_all_roles was routed curl-only; docs claimed nightly cron; seed held placeholder leader-role snowflake."]
+requirement = ["Personnel UI must call POST /admin/roles/sync; pin SPA path against live app.rs route registration."]
 current_state = [
     "resync_all_roles works and is routed but has no frontend caller — it is curl-only.",
     "There is no scheduled sync either; the architecture doc claims a nightly cron, which is aspirational.",
     "The seed also ships a placeholder snowflake for the leader role.",
 ]
+approach = ["Sync Roles header button posts ADMIN_ROLES_SYNC_PATH; include_str app.rs route tripwire in unit test."]
+verify = ["cargo test -p website-frontend admin_roles_sync_path_matches_live_api_route."]
+acceptance = ["Personnel synced roles from SPA; path test matched app.rs route; success toast displayed updated member count."]
 citations = [
     "architecture doc nightly cron",
     "leader role seed",
+    "9d334de90 Personnel sync",
 ]
 shipped_at = "9784c912"
 created_at = "2026-07-26T21:03:16Z"

@@ -8,8 +8,15 @@ order = 2620
 executor = "claude-code"
 main_goal = "No vehicle kind in the classifier pipeline — adding a lane to an existing pipeline, not building one."
 context = ["The Workbench export plus Rust classifier pipeline is real and produces 1,623 prefabs and 1.2M instances for Everon,"]
+requirement = ["Add vehicle kind to prefab-classify rules and Everon map-object catalogue pipeline."]
 current_state = ["but the kind enum covers building, tree, vegetation, rock, prop, utility, water and road — there is no vehicle kind."]
 approach = ["This is adding a lane to an existing pipeline, not building one."]
+verify = [
+    "cargo xtask schema map-object-enums",
+    "vehicle_kind_draws_as_prop; golden S3/S9",
+]
+acceptance = ["Schema gained vehicle kind; 7 classify rules appended; 13 wreck prefabs reclassified vehicle; S3/S9 goldens."]
+citations = ["commit 25d551b6f vehicle kind"]
 shipped_at = "bed4f269"
 created_at = "2026-07-26T18:49:08Z"
 completed_at = "2026-07-31T15:04:08Z"

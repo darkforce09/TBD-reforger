@@ -43,12 +43,15 @@ approach = [
     "Blocked by schema in three independent places, so this half of the ticket needs no work:",
     "TWO REAL FINDINGS, both unenforced convention rather than constraint:",
 ]
+verify = ["cargo test -p website-frontend cargo_over_capacity_is_a_fault_a_verdict_can_refuse_on."]
+acceptance = ["Over-capacity became a RowError; export refused with no bytes written."]
 citations = [
     "TBD_LoadoutEquipHelper.c:1108-1145",
     "TBD_RegistryScan.c:896-909",
     "mission.schema.json cargoContainer enum",
     "golden-missions-invalid cargo-container-typo",
     "faction-library.schema.json:108-119",
+    "e071d43c7 cargo fault tests",
 ]
 shipped_at = "33a7aa85"
 created_at = "2026-07-26T13:11:33Z"

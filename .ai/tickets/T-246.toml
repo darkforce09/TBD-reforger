@@ -7,14 +7,20 @@ status = "shipped"
 order = 2640
 executor = "claude-code"
 main_goal = "push-discord force-pushes any announcement without verifying status is published; unreachable from SPA today."
+context = ["POST push-discord broadcast drafts; create and patch already gated Discord push on published status only."]
+requirement = ["Refuse push-discord unless announcement status is published; cover draft and archived posts."]
 current_state = [
     "cms.rs:268-289 force-pushes any announcement — unlike the create and patch paths it does not verify status is published,",
     "so a draft or archived post can be broadcast to the guild.",
     "It is unreachable from the SPA today, which is the only thing hiding it.",
 ]
+approach = ["Added published guard in push_discord handler; cms_announcement_body tests mock webhook for three statuses."]
+verify = ["cargo test -p website-api --test cms_announcement_body push_discord_refuses_draft."]
+acceptance = ["Draft and archived push-discord returned four hundred; published post with webhook returned two hundred pushed true."]
 citations = [
     "create and patch paths",
     "SPA unreachable today",
+    "3c89c57fd published gate",
 ]
 shipped_at = "5fcea457"
 created_at = "2026-07-26T22:33:46Z"

@@ -32,10 +32,12 @@ verify = [
     "It also worked around the dev-login landmine by minting tokens via state.jwt.issue_access rather than logging in,",
     "because DEV_USER_ID shares one users row for every role and rewrites its role — which was making a pre-existing test fail intermittently in the same binary.",
 ]
+acceptance = ["POST PATCH DELETE /servers shipped with soft-delete; bad inet and unknown modpack_id returned four hundred at the boundary."]
 citations = [
     "misc_integration.rs::servers_crud_registration",
     "T-359-shaped tripwire",
     "migration 0001 ZERO foreign keys",
+    "8442f302c servers CRUD ship",
 ]
 shipped_at = "b2a29e43"
 created_at = "2026-07-26T12:18:02Z"

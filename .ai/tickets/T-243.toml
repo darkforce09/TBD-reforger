@@ -30,12 +30,14 @@ verify = [
     "Fixture authored environment disagrees with the row.",
     "weather_preset_list_matches_the_row_enum guards WeatherType coupling.",
 ]
+acceptance = ["flatten_mod_document deleted; apply_authored_environment shared in map-engine-core; client twin matched GET /missions compiled bytes."]
 citations = [
     "86e8588f ship commit",
     "apply_authored_environment shared crate",
     "T-159.29.3 shell deletion",
     "T-192 payload-first precedence",
     "mission_compile client twin test",
+    "dccf236fa flatten deleted",
 ]
 shipped_at = "33a7aa85"
 created_at = "2026-07-26T17:42:48Z"

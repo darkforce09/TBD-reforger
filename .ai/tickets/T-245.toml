@@ -14,7 +14,10 @@ requirement = [
     "Cache registry+compat for the SPA session so remounts skip both full GETs.",
     "True API pagination remains outside this file's owns (see T-427).",
 ]
+current_state = ["Each MissionEditorPage remount refetched full /registry and /compat; cargo_defaults_by_character walked every compat edge."]
+approach = ["thread_local registry_session caches registry and compat after first fetch; must_fetch gates skip remount GETs."]
 verify = ["t245_registry_session warm mount skips dual GET."]
+acceptance = ["t245_registry_session proved warm remount skipped dual registry and compat GETs."]
 citations = [
     "commit 06a5c370 session-cache",
     "wave 6 close 0fdf3d63",

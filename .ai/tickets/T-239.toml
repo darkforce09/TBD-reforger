@@ -46,6 +46,8 @@ approach = [
     "The latent exposure is real though: the moment anything goes behind inner_html, announcements.body, events.briefing, missions.briefing and wiki_pages.body_md all become live at once,",
     "and render_markdown (wiki.rs:215) is the obvious future candidate since it builds Leptos nodes today but would be the natural place to add a raw-HTML fast path.",
 ]
+verify = ["cargo test -p website-api --test cms_announcement_body; cargo test -p website-api --test admin_field."]
+acceptance = ["Announcement bodies stored as plain text; explicit snippet capped at two hundred runes."]
 citations = [
     "T-015 absent from registry",
     "T-391 P0 URL scheme",
@@ -53,6 +55,7 @@ citations = [
     "T-392 placeholder-fallback family",
     "frontend_data_provenance.md",
     "arsenal.rs:1392 inner_html",
+    "c46d4a97c plain-text bodies",
 ]
 shipped_at = "b2373ecd"
 created_at = "2026-07-26T13:18:16Z"
