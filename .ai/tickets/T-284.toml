@@ -14,7 +14,16 @@ requirement = [
     "Drop events.match_id via migration 0013; stop projecting column.",
     "Wire Event Hub Clear control to DELETE slots assign endpoint.",
 ]
+current_state = [
+    "events.match_id SELECTed forever-null; matches.event_id is the real link.",
+    "clear_slot handler existed with no Event Hub SPA caller.",
+]
+approach = [
+    "Migration 0013 dropped events.match_id; stop projecting column in handlers/models.",
+    "Wire Event Hub Clear control to DELETE slots assign endpoint with LeaderUser auth.",
+]
 verify = ["events.rs IT covers clear_slot."]
+acceptance = ["Dropped events.match_id; Event Hub Clear called clear_slot; events.rs IT covered both."]
 citations = [
     "commit 14270fcd drop match_id",
     "97b61777 wave 18 merge",

@@ -8,9 +8,23 @@ order = 3000
 executor = "claude-code"
 main_goal = "mission_versions stores full JSON snapshots per semver; ship a differ and timeline UI, not greenfield versioning."
 context = ["mission_versions already stores immutable full JSON snapshots per semver, so this is build a differ, not build versioning."]
+requirement = [
+    "Ship structural id-keyed differ and version rail from embedded current_version only.",
+    "Do not invent GET /missions/:id/versions list route.",
+]
 current_state = [
     "Blockers: no parent_version_id, no list-versions endpoint (only POST and GET-by-id), the by-id GET is never called, and the History button is present but disabled.",
     "Old versions are retained and unreachable from any UI.",
+]
+approach = [
+    "classify_row buckets added/removed/moved/edited/unchanged; DIFF_SAMPLE_CAP bounds samples.",
+    "Version rail census runs differ against empty document; History shows honest retention note.",
+]
+verify = ["cargo test -p website-frontend differ_names_the_specific_change_between_two_versions"]
+acceptance = ["Structural differ classified row changes by id; version rail rendered current_version census."]
+citations = [
+    "460708103 structural differ commit",
+    "classify_row RowChange buckets",
 ]
 shipped_at = "a5f487a4"
 created_at = "2026-07-31T01:15:32Z"

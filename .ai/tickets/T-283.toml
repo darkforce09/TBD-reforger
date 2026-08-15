@@ -15,9 +15,21 @@ requirement = [
     "Carry mission_comments DDL spec beside reject_mission in approvals.rs.",
     "Rehearse FK constraint, CASCADE, and orphan sweep on populated clone.",
 ]
+current_state = [
+    "No mission_comments table in migrations 0001..0019.",
+    "Reviewer comment UI mock; missions page said coming soon.",
+    "audit_logs readers AdminUser-gated; authors cannot read own mission rows.",
+]
+approach = [
+    "Specify mission_comments DDL beside reject_mission in approvals.rs per 0018 shape.",
+    "Rehearse mission_comments_mission_id_fkey CASCADE and fk_orphans sweep on populated clone.",
+]
+verify = ["grep mission_comments apps/website/api/src/handlers/approvals.rs"]
+acceptance = ["mission_comments DDL spec landed beside reject_mission; FK CASCADE orphan sweep rehearsed on clone."]
 citations = [
     "commit 08ed7f4f migration rehearsed",
     "dc0fa8cc wave 74 close",
+    "0018 fk_orphans sweep pattern",
 ]
 shipped_at = "dc0fa8cc"
 created_at = "2026-07-31T14:48:41Z"
