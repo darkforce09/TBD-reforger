@@ -9,6 +9,23 @@ spec = "docs/specs/Mission_Creator_Architecture/t068_10_smart_forge_ui.md"
 executor = "claude-code"
 notes = "Smart Forge + per-slot loadout in editor doc/Save/Export. Verify: .ai/artifacts/t068_10_verify_log.md. Mission-embed pulled forward from T-068.11."
 parent = "T-068"
+main_goal = "Wire Arsenal to registry compat worker; persist per-slot loadout in mission doc."
+context = ["T-068.9 worker exists; T-068.4 dumb dropdowns allowed impossible kits."]
+requirement = [
+    "initRegistryCompat filters picks via canAttach canEquip itemsFor.",
+    "Per-slot loadout in editor Save Export ORBAT IDB undo.",
+    "Invalid combos blocked before export; degrade keeps dumb dropdowns on init fail.",
+]
+current_state = ["registryCompatClient.ts existed but nothing imported it."]
+approach = [
+    "useArsenalValidation hook; upgrade T-068.4 Arsenal dropdowns.",
+    "Mission-embed pulled forward from T-068.11 scope.",
+]
+citations = [
+    "t068_10_smart_forge_ui.md",
+    "commit 3bc0bd24",
+    "commit 98916bb9",
+]
 shipped_at = "3bc0bd24"
 created_at = "2026-07-10T21:24:43Z"
 completed_at = "2026-07-11T01:08:32Z"

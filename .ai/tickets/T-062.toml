@@ -7,6 +7,22 @@ status = "shipped"
 order = 620
 spec = "docs/specs/Mission_Creator_Architecture/t062_incremental_bindings.md"
 executor = "claude-code"
+main_goal = "O(k) Zustand patches instead of full docToSnapshot on edits."
+context = ["After T-061; everyday Y.Doc edits still flushed ~360k slots.toJSON mirror."]
+requirement = [
+    "incPatchPlan.classifyTransaction routes slot-fields/add/remove, meta, editor-layers to O(k) patches.",
+    "Batched removeEntities for bulk delete; slotCount/slotsRevision; REMOVE_PATCH_CAP 10_000.",
+]
+current_state = ["Asset drop, delete, meta, and layer edits triggered full docToSnapshot @ 360k."]
+approach = [
+    "Add incPatchPlan.ts classifier; applyPlan in bindings with full-snapshot fallback.",
+    "Batched ydoc removeEntities; _patchAddSlot/_patchRemoveSlots and slotCount in useMapStore.",
+]
+citations = [
+    "Source: commit a5a651d9.",
+    "Source: SHIPPED_HISTORY §T-062.",
+    "Source: t062_incremental_bindings.md.",
+]
 shipped_at = "a5a651d9"
 created_at = "2026-06-24T05:44:53Z"
 completed_at = "2026-06-24T05:44:53Z"

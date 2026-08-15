@@ -7,6 +7,17 @@ status = "shipped"
 order = 630
 spec = "docs/specs/Mission_Creator_Architecture/t063_spatial_index.md"
 executor = "claude-code"
+main_goal = "rbush pickNearest/pickRect replaces Deck GPU pick @ 367k."
+context = ["Pan zoom and drag fast after T-057/T-061; picking still scanned all icons."]
+requirement = ["slotSpatialIndex.ts via slotIconCache mutators; slot-icons pickable false."]
+current_state = ["Deck pickObject/pickObjects on every click marquee; large boxes froze seconds."]
+approach = ["useSelectTool pickNearest/pickRect; click-select on pending-left pointerUp."]
+verify = ["FE build lint clean; manual click marquee faster @ ~367k per spec."]
+citations = [
+    "t063_spatial_index.md spec",
+    "078960e5 ship commit",
+    "SHIPPED_HISTORY §T-063",
+]
 shipped_at = "05e45aee"
 created_at = "2026-06-24T08:02:59Z"
 completed_at = "2026-06-24T08:03:16Z"

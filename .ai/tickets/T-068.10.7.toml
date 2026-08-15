@@ -1,6 +1,6 @@
 id = "T-068.10.7"
 kind = "work"
-title = "T-068.10.7 — Arsenal paper-doll (ACE layout, 2D SVG soldier, clickable parts)"
+title = "Arsenal paper-doll with clickable SVG soldier"
 summary = "T-068.10.7 — Arsenal paper-doll (ACE layout, 2D SVG soldier, clickable parts)"
 class = "feature"
 status = "shipped"
@@ -9,6 +9,19 @@ spec = "docs/specs/Mission_Creator_Architecture/t068_10_7_arsenal_paper_doll.md"
 executor = "claude-code"
 notes = "Mode D: Arsenal paper-doll - ACE layout with clickable SVG soldier silhouette (list left, doll center, context right; optic/magazine sub-hotspots on the rifle; honest weight readout). Replaces the .10.6 dropdown-rows layout inside the Arsenal tab; ArsenalPicksPanel stays for the Faction Manager. SHIPPED @ de1ab7b5 (tag T-068.10.7). T-068.11 remains PARKED for operator decision."
 parent = "T-068"
+main_goal = "Arsenal tab becomes ACE layout: list left, SVG soldier center, context right."
+context = ["Mode D operator-approved plan; replaces .10.6 dropdown-rows inside Arsenal tab only."]
+requirement = [
+    "Twelve DOLL_REGIONS hotspots plus optic/magazine sub-regions; SlotItemList click-to-equip.",
+    "Honest loadoutWeight readout; ArsenalPicksPanel untouched for Faction Manager.",
+]
+current_state = [".10.6 center column used dropdown picker rows, not paper-doll."]
+approach = ["arsenalDollModel.ts; SoldierSilhouette.tsx; ArsenalTab 270|1fr|240 grid."]
+citations = [
+    "t068_10_7_arsenal_paper_doll.md",
+    "commit de1ab7b5",
+    "t068_10_7_verify_log.md",
+]
 shipped_at = "de1ab7b5"
 created_at = "2026-07-13T06:13:06Z"
 completed_at = "2026-07-13T06:14:37Z"

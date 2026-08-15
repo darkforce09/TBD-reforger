@@ -1,11 +1,20 @@
 id = "T-067.0"
 kind = "work"
-title = "T-067.0"
+title = "Slot-add-bulk paste and chunk scaffolding"
 summary = "T-067.0"
 class = "feature"
 status = "shipped"
 order = 670
 parent = "T-067"
+main_goal = "O(k) bulk paste without full snapshot rebuild."
+context = ["Post-T-066 ~367k slot missions."]
+requirement = ["slot-add-bulk patch; dormant 512m chunk scaffolding."]
+current_state = ["Multi-add paste triggered full docToSnapshot."]
+approach = ["_patchAddSlotsBulk; spatialChunks.ts not wired render."]
+citations = [
+    "t067_spatial_chunks.md",
+    "SHIPPED_HISTORY.md T-067",
+]
 created_at = "2026-06-23T00:00:00Z"
 completed_at = "2026-06-26T00:00:00Z"
 estimated = [

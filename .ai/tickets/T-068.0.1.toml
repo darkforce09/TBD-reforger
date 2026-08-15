@@ -1,12 +1,21 @@
 id = "T-068.0.1"
 kind = "work"
-title = "T-068.0.1"
+title = "Registry-items and loadout-export JSON schemas"
 summary = "T-068.0.1"
 class = "feature"
 status = "shipped"
 order = 680
 executor = "claude-code"
 parent = "T-068"
+main_goal = "registry-items and loadout-export schema contracts."
+context = ["No shared flat catalog or loadout schema."]
+requirement = ["Two schemas plus goldens; npm run validate."]
+current_state = ["Only alias registry POC existed."]
+approach = ["Schema files, samples, validate.mjs wiring."]
+citations = [
+    "t068_0_1_registry_schemas.md",
+    "commit 2487d596",
+]
 shipped_at = "2487d596"
 created_at = "2026-06-26T16:56:30Z"
 completed_at = "2026-06-26T16:56:30Z"

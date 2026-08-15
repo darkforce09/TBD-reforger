@@ -7,6 +7,22 @@ status = "shipped"
 order = 590
 spec = "docs/specs/Mission_Creator_Architecture/t059_bulk_paste_operations.md"
 executor = "claude-code"
+main_goal = "O(n) pasteSlots batch writes and selection cap at 10k paste."
+context = ["First T-059..T-067 scale slice; 10k paste hard-froze the tab."]
+requirement = [
+    "pasteSlots batch-appends slotIds/entityIds once per array; paste 10k without multi-second freeze.",
+    "Post-paste selection capped at 500; outliner leaf cap when layer entityIds exceed 500.",
+]
+current_state = ["pasteSlots O(n²) spreads; full docToSnapshot and 10k selection on paste."]
+approach = [
+    "Accumulate squad/layer ID arrays in ydoc.ts pasteSlots; single set per map.",
+    "BULK_SELECT_CAP in MissionCreatorPage; OUTLINER_LEAF_CAP in buildTree.",
+]
+citations = [
+    "Source: commit 63cc477f.",
+    "Source: SHIPPED_HISTORY §T-059.",
+    "Source: t059_bulk_paste_operations.md.",
+]
 shipped_at = "63cc477f"
 created_at = "2026-06-22T17:19:16Z"
 completed_at = "2026-06-22T17:19:16Z"

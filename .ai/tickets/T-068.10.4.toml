@@ -9,6 +9,19 @@ spec = "docs/specs/Mission_Creator_Architecture/t068_10_4_loadout_doc_v2.md"
 executor = "claude-code"
 notes = "Arsenal polish C: SlotLoadout v2 (wear open map keyed by engine area, weapons[] slot-indexed) + loadout-export v2 + AreaType-aware v1->v2 migration. Prereq for unparking T-068.11. SHIPPED @ 338593b8 (tag T-068.10.4): L1-L5 PASS, vitest 334/334; 14 Arsenal rows; v2 export keeps derived legacy gear (U6). Arsenal polish program A+B+C complete - T-068.11 unpark = operator decision."
 parent = "T-068"
+main_goal = "Replace ACE six-field SlotLoadout with Reforger-shaped v2 wear map and slot-indexed weapons."
+context = ["After T-068.10.3 operator pause; v1 cannot express vanilla USSR rifleman kit."]
+requirement = [
+    "SlotLoadout v2 wear open map and weapons[]; loadout-export v2 with loadoutVersion 2.",
+    "AreaType-aware v1→v2 migration; Forge writes v2; derived legacy gear for U6.",
+]
+current_state = ["SlotLoadout and loadout-export modeled primary, uniform, vest, helmet, optic, magazine."]
+approach = ["Schema v2 plus contract codegen; migration on read; Forge write path."]
+citations = [
+    "t068_10_4_loadout_doc_v2.md",
+    "commit 338593b8",
+    "t068_10_4_verify_log.md",
+]
 shipped_at = "338593b8"
 created_at = "2026-07-12T21:41:42Z"
 completed_at = "2026-07-12T22:12:47Z"

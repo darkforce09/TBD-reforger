@@ -9,6 +9,22 @@ spec = "docs/specs/Mission_Creator_Architecture/t068_10_3_forge_picker_ux.md"
 executor = "claude-code"
 notes = "Arsenal polish B: Forge picker rows on v3 kinds - grouped/sorted/searchable, abstracts hidden. Row counts must equal DB counts (vitest). SHIPPED @ e6f8a9bb (tag T-068.10.3): F1-F5 PASS, vitest 325/325; F6 operator visual at pause. Jacket row = gear_jacket into v1 uniform field; remaining kind rows arrive with .10.4 fields."
 parent = "T-068"
+main_goal = "Rebuild Arsenal pickers on v3 kinds — grouped, sorted, searchable, abstracts hidden."
+context = [
+    "After T-068.10.2 v3 taxonomy; LOADOUT_ROWS still ACE Phase-1.",
+    "Authority: t068_virtual_arsenal_program.md and t068_10_2_exporter_reclassify.md.",
+]
+requirement = [
+    "Row set v2 per census kind; optgroup by category; locale-alpha sort; abstract excluded.",
+    "Search box over open picker; degrade paths preserved; SlotLoadout v1 unchanged.",
+]
+current_state = ["Options rendered in raw sort_order; abstract Base templates listed as picks."]
+approach = ["arsenalRules row v2 within v1 limits; SelectField optgroups; ArsenalTab search."]
+citations = [
+    "t068_10_3_forge_picker_ux.md",
+    "commit e6f8a9bb",
+    "t068_10_3_verify_log.md",
+]
 shipped_at = "e6f8a9bb"
 created_at = "2026-07-12T19:17:41Z"
 completed_at = "2026-07-12T21:41:42Z"

@@ -9,6 +9,23 @@ spec = "docs/specs/Mission_Creator_Architecture/t068_11_compiler_loadout_export.
 executor = "claude-code"
 notes = "SHIPPED @ c66494c6 (tag T-068.11). Compiled slot loadout {gear,cargo[]} via Rust flatten; no schemaVersion bump. Verify: .ai/artifacts/t068_11_verify_log.md"
 parent = "T-068"
+main_goal = "Emit compiled slot loadout gear and cargo[] in flattenEditorToModDocument."
+context = ["T-068.10 persists editor loadout; compiled flatten omitted gear block."]
+requirement = [
+    "Mod slot schema optional loadout gear ResourceNames.",
+    "Compiled slots carry cargo[] from editor SlotLoadoutV2.cargo.",
+    "Rust flatten copies slot loadout; empty loadout omitted.",
+]
+current_state = ["Compiled slots had kit alias and transform only."]
+approach = [
+    "Schema bump packages/tbd-schema; TS flattenEditorToModDocument.",
+    "Rust flatten parity; golden tests with loadout slot.",
+]
+citations = [
+    "t068_11_compiler_loadout_export.md",
+    "commit c66494c6",
+    "SHIPPED_HISTORY T-068.11",
+]
 shipped_at = "c66494c6"
 created_at = "2026-07-11T00:58:55Z"
 completed_at = "2026-07-24T13:39:01Z"

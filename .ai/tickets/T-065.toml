@@ -7,6 +7,17 @@ status = "shipped"
 order = 650
 spec = "docs/specs/Mission_Creator_Architecture/t065_cluster_lod.md"
 executor = "claude-code"
+main_goal = "Pan-stable cluster discs at extreme zoom; detail rings @ -2."
+context = ["367k rings @ zoom -2 already ~160fps; clusters for mega zoom-out only."]
+requirement = ["supercluster slotClusterIndex; ZOOM_CLUSTER_MAX=-4; threshold 500 slots."]
+current_state = ["T-065.1 viewport bbox re-query stuttered ~48fps each pan frame."]
+approach = ["T-065.2 full-terrain getClusterMarkers cache; clusterMode in TacticalMap."]
+verify = ["FE build lint clean; detail ~160fps @ -2 per spec."]
+citations = [
+    "t065_cluster_lod.md spec",
+    "845bfb21 ship commit",
+    "SHIPPED_HISTORY §T-065",
+]
 shipped_at = "845bfb21"
 created_at = "2026-06-25T07:27:58Z"
 completed_at = "2026-06-25T07:27:58Z"

@@ -7,6 +7,17 @@ status = "shipped"
 order = 640
 spec = "docs/specs/Mission_Creator_Architecture/t064_virtualized_outliner.md"
 executor = "claude-code"
+main_goal = "Virtual outliner scrolls 367k rows without DOM freeze."
+context = ["T-059 OUTLINER_LEAF_CAP=500 hid rows; recursive TreeView froze tab."]
+requirement = ["@tanstack/react-virtual; virtualSlotIds; VIRTUAL_SLOT_THRESHOLD=50."]
+current_state = ["LeftSidebar mounted every tree node; 360k leaves hard-froze browser."]
+approach = ["flattenOutliner segment index; VirtualOutliner with scrollEl callback ref."]
+verify = ["FE build lint clean; outliner scrollable @ ~367k per spec."]
+citations = [
+    "t064_virtualized_outliner.md spec",
+    "8838e58f ship commit",
+    "SHIPPED_HISTORY §T-064",
+]
 shipped_at = "8838e58f"
 created_at = "2026-06-24T20:40:36Z"
 completed_at = "2026-06-24T20:40:36Z"

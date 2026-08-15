@@ -7,6 +7,22 @@ status = "shipped"
 order = 600
 spec = "docs/specs/Mission_Creator_Architecture/t060_fast_initial_load.md"
 executor = "claude-code"
+main_goal = "256MB body limit, bulk sync load overlay, save progress UX."
+context = ["T-059..T-067 scale program; 360k mission save/load blocked."]
+requirement = [
+    "POST /missions/:id/versions accepts >>1 MB payloads; other routes keep 1 MB cap.",
+    "Load overlay with progress; Save Version Compiling/Uploading bars; surface API errors.",
+]
+current_state = ["1 MB GlobalBodyLimit rejected large saves; load lacked determinate progress UX."]
+approach = [
+    "bodylimit.go skips versions POST; route BodyLimit 256 MB via MissionVersionBodyLimit.",
+    "docToSnapshotWithProgress hydrate gate; compileMissionWithProgress for chunked save compile.",
+]
+citations = [
+    "Source: commit b1fd25a9.",
+    "Source: SHIPPED_HISTORY §T-060.",
+    "Source: t060_fast_initial_load.md.",
+]
 shipped_at = "80c69931"
 created_at = "2026-06-22T17:23:46Z"
 completed_at = "2026-06-23T01:54:05Z"

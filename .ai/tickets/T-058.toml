@@ -7,6 +7,22 @@ status = "shipped"
 order = 580
 spec = "docs/specs/Mission_Creator_Architecture/t058_entity_count_readout.md"
 executor = "claude-code"
+main_goal = "OBJ total and SEL selected counts in toolbelt."
+context = ["T-059..T-067 scale telemetry after T-057 pan/zoom hotfix."]
+requirement = [
+    "Bottom toolbelt shows OBJ slotsById total and SEL selection.ids.length when kind is slot.",
+    "Subscribe inside memoized BottomToolbelt; no cursor-move updates; slots only.",
+]
+current_state = ["Toolbelt had CUR/SEL coords but no placed-slot or selection counts."]
+approach = [
+    "Add memoized selectSlotCount in tactical-map/state/selectors.ts; re-export from index.",
+    "Wire OBJ/SEL in BottomToolbelt.tsx right of X/Y/Z with tabular-nums styling.",
+]
+citations = [
+    "Source: commit 7c79f0d8.",
+    "Source: SHIPPED_HISTORY §T-058.",
+    "Source: t058_entity_count_readout.md.",
+]
 shipped_at = "7c79f0d8"
 created_at = "2026-06-22T16:31:37Z"
 completed_at = "2026-06-22T16:53:28Z"

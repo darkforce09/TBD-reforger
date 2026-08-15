@@ -7,6 +7,17 @@ status = "shipped"
 order = 660
 spec = "docs/specs/Mission_Creator_Architecture/t066_worker_compile.md"
 executor = "claude-code"
+main_goal = "Save Export compile off main thread via Comlink worker."
+context = ["T-060 compile on main thread; 367k Save worked but blocked UI."]
+requirement = ["compiler.worker.ts; pickMapSnapshot strips Zustand actions before RPC."]
+current_state = ["Raw getState to Comlink caused DataCloneError 25 at compile phase."]
+approach = ["compilerClient singleton; terminateCompiler on mission unmount."]
+verify = ["FE build lint clean; Save Version 201 @ ~367k per spec."]
+citations = [
+    "t066_worker_compile.md spec",
+    "53bc2a8a ship commit",
+    "SHIPPED_HISTORY §T-066",
+]
 shipped_at = "53bc2a8a"
 created_at = "2026-06-25T08:00:15Z"
 completed_at = "2026-06-25T08:00:15Z"

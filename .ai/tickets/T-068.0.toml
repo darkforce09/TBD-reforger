@@ -1,12 +1,21 @@
 id = "T-068.0"
 kind = "work"
-title = "T-068.0"
+title = "Virtual Arsenal program hub and specs"
 summary = "T-068.0"
 class = "feature"
 status = "shipped"
 order = 680
 executor = "cursor-docs"
 parent = "T-068"
+main_goal = "Virtual Arsenal program hub and specs."
+context = ["T-068 registry reslice BUILD slice."]
+requirement = ["Hub plus thirteen child specs on disk."]
+current_state = ["Monolithic asset registry spec."]
+approach = ["Author hub; reslice registry to ladder."]
+citations = [
+    "t068_virtual_arsenal_program.md",
+    "commit 77fdc9e9",
+]
 shipped_at = "77fdc9e9"
 created_at = "2026-06-26T16:37:00Z"
 completed_at = "2026-06-26T16:37:00Z"

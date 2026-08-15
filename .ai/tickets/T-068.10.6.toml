@@ -9,6 +9,19 @@ spec = "docs/specs/Mission_Creator_Architecture/t068_10_6_arsenal_expanded_modal
 executor = "claude-code"
 notes = "Mode C slice C: expanded Attributes modal + ACE-style panes (detail left, rows center, container panel right). SHIPPED @ 421a69d4 (tag T-068.10.6). Mode C complete (A variant collapse + B faction library T-153 + C expanded modal); T-068.11 remains PARKED for operator decision."
 parent = "T-068"
+main_goal = "Attributes modal grows; Arsenal adopts ACE detail-left, rows-center, container-right panes."
+context = ["Mode C slice C after variant collapse and faction library T-153."]
+requirement = [
+    "itemDetail pure selector; ItemDetailPane plus ContainerPanel; ArsenalTab 3-zone grid.",
+    "AttributesModal max-w-6xl when Arsenal tab active; 14 picker rows stay center.",
+]
+current_state = ["Arsenal tab was dropdown picker rows without inspection panes."]
+approach = ["itemDetail.ts over catalog; conditional DialogContent width via tailwind-merge."]
+citations = [
+    "t068_10_6_arsenal_expanded_modal.md",
+    "commit 421a69d4",
+    "t068_10_6_verify_log.md",
+]
 shipped_at = "421a69d4"
 created_at = "2026-07-13T05:40:25Z"
 completed_at = "2026-07-13T05:40:25Z"

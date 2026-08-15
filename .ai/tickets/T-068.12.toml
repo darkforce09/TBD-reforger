@@ -9,6 +9,23 @@ spec = "docs/specs/Mission_Creator_Architecture/t068_12_mod_player_loadout_equip
 executor = "claude-code"
 notes = "SHIPPED @ 0be53e16 (tag T-068.12). TBD_LoadoutApplication shared path; player equip + cargo InsertItem live WB. Operator residual: M2 screenshot + optional M4 NPC toggle. Verify: .ai/artifacts/t068_12_verify_log.md"
 parent = "T-068"
+main_goal = "Equip human player from compiled slot loadout gear and cargo on spawn."
+context = ["T-068.11 supplies compiled loadout; T-068.5.1 proved equip path."]
+requirement = [
+    "Parse loadout.gear and loadout.cargo[] in mission slot struct.",
+    "Post-spawn equip on player not test NPC; InsertItem per cargo row.",
+    "Log [TBD][Loadout][Slot]; empty gear or cargo skipped.",
+]
+current_state = ["DeployPlayer spawned kit prefab only; test NPC used profile JSON."]
+approach = [
+    "TBD_LoadoutEquipHelper from TBD_LoadoutEquipComponent.",
+    "Hook TBD_SpawnManager post-spawn; MCP wb_play golden fixture.",
+]
+citations = [
+    "t068_12_mod_player_loadout_equip.md",
+    "commit 0be53e16",
+    "SHIPPED_HISTORY T-068.12",
+]
 shipped_at = "0be53e16"
 created_at = "2026-07-24T13:58:14Z"
 completed_at = "2026-07-24T13:58:14Z"
