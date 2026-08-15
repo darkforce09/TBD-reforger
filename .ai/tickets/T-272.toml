@@ -1,11 +1,25 @@
 id = "T-272"
 kind = "work"
 title = "Server-status producer — close the SSE loop"
-summary = "The whole SSE chain is built (realtime.rs hub, the stream route, sse.rs client) but the only publisher is inside POST /ingest/server-status, and nothing calls it. The stream connects, flips connected=true and delivers zero frames forever."
+summary = "SSE connected but delivered zero frames; poll server_statuses and republish so /status/stream works without a game-server bridge."
 class = "feature"
 status = "shipped"
 order = 2900
 executor = "claude-code"
+context = [
+    "realtime hub, stream route and sse client were wired.",
+    "Only publisher was POST /ingest/server-status; nothing else called it.",
+    "Stream flipped connected=true and delivered zero frames forever.",
+]
+requirement = [
+    "Poll server_statuses on boot and on an interval.",
+    "hub.publish the same ServerStatus JSON ingest already fans out.",
+    "Add SERVER_STATUS_PUBLISH_INTERVAL_SECS env defaulting to ten seconds.",
+]
+citations = [
+    "commit 5e55081f SSE republisher",
+    "wave 15 close 4e340548",
+]
 shipped_at = "31361970"
 created_at = "2026-07-26T23:53:02Z"
 completed_at = "2026-07-26T23:59:18Z"

@@ -1,12 +1,27 @@
 id = "T-280"
 kind = "work"
 title = "No observability, no backups, no durable rate limiting"
-summary = "Zero prometheus, metrics, sentry or opentelemetry in the api. No /metrics endpoint; /healthz pings the database only. No pg_dump or pg_restore anywhere. Rate limiting is in-memory single-instance so it resets on every restart and cannot scale past one process."
+summary = "Ship /metrics and deeper /healthz; PG rate limiter proven unwired. Backups still absent."
 class = "feature"
 status = "shipped"
 order = 2980
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
+context = [
+    "API had no prometheus metrics or /metrics scrape path.",
+    "Rate limiter was in-memory per process; /healthz only SELECT 1.",
+    "No pg_dump or pg_restore scripts anywhere in repo.",
+]
+requirement = [
+    "Wire GET /metrics behind ServiceAuth with request instrumentation.",
+    "Deepen /healthz with migration-state and bounded pool timeout.",
+    "Implement PgRateLimiter proven in tests; defer router wiring.",
+]
+verify = ["cargo test t280_observability: PASS."]
+citations = [
+    "commit 1b2e45bb metrics healthz limiter",
+    "e9728516 wave merge close",
+]
 shipped_at = "e9728516"
 created_at = "2026-07-31T00:22:37Z"
 completed_at = "2026-07-31T00:33:52Z"

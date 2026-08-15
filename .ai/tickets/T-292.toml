@@ -1,11 +1,27 @@
 id = "T-292"
 kind = "work"
 title = "net.range short is parsed then discarded"
-summary = "TBD_RadioService.c:214-220 maps only long to a nonzero value; short and any both collapse to 0 and are behaviourally identical. The schema advertises a three-value enum (mission.schema.json:308) the runtime does not honour."
+summary = "Narrow net.range to short|long; runtime honours both; schema rejects retired any."
 class = "feature"
 status = "shipped"
 order = 3100
 executor = "claude-code"
+context = [
+    "TBD_RadioService mapped only long to a nonzero LongRangeFlag value.",
+    "short and any both collapsed to 0 — behaviourally identical on the wire.",
+    "Schema advertised three-value enum the runtime did not honour.",
+]
+requirement = [
+    "Narrow mission.schema net.range enum to short|long only.",
+    "Document short|long contract in bridge-contract.md.",
+    "Pin rejection with negative golden net-range-any.json.",
+    "Update flatten emit and mod radio service, plan, tuner readers.",
+]
+citations = [
+    "commit 04478647 honour short|long",
+    "Enfusion two radio gadget classes",
+    "net-range-any negative golden",
+]
 shipped_at = "4dfbe47a"
 created_at = "2026-07-27T00:34:28Z"
 completed_at = "2026-07-27T00:41:33Z"

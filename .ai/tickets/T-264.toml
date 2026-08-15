@@ -1,11 +1,24 @@
 id = "T-264"
 kind = "work"
 title = "Bookmarked tab with no bookmark button"
-summary = "missions.rs:21 ships a bookmarked scope with backend support, but there is no bookmark control anywhere in the SPA and POST/DELETE /missions/{id}/bookmark are orphaned, so the tab can only ever be empty."
+summary = "Mission Library bookmark toggle on cards and dossier; Bookmarked tab refetches."
 class = "chore"
 status = "shipped"
 order = 2820
 executor = "claude-code"
+context = [
+    "Bookmarked scope existed; POST/DELETE bookmark endpoints were orphaned.",
+    "Cards and dossier had no star control; tab could only stay empty.",
+]
+requirement = [
+    "Wire optimistic POST/DELETE /missions/{id}/bookmark on cards and dossier.",
+    "Refetch list so Bookmarked tab populates; Class-R guards if removed.",
+]
+verify = ["SLICE GATE PASS: cargo check, wasm32, fmt, clippy, schema."]
+citations = [
+    "commit 9ed914b6 bookmark toggle",
+    "wave 13 close 12d8193f",
+]
 shipped_at = "12d8193f"
 created_at = "2026-07-26T23:25:41Z"
 completed_at = "2026-07-26T23:39:07Z"

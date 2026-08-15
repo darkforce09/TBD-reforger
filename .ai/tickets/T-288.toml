@@ -1,11 +1,34 @@
 id = "T-288"
 kind = "work"
 title = "Modpack to server-config renderer and push"
-summary = "The database modpack concept and the server's actual mod list are unconnected universes. deploy-staging.sh:258-260 hardcodes a single mod from an env var and never reads the modpacks table."
+summary = "deploy-staging.sh renders game.mods[] from modpacks API DTO; separates render from push; adds --render-only."
 class = "feature"
 status = "shipped"
 order = 3060
 executor = "claude-code"
+context = [
+    "deploy-staging.sh hardcoded one mod from TBD_WORKSHOP_MOD_ID env var.",
+    "A website-authored modpack had no path to a running server.",
+]
+requirement = [
+    "Render game.mods[] from GET /api/v1/modpacks/current document.",
+    "Separate render_server_config from ssh push of server.config.json.",
+    "--render-only renders and validates locally before any rsync or ssh.",
+    "Fail closed on malformed JSON, zero mods, empty workshop_id or name.",
+]
+current_state = [
+    "Push fused render in one ssh heredoc; nothing validated output before deploy.",
+    "TBD_MODPACK_URL path wired but fails closed pending authenticated read endpoint.",
+]
+approach = [
+    "workshop_id→modId, name→name; version omitted when empty.",
+    "TBD_MODPACK_JSON file or legacy single-mod env through same renderer.",
+]
+citations = [
+    "commit 9141c634 modpack DTO render",
+    "get_current_modpack modpacks handler",
+    "0012_modpack_mods_workshop columns",
+]
 shipped_at = "da0a7c45"
 created_at = "2026-07-31T02:21:59Z"
 completed_at = "2026-07-31T02:58:53Z"

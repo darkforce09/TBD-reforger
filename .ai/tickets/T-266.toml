@@ -1,11 +1,24 @@
 id = "T-266"
 kind = "work"
 title = "No pagination anywhere in the SPA"
-summary = "Every list endpoint returns data, total, limit and offset (audit uses next_cursor), but no page reads any of them — audit.rs fetches a cursor list and discards next_cursor. Every list is silently truncated at the default limit of 20."
+summary = "Audit Load more forwards next_cursor; stops silent truncation at default page."
 class = "audit"
 status = "shipped"
 order = 2840
 executor = "claude-code"
+context = [
+    "List endpoints return total, limit, offset; audit uses next_cursor.",
+    "audit.rs fetched cursor list and discarded next_cursor at ~20 rows.",
+]
+requirement = [
+    "Forward ?before=<cursor> and append into client-side filter set.",
+    "Pin Load-more path helpers with Class-R tests.",
+]
+verify = ["Class-R pins go red if next_cursor ignored."]
+citations = [
+    "commit cb7dc35d Load more",
+    "wave 13 merge 19de55ba",
+]
 shipped_at = "19de55ba"
 created_at = "2026-07-26T23:29:38Z"
 completed_at = "2026-07-26T23:34:08Z"

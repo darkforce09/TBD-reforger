@@ -1,11 +1,24 @@
 id = "T-276"
 kind = "work"
 title = "Close the marker.icon vocabulary"
-summary = "mission.schema.json:446 is a bare string with no enum and no minLength. TBD_MarkerIcons.c:43-45,165 falls back to a dot and logs once. This is the exact degradation cargoContainer was closed to prevent."
+summary = "marker.icon was a bare string; unknown values silently degraded to DOT at runtime — same class as cargoContainer."
 class = "feature"
 status = "shipped"
 order = 2940
 executor = "claude-code"
+context = [
+    "mission.schema.json accepted any string including empty with no enum.",
+    "TBD_MarkerIcons Resolve falls back to DOT and logs once for unknowns.",
+]
+requirement = [
+    "Close the authored vocabulary to the sixty-four Register alias keys.",
+    "Fix empty-warning-fields golden; keep runtime FALLBACK for non-schema paths.",
+]
+citations = [
+    "commit 1d7d1005 marker enum",
+    "cargoContainer degradation class",
+    "wave 17 close 736ffe6a",
+]
 shipped_at = "736ffe6a"
 created_at = "2026-07-27T00:12:38Z"
 completed_at = "2026-07-27T00:17:51Z"

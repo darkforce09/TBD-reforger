@@ -1,11 +1,24 @@
 id = "T-283"
 kind = "work"
 title = "Mission review and commenting workflow"
-summary = "No comments table in any migration. approvals.rs:274-284 is a reviewer comment box backed by a local signal, explicitly marked mock until a review-comments API lands, never POSTed. missions.rs:884-896 reads 'Comments coming soon'. Coarse approve/reject exists; the iterative loop does not."
+summary = "Spec mission_comments migration in approvals.rs; rehearsed on clone. No live endpoint."
 class = "chore"
 status = "shipped"
 order = 3010
 executor = "claude-code"
+context = [
+    "No mission_comments table in migrations 0001..0019.",
+    "Reviewer comment UI was mock signal; missions page said coming soon.",
+    "audit_logs cannot substitute — AdminUser-gated readers block authors.",
+]
+requirement = [
+    "Carry mission_comments DDL spec beside reject_mission in approvals.rs.",
+    "Rehearse FK constraint, CASCADE, and orphan sweep on populated clone.",
+]
+citations = [
+    "commit 08ed7f4f migration rehearsed",
+    "dc0fa8cc wave 74 close",
+]
 shipped_at = "dc0fa8cc"
 created_at = "2026-07-31T14:48:41Z"
 completed_at = "2026-07-31T15:35:28Z"

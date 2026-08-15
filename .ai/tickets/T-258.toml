@@ -1,11 +1,25 @@
 id = "T-258"
 kind = "work"
 title = "POST /versions is unaudited and does not bump updated_at"
-summary = "No trail of who saved what. The mission library orders by updated_at and the approvals queue reports it as submitted_at, so both show stale ordering. editor_notes is write-only — typed, POSTed, never read back, not even on the DTO."
+summary = "Version save now bumps updated_at and writes an audit row; missions integration test locks the contract."
 class = "feature"
 status = "shipped"
 order = 2760
 executor = "claude-code"
+context = [
+    "POST /versions had no audit trail of who saved what.",
+    "Mission library ordering and approvals queue both read updated_at, so saves looked stale.",
+    "editor_notes was write-only — posted but never returned on the DTO.",
+]
+requirement = [
+    "Bump mission updated_at on every version POST.",
+    "Write an audit log row recording the saving user and version id.",
+]
+verify = ["missions IT: create_version_bumps_updated_at_and_writes_audit."]
+citations = [
+    "commit 6134e6a4 version save audit",
+    "wave 11 close f2f3dfa7",
+]
 shipped_at = "f2f3dfa7"
 created_at = "2026-07-26T22:53:08Z"
 completed_at = "2026-07-26T23:07:33Z"

@@ -1,15 +1,23 @@
 id = "T-488"
 kind = "work"
 title = "Document ROLE_RESYNC_INTERVAL_SECS in .env.example"
-summary = """
-Wave 33 residual (T-428). api.rs arms role resync via ROLE_RESYNC_INTERVAL_SECS (default 24h) but apps/website/api/.env.example only documents SERVER_STATUS_PUBLISH_INTERVAL_SECS and LEADERBOARD_REFRESH_INTERVAL_SECS.
-
-Cure: add commented ROLE_RESYNC_INTERVAL_SECS=86400 next to sibling interval knobs."""
+summary = "Add commented ROLE_RESYNC_INTERVAL_SECS=86400 to .env.example beside sibling interval knobs."
 class = "feature"
 status = "shipped"
 order = 3327
 executor = "claude-code"
 priority = 2
+context = [
+    "Wave 33 residual from T-428 role resync scheduler.",
+    "api.rs arms role resync via ROLE_RESYNC_INTERVAL_SECS default 24h.",
+    ".env.example documented SERVER_STATUS and LEADERBOARD intervals only.",
+]
+requirement = ["Add commented ROLE_RESYNC_INTERVAL_SECS=86400 next to sibling interval knobs."]
+citations = [
+    "Wave 33 residual T-428",
+    "commit 318ad299 ROLE_RESYNC comment",
+    "ROLE_RESYNC_INTERVAL_SECS api.rs default",
+]
 shipped_at = "f536150f"
 created_at = "2026-07-27T05:18:36Z"
 completed_at = "2026-07-27T05:22:03Z"

@@ -1,11 +1,26 @@
 id = "T-293"
 kind = "work"
 title = "TBD_RadioPlan re-parses raw JSON instead of the parsed field"
-summary = "TBD_RadioPlan.c:4-6 claims the document struct has no radioPlan member. It does — TBD_MissionLoader.c:262. The class re-parses GetRawJson() through a separate projection (:233,258-264), so there are now two parse paths for one block."
+summary = "TBD_RadioPlan reads doc.radioPlan from loader parse; drops raw-JSON second pass."
 class = "feature"
 status = "shipped"
 order = 3110
 executor = "claude-code"
+context = [
+    "TBD_RadioPlan re-parsed GetRawJson through a projection-only second pass.",
+    "TBD_MissionDocumentStruct already carries radioPlan from T-181 loader work.",
+    "Two parse paths for one radioPlan block risked drift.",
+]
+requirement = [
+    "Collapse EnsureParsed onto TBD_MissionDocumentStruct.radioPlan field.",
+    "Delete raw-JSON projection path from TBD_RadioPlan.",
+    "Keep nets and freqMHz content tests; presence is content not null.",
+]
+citations = [
+    "commit 30bae878 parsed doc radioPlan",
+    "T-181.40 loader radioPlan field",
+    "JsonLoadContext presence not content",
+]
 shipped_at = "67620516"
 created_at = "2026-07-27T00:36:43Z"
 completed_at = "2026-07-27T00:38:13Z"

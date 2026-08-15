@@ -1,11 +1,23 @@
 id = "T-268"
 kind = "work"
-title = "Personnel — Issue Warning is a mock over a working endpoint, and there is no unban"
-summary = "personnel.rs:379-382 toasts 'Warning issued (mock)' while POST /admin/users/{id}/warnings exists and works. DELETE ban (unban) has no control at all, so a ban is irreversible from the UI. Sort and Filter are stubs and the Deployments dossier stat is hardcoded."
+title = "Personnel warning mocked with no unban control"
+summary = "Personnel posts real warnings, unban via DELETE ban, live sort and filter."
 class = "chore"
 status = "shipped"
 order = 2860
 executor = "claude-code"
+context = [
+    "personnel.rs toasted Warning issued (mock) over working POST warnings endpoint.",
+    "DELETE ban had no UI control; Sort, Filter, Deployments dossier were stubs.",
+]
+requirement = [
+    "POST /admin/users/{id}/warnings with required reason like ban classify.",
+    "Banned dossiers get Unban to DELETE ban; header Sort/Filter cycle modes.",
+]
+citations = [
+    "commit ab5cb2ab warning unban",
+    "wave 14 merge 4fd3818e",
+]
 shipped_at = "4fd3818e"
 created_at = "2026-07-26T23:44:32Z"
 completed_at = "2026-07-26T23:47:04Z"

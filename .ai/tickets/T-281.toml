@@ -1,11 +1,20 @@
 id = "T-281"
 kind = "work"
 title = "apps/mod README falsely claims the compile route does not exist"
-summary = "apps/mod/tbd-framework/README.md:23 says the route is not in the current backend and cites the wrong path without /v1. Both are false — contradicted by app.rs:158-161 and TBD_MissionLoader.c:506."
+summary = "Fix mod README to cite live GET /api/v1/missions/{id}/compiled route."
 class = "docs"
 status = "shipped"
 order = 2990
 executor = "claude-code"
+context = [
+    "README line 23 claimed compiled route absent from backend.",
+    "Cited wrong path missing /v1; live route exists in app.rs.",
+]
+requirement = ["Document live GET /api/v1/missions/{id}/compiled service-token route."]
+citations = [
+    "commit b56e64ea README fix",
+    "7f9e494f wave 17 merge",
+]
 shipped_at = "7f9e494f"
 created_at = "2026-07-27T00:13:59Z"
 completed_at = "2026-07-27T00:15:05Z"

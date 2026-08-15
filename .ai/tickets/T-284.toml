@@ -1,11 +1,24 @@
 id = "T-284"
 kind = "work"
 title = "events.match_id is dead weight and clear_slot is unreachable"
-summary = "events.match_id is selected in every event query and never written by any insert or update — the real link runs the other way via matches.event_id. Separately, clear_slot has no frontend caller, so an admin can never free a claimed slot."
+summary = "Drop dead events.match_id; wire Event Hub Clear to clear_slot DELETE."
 class = "feature"
 status = "shipped"
 order = 3020
 executor = "claude-code"
+context = [
+    "events.match_id selected but never written; matches.event_id is the link.",
+    "clear_slot handler existed with no SPA caller.",
+]
+requirement = [
+    "Drop events.match_id via migration 0013; stop projecting column.",
+    "Wire Event Hub Clear control to DELETE slots assign endpoint.",
+]
+verify = ["events.rs IT covers clear_slot."]
+citations = [
+    "commit 14270fcd drop match_id",
+    "97b61777 wave 18 merge",
+]
 shipped_at = "97b61777"
 created_at = "2026-07-27T00:23:30Z"
 completed_at = "2026-07-27T00:23:46Z"

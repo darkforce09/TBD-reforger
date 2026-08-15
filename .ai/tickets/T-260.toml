@@ -1,11 +1,26 @@
 id = "T-260"
 kind = "work"
 title = "Events carry no server or modpack"
-summary = "Grep for server_id or modpack_id over events.rs and models/event.rs returns zero, and the events table has no such columns. The Event Hub modpack chip fetches the global /modpacks/current, so every event shows the same pack."
+summary = "Events expose nullable server_id and modpack_id; migration, handlers, and IT wire per-event binding."
 class = "feature"
 status = "shipped"
 order = 2780
 executor = "claude-code"
+context = [
+    "events table and Event model had no server_id or modpack_id columns.",
+    "Event Hub modpack chip fetched global /modpacks/current, so every event showed the same pack.",
+]
+requirement = [
+    "Add nullable uuid server_id and modpack_id columns via migration 0011.",
+    "Expose fields on create, patch, and get with advisory existence checks.",
+    "Update dashboard and deployments FromRow SELECTs so Event decode does not 500.",
+]
+verify = ["events IT: event_server_and_modpack_binding."]
+citations = [
+    "commit eb9bdda0 server modpack bind",
+    "migration 0011 events columns",
+    "wave 11 close f2f3dfa7",
+]
 shipped_at = "876361f1"
 created_at = "2026-07-26T22:56:59Z"
 completed_at = "2026-07-26T22:59:26Z"

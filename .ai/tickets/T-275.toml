@@ -1,13 +1,27 @@
 id = "T-275"
 kind = "work"
 title = "Declare mod-enforced limits in the schema"
-summary = "The mod clamps values the schema is silent about: MAX_NETS=32 (TBD_RadioPlan.c:91), MAX_LABEL_CHARS=48 (:94), MAX_GRACE_SECONDS=3600 (TBD_ZoneRegistry.c:52), MAX_DURATION_SECONDS=21600 (TBD_ObjectiveRegistry.c:60), MISSION_FILE_MAX_BYTES=8MB. A document can validate and still be silently clamped."
+summary = "The mod clamps MAX_NETS, label length, grace and duration limits the schema was silent about; documents could validate and still be clamped at load."
 class = "feature"
 status = "shipped"
 order = 2930
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 depends_on = ["T-241"]
+context = [
+    "T-241 declared minima only; every maximum was left to this ticket.",
+    "MAX_NETS 32, MAX_LABEL_CHARS 48, MAX_GRACE_SECONDS 3600, MAX_DURATION_SECONDS 21600.",
+]
+requirement = [
+    "Encode mod maxima as schema maxItems, maxLength and maximum constraints.",
+    "Point mod clamp comments at the schema pins so the two cannot disagree.",
+]
+verify = ["Slice gate PASS."]
+citations = [
+    "commit 0d5d6f81 schema pins",
+    "T-241 minima only",
+    "wave 16 merge a0d9aab1",
+]
 shipped_at = "a0d9aab1"
 created_at = "2026-07-27T00:06:59Z"
 completed_at = "2026-07-27T00:08:15Z"

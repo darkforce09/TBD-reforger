@@ -1,12 +1,26 @@
 id = "T-259"
 kind = "work"
 title = "The mod has no reader for the settings block"
-summary = "mission.schema.json:451-462 defines respawn, spectatorPolicy and nightVision. TBD_MissionDocumentStruct has no settings member and flatten has no settings field. The block appears only in the schema, the four hand-written goldens and one doc."
+summary = "Flatten and compile emit the settings block; mod loader parses respawn, spectatorPolicy, and nightVision."
 class = "docs"
 status = "shipped"
 order = 2770
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
+context = [
+    "mission.schema.json defines respawn, spectatorPolicy, and nightVision under settings.",
+    "TBD_MissionDocumentStruct had no settings member; flatten omitted the block entirely.",
+    "T-224 refused UI for these keys because no mod reader consumed them at runtime.",
+]
+requirement = [
+    "Pass authored settings through flatten and compile into the game-server document.",
+    "Model settings in the mod loader, expose GetSettings, wire spectatorPolicy into TBD_SpectatorTargets.",
+]
+citations = [
+    "commit 3962ec37 settings block",
+    "mission.schema.json settings defs",
+    "T-224 unread settings precedent",
+]
 shipped_at = "3962ec37"
 created_at = "2026-07-26T22:59:03Z"
 completed_at = "2026-07-26T22:59:26Z"

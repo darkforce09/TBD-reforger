@@ -1,12 +1,29 @@
 id = "T-351"
 kind = "work"
-title = "Nothing pins the arma_id trim, and legacy whitespace rows are still in the tables"
-summary = "Padded arma_id trim pinned in identity_link IT (T-351). Live padded rows were 0; btrim of users.arma_id already shipped in migration 0016 (T-335) — no new mig in this slice. T-516/T-517 fixed parallel-suite races on this IT. Original ask covered."
+title = "Pin padded arma_id trim in identity_link IT"
+summary = "Add identity_link IT posting padded arma_id; assert trimmed storage and ingest resolve."
 class = "bug"
 status = "shipped"
 order = 3167
 executor = "claude-code"
 priority = 1
+context = [
+    "T-343 systematic is_empty sweep split trim follow-ons into T-346..T-351.",
+    "identity_link tests only posted clean arma_id; padding was never pinned.",
+    "btrim of users.arma_id already shipped in migration 0016 via T-335.",
+]
+requirement = [
+    "POST whitespace-padded arma_id on link-confirm path.",
+    "Assert users.arma_id stored trimmed after confirm.",
+    "Prove T-326 orphan claim and post-link ingest resolve.",
+    "Skip new btrim migration; live DBs showed zero padded rows.",
+]
+citations = [
+    "commit 48875af0 padded trim IT",
+    "T-343 sweep split T-346..T-351",
+    "migration 0016 btrim arma_id",
+    "T-326 ingest_link_confirm trim",
+]
 shipped_at = "9e1a2f93"
 created_at = "2026-07-26T08:10:24Z"
 completed_at = "2026-07-27T10:38:39Z"

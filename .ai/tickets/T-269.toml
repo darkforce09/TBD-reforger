@@ -1,11 +1,25 @@
 id = "T-269"
 kind = "work"
-title = "Real RCON transport — the current endpoint is a no-op that reports success"
-summary = "POST /admin/servers/{id}/rcon (admin.rs:331-379) validates the action enum, explicitly discards the command at admin.rs:361, writes an audit row and returns 202 accepted:true. Grep for std::process, Command::new, tokio::process or ssh over the api returns zero hits."
+title = "RCON returned success without delivering commands"
+summary = "RCON audits commands and returns 503 when undeliverable; stops 202 lie."
 class = "audit"
 status = "shipped"
 order = 2870
 executor = "claude-code"
+context = [
+    "POST /admin/servers/{id}/rcon discarded command, audited issued RCON, returned 202.",
+    "API has no shell, SSH, or game-host socket; real transport is T-289.",
+]
+requirement = [
+    "Model RconCommand so every field is represented or rejected.",
+    "Audit attempted-and-NOT-delivered at warn; answer 503 never 202.",
+    "Class-R pin forbids discard and accepted:true return.",
+]
+verify = ["admin_field.rs asserts 503 and audit row holds command."]
+citations = [
+    "commit 973c9a6f RCON honesty",
+    "T-289 host agent blocker",
+]
 shipped_at = "57ec4f19"
 created_at = "2026-07-31T00:11:44Z"
 completed_at = "2026-07-31T16:06:01Z"

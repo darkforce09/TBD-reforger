@@ -1,11 +1,25 @@
 id = "T-273"
 kind = "work"
-title = "schema.json is a month stale and would now reject nearly every ticket"
-summary = "Last touched 2026-06-26; it predates slice_plan.status, notes and shipped_at, so additionalProperties:false would reject most current tickets. Regenerate it from the registry's actual shape."
+title = "Regenerate ticket schema from live registry"
+summary = "schema.json predated slice_plan.status, notes and shipped_at; additionalProperties:false rejected most current tickets."
 class = "feature"
 status = "shipped"
 order = 2910
 executor = "claude-code"
+context = [
+    "Last touched 2026-06-26 with stale enums and missing slice_plan fields.",
+    "additionalProperties:false would reject nearly every live registry row.",
+]
+requirement = [
+    "Rewrite schema.json from the surveyed live registry shape.",
+    "jsonschema must validate every ticket in the registry.",
+]
+verify = ["jsonschema validates all 423 tickets."]
+citations = [
+    "commit d3ec3f9e schema rewrite",
+    "wave 15 merge 9bc47d14",
+    "T-237 blocked on schema",
+]
 shipped_at = "9bc47d14"
 created_at = "2026-07-26T23:55:24Z"
 completed_at = "2026-07-26T23:59:18Z"
