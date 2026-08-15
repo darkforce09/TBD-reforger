@@ -6,7 +6,29 @@ class = "bug"
 status = "shipped"
 order = 3392
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by W60 adversarial verifier (CLEAN MINOR outside T-525 owns) after T-525.
+
+content_golden.sql comments fixed. Migration 0015 comments still claim tests/events.rs seeds legacy two-seat / index deferred — obsolete after 0017 + T-511.
+
+Cure: update 0015 comment block to historical past-tense or point at 0017.
+
+Repro: rg 'two-seat|deferred' apps/website/api/migrations/0015*
+
+missing=0"""
 priority = 2
+main_goal = "Fix 0015 migration comment obsolete two-seat lore."
+context = ["W60 verifier after T-525."]
+requirement = ["0015 claims two-seat deferred; obsolete after 0017."]
+current_state = ["content_golden fixed; 0015 still has stale lore."]
+approach = ["Past-tense 0015 comments or point at 0017."]
+verify = ["rg two-seat deferred migrations/0015"]
+citations = [
+    "W60 verifier T-525",
+    "migration 0015 two-seat",
+]
 shipped_at = "b6ad1401"
 created_at = "2026-07-27T15:03:08Z"
 completed_at = "2026-07-27T15:13:10Z"
@@ -18,15 +40,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
-migration_legacy = [
-    "FOUND by W60 adversarial verifier (CLEAN MINOR outside T-525 owns) after T-525.",
-    "",
-    "content_golden.sql comments fixed. Migration 0015 comments still claim tests/events.rs seeds legacy two-seat / index deferred — obsolete after 0017 + T-511.",
-    "",
-    "Cure: update 0015 comment block to historical past-tense or point at 0017.",
-    "",
-    "Repro: rg 'two-seat|deferred' apps/website/api/migrations/0015*",
-]
 owns = ["apps/website/api/migrations"]
 
 [scope]

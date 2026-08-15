@@ -6,7 +6,27 @@ class = "bug"
 status = "shipped"
 order = 3387
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by W55 adversarial verifier (CLEAN MINOR-NIT) after T-353.
+
+Gap 3 correctly shared format_uptime/log_stamp for dashboard/server_intel/audit. datefmt docs overclaim server-control uses the same HH:MM:SS helper; that page still has a different private helper. Cure: fix the doc comment or unify the helper.
+
+Repro: rg format_uptime apps/website/frontend/src/
+
+missing=0"""
 priority = 2
+main_goal = "Fix datefmt format_uptime doc overclaim on server-control."
+context = ["W55 verifier CLEAN MINOR-NIT after T-353."]
+requirement = ["Gap 3 shares format_uptime for dashboard/server_intel/audit."]
+current_state = ["Docs overclaim server-control helper; page has private one."]
+approach = ["Fix doc comment or unify helper."]
+verify = ["rg format_uptime apps/website/frontend/src/"]
+citations = [
+    "W55 adversarial verifier",
+    "Gap 3 format_uptime",
+]
 shipped_at = "1b4be0f5"
 created_at = "2026-07-27T14:02:59Z"
 completed_at = "2026-07-27T14:22:39Z"
@@ -18,13 +38,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 6 commit subject(s)"
-migration_legacy = [
-    "FOUND by W55 adversarial verifier (CLEAN MINOR-NIT) after T-353.",
-    "",
-    "Gap 3 correctly shared format_uptime/log_stamp for dashboard/server_intel/audit. datefmt docs overclaim server-control uses the same HH:MM:SS helper; that page still has a different private helper. Cure: fix the doc comment or unify the helper.",
-    "",
-    "Repro: rg format_uptime apps/website/frontend/src/",
-]
 owns = [
     "apps/website/frontend/src/datefmt.rs",
     "apps/website/frontend/src/server_control.rs",

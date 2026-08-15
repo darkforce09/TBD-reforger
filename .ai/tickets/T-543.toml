@@ -6,8 +6,34 @@ class = "feature"
 status = "shipped"
 order = 3383
 executor = "claude-code"
-notes = "needs-operator: frozen unmappable Scope. "
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by W54 adversarial verifier (CLEAN MINOR-NIT) after T-328.
+
+mcp-daemon.sh correctly builds/execs from target-dev-mcpd and discards mcpd-bin.sh stdout. Residual footgun: scripts/mod/lib/mcpd-bin.sh still hardcodes echo $ROOT/target/debug/mcpd; mcp-call-selftest.sh still consumes that echo. Cure: honor CARGO_TARGET_DIR in mcpd-bin.sh echo path.
+
+Repro: rg 'target/debug/mcpd' scripts/mod/
+
+missing=0"""
 priority = 2
+main_goal = "Honor CARGO_TARGET_DIR in mcpd-bin.sh echo path."
+context = [
+    "W54 adversarial verifier CLEAN MINOR-NIT after T-328.",
+    "mcp-daemon builds from target-dev-mcpd; discards mcpd-bin stdout.",
+]
+requirement = ["mcpd-bin.sh echo path must honor CARGO_TARGET_DIR."]
+current_state = [
+    "mcpd-bin.sh hardcodes echo $ROOT/target/debug/mcpd.",
+    "mcp-call-selftest.sh still consumes that echo.",
+]
+approach = ["Honor CARGO_TARGET_DIR in mcpd-bin.sh echo path."]
+verify = ["rg target/debug/mcpd scripts/mod/"]
+citations = [
+    "W54 adversarial verifier MINOR-NIT",
+    "T-328 mcp-daemon target-dev-mcpd",
+    "mcpd-bin.sh echo footgun",
+]
 shipped_at = "201a7c83"
 created_at = "2026-07-27T13:51:15Z"
 completed_at = "2026-07-27T13:57:49Z"
@@ -18,13 +44,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = [
-    "FOUND by W54 adversarial verifier (CLEAN MINOR-NIT) after T-328.",
-    "",
-    "mcp-daemon.sh correctly builds/execs from target-dev-mcpd and discards mcpd-bin.sh stdout. Residual footgun: scripts/mod/lib/mcpd-bin.sh still hardcodes echo $ROOT/target/debug/mcpd; mcp-call-selftest.sh still consumes that echo. Cure: honor CARGO_TARGET_DIR in mcpd-bin.sh echo path.",
-    "",
-    "Repro: rg 'target/debug/mcpd' scripts/mod/",
-]
 owns = [
     "scripts/mod/lib/mcpd-bin.sh",
     "scripts/mod/mcp-call-selftest.sh",

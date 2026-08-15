@@ -1,12 +1,39 @@
 id = "T-544"
 kind = "work"
-title = "T-532 Class-R only — no HTTP IT for set-current version re-point"
+title = "No HTTP IT for set-current version re-point"
 summary = "T-532 Class-R only — no HTTP IT for set-current version re-point"
 class = "feature"
 status = "shipped"
 order = 3384
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by W54 adversarial verifier (CLEAN MINOR-NIT) after T-532.
+
+POST /missions/:id/versions/:vid/set-current is covered by in-handler Class-R source pins only. Cure: HTTP IT in tests/missions.rs that creates two versions, calls set-current to the older, asserts current_version_id + /compiled behavior.
+
+Repro: rg set_current_version apps/website/api/tests — no hit.
+
+missing=0"""
 priority = 2
+main_goal = "HTTP IT for set-current version re-point in missions.rs."
+context = [
+    "W54 adversarial verifier CLEAN MINOR-NIT after T-532.",
+    "set-current covered by in-handler Class-R source pins only.",
+]
+requirement = [
+    "HTTP IT creates two versions; set-current to older.",
+    "Assert current_version_id and /compiled behavior.",
+]
+current_state = ["POST set-current has Class-R pins only; no HTTP IT."]
+approach = ["HTTP IT in tests/missions.rs for set-current re-point."]
+verify = ["rg set_current_version apps/website/api/tests — no hit."]
+citations = [
+    "W54 adversarial verifier MINOR-NIT",
+    "T-532 set-current Class-R pins",
+    "tests/missions.rs HTTP IT",
+]
 shipped_at = "ca94e78d"
 created_at = "2026-07-27T13:51:15Z"
 completed_at = "2026-07-27T14:08:34Z"
@@ -18,13 +45,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = [
-    "FOUND by W54 adversarial verifier (CLEAN MINOR-NIT) after T-532.",
-    "",
-    "POST /missions/:id/versions/:vid/set-current is covered by in-handler Class-R source pins only. Cure: HTTP IT in tests/missions.rs that creates two versions, calls set-current to the older, asserts current_version_id + /compiled behavior.",
-    "",
-    "Repro: rg set_current_version apps/website/api/tests — no hit.",
-]
 owns = [
     "apps/website/api/tests/missions.rs",
     "apps/website/api/src/handlers/missions.rs",

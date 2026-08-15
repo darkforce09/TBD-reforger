@@ -6,7 +6,39 @@ class = "bug"
 status = "shipped"
 order = 3371
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by W48 adversarial verifier (MINOR) after T-341 shipped.
+
+`apps/website/api/tests/null_tolerance.rs` still has `KNOWN_OPEN` entry `("src/handlers/deployments.rs", "*", "T-341 — open")` and `BASELINE_CAP=1`, while deployments.rs no longer has bare `event_registrations.*`. Comments still claim "BASELINE_CAP is now 0" / "T-341 takes this to 0".
+
+The stale path is `eprintln!` only today (not a hard fail); cold gate PASS saw it. Prune the entry, set `BASELINE_CAP=0`, fix the lying comments. Repro: `rg 'T-341 — open|BASELINE_CAP' apps/website/api/tests/null_tolerance.rs`.
+
+missing=0"""
 priority = 2
+main_goal = "Prune stale KNOWN_OPEN entry; set BASELINE_CAP=0."
+context = [
+    "W48 adversarial verifier MINOR after T-341 shipped.",
+    "null_tolerance still lists deployments.rs as KNOWN_OPEN.",
+]
+requirement = [
+    "Remove deployments.rs KNOWN_OPEN entry from null_tolerance.",
+    "Set BASELINE_CAP=0; fix comments claiming baseline is zero.",
+]
+current_state = [
+    "KNOWN_OPEN entry and BASELINE_CAP=1 remain after T-341.",
+    "Stale path is eprintln only; cold gate still PASS.",
+]
+approach = [
+    "Prune KNOWN_OPEN entry for deployments.rs.",
+    "Set BASELINE_CAP=0 and fix lying comments.",
+]
+citations = [
+    "W48 adversarial verifier",
+    "T-341 deployments cleanup",
+    "null_tolerance KNOWN_OPEN stale",
+]
 shipped_at = "277ee0c6"
 created_at = "2026-07-27T11:57:37Z"
 completed_at = "2026-07-27T12:03:53Z"
@@ -18,13 +50,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = [
-    "FOUND by W48 adversarial verifier (MINOR) after T-341 shipped.",
-    "",
-    '`apps/website/api/tests/null_tolerance.rs` still has `KNOWN_OPEN` entry `("src/handlers/deployments.rs", "*", "T-341 — open")` and `BASELINE_CAP=1`, while deployments.rs no longer has bare `event_registrations.*`. Comments still claim "BASELINE_CAP is now 0" / "T-341 takes this to 0".',
-    "",
-    "The stale path is `eprintln!` only today (not a hard fail); cold gate PASS saw it. Prune the entry, set `BASELINE_CAP=0`, fix the lying comments. Repro: `rg 'T-341 — open|BASELINE_CAP' apps/website/api/tests/null_tolerance.rs`.",
-]
 owns = ["apps/website/api/tests/null_tolerance.rs"]
 
 [scope]

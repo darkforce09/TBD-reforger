@@ -6,7 +6,38 @@ class = "bug"
 status = "shipped"
 order = 3377
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND as T-383 residual (W51 CLEAN). Owns fixed cmds/sync/schema_gates; still open:
+- enf/apidoc.rs header-only TSV overwrite exits 0
+- world/aux.rs:1009/1022/1050, world/build.rs:664/958
+- map/labels.rs:455, map/sap.rs:1007
+
+Same shape: success path writing structurally empty/lossy content over committed files. Cure: refuse_empty_write (or equivalent) at each site. Repro: see T-383 summary.
+
+missing=0"""
 priority = 2
+main_goal = "Refuse empty/lossy writes at enf/world/map xtask residual sites."
+context = [
+    "FOUND as T-383 residual (W51 CLEAN).",
+    "cmds/sync/schema_gates owns fixed; enf/world/map sites still open.",
+]
+requirement = [
+    "refuse_empty_write (or equivalent) at each residual site.",
+    "enf/apidoc.rs header-only TSV overwrite must not exit 0.",
+]
+current_state = [
+    "world/aux.rs:1009/1022/1050, world/build.rs:664/958 still open.",
+    "map/labels.rs:455, map/sap.rs:1007 write empty/lossy over committed files.",
+]
+approach = ["refuse_empty_write at enf/apidoc.rs and listed world/map sites."]
+verify = ["Repro: see T-383 summary for empty-write perturbation."]
+citations = [
+    "T-383 residual W51 CLEAN",
+    "enf apidoc header-only TSV",
+    "world map empty write sites",
+]
 shipped_at = "c253687f"
 created_at = "2026-07-27T14:22:53Z"
 completed_at = "2026-07-27T14:34:27Z"
@@ -18,14 +49,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = [
-    "FOUND as T-383 residual (W51 CLEAN). Owns fixed cmds/sync/schema_gates; still open:",
-    "- enf/apidoc.rs header-only TSV overwrite exits 0",
-    "- world/aux.rs:1009/1022/1050, world/build.rs:664/958",
-    "- map/labels.rs:455, map/sap.rs:1007",
-    "",
-    "Same shape: success path writing structurally empty/lossy content over committed files. Cure: refuse_empty_write (or equivalent) at each site. Repro: see T-383 summary.",
-]
 owns = [
     "tools/tbd-tools/src/enf",
     "tools/tbd-tools/src/world",

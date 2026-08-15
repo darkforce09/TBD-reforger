@@ -1,12 +1,42 @@
 id = "T-532"
 kind = "work"
-title = "No API route to re-point mission current_version_id after a bad version"
+title = "No API route to re-point mission current_version_id"
 summary = "No API route to re-point mission current_version_id after a bad version"
 class = "feature"
 status = "shipped"
 order = 3372
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND as T-382 residual (W48). T-382 closed the *new* hole: vacuous `payload:{}` is rejected at create_version write time. Already-broken rows (and any future non-vacuous but unwanted tip) still cannot be re-pointed via API — only `psql` UPDATE of `missions.current_version_id`.
+
+Needs a rollback / re-point handler in missions.rs **and** route registration in `app.rs` (out of T-382 owns). Repro: after a good version then a bad tip that somehow lands, there is no PATCH/POST to restore the prior version id; `/compiled` stays 409 NoSlots.
+
+missing=0"""
 priority = 2
+main_goal = "Add API route to re-point mission current_version_id."
+context = [
+    "T-382 residual W48; vacuous payload:{} rejected at create_version.",
+    "Broken tip rows cannot be re-pointed except via psql UPDATE.",
+]
+requirement = [
+    "Rollback/re-point handler in missions.rs.",
+    "Route registration in app.rs outside T-382 owns.",
+]
+current_state = [
+    "No PATCH/POST restores prior version id after bad tip.",
+    "/compiled stays 409 NoSlots until manual psql fix.",
+]
+approach = [
+    "Add rollback handler re-pointing missions.current_version_id.",
+    "Register route in app.rs for version restore.",
+]
+citations = [
+    "T-382 residual W48",
+    "missions current_version_id rollback",
+    "/compiled 409 NoSlots",
+]
 shipped_at = "7e96c301"
 created_at = "2026-07-27T12:05:41Z"
 completed_at = "2026-07-27T13:34:54Z"
@@ -18,11 +48,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = [
-    "FOUND as T-382 residual (W48). T-382 closed the *new* hole: vacuous `payload:{}` is rejected at create_version write time. Already-broken rows (and any future non-vacuous but unwanted tip) still cannot be re-pointed via API — only `psql` UPDATE of `missions.current_version_id`.",
-    "",
-    "Needs a rollback / re-point handler in missions.rs **and** route registration in `app.rs` (out of T-382 owns). Repro: after a good version then a bad tip that somehow lands, there is no PATCH/POST to restore the prior version id; `/compiled` stays 409 NoSlots.",
-]
 owns = [
     "apps/website/api/src/handlers/missions.rs",
     "apps/website/api/src/app.rs",

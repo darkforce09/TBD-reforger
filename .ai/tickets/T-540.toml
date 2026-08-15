@@ -1,12 +1,42 @@
 id = "T-540"
 kind = "work"
-title = "T-384 Class-R only — no IT for attendance retract on match re-point"
+title = "No IT for attendance retract on match re-point"
 summary = "T-384 Class-R only — no IT for attendance retract on match re-point"
 class = "feature"
 status = "shipped"
 order = 3380
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by W53 adversarial verifier (CLEAN MINOR-NIT) after T-384.
+
+ingest_match_results retracts prior event_mission attendance on re-point with a NOT EXISTS other-match guard. Coverage is Class-R source pin only; pin comment falsely cites an IT in tests/telemetry.rs. Cure: HTTP/IT that re-POSTs a match EV1→EV2 and asserts EV1 returns to registered while EV2 is attended.
+
+Repro: rg retract_from apps/website/api — no IT exercises the path.
+
+missing=0"""
 priority = 2
+main_goal = "HTTP/IT re-POSTs match EV1→EV2; assert EV1 registered, EV2 attended."
+context = [
+    "W53 adversarial verifier CLEAN MINOR-NIT after T-384.",
+    "Coverage is Class-R source pin only; pin falsely cites IT.",
+]
+requirement = [
+    "HTTP/IT re-POSTs match EV1→EV2.",
+    "Assert EV1 returns registered while EV2 is attended.",
+]
+current_state = [
+    "ingest_match_results retracts attendance on re-point with NOT EXISTS guard.",
+    "Pin comment falsely cites IT in tests/telemetry.rs.",
+]
+approach = ["HTTP/IT that re-POSTs match EV1→EV2 and asserts attendance."]
+verify = ["rg retract_from apps/website/api — no IT exercises path."]
+citations = [
+    "W53 adversarial verifier MINOR-NIT",
+    "T-384 ingest_match_results retract",
+    "tests/telemetry.rs Class-R pin",
+]
 created_at = "2026-07-28T00:00:00Z"
 completed_at = "2026-07-28T00:00:00Z"
 estimated = [
@@ -17,13 +47,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "no subject commits; created_at/completed_at id-interpolated between T-539 and T-541 (midpoint, day precision); shipped_at left absent — no subject commits, a SHA is never invented"
-migration_legacy = [
-    "FOUND by W53 adversarial verifier (CLEAN MINOR-NIT) after T-384.",
-    "",
-    "ingest_match_results retracts prior event_mission attendance on re-point with a NOT EXISTS other-match guard. Coverage is Class-R source pin only; pin comment falsely cites an IT in tests/telemetry.rs. Cure: HTTP/IT that re-POSTs a match EV1→EV2 and asserts EV1 returns to registered while EV2 is attended.",
-    "",
-    "Repro: rg retract_from apps/website/api — no IT exercises the path.",
-]
 owns = [
     "apps/website/api/tests/telemetry.rs",
     "apps/website/api/src/handlers/telemetry.rs",

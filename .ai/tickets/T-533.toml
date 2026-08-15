@@ -1,12 +1,44 @@
 id = "T-533"
 kind = "work"
-title = "T-355 Class-R only — no HTTP IT for junk event_id/mission_id 400"
+title = "T-355 Class-R — no HTTP IT for junk UUID 400"
 summary = "T-355 Class-R only — no HTTP IT for junk event_id/mission_id 400"
 class = "feature"
 status = "shipped"
 order = 3373
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by W49 adversarial verifier (CLEAN MINOR-NIT) after T-355.
+
+upsert_match uses parse_uuid_opt_strict and unit/source pins prove junk → BadRequest, but no integration test POSTs a malformed event_id/mission_id through the live route and asserts HTTP 400. RED if the handler call sites are deleted while unit helper tests remain: today the source pin covers that; an HTTP IT would close the residual.
+
+Repro: rg parse_uuid_opt_strict apps/website/api/src/handlers/telemetry.rs; note absence of IT asserting status 400 on junk ids.
+
+missing=0"""
 priority = 2
+main_goal = "Add HTTP IT for junk event_id/mission_id 400 responses."
+context = [
+    "W49 adversarial verifier MINOR-NIT after T-355.",
+    "parse_uuid_opt_strict pins junk to BadRequest at unit level.",
+]
+requirement = [
+    "IT POSTs malformed event_id/mission_id through live route.",
+    "Assert HTTP 400 on junk ids via integration test.",
+]
+current_state = [
+    "Unit/source pins cover junk to BadRequest; no HTTP IT.",
+    "Handler call-site deletion could pass while unit tests remain.",
+]
+approach = [
+    "Add telemetry integration test posting malformed UUIDs.",
+    "Assert HTTP 400 status on junk event_id/mission_id.",
+]
+citations = [
+    "W49 verifier T-355",
+    "parse_uuid_opt_strict telemetry",
+    "junk id HTTP 400 IT",
+]
 created_at = "2026-07-27T00:00:00Z"
 completed_at = "2026-07-27T00:00:00Z"
 estimated = [
@@ -17,13 +49,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "no subject commits; created_at/completed_at id-interpolated between T-532 and T-534 (midpoint, day precision); shipped_at left absent — no subject commits, a SHA is never invented"
-migration_legacy = [
-    "FOUND by W49 adversarial verifier (CLEAN MINOR-NIT) after T-355.",
-    "",
-    "upsert_match uses parse_uuid_opt_strict and unit/source pins prove junk → BadRequest, but no integration test POSTs a malformed event_id/mission_id through the live route and asserts HTTP 400. RED if the handler call sites are deleted while unit helper tests remain: today the source pin covers that; an HTTP IT would close the residual.",
-    "",
-    "Repro: rg parse_uuid_opt_strict apps/website/api/src/handlers/telemetry.rs; note absence of IT asserting status 400 on junk ids.",
-]
 owns = [
     "apps/website/api/tests/telemetry.rs",
     "apps/website/api/src/handlers/telemetry.rs",

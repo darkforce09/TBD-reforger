@@ -6,7 +6,30 @@ class = "chore"
 status = "shipped"
 order = 3363
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 46 verifier MAJOR. gate_db_migrate_claim_body in scripts/platform/wave.sh uses grep -qF (comment-blind). Hollow bait with the three claim needles only inside -- line comments PASSes while live UPDATE is gone — same failure class as T-513/514. Cure: strip SQL line/block comments (or otherwise refuse comment-only matches) before needle search. Perturbation: TBD_GATE_MIGRATION_0016=/tmp/bait with needles only in comments → FAIL; real 0016 → PASS. Owns: scripts/platform/wave.sh only.
+
+missing=0"""
 priority = 0
+main_goal = "Strip SQL comments before db_migrate claim needle search."
+context = [
+    "Wave 46 verifier MAJOR on gate_db_migrate_claim_body.",
+    "grep -qF is comment-blind; same failure class as T-513/514.",
+]
+requirement = [
+    "Strip SQL line/block comments before needle search.",
+    "Comment-only claim needles must FAIL; real 0016 must PASS.",
+]
+current_state = ["Hollow bait with needles only in -- comments PASSes while live UPDATE gone."]
+approach = ["Strip SQL comments before grep needle search in wave.sh."]
+verify = ["TBD_GATE_MIGRATION_0016 bait comment-only → FAIL; real 0016 → PASS."]
+citations = [
+    "Wave 46 verifier MAJOR",
+    "gate_db_migrate_claim_body wave.sh",
+    "T-513/514 comment-blind class",
+]
 shipped_at = "c888dc1e"
 created_at = "2026-07-27T11:04:27Z"
 completed_at = "2026-07-27T11:06:56Z"
@@ -18,7 +41,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 2 commit subject(s)"
-migration_legacy = ["Wave 46 verifier MAJOR. gate_db_migrate_claim_body in scripts/platform/wave.sh uses grep -qF (comment-blind). Hollow bait with the three claim needles only inside -- line comments PASSes while live UPDATE is gone — same failure class as T-513/514. Cure: strip SQL line/block comments (or otherwise refuse comment-only matches) before needle search. Perturbation: TBD_GATE_MIGRATION_0016=/tmp/bait with needles only in comments → FAIL; real 0016 → PASS. Owns: scripts/platform/wave.sh only."]
 owns = ["scripts/platform/wave.sh"]
 
 [scope]

@@ -6,7 +6,29 @@ class = "feature"
 status = "shipped"
 order = 3390
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by W59 adversarial verifier (CLEAN MINOR outside owns) after T-549.
+
+GET /missions/:id/compiled now loads load_cargo_phys_catalog. Events roster in handlers/events.rs still calls no-arg flatten_to_mod_document (empty catalog), so pre-T-416 over-capacity payloads can still compile on that path.
+
+Cure: same wire as T-549 — load catalog → flatten_to_mod_document_with_catalog.
+
+Repro: rg flatten_to_mod_document apps/website/api/src/handlers/events.rs
+
+missing=0"""
 priority = 2
+main_goal = "Events roster compile must load cargo phys catalog."
+context = ["W59 verifier after T-549."]
+requirement = ["/compiled now loads catalog; events roster still no-arg."]
+current_state = ["events.rs calls empty-catalog flatten; over-capacity compiles."]
+approach = ["Same wire as T-549: catalog then flatten_with_catalog."]
+verify = ["rg flatten_to_mod_document handlers/events.rs"]
+citations = [
+    "W59 verifier T-549",
+    "load_cargo_phys_catalog",
+]
 shipped_at = "7e256153"
 created_at = "2026-07-27T14:54:24Z"
 completed_at = "2026-07-27T14:58:52Z"
@@ -18,15 +40,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = [
-    "FOUND by W59 adversarial verifier (CLEAN MINOR outside owns) after T-549.",
-    "",
-    "GET /missions/:id/compiled now loads load_cargo_phys_catalog. Events roster in handlers/events.rs still calls no-arg flatten_to_mod_document (empty catalog), so pre-T-416 over-capacity payloads can still compile on that path.",
-    "",
-    "Cure: same wire as T-549 — load catalog → flatten_to_mod_document_with_catalog.",
-    "",
-    "Repro: rg flatten_to_mod_document apps/website/api/src/handlers/events.rs",
-]
 owns = ["apps/website/api/src/handlers/events.rs"]
 
 [scope]

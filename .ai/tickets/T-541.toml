@@ -6,8 +6,39 @@ class = "docs"
 status = "shipped"
 order = 3381
 executor = "claude-code"
-notes = "needs-operator: frozen unmappable Scope. "
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND as T-415 residual (W53). ReportVerdict now consumes IsComplete and ERROR-refuses incomplete delivery. SpawnManager / MaterializeSlotBodies still do not call IsComplete — spawn proceeds to LOBBY regardless. Cure: abort or surface incomplete at spawn boundary.
+
+Also: stale 'IsComplete zero callers' prose in docs/TICKET_LEAD.md and apps/website/frontend/src/arsenal_rules.rs after T-415.
+
+Owns hint: apps/mod/tbd-framework/Scripts/Game/TBD/ spawn path + FE comment sync.
+
+missing=0"""
 priority = 2
+main_goal = "Call IsComplete at spawn boundary; sync stale IsComplete prose."
+context = [
+    "T-415 residual W53; ReportVerdict consumes IsComplete.",
+    "SpawnManager and MaterializeSlotBodies skip IsComplete.",
+]
+requirement = [
+    "Abort or surface incomplete at spawn boundary.",
+    "Sync stale IsComplete zero-callers prose in TICKET_LEAD and arsenal_rules.",
+]
+current_state = [
+    "Spawn proceeds to LOBBY without IsComplete check.",
+    "Stale zero-callers prose after T-415 in TICKET_LEAD and arsenal_rules.",
+]
+approach = [
+    "Call IsComplete at spawn boundary in SpawnManager path.",
+    "Sync FE comment and TICKET_LEAD IsComplete prose.",
+]
+citations = [
+    "T-415 residual W53 ReportVerdict",
+    "SpawnManager MaterializeSlotBodies",
+    "TICKET_LEAD arsenal_rules prose",
+]
 shipped_at = "f2dd0631"
 created_at = "2026-07-28T21:44:57Z"
 completed_at = "2026-07-28T21:51:53Z"
@@ -18,13 +49,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 4 commit subject(s)"
-migration_legacy = [
-    "FOUND as T-415 residual (W53). ReportVerdict now consumes IsComplete and ERROR-refuses incomplete delivery. SpawnManager / MaterializeSlotBodies still do not call IsComplete — spawn proceeds to LOBBY regardless. Cure: abort or surface incomplete at spawn boundary.",
-    "",
-    "Also: stale 'IsComplete zero callers' prose in docs/TICKET_LEAD.md and apps/website/frontend/src/arsenal_rules.rs after T-415.",
-    "",
-    "Owns hint: apps/mod/tbd-framework/Scripts/Game/TBD/ spawn path + FE comment sync.",
-]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_FrameworkManager.c",

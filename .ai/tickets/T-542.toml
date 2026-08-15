@@ -6,7 +6,42 @@ class = "feature"
 status = "shipped"
 order = 3382
 executor = "claude-code"
+notes = '''
+--- HEAD migration_legacy (verbatim) ---
+
+FOUND by W54 adversarial verifier (DIRTY MAJOR) after T-381.
+
+T-381 added common::require_test_database_url and wired it into factions.rs + identity_link.rs only. Ticket intent was refuse the *whole* suite against live `tbd_reforger`. 22 other IT binaries still raw-read env::var("TEST_DATABASE_URL") and will mutate the live DB under parallel cargo test while those two panic.
+
+Cure: replace every IT setup's raw TEST_DATABASE_URL read with common::require_test_database_url() (or assert_test_database_url after a required read). Add Class-R in common that fails if any tests/*.rs still contains env::var("TEST_DATABASE_URL") outside common/mod.rs itself.
+
+Repro: rg 'env::var\("TEST_DATABASE_URL"\)' apps/website/api/tests — 22 hits outside common.
+
+missing=0'''
 priority = 1
+main_goal = "Wire require_test_database_url into every IT binary."
+context = [
+    "W54 adversarial verifier DIRTY MAJOR after T-381.",
+    "Only factions.rs and identity_link.rs wired; 22 binaries raw-read env.",
+]
+requirement = [
+    "Replace every raw TEST_DATABASE_URL read with require_test_database_url.",
+    "Class-R fails if tests/*.rs still has env::var outside common/mod.rs.",
+]
+current_state = [
+    "22 IT binaries raw-read TEST_DATABASE_URL; parallel test mutates live DB.",
+    "factions and identity_link panic; others mutate tbd_reforger.",
+]
+approach = [
+    "require_test_database_url in every IT setup.",
+    "Class-R scan banning env::var outside common/mod.rs.",
+]
+verify = ["rg env::var TEST_DATABASE_URL apps/website/api/tests — 22 hits."]
+citations = [
+    "W54 adversarial verifier DIRTY MAJOR",
+    "T-381 require_test_database_url",
+    "apps/website/api/tests env::var",
+]
 shipped_at = "74d05c92"
 created_at = "2026-07-27T13:43:23Z"
 completed_at = "2026-07-27T13:47:12Z"
@@ -18,15 +53,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 3 commit subject(s)"
-migration_legacy = [
-    "FOUND by W54 adversarial verifier (DIRTY MAJOR) after T-381.",
-    "",
-    'T-381 added common::require_test_database_url and wired it into factions.rs + identity_link.rs only. Ticket intent was refuse the *whole* suite against live `tbd_reforger`. 22 other IT binaries still raw-read env::var("TEST_DATABASE_URL") and will mutate the live DB under parallel cargo test while those two panic.',
-    "",
-    """Cure: replace every IT setup's raw TEST_DATABASE_URL read with common::require_test_database_url() (or assert_test_database_url after a required read). Add Class-R in common that fails if any tests/*.rs still contains env::var("TEST_DATABASE_URL") outside common/mod.rs itself.""",
-    "",
-    '''Repro: rg 'env::var\("TEST_DATABASE_URL"\)' apps/website/api/tests — 22 hits outside common.''',
-]
 owns = ["apps/website/api/tests"]
 
 [scope]

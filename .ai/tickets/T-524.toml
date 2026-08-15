@@ -6,7 +6,32 @@ class = "bug"
 status = "shipped"
 order = 3364
 executor = "claude-code"
+notes = """
+--- HEAD migration_legacy (verbatim) ---
+
+Wave 46 verifier NIT. After T-505, store.rs loads payload title and lists title as known, but crates/map-engine-core/src/mission/compile.rs still omits title from KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS and retains stale T-375 comment that hydrate does not load title. Cure: add title to known keys + fix comment.
+
+missing=0"""
 priority = 2
+main_goal = "Add title to KNOWN keys; fix stale hydrate comment."
+context = [
+    "Wave 46 verifier NIT after T-505 store.rs loads title.",
+    "compile.rs omits title from KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS.",
+]
+requirement = [
+    "Add title to KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS.",
+    "Fix stale T-375 comment claiming hydrate skips title.",
+]
+current_state = [
+    "store.rs lists title as known; compile.rs omits it.",
+    "Stale comment says hydrate does not load title.",
+]
+approach = ["Add title to known keys; update comment in compile.rs."]
+citations = [
+    "Wave 46 verifier NIT",
+    "T-505 title hydrate store.rs",
+    "KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS compile.rs",
+]
 shipped_at = "0676531b"
 created_at = "2026-07-27T11:01:44Z"
 completed_at = "2026-07-27T14:54:24Z"
@@ -18,7 +43,6 @@ estimated = [
     "tokens",
 ]
 estimate_note = "created_at/completed_at/shipped_at git_subject-mined from 5 commit subject(s)"
-migration_legacy = ["Wave 46 verifier NIT. After T-505, store.rs loads payload title and lists title as known, but crates/map-engine-core/src/mission/compile.rs still omits title from KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS and retains stale T-375 comment that hydrate does not load title. Cure: add title to known keys + fix comment."]
 owns = ["crates/map-engine-core/src/mission/compile.rs"]
 
 [scope]
