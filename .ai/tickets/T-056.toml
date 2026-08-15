@@ -25,6 +25,10 @@ approach = [
     "cursorRef mirrors live cursor so keydown listener stays unbound.",
 ]
 verify = ["frontend build and lint clean per SHIPPED_HISTORY."]
+acceptance = [
+    "Ctrl/Cmd+C copied slot selection; Ctrl/Cmd+V pasted at cursor preserving layout.",
+    "pasteSlots ran one transact undo step; off-map paste nudged +20m/+20m.",
+]
 citations = [
     "t056_copy_paste.md spec",
     "b5c5ead6 ship commit",

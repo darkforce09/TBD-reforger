@@ -25,6 +25,10 @@ approach = [
     "Keep T-053 multi-select guard on onEntityActivate unchanged.",
 ]
 verify = ["frontend build and lint clean per SHIPPED_HISTORY."]
+acceptance = [
+    "Native dblclick on map and ORBAT opened the Attributes modal.",
+    "Multi-select guard preserved when selection.ids length exceeded one.",
+]
 citations = [
     "t054_attributes_entry_points.md",
     "3e302a45 ship commit",

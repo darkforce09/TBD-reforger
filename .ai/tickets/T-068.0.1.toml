@@ -12,6 +12,11 @@ context = ["No shared flat catalog or loadout schema."]
 requirement = ["Two schemas plus goldens; npm run validate."]
 current_state = ["Only alias registry POC existed."]
 approach = ["Schema files, samples, validate.mjs wiring."]
+verify = ["cd packages/tbd-schema && npm run validate"]
+acceptance = [
+    "registry-items and loadout-export JSON schemas committed with golden fixtures.",
+    "npm run validate passed with zero FAIL lines.",
+]
 citations = [
     "t068_0_1_registry_schemas.md",
     "commit 2487d596",

@@ -13,6 +13,10 @@ requirement = ["@tanstack/react-virtual; virtualSlotIds; VIRTUAL_SLOT_THRESHOLD=
 current_state = ["LeftSidebar mounted every tree node; 360k leaves hard-froze browser."]
 approach = ["flattenOutliner segment index; VirtualOutliner with scrollEl callback ref."]
 verify = ["FE build lint clean; outliner scrollable @ ~367k per spec."]
+acceptance = [
+    "@tanstack/react-virtual outliner scrolls 367k rows without DOM freeze.",
+    "virtualSlotIds replaced OUTLINER_LEAF_CAP band-aid.",
+]
 citations = [
     "t064_virtualized_outliner.md spec",
     "8838e58f ship commit",

@@ -28,6 +28,10 @@ verify = [
     "frontend build and lint clean per SHIPPED_HISTORY.",
     "Manual FpsCounter check at 200 plus slots per spec.",
 ]
+acceptance = [
+    "Cursor moved off page render path; pan/zoom restored ≥55fps at 200+ slots.",
+    "Deck onHover dropped; only BottomToolbelt subscribed to the cursor slice.",
+]
 citations = [
     "t057_map_performance_hotfix.md",
     "7adc3459 ship commit",

@@ -12,6 +12,11 @@ context = ["T-068 registry reslice BUILD slice."]
 requirement = ["Hub plus thirteen child specs on disk."]
 current_state = ["Monolithic asset registry spec."]
 approach = ["Author hub; reslice registry to ladder."]
+verify = ["cargo xtask ticket check --strict"]
+acceptance = [
+    "Virtual Arsenal program hub and thirteen child specs landed on disk.",
+    "Registry resliced to T-068 ladder slices.",
+]
 citations = [
     "t068_virtual_arsenal_program.md",
     "commit 77fdc9e9",

@@ -25,6 +25,10 @@ approach = [
     "Toggle useMapStore selection; last id removed yields none.",
 ]
 verify = ["frontend build and lint clean per SHIPPED_HISTORY."]
+acceptance = [
+    "Ctrl/Cmd+LMB toggled slots in/out of selection without replacing the set.",
+    "Plain click still replaced; marquee, drag-move, and Delete stayed unchanged.",
+]
 citations = [
     "t053_additive_select.md spec",
     "7a7bf05f ship commit",

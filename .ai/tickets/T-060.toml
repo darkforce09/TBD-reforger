@@ -18,6 +18,14 @@ approach = [
     "bodylimit.go skips versions POST; route BodyLimit 256 MB via MissionVersionBodyLimit.",
     "docToSnapshotWithProgress hydrate gate; compileMissionWithProgress for chunked save compile.",
 ]
+verify = [
+    "make test-it",
+    "cd frontend && npm run build && npm run lint",
+]
+acceptance = [
+    "POST /missions/:id/versions accepted large payloads; other routes kept 1MB cap.",
+    "Load overlay and Save Version compile/upload progress surfaced API errors.",
+]
 citations = [
     "Source: commit b1fd25a9.",
     "Source: SHIPPED_HISTORY §T-060.",

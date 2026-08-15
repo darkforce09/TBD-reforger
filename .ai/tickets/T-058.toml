@@ -18,6 +18,11 @@ approach = [
     "Add memoized selectSlotCount in tactical-map/state/selectors.ts; re-export from index.",
     "Wire OBJ/SEL in BottomToolbelt.tsx right of X/Y/Z with tabular-nums styling.",
 ]
+verify = ["cd frontend && npm run build && npm run lint"]
+acceptance = [
+    "Bottom toolbelt showed OBJ total and SEL selected slot counts.",
+    "selectSlotCount memoized; counts updated on slot changes not cursor moves.",
+]
 citations = [
     "Source: commit 7c79f0d8.",
     "Source: SHIPPED_HISTORY §T-058.",

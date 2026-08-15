@@ -25,6 +25,10 @@ approach = [
     "Empty query shows no assets match message; drag-to-place unchanged.",
 ]
 verify = ["frontend build and lint clean per SHIPPED_HISTORY."]
+acceptance = [
+    "Case-insensitive label search filtered the Factions Asset Browser tree.",
+    "Esc and X cleared the query; drag-to-place behavior stayed unchanged.",
+]
 citations = [
     "t055_asset_browser_search.md",
     "a2dd1b96 ship commit",

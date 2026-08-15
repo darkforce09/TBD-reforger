@@ -13,6 +13,10 @@ requirement = ["compiler.worker.ts; pickMapSnapshot strips Zustand actions befor
 current_state = ["Raw getState to Comlink caused DataCloneError 25 at compile phase."]
 approach = ["compilerClient singleton; terminateCompiler on mission unmount."]
 verify = ["FE build lint clean; Save Version 201 @ ~367k per spec."]
+acceptance = [
+    "Save/Export compile moved to Comlink worker via pickMapSnapshot.",
+    "DataCloneError 25 fixed; Save Version 201 at ~367k.",
+]
 citations = [
     "t066_worker_compile.md spec",
     "53bc2a8a ship commit",

@@ -12,6 +12,10 @@ requirement = ["Render path uses getBaseIcons only; no getBaseIconsForBbox wirin
 current_state = ["CPU cull dropped pan 165 idle to 21fps @ 367k zoom -2."]
 approach = ["Revert useIconLayer TacticalMap cull; keep dormant 512m chunk buckets."]
 verify = ["Pan ~160fps @ 367k zoom -2 user verified per spec."]
+acceptance = [
+    "CPU viewport cull reverted; render path uses getBaseIcons only.",
+    "Pan restored ~160fps at 367k zoom -2.",
+]
 citations = [
     "t067_spatial_chunks.md §0.1",
     "d2128cf3 ship commit",

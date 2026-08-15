@@ -12,6 +12,14 @@ context = ["Palette mock until T-068.3."]
 requirement = ["304 ETag; migration seed; import CLI; integration tests."]
 current_state = ["No backend registry route."]
 approach = ["registry handler; migration; import-registry-items CLI."]
+verify = [
+    "cargo xtask db test-it",
+    "cd apps/website/frontend && npm run build && npm run lint",
+]
+acceptance = [
+    "GET /api/v1/registry served weak ETag/304; registry_items migration and seed landed.",
+    "import-registry-items CLI and integration tests passed.",
+]
 citations = [
     "t068_2_registry_api.md",
     "commit 4c609fe0",

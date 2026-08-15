@@ -13,6 +13,10 @@ requirement = ["slotSpatialIndex.ts via slotIconCache mutators; slot-icons picka
 current_state = ["Deck pickObject/pickObjects on every click marquee; large boxes froze seconds."]
 approach = ["useSelectTool pickNearest/pickRect; click-select on pending-left pointerUp."]
 verify = ["FE build lint clean; manual click marquee faster @ ~367k per spec."]
+acceptance = [
+    "rbush pickNearest/pickRect replaced Deck GPU pick for click/marquee.",
+    "slot-icons pickable false; click-select moved to useSelectTool pointerUp.",
+]
 citations = [
     "t063_spatial_index.md spec",
     "078960e5 ship commit",

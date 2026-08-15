@@ -11,6 +11,11 @@ context = ["Post-T-066 ~367k slot missions."]
 requirement = ["slot-add-bulk patch; dormant 512m chunk scaffolding."]
 current_state = ["Multi-add paste triggered full docToSnapshot."]
 approach = ["_patchAddSlotsBulk; spatialChunks.ts not wired render."]
+verify = ["cd frontend && npm run build && npm run lint"]
+acceptance = [
+    "slot-add-bulk incremental patch avoided full snapshot rebuild on bulk paste.",
+    "Dormant 512m chunk scaffolding added but not wired to render.",
+]
 citations = [
     "t067_spatial_chunks.md",
     "SHIPPED_HISTORY.md T-067",

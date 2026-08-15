@@ -12,6 +12,14 @@ context = ["Palette needs real Enfusion ResourceNames."]
 requirement = ["≥20 vanilla rows; committed workbench JSON."]
 current_state = ["Mock catalog used fake resource ids."]
 approach = ["TBD_RegistryItemsExportPlugin.c; enfusion-mcp discovery."]
+verify = [
+    "cargo xtask mod dev-bootstrap",
+    "cd packages/tbd-schema && npm run validate",
+]
+acceptance = [
+    "Workbench MCP exported 21 vanilla rows to registry-items.workbench.json.",
+    "TBD_RegistryItemsExportPlugin.c committed; npm run validate included export.",
+]
 citations = [
     "t068_1_workbench_flat_export.md",
     "commit ca4f2cd0",

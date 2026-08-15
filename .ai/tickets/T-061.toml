@@ -18,6 +18,11 @@ approach = [
     "Split drag state in useMapStore; base + overlay layers in useIconLayer/useSelectTool.",
     "Add slotIconCache.ts; incremental slot observer in bindings.ts for boundary hotfix.",
 ]
+verify = ["cd frontend && npm run build && npm run lint"]
+acceptance = [
+    "Dual IconLayer sustained ~60fps drag at ~360k slots.",
+    "slotIconCache O(k) exclude/restore; fastSlotPatchIds on slot-position edits.",
+]
 citations = [
     "Source: commit 35d6336c.",
     "Source: SHIPPED_HISTORY §T-061.",

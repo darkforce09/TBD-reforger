@@ -18,6 +18,11 @@ approach = [
     "Accumulate squad/layer ID arrays in ydoc.ts pasteSlots; single set per map.",
     "BULK_SELECT_CAP in MissionCreatorPage; OUTLINER_LEAF_CAP in buildTree.",
 ]
+verify = ["cd frontend && npm run build && npm run lint"]
+acceptance = [
+    "pasteSlots batch-appended slotIds once; 10k paste no longer froze the tab.",
+    "BULK_SELECT_CAP=500 capped selection; OUTLINER_LEAF_CAP=500 hid leaf rows.",
+]
 citations = [
     "Source: commit 63cc477f.",
     "Source: SHIPPED_HISTORY §T-059.",

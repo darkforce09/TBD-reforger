@@ -13,6 +13,10 @@ requirement = ["supercluster slotClusterIndex; ZOOM_CLUSTER_MAX=-4; threshold 50
 current_state = ["T-065.1 viewport bbox re-query stuttered ~48fps each pan frame."]
 approach = ["T-065.2 full-terrain getClusterMarkers cache; clusterMode in TacticalMap."]
 verify = ["FE build lint clean; detail ~160fps @ -2 per spec."]
+acceptance = [
+    "supercluster index with pan-stable cache; detail rings at zoom -2.",
+    "ZOOM_CLUSTER_MAX=-4; clusters only past -4 on missions >500 slots.",
+]
 citations = [
     "t065_cluster_lod.md spec",
     "845bfb21 ship commit",
