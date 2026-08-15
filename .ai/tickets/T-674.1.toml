@@ -1,12 +1,28 @@
 id = "T-674.1"
 kind = "work"
 title = "T-674 engine flatten emit"
-summary = "T-674 engine flatten emit"
+summary = "T-674 emit half: typed slot callsign, rank, stance, unitName, tag, and squad leaderSlotId reach the compiled wire at schema 1.3; T-674.2 owns the Enfusion reader."
 class = "feature"
 status = "queued"
 order = 4310
 executor = "claude-code"
 parent = "T-674"
+main_goal = "Emit slot identity and leaderSlotId from flatten so compiled missions carry callsign, rank, stance, tag, and squad leader on the wire."
+context = [
+    "T-674 program closes T-216 ledger gap: six author values compile silently dropped today.",
+    "Mapper-minted child owns emit; T-674.2 owns Enfusion reader and spawn application.",
+]
+requirement = ["Emit ModSlot identity keys and orbat group leaderSlotId; bump schemaVersion to 1.3 when any identity key emits."]
+current_state = [
+    "Parent T-674 queued; dropped 2026-08-12 worktree recoverable at salvage/t853-dropped/T-674.",
+    "Commit 113108a1 documents intended emit gates; parent not shipped on main.",
+]
+approach = ["Emit-time gates per T-216 ledger: wire-unsafe drops whole; rank and stance enum-gated after trim."]
+citations = [
+    "T-674 parent program summary",
+    "commit 113108a1 emit subject",
+    "W120 M-4 leaderSlotId on group",
+]
 owns = ["crates/map-engine-core/src/mission/flatten.rs"]
 
 [scope]

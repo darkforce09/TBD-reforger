@@ -1,12 +1,18 @@
 id = "T-674.2"
 kind = "work"
 title = "T-674 Enfusion reader"
-summary = "T-674 Enfusion reader"
+summary = "Enfusion mod reader half of T-674: bind wire slot-identity fields and squad leaderSlotId from the compiled mission document."
 class = "feature"
 status = "queued"
 order = 4310
 executor = "claude-code"
 parent = "T-674"
+main_goal = "Deserialize T-674 identity keys in the mod loader and expose them to spawn runtime."
+citations = [
+    "commit 113108a1 salvage",
+    "T-674 program slot identity",
+    "W120 M-4 leader on group",
+]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",

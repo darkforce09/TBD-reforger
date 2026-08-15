@@ -1,12 +1,34 @@
 id = "T-908"
 kind = "work"
-title = "Split T-853 xtask/tools SIZE-3 files (8) the T-899 allowlist is holding"
-summary = "T-899 allowlisted 8 xtask/tools files over 1000 lines. Split them; drop the SIZE-3 rows. xtask/src: cmds.rs, main.rs, schema_gates.rs. tools/tbd-tools/src: map/sap.rs, smokes.rs, world/aux.rs, world/build.rs, world/gates.rs. Do not split in waves 234-235 — T-902/T-903/T-904 own overlapping xtask paths. Not the registry-split program."
+title = "Split 8 xtask/tools SIZE-3 allowlist files"
+summary = "Split xtask/tools SIZE-3 files (8) the T-899 allowlist is holding"
 class = "chore"
 status = "queued"
 order = 5880
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+main_goal = "Split 8 T-899-allowlisted xtask/tools SIZE-3 files; drop allowlist rows."
+context = [
+    "T-899 allowlisted eight xtask and tools/tbd-tools files over 1000 lines.",
+    "Do not split in waves 234-235; T-902/T-903/T-904 own overlapping paths.",
+    "Not the registry-split program.",
+]
+requirement = [
+    "Do not raise the SIZE-3 threshold.",
+    "Split files so SIZE-3 allowlist rows can drop.",
+]
+current_state = [
+    "Eight xtask/tools src files over 1000 lines on T-899 allowlist.",
+    "Overlapping xtask paths blocked waves 234-235 per ticket summary.",
+]
+approach = ["Split each listed xtask/tools file over 1000 lines."]
+verify = ["Split them; drop the SIZE-3 rows."]
+citations = [
+    "T-899 SIZE-3 allowlist",
+    "t853_shell_to_xtask_waves.md",
+    "xtask/src",
+    "tools/tbd-tools/src",
+]
 estimated = ["scope"]
 owns = [
     "xtask/src/cmds.rs",

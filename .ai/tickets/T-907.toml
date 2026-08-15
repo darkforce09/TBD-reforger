@@ -1,12 +1,34 @@
 id = "T-907"
 kind = "work"
-title = "Split T-151 map-engine SIZE-3 files (11) the T-899 allowlist is holding"
-summary = "T-899 allowlisted 11 map-engine files over 1000 lines. Split them; drop the SIZE-3 rows. crates/map-engine-core: dem/sample.rs, doc/apply_faction.rs, doc/store.rs, mission/compile.rs, mission/flatten.rs, mission/validate.rs, slots_gpu.rs, world/residency.rs. crates/map-engine-render: draw_order.rs, engine.rs, scene.rs. Not dispatched in T-853 waves 234-235. Not the registry-split program."
+title = "Split 11 map-engine SIZE-3 allowlist files"
+summary = "Split map-engine SIZE-3 files (11) the T-899 allowlist is holding"
 class = "docs"
 status = "queued"
 order = 5870
 spec = "docs/platform/t853_shell_to_xtask_waves.md"
 executor = "claude-code"
+main_goal = "Split 11 T-899-allowlisted map-engine SIZE-3 files; drop allowlist rows."
+context = [
+    "T-899 allowlisted 11 map-engine-core and map-engine-render files over 1000 lines.",
+    "Not dispatched in T-853 waves 234-235.",
+    "Not the registry-split program.",
+]
+requirement = [
+    "Do not raise the SIZE-3 threshold.",
+    "Split files so SIZE-3 allowlist rows can drop.",
+]
+current_state = [
+    "Eleven map-engine src files over 1000 lines on T-899 allowlist.",
+    "Each entry carries reason and expiry from T-899 walk.",
+]
+approach = ["Split each listed map-engine file over 1000 lines."]
+verify = ["Split them; drop the SIZE-3 rows."]
+citations = [
+    "T-899 SIZE-3 allowlist",
+    "t853_shell_to_xtask_waves.md",
+    "crates/map-engine-core",
+    "crates/map-engine-render",
+]
 estimated = ["scope"]
 owns = [
     "crates/map-engine-core/src/dem/sample.rs",

@@ -1,12 +1,41 @@
 id = "T-702"
 kind = "work"
 title = "Whole-terrain zone — one zone sized to the map"
-summary = "3den E11 (3DEN-MISC-001). One command that creates a zone covering the terrain exactly. Trivial given terrain_bounds already exists, and it is the normal way to author a boundary or a mission-wide trigger area."
+summary = "3DEN-MISC-001 E11: one command authors a play-area boundary polygon covering the terrain exactly from terrain_bounds."
 class = "feature"
 status = "queued"
 order = 4560
 executor = "claude-code"
 notes = "T-853 2026-08-12: the prepped slice worktree for this ticket was DROPPED, not landed. It carried one unmerged commit from 2026-08-02 that had sat unlanded for 10 days and was blocking the wave queue at 150. The work was NOT reviewed and NOT merged; the ticket stays queued so it can be redone. The commit is recoverable: `git checkout -b redo/T-702 salvage/t853-dropped/T-702` (tagged before the branch was deleted). Note T-674 and T-675 pointed at the SAME commit 113108a1, so whichever is redone first should check whether it subsumes the other."
+main_goal = "One button authors a whole-terrain Play Area zone from terrain_bounds with undo."
+context = [
+    "3DEN-MISC-001 E11: every mission needs a whole-terrain play-area zone.",
+    "Today authors draw a 12.8 km polygon by hand per 3den_sweep.",
+    "Salvage commit 4e4eefd7 sat unmerged; T-853 dropped the worktree.",
+]
+requirement = [
+    "Zones panel button authors one boundary polygon matching terrain_bounds exactly.",
+    "Label Play Area; one undo step; select zone so Attributes open.",
+    "Rect from same terrain_bounds the flatten and export path reads.",
+]
+current_state = [
+    "No whole-terrain zone button on main.",
+    "begin_zone_draw is the only path today per 3den_sweep.",
+    "Recoverable salvage: 4e4eefd7 on salvage/t853-dropped/T-702.",
+]
+approach = [
+    "terrain_rect_ring and terrain_rect_is_authorable native-tested in eden_zones.",
+    "add_whole_terrain_zone command in editor_ops behind a source pin.",
+]
+verify = [
+    "terrain_rect_ring golden vs terrain_bounds for both terrains.",
+    "One undo step; Play Area selected after creation.",
+]
+citations = [
+    "3den_sweep E11 3DEN-MISC-001",
+    "4e4eefd7 salvage commit message",
+    "terrain_bounds compile path",
+]
 estimated = ["scope"]
 owns = [
     "apps/website/frontend/src/eden_zones.rs",

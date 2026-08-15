@@ -1,12 +1,18 @@
 id = "T-675.1"
 kind = "work"
 title = "T-675 engine flatten emit"
-summary = "T-675 engine flatten emit"
+summary = "Flatten emit half of T-675: project authored vehicle roster onto top-level vehicles[] in the compiled document."
 class = "feature"
 status = "queued"
 order = 4320
 executor = "claude-code"
 parent = "T-675"
+main_goal = "Emit top-level vehicles[] roster rows the mod crew-spawn reader can consume."
+citations = [
+    "T-216 ledger vehicle row",
+    "commit 113108a1 shared salvage",
+    "T-706 schema widening shipped",
+]
 owns = ["crates/map-engine-core/src/mission/flatten.rs"]
 
 [scope]

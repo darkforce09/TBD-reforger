@@ -1,10 +1,22 @@
 id = "T-067.1"
 kind = "work"
-title = "T-067.1"
-summary = "T-067.1"
+title = "Lazy chunk residency @ 1M"
+summary = "Evict cold chunks from slotsById; reload from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M."
 class = "feature"
 status = "idea"
 parent = "T-111"
+context = ["T-067 shipped bulk paste and 512m chunk scaffolding; CPU viewport cull deferred."]
+requirement = [
+    "Evict cold chunks from slotsById and caches; Y.Doc stays authoritative.",
+    "Load chunk slots on viewport enter via yieldToUi.",
+    "Save/Export compiles md.entities.slots in worker without full store materialization.",
+]
+current_state = ["Dormant spatialChunks.ts scaffolding; full rbush pick unchanged."]
+approach = ["Optional IDB v3 spatial chunk keys per t067 spec §Deferred."]
+citations = [
+    "t067_spatial_chunks.md §Deferred",
+    "T-111 program summary",
+]
 
 [scope]
 domain = "repo"

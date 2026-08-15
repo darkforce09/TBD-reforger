@@ -1,13 +1,33 @@
 id = "T-090.10.2"
 kind = "work"
 title = "T-090.10 — Map Engine v2 (A3-aligned render spine)"
-summary = "T-090.10 — Map Engine v2 (A3-aligned render spine)"
+summary = "Delete legacy map-view branches and tiles/map fallback after vector parity sign-off from T-090.5.4 and T-090.8.1."
 class = "feature"
 status = "queued"
 order = 900
 spec = "docs/specs/Mission_Creator_Architecture/t090_10_map_engine_v2.md"
 executor = "claude-code"
 parent = "T-090"
+main_goal = "Retire raster map pyramid fallback; map style becomes pure vector layers only."
+context = [
+    "T-090.10.1 plan defines legacy retirement slice after visual parity.",
+    "T-090.5.1 scaffold dual-writes basemapView shim for rollback until this slice.",
+]
+requirement = [
+    "Delete map-view branches in useTerrainBasemapLayer and BasemapView type.",
+    "Manifest tiles.map deprecated; retire basemapView.ts shim over worldLayerPrefs.",
+    "Rewrite basemapView vitest; manual map style is pure vector.",
+]
+current_state = ["mapStyle map still renders gitignored tiles/map pyramid fallback branch."]
+approach = [
+    "Gate on visual parity after T-090.5.4 plus T-090.8.1 per implementation plan §7 row.",
+    "Freeze legacy cartographic build scripts; touch terrainManifest.ts per plan.",
+]
+citations = [
+    "t090_10 implementation plan §7",
+    "t090_10_map_engine_v2.md",
+    "t090_5_1_verify_log.md dual-write",
+]
 estimated = ["scope"]
 owns = [
     "crates/map-engine-render",

@@ -1,11 +1,23 @@
 id = "T-210"
 kind = "work"
-title = "In-game admin mission switch calls a route that does not exist"
+title = "Admin mission switch called dead ingest route"
 summary = "CANCELLED — premise fixed by T-181.51. TBD_MissionListLoader.c:38 now calls /api/v1/ingest/missions; the /api/missions path this ticket describes no longer exists."
 class = "bug"
 status = "cancelled"
 order = 2280
 executor = "claude-code"
+context = [
+    "Wave-1 priority-0 bug: in-game admin mission switch called a dead mission-list route.",
+    "PLATFORM_FACTORY.md cancelled it before the factory run; fixed by T-181.51.",
+]
+requirement = ["Repoint the mod mission list loader to a live ingest missions API route."]
+current_state = ["CANCELLED — LIST_PATH is /api/v1/ingest/missions; the /api/missions path is gone."]
+approach = ["Delivered by T-181.51 ServiceAuth ingest routes; ticket stays cancelled."]
+citations = [
+    "T-181.51 ingest routes",
+    "TBD_MissionListLoader.c:38 LIST_PATH",
+    "PLATFORM_FACTORY.md T-210 cancelled",
+]
 estimated = ["scope"]
 
 [scope]

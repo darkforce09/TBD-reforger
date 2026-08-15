@@ -8,6 +8,26 @@ order = 1470
 executor = "claude-code"
 notes = "needs-operator: frozen unmappable Scope. "
 depends_on = ["T-150"]
+main_goal = "Wire T-150 universal registry export into asset catalog for map drag-place."
+context = [
+    "Depends on T-150 universal registry export before browser wiring.",
+    "T-809 shipped per-faction tree absorbing part of this scope.",
+    "gap_analysis partial: live catalog tree exists; Eden F1 parity gap remains.",
+]
+requirement = [
+    "Hook T-150 registry items into Asset Browser for map drag-place.",
+    "Prefer after or parallel T-068.9 ingest per registry summary.",
+]
+current_state = [
+    "asset_catalog.rs has build_catalog_tree and search from T-084 T-646.",
+    "notes flag frozen unmappable Scope; needs operator resolution.",
+]
+approach = ["Extend catalog from T-150 export rows; reuse palette-drag place path."]
+citations = [
+    "t150_universal_registry_export.md",
+    "gap_analysis RIGHT-MODE partial",
+    "T-809 absorption note",
+]
 owns = ["apps/website/frontend/src/asset_catalog.rs"]
 
 [scope]

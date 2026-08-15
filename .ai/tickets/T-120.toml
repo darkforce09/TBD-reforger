@@ -11,6 +11,30 @@ depends_on = [
     "T-115",
     "T-117",
 ]
+main_goal = "Soak staging with pinned game and mod versions; smoke golden missions on the dedicated server."
+context = [
+    "Play-the-mission chain ends at T-114 through T-120 staging event.",
+    "North-star backlog assigns scale testing acceptance to this ticket.",
+    "STAGING-SERVER documents version skew, golden validate, and join procedures.",
+]
+requirement = [
+    "Run pinned game and mod version soak on the staging server.",
+    "Smoke golden-mission JSON via schema validate on staging.",
+    "Depends on slot, objective, and mission-upload slices T-114 T-115 T-117.",
+]
+current_state = [
+    "Queued human slice after T-114 T-115 T-117 audit closures.",
+    "Per-slice manual verify logs remain norm until this passes.",
+]
+approach = [
+    "Operator soak on staging server per STAGING-SERVER runbook.",
+    "Validate golden missions with cargo xtask schema validate-file.",
+]
+citations = [
+    "north_star backlog staging QA",
+    "STAGING-SERVER validate table",
+    "depends_on T-114 T-115 T-117",
+]
 owns = [
     "packages/tbd-schema/golden-missions",
     "docs/mod/STAGING-SERVER.md",

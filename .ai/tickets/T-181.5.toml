@@ -1,13 +1,31 @@
 id = "T-181.5"
 kind = "work"
-title = "T-181.5"
-summary = "T-181.5"
+title = "Retired Workbench gproj compile pass"
+summary = "Retired not built: Workbench -gproj open for compile verification; native mod compile lane removed the need."
 class = "feature"
 status = "deferred"
 order = 1810
 executor = "workbench"
 notes = "DEPRIORITISED: make mod-compile (native, 1.3s) removed most of the reason to open Workbench at all. Only world/prefab authoring and PIE visual checks still need it. Do this when a slice actually requires the editor."
 parent = "T-181"
+context = [
+    "t181 program lists Retired not built; native compile about 1.3s.",
+    "notes: mod-compile removed most Workbench need; PIE still needs editor.",
+    "Deferred workbench executor; reopen when slice requires editor.",
+]
+requirement = [
+    "Was Workbench -gproj open for compile verification.",
+    "Superseded by cargo xtask mod compile native gate.",
+]
+current_state = [
+    "Deferred; deprioritised per ticket notes.",
+    "Only world prefab authoring and PIE still need Workbench.",
+]
+approach = ["Reopen only when a slice actually requires Workbench editor."]
+citations = [
+    "t181_event_mod_program retired",
+    "ticket notes deprioritised compile",
+]
 
 [scope]
 domain = "repo"

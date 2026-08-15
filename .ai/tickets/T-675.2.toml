@@ -1,12 +1,18 @@
 id = "T-675.2"
 kind = "work"
 title = "T-675 Enfusion reader"
-summary = "T-675 Enfusion reader"
+summary = "Enfusion mod reader half of T-675: load wire vehicles[] roster and drive crew spawn from authored seats."
 class = "feature"
 status = "queued"
 order = 4320
 executor = "claude-code"
 parent = "T-675"
+main_goal = "Read compiled vehicles[] roster in the mod and spawn crew from authored seats."
+citations = [
+    "T-076 crew UI split",
+    "commit 113108a1 salvage note",
+    "T-216 ledger sixth drop",
+]
 owns = [
     "apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c",
     "apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c",

@@ -1,13 +1,24 @@
 id = "T-181.6"
 kind = "work"
-title = "T-181.6"
-summary = "T-181.6"
+title = "Retired auto-runner superseded by agents"
+summary = "Retired before build: planned automated slice runner for T-181, superseded by the command-center plus slice-agent execution model in t181_event_mod_program.md."
 class = "feature"
 status = "deferred"
 order = 1810
 executor = "claude-code"
 notes = "claude-code slices only; verify must exit 0 incl. mod-compile; never auto-ship; Workbench lockfile."
 parent = "T-181"
+context = [
+    "Filed as an auto-runner slice before the factory adopted command-center dispatch.",
+    "t181_event_mod_program.md §Retired lists T-181.6 beside T-181.5 — not built.",
+]
+requirement = ["No implementation: auto-runner retired when slice agents replaced batch dispatch."]
+current_state = ["Deferred child of T-181; parent children list still names T-181.6."]
+approach = ["Leave deferred; factory runs via command center plus slice agents per spec §Execution model."]
+citations = [
+    "t181_event_mod_program.md §Retired",
+    "T-181 parent children list",
+]
 
 [scope]
 domain = "repo"

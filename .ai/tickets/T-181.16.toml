@@ -1,13 +1,40 @@
 id = "T-181.16"
 kind = "work"
-title = "T-181.16"
-summary = "T-181.16"
+title = "Two-client dedicated-server event loop E2E"
+summary = "Human playtest proving connect, slot, brief, deploy, terminal death, and admin respawn on a dedicated server with two real clients; closes T-181 and satisfies T-068.14."
 class = "feature"
 status = "queued"
 order = 1810
 executor = "human"
 notes = "Dedicated server + 2 real clients, full loop."
 parent = "T-181"
+main_goal = "Prove the full event loop on a dedicated server with two real clients."
+context = [
+    "Last T-181 slice; T-181 program blocked on this runtime proof.",
+    "PLAYTEST_RUNBOOK closes T-181.16 and T-068.14 in one session.",
+    "T-068.14 satisfied by same session per its notes.",
+]
+requirement = [
+    "Two clients on dedicated server: connect, slot, brief, deploy.",
+    "Terminal death, admin respawn, contested-claim refusal observed.",
+    "Human executor; not agent-actionable per T-181 summary.",
+]
+current_state = [
+    "Factory shipped compile-verified spine; no runtime proof yet.",
+    "T-604 shipped joinable server script unblocking playtest.",
+]
+approach = ["Operator runs PLAYTEST_RUNBOOK numbered session with evidence capture."]
+verify = [
+    "Two clients connected; both roster Authenticated player lines.",
+    "LOBBY picker readable rows; claim and release without flicker.",
+    "Briefing side-specific; deploy at authored pose; objectives observed.",
+    "Terminal death blocks re-claim; admin respawn succeeds.",
+]
+citations = [
+    "PLAYTEST_RUNBOOK closes both",
+    "T-181 summary blocked human",
+    "T-068.14 satisfied-by note",
+]
 owns = [
     "docs/mod/capability_verdicts.tsv",
     "docs/mod/t181_event_mod_program.md",

@@ -1,13 +1,28 @@
 id = "T-068.13"
 kind = "work"
-title = "T-068.13"
-summary = "T-068.13"
+title = "Mod LOBBY production slot picker"
+summary = "CANCELLED — superseded by T-181.9.1. Scope moved to T-181 event-mod lobby, not dropped."
 class = "feature"
 status = "cancelled"
 order = 680
 executor = "claude-code"
 notes = "SUPERSEDED by T-181.9.1 (TBD lobby / slot picker). Scope MOVED, not dropped — the picker ships inside the T-181 event-mod program on the new gamemode state machine, with macOS-methodology UI on Aegis tokens. ClaimSlot in TBD_SpawnManager is already the backend it binds to. See docs/mod/t181_event_mod_program.md."
 parent = "T-068"
+context = [
+    "T-068 Virtual Arsenal Phase 2 needed production LOBBY slot picker UI.",
+    "T-181.9.1 shipped lobby picker @ 56ad6d16 binding ClaimSlot in TBD_SpawnManager.",
+]
+requirement = [
+    "Production LOBBY UI for slot claim before deploy.",
+    "Reads compiled slots[] roster; macOS-methodology on Aegis tokens per T-181 program.",
+]
+current_state = ["Shipped inside T-181.9.1; T-114 roster sync is separate follow-on."]
+approach = ["No action — see docs/mod/t181_event_mod_program.md and T-181.9.1."]
+citations = [
+    "commit 56ad6d16 lobby slot picker",
+    "t068_virtual_arsenal_program.md",
+    "SHIPPED_HISTORY.md T-068",
+]
 estimated = ["scope"]
 
 [scope]

@@ -1,12 +1,12 @@
 id = "T-675"
 kind = "program"
-title = "Vehicle roster reaches the game — the compile half of T-076"
+title = "Vehicle roster reaches game — T-076 compile half"
 summary = """
-The cross-boundary half that was split out of T-076 so the crew UI could be dispatched. No attribute ids of its own; it closes the sixth entry in the T-216 drop ledger. BLOCKING EVIDENCE: `crates/map-engine-core/src/mission/flatten.rs`:2631 states the delta as "document root + a new $def", key `vehicles`, and :2634-2640 PROVES the already-declared `entities[]` cannot carry it — `$defs/alias` is `^(kit|comp|veh|preset|layer|prop|item):[a-z0-9_]+$` and `apps/mod/tbd-framework/Data/registry.json` holds exactly ONE `veh:` row, so alias substitution would reproduce the T-200 silent-substitution defect with a 10-tonne vehicle. Without this, T-076's crew UI authors state the game never sees. EXECUTOR IS `workbench` DELIBERATELY: this modifies `packages/tbd-schema/schema/mission.schema.json` and/or `apps/mod/tbd-framework/`, which the CLAUDE.md executor gate puts out of reach of any coding agent. The factory filters on executor, so this tagging is the safety mechanism — do not flip it to claude-code.
-
-EXECUTOR CORRECTED 2026-08-02: was filed `workbench` on the mistaken reading that any .c file needs the Arma Workbench GUI. It does not — scripts/mod/compile.sh compiles tbd-framework against the native Linux dedicated server headlessly, verified: "OK: compiled clean, 5707 files, 11182 classes, 832 ms, no Workbench". Schema edits are plain JSON. This is factory work. Per the model-routing rule, the .c portion routes to Fable 5 even though the executor is claude-code.
-
-SCHEMA HALF SPLIT OUT to T-706 (one widening pass for the whole program). This ticket is the Enfusion reader plus any editor UI; it does not touch packages/tbd-schema."""
+Cross-boundary compile half split from T-076 so crew UI could ship separately.
+Closes the sixth T-216 drop-ledger row: top-level vehicles[] with seats and crew refs.
+T-706 already widened the schema; this program emits and reads the roster.
+Unmerged salvage 113108a1 overlaps T-674 — check subsumption before redo.
+"""
 status = "queued"
 order = 4320
 executor = "claude-code"
@@ -15,5 +15,31 @@ depends_on = ["T-076"]
 children = [
     "T-675.1",
     "T-675.2",
+]
+context = [
+    "Split from T-076; crew UI shipped; compile half stayed queued.",
+    "T-216 ledger sixth drop: vehicles[] at document root.",
+    "Schema widening shipped in T-706; emit and reader remain.",
+    "Salvage commit 113108a1 shared with T-674; worktree dropped T-853.",
+]
+requirement = [
+    "T-675.1 emits top-level vehicles[] from flatten compile boundary.",
+    "T-675.2 reads wire roster and drives crew spawn at runtime.",
+    "Do not touch packages/tbd-schema; T-706 owns widening.",
+]
+current_state = [
+    "Flatten drops authored vehicle roster today; ledger pins T-675.",
+    "entities[] alias path cannot carry roster without T-200 defect.",
+    "Dropped slice worktree; commit recoverable on salvage tag.",
+]
+approach = [
+    "Land T-675.1 emit after T-674 reports; then T-675.2 reader.",
+    "Redo from salvage/t853-dropped/T-675; check T-674 overlap first.",
+]
+citations = [
+    "T-076 crew UI split",
+    "T-706 schema widening",
+    "commit 113108a1 salvage",
+    "T-216 drop ledger sixth row",
 ]
 owns = ["apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_SpawnManager.c"]

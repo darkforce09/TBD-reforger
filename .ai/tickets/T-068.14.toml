@@ -1,13 +1,29 @@
 id = "T-068.14"
 kind = "work"
-title = "T-068.14"
-summary = "T-068.14"
+title = "Phase 2 E2E gate editor to player"
+summary = "Human sign-off: MC loadout → Save/Export → compiled JSON → mod slot picker → dressed human player spawn."
 class = "feature"
 status = "queued"
 order = 680
 executor = "human"
 notes = "Phase-2 E2E gate — do not ticket-done T-068 until this passes. Satisfied by T-181.16 (dedicated server + 2 real clients)."
 parent = "T-068"
+main_goal = "Prove Virtual Arsenal Phase 2 end-to-end before ticket done T-068."
+context = [
+    "Phase 1 E2E T-068.6 proved web JSON to test NPC only.",
+    "Prerequisites T-068.10–T-068.12 shipped; picker superseded to T-181.9.1.",
+]
+requirement = [
+    "P1–P8 checklist in t068_14_phase2_e2e_gate.md: editor loadout, export gear, LOBBY claim, spawn, screenshot, logs.",
+    "P7 greps [TBD][Loadout][Slot] and SpawnManager assigned slot — not phantom [Player] tags.",
+]
+current_state = ["Queued; executor human. Satisfied jointly with T-181.16 dedicated-server playtest."]
+approach = ["Follow docs/platform/PLAYTEST_RUNBOOK.md; attach P6 screenshot and P7 log excerpts."]
+citations = [
+    "t068_14_phase2_e2e_gate.md",
+    "PLAYTEST_RUNBOOK.md",
+    "T-068 parent summary",
+]
 owns = ["docs/mod/capability_verdicts.tsv"]
 
 [scope]
