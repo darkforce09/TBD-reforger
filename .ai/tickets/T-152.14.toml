@@ -9,6 +9,16 @@ spec = "docs/specs/Mission_Creator_Architecture/t152_14_tree_zoom_guarantee.md"
 executor = "claude-code"
 notes = "Shipped @ 9cc13714 (tag T-152.14) area-fraction budget + hysteresis + forest_fill_effective. Hotfix T-152.14.1 @ 75ccf5b1: ATLAS_GLYPH_COUNT 28→32 + CI guards A–D — icon lanes dark since T-152.10 (29th glyph vs hardcoded 28). Verify t152_14_verify_log.md; M1/M2 operator pending on .14 core."
 parent = "T-152"
+main_goal = "Guarantee tree glyphs survive zoom-in; refine heatmap swap budget."
+context = ["Chunk-sum budget clears glyphs in dense forest while fill turns off."]
+requirement = ["Area-fraction viewport count; hysteresis; forest_fill_effective mass handoff."]
+current_state = ["exact_tree_count sums whole chunks; blank forest at z≥0."]
+approach = ["density_ladder visible count; residency hysteresis; t152_14_verify_log.md."]
+citations = [
+    "commit 9cc13714",
+    "t152_14_verify_log.md",
+    "t152_14_tree_zoom_guarantee.md",
+]
 shipped_at = "9cc13714"
 created_at = "2026-07-13T16:17:54Z"
 completed_at = "2026-07-13T16:17:54Z"

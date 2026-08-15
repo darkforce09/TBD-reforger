@@ -9,6 +9,19 @@ spec = "docs/specs/Mission_Creator_Architecture/t152_20_settings_completeness.md
 executor = "claude-code"
 notes = "Shipped @ 4ec87d1b (tag T-152.20) UI 12/12 + T-152.20.1 @ 1a750cdd wiring (roads/forest/contours/sea); M1 PASS 3f78968e. O10 closed. Verify t152_20_1_verify_log.md."
 parent = "T-152"
+main_goal = "Expose seven missing WorldClassToggles in Mission Settings dialog."
+context = ["WorldClassToggles defines 12 classes; dialog exposed only five toggles."]
+requirement = [
+    "Seven Switch rows: Roads Buildings Forest Trees Props Contours Sea; 12/12 keyof test.",
+    "Each toggle round-trips getClassToggles and persists tbd-mc-world-layers; zero Rust diffs.",
+]
+current_state = ["roads forest contours sea props unreachable except via localStorage; O10 untestable."]
+approach = ["MissionSettingsDialog.tsx dumb UI only; Vitest completeness; t152_20_verify_log."]
+citations = [
+    "t152_20_settings_completeness.md",
+    "commit 4ec87d1b",
+    "t152_20_verify_log.md",
+]
 shipped_at = "4ec87d1b"
 created_at = "2026-07-13T21:20:27Z"
 completed_at = "2026-07-13T21:20:27Z"

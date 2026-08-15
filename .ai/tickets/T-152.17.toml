@@ -9,6 +9,19 @@ spec = "docs/specs/Mission_Creator_Architecture/t152_17_town_label_correctness.m
 executor = "claude-code"
 notes = "Shipped @ 45e4d247 (tag T-152.17). Settlement-only town lane (23 @ z=−2); fade [2,3]; band min −4.5; engine remove_lane fix; Highstone peak/required 8→7. Verify t152_17_verify_log.md; operator looks good 2026-07-13."
 parent = "T-152"
+main_goal = "Town lane draws settlements only; fix kind pollution and zoom fade band."
+context = ["All 60 locations.json rows drew on town lane; hills tagged town."]
+requirement = [
+    "Kind filter town/village; classifier fix sub-features to locality; fade [2,3] replaces hard hide.",
+    "Band min -4.5 importance-gated; live re-declutter on zoom-in; required-towns gate stays green.",
+]
+current_state = ["Four sawmill/farm rows kind town; labels vanish past z=+2 hard cut."]
+approach = ["importance_declutter.rs filter plus fade; locations-export.mjs regen; t152_17_verify_log."]
+citations = [
+    "t152_17_town_label_correctness.md",
+    "commit 45e4d247",
+    "t152_17_verify_log.md",
+]
 shipped_at = "45e4d247"
 created_at = "2026-07-13T20:53:31Z"
 completed_at = "2026-07-13T20:53:31Z"

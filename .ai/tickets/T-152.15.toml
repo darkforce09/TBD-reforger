@@ -1,6 +1,6 @@
 id = "T-152.15"
 kind = "work"
-title = "T-152.15 — Fence / pier / bridge visibility + orientation remediation"
+title = "T-152.15 — Fence/pier/bridge visibility + orientation fix"
 summary = "T-152.15 — Fence / pier / bridge visibility + orientation remediation"
 class = "feature"
 status = "shipped"
@@ -9,6 +9,16 @@ spec = "docs/specs/Mission_Creator_Architecture/t152_15_fence_pier_bridge_visibi
 executor = "claude-code"
 notes = "Shipped @ 9518680e (tag T-152.15). Fence z≥1.5 + STRIP_MIN_PX; yaw from obb_corners; 2,299/2,299 pier strips; Path A synthetic rails (288); strips_visible() TS gate. Verify t152_15_verify_log.md; M1–M3 operator PASS good enough 2026-07-13."
 parent = "T-152"
+main_goal = "Fix fence/pier/bridge strip visibility, yaw, and pier census gate."
+context = ["Fences gated z≥3; 0/2299 pier strips; BRIDGE_RAILING_RADIUS_M unused."]
+requirement = ["FENCE_MIN_ZOOM 1.5; pier strips ≥2299; obb_corners yaw parity gate."]
+current_state = ["Harbor blank; 0.35 m fence strips invisible; rotation heuristic suspect."]
+approach = ["lod_gates fence/pier classes; cartographic_strip obb_corners; t152_15_verify_log.md."]
+citations = [
+    "commit 9518680e",
+    "t152_15_verify_log.md",
+    "t152_15_fence_pier_bridge_visibility.md",
+]
 shipped_at = "9518680e"
 created_at = "2026-07-13T18:05:01Z"
 completed_at = "2026-07-13T18:05:01Z"

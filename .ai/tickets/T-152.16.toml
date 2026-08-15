@@ -9,6 +9,19 @@ spec = "docs/specs/Mission_Creator_Architecture/t152_16_height_markers_visible.m
 executor = "claude-code"
 notes = "Shipped @ 2a1c96e5 (tag T-152.16). 26-row sidecar (23 named + 3 DEM), band [−2,+3], 80 m floor; G6 fresh contour waiver. Verify t152_16_verify_log.md; M1/M2 browser pending."
 parent = "T-152"
+main_goal = "Credible visible height labels: zoom band, named peak/hill merge, prominence floor."
+context = ["Ten knolls in height-labels.json; dem/peaks.rs had no zoom band."]
+requirement = [
+    "Band [-2,+3]; PEAK_MIN_VALUE_M=80; merge locations.json peaks/hills; exporter writes post-floor set.",
+    "Contour index labels or fresh operator waiver in verify log.",
+]
+current_state = ["Height labels rode dead text lane pre-.12; five sub-55m knolls pollute sidecar."]
+approach = ["dem/peaks.rs band plus declutter; export-height-labels.mjs named merge; t152_16_verify_log."]
+citations = [
+    "t152_16_height_markers_visible.md",
+    "commit 2a1c96e5",
+    "t152_16_verify_log.md",
+]
 shipped_at = "2a1c96e5"
 created_at = "2026-07-13T19:03:51Z"
 completed_at = "2026-07-13T19:03:51Z"

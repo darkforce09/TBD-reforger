@@ -9,6 +9,19 @@ spec = "docs/specs/Mission_Creator_Architecture/t152_2_reforger_icon_art.md"
 executor = "claude-code"
 notes = "Workbench MCP icon discovery spike + LANDMARK_SET atlas rebuild."
 parent = "T-152"
+main_goal = "Replace LANDMARK_SET placeholder SVGs; rebuild world-glyphs atlas with discovery spike."
+context = ["Generic building placeholders; operators cannot distinguish lighthouse vs castle at zoom."]
+requirement = [
+    "Discovery JSON t152_2_icon_discovery_spike; redraw every LANDMARK_SET SVG; no placeholder hash.",
+    "build-glyph-atlas plus cargo xtask schema map-glyphs green; tag T-152.2.",
+]
+current_state = ["manifest.json lists 28 keys but art is pre-T-152 scaffold quality."]
+approach = ["Workbench MCP spike; packages/map-assets/glyphs/svg; t152_2_verify_log hashes."]
+citations = [
+    "t152_2_reforger_icon_art.md",
+    "commit 102e78c8",
+    "t152_2_verify_log.md",
+]
 shipped_at = "102e78c8"
 created_at = "2026-07-12T23:50:12Z"
 completed_at = "2026-07-12T23:50:12Z"

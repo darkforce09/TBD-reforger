@@ -9,6 +9,15 @@ spec = "docs/platform/t159_leptos_ui_program.md"
 executor = "cursor-docs"
 notes = "Hub + standing worktree."
 parent = "T-159"
+main_goal = "Leptos UI rewrite program hub and standing worktree."
+context = ["React SPA deletion planned; Fable audit finish program approved."]
+requirement = ["Program hub doc; slice ladder .22–.29; registry parent row."]
+current_state = ["React frontend live; no unified Leptos program ticket."]
+approach = ["cursor-docs hub lock; worktree .ai/artifacts/worktrees/TBD-T-159/."]
+citations = [
+    "commit f95b01ad",
+    "t159_leptos_ui_program.md",
+]
 shipped_at = "f95b01ad"
 created_at = "2026-07-14T15:48:28Z"
 completed_at = "2026-07-14T15:48:28Z"

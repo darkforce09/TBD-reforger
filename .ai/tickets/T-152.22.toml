@@ -9,6 +9,16 @@ spec = "docs/specs/Mission_Creator_Architecture/t152_22_e2e_regate_operator.md"
 executor = "human"
 notes = "Shipped 2026-07-14 — operator GO (bulk O1–O12 PASS; screenshot pack + extended master re-suite waived with dated quotes). Verify t152_22_verify_log.md. Merge ticket/T-152 → main next."
 parent = "T-152"
+main_goal = "Re-run de-vacuoused cartographic gate; operator signs O1–O12 program close."
+context = ["T-152.10 automated PASS while pier census vacuous; O-rows pending."]
+requirement = ["Extended master suite; anti-vacuous censuses; waiver quotes; O1–O12 sign-off."]
+current_state = ["Remediation .12–.21 shipped; program merge blocked on operator GO."]
+approach = ["t152_22 verify log; operator bulk PASS; merge readiness doc update."]
+citations = [
+    "t152_22_verify_log.md",
+    "commit 34d29b5f",
+    "t152_22_e2e_regate_operator.md",
+]
 shipped_at = "34d29b5f"
 created_at = "2026-07-14T00:01:38Z"
 completed_at = "2026-07-14T00:01:38Z"

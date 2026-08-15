@@ -9,6 +9,16 @@ spec = "docs/specs/Mission_Creator_Architecture/t152_4_fence_pier_bridge.md"
 executor = "claude-code"
 notes = "Spec file authored by Cursor when T-152.3 ships."
 parent = "T-152"
+main_goal = "Export P5_props; render fence, pier, bridge cartographic strips."
+context = ["Everon stuck at P2; piers drew fat OBB squares; fences absent."]
+requirement = ["P5 export; thin fence strips; pier aspect gate; bridge deck plus glyph."]
+current_state = ["No fence census; pier fills read as blocks not quays."]
+approach = ["polyline_strip reuse; worldLayerPrefs.fences; map export bump."]
+citations = [
+    "t152_4_verify_log.md",
+    "commit cc0c8a22",
+    "t152_4_fence_pier_bridge.md",
+]
 shipped_at = "cc0c8a22"
 created_at = "2026-07-13T00:08:00Z"
 completed_at = "2026-07-13T00:08:00Z"

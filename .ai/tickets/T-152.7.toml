@@ -8,6 +8,16 @@ order = 1520
 spec = "docs/specs/Mission_Creator_Architecture/t152_7_height_markers.md"
 executor = "claude-code"
 parent = "T-152"
+main_goal = "Detect DEM peaks, declutter, draw ASL height labels via wgpu text lane."
+context = ["T-152.1 text lane live; contours lack elevation text."]
+requirement = ["dem/peaks.rs; height-labels.json; WorldLabels GPU; heights toggle; verify gates."]
+current_state = ["No peak ASL labels on cartographic map before ship."]
+approach = ["PEAK_WINDOW 9px; 80m declutter; export-height-labels; verify-height-labels.mjs."]
+citations = [
+    "t152_7_verify_log.md",
+    "commit 8b37fe3f",
+    "t152_7_height_markers.md",
+]
 shipped_at = "8b37fe3f"
 created_at = "2026-07-13T02:37:40Z"
 completed_at = "2026-07-13T02:37:40Z"

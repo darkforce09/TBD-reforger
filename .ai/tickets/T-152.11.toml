@@ -9,6 +9,16 @@ spec = "docs/specs/Mission_Creator_Architecture/t152_11_operator_fidelity_audit.
 executor = "claude-code"
 notes = "Audit report @ a8a7a22c (tag T-152.11); D1–D13 ledger zero DONE; fix matrix → remediation ladder T-152.12–.22."
 parent = "T-152"
+main_goal = "Audit T-152 deliverables D1–D13; produce fix matrix for remediation ladder."
+context = ["T-152.10 automated PASS masked operator symptoms: dead text, blank piers, vanishing trees."]
+requirement = ["Reproduce ledger with file:line evidence; map follow-up slices; no application code."]
+current_state = ["Per-slice verify logs; O1–O12 operator pending; TextUniforms hotfix uncommitted."]
+approach = ["t152_11_fidelity_audit_report.md; scaffold T-152.12–.22 specs @ e9319ceb."]
+citations = [
+    "t152_11_fidelity_audit_report.md",
+    "commit a8a7a22c",
+    "t152_11_operator_fidelity_audit.md",
+]
 shipped_at = "a8a7a22c"
 created_at = "2026-07-13T11:44:11Z"
 completed_at = "2026-07-13T11:44:11Z"

@@ -9,6 +9,16 @@ spec = "docs/specs/Mission_Creator_Architecture/t153_faction_library.md"
 executor = "claude-code"
 notes = "Backend: faction-library.schema.json + goldens/codegen; migration 0006 user_factions; /api/v1/factions CRUD (owner-scoped, contract-validated); tests T1-T8."
 parent = "T-153"
+main_goal = "Ship faction-library schema, user_factions migration, owner-scoped CRUD API."
+context = ["T-074 intent; no reusable cross-mission faction storage."]
+requirement = ["faction-library.schema.json; migration 0006; /api/v1/factions; tests T1–T8."]
+current_state = ["Factions lived only per-mission; no contract-validated library backend."]
+approach = ["Golden codegen; mission_maker+ routes; doc jsonb owner-scoped writes."]
+citations = [
+    "t153_verify_log.md",
+    "commit e2aec2de",
+    "t153_faction_library.md",
+]
 shipped_at = "e2aec2de"
 created_at = "2026-07-13T00:00:00Z"
 completed_at = "2026-07-13T00:00:00Z"

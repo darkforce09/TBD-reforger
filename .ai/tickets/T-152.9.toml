@@ -9,6 +9,16 @@ spec = "docs/specs/Mission_Creator_Architecture/t152_9_road_names.md"
 executor = "claude-code"
 notes = "Road names discovery spike."
 parent = "T-152"
+main_goal = "Ship curated road-names.json with polyline-following labels on text lane."
+context = ["roads.json.gz has no name field; spike chose path B."]
+requirement = ["road-names.json; road_labels.rs; WorldRoadLabels; roadNames toggle; G2–G7."]
+current_state = ["Major Everon highways unnamed on cartographic map."]
+approach = ["Tangent placement; 60m declutter; verify-road-names.mjs @ z=0."]
+citations = [
+    "t152_9_verify_log.md",
+    "commit 0ff2eb00",
+    "t152_9_road_names.md",
+]
 shipped_at = "0ff2eb00"
 created_at = "2026-07-13T02:51:56Z"
 completed_at = "2026-07-13T02:51:56Z"

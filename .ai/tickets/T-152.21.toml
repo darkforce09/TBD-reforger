@@ -9,6 +9,19 @@ spec = "docs/specs/Mission_Creator_Architecture/t152_21_landmark_early_visibilit
 executor = "claude-code"
 notes = "Shipped @ d5c746df (tag T-152.21). importanceZoom wired; 44 badges @ z=−2 (was 0); residency band fix; landmarkVisible deleted. Verify t152_21_verify_log.md; M1/M2 buffer-proven, GPU visual operator-pending."
 parent = "T-152"
+main_goal = "Wire importanceZoom so landmark badges surface at island zoom."
+context = ["importanceZoom parsed in prefab.rs but no render path consulted it."]
+requirement = [
+    "Badge emission: deck_zoom >= importance_zoom overrides BUILDING_BADGE_MIN_ZOOM class gate.",
+    "Coarse fill de-emphasis when early glyph drew; delete or wire landmarkVisible oracle.",
+]
+current_state = ["Default editor z=-2 shows white OBB rectangles; BUILDING_BADGE_MIN_ZOOM is 1.0."]
+approach = ["residency.rs override plus glyph_math floor; Class R lighthouse fixture; t152_21_verify_log."]
+citations = [
+    "t152_21_landmark_early_visibility.md",
+    "commit d5c746df",
+    "t152_21_verify_log.md",
+]
 shipped_at = "d5c746df"
 created_at = "2026-07-13T22:43:08Z"
 completed_at = "2026-07-13T22:43:08Z"
