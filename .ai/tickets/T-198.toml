@@ -7,13 +7,31 @@ status = "shipped"
 order = 2160
 executor = "claude-code"
 main_goal = "The enum is closed to four worn garments — vest, pants, jacket, backpack — in both mission.schema.json:89 and loadout-export.schema.json:67, and GarmentForContainer resolves only to worn areas."
+context = [
+    "cargoContainer enum closed to four worn garments in mission and export schemas.",
+    "311 crate rows and vehicle prefabs had no inventory authoring surface.",
+]
+requirement = [
+    "Add entity.inventory item plus qty without widening cargoContainer enum.",
+    "Additive rows only; no capacity restatement on entity.",
+]
 current_state = [
     "No code path anywhere puts an item into a vehicle,",
     "and the 311 crate rows are unreachable from any UI.",
 ]
+approach = [
+    "entity.inventory array on $defs/entity in mission.schema.json.",
+    "Schema descriptions mark no runtime consumer yet.",
+]
+verify = [
+    "make schema-validate; four goldens PASS.",
+    "cargo-container-typo negative fixture still rejected.",
+]
+acceptance = ["Inventory validated on entity; cargoContainer unchanged; negative goldens still fail at declared pointers."]
 citations = [
     "mission.schema.json:89",
     "loadout-export.schema.json:67",
+    "Source: commit 2070eecd — entity inventory.",
 ]
 shipped_at = "2070eecd"
 created_at = "2026-07-26T05:33:32Z"

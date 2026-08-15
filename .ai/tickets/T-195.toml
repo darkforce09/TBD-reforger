@@ -7,6 +7,15 @@ status = "shipped"
 order = 2130
 executor = "claude-code"
 main_goal = "leaderboards.rs:307-309 sets rows to an empty vec whenever the API returns anything, so a populated ladder renders 'No operators match your search'."
+context = [
+    "board inverted API branch: populated response yielded empty rows.",
+    "Eight-row MOCK fixture rendered as live ladder when API returned nothing.",
+]
+requirement = [
+    "Delete fabricated ladder; render real /leaderboards rows.",
+    "Wire five tabs and search to ?category= and ?q= query params.",
+    "View Dossier opens GET /users/{id}/stats slide-over.",
+]
 current_state = [
     "leaderboards.rs:307-309 sets rows to an empty vec whenever the API returns anything,",
     "so a populated ladder renders 'No operators match your search'.",
@@ -14,7 +23,19 @@ current_state = [
     "All five tabs, the search box and View Dossier are dead,",
     "and GET /users/{id}/stats has no caller anywhere.",
 ]
-citations = ["GET /users/{id}/stats"]
+approach = [
+    "Remove MOCK, row, ranked, category_value; Transition refetch outside async.",
+    "parse_row from API Value; initials fallback for empty avatar_url.",
+]
+verify = [
+    "cargo test -p website-frontend.",
+    "curl /leaderboards ?category= and /users/{id}/stats.",
+]
+acceptance = ["Mock ladder deleted; tabs and search wired to category and q; dossier called stats API; browser render unexercised."]
+citations = [
+    "GET /users/{id}/stats",
+    "Source: commit c0c357e2 — real ladder.",
+]
 shipped_at = "c0c357e2"
 created_at = "2026-07-26T05:10:42Z"
 completed_at = "2026-07-26T05:41:00Z"

@@ -24,10 +24,16 @@ approach = [
     "add the PATCH /missions/{id} path that writes time_of_day/weather back to the missions row,",
     "AND make the compile path read the authored value.",
 ]
+verify = [
+    "cargo test -p website-api --lib authored_environment_beats_a_stale_mission_row.",
+    "Dev stack /compiled serves authored time and weather.",
+]
+acceptance = ["PATCH mirrored row; compile read payload environment; scrubber parsed HH:MM:SS; bad values rejected."]
 citations = [
     "eden_chrome.rs:1707-1765",
     "mission_compile.rs:24-29",
     "T-089",
+    "Source: commit bbb910be — row mirror compile.",
 ]
 shipped_at = "bbb910be"
 created_at = "2026-07-26T00:13:01Z"

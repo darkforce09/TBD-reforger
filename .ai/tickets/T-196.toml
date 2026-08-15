@@ -15,6 +15,17 @@ requirement = [
     "Set active_slice null; defer T-068 and T-181 with human-only open slices.",
     "Backfill status on ten T-068 phase-1 shipped slices missing status field.",
 ]
+current_state = [
+    "T-181 slices[] had 39 entries; active_slice pointed at shipped T-181.15.",
+    "Ten T-068 phase-1 slices shipped without status field.",
+]
+approach = [
+    "Backfill T-181 slices[] from slice_plan to 66 entries.",
+    "Clear active_slice; defer T-068 and T-181 with human-only open slices.",
+    "Rewrite five wrong ticket bodies; merge duplicates; close delivered tickets.",
+]
+verify = ["./scripts/ticket check OK; 113 runnable tickets."]
+acceptance = ["Registry matched shipped reality; factory Phase 0 unblocked; stale bodies corrected without deleting fixtures."]
 citations = [
     "Source: commit 7b98232b — registry true.",
     "PLATFORM_FACTORY Phase 0 dispatch gate",

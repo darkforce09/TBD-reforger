@@ -15,7 +15,17 @@ requirement = [
     "Route every environment write through author_env with CARRIED_ENV_KEYS table.",
     "Show ENV_UNCARRIED_NOTE where controls were; move Weather beside Time.",
 ]
+current_state = [
+    "View Distance and Thermals wrote meta.environment keys nothing reads on export.",
+    "ModEnvironment carries only time and weather; framework has no view-distance reader.",
+]
+approach = [
+    "Remove View Distance and Thermals controls from Mission Settings.",
+    "Route environment writes through author_env with CARRIED_ENV_KEYS gate.",
+    "ENV_UNCARRIED_NOTE where controls were; weather beside time.",
+]
 verify = ["website-frontend tests 111 pass, +3 new."]
+acceptance = ["Uncarried keys refused; three new tests passed; wasm32 clippy clean on eden_chrome.rs."]
 citations = [
     "Source: commit b30f5490 — remove controls.",
     "mission.schema environment additionalProperties",

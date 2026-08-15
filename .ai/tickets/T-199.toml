@@ -15,7 +15,17 @@ requirement = [
     "Extend mod reader for v1 and v2; match weapons on slotIndex plus slotType pair.",
     "Strip U+001F from untrusted attachment strings in loadout_to_picks separator gate.",
 ]
+current_state = [
+    "Download emitted SlotLoadoutV2 dict missing loadoutVersion, modpackId, and gear.",
+    "TBD_LoadoutEquipComponent accepted loadoutVersion 1 only.",
+]
+approach = [
+    "picks_to_export emits v2 branch with gear derivation matching mod_slot_loadout.",
+    "Mod reader accepts v1 and v2; match weapons on slotIndex plus slotType pair.",
+    "Strip U+001F from untrusted attachment strings in loadout_to_picks.",
+]
 verify = ["127 website-frontend tests; export bytes validate against schema."]
+acceptance = ["Export bytes validated schema; 127 frontend tests passed; mod compiled with v1 and v2 reader."]
 citations = [
     "Source: commit b53866e0 — conforming export.",
     "loadout-export.schema.json v2 branch",

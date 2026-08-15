@@ -7,14 +7,33 @@ status = "shipped"
 order = 2070
 executor = "claude-code"
 main_goal = "mission_history.rs:53 documents 'the beforeunload guard'; a repo-wide grep finds only that comment."
+context = [
+    "Reload or tab close discarded unsaved editor work silently.",
+    "IDB restore called refresh_hud, leaving dirty false for unsaved local work.",
+]
+requirement = [
+    "Warn on beforeunload only while the document is dirty.",
+    "Mark dirty after IDB restore without re-arming persist.",
+    "Teardown-safe window listener; exempt smoke and draft routes.",
+]
 current_state = [
     "There is no SPA navigation guard either.",
     "Worse, the IDB-restored doc calls refresh_hud() rather than after_local_edit() (mission_editor.rs:436),",
     "so dirty starts false while unsaved edits exist and the user sees no dot.",
 ]
+approach = [
+    "register_unload_guard on window via thread_local Closure cleanup.",
+    "IDB restore sets dirty flag only; hydrate still clears on adopt.",
+]
+verify = [
+    "wave.sh gate --slice T-189 PASS.",
+    "cargo check -p website-frontend --target wasm32-unknown-unknown.",
+]
+acceptance = ["Unload guard installed for dirty docs; IDB restore set dirty without persist; smoke routes exempt; listener removed on teardown."]
 citations = [
     "repo-wide beforeunload grep only comment",
     "refresh_hud versus after_local_edit",
+    "Source: commit 7a51fdda — unload guard.",
 ]
 shipped_at = "7a51fdda"
 created_at = "2026-07-26T00:05:26Z"

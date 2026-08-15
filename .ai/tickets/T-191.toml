@@ -7,16 +7,32 @@ status = "shipped"
 order = 2090
 executor = "claude-code"
 main_goal = "mission_hydrate.rs:164-185 runs under INIT origin while the UndoManager tracks only LOCAL, so Ctrl+Z cannot recover it."
+context = [
+    "Load server version ran hydrate under INIT; UndoManager tracks LOCAL only.",
+    "Debounced persist overwrote IndexedDB backup about five seconds after adopt.",
+]
+requirement = [
+    "Conflict adopt runs under LOCAL so Ctrl+Z recovers one hydrate step.",
+    "Pre-adopt encode_state snapshot under separate IndexedDB key.",
+    "Toast plus window.__missionBackup has and restore hook.",
+]
 current_state = [
     "mission_hydrate.rs:164-185 runs under INIT origin while the UndoManager tracks only LOCAL, so Ctrl+Z cannot recover it.",
     "hydrate clears all nine root maps,",
     "then after_local_edit overwrites the local IndexedDB blob about five seconds later.",
     "The conflict modal offers two buttons with no diff, no change count and no backup.",
 ]
+approach = [
+    "adopt_payload LOCAL origin; capture pre-adopt blob before hydrate.",
+    "restore_local_backup swaps fresh core; boot hydrates stay INIT.",
+]
+verify = ["MissionDocCore undo_depth 6 to 7 on adopt; undo restores pre-adopt slots."]
+acceptance = ["Load server version became one undo step; pre-adopt blob outlived persist; backup restored nine maps."]
 citations = [
     "UndoManager INIT versus LOCAL origin",
     "conflict modal two buttons",
     "IndexedDB blob five-second debounce",
+    "Source: commit 7de3ed57 — undoable adopt.",
 ]
 shipped_at = "7de3ed57"
 created_at = "2026-07-26T00:07:16Z"

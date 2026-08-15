@@ -15,7 +15,16 @@ requirement = [
     "Walk WEAPON_SLOTS for read and write; reuse row_options filtering rules.",
     "Fold attachment weight for picked weapons; flag stranded attachments in UI.",
 ]
+current_state = [
+    "arsenal.rs persisted attachments empty on every loadout row.",
+    "241 attachment_on_weapon compat edges had no UI reader.",
+]
+approach = [
+    "Pack per-weapon attachment sets in picks key attachments@row with U+001F join.",
+    "Walk WEAPON_SLOTS for read and write; fold attachment weight for picked weapons.",
+]
 verify = ["34 of 241 export edges reachable; eight attachments on seven rifles."]
+acceptance = ["Eight attachments on seven rifles reachable; stranded attachments flagged; compile schema untouched."]
 citations = [
     "Source: commit c042c885 — wire attachments.",
     "registry-compat export edge census",

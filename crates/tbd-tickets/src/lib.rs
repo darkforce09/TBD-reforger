@@ -166,7 +166,7 @@ pub fn main_goal_is_debt(w: &WorkTicket) -> bool {
 /// `check_ready_tier_body` widens to shipped corpus-wide and this pin is deleted in
 /// that same commit. Growth is red both ways: `ops::ship` already refuses a body-
 /// incomplete ship, so a rising count means a gate bypass.
-pub const BODY_DEBT_PIN: usize = 608;
+pub const BODY_DEBT_PIN: usize = 598;
 
 /// The one body-debt instrument (T-922): a SHIPPED work ticket with any
 /// [`empty_ready_tier_fields`] entry and no quarantine exemption (nonempty
