@@ -786,6 +786,7 @@ T-921 = [".ai/tickets"]
 T-922 = [".ai/tickets", "crates/tbd-tickets", "xtask/src"]
 T-923 = ["xtask/src/wave", "docs/plans/t-923_plan.md"]
 T-924 = ["xtask/src/wave"]
+T-925 = ["xtask/src/wave"]
 
 [depends_on]
 T-068 = ["T-067"]

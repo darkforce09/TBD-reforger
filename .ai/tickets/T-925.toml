@@ -1,0 +1,18 @@
+id = "T-925"
+kind = "work"
+title = "Close-selection semantics: the ceremony is unreachable live"
+summary = "current_wave names the first wave holding an unshipped ticket, so it always refuses to close, and a fully-shipped batch's label dissolves into wave 0 at the ship-hook repack. Decide what wave close selects."
+class = "feature"
+status = "idea"
+executor = "claude-code"
+notes = "T-923 slice-agent discovery 2026-08-16: predates T-923 (the old print was equally unreachable). The T-923 ceremony itself is proven on fabricated post-validation states; what is missing is a live selection rule — e.g. close targets the most recently emptied label, or the final ship of a wave defers its repack until close. Blocks the first real post-cutover close (would be wave 133)."
+created_at = "2026-08-16T03:46:18Z"
+estimated = ["scope"]
+owns = [
+    "xtask/src/wave",
+]
+
+[scope]
+domain = "repo"
+layer = "xtask"
+component = "wave"

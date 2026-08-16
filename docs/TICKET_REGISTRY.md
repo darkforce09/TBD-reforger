@@ -914,3 +914,4 @@ Either add mod readers or annotate them non-consumed so the next audit does not 
 | T-653 | — | idea | work | Preserve the three headless editor-screenshot findings | Preserve the three headless editor-screenshot findings |
 | T-704 | — | idea | work | Command palette over every editor command | Command palette over every editor command |
 | T-924 | — | idea | work | Gate verdict receipt required at land | platform wave gate writes a verdict file (HEAD sha plus verdict) and platform wave land refuses a landing ticket without a fresh one. Forward-only: future lands only, no backfill, existing tickets stay green untouched. |
+| T-925 | — | idea | work | Close-selection semantics: the ceremony is unreachable live | current_wave names the first wave holding an unshipped ticket, so it always refuses to close, and a fully-shipped batch's label dissolves into wave 0 at the ship-hook repack. Decide what wave close selects. |
