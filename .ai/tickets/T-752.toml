@@ -43,6 +43,10 @@ verify = [
     "cargo clippy wasm32 --all-targets -D warnings clean on main.",
     "ci-local-leptos runs --all-targets so regressions fail CI.",
 ]
+acceptance = [
+    "Unused imports and variables on inherited frontend files were removed for wasm clippy --all-targets.",
+    "ci-local-leptos and CI frontend job gained --all-targets; warnings stayed advisory without deny.",
+]
 citations = [
     "T-633 five lints main",
     "T-695 compositions_panel unused",

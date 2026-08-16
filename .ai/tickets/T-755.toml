@@ -43,6 +43,11 @@ verify = [
     "Perturbed alternate constructor or from_schema_node default fails env_settings pin.",
     "Re-based zoom or inserted line fails toolbelt pin; relocated mount outside gate fails hint pin.",
 ]
+acceptance = [
+    "FLOW_DEFAULT ban scanned from_schema_node; second Schema constructor pin went RED on alias path.",
+    "Contour m_per_px pin required contiguous dem_vectors bind-to-ladder without zoom rebind gap.",
+    "ControlsHint pin asserted STRIP_ROWS gated subtree placement, not mount presence alone.",
+]
 citations = [
     "editor_verify wave115 MINOR-2",
     "editor_verify wave115 MINOR-3",

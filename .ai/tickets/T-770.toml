@@ -44,6 +44,10 @@ verify = [
     "commit_writes WARNING fires when sink applies fewer writes than planned.",
     "Skip-perturbation pin stays red if receipt counts closures not sink acks.",
 ]
+acceptance = [
+    "update_slot_loadout returned bool so commit_writes counted sink acks, not loop invocations.",
+    "WARNING arm became reachable when the document refused a write.",
+]
 citations = [
     "editor_verify/wave118 MINOR-1",
     "T-699 commit_writes",

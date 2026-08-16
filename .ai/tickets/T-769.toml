@@ -44,6 +44,10 @@ verify = [
     "h-full tree scroller at 1080p and 1440x900; smoke_virtual_outliner cap pins windowing.",
     "False CONTAINER_H comment removed or corrected in eden_tree.rs.",
 ]
+acceptance = [
+    "Outliner windowed scroller used h-full with live clientHeight instead of fixed 420px box.",
+    "smoke_virtual_outliner asserted rendered rows matched ceil(H/16)+12 against measured scroller height.",
+]
 citations = [
     "editor_verify/wave118 MAJOR-1",
     "smoke_virtual_outliner cap",

@@ -41,6 +41,10 @@ verify = [
     "DEV wasm byte count shows single schema embed not duplicate 91KB.",
     "eden_zones comment matches actual size or removed.",
 ]
+acceptance = [
+    "eden_settings shared eden_zones MISSION_SCHEMA embed; wasm carried one schema include_str.",
+    "Stale eden_zones embed size comment was corrected or dropped against measured bytes.",
+]
 citations = [
     "editor_verify/wave115 MINOR-5",
     "T-688 eden_settings embed",

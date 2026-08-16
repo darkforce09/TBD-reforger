@@ -44,6 +44,10 @@ verify = [
     "Deep nesting pattern returns no-match not wasm trap abort.",
     "37 correctness cases still pass zero wrong answers after depth cap.",
 ]
+acceptance = [
+    "Asset-search regex enforced RX_MAX_DEPTH so deep patterns returned no-match without wasm trap.",
+    "Matcher recursion depth capped alongside step budget; deep nesting no longer aborted Leptos.",
+]
 citations = [
     "editor_verify/wave117 MAJOR-1",
     "asset_catalog 594-1015 engine",

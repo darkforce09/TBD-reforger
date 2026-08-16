@@ -42,6 +42,10 @@ verify = [
     "Clear briefing export compiled mission envelope has no deleted briefing text.",
     "Hydrate still cannot wipe good briefing via not-supplied guard intact.",
 ]
+acceptance = [
+    "clear_meta_briefing dropped meta.briefing on deliberate author clear without weakening hydrate guard.",
+    "Cleared library briefing no longer survived in compile_export envelope same session.",
+]
 citations = [
     "editor_verify/wave117 MINOR-2",
     "T-671 slice disclosure",

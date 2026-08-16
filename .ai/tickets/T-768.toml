@@ -44,6 +44,10 @@ verify = [
     "LMB target pick completes connection after T-723 path fixed.",
     "Panel Delete removes connection row without claiming Eden line-select parity.",
 ]
+acceptance = [
+    "Armed connect consumed LMB target pick on Pending path calling editor_ops::complete_connect.",
+    "Esc disarmed armed connect without commit, matching other placement arms.",
+]
 citations = [
     "T-672 CONN-START-001 partial",
     "T-723 armed-pointerup",

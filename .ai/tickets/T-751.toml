@@ -37,6 +37,11 @@ approach = [
     "Point compile.rs header at store.rs divergence documentation.",
 ]
 verify = ["verifier wave114.md NIT-1 through NIT-4 addressed."]
+acceptance = [
+    "Select chevron dimmed via peer-disabled alongside a disabled select sibling.",
+    "arm_favourite_place stayed clone-free; pins fail tidy-up arms that clone payload.",
+    "compile.rs header documented intentional key-list divergence from store.rs.",
+]
 citations = [
     "ui.rs Select chevron",
     "eden_dock_right.rs:745 clone",

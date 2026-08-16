@@ -42,6 +42,10 @@ verify = [
     "Compiled probe: non-finite yields em-dash; 9.996 yields three sig figs not 10.00.",
     "Clamp endpoints and 0.0625 regression cases remain correct.",
 ]
+acceptance = [
+    "Non-finite scale input produced em-dash readout instead of fabricated 1.00 m/px text.",
+    "Band-top carry formatted three significant figures; 9.996 no longer printed as 10.00.",
+]
 citations = [
     "editor_verify wave115 MINOR-4",
     "editor_verify wave115 NIT-3",

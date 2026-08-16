@@ -41,6 +41,10 @@ verify = [
     "Navigate mission A to B after export; B panel empty not A report.",
     "Pin RED if second mission inherits previous COMPILE_FINDINGS without export.",
 ]
+acceptance = [
+    "Editor hydrate called clear_compile_findings so mission B panel did not inherit A export.",
+    "Hydrate-reset seam pin scoped to production body, failing helper-bypass inheritance.",
+]
 citations = [
     "editor_verify/wave116 finding 3",
     "validation_panel COMPILE_FINDINGS",

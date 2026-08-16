@@ -43,6 +43,10 @@ verify = [
     "Delete production usage each positive pin goes RED not stay green.",
     "Perturbation without scrubber bypass still fails pins; class_r_scrub repo-wide intact.",
 ]
+acceptance = [
+    "T-696 dock-left SRC truncated at cfg(test); production-only pins failed on deleted usage.",
+    "Positive fly-to and tab needles required split literals or scoped source, not self-match.",
+]
 citations = [
     "editor_verify/wave116 finding 1",
     "T-559 T-561 precedent",

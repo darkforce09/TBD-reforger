@@ -44,6 +44,10 @@ verify = [
     "fly_to moves camera without calling __editorCamSet smoke hook directly.",
     "Rename __editorCamSet hook fly_to still works via pub seam not silent no-op.",
 ]
+acceptance = [
+    "world_assets exposed pub fly_to and named_locations seams beside camera_snapshot.",
+    "eden_dock_left fly-to and index paths stopped calling window.__editorCamSet smoke hook.",
+]
 citations = [
     "editor_verify/wave116 finding 4",
     "T-166 smoke hook",

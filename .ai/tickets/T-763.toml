@@ -44,6 +44,11 @@ verify = [
     "Clean mission compile response carries x-compile-diagnostics-count 0 header asserted.",
     "store.rs test prose matches actual EditorPayload root key declarations.",
 ]
+acceptance = [
+    "/compiled route pin required compiled_diagnostics_response_headers call in get_compiled_mission body.",
+    "Marker Attributes click site pinned selection addr to faction_id and id pair.",
+    "store.rs EditorPayload test prose limited claim to missing root markers key only.",
+]
 citations = [
     "editor_verify/wave116 findings 5-8",
     "T-069 decoy claim",

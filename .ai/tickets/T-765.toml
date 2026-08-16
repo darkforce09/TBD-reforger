@@ -41,6 +41,10 @@ verify = [
     "CAFÉ glob pattern matches café_x haystack after unified folding.",
     "2M-case randomised glob comparison still zero mismatches against reference.",
 ]
+acceptance = [
+    "Glob pattern literals folded with Unicode to_lowercase matching haystack folding.",
+    "Non-ASCII patterns like CAFÉ* matched lowercased haystacks after symmetric Unicode fold.",
+]
 citations = [
     "editor_verify/wave117 MINOR-1",
     "asset_catalog glob folding",

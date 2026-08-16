@@ -41,6 +41,10 @@ verify = [
     "Mission-owned rows not in tab order or aria-disabled with stated reason.",
     "Entity-owned rows follow T-754 router outcome not false pointer styling.",
 ]
+acceptance = [
+    "Mission-owned aggregated settings rows rendered non-focusable divs with aria-disabled reason.",
+    "Routable aggregated rows stayed focusable buttons only when T-754 click path resolved.",
+]
 citations = [
     "editor_verify/wave115 MINOR-6",
     "T-754 aggregated settings router",

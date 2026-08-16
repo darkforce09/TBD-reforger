@@ -42,6 +42,11 @@ verify = [
     "Zone-owned setting row selects entity or lacks pointer hover styling.",
     "No dead click toast dressed as navigable row.",
 ]
+acceptance = [
+    "route_select_by_subject_id widened to zones through eden_dock_right::route_select_zone.",
+    "Aggregated settings rows showed pointer styling only when the router could resolve the owner.",
+    "Unresolvable entity-owned rows lost cursor-pointer affordance instead of dead-click toast.",
+]
 citations = [
     "editor_verify wave115 MAJOR-2",
     "wog.md 14.6",

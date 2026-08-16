@@ -43,6 +43,10 @@ verify = [
     "Placed marker visible on map at default zoom after doc change rebind.",
     "RIGHT-MODE-006 markers-on-map requirement tracked and closed not verifier-only.",
 ]
+acceptance = [
+    "LaneRole::MissionMarkers landed between MissionZones and SquadLinks in draw order.",
+    "markers_bind fed after_doc_change and rebind_engine_from_doc so undo kept map glyphs honest.",
+]
 citations = [
     "editor_verify/wave116 finding 2",
     "T-069 marker authoring",

@@ -42,6 +42,11 @@ verify = [
     "Edit flatten default; frontend test or display fails not green pass.",
     "Cross-crate pin compiles via existing mission feature dependency.",
 ]
+acceptance = [
+    "Frontend FLOW_DEFAULT constants were deleted and re-exported from map-engine-core flatten.",
+    "Native tests asserted cross-crate FLOW_DEFAULT equality so drift fails loudly.",
+    "eden_env doc comment reflected authored_flow_seconds instead of stale flatten lore.",
+]
 citations = [
     "editor_verify wave115 MAJOR-1",
     "flatten.rs 1491",

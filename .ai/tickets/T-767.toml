@@ -43,6 +43,10 @@ verify = [
     "Formation enum description matches T-672 force_to_formation reader semantics.",
     "Frontend names ConnectionKind without context_menu::ConnKind::parse copy.",
 ]
+acceptance = [
+    "doc/mod.rs re-exported ConnectionKind, ConnectionRow, and formation_offsets for frontend use.",
+    "mission.schema.json formation enum description reflected force_to_formation reader semantics.",
+]
 citations = [
     "editor_verify/wave117 NIT-1",
     "T-672 found_not_fixed",
