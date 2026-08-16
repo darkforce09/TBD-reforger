@@ -49,6 +49,10 @@ verify = [
     "No unreachable RCON 2xx success path in server_control.",
     "Delete dialog matches events.rs soft-delete behavior.",
 ]
+acceptance = [
+    "Event delete confirm copy stated soft-delete truth and removed false ORBAT and registration cascade claims.",
+    "Integration test proved event_missions, orbat_slots, and registrations survive while deleted_at is stamped.",
+]
 citations = [
     "Wave 69 UI honesty",
     "T-269 RCON 503",

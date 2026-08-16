@@ -58,6 +58,10 @@ verify = [
     "grep reclassify Makefile returns map-reclassify target.",
     "instance_kinds_match_enums_schema lockstep test pins vehicle fix.",
 ]
+acceptance = [
+    "Makefile map-reclassify target exposed world reclassify drift check with required TERRAIN argument and optional WRITE=1 apply.",
+    "Read-only default exited one when committed prefab-classify edits had gone latent against catalogue classification.",
+]
 citations = [
     "T-278 world reclassify tool",
     "8-kind INSTANCE_KINDS schema_gates",

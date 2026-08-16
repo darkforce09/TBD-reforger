@@ -70,6 +70,10 @@ verify = [
     "Zone mutators callable from wasm js.rs bindings.",
     "Frontend zone draw commits at three polygon vertices.",
 ]
+acceptance = [
+    "All eleven zone mutators gained Rust callers in editor_ops; js.rs proved save-reload, not wasm bindings.",
+    "Zones panel shipped with schema-driven attributes; round trip through save and reload proved zones reach payload.",
+]
 citations = [
     "T-211 zones document layer",
     "compile known-keys landmine",

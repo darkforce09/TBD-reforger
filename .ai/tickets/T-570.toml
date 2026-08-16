@@ -35,6 +35,10 @@ approach = [
     "Treat cfg(any()) and loop-break decoys same as if false.",
 ]
 verify = ["Repro: live briefing → None; wrap decoy in if true==false; pin green."]
+acceptance = [
+    "Hydrate briefing pin stopped grepping source and executed recorded apply_row_meta calls instead.",
+    "Unreachable if true==false, loop break, cfg(any()), while false, and if !true wrappers no longer bypassed the pin.",
+]
 citations = [
     "W67 adversarial verifier DIRTY MAJOR",
     "T-567 unreachable apply_row_meta decoy",

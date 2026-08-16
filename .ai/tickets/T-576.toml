@@ -66,6 +66,10 @@ verify = [
     "POST ingest/server-status random server_id → 4xx not 500.",
     "Full happy path verifier drove found ZERO FK 500s on legitimate writes.",
 ]
+acceptance = [
+    "is_foreign_key_violation and foreign_key_error mapped SQLSTATE 23503 to 400 responses naming the missing parent.",
+    "telemetry ingest returned 400 instead of 500 on unregistered server_id; three other named FKs were pre-armed only.",
+]
 citations = [
     "wave 69 adversarial verifier",
     "is_unique_violation 23505 only",

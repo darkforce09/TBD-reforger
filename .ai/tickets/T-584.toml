@@ -52,6 +52,10 @@ verify = [
     "Verifier grepped live probe logs for dummy client id and secret — clean.",
     "Representation flip across editor would not false-report edited rows.",
 ]
+acceptance = [
+    "OAuth sentinel test fed credentials through the real rendering path so a log-site leak can fail the pin.",
+    "classify_row adopted numeric-aware deep equality so integer and float JSON representations no longer read as edited.",
+]
 citations = [
     "wave 70 adversarial verifier",
     "T-303 oauth sentinel test",

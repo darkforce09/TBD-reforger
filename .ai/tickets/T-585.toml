@@ -79,6 +79,10 @@ verify = [
     "Each constraint returns 400 with zero handler changes over HTTP.",
     "fk_constant_names_follow_migration_convention pins exact constraint names.",
 ]
+acceptance = [
+    "Migration 0019 added three VALIDATING ingest-pointer FKs with orphan pre-clean and ON DELETE SET NULL semantics.",
+    "content_golden.sql insert order was reordered so fresh seed no longer fails new server_statuses constraints.",
+]
 citations = [
     "T-576 rehearsed three FK constraints",
     "0018 idempotency DROP IF EXISTS",

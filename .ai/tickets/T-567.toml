@@ -32,6 +32,10 @@ current_state = [
 ]
 approach = ["Exclude unreachable/cfg-gated apply_row_meta from pin matching."]
 verify = ["Live briefing None plus if false apply_row_meta decoy; cargo test RED."]
+acceptance = [
+    "Stripped balanced if false blocks before apply_row_meta arg-list scan in hydrate briefing Class-R pin.",
+    "Unreachable if false apply_row_meta with opt briefing went RED while live None args no longer false-greened.",
+]
 citations = [
     "W66 verifier after T-564",
     "hydrate_wires_row_briefing apply_row_meta",

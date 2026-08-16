@@ -76,6 +76,10 @@ verify = [
     "Zone with bad rules returns 400 on save not 201.",
     "circle r=0.04 rejected or fixed before save.",
 ]
+acceptance = [
+    "scan_authored_zones rejected undeclared rules keys and invalid zone types as 400 at save boundary.",
+    "Post-quantisation circle radius zero from 0.04 metre rounding went RED before immutable version could brick export.",
+]
 citations = [
     "Wave 70 adversarial verifier",
     "T-367 save-time precheck",

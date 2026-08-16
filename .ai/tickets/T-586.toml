@@ -59,6 +59,10 @@ verify = [
     "T-576 throwaway cross-check found exactly three unwired handlers.",
     "Gate fails if @route tag lacks matching router entry.",
 ]
+acceptance = [
+    "scripts/verify-route-tags.sh restored bidirectional @route versus router cross-check with vacuity guards and literal path compares.",
+    "create_server, update_server, and deactivate_server routes registered on app.rs; submit_mission gained its missing @route tag.",
+]
 citations = [
     "T-576 scoping throwaway cross-check",
     "T-125 GO-7 route verifier",

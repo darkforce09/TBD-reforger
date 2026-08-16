@@ -37,6 +37,10 @@ verify = [
     "rg MIGRATE_TEST_DATABASE_URL wave.sh → no export.",
     "rg in api tests → consumers still absent.",
 ]
+acceptance = [
+    "wave.sh stopped exporting dead MIGRATE_TEST_DATABASE_URL after per-binary migrate provisioning replaced the shared gate database.",
+    "Stale export comments documenting the removed variable were scrubbed from the gate script.",
+]
 citations = [
     "W68 verifier CLEAN NIT T-558",
     "MIGRATE_TEST_DATABASE_URL dead export",

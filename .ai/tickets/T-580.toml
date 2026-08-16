@@ -49,6 +49,10 @@ verify = [
     "Unauthenticated /healthz returns status only.",
     "Verbose fields require X-Service-Token or verbose gate.",
 ]
+acceptance = [
+    "Unauthenticated healthz returned status only; version, uptime, pool, and migration detail required X-Service-Token.",
+    "Credential-less probers still received bare 200 or 503 status without verbose fingerprint fields.",
+]
 citations = [
     "T-280 /healthz extension",
     "Caddy public exposure",

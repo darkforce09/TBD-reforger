@@ -57,6 +57,10 @@ verify = [
     "Select slot + vehicle; drag — vehicle glyph should preview offset before release.",
     "Commit moves both; undo is one step.",
 ]
+acceptance = [
+    "pack_vehicle_drag_preview re-packed MissionVehicles lane so mixed slot+vehicle drags previewed before commit.",
+    "mission_editor dropped is_vehicle_id filter and passed whole selection to set_drag plus vehicles_bind.",
+]
 citations = [
     "W68 verifier CLEAN NIT T-491",
     "vehicles_bind bare flat xy",

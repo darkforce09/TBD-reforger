@@ -53,6 +53,10 @@ verify = [
     "Restore drill: dump → restore scratch DB → db_migrate against it.",
     "Without drill, backup untested until incident.",
 ]
+acceptance = [
+    "backup-db.sh and restore-db.sh shipped with pg_dump verify-on-write, allow-list guard, and count-based retention.",
+    "Makefile gained db-backup, db-restore, db-backup-drill targets plus user systemd backup timer and drill units.",
+]
 citations = [
     "T-280 no pg_dump tooling",
     "T-381 allow-list mod.rs:88",

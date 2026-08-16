@@ -35,6 +35,10 @@ approach = [
     "Extend Class-R to catch needle inside SQL string literals.",
 ]
 verify = ["Repro: COALESCE in unused fn; live UPDATE $2; Class-R green."]
+acceptance = [
+    "Class-R pinned COALESCE UPDATE to comment-stripped dev_login, catching dead-helper decoys.",
+    "SQL string-literal interiors were blanked so SELECT-WHERE COALESCE needles went RED.",
+]
 citations = [
     "W66 adversarial verifier DIRTY MAJOR",
     "T-565 Class-R hollow bypass",

@@ -35,6 +35,10 @@ approach = [
     "Reject split cfg(any()) / cfg(not(any())) match decoy pairs.",
 ]
 verify = ["Repro: cfg-out live arms; leave `_ => DEV_USER_ID` live; Class-R green."]
+acceptance = [
+    "Role-arm pin required runtime dev_login identity per role, rejecting cfg(any()) gated live arms with underscore fallback.",
+    "cfg(not(any())) split-match decoy with live underscore DEV_USER_ID arm went RED on runtime role proof.",
+]
 citations = [
     "W67 adversarial verifier DIRTY MAJOR",
     "T-569 cfg(any()) match arm decoy",

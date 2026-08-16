@@ -52,6 +52,10 @@ verify = [
     "PgRateLimiter referenced from state or middleware after wiring.",
     "rate_limit_buckets exists in schema via migration.",
 ]
+acceptance = [
+    "rate_limit_buckets migration landed and PgRateLimiter wired as L2 tier behind in-memory IpLimiter middleware.",
+    "Durable cross-process rate limiting survived restart perturbation in integration tests.",
+]
 citations = [
     "Wave 69 verifier PgRateLimiter",
     "T-280 durable token bucket",

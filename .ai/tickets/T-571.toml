@@ -33,6 +33,10 @@ approach = [
     "Extend blanker to strip PG dollar-quote COALESCE needles.",
 ]
 verify = ["Repro: nest decoy fn dev_login with COALESCE; live SET $2; Class-R green."]
+acceptance = [
+    "dev_login Class-R pinned file-scope fn body via brace depth, rejecting nested mod async fn dev_login COALESCE decoys.",
+    "Dollar-quote delimiters were parsed so SELECT UPDATE COALESCE needles inside pg dollar literals went RED.",
+]
 citations = [
     "W67 adversarial verifier DIRTY MAJOR",
     "T-568 nested dev_login COALESCE decoy",

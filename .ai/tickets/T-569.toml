@@ -35,6 +35,10 @@ approach = [
     "Reject `_ => DEV_USER_ID` live collapse when cfg arms are decoy-only.",
 ]
 verify = ["Repro: park arms in raw-string decoy; match `_ => DEV_USER_ID`; Class-R green."]
+acceptance = [
+    "Class-R blanked non-pattern string interiors so match arms parked only in raw-string decoys went RED.",
+    "Live match collapsed to underscore DEV_USER_ID with role arms only in r# decoys went RED.",
+]
 citations = [
     "W66 adversarial verifier DIRTY MAJOR",
     "T-566 raw-string match arm decoy",

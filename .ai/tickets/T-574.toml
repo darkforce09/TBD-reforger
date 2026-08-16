@@ -37,6 +37,10 @@ verify = [
     "Replace live call with comment containing symbol → pin must go RED.",
     "Drop pick/marquee delegation asserts → pin must go RED.",
 ]
+acceptance = [
+    "Soft include_str move_entities_and_vehicles host pin replaced with behavioural one-txn slot-and-vehicle move test.",
+    "Comment-only move_entities_and_vehicles mention in host sources no longer kept delegation Class-R green.",
+]
 citations = [
     "W68 verifier CLEAN NIT T-491",
     "include_str string-presence pin",
