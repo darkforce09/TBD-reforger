@@ -35,9 +35,13 @@ acceptance = [
     "A dirty tree or an oracle-refused subject refuses before any commit exists",
     "--dry-run prints the exact subject and changes nothing (git status --porcelain empty)",
 ]
+shipped_at = "46d718bea"
 created_at = "2026-08-16T03:15:16Z"
 completed_at = "2026-08-16T03:45:51Z"
-estimated = ["scope"]
+estimated = [
+    "scope",
+    "tokens",
+]
 owns = [
     "xtask/src/wave",
     "docs/plans/t-923_plan.md",
