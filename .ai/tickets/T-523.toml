@@ -25,6 +25,10 @@ requirement = [
 current_state = ["Hollow bait with needles only in -- comments PASSes while live UPDATE gone."]
 approach = ["Strip SQL comments before grep needle search in wave.sh."]
 verify = ["TBD_GATE_MIGRATION_0016 bait comment-only → FAIL; real 0016 → PASS."]
+acceptance = [
+    "gate_db_migrate_claim_body stripped SQL comments before 0016 needle search.",
+    "Comment-only claim UPDATE bait on 0016 no longer false-greened the gate.",
+]
 citations = [
     "Wave 46 verifier MAJOR",
     "gate_db_migrate_claim_body wave.sh",

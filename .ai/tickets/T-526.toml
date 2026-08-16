@@ -12,6 +12,10 @@ context = [
     "mission_title_prefer.rs adopt_payload_wires_prefer_helper chain wrapping broke fmt.",
 ]
 requirement = ["Run rustfmt on mission_title_prefer.rs only; no logic change."]
+current_state = ["mission_title_prefer.rs failed rustfmt --check on adopt_payload_wires_prefer_helper wrapping."]
+approach = ["rustfmt apps/website/frontend/src/mission_title_prefer.rs only; no logic change."]
+verify = ["rustfmt --check apps/website/frontend/src/mission_title_prefer.rs"]
+acceptance = ["mission_title_prefer.rs passed rustfmt --check after T-522 prefer-helper chain fix."]
 citations = [
     "commit d6ea5d6e rustfmt title prefer",
     "T-522 prefer-payload Class-R",

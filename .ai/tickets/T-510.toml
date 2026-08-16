@@ -27,6 +27,10 @@ requirement = [
 current_state = ["approvals_queue test INSERTs NULL to discriminate COALESCE sentinel."]
 approach = ["Rewrite test for post-0015 world; keep COALESCE Class-R if useful."]
 verify = ["NULL timestamp INSERT must fail 23502 post-0015."]
+acceptance = [
+    "null_tolerance approvals test pinned 23502 on explicit NULL timestamp INSERTs.",
+    "Retired both-NULL and updated_at-NULL discriminator rows after migration 0015.",
+]
 citations = [
     "Wave 43 re-gate FAIL T-509",
     "T-331 migration 0015 NOT NULL",

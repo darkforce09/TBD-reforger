@@ -32,6 +32,10 @@ approach = [
     "Require uncommented assign precedes to_value.",
 ]
 verify = ["Mutation: commented trim assign → Class-R must RED not PASS."]
+acceptance = [
+    "faction_manager save Class-R stripped comments before trim-assign needle search.",
+    "Commented trim-assign bait no longer passed save_trims_name_before_serialize.",
+]
 citations = [
     "Wave 44 verifier MAJOR",
     "T-507 Class-R trim assign",

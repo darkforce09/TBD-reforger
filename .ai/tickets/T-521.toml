@@ -12,6 +12,10 @@ context = [
     "T-505 create_version else-branch UPDATE broke rustfmt --check around line 951.",
 ]
 requirement = ["Run rustfmt on missions.rs create_version branch only."]
+current_state = ["missions.rs create_version else-branch UPDATE failed rustfmt --check after T-505."]
+approach = ["rustfmt apps/website/api/src/handlers/missions.rs create_version branch only."]
+verify = ["rustfmt --check apps/website/api/src/handlers/missions.rs"]
+acceptance = ["missions.rs create_version branch passed rustfmt --check after T-505 title mirror edit."]
 citations = [
     "commit e288a655 rustfmt create_version",
     "T-505 authored title mirror",

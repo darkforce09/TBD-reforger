@@ -25,6 +25,10 @@ requirement = [
 current_state = ["Ad-hoc HTTP was green at verify."]
 approach = ["Add missions IT cases for PATCH reject and CREATE omit."]
 verify = ["PATCH dense_fog then empty weather stays dense_fog or 400."]
+acceptance = [
+    "missions HTTP IT pinned CREATE omit and blank weather returning clear weather.",
+    "PATCH blank weather rejected rewrite; dense_fog row stayed dense_fog.",
+]
 citations = [
     "Wave 43 residual CLEAN NIT",
     "T-377 T-509 Class-R coverage",

@@ -25,6 +25,10 @@ requirement = [
 current_state = ["Create index on clean DB; UPDATE second seat → 23505."]
 approach = ["Update or retire two-seat assertion; CREATE UNIQUE INDEX in migration."]
 verify = ["Repro: second seat assigned_to UPDATE must fail 23505."]
+acceptance = [
+    "Migration 0017 landed partial unique on orbat_slots assigned_to occupant.",
+    "events.rs retired two-seat seed; second-seat assigned_to UPDATE raised 23505.",
+]
 citations = [
     "Wave 43 residual CLEAN",
     "T-331 content_golden double-seat",

@@ -12,6 +12,10 @@ context = [
     "T-511 23505 probe rewrite in events.rs broke fmt indent/wrapping.",
 ]
 requirement = ["Run rustfmt on events.rs only; no logic change."]
+current_state = ["events.rs failed rustfmt --check around T-511 23505 probe wrapping."]
+approach = ["rustfmt apps/website/api/tests/events.rs only; no logic change."]
+verify = ["rustfmt --check apps/website/api/tests/events.rs"]
+acceptance = ["events.rs passed rustfmt --check after T-511 23505 probe formatting fix."]
 citations = [
     "commit d1495cb4 rustfmt events",
     "T-511 orbat partial unique",

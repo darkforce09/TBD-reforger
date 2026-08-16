@@ -31,6 +31,14 @@ approach = [
     "Move PAD_ACTOR and PAD seed/arma suffixes to 400013.",
     "Class-R pin PAD_ACTOR != PLAYER_DISCORD snowflake.",
 ]
+verify = [
+    "cargo test -p website-api --test identity_link arma_link_flow -- --exact",
+    "cargo test -p website-api --test identity_link padded_arma_id_is_stored_trimmed_and_resolvable -- --exact",
+]
+acceptance = [
+    "PAD_ACTOR moved to 400013 off telemetry PLAYER_DISCORD snowflake 400003.",
+    "Class-R denied historical PLAYER_DISCORD collision on padded-trim actor.",
+]
 citations = [
     "Wave 45 cold gate FAIL",
     "T-351 PAD_ACTOR collision",

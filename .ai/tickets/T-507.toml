@@ -24,6 +24,11 @@ requirement = [
 ]
 current_state = ["serde_json::to_value(&doc) posts untrimmed name after empty check."]
 approach = ["Trim (or reject pad) before serialize on create/update."]
+verify = ["cargo test -p website-frontend faction_manager::tests::save_trims_name_before_serialize -- --exact"]
+acceptance = [
+    "Faction save trimmed doc.name before serde_json::to_value on create and update.",
+    "save_trims_name_before_serialize Class-R pinned trim-before-serialize order.",
+]
 citations = [
     "Wave 42 residual T-358",
     "faction_manager trim empty check",

@@ -27,6 +27,11 @@ current_state = [
     "Stale comment says hydrate does not load title.",
 ]
 approach = ["Add title to known keys; update comment in compile.rs."]
+verify = ["cargo test -p map-engine-core --features mission mission::compile::tests::title_is_known_editor_payload_top_level_key -- --exact"]
+acceptance = [
+    "compile.rs listed title in KNOWN_EDITOR_PAYLOAD_TOP_LEVEL_KEYS const list.",
+    "Stale hydrate-skips-title comment corrected to match store.rs title hydrate.",
+]
 citations = [
     "Wave 46 verifier NIT",
     "T-505 title hydrate store.rs",

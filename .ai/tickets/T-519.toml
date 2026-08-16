@@ -24,6 +24,15 @@ requirement = [
 ]
 current_state = ["dto::r_api::dashboard green; ls | rg member|compat|fire|solve → empty."]
 approach = ["File fixtures under tests/fixtures/api/ for each remaining typed DTO."]
+verify = [
+    "cargo test -p website-frontend dto::r_api::members_envelope -- --exact",
+    "cargo test -p website-frontend dto::r_api::registry_compat_envelope -- --exact",
+    "cargo test -p website-frontend dto::r_api::fire_solution -- --exact",
+]
+acceptance = [
+    "R-api golden fixtures landed for Member, RegistryCompatResponse, and FireSolution.",
+    "tests/fixtures/api/_index.tsv indexed GET__members, registry compat, fire solve captures.",
+]
 citations = [
     "Wave 45 residual T-360 NIT",
     "dto::r_api::dashboard green",

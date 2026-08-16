@@ -25,6 +25,10 @@ requirement = [
 current_state = ["Mutation: delete UPSERT bind; comment bait alone still PASS."]
 approach = ["Strip line and block comments from production body before counting."]
 verify = ["Perturbation RED with bait must fail; live calls green."]
+acceptance = [
+    "telemetry Class-R stripped Rust comments before counting require_role_played sites.",
+    "Comment bait require_role_played references no longer false-greened ingest pin.",
+]
 citations = [
     "Wave 44 verifier MAJOR",
     "ingest_match_results Class-R test",

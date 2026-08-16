@@ -31,6 +31,10 @@ approach = [
     "Release identity-link seeds in setup before seed_user.",
 ]
 verify = ["Perturbation: parallel runs under shared TBD_GATE_DB reproduce FAIL."]
+acceptance = [
+    "identity_link async integration tests serialised behind shared DB_LOCK Mutex.",
+    "setup released identity-link-seed arma placeholders before each seed_user call.",
+]
 citations = [
     "Wave 45 cold gate FAIL",
     "idx_users_arma_id duplicate key",

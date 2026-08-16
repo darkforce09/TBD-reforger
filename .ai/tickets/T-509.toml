@@ -27,6 +27,10 @@ requirement = [
 current_state = ["admin_field.rs:413 unwrap None on POST /missions without weather."]
 approach = ["CREATE treats empty weather as Clear canonical new-mission default."]
 verify = ["Class-R + IT pin. Perturbation RED required."]
+acceptance = [
+    "create_mission treated omitted and blank weather as Clear canonical default.",
+    "PATCH blank weather still rejected empty-string rewrite of dense_fog rows.",
+]
 citations = [
     "Wave 43 re-gate FAIL T-508",
     "T-377 valid_weather clear arm",

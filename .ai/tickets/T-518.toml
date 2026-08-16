@@ -31,6 +31,10 @@ approach = [
     "Shared test const imported by identity_link and telemetry.",
 ]
 verify = ["Set PLAYER_DISCORD to 400013 → t400_actor test ok false green."]
+acceptance = [
+    "t518_fixtures_do_not_collide parsed live PLAYER_DISCORD from telemetry.rs.",
+    "Bidirectional collision guard replaced one-sided historical snowflake denylist.",
+]
 citations = [
     "Wave 45 verifier MINOR",
     "T-517 Class-R denylist",

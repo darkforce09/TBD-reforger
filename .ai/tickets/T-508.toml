@@ -28,6 +28,10 @@ approach = [
     "Rewrite IT: NULL insert rejected; scrubbed rows ''; keep ''.",
 ]
 verify = ["Perturbation RED required; do not weaken 0015."]
+acceptance = [
+    "aar_replay_url_backfill IT substituted canonical empty scrub for historical NULL target.",
+    "NULL aar_replay_url INSERT pinned 23502; scrubbed replay rows landed as empty string.",
+]
 citations = [
     "Wave 43 cold gate FAIL",
     "T-331 migration 0015 NOT NULL",

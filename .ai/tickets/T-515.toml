@@ -30,6 +30,11 @@ approach = [
     "Class-R on 0016 migration body for claim UPDATE.",
     "Optional planted-orphan migrate probe in gate.",
 ]
+verify = ["wave gate db_migrate claim body step on live 0016 file."]
+acceptance = [
+    "gate_db_migrate_claim_body wired unconditional into wave cold gate.",
+    "Claim UPDATE needles pinned on 0016_backfill_pre_t326_linked_match_stats.sql body.",
+]
 citations = [
     "Wave 44 residual T-513/514",
     "db_migrate wave.sh hollow check",

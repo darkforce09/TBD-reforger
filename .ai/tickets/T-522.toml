@@ -31,6 +31,10 @@ approach = [
     "Or ungated tests module or wasm32 gate job.",
 ]
 verify = ["prefer→row.title perturbation RED under cold gate command."]
+acceptance = [
+    "prefer-payload Class-R moved to mission_title_prefer.rs native module.",
+    "Cold-gate native website-frontend tests now execute prefer_payload and adopt_payload pins.",
+]
 citations = [
     "Wave 46 verifier MAJOR",
     "mission_hydrate t505_tests wasm32 gate",

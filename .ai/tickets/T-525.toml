@@ -15,6 +15,13 @@ requirement = [
     "Update content_golden.sql orbat comments to match live idx_orbat_slots_em_assigned.",
     "Note events.rs two-seat seed retired with migration 0017.",
 ]
+current_state = ["content_golden.sql orbat comments still claimed deferred partial unique and two-seat seed."]
+approach = ["Refresh orbat seed comments for 0017 idx_orbat_slots_em_assigned and retired events.rs seed."]
+verify = ["content_golden.sql documents live idx_orbat_slots_em_assigned partial unique index."]
+acceptance = [
+    "content_golden.sql orbat comments documented live idx_orbat_slots_em_assigned index.",
+    "Seed comments noted events.rs legacy two-seat test seed retired with migration 0017.",
+]
 citations = [
     "commit c2f3e6ef orbat comments",
     "T-511 partial unique index",
