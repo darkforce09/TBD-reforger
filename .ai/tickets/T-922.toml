@@ -3,7 +3,7 @@ kind = "work"
 title = "Full-body reconstruction over shipped history"
 summary = "Drain BODY_DEBT_PIN 962 to zero: reviewed batches fill every missing ready-tier body field on shipped work tickets from real sources, then the ready-tier rule widens to shipped corpus-wide and the pin is deleted."
 class = "chore"
-status = "ready"
+status = "shipped"
 order = 6020
 spec = "docs/platform/t920_body_obligations.md"
 plan = "docs/plans/t-922_plan.md"
@@ -40,6 +40,7 @@ acceptance = [
     "Zeroing commit: check_ready_tier_body binds on shipped corpus-wide, pin + ratchet deleted, check --strict OK",
 ]
 created_at = "2026-08-15T18:01:48Z"
+completed_at = "2026-08-16T01:40:32Z"
 owns = [
     ".ai/tickets",
     "crates/tbd-tickets",
