@@ -43,10 +43,16 @@ verify = [
     "Enter commits Escape abandons squad rename draft.",
     "Two mission ids 404 afterward no T787 names in mission list.",
 ]
+acceptance = [
+    "ORBAT squad-rename input focused on open via NodeRef on_load; eleven-character string landed whole.",
+    "GRID chip stayed unchanged during rename; Enter committed and Escape abandoned without chord leakage.",
+    "ORBAT rename Class-R pins unpoisoned; both T787 probe mission ids returned 404 afterward.",
+]
 citations = [
     "wave200 F8 NIT-1 NIT-2",
     "eden_dock_left 330-338 pattern",
     "T-787 probe mission cleanup",
+    "5f47c7a2 ORBAT rename focus",
 ]
 shipped_at = "5f47c7a2"
 created_at = "2026-08-09T15:02:49Z"

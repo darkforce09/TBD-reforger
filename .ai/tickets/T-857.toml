@@ -41,11 +41,17 @@ verify = [
     "Diff port against bash on clean tree and two deliberately broken trees.",
     "A passing run alone is NOT evidence T-556 anti-vacuity.",
 ]
+acceptance = [
+    "Deleted mcp-wb-logs.sh; mcp wb-logs xtask gate replaced Workbench MCP log tail scan.",
+    "Inventory line removed; deploy-staging and tbd-spawn-verify callers repointed.",
+    "wb-logs --file= and empty --file exited 3 like bash; port matched stdout stderr rc.",
+]
 citations = [
     "T-853 shell->xtask waves",
     "t853_shell_to_xtask_waves.md",
     "T-556 anti-vacuity",
     "crates/tbd-gate",
+    "29b836d9 mcp wb-logs port",
 ]
 shipped_at = "29b836d9"
 created_at = "2026-08-12T03:22:44Z"

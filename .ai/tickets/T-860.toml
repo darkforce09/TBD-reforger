@@ -41,11 +41,17 @@ verify = [
     "Diff port against bash on clean tree and two deliberately broken trees.",
     "A passing run alone is NOT evidence T-556 anti-vacuity.",
 ]
+acceptance = [
+    "Deleted mcp-call.sh; mcp call xtask gate replaced the enfusion-mcp JSON-RPC wrapper.",
+    "Inventory entries removed; dependent mod scripts repointed to cargo xtask mcp call.",
+    "Port matched bash stdout stderr and rc on clean tree and deliberately broken trees.",
+]
 citations = [
     "T-853 shell->xtask waves",
     "t853_shell_to_xtask_waves.md",
     "T-556 anti-vacuity",
     "crates/tbd-gate",
+    "43895146 mcp call port",
 ]
 shipped_at = "43895146"
 created_at = "2026-08-12T04:32:17Z"

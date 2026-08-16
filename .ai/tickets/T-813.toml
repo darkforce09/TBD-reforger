@@ -44,11 +44,17 @@ verify = [
     "Type real value commits to all selected slots.",
     "Field Escape draft abandoned modal STAYS open second Escape closes; ROTATION 135 focus kept.",
 ]
+acceptance = [
+    "Differing ROLE apply-to-all focus blur without typing left undo depth and digest unchanged.",
+    "Operator-edited latch let deliberate typing stamp every selected slot including re-typed values.",
+    "Field Escape abandoned draft and kept modal open; second Escape closed; ROTATION 135 entry kept focus.",
+]
 citations = [
     "wave200 F3 F6 verifier",
     "attributes.rs 795-801 text_commit",
     "F-26 multi-edit batching",
     "T-814 modal Esc ladder",
+    "4e7a1ef3 latch field Escape",
 ]
 shipped_at = "4e7a1ef3"
 created_at = "2026-08-09T15:27:47Z"

@@ -41,10 +41,16 @@ verify = [
     "Heading ninety then one eighty: non-identical crop glyphs.",
     "Ring-drag live-updates visible heading slots and vehicles.",
 ]
+acceptance = [
+    "Wave-205 verifier filing proved slot yaw stayed hardcoded zero with pixel-identical heading crops.",
+    "Heading lane fold note landed on unit symbology ticket; lane closed delivered not deferred.",
+    "Slot map glyphs later showed visible rotation across heading sweep; vehicle heading render stayed unregressed.",
+]
 citations = [
     "wave205.md MAJOR claim-vs-pixels",
     "T-790 glyph-id lane template",
     "T-808 unit symbology fold",
+    "7ee0e7e5 heading lane fold",
 ]
 shipped_at = "7ee0e7e5"
 created_at = "2026-08-10T17:28:44Z"

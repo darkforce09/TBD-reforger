@@ -44,12 +44,18 @@ verify = [
     "Esc ladder one surface per press every dialog transient combination.",
     "ORBAT open ARSENAL Esc1 closes ARSENAL Esc2 ORBAT O-5 O-3 elementFromPoint pass.",
 ]
+acceptance = [
+    "Dialog registration closed menu export and hint transients when Attributes opened from canvas.",
+    "Consume-aware Escape closed exactly one surface per press across dialog and transient stacks.",
+    "Open-order Esc dismissed visual top: Arsenal closed first while stacked ORBAT stayed; O-3 wiring pin re-armed.",
+]
 citations = [
     "wave200 F4 F5 verifier",
     "wave-139 F3 pile-up",
     "eden_top_strip 787 any_open",
     "T-333 mount-order pins",
     "T-813 field Esc compose",
+    "27343f82 open-order Esc pin",
 ]
 shipped_at = "27343f82"
 created_at = "2026-08-09T16:06:01Z"

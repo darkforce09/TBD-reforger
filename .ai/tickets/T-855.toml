@@ -42,11 +42,17 @@ verify = [
     "Port diff matches clean tree byte-for-byte.",
     "Port diff matches at least two deliberately broken trees.",
 ]
+acceptance = [
+    "Deleted remote-log-grep.sh; mod remote-logs xtask gate replaced remote ssh log search.",
+    "Inventory line removed; deploy-staging.sh caller repointed.",
+    "Port matched bash stdout stderr and rc on clean tree and deliberately broken trees.",
+]
 citations = [
     "T-853 shell->xtask program",
     "T-556 anti-vacuity",
     "t853_shell_to_xtask_waves.md",
     "crates/tbd-gate",
+    "6fde71be remote-logs port",
 ]
 shipped_at = "6fde71be"
 created_at = "2026-08-12T02:48:46Z"

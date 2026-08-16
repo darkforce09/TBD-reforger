@@ -44,11 +44,17 @@ verify = [
     "activeElement equals input GRID chip byte-identical during typed rename.",
     "Enter blur commits rename; Escape abandons rename draft.",
 ]
+acceptance = [
+    "Layer rename pencil and creation flows focused on mount via NodeRef; decoupled draft ended remount keystroke loss.",
+    "Eleven-character typed rename landed whole in the input; GRID chip stayed byte-identical while typing.",
+    "Layer-rename source pin un-hollowed; deleting production node_ref perturbation went RED then restored green.",
+]
 citations = [
     "editor_verify wave200 F1",
     "hostile review F-02",
     "T-785 bookmark pin trap",
     "eden_dock_left 330-338 pattern",
+    "27343f82 layer rename pin",
 ]
 shipped_at = "27343f82"
 created_at = "2026-08-09T15:02:49Z"

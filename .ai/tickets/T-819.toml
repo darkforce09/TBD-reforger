@@ -45,11 +45,17 @@ verify = [
     "Unassign one: figure returns stored position and z exact f64.",
     "Delete vehicle: both return; undo assignment round-trips visibility.",
 ]
+acceptance = [
+    "Crew-assigned slots dropped from map render SoA; figure and label counts fell while outliner rows stayed.",
+    "Compiled export still contained both slots with crew refs; materialize and compile paths kept crewed rows.",
+    "Unassign or vehicle delete restored figures at stored position and exact z; undo round-tripped visibility.",
+]
 citations = [
     "T-701 editorHidden RENDER shape",
     "T-665 T-701 materialize drops trap",
     "wave-144 id-mint filtered view",
     "wave-145 selection invisible not gone",
+    "00eea875 map_render_slot_soa",
 ]
 shipped_at = "00eea875"
 created_at = "2026-08-10T00:12:13Z"

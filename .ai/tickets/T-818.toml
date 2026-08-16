@@ -46,11 +46,17 @@ verify = [
     "Right dock Vehicles tab catalog tree search only no Placed section.",
     "Esc undo per modal contract; T-819 hidden crew reappear on unassign.",
 ]
+acceptance = [
+    "Vehicle double-click Attributes modal gained Heading Cargo and Crew sections moved from dock strip.",
+    "Driver assignment through modal produced the same document write and digest as the old Placed strip.",
+    "Right dock Vehicles tab showed catalog tree and search only; Placed section removed entirely.",
+]
 citations = [
     "T-647 ATTR-OPEN vehicles dblclick",
     "T-809 W203 outliner stopgap",
     "T-785 heading number_field commit",
     "T-649 T-788 multi-edit untouched",
+    "22f3b137 Attributes modal crew",
 ]
 shipped_at = "22f3b137"
 created_at = "2026-08-10T00:12:13Z"

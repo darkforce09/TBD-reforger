@@ -41,11 +41,17 @@ verify = [
     "Diff port against bash on clean tree and two deliberately broken trees.",
     "A passing run alone is NOT evidence T-556 anti-vacuity.",
 ]
+acceptance = [
+    "Deleted deploy-website.sh; deploy website xtask gate replaced the website deploy driver.",
+    "Inventory line removed; deploy-staging, HOME_SERVER, backup service, and deploy.env callers repointed.",
+    "Port matched bash stdout stderr and rc on clean tree and deliberately broken trees.",
+]
 citations = [
     "T-853 shell->xtask waves",
     "t853_shell_to_xtask_waves.md",
     "T-556 anti-vacuity",
     "crates/tbd-gate",
+    "62ebd249 deploy website port",
 ]
 shipped_at = "62ebd249"
 created_at = "2026-08-12T03:27:58Z"

@@ -44,11 +44,17 @@ verify = [
     "ADD input focused_on_mount true g lands in field GRID unchanged.",
     "Escape abandons without committing bookmark rename draft.",
 ]
+acceptance = [
+    "Bookmark rename typed Ridge OP Two committed the full label; focus held through the whole edit.",
+    "ADD name-this-view input focused on mount; g landed in the field without flipping GRID.",
+    "Rename draft decoupled from list closure; T-785 layer-rename pins repointed to bookmark mechanism.",
+]
 citations = [
     "wave200 F2 F7 verifier",
     "T-785 on_load remount trap",
     "eden_dock_left 275-304 ADD",
     "T-811 layer rename pin",
+    "73a8999a bookmark draft fix",
 ]
 shipped_at = "73a8999a"
 created_at = "2026-08-09T15:35:13Z"

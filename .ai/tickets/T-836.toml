@@ -40,11 +40,17 @@ verify = [
     "No parse toast on export with seeded vehicles.",
     "New test RED if seed row lacks alias.",
 ]
+acceptance = [
+    "Four veh aliases added for M1025 M998 M923A1 and M113 seed rows in kit-aliases.json.",
+    "Missions with each seeded vehicle placed exported compiled clean with AJV and no parse toast.",
+    "Class-R flatten test went RED when a seed vehicle row lacked a veh alias.",
+]
 citations = [
     "wave-205 operator screenshot",
     "T-425 refuse contract",
     "registry_dev four seed vehicles",
     "flatten mission_compile consumers",
+    "dbacc087 veh alias seeds",
 ]
 shipped_at = "dbacc087"
 created_at = "2026-08-11T02:43:47Z"
