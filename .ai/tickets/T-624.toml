@@ -72,6 +72,11 @@ verify = [
     "Confirm matches_event_id_fkey exists per 0019 migration.",
     "Confirm revoke_token_family runs on revoked refresh presentation.",
 ]
+acceptance = [
+    "events.rs and t579 test corrected matches.event_id FK claim to ON DELETE SET NULL per migration 0019.",
+    "client.rs stated lost refresh race revokes entire token family across all tabs, not one 401.",
+    "Soft-delete decision was retained with the matches leg marked weakest on the page.",
+]
 citations = [
     "wave 81 verifier signature defect",
     "handlers/events.rs matches FK",

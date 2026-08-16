@@ -81,6 +81,12 @@ verify = [
     "Script failure leaves no stray ArmaReforgerServer on 2001.",
     "STAGING-SERVER and PLAYTEST_RUNBOOK agree on spawn-open grep.",
 ]
+acceptance = [
+    "kill_run escalated on alive and unknown, terminated engines during world-load failures, and named stray pgids instead of skipping kill -9.",
+    "STAGING-SERVER and PLAYTEST_RUNBOOK reconciled spawn-open grep strings after the T-605 Print rewrite.",
+    "Runbook fixed admin identityId chicken-and-egg and S3 restart-before-Ctrl-C pidfile orphan trap.",
+    "run-playtest-server.sh gained --selftest proving kill_run and the run lock actually work.",
+]
 citations = [
     "wave 76 verifier F1 F2",
     "kill_run hostrun probe gap",

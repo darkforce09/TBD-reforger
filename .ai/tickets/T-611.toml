@@ -72,6 +72,11 @@ verify = [
     "verify-citations reports scoped count including rs under apps and crates/.",
     "Summary line names extensions and roots; not blanket all resolve claim.",
 ]
+acceptance = [
+    "verify-citations added rs to CODE_EXTS and crates/ to scan roots; unverified @contract tags were resolved.",
+    "Printed summary named extensions and roots instead of claiming all citations resolve globally.",
+    "Makefile target comment documented docs/ prose held by convention per T-610 symbol-name rule.",
+]
 citations = [
     "T-610 wave 77 citation gap",
     "T-607 T-606 false-green family",

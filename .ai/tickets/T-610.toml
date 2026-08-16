@@ -61,6 +61,11 @@ verify = [
     "make verify-citations passes after runbook and arsenal_rules cite fixes.",
     "map-engine-core test count in docs matches measured 126 crate tests.",
 ]
+acceptance = [
+    "PLAYTEST_RUNBOOK sections S8-S13 cited stable symbol names instead of rotted file:line numbers.",
+    "arsenal_rules.rs IsComplete and unworn Degrade line cites were updated inside T-605 text.",
+    "STAGING-SERVER.md line citations were retargeted to section headings after they landed in unrelated sections.",
+]
 citations = [
     "wave 76 verifier F4 stale cites",
     "verify-citations 41 @contract only",

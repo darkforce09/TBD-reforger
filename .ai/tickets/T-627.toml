@@ -17,6 +17,25 @@ requirement = [
     "Fetch only needed mips via index Range requests; concurrency capped at four.",
     "Replace parse_tbd_sat whole-body parse with parse_tbd_sat_index_strict index-only validation.",
 ]
+current_state = [
+    "Boot overlay bar was a fixed-width CSS sweep identical at every percentage while stalled.",
+    "load_unified_full GET the whole 152 MB bundle then discarded mips above GPU maxTextureDimension2D.",
+    "parse_tbd_sat required the full bundle body for strict validation before any tile upload.",
+]
+approach = [
+    "Split hydrate indeterminate and map determinate; satellite bar driven by completed Range byte totals.",
+    "Index Range fetch with four concurrent tile spans; parse_tbd_sat_index_strict replaced whole-body parse.",
+    "Hoisted span planning and reassembly into boot_progress for host-testable pins.",
+]
+verify = [
+    "cargo test -p website-frontend mission_editor::t628_boot_progress::split_range_covers_the_tile_exactly_contiguously_and_in_order -- --exact",
+    "cargo check --target wasm32-unknown-unknown -p website-frontend",
+]
+acceptance = [
+    "Boot overlay split hydrate indeterminate and map determinate; satellite bar tracked completed Range bytes.",
+    "Satellite load dropped whole-bundle GET for index Range plus four-up spans; everon cost 42.2 MB not 152.7 MB on 8192 devices.",
+    "parse_tbd_sat was removed; parse_tbd_sat_index_strict validated the mip chain from the index alone.",
+]
 citations = [
     "commit 920533f6 load screen satellite",
     "T-159.29.3 React boot bar removed",

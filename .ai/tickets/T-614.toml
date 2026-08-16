@@ -61,6 +61,11 @@ verify = [
     "clippy -p xtask -p tbd-tools --all-targets -D warnings rc=0.",
     "Reword :675 Print to tagged vocab; grep rc stays zero.",
 ]
+acceptance = [
+    "Slice gate ran clippy -p xtask -p tbd-tools; stale red-on-main skip at wave.sh:875 was removed.",
+    "remote-log-grep PAT_ASSIGNED matched tagged and flat assigned-slot prefixes per the prefix-pin rule.",
+    "No comment repeated the fourteen-errors-across-four-files figure; T-614.3 found nothing to correct.",
+]
 citations = [
     "wave 77 verifier three nits",
     "T-603 clippy re-measure clean",

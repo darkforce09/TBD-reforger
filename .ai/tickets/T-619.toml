@@ -61,6 +61,11 @@ verify = [
     "mcp-wb-logs --file tagged_seat.log no false PARTIAL on seated boot.",
     "Both scripts share one sourced PAT_ASSIGNED definition.",
 ]
+acceptance = [
+    "mcp-wb-logs PAT_ASSIGNED broadened to match remote-log-grep tagged and flat assigned-slot formats.",
+    "tagged_seat.log no longer exited PARTIAL when a player was seated with tagged spawn output.",
+    "Header now describes a hand-synced copy, not one shared definition.",
+]
 citations = [
     "wave 78 verifier cross-slice",
     "T-614 broadened sibling",

@@ -84,6 +84,11 @@ verify = [
     "verify-citations prints scope from constants each run.",
     "No dead relative links remain in DOCUMENTATION_STANDARDS.",
 ]
+acceptance = [
+    "Seven dead Go and React path links in DOCUMENTATION_STANDARDS were replaced with live Rust citations.",
+    "§10.1 inserted documenting symbol-name prose cites and the docs/ gate exclusion rationale.",
+    "t123 rollout stale tsdoc.json and verify-contract-citations.mjs gate cites were corrected.",
+]
 citations = [
     "T-611 wave 78 docs scan",
     "T-610 symbol name convention",

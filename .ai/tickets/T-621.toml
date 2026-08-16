@@ -70,6 +70,11 @@ verify = [
     "CODING_STANDARDS documents Rust-first tooling policy.",
     "New unlisted .sh fails verify-no-new-shell gate.",
 ]
+acceptance = [
+    "CODING_STANDARDS documented Rust-first tooling policy with explicit bash glue exceptions.",
+    "shell-inventory.txt grandfather ratchet was added; cargo xtask verify no-shell failed on unlisted new .sh files.",
+    "Committed inventory pinned fifty-eight tracked shell files at ship time.",
+]
 citations = [
     "T-620 verify-no-python gap",
     "T-607 GUID brace truncation",

@@ -61,6 +61,11 @@ verify = [
     "world-boot.sh --mission=golden ends WORLD BOOT PASS without widening baseline budget.",
     "Validator warnings do not exceed baseline zero for goldens after fix.",
 ]
+acceptance = [
+    "TBD_MissionValidator retired benign unconsumed-key warnings while keeping real authored-but-unmodelled checks.",
+    "Golden missions stayed red at honest warning budgets; world-boot baselines were not widened.",
+    "world-boot.sh reported validator warnings at baseline separately from rises above the ratchet.",
+]
 citations = [
     "T-605 wave 76 verifier F3",
     "TBD_MissionValidator.c unconsumed keys",

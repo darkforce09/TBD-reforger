@@ -74,6 +74,11 @@ verify = [
     "Tracked deleted and chmod 000 paths fail gate.",
     "Inventory 59 files; byte-identity unchanged across ten streams.",
 ]
+acceptance = [
+    "verify-no-python used git ls-files -z; unresolved enumerated paths failed instead of silent skip.",
+    "Shell ratchet counted shebang sh/bash/dash/zsh; inventory rose to fifty-nine including scripts/ticket.",
+    "slice_collisions exited nonzero on non-numeric wave labels naming offending rows.",
+]
 citations = [
     "wave 80 verifier F1 F3 F5",
     "T-616 bad label unnoticed",

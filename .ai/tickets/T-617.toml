@@ -58,6 +58,10 @@ verify = [
     "Grep healthy boot log: zero dead string matches remain.",
     "remote-log-grep.sh line 34 rule satisfied for new pins.",
 ]
+acceptance = [
+    "TBD_Dev_POC.conf m_sDescription replaced dead built slot spawn and spawn requested strings.",
+    "Player-facing dev mission text now cited measured tagged vocabulary from a healthy boot log.",
+]
 citations = [
     "T-612 wave 78 mission config",
     "T-606 structural token pin rule",

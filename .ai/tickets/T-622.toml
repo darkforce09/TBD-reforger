@@ -76,6 +76,11 @@ verify = [
     "W_A/W_B wrapper on sse.rs pin_holds false after fix.",
     "54 wrapper attacks red; six production pins still green.",
 ]
+acceptance = [
+    "constant_shaped failed closed on unknown conditions and scrubbed dead code instead of greening pins.",
+    "Const bindings fixpoint-folded eight rounds; false-green wrapper attacks dropped from fifty-four to zero.",
+    "Six production pins stayed green; cfg compilation deliberately remained fail-open with a disclosed test.",
+]
 citations = [
     "T-601 three named survivors",
     "arsenal constant_shaped rule",

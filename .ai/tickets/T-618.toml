@@ -82,6 +82,11 @@ verify = [
     "Scratch clone variant A rc2 after fix not silent PASS.",
     "Variant B still refuses unconfirmed; variant C rc2.",
 ]
+acceptance = [
+    "wave_close_ledger_says read plan membership via git show at the parent; registry completion stayed at the boundary.",
+    "Forged close commit editing ledger files in the same commit no longer self-approved a silent PASS.",
+    "False independence claim at wave.sh :1901 was corrected to match actual oracle behavior.",
+]
 citations = [
     "wave 78 adversarial verifier",
     "T-602 T-613 prior rounds",

@@ -78,6 +78,11 @@ verify = [
     "verify-no-python finds python3 invocations without rg.",
     "Gate runs in CI or wave.sh not ci-local only.",
 ]
+acceptance = [
+    "verify-no-python replaced rg with grep and failed closed instead of reporting OK on a missing rg.",
+    "Both slice-collisions.py files were ported to xtask slice_collisions; the repo held zero .py files.",
+    "Gate was wired into ci.yml no-python job and a wave-gate step, not ci-local only.",
+]
 citations = [
     "T-621 no shell rule",
     "T-611 verify-citations scope",

@@ -48,6 +48,11 @@ current_state = [
 ]
 approach = ["File for accuracy; no behavior change needed beyond documentation."]
 verify = ["Measured: +1000, .5, 5., 1e3 fail regex; 1000,2000 passes."]
+acceptance = [
+    "parse_grid documented under-permissive regex divergence; checksummed 0020 comment was left in place.",
+    "Backfill fixture gained four divergent plus-dot-exponent forms the original six cases omitted.",
+    "the_backfill_regex_is_narrower_than_parse_grid measured both readers on agreed and divergent inputs.",
+]
 citations = [
     "wave 81 verifier F3",
     "0020 fire missions regex",

@@ -58,6 +58,10 @@ verify = [
     "main reads wave w78 correctly after format unification.",
     "Ticket ledger cross-check still corroborates wN rows.",
 ]
+acceptance = [
+    "wave_plan.tsv column-one labels migrated to bare integers; the wN spelling left the working tree.",
+    "current_wave gained a generation floor of 76 so numeric labels still returned 80, not deferred wave 3.",
+]
 citations = [
     "T-613 wave 78 label mix",
     "wave 78 ticket ledger oracle",

@@ -70,6 +70,11 @@ verify = [
     "Fabricated CLOSED? reopened subject refused or fails independent cover check.",
     "Revert wave-close on top does not derive disavowed span as gate base.",
 ]
+acceptance = [
+    "wave.sh anchored CLOSED subject match; fabricated CLOSED? reopened subjects were refused.",
+    "gate_base_covers_wave still asked prev_wave_close, then added refuse-only cross-checks it did not produce.",
+    "Reverted wave-close on top no longer derived the disavowed span as the gate base.",
+]
 citations = [
     "wave 77 adversarial verifier",
     "T-602 wave gate base fix",

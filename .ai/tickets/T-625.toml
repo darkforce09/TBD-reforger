@@ -49,6 +49,11 @@ current_state = [
 ]
 approach = ["Read X-Forwarded-For when trusted_proxies configured per T-578 header deferral."]
 verify = ["Behind Caddy each client gets distinct rate-limit bucket key."]
+acceptance = [
+    "ratelimit middleware read X-Forwarded-For when the immediate peer matched Config::trusted_proxies.",
+    "Rightmost untrusted hop keyed per-client buckets; empty trusted_proxies preserved pre-ship shared-bucket behavior.",
+    "t625_forwarded_for proved separate buckets behind one proxy and resistance to header forgery.",
+]
 citations = [
     "wave 81 verifier F5",
     "Caddyfile.website proxy loopback",

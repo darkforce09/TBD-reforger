@@ -77,6 +77,11 @@ verify = [
     "Dead string greps fail on stale log and pass on healthy golden server log.",
     "t068_14 spec tags match measured [TBD][Loadout][Slot] lines in working pass.",
 ]
+acceptance = [
+    "mcp-wb-logs and tbd-spawn-verify dropped built-slot-spawn pins; tbd-spawn-determinism pinned [TBD][Mission] loaded.",
+    "Five docs and two comments cited [TBD][Loadout][Slot] and [TBD][Slots] instead of dead Player tags.",
+    "Scripts gained --selftest modes proving stale fail and healthy pass under ugrep and GNU grep.",
+]
 citations = [
     "T-606 wave 77 dead string pattern",
     "t068_14 dead Loadout Player tag",
