@@ -9,7 +9,6 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
-- **T-925** (6040) — Close-selection semantics: the ceremony is unreachable live [ready] — wave close targets the oldest pending emptied label: the ship-hook repack records a fully-shipped wave's label and frozen ticket set in the lock, close validates and closes exactly that set, and open waves number past pending labels.
 
 ## Next queued (top 10)
 
