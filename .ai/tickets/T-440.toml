@@ -34,6 +34,7 @@ current_state = [
 ]
 approach = ["Cure: gate tripwire for seed recipe and faction_library.sql."]
 verify = ["Repro: remove seeds/faction_library.sql from Makefile; wave gate still PASS."]
+acceptance = ["Cold gate verify t440 pins make seed applies faction_library.sql; deleting seed line now reds wave gate."]
 citations = [
     "T-256 wave 10 MAJOR",
     "faction_library.sql seed",

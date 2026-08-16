@@ -34,6 +34,7 @@ current_state = [
 ]
 approach = ["Cure: populate registry.json prop:/comp: rows from workbench kinds."]
 verify = ["Repro: place non-checkpoint Objects leaf; world-boot spawn warns and skips."]
+acceptance = ["Registered prop:/comp: aliases in mod registry.json so Objects palette spawn resolves beyond checkpoint_small."]
 citations = [
     "T-254 wave 9 N5",
     "registry.json prop comp rows",

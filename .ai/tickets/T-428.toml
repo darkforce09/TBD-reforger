@@ -27,6 +27,11 @@ current_state = [
     "Seed row: placeholder 1517290000000000000 for leader role.",
 ]
 approach = ["Wire nightly/cron job calling resync_all_roles; replace seed placeholder snowflake."]
+verify = [
+    "cargo test -p website-api role_sync",
+    "grep start_role_resync apps/website/api/src/bin/api.rs",
+]
+acceptance = ["Scheduled nightly resync_all_roles on API boot; removed placeholder Squad Leader snowflake from discord_roles seed."]
 citations = [
     "T-247 personnel.rs sync caller",
     "architecture.md resync_all_roles claim",

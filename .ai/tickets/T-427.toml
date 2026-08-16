@@ -30,6 +30,8 @@ current_state = [
     "~1.8k items / ~20k edges. Remount within wasm session does not re-fetch.",
 ]
 approach = ["API pagination or narrower endpoints plus frontend DTO/client changes."]
+verify = ["cargo test -p website-frontend cold_registry_uses_paginated_path_not_unbounded_dump"]
+acceptance = ["Paginated registry and compat cold-open fetches; editor first SPA load no longer pulls unbounded ~7MB dual dump."]
 citations = [
     "T-245 session cache remounts",
     "t245_registry_session no re-fetch",

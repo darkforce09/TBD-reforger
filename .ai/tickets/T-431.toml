@@ -29,6 +29,8 @@ current_state = [
     "Identity-link path runs BACKFILL_ATTENDANCE at me.rs ≈59–65.",
 ]
 approach = ["Join event_missions on mission_id matching player's match row."]
+verify = ["cargo test -p website-api backfill_attendance_joins_event_id_and_mission_id"]
+acceptance = ["Identity-link BACKFILL_ATTENDANCE now scopes attended to the played mission_id, not every event_mission sibling."]
 citations = [
     "T-230 telemetry ingest JOIN",
     "me.rs BACKFILL_ATTENDANCE block",

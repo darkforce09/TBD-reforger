@@ -27,6 +27,8 @@ current_state = [
     "Empty map still omitted.",
 ]
 approach = ["Cure: reserved internal name or non-colliding storage rename."]
+verify = ["cargo test -p map-engine-core --features mission payload_extras_key_name_never_promoted_onto_wire"]
+acceptance = ["Reserved payloadExtras as known compile side-channel; authored wire key no longer nests or re-emits onto export."]
 citations = [
     "T-219 wave 7 verifier",
     "is_known_editor_payload_top_level",

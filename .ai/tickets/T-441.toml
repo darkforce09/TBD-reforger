@@ -31,6 +31,7 @@ current_state = [
 ]
 approach = ["Cure: extend OPTION_FIELDS with server_id and modpack_id pairs."]
 verify = ["Repro: after T-260 merge, wave gate null_tolerance FAIL without COALESCE."]
+acceptance = ["null_tolerance OPTION_FIELDS allowlisted events.server_id and events.modpack_id nullable columns for dashboard and deployments SELECTs."]
 citations = [
     "T-260 wave 11 gate RED",
     "null_tolerance.rs OPTION_FIELDS",

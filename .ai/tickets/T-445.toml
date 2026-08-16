@@ -27,6 +27,8 @@ requirement = [
 ]
 current_state = ["Repro: Load more replaces vec; audit::tests still PASS."]
 approach = ["include_str! source guard T-264 style for on_load_more wiring."]
+verify = ["cargo test -p website-frontend on_load_more_appends_via_merge_audit_page"]
+acceptance = ["Class-R source guard bound on_load_more to merge_audit_page append; replace-with-set bug now fails audit tests."]
 citations = [
     "T-266 wave 13 adversarial",
     "T-264 style source guard",

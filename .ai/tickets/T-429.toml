@@ -27,6 +27,8 @@ current_state = [
     "handlers/oauth.rs unit tests cover helper; IT does not.",
 ]
 approach = ["Add IT Set-Cookie Max-Age=0 assertion on CSRF reject paths."]
+verify = ["cargo test -p website-api --test oauth_redirect"]
+acceptance = ["oauth_redirect IT now asserts oauth_state Set-Cookie Max-Age=0 clear on every CSRF reject path."]
 citations = [
     "T-248 callback_csrf_reject helper",
     "oauth_redirect.rs CSRF cases",

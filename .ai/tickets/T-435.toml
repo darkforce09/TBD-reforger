@@ -26,6 +26,8 @@ current_state = [
     "Repro: cargo test -p map-engine-core --features mission — no arland z_bounds assert.",
 ]
 approach = ["Cure: flatten.rs unit test pinning arland z_bounds size."]
+verify = ["cargo test -p map-engine-core --features mission terrain_boundary_fallback_uses_arland_4096_ring"]
+acceptance = ["Flatten tests now pin arland z_bounds as 4096² polygon ring matching terrain_bounds, alongside everon."]
 citations = [
     "T-201 wave 8 verifier",
     "terrain_bounds arland 4096",

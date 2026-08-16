@@ -31,6 +31,8 @@ current_state = [
     "Repro: TBD_REMOTE_DIR=/tmp/not-tbd-at-all — dry-run rc=0 before fix.",
 ]
 approach = ["Cure: prefix gate plus case-insensitive prairielearn refuse in deploy-website.sh."]
+verify = ["deploy-website.sh prefix /home/sam/tbd/ and prairielearn case-insensitive refuse @ 425c8c959."]
+acceptance = ["deploy-website.sh refused paths outside /home/sam/tbd/ and matched prairielearn case-insensitively before rsync."]
 citations = [
     "wave 9 adversarial verify",
     "deploy-website.sh prefix gate",

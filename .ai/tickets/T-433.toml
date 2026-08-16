@@ -30,6 +30,8 @@ current_state = [
     "Repro: read unit test; cannot fail if handlers regress to sanitize_html.",
 ]
 approach = ["Cure: handler-level or IT-only pin, not identity assertion."]
+verify = ["cargo test -p website-api --test cms_announcement_body"]
+acceptance = ["Removed tautological CMS announcement_body identity unit test; IT cms_announcement_body remains the real persist pin."]
 citations = [
     "handlers/cms.rs contract test",
     "cms_announcement_body IT",

@@ -33,6 +33,7 @@ current_state = [
 ]
 approach = ["Cure: rewrite diagnostics; distinguish spawn vs alias vs zone failure modes."]
 verify = ["Repro: destroy objective with failing alias; inertReason still claims no entities[] spawn."]
+acceptance = ["Destroy-target inertReason distinguishes unresolved alias, missing entities[] row, out-of-zone, and spawn/query miss."]
 citations = [
     "T-254 wave 9 M1",
     "TBD_ObjectiveRegistry.c:647",

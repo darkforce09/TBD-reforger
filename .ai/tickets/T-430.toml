@@ -27,6 +27,8 @@ current_state = [
     "Login returns oauth_unconfigured, not discord_unreachable.",
 ]
 approach = ["Add DISCORD_CLIENT_ID to production validate() required fields."]
+verify = ["cargo test -p website-api production_rejects_blank_discord_client_id"]
+acceptance = ["Production Config::validate now hard-fails blank DISCORD_CLIENT_ID alongside secret and redirect URL."]
 citations = [
     "T-248 validate discord fields",
     "authorize_url oauth_unconfigured path",

@@ -30,6 +30,8 @@ current_state = [
     "Repro: create event with modpack_id set; Hub chip ignores it.",
 ]
 approach = ["Cure: wire event_hub.rs (+ dto) for modpack_id preference with fallback."]
+verify = ["cargo test -p website-frontend hub_chip_prefers_event_modpack_id"]
+acceptance = ["Event Hub modpack chip prefers event.modpack_id via /modpacks list; falls back to /modpacks/current only when unset."]
 citations = [
     "T-260 wave 11 adversarial",
     "migration 0011 handlers",

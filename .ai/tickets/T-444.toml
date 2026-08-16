@@ -27,6 +27,8 @@ requirement = [
 ]
 current_state = ["Repro: make db-up + make seed; GET /api/v1/wiki data:[] while vehicles have rows."]
 approach = ["Include content_golden wiki section in seeds/ + Makefile."]
+verify = ["make seed"]
+acceptance = ["make seed applies wiki_pages.sql extracted from content_golden; fresh DB GET /wiki returns seeded manuals."]
 citations = [
     "T-263 wave 12 adversarial",
     "content_golden.sql wiki section",

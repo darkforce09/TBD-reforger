@@ -31,6 +31,7 @@ current_state = [
 ]
 approach = ["Cure: fix compose path; align HOME_SERVER.md staging docs."]
 verify = ["Repro: after T-251, deploy-staging.sh compose step fails file not found."]
+acceptance = ["deploy-staging compose step now uses apps/website/docker-compose.staging.yml instead of wrong api/ cwd."]
 citations = [
     "T-251 wave 9 N1",
     "deploy-staging.sh:184",

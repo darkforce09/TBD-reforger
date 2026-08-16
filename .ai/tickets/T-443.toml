@@ -30,6 +30,8 @@ current_state = [
     "Repro: delete .post(create_vehicle) or stub 500; gate still PASS.",
 ]
 approach = ["Extend content_read.rs with POST happy path, 400 cases, list assert."]
+verify = ["cargo test -p website-api --test content_read vehicle_database_create_round_trip"]
+acceptance = ["content_read IT now exercises POST /vehicle-database happy path, 400 validation cases, and list round-trip."]
 citations = [
     "T-263 wave 12 adversarial",
     "handlers/wiki.rs create_vehicle",

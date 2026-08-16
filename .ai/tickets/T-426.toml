@@ -42,6 +42,11 @@ approach = [
     "Schema files ALSO validated by gate_schema since wave 5 — less urgent.",
     "Gate dirs expensive to rebuild: T-421 cold 23.4s vs warm 9.3s slice gate.",
 ]
+verify = [
+    "bash scripts/platform/wave.sh reclaim --gate-dirs",
+    "Gate touch_workspace logs include_str!/include_bytes! invalidation alongside .rs files.",
+]
+acceptance = ["Extended touch_workspace to invalidate include_str inputs; added opt-in reclaim --gate-dirs for repo-root target-gate caches without default sweep."]
 citations = [
     "T-421 touch_workspace mtime",
     "T-420 target-gate-schema",

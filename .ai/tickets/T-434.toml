@@ -27,6 +27,8 @@ current_state = [
     "Repro: compare ci.yml schema job vs Makefile schema-validate / GATE_SCHEMA_VALIDATE_GATES.",
 ]
 approach = ["Cure: CI parity with Makefile schema-validate recipe in wave.sh."]
+verify = ["make ci-local-schema"]
+acceptance = ["CI schema job now runs full ci-local-schema gate set matching wave.sh Makefile schema-validate parity."]
 citations = [
     "T-420 T-422 residual",
     "ci.yml schema job",
