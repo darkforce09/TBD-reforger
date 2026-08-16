@@ -616,6 +616,7 @@ fn check_ready_tier_body(root: &Path) -> Vec<String> {
             tbd_tickets::StatusName::Ready
                 | tbd_tickets::StatusName::Running
                 | tbd_tickets::StatusName::Review
+                | tbd_tickets::StatusName::Shipped
         ) || !w.migration_legacy.is_empty()
         {
             continue;
@@ -623,7 +624,7 @@ fn check_ready_tier_body(root: &Path) -> Vec<String> {
         let missing = tbd_tickets::empty_ready_tier_fields(w);
         if !missing.is_empty() {
             errors.push(format!(
-                "{}: {} work ticket with empty ready-tier body fields: {} — ready requires them nonempty (t920 spec Decisions log #2); fill from the spec/plan or demote",
+                "{}: {} work ticket with empty ready-tier body fields: {} — ready-tier requires them nonempty (t920 spec Decisions log #2); fill from the spec/plan or demote",
                 w.id,
                 w.status.name().as_str(),
                 missing.join(", ")
@@ -636,10 +637,9 @@ fn check_ready_tier_body(root: &Path) -> Vec<String> {
 /// The two T-920.1 debt counts over a loaded corpus, by THE shared instruments
 /// (`tbd_tickets::title_is_debt` / `main_goal_is_debt`) — split pure so the
 /// fixture tests and the counter printer consume the same arithmetic.
-fn debt_counts(corpus: &tbd_tickets::Corpus) -> (usize, usize, usize) {
+fn debt_counts(corpus: &tbd_tickets::Corpus) -> (usize, usize) {
     let mut title = 0usize;
     let mut main_goal = 0usize;
-    let mut body = 0usize;
     for (id, t) in &corpus.tickets {
         match t {
             tbd_tickets::Ticket::Program(p) => {
@@ -654,13 +654,10 @@ fn debt_counts(corpus: &tbd_tickets::Corpus) -> (usize, usize, usize) {
                 if tbd_tickets::main_goal_is_debt(w) {
                     main_goal += 1;
                 }
-                if tbd_tickets::body_is_debt(w) {
-                    body += 1;
-                }
             }
         }
     }
-    (title, main_goal, body)
+    (title, main_goal)
 }
 
 /// Pure growth verdict for one debt pin: red only when `measured > pin` — a new
@@ -696,7 +693,7 @@ fn check_debt_pins(root: &Path) -> Vec<String> {
         Ok(c) => c,
         Err(e) => return vec![e],
     };
-    let (title, main_goal, body) = debt_counts(&corpus);
+    let (title, main_goal) = debt_counts(&corpus);
     let mut errors = pin_growth_finding(
         "TITLE_DEBT_PIN",
         title,
@@ -709,12 +706,6 @@ fn check_debt_pins(root: &Path) -> Vec<String> {
         tbd_tickets::MAIN_GOAL_DEBT_PIN,
         "queued/ready/running/review work tickets with empty main_goal",
     ));
-    errors.extend(pin_growth_finding(
-        "BODY_DEBT_PIN",
-        body,
-        tbd_tickets::BODY_DEBT_PIN,
-        "shipped work tickets with any empty ready-tier body field",
-    ));
     errors
 }
 
@@ -724,7 +715,7 @@ fn check_debt_pins(root: &Path) -> Vec<String> {
 /// name why; counters never mask a red).
 fn debt_counter_lines(root: &Path) -> Option<Vec<String>> {
     let corpus = tbd_tickets::Corpus::load(root).ok()?;
-    let (title, main_goal, body) = debt_counts(&corpus);
+    let (title, main_goal) = debt_counts(&corpus);
     let cmp = |pin: usize, m: usize| if pin == m { "==" } else { "!=" };
     Some(vec![
         format!(
@@ -736,11 +727,6 @@ fn debt_counter_lines(root: &Path) -> Option<Vec<String>> {
             "MAIN_GOAL_DEBT_PIN {} {} measured {main_goal} (instrument: queued/ready/running/review work tickets with empty main_goal)",
             tbd_tickets::MAIN_GOAL_DEBT_PIN,
             cmp(tbd_tickets::MAIN_GOAL_DEBT_PIN, main_goal)
-        ),
-        format!(
-            "BODY_DEBT_PIN {} {} measured {body} (instrument: shipped work tickets with any empty ready-tier body field)",
-            tbd_tickets::BODY_DEBT_PIN,
-            cmp(tbd_tickets::BODY_DEBT_PIN, body)
         ),
     ])
 }
@@ -1937,17 +1923,17 @@ component = "mission_creator"
         fs::remove_dir_all(&tmp).unwrap();
     }
 
-    /// T-920.1 — the ready-tier body rule: live tree green (the T-920.1 land filled
-    /// the live ready set); a planted ready work ticket with the six fields empty
-    /// reds NAMING EACH missing field; the quarantine exemption and the queued tier
-    /// stay green.
+    /// T-920.1 / T-922 — the ready-tier body rule: live tree green (ready-class plus
+    /// shipped after the T-922 drain); a planted ready or shipped work ticket with
+    /// the six fields empty reds NAMING EACH missing field; the quarantine exemption
+    /// and the queued tier stay green.
     #[test]
     fn ready_tier_body_red_green_and_quarantine_exempt() {
         let root = worktree_root();
         let errs = check_ready_tier_body(&root);
         assert!(
             errs.is_empty(),
-            "live ready-class work must carry the six body fields; got:\n{}",
+            "live ready-class and shipped work must carry the six body fields; got:\n{}",
             errs.join("\n")
         );
 
@@ -2010,6 +1996,43 @@ component = "mission_creator"
         assert!(
             check_ready_tier_body(&tmp).is_empty(),
             "queued is exempt from the ready tier"
+        );
+        // T-922 zeroing: shipped joins this rule. Empty-bodied shipped reds;
+        // quarantine exemption still holds; filled shipped is green.
+        let shipped = |extra: &str| {
+            format!(
+                "id = \"T-001\"\nkind = \"work\"\ntitle = \"x\"\nsummary = \"x\"\nclass = \"chore\"\nstatus = \"shipped\"\norder = 10\nspec = \"docs/spec.md\"\nmain_goal = \"goal\"\nshipped_at = \"abcdef12\"\ncreated_at = \"2026-07-01T10:00:00Z\"\ncompleted_at = \"2026-07-02T10:00:00Z\"\n{extra}acceptance = [\"gate\"]\nowns = [\"a.rs\"]\n\n[scope]\ndomain = \"repo\"\nlayer = \"docs\"\n"
+            )
+        };
+        fs::write(dir.join("T-001.toml"), shipped("")).unwrap();
+        let errs = check_ready_tier_body(&tmp);
+        assert_eq!(errs.len(), 1, "shipped empty: {errs:?}");
+        assert!(
+            errs[0].contains("T-001")
+                && errs[0].contains("shipped")
+                && errs[0].contains("context, requirement, current_state, approach, verify"),
+            "shipped empty must name each field: {}",
+            errs[0]
+        );
+        fs::write(
+            dir.join("T-001.toml"),
+            shipped("migration_legacy = [\"parked wall\"]\n"),
+        )
+        .unwrap();
+        assert!(
+            check_ready_tier_body(&tmp).is_empty(),
+            "quarantined shipped ticket is exempt"
+        );
+        fs::write(
+            dir.join("T-001.toml"),
+            shipped(
+                "context = [\"why\"]\nrequirement = [\"ask\"]\ncurrent_state = [\"today\"]\napproach = [\"steps\"]\nverify = [\"cargo test\"]\n",
+            ),
+        )
+        .unwrap();
+        assert!(
+            check_ready_tier_body(&tmp).is_empty(),
+            "filled shipped is green"
         );
         fs::remove_dir_all(&tmp).unwrap();
     }

@@ -28,7 +28,15 @@ requirement = [
     "Absent fields show explicit em-dash; list fields render as one-liners.",
     "migration_legacy section visually quarantined with copy-for-triage affordance.",
 ]
+current_state = [
+    "Detail panel showed summary, user_story, acceptance and notes only; six body fields had no section",
+    "migration_legacy bytes lived on tickets from T-917.3 but had no quarantined triage box",
+]
 approach = ["Pinned order: summary user_story context requirement current_state approach verify acceptance citations notes."]
+verify = [
+    "cargo test -p ticketboard detail:: — seven unit tests green on order, quarantine and triage_block",
+    "cargo test -p ticketboard",
+]
 acceptance = [
     "All ten fields render as separated sections in the pinned order; absent renders em-dash",
     "migration_legacy section visually distinct with a copy affordance",
@@ -37,6 +45,7 @@ acceptance = [
 citations = [
     "T-917.3 migration_legacy quarantine",
     "t917_ticket_schema_v2.md ten-field body",
+    "commit dda9366d detail.rs",
 ]
 shipped_at = "dda9366d"
 created_at = "2026-08-14T21:54:38Z"

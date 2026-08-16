@@ -158,30 +158,8 @@ pub fn main_goal_is_debt(w: &WorkTicket) -> bool {
     w.status.name().is_live() && w.main_goal.as_deref().unwrap_or("").trim().is_empty()
 }
 
-/// T-922 shrink-only debt pin: SHIPPED work tickets missing any of the six
-/// ready-tier body fields (instrument: [`body_is_debt`]) — measured on the live tree
-/// at mint (operator decision 2026-08-15: full-body reconstruction round over
-/// history rather than a permanent transition-time-only rule). The T-922 drain
-/// shrinks this per reviewed batch; when it hits zero the ready-tier body rule in
-/// `check_ready_tier_body` widens to shipped corpus-wide and this pin is deleted in
-/// that same commit. Growth is red both ways: `ops::ship` already refuses a body-
-/// incomplete ship, so a rising count means a gate bypass.
-pub const BODY_DEBT_PIN: usize = 2;
-
-/// The one body-debt instrument (T-922): a SHIPPED work ticket with any
-/// [`empty_ready_tier_fields`] entry and no quarantine exemption (nonempty
-/// `migration_legacy` would mean the content exists unprocessed — zero such
-/// carriers exist since the T-919 drain finished, the arm is kept so the
-/// instrument stays total). Shared by the check-side counter and the store
-/// ratchet test.
-pub fn body_is_debt(w: &WorkTicket) -> bool {
-    matches!(w.status.name(), StatusName::Shipped)
-        && w.migration_legacy.iter().all(|s| s.trim().is_empty())
-        && !empty_ready_tier_fields(w).is_empty()
-}
-
 /// T-920.1 ready-tier body obligation (t920 spec Decisions log #2): the six fields a
-/// ready/running/review (and future-shipped) WORK ticket must carry nonempty, in the
+/// ready/running/review/shipped WORK ticket must carry nonempty, in the
 /// spec table's order. Returns the empty ones by name — `ops::mark_ready` and
 /// `ops::ship` refuse naming each, and the corpus-wide check rule reds the same list.
 /// `main_goal` and `spec` are NOT here: ready-class already parse-enforces them

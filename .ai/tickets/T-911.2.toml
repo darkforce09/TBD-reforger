@@ -24,10 +24,18 @@ verify = [
     "proptest parse(render(t))==t; deny clippy wildcard_enum_match_arm.",
     "cargo xtask ticket check --strict OK post mapper.",
 ]
+acceptance = [
+    "Phase-1 per-file tree mapped onto tbd-tickets with Scope/Status enums and encoding C on every ticket",
+    "Forty-nine frozen-unmappable tickets parked; live corpus set-equals the spec needs-operator list",
+    "Ready prose on T-090 family tickets; T-159.23 shipped; T-674/T-675 Program children mapper-minted",
+    "Proptest roundtrip green; trybuild Frontend-domain fixture compile-fails; wildcard_enum_match_arm denied crate-wide",
+    "Strict ticket check prints check OK on the remapped phase-1 tree",
+]
 citations = [
     "t911_ticket_registry_redesign.md",
     "commit 00e09ff1 clippy fix",
     "frozen-49 needs-operator set",
+    "commit 8aa578432 typed store",
 ]
 shipped_at = "00e09ff15"
 created_at = "2026-08-13T17:28:32Z"
