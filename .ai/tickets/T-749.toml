@@ -31,11 +31,16 @@ current_state = [
 ]
 approach = ["Align comments with settled-only scrubber and actual pin scope."]
 verify = ["verifier wave114.md MINOR-1 comment accuracy only."]
+acceptance = [
+    "Top-strip scrubber comment dropped false live mid-drag HH:MM readout rationale.",
+    "Settle-commit pin renamed to match on-change-only slider path it actually asserts.",
+]
 citations = [
     "eden_top_strip.rs:1166 rationale",
     "eden_top_strip.rs:2374 pin claim",
     "wave114.md MINOR-1",
     "T-633 settle-only scrubber",
+    "f5b64162 settle pin rename",
 ]
 shipped_at = "f5b64162"
 created_at = "2026-08-08T07:37:41Z"

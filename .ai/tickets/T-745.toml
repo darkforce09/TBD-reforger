@@ -51,10 +51,15 @@ verify = [
     "All-None single-target call does not bump doc_ver or arm persist.",
     "Nonexistent id call does not fire history tail or false saved state.",
 ]
+acceptance = [
+    "attrs_update_slot skipped doc_ver bump when all fields None or target id missing from raw rows.",
+    "Class-R pin required both no-op guards so a one-hunk revert would fail.",
+]
 citations = [
     "editor_verify wave113 F-3",
     "editor_ops.rs 1855",
     "T-082 _multi guard",
+    "e0a7b442 Class-R no-op pin",
 ]
 shipped_at = "e0a7b442"
 created_at = "2026-08-08T06:56:51Z"

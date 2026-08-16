@@ -35,11 +35,16 @@ current_state = [
 ]
 approach = ["Count attrs_multi_ids filtered set in header or add vehicles-excluded note."]
 verify = ["Mixed slot+vehicle selection shows honest entity count or exclusion copy."]
+acceptance = [
+    "Multi-edit header counted filtered slots and disclosed vehicle exclusion under mixed select-all.",
+    "Per-field copy stopped claiming every selected entity when only slot subset received writes.",
+]
 citations = [
     "editor_verify/wave112 NIT-4",
     "T-649 Ctrl+A select-all",
     "T-716 honesty overclaim class",
     "attrs_multi_ids slot filter",
+    "fb648552d slot count copy",
 ]
 shipped_at = "5f11ac4c"
 created_at = "2026-08-08T07:37:03Z"

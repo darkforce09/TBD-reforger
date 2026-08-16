@@ -43,11 +43,16 @@ verify = [
     "Undo depth one per bulk op after migration.",
     "T-645 confirm text matches honest undo when atomic API ships.",
 ]
+acceptance = [
+    "Store gained atomic batch APIs so multi-entity rotate and placement undid in one Ctrl+Z.",
+    "Host call sites migrated; T-645 greater-than-ten confirm copy aligned with one-step undo.",
+]
 citations = [
     "editor_verify/wave110.md NOTE-B",
     "wave111 MINOR-3 T-645 confirm",
     "T-648 multi-rotate N steps",
     "T-491 move_entities_and_vehicles",
+    "981f80446 batch API",
 ]
 shipped_at = "d9ec83e9"
 created_at = "2026-08-08T14:43:00Z"

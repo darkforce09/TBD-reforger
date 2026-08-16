@@ -40,11 +40,16 @@ verify = [
     "Open Attributes hide slot modal stays open for still-existing entity.",
     "Undo-away path still closes modal; hide and undo remain distinguishable.",
 ]
+acceptance = [
+    "read_attrs consulted raw slot rows so hidden layer or H slots kept Attributes modal open.",
+    "Undo-away still closed modal; hide and delete paths remained distinguishable for the author.",
+]
 citations = [
     "editor_verify wave113 F-2",
     "store.rs materialize 596",
     "T-665 layer-hidden",
     "T-701 editorHidden",
+    "e72047db raw row gate",
 ]
 shipped_at = "e72047db"
 created_at = "2026-08-08T06:15:10Z"

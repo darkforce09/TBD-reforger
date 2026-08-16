@@ -35,11 +35,16 @@ approach = [
     "Composability touches slot clipboard and Del-key exclusion lanes.",
 ]
 verify = ["verifier wave114.md MAJOR-1 scope accounting recorded."]
+acceptance = [
+    "MissionComments lane rendered comment slot-atlas rings on map with honest undo rebind path.",
+    "Lane sat between MissionMarkers and SquadLinks; comments_bind fed from after_doc_change.",
+]
 citations = [
     "eden/interactions.md:214",
     "editor_ops.rs:728 selection",
     "outliner.rs:99 no lane",
     "wave114.md MAJOR-1",
+    "74d92fdf3 comment map lane",
 ]
 shipped_at = "e3147bf1"
 created_at = "2026-08-08T16:12:30Z"

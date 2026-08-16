@@ -40,11 +40,16 @@ verify = [
     "Reopen during in-flight PATCH select shows current mode not stale pre-PATCH.",
     "Failed GET still clears to SHAPE_UNAVAILABLE_NOTE not invented stale value.",
 ]
+acceptance = [
+    "ShapeMirror sequenced open GET against in-flight PATCH so reopen did not show pre-PATCH game_mode.",
+    "Shared is_mission_row_id replaced byte-identical copy; ROW_META hydrate exposed game_mode getter.",
+]
 citations = [
     "editor_verify wave113 F-5",
     "eden_settings ShapeMirror",
     "T-694 RowMirror declined",
     "mission_commands ROW_META",
+    "add1e5ac ShapeSeq single-flight",
 ]
 shipped_at = "add1e5ac"
 created_at = "2026-08-08T04:01:04Z"

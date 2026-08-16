@@ -34,11 +34,16 @@ approach = [
     "Wire failure signal from fetch into favourites panel render branch.",
 ]
 verify = ["verifier wave114.md MINOR-2 failure arm with retry."]
+acceptance = [
+    "Registry fetch Err wrote failure signal alongside catalog fields instead of leaving registry_items None.",
+    "Favourites panel showed terminal error with Retry instead of indefinite Resolving spinner.",
+]
 citations = [
     "mission_editor.rs:1791 fetch",
     "eden_dock_right.rs:873 panel",
     "wave114.md MINOR-2",
     "T-695 loading distinction",
+    "9b0060d3 retry arm",
 ]
 shipped_at = "9b0060d3"
 created_at = "2026-08-08T05:06:52Z"

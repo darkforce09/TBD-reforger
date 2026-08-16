@@ -38,11 +38,16 @@ verify = [
     "Escape help row lists measurement hint menus Save modal picker dismiss paths.",
     "Future ev.key listener outside code blocks fails undocumented coverage pin.",
 ]
+acceptance = [
+    "Escape help row documented picker modal menus Save and hint dismiss paths honestly.",
+    "Coverage pins failed when known ev.key Escape sites dropped from widened census scrape.",
+]
 citations = [
     "editor_verify/wave112 MINOR-4",
     "T-703 keybinding collision test",
     "T-692 Controls Hint close",
     "eden_help bound_codes scrape",
+    "959f61b06 Escape honesty",
 ]
 shipped_at = "fe51e454"
 created_at = "2026-08-08T16:07:25Z"

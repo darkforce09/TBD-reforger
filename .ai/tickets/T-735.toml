@@ -43,11 +43,16 @@ verify = [
     "Three trap documents refused not Ok; verifier traps yield flags not zero.",
     "Control mixed type object maxProperties refused and flagged remains green.",
 ]
+acceptance = [
+    "Loadout import subset checker refused oneOf branch traps, non-boolean additionalProperties, and tuple-form items.",
+    "Positional keyword guard flagged unimplemented schema nodes the old is_schema heuristic skipped.",
+]
 citations = [
     "editor_verify/wave112 MAJOR-1",
     "T-686 SUPPORTED_SCHEMA_KEYWORDS",
     "an_unimplemented_keyword pin",
     "loadout-export.schema.json",
+    "65244f80 fail-closed traps",
 ]
 shipped_at = "65244f80"
 created_at = "2026-08-07T23:12:40Z"

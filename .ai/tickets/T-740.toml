@@ -38,11 +38,16 @@ verify = [
     "Intro prose states seventeen bindings consistent with table and pins.",
     "Redo row shows Ctrl+Y and Cmd+Y matching mission_history guard.",
 ]
+acceptance = [
+    "KeyY redo help chord documented Ctrl/Cmd plus Y matching mission_history ctrl-or-meta guard.",
+    "Class-R pin failed when redo row omitted Cmd on KeyY alternative chord text.",
+]
 citations = [
     "editor_verify/wave112 NIT-2",
     "editor_verify/wave112 NIT-3",
     "wave-112 KeyA merge",
     "mission_history.rs 490 guard",
+    "c91789951 KeyY Cmd chord",
 ]
 shipped_at = "ee8302d5"
 created_at = "2026-08-08T15:49:22Z"

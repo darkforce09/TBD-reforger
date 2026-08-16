@@ -36,10 +36,15 @@ approach = [
     "Remove false resize does NOT reallocate comment from T-638.",
 ]
 verify = ["Event-sequence test pans toggles asserts label pos_px changed."]
+acceptance = [
+    "Wave-107 filed grid-ref For keyed-on-text stale-node defect keyboard-triggerable after T-638 collapse.",
+    "No subject commit shipped this slice; estimate_note records shipped_at absent by design.",
+]
 citations = [
     "T-667 grid-ref overlay root",
     "T-638 centre-hold collapse geometry",
     "wave107.md MAJOR-1 MINOR-3",
+    "wave107 MAJOR-1 filed",
 ]
 created_at = "2026-08-08T00:00:00Z"
 completed_at = "2026-08-08T00:00:00Z"

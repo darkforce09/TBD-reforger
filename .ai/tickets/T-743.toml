@@ -42,11 +42,16 @@ verify = [
     "Paste-at-original Ctrl+Shift+V lands slots at exact source coordinates.",
     "Off-map plain paste behavior unchanged or deliberately specified not zeroed.",
 ]
+acceptance = [
+    "Paste-at-original used dedicated zero-offset path; slots landed at exact source not plus-twenty metres.",
+    "PASTE_NUDGE was deleted; off-map plain paste anchored on the visible map centre instead.",
+]
 citations = [
     "ACTION-PASTE-ORIG-001",
     "editor_verify wave113 F-1",
     "gap_analysis.md 265",
     "T-669 registry summary",
+    "dd2b29165 zero-offset paste",
 ]
 shipped_at = "53380c03"
 created_at = "2026-08-08T18:24:38Z"

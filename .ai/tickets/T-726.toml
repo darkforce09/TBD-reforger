@@ -33,11 +33,17 @@ current_state = [
 ]
 approach = ["Route Esc through modal_stack; pin stacked-Esc test both dialogs."]
 verify = ["Stacked Esc test: first Esc closes topmost only; measurement survives menu close."]
+acceptance = [
+    "Stacked preferences and settings consumed Esc topmost-first through modal_stack register and is_topmost_open.",
+    "Context menu asset picker and measure arms yielded Esc while any modal_stack overlay stayed open.",
+    "Class-R pins gated Attributes context-menu and mission_settings stacked Esc on modal_stack topmost.",
+]
 citations = [
     "editor_verify/wave106.md MINOR-2",
     "wave108.md MAJOR-2 ruler Esc",
     "wave109 MINOR-1 LoS Esc victim",
     "T-691 EditorPreferencesDialog stack",
+    "56f3919f modal_stack Esc",
 ]
 shipped_at = "d9ec83e9"
 created_at = "2026-08-08T14:45:42Z"

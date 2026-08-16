@@ -35,11 +35,13 @@ current_state = [
 ]
 approach = ["Render row key with refusal message in import path at arsenal 1031."]
 verify = ["Two stranded rows show distinguishable refusal messages naming offending row."]
+acceptance = ["Import refusal lines included RowError key so two stranded rows showed distinguishable messages."]
 citations = [
     "editor_verify/wave112 MINOR-3",
     "T-686 export import asymmetry",
     "RowError key discard",
     "arsenal.rs 743-750 export cap",
+    "f1c46457 refusal_line key",
 ]
 shipped_at = "f1c46457"
 created_at = "2026-08-08T00:43:45Z"

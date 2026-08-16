@@ -34,11 +34,16 @@ approach = [
     "Point verification step not product defect.",
 ]
 verify = ["verifier wave113.md verified-clean register item 13."]
+acceptance = [
+    "map-engine gate in wave.sh ran tests with all-features so doc-module suite compiled under gate.",
+    "Ungated tripwire failed when doc feature off instead of passing about 150 tests while skipping about 500.",
+]
 citations = [
     "wave113.md item 13",
     "Makefile:183 all-features",
     "T-742 CARGO_TARGET_DIR",
     "doc module feature gate",
+    "71118a86 all-features gate",
 ]
 shipped_at = "71118a86"
 created_at = "2026-08-08T14:36:53Z"

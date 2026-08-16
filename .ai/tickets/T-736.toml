@@ -42,11 +42,16 @@ verify = [
     "Perturbed N-step persist patterns fail strengthened arsenal pin.",
     "Tail-inside-loop regression fails mission_editor pin not only outside-loop case.",
 ]
+acceptance = [
+    "One-commit import pin rejected into_iter loop and recursion paths beyond spelling blacklist.",
+    "One-tail pin required after_local_edit outside multi persist loops not merely count equals one.",
+]
 citations = [
     "editor_verify/wave112 MINOR-1",
     "editor_verify/wave112 MINOR-2",
     "T-649 one-tail pin",
     "editor_ops.rs 1745",
+    "13d4882b strengthened pins",
 ]
 shipped_at = "13d4882b"
 created_at = "2026-08-08T05:38:18Z"
