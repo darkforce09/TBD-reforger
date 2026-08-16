@@ -39,8 +39,10 @@ acceptance = [
     "Reconstructed fields cite their sources; no invented claims; existing field content never overwritten",
     "Zeroing commit: check_ready_tier_body binds on shipped corpus-wide, pin + ratchet deleted, check --strict OK",
 ]
+shipped_at = "b0464a5ba"
 created_at = "2026-08-15T18:01:48Z"
 completed_at = "2026-08-16T01:40:32Z"
+estimated = ["tokens"]
 owns = [
     ".ai/tickets",
     "crates/tbd-tickets",
