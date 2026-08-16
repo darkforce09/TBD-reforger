@@ -94,6 +94,15 @@ approach = [
     "Per-binary cold DB isolation with dev-login prime.",
     "Suite lock in admin_field for roles/sync snapshot tests.",
 ]
+verify = [
+    "cargo test -p website-api --test admin_field common::t534_per_binary_database_name -- --exact",
+    "cargo test -p website-api --test admin_field -- --test-threads=1",
+]
+acceptance = [
+    "require_test_database_url derived per-binary gate DB names from suite label.",
+    "admin_field suite lock serialised whole-table roles/sync snapshot tests within one binary.",
+    "In-binary test concurrency used per-binary gate DBs; Cargo still ran test targets sequentially.",
+]
 citations = [
     "W49 verifier T-479",
     "idx_users_arma_id dev-login",

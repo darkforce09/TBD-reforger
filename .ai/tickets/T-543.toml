@@ -29,6 +29,10 @@ current_state = [
 ]
 approach = ["Honor CARGO_TARGET_DIR in mcpd-bin.sh echo path."]
 verify = ["rg target/debug/mcpd scripts/mod/"]
+acceptance = [
+    "mcpd-bin.sh echoed ${CARGO_TARGET_DIR:-$ROOT/target}/debug/mcpd for consumers.",
+    "mcp-call-selftest asserted resolved path matches private target-dev-mcpd layout.",
+]
 citations = [
     "W54 adversarial verifier MINOR-NIT",
     "T-328 mcp-daemon target-dev-mcpd",

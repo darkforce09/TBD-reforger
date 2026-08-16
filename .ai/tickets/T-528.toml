@@ -28,6 +28,10 @@ current_state = [
 ]
 approach = ["Replace is_some() with arma_id_is_linked at both me.rs sites."]
 verify = ["Class-R/IT RED on is_some()-only; whitespace arma_id not linked."]
+acceptance = [
+    "GET /me and /me/link/status reported unlinked for whitespace-only arma_id.",
+    "Both endpoints used arma_id_is_linked trim/nonempty helper instead of is_some().",
+]
 citations = [
     "Wave 47 verifier P1/MAJOR",
     "T-350 linked sites claim",

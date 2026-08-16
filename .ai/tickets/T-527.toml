@@ -12,6 +12,10 @@ context = [
     "T-332 Attach Mission UI left AdminGate before badge_class/cn.",
 ]
 requirement = ["Reorder crate::ui imports so rustfmt --check passes."]
+current_state = ["Wave 47 cold gate failed cargo fmt --check on event_manager.rs after T-332."]
+approach = ["rustfmt event_manager.rs import reorder only; no logic change."]
+verify = ["cargo fmt --check -- apps/website/frontend/src/event_manager.rs"]
+acceptance = ["event_manager.rs passed rustfmt --check after T-332 AdminGate import reorder."]
 citations = [
     "Wave 47 cold gate fmt",
     "T-332 Attach Mission UI",

@@ -32,6 +32,10 @@ current_state = [
 ]
 approach = ["files=$(changed_rs) || return $? (or equivalent) in touch_changed."]
 verify = ["Porcelain failure must propagate rc; listed=0 must not mask error."]
+acceptance = [
+    "touch_changed used files=$(changed_rs) || return $? instead of for-loop subshell mask.",
+    "Porcelain failure propagated rc; listed=0 no longer reported success on changed_rs error.",
+]
 citations = [
     "W50 verifier MINOR-NIT T-492",
     "fmt_changed clippy_changed rc",

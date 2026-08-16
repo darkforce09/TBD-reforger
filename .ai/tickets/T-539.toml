@@ -32,6 +32,10 @@ current_state = [
 ]
 approach = ["Class-R exercises flatten_orbat_slots(..., false) stdout path."]
 verify = ["Add stamp after apply in flatten_orbat_slots false branch → tests must RED."]
+acceptance = [
+    "flatten_stdout_* Class-R routed through flatten_orbat_slots false stdout entrypoint.",
+    "Source ratchet RED on post-apply schemaVersion reassignment in stdout branch.",
+]
 citations = [
     "W52 verifier MAJOR T-538",
     "apply_flatten_orbat_slots bypass",

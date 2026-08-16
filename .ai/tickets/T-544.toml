@@ -29,6 +29,10 @@ requirement = [
 current_state = ["POST set-current has Class-R pins only; no HTTP IT."]
 approach = ["HTTP IT in tests/missions.rs for set-current re-point."]
 verify = ["rg set_current_version apps/website/api/tests — no hit."]
+acceptance = [
+    "missions.rs HTTP IT created two non-vacuous versions then set-current to older row.",
+    "GET and /compiled served older payload after set-current re-pointed current_version_id.",
+]
 citations = [
     "W54 adversarial verifier MINOR-NIT",
     "T-532 set-current Class-R pins",

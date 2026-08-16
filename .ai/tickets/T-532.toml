@@ -32,6 +32,11 @@ approach = [
     "Add rollback handler re-pointing missions.current_version_id.",
     "Register route in app.rs for version restore.",
 ]
+verify = ["cargo test -p website-api handlers::missions::tests::set_current_version_repaints_tip_with_belonging_check -- --exact"]
+acceptance = [
+    "POST /missions/:id/versions/:vid/set-current re-pointed missions.current_version_id.",
+    "Handler gated on can_edit and version-belongs-to-mission; route registered in app.rs.",
+]
 citations = [
     "T-382 residual W48",
     "missions current_version_id rollback",

@@ -37,6 +37,10 @@ approach = [
     "Class-R scan banning env::var outside common/mod.rs.",
 ]
 verify = ["rg env::var TEST_DATABASE_URL apps/website/api/tests — 22 hits."]
+acceptance = [
+    "Every IT binary setup called common::require_test_database_url instead of raw env::var.",
+    "Class-R t542_no_raw_test_database_url_reads_outside_common banned reads outside common/mod.rs.",
+]
 citations = [
     "W54 adversarial verifier DIRTY MAJOR",
     "T-381 require_test_database_url",

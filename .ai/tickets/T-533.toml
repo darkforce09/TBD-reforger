@@ -34,6 +34,11 @@ approach = [
     "Add telemetry integration test posting malformed UUIDs.",
     "Assert HTTP 400 status on junk event_id/mission_id.",
 ]
+verify = ["cargo test -p website-api --test telemetry junk_event_or_mission_id_is_a_400_that_writes_nothing -- --exact"]
+acceptance = [
+    "HTTP IT posted junk event_id and mission_id through live telemetry route.",
+    "Each junk shape returned HTTP 400 naming the field; no match or stat row written.",
+]
 citations = [
     "W49 verifier T-355",
     "parse_uuid_opt_strict telemetry",

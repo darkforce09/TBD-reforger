@@ -32,6 +32,10 @@ current_state = [
 ]
 approach = ["HTTP/IT that re-POSTs match EV1→EV2 and asserts attendance."]
 verify = ["rg retract_from apps/website/api — no IT exercises path."]
+acceptance = [
+    "HTTP IT re-POSTed match across EV1 then EV2 with four telemetry POSTs.",
+    "EV1 attendance retracted when unjustified; NOT EXISTS guard held while sibling match justified.",
+]
 citations = [
     "W53 adversarial verifier MINOR-NIT",
     "T-384 ingest_match_results retract",

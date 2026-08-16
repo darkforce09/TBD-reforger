@@ -15,7 +15,13 @@ requirement = [
     "Pin live body.insert, is_unique_violation, and qb.push clear writers.",
     "FE tests strip comments before asserting live identifiers.",
 ]
+current_state = ["T-332 Class-R partly pinned doc-comment prose; comment-only edits stayed green."]
+approach = ["Pin live body.insert, is_unique_violation, and qb.push writers after comment-strip."]
 verify = ["Comment-only T-332 prose edits cannot stay green."]
+acceptance = [
+    "BE Class-R pinned live PATCH clear writers and is_unique_violation after comment-strip.",
+    "FE Class-R pinned body.insert unwrap_or_default diffs; prose-only T-332 edits no longer passed.",
+]
 citations = [
     "Wave 62 GATE PASS",
     "T-332 clear contract pins",

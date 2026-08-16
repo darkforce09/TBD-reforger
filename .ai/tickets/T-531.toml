@@ -34,6 +34,11 @@ approach = [
     "Prune KNOWN_OPEN entry for deployments.rs.",
     "Set BASELINE_CAP=0 and fix lying comments.",
 ]
+verify = ["cargo test -p website-api --test null_tolerance every_get_route_is_swept_or_skipped_with_a_reason -- --exact"]
+acceptance = [
+    "Stale deployments.rs KNOWN_OPEN tolerance row pruned after T-341 cleanup.",
+    "BASELINE_CAP pinned at zero with assert_eq Class-R instead of absurd <= compare.",
+]
 citations = [
     "W48 adversarial verifier",
     "T-341 deployments cleanup",

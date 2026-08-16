@@ -30,6 +30,11 @@ approach = [
     "Add btrim/nonempty predicate to ingest_event_roster.",
     "Trim seating key like other arma_id handler sites.",
 ]
+verify = ["cargo test -p website-api --test t529_roster_whitespace_arma"]
+acceptance = [
+    "ingest_event_roster filtered whitespace arma_id via btrim in roster SQL.",
+    "Padded real arma_id emitted trimmed seating key matching T-350 linked checks.",
+]
 citations = [
     "Wave 47 verifier T-350",
     "T-343 one-sided-trim caution",

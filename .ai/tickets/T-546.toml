@@ -15,7 +15,13 @@ requirement = [
     "Assert leading =title becomes ZWSP-prefixed in outbound embed JSON.",
     "Cover CMS push_to_discord path; stored row keeps authored bytes.",
 ]
+current_state = ["sanitize_discord_embed_field Class-R pins only; no HTTP IT read outbound embed bytes."]
+approach = ["webhook_it captured raw Discord POST body; misc_integration CMS push_to_discord path asserted split."]
 verify = ["webhook_it 10; CMS path embed title assertions."]
+acceptance = [
+    "webhook_it neutralised formula-leading embed titles on the wire for hostile CSV lead set.",
+    "CMS publish kept authored announcement bytes in DB while Discord sink title was sanitised.",
+]
 citations = [
     "W55 verifier after T-498",
     "734b175c webhook_it HTTP IT",

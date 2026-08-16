@@ -13,7 +13,13 @@ context = [
     "Runtime correct since T-328/T-543; comment still claimed ignore.",
 ]
 requirement = ["Update mcp-daemon.sh comment to match T-543 CARGO_TARGET_DIR honor."]
+current_state = ["mcp-daemon.sh comment still claimed mcpd-bin ignored CARGO_TARGET_DIR after T-543 fix."]
+approach = ["Update mcp-daemon.sh comment to match T-543 runtime; no path logic change."]
 verify = ["rg ignores CARGO_TARGET_DIR scripts/mod/"]
+acceptance = [
+    "mcp-daemon.sh comment documented mcpd-bin.sh CARGO_TARGET_DIR honor.",
+    "Private target-dev-mcpd runtime behavior unchanged from T-328/T-543.",
+]
 citations = [
     "W55 verifier after T-543",
     "T-543 mcpd-bin honor",

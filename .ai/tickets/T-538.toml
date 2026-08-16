@@ -29,6 +29,10 @@ requirement = [
 current_state = ["stdout flatten drops loadout/uid and force-stamps schemaVersion 1.1."]
 approach = ["Apply T-383 preserve/refuse rules to stdout flatten path."]
 verify = ["Run flatten-orbat-slots without --in-place on golden with loadout/uid."]
+acceptance = [
+    "stdout flatten-orbat-slots shared apply_flatten_orbat_slots preserve/refuse with --in-place path.",
+    "Stdout path dropped force-stamp of schemaVersion 1.1; loadout and uid preserved on golden.",
+]
 citations = [
     "W51 verifier MINOR-NIT T-383",
     "flatten-orbat-slots stdout path",

@@ -34,6 +34,11 @@ approach = [
     "Call IsComplete at spawn boundary in SpawnManager path.",
     "Sync FE comment and TICKET_LEAD IsComplete prose.",
 ]
+verify = ["SpawnManager settled MaterializeSlotBodies then called IsComplete; incomplete delivery blocked LOBBY."]
+acceptance = [
+    "SpawnManager settled MaterializeSlotBodies apps then called IsComplete before LOBBY deploy.",
+    "Incomplete delivery blocked spawn; arsenal_rules and TICKET_LEAD stale zero-callers prose synced.",
+]
 citations = [
     "T-415 residual W53 ReportVerdict",
     "SpawnManager MaterializeSlotBodies",

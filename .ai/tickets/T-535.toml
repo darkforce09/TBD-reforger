@@ -36,6 +36,10 @@ verify = [
     "Delete LEFT JOIN from SERVER_STATUS_SELECT_* → positive IT RED.",
     "HTTP create-null IT alone is insufficient; need join-removal RED.",
 ]
+acceptance = [
+    "misc_integration IT seeded match.terrain everon with current_match_id pointer.",
+    "GET /servers list JSON carried everon; broken LEFT JOIN would fail this positive IT.",
+]
 citations = [
     "W50 adversarial verifier MAJOR",
     "T-385 LEFT JOIN matches.terrain",

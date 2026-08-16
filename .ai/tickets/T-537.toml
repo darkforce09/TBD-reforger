@@ -33,6 +33,10 @@ current_state = [
 ]
 approach = ["refuse_empty_write at enf/apidoc.rs and listed world/map sites."]
 verify = ["Repro: see T-383 summary for empty-write perturbation."]
+acceptance = [
+    "refuse_empty_write guards added at enf apidoc/index/source/carve residual sites.",
+    "world aux/build and map labels/sap/glyphs refused empty overwrite of committed artifacts.",
+]
 citations = [
     "T-383 residual W51 CLEAN",
     "enf apidoc header-only TSV",
